@@ -14,7 +14,7 @@
 */
 
 
-/* plparams.c -  PJL handling of common device parameters */
+/* plparams.c -  PJL handling of pdfwrite device parameters */
 
 #include "std.h"
 #include "gsmemory.h"
@@ -22,30 +22,61 @@
 #include "gsdevice.h"
 #include "gsparam.h"
 #include "gp.h"
+#include "gserrors.h"
+#include "string_.h"
+#include "plparams.h"
+#include <stdlib.h>
 
-int pjl_dist_add_token_to_list(gs_c_param_list *, char **);
+int pjl_dist_process_dict(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
+int count_tokens(char *p);
+int pjl_dist_process_dict_or_hexstring(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
+int pjl_dist_process_string(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
+int pjl_dist_add_tokens_to_list(gs_param_list *, char **);
+int pjl_dist_process_number(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
+int pjl_dist_process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
+int pjl_dist_process_name(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name *key, char **p);
 
+/*--------------------------------------------- pdfmark -------------------------------------------*/
+
+/* Add a newly created param_string array to a param list, and then use that
+ * param list as an argument to put the device parameters.
+ */
 static int pdfmark_write_list(gs_memory_t *mem, gx_device *device, gs_param_string_array *array_list)
 {
     gs_c_param_list list;
     int code;
 
+    /* Set the list to writeable, and initialise it */
     gs_c_param_list_write(&list, mem);
+    /* We don't want keys to be persistent, as we are going to throw
+     * away our array, force them to be copied
+     */
     gs_param_list_set_persistent_keys((gs_param_list *) &list, false);
+
+    /* Make really sure the list is writable, but don't initialise it */
     gs_c_param_list_write_more(&list);
+
+    /* Add the param string array to the list */
     code = param_write_string_array((gs_param_list *)&list, "pdfmark", array_list);
     if (code < 0)
         return code;
 
+    /* Set the param list back to readable, so putceviceparams can readit (mad...) */
     gs_c_param_list_read(&list);
+
+    /* and set the actual device parameters */
     code = gs_putdeviceparams(device, (gs_param_list *)&list);
 
     return code;
 }
 
+/* pdfmark operations always take an array parameter. Because (see below) we
+ * know that array valuess must be homogenous types we can treat them all as
+ * parameter strings.
+ */
 static int process_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
 {
-    char *p, *type, *start, *copy, *stream_data = 0L;
+    char *p, *start, *copy, *stream_data = 0L;
     int tokens = 0, code = 0;
     gs_param_string *parray;
     gs_param_string_array array_list;
@@ -143,7 +174,7 @@ static int process_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
     parray[tokens - 1].persistent = false;
 
     /* Features are name objects (ie they start with a '/') but putdeviceparams wants them
-     * as strings without the #/#, so we need to strip that here.
+     * as strings without the '/', so we need to strip that here.
      */
     if (parray[tokens].data[0] != '/') {
         gs_free_object(mem, copy, "working buffer for pdfmark processing");
@@ -154,7 +185,7 @@ static int process_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
         parray[tokens].size--;
     }
 
-    /* We need to convert a 'PUT' with a dictonayr into a 'PUTDICT', this is normally done
+    /* We need to convert a 'PUT' with a dictonary into a 'PUTDICT', this is normally done
      * in PostScript
      */
     if (putdict && strncmp((const char *)(parray[tokens].data), "PUT", 3) == 0) {
@@ -197,7 +228,7 @@ static int process_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
         stream_data = (char *)(parray[tokens - 2].data);
 
         gp_fseek_64(f, 0, SEEK_SET);
-        fread(stream_data, 1, bytes, f);
+        code = fread(stream_data, 1, bytes, f);
         fclose(f);
         parray[tokens - 2].size = bytes;
 
@@ -246,6 +277,12 @@ int pcl_pjl_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
     return 0;
 }
 
+/*--------------------------------------------- distillerparams -------------------------------------------*/
+
+/* Dictionaries are surprisingly easy, we just make a param_dict
+ * and then call the existing routine to parse the string and
+ * add tokens to the parameter list contained in the dictionary.
+ */
 int pjl_dist_process_dict(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
 {
     gs_param_dict dict;
@@ -276,11 +313,15 @@ int pjl_dist_process_dict(gs_memory_t *mem, gs_c_param_list *plist, gs_param_nam
     if (*p1 == 0x00)
         return -1;
 
+    /* NULL out the dictioanry end marks */
     *p1++ = 0x00;
     if (*p1 == 0x00)
         return -1;
     *p1 = 0x00;
 
+    /* Move the string pointer past the end of the dictionary so that
+     * parsing will continue correctly
+     */
     *p = p1 + 1;
 
     p1 = start;
@@ -289,13 +330,17 @@ int pjl_dist_process_dict(gs_memory_t *mem, gs_c_param_list *plist, gs_param_nam
     dict.size = tokens;
 
     code = param_begin_write_dict((gs_param_list *)plist, key, &dict, false);
+    if (code < 0)
+        return code;
 
     gs_param_list_set_persistent_keys(dict.list, false);
 
-    code = pjl_dist_add_token_to_list(dict.list, &p1);
+    code = pjl_dist_add_tokens_to_list(dict.list, &p1);
+    if (code < 0)
+        return code;
 
     code = param_end_write_dict((gs_param_list *)plist, key, &dict);
-    return 0;
+    return code;
 }
 
 int pjl_dist_process_dict_or_hexstring(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
@@ -355,6 +400,7 @@ int pjl_dist_process_string(gs_memory_t *mem, gs_c_param_list *plist, gs_param_n
     return 0;
 }
 
+/* We need to know how many items are in an array or dictionary */
 int count_tokens(char *p)
 {
     int tokens = 0;
@@ -463,19 +509,41 @@ int count_tokens(char *p)
     return tokens;
 }
 
+/* Arrays are *way* more complicated than dicts :-(
+ * We have 4 different kinds of arrays; name, string, int and float
+ * It seems that parameter arrays can only contain homogenous data, it
+ * all has to be of the same type. This complicates matters because we
+ * can't know in advance what the type is!
+ *
+ * So we only handle 3 types of array; int, float and string. Anything
+ * which isn't one of those either gets converted to a string or (arrays and
+ * dictionaries) throws an error.
+ *
+ * For numbers, we look at the first element, if its an integer we make
+ * an int array otherwise we make a float array. If we start an int array
+ *  and later encounter a float, we make a new float array, copy the existing
+ * integers into it (converting to floats) and throw away the old int array.
+ *
+ * Otherwise if we encounter an object whose type doesnt' match the array we
+ * created we throw an error.
+ */
 int pjl_dist_process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
 {
-    int tokens = 0, nested = 0, index = 0, code;
+    int tokens = 0, nested = 0, index = 0, code = 0;
+    gs_param_type array_type = gs_param_type_null;
     char *start = *p + 1, *p1 = start;
-    gs_param_string *parray;
-    gs_param_string_array *array_list;
+    gs_param_string *parray = 0L;
+    char *array_data = 0x00;
+    gs_param_string_array string_array;
+    gs_param_int_array int_array;
+    gs_param_float_array float_array;
 
     /* for now we won't handle nested arrays */
     do {
         while (*p1 != ']' && *p1 != 0x00) {
             if (*p1 == '[')
                 nested++;
-            *p1++;
+            p1++;
         }
     }while (nested--);
 
@@ -487,51 +555,87 @@ int pjl_dist_process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_na
 
     tokens = count_tokens(start);
 
-    array_list = (gs_param_string_array *)gs_alloc_bytes(mem, sizeof(gs_param_string_array), "array in distillerparams");
-    if (array_list == NULL)
-        return -1;
-
-    parray = (gs_param_string *)gs_alloc_bytes(mem, sizeof(gs_param_string) * tokens, "param string array in distillerparams");
-    if (parray == NULL){
-        gs_free_object(mem, array_list, "working buffer for distillerparams processing");
-        return -1;
-    }
-
-    while (*p1 != 0x00){
+    while (*p1 != 0x00 && code == 0){
         switch (*p1) {
             case ' ':
                 p1++;
                 break;
+
             case 'f':
+                if (array_type != gs_param_type_null && array_type != gs_param_type_string_array) {
+                    code = gs_error_typecheck;
+                    break;
+                }
+                if (array_type == gs_param_type_null) {
+                    array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * tokens, "param string array in distillerparams");
+                    if (array_data == NULL){
+                        code = gs_error_VMerror;
+                        break;
+                    }
+                    array_type = gs_param_type_string_array;
+                }
                 if (strncmp(p1, "false", 5) == 0) {
+                    parray = (gs_param_string *)array_data;
                     parray[index].data = (const byte *)p1;
                     p1 += 5;
                     *p1++ = 0x00;
                     parray[index].size = 5;
                     parray[index++].persistent = false;
                 } else {
-                    return -1;
+                    code = gs_error_typecheck;
+                    break;
                 }
                 break;
+
             case 't':
+                if (array_type != gs_param_type_null && array_type != gs_param_type_string_array) {
+                    code = gs_error_typecheck;
+                    break;
+                }
+                if (array_type == gs_param_type_null) {
+                    array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * tokens, "param string array in distillerparams");
+                    if (array_data == NULL){
+                        code = gs_error_VMerror;
+                        break;
+                    }
+                    array_type = gs_param_type_string_array;
+                }
                 if (strncmp(p1, "true", 4) == 0) {
+                    parray = (gs_param_string *)array_data;
                     parray[index].data = (const byte *)p1;
                     p1 += 4;
                     *p1++ = 0x00;
                     parray[index].size = 4;
                     parray[index++].persistent = false;
                 } else {
-                    return -1;
+                    code = gs_error_typecheck;
+                    break;
                 }
                 break;
+
             case '<':
+                if (array_type != gs_param_type_null && array_type != gs_param_type_string_array) {
+                    code = gs_error_typecheck;
+                    break;
+                }
+                if (array_type == gs_param_type_null) {
+                    array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * tokens, "param string array in distillerparams");
+                    if (array_data == NULL){
+                        code = gs_error_VMerror;
+                        break;
+                    }
+                    array_type = gs_param_type_string_array;
+                }
                 if (*(p1+1) == '<') {
+                    code = gs_error_typecheck;
+                    break;
                     /* dictionary inside an array, not supported */
                 } else {
                     char *src, *dest;
                     char data = 0;
                     int i;
 
+                    parray = (gs_param_string *)array_data;
                     src = dest = ++p1;
                     parray[index].data = (const byte *)p1;
                     while (*src != 0x00 && *src != '>') {
@@ -558,32 +662,61 @@ int pjl_dist_process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_na
                         *dest++ = data;
                     }
                     *dest = 0x00;
-                    parray[index].size = strlen(parray[index].data);
+                    parray[index].size = strlen((char *)(parray[index].data));
                     parray[index++].persistent = false;
                 }
                 break;
+
             case '/':
+                if (array_type != gs_param_type_null && array_type != gs_param_type_string_array) {
+                    code = gs_error_typecheck;
+                    break;
+                }
+                if (array_type == gs_param_type_null) {
+                    array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * tokens, "param string array in distillerparams");
+                    if (array_data == NULL){
+                        code = gs_error_VMerror;
+                        break;
+                    }
+                    array_type = gs_param_type_string_array;
+                }
+                parray = (gs_param_string *)array_data;
                 parray[index].data = (const byte *)p1;
                 while (*p1 != ' ' && *p1 != 0x00)
                     p1++;
                 if (*p1 == 0x00)
                     return -1;
                 *p1++ = 0x00;
-                parray[index].size = strlen(parray[index].data);
+                parray[index].size = strlen((char *)(parray[index].data));
                 parray[index++].persistent = false;
                 break;
+
             case '(':
+                if (array_type != gs_param_type_null && array_type != gs_param_type_string_array) {
+                    code = gs_error_typecheck;
+                    break;
+                }
+                if (array_type == gs_param_type_null) {
+                    array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * tokens, "param string array in distillerparams");
+                    if (array_data == NULL){
+                        code = gs_error_VMerror;
+                        break;
+                    }
+                    array_type = gs_param_type_string_array;
+                }
+                parray = (gs_param_string *)array_data;
                 parray[index].data = (const byte *)p1;
                 while (*p1 != ')' && *p1 != 0x00)
                     p1++;
                 if (*p1 == 0x00)
                     return -1;
                 *p1++ = 0x00;
-                parray[index].size = strlen(parray[index].data);
+                parray[index].size = strlen((char *)(parray[index].data));
                 parray[index++].persistent = false;
                 break;
             case '[':
                 /* Nested arrays, not supported */
+                code = gs_error_typecheck;
                 break;
             case '0':
             case '1':
@@ -596,29 +729,105 @@ int pjl_dist_process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_na
             case '8':
             case '9':
             case '.':
-                parray[index].data = (const byte *)p1;
-                while (*p1 != 0x00 && ((*p1 >= '0' && *p1 <= '9') || *p1 == '.'))
-                    p1++;
-                if (*p1 == 0x00)
-                    return -1;
-                *p1++ = 0x00;
-                parray[index].size = strlen(parray[index].data);
-                parray[index++].persistent = false;
+                if (array_type == gs_param_type_string_array) {
+                    code = gs_error_typecheck;
+                    break;
+                } else {
+                    int integer = 1;
+                    char *c = p1;
+                    float *floats;
+                    int *ints, i;
+
+                    integer = 1;
+                    while (*p1 != 0x00 && ((*p1 >= '0' && *p1 <= '9') || *p1 == '.')) {
+                        if (*p1 == '.')
+                            integer = 0;
+                        p1++;
+                    }
+                    if (*p1 == 0x00)
+                        return -1;
+                    *p1++ = 0x00;
+
+                    if (array_type == gs_param_type_null) {
+                        if (integer) {
+                            ints = (int *)gs_alloc_bytes(mem, sizeof(int) * tokens, "param string array in distillerparams");
+                            if (ints == NULL){
+                                code = gs_error_VMerror;
+                                break;
+                            }
+                            array_type = gs_param_type_int_array;
+                            array_data = (char *)ints;
+                        } else {
+                            floats = (float *)gs_alloc_bytes(mem, sizeof(float) * tokens, "param string array in distillerparams");
+                            if (floats == NULL){
+                                code = gs_error_VMerror;
+                                break;
+                            }
+                            array_type = gs_param_type_float_array;
+                            array_data = (char *)floats;
+                        }
+                    }
+                    if (array_type == gs_param_type_int_array && !integer) {
+                        ints = (int *)array_data;
+                        floats = (float *)gs_alloc_bytes(mem, sizeof(float) * tokens, "param string array in distillerparams");
+                        if (floats == NULL){
+                            code = gs_error_VMerror;
+                            break;
+                        }
+                        array_type = gs_param_type_float_array;
+                        for (i=0;i<index;i++){
+                            floats[i] = (float)(ints[i]);
+                        }
+                        gs_free_object(mem, ints, "param string array in distillerparams");
+                        array_data = (char *)floats;
+                    }
+                    if (array_type == gs_param_type_int_array) {
+                        ints = (int *)array_data;
+                        ints[index++] = (int)atoi(c);
+                    } else {
+                        floats = (float *)array_data;
+                        floats[index++] = (float)atof(c);
+                    }
+                }
                 break;
             default:
-                return -1;
+                code = gs_error_typecheck;
                 break;
         }
     }
-    array_list->data = parray;
-    array_list->persistent = 0;
-    array_list->size = tokens;
 
-    code = param_write_string_array((gs_param_list *)plist, key, array_list);
-    gs_free_object(mem, parray, "param string array in distillerparams");
-    gs_free_object(mem, array_list, "working buffer for distillerparams processing");
+    /* Now we have to deal with adding the array to the parm list, there are
+     * (of course!) different calls for each array type....
+     */
+    switch(array_type) {
+        case gs_param_type_string_array:
+            string_array.data = (const gs_param_string *)array_data;
+            string_array.persistent = 0;
+            string_array.size = tokens;
+            code = param_write_string_array((gs_param_list *)plist, key, &string_array);
+            break;
+        case gs_param_type_int_array:
+            int_array.data = (const int *)array_data;
+            int_array.persistent = 0;
+            int_array.size = tokens;
+            code = param_write_int_array((gs_param_list *)plist, key, &int_array);
+            break;
+        case gs_param_type_float_array:
+            float_array.data = (const float *)array_data;
+            float_array.persistent = 0;
+            float_array.size = tokens;
+            code = param_write_float_array((gs_param_list *)plist, key, &float_array);
+            break;
 
-    *p = p1++;
+        default:
+            break;
+    }
+
+    /* And now we can throw away the array data, we copied it to the param list. */
+    gs_free_object(mem, array_data, "param string array in distillerparams");
+
+    /* Update the string pointer to point past the 0x00 byte marking the end of the array */
+    *p = p1 + 1;
 
     return code;
 }
@@ -641,7 +850,7 @@ int pjl_dist_process_number(gs_memory_t *mem, gs_c_param_list *plist, gs_param_n
     }
 
     if (!integer) {
-        double f = atof(start);
+        float f = (float)atof(start);
         param_write_float((gs_param_list *)plist, key, (float *)&f);
     } else {
         long i = atol(start);
@@ -651,10 +860,13 @@ int pjl_dist_process_number(gs_memory_t *mem, gs_c_param_list *plist, gs_param_n
     return 0;
 }
 
-int pjl_dist_add_token_to_list(gs_c_param_list *plist, char **p)
+/* Given a string to parse, parse it and add what we find to the supplied
+ * param list.
+ */
+int pjl_dist_add_tokens_to_list(gs_param_list *plist, char **p)
 {
     char *p1 = *p;
-    int code;
+    int code = 0;
     gs_param_name key = NULL;
 
     while (*p1 != 0x00){
@@ -686,24 +898,24 @@ int pjl_dist_add_token_to_list(gs_c_param_list *plist, char **p)
                 if (key == NULL) {
                     return -1;
                 }
-                code = pjl_dist_process_dict_or_hexstring(plist->memory, plist, key, &p1);
+                code = pjl_dist_process_dict_or_hexstring(plist->memory, (gs_c_param_list *)plist, key, &p1);
                 key = NULL;
                 break;
             case '/':
-                code = pjl_dist_process_name(plist->memory, plist, &key, &p1);
+                code = pjl_dist_process_name(plist->memory, (gs_c_param_list *)plist, &key, &p1);
                 break;
             case '(':
                 if (key == NULL) {
                     return -1;
                 }
-                code = pjl_dist_process_string(plist->memory, plist, key, &p1);
+                code = pjl_dist_process_string(plist->memory, (gs_c_param_list *)plist, key, &p1);
                 key = NULL;
                 break;
             case '[':
                 if (key == NULL) {
                     return -1;
                 }
-                code = pjl_dist_process_array(plist->memory, plist, key, &p1);
+                code = pjl_dist_process_array(plist->memory, (gs_c_param_list *)plist, key, &p1);
                 key = NULL;
                 break;
             case '0':
@@ -720,7 +932,7 @@ int pjl_dist_add_token_to_list(gs_c_param_list *plist, char **p)
                 if (key == NULL) {
                     return -1;
                 }
-                code = pjl_dist_process_number(plist->memory, plist, key, &p1);
+                code = pjl_dist_process_number(plist->memory, (gs_c_param_list *)plist, key, &p1);
                 key = NULL;
                 break;
             default:
@@ -737,10 +949,9 @@ int pjl_dist_add_token_to_list(gs_c_param_list *plist, char **p)
 
 int pcl_pjl_setdistillerparams(gs_memory_t *mem, gx_device *device, char *distillerparams)
 {
-    char *p, *type, *start, *copy;
-    int tokens = 0, code = 0;
+    char *p, *start, *copy;
+    int code = 0;
     gs_c_param_list *plist;
-    gs_param_name key = NULL;
 
     plist = gs_c_param_list_alloc(mem, "temp C param list for PJL distillerparams");
     gs_c_param_list_write(plist, mem);
@@ -776,98 +987,23 @@ int pcl_pjl_setdistillerparams(gs_memory_t *mem, gx_device *device, char *distil
         start++;
     p = start;
 
-    code = pjl_dist_add_token_to_list(plist, &p);
-
-#if 0
-    while (*p != 0x00){
-        switch (*p) {
-            case ' ':
-                p++;
-                break;
-            case 'f':
-                if (strncmp(p, "false", 5) == 0) {
-                    bool t = false;
-                    param_write_bool((gs_param_list *)plist, key, &t);
-                    p += 5;
-                    key = NULL;
-                } else {
-                    gs_free_object(mem, copy, "working buffer for distillerparams processing");
-                    return -1;
-                }
-                break;
-            case 't':
-                if (strncmp(p, "true", 4) == 0) {
-                    bool t = true;
-                    param_write_bool((gs_param_list *)plist, key, &t);
-                    p += 4;
-                    key = NULL;
-                } else {
-                    gs_free_object(mem, copy, "working buffer for distillerparams processing");
-                    return -1;
-                }
-                break;
-            case '<':
-                if (key == NULL) {
-                    gs_free_object(mem, copy, "working buffer for distillerparams processing");
-                    return -1;
-                }
-                code = pjl_dist_process_dict_or_hexstring(mem, plist, key, &p);
-                key = NULL;
-                break;
-            case '/':
-                code = pjl_dist_process_name(mem, plist, &key, &p);
-                break;
-            case '(':
-                if (key == NULL) {
-                    gs_free_object(mem, copy, "working buffer for distillerparams processing");
-                    return -1;
-                }
-                code = pjl_dist_process_string(mem, plist, key, &p);
-                key = NULL;
-                break;
-            case '[':
-                if (key == NULL) {
-                    gs_free_object(mem, copy, "working buffer for distillerparams processing");
-                    return -1;
-                }
-                code = pjl_dist_process_array(mem, plist, key, &p);
-                key = NULL;
-                break;
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-            case '.':
-                if (key == NULL) {
-                    gs_free_object(mem, copy, "working buffer for distillerparams processing");
-                    return -1;
-                }
-                code = pjl_dist_process_number(mem, plist, key, &p);
-                key = NULL;
-                break;
-            default:
-                gs_free_object(mem, copy, "working buffer for distillerparams processing");
-                return -1;
-                break;
-        }
-        if (code < 0) {
-            gs_free_object(mem, copy, "working buffer for distillerparams processing");
-            return -1;
-        }
+    /* Parse the string, adding what we find to the plist */
+    code = pjl_dist_add_tokens_to_list((gs_param_list *)plist, &p);
+    if (code < 0) {
+        gs_c_param_list_release(plist);
+        return code;
     }
-#endif
 
+    /* Discard our working copy of the string */
     gs_free_object(mem, copy, "working buffer for distillerparams processing");
 
+    /* Set the list to 'read' (bonkers...) */
     gs_c_param_list_read(plist);
+
+    /* Actually set the newly created device parameters */
     code = gs_putdeviceparams(device, (gs_param_list *)plist);
 
+    /* And throw away the plist, we're done with it */
     gs_c_param_list_release(plist);
-    return 0;
+    return code;
 }
