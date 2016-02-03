@@ -22,6 +22,10 @@
 #include <stdlib.h>		/* for calloc */
 #include <string.h>
 
+#ifndef DEBUG_GENCONF_MEMORY
+# define DEBUG_GENCONF_MEMORY 0
+#endif
+
 /*
  * This program reads .dev files, which contain definitions of modules,
  * and generates merged configuration files.
@@ -238,6 +242,24 @@
 
 #define MAX_STR 120
 
+static const char const * empty_str = "";
+
+#if DEBUG_GENCONF_MEMORY
+static long long int mem_alloc_count = 0;
+
+typedef struct mem_hdr memhdr;
+struct mem_hdr {
+   size_t s;
+   long long int count;
+   memhdr *next;
+};
+
+#define SIZEOF_MEMHDR_ALIGNED ((sizeof(memhdr) + 7) & ~7)
+
+static memhdr memhdr_lst = {0};
+static memhdr *memhdr_tail = &memhdr_lst;
+#endif
+
 /* Structures for accumulating information. */
 typedef struct string_item_s {
     const char *str;
@@ -322,8 +344,14 @@ static const string_list_t init_config_lists[] = {
 };
 
 /* Forward definitions */
-static void *mrealloc(void *, size_t, size_t);
+static void *mrealloc(void *, size_t, size_t, const char *label);
+static void *mmalloc(size_t s, const char *label);
+static void *mcalloc(size_t nmemb, size_t size, const char *label);
+static void mfree (void *om, const char *label);
+
 int alloc_list(string_list_t *);
+void free_list(string_list_t * list);
+
 void dev_file_name(char *);
 int process_replaces(config_t *);
 int read_dev(config_t *, const char *);
@@ -336,6 +364,10 @@ void write_list_pattern(FILE *, const string_list_t *, const string_pattern_t *)
 bool var_expand(char *, char [MAX_STR], const config_t *);
 void add_definition(const char *, const char *, string_list_t *, bool);
 string_item_t *lookup(const char *, const string_list_t *);
+
+void validate_list(string_list_t *sl);
+void validate_lists(config_t *conf);
+void validate_memory(void);
 
 int
 main(int argc, char *argv[])
@@ -379,7 +411,7 @@ main(int argc, char *argv[])
         switch (arg[1]) {
             case 'C':		/* change directory, by analogy with make */
                 conf.file_prefix =
-                    (argv[i + 1][0] == '-' ? "" : argv[i + 1]);
+                    (argv[i + 1][0] == '-' ? empty_str : argv[i + 1]);
                 ++i;
                 continue;
             case 'e':
@@ -388,7 +420,7 @@ main(int argc, char *argv[])
                 continue;
             case 'n':
                 conf.name_prefix =
-                    (argv[i + 1][0] == '-' ? "" : argv[i + 1]);
+                    (argv[i + 1][0] == '-' ? empty_str : argv[i + 1]);
                 ++i;
                 continue;
             case 'p':
@@ -520,25 +552,101 @@ main(int argc, char *argv[])
         fclose(out);
     }
 
+    free_list(&conf.file_names);
+    free_list(&conf.file_contents);
+    free_list(&conf.replaces);
+    for (i = 0; i < NUM_RESOURCE_LISTS; ++i)
+        free_list(&conf.lists.indexed[i]);
+
     return 0;
 }
 
-/*
- * We would like to use the real realloc, but it doesn't work on all systems
- * (e.g., some Linux versions).  Also, this procedure does the right thing
- * if old_ptr = NULL.
- */
 static void *
-mrealloc(void *old_ptr, size_t old_size, size_t new_size)
+mmalloc(size_t s, const char *label)
 {
-    void *new_ptr = malloc(new_size);
+#if DEBUG_GENCONF_MEMORY
+  char *m;
+  memhdr *h;
+
+  s +=  SIZEOF_MEMHDR_ALIGNED;
+
+  m = malloc(s);
+  if (!m) return m;
+  h = (memhdr *)m;
+  h->s = s;
+  h->next = NULL;
+  h->count = mem_alloc_count++;
+  memhdr_tail->next = h;
+  memhdr_tail = h;
+  m += SIZEOF_MEMHDR_ALIGNED;
+
+  return (void *)m;
+#else
+  (void)label;
+  return malloc(s);
+#endif
+}
+
+static void *
+mcalloc(size_t nmemb, size_t size, const char *label)
+{
+#if DEBUG_GENCONF_MEMORY
+  char *m;
+  m = mmalloc(nmemb * size, label);
+  if (m) {
+    memset(m, 0x00, nmemb * size);
+  }
+
+  return (void *)m;
+#else
+  (void)label;
+  return calloc (nmemb, size);
+#endif
+}
+
+static void
+mfree (void *om, const char *label)
+{
+#if DEBUG_GENCONF_MEMORY
+  char *m = om;
+  memhdr *h, *hcur, *hprev;
+
+  if (!m) return;
+
+  h = (memhdr *)(m - SIZEOF_MEMHDR_ALIGNED);
+  hcur = memhdr_lst.next;
+  hprev = &memhdr_lst;
+  while (hcur && hcur != h) {
+    hprev = hcur;
+    hcur = hprev->next;
+  }
+  if (hcur == h) {
+    hprev->next = h->next;
+  }
+  if (h == memhdr_tail)
+    memhdr_tail = hprev;
+
+  free(h);
+#else
+  (void)label;
+  free(om);
+#endif
+}
+
+static void *
+mrealloc(void *old_ptr, size_t old_size, size_t new_size, const char *label)
+{
+    void *new_ptr = mmalloc(new_size, label);
 
     if (new_ptr == NULL)
         return NULL;
+    memset(new_ptr, 0x00, new_size);
     /* We have to pass in the old size, since we have no way to */
     /* determine it otherwise. */
-    if (old_ptr)
+    if (old_ptr) {
         memcpy(new_ptr, old_ptr, min(old_size, new_size));
+        mfree(old_ptr, "realloc");
+    }
     return new_ptr;
 }
 
@@ -548,9 +656,26 @@ alloc_list(string_list_t * list)
 {
     list->count = 0;
     list->items =
-        (string_item_t *) calloc(list->max_count, sizeof(string_item_t));
+        (string_item_t *) mcalloc(list->max_count, sizeof(string_item_t), "alloc_list(items->items)");
     assert(list->items != NULL);
     return 0;
+}
+
+void
+free_list(string_list_t * list)
+{
+    int i;
+
+    for (i = 0; i < list->max_count; i++) {
+        if (list->items[i].str != empty_str) {
+            mfree((void *)list->items[i].str, "free_list(list->items[i].str)");
+        }
+        list->items[i].str = empty_str;
+    }
+
+    list->count = 0;
+    mfree(list->items, "free_list(list->items)");
+    list->items = NULL;
 }
 
 /* If necessary, convert a .dev name to its file name. */
@@ -603,13 +728,20 @@ process_replaces(config_t * pconf)
                                     printf("Replacing %s %s.\n",
                                          pconf->lists.indexed[rn].list_name,
                                            items[tn].str);
+                                if (items[tn].str && items[tn].str != empty_str) {
+                                    mfree((void *)items[tn].str, "process_replaces(items[tn].str)");
+                                }
                                 items[tn--] = items[--count];
+                                items[count].str = empty_str;
                             }
                         }
                         pconf->lists.indexed[rn].count = count;
                     }
                 }
-                pconf->file_names.items[j].str = "";
+                if (pconf->file_names.items[j].str != empty_str) {
+                    mfree((void *)pconf->file_names.items[j].str, "process_replaces(pconf->file_names.items[j].str)");
+                }
+                pconf->file_names.items[j].str = empty_str;
                 break;
             }
         }
@@ -628,7 +760,7 @@ process_replaces(config_t * pconf)
 static string_item_t *
 read_file(config_t * pconf, const char *fname)
 {
-    char *cname = malloc(strlen(fname) + strlen(pconf->file_prefix) + 1);
+    char *cname = mmalloc(strlen(fname) + strlen(pconf->file_prefix) + 1, "read_file(cname)");
     int i;
     FILE *in;
     int end, nread;
@@ -644,7 +776,7 @@ read_file(config_t * pconf, const char *fname)
     strcat(cname, fname);
     for (i = 0; i < pconf->file_names.count; ++i)
         if (!strcmp(pconf->file_names.items[i].str, cname)) {
-            free(cname);
+            mfree(cname, "read_file(cname)");
             return &pconf->file_contents.items[i];
         }
     /* Try to open the file in binary mode, to avoid the overhead */
@@ -654,15 +786,17 @@ read_file(config_t * pconf, const char *fname)
         in = fopen(cname, "r");
         if (in == 0) {
             fprintf(stderr, "Can't read %s.\n", cname);
+            mfree(cname, "read_file(cname)");
             exit(1);
         }
     }
     fseek(in, 0L, 2 /*SEEK_END */ );
     end = ftell(in);
-    cont = malloc(end + 1);
+    cont = mmalloc(end + 1, "read_file(cont)");
     if (cont == 0) {
         fprintf(stderr, "Can't allocate %d bytes to read %s.\n",
                 end + 1, cname);
+        mfree(cname, "read_file(cname)");
         exit(1);
     }
     rewind(in);
@@ -674,6 +808,8 @@ read_file(config_t * pconf, const char *fname)
     add_item(&pconf->file_names, cname, -1);
     item = add_item(&pconf->file_contents, cont, -1);
     item->index = 0;		/* union of uniq_mode_ts */
+    mfree(cname, "read_file(cname)");
+    mfree(cont, "read_file(cont)");
     return item;
 }
 
@@ -699,13 +835,21 @@ read_dev(config_t * pconf, const char *arg)
         return uniq_first;
     }
     in = item->str;
-    token = malloc(MAX_TOKEN + 1);
-    category = malloc(MAX_TOKEN + 1);
+    token = mmalloc(MAX_TOKEN + 1, "read_dev(token)");
+    category = mmalloc(MAX_TOKEN + 1, "read_dev(category)");
     file_index = item - pconf->file_contents.items;
     strcpy(category, "obj");
-    while ((len = read_token(token, MAX_TOKEN, &in)) > 0)
-        item->index |= add_entry(pconf, category, token, file_index);
-    free(category);
+    while ((len = read_token(token, MAX_TOKEN, &in)) > 0) {
+        int ind = add_entry(pconf, category, token, file_index);
+        /* we have to call "read_file" here in case add_entry has caused
+         * the memory for item to be realloc'ed.
+         * It will return the cached contents, not actually reread the entire
+         * file
+         */
+        item = read_file(pconf, arg);
+        item->index |= ind;
+    }
+    mfree(category, "read_dev(category)");
 #undef MAX_TOKEN
     if (len < 0) {
         fprintf(stderr, "Token too long: %s.\n", token);
@@ -713,7 +857,7 @@ read_dev(config_t * pconf, const char *arg)
     }
     if (pconf->debug)
         printf("Finished %s.\n", arg);
-    free(token);
+    mfree(token, "read_dev(token)");
     return item->index;
 }
 
@@ -881,7 +1025,7 @@ err:		fprintf(stderr, "Definition not recognized: %s %s.\n",
 string_item_t *
 add_item(string_list_t * list, const char *str, int file_index)
 {
-    char *rstr = malloc(strlen(str) + 1);
+    char *rstr = mmalloc(strlen(str) + 1, "add_item(rstr)");
     int count = list->count;
     string_item_t *item;
 
@@ -894,7 +1038,8 @@ add_item(string_list_t * list, const char *str, int file_index)
                                      (list->max_count >> 1) *
                                      sizeof(string_item_t),
                                      list->max_count *
-                                     sizeof(string_item_t));
+                                     sizeof(string_item_t),
+                                     "add_item(list->items)");
         assert(list->items != NULL);
     }
     item = &list->items[count];
@@ -933,23 +1078,37 @@ sort_uniq(string_list_t * list, bool by_index)
 {
     string_item_t *strlist = list->items;
     int count = list->count;
-    const string_item_t *from;
+    string_item_t *from;
     string_item_t *to;
     int i;
+    char *str;
     bool last = list->mode == uniq_last;
 
     if (count == 0)
         return;
     qsort((char *)strlist, count, sizeof(string_item_t), cmp_str);
-    for (from = to = strlist + 1, i = 1; i < count; from++, i++)
-        if (strcmp(from->str, to[-1].str))
-            *to++ = *from;
-        else if ((last ? from->index > to[-1].index :
-                  from->index < to[-1].index)
-            )
-            to[-1] = *from;
+    for (from = to = strlist + 1, i = 1; i < count; from++, i++) {
+        if (strcmp(from->str, to[-1].str)) {
+            if (to != from) {
+                str = (char *)to->str;
+                *to = *from;
+                if (str != empty_str) mfree(str, "sort_uniq(to->str)");
+                from->str = empty_str;
+            }
+            to++;
+        }
+        else if ((last ? from->index > to[-1].index : from->index < to[-1].index)) {
+            if (&to[-1] != from) {
+                str = (char *)to[-1].str;
+                to[-1] = *from;
+                if (str != empty_str) mfree(str, "sort_uniq(to->str)");
+                from->str = empty_str;
+            }
+        }
+    }
     count = to - strlist;
     list->count = count;
+
     if (by_index)
         qsort((char *)strlist, count, sizeof(string_item_t), cmp_index);
 }
@@ -977,9 +1136,9 @@ write_list_pattern(FILE * out, const string_list_t * list,
     for (i = 0; i < list->count; i++) {
         const char *lstr = list->items[i].str;
         int len = strlen(lstr);
-        char *str = malloc(len + 1);
+        char *str = mmalloc(len + 1, "write_list_pattern(str)");
         int xlen = plen + len * 3;
-        char *xstr = malloc(xlen + 1);
+        char *xstr = mmalloc(xlen + 1, "write_list_pattern(xstr)");
         char *alist;
 
         strcpy(str, lstr);
@@ -1020,9 +1179,53 @@ write_list_pattern(FILE * out, const string_list_t * list,
             }
         }
         fputs(xstr, out);
-        free(xstr);
-        free(str);
+        mfree(xstr, "write_list_pattern(xstr)");
+        mfree(str, "write_list_pattern(str)");
     }
     if (*macname)
         fputs("#endif\n", out);
 }
+
+#if DEBUG_GENCONF_MEMORY
+void
+validate_list(string_list_t *sl)
+{
+  int i, j;
+  for (i = 0; i < sl->max_count; i++) {
+    if (sl->items[i].str && sl->items[i].str != empty_str) {
+      for (j = i + 1; j < sl->count; j++){
+        if (sl->items[i].str == sl->items[j].str) {
+          printf("Duplicate found: %s\n", sl->items[j].str);
+        }
+      }
+    }
+  }
+
+}
+
+void
+validate_lists(config_t *conf)
+{
+  int i;
+  printf("Validating lists....\n");
+  validate_list(&conf->file_names);
+  validate_list(&conf->file_contents);
+  validate_list(&conf->replaces);
+  for (i = 0; i < NUM_RESOURCE_LISTS; ++i)
+      validate_list(&conf->lists.indexed[i]);
+
+  printf("Done validating lists\n");
+}
+
+void validate_memory(void)
+{
+  memhdr *h = memhdr_lst.next;
+  printf("Validating memory....\n");
+
+  while (h) {
+    printf("hdr: 0x%llx, from allocation %lld not freed\n", h, h->count);
+    h = h->next;
+  }
+  printf("Done validating memory\n");
+}
+#endif

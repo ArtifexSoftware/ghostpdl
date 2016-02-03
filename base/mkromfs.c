@@ -1663,6 +1663,7 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
     free(ubuf);
     free(found_path);
     free(prefixed_path);
+    free(rom_filename);
     if (save_count == *inode_count) {
         printf("warning: no files found from path '%s%s'\n", os_prefix, path);
     }
@@ -2269,7 +2270,7 @@ main(int argc, char *argv[])
     int atarg = 1;
     int compression = 1;			/* default to doing compression */
     int compaction = 0;
-    Xlist_element *Xlist_scan, *Xlist_head = NULL;
+    Xlist_element *Xlist_scan = NULL, *Xlist_head = NULL;
 
     if (argc < 2) {
         printf("\n"
@@ -2388,16 +2389,18 @@ main(int argc, char *argv[])
         /* process a path or file */
         process_path(argv[atarg], os_prefix, rom_prefix, Xlist_head,
                     compression, compaction, &inode_count, &totlen, out);
-
     }
     /* now write out the array of nodes */
     fprintf(out, "    uint32_t *gs_romfs[] = {\n");
     for (i=0; i<inode_count; i++)
         fprintf(out, "\tnode_%d,\n", i);
     fprintf(out, "\t0 };\n");
-
     fclose(out);
-
+    while (Xlist_head) {
+        Xlist_scan = Xlist_head->next;
+        free(Xlist_head);
+        Xlist_head = Xlist_scan;
+    }
     printf("Total %%rom%% structure size is %d bytes.\n", totlen);
 
     return 0;
