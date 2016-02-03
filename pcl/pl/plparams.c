@@ -27,14 +27,14 @@
 #include "plparams.h"
 #include <stdlib.h>
 
-int pjl_dist_process_dict(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
-int count_tokens(char *p);
-int pjl_dist_process_dict_or_hexstring(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
-int pjl_dist_process_string(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
-int pjl_dist_add_tokens_to_list(gs_param_list *, char **);
-int pjl_dist_process_number(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
-int pjl_dist_process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
-int pjl_dist_process_name(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name *key, char **p);
+static int pjl_dist_process_dict(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
+static int count_tokens(char *p);
+static int pjl_dist_process_dict_or_hexstring(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
+static int pjl_dist_process_string(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
+static int pjl_dist_add_tokens_to_list(gs_param_list *, char **);
+static int pjl_dist_process_number(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
+static int pjl_dist_process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p);
+static int pjl_dist_process_name(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name *key, char **p);
 
 /*--------------------------------------------- pdfmark -------------------------------------------*/
 
@@ -283,7 +283,7 @@ int pcl_pjl_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
  * and then call the existing routine to parse the string and
  * add tokens to the parameter list contained in the dictionary.
  */
-int pjl_dist_process_dict(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
+static int pjl_dist_process_dict(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
 {
     gs_param_dict dict;
     int code, tokens, nested = 0;
@@ -343,17 +343,54 @@ int pjl_dist_process_dict(gs_memory_t *mem, gs_c_param_list *plist, gs_param_nam
     return code;
 }
 
-int pjl_dist_process_dict_or_hexstring(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
+static int pjl_dist_process_dict_or_hexstring(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
 {
-    char *p1 = *p;
+    char *p1 = *p, *src, *dest, data;
+    int i;
+    gs_param_string ps;
+
     if (p1[1] == '<') {
         *p += 2;
         return pjl_dist_process_dict(mem, plist, key, p);
     }
+
+    src = dest = p1;
+    while (*src != 0x00 && *src != '>') {
+        data = 0;
+        for (i=0;i<2;i++) {
+            if(*src >= '0' && *src <= '9') {
+                data = (data << 4);
+                data += (*src - '0');
+            } else {
+                if (*src >= 'A' && *src <= 'F') {
+                    data = (data << 4);
+                    data += (*src - 'A' + 10);
+                } else {
+                    if (*src >= 'a' && *src <= 'f') {
+                        data = (data << 4);
+                        data += (*src - 'a' + 10);
+                    } else {
+                        return -1;
+                    }
+                }
+            }
+            src++;
+        }
+        *dest++ = data;
+    }
+    *dest = 0x00;
+
+    *p = dest + 1;
+
+    ps.data = (const byte *)p1;
+    ps.size = strlen(p1);
+    ps.persistent = false;
+    param_write_string((gs_param_list *)plist, key, &ps);
+
     return 0;
 }
 
-int pjl_dist_process_name(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name *key, char **p)
+static int pjl_dist_process_name(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name *key, char **p)
 {
     char *start = *p + 1;
     gs_param_string ps;
@@ -378,7 +415,7 @@ int pjl_dist_process_name(gs_memory_t *mem, gs_c_param_list *plist, gs_param_nam
     return 0;
 }
 
-int pjl_dist_process_string(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
+static int pjl_dist_process_string(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
 {
     char *start = *p + 1;
     gs_param_string ps;
@@ -401,7 +438,7 @@ int pjl_dist_process_string(gs_memory_t *mem, gs_c_param_list *plist, gs_param_n
 }
 
 /* We need to know how many items are in an array or dictionary */
-int count_tokens(char *p)
+static int count_tokens(char *p)
 {
     int tokens = 0;
 
@@ -527,7 +564,7 @@ int count_tokens(char *p)
  * Otherwise if we encounter an object whose type doesnt' match the array we
  * created we throw an error.
  */
-int pjl_dist_process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
+static int pjl_dist_process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
 {
     int tokens = 0, nested = 0, index = 0, code = 0;
     gs_param_type array_type = gs_param_type_null;
@@ -832,7 +869,7 @@ int pjl_dist_process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_na
     return code;
 }
 
-int pjl_dist_process_number(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
+static int pjl_dist_process_number(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
 {
     char *start = *p;
     bool integer = true;
@@ -863,7 +900,7 @@ int pjl_dist_process_number(gs_memory_t *mem, gs_c_param_list *plist, gs_param_n
 /* Given a string to parse, parse it and add what we find to the supplied
  * param list.
  */
-int pjl_dist_add_tokens_to_list(gs_param_list *plist, char **p)
+static int pjl_dist_add_tokens_to_list(gs_param_list *plist, char **p)
 {
     char *p1 = *p;
     int code = 0;
