@@ -195,6 +195,25 @@ gs_text_enum_init(gs_text_enum_t *pte, const gs_text_enum_procs_t *procs,
     return code;
 }
 
+gs_text_enum_t *
+gs_text_enum_alloc(gs_memory_t * mem, gs_imager_state * pis, client_name_t cname)
+{
+    gs_text_enum_t *penum;
+
+    rc_alloc_struct_1(penum, gs_text_enum_t, &st_gs_text_enum, mem,
+                      return 0, cname);
+    penum->rc.free = rc_free_text_enum;
+
+    /* Initialize pointers for GC */
+    penum->text.operation = 0;  /* no pointers relevant */
+    penum->dev = 0;
+    penum->pis = pis;
+    penum->fapi_log2_scale.x = penum->fapi_log2_scale.y = -1;
+    penum->fapi_glyph_shift.x = penum->fapi_glyph_shift.y = 0;
+    penum->fstack.depth = -1;
+    return penum;
+}
+
 /*
  * Copy the dynamically changing elements from one enumerator to another.
  * This is useful primarily for enumerators that sometimes pass the

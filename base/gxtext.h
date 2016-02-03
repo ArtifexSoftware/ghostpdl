@@ -185,6 +185,13 @@ int gs_text_enum_init(gs_text_enum_t *pte,
                       const gx_clip_path *pcpath,
                       gs_memory_t *mem);
 
+/* Allocate a text enumerator.
+ * This is primarily intended for code avoiding the device API, such
+ * as that purely for retrieving metrics
+ */
+gs_text_enum_t *
+gs_text_enum_alloc(gs_memory_t * mem, gs_imager_state * pis, client_name_t cname);
+
 /*
  * Copy the dynamically changing elements from one enumerator to another.
  * This is useful primarily for enumerators that sometimes pass the

@@ -465,18 +465,26 @@ pl_fapi_get_mtype_font_scaleFactor(gs_font * pfont, uint * scaleFactor)
 }
 
 static text_enum_proc_is_width_only(pl_show_text_is_width_only);
+static text_enum_proc_release(pl_text_release);
 
 static const gs_text_enum_procs_t null_text_procs = {
     NULL, NULL,
     pl_show_text_is_width_only, NULL,
     NULL, NULL,
-    NULL
+    pl_text_release
 };
 
 static bool
 pl_show_text_is_width_only(const gs_text_enum_t *pte)
 {
     return(true);
+}
+
+void pl_text_release(gs_text_enum_t *pte, client_name_t cname)
+{
+  (void)pte;
+  (void)cname;
+  return;
 }
 
 static int
@@ -498,7 +506,7 @@ pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
                      gs_char char_code, float metrics[4])
 {
     int code = 0;
-    gs_text_enum_t penum1;
+    gs_text_enum_t *penum1;
     gs_font *pfont = plfont->pfont;
     gs_font_base *pbfont = (gs_font_base *) pfont;
     gs_text_params_t text;
@@ -563,25 +571,27 @@ pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
         text.data.chars = buf;
         text.size = 1;
 
-        if ((code = gs_text_enum_init(&penum1, &null_text_procs,
-                             NULL, NULL, &text, pfont,
-                             NULL, NULL, NULL, pfont->memory)) >= 0) {
+        if ((penum1 = gs_text_enum_alloc(pfont->memory, (gs_imager_state *)pgs,
+                      "pl_fapi_char_metrics")) != NULL) {
 
-            penum1.pis = (gs_imager_state *)pgs;
+            if ((code = gs_text_enum_init(penum1, &null_text_procs,
+                                 NULL, (gs_imager_state *)pgs, &text, pfont,
+                                 NULL, NULL, NULL, pfont->memory)) >= 0) {
 
-            code = gs_fapi_do_char(pfont, pgs, &penum1, plfont->font_file, false,
-                        NULL, NULL, char_code, glyph, 0);
+                code = gs_fapi_do_char(pfont, pgs, penum1, plfont->font_file, false,
+                            NULL, NULL, char_code, glyph, 0);
 
-            if (code >= 0 || code == gs_error_unknownerror) {
-                metrics[0] = metrics[1] = 0;
-                metrics[2] = penum1.returned.total_width.x;
-                metrics[3] = penum1.returned.total_width.y;
-                if (code < 0)
-                    code = 0;
+                if (code >= 0 || code == gs_error_unknownerror) {
+                    metrics[0] = metrics[1] = 0;
+                    metrics[2] = penum1->returned.total_width.x;
+                    metrics[3] = penum1->returned.total_width.y;
+                    if (code < 0)
+                        code = 0;
+                }
             }
+            rc_decrement(penum1, "pl_fapi_char_metrics");
         }
         pfont->FontMatrix = fmat;
-
         I->ff.fapi_set_cache = tmp_ff.fapi_set_cache;
     }
     return (code);
