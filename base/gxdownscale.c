@@ -1595,6 +1595,57 @@ static int get_planar_line_for_trap(void *arg, unsigned char *buf)
     return code;
 }
 
+static int check_trapping(gs_memory_t *memory, int trap_w, int trap_h,
+                          int num_comps, const int *comp_order)
+{
+#ifndef ENABLE_TRAPPING
+    if (trap_w > 0 || trap_h > 0)
+    {
+        dmprintf(memory,
+                 "Trapping is disabled in this build. To enable trapping,\n"
+                 "follow the instructions in the documentation. Please note\n"
+                 "that if you do this, you are responsible for ensuring that\n"
+                 "you have any and all patent licenses that may be required.\n");
+        return gs_error_rangecheck;
+    }
+#endif
+
+    if (trap_w < 0 || trap_h < 0)
+    {
+        dmprintf(memory, "Trapping range must be >= 0");
+        return gs_error_rangecheck;
+    }
+
+    if (trap_w > 0 || trap_h > 0)
+    {
+        if (comp_order == NULL)
+        {
+            emprintf(memory, "Trapping cannot be used without comp_order being defined");
+            return gs_error_rangecheck;
+        }
+
+        /* Check that the comp_order we have been passed is sane */
+        {
+            char comps[GS_CLIENT_COLOR_MAX_COMPONENTS] = { 0 };
+            int i;
+
+            for (i = 0; i < num_comps; i++)
+            {
+                int n = comp_order[i];
+                if (n < 0 || n >= num_comps || comps[n] != 0)
+                    break;
+                comps[n] = 1;
+            }
+            if (i != num_comps)
+            {
+                emprintf(memory, "Illegal component order passed to trapping");
+                return gs_error_rangecheck;
+            }
+        }
+    }
+    return 0;
+}
+
 int gx_downscaler_init_planar(gx_downscaler_t      *ds,
                               gx_device            *dev,
                               gs_get_bits_params_t *params,
@@ -1642,20 +1693,12 @@ int gx_downscaler_init_planar_trapped(gx_downscaler_t      *ds,
     ds->scaled_data = NULL;
     ds->scaled_span = bitmap_raster((dst_bpc*dev->width*upfactor + downfactor-1)/downfactor);
 
-    if (trap_w < 0 || trap_h < 0)
-    {
-        dmprintf(dev->memory, "Trapping range must be >= 0");
-        return gs_error_rangecheck;
-    }
+    code = check_trapping(dev->memory, trap_w, trap_h, num_comps, comp_order);
+    if (code < 0)
+        return code;
 
     if (trap_w > 0 || trap_h > 0)
     {
-        if (comp_order == NULL)
-        {
-            dmprintf(dev->memory, "Trapping cannot be used without comp_order being defined");
-            return gs_error_rangecheck;
-        }
-
         ds->claptrap = ClapTrap_Init(dev->memory, width, dev->height, num_comps, comp_order, trap_w, trap_h, get_planar_line_for_trap, ds);
         if (ds->claptrap == NULL)
         {
@@ -1828,40 +1871,13 @@ int gx_downscaler_init_trapped(gx_downscaler_t   *ds,
     ds->factor     = factor;
     ds->num_planes = 0;
     ds->src_bpc    = src_bpc;
-    
-    if (trap_w < 0 || trap_h < 0)
-    {
-        dmprintf(dev->memory, "Trapping range must be >= 0");
-        return gs_error_rangecheck;
-    }
+
+    code = check_trapping(dev->memory, trap_w, trap_h, num_comps, comp_order);
+    if (code < 0)
+        return code;
 
     if (trap_w > 0 || trap_h > 0)
     {
-        if (comp_order == NULL)
-        {
-            emprintf(dev->memory, "Trapping cannot be used without comp_order being defined");
-            return gs_error_rangecheck;
-        }
-
-        /* Check that the comp_order we have been passed is sane */
-        {
-            char comps[GS_CLIENT_COLOR_MAX_COMPONENTS] = { 0 };
-            int i;
-
-            for (i = 0; i < num_comps; i++)
-            {
-                int n = comp_order[i];
-                if (n < 0 || n >= num_comps || comps[n] != 0)
-                    break;
-                comps[n] = 1;
-            }
-            if (i != num_comps)
-            {
-                emprintf(dev->memory, "Illegal component order passed to trapping");
-                return gs_error_rangecheck;
-            }
-        }
-
         ds->claptrap = ClapTrap_Init(dev->memory, width, dev->height, num_comps, comp_order, trap_w, trap_h, get_line_for_trap, ds);
         if (ds->claptrap == NULL)
         {

@@ -731,7 +731,8 @@ to 32760.
 
 <p>The <code>tiffsep</code> device (along with the <code>tiffscaled32</code> and
 <code>psdcmyk</code> devices) can perform rudimentary automatic bitmap
-'trapping' on the final rendered bitmap.
+'trapping' on the final rendered bitmap. This code is disabled by default; see
+the <a href="trapping_patent_note">note</a> below as to why.
 
 <p>Trapping is a process whereby the output is adjusted to minimise the
 visual impact of offsets between each printed plane. Typically this involves
@@ -741,8 +742,8 @@ revealed in the final printout if the different color plates do not exactly
 line up.
 
 <p>This trapping is controlled by 3 device parameters. Firstly the maximum
-X and Y offsets are specified using <tt>-dTrapX=N</tt> and <tt>-dTrapY=N</tt> (where <tt>N</tt> is a
-figure in pixels, before the downscaler is applied).
+X and Y offsets are specified using <tt>-dTrapX=N</tt> and <tt>-dTrapY=N</tt>
+(where <tt>N</tt> is a figure in pixels, before the downscaler is applied).
 
 <p>The final control is to inform the trapping process in what order inks
 should be processed, from darkest to lightest. For a typical CMYK device
@@ -757,7 +758,27 @@ example:
 <blockquote><code>
     gs -sDEVICE=psdcmyk -dTrapX=2 -dTrapY=2 -o out.psd -c "&lt;&lt; [ 4 5 3 1 0 2 ] &gt;&gt; setpagedevice" -f examples\tiger.eps
 </code></blockquote>
-  
+
+<h4><a name="trapping_patent_note"></a>Trapping patents</h4>
+
+<p>Trapping is an technology area encumbered by many patents. Until
+we can convince ourselves that our trapping code is not covered by
+any of these patents, the functionality is disabled by default.</p>
+
+<p>It can be enabled by building with the <tt>ENABLE_TRAPPING</tt>
+define, but before you do so you should convince yourself that
+either:</p>
+
+<ul>
+<li>The trapping code is not covered by any existing patent.
+<li>Any patents that do cover the code are invalid in your
+jurisdiction.
+<li>That you have appropriate patent licenses for any patents
+  that do apply.
+</ul>
+
+<p>You bear full responsibility for choosing to build with
+<tt>ENABLE_TRAPPING</tt>.
 
 <h3><a name="fax"></a>FAX</h3>
 
@@ -804,8 +825,9 @@ colors.  <a href="#tiffsep">See the comments under the <tt>tiffsep</tt> and <tt>
 device about the maximum number of spot colors supported by Ghostscript</a>
 
 <p>
-These devices support the same -dDownScaleFactor= ratios as <tt>tiffsep</tt>. <tt>tiffscaled32</tt>
-supports the same trapping options as <tt>tiffsep</tt>.
+These devices support the same -dDownScaleFactor= ratios as <tt>tiffsep</tt>.
+<tt>psdcmyk</tt> supports the same trapping options as <tt>tiffsep</tt>
+(but see <a href="trapping_patent_note">this note</a>).
 
 <p>
 NOTE: The PSD format is a single image per file format, so you must use the &quot%d&quot
