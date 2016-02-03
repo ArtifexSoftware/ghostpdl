@@ -116,7 +116,6 @@ if test x"$CCAUX" != x"" ; then
   fi
   mkdir $CONFAUXDIR
   cd $CONFAUXDIR
-  echo $0 $olddir
   ../$0 CC=$CCAUX CFLAGS=$CFLAGSAUX CCAUX= CFLAGSAUX= MAKEFILE=../$AUXFLAGS_MAK --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
   status=$?
   cp config.log ../configaux.log
