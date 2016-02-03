@@ -95,7 +95,22 @@ gsdll_stdin_utf8(void *instance, char *buf, int len)
             len--;
         }
         while (len) {
-            if (0 >= _read(fileno(stdin), buf, 1))
+            /* Previously the code here has always just checked for whether
+             * _read returns <= 0 to see whether we should exit. According
+             * to the docs -1 means error, 0 means EOF. Unfortunately,
+             * building using VS2015 there appears to be a bug in the 
+             * runtime, whereby a line with a single return on it (on an
+             * ANSI encoded Text file at least) causes a 0 return value.
+             * We hack around this by second guessing the code. We clear
+             * the buffer to start with, and (if we get a zero return
+             * value) we check to see if we have a '\n' in the buffer. If
+             * we do, then we disbelieve the return value. */
+            int num_read;
+            buf[0] = 0; /* Clear buffer */
+            num_read = _read(fileno(stdin), buf, 1);
+            if (num_read == 0 && buf[0] == 0x0a)
+                num_read = 1; /* Stupid VS2015 */
+            if (0 >= num_read)
                 return nret;
             nret++, buf++, len--;
             if (buf[-1] == '\n')
