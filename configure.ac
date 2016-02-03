@@ -118,12 +118,19 @@ if test x"$CCAUX" != x"" ; then
   cd $CONFAUXDIR
   echo $0 $olddir
   ../$0 CC=$CCAUX CFLAGS=$CFLAGSAUX CCAUX= CFLAGSAUX= MAKEFILE=../$AUXFLAGS_MAK --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
+  status=$?
   cp config.log ../configaux.log
   cd $olddir
+
+  if test $status -ne 0 ; then
+    AC_MSG_ERROR([Recursive call to configure (for auxiliary tools) script failed], $status)
+  fi
+
   if test "x$enable_save-confaux" = "xno"; then
     rm -rf $CONFAUXDIR
   fi
 fi
+
 # we have to do this here in case it took
 # AC_PROG_CC to set CC (as it usually does)
 CCAUX="${CCAUX:-$CC}"
@@ -1151,7 +1158,7 @@ if test x"$SHARE_LIBTIFF" = x"0" ; then
       fi
       cd "$LIBTIFFCONFDIR" && ../"$LIBTIFFDIR"/configure --disable-jbig --disable-lzma $SUBCONFIG_OPTS
       status=$?
-      if test "$status" -ne 0 ; then
+      if test $status -ne 0 ; then
         AC_MSG_ERROR([libtiff configure script failed], $status)
       fi
       cd "$olddir"
