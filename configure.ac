@@ -30,6 +30,8 @@ CPPFLAGS="${CPPFLAGS:=}"
 CXXFLAGS="${CXXFLAGS:=}"
 LDFLAGS="${LDFLAGS:=}"
 
+CFLAGSAUX="${CFLAGSAUX:-CFLAGS}"
+
 # save these for later
 OPARMS=$@
 
@@ -103,7 +105,7 @@ AC_ARG_ENABLE([save-confaux])
 if test x"$CCAUX" != x"" ; then
   SUBCONFPARMS=
   for parm in $OPARMS ; do
-    SUBCONFPARMS="$(echo $parm | grep -v CC | grep -v CCAUX) $SUBCONFPARMS"
+    SUBCONFPARMS="$(echo $parm | grep -v CC | grep -v CCAUX | grep -v CFLAGSAUX | grep -v CFLAGS) $SUBCONFPARMS"
   done
   # rerun configure for the AUX tools, disabling a load of tests not relevant for CCAUX
   olddir=`pwd`
@@ -115,14 +117,15 @@ if test x"$CCAUX" != x"" ; then
   mkdir $CONFAUXDIR
   cd $CONFAUXDIR
   echo $0 $olddir
-  ../$0 CC=$CCAUX CCAUX= MAKEFILE=../$AUXFLAGS_MAK --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
+  ../$0 CC=$CCAUX CFLAGS=$CFLAGSAUX CCAUX= CFLAGSAUX= MAKEFILE=../$AUXFLAGS_MAK --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
   cp config.log ../configaux.log
   cd $olddir
   if test "x$enable_save-confaux" = "xno"; then
     rm -rf $CONFAUXDIR
   fi
 fi
-
+# we have to do this here in case it took
+# AC_PROG_CC to set CC (as it usually does)
 CCAUX="${CCAUX:-$CC}"
 
 AC_PROG_SED
