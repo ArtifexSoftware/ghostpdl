@@ -41,6 +41,7 @@
 #include "gscindex.h"
 #include "gsicc_cache.h"
 #include "gsicc_cms.h"
+#include "gxdevsop.h"
 
 /* Structure descriptors */
 private_st_gx_image_enum();
@@ -247,6 +248,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     gs_fixed_point row_extent, col_extent, x_extent, y_extent;
     bool device_color = true;
     gs_fixed_rect obox, cbox;
+    bool gridfitimages = 0;
 
     penum->clues = NULL;
     penum->icc_setup.has_transfer = false;
@@ -281,7 +283,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
      * covered. Bug 692666 is such a problem.
      *
      * As a workaround for this problem, the code below was introduced. The
-     * concept is that orthogonal images can be 'grid fitted' (or 'stretched')
+     * concept is that orthogonal images can be 'grid fitted' (or 'stretch')
      * to entirely cover pixels that they touch. Initially I had this working
      * for all images regardless of type, but as testing has proceeded, this
      * showed more and more regressions, so I've cut the cases back in which
@@ -289,15 +291,18 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
      * either 1 pixel high, or wide, and then not if we are rendering a
      * glyph (such as from a type3 font).
      */
+    gridfitimages = (dev_proc(dev, dev_spec_op)(dev, gxdso_gridfit_images, NULL, 0));
     if (pis != NULL && pis->is_gstate && ((gs_state *)pis)->show_gstate != NULL) {
         /* If we're a graphics state, and we're in a text object, then we
          * must be in a type3 font. Don't fiddle with it. */
-    } else if (!penum->masked || penum->image_parent_type != 0) {
-        /* We only grid fit for ImageMasks, currently */
+    } else if (!gridfitimages &&
+               (!penum->masked || penum->image_parent_type != 0)) {
+        /* Other than for images we are specifically looking to grid fit (such as
+         * ones in a pattern device), we only grid fit imagemasks */
     } else if (pis != NULL && pis->fill_adjust.x == 0 && pis->fill_adjust.y == 0) {
         /* If fill adjust is disabled, so is grid fitting */
     } else if (mat.xy == 0 && mat.yx == 0) {
-        if (width == 1) {
+        if (width == 1 || gridfitimages) {
             if (mat.xx > 0) {
                 fixed ix0 = int2fixed(fixed2int(float2fixed(mat.tx)));
                 double x1 = mat.tx + mat.xx * width;
@@ -312,7 +317,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
                 mat.xx = (double)(fixed2float(ix1 - ix0)/width);
             }
         }
-        if (height == 1) {
+        if (height == 1 || gridfitimages) {
             if (mat.yy > 0) {
                 fixed iy0 = int2fixed(fixed2int(float2fixed(mat.ty)));
                 double y1 = mat.ty + mat.yy * height;
@@ -328,7 +333,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
             }
         }
     } else if (mat.xx == 0 && mat.yy == 0) {
-        if (height == 1) {
+        if (height == 1 || gridfitimages) {
             if (mat.yx > 0) {
                 fixed ix0 = int2fixed(fixed2int(float2fixed(mat.tx)));
                 double x1 = mat.tx + mat.yx * height;
@@ -343,7 +348,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
                 mat.yx = (double)(fixed2float(ix1 - ix0)/height);
             }
         }
-        if (width == 1) {
+        if (width == 1 || gridfitimages) {
             if (mat.xy > 0) {
                 fixed iy0 = int2fixed(fixed2int(float2fixed(mat.ty)));
                 double y1 = mat.ty + mat.xy * width;

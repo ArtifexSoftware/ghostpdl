@@ -300,6 +300,15 @@ enum {
     gxdso_adjust_bandheight,
     /* Retrieve a *single* device parameter */
     gxdso_get_dev_param,
+    /* gxdso_gridfit_images:
+     *     data = NULL
+     *     size = 0
+     * Returns 1 if the device would like images rendered to it to be
+     * gridfitted (i.e. expanded out to cover whole pixels). This is
+     * used for pattern accumulation devices to avoid white spaces
+     * between tilings.
+     */
+    gxdso_gridfit_images,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };
