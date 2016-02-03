@@ -100,7 +100,7 @@ AC_PROG_CPP
 CFLAGS=$save_cflags
 
 # purposefully do not include "help" output for this
-AC_ARG_ENABLE([save-confaux])
+AC_ARG_ENABLE([save_confaux])
 
 if test x"$CCAUX" != x"" ; then
   SUBCONFPARMS=
@@ -109,7 +109,7 @@ if test x"$CCAUX" != x"" ; then
   done
   # rerun configure for the AUX tools, disabling a load of tests not relevant for CCAUX
   olddir=`pwd`
-  if test "x$enable_save-confaux" != "xno"; then
+  if test x"$enable_save_confaux" = x"yes"; then
     CONFAUXDIR=auxtmp
   else
     CONFAUXDIR=auxtmp$RANDOM$RANDOM
@@ -125,7 +125,7 @@ if test x"$CCAUX" != x"" ; then
     AC_MSG_ERROR([Recursive call to configure (for auxiliary tools) script failed], $status)
   fi
 
-  if test "x$enable_save-confaux" = "xno"; then
+  if test x"$enable_save_confaux" != x"yes"; then
     rm -rf $CONFAUXDIR
   fi
 fi
