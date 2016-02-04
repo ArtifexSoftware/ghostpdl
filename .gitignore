@@ -1,5 +1,6 @@
 # Ignore editor backup files
 *~
+*.swp
 
 # Ignore bad merge files
 *.rej
@@ -94,6 +95,10 @@ config.status
 configure
 tiff
 tiff-config
+
+
+/Makefile
+/auxflags.mak
 
 
 # Adding the following lines would help limit the 'noise' seen in git status
