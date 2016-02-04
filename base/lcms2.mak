@@ -84,11 +84,11 @@ LCMS2_CC=$(CC) $(D_)SHARE_LCMS=$(SHARE_LCMS)$(_D) $(CFLAGS) $(LCMS2_CFLAGS) $(I_
 LCMS2O_=$(O_)$(LCMS2OBJ)
 
 # switch in the version of lcms2.dev we're actually using
-$(LCMS2GEN)lcms2.dev : $(LCMS2GEN)lcms2_$(SHARE_LCMS).dev $(LCMS2_DEPS)
+$(LCMS2GEN)lcms2.dev : $(LCMS2GEN)lcms2_$(SHARE_LCMS).dev $(MAKEDIRS)
 	$(CP_) $(LCMS2GEN)lcms2_$(SHARE_LCMS).dev $(LCMS2GEN)lcms2.dev
 
 # dev file for shared (separately built) lcms library
-$(LCMS2GEN)lcms2_1.dev : $(LCMS2_MAK) $(ECHOGS_XE) $(LCMS2_DEPS)
+$(LCMS2GEN)lcms2_1.dev : $(LCMS2_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 	$(SETMOD) $(LCMS2GEN)lcms2_1 -lib lcms2
 
 # dev file for compiling our own from source

@@ -105,7 +105,7 @@ $(JPEGXR_GEN)jpegxr_0.dev : $(ECHOGS_XE) $(jpegxr_objs) $(JPEGXR_DEPS)
 	$(SETMOD) $(JPEGXR_GEN)jpegxr_0 $(jpegxr_objs)
 
 # Define the external link target
-$(JPEGXR_GEN)jpegxr_1.dev : $(ECHOGS_XE) $(JPEGXR_DEPS)
+$(JPEGXR_GEN)jpegxr_1.dev : $(ECHOGS_XE) $(JPEGXR_MAK) $(MAKEDIRS)
 	$(SETMOD) $(JPEGXR_GEN)jpegxr_1 -lib jpegxr
 
 # Copy the target definition we want

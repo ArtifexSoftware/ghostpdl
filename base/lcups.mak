@@ -122,7 +122,8 @@ $(LIBCUPSGEN)lcups.dev : $(LIBCUPSGEN)lcups_$(SHARE_LCUPS).dev \
 	$(CP_) $(LIBCUPSGEN)lcups_$(SHARE_LCUPS).dev $(LIBCUPSGEN)lcups.dev
 
 # Define the shared version.
-$(LIBCUPSGEN)lcups_1.dev : $(ECHOGS_XE) $(LIBCUPS_DEPS)
+$(LIBCUPSGEN)lcups_1.dev : $(ECHOGS_XE) $(LCUPS_MAK) \
+		$(MAKEDIRS)
 	$(SETMOD) $(LIBCUPSGEN)lcups_1 -link $(LCUPS_LIBS)
 	$(ADDMOD) $(DD)lcups_1 -libpath $(CUPSLIBDIRS)
 	$(ADDMOD) $(DD)lcups_1 -lib $(CUPSLIBS)

@@ -61,7 +61,8 @@ $(LIBCUPSIGEN)lcupsi.dev : $(LIBCUPSIGEN)lcupsi_$(SHARE_LCUPSI).dev\
 	$(CP_) $(LIBCUPSIGEN)lcupsi_$(SHARE_LCUPSI).dev $(LIBCUPSIGEN)lcupsi.dev
 
 # Define the shared version.
-$(LIBCUPSIGEN)lcupsi_1.dev : $(ECHOGS_XE) $(LIBCUPSI_DEPS)
+$(LIBCUPSIGEN)lcupsi_1.dev : $(ECHOGS_XE) $(LCUPSI_MAK) \
+		$(MAKEDIRS)
 	$(SETMOD) $(LIBCUPSIGEN)lcupsi_1 -link $(LCUPSI_LIBS)
 
 # Define the non-shared version.
