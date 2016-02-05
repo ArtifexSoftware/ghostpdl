@@ -850,6 +850,7 @@ struct gx_device_pdf_s {
     bool DetectDuplicateImages;
     bool AllowIncrementalCFF;
     bool WantsToUnicode;
+    bool WantsPageLabels;
     bool AllowPSRepeatFunctions;
     bool IsDistiller;
     bool PreserveSMask;

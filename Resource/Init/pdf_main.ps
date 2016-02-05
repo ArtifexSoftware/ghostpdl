@@ -971,7 +971,8 @@ currentdict /xref-char-dict undef
     %% because we deal with these using putparams, not pdfmarks
     %% This is because the pdfmark syntax can't handle all the
     %% possible page label formats in a PDF file!
-    currentdevice .devicename /pdfwrite eq {
+    /WantsPageLabels /GetDeviceParam .special_op {
+      pop pop
       .pdfpagelabels
     } {
       pop
