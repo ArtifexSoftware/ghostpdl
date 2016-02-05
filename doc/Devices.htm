@@ -845,56 +845,32 @@ resolution independence, and editability.</p>
 
 <h3><a name="PDF"></a>PDF writer</h3>
 
-<p>The <tt>pdfwrite</tt> device outputs PDF.  Please refer to
-<a href="Ps2pdf.htm">Ps2pdf.htm</a> for the extensive <tt>pdfwrite</tt>
-device options.</p>
+<p>The <tt>pdfwrite</tt> device outputs PDF.</p>
 
 <h3><a name="PS"></a>PS2 writer</h3>
 
-<p>The <tt>ps2write</tt> device outputs postscript language levels 2 and 3.
-Please refer to <a href="Ps2ps2.htm">Ps2ps2.htm</a> for the <tt>ps2write</tt>
-device options. It is recommnded that this device is used for PostScript output.
+<p>The <tt>ps2write</tt> device outputs postscript language level 2.
+It is recommnded that this device is used for PostScript output.
 There is no longer any support for creating PostScript level 1 output.</p>
 
 <h3><a name="EPS"></a>EPS writer</h3>
 
 <p>The <tt>eps2write</tt> device outputs encapsulated postscript.</p>
-
 <h3><a name="PXL"></a>PXL</h3>
 
 <p>The <tt>pxlmono</tt> and <tt>pxlcolor</tt> devices output HP PCL-XL,
 a graphic language understood by many recent laser printers.
 
-<h4>Options</h4>
-<blockquote>
-<dl>
-<dt><code>-dCompressMode=<em>1 | 2 | 3</em></code> (default is 1)
-<dd>Set the compression algorithm used for bitmap graphics. RLE=1, JPEG=2, DeltaRow=3.
-When JPEG=2 is on, it is applied only to full-color images; indexed-color graphics
-and masks continues to be compressed with RLE.
-</dl></blockquote>
 
 <h3><a name="TXT"></a>Text output</h3>
 
-<p> The <tt>txtwrite</tt> device will output the text contained in the original
-document as Unicode.
+<p> The txtwrite device will output the text contained in the original
+document as Unicode.</p>
 
-<h4>Options</h4>
-<blockquote>
-<dl>
-<dt><code>-dTextFormat=<em>0 | 1 | 2 | 3 </em></code> (default is 3)
-<dd>Format 0 is intended for use by developers and outputs XML-escaped Unicode
-along with information regarding the format of the text (position, font name,
-point size, etc). The XML output is the same format as the MuPDF output, but
-no additional processing is performed on the content, so no block detection.</dd>
-<dd>Format 1 uses the same XML output format, but attempts similar processing to
-MuPDF, and will output blocks of text. Note the alogrithm used is not the same
-as the MuPDF code, and so the results will not be identical.</dd>
-<dd>Format 2 outputs Unicode (UCS2) text (with a Byte Order Mark) which
-approximates the layout of the text in the original document.</dd>
-<dd>Format 3 is the same as format 2, but the text is encoded in UTF-8.</dd>
-</dl></blockquote>
-
+<p>  Please refer to
+<a href="HiLevelDevices.htm">HiLevelDevices.htm</a> for documentation on the
+device options for these devices.
+</p>
 <p>
 
 <hr>
