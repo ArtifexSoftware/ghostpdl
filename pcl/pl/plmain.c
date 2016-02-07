@@ -513,7 +513,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
     }
 
     /* ----- End Main loop ----- */
-#ifndef OMIT_SAVED_PAGES_TEST
     /* If we were accumulating saved-pages, print them now */
     if (inst.saved_pages_test_mode) {
         gx_device *pdev = inst.device;
@@ -524,7 +523,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
             return -1;
         }
      }
-#endif /* OMIT_SAVED_PAGES_TEST */
     /* release param list */
     gs_c_param_list_release(&params);
     /* Dnit PDLs */
@@ -835,9 +833,7 @@ pl_main_init_instance(pl_main_instance_t * pti, gs_memory_t * mem)
     pti->page_set_on_command_line = false;
     pti->res_set_on_command_line = false;
     pti->high_level_device = false;
-#ifndef OMIT_SAVED_PAGES_TEST
     pti->saved_pages_test_mode = false;
-#endif
     pti->piccdir = NULL;
     pti->pdefault_gray_icc = NULL;
     pti->pdefault_rgb_icc = NULL;
@@ -987,7 +983,6 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     if (code < 0)
                         return code;
                     break;
-#ifndef OMIT_SAVED_PAGES_TEST
                 /* The following code is only to allow regression testing of saved-pages */
                 } else if (strncmp(arg, "saved-pages-test", 16) == 0) {
                     gx_device *pdev = pmi->device;
@@ -1017,7 +1012,6 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         return code;
                     pmi->saved_pages_test_mode = true;
                     break;
-#endif /* OMIT_SAVED_PAGES_TEST */
                 }
                 /* FALLTHROUGH */
             default:
