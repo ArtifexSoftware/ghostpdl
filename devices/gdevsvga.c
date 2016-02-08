@@ -490,7 +490,7 @@ svga_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
 }
 
 /* Copy an alpha-map to the screen. */
-/* Depth is 1, 2, or 4. */
+/* Depth is 1, 2, 4 or 8. */
 static int
 svga_copy_alpha(gx_device * dev, const byte * base, int sourcex,
                 int sraster, gx_bitmap_id id, int x, int y, int w, int h,
@@ -506,8 +506,11 @@ svga_copy_alpha(gx_device * dev, const byte * base, int sourcex,
     /* alpha = 0 is white, alpha = 1 is the full color. */
     byte shades[16];
     gx_color_value rgb[3];
-    int log2_depth = depth >> 1;	/* works for 1,2,4 */
     int n1 = (1 << depth) - 1;
+    int log2_depth = depth >> 1;	/* works for 1,2,4 */
+
+    if (log2_depth == 4)                /* And fix up the 8 case */
+        log2_depth = 3;
 
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     shades[0] = (byte) svga_map_rgb_color(dev, gx_max_color_value,

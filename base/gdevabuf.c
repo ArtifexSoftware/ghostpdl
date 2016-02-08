@@ -97,6 +97,28 @@ mem_alpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
            int raster, gx_bitmap_id id, int x, int y, int width, int height,
                      gx_color_index color, int depth)
 {				/* Just use copy_color. */
+    if (depth == 8) {
+        /* We don't support depth=8 in this function, but this doesn't
+         * matter, because:
+         * 1) This code is only called for dTextAlphaBits > 0, when
+         *    DisableFAPI=true. And we don't support DisableFAPI.
+         * 2) Even if we did support DisableFAPI, this can never actually
+         *    be called because gx_compute_text_oversampling arranges that
+         *    log2_scale.{x,y} sum to <= alpha_bits, and this code is only
+         *    called if it sums to MORE than alpha_bits.
+         * 3) Even if copy_alpha DID somehow manage to be called, the
+         *    only place that uses depth==8 is the imagemask interpolation
+         *    code, and that can never hit this code. (Type 3 fonts might
+         *    include Imagemasks, but those don't go through FAPI).
+         *
+         * If in the future we ever rearrange the conditions under which
+         * this code is called (so that it CAN be called with depth == 8)
+         * then this will probably be best implemented by decimating the
+         * input alpha values to either 2 or 4 bits as appropriate and
+         * then recursively calling us back.
+         */
+        return gs_error_unknownerror;
+    }
     return (color == 0 ?
             (*dev_proc(dev, fill_rectangle)) (dev, x, y, width, height,
                                               color) :

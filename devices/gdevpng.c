@@ -936,12 +936,20 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
                 gx_color_index composite;
                 int alpha2, alpha;
 
-                if (depth == 2)	/* map 0 - 3 to 0 - 15 */
-                    alpha = ((row[sx >> 2] >> ((3 - (sx & 3)) << 1)) & 3) * 5;
-                else
-                    alpha2 = row[sx >> 1],
-                        alpha = (sx & 1 ? alpha2 & 0xf : alpha2 >> 4);
-                if (alpha == 15) {	/* Just write the new color. */
+                switch(depth)
+                {
+                case 2:	/* map 0 - 3 to 0 - 255 */
+                    alpha = ((row[sx >> 2] >> ((3 - (sx & 3)) << 1)) & 3) * 85;
+                    break;
+                case 4:
+                    alpha2 = row[sx >> 1];
+                    alpha = (sx & 1 ? alpha2 & 0xf : alpha2 >> 4) * 17;
+                    break;
+                case 8:
+                    alpha = row[sx];
+                    break;
+                }
+                if (alpha == 255) {	/* Just write the new color. */
                     composite = color;
                 } else {
                     if (previous == gx_no_color_index) {	/* Extract the old color. */
@@ -965,11 +973,11 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
                         cv[3] = previous & 0xff;
                         old_coverage = 255 - cv[3];
                         new_coverage =
-                            (255 * alpha + old_coverage * (15 - alpha)) / 15;
+                            (255 * alpha + old_coverage * (255 - alpha)) / 255;
                         for (i=0; i<ncomps; i++)
                             cv[i] = min(((255 * alpha * color_cv[i]) +
-                                (old_coverage * (15 - alpha ) * cv[i]))
-                                / (new_coverage * 15), gx_max_color_value);
+                                (old_coverage * (255 - alpha ) * cv[i]))
+                                / (new_coverage * 255), gx_max_color_value);
                         composite =
                             (*dev_proc(dev, encode_color)) (dev, cv);
                         /* encode color doesn't include coverage */

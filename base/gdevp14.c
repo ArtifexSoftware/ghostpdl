@@ -2492,16 +2492,25 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                 dst[num_comp] = dst_ptr[num_comp * planestride];	/* alpha */
             }
             /* Get the aa alpha from the buffer */
-            if (depth == 2) {	/* map 0 - 3 to 0 - 15 */
-                alpha_aa = ((aa_row[sx >> 2] >> ((3 - (sx & 3)) << 1)) & 3) * 5;
-            } else {
-                alpha2_aa = aa_row[sx >> 1],
-                alpha_aa = (sx & 1 ? alpha2_aa & 0xf : alpha2_aa >> 4);
+            switch(depth)
+            {
+            case 2:  /* map 0 - 3 to 0 - 255 */
+                alpha_aa = ((aa_row[sx >> 2] >> ((3 - (sx & 3)) << 1)) & 3) * 85;
+                break;
+            case 4:
+                alpha2_aa = aa_row[sx >> 1];
+                alpha_aa = (sx & 1 ? alpha2_aa & 0xf : alpha2_aa >> 4) * 17;
+                break;
+            case 8:
+                alpha_aa = aa_row[sx];
+                break;
+            default:
+                return gs_error_rangecheck;
             }
             if (alpha_aa != 0) {  /* This does happen */
-                if (!(alpha_aa == 15)) {
+                if (alpha_aa != 255) {
                     /* We have an alpha value from aa */
-                    alpha_aa_act =  (255 * alpha_aa) / 15;
+                    alpha_aa_act = alpha_aa;
                     if (src_alpha != 255) {
                         /* Need to combine it with the existing alpha */
                         int tmp = src_alpha * alpha_aa_act + 0x80;

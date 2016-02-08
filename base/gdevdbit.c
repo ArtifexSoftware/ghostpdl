@@ -260,14 +260,24 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
             int alpha2, alpha;
 
             w_curr += 1;
-            if (depth == 2)	/* map 0 - 3 to 0 - 15 */
-                alpha = ((row_alpha[sx >> 2] >> ((3 - (sx & 3)) << 1)) & 3) * 5;
-            else
-                alpha2 = row_alpha[sx >> 1],
-                    alpha = (sx & 1 ? alpha2 & 0xf : alpha2 >> 4);
+            switch (depth)
+            {
+            case 2:
+                alpha = ((row_alpha[sx >> 2] >> ((3 - (sx & 3)) << 1)) & 3) * 85;
+                break;
+            case 4:
+                alpha2 = row_alpha[sx >> 1];
+                alpha = (sx & 1 ? alpha2 & 0xf : alpha2 >> 4);
+                break;
+            case 8:
+                alpha = row_alpha[sx];
+                break;
+            default:
+                return gs_error_rangecheck;
+            }
 
             if (alpha == 0) {
-                /* With alpha 0 we want to avoid writting out this value.
+                /* With alpha 0 we want to avoid writing out this value.
                  * While it is true that writting it out leaves the color 
                  * unchanged,  any device that's watching what pixels are 
                  * written (such as the pattern tile devices) may have problems. 
@@ -286,11 +296,12 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                 w_curr = 0;
                 x_curr = rx + 1;
             } else {
-                if (alpha == 15) {	
+                if (alpha == 255) {
                     /* Just use the new color. */
                     composite = &(src_cv[0]);
                 } else {
                     /* We need to do the weighting by the alpha value */
+                    alpha += (alpha>>7); /* Expand from 0..255->0..256 */
                     /* First get the old color */
                     for (k = 0; k < ncomps; k++) {
                         /* We only have 8 and 16 bit depth to worry about.
@@ -309,8 +320,8 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                         }
                         /* Now compute the new color which is a blend of 
                            the old and the new */
-                        blend_cv[k] =  curr_cv[k] +  
-                            (((long) src_cv[k] - (long) curr_cv[k]) * alpha / 15);
+                        blend_cv[k] =  ((curr_cv[k]<<8) +
+                                        (((long) src_cv[k] - (long) curr_cv[k]) * alpha))>>8;
                         composite = &(blend_cv[0]);
                     }
                 } 
@@ -387,11 +398,22 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
                 gx_color_index composite;
                 int alpha2, alpha;
 
-                if (depth == 2)	/* map 0 - 3 to 0 - 15 */
-                    alpha = ((row[sx >> 2] >> ((3 - (sx & 3)) << 1)) & 3) * 5;
-                else
+                switch(depth)
+                {
+                case 2:
+                    /* map 0 - 3 to 0 - 15 */
+                    alpha = ((row[sx >> 2] >> ((3 - (sx & 3)) << 1)) & 3) * 85;
+                    break;
+                case 4:
                     alpha2 = row[sx >> 1],
-                        alpha = (sx & 1 ? alpha2 & 0xf : alpha2 >> 4);
+                        alpha = (sx & 1 ? alpha2 & 0xf : alpha2 >> 4) * 17;
+                    break;
+                case 8:
+                    alpha = row[sx];
+                    break;
+                default:
+                    return gs_error_rangecheck;
+                }
               blend:
                 if (alpha == 0) {
                     /* Previously the code used to just write out the previous
@@ -405,11 +427,12 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
                     LINE_ACCUM_FLUSH_AND_RESTART(dev, lout, bpp, lx, rx, out_size, ry);
                     lx = rx+1;
                 } else {
-                    if (alpha == 15) {	/* Just write the new color. */
+                    if (alpha == 255) {	/* Just write the new color. */
                         composite = color;
                     } else {
                         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
                         int i;
+                        int alpha2 = alpha + (alpha>>7);
 
                         if (previous == gx_no_color_index) {	/* Extract the old color. */
                             if (bpp < 8) {
@@ -453,19 +476,19 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 #else
 #  define b_int int
 #endif
-#define make_shade(old, clr, alpha, amax) \
-  (old) + (((b_int)(clr) - (b_int)(old)) * (alpha) / (amax))
+#define make_shade(old, clr, alpha) \
+  (((((b_int)(old))<<8) + (((b_int)(clr) - (b_int)(old)) * (alpha)))>>8)
                         for (i=0; i<ncomps; i++)
-                            cv[i] = make_shade(cv[i], color_cv[i], alpha, 15);
+                            cv[i] = make_shade(cv[i], color_cv[i], alpha2);
 #undef b_int
 #undef make_shade
                         composite =
                             (*dev_proc(dev, encode_color)) (dev, cv);
                         if (composite == gx_no_color_index) {	/* The device can't represent this color. */
                             /* Move the alpha value towards 0 or 1. */
-                            if (alpha == 7)	/* move 1/2 towards 1 */
+                            if (alpha == 127)	/* move 1/2 towards 1 */
                                 ++alpha;
-                            alpha = (alpha & 8) | (alpha >> 1);
+                            alpha = (alpha & 128) | (alpha >> 1);
                             goto blend;
                         }
                     }

@@ -1690,11 +1690,24 @@ alpha-compositing with a source pixel whose alpha value is obtained from
 the pixmap (<code>data</code>, <code>data_x</code>, and
 <code>raster</code>) and whose color is the given color (which has
 <b><em>not</em></b> been premultiplied by the alpha value), using the Sover
-rule.  <code>depth</code>, the number of bits per alpha value, is either
-2 or 4, and in any case is always a value returned by a previous call on
-the <code>get_alpha_bits</code> procedure.  Note that if
-<code>get_alpha_bits</code> always returns 1, this procedure will never
-be called.
+rule.
+
+<p><code>depth</code>, the number of bits per alpha value, is either
+2, 4 or 8. Any <code>copy_alpha</code> routine must accept being called
+with an 8 bit depth. In addition they should accept either 2 or 4 if
+the corresponding <code>get_alpha_bits</code> procedure returns either
+of those values.
+</dl>
+
+<dl>
+<dt><code>int (*copy_alpha_hl_color)(gx_device&nbsp;*dev,
+const&nbsp;byte&nbsp;*data, int&nbsp;data_x, int&nbsp;raster,
+gx_bitmap_id&nbsp;id, int&nbsp;x, int&nbsp;y, int&nbsp;width,
+int&nbsp;height, const&nbsp;gx_drawing_color&nbsp;*pdcolor, int&nbsp;depth)</code>
+<b><em>[OPTIONAL]</em></b>
+<dd>Equivalent function to copy_alpha, using high level color rather
+than a gx_color_index.
+
 </dl>
 
 <dl>
