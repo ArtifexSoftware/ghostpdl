@@ -1169,6 +1169,33 @@ currentdict /xref-char-dict undef
    currentdict end
  } bind def
 
+%% Executing token on a file will close the file if we reach EOF while
+%% processing. When repairing broken files (or searching for startxref
+%% and the xref offset) we do *NOT* want this to happen, because that
+%% will close PDFfile and we don't have the filename to reopen it.
+/token_no_close {   %% -file- token_no_close <any> true | false
+  dup type /filetype eq {
+    <<
+    /EODCount 2 index bytesavailable    %% fix data length at underlying bytes
+    /EODString ()                       %% make sure filter passes that many bytes, no EOD
+    /CloseSource false                  %% Be sure, tell the filter not to close the source file
+    >>
+    /SubFileDecode filter dup           %% -filter- -filter-
+    token {                             %% -filter- <any> true | false
+                                        %%  token returned a value
+      exch                              %%  <any> filter
+      closefile                         %%  <any>
+      true                              %%  <any> true
+    }{
+                                        %% token didn't find a value
+      closefile                         %%  -
+      false                             %%  false
+    } ifelse
+  } {
+      token
+  } ifelse
+} bind def
+
 % Look for the last (startxref) from the current position
 % of the file. Return the position after (startxref) if found or -1 .
 /find-startxref {  % <file> find_eof <file> <position>
@@ -1203,7 +1230,7 @@ currentdict /xref-char-dict undef
     } if
   } if
   2 copy setfileposition
-  pop token not { //null } if
+  pop token_no_close not { //null } if
   dup type /integertype ne {
     (   **** Error: invalid token after startxref.\n)  pdfformaterror
     (               Output may be incorrect.\n) pdfformaterror

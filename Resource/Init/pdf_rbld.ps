@@ -165,22 +165,26 @@
 %% choose to enhance this routine further.
 %%
 /search_earlier_trailer {
-{                                             % position
+  {                                             % position
     dup 0 gt {                                  % position bool
-      dup 65535 .min exch                        % block_size position
+      dup 65535 .min exch                       % block_size position
       1 index sub                               % block_size position-block_size
       dup                                       % block_size new_position new_position
       PDFfile exch setfileposition              % block_size new position
-      exch dup string 0 1 4 -1 roll 1 sub       %
+      exch dup                                  % new position block_size block_size
+      dup string 0 1 4 -1 roll 1 sub            %
       {2 copy PDFfile read pop put pop } for    %
-                                                % new_position (...string from file....)
+                                                % new_position block size (...string from file....)
       (trailer) search {
         pop
         { search not { exit } if pop } loop
                                                 % determine where the trailer is in the file
                                                 %   trailer loc = end loc - remaing string length
-        length exch 65535 add exch sub
+        length                                  % new_position block size string length
+        3 1 roll                                % string length new_position block size
+        add exch sub                            % string length - (new_position + block size)
       } {
+        pop                                     % discard old block size
         pop 0
       } ifelse
     } {
@@ -257,7 +261,7 @@
      length sub 9 sub
      % move the file to this position and read startxref and position
      PDFfile exch setfileposition PDFfile token
-     pop pop PDFfile token pop
+     pop pop PDFfile token_no_close pop
      dup type /integertype eq not {
        pop
        % startxref not followed by integer.  We will search the end of the file for trailer.
@@ -431,7 +435,7 @@
   pdfformaterror
   (   **** Ghostscript will attempt to recover the data.\n)
   pdfformaterror
-  (   However, the output may be incorrect.\n) pdfformaterror
+  (   **** However, the output may be incorrect.\n) pdfformaterror
 } bind def
 
 % Attempt to recover the XRef data.  This is called if we have a failure
