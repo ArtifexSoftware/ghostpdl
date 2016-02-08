@@ -48,7 +48,7 @@ fpng_get_param(gx_device *dev, char *Param, void *list)
     gs_param_list * plist = (gs_param_list *)list;
 
     if (strcmp(Param, "DownScaleFactor") == 0) {
-        return param_write_int(plist, "DownScaleFactor", (int *)&pdev->downscale.downscale_factor);
+        return param_write_int(plist, "DownScaleFactor", &pdev->downscale.downscale_factor);
     }
     return gdev_prn_get_param(dev, Param, list);
 }

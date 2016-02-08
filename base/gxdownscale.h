@@ -165,8 +165,8 @@ int gx_downscaler_init_planar_trapped(gx_downscaler_t      *ds,
  */
 typedef struct gx_downscaler_params_s
 {
-    long downscale_factor;
-    long min_feature_size;
+    int downscale_factor;
+    int min_feature_size;
     int trap_w;
     int trap_h;
     int trap_order[GS_CLIENT_COLOR_MAX_COMPONENTS];

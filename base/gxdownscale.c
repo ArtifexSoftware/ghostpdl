@@ -2392,14 +2392,14 @@ int gx_downscaler_read_params(gs_param_list        *plist,
                               int                   features)
 {
     int code;
-    long downscale, mfs;
+    int downscale, mfs;
     int trap_w, trap_h;
     const char *param_name;
     gs_param_int_array trap_order;
 
     trap_order.data = NULL;
 
-    switch (code = param_read_long(plist,
+    switch (code = param_read_int(plist,
                                    (param_name = "DownScaleFactor"),
                                    &downscale)) {
         case 1:
@@ -2417,7 +2417,7 @@ int gx_downscaler_read_params(gs_param_list        *plist,
 
     if (features & GX_DOWNSCALER_PARAMS_MFS)
     {
-        switch (code = param_read_long(plist, (param_name = "MinFeatureSize"), &mfs)) {
+        switch (code = param_read_int(plist, (param_name = "MinFeatureSize"), &mfs)) {
             case 1:
                 break;
             case 0:
@@ -2526,11 +2526,11 @@ int gx_downscaler_write_params(gs_param_list        *plist,
     trap_order.size = GS_CLIENT_COLOR_MAX_COMPONENTS;
     trap_order.persistent = false;
 
-    if ((code = param_write_long(plist, "DownScaleFactor", &params->downscale_factor)) < 0)
+    if ((code = param_write_int(plist, "DownScaleFactor", &params->downscale_factor)) < 0)
         ecode = code;
     if (features & GX_DOWNSCALER_PARAMS_MFS)
     {
-        if ((code = param_write_long(plist, "MinFeatureSize", &params->min_feature_size)) < 0)
+        if ((code = param_write_int(plist, "MinFeatureSize", &params->min_feature_size)) < 0)
             ecode = code;
     }
     if (features & GX_DOWNSCALER_PARAMS_TRAP)
