@@ -781,6 +781,8 @@ psd_get_params_generic(gx_device * pdev, gs_param_list * plist, int cmyk)
 #endif
     code = gx_downscaler_write_params(plist, &xdev->downscale,
                                       cmyk ? GX_DOWNSCALER_PARAMS_TRAP : 0);
+    if (code < 0)
+        return code;
     code = param_write_int(plist, "MaxSpots", &xdev->max_spots);
     if (code < 0)
         return code;
