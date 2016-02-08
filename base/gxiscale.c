@@ -68,8 +68,74 @@ iclass_proc(gs_image_class_0_interpolate);
    initialized and allocates buffer space if needed */
 static irender_proc(image_render_interpolate);
 static irender_proc(image_render_interpolate_icc);
+static irender_proc(image_render_interpolate_masked);
+static irender_proc(image_render_interpolate_masked_hl);
 static irender_proc(image_render_interpolate_landscape);
 static irender_proc(image_render_interpolate_landscape_icc);
+static irender_proc(image_render_interpolate_landscape_masked);
+static irender_proc(image_render_interpolate_landscape_masked_hl);
+
+static bool
+is_high_level_device(gx_device *dev)
+{
+    char data[] = "HighLevelDevice";
+    dev_param_req_t request;
+    gs_c_param_list list;
+    int highlevel = 0;
+    int code;
+
+    gs_c_param_list_write(&list, dev->memory);
+    /* Stuff the data into a structure for passing to the spec_op */
+    request.Param = data;
+    request.list = &list;
+    code = dev_proc(dev, dev_spec_op)(dev, gxdso_get_dev_param, &request, sizeof(dev_param_req_t));
+    if (code < 0 && code != gs_error_undefined) {
+        gs_c_param_list_release(&list);
+        return 0;
+    }
+    gs_c_param_list_read(&list);
+    code = param_read_bool((gs_param_list *)&list,
+            "HighLevelDevice",
+            &highlevel);
+    gs_c_param_list_release(&list);
+    if (code < 0)
+        return 0;
+
+    return highlevel;
+}
+
+#define DC_IS_NULL(pdc)\
+  (gx_dc_is_pure(pdc) && (pdc)->colors.pure == gx_no_color_index)
+
+static int mask_suitable_for_interpolation(gx_image_enum *penum)
+{
+    gx_device_color * const pdc1 = penum->icolor1;
+    int code;
+    int high_level = 1;
+
+    if (gx_dc_is_pure(pdc1) && (pdc1)->colors.pure != gx_no_color_index &&
+        dev_proc(penum->dev, copy_alpha) != NULL &&
+        dev_proc(penum->dev, copy_alpha) != gx_no_copy_alpha) {
+        /* We have a 'pure' color, and a valid copy_alpha. We can work with that. */
+        high_level = 0;
+    } else if (dev_proc(penum->dev, copy_alpha_hl_color) == NULL) {
+        /* No copy_alpha_hl_color. We're out of luck. */
+        return -1;
+    } else if ((code = gx_color_load(pdc1, penum->pis, penum->dev)) < 0) {
+        /* Otherwise we'll need to load the color value. If this gives an
+         * error, we can't cope. */
+        return -1;
+    } else if (!gx_dc_is_devn(pdc1)) {
+        /* If it's not a devn color, then we're really out of luck. */
+        return -1;
+    }
+
+    /* Never turn this on for high level devices */
+    if (is_high_level_device(penum->dev))
+        return -1;
+
+    return high_level;
+}
 
 irender_proc_t
 gs_image_class_0_interpolate(gx_image_enum * penum)
@@ -86,13 +152,18 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     cmm_dev_profile_t *dev_profile;
     int code;
     gx_color_polarity_t pol;
+    int mask_col_high_level = 0;
 
     if (!penum->interpolate)
         return 0;
+    if (penum->masked && (mask_col_high_level = mask_suitable_for_interpolation(penum)) < 0) {
+        penum->interpolate = false;
+        return 0;
+    }
     if (penum->use_mask_color ||
         (penum->posture != image_portrait &&
          penum->posture != image_landscape) ||
-        penum->masked || penum->alpha) {
+        penum->alpha) {
         /* We can't handle these cases yet.  Punt. */
         penum->interpolate = false;
         return 0;
@@ -118,35 +189,40 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         /* A calculation has overflowed. Bale */
         return 0;
     }
-    if ( pcs->cmm_icc_profile_data != NULL ) {
-        use_icc = true;
-    }
-    if ( pcs->type->index == gs_color_space_index_Indexed) {
-        if ( pcs->base_space->cmm_icc_profile_data != NULL) {
+    if (penum->masked) {
+        use_icc = false;
+        num_des_comps = 1;
+    } else {
+        if ( pcs->cmm_icc_profile_data != NULL ) {
             use_icc = true;
         }
-    }
-    if (!(penum->bps <= 8 || penum->bps == 16)) {
-        use_icc = false;
-    }
-    /* Do not allow mismatch in devices component output with the
-       profile output size.  For example sep device with CMYK profile should
-       not go through the fast method */
-    code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
-    if (code) {
-        penum->interpolate = false;
-        return 0;
-    }
-    num_des_comps = gsicc_get_device_profile_comps(dev_profile);
-    if (num_des_comps != penum->dev->color_info.num_components) {
-        use_icc = false;
-    }
-    /* If the device has some unique color mapping procs due to its color space,
-       then we will need to use those and go through pixel by pixel instead
-       of blasting through buffers.  This is true for example with many of
-       the color spaces for CUPs */
-    if(!gx_device_uses_std_cmap_procs(penum->dev, penum->pis)) {
-        use_icc = false;
+        if ( pcs->type->index == gs_color_space_index_Indexed) {
+            if ( pcs->base_space->cmm_icc_profile_data != NULL) {
+                use_icc = true;
+            }
+        }
+        if (!(penum->bps <= 8 || penum->bps == 16)) {
+            use_icc = false;
+        }
+        /* Do not allow mismatch in devices component output with the
+           profile output size.  For example sep device with CMYK profile should
+           not go through the fast method */
+        code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
+        if (code) {
+            penum->interpolate = false;
+            return 0;
+        }
+        num_des_comps = gsicc_get_device_profile_comps(dev_profile);
+        if (num_des_comps != penum->dev->color_info.num_components) {
+            use_icc = false;
+        }
+        /* If the device has some unique color mapping procs due to its color space,
+           then we will need to use those and go through pixel by pixel instead
+           of blasting through buffers.  This is true for example with many of
+           the color spaces for CUPs */
+        if(!gx_device_uses_std_cmap_procs(penum->dev, penum->pis)) {
+            use_icc = false;
+        }
     }
 /*
  * USE_CONSERVATIVE_INTERPOLATION_RULES is normally NOT defined since
@@ -171,7 +247,10 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         return 0;
     }
 #endif
-    if (use_icc) {
+    if (penum->masked) {
+        iss.BitsPerComponentOut = 8;
+        iss.MaxValueOut = 0xff;
+    } else if (use_icc) {
         iss.BitsPerComponentOut = 16;
         iss.MaxValueOut = 0xffff;
     } else {
@@ -254,15 +333,19 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         penum->interpolate = false;
         return 0;
     }
-    /* If we are in an indexed space then we need to use the number of components
-       in the base space.  Otherwise we use the number of components in the source space */
-    if (pcs->type->index == gs_color_space_index_Indexed) {
-        /* Use the number of colors in the base space */
-        iss.spp_decode = cs_num_components(pcs->base_space);
+    if (penum->masked) {
+        iss.spp_decode = 1;
     } else {
-        /* Use the number of colors that exist in the source space
-        as this is where we are doing our interpolation */
-        iss.spp_decode = cs_num_components(pcs);
+        /* If we are in an indexed space then we need to use the number of components
+           in the base space.  Otherwise we use the number of components in the source space */
+        if (pcs->type->index == gs_color_space_index_Indexed) {
+           /* Use the number of colors in the base space */
+            iss.spp_decode = cs_num_components(pcs->base_space);
+        } else {
+            /* Use the number of colors that exist in the source space
+            as this is where we are doing our interpolation */
+            iss.spp_decode = cs_num_components(pcs);
+        }
     }
     if (iss.HeightOut > iss.EntireHeightIn && use_icc) {
         iss.early_cm = true;
@@ -282,9 +365,11 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
           It is handed here to us in 8 bit form already decoded. */
         iss.BitsPerComponentIn = 8;
         iss.MaxValueIn = 0xff;
-        /* If it is an index color space we will need to allocate for
-           the decoded data */
-        if (pcs->type->index == gs_color_space_index_Indexed) {
+        if (penum->masked) {
+            in_size = iss.WidthIn * iss.spp_decode;
+        } else if (pcs->type->index == gs_color_space_index_Indexed) {
+            /* If it is an index color space we will need to allocate for
+               the decoded data */
             in_size = iss.WidthIn * iss.spp_decode;
         } else {
             /* Non indexed case, we either use the data as
@@ -323,7 +408,10 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 #else
     templat = &s_IIEncode_template;
 #endif
-    pol = cs_polarity(pcs);
+    if (!pcs)
+        pol = GX_CINFO_POLARITY_ADDITIVE;
+    else
+        pol = cs_polarity(pcs);
     if ((iss.WidthOut < iss.WidthIn) &&
         (iss.HeightOut < iss.HeightIn) &&       /* downsampling */
         (pol != GX_CINFO_POLARITY_UNKNOWN) &&
@@ -397,7 +485,17 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
                                          penum->dst_height / penum->Width));
     }
     if_debug0m('b', penum->memory, "[b]render=interpolate\n");
-    if (use_icc) {
+    if (penum->masked) {
+        if (!mask_col_high_level) {
+            return (penum->posture == image_portrait ?
+                    &image_render_interpolate_masked :
+                    &image_render_interpolate_landscape_masked);
+        } else {
+            return (penum->posture == image_portrait ?
+                    &image_render_interpolate_masked_hl :
+                    &image_render_interpolate_landscape_masked_hl);
+        }
+    } else if (use_icc) {
         /* Set up the link now */
         const gs_color_space *pcs;
         gsicc_rendering_param_t rendering_params;
@@ -488,7 +586,7 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
         int sizeofPixelIn = pss->params.BitsPerComponentIn / 8;
         uint row_size = pss->params.WidthIn * spp_decode * sizeofPixelIn;
         /* raw input data */
-        const int raw_size = (pcs->type->index == gs_color_space_index_Indexed ?
+        const int raw_size = (pcs != NULL && pcs->type->index == gs_color_space_index_Indexed ?
                               1 : spp_decode);
         const unsigned char *bdata = buffer + data_x * raw_size * sizeofPixelIn;
         /* We have the following cases to worry about
@@ -502,7 +600,7 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
              will then be in same state as 3.
          */
         if (sizeofPixelIn == 1) {
-            if (pcs->type->index != gs_color_space_index_Indexed) {
+            if (pcs == NULL || pcs->type->index != gs_color_space_index_Indexed) {
                 /* An issue here is that we may not be "device color" due to
                    how the data is encoded.  Need to check for that case here */
                 /* Decide here if we need to decode or not. Essentially, as
@@ -731,9 +829,13 @@ static int handle_colors(gx_image_enum *penum, const frac *psrc, int spp_decode,
     const gs_imager_state *pis = penum->pis;
     const gs_color_space *pcs = penum->pcs;
     bool device_color;
-    bool is_index_space = (pcs->type->index == gs_color_space_index_Indexed);
+    bool is_index_space;
     int code = 0;
 
+    if (pcs == NULL)
+        return 0; /* Must be masked */
+
+    is_index_space = (pcs->type->index == gs_color_space_index_Indexed);
 #ifdef DEBUG
     if (gs_debug_c('B')) {
         int ci;
@@ -803,7 +905,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
     byte *out = penum->line;
     bool islab = false;
 
-    if (pcs->cmm_icc_profile_data != NULL) {
+    if (!penum->masked && pcs->cmm_icc_profile_data != NULL) {
         islab = pcs->cmm_icc_profile_data->islab;
     }
     /* Perform any decode procedure if needed */
@@ -944,6 +1046,147 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                 }
                 LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
                 /*if_debug1m('w', dev->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
+inactive:
+                penum->line_xy++;
+                if_debug0m('B', dev->memory, "\n");
+            }
+            if ((status == 0 && stream_r.ptr == stream_r.limit) || status == EOFC)
+                break;
+        }
+    }
+    return (h == 0 ? 0 : 1);
+}
+
+static int
+image_render_interpolate_masked(gx_image_enum * penum, const byte * buffer,
+                                int data_x, uint iw, int h, gx_device * dev)
+{
+    stream_image_scale_state *pss = penum->scaler;
+    stream_cursor_read stream_r;
+    stream_cursor_write stream_w;
+    byte *out = penum->line;
+    gx_color_index color = penum->icolor1->colors.pure;
+
+    /* Perform any decode procedure if needed */
+    initial_decode(penum, buffer, data_x, h, &stream_r, false);
+    /*
+     * Process input and/or collect output.  By construction, the pixels are
+     * 1-for-1 with the device, but the Y coordinate might be inverted.
+     */
+    {
+        int xo = penum->xyi.x;
+        int yo = penum->xyi.y;
+        int width = pss->params.WidthOut;
+        int dy;
+        int bpp = dev->color_info.depth;
+        uint raster = bitmap_raster(width * bpp);
+
+        if (penum->matrix.yy > 0)
+            dy = 1;
+        else
+            dy = -1, yo--;
+        for (;;) {
+            int ry = yo + penum->line_xy * dy;
+            const byte *psrc;
+            int status, code;
+
+            stream_w.limit = out + width - 1;
+            stream_w.ptr = stream_w.limit - width;
+            psrc = stream_w.ptr + 1;
+            /* This is where the rescale takes place; this will consume the
+             * data from stream_r, and post processed data into stream_w. The
+             * data in stream_w may be bogus if we are outside the active
+             * region, and this will be indicated by pss->params.Active being
+             * set to false. */
+            status = (*pss->templat->process)
+                ((stream_state *) pss, &stream_r, &stream_w, h == 0);
+            if (status < 0 && status != EOFC)
+                return_error(gs_error_ioerror);
+            if (stream_w.ptr == stream_w.limit) {
+                int xe = xo + pss->params.PatchWidthOut;
+
+                /* Are we active? (i.e. in the render rectangle) */
+                if (!pss->params.Active)
+                    goto inactive;
+                if_debug1m('B', penum->memory, "[B]Interpolated mask row %d:\n[B]",
+                           penum->line_xy);
+                psrc += pss->params.LeftMarginOut;
+                code = (*dev_proc(dev, copy_alpha))
+                            (dev, psrc, 0, raster,
+                             gx_no_bitmap_id, xo, ry, xe-xo, 1,
+                             color, 8);
+                if ( code < 0 )
+                    return code;
+inactive:
+                penum->line_xy++;
+                if_debug0m('B', dev->memory, "\n");
+            }
+            if ((status == 0 && stream_r.ptr == stream_r.limit) || status == EOFC)
+                break;
+        }
+    }
+    return (h == 0 ? 0 : 1);
+}
+
+static int
+image_render_interpolate_masked_hl(gx_image_enum * penum, const byte * buffer,
+                                   int data_x, uint iw, int h, gx_device * dev)
+{
+    stream_image_scale_state *pss = penum->scaler;
+    stream_cursor_read stream_r;
+    stream_cursor_write stream_w;
+    byte *out = penum->line;
+
+    /* Perform any decode procedure if needed */
+    initial_decode(penum, buffer, data_x, h, &stream_r, false);
+    /*
+     * Process input and/or collect output.  By construction, the pixels are
+     * 1-for-1 with the device, but the Y coordinate might be inverted.
+     */
+    {
+        int xo = penum->xyi.x;
+        int yo = penum->xyi.y;
+        int width = pss->params.WidthOut;
+        int dy;
+        int bpp = dev->color_info.depth;
+        uint raster = bitmap_raster(width * bpp);
+
+        if (penum->matrix.yy > 0)
+            dy = 1;
+        else
+            dy = -1, yo--;
+        for (;;) {
+            int ry = yo + penum->line_xy * dy;
+            const byte *psrc;
+            int status, code;
+
+            stream_w.limit = out + width - 1;
+            stream_w.ptr = stream_w.limit - width;
+            psrc = stream_w.ptr + 1;
+            /* This is where the rescale takes place; this will consume the
+             * data from stream_r, and post processed data into stream_w. The
+             * data in stream_w may be bogus if we are outside the active
+             * region, and this will be indicated by pss->params.Active being
+             * set to false. */
+            status = (*pss->templat->process)
+                ((stream_state *) pss, &stream_r, &stream_w, h == 0);
+            if (status < 0 && status != EOFC)
+                return_error(gs_error_ioerror);
+            if (stream_w.ptr == stream_w.limit) {
+                int xe = xo + pss->params.PatchWidthOut;
+
+                /* Are we active? (i.e. in the render rectangle) */
+                if (!pss->params.Active)
+                    goto inactive;
+                if_debug1m('B', penum->memory, "[B]Interpolated mask row %d:\n[B]",
+                           penum->line_xy);
+                psrc += pss->params.LeftMarginOut;
+                code = (*dev_proc(dev, copy_alpha_hl_color))
+                            (dev, psrc, 0, raster,
+                             gx_no_bitmap_id, xo, ry, xe-xo, 1,
+                             penum->icolor1, 8);
+                if ( code < 0 )
+                    return code;
 inactive:
                 penum->line_xy++;
                 if_debug0m('B', dev->memory, "\n");
@@ -1301,6 +1544,159 @@ image_render_interpolate_landscape(gx_image_enum * penum,
                             return rcode;
                         x++, psrc += spp_decode;
                     }
+                }
+                /*if_debug1m('w', dev->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
+inactive:
+                penum->line_xy++;
+                if_debug0m('B', dev->memory, "\n");
+            }
+            if ((status == 0 && stream_r.ptr == stream_r.limit) || status == EOFC)
+                break;
+        }
+    }
+    return (h == 0 ? 0 : 1);
+}
+
+static int
+image_render_interpolate_landscape_masked(gx_image_enum * penum,
+                                          const byte * buffer,
+                                          int data_x, uint iw, int h,
+                                          gx_device * dev)
+{
+    stream_image_scale_state *pss = penum->scaler;
+    int spp_decode = pss->params.spp_decode;
+    stream_cursor_read stream_r;
+    stream_cursor_write stream_w;
+    byte *out = penum->line;
+    gx_color_index color = penum->icolor1->colors.pure;
+
+    /* Perform any decode procedure if needed. Probably only reversal
+     * of the data in this case. */
+    initial_decode(penum, buffer, data_x, h, &stream_r, false);
+    /*
+     * Process input and/or collect output.  By construction, the pixels are
+     * 1-for-1 with the device, but the Y coordinate might be inverted.
+     */
+    {
+        int xo = penum->xyi.y;
+        int yo = penum->xyi.x;
+        int width = pss->params.WidthOut;
+        int sizeofPixelOut = pss->params.BitsPerComponentOut / 8;
+        int dy;
+
+        if (penum->matrix.yx > 0)
+            dy = 1;
+        else
+            dy = -1, yo--;
+        for (;;) {
+            int ry = yo + penum->line_xy * dy;
+            int x;
+            const byte *psrc;
+            int status, code;
+
+            stream_w.limit = out + width *
+                max(spp_decode * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
+            stream_w.ptr = stream_w.limit - width * spp_decode * sizeofPixelOut;
+            psrc = stream_w.ptr + 1;
+            /* This is where the rescale takes place; this will consume the
+             * data from stream_r, and post processed data into stream_w. The
+             * data in stream_w may be bogus if we are outside the active
+             * region, and this will be indicated by pss->params.Active being
+             * set to false. */
+            status = (*pss->templat->process)
+                ((stream_state *) pss, &stream_r, &stream_w, h == 0);
+            if (status < 0 && status != EOFC)
+                return_error(gs_error_ioerror);
+            if (stream_w.ptr == stream_w.limit) {
+                int xe = xo + pss->params.PatchWidthOut;
+
+                /* Are we active? (i.e. in the render rectangle) */
+                if (!pss->params.Active)
+                    goto inactive;
+                if_debug1m('B', penum->memory, "[B]Interpolated masked (rotated) row %d:\n[B]",
+                           penum->line_xy);
+                psrc += pss->params.LeftMarginOut * spp_decode;
+                for (x = xo; x < xe;) {
+                    code = (*dev_proc(dev, copy_alpha))(dev, psrc, 0, 0,
+                        gx_no_bitmap_id, ry, x, 1, 1, color, 8);
+                    if (code < 0)
+                        return code;
+                }
+                /*if_debug1m('w', dev->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
+inactive:
+                penum->line_xy++;
+                if_debug0m('B', dev->memory, "\n");
+            }
+            if ((status == 0 && stream_r.ptr == stream_r.limit) || status == EOFC)
+                break;
+        }
+    }
+    return (h == 0 ? 0 : 1);
+}
+
+static int
+image_render_interpolate_landscape_masked_hl(gx_image_enum * penum,
+                                             const byte * buffer,
+                                             int data_x, uint iw, int h,
+                                             gx_device * dev)
+{
+    stream_image_scale_state *pss = penum->scaler;
+    int spp_decode = pss->params.spp_decode;
+    stream_cursor_read stream_r;
+    stream_cursor_write stream_w;
+    byte *out = penum->line;
+
+    /* Perform any decode procedure if needed. Probably only reversal
+     * of the data in this case. */
+    initial_decode(penum, buffer, data_x, h, &stream_r, false);
+    /*
+     * Process input and/or collect output.  By construction, the pixels are
+     * 1-for-1 with the device, but the Y coordinate might be inverted.
+     */
+    {
+        int xo = penum->xyi.y;
+        int yo = penum->xyi.x;
+        int width = pss->params.WidthOut;
+        int sizeofPixelOut = pss->params.BitsPerComponentOut / 8;
+        int dy;
+
+        if (penum->matrix.yx > 0)
+            dy = 1;
+        else
+            dy = -1, yo--;
+        for (;;) {
+            int ry = yo + penum->line_xy * dy;
+            int x;
+            const byte *psrc;
+            int status, code;
+
+            stream_w.limit = out + width *
+                max(spp_decode * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
+            stream_w.ptr = stream_w.limit - width * spp_decode * sizeofPixelOut;
+            psrc = stream_w.ptr + 1;
+            /* This is where the rescale takes place; this will consume the
+             * data from stream_r, and post processed data into stream_w. The
+             * data in stream_w may be bogus if we are outside the active
+             * region, and this will be indicated by pss->params.Active being
+             * set to false. */
+            status = (*pss->templat->process)
+                ((stream_state *) pss, &stream_r, &stream_w, h == 0);
+            if (status < 0 && status != EOFC)
+                return_error(gs_error_ioerror);
+            if (stream_w.ptr == stream_w.limit) {
+                int xe = xo + pss->params.PatchWidthOut;
+
+                /* Are we active? (i.e. in the render rectangle) */
+                if (!pss->params.Active)
+                    goto inactive;
+                if_debug1m('B', penum->memory, "[B]Interpolated masked (rotated) row %d:\n[B]",
+                           penum->line_xy);
+                psrc += pss->params.LeftMarginOut * spp_decode;
+                for (x = xo; x < xe;) {
+                    code = (*dev_proc(dev, copy_alpha_hl_color))(dev, psrc, 0, 0,
+                        gx_no_bitmap_id, ry, x, 1, 1, penum->icolor1, 8);
+                    if (code < 0)
+                        return code;
                 }
                 /*if_debug1m('w', dev->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 inactive:
