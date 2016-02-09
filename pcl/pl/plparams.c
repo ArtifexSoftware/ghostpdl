@@ -229,6 +229,13 @@ static int process_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
 
         gp_fseek_64(f, 0, SEEK_SET);
         code = fread(stream_data, 1, bytes, f);
+        if (code != 1) {
+            if (stream_data)
+                gs_free_object(mem, stream_data, "PJL pdfmark, stream");
+            gs_free_object(mem, copy, "working buffer for pdfmark processing");
+            gs_free_object(mem, parray, "temporary pdfmark array");
+            return gs_note_error(gs_error_ioerror);
+        }
         fclose(f);
         parray[tokens - 2].size = bytes;
 

@@ -69,6 +69,8 @@ bool pjl_skip_to_uel(stream_cursor_read * pr);
    Both variables and values are case insensitive.
 */
 pjl_envvar_t *pjl_get_envvar(pjl_parser_state * pst, const char *pjl_var);
+pjl_envvar_t *pjl_set_envvar(pjl_parser_state * pst, const char *pjl_var, const char *data);
+pjl_envvar_t *pjl_set_defvar(pjl_parser_state * pst, const char *pjl_var, const char *data);
 
 /* compare a pjl environment variable to a string values. */
 int pjl_compare(const pjl_envvar_t * s1, const char *s2);
