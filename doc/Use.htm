@@ -2660,7 +2660,7 @@ of using the normal intelligent substitution algorithm.  Also, in this
 case, the font returned by <code>findfont</code> is the actual font
 named <em>fontname</em>, not a copy of the font with its
 <code>FontName</code> changed to the requested one.
-THIS OPTION SHOULD NOT BE USED WITH HIGH LEVEL DEVICES, such as
+THIS OPTION SHOULD NOT BE USED WITH HIGH LEVEL (VECTOR) DEVICES, such as
 <code>pdfwrite</code>, because it prevents such devices from
 providing the original font names in the output document. The
 font specified (<em>fontname</em>) will be embedded instead,
@@ -3429,7 +3429,7 @@ memory. For example, to allow use of 30Mb of extra RAM use:
 <p>
     <code>-c&nbsp;30000000&nbsp;setvmthreshold&nbsp;-f</code>.
 <p>This can also be useful in processing large documents when using a
-high-level output device (like pdfwrite) that maintains significant internal
+high-level (vector) output device (like pdfwrite) that maintains significant internal
 state.  In fact, the <a href="Language.htm#.setpdfwrite"><tt>.setpdfwrite</tt></a>
 operator used by the ps2pdf script and others sets a vmthreshold value of
 3&nbsp;MB to account for this.
@@ -3682,7 +3682,7 @@ usage.
 <dt><code>'</code><dd>contexts, create/destroy
 <dt>&nbsp;&nbsp;&nbsp;<code>"</code><dd>contexts, every operation
 <dt><code>^</code><dd>reference counting
-<dt><code>_</code><dd>high-level output
+<dt><code>_</code><dd>high-level (vector) output
 <dt><code>!</code><dd>Postscript operator names (this option is available only
 when Ghostscript is compiled with a predefined macro DEBUG_TRACE_PS_OPERATORS)
 <dt><code>|</code><dd>(reserved for experimental code)
