@@ -292,6 +292,9 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
      * glyph (such as from a type3 font).
      */
     gridfitimages = (dev_proc(dev, dev_spec_op)(dev, gxdso_gridfit_images, NULL, 0));
+    if (gridfitimages < 0)
+        gridfitimages = 0;
+
     if (pis != NULL && pis->is_gstate && ((gs_state *)pis)->show_gstate != NULL) {
         /* If we're a graphics state, and we're in a text object, then we
          * must be in a type3 font. Don't fiddle with it. */
