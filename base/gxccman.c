@@ -541,6 +541,22 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
         pdev->HWResolution[0] = HWResolution0;
         pdev->HWResolution[1] = HWResolution1;
     } else {
+        /* We reckon this code has never actually been run since 2002,
+         * as the conditions set up in gx_compute_text_oversampling
+         * preclude this function ever being called in a way that
+         * will cause this else clause to be executed. */
+#ifndef ENABLE_IMPOSSIBLE_ALPHA_CODE
+        static int THIS_NEVER_HAPPENS = 0;
+
+        if (THIS_NEVER_HAPPENS == 0) {
+            /* Just put the warning out once */
+            dmlprintf(dev->memory,
+                      "Unexpected code path in gx_alloc_char_bits taken!\n"
+                      "Please contact the Ghostscript developers.\n");
+            THIS_NEVER_HAPPENS = 1;
+        }
+        return gs_error_unknownerror;
+#else
         /* Use an alpha-buffer device to compress as we go. */
         /* Preserve the reference counts, if any. */
         rc_header rc;
@@ -561,6 +577,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
         isize += isize2;	/* Assume less than max_ulong */
         dev->HWResolution[0] = HWResolution0 * (1 >> log2_xscale);
         dev->HWResolution[1] = HWResolution1 * (1 >> log2_yscale);
+#endif
     }
     icdsize = isize + sizeof_cached_char;
     code = alloc_char(dir, icdsize, &cc);
