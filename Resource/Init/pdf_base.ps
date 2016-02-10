@@ -930,7 +930,19 @@ currentdict /no_debug_dict undef
     (   **** Error: stream Length incorrect.\n) pdfformaterror
     (               Output may be incorrect.\n) pdfformaterror
     dup /Length undef % prevent the use of the incorrect length.
-    cvx endobj exit   % exit from .pdfrun now.
+
+    %% Bug #696560 If we get a stream whose length is incorrect we cannot
+    %% safely *assume* it has an object definition as we can get here when
+    %% reading an XRef stream, and in that case we will not have the object
+    %% and generation numbers on the stack!
+    %% So before we call endobj and exit pdfrun, try and see if ths looks like
+    %% a regular object or not. If it isn't then don't try and ahndle it as
+    %% one, just return the object.
+    count 3 ge {
+      1 index type /integertype eq 2 index type /integertype eq and {
+        cvx endobj exit   % exit from .pdfrun now.
+      } if
+    } if
   } {
     PDFsource (??) .peekstring pop (>>) eq { % Bug 690161, sample #1
       (   **** Error: Spurious '>>' after 'endstream' ignored.\n) pdfformaterror
