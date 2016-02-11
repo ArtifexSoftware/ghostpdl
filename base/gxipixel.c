@@ -251,6 +251,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     bool gridfitimages = 0;
     bool in_pattern_accumulator = 0;
     int orthogonal;
+    int force_interpolation = 0;
 
     penum->clues = NULL;
     penum->icc_setup.has_transfer = false;
@@ -383,6 +384,21 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
                 fixed iy1 = int2fixed(fixed2int(float2fixed(y1)));
                 mat.ty = (double)fixed2float(iy0);
                 mat.xy = ((double)fixed2float(iy1 - iy0)/width);
+            }
+        }
+    }
+
+    /* When rendering to a pattern accumulator, if we are downscaling
+     * then enable interpolation, as otherwise dropouts can cause
+     * serious problems. */
+    if (in_pattern_accumulator) {
+        if (orthogonal == 1) {
+            if ((mat.xx > -1 && mat.xx < 1) || (mat.yy > -1 && mat.yy < 1)) {
+                force_interpolation = true;
+            }
+        } else if (orthogonal == 2) {
+            if ((mat.xy > -1 && mat.xy < 1) || (mat.yx > -1 && mat.yx < 1)) {
+                force_interpolation = true;
             }
         }
     }
@@ -709,7 +725,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
      * the given sub-image, or else is constructing output out of
      * overlapping pieces.
      */
-    penum->interpolate = pim->Interpolate;
+    penum->interpolate = pim->Interpolate | force_interpolation;
     penum->x_extent = x_extent;
     penum->y_extent = y_extent;
     penum->posture =
