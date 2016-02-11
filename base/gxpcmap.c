@@ -1421,8 +1421,8 @@ pattern_accum_dev_spec_op(gx_device *dev, int dso, void *data, int size)
         (padev->target == 0 ? gs_currentdevice(pinst->saved) :
          padev->target);
 
-    if (dso == gxdso_gridfit_images)
-        return 1;
+    if (dso == gxdso_in_pattern_accumulator)
+        return (pinst->templat.PaintType == 2 ? 2 : 1);
 
     return dev_proc(target, dev_spec_op)(target, dso, data, size);
 }

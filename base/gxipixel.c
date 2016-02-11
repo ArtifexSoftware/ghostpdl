@@ -249,6 +249,8 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     bool device_color = true;
     gs_fixed_rect obox, cbox;
     bool gridfitimages = 0;
+    bool in_pattern_accumulator = 0;
+    int orthogonal;
 
     penum->clues = NULL;
     penum->icc_setup.has_transfer = false;
@@ -291,9 +293,26 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
      * either 1 pixel high, or wide, and then not if we are rendering a
      * glyph (such as from a type3 font).
      */
-    gridfitimages = (dev_proc(dev, dev_spec_op)(dev, gxdso_gridfit_images, NULL, 0));
-    if (gridfitimages < 0)
-        gridfitimages = 0;
+
+    /* Ask the device if we are in a pattern accumulator */
+    in_pattern_accumulator = (dev_proc(dev, dev_spec_op)(dev, gxdso_in_pattern_accumulator, NULL, 0));
+    if (in_pattern_accumulator < 0)
+        in_pattern_accumulator = 0;
+
+    /* Figure out if we are orthogonal */
+    if (mat.xy == 0 && mat.yx == 0)
+        orthogonal = 1;
+    else if (mat.xx == 0 && mat.yy == 0)
+        orthogonal = 2;
+    else
+        orthogonal = 0;
+
+    /* If we are in a pattern accumulator, we choose to always grid fit
+     * orthogonal images. We do this by asking the device whether we
+     * should grid fit. This allows us to avoid nasty blank lines around
+     * the edges of cells.
+     */
+    gridfitimages = in_pattern_accumulator && orthogonal;
 
     if (pis != NULL && pis->is_gstate && ((gs_state *)pis)->show_gstate != NULL) {
         /* If we're a graphics state, and we're in a text object, then we
@@ -304,7 +323,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
          * ones in a pattern device), we only grid fit imagemasks */
     } else if (pis != NULL && pis->fill_adjust.x == 0 && pis->fill_adjust.y == 0) {
         /* If fill adjust is disabled, so is grid fitting */
-    } else if (mat.xy == 0 && mat.yx == 0) {
+    } else if (orthogonal == 1) {
         if (width == 1 || gridfitimages) {
             if (mat.xx > 0) {
                 fixed ix0 = int2fixed(fixed2int(float2fixed(mat.tx)));
@@ -335,7 +354,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
                 mat.yy = ((double)fixed2float(iy1 - iy0)/height);
             }
         }
-    } else if (mat.xx == 0 && mat.yy == 0) {
+    } else if (orthogonal == 2) {
         if (height == 1 || gridfitimages) {
             if (mat.yx > 0) {
                 fixed ix0 = int2fixed(fixed2int(float2fixed(mat.tx)));
