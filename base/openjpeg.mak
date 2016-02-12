@@ -102,10 +102,10 @@ $(OPEN_JPEG_GEN)openjpeg.dev : $(OPEN_JPEG_GEN)openjpeg_$(SHARE_JPX).dev \
  $(OPEN_JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(OPEN_JPEG_GEN)openjpeg_$(SHARE_JPX).dev $(OPEN_JPEG_GEN)openjpeg.dev
 
-# external link .dev
+# external link .dev - empty, as we add the lib to LDFLAGS
 $(OPEN_JPEG_GEN)openjpeg_1.dev : $(OPEN_JPEG_MAK) $(ECHOGS_XE) \
  $(OPEN_JPEG_MAK) $(MAKEDIRS)
-	$(SETMOD) $(OPEN_JPEG_GEN)openjpeg_1 -lib $(JPX_LIBS)
+	$(SETMOD) $(OPEN_JPEG_GEN)openjpeg_1
 
 # compile our own .dev
 $(OPEN_JPEG_GEN)openjpeg_0.dev : $(ECHOGS_XE) $(open_jpeg_OBJS) \
