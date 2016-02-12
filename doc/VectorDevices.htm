@@ -517,7 +517,8 @@ is temporary and will be removed in future releases, do not rely on its availabi
 <p>
 The <code>ColorConversionStrategy</code> switch can now be set to <code>LeaveColorUnchanged</code>, <code>Gray</code>, <code>RGB</code>, <code>CMYK</code> or
 <code>UseDeviceIndependentColor</code>. Note that, particularly for ps2write, <code>LeaveColorUnchanged</code> may still need to convert
-colors into a different space (ICCbased colors cannot be represented in PostScript for example).
+colors into a different space (ICCbased colors cannot be represented in PostScript for example). <code>ColorConversionStrategy</code> can be specified either as; a string
+by using the <code>-s</code> switch (<code>-sColorConversionStrategy=RGB</code>) or as a name using the <code>-d</code> switch (<code>-dColorConversionStrategy=/RGB</code>).
 </p>
 <p>ps2write cannot currently convert into device-independent color spaces, and so <code>UseDeviceIndependentColor</code>should not be used with ps2write (oe eps2write).
 </p>
@@ -1160,7 +1161,7 @@ It accepts a four-value array in the same format as the
 
 Here is a sample command line to invoke Ghostscript for generating a PDF/X-3 document :
 <blockquote><code>
-gs -dPDFX -dBATCH -dNOPAUSE -sColorConverionStrategy=/CMYK -sDEVICE=pdfwrite -sOutputFile=out-x3.pdf PDFX_def.ps input.ps
+gs -dPDFX -dBATCH -dNOPAUSE -sColorConverionStrategy=CMYK -sDEVICE=pdfwrite -sOutputFile=out-x3.pdf PDFX_def.ps input.ps
 </code></blockquote>
 
 <p>
