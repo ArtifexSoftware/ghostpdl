@@ -605,6 +605,32 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
                                       (unsigned int)(glyph - GS_MIN_CID_GLYPH),
                                       buf);
                             pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
+                            if (pdev->PDFA != 0) {
+                                switch (pdev->PDFACompatibilityPolicy) {
+                                    /* Default behaviour matches Adobe Acrobat, warn and continue,
+                                     * output file will not be PDF/A compliant
+                                     */
+                                    case 0:
+                                    case 1:
+                                    case 3:
+                                        emprintf(pdev->memory,
+                                             "All used glyphs mst be present in fonts for PDF/A, reverting to normal PDF output.\n");
+                                        pdev->AbortPDFAX = true;
+                                        pdev->PDFA = 0;
+                                        break;
+                                    case 2:
+                                        emprintf(pdev->memory,
+                                             "All used glyphs mst be present in fonts for PDF/A, aborting conversion.\n");
+                                        return gs_error_invalidfont;
+                                        break;
+                                    default:
+                                        emprintf(pdev->memory,
+                                             "All used glyphs mst be present in fonts for PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                                        pdev->AbortPDFAX = true;
+                                        pdev->PDFA = 0;
+                                        break;
+                                }
+                            }
                         }
                         cid = 0, code = 1;  /* undefined glyph. */
                         notdef_subst = true;
