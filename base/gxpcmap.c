@@ -95,6 +95,7 @@ static dev_proc_copy_color(pattern_accum_copy_color);
 static dev_proc_copy_planes(pattern_accum_copy_planes);
 static dev_proc_get_bits_rectangle(pattern_accum_get_bits_rectangle);
 static dev_proc_fill_rectangle_hl_color(pattern_accum_fill_rectangle_hl_color);
+static dev_proc_dev_spec_op(pattern_accum_dev_spec_op);
 
 /* The device descriptor */
 static const gx_device_pattern_accum gs_pattern_accum_device =
@@ -168,7 +169,7 @@ static const gx_device_pattern_accum gs_pattern_accum_device =
      NULL,                              /* push_transparency_state */
      NULL,                              /* pop_transparency_state */
      NULL,                              /* put_image */
-     NULL,                              /* dev_spec_op */
+     pattern_accum_dev_spec_op,         /* dev_spec_op */
      pattern_accum_copy_planes,         /* copy_planes */
      NULL,                              /* get_profile */
      NULL,                              /* set_graphics_type_tag */
@@ -1409,4 +1410,19 @@ gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
     pdc->mask.id = pinst->id;
     pdc->mask.m_tile = 0;
     return gx_pattern_load(pdc, pis, dev, select);
+}
+
+int
+pattern_accum_dev_spec_op(gx_device *dev, int dso, void *data, int size)
+{
+    gx_device_pattern_accum *const padev = (gx_device_pattern_accum *)dev;
+    const gs_pattern1_instance_t *pinst = padev->instance;
+    gx_device *target =
+        (padev->target == 0 ? gs_currentdevice(pinst->saved) :
+         padev->target);
+
+    if (dso == gxdso_in_pattern_accumulator)
+        return (pinst->templat.PaintType == 2 ? 2 : 1);
+
+    return dev_proc(target, dev_spec_op)(target, dso, data, size);
 }
