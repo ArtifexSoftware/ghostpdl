@@ -118,7 +118,7 @@ libcups.config-clean :
 
 # instantiate the requested build option (shared or compiled in)
 $(LIBCUPSGEN)lcups.dev : $(LIBCUPSGEN)lcups_$(SHARE_LCUPS).dev \
- $(LIBCUPS_DEPS)
+ $(LCUPS_MAK) $(MAKEDIRS)
 	$(CP_) $(LIBCUPSGEN)lcups_$(SHARE_LCUPS).dev $(LIBCUPSGEN)lcups.dev
 
 # Define the shared version.

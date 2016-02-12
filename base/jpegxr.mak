@@ -110,7 +110,7 @@ $(JPEGXR_GEN)jpegxr_1.dev : $(ECHOGS_XE) $(JPEGXR_MAK) $(MAKEDIRS)
 
 # Copy the target definition we want
 $(JPEGXR_GEN)jpegxr.dev : $(TOP_MAKEFILES) \
- $(JPEGXR_GEN)jpegxr_$(SHARE_JPEGXR).dev $(JPEGXR_DEPS)
+ $(JPEGXR_GEN)jpegxr_$(SHARE_JPEGXR).dev $(JPEGXR_MAK) $(MAKEDIRS)
 	$(CP_) $(JPEGXR_GEN)jpegxr_$(SHARE_JPEGXR).dev $(JPEGXR_GEN)jpegxr.dev
 
 

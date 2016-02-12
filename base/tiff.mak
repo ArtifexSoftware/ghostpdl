@@ -184,9 +184,16 @@ $(TIFFOBJ)tif_zip.$(OBJ) : $(TIFFSRC)/libtiff/tif_zip.c $(TIFFDEP)
 
 # instead of the platform specific files above, we include our own which stubs out
 # the platform specific code, and routes via the Ghostscript I/O functions.
-$(TIFFOBJ)gstiffio.$(OBJ) : $(GLSRC)gstiffio.c $(gstiffio_h) $(PDEVH) $(stdint__h) $(stdio__h) $(time__h)\
+$(TIFFOBJ)gstiffio_0.$(OBJ) : $(GLSRC)gstiffio.c $(gstiffio_h) $(PDEVH) $(stdint__h) $(stdio__h) $(time__h)\
     $(gscdefs_h) $(gstypes_h) $(stream_h) $(strmio_h) $(malloc__h) $(TIFFDEP)
-	$(TIFFCC) $(TIFFO_)gstiffio.$(OBJ) $(D_)SHARE_LIBTIFF=$(SHARE_LIBTIFF) $(C_) $(GLSRC)gstiffio.c
+	$(TIFFCC) $(TIFFO_)gstiffio_0.$(OBJ) $(D_)SHARE_LIBTIFF=$(SHARE_LIBTIFF) $(C_) $(GLSRC)gstiffio.c
+
+$(TIFFOBJ)gstiffio_1.$(OBJ) : $(GLSRC)gstiffio.c $(gstiffio_h) $(PDEVH) $(stdint__h) $(stdio__h) $(time__h)\
+    $(gscdefs_h) $(gstypes_h) $(stream_h) $(strmio_h) $(malloc__h) $(LIBTIFF_MAK) $(MAKEDIRS)
+	$(TIFFCC) $(TIFFO_)gstiffio_1.$(OBJ) $(D_)SHARE_LIBTIFF=$(SHARE_LIBTIFF) $(C_) $(GLSRC)gstiffio.c
+
+$(TIFFOBJ)gstiffio.$(OBJ) : $(TIFFOBJ)gstiffio_$(SHARE_LIBTIFF).$(OBJ) $(LIBTIFF_MAK) $(MAKEDIRS)
+	$(CP_) $(TIFFOBJ)gstiffio_$(SHARE_LIBTIFF).$(OBJ) $(TIFFOBJ)gstiffio.$(OBJ)
 
 $(TIFFGEN)tif_config.h: $(TIFFCONFIG_H) $(LIBTIFF_MAK) $(MAKEDIRS)
 	$(CP_) $(TIFFCONFIG_H) $(TIFFGEN)tif_config.h
