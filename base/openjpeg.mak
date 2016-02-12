@@ -105,7 +105,7 @@ $(OPEN_JPEG_GEN)openjpeg.dev : $(OPEN_JPEG_GEN)openjpeg_$(SHARE_JPX).dev \
 # external link .dev
 $(OPEN_JPEG_GEN)openjpeg_1.dev : $(OPEN_JPEG_MAK) $(ECHOGS_XE) \
  $(OPEN_JPEG_MAK) $(MAKEDIRS)
-	$(SETMOD) $(OPEN_JPEG_GEN)openjpeg_1 -lib lib_openjpeg
+	$(SETMOD) $(OPEN_JPEG_GEN)openjpeg_1 -lib $(JPX_LIBS)
 
 # compile our own .dev
 $(OPEN_JPEG_GEN)openjpeg_0.dev : $(ECHOGS_XE) $(open_jpeg_OBJS) \

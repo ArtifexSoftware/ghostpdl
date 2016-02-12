@@ -1432,8 +1432,6 @@ if test x$with_luratech != xno; then
   fi
 fi
 
-OPENJPEGDIR=$srcdir/openjpeg
-
 if test "x$ac_cv_header_stdint_h" = "xyes"; then
   CFLAGS_OPJ_HAVE_STDINT_H="-DOPJ_HAVE_STDINT_H=1"
 else
@@ -1468,6 +1466,8 @@ AC_CHECK_DECL(lrintf, , [OPJ_LRINTF_SUBST="-D\"lrintf(a)\"=\"((long)(a+0.5))\"]"
 AC_ARG_ENABLE([openjpeg], AC_HELP_STRING([--disable-openjpeg],
         [Do not use OpenJPEG for JPX decoding]))
 
+OPENJPEGDIR=$srcdir/openjpeg
+
 if test "x$JPX_DECODER" = "x"; then
   if test "x$enable_openjpeg" != "xno"; then
     AC_MSG_CHECKING([for local OpenJPEG library source])
@@ -1489,12 +1489,30 @@ if test "x$JPX_DECODER" = "x"; then
       JPXDEVS='$(PSD)jpx.dev'
     else
       AC_MSG_RESULT([no])
+      if test x"$PKGCONFIG" != x""; then
+        AC_MSG_CHECKING(for OpenJPEG2)
+        if $PKGCONFIG --exists libopenjp2; then
+          JPX_AUTOCONF_CFLAGS="`$PKGCONFIG libopenjp2 --cflags`"
+          JPX_AUTOCONF_LIBS="`$PKGCONFIG libopenjp2 --libs`"
+          SHARE_JPX=1
+          AC_MSG_RESULT([yes])
+        else
+          AC_MSG_RESULT([no])
+        fi
+      else
+        AC_CHECK_LIB(openjp2, opj_stream_set_user_data,
+            [JPX_AUTOCONF_CFLAGS="$JPX_AUTOCONF_CFLAGS $OPJ_LRINTF_SUBST -DUSE_JPIP -DUSE_OPENJPEG_JP2 $CFLAGS_OPJ_HAVE_STDINT_H $CFLAGS_OPJ_HAVE_INTTYPES_H $CFLAGS_OPJ_BIGENDIAN $CFLAGS_OPJ_HAVE_FSEEKO";
+             JPX_AUTOCONF_LIBS="-lopenjp2";
+             SHARE_JPX=1]
+        )
+      fi
     fi
   fi
 fi
 
 AC_SUBST(JPX_DECODER)
 AC_SUBST(JPX_AUTOCONF_CFLAGS)
+AC_SUBST(JPX_AUTOCONF_LIBS)
 AC_SUBST(JPXDIR)
 AC_SUBST(SHARE_JPX)
 AC_SUBST(JPXDEVS)
