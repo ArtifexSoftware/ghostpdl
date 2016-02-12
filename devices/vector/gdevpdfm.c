@@ -685,9 +685,43 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
              (pdf_key_eq(Action + 1, "/GoToR") && File) ||
              pdf_key_eq(Action + 1, "/Article"))
             ) {
-            cos_dict_t *adict = cos_dict_alloc(pdev, "action dict");
+            cos_dict_t *adict;
             cos_value_t avalue;
 
+            if (pdf_key_eq(Action + 1, "/Launch") && pdev->PDFA != 0) {
+                switch (pdev->PDFACompatibilityPolicy) {
+                    /* Default behaviour matches Adobe Acrobat, warn and continue,
+                     * output file will not be PDF/A compliant
+                     */
+                    case 0:
+                        emprintf(pdev->memory,
+                                 "Launch annotations not permitted in PDF/A, reverting to normal PDF output\n");
+                        pdev->AbortPDFAX = true;
+                        pdev->PDFA = 0;
+                        break;
+                        /* Since the annotation would break PDF/A compatibility, do not
+                         * include it, but warn the user that it has been dropped.
+                         */
+                    case 1:
+                        emprintf(pdev->memory,
+                                 "Launch annotations not permitted in PDF/A,  cannot drop annotation, aborting conversion\n");
+                        return_error (gs_error_typecheck);
+                        break;
+                    case 2:
+                        emprintf(pdev->memory,
+                                 "Launch annotations not permitted in PDF/A,  aborting conversion\n");
+                        return_error (gs_error_typecheck);
+                        break;
+                    default:
+                        emprintf(pdev->memory,
+                                 "Launch annotations not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                        pdev->AbortPDFAX = true;
+                        pdev->PDFA = 0;
+                        break;
+                }
+            }
+
+            adict = cos_dict_alloc(pdev, "action dict");
             if (adict == 0)
                 return_error(gs_error_VMerror);
             if (!for_outline) {
@@ -744,6 +778,42 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
                     (code = pdf_scan_token_composite(&scan, end, &value.data)) != 1)
                     break;
                 value.size = scan - value.data;
+                if (pdev->PDFA != 0 && (pdf_key_eq(&key, "/Subtype") || pdf_key_eq(&key, "/S"))) {
+                    if (pdf_key_eq(&value, "/Launch")) {
+                        switch (pdev->PDFACompatibilityPolicy) {
+                            /* Default behaviour matches Adobe Acrobat, warn and continue,
+                             * output file will not be PDF/A compliant
+                             */
+                            case 0:
+                                emprintf(pdev->memory,
+                                         "Launch annotations not permitted in PDF/A, reverting to normal PDF output\n");
+                                pdev->AbortPDFAX = true;
+                                pdev->PDFA = 0;
+                                break;
+                                /* Since the annotation would break PDF/A compatibility, do not
+                                 * include it, but warn the user that it has been dropped.
+                                 */
+                            case 1:
+                                emprintf(pdev->memory,
+                                         "Launch annotations not permitted in PDF/A,  cannot drop annotation, aborting conversion\n");
+                                gs_free_object(pdev->memory->stable_memory, adict,  "action dict");
+                                return_error (gs_error_typecheck);
+                                break;
+                            case 2:
+                                emprintf(pdev->memory,
+                                         "Launch annotations not permitted in PDF/A,  aborting conversion\n");
+                                gs_free_object(pdev->memory->stable_memory, adict,  "action dict");
+                                return_error (gs_error_typecheck);
+                                break;
+                            default:
+                                emprintf(pdev->memory,
+                                         "Launch annotations not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                                pdev->AbortPDFAX = true;
+                                pdev->PDFA = 0;
+                                break;
+                        }
+                    }
+                }
                 if (pdf_key_eq(&key, "/Dest") || pdf_key_eq(&key, "/D")) {
                     param_string_from_string(key, "/D");
                     if (value.data[0] == '(') {
