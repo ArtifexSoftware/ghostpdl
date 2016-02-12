@@ -300,13 +300,6 @@ enum {
     gxdso_adjust_bandheight,
     /* Retrieve a *single* device parameter */
     gxdso_get_dev_param,
-    /* gxdso_in_pattern_accumulator:
-     *     data = NULL
-     *     size = 0
-     * Returns +ve value if we are rendering into a pattern accumulator
-     * device.
-     */
-    gxdso_in_pattern_accumulator,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };
