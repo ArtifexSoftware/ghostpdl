@@ -575,7 +575,7 @@ int
 gxht_thresh_image_init(gx_image_enum *penum)
 {
     int code = 0;
-    fixed ox, oy;
+    fixed ox;
     int temp;
     int dev_width, max_height;
     int spp_out;
@@ -618,7 +618,6 @@ gxht_thresh_image_init(gx_image_enum *penum)
         int col_length = fixed2int_var_rounded(any_abs(penum->x_extent.y));
 
         ox = dda_current(penum->dda.pixel0.x);
-        oy = dda_current(penum->dda.pixel0.y);
         temp = gxht_dda_length(&penum->dda.pixel0.y, penum->rect.w);
         if (col_length < temp)
             col_length = temp;          /* choose max to make sure line_size is large enough */
@@ -684,7 +683,6 @@ gxht_thresh_image_init(gx_image_enum *penum)
         /* Initialize the ht_landscape stuff to zero */
         memset(&(penum->ht_landscape), 0, sizeof(ht_landscape_info_t));
         ox = dda_current(penum->dda.pixel0.x);
-        oy = dda_current(penum->dda.pixel0.y);
         dev_width = gxht_dda_length(&penum->dda.pixel0.x, penum->rect.w);
         /* Get the bit position so that we can do a copy_mono for
            the left remainder and then 16 bit aligned copies for the
