@@ -75,6 +75,7 @@ static irender_proc(image_render_interpolate_landscape_icc);
 static irender_proc(image_render_interpolate_landscape_masked);
 static irender_proc(image_render_interpolate_landscape_masked_hl);
 
+#if 0 // Unused now, but potentially useful in the future
 static bool
 is_high_level_device(gx_device *dev)
 {
@@ -103,21 +104,52 @@ is_high_level_device(gx_device *dev)
 
     return highlevel;
 }
+#endif
+
+static bool
+device_allows_imagemask_interpolation(gx_device *dev)
+{
+    char data[] = "NoInterpolateImagemasks";
+    dev_param_req_t request;
+    gs_c_param_list list;
+    int nointerpolate = 0;
+    int code;
+
+    gs_c_param_list_write(&list, dev->memory);
+    /* Stuff the data into a structure for passing to the spec_op */
+    request.Param = data;
+    request.list = &list;
+    code = dev_proc(dev, dev_spec_op)(dev, gxdso_get_dev_param, &request, sizeof(dev_param_req_t));
+    if (code < 0 && code != gs_error_undefined) {
+        gs_c_param_list_release(&list);
+        return 0;
+    }
+    gs_c_param_list_read(&list);
+    code = param_read_bool((gs_param_list *)&list,
+            "NoInterpolateImagemasks",
+            &nointerpolate);
+    gs_c_param_list_release(&list);
+    if (code < 0)
+        return 0;
+
+    return !nointerpolate;
+}
 
 #define DC_IS_NULL(pdc)\
   (gx_dc_is_pure(pdc) && (pdc)->colors.pure == gx_no_color_index)
 
+/* Returns < 0 for error, 0 for pure color, 1 for high level */
 static int mask_suitable_for_interpolation(gx_image_enum *penum)
 {
     gx_device_color * const pdc1 = penum->icolor1;
     int code;
-    int high_level = 1;
+    int high_level_color = 1;
 
     if (gx_dc_is_pure(pdc1) && (pdc1)->colors.pure != gx_no_color_index &&
         dev_proc(penum->dev, copy_alpha) != NULL &&
         dev_proc(penum->dev, copy_alpha) != gx_no_copy_alpha) {
         /* We have a 'pure' color, and a valid copy_alpha. We can work with that. */
-        high_level = 0;
+        high_level_color = 0;
     } else if (dev_proc(penum->dev, copy_alpha_hl_color) == NULL) {
         /* No copy_alpha_hl_color. We're out of luck. */
         return -1;
@@ -130,11 +162,12 @@ static int mask_suitable_for_interpolation(gx_image_enum *penum)
         return -1;
     }
 
-    /* Never turn this on for high level devices */
-    if (is_high_level_device(penum->dev))
+    /* Never turn this on for devices that disallow it (primarily
+     * high level devices) */
+    if (!device_allows_imagemask_interpolation(penum->dev))
         return -1;
 
-    return high_level;
+    return high_level_color;
 }
 
 irender_proc_t

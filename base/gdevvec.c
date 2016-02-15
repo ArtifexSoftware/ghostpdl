@@ -973,6 +973,9 @@ int gdev_vector_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "HighLevelDevice") == 0) {
         return param_write_bool(plist, "HighLevelDevice", &bool_true);
     }
+    if (strcmp(Param, "NoInterpolateImagemasks") == 0) {
+        return param_write_bool(plist, "NoInterpolateImagemasks", &bool_true);
+    }
     return gx_default_get_param(dev, Param, list);
 }
 
@@ -994,6 +997,8 @@ gdev_vector_get_params(gx_device * dev, gs_param_list * plist)
         return ecode;
     if ((ecode = param_write_bool(plist, "HighLevelDevice", &bool_true)) < 0)
         return ecode;
+    if ((ecode = param_write_bool(plist, "NoInterpolateImagemasks", &bool_true)) < 0)
+        return ecode;
     return code;
 }
 
@@ -1007,9 +1012,13 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
     bool ignb;
     gs_param_name param_name;
     gs_param_string ofns;
-    bool open = dev->is_open, HighLevelDevice;
+    bool open = dev->is_open, HighLevelDevice, NoInterpolateImagemasks;
 
     code = param_read_bool(plist, (param_name = "HighLevelDevice"), &HighLevelDevice);
+    if (code < 0)
+        return code;
+
+    code = param_read_bool(plist, (param_name = "NoInterpolateImagemasks"), &NoInterpolateImagemasks);
     if (code < 0)
         return code;
 
