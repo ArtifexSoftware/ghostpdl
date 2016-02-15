@@ -3391,6 +3391,9 @@ Ghostscript attempts to find an optimum balance between speed and memory
 consumption, but there are some cases in which you may get a very large
 speedup by telling Ghostscript to use more memory.
 
+Please note that this discussion relates to devices which produce a bitmap format as the output.
+These parameters have no effect on the vector devices, such as pdfwrite.
+
 <ul>
 <li>
 For raster printers and image format (jpeg*, tiff*, png* ...) devices,
@@ -3398,7 +3401,7 @@ performance can be 'tuned' by adjusting some of the parameters related
 to banding (clist) options (refer to: <a href="Language.htm#Banding_parameters">
 Banding Parameters</a>).
 <p>
-All devices may use a display list ("clist") and use banding when processing
+All devices may use a display list ("clist") and use banding when rendering
 PDF 1.4 transparency. This prevents allocation of excessively large amounts of
 memory for the transparency buffer stack. The <code>-dMaxBitmap=</code> option
 is used to control when to use the display list, and the other banding parameters

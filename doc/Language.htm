@@ -2009,7 +2009,8 @@ the band buffer in the 'main' parsing thread.
 <p>If <code>NumRenderingThreads</code> is &gt; 0, then the background printing thread
 will use the specified number of rendering threads as children of the background printing
 thread. The background printing thread will perform any processing of the raster data
-delivered by the rendering threads.
+delivered by the rendering threads. Note that BGPrint is disabled for vector devices such as pdfwrite
+and NumRenderingThreads has no effect on these devices eitehr.
 </dl>
 
 <dl>
@@ -2077,6 +2078,11 @@ processor cores for best throughput.
 <p>Note that each thread will allocate a band buffer (size determined by the
 <code>BufferSpace</code> or <code>BandBufferSpace</code> values) in addition to
 the band buffer in the 'main' thread.
+</p>
+<p>Additoinally note that ths parameter has no effect with devices which do not generally
+render to a bitmap output, such as the vector devices (eg pdfwrite) and has no effect
+when rendering, but not using a clist. See <a href="Use.htm#Improving_performance">Improving_performance</a>
+</p>
 </dl>
 
 <dl>
