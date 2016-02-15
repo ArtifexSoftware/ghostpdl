@@ -47,4 +47,8 @@ int gxht_thresh_image_init(gx_image_enum *penum);
 int gxht_thresh_planes(gx_image_enum *penum, fixed xrun, int dest_width,
                        int dest_height, byte *thresh_align, gx_device * dev,
                        int offset_contone[], int contone_stride);
+
+/* Helper function for an operation performed several times */
+int gxht_dda_length(gx_dda_fixed *dda, int src_size);
+
 #endif /* gshtx_INCLUDED */

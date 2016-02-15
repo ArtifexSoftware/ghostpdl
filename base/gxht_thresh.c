@@ -619,8 +619,7 @@ gxht_thresh_image_init(gx_image_enum *penum)
 
         ox = dda_current(penum->dda.pixel0.x);
         oy = dda_current(penum->dda.pixel0.y);
-        temp = (int) fabs((long) fixed2int_var_rounded(oy + penum->x_extent.y) -
-                         fixed2int_var_rounded(oy));
+        temp = gxht_dda_length(&penum->dda.pixel0.y, penum->rect.w);
         if (col_length < temp)
             col_length = temp;          /* choose max to make sure line_size is large enough */
         temp = (col_length + LAND_BITS)/LAND_BITS;      /* round up to allow for offset bits */
@@ -686,9 +685,7 @@ gxht_thresh_image_init(gx_image_enum *penum)
         memset(&(penum->ht_landscape), 0, sizeof(ht_landscape_info_t));
         ox = dda_current(penum->dda.pixel0.x);
         oy = dda_current(penum->dda.pixel0.y);
-        dev_width =
-           (int) fabs((long) fixed2int_var_rounded(ox + penum->x_extent.x) -
-                    fixed2int_var_rounded(ox));
+        dev_width = gxht_dda_length(&penum->dda.pixel0.x, penum->rect.w);
         /* Get the bit position so that we can do a copy_mono for
            the left remainder and then 16 bit aligned copies for the
            rest.  The right remainder will be OK as it will land in
@@ -1130,4 +1127,11 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
             return gs_rethrow(-1, "Invalid orientation for thresholding");
     }
     return 0;
+}
+
+int gxht_dda_length(gx_dda_fixed *dda, int src_size)
+{
+    gx_dda_fixed d = (*dda);
+    dda_advance(d, src_size);
+    return abs(fixed2int_var_rounded(dda_current(d)) - fixed2int_var_rounded(dda_current(*dda)));
 }

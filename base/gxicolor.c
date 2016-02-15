@@ -497,9 +497,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                memory boundaries when we get offset_bits into the data. */
             /* Can't do this earlier, as GC might move the buffers. */
             xrun = dda_current(penum->dda.pixel0.x);
-            /* match width in gxht_thresh.c dev_width calculation */
-            dest_width = (int) fabs((long) fixed2int_var_rounded(xrun + penum->x_extent.x) -
-                    fixed2int_var_rounded(xrun));
+            dest_width = gxht_dda_length(&penum->dda.pixel0.x, src_size);
             if (penum->x_extent.x < 0)
                 xrun += penum->x_extent.x;
             vdi = penum->hci;
@@ -530,8 +528,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
             dest_width = fixed2int_var_rounded(any_abs(penum->y_extent.x));
             /* match height in gxht_thresh.c dev_width calculation */
             xrun = dda_current(penum->dda.pixel0.y);            /* really yrun, but just used here for landscape */
-            dest_height = (int) fabs((long) fixed2int_var_rounded(xrun + penum->x_extent.y) -
-                    fixed2int_var_rounded(xrun));
+            dest_height = gxht_dda_length(&penum->dda.pixel0.y, src_size);
             data_length = dest_height;
             scale_factor = float2fixed_rounded((float) src_size / (float) dest_height);
             offset_threshold = (-(long)(penum->thresh_buffer)) & 15;
