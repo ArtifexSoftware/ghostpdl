@@ -286,7 +286,11 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
         if (pcmap->CMapName.size == strlen(*pcmn) &&
             !memcmp(*pcmn, pcmap->CMapName.data, pcmap->CMapName.size))
             break;
-    if (*pcmn == 0) {
+
+    /* For PDF/A we need to write out all non-identity CMaps
+     * first force the identity check.
+     */
+    if (*pcmn == 0 || pdev->PDFA != 0) {
         /*
          * PScript5.dll Version 5.2 creates identity CMaps with
          * instandard name. Check this specially here
@@ -295,7 +299,10 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
          */
         is_identity = gs_cmap_is_identity(pcmap, font_index_only);
     }
-    if (*pcmn == 0 && !is_identity) {		/* not standard */
+    /* If the CMap is non-standard, or we are producing PDF/A, and its not
+     * an Identity CMap, then we need to emit it.
+     */
+    if ((*pcmn == 0  || pdev->PDFA != 0) && !is_identity) {		/* not standard */
         pcmres = pdf_find_resource_by_gs_id(pdev, resourceCMap, pcmap->id + font_index_only);
         if (pcmres == 0) {
             /* Create and write the CMap object. */
