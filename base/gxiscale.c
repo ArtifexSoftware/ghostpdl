@@ -1649,7 +1649,7 @@ image_render_interpolate_landscape_masked(gx_image_enum * penum,
                 if_debug1m('B', penum->memory, "[B]Interpolated masked (rotated) row %d:\n[B]",
                            penum->line_xy);
                 psrc += pss->params.LeftMarginOut * spp_decode;
-                for (x = xo; x < xe;) {
+                for (x = xo; x < xe; x++) {
                     code = (*dev_proc(dev, copy_alpha))(dev, psrc, 0, 0,
                         gx_no_bitmap_id, ry, x, 1, 1, color, 8);
                     if (code < 0)
