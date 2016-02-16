@@ -581,6 +581,7 @@ gxht_thresh_image_init(gx_image_enum *penum)
     int spp_out;
     int k;
     gx_ht_order *d_order;
+    gx_dda_fixed dda_ht;
 
     if (gx_device_must_halftone(penum->dev)) {
         if (penum->pis != NULL && penum->pis->dev_ht != NULL) {
@@ -597,6 +598,8 @@ gxht_thresh_image_init(gx_image_enum *penum)
         }
     }
     spp_out = penum->dev->color_info.num_components;
+    /* Precompute values needed for rasterizing. */
+    penum->dxx = float2fixed(penum->matrix.xx + fixed2float(fixed_epsilon) / 2);
     /* If the image is landscaped then we want to maintain a buffer
        that is sufficiently large so that we can hold a byte
        of halftoned data along the column.  This way we avoid doing
@@ -616,9 +619,12 @@ gxht_thresh_image_init(gx_image_enum *penum)
        data.  */
     if (penum->posture == image_landscape) {
         int col_length = fixed2int_var_rounded(any_abs(penum->x_extent.y));
+        dda_ht = penum->dda.pixel0.y;
+        if (penum->dxx > 0)
+            dda_translate(dda_ht, -fixed_epsilon);      /* to match rounding in non-fast code */
 
         ox = dda_current(penum->dda.pixel0.x);
-        temp = gxht_dda_length(&penum->dda.pixel0.y, penum->rect.w);
+        temp = gxht_dda_length(&dda_ht, penum->rect.w);
         if (col_length < temp)
             col_length = temp;          /* choose max to make sure line_size is large enough */
         temp = (col_length + LAND_BITS)/LAND_BITS;      /* round up to allow for offset bits */
@@ -680,10 +686,13 @@ gxht_thresh_image_init(gx_image_enum *penum)
            boundary after an offset to ensure that we can make use
            of  the SSE2 operations for thresholding.  We do the
            allocations now to avoid doing them with every line */
+        dda_ht = penum->dda.pixel0.x;
+        if (penum->dxx > 0)
+            dda_translate(dda_ht, -fixed_epsilon);      /* to match rounding in non-fast code */
         /* Initialize the ht_landscape stuff to zero */
         memset(&(penum->ht_landscape), 0, sizeof(ht_landscape_info_t));
-        ox = dda_current(penum->dda.pixel0.x);
-        dev_width = gxht_dda_length(&penum->dda.pixel0.x, penum->rect.w);
+        ox = dda_current(dda_ht);
+        dev_width = gxht_dda_length(&dda_ht, penum->rect.w);
         /* Get the bit position so that we can do a copy_mono for
            the left remainder and then 16 bit aligned copies for the
            rest.  The right remainder will be OK as it will land in
@@ -737,8 +746,6 @@ gxht_thresh_image_init(gx_image_enum *penum)
 #endif
         }
     }
-    /* Precompute values needed for rasterizing. */
-    penum->dxx = float2fixed(penum->matrix.xx + fixed2float(fixed_epsilon) / 2);
     return code;
 }
 

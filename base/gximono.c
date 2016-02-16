@@ -837,14 +837,19 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     }
     src_size = penum->rect.w;
 
+    /* Set up the dda.  We could move this out but the cost is pretty small */
+    dda_ht = (posture == image_portrait) ? penum->dda.pixel0.x : penum->dda.pixel0.y;
+    if (penum->dxx > 0)
+        dda_translate(dda_ht, -fixed_epsilon);      /* to match rounding in non-fast code */
+
     switch (posture) {
         case image_portrait:
             /* Figure out our offset in the contone and threshold data
                buffers so that we ensure that we are on the 128bit
                memory boundaries when we get offset_bits into the data. */
             /* Can't do this earlier, as GC might move the buffers. */
-            xrun = dda_current(penum->dda.pixel0.x);
-            dest_width = gxht_dda_length(&penum->dda.pixel0.x, src_size);
+            xrun = dda_current(dda_ht);
+            dest_width = gxht_dda_length(&dda_ht, src_size);
             if (penum->x_extent.x < 0)
                 xrun += penum->x_extent.x;
             vdi = penum->hci;
@@ -874,8 +879,8 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             contone_stride = penum->line_size;
             dest_width = fixed2int_var_rounded(any_abs(penum->y_extent.x));
             /* match height in gxht_thresh.c dev_width calculation */
-            xrun = dda_current(penum->dda.pixel0.y);            /* really yrun, but just used here for landscape */
-            dest_height = gxht_dda_length(&penum->dda.pixel0.y, src_size);
+            xrun = dda_current(dda_ht);            /* really yrun, but just used here for landscape */
+            dest_height = gxht_dda_length(&dda_ht, src_size);
             data_length = dest_height;
             scale_factor = float2fixed_rounded((float) src_size / (float) dest_height);
             offset_threshold = (-(long)(penum->thresh_buffer)) & 15;
@@ -930,10 +935,6 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                               LAND_BITS * k * contone_stride;
         }
     }
-    /* Set up the dda.  We could move this out but the cost is pretty small */
-    dda_ht = (posture == image_portrait) ? penum->dda.pixel0.x : penum->dda.pixel0.y;
-    if (penum->dxx > 0)
-        dda_translate(dda_ht, -fixed_epsilon);      /* to match rounding in non-fast code */
     xr = fixed2int_var_rounded(dda_current(dda_ht));	/* indexes in the destination (contone) */
 
     devc_contone_gray = devc_contone[0];
