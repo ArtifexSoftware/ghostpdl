@@ -289,6 +289,16 @@ pcl_pjl_res(pcl_state_t * pcs)
     return atof(pres);
 }
 
+static int
+pcjob_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
+              pcl_copy_operation_t operation)
+{
+    if (operation & pcl_copy_after_overlay) {
+        psaved->back_side = pcs->back_side;
+    }
+    return 0;
+}
+
 static void
 pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
@@ -374,5 +384,5 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
     }
 }
 const pcl_init_t pcjob_init = {
-    pcjob_do_registration, pcjob_do_reset, 0
+    pcjob_do_registration, pcjob_do_reset, pcjob_do_copy
 };
