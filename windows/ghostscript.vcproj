@@ -1814,6 +1814,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\gdevsclass.c"
+				>
+			</File>
+			<File
 				RelativePath="..\base\genarch.c"
 				>
 			</File>
@@ -3355,6 +3359,10 @@
 			</File>
 			<File
 				RelativePath="..\base\gdevoflt.h"
+				>
+			</File>
+			<File
+				RelativePath="..\base\gdevsclass.h"
 				>
 			</File>
 			<File
