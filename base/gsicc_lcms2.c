@@ -344,7 +344,7 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     if (num_src_lcms != input_buff_desc->num_chan ||
         num_des_lcms != output_buff_desc->num_chan) {
         /* We can't transform this. Someone is doing something odd */
-        return gs_error_unknownerror;
+        return_error(gs_error_unknownerror);
     }
     dwInputFormat = dwInputFormat | CHANNELS_SH(num_src_lcms);
     dwOutputFormat = dwOutputFormat | CHANNELS_SH(num_des_lcms);
@@ -391,12 +391,12 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                                               source_size * input_buff_desc->num_chan, 
                                               "gscms_transform_color_buffer");
             if (temp_src == NULL)
-                return gs_error_VMerror;
+                return_error(gs_error_VMerror);
             temp_des = (byte*) gs_alloc_bytes(dev->memory->non_gc_memory,
                                               des_size * output_buff_desc->num_chan, 
                                               "gscms_transform_color_buffer");
             if (temp_des == NULL)
-                return gs_error_VMerror;
+                return_error(gs_error_VMerror);
             for (y = 0; y < input_buff_desc->num_rows; y++) {
                 byte *src_cm = temp_src;
                 byte *src_buff = inputpos;
@@ -729,7 +729,7 @@ gscms_create(gs_memory_t *memory)
     /* Set our own error handling function */
     ctx = cmsCreateContext((void *)&gs_cms_memhandler, memory);
     if (ctx == NULL)
-        return gs_error_VMerror;
+        return_error(gs_error_VMerror);
 
 #ifdef USE_LCMS2_LOCKING
     cmsPluginTHR(ctx, (void *)&gs_cms_mutexhandler);

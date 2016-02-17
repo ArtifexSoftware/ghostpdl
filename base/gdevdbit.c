@@ -273,7 +273,7 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                 alpha = row_alpha[sx];
                 break;
             default:
-                return gs_error_rangecheck;
+                return_error(gs_error_rangecheck);
             }
 
             if (alpha == 0) {
@@ -412,7 +412,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
                     alpha = row[sx];
                     break;
                 default:
-                    return gs_error_rangecheck;
+                    return_error(gs_error_rangecheck);
                 }
               blend:
                 if (alpha == 0) {

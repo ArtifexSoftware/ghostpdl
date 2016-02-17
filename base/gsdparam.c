@@ -131,7 +131,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     }
     if (strcmp(Param, "NumCopies") == 0) {
         if (dev->NumCopies_set < 0 || (*dev_proc(dev, get_page_device))(dev) == 0) {
-            return gs_error_undefined;
+            return_error(gs_error_undefined);
         } else {
             if (dev->NumCopies_set)
                 return param_write_int(plist, "NumCopies", &dev->NumCopies);
@@ -447,7 +447,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         return param_write_bool(plist, "FILTERVECTOR", &temp_bool);
     }
 
-    return gs_error_undefined;
+    return_error(gs_error_undefined);
 }
 
 /* Get standard parameters. */

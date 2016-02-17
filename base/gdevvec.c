@@ -1085,7 +1085,7 @@ ofe:        param_signal_error(plist, param_name, ecode);
     if (dev->color_info.anti_alias.text_bits != 1 || dev->color_info.anti_alias.graphics_bits != 1) {
         emprintf(dev->memory,
             "\n\n  ERROR:\n    Can't set GraphicsAlphaBits or TextAlphaBits with a vector device.\n");
-        return gs_error_unregistered;
+        return_error(gs_error_unregistered);
     }
 
     if (ofns.data != 0) {

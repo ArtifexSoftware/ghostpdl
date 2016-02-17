@@ -555,7 +555,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
                       "Please contact the Ghostscript developers.\n");
             THIS_NEVER_HAPPENS = 1;
         }
-        return gs_error_unknownerror;
+        return_error(gs_error_unknownerror);
 #else
         /* Use an alpha-buffer device to compress as we go. */
         /* Preserve the reference counts, if any. */

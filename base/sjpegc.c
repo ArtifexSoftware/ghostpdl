@@ -106,7 +106,7 @@ gs_jpeg_log_error(stream_DCT_state * st)
     /* Format the error message */
     (*cinfo->err->format_message) (cinfo, buffer);
     (*st->report_error) ((stream_state *) st, buffer);
-    return gs_error_ioerror;	/* caller will do return_error() */
+    return_error(gs_error_ioerror);	/* caller will do return_error() */
 }
 
 /*

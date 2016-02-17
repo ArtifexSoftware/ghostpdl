@@ -860,7 +860,7 @@ fco_open(fapi_ufst_server * r, const char *font_file_path,
                                         "fco_list_elem");
         if (e == 0) {
             CGIFfco_Close(FSA fcHandle);
-            return gs_error_VMerror;
+            return_error(gs_error_VMerror);
         }
         e->open_count = 0;
         e->fcHandle = fcHandle;
@@ -868,7 +868,7 @@ fco_open(fapi_ufst_server * r, const char *font_file_path,
         if (e->file_path == 0) {
             CGIFfco_Close(FSA fcHandle);
             gs_free(r->mem, e, 0, 0, "fco_list_elem");
-            return gs_error_VMerror;
+            return_error(gs_error_VMerror);
         }
         e->next = r->fco_list;
         r->fco_list = e;
@@ -919,7 +919,7 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
         else {
             tt_size = ff->get_long(ff, gs_fapi_font_feature_TT_size, 0);
             if (tt_size == 0)
-                return gs_error_invalidfont;
+                return_error(gs_error_invalidfont);
 /*            area_length += tt_size + (use_XL_format ? 6 : 4) + 4 + 2;*/
             area_length += tt_size + 6 + 4 + 2;
         }
@@ -947,7 +947,7 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
     }
     buf = gs_malloc(r->mem, area_length, 1, "ufst font data");
     if (buf == 0)
-        return gs_error_VMerror;
+        return_error(gs_error_VMerror);
 
     memset(buf, 0x00, area_length);
 
@@ -975,7 +975,7 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
             if (f == NULL) {
                 ufst_emprintf1(r->mem,
                           "fapiufst: Can't open %s\n", font_file_path);
-                return gs_error_undefinedfilename;
+                return_error(gs_error_undefinedfilename);
             }
             memcpy(d + 1, font_file_path, strlen(font_file_path) + 1);
             d->font_type = get_font_type(f);
@@ -1072,7 +1072,7 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
 
             d->tt_font_body_offset = (LPUB8) fontdata - (LPUB8) d;
             if (ff->serialize_tt_font(ff, fontdata, tt_size))
-                return gs_error_invalidfont;
+                return_error(gs_error_invalidfont);
             *(fontdata + tt_size) = 255;
             *(fontdata + tt_size + 1) = 255;
             *(fontdata + tt_size + 2) = 0;
@@ -1548,7 +1548,7 @@ export_outline(fapi_ufst_server * r, PIFOUTLINE pol, gs_fapi_path * p)
             }
             else if (*segment == 0x02) {
                 points += 2;
-                return gs_error_invalidfont;    /* This must not happen */
+                return_error(gs_error_invalidfont);   /* This must not happen */
             }
             else if (*segment == 0x03) {
                 if ((p->gs_error =
@@ -1562,7 +1562,7 @@ export_outline(fapi_ufst_server * r, PIFOUTLINE pol, gs_fapi_path * p)
                 points += 3;
             }
             else
-                return gs_error_invalidfont;    /* This must not happen */
+                return_error(gs_error_invalidfont);   /* This must not happen */
             segment++;
         }
     }
@@ -2011,7 +2011,7 @@ gs_fapi_ufst_get_char_raster(gs_fapi_server * server, gs_fapi_raster * rast)
     fapi_ufst_server *r = If_to_I(server);
 
     if (!r->bRaster)
-        return gs_error_unregistered;
+        return_error(gs_error_unregistered);
     else if (r->char_data == NULL) {
         rast->height = rast->width = rast->line_step = 0;
         rast->p = 0;
@@ -2165,7 +2165,7 @@ gs_fapi_ufst_init(gs_memory_t * mem, gs_fapi_server ** server)
                                                       (fapi_ufst_server),
                                                       "fapi_ufst_server");
     if (serv == 0)
-        return gs_error_Fatal;
+        return_error(gs_error_Fatal);
     memset(serv, 0, sizeof(*serv));
 
     serv->mem = cmem;

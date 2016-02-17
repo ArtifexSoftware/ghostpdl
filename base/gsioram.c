@@ -391,7 +391,7 @@ iodev_ram_init(gx_io_device * iodev, gs_memory_t * mem)
     }
     if(fs) ramfs_destroy(mem, fs);
     if(state) gs_free_object(mem,state,"iodev_ram_init(state)");
-    return gs_error_VMerror;
+    return_error(gs_error_VMerror);
 }
 
 static void

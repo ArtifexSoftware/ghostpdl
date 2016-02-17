@@ -396,7 +396,7 @@ top:
         pfs->icclink = gsicc_get_link(pis, pis->trans_device, pcs, NULL,
                                       &rendering_params, pis->memory);
         if (pfs->icclink == NULL)
-            return gs_error_VMerror;
+            return_error(gs_error_VMerror);
     } else {
         if (pcs->icc_equivalent != NULL ) {
             /* We have a PS equivalent ICC profile.  We may need to go
@@ -405,7 +405,7 @@ top:
                                           pcs->icc_equivalent, NULL,
                                           &rendering_params, pis->memory);
             if (pfs->icclink == NULL)
-                return gs_error_VMerror;
+                return_error(gs_error_VMerror);
         } else {
             pfs->icclink = NULL;
         }

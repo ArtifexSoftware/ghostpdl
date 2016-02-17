@@ -217,7 +217,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
         /* assert(pas->u.s.decoded); */
         if (strlen(pas->u.s.str) >= arg_str_max) {
             errprintf(errmem, "Command too long: %s\n", pas->u.s.str);
-            return gs_error_Fatal;
+            return_error(gs_error_Fatal);
         } else {
             strcpy(pal->cstr, pas->u.s.str);
             *argstr = pal->cstr;
@@ -330,7 +330,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
         f = (*pal->arg_fopen) (fname, pal->fopen_data);
         if (f == NULL) {
             errprintf(errmem, "Unable to open command line file %s\n", *argstr);
-            return gs_error_Fatal;
+            return_error(gs_error_Fatal);
         }
         pal->depth++;
         pas++;

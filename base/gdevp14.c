@@ -2505,7 +2505,7 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                 alpha_aa = aa_row[sx];
                 break;
             default:
-                return gs_error_rangecheck;
+                return_error(gs_error_rangecheck);
             }
             if (alpha_aa != 0) {  /* This does happen */
                 if (alpha_aa != 255) {

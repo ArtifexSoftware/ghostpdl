@@ -188,7 +188,7 @@ iodev_diskn_init(gx_io_device * iodev, gs_memory_t * mem)
     diskn_state * pstate = gs_alloc_struct(mem, diskn_state, &st_diskn_state,
                                                 "iodev_diskn_init(state)");
     if (!pstate)
-        return gs_error_VMerror;
+        return_error(gs_error_VMerror);
     pstate->root_size = 0;
     pstate->root = NULL;
     pstate->memory = mem;
@@ -445,7 +445,7 @@ diskn_put_params(gx_io_device *iodev, gs_param_list *plist)
             pstate->root = (char *)gs_alloc_byte_array(pstate->memory,
                         gp_file_name_sizeof, sizeof(char), "diskn(rootdir)");
             if (!pstate->root)
-                return gs_error_VMerror;
+                return_error(gs_error_VMerror);
             pstate->root_size = rootstr.size + 1;
             /* Now allow enumeration of files on the disk */
             iodev->procs.enumerate_files = diskn_enumerate_files;

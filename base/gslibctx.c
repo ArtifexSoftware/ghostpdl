@@ -134,7 +134,7 @@ int gs_lib_ctx_init( gs_memory_t *mem )
 
     /* Check the non gc allocator is being passed in */
     if (mem == 0 || mem != mem->non_gc_memory)
-        return gs_error_Fatal;
+        return_error(gs_error_Fatal);
 
 #ifndef GS_THREADSAFE
     mem_err_print = mem;

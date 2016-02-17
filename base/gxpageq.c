@@ -132,7 +132,7 @@ gx_page_queue_init(
         return 0;
     else {
         gx_page_queue_dnit(queue);
-        return gs_error_VMerror;
+        return_error(gs_error_VMerror);
     }
 }
 

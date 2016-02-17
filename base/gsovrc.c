@@ -63,7 +63,7 @@ write_color_index(gx_color_index cindex, byte * data, uint * psize)
         ;
     if (num_bytes > *psize) {
         *psize = num_bytes;
-        return gs_error_rangecheck;
+        return_error(gs_error_rangecheck);
     }
     ctmp = cindex;
     *psize = num_bytes;

@@ -860,7 +860,7 @@ get_scaled_range(const gs_function_Sd_t *const pfn,
     const float small_noise = (float)1e-6;
 
     if (v0 < d0 || v0 > d1)
-        return gs_error_rangecheck;
+        return_error(gs_error_rangecheck);
     if (pfn->params.Encode)
         e0 = pfn->params.Encode[i * 2 + 0], e1 = pfn->params.Encode[i * 2 + 1];
     else

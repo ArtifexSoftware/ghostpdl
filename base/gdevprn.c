@@ -606,7 +606,7 @@ gdev_prn_free_memory(gx_device *pdev)
 int	/* rets 0 ok, -ve error if couldn't start thread */
 gx_default_start_render_thread(gdev_prn_start_render_params *params)
 {
-    return gs_error_unknownerror;
+    return_error(gs_error_unknownerror);
 }
 
 /* Open the renderer's copy of a device. */
@@ -614,7 +614,7 @@ gx_default_start_render_thread(gdev_prn_start_render_params *params)
 int
 gx_default_open_render_device(gx_device_printer *pdev)
 {
-    return gs_error_unknownerror;
+    return_error(gs_error_unknownerror);
 }
 
 /* Close the renderer's copy of a device. */
@@ -1225,7 +1225,7 @@ int
 gx_default_buffer_page(gx_device_printer *pdev, FILE *prn_stream,
                        int num_copies)
 {
-    return gs_error_unknownerror;
+    return_error(gs_error_unknownerror);
 }
 
 /*

@@ -522,7 +522,7 @@ mem_true24_copy_alpha(gx_device * dev, const byte * base, int sourcex,
                 alpha = line[sx];
                 break;
             default:
-                return gs_error_rangecheck;
+                return_error(gs_error_rangecheck);
             }
             if (alpha == 255) {	/* Just write the new color. */
                 put3(pptr, r, g, b);

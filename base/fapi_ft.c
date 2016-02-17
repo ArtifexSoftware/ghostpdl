@@ -509,9 +509,9 @@ ft_to_gs_error(FT_Error a_error)
 {
     if (a_error) {
         if (a_error == FT_Err_Out_Of_Memory)
-            return gs_error_VMerror;
+            return_error(gs_error_VMerror);
         else
-            return gs_error_unknownerror;
+            return_error(gs_error_unknownerror);
     }
     return 0;
 }
@@ -1171,7 +1171,7 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                 open_args.memory_base = own_font_data =
                     FF_alloc(s->ftmemory, length);
                 if (!open_args.memory_base)
-                    return gs_error_VMerror;
+                    return_error(gs_error_VMerror);
                 own_font_data_len = length;
                 if (type == 1)
                     open_args.memory_size =
@@ -1186,7 +1186,7 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                 ft_inc_int = new_inc_int(a_server, a_font);
                 if (!ft_inc_int) {
                     FF_free(s->ftmemory, own_font_data);
-                    return gs_error_VMerror;
+                    return_error(gs_error_VMerror);
                 }
             }
 
@@ -1196,26 +1196,26 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                 open_args.memory_size =
                     a_font->get_long(a_font, gs_fapi_font_feature_TT_size, 0);
                 if (open_args.memory_size == 0)
-                    return gs_error_invalidfont;
+                    return_error(gs_error_invalidfont);
 
                 /* Load the TrueType data into a single buffer. */
                 open_args.memory_base = own_font_data =
                     FF_alloc(s->ftmemory, open_args.memory_size);
                 if (!own_font_data)
-                    return gs_error_VMerror;
+                    return_error(gs_error_VMerror);
 
                 own_font_data_len = open_args.memory_size;
 
                 if (a_font->
                     serialize_tt_font(a_font, own_font_data,
                                       open_args.memory_size))
-                    return gs_error_invalidfont;
+                    return_error(gs_error_invalidfont);
 
                 /* We always load incrementally. */
                 ft_inc_int = new_inc_int(a_server, a_font);
                 if (!ft_inc_int) {
                     FF_free(s->ftmemory, own_font_data);
-                    return gs_error_VMerror;
+                    return_error(gs_error_VMerror);
                 }
             }
 
@@ -1245,7 +1245,7 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                 FF_free(s->ftmemory, own_font_data);
                 FT_Done_Face(ft_face);
                 delete_inc_int(a_server, ft_inc_int);
-                return gs_error_VMerror;
+                return_error(gs_error_VMerror);
             }
             a_font->server_font_data = face;
         }

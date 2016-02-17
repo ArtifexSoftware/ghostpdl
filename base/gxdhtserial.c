@@ -73,7 +73,7 @@ gx_ht_write_tf(
         req_size += sizeof(pmap->values);
     if (req_size > *psize) {
         *psize = req_size;
-        return gs_error_rangecheck;
+        return_error(gs_error_rangecheck);
     }
 
     if (req_size == 1)
@@ -221,7 +221,7 @@ gx_ht_write_component(
     req_size += tmp_size;
     if (req_size > *psize) {
         *psize = req_size;
-        return gs_error_rangecheck;
+        return_error(gs_error_rangecheck);
     }
 
     /* write out the dimensional data */

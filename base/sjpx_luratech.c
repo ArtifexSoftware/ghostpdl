@@ -331,7 +331,7 @@ s_jpxd_inbuf(stream_jpxd_state *state, stream_cursor_read * pr)
     /* allocate the input buffer if needed */
     if (state->inbuf == NULL) {
         state->inbuf = s_jpx_alloc(JPX_BUFFER_SIZE, (JP2_Callback_Param)state->memory->non_gc_memory);
-        if (state->inbuf == NULL) return gs_error_VMerror;
+        if (state->inbuf == NULL) return_error(gs_error_VMerror);
         state->inbuf_size = JPX_BUFFER_SIZE;
         state->inbuf_fill = 0;
     }
@@ -348,7 +348,7 @@ s_jpxd_inbuf(stream_jpxd_state *state, stream_cursor_read * pr)
                    new_size);
 
         new = gs_resize_object(state->memory->non_gc_memory, state->inbuf, new_size, "s_jpxd_inbuf");
-        if (new == NULL) return gs_error_VMerror;
+        if (new == NULL) return_error(gs_error_VMerror);
 
         state->inbuf = new;
         state->inbuf_size = new_size;

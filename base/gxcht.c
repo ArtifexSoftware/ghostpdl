@@ -266,7 +266,7 @@ gx_dc_ht_colored_write(
     /* see if enough space is available */
     if (req_size > *psize) {
         *psize = req_size;
-        return gs_error_rangecheck;
+        return_error(gs_error_rangecheck);
     }
 
     /* write out the flag byte */

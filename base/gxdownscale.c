@@ -1606,14 +1606,14 @@ static int check_trapping(gs_memory_t *memory, int trap_w, int trap_h,
                  "follow the instructions in the documentation. Please note\n"
                  "that if you do this, you are responsible for ensuring that\n"
                  "you have any and all patent licenses that may be required.\n");
-        return gs_error_rangecheck;
+        return_error(gs_error_rangecheck);
     }
 #endif
 
     if (trap_w < 0 || trap_h < 0)
     {
         dmprintf(memory, "Trapping range must be >= 0");
-        return gs_error_rangecheck;
+        return_error(gs_error_rangecheck);
     }
 
     if (trap_w > 0 || trap_h > 0)
@@ -1621,7 +1621,7 @@ static int check_trapping(gs_memory_t *memory, int trap_w, int trap_h,
         if (comp_order == NULL)
         {
             emprintf(memory, "Trapping cannot be used without comp_order being defined");
-            return gs_error_rangecheck;
+            return_error(gs_error_rangecheck);
         }
 
         /* Check that the comp_order we have been passed is sane */
@@ -1639,7 +1639,7 @@ static int check_trapping(gs_memory_t *memory, int trap_w, int trap_h,
             if (i != num_comps)
             {
                 emprintf(memory, "Illegal component order passed to trapping");
-                return gs_error_rangecheck;
+                return_error(gs_error_rangecheck);
             }
         }
     }
@@ -1703,7 +1703,7 @@ int gx_downscaler_init_planar_trapped(gx_downscaler_t      *ds,
         if (ds->claptrap == NULL)
         {
             emprintf(dev->memory, "Trapping initialisation failed");
-            return gs_error_VMerror;
+            return_error(gs_error_VMerror);
         }
     }
     else
@@ -1882,7 +1882,7 @@ int gx_downscaler_init_trapped(gx_downscaler_t   *ds,
         if (ds->claptrap == NULL)
         {
             emprintf(dev->memory, "Trapping initialisation failed");
-            return gs_error_VMerror;
+            return_error(gs_error_VMerror);
         }
     }
     else
@@ -2209,7 +2209,7 @@ static int downscaler_init_fn(void *arg_, gx_device *dev, gs_memory_t *memory, i
 
     buffer = (downscaler_process_page_buffer_t *)gs_alloc_bytes(memory, sizeof(*buffer), "downscaler process_page buffer");
     if (buffer == NULL)
-        return gs_error_VMerror;
+        return_error(gs_error_VMerror);
     memset(buffer, 0, sizeof(*buffer));
 
     if (arg->upfactor > arg->downfactor) {

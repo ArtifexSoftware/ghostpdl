@@ -66,12 +66,12 @@ s_jbig2decode_make_global_data(byte *data, uint size, void **result)
     s_jbig2decode_global_data *global = NULL;
 
     global = malloc(sizeof(*global));
-    if (global == NULL) return gs_error_VMerror;
+    if (global == NULL) return_error(gs_error_VMerror);
 
     global->data = malloc(size);
     if (global->data == NULL) {
         free(global);
-        return gs_error_VMerror;
+        return_error(gs_error_VMerror);
     }
     memcpy(global->data, data, size);
     global->size = size;
@@ -99,7 +99,7 @@ s_jbig2decode_set_global_data(stream_state *ss, s_jbig2_global_data_t *gd)
 {
     stream_jbig2decode_state *state = (stream_jbig2decode_state*)ss;
     if (state == NULL)
-        return gs_error_VMerror;
+        return_error(gs_error_VMerror);
 
     state->global_struct = gd;
     if (gd != NULL) {
@@ -230,7 +230,7 @@ s_jbig2decode_inbuf(stream_jbig2decode_state *state, stream_cursor_read * pr)
     /* allocate the input buffer if needed */
     if (state->inbuf == NULL) {
         state->inbuf = malloc(JBIG2_BUFFER_SIZE);
-        if (state->inbuf == NULL) return gs_error_VMerror;
+        if (state->inbuf == NULL) return_error(gs_error_VMerror);
         state->insize = JBIG2_BUFFER_SIZE;
         state->infill = 0;
     }
@@ -246,7 +246,7 @@ s_jbig2decode_inbuf(stream_jbig2decode_state *state, stream_cursor_read * pr)
         if_debug1m('s', state->memory, "[s]jbig2decode growing input buffer to %lu bytes\n",
                    new_size);
         new = realloc(state->inbuf, new_size);
-        if (new == NULL) return gs_error_VMerror;
+        if (new == NULL) return_error(gs_error_VMerror);
 
         state->inbuf = new;
         state->insize = new_size;

@@ -92,7 +92,7 @@ gx_default_decode_color(gx_device * dev, gx_color_index color, gx_color_value cv
 #ifdef DEBUG
     if ( dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN ) {
         dmprintf(dev->memory, "gx_default_decode_color() requires separable and linear\n" );
-        return gs_error_rangecheck;
+        return_error(gs_error_rangecheck);
     }
 #endif
 
@@ -139,7 +139,7 @@ gx_error_decode_color(gx_device * dev, gx_color_index cindex, gx_color_value col
 #endif
      for(; i>=0; i--)
         colors[i] = 0;
-     return gs_error_rangecheck;
+     return_error(gs_error_rangecheck);
 }
 
 /*

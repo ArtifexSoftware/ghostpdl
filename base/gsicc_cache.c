@@ -1310,7 +1310,7 @@ gsicc_transform_named_color(const float tint_values[],
                     gs_free(nongc_mem, namedcolor_table, num_entries,
                             sizeof(gsicc_namedcolortable_t),
                             "gsicc_transform_named_color");
-                    return gs_error_VMerror;
+                    return_error(gs_error_VMerror);
                 }
                 namedcolor_table->number_entries = num_entries;
                 namedcolor_table->named_color = namedcolor_data;
@@ -1337,7 +1337,7 @@ gsicc_transform_named_color(const float tint_values[],
                         (char*)gs_malloc(nongc_mem, 1, curr_name_size + 1,
                                           "gsicc_transform_named_color");
                     if (namedcolor_data[k].colorant_name == NULL)
-                        return gs_error_VMerror;
+                        return_error(gs_error_VMerror);
                     strncpy(namedcolor_data[k].colorant_name,temp_ptr,
                             namedcolor_data[k].name_size+1);
                     for (j = 0; j < 3; j++) {

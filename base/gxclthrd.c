@@ -699,7 +699,7 @@ clist_get_band_from_thread(gx_device *dev, int band_needed, gx_process_page_opti
     gp_thread_finish(thread->thread);
     thread->thread = NULL;
     if (thread->status == THREAD_ERROR)
-        return gs_error_unknownerror;          /* FAIL */
+        return_error(gs_error_unknownerror);          /* FAIL */
 
     if (options && options->output_fn) {
         code = options->output_fn(options->arg, dev, thread->buffer);

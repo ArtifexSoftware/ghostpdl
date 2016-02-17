@@ -462,7 +462,7 @@ gx_dc_ht_binary_write(
     /* check if sufficient space has been provided */
     if (req_size > *psize) {
         *psize = req_size;
-        return gs_error_rangecheck;
+        return_error(gs_error_rangecheck);
     }
 
     /* write out the flag byte */

@@ -102,9 +102,9 @@ InitFont(Bitstream_server * server, FAPI_font * ff)
             /* Load the TrueType data into a single buffer. */
             own_font_data = gs_malloc(mem, 1, length, "Type 42 fotn copy");
             if (!own_font_data)
-                return gs_error_VMerror;
+                return_error(gs_error_VMerror);
             if (ff->serialize_tt_font(ff, own_font_data, length))
-                return gs_error_invalidfont;
+                return_error(gs_error_invalidfont);
         }
     }
     face->font_data = own_font_data;
@@ -370,7 +370,7 @@ gs_fapibstm_instantiate(i_plugin_client_memory * client_mem,
                                                     (fapi_bitstream_server),
                                                     "fapi_bitstream_server");
     if (r == 0)
-        return gs_error_VMerror;
+        return_error(gs_error_VMerror);
     memset(r, 0, sizeof(*r));
     r->If = If0;
     r->client_mem = *client_mem;

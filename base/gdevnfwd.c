@@ -841,7 +841,7 @@ gx_forward_dev_spec_op(gx_device * dev, int dev_spec_op, void *data, int size)
         if (dev_spec_op == gxdso_pattern_shfill_doesnt_need_path) {
             return (dev->procs.fill_path == gx_default_fill_path);
         }
-        return gs_error_undefined;
+        return_error(gs_error_undefined);
     } else if (dev_spec_op == gxdso_pattern_handles_clip_path) {
         if (dev->procs.fill_path == gx_default_fill_path)
             return 0;

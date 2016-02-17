@@ -215,7 +215,7 @@ gp_create_thread(
         (gp_thread_creation_closure *)malloc(sizeof(*closure));
 
     if (!closure)
-        return gs_error_VMerror;
+        return_error(gs_error_VMerror);
     closure->function = function;
     closure->data = data;
 
@@ -265,7 +265,7 @@ int gp_thread_start(gp_thread_creation_callback_t function,
         (gp_thread_creation_closure *)malloc(sizeof(*closure));
 
     if (!closure)
-        return gs_error_VMerror;
+        return_error(gs_error_VMerror);
     closure->function = function;
     closure->data = data;
     hThread = (HANDLE)_beginthreadex(NULL, 0, &gp_thread_start_wrapper,

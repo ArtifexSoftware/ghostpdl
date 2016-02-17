@@ -117,7 +117,7 @@ mem_alpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
          * input alpha values to either 2 or 4 bits as appropriate and
          * then recursively calling us back.
          */
-        return gs_error_unknownerror;
+        return_error(gs_error_unknownerror);
     }
     return (color == 0 ?
             (*dev_proc(dev, fill_rectangle)) (dev, x, y, width, height,

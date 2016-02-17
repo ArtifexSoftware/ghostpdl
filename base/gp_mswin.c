@@ -276,7 +276,7 @@ gp_printfile(const char *filename, const char *pmport)
         GetProfileStringW(L"windows", L"device", L"",  wbuf, sizeof(wbuf));
         l = wchar_to_utf8(NULL, wbuf);
         if (l < 0 || l > sizeof(buf))
-            return gs_error_undefinedfilename;
+            return_error(gs_error_undefinedfilename);
         wchar_to_utf8(buf, wbuf);
 #endif
         if ((p = strchr(buf, ',')) != NULL)
@@ -288,7 +288,7 @@ gp_printfile(const char *filename, const char *pmport)
         else
             return gp_printfile_win32(filename, (char *)NULL);
     } else
-        return gs_error_undefinedfilename;
+        return_error(gs_error_undefinedfilename);
 }
 
 #define PRINT_BUF_SIZE 16384u

@@ -493,23 +493,23 @@ gsicc_fill_srcgtag_item(gsicc_rendering_param_t *r_params, char **pstrlast, bool
     /* Get the intent */
     curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
     if (sscanf(curr_ptr, "%d", &ri) != 1)
-        return gs_error_unknownerror;
+        return_error(gs_error_unknownerror);
     r_params->rendering_intent = ri | gsRI_OVERRIDE;
     /* Get the black point compensation setting */
     curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
     if (sscanf(curr_ptr, "%d", &blackptcomp) != 1)
-        return gs_error_unknownerror;
+        return_error(gs_error_unknownerror);
     r_params->black_point_comp = blackptcomp | gsBP_OVERRIDE;
     /* Get the over-ride embedded ICC boolean */
     curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
     if (sscanf(curr_ptr, "%d", &or_icc) != 1)
-        return gs_error_unknownerror;
+        return_error(gs_error_unknownerror);
     r_params->override_icc = or_icc;
     if (cmyk) {
         /* Get the preserve K control */
         curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
         if (sscanf(curr_ptr, "%d", &preserve_k) < 1)
-            return gs_error_unknownerror;
+            return_error(gs_error_unknownerror);
         r_params->preserve_black = preserve_k | gsKP_OVERRIDE;
     } else {
         r_params->preserve_black = gsBKPRESNOTSPECIFIED;
@@ -2111,7 +2111,7 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s,
     if (code < 0)
         return code;
     if (profile_size < ICC_HEADER_SIZE)
-        return gs_error_VMerror;
+        return_error(gs_error_VMerror);
     /* Allocate the buffer, stuff with the profile */
    buffer_ptr = gs_alloc_bytes(memory, profile_size,
                                         "gsicc_load_profile");

@@ -604,7 +604,7 @@ mem_default_strip_copy_rop2(gx_device * dev,
                             uint planar_height)
 {
     dmlprintf(dev->memory, "mem_default_strip_copy_rop2 should never be called!\n");
-    return gs_error_Fatal;
+    return_error(gs_error_Fatal);
 }
 
 int

@@ -974,7 +974,7 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
                 return gx_default_get_param(pdev, request->Param, request->list);
             }
     }
-    return gs_error_undefined;
+    return_error(gs_error_undefined);
 }
 
 int
@@ -983,7 +983,7 @@ gx_default_fill_rectangle_hl_color(gx_device *pdev,
     const gs_imager_state *pis, const gx_drawing_color *pdcolor,
     const gx_clip_path *pcpath)
 {
-    return gs_error_rangecheck;
+    return_error(gs_error_rangecheck);
 }
 
 int
