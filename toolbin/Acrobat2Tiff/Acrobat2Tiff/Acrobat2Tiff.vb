@@ -15,7 +15,7 @@ Module Acrobat2Tiff
     Console.WriteLine("        using [ -gray | -mono | -rgb | -cmyk ]")
     Console.WriteLine("  Resolution defaults to 72dpi, but may be specified e.g. -r 300")
     Console.WriteLine("")
-    Console.WriteLine("Tested with Acrobat 9.0, will hopefully work with 7.0 or 8.0 too.")
+    Console.WriteLine("Tested with Acrobat 9.0, will hopefully work with 7/8/10/11/DC too.")
     Console.WriteLine("Ensure you have no other Acrobat processes running, or the colorspace")
     Console.WriteLine("and Resolution of output images may be wrong.")
   End Sub
@@ -104,6 +104,9 @@ Module Acrobat2Tiff
     setRegistryKeys("HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\7.0\AVConversionFromPDF\cSettings", "TIFF", res, cspace)
     setRegistryKeys("HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\8.0\AVConversionFromPDF\cSettings", "TIFF", res, cspace)
     setRegistryKeys("HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\9.0\AVConversionFromPDF\cSettings", "TIFF", res, cspace)
+    setRegistryKeys("HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\10.0\AVConversionFromPDF\cSettings", "TIFF", res, cspace)
+    setRegistryKeys("HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\11.0\AVConversionFromPDF\cSettings", "TIFF", res, cspace)
+    setRegistryKeys("HKEY_CURRENT_USER\Software\Adobe\Adobe Acrobat\DC\AVConversionFromPDF\cSettings", "TIFF", res, cspace)
 
     ' Create Acrobat Application object
     PDFApp = CreateObject("AcroExch.App")
