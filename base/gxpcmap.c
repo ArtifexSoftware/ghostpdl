@@ -38,6 +38,7 @@
 #include "gxdevsop.h"
 #include "gdevmpla.h"
 #include "gdevp14.h"
+#include "gxgetbit.h"
 
 #if RAW_PATTERN_DUMP
 unsigned int global_pat_index = 0;
@@ -636,6 +637,113 @@ pattern_accum_copy_planes(gx_device * dev, const byte * data, int data_x,
         return 0;
 }
 
+static int
+blank_unmasked_bits(gx_device * mask,
+                    int polarity,
+                    int num_comps,
+                    int depth,
+                    const gs_int_rect *prect,
+                    gs_get_bits_params_t *p)
+{
+    static const int required_options = GB_COLORS_NATIVE
+                       | GB_ALPHA_NONE
+                       | GB_RETURN_COPY
+                       | GB_ALIGN_STANDARD
+                       | GB_OFFSET_0
+                       | GB_RASTER_STANDARD;
+    int raster;
+    byte *min;
+    int x0 = prect->p.x;
+    int y0 = prect->p.y;
+    int x, y;
+    int w = prect->q.x - x0;
+    int h = prect->q.y - y0;
+    int code = 0;
+    byte *ptr;
+    int blank = (polarity == GX_CINFO_POLARITY_ADDITIVE ? 255 : 0);
+
+    if ((p->options & required_options) != required_options)
+        return_error(gs_error_rangecheck);
+    if (depth/num_comps != 8)
+        return_error(gs_error_rangecheck);
+
+    min = gs_alloc_bytes(mask->memory, (w+7)>>3, "blank_unmasked_bits");
+    if (min == NULL)
+        return_error(gs_error_VMerror);
+
+    if (p->options & GB_PACKING_CHUNKY)
+    {
+        ptr = p->data[0];
+        depth >>= 3;
+        raster = p->raster - w*depth;
+        for (y = 0; y < h; y++)
+        {
+            byte *mine;
+            code = dev_proc(mask, get_bits)(mask, y+y0, min, &mine);
+            if (code < 0)
+                goto fail;
+            for (x = 0; x < w; x++)
+            {
+                int xx = x+x0;
+                if (((mine[xx>>3]>>(x&7)) & 1) == 0) {
+                    switch (depth)
+                    {
+                    case 8:
+                        *ptr++ = blank;
+                    case 7:
+                        *ptr++ = blank;
+                    case 6:
+                        *ptr++ = blank;
+                    case 5:
+                        *ptr++ = blank;
+                    case 4:
+                        *ptr++ = blank;
+                    case 3:
+                        *ptr++ = blank;
+                    case 2:
+                        *ptr++ = blank;
+                    case 1:
+                        *ptr++ = blank;
+                        break;
+                    }
+                } else {
+                    ptr += depth;
+                }
+            }
+            ptr += p->raster - w;
+        }
+    } else {
+        for (y = 0; y < h; y++)
+        {
+            int c;
+            byte *mine;
+            code = dev_proc(mask, get_bits)(mask, y+y0, min, &mine);
+            if (code < 0)
+                goto fail;
+            for (c = 0; c < num_comps; c++)
+            {
+                if (p->data[c] == NULL)
+                    continue;
+                ptr = p->data[c] + raster * y;
+                for (x = 0; x < w; x++)
+                {
+                    int xx = x+x0;
+                    if (((mine[xx>>3]>>(x&7)) & 1) == 0) {
+                        *ptr++ = blank;
+                    } else {
+                        ptr++;
+                    }
+                }
+            }
+        }
+    }
+
+fail:
+    gs_free_object(mask->memory, min, "blank_unmasked_bits");
+
+    return code;
+}
+
 /* Read back a rectangle of bits. */
 /****** SHOULD USE MASK TO DEFINE UNREAD AREA *****/
 static int
@@ -644,10 +752,26 @@ pattern_accum_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 {
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
     const gs_pattern1_instance_t *pinst = padev->instance;
+    int code;
 
-    if (padev->bits)
-        return (*dev_proc(padev->target, get_bits_rectangle))
+    if (padev->bits) {
+        code = (*dev_proc(padev->target, get_bits_rectangle))
             (padev->target, prect, params, unread);
+        /* If we have a mask, then unmarked pixels of the bits
+         * will be undefined. Strictly speaking it makes no
+         * sense for us to return any value here, but the only
+         * caller of this currently is the overprint code, which
+         * uses the the values to parrot back to us. Let's
+         * make sure they are set to the default 'empty' values.
+         */
+        if (code >= 0 && padev->mask)
+            code = blank_unmasked_bits((gx_device *)padev->mask,
+                                       padev->target->color_info.polarity,
+                                       padev->target->color_info.num_components,
+                                       padev->target->color_info.depth,
+                                       prect, params);
+        return code;
+    }
 
     if (pinst->templat.PaintType == 2)
         return 0;
