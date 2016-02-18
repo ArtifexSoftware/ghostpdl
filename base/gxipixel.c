@@ -322,6 +322,8 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
                (!penum->masked || penum->image_parent_type != 0)) {
         /* Other than for images we are specifically looking to grid fit (such as
          * ones in a pattern device), we only grid fit imagemasks */
+    } else if (gridfitimages && (penum->masked && penum->image_parent_type == 0)) {
+        /* We don't gridfit imagemasks in a pattern accumulator */
     } else if (pis != NULL && pis->fill_adjust.x == 0 && pis->fill_adjust.y == 0) {
         /* If fill adjust is disabled, so is grid fitting */
     } else if (orthogonal == 1) {

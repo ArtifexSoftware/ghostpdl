@@ -1423,6 +1423,15 @@ pattern_accum_dev_spec_op(gx_device *dev, int dso, void *data, int size)
 
     if (dso == gxdso_in_pattern_accumulator)
         return (pinst->templat.PaintType == 2 ? 2 : 1);
+    if (dso == gxdso_get_dev_param) {
+        dev_param_req_t *request = (dev_param_req_t *)data;
+        gs_param_list * plist = (gs_param_list *)request->list;
+        bool bool_true = 1;
+
+        if (strcmp(request->Param, "NoInterpolateImagemasks") == 0) {
+            return param_write_bool(plist, "NoInterpolateImagemasks", &bool_true);
+        }
+    }
 
     return dev_proc(target, dev_spec_op)(target, dso, data, size);
 }
