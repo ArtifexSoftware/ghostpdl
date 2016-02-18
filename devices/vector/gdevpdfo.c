@@ -558,7 +558,7 @@ cos_array_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
                 /* Careful here, only certain errors will bubble up
                  * through the text processing.
                  */
-                return gs_error_limitcheck;
+                return_error(gs_error_limitcheck);
                 break;
             default:
                 emprintf(pdev->memory,
@@ -891,7 +891,7 @@ cos_elements_write(stream *s, const cos_dict_element_t *pcde,
                         /* Careful here, only certain errors will bubble up
                          * through the text processing.
                          */
-                        return gs_error_limitcheck;
+                        return_error(gs_error_limitcheck);
                         break;
                     default:
                         emprintf(pdev->memory,
@@ -1710,7 +1710,7 @@ static int hash_cos_stream(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
             return result;
         }
         if (gp_fseek_64(sfile, pcsp->position, SEEK_SET) != 0)
-            return gs_error_ioerror;
+	  return_error(gs_error_ioerror);
 
         if (fread(ptr, 1, pcsp->size, sfile) != pcsp->size) {
             gs_free(pdev->memory, ptr, sizeof (byte), pcsp->size, "hash_cos_stream");
@@ -1723,7 +1723,7 @@ static int hash_cos_stream(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
     }
     gs_md5_finish(md5, (gs_md5_byte_t *)hash);
     if (gp_fseek_64(sfile, position_save, SEEK_SET) != 0)
-        return gs_error_ioerror;
+      return_error(gs_error_ioerror);
 
     return 0;
 }
@@ -1831,12 +1831,12 @@ cos_stream_contents_write(const cos_stream_t *pcs, gx_device_pdf *pdev)
         } else {
             end_pos = gp_ftell_64(sfile);
             if (gp_fseek_64(sfile, pcsp->position, SEEK_SET) != 0)
-                return gs_error_ioerror;
+	      return_error(gs_error_ioerror);
             code = pdf_copy_data(s, sfile, pcsp->size, ss);
             if (code < 0)
                 return code;
             if (gp_fseek_64(sfile, end_pos, SEEK_SET) != 0)
-                return gs_error_ioerror;
+	      return_error(gs_error_ioerror);
         }
     }
     /* Reverse the elements back. */

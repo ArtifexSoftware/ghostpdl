@@ -291,10 +291,10 @@ win_char_metrics(gx_xfont * xf, gx_xglyph xg, int wmode,
     char chr = (char)xg;
 
     if (wmode != 0)
-        return gs_error_undefined;
+      return_error(gs_error_undefined);
     hdc = win_get_dc(wxf->dev);
     if (hdc == NULL)
-        return gs_error_limitcheck;
+      return_error(gs_error_limitcheck);
     if ((code = win_select_font(hdc, wxf)) < 0) {
         win_release_dc(wxf->dev, hdc);
         return code;
@@ -370,7 +370,7 @@ win_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
         raster = wbm >> 3;
         bits = gs_malloc(dev->memory, h, raster, "win_render_char");
         if (bits == 0)
-            return gs_error_limitcheck;
+	  return_error(gs_error_limitcheck);
         hbm = CreateBitmap(wbm, h, 1, 1, NULL);
         if (hbm == NULL) {
             code = gs_error_limitcheck;
@@ -458,7 +458,7 @@ win_select_font(HDC hdc, win_xfont * wxf)
         /* Re-acquire it now. */
         wxf->hFont = CreateFontIndirect(&wxf->lf);
         if (wxf->hFont == NULL)
-            return gs_error_limitcheck;
+	  return_error(gs_error_limitcheck);
     }
     SelectObject(hdc, wxf->hFont);
     return 0;

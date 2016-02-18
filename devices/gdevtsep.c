@@ -1028,7 +1028,7 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
                 errprintf(pdevn->memory, "Invalid compression setting for this bitdepth\n");
 
                 param_signal_error(plist, param_name, gs_error_rangecheck);
-                return gs_error_rangecheck;
+                return_error(gs_error_rangecheck);
             }
             break;
         case 1:

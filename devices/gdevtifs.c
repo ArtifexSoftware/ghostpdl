@@ -189,7 +189,7 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
 
                 errprintf(tfdev->memory, "Invalid compression setting for this bitdepth\n");
                 param_signal_error(plist, param_name, gs_error_rangecheck);
-                return gs_error_rangecheck;
+                return_error(gs_error_rangecheck);
             }
             break;
         case 1:
@@ -518,7 +518,7 @@ tiff_compression_param_string(gs_param_string *param, uint16 id)
             param_string_from_string(*param, c->str);
             return 0;
         }
-    return gs_error_undefined;
+    return_error(gs_error_undefined);
 }
 
 int
@@ -532,7 +532,7 @@ tiff_compression_id(uint16 *id, gs_param_string *param)
             *id = c->id;
             return 0;
         }
-    return gs_error_undefined;
+    return_error(gs_error_undefined);
 }
 
 int tiff_compression_allowed(uint16 compression, byte depth)

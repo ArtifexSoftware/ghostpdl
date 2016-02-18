@@ -135,7 +135,7 @@ win_ddb_open(gx_device * dev)
         return code;
 
     if (wdev->BitsPerPixel > 8)
-        return gs_error_limitcheck;	/* don't support 24 bit/pixel */
+      return_error(gs_error_limitcheck);	/* don't support 24 bit/pixel */
 
     /* Create the backing bitmap. */
     code = win_ddb_alloc_bitmap((gx_device_win *) dev, dev);

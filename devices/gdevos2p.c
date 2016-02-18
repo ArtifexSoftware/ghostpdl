@@ -145,18 +145,18 @@ os2prn_open(gx_device * dev)
 
     if (DosGetInfoBlocks(&pptib, &pppib)) {
         errprintf(dev->memory, "\nos2prn_open: Couldn't get pid\n");
-        return gs_error_limitcheck;
+        return_error(gs_error_limitcheck);
     }
     if (pppib->pib_ultype != 3) {
         /* if caller is not PM app */
         errprintf(dev->memory, "os2prn device can only be used from a PM application\n");
-        return gs_error_limitcheck;
+        return_error(gs_error_limitcheck);
     }
     opdev->hab = WinQueryAnchorBlock(hwndtext);
     opdev->newframe = 0;
 
     if (os2prn_get_queue_list(dev->memory, &opdev->ql))
-        return gs_error_limitcheck;
+      return_error(gs_error_limitcheck);
 
     if (opdev->queue_name[0] == '\0') {
         /* obtain printer name from filename */
@@ -190,7 +190,7 @@ os2prn_open(gx_device * dev)
         for (i = 0; i < opdev->ql.nqueues; i++) {
             errprintf(opdev->memory, "  -sOS2QUEUE=\042%s\042\n", opdev->ql.prq[i].pszName);
         }
-        return gs_error_rangecheck;
+        return_error(gs_error_rangecheck);
     }
     /* open printer device */
     memset(&dop, 0, sizeof(dop));
@@ -206,7 +206,7 @@ os2prn_open(gx_device * dev)
         ERRORID eid = WinGetLastError(opdev->hab);
 
         errprintf(opdev->memory, "DevOpenDC for printer error 0x%x\n", eid);
-        return gs_error_limitcheck;
+        return_error(gs_error_limitcheck);
     }
     os2prn_free_queue_list(dev->memory, &opdev->ql);
 
@@ -264,7 +264,7 @@ os2prn_open(gx_device * dev)
         ERRORID eid = WinGetLastError(opdev->hab);
 
         errprintf(opdev->memory, "DevOpenDC for memory error 0x%x\n", eid);
-        return gs_error_limitcheck;
+        return_error(gs_error_limitcheck);
     }
     sizlPage.cx = dev->width;
     sizlPage.cy = dev->height;
@@ -274,14 +274,14 @@ os2prn_open(gx_device * dev)
         ERRORID eid = WinGetLastError(opdev->hab);
 
         errprintf(opdev->memory, "GpiCreatePS for memory error 0x%x\n", eid);
-        return gs_error_limitcheck;
+        return_error(gs_error_limitcheck);
     }
     if (DevEscape(opdev->hdc, DEVESC_STARTDOC, (LONG) strlen(gs_product),
                   (char *)gs_product, NULL, NULL) == DEVESC_ERROR) {
         ERRORID eid = WinGetLastError(opdev->hab);
 
         errprintf(opdev->memory, "DEVESC_STARTDOC error 0x%x\n", eid);
-        return gs_error_limitcheck;
+        return_error(gs_error_limitcheck);
     }
     /* gdev_prn_open opens a temporary file which we don't want */
     /* so we specify the name now so we can delete it later */

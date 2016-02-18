@@ -108,7 +108,7 @@ struct mac_xfont_s {
                         if (len - offset < a) {													\
                                 HUnlock((Handle) mdev->pic);										\
                                 SetHandleSize((Handle) mdev->pic, len + b);							\
-                                if (MemError() != noErr) return gs_error_VMerror;					\
+                                if (MemError() != noErr) return_error(gs_error_VMerror); \
                                 HLockHi((Handle) mdev->pic);										\
                                 mdev->currPicPos = (short*) ((long) *mdev->pic + offset);			\
                         }																		\

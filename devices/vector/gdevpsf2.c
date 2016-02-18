@@ -1494,7 +1494,7 @@ static int
 offset_error(const char *msg)
 {
     if_debug1('l', "[l]%s offset error\n", msg);
-    return gs_error_rangecheck;
+    return_error(gs_error_rangecheck);
 }
 #else
 #  define offset_error(msg) gs_error_rangecheck

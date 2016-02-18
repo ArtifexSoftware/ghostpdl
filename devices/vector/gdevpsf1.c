@@ -250,7 +250,7 @@ static int CheckSubrForMM (gs_glyph_data_t *gdata, gs_font_type1 *pfont)
                 case 12:
                     if (*(source + 1) == 16) {
                         if (CurrentNumberIndex < 1)
-                            return gs_error_rangecheck;
+			  return_error(gs_error_rangecheck);
                         switch(Stack[CurrentNumberIndex-1]) {
                             case 18:
                                 code = 6;

@@ -38,7 +38,7 @@ pdf_objname_is_valid(const byte *data, uint size)
 }
 
 /*
- * Look up a named object.  Return gs_error_rangecheck if the syntax is invalid.
+ * Look up a named object.  Return_error(gs_error_rangecheck if the syntax is invalid.
  * If the object is missing, return gs_error_undefined.
  */
 int

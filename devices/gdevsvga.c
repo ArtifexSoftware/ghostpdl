@@ -472,7 +472,7 @@ svga_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
     fb_ptr src;
 
     if (y < 0 || y >= dev->height)
-        return gs_error_rangecheck;
+      return_error(gs_error_rangecheck);
     set_pixel_read_ptr(src, fb_dev, 0, y);
     /* The logic here is similar to fill_rectangle. */
     if (PTR_OFF(src) <= limit)

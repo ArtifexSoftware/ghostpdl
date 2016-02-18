@@ -267,7 +267,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
                          * as a glyph in a font. This will eliminate the problem
                          * and the fiel should appear the same as the original.
                          */
-                        return gs_error_unknownerror;
+                        return_error(gs_error_unknownerror);
                         break;
                     case 2:
                         emprintf(pdev->memory,
@@ -275,7 +275,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
                         /* Careful here, only certain errors will bubble up
                          * through the text processing.
                          */
-                        return gs_error_invalidfont;
+                        return_error(gs_error_invalidfont);
                         break;
                     default:
                         emprintf(pdev->memory,
@@ -830,12 +830,12 @@ pdf_char_widths(gx_device_pdf *const pdev,
             font->FontType == ft_MicroType || font->FontType == ft_GL2_stick_user_defined ||
             font->FontType == ft_GL2_531) {
             if (!(pdfont->used[ch >> 3] & 0x80 >> (ch & 7)))
-                return gs_error_undefined; /* The charproc was not accumulated. */
+	      return_error(gs_error_undefined); /* The charproc was not accumulated. */
             if (!pdev->charproc_just_accumulated &&
                 !(pdfont->u.simple.s.type3.cached[ch >> 3] & 0x80 >> (ch & 7))) {
                  /* The charproc uses setcharwidth.
                     Need to accumulate again to check for a glyph variation. */
-                return gs_error_undefined;
+	      return_error(gs_error_undefined);
             }
         }
         if (pdev->charproc_just_accumulated && font->FontType == ft_user_defined) {

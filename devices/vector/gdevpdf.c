@@ -1218,7 +1218,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
                     case 2:
                         emprintf(pdev->memory,
                          "TrimBox does not fit inside BleedBox, not permitted in PDF/X-3, aborting conversion\n");
-                         return gs_error_unknownerror;
+			return_error(gs_error_unknownerror);
                         break;
                     default:
                         emprintf(pdev->memory,
@@ -1283,7 +1283,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
                         case 2:
                             emprintf(pdev->memory,
                              "TrimBox does not fit inside CropBox, not permitted in PDF/X-3, aborting conversion\n");
-                             return gs_error_unknownerror;
+			    return_error(gs_error_unknownerror);
                             break;
                         default:
                             emprintf(pdev->memory,
@@ -1553,13 +1553,13 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
         if (Size > ScratchSize) {
             code = fread(Scratch, ScratchSize, 1, linear_params->sfile);
             if (code != 1)
-                return gs_error_ioerror;
+	      return_error(gs_error_ioerror);
             fwrite(Scratch, ScratchSize, 1, linear_params->Lin_File.file);
             Size -= 16384;
         } else {
             code = fread(Scratch, Size, 1, linear_params->sfile);
             if (code != 1)
-                return gs_error_ioerror;
+	      return_error(gs_error_ioerror);
             fwrite(Scratch, Size, 1, linear_params->Lin_File.file);
             Size = 0;
         }
@@ -2471,7 +2471,7 @@ pdf_close(gx_device * dev)
     pdf_linearisation_t linear_params;
 
     if (!dev->is_open)
-        return gs_error_undefined;
+      return_error(gs_error_undefined);
     dev->is_open = false;
 
     Catalog_id = pdev->Catalog->id;

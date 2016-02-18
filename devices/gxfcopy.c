@@ -442,7 +442,7 @@ named_glyph_slot_hashed(gs_copied_font_data_t *cfdata, gs_glyph glyph,
     while (names[hash].str.data != 0 && names[hash].glyph != glyph) {
         hash = (hash + hash2) % gsize;
         if (!tries)
-            return gs_error_undefined;
+	  return_error(gs_error_undefined);
         tries--;
     }
     *pslot = &cfdata->glyphs[hash];

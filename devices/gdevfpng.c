@@ -212,7 +212,7 @@ static int fpng_init_buffer(void *arg, gx_device *dev, gs_memory_t *mem, int w, 
     buffer = (fpng_buffer_t *)gs_alloc_bytes(mem, sizeof(fpng_buffer_t) + size, "fpng_init_buffer");
     *pbuffer = (void *)buffer;
     if (buffer == NULL)
-        return gs_error_VMerror;
+      return_error(gs_error_VMerror);
     buffer->size = size;
     buffer->compressed = 0;
     return 0;
@@ -359,7 +359,7 @@ static int fpng_process(void *arg, gx_device *dev, gx_device *bdev, const gs_int
     stream.opaque = bdev->memory;
     err = deflateInit(&stream, Z_DEFAULT_COMPRESSION);
     if (err != Z_OK)
-        return gs_error_VMerror;
+      return_error(gs_error_VMerror);
     p = params.data[0];
     stream.next_out = &buffer->data[0];
     stream.avail_out = buffer->size;

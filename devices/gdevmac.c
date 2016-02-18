@@ -117,7 +117,7 @@ mac_open(register gx_device *dev)
 
         mdev->pic		= (PicHandle) NewHandle(500000);
         if (mdev->pic == 0)	// error, not enough memory
-                return gs_error_VMerror;
+	  return_error(gs_error_VMerror);
 
         HLockHi((Handle) mdev->pic);	// move handle high and lock it
 
@@ -358,7 +358,7 @@ mac_copy_alpha(gx_device *dev, const unsigned char *base, int data_x,
 
         colorTable = (ColorSpec*) malloc(sizeof(ColorSpec) * (maxShade+1));
         if (colorTable == NULL)
-                return gs_error_VMerror;
+	  return_error(gs_error_VMerror);
 
         (*dev_proc(dev, map_color_rgb))(dev, color, rgb);
         colRGB.red = rgb[0];
@@ -507,7 +507,7 @@ mac_set_colordepth(gx_device *dev, int depth)
         gx_device_color_info		* ci = &mdev->color_info;
 
         if (depth != 1 && depth != 4 && depth != 7 && depth != 8 && depth != 24)
-                return gs_error_rangecheck;
+	  return_error(gs_error_rangecheck);
 
         mdev->color_info.depth = depth;
         switch (depth)
@@ -594,11 +594,11 @@ mac_put_params(gx_device *dev, gs_param_list *plist)
                         bytes_compare(outputFile.data, outputFile.size,
                             (const byte *)mdev->outputFileName, strlen(mdev->outputFileName))) {
                         param_signal_error(plist, "OutputFile", gs_error_invalidaccess);
-                        return gs_error_invalidaccess;
+                        return_error(gs_error_invalidaccess);
                 }
                 if (outputFile.size > (gp_file_name_sizeof - 1)) {
                         param_signal_error(plist, "OutputFile", gs_error_limitcheck);
-                        return gs_error_limitcheck;
+                        return_error(gs_error_limitcheck);
                 }
 
                 /* If filename changed, close file. */

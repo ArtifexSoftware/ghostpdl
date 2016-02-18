@@ -367,7 +367,7 @@ int
 win_nomemory(void)
 {
     MessageBox((HWND) NULL, (LPSTR) "Not enough memory", (LPSTR) szAppName, MB_ICONSTOP);
-    return gs_error_limitcheck;
+    return_error(gs_error_limitcheck);
 }
 
 LPLOGPALETTE

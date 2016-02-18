@@ -1349,7 +1349,7 @@ int pdfmark_write_article(gx_device_pdf * pdev, const pdf_article_t * part);
 bool pdf_objname_is_valid(const byte *data, uint size);
 
 /*
- * Look up a named object.  Return gs_error_rangecheck if the syntax is invalid,
+ * Look up a named object.  Return_error(gs_error_rangecheck if the syntax is invalid,
  * gs_error_undefined if no object by that name exists.
  */
 int pdf_find_named(gx_device_pdf * pdev, const gs_param_string * pname,
@@ -1375,7 +1375,7 @@ int pdf_refer_named(gx_device_pdf *pdev, const gs_param_string *pname,
 
 /*
  * Look up a named object as for pdf_refer_named.  If the object already
- * exists and is not simply a forward reference, return gs_error_rangecheck;
+ * exists and is not simply a forward reference, return_error(gs_error_rangecheck);
  * if it exists as a forward reference, set its type and return 0;
  * otherwise, create the object with the given type and return 1.
  * pname = 0 is allowed: in this case, simply create the object.

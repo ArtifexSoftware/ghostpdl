@@ -421,7 +421,7 @@ int gdev_psdf_get_image_param(gx_device_psdf *pdev, const psdf_image_param_names
                                    (params->AutoFilterStrategy == 0 ?
                                    "JPEG2000" : params->AutoFilterStrategy));
 #endif
-    return gs_error_undefined;
+    return_error(gs_error_undefined);
 }
 int
 gdev_psdf_get_param(gx_device *dev, char *Param, void *list)
@@ -526,7 +526,7 @@ gdev_psdf_get_param(gx_device *dev, char *Param, void *list)
         return(psdf_write_name(plist, "CannotEmbedFontPolicy",
                 CannotEmbedFontPolicy_names[(int)pdev->params.CannotEmbedFontPolicy]));
     }
-    return gs_error_undefined;
+    return_error(gs_error_undefined);
 }
 
 int

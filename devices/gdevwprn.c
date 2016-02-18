@@ -145,7 +145,7 @@ win_prn_open(gx_device * dev)
     pd.Flags = PD_PRINTSETUP | PD_RETURNDC;
     if (!PrintDlg(&pd)) {
         /* device not opened - exit ghostscript */
-        return gs_error_limitcheck;
+      return_error(gs_error_limitcheck);
     }
     GlobalFree(pd.hDevMode);
     GlobalFree(pd.hDevNames);
@@ -153,13 +153,13 @@ win_prn_open(gx_device * dev)
     wdev->hdcprn = pd.hDC;
     if (!(GetDeviceCaps(wdev->hdcprn, RASTERCAPS) != RC_BITBLT)) {
         DeleteDC(wdev->hdcprn);
-        return gs_error_limitcheck;
+        return_error(gs_error_limitcheck);
     }
     wdev->lpfnAbortProc = (DLGPROC) AbortProc;
     Escape(wdev->hdcprn, SETABORTPROC, 0, (LPSTR) wdev->lpfnAbortProc, NULL);
     if (Escape(wdev->hdcprn, STARTDOC, strlen(szAppName), szAppName, NULL) <= 0) {
         DeleteDC(wdev->hdcprn);
-        return gs_error_limitcheck;
+        return_error(gs_error_limitcheck);
     }
     f = gp_open_scratch_file(dev->memory,
                              gp_scratch_file_name_prefix,
@@ -167,7 +167,7 @@ win_prn_open(gx_device * dev)
     if (f == (FILE *) NULL) {
         Escape(wdev->hdcprn, ENDDOC, 0, NULL, NULL);
         DeleteDC(wdev->hdcprn);
-        return gs_error_limitcheck;
+        return_error(gs_error_limitcheck);
     }
     unlink(wdev->mfname);
     wdev->hdcmf = CreateMetaFile(wdev->mfname);

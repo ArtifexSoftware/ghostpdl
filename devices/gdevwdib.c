@@ -129,7 +129,7 @@ win_dib_open(gx_device * dev)
 #endif
     if (gdev_mem_device_for_bits(dev->color_info.depth) == 0) {
         win_close(dev);
-        return gs_error_rangecheck;
+        return_error(gs_error_rangecheck);
     }
     code = win_dib_alloc_bitmap((gx_device_win *) dev, dev);
     if (code < 0) {

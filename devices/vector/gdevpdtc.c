@@ -143,7 +143,7 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
             if (code < 0) {
                 if (code == gs_error_undefined && new_font && new_font->FontType == ft_encrypted2)
                 /* Caused by trying to make a CFF font resource for ps2write, which doesn't support CFF, abort now! */
-                    return gs_error_invalidfont;
+		  return_error(gs_error_invalidfont);
                 return code;
             }
             curr.xy_index = out.xy_index; /* pdf_encode_process_string advanced it. */
@@ -521,7 +521,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
                      */
                     pdev->type3charpath = 1;
                 pte->current_font = subfont;
-                return gs_error_undefined;
+                return_error(gs_error_undefined);
             }
             if (subfont->FontType == ft_encrypted || subfont->FontType == ft_encrypted2) {
                 font_change = (subfont != subfont0 && subfont0 != NULL);
@@ -628,7 +628,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
                                     case 2:
                                         emprintf(pdev->memory,
                                              "All used glyphs mst be present in fonts for PDF/A, aborting conversion.\n");
-                                        return gs_error_invalidfont;
+                                        return_error(gs_error_invalidfont);
                                         break;
                                     default:
                                         emprintf(pdev->memory,

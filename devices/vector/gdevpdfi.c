@@ -2902,7 +2902,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
         case gxdso_pattern_load:
             pres = pdf_find_resource_by_gs_id(pdev, resourcePattern, id);
             if (pres == 0)
-                return gs_error_undefined;
+	      return_error(gs_error_undefined);
             pres = pdf_substitute_pattern(pres);
             pres->where_used |= pdev->used_mask;
             code = pdf_add_resource(pdev, pdev->substream_Resources, "/Pattern", pres);

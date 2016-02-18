@@ -967,7 +967,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                 case 2:
                     emprintf(pdev->memory,
                              "Annotation set to non-printing,\n not permitted in PDF/A, aborting conversion\n");
-                    return gs_error_invalidfont;
+                    return_error(gs_error_invalidfont);
                     break;
                 default:
                     emprintf(pdev->memory,
@@ -1111,7 +1111,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                         case 2:
                             emprintf(pdev->memory,
                                      "Annotation (not TrapNet or PrinterMark) on page,\n not permitted in PDF/X, aborting conversion\n");
-                            return gs_error_invalidfont;
+                            return_error(gs_error_invalidfont);
                             break;
                         default:
                             emprintf(pdev->memory,
@@ -1145,7 +1145,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                     case 2:
                         emprintf(pdev->memory,
                                  "Annotation (not TrapNet or PrinterMark) potentially on page (no /Rect in dict),\n not permitted in PDF/X, aborting conversion\n");
-                        return gs_error_invalidfont;
+                        return_error(gs_error_invalidfont);
                         break;
                     default:
                         emprintf(pdev->memory,

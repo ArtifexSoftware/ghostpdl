@@ -271,7 +271,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
         }
         dict = pdip->ACSDict;
     } else if (!lossless)
-        return gs_error_rangecheck; /* Reject the alternative stream. */
+      return_error(gs_error_rangecheck); /* Reject the alternative stream. */
     if (pdev->version < psdf_version_ll3 && templat == &s_zlibE_template)
         templat = lossless_template;
     if (dict != NULL) /* Some interpreters don't supply filter parameters. */

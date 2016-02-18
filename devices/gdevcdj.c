@@ -3217,7 +3217,7 @@ cdj_set_bpp(gx_device *pdev, int bpp, int ccomps)
       if (cprn_device->cmyk) {
           switch (ccomps) {
               default:
-                  return gs_error_rangecheck;
+		return_error(gs_error_rangecheck);
                   /*NOTREACHED*/
                   break;
 
@@ -3317,7 +3317,7 @@ cdj_set_bpp(gx_device *pdev, int bpp, int ccomps)
         }
 
     default:
-bppe:  return gs_error_rangecheck;
+    bppe:  return_error(gs_error_rangecheck);
     }
 
     if (cprn_device->cmyk == -1) {
@@ -3360,7 +3360,7 @@ bppe:  return gs_error_rangecheck;
               break;
           }
 
-cce:  default: return gs_error_rangecheck;
+  cce:  default: return_error(gs_error_rangecheck);
   }
 
   if (cprn_device->cmyk) {

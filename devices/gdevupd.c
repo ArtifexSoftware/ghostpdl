@@ -1051,7 +1051,7 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
          errprintf(pdev->memory, "CALL-REJECTED upd_print_page(0x%05lx,0x%05lx)\n",
              (long) udev,(long) out);
 #endif
-      return gs_error_undefined;
+	 return_error(gs_error_undefined);
    }
 
 #if UPD_MESSAGES & UPD_M_TOPCALLS

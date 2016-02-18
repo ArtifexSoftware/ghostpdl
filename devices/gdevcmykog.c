@@ -310,7 +310,7 @@ cmykog_init_buffer(void *arg_, gx_device *dev_, gs_memory_t *memory, int w, int 
   *bufferp = NULL;
   buffer = (cmykog_process_buffer_t *)gs_alloc_bytes(memory, sizeof(*buffer), "cmykog_init_buffer");
   if (buffer == NULL)
-    return gs_error_VMerror;
+    return_error(gs_error_VMerror);
   memset(buffer, 0, sizeof(*buffer));
 
   *bufferp = buffer;

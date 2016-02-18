@@ -401,7 +401,7 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_imager_state * 
                         break;
                     default:
                         /* Can't happen since we already check the colour space */
-                        return gs_error_rangecheck;
+		      return_error(gs_error_rangecheck);
                 }
                 pprintg1(pdev->strm, "%g", psdf_round(frac2float(conc[0]), 255, 8));
                 for (i = 1; i < pdev->color_info.num_components; i++) {
@@ -483,7 +483,7 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_imager_state * 
         return code;
     *used_process_color = true;
     return 0;*/
-    return gs_error_unknownerror;
+    return_error(gs_error_unknownerror);
 }
 
 static int write_color_unchanged(gx_device_pdf * pdev, const gs_imager_state * pis,
@@ -1238,7 +1238,7 @@ static int new_pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis
                      * unlike shading patterns we have no fallback.
                      */
                     if (pdev->CompatibilityLevel < 1.2) {
-                        return gs_error_undefined;
+		      return_error(gs_error_undefined);
                     }
                     code = pdf_put_colored_pattern(pdev, pdc, pcs,
                                 ppscc, pis, &pres);
@@ -2672,7 +2672,7 @@ pdf_open_gstate(gx_device_pdf *pdev, pdf_resource_t **ppres)
      */
     if (pdev->context != PDF_IN_STREAM) {
         /* We apparently use gs_error_interrupt as a request to change context. */
-        return gs_error_interrupt;
+      return_error(gs_error_interrupt);
     }
     code = pdf_alloc_resource(pdev, resourceExtGState, gs_no_id, ppres, -1L);
     if (code < 0)

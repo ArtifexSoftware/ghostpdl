@@ -994,7 +994,7 @@ static int txtwrite_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "HighLevelDevice") == 0) {
         return param_write_bool(plist, "HighLevelDevice", &bool_T);
     }
-    return gs_error_undefined;
+    return_error(gs_error_undefined);
 }
 
 static int
@@ -2208,7 +2208,7 @@ textw_text_process(gs_text_enum_t *pte)
             code = txtwrite_process_plain_text(pte);
             break;
         default:
-            return gs_error_rangecheck;
+	  return_error(gs_error_rangecheck);
             break;
         }
         if (code == 0) {
