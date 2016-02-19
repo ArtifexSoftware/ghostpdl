@@ -651,7 +651,7 @@ blank_unmasked_bits(gx_device * mask,
                        | GB_ALIGN_STANDARD
                        | GB_OFFSET_0
                        | GB_RASTER_STANDARD;
-    int raster;
+    int raster = p->raster;
     byte *min;
     int x0 = prect->p.x;
     int y0 = prect->p.y;
@@ -675,7 +675,7 @@ blank_unmasked_bits(gx_device * mask,
     {
         ptr = p->data[0];
         depth >>= 3;
-        raster = p->raster - w*depth;
+        raster -= w*depth;
         for (y = 0; y < h; y++)
         {
             byte *mine;
@@ -710,7 +710,7 @@ blank_unmasked_bits(gx_device * mask,
                     ptr += depth;
                 }
             }
-            ptr += p->raster - w;
+            ptr += raster;
         }
     } else {
         for (y = 0; y < h; y++)
