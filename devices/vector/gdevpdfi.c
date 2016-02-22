@@ -1247,6 +1247,7 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                     }
                 }
                 else
+                    *pcs_orig = (gs_color_space *)pcs;
                     return 1;
                 break;
 
