@@ -39,6 +39,7 @@
 #include "gdevmpla.h"
 #include "gdevp14.h"
 #include "gxgetbit.h"
+#include "gscoord.h"
 
 #if RAW_PATTERN_DUMP
 unsigned int global_pat_index = 0;
@@ -1330,12 +1331,17 @@ gx_erase_colored_pattern(gs_state *pgs)
     if ((code = gs_setgray(pgs, 1.0)) >= 0) {
         gs_rect rect;
         gx_device_memory *mask;
+        static const gs_matrix identity = { 1, 0, 0, 1, 0, 0 };
+
         pgs->log_op = lop_default;
         rect.p.x = 0.0;
         rect.p.y = 0.0;
         rect.q.x = (double)pdev->width;
         rect.q.y = (double)pdev->height;
 
+        code = gs_setmatrix(pgs, &identity);
+        if (code < 0)
+            return code;
         /* we don't want the fill rectangle device call to use the
            mask */
         mask = pdev->mask;
