@@ -752,10 +752,13 @@ pattern_accum_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 {
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
     int code;
+    gs_get_bits_params_t params2 = *params;
 
     if (padev->bits) {
+        if (padev->mask)
+            params2.options &= ~GB_RETURN_POINTER;
         code = (*dev_proc(padev->target, get_bits_rectangle))
-            (padev->target, prect, params, unread);
+            (padev->target, prect, &params2, unread);
         /* If we have a mask, then unmarked pixels of the bits
          * will be undefined. Strictly speaking it makes no
          * sense for us to return any value here, but the only
@@ -768,7 +771,7 @@ pattern_accum_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
                                        padev->target->color_info.polarity,
                                        padev->target->color_info.num_components,
                                        padev->target->color_info.depth,
-                                       prect, params);
+                                       prect, &params2);
         return code;
     }
 
