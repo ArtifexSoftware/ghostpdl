@@ -5624,6 +5624,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
         ((gx_device_pdf14_accum *)new_target)->save_p14dev = (gx_device *)p14dev;  /* non-clist p14dev */
         /* Fill in values from the target device before opening */
         new_target->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+        new_target->color_info.anti_alias = p14dev->color_info.anti_alias;
         set_linear_color_bits_mask_shift(new_target);
         gs_pdf14_device_copy_params(new_target, target);
         ((gx_device_pdf14_accum *)new_target)->page_uses_transparency = true;
@@ -6644,16 +6645,19 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
             ptempdevproto->color_info.max_gray = 255;
             ptempdevproto->color_info.gray_index = 0; /* Avoid halftoning */
             ptempdevproto->color_info.dither_grays = 256;
+            ptempdevproto->color_info.anti_alias = dev->color_info.anti_alias;
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceRGB:
             *pdevproto = (pdf14_clist_device *)&pdf14_clist_RGB_device;
             *ptempdevproto = **pdevproto;
+            ptempdevproto->color_info.anti_alias = dev->color_info.anti_alias;
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceCMYK:
             *pdevproto = (pdf14_clist_device *)&pdf14_clist_CMYK_device;
             *ptempdevproto = **pdevproto;
+            ptempdevproto->color_info.anti_alias = dev->color_info.anti_alias;
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceCMYKspot:
@@ -6677,6 +6681,7 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
                 ptempdevproto->color_info.depth =
                                     ptempdevproto->color_info.num_components * 8;
             }
+            ptempdevproto->color_info.anti_alias = dev->color_info.anti_alias;
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceCustom:
@@ -6694,6 +6699,7 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
             ptempdevproto->color_info.max_color = 255;
             ptempdevproto->color_info.dither_grays = 256;
             ptempdevproto->color_info.dither_colors = 256;
+            ptempdevproto->color_info.anti_alias = dev->color_info.anti_alias;
             *pdevproto = ptempdevproto;
             break;
         default:			/* Should not occur */
