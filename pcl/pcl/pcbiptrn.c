@@ -371,10 +371,14 @@ static const gs_depth_bitmap solid_pattern_pixmap = {
  * the GL/2 documentation describes as source transparency is actually pattern
  * transparency).
  */
-static const byte unsolid_pattern_data = 0x0;
+/* This only actually needs to be a single byte, but we
+ * allocate it to be 2 as this stops address sanitizer
+ * reporting (intentional, safe) overreads by
+ * mem_copy_color_mono. See bug 696603. */
+static const byte unsolid_pattern_data[2] = { 0, 0 };
 
 static const gs_depth_bitmap unsolid_pattern_pixmap = {
-    (byte *) & unsolid_pattern_data, 1, {1, 1}, 0, 1, 1
+    (byte *) & unsolid_pattern_data[0], 1, {1, 1}, 0, 1, 1
 };
 
 /*
