@@ -708,7 +708,7 @@ gp_open_scratch_file_generic(const gs_memory_t *mem,
                                GENERIC_READ | GENERIC_WRITE | DELETE,
                                FILE_SHARE_READ | FILE_SHARE_WRITE,
                                NULL, CREATE_ALWAYS,
-                               FILE_ATTRIBUTE_NORMAL /* | FILE_FLAG_DELETE_ON_CLOSE */,
+                               FILE_ATTRIBUTE_NORMAL | (remove ? FILE_FLAG_DELETE_ON_CLOSE : 0),
                                NULL);
 #else
             int len = utf8_to_wchar(NULL, sTempFileName);
