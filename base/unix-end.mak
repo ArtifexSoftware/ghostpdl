@@ -149,6 +149,30 @@ mementoclean:
 gpcl6_gxps_clean: gpcl6clean gxpsclean
 	$(NO_OP)
 
+# Define rules for building address sanitizer configurations.
+# NOTE: Currently these targets rely on ignoring errors. This
+# will be fixed in future.
+SANITIZEDEFS=GENOPT='-DDEBUG' \
+ CFLAGS='$(CFLAGS_DEBUG) $(CFLAGS_SANITIZE) $(GCFLAGS) $(XCFLAGS)'\
+ LDFLAGS='$(LDFLAGS) $(LDFLAGS_SANITIZE)' \
+ BUILDDIRPREFIX=$(SANITIZEDIRPREFIX) \
+ -i
+
+sanitize:
+	$(MAKE) $(SUB_MAKE_OPTION) $(SANITIZEDEFS) default
+
+gssanitize:
+	$(MAKE) $(SUB_MAKE_OPTION) $(SANITIZEDEFS) .gssubtarget
+
+gpcl6sanitize:
+	$(MAKE) $(SUB_MAKE_OPTION) $(SANITIZEDEFS) .pcl6subtarget
+
+gxpssanitize:
+	$(MAKE) $(SUB_MAKE_OPTION) $(SANITIZEDEFS) .xpssubtarget
+
+sanitizeclean:
+	$(MAKE) $(SUB_MAKE_OPTION) $(SANITIZEDEFS) cleansub
+
 # Emacs tags maintenance.
 
 TAGS:

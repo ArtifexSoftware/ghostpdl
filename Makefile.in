@@ -185,6 +185,7 @@ PCL_XPS_TARGETS=@PCL_TARGET@ @XPS_TARGET@ @GPDL_TARGET@
 
 DEBUGDIRPREFIX=debug
 MEMENTODIRPREFIX=mem
+SANITIZEDIRPREFIX=san
 PGDIRPREFIX=pg
 
 # Define whether to compile in the FreeType library, and if so, where
@@ -378,6 +379,11 @@ CFLAGS_STANDARD=@OPT_CFLAGS@
 CFLAGS_DEBUG=@DBG_CFLAGS@
 CFLAGS_PROFILE=-pg @OPT_CFLAGS@
 CFLAGS_SO=@DYNAMIC_CFLAGS@
+
+# Define the extra flags added for address sanitizer builds
+
+CFLAGS_SANITIZE=-fsanitize=address -fno-omit-frame-pointer
+LDFLAGS_SANITIZE=$(CFLAGS_SANITIZE)
 
 # Define the other compilation flags.  Add at most one of the following:
 #	-DBSD4_2 for 4.2bsd systems.
