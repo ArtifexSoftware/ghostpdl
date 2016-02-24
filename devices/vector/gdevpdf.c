@@ -2965,9 +2965,9 @@ pdf_close(gx_device * dev)
          * debug builds of non-PS languages take a long time to close down
          * due to reporting the dangling memory allocations.
          */
-        int j, code = 0;
+        int j;
 
-        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
             pdf_resource_t *pres = pdev->resources[resourceFont].chains[j];
 
             for (; pres != 0;) {
@@ -2980,9 +2980,9 @@ pdf_close(gx_device * dev)
     }
 
     {
-        int j, code = 0;
+        int j;
 
-        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
             pdf_resource_t *pres = pdev->resources[resourceCIDFont].chains[j];
 
             for (; pres != 0;) {
@@ -2995,9 +2995,9 @@ pdf_close(gx_device * dev)
     }
 
     {
-        int j, code = 0;
+        int j;
 
-        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
             pdf_resource_t *pres = pdev->resources[resourceFontDescriptor].chains[j];
             for (; pres != 0;) {
                 pdf_font_descriptor_free(pdev, pres);
@@ -3007,9 +3007,9 @@ pdf_close(gx_device * dev)
     }
 
     {
-        int j, code = 0;
+        int j;
 
-        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
             pdf_resource_t *pres = pdev->resources[resourceCharProc].chains[j];
 
             for (; pres != 0;) {
@@ -3023,9 +3023,9 @@ pdf_close(gx_device * dev)
     }
 
     {
-        int j, code = 0;
+        int j;
 
-        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
             pdf_resource_t *pres = pdev->resources[resourceColorSpace].chains[j];
             for (; pres != 0;) {
                 free_color_space(pdev, pres);
@@ -3035,9 +3035,9 @@ pdf_close(gx_device * dev)
     }
 
     {
-        int j, code = 0;
+        int j;
 
-        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
             pdf_resource_t *pres = pdev->resources[resourceExtGState].chains[j];
 
             for (; pres != 0;) {
@@ -3052,9 +3052,9 @@ pdf_close(gx_device * dev)
     }
 
     {
-        int j, code = 0;
+        int j;
 
-        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
             pdf_resource_t *pres = pdev->resources[resourcePattern].chains[j];
 
             for (; pres != 0;) {
@@ -3069,9 +3069,9 @@ pdf_close(gx_device * dev)
     }
 
     {
-        int j, code = 0;
+        int j;
 
-        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
             pdf_resource_t *pres = pdev->resources[resourceShading].chains[j];
 
             for (; pres != 0;) {
@@ -3086,9 +3086,9 @@ pdf_close(gx_device * dev)
     }
 
     {
-        int j, code = 0;
+        int j;
 
-        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
             pdf_resource_t *pres = pdev->resources[resourceGroup].chains[j];
 
             for (; pres != 0;) {
@@ -3103,9 +3103,9 @@ pdf_close(gx_device * dev)
     }
 
     {
-        int j, code = 0;
+        int j;
 
-        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
             pdf_resource_t *pnext = 0, *pres = pdev->resources[resourceFunction].chains[j];
 
             for (; pres != 0;) {
@@ -3120,11 +3120,11 @@ pdf_close(gx_device * dev)
         }
     }
 
-    {
+    if (code >= 0) {
         int i, j;
 
         for (i = 0; i < NUM_RESOURCE_TYPES; i++) {
-            for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+            for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
                 pdev->resources[i].chains[j] = 0;
             }
         }
