@@ -195,7 +195,7 @@ zcallendpage(i_ctx_t *i_ctx_p)
 
 /* Check whether we need to call out to create the page device dictionary. */
 static bool
-save_page_device(gs_state *pgs)
+save_page_device(gs_gstate *pgs)
 {
     return
         (r_has_type(&gs_int_gstate(pgs)->pagedevice, t_null) &&
@@ -251,7 +251,7 @@ z2currentgstate(i_ctx_t *i_ctx_p)
 
 /* Check whether we need to call out to restore the page device. */
 static bool
-restore_page_device(const gs_state * pgs_old, const gs_state * pgs_new)
+restore_page_device(const gs_gstate * pgs_old, const gs_gstate * pgs_new)
 {
     gx_device *dev_old = gs_currentdevice(pgs_old);
     gx_device *dev_new;
@@ -286,7 +286,7 @@ restore_page_device(const gs_state * pgs_old, const gs_state * pgs_new)
 static int
 z2grestore(i_ctx_t *i_ctx_p)
 {
-    if (!restore_page_device(igs, gs_state_saved(igs)))
+    if (!restore_page_device(igs, gs_gstate_saved(igs)))
         return gs_grestore(igs);
     return push_callout(i_ctx_p, "%grestorepagedevice");
 }
@@ -296,8 +296,8 @@ static int
 z2grestoreall(i_ctx_t *i_ctx_p)
 {
     for (;;) {
-        if (!restore_page_device(igs, gs_state_saved(igs))) {
-            bool done = !gs_state_saved(gs_state_saved(igs));
+        if (!restore_page_device(igs, gs_gstate_saved(igs))) {
+            bool done = !gs_gstate_saved(gs_gstate_saved(igs));
 
             gs_grestore(igs);
             if (done)
@@ -312,12 +312,12 @@ z2grestoreall(i_ctx_t *i_ctx_p)
 static int
 z2restore(i_ctx_t *i_ctx_p)
 {
-    while (gs_state_saved(gs_state_saved(igs))) {
-        if (restore_page_device(igs, gs_state_saved(igs)))
+    while (gs_gstate_saved(gs_gstate_saved(igs))) {
+        if (restore_page_device(igs, gs_gstate_saved(igs)))
             return push_callout(i_ctx_p, "%restore1pagedevice");
         gs_grestore(igs);
     }
-    if (restore_page_device(igs, gs_state_saved(igs)))
+    if (restore_page_device(igs, gs_gstate_saved(igs)))
         return push_callout(i_ctx_p, "%restorepagedevice");
     return zrestore(i_ctx_p);
 }

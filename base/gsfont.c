@@ -599,7 +599,7 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
 /* Set the current font.  This is provided only for the benefit of cshow, */
 /* which must reset the current font without disturbing the root font. */
 void
-gs_set_currentfont(gs_state * pgs, gs_font * pfont)
+gs_set_currentfont(gs_gstate * pgs, gs_font * pfont)
 {
     pgs->font = pfont;
     pgs->char_tm_valid = false;
@@ -607,7 +607,7 @@ gs_set_currentfont(gs_state * pgs, gs_font * pfont)
 
 /* setfont */
 int
-gs_setfont(gs_state * pgs, gs_font * pfont)
+gs_setfont(gs_gstate * pgs, gs_font * pfont)
 {
     pgs->font = pgs->root_font = pfont;
     pgs->char_tm_valid = false;
@@ -616,14 +616,14 @@ gs_setfont(gs_state * pgs, gs_font * pfont)
 
 /* currentfont */
 gs_font *
-gs_currentfont(const gs_state * pgs)
+gs_currentfont(const gs_gstate * pgs)
 {
     return pgs->font;
 }
 
 /* rootfont */
 gs_font *
-gs_rootfont(const gs_state * pgs)
+gs_rootfont(const gs_gstate * pgs)
 {
     return pgs->root_font;
 }
@@ -643,7 +643,7 @@ gs_cachestatus(register const gs_font_dir * pdir, register uint pstat[7])
 
 /* setcacheparams */
 int
-gs_setcachesize(gs_state * pgs, gs_font_dir * pdir, uint size)
+gs_setcachesize(gs_gstate * pgs, gs_font_dir * pdir, uint size)
 {
     gs_memory_t *stable_mem = pdir->memory->stable_memory;
     if (size < 100000)             /* limits derived from CPSI emulation (CET 27-07) */

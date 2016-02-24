@@ -33,7 +33,7 @@
 
 /* setsmoothness */
 int
-gs_setsmoothness(gs_state * pgs, double smoothness)
+gs_setsmoothness(gs_gstate * pgs, double smoothness)
 {
     pgs->smoothness =
         (smoothness < 0 ? 0 : smoothness > 1 ? 1 : smoothness);
@@ -42,14 +42,14 @@ gs_setsmoothness(gs_state * pgs, double smoothness)
 
 /* currentsmoothness */
 float
-gs_currentsmoothness(const gs_state * pgs)
+gs_currentsmoothness(const gs_gstate * pgs)
 {
     return pgs->smoothness;
 }
 
 /* shfill */
 int
-gs_shfill(gs_state * pgs, const gs_shading_t * psh)
+gs_shfill(gs_gstate * pgs, const gs_shading_t * psh)
 {
     /*
      * shfill is equivalent to filling the current clipping path (or, if
@@ -94,7 +94,7 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
         return_error(gs_error_VMerror);
 
     pcs->params.pattern.has_base_space = false;
-    code = pcs->type->remap_color(&cc, pcs, &devc, (gs_imager_state *)pgs,
+    code = pcs->type->remap_color(&cc, pcs, &devc, pgs,
                                   pgs->device, gs_color_select_texture);
     if (code >= 0) {
         gx_device *dev = pgs->device;

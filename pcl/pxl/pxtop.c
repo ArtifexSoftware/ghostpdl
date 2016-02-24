@@ -143,7 +143,7 @@ typedef struct pxl_interp_instance_s
     gs_memory_t *memory;        /* memory allocator to use */
     px_parser_state_t *st;      /* parser state */
     px_state_t *pxs;            /* interp state */
-    gs_state *pgs;              /* grafix state */
+    gs_gstate *pgs;              /* grafix state */
     pl_page_action_t pre_page_action;   /* action before page out */
     void *pre_page_closure;     /* closure to call pre_page_action with */
     pl_page_action_t post_page_action;  /* action before page out */
@@ -199,7 +199,7 @@ pxl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,
                                                    sizeof
                                                    (pxl_interp_instance_t),
                                                    "pxl_allocate_interp_instance(pxl_interp_instance_t)");
-    gs_state *pgs = gs_state_alloc(mem);
+    gs_gstate *pgs = gs_gstate_alloc(mem);
     px_parser_state_t *st = px_process_alloc(mem);      /* parser init, cheap */
     px_state_t *pxs = px_state_alloc(mem);      /* inits interp state, potentially expensive */
 
@@ -209,7 +209,7 @@ pxl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,
             gs_free_object(mem, pxli,
                            "pxl_impl_allocate_interp_instance(pxl_interp_instance_t)");
         if (pgs)
-            gs_state_free(pgs);
+            gs_gstate_free(pgs);
         if (st)
             px_process_release(st);
         if (pxs)
@@ -284,7 +284,7 @@ pxl_impl_set_post_page_action(pl_interp_instance_t * instance,
 }
 
 static int
-pxl_set_icc_params(pl_interp_instance_t * instance, gs_state * pgs)
+pxl_set_icc_params(pl_interp_instance_t * instance, gs_gstate * pgs)
 {
     gs_param_string p;
     int code = 0;
@@ -594,7 +594,7 @@ pxl_impl_deallocate_interp_instance(pl_interp_instance_t * instance)
     /* do total dnit of interp state */
     px_state_finit(pxli->pxs);
     /* free halftone cache */
-    gs_state_free(pxli->pgs);
+    gs_gstate_free(pxli->pgs);
     px_process_release(pxli->st);
     px_state_release(pxli->pxs);
     gs_free_object(mem, pxli,

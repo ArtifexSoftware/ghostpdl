@@ -411,7 +411,7 @@ static int gsijs_fill_mask(gx_device * dev,
    return code;
 }
 
-static int gsijs_fill_path(gx_device * dev, const gs_imager_state * pis,
+static int gsijs_fill_path(gx_device * dev, const gs_gstate * pgs,
       gx_path * ppath, const gx_fill_params * params,
       const gx_drawing_color * pdcolor,
       const gx_clip_path * pcpath)
@@ -424,14 +424,14 @@ static int gsijs_fill_path(gx_device * dev, const gs_imager_state * pis,
 
    ijsdev->k_path = 1;
 
-   code = (*ijsdev->prn_procs.fill_path)(dev, pis, ppath, params, pdcolor, pcpath);
+   code = (*ijsdev->prn_procs.fill_path)(dev, pgs, ppath, params, pdcolor, pcpath);
 
    ijsdev->k_path = 0;
 
    return code;
 }
 
-static int gsijs_stroke_path(gx_device * dev, const gs_imager_state * pis,
+static int gsijs_stroke_path(gx_device * dev, const gs_gstate * pgs,
         gx_path * ppath, const gx_stroke_params * params,
         const gx_drawing_color * pdcolor,
         const gx_clip_path * pcpath)
@@ -444,7 +444,7 @@ static int gsijs_stroke_path(gx_device * dev, const gs_imager_state * pis,
 
    ijsdev->k_path = 1;
 
-   code = (*ijsdev->prn_procs.stroke_path)(dev, pis, ppath, params, pdcolor, pcpath);
+   code = (*ijsdev->prn_procs.stroke_path)(dev, pgs, ppath, params, pdcolor, pcpath);
 
    ijsdev->k_path = 0;
 

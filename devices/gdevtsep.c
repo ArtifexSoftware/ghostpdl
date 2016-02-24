@@ -802,12 +802,12 @@ tiffsep_gray_cs_to_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-tiffsep_rgb_cs_to_cm(gx_device * dev, const gs_imager_state *pis,
+tiffsep_rgb_cs_to_cm(gx_device * dev, const gs_gstate *pgs,
                                    frac r, frac g, frac b, frac out[])
 {
     int * map = ((tiffsep_device *) dev)->devn_params.separation_order_map;
 
-    rgb_cs_to_devn_cm(dev, map, pis, r, g, b, out);
+    rgb_cs_to_devn_cm(dev, map, pgs, r, g, b, out);
 }
 
 static void
@@ -904,7 +904,7 @@ tiffsep_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out
  *  Device proc for updating the equivalent CMYK color for spot colors.
  */
 static int
-tiffsep_update_spot_equivalent_colors(gx_device * dev, const gs_state * pgs)
+tiffsep_update_spot_equivalent_colors(gx_device * dev, const gs_gstate * pgs)
 {
     tiffsep_device * pdev = (tiffsep_device *)dev;
 
@@ -1162,7 +1162,7 @@ static void build_comp_to_sep_map(tiffsep_device *, short *);
 static int number_output_separations(int, int, int, int);
 static int create_separation_file_name(tiffsep_device *, char *, uint, int, bool);
 static byte * threshold_from_order( gx_ht_order *, int *, int *, gs_memory_t *);
-static int sep1_ht_order_to_thresholds(gx_device *pdev, const gs_imager_state *pis);
+static int sep1_ht_order_to_thresholds(gx_device *pdev, const gs_gstate *pgs);
 static void sep1_free_thresholds(tiffsep1_device *);
 dev_proc_fill_path(clist_fill_path);
 
@@ -1318,7 +1318,7 @@ done:
 
 
 static int
-sep1_fill_path(gx_device * pdev, const gs_imager_state * pis,
+sep1_fill_path(gx_device * pdev, const gs_gstate * pgs,
                  gx_path * ppath, const gx_fill_params * params,
                  const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
@@ -1326,12 +1326,12 @@ sep1_fill_path(gx_device * pdev, const gs_imager_state * pis,
 
     /* If we haven't already converted the ht into thresholds, do it now */
     if( tfdev->thresholds[0].dstart == NULL) {
-        int code = sep1_ht_order_to_thresholds(pdev, pis);
+        int code = sep1_ht_order_to_thresholds(pdev, pgs);
 
         if (code < 0)
             return code;
     }
-    return (tfdev->fill_path)( pdev, pis, ppath, params, pdevc, pcpath);
+    return (tfdev->fill_path)( pdev, pgs, ppath, params, pdevc, pcpath);
 }
 
 /*
@@ -1971,7 +1971,7 @@ build_cmyk_raster_line_fromplanar_4bpc(gs_get_bits_params_t params, byte * dest,
 }
 
 static int
-sep1_ht_order_to_thresholds(gx_device *pdev, const gs_imager_state *pis)
+sep1_ht_order_to_thresholds(gx_device *pdev, const gs_gstate *pgs)
 {
     tiffsep1_device * const tfdev = (tiffsep1_device *)pdev;
     gs_memory_t *mem = pdev->memory;
@@ -1984,13 +1984,13 @@ sep1_ht_order_to_thresholds(gx_device *pdev, const gs_imager_state *pis)
         gx_ht_order *d_order;
         threshold_array_t *dptr;
 
-        if (pis->dev_ht == NULL) {
+        if (pgs->dev_ht == NULL) {
             emprintf(mem, "sep1_order_to_thresholds: no dev_ht available\n");
             return_error(gs_error_rangecheck);  /* error condition */
         }
-        nc = pis->dev_ht->num_comp;
+        nc = pgs->dev_ht->num_comp;
         for( j=0; j<nc; j++ ) {
-            d_order = &(pis->dev_ht->components[j].corder);
+            d_order = &(pgs->dev_ht->components[j].corder);
             dptr = &(tfdev->thresholds[j]);
             dptr->dstart = threshold_from_order( d_order, &(dptr->dwidth), &(dptr->dheight), mem);
             if( dptr->dstart == NULL ) {

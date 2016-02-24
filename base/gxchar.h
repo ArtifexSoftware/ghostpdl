@@ -70,10 +70,10 @@ struct gs_show_enum_s {
     gs_text_enum_common;	/* (procs, text, index) */
     /* Following are set at creation time */
     bool auto_release;		/* true if old API, false if new */
-    gs_state *pgs;
+    gs_gstate *pgs2;
     int level;			/* save the level of pgs */
     gs_char_path_mode charpath_flag;
-    gs_state *show_gstate;	/* for setting pgs->show_gstate */
+    gs_gstate *show_gstate;	/* for setting pgs->show_gstate */
                                 /* at returns/callouts */
     int can_cache;		/* -1 if can't use cache at all, */
                                 /* 0 if can read but not load, */
@@ -130,9 +130,9 @@ cached_char *
 int gx_image_cached_char(gs_show_enum *, cached_char *);
 void gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfont,
                                   int alpha_bits, gs_log2_scale_point *p_log2_scale);
-int set_char_width(gs_show_enum *penum, gs_state *pgs, double wx, double wy);
+int set_char_width(gs_show_enum *penum, gs_gstate *pgs, double wx, double wy);
 int gx_default_text_restore_state(gs_text_enum_t *pte);
-int gx_hld_stringwidth_begin(gs_imager_state * pis, gx_path **path);
+int gx_hld_stringwidth_begin(gs_gstate * pgs, gx_path **path);
 
 /* Define the maximum size of a full temporary bitmap when rasterizing, */
 /* in bits (not bytes). */

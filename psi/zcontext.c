@@ -668,12 +668,12 @@ do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
          */
         {
             int n;
-            const gs_state *old;
-            gs_state *new;
+            const gs_gstate *old;
+            gs_gstate *new;
 
-            for (n = 0, old = igs; old != 0; old = gs_state_saved(old))
+            for (n = 0, old = igs; old != 0; old = gs_gstate_saved(old))
                 ++n;
-            for (old = pctx->state.pgs; old != 0; old = gs_state_saved(old))
+            for (old = pctx->state.pgs; old != 0; old = gs_gstate_saved(old))
                 --n;
             for (; n > 0 && code >= 0; --n)
                 code = gs_gsave(pctx->state.pgs);
@@ -683,7 +683,7 @@ do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
             }
             for (old = igs, new = pctx->state.pgs;
                  old != 0 /* (== new != 0) */  && code >= 0;
-                 old = gs_state_saved(old), new = gs_state_saved(new)
+                 old = gs_gstate_saved(old), new = gs_gstate_saved(new)
                 )
                 code = gs_setgstate(new, old);
             if (code < 0) {

@@ -21,7 +21,7 @@
 #include "gserrors.h"
 #include "gsropt.h"		/* for gxpaint.h */
 #include "gxfixed.h"
-#include "gxmatrix.h"		/* for gs_state */
+#include "gxmatrix.h"		/* for gs_gstate */
 #include "gspaint.h"
 #include "gspath.h"
 #include "gzpath.h"
@@ -51,7 +51,7 @@
 
 /* Erase the page */
 int
-gs_erasepage(gs_state * pgs)
+gs_erasepage(gs_gstate * pgs)
 {
     /*
      * We can't just fill with device white; we must take the
@@ -71,7 +71,7 @@ gs_erasepage(gs_state * pgs)
 
 /* Fill the page with the current color. */
 int
-gs_fillpage(gs_state * pgs)
+gs_fillpage(gs_gstate * pgs)
 {
     gx_device *dev = gs_currentdevice(pgs);
     int code;
@@ -94,8 +94,7 @@ gs_fillpage(gs_state * pgs)
     if (code != 0)
         return code;
 
-    code = (*dev_proc(dev, fillpage))(dev, (gs_imager_state *)pgs,
-                                      gs_currentdevicecolor_inline(pgs));
+    code = (*dev_proc(dev, fillpage))(dev, pgs, gs_currentdevicecolor_inline(pgs));
     if (code < 0)
         return code;
 
@@ -121,7 +120,7 @@ gs_fillpage(gs_state * pgs)
  * the former is less inconvenient.
  */
 static int
-scale_paths(gs_state * pgs, int log2_scale_x, int log2_scale_y, bool do_path)
+scale_paths(gs_gstate * pgs, int log2_scale_x, int log2_scale_y, bool do_path)
 {
     /*
      * Because of clip and clippath, any of path, clip_path, and view_clip
@@ -173,7 +172,7 @@ scale_paths(gs_state * pgs, int log2_scale_x, int log2_scale_y, bool do_path)
     return 0;
 }
 static void
-scale_dash_pattern(gs_state * pgs, double scale)
+scale_dash_pattern(gs_gstate * pgs, double scale)
 {
     int i;
 
@@ -186,7 +185,7 @@ scale_dash_pattern(gs_state * pgs, double scale)
         pgs->line_params.dot_length *= scale;
 }
 static int
-alpha_buffer_init(gs_state * pgs, fixed extra_x, fixed extra_y, int alpha_bits, 
+alpha_buffer_init(gs_gstate * pgs, fixed extra_x, fixed extra_y, int alpha_bits, 
                   bool devn)
 {
     gx_device *dev = gs_currentdevice_inline(pgs);
@@ -238,7 +237,7 @@ alpha_buffer_init(gs_state * pgs, fixed extra_x, fixed extra_y, int alpha_bits,
 
 /* Release an alpha buffer. */
 static int
-alpha_buffer_release(gs_state * pgs, bool newpath)
+alpha_buffer_release(gs_gstate * pgs, bool newpath)
 {
     gx_device_memory *mdev =
         (gx_device_memory *) gs_currentdevice_inline(pgs);
@@ -252,7 +251,7 @@ alpha_buffer_release(gs_state * pgs, bool newpath)
     return code;
 }
 
-static int do_fill(gs_state *pgs, int rule)
+static int do_fill(gs_gstate *pgs, int rule)
 {
     int code, abits, acode, rcode = 0;
     bool devn;
@@ -294,7 +293,7 @@ static int do_fill(gs_state *pgs, int rule)
     code = gx_set_dev_color(pgs);
     if (code != 0)
         return code;
-    code = gs_state_color_load(pgs);
+    code = gs_gstate_color_load(pgs);
     if (code < 0)
         return code;
     abits = 0;
@@ -323,7 +322,7 @@ static int do_fill(gs_state *pgs, int rule)
 
 /* Fill the current path using a specified rule. */
 static int
-fill_with_rule(gs_state * pgs, int rule)
+fill_with_rule(gs_gstate * pgs, int rule)
 {
     int code;
 
@@ -341,7 +340,7 @@ fill_with_rule(gs_state * pgs, int rule)
     else if (gs_is_null_device(pgs->device)
             || (pgs->show_gstate && pgs->text_rendering_mode == 3
             && pgs->in_cachedevice == CACHE_DEVICE_NOT_CACHING)) {
-        /* Handle separately to prevent gs_state_color_load - bug 688308. */
+        /* Handle separately to prevent gs_gstate_color_load - bug 688308. */
         gs_newpath(pgs);
         code = 0;
     } else {
@@ -353,21 +352,21 @@ fill_with_rule(gs_state * pgs, int rule)
 }
 /* Fill using the winding number rule */
 int
-gs_fill(gs_state * pgs)
+gs_fill(gs_gstate * pgs)
 {
     pgs->device->sgr.stroke_stored = false;
     return fill_with_rule(pgs, gx_rule_winding_number);
 }
 /* Fill using the even/odd rule */
 int
-gs_eofill(gs_state * pgs)
+gs_eofill(gs_gstate * pgs)
 {
     pgs->device->sgr.stroke_stored = false;
     return fill_with_rule(pgs, gx_rule_even_odd);
 }
 
 static int
-do_stroke(gs_state * pgs)
+do_stroke(gs_gstate * pgs)
 {
     int code, abits, acode, rcode = 0;
     bool devn;
@@ -407,7 +406,7 @@ do_stroke(gs_state * pgs)
     code = gx_set_dev_color(pgs);
     if (code != 0)
         return code;
-    code = gs_state_color_load(pgs);
+    code = gs_gstate_color_load(pgs);
     if (code < 0)
         return code;
     abits = 0;
@@ -471,7 +470,7 @@ do_stroke(gs_state * pgs)
 
 /* Stroke the current path */
 int
-gs_stroke(gs_state * pgs)
+gs_stroke(gs_gstate * pgs)
 {
     int code;
 
@@ -495,7 +494,7 @@ gs_stroke(gs_state * pgs)
             return code;
     }
     if (gs_is_null_device(pgs->device)) {
-        /* Handle separately to prevent gs_state_color_load. */
+        /* Handle separately to prevent gs_gstate_color_load. */
         gs_newpath(pgs);
         code = 0;
     } else {
@@ -508,7 +507,7 @@ gs_stroke(gs_state * pgs)
 
 /* Compute the stroked outline of the current path */
 static int
-gs_strokepath_aux(gs_state * pgs, bool traditional)
+gs_strokepath_aux(gs_gstate * pgs, bool traditional)
 {
     gx_path spath;
     int code;
@@ -534,13 +533,13 @@ gs_strokepath_aux(gs_state * pgs, bool traditional)
 }
 
 int
-gs_strokepath(gs_state * pgs)
+gs_strokepath(gs_gstate * pgs)
 {
     return gs_strokepath_aux(pgs, true);
 }
 
 int
-gs_strokepath2(gs_state * pgs)
+gs_strokepath2(gs_gstate * pgs)
 {
     return gs_strokepath_aux(pgs, false);
 }

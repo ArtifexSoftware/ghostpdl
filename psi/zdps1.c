@@ -21,6 +21,7 @@
 #include "gspath.h"
 #include "gspath2.h"
 #include "gsstate.h"
+#include "gxgstate.h"
 #include "ialloc.h"
 #include "igstate.h"
 #include "ivmspace.h"
@@ -115,7 +116,7 @@ zgstate(i_ctx_t *i_ctx_p)
 
     int code = gstate_check_space(i_ctx_p, istate, icurrent_space);
     igstate_obj *pigo;
-    gs_state *pnew;
+    gs_gstate *pnew;
     int_gstate *isp;
 
     if (code < 0)
@@ -123,7 +124,7 @@ zgstate(i_ctx_t *i_ctx_p)
     pigo = ialloc_struct(igstate_obj, &st_igstate_obj, "gstate");
     if (pigo == 0)
         return_error(gs_error_VMerror);
-    pnew = gs_state_copy(igs, imemory);
+    pnew = gs_gstate_copy(igs, imemory);
     if (pnew == 0) {
         ifree_object(pigo, "gstate");
         return_error(gs_error_VMerror);
@@ -153,8 +154,8 @@ zcopy_gstate(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     os_ptr op1 = op - 1;
-    gs_state *pgs;
-    gs_state *pgs1;
+    gs_gstate *pgs;
+    gs_gstate *pgs1;
     int_gstate *pistate;
     gs_memory_t *mem;
     int code;
@@ -174,9 +175,9 @@ zcopy_gstate(i_ctx_t *i_ctx_p)
 #define gsref_save(p) ref_save(op, p, "copygstate")
     int_gstate_map_refs(pistate, gsref_save);
 #undef gsref_save
-    mem = gs_state_swap_memory(pgs, imemory);
+    mem = gs_gstate_swap_memory(pgs, imemory);
     code = gs_copygstate(pgs, pgs1);
-    gs_state_swap_memory(pgs, mem);
+    gs_gstate_swap_memory(pgs, mem);
     if (code < 0)
         return code;
     int_gstate_map_refs(pistate, ref_mark_new);
@@ -190,7 +191,7 @@ int
 zcurrentgstate(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_state *pgs;
+    gs_gstate *pgs;
     int_gstate *pistate;
     int code;
     gs_memory_t *mem;
@@ -208,9 +209,9 @@ zcurrentgstate(i_ctx_t *i_ctx_p)
 #define gsref_save(p) ref_save(op, p, "currentgstate")
     int_gstate_map_refs(pistate, gsref_save);
 #undef gsref_save
-    mem = gs_state_swap_memory(pgs, imemory);
+    mem = gs_gstate_swap_memory(pgs, imemory);
     code = gs_currentgstate(pgs, igs);
-    gs_state_swap_memory(pgs, mem);
+    gs_gstate_swap_memory(pgs, mem);
     if (code < 0)
         return code;
     int_gstate_map_refs(pistate, ref_mark_new);
@@ -470,14 +471,14 @@ gstate_unshare(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     ref *pgsref = &r_ptr(op, igstate_obj)->gstate;
-    gs_state *pgs = r_ptr(pgsref, gs_state);
-    gs_state *pnew;
+    gs_gstate *pgs = r_ptr(pgsref, gs_gstate);
+    gs_gstate *pnew;
     int_gstate *isp;
 
     if (!ref_must_save(pgsref))
         return 0;
     /* Copy the gstate. */
-    pnew = gs_gstate(pgs);
+    pnew = gs_gstate_copy(pgs, pgs->memory);
     if (pnew == 0)
         return_error(gs_error_VMerror);
     isp = gs_int_gstate(pnew);

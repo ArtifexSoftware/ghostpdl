@@ -31,7 +31,7 @@
 
 /* Begin an image with parameters derived from a graphics state. */
 int
-pl_begin_image(gs_state * pgs, const gs_image_t * pim, void **pinfo)
+pl_begin_image(gs_gstate * pgs, const gs_image_t * pim, void **pinfo)
 {
     gx_device *dev = pgs->device;
 
@@ -42,14 +42,14 @@ pl_begin_image(gs_state * pgs, const gs_image_t * pim, void **pinfo)
             return code;
     }
     return (*dev_proc(dev, begin_image))
-        (dev, (const gs_imager_state *)pgs, pim,
+        (dev, (const gs_gstate *)pgs, pim,
          gs_image_format_chunky, (const gs_int_rect *)0,
          gs_currentdevicecolor_inline(pgs), pgs->clip_path, pgs->memory,
          (gx_image_enum_common_t **) pinfo);
 }
 
 int
-pl_image_data(gs_state * pgs, void *info, const byte ** planes,
+pl_image_data(gs_gstate * pgs, void *info, const byte ** planes,
               int data_x, uint raster, int height)
 {
     gx_device *dev = pgs->device;
@@ -59,7 +59,7 @@ pl_image_data(gs_state * pgs, void *info, const byte ** planes,
 }
 
 int
-pl_end_image(gs_state * pgs, void *info, bool draw_last)
+pl_end_image(gs_gstate * pgs, void *info, bool draw_last)
 {
     gx_device *dev = pgs->device;
 
@@ -67,9 +67,9 @@ pl_end_image(gs_state * pgs, void *info, bool draw_last)
 }
 
 int
-pl_begin_image2(gs_image_enum ** ppenum, gs_image_t * pimage, gs_state * pgs)
+pl_begin_image2(gs_image_enum ** ppenum, gs_image_t * pimage, gs_gstate * pgs)
 {
-    *ppenum = gs_image_enum_alloc(gs_state_memory(pgs), "px_paint_pattern");
+    *ppenum = gs_image_enum_alloc(gs_gstate_memory(pgs), "px_paint_pattern");
     if (*ppenum == 0)
         return_error(gs_error_VMerror);
 
@@ -84,7 +84,7 @@ pl_image_data2(gs_image_enum * penum, const byte * row, uint size,
 }
 
 int
-pl_end_image2(gs_image_enum * penum, gs_state * pgs)
+pl_end_image2(gs_image_enum * penum, gs_gstate * pgs)
 {
     return gs_image_cleanup_and_free_enum(penum, pgs);
 }

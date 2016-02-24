@@ -95,7 +95,7 @@ struct gs_type1_state_s {
     t1_hinter h;
     /* The following are set at initialization */
     gs_font_type1 *pfont;	/* font-specific data */
-    gs_imager_state *pis;	/* imager state */
+    gs_gstate *pgs;              /* gs_gstate */
     gx_path *path;		/* path for appending */
     bool no_grid_fitting;
     int paint_type;		/* 0/3 for fill, 1/2 for stroke */

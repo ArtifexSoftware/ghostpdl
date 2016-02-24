@@ -159,7 +159,7 @@ ps_impl_allocate_interp_instance(
             return exit_code;
 
         {
-            gs_state *pgs = psi->minst->i_ctx_p->pgs;
+            gs_gstate *pgs = psi->minst->i_ctx_p->pgs;
             gsicc_init_iccmanager(pgs);
         }
         /* inialize fresh job to false so that we can check for a pdf
@@ -223,7 +223,7 @@ ps_impl_set_device(
     int code = 0;
     int exit_code = 0;
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-    gs_state *pgs = psi->minst->i_ctx_p->pgs;
+    gs_gstate *pgs = psi->minst->i_ctx_p->pgs;
 
     /* Initialize device ICC profile  */
     code = gsicc_init_device_profile_struct(device, NULL, 0);
@@ -502,7 +502,7 @@ ps_impl_remove_device(
        The Postscript job server logic must provide that.
      */
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-    gs_state *pgs = psi->minst->i_ctx_p->pgs;
+    gs_gstate *pgs = psi->minst->i_ctx_p->pgs;
     int code = gs_nulldevice(pgs);
 
     if ( code < 0 )

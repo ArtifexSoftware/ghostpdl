@@ -81,10 +81,10 @@ typedef struct gx_device_s gx_device;
 #define SHADING_FILL_RECTANGLE_PROC(proc)\
   int proc(const gs_shading_t *psh, const gs_rect *prect,\
            const gs_fixed_rect *prect_clip, gx_device *dev,\
-           gs_imager_state *pis)
+           gs_gstate *pgs)
 typedef SHADING_FILL_RECTANGLE_PROC((*shading_fill_rectangle_proc_t));
-#define gs_shading_fill_rectangle(psh, prect, prect_clip, dev, pis)\
-  ((psh)->head.procs.fill_rectangle(psh, prect, prect_clip, dev, pis))
+#define gs_shading_fill_rectangle(psh, prect, prect_clip, dev, pgs)\
+  ((psh)->head.procs.fill_rectangle(psh, prect, prect_clip, dev, pgs))
 
 /* Define the generic shading structures. */
 typedef struct gs_shading_procs_s {
@@ -258,7 +258,7 @@ typedef struct gs_matrix_fixed_s gs_matrix_fixed;
 /* Fill a rectangle with a shading. */
 int gs_shading_do_fill_rectangle(const gs_shading_t *psh,
                          const gs_fixed_rect *prect, gx_device *dev,
-                         gs_imager_state *pis, bool fill_background);
+                         gs_gstate *pgs, bool fill_background);
 
 /* Add a shading bbox to a path. */
 int gs_shading_path_add_box(gx_path *ppath, const gs_rect *pbox,

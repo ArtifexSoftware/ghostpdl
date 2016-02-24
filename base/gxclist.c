@@ -46,7 +46,7 @@ extern dev_proc_open_device(pattern_clist_open_device);
     writer rather than the common.   fixme: Also, if icc_cache_cl is not
     included in the writer, 64bit builds will seg fault */
 
-extern_st(st_imager_state);
+extern_st(st_gs_gstate);
 static
 ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
     if (index < st_device_forward_max_ptrs) {
@@ -67,8 +67,8 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
         case 3: return ENUM_OBJ(cdev->writer.cropping_stack);
         case 4: return ENUM_OBJ(cdev->writer.icc_table);
         default:
-        return ENUM_USING(st_imager_state, &cdev->writer.imager_state,
-                  sizeof(gs_imager_state), index - 5);
+        return ENUM_USING(st_gs_gstate, &cdev->writer.gs_gstate,
+                  sizeof(gs_gstate), index - 5);
         }
     }
     else {
@@ -101,8 +101,8 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
         RELOC_VAR(cdev->writer.pinst);
         RELOC_VAR(cdev->writer.cropping_stack);
         RELOC_VAR(cdev->writer.icc_table);
-        RELOC_USING(st_imager_state, &cdev->writer.imager_state,
-            sizeof(gs_imager_state));
+        RELOC_USING(st_gs_gstate, &cdev->writer.gs_gstate,
+            sizeof(gs_gstate));
     } else {
         /* 041207
          * clist is reader.
@@ -230,11 +230,6 @@ clist_init_io_procs(gx_device_clist *pclist_dev, bool in_memory)
 }
 
 /* ------ Define the command set and syntax ------ */
-
-/* Initialization for imager state. */
-/* The initial scale is arbitrary. */
-const gs_imager_state clist_imager_state_initial =
-{gs_imager_state_initial(300.0 / 72.0, false)};
 
 /*
  * The buffer area (data, data_size) holds a bitmap cache when both writing
@@ -540,7 +535,7 @@ clist_reset(gx_device * dev)
     cdev->tile_depth = 0;
     cdev->tile_known_min = nbands;
     cdev->tile_known_max = -1;
-    cdev->imager_state = clist_imager_state_initial;
+    GS_STATE_INIT_VALUES_CLIST((&cdev->gs_gstate));
     cdev->clip_path = NULL;
     cdev->clip_path_id = gs_no_id;
     cdev->color_space.byte1 = 0;

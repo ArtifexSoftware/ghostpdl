@@ -277,7 +277,7 @@ job_begin()
 
     /* Ghostscript doesn't provide erasepage as an operator. */
     /* However, we can get the same effect by calling gs_erasepage. */
-    extern gs_state *igs;
+    extern gs_gstate *igs;
 
     if ((code = gs_erasepage(igs)) < 0)
         return code;

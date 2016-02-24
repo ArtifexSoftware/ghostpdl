@@ -58,7 +58,7 @@ void gx_cpath_accum_discard(gx_device_cpath_accum * padev);
 
 /* Intersect two clipping paths using an accumulator. */
 int gx_cpath_intersect_path_slow(gx_clip_path *, gx_path *, int,
-                        gs_imager_state *, const gx_fill_params *);
+                        gs_gstate *, const gx_fill_params *);
 
 int cpath_accum_fill_rect_with(gx_device_cpath_accum *pcdev, gx_device *tdev,
                                gx_device_color *pdevc);

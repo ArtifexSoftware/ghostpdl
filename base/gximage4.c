@@ -61,7 +61,7 @@ gs_image4_t_init(gs_image4_t * pim, gs_color_space * color_space)
 /* Start processing an ImageType 4 image. */
 static int
 gx_begin_image4(gx_device * dev,
-                const gs_imager_state * pis, const gs_matrix * pmat,
+                const gs_gstate * pgs, const gs_matrix * pmat,
                 const gs_image_common_t * pic, const gs_int_rect * prect,
                 const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
                 gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
@@ -104,7 +104,7 @@ gx_begin_image4(gx_device * dev,
         }
         penum->use_mask_color = !opaque;
     }
-    code = gx_image_enum_begin(dev, pis, pmat, pic, pdcolor, pcpath, mem,
+    code = gx_image_enum_begin(dev, pgs, pmat, pic, pdcolor, pcpath, mem,
                                penum);
     if (code >= 0)
         *pinfo = (gx_image_enum_common_t *)penum;

@@ -91,6 +91,6 @@ int cie_prepare_caches_4(i_ctx_t *i_ctx_p, const gs_range * domains,
                        &(c4)[3].floats, pcie, imem, cname)
 
 int cie_cache_joint(i_ctx_t *, const ref_cie_render_procs *,
-                    const gs_cie_common *, gs_state *);
+                    const gs_cie_common *, gs_gstate *);
 
 #endif /* icie_INCLUDED */

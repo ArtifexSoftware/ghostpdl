@@ -442,12 +442,12 @@ clip_call_fill_rectangle_hl_color(clip_callback_data_t * pccd, int xc, int yc,
     rect.q.x = int2fixed(xec);
     rect.q.y = int2fixed(yec);
     return (*dev_proc(pccd->tdev, fill_rectangle_hl_color))
-        (pccd->tdev, &rect, pccd->pis, pccd->pdcolor, pccd->pcpath);
+        (pccd->tdev, &rect, pccd->pgs, pccd->pdcolor, pccd->pcpath);
 }
 
 static int
 clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
-    const gs_imager_state *pis, const gx_drawing_color *pdcolor,
+    const gs_gstate *pgs, const gx_drawing_color *pdcolor,
     const gx_clip_path *pcpath)
 {
     gx_device_clip *rdev = (gx_device_clip *) dev;
@@ -482,7 +482,7 @@ clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
             newrect.p.y = int2fixed(y);
             newrect.q.x = int2fixed(x + w);
             newrect.q.y = int2fixed(y + h);
-            return dev_proc(tdev, fill_rectangle_hl_color)(tdev, &newrect, pis,
+            return dev_proc(tdev, fill_rectangle_hl_color)(tdev, &newrect, pgs,
                                                            pdcolor, pcpath);
         }
         else if ((rptr->prev == 0 || rptr->prev->ymax != rptr->ymax) &&
@@ -500,14 +500,14 @@ clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
                 newrect.p.y = int2fixed(y);
                 newrect.q.x = int2fixed(xe);
                 newrect.q.y = int2fixed(y + h);
-                return dev_proc(tdev, fill_rectangle_hl_color)(tdev, &newrect, pis,
+                return dev_proc(tdev, fill_rectangle_hl_color)(tdev, &newrect, pgs,
                                                                pdcolor, pcpath);
             }
         }
     }
     ccdata.tdev = tdev;
     ccdata.pdcolor = pdcolor;
-    ccdata.pis = pis;
+    ccdata.pgs = pgs;
     ccdata.pcpath = pcpath;
     return clip_enumerate_rest(rdev, x, y, xe, ye,
                                clip_call_fill_rectangle_hl_color, &ccdata);
@@ -894,7 +894,7 @@ clip_call_fill_path(clip_callback_data_t * pccd, int xc, int yc, int xec, int ye
         gx_path_init_local(&rect_path, pccd->ppath->memory);
         gx_path_add_rectangle(&rect_path, int2fixed(xc), int2fixed(yc), int2fixed(xec), int2fixed(yec));
         code = gx_cpath_intersect(&cpath_intersection, &rect_path,
-                                  gx_rule_winding_number, (gs_imager_state *)(pccd->pis));
+                                  gx_rule_winding_number, (gs_gstate *)(pccd->pgs));
         gx_path_free(&rect_path, "clip_call_fill_path");
     } else {
         gs_fixed_rect clip_box;
@@ -910,13 +910,13 @@ clip_call_fill_path(clip_callback_data_t * pccd, int xc, int yc, int xec, int ye
     proc = dev_proc(tdev, fill_path);
     if (proc == NULL)
         proc = gx_default_fill_path;
-    code = (*proc)(pccd->tdev, pccd->pis, pccd->ppath, pccd->params,
+    code = (*proc)(pccd->tdev, pccd->pgs, pccd->ppath, pccd->params,
                    pccd->pdcolor, &cpath_intersection);
     gx_cpath_free(&cpath_intersection, "clip_call_fill_path");
     return code;
 }
 static int
-clip_fill_path(gx_device * dev, const gs_imager_state * pis,
+clip_fill_path(gx_device * dev, const gs_gstate * pgs,
                gx_path * ppath, const gx_fill_params * params,
                const gx_drawing_color * pdcolor,
                const gx_clip_path * pcpath)
@@ -925,7 +925,7 @@ clip_fill_path(gx_device * dev, const gs_imager_state * pis,
     clip_callback_data_t ccdata;
     gs_fixed_rect box;
 
-    ccdata.pis = pis;
+    ccdata.pgs = pgs;
     ccdata.ppath = ppath;
     ccdata.params = params;
     ccdata.pdcolor = pdcolor;

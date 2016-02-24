@@ -264,7 +264,7 @@ gray_cs_to_spotrgb_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_spotrgb_cm(gx_device * dev, const gs_imager_state *pis,
+rgb_cs_to_spotrgb_cm(gx_device * dev, const gs_gstate *pgs,
                                   frac r, frac g, frac b, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
@@ -301,7 +301,7 @@ gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_imager_state *pis,
+rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_gstate *pgs,
                                    frac r, frac g, frac b, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
@@ -309,7 +309,7 @@ rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_imager_state *pis,
     int n = rdev->separation_names.num_names;
     int i;
 
-    color_rgb_to_cmyk(r, g, b, pis, out, dev->memory);
+    color_rgb_to_cmyk(r, g, b, pgs, out, dev->memory);
     for(i = 0; i < n; i++)			/* Clear spot colors */
         out[4 + i] = 0;
 }
@@ -356,13 +356,13 @@ gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
+rgb_cs_to_spotn_cm(gx_device * dev, const gs_gstate *pgs,
                                    frac r, frac g, frac b, frac out[])
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     frac cmyk[4];
 
-    color_rgb_to_cmyk(r, g, b, pis, cmyk, dev->memory);
+    color_rgb_to_cmyk(r, g, b, pgs, cmyk, dev->memory);
     cmyk_cs_to_spotn_cm(dev, cmyk[0], cmyk[1], cmyk[2], cmyk[3],
                         out);
 }

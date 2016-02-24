@@ -342,7 +342,7 @@ dev_proc_put_params(gdev_psdf_put_params);
 dev_proc_dev_spec_op(gdev_psdf_dev_spec_op);
 /* ---------------- Vector implementation procedures ---------------- */
 
-        /* Imager state */
+        /* gs_gstate */
 int psdf_setlinewidth(gx_device_vector * vdev, double width);
 int psdf_setlinecap(gx_device_vector * vdev, gs_line_cap cap);
 int psdf_setlinejoin(gx_device_vector * vdev, gs_line_join join);
@@ -414,20 +414,20 @@ int psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
 
 /* Decive whether to convert an image to RGB. */
 bool psdf_is_converting_image_to_RGB(const gx_device_psdf * pdev,
-                const gs_imager_state * pis, const gs_pixel_image_t * pim);
+                const gs_gstate * pgs, const gs_pixel_image_t * pim);
 
 /* Set up compression and downsampling filters for an image. */
 /* Note that this may modify the image parameters. */
 /* If pctm is NULL, downsampling is not used. */
-/* pis only provides UCR and BG information for CMYK => RGB conversion. */
+/* pgs only provides UCR and BG information for CMYK => RGB conversion. */
 int psdf_setup_image_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
                              gs_pixel_image_t *pim, const gs_matrix *pctm,
-                             const gs_imager_state * pis, bool lossless,
+                             const gs_gstate * pgs, bool lossless,
                              bool in_line);
 
 int new_setup_image_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
                              gs_pixel_image_t *pim, const gs_matrix *pctm,
-                             const gs_imager_state * pis, bool lossless,
+                             const gs_gstate * pgs, bool lossless,
                              bool in_line, bool colour_conversion);
 
 /* Set up compression filters for a lossless image, with no downsampling, */
@@ -458,7 +458,7 @@ int psdf_setup_image_to_mask_filter(psdf_binary_writer *pbw, gx_device_psdf *pde
 /* Set up an image colors filter. */
 int psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
         gx_device_psdf *pdev, gs_pixel_image_t * pim,
-        const gs_imager_state *pis);
+        const gs_gstate *pgs);
 
 /* ---------------- Symbolic data printing ---------------- */
 

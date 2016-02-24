@@ -212,7 +212,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
     *ppcst = pcst;
     return 0;
   x3:/* No need to delete dictionary here, as gc will do it for us. */
-  x2:gs_state_free(pcst->pgs);
+  x2:gs_gstate_free(pcst->pgs);
   x1:gs_interp_free_stacks(mem, pcst);
   x0:if (*ppcst == 0)
         gs_free_object((gs_memory_t *) mem, pcst, "context_state_alloc");
@@ -331,18 +331,18 @@ context_state_free(gs_context_state_t * pcst)
     if (freed)
         return freed;
     {
-        gs_state *pgs = pcst->pgs;
+        gs_gstate *pgs = pcst->pgs;
 
         gs_grestoreall(pgs);
         /* Patch the saved pointer so we can do the last grestore. */
         {
-            gs_state *saved = gs_state_saved(pgs);
+            gs_gstate *saved = gs_gstate_saved(pgs);
 
-            gs_state_swap_saved(saved, saved);
+            gs_gstate_swap_saved(saved, saved);
         }
         gs_grestore(pgs);
-        gs_state_swap_saved(pgs, (gs_state *) 0);
-        gs_state_free(pgs);
+        gs_gstate_swap_saved(pgs, (gs_gstate *) 0);
+        gs_gstate_free(pgs);
     }
 /****** FREE USERPARAMS ******/
     gs_interp_free_stacks(mem, pcst);

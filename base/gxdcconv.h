@@ -23,14 +23,14 @@
 
 /* Color space conversion routines */
 frac color_rgb_to_gray(frac r, frac g, frac b,
-                       const gs_imager_state * pis);
+                       const gs_gstate * pgs);
 void color_rgb_to_cmyk(frac r, frac g, frac b,
-                       const gs_imager_state * pis, frac cmyk[4],
+                       const gs_gstate * pgs, frac cmyk[4],
                        gs_memory_t * mem);
 frac color_cmyk_to_gray(frac c, frac m, frac y, frac k,
-                        const gs_imager_state * pis);
+                        const gs_gstate * pgs);
 void color_cmyk_to_rgb(frac c, frac m, frac y, frac k,
-                       const gs_imager_state * pis, frac rgb[3],
+                       const gs_gstate * pgs, frac rgb[3],
                        gs_memory_t * mem);
 
 #endif /* gxdcconv_INCLUDED */

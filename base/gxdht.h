@@ -283,7 +283,7 @@ typedef struct gx_device_halftone_s gx_device_halftone;
 
 /*
  * Device Halftone Structure definition.  See comments before
- * gx_imager_dev_ht_install() for more information on this structure and its
+ * gx_gstate_dev_ht_install() for more information on this structure and its
  * fields.
  */
 struct gx_device_halftone_s {
@@ -292,7 +292,7 @@ struct gx_device_halftone_s {
     gs_id id;			/* the id changes whenever the data change */
     /*
      * We have to keep the halftone type so that we can pass it
-     * through the band list for gx_imager_dev_ht_install.
+     * through the band list for gx_gstate_dev_ht_install.
      */
     gs_halftone_type type;
     gx_ht_order_component *components;

@@ -838,7 +838,7 @@ pngalpha_decode_color(gx_device * dev, gx_color_index color,
 
 /* fill the page fills with transparent */
 static int
-pngalpha_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
+pngalpha_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
 {
     return (*dev_proc(dev, fill_rectangle))(dev, 0, 0, dev->width, dev->height,  0xffffffff);
 }

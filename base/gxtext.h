@@ -85,7 +85,7 @@ rc_free_proc(rc_free_text_enum);
     gs_text_params_t text;	/* must be first for subclassing */\
     gx_device *dev;\
     gx_device *imaging_dev;	/* see note below */\
-    gs_imager_state *pis;\
+    gs_gstate *pgs;\
     gs_font *orig_font;\
     gx_path *path;			/* unless DO_NONE & !RETURN_WIDTH */\
     const gx_device_color *pdcolor;	/* if DO_DRAW */\
@@ -178,7 +178,7 @@ struct gs_text_enum_s {
  */
 int gs_text_enum_init(gs_text_enum_t *pte,
                       const gs_text_enum_procs_t *procs,
-                      gx_device *dev, gs_imager_state *pis,
+                      gx_device *dev, gs_gstate *pgs,
                       const gs_text_params_t *text,
                       gs_font *font, gx_path *path,
                       const gx_device_color *pdcolor,
@@ -190,7 +190,7 @@ int gs_text_enum_init(gs_text_enum_t *pte,
  * as that purely for retrieving metrics
  */
 gs_text_enum_t *
-gs_text_enum_alloc(gs_memory_t * mem, gs_imager_state * pis, client_name_t cname);
+gs_text_enum_alloc(gs_memory_t * mem, gs_gstate * pgs, client_name_t cname);
 
 /*
  * Copy the dynamically changing elements from one enumerator to another.

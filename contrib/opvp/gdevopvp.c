@@ -188,10 +188,10 @@ static  int oprp_get_params(gx_device *, gs_param_list *);
 static  int _put_params(gs_param_list *);
 static  int opvp_put_params(gx_device *, gs_param_list *);
 static  int oprp_put_params(gx_device *, gs_param_list *);
-static  int opvp_fill_path(gx_device *, const gs_imager_state *, gx_path *,
+static  int opvp_fill_path(gx_device *, const gs_gstate *, gx_path *,
                            const gx_fill_params *, const gx_device_color *,
                            const gx_clip_path *);
-static  int opvp_stroke_path(gx_device *, const gs_imager_state *, gx_path *,
+static  int opvp_stroke_path(gx_device *, const gs_gstate *, gx_path *,
                              const gx_stroke_params *, const gx_drawing_color *,
                              const gx_clip_path *);
 static  int opvp_fill_mask(gx_device *, const byte *, int, int, gx_bitmap_id,
@@ -222,9 +222,9 @@ static  int opvp_setflat(gx_device_vector *, double);
 static  int opvp_setlogop(gx_device_vector *, gs_logical_operation_t,
                           gs_logical_operation_t);
 #if GS_VERSION_MAJOR >= 8
-static  int opvp_can_handle_hl_color(gx_device_vector *, const gs_imager_state *, const gx_drawing_color *);
-static  int opvp_setfillcolor(gx_device_vector *, const gs_imager_state *, const gx_drawing_color *);
-static  int opvp_setstrokecolor(gx_device_vector *, const gs_imager_state *,const gx_drawing_color *);
+static  int opvp_can_handle_hl_color(gx_device_vector *, const gs_gstate *, const gx_drawing_color *);
+static  int opvp_setfillcolor(gx_device_vector *, const gs_gstate *, const gx_drawing_color *);
+static  int opvp_setstrokecolor(gx_device_vector *, const gs_gstate *,const gx_drawing_color *);
 #else
 static  int opvp_setfillcolor(gx_device_vector *, const gx_drawing_color *);
 static  int opvp_setstrokecolor(gx_device_vector *, const gx_drawing_color *);
@@ -3484,7 +3484,7 @@ static int checkCPath(const gx_clip_path *pcpath)
 static  int
 opvp_fill_path(
     gx_device *dev,
-    const gs_imager_state *pis,
+    const gs_gstate *pgs,
     gx_path *ppath,
     const gx_fill_params *params,
     const gx_device_color *pdevc,
@@ -3495,7 +3495,7 @@ opvp_fill_path(
 
     /* check if paths are too complex */
     if (!checkPath(ppath) || !checkCPath(pxpath)) {
-        return gx_default_fill_path(dev, pis, ppath, params, pdevc, pxpath);
+        return gx_default_fill_path(dev, pgs, ppath, params, pdevc, pxpath);
     }
     /* check clippath support */
     if (!(apiEntry->opvpSetClipPath)) {
@@ -3511,10 +3511,10 @@ opvp_fill_path(
     }
 
     if (!vector || draw_image) {
-        return gx_default_fill_path(dev, pis, ppath, params, pdevc, pxpath);
+        return gx_default_fill_path(dev, pgs, ppath, params, pdevc, pxpath);
     }
 
-    return gdev_vector_fill_path(dev, pis, ppath, params, pdevc, pxpath);
+    return gdev_vector_fill_path(dev, pgs, ppath, params, pdevc, pxpath);
 }
 
 /*
@@ -3523,7 +3523,7 @@ opvp_fill_path(
 static  int
 opvp_stroke_path(
     gx_device *dev,
-    const gs_imager_state *pis,
+    const gs_gstate *pgs,
     gx_path *ppath,
     const gx_stroke_params *params,
     const gx_drawing_color *pdcolor,
@@ -3534,7 +3534,7 @@ opvp_stroke_path(
 
     /* check if paths are too complex */
     if (!checkPath(ppath) || !checkCPath(pxpath)) {
-        return gx_default_stroke_path(dev, pis, ppath,
+        return gx_default_stroke_path(dev, pgs, ppath,
                                       params, pdcolor, pxpath);
     }
     /* check clippath support */
@@ -3551,11 +3551,11 @@ opvp_stroke_path(
     }
 
     if (!vector || draw_image) {
-        return gx_default_stroke_path(dev, pis, ppath,
+        return gx_default_stroke_path(dev, pgs, ppath,
                                       params, pdcolor, pxpath);
     }
 
-    return gdev_vector_stroke_path(dev, pis, ppath,
+    return gdev_vector_stroke_path(dev, pgs, ppath,
                                    params, pdcolor, pxpath);
 }
 
@@ -3598,7 +3598,7 @@ opvp_fill_mask(
 static  int
 opvp_begin_image(
     gx_device *dev,
-    const gs_imager_state *pis,
+    const gs_gstate *pgs,
     const gs_image_t *pim,
     gs_image_format_t format,
     const gs_int_rect *prect,
@@ -3625,7 +3625,7 @@ opvp_begin_image(
     /* check if paths are too complex */
     if (!checkCPath(pcpath)) {
         return gx_default_begin_image(
-                    dev, pis, pim, format,
+                    dev, pgs, pim, format,
                     prect, pdcolor, pcpath,
                     mem, pinfo);
     }
@@ -3639,7 +3639,7 @@ opvp_begin_image(
     if (vinfo) {
         memcpy(imageDecode,pim->Decode,sizeof(pim->Decode));
         vinfo->memory =mem;
-        code = gdev_vector_begin_image(vdev, pis, pim, format, prect,
+        code = gdev_vector_begin_image(vdev, pgs, pim, format, prect,
                                        pdcolor, pcpath, mem,
                                        &opvp_image_enum_procs,
                                        vinfo);
@@ -3660,7 +3660,7 @@ opvp_begin_image(
                     if (((pcs->params.indexed.hival + 1) > 256)
                         || (bits_per_pixel != 8 && bits_per_pixel != 1)) {
                         return gx_default_begin_image(
-                                dev, pis, pim, format,
+                                dev, pgs, pim, format,
                                 prect, pdcolor, pcpath,
                                 mem, pinfo);
                     } else if (base_color_index
@@ -3680,9 +3680,9 @@ opvp_begin_image(
                                byte2frac((*(p + 2 + (count * 4)))),
                                byte2frac((*(p + 3 + (count * 4)))),
 #if GS_VERSION_MAJOR >= 9
-                               pis, rgb, mem);
+                               pgs, rgb, mem);
 #else
-                               pis, rgb);
+                               pgs, rgb);
 #endif
                             *(palette + 0 + (count * 3)) = frac2byte(rgb[0]);
                             *(palette + 1 + (count * 3)) = frac2byte(rgb[1]);
@@ -3707,7 +3707,7 @@ opvp_begin_image(
                     } else {
                         /* except CMYK and RGB */
                         return gx_default_begin_image(
-                                    dev, pis, pim, format,
+                                    dev, pgs, pim, format,
                                     prect, pdcolor, pcpath,
                                     mem, pinfo);
                     }
@@ -3722,7 +3722,7 @@ opvp_begin_image(
             /* adjust matrix */
             reverse_image = false;
             gs_matrix_invert(&pim->ImageMatrix, &mtx);
-            gs_matrix_multiply(&mtx, &ctm_only(pis), &mtx);
+            gs_matrix_multiply(&mtx, &ctm_only(pgs), &mtx);
             switch (FastImageMode) {
             case FastImageNoCTM:
                 if ((mtx.xy==0)&&(mtx.yx==0)&& (mtx.yy>=0)) {
@@ -3955,7 +3955,7 @@ fallthrough:
                 if(apiEntry->opvpResetCTM) {
                     apiEntry->opvpResetCTM(printerContext); /* reset CTM */
                 }
-                return gx_default_begin_image(dev, pis, pim, format,
+                return gx_default_begin_image(dev, pgs, pim, format,
                                     prect, pdcolor, pcpath, mem, pinfo);
             }
         }
@@ -3967,7 +3967,7 @@ fallthrough:
         return ecode;
     }
 
-    return gx_default_begin_image(dev, pis, pim, format, prect,
+    return gx_default_begin_image(dev, pgs, pim, format, prect,
                                   pdcolor, pcpath, mem, pinfo);
 }
 
@@ -3997,7 +3997,7 @@ opvp_image_plane_data(
     byte *ptr;
     bbox_image_enum *pbe;
     gx_image_enum *tinfo;
-    const gs_imager_state *pis;
+    const gs_gstate *pgs;
 
     vinfo = (gdev_vector_image_enum_t *)info;
 
@@ -4022,7 +4022,7 @@ opvp_image_plane_data(
         /* Adjust image data gamma */
         pbe = (bbox_image_enum *)vinfo->bbox_info;
         tinfo = (gx_image_enum *)pbe->target_info;
-        pis = tinfo->pis;
+        pgs = tinfo->pgs;
 
         if (vinfo->num_planes == 1) {
             for (h = 0; h < height; h++) {
@@ -4337,11 +4337,11 @@ opvp_image_plane_data(
             for (i = 0; i < height; i++) {
                 ptr = buf + raster_length * i;
                 for (j = 0; j < vinfo->width; j++) {
-                    ptr[j*3] = min(255, frac2cv(gx_map_color_frac(pis,
+                    ptr[j*3] = min(255, frac2cv(gx_map_color_frac(pgs,
                       cv2frac(ptr[j*3]), effective_transfer[0])));
-                    ptr[j*3+1] = min(255, frac2cv(gx_map_color_frac(pis,
+                    ptr[j*3+1] = min(255, frac2cv(gx_map_color_frac(pgs,
                       cv2frac(ptr[j*3+1]), effective_transfer[1])));
-                    ptr[j*3+2] = min(255, frac2cv(gx_map_color_frac(pis,
+                    ptr[j*3+2] = min(255, frac2cv(gx_map_color_frac(pgs,
                       cv2frac(ptr[j*3+2]), effective_transfer[2])));
                 }
             }
@@ -4349,7 +4349,7 @@ opvp_image_plane_data(
             for (i = 0; i < height; i++) {
                 ptr = buf + raster_length * i;
                 for (j=0; j < vinfo->width; j++) {
-                    ptr[j] = min(255, frac2cv(gx_map_color_frac(pis,
+                    ptr[j] = min(255, frac2cv(gx_map_color_frac(pgs,
                       cv2frac(ptr[j]), effective_transfer[3])));
                 }
             }
@@ -4359,11 +4359,11 @@ opvp_image_plane_data(
             for (i = 0; i < height; i++) {
                 ptr = buf + raster_length * i;
                 for (j = 0; j < vinfo->width; j++) {
-                    ptr[j*3] = min(255, frac2cv(gx_map_color_frac(pis,
+                    ptr[j*3] = min(255, frac2cv(gx_map_color_frac(pgs,
                       cv2frac(ptr[j*3]), effective_transfer.colored.red)));
-                    ptr[j*3+1] = min(255, frac2cv(gx_map_color_frac(pis,
+                    ptr[j*3+1] = min(255, frac2cv(gx_map_color_frac(pgs,
                       cv2frac(ptr[j*3+1]), effective_transfer.colored.green)));
-                    ptr[j*3+2] = min(255, frac2cv(gx_map_color_frac(pis,
+                    ptr[j*3+2] = min(255, frac2cv(gx_map_color_frac(pgs,
                       cv2frac(ptr[j*3+2]), effective_transfer.colored.blue)));
                 }
             }
@@ -4371,7 +4371,7 @@ opvp_image_plane_data(
             for (i = 0; i < height; i++) {
                 ptr = buf + raster_length * i;
                 for (j = 0; j < vinfo->width; j++) {
-                    ptr[j] = min(255, frac2cv(gx_map_color_frac(pis,
+                    ptr[j] = min(255, frac2cv(gx_map_color_frac(pgs,
                       cv2frac(ptr[j]), effective_transfer.colored.gray)));
                 }
             }
@@ -4720,7 +4720,7 @@ opvp_setlogop(
 /*--- added for Ghostscritp 8.15 ---*/
 static int
 opvp_can_handle_hl_color(gx_device_vector * vdev,
-              const gs_imager_state * pis1, const gx_drawing_color * pdc)
+              const gs_gstate * pgs1, const gx_drawing_color * pdc)
 {
     return false; /* High level color is not implemented yet. */
 }
@@ -4733,7 +4733,7 @@ opvp_can_handle_hl_color(gx_device_vector * vdev,
 static  int
 opvp_setfillcolor(
     gx_device_vector *vdev,
-    const gs_imager_state *pis, /* added for gs 8.15 */
+    const gs_gstate *pgs, /* added for gs 8.15 */
     const gx_drawing_color *pdc)
 #else
 static  int
@@ -4774,7 +4774,7 @@ opvp_setfillcolor(gx_device_vector *vdev, const gx_drawing_color *pdc)
 static  int
 opvp_setstrokecolor(
     gx_device_vector *vdev,
-    const gs_imager_state *pis, /* added for gs 8.15 */
+    const gs_gstate *pgs, /* added for gs 8.15 */
     const gx_drawing_color *pdc)
 #else
 static  int

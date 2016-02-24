@@ -256,8 +256,8 @@ gdev_vector_init(gx_device_vector * vdev)
 void
 gdev_vector_reset(gx_device_vector * vdev)
 {
-    static const gs_imager_state state_initial =
-    {gs_imager_state_initial(1, false)};
+    static const gs_gstate state_initial =
+    {gs_gstate_initial(1.0)};
 
     vdev->state = state_initial;
     gx_hld_saved_color_init(&vdev->saved_fill_color);
@@ -384,22 +384,22 @@ gdev_vector_update_log_op(gx_device_vector * vdev, gs_logical_operation_t lop)
 /* Update color (fill or stroke). */
 static int
 gdev_vector_update_color(gx_device_vector * vdev,
-                              const gs_imager_state * pis,
+                              const gs_gstate * pgs,
                               const gx_drawing_color * pdcolor,
                               gx_hl_saved_color *sc,
                               int (*setcolor) (gx_device_vector * vdev,
-                                               const gs_imager_state * pis,
+                                               const gs_gstate * pgs,
                                                const gx_drawing_color * pdc))
 {
     gx_hl_saved_color temp;
     int code;
-    bool hl_color = (*vdev_proc(vdev, can_handle_hl_color)) (vdev, pis, pdcolor);
-    const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
+    bool hl_color = (*vdev_proc(vdev, can_handle_hl_color)) (vdev, pgs, pdcolor);
+    const gs_gstate *pgs_for_hl_color = (hl_color ? pgs : NULL);
 
-    gx_hld_save_color(pis_for_hl_color, pdcolor, &temp);
+    gx_hld_save_color(pgs_for_hl_color, pdcolor, &temp);
     if (gx_hld_saved_color_equal(&temp, sc))
         return 0;
-    code = (*setcolor) (vdev, pis_for_hl_color, pdcolor);
+    code = (*setcolor) (vdev, pgs_for_hl_color, pdcolor);
     if (code < 0)
         return code;
     *sc = temp;
@@ -409,19 +409,19 @@ gdev_vector_update_color(gx_device_vector * vdev,
 /* Update the fill color. */
 int
 gdev_vector_update_fill_color(gx_device_vector * vdev,
-                              const gs_imager_state * pis,
+                              const gs_gstate * pgs,
                               const gx_drawing_color * pdcolor)
 {
-    return gdev_vector_update_color(vdev, pis, pdcolor, &vdev->saved_fill_color,
+    return gdev_vector_update_color(vdev, pgs, pdcolor, &vdev->saved_fill_color,
                                     vdev_proc(vdev, setfillcolor));
 }
 
 /* Update the state for filling a region. */
 static int
-update_fill(gx_device_vector * vdev, const gs_imager_state * pis,
+update_fill(gx_device_vector * vdev, const gs_gstate * pgs,
             const gx_drawing_color * pdcolor, gs_logical_operation_t lop)
 {
-    int code = gdev_vector_update_fill_color(vdev, pis, pdcolor);
+    int code = gdev_vector_update_fill_color(vdev, pgs, pdcolor);
 
     if (code < 0)
         return code;
@@ -430,7 +430,7 @@ update_fill(gx_device_vector * vdev, const gs_imager_state * pis,
 
 /* Bring state up to date for filling. */
 int
-gdev_vector_prepare_fill(gx_device_vector * vdev, const gs_imager_state * pis,
+gdev_vector_prepare_fill(gx_device_vector * vdev, const gs_gstate * pgs,
             const gx_fill_params * params, const gx_drawing_color * pdcolor)
 {
     if (params->flatness != vdev->state.flatness) {
@@ -440,7 +440,7 @@ gdev_vector_prepare_fill(gx_device_vector * vdev, const gs_imager_state * pis,
             return code;
         vdev->state.flatness = params->flatness;
     }
-    return update_fill(vdev, pis, pdcolor, pis->log_op);
+    return update_fill(vdev, pgs, pdcolor, pgs->log_op);
 }
 
 /* Compare two dash patterns. */
@@ -458,20 +458,20 @@ dash_pattern_eq(const float *stored, const gx_dash_params * set, double scale)
 /* Bring state up to date for stroking. */
 int
 gdev_vector_prepare_stroke(gx_device_vector * vdev,
-                           const gs_imager_state * pis,	/* may be NULL */
+                           const gs_gstate * pgs,	/* may be NULL */
                            const gx_stroke_params * params, /* may be NULL */
                            const gx_drawing_color * pdcolor, /* may be NULL */
                            double scale)
 {
-    if (pis) {
-        int pattern_size = pis->line_params.dash.pattern_size;
-        float dash_offset = pis->line_params.dash.offset * scale;
-        float half_width = pis->line_params.half_width * scale;
+    if (pgs) {
+        int pattern_size = pgs->line_params.dash.pattern_size;
+        float dash_offset = pgs->line_params.dash.offset * scale;
+        float half_width = pgs->line_params.half_width * scale;
 
         if (dash_offset != vdev->state.line_params.dash.offset ||
             pattern_size != vdev->state.line_params.dash.pattern_size ||
             (pattern_size != 0 &&
-             !dash_pattern_eq(vdev->dash_pattern, &pis->line_params.dash,
+             !dash_pattern_eq(vdev->dash_pattern, &pgs->line_params.dash,
                               scale))
             ) {
             float *pattern;
@@ -479,7 +479,7 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
 
             pattern = (float *)gs_alloc_bytes(vdev->memory->stable_memory, pattern_size * sizeof(float), "vector allocate dash pattern");
             for (i = 0; i < pattern_size; ++i)
-                pattern[i] = pis->line_params.dash.pattern[i] * scale;
+                pattern[i] = pgs->line_params.dash.pattern[i] * scale;
             code = (*vdev_proc(vdev, setdash))
                 (vdev, pattern, pattern_size, dash_offset);
             if (code < 0)
@@ -500,33 +500,33 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
                 return code;
             vdev->state.line_params.half_width = half_width;
         }
-        if (pis->line_params.miter_limit != vdev->state.line_params.miter_limit) {
+        if (pgs->line_params.miter_limit != vdev->state.line_params.miter_limit) {
             int code = (*vdev_proc(vdev, setmiterlimit))
-                (vdev, pis->line_params.miter_limit);
+                (vdev, pgs->line_params.miter_limit);
 
             if (code < 0)
                 return code;
             gx_set_miter_limit(&vdev->state.line_params,
-                               pis->line_params.miter_limit);
+                               pgs->line_params.miter_limit);
         }
         /* FIXME: Should cope with end_cap and dash_cap too */
-        if (pis->line_params.start_cap != vdev->state.line_params.start_cap) {
+        if (pgs->line_params.start_cap != vdev->state.line_params.start_cap) {
             int code = (*vdev_proc(vdev, setlinecap))
-                (vdev, pis->line_params.start_cap);
+                (vdev, pgs->line_params.start_cap);
 
             if (code < 0)
                 return code;
-            vdev->state.line_params.start_cap = pis->line_params.start_cap;
+            vdev->state.line_params.start_cap = pgs->line_params.start_cap;
         }
-        if (pis->line_params.join != vdev->state.line_params.join) {
+        if (pgs->line_params.join != vdev->state.line_params.join) {
             int code = (*vdev_proc(vdev, setlinejoin))
-                (vdev, pis->line_params.join);
+                (vdev, pgs->line_params.join);
 
             if (code < 0)
                 return code;
-            vdev->state.line_params.join = pis->line_params.join;
+            vdev->state.line_params.join = pgs->line_params.join;
         } {
-            int code = gdev_vector_update_log_op(vdev, pis->log_op);
+            int code = gdev_vector_update_log_op(vdev, pgs->log_op);
 
             if (code < 0)
                 return code;
@@ -542,7 +542,7 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
         }
     }
     if (pdcolor) {
-        int code = gdev_vector_update_color(vdev, pis, pdcolor,
+        int code = gdev_vector_update_color(vdev, pgs, pdcolor,
                     &vdev->saved_stroke_color, vdev_proc(vdev, setstrokecolor));
 
         if (code < 0)
@@ -559,7 +559,7 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
  */
 int
 gdev_vector_stroke_scaling(const gx_device_vector *vdev,
-                           const gs_imager_state *pis,
+                           const gs_gstate *pgs,
                            double *pscale, gs_matrix *pmat)
 {
     bool set_ctm = true;
@@ -575,16 +575,16 @@ gdev_vector_stroke_scaling(const gx_device_vector *vdev,
      * do it before constructing the path, and inverse-transform all
      * the coordinates.
      */
-    if (is_xxyy(&pis->ctm)) {
-        scale = fabs(pis->ctm.xx);
-        set_ctm = fabs(pis->ctm.yy) != scale;
-    } else if (is_xyyx(&pis->ctm)) {
-        scale = fabs(pis->ctm.xy);
-        set_ctm = fabs(pis->ctm.yx) != scale;
-    } else if ((pis->ctm.xx == pis->ctm.yy && pis->ctm.xy == -pis->ctm.yx) ||
-               (pis->ctm.xx == -pis->ctm.yy && pis->ctm.xy == pis->ctm.yx)
+    if (is_xxyy(&pgs->ctm)) {
+        scale = fabs(pgs->ctm.xx);
+        set_ctm = fabs(pgs->ctm.yy) != scale;
+    } else if (is_xyyx(&pgs->ctm)) {
+        scale = fabs(pgs->ctm.xy);
+        set_ctm = fabs(pgs->ctm.yx) != scale;
+    } else if ((pgs->ctm.xx == pgs->ctm.yy && pgs->ctm.xy == -pgs->ctm.yx) ||
+               (pgs->ctm.xx == -pgs->ctm.yy && pgs->ctm.xy == pgs->ctm.yx)
         ) {
-        scale = hypot(pis->ctm.xx, pis->ctm.xy);
+        scale = hypot(pgs->ctm.xx, pgs->ctm.xy);
         set_ctm = false;
     }
     if (set_ctm) {
@@ -596,10 +596,10 @@ gdev_vector_stroke_scaling(const gx_device_vector *vdev,
          * formats.)
          */
         double
-            mxx = pis->ctm.xx / vdev->scale.x,
-            mxy = pis->ctm.xy / vdev->scale.y,
-            myx = pis->ctm.yx / vdev->scale.x,
-            myy = pis->ctm.yy / vdev->scale.y;
+            mxx = pgs->ctm.xx / vdev->scale.x,
+            mxy = pgs->ctm.xy / vdev->scale.y,
+            myx = pgs->ctm.yx / vdev->scale.x,
+            myy = pgs->ctm.yy / vdev->scale.y;
 
         scale = 0.5 * (fabs(mxx) + fabs(mxy) + fabs(myx) + fabs(myy));
         pmat->xx = mxx / scale, pmat->xy = mxy / scale;
@@ -864,7 +864,7 @@ gdev_vector_close_file(gx_device_vector * vdev)
 /* Initialize for enumerating an image. */
 int
 gdev_vector_begin_image(gx_device_vector * vdev,
-                        const gs_imager_state * pis, const gs_image_t * pim,
+                        const gs_gstate * pgs, const gs_image_t * pim,
                         gs_image_format_t format, const gs_int_rect * prect,
               const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
                     gs_memory_t * mem, const gx_image_enum_procs_t * pprocs,
@@ -890,14 +890,14 @@ gdev_vector_begin_image(gx_device_vector * vdev,
         pie->num_planes;
     pie->default_info = 0;
     pie->bbox_info = 0;
-    if ((code = gdev_vector_update_log_op(vdev, pis->log_op)) < 0 ||
+    if ((code = gdev_vector_update_log_op(vdev, pgs->log_op)) < 0 ||
         (code = gdev_vector_update_clip_path(vdev, pcpath)) < 0 ||
         ((pim->ImageMask ||
-          (pim->CombineWithColor && rop3_uses_T(pis->log_op))) &&
-         (code = gdev_vector_update_fill_color(vdev, pis, pdcolor)) < 0) ||
+          (pim->CombineWithColor && rop3_uses_T(pgs->log_op))) &&
+         (code = gdev_vector_update_fill_color(vdev, pgs, pdcolor)) < 0) ||
         (vdev->bbox_device &&
          (code = (*dev_proc(vdev->bbox_device, begin_image))
-          ((gx_device *) vdev->bbox_device, pis, pim, format, prect,
+          ((gx_device *) vdev->bbox_device, pgs, pim, format, prect,
            pdcolor, pcpath, mem, &pie->bbox_info)) < 0)
         )
         return code;
@@ -1161,17 +1161,17 @@ gdev_vector_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 }
 
 int
-gdev_vector_fill_path(gx_device * dev, const gs_imager_state * pis,
+gdev_vector_fill_path(gx_device * dev, const gs_gstate * pgs,
                       gx_path * ppath, const gx_fill_params * params,
                  const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
     int code;
 
     if ((code = gdev_vector_update_clip_path(vdev, pcpath)) < 0 ||
-        (code = gdev_vector_prepare_fill(vdev, pis, params, pdevc)) < 0 ||
+        (code = gdev_vector_prepare_fill(vdev, pgs, params, pdevc)) < 0 ||
         (vdev->bbox_device &&
          (code = (*dev_proc(vdev->bbox_device, fill_path))
-          ((gx_device *) vdev->bbox_device, pis, ppath, params,
+          ((gx_device *) vdev->bbox_device, pgs, ppath, params,
            pdevc, pcpath)) < 0) ||
         (code = (*vdev_proc(vdev, dopath))
          (vdev, ppath,
@@ -1180,12 +1180,12 @@ gdev_vector_fill_path(gx_device * dev, const gs_imager_state * pis,
            vdev->fill_options,
          NULL)) < 0
         )
-        return gx_default_fill_path(dev, pis, ppath, params, pdevc, pcpath);
+        return gx_default_fill_path(dev, pgs, ppath, params, pdevc, pcpath);
     return code;
 }
 
 int
-gdev_vector_stroke_path(gx_device * dev, const gs_imager_state * pis,
+gdev_vector_stroke_path(gx_device * dev, const gs_gstate * pgs,
                         gx_path * ppath, const gx_stroke_params * params,
               const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
@@ -1195,16 +1195,16 @@ gdev_vector_stroke_path(gx_device * dev, const gs_imager_state * pis,
     gs_matrix mat;
 
     if ((code = gdev_vector_update_clip_path(vdev, pcpath)) < 0 ||
-        (set_ctm = gdev_vector_stroke_scaling(vdev, pis, &scale, &mat)) != 0 ||
-        (code = gdev_vector_prepare_stroke(vdev, pis, params, pdcolor, scale)) < 0 ||
+        (set_ctm = gdev_vector_stroke_scaling(vdev, pgs, &scale, &mat)) != 0 ||
+        (code = gdev_vector_prepare_stroke(vdev, pgs, params, pdcolor, scale)) < 0 ||
         (vdev->bbox_device &&
          (code = (*dev_proc(vdev->bbox_device, stroke_path))
-          ((gx_device *) vdev->bbox_device, pis, ppath, params,
+          ((gx_device *) vdev->bbox_device, pgs, ppath, params,
            pdcolor, pcpath)) < 0) ||
         (code = (*vdev_proc(vdev, dopath))
          (vdev, ppath, gx_path_type_stroke | vdev->stroke_options, NULL)) < 0
         )
-        return gx_default_stroke_path(dev, pis, ppath, params, pdcolor, pcpath);
+        return gx_default_stroke_path(dev, pgs, ppath, params, pdcolor, pcpath);
     return code;
 }
 

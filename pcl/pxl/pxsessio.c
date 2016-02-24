@@ -176,11 +176,11 @@ px_end_session_cleanup(px_state_t * pxs)
                        gstate_pattern_cache(pxs->pgs),
                        "px_end_session_cleanup(struct)");
         {
-            gs_state *pgs = pxs->pgs;
+            gs_gstate *pgs = pxs->pgs;
 
             while (pgs) {
                 gstate_set_pattern_cache(pgs, 0);
-                pgs = gs_state_saved(pgs);
+                pgs = gs_gstate_saved(pgs);
             }
         }
     }
@@ -307,7 +307,7 @@ const byte apxBeginPage[] = {
 int
 pxBeginPage(px_args_t * par, px_state_t * pxs)
 {
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
     gx_device *dev = gs_currentdevice(pgs);
     gs_point page_size_pixels;
     gs_matrix points2device;
@@ -625,7 +625,7 @@ int
 pxBeginPageFromPassthrough(px_state_t * pxs)
 {
     int code;
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
     gs_point page_size_pixels;
     gs_matrix points2device;
 

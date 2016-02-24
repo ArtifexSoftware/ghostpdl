@@ -25,7 +25,7 @@
 /* Define the state of the conversion process. */
 typedef struct {
     /* The following are set at the beginning of the conversion. */
-    gs_state *pgs;
+    gs_gstate *pgs;
     const byte *data;		/* image data */
     int width, height, raster;
     /* The following are updated dynamically. */
@@ -48,7 +48,7 @@ static int add_dxdy(status *, int, int, int);
   if ( (code = add_dxdy(s, dx, dy, n)) < 0 ) return code
 /* Append an outline derived from an image to the current path. */
 int
-gs_imagepath(gs_state * pgs, int width, int height, const byte * data)
+gs_imagepath(gs_gstate * pgs, int width, int height, const byte * data)
 {
     status stat;
     status *out = &stat;

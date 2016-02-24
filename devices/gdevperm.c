@@ -216,10 +216,10 @@ gray_cs_to_perm_cm_0(gx_device *dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_perm_cm_0(gx_device *dev, const gs_imager_state *pis,
+rgb_cs_to_perm_cm_0(gx_device *dev, const gs_gstate *pgs,
                                   frac r, frac g, frac b, frac out[])
 {
-    color_rgb_to_cmyk(r, g, b, pis, out, dev->memory);
+    color_rgb_to_cmyk(r, g, b, pgs, out, dev->memory);
     perm_permute_cm(dev, out);
 }
 
@@ -241,7 +241,7 @@ gray_cs_to_perm_cm_1(gx_device *dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_perm_cm_1(gx_device *dev, const gs_imager_state *pis,
+rgb_cs_to_perm_cm_1(gx_device *dev, const gs_gstate *pgs,
                                   frac r, frac g, frac b, frac out[])
 {
     out[0] = frac_1 - r;

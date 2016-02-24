@@ -1318,7 +1318,7 @@ pattern_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
     }
     if (type & pcl_reset_permanent || type & pcl_reset_printer) {
         if (gstate_pattern_cache(pcs->pgs)) {
-            gs_state *pgs = pcs->pgs;
+            gs_gstate *pgs = pcs->pgs;
 
             (gstate_pattern_cache(pgs)->free_all) (gstate_pattern_cache(pgs));
             gs_free_object(pcs->memory,
@@ -1329,7 +1329,7 @@ pattern_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
                            "pattern_do_reset(struct)");
             while (pgs) {
                 gstate_set_pattern_cache(pgs, 0);
-                pgs = gs_state_saved(pgs);
+                pgs = gs_gstate_saved(pgs);
             }
         }
     }

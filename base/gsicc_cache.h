@@ -18,9 +18,9 @@
 #ifndef gsicccache_INCLUDED
 #  define gsicccache_INCLUDED
 
-#ifndef gs_imager_state_DEFINED
-#  define gs_imager_state_DEFINED
-typedef struct gs_imager_state_s gs_imager_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
 #ifndef gx_device_DEFINED
@@ -46,12 +46,12 @@ void gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan,
 bool gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache, 
                             gsicc_link_t **ret_link, gsicc_hashlink_t hash,
                             bool include_softproof, bool include_devlink);
-gsicc_link_t* gsicc_get_link(const gs_imager_state * pis, gx_device *dev,
+gsicc_link_t* gsicc_get_link(const gs_gstate * pgs, gx_device *dev,
                              const gs_color_space  *input_colorspace,
                              gs_color_space *output_colorspace,
                              gsicc_rendering_param_t *rendering_params,
                              gs_memory_t *memory);
-gsicc_link_t* gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
+gsicc_link_t* gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
                                      cmm_profile_t *gs_input_profile,
                                      cmm_profile_t *gs_output_profile,
                                      gsicc_rendering_param_t *rendering_params,
@@ -64,7 +64,7 @@ int gsicc_transform_named_color(const float tint_values[],
                             gsicc_namedcolor_t color_names[], 
                             uint num_names,
                             gx_color_value device_values[],
-                            const gs_imager_state *pis, gx_device *dev,
+                            const gs_gstate *pgs, gx_device *dev,
                             cmm_profile_t *gs_output_profile,
                             gsicc_rendering_param_t *rendering_params);
 int  gsicc_get_device_profile_comps(cmm_dev_profile_t *dev_profile);

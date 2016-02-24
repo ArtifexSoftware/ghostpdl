@@ -43,7 +43,7 @@ typedef struct gs_file_path_s *gs_file_path_ptr;
 #endif
 
 struct gs_context_state_s {
-    gs_state *pgs;
+    gs_gstate *pgs;
     gs_dual_memory_t memory;
     int language_level;
     ref array_packing;		/* t_boolean */

@@ -91,38 +91,36 @@ int gs_get_device_or_hw_params(gx_device *, gs_param_list *, bool);
 int gs_putdeviceparams(gx_device *, gs_param_list *);
 int gs_closedevice(gx_device *);
 
-/* Device procedures involving an imager state. */
+/* Device procedures involving an gs_gstate. */
 
-#ifndef gs_imager_state_DEFINED
-#  define gs_imager_state_DEFINED
-typedef struct gs_imager_state_s gs_imager_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
-int gs_imager_putdeviceparams(gs_imager_state *pis, gx_device *dev,
-                              gs_param_list *plist);
+int gs_gstate_putdeviceparams(gs_gstate *pgs, gx_device *dev,
+gs_param_list *plist);
 
 /* Device procedures involving a graphics state. */
 
-#ifndef gs_state_DEFINED
-#  define gs_state_DEFINED
-typedef struct gs_state_s gs_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
-int gs_flushpage(gs_state *);
-int gs_copypage(gs_state *);
-int gs_output_page(gs_state *, int, int);
-int gs_nulldevice(gs_state *);
-int gs_setdevice(gs_state *, gx_device *);
-int gs_setdevice_no_erase(gs_state *, gx_device *);		/* returns 1 */
+int gs_flushpage(gs_gstate *);
+int gs_copypage(gs_gstate *);
+int gs_output_page(gs_gstate *, int, int);
+int gs_nulldevice(gs_gstate *);
+int gs_setdevice(gs_gstate *, gx_device *);
+int gs_setdevice_no_erase(gs_gstate *, gx_device *);		/* returns 1 */
                                                 /* if erasepage required */
-int gs_setdevice_no_init(gs_state *, gx_device *);
-gx_device *gs_currentdevice(const gs_state *);
+int gs_setdevice_no_init(gs_gstate *, gx_device *);
+gx_device *gs_currentdevice(const gs_gstate *);
 
 /* gzstate.h redefines the following: */
 #ifndef gs_currentdevice_inline
 #  define gs_currentdevice_inline(pgs) gs_currentdevice(pgs)
 #endif
-
-int gs_state_putdeviceparams(gs_state *pgs, gs_param_list *plist);
 
 #endif /* gsdevice_INCLUDED */

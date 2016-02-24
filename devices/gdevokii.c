@@ -131,7 +131,7 @@ okiibm_print_page1(gx_device_printer *pdev, FILE *prn_stream, int y_9pin_high,
                 byte *in_data;
                 byte *inp;
                 byte *in_end;
-                byte *out_end;
+                byte *out_end = NULL;
                 int lcnt;
 
                 /* Copy 1 scan line and test for all zero. */

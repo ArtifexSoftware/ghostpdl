@@ -66,7 +66,7 @@ struct gs_pattern_type_s {
 
 #define pattern_proc_make_pattern(proc)\
   int proc(gs_client_color *, const gs_pattern_template_t *,\
-           const gs_matrix *, gs_state *, gs_memory_t *)
+           const gs_matrix *, gs_gstate *, gs_memory_t *)
 
         pattern_proc_make_pattern((*make_pattern));
 
@@ -96,7 +96,7 @@ struct gs_pattern_type_s {
          * pattern instance specifies a color space.
          */
 #define pattern_proc_set_color(proc)\
-  int proc(const gs_client_color *, gs_state *)
+  int proc(const gs_client_color *, gs_gstate *)
 
         pattern_proc_set_color((*set_color));
 
@@ -115,7 +115,7 @@ void gs_pattern_common_init(gs_pattern_template_t *,
  * saved graphics state, and fill in the common members.
  */
 int gs_make_pattern_common(gs_client_color *, const gs_pattern_template_t *,
-                           const gs_matrix *, gs_state *, gs_memory_t *,
+                           const gs_matrix *, gs_gstate *, gs_memory_t *,
                            gs_memory_type_ptr_t);
 
 /* Declare the freeing procedure for Pattern instances. */
@@ -257,8 +257,8 @@ gx_pattern_cache *gx_pattern_alloc_cache(gs_memory_t *, uint, ulong);
 void gx_pattern_cache_free(gx_pattern_cache *pcache);
 
 /* Get or set the Pattern cache in a gstate. */
-gx_pattern_cache *gstate_pattern_cache(gs_state *);
-void gstate_set_pattern_cache(gs_state *, gx_pattern_cache *);
+gx_pattern_cache *gstate_pattern_cache(gs_gstate *);
+void gstate_set_pattern_cache(gs_gstate *, gx_pattern_cache *);
 
 /*
  * Define a device for accumulating the rendering of a Pattern.
@@ -301,29 +301,29 @@ bool gx_device_is_pattern_accum(gx_device *dev);
 /* Given the size of a new pattern tile, free entries from the cache until  */
 /* enough space is available (or nothing left to free).			    */
 /* This will allow 1 oversized entry					    */
-void gx_pattern_cache_ensure_space(gs_imager_state * pis, int needed);
+void gx_pattern_cache_ensure_space(gs_gstate * pgs, int needed);
 
-void gx_pattern_cache_update_used(gs_imager_state *pis, ulong used);
+void gx_pattern_cache_update_used(gs_gstate *pgs, ulong used);
 
 /* Update cache tile space */
-void gx_pattern_cache_update_space(gs_imager_state * pis, int64_t used);
+void gx_pattern_cache_update_space(gs_gstate * pgs, int64_t used);
 
 /* Add an accumulated pattern to the cache. */
 /* Note that this does not free any of the data in the accumulator */
 /* device, but it may zero out the bitmap_memory pointers to prevent */
 /* the accumulated bitmaps from being freed when the device is closed. */
-int gx_pattern_cache_add_entry(gs_imager_state *, gx_device_forward *,
+int gx_pattern_cache_add_entry(gs_gstate *, gx_device_forward *,
                                gx_color_tile **);
 /* Add a dummy Pattern cache entry.  Stubs a pattern tile for interpreter when
    device handles high level patterns. */
-int gx_pattern_cache_add_dummy_entry(gs_imager_state *pis, gs_pattern1_instance_t *pinst,
+int gx_pattern_cache_add_dummy_entry(gs_gstate *pgs, gs_pattern1_instance_t *pinst,
                                 int depth);
 
 /* Get entry for reading a pattern from clist. */
-int gx_pattern_cache_get_entry(gs_imager_state * pis, gs_id id, gx_color_tile ** pctile);
+int gx_pattern_cache_get_entry(gs_gstate * pgs, gs_id id, gx_color_tile ** pctile);
 
 /* Look up a pattern color in the cache. */
-bool gx_pattern_cache_lookup(gx_device_color *, const gs_imager_state *,
+bool gx_pattern_cache_lookup(gx_device_color *, const gs_gstate *,
                              gx_device *, gs_color_select_t);
 
 /* Purge selected entries from the pattern cache. */
@@ -359,6 +359,6 @@ void tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax, int px,
                             gx_pattern_trans_t *fill_trans_buffer);
 
 /* File a colored pattern with white */
-int gx_erase_colored_pattern(gs_state *pgs);
+int gx_erase_colored_pattern(gs_gstate *pgs);
 
 #endif /* gxpcolor_INCLUDED */

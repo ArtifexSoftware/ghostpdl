@@ -47,7 +47,7 @@
 extern const gs_color_space_type gs_color_space_type_Pattern;
 
 /* Forward references */
-static int zPaintProc(const gs_client_color *, gs_state *);
+static int zPaintProc(const gs_client_color *, gs_gstate *);
 static int pattern_paint_prepare(i_ctx_t *);
 static int pattern_paint_finish(i_ctx_t *);
 
@@ -185,7 +185,7 @@ const op_def zpcolor_l2_op_defs[] =
 /* Render the pattern by calling the PaintProc. */
 static int pattern_paint_cleanup(i_ctx_t *);
 static int
-zPaintProc(const gs_client_color * pcc, gs_state * pgs)
+zPaintProc(const gs_client_color * pcc, gs_gstate * pgs)
 {
     /* Just schedule a call on the real PaintProc. */
     r_ptr(&gs_int_gstate(pgs)->remap_color_info,
@@ -197,7 +197,7 @@ zPaintProc(const gs_client_color * pcc, gs_state * pgs)
 static int
 pattern_paint_prepare(i_ctx_t *i_ctx_p)
 {
-    gs_state *pgs = igs;
+    gs_gstate *pgs = igs;
     gs_pattern1_instance_t *pinst =
         (gs_pattern1_instance_t *)gs_currentcolor(pgs)->pattern;
     ref *pdict = &((int_pattern *) pinst->templat.client_data)->dict;
@@ -227,8 +227,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
             return code;
         }
     } else {
-        code = gx_pattern_cache_add_dummy_entry((gs_imager_state *)igs,
-                    pinst, cdev->color_info.depth);
+        code = gx_pattern_cache_add_dummy_entry(igs, pinst, cdev->color_info.depth);
         if (code < 0)
             return code;
     }
@@ -317,7 +316,7 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
     if (pdev != NULL) {
         gx_color_tile *ctile;
         int code;
-        gs_state *pgs = igs;
+        gs_gstate *pgs = igs;
         /* If the PaintProc does one or more gsaves, then fails to do an equal numer of
          * grestores, we can get here with the graphics state stack not how we expect.
          * Hence we stored a reference to the pattern instance on the exec stack, and that
@@ -353,7 +352,7 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
                     return code;
             }
         }
-        code = gx_pattern_cache_add_entry((gs_imager_state *)igs, pdev, &ctile);
+        code = gx_pattern_cache_add_entry(igs, pdev, &ctile);
         if (code < 0)
             return code;
     }
@@ -384,7 +383,7 @@ pattern_paint_cleanup(i_ctx_t *i_ctx_p)
      * and pattern instance we expect
      */
     if (pinst != pinst2) {
-        gs_state *pgs = igs;
+        gs_gstate *pgs = igs;
         for (i = 0; pgs->saved && pinst != pinst2; i++, pgs = pgs->saved) {
             pinst = (gs_pattern1_instance_t *)gs_currentcolor(pgs->saved)->pattern;
         }

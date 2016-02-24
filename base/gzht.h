@@ -45,9 +45,9 @@ void gx_ht_construct_spot_order(gx_ht_order *);
 int gx_ht_construct_threshold_order(gx_ht_order *, const byte *);
 void gx_ht_construct_bit(gx_ht_bit * bit, int width, int bit_num);
 void gx_ht_construct_bits(gx_ht_order *);
-bool gx_transfer_is_monotonic(const gs_imager_state *pis, int plane_index);
+bool gx_transfer_is_monotonic(const gs_gstate *pgs, int plane_index);
 int gx_ht_construct_threshold(gx_ht_order *d_order, gx_device *dev,
-                              const gs_imager_state * pis, int plane_index);
+                              const gs_gstate * pgs, int plane_index);
 
 /* Halftone enumeration structure */
 struct gs_screen_enum_s {
@@ -57,7 +57,7 @@ struct gs_screen_enum_s {
     gs_matrix mat_inv;		/* the inversion of mat */
     int x, y;
     int strip, shift;
-    gs_state *pgs;
+    gs_gstate *pgs;
 };
 
 #define private_st_gs_screen_enum() /* in gshtscr.c */\
@@ -66,13 +66,13 @@ struct gs_screen_enum_s {
 /*    order.levels, order.bits, pgs) */
 
 /* Prepare a device halftone for installation, but don't install it. */
-int gs_sethalftone_prepare(gs_state *, gs_halftone *,
+int gs_sethalftone_prepare(gs_gstate *, gs_halftone *,
                            gx_device_halftone *);
 
 /* Allocate and initialize a spot screen. */
 /* This is the first half of gs_screen_init_accurate/memory. */
 int gs_screen_order_alloc(gx_ht_order *, gs_memory_t *);
-int gs_screen_order_init_memory(gx_ht_order *, const gs_state *,
+int gs_screen_order_init_memory(gx_ht_order *, const gs_gstate *,
                                 gs_screen_halftone *, bool, gs_memory_t *);
 
 #define gs_screen_order_init(porder, pgs, phsp, accurate)\
@@ -81,14 +81,14 @@ int gs_screen_order_init_memory(gx_ht_order *, const gs_state *,
 /* Prepare to sample a spot screen. */
 /* This is the second half of gs_screen_init_accurate/memory. */
 int gs_screen_enum_init_memory(gs_screen_enum *, const gx_ht_order *,
-                               gs_state *, const gs_screen_halftone *,
+                               gs_gstate *, const gs_screen_halftone *,
                                gs_memory_t *);
 
 #define gs_screen_enum_init(penum, porder, pgs, phsp)\
   gs_screen_enum_init_memory(penum, porder, pgs, phsp, pgs->memory)
 
 /* Process an entire screen plane. */
-int gx_ht_process_screen_memory(gs_screen_enum * penum, gs_state * pgs,
+int gx_ht_process_screen_memory(gs_screen_enum * penum, gs_gstate * pgs,
                                 gs_screen_halftone * phsp, bool accurate,
                                 gs_memory_t * mem);
 
@@ -189,10 +189,10 @@ void gx_ht_init_cache(const gs_memory_t *mem, gx_ht_cache *, const gx_ht_order *
 void gx_ht_order_release(gx_ht_order * porder, gs_memory_t * mem, bool free_cache);
 
 /*
- * Install a device halftone in an imager state.  Note that this does not
+ * Install a device halftone in an gs_gstate.  Note that this does not
  * read or update the client halftone.
  */
-int gx_imager_dev_ht_install(gs_imager_state * pis,
+int gx_gstate_dev_ht_install(gs_gstate * pgs,
                              gx_device_halftone * pdht,
                              gs_halftone_type type,
                              const gx_device * dev);
@@ -202,13 +202,13 @@ int gx_imager_dev_ht_install(gs_imager_state * pis,
  * level of the gs_halftone and the gx_device_halftone, and take ownership
  * of any substructures.
  */
-int gx_ht_install(gs_state *, const gs_halftone *, gx_device_halftone *);
+int gx_ht_install(gs_gstate *, const gs_halftone *, gx_device_halftone *);
 
 /* Reestablish the effective transfer functions, taking into account */
 /* any overrides from halftone dictionaries. */
 /* Some compilers object to names longer than 31 characters.... */
-void gx_imager_set_effective_xfer(gs_imager_state * pis);
-void gx_set_effective_transfer(gs_state * pgs);
+void gx_gstate_set_effective_xfer(gs_gstate * pgs);
+void gx_set_effective_transfer(gs_gstate * pgs);
 
 /*
  * This routine will take a color name (defined by a ptr and size) and
@@ -234,6 +234,6 @@ int gs_color_name_component_number(gx_device * dev, const char * pname,
  * This version converts a name index value into a string and size and
  * then call gs_color_name_component_number.
  */
-int gs_cname_to_colorant_number(gs_state * pgs, byte * pname, uint name_size,
+int gs_cname_to_colorant_number(gs_gstate * pgs, byte * pname, uint name_size,
                                  int halftonetype);
 #endif /* gzht_INCLUDED */

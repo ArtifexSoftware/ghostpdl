@@ -28,7 +28,7 @@
 #include "gzstate.h"
 
 /* Imported from gsht.c */
-void gx_set_effective_transfer(gs_state *);
+void gx_set_effective_transfer(gs_gstate *);
 
 /* Structure descriptors */
 public_st_client_color();
@@ -99,11 +99,11 @@ gx_no_adjust_color_count(const gs_client_color * pcc,
 }
 
 /* Forward declarations */
-void load_transfer_map(gs_state *, gx_transfer_map *, double);
+void load_transfer_map(gs_gstate *, gx_transfer_map *, double);
 
 /* setgray */
 int
-gs_setgray(gs_state * pgs, double gray)
+gs_setgray(gs_gstate * pgs, double gray)
 {
     gs_color_space      *pcs;
     int                 code;
@@ -125,7 +125,7 @@ gs_setgray(gs_state * pgs, double gray)
 
 /* setrgbcolor */
 int
-gs_setrgbcolor(gs_state * pgs, double r, double g, double b)
+gs_setrgbcolor(gs_gstate * pgs, double r, double g, double b)
 {
     gs_color_space      *pcs;
     int                 code;
@@ -149,7 +149,7 @@ gs_setrgbcolor(gs_state * pgs, double r, double g, double b)
 
 /* setnullcolor */
 int
-gs_setnullcolor(gs_state * pgs)
+gs_setnullcolor(gs_gstate * pgs)
 {
     if (pgs->in_cachedevice)
         return_error(gs_error_undefined);
@@ -161,12 +161,12 @@ gs_setnullcolor(gs_state * pgs)
 /* settransfer */
 /* Remap=0 is used by the interpreter. */
 int
-gs_settransfer(gs_state * pgs, gs_mapping_proc tproc)
+gs_settransfer(gs_gstate * pgs, gs_mapping_proc tproc)
 {
     return gs_settransfer_remap(pgs, tproc, true);
 }
 int
-gs_settransfer_remap(gs_state * pgs, gs_mapping_proc tproc, bool remap)
+gs_settransfer_remap(gs_gstate * pgs, gs_mapping_proc tproc, bool remap)
 {
     gx_transfer *ptran = &pgs->set_transfer;
 
@@ -202,7 +202,7 @@ gs_settransfer_remap(gs_state * pgs, gs_mapping_proc tproc, bool remap)
 
 /* currenttransfer */
 gs_mapping_proc
-gs_currenttransfer(const gs_state * pgs)
+gs_currenttransfer(const gs_gstate * pgs)
 {
     return pgs->set_transfer.gray->proc;
 }
@@ -211,7 +211,7 @@ gs_currenttransfer(const gs_state * pgs)
 
 /* Set device color = 1 for writing into the character cache. */
 int
-gx_set_device_color_1(gs_state * pgs)
+gx_set_device_color_1(gs_gstate * pgs)
 {
     gs_color_space  *pcs;
 
@@ -250,7 +250,7 @@ transfer_use_proc(double value, const gx_transfer_map * pmap,
     return (*pmap->proc) (value, pmap);
 }
 void
-load_transfer_map(gs_state * pgs, gx_transfer_map * pmap, double min_value)
+load_transfer_map(gs_gstate * pgs, gx_transfer_map * pmap, double min_value)
 {
     gs_mapping_closure_proc_t proc;
     const void *proc_data;

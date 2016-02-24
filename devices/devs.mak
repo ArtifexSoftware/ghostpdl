@@ -816,7 +816,7 @@ $(DD)txtwrite.dev : $(ECHOGS_XE) $(txtwrite_) $(GDEV)\
 $(DEVOBJ)gdevtxtw.$(OBJ) : $(DEVVECSRC)gdevtxtw.c $(GDEV)\
   $(memory__h) $(string__h) $(gp_h) $(gsparam_h) $(gsutil_h) \
   $(gsdevice_h) $(gxfont_h) $(gxfont0_h) $(gstext_h) $(gxfcid_h)\
-  $(gxistate_h) $(gxpath_h) $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS)
+  $(gxgstate_h) $(gxpath_h) $(gdevagl_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevtxtw.$(OBJ) $(C_) $(DEVVECSRC)gdevtxtw.c
 
 $(DEVOBJ)gdevagl.$(OBJ) : $(DEVVECSRC)gdevagl.c $(GDEV)\
@@ -915,7 +915,7 @@ $(DEVOBJ)gdevpdfc.$(OBJ) : $(DEVVECSRC)gdevpdfc.c $(GXERR) $(math__h) $(memory__
 	$(DEVCC) $(DEVO_)gdevpdfc.$(OBJ) $(C_) $(DEVVECSRC)gdevpdfc.c
 
 $(DEVOBJ)gdevpdfd.$(OBJ) : $(DEVVECSRC)gdevpdfd.c $(math__h) $(memory__h)\
- $(gx_h) $(gxdevice_h) $(gxfixed_h) $(gxistate_h) $(gxpaint_h)\
+ $(gx_h) $(gxdevice_h) $(gxfixed_h) $(gxgstate_h) $(gxpaint_h)\
  $(gxcoord_h) $(gxdevmem_h) $(gxcolor2_h) $(gxhldevc_h)\
  $(gsstate_h) $(gserrors_h) $(gsptype2_h) $(gsshade_h)\
  $(gzpath_h) $(gzcpath_h) $(gdevpdfx_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gsutil_h) \
@@ -930,7 +930,7 @@ $(DEVOBJ)gdevpdfe.$(OBJ) : $(DEVVECSRC)gdevpdfe.c\
 $(DEVOBJ)gdevpdfg.$(OBJ) : $(DEVVECSRC)gdevpdfg.c $(GXERR) $(math__h) $(string__h)\
  $(memory__h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gsfunc0_h) $(gsstate_h) $(gxdcolor_h) $(gxpcolor_h) $(gxcolor2_h) $(gsptype2_h)\
- $(gxbitmap_h) $(gxdht_h) $(gxfarith_h) $(gxfmap_h) $(gxht_h) $(gxistate_h)\
+ $(gxbitmap_h) $(gxdht_h) $(gxfarith_h) $(gxfmap_h) $(gxht_h) $(gxgstate_h)\
  $(gzht_h) $(gsicc_manage_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevpdfg.$(OBJ) $(C_) $(DEVVECSRC)gdevpdfg.c
 
@@ -1050,7 +1050,7 @@ $(DEVOBJ)gdevpsfu.$(OBJ) : $(DEVVECSRC)gdevpsfu.c $(AK) $(gx_h)\
 $(DEVOBJ)gdevpsfx.$(OBJ) : $(DEVVECSRC)gdevpsfx.c $(AK) $(gx_h)\
  $(gserrors_h) $(math__h) $(memory__h)\
  $(gxfixed_h) $(gxfont_h) $(gxfont1_h) $(gxmatrix_h) $(gxtype1_h)\
- $(stream_h) $(gdevpsf_h) $(gxistate_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(stream_h) $(gdevpsf_h) $(gxgstate_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevpsfx.$(OBJ) $(C_) $(DEVVECSRC)gdevpsfx.c
 
 # ---------------- Font copying ---------------- #
@@ -1065,7 +1065,7 @@ $(GLD)fcopy.dev : $(ECHOGS_XE) $(fcopy_) $(DEVS_MAK) $(MAKEDIRS)
 $(DEVOBJ)gxfcopy.$(OBJ) : $(DEVSRC)gxfcopy.c $(memory__h) $(AK) $(gx_h)\
  $(gserrors_h) $(gscencs_h) $(gsline_h) $(gspaint_h) $(gspath_h) $(gsstruct_h)\
  $(gsutil_h) $(gschar_h) $(gxfont_h) $(gxfont1_h) $(gxfont42_h) $(gxchar_h)\
- $(gxfcid_h) $(gxfcopy_h) $(gxfcache_h) $(gxistate_h) $(gxtext_h) $(gxtype1_h)\
+ $(gxfcid_h) $(gxfcopy_h) $(gxfcache_h) $(gxgstate_h) $(gxtext_h) $(gxtype1_h)\
  $(smd5_h) $(gzstate_h) $(gdevpsf_h) $(stream_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gxfcopy.$(OBJ) $(C_) $(DEVSRC)gxfcopy.c
 
@@ -2062,7 +2062,7 @@ $(DEVOBJ)gdevcups.$(OBJ) : $(LCUPSSRCDIR)$(D)gdevcups.c $(std_h) $(DEVS_MAK) $(M
 
 $(DEVOBJ)gdevtrac.$(OBJ) : $(DEVSRC)gdevtrac.c $(AK) $(gx_h)\
  $(gserrors_h) $(gscspace_h)\
- $(gxdevice_h) $(gxdht_h) $(gxfont_h) $(gxiparam_h) $(gxistate_h)\
+ $(gxdevice_h) $(gxdht_h) $(gxfont_h) $(gxiparam_h) $(gxgstate_h)\
  $(gxpaint_h) $(gxtmap_h) $(gzcpath_h) $(gzpath_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevtrac.$(OBJ) $(C_) $(DEVSRC)gdevtrac.c
 

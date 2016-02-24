@@ -432,7 +432,7 @@ mem_abuf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 /* Fill a rectangle. */
 static int
 mem_abuf_fill_rectangle_hl_color(gx_device * dev, const gs_fixed_rect *rect,
-                                 const gs_imager_state *pis,
+                                 const gs_gstate *pgs,
                                  const gx_drawing_color *pdcolor,
                                  const gx_clip_path *pcpath)
 {
@@ -442,6 +442,7 @@ mem_abuf_fill_rectangle_hl_color(gx_device * dev, const gs_fixed_rect *rect,
     int y = fixed2int(rect->p.y);
     int w = fixed2int(rect->q.x) - x;
     int h = fixed2int(rect->q.y) - y;
+    (void)pgs;
 
     x -= mdev->mapped_x;
     fit_fill_xy(dev, x, y, w, h);
@@ -480,7 +481,7 @@ mem_abuf_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
  * We should do alpha buffering iff this value is >1.
  */
 int
-alpha_buffer_bits(gs_state * pgs)
+alpha_buffer_bits(gs_gstate * pgs)
 {
     gx_device *dev;
 

@@ -132,7 +132,7 @@ static int color_draws_b_w(gx_device * dev,
 static int image_init_colors(gx_image_enum * penum, int bps, int spp,
                                gs_image_format_t format,
                                const float *decode,
-                               const gs_imager_state * pis, gx_device * dev,
+                               const gs_gstate * pgs, gx_device * dev,
                                const gs_color_space * pcs, bool * pdcb);
 
 /* Procedures for unpacking the input data into bytes or fracs. */
@@ -223,7 +223,7 @@ static inline fixed float2fixed_rounded_boxed(double src) {
  *      masked, adjust
  */
 int
-gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
+gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
                     const gs_matrix *pmat, const gs_image_common_t * pic,
                 const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
                 gs_memory_t * mem, gx_image_enum *penum)
@@ -238,7 +238,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     gs_matrix_double mat;
     int index_bps;
     const gs_color_space *pcs = pim->ColorSpace;
-    gs_logical_operation_t lop = (pis ? pis->log_op : lop_default);
+    gs_logical_operation_t lop = (pgs ? pgs->log_op : lop_default);
     int code;
     int log2_xbytes = (bps <= 8 ? 0 : arch_log2_sizeof_frac);
     int spp, nplanes, spread;
@@ -261,7 +261,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     penum->Width = width;
     penum->Height = height;
     if (pmat == 0)
-        pmat = &ctm_only(pis);
+        pmat = &ctm_only(pgs);
     if (pim->ImageMatrix.xx == pmat->xx && pim->ImageMatrix.xy == pmat->xy &&
         pim->ImageMatrix.yx == pmat->yx && pim->ImageMatrix.yy == pmat->yy) {
         /* Process common special case separately to accept singular matrix. */
@@ -315,7 +315,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
      */
     gridfitimages = in_pattern_accumulator && orthogonal;
 
-    if (pis != NULL && pis->is_gstate && ((gs_state *)pis)->show_gstate != NULL) {
+    if (pgs != NULL && pgs->show_gstate != NULL) {
         /* If we're a graphics state, and we're in a text object, then we
          * must be in a type3 font. Don't fiddle with it. */
     } else if (!gridfitimages &&
@@ -324,7 +324,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
          * ones in a pattern device), we only grid fit imagemasks */
     } else if (gridfitimages && (penum->masked && penum->image_parent_type == 0)) {
         /* We don't gridfit imagemasks in a pattern accumulator */
-    } else if (pis != NULL && pis->fill_adjust.x == 0 && pis->fill_adjust.y == 0) {
+    } else if (pgs != NULL && pgs->fill_adjust.x == 0 && pgs->fill_adjust.y == 0) {
         /* If fill adjust is disabled, so is grid fitting */
     } else if (orthogonal == 1) {
         if (width == 1 || gridfitimages) {
@@ -412,7 +412,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
         gs_matrix mi;
         gs_fixed_rect obox;
         gs_int_rect irect;
-        if ((code = gs_matrix_invert(&ctm_only(pis), &mi)) < 0 ||
+        if ((code = gs_matrix_invert(&ctm_only(pgs), &mi)) < 0 ||
             (code = gs_matrix_multiply(&mi, &pic->ImageMatrix, &mi)) < 0) {
             /* Give up trying to shrink the render box, but continue processing */
             break;
@@ -608,10 +608,10 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
         if (pcs->cmm_icc_profile_data != NULL) {
             device_color = false;
         } else {
-            device_color = (*pcst->concrete_space) (pcs, pis) == pcs;
+            device_color = (*pcst->concrete_space) (pcs, pgs) == pcs;
         }
 
-        code = image_init_colors(penum, bps, spp, format, decode, pis, dev,
+        code = image_init_colors(penum, bps, spp, format, decode, pgs, dev,
                           pcs, &device_color);
         if (code < 0) 
             return gs_throw(code, "Image colors initialization failed");
@@ -620,14 +620,14 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
            be done due to the above init_colors which may go through remap. */
         if (gs_color_space_is_PSCIE(pcs) && pcs->icc_equivalent == NULL) {
             gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &(penum->icc_setup.is_lab),
-                                                pis->memory);
+                                                pgs->memory);
             if (penum->icc_setup.is_lab) {
                 /* Free what ever profile was created and use the icc manager's
                    cielab profile */
                 gs_color_space *curr_pcs = (gs_color_space *)pcs;
                 rc_decrement(curr_pcs->icc_equivalent,"gx_image_enum_begin");
                 rc_decrement(curr_pcs->cmm_icc_profile_data,"gx_image_enum_begin");
-                curr_pcs->cmm_icc_profile_data = pis->icc_manager->lab_profile;
+                curr_pcs->cmm_icc_profile_data = pgs->icc_manager->lab_profile;
                 rc_increment(curr_pcs->cmm_icc_profile_data);
             }
         }
@@ -734,7 +734,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
         ((x_extent.y | y_extent.x) == 0 ? image_portrait :
          (x_extent.x | y_extent.y) == 0 ? image_landscape :
          image_skewed);
-    penum->pis = pis;
+    penum->pgs = pgs;
     penum->pcs = pcs;
     penum->memory = mem;
     penum->buffer = buffer;
@@ -1111,7 +1111,7 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
                     for (kk = 0; kk < num_des_comp; kk++) {
                         conc[kk] = gx_color_value_from_byte(psrc[kk]);
                     }
-                    cmap_transfer(&(conc[0]), penum->pis, penum->dev);
+                    cmap_transfer(&(conc[0]), penum->pgs, penum->dev);
                     for (kk = 0; kk < num_des_comp; kk++) {
                         psrc[kk] = gx_color_value_to_byte(conc[kk]);
                     }
@@ -1195,7 +1195,7 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
                 for (kk = 0; kk < num_des_comp; kk++) {
                     conc[kk] = gx_color_value_from_byte(byte_ptr[kk]);
                 }
-                cmap_transfer(&(conc[0]), penum->pis, penum->dev);
+                cmap_transfer(&(conc[0]), penum->pgs, penum->dev);
                 for (kk = 0; kk < num_des_comp; kk++) {
                     byte_ptr[kk] = gx_color_value_to_byte(conc[kk]);
                 }
@@ -1252,7 +1252,7 @@ image_init_clues(gx_image_enum * penum, int bps, int spp)
 static int
 image_init_colors(gx_image_enum * penum, int bps, int spp,
                   gs_image_format_t format, const float *decode /*[spp*2] */ ,
-                  const gs_imager_state * pis, gx_device * dev,
+                  const gs_gstate * pgs, gx_device * dev,
                   const gs_color_space * pcs, bool * pdcb)
 {
     int ci, decode_type, code;
@@ -1356,12 +1356,12 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
             /* Image clues are used in this case */
             cc.paint.values[0] = real_decode[0];
             code = (*pcs->type->remap_color) (&cc, pcs, penum->icolor0,
-                                       pis, dev, gs_color_select_source);
+                                       pgs, dev, gs_color_select_source);
             if (code < 0) 
                 return code;
             cc.paint.values[0] = real_decode[1];
             code = (*pcs->type->remap_color) (&cc, pcs, penum->icolor1,
-                                       pis, dev, gs_color_select_source);
+                                       pgs, dev, gs_color_select_source);
             if (code < 0) 
                 return code;
         }
@@ -1418,12 +1418,12 @@ gx_image_scale_mask_colors(gx_image_enum *penum, int component_index)
 
 /* Used to indicate for ICC procesing if we have decoding to do */
 bool
-gx_has_transfer(const gs_imager_state *pis, int num_comps)
+gx_has_transfer(const gs_gstate *pgs, int num_comps)
 {
     int k;
 
     for (k = 0; k < num_comps; k++) {
-        if (pis->effective_transfer[k]->proc != gs_identity_transfer) {
+        if (pgs->effective_transfer[k]->proc != gs_identity_transfer) {
             return(true);
         }
     }

@@ -36,7 +36,7 @@
 #include "zicc.h"
 #include "gsicc_manage.h"
 #include "gx.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gsicc_create.h"
 #include "gsicc_profilecache.h"
 #include "gxdevice.h"  /* for output intent setting */
@@ -49,7 +49,6 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     ref *                   pstrmval;
     stream *                s = 0L;
     cmm_profile_t           *picc_profile = NULL;
-    gs_imager_state *       pis = (gs_imager_state *)igs;
     int                     i, expected = 0;
     ref *                   pnameval;
     static const char *const icc_std_profile_names[] = {
@@ -65,7 +64,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     check_read_file(i_ctx_p, s, pstrmval);
 
     /* build the color space object */
-    code = gs_cspace_build_ICC(&pcs, NULL, gs_state_memory(igs));
+    code = gs_cspace_build_ICC(&pcs, NULL, gs_gstate_memory(igs));
     if (code < 0)
         return gs_rethrow(code, "building color space object");
     /*  For now, dump the profile into a buffer
@@ -79,7 +78,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
        specs that have enumerated types to indicate sRGB sGray etc */
     if (dict_find_string(ICCdict, "Name", &pnameval) > 0){
         uint size = r_size(pnameval);
-        char *str = (char *)gs_alloc_bytes(gs_state_memory(igs), size+1, "seticc");
+        char *str = (char *)gs_alloc_bytes(gs_gstate_memory(igs), size+1, "seticc");
         memcpy(str, (const char *)pnameval->value.bytes, size);
         str[size] = 0;
 
@@ -87,12 +86,12 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         for (k = 0; k < GSICC_NUMBER_STANDARD_PROFILES; k++) {
             if ( strcmp( str, icc_std_profile_keys[k] ) == 0 ) {
                 picc_profile = gsicc_get_profile_handle_file(icc_std_profile_names[k],
-                    strlen(icc_std_profile_names[k]), gs_state_memory(igs));
+                    strlen(icc_std_profile_names[k]), gs_gstate_memory(igs));
                 break;
             }
         }
     } else {
-        picc_profile = gsicc_profile_new(s, gs_state_memory(igs), NULL, 0);
+        picc_profile = gsicc_profile_new(s, gs_gstate_memory(igs), NULL, 0);
         if (picc_profile == NULL)
             return gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
         /* We have to get the profile handle due to the fact that we need to know
@@ -100,7 +99,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         picc_profile->profile_handle =
             gsicc_get_profile_handle_buffer(picc_profile->buffer,
                                             picc_profile->buffer_size,
-                                            gs_state_memory(igs));
+                                            gs_gstate_memory(igs));
     }
     if (picc_profile == NULL || picc_profile->profile_handle == NULL) {
         /* Free up everything, the profile is not valid. We will end up going
@@ -109,7 +108,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         rc_decrement(pcs,"seticc");
         return -1;
     }
-    code = gsicc_set_gscs_profile(pcs, picc_profile, gs_state_memory(igs));
+    code = gsicc_set_gscs_profile(pcs, picc_profile, gs_gstate_memory(igs));
     if (code < 0) {
         rc_decrement(picc_profile,"seticc");
         rc_decrement(pcs,"seticc");
@@ -143,7 +142,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 
     /* Lets go ahead and get the hash code and check if we match one of the default spaces */
     /* Later we may want to delay this, but for now lets go ahead and do it */
-    gsicc_init_hash_cs(picc_profile, pis);
+    gsicc_init_hash_cs(picc_profile, igs);
 
     /* Set the range according to the data type that is associated with the
        ICC input color type.  Occasionally, we will run into CIELAB to CIELAB
@@ -179,17 +178,17 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     }
     /* Now see if we are in an overide situation.  We have to wait until now
        in case this is an LAB profile which we will not overide */
-    if (gs_currentoverrideicc(pis) && picc_profile->data_cs != gsCIELAB) {
+    if (gs_currentoverrideicc(igs) && picc_profile->data_cs != gsCIELAB) {
         /* Free up the profile structure */
         switch( picc_profile->data_cs ) {
             case gsRGB:
-                pcs->cmm_icc_profile_data = pis->icc_manager->default_rgb;
+                pcs->cmm_icc_profile_data = igs->icc_manager->default_rgb;
                 break;
             case gsGRAY:
-                pcs->cmm_icc_profile_data = pis->icc_manager->default_gray;
+                pcs->cmm_icc_profile_data = igs->icc_manager->default_gray;
                 break;
             case gsCMYK:
-                pcs->cmm_icc_profile_data = pis->icc_manager->default_cmyk;
+                pcs->cmm_icc_profile_data = igs->icc_manager->default_cmyk;
                 break;
             default:
                 break;
@@ -225,7 +224,6 @@ zset_outputintent(i_ctx_t * i_ctx_p)
     os_ptr                  op = osp;
     int                     code = 0;
     gx_device *dev = gs_currentdevice(igs);
-    gs_imager_state *pis = (gs_imager_state *)igs;
     cmm_dev_profile_t       *dev_profile;
     stream *                s = 0L;
     ref *                   pnval;
@@ -234,7 +232,7 @@ zset_outputintent(i_ctx_t * i_ctx_p)
     cmm_profile_t           *picc_profile;
     int                     expected = 0;
     gs_color_space_index    index;
-    gsicc_manager_t         *icc_manager = pis->icc_manager;
+    gsicc_manager_t         *icc_manager = igs->icc_manager;
     cmm_profile_t           *source_profile = NULL;
 
     check_type(*op, t_dictionary);
@@ -264,14 +262,14 @@ zset_outputintent(i_ctx_t * i_ctx_p)
         return_error(gs_error_undefined);
     check_read_file(i_ctx_p, s, pstrmval);
 
-    picc_profile = gsicc_profile_new(s, gs_state_memory(igs), NULL, 0);
+    picc_profile = gsicc_profile_new(s, gs_gstate_memory(igs), NULL, 0);
     if (picc_profile == NULL)
         return gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
     picc_profile->num_comps = ncomps;
     picc_profile->profile_handle =
         gsicc_get_profile_handle_buffer(picc_profile->buffer,
                                         picc_profile->buffer_size,
-                                        gs_state_memory(igs));
+                                        gs_gstate_memory(igs));
     if (picc_profile->profile_handle == NULL) {
         rc_decrement(picc_profile,"zset_outputintent");
         return -1;
@@ -303,7 +301,7 @@ zset_outputintent(i_ctx_t * i_ctx_p)
         rc_decrement(picc_profile,"zset_outputintent");
         return_error(gs_error_rangecheck);
     }
-    gsicc_init_hash_cs(picc_profile, pis);
+    gsicc_init_hash_cs(picc_profile, igs);
 
     /* All is well with the profile.  Lets set the stuff that needs to be set */
     dev_profile->oi_profile = picc_profile;
@@ -477,24 +475,23 @@ seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
 {
     int                     code;
     gs_color_space *        pcs;
-    gs_imager_state *       pis = (gs_imager_state *)igs;
     int                     i;
 
     /* build the color space object */
-    code = gs_cspace_build_ICC(&pcs, NULL, gs_state_memory(igs));
+    code = gs_cspace_build_ICC(&pcs, NULL, gs_gstate_memory(igs));
     if (code < 0)
         return gs_rethrow(code, "building color space object");
     /* record the current space as the alternative color space */
     /* Get the lab profile.  It may already be set in the icc manager.
        If not then lets populate it.  */
-    if (pis->icc_manager->lab_profile == NULL ) {
+    if (igs->icc_manager->lab_profile == NULL ) {
         /* This can't happen as the profile
            should be initialized during the
            setting of the user params */
         return gs_rethrow(code, "cannot find lab icc profile");
     }
     /* Assign the LAB to LAB profile to this color space */
-    code = gsicc_set_gscs_profile(pcs, pis->icc_manager->lab_profile, gs_state_memory(igs));
+    code = gsicc_set_gscs_profile(pcs, igs->icc_manager->lab_profile, gs_gstate_memory(igs));
     if (code < 0)
         return gs_rethrow(code, "installing the lab profile");
     pcs->cmm_icc_profile_data->Range.ranges[0].rmin = 0.0;
@@ -517,8 +514,7 @@ seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma,
 {
     int                     code;
     gs_color_space *        pcs;
-    gs_imager_state *       pis = (gs_imager_state *)igs;
-    gs_memory_t             *mem = pis->memory;
+    gs_memory_t             *mem = igs->memory;
     int                     i;
     cmm_profile_t           *cal_profile;
 
@@ -581,7 +577,7 @@ znumicc_components(i_ctx_t * i_ctx_p)
         return_error(gs_error_undefined);
     check_read_file(i_ctx_p, s, pstrmval);
 
-    picc_profile = gsicc_profile_new(s, gs_state_memory(igs), NULL, 0);
+    picc_profile = gsicc_profile_new(s, gs_gstate_memory(igs), NULL, 0);
     if (picc_profile == NULL)
         return gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
 
@@ -589,7 +585,7 @@ znumicc_components(i_ctx_t * i_ctx_p)
     picc_profile->profile_handle =
         gsicc_get_profile_handle_buffer(picc_profile->buffer,
                                         picc_profile->buffer_size,
-                                        gs_state_memory(igs));
+                                        gs_gstate_memory(igs));
     if (picc_profile->profile_handle == NULL) {
         rc_decrement(picc_profile,"znumicc_components");
         make_int(op, expected);

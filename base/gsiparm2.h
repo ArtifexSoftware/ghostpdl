@@ -34,7 +34,7 @@ typedef struct gx_path_s gx_path;
 
 typedef struct gs_image2_s {
     gs_image_common;
-    gs_state *DataSource;
+    gs_gstate *DataSource;
     float XOrigin, YOrigin;
     float Width, Height;
     /*

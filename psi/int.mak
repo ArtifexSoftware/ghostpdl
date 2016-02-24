@@ -887,7 +887,7 @@ $(PSD)type42.dev : $(ECHOGS_XE) $(type42read_) $(GLD)ttflib.dev\
 $(PSOBJ)zchar42.$(OBJ) : $(PSSRC)zchar42.c $(OP)\
  $(gsmatrix_h) $(gspaint_h) $(gspath_h)\
  $(gxfixed_h) $(gxfont_h) $(gxfont42_h)\
- $(gxistate_h) $(gxpath_h) $(gxtext_h) $(gzstate_h)\
+ $(gxgstate_h) $(gxpath_h) $(gxtext_h) $(gzstate_h)\
  $(dstack_h) $(estack_h) $(ichar_h) $(icharout_h)\
  $(ifont_h) $(igstate_h) $(store_h) $(string_h) $(zchar42_h)\
  $(idict_h) $(INT_MAK) $(MAKEDIRS)
@@ -1428,7 +1428,7 @@ $(PSOBJ)zcharx.$(OBJ) : $(PSSRC)zcharx.c $(OP)\
 	$(PSCC) $(PSO_)zcharx.$(OBJ) $(C_) $(PSSRC)zcharx.c
 
 $(PSOBJ)zdps1.$(OBJ) : $(PSSRC)zdps1.c $(OP)\
- $(gsmatrix_h) $(gspath_h) $(gspath2_h) $(gsstate_h)\
+ $(gsmatrix_h) $(gspath_h) $(gspath2_h) $(gsstate_h) $(gxgstate_h \
  $(ialloc_h) $(ivmspace_h) $(igstate_h) $(store_h) $(stream_h) $(ibnum_h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zdps1.$(OBJ) $(C_) $(PSSRC)zdps1.c
@@ -1838,7 +1838,7 @@ $(PSD)icc.dev : $(ECHOGS_XE) $(PSD)cie.dev $(iccread_) \
 $(PSOBJ)zicc.$(OBJ) : $(PSSRC)zicc.c  $(OP) $(math__h) $(memory__h)\
  $(gsstruct_h) $(gxcspace_h) $(stream_h) $(files_h) $(gscolor2_h)\
  $(gsicc_h) $(estack_h) $(idict_h) $(idparam_h) $(igstate_h)\
- $(icie_h) $(ialloc_h) $(zicc_h) $(gsicc_manage_h) $(GX) $(gxistate_h)\
+ $(icie_h) $(ialloc_h) $(zicc_h) $(gsicc_manage_h) $(GX) $(gxgstate_h)\
  $(gsicc_create_h) $(gsicc_profilecache_h) $(gxdevice_h)\
  $(gsicc_cache_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c

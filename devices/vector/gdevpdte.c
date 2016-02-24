@@ -385,7 +385,7 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
     code = gx_path_current_point(pte->path, &origin);
     if (code < 0)
         return code;
-    m = ctm_only(pte->pis);
+    m = ctm_only(pte->pgs);
     m.tx = fixed2float(origin.x);
     m.ty = fixed2float(origin.y);
     gs_matrix_multiply(pfmat, &m, &m);
@@ -453,7 +453,7 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
             rect_merge(*text_bbox, bbox);
         if (pte->text.operation & TEXT_REPLACE_WIDTHS) {
             gs_text_replaced_width(&pte->text, xy_index++, &tpt);
-            gs_distance_transform(tpt.x, tpt.y, &ctm_only(pte->pis), &wanted);
+            gs_distance_transform(tpt.x, tpt.y, &ctm_only(pte->pgs), &wanted);
         } else {
             gs_distance_transform(info.width[WMode].x,
                                   info.width[WMode].y,
@@ -461,14 +461,14 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
             if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
                 gs_distance_transform(pte->text.delta_all.x,
                                       pte->text.delta_all.y,
-                                      &ctm_only(pte->pis), &tpt);
+                                      &ctm_only(pte->pgs), &tpt);
                 wanted.x += tpt.x;
                 wanted.y += tpt.y;
             }
             if (pstr->data[i] == space_char && pte->text.operation & TEXT_ADD_TO_SPACE_WIDTH) {
                 gs_distance_transform(pte->text.delta_space.x,
                                       pte->text.delta_space.y,
-                                      &ctm_only(pte->pis), &tpt);
+                                      &ctm_only(pte->pgs), &tpt);
                 wanted.x += tpt.x;
                 wanted.y += tpt.y;
             }
@@ -498,15 +498,13 @@ adjust_first_last_char(pdf_font_resource_t *pdfont, byte *str, int size)
 int
 pdf_shift_text_currentpoint(pdf_text_enum_t *penum, gs_point *wpt)
 {
-    gs_state *pgs;
-    extern_st(st_gs_state);
+    extern_st(st_gs_gstate);
 
-    if (gs_object_type(penum->dev->memory, penum->pis) != &st_gs_state) {
+    if (gs_object_type(penum->dev->memory, penum->pgs) != &st_gs_gstate) {
         /* Probably never happens. Not sure though. */
         return_error(gs_error_unregistered);
     }
-    pgs = (gs_state *)penum->pis;
-    return gs_moveto_aux(penum->pis, gx_current_path(pgs),
+    return gs_moveto_aux(penum->pgs, gx_current_path(penum->pgs),
                               fixed2float(penum->origin.x) + wpt->x,
                               fixed2float(penum->origin.y) + wpt->y);
 }
@@ -552,7 +550,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
     }
     if (text->size == 0)
         return 0;
-    if (penum->pis->text_rendering_mode != 3 && !(text->operation & TEXT_DO_NONE)) {
+    if (penum->pgs->text_rendering_mode != 3 && !(text->operation & TEXT_DO_NONE)) {
         /*
          * Acrobat Reader can't handle text with huge coordinates,
          * so skip the text if it is outside the clip bbox
@@ -584,7 +582,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
             if (code < 0)
                 return code;
 
-            m = ctm_only(penum->pis);
+            m = ctm_only(penum->pgs);
             m.tx = fixed2float(origin.x);
             m.ty = fixed2float(origin.y);
             gs_matrix_multiply(pfmat, &m, &m);
@@ -654,7 +652,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
             return code;
         if (code == 0) {
             /* No characters with redefined widths -- the fast case. */
-            if (text->operation & TEXT_DO_DRAW || penum->pis->text_rendering_mode == 3) {
+            if (text->operation & TEXT_DO_DRAW || penum->pgs->text_rendering_mode == 3) {
                 code = pdf_append_chars(pdev, pstr->data, accepted,
                                         width_pt.x, width_pt.y, false);
                 if (code < 0)
@@ -724,7 +722,7 @@ finish:
             gs_point p0, p1, p2, p3;
 
             code = gx_path_current_point(penum->path, &origin);
-            m = ctm_only(penum->pis);
+            m = ctm_only(penum->pgs);
             m.tx = fixed2float(origin.x);
             m.ty = fixed2float(origin.y);
             gs_matrix_multiply(pfmat, &m, &m);
@@ -775,7 +773,7 @@ finish:
         /* stringwidth needs to transform to user space. */
         gs_point p;
 
-        gs_distance_transform_inverse(width_pt.x, width_pt.y, &ctm_only(penum->pis), &p);
+        gs_distance_transform_inverse(width_pt.x, width_pt.y, &ctm_only(penum->pgs), &p);
         penum->returned.total_width.x += p.x;
         penum->returned.total_width.y += p.y;
     } else
@@ -992,7 +990,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
                 gs_fixed_point subpix_origin = {0,0};
                 cached_fm_pair *pair;
 
-                code = gx_lookup_fm_pair(pfont, &ctm_only(pte->pis), &log2_scale,
+                code = gx_lookup_fm_pair(pfont, &ctm_only(pte->pgs), &log2_scale,
                     false, &pair);
                 if (code < 0)
                     return code;
@@ -1045,7 +1043,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
         gs_point tpt;
 
         gs_distance_transform(pte->text.delta_all.x, pte->text.delta_all.y,
-                              &ctm_only(pte->pis), &tpt);
+                              &ctm_only(pte->pgs), &tpt);
         dpt.x += tpt.x * num_chars;
         dpt.y += tpt.y * num_chars;
     }
@@ -1053,7 +1051,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
         gs_point tpt;
 
         gs_distance_transform(pte->text.delta_space.x, pte->text.delta_space.y,
-                              &ctm_only(pte->pis), &tpt);
+                              &ctm_only(pte->pgs), &tpt);
         dpt.x += tpt.x * num_spaces;
         dpt.y += tpt.y * num_spaces;
     }
@@ -1181,7 +1179,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
                         gs_fixed_point subpix_origin = {0,0};
                         cached_fm_pair *pair;
 
-                        code = gx_lookup_fm_pair(pfont, &ctm_only(pte->pis), &log2_scale,
+                        code = gx_lookup_fm_pair(pfont, &ctm_only(pte->pgs), &log2_scale,
                             false, &pair);
                         if (code < 0)
                             return code;
@@ -1255,7 +1253,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
             gs_distance_transform(glyph_origin_shift.x, glyph_origin_shift.y,
                                   &font->FontMatrix, &glyph_origin_shift);
             gs_distance_transform(glyph_origin_shift.x, glyph_origin_shift.y,
-                                  &ctm_only(pte->pis), &glyph_origin_shift);
+                                  &ctm_only(pte->pgs), &glyph_origin_shift);
             if (glyph_origin_shift.x != 0 || glyph_origin_shift.y != 0) {
                 ppts->values.matrix.tx = start.x + total.x + glyph_origin_shift.x;
                 ppts->values.matrix.ty = start.y + total.y + glyph_origin_shift.y;
@@ -1302,7 +1300,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
             code = gs_text_replaced_width(&pte->text, pte->xy_index++, &dpt);
             if (code < 0)
                 return_error(gs_error_unregistered);
-            gs_distance_transform(dpt.x, dpt.y, &ctm_only(pte->pis), &wanted);
+            gs_distance_transform(dpt.x, dpt.y, &ctm_only(pte->pgs), &wanted);
         } else {
             gs_distance_transform(cw.real_width.xy.x * ppts->values.size,
                                   cw.real_width.xy.y * ppts->values.size,
@@ -1310,7 +1308,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
             if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
                 gs_distance_transform(pte->text.delta_all.x,
                                       pte->text.delta_all.y,
-                                      &ctm_only(pte->pis), &tpt);
+                                      &ctm_only(pte->pgs), &tpt);
                 wanted.x += tpt.x;
                 wanted.y += tpt.y;
             }
@@ -1320,7 +1318,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
             if (chr == space_char && (!pte->single_byte_space || decoded_bytes == 1)) {
                 gs_distance_transform(pte->text.delta_space.x,
                                       pte->text.delta_space.y,
-                                      &ctm_only(pte->pis), &tpt);
+                                      &ctm_only(pte->pgs), &tpt);
                 wanted.x += tpt.x;
                 wanted.y += tpt.y;
             }

@@ -65,10 +65,10 @@ int gs_font_find_similar(const gs_font_dir * pdir, const gs_font **ppfont,
 /* was already in the cache, 1 if a new font was created. */
 int gs_scalefont(gs_font_dir *, const gs_font *, double, gs_font **);
 int gs_makefont(gs_font_dir *, const gs_font *, const gs_matrix *, gs_font **);
-int gs_setfont(gs_state *, gs_font *);
-gs_font *gs_currentfont(const gs_state *);
-gs_font *gs_rootfont(const gs_state *);
-void gs_set_currentfont(gs_state *, gs_font *);
+int gs_setfont(gs_gstate *, gs_font *);
+gs_font *gs_currentfont(const gs_gstate *);
+gs_font *gs_rootfont(const gs_gstate *);
+void gs_set_currentfont(gs_gstate *, gs_font *);
 int  gs_purge_font(gs_font *);
 /* Locate a gs_font by gs_id. */
 gs_font *gs_find_font_by_id(gs_font_dir *pdir, gs_id id, gs_matrix *FontMatrix);
@@ -78,7 +78,7 @@ void gs_cachestatus(const gs_font_dir *, uint[7]);
 
 #define gs_setcachelimit(pdir,limit) gs_setcacheupper(pdir,limit)
 uint gs_currentcachesize(const gs_font_dir *);
-int gs_setcachesize(gs_state * pgs, gs_font_dir *, uint);
+int gs_setcachesize(gs_gstate * pgs, gs_font_dir *, uint);
 uint gs_currentcachelower(const gs_font_dir *);
 int gs_setcachelower(gs_font_dir *, uint);
 uint gs_currentcacheupper(const gs_font_dir *);

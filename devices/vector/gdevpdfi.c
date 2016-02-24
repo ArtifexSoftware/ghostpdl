@@ -129,7 +129,7 @@ color_is_black_or_white(gx_device *dev, const gx_drawing_color *pdcolor)
 }
 static int
 pdf_convert_image4_to_image1(gx_device_pdf *pdev,
-                             const gs_imager_state *pis,
+                             const gs_gstate *pgs,
                              const gx_drawing_color *pbcolor,
                              const gs_image4_t *pim4, gs_image_t *pim1,
                              gx_drawing_color *pdcolor)
@@ -154,7 +154,7 @@ pdf_convert_image4_to_image1(gx_device_pdf *pdev,
 
         cc.paint.values[0] = pim4->Decode[(int)write_1s];
         cc.pattern = 0;
-        code = pcs->type->remap_color(&cc, pcs, pdcolor, pis, dev,
+        code = pcs->type->remap_color(&cc, pcs, pdcolor, pgs, dev,
                                       gs_color_select_texture);
         if (code < 0)
             return code;
@@ -167,7 +167,7 @@ pdf_convert_image4_to_image1(gx_device_pdf *pdev,
          * texture are black, white, or neither.
          */
         {
-            gs_logical_operation_t lop = pis->log_op;
+            gs_logical_operation_t lop = pgs->log_op;
             int black_or_white = color_is_black_or_white(dev, pdcolor);
 
             switch (black_or_white) {
@@ -297,7 +297,7 @@ typedef union image_union_s {
 } image_union_t;
 
 static int pdf_begin_typed_image(gx_device_pdf *pdev,
-    const gs_imager_state * pis, const gs_matrix *pmat,
+    const gs_gstate * pgs, const gs_matrix *pmat,
     const gs_image_common_t *pic, const gs_int_rect * prect,
     const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
     gs_memory_t * mem, gx_image_enum_common_t ** pinfo,
@@ -326,7 +326,7 @@ static int setup_type1_image(gx_device_pdf *pdev, const gs_image_common_t *pic,
         can_write_image_in_line(pdev, pim1));
 }
 
-static int setup_type3_image(gx_device_pdf *pdev, const gs_imager_state * pis,
+static int setup_type3_image(gx_device_pdf *pdev, const gs_gstate * pgs,
                       const gs_matrix *pmat, const gs_image_common_t *pic,
                       const gs_int_rect * prect,
                       const gx_drawing_color * pdcolor,
@@ -342,7 +342,7 @@ static int setup_type3_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     int code;
 
     if (pdev->CompatibilityLevel < 1.3 && !pdev->PatternImagemask) {
-        code = pdf_check_soft_mask(pdev, (gs_imager_state *)pis);
+        code = pdf_check_soft_mask(pdev, (gs_gstate *)pgs);
         if (code < 0)
             return code;
         if (pdf_must_put_clip_path(pdev, pcpath))
@@ -356,8 +356,8 @@ static int setup_type3_image(gx_device_pdf *pdev, const gs_imager_state * pis,
             return code;
         gs_make_identity(&m);
         pmat1 = &m;
-        m.tx = floor(pis->ctm.tx + 0.5); /* Round the origin against the image size distorsions */
-        m.ty = floor(pis->ctm.ty + 0.5);
+        m.tx = floor(pgs->ctm.tx + 0.5); /* Round the origin against the image size distorsions */
+        m.ty = floor(pgs->ctm.ty + 0.5);
         pim3a = *pim3;
         gs_matrix_invert(&pim3a.ImageMatrix, &mi);
         gs_make_identity(&pim3a.ImageMatrix);
@@ -376,19 +376,19 @@ static int setup_type3_image(gx_device_pdf *pdev, const gs_imager_state * pis,
         gs_matrix_multiply(&mi, &pim3a.MaskDict.ImageMatrix, &pim3a.MaskDict.ImageMatrix);
         pic1 = (gs_image_common_t *)&pim3a;
         /* Setting pdev->converting_image_matrix to communicate with pdf_image3_make_mcde. */
-        gs_matrix_multiply(&mi, &ctm_only(pis), &pdev->converting_image_matrix);
+        gs_matrix_multiply(&mi, &ctm_only(pgs), &pdev->converting_image_matrix);
     }
     /*
      * We handle ImageType 3 images in a completely different way:
      * the default implementation sets up the enumerator.
      */
-    return gx_begin_image3_generic((gx_device *)pdev, pis, pmat1, pic1,
+    return gx_begin_image3_generic((gx_device *)pdev, pgs, pmat1, pic1,
                                    prect, pdcolor, pcpath, mem,
                                    pdf_image3_make_mid,
                                    pdf_image3_make_mcde, pinfo);
 }
 
-static int convert_type4_image(gx_device_pdf *pdev, const gs_imager_state * pis,
+static int convert_type4_image(gx_device_pdf *pdev, const gs_gstate * pgs,
                       const gs_matrix *pmat, const gs_image_common_t *pic,
                       const gs_int_rect * prect,
                       const gx_drawing_color * pdcolor,
@@ -402,11 +402,9 @@ static int convert_type4_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     int code;
 
     pdev->image_mask_is_SMask = false;
-    if (pdf_convert_image4_to_image1(pdev, pis, pdcolor,
+    if (pdf_convert_image4_to_image1(pdev, pgs, pdcolor,
                                      (const gs_image4_t *)pic,
                                      &image[0].type1, &icolor) >= 0) {
-        gs_state *pgs = (gs_state *)gx_hld_get_gstate_ptr(pis);
-
         if (pgs == NULL)
             return_error(gs_error_unregistered); /* Must not happen. */
 
@@ -415,25 +413,25 @@ static int convert_type4_image(gx_device_pdf *pdev, const gs_imager_state * pis,
             cos_array_add_object(pdev->NI_stack, COS_OBJECT(pnamed));
         /* HACK: temporary patch the color space, to allow
            pdf_prepare_imagemask to write the right color for the imagemask. */
-        code = gs_gsave(pgs);
+        code = gs_gsave((gs_gstate *)pgs);
         if (code < 0)
             return code;
         /* {csrc}: const cast warning */
-        code = gs_setcolorspace(pgs, ((const gs_image4_t *)pic)->ColorSpace);
+        code = gs_setcolorspace((gs_gstate *)pgs, ((const gs_image4_t *)pic)->ColorSpace);
         if (code < 0)
             return code;
-        code = pdf_begin_typed_image(pdev, pis, pmat,
+        code = pdf_begin_typed_image(pdev, pgs, pmat,
                                      (gs_image_common_t *)&image[0].type1,
                                      prect, &icolor, pcpath, mem,
                                      pinfo, context);
         if (code < 0)
             return code;
-        return gs_grestore(pgs);
+        return gs_grestore((gs_gstate *)pgs);
     }
     return 1;
 }
 
-static int convert_type4_to_masked_image(gx_device_pdf *pdev, const gs_imager_state * pis,
+static int convert_type4_to_masked_image(gx_device_pdf *pdev, const gs_gstate * pgs,
                       const gs_image_common_t *pic,
                       const gs_int_rect * prect,
                       const gx_drawing_color * pdcolor,
@@ -445,7 +443,7 @@ static int convert_type4_to_masked_image(gx_device_pdf *pdev, const gs_imager_st
         int code;
         pdf_lcvd_t *cvd = NULL;
 
-        code = pdf_check_soft_mask(pdev, (gs_imager_state *)pis);
+        code = pdf_check_soft_mask(pdev, (gs_gstate *)pgs);
         if (code < 0)
             return code;
         if (pdf_must_put_clip_path(pdev, pcpath))
@@ -459,7 +457,7 @@ static int convert_type4_to_masked_image(gx_device_pdf *pdev, const gs_imager_st
             return code;
         gs_make_identity(&m1);
         gs_matrix_invert(&pic->ImageMatrix, &mi);
-        gs_matrix_multiply(&mi, &ctm_only(pis), &m);
+        gs_matrix_multiply(&mi, &ctm_only(pgs), &m);
         code = pdf_setup_masked_image_converter(pdev, mem, &m, &cvd,
                              true, 0, 0, pi4.Width, pi4.Height, false);
         if (code < 0)
@@ -475,7 +473,7 @@ static int convert_type4_to_masked_image(gx_device_pdf *pdev, const gs_imager_st
         gx_device_retain((gx_device *)cvd->mask, true);
         gs_make_identity(&pi4.ImageMatrix);
         code = gx_default_begin_typed_image((gx_device *)cvd,
-            pis, &m1, (gs_image_common_t *)&pi4, prect, pdcolor, NULL, mem, pinfo);
+            pgs, &m1, (gs_image_common_t *)&pi4, prect, pdcolor, NULL, mem, pinfo);
         if (code < 0)
             return code;
         (*pinfo)->procs = &pdf_image_cvd_enum_procs;
@@ -932,7 +930,7 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
 }
 
 static int
-pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
+pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
                       const gs_matrix *pmat, const gs_image_common_t *pic,
                       const gs_int_rect * prect,
                       const gx_drawing_color * pdcolor,
@@ -999,12 +997,12 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
                    prect->q.y == ((const gs_image3_t *)pic)->Height))) {
             gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                               "pdf_begin_typed_image(image)");
-            return (gx_default_begin_typed_image((gx_device *)pdev, pis, pmat, pic, prect, pdcolor,
+            return (gx_default_begin_typed_image((gx_device *)pdev, pgs, pmat, pic, prect, pdcolor,
                 pcpath, mem, pinfo));
         }
         gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                           "pdf_begin_typed_image(image)");
-        return (setup_type3_image(pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem, pinfo, image));
+        return (setup_type3_image(pdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem, pinfo, image));
         break;
 
     case IMAGE3X_IMAGETYPE:
@@ -1014,18 +1012,18 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
             (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
                        prect->q.x == ((const gs_image3x_t *)pic)->Width &&
                        prect->q.y == ((const gs_image3x_t *)pic)->Height))) {
-            return (gx_default_begin_typed_image((gx_device *)pdev, pis, pmat, pic, prect, pdcolor,
+            return (gx_default_begin_typed_image((gx_device *)pdev, pgs, pmat, pic, prect, pdcolor,
                 pcpath, mem, pinfo));
         }
         pdev->image_mask_is_SMask = true;
-        return gx_begin_image3x_generic((gx_device *)pdev, pis, pmat, pic,
+        return gx_begin_image3x_generic((gx_device *)pdev, pgs, pmat, pic,
                                         prect, pdcolor, pcpath, mem,
                                         pdf_image3x_make_mid,
                                         pdf_image3x_make_mcde, pinfo);
         break;
 
     case 4:
-        code = convert_type4_image(pdev, pis, pmat, pic, prect, pdcolor,
+        code = convert_type4_image(pdev, pgs, pmat, pic, prect, pdcolor,
                       pcpath, mem, pinfo, context, image, pnamed);
         if (code < 0) {
             use_fallback = 1;
@@ -1042,7 +1040,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
         if (pdev->CompatibilityLevel < 1.3 && !pdev->PatternImagemask) {
             gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                                   "pdf_begin_typed_image(image)");
-            return (convert_type4_to_masked_image(pdev, pis, pic, prect, pdcolor,
+            return (convert_type4_to_masked_image(pdev, pgs, pic, prect, pdcolor,
                       pcpath, mem,pinfo));
         }
         image[0].type4 = *(const gs_image4_t *)pic;
@@ -1103,7 +1101,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
         else
             Box = &pdev->charproc_BBox;
         if (pmat1 == 0)
-            pmat1 = (gs_matrix *)&ctm_only(pis);
+            pmat1 = (gs_matrix *)&ctm_only(pgs);
         if ((code = gs_matrix_invert(&pic->ImageMatrix, &mat)) < 0 ||
             (code = gs_matrix_multiply(&mat, pmat1, &mat)) < 0)
             return code;
@@ -1163,14 +1161,14 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
         gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                               "pdf_begin_typed_image(image)");
         return gx_default_begin_typed_image
-            ((gx_device *)pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+            ((gx_device *)pdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem,
             pinfo);
     }
 
     pcs = pim->ColorSpace;
     num_components = (is_mask ? 1 : gs_color_space_num_components(pcs));
 
-    code = pdf_check_soft_mask(pdev, (gs_imager_state *)pis);
+    code = pdf_check_soft_mask(pdev, (gs_gstate *)pgs);
     if (code < 0)
         return code;
     if (pdf_must_put_clip_path(pdev, pcpath))
@@ -1181,7 +1179,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
         gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                               "pdf_begin_typed_image(image)");
         return gx_default_begin_typed_image
-            ((gx_device *)pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+            ((gx_device *)pdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem,
             pinfo);
     }
 
@@ -1194,14 +1192,14 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
         /* {csrc} make sure this gets freed */
         pcs = gs_cspace_new_DeviceGray(pdev->memory);
     } else if (is_mask)
-        code = pdf_prepare_imagemask(pdev, pis, pdcolor);
+        code = pdf_prepare_imagemask(pdev, pgs, pdcolor);
     else
-        code = pdf_prepare_image(pdev, pis);
+        code = pdf_prepare_image(pdev, pgs);
     if (code < 0) {
         gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                               "pdf_begin_typed_image(image)");
         return gx_default_begin_typed_image
-            ((gx_device *)pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+            ((gx_device *)pdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem,
             pinfo);
     }
 
@@ -1242,7 +1240,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     }
 
     if (pmat == 0)
-        pmat = &ctm_only(pis);
+        pmat = &ctm_only(pgs);
     {
         gs_matrix mat;
         gs_matrix bmat;
@@ -1302,12 +1300,12 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
         if (pim->BitsPerComponent > 8 && convert_to_process_colors)
             goto fail_and_fallback;
         if (convert_to_process_colors == 4) {
-            code = convert_DeviceN_alternate(pdev, pis, pcs, NULL, NULL, NULL, NULL, &cs_value, in_line);
+            code = convert_DeviceN_alternate(pdev, pgs, pcs, NULL, NULL, NULL, NULL, &cs_value, in_line);
             if (code < 0)
                 goto fail_and_fallback;
         }
         if (convert_to_process_colors == 3) {
-            code = convert_separation_alternate(pdev, pis, pcs, NULL, NULL, NULL, NULL, &cs_value, in_line);
+            code = convert_separation_alternate(pdev, pgs, pcs, NULL, NULL, NULL, NULL, &cs_value, in_line);
             if (code < 0)
                 goto fail_and_fallback;
         }
@@ -1316,20 +1314,20 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
             if (code < 0)
                 goto fail_and_fallback;
             image[0].pixel.ColorSpace = pcs_device;
-            code = pdf_color_space_named(pdev, pis, &cs_value, &pranges, pcs_device, names,
+            code = pdf_color_space_named(pdev, pgs, &cs_value, &pranges, pcs_device, names,
                                      in_line, NULL, 0, false);
             if (code < 0)
                 goto fail_and_fallback;
         } else {
             if (convert_to_process_colors == 2) {
                 convert_to_process_colors = 0;
-                code = pdf_color_space_named(pdev, pis, &cs_value, &pranges, pcs, names,
+                code = pdf_color_space_named(pdev, pgs, &cs_value, &pranges, pcs, names,
                                      in_line, NULL, 0, true);
                 if (code < 0)
                     goto fail_and_fallback;
             } else {
                 convert_to_process_colors = 0;
-                code = pdf_color_space_named(pdev, pis, &cs_value, &pranges, pcs, names,
+                code = pdf_color_space_named(pdev, pgs, &cs_value, &pranges, pcs, names,
                                      in_line, NULL, 0, false);
                 if (code < 0)
                     goto fail_and_fallback;
@@ -1377,12 +1375,12 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
             pdev->params.ColorImage.DownsampleType = ds_Subsample;
             code = new_setup_image_filters((gx_device_psdf *) pdev,
                                           &pie->writer.binary[0], &image[0].pixel,
-                                          pmat, pis, true, in_line, convert_to_process_colors);
+                                          pmat, pgs, true, in_line, convert_to_process_colors);
             pdev->params.ColorImage.DownsampleType = saved_downsample;
         } else {
             code = new_setup_image_filters((gx_device_psdf *) pdev,
                                           &pie->writer.binary[0], &image[0].pixel,
-                                          pmat, pis, true, in_line, convert_to_process_colors);
+                                          pmat, pgs, true, in_line, convert_to_process_colors);
         }
     }
 
@@ -1392,7 +1390,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     if (convert_to_process_colors) {
         image[0].pixel.ColorSpace = pcs_orig;
         code = psdf_setup_image_colors_filter(&pie->writer.binary[0],
-                    (gx_device_psdf *)pdev, &image[0].pixel, pis);
+                    (gx_device_psdf *)pdev, &image[0].pixel, pgs);
         if (code < 0)
             goto fail_and_fallback;
         image[0].pixel.ColorSpace = pcs_device;
@@ -1405,7 +1403,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
         }
         code = new_setup_image_filters((gx_device_psdf *) pdev,
                                   &pie->writer.binary[1], &image[1].pixel,
-                                  pmat, pis, force_lossless, in_line, convert_to_process_colors);
+                                  pmat, pgs, force_lossless, in_line, convert_to_process_colors);
         if (code == gs_error_rangecheck) {
 
             for (i=1;i < pie->writer.alt_writer_count; i++) {
@@ -1425,7 +1423,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
         } else if (convert_to_process_colors) {
             image[1].pixel.ColorSpace = pcs_orig;
             code = psdf_setup_image_colors_filter(&pie->writer.binary[1],
-                    (gx_device_psdf *)pdev, &image[1].pixel, pis);
+                    (gx_device_psdf *)pdev, &image[1].pixel, pgs);
             if (code < 0) {
                 goto fail_and_fallback;
             }
@@ -1460,7 +1458,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
             goto fail_and_fallback;
         code = psdf_setup_image_filters((gx_device_psdf *) pdev,
                                   &pie->writer.binary[i], &image[i].pixel,
-                                  pmat, pis, force_lossless, in_line);
+                                  pmat, pgs, force_lossless, in_line);
         if (code < 0)
             goto fail_and_fallback;
         psdf_setup_image_to_mask_filter(&pie->writer.binary[i],
@@ -1482,19 +1480,19 @@ fail_and_fallback:
                                       "pdf_begin_typed_image(image)");
     gs_free_object(mem, pie, "pdf_begin_image");
     return gx_default_begin_typed_image
-        ((gx_device *)pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+        ((gx_device *)pdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem,
         pinfo);
 }
 
 int
-gdev_pdf_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
+gdev_pdf_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
                            const gs_matrix *pmat, const gs_image_common_t *pic,
                            const gs_int_rect * prect,
                            const gx_drawing_color * pdcolor,
                            const gx_clip_path * pcpath, gs_memory_t * mem,
                            gx_image_enum_common_t ** pinfo)
 {
-    return pdf_begin_typed_image((gx_device_pdf *)dev, pis, pmat, pic, prect,
+    return pdf_begin_typed_image((gx_device_pdf *)dev, pgs, pmat, pic, prect,
                                  pdcolor, pcpath, mem, pinfo,
                                  PDF_IMAGE_DEFAULT);
 }
@@ -1604,7 +1602,7 @@ static int
 use_image_as_pattern(gx_device_pdf *pdev, pdf_resource_t *pres1,
                      const gs_matrix *pmat, gs_id id)
 {   /* See also dump_image in gdevpdfd.c . */
-    gs_imager_state s;
+    gs_gstate s;
     gs_pattern1_instance_t inst;
     cos_value_t v;
     const pdf_resource_t *pres;
@@ -1618,7 +1616,7 @@ use_image_as_pattern(gx_device_pdf *pdev, pdf_resource_t *pres1,
     s.ctm.tx = pmat->tx;
     s.ctm.ty = pmat->ty;
     memset(&inst, 0, sizeof(inst));
-    inst.saved = (gs_state *)&s; /* HACK : will use s.ctm only. */
+    inst.saved = (gs_gstate *)&s; /* HACK : will use s.ctm only. */
     inst.templat.PaintType = 1;
     inst.templat.TilingType = 1;
     inst.templat.BBox.p.x = inst.templat.BBox.p.y = 0;
@@ -1868,7 +1866,7 @@ pdf_image3_make_mid(gx_device **pmidev, gx_device *dev, int width, int height,
     }
 }
 static int
-pdf_mid_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
+pdf_mid_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
                           const gs_matrix *pmat, const gs_image_common_t *pic,
                           const gs_int_rect * prect,
                           const gx_drawing_color * pdcolor,
@@ -1879,13 +1877,13 @@ pdf_mid_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
     gx_device_pdf *const pdev = (gx_device_pdf *)
         ((gx_device_null *)dev)->target;
     return pdf_begin_typed_image
-        (pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem, pinfo,
+        (pdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem, pinfo,
          PDF_IMAGE_TYPE3_MASK);
 }
 
 /* Implement the mask clip device. */
 static int
-pdf_image3_make_mcde(gx_device *dev, const gs_imager_state *pis,
+pdf_image3_make_mcde(gx_device *dev, const gs_gstate *pgs,
                      const gs_matrix *pmat, const gs_image_common_t *pic,
                      const gs_int_rect *prect, const gx_drawing_color *pdcolor,
                      const gx_clip_path *pcpath, gs_memory_t *mem,
@@ -1907,7 +1905,7 @@ pdf_image3_make_mcde(gx_device *dev, const gs_imager_state *pis,
         cvd->mdev.mapped_y = origin->y;
         *pmcdev = (gx_device *)&cvd->mdev;
         code = gx_default_begin_typed_image
-            ((gx_device *)&cvd->mdev, pis, pmat, pic, prect, pdcolor, NULL, mem,
+            ((gx_device *)&cvd->mdev, pgs, pmat, pic, prect, pdcolor, NULL, mem,
             pinfo);
         if (code < 0)
             return code;
@@ -1916,7 +1914,7 @@ pdf_image3_make_mcde(gx_device *dev, const gs_imager_state *pis,
         if (code < 0)
             return code;
         code = pdf_begin_typed_image
-            ((gx_device_pdf *)dev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+            ((gx_device_pdf *)dev, pgs, pmat, pic, prect, pdcolor, pcpath, mem,
             pinfo, PDF_IMAGE_TYPE3_DATA);
         if (code < 0)
             return code;
@@ -1944,7 +1942,7 @@ pdf_image3x_make_mid(gx_device **pmidev, gx_device *dev, int width, int height,
 
 /* Implement the mask clip device. */
 static int
-pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
+pdf_image3x_make_mcde(gx_device *dev, const gs_gstate *pgs,
                       const gs_matrix *pmat, const gs_image_common_t *pic,
                       const gs_int_rect *prect,
                       const gx_drawing_color *pdcolor,
@@ -1972,7 +1970,7 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
     if (code < 0)
         return code;
     code = pdf_begin_typed_image
-        ((gx_device_pdf *)dev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+        ((gx_device_pdf *)dev, pgs, pmat, pic, prect, pdcolor, pcpath, mem,
          pinfo, PDF_IMAGE_TYPE3_DATA);
     if (code < 0)
         return code;
@@ -2183,10 +2181,10 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             {
                 pattern_accum_param_s *param = (pattern_accum_param_s *)data;
                 gs_pattern1_instance_t *pinst = param->pinst;
-                gs_state *pgs = param->graphics_state;
+                gs_gstate *pgs = param->graphics_state;
 
                 id = param->pinst_id;
-                code = pdf_check_soft_mask(pdev, (gs_imager_state *)pgs);
+                code = pdf_check_soft_mask(pdev, (gs_gstate *)pgs);
                 if (code < 0)
                     return code;
                 code = pdf_enter_substream(pdev, resourcePattern, id, &pres, false,

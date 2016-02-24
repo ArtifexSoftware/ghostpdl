@@ -43,9 +43,9 @@
 #define ht_threshold threshold
 #define ht_multiple multiple
 
-#ifndef gs_state_DEFINED
-#  define gs_state_DEFINED
-typedef struct gs_state_s gs_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 
 #endif
 
@@ -141,6 +141,6 @@ extern void gs_ht_release(gs_ht * pht);
 #define gs_ht_init_ptr(pto, pfrom)          \
     BEGIN gs_ht_reference(pfrom); pto = pfrom; END
 
-extern int gs_ht_install(gs_state * pgs, gs_ht * pht);
+extern int gs_ht_install(gs_gstate * pgs, gs_ht * pht);
 
 #endif /* gshtx_INCLUDED */

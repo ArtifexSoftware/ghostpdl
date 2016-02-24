@@ -28,7 +28,7 @@
 #include "gxdevice.h"
 #include "gxcmap.h"
 #include "gxdcolor.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxdevmem.h"
 #include "gdevmem.h"            /* for mem_mono_device */
 #include "gxcpath.h"
@@ -101,7 +101,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
             penum->bps == 8 && (penum->posture == image_portrait
             || penum->posture == image_landscape) &&
             penum->image_parent_type == gs_image_type1 &&
-            gx_transfer_is_monotonic(penum->pis, 0)) {
+            gx_transfer_is_monotonic(penum->pgs, 0)) {
             penum->icc_setup.need_decode = false;
             /* Check if we need to do any decoding.  */
             if ( penum->map[0].decoding != sd_none ) {
@@ -113,11 +113,11 @@ gs_image_class_3_mono(gx_image_enum * penum)
             }
             code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
             /* Define the rendering intents */
-            rendering_params.black_point_comp = penum->pis->blackptcomp;
+            rendering_params.black_point_comp = penum->pgs->blackptcomp;
             rendering_params.graphics_type_tag = GS_IMAGE_TAG;
             rendering_params.override_icc = false;
             rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
-            rendering_params.rendering_intent = penum->pis->renderingintent;
+            rendering_params.rendering_intent = penum->pgs->renderingintent;
             rendering_params.cmm = gsCMM_DEFAULT;
             if (gs_color_space_get_index(penum->pcs) ==
                 gs_color_space_index_Indexed) {
@@ -142,7 +142,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
             if (penum->icc_setup.is_lab)
                 penum->icc_setup.need_decode = false;
             if (penum->icc_link == NULL) {
-                penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL,
+                penum->icc_link = gsicc_get_link(penum->pgs, penum->dev, pcs, NULL,
                     &rendering_params, penum->memory);
             }
             /* PS CIE color spaces may have addition decoding that needs to
@@ -213,7 +213,7 @@ not_fast_halftoning:
 static inline int
 image_set_gray(byte sample_value, const bool masked, uint mask_base,
                 uint mask_limit, gx_device_color **ppdevc, gs_client_color *cc,
-                const gs_color_space *pcs, const gs_imager_state *pis,
+                const gs_color_space *pcs, const gs_gstate *pgs,
                 gx_device * dev, gs_color_select_t gs_color_select_source,
                 gx_image_enum * penum)
 {
@@ -240,11 +240,11 @@ image_set_gray(byte sample_value, const bool masked, uint mask_base,
               penum->map[0].decode_base + (sample_value) * penum->map[0].decode_factor;
             }
             remap_color = pcs->type->remap_color;
-            code = (*remap_color)(cc, pcs, pdevc, pis, dev, gs_color_select_source);
+            code = (*remap_color)(cc, pcs, pdevc, pgs, dev, gs_color_select_source);
             return(code);
         }
     } else if (!color_is_pure(pdevc)) {
-        code = gx_color_load_select(pdevc, pis, dev, gs_color_select_source);
+        code = gx_color_load_select(pdevc, pgs, dev, gs_color_select_source);
         if (code < 0)
             return(code);
     }
@@ -263,7 +263,7 @@ static int
 image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
                   uint w, int h, gx_device * dev)
 {
-    const gs_imager_state *pis = penum->pis;
+    const gs_gstate *pgs = penum->pgs;
     gs_logical_operation_t lop = penum->log_op;
     const bool masked = penum->masked;
     const gs_color_space *pcs = NULL;   /* only set for non-masks */
@@ -277,7 +277,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
          penum->mask_color.values[1] - mask_base + 1 : 0);
 /*
  * Free variables of IMAGE_SET_GRAY:
- *   Read: penum, pis, dev, mask_base, mask_limit
+ *   Read: penum, pgs, dev, mask_base, mask_limit
  *   Set: pdevc, code, cc
  */
 #define IMAGE_SET_GRAY(sample_value)\
@@ -288,12 +288,12 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
             color_set_null(pdevc);\
         else {\
             decode_sample(sample_value, cc, 0);\
-            code = (*remap_color)(&cc, pcs, pdevc, pis, dev, gs_color_select_source);\
+            code = (*remap_color)(&cc, pcs, pdevc, pgs, dev, gs_color_select_source);\
             if (code < 0)\
                 goto err;\
         }\
     } else if (!color_is_pure(pdevc)) {\
-        code = gx_color_load_select(pdevc, pis, dev, gs_color_select_source);\
+        code = gx_color_load_select(pdevc, pgs, dev, gs_color_select_source);\
         if (code < 0)\
             goto err;\
     }\
@@ -358,7 +358,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
              **********************/
 
             pdevc = penum->icolor1;
-            code = gx_color_load(pdevc, pis, dev);
+            code = gx_color_load(pdevc, pgs, dev);
             if (code < 0)
                 return code;
             if ((stop <= psrc) && (penum->adjust == 0) &&
@@ -541,7 +541,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
                         htrun = run;
 #if USE_SET_GRAY_FUNCTION
                         code = image_set_gray(run,masked,mask_base,mask_limit,&pdevc,
-                            &cc,pcs,pis,dev,gs_color_select_source,penum);
+                            &cc,pcs,pgs,dev,gs_color_select_source,penum);
                         if (code < 0)
                             goto err;
 #else
@@ -585,7 +585,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
                     htrun = run;
 #if USE_SET_GRAY_FUNCTION
                     code = image_set_gray(run,masked,mask_base,mask_limit,&pdevc,
-                        &cc,pcs,pis,dev,gs_color_select_source,penum);
+                        &cc,pcs,pgs,dev,gs_color_select_source,penum);
                     if (code < 0)
                         goto err;
 #else
@@ -612,7 +612,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
             if (!masked) {
 #if USE_SET_GRAY_FUNCTION
                     code = image_set_gray(*stop, masked,mask_base,mask_limit,&pdevc,
-                        &cc,pcs,pis,dev,gs_color_select_source,penum);
+                        &cc,pcs,pgs,dev,gs_color_select_source,penum);
                     if (code < 0)
                         goto err;
 #else
@@ -722,7 +722,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
                             if (run != htrun) {
 #if USE_SET_GRAY_FUNCTION
                                 code = image_set_gray(run, masked,mask_base,mask_limit,&pdevc,
-                                    &cc,pcs,pis,dev,gs_color_select_source,penum);
+                                    &cc,pcs,pgs,dev,gs_color_select_source,penum);
                                 if (code < 0)
                                     goto err;
 #else
@@ -769,7 +769,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
             }
 #if USE_SET_GRAY_FUNCTION
             code = image_set_gray(*stop, masked,mask_base,mask_limit,&pdevc,
-                &cc,pcs,pis,dev,gs_color_select_source,penum);
+                &cc,pcs,pgs,dev,gs_color_select_source,penum);
             if (code < 0)
                 goto err;
 #else

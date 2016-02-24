@@ -36,7 +36,7 @@ typedef struct gs_font_s gs_font;
 #endif
 
 /* Allocate an enumerator. */
-gs_show_enum *gs_show_enum_alloc(gs_memory_t *, gs_state *, client_name_t);
+gs_show_enum *gs_show_enum_alloc(gs_memory_t *, gs_gstate *, client_name_t);
 
 /* Release the contents of an enumerator. */
 /* (This happens automatically if the enumeration finishes normally.) */
@@ -86,15 +86,15 @@ gs_char_path_mode
 
 /* Character cache and metrics operators. */
 /* gs_setcachedevice* return 1 iff the cache device was just installed. */
-int gs_setcachedevice_float(gs_show_enum *, gs_state *, const float * /*[6] */ );
-int gs_setcachedevice_double(gs_show_enum *, gs_state *, const double * /*[6] */ );
+int gs_setcachedevice_float(gs_show_enum *, gs_gstate *, const float * /*[6] */ );
+int gs_setcachedevice_double(gs_show_enum *, gs_gstate *, const double * /*[6] */ );
 #define gs_setcachedevice(penum, pgs, pw)\
   gs_setcachedevice_float(penum, pgs, pw)
-int gs_setcachedevice2_float(gs_show_enum *, gs_state *, const float * /*[10] */ );
-int gs_setcachedevice2_double(gs_show_enum *, gs_state *, const double * /*[10] */ );
+int gs_setcachedevice2_float(gs_show_enum *, gs_gstate *, const float * /*[10] */ );
+int gs_setcachedevice2_double(gs_show_enum *, gs_gstate *, const double * /*[10] */ );
 #define gs_setcachedevice2(penum, pgs, pw2)\
   gs_setcachedevice2_float(penum, pgs, pw2)
-int gs_setcharwidth(gs_show_enum *, gs_state *, double, double);
+int gs_setcharwidth(gs_show_enum *, gs_gstate *, double, double);
 
 /* Return true if we only need the width from the rasterizer */
 /* and can short-circuit the full rendering of the character, */

@@ -80,7 +80,7 @@ typedef enum {
     /* op_bm_tk: blend mode(5)text knockout(1)o.p.mode(1)o.p.(1) */
     /* segment notes: (byte) */
     /* opacity/shape: alpha(float)mask(TBD) */
-    /* alpha: <<verbatim copy from imager state>> */
+    /* alpha: <<verbatim copy from gs_gstate>> */
     cmd_opv_set_misc2 = 0xd5,	/* mask#, selected parameters */
     cmd_opv_set_dash = 0xd6,	/* adapt(1)abs.dot(1)n(6), dot */
                                 /* length(float), offset(float), */
@@ -220,11 +220,11 @@ dev_proc_fill_triangle(clist_fill_triangle);
 /* The procedures and macros defined here are used when writing */
 /* (gxclimag.c, gxclpath.c). */
 
-/* Compare and update members of the imager state. */
+/* Compare and update members of the gs_gstate. */
 #define state_neq(member)\
-  (cdev->imager_state.member != pis->member)
+  (cdev->gs_gstate.member != pgs->member)
 #define state_update(member)\
-  (cdev->imager_state.member = pis->member)
+  (cdev->gs_gstate.member = pgs->member)
 
 /* ------ Exported by gxclpath.c ------ */
 

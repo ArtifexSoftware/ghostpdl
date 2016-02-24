@@ -19,6 +19,8 @@
 #ifndef gsstype_INCLUDED
 #  define gsstype_INCLUDED
 
+#include "gsmemory.h"
+
 /* Define an opaque type for the garbage collector state. */
 typedef struct gc_state_s gc_state_t;
 

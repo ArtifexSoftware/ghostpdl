@@ -149,7 +149,7 @@ hpgl_dl_char_metrics(const pl_font_t * plfont, const void *pgs,
 
 /* Add a symbol to the path. */
 static int
-hpgl_stick_arc_build_char(gs_show_enum * penum, gs_state * pgs,
+hpgl_stick_arc_build_char(gs_show_enum * penum, gs_gstate * pgs,
                           gs_font * pfont, gs_glyph uni_code,
                           hpgl_font_type_t font_type)
 {
@@ -186,14 +186,14 @@ hpgl_stick_arc_build_char(gs_show_enum * penum, gs_state * pgs,
 }
 
 static int
-hpgl_stick_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
+hpgl_stick_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
                       gs_char ignore_chr, gs_glyph uni_code)
 {
     return hpgl_stick_arc_build_char(penum, pgs, pfont, uni_code,
                                      HPGL_STICK_FONT);
 }
 static int
-hpgl_arc_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
+hpgl_arc_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
                     gs_char ignore_chr, gs_glyph uni_code)
 {
     return hpgl_stick_arc_build_char(penum, pgs, pfont, uni_code,
@@ -226,7 +226,7 @@ hpgl_fill_in_stick_arc_font(gs_font_base * pfont, long unique_id)
 }
 
 static int
-hpgl_531_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
+hpgl_531_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
                     gs_char ignore_chr, gs_glyph ccode)
 {
     gs_matrix save_ctm;

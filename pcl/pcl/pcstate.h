@@ -82,9 +82,9 @@ typedef struct pstack_entry_s
 #  define pcl_state_DEFINED
 typedef struct pcl_state_s pcl_state_t;
 #endif
-#ifndef gs_state_DEFINED
-#  define gs_state_DEFINED
-typedef struct gs_state_s gs_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
 /*
@@ -138,7 +138,7 @@ struct pcl_state_s
     void *client_data;
 
     /* graphics state */
-    gs_state *pgs;
+    gs_gstate *pgs;
 
     /* Define an optional procedure for parsing non-ESC data. */
     int (*parse_other) (void *parse_data,

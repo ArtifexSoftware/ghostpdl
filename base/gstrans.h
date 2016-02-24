@@ -140,60 +140,60 @@ typedef struct gs_pdf14trans_s {
 } gs_pdf14trans_t;
 
 /* Access transparency-related graphics state elements. */
-int gs_setblendmode(gs_state *, gs_blend_mode_t);
-gs_blend_mode_t gs_currentblendmode(const gs_state *);
-int gs_setopacityalpha(gs_state *, double);
-float gs_currentopacityalpha(const gs_state *);
-int gs_setshapealpha(gs_state *, double);
-float gs_currentshapealpha(const gs_state *);
-int gs_settextknockout(gs_state *, bool);
-bool gs_currenttextknockout(const gs_state *);
+int gs_setblendmode(gs_gstate *, gs_blend_mode_t);
+gs_blend_mode_t gs_currentblendmode(const gs_gstate *);
+int gs_setopacityalpha(gs_gstate *, double);
+float gs_currentopacityalpha(const gs_gstate *);
+int gs_setshapealpha(gs_gstate *, double);
+float gs_currentshapealpha(const gs_gstate *);
+int gs_settextknockout(gs_gstate *, bool);
+bool gs_currenttextknockout(const gs_gstate *);
 
 /*
  * We have to abbreviate the procedure name because procedure names are
  * only unique to 23 characters on VMS.
  */
-int gs_push_pdf14trans_device(gs_state * pgs, bool is_pattern);
+int gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern);
 
-int gs_pop_pdf14trans_device(gs_state * pgs, bool is_pattern);
+int gs_pop_pdf14trans_device(gs_gstate * pgs, bool is_pattern);
 
-int gs_abort_pdf14trans_device(gs_state * pgs);
+int gs_abort_pdf14trans_device(gs_gstate * pgs);
 
 void gs_trans_group_params_init(gs_transparency_group_params_t *ptgp);
 
-int gs_update_trans_marking_params(gs_state * pgs);
+int gs_update_trans_marking_params(gs_gstate * pgs);
 
-int gs_begin_transparency_group(gs_state * pgs,
+int gs_begin_transparency_group(gs_gstate * pgs,
                                 const gs_transparency_group_params_t *ptgp,
                                 const gs_rect *pbbox);
 
-int gs_end_transparency_group(gs_state *pgs);
+int gs_end_transparency_group(gs_gstate *pgs);
 
 void gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
                                gs_transparency_mask_subtype_t subtype);
 
-int gs_begin_transparency_mask(gs_state *pgs,
+int gs_begin_transparency_mask(gs_gstate *pgs,
                                const gs_transparency_mask_params_t *ptmp,
                                const gs_rect *pbbox, bool mask_is_image);
 
-int gs_end_transparency_mask(gs_state *pgs,
+int gs_end_transparency_mask(gs_gstate *pgs,
                              gs_transparency_channel_selector_t csel);
 
 /*
  * Imager level routines for the PDF 1.4 transparency operations.
  */
-int gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
+int gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
                                 const gs_pdf14trans_params_t * pparams);
 
-int gx_end_transparency_group(gs_imager_state * pis, gx_device * pdev);
+int gx_end_transparency_group(gs_gstate * pgs, gx_device * pdev);
 
-int gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
+int gx_begin_transparency_mask(gs_gstate * pgs, gx_device * pdev,
                                 const gs_pdf14trans_params_t * pparams);
 
-int gx_end_transparency_mask(gs_imager_state * pis, gx_device * pdev,
+int gx_end_transparency_mask(gs_gstate * pgs, gx_device * pdev,
                                 const gs_pdf14trans_params_t * pparams);
 
-int gx_abort_trans_device(gs_imager_state * pis, gx_device * pdev);
+int gx_abort_trans_device(gs_gstate * pgs, gx_device * pdev);
 
 
 /* These are used for watching for q Smask Q events.  We need to
@@ -203,13 +203,13 @@ int gx_abort_trans_device(gs_imager_state * pis, gx_device * pdev);
    clist writer side and the gx functions occur on the
    clist reader side */
 
-int gs_push_transparency_state(gs_state *pgs);
+int gs_push_transparency_state(gs_gstate *pgs);
 
-int gs_pop_transparency_state(gs_state *pgs, bool force);
+int gs_pop_transparency_state(gs_gstate *pgs, bool force);
 
-int gx_push_transparency_state(gs_imager_state * pis, gx_device * pdev);
+int gx_push_transparency_state(gs_gstate * pgs, gx_device * pdev);
 
-int gx_pop_transparency_state(gs_imager_state * pis, gx_device * pdev);
+int gx_pop_transparency_state(gs_gstate * pgs, gx_device * pdev);
 
 /*
  * Verify that a compositor data structure is for the PDF 1.4 compositor.

@@ -35,7 +35,7 @@ private_st_int_remap_color_info();
 /* ------ Utilities ------ */
 
 static int
-zset_real(i_ctx_t *i_ctx_p, int (*set_proc)(gs_state *, double))
+zset_real(i_ctx_t *i_ctx_p, int (*set_proc)(gs_gstate *, double))
 {
     os_ptr op = osp;
     double param;
@@ -50,7 +50,7 @@ zset_real(i_ctx_t *i_ctx_p, int (*set_proc)(gs_state *, double))
 }
 
 static int
-zset_bool(i_ctx_t *i_ctx_p, void (*set_proc)(gs_state *, bool))
+zset_bool(i_ctx_t *i_ctx_p, void (*set_proc)(gs_gstate *, bool))
 {
     os_ptr op = osp;
 
@@ -61,7 +61,7 @@ zset_bool(i_ctx_t *i_ctx_p, void (*set_proc)(gs_state *, bool))
 }
 
 static int
-zcurrent_bool(i_ctx_t *i_ctx_p, bool (*current_proc)(const gs_state *))
+zcurrent_bool(i_ctx_t *i_ctx_p, bool (*current_proc)(const gs_gstate *))
 {
     os_ptr op = osp;
 
@@ -71,7 +71,7 @@ zcurrent_bool(i_ctx_t *i_ctx_p, bool (*current_proc)(const gs_state *))
 }
 
 static int
-zset_uint(i_ctx_t *i_ctx_p, void (*set_proc)(gs_state *, uint))
+zset_uint(i_ctx_t *i_ctx_p, void (*set_proc)(gs_gstate *, uint))
 {
     os_ptr op = osp;
 
@@ -82,7 +82,7 @@ zset_uint(i_ctx_t *i_ctx_p, void (*set_proc)(gs_state *, uint))
 }
 
 static int
-zcurrent_uint(i_ctx_t *i_ctx_p, uint (*current_proc)(const gs_state *))
+zcurrent_uint(i_ctx_t *i_ctx_p, uint (*current_proc)(const gs_gstate *))
 {
     os_ptr op = osp;
 
@@ -97,7 +97,7 @@ zcurrent_uint(i_ctx_t *i_ctx_p, uint (*current_proc)(const gs_state *))
 static void *gs_istate_alloc(gs_memory_t * mem);
 static int gs_istate_copy(void *to, const void *from);
 static void gs_istate_free(void *old, gs_memory_t * mem);
-static const gs_state_client_procs istate_procs = {
+static const gs_gstate_client_procs istate_procs = {
     gs_istate_alloc,
     gs_istate_copy,
     gs_istate_free,
@@ -105,7 +105,7 @@ static const gs_state_client_procs istate_procs = {
 };
 
 /* Initialize the graphics stack. */
-gs_state *
+gs_gstate *
 int_gstate_alloc(const gs_dual_memory_t * dmem)
 {
     int_gstate *iigs;
@@ -113,7 +113,7 @@ int_gstate_alloc(const gs_dual_memory_t * dmem)
     int_remap_color_info_t *prci;
     gs_ref_memory_t *lmem = dmem->space_local;
     gs_ref_memory_t *gmem = dmem->space_global;
-    gs_state *pgs = gs_state_alloc((gs_memory_t *)lmem);
+    gs_gstate *pgs = gs_gstate_alloc((gs_memory_t *)lmem);
 
     iigs = gs_alloc_struct((gs_memory_t *)lmem, int_gstate, &st_int_gstate,
                            "int_gstate_alloc(int_gstate)");
@@ -141,7 +141,7 @@ int_gstate_alloc(const gs_dual_memory_t * dmem)
         return NULL;
     make_struct(&iigs->remap_color_info, imemory_space(gmem), prci);
     clear_pagedevice(iigs);
-    gs_state_set_client(pgs, iigs, &istate_procs, true);
+    gs_gstate_set_client(pgs, iigs, &istate_procs, true);
     /* PostScript code wants limit clamping enabled. */
     gs_setlimitclamp(pgs, true);
     /*

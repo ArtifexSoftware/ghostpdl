@@ -27,16 +27,16 @@
 
 
 /* Imports from gscolor.c */
-void load_transfer_map(gs_state *, gx_transfer_map *, double);
+void load_transfer_map(gs_gstate *, gx_transfer_map *, double);
 
 /* Forward declarations */
-static int process_spot(gx_ht_order *, gs_state *,
+static int process_spot(gx_ht_order *, gs_gstate *,
                          gs_spot_halftone *, gs_memory_t *);
-static int process_threshold(gx_ht_order *, gs_state *,
+static int process_threshold(gx_ht_order *, gs_gstate *,
                               gs_threshold_halftone *, gs_memory_t *);
-static int process_threshold2(gx_ht_order *, gs_state *,
+static int process_threshold2(gx_ht_order *, gs_gstate *,
                                gs_threshold2_halftone *, gs_memory_t *);
-static int process_client_order(gx_ht_order *, gs_state *,
+static int process_client_order(gx_ht_order *, gs_gstate *,
                                  gs_client_order_halftone *, gs_memory_t *);
 
 /* Structure types */
@@ -106,7 +106,7 @@ RELOC_PTRS_END
 
 /* setcolorscreen */
 int
-gs_setcolorscreen(gs_state * pgs, gs_colorscreen_halftone * pht)
+gs_setcolorscreen(gs_gstate * pgs, gs_colorscreen_halftone * pht)
 {
     gs_halftone ht;
 
@@ -117,7 +117,7 @@ gs_setcolorscreen(gs_state * pgs, gs_colorscreen_halftone * pht)
 
 /* currentcolorscreen */
 int
-gs_currentcolorscreen(gs_state * pgs, gs_colorscreen_halftone * pht)
+gs_currentcolorscreen(gs_gstate * pgs, gs_colorscreen_halftone * pht)
 {
     int code;
 
@@ -138,7 +138,7 @@ gs_currentcolorscreen(gs_state * pgs, gs_colorscreen_halftone * pht)
 
 /* Set the halftone in the graphics state. */
 int
-gs_sethalftone(gs_state * pgs, gs_halftone * pht)
+gs_sethalftone(gs_gstate * pgs, gs_halftone * pht)
 {
     gs_halftone ht;
 
@@ -147,7 +147,7 @@ gs_sethalftone(gs_state * pgs, gs_halftone * pht)
     return gs_sethalftone_allocated(pgs, &ht);
 }
 int
-gs_sethalftone_allocated(gs_state * pgs, gs_halftone * pht)
+gs_sethalftone_allocated(gs_gstate * pgs, gs_halftone * pht)
 {
     gx_device_halftone dev_ht;
     int code = gs_sethalftone_prepare(pgs, pht, &dev_ht);
@@ -162,7 +162,7 @@ gs_sethalftone_allocated(gs_state * pgs, gs_halftone * pht)
 
 /* Prepare the halftone, but don't install it. */
 int
-gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
+gs_sethalftone_prepare(gs_gstate * pgs, gs_halftone * pht,
                        gx_device_halftone * pdht)
 {
     gs_memory_t *mem = pht->rc.memory;
@@ -320,7 +320,7 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 
 /* Process a transfer function override, if any. */
 static int
-process_transfer(gx_ht_order * porder, gs_state * pgs,
+process_transfer(gx_ht_order * porder, gs_gstate * pgs,
                  gs_mapping_proc proc, gs_mapping_closure_t * pmc,
                  gs_memory_t * mem)
 {
@@ -347,7 +347,7 @@ process_transfer(gx_ht_order * porder, gs_state * pgs,
 
 /* Process a spot plane. */
 static int
-process_spot(gx_ht_order * porder, gs_state * pgs,
+process_spot(gx_ht_order * porder, gs_gstate * pgs,
              gs_spot_halftone * phsp, gs_memory_t * mem)
 {
     gs_screen_enum senum;
@@ -396,7 +396,7 @@ gx_ht_construct_threshold_order(gx_ht_order * porder, const byte * thresholds)
 
 /* Process a threshold plane. */
 static int
-process_threshold(gx_ht_order * porder, gs_state * pgs,
+process_threshold(gx_ht_order * porder, gs_gstate * pgs,
                   gs_threshold_halftone * phtp, gs_memory_t * mem)
 {
     int code;
@@ -416,7 +416,7 @@ process_threshold(gx_ht_order * porder, gs_state * pgs,
 
 /* Process an extended threshold plane. */
 static int
-process_threshold2(gx_ht_order * porder, gs_state * pgs,
+process_threshold2(gx_ht_order * porder, gs_gstate * pgs,
                    gs_threshold2_halftone * phtp, gs_memory_t * mem)
 {
     int code;
@@ -532,7 +532,7 @@ process_threshold2(gx_ht_order * porder, gs_state * pgs,
 
 /* Process a client-order plane. */
 static int
-process_client_order(gx_ht_order * porder, gs_state * pgs,
+process_client_order(gx_ht_order * porder, gs_gstate * pgs,
                      gs_client_order_halftone * phcop, gs_memory_t * mem)
 {
     int code = (*phcop->procs->create_order) (porder, pgs, phcop, mem);

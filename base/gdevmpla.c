@@ -238,7 +238,7 @@ mem_planar_put_image(gx_device *pdev, const byte *buffer, int num_chan, int xsta
    devices. (e.g. tiffsep, psdcmyk) */
 static int
 mem_planar_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
-    const gs_imager_state *pis, const gx_drawing_color *pdcolor,
+    const gs_gstate *pgs, const gx_drawing_color *pdcolor,
     const gx_clip_path *pcpath)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
@@ -1058,7 +1058,7 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
     byte lmask, rmask;
     rop_proc cproc, mproc, yproc;
     int dbit;
-    int cscolor, mscolor, yscolor, kscolor;
+    int cscolor = 0, mscolor = 0, yscolor = 0, kscolor = 0;
     int ctcolor = 0, mtcolor = 0, ytcolor = 0, ktcolor = 0;
     int constant_s = 0;
 
@@ -2019,7 +2019,7 @@ mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
                               gs_get_bits_params_t * params,
                               gs_int_rect ** unread)
 {
-    /* This duplicates most of mem_get_bits_rectangle.  Tant pis. */
+    /* This duplicates most of mem_get_bits_rectangle.  Tant pgs. */
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     gs_get_bits_options_t options = params->options;
     int x = prect->p.x, w = prect->q.x - x, y = prect->p.y, h = prect->q.y - y;

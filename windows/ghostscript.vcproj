@@ -4250,7 +4250,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\base\gxistate.h"
+				RelativePath="..\base\gxgstate.h"
 				>
 			</File>
 			<File

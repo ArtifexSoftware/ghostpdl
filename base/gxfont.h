@@ -341,7 +341,7 @@ typedef struct gs_font_procs_s {
      */
 
 #define font_proc_build_char(proc)\
-  int proc(gs_show_enum *, gs_state *, gs_font *, gs_char, gs_glyph)
+  int proc(gs_show_enum *, gs_gstate *, gs_font *, gs_char, gs_glyph)
     font_proc_build_char((*build_char));
 
 } gs_font_procs;

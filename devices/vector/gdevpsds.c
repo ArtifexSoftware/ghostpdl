@@ -25,7 +25,7 @@
 #include "gsdcolor.h"
 #include "gscspace.h"
 #include "gxdevcli.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 
 /* ---------------- Convert between 1/2/4/12 and 8 bits ---------------- */
 
@@ -349,9 +349,9 @@ private_st_C2R_state();
 
 /* Initialize a CMYK => RGB conversion stream. */
 int
-s_C2R_init(stream_C2R_state *ss, const gs_imager_state *pis)
+s_C2R_init(stream_C2R_state *ss, const gs_gstate *pgs)
 {
-    ss->pis = pis;
+    ss->pgs = pgs;
     return 0;
 }
 
@@ -361,7 +361,7 @@ s_C2R_set_defaults(stream_state * st)
 {
     stream_C2R_state *const ss = (stream_C2R_state *) st;
 
-    ss->pis = 0;
+    ss->pgs = 0;
 }
 
 /* Process one buffer. */
@@ -380,7 +380,7 @@ s_C2R_process(stream_state * st, stream_cursor_read * pr,
         frac rgb[3];
 
         color_cmyk_to_rgb(byte2frac(bc), byte2frac(bm), byte2frac(by),
-                          byte2frac(bk), ss->pis, rgb, ss->pis->memory);
+                          byte2frac(bk), ss->pgs, rgb, ss->pgs->memory);
         q[1] = frac2byte(rgb[0]);
         q[2] = frac2byte(rgb[1]);
         q[3] = frac2byte(rgb[2]);
@@ -1188,7 +1188,7 @@ s_image_colors_init(stream_state * st)
     ss->convert_color = 0;
     ss->pcs = 0;
     ss->pdev = 0;
-    ss->pis = 0;
+    ss->pgs = 0;
     return 0;
 }
 
@@ -1218,7 +1218,7 @@ s_image_colors_convert_to_device_color(stream_image_colors_state * ss)
         cc.paint.values[i] = ss->input_color[i] *
                 (ss->Decode[i * 2 + 1] - ss->Decode[i * 2]) / v0 + ss->Decode[i * 2];
 
-    code = ss->pcs->type->remap_color(&cc, ss->pcs, &dc, ss->pis,
+    code = ss->pcs->type->remap_color(&cc, ss->pcs, &dc, ss->pgs,
                               ss->pdev, gs_color_select_texture);
     if (code < 0)
         return code;
@@ -1255,7 +1255,7 @@ s_image_colors_set_dimensions(stream_image_colors_state * ss,
 
 void
 s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
-                               const gs_color_space *pcs, const gs_imager_state *pis,
+                               const gs_color_space *pcs, const gs_gstate *pgs,
                                float *Decode)
 {
     ss->output_depth = pdev->color_info.num_components;
@@ -1264,13 +1264,13 @@ s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
     ss->convert_color = s_image_colors_convert_to_device_color;
     ss->pdev = pdev;
     ss->pcs = pcs;
-    ss->pis = pis;
+    ss->pgs = pgs;
     memcpy(ss->Decode, Decode, ss->depth * sizeof(Decode[0]) * 2);
 }
 
 void
 s_new_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
-                               const gs_color_space *pcs, const gs_imager_state *pis,
+                               const gs_color_space *pcs, const gs_gstate *pgs,
                                float *Decode)
 {
     ss->output_depth = pdev->color_info.num_components;
@@ -1279,7 +1279,7 @@ s_new_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pd
     ss->convert_color = s_image_colors_convert_to_device_color;
     ss->pdev = pdev;
     ss->pcs = pcs;
-    ss->pis = pis;
+    ss->pgs = pgs;
     memcpy(ss->Decode, Decode, ss->depth * sizeof(Decode[0]) * 2);
 }
 

@@ -23,7 +23,7 @@
 #include "gsdevice.h"		/* requires gsmatrix.h */
 #include "gxdcolor.h"		/* for gx_device_black/white */
 #include "gxiparam.h"		/* for image source size */
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxpaint.h"
 #include "gxpath.h"
 #include "gxcpath.h"
@@ -202,21 +202,21 @@ int obj_filter_draw_line(gx_device *dev, int x0, int y0, int x1, int y1, gx_colo
     return 0;
 }
 
-int obj_filter_fill_path(gx_device *dev, const gs_imager_state *pis, gx_path *ppath,
+int obj_filter_fill_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     const gx_fill_params *params,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
     if ((dev->ObjectFilter & FILTERVECTOR) == 0)
-        return default_subclass_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
+        return default_subclass_fill_path(dev, pgs, ppath, params, pdcolor, pcpath);
     return 0;
 }
 
-int obj_filter_stroke_path(gx_device *dev, const gs_imager_state *pis, gx_path *ppath,
+int obj_filter_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     const gx_stroke_params *params,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
     if ((dev->ObjectFilter & FILTERVECTOR) == 0)
-        return default_subclass_stroke_path(dev, pis, ppath, params, pdcolor, pcpath);
+        return default_subclass_stroke_path(dev, pgs, ppath, params, pdcolor, pcpath);
     return 0;
 }
 
@@ -264,13 +264,13 @@ int obj_filter_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed fx1, f
     return 0;
 }
 
-int obj_filter_begin_image(gx_device *dev, const gs_imager_state *pis, const gs_image_t *pim,
+int obj_filter_begin_image(gx_device *dev, const gs_gstate *pgs, const gs_image_t *pim,
     gs_image_format_t format, const gs_int_rect *prect,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 {
     if ((dev->ObjectFilter & FILTERIMAGE) == 0)
-        return default_subclass_begin_image(dev, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
+        return default_subclass_begin_image(dev, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo);
     return 0;
 }
 
@@ -345,7 +345,7 @@ static const gx_image_enum_procs_t obj_filter_image_enum_procs = {
     obj_filter_image_end_image
 };
 
-int obj_filter_begin_typed_image(gx_device *dev, const gs_imager_state *pis, const gs_matrix *pmat,
+int obj_filter_begin_typed_image(gx_device *dev, const gs_gstate *pgs, const gs_matrix *pmat,
     const gs_image_common_t *pic, const gs_int_rect *prect,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
@@ -355,7 +355,7 @@ int obj_filter_begin_typed_image(gx_device *dev, const gs_imager_state *pis, con
     int num_components;
 
     if ((dev->ObjectFilter & FILTERIMAGE) == 0)
-        return default_subclass_begin_typed_image(dev, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
+        return default_subclass_begin_typed_image(dev, pgs, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
 
     if (pic->type->index == 1) {
         const gs_image_t *pim1 = (const gs_image_t *)pic;
@@ -445,7 +445,7 @@ static const gs_text_enum_procs_t obj_filter_text_procs = {
  * in which case we create a text enumerator with our dummy procedures, or we are leaving it
  * up to the device, in which case we simply pass on the 'begin' method to the device.
  */
-int obj_filter_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_params_t *text,
+int obj_filter_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t *text,
     gs_font *font, gx_path *path, const gx_device_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gs_text_enum_t **ppte)
 {
@@ -457,21 +457,21 @@ int obj_filter_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_pa
      * secondly  because op_show_restore executes an unconditional grestore, assuming
      * that a gsave has been done simply *because* its a tringwidth operation !
      */
-    if ((text->operation & TEXT_DO_NONE) && (text->operation & TEXT_RETURN_WIDTH) && pis->text_rendering_mode != 3)
+    if ((text->operation & TEXT_DO_NONE) && (text->operation & TEXT_RETURN_WIDTH) && pgs->text_rendering_mode != 3)
         /* Note that the high level devices *must* be given the opportunity to 'see' the
          * stringwidth operation, or they won;t be able to cache the glyphs properly.
          * So always pass stringwidth operations to the child.
          */
-        return default_subclass_text_begin(dev, pis, text, font, path, pdcolor, pcpath, memory, ppte);
+        return default_subclass_text_begin(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
 
     if ((dev->ObjectFilter & FILTERTEXT) == 0)
-        return default_subclass_text_begin(dev, pis, text, font, path, pdcolor, pcpath, memory, ppte);
+        return default_subclass_text_begin(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
 
     rc_alloc_struct_1(penum, obj_filter_text_enum_t, &st_obj_filter_text_enum, memory,
                   return_error(gs_error_VMerror), "gdev_obj_filter_text_begin");
     penum->rc.free = rc_free_text_enum;
     code = gs_text_enum_init((gs_text_enum_t *)penum, &obj_filter_text_procs,
-                         dev, pis, text, font, path, pdcolor, pcpath, memory);
+                         dev, pgs, text, font, path, pdcolor, pcpath, memory);
     if (code < 0) {
         gs_free_object(memory, penum, "gdev_obj_filter_text_begin");
         return code;
@@ -482,10 +482,10 @@ int obj_filter_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_pa
 }
 
 int obj_filter_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
-        const gs_imager_state *pis, const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
+        const gs_gstate *pgs, const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
     if ((dev->ObjectFilter & FILTERVECTOR) == 0)
-        return default_subclass_fill_rectangle_hl_color(dev, rect, pis, pdcolor, pcpath);
+        return default_subclass_fill_rectangle_hl_color(dev, rect, pgs, pdcolor, pcpath);
     return 0;
 }
 

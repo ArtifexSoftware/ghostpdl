@@ -51,9 +51,9 @@
  * saving, comparing, and getting high level color information.
  */
 
-#ifndef gs_imager_state_DEFINED
-#  define gs_imager_state_DEFINED
-typedef struct gs_imager_state_s gs_imager_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
 #ifndef gx_device_color_DEFINED
@@ -78,12 +78,6 @@ typedef struct gx_hl_saved_color_s {
 void gx_hld_saved_color_init(gx_hl_saved_color * psc);
 
 /*
- * Get graphics state pointer (from imager state pointer)
- * Return NULL if the imager state is not also a graphics state.
- */
-const gs_state * gx_hld_get_gstate_ptr(const gs_imager_state * pis);
-
-/*
  * Save the device color information including the color space id and
  * client color data (if available).  The pattern id is also saved for
  * detection of changes in the pattern.
@@ -94,9 +88,9 @@ const gs_state * gx_hld_get_gstate_ptr(const gs_imager_state * pis);
  * a save and test on the given color.
  *
  * If the device can't handle high level colors, it must pass NULL to
- * the 'pis' argument.
+ * the 'pgs' argument.
  */
-bool gx_hld_save_color(const gs_imager_state * pis,
+bool gx_hld_save_color(const gs_gstate * pgs,
         const gx_device_color * pdevc, gx_hl_saved_color * psc);
 
 /*
@@ -117,7 +111,7 @@ bool gx_hld_saved_color_same_cspace(const gx_hl_saved_color * psc1,
  * Check if a high level color is availavble.
  */
 bool
-gx_hld_is_hl_color_available(const gs_imager_state * pis,
+gx_hld_is_hl_color_available(const gs_gstate * pgs,
                 const gx_device_color * pdevc);
 
 /*
@@ -137,7 +131,7 @@ typedef enum {
  * Get pointers to the current color space and client color.
  *
  * There are four possible cases:
- * 1.  Either the device color or imager state pointer is NULL.  If so then
+ * 1.  Either the device color or gs_gstate pointer is NULL.  If so then
  *     we do not have enough information.  Thus we need to fall back to the
  *     process color model color.  Return NULL for both pointers.
  * 2.  The device color was not created from a color space and a client color.
@@ -157,17 +151,17 @@ typedef enum {
  * a pattern or non pattern).
  */
 gx_hld_get_color_space_and_ccolor_status gx_hld_get_color_space_and_ccolor(
-                const gs_imager_state * pis, const gx_device_color * pdevc,
+                const gs_gstate * pgs, const gx_device_color * pdevc,
                 const gs_color_space ** ppcs, const gs_client_color ** ppcc);
 
 /*
  * This routine will return the number of components in the current color
  * space.
  *
- * The routine will return -1 if the imager state does not point to a
+ * The routine will return -1 if the gs_gstate does not point to a
  * graphics state (and thus we cannot get the current color space).
  */
-int gx_hld_get_number_color_components(const gs_imager_state * pis);
+int gx_hld_get_number_color_components(const gs_gstate * pgs);
 
 /*
  * This defines sthe possible status to be returned from get_color_component.
@@ -187,7 +181,7 @@ typedef enum {
  * device fall back to using the process color model.
  */
 gx_hld_get_color_component_status gx_hld_get_color_component(
-                const gs_imager_state * pis, const gx_device_color * pdevc,
+                const gs_gstate * pgs, const gx_device_color * pdevc,
                 int comp_numi, float * output);
 
 #endif

@@ -24,7 +24,7 @@
 
 /* Forward references */
 static int common_transform(i_ctx_t *,
-                int (*)(gs_state *, double, double, gs_point *),
+                int (*)(gs_gstate *, double, double, gs_point *),
                 int (*)(double, double, const gs_matrix *, gs_point *));
 
 /* - initmatrix - */
@@ -265,7 +265,7 @@ zidtransform(i_ctx_t *i_ctx_p)
 /* Common logic for [i][d]transform */
 static int
 common_transform(i_ctx_t *i_ctx_p,
-        int (*ptproc)(gs_state *, double, double, gs_point *),
+        int (*ptproc)(gs_gstate *, double, double, gs_point *),
         int (*matproc)(double, double, const gs_matrix *, gs_point *))
 {
     os_ptr op = osp;

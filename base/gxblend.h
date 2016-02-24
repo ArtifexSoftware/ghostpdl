@@ -422,7 +422,7 @@ void pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff)
 
 int pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
                                pdf14_buf *tos, cmm_profile_t *tos_profile,
-                               gs_memory_t *memory, gs_imager_state *pis,
+                               gs_memory_t *memory, gs_gstate *pgs,
                                gx_device *dev, bool knockout_buff);
 
 void pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
@@ -436,7 +436,7 @@ gx_color_index pdf14_encode_color_tag(gx_device *dev, const gx_color_value color
 
 int pdf14_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out);
 void pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[]);
-void pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_imager_state *pis,
+void pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_gstate *pgs,
                            frac r, frac g, frac b, frac out[]);
 void pdf14_cmyk_cs_to_cmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[]);
 

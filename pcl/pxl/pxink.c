@@ -240,7 +240,7 @@ ilcm(uint x, uint y)
 
 /* Render a pattern. */
 static int
-px_paint_pattern(const gs_client_color * pcc, gs_state * pgs)
+px_paint_pattern(const gs_client_color * pcc, gs_gstate * pgs)
 {
     const gs_client_pattern *ppat = gs_getpattern(pcc);
     const px_pattern_t *pattern = ppat->client_data;
@@ -296,7 +296,7 @@ px_paint_pattern(const gs_client_color * pcc, gs_state * pgs)
     return code;
 }
 
-int px_high_level_pattern(gs_state * pgs)
+int px_high_level_pattern(gs_gstate * pgs)
 {
     gs_matrix m;
     gs_rect bbox;
@@ -309,8 +309,8 @@ int px_high_level_pattern(gs_state * pgs)
         (gs_pattern1_instance_t *)gs_currentcolor(pgs)->pattern;
     const px_pattern_t * pattern = ppat->client_data;
 
-    code = gx_pattern_cache_add_dummy_entry((gs_imager_state *)pgs,
-        pinst, pgs->device->color_info.depth);
+    code = gx_pattern_cache_add_dummy_entry(pgs, pinst,
+        pgs->device->color_info.depth);
     if (code < 0)
         return code;
 
@@ -395,7 +395,7 @@ int px_high_level_pattern(gs_state * pgs)
     return code;
 }
 
-static int px_remap_pattern(const gs_client_color *pcc, gs_state *pgs)
+static int px_remap_pattern(const gs_client_color *pcc, gs_gstate *pgs)
 {
     const gs_client_pattern *ppat = gs_getpattern(pcc);
     int code = 0;
@@ -433,7 +433,7 @@ render_pattern(gs_client_color * pcc, const px_pattern_t * pattern,
     uint rep_width = pattern->params.width;
     uint rep_height = pattern->params.height;
     uint full_width, full_height;
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
     gs_client_pattern templat;
 
     /*
@@ -738,7 +738,7 @@ set_source(const px_args_t * par, px_state_t * pxs, px_paint_t * ppt)
 int
 px_set_paint(const px_paint_t * ppt, px_state_t * pxs)
 {
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
     px_paint_type_t type;
 
     type = ppt->type;
@@ -871,7 +871,7 @@ const byte apxSetHalftoneMethod[] = {
 int
 pxSetHalftoneMethod(px_args_t * par, px_state_t * pxs)
 {
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
     px_gstate_t *pxgs = pxs->pxgs;
     pxeDitherMatrix_t method;
 

@@ -31,17 +31,17 @@
 #include "gzht.h"
 
 /* Imports from gscolor.c */
-void load_transfer_map(gs_state *, gx_transfer_map *, double);
+void load_transfer_map(gs_gstate *, gx_transfer_map *, double);
 
 /* Imported from gsht.c */
-void gx_set_effective_transfer(gs_state *);
+void gx_set_effective_transfer(gs_gstate *);
 
 /* Force a parameter into the range [0.0..1.0]. */
 #define FORCE_UNIT(p) (p < 0.0 ? 0.0 : p > 1.0 ? 1.0 : p)
 
 /* setcmykcolor */
 int
-gs_setcmykcolor(gs_state * pgs, double c, double m, double y, double k)
+gs_setcmykcolor(gs_gstate * pgs, double c, double m, double y, double k)
 {
     gs_color_space      *pcs;
     int                 code;
@@ -67,12 +67,12 @@ gs_setcmykcolor(gs_state * pgs, double c, double m, double y, double k)
 /* setblackgeneration */
 /* Remap=0 is used by the interpreter. */
 int
-gs_setblackgeneration(gs_state * pgs, gs_mapping_proc proc)
+gs_setblackgeneration(gs_gstate * pgs, gs_mapping_proc proc)
 {
     return gs_setblackgeneration_remap(pgs, proc, true);
 }
 int
-gs_setblackgeneration_remap(gs_state * pgs, gs_mapping_proc proc, bool remap)
+gs_setblackgeneration_remap(gs_gstate * pgs, gs_mapping_proc proc, bool remap)
 {
     rc_unshare_struct(pgs->black_generation, gx_transfer_map,
                       &st_transfer_map, pgs->memory,
@@ -89,7 +89,7 @@ gs_setblackgeneration_remap(gs_state * pgs, gs_mapping_proc proc, bool remap)
 
 /* currentblackgeneration */
 gs_mapping_proc
-gs_currentblackgeneration(const gs_state * pgs)
+gs_currentblackgeneration(const gs_gstate * pgs)
 {
     return pgs->black_generation->proc;
 }
@@ -97,12 +97,12 @@ gs_currentblackgeneration(const gs_state * pgs)
 /* setundercolorremoval */
 /* Remap=0 is used by the interpreter. */
 int
-gs_setundercolorremoval(gs_state * pgs, gs_mapping_proc proc)
+gs_setundercolorremoval(gs_gstate * pgs, gs_mapping_proc proc)
 {
     return gs_setundercolorremoval_remap(pgs, proc, true);
 }
 int
-gs_setundercolorremoval_remap(gs_state * pgs, gs_mapping_proc proc, bool remap)
+gs_setundercolorremoval_remap(gs_gstate * pgs, gs_mapping_proc proc, bool remap)
 {
     rc_unshare_struct(pgs->undercolor_removal, gx_transfer_map,
                       &st_transfer_map, pgs->memory,
@@ -119,7 +119,7 @@ gs_setundercolorremoval_remap(gs_state * pgs, gs_mapping_proc proc, bool remap)
 
 /* currentundercolorremoval */
 gs_mapping_proc
-gs_currentundercolorremoval(const gs_state * pgs)
+gs_currentundercolorremoval(const gs_gstate * pgs)
 {
     return pgs->undercolor_removal->proc;
 }
@@ -127,7 +127,7 @@ gs_currentundercolorremoval(const gs_state * pgs)
 /* setcolortransfer */
 /* Remap=0 is used by the interpreter. */
 int
-gs_setcolortransfer_remap(gs_state * pgs, gs_mapping_proc red_proc,
+gs_setcolortransfer_remap(gs_gstate * pgs, gs_mapping_proc red_proc,
                           gs_mapping_proc green_proc,
                           gs_mapping_proc blue_proc,
                           gs_mapping_proc gray_proc, bool remap)
@@ -182,7 +182,7 @@ gs_setcolortransfer_remap(gs_state * pgs, gs_mapping_proc red_proc,
     return_error(gs_error_VMerror);
 }
 int
-gs_setcolortransfer(gs_state * pgs, gs_mapping_proc red_proc,
+gs_setcolortransfer(gs_gstate * pgs, gs_mapping_proc red_proc,
                     gs_mapping_proc green_proc, gs_mapping_proc blue_proc,
                     gs_mapping_proc gray_proc)
 {
@@ -192,7 +192,7 @@ gs_setcolortransfer(gs_state * pgs, gs_mapping_proc red_proc,
 
 /* currentcolortransfer */
 void
-gs_currentcolortransfer(const gs_state * pgs, gs_mapping_proc procs[4])
+gs_currentcolortransfer(const gs_gstate * pgs, gs_mapping_proc procs[4])
 {
     const gx_transfer *ptran = &pgs->set_transfer;
 

@@ -74,7 +74,7 @@ gs_image_t_init_mask_adjust(gs_image_t * pim, bool write_1s, bool adjust)
 /* Start processing an ImageType 1 image. */
 int
 gx_begin_image1(gx_device * dev,
-                const gs_imager_state * pis, const gs_matrix * pmat,
+                const gs_gstate * pgs, const gs_matrix * pmat,
                 const gs_image_common_t * pic, const gs_int_rect * prect,
                 const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
                 gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
@@ -91,7 +91,7 @@ gx_begin_image1(gx_device * dev,
     penum->masked = pim->ImageMask;
     penum->adjust =
         (pim->ImageMask && pim->adjust ? float2fixed(0.25) : fixed_0);
-    code = gx_image_enum_begin(dev, pis, pmat, pic, pdcolor, pcpath, mem,
+    code = gx_image_enum_begin(dev, pgs, pmat, pic, pdcolor, pcpath, mem,
                                penum);
     if (code >= 0)
         *pinfo = (gx_image_enum_common_t *)penum;

@@ -350,7 +350,7 @@ cmd_check_clip_path(gx_device_clist_writer * cldev, const gx_clip_path * pcpath)
  (cj_ac_sa_known | flatness_known | op_bm_tk_known | opacity_alpha_known |\
   shape_alpha_known | fill_adjust_known | alpha_known | clip_path_known)
 static void
-cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
+cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_gstate *pgs,
                      double flatness, const gs_fixed_point *padjust,
                      const gx_clip_path *pcpath, uint *punknown)
 {
@@ -366,9 +366,9 @@ cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
         state_update(accurate_curves);
         state_update(stroke_adjust);
     }
-    if (cdev->imager_state.flatness != flatness) {
+    if (cdev->gs_gstate.flatness != flatness) {
         *punknown |= flatness_known;
-        cdev->imager_state.flatness = flatness;
+        cdev->gs_gstate.flatness = flatness;
     }
     /*
      * Note: overprint and overprint_mode are implemented via a compositor
@@ -394,13 +394,13 @@ cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
         *punknown |= shape_alpha_known;
         state_update(shape.alpha);
     }
-    if (cdev->imager_state.fill_adjust.x != padjust->x ||
-        cdev->imager_state.fill_adjust.y != padjust->y
+    if (cdev->gs_gstate.fill_adjust.x != padjust->x ||
+        cdev->gs_gstate.fill_adjust.y != padjust->y
         ) {
         *punknown |= fill_adjust_known;
-        cdev->imager_state.fill_adjust = *padjust;
+        cdev->gs_gstate.fill_adjust = *padjust;
     }
-    if (cdev->imager_state.alpha != pis->alpha) {
+    if (cdev->gs_gstate.alpha != pgs->alpha) {
         *punknown |= alpha_known;
         state_update(alpha);
     }
@@ -464,57 +464,57 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                  sizeof(float) +	/* miter limit */
                  2 +		/* op_bm_tk and rend intent */
                  sizeof(float) * 2 +  /* opacity/shape alpha */
-                 sizeof(cldev->imager_state.alpha)
+                 sizeof(cldev->gs_gstate.alpha)
         ];
         byte *bp = buf;
         if (unknown & cap_join_known) {
-            *bp++ = (cldev->imager_state.line_params.start_cap << 3) +
-                cldev->imager_state.line_params.join;
-            *bp++ = (cldev->imager_state.line_params.end_cap << 3) +
-                cldev->imager_state.line_params.dash_cap;
+            *bp++ = (cldev->gs_gstate.line_params.start_cap << 3) +
+                cldev->gs_gstate.line_params.join;
+            *bp++ = (cldev->gs_gstate.line_params.end_cap << 3) +
+                cldev->gs_gstate.line_params.dash_cap;
         }
         if (unknown & cj_ac_sa_known) {
             *bp++ =
-                ((cldev->imager_state.line_params.curve_join + 1) << 2) +
-                (cldev->imager_state.accurate_curves ? 2 : 0) +
-                (cldev->imager_state.stroke_adjust ? 1 : 0);
+                ((cldev->gs_gstate.line_params.curve_join + 1) << 2) +
+                (cldev->gs_gstate.accurate_curves ? 2 : 0) +
+                (cldev->gs_gstate.stroke_adjust ? 1 : 0);
         }
         if (unknown & flatness_known) {
-            memcpy(bp, &cldev->imager_state.flatness, sizeof(float));
+            memcpy(bp, &cldev->gs_gstate.flatness, sizeof(float));
             bp += sizeof(float);
         }
         if (unknown & line_width_known) {
             float width =
-                gx_current_line_width(&cldev->imager_state.line_params);
+                gx_current_line_width(&cldev->gs_gstate.line_params);
 
             memcpy(bp, &width, sizeof(width));
             bp += sizeof(width);
         }
         if (unknown & miter_limit_known) {
-            memcpy(bp, &cldev->imager_state.line_params.miter_limit,
+            memcpy(bp, &cldev->gs_gstate.line_params.miter_limit,
                    sizeof(float));
             bp += sizeof(float);
         }
         if (unknown & op_bm_tk_known) {
             *bp++ =
-                ((int)cldev->imager_state.blend_mode << 3) +
-                (cldev->imager_state.text_knockout << 2) +
-                (cldev->imager_state.overprint_mode << 1) +
-                cldev->imager_state.overprint;
-            *bp++ = cldev->imager_state.renderingintent;
+                ((int)cldev->gs_gstate.blend_mode << 3) +
+                (cldev->gs_gstate.text_knockout << 2) +
+                (cldev->gs_gstate.overprint_mode << 1) +
+                cldev->gs_gstate.overprint;
+            *bp++ = cldev->gs_gstate.renderingintent;
         }
         if (unknown & opacity_alpha_known) {
-            memcpy(bp, &cldev->imager_state.opacity.alpha, sizeof(float));
+            memcpy(bp, &cldev->gs_gstate.opacity.alpha, sizeof(float));
             bp += sizeof(float);
         }
         if (unknown & shape_alpha_known) {
-            memcpy(bp, &cldev->imager_state.shape.alpha, sizeof(float));
+            memcpy(bp, &cldev->gs_gstate.shape.alpha, sizeof(float));
             bp += sizeof(float);
         }
         if (unknown & alpha_known) {
-            memcpy(bp, &cldev->imager_state.alpha,
-                   sizeof(cldev->imager_state.alpha));
-            bp += sizeof(cldev->imager_state.alpha);
+            memcpy(bp, &cldev->gs_gstate.alpha,
+                   sizeof(cldev->gs_gstate.alpha));
+            bp += sizeof(cldev->gs_gstate.alpha);
         }
         code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc2,
                               1 + cmd_sizew(misc2_unknown) + (bp - buf));
@@ -528,34 +528,34 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                               1 + sizeof(fixed) * 2);
         if (code < 0)
             return code;
-        memcpy(dp + 1, &cldev->imager_state.fill_adjust.x, sizeof(fixed));
-        memcpy(dp + 1 + sizeof(fixed), &cldev->imager_state.fill_adjust.y, sizeof(fixed));
+        memcpy(dp + 1, &cldev->gs_gstate.fill_adjust.x, sizeof(fixed));
+        memcpy(dp + 1 + sizeof(fixed), &cldev->gs_gstate.fill_adjust.y, sizeof(fixed));
         pcls->known |= fill_adjust_known;
     }
     if (unknown & ctm_known) {
-        int len = cmd_write_ctm_return_length(cldev, &ctm_only(&cldev->imager_state));
+        int len = cmd_write_ctm_return_length(cldev, &ctm_only(&cldev->gs_gstate));
 
         code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_ctm, len + 1);
         if (code < 0)
             return code;
-        code = cmd_write_ctm(&ctm_only(&cldev->imager_state), dp, len);
+        code = cmd_write_ctm(&ctm_only(&cldev->gs_gstate), dp, len);
         if (code < 0)
             return code;
         pcls->known |= ctm_known;
     }
     if (unknown & dash_known) {
-        int n = cldev->imager_state.line_params.dash.pattern_size;
+        int n = cldev->gs_gstate.line_params.dash.pattern_size;
 
         code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_dash,
                               2 + (n + 2) * sizeof(float));
         if (code < 0)
             return code;
-        dp[1] = n + (cldev->imager_state.line_params.dash.adapt ? 0x80 : 0) +
-            (cldev->imager_state.line_params.dot_length_absolute ? 0x40 : 0);
-        memcpy(dp + 2, &cldev->imager_state.line_params.dot_length,
+        dp[1] = n + (cldev->gs_gstate.line_params.dash.adapt ? 0x80 : 0) +
+            (cldev->gs_gstate.line_params.dot_length_absolute ? 0x40 : 0);
+        memcpy(dp + 2, &cldev->gs_gstate.line_params.dot_length,
                sizeof(float));
         memcpy(dp + 2 + sizeof(float),
-               &cldev->imager_state.line_params.dash.offset,
+               &cldev->gs_gstate.line_params.dash.offset,
                sizeof(float));
         if (n != 0)
             memcpy(dp + 2 + sizeof(float) * 2,
@@ -705,7 +705,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 /* ------ Driver procedures ------ */
 
 int
-clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
+clist_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
             const gx_fill_params * params, const gx_drawing_color * pdcolor,
                 const gx_clip_path * pcpath)
 {
@@ -713,7 +713,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
         &((gx_device_clist *)dev)->writer;
     uint unknown = 0;
     int ry, rheight, rx, rwidth, y0, y1;
-    gs_logical_operation_t lop = pis->log_op;
+    gs_logical_operation_t lop = pgs->log_op;
     byte op = (byte)
         (params->rule == gx_rule_even_odd ?
          cmd_opv_eofill : cmd_opv_fill);
@@ -745,7 +745,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
          gs_debug_c(',')
          ) {
         /* Disable path-based banding. */
-        return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
+        return gx_default_fill_path(dev, pgs, ppath, params, pdcolor,
                                     pcpath);
     }
     if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor)) {
@@ -758,7 +758,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
            See comment below about pdcolor == NULL.
          */
         cdev->cropping_saved = false;
-        code = gx_default_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
+        code = gx_default_fill_path(dev, pgs, ppath, params, pdcolor, pcpath);
         if (cdev->cropping_saved) {
             cdev->cropping_min = cdev->save_cropping_min;
             cdev->cropping_max = cdev->save_cropping_max;
@@ -770,7 +770,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     }
     y0 = ry;
     y1 = ry + rheight;
-    cmd_check_fill_known(cdev, pis, params->flatness, &adjust, pcpath,
+    cmd_check_fill_known(cdev, pgs, params->flatness, &adjust, pcpath,
                          &unknown);
     if (unknown)
         cmd_clear_known(cdev, unknown);
@@ -836,7 +836,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
                 return code;
             if (code < 0) {
                 /* Something went wrong, use the default implementation. */
-                return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
+                return gx_default_fill_path(dev, pgs, ppath, params, pdcolor,
                                             pcpath);
             }
             re.pcls->color_usage.slow_rop |= slow_rop;
@@ -854,19 +854,19 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 }
 
 int
-clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
+clist_stroke_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                   const gx_stroke_params * params,
               const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
     gx_device_clist_writer * const cdev =
         &((gx_device_clist *)dev)->writer;
-    int pattern_size = pis->line_params.dash.pattern_size;
+    int pattern_size = pgs->line_params.dash.pattern_size;
     uint unknown = 0;
     gs_fixed_rect bbox;
     gs_fixed_point expansion;
     int adjust_y, expansion_code;
     int ry, rheight;
-    gs_logical_operation_t lop = pis->log_op;
+    gs_logical_operation_t lop = pgs->log_op;
     bool slow_rop = cmd_slow_rop(dev, lop_know_S_0(lop), pdcolor);
     cmd_rects_enum_t re;
 
@@ -874,13 +874,13 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
         gs_debug_c(',')
         ) {
         /* Disable path-based banding. */
-        return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
+        return gx_default_stroke_path(dev, pgs, ppath, params, pdcolor,
                                       pcpath);
     }
     gx_path_bbox(ppath, &bbox);
-    /* We must use the supplied imager state, not our saved one, */
+    /* We must use the supplied gs_gstate, not our saved one, */
     /* for computing the stroke expansion. */
-    expansion_code = gx_stroke_path_expansion(pis, ppath, &expansion);
+    expansion_code = gx_stroke_path_expansion(pgs, ppath, &expansion);
     if (expansion_code < 0) {
         /* Expansion is too large: use the entire page. */
         adjust_y = 0;
@@ -897,39 +897,39 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     }
     /* Check the dash pattern, since we bail out if */
     /* the pattern is too large. */
-    if (cdev->imager_state.line_params.dash.pattern_size != pattern_size ||
+    if (cdev->gs_gstate.line_params.dash.pattern_size != pattern_size ||
         (pattern_size != 0 &&
-         memcmp(cdev->dash_pattern, pis->line_params.dash.pattern,
+         memcmp(cdev->dash_pattern, pgs->line_params.dash.pattern,
                 pattern_size * sizeof(float))) ||
-        cdev->imager_state.line_params.dash.offset !=
-          pis->line_params.dash.offset ||
-        cdev->imager_state.line_params.dash.adapt !=
-          pis->line_params.dash.adapt ||
-        cdev->imager_state.line_params.dot_length !=
-          pis->line_params.dot_length ||
-        cdev->imager_state.line_params.dot_length_absolute !=
-          pis->line_params.dot_length_absolute
+        cdev->gs_gstate.line_params.dash.offset !=
+          pgs->line_params.dash.offset ||
+        cdev->gs_gstate.line_params.dash.adapt !=
+          pgs->line_params.dash.adapt ||
+        cdev->gs_gstate.line_params.dot_length !=
+          pgs->line_params.dot_length ||
+        cdev->gs_gstate.line_params.dot_length_absolute !=
+          pgs->line_params.dot_length_absolute
     ) {
         /* Bail out if the dash pattern is too long. */
         if (pattern_size > cmd_max_dash)
-            return gx_default_stroke_path(dev, pis, ppath, params,
+            return gx_default_stroke_path(dev, pgs, ppath, params,
                                           pdcolor, pcpath);
         unknown |= dash_known;
         /*
          * Temporarily reset the dash pattern pointer for gx_set_dash,
          * but don't leave it set, since that would confuse the GC.
          */
-        cdev->imager_state.line_params.dash.pattern = cdev->dash_pattern;
-        gx_set_dash(&cdev->imager_state.line_params.dash,
-                    pis->line_params.dash.pattern,
-                    pis->line_params.dash.pattern_size,
-                    pis->line_params.dash.offset, NULL);
-        cdev->imager_state.line_params.dash.pattern = 0;
-        gx_set_dash_adapt(&cdev->imager_state.line_params.dash,
-                          pis->line_params.dash.adapt);
-        gx_set_dot_length(&cdev->imager_state.line_params,
-                          pis->line_params.dot_length,
-                          pis->line_params.dot_length_absolute);
+        cdev->gs_gstate.line_params.dash.pattern = cdev->dash_pattern;
+        gx_set_dash(&cdev->gs_gstate.line_params.dash,
+                    pgs->line_params.dash.pattern,
+                    pgs->line_params.dash.pattern_size,
+                    pgs->line_params.dash.offset, NULL);
+        cdev->gs_gstate.line_params.dash.pattern = 0;
+        gx_set_dash_adapt(&cdev->gs_gstate.line_params.dash,
+                          pgs->line_params.dash.adapt);
+        gx_set_dot_length(&cdev->gs_gstate.line_params,
+                          pgs->line_params.dot_length,
+                          pgs->line_params.dot_length_absolute);
     }
 
     if (state_neq(line_params.start_cap) || state_neq(line_params.join) ||
@@ -940,7 +940,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
         state_update(line_params.dash_cap);
         state_update(line_params.join);
     }
-    cmd_check_fill_known(cdev, pis, params->flatness, &pis->fill_adjust,
+    cmd_check_fill_known(cdev, pgs, params->flatness, &pgs->fill_adjust,
                          pcpath, &unknown);
     if (state_neq(line_params.half_width)) {
         unknown |= line_width_known;
@@ -948,8 +948,8 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     }
     if (state_neq(line_params.miter_limit)) {
         unknown |= miter_limit_known;
-        gx_set_miter_limit(&cdev->imager_state.line_params,
-                           pis->line_params.miter_limit);
+        gx_set_miter_limit(&cdev->gs_gstate.line_params,
+                           pgs->line_params.miter_limit);
     }
     if (state_neq(ctm.xx) || state_neq(ctm.xy) ||
         state_neq(ctm.yx) || state_neq(ctm.yy) ||
@@ -993,7 +993,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
                 return code;
         if (code < 0) {
             /* Something went wrong, use the default implementation. */
-            return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
+            return gx_default_stroke_path(dev, pgs, ppath, params, pdcolor,
                                           pcpath);
         }
         re.pcls->color_usage.slow_rop |= slow_rop;

@@ -143,6 +143,7 @@ pr201_print_page(gx_device_printer *pdev, FILE *prn_stream)
                 case PR150:
                         head_pins=48; lr_pitch=18; x_dpi=320; break;
                 case PR1K4:
+                default:
                         head_pins=60; lr_pitch=18; x_dpi=400; break;
         }
 

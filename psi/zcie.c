@@ -429,7 +429,7 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
-    gs_memory_t *mem = gs_state_memory(igs);
+    gs_memory_t *mem = gs_gstate_memory(igs);
     gs_color_space *pcs;
     ref_cie_procs procs;
     gs_cie_defg *pcie;
@@ -531,7 +531,7 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
-    gs_memory_t *mem = gs_state_memory(igs);
+    gs_memory_t *mem = gs_gstate_memory(igs);
     gs_color_space *pcs;
     ref_cie_procs procs;
     gs_cie_def *pcie;
@@ -591,7 +591,7 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
-    gs_memory_t *mem = gs_state_memory(igs);
+    gs_memory_t *mem = gs_gstate_memory(igs);
     gs_color_space *pcs;
     ref_cie_procs procs;
     gs_cie_abc *pcie;
@@ -650,7 +650,7 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, ulong dictkey)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
-    gs_memory_t *mem = gs_state_memory(igs);
+    gs_memory_t *mem = gs_gstate_memory(igs);
     const gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
     gs_color_space *pcs;
     ref_cie_procs procs;

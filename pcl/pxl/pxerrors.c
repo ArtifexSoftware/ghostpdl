@@ -228,7 +228,7 @@ px_error_message_line(char message[px_max_error_line + 1], int N,
 int
 px_begin_error_page(px_state_t * pxs)
 {
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
 
     gs_initgraphics(pgs);
     gs_erasepage(pgs);
@@ -250,7 +250,7 @@ px_begin_error_page(px_state_t * pxs)
 int
 px_error_page_show(const char *message, int ytop, px_state_t * pxs)
 {
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
     int y = ytop;
     const char *m = message;
     const char *p;

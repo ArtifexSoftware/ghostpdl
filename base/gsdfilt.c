@@ -46,7 +46,7 @@ gs_public_st_simple(st_gs_device_filter, gs_device_filter_t,
                     "gs_device_filter");
 
 int
-gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *df)
+gs_push_device_filter(gs_memory_t *mem, gs_gstate *pgs, gs_device_filter_t *df)
 {
     gs_device_filter_stack_t *dfs;
     gx_device *new_dev = NULL;
@@ -73,7 +73,7 @@ gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *df)
 }
 
 int
-gs_pop_device_filter(gs_memory_t *mem, gs_state *pgs)
+gs_pop_device_filter(gs_memory_t *mem, gs_gstate *pgs)
 {
     gs_device_filter_stack_t *dfs_tos = pgs->dfilter_stack;
     gx_device *tos_device = pgs->device;
@@ -96,7 +96,7 @@ gs_pop_device_filter(gs_memory_t *mem, gs_state *pgs)
 }
 
 int
-gs_clear_device_filters(gs_memory_t *mem, gs_state *pgs)
+gs_clear_device_filters(gs_memory_t *mem, gs_gstate *pgs)
 {
     int code;
 

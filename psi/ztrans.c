@@ -41,7 +41,7 @@
 /* ------ Utilities ------ */
 
 static int
-set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(gs_state *, double))
+set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(gs_gstate *, double))
 {
     os_ptr op = osp;
     double value;
@@ -57,7 +57,7 @@ set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(gs_state *, double))
 
 static int
 current_float_value(i_ctx_t *i_ctx_p,
-                    float (*current_value)(const gs_state *))
+                    float (*current_value)(const gs_gstate *))
 {
     os_ptr op = osp;
 
@@ -188,7 +188,7 @@ rect_param(gs_rect *prect, os_ptr op)
 
 static int
 mask_op(i_ctx_t *i_ctx_p,
-        int (*mask_proc)(gs_state *, gs_transparency_channel_selector_t))
+        int (*mask_proc)(gs_gstate *, gs_transparency_channel_selector_t))
 {
     int csel;
     int code = int_param(osp, 1, &csel);

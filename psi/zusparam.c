@@ -42,7 +42,7 @@
 #include "gsicc_manage.h"
 #include "gsparamx.h"
 #include "gx.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gslibctx.h"
 
 
@@ -641,14 +641,12 @@ set_AccurateScreens(i_ctx_t *i_ctx_p, bool val)
 static bool
 current_OverrideICC(i_ctx_t *i_ctx_p)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    return gs_currentoverrideicc(pis);
+    return gs_currentoverrideicc(igs);
 }
 static int
 set_OverrideICC(i_ctx_t *i_ctx_p, bool val)
 {
-    gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_setoverrideicc(pis, val);
+    gs_setoverrideicc(igs, val);
     return 0;
 }
 static bool

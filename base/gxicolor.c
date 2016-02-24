@@ -31,7 +31,7 @@
 #include "gxcmap.h"
 #include "gxdcconv.h"
 #include "gxdcolor.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxdevmem.h"
 #include "gxcpath.h"
 #include "gximage.h"
@@ -107,7 +107,7 @@ gs_image_class_4_color(gx_image_enum * penum)
        then we will need to use those and go through pixel by pixel instead
        of blasting through buffers.  This is true for example with many of
        the color spaces for CUPs */
-    std_cmap_procs = gx_device_uses_std_cmap_procs(penum->dev, penum->pis);
+    std_cmap_procs = gx_device_uses_std_cmap_procs(penum->dev, penum->pgs);
     if ( (gs_color_space_get_index(penum->pcs) == gs_color_space_index_DeviceN &&
         penum->pcs->cmm_icc_profile_data == NULL) || penum->use_mask_color ||
         !std_cmap_procs) {
@@ -133,11 +133,11 @@ gs_image_class_4_color(gx_image_enum * penum)
             }
         }
         /* Define the rendering intents */
-        rendering_params.black_point_comp = penum->pis->blackptcomp;
+        rendering_params.black_point_comp = penum->pgs->blackptcomp;
         rendering_params.graphics_type_tag = GS_IMAGE_TAG;
         rendering_params.override_icc = false;
         rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
-        rendering_params.rendering_intent = penum->pis->renderingintent;
+        rendering_params.rendering_intent = penum->pgs->renderingintent;
         rendering_params.cmm = gsCMM_DEFAULT;
         if (gs_color_space_is_PSCIE(penum->pcs) && penum->pcs->icc_equivalent != NULL) {
             pcs = penum->pcs->icc_equivalent;
@@ -146,11 +146,11 @@ gs_image_class_4_color(gx_image_enum * penum)
         }
         penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
         penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
-        penum->icc_setup.has_transfer = gx_has_transfer(penum->pis, des_num_comp);
+        penum->icc_setup.has_transfer = gx_has_transfer(penum->pgs, des_num_comp);
         if (penum->icc_setup.is_lab)
             penum->icc_setup.need_decode = false;
         if (penum->icc_link == NULL) {
-            penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL,
+            penum->icc_link = gsicc_get_link(penum->pgs, penum->dev, pcs, NULL,
                 &rendering_params, penum->memory);
         }
         /* PS CIE color spaces may have addition decoding that needs to
@@ -173,7 +173,7 @@ gs_image_class_4_color(gx_image_enum * penum)
             bool transfer_is_monotonic = true;
 
             for (k=0; k<des_num_comp; k++) {
-                if (!gx_transfer_is_monotonic(penum->pis, k)) {
+                if (!gx_transfer_is_monotonic(penum->pgs, k)) {
                     transfer_is_monotonic = false;
                     break;
                 }
@@ -304,7 +304,7 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                      byte **psrc_cm_start, byte **bufend, bool planar_out)
 {
     const gx_image_enum *const penum = penum_orig; /* const within proc */
-    const gs_imager_state *pis = penum->pis;
+    const gs_gstate *pgs = penum->pgs;
     bool need_decode = penum->icc_setup.need_decode;
     gsicc_bufferdesc_t input_buff_desc;
     gsicc_bufferdesc_t output_buff_desc;
@@ -342,7 +342,7 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
         *psrc_cm_start = NULL;
     } else {
         spp_cm = num_des_comps;
-        *psrc_cm = gs_alloc_bytes(pis->memory,  w * spp_cm/spp,
+        *psrc_cm = gs_alloc_bytes(pgs->memory,  w * spp_cm/spp,
                                   "image_color_icc_prep");
         *psrc_cm_start = *psrc_cm;
         *bufend = *psrc_cm +  w * spp_cm/spp;
@@ -356,7 +356,7 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                    imager_render_color_thresh, which is limited to 8 bit case */
                 if (need_decode) {
                     /* Need decode and then to planar */
-                    psrc_decode = gs_alloc_bytes(pis->memory,  w,
+                    psrc_decode = gs_alloc_bytes(pgs->memory,  w,
                                                   "image_color_icc_prep");
                     if (!penum->use_cie_range) {
                         decode_row(penum, psrc, spp, psrc_decode, psrc_decode+w);
@@ -381,7 +381,7 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                 }
                 /* Free up decode if we used it */
                 if (psrc_decode != NULL) {
-                    gs_free_object(pis->memory, (byte *) psrc_decode,
+                    gs_free_object(pgs->memory, (byte *) psrc_decode,
                                    "image_render_color_icc");
                 }
             }
@@ -407,7 +407,7 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                less than or equal to the new one.  */
             if (need_decode) {
                 /* Need decode and CM.  This is slow but does not happen that often */
-                psrc_decode = gs_alloc_bytes(pis->memory, w,
+                psrc_decode = gs_alloc_bytes(pgs->memory, w,
                                               "image_color_icc_prep");
                 if (!penum->use_cie_range) {
                     decode_row(penum, psrc, spp, psrc_decode, psrc_decode+w);
@@ -421,7 +421,7 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                                                     &output_buff_desc,
                                                     (void*) psrc_decode,
                                                     (void*) *psrc_cm);
-                gs_free_object(pis->memory, psrc_decode, "image_color_icc_prep");
+                gs_free_object(pgs->memory, psrc_decode, "image_color_icc_prep");
             } else {
                 /* CM only. No decode */
                 (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
@@ -856,7 +856,7 @@ flush:
                                contone_stride);
     /* Free cm buffer, if it was used */
     if (psrc_cm_start != NULL) {
-        gs_free_object(penum->pis->memory, (byte *)psrc_cm_start,
+        gs_free_object(penum->pgs->memory, (byte *)psrc_cm_start,
                        "image_render_color_thresh");
     }
     return code;
@@ -868,7 +868,7 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
                    uint w, int h, gx_device * dev)
 {
     const gx_image_enum *const penum = penum_orig; /* const within proc */
-    const gs_imager_state *pis = penum->pis;
+    const gs_gstate *pgs = penum->pgs;
     gs_logical_operation_t lop = penum->log_op;
     gx_dda_fixed_point pnext;
     image_posture posture = penum->posture;
@@ -953,7 +953,7 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
            and or halftoning */
         if (must_halftone || has_transfer) {
             /* We need to do the tranfer function and/or the halftoning */
-            cmap_transfer_halftone(&(conc[0]), pdevc_next, pis, dev,
+            cmap_transfer_halftone(&(conc[0]), pdevc_next, pgs, dev,
                 has_transfer, must_halftone, gs_color_select_source);
         } else {
             /* encode as a color index. avoid all the cv to frac to cv
@@ -1057,12 +1057,12 @@ inc:	xprev = dda_current(pnext.x);
             }
     /* Free cm buffer, if it was used */
     if (psrc_cm_start != NULL) {
-        gs_free_object(pis->memory, (byte *)psrc_cm_start, "image_render_color_icc");
+        gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_color_icc");
     }
     return (code < 0 ? code : 1);
     /* Save position if error, in case we resume. */
 err:
-    gs_free_object(pis->memory, (byte *)psrc_cm_start, "image_render_color_icc");
+    gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_color_icc");
     penum_orig->used.x = (rsrc - spp - psrc_initial) / spp;
     penum_orig->used.y = 0;
     return code;
@@ -1076,7 +1076,7 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
                    uint w, int h, gx_device * dev)
 {
     const gx_image_enum *const penum = penum_orig; /* const within proc */
-    const gs_imager_state *pis = penum->pis;
+    const gs_gstate *pgs = penum->pgs;
     gs_logical_operation_t lop = penum->log_op;
     gx_dda_fixed_point pnext;
     image_posture posture = penum->posture;
@@ -1185,7 +1185,7 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
             dmputs(dev->memory, "\n");
         }
 #endif
-        mcode = remap_color(&cc, pcs, pdevc_next, pis, dev,
+        mcode = remap_color(&cc, pcs, pdevc_next, pgs, dev,
                            gs_color_select_source);
 mapped:	if (mcode < 0)
             goto fill;

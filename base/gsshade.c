@@ -24,7 +24,7 @@
 #include "gxcpath.h"
 #include "gxcspace.h"
 #include "gxdcolor.h"		/* for filling background rectangle */
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxpaint.h"
 #include "gxpath.h"
 #include "gxshade.h"
@@ -443,9 +443,9 @@ gs_shading_path_add_box(gx_path *ppath, const gs_rect *pbox,
 int
 gs_shading_do_fill_rectangle(const gs_shading_t *psh,
                      const gs_fixed_rect *prect, gx_device *dev,
-                     gs_imager_state *pis, bool fill_background)
+                     gs_gstate *pgs, bool fill_background)
 {   /* If you need to fill a path, clip the output device before calling this function. */
-    const gs_matrix_fixed *pmat = &pis->ctm;
+    const gs_matrix_fixed *pmat = &pgs->ctm;
     gs_fixed_rect path_box;
     gs_rect path_rect;
     gs_rect rect;
@@ -461,12 +461,12 @@ gs_shading_do_fill_rectangle(const gs_shading_t *psh,
 
         cc = *psh->params.Background;
         (*pcs->type->restrict_color)(&cc, pcs);
-        code = (*pcs->type->remap_color)(&cc, pcs, &dev_color, pis,
+        code = (*pcs->type->remap_color)(&cc, pcs, &dev_color, pgs,
                                          dev, gs_color_select_texture);
 
         /****** WRONG IF NON-IDEMPOTENT RasterOp ******/
         if (code >= 0)
-            code = gx_shade_background(dev, &path_box, &dev_color, pis->log_op);
+            code = gx_shade_background(dev, &path_box, &dev_color, pgs->log_op);
     }
     if (code >= 0) {
         path_rect.p.x = fixed2float(path_box.p.x);
@@ -474,7 +474,7 @@ gs_shading_do_fill_rectangle(const gs_shading_t *psh,
         path_rect.q.x = fixed2float(path_box.q.x);
         path_rect.q.y = fixed2float(path_box.q.y);
         gs_bbox_transform_inverse(&path_rect, (const gs_matrix *)pmat, &rect);
-        code = gs_shading_fill_rectangle(psh, &rect, &path_box, dev, pis);
+        code = gs_shading_fill_rectangle(psh, &rect, &path_box, dev, pgs);
     }
     return code;
 }

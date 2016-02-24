@@ -22,7 +22,7 @@
 #include "gsstruct.h"
 #include "scommon.h"
 #include "gx.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "smd5.h"
 #include "gscms.h"
 #include "gsicc_cms.h"
@@ -571,7 +571,7 @@ gsicc_remove_link(gsicc_link_t *link, const gs_memory_t *memory)
 }
 
 gsicc_link_t*
-gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
+gsicc_get_link(const gs_gstate *pgs1, gx_device *dev_in,
                const gs_color_space *pcs_in,
                gs_color_space *output_colorspace,
                gsicc_rendering_param_t *rendering_params, gs_memory_t *memory)
@@ -579,7 +579,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     cmm_profile_t *gs_input_profile;
     cmm_profile_t *gs_srcgtag_profile = NULL;
     cmm_profile_t *gs_output_profile;
-    gs_state *pgs;
+    gs_gstate *pgs = (gs_gstate *)pgs1;
     gx_device *dev;
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
@@ -588,9 +588,9 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     gs_color_space *input_colorspace = (gs_color_space*) pcs_in;
 
     if (dev_in == NULL) {
-        /* Get from the imager state which is going to be a graphic state.
+        /* Get from the gs_gstate which is going to be a graphic state.
            This only occurs for the other (non-ps/pdf) interpreters */
-        pgs = (gs_state*) pis;
+        pgs = (gs_gstate*) pgs;
         dev = pgs->device;
     } else {
         dev = dev_in;
@@ -601,7 +601,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
         } else {
             /* Use default type */
             gs_input_profile = gsicc_get_gscs_profile(input_colorspace,
-                                                      pis->icc_manager);
+                                                      pgs->icc_manager);
         }
     } else {
         gs_input_profile = input_colorspace->cmm_icc_profile_data;
@@ -610,13 +610,13 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     if (code < 0)
         return NULL;
     /* If present, use an graphic object defined source profile */
-    if (pis->icc_manager != NULL &&
-        pis->icc_manager->srcgtag_profile != NULL) {
+    if (pgs->icc_manager != NULL &&
+        pgs->icc_manager->srcgtag_profile != NULL) {
             if (gs_input_profile->data_cs == gsRGB
                 || gs_input_profile->data_cs == gsCMYK) {
                 gsicc_get_srcprofile(gs_input_profile->data_cs,
                                       dev->graphics_type_tag,
-                                      pis->icc_manager->srcgtag_profile,
+                                      pgs->icc_manager->srcgtag_profile,
                                       &(gs_srcgtag_profile), &render_cond);
                 if (gs_srcgtag_profile != NULL) {
                     /* In this case, the user is letting the source profiles
@@ -651,7 +651,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
                         rendering_params->black_point_comp =
                             render_cond.black_point_comp & gsBP_MASK;
 
-                            return gsicc_get_link_profile(pis, dev, gs_input_profile,
+                            return gsicc_get_link_profile(pgs, dev, gs_input_profile,
                                                           dev_profile->device_profile[0],
                                                           rendering_params, memory,
                                                           false);
@@ -666,9 +666,9 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
                         gsicc_link_t *link;
 
                         if (gs_input_profile->data_cs == gsRGB) {
-                            link = gsicc_nocm_get_link(pis, dev, 3);
+                            link = gsicc_nocm_get_link(pgs, dev, 3);
                         } else {
-                            link = gsicc_nocm_get_link(pis, dev, 4);
+                            link = gsicc_nocm_get_link(pgs, dev, 4);
                         }
                         /* Set the identity case if we are in that situation */
                         if (link != NULL) {
@@ -679,7 +679,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
                             return link;
                         }
                     } else if (render_cond.cmm == gsCMM_REPLACE) {
-                        return gsicc_rcm_get_link(pis, dev,
+                        return gsicc_rcm_get_link(pgs, dev,
                                                   gs_input_profile->data_cs);
                         /* Note that there is never an identity case  */
                     }
@@ -701,7 +701,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
         if (index < gs_color_space_index_DevicePixel &&
             dev_profile->usefastcolor) {
             /* Return a "link" from the source space to the device color space */
-            gsicc_link_t *link = gsicc_nocm_get_link(pis, dev,
+            gsicc_link_t *link = gsicc_nocm_get_link(pgs, dev,
                                                      gs_input_profile->num_comps);
             if (link != NULL) {
                 if (gs_input_profile->num_comps ==
@@ -742,7 +742,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     rendering_params->rendering_intent = rendering_params->rendering_intent & gsRI_MASK;
     rendering_params->black_point_comp = rendering_params->black_point_comp & gsBP_MASK;
     rendering_params->preserve_black = rendering_params->preserve_black & gsKP_MASK;
-    return gsicc_get_link_profile(pis, dev, gs_input_profile, gs_output_profile,
+    return gsicc_get_link_profile(pgs, dev, gs_input_profile, gs_output_profile,
                     rendering_params, memory, devicegraytok);
 }
 
@@ -809,7 +809,7 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
    source profile is a device link profile we have no output profile but
    may still have a proofing or another device link profile to use */
 gsicc_link_t*
-gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
+gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
                        cmm_profile_t *gs_input_profile,
                        cmm_profile_t *gs_output_profile,
                        gsicc_rendering_param_t *rendering_params,
@@ -818,9 +818,9 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
     gsicc_hashlink_t hash;
     gsicc_link_t *link, *found_link;
     gcmmhlink_t link_handle = NULL;
-    gsicc_manager_t *icc_manager = pis->icc_manager;
-    gsicc_link_cache_t *icc_link_cache = pis->icc_link_cache;
-    gs_memory_t *cache_mem = pis->icc_link_cache->memory;
+    gsicc_manager_t *icc_manager = pgs->icc_manager;
+    gsicc_link_cache_t *icc_link_cache = pgs->icc_link_cache;
+    gs_memory_t *cache_mem = pgs->icc_link_cache->memory;
     gcmmhprofile_t *cms_input_profile;
     gcmmhprofile_t *cms_output_profile = NULL;
     gcmmhprofile_t *cms_proof_profile = NULL;
@@ -907,9 +907,9 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             gs_input_profile->rend_cond.cmm == gsCMM_NONE) {
 
             if (gs_input_profile->data_cs == gsRGB) {
-                link = gsicc_nocm_get_link(pis, dev, 3);
+                link = gsicc_nocm_get_link(pgs, dev, 3);
             } else {
-                link = gsicc_nocm_get_link(pis, dev, 4);
+                link = gsicc_nocm_get_link(pgs, dev, 4);
             }
             /* Set the identity case if we are in that situation */
             if (link != NULL) {
@@ -921,7 +921,7 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             }
         } else if (gs_input_profile->rend_is_valid &&
             gs_input_profile->rend_cond.cmm == gsCMM_REPLACE) {
-            return gsicc_rcm_get_link(pis, dev, gs_input_profile->data_cs);
+            return gsicc_rcm_get_link(pgs, dev, gs_input_profile->data_cs);
             /* Note that there is never an identity case for
                this type.  */
         }
@@ -1044,13 +1044,13 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
        DeviceCMYK to ensure that Gray is mapped to K only.  This is only
        done once and then it is cached and the link used */
     if (!src_dev_link && gs_output_profile->data_cs == gsCMYK &&
-        gs_input_profile->data_cs == gsGRAY && pis->icc_manager != NULL &&
+        gs_input_profile->data_cs == gsGRAY && pgs->icc_manager != NULL &&
         devicegraytok) {
         if (icc_manager->graytok_profile == NULL) {
             icc_manager->graytok_profile =
                 gsicc_set_iccsmaskprofile(GRAY_TO_K, strlen(GRAY_TO_K),
-                                          pis->icc_manager,
-                                          pis->icc_manager->memory->stable_memory);
+                                          pgs->icc_manager,
+                                          pgs->icc_manager->memory->stable_memory);
             if (icc_manager->graytok_profile == NULL) {
                 return NULL;
             }
@@ -1232,7 +1232,7 @@ gsicc_transform_named_color(const float tint_values[],
                             gsicc_namedcolor_t color_names[],
                             uint num_names,
                             gx_color_value device_values[],
-                            const gs_imager_state *pis, gx_device *dev,
+                            const gs_gstate *pgs, gx_device *dev,
                             cmm_profile_t *gs_output_profile,
                             gsicc_rendering_param_t *rendering_params)
 {
@@ -1262,7 +1262,7 @@ gsicc_transform_named_color(const float tint_values[],
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
     int indices[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    gs_memory_t *nongc_mem = pis->memory->non_gc_memory;
+    gs_memory_t *nongc_mem = pgs->memory->non_gc_memory;
 
     /* Set indices to avoid use of uninitialized index. It is actually not
        possible to access them using real data but someone could perhaps
@@ -1270,9 +1270,9 @@ gsicc_transform_named_color(const float tint_values[],
     memset(&(indices[0]), 0, sizeof(indices));
 
     /* Check if the data that we have has already been generated. */
-    if (pis->icc_manager != NULL) {
-        if (pis->icc_manager->device_named != NULL) {
-            named_profile = pis->icc_manager->device_named;
+    if (pgs->icc_manager != NULL) {
+        if (pgs->icc_manager->device_named != NULL) {
+            named_profile = pgs->icc_manager->device_named;
             if (named_profile->buffer != NULL &&
                 named_profile->profile_handle == NULL) {
                 /* Create the structure that we will use in searching */
@@ -1444,10 +1444,10 @@ gsicc_transform_named_color(const float tint_values[],
                                       dev_profile, &(curr_output_profile),
                                       &render_cond);
             }
-            icc_link = gsicc_get_link_profile(pis, dev,
-                                            pis->icc_manager->lab_profile,
+            icc_link = gsicc_get_link_profile(pgs, dev,
+                                            pgs->icc_manager->lab_profile,
                                             curr_output_profile, rendering_params,
-                                            pis->memory, false);
+                                            pgs->memory, false);
             if (icc_link->is_identity) {
                 psrc_temp = &(psrc[0]);
             } else {

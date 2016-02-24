@@ -696,7 +696,7 @@ pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,
  * with a previous text operation using text rendering modes.
  */
 bool pdf_compare_text_state_for_charpath(pdf_text_state_t *pts, gx_device_pdf *pdev,
-                                         gs_imager_state *pis, gs_font *font,
+                                         gs_gstate *pgs, gs_font *font,
                                          const gs_text_params_t *text)
 {
     int code;
@@ -733,11 +733,11 @@ bool pdf_compare_text_state_for_charpath(pdf_text_state_t *pts, gx_device_pdf *p
      * NB! only check 2 decimal places, allow some slack in the match. This
      * still may prove to be too tight a requirement.
      */
-    if(fabs(pts->start.x - pis->current_point.x) > 0.01 ||
-       fabs(pts->start.y - pis->current_point.y) > 0.01)
+    if(fabs(pts->start.x - pgs->current_point.x) > 0.01 ||
+       fabs(pts->start.y - pgs->current_point.y) > 0.01)
         return(false);
 
-    size = pdf_calculate_text_size(pis, pdfont, &font->FontMatrix, &smat, &tmat, font, pdev);
+    size = pdf_calculate_text_size(pgs, pdfont, &font->FontMatrix, &smat, &tmat, font, pdev);
 
     /* Finally, check the calculated size against the size stored in
      * the text state.
@@ -814,11 +814,11 @@ int pdf_modify_text_render_mode(pdf_text_state_t *pts, int render_mode)
     return(0);
 }
 
-int pdf_set_PaintType0_params (gx_device_pdf *pdev, gs_imager_state *pis, float size,
+int pdf_set_PaintType0_params (gx_device_pdf *pdev, gs_gstate *pgs, float size,
                                double scaled_width, const pdf_text_state_values_t *ptsv)
 {
     pdf_text_state_t *pts = pdev->text->text_state;
-    double saved_width = pis->line_params.half_width;
+    double saved_width = pgs->line_params.half_width;
     int code;
 
     /* This routine is used to check if we have accumulated glyphs waiting for output
@@ -838,19 +838,19 @@ int pdf_set_PaintType0_params (gx_device_pdf *pdev, gs_imager_state *pis, float 
      */
     if (pts->buffer.count_chars > 0) {
         if (pts->PaintType0Width != scaled_width) {
-            pis->line_params.half_width = scaled_width / 2;
+            pgs->line_params.half_width = scaled_width / 2;
             code = pdf_set_text_state_values(pdev, ptsv);
             if (code < 0)
                 return code;
             if (pdev->text->text_state->in.render_mode == ptsv->render_mode){
-                code = pdf_prepare_stroke(pdev, pis);
+                code = pdf_prepare_stroke(pdev, pgs);
                 if (code >= 0)
                     code = gdev_vector_prepare_stroke((gx_device_vector *)pdev,
-                                              pis, NULL, NULL, 1);
+                                              pgs, NULL, NULL, 1);
             }
             if (code < 0)
                 return code;
-            pis->line_params.half_width = saved_width;
+            pgs->line_params.half_width = saved_width;
             pts->PaintType0Width = scaled_width;
         }
     }

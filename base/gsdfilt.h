@@ -17,7 +17,7 @@
 #ifndef gsdfilt_INCLUDED
 #  define gsdfilt_INCLUDED
 
-/* The device filter stack lives in the gs_state structure. It represents
+/* The device filter stack lives in the gs_gstate structure. It represents
    a chained sequence of devices that filter device requests, each forwarding
    to its target. The last such target is the physical device as set by
    setpagedevice.
@@ -38,11 +38,11 @@ typedef struct gs_device_filter_s gs_device_filter_t;
 #endif
 
 struct gs_device_filter_s {
-    int (*push)(gs_device_filter_t *self, gs_memory_t *mem, gs_state *pgs,
+    int (*push)(gs_device_filter_t *self, gs_memory_t *mem, gs_gstate *pgs,
                 gx_device **pdev, gx_device *target);
-    int (*prepop)(gs_device_filter_t *self, gs_memory_t *mem, gs_state *pgs,
+    int (*prepop)(gs_device_filter_t *self, gs_memory_t *mem, gs_gstate *pgs,
                   gx_device *dev);
-    int (*postpop)(gs_device_filter_t *self, gs_memory_t *mem, gs_state *pgs,
+    int (*postpop)(gs_device_filter_t *self, gs_memory_t *mem, gs_gstate *pgs,
                    gx_device *dev);
 };
 
@@ -58,7 +58,7 @@ extern_st(st_gs_device_filter);
  *
  * Return value: 0 on success, or error code.
  **/
-int gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *df);
+int gs_push_device_filter(gs_memory_t *mem, gs_gstate *pgs, gs_device_filter_t *df);
 
 /**
  * gs_pop_device_filter: Pop a device filter.
@@ -70,7 +70,7 @@ int gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *d
  *
  * Return value: 0 on success, or error code.
  **/
-int gs_pop_device_filter(gs_memory_t *mem, gs_state *pgs);
+int gs_pop_device_filter(gs_memory_t *mem, gs_gstate *pgs);
 
 /**
  * gs_clear_device_filters: Clear device filters from a graphics state.
@@ -81,6 +81,6 @@ int gs_pop_device_filter(gs_memory_t *mem, gs_state *pgs);
  *
  * Return value: 0 on success, or error code.
  **/
-int gs_clear_device_filters(gs_memory_t *mem, gs_state *pgs);
+int gs_clear_device_filters(gs_memory_t *mem, gs_gstate *pgs);
 
 #endif /* gsdfilt_INCLUDED */

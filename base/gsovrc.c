@@ -28,7 +28,7 @@
 #include "gxdcolor.h"
 #include "gxoprect.h"
 #include "gsbitops.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 
 /* GC descriptor for gs_overprint_t */
 private_st_gs_overprint_t();
@@ -925,12 +925,12 @@ overprint_create_compositor(
     gx_device *             dev,
     gx_device **            pcdev,
     const gs_composite_t *  pct,
-    gs_imager_state *	    pis,
+    gs_gstate *	            pgs,
     gs_memory_t *           memory,
     gx_device *             cdev)
 {
     if (pct->type != &gs_composite_overprint_type)
-        return gx_default_create_compositor(dev, pcdev, pct, pis, memory, cdev);
+        return gx_default_create_compositor(dev, pcdev, pct, pgs, memory, cdev);
     else {
         gs_overprint_params_t params = ((const gs_overprint_t *)pct)->params;
         int     code;
@@ -1105,7 +1105,7 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
    AND it supports devn colors AND is 8 bit. */
 static int 
 overprint_fill_rectangle_hl_color(gx_device *dev,
-    const gs_fixed_rect *rect, const gs_imager_state *pis, 
+    const gs_fixed_rect *rect, const gs_gstate *pgs, 
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
     overprint_device_t *    opdev = (overprint_device_t *)dev;
@@ -1302,7 +1302,7 @@ c_overprint_create_default_compositor(
     const gs_composite_t *  pct,
     gx_device **            popdev,
     gx_device *             tdev,
-    gs_imager_state *	    pis,
+    gs_gstate *	            pgs,
     gs_memory_t *           mem )
 {
     const gs_overprint_t *  ovrpct = (const gs_overprint_t *)pct;

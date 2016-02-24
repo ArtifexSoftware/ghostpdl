@@ -1080,12 +1080,12 @@ display_separation_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
 
 static void
 display_separation_rgb_cs_to_cmyk_cm(gx_device * dev,
-    const gs_imager_state *pis, frac r, frac g, frac b, frac out[])
+    const gs_gstate *pgs, frac r, frac g, frac b, frac out[])
 {
     int * map =
       (int *)(&((gx_device_display *) dev)->devn_params.separation_order_map);
 
-    rgb_cs_to_devn_cm(dev, map, pis, r, g, b, out);
+    rgb_cs_to_devn_cm(dev, map, pgs, r, g, b, out);
 }
 
 static void
@@ -1161,7 +1161,7 @@ display_separation_decode_color(gx_device * dev, gx_color_index color,
  *  Device proc for updating the equivalent CMYK color for spot colors.
  */
 static int
-display_update_spot_equivalent_colors(gx_device * dev, const gs_state * pgs)
+display_update_spot_equivalent_colors(gx_device * dev, const gs_gstate * pgs)
 {
     gx_device_display * ddev = (gx_device_display *)dev;
 

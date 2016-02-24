@@ -24,7 +24,7 @@
 #include "gxdcolor.h"
 #include "gxfixed.h"
 #include "gxdevice.h"		/* for gzht.h */
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gzht.h"
 #include "gsserial.h"
 
@@ -215,7 +215,7 @@ gx_dc_ht_binary_get_dev_halftone(const gx_device_color * pdevc)
 
 /* Load the device color into the halftone cache if needed. */
 static int
-gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
+gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_gstate * pgs,
                      gx_device * dev, gs_color_select_t select)
 {
     int component_index = pdevc->colors.binary.b_index;
@@ -226,7 +226,7 @@ gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
     gx_ht_cache *pcache = porder->cache;
 
     if (pcache->order.bit_data != porder->bit_data)
-        gx_ht_init_cache(pis->memory, pcache, porder);
+        gx_ht_init_cache(pgs->memory, pcache, porder);
     /*
      * We do not load the cache now.  Instead we wait until we are ready
      * to actually render the color.  This allows multiple colors to be
@@ -506,12 +506,12 @@ gx_dc_ht_binary_write(
  *  pdevc       pointer to the location in which to write the
  *              reconstructed device color
  *
- *  pis         pointer to the current imager state (to access the
+ *  pgs         pointer to the current gs_gstate (to access the
  *              current halftone)
  *
  *  prior_devc  pointer to the current device color (this is provided
  *              separately because the device color is not part of the
- *              imager state)
+ *              gs_gstate)
  *
  *  dev         pointer to the current device, used to retrieve process
  *              color model information
@@ -531,7 +531,7 @@ gx_dc_ht_binary_write(
 static int
 gx_dc_ht_binary_read(
     gx_device_color *       pdevc,
-    const gs_imager_state * pis,
+    const gs_gstate        * pgs,
     const gx_device_color * prior_devc,
     const gx_device *       dev,        /* ignored */
     int64_t		    offset,
@@ -553,8 +553,8 @@ gx_dc_ht_binary_read(
         memset(&devc, 0, sizeof(devc));   /* clear pointers */
     devc.type = gx_dc_type_ht_binary;
 
-    /* the halftone is always taken from the imager state */
-    devc.colors.binary.b_ht = pis->dev_ht;
+    /* the halftone is always taken from the gs_gstate */
+    devc.colors.binary.b_ht = pgs->dev_ht;
 
     /* cache is not porvided until the device color is used */
     devc.colors.binary.b_tile = 0;
@@ -601,14 +601,14 @@ gx_dc_ht_binary_read(
         devc.colors.binary.b_index = *pdata++;
     }
 
-    if (pis->dev_ht == NULL)
+    if (pgs->dev_ht == NULL)
         return_error(gs_error_unregistered); /* Must not happen. */
     /* set the phase as required (select value is arbitrary) */
     color_set_phase_mod( &devc,
-                         pis->screen_phase[0].x,
-                         pis->screen_phase[0].y,
-                         pis->dev_ht->lcm_width,
-                         pis->dev_ht->lcm_height );
+                         pgs->screen_phase[0].x,
+                         pgs->screen_phase[0].y,
+                         pgs->dev_ht->lcm_width,
+                         pgs->dev_ht->lcm_height );
 
     /* everything looks good */
     *pdevc = devc;

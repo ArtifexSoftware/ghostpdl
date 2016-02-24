@@ -574,7 +574,7 @@ pxBeginImage(px_args_t * par, px_state_t * pxs)
     gs_point origin;
     px_bitmap_params_t params;
     px_bitmap_enum_t benum;
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
     px_gstate_t *pxgs = pxs->pxgs;
     px_image_enum_t *pxenum;
     int code;
@@ -890,7 +890,7 @@ pxScanLineRel(px_args_t * par, px_state_t * pxs)
                                  * We use the separate variable source.count to keep track of
                                  * the number of x-pairs left in the scan line.
                                  */
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
     bool big_endian = pxs->data_source_big_endian;
     const byte *data = par->source.data;
     pxeDataType_t

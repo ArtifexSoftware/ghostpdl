@@ -246,7 +246,7 @@ pl_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
                   const double pwidth[2], const gs_rect * pbbox,
                   const double Metrics2_sbw_default[4], bool * imagenow)
 {
-    gs_state *pgs = (gs_state *) penum->pis;
+    gs_gstate *pgs = penum->pgs;
     float w2[6];
     int code = 0;
     gs_fapi_server *I = pbfont->FAPI;
@@ -334,7 +334,7 @@ pl_fapi_set_cache_rotate(gs_text_enum_t * penum, const gs_font_base * pbfont,
 
 
 static int
-pl_fapi_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
+pl_fapi_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
                    gs_char chr, gs_glyph glyph)
 {
     int code;
@@ -511,7 +511,7 @@ pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
     gs_font_base *pbfont = (gs_font_base *) pfont;
     gs_text_params_t text;
     gs_char buf[2];
-    gs_state *rpgs = (gs_state *) vpgs;
+    gs_gstate *rpgs = (gs_gstate *) vpgs;
     /* NAFF: undefined glyph would be better handled inside FAPI */
     gs_char chr = char_code;
     gs_glyph unused_glyph = GS_NO_GLYPH;
@@ -539,14 +539,13 @@ pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
         code = 1;
     } else {
         gs_fapi_server *I = pbfont->FAPI;
-        gs_state lpgs;
-        gs_state *pgs = &lpgs;
+        gs_gstate lpgs;
+        gs_gstate *pgs = &lpgs;
 
         /* This is kind of naff, but it's *much* cheaper to copy
          * the parts of the gstate we need, than gsave/grestore
          */
         memset(pgs, 0x00, sizeof(lpgs));
-        pgs->is_gstate = rpgs->is_gstate;
         pgs->memory = rpgs->memory;
         pgs->ctm = rpgs->ctm;
         pgs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;
@@ -571,11 +570,11 @@ pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
         text.data.chars = buf;
         text.size = 1;
 
-        if ((penum1 = gs_text_enum_alloc(pfont->memory, (gs_imager_state *)pgs,
+        if ((penum1 = gs_text_enum_alloc(pfont->memory, pgs,
                       "pl_fapi_char_metrics")) != NULL) {
 
             if ((code = gs_text_enum_init(penum1, &null_text_procs,
-                                 NULL, (gs_imager_state *)pgs, &text, pfont,
+                                 NULL, pgs, &text, pfont,
                                  NULL, NULL, NULL, pfont->memory)) >= 0) {
 
                 code = gs_fapi_do_char(pfont, pgs, penum1, plfont->font_file, false,

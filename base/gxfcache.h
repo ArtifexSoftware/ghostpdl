@@ -62,9 +62,9 @@ typedef struct gx_ttfMemory_s gx_ttfMemory;
 #   define gx_device_spot_analyzer_DEFINED
 typedef struct gx_device_spot_analyzer_s gx_device_spot_analyzer;
 #endif
-#ifndef gs_state_DEFINED
-#  define gs_state_DEFINED
-typedef struct gs_state_s gs_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
 /*

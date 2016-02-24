@@ -71,7 +71,7 @@ typedef struct px_media_s
 } px_media_t;
 
 /* This structure captures the entire state of the PCL XL "virtual */
-/* machine", except for graphics state parameters in the gs_state. */
+/* machine", except for graphics state parameters in the gs_gstate. */
 struct px_state_s
 {
 
@@ -143,7 +143,7 @@ struct px_state_s
 
     /* Graphics state */
 
-    gs_state *pgs;              /* PostScript graphics state */
+    gs_gstate *pgs;              /* PostScript graphics state */
     px_gstate_t *pxgs;
     /* Image/pattern reading state */
     px_image_enum_t *image_enum;
@@ -186,7 +186,7 @@ px_state_t *px_state_alloc(gs_memory_t *);
 void px_state_release(px_state_t * pxs);
 
 /* Do one-time state initialization. */
-void px_state_init(px_state_t *, gs_state *);
+void px_state_init(px_state_t *, gs_gstate *);
 
 /* Define the default end-of-page procedure. */
 int px_default_end_page(px_state_t *, int, int);

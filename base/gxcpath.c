@@ -24,7 +24,7 @@
 #include "gxfixed.h"
 #include "gxpaint.h"
 #include "gscoord.h"		/* needs gsmatrix.h */
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gzacpath.h"
@@ -586,16 +586,15 @@ gx_path_rectangular_type cpath_is_rectangle(const gx_clip_path * pcpath, gs_fixe
 /* Intersect a new clipping path with an old one. */
 /* Flatten the new path first (in a copy) if necessary. */
 int
-gx_cpath_clip(gs_state *pgs, gx_clip_path *pcpath,
+gx_cpath_clip(gs_gstate *pgs, gx_clip_path *pcpath,
               /*const*/ gx_path *ppath_orig, int rule)
 {
-    return gx_cpath_intersect(pcpath, ppath_orig, rule,
-                              (gs_imager_state *)pgs);
+    return gx_cpath_intersect(pcpath, ppath_orig, rule, pgs);
 }
 
 int
 gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
-                   int rule, gs_imager_state *pis, const gx_fill_params * params)
+                   int rule, gs_gstate *pgs, const gx_fill_params * params)
 {
     gx_path fpath;
     /*const*/ gx_path *ppath = ppath_orig;
@@ -604,10 +603,10 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
 
     /* Flatten the path if necessary. */
     if (gx_path_has_curves_inline(ppath)) {
-        gx_path_init_local(&fpath, pis->memory);
+        gx_path_init_local(&fpath, pgs->memory);
         code = gx_path_add_flattened_accurate(ppath, &fpath,
-                                              gs_currentflat_inline(pis),
-                                              pis->accurate_curves);
+                                              gs_currentflat_inline(pgs),
+                                              pgs->accurate_curves);
         if (code < 0)
             return code;
         ppath = &fpath;
@@ -623,14 +622,14 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
             /* The new path is void. */
             if (gx_path_current_point(ppath, &new_box.p) < 0) {
                 /* Use the user space origin (arbitrarily). */
-                new_box.p.x = float2fixed(pis->ctm.tx);
-                new_box.p.y = float2fixed(pis->ctm.ty);
+                new_box.p.x = float2fixed(pgs->ctm.tx);
+                new_box.p.y = float2fixed(pgs->ctm.ty);
             }
             new_box.q = new_box.p;
             changed = 1;
         } else {
             {   /* Apply same adjustment as for filling the path. */
-                gs_fixed_point adjust = params != NULL ? params->adjust : pis->fill_adjust;
+                gs_fixed_point adjust = params != NULL ? params->adjust : pgs->fill_adjust;
                 fixed adjust_xl, adjust_xu, adjust_yl, adjust_yu;
 
                 if (adjust.x == -1)
@@ -691,7 +690,7 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
                 goto ex;
         }
         code = gx_cpath_intersect_path_slow(pcpath, (params != NULL ? ppath_orig : ppath),
-                            rule, pis, params);
+                            rule, pgs, params);
         if (code < 0)
             goto ex;
         if (path_valid) {
@@ -710,10 +709,10 @@ ex:
 }
 int
 gx_cpath_intersect(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
-                   int rule, gs_imager_state *pis)
+                   int rule, gs_gstate *pgs)
 {
     return gx_cpath_intersect_with_params(pcpath, ppath_orig,
-                   rule, pis, NULL);
+                   rule, pgs, NULL);
 }
 
 /* Scale a clipping path by a power of 2. */

@@ -75,8 +75,8 @@ void gsicc_get_srcprofile(gsicc_colorbuffer_t data_cs,
                      cmm_srcgtag_profile_t *srcgtag_profile,
                      cmm_profile_t **profile, gsicc_rendering_param_t *render_cond);
 int gsicc_getsrc_channel_count(cmm_profile_t *icc_profile);
-int gsicc_init_iccmanager(gs_state * pgs);
-int gsicc_init_gs_colors(gs_state *pgs);
+int gsicc_init_iccmanager(gs_gstate * pgs);
+int gsicc_init_gs_colors(gs_gstate *pgs);
 void  gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data,
                               cmm_profile_t *iccprofile);
 int gsicc_set_device_profile_intent(gx_device *dev,
@@ -88,7 +88,7 @@ int gsicc_set_device_blackptcomp(gx_device *dev,
 int gsicc_set_device_blackpreserve(gx_device *dev,
                                    gsicc_blackpreserve_t blackpreserve,
                                    gsicc_profile_types_t profile_type);
-int gsicc_set_devicen_equiv_colors(gx_device *dev, const gs_imager_state * pis,
+int gsicc_set_devicen_equiv_colors(gx_device *dev, const gs_gstate * pgs,
                                     cmm_profile_t *profile);
 int gsicc_set_device_profile_colorants(gx_device *dev, char *name_str);
 int gsicc_init_device_profile_struct(gx_device * dev,  char *profile_name,
@@ -110,7 +110,7 @@ int gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile,
                            gs_memory_t * mem);
 cmm_profile_t* gsicc_get_gscs_profile(gs_color_space *gs_colorspace,
                                       gsicc_manager_t *icc_manager);
-void gsicc_init_hash_cs(cmm_profile_t *picc_profile, gs_imager_state *pis);
+void gsicc_init_hash_cs(cmm_profile_t *picc_profile, gs_gstate *pgs);
 gcmmhprofile_t gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile,
                                               gs_memory_t *memory);
 gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer,
@@ -126,8 +126,8 @@ cmm_profile_t* gsicc_finddevicen(const gs_color_space *pcs,
 gs_color_space_index gsicc_get_default_type(cmm_profile_t *profile_data);
 bool gsicc_profile_from_ps(cmm_profile_t *profile_data);
 cmm_dev_profile_t* gsicc_new_device_profile_array(gs_memory_t *memory);
-void gs_setoverrideicc(gs_imager_state *pis, bool value);
-bool gs_currentoverrideicc(const gs_imager_state *pis);
+void gs_setoverrideicc(gs_gstate *pgs, bool value);
+bool gs_currentoverrideicc(const gs_gstate *pgs);
 cmm_profile_t* gsicc_set_iccsmaskprofile(const char *pname, int namelen,
                                          gsicc_manager_t *icc_manager,
                                          gs_memory_t *mem);
@@ -136,22 +136,22 @@ int gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
 char* gsicc_get_dev_icccolorants(cmm_dev_profile_t *dev_profile);
 void gsicc_setrange_lab(cmm_profile_t *profile);
 /* system and user params */
-void gs_currentdevicenicc(const gs_state * pgs, gs_param_string * pval);
-int gs_setdevicenprofileicc(const gs_state * pgs, gs_param_string * pval);
-void gs_currentdefaultgrayicc(const gs_state * pgs, gs_param_string * pval);
-int gs_setdefaultgrayicc(const gs_state * pgs, gs_param_string * pval);
-void gs_currenticcdirectory(const gs_state * pgs, gs_param_string * pval);
-int gs_seticcdirectory(const gs_state * pgs, gs_param_string * pval);
-void gs_currentsrcgtagicc(const gs_state * pgs, gs_param_string * pval);
-int gs_setsrcgtagicc(const gs_state * pgs, gs_param_string * pval);
-void gs_currentdefaultrgbicc(const gs_state * pgs, gs_param_string * pval);
-int gs_setdefaultrgbicc(const gs_state * pgs, gs_param_string * pval);
-void gs_currentnamedicc(const gs_state * pgs, gs_param_string * pval);
-int gs_setnamedprofileicc(const gs_state * pgs, gs_param_string * pval);
-void gs_currentdefaultcmykicc(const gs_state * pgs, gs_param_string * pval);
-int gs_setdefaultcmykicc(const gs_state * pgs, gs_param_string * pval);
-void gs_currentlabicc(const gs_state * pgs, gs_param_string * pval);
-int gs_setlabicc(const gs_state * pgs, gs_param_string * pval);
+void gs_currentdevicenicc(const gs_gstate * pgs, gs_param_string * pval);
+int gs_setdevicenprofileicc(const gs_gstate * pgs, gs_param_string * pval);
+void gs_currentdefaultgrayicc(const gs_gstate * pgs, gs_param_string * pval);
+int gs_setdefaultgrayicc(const gs_gstate * pgs, gs_param_string * pval);
+void gs_currenticcdirectory(const gs_gstate * pgs, gs_param_string * pval);
+int gs_seticcdirectory(const gs_gstate * pgs, gs_param_string * pval);
+void gs_currentsrcgtagicc(const gs_gstate * pgs, gs_param_string * pval);
+int gs_setsrcgtagicc(const gs_gstate * pgs, gs_param_string * pval);
+void gs_currentdefaultrgbicc(const gs_gstate * pgs, gs_param_string * pval);
+int gs_setdefaultrgbicc(const gs_gstate * pgs, gs_param_string * pval);
+void gs_currentnamedicc(const gs_gstate * pgs, gs_param_string * pval);
+int gs_setnamedprofileicc(const gs_gstate * pgs, gs_param_string * pval);
+void gs_currentdefaultcmykicc(const gs_gstate * pgs, gs_param_string * pval);
+int gs_setdefaultcmykicc(const gs_gstate * pgs, gs_param_string * pval);
+void gs_currentlabicc(const gs_gstate * pgs, gs_param_string * pval);
+int gs_setlabicc(const gs_gstate * pgs, gs_param_string * pval);
 int gsicc_get_device_class(cmm_profile_t *icc_profile);
 
 #if ICC_DUMP

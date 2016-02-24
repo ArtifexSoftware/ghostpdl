@@ -152,7 +152,7 @@ static RELOC_PTRS_WITH(gs_image_enum_reloc_ptrs, gs_image_enum *eptr)
 RELOC_PTRS_END
 
 static int
-is_image_visible(const gs_image_common_t * pic, gs_state * pgs, gx_clip_path *pcpath)
+is_image_visible(const gs_image_common_t * pic, gs_gstate * pgs, gx_clip_path *pcpath)
 {
     /* HACK : We need the source image size here,
        but gs_image_common_t doesn't pass it.
@@ -201,7 +201,7 @@ is_image_visible(const gs_image_common_t * pic, gs_state * pgs, gx_clip_path *pc
 
 /* Create an image enumerator given image parameters and a graphics state. */
 int
-gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
+gs_image_begin_typed(const gs_image_common_t * pic, gs_gstate * pgs,
                      bool uses_color, gx_image_enum_common_t ** ppie)
 {
     gx_device *dev = gs_currentdevice(pgs);
@@ -219,13 +219,13 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
         code = gx_set_dev_color(pgs);
         if (code != 0)
             return code;
-        code = gs_state_color_load(pgs);
+        code = gs_gstate_color_load(pgs);
         if (code < 0)
             return code;
     }
     /* Imagemask with shading color needs a special optimization
        with converting the image into a clipping.
-       Check for such case after gs_state_color_load is done,
+       Check for such case after gs_gstate_color_load is done,
        because it can cause interpreter callout.
      */
     if (pic->type->begin_typed_image == &gx_begin_image1) {
@@ -241,7 +241,7 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
             pdevc = &dc_temp;
         }
     }
-    code = gx_device_begin_typed_image(dev2, (const gs_imager_state *)pgs,
+    code = gx_device_begin_typed_image(dev2, (const gs_gstate *)pgs,
                 NULL, pic, NULL, pdevc, pcpath, pgs->memory, ppie);
     if (code < 0)
         return code;
@@ -279,7 +279,7 @@ gs_image_enum_alloc(gs_memory_t * mem, client_name_t cname)
 /* Start processing an ImageType 1 image. */
 int
 gs_image_init(gs_image_enum * penum, const gs_image_t * pim, bool multi,
-              gs_state * pgs)
+              gs_gstate * pgs)
 {
     gs_image_t image;
     gx_image_enum_common_t *pie;
@@ -411,7 +411,7 @@ gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
 */
 int
 gs_image_enum_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
-                   const gs_data_image_t * pim, gs_state *pgs)
+                   const gs_data_image_t * pim, gs_gstate *pgs)
 {
     pgs->device->sgr.stroke_stored = false;
     return gs_image_common_init(penum, pie, pim,
@@ -641,7 +641,7 @@ gs_image_next_planes(gs_image_enum * penum,
 /* Clean up after processing an image. */
 /* Public for ghostpcl. */
 int
-gs_image_cleanup(gs_image_enum * penum, gs_state *pgs)
+gs_image_cleanup(gs_image_enum * penum, gs_gstate *pgs)
 {
     int code = 0, code1;
 
@@ -666,7 +666,7 @@ gs_image_cleanup(gs_image_enum * penum, gs_state *pgs)
 
 /* Clean up after processing an image and free the enumerator. */
 int
-gs_image_cleanup_and_free_enum(gs_image_enum * penum, gs_state *pgs)
+gs_image_cleanup_and_free_enum(gs_image_enum * penum, gs_gstate *pgs)
 {
     int code = gs_image_cleanup(penum, pgs);
 

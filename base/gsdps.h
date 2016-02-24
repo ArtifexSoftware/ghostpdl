@@ -23,9 +23,9 @@
 #include "gsiparm2.h"
 
 /* View clipping */
-int gs_initviewclip(gs_state *);
-int gs_eoviewclip(gs_state *);
-int gs_viewclip(gs_state *);
-int gs_viewclippath(gs_state *);
+int gs_initviewclip(gs_gstate *);
+int gs_eoviewclip(gs_gstate *);
+int gs_viewclip(gs_gstate *);
+int gs_viewclippath(gs_gstate *);
 
 #endif /* gsdps_INCLUDED */

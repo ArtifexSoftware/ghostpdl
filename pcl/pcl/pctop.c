@@ -139,7 +139,7 @@ pcl_gstate_client_alloc(gs_memory_t * mem)
  */
 static int
 pcl_gstate_client_copy_for(void *to,
-                           void *from, gs_state_copy_reason_t reason)
+                           void *from, gs_gstate_copy_reason_t reason)
 {
     return 0;
 }
@@ -149,7 +149,7 @@ pcl_gstate_client_free(void *old, gs_memory_t * mem)
 {
 }
 
-static const gs_state_client_procs pcl_gstate_procs = {
+static const gs_gstate_client_procs pcl_gstate_procs = {
     pcl_gstate_client_alloc,
     0,                          /* copy -- superseded by copy_for */
     pcl_gstate_client_free,
@@ -240,7 +240,7 @@ pcl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,     /* RETUR
                                                    (pcl_interp_instance_t),
                                                    "pcl_allocate_interp_instance(pcl_interp_instance_t)");
 
-    gs_state *pgs = gs_state_alloc(mem);
+    gs_gstate *pgs = gs_gstate_alloc(mem);
 
     /* If allocation error, deallocate & return */
     if (!pcli || !pgs) {
@@ -248,7 +248,7 @@ pcl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,     /* RETUR
             gs_free_object(mem, pcli,
                            "pcl_allocate_interp_instance(pcl_interp_instance_t)");
         if (pgs)
-            gs_state_free(pgs);
+            gs_gstate_free(pgs);
         return gs_error_VMerror;
     }
 
@@ -267,7 +267,7 @@ pcl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,     /* RETUR
     /* provide an end page procedure */
     pcli->pcs.end_page = pcl_end_page_top;
     /* Init gstate to point to pcl state */
-    gs_state_set_client(pgs, &pcli->pcs, &pcl_gstate_procs, true);
+    gs_gstate_set_client(pgs, &pcli->pcs, &pcl_gstate_procs, true);
     /* register commands */
     {
         int code = pcl_do_registrations(&pcli->pcs, &pcli->pst);
@@ -349,7 +349,7 @@ pcl_get_personality(pl_interp_instance_t * instance, gx_device * device)
 }
 
 static int
-pcl_set_icc_params(pl_interp_instance_t * instance, gs_state * pgs)
+pcl_set_icc_params(pl_interp_instance_t * instance, gs_gstate * pgs)
 {
     gs_param_string p;
     int code = 0;
@@ -641,7 +641,7 @@ pcl_impl_deallocate_interp_instance(pl_interp_instance_t * instance     /* insta
     pcl_free_default_objects(mem, &pcli->pcs);
 
     /* free halftone cache in gs state */
-    gs_state_free(pcli->pcs.pgs);
+    gs_gstate_free(pcli->pcs.pgs);
     /* remove pcl's gsave grestore stack */
     pcl_free_gstate_stk(&pcli->pcs);
     gs_free_object(mem, pcli,

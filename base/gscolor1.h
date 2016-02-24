@@ -21,24 +21,24 @@
 #  define gscolor1_INCLUDED
 
 /* Color and gray interface */
-int gs_setcmykcolor(gs_state *, double, double, double, double),
-    gs_currentcmykcolor(const gs_state *, float[4]),
-    gs_setblackgeneration(gs_state *, gs_mapping_proc),
-    gs_setblackgeneration_remap(gs_state *, gs_mapping_proc, bool);
-gs_mapping_proc gs_currentblackgeneration(const gs_state *);
-int gs_setundercolorremoval(gs_state *, gs_mapping_proc),
-    gs_setundercolorremoval_remap(gs_state *, gs_mapping_proc, bool);
-gs_mapping_proc gs_currentundercolorremoval(const gs_state *);
+int gs_setcmykcolor(gs_gstate *, double, double, double, double),
+    gs_currentcmykcolor(const gs_gstate *, float[4]),
+    gs_setblackgeneration(gs_gstate *, gs_mapping_proc),
+    gs_setblackgeneration_remap(gs_gstate *, gs_mapping_proc, bool);
+gs_mapping_proc gs_currentblackgeneration(const gs_gstate *);
+int gs_setundercolorremoval(gs_gstate *, gs_mapping_proc),
+    gs_setundercolorremoval_remap(gs_gstate *, gs_mapping_proc, bool);
+gs_mapping_proc gs_currentundercolorremoval(const gs_gstate *);
 
 /* Transfer function */
-int gs_setcolortransfer(gs_state *, gs_mapping_proc /*red */ ,
+int gs_setcolortransfer(gs_gstate *, gs_mapping_proc /*red */ ,
                         gs_mapping_proc /*green */ ,
                         gs_mapping_proc /*blue */ ,
                         gs_mapping_proc /*gray */ ),
-    gs_setcolortransfer_remap(gs_state *, gs_mapping_proc /*red */ ,
+    gs_setcolortransfer_remap(gs_gstate *, gs_mapping_proc /*red */ ,
                               gs_mapping_proc /*green */ ,
                               gs_mapping_proc /*blue */ ,
                               gs_mapping_proc /*gray */ , bool);
-void gs_currentcolortransfer(const gs_state *, gs_mapping_proc[4]);
+void gs_currentcolortransfer(const gs_gstate *, gs_mapping_proc[4]);
 
 #endif /* gscolor1_INCLUDED */

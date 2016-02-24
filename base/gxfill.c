@@ -39,7 +39,7 @@
 #include "gzcpath.h"
 #include "gxdcolor.h"
 #include "gxhttile.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxpaint.h"            /* for prototypes */
 #include "gxfdrop.h"
 #include "gxfill.h"
@@ -289,12 +289,12 @@ unclose_path(gx_path * ppath, int count)
  * The general fill  path algorithm.
  */
 static int
-gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
+gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
                      gx_path * ppath, const gx_fill_params * params,
                  const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
     gs_fixed_point adjust;
-    gs_logical_operation_t lop = pis->log_op;
+    gs_logical_operation_t lop = pgs->log_op;
     gs_fixed_rect ibox, bbox, sbox;
     gx_device_clip cdev;
     gx_device *dev = pdev;
@@ -304,7 +304,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     int code;
     int max_fill_band = dev->max_fill_band;
 #define NO_BAND_MASK ((fixed)(-1) << (sizeof(fixed) * 8 - 1))
-    const bool is_character = params->adjust.x == -1; /* See gxistate.h */
+    const bool is_character = params->adjust.x == -1; /* See gxgstate.h */
     bool fill_by_trapezoids;
     bool pseudo_rasterization;
     bool big_path = ppath->subpath_count > 50;
@@ -465,11 +465,11 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
         pfpath = ppath;
     else if (is_spotan_device(dev))
         pfpath = ppath;
-    else if (!big_path && !pis->accurate_curves && gx_path__check_curves(ppath, pco_small_curves, fo.fixed_flat))
+    else if (!big_path && !pgs->accurate_curves && gx_path__check_curves(ppath, pco_small_curves, fo.fixed_flat))
         pfpath = ppath;
     else {
         code = gx_path_copy_reducing(ppath, &ffpath, fo.fixed_flat, NULL,
-                                     pco_small_curves | (pis->accurate_curves ? pco_accurate : 0));
+                                     pco_small_curves | (pgs->accurate_curves ? pco_accurate : 0));
         if (code < 0)
             return code;
         pfpath = &ffpath;
@@ -508,7 +508,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
             init_section(lst.margin_set0.sect, 0, lst.bbox_width);
             init_section(lst.margin_set1.sect, 0, lst.bbox_width);
         }
-        if (gs_currentcpsimode(pis->memory) && is_character) {
+        if (gs_currentcpsimode(pgs->memory) && is_character) {
             if (lst.contour_count > countof(lst.local_windings)) {
                 lst.windings = (int *)gs_alloc_byte_array(pdev->memory, lst.contour_count,
                                 sizeof(int), "gx_general_fill_path");
@@ -556,17 +556,17 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 }
 
 static int
-pass_shading_area_through_clip_path_device(gx_device * pdev, const gs_imager_state * pis,
+pass_shading_area_through_clip_path_device(gx_device * pdev, const gs_gstate * pgs,
                      gx_path * ppath, const gx_fill_params * params,
                  const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
     if (pdevc == NULL) {
         gx_device_clip *cdev = (gx_device_clip *)pdev;
 
-        return dev_proc(cdev->target, fill_path)(cdev->target, pis, ppath, params, pdevc, pcpath);
+        return dev_proc(cdev->target, fill_path)(cdev->target, pgs, ppath, params, pdevc, pcpath);
     }
     /* We know that tha clip path device implements fill_path with default proc. */
-    return gx_default_fill_path(pdev, pis, ppath, params, pdevc, pcpath);
+    return gx_default_fill_path(pdev, pgs, ppath, params, pdevc, pcpath);
 }
 
 /*
@@ -574,7 +574,7 @@ pass_shading_area_through_clip_path_device(gx_device * pdev, const gs_imager_sta
  * fill_path procedure.
  */
 int
-gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
+gx_default_fill_path(gx_device * pdev, const gs_gstate * pgs,
                      gx_path * ppath, const gx_fill_params * params,
                  const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
@@ -600,7 +600,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
         */
         gx_clip_path cpath_intersection, cpath_with_shading_bbox;
         const gx_clip_path *pcpath1, *pcpath2;
-        gs_imager_state *pis_noconst = (gs_imager_state *)pis; /* Break const. */
+        gs_gstate *pgs_noconst = (gs_gstate *)pgs; /* Break const. */
 
         if (ppath != NULL) {
             code = gx_cpath_init_local_shared_nested(&cpath_intersection, pcpath, pdev->memory, 1);
@@ -614,7 +614,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
             }
             if (code >= 0)
                 code = gx_cpath_intersect_with_params(&cpath_intersection, ppath, params->rule,
-                        pis_noconst, params);
+                        pgs_noconst, params);
             pcpath1 = &cpath_intersection;
         } else
             pcpath1 = pcpath;
@@ -640,7 +640,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
                 /* A special interaction with clist writer device :
                    pass the intersected clipping path. It uses an unusual call to
                    fill_path with NULL device color. */
-                code = (*dev_proc(pdev, fill_path))(pdev, pis, ppath, params, NULL, pcpath1);
+                code = (*dev_proc(pdev, fill_path))(pdev, pgs, ppath, params, NULL, pcpath1);
                 dev = pdev;
             } else {
                 gx_make_clip_device_on_stack(&cdev, pcpath1, pdev);
@@ -653,7 +653,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
             if (code >= 0)
                 code = pdevc->type->fill_rectangle(pdevc,
                         cb.p.x, cb.p.y, cb.q.x - cb.p.x, cb.q.y - cb.p.y,
-                        dev, pis->log_op, rs);
+                        dev, pgs->log_op, rs);
         }
         if (ppath != NULL)
             gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");
@@ -678,7 +678,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
             vd_disable;
 #endif
 
-        code = gx_general_fill_path(pdev, pis, ppath, params, pdevc, pcpath);
+        code = gx_general_fill_path(pdev, pgs, ppath, params, pdevc, pcpath);
 
 #ifndef GS_THREADSAFE
         if (got_dc)

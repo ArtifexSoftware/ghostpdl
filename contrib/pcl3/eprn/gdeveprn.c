@@ -1113,7 +1113,7 @@ static void eprn_forget_defaultmatrix(gx_device *device)
 {
   eprn_Eprn *eprn = &((eprn_Device *)device)->eprn;
 
-  gs_setdefaultmatrix((gs_state *)eprn->pis, NULL);
+  gs_setdefaultmatrix((gs_gstate *)eprn->pgs, NULL);
 
   return;
 }

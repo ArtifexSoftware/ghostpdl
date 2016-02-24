@@ -34,7 +34,7 @@
 #include "gxfcid.h"
 #include "gxfcopy.h"
 #include "gxfcache.h"		/* for gs_font_dir_s */
-#include "gxistate.h"		/* for Type 1 glyph_outline */
+#include "gxgstate.h"		/* for Type 1 glyph_outline */
 #include "gxtext.h"		/* for BuildChar */
 #include "gxtype1.h"		/* for Type 1 glyph_outline */
 #include "gzstate.h"		/* for path for BuildChar */
@@ -704,7 +704,7 @@ copied_glyph_name(gs_font *font, gs_glyph glyph, gs_const_string *pstr)
 }
 
 static int
-copied_build_char(gs_show_enum *pte, gs_state *pgs, gs_font *font,
+copied_build_char(gs_show_enum *pte, gs_gstate *pgs, gs_font *font,
                   gs_char chr, gs_glyph glyph)
 {
     int wmode = font->WMode;
@@ -1059,7 +1059,7 @@ copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
     int code;
     const gs_glyph_data_t *pgd = &gdata;
     gs_type1_state cis;
-    gs_imager_state gis;
+    gs_gstate ggs;
 
     memset(&cis, 0x00, sizeof(cis));
 
@@ -1069,17 +1069,17 @@ copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
         return code;
     if (pgd->bits.size <= max(pfont1->data.lenIV, 0))
         return_error(gs_error_invalidfont);
-    /* Initialize just enough of the imager state. */
+    /* Initialize just enough of the gs_gstate. */
     if (pmat)
-        gs_matrix_fixed_from_matrix(&gis.ctm, pmat);
+        gs_matrix_fixed_from_matrix(&ggs.ctm, pmat);
     else {
         gs_matrix imat;
 
         gs_make_identity(&imat);
-        gs_matrix_fixed_from_matrix(&gis.ctm, &imat);
+        gs_matrix_fixed_from_matrix(&ggs.ctm, &imat);
     }
-    gis.flatness = 0;
-    code = gs_type1_interp_init(&cis, &gis, ppath, NULL, NULL, true, 0,
+    ggs.flatness = 0;
+    code = gs_type1_interp_init(&cis, &ggs, ppath, NULL, NULL, true, 0,
                                 pfont1);
     if (code < 0)
         return code;

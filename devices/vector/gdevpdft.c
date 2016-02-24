@@ -74,12 +74,11 @@ pdf_make_soft_mask_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * ppa
 
 static int
 pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams,
-                            const gs_imager_state * pis, cos_dict_t **pdict)
+                            const gs_gstate * pgs, cos_dict_t **pdict)
 {
     pdf_resource_t *pres_group;
     cos_dict_t *group_dict;
     int code;
-    const gs_state *gstate = gx_hld_get_gstate_ptr(pis);
     cos_value_t cs_value;
 
     code = pdf_alloc_resource(pdev, resourceGroup, gs_no_id, &pres_group, -1);
@@ -108,10 +107,10 @@ pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams
        a group color specified.
        In this case, the parent group is inherited from
        the previous group or the device color space */
-    if (gstate != NULL && pparams->group_color != UNKNOWN) {
-        const gs_color_space *cs = gs_currentcolorspace_inline(gstate);
+    if (pgs != NULL && pparams->group_color != UNKNOWN) {
+        const gs_color_space *cs = gs_currentcolorspace_inline(pgs);
 
-        code = pdf_color_space_named(pdev, pis, &cs_value, NULL, cs,
+        code = pdf_color_space_named(pdev, pgs, &cs_value, NULL, cs,
                 &pdf_color_space_names, false, NULL, 0, false);
         if (code < 0)
             return code;
@@ -130,7 +129,7 @@ pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams
 
 static int
 pdf_make_form_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams,
-                            const gs_imager_state * pis,
+                            const gs_gstate * pgs,
                             const cos_dict_t *group_dict, cos_dict_t *form_dict)
 {
     cos_array_t *bbox_array;
@@ -138,7 +137,7 @@ pdf_make_form_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams,
     gs_rect bbox_rect;
     int code;
 
-    code = gs_bbox_transform(&pparams->bbox, &ctm_only(pis), &bbox_rect);
+    code = gs_bbox_transform(&pparams->bbox, &ctm_only(pgs), &bbox_rect);
     if (code < 0)
         return code;
     bbox[0] = bbox_rect.p.x;
@@ -167,25 +166,24 @@ pdf_make_form_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams,
 }
 
 static int
-pdf_begin_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev,
+pdf_begin_transparency_group(gs_gstate * pgs, gx_device_pdf * pdev,
                                 const gs_pdf14trans_params_t * pparams)
 {
     cos_dict_t *group_dict;
     bool in_page = is_in_page(pdev);
-    const gs_state *gstate = gx_hld_get_gstate_ptr(pis);
     int code;
 
-    if (gstate == NULL)
+    if (pgs == NULL)
         return_error(gs_error_unregistered); /* Must not happen. */
-    code = pdf_make_group_dict(pdev, pparams, pis, &group_dict);
+    code = pdf_make_group_dict(pdev, pparams, pgs, &group_dict);
     if (code < 0)
         return code;
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
         return code;
-    code = pdf_check_soft_mask(pdev, pis);
-    if (pdf_must_put_clip_path(pdev, gstate->clip_path)) {
-        code = pdf_put_clip_path(pdev, gstate->clip_path);
+    code = pdf_check_soft_mask(pdev, pgs);
+    if (pdf_must_put_clip_path(pdev, pgs->clip_path)) {
+        code = pdf_put_clip_path(pdev, pgs->clip_path);
         if (code < 0)
             return code;
     }
@@ -200,7 +198,7 @@ pdf_begin_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev,
         pdf_resource_t *pres, *pres_gstate = NULL;
         cos_dict_t *pcd = NULL, *pcd_Resources = NULL;
 
-        code = pdf_prepare_drawing(pdev, pis, &pres_gstate);
+        code = pdf_prepare_drawing(pdev, pgs, &pres_gstate);
         if (code < 0)
             return code;
         code = pdf_end_gstate(pdev, pres_gstate);
@@ -211,7 +209,7 @@ pdf_begin_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev,
         if (code < 0)
             return code;
         pdev->FormDepth++;
-        code = pdf_make_form_dict(pdev, pparams, pis, group_dict, (cos_dict_t *)pres->object);
+        code = pdf_make_form_dict(pdev, pparams, pgs, group_dict, (cos_dict_t *)pres->object);
         if (code < 0)
             return code;
 
@@ -228,7 +226,7 @@ pdf_begin_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev,
 }
 
 static int
-pdf_end_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev)
+pdf_end_transparency_group(gs_gstate * pgs, gx_device_pdf * pdev)
 {
     int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
 
@@ -267,24 +265,24 @@ pdf_end_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev)
 }
 
 static int
-pdf_begin_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
+pdf_begin_transparency_mask(gs_gstate * pgs, gx_device_pdf * pdev,
                                 const gs_pdf14trans_params_t * pparams)
 {
     if (pparams->subtype == TRANSPARENCY_MASK_None) {
-        int code, id = pis->soft_mask_id;
+        int code, id = pgs->soft_mask_id;
         pdf_resource_t *pres = 0L;
 
         /* reset the soft mask ID. Apparently this is only used by pdfwrite, if we don't
          * reset it, then the pdf_prepare_drawing code doesn't know that the SMask has
          * changed, and so doesn't write out the GState
          */
-        pis->soft_mask_id = 0;
-        code = pdf_prepare_drawing(pdev, pis, &pres);
+        pgs->soft_mask_id = 0;
+        code = pdf_prepare_drawing(pdev, pgs, &pres);
         if (code == gs_error_interrupt) {
             /* Not in an appropriate context, ignore it but restore
              * the old soft_mask_id. Not sure this is correct, but it works for now.
              */
-            pis->soft_mask_id = id;
+            pgs->soft_mask_id = id;
             /* ignore return code, we don't care about this graphics state as we aren't
              * emitting it anyway
              */
@@ -336,12 +334,12 @@ pdf_begin_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
         code = pdf_open_page(pdev, PDF_IN_STREAM);
         if (code < 0)
             return code;
-        return pdf_begin_transparency_group(pis, pdev, pparams);
+        return pdf_begin_transparency_group(pgs, pdev, pparams);
     }
 }
 
 static int
-pdf_end_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
+pdf_end_transparency_mask(gs_gstate * pgs, gx_device_pdf * pdev,
                                 const gs_pdf14trans_params_t * pparams)
 {
     if (pdev->image_mask_skip)
@@ -369,7 +367,7 @@ pdf_end_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
         if (code < 0)
             return code;
         pdev->pres_soft_mask_dict->where_used |= pdev->used_mask;
-        pis->soft_mask_id = pdev->pres_soft_mask_dict->object->id;
+        pgs->soft_mask_id = pdev->pres_soft_mask_dict->object->id;
         pdev->pres_soft_mask_dict = NULL;
         /* We called pdf_start_trnasparency_group (see pdf_begin_transparency_mask
          * above) but we don't call pdf_end_transparency_group, so we must reduce
@@ -381,7 +379,7 @@ pdf_end_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
 }
 
 static int
-pdf_set_blend_params(gs_imager_state * pis, gx_device_pdf * dev,
+pdf_set_blend_params(gs_gstate * pgs, gx_device_pdf * dev,
                                 const gs_pdf14trans_params_t * pparams)
 {
     return 0;
@@ -390,7 +388,7 @@ pdf_set_blend_params(gs_imager_state * pis, gx_device_pdf * dev,
 int
 gdev_pdf_create_compositor(gx_device *dev,
     gx_device **pcdev, const gs_composite_t *pct,
-    gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev)
+    gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
 {
     gx_device_pdf *pdev = (gx_device_pdf *)dev;
 
@@ -409,15 +407,15 @@ gdev_pdf_create_compositor(gx_device *dev,
             case PDF14_ABORT_DEVICE:
                 return 0;
             case PDF14_BEGIN_TRANS_GROUP:
-                return pdf_begin_transparency_group(pis, pdev, params);
+                return pdf_begin_transparency_group(pgs, pdev, params);
             case PDF14_END_TRANS_GROUP:
-                return pdf_end_transparency_group(pis, pdev);
+                return pdf_end_transparency_group(pgs, pdev);
             case PDF14_BEGIN_TRANS_MASK:
-                return pdf_begin_transparency_mask(pis, pdev, params);
+                return pdf_begin_transparency_mask(pgs, pdev, params);
             case PDF14_END_TRANS_MASK:
-                return pdf_end_transparency_mask(pis, pdev, params);
+                return pdf_end_transparency_mask(pgs, pdev, params);
             case PDF14_SET_BLEND_PARAMS:
-                return pdf_set_blend_params(pis, pdev, params);
+                return pdf_set_blend_params(pgs, pdev, params);
             case PDF14_PUSH_TRANS_STATE:
                 return 0;
             case PDF14_POP_TRANS_STATE:
@@ -432,7 +430,7 @@ gdev_pdf_create_compositor(gx_device *dev,
         }
         return 0;
     }
-    return psdf_create_compositor(dev, pcdev, pct, pis, memory, cdev);
+    return psdf_create_compositor(dev, pcdev, pct, pgs, memory, cdev);
 }
 
 /* We're not sure why the folllowing device methods are never called.
@@ -442,14 +440,14 @@ int
 gdev_pdf_begin_transparency_group(gx_device *dev,
     const gs_transparency_group_params_t *ptgp,
     const gs_rect *pbbox,
-    gs_imager_state *pis, gs_memory_t *mem)
+    gs_gstate *pgs, gs_memory_t *mem)
 {
     return 0;
 }
 
 int
 gdev_pdf_end_transparency_group(gx_device *dev,
-    gs_imager_state *pis)
+    gs_gstate *pgs)
 {
     return 0;
 }
@@ -458,14 +456,14 @@ int
 gdev_pdf_begin_transparency_mask(gx_device *dev,
     const gx_transparency_mask_params_t *ptmp,
     const gs_rect *pbbox,
-    gs_imager_state *pis, gs_memory_t *mem)
+    gs_gstate *pgs, gs_memory_t *mem)
 {
     return 0;
 }
 
 int
 gdev_pdf_end_transparency_mask(gx_device *dev,
-    gs_imager_state *pis)
+    gs_gstate *pgs)
 {
     return 0;
 }

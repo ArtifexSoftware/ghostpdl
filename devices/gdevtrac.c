@@ -23,7 +23,7 @@
 #include "gxdht.h"
 #include "gxfont.h"
 #include "gxiparam.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxpaint.h"
 #include "gzpath.h"
 #include "gzcpath.h"
@@ -303,7 +303,7 @@ trace_strip_copy_rop2(gx_device * dev, const byte * sdata, int sourcex,
 /* ---------------- High-level driver procedures ---------------- */
 
 static int
-trace_fill_path(gx_device * dev, const gs_imager_state * pis,
+trace_fill_path(gx_device * dev, const gs_gstate * pgs,
                 gx_path * ppath, const gx_fill_params * params,
                 const gx_drawing_color * pdcolor,
                 const gx_clip_path * pcpath)
@@ -315,13 +315,13 @@ trace_fill_path(gx_device * dev, const gs_imager_state * pis,
              params->rule, fixed2float(params->adjust.x),
              fixed2float(params->adjust.y), params->flatness);
     trace_clip(dev, pcpath);
-    /****** pis ******/
+    /****** pgs ******/
     dmputs(dev->memory,")\n");
     return 0;
 }
 
 static int
-trace_stroke_path(gx_device * dev, const gs_imager_state * pis,
+trace_stroke_path(gx_device * dev, const gs_gstate * pgs,
                   gx_path * ppath, const gx_stroke_params * params,
                   const gx_drawing_color * pdcolor,
                   const gx_clip_path * pcpath)
@@ -331,7 +331,7 @@ trace_stroke_path(gx_device * dev, const gs_imager_state * pis,
     trace_drawing_color(dev->memory,"}, ", pdcolor);
     dmprintf1(dev->memory,", flatness=%g", params->flatness);
     trace_clip(dev, pcpath);
-    /****** pis ******/
+    /****** pgs ******/
     dmputs(dev->memory,")\n");
     return 0;
 }
@@ -377,7 +377,7 @@ static const gx_image_enum_procs_t trace_image_enum_procs = {
     trace_plane_data, trace_end_image
 };
 static int
-trace_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
+trace_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
                         const gs_matrix * pmat,
                         const gs_image_common_t * pim,
                         const gs_int_rect * prect,
@@ -431,7 +431,7 @@ trace_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
     return 0;
  dflt:
     dmputs(dev->memory,") DEFAULTED\n");
-    return gx_default_begin_typed_image(dev, pis, pmat, pim, prect, pdcolor,
+    return gx_default_begin_typed_image(dev, pgs, pmat, pim, prect, pdcolor,
                                         pcpath, memory, pinfo);
 }
 
@@ -445,7 +445,7 @@ static const gs_text_enum_procs_t trace_text_procs = {
     gx_default_text_release
 };
 static int
-trace_text_begin(gx_device * dev, gs_imager_state * pis,
+trace_text_begin(gx_device * dev, gs_gstate * pgs,
                  const gs_text_params_t * text, gs_font * font,
                  gx_path * path, const gx_device_color * pdcolor,
                  const gx_clip_path * pcpath, gs_memory_t * memory,
@@ -525,7 +525,7 @@ trace_text_begin(gx_device * dev, gs_imager_state * pis,
         goto dflt;
     rc_alloc_struct_1(pte, gs_text_enum_t, &st_gs_text_enum, memory,
                       goto dflt, "trace_text_begin");
-    code = gs_text_enum_init(pte, &trace_text_procs, dev, pis, text, font,
+    code = gs_text_enum_init(pte, &trace_text_procs, dev, pgs, text, font,
                              path, pdcolor, pcpath, memory);
     if (code < 0)
         goto dfree;
@@ -582,7 +582,7 @@ trace_text_begin(gx_device * dev, gs_imager_state * pis,
             dpt.y += text->delta_space.y * num_spaces;
         }
         pte->returned.total_width = dpt;
-        gs_distance_transform(dpt.x, dpt.y, &ctm_only(pis), &dpt);
+        gs_distance_transform(dpt.x, dpt.y, &ctm_only(pgs), &dpt);
         code = gx_path_add_point(path,
                                  origin.x + float2fixed(dpt.x),
                                  origin.y + float2fixed(dpt.y));
@@ -596,7 +596,7 @@ trace_text_begin(gx_device * dev, gs_imager_state * pis,
     gs_free_object(memory, pte, "trace_text_begin");
  dflt:
     dmputs(dev->memory,") DEFAULTED\n");
-    return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
+    return gx_default_text_begin(dev, pgs, text, font, path, pdcolor,
                                  pcpath, memory, ppenum);
 }
 

@@ -178,7 +178,7 @@ gs_screen_enum_alloc(gs_memory_t * mem, client_name_t cname)
 
 /* Set up for halftone sampling. */
 int
-gs_screen_init(gs_screen_enum * penum, gs_state * pgs,
+gs_screen_init(gs_screen_enum * penum, gs_gstate * pgs,
                gs_screen_halftone * phsp)
 {
     gs_lib_ctx_t *ctx = gs_lib_ctx_get_interp_instance(pgs->memory);
@@ -187,7 +187,7 @@ gs_screen_init(gs_screen_enum * penum, gs_state * pgs,
                                    ctx->screen_accurate_screens);
 }
 int
-gs_screen_init_memory(gs_screen_enum * penum, gs_state * pgs,
+gs_screen_init_memory(gs_screen_enum * penum, gs_gstate * pgs,
                 gs_screen_halftone * phsp, bool accurate, gs_memory_t * mem)
 {
     int code =
@@ -232,7 +232,7 @@ gs_screen_order_alloc(gx_ht_order *porder, gs_memory_t *mem)
     return code;
 }
 int
-gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
+gs_screen_order_init_memory(gx_ht_order * porder, const gs_gstate * pgs,
                             gs_screen_halftone * phsp, bool accurate,
                             gs_memory_t * mem)
 {
@@ -471,7 +471,7 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
 /* This is the second half of gs_screen_init_accurate. */
 int
 gs_screen_enum_init_memory(gs_screen_enum * penum, const gx_ht_order * porder,
-                           gs_state * pgs, const gs_screen_halftone * phsp,
+                           gs_gstate * pgs, const gs_screen_halftone * phsp,
                            gs_memory_t * mem)
 {
     penum->pgs = pgs;           /* ensure clean for GC */

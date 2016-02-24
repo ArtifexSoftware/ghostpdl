@@ -54,7 +54,7 @@ typedef struct gs_function_s gs_function_t;
 int gs_cspace_set_sepr_proc(gs_color_space * pcspace,
                         int (*proc)(const float *,
                                     float *,
-                                    const gs_imager_state *,
+                                    const gs_gstate *,
                                     void *
                                     ),
                         void *proc_data

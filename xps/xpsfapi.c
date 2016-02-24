@@ -136,7 +136,7 @@ xps_fapi_set_cache(gs_text_enum_t *penum, const gs_font_base *pbfont,
                    const double pwidth[2], const gs_rect *pbbox,
                    const double Metrics2_sbw_default[4], bool *imagenow)
 {
-    gs_state *pgs = (gs_state *) penum->pis;
+    gs_gstate *pgs = penum->pgs;
     float w2[6];
 
     w2[0] = pwidth[0];
@@ -160,7 +160,7 @@ xps_fapi_set_cache(gs_text_enum_t *penum, const gs_font_base *pbfont,
 }
 
 static int
-xps_fapi_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
+xps_fapi_build_char(gs_show_enum *penum, gs_gstate *pgs, gs_font *pfont,
                     gs_char chr, gs_glyph glyph)
 {
     int code;

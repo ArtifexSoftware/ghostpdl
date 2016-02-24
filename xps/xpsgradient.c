@@ -90,9 +90,8 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
                 rendering_params.rendering_intent = gsPERCEPTUAL;
                 rendering_params.cmm = gsCMM_DEFAULT;
                 /* Get link to map from source to sRGB */
-                icclink = gsicc_get_link((gs_imager_state*) ctx->pgs,
-                                         NULL, colorspace, ctx->srgb,
-                                         &rendering_params, ctx->memory);
+                icclink = gsicc_get_link(ctx->pgs, NULL, colorspace,
+                                ctx->srgb, &rendering_params, ctx->memory);
 
                 if (icclink != NULL && !icclink->is_identity)
                 {

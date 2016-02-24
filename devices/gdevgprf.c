@@ -377,11 +377,11 @@ gray_cs_to_gprf_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_gprf_cm(gx_device * dev, const gs_imager_state *pis, frac r, frac g,
+rgb_cs_to_gprf_cm(gx_device * dev, const gs_gstate *pgs, frac r, frac g,
                     frac b, frac out[])
 {
     int * map = ((gprf_device *)dev)->devn_params.separation_order_map;
-    rgb_cs_to_devn_cm(dev, map, pis, r, g, b, out);
+    rgb_cs_to_devn_cm(dev, map, pgs, r, g, b, out);
 }
 
 static void
@@ -1005,7 +1005,7 @@ gprf_write_image_data(gprf_write_ctx *xc)
     int raster_plane;
     byte *planes[GS_CLIENT_COLOR_MAX_COMPONENTS];
     byte *rgb[3];
-    byte *cmyk;
+    byte *cmyk = NULL;
     int code = 0;
     int i, y;
     int chan_idx;

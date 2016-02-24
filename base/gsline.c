@@ -32,7 +32,7 @@
 
 /* setlinewidth */
 int
-gs_setlinewidth(gs_state * pgs, double width)
+gs_setlinewidth(gs_gstate * pgs, double width)
 {
     gx_set_line_width(pgs_lp, width);
     return 0;
@@ -40,14 +40,14 @@ gs_setlinewidth(gs_state * pgs, double width)
 
 /* currentlinewidth */
 float
-gs_currentlinewidth(const gs_state * pgs)
+gs_currentlinewidth(const gs_gstate * pgs)
 {
     return gx_current_line_width(pgs_lp);
 }
 
 /* setlinecap (sets all 3 caps) */
 int
-gs_setlinecap(gs_state * pgs, gs_line_cap cap)
+gs_setlinecap(gs_gstate * pgs, gs_line_cap cap)
 {
     if ((uint) cap > gs_line_cap_max)
         return_error(gs_error_rangecheck);
@@ -59,7 +59,7 @@ gs_setlinecap(gs_state * pgs, gs_line_cap cap)
 
 /* setlinestartcap */
 int
-gs_setlinestartcap(gs_state * pgs, gs_line_cap cap)
+gs_setlinestartcap(gs_gstate * pgs, gs_line_cap cap)
 {
     if ((uint) cap > gs_line_cap_max)
         return_error(gs_error_rangecheck);
@@ -69,7 +69,7 @@ gs_setlinestartcap(gs_state * pgs, gs_line_cap cap)
 
 /* setlineendcap */
 int
-gs_setlineendcap(gs_state * pgs, gs_line_cap cap)
+gs_setlineendcap(gs_gstate * pgs, gs_line_cap cap)
 {
     if ((uint) cap > gs_line_cap_max)
         return_error(gs_error_rangecheck);
@@ -79,7 +79,7 @@ gs_setlineendcap(gs_state * pgs, gs_line_cap cap)
 
 /* setlinedashcap */
 int
-gs_setlinedashcap(gs_state * pgs, gs_line_cap cap)
+gs_setlinedashcap(gs_gstate * pgs, gs_line_cap cap)
 {
     if ((uint) cap > gs_line_cap_max)
         return_error(gs_error_rangecheck);
@@ -89,7 +89,7 @@ gs_setlinedashcap(gs_state * pgs, gs_line_cap cap)
 
 /* currentlinecap */
 gs_line_cap
-gs_currentlinecap(const gs_state * pgs)
+gs_currentlinecap(const gs_gstate * pgs)
 {
     /* This assumes that all caps are the same as start_cap - this will be
      * the case for postscript at least. */
@@ -98,7 +98,7 @@ gs_currentlinecap(const gs_state * pgs)
 
 /* setlinejoin */
 int
-gs_setlinejoin(gs_state * pgs, gs_line_join join)
+gs_setlinejoin(gs_gstate * pgs, gs_line_join join)
 {
     if ((uint) join > gs_line_join_max)
         return_error(gs_error_rangecheck);
@@ -108,7 +108,7 @@ gs_setlinejoin(gs_state * pgs, gs_line_join join)
 
 /* currentlinejoin */
 gs_line_join
-gs_currentlinejoin(const gs_state * pgs)
+gs_currentlinejoin(const gs_gstate * pgs)
 {
     return pgs_lp->join;
 }
@@ -140,14 +140,14 @@ gx_set_miter_limit(gx_line_params * plp, double limit)
     return 0;
 }
 int
-gs_setmiterlimit(gs_state * pgs, double limit)
+gs_setmiterlimit(gs_gstate * pgs, double limit)
 {
     return gx_set_miter_limit(pgs_lp, limit);
 }
 
 /* currentmiterlimit */
 float
-gs_currentmiterlimit(const gs_state * pgs)
+gs_currentmiterlimit(const gs_gstate * pgs)
 {
     return pgs_lp->miter_limit;
 }
@@ -228,7 +228,7 @@ gx_set_dash(gx_dash_params * dash, const float *pattern, uint length,
     return 0;
 }
 int
-gs_setdash(gs_state * pgs, const float *pattern, uint length, double offset)
+gs_setdash(gs_gstate * pgs, const float *pattern, uint length, double offset)
 {
     return gx_set_dash(&pgs_lp->dash, pattern, length, offset,
                        pgs->memory);
@@ -236,57 +236,57 @@ gs_setdash(gs_state * pgs, const float *pattern, uint length, double offset)
 
 /* currentdash */
 uint
-gs_currentdash_length(const gs_state * pgs)
+gs_currentdash_length(const gs_gstate * pgs)
 {
     return pgs_lp->dash.pattern_size;
 }
 const float *
-gs_currentdash_pattern(const gs_state * pgs)
+gs_currentdash_pattern(const gs_gstate * pgs)
 {
     return pgs_lp->dash.pattern;
 }
 float
-gs_currentdash_offset(const gs_state * pgs)
+gs_currentdash_offset(const gs_gstate * pgs)
 {
     return pgs_lp->dash.offset;
 }
 
 /* Internal accessor for line parameters */
 const gx_line_params *
-gs_currentlineparams(const gs_imager_state * pis)
+gs_currentlineparams(const gs_gstate * pgs)
 {
-    return gs_currentlineparams_inline(pis);
+    return gs_currentlineparams_inline(pgs);
 }
 
 /* ------ Device-dependent parameters ------ */
 
 /* setflat */
 int
-gs_imager_setflat(gs_imager_state * pis, double flat)
+gs_gstate_setflat(gs_gstate * pgs, double flat)
 {
     if (flat <= 0.2)
         flat = 0.2;
     else if (flat > 100)
         flat = 100;
-    pis->flatness = flat;
+    pgs->flatness = flat;
     return 0;
 }
 int
-gs_setflat(gs_state * pgs, double flat)
+gs_setflat(gs_gstate * pgs, double flat)
 {
-    return gs_imager_setflat((gs_imager_state *) pgs, flat);
+    return gs_gstate_setflat(pgs, flat);
 }
 
 /* currentflat */
 float
-gs_currentflat(const gs_state * pgs)
+gs_currentflat(const gs_gstate * pgs)
 {
     return pgs->flatness;
 }
 
 /* setstrokeadjust */
 int
-gs_setstrokeadjust(gs_state * pgs, bool stroke_adjust)
+gs_setstrokeadjust(gs_gstate * pgs, bool stroke_adjust)
 {
     pgs->stroke_adjust = stroke_adjust;
     return 0;
@@ -294,7 +294,7 @@ gs_setstrokeadjust(gs_state * pgs, bool stroke_adjust)
 
 /* currentstrokeadjust */
 bool
-gs_currentstrokeadjust(const gs_state * pgs)
+gs_currentstrokeadjust(const gs_gstate * pgs)
 {
     return pgs->stroke_adjust;
 }
@@ -305,26 +305,26 @@ gs_currentstrokeadjust(const gs_state * pgs)
 
 /* setdashadapt */
 void
-gs_setdashadapt(gs_state * pgs, bool adapt)
+gs_setdashadapt(gs_gstate * pgs, bool adapt)
 {
     pgs_lp->dash.adapt = adapt;
 }
 
 /* currentdashadapt */
 bool
-gs_imager_currentdashadapt(const gs_imager_state * pis)
+gs_gstate_currentdashadapt(const gs_gstate * pgs)
 {
-    return gs_currentlineparams_inline(pis)->dash.adapt;
+    return gs_currentlineparams_inline(pgs)->dash.adapt;
 }
 bool
-gs_currentdashadapt(const gs_state * pgs)
+gs_currentdashadapt(const gs_gstate * pgs)
 {
-    return gs_imager_currentdashadapt((const gs_imager_state *)pgs);
+    return gs_gstate_currentdashadapt((const gs_gstate *)pgs);
 }
 
 /* setcurvejoin */
 int
-gs_setcurvejoin(gs_state * pgs, int join)
+gs_setcurvejoin(gs_gstate * pgs, int join)
 {
     if (join < -1 || join > gs_line_join_max)
         return_error(gs_error_rangecheck);
@@ -334,7 +334,7 @@ gs_setcurvejoin(gs_state * pgs, int join)
 
 /* currentcurvejoin */
 int
-gs_currentcurvejoin(const gs_state * pgs)
+gs_currentcurvejoin(const gs_gstate * pgs)
 {
     return pgs_lp->curve_join;
 }
@@ -343,21 +343,21 @@ gs_currentcurvejoin(const gs_state * pgs)
 
 /* setaccuratecurves */
 void
-gs_setaccuratecurves(gs_state * pgs, bool accurate)
+gs_setaccuratecurves(gs_gstate * pgs, bool accurate)
 {
     pgs->accurate_curves = accurate;
 }
 
 /* currentaccuratecurves */
 bool
-gs_imager_currentaccuratecurves(const gs_imager_state * pis)
+gs_gstate_currentaccuratecurves(const gs_gstate * pgs)
 {
-    return pis->accurate_curves;
+    return pgs->accurate_curves;
 }
 bool
-gs_currentaccuratecurves(const gs_state * pgs)
+gs_currentaccuratecurves(const gs_gstate * pgs)
 {
-    return gs_imager_currentaccuratecurves((const gs_imager_state *)pgs);
+    return gs_gstate_currentaccuratecurves((const gs_gstate *)pgs);
 }
 
 /* setdotlength */
@@ -371,26 +371,26 @@ gx_set_dot_length(gx_line_params * plp, double length, bool absolute)
     return 0;
 }
 int
-gs_setdotlength(gs_state * pgs, double length, bool absolute)
+gs_setdotlength(gs_gstate * pgs, double length, bool absolute)
 {
     return gx_set_dot_length(pgs_lp, length, absolute);
 }
 
 /* currentdotlength */
 float
-gs_currentdotlength(const gs_state * pgs)
+gs_currentdotlength(const gs_gstate * pgs)
 {
     return pgs_lp->dot_length;
 }
 bool
-gs_currentdotlength_absolute(const gs_state * pgs)
+gs_currentdotlength_absolute(const gs_gstate * pgs)
 {
     return pgs_lp->dot_length_absolute;
 }
 
 /* setdotorientation */
 int
-gs_setdotorientation(gs_state *pgs)
+gs_setdotorientation(gs_gstate *pgs)
 {
     if (is_xxyy(&pgs->ctm) || is_xyyx(&pgs->ctm))
         return gs_currentmatrix(pgs, &pgs_lp->dot_orientation);
@@ -399,7 +399,7 @@ gs_setdotorientation(gs_state *pgs)
 
 /* dotorientation */
 int
-gs_dotorientation(gs_state *pgs)
+gs_dotorientation(gs_gstate *pgs)
 {
     return gs_setmatrix(pgs, &pgs_lp->dot_orientation);
 }

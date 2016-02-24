@@ -22,7 +22,7 @@
 
 int pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
                          const byte * bitmap_data, uint sraster,
-                         int bold, byte * bold_lines, gs_state * pgs);
+                         int bold, byte * bold_lines, gs_gstate * pgs);
 
 
 int pl_tt_get_outline(gs_font_type42 * pfont, uint index,

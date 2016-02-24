@@ -69,7 +69,7 @@ px_state_release(px_state_t * pxs)
 /* Do one-time state initialization. */
 /* There isn't much of this: most state is initialized per-session. */
 void
-px_state_init(px_state_t * pxs, gs_state * pgs)
+px_state_init(px_state_t * pxs, gs_gstate * pgs)
 {
     pxs->pgs = pgs;
     px_gstate_init(pxs->pxgs, pgs);

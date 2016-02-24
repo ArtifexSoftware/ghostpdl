@@ -26,7 +26,7 @@
 #include "gxclio.h"
 #include "gxcolor2.h"		/* for pattern1_instance */
 #include "gxdevbuf.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxrplane.h"
 #include "gscms.h"
 
@@ -158,11 +158,11 @@ typedef struct cmd_list_s {
 
 /*
  * In order to keep the per-band state down to a reasonable size,
- * we store only a single set of the imager state parameters;
+ * we store only a single set of the gs_gstate parameters;
  * for each parameter, each band has a flag that says whether that band
  * 'knows' the current value of the parameters.
  */
-extern const gs_imager_state clist_imager_state_initial;
+#define GS_STATE_INIT_VALUES_CLIST(s) GS_STATE_INIT_VALUES(s, 300.0 / 72.0)
 
 /*
  * Define the main structure for holding command list state.
@@ -321,11 +321,11 @@ struct gx_device_clist_writer_s {
                                 /* current tile parameters */
     /*
      * NOTE: we must not set the line_params.dash.pattern member of the
-     * imager state to point to the dash_pattern member of the writer
+     * gs_gstate to point to the dash_pattern member of the writer
      * state (except transiently), since this would confuse the
      * garbage collector.
      */
-    gs_imager_state imager_state;	/* current values of imager params */
+    gs_gstate gs_gstate;	        /* current values of gs_gstate params */
     bool pdf14_needed;		/* if true then not page level opaque mode */
                                 /* above set when not at page level with no SMask or when */
                                 /* the page level BM, shape or opacity alpha needs tranaparency */
@@ -429,7 +429,7 @@ extern_st(st_device_clist);
     "gx_device_clist", 0, device_clist_enum_ptrs, device_clist_reloc_ptrs,\
     gx_device_finalize)
 #define st_device_clist_max_ptrs\
-  (st_device_forward_max_ptrs + st_imager_state_num_ptrs + 4)
+  (st_device_forward_max_ptrs + st_gs_gstate_num_ptrs + 4)
 
 #define CLIST_IS_WRITER(cdev) ((cdev)->common.ymin < 0)
 

@@ -78,11 +78,11 @@ void pl_main_init_standard_io(void);
 void pl_main_init(pl_main_instance_t * pmi, gs_memory_t * memory);
 
 /* Allocate and initialize the first graphics state. */
-#ifndef gs_state_DEFINED
-#  define gs_state_DEFINED
-typedef struct gs_state_s gs_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
-int pl_main_make_gstate(pl_main_instance_t * pmi, gs_state ** ppgs);
+int pl_main_make_gstate(pl_main_instance_t * pmi, gs_gstate ** ppgs);
 
 #ifdef DEBUG
 /* Print memory and time usage. */
@@ -90,7 +90,7 @@ void pl_print_usage(const pl_main_instance_t * pmi, const char *msg);
 #endif
 
 /* Finish a page, possibly printing usage statistics and/or pausing. */
-int pl_finish_page(pl_main_instance_t * pmi, gs_state * pgs,
+int pl_finish_page(pl_main_instance_t * pmi, gs_gstate * pgs,
                    int num_copies, int flush);
 
 /* Main instance accessors */

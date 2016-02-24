@@ -123,7 +123,7 @@ Note: All profile data must be encoded as big-endian
 #include "gx.h"
 #include <gp.h>
 
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gstypes.h"
 #include "gscspace.h"
 #include "gscie.h"
@@ -299,7 +299,7 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
                   gs_vector3 *white_point, bool range_adjust, float cam[],
                   gs_memory_t *memory)
 {
-    gs_imager_state *pis;
+    gs_gstate *pgs;
     int code;
     int num_points = clut->clut_num_entries;
     int table_size = clut->clut_dims[0]; /* Same resolution in each direction*/
@@ -316,7 +316,7 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
 
     /* This completes the joint cache inefficiently so that
        we can sample through it and get our table entries */
-    code = gx_cie_to_xyz_alloc(&pis, pcs, memory);
+    code = gx_cie_to_xyz_alloc(&pgs, pcs, memory);
     if (code < 0)
         return gs_rethrow(code, "Allocation of cie to xyz transform failed");
     cs_index = gs_color_space_get_index(pcs);
@@ -385,7 +385,7 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
            the ICC mapping like the procs associated with the color space */
         switch (cs_index) {
             case gs_color_space_index_CIEA:
-                gx_psconcretize_CIEA(&cc, pcs, xyz, xyz_float, pis);
+                gx_psconcretize_CIEA(&cc, pcs, xyz, xyz_float, pgs);
                 /* AR forces this case to always be achromatic.  We will
                    do the same even though it does not match the PS
                    specification */
@@ -396,13 +396,13 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
                 xyz_float[2] = white_point->w * xyz_float[1];
                 break;
             case gs_color_space_index_CIEABC:
-                gx_psconcretize_CIEABC(&cc, pcs, xyz, xyz_float, pis);
+                gx_psconcretize_CIEABC(&cc, pcs, xyz, xyz_float, pgs);
                 break;
             case gs_color_space_index_CIEDEF:
-                gx_psconcretize_CIEDEF(&cc, pcs, xyz, xyz_float, pis);
+                gx_psconcretize_CIEDEF(&cc, pcs, xyz, xyz_float, pgs);
                 break;
             case gs_color_space_index_CIEDEFG:
-               gx_psconcretize_CIEDEFG(&cc, pcs, xyz, xyz_float, pis);
+               gx_psconcretize_CIEDEFG(&cc, pcs, xyz, xyz_float, pgs);
                break;
             default:
                 return gs_throw(-1, "Invalid gs_color_space_index when creating ICC profile");
@@ -419,7 +419,7 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
            *ptr_short ++= (unsigned int)(temp * 65535);
         }
     }
-    gx_cie_to_xyz_free(pis); /* Free the joint cache we created */
+    gx_cie_to_xyz_free(pgs); /* Free the joint cache we created */
     for (i = 0; i < num_components; i++) {
         gs_free_object(memory, input_samples[i], "gsicc_create_clut");
     }
@@ -1816,7 +1816,7 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
         return gs_rethrow(code, "Create ICC from CIEABC failed");
     }
 
-    /* Detect if the space is CIELAB. We don't have access to pis here though */
+    /* Detect if the space is CIELAB. We don't have access to pgs here though */
     /* *islab = cie_is_lab(pcie); This is not working yet */
     *islab = false;
 
@@ -2403,7 +2403,7 @@ write_v2_common_data(byte *buffer, int profile_size, icHeader *header,
 }
 
 static gsicc_link_t*
-get_link(const gs_imager_state *pis, cmm_profile_t *src_profile,
+get_link(const gs_gstate *pgs, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, gsicc_rendering_intents_t intent)
 {
     gsicc_rendering_param_t rendering_params;
@@ -2415,8 +2415,8 @@ get_link(const gs_imager_state *pis, cmm_profile_t *src_profile,
     rendering_params.preserve_black = gsBLACKPRESERVE_OFF;
     rendering_params.rendering_intent = intent;
     rendering_params.cmm = gsCMM_DEFAULT;
-    return gsicc_get_link_profile(pis, NULL, src_profile, des_profile,
-        &rendering_params, pis->memory, false);
+    return gsicc_get_link_profile(pgs, NULL, src_profile, des_profile,
+        &rendering_params, pgs->memory, false);
 }
 
 static void
@@ -2666,7 +2666,7 @@ add_lutType(byte *input_ptr, gsicc_clut *lut)
 }
 
 static int
-create_write_table_intent(const gs_imager_state *pis, gsicc_rendering_intents_t intent,
+create_write_table_intent(const gs_gstate *pgs, gsicc_rendering_intents_t intent,
         cmm_profile_t *src_profile, cmm_profile_t *des_profile, byte *curr_ptr,
         int table_size, int bit_depth)
 {
@@ -2674,19 +2674,19 @@ create_write_table_intent(const gs_imager_state *pis, gsicc_rendering_intents_t 
     int code;
     gsicc_clut clut;
 
-    link = get_link(pis, src_profile, des_profile, intent);
+    link = get_link(pgs, src_profile, des_profile, intent);
     code = create_clut_v2(&clut, link, src_profile->num_comps,
-        des_profile->num_comps, table_size, pis->memory, bit_depth);
+        des_profile->num_comps, table_size, pgs->memory, bit_depth);
     if (code < 0)
         return code;
     add_lutType(curr_ptr, &clut);
-    clean_lut(&clut, pis->memory);
+    clean_lut(&clut, pgs->memory);
     gsicc_release_link(link);
     return 0;
 }
 
 static void
-gsicc_create_v2input(const gs_imager_state *pis, icHeader *header, cmm_profile_t *src_profile,
+gsicc_create_v2input(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src_profile,
                 byte *mediawhitept, cmm_profile_t *lab_profile)
 {
     /* Need to create the forward table only (Gray, RGB, CMYK to LAB) */
@@ -2735,11 +2735,11 @@ gsicc_create_v2input(const gs_imager_state *pis, icHeader *header, cmm_profile_t
         num_tags, mediawhitept);
 
     /* Now the A2B0 Tag */
-    link = get_link(pis, src_profile, lab_profile, gsPERCEPTUAL);
+    link = get_link(pgs, src_profile, lab_profile, gsPERCEPTUAL);
 
     /* First create the data */
     code = create_clut_v2(&clut, link, src_profile->num_comps, 3,
-        FORWARD_V2_TABLE_SIZE, pis->memory, 2);
+        FORWARD_V2_TABLE_SIZE, pgs->memory, 2);
     if (code < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2input");
         return;
@@ -2750,7 +2750,7 @@ gsicc_create_v2input(const gs_imager_state *pis, icHeader *header, cmm_profile_t
 
     /* Clean up */
     gsicc_release_link(link);
-    clean_lut(&clut, pis->memory);
+    clean_lut(&clut, pgs->memory);
     gs_free_object(memory, tag_list, "gsicc_create_v2input");
     /* Save the v2 data */
     src_profile->v2_data = buffer;
@@ -2763,7 +2763,7 @@ gsicc_create_v2input(const gs_imager_state *pis, icHeader *header, cmm_profile_t
 }
 
 static void
-gsicc_create_v2output(const gs_imager_state *pis, icHeader *header, cmm_profile_t *src_profile,
+gsicc_create_v2output(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src_profile,
                 byte *mediawhitept, cmm_profile_t *lab_profile)
 {
     /* Need to create forward and backward table (Gray, RGB, CMYK to LAB and back)
@@ -2834,7 +2834,7 @@ gsicc_create_v2output(const gs_imager_state *pis, icHeader *header, cmm_profile_
     tag_location = V2_COMMON_TAGS;
 
     /* A2B0 */
-    if (create_write_table_intent(pis, gsPERCEPTUAL, src_profile, lab_profile,
+    if (create_write_table_intent(pgs, gsPERCEPTUAL, src_profile, lab_profile,
         curr_ptr, FORWARD_V2_TABLE_SIZE, 2) < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2output");
         return;
@@ -2842,7 +2842,7 @@ gsicc_create_v2output(const gs_imager_state *pis, icHeader *header, cmm_profile_
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
     /* B2A0 */
-    if (create_write_table_intent(pis, gsPERCEPTUAL, lab_profile, src_profile,
+    if (create_write_table_intent(pgs, gsPERCEPTUAL, lab_profile, src_profile,
         curr_ptr, BACKWARD_V2_TABLE_SIZE, 1) < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2output");
         return;
@@ -2851,7 +2851,7 @@ gsicc_create_v2output(const gs_imager_state *pis, icHeader *header, cmm_profile_
     tag_location++;
 
     /* A2B1 */
-    if (create_write_table_intent(pis, gsRELATIVECOLORIMETRIC, src_profile,
+    if (create_write_table_intent(pgs, gsRELATIVECOLORIMETRIC, src_profile,
         lab_profile, curr_ptr, FORWARD_V2_TABLE_SIZE, 2) < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2output");
         return;
@@ -2859,7 +2859,7 @@ gsicc_create_v2output(const gs_imager_state *pis, icHeader *header, cmm_profile_
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
     /* B2A1 */
-    if (create_write_table_intent(pis, gsRELATIVECOLORIMETRIC, lab_profile,
+    if (create_write_table_intent(pgs, gsRELATIVECOLORIMETRIC, lab_profile,
         src_profile, curr_ptr, BACKWARD_V2_TABLE_SIZE, 1) < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2output");
         return;
@@ -2868,7 +2868,7 @@ gsicc_create_v2output(const gs_imager_state *pis, icHeader *header, cmm_profile_
     tag_location++;
 
     /* A2B2 */
-    if (create_write_table_intent(pis, gsSATURATION, src_profile, lab_profile,
+    if (create_write_table_intent(pgs, gsSATURATION, src_profile, lab_profile,
         curr_ptr, FORWARD_V2_TABLE_SIZE, 2) < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2output");
         return;
@@ -2876,7 +2876,7 @@ gsicc_create_v2output(const gs_imager_state *pis, icHeader *header, cmm_profile_
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
     /* B2A2 */
-    if (create_write_table_intent(pis, gsSATURATION, lab_profile, src_profile,
+    if (create_write_table_intent(pgs, gsSATURATION, lab_profile, src_profile,
         curr_ptr, BACKWARD_V2_TABLE_SIZE, 1) < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2output");
         return;
@@ -2885,7 +2885,7 @@ gsicc_create_v2output(const gs_imager_state *pis, icHeader *header, cmm_profile_
     tag_location++;
 
     /* Gamut tag, which is bogus */
-    code = create_clut_v2(&gamutlut, NULL, src_profile->num_comps, 1, 2, pis->memory, 1);
+    code = create_clut_v2(&gamutlut, NULL, src_profile->num_comps, 1, 2, pgs->memory, 1);
     if (code < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2output");
         return;
@@ -2895,7 +2895,7 @@ gsicc_create_v2output(const gs_imager_state *pis, icHeader *header, cmm_profile_
 
     /* Done */
     gs_free_object(memory, tag_list, "gsicc_create_v2output");
-   clean_lut(&gamutlut, pis->memory);
+   clean_lut(&gamutlut, pgs->memory);
     /* Save the v2 data */
     src_profile->v2_data = buffer;
     src_profile->v2_size = profile_size;
@@ -2907,7 +2907,7 @@ gsicc_create_v2output(const gs_imager_state *pis, icHeader *header, cmm_profile_
 }
 
 static void
-gsicc_create_v2displaygray(const gs_imager_state *pis, icHeader *header, cmm_profile_t *src_profile,
+gsicc_create_v2displaygray(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src_profile,
             byte *mediawhitept, cmm_profile_t *xyz_profile)
 {
     int num_tags = 4;
@@ -2957,7 +2957,7 @@ gsicc_create_v2displaygray(const gs_imager_state *pis, icHeader *header, cmm_pro
 
     /* Now the TRC. First collect the curve data and then write it out */
     /* Get the link between our gray profile and XYZ profile */
-    link = get_link(pis, src_profile, xyz_profile, gsPERCEPTUAL);
+    link = get_link(pgs, src_profile, xyz_profile, gsPERCEPTUAL);
     /* First get the max value for Y on the range */
     src = 65535;
     (link->procs.map_color)(NULL, link, &src, &(des[0]), 2);
@@ -2987,7 +2987,7 @@ gsicc_create_v2displaygray(const gs_imager_state *pis, icHeader *header, cmm_pro
 }
 
 static void
-gsicc_create_v2displayrgb(const gs_imager_state *pis, icHeader *header, cmm_profile_t *src_profile,
+gsicc_create_v2displayrgb(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src_profile,
         byte *mediawhitept, cmm_profile_t *xyz_profile)
 {
     int num_tags = 9;
@@ -3043,7 +3043,7 @@ gsicc_create_v2displayrgb(const gs_imager_state *pis, icHeader *header, cmm_prof
 
     /* Now the main colorants. Get them and the TRC data from using the link
         between the source profile and the CIEXYZ profile */
-    link = get_link(pis, src_profile, xyz_profile, gsPERCEPTUAL);
+    link = get_link(pgs, src_profile, xyz_profile, gsPERCEPTUAL);
 
     /* Get the Red, Green and Blue colorants */
     for (k = 0; k < 3; k++) {
@@ -3077,15 +3077,15 @@ gsicc_create_v2displayrgb(const gs_imager_state *pis, icHeader *header, cmm_prof
 }
 
 static void
-gsicc_create_v2display(const gs_imager_state *pis, icHeader *header, cmm_profile_t *src_profile,
+gsicc_create_v2display(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src_profile,
                     byte *mediawhitept, cmm_profile_t *xyz_profile)
 {
     /* Need to create matrix with the TRCs.  Have to worry about gray
        and RGB cases. */
     if (header->colorSpace == icSigGrayData)
-        gsicc_create_v2displaygray(pis, header, src_profile, mediawhitept, xyz_profile);
+        gsicc_create_v2displaygray(pgs, header, src_profile, mediawhitept, xyz_profile);
     else
-        gsicc_create_v2displayrgb(pis, header, src_profile, mediawhitept, xyz_profile);
+        gsicc_create_v2displayrgb(pgs, header, src_profile, mediawhitept, xyz_profile);
 }
 
 static int
@@ -3250,7 +3250,7 @@ get_mediawp(cmm_profile_t *src_profile, byte *mediawhitept)
 }
 
 static void
-gsicc_create_v2(const gs_imager_state *pis, cmm_profile_t *src_profile)
+gsicc_create_v2(const gs_gstate *pgs, cmm_profile_t *src_profile)
 {
     icProfile iccprofile;
     icHeader *header = &(iccprofile.header);
@@ -3298,10 +3298,10 @@ gsicc_create_v2(const gs_imager_state *pis, cmm_profile_t *src_profile)
     /* Also, we will want to create an XYZ ICC profile that we can use for
        creating our data with lcms.  If already created, this profile is
        stored in the manager */
-    if (pis->icc_manager->xyz_profile != NULL) {
-        xyz_profile = pis->icc_manager->xyz_profile;
+    if (pgs->icc_manager->xyz_profile != NULL) {
+        xyz_profile = pgs->icc_manager->xyz_profile;
     } else {
-        xyz_profile = gsicc_profile_new(NULL, pis->memory, NULL, 0);
+        xyz_profile = gsicc_profile_new(NULL, pgs->memory, NULL, 0);
         if (xyz_profile == NULL) {
 #ifdef DEBUG
             gs_warn("Failed in creating V2 ICC profile");
@@ -3314,25 +3314,25 @@ gsicc_create_v2(const gs_imager_state *pis, cmm_profile_t *src_profile)
 #endif
             return;
         }
-        pis->icc_manager->xyz_profile = xyz_profile;
+        pgs->icc_manager->xyz_profile = xyz_profile;
     }
 
     /* The type of stuff that we need to create */
     switch (header->deviceClass) {
         case icSigInputClass:
             header->pcs = icSigLabData;
-            gsicc_create_v2input(pis, header, src_profile, mediawhitept,
-                pis->icc_manager->lab_profile);
+            gsicc_create_v2input(pgs, header, src_profile, mediawhitept,
+                pgs->icc_manager->lab_profile);
             break;
         case icSigDisplayClass:
             header->pcs = icSigXYZData;
-            gsicc_create_v2display(pis, header, src_profile, mediawhitept,
+            gsicc_create_v2display(pgs, header, src_profile, mediawhitept,
                 xyz_profile);
             break;
         case icSigOutputClass:
             header->pcs = icSigLabData;
-            gsicc_create_v2output(pis, header, src_profile, mediawhitept,
-                pis->icc_manager->lab_profile);
+            gsicc_create_v2output(pgs, header, src_profile, mediawhitept,
+                pgs->icc_manager->lab_profile);
             break;
         default:
 #ifdef DEBUG
@@ -3368,7 +3368,7 @@ gsicc_create_isv2(cmm_profile_t *profile)
 }
 
 byte*
-gsicc_create_getv2buffer(const gs_imager_state *pis, cmm_profile_t *srcprofile,
+gsicc_create_getv2buffer(const gs_gstate *pgs, cmm_profile_t *srcprofile,
                         int *size)
 {
     if (gsicc_create_isv2(srcprofile)) {
@@ -3379,10 +3379,10 @@ gsicc_create_getv2buffer(const gs_imager_state *pis, cmm_profile_t *srcprofile,
     if (srcprofile->profile_handle == NULL)
         srcprofile->profile_handle =
         gsicc_get_profile_handle_buffer(srcprofile->buffer,
-        srcprofile->buffer_size, pis->memory);
+        srcprofile->buffer_size, pgs->memory);
 
     /* Need to create v2 profile */
-    gsicc_create_v2(pis, srcprofile);
+    gsicc_create_v2(pgs, srcprofile);
 
     *size = srcprofile->v2_size;
     return srcprofile->v2_data;

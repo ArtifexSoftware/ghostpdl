@@ -28,7 +28,7 @@
 #include "gxdevice.h"
 #include "gxcmap.h"
 #include "gxdcolor.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxdevmem.h"
 #include "gxcpath.h"
 #include "gximage.h"
@@ -125,7 +125,7 @@ gs_image_class_2_fracs(gx_image_enum * penum)
            then we will need to use those and go through pixel by pixel instead
            of blasting through buffers.  This is true for example with many of
            the color spaces for CUPs */
-        std_cmap_procs = gx_device_uses_std_cmap_procs(penum->dev, penum->pis);
+        std_cmap_procs = gx_device_uses_std_cmap_procs(penum->dev, penum->pgs);
         if ( (gs_color_space_get_index(penum->pcs) == gs_color_space_index_DeviceN &&
             penum->pcs->cmm_icc_profile_data == NULL) || penum->use_mask_color ||
             penum->bps != 16 || !std_cmap_procs ||
@@ -158,11 +158,11 @@ gs_image_class_2_fracs(gx_image_enum * penum)
                 }
             }
             /* Define the rendering intents */
-            rendering_params.black_point_comp = penum->pis->blackptcomp;
+            rendering_params.black_point_comp = penum->pgs->blackptcomp;
             rendering_params.graphics_type_tag = GS_IMAGE_TAG;
             rendering_params.override_icc = false;
             rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
-            rendering_params.rendering_intent = penum->pis->renderingintent;
+            rendering_params.rendering_intent = penum->pgs->renderingintent;
             rendering_params.cmm = gsCMM_DEFAULT;
             if (gs_color_space_is_PSCIE(penum->pcs) && penum->pcs->icc_equivalent != NULL) {
                 pcs = penum->pcs->icc_equivalent;
@@ -172,10 +172,10 @@ gs_image_class_2_fracs(gx_image_enum * penum)
             penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
             penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
             penum->icc_setup.has_transfer = 
-                gx_has_transfer(penum->pis, num_des_comps);
+                gx_has_transfer(penum->pgs, num_des_comps);
             if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
             if (penum->icc_link == NULL) {
-                penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL,
+                penum->icc_link = gsicc_get_link(penum->pgs, penum->dev, pcs, NULL,
                     &rendering_params, penum->memory);
             }
             /* Use the direct unpacking proc */
@@ -231,7 +231,7 @@ static int
 image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
                   uint w, int h, gx_device * dev)
 {
-    const gs_imager_state *pis = penum->pis;
+    const gs_gstate *pgs = penum->pgs;
     gs_logical_operation_t lop = penum->log_op;
     gx_dda_fixed_point pnext;
     image_posture posture = penum->posture;
@@ -242,7 +242,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
     cs_proc_remap_color((*remap_color)) = pcs->type->remap_color;
     gs_client_color cc;
     bool device_color = penum->device_color;
-    const gx_color_map_procs *cmap_procs = gx_get_cmap_procs(pis, dev);
+    const gx_color_map_procs *cmap_procs = gx_get_cmap_procs(pgs, dev);
     cmap_proc_rgb((*map_rgb)) = cmap_procs->map_rgb;
     cmap_proc_cmyk((*map_cmyk)) = cmap_procs->map_cmyk;
     bool use_mask_color = penum->use_mask_color;
@@ -307,7 +307,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
                 if (device_color) {
                     (*map_cmyk) (next.v[0], next.v[1],
                                  next.v[2], next.v[3],
-                                 pdevc_next, pis, dev,
+                                 pdevc_next, pgs, dev,
                                  gs_color_select_source, NULL);
                     goto f;
                 }
@@ -331,7 +331,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
                 }
                 if (device_color) {
                     (*map_rgb) (next.v[0], next.v[1],
-                                next.v[2], pdevc_next, pis, dev,
+                                next.v[2], pdevc_next, pgs, dev,
                                 gs_color_select_source);
                     goto f;
                 }
@@ -365,7 +365,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
                     }
                     if (device_color) {
                         (*map_rgb) (next.v[0], next.v[0],
-                                    next.v[0], pdevc_next, pis, dev,
+                                    next.v[0], pdevc_next, pgs, dev,
                                     gs_color_select_source);
                         goto f;
                     }
@@ -403,7 +403,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
                 }
                 break;
         }
-        mcode = remap_color(&cc, pcs, pdevc_next, pis, dev,
+        mcode = remap_color(&cc, pcs, pdevc_next, pgs, dev,
                            gs_color_select_source);
         if (mcode < 0)
             goto fill;
@@ -586,7 +586,7 @@ static int
 image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
                   uint w, int h, gx_device * dev)
 {
-    const gs_imager_state *pis = penum->pis;
+    const gs_gstate *pgs = penum->pgs;
     gs_logical_operation_t lop = penum->log_op;
     gx_dda_fixed_point pnext;
     image_posture posture = penum->posture;
@@ -647,7 +647,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
         psrc_cm_start = NULL;
     } else {
         spp_cm = num_des_comps;
-        psrc_cm = (unsigned short*) gs_alloc_bytes(pis->memory,
+        psrc_cm = (unsigned short*) gs_alloc_bytes(pgs->memory,
                         sizeof(unsigned short)  * w * spp_cm/spp,
                         "image_render_icc16");
         psrc_cm_start = psrc_cm;
@@ -671,7 +671,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
                less than or equal to the new one.  */
             if (need_decode) {
                 /* Need decode and CM.  This is slow but does not happen that often */
-                psrc_decode = (unsigned short*) gs_alloc_bytes(pis->memory,
+                psrc_decode = (unsigned short*) gs_alloc_bytes(pgs->memory,
                                 sizeof(unsigned short) * w * spp_cm/spp,
                                 "image_render_icc16");
                 if (!penum->use_cie_range) {
@@ -688,7 +688,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
                                                     &output_buff_desc, 
                                                     (void*) psrc_decode,
                                                     (void*) psrc_cm);
-                gs_free_object(pis->memory, (byte *)psrc_decode, "image_render_color_icc");
+                gs_free_object(pgs->memory, (byte *)psrc_decode, "image_render_color_icc");
             } else {
                 /* CM only. No decode */
                 (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, 
@@ -742,7 +742,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
            and or halftoning */
         if (must_halftone || has_transfer) {
             /* We need to do the tranfer function and/or the halftoning */
-            cmap_transfer_halftone(&(conc[0]), pdevc_next, pis, dev,
+            cmap_transfer_halftone(&(conc[0]), pdevc_next, pgs, dev,
                 has_transfer, must_halftone, gs_color_select_source);
         } else {
             /* encode as a color index. avoid all the cv to frac to cv
@@ -798,13 +798,13 @@ inc:	xprev = dda_current(pnext.x);
     }
     /* Free cm buffer, if it was used */
     if (psrc_cm_start != NULL) {
-        gs_free_object(pis->memory, (byte *)psrc_cm_start, "image_render_icc16");
+        gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_icc16");
     }
     return (code < 0 ? code : 1);
 
     /* Save position if error, in case we resume. */
 err:
-    gs_free_object(pis->memory, (byte *)psrc_cm_start, "image_render_icc16");
+    gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_icc16");
     penum->used.x = (rsrc - spp - psrc_initial) / spp;
     penum->used.y = 0;
     return code;

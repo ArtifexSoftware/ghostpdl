@@ -25,7 +25,7 @@
 #include "gxdevice.h"
 #include "gxcmap.h"
 #include "gxdcolor.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gzht.h"
 #include "gsserial.h"
 #include "gxdevsop.h"
@@ -328,12 +328,12 @@ gx_dc_ht_colored_write(
  *  pdevc       pointer to the location in which to write the
  *              reconstructed device color
  *
- *  pis         pointer to the current imager state (to access the
+ *  pgs         pointer to the current gs_gstate (to access the
  *              current halftone)
  *
  *  prior_devc  pointer to the current device color (this is provided
  *              separately because the device color is not part of the
- *              imager state)
+ *              gs_gstate)
  *
  *  dev         pointer to the current device, used to retrieve process
  *              color model information
@@ -353,7 +353,7 @@ gx_dc_ht_colored_write(
 static int
 gx_dc_ht_colored_read(
     gx_device_color *       pdevc,
-    const gs_imager_state * pis,
+    const gs_gstate * pgs,
     const gx_device_color * prior_devc,
     const gx_device *       dev,
     int64_t		    offset,
@@ -379,7 +379,7 @@ gx_dc_ht_colored_read(
 
     /* the number of components is determined by the color model */
     devc.colors.colored.num_components = num_comps;
-    devc.colors.colored.c_ht = pis->dev_ht;
+    devc.colors.colored.c_ht = pgs->dev_ht;
 
     /*
      * Verify that we have at least the flag bits. For performance
@@ -460,10 +460,10 @@ gx_dc_ht_colored_read(
 
     /* set the phase as required (select value is arbitrary) */
     color_set_phase_mod( &devc,
-                         pis->screen_phase[0].x,
-                         pis->screen_phase[0].y,
-                         pis->dev_ht->lcm_width,
-                         pis->dev_ht->lcm_height );
+                         pgs->screen_phase[0].x,
+                         pgs->screen_phase[0].y,
+                         pgs->dev_ht->lcm_width,
+                         pgs->dev_ht->lcm_height );
 
     /* everything looks OK */
     *pdevc = devc;
@@ -557,7 +557,7 @@ static SET_COLOR_HT_PROC(set_color_ht_gt_4);
 
 /* Prepare to use a colored halftone, by loading the default cache. */
 static int
-gx_dc_ht_colored_load(gx_device_color * pdevc, const gs_imager_state * pis,
+gx_dc_ht_colored_load(gx_device_color * pdevc, const gs_gstate * pgs,
                       gx_device * ignore_dev, gs_color_select_t select)
 {
     /* TO_DO_DEVICEN */

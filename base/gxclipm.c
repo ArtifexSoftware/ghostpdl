@@ -119,7 +119,7 @@ const gx_device_mask_clip gs_mask_clip_device =
 static int
 mask_clip_fill_rectangle_hl_color(gx_device *dev,
     const gs_fixed_rect *rect,
-    const gs_imager_state *pis, const gx_drawing_color *pdcolor,
+    const gs_gstate *pgs, const gx_drawing_color *pdcolor,
     const gx_clip_path *pcpath)
 {
     gx_device_mask_clip *cdev = (gx_device_mask_clip *) dev;

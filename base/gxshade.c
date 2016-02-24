@@ -23,7 +23,7 @@
 #include "gscindex.h"
 #include "gscie.h"		/* requires gscspace.h */
 #include "gxdevcli.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxdht.h"		/* for computing # of different colors */
 #include "gxpaint.h"
 #include "gxshade.h"
@@ -54,10 +54,10 @@ static bool cs_eod(const shade_coord_stream_t * cs);
 void
 shade_next_init(shade_coord_stream_t * cs,
                 const gs_shading_mesh_params_t * params,
-                const gs_imager_state * pis)
+                const gs_gstate * pgs)
 {
     cs->params = params;
-    cs->pctm = &pis->ctm;
+    cs->pctm = &pgs->ctm;
     if (data_source_is_stream(params->DataSource)) {
         /*
          * Rewind the data stream iff it is reusable -- either a reusable
@@ -314,10 +314,10 @@ shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex, patch_co
 /* Initialize the common parts of the recursion state. */
 int
 shade_init_fill_state(shading_fill_state_t * pfs, const gs_shading_t * psh,
-                      gx_device * dev, gs_imager_state * pis)
+                      gx_device * dev, gs_gstate * pgs)
 {
     const gs_color_space *pcs = psh->params.ColorSpace;
-    float max_error = min(pis->smoothness, MAX_SMOOTHNESS);
+    float max_error = min(pgs->smoothness, MAX_SMOOTHNESS);
     bool is_lab;
     bool cs_lin_test;
 
@@ -334,7 +334,7 @@ shade_init_fill_state(shading_fill_state_t * pfs, const gs_shading_t * psh,
 
     pfs->cs_always_linear = false;
     pfs->dev = dev;
-    pfs->pis = pis;
+    pfs->pgs = pgs;
 top:
     pfs->direct_space = pcs;
     pfs->num_components = gs_color_space_num_components(pcs);
@@ -363,7 +363,7 @@ top:
         }
     if (num_colors <= 32) {
         /****** WRONG FOR MULTI-PLANE HALFTONES ******/
-        num_colors *= pis->dev_ht->components[0].corder.num_levels;
+        num_colors *= pgs->dev_ht->components[0].corder.num_levels;
     }
     if (psh->head.type == 2 || psh->head.type == 3) {
         max_error *= 0.25;
@@ -375,35 +375,35 @@ top:
         pfs->cc_max_error[ci] =
             (ranges == 0 ? max_error :
              max_error * (ranges[ci].rmax - ranges[ci].rmin));
-    if (pis->has_transparency && pis->trans_device != NULL) {
-        pfs->trans_device = pis->trans_device;
+    if (pgs->has_transparency && pgs->trans_device != NULL) {
+        pfs->trans_device = pgs->trans_device;
     } else {
         pfs->trans_device = dev;
     }
     /* If the CS is PS based and we have not yet converted to the ICC form
        then go ahead and do that now */
     if (gs_color_space_is_PSCIE(pcs) && pcs->icc_equivalent == NULL) {
-        gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &(is_lab), pis->memory);
+        gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &(is_lab), pgs->memory);
     }
-    rendering_params.black_point_comp = pis->blackptcomp;
+    rendering_params.black_point_comp = pgs->blackptcomp;
     rendering_params.graphics_type_tag = GS_PATH_TAG;
     rendering_params.override_icc = false;
     rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
-    rendering_params.rendering_intent = pis->renderingintent;
+    rendering_params.rendering_intent = pgs->renderingintent;
     rendering_params.cmm = gsCMM_DEFAULT;
     /* Grab the icc link transform that we need now */
     if (pcs->cmm_icc_profile_data != NULL) {
-        pfs->icclink = gsicc_get_link(pis, pis->trans_device, pcs, NULL,
-                                      &rendering_params, pis->memory);
+        pfs->icclink = gsicc_get_link(pgs, pgs->trans_device, pcs, NULL,
+                                      &rendering_params, pgs->memory);
         if (pfs->icclink == NULL)
             return_error(gs_error_VMerror);
     } else {
         if (pcs->icc_equivalent != NULL ) {
             /* We have a PS equivalent ICC profile.  We may need to go
                through special range adjustments in this case */
-            pfs->icclink = gsicc_get_link(pis, pis->trans_device,
+            pfs->icclink = gsicc_get_link(pgs, pgs->trans_device,
                                           pcs->icc_equivalent, NULL,
-                                          &rendering_params, pis->memory);
+                                          &rendering_params, pgs->memory);
             if (pfs->icclink == NULL)
                 return_error(gs_error_VMerror);
         } else {
@@ -423,14 +423,11 @@ top:
     * now, we will punt on those and let them go through the longer processing
     * steps */
     if (pfs->icclink == NULL)
-        if (pis->is_gstate)
-            cs_lin_test = !(using_alt_color_space((gs_state*)pis));
-        else
-            cs_lin_test = false;
+            cs_lin_test = !(using_alt_color_space((gs_gstate*)pgs));
     else
         cs_lin_test = pfs->icclink->is_identity;
 
-    if (cs_lin_test && !gx_has_transfer(pis, dev->color_info.num_components)) {
+    if (cs_lin_test && !gx_has_transfer(pgs, dev->color_info.num_components)) {
         pfs->cs_always_linear = true;
     }
     return 0;
@@ -446,6 +443,6 @@ shade_fill_path(const shading_fill_state_t * pfs, gx_path * ppath,
     params.rule = -1;		/* irrelevant */
     params.adjust = *fill_adjust;
     params.flatness = 0;	/* irrelevant */
-    return (*dev_proc(pfs->dev, fill_path)) (pfs->dev, pfs->pis, ppath,
+    return (*dev_proc(pfs->dev, fill_path)) (pfs->dev, pfs->pgs, ppath,
                                              &params, pdevc, NULL);
 }

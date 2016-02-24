@@ -58,7 +58,7 @@ typedef struct {
      * output device as an image.
      */
     int (* put_image)(gx_device * dev,
-                    gs_imager_state * pis, gx_device * target);
+                    gs_gstate * pgs, gx_device * target);
 } pdf14_procs_s;
 
 typedef pdf14_procs_s pdf14_procs_t;
@@ -111,7 +111,7 @@ struct pdf14_parent_color_s {
     byte depth;  /* used in clist writer cmd_put_color */
     uint max_gray;  /* Used to determine if device halftones */
     uint max_color; /* Causes issues if these are not maintained */
-    const gx_color_map_procs *(*get_cmap_procs)(const gs_imager_state *,
+    const gx_color_map_procs *(*get_cmap_procs)(const gs_gstate *,
                                                      const gx_device *);
     const gx_cm_color_map_procs *(*parent_color_mapping_procs)(const gx_device *);
     gx_color_index (*encode)(gx_device *, const gx_color_value value[]);
@@ -183,9 +183,9 @@ struct pdf14_ctx_s {
 typedef struct gs_devn_params_s gs_devn_params;
 #endif
 
-#ifndef gs_imager_state_DEFINED
-#  define gs_imager_state_DEFINED
-typedef struct gs_imager_state_s gs_imager_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
 #ifndef gx_device_DEFINED
@@ -228,7 +228,7 @@ typedef struct pdf14_device_s {
     gx_color_index drawn_comps;		/* Used for overprinting.  Passed from overprint compositor */
     gx_device * pclist_device;
     bool free_devicen;                  /* Used to avoid freeing a deviceN parameter from target clist device */
-    const gx_color_map_procs *(*save_get_cmap_procs)(const gs_imager_state *,
+    const gx_color_map_procs *(*save_get_cmap_procs)(const gs_gstate *,
                                                      const gx_device *);
     gx_device_color_info saved_target_color_info;
     dev_proc_encode_color(*saved_target_encode_color);
@@ -255,7 +255,7 @@ typedef	struct pdf14_device_s pdf14_clist_device;
 /*
  * Send a PDF 1.4 transparency compositor action to the specified device.
  */
-int send_pdf14trans(gs_imager_state * pis, gx_device * dev,
+int send_pdf14trans(gs_gstate * pgs, gx_device * dev,
     gx_device * * pcdev, gs_pdf14trans_params_t * pparams, gs_memory_t * mem);
 
 /*

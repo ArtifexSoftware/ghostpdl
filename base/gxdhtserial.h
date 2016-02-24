@@ -34,9 +34,9 @@ typedef struct gx_device_s  gx_device;
 typedef struct gx_device_halftone_s gx_device_halftone;
 #endif
 
-#ifndef gs_imager_state_DEFINED
-#  define gs_imager_state_DEFINED
-typedef struct gs_imager_state_s    gs_imager_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s    gs_gstate;
 #endif
 
 /*
@@ -70,7 +70,7 @@ extern  int     gx_ht_write( const gx_device_halftone * pdht,
  *
  * Returns the number of bytes read, or < 0 in the event of an error.
  */
-extern  int     gx_ht_read_and_install( gs_imager_state *   pis,
+extern  int     gx_ht_read_and_install( gs_gstate   *        pgs,
                                         const gx_device *   dev,
                                         const byte *        data,
                                         uint                size,

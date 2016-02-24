@@ -373,11 +373,11 @@ static int escv_setlogop (gx_device_vector * vdev, gs_logical_operation_t lop,
                            gs_logical_operation_t diff);
 /* Other state */
 #if ( 8 <= GS_VERSION_MAJOR )
-static bool escv_can_handle_hl_color (gx_device_vector * vdev, const gs_imager_state * pis,
+static bool escv_can_handle_hl_color (gx_device_vector * vdev, const gs_gstate * pgs,
                                        const gx_drawing_color * pdc);
-static int escv_setfillcolor (gx_device_vector * vdev, const gs_imager_state * pis,
+static int escv_setfillcolor (gx_device_vector * vdev, const gs_gstate * pgs,
                                const gx_drawing_color * pdc);
-static int escv_setstrokecolor (gx_device_vector * vdev, const gs_imager_state * pis,
+static int escv_setstrokecolor (gx_device_vector * vdev, const gs_gstate * pgs,
                                  const gx_drawing_color * pdc);
 #else
 static int escv_setfillcolor (gx_device_vector * vdev, const gx_drawing_color * pdc);
@@ -1408,7 +1408,7 @@ escv_setmiterlimit(gx_device_vector * vdev, double limit)
 
 #if ( 8 <= GS_VERSION_MAJOR )
 static bool
-escv_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis,
+escv_can_handle_hl_color(gx_device_vector * vdev, const gs_gstate * pgs,
                          const gx_drawing_color * pdc)
 {
   return false;
@@ -1418,7 +1418,7 @@ escv_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis,
 static int
 escv_setfillcolor(gx_device_vector * vdev,
 #if ( 8 <= GS_VERSION_MAJOR )
-                  const gs_imager_state * pis,
+                  const gs_gstate * pgs,
 #endif
                   const gx_drawing_color * pdc)
 {
@@ -1461,7 +1461,7 @@ escv_setfillcolor(gx_device_vector * vdev,
 static int
 escv_setstrokecolor(gx_device_vector * vdev,
 #if ( 8 <= GS_VERSION_MAJOR )
-                    const gs_imager_state * pis,
+                    const gs_gstate * pgs,
 #endif
                     const gx_drawing_color * pdc)
 {
@@ -2153,7 +2153,7 @@ escv_copy_mono(gx_device * dev, const byte * data,
   int				depth = 1;
 #if ( 8 <= GS_VERSION_MAJOR )
   /* FIXME! add for gs815 */
-  const gs_imager_state * pis = (const gs_imager_state *)0;
+  const gs_gstate * pgs = (const gs_gstate *)0;
 #endif
 
   if (id != gs_no_id && zero == gx_no_color_index && one != gx_no_color_index && data_x == 0) {
@@ -2162,7 +2162,7 @@ escv_copy_mono(gx_device * dev, const byte * data,
     color_set_pure(&dcolor, one);
     escv_setfillcolor(vdev,
 #if ( 8 <= GS_VERSION_MAJOR )
-                      pis,
+                      pgs,
 #endif
                       &dcolor); /* FIXME! gs815 */
   }
@@ -2250,7 +2250,7 @@ escv_copy_mono(gx_device * dev, const byte * data,
       color_set_pure(&color, one);
       code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
 #if ( 8 <= GS_VERSION_MAJOR )
-                                           pis,
+                                           pgs,
 #endif
                                            &color);
 
@@ -2365,7 +2365,7 @@ escv_fill_mask(gx_device * dev,
 
 #if ( 8 <= GS_VERSION_MAJOR )
   /* FIXME! add for gs815 */
-  const gs_imager_state * pis = (const gs_imager_state *)0;
+  const gs_gstate * pgs = (const gs_gstate *)0;
 #endif
 
   if (w <= 0 || h <= 0) return 0;
@@ -2373,7 +2373,7 @@ escv_fill_mask(gx_device * dev,
   if (depth > 1 ||
       gdev_vector_update_fill_color(vdev,
 #if ( 8 <= GS_VERSION_MAJOR )
-                                    pis,
+                                    pgs,
 #endif
                                     pdcolor) < 0 ||
       gdev_vector_update_clip_path(vdev, pcpath) < 0 ||
@@ -2475,7 +2475,7 @@ static const gx_image_enum_procs_t escv_image_enum_procs =
 /* Start processing an image. */
 static int
 escv_begin_image(gx_device * dev,
-                 const gs_imager_state * pis, const gs_image_t * pim,
+                 const gs_gstate * pgs, const gs_image_t * pim,
                  gs_image_format_t format, const gs_int_rect * prect,
                  const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
                  gs_memory_t * mem, gx_image_enum_common_t **pinfo)
@@ -2501,7 +2501,7 @@ escv_begin_image(gx_device * dev,
 
   if (pie == 0) return_error(gs_error_VMerror);
   pie->memory = mem;
-  code = gdev_vector_begin_image(vdev, pis, pim, format, prect,
+  code = gdev_vector_begin_image(vdev, pgs, pim, format, prect,
                                  pdcolor, pcpath, mem, &escv_image_enum_procs, pie);
   if (code < 0) return code;
 
@@ -2532,7 +2532,7 @@ escv_begin_image(gx_device * dev,
     }
   }
   if (!can_do) {
-    return gx_default_begin_image(dev, pis, pim, format, prect,
+    return gx_default_begin_image(dev, pgs, pim, format, prect,
                                   pdcolor, pcpath, mem, &pie->default_info);
   }
 
@@ -2551,7 +2551,7 @@ escv_begin_image(gx_device * dev,
 
   /* Write the image/colorimage/imagemask preamble. */
   gs_matrix_invert(&pim->ImageMatrix, &imat);
-  gs_matrix_multiply(&imat, &ctm_only(pis), &imat);
+  gs_matrix_multiply(&imat, &ctm_only(pgs), &imat);
 
   ty = imat.ty;
   bx = imat.xx * pim->Width + imat.yx * pim->Height + imat.tx;

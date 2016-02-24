@@ -19,6 +19,12 @@
 #ifndef gsrefct_INCLUDED
 #  define gsrefct_INCLUDED
 
+/* Remove this, hopefully */
+#ifndef gs_memory_DEFINED
+#  define gs_memory_DEFINED
+typedef struct gs_memory_s gs_memory_t;
+#endif
+
 /*
  * A reference-counted object must include the following header:
  *      rc_header rc;

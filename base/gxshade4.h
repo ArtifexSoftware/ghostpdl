@@ -176,7 +176,7 @@ typedef struct {
 int mesh_init_fill_state(mesh_fill_state_t * pfs,
                           const gs_shading_mesh_t * psh,
                           const gs_fixed_rect * rect_clip,
-                          gx_device * dev, gs_imager_state * pis);
+                          gx_device * dev, gs_gstate * pgs);
 
 int init_patch_fill_state(patch_fill_state_t *pfs);
 bool term_patch_fill_state(patch_fill_state_t *pfs);

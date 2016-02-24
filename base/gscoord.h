@@ -21,34 +21,34 @@
 #  define gscoord_INCLUDED
 
 /* Coordinate system modification */
-int gs_initmatrix(gs_state *),
-    gs_defaultmatrix(const gs_state *, gs_matrix *),
-    gs_currentmatrix(const gs_state *, gs_matrix *),
-    gs_setmatrix(gs_state *, const gs_matrix *),
-    gs_translate(gs_state *, double, double),
-    gs_translate_untransformed(gs_state *, double, double),
-    gs_scale(gs_state *, double, double),
-    gs_rotate(gs_state *, double),
-    gs_concat(gs_state *, const gs_matrix *);
+int gs_initmatrix(gs_gstate *),
+    gs_defaultmatrix(const gs_gstate *, gs_matrix *),
+    gs_currentmatrix(const gs_gstate *, gs_matrix *),
+    gs_setmatrix(gs_gstate *, const gs_matrix *),
+    gs_translate(gs_gstate *, double, double),
+    gs_translate_untransformed(gs_gstate *, double, double),
+    gs_scale(gs_gstate *, double, double),
+    gs_rotate(gs_gstate *, double),
+    gs_concat(gs_gstate *, const gs_matrix *);
 
 /* Extensions */
-int gs_setdefaultmatrix(gs_state *, const gs_matrix *),
-    gs_currentcharmatrix(gs_state *, gs_matrix *, bool),
-    gs_setcharmatrix(gs_state *, const gs_matrix *),
-    gs_settocharmatrix(gs_state *);
+int gs_setdefaultmatrix(gs_gstate *, const gs_matrix *),
+    gs_currentcharmatrix(gs_gstate *, gs_matrix *, bool),
+    gs_setcharmatrix(gs_gstate *, const gs_matrix *),
+    gs_settocharmatrix(gs_gstate *);
 
 /* Coordinate transformation */
-int gs_transform(gs_state *, double, double, gs_point *),
-    gs_dtransform(gs_state *, double, double, gs_point *),
-    gs_itransform(gs_state *, double, double, gs_point *),
-    gs_idtransform(gs_state *, double, double, gs_point *);
+int gs_transform(gs_gstate *, double, double, gs_point *),
+    gs_dtransform(gs_gstate *, double, double, gs_point *),
+    gs_itransform(gs_gstate *, double, double, gs_point *),
+    gs_idtransform(gs_gstate *, double, double, gs_point *);
 
-#ifndef gs_imager_state_DEFINED
-#  define gs_imager_state_DEFINED
-typedef struct gs_imager_state_s gs_imager_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
-int gs_imager_setmatrix(gs_imager_state *, const gs_matrix *);
-int gs_imager_idtransform(const gs_imager_state *, double, double, gs_point *);
+int gs_gstate_setmatrix(gs_gstate *, const gs_matrix *);
+int gs_gstate_idtransform(const gs_gstate *, double, double, gs_point *);
 
 #endif /* gscoord_INCLUDED */

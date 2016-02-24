@@ -118,7 +118,7 @@ typedef struct gs_client_order_ht_procs_s {
      */
 
     int (*create_order) (gx_ht_order * porder,
-                         gs_state * pgs,
+                         gs_gstate * pgs,
                          const gs_client_order_halftone * phcop,
                          gs_memory_t * mem);
 
@@ -213,7 +213,7 @@ void gs_setaccuratescreens(gs_memory_t *, bool);
 bool gs_currentaccuratescreens(gs_memory_t *);
 
 /* Initiate screen sampling with optional AccurateScreens. */
-int gs_screen_init_memory(gs_screen_enum *, gs_state *,
+int gs_screen_init_memory(gs_screen_enum *, gs_gstate *,
                           gs_screen_halftone *, bool, gs_memory_t *);
 
 #define gs_screen_init_accurate(penum, pgs, phsp, accurate)\

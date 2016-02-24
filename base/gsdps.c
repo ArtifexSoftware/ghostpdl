@@ -27,10 +27,10 @@
 /* ---------------- View clipping ---------------- */
 
 /* Forward references */
-static int common_viewclip(gs_state *, int);
+static int common_viewclip(gs_gstate *, int);
 
 int
-gs_initviewclip(gs_state * pgs)
+gs_initviewclip(gs_gstate * pgs)
 {
     gx_clip_path *pcpath = pgs->view_clip;
 
@@ -42,13 +42,13 @@ gs_initviewclip(gs_state * pgs)
 }
 
 int
-gs_viewclip(gs_state * pgs)
+gs_viewclip(gs_gstate * pgs)
 {
     return common_viewclip(pgs, gx_rule_winding_number);
 }
 
 int
-gs_eoviewclip(gs_state * pgs)
+gs_eoviewclip(gs_gstate * pgs)
 {
     return common_viewclip(pgs, gx_rule_even_odd);
 }
@@ -56,7 +56,7 @@ gs_eoviewclip(gs_state * pgs)
 /* This code is (almost) copied from common_clip in gspath.c. */
 /* Someday we'll find a way to merge them. */
 static int
-common_viewclip(gs_state * pgs, int rule)
+common_viewclip(gs_gstate * pgs, int rule)
 {
     gs_fixed_rect bbox;
     gx_clip_path rpath;
@@ -86,7 +86,7 @@ common_viewclip(gs_state * pgs, int rule)
 }
 
 int
-gs_viewclippath(gs_state * pgs)
+gs_viewclippath(gs_gstate * pgs)
 {
     gx_path cpath;
     gx_clip_path *pcpath = pgs->view_clip;

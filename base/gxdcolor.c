@@ -260,7 +260,7 @@ gx_dc_no_get_dev_halftone(const gx_device_color * pdevc)
 }
 
 static int
-gx_dc_no_load(gx_device_color *pdevc, const gs_imager_state *ignore_pis,
+gx_dc_no_load(gx_device_color *pdevc, const gs_gstate *ignore_pgs,
               gx_device *ignore_dev, gs_color_select_t ignore_select)
 {
     return 0;
@@ -315,7 +315,7 @@ gx_dc_no_write(
 static int
 gx_dc_no_read(
     gx_device_color *       pdevc,
-    const gs_imager_state * pis,                /* ignored */
+    const gs_gstate        * pgs,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,                /* ignored */
     int64_t		    offset,             /* ignored */
@@ -342,7 +342,7 @@ gx_dc_cannot_write(
 int
 gx_dc_cannot_read(
     gx_device_color *       pdevc,
-    const gs_imager_state * pis,                /* ignored */
+    const gs_gstate  *       pgs,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,                /* ignored */
     int64_t		    offset,             /* ignored */
@@ -365,7 +365,7 @@ gx_dc_no_get_nonzero_comps(
 /* ------ Null color ------ */
 
 static int
-gx_dc_null_load(gx_device_color *pdevc, const gs_imager_state *ignore_pis,
+gx_dc_null_load(gx_device_color *pdevc, const gs_gstate *ignore_pgs,
                 gx_device *ignore_dev, gs_color_select_t ignore_select)
 {
     return 0;
@@ -398,7 +398,7 @@ gx_dc_null_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
 static int
 gx_dc_null_read(
     gx_device_color *       pdevc,
-    const gs_imager_state * pis,                /* ignored */
+    const gs_gstate  *       pgs,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,                /* ignored */
     int64_t		    offset,             /* ignored */
@@ -422,7 +422,7 @@ gx_dc_devn_save_dc(const gx_device_color * pdevc, gx_device_color_saved * psdc)
 }
 
 static int
-gx_dc_devn_load(gx_device_color * pdevc, const gs_imager_state * ignore_pis,
+gx_dc_devn_load(gx_device_color * pdevc, const gs_gstate * ignore_pgs,
                 gx_device * ignore_dev, gs_color_select_t ignore_select)
 {
     return 0;
@@ -700,11 +700,11 @@ gx_devn_read_color(
  *  pdevc       pointer to the location in which to write the
  *              reconstructed device color
  *
- *  pis         pointer to the current imager state (ignored here)
+ *  pgs         pointer to the current gs_gstate (ignored here)
  *
  *  prior_devc  pointer to the current device color (this is provided
  *              separately because the device color is not part of the
- *              imager state; it is ignored here)
+ *              gs_gstate; it is ignored here)
  *
  *  dev         pointer to the current device, used to retrieve process
  *              color model information
@@ -724,7 +724,7 @@ gx_devn_read_color(
 static int
 gx_dc_devn_read(
     gx_device_color *       pdevc,
-    const gs_imager_state * pis,                /* ignored */
+    const gs_gstate  *       pgs,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,
     int64_t		    offset,             /* ignored */
@@ -771,7 +771,7 @@ gx_dc_pure_save_dc(const gx_device_color * pdevc, gx_device_color_saved * psdc)
 }
 
 static int
-gx_dc_pure_load(gx_device_color * pdevc, const gs_imager_state * ignore_pis,
+gx_dc_pure_load(gx_device_color * pdevc, const gs_gstate * ignore_pgs,
                 gx_device * ignore_dev, gs_color_select_t ignore_select)
 {
     return 0;
@@ -906,11 +906,11 @@ gx_dc_pure_write(
  *  pdevc       pointer to the location in which to write the
  *              reconstructed device color
  *
- *  pis         pointer to the current imager state (ignored here)
+ *  pgs         pointer to the current gs_gstate (ignored here)
  *
  *  prior_devc  pointer to the current device color (this is provided
  *              separately because the device color is not part of the
- *              imager state; it is ignored here)
+ *              gs_gstate; it is ignored here)
  *
  *  dev         pointer to the current device, used to retrieve process
  *              color model information
@@ -930,7 +930,7 @@ gx_dc_pure_write(
 static int
 gx_dc_pure_read(
     gx_device_color *       pdevc,
-    const gs_imager_state * pis,                /* ignored */
+    const gs_gstate        * pgs,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,
     int64_t		    offset,             /* ignored */

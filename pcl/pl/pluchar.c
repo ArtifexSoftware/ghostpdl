@@ -88,7 +88,7 @@ extern PIF_STATE pIFS;
  */
 static void
 pl_init_fc(const pl_font_t * plfont,
-           gs_state * pgs,
+           gs_gstate * pgs,
            int need_outline, FONTCONTEXT * pfc, bool width_request)
 {
     gs_font *pfont = plfont->pfont;
@@ -298,10 +298,9 @@ pl_ufst_char_width(uint char_code,
  */
 static int
 pl_ufst_make_char(gs_show_enum * penum,
-                  gs_state * pgs,
+                  gs_gstate * pgs,
                   gs_font * pfont, gs_char chr, FONTCONTEXT * pfc)
 {
-    gs_imager_state *pis = (gs_imager_state *) pgs;
     MEM_HANDLE memhdl;
     UW16 status, chIdloc = chr;
     gs_matrix sv_ctm, tmp_ctm;
@@ -425,7 +424,7 @@ pl_ufst_make_char(gs_show_enum * penum,
         }
 
         code =
-            image_outline_char(pols, &pis->ctm, pgs->path, pfont,
+            image_outline_char(pols, &pgs->ctm, pgs->path, pfont,
                                outline_sub_for_bitmap);
         if (code >= 0) {
             code = gs_fill(pgs);
@@ -451,7 +450,7 @@ pl_mt_encode_char(gs_font * pfont, gs_char pchr, gs_glyph_space_t not_used)
  * Set the current UFST font to be a MicroType font.
  */
 static int
-pl_set_mt_font(gs_state * pgs,
+pl_set_mt_font(gs_gstate * pgs,
                const pl_font_t * plfont, int need_outline, FONTCONTEXT * pfc)
 {
     pl_init_fc(plfont, pgs, need_outline, pfc, /* width request iff */
@@ -467,7 +466,7 @@ pl_set_mt_font(gs_state * pgs,
 /* Render a MicroType character. */
 static int
 pl_mt_build_char(gs_show_enum * penum,
-                 gs_state * pgs, gs_font * pfont, gs_char chr, gs_glyph glyph)
+                 gs_gstate * pgs, gs_font * pfont, gs_char chr, gs_glyph glyph)
 {
     const pl_font_t *plfont = (const pl_font_t *)pfont->client_data;
     FONTCONTEXT fc;

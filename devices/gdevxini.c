@@ -451,8 +451,8 @@ gdev_x_open(gx_device_X * xdev)
             wm_hints.flags = InputHint;
             wm_hints.input = False;
             XSetWMHints(xdev->dpy, xdev->win, &wm_hints);	/* avoid input focus */
-            class_hint.res_name = "ghostscript";
-            class_hint.res_class = "Ghostscript";
+            class_hint.res_name = (char *)"ghostscript";
+            class_hint.res_class = (char *)"Ghostscript";
             XSetClassHint(xdev->dpy, xdev->win, &class_hint);
         }
     }

@@ -91,14 +91,14 @@ pixel_resize(psdf_binary_writer * pbw, int width, int num_components,
 }
 
 static int
-convert_color(gx_device *pdev, const gs_color_space *pcs, const gs_imager_state * pis,
+convert_color(gx_device *pdev, const gs_color_space *pcs, const gs_gstate * pgs,
               gs_client_color *cc, float c[3])
 {
     int code;
     gx_device_color dc;
 
     cs_restrict_color(cc, pcs);
-    code = pcs->type->remap_color(cc, pcs, &dc, pis, pdev, gs_color_select_texture);
+    code = pcs->type->remap_color(cc, pcs, &dc, pgs, pdev, gs_color_select_texture);
     if (code < 0)
         return code;
     c[0] = (float)((int)(dc.colors.pure >> pdev->color_info.comp_shift[0]) & ((1 << pdev->color_info.comp_bits[0]) - 1));
@@ -110,7 +110,7 @@ convert_color(gx_device *pdev, const gs_color_space *pcs, const gs_imager_state 
 /* A heuristic choice of DCT compression parameters - see bug 687174. */
 static int
 choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
-                  const gs_imager_state * pis,
+                  const gs_gstate * pgs,
                   gs_c_param_list *list, gs_c_param_list **param,
                   stream_state *st)
 {
@@ -139,25 +139,25 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
     mdev.color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     /* Set mem device icc profile */
     gsicc_init_device_profile_struct((gx_device *) &mdev, NULL, 0);
-    if (pis) {
+    if (pgs) {
         /* Check for an RGB-like color space.
            To recognize that we make a matrix as it were a linear operator,
            suppress an ununiformity by subtracting the image of {0,0,0},
            and then check for giagonal domination.  */
         cc.paint.values[0] = cc.paint.values[1] = cc.paint.values[2] = MIN_FLOAT;
-        code = convert_color((gx_device *)&mdev, pcs, pis, &cc, c[3]);
+        code = convert_color((gx_device *)&mdev, pcs, pgs, &cc, c[3]);
         if (code < 0)
             return code;
         cc.paint.values[0] = MAX_FLOAT; cc.paint.values[1] = MIN_FLOAT; cc.paint.values[2] = MIN_FLOAT;
-        code = convert_color((gx_device *)&mdev, pcs, pis, &cc, c[0]);
+        code = convert_color((gx_device *)&mdev, pcs, pgs, &cc, c[0]);
         if (code < 0)
             return code;
         cc.paint.values[0] = MIN_FLOAT; cc.paint.values[1] = MAX_FLOAT; cc.paint.values[2] = MIN_FLOAT;
-        code = convert_color((gx_device *)&mdev, pcs, pis, &cc, c[1]);
+        code = convert_color((gx_device *)&mdev, pcs, pgs, &cc, c[1]);
         if (code < 0)
             return code;
         cc.paint.values[0] = MIN_FLOAT; cc.paint.values[1] = MIN_FLOAT; cc.paint.values[2] = MAX_FLOAT;
-        code = convert_color((gx_device *)&mdev, pcs, pis, &cc, c[2]);
+        code = convert_color((gx_device *)&mdev, pcs, pgs, &cc, c[2]);
         if (code < 0)
             return code;
         c[0][0] -= c[3][0]; c[0][1] -= c[3][1]; c[0][2] -= c[3][2];
@@ -180,11 +180,11 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
         /* Check for a Lab-like color space.
            Colors {v,0,0} should map to grays. */
         cc.paint.values[0] = MAX_FLOAT; cc.paint.values[1] = cc.paint.values[2] = 0;
-        convert_color((gx_device *)&mdev, pcs, pis, &cc, c[0]);
+        convert_color((gx_device *)&mdev, pcs, pgs, &cc, c[0]);
         cc.paint.values[0] /= 2;
-        convert_color((gx_device *)&mdev, pcs, pis, &cc, c[1]);
+        convert_color((gx_device *)&mdev, pcs, pgs, &cc, c[1]);
         cc.paint.values[0] /= 2;
-        convert_color((gx_device *)&mdev, pcs, pis, &cc, c[2]);
+        convert_color((gx_device *)&mdev, pcs, pgs, &cc, c[2]);
         c[0][1] -= c[0][0]; c[0][2] -= c[0][0];
         c[1][1] -= c[1][0]; c[1][2] -= c[1][0];
         c[2][1] -= c[2][0]; c[2][2] -= c[2][0];
@@ -192,7 +192,7 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
         c[1][1] = any_abs(c[1][1]); c[1][2] = any_abs(c[1][2]);
         c[2][1] = any_abs(c[2][1]); c[2][2] = any_abs(c[2][2]);
     }
-    if (pis && c[0][0] * domination > c[0][1] && c[0][0] * domination > c[0][2] &&
+    if (pgs && c[0][0] * domination > c[0][1] && c[0][0] * domination > c[0][2] &&
         c[1][0] * domination > c[1][1] && c[1][0] * domination > c[1][2] &&
         c[2][0] * domination > c[2][1] && c[2][0] * domination > c[2][2]) {
         /* Yes, it looks like an Lab color space.
@@ -228,7 +228,7 @@ error:
 /* Add the appropriate image compression filter, if any. */
 static int
 setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
-                        const gs_pixel_image_t * pim, const gs_imager_state * pis,
+                        const gs_pixel_image_t * pim, const gs_gstate * pgs,
                         bool lossless)
 {
     gx_device_psdf *pdev = pbw->dev;
@@ -341,7 +341,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
         gs_c_param_list list, *param = dict;
 
         gs_c_param_list_write(&list, mem);
-        code = choose_DCT_params((gx_device *)pbw->dev, pcs, pis, &list, &param, st);
+        code = choose_DCT_params((gx_device *)pbw->dev, pcs, pgs, &list, &param, st);
         if (code < 0) {
             gs_c_param_list_release(&list);
             return code;
@@ -413,7 +413,7 @@ do_downsample(const psdf_image_params *pdip, const gs_pixel_image_t *pim,
 /* Assumes do_downsampling() is true. */
 static int
 setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
-                   gs_pixel_image_t * pim, const gs_imager_state * pis,
+                   gs_pixel_image_t * pim, const gs_gstate * pgs,
                    double resolution, bool lossless)
 {
     gx_device_psdf *pdev = pbw->dev;
@@ -500,7 +500,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
                         (double)pim->Height / orig_height,
                         &pim->ImageMatrix);
         /****** NO ANTI-ALIASING YET ******/
-        if ((code = setup_image_compression(pbw, pdip, pim, pis, lossless)) < 0 ||
+        if ((code = setup_image_compression(pbw, pdip, pim, pgs, lossless)) < 0 ||
             (code = pixel_resize(pbw, pim->Width, ss->Colors,
                                  8, pdip->Depth)) < 0 ||
             (code = psdf_encode_binary(pbw, templat, st)) < 0 ||
@@ -545,7 +545,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
                         (double)pim->Height / orig_height,
                         &pim->ImageMatrix);
         /****** NO ANTI-ALIASING YET ******/
-        if ((code = setup_image_compression(pbw, pdip, pim, pis, lossless)) < 0 ||
+        if ((code = setup_image_compression(pbw, pdip, pim, pgs, lossless)) < 0 ||
             (code = pixel_resize(pbw, pim->Width, Colors,
                                  8, pdip->Depth)) < 0 ||
             (code = psdf_encode_binary(pbw, templat, st)) < 0 ||
@@ -562,10 +562,10 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
 /* Decive whether to convert an image to RGB. */
 bool
 psdf_is_converting_image_to_RGB(const gx_device_psdf * pdev,
-                const gs_imager_state * pis, const gs_pixel_image_t * pim)
+                const gs_gstate * pgs, const gs_pixel_image_t * pim)
 {
     return pdev->params.ConvertCMYKImagesToRGB &&
-            pis != 0 && pim->ColorSpace &&
+            pgs != 0 && pim->ColorSpace &&
             (gs_color_space_get_index(pim->ColorSpace) == gs_color_space_index_DeviceCMYK ||
             (gs_color_space_get_index(pim->ColorSpace) == gs_color_space_index_ICC
             && gsicc_get_default_type(pim->ColorSpace->cmm_icc_profile_data) ==
@@ -610,7 +610,7 @@ adjust_auto_filter_strategy_mono(gx_device_psdf *pdev,
 int
 psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
                          gs_pixel_image_t * pim, const gs_matrix * pctm,
-                         const gs_imager_state * pis, bool lossless, bool in_line)
+                         const gs_gstate * pgs, bool lossless, bool in_line)
 {
     /*
      * The following algorithms are per Adobe Tech Note # 5151,
@@ -693,17 +693,17 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
                 params.Dict = pdev->params.GrayImage.Dict;
                 adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict, pim, in_line);
             }
-            code = setup_downsampling(pbw, &params, pim, pis, resolution, lossless);
+            code = setup_downsampling(pbw, &params, pim, pgs, resolution, lossless);
         } else {
             adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict, pim, in_line);
-            code = setup_image_compression(pbw, &params, pim, pis, lossless);
+            code = setup_image_compression(pbw, &params, pim, pgs, lossless);
         }
         if (code < 0)
             return code;
         code = pixel_resize(pbw, pim->Width, ncomp, bpc, bpc_out);
     } else {
         /* Color */
-        bool cmyk_to_rgb = psdf_is_converting_image_to_RGB(pdev, pis, pim);
+        bool cmyk_to_rgb = psdf_is_converting_image_to_RGB(pdev, pgs, pim);
 
         if (cmyk_to_rgb) {
             gs_memory_t *mem = pdev->v_memory;
@@ -716,10 +716,10 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
             params.Depth = (cmyk_to_rgb ? 8 : bpc_out);
         if (do_downsample(&params, pim, resolution)) {
             adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict, pim, in_line);
-            code = setup_downsampling(pbw, &params, pim, pis, resolution, lossless);
+            code = setup_downsampling(pbw, &params, pim, pgs, resolution, lossless);
         } else {
             adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict, pim, in_line);
-            code = setup_image_compression(pbw, &params, pim, pis, lossless);
+            code = setup_image_compression(pbw, &params, pim, pgs, lossless);
         }
         if (code < 0)
             return code;
@@ -735,7 +735,7 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
                 (code = pixel_resize(pbw, pim->Width, 4, bpc, 8)) < 0
                 )
                 return code;
-            s_C2R_init(ss, pis);
+            s_C2R_init(ss, pgs);
         } else {
             code = pixel_resize(pbw, pim->Width, ncomp, bpc, bpc_out);
             if (code < 0)
@@ -823,7 +823,7 @@ psdf_setup_image_to_mask_filter(psdf_binary_writer *pbw, gx_device_psdf *pdev,
 int
 psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
                                gx_device_psdf *pdev, gs_pixel_image_t * pim,
-                               const gs_imager_state *pis)
+                               const gs_gstate *pgs)
 {   /* fixme: currently it's a stub convertion to mask. */
     int code;
     stream_state *ss = s_alloc_state(pdev->memory, s__image_colors_template.stype,
@@ -842,7 +842,7 @@ psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
                     gs_color_space_num_components(pim->ColorSpace),
                     pim->BitsPerComponent);
     s_image_colors_set_color_space((stream_image_colors_state *)ss,
-                    (gx_device *)pdev, pim->ColorSpace, pis, pim->Decode);
+                    (gx_device *)pdev, pim->ColorSpace, pgs, pim->Decode);
     pim->BitsPerComponent = pdev->color_info.comp_bits[0]; /* Same precision for all components. */
     for (i = 0; i < pdev->color_info.num_components; i++) {
         pim->Decode[i * 2 + 0] = 0;
@@ -856,7 +856,7 @@ psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
 int
 new_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
                          gs_pixel_image_t * pim, const gs_matrix * pctm,
-                         const gs_imager_state * pis, bool lossless, bool in_line,
+                         const gs_gstate * pgs, bool lossless, bool in_line,
                          bool colour_conversion)
 {
     /*
@@ -953,10 +953,10 @@ new_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
                 params.Dict = pdev->params.GrayImage.Dict;
                 adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict, pim, in_line);
             }
-            code = setup_downsampling(pbw, &params, pim, pis, resolution, lossless);
+            code = setup_downsampling(pbw, &params, pim, pgs, resolution, lossless);
         } else {
             adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict, pim, in_line);
-            code = setup_image_compression(pbw, &params, pim, pis, lossless);
+            code = setup_image_compression(pbw, &params, pim, pgs, lossless);
         }
         if (code < 0)
             return code;
@@ -967,10 +967,10 @@ new_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
             params.Depth = (colour_conversion ? 8 : bpc_out);
         if (do_downsample(&params, pim, resolution)) {
             adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict, pim, in_line);
-            code = setup_downsampling(pbw, &params, pim, pis, resolution, lossless);
+            code = setup_downsampling(pbw, &params, pim, pgs, resolution, lossless);
         } else {
             adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict, pim, in_line);
-            code = setup_image_compression(pbw, &params, pim, pis, lossless);
+            code = setup_image_compression(pbw, &params, pim, pgs, lossless);
         }
         if (code < 0)
             return code;

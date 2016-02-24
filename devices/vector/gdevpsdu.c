@@ -491,8 +491,8 @@ psdf_get_bits_rectangle(
 
 /*
  * Create compositor procedure for PostScript/PDF writer. Since these
- * devices directly support overprint (and have access to the imager
- * state), no compositor is required for overprint support. Hence, this
+ * devices directly support overprint (and have access to the gs_gstate),
+ * no compositor is required for overprint support. Hence, this
  * routine just recognizes and discards invocations of the overprint
  * compositor.
  */
@@ -501,7 +501,7 @@ psdf_create_compositor(
     gx_device *             dev,
     gx_device **            pcdev,
     const gs_composite_t *  pct,
-    gs_imager_state * pis,
+    gs_gstate             *  pgs,
     gs_memory_t *           mem,
     gx_device *             cdev)
 {
@@ -510,8 +510,8 @@ psdf_create_compositor(
         return 0;
     } else {
         if (dev->parent)
-            return gx_default_create_compositor(dev->parent, pcdev, pct, pis, mem, cdev);
+            return gx_default_create_compositor(dev->parent, pcdev, pct, pgs, mem, cdev);
         else
-            return gx_default_create_compositor(dev, pcdev, pct, pis, mem, cdev);
+            return gx_default_create_compositor(dev, pcdev, pct, pgs, mem, cdev);
     }
 }

@@ -170,7 +170,7 @@ sgi_next_row(sgi_cursor *pcur)
 
 static int
 sgi_print_page(gx_device_printer *pdev, FILE *pstream)
-{      sgi_cursor cur;
+{      sgi_cursor cur = {0};
        int code = sgi_begin_page(bdev, pstream, &cur);
        uint bpe, mask;
        int separation;

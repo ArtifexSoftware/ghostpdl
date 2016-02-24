@@ -60,14 +60,14 @@ typedef struct gs_color_space_s gs_color_space;
 typedef struct gx_device_color_s gx_device_color;
 #endif
 
-#ifndef gs_state_DEFINED
-#  define gs_state_DEFINED
-typedef struct gs_state_s gs_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
-#ifndef gs_imager_state_DEFINED
-#  define gs_imager_state_DEFINED
-typedef struct gs_imager_state_s gs_imager_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
 #ifndef gx_device_DEFINED
@@ -96,7 +96,7 @@ typedef struct gs_param_list_s gs_param_list;
  * is not being used since PS integers are nominally 32 bits.  Thus there
  * would be a problem using integers to pass pointer values on 64 bit systems.
  */
-int custom_color_callback_put_params(gs_state * pgs, gs_param_list * plist);
+int custom_color_callback_put_params(gs_gstate * pgs, gs_param_list * plist);
 
 /*
  * Get the custom client client callback parameter block pointer.  This value
@@ -105,20 +105,20 @@ int custom_color_callback_put_params(gs_state * pgs, gs_param_list * plist);
  * is not being used since PS intergers are nominally 32 bits.  Thus there
  * would be a problem using integers to pass pointer values on 64 bit systems.
  */
-int custom_color_callback_get_params(gs_state * pgs, gs_param_list * plist);
+int custom_color_callback_get_params(gs_gstate * pgs, gs_param_list * plist);
 
 /*
  * Check if we want to use the callback color processing logic for the given
  * Separation color space.
  */
 bool custom_color_callback_install_Separation(gs_color_space * pcs,
-                                                        gs_state * pgs);
+                                                        gs_gstate * pgs);
 
 /*
  * Check if we want to use the custom client callback processing logic for the
  * given DeviceN color space.
  */
-bool custom_color_callback_install_DeviceN(gs_color_space * pcs, gs_state * pgs);
+bool custom_color_callback_install_DeviceN(gs_color_space * pcs, gs_gstate * pgs);
 
 /*
  * Convert a Separation color into device colorants using the custom client
@@ -126,7 +126,7 @@ bool custom_color_callback_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
  */
 int gx_remap_concrete_custom_color_Separation(const frac * pconc,
         const gs_color_space * pcs, gx_device_color * pdc,
-        const gs_imager_state * pis, gx_device * dev, gs_color_select_t select);
+        const gs_gstate * pgs, gx_device * dev, gs_color_select_t select);
 
 /*
  * Convert a DeviceN color into device colorants using the custom client
@@ -134,7 +134,7 @@ int gx_remap_concrete_custom_color_Separation(const frac * pconc,
  */
 int gx_remap_concrete_custom_color_DeviceN(const frac * pconc,
         const gs_color_space * pcs, gx_device_color * pdc,
-        const gs_imager_state * pis, gx_device * dev, gs_color_select_t select);
+        const gs_gstate * pgs, gx_device * dev, gs_color_select_t select);
 
 /* "CLIENT COLOR CALLBACK APPLICATION INTERFACE" */
 /*
@@ -178,70 +178,70 @@ typedef struct client_custom_color_procs_s {
      * Install a DeviceGray color space.
      */
     bool (* install_DeviceGray)(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_gstate * pgs);
     /*
      * Convert a DeviceGray color into device color.
      */
     int (* remap_DeviceGray)(client_custom_color_params_t * pparams,
             const frac * pconc, const gs_color_space * pcs,
-            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device_color * pdc, const gs_gstate * pgs,
             gx_device * dev, gs_color_select_t select);
     /*
      * Install a DeviceRGB color space.
      */
     bool (* install_DeviceRGB)(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_gstate * pgs);
     /*
      * Convert a DeviceRGB color into device color.
      */
     int (* remap_DeviceRGB)(client_custom_color_params_t * pparams,
             const frac * pconc, const gs_color_space * pcs,
-            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device_color * pdc, const gs_gstate * pgs,
             gx_device * dev, gs_color_select_t select);
     /*
      * Install a DeviceCMYK color space.
      */
     bool (* install_DeviceCMYK)(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_gstate * pgs);
     /*
      * Convert a DeviceGray color into device color.
      */
     int (* remap_DeviceCMYK)(client_custom_color_params_t * pparams,
             const frac * pconc, const gs_color_space * pcs,
-            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device_color * pdc, const gs_gstate * pgs,
             gx_device * dev, gs_color_select_t select);
     /*
      * Check if we want to use the callback color processing logic for the
      * given Separation color space.
      */
     bool (* install_Separation)(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_gstate * pgs);
     /*
      * Convert a Separation color into device color.
      */
     int (* remap_Separation)(client_custom_color_params_t * pparams,
             const frac * pconc, const gs_color_space * pcs,
-            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device_color * pdc, const gs_gstate * pgs,
             gx_device * dev, gs_color_select_t select);
     /*
      * Check if we want to use the callback color processing logic for the
      * given DeviceN color space.
      */
     bool (* install_DeviceN)(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_gstate * pgs);
     /*
      * Convert a DeviceN color into device color.
      */
     int (* remap_DeviceN)(client_custom_color_params_t * pparams,
             const frac * pconc, const gs_color_space * pcs,
-            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device_color * pdc, const gs_gstate * pgs,
             gx_device * dev, gs_color_select_t select);
     /*
      * Check if we want to use the callback color processing logic for the
      * given CIEBasedA color space.
      */
     bool (* install_CIEBasedA)(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_gstate * pgs);
     /*
      * Please note that the 'complex' color spaces (CIEBasedA, CIEBasedABC,
      * CIEBasedDEF, CIEBasedDEFG, and ICCBased) have a different prototype,
@@ -253,59 +253,59 @@ typedef struct client_custom_color_procs_s {
      */
     int (* remap_CIEBasedA)(client_custom_color_params_t * pparams,
             const gs_client_color * pc, const gs_color_space * pcs,
-            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device_color * pdc, const gs_gstate * pgs,
             gx_device * dev, gs_color_select_t select);
     /*
      * Check if we want to use the callback color processing logic for the
      * given CIEBasedABC color space.
      */
     bool (* install_CIEBasedABC)(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_gstate * pgs);
     /*
      * Convert a CIEBasedABC color into device color.
      */
     int (* remap_CIEBasedABC)(client_custom_color_params_t * pparams,
             const gs_client_color * pc, const gs_color_space * pcs,
-            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device_color * pdc, const gs_gstate * pgs,
             gx_device * dev, gs_color_select_t select);
     /*
      * Check if we want to use the callback color processing logic for the
      * given CIEBasedDEF color space.
      */
     bool (* install_CIEBasedDEF)(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_gstate * pgs);
     /*
      * Convert a CIEBasedDEF color into device color.
      */
     int (* remap_CIEBasedDEF)(client_custom_color_params_t * pparams,
             const gs_client_color * pc, const gs_color_space * pcs,
-            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device_color * pdc, const gs_gstate * pgs,
             gx_device * dev, gs_color_select_t select);
     /*
      * Check if we want to use the callback color processing logic for the
      * given CIEBasedDEFG color space.
      */
     bool (* install_CIEBasedDEFG)(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_gstate * pgs);
     /*
      * Convert a CIEBasedDEFG color into device color.
      */
     int (* remap_CIEBasedDEFG)(client_custom_color_params_t * pparams,
             const gs_client_color * pc, const gs_color_space * pcs,
-            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device_color * pdc, const gs_gstate * pgs,
             gx_device * dev, gs_color_select_t select);
     /*
      * Check if we want to use the callback color processing logic for the
      * given ICCBased color space.
      */
     bool (* install_ICCBased)(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_gstate * pgs);
     /*
      * Convert a ICCBased color into device color.
      */
     int (* remap_ICCBased)(client_custom_color_params_t * pparams,
             const gs_client_color * pc, const gs_color_space * pcs,
-            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device_color * pdc, const gs_gstate * pgs,
             gx_device * dev, gs_color_select_t select);
 
 } client_custom_color_procs_t;

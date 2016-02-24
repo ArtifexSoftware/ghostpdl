@@ -23,7 +23,7 @@
 #include "gxblend.h"
 #include "gxdcconv.h"
 #include "gxdevcli.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gdevdevn.h"
 #include "gdevp14.h"
 #include "vdtrace.h"
@@ -127,7 +127,7 @@ copy_extra_planes(byte *des_buf, pdf14_buf *des_info, byte *src_buf,
 int
 pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
                            pdf14_buf *tos, cmm_profile_t *tos_profile,
-                           gs_memory_t *memory, gs_imager_state *pis, gx_device *dev,
+                           gs_memory_t *memory, gs_gstate *pgs, gx_device *dev,
                            bool knockout_buff)
 {
     /* Make copy of backdrop, but convert to new group's colorspace */
@@ -153,7 +153,7 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
         rendering_params.rendering_intent = gsPERCEPTUAL;
         rendering_params.cmm = gsCMM_DEFAULT;
         /* Request the ICC link for the transform that we will need to use */
-        icc_link = gsicc_get_link_profile(pis, dev, tos_profile, group_profile,
+        icc_link = gsicc_get_link_profile(pgs, dev, tos_profile, group_profile,
                                           &rendering_params, memory, false);
         if (icc_link == NULL)
             return gs_throw(gs_error_unknownerror, "ICC link failed.  Trans backdrop");
@@ -621,7 +621,7 @@ pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
  * it is unlikely that any device with a DeviceCMYK color model
  * would define this mapping on its own.
  *
- * If the imager state is not available, map as though the black
+ * If the gs_gstate is not available, map as though the black
  * generation and undercolor removal functions are identity
  * transformations. This mode is used primarily to support the
  * raster operation (rop) feature of PCL, which requires that
@@ -631,13 +631,13 @@ pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
  * often they are { pop 0 }.
  */
 void
-pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_imager_state *pis,
+pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_gstate *pgs,
                            frac r, frac g, frac b, frac out[])
 {
     uchar num_comp = dev->color_info.num_components;
 
-    if (pis != 0)
-        color_rgb_to_cmyk(r, g, b, pis, out, dev->memory);
+    if (pgs != 0)
+        color_rgb_to_cmyk(r, g, b, pgs, out, dev->memory);
     else {
         frac    c = frac_1 - r, m = frac_1 - g, y = frac_1 - b;
         frac    k = min(c, min(m, y));

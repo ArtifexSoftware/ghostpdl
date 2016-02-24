@@ -34,7 +34,7 @@ extern const int zcolor_remap_one_estack;
  * a change as of release 5.95; formerly, it returned 0 in this case.)
  */
 int zcolor_remap_one(i_ctx_t *, const ref *, gx_transfer_map *,
-                     const gs_state *, op_proc_t);
+                     const gs_gstate *, op_proc_t);
 
 /* Reload a cache with entries in [0..1] after sampling. */
 int zcolor_remap_one_finish(i_ctx_t *);

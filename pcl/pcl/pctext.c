@@ -508,7 +508,7 @@ show_char_invisible_foreground(const pcl_state_t * pcs, const gs_char * pbuff)
     gs_param_name ParamName = "PreserveTrMode";
     gs_param_typed_value Param;
     char *data;
-    gs_state *pgs = pcs->pgs;
+    gs_gstate *pgs = pcs->pgs;
     uint saved_mode = gs_currenttextrenderingmode(pgs);
     int code = 0;
 
@@ -594,7 +594,7 @@ show_char_invisible_foreground(const pcl_state_t * pcs, const gs_char * pbuff)
 static int
 show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
 {
-    gs_state *pgs = pcs->pgs;
+    gs_gstate *pgs = pcs->pgs;
     gs_rop3_t rop = (gs_rop3_t) (pcs->logical_op);
     const pl_font_t *plfont = pcs->font;
     gs_font *pfont = plfont->pfont;
@@ -625,7 +625,7 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
 
         /* allocate the image enumerator */
         pen =
-            gs_image_enum_alloc(gs_state_memory(pgs),
+            gs_image_enum_alloc(gs_gstate_memory(pgs),
                                 "bitmap font background");
         if (pen == 0) {
             pcl_grestore(pcs);
@@ -648,7 +648,7 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
 
         /* clean up */
         gs_image_cleanup(pen, pgs);
-        gs_free_object(gs_state_memory(pgs), pen, "bitmap font background");
+        gs_free_object(gs_gstate_memory(pgs), pen, "bitmap font background");
 
     } else {
         gs_text_params_t text;
@@ -775,7 +775,7 @@ pcl_show_chars_slow(pcl_state_t * pcs,
                     const gs_point * pscale,
                     const byte * str, uint size, bool literal)
 {
-    gs_state *pgs = pcs->pgs;
+    gs_gstate *pgs = pcs->pgs;
     gs_char buff[1];
     double rmargin = pcs->margins.right;
     double page_size = pcs->xfm_state.pd_size.x;
@@ -986,7 +986,7 @@ pcl_font_scale(pcl_state_t * pcs, gs_point * pscale)
 int
 pcl_text(const byte * str, uint size, pcl_state_t * pcs, bool literal)
 {
-    gs_state *pgs = pcs->pgs;
+    gs_gstate *pgs = pcs->pgs;
     gs_matrix user_ctm;
     gs_point scale;
     int code;
@@ -1064,7 +1064,7 @@ void
 pcl_do_underline(pcl_state_t * pcs)
 {
     if (pcs->underline_start.x != pcs->cap.x) {
-        gs_state *pgs = pcs->pgs;
+        gs_gstate *pgs = pcs->pgs;
         float y = pcs->underline_start.y + pcs->underline_position;
         int code;
 

@@ -355,7 +355,7 @@ new_page_size(pcl_state_t * pcs,
     double height_pts = psize->height * 0.01;
     float page_size[2];
     float old_page_size[2];
-    gs_state *pgs = pcs->pgs;
+    gs_gstate *pgs = pcs->pgs;
     gs_matrix mat;
     bool changed_page_size;
 

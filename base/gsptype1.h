@@ -47,7 +47,7 @@ typedef struct gs_pattern1_template_s {
     gs_rect BBox;
     float XStep;
     float YStep;
-    int (*PaintProc) (const gs_client_color *, gs_state *);
+    int (*PaintProc) (const gs_client_color *, gs_gstate *);
 } gs_pattern1_template_t;
 
 #define private_st_pattern1_template() /* in gspcolor.c */\
@@ -83,11 +83,11 @@ void gs_pattern1_init(gs_pattern1_template_t *);
  * PatternType 1 patterns.
  *
  * The gs_memory_t argument for gs_makepattern may be NULL, meaning use the
- * same allocator as for the gs_state argument.  Note that gs_makepattern
+ * same allocator as for the gs_gstate argument.  Note that gs_makepattern
  * uses rc_alloc_struct_1 to allocate pattern instances.
  */
 int gs_makepattern(gs_client_color *, const gs_client_pattern *,
-                   const gs_matrix *, gs_state *, gs_memory_t *);
+                   const gs_matrix *, gs_gstate *, gs_memory_t *);
 const gs_client_pattern *gs_getpattern(const gs_client_color *);
 
 /* Check device color for Pattern Type 1. */
@@ -153,7 +153,7 @@ extern int gs_makepixmappattern(
                                 long id,
                                 gs_color_space * pcspace,
                                 uint white_index,
-                                gs_state * pgs,
+                                gs_gstate * pgs,
                                 gs_memory_t * mem
                                 );
 
@@ -167,14 +167,14 @@ extern int gs_makebitmappattern_xform(
                                       bool mask,
                                       const gs_matrix * pmat,
                                       long id,
-                                      gs_state * pgs,
+                                      gs_gstate * pgs,
                                       gs_memory_t * mem
                                       );
 
 /*
  * High level pattern support for pixmap patterns, if the interpreter supports them.
  */
-extern int pixmap_high_level_pattern(gs_state * pgs);
+extern int pixmap_high_level_pattern(gs_gstate * pgs);
 
 #define gs_makebitmappattern(pcc, tile, mask, pgs, mem)                 \
     gs_makebitmappattern_xform(pcc, tile, mask, 0, no_UniqueID, pgs, mem)

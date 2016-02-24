@@ -32,9 +32,9 @@
 typedef struct gx_device_s gx_device;
 #endif
 
-#ifndef gs_imager_state_DEFINED
-#  define gs_imager_state_DEFINED
-typedef struct gs_imager_state_s gs_imager_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
 /*
@@ -114,7 +114,7 @@ struct gx_device_color_type_s {
      */
 
 #define dev_color_proc_load(proc)\
-  int proc(gx_device_color *pdevc, const gs_imager_state *pis,\
+  int proc(gx_device_color *pdevc, const gs_gstate *pgs,\
     gx_device *dev, gs_color_select_t select)
                          dev_color_proc_load((*load));
 
@@ -202,10 +202,10 @@ struct gx_device_color_type_s {
      * changed, so informaition from the prior device color will no
      * longer be available.
      *
-     * For the read method, the imager state is passed as an operand,
+     * For the read method, the gs_gstate is passed as an operand,
      * which allows the routine to access the current device halftone
      * (always required). Also passed in a pointer to the existing device
-     * color, as this is not part of the imager state. If the writer was
+     * color, as this is not part of the gs_gstate. If the writer was
      * passed a non-null psdc operand, *prior_devc must reflect the
      * information contained in *psdc.
      *
@@ -223,7 +223,7 @@ struct gx_device_color_type_s {
                         dev_color_proc_write((*write));
 
 #define dev_color_proc_read(proc)\
-  int proc(gx_device_color *pdevc, const gs_imager_state * pis,\
+  int proc(gx_device_color *pdevc, const gs_gstate * pgs,\
     const gx_device_color *prior_devc, const gx_device * dev, int64_t offset,\
     const byte *data, uint size, gs_memory_t *mem)
                         dev_color_proc_read((*read));
@@ -300,10 +300,10 @@ extern  dev_color_proc_get_phase(gx_dc_ht_get_phase);
 
 /* Set up device color 1 for writing into a mask cache */
 /* (e.g., the character cache). */
-int gx_set_device_color_1(gs_state * pgs);
+int gx_set_device_color_1(gs_gstate * pgs);
 
 /* Remap the color if necessary. */
-int gx_remap_color(gs_state *);
+int gx_remap_color(gs_gstate *);
 
 #define gx_set_dev_color(pgs)\
     color_is_set(gs_currentdevicecolor_inline(pgs)) ? 0 :\
@@ -316,12 +316,12 @@ int gx_remap_color(gs_state *);
   color_unset(gs_altdevicecolor_inline(pgs))
 
 /* Load the halftone cache in preparation for drawing. */
-#define gx_color_load_select(pdevc, pis, dev, select)\
-  (*(pdevc)->type->load)(pdevc, pis, dev, select)
-#define gx_color_load(pdevc, pis, dev)\
-  gx_color_load_select(pdevc, pis, dev, gs_color_select_texture)
-#define gs_state_color_load(pgs)\
-  gx_color_load(gs_currentdevicecolor_inline(pgs), (const gs_imager_state *)(pgs),\
+#define gx_color_load_select(pdevc, pgs, dev, select)\
+  (*(pdevc)->type->load)(pdevc, pgs, dev, select)
+#define gx_color_load(pdevc, pgs, dev)\
+  gx_color_load_select(pdevc, pgs, dev, gs_color_select_texture)
+#define gs_gstate_color_load(pgs)\
+  gx_color_load(gs_currentdevicecolor_inline(pgs), (const gs_gstate *)(pgs),\
                 (pgs)->device)
 
 /* Fill a rectangle with a color. */

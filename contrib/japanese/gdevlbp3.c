@@ -181,7 +181,7 @@ CompressImage(gx_device_printer *pDev, struct bounding *pBox, FILE *fp, const ch
         int	x, y, i, count = 255;
         int	Xres = (int)pDev->x_pixels_per_inch;
         int	LineSize = gdev_mem_bytes_per_scan_line((gx_device *)pDev);
-        byte	*Buf, oBuf[128], c_prev, c_cur, c_tmp;
+        byte	*Buf, oBuf[128], c_prev = 0, c_cur, c_tmp;
         long	DataSize = 0;
 
         /* ----==== Printer initialize ====---- */

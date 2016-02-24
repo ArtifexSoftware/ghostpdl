@@ -1165,7 +1165,7 @@ int pdf_write_saved_string(gx_device_pdf * pdev, gs_string * pstr);
 /* Store a copy of clipping path. */
 int pdf_remember_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath);
 
-int pdf_check_soft_mask(gx_device_pdf * pdev, gs_imager_state * pis);
+int pdf_check_soft_mask(gx_device_pdf * pdev, gs_gstate * pgs);
 
 /* Test whether the clip path needs updating. */
 bool pdf_must_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath);

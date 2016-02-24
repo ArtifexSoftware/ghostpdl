@@ -124,7 +124,7 @@ px_gstate_client_alloc(gs_memory_t * mem)
 }
 
 static int
-px_gstate_client_copy_for(void *to, void *from, gs_state_copy_reason_t reason)
+px_gstate_client_copy_for(void *to, void *from, gs_gstate_copy_reason_t reason)
 {
 #define pxfrom ((px_gstate_t *)from)
 #define pxto ((px_gstate_t *)to)
@@ -213,7 +213,7 @@ px_gstate_client_free(void *old, gs_memory_t * mem)
     gs_free_object(mem, old, "px_gstate_free");
 }
 
-static const gs_state_client_procs px_gstate_procs = {
+static const gs_gstate_client_procs px_gstate_procs = {
     px_gstate_client_alloc,
     0,                          /* copy -- superseded by copy_for */
     px_gstate_client_free,
@@ -237,7 +237,7 @@ px_gstate_alloc(gs_memory_t * mem)
 
 /* Initialize a px_gstate_t. */
 void
-px_gstate_init(px_gstate_t * pxgs, gs_state * pgs)
+px_gstate_init(px_gstate_t * pxgs, gs_gstate * pgs)
 {
     pxgs->halftone.method = eDeviceBest;
     pxgs->halftone.set = false;
@@ -245,7 +245,7 @@ px_gstate_init(px_gstate_t * pxgs, gs_state * pgs)
     /* halftone.thresholds was initialized at alloc time */
     px_gstate_reset(pxgs);
     if (pgs)
-        gs_state_set_client(pgs, pxgs, &px_gstate_procs, true);
+        gs_gstate_set_client(pgs, pxgs, &px_gstate_procs, true);
 }
 
 /* Initialize the graphics state for a page. */
@@ -253,7 +253,7 @@ px_gstate_init(px_gstate_t * pxgs, gs_state * pgs)
 int
 px_initgraphics(px_state_t * pxs)
 {
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
 
     px_gstate_reset(pxs->pxgs);
     gs_initgraphics(pgs);
@@ -324,7 +324,7 @@ px_initclip(px_state_t * pxs)
 }
 
 static bool
-px_is_currentcolor_pattern(const gs_state * pgs)
+px_is_currentcolor_pattern(const gs_gstate * pgs)
 {
     return (gs_color_space_num_components(gs_currentcolorspace(pgs)) < 1);
 }
@@ -333,7 +333,7 @@ px_is_currentcolor_pattern(const gs_state * pgs)
 int
 px_image_color_space(gs_image_t * pim,
                      const px_bitmap_params_t * params,
-                     const gs_string * palette, const gs_state * pgs)
+                     const gs_string * palette, const gs_gstate * pgs)
 {
 
     int depth = params->depth;
@@ -406,7 +406,7 @@ px_image_color_space(gs_image_t * pim,
         pim->Decode[1] = (float)((1 << depth) - 1);
     /* NB - this needs investigation */
     if (cie_space && !px_is_currentcolor_pattern(pgs)) {
-        code = gs_setrgbcolor((gs_state *) pgs, 0.0, 0.0, 0.0);
+        code = gs_setrgbcolor((gs_gstate *) pgs, 0.0, 0.0, 0.0);
     }
     return code;
 }
@@ -435,7 +435,7 @@ const byte apxPopGS[] = { 0, 0 };
 int
 pxPopGS(px_args_t * par, px_state_t * pxs)
 {
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
     px_gstate_t *pxgs = pxs->pxgs;
     int code;
 
@@ -453,7 +453,7 @@ pxPopGS(px_args_t * par, px_state_t * pxs)
     }
     px_purge_pattern_cache(pxs, eTempPattern);
     code = gs_grestore(pgs);
-    pxs->pxgs = gs_state_client_data(pgs);
+    pxs->pxgs = gs_gstate_client_data(pgs);
     return code;
 }
 
@@ -461,13 +461,13 @@ const byte apxPushGS[] = { 0, 0 };
 int
 pxPushGS(px_args_t * par, px_state_t * pxs)
 {
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
     int code = gs_gsave(pgs);
     px_gstate_t *pxgs;
 
     if (code < 0)
         return code;
-    pxgs = pxs->pxgs = gs_state_client_data(pgs);
+    pxgs = pxs->pxgs = gs_gstate_client_data(pgs);
     if (pxgs->palette.data)
         pxgs->palette_is_shared = true;
     ++(pxgs->stack_depth);
@@ -678,7 +678,7 @@ const byte apxSetClipIntersect[] = {
 int
 pxSetClipIntersect(px_args_t * par, px_state_t * pxs)
 {
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
     pxeClipRegion_t clip_region = par->pv[0]->value.i;
     int code;
 
@@ -720,7 +720,7 @@ int
 pxSetClipRectangle(px_args_t * par, px_state_t * pxs)
 {
     px_args_t args;
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
     int code;
 
     check_clip_region(par, pxs);
@@ -782,7 +782,7 @@ int
 pxSetLineDash(px_args_t * par, px_state_t * pxs)
 {
     px_gstate_t *pxgs = pxs->pxgs;
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
 
     if (par->pv[0]) {
         float pattern[MAX_DASH_ELEMENTS * 2];

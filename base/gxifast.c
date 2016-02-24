@@ -29,7 +29,7 @@
 #include "gxdevice.h"
 #include "gxcmap.h"
 #include "gxdcolor.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxdevmem.h"
 #include "gdevmem.h"		/* for mem_mono_device */
 #include "gxcpath.h"
@@ -554,9 +554,9 @@ image_render_simple(gx_image_enum * penum, const byte * buffer, int data_x,
     if (h == 0)
         return 0;
     if ((!DC_IS_NULL(pdc0) &&
-         (code = gx_color_load(pdc0, penum->pis, dev)) < 0) ||
+         (code = gx_color_load(pdc0, penum->pgs, dev)) < 0) ||
         (!DC_IS_NULL(pdc1) &&
-         (code = gx_color_load(pdc1, penum->pis, dev)) < 0)
+         (code = gx_color_load(pdc1, penum->pgs, dev)) < 0)
         )
         return code;
     if (penum->line == 0) {	/* A direct BitBlt is possible. */

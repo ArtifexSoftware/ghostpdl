@@ -55,7 +55,7 @@ struct gx_image_type_s {
      * structure, but ImageType 2 images must compute it.
      */
 #define image_proc_source_size(proc)\
-  int proc(const gs_imager_state *pis, const gs_image_common_t *pic,\
+  int proc(const gs_gstate *pgs, const gs_image_common_t *pic,\
     gs_int_point *psize)
 
     image_proc_source_size((*source_size));

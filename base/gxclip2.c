@@ -155,7 +155,7 @@ tile_clip_set_phase(gx_device_tile_clip * cdev, int px, int py)
 /* Fill a rectangle with high level devn color by tiling with the mask. */
 static int
 tile_clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
-                const gs_imager_state *pis, const gx_drawing_color *pdcolor, 
+                const gs_gstate *pgs, const gx_drawing_color *pdcolor, 
                 const gx_clip_path *pcpath)
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;

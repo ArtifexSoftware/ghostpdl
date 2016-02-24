@@ -23,7 +23,7 @@
 #include "gsutil.h"		/* for gs_next_ids */
 #include "gxcmap.h"
 #include "gxcspace.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gsovrc.h"
 #include "gsstate.h"
 #include "gsdevice.h"
@@ -163,7 +163,7 @@ gs_cspace_new_DeviceCMYK(gs_memory_t *mem)
 
 /* For use in initializing ICC color spaces for XPS */
 gs_color_space *
-gs_cspace_new_ICC(gs_memory_t *pmem, gs_state * pgs, int components)
+gs_cspace_new_ICC(gs_memory_t *pmem, gs_gstate * pgs, int components)
 {
     gsicc_manager_t *icc_manage = pgs->icc_manager;
     int code = 0;
@@ -263,7 +263,7 @@ gs_color_space_restrict_color(gs_client_color *pcc, const gs_color_space *pcs)
 
 /* Install a DeviceGray color space. */
 static int
-gx_install_DeviceGray(gs_color_space * pcs, gs_state * pgs)
+gx_install_DeviceGray(gs_color_space * pcs, gs_gstate * pgs)
 {
     /* If we already have profile data installed, nothing to do here. */
     if (pcs->cmm_icc_profile_data != NULL)
@@ -347,7 +347,7 @@ void rc_decrement_only_cs(gs_color_space *pcs, const char *cname)
     }
 }
 
-void cs_adjust_counts_icc(gs_state *pgs, int delta)
+void cs_adjust_counts_icc(gs_gstate *pgs, int delta)
 {
     gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
 
@@ -360,14 +360,14 @@ void cs_adjust_counts_icc(gs_state *pgs, int delta)
 
 /* Null color space installation procedure. */
 int
-gx_no_install_cspace(gs_color_space * pcs, gs_state * pgs)
+gx_no_install_cspace(gs_color_space * pcs, gs_gstate * pgs)
 {
     return 0;
 }
 
 /* Install a DeviceRGB color space. */
 static int
-gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
+gx_install_DeviceRGB(gs_color_space * pcs, gs_gstate * pgs)
 {
     /* If we already have profile_data, nothing to do here. */
     if (pcs->cmm_icc_profile_data != NULL)
@@ -386,7 +386,7 @@ gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
 
 /* Install a DeviceCMYK color space. */
 static int
-gx_install_DeviceCMYK(gs_color_space * pcs, gs_state * pgs)
+gx_install_DeviceCMYK(gs_color_space * pcs, gs_gstate * pgs)
 {
     /* If we already have profile data, nothing to do here. */
     if (pcs->cmm_icc_profile_data != NULL)
@@ -414,17 +414,16 @@ gx_install_DeviceCMYK(gs_color_space * pcs, gs_state * pgs)
  * special verson that supports overprint mode.
  */
 int
-gx_spot_colors_set_overprint(const gs_color_space * pcs, gs_state * pgs)
+gx_spot_colors_set_overprint(const gs_color_space * pcs, gs_gstate * pgs)
 {
-    gs_imager_state *       pis = (gs_imager_state *)pgs;
     gs_overprint_params_t   params;
 
-    if ((params.retain_any_comps = pis->overprint))
+    if ((params.retain_any_comps = pgs->overprint))
         params.retain_spot_comps = true;
     pgs->effective_overprint_mode = 0;
     params.k_value = 0;
     params.blendspot = false;
-    return gs_state_update_overprint(pgs, &params);
+    return gs_gstate_update_overprint(pgs, &params);
 }
 
 /*
@@ -434,17 +433,16 @@ gx_spot_colors_set_overprint(const gs_color_space * pcs, gs_state * pgs)
  * devices
  */
 int
-gx_simulated_set_overprint(const gs_color_space * pcs, gs_state * pgs)
+gx_simulated_set_overprint(const gs_color_space * pcs, gs_gstate * pgs)
 {
-    gs_imager_state *       pis = (gs_imager_state *)pgs;
     gs_overprint_params_t   params;
 
-    if ((params.retain_any_comps = pis->overprint))
+    if ((params.retain_any_comps = pgs->overprint))
         params.retain_spot_comps = true;
     pgs->effective_overprint_mode = 0;
     params.k_value = 0;
     params.blendspot = true;
-    return gs_state_update_overprint(pgs, &params);
+    return gs_gstate_update_overprint(pgs, &params);
 }
 
 static bool
@@ -615,7 +613,7 @@ check_rgb_color_model_comps(gx_device * dev)
  * the set of drawn components.
  */
 static int
-gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
+gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_gstate * pgs)
 {
     gx_device *             dev = pgs->device;
     gx_device_color_info *  pcinfo = (dev == 0 ? 0 : &dev->color_info);
@@ -643,7 +641,7 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
    overprinting is no longer previewed. We follow the same logic here.
    If the source and destination ICC profiles do not match, then there is
    effectively no overprinting enabled.  This is bug 692433 */
-int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_state * pgs)
+int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
 {
     gx_device *             dev = pgs->device;
     gx_device_color_info *  pcinfo = (dev == 0 ? 0 : &dev->color_info);
@@ -737,14 +735,14 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_state * pgs)
     params.drawn_comps = drawn_comps;
     params.k_value = 0;
     params.blendspot = false;
-    return gs_state_update_overprint(pgs, &params);
+    return gs_gstate_update_overprint(pgs, &params);
 }
 
 /* This is used for the case where we have an RGB based device, but we want
    to simulate CMY overprinting.  Color management is pretty much thrown out
    the window when doing this. */
 
-int gx_set_overprint_rgb(const gs_color_space * pcs, gs_state * pgs)
+int gx_set_overprint_rgb(const gs_color_space * pcs, gs_gstate * pgs)
 {
     gx_device *             dev = pgs->device;
     gx_device_color_info *  pcinfo = (dev == 0 ? 0 : &dev->color_info);
@@ -827,12 +825,12 @@ int gx_set_overprint_rgb(const gs_color_space * pcs, gs_state * pgs)
     params.retain_any_comps = true;
     params.retain_spot_comps = false;
     params.drawn_comps = drawn_comps;
-    return gs_state_update_overprint(pgs, &params);
+    return gs_gstate_update_overprint(pgs, &params);
 }
 
 /* A stub for a color mapping linearity check, when it is inapplicable. */
 int
-gx_cspace_no_linear(const gs_color_space *cs, const gs_imager_state * pis,
+gx_cspace_no_linear(const gs_color_space *cs, const gs_gstate * pgs,
                 gx_device * dev,
                 const gs_client_color *c0, const gs_client_color *c1,
                 const gs_client_color *c2, const gs_client_color *c3,
@@ -842,10 +840,10 @@ gx_cspace_no_linear(const gs_color_space *cs, const gs_imager_state * pis,
 }
 
 static inline int
-cc2dc(const gs_color_space *cs, const gs_imager_state * pis, gx_device *dev,
+cc2dc(const gs_color_space *cs, const gs_gstate * pgs, gx_device *dev,
             gx_device_color *dc, const gs_client_color *cc)
 {
-    return cs->type->remap_color(cc, cs, dc, pis, dev, gs_color_select_texture);
+    return cs->type->remap_color(cc, cs, dc, pgs, dev, gs_color_select_texture);
 }
 
 static inline void
@@ -909,7 +907,7 @@ is_dc_nearly_linear(const gx_device *dev, const gx_device_color *c,
 
 /* Default color mapping linearity check, a 2-points case. */
 static int
-gx_cspace_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
+gx_cspace_is_linear_in_line(const gs_color_space *cs, const gs_gstate * pgs,
                 gx_device *dev,
                 const gs_client_color *c0, const gs_client_color *c1,
                 float smoothness)
@@ -920,20 +918,20 @@ gx_cspace_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pi
     uchar ndev = dev->color_info.num_components;
     int code;
 
-    code = cc2dc(cs, pis, dev, &d[0], c0);
+    code = cc2dc(cs, pgs, dev, &d[0], c0);
     if (code < 0)
         return code;
-    code = cc2dc(cs, pis, dev, &d[1], c1);
+    code = cc2dc(cs, pgs, dev, &d[1], c1);
     if (code < 0)
         return code;
     interpolate_cc(&c01a, c0, c1, 0.3, n);
-    code = cc2dc(cs, pis, dev, &d01a, &c01a);
+    code = cc2dc(cs, pgs, dev, &d01a, &c01a);
     if (code < 0)
         return code;
     if (!is_dc_nearly_linear(dev, &d01a, &d[0], &d[1], 0.3, ndev, smoothness))
         return 0;
     interpolate_cc(&c01b, c0, c1, 0.7, n);
-    code = cc2dc(cs, pis, dev, &d01b, &c01b);
+    code = cc2dc(cs, pgs, dev, &d01b, &c01b);
     if (code < 0)
         return code;
     if (!is_dc_nearly_linear(dev, &d01b, &d[0], &d[1], 0.7, ndev, smoothness))
@@ -943,7 +941,7 @@ gx_cspace_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pi
 
 /* Default color mapping linearity check, a triangle case. */
 static int
-gx_cspace_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * pis,
+gx_cspace_is_linear_in_triangle(const gs_color_space *cs, const gs_gstate * pgs,
                 gx_device *dev,
                 const gs_client_color *c0, const gs_client_color *c1,
                 const gs_client_color *c2, float smoothness)
@@ -962,39 +960,39 @@ gx_cspace_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state 
 
     int code;
 
-    code = cc2dc(cs, pis, dev, &d[0], c0);
+    code = cc2dc(cs, pgs, dev, &d[0], c0);
     if (code < 0)
         return code;
-    code = cc2dc(cs, pis, dev, &d[1], c1);
+    code = cc2dc(cs, pgs, dev, &d[1], c1);
     if (code < 0)
         return code;
-    code = cc2dc(cs, pis, dev, &d[2], c2);
+    code = cc2dc(cs, pgs, dev, &d[2], c2);
     if (code < 0)
         return code;
 
     interpolate_cc(&c01, c0, c1, 0.5, n);
-    code = cc2dc(cs, pis, dev, &d01, &c01);
+    code = cc2dc(cs, pgs, dev, &d01, &c01);
     if (code < 0)
         return code;
     if (!is_dc_nearly_linear(dev, &d01, &d[0], &d[1], 0.5, ndev, smoothness))
         return 0;
 
     interpolate_cc(&c012, c2, &c01, 2.0 / 3, n);
-    code = cc2dc(cs, pis, dev, &d012, &c012);
+    code = cc2dc(cs, pgs, dev, &d012, &c012);
     if (code < 0)
         return code;
     if (!is_dc_nearly_linear(dev, &d012, &d[2], &d01, 2.0 / 3, ndev, smoothness))
         return 0;
 
     interpolate_cc(&c12, c1, c2, 0.5, n);
-    code = cc2dc(cs, pis, dev, &d12, &c12);
+    code = cc2dc(cs, pgs, dev, &d12, &c12);
     if (code < 0)
         return code;
     if (!is_dc_nearly_linear(dev, &d12, &d[1], &d[2], 0.5, ndev, smoothness))
         return 0;
 
     interpolate_cc(&c20, c2, c0, 0.5, n);
-    code = cc2dc(cs, pis, dev, &d20, &c20);
+    code = cc2dc(cs, pgs, dev, &d20, &c20);
     if (code < 0)
         return code;
     if (!is_dc_nearly_linear(dev, &d20, &d[2], &d[0], 0.5, ndev, smoothness))
@@ -1004,7 +1002,7 @@ gx_cspace_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state 
 
 /* Default color mapping linearity check. */
 int
-gx_cspace_is_linear_default(const gs_color_space *cs, const gs_imager_state * pis,
+gx_cspace_is_linear_default(const gs_color_space *cs, const gs_gstate * pgs,
                 gx_device *dev,
                 const gs_client_color *c0, const gs_client_color *c1,
                 const gs_client_color *c2, const gs_client_color *c3,
@@ -1017,13 +1015,13 @@ gx_cspace_is_linear_default(const gs_color_space *cs, const gs_imager_state * pi
     if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
         return_error(gs_error_rangecheck);
     if (c2 == NULL)
-        return gx_cspace_is_linear_in_line(cs, pis, dev, c0, c1, smoothness);
-    code = gx_cspace_is_linear_in_triangle(cs, pis, dev, c0, c1, c2, smoothness);
+        return gx_cspace_is_linear_in_line(cs, pgs, dev, c0, c1, smoothness);
+    code = gx_cspace_is_linear_in_triangle(cs, pgs, dev, c0, c1, c2, smoothness);
     if (code <= 0)
         return code;
     if (c3 == NULL)
         return 1;
-    return gx_cspace_is_linear_in_triangle(cs, pis, dev, c1, c2, c3, smoothness);
+    return gx_cspace_is_linear_in_triangle(cs, pgs, dev, c1, c2, c3, smoothness);
 }
 
 /* Serialization. */

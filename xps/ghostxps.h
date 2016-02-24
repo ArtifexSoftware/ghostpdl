@@ -64,7 +64,7 @@
 #include "gxfont1.h"
 #include "gxfont42.h"
 #include "gxfcache.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 
 #include "gzstate.h"
 #include "gzpath.h"
@@ -385,7 +385,7 @@ struct xps_context_s
 {
     void *instance;
     gs_memory_t *memory;
-    gs_state *pgs;
+    gs_gstate *pgs;
     gs_font_dir *fontdir;
     int preserve_tr_mode; /* for avoiding charpath with pdfwrite */
 

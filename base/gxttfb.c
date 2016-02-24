@@ -33,7 +33,7 @@
 #include "gdebug.h"
 #include "memory_.h"
 #include "math_.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxpaint.h"
 #include "gzspotan.h"
 #include <stdarg.h>
@@ -646,7 +646,7 @@ static int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
         gs_font_type42 *pfont, const gs_log2_scale_point *pscale, gx_ttfExport *e, ttfOutliner *o)
 {
     /* Not completed yet. */
-    gs_imager_state is_stub;
+    gs_gstate gs_stub;
     gx_fill_params params;
     gx_device_color devc_stub;
     int code;
@@ -697,8 +697,8 @@ static int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
         code = gx_path_bbox(path, &bbox);
         if (code < 0)
             return code;
-        memset(&is_stub, 0, sizeof(is_stub));
-        is_stub.memory = padev->memory;
+        memset(&gs_stub, 0, sizeof(gs_stub));
+        gs_stub.memory = padev->memory;
         set_nonclient_dev_color(&devc_stub, 1);
         params.rule = gx_rule_winding_number;
         params.adjust.x = params.adjust.y = 0;
@@ -710,7 +710,7 @@ static int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
                 transpose_path(path);
             gx_san_begin(padev);
             code = dev_proc(padev, fill_path)((gx_device *)padev,
-                            &is_stub, path, &params, &devc_stub, NULL);
+                            &gs_stub, path, &params, &devc_stub, NULL);
             gx_san_end(padev);
             if (code >= 0)
                 code = gx_san_generate_stems(padev, OVERALL_HINT && h.transpose,

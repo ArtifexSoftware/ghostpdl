@@ -27,7 +27,7 @@
 #include "gxdcolor.h"
 #include "gxfarith.h"
 #include "gxfixed.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxpath.h"
 #include "gxshade.h"
 #include "gxdevcli.h"
@@ -124,7 +124,7 @@ Fb_fill_region(Fb_fill_state_t * pfs, const gs_fixed_rect *rect)
 int
 gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
                              const gs_fixed_rect * rect_clip,
-                             gx_device * dev, gs_imager_state * pis)
+                             gx_device * dev, gs_gstate * pgs)
 {
     const gs_shading_Fb_t * const psh = (const gs_shading_Fb_t *)psh0;
     gs_matrix save_ctm;
@@ -132,15 +132,15 @@ gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     float x[2], y[2];
     Fb_fill_state_t state;
 
-    code = shade_init_fill_state((shading_fill_state_t *) & state, psh0, dev, pis);
+    code = shade_init_fill_state((shading_fill_state_t *) & state, psh0, dev, pgs);
     if (code < 0)
         return code;
     state.psh = psh;
     /****** HACK FOR FIXED-POINT MATRIX MULTIPLY ******/
-    gs_currentmatrix((gs_state *) pis, &save_ctm);
-    gs_concat((gs_state *) pis, &psh->params.Matrix);
-    state.ptm = pis->ctm;
-    gs_setmatrix((gs_state *) pis, &save_ctm);
+    gs_currentmatrix((gs_gstate *) pgs, &save_ctm);
+    gs_concat((gs_gstate *) pgs, &psh->params.Matrix);
+    state.ptm = pgs->ctm;
+    gs_setmatrix((gs_gstate *) pgs, &save_ctm);
     /* Compute the parameter X and Y ranges. */
     {
         gs_rect pbox;
@@ -197,10 +197,10 @@ A_fill_region(A_fill_state_t * pfs, patch_fill_state_t *pfs1)
     double h0 = pfs->u0, h1 = pfs->u1;
     patch_curve_t curve[4];
 
-    gs_point_transform2fixed(&pfs1->pis->ctm, x0 + pfs->delta.y * h0, y0 - pfs->delta.x * h0, &curve[0].vertex.p);
-    gs_point_transform2fixed(&pfs1->pis->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[1].vertex.p);
-    gs_point_transform2fixed(&pfs1->pis->ctm, x1 + pfs->delta.y * h1, y1 - pfs->delta.x * h1, &curve[2].vertex.p);
-    gs_point_transform2fixed(&pfs1->pis->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[3].vertex.p);
+    gs_point_transform2fixed(&pfs1->pgs->ctm, x0 + pfs->delta.y * h0, y0 - pfs->delta.x * h0, &curve[0].vertex.p);
+    gs_point_transform2fixed(&pfs1->pgs->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[1].vertex.p);
+    gs_point_transform2fixed(&pfs1->pgs->ctm, x1 + pfs->delta.y * h1, y1 - pfs->delta.x * h1, &curve[2].vertex.p);
+    gs_point_transform2fixed(&pfs1->pgs->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[3].vertex.p);
     curve[0].vertex.cc[0] = pfs->t0; /* The element cc[1] is set to a dummy value against */
     curve[1].vertex.cc[0] = pfs->t1; /* interrupts while an idle priocessing in gxshade.6.c .  */
     curve[2].vertex.cc[0] = pfs->t1;
@@ -216,7 +216,7 @@ A_fill_region(A_fill_state_t * pfs, patch_fill_state_t *pfs1)
 static inline int
 gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
                             const gs_fixed_rect *clip_rect,
-                            gx_device * dev, gs_imager_state * pis)
+                            gx_device * dev, gs_gstate * pgs)
 {
     const gs_shading_A_t *const psh = (const gs_shading_A_t *)psh0;
     gs_function_t * const pfn = psh->params.Function;
@@ -231,7 +231,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     int code;
 
     state.psh = psh;
-    code = shade_init_fill_state((shading_fill_state_t *)&pfs1, psh0, dev, pis);
+    code = shade_init_fill_state((shading_fill_state_t *)&pfs1, psh0, dev, pgs);
     if (code < 0)
         return code;
     pfs1.Function = pfn;
@@ -265,7 +265,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     state.u1 = t_rect.q.x;
     state.t0 = t0 * dd + d0;
     state.t1 = t1 * dd + d0;
-    gs_distance_transform(state.delta.x, state.delta.y, &ctm_only(pis),
+    gs_distance_transform(state.delta.x, state.delta.y, &ctm_only(pgs),
                           &dist);
     state.length = hypot(dist.x, dist.y);	/* device space line length */
     code = A_fill_region(&state, &pfs1);
@@ -300,7 +300,7 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 int
 gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
                             const gs_fixed_rect * rect_clip,
-                            gx_device * dev, gs_imager_state * pis)
+                            gx_device * dev, gs_gstate * pgs)
 {
     int code;
 
@@ -310,7 +310,7 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
         vd_set_scale(0.01);
         vd_set_origin(0, 0);
     }
-    code = gs_shading_A_fill_rectangle_aux(psh0, rect, rect_clip, dev, pis);
+    code = gs_shading_A_fill_rectangle_aux(psh0, rect, rect_clip, dev, pgs);
     if (VD_TRACE_AXIAL_PATCH && vd_allowed('s'))
         vd_release_dc;
     return code;
@@ -432,14 +432,14 @@ R_tensor_annulus(patch_fill_state_t *pfs,
         for (j = 0; j < 4; j++) {
             int jj = (j + inside) % 4;
 
-            if (gs_point_transform2fixed(&pfs->pis->ctm,         p[j*3 + 0].x, p[j*3 + 0].y, &curve[jj].vertex.p) < 0)
-                gs_point_transform2fixed_clamped(&pfs->pis->ctm, p[j*3 + 0].x, p[j*3 + 0].y, &curve[jj].vertex.p);
+            if (gs_point_transform2fixed(&pfs->pgs->ctm,         p[j*3 + 0].x, p[j*3 + 0].y, &curve[jj].vertex.p) < 0)
+                gs_point_transform2fixed_clamped(&pfs->pgs->ctm, p[j*3 + 0].x, p[j*3 + 0].y, &curve[jj].vertex.p);
 
-            if (gs_point_transform2fixed(&pfs->pis->ctm,         p[j*3 + 1].x, p[j*3 + 1].y, &curve[jj].control[0]) < 0)
-                gs_point_transform2fixed_clamped(&pfs->pis->ctm, p[j*3 + 1].x, p[j*3 + 1].y, &curve[jj].control[0]);
+            if (gs_point_transform2fixed(&pfs->pgs->ctm,         p[j*3 + 1].x, p[j*3 + 1].y, &curve[jj].control[0]) < 0)
+                gs_point_transform2fixed_clamped(&pfs->pgs->ctm, p[j*3 + 1].x, p[j*3 + 1].y, &curve[jj].control[0]);
 
-            if (gs_point_transform2fixed(&pfs->pis->ctm,         p[j*3 + 2].x, p[j*3 + 2].y, &curve[jj].control[1]) < 0)
-                gs_point_transform2fixed_clamped(&pfs->pis->ctm, p[j*3 + 2].x, p[j*3 + 2].y, &curve[jj].control[1]);
+            if (gs_point_transform2fixed(&pfs->pgs->ctm,         p[j*3 + 2].x, p[j*3 + 2].y, &curve[jj].control[1]) < 0)
+                gs_point_transform2fixed_clamped(&pfs->pgs->ctm, p[j*3 + 2].x, p[j*3 + 2].y, &curve[jj].control[1]);
             curve[j].straight = (((j + inside) & 1) != 0);
         }
         curve[(0 + inside) % 4].vertex.cc[0] = t0;
@@ -557,11 +557,11 @@ R_fill_triangle_new(patch_fill_state_t *pfs, const gs_rect *rect,
     p0.c = c;
     p1.c = c;
     p2.c = c;
-    code = gs_point_transform2fixed(&pfs->pis->ctm, x0, y0, &p0.p);
+    code = gs_point_transform2fixed(&pfs->pgs->ctm, x0, y0, &p0.p);
     if (code >= 0)
-        code = gs_point_transform2fixed(&pfs->pis->ctm, x1, y1, &p1.p);
+        code = gs_point_transform2fixed(&pfs->pgs->ctm, x1, y1, &p1.p);
     if (code >= 0)
-        code = gs_point_transform2fixed(&pfs->pis->ctm, x2, y2, &p2.p);
+        code = gs_point_transform2fixed(&pfs->pgs->ctm, x2, y2, &p2.p);
     if (code >= 0) {
         c->t[0] = c->t[1] = t;
         patch_resolve_color(c, pfs);
@@ -802,7 +802,7 @@ R_fill_rect_with_const_color(patch_fill_state_t *pfs, const gs_fixed_rect *clip_
     return gx_fill_rectangle_device_rop(fixed2int_pixround(clip_rect->p.x), fixed2int_pixround(clip_rect->p.y),
                                         fixed2int_pixround(clip_rect->q.x) - fixed2int_pixround(clip_rect->p.x),
                                         fixed2int_pixround(clip_rect->q.y) - fixed2int_pixround(clip_rect->p.y),
-                                        &dc, pfs->dev, pfs->pis->log_op);
+                                        &dc, pfs->dev, pfs->pgs->log_op);
 #else
     /* Can't apply fill_rectangle, because the clist writer device doesn't pass
        the clipping path with fill_recatangle. Convert into trapezoids instead.
@@ -1224,7 +1224,7 @@ is_radial_shading_large(double x0, double y0, double r0, double x1, double y1, d
 static int
 gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
                             const gs_fixed_rect *clip_rect,
-                            gx_device * dev, gs_imager_state * pis)
+                            gx_device * dev, gs_gstate * pgs)
 {
     const gs_shading_R_t *const psh = (const gs_shading_R_t *)psh0;
     float d0 = psh->params.Domain[0], d1 = psh->params.Domain[1];
@@ -1239,7 +1239,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 
     if (r0 == 0 && r1 == 0)
         return 0; /* PLRM requires to paint nothing. */
-    code = shade_init_fill_state((shading_fill_state_t *)&pfs1, psh0, dev, pis);
+    code = shade_init_fill_state((shading_fill_state_t *)&pfs1, psh0, dev, pgs);
     if (code < 0)
         return code;
     pfs1.Function = psh->params.Function;
@@ -1308,7 +1308,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 int
 gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
                             const gs_fixed_rect * rect_clip,
-                            gx_device * dev, gs_imager_state * pis)
+                            gx_device * dev, gs_gstate * pgs)
 {
     int code;
 
@@ -1318,7 +1318,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
         vd_set_scale(0.01);
         vd_set_origin(0, 0);
     }
-    code = gs_shading_R_fill_rectangle_aux(psh0, rect, rect_clip, dev, pis);
+    code = gs_shading_R_fill_rectangle_aux(psh0, rect, rect_clip, dev, pgs);
     if (VD_TRACE_FUNCTIONAL_PATCH && vd_allowed('s'))
         vd_release_dc;
     return code;

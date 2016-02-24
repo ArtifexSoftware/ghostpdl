@@ -45,7 +45,7 @@ int pdf_finish_cie_space(gx_device_pdf *pdev, cos_array_t *pca, cos_dict_t *pcd,
  * Create an ICCBased color space.  This is a single-use procedure,
  * broken out only for readability.
  */
-int pdf_iccbased_color_space(gx_device_pdf *pdev, const gs_imager_state * pis, cos_value_t *pvalue,
+int pdf_iccbased_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, cos_value_t *pvalue,
                              const gs_color_space *pcs, cos_array_t *pca);
 
 /*

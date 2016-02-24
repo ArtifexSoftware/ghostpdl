@@ -38,7 +38,7 @@
 #include "gsdevice.h"		/* requires gsmatrix.h */
 #include "gxdcolor.h"		/* for gx_device_black/white */
 #include "gxiparam.h"		/* for image source size */
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxpaint.h"
 #include "gxpath.h"
 #include "gxcpath.h"
@@ -562,7 +562,7 @@ int flp_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, g
     return 0;
 }
 
-int flp_fill_path(gx_device *dev, const gs_imager_state *pis, gx_path *ppath,
+int flp_fill_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     const gx_fill_params *params,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
@@ -571,12 +571,12 @@ int flp_fill_path(gx_device *dev, const gs_imager_state *pis, gx_path *ppath,
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
+        return default_subclass_fill_path(dev, pgs, ppath, params, pdcolor, pcpath);
 
     return 0;
 }
 
-int flp_stroke_path(gx_device *dev, const gs_imager_state *pis, gx_path *ppath,
+int flp_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     const gx_stroke_params *params,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
@@ -585,7 +585,7 @@ int flp_stroke_path(gx_device *dev, const gs_imager_state *pis, gx_path *ppath,
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_stroke_path(dev, pis, ppath, params, pdcolor, pcpath);
+        return default_subclass_stroke_path(dev, pgs, ppath, params, pdcolor, pcpath);
 
     return 0;
 }
@@ -659,7 +659,7 @@ int flp_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed fx1, fixed fy
     return 0;
 }
 
-int flp_begin_image(gx_device *dev, const gs_imager_state *pis, const gs_image_t *pim,
+int flp_begin_image(gx_device *dev, const gs_gstate *pgs, const gs_image_t *pim,
     gs_image_format_t format, const gs_int_rect *prect,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
@@ -669,7 +669,7 @@ int flp_begin_image(gx_device *dev, const gs_imager_state *pis, const gs_image_t
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_begin_image(dev, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
+        return default_subclass_begin_image(dev, pgs, pim, format, prect, pdcolor, pcpath, memory, pinfo);
 
     return 0;
 }
@@ -765,7 +765,7 @@ static const gx_image_enum_procs_t flp_image_enum_procs = {
     flp_image_end_image
 };
 
-int flp_begin_typed_image(gx_device *dev, const gs_imager_state *pis, const gs_matrix *pmat,
+int flp_begin_typed_image(gx_device *dev, const gs_gstate *pgs, const gs_matrix *pmat,
     const gs_image_common_t *pic, const gs_int_rect *prect,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
@@ -778,7 +778,7 @@ int flp_begin_typed_image(gx_device *dev, const gs_imager_state *pis, const gs_m
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_begin_typed_image(dev, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
+        return default_subclass_begin_typed_image(dev, pgs, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
 
     if (pic->type->index == 1) {
         const gs_image_t *pim1 = (const gs_image_t *)pic;
@@ -819,14 +819,14 @@ int flp_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
 }
 
 int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
-    gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev)
+    gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
 {
     int code = SkipPage(dev);
 
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+        return default_subclass_create_compositor(dev, pcdev, pcte, pgs, memory, cdev);
 
     return 0;
 }
@@ -894,7 +894,7 @@ static const gs_text_enum_procs_t flp_text_procs = {
  * in which case we create a text enumerator with our dummy procedures, or we are leaving it
  * up to the device, in which case we simply pass on the 'begin' method to the device.
  */
-int flp_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_params_t *text,
+int flp_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t *text,
     gs_font *font, gx_path *path, const gx_device_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gs_text_enum_t **ppte)
 {
@@ -906,24 +906,24 @@ int flp_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_params_t 
      * secondly  because op_show_restore executes an unconditional grestore, assuming
      * that a gsave has been done simply *because* its a tringwidth operation !
      */
-    if (dev->DisablePageHandler || ((text->operation & TEXT_DO_NONE) && (text->operation & TEXT_RETURN_WIDTH) && pis->text_rendering_mode != 3))
+    if (dev->DisablePageHandler || ((text->operation & TEXT_DO_NONE) && (text->operation & TEXT_RETURN_WIDTH) && pgs->text_rendering_mode != 3))
         /* Note that the high level devices *must* be given the opportunity to 'see' the
          * stringwidth operation, or they won;t be able to cache the glyphs properly.
          * So always pass stringwidth operations to the child.
          */
-        return default_subclass_text_begin(dev, pis, text, font, path, pdcolor, pcpath, memory, ppte);
+        return default_subclass_text_begin(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
 
     code = SkipPage(dev);
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_text_begin(dev, pis, text, font, path, pdcolor, pcpath, memory, ppte);
+        return default_subclass_text_begin(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
 
     rc_alloc_struct_1(penum, flp_text_enum_t, &st_flp_text_enum, memory,
                   return_error(gs_error_VMerror), "gdev_flp_text_begin");
     penum->rc.free = rc_free_text_enum;
     code = gs_text_enum_init((gs_text_enum_t *)penum, &flp_text_procs,
-                         dev, pis, text, font, path, pdcolor, pcpath, memory);
+                         dev, pgs, text, font, path, pdcolor, pcpath, memory);
     if (code < 0) {
         gs_free_object(memory, penum, "gdev_flp_text_begin");
         return code;
@@ -934,63 +934,63 @@ int flp_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_params_t 
 }
 
 int flp_begin_transparency_group(gx_device *dev, const gs_transparency_group_params_t *ptgp,
-    const gs_rect *pbbox, gs_imager_state *pis, gs_memory_t *mem)
+    const gs_rect *pbbox, gs_gstate *pgs, gs_memory_t *mem)
 {
     int code = SkipPage(dev);
 
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_begin_transparency_group(dev, ptgp, pbbox, pis, mem);
+        return default_subclass_begin_transparency_group(dev, ptgp, pbbox, pgs, mem);
 
     return 0;
 }
 
-int flp_end_transparency_group(gx_device *dev, gs_imager_state *pis)
+int flp_end_transparency_group(gx_device *dev, gs_gstate *pgs)
 {
     int code = SkipPage(dev);
 
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_end_transparency_group(dev, pis);
+        return default_subclass_end_transparency_group(dev, pgs);
 
     return 0;
 }
 
 int flp_begin_transparency_mask(gx_device *dev, const gx_transparency_mask_params_t *ptmp,
-    const gs_rect *pbbox, gs_imager_state *pis, gs_memory_t *mem)
+    const gs_rect *pbbox, gs_gstate *pgs, gs_memory_t *mem)
 {
     int code = SkipPage(dev);
 
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_begin_transparency_mask(dev, ptmp, pbbox, pis, mem);
+        return default_subclass_begin_transparency_mask(dev, ptmp, pbbox, pgs, mem);
 
     return 0;
 }
 
-int flp_end_transparency_mask(gx_device *dev, gs_imager_state *pis)
+int flp_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
 {
     int code = SkipPage(dev);
 
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_end_transparency_mask(dev, pis);
+        return default_subclass_end_transparency_mask(dev, pgs);
 
     return 0;
 }
 
-int flp_discard_transparency_layer(gx_device *dev, gs_imager_state *pis)
+int flp_discard_transparency_layer(gx_device *dev, gs_gstate *pgs)
 {
     int code = SkipPage(dev);
 
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_discard_transparency_layer(dev, pis);
+        return default_subclass_discard_transparency_layer(dev, pgs);
 
     return 0;
 }
@@ -1009,14 +1009,14 @@ int flp_pattern_manage(gx_device *dev, gx_bitmap_id id,
 }
 
 int flp_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
-        const gs_imager_state *pis, const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
+        const gs_gstate *pgs, const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
     int code = SkipPage(dev);
 
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_fill_rectangle_hl_color(dev, rect, pis, pdcolor, pcpath);
+        return default_subclass_fill_rectangle_hl_color(dev, rect, pgs, pdcolor, pcpath);
 
     return 0;
 }
@@ -1065,38 +1065,38 @@ int flp_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
     return 0;
 }
 
-int flp_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
+int flp_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
 {
     int code = SkipPage(dev);
 
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_fillpage(dev, pis, pdevc);
+        return default_subclass_fillpage(dev, pgs, pdevc);
 
     return 0;
 }
 
-int flp_push_transparency_state(gx_device *dev, gs_imager_state *pis)
+int flp_push_transparency_state(gx_device *dev, gs_gstate *pgs)
 {
     int code = SkipPage(dev);
 
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_push_transparency_state(dev, pis);
+        return default_subclass_push_transparency_state(dev, pgs);
 
     return 0;
 }
 
-int flp_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
+int flp_pop_transparency_state(gx_device *dev, gs_gstate *pgs)
 {
     int code = SkipPage(dev);
 
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_pop_transparency_state(dev, pis);
+        return default_subclass_pop_transparency_state(dev, pgs);
 
     return 0;
 }

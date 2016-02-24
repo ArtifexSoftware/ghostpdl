@@ -41,7 +41,7 @@ typedef enum {
 typedef struct arc_curve_params_s {
     /* The following are set once. */
     gx_path *ppath;
-    gs_imager_state *pis;
+    gs_gstate *pgs;
     gs_point center;            /* (not used by arc_add) */
     double radius;
     /* The following may be updated dynamically. */
@@ -59,34 +59,34 @@ typedef struct arc_curve_params_s {
 
 /* Forward declarations */
 static int arc_add(const arc_curve_params_t *arc, bool is_quadrant);
-static int gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
+static int gs_gstate_arc_add(gx_path * ppath, gs_gstate * pgs, bool clockwise,
             double axc, double ayc, double arad, double aang1, double aang2,
                   bool add_line, gs_point *p3);
 
 int
-gx_setcurrentpoint_from_path(gs_imager_state *pis, gx_path *path)
+gx_setcurrentpoint_from_path(gs_gstate *pgs, gx_path *path)
 {
     gs_point pt;
 
     pt.x = fixed2float(path->position.x);
     pt.y = fixed2float(path->position.y);
-    gx_setcurrentpoint(pis, pt.x, pt.y);
-    pis->current_point_valid = true;
+    gx_setcurrentpoint(pgs, pt.x, pt.y);
+    pgs->current_point_valid = true;
     return 0;
 }
 
 static inline int
-gs_arc_add_inline(gs_state *pgs, bool cw, double xc, double yc, double rad,
+gs_arc_add_inline(gs_gstate *pgs, bool cw, double xc, double yc, double rad,
                     double a1, double a2, bool add)
 {
     gs_point p3;
-    int code = gs_imager_arc_add(pgs->path, (gs_imager_state *)pgs, cw, xc, yc, rad, a1, a2, add, &p3);
+    int code = gs_gstate_arc_add(pgs->path, pgs, cw, xc, yc, rad, a1, a2, add, &p3);
 
     if (code < 0)
         return code;
 
 #if !PRECISE_CURRENTPOINT
-    return gx_setcurrentpoint_from_path((gs_imager_state *)pgs, pgs->path);
+    return gx_setcurrentpoint_from_path(pgs, pgs->path);
 #else
     pgs->current_point_valid = true;
     return gs_point_transform(p3.x, p3.y, &ctm_only(pgs), &pgs->current_point);
@@ -95,21 +95,21 @@ gs_arc_add_inline(gs_state *pgs, bool cw, double xc, double yc, double rad,
 }
 
 int
-gs_arc(gs_state * pgs,
+gs_arc(gs_gstate * pgs,
        double xc, double yc, double r, double ang1, double ang2)
 {
     return gs_arc_add_inline(pgs, false, xc, yc, r, ang1, ang2, true);
 }
 
 int
-gs_arcn(gs_state * pgs,
+gs_arcn(gs_gstate * pgs,
         double xc, double yc, double r, double ang1, double ang2)
 {
     return gs_arc_add_inline(pgs, true, xc, yc, r, ang1, ang2, true);
 }
 
 int
-gs_arc_add(gs_state * pgs, bool clockwise, double axc, double ayc,
+gs_arc_add(gs_gstate * pgs, bool clockwise, double axc, double ayc,
            double arad, double aang1, double aang2, bool add_line)
 {
     return gs_arc_add_inline(pgs, clockwise, axc, ayc, arad,
@@ -149,13 +149,13 @@ next_arc_quadrant(arc_curve_params_t * arc, double anext)
          * If the CTM is well-behaved, we can pre-calculate the delta
          * from the arc points to the control points.
          */
-        const gs_imager_state *pis = arc->pis;
+        const gs_gstate *pgs = arc->pgs;
         double scale = 0; /* Quiet gcc warning. */
 
-        if (is_fzero2(pis->ctm.xy, pis->ctm.yx) ?
-            (scale = fabs(pis->ctm.xx)) == fabs(pis->ctm.yy) :
-            is_fzero2(pis->ctm.xx, pis->ctm.yy) ?
-            (scale = fabs(pis->ctm.xy)) == fabs(pis->ctm.yx) :
+        if (is_fzero2(pgs->ctm.xy, pgs->ctm.yx) ?
+            (scale = fabs(pgs->ctm.xx)) == fabs(pgs->ctm.yy) :
+            is_fzero2(pgs->ctm.xx, pgs->ctm.yy) ?
+            (scale = fabs(pgs->ctm.xy)) == fabs(pgs->ctm.yx) :
             0
             ) {
             double scaled_radius = arc->radius * scale;
@@ -200,7 +200,7 @@ next_arc_quadrant(arc_curve_params_t * arc, double anext)
 }
 
 static int
-gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
+gs_gstate_arc_add(gx_path * ppath, gs_gstate * pgs, bool clockwise,
             double axc, double ayc, double arad, double aang1, double aang2,
                   bool add_line, gs_point *p3)
 {
@@ -211,7 +211,7 @@ gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
     int code;
 
     arc.ppath = ppath;
-    arc.pis = pis;
+    arc.pgs = pgs;
     arc.center.x = axc;
     arc.center.y = ayc;
     if (ar < 0) {
@@ -308,7 +308,7 @@ last:
 }
 
 int
-gs_arcto(gs_state * pgs,
+gs_arcto(gs_gstate * pgs,
 double ax1, double ay1, double ax2, double ay2, double arad, float retxy[4])
 {
     double xt0, yt0, xt2, yt2;
@@ -354,7 +354,7 @@ double ax1, double ay1, double ax2, double ay2, double arad, float retxy[4])
             arc_curve_params_t arc;
 
             arc.ppath = pgs->path;
-            arc.pis = (gs_imager_state *) pgs;
+            arc.pgs = pgs;
             arc.radius = arad;
             arc.action = arc_lineto;
             arc.notes = sn_none;
@@ -368,7 +368,7 @@ double ax1, double ay1, double ax2, double ay2, double arad, float retxy[4])
             arc.pt.y = ay1;
             code = arc_add(&arc, false);
             if (code == 0)
-                code = gx_setcurrentpoint_from_path((gs_imager_state *)pgs, pgs->path);
+                code = gx_setcurrentpoint_from_path(pgs, pgs->path);
         }
     }
     if (retxy != 0) {
@@ -385,7 +385,7 @@ static int
 arc_add(const arc_curve_params_t * arc, bool is_quadrant)
 {
     gx_path *path = arc->ppath;
-    gs_imager_state *pis = arc->pis;
+    gs_gstate *pgs = arc->pgs;
     double x0 = arc->p0.x, y0 = arc->p0.y;
     double xt = arc->pt.x, yt = arc->pt.y;
     double fraction;
@@ -394,19 +394,19 @@ arc_add(const arc_curve_params_t * arc, bool is_quadrant)
 
     if ((arc->action != arc_nothing &&
 #if !PRECISE_CURRENTPOINT
-         (code = gs_point_transform2fixed(&pis->ctm, x0, y0, &p0)) < 0) ||
-        (code = gs_point_transform2fixed(&pis->ctm, xt, yt, &pt)) < 0 ||
-        (code = gs_point_transform2fixed(&pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0
+         (code = gs_point_transform2fixed(&pgs->ctm, x0, y0, &p0)) < 0) ||
+        (code = gs_point_transform2fixed(&pgs->ctm, xt, yt, &pt)) < 0 ||
+        (code = gs_point_transform2fixed(&pgs->ctm, arc->p3.x, arc->p3.y, &p3)) < 0
 #else
-         (code = gs_point_transform2fixed_rounding(&pis->ctm, x0, y0, &p0)) < 0) ||
-        (code = gs_point_transform2fixed_rounding(&pis->ctm, xt, yt, &pt)) < 0 ||
-        (code = gs_point_transform2fixed_rounding(&pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0
+         (code = gs_point_transform2fixed_rounding(&pgs->ctm, x0, y0, &p0)) < 0) ||
+        (code = gs_point_transform2fixed_rounding(&pgs->ctm, xt, yt, &pt)) < 0 ||
+        (code = gs_point_transform2fixed_rounding(&pgs->ctm, arc->p3.x, arc->p3.y, &p3)) < 0
 #endif
         )
         return code;
 #if PRECISE_CURRENTPOINT
     if (!path_position_valid(path))
-        gs_point_transform(arc->p0.x, arc->p0.y, &ctm_only(arc->pis), &pis->subpath_start);
+        gs_point_transform(arc->p0.x, arc->p0.y, &ctm_only(arc->pgs), &pgs->subpath_start);
 #endif
     code = (arc->action == arc_nothing ?
           (p0.x = path->position.x, p0.y = path->position.y, 0) :
@@ -482,7 +482,7 @@ make_quadrant_arc(gs_point *p, const gs_point *c,
 /* ------ Path transformers ------ */
 
 int
-gs_dashpath(gs_state * pgs)
+gs_dashpath(gs_gstate * pgs)
 {
     gx_path *ppath;
     gx_path fpath;
@@ -495,7 +495,7 @@ gs_dashpath(gs_state * pgs)
         return code;
     ppath = pgs->path;
     gx_path_init_local(&fpath, ppath->memory);
-    code = gx_path_add_dash_expansion(ppath, &fpath, (gs_imager_state *)pgs);
+    code = gx_path_add_dash_expansion(ppath, &fpath, pgs);
     if (code < 0) {
         gx_path_free(&fpath, "gs_dashpath");
         return code;
@@ -505,7 +505,7 @@ gs_dashpath(gs_state * pgs)
 }
 
 int
-gs_flattenpath(gs_state * pgs)
+gs_flattenpath(gs_gstate * pgs)
 {
     gx_path *ppath = pgs->path;
     gx_path fpath;
@@ -525,7 +525,7 @@ gs_flattenpath(gs_state * pgs)
 }
 
 int
-gs_reversepath(gs_state * pgs)
+gs_reversepath(gs_gstate * pgs)
 {
     gx_path *ppath = pgs->path;
     gx_path rpath;
@@ -553,7 +553,7 @@ gs_reversepath(gs_state * pgs)
 /* ------ Accessors ------ */
 
 int
-gs_upathbbox(gs_state * pgs, gs_rect * pbox, bool include_moveto)
+gs_upathbbox(gs_gstate * pgs, gs_rect * pbox, bool include_moveto)
 {
     gs_fixed_rect fbox;         /* box in device coordinates */
     gs_rect dbox;
@@ -590,7 +590,7 @@ gs_upathbbox(gs_state * pgs, gs_rect * pbox, bool include_moveto)
 
 /* Start enumerating a path */
 int
-gs_path_enum_copy_init(gs_memory_t *mem, gs_path_enum * penum, const gs_state * pgs, bool copy)
+gs_path_enum_copy_init(gs_memory_t *mem, gs_path_enum * penum, const gs_gstate * pgs, bool copy)
 {
     if (copy) {
         gx_path *copied_path =

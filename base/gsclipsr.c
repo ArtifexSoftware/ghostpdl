@@ -45,7 +45,7 @@ rc_free_clip_stack(gs_memory_t * mem, void *vstack, client_name_t cname)
 
 /* clipsave */
 int
-gs_clipsave(gs_state *pgs)
+gs_clipsave(gs_gstate *pgs)
 {
     gs_memory_t *mem = pgs->memory;
     gx_clip_path *copy =
@@ -68,7 +68,7 @@ gs_clipsave(gs_state *pgs)
 
 /* cliprestore */
 int
-gs_cliprestore(gs_state *pgs)
+gs_cliprestore(gs_gstate *pgs)
 {
     gx_clip_stack_t *stack = pgs->clip_stack;
 

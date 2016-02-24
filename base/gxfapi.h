@@ -26,9 +26,9 @@
 typedef struct gs_font_base_s gs_font_base;
 #endif
 
-#ifndef gs_state_DEFINED
-#  define gs_state_DEFINED
-typedef struct gs_state_s gs_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
 #ifndef gs_text_enum_DEFINED
@@ -403,10 +403,10 @@ gs_fapi_prepare_font(gs_font *pfont, gs_fapi_server *I, int subfont, const char 
                      gs_string *full_font_buf, const char *xlatmap, const char **decodingID);
 
 int
-gs_fapi_finish_render(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, gs_fapi_server *I);
+gs_fapi_finish_render(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, gs_fapi_server *I);
 
 int
-gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font_file_path,
+gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *font_file_path,
                 bool bBuildGlyph, gs_string *charstring, gs_string *glyphname,
                 gs_char chr, gs_glyph index, int subfont);
 

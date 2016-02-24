@@ -58,10 +58,10 @@ static int upath_stroke(i_ctx_t *, gs_matrix *, bool);
 /* ---------------- Insideness testing ---------------- */
 
 /* Forward references */
-static int in_test(i_ctx_t *, int (*)(gs_state *));
+static int in_test(i_ctx_t *, int (*)(gs_gstate *));
 static int in_path(os_ptr, i_ctx_t *, gx_device *);
 static int in_path_result(i_ctx_t *, int, int);
-static int in_utest(i_ctx_t *, int (*)(gs_state *));
+static int in_utest(i_ctx_t *, int (*)(gs_gstate *));
 static int in_upath(i_ctx_t *, gx_device *);
 static int in_upath_result(i_ctx_t *, int, int);
 
@@ -139,7 +139,7 @@ zinustroke(i_ctx_t *i_ctx_p)
 
 /* Do the work of the non-user-path insideness operators. */
 static int
-in_test(i_ctx_t *i_ctx_p, int (*paintproc)(gs_state *))
+in_test(i_ctx_t *i_ctx_p, int (*paintproc)(gs_gstate *))
 {
     os_ptr op = osp;
     gx_device hdev;
@@ -231,7 +231,7 @@ in_path_result(i_ctx_t *i_ctx_p, int npop, int code)
 
 /* Do the work of the user-path insideness operators. */
 static int
-in_utest(i_ctx_t *i_ctx_p, int (*paintproc)(gs_state *))
+in_utest(i_ctx_t *i_ctx_p, int (*paintproc)(gs_gstate *))
 {
     gx_device hdev;
     int npop = in_upath(i_ctx_p, &hdev);
@@ -450,7 +450,7 @@ zustrokepath(i_ctx_t *i_ctx_p)
 /* <with_ucache> upath <userpath> */
 /* We do all the work in a procedure that is also used to construct */
 /* the UnpaintedPath user path for ImageType 2 images. */
-int make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
+int make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_gstate *pgs, gx_path *ppath,
                bool with_ucache);
 static int
 zupath(i_ctx_t *i_ctx_p)
@@ -490,7 +490,7 @@ path_length_for_upath(const gx_path *ppath)
 }
 
 int
-make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
+make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_gstate *pgs, gx_path *ppath,
            bool with_ucache)
 {
     int size = (with_ucache ? 6 : 5);

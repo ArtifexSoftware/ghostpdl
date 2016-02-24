@@ -24,7 +24,7 @@
 #include "gsstate.h"
 #include "gxdevice.h"
 #include "gxfixed.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gzpath.h"
 #include "gxpaint.h"
 #include "gzcpath.h"
@@ -203,10 +203,10 @@ gx_cpath_accum_discard(gx_device_cpath_accum * padev)
 /* Intersect two clipping paths using an accumulator. */
 int
 gx_cpath_intersect_path_slow(gx_clip_path * pcpath, gx_path * ppath,
-                             int rule, gs_imager_state *pis,
+                             int rule, gs_gstate *pgs,
                              const gx_fill_params * params0)
 {
-    gs_logical_operation_t save_lop = gs_current_logical_op_inline(pis);
+    gs_logical_operation_t save_lop = gs_current_logical_op_inline(pgs);
     gx_device_cpath_accum adev;
     gx_device_color devc;
     gx_fill_params params;
@@ -214,22 +214,22 @@ gx_cpath_intersect_path_slow(gx_clip_path * pcpath, gx_path * ppath,
 
     gx_cpath_accum_begin(&adev, pcpath->path.memory);
     set_nonclient_dev_color(&devc, 0);	/* arbitrary, but not transparent */
-    gs_set_logical_op_inline(pis, lop_default);
+    gs_set_logical_op_inline(pgs, lop_default);
     if (params0 != 0)
         params = *params0;
     else {
         gs_point fadjust;
         params.rule = rule;
-        gs_currentfilladjust((gs_state *)pis, &fadjust);
+        gs_currentfilladjust(pgs, &fadjust);
         params.adjust.x = float2fixed(fadjust.x);
         params.adjust.y = float2fixed(fadjust.y);
-        params.flatness = gs_currentflat_inline(pis);
+        params.flatness = gs_currentflat_inline(pgs);
     }
-    code = gx_fill_path_only(ppath, (gx_device *)&adev, pis,
+    code = gx_fill_path_only(ppath, (gx_device *)&adev, pgs,
                              &params, &devc, pcpath);
     if (code < 0 || (code = gx_cpath_accum_end(&adev, pcpath)) < 0)
         gx_cpath_accum_discard(&adev);
-    gs_set_logical_op_inline(pis, save_lop);
+    gs_set_logical_op_inline(pgs, save_lop);
     return code;
 }
 

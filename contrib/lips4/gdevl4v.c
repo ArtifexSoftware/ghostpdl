@@ -228,9 +228,9 @@ gx_device_lips4v far_data gs_lips4v_device = {
 /* Vector device implementation */
 #if GS_VERSION_MAJOR >= 8
 static int lips4v_beginpage(gx_device_vector * vdev);
-static int lips4v_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis,
+static int lips4v_setfillcolor(gx_device_vector * vdev, const gs_gstate * pgs,
                                                                                 const gx_drawing_color * pdc);
-static int lips4v_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis,
+static int lips4v_setstrokecolor(gx_device_vector * vdev, const gs_gstate * pgs,
                                                                         const gx_drawing_color * pdc);
 static int lips4v_setdash(gx_device_vector * vdev, const float *pattern,
                               uint count, double offset);
@@ -238,7 +238,7 @@ static int lips4v_setflat(gx_device_vector * vdev, double flatness);
 static int
 lips4v_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
                  gs_logical_operation_t diff);
-static int lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis,
+static int lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_gstate * pgs,
                   const gx_drawing_color * pdc);
 static int
 
@@ -1080,7 +1080,7 @@ lips4v_setmiterlimit(gx_device_vector * vdev, double limit)
 
 #if GS_VERSION_MAJOR >= 8
 static int
-lips4v_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis, const gx_drawing_color * pdc)
+lips4v_setfillcolor(gx_device_vector * vdev, const gs_gstate * pgs, const gx_drawing_color * pdc)
 #else
 static int
 lips4v_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
@@ -1148,7 +1148,7 @@ lips4v_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 
 #if GS_VERSION_MAJOR >= 8
 static int
-lips4v_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis, const gx_drawing_color * pdc)
+lips4v_setstrokecolor(gx_device_vector * vdev, const gs_gstate * pgs, const gx_drawing_color * pdc)
 #else
 static int
 lips4v_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
@@ -1291,7 +1291,7 @@ lips4v_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
 #if GS_VERSION_MAJOR >= 8
 /*--- added for Ghostscritp 8.15 ---*/
 static int
-lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis1,
+lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_gstate * pgs1,
               const gx_drawing_color * pdc)
 {
     return false; /* High level color is not implemented yet. */
@@ -2203,7 +2203,7 @@ static const gx_image_enum_procs_t lips4v_image_enum_procs = {
 /* Start processing an image. */
 static int
 lips4v_begin_image(gx_device * dev,
-                   const gs_imager_state * pis, const gs_image_t * pim,
+                   const gs_gstate * pgs, const gs_image_t * pim,
                    gs_image_format_t format, const gs_int_rect * prect,
                    const gx_drawing_color * pdcolor,
                    const gx_clip_path * pcpath, gs_memory_t * mem,
@@ -2227,7 +2227,7 @@ lips4v_begin_image(gx_device * dev,
     if (pie == 0)
         return_error(gs_error_VMerror);
     pie->memory = mem;
-    code = gdev_vector_begin_image(vdev, pis, pim, format, prect,
+    code = gdev_vector_begin_image(vdev, pgs, pim, format, prect,
                                    pdcolor, pcpath, mem,
                                    &lips4v_image_enum_procs, pie);
     if (code < 0)
@@ -2267,7 +2267,7 @@ lips4v_begin_image(gx_device * dev,
         }
     }
     if (!can_do)
-        return gx_default_begin_image(dev, pis, pim, format, prect,
+        return gx_default_begin_image(dev, pgs, pim, format, prect,
                                       pdcolor, pcpath, mem,
                                       &pie->default_info);
     else if (index == gs_color_space_index_DeviceGray) {
@@ -2302,7 +2302,7 @@ lips4v_begin_image(gx_device * dev,
             pdev->TextMode = FALSE;
         }
         gs_matrix_invert(&pim->ImageMatrix, &imat);
-        gs_matrix_multiply(&imat, &ctm_only(pis), &imat);
+        gs_matrix_multiply(&imat, &ctm_only(pgs), &imat);
         /*
            [xx xy yx yy tx ty]
            LIPS の座標系に変換を行なう。

@@ -92,7 +92,7 @@ xps_set_nocache(pl_interp_instance_t *instance, gs_font_dir *font_dir)
 }
 
 static int
-xps_set_icc_user_params(pl_interp_instance_t *instance, gs_state *pgs)
+xps_set_icc_user_params(pl_interp_instance_t *instance, gs_gstate *pgs)
 {    gs_param_string p;
     int code = 0;
 
@@ -131,7 +131,7 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
 {
     xps_interp_instance_t *instance;
     xps_context_t *ctx;
-    gs_state *pgs;
+    gs_gstate *pgs;
 
     instance = (xps_interp_instance_t *) gs_alloc_bytes(pmem,
             sizeof(xps_interp_instance_t), "xps_imp_allocate_interp_instance");
@@ -139,7 +139,7 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     ctx = (xps_context_t *) gs_alloc_bytes(pmem,
             sizeof(xps_context_t), "xps_imp_allocate_interp_instance");
 
-    pgs = gs_state_alloc(pmem);
+    pgs = gs_gstate_alloc(pmem);
 
     if (!instance || !ctx || !pgs)
     {
@@ -148,7 +148,7 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
         if (ctx)
             gs_free_object(pmem, ctx, "xps_imp_allocate_interp_instance");
         if (pgs)
-            gs_state_free(pgs);
+            gs_gstate_free(pgs);
         return gs_error_VMerror;
     }
 

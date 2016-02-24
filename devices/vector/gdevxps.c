@@ -148,14 +148,14 @@ typedef struct xps_image_enum_s {
     byte *devc_buffer; /* Needed for case where we are mapping to device colors */
     gs_color_space *pcs;     /* Needed for Sep, DeviceN, Indexed */
     gsicc_link_t *icc_link;  /* Needed for CIELAB */
-    const gs_imager_state *pis;    /* Needed for color conversions of DeviceN etc */
+    const gs_gstate *pgs;    /* Needed for color conversions of DeviceN etc */
     FILE *fid;
 } xps_image_enum_t;
 
 gs_private_st_suffix_add3(st_xps_image_enum, xps_image_enum_t,
     "xps_image_enum_t", xps_image_enum_enum_ptrs,
     xps_image_enum_reloc_ptrs, st_vector_image_enum,
-    buffer, devc_buffer, pis);
+    buffer, devc_buffer, pgs);
 
 typedef struct gx_device_xps_s {
     /* superclass state */
@@ -275,13 +275,13 @@ xps_setlogop(gx_device_vector *vdev, gs_logical_operation_t lop,
              gs_logical_operation_t diff);
 
 static int
-xps_can_handle_hl_color(gx_device_vector *vdev, const gs_imager_state *pis,
+xps_can_handle_hl_color(gx_device_vector *vdev, const gs_gstate *pgs,
                         const gx_drawing_color * pdc);
 static int
-xps_setfillcolor(gx_device_vector *vdev, const gs_imager_state *pis,
+xps_setfillcolor(gx_device_vector *vdev, const gs_gstate *pgs,
                  const gx_drawing_color *pdc);
 static int
-xps_setstrokecolor(gx_device_vector *vdev, const gs_imager_state *pis,
+xps_setstrokecolor(gx_device_vector *vdev, const gs_gstate *pgs,
                    const gx_drawing_color *pdc);
 
 static int
@@ -1242,7 +1242,7 @@ set_state_color(gx_device_vector *vdev, const gx_drawing_color *pdc, gx_color_in
 }
 
 static int
-xps_setfillcolor(gx_device_vector *vdev, const gs_imager_state *pis, const gx_drawing_color *pdc)
+xps_setfillcolor(gx_device_vector *vdev, const gs_gstate *pgs, const gx_drawing_color *pdc)
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
 
@@ -1252,7 +1252,7 @@ xps_setfillcolor(gx_device_vector *vdev, const gs_imager_state *pis, const gx_dr
 }
 
 static int
-xps_setstrokecolor(gx_device_vector *vdev, const gs_imager_state *pis, const gx_drawing_color *pdc)
+xps_setstrokecolor(gx_device_vector *vdev, const gs_gstate *pgs, const gx_drawing_color *pdc)
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
     
@@ -1393,7 +1393,7 @@ xps_setlogop(gx_device_vector *vdev, gs_logical_operation_t lop,
         /* Other state */
 
 static int
-xps_can_handle_hl_color(gx_device_vector *vdev, const gs_imager_state *pis,
+xps_can_handle_hl_color(gx_device_vector *vdev, const gs_gstate *pgs,
                           const gx_drawing_color *pdc)
 {
     if_debug0m('_', vdev->memory, "xps_can_handle_hl_color\n");
@@ -1522,25 +1522,25 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
 }
 
 static int
-gdev_xps_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
+gdev_xps_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                    const gx_fill_params * params,
                    const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
     if (gx_path_is_void(ppath)) {
         return 0;
     }
-    return gdev_vector_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
+    return gdev_vector_fill_path(dev, pgs, ppath, params, pdcolor, pcpath);
 }
 
 static int
-gdev_xps_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
+gdev_xps_stroke_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                      const gx_stroke_params * params,
                      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
     if (gx_path_is_void(ppath)) {
         return 0;
     }
-    return gdev_vector_stroke_path(dev, pis, ppath, params, pdcolor, pcpath);
+    return gdev_vector_stroke_path(dev, pgs, ppath, params, pdcolor, pcpath);
 }
            
 static int
@@ -1773,20 +1773,20 @@ xps_add_image_relationship(xps_image_enum_t *pie)
 }
 
 static int
-xps_write_profile(const gs_imager_state *pis, char *name, cmm_profile_t *profile, gx_device_xps *xps_dev)
+xps_write_profile(const gs_gstate *pgs, char *name, cmm_profile_t *profile, gx_device_xps *xps_dev)
 {
     byte *profile_buffer;
     int size;
 
     /* Need V2 ICC Profile */
-    profile_buffer = gsicc_create_getv2buffer(pis, profile, &size);
+    profile_buffer = gsicc_create_getv2buffer(pgs, profile, &size);
 
     /* Now go ahead and add to the zip archive */
     return add_data_to_zip_file(xps_dev, name, profile_buffer, size);
 }
 
 static int
-xps_begin_image(gx_device *dev, const gs_imager_state *pis, 
+xps_begin_image(gx_device *dev, const gs_gstate *pgs, 
                 const gs_image_t *pim, gs_image_format_t format, 
                 const gs_int_rect *prect, const gx_drawing_color *pdcolor,
                 const gx_clip_path *pcpath, gs_memory_t *mem,
@@ -1819,15 +1819,15 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
     if (csindex == gs_color_space_index_Indexed && pim->BitsPerComponent != 8)
         goto use_default;
 
-    /* Also need imager state for these color spaces */
-    if (pis == NULL && (csindex == gs_color_space_index_Indexed ||
+    /* Also need  gs_gstate for these color spaces */
+    if (pgs == NULL && (csindex == gs_color_space_index_Indexed ||
         csindex == gs_color_space_index_Separation ||
         csindex == gs_color_space_index_DeviceN))
         goto use_default;
 
     gs_matrix_invert(&pim->ImageMatrix, &mat);
-    if (pis)
-        gs_matrix_multiply(&mat, &ctm_only(pis), &mat);
+    if (pgs)
+        gs_matrix_multiply(&mat, &ctm_only(pgs), &mat);
 
     pie = gs_alloc_struct(mem, xps_image_enum_t, &st_xps_image_enum,
                           "xps_begin_image");
@@ -1835,7 +1835,7 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
         return_error(gs_error_VMerror);
     pie->buffer = NULL;
     pie->devc_buffer = NULL;
-    pie->pis = NULL;
+    pie->pgs = NULL;
 
     /* Set the brush types to image */
     xps_setstrokebrush(xdev, xps_imagebrush);
@@ -1866,10 +1866,9 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
         if (gs_color_space_is_PSCIE(pcs)) {
             if (pcs->icc_equivalent == NULL) {
                 bool is_lab;
-
-                if (pis == NULL)
+                if (pgs == NULL)
                     return(gs_error_invalidaccess);
-                gs_colorspace_set_icc_equivalent(pcs, &is_lab, pis->memory);
+                gs_colorspace_set_icc_equivalent(pcs, &is_lab, pgs->memory);
             }
             icc_profile = pcs->icc_equivalent->cmm_icc_profile_data;
         } else {
@@ -1887,11 +1886,11 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
         rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
         rendering_params.rendering_intent = gsPERCEPTUAL;
         rendering_params.cmm = gsCMM_DEFAULT;
-        if (pis == NULL)
+        if (pgs == NULL)
             return(gs_error_invalidaccess);
-        pie->icc_link = gsicc_get_link_profile(pis, dev, icc_profile,
-            pis->icc_manager->default_rgb, &rendering_params, pis->memory, false);
-        icc_profile = pis->icc_manager->default_rgb;
+        pie->icc_link = gsicc_get_link_profile(pgs, dev, icc_profile,
+            pgs->icc_manager->default_rgb, &rendering_params, pgs->memory, false);
+        icc_profile = pgs->icc_manager->default_rgb;
     } else {
         pie->icc_link = NULL;
     }
@@ -1925,9 +1924,9 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
 
         /* Add profile to the package. Here like images we are going to write
            the data now.  Rather than later. */
-        if (pis == NULL)
+        if (pgs == NULL)
             return(gs_error_invalidaccess);
-        code = xps_write_profile(pis, &(pie->icc_name[0]), icc_profile, xdev);
+        code = xps_write_profile(pgs, &(pie->icc_name[0]), icc_profile, xdev);
         if (code < 0)
             return gs_rethrow_code(code);
 
@@ -1961,9 +1960,9 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
         ((gx_device_vector*) vdev)->clip_path_id = vdev->no_clip_path_id;
     }
 
-    if (pis == NULL)
+    if (pgs == NULL)
         return(gs_error_invalidaccess);
-    code = gdev_vector_begin_image(vdev, pis, pim, format, prect,
+    code = gdev_vector_begin_image(vdev, pgs, pim, format, prect,
         pdcolor, pcpath, mem, &xps_image_enum_procs,
         (gdev_vector_image_enum_t *)pie);
     if (code < 0)
@@ -2024,15 +2023,15 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
             *pinfo = NULL;
             return_error(gs_error_VMerror);
         }
-        /* Also, the color remaps need the imager state */
-        pie->pis = pis;
+        /* Also, the color remaps need the gs_gstate */
+        pie->pgs = pgs;
     }
 
     *pinfo = (gx_image_enum_common_t *)pie;
     return 0;
 
 use_default:
-    return gx_default_begin_image(dev, pis, pim, format, prect,
+    return gx_default_begin_image(dev, pgs, pim, format, prect,
         pdcolor, pcpath, mem, pinfo);
 }
 
@@ -2047,7 +2046,7 @@ static int
 set_device_colors(xps_image_enum_t *pie)
 {
     gx_device *pdev = pie->dev;
-    const gs_imager_state *pis = pie->pis;
+    const gs_gstate *pgs = pie->pgs;
     gs_color_space *pcs = pie->pcs;
     byte *src = pie->buffer;
     byte *des = pie->devc_buffer;
@@ -2069,7 +2068,7 @@ set_device_colors(xps_image_enum_t *pie)
             for (j = 0; j < num_src; j++, pos_src++) {
                 cc.paint.values[j] = (float)(src_ptr[pos_src]) / 65535.0;
             }
-            code = remap_color(&cc, pcs, &devc, pis, pdev, gs_color_select_source);
+            code = remap_color(&cc, pcs, &devc, pgs, pdev, gs_color_select_source);
             dev_proc(pdev, decode_color)(pdev, devc.colors.pure, cm_values);
             for (j = 0; j < num_des; j++, pos_des++) {
                 des[pos_des] = (cm_values[j] >> 8);
@@ -2084,7 +2083,7 @@ set_device_colors(xps_image_enum_t *pie)
             for (j = 0; j < num_src; j++, pos_src++) {
                 cc.paint.values[j] = (float)(src[pos_src]) / scale;
             }
-            code = remap_color(&cc, pcs, &devc, pis, pdev, gs_color_select_source);
+            code = remap_color(&cc, pcs, &devc, pgs, pdev, gs_color_select_source);
             dev_proc(pdev, decode_color)(pdev, devc.colors.pure, cm_values);
             for (j = 0; j < num_des; j++, pos_des++) {
                 des[pos_des] = (cm_values[j] >> 8);

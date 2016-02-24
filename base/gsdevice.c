@@ -167,7 +167,7 @@ gx_device_set_procs(gx_device * dev)
 
 /* Flush buffered output to the device */
 int
-gs_flushpage(gs_state * pgs)
+gs_flushpage(gs_gstate * pgs)
 {
     gx_device *dev = gs_currentdevice(pgs);
 
@@ -176,18 +176,18 @@ gs_flushpage(gs_state * pgs)
 
 /* Make the device output the accumulated page description */
 int
-gs_copypage(gs_state * pgs)
+gs_copypage(gs_gstate * pgs)
 {
     return gs_output_page(pgs, 1, 0);
 }
 int
-gs_output_page(gs_state * pgs, int num_copies, int flush)
+gs_output_page(gs_gstate * pgs, int num_copies, int flush)
 {
     gx_device *dev = gs_currentdevice(pgs);
     cmm_dev_profile_t *dev_profile;
     int code;
 
-    /* for devices that hook 'fill_path' in order to pick up imager state */
+    /* for devices that hook 'fill_path' in order to pick up gs_gstate */
     /* values such as dev_ht (such as tiffsep1), make a dummy call here   */
     /* to make sure that it has been called at least once		  */
     code = gs_gsave(pgs);
@@ -260,7 +260,7 @@ gs_copyscanlines(gx_device * dev, int start_y, byte * data, uint size,
 
 /* Get the current device from the graphics state. */
 gx_device *
-gs_currentdevice(const gs_state * pgs)
+gs_currentdevice(const gs_gstate * pgs)
 {
     return pgs->device;
 }
@@ -462,36 +462,33 @@ gs_opendevice(gx_device *dev)
     }
 }
 
-/* Set device parameters, updating a graphics state or imager state. */
-int
-gs_imager_putdeviceparams(gs_imager_state *pis, gx_device *dev,
-                          gs_param_list *plist)
-{
-    int code = gs_putdeviceparams(dev, plist);
-
-    if (code >= 0)
-        gx_set_cmap_procs(pis, dev);
-    return code;
-}
 static void
-gs_state_update_device(gs_state *pgs)
+gs_gstate_update_device(gs_gstate *pgs, gx_device *dev)
 {
-    gx_set_cmap_procs((gs_imager_state *)pgs, pgs->device);
+    gx_set_cmap_procs(pgs, dev);
     gx_unset_dev_color(pgs);
 }
-int
-gs_state_putdeviceparams(gs_state *pgs, gs_param_list *plist)
-{
-    int code = gs_putdeviceparams(pgs->device, plist);
 
+int
+gs_gstate_putdeviceparams(gs_gstate *pgs, gx_device *dev, gs_param_list *plist)
+{
+    int code;
+    gx_device *dev2;
+
+    if (dev)
+       dev2 = dev;
+    else
+       dev2 = pgs->device;
+
+    code = gs_putdeviceparams(dev2, plist);
     if (code >= 0)
-        gs_state_update_device(pgs);
+        gs_gstate_update_device(pgs, dev2);
     return code;
 }
 
 /* Set the device in the graphics state */
 int
-gs_setdevice(gs_state * pgs, gx_device * dev)
+gs_setdevice(gs_gstate * pgs, gx_device * dev)
 {
     int code = gs_setdevice_no_erase(pgs, dev);
 
@@ -500,7 +497,7 @@ gs_setdevice(gs_state * pgs, gx_device * dev)
     return code;
 }
 int
-gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
+gs_setdevice_no_erase(gs_gstate * pgs, gx_device * dev)
 {
     int open_code = 0, code;
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(pgs->memory);
@@ -582,7 +579,7 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
     return open_code;
 }
 int
-gs_setdevice_no_init(gs_state * pgs, gx_device * dev)
+gs_setdevice_no_init(gs_gstate * pgs, gx_device * dev)
 {
     /*
      * Just set the device, possibly changing color space but no other
@@ -604,7 +601,7 @@ gs_setdevice_no_init(gs_state * pgs, gx_device * dev)
             return code;
     }
     rc_assign(pgs->device, dev, "gs_setdevice_no_init");
-    gs_state_update_device(pgs);
+    gs_gstate_update_device(pgs, dev);
     return pgs->overprint ? gs_do_set_overprint(pgs) : 0;
 }
 
@@ -680,7 +677,7 @@ gx_device_retain(gx_device *dev, bool retained)
 
 /* Select a null device. */
 int
-gs_nulldevice(gs_state * pgs)
+gs_nulldevice(gs_gstate * pgs)
 {
     if (pgs->device == 0 || !gx_device_is_null(pgs->device)) {
         gx_device *ndev;
@@ -732,7 +729,7 @@ gs_closedevice(gx_device * dev)
  * (For internal use only.)
  */
 void
-gx_set_device_only(gs_state * pgs, gx_device * dev)
+gx_set_device_only(gs_gstate * pgs, gx_device * dev)
 {
     rc_assign(pgs->device, dev, "gx_set_device_only");
 }

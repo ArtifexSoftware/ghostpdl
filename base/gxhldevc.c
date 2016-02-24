@@ -43,29 +43,15 @@ void gx_hld_saved_color_init(gx_hl_saved_color * psc)
 }
 
 /*
- * Get graphics state pointer (from imager state pointer)
- */
-const gs_state * gx_hld_get_gstate_ptr(const gs_imager_state * pis)
-{
-
-    /* Check to verify the structure type is really (gs_state *) */
-    if (pis == NULL || pis->is_gstate == false)
-        return NULL;
-
-    return (const gs_state *) pis;
-}
-
-/*
  * Save the device color information including the color space id and
  * client color data (if available).
  *
  * More description in src/gxhldevc.h
  */
 bool
-gx_hld_save_color(const gs_imager_state * pis, const gx_device_color * pdevc,
+gx_hld_save_color(const gs_gstate * pgs, const gx_device_color * pdevc,
                 gx_hl_saved_color * psc)
 {
-    const gs_state * pgs = gx_hld_get_gstate_ptr(pis);
     memset(psc, 0, sizeof(*psc));	/* clear the entire structure */
 
     if (pdevc == NULL) {
@@ -209,11 +195,9 @@ bool gx_hld_saved_color_same_cspace(const gx_hl_saved_color * psc1,
  * Check if a high level color is availavble.
  */
 bool
-gx_hld_is_hl_color_available(const gs_imager_state * pis,
+gx_hld_is_hl_color_available(const gs_gstate * pgs,
                 const gx_device_color * pdevc)
 {
-    const gs_state * pgs = gx_hld_get_gstate_ptr(pis);
-
     if (pgs != NULL && pdevc != NULL && pdevc->ccolor_valid)
         return true;
     return false;
@@ -225,13 +209,12 @@ gx_hld_is_hl_color_available(const gs_imager_state * pis,
  * More description in src/gxhldevc.h
  */
 gx_hld_get_color_space_and_ccolor_status
-gx_hld_get_color_space_and_ccolor(const gs_imager_state * pis,
+gx_hld_get_color_space_and_ccolor(const gs_gstate * pgs,
                 const gx_device_color * pdevc, const gs_color_space ** ppcs,
                 const gs_client_color ** ppcc)
 {
     /* Check if the current color space was used to build the device color */
-    if (gx_hld_is_hl_color_available(pis, pdevc)) {
-        const gs_state * pgs = gx_hld_get_gstate_ptr(pis);
+    if (gx_hld_is_hl_color_available(pgs, pdevc)) {
         const gs_color_space * pcs = gs_currentcolorspace_inline(pgs);
 
         *ppcs = pcs;
@@ -256,10 +239,8 @@ gx_hld_get_color_space_and_ccolor(const gs_imager_state * pis,
  * More description in src/gxhldevc.h
  */
 int
-gx_hld_get_number_color_components(const gs_imager_state * pis)
+gx_hld_get_number_color_components(const gs_gstate * pgs)
 {
-    const gs_state * pgs = gx_hld_get_gstate_ptr(pis);
-
     if (pgs != NULL) {
         const gs_color_space * pcs = gs_currentcolorspace_inline(pgs);
         int n = gs_color_space_num_components(pcs);
@@ -275,12 +256,12 @@ gx_hld_get_number_color_components(const gs_imager_state * pis)
  * More description in src/gxhldevc.h
  */
 gx_hld_get_color_component_status
-gx_hld_get_color_component(const gs_imager_state * pis,
+gx_hld_get_color_component(const gs_gstate * pgs,
                           const gx_device_color * pdevc,
                           int comp_num, float * output)
 {
     if (pdevc != NULL && pdevc->ccolor_valid) {
-        int ncomp = gx_hld_get_number_color_components(pis);
+        int ncomp = gx_hld_get_number_color_components(pgs);
 
         if (ncomp < 0)
             return invalid_color_info;

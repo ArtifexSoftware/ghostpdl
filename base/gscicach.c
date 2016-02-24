@@ -42,7 +42,7 @@ struct gs_color_index_cache_elem_s {
 
 struct gs_color_index_cache_s {
     const gs_color_space *direct_space;
-    gs_imager_state *pis;
+    gs_gstate *pgs;
     gx_device *dev;
     gx_device *trans_dev;
     int client_num_components;
@@ -66,7 +66,7 @@ gs_private_st_ptrs6(st_color_index_cache, gs_color_index_cache_t, "gs_color_inde
 
 gs_color_index_cache_t *
 gs_color_index_cache_create(gs_memory_t *memory, const gs_color_space *direct_space, gx_device *dev,
-                            gs_imager_state *pis, bool need_frac, gx_device *trans_dev)
+                            gs_gstate *pgs, bool need_frac, gx_device *trans_dev)
 {
     int client_num_components = cs_num_components(direct_space);
     int device_num_components = trans_dev->color_info.num_components;
@@ -88,7 +88,7 @@ gs_color_index_cache_create(gs_memory_t *memory, const gs_color_space *direct_sp
     memset(pcic, 0, sizeof(*pcic));
     memset(buf, 0, COLOR_INDEX_CACHE_SIZE * sizeof(gs_color_index_cache_elem_t));
     pcic->direct_space = direct_space;
-    pcic->pis = pis;
+    pcic->pgs = pgs;
     pcic->dev = dev;
     pcic->trans_dev = trans_dev;
     pcic->device_num_components = device_num_components;
@@ -309,7 +309,7 @@ gs_cached_color_index(gs_color_index_cache_t *self, const float *paint_values,
                sizeof(*paint_values) * client_num_components);
         memcpy(fcc.paint.values, paint_values, 
                sizeof(*paint_values) * client_num_components);
-        code = pcs->type->remap_color(&fcc, pcs, pdevc, self->pis, 
+        code = pcs->type->remap_color(&fcc, pcs, pdevc, self->pgs, 
                                       self->trans_dev, gs_color_select_texture);
         if (code < 0)
             return code;

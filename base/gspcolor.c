@@ -83,7 +83,7 @@ gs_pattern_common_init(gs_pattern_template_t * ppat,
 /* Generic makepattern */
 int
 gs_make_pattern(gs_client_color * pcc, const gs_pattern_template_t * pcp,
-                const gs_matrix * pmat, gs_state * pgs, gs_memory_t * mem)
+                const gs_matrix * pmat, gs_gstate * pgs, gs_memory_t * mem)
 {
     return pcp->type->procs.make_pattern(pcc, pcp, pmat, pgs, mem);
 }
@@ -95,20 +95,20 @@ gs_make_pattern(gs_client_color * pcc, const gs_pattern_template_t * pcp,
 int
 gs_make_pattern_common(gs_client_color *pcc,
                        const gs_pattern_template_t *ptemp,
-                       const gs_matrix *pmat, gs_state *pgs, gs_memory_t *mem,
+                       const gs_matrix *pmat, gs_gstate *pgs, gs_memory_t *mem,
                        gs_memory_type_ptr_t pstype)
 {
     gs_pattern_instance_t *pinst;
-    gs_state *saved;
+    gs_gstate *saved;
 
     if (mem == 0)
-        mem = gs_state_memory(pgs);
+        mem = gs_gstate_memory(pgs);
     rc_alloc_struct_1(pinst, gs_pattern_instance_t, pstype, mem,
                       return_error(gs_error_VMerror),
                       "gs_make_pattern_common");
     pinst->rc.free = rc_free_pattern_instance;
     pinst->type = ptemp->type;
-    saved = gs_state_copy(pgs, mem);
+    saved = gs_gstate_copy(pgs, mem);
     if (saved == 0) {
         gs_free_object(mem, pinst, "gs_make_pattern_common");
         return_error(gs_error_VMerror);
@@ -128,13 +128,13 @@ rc_free_pattern_instance(gs_memory_t * mem, void *pinst_void,
 {
     gs_pattern_instance_t *pinst = pinst_void;
 
-    gs_state_free(pinst->saved);
+    gs_gstate_free(pinst->saved);
     rc_free_struct_only(mem, pinst_void, cname);
 }
 
 /* setpattern */
 int
-gs_setpattern(gs_state * pgs, const gs_client_color * pcc)
+gs_setpattern(gs_gstate * pgs, const gs_client_color * pcc)
 {
     int code = gs_setpatternspace(pgs);
 
@@ -146,7 +146,7 @@ gs_setpattern(gs_state * pgs, const gs_client_color * pcc)
 /* setpatternspace */
 /* This does all the work of setpattern except for the final setcolor. */
 int
-gs_setpatternspace(gs_state * pgs)
+gs_setpatternspace(gs_gstate * pgs)
 {
     int code = 0;
     gs_color_space *ccs_old;
@@ -211,7 +211,7 @@ gx_num_components_Pattern(const gs_color_space * pcs)
 /* Remap a Pattern color. */
 static int
 gx_remap_Pattern(const gs_client_color * pc, const gs_color_space * pcs,
-                 gx_device_color * pdc, const gs_imager_state * pis,
+                 gx_device_color * pdc, const gs_gstate * pgs,
                  gx_device * dev, gs_color_select_t select)
 {
     if (pc->pattern == 0) {
@@ -221,7 +221,7 @@ gx_remap_Pattern(const gs_client_color * pc, const gs_color_space * pcs,
         return 0;
     }
     return
-        pc->pattern->type->procs.remap_color(pc, pcs, pdc, pis, dev, select);
+        pc->pattern->type->procs.remap_color(pc, pcs, pdc, pgs, dev, select);
 }
 
 /* Initialize a Pattern color. */
@@ -257,7 +257,7 @@ gx_restrict_Pattern(gs_client_color * pcc, const gs_color_space * pcs)
 
 /* Install a Pattern color space. */
 static int
-gx_install_Pattern(gs_color_space * pcs, gs_state * pgs)
+gx_install_Pattern(gs_color_space * pcs, gs_gstate * pgs)
 {
     if (!pcs->params.pattern.has_base_space)
         return 0;
@@ -274,14 +274,14 @@ gx_install_Pattern(gs_color_space * pcs, gs_state * pgs)
  * a factor in that set up and here the color space is a pattern.
 */
 static int
-gx_set_overprint_Pattern(const gs_color_space * pcs, gs_state * pgs)
+gx_set_overprint_Pattern(const gs_color_space * pcs, gs_gstate * pgs)
 {
     gs_overprint_params_t params;
 
     if (!pgs->overprint) {
         params.retain_any_comps = false;
         pgs->effective_overprint_mode = 0;
-        return gs_state_update_overprint(pgs, &params);
+        return gs_gstate_update_overprint(pgs, &params);
     }
     return 0;
 }

@@ -359,7 +359,7 @@ cmyk_cs_to_rgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 }
 
 static void
-private_rgb_cs_to_rgb_cm(gx_device * dev, const gs_imager_state *pis,
+private_rgb_cs_to_rgb_cm(gx_device * dev, const gs_gstate *pgs,
                                   frac r, frac g, frac b, frac out[])
 {
     out[0] = r;

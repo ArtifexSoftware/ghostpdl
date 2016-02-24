@@ -20,9 +20,9 @@
 #include "gsmemory.h"
 #include "gxtmap.h"
 /* Define an abstract type for the PostScript graphics state. */
-#ifndef gs_state_DEFINED
-#  define gs_state_DEFINED
-typedef struct gs_state_s gs_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 #include "gsstate.h"
 #include "gxht.h"
@@ -30,7 +30,7 @@ typedef struct gs_state_s gs_state;
 #include "plht.h"
 
 int
-pl_set_pcl_halftone(gs_state * pgs, gs_mapping_proc transfer_proc,
+pl_set_pcl_halftone(gs_gstate * pgs, gs_mapping_proc transfer_proc,
                     int width, int height,
                     gs_string threshold_data, int phase_x, int phase_y)
 {

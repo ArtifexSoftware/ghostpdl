@@ -23,29 +23,29 @@
 #include "gsiparam.h"
 #include "gsimage.h"
 
-#ifndef gs_state_DEFINED
-#  define gs_state_DEFINED
-typedef struct gs_state_s gs_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
 /* Begin an image with parameters derived from a graphics state. */
-int pl_begin_image(gs_state * pgs, const gs_image_t * pim, void **pinfo);
+int pl_begin_image(gs_gstate * pgs, const gs_image_t * pim, void **pinfo);
 
 /* draw image data */
-int pl_image_data(gs_state * pgs, void *info, const byte ** planes,
+int pl_image_data(gs_gstate * pgs, void *info, const byte ** planes,
                   int data_x, uint raster, int height);
 
 /* end image */
-int pl_end_image(gs_state * pgs, void *info, bool draw_last);
+int pl_end_image(gs_gstate * pgs, void *info, bool draw_last);
 
 
 /* NEW API */
 int pl_begin_image2(gs_image_enum ** ppenum, gs_image_t * pimage,
-                    gs_state * pgs);
+                    gs_gstate * pgs);
 
 int pl_image_data2(gs_image_enum * penum, const byte * row, uint size,
                    uint * pused);
 
-int pl_end_image2(gs_image_enum * penum, gs_state * pgs);
+int pl_end_image2(gs_image_enum * penum, gs_gstate * pgs);
 
 #endif /* pldraw_INCLUDED */

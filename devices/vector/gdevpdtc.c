@@ -383,7 +383,7 @@ static int estimate_fontbbox(pdf_text_enum_t *pte, gs_font_base *font,
         return_error(gs_error_undefined);
     if (pfmat == 0)
         pfmat = &font->FontMatrix;
-    m = ctm_only(pte->pis);
+    m = ctm_only(pte->pgs);
     m.tx = fixed2float(pte->origin.x);
     m.ty = fixed2float(pte->origin.y);
     gs_matrix_multiply(pfmat, &m, &m);

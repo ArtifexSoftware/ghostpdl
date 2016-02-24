@@ -201,17 +201,17 @@ void eprn_dump_parameter_list(gs_param_list *plist)
 /******************************************************************************
 
   Function: eprn_fillpage
-  This is just a "call-through" to the default, so we can grab the imager state
+  This is just a "call-through" to the default, so we can grab the gs_gstate
 
 ******************************************************************************/
 int
-eprn_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
+eprn_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
 {
   eprn_Eprn *eprn = &((eprn_Device *)dev)->eprn;
 
-  eprn->pis = pis;
+  eprn->pgs = pgs;
 
-  return (*eprn->orig_fillpage)(dev, pis, pdevc);
+  return (*eprn->orig_fillpage)(dev, pgs, pdevc);
 }
 
 

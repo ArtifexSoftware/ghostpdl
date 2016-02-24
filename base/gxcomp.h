@@ -53,9 +53,9 @@
  */
                                                    /*typedef struct gs_composite_s gs_composite_t; *//* in gscompt.h */
 
-#ifndef gs_imager_state_DEFINED
-#  define gs_imager_state_DEFINED
-typedef struct gs_imager_state_s gs_imager_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
 #ifndef gx_device_DEFINED
@@ -75,7 +75,7 @@ typedef struct gs_composite_type_procs_s {
      */
 #define composite_create_default_compositor_proc(proc)\
   int proc(const gs_composite_t *pcte, gx_device **pcdev,\
-    gx_device *dev, gs_imager_state *pis, gs_memory_t *mem)
+    gx_device *dev, gs_gstate *pgs, gs_memory_t *mem)
     composite_create_default_compositor_proc((*create_default_compositor));
 
     /*
@@ -112,7 +112,7 @@ typedef struct gs_composite_type_procs_s {
      * Adjust CTM before applying the compositor. Used with banding.
      */
 #define composite_adjust_ctm_proc(proc)\
-  int proc(gs_composite_t *pcte, int x0, int y0, gs_imager_state *pis)
+  int proc(gs_composite_t *pcte, int x0, int y0, gs_gstate *pgs)
     composite_adjust_ctm_proc((*adjust_ctm));
 
     /*
@@ -139,7 +139,7 @@ typedef struct gs_composite_type_procs_s {
      */
 #define composite_clist_write_update(proc)\
   int proc(const gs_composite_t * pcte, gx_device * dev, gx_device ** pcdev,\
-                        gs_imager_state * pis, gs_memory_t * mem)
+                        gs_gstate * pgs, gs_memory_t * mem)
     composite_clist_write_update((*clist_compositor_write_update));
 
     /*
@@ -147,7 +147,7 @@ typedef struct gs_composite_type_procs_s {
      */
 #define composite_clist_read_update(proc)\
   int proc(gs_composite_t * pcte, gx_device * cdev, gx_device * tdev,\
-                        gs_imager_state * pis, gs_memory_t * mem)
+                        gs_gstate * pgs, gs_memory_t * mem)
     composite_clist_read_update((*clist_compositor_read_update));
 
     /*

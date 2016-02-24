@@ -25,7 +25,7 @@
 #include "scommon.h"
 #include "strmio.h"
 #include "gx.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxcspace.h"
 #include "gsicc_cms.h"
 #include "gsicc_cache.h"
@@ -33,8 +33,8 @@
 /* A link structure for our non-cm color transform */
 typedef struct nocm_link_s {
     /* Since RGB to CMYK requires BG and UCR, we need to have the
-       imager state available */
-    gs_imager_state *pis;
+       gs_gstate available */
+    gs_gstate *pgs;
     byte num_in;
     byte num_out;
     gs_memory_t *memory;
@@ -256,7 +256,7 @@ gsicc_nocm_transform_general(gx_device *dev, gsicc_link_t *icclink,
             dev_proc(dev, get_color_mapping_procs)(dev)->map_gray(dev, frac_in[0], frac_out);
             break;
         case 3:
-            dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, link->pis, frac_in[0], frac_in[1],
+            dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, link->pgs, frac_in[0], frac_in[1],
                 frac_in[2], frac_out);
             break;
         case 4:
@@ -299,16 +299,16 @@ gsicc_nocm_freelink(gsicc_link_t *icclink)
     nocm_link_t *nocm_link = (nocm_link_t*) icclink->link_handle;
 
     if (nocm_link) {
-        if (nocm_link->pis != NULL) {
-            if (nocm_link->pis->black_generation != NULL) {
-                gs_free_object(nocm_link->memory, nocm_link->pis->black_generation,
+        if (nocm_link->pgs != NULL) {
+            if (nocm_link->pgs->black_generation != NULL) {
+                gs_free_object(nocm_link->memory, nocm_link->pgs->black_generation,
                                "gsicc_nocm_freelink");
             }
-            if (nocm_link->pis->undercolor_removal != NULL) {
-                gs_free_object(nocm_link->memory, nocm_link->pis->undercolor_removal,
+            if (nocm_link->pgs->undercolor_removal != NULL) {
+                gs_free_object(nocm_link->memory, nocm_link->pgs->undercolor_removal,
                                "gsicc_nocm_freelink");
             }
-            gs_free_object(nocm_link->memory, nocm_link->pis, "gsicc_nocm_freelink");
+            gs_free_object(nocm_link->memory, nocm_link->pgs, "gsicc_nocm_freelink");
         }
         gs_free_object(nocm_link->memory, nocm_link, "gsicc_nocm_freelink");
         icclink->link_handle = NULL;
@@ -342,13 +342,13 @@ gsicc_nocm_copy_curve(gx_transfer_map *in_map, gs_memory_t *mem)
 /* Get the link, which is the mapping procedure in this non color managed
    transformation case. */
 gsicc_link_t*
-gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
+gsicc_nocm_get_link(const gs_gstate *pgs, gx_device *dev,
                     gs_color_space_index src_index)
 {
     gsicc_link_t *result;
     gsicc_hashlink_t hash;
     nocm_link_t *nocm_link;
-    gs_memory_t *mem = pis->icc_link_cache->memory->non_gc_memory;
+    gs_memory_t *mem = pgs->icc_link_cache->memory->non_gc_memory;
     bool pageneutralcolor = false;
     cmm_dev_profile_t *dev_profile;
     int code;
@@ -376,13 +376,13 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
     hash.link_hashcode = src_index + hash.des_hash * 256 + hash.rend_hash * 4096;
 
     /* Check the cache for a hit. */
-    result = gsicc_findcachelink(hash, pis->icc_link_cache, false, false);
+    result = gsicc_findcachelink(hash, pgs->icc_link_cache, false, false);
     if (result != NULL) {
         return result;
     }
     /* If not, then lets create a new one.  This may actually return a link if
        another thread has already created it while we were trying to do so */
-    if (gsicc_alloc_link_entry(pis->icc_link_cache, &result, hash, false, false))
+    if (gsicc_alloc_link_entry(pgs->icc_link_cache, &result, hash, false, false))
         return result;
 
     if (result == NULL)
@@ -390,7 +390,7 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
 
     /* Now compute the link contents */
     /* Lock the cache as we alter the procs */
-    gx_monitor_enter(pis->icc_link_cache->lock);
+    gx_monitor_enter(pgs->icc_link_cache->lock);
 
     result->procs.map_buffer = gsicc_nocm_transform_color_buffer;
     result->procs.map_color = gsicc_nocm_transform_color;
@@ -402,22 +402,22 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
         return NULL;
     result->link_handle = (void*) nocm_link;
     nocm_link->memory = mem;
-    /* Create a dummy imager state and populate the ucr/bg values.  This
+    /* Create a dummy gs_gstate and populate the ucr/bg values.  This
        is the only part that we need */
-    if ((pis->black_generation == NULL && pis->undercolor_removal == NULL)) {
-        nocm_link->pis = NULL;
+    if ((pgs->black_generation == NULL && pgs->undercolor_removal == NULL)) {
+        nocm_link->pgs = NULL;
     } else {
-        nocm_link->pis = (gs_imager_state*)
-                          gs_alloc_bytes(mem, sizeof(gs_imager_state),
+        nocm_link->pgs = (gs_gstate*)
+                          gs_alloc_bytes(mem, sizeof(gs_gstate),
                                          "gsicc_nocm_get_link");
-        if (nocm_link->pis == NULL)
+        if (nocm_link->pgs == NULL)
             return NULL;
-        memset(nocm_link->pis, 0, sizeof(gs_imager_state));
+        memset(nocm_link->pgs, 0, sizeof(gs_gstate));
         /* Note if allocation of either of the maps fails, just use NULL */
-        nocm_link->pis->black_generation = (gx_transfer_map*)
-                            gsicc_nocm_copy_curve(pis->black_generation, mem);
-        nocm_link->pis->undercolor_removal = (gx_transfer_map*)
-                            gsicc_nocm_copy_curve(pis->undercolor_removal, mem);
+        nocm_link->pgs->black_generation = (gx_transfer_map*)
+                            gsicc_nocm_copy_curve(pgs->black_generation, mem);
+        nocm_link->pgs->undercolor_removal = (gx_transfer_map*)
+                            gsicc_nocm_copy_curve(pgs->undercolor_removal, mem);
     }
     nocm_link->num_out = min(dev->color_info.num_components,
                              GS_CLIENT_COLOR_MAX_COMPONENTS);
@@ -454,7 +454,7 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
         gx_semaphore_signal(result->wait);
         result->num_waiting--;
     }
-    gx_monitor_leave(pis->icc_link_cache->lock);	/* done with updating, let everyone run */
+    gx_monitor_leave(pgs->icc_link_cache->lock);	/* done with updating, let everyone run */
 
     return result;
 }

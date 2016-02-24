@@ -20,7 +20,7 @@
 #include "gx.h"
 #include "gxdevice.h"
 #include "gxfixed.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxpaint.h"
 #include "gxcoord.h"
 #include "gxdevmem.h"
@@ -109,50 +109,50 @@ pdf_setlinewidth(gx_device_vector * vdev, double width)
 }
 
 static int
-pdf_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis,
+pdf_can_handle_hl_color(gx_device_vector * vdev, const gs_gstate * pgs,
                  const gx_drawing_color * pdc)
 {
-    return pis != NULL;
+    return pgs != NULL;
 }
 
 static int
-pdf_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis,
+pdf_setfillcolor(gx_device_vector * vdev, const gs_gstate * pgs,
                  const gx_drawing_color * pdc)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)vdev;
-    bool hl_color = (*vdev_proc(vdev, can_handle_hl_color)) (vdev, pis, pdc);
-    const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
+    bool hl_color = (*vdev_proc(vdev, can_handle_hl_color)) (vdev, pgs, pdc);
+    const gs_gstate *pgs_for_hl_color = (hl_color ? pgs : NULL);
 
     if (!pdev->HaveStrokeColor) {
         /* opdfread.ps assumes same color for stroking and non-stroking operations. */
-        int code = pdf_set_drawing_color(pdev, pis_for_hl_color, pdc, &pdev->saved_stroke_color,
+        int code = pdf_set_drawing_color(pdev, pgs_for_hl_color, pdc, &pdev->saved_stroke_color,
                                     &pdev->stroke_used_process_color,
                                     &psdf_set_stroke_color_commands);
         if (code < 0)
             return code;
     }
-    return pdf_set_drawing_color(pdev, pis_for_hl_color, pdc, &pdev->saved_fill_color,
+    return pdf_set_drawing_color(pdev, pgs_for_hl_color, pdc, &pdev->saved_fill_color,
                                  &pdev->fill_used_process_color,
                                  &psdf_set_fill_color_commands);
 }
 
 static int
-pdf_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis,
+pdf_setstrokecolor(gx_device_vector * vdev, const gs_gstate * pgs,
                    const gx_drawing_color * pdc)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)vdev;
-    bool hl_color = (*vdev_proc(vdev, can_handle_hl_color)) (vdev, pis, pdc);
-    const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
+    bool hl_color = (*vdev_proc(vdev, can_handle_hl_color)) (vdev, pgs, pdc);
+    const gs_gstate *pgs_for_hl_color = (hl_color ? pgs : NULL);
 
     if (!pdev->HaveStrokeColor) {
         /* opdfread.ps assumes same color for stroking and non-stroking operations. */
-        int code = pdf_set_drawing_color(pdev, pis_for_hl_color, pdc, &pdev->saved_fill_color,
+        int code = pdf_set_drawing_color(pdev, pgs_for_hl_color, pdc, &pdev->saved_fill_color,
                                  &pdev->fill_used_process_color,
                                  &psdf_set_fill_color_commands);
         if (code < 0)
             return code;
     }
-    return pdf_set_drawing_color(pdev, pis_for_hl_color, pdc, &pdev->saved_stroke_color,
+    return pdf_set_drawing_color(pdev, pgs_for_hl_color, pdc, &pdev->saved_stroke_color,
                                  &pdev->stroke_used_process_color,
                                  &psdf_set_stroke_color_commands);
 }
@@ -301,11 +301,11 @@ pdf_is_same_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 }
 
 int
-pdf_check_soft_mask(gx_device_pdf * pdev, gs_imager_state * pis)
+pdf_check_soft_mask(gx_device_pdf * pdev, gs_gstate * pgs)
 {
     int code = 0;
 
-    if (pis && pdev->state.soft_mask_id != pis->soft_mask_id) {
+    if (pgs && pdev->state.soft_mask_id != pgs->soft_mask_id) {
     /*
      * The contents must be open already, so the following will only exit
      * text or string context.
@@ -807,7 +807,7 @@ make_rect_scaling(const gx_device_pdf *pdev, const gs_fixed_rect *bbox,
  * Changes *box to the clipping box.
  */
 static int
-prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
+prepare_fill_with_clip(gx_device_pdf *pdev, const gs_gstate * pgs,
               gs_fixed_rect *box, bool have_path,
               const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
@@ -825,7 +825,7 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
             return 1;		/* empty clipping path */
         *box = cbox;
     }
-    code = pdf_check_soft_mask(pdev, (gs_imager_state *)pis);
+    code = pdf_check_soft_mask(pdev, (gs_gstate *)pgs);
     if (code < 0)
         return code;
 
@@ -838,7 +838,7 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
         if (code < 0)
             return code;
     }
-    code = pdf_prepare_fill(pdev, pis);
+    code = pdf_prepare_fill(pdev, pgs);
     if (code < 0)
         return code;
     return pdf_put_clip_path(pdev, pcpath);
@@ -1184,7 +1184,7 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
     } else if (!cvd->mask_is_empty && pdev->PatternImagemask) {
         /* Convert to imagemask with a pattern color. */
         /* See also use_image_as_pattern in gdevpdfi.c . */
-        gs_imager_state s;
+        gs_gstate s;
         gs_pattern1_instance_t inst;
         gs_id id = gs_next_ids(cvd->mdev.memory, 1);
         cos_value_t v;
@@ -1198,7 +1198,7 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
         s.ctm.tx = cvd->m.tx;
         s.ctm.ty = cvd->m.ty;
         memset(&inst, 0, sizeof(inst));
-        inst.saved = (gs_state *)&s; /* HACK : will use s.ctm only. */
+        inst.saved = (gs_gstate *)&s; /* HACK : will use s.ctm only. */
         inst.templat.PaintType = 1;
         inst.templat.TilingType = 1;
         inst.templat.BBox.p.x = inst.templat.BBox.p.y = 0;
@@ -1256,7 +1256,7 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
 }
 static int
 lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
-    const gs_imager_state *pis, gx_path *ppath,
+    const gs_gstate *pgs, gx_path *ppath,
     const gx_fill_params *params,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
@@ -1405,7 +1405,7 @@ pdf_remove_masked_image_converter(gx_device_pdf *pdev, pdf_lcvd_t *cvd, bool nee
 
 /* Fill a path. */
 int
-gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
+gdev_pdf_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                    const gx_fill_params * params,
               const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
@@ -1449,7 +1449,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
     have_path = !gx_path_is_void(ppath);
     if (!have_path && !pdev->vg_initial_set) {
         /* See lib/gs_pdfwr.ps about "initial graphic state". */
-        pdf_prepare_initial_viewer_state(pdev, pis);
+        pdf_prepare_initial_viewer_state(pdev, pgs);
         pdf_reset_graphics(pdev);
         return 0;
     }
@@ -1460,11 +1460,11 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
     }
     box1 = box;
 
-    code = prepare_fill_with_clip(pdev, pis, &box, have_path, pdcolor, pcpath);
+    code = prepare_fill_with_clip(pdev, pgs, &box, have_path, pdcolor, pcpath);
     if (code == gs_error_rangecheck) {
         /* Fallback to the default implermentation for handling
            a transparency with CompatibilityLevel<=1.3 . */
-        return gx_default_fill_path((gx_device *)pdev, pis, ppath, params, pdcolor, pcpath);
+        return gx_default_fill_path((gx_device *)pdev, pgs, ppath, params, pdcolor, pcpath);
     }
     if (code < 0)
         return code;
@@ -1472,7 +1472,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
         return 0; /* Nothing to paint. */
     if (!have_path)
         return 0;
-    code = pdf_setfillcolor((gx_device_vector *)pdev, pis, pdcolor);
+    code = pdf_setfillcolor((gx_device_vector *)pdev, pgs, pdcolor);
     if (code == gs_error_rangecheck) {
         const bool convert_to_image = ((pdev->CompatibilityLevel <= 1.2 ||
                 pdev->params.ColorConversionStrategy != ccs_LeaveColorUnchanged) &&
@@ -1481,7 +1481,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
         if (!convert_to_image) {
             /* Fallback to the default implermentation for handling
             a shading with CompatibilityLevel<=1.2 . */
-            return gx_default_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
+            return gx_default_fill_path(dev, pgs, ppath, params, pdcolor, pcpath);
         } else {
             /* Convert a shading into a bitmap
                with CompatibilityLevel<=1.2 . */
@@ -1489,19 +1489,19 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
             int sx, sy;
             gs_fixed_rect bbox, bbox1;
             bool need_mask = gx_dc_pattern2_can_overlap(pdcolor);
-            gs_matrix m, save_ctm = ctm_only(pis), ms, msi, mm;
+            gs_matrix m, save_ctm = ctm_only(pgs), ms, msi, mm;
             gs_int_point rect_size;
             /* double scalex = 1.9, scaley = 1.4; debug purpose only. */
             double scale, scalex, scaley;
             int log2_scale_x = 0, log2_scale_y = 0;
             gx_drawing_color dc = *pdcolor;
             gs_pattern2_instance_t pi = *(gs_pattern2_instance_t *)dc.ccolor.pattern;
-            gs_state *pgs = gs_state_copy(pi.saved, gs_state_memory(pi.saved));
+            gs_gstate *pgs2 = gs_gstate_copy(pi.saved, gs_gstate_memory(pi.saved));
 
-            if (pgs == NULL)
+            if (pgs2 == NULL)
                 return_error(gs_error_VMerror);
             dc.ccolor.pattern = (gs_pattern_instance_t *)&pi;
-            pi.saved = pgs;
+            pi.saved = pgs2;
             code = gx_path_bbox(ppath, &bbox);
             if (code < 0)
                 return code;
@@ -1545,10 +1545,10 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
                 gs_make_scaling(1.0 / scalex, 1.0 / scaley, &ms);
                 gs_make_scaling(scalex, scaley, &msi);
                 gs_matrix_multiply(&msi, &m, &m);
-                gs_matrix_multiply(&ctm_only(pis), &ms, &mm);
-                gs_setmatrix((gs_state *)pis, &mm);
-                gs_matrix_multiply(&ctm_only((gs_imager_state *)pgs), &ms, &mm);
-                gs_setmatrix((gs_state *)pgs, &mm);
+                gs_matrix_multiply(&ctm_only(pgs), &ms, &mm);
+                gs_setmatrix((gs_gstate *)pgs, &mm);
+                gs_matrix_multiply(&ctm_only(pgs2), &ms, &mm);
+                gs_setmatrix((gs_gstate *)pgs2, &mm);
                 sx = fixed2int(bbox.p.x / (int)scalex);
                 sy = fixed2int(bbox.p.y / (int)scaley);
                 cvd.path_offset.x = sx; /* m.tx / scalex */
@@ -1569,13 +1569,13 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
             cvd.write_matrix = false;
             if (code >= 0)
                 code = gs_shading_do_fill_rectangle(pi.templat.Shading,
-                     NULL, (gx_device *)&cvd.mdev, (gs_imager_state *)pgs, !pi.shfill);
+                     NULL, (gx_device *)&cvd.mdev, pgs2, !pi.shfill);
             if (code >= 0)
                 code = pdf_dump_converted_image(pdev, &cvd);
             stream_puts(pdev->strm, "Q Q\n");
             pdf_remove_masked_image_converter(pdev, &cvd, need_mask);
-            gs_setmatrix((gs_state *)pis, &save_ctm);
-            gs_state_free(pgs);
+            gs_setmatrix((gs_gstate *)pgs, &save_ctm);
+            gs_gstate_free(pgs2);
             return code;
         }
     }
@@ -1617,7 +1617,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 
 /* Stroke a path. */
 int
-gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
+gdev_pdf_stroke_path(gx_device * dev, const gs_gstate * pgs,
                      gx_path * ppath, const gx_stroke_params * params,
               const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
@@ -1634,19 +1634,19 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 
     if (gx_path_is_void(ppath))
         return 0;		/* won't mark the page */
-    code = pdf_check_soft_mask(pdev, (gs_imager_state *)pis);
+    code = pdf_check_soft_mask(pdev, (gs_gstate *)pgs);
     if (code < 0)
         return code;
    if (pdf_must_put_clip_path(pdev, pcpath))
         code = pdf_unclip(pdev);
     else if ((pdev->last_charpath_op & TEXT_DO_FALSE_CHARPATH) && ppath->current_subpath &&
         (ppath->last_charpath_segment == ppath->current_subpath->last) && !pdev->ForOPDFRead) {
-        bool hl_color = pdf_can_handle_hl_color((gx_device_vector *)pdev, pis, pdcolor);
-        const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
+        bool hl_color = pdf_can_handle_hl_color((gx_device_vector *)pdev, pgs, pdcolor);
+        const gs_gstate *pgs_for_hl_color = (hl_color ? pgs : NULL);
 
         if (pdf_modify_text_render_mode(pdev->text->text_state, 1)) {
             /* Set the colour for the stroke */
-            code = pdf_reset_color(pdev, pis_for_hl_color, pdcolor, &pdev->saved_stroke_color,
+            code = pdf_reset_color(pdev, pgs_for_hl_color, pdcolor, &pdev->saved_stroke_color,
                         &pdev->stroke_used_process_color, &psdf_set_stroke_color_commands);
             if (code == 0) {
                 s = pdev->strm;
@@ -1655,8 +1655,8 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
                  * width scaled by the CTM before the text, either of which would be wrong.
                  */
                 scale = 72 / pdev->HWResolution[0];
-                scale *= fabs(pis->ctm.xx);
-                pprintg1(s, "%g w\n", (pis->line_params.half_width * 2) * (float)scale);
+                scale *= fabs(pgs->ctm.xx);
+                pprintg1(s, "%g w\n", (pgs->line_params.half_width * 2) * (float)scale);
                 /* Some trickery here. We have altered the colour, text render mode and linewidth,
                  * we don't want those to persist. By switching to a stream context we will flush the
                  * pending text. This has the beneficial side effect of executing a grestore. So
@@ -1674,11 +1674,11 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
         code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
         return code;
-    code = pdf_prepare_stroke(pdev, pis);
+    code = pdf_prepare_stroke(pdev, pgs);
     if (code == gs_error_rangecheck) {
         /* Fallback to the default implermentation for handling
            a transparency with CompatibilityLevel<=1.3 . */
-        return gx_default_stroke_path((gx_device *)dev, pis, ppath, params, pdcolor, pcpath);
+        return gx_default_stroke_path((gx_device *)dev, pgs, ppath, params, pdcolor, pcpath);
     }
     if (code < 0)
         return code;
@@ -1696,9 +1696,9 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
      * the coordinates.
      */
     set_ctm = (bool)gdev_vector_stroke_scaling((gx_device_vector *)pdev,
-                                               pis, &scale, &mat);
-    if (set_ctm && ((pis->ctm.xx == 0 && pis->ctm.xy == 0) ||
-                    (pis->ctm.yx == 0 && pis->ctm.yy == 0))) {
+                                               pgs, &scale, &mat);
+    if (set_ctm && ((pgs->ctm.xx == 0 && pgs->ctm.xy == 0) ||
+                    (pgs->ctm.yx == 0 && pgs->ctm.yy == 0))) {
         /* Acrobat Reader 5 and Adobe Reader 6 issues
            the "Wrong operand type" error with matrices, which have 3 zero coefs.
            Besides that, we found that Acrobat Reader 4, Acrobat Reader 5
@@ -1710,7 +1710,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
            gdev_vector_dopath. Therefore we exclude projection matrices
            (see bug 688363). */
         set_ctm = false;
-        scale = fabs(pis->ctm.xx + pis->ctm.xy + pis->ctm.yx + pis->ctm.yy) /* Using the non-zero coeff. */
+        scale = fabs(pgs->ctm.xx + pgs->ctm.xy + pgs->ctm.yx + pgs->ctm.yy) /* Using the non-zero coeff. */
                 / sqrt(2); /* Empirically from Adobe. */
     }
     if (set_ctm) {
@@ -1734,7 +1734,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
            uses a special hack with painting outside the clipping box
            for synchronizing the clipping path (see lib/gs_pdfwr.ps).
            That hack appeared because there is no way to pass
-           the imager state through gdev_pdf_put_params,
+           the gs_gstate through gdev_pdf_put_params,
            which pdfmark is implemented with.
         */
         gs_fixed_rect clip_box, stroke_bbox = bbox;
@@ -1742,8 +1742,8 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
         gs_fixed_point p0, p1;
         fixed bbox_expansion_x, bbox_expansion_y;
 
-        gs_distance_transform(pis->line_params.half_width, 0, &ctm_only(pis), &d0);
-        gs_distance_transform(0, pis->line_params.half_width, &ctm_only(pis), &d1);
+        gs_distance_transform(pgs->line_params.half_width, 0, &ctm_only(pgs), &d0);
+        gs_distance_transform(0, pgs->line_params.half_width, &ctm_only(pgs), &d1);
         p0.x = float2fixed(any_abs(d0.x));
         p0.y = float2fixed(any_abs(d0.y));
         p1.x = float2fixed(any_abs(d1.x));
@@ -1768,16 +1768,16 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
             set_ctm = true;
         }
     }
-    code = gdev_vector_prepare_stroke((gx_device_vector *)pdev, pis, params,
+    code = gdev_vector_prepare_stroke((gx_device_vector *)pdev, pgs, params,
                                       pdcolor, scale);
     if (code < 0)
-        return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
+        return gx_default_stroke_path(dev, pgs, ppath, params, pdcolor,
                                       pcpath);
     if (!pdev->HaveStrokeColor)
         pdev->saved_fill_color = pdev->saved_stroke_color;
     if (set_ctm)
         pdf_put_matrix(pdev, "q ", &mat, "cm\n");
-    if (pis->line_params.dash.offset != 0 || pis->line_params.dash.pattern_size != 0)
+    if (pgs->line_params.dash.offset != 0 || pgs->line_params.dash.pattern_size != 0)
         code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)ppath, 0, gx_path_type_stroke | gx_path_type_optimize | gx_path_type_dashed_stroke, (set_ctm ? &mat : (const gs_matrix *)0));
     else
         code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)ppath, 0, gx_path_type_stroke | gx_path_type_optimize, (set_ctm ? &mat : (const gs_matrix *)0));
@@ -1788,7 +1788,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     stream_puts(s, (set_ctm ? " Q\n" : "\n"));
     if (pdev->Eps2Write) {
         pdev->AccumulatingBBox++;
-        code = gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
+        code = gx_default_stroke_path(dev, pgs, ppath, params, pdcolor,
                                       pcpath);
         pdev->AccumulatingBBox--;
         if (code < 0)
@@ -1803,7 +1803,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
  */
 int
 gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
-    const gs_imager_state *pis, const gx_drawing_color *pdcolor,
+    const gs_gstate *pgs, const gx_drawing_color *pdcolor,
     const gx_clip_path *pcpath)
 {
     int code;
@@ -1818,12 +1818,12 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     if (rect->p.x == rect->q.x)
         return 0;
     if (!convert_to_image) {
-        code = prepare_fill_with_clip(pdev, pis, &box, true, pdcolor, pcpath);
+        code = prepare_fill_with_clip(pdev, pgs, &box, true, pdcolor, pcpath);
         if (code < 0)
             return code;
         if (code == 1)
             return 0; /* Nothing to paint. */
-        code = pdf_setfillcolor((gx_device_vector *)pdev, pis, pdcolor);
+        code = pdf_setfillcolor((gx_device_vector *)pdev, pgs, pdcolor);
         if (code < 0)
             return code;
         if (pcpath)
@@ -1864,12 +1864,12 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
 
         params.rule = 1; /* Not important because the path is a rectange. */
         params.adjust.x = params.adjust.y = 0;
-        params.flatness = pis->flatness;
-        gx_path_init_local(&path, pis->memory);
+        params.flatness = pgs->flatness;
+        gx_path_init_local(&path, pgs->memory);
         code = gx_path_add_rectangle(&path, rect->p.x, rect->p.y, rect->q.x, rect->q.y);
         if (code < 0)
             return code;
-        code = gdev_pdf_fill_path(dev, pis, &path, &params, pdcolor, pcpath);
+        code = gdev_pdf_fill_path(dev, pgs, &path, &params, pdcolor, pcpath);
         if (code < 0)
             return code;
         gx_path_free(&path, "gdev_pdf_fill_rectangle_hl_color");
@@ -1879,7 +1879,7 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
 }
 
 int
-gdev_pdf_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
+gdev_pdf_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
     int bottom = (pdev->ResourcesBeforeUsage ? 1 : 0);
@@ -1889,5 +1889,5 @@ gdev_pdf_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
         return 0;
     }
     else
-        return gx_default_fillpage(dev, pis, pdevc);
+        return gx_default_fillpage(dev, pgs, pdevc);
 }

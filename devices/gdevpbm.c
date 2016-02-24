@@ -592,7 +592,7 @@ pnm_copy_alpha(gx_device * pdev, const byte * data, int data_x,
 /* non-black/white colors in the process. */
 static int
 pnm_begin_typed_image(gx_device *dev,
-                      const gs_imager_state *pis, const gs_matrix *pmat,
+                      const gs_gstate *pgs, const gs_matrix *pmat,
                       const gs_image_common_t *pim, const gs_int_rect *prect,
                       const gx_drawing_color *pdcolor,
                       const gx_clip_path *pcpath,
@@ -631,7 +631,7 @@ pnm_begin_typed_image(gx_device *dev,
         }
     }
     /* Forward to saved routine */
-    return (*bdev->save_begin_typed_image)(dev, pis, pmat, pim, prect,
+    return (*bdev->save_begin_typed_image)(dev, pgs, pmat, pim, prect,
                                            pdcolor, pcpath, memory, pinfo);
 }
 

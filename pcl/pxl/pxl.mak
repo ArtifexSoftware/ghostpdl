@@ -188,7 +188,7 @@ $(PXLOBJ)pxink.$(OBJ): $(PXLSRC)pxink.c $(math__h) $(stdio__h) $(memory__h)\
 
 $(PXLOBJ)pxpaint.$(OBJ): $(PXLSRC)pxpaint.c $(AK) $(math__h) $(stdio__h)\
  $(gscoord_h) $(gspaint_h) $(gspath_h) $(gspath2_h) $(gsrop_h) $(gsstate_h)\
- $(gxfarith_h) $(gxfixed_h) $(gxistate_h) $(gxmatrix_h) $(gxpath_h)\
+ $(gxfarith_h) $(gxfixed_h) $(gxgstate_h) $(gxmatrix_h) $(gxpath_h)\
  $(pxfont_h) $(pxoper_h) $(pxptable_h) $(pxstate_h) \
  $(PXL_MAK) $(MAKEDIRS)
 	$(PXLCCC) $(PXLSRC)pxpaint.c $(PXLO_)pxpaint.$(OBJ)

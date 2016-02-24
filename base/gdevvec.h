@@ -24,7 +24,7 @@
 #include "gxdevice.h"
 #include "gdevbbox.h"
 #include "gxiparam.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxhldevc.h"
 #include "stream.h"
 
@@ -102,7 +102,7 @@ typedef struct gx_device_vector_procs_s {
        beginpage. in_page must also be set to false in the device's
        output_page method to request that beginpage be called again
        when drawing next occurs. */
-    /* Imager state */
+    /* gs_gstate */
     int (*setlinewidth) (gx_device_vector * vdev, double width);
     int (*setlinecap) (gx_device_vector * vdev, gs_line_cap cap);
     int (*setlinejoin) (gx_device_vector * vdev, gs_line_join join);
@@ -113,11 +113,11 @@ typedef struct gx_device_vector_procs_s {
     int (*setlogop) (gx_device_vector * vdev, gs_logical_operation_t lop,
                      gs_logical_operation_t diff);
     /* Other state */
-    bool (*can_handle_hl_color) (gx_device_vector * vdev, const gs_imager_state * pis,
+    bool (*can_handle_hl_color) (gx_device_vector * vdev, const gs_gstate * pgs,
                          const gx_drawing_color * pdc);
-    int (*setfillcolor) (gx_device_vector * vdev, const gs_imager_state * pis,
+    int (*setfillcolor) (gx_device_vector * vdev, const gs_gstate * pgs,
                          const gx_drawing_color * pdc);
-    int (*setstrokecolor) (gx_device_vector * vdev, const gs_imager_state * pis,
+    int (*setstrokecolor) (gx_device_vector * vdev, const gs_gstate * pgs,
                            const gx_drawing_color * pdc);
     /* Paths */
     /* dopath and dorect are normally defaulted */
@@ -165,7 +165,7 @@ int gdev_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0,
         uint strmbuf_size;\
         int open_options;	/* see below */\
                 /* Graphics state */\
-        gs_imager_state state;\
+        gs_gstate state;\
         float *dash_pattern;\
         uint dash_pattern_size;\
         bool fill_used_process_color;\
@@ -258,13 +258,13 @@ int gdev_vector_update_log_op(gx_device_vector * vdev,
 /* Bring the fill color up to date. */
 /* May call setfillcolor. */
 int gdev_vector_update_fill_color(gx_device_vector * vdev,
-                                  const gs_imager_state * pis,
+                                  const gs_gstate * pgs,
                                   const gx_drawing_color * pdcolor);
 
 /* Bring state up to date for filling. */
 /* May call setflat, setfillcolor, setlogop. */
 int gdev_vector_prepare_fill(gx_device_vector * vdev,
-                             const gs_imager_state * pis,
+                             const gs_gstate * pgs,
                              const gx_fill_params * params,
                              const gx_drawing_color * pdcolor);
 
@@ -272,9 +272,9 @@ int gdev_vector_prepare_fill(gx_device_vector * vdev,
 /* for the line width and dash offset explicitly. */
 /* May call setlinewidth, setlinecap, setlinejoin, setmiterlimit, */
 /* setdash, setflat, setstrokecolor, setlogop. */
-/* Any of pis, params, and pdcolor may be NULL. */
+/* Any of pgs, params, and pdcolor may be NULL. */
 int gdev_vector_prepare_stroke(gx_device_vector * vdev,
-                               const gs_imager_state * pis,
+                               const gs_gstate * pgs,
                                const gx_stroke_params * params,
                                const gx_drawing_color * pdcolor,
                                double scale);
@@ -286,7 +286,7 @@ int gdev_vector_prepare_stroke(gx_device_vector * vdev,
  * Return 0 if only scaling, 1 if a full matrix is needed.
  */
 int gdev_vector_stroke_scaling(const gx_device_vector *vdev,
-                               const gs_imager_state *pis,
+                               const gs_gstate *pgs,
                                double *pscale, gs_matrix *pmat);
 
 /* Prepare to write a path using the default implementation. */
@@ -368,7 +368,7 @@ extern_st(st_vector_image_enum);
  * enumerator.
  */
 int gdev_vector_begin_image(gx_device_vector * vdev,
-                        const gs_imager_state * pis, const gs_image_t * pim,
+                        const gs_gstate * pgs, const gs_image_t * pim,
                         gs_image_format_t format, const gs_int_rect * prect,
               const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
                     gs_memory_t * mem, const gx_image_enum_procs_t * pprocs,

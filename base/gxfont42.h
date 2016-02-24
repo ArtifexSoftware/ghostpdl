@@ -159,7 +159,7 @@ int gs_type42_read_data(gs_font_type42 * pfont, ulong pos, uint length, byte *bu
 #define MAX_NUM_TT_TABLES 40
 
 /* Append the outline of a TrueType character to a path. */
-int gs_type42_append(uint glyph_index, gs_state * pgs,
+int gs_type42_append(uint glyph_index, gs_gstate * pgs,
                  gx_path * ppath, gs_text_enum_t *penum, gs_font *pfont,
                  bool charpath_flag);
 

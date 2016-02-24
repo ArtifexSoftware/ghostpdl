@@ -33,7 +33,7 @@
 #include "store.h"
 
 /* Import the procedure for constructing user paths. */
-extern int make_upath(i_ctx_t *, ref *, const gs_state *, gx_path *, bool);
+extern int make_upath(i_ctx_t *, ref *, const gs_gstate *, gx_path *, bool);
 
 /* ------ Graphics state ------ */
 

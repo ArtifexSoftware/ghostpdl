@@ -136,20 +136,20 @@ typedef struct demo_color_space_data_s {
      * colorant in the color space.
      */
     int color_index[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    gs_imager_state *CIEtoXYZ_pis;	/* Used to map CIE spaces to XYZ */
+    gs_gstate *CIEtoXYZ_pgs;	/* Used to map CIE spaces to XYZ */
                                         /* refer to gx_cie_to_xyz_alloc	 */
 } demo_color_space_data_t;
 
 gs_private_st_ptrs1(st_demo_color_space_data, demo_color_space_data_t,
             "demo_color_space_data_t", demo_color_space_enum_ptrs,
-            demo_color_space_reloc_ptrs, CIEtoXYZ_pis);
+            demo_color_space_reloc_ptrs, CIEtoXYZ_pgs);
 
 /*
  * Dummy install routine for color spaces which are not handled by the client.
  */
 static bool
 client_install_no_op(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs)
+            gs_color_space * pcs, gs_gstate * pgs)
 {
     return false;	/* Do nothing */
 }
@@ -166,9 +166,9 @@ client_adjust_cspace_count(const gs_color_space * pcs, int delta)
 
     pdata->ref_count += delta;
     if (pdata->ref_count <= 0) {
-        /* Free up the CIE to XYZ imager state if it was allocated */
-        if (pdata->CIEtoXYZ_pis) {
-            gx_cie_to_xyz_free(pdata->CIEtoXYZ_pis);
+        /* Free up the CIE to XYZ gs_gstate if it was allocated */
+        if (pdata->CIEtoXYZ_pgs) {
+            gx_cie_to_xyz_free(pdata->CIEtoXYZ_pgs);
         }
         gs_free_object(pdata->memory, pdata, "client_adjust_cspace_count(pdata)");
     }
@@ -186,7 +186,7 @@ allocate_client_data_block(int initial_ref_count, gs_memory_t *mem)
 {
     /*
      * We allocate this with normal GC structure declarations since
-     * we need this to be able to allocate the gs_imager_state for XYZ
+     * we need this to be able to allocate the gs_gstate for XYZ
      * conversion.
      * Since this is in stable memory, we use a simple reference count.
      * See client_adjust_cspace_count.
@@ -211,7 +211,7 @@ allocate_client_data_block(int initial_ref_count, gs_memory_t *mem)
 
 static bool
 client_install_generic(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs)
+            gs_color_space * pcs, gs_gstate * pgs)
 {
         demo_color_space_data_t * pclient_data;
 
@@ -235,7 +235,7 @@ client_install_generic(client_custom_color_params_t * pparams,
  */
 static bool
 client_pantone_install_Separation(client_custom_color_params_t * pparam,
-                        gs_color_space * pcs, gs_state * pgs)
+                        gs_color_space * pcs, gs_gstate * pgs)
 {
     const gs_separation_name name = pcs->params.separation.sep_name;
     int pan_index;
@@ -285,7 +285,7 @@ client_pantone_install_Separation(client_custom_color_params_t * pparam,
  */
 static bool
 client_pantone_install_DeviceN(client_custom_color_params_t * pparam,
-                        gs_color_space * pcs, gs_state * pgs)
+                        gs_color_space * pcs, gs_gstate * pgs)
 {
     const gs_separation_name *names = pcs->params.device_n.names;
     int num_comp = pcs->params.device_n.num_components;
@@ -406,7 +406,7 @@ client_pantone_install_DeviceN(client_custom_color_params_t * pparam,
 static int
 client_pantone_remap_color(client_custom_color_params_t * pparam,
         const frac * pconc, const demo_color_space_data_t * pparams,
-        gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
         gs_color_select_t select, int num_comp)
 {
     int i, pantone_index, cvalue;
@@ -463,7 +463,7 @@ client_pantone_remap_color(client_custom_color_params_t * pparam,
     cm = (magenta > frac_1) ? frac_1 : (magenta < frac_0) ? frac_0 : magenta;
     cy = (yellow > frac_1) ? frac_1 : (yellow < frac_0) ? frac_0 : yellow;
     ck = (black > frac_1) ? frac_1 : (black < frac_0) ? frac_0 : black;
-    gx_remap_concrete_cmyk(cc, cm, cy, ck, pdc, pis, dev, select);
+    gx_remap_concrete_cmyk(cc, cm, cy, ck, pdc, pgs, dev, select);
     return 0;
 }
 
@@ -473,11 +473,11 @@ client_pantone_remap_color(client_custom_color_params_t * pparam,
 static int
 client_pantone_remap_Separation(client_custom_color_params_t * pparam,
         const frac * pconc, const gs_color_space * pcs, gx_device_color * pdc,
-        const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+        const gs_gstate * pgs, gx_device * dev, gs_color_select_t select)
 {
     return client_pantone_remap_color(pparam, pconc,
         (demo_color_space_data_t *)(pcs->pclient_color_space_data),
-        pdc, pis, dev, select, 1);
+        pdc, pgs, dev, select, 1);
 }
 
 /*
@@ -486,11 +486,11 @@ client_pantone_remap_Separation(client_custom_color_params_t * pparam,
 static int
 client_pantone_remap_DeviceN(client_custom_color_params_t * pparam,
         const frac * pconc, const gs_color_space * pcs, gx_device_color * pdc,
-        const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+        const gs_gstate * pgs, gx_device * dev, gs_color_select_t select)
 {
         return client_pantone_remap_color(pparam, pconc,
         (demo_color_space_data_t *)(pcs->pclient_color_space_data),
-        pdc, pis, dev, select, gs_color_space_num_components(pcs));
+        pdc, pgs, dev, select, gs_color_space_num_components(pcs));
 }
 
 #if !PANTONE_ONLY
@@ -500,7 +500,7 @@ client_pantone_remap_DeviceN(client_custom_color_params_t * pparam,
  */
 static bool
 client_install_DeviceGray(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs)
+            gs_color_space * pcs, gs_gstate * pgs)
 {
     /* Nothing to do in our demo */
     return true;
@@ -512,7 +512,7 @@ client_install_DeviceGray(client_custom_color_params_t * pparams,
  */
 static int
 convert_intensity_into_device_color(const frac intensity,
-        gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
         gs_color_select_t select)
 {
     frac cc, cm, cy, ck;
@@ -534,7 +534,7 @@ convert_intensity_into_device_color(const frac intensity,
     }
 
     /* Send CMYK colors to the device */
-    gx_remap_concrete_cmyk(cc, cm, cy, ck, pdc, pis, dev, select);
+    gx_remap_concrete_cmyk(cc, cm, cy, ck, pdc, pgs, dev, select);
     return 0;
 }
 
@@ -544,7 +544,7 @@ convert_intensity_into_device_color(const frac intensity,
 static int
 client_remap_DeviceGray(client_custom_color_params_t * pparams,
     const frac * pconc, const gs_color_space * pcs, gx_device_color * pdc,
-    const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+    const gs_gstate * pgs, gx_device * dev, gs_color_select_t select)
 {
 
         #if OBJECT_TYPE_EXAMPLE
@@ -553,13 +553,13 @@ client_remap_DeviceGray(client_custom_color_params_t * pparams,
                  * intensity of the given colors and the object type. */
 
                 frac intensity = pconc[0];
-                convert_intensity_into_device_color(intensity, pdc, pis, dev, select);
+                convert_intensity_into_device_color(intensity, pdc, pgs, dev, select);
 
         #else
 
                 /* If desired, replace with your own color transformation */
 
-                gx_remap_concrete_gray(pconc[0], pdc, pis, dev, select);
+                gx_remap_concrete_gray(pconc[0], pdc, pgs, dev, select);
 
         #endif
 
@@ -571,7 +571,7 @@ client_remap_DeviceGray(client_custom_color_params_t * pparams,
  */
 static bool
 client_install_DeviceRGB(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs)
+            gs_color_space * pcs, gs_gstate * pgs)
 {
     /* Nothing to do in our demo */
     dlprintf1("client_install_DeviceRGB ri = %d\n", pgs->renderingintent);
@@ -584,7 +584,7 @@ client_install_DeviceRGB(client_custom_color_params_t * pparams,
 static int
 client_remap_DeviceRGB(client_custom_color_params_t * pparams,
         const frac * pconc, const gs_color_space * pcs, gx_device_color * pdc,
-        const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+        const gs_gstate * pgs, gx_device * dev, gs_color_select_t select)
 {
 
         #if OBJECT_TYPE_EXAMPLE
@@ -593,13 +593,13 @@ client_remap_DeviceRGB(client_custom_color_params_t * pparams,
                  * intensity of the given colors and the object type. */
 
                 frac intensity = (frac)(pconc[0] * 0.30 + pconc[1] * 0.59 + pconc[2] * 0.11);
-                convert_intensity_into_device_color(intensity, pdc, pis, dev, select);
+                convert_intensity_into_device_color(intensity, pdc, pgs, dev, select);
 
         #else
 
                  /* If desired, replace with your own color transformation */
 
-                 gx_remap_concrete_rgb(pconc[0], pconc[1], pconc[2], pdc, pis, dev, select);
+                 gx_remap_concrete_rgb(pconc[0], pconc[1], pconc[2], pdc, pgs, dev, select);
 
         #endif
 
@@ -611,7 +611,7 @@ client_remap_DeviceRGB(client_custom_color_params_t * pparams,
  */
 static bool
 client_install_DeviceCMYK(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs)
+            gs_color_space * pcs, gs_gstate * pgs)
 {
     /* Nothing to do in our demo */
     return true;
@@ -623,7 +623,7 @@ client_install_DeviceCMYK(client_custom_color_params_t * pparams,
 static int
 client_remap_DeviceCMYK(client_custom_color_params_t * pparams,
         const frac * pconc, const gs_color_space * pcs, gx_device_color * pdc,
-        const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+        const gs_gstate * pgs, gx_device * dev, gs_color_select_t select)
 {
 
         #if OBJECT_TYPE_EXAMPLE
@@ -637,12 +637,12 @@ client_remap_DeviceCMYK(client_custom_color_params_t * pparams,
 
                 if (intensity < frac_0)
                 intensity = frac_0;
-                convert_intensity_into_device_color(intensity, pdc, pis, dev, select);
+                convert_intensity_into_device_color(intensity, pdc, pgs, dev, select);
 
         #else
 
                  /* If desired, replace with your own color transformation */
-                 gx_remap_concrete_cmyk(pconc[0], pconc[1], pconc[2], pconc[3],pdc, pis, dev, select);
+                 gx_remap_concrete_cmyk(pconc[0], pconc[1], pconc[2], pconc[3],pdc, pgs, dev, select);
 
         #endif
 
@@ -661,7 +661,7 @@ client_remap_DeviceCMYK(client_custom_color_params_t * pparams,
 
 static bool
 client_install_CIEtoA(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs)
+            gs_color_space * pcs, gs_gstate * pgs)
 {
     /* get ready for converting to XYZ */
     demo_color_space_data_t * pdata;
@@ -692,9 +692,9 @@ client_install_CIEtoA(client_custom_color_params_t * pparams,
         gx_cie_load_common_cache(&pcie->common, pgs);
         gs_cie_a_complete(pcie);
         if ((code=gs_cie_cs_complete(pgs, true)) >= 0) {
-            /* Now allocate the conversion imager state in stable_memory */
+            /* Now allocate the conversion gs_gstate in stable_memory */
             /* so that the garbage collector won't free it		 */
-            code = gx_cie_to_xyz_alloc(&pdata->CIEtoXYZ_pis, pcs,
+            code = gx_cie_to_xyz_alloc(&pdata->CIEtoXYZ_pgs, pcs,
                                         pcs->rc.memory->stable_memory);
         }
         if (code < 0) {
@@ -707,7 +707,7 @@ client_install_CIEtoA(client_custom_color_params_t * pparams,
 
 static bool
 client_install_CIEtoXYZ(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs)
+            gs_color_space * pcs, gs_gstate * pgs)
 {
     /* get ready for converting to XYZ */
     demo_color_space_data_t * pdata;
@@ -753,9 +753,9 @@ client_install_CIEtoXYZ(client_custom_color_params_t * pparams,
         }
         /* Fill the caches we need in the CIE color space */
         if ((code=gx_install_cie_abc((gs_cie_abc *)pcie, pgs)) >= 0) {
-            /* Now allocate the conversion imager state in stable_memory */
+            /* Now allocate the conversion gs_gstate in stable_memory */
             /* so that the garbage collector won't free it               */
-            code = gx_cie_to_xyz_alloc(&pdata->CIEtoXYZ_pis, pcs,
+            code = gx_cie_to_xyz_alloc(&pdata->CIEtoXYZ_pgs, pcs,
                                     pcs->rc.memory->stable_memory);
         }
         if (code < 0) {
@@ -768,7 +768,7 @@ client_install_CIEtoXYZ(client_custom_color_params_t * pparams,
 
 static bool
 client_install_ICCtoXYZ(client_custom_color_params_t * pparams,
-            gs_color_space * pcs, gs_state * pgs)
+            gs_color_space * pcs, gs_gstate * pgs)
 {
     int code;
     const gs_icc_params * picc_params = (const gs_icc_params *)&pcs->params.icc;
@@ -781,7 +781,7 @@ client_install_ICCtoXYZ(client_custom_color_params_t * pparams,
     pdata = allocate_client_data_block(1, pcs->rc.memory->stable_memory);
     pcs->pclient_color_space_data = (client_color_space_data_t *) pdata;
 
-        /* Need to initialize the client data.  The imager_state is what is needed in pdata->CIEtoXZY_ps */
+        /* Need to initialize the client data.  The gs_gstate is what is needed in pdata->CIEtoXZY_ps */
 
     /* update the stub information used by the joint caches  */
     gx_cie_load_common_cache(&picc_info->common, pgs);
@@ -792,9 +792,9 @@ client_install_ICCtoXYZ(client_custom_color_params_t * pparams,
         return false;
     }
 
-        /* Now allocate the conversion imager state in stable_memory	*/
+        /* Now allocate the conversion gs_gstate in stable_memory	*/
         /* so that the garbage collector won't free it			*/
-        code = gx_cie_to_xyz_alloc(&pdata->CIEtoXYZ_pis, pcs,
+        code = gx_cie_to_xyz_alloc(&pdata->CIEtoXYZ_pgs, pcs,
                                 pcs->rc.memory->stable_memory);
 
         if (code < 0) {
@@ -811,7 +811,7 @@ client_install_ICCtoXYZ(client_custom_color_params_t * pparams,
 static int
 client_remap_CIEBasedA(client_custom_color_params_t * pparams,
     const gs_client_color * pc, const gs_color_space * pcs,
-    gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+    gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
     gs_color_select_t select)
 {
     demo_color_space_data_t * pdata =
@@ -819,10 +819,10 @@ client_remap_CIEBasedA(client_custom_color_params_t * pparams,
     frac gray = convert2frac(pc->paint.values[0], pcs->params.a->RangeA);
 
     /*** Demonstrate method to convert to XYZ ***/
-    if (pdata->CIEtoXYZ_pis) {
+    if (pdata->CIEtoXYZ_pgs) {
         frac xyz[3];
 
-        cs_concretize_color(pc, pcs, xyz, pdata->CIEtoXYZ_pis);
+        cs_concretize_color(pc, pcs, xyz, pdata->CIEtoXYZ_pgs);
         /* We don't really do anything with these values, but this */
         /* is where a real client could convert to a device color  */
         if_debug4('|', "[c]client_remap CIEA [%g] -> XYZ [%g, %g, %g]\n",
@@ -834,7 +834,7 @@ client_remap_CIEBasedA(client_custom_color_params_t * pparams,
      * For demo and debug purposes, make our colors a function of the
      * intensity of the given color value and the object type.
      */
-    return client_remap_DeviceGray(pparams, &gray, pcs, pdc, pis, dev, select);
+    return client_remap_DeviceGray(pparams, &gray, pcs, pdc, pgs, dev, select);
 }
 
 /*
@@ -843,7 +843,7 @@ client_remap_CIEBasedA(client_custom_color_params_t * pparams,
 static int
 client_remap_CIEBasedABC(client_custom_color_params_t * pparams,
     const gs_client_color * pc, const gs_color_space * pcs,
-    gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+    gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
     gs_color_select_t select)
 {
     demo_color_space_data_t * pdata =
@@ -852,10 +852,10 @@ client_remap_CIEBasedABC(client_custom_color_params_t * pparams,
     int i;
 
     /*** Demonstrate method to convert to XYZ ***/
-    if (pdata->CIEtoXYZ_pis) {
+    if (pdata->CIEtoXYZ_pgs) {
         frac xyz[3];
 
-        cs_concretize_color(pc, pcs, xyz, pdata->CIEtoXYZ_pis);
+        cs_concretize_color(pc, pcs, xyz, pdata->CIEtoXYZ_pgs);
         /* We don't really do anything with these values, but this */
         /* is where a real client could convert to a device color  */
         if_debug6('|', "[c]client_remap CIEABC [%g, %g, %g] -> XYZ [%g, %g, %g]\n",
@@ -871,7 +871,7 @@ client_remap_CIEBasedABC(client_custom_color_params_t * pparams,
     for (i = 0; i < 3; i++)
         rgb[i] = convert2frac(pc->paint.values[i],
                         pcs->params.abc->RangeABC.ranges[i]);
-    return client_remap_DeviceRGB(pparams, rgb, pcs, pdc, pis, dev, select);
+    return client_remap_DeviceRGB(pparams, rgb, pcs, pdc, pgs, dev, select);
 }
 
 /*
@@ -880,7 +880,7 @@ client_remap_CIEBasedABC(client_custom_color_params_t * pparams,
 static int
 client_remap_CIEBasedDEF(client_custom_color_params_t * pparams,
     const gs_client_color * pc, const gs_color_space * pcs,
-    gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+    gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
     gs_color_select_t select)
 {
     demo_color_space_data_t * pdata =
@@ -889,10 +889,10 @@ client_remap_CIEBasedDEF(client_custom_color_params_t * pparams,
     int i;
 
     /*** Demonstrate method to convert to XYZ ***/
-    if (pdata->CIEtoXYZ_pis) {
+    if (pdata->CIEtoXYZ_pgs) {
         frac xyz[3];
 
-        cs_concretize_color(pc, pcs, xyz, pdata->CIEtoXYZ_pis);
+        cs_concretize_color(pc, pcs, xyz, pdata->CIEtoXYZ_pgs);
         /* We don't really do anything with these values, but this */
         /* is where a real client could convert to a device color  */
         if_debug6('|', "[c]client_remap CIEDEF [%g, %g, %g] -> XYZ [%g, %g, %g]\n",
@@ -908,7 +908,7 @@ client_remap_CIEBasedDEF(client_custom_color_params_t * pparams,
     for (i = 0; i < 3; i++)
         rgb[i] = convert2frac(pc->paint.values[i],
                         pcs->params.def->RangeDEF.ranges[i]);
-    return client_remap_DeviceRGB(pparams, rgb, pcs, pdc, pis, dev, select);
+    return client_remap_DeviceRGB(pparams, rgb, pcs, pdc, pgs, dev, select);
 }
 
 /*
@@ -917,7 +917,7 @@ client_remap_CIEBasedDEF(client_custom_color_params_t * pparams,
 static int
 client_remap_CIEBasedDEFG(client_custom_color_params_t * pparams,
     const gs_client_color * pc, const gs_color_space * pcs,
-    gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+    gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
     gs_color_select_t select)
 {
     demo_color_space_data_t * pdata =
@@ -926,10 +926,10 @@ client_remap_CIEBasedDEFG(client_custom_color_params_t * pparams,
     int i;
 
     /*** Demonstrate method to convert to XYZ ***/
-    if (pdata->CIEtoXYZ_pis) {
+    if (pdata->CIEtoXYZ_pgs) {
         frac xyz[3];
 
-        cs_concretize_color(pc, pcs, xyz, pdata->CIEtoXYZ_pis);
+        cs_concretize_color(pc, pcs, xyz, pdata->CIEtoXYZ_pgs);
         /* We don't really do anything with these values, but this */
         /* is where a real client could convert to a device color  */
         if_debug7('|', "[c]client_remap CIEDEFG [%g, %g, %g] -> XYZ [%g, %g, %g]\n",
@@ -946,7 +946,7 @@ client_remap_CIEBasedDEFG(client_custom_color_params_t * pparams,
     for (i = 0; i < 4; i++)
         cmyk[i] = convert2frac(pc->paint.values[i],
                         pcs->params.defg->RangeDEFG.ranges[i]);
-    return client_remap_DeviceRGB(pparams, cmyk, pcs, pdc, pis, dev, select);
+    return client_remap_DeviceRGB(pparams, cmyk, pcs, pdc, pgs, dev, select);
 }
 
 /*
@@ -955,7 +955,7 @@ client_remap_CIEBasedDEFG(client_custom_color_params_t * pparams,
 static int
 client_remap_ICCBased(client_custom_color_params_t * pparams,
     const gs_client_color * pc, const gs_color_space * pcs,
-    gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+    gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
     gs_color_select_t select)
 {
     demo_color_space_data_t * pdata =
@@ -964,11 +964,11 @@ client_remap_ICCBased(client_custom_color_params_t * pparams,
     int i, num_values = pcs->params.icc.picc_info->num_components;
 
     /*** Demonstrate method to convert to XYZ ***/
-    if (pdata->CIEtoXYZ_pis) {
+    if (pdata->CIEtoXYZ_pgs) {
 
                 frac xyz[3];
 
-                cs_concretize_color(pc, pcs, xyz, pdata->CIEtoXYZ_pis);
+                cs_concretize_color(pc, pcs, xyz, pdata->CIEtoXYZ_pgs);
                 /* We don't really do anything with these values, but this */
                 /* is where a real client could convert to a device color  */
                 if_debug6('|', "[c]client_remap ICCBased [%g, %g, %g] -> XYZ [%g, %g, %g]\n",
@@ -992,14 +992,14 @@ client_remap_ICCBased(client_custom_color_params_t * pparams,
             return_error(gs_error_rangecheck);
         case 1:
             return client_remap_DeviceGray(pparams, frac_color, pcs,
-                                         pdc, pis, dev, select);
+                                         pdc, pgs, dev, select);
         case 3:
             return client_remap_DeviceRGB(pparams, frac_color, pcs,
-                                         pdc, pis, dev, select);
+                                         pdc, pgs, dev, select);
         case 4:
         default:
             return client_remap_DeviceCMYK(pparams, frac_color, pcs,
-                                         pdc, pis, dev, select);
+                                         pdc, pgs, dev, select);
     }
 }
 

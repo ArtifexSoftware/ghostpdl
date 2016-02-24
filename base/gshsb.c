@@ -29,7 +29,7 @@ static void color_rgb_to_hsb(double r, double g, double b, float hsb[3]);
 
 /* sethsbcolor */
 int
-gs_sethsbcolor(gs_state * pgs, double h, double s, double b)
+gs_sethsbcolor(gs_gstate * pgs, double h, double s, double b)
 {
     float rgb[3];
 
@@ -39,7 +39,7 @@ gs_sethsbcolor(gs_state * pgs, double h, double s, double b)
 
 /* currenthsbcolor */
 int
-gs_currenthsbcolor(const gs_state * pgs, float pr3[3])
+gs_currenthsbcolor(const gs_gstate * pgs, float pr3[3])
 {
     float rgb[3];
 

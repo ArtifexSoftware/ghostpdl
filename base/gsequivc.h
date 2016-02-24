@@ -49,7 +49,7 @@ typedef struct equivalent_cmyk_color_params_s {
  * If possible, update the equivalent CMYK color for spot colors.
  */
 int update_spot_equivalent_cmyk_colors(gx_device * pdev,
-                const gs_state * pgs, gs_devn_params * pdevn_params,
+                const gs_gstate * pgs, gs_devn_params * pdevn_params,
                 equivalent_cmyk_color_params * pparams);
 
 /*
@@ -57,12 +57,12 @@ int update_spot_equivalent_cmyk_colors(gx_device * pdev,
  * color space.
  */
 void capture_spot_equivalent_cmyk_colors(gx_device * pdev,
-                const gs_state * pgs, const gs_client_color * pcc,
+                const gs_gstate * pgs, const gs_client_color * pcc,
                 const gs_color_space * pcs, int sep_num,
                 equivalent_cmyk_color_params * pparams);
 
 /* Used in named color replacement to detect that we are doing the equivalent
    computation */
-bool named_color_equivalent_cmyk_colors(const gs_imager_state * pis);
+bool named_color_equivalent_cmyk_colors(const gs_gstate * pgs);
 
 #endif		/* define gsequivc_INCLUDED */

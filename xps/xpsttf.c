@@ -257,7 +257,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
 }
 
 static int
-xps_true_callback_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
+xps_true_callback_build_char(gs_show_enum *penum, gs_gstate *pgs, gs_font *pfont,
         gs_char chr, gs_glyph glyph)
 {
     gs_font_type42 *p42 = (gs_font_type42*)pfont;

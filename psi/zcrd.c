@@ -53,7 +53,7 @@ static int
 zbuildcolorrendering1(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_memory_t *mem = gs_state_memory(igs);
+    gs_memory_t *mem = gs_gstate_memory(igs);
     int code;
     es_ptr ep = esp;
     gs_cie_render *pcrd;
@@ -82,7 +82,7 @@ static int
 zbuilddevicecolorrendering1(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_memory_t *mem = gs_state_memory(igs);
+    gs_memory_t *mem = gs_gstate_memory(igs);
     dict_param_list list;
     gs_cie_render *pcrd = 0;
     int code;
@@ -262,11 +262,11 @@ static int
     cie_tpqr_finish(i_ctx_t *);
 int
 cie_cache_joint(i_ctx_t *i_ctx_p, const ref_cie_render_procs * pcrprocs,
-                const gs_cie_common *pcie, gs_state * pgs)
+                const gs_cie_common *pcie, gs_gstate * pgs)
 {
     const gs_cie_render *pcrd = gs_currentcolorrendering(pgs);
     gx_cie_joint_caches *pjc = gx_unshare_cie_caches(pgs);
-    gs_ref_memory_t *imem = (gs_ref_memory_t *) gs_state_memory(pgs);
+    gs_ref_memory_t *imem = (gs_ref_memory_t *) gs_gstate_memory(pgs);
     ref pqr_procs;
     uint space;
     int code;
@@ -356,7 +356,7 @@ static int
 cie_tpqr_finish(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_state *pgs = r_ptr(op, gs_state);
+    gs_gstate *pgs = r_ptr(op, gs_gstate);
     gs_cie_render *pcrd =
         (gs_cie_render *)gs_currentcolorrendering(pgs);  /* break const */
     int code;

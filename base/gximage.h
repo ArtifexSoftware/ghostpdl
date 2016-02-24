@@ -215,7 +215,7 @@ struct gx_image_enum_s {
     gs_fixed_point x_extent, y_extent;  /* extent of one row of rect */
     SAMPLE_UNPACK_PROC((*unpack));
     irender_proc((*render));
-    const gs_imager_state *pis;
+    const gs_gstate *pgs;
     const gs_color_space *pcs;  /* color space of image */
     byte *buffer;               /* for expanding samples to a */
                                 /* byte or frac */
@@ -297,7 +297,7 @@ struct gx_image_enum_s {
 
 /* Enumerate the pointers in an image enumerator. */
 #define gx_image_enum_do_ptrs(m)\
-  m(0,pis) m(1,pcs) m(2,dev) m(3,buffer) m(4,line)\
+  m(0,pgs) m(1,pcs) m(2,dev) m(3,buffer) m(4,line)\
   m(5,clip_dev) m(6,rop_dev) m(7,scaler) m(8,icc_link)\
   m(9,color_cache) m(10,ht_buffer) m(11,thresh_buffer) \
   m(12,clues)
@@ -319,7 +319,7 @@ struct gx_image_enum_s {
 void gx_image_scale_mask_colors(gx_image_enum *penum,
                                 int component_index);
 /* Used by icc processing to detect decode cases */
-bool gx_has_transfer(const gs_imager_state *pis, int num_comps);
+bool gx_has_transfer(const gs_gstate *pgs, int num_comps);
 /*
  * Do common initialization for processing an ImageType 1 or 4 image.
  * Allocate the enumerator and fill in the following members:
@@ -338,7 +338,7 @@ gx_image_enum_alloc(const gs_image_common_t * pic,
  *      masked, adjust
  */
 int
-gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
+gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
                     const gs_matrix *pmat, const gs_image_common_t * pic,
                     const gx_drawing_color * pdcolor,
                     const gx_clip_path * pcpath,

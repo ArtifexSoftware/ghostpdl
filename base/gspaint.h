@@ -21,13 +21,13 @@
 #  define gspaint_INCLUDED
 
 /* Painting */
-int gs_erasepage(gs_state *),
-    gs_fillpage(gs_state *),
-    gs_fill(gs_state *),
-    gs_eofill(gs_state *),
-    gs_stroke(gs_state *);
+int gs_erasepage(gs_gstate *),
+    gs_fillpage(gs_gstate *),
+    gs_fill(gs_gstate *),
+    gs_eofill(gs_gstate *),
+    gs_stroke(gs_gstate *);
 
 /* Image tracing */
-int gs_imagepath(gs_state *, int, int, const byte *);
+int gs_imagepath(gs_gstate *, int, int, const byte *);
 
 #endif /* gspaint_INCLUDED */

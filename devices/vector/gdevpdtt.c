@@ -112,7 +112,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
          * font co-ordinate space, so we need to undo that scale here.
          */
         if (pdev->PS_accumulator){
-            gs_matrix_scale(&ctm_only(pte->pis), .01, .01, &m);
+            gs_matrix_scale(&ctm_only(pte->pgs), .01, .01, &m);
             gs_distance_transform(pw[0], pw[1], &m, &pdev->char_width);
         } else {
             pdev->char_width.x = pw[0];
@@ -131,7 +131,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
          * font co-ordinate space, so we need to undo that scale here.
          */
         if (pdev->PS_accumulator){
-            gs_matrix_scale(&ctm_only(pte->pis), .01, .01, &m);
+            gs_matrix_scale(&ctm_only(pte->pgs), .01, .01, &m);
             gs_distance_transform(pw[0], pw[1], &m, &pdev->char_width);
         } else {
             pdev->char_width.x = pw[0];
@@ -266,7 +266,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
             /* See comments in pdf_text_process. We are using a 100x100 matrix
              * NOT the identity,  so we need to undo that scale here.
              */
-            gs_matrix_scale(&ctm_only(penum->pis), .01, .01, (gs_matrix *)&ctm_only(penum->pis));
+            gs_matrix_scale(&ctm_only(penum->pgs), .01, .01, (gs_matrix *)&ctm_only(penum->pgs));
             /* We also scaled the page height and width. Because we
              * don't go through the accumulator 'close' in pdf_text_process
              * we must also undo that scale.
@@ -274,8 +274,8 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
             pdev->width /= 100;
             pdev->height /= 100;
 
-            gs_matrix_multiply((gs_matrix *)&pdev->charproc_ctm, (gs_matrix *)&penum->pis->ctm, &m);
-            gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
+            gs_matrix_multiply((gs_matrix *)&pdev->charproc_ctm, (gs_matrix *)&penum->pgs->ctm, &m);
+            gs_matrix_fixed_from_matrix(&penum->pgs->ctm, &m);
             penum->charproc_accum = false;
             pdev->accumulating_charproc = false;
         }
@@ -340,13 +340,12 @@ static const gs_text_enum_procs_t pdf_text_procs = {
  * so this functionality was left in pdf_prepare_text_drawing.
  */
 static int
-pdf_prepare_text_color(gx_device_pdf *const pdev, gs_imager_state *pis, const gs_text_params_t *text, gs_font *font)
+pdf_prepare_text_color(gx_device_pdf *const pdev, gs_gstate *pgs, const gs_text_params_t *text, gs_font *font)
 {
     int code=0;
     if (text->operation & TEXT_DO_DRAW) {
-        gs_state *pgs = (gs_state *)pis;
         if (!pdev->ForOPDFRead) {
-            if (pis->text_rendering_mode != 3 && pis->text_rendering_mode != 7) {
+            if (pgs->text_rendering_mode != 3 && pgs->text_rendering_mode != 7) {
                 if (font->PaintType == 2) {
                     /* Bit awkward, if the PaintType is 2 then we want to set the
                      * current ie 'fill' colour, but as a stroke colour because we
@@ -355,21 +354,21 @@ pdf_prepare_text_color(gx_device_pdf *const pdev, gs_imager_state *pis, const gs
                     code = gx_set_dev_color(pgs);
                     if (code != 0)
                         return code;
-                    code = pdf_set_drawing_color(pdev, pis, pgs->color[0].dev_color, &pdev->saved_stroke_color,
+                    code = pdf_set_drawing_color(pdev, pgs, pgs->color[0].dev_color, &pdev->saved_stroke_color,
                                  &pdev->stroke_used_process_color,
                                  &psdf_set_stroke_color_commands);
                     if (code < 0)
                         return code;
                 } else {
-                    if ((pis->text_rendering_mode == 0 || pis->text_rendering_mode == 2 ||
-                        pis->text_rendering_mode == 4 || pis->text_rendering_mode == 6) &&
+                    if ((pgs->text_rendering_mode == 0 || pgs->text_rendering_mode == 2 ||
+                        pgs->text_rendering_mode == 4 || pgs->text_rendering_mode == 6) &&
                         !pdev->remap_stroke_color) {
                         code = gx_set_dev_color(pgs);
                         if (code != 0)
                             return code;
                     }
-                    if (pis->text_rendering_mode == 1 || pis->text_rendering_mode == 2 ||
-                        pis->text_rendering_mode == 5 || pis->text_rendering_mode == 6) {
+                    if (pgs->text_rendering_mode == 1 || pgs->text_rendering_mode == 2 ||
+                        pgs->text_rendering_mode == 5 || pgs->text_rendering_mode == 6) {
                         if (!pdev->remap_fill_color) {
                             if (pdev->remap_stroke_color) {
                                 pdev->remap_stroke_color = false;
@@ -400,16 +399,15 @@ pdf_prepare_text_color(gx_device_pdf *const pdev, gs_imager_state *pis, const gs
 static int
 pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
 {
-    gs_imager_state * pis = pte->pis;
-    gs_state *pgs = (gs_state *)pis;
+    gs_gstate * pgs = pte->pgs;
     const gx_clip_path * pcpath = pte->pcpath;
     const gs_text_params_t *text = &pte->text;
     bool new_clip = false; /* Quiet compiler. */
     int code;
     gs_font *font = pte->current_font;
 
-    if (!(text->operation & TEXT_DO_NONE) || pis->text_rendering_mode == 3) {
-        code = pdf_check_soft_mask(pdev, pte->pis);
+    if (!(text->operation & TEXT_DO_NONE) || pgs->text_rendering_mode == 3) {
+        code = pdf_check_soft_mask(pdev, pte->pgs);
         if (code < 0)
             return code;
         new_clip = pdf_must_put_clip_path(pdev, pcpath);
@@ -421,7 +419,7 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
             code = 0;
         if (code < 0)
             return code;
-        code = pdf_prepare_fill(pdev, pis);
+        code = pdf_prepare_fill(pdev, pgs);
         if (code < 0)
             return code;
     }
@@ -441,7 +439,7 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
         }
 
         if (!pdev->ForOPDFRead) {
-            if (pis->text_rendering_mode != 3 && pis->text_rendering_mode != 7) {
+            if (pgs->text_rendering_mode != 3 && pgs->text_rendering_mode != 7) {
                 if (font->PaintType == 2) {
                     /* Bit awkward, if the PaintType is 2 then we want to set the
                      * current ie 'fill' colour, but as a stroke colour because we
@@ -450,30 +448,30 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
                     code = gx_set_dev_color(pgs);
                     if (code != 0)
                         return code;
-                    code = pdf_set_drawing_color(pdev, pis, pgs->color[0].dev_color, &pdev->saved_stroke_color,
+                    code = pdf_set_drawing_color(pdev, pgs, pgs->color[0].dev_color, &pdev->saved_stroke_color,
                                  &pdev->stroke_used_process_color,
                                  &psdf_set_stroke_color_commands);
                     if (code < 0)
                         return code;
                 } else {
-                    if (pis->text_rendering_mode == 0 || pis->text_rendering_mode == 2 ||
-                        pis->text_rendering_mode == 4 || pis->text_rendering_mode == 6) {
+                    if (pgs->text_rendering_mode == 0 || pgs->text_rendering_mode == 2 ||
+                        pgs->text_rendering_mode == 4 || pgs->text_rendering_mode == 6) {
                         code = gx_set_dev_color(pgs);
                         if (code != 0)
                             return code;
-                        code = pdf_set_drawing_color(pdev, pis, pgs->color[0].dev_color, &pdev->saved_fill_color,
+                        code = pdf_set_drawing_color(pdev, pgs, pgs->color[0].dev_color, &pdev->saved_fill_color,
                                      &pdev->fill_used_process_color,
                                      &psdf_set_fill_color_commands);
                         if (code < 0)
                             return code;
                     }
-                    if (pis->text_rendering_mode == 1 || pis->text_rendering_mode == 2 ||
-                        pis->text_rendering_mode == 5 || pis->text_rendering_mode == 6) {
+                    if (pgs->text_rendering_mode == 1 || pgs->text_rendering_mode == 2 ||
+                        pgs->text_rendering_mode == 5 || pgs->text_rendering_mode == 6) {
                         gs_swapcolors_quick(pgs);
                         code = gx_set_dev_color(pgs);
                         if (code != 0)
                             return code;
-                        code = pdf_set_drawing_color(pdev, pis, pgs->color[0].dev_color, &pdev->saved_stroke_color,
+                        code = pdf_set_drawing_color(pdev, pgs, pgs->color[0].dev_color, &pdev->saved_stroke_color,
                                      &pdev->stroke_used_process_color,
                                      &psdf_set_stroke_color_commands);
                         if (code < 0)
@@ -489,11 +487,11 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
                 return code;
 
             if ((code =
-                 pdf_set_drawing_color(pdev, pis, pgs->color[0].dev_color, &pdev->saved_stroke_color,
+                 pdf_set_drawing_color(pdev, pgs, pgs->color[0].dev_color, &pdev->saved_stroke_color,
                                        &pdev->stroke_used_process_color,
                                        &psdf_set_stroke_color_commands)) < 0 ||
                 (code =
-                 pdf_set_drawing_color(pdev, pis, pgs->color[0].dev_color, &pdev->saved_fill_color,
+                 pdf_set_drawing_color(pdev, pgs, pgs->color[0].dev_color, &pdev->saved_fill_color,
                                        &pdev->fill_used_process_color,
                                        &psdf_set_fill_color_commands)) < 0
                 )
@@ -504,7 +502,7 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
 }
 
 int
-gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
+gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
                     const gs_text_params_t *text, gs_font * font,
                     gx_path * path0, const gx_device_color * pdcolor,
                     const gx_clip_path * pcpath,
@@ -518,7 +516,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
     /* should we "flatten" the font to "normal" marking operations */
     if (pdev->FlattenFonts) {
         font->dir->ccache.upper = 0;
-        return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
+        return gx_default_text_begin(dev, pgs, text, font, path, pdcolor,
                                          pcpath, mem, ppte);
     }
     
@@ -528,7 +526,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
         gs_point p;
         int i;
 
-        gs_matrix_multiply(&font->FontMatrix, &ctm_only(pis), &tmat);
+        gs_matrix_multiply(&font->FontMatrix, &ctm_only(pgs), &tmat);
         gs_distance_transform(1, 0, &tmat, &p);
         if (p.x > fabs(p.y))
             i = 0;
@@ -545,7 +543,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 
     pdev->last_charpath_op = 0;
     if ((text->operation & TEXT_DO_ANY_CHARPATH) && !path0->first_subpath) {
-        if (pdf_compare_text_state_for_charpath(pdev->text->text_state, pdev, pis, font, text))
+        if (pdf_compare_text_state_for_charpath(pdev->text->text_state, pdev, pgs, font, text))
             pdev->last_charpath_op = text->operation & TEXT_DO_ANY_CHARPATH;
     }
 
@@ -576,7 +574,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
         penum->cgp = NULL;
         penum->output_char_code = GS_NO_CHAR;
         code = gs_text_enum_init((gs_text_enum_t *)penum, &pdf_text_procs,
-                             dev, pis, text, font, path, pdcolor, pcpath, mem);
+                             dev, pgs, text, font, path, pdcolor, pcpath, mem);
         if (code < 0) {
             gs_free_object(mem, penum, "gdev_pdf_text_begin");
             return code;
@@ -597,27 +595,27 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
     if (!user_defined || !(text->operation & TEXT_DO_ANY_CHARPATH)) {
         if (user_defined &&
             (text->operation & TEXT_DO_NONE) && (text->operation & TEXT_RETURN_WIDTH)
-            && pis->text_rendering_mode != 3) {
+            && pgs->text_rendering_mode != 3) {
             /* This is stringwidth, see gx_default_text_begin.
              * We need to prevent writing characters to PS cache,
              * otherwise the font converts to bitmaps.
              * So pass through even with stringwidth.
              */
-            code = gx_hld_stringwidth_begin(pis, &path);
+            code = gx_hld_stringwidth_begin(pgs, &path);
             if (code < 0)
                 return code;
-        } else if ((!(text->operation & TEXT_DO_DRAW) && pis->text_rendering_mode != 3)
+        } else if ((!(text->operation & TEXT_DO_DRAW) && pgs->text_rendering_mode != 3)
                     || path == 0 || !path_position_valid(path)
                     || pdev->type3charpath)
-            return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
+            return gx_default_text_begin(dev, pgs, text, font, path, pdcolor,
                                          pcpath, mem, ppte);
         else if (text->operation & TEXT_DO_ANY_CHARPATH)
-            return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
+            return gx_default_text_begin(dev, pgs, text, font, path, pdcolor,
                                          pcpath, mem, ppte);
     }
 
     if (!pdev->ForOPDFRead) {
-    code = pdf_prepare_text_color(pdev, pis, text, font);
+    code = pdf_prepare_text_color(pdev, pgs, text, font);
     if (code != 0)
         return code;
     }
@@ -635,7 +633,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
     penum->cgp = NULL;
     penum->output_char_code = GS_NO_CHAR;
     code = gs_text_enum_init((gs_text_enum_t *)penum, &pdf_text_procs,
-                             dev, pis, text, font, path, pdcolor, pcpath, mem);
+                             dev, pgs, text, font, path, pdcolor, pcpath, mem);
     if (code < 0) {
         gs_free_object(mem, penum, "gdev_pdf_text_begin");
         return code;
@@ -2267,7 +2265,7 @@ pdf_find_glyph(pdf_font_resource_t *pdfont, gs_glyph glyph)
 
 /*
  * Compute the cached values in the text processing state from the text
- * parameters, current_font, and pis->ctm.  Return either an error code (<
+ * parameters, current_font, and pgs->ctm.  Return either an error code (<
  * 0) or a mask of operation attributes that the caller must emulate.
  * Currently the only such attributes are TEXT_ADD_TO_ALL_WIDTHS and
  * TEXT_ADD_TO_SPACE_WIDTH.  Note that this procedure fills in all the
@@ -2295,7 +2293,7 @@ transform_delta_inverse(const gs_point *pdelta, const gs_matrix *pmat,
     return 0;
 }
 
-float pdf_calculate_text_size(gs_imager_state *pis, pdf_font_resource_t *pdfont,
+float pdf_calculate_text_size(gs_gstate *pgs, pdf_font_resource_t *pdfont,
                               const gs_matrix *pfmat, gs_matrix *smat, gs_matrix *tmat,
                               gs_font *font, gx_device_pdf *pdev)
 {
@@ -2336,7 +2334,7 @@ float pdf_calculate_text_size(gs_imager_state *pis, pdf_font_resource_t *pdfont,
 
     gs_matrix_invert(&orig_matrix, smat);
     gs_matrix_multiply(smat, pfmat, smat);
-    *tmat = ctm_only(pis);
+    *tmat = ctm_only(pgs);
     tmat->tx = tmat->ty = 0;
     gs_matrix_multiply(smat, tmat, tmat);
 
@@ -2369,7 +2367,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     if (code < 0)
         return code;
 
-    size = pdf_calculate_text_size(penum->pis, pdfont, pfmat, &smat, &tmat, penum->current_font, pdev);
+    size = pdf_calculate_text_size(penum->pgs, pdfont, pfmat, &smat, &tmat, penum->current_font, pdev);
     /* Check for spacing parameters we can handle, and transform them. */
 
     if (penum->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
@@ -2408,16 +2406,16 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     ppts->values.pdfont = pdfont;
     ppts->values.size = size;
     ppts->values.matrix = tmat;
-    ppts->values.render_mode = penum->pis->text_rendering_mode;
+    ppts->values.render_mode = penum->pgs->text_rendering_mode;
     ppts->values.word_spacing = w_s;
     ppts->font = font;
 
-    if (font->PaintType == 2 && penum->pis->text_rendering_mode == 0)
+    if (font->PaintType == 2 && penum->pgs->text_rendering_mode == 0)
     {
-        gs_imager_state *pis = penum->pis;
+        gs_gstate *pgs = penum->pgs;
         gs_font *font = penum->current_font;
         double scaled_width = font->StrokeWidth != 0 ? font->StrokeWidth : 0.001;
-        double saved_width = pis->line_params.half_width;
+        double saved_width = pgs->line_params.half_width;
         /*
          * See stream_to_text in gdevpdfu.c re the computation of
          * the scaling value.
@@ -2437,17 +2435,17 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
         ppts->values.render_mode = 1;
 
         /* Sort out any pending glyphs */
-        code = pdf_set_PaintType0_params(pdev, pis, size, scaled_width, &ppts->values);
+        code = pdf_set_PaintType0_params(pdev, pgs, size, scaled_width, &ppts->values);
         if (code < 0)
             return code;
 
-        pis->line_params.half_width = scaled_width / 2;
+        pgs->line_params.half_width = scaled_width / 2;
         code = pdf_set_text_process_state(pdev, (const gs_text_enum_t *)penum,
                                       ppts);
         if (code < 0)
             return code;
 
-        pis->line_params.half_width = saved_width;
+        pgs->line_params.half_width = saved_width;
     } else {
         code = pdf_set_text_process_state(pdev, (const gs_text_enum_t *)penum,
                                       ppts);
@@ -2462,7 +2460,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
  */
 int
 pdf_set_text_process_state(gx_device_pdf *pdev,
-                           const gs_text_enum_t *pte,        /* for pdcolor, pis */
+                           const gs_text_enum_t *pte,        /* for pdcolor, pgs */
                            pdf_text_process_state_t *ppts)
 {
     /*
@@ -2472,8 +2470,8 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
      */
     if (pdf_render_mode_uses_stroke(pdev, &ppts->values)) {
         /* Write all the parameters for stroking. */
-        gs_imager_state *pis = pte->pis;
-        float save_width = pis->line_params.half_width;
+        gs_gstate *pgs = pte->pgs;
+        float save_width = pgs->line_params.half_width;
         int code;
 
         if (pdev->context == PDF_IN_STRING) {
@@ -2486,10 +2484,10 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
         if (code < 0)
             return code;
 
-        code = pdf_prepare_stroke(pdev, pis);
+        code = pdf_prepare_stroke(pdev, pgs);
         if (code >= 0) {
             code = gdev_vector_prepare_stroke((gx_device_vector *)pdev,
-                                              pis, NULL, NULL, 1);
+                                              pgs, NULL, NULL, 1);
             if (code < 0)
                 return code;
         }
@@ -2498,7 +2496,7 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
         if (code < 0)
             return code;
 
-        pis->line_params.half_width = save_width;
+        pgs->line_params.half_width = save_width;
     }
 
     /* Now set all the other parameters. */
@@ -2815,7 +2813,7 @@ pdf_default_text_begin(gs_text_enum_t *pte, const gs_text_params_t *text,
         text1.operation &= ~TEXT_DO_NONE;
         text1.operation |= TEXT_DO_DRAW;
     }
-    return gx_default_text_begin(pte->dev, pte->pis, &text1, pte->current_font,
+    return gx_default_text_begin(pte->dev, pte->pgs, &text1, pte->current_font,
                                  pte->path, pte->pdcolor, pte->pcpath,
                                  pte->memory, ppte);
 }
@@ -2827,7 +2825,7 @@ static int install_PS_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *
 
     penum->returned.current_char = pte_default->returned.current_char;
     penum->returned.current_glyph = pte_default->returned.current_glyph;
-    pdev->charproc_ctm = penum->pis->ctm;
+    pdev->charproc_ctm = penum->pgs->ctm;
     if (penum->current_font->FontType == ft_user_defined &&
         penum->outer_CID == GS_NO_GLYPH &&
             !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
@@ -2853,7 +2851,7 @@ static int install_PS_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *
         pdev->width *= 100;
         pdev->height *= 100;
 
-        pdf_viewer_state_from_imager_state(pdev, pte->pis, pte->pdcolor);
+        pdf_viewer_state_from_gs_gstate(pdev, pte->pgs, pte->pdcolor);
         /* Set line params to unallowed values so that
            they'll synchronize with writing them out on the first use.
            Doing so because PDF viewer inherits them from the
@@ -2880,7 +2878,7 @@ static int install_PS_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *
          * clipping or arithmetic overflow.
          */
         gs_matrix_scale(&m, 100, 100, &m);
-        gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
+        gs_matrix_fixed_from_matrix(&penum->pgs->ctm, &m);
 
         /* Choose a character code to use with the charproc. */
         code = pdf_choose_output_char_code(pdev, penum, &penum->output_char_code);
@@ -2907,7 +2905,7 @@ static int install_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *pte
 {
     int code;
 
-    pdev->charproc_ctm = penum->pis->ctm;
+    pdev->charproc_ctm = penum->pgs->ctm;
     if ((penum->current_font->FontType == ft_user_defined ||
         penum->current_font->FontType == ft_PCL_user_defined ||
         penum->current_font->FontType == ft_MicroType ||
@@ -2925,7 +2923,7 @@ static int install_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *pte
         if (code < 0)
             return code;
 
-        pdf_viewer_state_from_imager_state(pdev, pte->pis, pte->pdcolor);
+        pdf_viewer_state_from_gs_gstate(pdev, pte->pgs, pte->pdcolor);
         /* Set line params to unallowed values so that
            they'll synchronize with writing them out on the first use.
            Doing so because PDF viewer inherits them from the
@@ -2944,7 +2942,7 @@ static int install_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *pte
            executed gsave, so we are safe to change CTM now.
            Note that BuildChar may change CTM before calling setcachedevice. */
         gs_make_identity(&m);
-        gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
+        gs_matrix_fixed_from_matrix(&penum->pgs->ctm, &m);
 
         /* Choose a character code to use with the charproc. */
         code = pdf_choose_output_char_code(pdev, penum, &penum->output_char_code);
@@ -3203,10 +3201,10 @@ pdf_text_process(gs_text_enum_t *pte)
              */
             float x0y1, x1y0;
 
-            x0y1 = (penum->pis->ctm.yx * penum->pis->ctm.yx) +
-                (penum->pis->ctm.yy * penum->pis->ctm.yy);
-            x1y0 = (penum->pis->ctm.xx * penum->pis->ctm.xx) +
-                (penum->pis->ctm.xy * penum->pis->ctm.xy);
+            x0y1 = (penum->pgs->ctm.yx * penum->pgs->ctm.yx) +
+                (penum->pgs->ctm.yy * penum->pgs->ctm.yy);
+            x1y0 = (penum->pgs->ctm.xx * penum->pgs->ctm.xx) +
+                (penum->pgs->ctm.xy * penum->pgs->ctm.xy);
 
             if (x0y1 == x1y0)
                 early_accumulator = 1;
@@ -3218,7 +3216,7 @@ pdf_text_process(gs_text_enum_t *pte)
                  * graphics state pointer below which is why we need this.
                  */
                 gs_show_enum psenum = *(gs_show_enum *)pte_default;
-                gs_state *pgs = (gs_state *)penum->pis;
+                gs_gstate *pgs = (gs_gstate *)penum->pgs;
                 gs_text_enum_procs_t special_procs = *pte_default->procs;
                 void (*save_proc)(gx_device *, gs_matrix *) = pdev->procs.get_initial_matrix;
                 extern_st(st_gs_show_enum);
@@ -3243,7 +3241,7 @@ pdf_text_process(gs_text_enum_t *pte)
                     cached_fm_pair *pair;
                     cached_char *cc;
 
-                    code = gx_lookup_fm_pair(pfont, &ctm_only(pte->pis), &log2_scale, false, &pair);
+                    code = gx_lookup_fm_pair(pfont, &ctm_only(pte->pgs), &log2_scale, false, &pair);
                     if (code < 0)
                         return code;
                     cc = gx_lookup_cached_char(pfont, pair, pte_default->text.data.chars[pte_default->index], wmode, 1, &subpix_origin);
@@ -3253,11 +3251,11 @@ pdf_text_process(gs_text_enum_t *pte)
                 }
                 /* charproc completion will restore a gstate */
                 gs_gsave(pgs);
-                /* Assigning the imager state pointer to the graphics state pointer
+                /* Assigning the gs_gstate pointer to the graphics state pointer
                  * makes sure that when we make the CTM into the identity it
                  * affects both.
                  */
-                psenum.pgs = (gs_state *)psenum.pis;
+                psenum.pgs = (gs_gstate *)psenum.pgs;
                 /* Save the current FontMatrix */
                 savem = pgs->font->FontMatrix;
                 /* Make the FontMatrix the identity otherwise we will apply
@@ -3362,7 +3360,7 @@ pdf_text_process(gs_text_enum_t *pte)
                         return code;
 
                     /* The following code is copied from show_update, case sws_cache */
-                    code = gx_lookup_fm_pair(pte->current_font, &ctm_only(pte->pis),
+                    code = gx_lookup_fm_pair(pte->current_font, &ctm_only(pte->pgs),
                             &log2_scale, false, &pair);
                     if (code < 0)
                         return code;
@@ -3423,14 +3421,13 @@ pdf_text_process(gs_text_enum_t *pte)
             int save_can_cache = penum->can_cache;
             const gs_color_space *pcs;
             const gs_client_color *pcc;
-            gs_imager_state * pis = pte->pis;
-            gs_state *pgs = (gs_state *)pis;
+            gs_gstate * pgs = pte->pgs;
 
             /* If we are using a high level pattern, we must not use the cached character, as the
              * cache hasn't seen the pattern. So set can_cache to < 0, which prevents us consulting
              * the cache, or storing the result in it.
              */
-            if (gx_hld_get_color_space_and_ccolor(pis, (const gx_drawing_color *)pgs->color[0].dev_color, &pcs, &pcc) == pattern_color_space)
+            if (gx_hld_get_color_space_and_ccolor(pgs, (const gx_drawing_color *)pgs->color[0].dev_color, &pcs, &pcc) == pattern_color_space)
                 penum->can_cache = -1;
             pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
             code = gs_text_process(pte_default);

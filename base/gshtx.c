@@ -320,7 +320,7 @@ static int
 build_component(
                    gs_ht_component * phtc,
                    gx_ht_order * porder,
-                   gs_state * pgs,
+                   gs_gstate * pgs,
                    gs_memory_t * pmem
 )
 {
@@ -396,7 +396,7 @@ free_order_array(
  */
 int
 gs_ht_install(
-                 gs_state * pgs,
+                 gs_gstate * pgs,
                  gs_ht * pht
 )
 {
@@ -501,7 +501,7 @@ create_mask_bits(const byte * mask1, const byte * mask2,
     return count;
 }
 static int
-create_mask_order(gx_ht_order * porder, gs_state * pgs,
+create_mask_order(gx_ht_order * porder, gs_gstate * pgs,
                   const gs_client_order_halftone * phcop,
                   gs_memory_t * mem)
 {

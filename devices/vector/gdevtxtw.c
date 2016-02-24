@@ -28,7 +28,7 @@
 #include "gxfont0.h"
 #include "gstext.h"
 #include "gxfcid.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxpath.h"
 #include "gdevagl.h"
 #include "gxdevsop.h"
@@ -1134,7 +1134,7 @@ txtwrite_draw_thin_line(gx_device * dev,
 /* ---------------- High-level drawing ---------------- */
 
 static int
-txtwrite_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
+txtwrite_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                const gx_fill_params * params, const gx_device_color * pdevc,
                const gx_clip_path * pcpath)
 {
@@ -1142,7 +1142,7 @@ txtwrite_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 }
 
 static int
-txtwrite_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
+txtwrite_stroke_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                  const gx_stroke_params * params,
                  const gx_drawing_color * pdevc, const gx_clip_path * pcpath)
 {
@@ -1281,7 +1281,7 @@ glyph_orig_matrix(const gs_font *font, gs_glyph cid, gs_matrix *pmat)
 
 /*
  * Compute the cached values in the text processing state from the text
- * parameters, current_font, and pis->ctm.  Return either an error code (<
+ * parameters, current_font, and pgs->ctm.  Return either an error code (<
  * 0) or a mask of operation attributes that the caller must emulate.
  * Currently the only such attributes are TEXT_ADD_TO_ALL_WIDTHS and
  * TEXT_ADD_TO_SPACE_WIDTH.  Note that this procedure fills in all the
@@ -1310,7 +1310,7 @@ transform_delta_inverse(const gs_point *pdelta, const gs_matrix *pmat,
 }
 
 static
-float txt_calculate_text_size(gs_imager_state *pis, gs_font *ofont,
+float txt_calculate_text_size(gs_gstate *pgs, gs_font *ofont,
                               const gs_matrix *pfmat, gs_matrix *smat, gs_matrix *tmat,
                               gs_font *font, gx_device *pdev)
 {
@@ -1327,7 +1327,7 @@ float txt_calculate_text_size(gs_imager_state *pis, gs_font *ofont,
 
     gs_matrix_invert(&orig_matrix, smat);
     gs_matrix_multiply(smat, pfmat, smat);
-    *tmat = ctm_only(pis);
+    *tmat = ctm_only(pgs);
     tmat->tx = tmat->ty = 0;
     gs_matrix_multiply(smat, tmat, tmat);
 
@@ -1358,7 +1358,7 @@ txt_update_text_state(text_list_entry_t *ppts,
     if (code < 0)
         return code;
 
-    size = txt_calculate_text_size(penum->pis, ofont, pfmat, &smat, &tmat, penum->current_font, pdev);
+    size = txt_calculate_text_size(penum->pgs, ofont, pfmat, &smat, &tmat, penum->current_font, pdev);
     /* Check for spacing parameters we can handle, and transform them. */
 
     if (penum->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
@@ -1391,7 +1391,7 @@ txt_update_text_state(text_list_entry_t *ppts,
 
     ppts->size = size;
     ppts->matrix = tmat;
-    ppts->render_mode = penum->pis->text_rendering_mode;
+    ppts->render_mode = penum->pgs->text_rendering_mode;
     ppts->FontName = (char *)gs_malloc(pdev->memory->stable_memory, 1,
         font->font_name.size + 1, "txtwrite alloc font name");
     if (!ppts->FontName)
@@ -1400,12 +1400,12 @@ txt_update_text_state(text_list_entry_t *ppts,
     ppts->FontName[font->font_name.size] = 0x00;
     ppts->render_mode = font->WMode;
 
-    if (font->PaintType == 2 && penum->pis->text_rendering_mode == 0)
+    if (font->PaintType == 2 && penum->pgs->text_rendering_mode == 0)
     {
-        gs_imager_state *pis = penum->pis;
+        gs_gstate *pgs = penum->pgs;
         gs_font *font = penum->current_font;
         double scaled_width = font->StrokeWidth != 0 ? font->StrokeWidth : 0.001;
-        double saved_width = pis->line_params.half_width;
+        double saved_width = pgs->line_params.half_width;
         /*
          * See stream_to_text in gdevpdfu.c re the computation of
          * the scaling value.
@@ -1420,11 +1420,11 @@ txt_update_text_state(text_list_entry_t *ppts,
         ppts->render_mode = 1;
         ppts->PaintType0Width = scaled_width;
 
-        pis->line_params.half_width = scaled_width / 2;
+        pgs->line_params.half_width = scaled_width / 2;
         if (code < 0)
             return code;
 
-        pis->line_params.half_width = saved_width;
+        pgs->line_params.half_width = saved_width;
     }
     return (code < 0 ? code : mask);
 }
@@ -1653,15 +1653,15 @@ txt_char_widths_to_uts(gs_font *font /* may be NULL for non-Type3 */,
 static int
 txt_shift_text_currentpoint(textw_text_enum_t *penum, gs_point *wpt)
 {
-    gs_state *pgs;
-    extern_st(st_gs_state);
+    gs_gstate *pgs;
+    extern_st(st_gs_gstate);
 
-    if (gs_object_type(penum->dev->memory, penum->pis) != &st_gs_state) {
+    if (gs_object_type(penum->dev->memory, penum->pgs) != &st_gs_gstate) {
         /* Probably never happens. Not sure though. */
         return_error(gs_error_unregistered);
     }
-    pgs = (gs_state *)penum->pis;
-    return gs_moveto_aux(penum->pis, gx_current_path(pgs),
+    pgs = (gs_gstate *)penum->pgs;
+    return gs_moveto_aux(penum->pgs, gx_current_path(pgs),
                               fixed2float(penum->origin.x) + wpt->x,
                               fixed2float(penum->origin.y) + wpt->y);
 }
@@ -1849,7 +1849,7 @@ txtwrite_process_cmap_text(gs_text_enum_t *pte)
                     gs_point tpt;
 
                     gs_distance_transform(pte->text.delta_all.x, pte->text.delta_all.y,
-                              &ctm_only(pte->pis), &tpt);
+                              &ctm_only(pte->pgs), &tpt);
                     dpt.x += tpt.x;
                     dpt.y += tpt.y;
                 }
@@ -1857,7 +1857,7 @@ txtwrite_process_cmap_text(gs_text_enum_t *pte)
                     gs_point tpt;
 
                     gs_distance_transform(pte->text.delta_space.x, pte->text.delta_space.y,
-                              &ctm_only(pte->pis), &tpt);
+                              &ctm_only(pte->pgs), &tpt);
                     dpt.x += tpt.x;
                     dpt.y += tpt.y;
                 }
@@ -1929,7 +1929,7 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
             gs_point tpt;
 
             gs_distance_transform(pte->text.delta_all.x, pte->text.delta_all.y,
-                              &ctm_only(pte->pis), &tpt);
+                              &ctm_only(pte->pgs), &tpt);
             dpt.x += tpt.x;
             dpt.y += tpt.y;
         }
@@ -1937,7 +1937,7 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
             gs_point tpt;
 
             gs_distance_transform(pte->text.delta_space.x, pte->text.delta_space.y,
-                              &ctm_only(pte->pis), &tpt);
+                              &ctm_only(pte->pgs), &tpt);
             dpt.x += tpt.x;
             dpt.y += tpt.y;
         }
@@ -2180,7 +2180,7 @@ textw_text_process(gs_text_enum_t *pte)
                 gs_point p0, p1, p2, p3;
                 gs_matrix m;
 
-                m = ctm_only(pte->pis);
+                m = ctm_only(pte->pgs);
                 m.tx = m.ty = fixed2float(0);
                 gs_matrix_multiply(&font_base->FontMatrix, &m, &m);
                 gs_point_transform(font_base->FontBBox.p.x, font_base->FontBBox.p.y, &m, &p0);
@@ -2282,7 +2282,7 @@ static const gs_text_enum_procs_t textw_text_procs = {
  * the text, it won't refer to the device methods again for this text.
  */
 static int
-txtwrite_text_begin(gx_device * dev, gs_imager_state * pis,
+txtwrite_text_begin(gx_device * dev, gs_gstate * pgs,
                 const gs_text_params_t * text, gs_font * font,
                 gx_path * path, const gx_device_color * pdcolor,
                 const gx_clip_path * pcpath,
@@ -2299,9 +2299,9 @@ txtwrite_text_begin(gx_device * dev, gs_imager_state * pis,
      * messes up all the font handling. The test below is copied from pdfwrite
      * (gdev_pdf_text_begin) and seems to do the job.
      */
-    if ((!(text->operation & TEXT_DO_DRAW) && pis->text_rendering_mode != 3)
+    if ((!(text->operation & TEXT_DO_DRAW) && pgs->text_rendering_mode != 3)
                     || path == 0 || !path_position_valid(path))
-            return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
+            return gx_default_text_begin(dev, pgs, text, font, path, pdcolor,
                                          pcpath, mem, ppenum);
     /* Allocate and initialize one of our text enumerators. */
     rc_alloc_struct_1(penum, textw_text_enum_t, &st_textw_text_enum, mem,
@@ -2321,7 +2321,7 @@ txtwrite_text_begin(gx_device * dev, gs_imager_state * pis,
     memset(penum->text_state, 0x00, sizeof(text_list_entry_t));
 
     code = gs_text_enum_init((gs_text_enum_t *)penum, &textw_text_procs,
-                             dev, pis, text, font, path, pdcolor, pcpath, mem);
+                             dev, pgs, text, font, path, pdcolor, pcpath, mem);
     if (code < 0) {
         /* Belt and braces; I'm not certain this is required, but its safe */
         gs_free(tdev->memory, penum->text_state, 1, sizeof(text_list_entry_t), "txtwrite free text state");

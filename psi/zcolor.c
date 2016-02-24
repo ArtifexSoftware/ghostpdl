@@ -64,7 +64,7 @@
 static const float default_0_1[] = {0, 1, 0, 1, 0, 1, 0, 1};
 
 /* imported from gsht.c */
-extern  void    gx_set_effective_transfer(gs_state *);
+extern  void    gx_set_effective_transfer(gs_gstate *);
 
 /* Essential forward declarations */
 static int validate_spaces(i_ctx_t *i_ctx_p, ref *arr, int *depth);
@@ -661,7 +661,7 @@ zcolor_remap_one(
     i_ctx_t *           i_ctx_p,
     const ref *         pproc,
     gx_transfer_map *   pmap,
-    const gs_state *    pgs,
+    const gs_gstate *    pgs,
     op_proc_t           finish_proc )
 {
     os_ptr              op;

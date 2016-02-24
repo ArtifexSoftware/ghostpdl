@@ -22,7 +22,7 @@
 #include "gxcmap.h"
 #include "gxfarith.h"
 #include "gxlum.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gsstate.h"            /* for gs_currentcpsimode */
 
 /*
@@ -44,7 +44,7 @@
 
 /* Convert RGB to Gray. */
 frac
-color_rgb_to_gray(frac r, frac g, frac b, const gs_imager_state * pis)
+color_rgb_to_gray(frac r, frac g, frac b, const gs_gstate * pgs)
 {
     return (r * (unsigned long)lum_red_weight +
             g * (unsigned long)lum_green_weight +
@@ -56,7 +56,7 @@ color_rgb_to_gray(frac r, frac g, frac b, const gs_imager_state * pis)
 /* Convert RGB to CMYK. */
 /* Note that this involves black generation and undercolor removal. */
 void
-color_rgb_to_cmyk(frac r, frac g, frac b, const gs_imager_state * pis,
+color_rgb_to_cmyk(frac r, frac g, frac b, const gs_gstate * pgs,
                   frac cmyk[4], gs_memory_t *mem)
 {
     frac c = frac_1 - r, m = frac_1 - g, y = frac_1 - b;
@@ -67,11 +67,11 @@ color_rgb_to_cmyk(frac r, frac g, frac b, const gs_imager_state * pis,
      * but they must agree with the ones in gs_init.ps.
      */
     frac bg =
-        (pis == NULL ? k : pis->black_generation == NULL ? frac_0 :
-         gx_map_color_frac(pis, k, black_generation));
+        (pgs == NULL ? k : pgs->black_generation == NULL ? frac_0 :
+         gx_map_color_frac(pgs, k, black_generation));
     signed_frac ucr =
-        (pis == NULL ? k : pis->undercolor_removal == NULL ? frac_0 :
-         gx_map_color_frac(pis, k, undercolor_removal));
+        (pgs == NULL ? k : pgs->undercolor_removal == NULL ? frac_0 :
+         gx_map_color_frac(pgs, k, undercolor_removal));
 
     if (ucr == frac_1)
         cmyk[0] = cmyk[1] = cmyk[2] = 0;
@@ -109,9 +109,9 @@ color_rgb_to_cmyk(frac r, frac g, frac b, const gs_imager_state * pis,
 
 /* Convert CMYK to Gray. */
 frac
-color_cmyk_to_gray(frac c, frac m, frac y, frac k, const gs_imager_state * pis)
+color_cmyk_to_gray(frac c, frac m, frac y, frac k, const gs_gstate * pgs)
 {
-    frac not_gray = color_rgb_to_gray(c, m, y, pis);
+    frac not_gray = color_rgb_to_gray(c, m, y, pgs);
 
     return (not_gray > frac_1 - k ?	/* gray + k > 1.0 */
             frac_0 : frac_1 - (not_gray + k));
@@ -119,7 +119,7 @@ color_cmyk_to_gray(frac c, frac m, frac y, frac k, const gs_imager_state * pis)
 
 /* Convert CMYK to RGB. */
 void
-color_cmyk_to_rgb(frac c, frac m, frac y, frac k, const gs_imager_state * pis,
+color_cmyk_to_rgb(frac c, frac m, frac y, frac k, const gs_gstate * pgs,
                   frac rgb[3], gs_memory_t *mem)
 {
     switch (k) {

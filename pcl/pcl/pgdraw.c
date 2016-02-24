@@ -1132,7 +1132,7 @@ hpgl_add_point_to_path(hpgl_state_t * pgls,
                        double x,
                        double y, hpgl_plot_function_t func, bool set_ctm)
 {
-    static int (*const gs_procs[]) (gs_state *, double, double)
+    static int (*const gs_procs[]) (gs_gstate *, double, double)
         = {
     hpgl_plot_function_procedures};
     int code = 0;
@@ -1487,7 +1487,7 @@ hpgl_set_special_pixel_placement(hpgl_state_t * pgls,
 int
 hpgl_draw_current_path(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
 {
-    gs_state *pgs = pgls->pgs;
+    gs_gstate *pgs = pgls->pgs;
     pcl_pattern_set_proc_t set_proc;
     int code = 0;
     gx_path *ppath = gx_current_path(pgls->pgs);
@@ -1515,7 +1515,7 @@ hpgl_draw_current_path(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
                 /* Intellifonts require eofill, but TrueType require fill. */
             /****** HACK: look at the scaling technology of ******/
             /****** the current font to decide. ******/
-                int (*fill) (gs_state *);
+                int (*fill) (gs_gstate *);
 
                 if (pgls->g.font->scaling_technology == plfst_Intellifont)
                     fill = gs_eofill;

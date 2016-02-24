@@ -47,7 +47,7 @@
 static int
 adjust_render_rectangle(pcl_state_t * pcs)
 {
-    gs_state *pgs = pcs->pgs;
+    gs_gstate *pgs = pcs->pgs;
     const pcl_xfm_state_t *pxfmst = &(pcs->xfm_state);
     coord w = pcs->rectangle.x;
     coord h = pcs->rectangle.y;

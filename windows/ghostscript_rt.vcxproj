@@ -1917,7 +1917,7 @@
     <ClInclude Include="..\base\gximask.h" />
     <ClInclude Include="..\base\gxiodev.h" />
     <ClInclude Include="..\base\gxiparam.h" />
-    <ClInclude Include="..\base\gxistate.h" />
+    <ClInclude Include="..\base\gxgstate.h" />
     <ClInclude Include="..\base\gxline.h" />
     <ClInclude Include="..\base\gxlum.h" />
     <ClInclude Include="..\base\gxmatrix.h" />

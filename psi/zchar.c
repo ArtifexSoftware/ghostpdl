@@ -285,7 +285,7 @@ finish_stringwidth(i_ctx_t *i_ctx_p)
 /* Common code for charpath and .charboxpath. */
 static int
 zchar_path(i_ctx_t *i_ctx_p, op_proc_t proc,
-           int (*begin)(gs_state *, const byte *, uint,
+           int (*begin)(gs_gstate *, const byte *, uint,
                         bool, gs_memory_t *, gs_text_enum_t **))
 {
     os_ptr op = osp;

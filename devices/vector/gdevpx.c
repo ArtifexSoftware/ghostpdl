@@ -379,11 +379,11 @@ pclxl_can_icctransform(const gs_image_t * pim)
  */
 
 static bool
-pclxl_nontrivial_transfer(const gs_imager_state * pis)
+pclxl_nontrivial_transfer(const gs_gstate * pgs)
 {
-    gx_transfer_map *red = pis->set_transfer.red;
-    gx_transfer_map *green = pis->set_transfer.green;
-    gx_transfer_map *blue = pis->set_transfer.blue;
+    gx_transfer_map *red = pgs->set_transfer.red;
+    gx_transfer_map *green = pgs->set_transfer.green;
+    gx_transfer_map *blue = pgs->set_transfer.blue;
 
     return (red || green || blue);
     
@@ -1326,14 +1326,14 @@ pclxl_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
 }
 
 static int
-pclxl_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis,
+pclxl_can_handle_hl_color(gx_device_vector * vdev, const gs_gstate * pgs,
                    const gx_drawing_color * pdc)
 {
     return false;
 }
 
 static int
-pclxl_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis,
+pclxl_setfillcolor(gx_device_vector * vdev, const gs_gstate * pgs,
                    const gx_drawing_color * pdc)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
@@ -1342,7 +1342,7 @@ pclxl_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis,
 }
 
 static int
-pclxl_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis,
+pclxl_setstrokecolor(gx_device_vector * vdev, const gs_gstate * pgs,
                      const gx_drawing_color * pdc)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
@@ -1951,7 +1951,7 @@ gs_private_st_suffix_add1(st_pclxl_image_enum, pclxl_image_enum_t,
 /* Start processing an image. */
 static int
 pclxl_begin_image(gx_device * dev,
-                  const gs_imager_state * pis, const gs_image_t * pim,
+                  const gs_gstate * pgs, const gs_image_t * pim,
                   gs_image_format_t format, const gs_int_rect * prect,
                   const gx_drawing_color * pdcolor,
                   const gx_clip_path * pcpath, gs_memory_t * mem,
@@ -1979,9 +1979,9 @@ pclxl_begin_image(gx_device * dev,
      * handle orthogonal transformations.
      */
     gs_matrix_invert(&pim->ImageMatrix, &mat);
-    gs_matrix_multiply(&mat, &ctm_only(pis), &mat);
+    gs_matrix_multiply(&mat, &ctm_only(pgs), &mat);
 
-    if (pclxl_nontrivial_transfer(pis))
+    if (pclxl_nontrivial_transfer(pgs))
         goto use_default;
 
     /* 
@@ -2018,7 +2018,7 @@ pclxl_begin_image(gx_device * dev,
         code = gs_note_error(gs_error_VMerror);
         goto fail;
     }
-    code = gdev_vector_begin_image(vdev, pis, pim, format, prect,
+    code = gdev_vector_begin_image(vdev, pgs, pim, format, prect,
                                    pdcolor, pcpath, mem,
                                    &pclxl_image_enum_procs,
                                    (gdev_vector_image_enum_t *)pie);
@@ -2109,16 +2109,16 @@ pclxl_begin_image(gx_device * dev,
 	&& pclxl_can_icctransform(pim) && pcs->cmm_icc_profile_data) {
 	gsicc_rendering_param_t rendering_params;
 
-	rendering_params.black_point_comp = pis->blackptcomp;
+	rendering_params.black_point_comp = pgs->blackptcomp;
 	rendering_params.graphics_type_tag = GS_IMAGE_TAG;
-	rendering_params.rendering_intent = pis->renderingintent;
-	pie->icclink = gsicc_get_link(pis, dev, pcs, NULL /*des */ ,
-				      &rendering_params, pis->memory);
+	rendering_params.rendering_intent = pgs->renderingintent;
+	pie->icclink = gsicc_get_link(pgs, dev, pcs, NULL /*des */ ,
+				      &rendering_params, pgs->memory);
     } else
 	pie->icclink = NULL;
     *pinfo = (gx_image_enum_common_t *) pie;
     {
-        gs_logical_operation_t lop = pis->log_op;
+        gs_logical_operation_t lop = pgs->log_op;
 
         if (pim->ImageMask) {
             const byte *palette = (const byte *)
@@ -2178,7 +2178,7 @@ pclxl_begin_image(gx_device * dev,
                         (pim->Decode[j * 2 + 1] - pim->Decode[j * 2]) /
                         sample_max;
                 (*pcs->type->remap_color)
-                    (&cc, pcs, &devc, pis, dev, gs_color_select_source);
+                    (&cc, pcs, &devc, pgs, dev, gs_color_select_source);
                 if (!gx_dc_is_pure(&devc))
                     return_error(gs_error_Fatal);
                 ci = gx_dc_pure_color(&devc);
@@ -2210,7 +2210,7 @@ pclxl_begin_image(gx_device * dev,
         pclxl_set_color_space(xdev, eGray);
     else
         pclxl_set_color_space(xdev, eRGB);
-    return gx_default_begin_image(dev, pis, pim, format, prect,
+    return gx_default_begin_image(dev, pgs, pim, format, prect,
                                   pdcolor, pcpath, mem, pinfo);
 }
 

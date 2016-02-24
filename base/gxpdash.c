@@ -21,7 +21,7 @@
 #include "gscoord.h"
 #include "gxfixed.h"
 #include "gxarith.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gsline.h"
 #include "gzline.h"
 #include "gzpath.h"
@@ -29,14 +29,14 @@
 /* Expand a dashed path into explicit segments. */
 /* The path contains no curves. */
 static int subpath_expand_dashes(const subpath *, gx_path *,
-                                  const gs_imager_state *,
+                                  const gs_gstate *,
                                   const gx_dash_params *);
 int
 gx_path_add_dash_expansion(const gx_path * ppath_old, gx_path * ppath,
-                           const gs_imager_state * pis)
+                           const gs_gstate * pgs)
 {
     const subpath *psub;
-    const gx_dash_params *dash = &gs_currentlineparams(pis)->dash;
+    const gx_dash_params *dash = &gs_currentlineparams(pgs)->dash;
     int code = 0;
 
     if (dash->pattern_size == 0)
@@ -44,13 +44,13 @@ gx_path_add_dash_expansion(const gx_path * ppath_old, gx_path * ppath,
     for (psub = ppath_old->first_subpath; psub != 0 && code >= 0;
          psub = (const subpath *)psub->last->next
         )
-        code = subpath_expand_dashes(psub, ppath, pis, dash);
+        code = subpath_expand_dashes(psub, ppath, pgs, dash);
     return code;
 }
 
 static int
 subpath_expand_dashes(const subpath * psub, gx_path * ppath,
-                   const gs_imager_state * pis, const gx_dash_params * dash)
+                   const gs_gstate * pgs, const gx_dash_params * dash)
 {
     const float *pattern = dash->pattern;
     int count, index;
@@ -62,7 +62,7 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
     int wrap = (dash->init_ink_on && psub->is_closed ? -1 : 0);
     int drawing = wrap;
     segment_notes notes = ~sn_not_first;
-    const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
+    const gx_line_params *pgs_lp = gs_currentlineparams_inline(pgs);
     bool zero_length = true;
     int code;
     gs_line_cap cap;
@@ -116,14 +116,14 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 
             zero_length = false;
             dx = udx, dy = udy;	/* scaled as fixed */
-            code = gs_imager_idtransform(pis, dx, dy, &d);
+            code = gs_gstate_idtransform(pgs, dx, dy, &d);
             if (code < 0) {
                 d.x = 0; d.y = 0;
                 /* Swallow the error */
                 code = 0;
             }
             length = hypot(d.x, d.y) * (1.0 / fixed_1);
-            if (gs_imager_currentdashadapt(pis)) {
+            if (gs_gstate_currentdashadapt(pgs)) {
                 double reps = length / dash->pattern_length;
 
                 scale = reps / ceil(reps);

@@ -495,7 +495,7 @@ int gx_device_delete_output_file(const gx_device * dev, const char *fname);
 
 /*
  * Determine whether a given device needs to halftone.  Eventually this
- * should take an imager state as an additional argument.
+ * should take a gs_gstate as an additional argument.
  */
 #define gx_device_must_halftone(dev)\
   ((gx_device_has_color(dev) ? (dev)->color_info.max_color :\
@@ -645,7 +645,7 @@ int gs_is_pdf14trans_compositor(const gs_composite_t * pct);
 #define subclass_common\
     t_dev_proc_create_compositor *saved_compositor_method
 
-typedef int (t_dev_proc_create_compositor) (gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte, gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev);
+typedef int (t_dev_proc_create_compositor) (gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte, gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev);
 
 typedef struct {
     t_dev_proc_create_compositor *saved_compositor_method;
@@ -657,7 +657,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
 int gx_device_unsubclass(gx_device *dev);
 int gx_update_from_subclass(gx_device *dev);
 int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
-    gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev);
+    gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev);
 
 
 #endif /* gxdevice_INCLUDED */

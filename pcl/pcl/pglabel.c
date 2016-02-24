@@ -40,7 +40,7 @@
 #include "gsutil.h"
 #include "gxchar.h"             /* for show enumerator */
 #include "gxfont.h"
-#include "gxstate.h"            /* for gs_state_client_data */
+#include "gxstate.h"            /* for gs_gstate_client_data */
 
 #define STICK_FONT_TYPEFACE 48
 
@@ -741,7 +741,7 @@ hpgl_print_char(hpgl_state_t * pgls, uint ch)
     const pcl_font_selection_t *pfs =
         &pgls->g.font_selection[pgls->g.font_selected];
     pl_font_t *font = pfs->font;
-    gs_state *pgs = pgls->pgs;
+    gs_gstate *pgs = pgls->pgs;
     gs_matrix save_ctm;
     gs_font *pfont = pgls->g.font->pfont;
     gs_point scale = hpgl_current_char_scale(pgls);

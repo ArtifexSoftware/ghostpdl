@@ -43,7 +43,7 @@
 /* Structure descriptors */
 public_st_gs_show_enum();
 extern_st(st_gs_text_enum);
-extern_st(st_gs_state);         /* only for testing */
+extern_st(st_gs_gstate);         /* only for testing */
 static
 ENUM_PTRS_BEGIN(show_enum_enum_ptrs)
      return ENUM_USING(st_gs_text_enum, vptr, size, index - 5);
@@ -67,7 +67,7 @@ static int continue_show_update(gs_show_enum *);
 static void show_set_scale(const gs_show_enum *, gs_log2_scale_point *log2_scale);
 static int show_cache_setup(gs_show_enum *);
 static int show_state_setup(gs_show_enum *);
-static int show_origin_setup(gs_state *, fixed, fixed, gs_show_enum * penum);
+static int show_origin_setup(gs_gstate *, fixed, fixed, gs_show_enum * penum);
 
 /* Accessors for current_char and current_glyph. */
 #define CURRENT_CHAR(penum) ((penum)->returned.current_char)
@@ -79,7 +79,7 @@ static int show_origin_setup(gs_state *, fixed, fixed, gs_show_enum * penum);
 
 /* Allocate a show enumerator. */
 gs_show_enum *
-gs_show_enum_alloc(gs_memory_t * mem, gs_state * pgs, client_name_t cname)
+gs_show_enum_alloc(gs_memory_t * mem, gs_gstate * pgs, client_name_t cname)
 {
     gs_show_enum *penum;
 
@@ -119,7 +119,7 @@ static const gs_text_enum_procs_t default_text_procs = {
 };
 
 int
-gx_default_text_begin(gx_device * dev, gs_imager_state * pis,
+gx_default_text_begin(gx_device * dev, gs_gstate * pgs1,
                       const gs_text_params_t * text, gs_font * font,
                       gx_path * path, const gx_device_color * pdcolor,
                       const gx_clip_path * pcpath,
@@ -128,20 +128,20 @@ gx_default_text_begin(gx_device * dev, gs_imager_state * pis,
     uint operation = text->operation;
     bool propagate_charpath = (operation & TEXT_DO_DRAW) != 0;
     int code;
-    gs_state *pgs = (gs_state *)pis;
+    gs_gstate *pgs = (gs_gstate *)pgs1;
     gs_show_enum *penum;
 
     /*
-     * For the moment, require pis to be a gs_state *, since all the
+     * For the moment, require pgs to be a gs_gstate *, since all the
      * procedures for character rendering expect it.
      */
-    if (gs_object_type(mem, pis) != &st_gs_state)
+    if (gs_object_type(mem, pgs) != &st_gs_gstate)
         return_error(gs_error_Fatal);
     penum = gs_show_enum_alloc(mem, pgs, "gx_default_text_begin");
     if (!penum)
         return_error(gs_error_VMerror);
     code = gs_text_enum_init((gs_text_enum_t *)penum, &default_text_procs,
-                             dev, pis, text, font, path, pdcolor, pcpath, mem);
+                             dev, pgs, text, font, path, pdcolor, pcpath, mem);
     if (code < 0) {
         gs_free_object(mem, penum, "gx_default_text_begin");
         return code;
@@ -208,7 +208,7 @@ gx_default_text_begin(gx_device * dev, gs_imager_state * pis,
 
 /* Compute the number of characters in a text. */
 int
-gs_text_count_chars(gs_state * pgs, gs_text_params_t *text, gs_memory_t * mem)
+gs_text_count_chars(gs_gstate * pgs, gs_text_params_t *text, gs_memory_t * mem)
 {
     font_proc_next_char_glyph((*next_proc)) = pgs->font->procs.next_char_glyph;
 
@@ -242,13 +242,12 @@ gs_text_count_chars(gs_state * pgs, gs_text_params_t *text, gs_memory_t * mem)
 
 /* An auxiliary functions for pdfwrite to process type 3 fonts. */
 int
-gx_hld_stringwidth_begin(gs_imager_state * pis, gx_path **path)
+gx_hld_stringwidth_begin(gs_gstate * pgs, gx_path **path)
 {
-    gs_state *pgs = (gs_state *)pis;
-    extern_st(st_gs_state);
+    extern_st(st_gs_gstate);
     int code;
 
-    if (gs_object_type(pis->memory, pis) != &st_gs_state)
+    if (gs_object_type(pgs->memory, pgs) != &st_gs_gstate)
         return_error(gs_error_unregistered);
     code = gs_gsave(pgs);
     if (code < 0)
@@ -263,7 +262,7 @@ int
 gx_default_text_restore_state(gs_text_enum_t *pte)
 {
     gs_show_enum *penum;
-    gs_state *pgs;
+    gs_gstate *pgs;
 
     if (SHOW_IS(pte, TEXT_DO_NONE))
         return 0;
@@ -274,7 +273,7 @@ gx_default_text_restore_state(gs_text_enum_t *pte)
 /* ------ Width/cache setting ------ */
 
 static int
-    set_cache_device(gs_show_enum *penum, gs_state *pgs,
+    set_cache_device(gs_show_enum *penum, gs_gstate *pgs,
                      double llx, double lly, double urx, double ury);
 
 /* This is the default implementation of text enumerator set_cache. */
@@ -283,7 +282,7 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
                           gs_text_cache_control_t control)
 {
     gs_show_enum *const penum = (gs_show_enum *)pte;
-    gs_state *pgs = penum->pgs;
+    gs_gstate *pgs = penum->pgs;
     gs_font *pfont = gs_rootfont(pgs);
 
     /* Detect zero FontMatrix now for Adobe compatibility with CET tests.
@@ -360,7 +359,7 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 /* Note that this returns 1 if the current show operation is */
 /* non-displaying (stringwidth or cshow). */
 int
-set_char_width(gs_show_enum *penum, gs_state *pgs, double wx, double wy)
+set_char_width(gs_show_enum *penum, gs_gstate *pgs, double wx, double wy)
 {
     int code;
 
@@ -434,7 +433,7 @@ compute_glyph_raster_params(gs_show_enum *penum, bool in_setcachedevice, int *al
                     int *depth,
                     gs_fixed_point *subpix_origin, gs_log2_scale_point *log2_scale)
 {
-    gs_state *pgs = penum->pgs;
+    gs_gstate *pgs = penum->pgs;
     gx_device *dev = gs_currentdevice_inline(pgs);
     int code;
 
@@ -483,7 +482,7 @@ compute_glyph_raster_params(gs_show_enum *penum, bool in_setcachedevice, int *al
 /* Return 1 if we just set up a cache device. */
 /* Used by setcachedevice and setcachedevice2. */
 static int
-set_cache_device(gs_show_enum * penum, gs_state * pgs, double llx, double lly,
+set_cache_device(gs_show_enum * penum, gs_gstate * pgs, double llx, double lly,
                  double urx, double ury)
 {
     gs_glyph glyph;
@@ -699,7 +698,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, double llx, double lly,
 
 /* Return the cache device status. */
 gs_in_cache_device_t
-gs_incachedevice(const gs_state *pgs)
+gs_incachedevice(const gs_gstate *pgs)
 {
     return pgs->in_cachedevice;
 }
@@ -774,7 +773,7 @@ continue_show(gs_show_enum * penum)
 static int
 continue_kshow(gs_show_enum * penum)
 {   int code;
-    gs_state *pgs = penum->pgs;
+    gs_gstate *pgs = penum->pgs;
 
     if (pgs->font != penum->orig_font)
         gs_setfont(pgs, penum->orig_font);
@@ -790,7 +789,7 @@ continue_kshow(gs_show_enum * penum)
 static int
 show_update(gs_show_enum * penum)
 {
-    gs_state *pgs = penum->pgs;
+    gs_gstate *pgs = penum->pgs;
     cached_char *cc = penum->cc;
     int code;
 
@@ -841,7 +840,7 @@ show_update(gs_show_enum * penum)
             code = gs_grestore(pgs);
             if (code < 0)
                 return code;
-            code = gs_state_color_load(pgs);
+            code = gs_gstate_color_load(pgs);
             if (code < 0)
                 return code;
             return gx_image_cached_char(penum, cc);
@@ -861,9 +860,9 @@ show_update(gs_show_enum * penum)
 
 /* Move to next character */
 static inline int
-show_fast_move(gs_state * pgs, gs_fixed_point * pwxy)
+show_fast_move(gs_gstate * pgs, gs_fixed_point * pwxy)
 {
-    return gs_moveto_aux((gs_imager_state *)pgs, pgs->path,
+    return gs_moveto_aux(pgs, pgs->path,
                               pgs->current_point.x + fixed2float(pwxy->x),
                               pgs->current_point.y + fixed2float(pwxy->y));
 }
@@ -899,7 +898,7 @@ int gx_current_char(const gs_text_enum_t * pte)
 static int
 show_move(gs_show_enum * penum)
 {
-    gs_state *pgs = penum->pgs;
+    gs_gstate *pgs = penum->pgs;
     int code;
 
     if (SHOW_IS(penum, TEXT_REPLACE_WIDTHS)) {
@@ -951,7 +950,7 @@ show_move(gs_show_enum * penum)
         int code;
 
         if (penum->use_wxy_float)
-            code = gs_moveto_aux((gs_imager_state *)pgs, pgs->path,
+            code = gs_moveto_aux(pgs, pgs->path,
                     pgs->current_point.x + penum->wxy_float.x + fixed2float(penum->wxy.x),
                     pgs->current_point.y + penum->wxy_float.y + fixed2float(penum->wxy.y));
         else
@@ -970,7 +969,7 @@ show_move(gs_show_enum * penum)
 static int
 show_proceed(gs_show_enum * penum)
 {
-    gs_state *pgs = penum->pgs;
+    gs_gstate *pgs = penum->pgs;
     gs_font *pfont;
     cached_fm_pair *pair = 0;
     gs_font *rfont =
@@ -987,7 +986,7 @@ show_proceed(gs_show_enum * penum)
     gs_log2_scale_point log2_scale;
 
     if (penum->charpath_flag == cpm_show && SHOW_USES_OUTLINE(penum)) {
-        code = gs_state_color_load(pgs);
+        code = gs_gstate_color_load(pgs);
         if (code < 0)
             return code;
     }
@@ -1298,7 +1297,7 @@ gx_show_text_retry(gs_text_enum_t *pte)
 static int
 show_finish(gs_show_enum * penum)
 {
-    gs_state *pgs = penum->pgs;
+    gs_gstate *pgs = penum->pgs;
     int code = 0, rcode;
 
     if ((penum->text.operation & TEXT_DO_FALSE_CHARPATH) ||
@@ -1397,7 +1396,7 @@ gs_show_current_font(const gs_show_enum * penum)
 static int
 show_state_setup(gs_show_enum * penum)
 {
-    gs_state *pgs = penum->pgs;
+    gs_gstate *pgs = penum->pgs;
     gx_clip_path *pcpath;
     gs_font *pfont;
 
@@ -1488,15 +1487,12 @@ show_set_scale(const gs_show_enum * penum, gs_log2_scale_point *log2_scale)
      * Decide whether to oversample.
      * We have to decide this each time setcachedevice is called.
      */
-    const gs_state *pgs = NULL;
+    const gs_gstate *pgs = NULL;
 
-    if (gs_object_type(penum->pis->memory, penum) == &st_gs_show_enum) {
+    if (gs_object_type(penum->pgs->memory, penum) == &st_gs_show_enum) {
         pgs = penum->pgs;
     } else {
-        if (penum->pis->is_gstate)
-            pgs = (gs_state *)penum->pis;
-        else
-            outprintf(penum->memory, "Warning: cannot calculate text oversample (TextAlphaBits)\n");
+            pgs = (gs_gstate *)penum->pgs;
     }
 
     if (pgs != NULL && (penum->charpath_flag == cpm_show ||
@@ -1542,7 +1538,7 @@ show_set_scale(const gs_show_enum * penum, gs_log2_scale_point *log2_scale)
 static int
 show_cache_setup(gs_show_enum * penum)
 {
-    gs_state *pgs = penum->pgs;
+    gs_gstate *pgs = penum->pgs;
     gs_memory_t *mem = penum->memory;
     gx_device_memory *dev =
         gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
@@ -1578,7 +1574,7 @@ show_cache_setup(gs_show_enum * penum)
 /* Used before rendering characters, and for moving the origin */
 /* in setcachedevice2 when WMode=1. */
 static int
-show_origin_setup(gs_state * pgs, fixed cpt_x, fixed cpt_y, gs_show_enum * penum)
+show_origin_setup(gs_gstate * pgs, fixed cpt_x, fixed cpt_y, gs_show_enum * penum)
 {
     if (penum->charpath_flag == cpm_show) {
         /* Round the translation in the graphics state. */

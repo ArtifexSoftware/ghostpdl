@@ -60,12 +60,12 @@ xps_paint_tiling_brush_clipped(struct tile_closure_s *c)
 }
 
 static int
-xps_paint_tiling_brush(const gs_client_color *pcc, gs_state *pgs)
+xps_paint_tiling_brush(const gs_client_color *pcc, gs_gstate *pgs)
 {
     const gs_client_pattern *ppat = gs_getpattern(pcc);
     struct tile_closure_s *c = ppat->client_data;
     xps_context_t *ctx = c->ctx;
-    gs_state *saved_pgs;
+    gs_gstate *saved_pgs;
     int code;
 
     saved_pgs = ctx->pgs;
@@ -132,8 +132,8 @@ xps_high_level_pattern(xps_context_t *ctx)
     gs_pattern1_instance_t *pinst =
         (gs_pattern1_instance_t *)gs_currentcolor(ctx->pgs)->pattern;
 
-    code = gx_pattern_cache_add_dummy_entry((gs_imager_state *)ctx->pgs,
-        pinst, ctx->pgs->device->color_info.depth);
+    code = gx_pattern_cache_add_dummy_entry(ctx->pgs, pinst,
+        ctx->pgs->device->color_info.depth);
     if (code < 0)
         return code;
 
@@ -197,7 +197,7 @@ xps_high_level_pattern(xps_context_t *ctx)
 }
 
 static int
-xps_remap_pattern(const gs_client_color *pcc, gs_state *pgs)
+xps_remap_pattern(const gs_client_color *pcc, gs_gstate *pgs)
 {
     const gs_client_pattern *ppat = gs_getpattern(pcc);
     struct tile_closure_s *c = ppat->client_data;

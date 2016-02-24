@@ -25,7 +25,7 @@
 #include "scommon.h"
 #include "strmio.h"
 #include "gx.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxcspace.h"
 #include "gsicc_cms.h"
 #include "gsicc_cache.h"
@@ -300,7 +300,7 @@ gsicc_rcm_freelink(gsicc_link_t *icclink)
    the number of components for the source so that we know what we are
    coming from (e.g. RGB, CMYK, Gray) */
 gsicc_link_t*
-gsicc_rcm_get_link(const gs_imager_state *pis, gx_device *dev,
+gsicc_rcm_get_link(const gs_gstate *pgs, gx_device *dev,
                    gsicc_colorbuffer_t data_cs)
 {
     gsicc_link_t *result;
@@ -338,13 +338,13 @@ gsicc_rcm_get_link(const gs_imager_state *pis, gx_device *dev,
     hash.link_hashcode = data_cs + hash.des_hash * 256 + hash.rend_hash * 4096;
 
     /* Check the cache for a hit. */
-    result = gsicc_findcachelink(hash, pis->icc_link_cache, false, false);
+    result = gsicc_findcachelink(hash, pgs->icc_link_cache, false, false);
     if (result != NULL) {
         return result;
     }
     /* If not, then lets create a new one.  This may actually return a link if
        another thread has already created it while we were trying to do so */
-    if (gsicc_alloc_link_entry(pis->icc_link_cache, &result, hash, false, false))
+    if (gsicc_alloc_link_entry(pgs->icc_link_cache, &result, hash, false, false))
         return result;
 
     if (result == NULL)
@@ -352,7 +352,7 @@ gsicc_rcm_get_link(const gs_imager_state *pis, gx_device *dev,
 
     /* Now compute the link contents */
     /* Lock the cache as we alter the procs */
-    gx_monitor_enter(pis->icc_link_cache->lock);
+    gx_monitor_enter(pgs->icc_link_cache->lock);
 
     result->procs.map_buffer = gsicc_rcm_transform_color_buffer;
     result->procs.map_color = gsicc_rcm_transform_color;
@@ -415,7 +415,7 @@ gsicc_rcm_get_link(const gs_imager_state *pis, gx_device *dev,
         gx_semaphore_signal(result->wait);
         result->num_waiting--;
     }
-    gx_monitor_leave(pis->icc_link_cache->lock);	/* done with updating, let everyone run */
+    gx_monitor_leave(pgs->icc_link_cache->lock);	/* done with updating, let everyone run */
 
     return result;
 }

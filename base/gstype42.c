@@ -23,7 +23,7 @@
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsccode.h"
-#include "gsline.h"		/* for gs_imager_setflat */
+#include "gsline.h"		/* for gs_gstate_setflat */
 #include "gsmatrix.h"
 #include "gsutil.h"
 #include "gxchrout.h"
@@ -36,7 +36,7 @@
 #include "gxtext.h"
 #include "gxchar.h"
 #include "gxfcache.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gzstate.h"
 #include "stream.h"
 
@@ -1251,7 +1251,7 @@ gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
 /* Append a TrueType outline to a path. */
 /* Note that this does not append the final moveto for the width. */
 int
-gs_type42_append(uint glyph_index, gs_state * pgs,
+gs_type42_append(uint glyph_index, gs_gstate * pgs,
                  gx_path * ppath, gs_text_enum_t *penum, gs_font *pfont,
                  bool charpath_flag)
 {
@@ -1276,12 +1276,11 @@ gs_type42_append(uint glyph_index, gs_state * pgs,
         }
         return code;
     }
-    code = gx_setcurrentpoint_from_path((gs_imager_state *)pgs, ppath);
+    code = gx_setcurrentpoint_from_path(pgs, ppath);
     if (code < 0)
         return code;
     /* Set the flatness for curve rendering. */
-    return gs_imager_setflat((gs_imager_state *)pgs,
-                gs_char_flatness((gs_imager_state *)pgs, 1.0));
+    return gs_gstate_setflat(pgs, gs_char_flatness(pgs, 1.0));
 }
 #if 0
 /* Used only by add_simple below, which has been removed as unused. */

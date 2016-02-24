@@ -41,7 +41,7 @@ static const bool I_VALIDATE_AFTER_RESTORE = true;
 /* 'Save' structure */
 typedef struct vm_save_s vm_save_t;
 struct vm_save_s {
-    gs_state *gsave;		/* old graphics state */
+    gs_gstate *gsave;		/* old graphics state */
 };
 
 gs_private_st_ptrs1(st_vm_save, vm_save_t, "savetype",
@@ -68,7 +68,7 @@ zsave(i_ctx_t *i_ctx_p)
     vm_save_t *vmsave;
     ulong sid;
     int code;
-    gs_state *prev;
+    gs_gstate *prev;
 
     if (I_VALIDATE_BEFORE_SAVE)
         ivalidate_clean_spaces(i_ctx_p);
@@ -401,12 +401,12 @@ zforgetsave(i_ctx_t *i_ctx_p)
      * concatenating the stacks together.
      */
     {
-        gs_state *pgs = igs;
-        gs_state *last;
+        gs_gstate *pgs = igs;
+        gs_gstate *last;
 
-        while (gs_state_saved(last = gs_state_saved(pgs)) != 0)
+        while (gs_gstate_saved(last = gs_gstate_saved(pgs)) != 0)
             pgs = last;
-        gs_state_swap_saved(last, vmsave->gsave);
+        gs_gstate_swap_saved(last, vmsave->gsave);
         gs_grestore(last);
         gs_grestore(last);
     }

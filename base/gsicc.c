@@ -87,7 +87,7 @@ gsicc_remap_fast(gx_device *dev, unsigned short *psrc, unsigned short *psrc_cm,
 
 /* ICC color mapping linearity check, a 2-points case. Check only the 1/2 point */
 static int
-gx_icc_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
+gx_icc_is_linear_in_line(const gs_color_space *cs, const gs_gstate * pgs,
                         gx_device *dev,
                         const gs_client_color *c0, const gs_client_color *c1,
                         float smoothness, gsicc_link_t *icclink)
@@ -132,7 +132,7 @@ gx_icc_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
 
 /* Default icc color mapping linearity check, a triangle case. */
 static int
-gx_icc_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * pis,
+gx_icc_is_linear_in_triangle(const gs_color_space *cs, const gs_gstate * pgs,
                 gx_device *dev,
                 const gs_client_color *c0, const gs_client_color *c1,
                 const gs_client_color *c2, float smoothness, gsicc_link_t *icclink)
@@ -204,7 +204,7 @@ gx_icc_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * p
 
 /* ICC color mapping linearity check. */
 int
-gx_cspace_is_linear_ICC(const gs_color_space *cs, const gs_imager_state * pis,
+gx_cspace_is_linear_ICC(const gs_color_space *cs, const gs_gstate * pgs,
                 gx_device *dev,
                 const gs_client_color *c0, const gs_client_color *c1,
                 const gs_client_color *c2, const gs_client_color *c3,
@@ -222,14 +222,14 @@ gx_cspace_is_linear_ICC(const gs_color_space *cs, const gs_imager_state * pis,
     if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
         return_error(gs_error_rangecheck);
     if (c2 == NULL)
-        return gx_icc_is_linear_in_line(cs, pis, dev, c0, c1, smoothness, icclink);
-    code = gx_icc_is_linear_in_triangle(cs, pis, dev, c0, c1, c2,
+        return gx_icc_is_linear_in_line(cs, pgs, dev, c0, c1, smoothness, icclink);
+    code = gx_icc_is_linear_in_triangle(cs, pgs, dev, c0, c1, c2,
                                             smoothness, icclink);
     if (code <= 0)
         return code;
     if (c3 == NULL)
         return 1;
-    return gx_icc_is_linear_in_triangle(cs, pis, dev, c1, c2, c3,
+    return gx_icc_is_linear_in_triangle(cs, pgs, dev, c1, c2, c3,
                                                 smoothness, icclink);
 }
 /*
@@ -300,7 +300,7 @@ gx_restrict_ICC(gs_client_color * pcc, const gs_color_space * pcs)
 
 static int
 gx_remap_concrete_icc_devicen(const frac * pconc, const gs_color_space * pcs,
-        gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
                           gs_color_select_t select)
 {
     /* Check if this is a device with a DeviceN ICC profile.  In this case,
@@ -316,10 +316,10 @@ gx_remap_concrete_icc_devicen(const frac * pconc, const gs_color_space * pcs,
            up the equivalent CMYK colors for the spot colors that are present.
            This allows us to have some sort of composite viewing of the spot
            colors as they would colorimetrically appear. */
-        code = gsicc_set_devicen_equiv_colors(dev, pis, dev_profile->device_profile[0]);
+        code = gsicc_set_devicen_equiv_colors(dev, pgs, dev_profile->device_profile[0]);
         dev_profile->spotnames->equiv_cmyk_set = true;
     }
-    gx_remap_concrete_devicen(pconc, pdc, pis, dev, select);
+    gx_remap_concrete_devicen(pconc, pdc, pgs, dev, select);
     return code;
 }
 
@@ -330,7 +330,7 @@ gx_remap_concrete_icc_devicen(const frac * pconc, const gs_color_space * pcs,
    in the device profile entry of the profile manager. */
 int
 gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
-        gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
                           gs_color_select_t select)
 {
     int num_colorants;
@@ -341,19 +341,19 @@ gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
     num_colorants = gsicc_get_device_profile_comps(dev_profile);
     switch( num_colorants ) {
         case 1:
-            code = gx_remap_concrete_DGray(pconc, pcs, pdc, pis, dev, select);
+            code = gx_remap_concrete_DGray(pconc, pcs, pdc, pgs, dev, select);
             break;
         case 3:
-            code = gx_remap_concrete_DRGB(pconc, pcs, pdc, pis, dev, select);
+            code = gx_remap_concrete_DRGB(pconc, pcs, pdc, pgs, dev, select);
             break;
         case 4:
-            code = gx_remap_concrete_DCMYK(pconc, pcs, pdc, pis, dev, select);
+            code = gx_remap_concrete_DCMYK(pconc, pcs, pdc, pgs, dev, select);
             break;
         default:
             /* This is a special case where we have a source color and our
                output profile must be DeviceN.   We will need to map our
                colorants to the proper planes */
-            code = gx_remap_concrete_icc_devicen(pconc, pcs, pdc, pis, dev, select);
+            code = gx_remap_concrete_icc_devicen(pconc, pcs, pdc, pgs, dev, select);
             break;
         }
     return code;
@@ -364,7 +364,7 @@ gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
  */
 int
 gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
-        gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
                 gs_color_select_t select)
 {
     gsicc_link_t *icc_link;
@@ -386,11 +386,11 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     if (dev_profile == NULL)
         return gs_throw(gs_error_Fatal, "Attempting to do ICC remap with no profile");
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
-    rendering_params.black_point_comp = pis->blackptcomp;
+    rendering_params.black_point_comp = pgs->blackptcomp;
     rendering_params.graphics_type_tag = dev->graphics_type_tag;
     rendering_params.override_icc = false;
     rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
-    rendering_params.rendering_intent = pis->renderingintent;
+    rendering_params.rendering_intent = pgs->renderingintent;
     rendering_params.cmm = gsCMM_DEFAULT;
     /* Need to clear out psrc_cm in case we have separation bands that are
        not color managed */
@@ -408,7 +408,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
         }
     }
     /* Get a link from the cache, or create if it is not there. Need to get 16 bit profile */
-    icc_link = gsicc_get_link(pis, dev, pcs, NULL, &rendering_params, pis->memory);
+    icc_link = gsicc_get_link(pgs, dev, pcs, NULL, &rendering_params, pgs->memory);
     if (icc_link == NULL) {
         #ifdef DEBUG
             gs_warn("Could not create ICC link:  Check profiles");
@@ -445,7 +445,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     for ( k = 0; k < num_des_comps; k++){
         conc[k] = ushort2frac(psrc_temp[k]);
     }
-    gx_remap_concrete_ICC(conc, pcs, pdc, pis, dev, select);
+    gx_remap_concrete_ICC(conc, pcs, pdc, pgs, dev, select);
 
     /* Save original color space and color info into dev color */
     i = pcs->cmm_icc_profile_data->num_comps;
@@ -463,7 +463,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
  */
 int
 gx_remap_ICC_imagelab(const gs_client_color * pcc, const gs_color_space * pcs,
-        gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
                 gs_color_select_t select)
 {
     gsicc_link_t *icc_link;
@@ -480,11 +480,11 @@ gx_remap_ICC_imagelab(const gs_client_color * pcc, const gs_color_space * pcs,
     if (code < 0)
         return code;
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
-    rendering_params.black_point_comp = pis->blackptcomp;
+    rendering_params.black_point_comp = pgs->blackptcomp;
     rendering_params.graphics_type_tag = dev->graphics_type_tag;
     rendering_params.override_icc = false;
     rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
-    rendering_params.rendering_intent = pis->renderingintent;
+    rendering_params.rendering_intent = pgs->renderingintent;
     rendering_params.cmm = gsCMM_DEFAULT;
     /* Need to clear out psrc_cm in case we have separation bands that are
        not color managed */
@@ -494,7 +494,7 @@ gx_remap_ICC_imagelab(const gs_client_color * pcc, const gs_color_space * pcs,
         psrc[k] = (unsigned short) (pcc->paint.values[k]*65535.0);
 
     /* Get a link from the cache, or create if it is not there. Need to get 16 bit profile */
-    icc_link = gsicc_get_link(pis, dev, pcs, NULL, &rendering_params, pis->memory);
+    icc_link = gsicc_get_link(pgs, dev, pcs, NULL, &rendering_params, pgs->memory);
     if (icc_link == NULL) {
         #ifdef DEBUG
                 gs_warn("Could not create ICC link:  Check profiles");
@@ -517,7 +517,7 @@ gx_remap_ICC_imagelab(const gs_client_color * pcc, const gs_color_space * pcs,
     for ( k = 0; k < num_des_comps; k++){
         conc[k] = ushort2frac(psrc_temp[k]);
     }
-    gx_remap_concrete_ICC(conc, pcs, pdc, pis, dev, select);
+    gx_remap_concrete_ICC(conc, pcs, pdc, pgs, dev, select);
 
     /* Save original color space and color info into dev color */
     i = pcs->cmm_icc_profile_data->num_comps;
@@ -534,7 +534,7 @@ gx_concretize_ICC(
     const gs_client_color * pcc,
     const gs_color_space *  pcs,
     frac *                  pconc,
-    const gs_imager_state * pis,
+    const gs_gstate * pgs,
     gx_device *dev)
     {
 
@@ -552,17 +552,17 @@ gx_concretize_ICC(
         return code;
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     /* Define the rendering intents.  */
-    rendering_params.black_point_comp = pis->blackptcomp;
+    rendering_params.black_point_comp = pgs->blackptcomp;
     rendering_params.graphics_type_tag = dev->graphics_type_tag;
     rendering_params.override_icc = false;
     rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
-    rendering_params.rendering_intent = pis->renderingintent;
+    rendering_params.rendering_intent = pgs->renderingintent;
     rendering_params.cmm = gsCMM_DEFAULT;
     for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++) {
         psrc[k] = (unsigned short) (pcc->paint.values[k]*65535.0);
     }
     /* Get a link from the cache, or create if it is not there. Get 16 bit profile */
-    icc_link = gsicc_get_link(pis, dev, pcs, NULL, &rendering_params, pis->memory);
+    icc_link = gsicc_get_link(pgs, dev, pcs, NULL, &rendering_params, pgs->memory);
     if (icc_link == NULL) {
         #ifdef DEBUG
                 gs_warn("Could not create ICC link:  Check profiles");
@@ -608,7 +608,7 @@ gx_final_ICC(const gs_color_space * pcs)
  * the ICC profile or the alternate color space is to be used.
  */
 static int
-gx_install_ICC(gs_color_space * pcs, gs_state * pgs)
+gx_install_ICC(gs_color_space * pcs, gs_gstate * pgs)
 {
     /* update the stub information used by the joint caches */
     return 0;
@@ -648,7 +648,7 @@ gx_serialize_ICC(const gs_color_space * pcs, stream * s)
 
 /* Overprint.  Here we may have either spot colors or CMYK colors. */
 static int
-gx_set_overprint_ICC(const gs_color_space * pcs, gs_state * pgs)
+gx_set_overprint_ICC(const gs_color_space * pcs, gs_gstate * pgs)
 {
     gx_device *dev = pgs->device;
     gx_device_color_info *pcinfo = (dev == 0 ? 0 : &dev->color_info);

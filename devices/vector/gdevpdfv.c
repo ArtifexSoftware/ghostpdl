@@ -214,7 +214,7 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
                         gs_pattern1_instance_t *pinst)
 {
     gs_pattern1_template_t *t = &pinst->templat;
-    gs_matrix smat2 = ctm_only((gs_imager_state *)pinst->saved), smat;
+    gs_matrix smat2 = ctm_only((gs_gstate *)pinst->saved), smat;
     double scale_x = pdev->HWResolution[0] / 72.0;
     double scale_y = pdev->HWResolution[1] / 72.0;
     cos_dict_t *pcd = cos_stream_dict((cos_stream_t *)pres->object);
@@ -325,12 +325,12 @@ int
 pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
                           const gs_color_space *pcs,
                           const psdf_set_color_commands_t *ppscc,
-                          const gs_imager_state * pis, pdf_resource_t **ppres)
+                          const gs_gstate * pgs, pdf_resource_t **ppres)
 {
     const gx_color_tile *m_tile = pdc->mask.m_tile;
     gx_drawing_color dc_pure;
 
-    if (!pis->have_pattern_streams && m_tile == 0) {
+    if (!pgs->have_pattern_streams && m_tile == 0) {
         /*
          * If m_tile == 0, this uncolored Pattern is all 1's,
          * equivalent to a pure color.
@@ -347,14 +347,14 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 
         if (!tile_size_ok(pdev, NULL, m_tile))
             return_error(gs_error_limitcheck);
-        if (!pis->have_pattern_streams) {
+        if (!pgs->have_pattern_streams) {
             if ((code = pdf_cs_Pattern_uncolored(pdev, &v)) < 0 ||
                 (code = pdf_put_pattern_mask(pdev, m_tile, &pcs_image)) < 0 ||
                 (code = pdf_pattern(pdev, pdc, NULL, m_tile, pcs_image, ppres)) < 0
                 )
                 return code;
         } else {
-            code = pdf_cs_Pattern_uncolored_hl(pdev, pcs, &v, pis);
+            code = pdf_cs_Pattern_uncolored_hl(pdev, pcs, &v, pgs);
             if (code < 0)
                 return code;
             *ppres = pdf_find_resource_by_gs_id(pdev, resourcePattern, pdc->mask.id);
@@ -373,7 +373,7 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
         }
         cos_value_write(&v, pdev);
         pprints1(s, " %s ", ppscc->setcolorspace);
-        if (pis->have_pattern_streams)
+        if (pgs->have_pattern_streams)
             return 0;
         set_nonclient_dev_color(&dc_pure, gx_dc_pure_color(pdc));
         return psdf_set_color((gx_device_vector *)pdev, &dc_pure, &no_scc);
@@ -384,7 +384,7 @@ int
 pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
                         const gs_color_space *pcs,
                         const psdf_set_color_commands_t *ppscc,
-                        const gs_imager_state * pis, pdf_resource_t **ppres)
+                        const gs_gstate * pgs, pdf_resource_t **ppres)
 {
     const gx_color_tile *p_tile = pdc->colors.pattern.p_tile;
     gs_color_space *pcs_Device;
@@ -401,7 +401,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
         h = p_tile->tbits.rep_height;
     }
 
-    if (!pis->have_pattern_streams) {
+    if (!pgs->have_pattern_streams) {
         /*
          * NOTE: We assume here that the color space of the cached Pattern
          * is the same as the native color space of the device.  This will
@@ -449,7 +449,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
                     dcolor = *pdc;
                     dcolor.colors.pure = color;
                     return pdf_put_uncolored_pattern(pdev, &dcolor, pcs, ppscc,
-                                pis, ppres);
+                                pgs, ppres);
                 }
             not_pure:
                 DO_NOTHING;		/* required by MSVC */
@@ -475,7 +475,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
                            &pdf_color_space_names, true, NULL, 0, false);
     if (code < 0)
         return code;
-    if (!pis->have_pattern_streams) {
+    if (!pgs->have_pattern_streams) {
         cos_stream_t *pcs_mask = 0;
         cos_stream_t *pcs_image;
 
@@ -531,7 +531,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 
 /* Write parameters common to all Shadings. */
 static int
-pdf_put_shading_common(gx_device_pdf *pdev, cos_dict_t *pscd, const gs_imager_state * pis, const gs_shading_t *psh,
+pdf_put_shading_common(gx_device_pdf *pdev, cos_dict_t *pscd, const gs_gstate * pgs, const gs_shading_t *psh,
                        bool shfill, const gs_range_t **ppranges)
 {
     gs_shading_type_t type = ShadingType(psh);
@@ -542,7 +542,7 @@ pdf_put_shading_common(gx_device_pdf *pdev, cos_dict_t *pscd, const gs_imager_st
     if (code < 0 ||
         (psh->params.AntiAlias &&
          (code = cos_dict_put_c_strings(pscd, "/AntiAlias", "true")) < 0) ||
-        (code = pdf_color_space_named(pdev, pis, &cs_value, ppranges, pcs,
+        (code = pdf_color_space_named(pdev, pgs, &cs_value, ppranges, pcs,
                                 &pdf_color_space_names, false, NULL, 0, false)) < 0 ||
         (code = cos_dict_put_c_key(pscd, "/ColorSpace", &cs_value)) < 0
         )
@@ -937,7 +937,7 @@ pdf_put_mesh_shading(gx_device_pdf *pdev, cos_stream_t *pscs, const gs_shading_t
 
 /* Write a PatternType 2 (shading pattern) color. */
 int
-pdf_put_pattern2(gx_device_pdf *pdev, const gs_imager_state * pis, const gx_drawing_color *pdc,
+pdf_put_pattern2(gx_device_pdf *pdev, const gs_gstate * pgs, const gx_drawing_color *pdc,
                  const psdf_set_color_commands_t *ppscc,
                  pdf_resource_t **ppres)
 {
@@ -969,7 +969,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gs_imager_state * pis, const gx_draw
     if (ShadingType(psh) >= 4) {
         /* Shading has an associated data stream. */
         cos_become(psco, cos_type_stream);
-        code = pdf_put_shading_common(pdev, cos_stream_dict((cos_stream_t *)psco), pis,
+        code = pdf_put_shading_common(pdev, cos_stream_dict((cos_stream_t *)psco), pgs,
                                       psh, pinst->shfill, &pranges);
         if (code >= 0)
             code1 = pdf_put_mesh_shading(pdev, (cos_stream_t *)psco, psh, pranges);
@@ -978,7 +978,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gs_imager_state * pis, const gx_draw
             psres->where_used = 0;
     } else {
         cos_become(psco, cos_type_dict);
-        code = pdf_put_shading_common(pdev, (cos_dict_t *)psco, pis, psh, pinst->shfill, &pranges);
+        code = pdf_put_shading_common(pdev, (cos_dict_t *)psco, pgs, psh, pinst->shfill, &pranges);
         if (code >= 0)
             code = pdf_put_scalar_shading(pdev, (cos_dict_t *)psco, psh, pranges);
         else

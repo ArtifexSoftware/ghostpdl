@@ -369,7 +369,7 @@ typedef struct gx_cie_vector_cache3_s {
 
 /* Elements common to all CIE color space dictionaries. */
 struct gs_cie_common_s {
-    int (*install_cspace)(gs_color_space *, gs_state *);
+    int (*install_cspace)(gs_color_space *, gs_gstate *);
     void *client_data;
     gs_range3 RangeLMN;
     gs_cie_common_proc3 DecodeLMN;
@@ -596,7 +596,7 @@ typedef enum {
  */
 #define GX_CIE_REMAP_FINISH_PROC(proc)\
   int proc(cie_cached_vector3 vec3, frac *pconc, float *xyz,\
-           const gs_imager_state *pis, const gs_color_space *pcs)
+           const gs_gstate *pgs, const gs_color_space *pcs)
 
 struct gx_cie_joint_caches_s {
     /*
@@ -680,13 +680,13 @@ void gs_cie_defg_complete(gs_cie_defg *);
 void gs_cie_def_complete(gs_cie_def *);
 void gs_cie_abc_complete(gs_cie_abc *);
 void gs_cie_a_complete(gs_cie_a *);
-gx_cie_joint_caches *gx_unshare_cie_caches(gs_state *);
-gx_cie_joint_caches *gx_currentciecaches(gs_state *);
-const gs_cie_common *gs_cie_cs_common(const gs_state *);
-int gs_cie_cs_complete(gs_state *, bool);
-int gs_cie_jc_complete(const gs_imager_state *, const gs_color_space *);
+gx_cie_joint_caches *gx_unshare_cie_caches(gs_gstate *);
+gx_cie_joint_caches *gx_currentciecaches(gs_gstate *);
+const gs_cie_common *gs_cie_cs_common(const gs_gstate *);
+int gs_cie_cs_complete(gs_gstate *, bool);
+int gs_cie_jc_complete(const gs_gstate *, const gs_color_space *);
 float gs_cie_cached_value(double, const cie_cache_floats *);
-int gx_install_cie_abc(gs_cie_abc *, gs_state *);
+int gx_install_cie_abc(gs_cie_abc *, gs_gstate *);
 
 #define CIE_CLAMP_INDEX(index)\
   index = (index < 0 ? 0 :\

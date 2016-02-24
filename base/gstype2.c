@@ -24,7 +24,7 @@
 #include "gxfixed.h"
 #include "gxmatrix.h"
 #include "gxcoord.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxpath.h"
 #include "gxfont.h"
 #include "gxfont1.h"
@@ -152,7 +152,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
             break;
         case 0:
             gs_type1_finish_init(pcis);	/* sets origin */
-            code = t1_hinter__set_mapping(h, &pcis->pis->ctm,
+            code = t1_hinter__set_mapping(h, &pcis->pgs->ctm,
                             &pfont->FontMatrix, &pfont->base->FontMatrix,
                             pcis->scale.x.log2_unit, pcis->scale.x.log2_unit,
                             pcis->scale.x.log2_unit - pcis->log2_subpixels.x,
@@ -340,7 +340,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     code = t1_hinter__endglyph(h);
                     if (code < 0)
                         return code;
-                    code = gx_setcurrentpoint_from_path(pcis->pis, pcis->path);
+                    code = gx_setcurrentpoint_from_path(pcis->pgs, pcis->path);
                     if (code < 0)
                         return code;
                 } else {
@@ -726,12 +726,12 @@ flex:			{
                             if ((code =
                                  gs_distance_transform(fixed2float(x_join),
                                                        fixed2float(y_join),
-                                                       &ctm_only(pcis->pis),
+                                                       &ctm_only(pcis->pgs),
                                                        &join)) < 0 ||
                                 (code =
                                  gs_distance_transform(fixed2float(x_end),
                                                        fixed2float(y_end),
-                                                       &ctm_only(pcis->pis),
+                                                       &ctm_only(pcis->pgs),
                                                        &end)) < 0
                                 )
                                 return code;

@@ -19,7 +19,7 @@
 
 #include "memory_.h"
 #include "gx.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gsiparam.h"
 #include "math_.h"
 #include "gxfixed.h"  /* needed for gximage.h */
@@ -584,11 +584,11 @@ gxht_thresh_image_init(gx_image_enum *penum)
     gx_dda_fixed dda_ht;
 
     if (gx_device_must_halftone(penum->dev)) {
-        if (penum->pis != NULL && penum->pis->dev_ht != NULL) {
-            for (k = 0; k < penum->pis->dev_ht->num_comp; k++) {
-                d_order = &(penum->pis->dev_ht->components[k].corder);
+        if (penum->pgs != NULL && penum->pgs->dev_ht != NULL) {
+            for (k = 0; k < penum->pgs->dev_ht->num_comp; k++) {
+                d_order = &(penum->pgs->dev_ht->components[k].corder);
                 code = gx_ht_construct_threshold(d_order, penum->dev,
-                                                 penum->pis, k);
+                                                 penum->pgs, k);
                 if (code < 0 ) {
                     return gs_rethrow(code, "threshold creation failed");
                 }
@@ -872,13 +872,13 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
             /*  Iterate over the vdi and fill up our threshold buffer.  We
                  also need to loop across the planes of data */
             for (j = 0; j < spp_out; j++) {
-                bool threshold_inverted = penum->pis->dev_ht->components[j].corder.threshold_inverted;
+                bool threshold_inverted = penum->pgs->dev_ht->components[j].corder.threshold_inverted;
 
-                thresh_width = penum->pis->dev_ht->components[j].corder.width;
-                thresh_height = penum->pis->dev_ht->components[j].corder.full_height;
+                thresh_width = penum->pgs->dev_ht->components[j].corder.width;
+                thresh_height = penum->pgs->dev_ht->components[j].corder.full_height;
                 halftone = penum->ht_buffer + j * vdi * dithered_stride;
                 /* Compute the tiling positions with dest_width */
-                dx = (fixed2int_var_rounded(xrun) + penum->pis->screen_phase[0].x) % thresh_width;
+                dx = (fixed2int_var_rounded(xrun) + penum->pgs->screen_phase[0].x) % thresh_width;
                 /* Left remainder part */
                 left_rem_end = min(dx + dest_width, thresh_width);
                 /* The left width of our tile part */
@@ -890,7 +890,7 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                 right_tile_width = dest_width -  num_full_tiles * thresh_width -
                                    left_width;
                 /* Get the proper threshold for the colorant count */
-                threshold = penum->pis->dev_ht->components[j].corder.threshold;
+                threshold = penum->pgs->dev_ht->components[j].corder.threshold;
                 /* Point to the proper contone data */
                 contone_align = penum->line + contone_stride * j +
                                 offset_contone[j];
@@ -983,11 +983,11 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                 for (j = 0; j < spp_out; j++) {
                     halftone = penum->ht_buffer +
                                    j * penum->ht_plane_height * (LAND_BITS>>3);
-                    thresh_width = penum->pis->dev_ht->components[j].corder.width;
+                    thresh_width = penum->pgs->dev_ht->components[j].corder.width;
                     thresh_height =
-                          penum->pis->dev_ht->components[j].corder.full_height;
+                          penum->pgs->dev_ht->components[j].corder.full_height;
                     /* Get the proper threshold for the colorant count */
-                    threshold = penum->pis->dev_ht->components[j].corder.threshold;
+                    threshold = penum->pgs->dev_ht->components[j].corder.threshold;
                     /* Point to the proper contone data */
                     contone_align = penum->line + offset_contone[j] +
                                       LAND_BITS * j * contone_stride;
@@ -1001,7 +1001,7 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                     } else {
                         dx = penum->ht_landscape.xstart;
                     }
-                    dx = (dx + penum->pis->screen_phase[0].x) % thresh_width;
+                    dx = (dx + penum->pgs->screen_phase[0].x) % thresh_width;
                     dy = (penum->ht_landscape.y_pos +
                               penum->dev->band_offset_y) % thresh_height;
                     if (dy < 0)

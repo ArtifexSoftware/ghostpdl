@@ -18,16 +18,16 @@
 #include "gx.h"
 #include "gxchrout.h"
 #include "gxfarith.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 
 /*
  * Determine the flatness for rendering a character in an outline font.
- * This may be less than the flatness in the imager state.
+ * This may be less than the flatness in the gs_gstate.
  * The second argument is the default scaling for the font: 0.001 for
  * Type 1 fonts, 1.0 for TrueType fonts.
  */
 double
-gs_char_flatness(const gs_imager_state *pis, double default_scale)
+gs_char_flatness(const gs_gstate *pgs, double default_scale)
 {
     /*
      * Set the flatness to a value that is likely to produce reasonably
@@ -35,12 +35,12 @@ gs_char_flatness(const gs_imager_state *pis, double default_scale)
      * graphics state.  If the character is very small, set the flatness
      * to zero, which will produce very accurate curves.
      */
-    double cxx = fabs(pis->ctm.xx), cyy = fabs(pis->ctm.yy);
+    double cxx = fabs(pgs->ctm.xx), cyy = fabs(pgs->ctm.yy);
 
     if (is_fzero(cxx) || (cyy < cxx && !is_fzero(cyy)))
         cxx = cyy;
-    if (!is_xxyy(&pis->ctm)) {
-        double cxy = fabs(pis->ctm.xy), cyx = fabs(pis->ctm.yx);
+    if (!is_xxyy(&pgs->ctm)) {
+        double cxy = fabs(pgs->ctm.xy), cyx = fabs(pgs->ctm.yx);
 
         if (is_fzero(cxx) || (cxy < cxx && !is_fzero(cxy)))
             cxx = cxy;
@@ -50,8 +50,8 @@ gs_char_flatness(const gs_imager_state *pis, double default_scale)
     /* Correct for the default scaling. */
     cxx *= 0.001 / default_scale;
     /* Don't let the flatness be worse than the default. */
-    if (cxx > pis->flatness)
-        cxx = pis->flatness;
+    if (cxx > pgs->flatness)
+        cxx = pgs->flatness;
     /* If the character is tiny, force accurate curves. */
     if (cxx < 0.2)
         cxx = 0;

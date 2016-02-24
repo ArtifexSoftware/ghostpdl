@@ -46,7 +46,7 @@ typedef IMAGE3_MAKE_MID_PROC((*image3_make_mid_proc_t));
 #define IMAGE3_MAKE_MCDE_PROC(proc)\
   int proc(/* The initial arguments are those of begin_typed_image. */\
                gx_device *dev,\
-           const gs_imager_state *pis,\
+           const gs_gstate *pgs,\
            const gs_matrix *pmat,\
            const gs_image_common_t *pic,\
            const gs_int_rect *prect,\
@@ -64,7 +64,7 @@ typedef IMAGE3_MAKE_MCDE_PROC((*image3_make_mcde_proc_t));
  * procedures as additional parameters.
  */
 int gx_begin_image3_generic(gx_device * dev,
-                            const gs_imager_state *pis,
+                            const gs_gstate *pgs,
                             const gs_matrix *pmat,
                             const gs_image_common_t *pic,
                             const gs_int_rect *prect,

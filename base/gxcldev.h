@@ -590,7 +590,7 @@ int cmd_update_lop(gx_device_clist_writer *, gx_clist_state *,
  *
  * The error_in_rect code detects an error that may be a recoverable
  * VMerror, with calling clist_VMerror_recover_flush. It will attempt to fix the
- * VMerror by flushing and closing the band and resetting the imager state,
+ * VMerror by flushing and closing the band and resetting the gs_gstate,
  * and then restart emitting the entire band.
  * Note that re.y must not change when restarting the band.
  *
@@ -746,7 +746,7 @@ int clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
  * Write out any necessary color mapping data.
  */
 int cmd_put_color_mapping(gx_device_clist_writer * cldev,
-                                  const gs_imager_state * pis);
+                                  const gs_gstate * pgs);
 /*
  * Add commands to represent a full (device) halftone.
  * (This routine should probably be in some other module.)

@@ -22,15 +22,15 @@
 #include "gxtmap.h"
 
 /* Color and gray interface */
-int gs_setgray(gs_state *, double);
-int gs_currentgray(const gs_state *, float *);
-int gs_setrgbcolor(gs_state *, double, double, double);
-int gs_currentrgbcolor(const gs_state *, float[3]);
-int gs_setnullcolor(gs_state *);
+int gs_setgray(gs_gstate *, double);
+int gs_currentgray(const gs_gstate *, float *);
+int gs_setrgbcolor(gs_gstate *, double, double, double);
+int gs_currentrgbcolor(const gs_gstate *, float[3]);
+int gs_setnullcolor(gs_gstate *);
 
 /* Transfer function */
-int gs_settransfer(gs_state *, gs_mapping_proc);
-int gs_settransfer_remap(gs_state *, gs_mapping_proc, bool);
-gs_mapping_proc gs_currenttransfer(const gs_state *);
+int gs_settransfer(gs_gstate *, gs_mapping_proc);
+int gs_settransfer_remap(gs_gstate *, gs_mapping_proc, bool);
+gs_mapping_proc gs_currenttransfer(const gs_gstate *);
 
 #endif /* gscolor_INCLUDED */

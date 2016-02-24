@@ -122,16 +122,16 @@ const gs_color_space_type gs_color_space_type_CIEA = {
 
 /* Determine the concrete space underlying a CIEBased space. */
 const gs_color_space *
-gx_concrete_space_CIE(const gs_color_space * pcs, const gs_imager_state * pis)
+gx_concrete_space_CIE(const gs_color_space * pcs, const gs_gstate * pgs)
 {
-    const gs_cie_render *pcie = pis->cie_render;
+    const gs_cie_render *pcie = pgs->cie_render;
 
     if (pcie == 0 || pcie->RenderTable.lookup.table == 0 ||
         pcie->RenderTable.lookup.m == 3
         ) {
-        return pis->devicergb_cs;
+        return pgs->devicergb_cs;
     } else {			/* pcie->RenderTable.lookup.m == 4 */
-        return pis->devicecmyk_cs;
+        return pgs->devicecmyk_cs;
     }
 }
 
@@ -140,7 +140,7 @@ gx_concrete_space_CIE(const gs_color_space * pcs, const gs_imager_state * pis)
 /* interpreters can substitute their own installer. */
 /* This procedure is exported for the benefit of gsicc.c */
 int
-gx_install_CIE(gs_color_space * pcs, gs_state * pgs)
+gx_install_CIE(gs_color_space * pcs, gs_gstate * pgs)
 {
     return (*pcs->params.a->common.install_cspace) (pcs, pgs);
 }

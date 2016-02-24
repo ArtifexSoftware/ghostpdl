@@ -98,15 +98,13 @@ sj48_print_page(gx_device_printer *pdev, FILE *prn_stream)
         int limit = last_row - bits_per_column;
 
         if ( in == 0 || out == 0 )
-        {	code = gs_error_VMerror;
-                gs_note_error(code);
+        {	code = gs_note_error(gs_error_VMerror);
                 goto fin;
         }
 
         /* Abort if the requested resolution is unsupported. */
         if ((xres !=180 && xres != 360) || (yres !=180 && yres != 360))
-        {	code = gs_error_rangecheck;
-                gs_note_error(code);
+        {	code = gs_note_error(gs_error_rangecheck);
                 goto fin;
         }
 

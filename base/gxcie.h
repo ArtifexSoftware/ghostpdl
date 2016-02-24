@@ -46,14 +46,14 @@ cs_proc_restrict_color(gx_restrict_CIEA);
 cs_proc_install_cspace(gx_install_CIEA);
 
 /*
- * Initialize (just enough of) an imager state so that "concretizing" colors
- * using this imager state will do only the CIE->XYZ mapping.  This is a
+ * Initialize (just enough of) an gs_gstate so that "concretizing" colors
+ * using this gs_gstate will do only the CIE->XYZ mapping.  This is a
  * semi-hack for the PDF writer.
  */
-extern	int	gx_cie_to_xyz_alloc(gs_imager_state **,
+extern	int	gx_cie_to_xyz_alloc(gs_gstate **,
                                     const gs_color_space *, gs_memory_t *);
-extern	void	gx_cie_to_xyz_free(gs_imager_state *);
-extern int gx_cie_to_xyz_alloc2(gs_color_space * pcs, gs_state * pgs);
+extern	void	gx_cie_to_xyz_free(gs_gstate *);
+extern int gx_cie_to_xyz_alloc2(gs_color_space * pcs, gs_gstate * pgs);
 
 /* Defined in gsciemap.c */
 
@@ -62,7 +62,7 @@ extern int gx_cie_to_xyz_alloc2(gs_color_space * pcs, gs_state * pgs);
  * caches are loaded.  Note that the procedure may return 1 if no rendering
  * has been defined.
  */
-int gx_cie_check_rendering(const gs_color_space * pcs, frac * pconc, const gs_imager_state * pis);
+int gx_cie_check_rendering(const gs_color_space * pcs, frac * pconc, const gs_gstate * pgs);
 
 /*
  * Do the common remapping operation for CIE color spaces. Returns the
@@ -72,7 +72,7 @@ int gx_cie_check_rendering(const gs_color_space * pcs, frac * pconc, const gs_im
  */
 extern  int     gx_cie_remap_finish( cie_cached_vector3,
                                      frac *, float *,
-                                     const gs_imager_state *,
+                                     const gs_gstate *,
                                      const gs_color_space * );
 /* Make sure the prototype matches the one defined in gscie.h. */
 extern GX_CIE_REMAP_FINISH_PROC(gx_cie_remap_finish);
@@ -110,7 +110,7 @@ extern  void    gx_set_common_cie_defaults( gs_cie_common *,
                                             void *  client_data );
 
 /* Load the common caches for a CIE color space */
-extern  void    gx_cie_load_common_cache(gs_cie_common *, gs_state *);
+extern  void    gx_cie_load_common_cache(gs_cie_common *, gs_gstate *);
 
 /* Complete loading of the common caches */
 extern  void    gx_cie_common_complete(gs_cie_common *);
@@ -135,13 +135,13 @@ cs_proc_concrete_space(gx_concrete_space_CIE);
 /* Special operations used in the creation of ICC color spaces from PS
    spaces.  These are used to map from PS color to CIEXYZ */
 int gx_psconcretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
-                      frac * pconc, float * xyz, const gs_imager_state * pis);
+                      frac * pconc, float * xyz, const gs_gstate * pgs);
 int gx_psconcretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
-                     frac * pconc, float * xyz, const gs_imager_state * pis);
+                     frac * pconc, float * xyz, const gs_gstate * pgs);
 int gx_psconcretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
-                     frac * pconc, float * xyz, const gs_imager_state * pis);
+                     frac * pconc, float * xyz, const gs_gstate * pgs);
 int gx_psconcretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
-                     frac * pconc, float * xyz, const gs_imager_state * pis);
+                     frac * pconc, float * xyz, const gs_gstate * pgs);
 bool check_range(gs_range *ranges, int num_colorants);
 bool check_cie_range( const gs_color_space * pcs );
 gs_range* get_cie_range( const gs_color_space * pcs );

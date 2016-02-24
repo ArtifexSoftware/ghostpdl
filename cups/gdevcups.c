@@ -1728,7 +1728,7 @@ cups_map_gray(gx_device *pdev,		/* I - Device info */
 private void
 cups_map_rgb(gx_device             *pdev,
 					/* I - Device info */
-             const gs_imager_state *pis,/* I - Device state */
+             const gs_gstate        *pgs,/* I - Device state */
              frac                  r,	/* I - Red value */
 	     frac                  g,	/* I - Green value */
 	     frac                  b,	/* I - Blue value */
@@ -1741,7 +1741,7 @@ cups_map_rgb(gx_device             *pdev,
 
 #ifdef CUPS_DEBUG2
   dmprintf6(pdev->memory, "DEBUG2: cups_map_rgb(%p, %p, %d, %d, %d, %p)\n",
-            pdev, pis, r, g, b, out);
+            pdev, pgs, r, g, b, out);
 #endif /* CUPS_DEBUG2 */
 
  /*

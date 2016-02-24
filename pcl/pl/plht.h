@@ -19,7 +19,7 @@
 #ifndef plht_INCLUDED
 #  define plht_INCLUDED
 
-int pl_set_pcl_halftone(gs_state * pgs, gs_mapping_proc transfer_proc,
+int pl_set_pcl_halftone(gs_gstate * pgs, gs_mapping_proc transfer_proc,
                         int width, int height,
                         gs_string threshold_data, int phase_x, int phase_y);
 

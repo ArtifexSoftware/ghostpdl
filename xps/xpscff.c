@@ -707,13 +707,12 @@ xps_post_callback_pop(void *callback_data, fixed *value)
 }
 
 static int
-xps_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
+xps_cff_append(gs_gstate *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
 {
     int code, value;
     gs_type1exec_state cxs;
     gs_glyph_data_t gd;
     gs_type1_state *const pcis = &cxs.cis;
-    gs_imager_state *pgis = (gs_imager_state*)pgs;
     gs_glyph_data_t *pgd = &gd;
     double sbw[4];
     gs_matrix mtx;
@@ -727,10 +726,10 @@ xps_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
     gs_matrix_scale(&mtx, 0.001, 0.001, &mtx);
     mtx.tx = 0;
     mtx.ty = 0;
-    gs_matrix_fixed_from_matrix(&pgis->ctm, &mtx);
-    pgis->flatness = 0;
+    gs_matrix_fixed_from_matrix(&pgs->ctm, &mtx);
+    pgs->flatness = 0;
 
-    code = gs_type1_interp_init(&cxs.cis, pgis, pgs->path, NULL, NULL, donthint, 0, pt1);
+    code = gs_type1_interp_init(&cxs.cis, pgs, pgs->path, NULL, NULL, donthint, 0, pt1);
     if (code < 0)
         return gs_throw(code, "cannot init type1 interpreter");
 
@@ -763,7 +762,7 @@ xps_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
 }
 
 static int
-xps_post_callback_build_char(gs_show_enum *penum, gs_state *pgs,
+xps_post_callback_build_char(gs_show_enum *penum, gs_gstate *pgs,
         gs_font *pfont, gs_char chr, gs_glyph glyph)
 {
     gs_font_type1 *pt1 = (gs_font_type1*)pfont;

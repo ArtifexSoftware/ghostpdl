@@ -88,7 +88,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
     byte * pname;
     uint name_size;
     int halftonetype, type = 0;
-    gs_state *pgs = igs;
+    gs_gstate *pgs = igs;
     int space_index = r_space_index(op - 1);
 
     mem = (gs_memory_t *) idmemory->spaces_indexed[space_index];

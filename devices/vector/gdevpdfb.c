@@ -167,8 +167,8 @@ pdf_copy_mono(gx_device_pdf *pdev,
             if (pres == 0) {        /* Define the character in an embedded font. */
                 gs_image_t_init_mask(&image, false);
                 invert = 0xff;
-                x_offset = x - (int)show_enum->pis->current_point.x;
-                y_offset = y - (int)show_enum->pis->current_point.y;
+                x_offset = x - (int)show_enum->pgs->current_point.x;
+                y_offset = y - (int)show_enum->pgs->current_point.y;
                 x -= x_offset;
                 y -= y_offset;
                 y -= h;

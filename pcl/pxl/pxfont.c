@@ -320,7 +320,7 @@ px_str_to_gschars(px_args_t * par, px_state_t * pxs, gs_char * pchr)
 
 /* startup for the processing text */
 static int
-px_text_setup(gs_state * pgs, const gs_char * str, uint size,
+px_text_setup(gs_gstate * pgs, const gs_char * str, uint size,
               const float *x_widths, const float *y_widths,
               uint widths_size, gs_memory_t * mem, gs_text_enum_t ** ppte,
               bool to_path, bool can_cache)
@@ -360,7 +360,7 @@ int
 px_text(px_args_t * par, px_state_t * pxs, bool to_path)
 {
     gs_memory_t *mem = pxs->memory;
-    gs_state *pgs = pxs->pgs;
+    gs_gstate *pgs = pxs->pgs;
     px_gstate_t *pxgs = pxs->pxgs;
     gs_text_enum_t *penum;
     const px_value_t *pstr = par->pv[0];

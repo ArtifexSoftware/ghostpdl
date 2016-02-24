@@ -23,7 +23,7 @@
 #include "gxfixed.h"
 #include "gxfont.h"
 #include "gxfont42.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxpath.h"
 #include "gxtext.h"
 #include "gzstate.h"		/* only for ->path */
@@ -218,7 +218,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 
 /* Continue after a CDevProc callout. */
 static int type42_finish(i_ctx_t *i_ctx_p,
-                          int (*cont)(gs_state *));
+                          int (*cont)(gs_gstate *));
 static int
 type42_fill(i_ctx_t *i_ctx_p)
 {
@@ -238,7 +238,7 @@ type42_stroke(i_ctx_t *i_ctx_p)
 }
 /* <font> <code|name> <name> <glyph_index> %type42_{fill|stroke} - */
 static int
-type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
+type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_gstate *))
 {
     os_ptr op = osp;
     gs_font *pfont;

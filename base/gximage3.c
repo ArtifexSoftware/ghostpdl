@@ -26,7 +26,7 @@
 #include "gxdevmem.h"
 #include "gxclipm.h"
 #include "gximage3.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 
 /* Forward references */
 static dev_proc_begin_typed_image(gx_begin_image3);
@@ -124,7 +124,7 @@ make_mid_default(gx_device **pmidev, gx_device *dev, int width, int height,
 }
 static IMAGE3_MAKE_MCDE_PROC(make_mcde_default);  /* check prototype */
 static int
-make_mcde_default(gx_device *dev, const gs_imager_state *pis,
+make_mcde_default(gx_device *dev, const gs_gstate *pgs,
                   const gs_matrix *pmat, const gs_image_common_t *pic,
                   const gs_int_rect *prect, const gx_drawing_color *pdcolor,
                   const gx_clip_path *pcpath, gs_memory_t *mem,
@@ -157,7 +157,7 @@ make_mcde_default(gx_device *dev, const gs_imager_state *pis,
     }
     mcdev->tiles = bits;
     code = dev_proc(mcdev, begin_typed_image)
-        ((gx_device *)mcdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+        ((gx_device *)mcdev, pgs, pmat, pic, prect, pdcolor, pcpath, mem,
          pinfo);
     if (code < 0) {
         gs_free_object(mem, mcdev, "make_mcde_default");
@@ -168,12 +168,12 @@ make_mcde_default(gx_device *dev, const gs_imager_state *pis,
 }
 static int
 gx_begin_image3(gx_device * dev,
-                const gs_imager_state * pis, const gs_matrix * pmat,
+                const gs_gstate * pgs, const gs_matrix * pmat,
                 const gs_image_common_t * pic, const gs_int_rect * prect,
                 const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
                 gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
 {
-    return gx_begin_image3_generic(dev, pis, pmat, pic, prect, pdcolor,
+    return gx_begin_image3_generic(dev, pgs, pmat, pic, prect, pdcolor,
                                    pcpath, mem, make_mid_default,
                                    make_mcde_default, pinfo);
 }
@@ -185,7 +185,7 @@ gx_begin_image3(gx_device * dev,
 static bool check_image3_extent(double mask_coeff, double data_coeff);
 int
 gx_begin_image3_generic(gx_device * dev,
-                        const gs_imager_state *pis, const gs_matrix *pmat,
+                        const gs_gstate *pgs, const gs_matrix *pmat,
                         const gs_image_common_t *pic, const gs_int_rect *prect,
                         const gx_drawing_color *pdcolor,
                         const gx_clip_path *pcpath, gs_memory_t *mem,
@@ -349,7 +349,7 @@ gx_begin_image3_generic(gx_device * dev,
     mrect.q.x = pim->MaskDict.Width;
     mrect.q.y = pim->MaskDict.Height;
     if (pmat == 0)
-        pmat = &ctm_only(pis);
+        pmat = &ctm_only(pgs);
     if ((code = gs_matrix_multiply(&mi_mask, pmat, &mat)) < 0 ||
         (code = gs_bbox_transform(&mrect, &mat, &mrect)) < 0
         )
@@ -385,8 +385,8 @@ gx_begin_image3_generic(gx_device * dev,
         m_mat.tx -= origin.x;
         m_mat.ty -= origin.y;
         /*
-         * Note that pis = NULL here, since we don't want to have to
-         * create another imager state with default log_op, etc.
+         * Note that pgs = NULL here, since we don't want to have to
+         * create another gs_gstate with default log_op, etc.
          */
         code = gx_device_begin_typed_image(mdev, NULL, &m_mat,
                                            (const gs_image_common_t *)&i_mask,
@@ -403,7 +403,7 @@ gx_begin_image3_generic(gx_device * dev,
         i_pixel.type = type1;
         i_pixel.image_parent_type = gs_image_type3;
     }
-    code = make_mcde(dev, pis, pmat, (const gs_image_common_t *)&i_pixel,
+    code = make_mcde(dev, pgs, pmat, (const gs_image_common_t *)&i_pixel,
                      prect, pdcolor, pcpath, mem, &penum->pixel_info,
                      &pcdev, mdev, penum->mask_info, &origin);
     if (code < 0)

@@ -256,7 +256,7 @@ fapi_gs_char_show_width_only(const gs_text_enum_t *penum)
  * a path outline, and not a bitmap.
  */
 static bool
-using_transparency_pattern(gs_state *pgs)
+using_transparency_pattern(gs_gstate *pgs)
 {
     gx_device *dev = gs_currentdevice_inline(pgs);
 
@@ -270,7 +270,7 @@ produce_outline_char(gs_show_enum *penum_s,
                      gs_font_base *pbfont, int abits,
                      gs_log2_scale_point *log2_scale)
 {
-    gs_state *pgs = (gs_state *) penum_s->pis;
+    gs_gstate *pgs = (gs_gstate *) penum_s->pgs;
 
     log2_scale->x = 0;
     log2_scale->y = 0;
@@ -286,7 +286,7 @@ produce_outline_char(gs_show_enum *penum_s,
 
     return (pgs->in_charpath || pbfont->PaintType != 0 ||
             (pgs->in_cachedevice != CACHE_DEVICE_CACHING
-             && using_transparency_pattern((gs_state *) penum_s->pis))
+             && using_transparency_pattern((gs_gstate *) penum_s->pgs))
             || (pgs->in_cachedevice != CACHE_DEVICE_CACHING
                 && (log2_scale->x > 0 || log2_scale->y > 0))
             || (pgs->in_cachedevice != CACHE_DEVICE_CACHING && abits > 1));
@@ -526,17 +526,17 @@ outline_char(gs_memory_t *mem, gs_fapi_server *I, int import_shift_v,
     gs_fapi_path path_interface = path_interface_stub;
     gs_fapi_outline_handler olh;
     int code;
-    gs_state *pgs;
+    gs_gstate *pgs;
 
     extern_st(st_gs_show_enum);
-    extern_st(st_gs_state);
+    extern_st(st_gs_gstate);
 
     if (gs_object_type(penum_s->memory, penum_s) == &st_gs_show_enum) {
         pgs = penum_s->pgs;
     }
     else {
-        if (gs_object_type(penum_s->memory, penum_s->pis) == &st_gs_state) {
-            pgs = (gs_state *) penum_s->pis;
+        if (gs_object_type(penum_s->memory, penum_s->pgs) == &st_gs_gstate) {
+            pgs = (gs_gstate *) penum_s->pgs;
         }
         else
             /* No graphics state, give up... */
@@ -747,11 +747,11 @@ static const int frac_pixel_shift = 4;
  * validation, or fapi_image_uncached_glyph() must be changed to include the validation.
  */
 static int
-fapi_image_uncached_glyph(gs_font *pfont, gs_state *pgs, gs_show_enum *penum,
+fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
                           gs_fapi_raster *rast, const int import_shift_v)
 {
     gx_device *dev = penum->dev;
-    gs_state *penum_pgs = (gs_state *) penum->pis;
+    gs_gstate *penum_pgs = (gs_gstate *) penum->pgs;
     int code;
     const gx_clip_path *pcpath = pgs->clip_path;
     const gx_drawing_color *pdcolor = penum->pdcolor;
@@ -975,10 +975,10 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_state *pgs, gs_show_enum *penum,
 }
 
 int
-gs_fapi_finish_render(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, gs_fapi_server *I)
+gs_fapi_finish_render(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, gs_fapi_server *I)
 {
     gs_show_enum *penum_s = (gs_show_enum *) penum;
-    gs_state *penum_pgs;
+    gs_gstate *penum_pgs;
     gx_device *dev1;
     const int import_shift_v = _fixed_shift - 32;       /* we always 32.32 values for the outline interface now */
     gs_fapi_raster rast;
@@ -987,15 +987,15 @@ gs_fapi_finish_render(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, gs_f
     gs_font_base *pbfont = (gs_font_base *)pfont;
 
     extern_st(st_gs_show_enum);
-    extern_st(st_gs_state);
+    extern_st(st_gs_gstate);
 
     if (penum == NULL) {
         return_error(gs_error_undefined);
     }
 
-    /* Ensure that pis points to a st_gs_gstate (graphics state) structure */
-    if (gs_object_type(penum->memory, penum->pis) != &st_gs_state) {
-        /* If pis is not a graphics state, see if the text enumerator is a
+    /* Ensure that pgs points to a st_gs_gstate (graphics state) structure */
+    if (gs_object_type(penum->memory, penum->pgs) != &st_gs_gstate) {
+        /* If pgs is not a graphics state, see if the text enumerator is a
          * show enumerator, in which case we have a pointer to the graphics state there
          */
         if (gs_object_type(penum->memory, penum) == &st_gs_show_enum) {
@@ -1006,7 +1006,7 @@ gs_fapi_finish_render(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, gs_f
             return_error(gs_error_undefined);
     }
     else
-        penum_pgs = (gs_state *) penum->pis;
+        penum_pgs = (gs_gstate *) penum->pgs;
 
     dev1 = gs_currentdevice_inline(penum_pgs);  /* Possibly changed by zchar_set_cache. */
 
@@ -1043,7 +1043,6 @@ gs_fapi_finish_render(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, gs_f
 
         if (!SHOW_IS(penum, TEXT_DO_NONE) && I->use_outline) {
             /* The server provides an outline instead the raster. */
-            gs_imager_state *pis = (gs_imager_state *) penum_pgs->show_gstate;
             gs_point pt;
 
             /* This mimics code which is used below in the case where I->Use_outline is set.
@@ -1060,8 +1059,8 @@ gs_fapi_finish_render(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, gs_f
                               penum_pgs->path, !pbfont->PaintType)) < 0)
                 return code;
             if ((code =
-                 gs_imager_setflat((gs_imager_state *) penum_pgs,
-                                   gs_char_flatness(pis, 1.0))) < 0)
+                 gs_gstate_setflat((gs_gstate *) penum_pgs,
+                                   gs_char_flatness(penum_pgs->show_gstate, 1.0))) < 0)
                 return code;
             if (pbfont->PaintType) {
                 float lw = gs_currentlinewidth(penum_pgs);
@@ -1187,7 +1186,7 @@ gs_fapi_finish_render(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, gs_f
                            mtx1->yx == mtx2->yx && mtx1->yy == mtx2->yy)
 
 int
-gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font_file_path,
+gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *font_file_path,
                 bool bBuildGlyph, gs_string *charstring, gs_string *glyphname,
                 gs_char chr, gs_glyph index, int subfont)
 {                               /* Stack : <font> <code|name> --> - */

@@ -26,7 +26,7 @@
 #include "gxdevsop.h"
 #include "gdevp14.h"        /* Needed to patch up the procs after compositor creation */
 #include "gstrans.h"        /* For gs_pdf14trans_t */
-#include "gxistate.h"       /* for gs_image_state_s */
+#include "gxgstate.h"       /* for gs_image_state_s */
 
 
 /* defined in gsdpram.c */
@@ -838,7 +838,7 @@ gx_get_largest_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 int
 gx_no_create_compositor(gx_device * dev, gx_device ** pcdev,
                         const gs_composite_t * pcte,
-                        gs_imager_state * pis, gs_memory_t * memory,
+                        gs_gstate * pgs, gs_memory_t * memory,
                         gx_device *cdev)
 {
     return_error(gs_error_unknownerror);	/* not implemented */
@@ -846,16 +846,16 @@ gx_no_create_compositor(gx_device * dev, gx_device ** pcdev,
 int
 gx_default_create_compositor(gx_device * dev, gx_device ** pcdev,
                              const gs_composite_t * pcte,
-                             gs_imager_state * pis, gs_memory_t * memory,
+                             gs_gstate * pgs, gs_memory_t * memory,
                              gx_device *cdev)
 {
     return pcte->type->procs.create_default_compositor
-        (pcte, pcdev, dev, pis, memory);
+        (pcte, pcdev, dev, pgs, memory);
 }
 int
 gx_null_create_compositor(gx_device * dev, gx_device ** pcdev,
                           const gs_composite_t * pcte,
-                          gs_imager_state * pis, gs_memory_t * memory,
+                          gs_gstate * pgs, gs_memory_t * memory,
                           gx_device *cdev)
 {
     *pcdev = dev;
@@ -866,7 +866,7 @@ gx_null_create_compositor(gx_device * dev, gx_device ** pcdev,
  * Default handler for creating a compositor device when writing the clist. */
 int
 gx_default_composite_clist_write_update(const gs_composite_t *pcte, gx_device * dev,
-                gx_device ** pcdev, gs_imager_state * pis, gs_memory_t * mem)
+                gx_device ** pcdev, gs_gstate * pgs, gs_memory_t * mem)
 {
     *pcdev = dev;		/* Do nothing -> return the same device */
     return 0;
@@ -874,7 +874,7 @@ gx_default_composite_clist_write_update(const gs_composite_t *pcte, gx_device * 
 
 /* Default handler for adjusting a compositor's CTM. */
 int
-gx_default_composite_adjust_ctm(gs_composite_t *pcte, int x0, int y0, gs_imager_state *pis)
+gx_default_composite_adjust_ctm(gs_composite_t *pcte, int x0, int y0, gs_gstate *pgs)
 {
     return 0;
 }
@@ -903,7 +903,7 @@ gx_default_composite_is_friendly(const gs_composite_t *this, byte cmd0, byte cmd
  */
 int
 gx_default_composite_clist_read_update(gs_composite_t *pxcte, gx_device * cdev,
-                gx_device * tdev, gs_imager_state * pis, gs_memory_t * mem)
+                gx_device * tdev, gs_gstate * pgs, gs_memory_t * mem)
 {
     return 0;			/* Do nothing */
 }
@@ -972,7 +972,7 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
 int
 gx_default_fill_rectangle_hl_color(gx_device *pdev,
     const gs_fixed_rect *rect,
-    const gs_imager_state *pis, const gx_drawing_color *pdcolor,
+    const gs_gstate *pgs, const gx_drawing_color *pdcolor,
     const gx_clip_path *pcpath)
 {
     return_error(gs_error_rangecheck);
@@ -991,7 +991,7 @@ gx_default_include_color_space(gx_device *pdev, gs_color_space *cspace,
  * src/gsequivc.c.
  */
 int
-gx_default_update_spot_equivalent_colors(gx_device *pdev, const gs_state * pgs)
+gx_default_update_spot_equivalent_colors(gx_device *pdev, const gs_gstate * pgs)
 {
     return 0;
 }
@@ -1041,19 +1041,19 @@ gx_default_process_page(gx_device *dev, gx_process_page_options_t *options)
 /* ---------------- Default per-instance procedures ---------------- */
 
 int
-gx_default_install(gx_device * dev, gs_state * pgs)
+gx_default_install(gx_device * dev, gs_gstate * pgs)
 {
     return 0;
 }
 
 int
-gx_default_begin_page(gx_device * dev, gs_state * pgs)
+gx_default_begin_page(gx_device * dev, gs_gstate * pgs)
 {
     return 0;
 }
 
 int
-gx_default_end_page(gx_device * dev, int reason, gs_state * pgs)
+gx_default_end_page(gx_device * dev, int reason, gs_gstate * pgs)
 {
     return (reason != 2 ? 1 : 0);
 }
@@ -1443,7 +1443,7 @@ int gx_update_from_subclass(gx_device *dev)
 }
 
 int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
-    gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev)
+    gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev)
 {
     pdf14_clist_device *p14dev;
     generic_subclass_data *psubclass_data;
@@ -1472,13 +1472,13 @@ int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_co
                     p14dev->target->child->procs.get_color_mapping_procs = p14dev->saved_target_get_color_mapping_procs;
                     p14dev->target->child->procs.get_color_comp_index = p14dev->saved_target_get_color_comp_index;
 
-                    pis->get_cmap_procs = p14dev->save_get_cmap_procs;
-                    gx_set_cmap_procs(pis, p14dev->target);
+                    pgs->get_cmap_procs = p14dev->save_get_cmap_procs;
+                    gx_set_cmap_procs(pgs, p14dev->target);
 
                     subclass_device = p14dev->target;
                     p14dev->target = p14dev->target->child;
 
-                    code = dev->procs.create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+                    code = dev->procs.create_compositor(dev, pcdev, pcte, pgs, memory, cdev);
 
                     p14dev->target = subclass_device;
 
@@ -1486,11 +1486,11 @@ int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_co
                 }
                 break;
             default:
-                code = dev->procs.create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+                code = dev->procs.create_compositor(dev, pcdev, pcte, pgs, memory, cdev);
                 break;
         }
     } else {
-        code = dev->procs.create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+        code = dev->procs.create_compositor(dev, pcdev, pcte, pgs, memory, cdev);
     }
     dev->procs.create_compositor = gx_subclass_create_compositor;
     return code;

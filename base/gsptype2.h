@@ -104,7 +104,7 @@ int gs_pattern2_set_shfill(gs_client_color * pcc);
 
 /* Transform a shading bounding box into device space. */
 int gx_dc_pattern2_shade_bbox_transform2fixed(const gs_rect * rect,
-        const gs_imager_state * pis, gs_fixed_rect * rfixed);
+        const gs_gstate * pgs, gs_fixed_rect * rfixed);
 
 /* Get a shading bbox. Returns 1 on success. */
 int gx_dc_pattern2_get_bbox(const gx_device_color * pdevc, gs_fixed_rect *bbox);

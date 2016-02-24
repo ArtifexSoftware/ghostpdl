@@ -101,7 +101,7 @@ gs_private_st_simple(st_seed_row_t_element, pcl_seed_row_t,
 gs_private_st_simple(st_raster_t, pcl_raster_t, "PCL raster object");
 
 /* forward declaration */
-static int process_zero_rows(gs_state * pgs, pcl_raster_t * prast, int nrows);
+static int process_zero_rows(gs_gstate * pgs, pcl_raster_t * prast, int nrows);
 
 /*
  * Clear the consolidation buffer, allocating it if it does not already
@@ -545,7 +545,7 @@ create_image_enumerator(pcl_raster_t * prast)
  *     set to false.
  */
 static void
-close_raster(gs_state * pgs, pcl_raster_t * prast, bool complete)
+close_raster(gs_gstate * pgs, pcl_raster_t * prast, bool complete)
 {
     /* see if we need to fill in any missing rows */
     if (complete &&
@@ -674,7 +674,7 @@ process_zero_mask_rows(pcl_raster_t * prast, int nrows)
  * Returns 0 on success, < 0 in the event of an error.
  */
 static int
-process_zero_rows(gs_state * pgs, pcl_raster_t * prast, int nrows)
+process_zero_rows(gs_gstate * pgs, pcl_raster_t * prast, int nrows)
 {
     int npixels = prast->src_width;
     int nbytes = (npixels * prast->bits_per_plane + 7) / 8;
@@ -707,7 +707,7 @@ process_zero_rows(gs_state * pgs, pcl_raster_t * prast, int nrows)
     /* render as raster or rectangle */
     if (((nrows * nbytes > 1024) || (prast->pen == 0)) &&
         (prast->zero_is_white || prast->zero_is_black)) {
-        gs_state *pgs = prast->pcs->pgs;
+        gs_gstate *pgs = prast->pcs->pgs;
 
         close_raster(pgs, prast, false);
         if ((prast->zero_is_black) || !prast->pcs->source_transparent) {
@@ -876,7 +876,7 @@ process_row(pcl_raster_t * prast, int comp_mode /* modified compression mode */
  */
 
 static int
-process_block_nocompress(gs_state * pgs,
+process_block_nocompress(gs_gstate * pgs,
                          pcl_raster_t * prast, const byte * pin, uint insize)
 {
     uint32 row_bytes, nrows;
@@ -918,7 +918,7 @@ pcl_ccitt_error(stream_state * st, const char *str)
 
 
 static int
-process_ccitt_compress(gs_state * pgs,
+process_ccitt_compress(gs_gstate * pgs,
                        pcl_raster_t * prast,
                        const byte * pin,
                        uint insize, pcl_rast_buff_type_t comp)
@@ -999,7 +999,7 @@ process_ccitt_compress(gs_state * pgs,
  * Process an input data buffer using adpative compression.
  */
 static int
-process_adaptive_compress(gs_state * pgs,
+process_adaptive_compress(gs_gstate * pgs,
                           pcl_raster_t * prast, const byte * pin, uint insize)
 {
     pcl_seed_row_t *pseed_row = prast->pseed_rows;

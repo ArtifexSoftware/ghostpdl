@@ -26,7 +26,7 @@
 #include "gxdcolor.h"
 #include "gxdevice.h"
 #include "gxiparam.h"
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxhldevc.h"
 #include "gdevddrw.h"
 #include "vdtrace.h"
@@ -992,7 +992,7 @@ RELOC_PTRS_END
  */
 static int
 gx_no_begin_image(gx_device * dev,
-                  const gs_imager_state * pis, const gs_image_t * pim,
+                  const gs_gstate * pgs, const gs_image_t * pim,
                   gs_image_format_t format, const gs_int_rect * prect,
               const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
                   gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
@@ -1001,7 +1001,7 @@ gx_no_begin_image(gx_device * dev,
 }
 int
 gx_default_begin_image(gx_device * dev,
-                       const gs_imager_state * pis, const gs_image_t * pim,
+                       const gs_gstate * pgs, const gs_image_t * pim,
                        gs_image_format_t format, const gs_int_rect * prect,
               const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
                        gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
@@ -1027,7 +1027,7 @@ gx_default_begin_image(gx_device * dev,
         ptim = &image;
     }
     code = (*dev_proc(dev, begin_typed_image))
-        (dev, pis, NULL, (const gs_image_common_t *)ptim, prect, pdcolor,
+        (dev, pgs, NULL, (const gs_image_common_t *)ptim, prect, pdcolor,
          pcpath, memory, pinfo);
     set_dev_proc(dev, begin_image, save_begin_image);
     return code;
@@ -1035,26 +1035,26 @@ gx_default_begin_image(gx_device * dev,
 
 int
 gx_default_begin_typed_image(gx_device * dev,
-                        const gs_imager_state * pis, const gs_matrix * pmat,
+                        const gs_gstate * pgs, const gs_matrix * pmat,
                    const gs_image_common_t * pic, const gs_int_rect * prect,
               const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
                       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
 {
     /* Processing an image object operation */
-    if (pis != NULL)   /* Null can happen when generating image3 mask */
+    if (pgs != NULL)   /* Null can happen when generating image3 mask */
         dev_proc(dev, set_graphics_type_tag)(dev, GS_IMAGE_TAG);
 
-    /* If this is an ImageType 1 image using the imager's CTM,
+    /* If this is an ImageType 1 image using the gs_gstate's CTM,
          * defer to begin_image.
          */
     if (pic->type->begin_typed_image == gx_begin_image1) {
         const gs_image_t *pim = (const gs_image_t *)pic;
 
         if (pmat == 0 ||
-            (pis != 0 && !gs_matrix_compare(pmat, &ctm_only(pis)))
+            (pgs != 0 && !gs_matrix_compare(pmat, &ctm_only(pgs)))
             ) {
             int code = (*dev_proc(dev, begin_image))
-            (dev, pis, pim, pim->format, prect, pdcolor,
+            (dev, pgs, pim, pim->format, prect, pdcolor,
              pcpath, memory, pinfo);
 
             if (code >= 0)
@@ -1062,7 +1062,7 @@ gx_default_begin_typed_image(gx_device * dev,
         }
     }
     return (*pic->type->begin_typed_image)
-        (dev, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
+        (dev, pgs, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
 }
 
 /* Backward compatibility for obsolete driver procedures. */
@@ -1092,9 +1092,9 @@ gx_default_end_image(gx_device *dev, gx_image_enum_common_t * info,
 }
 
 int
-gx_default_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
+gx_default_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
 {
-    bool hl_color_available = gx_hld_is_hl_color_available(pis, pdevc);
+    bool hl_color_available = gx_hld_is_hl_color_available(pgs, pdevc);
     int code = 0;
 
     /* Fill the page directly, ignoring clipping. */
@@ -1106,7 +1106,7 @@ gx_default_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdev
         rect.q.x = int2fixed(dev->width);
         rect.q.y = int2fixed(dev->height);
         code = dev_proc(dev, fill_rectangle_hl_color)(dev,
-                &rect, (const gs_imager_state *)pis, pdevc, NULL);
+                &rect, (const gs_gstate *)pgs, pdevc, NULL);
     }
     if (!hl_color_available || code == gs_error_rangecheck)
         code = gx_fill_rectangle_device_rop(0, 0, dev->width, dev->height, pdevc, dev, lop_default);

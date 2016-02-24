@@ -174,7 +174,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     /* Setup new page */
     {
         gs_memory_t *mem = ctx->memory;
-        gs_state *pgs = ctx->pgs;
+        gs_gstate *pgs = ctx->pgs;
         gx_device *dev = gs_currentdevice(pgs);
         gs_param_float_array fa;
         float fv[2];

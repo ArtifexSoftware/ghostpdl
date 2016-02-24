@@ -30,7 +30,7 @@
 #include "gsdevice.h"		/* requires gsmatrix.h */
 #include "gxdcolor.h"		/* for gx_device_black/white */
 #include "gxiparam.h"		/* for image source size */
-#include "gxistate.h"
+#include "gxgstate.h"
 #include "gxpaint.h"
 #include "gxpath.h"
 #include "gxcpath.h"
@@ -181,7 +181,7 @@ pcl_gray_cs_to_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-pcl_rgb_cs_to_cm(gx_device * dev, const gs_imager_state * pis, frac r, frac g,
+pcl_rgb_cs_to_cm(gx_device * dev, const gs_gstate * pgs, frac r, frac g,
                  frac b, frac out[])
 {
     pcl_mono_palette_subclass_data *psubclass_data;
@@ -197,7 +197,7 @@ pcl_rgb_cs_to_cm(gx_device * dev, const gs_imager_state * pis, frac r, frac g,
         psubclass_data = dev->subclass_data;
         gray = color_rgb_to_gray(r, g, b, NULL);
 
-        psubclass_data->device_cm_procs->map_rgb(dev, pis, gray, gray, gray, out);
+        psubclass_data->device_cm_procs->map_rgb(dev, pgs, gray, gray, gray, out);
     } else
         return;
 }

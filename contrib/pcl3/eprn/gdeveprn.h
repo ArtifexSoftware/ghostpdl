@@ -527,7 +527,7 @@ typedef struct s_eprn_Device {
     eprn_IR_FloydSteinberg, the next scan line to return is actually already
     present in 'next_scan_line' with its device coordinate being "next_y - 1",
     unless 'next_y' is zero in which case we have finished. */
-  gs_imager_state * pis;
+  gs_gstate * pgs;
 } eprn_Eprn;
 
 /* Macro for device structure type definitions. Note that in contrast to
@@ -625,7 +625,7 @@ typedef struct {
     0,		/* octets_per_line */	\
     0,		/* output_planes */	\
     0,		/* next_y */		\
-    NULL        /* pis    */            \
+    NULL        /* pgs    */            \
   }
 
 /*  For the calling conventions of the following functions consult the comments

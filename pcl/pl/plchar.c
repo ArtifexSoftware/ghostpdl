@@ -287,7 +287,7 @@ bits_smear_horizontally(byte * dest, const byte * src, uint width,
 int
 pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
                      const byte * bitmap_data, uint sraster, int bold,
-                     byte * bold_lines, gs_state * pgs)
+                     byte * bold_lines, gs_gstate * pgs)
 {
     uint dest_bytes = (pim->Width + 7) >> 3;
     gx_device *dev = pgs->device;
@@ -301,7 +301,7 @@ pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
     if (code != 0)
         return code;
     code = (*dev_proc(dev, begin_image))
-        (dev, (const gs_imager_state *)pgs, pim, gs_image_format_chunky,
+        (dev, (const gs_gstate *)pgs, pim, gs_image_format_chunky,
          NULL, gs_currentdevicecolor_inline(pgs), pgs->clip_path,
          pgs->memory, (gx_image_enum_common_t **) & iinfo);
     if (code < 0)
@@ -379,7 +379,7 @@ pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
 /* Render a character for a bitmap font. */
 /* This handles both format 0 (PCL XL) and format 4 (PCL5 bitmap). */
 static int
-pl_bitmap_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
+pl_bitmap_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
                      gs_char chr, gs_glyph glyph)
 {
     pl_font_t *plfont = (pl_font_t *) pfont->client_data;
@@ -699,9 +699,9 @@ tt_find_table(gs_font_type42 * pfont, const char *tname, uint * plen)
     return 0;
 }
 
-#ifndef gs_imager_state_DEFINED
-#  define gs_imager_state_DEFINED
-typedef struct gs_imager_state_s gs_imager_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
 /* Opaque type for a path */
@@ -966,7 +966,7 @@ pl_tt_char_width(const pl_font_t * plfont, const void *pgs, gs_char char_code,
 
 /* Render a TrueType character. */
 static int
-pl_tt_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
+pl_tt_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
                  gs_char chr, gs_glyph orig_glyph)
 {
     gs_glyph glyph = orig_glyph;
@@ -1242,7 +1242,7 @@ pl_intelli_merge_box(float wbox[6], const pl_font_t * plfont, gs_glyph glyph)
 /* Do the work for rendering an Intellifont character. */
 /* The caller has done the setcachedevice. */
 static int
-pl_intelli_show_char(gs_state * pgs, const pl_font_t * plfont, gs_glyph glyph)
+pl_intelli_show_char(gs_gstate * pgs, const pl_font_t * plfont, gs_glyph glyph)
 {
     int code;
     const byte *cdata;
@@ -1506,7 +1506,7 @@ pl_intelli_char_metrics(const pl_font_t * plfont, const void *pgs,
 
 /* Render a character for an Intellifont. */
 static int
-pl_intelli_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
+pl_intelli_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
                       gs_char chr, gs_glyph glyph)
 {
     const pl_font_t *plfont = (const pl_font_t *)pfont->client_data;

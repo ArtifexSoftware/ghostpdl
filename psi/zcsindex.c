@@ -39,7 +39,7 @@ zcs_begin_map(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap, const ref * pproc,
               int num_entries,  const gs_color_space * base_space,
               op_proc_t map1)
 {
-    gs_memory_t *mem = gs_state_memory(igs);
+    gs_memory_t *mem = gs_gstate_memory(igs);
     int space = imemory_space((gs_ref_memory_t *)mem);
     int num_components = cs_num_components(base_space);
     int num_values = num_entries * num_components;

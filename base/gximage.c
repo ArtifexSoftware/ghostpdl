@@ -113,7 +113,7 @@ gx_image_enum_common_init(gx_image_enum_common_t * piec,
 
 /* Compute the source size of an ordinary image with explicit data. */
 int
-gx_data_image_source_size(const gs_imager_state * pis,
+gx_data_image_source_size(const gs_gstate * pgs,
                           const gs_image_common_t * pim, gs_int_point * psize)
 {
     const gs_data_image_t *pdi = (const gs_data_image_t *)pim;

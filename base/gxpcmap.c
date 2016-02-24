@@ -531,7 +531,7 @@ pattern_accum_close(gx_device * dev)
 /* _hl_color */
 static int
 pattern_accum_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
-                                      const gs_imager_state *pis, 
+                                      const gs_gstate *pgs, 
                                       const gx_drawing_color *pdcolor, 
                                       const gx_clip_path *pcpath)
 {
@@ -539,7 +539,7 @@ pattern_accum_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
 
     if (padev->bits)
         (*dev_proc(padev->target, fill_rectangle_hl_color))
-            (padev->target, rect, pis, pdcolor, pcpath);
+            (padev->target, rect, pgs, pdcolor, pcpath);
     if (padev->mask) {
         int x, y, w, h;
 
@@ -837,17 +837,17 @@ gx_pattern_alloc_cache(gs_memory_t * mem, uint num_tiles, ulong max_bits)
 }
 /* Ensure that an imager has a Pattern cache. */
 static int
-ensure_pattern_cache(gs_imager_state * pis)
+ensure_pattern_cache(gs_gstate * pgs)
 {
-    if (pis->pattern_cache == 0) {
+    if (pgs->pattern_cache == 0) {
         gx_pattern_cache *pcache =
-        gx_pattern_alloc_cache(pis->memory,
+        gx_pattern_alloc_cache(pgs->memory,
                                gx_pat_cache_default_tiles(),
                                gx_pat_cache_default_bits());
 
         if (pcache == 0)
             return_error(gs_error_VMerror);
-        pis->pattern_cache = pcache;
+        pgs->pattern_cache = pcache;
     }
     return 0;
 }
@@ -864,12 +864,12 @@ gx_pattern_cache_free(gx_pattern_cache *pcache)
 
 /* Get and set the Pattern cache in a gstate. */
 gx_pattern_cache *
-gstate_pattern_cache(gs_state * pgs)
+gstate_pattern_cache(gs_gstate * pgs)
 {
     return pgs->pattern_cache;
 }
 void
-gstate_set_pattern_cache(gs_state * pgs, gx_pattern_cache * pcache)
+gstate_set_pattern_cache(gs_gstate * pgs, gx_pattern_cache * pcache)
 {
     pgs->pattern_cache = pcache;
 }
@@ -955,15 +955,15 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 /* enough space is available (or nothing left to free).                     */
 /* This will allow 1 oversized entry                                        */
 void
-gx_pattern_cache_ensure_space(gs_imager_state * pis, int needed)
+gx_pattern_cache_ensure_space(gs_gstate * pgs, int needed)
 {
-    int code = ensure_pattern_cache(pis);
+    int code = ensure_pattern_cache(pgs);
     gx_pattern_cache *pcache;
 
     if (code < 0)
         return;                 /* no cache -- just exit */
 
-    pcache = pis->pattern_cache;
+    pcache = pgs->pattern_cache;
 
     /* If too large then start freeing entries */
     /* By starting at 'next', we attempt to first free the oldest entries */
@@ -976,9 +976,9 @@ gx_pattern_cache_ensure_space(gs_imager_state * pis, int needed)
 
 /* Export updating the pattern_cache bits_used and tiles_used for clist reading */
 void
-gx_pattern_cache_update_used(gs_imager_state *pis, ulong used)
+gx_pattern_cache_update_used(gs_gstate *pgs, ulong used)
 {
-    gx_pattern_cache *pcache = pis->pattern_cache;
+    gx_pattern_cache *pcache = pgs->pattern_cache;
 
     pcache->bits_used += used;
     pcache->tiles_used++;
@@ -992,7 +992,7 @@ gx_pattern_cache_update_used(gs_imager_state *pis, ulong used)
  */
 static void make_bitmap(gx_strip_bitmap *, const gx_device_memory *, gx_bitmap_id);
 int
-gx_pattern_cache_add_entry(gs_imager_state * pis,
+gx_pattern_cache_add_entry(gs_gstate * pgs,
                    gx_device_forward * fdev, gx_color_tile ** pctile)
 {
     gx_pattern_cache *pcache;
@@ -1000,17 +1000,16 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     ulong used = 0, mask_used = 0, trans_used = 0;
     gx_bitmap_id id;
     gx_color_tile *ctile;
-    int code = ensure_pattern_cache(pis);
+    int code = ensure_pattern_cache(pgs);
     extern dev_proc_open_device(pattern_clist_open_device);
     gx_device_memory *mmask = NULL;
     gx_device_memory *mbits = NULL;
     gx_pattern_trans_t *trans = NULL;
     int size_b, size_c;
-    gs_state *pgs = (gs_state *)pis;
 
     if (code < 0)
         return code;
-    pcache = pis->pattern_cache;
+    pcache = pgs->pattern_cache;
 
     if (fdev->procs.open_device != pattern_clist_open_device) {
         gx_device_pattern_accum *padev = (gx_device_pattern_accum *)fdev;
@@ -1089,7 +1088,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
         ctile->blending_mode = 0;
     if (fdev->procs.open_device != pattern_clist_open_device) {
         if (mbits != 0) {
-            make_bitmap(&ctile->tbits, mbits, gs_next_ids(pis->memory, 1));
+            make_bitmap(&ctile->tbits, mbits, gs_next_ids(pgs->memory, 1));
             mbits->bitmap_memory = 0;   /* don't free the bits */
         } else
             ctile->tbits.data = 0;
@@ -1099,7 +1098,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
         } else
             ctile->tmask.data = 0;
         if (trans != 0) {
-			if_debug2m('?', pis->memory,
+			if_debug2m('?', pgs->memory,
 				"[v*] Adding trans pattern to cache, uid = %ld id = %ld \n",
 				ctile->uid.id, ctile->id);
             ctile->ttrans = trans;
@@ -1125,7 +1124,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
      * going in and coming out of the cache. Therefore we store the used
      * figure in the tile so we always remove the same amount. */
     ctile->bits_used = used;
-    gx_pattern_cache_update_used(pis, used);
+    gx_pattern_cache_update_used(pgs, used);
 
     *pctile = ctile;
     return 0;
@@ -1133,17 +1132,17 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
 
 /* Get entry for reading a pattern from clist. */
 int
-gx_pattern_cache_get_entry(gs_imager_state * pis, gs_id id, gx_color_tile ** pctile)
+gx_pattern_cache_get_entry(gs_gstate * pgs, gs_id id, gx_color_tile ** pctile)
 {
     gx_pattern_cache *pcache;
     gx_color_tile *ctile;
-    int code = ensure_pattern_cache(pis);
+    int code = ensure_pattern_cache(pgs);
 
     if (code < 0)
         return code;
-    pcache = pis->pattern_cache;
+    pcache = pgs->pattern_cache;
     ctile = &pcache->tiles[id % pcache->num_tiles];
-    gx_pattern_cache_free_entry(pis->pattern_cache, ctile);
+    gx_pattern_cache_free_entry(pgs->pattern_cache, ctile);
     ctile->id = id;
     *pctile = ctile;
     return 0;
@@ -1158,17 +1157,17 @@ gx_pattern_tile_is_clist(gx_color_tile *ptile)
 /* Add a dummy Pattern cache entry.  Stubs a pattern tile for interpreter when
    device handles high level patterns. */
 int
-gx_pattern_cache_add_dummy_entry(gs_imager_state *pis,
+gx_pattern_cache_add_dummy_entry(gs_gstate *pgs,
             gs_pattern1_instance_t *pinst, int depth)
 {
     gx_color_tile *ctile;
     gx_pattern_cache *pcache;
     gx_bitmap_id id = pinst->id;
-    int code = ensure_pattern_cache(pis);
+    int code = ensure_pattern_cache(pgs);
 
     if (code < 0)
         return code;
-    pcache = pis->pattern_cache;
+    pcache = pgs->pattern_cache;
     ctile = &pcache->tiles[id % pcache->num_tiles];
     gx_pattern_cache_free_entry(pcache, ctile);
     ctile->id = id;
@@ -1323,7 +1322,7 @@ gx_pattern_cache_winnow(gx_pattern_cache * pcache,
 /* blank the pattern accumulator device assumed to be in the graphics
    state */
 int
-gx_erase_colored_pattern(gs_state *pgs)
+gx_erase_colored_pattern(gs_gstate *pgs)
 {
     int code;
     gx_device_pattern_accum *pdev = (gx_device_pattern_accum *)gs_currentdevice(pgs);
@@ -1361,45 +1360,45 @@ gx_erase_colored_pattern(gs_state *pgs)
 /* Reload a (non-null) Pattern color into the cache. */
 /* *pdc is already set, except for colors.pattern.p_tile and mask.m_tile. */
 int
-gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
+gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
                 gx_device * dev, gs_color_select_t select)
 {
     gx_device_forward *adev = NULL;
     gs_pattern1_instance_t *pinst =
         (gs_pattern1_instance_t *)pdc->ccolor.pattern;
-    gs_state *saved;
+    gs_gstate *saved;
     gx_color_tile *ctile;
-    gs_memory_t *mem = pis->memory;
+    gs_memory_t *mem = pgs->memory;
     bool has_tags = (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) != 0;
     int code;
 
-    if (pis->pattern_cache == NULL)
-        if ((code = ensure_pattern_cache((gs_imager_state *) pis))< 0)      /* break const for call */
+    if (pgs->pattern_cache == NULL)
+        if ((code = ensure_pattern_cache((gs_gstate *) pgs))< 0)      /* break const for call */
             return code;
 
-    if (gx_pattern_cache_lookup(pdc, pis, dev, select))
+    if (gx_pattern_cache_lookup(pdc, pgs, dev, select))
         return 0;
 
     /* Get enough space in the cache for this pattern (estimated if it is a clist) */
-    gx_pattern_cache_ensure_space((gs_imager_state *)pis, gx_pattern_size_estimate(pinst, has_tags));
+    gx_pattern_cache_ensure_space((gs_gstate *)pgs, gx_pattern_size_estimate(pinst, has_tags));
     /*
      * Note that adev is an internal device, so it will be freed when the
      * last reference to it from a graphics state is deleted.
      */
-    adev = gx_pattern_accum_alloc(mem, pis->pattern_cache->memory, pinst, "gx_pattern_load");
+    adev = gx_pattern_accum_alloc(mem, pgs->pattern_cache->memory, pinst, "gx_pattern_load");
     if (adev == 0)
         return_error(gs_error_VMerror);
     gx_device_set_target((gx_device_forward *)adev, dev);
     code = dev_proc(adev, open_device)((gx_device *)adev);
     if (code < 0)
         goto fail;
-    saved = gs_gstate(pinst->saved);
+    saved = gs_gstate_copy(pinst->saved, pinst->saved->memory);
     if (saved == 0) {
         code = gs_note_error(gs_error_VMerror);
         goto fail;
     }
     if (saved->pattern_cache == 0)
-        saved->pattern_cache = pis->pattern_cache;
+        saved->pattern_cache = pgs->pattern_cache;
     gs_setdevice_no_init(saved, (gx_device *)adev);
     if (pinst->templat.uses_transparency) {
         if_debug0m('v', mem, "gx_pattern_load: pushing the pdf14 compositor device into this graphics state\n");
@@ -1423,7 +1422,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     if (code < 0) {
         /* RJW: At this point, in the non transparency case,
          * saved->device == adev. So unretain it, close it, and the
-         * gs_state_free(saved) will remove it. In the transparency case,
+         * gs_gstate_free(saved) will remove it. In the transparency case,
          * saved->device = the pdf14 device. So we need to unretain it,
          * close adev, and finally close saved->device
          * (which frees adev). */
@@ -1437,7 +1436,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
         }
         dev_proc(saved->device, close_device)((gx_device *)saved->device);
         /* Freeing the state should now free the device which may be the pdf14 compositor. */
-        gs_state_free(saved);
+        gs_gstate_free(saved);
         return code;
     }
     if (pinst->templat.uses_transparency) {
@@ -1463,10 +1462,10 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
             }
     }
     /* We REALLY don't like the following cast.... */
-    code = gx_pattern_cache_add_entry((gs_imager_state *)pis,
+    code = gx_pattern_cache_add_entry((gs_gstate *)pgs,
                 adev, &ctile);
     if (code >= 0) {
-        if (!gx_pattern_cache_lookup(pdc, pis, dev, select)) {
+        if (!gx_pattern_cache_lookup(pdc, pgs, dev, select)) {
             mlprintf(mem, "Pattern cache lookup failed after insertion!\n");
             code = gs_note_error(gs_error_Fatal);
         }
@@ -1490,7 +1489,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     /* data iff they are still needed. */
     dev_proc(adev, close_device)((gx_device *)adev);
     /* Free the chain of gstates. Freeing the state will free the device. */
-    gs_state_free_chain(saved);
+    gs_gstate_free_chain(saved);
     return code;
 fail:
     if (adev->procs.open_device == pattern_clist_open_device) {
@@ -1507,7 +1506,7 @@ fail:
 cs_proc_remap_color(gx_remap_Pattern);  /* check the prototype */
 int
 gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
-                        gx_device_color * pdc, const gs_imager_state * pis,
+                        gx_device_color * pdc, const gs_gstate * pgs,
                         gx_device * dev, gs_color_select_t select)
 {
     gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pc->pattern;
@@ -1523,7 +1522,7 @@ gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
     }
     if (pinst->templat.PaintType == 2) {       /* uncolored */
         code = (pcs->base_space->type->remap_color)
-            (pc, pcs->base_space, pdc, pis, dev, select);
+            (pc, pcs->base_space, pdc, pgs, dev, select);
         if (code < 0)
             return code;
         if (pdc->type == gx_dc_type_pure)
@@ -1540,7 +1539,7 @@ gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
         color_set_null_pattern(pdc);
     pdc->mask.id = pinst->id;
     pdc->mask.m_tile = 0;
-    return gx_pattern_load(pdc, pis, dev, select);
+    return gx_pattern_load(pdc, pgs, dev, select);
 }
 
 int

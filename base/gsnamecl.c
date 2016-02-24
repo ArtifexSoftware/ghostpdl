@@ -51,7 +51,7 @@
  * Separation color space.
  */
 bool
-custom_color_callback_install_Separation(gs_color_space * pcs, gs_state * pgs)
+custom_color_callback_install_Separation(gs_color_space * pcs, gs_gstate * pgs)
 {
         client_custom_color_params_t * pcb =
         (client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
@@ -65,7 +65,7 @@ custom_color_callback_install_Separation(gs_color_space * pcs, gs_state * pgs)
  * DeviceN color space.
  */
 bool
-custom_color_callback_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
+custom_color_callback_install_DeviceN(gs_color_space * pcs, gs_gstate * pgs)
 {
     client_custom_color_params_t * pcb =
         (client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
@@ -81,17 +81,17 @@ custom_color_callback_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
 int
 gx_remap_concrete_custom_color_Separation(const frac * pconc,
         const gs_color_space * pcs, gx_device_color * pdc,
-                const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+                const gs_gstate * pgs, gx_device * dev, gs_color_select_t select)
 {
     client_custom_color_params_t * pcb =
-        (client_custom_color_params_t *) pis->memory->gs_lib_ctx->custom_color_callback;
+        (client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
 
       if (pcb == NULL) {
         return_error(gs_error_rangecheck);
     }
     else
         return pcb->client_procs->remap_Separation(pcb, pconc,
-                                        pcs, pdc, pis, dev, select);
+                                        pcs, pdc, pgs, dev, select);
 }
 
 /*
@@ -101,17 +101,17 @@ gx_remap_concrete_custom_color_Separation(const frac * pconc,
 int
 gx_remap_concrete_custom_color_DeviceN(const frac * pconc,
         const gs_color_space * pcs, gx_device_color * pdc,
-        const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+        const gs_gstate * pgs, gx_device * dev, gs_color_select_t select)
 {
     client_custom_color_params_t * pcb =
-        (client_custom_color_params_t *) pis->memory->gs_lib_ctx->custom_color_callback;
+        (client_custom_color_params_t *) pgs->memory->gs_lib_ctx->custom_color_callback;
 
         if (pcb == NULL) {
                 return_error(gs_error_rangecheck);
     }
     else
                 return pcb->client_procs->remap_DeviceN(pcb, pconc,
-                                        pcs, pdc, pis, dev, select);
+                                        pcs, pdc, pgs, dev, select);
 }
 
 /*
@@ -122,7 +122,7 @@ gx_remap_concrete_custom_color_DeviceN(const frac * pconc,
  * would be a problem using integers to pass pointer values on 64 bit systems.
  */
 int
-custom_color_callback_get_params(gs_state * pgs, gs_param_list * plist)
+custom_color_callback_get_params(gs_gstate * pgs, gs_param_list * plist)
 {
     /* Convert our pointer to a PostScript hex string */
     char buf[64] = "16#";
@@ -156,7 +156,7 @@ custom_color_callback_get_params(gs_state * pgs, gs_param_list * plist)
  * would be a problem using integers to pass pointer values on 64 bit systems.
  */
 int
-custom_color_callback_put_params(gs_state * pgs, gs_param_list * plist)
+custom_color_callback_put_params(gs_gstate * pgs, gs_param_list * plist)
 {
     int code;
     size_t iptr = (size_t)(pgs->memory->gs_lib_ctx->custom_color_callback);

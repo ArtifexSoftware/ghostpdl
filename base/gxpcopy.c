@@ -20,7 +20,7 @@
 #include "gserrors.h"
 #include "gxfixed.h"
 #include "gxfarith.h"
-#include "gxistate.h"		/* for access to line params */
+#include "gxgstate.h"		/* for access to line params */
 #include "gzpath.h"
 #include "vdtrace.h"
 
@@ -85,7 +85,7 @@ break_gap_if_long(gx_path *ppath, const segment *pseg)
 /* If the copy fails, free the new path. */
 int
 gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
-                      fixed fixed_flatness, const gs_imager_state *pis,
+                      fixed fixed_flatness, const gs_gstate *pgs,
                       gx_path_copy_options options)
 {
     const segment *pseg;
@@ -105,12 +105,12 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 #endif
     if (options & pco_for_stroke) {
         /* Precompute the maximum expansion of the bounding box. */
-        double width = pis->line_params.half_width;
+        double width = pgs->line_params.half_width;
 
         expansion.x =
-            float2fixed((fabs(pis->ctm.xx) + fabs(pis->ctm.yx)) * width) * 2;
+            float2fixed((fabs(pgs->ctm.xx) + fabs(pgs->ctm.yx)) * width) * 2;
         expansion.y =
-            float2fixed((fabs(pis->ctm.xy) + fabs(pis->ctm.yy)) * width) * 2;
+            float2fixed((fabs(pgs->ctm.xy) + fabs(pgs->ctm.yy)) * width) * 2;
     } else
         expansion.x = expansion.y = 0; /* Quiet gcc warning. */
     vd_setcolor(RGB(255,255,0));

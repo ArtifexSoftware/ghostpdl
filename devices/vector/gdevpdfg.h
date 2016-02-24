@@ -95,7 +95,7 @@ int pdf_convert_ICC(gx_device_pdf *pdev,
  * to be scaled (to convert a CIEBased space to ICCBased), store a pointer
  * to the ranges in *ppranges, otherwise set *ppranges to 0.
  */
-int pdf_color_space_named(gx_device_pdf *pdev, const gs_imager_state * pis,
+int pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
                     cos_value_t *pvalue,
                     const gs_range_t **ppranges,
                     const gs_color_space *pcs,
@@ -103,20 +103,20 @@ int pdf_color_space_named(gx_device_pdf *pdev, const gs_imager_state * pis,
                     bool by_name, const byte *res_name, int name_length, bool keepICC);
 
 int free_color_space(gx_device_pdf *pdev, pdf_resource_t *pres);
-int pdf_indexed_color_space(gx_device_pdf *pdev, const gs_imager_state * pis, cos_value_t *pvalue,
+int pdf_indexed_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, cos_value_t *pvalue,
                         const gs_color_space *pcs, cos_array_t *pca, cos_value_t *cos_base);
 
-int convert_separation_alternate(gx_device_pdf * pdev, const gs_imager_state * pis, const gs_color_space *pcs,
+int convert_separation_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const gs_color_space *pcs,
                         const gx_drawing_color *pdc, bool *used_process_color,
                         const psdf_set_color_commands_t *ppscc, gs_client_color *pcc, cos_value_t *pvalue, bool by_name);
-int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis, const gs_color_space *pcs,
+int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const gs_color_space *pcs,
                         const gx_drawing_color *pdc, bool *used_process_color,
                         const psdf_set_color_commands_t *ppscc, gs_client_color *pcc, cos_value_t *pvalue, bool by_name);
 /* Create colored and uncolored Pattern color spaces. */
 int pdf_cs_Pattern_colored(gx_device_pdf *pdev, cos_value_t *pvalue);
 int pdf_cs_Pattern_uncolored(gx_device_pdf *pdev, cos_value_t *pvalue);
 int pdf_cs_Pattern_uncolored_hl(gx_device_pdf *pdev,
-        const gs_color_space *pcs, cos_value_t *pvalue, const gs_imager_state * pis);
+        const gs_color_space *pcs, cos_value_t *pvalue, const gs_gstate * pgs);
 
 /* Set the ProcSets bits corresponding to an image color space. */
 void pdf_color_space_procsets(gx_device_pdf *pdev,
@@ -125,11 +125,11 @@ void pdf_color_space_procsets(gx_device_pdf *pdev,
 /* ---------------- Exported by gdevpdfg.c ---------------- */
 
 /* Copy viewer state from images state. */
-void pdf_viewer_state_from_imager_state(gx_device_pdf * pdev,
-        const gs_imager_state *pis, const gx_device_color *pdevc);
+void pdf_viewer_state_from_gs_gstate(gx_device_pdf * pdev,
+        const gs_gstate *pgs, const gx_device_color *pdevc);
 
 /* Prepare intitial values for viewer's graphics state parameters. */
-void pdf_prepare_initial_viewer_state(gx_device_pdf * pdev, const gs_imager_state *pis);
+void pdf_prepare_initial_viewer_state(gx_device_pdf * pdev, const gs_gstate *pgs);
 
 /* Reset the graphics state parameters to initial values. */
 void pdf_reset_graphics(gx_device_pdf *pdev);
@@ -142,7 +142,7 @@ void pdf_set_initial_color(gx_device_pdf * pdev, gx_hl_saved_color *saved_fill_c
 void rescale_cie_color(gs_range_t *ranges, int num_colorants,
                     const gs_client_color *src, gs_client_color *des);
 /* Set the fill or stroke color. */
-int pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
+int pdf_reset_color(gx_device_pdf * pdev, const gs_gstate * pgs,
                 const gx_drawing_color *pdc, gx_hl_saved_color * psc,
                 bool *used_process_color,
                 const psdf_set_color_commands_t *ppscc);
@@ -151,7 +151,7 @@ int pdf_set_pure_color(gx_device_pdf * pdev, gx_color_index color,
                    gx_hl_saved_color * psc,
                    bool *used_process_color,
                    const psdf_set_color_commands_t *ppscc);
-int pdf_set_drawing_color(gx_device_pdf * pdev, const gs_imager_state * pis,
+int pdf_set_drawing_color(gx_device_pdf * pdev, const gs_gstate * pgs,
                       const gx_drawing_color *pdc,
                       gx_hl_saved_color * psc,
                       bool *used_process_color,
@@ -160,12 +160,12 @@ int pdf_set_drawing_color(gx_device_pdf * pdev, const gs_imager_state * pis,
  * Bring the graphics state up to date for a drawing operation.
  * (Text uses either fill or stroke.)
  */
-int pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis);
-int pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis, pdf_resource_t **ppres);
-int pdf_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis);
-int pdf_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis);
-int pdf_prepare_image(gx_device_pdf *pdev, const gs_imager_state *pis);
-int pdf_prepare_imagemask(gx_device_pdf *pdev, const gs_imager_state *pis,
+int pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_gstate *pgs);
+int pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs, pdf_resource_t **ppres);
+int pdf_prepare_fill(gx_device_pdf *pdev, const gs_gstate *pgs);
+int pdf_prepare_stroke(gx_device_pdf *pdev, const gs_gstate *pgs);
+int pdf_prepare_image(gx_device_pdf *pdev, const gs_gstate *pgs);
+int pdf_prepare_imagemask(gx_device_pdf *pdev, const gs_gstate *pgs,
                           const gx_drawing_color *pdcolor);
 int pdf_save_viewer_state(gx_device_pdf *pdev, stream *s);
 int pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s);
@@ -334,16 +334,16 @@ int pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
 int pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
                         const gs_color_space *pcs,
                         const psdf_set_color_commands_t *ppscc,
-                        const gs_imager_state * pis, pdf_resource_t **ppres);
+                        const gs_gstate * pgs, pdf_resource_t **ppres);
 
 /* Write an uncolored Pattern color. */
 int pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
                           const gs_color_space *pcs,
                           const psdf_set_color_commands_t *ppscc,
-                          const gs_imager_state *pis, pdf_resource_t **ppres);
+                          const gs_gstate *pgs, pdf_resource_t **ppres);
 
 /* Write a PatternType 2 (shading pattern) color. */
-int pdf_put_pattern2(gx_device_pdf *pdev, const gs_imager_state * pis, const gx_drawing_color *pdc,
+int pdf_put_pattern2(gx_device_pdf *pdev, const gs_gstate * pgs, const gx_drawing_color *pdc,
                  const psdf_set_color_commands_t *ppscc,
                  pdf_resource_t **ppres);
 

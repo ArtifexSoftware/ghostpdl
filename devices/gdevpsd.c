@@ -437,7 +437,7 @@ gray_cs_to_psdgray_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_psdgray_cm(gx_device * dev, const gs_imager_state *pis,
+rgb_cs_to_psdgray_cm(gx_device * dev, const gs_gstate *pgs,
                                    frac r, frac g, frac b, frac out[])
 {
     out[0] = color_rgb_to_gray(r, g, b, NULL);
@@ -464,7 +464,7 @@ gray_cs_to_psdrgb_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_psdrgb_cm(gx_device * dev, const gs_imager_state *pis,
+rgb_cs_to_psdrgb_cm(gx_device * dev, const gs_gstate *pgs,
                                   frac r, frac g, frac b, frac out[])
 {
     int i = ((psd_device *)dev)->devn_params.separations.num_separations;
@@ -498,12 +498,12 @@ gray_cs_to_psdcmyk_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_psdcmyk_cm(gx_device * dev, const gs_imager_state *pis,
+rgb_cs_to_psdcmyk_cm(gx_device * dev, const gs_gstate *pgs,
                            frac r, frac g, frac b, frac out[])
 {
     int * map = ((psd_device *) dev)->devn_params.separation_order_map;
 
-    rgb_cs_to_devn_cm(dev, map, pis, r, g, b, out);
+    rgb_cs_to_devn_cm(dev, map, pgs, r, g, b, out);
 }
 
 static void
@@ -585,7 +585,7 @@ gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
 }
 
 static void
-rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
+rgb_cs_to_spotn_cm(gx_device * dev, const gs_gstate *pgs,
                                    frac r, frac g, frac b, frac out[])
 {
     psd_device *xdev = (psd_device *)dev;
@@ -614,7 +614,7 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
     } else {
         frac cmyk[4];
 
-        color_rgb_to_cmyk(r, g, b, pis, cmyk, dev->memory);
+        color_rgb_to_cmyk(r, g, b, pgs, cmyk, dev->memory);
         cmyk_cs_to_spotn_cm(dev, cmyk[0], cmyk[1], cmyk[2], cmyk[3],
                             out);
     }

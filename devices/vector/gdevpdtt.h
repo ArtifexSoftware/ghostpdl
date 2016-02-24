@@ -62,7 +62,7 @@
 
   The following convert between these spaces:
 
-  - The PostScript CTM (pte->pis->ctm) maps #1 to #2.
+  - The PostScript CTM (pte->pgs->ctm) maps #1 to #2.
 
   - The mapping from #3 to #2 is a scaling by pdev->HWResolution / 72.
 
@@ -226,7 +226,7 @@ int pdf_make_font3_resource(gx_device_pdf *pdev, gs_font *font,
 
 /*
  * Compute the cached values in the text processing state from the text
- * parameters, pdfont, and pis->ctm.  Return either an error code (< 0) or a
+ * parameters, pdfont, and pgs->ctm.  Return either an error code (< 0) or a
  * mask of operation attributes that the caller must emulate.  Currently the
  * only such attributes are TEXT_ADD_TO_ALL_WIDTHS and
  * TEXT_ADD_TO_SPACE_WIDTH.
@@ -242,7 +242,7 @@ int pdf_update_text_state(pdf_text_process_state_t *ppts,
  * are written later.
  */
 int pdf_set_text_process_state(gx_device_pdf *pdev,
-                               const gs_text_enum_t *pte, /*for pdcolor, pis*/
+                               const gs_text_enum_t *pte, /*for pdcolor, pgs*/
                                pdf_text_process_state_t *ppts);
 
 /*
@@ -326,7 +326,7 @@ int pdf_shift_text_currentpoint(pdf_text_enum_t *penum, gs_point *wpt);
 
 void adjust_first_last_char(pdf_font_resource_t *pdfont, byte *str, int size);
 
-float pdf_calculate_text_size(gs_imager_state *pis, pdf_font_resource_t *pdfont,
+float pdf_calculate_text_size(gs_gstate *pgs, pdf_font_resource_t *pdfont,
                               const gs_matrix *pfmat, gs_matrix *smat, gs_matrix *tmat,
                               gs_font *font, gx_device_pdf *pdev);
 #endif /* gdevpdtt_INCLUDED */

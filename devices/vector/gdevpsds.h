@@ -56,16 +56,16 @@ int s_1248_init(stream_1248_state *ss, int Columns, int samples_per_pixel);
 typedef struct stream_C2R_state_s {
     stream_state_common;
     /* The following are set at initialization time. */
-    const gs_imager_state *pis;	/* for UCR & BG */
+    const gs_gstate *pgs;	/* for UCR & BG */
 } stream_C2R_state;
 
 #define private_st_C2R_state()	/* in gdevpsds.c */\
   gs_private_st_ptrs1(st_C2R_state, stream_C2R_state, "stream_C2R_state",\
-    c2r_enum_ptrs, c2r_reloc_ptrs, pis)
+    c2r_enum_ptrs, c2r_reloc_ptrs, pgs)
 extern const stream_template s_C2R_template;
 
 /* Initialize a CMYK => RGB conversion stream. */
-int s_C2R_init(stream_C2R_state *ss, const gs_imager_state *pis);
+int s_C2R_init(stream_C2R_state *ss, const gs_gstate *pgs);
 
 /* Convert an image to indexed form (IndexedEncode filter). */
 typedef struct stream_IE_state_s {
@@ -220,14 +220,14 @@ struct stream_image_colors_state_s {
     float Decode[GS_IMAGE_MAX_COLOR_COMPONENTS * 2];
     const gs_color_space *pcs;
     gx_device *pdev;
-    const gs_imager_state *pis;
+    const gs_gstate *pgs;
     int (*convert_color)(stream_image_colors_state *);
 };
 
 #define private_st_image_colors_state()	/* in gdevpsds.c */\
   gs_private_st_ptrs3(st_stream_image_colors_state, stream_image_colors_state,\
     "stream_image_colors_state", stream_image_colors_enum_ptrs,\
-    stream_image_colors_reloc_ptrs, pcs, pdev, pis)
+    stream_image_colors_reloc_ptrs, pcs, pdev, pgs)
 
 void s_image_colors_set_dimensions(stream_image_colors_state * st,
                                int width, int height, int depth, int bits_per_sample);
@@ -235,11 +235,11 @@ void s_image_colors_set_dimensions(stream_image_colors_state * st,
 void s_image_colors_set_mask_colors(stream_image_colors_state * ss, uint *MaskColor);
 
 void s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
-                               const gs_color_space *pcs, const gs_imager_state *pis,
+                               const gs_color_space *pcs, const gs_gstate *pgs,
                                float *Decode);
 
 void s_new_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
-                               const gs_color_space *pcs, const gs_imager_state *pis,
+                               const gs_color_space *pcs, const gs_gstate *pgs,
                                float *Decode);
 
 extern const stream_template s__image_colors_template;

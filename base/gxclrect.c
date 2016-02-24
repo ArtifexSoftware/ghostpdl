@@ -306,7 +306,7 @@ cmd_write_trapezoid_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 /* ---------------- Driver procedures ---------------- */
 
 int
-clist_fillpage(gx_device * dev, gs_imager_state *pis, gx_drawing_color *pdcolor)
+clist_fillpage(gx_device * dev, gs_gstate *pgs, gx_drawing_color *pdcolor)
 {
     gx_device_clist * const cldev = (gx_device_clist *)dev;
     gx_device_clist_writer * const cdev = &(cldev->writer);
@@ -385,7 +385,7 @@ error_in_rect:
 /* This is used in fills from devn color types */
 int
 clist_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
-    const gs_imager_state *pis, const gx_drawing_color *pdcolor,
+    const gs_gstate *pgs, const gx_drawing_color *pdcolor,
     const gx_clip_path *pcpath)
 {
     gx_device_clist_writer * const cdev =

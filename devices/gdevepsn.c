@@ -201,7 +201,7 @@ eps_print_page(gx_device_printer *pdev, FILE *prn_stream, int y_9pin_high,
                 byte *in_data;
                 byte *inp;
                 byte *in_end;
-                byte *out_end;
+                byte *out_end = NULL;
                 byte *out_blk;
                 register byte *outp;
                 int lcnt;

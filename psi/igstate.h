@@ -39,9 +39,9 @@
  * The interpreter represents graphics state objects in a slightly
  * unnatural way, namely, by a t_astruct ref that points to an object
  * of type st_igstate_obj, which is essentially a t_struct ref that in turn
- * points to a real graphics state (object of type st_gs_state).
+ * points to a real graphics state (object of type st_gs_gstate).
  * We do this so that save and restore can manipulate the intermediate
- * object and not have to worry about copying entire gs_states.
+ * object and not have to worry about copying entire gs_gstates.
  *
  * Because a number of different operators must test whether an object
  * is a gstate, we make an exception to our convention of declaring
@@ -49,13 +49,13 @@
  * is defined (see gsstruct.h for more information on this).
  */
 typedef struct igstate_obj_s {
-    ref gstate;			/* t_struct / st_gs_state */
+    ref gstate;			/* t_struct / st_gs_gstate */
 } igstate_obj;
 
 extern_st(st_igstate_obj);
 #define public_st_igstate_obj()	/* in zdps1.c */\
   gs_public_st_ref_struct(st_igstate_obj, igstate_obj, "gstatetype")
-#define igstate_ptr(rp) r_ptr(&r_ptr(rp, igstate_obj)->gstate, gs_state)
+#define igstate_ptr(rp) r_ptr(&r_ptr(rp, igstate_obj)->gstate, gs_gstate)
 
 /* DeviceN names and tint transform */
 typedef struct ref_device_n_params_s {
@@ -197,10 +197,10 @@ typedef struct int_gstate_s {
 
 /* Create the gstate for a new context. */
 /* We export this so that fork can use it. */
-gs_state *int_gstate_alloc(const gs_dual_memory_t * dmem);
+gs_gstate *int_gstate_alloc(const gs_dual_memory_t * dmem);
 
-/* Get the int_gstate from a gs_state. */
-#define gs_int_gstate(pgs) ((int_gstate *)gs_state_client_data(pgs))
+/* Get the int_gstate from a gs_gstate. */
+#define gs_int_gstate(pgs) ((int_gstate *)gs_gstate_client_data(pgs))
 
 /* The current instances for operators. */
 #define igs (i_ctx_p->pgs)

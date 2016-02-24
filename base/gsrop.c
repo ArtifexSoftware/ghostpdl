@@ -22,7 +22,7 @@
 
 /* setrasterop */
 int
-gs_setrasterop(gs_state * pgs, gs_rop3_t rop)
+gs_setrasterop(gs_gstate * pgs, gs_rop3_t rop)
 {
     if (pgs->in_cachedevice)
         return_error(gs_error_undefined);
@@ -32,14 +32,14 @@ gs_setrasterop(gs_state * pgs, gs_rop3_t rop)
 
 /* currentrasterop */
 gs_rop3_t
-gs_currentrasterop(const gs_state * pgs)
+gs_currentrasterop(const gs_gstate * pgs)
 {
     return lop_rop(pgs->log_op);
 }
 
 /* setsourcetransparent */
 int
-gs_setsourcetransparent(gs_state * pgs, bool transparent)
+gs_setsourcetransparent(gs_gstate * pgs, bool transparent)
 {
     if (pgs->in_cachedevice)
         return_error(gs_error_undefined);
@@ -51,14 +51,14 @@ gs_setsourcetransparent(gs_state * pgs, bool transparent)
 
 /* currentsourcetransparent */
 bool
-gs_currentsourcetransparent(const gs_state * pgs)
+gs_currentsourcetransparent(const gs_gstate * pgs)
 {
     return (pgs->log_op & lop_S_transparent) != 0;
 }
 
 /* settexturetransparent */
 int
-gs_settexturetransparent(gs_state * pgs, bool transparent)
+gs_settexturetransparent(gs_gstate * pgs, bool transparent)
 {
     if (pgs->in_cachedevice)
         return_error(gs_error_undefined);
@@ -70,20 +70,20 @@ gs_settexturetransparent(gs_state * pgs, bool transparent)
 
 /* currenttexturetransparent */
 bool
-gs_currenttexturetransparent(const gs_state * pgs)
+gs_currenttexturetransparent(const gs_gstate * pgs)
 {
     return (pgs->log_op & lop_T_transparent) != 0;
 }
 
 /* Save/restore logical operation.  (For internal use only.) */
 int
-gs_set_logical_op(gs_state * pgs, gs_logical_operation_t lop)
+gs_set_logical_op(gs_gstate * pgs, gs_logical_operation_t lop)
 {
     pgs->log_op = lop;
     return 0;
 }
 gs_logical_operation_t
-gs_current_logical_op(const gs_state * pgs)
+gs_current_logical_op(const gs_gstate * pgs)
 {
     return pgs->log_op;
 }

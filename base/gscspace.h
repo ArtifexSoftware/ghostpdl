@@ -133,9 +133,9 @@
 */
 
 /* Opaque types for a graphics state stuff */
-#ifndef gs_state_DEFINED
-#  define gs_state_DEFINED
-typedef struct gs_state_s gs_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
 #ifndef gsicc_link_DEFINED
@@ -346,7 +346,7 @@ struct gs_color_space_s {
 gs_color_space *gs_cspace_new_DeviceGray(gs_memory_t *mem);
 gs_color_space *gs_cspace_new_DeviceRGB(gs_memory_t *mem);
 gs_color_space *gs_cspace_new_DeviceCMYK(gs_memory_t *mem);
-gs_color_space *gs_cspace_new_ICC(gs_memory_t *pmem, gs_state * pgs, 
+gs_color_space *gs_cspace_new_ICC(gs_memory_t *pmem, gs_gstate * pgs, 
                                   int components);
 
 /* ------ Accessors ------ */
@@ -395,7 +395,7 @@ void rc_decrement_cs(gs_color_space *pcs, const char *cname);
 
 void rc_decrement_only_cs(gs_color_space *pcs, const char *cname);
 
-void cs_adjust_counts_icc(gs_state *pgs, int delta);
+void cs_adjust_counts_icc(gs_gstate *pgs, int delta);
 
 /* backwards compatibility */
 #define gs_color_space_indexed_base_space(pcspace)\

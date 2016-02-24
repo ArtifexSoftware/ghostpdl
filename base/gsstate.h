@@ -20,9 +20,9 @@
 #  define gsstate_INCLUDED
 
 /* Opaque type for a graphics state */
-#ifndef gs_state_DEFINED
-#  define gs_state_DEFINED
-typedef struct gs_state_s gs_state;
+#ifndef gs_gstate_DEFINED
+#  define gs_gstate_DEFINED
+typedef struct gs_gstate_s gs_gstate;
 #endif
 
 /* opague type for overprint compositor parameters */
@@ -32,35 +32,35 @@ typedef struct gs_overprint_params_s    gs_overprint_params_t;
 #endif
 
 /* Initial allocation and freeing */
-gs_state *gs_state_alloc(gs_memory_t *);	/* 0 if fails */
-int gs_state_free(gs_state *);
-int gs_state_free_chain(gs_state *);
+gs_gstate *gs_gstate_alloc(gs_memory_t *);	/* 0 if fails */
+int gs_gstate_free(gs_gstate *);
+int gs_gstate_free_chain(gs_gstate *);
 
 /* Initialization, saving, restoring, and copying */
-int gs_gsave(gs_state *), gs_grestore(gs_state *), gs_grestoreall(gs_state *);
-int gs_grestore_only(gs_state *);
-int gs_gsave_for_save(gs_state *, gs_state **), gs_grestoreall_for_restore(gs_state *, gs_state *);
-gs_state *gs_gstate(gs_state *);
-gs_state *gs_state_copy(gs_state *, gs_memory_t *);
-int gs_copygstate(gs_state * /*to */ , const gs_state * /*from */ ),
-      gs_currentgstate(gs_state * /*to */ , const gs_state * /*from */ ),
-      gs_setgstate(gs_state * /*to */ , const gs_state * /*from */ );
+int gs_gsave(gs_gstate *), gs_grestore(gs_gstate *), gs_grestoreall(gs_gstate *);
+int gs_grestore_only(gs_gstate *);
+int gs_gsave_for_save(gs_gstate *, gs_gstate **), gs_grestoreall_for_restore(gs_gstate *, gs_gstate *);
 
-int gs_state_update_overprint(gs_state *, const gs_overprint_params_t *);
-bool gs_currentoverprint(const gs_state *);
-void gs_setoverprint(gs_state *, bool);
-int gs_currentoverprintmode(const gs_state *);
-int gs_setoverprintmode(gs_state *, int);
+gs_gstate *gs_gstate_copy(gs_gstate *, gs_memory_t *);
+int gs_copygstate(gs_gstate * /*to */ , const gs_gstate * /*from */ ),
+      gs_currentgstate(gs_gstate * /*to */ , const gs_gstate * /*from */ ),
+      gs_setgstate(gs_gstate * /*to */ , const gs_gstate * /*from */ );
 
-int gs_do_set_overprint(gs_state *);
+int gs_gstate_update_overprint(gs_gstate *, const gs_overprint_params_t *);
+bool gs_currentoverprint(const gs_gstate *);
+void gs_setoverprint(gs_gstate *, bool);
+int gs_currentoverprintmode(const gs_gstate *);
+int gs_setoverprintmode(gs_gstate *, int);
 
-int gs_currentrenderingintent(const gs_state *);
-int gs_setrenderingintent(gs_state *, int);
+int gs_do_set_overprint(gs_gstate *);
 
-int gs_currentblackptcomp(const gs_state *);
-int gs_setblackptcomp(gs_state *, int);
+int gs_currentrenderingintent(const gs_gstate *);
+int gs_setrenderingintent(gs_gstate *, int);
 
-int gs_initgraphics(gs_state *);
+int gs_currentblackptcomp(const gs_gstate *);
+int gs_setblackptcomp(gs_gstate *, int);
+
+int gs_initgraphics(gs_gstate *);
 
 bool gs_currentcpsimode(const gs_memory_t *);
 void gs_setcpsimode(gs_memory_t *, bool);
@@ -77,25 +77,25 @@ void gs_setcpsimode(gs_memory_t *, bool);
 /* Halftone screen */
 #include "gsht.h"
 #include "gscsel.h"
-int gs_setscreenphase(gs_state *, int, int, gs_color_select_t);
-int gs_currentscreenphase(const gs_state *, gs_int_point *, gs_color_select_t);
+int gs_setscreenphase(gs_gstate *, int, int, gs_color_select_t);
+int gs_currentscreenphase(const gs_gstate *, gs_int_point *, gs_color_select_t);
 
 #define gs_sethalftonephase(pgs, px, py)\
   gs_setscreenphase(pgs, px, py, gs_color_select_all)
 #define gs_currenthalftonephase(pgs, ppt)\
   gs_currentscreenphase(pgs, ppt, 0)
-int gx_imager_setscreenphase(gs_imager_state *, int, int, gs_color_select_t);
+int gx_gstate_setscreenphase(gs_gstate *, int, int, gs_color_select_t);
 
 /* Miscellaneous */
-int gs_setfilladjust(gs_state *, double, double);
-int gs_currentfilladjust(const gs_state *, gs_point *);
-void gs_setlimitclamp(gs_state *, bool);
-bool gs_currentlimitclamp(const gs_state *);
-void gs_settextrenderingmode(gs_state * pgs, uint trm);
-uint gs_currenttextrenderingmode(const gs_state * pgs);
+int gs_setfilladjust(gs_gstate *, double, double);
+int gs_currentfilladjust(const gs_gstate *, gs_point *);
+void gs_setlimitclamp(gs_gstate *, bool);
+bool gs_currentlimitclamp(const gs_gstate *);
+void gs_settextrenderingmode(gs_gstate * pgs, uint trm);
+uint gs_currenttextrenderingmode(const gs_gstate * pgs);
 #include "gscpm.h"
-gs_in_cache_device_t gs_incachedevice(const gs_state *);
-void gs_sethpglpathmode(gs_state *, bool);
-bool gs_currenthpglpathmode(const gs_state *);
+gs_in_cache_device_t gs_incachedevice(const gs_gstate *);
+void gs_sethpglpathmode(gs_gstate *, bool);
+bool gs_currenthpglpathmode(const gs_gstate *);
 
 #endif /* gsstate_INCLUDED */

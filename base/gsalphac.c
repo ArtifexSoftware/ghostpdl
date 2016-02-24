@@ -271,7 +271,7 @@ static const gx_device_composite_alpha gs_composite_alpha_device =
 /* Create an alpha compositor. */
 static int
 c_alpha_create_default_compositor(const gs_composite_t * pcte,
-           gx_device ** pcdev, gx_device * dev, gs_imager_state * pis,
+           gx_device ** pcdev, gx_device * dev, gs_gstate * pgs,
            gs_memory_t * mem)
 {
     gx_device_composite_alpha *cdev;

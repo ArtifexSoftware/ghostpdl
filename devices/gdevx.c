@@ -710,14 +710,14 @@ x_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 /* this procedure does all the work. */
 static int
 x_begin_typed_image(gx_device * dev,
-                    const gs_imager_state * pis, const gs_matrix * pmat,
+                    const gs_gstate * pgs1, const gs_matrix * pmat,
                     const gs_image_common_t * pic, const gs_int_rect * prect,
               const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
                     gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
     const gs_image2_t *pim;
-    gs_state *pgs;
+    gs_gstate *pgs = (gs_gstate *)pgs1;
     gx_device *sdev;
     gs_matrix smat, dmat;
 
@@ -741,10 +741,10 @@ x_begin_typed_image(gx_device * dev,
      * should be the other way around.  Also see gximage2.c.
      */
     gs_matrix_multiply(&pim->ImageMatrix, &smat, &smat);
-    if (pis == 0)
+    if (pgs == 0)
         dmat = *pmat;
     else
-        gs_currentmatrix((const gs_state *)pis, &dmat);
+        gs_currentmatrix(pgs, &dmat);
     if (!((is_xxyy(&dmat) || is_xyyx(&dmat)) &&
 #define eqe(e) smat.e == dmat.e
           eqe(xx) && eqe(xy) && eqe(yx) && eqe(yy))
@@ -768,7 +768,7 @@ x_begin_typed_image(gx_device * dev,
         rect.q.x += (rect.p.x = pim->XOrigin);
         rect.q.y += (rect.p.y = pim->YOrigin);
         gs_bbox_transform(&rect, &smat, &src);
-        (*pic->type->source_size) (pis, pic, &size);
+        (*pic->type->source_size) (pgs, pic, &size);
         X_SET_FILL_STYLE(xdev, FillSolid);
         X_SET_FUNCTION(xdev, GXcopy);
         srcx = (int)(src.p.x + 0.5);
@@ -780,7 +780,7 @@ x_begin_typed_image(gx_device * dev,
         x_update_add(xdev, destx, desty, size.x, size.y);
     }
     return 0;
-  punt:return gx_default_begin_typed_image(dev, pis, pmat, pic, prect,
+  punt:return gx_default_begin_typed_image(dev, pgs, pmat, pic, prect,
                                         pdcolor, pcpath, mem, pinfo);
 }
 
