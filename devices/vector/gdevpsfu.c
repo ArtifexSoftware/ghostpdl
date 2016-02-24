@@ -240,9 +240,9 @@ psf_check_outline_glyphs(gs_font_base *pfont, psf_glyph_enum_t *ppge,
 
         /* It may be that a single glyph is bad (eg no (h)sbw), we'll ignore it */
         /* here, the glyph may not be included in any subset, or not used at all */
-        /* (ie the /.notdef). If an invalid glyoh is actually used then the text */
+        /* (ie the /.notdef). If an invalid glyph is actually used then the text */
         /* processing will still signal an error causing the document to fail. */
-        if(code == gs_error_invalidfont)
+        if(code == gs_error_invalidfont || code == gs_error_rangecheck)
             continue;
 
         if (code < 0)
