@@ -1461,8 +1461,9 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
 
             do {
                 code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_extend, 1);
-                code = set_cmd_put_op(dp, cdev, re.pcls,
-                                      cmd_opv_ext_unset_color_is_devn, 1);
+                if (code >= 0)
+                    code = set_cmd_put_op(dp, cdev, re.pcls,
+                                          cmd_opv_ext_unset_color_is_devn, 1);
             } while (RECT_RECOVER(code));
             if (code < 0 && SET_BAND_CODE(code))
                 goto error_in_rect;
