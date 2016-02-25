@@ -267,7 +267,7 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                 break;
             case 4:
                 alpha2 = row_alpha[sx >> 1];
-                alpha = (sx & 1 ? alpha2 & 0xf : alpha2 >> 4);
+                alpha = (sx & 1 ? alpha2 & 0xf : alpha2 >> 4) * 17;
                 break;
             case 8:
                 alpha = row_alpha[sx];
