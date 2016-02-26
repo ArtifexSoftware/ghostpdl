@@ -478,7 +478,7 @@ CCITTFax:
 <dt>
 DCT (JPEG):
 <dd>
-<a href="../psi/gs.conf.h">psi/gs.conf.h</a>,
+<a href="../base/gsjconf.h">base/gsjconf.h</a>,
 <a href="../base/gsjmorec.h">base/gsjmorec.h</a>,
 <a href="../base/sdcparam.c">base/sdcparam.c</a>,
 <a href="../base/sdcparam.h">base/sdcparam.h</a>,
@@ -503,8 +503,8 @@ or
 
 <dt>
 JPX (JPEG 2000):
-<a href="../base/sjpx.h">base/sjpx.h</a>,
-<a href="../base/sjpx.c">base/sjpx.c</a>
+<!-- missing <a href="../base/sjpx.h">base/sjpx.h</a>, -->
+<!-- missing <a href="../base/sjpx.c">base/sjpx.c</a> -->
 or
 <a href="../base/sjpx_luratech.h">base/sjpx_luratech.h</a>,
 <a href="../base/sjpx_luratech.c">base/sjpx_luratech.c</a>.
@@ -621,7 +621,7 @@ Arithmetic:
 <dt>
 Operating system interface:
 <dd>
-<a href="../base/gserror.h">base/gserror.h</a>,
+<a href="../base/gserrors.h">base/gserrors.h</a>,
 <a href="../base/gsexit.h">base/gsexit.h</a>,
 <a href="../base/gxstdio.h">base/gxstdio.h</a>,
 <a href="../base/gxsync.c">base/gxsync.c</a>,
@@ -784,20 +784,20 @@ Fonts, generic:
 <dd>
 <a href="../base/gsfont.c">base/gsfont.c</a>,
 <a href="../base/gsfont.h">base/gsfont.h</a>,
-<a href="../base/gxfcopy.c">base/gxfcopy.c</a>,
-<a href="../base/gxfcopy.h">base/gxfcopy.h</a>,
+<a href="../devices/gxfcopy.c">devices/gxfcopy.c</a>,
+<a href="../devices/gxfcopy.h">devices/gxfcopy.h</a>,
 <a href="../base/gxfont.h">base/gxfont.h</a>.
 
 <dt>
 Fonts, specific FontTypes:
 <dd>
-<a href="../psi/gs.cid.c">psi/gs.cid.c</a>,
-<a href="../psi/gs.cid2.c">psi/gs.cid.c</a>,
-<a href="../psi/gs.cmap.c">psi/gs.cmap.c</a>,
-<a href="../psi/gs.cmap1.c">psi/gs.cmap1.c</a>,
-<a href="../psi/gs.cmap.h">psi/gs.cmap.h</a>,
+<a href="../base/gsfcid.c">base/gsfcid.c</a>,
+<a href="../base/gsfcid2.c">base/gsfcid.c</a>,
+<a href="../base/gsfcmap.c">base/gsfcmap.c</a>,
+<a href="../base/gsfcmap1.c">base/gsfcmap1.c</a>,
+<a href="../base/gsfcmap.h">base/gsfcmap.h</a>,
 <a href="../base/gsfont0.c">base/gsfont0.c</a>,
-<a href="../base/gsfont0c.c">base/gsfont0.c</a>,
+<a href="../base/gsfont0c.c">base/gsfont0c.c</a>,
 <a href="../base/gxcid.h">base/gxcid.h</a>,
 <a href="../base/gxfcid.h">base/gxfcid.h</a>,
 <a href="../base/gxfcmap.h">base/gxfcmap.h</a>,
@@ -812,14 +812,14 @@ Fonts, specific FontTypes:
 <dt>
 Character rendering + font cache, generic:
 <dd>
-<a href="../psi/gs.code.h">psi/gs.code.h</a>,
+<a href="../base/gsccode.h">base/gsccode.h</a>,
 <a href="../base/gschar.c">base/gschar.c</a>,
 <a href="../base/gschar.h">base/gschar.h</a>,
 <a href="../base/gscpm.h">base/gscpm.h</a>,
 <a href="../base/gsgdata.c">base/gsgdata.c</a>,
 <a href="../base/gsgdata.h">base/gsgdata.h</a>,
-<a href="../psi/gs.cache.c">psi/gs.cache.c</a>,
-<a href="../psi/gs.cache.h">psi/gs.cache.h</a>,
+<a href="../base/gsgcache.c">base/gsgcache.c</a>,
+<a href="../base/gsgcache.h">base/gsgcache.h</a>,
 <a href="../base/gstext.c">base/gstext.c</a>,
 <a href="../base/gstext.h">base/gstext.h</a>,
 <a href="../base/gxbcache.c">base/gxbcache.c</a>,
@@ -1031,7 +1031,7 @@ that involve a RasterOp, do something more complicated.
 <dt>
 Color specification:
 <dd>
-<a href="../psi/gs.color.h">psi/gs.color.h</a>,
+<a href="../base/gsdcolor.h">base/gsdcolor.h</a>,
 <a href="../base/gscolor.c">base/gscolor.c</a>,
 <a href="../base/gscolor.h">base/gscolor.h</a>,
 <a href="../base/gscolor1.c">base/gscolor1.c</a>,
@@ -1075,7 +1075,7 @@ Color mapping:
 <a href="../base/gscrdp.c">base/gscrdp.c</a>,
 <a href="../base/gscrdp.h">base/gscrdp.h</a>,
 <a href="../base/gscsel.h">base/gscsel.h</a>,
-<a href="../psi/gs.color.h">psi/gs.color.h</a>,
+<!-- missing <a href="../psi/gs.color.h">psi/gs.color.h</a>, -->
 <a href="../base/gxcindex.h">base/gxcindex.h</a>,
 <a href="../base/gxcmap.c">base/gxcmap.c</a>,
 <a href="../base/gxcmap.h">base/gxcmap.h</a>,
@@ -1098,8 +1098,8 @@ not standard in PostScript.
 
 <dt>
 <dd>
-<a href="../psi/gs.cc.c">psi/gs.cc.c</a>,
-<a href="../psi/gs.cc.h">psi/gs.cc.h</a>,
+<a href="../base/gsicc.c">base/gsicc.c</a>,
+<a href="../base/gsicc.h">base/gsicc.h</a>,
 
 <p>
 The following files provide a callback mechanism to allow a client program 
@@ -1110,8 +1110,8 @@ PANTONE colors.
 <dd>
 <a href="../base/gsnamecl.c">base/gsnamecl.c</a>,
 <a href="../base/gsnamecl.h">base/gsnamecl.h</a>,
-<a href="../psi/gs.cdummy.c">psi/gs.cdummy.c</a>,
-<a href="../psi/gs.cdummy.h">psi/gs.cdummy.h</a>,
+<a href="../base/gsncdummy.c">base/gsncdummy.c</a>,
+<a href="../base/gsncdummy.h">base/gsncdummy.h</a>,
 <a href="../psi/zncdummy.c">psi/zncdummy.c</a>,
 
 </dl>
@@ -1171,7 +1171,7 @@ Halftoning:
 <a href="../base/gsht.h">base/gsht.h</a>,
 <a href="../base/gsht1.c">base/gsht1.c</a>,
 <a href="../base/gsht1.h">base/gsht1.h</a>,
-<a href="../base/gsht.cr.c">base/gsht.cr.c</a>,
+<a href="../base/gshtscr.c">base/gshtscr.c</a>,
 <a href="../base/gshtx.c">base/gshtx.c</a>,
 <a href="../base/gshtx.h">base/gshtx.h</a>,
 <a href="../base/gxcht.c">base/gxcht.c</a>,
@@ -1205,8 +1205,8 @@ operator.
 <dt>
 Patterns:
 <dd>
-<a href="../psi/gs.color.c">psi/gs.color.c</a>,
-<a href="../psi/gs.color.h">psi/gs.color.h</a>,
+<a href="../base/gspcolor.c">base/gs.color.c</a>,
+<a href="../base/gspcolor.h">base/gs.color.h</a>,
 <a href="../base/gsptype1.c">base/gsptype1.c</a>,
 <a href="../base/gsptype1.h">base/gsptype1.h</a>,
 <a href="../base/gxp1fill.c">base/gxp1fill.c</a>,
@@ -1231,12 +1231,12 @@ Shading:
 <a href="../base/gsptype2.h">base/gsptype2.h</a>,
 <a href="../base/gsshade.c">base/gsshade.c</a>,
 <a href="../base/gsshade.h">base/gsshade.h</a>,
-<a href="../base/gx.hade.c">base/gx.hade.c</a>,
-<a href="../base/gx.hade.h">base/gx.hade.h</a>,
-<a href="../base/gx.hade1.c">base/gx.hade1.c</a>,
-<a href="../base/gx.hade4.c">base/gx.hade4.c</a>,
-<a href="../base/gx.hade4.h">base/gx.hade4.h</a>,
-<a href="../base/gx.hade6.c">base/gx.hade6.c</a>,
+<a href="../base/gxshade.c">base/gxshade.c</a>,
+<a href="../base/gxshade.h">base/gxshade.h</a>,
+<a href="../base/gxshade1.c">base/gxshade1.c</a>,
+<a href="../base/gxshade4.c">base/gxshade4.c</a>,
+<a href="../base/gxshade4.h">base/gxshade4.h</a>,
+<a href="../base/gxshade6.c">base/gxshade6.c</a>,
 <a href="../base/gscicach.h">base/gscicach.h</a>,
 <a href="../base/gscicach.c">base/gscicach.c</a>.
 
@@ -1261,7 +1261,7 @@ RasterOp:
 <dd>
 <a href="../base/gdevdrop.c">base/gdevdrop.c</a>,
 <a href="../base/gdevrops.c">base/gdevrops.c</a>,
-<a href="../base/gsnorop.c">base/gsnorop.c</a>,
+<!-- missing <a href="../base/gsnorop.c">base/gsnorop.c</a>, -->
 <a href="../base/gsrop.c">base/gsrop.c</a>,
 <a href="../base/gsrop.h">base/gsrop.h</a>,
 <a href="../base/gsropt.h">base/gsropt.h</a>,
@@ -1465,8 +1465,8 @@ Accessing rendered bits:
 <dt>
 "Printer" driver support:
 <dd>
-<a href="../base/gdevmeds.c">base/gdevmeds.c</a>,
-<a href="../base/gdevmeds.h">base/gdevmeds.h</a>,
+<a href="../devices/gdevmeds.c">devices/gdevmeds.c</a>,
+<a href="../devices/gdevmeds.h">devices/gdevmeds.h</a>,
 <a href="../base/gdevppla.c">base/gdevppla.c</a>,
 <a href="../base/gdevppla.h">base/gdevppla.h</a>,
 <a href="../base/gdevprn.c">base/gdevprn.c</a>,
@@ -1644,7 +1644,7 @@ rewrite in June 2002 was intended to make it more robust and somewhat easier
 to understand, but also increased its size by about 40%, contrary to the
 expectation that it would shrink.  Currently both sets of code are in the
 code base, with compatible APIs, selected by a line in <a
-href="../base/devs.mak">base/devs.mak</a>.
+href="../devices/devs.mak">devices/devs.mak</a>.
 
 <dl>
 
@@ -1656,13 +1656,13 @@ Shared support:
 <dt>
 Writing fonts:
 <dd>
-<a href="../base/gdevpsf.h">base/gdevpsf.h</a>,
-<a href="../base/gdevpsf1.c">base/gdevpsf1.c</a>,
-<a href="../base/gdevpsf2.c">base/gdevpsf2.c</a>,
-<a href="../base/gdevpsfm.c">base/gdevpsfm.c</a>,
-<a href="../base/gdevpsft.c">base/gdevpsft.c</a>,
-<a href="../base/gdevpsfu.c">base/gdevpsfu.c</a>,
-<a href="../base/gdevpsfx.c">base/gdevpsfx.c</a>,
+<a href="../devices/vector/gdevpsf.h">devices/vector/gdevpsf.h</a>,
+<a href="../devices/vector/gdevpsf1.c">devices/vector/gdevpsf1.c</a>,
+<a href="../devices/vector/gdevpsf2.c">devices/vector/gdevpsf2.c</a>,
+<a href="../devices/vector/gdevpsfm.c">devices/vector/gdevpsfm.c</a>,
+<a href="../devices/vector/gdevpsft.c">devices/vector/gdevpsft.c</a>,
+<a href="../devices/vector/gdevpsfu.c">devices/vector/gdevpsfu.c</a>,
+<a href="../devices/vector/gdevpsfx.c">devices/vector/gdevpsfx.c</a>,
 <a href="../base/gscedata.c">base/gscedata.c</a>,
 <a href="../base/gscedata.h">base/gscedata.h</a>,
 <a href="../base/gscencs.c">base/gscencs.c</a>,
@@ -1671,21 +1671,21 @@ Writing fonts:
 <dt>
 Other:
 <dd>
-<a href="../base/gdevpsdf.h">base/gdevpsdf.h</a>,
-<a href="../base/gdevpsdi.c">base/gdevpsdi.c</a>,
-<a href="../base/gdevpsdp.c">base/gdevpsdp.c</a>,
-<a href="../base/gdevpsds.c">base/gdevpsds.c</a>,
-<a href="../base/gdevpsds.h">base/gdevpsds.h</a>,
-<a href="../base/gdevpsdu.c">base/gdevpsdu.c</a>.
+<a href="../devices/vector/gdevpsdf.h">devices/vector/gdevpsdf.h</a>,
+<a href="../devices/vector/gdevpsdi.c">devices/vector/gdevpsdi.c</a>,
+<a href="../devices/vector/gdevpsdp.c">devices/vector/gdevpsdp.c</a>,
+<a href="../devices/vector/gdevpsds.c">devices/vector/gdevpsds.c</a>,
+<a href="../devices/vector/gdevpsds.h">devices/vector/gdevpsds.h</a>,
+<a href="../devices/vector/gdevpsdu.c">devices/vector/gdevpsdu.c</a>.
 
 </dl>
 
 <dt>
 Encapsulated PostScript output driver (epswrite):
 <dd>
-<a href="../base/gdevps.c">base/gdevps.c</a>,
-<a href="../base/gdevpsu.c">base/gdevpsu.c</a>,
-<a href="../base/gdevpsu.h">base/gdevpsu.h</a>.
+<!-- missing <a href="../base/gdevps.c">base/gdevps.c</a>, -->
+<a href="../devices/vector/gdevpsu.c">devices/vector/gdevpsu.c</a>,
+<a href="../devices/vector/gdevpsu.h">devices/vector/gdevpsu.h</a>.
 
 <dt>
 PDF output driver (pdfwrite):
@@ -1695,71 +1695,71 @@ PDF output driver (pdfwrite):
 <dt>
 Substrate:
 <dd>
-<a href="../base/gdevpdfo.c">base/gdevpdfo.c</a>,
-<a href="../base/gdevpdfo.h">base/gdevpdfo.h</a>,
-<a href="../base/gdevpdfr.c">base/gdevpdfr.c</a>,
-<a href="../base/gdevpdfu.c">base/gdevpdfu.c</a>.
+<a href="../devices/vector/gdevpdfo.c">devices/vector/gdevpdfo.c</a>,
+<a href="../devices/vector/gdevpdfo.h">devices/vector/gdevpdfo.h</a>,
+<a href="../devices/vector/gdevpdfr.c">devices/vector/gdevpdfr.c</a>,
+<a href="../devices/vector/gdevpdfu.c">devices/vector/gdevpdfu.c</a>.
 
 <dt>
 Old text and fonts:
 <dd>
-<a href="../base/gdevpdfe.c">base/gdevpdfe.c</a>,
-<a href="../base/gdevpdft.c">base/gdevpdft.c</a>.
+<a href="../devices/vector/gdevpdfe.c">devices/vector/gdevpdfe.c</a>,
+<a href="../devices/vector/gdevpdft.c">devices/vector/gdevpdft.c</a>.
 
 <dt>
 New text and fonts:
 <dd>
-<a href="../base/gdevpdt.c">base/gdevpdt.c</a>,
-<a href="../base/gdevpdt.h">base/gdevpdt.h</a>,
-<a href="../base/gdevpdtb.c">base/gdevpdtb.c</a>,
-<a href="../base/gdevpdtb.h">base/gdevpdtb.h</a>,
-<a href="../base/gdevpdtc.c">base/gdevpdtc.c</a>,
-<a href="../base/gdevpdtd.c">base/gdevpdtd.c</a>,
-<a href="../base/gdevpdtd.h">base/gdevpdtd.h</a>,
-<a href="../base/gdevpdte.c">base/gdevpdte.c</a>,
-<a href="../base/gdevpdtf.c">base/gdevpdtf.c</a>,
-<a href="../base/gdevpdtf.h">base/gdevpdtf.h</a>,
-<a href="../base/gdevpdti.c">base/gdevpdti.c</a>,
-<a href="../base/gdevpdti.h">base/gdevpdti.h</a>,
-<a href="../base/gdevpdts.c">base/gdevpdts.c</a>,
-<a href="../base/gdevpdts.h">base/gdevpdts.h</a>,
-<a href="../base/gdevpdtt.c">base/gdevpdtt.c</a>,
-<a href="../base/gdevpdtt.h">base/gdevpdtt.h</a>,
-<a href="../base/gdevpdtv.c">base/gdevpdtv.c</a>,
-<a href="../base/gdevpdtv.h">base/gdevpdtv.h</a>,
-<a href="../base/gdevpdtw.c">base/gdevpdtw.c</a>,
-<a href="../base/gdevpdtw.h">base/gdevpdtw.h</a>,
-<a href="../base/gdevpdtx.h">base/gdevpdtx.h</a>.
+<a href="../devices/vector/gdevpdt.c">devices/vector/gdevpdt.c</a>,
+<a href="../devices/vector/gdevpdt.h">devices/vector/gdevpdt.h</a>,
+<a href="../devices/vector/gdevpdtb.c">devices/vector/gdevpdtb.c</a>,
+<a href="../devices/vector/gdevpdtb.h">devices/vector/gdevpdtb.h</a>,
+<a href="../devices/vector/gdevpdtc.c">devices/vector/gdevpdtc.c</a>,
+<a href="../devices/vector/gdevpdtd.c">devices/vector/gdevpdtd.c</a>,
+<a href="../devices/vector/gdevpdtd.h">devices/vector/gdevpdtd.h</a>,
+<a href="../devices/vector/gdevpdte.c">devices/vector/gdevpdte.c</a>,
+<a href="../devices/vector/gdevpdtf.c">devices/vector/gdevpdtf.c</a>,
+<a href="../devices/vector/gdevpdtf.h">devices/vector/gdevpdtf.h</a>,
+<a href="../devices/vector/gdevpdti.c">devices/vector/gdevpdti.c</a>,
+<a href="../devices/vector/gdevpdti.h">devices/vector/gdevpdti.h</a>,
+<a href="../devices/vector/gdevpdts.c">devices/vector/gdevpdts.c</a>,
+<a href="../devices/vector/gdevpdts.h">devices/vector/gdevpdts.h</a>,
+<a href="../devices/vector/gdevpdtt.c">devices/vector/gdevpdtt.c</a>,
+<a href="../devices/vector/gdevpdtt.h">devices/vector/gdevpdtt.h</a>,
+<a href="../devices/vector/gdevpdtv.c">devices/vector/gdevpdtv.c</a>,
+<a href="../devices/vector/gdevpdtv.h">devices/vector/gdevpdtv.h</a>,
+<a href="../devices/vector/gdevpdtw.c">devices/vector/gdevpdtw.c</a>,
+<a href="../devices/vector/gdevpdtw.h">devices/vector/gdevpdtw.h</a>,
+<a href="../devices/vector/gdevpdtx.h">devices/vector/gdevpdtx.h</a>.
 <a href="../base/ConvertUTF.h">base/ConvertUTF.h</a>,
 <a href="../base/ConvertUTF.c">base/ConvertUTF.c</a>,
 
 <dt>
 Graphics:
 <dd>
-<a href="../base/gdevpdfc.c">base/gdevpdfc.c</a>,
-<a href="../base/gdevpdfc.h">base/gdevpdfc.h</a>,
-<a href="../base/gdevpdfd.c">base/gdevpdfd.c</a>,
-<a href="../base/gdevpdfg.c">base/gdevpdfg.c</a>,
-<a href="../base/gdevpdfg.h">base/gdevpdfg.h</a>,
-<a href="../base/gdevpdfk.c">base/gdevpdfk.c</a>,
-<a href="../base/gdevpdft.c">base/gdevpdft.c</a>.
-<a href="../base/gdevpdfv.c">base/gdevpdfv.c</a>.
+<a href="../devices/vector/gdevpdfc.c">devices/vector/gdevpdfc.c</a>,
+<a href="../devices/vector/gdevpdfc.h">devices/vector/gdevpdfc.h</a>,
+<a href="../devices/vector/gdevpdfd.c">devices/vector/gdevpdfd.c</a>,
+<a href="../devices/vector/gdevpdfg.c">devices/vector/gdevpdfg.c</a>,
+<a href="../devices/vector/gdevpdfg.h">devices/vector/gdevpdfg.h</a>,
+<a href="../devices/vector/gdevpdfk.c">devices/vector/gdevpdfk.c</a>,
+<a href="../devices/vector/gdevpdft.c">devices/vector/gdevpdft.c</a>.
+<a href="../devices/vector/gdevpdfv.c">devices/vector/gdevpdfv.c</a>.
 
 <dt>
 Images:
 <dd>
-<a href="../base/gdevpdfb.c">base/gdevpdfb.c</a>,
-<a href="../base/gdevpdfi.c">base/gdevpdfi.c</a>,
-<a href="../base/gdevpdfj.c">base/gdevpdfj.c</a>.
+<a href="../devices/vector/gdevpdfb.c">devices/vector/gdevpdfb.c</a>,
+<a href="../devices/vector/gdevpdfi.c">devices/vector/gdevpdfi.c</a>,
+<a href="../devices/vector/gdevpdfj.c">devices/vector/gdevpdfj.c</a>.
 
 <dt>
 Other:
 <dd>
-<a href="../base/gdevpdf.c">base/gdevpdf.c</a>,
-<a href="../base/gdevpdfm.c">base/gdevpdfm.c</a>,
-<a href="../base/gdevpdfp.c">base/gdevpdfp.c</a>,
-<a href="../base/gdevpdfx.h">base/gdevpdfx.h</a>.
-<a href="../base/gdevpdfb.h">base/gdevpdfb.h</a>.
+<a href="../devices/vector/gdevpdf.c">devices/vector/gdevpdf.c</a>,
+<a href="../devices/vector/gdevpdfm.c">devices/vector/gdevpdfm.c</a>,
+<a href="../devices/vector/gdevpdfp.c">devices/vector/gdevpdfp.c</a>,
+<a href="../devices/vector/gdevpdfx.h">devices/vector/gdevpdfx.h</a>.
+<a href="../devices/vector/gdevpdfb.h">devices/vector/gdevpdfb.h</a>.
 
 </dl>
 
@@ -1770,18 +1770,18 @@ Other:
 <p>
 PCL XL output device (pxlmono, pxlcolor):
 <dd>
-<a href="../base/gdevpx.c">base/gdevpx.c</a>,
+<a href="../devices/vector/gdevpx.c">devices/vector/gdevpx.c</a>,
 <a href="../base/gdevpxat.h">base/gdevpxat.h</a>,
 <a href="../base/gdevpxen.h">base/gdevpxen.h</a>,
 <a href="../base/gdevpxop.h">base/gdevpxop.h</a>,
-<a href="../base/gdevpxut.c">base/gdevpxut.c</a>,
-<a href="../base/gdevpxut.h">base/gdevpxut.h</a>.
+<a href="../devices/gdevpxut.c">devices/gdevpxut.c</a>,
+<a href="../devices/gdevpxut.h">devices/gdevpxut.h</a>.
 
 <dt>
 Cairo and SVG output devices (cairo, svgwrite):
 <dd>
-<a href="../base/gdevcairo.c">base/gdevcairo.c</a>,
-<a href="../base/gdevsvg.c">base/gdevsvg.c</a>.
+<!-- missing <a href="../base/gdevcairo.c">base/gdevcairo.c</a>, -->
+<!-- missing <a href="../base/gdevsvg.c">base/gdevsvg.c</a>. -->
 
 <p>
 The svgwrite device produces SVG only.
@@ -1793,12 +1793,12 @@ and lack of attention.
 <dt>
 Text extraction:
 <dd>
-<a href="../base/gdevtxtw.c">base/gdevtxtw.c</a>.
+<a href="../devices/vector/gdevtxtw.c">devices/vector/gdevtxtw.c</a>.
 
 <dt>
 Other high-level devices:
 <dd>
-<a href="../base/gdevtrac.c">base/gdevtrac.c</a>.
+<a href="../devices/gdevtrac.c">devices/gdevtrac.c</a>.
 
 </dl>
 
@@ -1814,19 +1814,19 @@ sense as the Ghostscript core code.
 <dt>
 Display drivers:
 <dd>
-<a href="../base/gdev8bcm.c">base/gdev8bcm.c</a>,
-<a href="../base/gdev8bcm.h">base/gdev8bcm.h</a>,
-<a href="../base/gdevevga.c">base/gdevevga.c</a>,
-<a href="../base/gdevl256.c">base/gdevl256.c</a>,
+<a href="../devices/gdev8bcm.c">devices/gdev8bcm.c</a>,
+<a href="../devices/gdev8bcm.h">devices/gdev8bcm.h</a>,
+<a href="../devices/gdevevga.c">devices/gdevevga.c</a>,
+<a href="../devices/gdevl256.c">devices/gdevl256.c</a>,
 <a href="../base/gdevpccm.c">base/gdevpccm.c</a>,
 <a href="../base/gdevpccm.h">base/gdevpccm.h</a>,
-<a href="../base/gdevpcfb.c">base/gdevpcfb.c</a>,
-<a href="../base/gdevpcfb.h">base/gdevpcfb.h</a>,
-<a href="../base/gdevs3ga.c">base/gdevs3ga.c</a>,
-<a href="../base/gdevsco.c">base/gdevsco.c</a>,
-<a href="../base/gdevsvga.c">base/gdevsvga.c</a>,
-<a href="../base/gdevsvga.h">base/gdevsvga.h</a>,
-<a href="../base/gdevvglb.c">base/gdevvglb.c</a>.
+<a href="../devices/gdevpcfb.c">devices/gdevpcfb.c</a>,
+<a href="../devices/gdevpcfb.h">devices/gdevpcfb.h</a>,
+<a href="../devices/gdevs3ga.c">devices/gdevs3ga.c</a>,
+<a href="../devices/gdevsco.c">devices/gdevsco.c</a>,
+<a href="../devices/gdevsvga.c">devices/gdevsvga.c</a>,
+<a href="../devices/gdevsvga.h">devices/gdevsvga.h</a>,
+<a href="../devices/gdevvglb.c">devices/gdevvglb.c</a>.
 
 <dt>
 Window system drivers:
@@ -1837,28 +1837,28 @@ Window system drivers:
 <dt>
 X Windows:
 <dd>
-<a href="../base/gdevx.c">base/gdevx.c</a>,
-<a href="../base/gdevx.h">base/gdevx.h</a>,
-<a href="../base/gdevxalt.c">base/gdevxalt.c</a>,
-<a href="../base/gdevxcmp.c">base/gdevxcmp.c</a>,
-<a href="../base/gdevxcmp.h">base/gdevxcmp.h</a>,
-<a href="../base/gdevxini.c">base/gdevxini.c</a>,
-<a href="../base/gdevxres.c">base/gdevxres.c</a>,
-<a href="../base/gdevxxf.c">base/gdevxxf.c</a>.
+<a href="../devices/gdevx.c">devices/gdevx.c</a>,
+<a href="../devices/gdevx.h">devices/gdevx.h</a>,
+<a href="../devices/gdevxalt.c">devices/gdevxalt.c</a>,
+<a href="../devices/gdevxcmp.c">devices/gdevxcmp.c</a>,
+<a href="../devices/gdevxcmp.h">devices/gdevxcmp.h</a>,
+<a href="../devices/gdevxini.c">devices/gdevxini.c</a>,
+<a href="../devices/gdevxres.c">devices/gdevxres.c</a>,
+<!-- missing <a href="../base/gdevxxf.c">base/gdevxxf.c</a>. -->
 
 <dt>
 Microsoft Windows:
 <dd>
-<a href="../base/gdevmswn.c">base/gdevmswn.c</a>,
-<a href="../base/gdevmswn.h">base/gdevmswn.h</a>,
-<a href="../base/gdevmsxf.c">base/gdevmsxf.c</a>,
-<a href="../base/gdevwddb.c">base/gdevwddb.c</a>,
-<a href="../base/gdevwdib.c">base/gdevwdib.c</a>.
+<a href="../devices/gdevmswn.c">devices/gdevmswn.c</a>,
+<a href="../devices/gdevmswn.h">devices/gdevmswn.h</a>,
+<a href="../devices/gdevmsxf.c">devices/gdevmsxf.c</a>,
+<a href="../devices/gdevwddb.c">devices/gdevwddb.c</a>,
+<a href="../devices/gdevwdib.c">devices/gdevwdib.c</a>.
 
 <dt>
 OS/2 Presentation Manager:
 <dd>
-<a href="../base/gdevpm.h">base/gdevpm.h</a>,
+<a href="../devices/gdevpm.h">devices/gdevpm.h</a>,
 <a href="../base/gspmdrv.c">base/gspmdrv.c</a>,
 <a href="../base/gspmdrv.h">base/gspmdrv.h</a>.
 
@@ -1873,39 +1873,39 @@ Raster file output drivers:
 <dt>
 Fax and TIFF:
 <dd>
-<a href="../base/gdevfax.c">base/gdevfax.c</a>,
-<a href="../base/gdevfax.h">base/gdevfax.h</a>,
-<a href="../base/gdevtfax.c">base/gdevtfax.c</a>,
-<a href="../base/gdevtfax.h">base/gdevtfax.h</a>,
-<a href="../base/gdevtifs.c">base/gdevtifs.c</a>,
-<a href="../base/gdevtifs.h">base/gdevtifs.h</a>,
-<a href="../base/gdevtfnx.c">base/gdevtfnx.c</a>.
-<a href="../base/gdevtsep.c">base/gdevtsep.c</a>.
+<a href="../devices/gdevfax.c">devices/gdevfax.c</a>,
+<a href="../devices/gdevfax.h">devices/gdevfax.h</a>,
+<a href="../devices/gdevtfax.c">devices/gdevtfax.c</a>,
+<a href="../devices/gdevtfax.h">devices/gdevtfax.h</a>,
+<a href="../devices/gdevtifs.c">devices/gdevtifs.c</a>,
+<a href="../devices/gdevtifs.h">devices/gdevtifs.h</a>,
+<a href="../devices/gdevtfnx.c">devices/gdevtfnx.c</a>.
+<a href="../devices/gdevtsep.c">devices/gdevtsep.c</a>.
 
 <dt>
 Example DeviceN devices:
 <dd>
 <a href="../base/gdevdevn.c">base/gdevdevn.c</a>,
 <a href="../base/gdevdevn.h">base/gdevdevn.h</a>,
-<a href="../base/gdevxcf.c">base/gdevxcf.c</a>,
-<a href="../base/gdevpsd.c">base/gdevpsd.c</a>,
-<a href="../base/gdevperm.c">base/gdevperm.c</a>.
+<a href="../devices/gdevxcf.c">devices/gdevxcf.c</a>,
+<a href="../devices/gdevpsd.c">devices/gdevpsd.c</a>,
+<a href="../devices/gdevperm.c">devices/gdevperm.c</a>.
 
 <dt>
 Other raster file formats:
 <dd>
-<a href="../base/gdevbit.c">base/gdevbit.c</a>,
-<a href="../base/gdevbmp.c">base/gdevbmp.c</a>,
-<a href="../base/gdevbmp.h">base/gdevbmp.h</a>,
-<a href="../base/gdevbmpa.c">base/gdevbmpa.c</a>,
-<a href="../base/gdevbmpc.c">base/gdevbmpc.c</a>,
-<a href="../base/gdevjpeg.c">base/gdevjpeg.c</a>,
-<a href="../base/gdevmiff.c">base/gdevmiff.c</a>,
-<a href="../base/gdevp2up.c">base/gdevp2up.c</a>,
-<a href="../base/gdevpcx.c">base/gdevpcx.c</a>,
-<a href="../base/gdevpbm.c">base/gdevpbm.c</a>,
-<a href="../base/gdevpng.c">base/gdevpng.c</a>,
-<a href="../base/gdevpsim.c">base/gdevpsim.c</a>.
+<a href="../devices/gdevbit.c">devices/gdevbit.c</a>,
+<a href="../devices/gdevbmp.c">devices/gdevbmp.c</a>,
+<a href="../devices/gdevbmp.h">devices/gdevbmp.h</a>,
+<a href="../devices/gdevbmpa.c">devices/gdevbmpa.c</a>,
+<a href="../devices/gdevbmpc.c">devices/gdevbmpc.c</a>,
+<a href="../devices/gdevjpeg.c">devices/gdevjpeg.c</a>,
+<a href="../devices/gdevmiff.c">devices/gdevmiff.c</a>,
+<a href="../devices/gdevp2up.c">devices/gdevp2up.c</a>,
+<a href="../devices/gdevpcx.c">devices/gdevpcx.c</a>,
+<a href="../devices/gdevpbm.c">devices/gdevpbm.c</a>,
+<a href="../devices/gdevpng.c">devices/gdevpng.c</a>,
+<a href="../devices/gdevpsim.c">devices/gdevpsim.c</a>.
 
 </dl>
 
@@ -1918,22 +1918,22 @@ Printer drivers:
 <dt>
 Operating system printer services:
 <dd>
-<a href="../base/gdevos2p.c">base/gdevos2p.c</a>,
-<a href="../base/gdevwpr2.c">base/gdevwpr2.c</a>,
-<a href="../base/gdevwprn.c">base/gdevwprn.c</a>.
+<a href="../devices/gdevos2p.c">devices/gdevos2p.c</a>,
+<a href="../devices/gdevwpr2.c">devices/gdevwpr2.c</a>,
+<a href="../devices/gdevwprn.c">devices/gdevwprn.c</a>.
 
 <dt>
 H-P monochrome printers:
 <dd>
-<a href="../base/gdevdljm.c">base/gdevdljm.c</a>,
-<a href="../base/gdevdljm.h">base/gdevdljm.h</a>,
-<a href="../base/gdevdjet.c">base/gdevdjet.c</a>,
-<a href="../base/gdevlj56.c">base/gdevlj56.c</a>.
+<a href="../devices/gdevdljm.c">devices/gdevdljm.c</a>,
+<a href="../devices/gdevdljm.h">devices/gdevdljm.h</a>,
+<a href="../devices/gdevdjet.c">devices/gdevdjet.c</a>,
+<a href="../devices/gdevlj56.c">devices/gdevlj56.c</a>.
 
 <dt>
 Other printers:
 <dd>
-<a href="../base/gdevatx.c">base/gdevatx.c</a>.
+<a href="../devices/gdevatx.c">devices/gdevatx.c</a>.
 
 </dl>
 
@@ -1942,34 +1942,35 @@ Other printers:
 <h4><a name="Contributed_drivers"></a>Contributed drivers</h4>
 
 <p>
-This list is likely to be incomplete and inaccurate: see <a
-href="../base/contrib.mak">base/contrib.mak</a> for the real one.
+This list is likely to be incomplete and inaccurate: see
+<a href="../devices/contrib.mak">devices/contrib.mak</a> and
+<a href="../contrib/contrib.mak">contrib/contrib.mak</a>.
 
 <dl>
 
 <dt>
 Display and window system drivers:
 <dd>
-<a href="../base/gdev3b1.c">base/gdev3b1.c</a>,
-<a href="../base/gdevherc.c">base/gdevherc.c</a>,
-<a href="../base/gdevpe.c">base/gdevpe.c</a>,
-<a href="../base/gdevsnfb.c">base/gdevsnfb.c</a>,
-<a href="../base/gdevsun.c">base/gdevsun.c</a>.
+<a href="../devices/gdev3b1.c">devices/gdev3b1.c</a>,
+<a href="../devices/gdevherc.c">devices/gdevherc.c</a>,
+<a href="../devices/gdevpe.c">devices/gdevpe.c</a>,
+<a href="../devices/gdevsnfb.c">devices/gdevsnfb.c</a>,
+<a href="../devices/gdevsun.c">devices/gdevsun.c</a>.
 
 <dt>
 Raster file output drivers:
 <dd>
-<a href="../base/gdevcfax.c">base/gdevcfax.c</a>,
-<a href="../base/gdevcif.c">base/gdevcif.c</a>,
-<a href="../base/gdevdfax.c">base/gdevdfax.c</a>,
-<a href="../base/gdevifno.c">base/gdevifno.c</a>,
-<a href="../base/gdevmgr.c">base/gdevmgr.c</a>,
-<a href="../base/gdevmgr.h">base/gdevmgr.h</a>,
-<a href="../base/gdevsgi.c">base/gdevsgi.c</a>,
-<a href="../base/gdevsgi.h">base/gdevsgi.h</a>,
-<a href="../base/gdevsunr.c">base/gdevsunr.c</a>,
-<a href="../base/gdevjbig2.c">base/gdevjbig2.c</a>,
-<a href="../base/gdevjpx.c">base/gdevjpx.c</a>.
+<a href="../devices/gdevcfax.c">devices/gdevcfax.c</a>,
+<a href="../devices/gdevcif.c">devices/gdevcif.c</a>,
+<a href="../devices/gdevdfax.c">devices/gdevdfax.c</a>,
+<a href="../devices/gdevifno.c">devices/gdevifno.c</a>,
+<a href="../devices/gdevmgr.c">devices/gdevmgr.c</a>,
+<a href="../devices/gdevmgr.h">devices/gdevmgr.h</a>,
+<a href="../devices/gdevsgi.c">devices/gdevsgi.c</a>,
+<a href="../devices/gdevsgi.h">devices/gdevsgi.h</a>,
+<a href="../devices/gdevsunr.c">devices/gdevsunr.c</a>,
+<a href="../devices/gdevjbig2.c">devices/gdevjbig2.c</a>,
+<a href="../devices/gdevjpx.c">devices/gdevjpx.c</a>.
 
 <dt>
 Printer drivers:
@@ -1977,71 +1978,71 @@ Printer drivers:
 <a href="../lib/bj8.rpd">lib/bj8.rpd</a>,
 <a href="../lib/cbjc600.ppd">lib/cbjc600.ppd</a>,
 <a href="../lib/cbjc800.ppd">lib/cbjc800.ppd</a>,
-<a href="../base/gdev3852.c">base/gdev3852.c</a>,
-<a href="../base/gdev4081.c">base/gdev4081.c</a>,
-<a href="../base/gdev4693.c">base/gdev4693.c</a>,
-<a href="../base/gdev8510.c">base/gdev8510.c</a>,
-<a href="../base/gdevadmp.c">base/gdevadmp.c</a>,
-<a href="../base/gdevbj10.c">base/gdevbj10.c</a>,
-<a href="../base/gdevbjc.h">base/gdevbjc.h</a>,
-<a href="../base/gdevbjcl.c">base/gdevbjcl.c</a>,
-<a href="../base/gdevbjcl.h">base/gdevbjcl.h</a>,
-<a href="../base/gdevccr.c">base/gdevccr.c</a>,
-<a href="../base/gdevcdj.c">base/gdevcdj.c</a>,
-<a href="../base/gdevclj.c">base/gdevclj.c</a>,
-<a href="../base/gdevcljc.c">base/gdevcljc.c</a>,
-<a href="../base/gdevcp50.c">base/gdevcp50.c</a>,
-<a href="../base/gdevcslw.c">base/gdevcslw.c</a>,
-<a href="../base/gdevdjtc.c">base/gdevdjtc.c</a>,
-<a href="../base/gdevdm24.c">base/gdevdm24.c</a>,
-<a href="../base/gdevepsc.c">base/gdevepsc.c</a>,
-<a href="../base/gdevepsn.c">base/gdevepsn.c</a>,
-<a href="../base/gdevescp.c">base/gdevescp.c</a>,
-<a href="../base/gdevhl7x.c">base/gdevhl7x.c</a>,
-<a href="../base/gdevijs.c">base/gdevijs.c</a>,
-<a href="../base/gdevimgn.c">base/gdevimgn.c</a>,
-<a href="../base/gdevl31s.c">base/gdevl31s.c</a>,
-<a href="../base/gdevlbp8.c">base/gdevlbp8.c</a>,
-<a href="../base/gdevlp8k.c">base/gdevlp8k.c</a>,
-<a href="../base/gdevlxm.c">base/gdevlxm.c</a>,
-<a href="../base/gdevn533.c">base/gdevn533.c</a>,
-<a href="../base/gdevo182.c">base/gdevo182.c</a>,
-<a href="../base/gdevokii.c">base/gdevokii.c</a>,
-<a href="../base/gdevpcl.c">base/gdevpcl.c</a>,
-<a href="../base/gdevpcl.h">base/gdevpcl.h</a>,
-<a href="../base/gdevphex.c">base/gdevphex.c</a>,
-<a href="../base/gdevpjet.c">base/gdevpjet.c</a>,
-<a href="../base/gdevsj48.c">base/gdevsj48.c</a>,
-<a href="../base/gdevsppr.c">base/gdevsppr.c</a>,
-<a href="../base/gdevstc.c">base/gdevstc.c</a>,
-<a href="../base/gdevstc.h">base/gdevstc.h</a>,
-<a href="../base/gdevstc1.c">base/gdevstc1.c</a>,
-<a href="../base/gdevstc2.c">base/gdevstc2.c</a>,
-<a href="../base/gdevstc3.c">base/gdevstc3.c</a>,
-<a href="../base/gdevstc4.c">base/gdevstc4.c</a>,
-<a href="../base/gdevtknk.c">base/gdevtknk.c</a>,
-<a href="../base/gdevupd.c">base/gdevupd.c</a>.
+<a href="../devices/gdev3852.c">devices/gdev3852.c</a>,
+<a href="../devices/gdev4081.c">devices/gdev4081.c</a>,
+<a href="../devices/gdev4693.c">devices/gdev4693.c</a>,
+<a href="../devices/gdev8510.c">devices/gdev8510.c</a>,
+<a href="../devices/gdevadmp.c">devices/gdevadmp.c</a>,
+<a href="../devices/gdevbj10.c">devices/gdevbj10.c</a>,
+<a href="../devices/gdevbjc.h">devices/gdevbjc.h</a>,
+<a href="../devices/gdevbjcl.c">devices/gdevbjcl.c</a>,
+<a href="../devices/gdevbjcl.h">devices/gdevbjcl.h</a>,
+<a href="../devices/gdevccr.c">devices/gdevccr.c</a>,
+<a href="../devices/gdevcdj.c">devices/gdevcdj.c</a>,
+<a href="../devices/gdevclj.c">devices/gdevclj.c</a>,
+<a href="../devices/gdevcljc.c">devices/gdevcljc.c</a>,
+<a href="../devices/gdevcp50.c">devices/gdevcp50.c</a>,
+<a href="../devices/gdevcslw.c">devices/gdevcslw.c</a>,
+<a href="../devices/gdevdjtc.c">devices/gdevdjtc.c</a>,
+<a href="../devices/gdevdm24.c">devices/gdevdm24.c</a>,
+<a href="../devices/gdevepsc.c">devices/gdevepsc.c</a>,
+<a href="../devices/gdevepsn.c">devices/gdevepsn.c</a>,
+<a href="../devices/gdevescp.c">devices/gdevescp.c</a>,
+<a href="../devices/gdevhl7x.c">devices/gdevhl7x.c</a>,
+<a href="../devices/gdevijs.c">devices/gdevijs.c</a>,
+<a href="../devices/gdevimgn.c">devices/gdevimgn.c</a>,
+<a href="../devices/gdevl31s.c">devices/gdevl31s.c</a>,
+<a href="../devices/gdevlbp8.c">devices/gdevlbp8.c</a>,
+<a href="../devices/gdevlp8k.c">devices/gdevlp8k.c</a>,
+<a href="../devices/gdevlxm.c">devices/gdevlxm.c</a>,
+<a href="../devices/gdevn533.c">devices/gdevn533.c</a>,
+<a href="../devices/gdevo182.c">devices/gdevo182.c</a>,
+<a href="../devices/gdevokii.c">devices/gdevokii.c</a>,
+<a href="../devices/gdevpcl.c">devices/gdevpcl.c</a>,
+<a href="../devices/gdevpcl.h">devices/gdevpcl.h</a>,
+<a href="../devices/gdevphex.c">devices/gdevphex.c</a>,
+<a href="../devices/gdevpjet.c">devices/gdevpjet.c</a>,
+<a href="../devices/gdevsj48.c">devices/gdevsj48.c</a>,
+<a href="../devices/gdevsppr.c">devices/gdevsppr.c</a>,
+<a href="../devices/gdevstc.c">devices/gdevstc.c</a>,
+<a href="../devices/gdevstc.h">devices/gdevstc.h</a>,
+<a href="../devices/gdevstc1.c">devices/gdevstc1.c</a>,
+<a href="../devices/gdevstc2.c">devices/gdevstc2.c</a>,
+<a href="../devices/gdevstc3.c">devices/gdevstc3.c</a>,
+<a href="../devices/gdevstc4.c">devices/gdevstc4.c</a>,
+<a href="../devices/gdevtknk.c">devices/gdevtknk.c</a>,
+<a href="../devices/gdevupd.c">devices/gdevupd.c</a>.
 
 <dt>
 The special <tt>rinkj</tt> high-quality inkjet driver:
 <dd>
-<a href="../base/gdevrinkj.c">base/gdevrinkj.c</a>,
+<a href="../devices/gdevrinkj.c">devices/gdevrinkj.c</a>,
 <a href="../base/gsequivc.c">base/gsequivc.c</a>,
 <a href="../base/gsequivc.h">base/gsequivc.h</a>,
-<a href="../base/rinkj/evenbetter-rll.c">base/rinkj/evenbetter-rll.c</a>,
-<a href="../base/rinkj/evenbetter-rll.h">base/rinkj/evenbetter-rll.h</a>,
-<a href="../base/rinkj/rinkj-byte-stream.c">base/rinkj/rinkj-byte-stream.c</a>,
-<a href="../base/rinkj/rinkj-byte-stream.h">base/rinkj/rinkj-byte-stream.h</a>,
-<a href="../base/rinkj/rinkj-config.c">base/rinkj/rinkj-config.c</a>,
-<a href="../base/rinkj/rinkj-config.h">base/rinkj/rinkj-config.h</a>,
-<a href="../base/rinkj/rinkj-device.c">base/rinkj/rinkj-device.c</a>,
-<a href="../base/rinkj/rinkj-device.h">base/rinkj/rinkj-device.h</a>,
-<a href="../base/rinkj/rinkj-dither.c">base/rinkj/rinkj-dither.c</a>,
-<a href="../base/rinkj/rinkj-dither.h">base/rinkj/rinkj-dither.h</a>,
-<a href="../base/rinkj/rinkj-epson870.c">base/rinkj/rinkj-epson870.c</a>,
-<a href="../base/rinkj/rinkj-epson870.h">base/rinkj/rinkj-epson870.h</a>,
-<a href="../base/rinkj/rinkj-screen-eb.c">base/rinkj/rinkj-screen-eb.c</a>,
-<a href="../base/rinkj/rinkj-screen-eb.h">base/rinkj/rinkj-screen-eb.h</a>,
+<a href="../devices/rinkj/evenbetter-rll.c">devices/rinkj/evenbetter-rll.c</a>,
+<a href="../devices/rinkj/evenbetter-rll.h">devices/rinkj/evenbetter-rll.h</a>,
+<a href="../devices/rinkj/rinkj-byte-stream.c">devices/rinkj/rinkj-byte-stream.c</a>,
+<a href="../devices/rinkj/rinkj-byte-stream.h">devices/rinkj/rinkj-byte-stream.h</a>,
+<a href="../devices/rinkj/rinkj-config.c">devices/rinkj/rinkj-config.c</a>,
+<a href="../devices/rinkj/rinkj-config.h">devices/rinkj/rinkj-config.h</a>,
+<a href="../devices/rinkj/rinkj-device.c">devices/rinkj/rinkj-device.c</a>,
+<a href="../devices/rinkj/rinkj-device.h">devices/rinkj/rinkj-device.h</a>,
+<a href="../devices/rinkj/rinkj-dither.c">devices/rinkj/rinkj-dither.c</a>,
+<a href="../devices/rinkj/rinkj-dither.h">devices/rinkj/rinkj-dither.h</a>,
+<a href="../devices/rinkj/rinkj-epson870.c">devices/rinkj/rinkj-epson870.c</a>,
+<a href="../devices/rinkj/rinkj-epson870.h">devices/rinkj/rinkj-epson870.h</a>,
+<a href="../devices/rinkj/rinkj-screen-eb.c">devices/rinkj/rinkj-screen-eb.c</a>,
+<a href="../devices/rinkj/rinkj-screen-eb.h">devices/rinkj/rinkj-screen-eb.h</a>,
 <a href="../lib/rinkj-2200-setup">lib/rinkj-2200-setup</a>.
 
 </dl>
@@ -2404,7 +2405,7 @@ Device management:
 <a href="../psi/ziodev.c">psi/ziodev.c</a>,
 <a href="../psi/ziodev2.c">psi/ziodev2.c</a>,
 <a href="../psi/ziodevs.c">psi/ziodevs.c</a>,
-<a href="../psi/ziodev.c.c">psi/ziodev.c.c</a>,
+<!-- missing <a href="../psi/ziodev.c.c">psi/ziodev.c.c</a>, -->
 <a href="../psi/zmedia2.c">psi/zmedia2.c</a>,
 <a href="../psi/zdfilter.c">psi/zdfilter.c</a>.
 
@@ -2629,7 +2630,7 @@ Font API :
 Miscellaneous support:
 <dd>
 <a href="../psi/ierrors.h">psi/ierrors.h</a>,
-<a href="../base/errors.h">base/errors.h</a> <em>(deprecated)</em>,
+<!-- missing <a href="../base/errors.h">base/errors.h</a> <em>(deprecated)</em>, -->
 <a href="../psi/ghost.h">psi/ghost.h</a>,
 <a href="../psi/iconf.c">psi/iconf.c</a>,
 <a href="../psi/iconf.h">psi/iconf.h</a>,
@@ -2662,39 +2663,39 @@ Initialization and language support:
 <dt>
 All configurations:
 <dd>
-<a href="../lib/gs_init.ps">lib/gs_init.ps</a>,
-<a href="../lib/gs_statd.ps">lib/gs_statd.ps</a>.
+<a href="../Resource/Init/gs_init.ps">Resource/Init/gs_init.ps</a>,
+<a href="../Resource/Init/gs_statd.ps">Resource/Init/gs_statd.ps</a>.
 
 <dt>
 Level 2:
 <dd>
-<a href="../lib/gs_btokn.ps">lib/gs_btokn.ps</a>,
-<a href="../lib/gs_dps1.ps">lib/gs_dps1.ps</a>,
-<a href="../lib/gs_dps2.ps">lib/gs_dps2.ps</a>,
-<a href="../lib/gs_lev2.ps">lib/gs_lev2.ps</a>,
-<a href="../lib/gs_res.ps">lib/gs_res.ps</a>,
-<a href="../lib/gs_resmp.ps">lib/gs_resmp.ps</a>,
-<a href="../lib/gs_resst.ps">lib/gs_resst.ps</a>,
-<a href="../lib/gs_stres.ps">lib/gs_stres.ps</a>,
-<a href="../lib/gs_setpd.ps">lib/gs_setpd.ps</a>.
+<a href="../Resource/Init/gs_btokn.ps">Resource/Init/gs_btokn.ps</a>,
+<a href="../Resource/Init/gs_dps1.ps">Resource/Init/gs_dps1.ps</a>,
+<a href="../Resource/Init/gs_dps2.ps">Resource/Init/gs_dps2.ps</a>,
+<a href="../Resource/Init/gs_lev2.ps">Resource/Init/gs_lev2.ps</a>,
+<a href="../Resource/Init/gs_res.ps">Resource/Init/gs_res.ps</a>,
+<a href="../Resource/Init/gs_resmp.ps">Resource/Init/gs_resmp.ps</a>,
+<!-- missing <a href="../lib/gs_resst.ps">lib/gs_resst.ps</a>, -->
+<!-- missing <a href="../lib/gs_stres.ps">lib/gs_stres.ps</a>, -->
+<a href="../Resource/Init/gs_setpd.ps">Resource/Init/gs_setpd.ps</a>.
 
 <dt>
 LanguageLevel 3:
 <dd>
-<a href="../lib/gs_frsd.ps">lib/gs_frsd.ps</a>,
-<a href="../lib/gs_ll3.ps">lib/gs_ll3.ps</a>,
-<a href="../lib/gs_trap.ps">lib/gs_trap.ps</a>.
+<a href="../Resource/Init/gs_frsd.ps">Resource/Init/gs_frsd.ps</a>,
+<a href="../Resource/Init/gs_ll3.ps">Resource/Init/gs_ll3.ps</a>,
+<a href="../Resource/Init/gs_trap.ps">Resource/Init/gs_trap.ps</a>.
 
 <dt>
 Display PostScript:
 <dd>
-<a href="../lib/gs_dpnxt.ps">lib/gs_dpnxt.ps</a>,
-<a href="../lib/gs_dps.ps">lib/gs_dps.ps</a>.
+<a href="../Resource/Init/gs_dpnxt.ps">Resource/Init/gs_dpnxt.ps</a>,
+<a href="../Resource/Init/gs_dps.ps">Resource/Init/gs_dps.ps</a>.
 
 <dt>
 Emulation of other interpreters:
 <dd>
-<a href="../lib/gs_cet.ps">lib/gs_cet.ps</a> (Adobe CPSI).
+<a href="../Resource/Init/gs_cet.ps">Resource/Init/gs_cet.ps</a> (Adobe CPSI).
 
 </dl>
 
@@ -2707,12 +2708,12 @@ Color Spaces and support:
 <dt>
 Color Space Loading:
 <dd>
-<a href="../lib/gs_cspace.ps">lib/gs_cspace.ps</a>,
+<a href="../Resource/Init/gs_cspace.ps">Resource/Init/gs_cspace.ps</a>,
 
 <dt>
 ICC color profiles:
 <dd>
-<a href="../lib/gs_icc.ps">lib/gs_icc.ps</a>.
+<a href="../Resource/Init/gs_icc.ps">Resource/Init/gs_icc.ps</a>.
 
 </dl>
 
@@ -2725,10 +2726,10 @@ Font loading and support:
 <dt>
 Font name mapping:
 <dd>
-<a href="../lib/Fontmap">lib/Fontmap</a>,
+<a href="../Resource/Init/Fontmap">Resource/Init/Fontmap</a>,
 <a href="../lib/Fontmap.ATB">lib/Fontmap.ATB</a>,
 <a href="../lib/Fontmap.ATM">lib/Fontmap.ATM</a>,
-<a href="../lib/Fontmap.GS">lib/Fontmap.GS</a>,
+<a href="../Resource/Init/Fontmap.GS">Resource/Init/Fontmap.GS</a>,
 <a href="../lib/Fontmap.OS2">lib/Fontmap.OS2</a>,
 <a href="../lib/Fontmap.OSF">lib/Fontmap.OSF</a>,
 <a href="../lib/Fontmap.SGI">lib/Fontmap.SGI</a>,
@@ -2737,49 +2738,49 @@ Font name mapping:
 <a href="../lib/Fontmap.VMS">lib/Fontmap.VMS</a>,
 <a href="../lib/Fontmap.URW-136.T1">lib/Fontmap.URW-136.T1</a>,
 <a href="../lib/Fontmap.URW-136.TT">lib/Fontmap.URW-136.TT</a>,
-<a href="../lib/cidfmap">lib/cidfmap</a>,
-<a href="../lib/FAPIcidfmap">lib/FAPIcidfmap</a>,
-<a href="../lib/FAPIfontmap">lib/FAPIfontmap</a>,
-<a href="../lib/FCOfontmap">lib/FCOfontmap</a>.
+<a href="../Resource/Init/cidfmap">Resource/Init/cidfmap</a>,
+<a href="../Resource/Init/FAPIcidfmap">Resource/Init/FAPIcidfmap</a>,
+<a href="../Resource/Init/FAPIfontmap">Resource/Init/FAPIfontmap</a>,
+<!-- missing <a href="../lib/FCOfontmap">lib/FCOfontmap</a>. -->
 
 <dt>
 Generic:
 <dd>
-<a href="../lib/gs_ccfnt.ps">lib/gs_ccfnt.ps</a>,
-<a href="../lib/gs_fonts.ps">lib/gs_fonts.ps</a>,
-<a href="../lib/gs_fntem.ps">lib/gs_fntem.ps</a>.
+<!-- missing <a href="../lib/gs_ccfnt.ps">lib/gs_ccfnt.ps</a>, -->
+<a href="../Resource/Init/gs_fonts.ps">Resource/Init/gs_fonts.ps</a>,
+<a href="../Resource/Init/gs_fntem.ps">Resource/Init/gs_fntem.ps</a>.
 
 <dt>
 Type 1 and CFF:
 <dd>
-<a href="../lib/gs_cff.ps">lib/gs_cff.ps</a>,
-<a href="../lib/gs_diskf.ps">lib/gs_diskf.ps</a>,
-<a href="../lib/gs_type1.ps">lib/gs_type1.ps</a>.
+<a href="../Resource/Init/gs_cff.ps">Resource/Init/gs_cff.ps</a>,
+<a href="../Resource/Init/gs_diskf.ps">Resource/Init/gs_diskf.ps</a>,
+<a href="../Resource/Init/gs_type1.ps">Resource/Init/gs_type1.ps</a>.
 
 <dt>
 TrueType:
 <dd>
-<a href="../lib/gs_ttf.ps">lib/gs_ttf.ps</a>,
-<a href="../lib/gs_typ42.ps">lib/gs_typ42.ps</a>.
+<a href="../Resource/Init/gs_ttf.ps">Resource/Init/gs_ttf.ps</a>,
+<a href="../Resource/Init/gs_typ42.ps">Resource/Init/gs_typ42.ps</a>.
 
 <dt>
 CID-keyed:
 <dd>
-<a href="../lib/gs_cidcm.ps">lib/gs_cidcm.ps</a>,
-<a href="../lib/gs_cidfn.ps">lib/gs_cidfn.ps</a>,
-<a href="../lib/gs_cmap.ps">lib/gs_cmap.ps</a>,
-<a href="../lib/gs_ciddc.ps">lib/gs_ciddc.ps</a>,
-<a href="../lib/gs_cidfm.ps">lib/gs_cidfm.ps</a>,
-<a href="../lib/gs_cidtt.ps">lib/gs_cidtt.ps</a>.
+<a href="../Resource/Init/gs_cidcm.ps">Resource/Init/gs_cidcm.ps</a>,
+<a href="../Resource/Init/gs_cidfn.ps">Resource/Init/gs_cidfn.ps</a>,
+<a href="../Resource/Init/gs_cmap.ps">Resource/Init/gs_cmap.ps</a>,
+<a href="../Resource/Init/gs_ciddc.ps">Resource/Init/gs_ciddc.ps</a>,
+<a href="../Resource/Init/gs_cidfm.ps">Resource/Init/gs_cidfm.ps</a>,
+<a href="../Resource/Init/gs_cidtt.ps">Resource/Init/gs_cidtt.ps</a>.
 
 <dt>
 Font API:
 <dd>
-<a href="../lib/gs_fapi.ps">lib/gs_fapi.ps</a>,
-<a href="../lib/FAPIconfig">lib/FAPIconfig</a>,
+<a href="../Resource/Init/gs_fapi.ps">Resource/Init/gs_fapi.ps</a>,
+<a href="../Resource/Init/FAPIconfig">Resource/Init/FAPIconfig</a>,
 <a href="../lib/FAPIconfig-FCO">lib/FAPIconfig-FCO</a>,
-<a href="../lib/xlatmap">lib/xlatmap</a>.
-<a href="../lib/FCOfontmap-PCLPS2">lib/FCOfontmap-PCLPS2</a>.
+<a href="../Resource/Init/xlatmap">Resource/Init/xlatmap</a>.
+<a href="../Resource/Init/FCOfontmap-PCLPS2">Resource/Init/FCOfontmap-PCLPS2</a>.
 <a href="../lib/FCOfontmap-PCLPS3">lib/FCOfontmap-PCLPS3</a>.
 <a href="../lib/FCOfontmap-PS3">lib/FCOfontmap-PS3</a>.
 
@@ -2788,7 +2789,7 @@ Other:
 <dd>
 <a href="../lib/gs_kanji.ps">lib/gs_kanji.ps</a>,
 <a href="../lib/gs_pfile.ps">lib/gs_pfile.ps</a>,
-<a href="../lib/gs_typ32.ps">lib/gs_typ32.ps</a>.
+<a href="../Resource/Init/gs_typ32.ps">Resource/Init/gs_typ32.ps</a>.
 
 </dl>
 
@@ -2802,14 +2803,14 @@ Encodings:
 Adobe-specified:
 <dd>
 <a href="../lib/gs_ce_e.ps">lib/gs_ce_e.ps</a>,
-<a href="../lib/gs_dbt_e.ps">lib/gs_dbt_e.ps</a>,
-<a href="../lib/gs_il1_e.ps">lib/gs_il1_e.ps</a>,
-<a href="../lib/gs_mex_e.ps">lib/gs_mex_e.ps</a>,
-<a href="../lib/gs_mro_e.ps">lib/gs_mro_e.ps</a>,
-<a href="../lib/gs_pdf_e.ps">lib/gs_pdf_e.ps</a>,
-<a href="../lib/gs_std_e.ps">lib/gs_std_e.ps</a>,
-<a href="../lib/gs_sym_e.ps">lib/gs_sym_e.ps</a>,
-<a href="../lib/gs_wan_e.ps">lib/gs_wan_e.ps</a>.
+<a href="../Resource/Init/gs_dbt_e.ps">Resource/Init/gs_dbt_e.ps</a>,
+<a href="../Resource/Init/gs_il1_e.ps">Resource/Init/gs_il1_e.ps</a>,
+<a href="../Resource/Init/gs_mex_e.ps">Resource/Init/gs_mex_e.ps</a>,
+<a href="../Resource/Init/gs_mro_e.ps">Resource/Init/gs_mro_e.ps</a>,
+<a href="../Resource/Init/gs_pdf_e.ps">Resource/Init/gs_pdf_e.ps</a>,
+<a href="../Resource/Init/gs_std_e.ps">Resource/Init/gs_std_e.ps</a>,
+<a href="../Resource/Init/gs_sym_e.ps">Resource/Init/gs_sym_e.ps</a>,
+<a href="../Resource/Init/gs_wan_e.ps">Resource/Init/gs_wan_e.ps</a>.
 
 <dt>
 Additional:
@@ -2823,10 +2824,10 @@ Additional:
 <dt>
 Pseudo-encodings for internal use:
 <dd>
-<a href="../lib/gs_css_e.ps">lib/gs_css_e.ps</a>,
+<!-- missing <a href="../lib/gs_css_e.ps">lib/gs_css_e.ps</a>, -->
 <a href="../lib/gs_lgo_e.ps">lib/gs_lgo_e.ps</a>,
 <a href="../lib/gs_lgx_e.ps">lib/gs_lgx_e.ps</a>,
-<a href="../lib/gs_mgl_e.ps">lib/gs_mgl_e.ps</a>.
+<a href="../Resource/Init/gs_mgl_e.ps">Resource/Init/gs_mgl_e.ps</a>.
 
 </dl>
 
@@ -2839,20 +2840,20 @@ Miscellaneous:
 <dt>
 Image support:
 <dd>
-<a href="../lib/gs_img.ps">lib/gs_img.ps</a>,
+<a href="../Resource/Init/gs_img.ps">Resource/Init/gs_img.ps</a>,
 
 <dt>
 Emulation of %disk IODevice:
 <dd>
-<a href="../lib/gs_diskn.ps">lib/gs_diskn.ps</a>,
+<a href="../Resource/Init/gs_diskn.ps">Resource/Init/gs_diskn.ps</a>,
 
 <dt>
 Other support:
 <dd>
-<a href="../lib/gs_agl.ps">lib/gs_agl.ps</a>,
-<a href="../lib/gs_dscp.ps">lib/gs_dscp.ps</a>,
-<a href="../lib/gs_epsf.ps">lib/gs_epsf.ps</a>,
-<a href="../lib/gs_pdfwr.ps">lib/gs_pdfwr.ps</a>,
+<a href="../Resource/Init/gs_agl.ps">Resource/Init/gs_agl.ps</a>,
+<a href="../Resource/Init/gs_dscp.ps">Resource/Init/gs_dscp.ps</a>,
+<a href="../Resource/Init/gs_epsf.ps">Resource/Init/gs_epsf.ps</a>,
+<a href="../Resource/Init/gs_pdfwr.ps">Resource/Init/gs_pdfwr.ps</a>,
 <a href="../lib/gs_rdlin.ps">lib/gs_rdlin.ps</a>.
 
 <dt>
@@ -2880,8 +2881,8 @@ PDF/X-3 definition file sample :
 Not currently used:
 <dd>
 <a href="../lib/gs_cmdl.ps">lib/gs_cmdl.ps</a>,
-<a href="../lib/gs_fform.ps">lib/gs_fform.ps</a>,
-<a href="../lib/gs_l2img.ps">lib/gs_l2img.ps</a>.
+<!-- missing <a href="../lib/gs_fform.ps">lib/gs_fform.ps</a>, -->
+<a href="../Resource/Init/gs_l2img.ps">Resource/Init/gs_l2img.ps</a>.
 
 </dl>
 
@@ -2909,7 +2910,7 @@ PostScript code.
 <p>
 In addition to patching the <code>run</code> operator to detect PDF
 files, the interpreter provides some procedures in <a
-href="../lib/pdf_main.ps">lib/pdf_main.ps</a> that are meant to be called
+href="../Resource/Init/pdf_main.ps">Resource/Init/pdf_main.ps</a> that are meant to be called
 from applications such as previewers.
 
 <dl>
@@ -2917,13 +2918,13 @@ from applications such as previewers.
 <dt>
 Files:
 <dd>
-<a href="../lib/pdf_base.ps">lib/pdf_base.ps</a>,
-<a href="../lib/pdf_draw.ps">lib/pdf_draw.ps</a>,
-<a href="../lib/pdf_font.ps">lib/pdf_font.ps</a>,
-<a href="../lib/pdf_main.ps">lib/pdf_main.ps</a>,
-<a href="../lib/pdf_rbld.ps">lib/pdf_rbld.ps</a>,
-<a href="../lib/pdf_ops.ps">lib/pdf_ops.ps</a>,
-<a href="../lib/pdf_sec.ps">lib/pdf_sec.ps</a>.
+<a href="../Resource/Init/pdf_base.ps">Resource/Init/pdf_base.ps</a>,
+<a href="../Resource/Init/pdf_draw.ps">Resource/Init/pdf_draw.ps</a>,
+<a href="../Resource/Init/pdf_font.ps">Resource/Init/pdf_font.ps</a>,
+<a href="../Resource/Init/pdf_main.ps">Resource/Init/pdf_main.ps</a>,
+<a href="../Resource/Init/pdf_rbld.ps">Resource/Init/pdf_rbld.ps</a>,
+<a href="../Resource/Init/pdf_ops.ps">Resource/Init/pdf_ops.ps</a>,
+<a href="../Resource/Init/pdf_sec.ps">Resource/Init/pdf_sec.ps</a>.
 </dl>
 
 <p>
@@ -2937,7 +2938,7 @@ included drivers. To activate this feature add
 Files:
 <dt>
 <dd>
-<a href="../lib/pdf_cslayer.ps">lib/pdf_cslayer.ps</a>,
+<!-- missing <a href="../lib/pdf_cslayer.ps">lib/pdf_cslayer.ps</a>, -->
 </dl>
 
 <h3><a name="PPD"></a>PostScript Printer Description</h3>
@@ -3270,11 +3271,11 @@ Files for PC environments:
 <a href="../psi/dwmain.rc">psi/dwmain.rc</a>,
 <a href="../psi/dwmain32.def">psi/dwmain32.def</a>,
 <a href="../psi/dwsetup.def">psi/dwsetup.def</a>,
-<a href="../psi/dwsetup.rc">psi/dwsetup.rc</a>,
+<!-- missing <a href="../psi/dwsetup.rc">psi/dwsetup.rc</a>, -->
 <a href="../psi/dwsetup_x86.manifest">psi/dwsetup_x86.manifest</a>,
 <a href="../psi/dwsetup_x64.manifest">psi/dwsetup_x64.manifest</a>,
 <a href="../psi/dwuninst.def">psi/dwuninst.def</a>,
-<a href="../psi/dwuninst.rc">psi/dwuninst.rc</a>,
+<!-- missing <a href="../psi/dwuninst.rc">psi/dwuninst.rc</a>, -->
 <a href="../psi/dwuninst_x86.manifest">psi/dwuninst_x86.manifest</a>,
 <a href="../psi/dwuninst_x64.manifest">psi/dwuninst_x64.manifest</a>,
 <a href="../psi/gsdll2.def">psi/gsdll2.def</a>,
@@ -3294,7 +3295,7 @@ Files for PC environments:
 <a href="../base/mv.cmd">base/mv.cmd</a>,
 <a href="../base/rm.bat">base/rm.bat</a>,
 <a href="../base/rm.cmd">base/rm.cmd</a>,
-<a href="../base/turboc.cfg">base/turboc.cfg</a>.
+<!-- missing <a href="../base/turboc.cfg">base/turboc.cfg</a>. -->
 
 <dt>
 Files for MacOS:
@@ -3348,27 +3349,27 @@ Script files without PC versions:
 <dd>
 <a href="../lib/afmdiff.awk">lib/afmdiff.awk</a>,
 <a href="../lib/dvipdf">lib/dvipdf</a>,
-<a href="../lib/fixmswrd.pl">lib/fixmswrd.pl</a>,
+<!-- missing <a href="../lib/fixmswrd.pl">lib/fixmswrd.pl</a>, -->
 <a href="../lib/lprsetup.sh">lib/lprsetup.sh</a>,
-<a href="../lib/pj-gs.sh">lib/pj-gs.sh</a>,
+<!-- missing <a href="../lib/pj-gs.sh">lib/pj-gs.sh</a>, -->
 <a href="../lib/pphs">lib/pphs</a>,
 <a href="../lib/printafm">lib/printafm</a>,
-<a href="../lib/pv.sh">lib/pv.sh</a>,
-<a href="../lib/sysvlp.sh">lib/sysvlp.sh</a>,
+<!-- missing <a href="../lib/pv.sh">lib/pv.sh</a>, -->
+<!-- missing <a href="../lib/sysvlp.sh">lib/sysvlp.sh</a>, -->
 <a href="../lib/unix-lpr.sh">lib/unix-lpr.sh</a>,
 <a href="../lib/wftopfa">lib/wftopfa</a>.
 
 <dt>
 Script files with PC versions:
 <dd>
-<a href="../lib/bdftops">lib/bdftops</a>,
-<a href="../lib/bdftops.bat">lib/bdftops.bat</a>,
-<a href="../lib/bdftops.cmd">lib/bdftops.cmd</a>,
+<!-- missing <a href="../lib/bdftops">lib/bdftops</a>, -->
+<!-- missing <a href="../lib/bdftops.bat">lib/bdftops.bat</a>, -->
+<!-- missing <a href="../lib/bdftops.cmd">lib/bdftops.cmd</a>, -->
 <a href="../lib/eps2eps">lib/eps2eps</a>,
 <a href="../lib/eps2eps.bat">lib/eps2eps.bat</a>,
 <a href="../lib/eps2eps.cmd">lib/eps2eps.cmd</a>,
-<a href="../lib/ps2write.bat">lib/ps2write.bat</a>,
-<a href="../lib/ps2write.cmd">lib/ps2write.cmd</a>,
+<!-- missing <a href="../lib/ps2write.bat">lib/ps2write.bat</a>, -->
+<!-- missing <a href="../lib/ps2write.cmd">lib/ps2write.cmd</a>, -->
 <a href="../lib/ps2ps2">lib/ps2ps2</a>,
 <a href="../lib/ps2ps2.bat">lib/ps2ps2.bat</a>,
 <a href="../lib/ps2ps2.cmd">lib/ps2ps2.cmd</a>,
@@ -3621,7 +3622,7 @@ garbage collectable objects from the stack (other than designated roots).
 <dt>
 Files:
 <dd>
-<a href="../psi/gs.c.h">psi/gs.c.h</a>,
+<a href="../base/gsgc.h">base/gsgc.h</a>,
 <a href="../base/gsnogc.c">base/gsnogc.c</a>,
 <a href="../base/gsnogc.h">base/gsnogc.h</a>.
 </dl>
@@ -3826,8 +3827,8 @@ which MUST be mutex protected.
 <dt>
 Files:
 <dd>
-<a href="../psi/gs.chunk.h">psi/gs.chunk.h</a>,
-<a href="../psi/gs.chunk.c">psi/gs.chunk.c</a>.
+<a href="../base/gsmchunk.h">base/gsmchunk.h</a>,
+<a href="../base/gsmchunk.c">base/gsmchunk.c</a>.
 </dl>
 
 <h3><a name="Standard_implementation"></a>Standard implementation</h3>
@@ -4023,7 +4024,7 @@ procedure for an image can invoke <code>save</code> and
 .. register .. restore.
 
 <li>The parameter lists for pdfwrite and epswrite devices (in <a
-href="../base/gdevpsdp.c">base/gdevpsdp.c</a>), because the whole issue of
+href="../devices/vector/gdevpsdp.c">devices/vector/gdevpsdp.c</a>), because the whole issue of
 local vs. global VM for setpagedevice is, in the words of Ed Taft of Adobe,
 "a mess".
 
@@ -4263,7 +4264,7 @@ Platform-specific implementation files:
 <a href="../base/gp_dosfe.c">base/gp_dosfe.c</a>,
 <a href="../base/gp_dosfs.c">base/gp_dosfs.c</a>,
 <a href="../base/gp_dvx.c">base/gp_dvx.c</a>,
-<a href="../base/gp_iwatc.c">base/gp_iwatc.c</a>,
+<!-- missing <a href="../base/gp_iwatc.c">base/gp_iwatc.c</a>, -->
 <a href="../base/gp_msdos.c">base/gp_msdos.c</a>,
 <a href="../base/gp_mshdl.c">base/gp_mshdl.c</a>,
 <a href="../base/gp_mslib.c">base/gp_mslib.c</a>,
@@ -4280,7 +4281,7 @@ Platform-specific implementation files:
 <a href="../base/gp_unifn.c">base/gp_unifn.c</a>,
 <a href="../base/gp_unifs.c">base/gp_unifs.c</a>,
 <a href="../base/gp_unix.c">base/gp_unix.c</a>,
-<a href="../base/gp_unix.cache.c">base/gp_unix.cache.c</a>,
+<!-- missing <a href="../base/gp_unix.cache.c">base/gp_unix.cache.c</a>, -->
 <a href="../base/gp_upapr.c">base/gp_upapr.c</a>,
 <a href="../base/gp_vms.c">base/gp_vms.c</a>,
 <a href="../base/gp_wgetv.c">base/gp_wgetv.c</a>,
@@ -4343,9 +4344,9 @@ configurations:
 
 <li>POSIX systems (inluding Linux and Unix):
 <ul>
-<li><a href="../base/configure.ac">base/configure.ac</a>,
+<li><a href="../configure.ac"configure.ac</a>,
 GNU Autoconf source script for automatic build configuration.
-<li><a href="../base/Makefile.in">base/Makefile.in</a>,
+<li><a href="../Makefile.in">Makefile.in</a>,
 source for the top-level makefile used in the Autoconf build.
 <li><a href="../base/unix-gcc.mak">base/unix-gcc.mak</a>,
 for Unix with gcc.
@@ -4357,13 +4358,13 @@ for Unix with an ANSI C compiler other than gcc.
 <ul>
 <li><a href="../ghostscript.vcproj">ghostscript.vcproj</a>,
 Visual Studio project file used to build Ghostscript.
-<li><a href="../base/bcwin32.mak">base/bcwin32.mak</a>,
+<!-- missing <li><a href="../base/bcwin32.mak">base/bcwin32.mak</a>, -->
 for MS Windows with Borland C++ Builder.
 <li><a href="../psi/msvc32.mak">psi/msvc32.mak</a>,
 for MS Windows with Microsoft Visual C (MSVC).
-<li><a href="../base/os2.mak">base/os2.mak</a>,
+<li><a href="../psi/os2.mak">psi/os2.mak</a>,
 for MS-DOS or OS/2 GCC/EMX environment.
-<li><a href="../base/watcw32.mak">base/watcw32.mak</a>,
+<!-- missing <li><a href="../base/watcw32.mak">base/watcw32.mak</a>, -->
 for MS Windows with Watcom C.
 </ul>
 
@@ -4396,7 +4397,7 @@ The following top-level makefiles build the library test program:
 on Unix with gcc.
 <li><a href="../base/msvclib.mak">base/msvclib.mak</a>,
 on MS Windows with MSVC.
-<li><a href="../base/watclib.mak">base/watclib.mak</a>,
+<!-- missing <li><a href="../base/watclib.mak">base/watclib.mak</a>, -->
 on extended MS-DOS with Watcom C.
 </ul>
 
@@ -4424,8 +4425,8 @@ Platform-independent makefiles:
 <dt>
 Graphics library and support:
 <dd>
-<a href="../base/contrib.mak">base/contrib.mak</a>,
-<a href="../base/devs.mak">base/devs.mak</a>,
+<a href="../devices/contrib.mak">devices/contrib.mak</a>,
+<a href="../devices/devs.mak">devices/devs.mak</a>,
 <a href="../base/gs.mak">base/gs.mak</a>,
 <a href="../base/lib.mak">base/lib.mak</a>,
 <a href="../base/version.mak">base/version.mak</a>.
@@ -4439,14 +4440,14 @@ PostScript interpreter and fonts:
 Third-party libraries:
 <dd>
 <a href="../base/expat.mak">base/expat.mak</a>,
-<a href="../base/icclib.mak">base/icclib.mak</a>,
+<!-- missing <a href="../base/icclib.mak">base/icclib.mak</a>, -->
 <a href="../base/ijs.mak">base/ijs.mak</a>,
-<a href="../base/jasper.mak">base/jasper.mak</a>,
+<!-- missing <a href="../base/jasper.mak">base/jasper.mak</a>, -->
 <a href="../base/jbig2.mak">base/jbig2.mak</a>,
 <a href="../base/ldf_jb2.mak">base/ldf_jb2.mak</a>,
 <a href="../base/lwf_jp2.mak">base/lwf_jp2.mak</a>,
 <a href="../base/jpeg.mak">base/jpeg.mak</a>,
-<a href="../base/libpng.mak">base/libpng.mak</a>,
+<!-- missing <a href="../base/libpng.mak">base/libpng.mak</a>, -->
 <a href="../base/zlib.mak">base/zlib.mak</a>.
 </dl>
 
@@ -4472,8 +4473,8 @@ Microsoft Windows and MS-DOS:
 <a href="../base/msvccmd.mak">base/msvccmd.mak</a>,
 <a href="../base/msvctail.mak">base/msvctail.mak</a>,
 <a href="../base/pcwin.mak">base/pcwin.mak</a>,
-<a href="../base/wccommon.mak">base/wccommon.mak</a>,
-<a href="../base/wctail.mak">base/wctail.mak</a>,
+<!-- missing <a href="../base/wccommon.mak">base/wccommon.mak</a>, -->
+<!-- missing <a href="../base/wctail.mak">base/wctail.mak</a>, -->
 <a href="../psi/winint.mak">psi/winint.mak</a>,
 <a href="../base/winlib.mak">base/winlib.mak</a>,
 <a href="../base/winplat.mak">base/winplat.mak</a>.
@@ -4581,22 +4582,22 @@ MS Windows files:
 <a href="../psi/dwdll.h">psi/dwdll.h</a>,
 <a href="../psi/dwimg.c">psi/dwimg.c</a>,
 <a href="../psi/dwimg.h">psi/dwimg.h</a>,
-<a href="../psi/dwinst.cpp">psi/dwinst.cpp</a>,
-<a href="../psi/dwinst.h">psi/dwinst.h</a>,
+<!-- missing <a href="../psi/dwinst.cpp">psi/dwinst.cpp</a>, -->
+<!-- missing <a href="../psi/dwinst.h">psi/dwinst.h</a>, -->
 <a href="../psi/dwmain.c">psi/dwmain.c</a>,
 <a href="../psi/dwmainc.c">psi/dwmainc.c</a>,
 <a href="../psi/dwnodll.c">psi/dwnodll.c</a>,
 <a href="../psi/dwreg.c">psi/dwreg.c</a>,
 <a href="../psi/dwreg.h">psi/dwreg.h</a>,
 <a href="../psi/dwres.h">psi/dwres.h</a>,
-<a href="../psi/dwsetup.cpp">psi/dwsetup.cpp</a>,
-<a href="../psi/dwsetup.h">psi/dwsetup.h</a>,
+<!-- missing <a href="../psi/dwsetup.cpp">psi/dwsetup.cpp</a>, -->
+<!-- missing <a href="../psi/dwsetup.h">psi/dwsetup.h</a>, -->
 <a href="../psi/dwtext.c">psi/dwtext.c</a>,
 <a href="../psi/dwtext.h">psi/dwtext.h</a>,
 <a href="../psi/dwtrace.c">psi/dwtrace.c</a>,
 <a href="../psi/dwtrace.h">psi/dwtrace.h</a>,
-<a href="../psi/dwuninst.cpp">psi/dwuninst.cpp</a>,
-<a href="../psi/dwuninst.h">psi/dwuninst.h</a>,
+<!-- missing <a href="../psi/dwuninst.cpp">psi/dwuninst.cpp</a>, -->
+<!-- missing <a href="../psi/dwuninst.h">psi/dwuninst.h</a>, -->
 <a href="../base/gp_msdll.c">base/gp_msdll.c</a>,
 <a href="../base/gp_mspol.c">base/gp_mspol.c</a>,
 <a href="../base/gp_msprn.c">base/gp_msprn.c</a>,
@@ -4610,17 +4611,17 @@ OS/2 files:
 <dt>
 Unix files:
 <dd>
-<a href="../base/dxmain.c">base/dxmain.c</a>,
-<a href="../base/dxmainc.c">base/dxmainc.c</a>.
+<a href="../psi/dxmain.c">psi/dxmain.c</a>,
+<a href="../psi/dxmainc.c">psi/dxmainc.c</a>.
 
 <dt>
 Macintosh files:
 <dd>
-<a href="../base/gdevmac.c">base/gdevmac.c</a>,
-<a href="../base/gdevmac.h">base/gdevmac.h</a>,
-<a href="../base/gdevmacpictop.h">base/gdevmacpictop.h</a>,
-<a href="../base/gdevmacttf.h">base/gdevmacttf.h</a>,
-<a href="../base/gdevmacxf.c">base/gdevmacxf.c</a>,
+<a href="../devices/gdevmac.c">devices/gdevmac.c</a>,
+<a href="../devices/gdevmac.h">devices/gdevmac.h</a>,
+<a href="../devices/gdevmacpictop.h">devices/gdevmacpictop.h</a>,
+<a href="../devices/gdevmacttf.h">devices/gdevmacttf.h</a>,
+<!-- missing <a href="../base/gdevmacxf.c">base/gdevmacxf.c</a>, -->
 <a href="../base/gp_mac.c">base/gp_mac.c</a>,
 <a href="../base/gp_mac.h">base/gp_mac.h</a>,
 <a href="../base/gp_macio.c">base/gp_macio.c</a>,
@@ -4645,9 +4646,9 @@ DLL files:
 <dd>
 <a href="../psi/gsdll.c">psi/gsdll.c</a>,
 <a href="../base/gsdll.h">base/gsdll.h</a>,
-<a href="../base/gdevdsp.c">base/gdevdsp.c</a>,
-<a href="../base/gdevdsp.h">base/gdevdsp.h</a>,
-<a href="../base/gdevdsp2.h">base/gdevdsp2.h</a>,
+<a href="../devices/gdevdsp.c">devices/gdevdsp.c</a>,
+<a href="../devices/gdevdsp.h">devices/gdevdsp.h</a>,
+<a href="../devices/gdevdsp2.h">devices/gdevdsp2.h</a>,
 <a href="../psi/iapi.c">psi/iapi.c</a>,
 <a href="../psi/iapi.h">psi/iapi.h</a>,
 <a href="../psi/idisp.c">psi/idisp.c</a>,

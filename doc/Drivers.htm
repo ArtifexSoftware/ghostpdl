@@ -176,15 +176,15 @@ Note that the space before the :, and the explicit compilation rules for the
 If you want to add a simple device (specifically, a monochrome printer), you
 probably don't need to read the rest of this document; just use the code in
 an existing driver as a guide.  The Epson and Canon BubbleJet drivers <a
-href="../base/gdevepsn.c">gdevepsn.c</a> and <a
-href="../base/gdevbj10.c">gdevbj10.c</a> are good models for dot-matrix
+href="../devices/gdevepsn.c">gdevepsn.c</a> and <a
+href="../devices/gdevbj10.c">gdevbj10.c</a> are good models for dot-matrix
 printers, which require presenting the data for many scan lines at once; the
-DeskJet/LaserJet drivers in <a href="../base/gdevdjet.c">gdevdjet.c</a> are
+DeskJet/LaserJet drivers in <a href="../devices/gdevdjet.c">gdevdjet.c</a> are
 good models for laser printers, which take a single scan line at a time but
 support data compression.  For color printers, there are unfortunately no
 good models: the two major color inkjet printer drivers, <a
-href="../base/gdevcdj.c">gdevcdj.c</a> and <a
-href="../base/gdevstc.c">gdevstc.c</a>, are far too complex to read.
+href="../devices/gdevcdj.c">gdevcdj.c</a> and <a
+href="../devices/gdevstc.c">gdevstc.c</a>, are far too complex to read.
 
 <p>
 On the other hand, if you're writing a driver for some more esoteric
@@ -197,8 +197,8 @@ Duplication of code, and sheer volume of code, is a serious maintenance and
 distribution problem for Ghostscript.  If your device is similar to an
 existing one, try to implement your driver by adding some parameterization
 to an existing driver rather than by copying code to create an entirely new
-source module.  <a href="../base/gdevepsn.c">gdevepsn.c</a> and <a
-href="../base/gdevdjet.c">gdevdjet.c</a> are good examples of this approach.
+source module.  <a href="../devices/gdevepsn.c">gdevepsn.c</a> and <a
+href="../devices/gdevdjet.c">gdevdjet.c</a> are good examples of this approach.
 
 <hr>
 
@@ -296,7 +296,7 @@ structure for ordinary drivers are:
 
 <p>
 The name in the structure (<code>dname</code>) should be the same as the
-name in <a href="../base/contrib.mak">contrib.mak</a>.
+name in <a href="../devices/contrib.mak">contrib.mak</a>.
 
 <h3><a name="Sophisticated"></a>For sophisticated developers only</h3>
 
@@ -354,7 +354,7 @@ href="../base/gsdparam.c">gsdparam.c</a>.
 <p>
 You should not have to change any of the real devices in the standard
 Ghostscript distribution (listed in <a href="../base/devs.mak">devs.mak</a>
-and <a href="../base/contrib.mak">contrib.mak</a>) or any of your own
+and <a href="../devices/contrib.mak">contrib.mak</a>) or any of your own
 devices, because all of them are supposed to use the macros in <a
 href="../base/gxdevice.h">gxdevice.h</a> or <a
 href="../base/gdevprn.h">gdevprn.h</a> to define and initialize their state.
@@ -664,7 +664,7 @@ has responsibility for insuring that the correct procedures are contained
 in the device structure. (For an example, see the display device open procedure
 <code>display_open</code> and its subroutine 
 <code>display_set_color_format</code> 
-(in <a href="../base/gdevdisp.c">gdevdisp</a>).
+(in <a href="../devices/gdevdsp.c">gdevdsp.c</a>).
 
 
 <h3><a name="Types"></a>Types</h3>
@@ -966,7 +966,7 @@ The printer driver must implement a <code>print_page</code> or
 <code>print_page_copies</code> procedure.  There are macros in <a
 href="../base/gdevprn.h">gdevprn.h</a> that generate the device structure for
 such devices, of which the simplest is <code>prn_device</code>; for an
-example, see <a href="../base/gdevbj10.c">gdevbj10.c</a>.  If you are writing
+example, see <a href="../devices/gdevbj10.c">gdevbj10.c</a>.  If you are writing
 a printer driver, we suggest you start by reading <a
 href="../base/gdevprn.h">gdevprn.h</a> and the <a
 href="#Color_mapping">subsection on "Color mapping"</a> below; you may be
@@ -1034,7 +1034,7 @@ required to hold a scan line by calling:
 <p>
 For a very simple concrete example of this pattern of use, we suggest
 reading the code in <code>bit_print_page</code> in
-<a href="../base/gdevbit.c">gdevbit.c</a>.
+<a href="../devices/gdevbit.c">gdevbit.c</a>.
 
 <p>
 If the device provides <code>print_page</code>, Ghostscript will call
@@ -2410,7 +2410,7 @@ consult the source code, specifically:
 
 <p>
 For a minimal example of how to implement the high-level drawing operations,
-see <a href="../base/gdevtrac.c">gdevtrac.c</a>.
+see <a href="../devices/gdevtrac.c">gdevtrac.c</a>.
 
 <h4><a name="Paths"></a>Paths</h4>
 
@@ -2605,8 +2605,8 @@ image data, together with all variables needed to maintain the state of the
 process.  Since this is somewhat tricky to get right, if you plan to create
 one of your own you should probably read an existing implementation of
 <code>begin[_typed]_image</code>, such as the one in <a
-href="../base/gdevbbox.c">gdevbbox.c</a> or <a
-href="../base/gdevps.c">gdevps.c</a>.
+href="../base/gdevbbox.c">gdevbbox.c</a>. <!-- or <a -->
+<!-- missing href="../base/gdevps.c">gdevps.c</a>. -->
 
 <p>
 The data passed at each call of <code>image_plane_data</code> consists of
@@ -3150,8 +3150,8 @@ If a device has parameters other than the ones applicable to all devices
 your device has parameters beyond those of a straightforward display or
 printer, we strongly advise using the <code>_get_params</code> and
 <code>_put_params</code> procedures in an existing device (for example,
-<a href="../base/gdevcdj.c">gdevcdj.c</a> or <a
-href="../base/gdevbit.c">gdevbit.c</a>) as a model for your own code.
+<a href="../devices/gdevcdj.c">gdevcdj.c</a> or <a
+href="../devices/gdevbit.c">gdevbit.c</a>) as a model for your own code.
 
 <dl>
 <dt><code>int (*get_params)(gx_device&nbsp;*dev,
@@ -3216,7 +3216,7 @@ procedure address.
 
 <p>
 For a complete example, see the <code>bit_get_params</code> procedure in
-<a href="../base/gdevbit.c">gdevbit.c</a>.  Note that it is essential that
+<a href="../devices/gdevbit.c">gdevbit.c</a>.  Note that it is essential that
 the driver return the CRD or the procedure address only if specifically
 requested (<code>param_requested(...)</code> &gt; 0); otherwise, errors
 will occur.
