@@ -99,6 +99,7 @@ static int zbeginform(i_ctx_t *i_ctx_p)
         /* We choose to permit negative values of the same magnitude as the
          * positive ones.
          */
+
         box.p.x = float2fixed(ll.x);
         box.p.y = float2fixed(ll.y);
         box.q.x = float2fixed(ur.x);
@@ -108,13 +109,23 @@ static int zbeginform(i_ctx_t *i_ctx_p)
             if(box.p.x * -1 > box.q.x)
                 box.q.x = box.p.x * -1;
         } else {
-            box.p.x = box.q.x * -1;
+            if (fabs(ur.x) > fabs(ll.x))
+                box.p.x = box.q.x * -1;
+            else {
+                box.p.x = float2fixed(ll.x * -1);
+                box.q.x = float2fixed(ll.x);
+            }
         }
         if (box.p.y < 0) {
             if(box.p.y * -1 > box.q.y)
                 box.q.y = box.p.y * -1;
         } else {
-            box.p.y = box.q.y * -1;
+            if (fabs(ur.y) > fabs(ll.y))
+                box.p.y = box.q.y * -1;
+            else {
+                box.p.y = float2fixed(ll.y * -1);
+                box.q.y = float2fixed(ll.y);
+            }
         }
         /* This gets undone when we grestore after the form is executed */
         code = gx_clip_to_rectangle(igs, &box);
