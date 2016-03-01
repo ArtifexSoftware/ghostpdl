@@ -451,7 +451,8 @@ typedef struct gx_device_color_info_s {
      */
     gx_cm_opmode_t opmode;
     gx_color_index process_comps;
-    int black_component;\
+    int black_component;
+    bool use_antidropout_downscaler;
 } gx_device_color_info;
 
 /* NB encoding flag ignored */

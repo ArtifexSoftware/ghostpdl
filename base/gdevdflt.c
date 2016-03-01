@@ -949,15 +949,7 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         case gxdso_is_std_cmyk_1bit:
             return (pdev->procs.map_cmyk_color == cmyk_1bit_map_cmyk_color);
         case gxdso_interpolate_antidropout:
-            if ((pdev->color_info.num_components == 1 &&
-                 pdev->color_info.max_gray < 15) ||
-                (pdev->color_info.num_components > 1 &&
-                 pdev->color_info.max_color < 15)) {
-                /* If we are are limited color device (i.e. we are halftoning)
-                 * then use the antidropout interpolators. */
-                return 1;
-            }
-            return 0;
+            return pdev->color_info.use_antidropout_downscaler;
         case gxdso_interpolate_threshold:
             if ((pdev->color_info.num_components == 1 &&
                  pdev->color_info.max_gray < 15) ||

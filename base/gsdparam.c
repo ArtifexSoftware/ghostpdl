@@ -206,6 +206,10 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         return param_write_int(plist, "GraphicsAlphaBits",
                                 &dev->color_info.anti_alias.graphics_bits);
     }
+    if (strcmp(Param, "AntidropoutDownscaler") == 0) {
+        return param_write_bool(plist, "AntidropoutDownscaler",
+                                &dev->color_info.use_antidropout_downscaler);
+    }
     if (strcmp(Param, ".LockSafetyParams") == 0) {
         return param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams);
     }
@@ -659,6 +663,8 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
                                 &dev->color_info.anti_alias.text_bits)) < 0 ||
         (code = param_write_int(plist, "GraphicsAlphaBits",
                                 &dev->color_info.anti_alias.graphics_bits)) < 0 ||
+        (code = param_write_bool(plist, "AntidropoutDownscaler",
+                                &dev->color_info.use_antidropout_downscaler)) < 0 ||
         (code = param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams)) < 0 ||
         (code = param_write_int(plist, "MaxPatternBitmap", &dev->MaxPatternBitmap)) < 0 ||
         (code = param_write_bool(plist, "PageUsesTransparency", &dev->page_uses_transparency)) < 0 ||
@@ -1307,6 +1313,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     bool usefastcolor = false;
     bool sim_overprint = false;
     bool prebandthreshold = false;
+    bool use_antidropout = dev->color_info.use_antidropout_downscaler;
     bool temp_bool;
     int  profile_types[NUM_DEVICE_PROFILES] = {gsDEFAULTPROFILE,
                                                gsGRAPHICPROFILE,
@@ -1625,6 +1632,8 @@ nce:
         ecode = code;
     if ((code = param_anti_alias_bits(plist, "GraphicsAlphaBits", &gab)) < 0)
         ecode = code;
+    if ((code = param_read_bool(plist, "AntidropoutDownscaler", &use_antidropout)) < 0)
+        ecode = code;
     if ((code = param_read_int(plist, "MaxPatternBitmap", &mpbm)) < 0)
         ecode = code;
     if ((code = param_read_bool(plist, (param_name = "PageUsesTransparency"),
@@ -1823,6 +1832,8 @@ label:\
      * close and reopen the device unnecessarily, we check for
      * replacing the values with the same ones.
      */
+
+    dev->color_info.use_antidropout_downscaler = use_antidropout;
 
     if (hwra.data != 0 &&
         (dev->HWResolution[0] != hwra.data[0] ||
