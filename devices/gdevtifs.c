@@ -101,9 +101,11 @@ tiff_get_some_params(gx_device * dev, gs_param_list * plist, int which)
         ecode = code;
     if ((code = param_write_long(plist, "AdjustWidth", &tfdev->AdjustWidth)) < 0)
         ecode = code;
-    if ((code = gx_downscaler_write_params(plist, &tfdev->downscale,
-                                           GX_DOWNSCALER_PARAMS_MFS | (which & 2 ? GX_DOWNSCALER_PARAMS_TRAP : 0))) < 0)
-        ecode = code;
+    if (which & 1) {
+        if ((code = gx_downscaler_write_params(plist, &tfdev->downscale,
+                                               GX_DOWNSCALER_PARAMS_MFS | (which & 2 ? GX_DOWNSCALER_PARAMS_TRAP : 0))) < 0)
+            ecode = code;
+    }
     return ecode;
 }
 
