@@ -503,8 +503,8 @@ or
 
 <dt>
 JPX (JPEG 2000):
-<!-- missing <a href="../base/sjpx.h">base/sjpx.h</a>, -->
-<!-- missing <a href="../base/sjpx.c">base/sjpx.c</a> -->
+<a href="../base/sjpx_openjpeg.h">base/sjpx_openjpeg.h</a>,
+<a href="../base/sjpx_openjpeg.c">base/sjpx_openjpeg.c</a>
 or
 <a href="../base/sjpx_luratech.h">base/sjpx_luratech.h</a>,
 <a href="../base/sjpx_luratech.c">base/sjpx_luratech.c</a>.
@@ -1075,7 +1075,6 @@ Color mapping:
 <a href="../base/gscrdp.c">base/gscrdp.c</a>,
 <a href="../base/gscrdp.h">base/gscrdp.h</a>,
 <a href="../base/gscsel.h">base/gscsel.h</a>,
-<!-- missing <a href="../psi/gs.color.h">psi/gs.color.h</a>, -->
 <a href="../base/gxcindex.h">base/gxcindex.h</a>,
 <a href="../base/gxcmap.c">base/gxcmap.c</a>,
 <a href="../base/gxcmap.h">base/gxcmap.h</a>,
@@ -1261,7 +1260,6 @@ RasterOp:
 <dd>
 <a href="../base/gdevdrop.c">base/gdevdrop.c</a>,
 <a href="../base/gdevrops.c">base/gdevrops.c</a>,
-<!-- missing <a href="../base/gsnorop.c">base/gsnorop.c</a>, -->
 <a href="../base/gsrop.c">base/gsrop.c</a>,
 <a href="../base/gsrop.h">base/gsrop.h</a>,
 <a href="../base/gsropt.h">base/gsropt.h</a>,
@@ -1683,7 +1681,6 @@ Other:
 <dt>
 Encapsulated PostScript output driver (epswrite):
 <dd>
-<!-- missing <a href="../base/gdevps.c">base/gdevps.c</a>, -->
 <a href="../devices/vector/gdevpsu.c">devices/vector/gdevpsu.c</a>,
 <a href="../devices/vector/gdevpsu.h">devices/vector/gdevpsu.h</a>.
 
@@ -1778,19 +1775,6 @@ PCL XL output device (pxlmono, pxlcolor):
 <a href="../devices/gdevpxut.h">devices/gdevpxut.h</a>.
 
 <dt>
-Cairo and SVG output devices (cairo, svgwrite):
-<dd>
-<!-- missing <a href="../base/gdevcairo.c">base/gdevcairo.c</a>, -->
-<!-- missing <a href="../base/gdevsvg.c">base/gdevsvg.c</a>. -->
-
-<p>
-The svgwrite device produces SVG only.
-
-The cairo device has been removed for the
-Ghostscript version 9.0 release due to it's incompleteness
-and lack of attention.
-
-<dt>
 Text extraction:
 <dd>
 <a href="../devices/vector/gdevtxtw.c">devices/vector/gdevtxtw.c</a>.
@@ -1843,8 +1827,7 @@ X Windows:
 <a href="../devices/gdevxcmp.c">devices/gdevxcmp.c</a>,
 <a href="../devices/gdevxcmp.h">devices/gdevxcmp.h</a>,
 <a href="../devices/gdevxini.c">devices/gdevxini.c</a>,
-<a href="../devices/gdevxres.c">devices/gdevxres.c</a>,
-<!-- missing <a href="../base/gdevxxf.c">base/gdevxxf.c</a>. -->
+<a href="../devices/gdevxres.c">devices/gdevxres.c</a>.
 
 <dt>
 Microsoft Windows:
@@ -2405,7 +2388,6 @@ Device management:
 <a href="../psi/ziodev.c">psi/ziodev.c</a>,
 <a href="../psi/ziodev2.c">psi/ziodev2.c</a>,
 <a href="../psi/ziodevs.c">psi/ziodevs.c</a>,
-<!-- missing <a href="../psi/ziodev.c.c">psi/ziodev.c.c</a>, -->
 <a href="../psi/zmedia2.c">psi/zmedia2.c</a>,
 <a href="../psi/zdfilter.c">psi/zdfilter.c</a>.
 
@@ -2630,7 +2612,7 @@ Font API :
 Miscellaneous support:
 <dd>
 <a href="../psi/ierrors.h">psi/ierrors.h</a>,
-<!-- missing <a href="../base/errors.h">base/errors.h</a> <em>(deprecated)</em>, -->
+<a href="../base/gserrors.h">base/gserrors.h</a>,
 <a href="../psi/ghost.h">psi/ghost.h</a>,
 <a href="../psi/iconf.c">psi/iconf.c</a>,
 <a href="../psi/iconf.h">psi/iconf.h</a>,
@@ -2675,8 +2657,6 @@ Level 2:
 <a href="../Resource/Init/gs_lev2.ps">Resource/Init/gs_lev2.ps</a>,
 <a href="../Resource/Init/gs_res.ps">Resource/Init/gs_res.ps</a>,
 <a href="../Resource/Init/gs_resmp.ps">Resource/Init/gs_resmp.ps</a>,
-<!-- missing <a href="../lib/gs_resst.ps">lib/gs_resst.ps</a>, -->
-<!-- missing <a href="../lib/gs_stres.ps">lib/gs_stres.ps</a>, -->
 <a href="../Resource/Init/gs_setpd.ps">Resource/Init/gs_setpd.ps</a>.
 
 <dt>
@@ -2741,12 +2721,11 @@ Font name mapping:
 <a href="../Resource/Init/cidfmap">Resource/Init/cidfmap</a>,
 <a href="../Resource/Init/FAPIcidfmap">Resource/Init/FAPIcidfmap</a>,
 <a href="../Resource/Init/FAPIfontmap">Resource/Init/FAPIfontmap</a>,
-<!-- missing <a href="../lib/FCOfontmap">lib/FCOfontmap</a>. -->
+<a href="../Resource/Init/FCOfontmap-PCLPS2">Resource/Init/FCOfontmap-PCLPS2</a>.
 
 <dt>
 Generic:
 <dd>
-<!-- missing <a href="../lib/gs_ccfnt.ps">lib/gs_ccfnt.ps</a>, -->
 <a href="../Resource/Init/gs_fonts.ps">Resource/Init/gs_fonts.ps</a>,
 <a href="../Resource/Init/gs_fntem.ps">Resource/Init/gs_fntem.ps</a>.
 
@@ -2824,7 +2803,6 @@ Additional:
 <dt>
 Pseudo-encodings for internal use:
 <dd>
-<!-- missing <a href="../lib/gs_css_e.ps">lib/gs_css_e.ps</a>, -->
 <a href="../lib/gs_lgo_e.ps">lib/gs_lgo_e.ps</a>,
 <a href="../lib/gs_lgx_e.ps">lib/gs_lgx_e.ps</a>,
 <a href="../Resource/Init/gs_mgl_e.ps">Resource/Init/gs_mgl_e.ps</a>.
@@ -2881,7 +2859,6 @@ PDF/X-3 definition file sample :
 Not currently used:
 <dd>
 <a href="../lib/gs_cmdl.ps">lib/gs_cmdl.ps</a>,
-<!-- missing <a href="../lib/gs_fform.ps">lib/gs_fform.ps</a>, -->
 <a href="../Resource/Init/gs_l2img.ps">Resource/Init/gs_l2img.ps</a>.
 
 </dl>
@@ -2925,20 +2902,6 @@ Files:
 <a href="../Resource/Init/pdf_rbld.ps">Resource/Init/pdf_rbld.ps</a>,
 <a href="../Resource/Init/pdf_ops.ps">Resource/Init/pdf_ops.ps</a>,
 <a href="../Resource/Init/pdf_sec.ps">Resource/Init/pdf_sec.ps</a>.
-</dl>
-
-<p>
-Extraction of layer information from Illustratir CS2/CS3 PDF files is
-implemented for a specific commercial customer; it is not used by any of the
-included drivers. To activate this feature add
-<code>cslayer.dev</code> to the list of feature devices.
-
-<dl>
-<dt>
-Files:
-<dt>
-<dd>
-<!-- missing <a href="../lib/pdf_cslayer.ps">lib/pdf_cslayer.ps</a>, -->
 </dl>
 
 <h3><a name="PPD"></a>PostScript Printer Description</h3>
@@ -3271,11 +3234,9 @@ Files for PC environments:
 <a href="../psi/dwmain.rc">psi/dwmain.rc</a>,
 <a href="../psi/dwmain32.def">psi/dwmain32.def</a>,
 <a href="../psi/dwsetup.def">psi/dwsetup.def</a>,
-<!-- missing <a href="../psi/dwsetup.rc">psi/dwsetup.rc</a>, -->
 <a href="../psi/dwsetup_x86.manifest">psi/dwsetup_x86.manifest</a>,
 <a href="../psi/dwsetup_x64.manifest">psi/dwsetup_x64.manifest</a>,
 <a href="../psi/dwuninst.def">psi/dwuninst.def</a>,
-<!-- missing <a href="../psi/dwuninst.rc">psi/dwuninst.rc</a>, -->
 <a href="../psi/dwuninst_x86.manifest">psi/dwuninst_x86.manifest</a>,
 <a href="../psi/dwuninst_x64.manifest">psi/dwuninst_x64.manifest</a>,
 <a href="../psi/gsdll2.def">psi/gsdll2.def</a>,
@@ -3295,7 +3256,6 @@ Files for PC environments:
 <a href="../base/mv.cmd">base/mv.cmd</a>,
 <a href="../base/rm.bat">base/rm.bat</a>,
 <a href="../base/rm.cmd">base/rm.cmd</a>,
-<!-- missing <a href="../base/turboc.cfg">base/turboc.cfg</a>. -->
 
 <dt>
 Files for MacOS:
@@ -3349,27 +3309,18 @@ Script files without PC versions:
 <dd>
 <a href="../lib/afmdiff.awk">lib/afmdiff.awk</a>,
 <a href="../lib/dvipdf">lib/dvipdf</a>,
-<!-- missing <a href="../lib/fixmswrd.pl">lib/fixmswrd.pl</a>, -->
 <a href="../lib/lprsetup.sh">lib/lprsetup.sh</a>,
-<!-- missing <a href="../lib/pj-gs.sh">lib/pj-gs.sh</a>, -->
 <a href="../lib/pphs">lib/pphs</a>,
 <a href="../lib/printafm">lib/printafm</a>,
-<!-- missing <a href="../lib/pv.sh">lib/pv.sh</a>, -->
-<!-- missing <a href="../lib/sysvlp.sh">lib/sysvlp.sh</a>, -->
 <a href="../lib/unix-lpr.sh">lib/unix-lpr.sh</a>,
 <a href="../lib/wftopfa">lib/wftopfa</a>.
 
 <dt>
 Script files with PC versions:
 <dd>
-<!-- missing <a href="../lib/bdftops">lib/bdftops</a>, -->
-<!-- missing <a href="../lib/bdftops.bat">lib/bdftops.bat</a>, -->
-<!-- missing <a href="../lib/bdftops.cmd">lib/bdftops.cmd</a>, -->
 <a href="../lib/eps2eps">lib/eps2eps</a>,
 <a href="../lib/eps2eps.bat">lib/eps2eps.bat</a>,
 <a href="../lib/eps2eps.cmd">lib/eps2eps.cmd</a>,
-<!-- missing <a href="../lib/ps2write.bat">lib/ps2write.bat</a>, -->
-<!-- missing <a href="../lib/ps2write.cmd">lib/ps2write.cmd</a>, -->
 <a href="../lib/ps2ps2">lib/ps2ps2</a>,
 <a href="../lib/ps2ps2.bat">lib/ps2ps2.bat</a>,
 <a href="../lib/ps2ps2.cmd">lib/ps2ps2.cmd</a>,
@@ -4264,7 +4215,6 @@ Platform-specific implementation files:
 <a href="../base/gp_dosfe.c">base/gp_dosfe.c</a>,
 <a href="../base/gp_dosfs.c">base/gp_dosfs.c</a>,
 <a href="../base/gp_dvx.c">base/gp_dvx.c</a>,
-<!-- missing <a href="../base/gp_iwatc.c">base/gp_iwatc.c</a>, -->
 <a href="../base/gp_msdos.c">base/gp_msdos.c</a>,
 <a href="../base/gp_mshdl.c">base/gp_mshdl.c</a>,
 <a href="../base/gp_mslib.c">base/gp_mslib.c</a>,
@@ -4281,7 +4231,7 @@ Platform-specific implementation files:
 <a href="../base/gp_unifn.c">base/gp_unifn.c</a>,
 <a href="../base/gp_unifs.c">base/gp_unifs.c</a>,
 <a href="../base/gp_unix.c">base/gp_unix.c</a>,
-<!-- missing <a href="../base/gp_unix.cache.c">base/gp_unix.cache.c</a>, -->
+<a href="../base/gp_unix_cache.c">base/gp_unix_cache.c</a>,
 <a href="../base/gp_upapr.c">base/gp_upapr.c</a>,
 <a href="../base/gp_vms.c">base/gp_vms.c</a>,
 <a href="../base/gp_wgetv.c">base/gp_wgetv.c</a>,
@@ -4358,14 +4308,10 @@ for Unix with an ANSI C compiler other than gcc.
 <ul>
 <li><a href="../ghostscript.vcproj">ghostscript.vcproj</a>,
 Visual Studio project file used to build Ghostscript.
-<!-- missing <li><a href="../base/bcwin32.mak">base/bcwin32.mak</a>, -->
-for MS Windows with Borland C++ Builder.
 <li><a href="../psi/msvc32.mak">psi/msvc32.mak</a>,
 for MS Windows with Microsoft Visual C (MSVC).
 <li><a href="../psi/os2.mak">psi/os2.mak</a>,
 for MS-DOS or OS/2 GCC/EMX environment.
-<!-- missing <li><a href="../base/watcw32.mak">base/watcw32.mak</a>, -->
-for MS Windows with Watcom C.
 </ul>
 
 <li>Macintosh:
@@ -4397,8 +4343,6 @@ The following top-level makefiles build the library test program:
 on Unix with gcc.
 <li><a href="../base/msvclib.mak">base/msvclib.mak</a>,
 on MS Windows with MSVC.
-<!-- missing <li><a href="../base/watclib.mak">base/watclib.mak</a>, -->
-on extended MS-DOS with Watcom C.
 </ul>
 
 <p>
@@ -4440,14 +4384,12 @@ PostScript interpreter and fonts:
 Third-party libraries:
 <dd>
 <a href="../base/expat.mak">base/expat.mak</a>,
-<!-- missing <a href="../base/icclib.mak">base/icclib.mak</a>, -->
 <a href="../base/ijs.mak">base/ijs.mak</a>,
-<!-- missing <a href="../base/jasper.mak">base/jasper.mak</a>, -->
 <a href="../base/jbig2.mak">base/jbig2.mak</a>,
 <a href="../base/ldf_jb2.mak">base/ldf_jb2.mak</a>,
 <a href="../base/lwf_jp2.mak">base/lwf_jp2.mak</a>,
 <a href="../base/jpeg.mak">base/jpeg.mak</a>,
-<!-- missing <a href="../base/libpng.mak">base/libpng.mak</a>, -->
+<a href="../base/png.mak">base/png.mak</a>,
 <a href="../base/zlib.mak">base/zlib.mak</a>.
 </dl>
 
@@ -4473,8 +4415,6 @@ Microsoft Windows and MS-DOS:
 <a href="../base/msvccmd.mak">base/msvccmd.mak</a>,
 <a href="../base/msvctail.mak">base/msvctail.mak</a>,
 <a href="../base/pcwin.mak">base/pcwin.mak</a>,
-<!-- missing <a href="../base/wccommon.mak">base/wccommon.mak</a>, -->
-<!-- missing <a href="../base/wctail.mak">base/wctail.mak</a>, -->
 <a href="../psi/winint.mak">psi/winint.mak</a>,
 <a href="../base/winlib.mak">base/winlib.mak</a>,
 <a href="../base/winplat.mak">base/winplat.mak</a>.
@@ -4582,22 +4522,16 @@ MS Windows files:
 <a href="../psi/dwdll.h">psi/dwdll.h</a>,
 <a href="../psi/dwimg.c">psi/dwimg.c</a>,
 <a href="../psi/dwimg.h">psi/dwimg.h</a>,
-<!-- missing <a href="../psi/dwinst.cpp">psi/dwinst.cpp</a>, -->
-<!-- missing <a href="../psi/dwinst.h">psi/dwinst.h</a>, -->
 <a href="../psi/dwmain.c">psi/dwmain.c</a>,
 <a href="../psi/dwmainc.c">psi/dwmainc.c</a>,
 <a href="../psi/dwnodll.c">psi/dwnodll.c</a>,
 <a href="../psi/dwreg.c">psi/dwreg.c</a>,
 <a href="../psi/dwreg.h">psi/dwreg.h</a>,
 <a href="../psi/dwres.h">psi/dwres.h</a>,
-<!-- missing <a href="../psi/dwsetup.cpp">psi/dwsetup.cpp</a>, -->
-<!-- missing <a href="../psi/dwsetup.h">psi/dwsetup.h</a>, -->
 <a href="../psi/dwtext.c">psi/dwtext.c</a>,
 <a href="../psi/dwtext.h">psi/dwtext.h</a>,
 <a href="../psi/dwtrace.c">psi/dwtrace.c</a>,
 <a href="../psi/dwtrace.h">psi/dwtrace.h</a>,
-<!-- missing <a href="../psi/dwuninst.cpp">psi/dwuninst.cpp</a>, -->
-<!-- missing <a href="../psi/dwuninst.h">psi/dwuninst.h</a>, -->
 <a href="../base/gp_msdll.c">base/gp_msdll.c</a>,
 <a href="../base/gp_mspol.c">base/gp_mspol.c</a>,
 <a href="../base/gp_msprn.c">base/gp_msprn.c</a>,
@@ -4621,7 +4555,6 @@ Macintosh files:
 <a href="../devices/gdevmac.h">devices/gdevmac.h</a>,
 <a href="../devices/gdevmacpictop.h">devices/gdevmacpictop.h</a>,
 <a href="../devices/gdevmacttf.h">devices/gdevmacttf.h</a>,
-<!-- missing <a href="../base/gdevmacxf.c">base/gdevmacxf.c</a>, -->
 <a href="../base/gp_mac.c">base/gp_mac.c</a>,
 <a href="../base/gp_mac.h">base/gp_mac.h</a>,
 <a href="../base/gp_macio.c">base/gp_macio.c</a>,
