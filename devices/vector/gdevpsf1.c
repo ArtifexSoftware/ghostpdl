@@ -444,7 +444,14 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                                 dest += written;
                         }
                         for (i=0;i<SubrsWithMM[index];i++) {
-                            written = WriteNumber(dest, Stack[StackBase + i]);
+                            /* See above, it may be that we don't have enough numbers on the stack
+                             * (due to constructs such as x y div), if we don't have enough parameters
+                             * just write a 0 instead. We know this is incorrect.....
+                             */
+                            if (StackBase + i >= 0)
+                                written = WriteNumber(dest, Stack[StackBase + i]);
+                            else
+                                written = WriteNumber(dest, 0);
                             dest_length += written;
                             if (!OnlyCalcLength)
                                 dest += written;
