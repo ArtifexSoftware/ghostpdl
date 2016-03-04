@@ -113,9 +113,12 @@ const char *pdf_find_base14_name(const byte *str, uint size)
 {
     const pdf_base14_font_info_t *ppsf;
 
-    for (ppsf = base14_font_info; ppsf->urwname; ++ppsf)
-      if (!memcmp(ppsf->urwname, (const char *)str, size))
-          return ppsf->stdname;
+    for (ppsf = base14_font_info; ppsf->urwname; ++ppsf) {
+        if (strlen(ppsf->urwname) == size) {
+            if (!memcmp(ppsf->urwname, (const char *)str, size))
+                return ppsf->stdname;
+        }
+    }
     return NULL;
 }
 
