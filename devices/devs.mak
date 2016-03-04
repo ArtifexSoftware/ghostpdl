@@ -1540,17 +1540,6 @@ $(DD)pcxcmyk.dev : $(pcx_) $(GLD)page.dev $(GDEV) \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)pcxcmyk $(pcx_)
 
-# The 2-up PCX device is here only as an example, and for testing.
-
-$(DD)pcx2up.dev : $(LIB_MAK) $(DEVOBJ)gdevp2up.$(OBJ)\
- $(GLD)page.dev $(DD)pcx256.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETPDEV) $(DD)pcx2up $(DEVOBJ)gdevp2up.$(OBJ)
-	$(ADDMOD) $(DD)pcx2up -include $(DD)pcx256
-
-$(DEVOBJ)gdevp2up.$(OBJ) : $(DEVSRC)gdevp2up.c $(AK)\
- $(gdevpccm_h) $(gdevprn_h) $(gxclpage_h) $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevp2up.$(OBJ) $(C_) $(DEVSRC)gdevp2up.c
-
 ### ------------------- Portable Bitmap file formats ------------------- ###
 ### For more information, see the pam(5), pbm(5), pgm(5), and ppm(5)     ###
 ### man pages.                                                           ###
