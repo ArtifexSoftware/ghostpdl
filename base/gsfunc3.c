@@ -217,13 +217,22 @@ gs_function_ElIn_serialize(const gs_function_t * pfn, stream *s)
     uint n;
     const gs_function_ElIn_params_t * p = (const gs_function_ElIn_params_t *)&pfn->params;
     int code = fn_common_serialize(pfn, s);
+    float C0_default[2] = {0, 0};
+    float C1_default[2] = {1, 0};
 
     if (code < 0)
         return code;
-    code = sputs(s, (const byte *)&p->C0[0], sizeof(p->C0[0]) * p->n, &n);
+    if (p->C0)
+        code = sputs(s, (const byte *)&p->C0[0], sizeof(p->C0[0]) * p->n, &n);
+    else
+        code = sputs(s, (const byte *)&C0_default, sizeof(float) * 2, &n);
     if (code < 0)
         return code;
-    code = sputs(s, (const byte *)&p->C1[0], sizeof(p->C1[0]) * p->n, &n);
+
+    if (p->C1)
+        code = sputs(s, (const byte *)&p->C1[0], sizeof(p->C1[0]) * p->n, &n);
+    else
+        code = sputs(s, (const byte *)&C1_default, sizeof(float) * 2, &n);
     if (code < 0)
         return code;
     return sputs(s, (const byte *)&p->N, sizeof(p->N), &n);
