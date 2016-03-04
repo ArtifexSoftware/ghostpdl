@@ -70,8 +70,8 @@ clippath pathbbox /ury exch def /urx exch def /lly exch def /llx exch def
 
 /boxsize 
 	inwidth inheight gt
-	{pagewidth inwidth truncate div}
-	{pageheight inheight truncate div}
+	{pagewidth inwidth truncate 1 .max div}
+	{pageheight inheight truncate 1 .max div}
 	ifelse
 def
 
