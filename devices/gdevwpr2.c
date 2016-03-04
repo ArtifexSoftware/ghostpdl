@@ -53,7 +53,7 @@
  * device gets opened (and any spooling starts).
  *
  * The driver returns an additional property named "UserSettings".
- * This is a dictionary which contens are valid only after setting
+ * This is a dictionary which contents are valid only after setting
  * the QueryUser property (see below). The UserSettings dict contains
  * the following keys:
  *
@@ -112,7 +112,7 @@
  *     supported for n:
  *     1 => show standard Print dialog
  *     2 => show Print Setup dialog instead
- *     3 => select default printer
+ *     3 => select default printer (default action if -dQueryUser not specified)
  *     other, does nothing
  *
  * The /Duplex & /Tumble keys of the setpagedevice dict are supported
@@ -923,6 +923,8 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
             ecode = code;
             param_signal_error(plist, "QueryUser", ecode);
         case 1:
+                /* default if QueryUser not specified */
+                win_pr2_print_setup_interaction(wdev, 3);
             break;
     }
 
