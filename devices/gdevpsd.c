@@ -1417,10 +1417,18 @@ psd_allow_multiple_pages (gx_device_printer *pdev)
     bool retval = true;
     gs_parsed_file_name_t parsed;
 
-    code = gx_parse_output_file_name(&parsed, &fmt, psd_dev->fname,
+    if (strcmp(gp_null_file_name, psd_dev->fname) == 0) {
+        /* If the output is discarded, it doesn't matter whether
+         * the file is format valid or not
+         */
+        retval = true;
+    }
+    else {
+        code = gx_parse_output_file_name(&parsed, &fmt, psd_dev->fname,
                                      strlen(psd_dev->fname), psd_dev->memory);
-    if (code < 0 || (fmt == NULL && psd_dev->PageCount > 0)) {
-        retval = false;
+        if (code < 0 || (fmt == NULL && psd_dev->PageCount > 0)) {
+            retval = false;
+        }
     }
     return retval;
 }
