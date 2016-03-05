@@ -929,7 +929,7 @@ AC_SUBST(FT_SYS_ZLIB)
 dnl png for the png output device; it also requires zlib
 LIBPNGDIR=src
 PNGDEVS=''
-PNGDEVS_ALL='png48 png16m pnggray pngmono png256 png16 pngalpha'
+PNGDEVS_ALL='png48 png16m pnggray pngmono pngmonod png256 png16 pngalpha'
 AC_MSG_CHECKING([for local png library source])
 if test -f $srcdir/libpng/pngread.c; then
         AC_MSG_RESULT([yes])
