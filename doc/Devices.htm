@@ -823,11 +823,15 @@ It is supported by the <tt>psdcmyk</tt> and <tt>psdrgb</tt> devices.
 Of special interest with the <tt>psdcmyk</tt> device is that it supports spot
 colors.  <a href="#tiffsep">See the comments under the <tt>tiffsep</tt> and <tt>tiffsep1</tt> 
 device about the maximum number of spot colors supported by Ghostscript</a>
+<p>
+The <tt>psdcmykog</tt> device produces PSD files with 6 components:
+Cyan, Magenta, Yellow, blacK, Orange, and Green.  This device does not support the -dDownScaleFactor= 
+option (see below), instead it always scales down by a factor of two.
 
 <p>
 These devices support the same -dDownScaleFactor= ratios as <tt>tiffsep</tt>.
-<tt>psdcmyk</tt> supports the same trapping options as <tt>tiffsep</tt>
-(but see <a href="trapping_patent_note">this note</a>).
+The <tt>psdcmyk</tt> device supports the same trapping options as <tt>tiffsep</tt>
+(but see <a href="#trapping_patent_note">this note</a>).
 
 <p>
 NOTE: The PSD format is a single image per file format, so you must use the &quot%d&quot
