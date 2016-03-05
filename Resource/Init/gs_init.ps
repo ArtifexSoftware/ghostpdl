@@ -2021,6 +2021,7 @@ readonly def
 
 /.locksafe {
   .locksafe_userparams
+  systemdict /getenv {pop //false} put
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
   % properties and pagedevice .LockSafetyParams in agreement even
@@ -2039,6 +2040,7 @@ readonly def
 %%
 /.locksafeglobal {
   .locksafe_userparams
+  systemdict /getenv {pop //false} put
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
   % properties and pagedevice .LockSafetyParams in agreement even
