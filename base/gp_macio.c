@@ -139,13 +139,6 @@ int fake_stdin = 0;
 
 /* Do platform-dependent initialization */
 
-void
-setenv(const char * env, char *p) {
-//	if ( strcmp(env,"outfile") == 0) {
-//	   sprintf((char *)&g_fcout[0],"%s",p);
-//	}
-}
-
 char *
 getenv(const char * env) {
 
