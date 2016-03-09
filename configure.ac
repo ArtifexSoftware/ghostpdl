@@ -392,6 +392,11 @@ if test "x$ac_cv_header_inttypes_h" = xyes; then
         GCFLAGS="$GCFLAGS -DHAVE_INTTYPES_H=1"
 fi
 
+AC_CHECK_LIB([dl], [dlopen],
+             AC_CHECK_HEADER([dlfcn.h], [GCFLAGS="$GCFLAGS -DHAVE_LIBDL=1";LIBS="-ldl $LIBS"])
+              )
+echo $LIBS
+
 large_color_index=1
 
 AC_ARG_WITH([large_color_index],, large_color_index="$with_large_color_index")
@@ -698,7 +703,6 @@ AC_SUBST(HAVE_DBUS)
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
-AC_CHECK_LIB(dl, dlopen)
 
 AC_ARG_ENABLE([freetype], AC_HELP_STRING([--disable-freetype],
         [Disable freetype for font rasterization]))
@@ -2059,7 +2063,7 @@ case `uname` in
           DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
           if test $ac_cv_prog_gcc = yes; then
             # GCC high level flag
-            DYNAMIC_LIBS="-rdynamic -ldl"
+            DYNAMIC_LIBS="-rdynamic"
           else
             DYNAMIC_LIBS=""
           fi
@@ -2098,12 +2102,6 @@ case `uname` in
           DYNAMIC_CFLAGS="-fPIC"
           GCFLAGS="-Wl,-brtl $GCFLAGS"
           DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
-          if test $ac_cv_prog_gcc = yes; then
-            # GCC high level flag
-            DYNAMIC_LIBS="-ldl"
-          else
-            DYNAMIC_LIBS=""
-          fi
           SO_LIB_EXT=".so"
         ;;
 esac

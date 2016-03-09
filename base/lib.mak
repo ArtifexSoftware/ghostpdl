@@ -217,7 +217,7 @@ $(GLOBJ)gsmalloc.$(OBJ) : $(GLSRC)gsmalloc.c $(malloc__h)\
 # rebuilds work.
 $(GLOBJ)memento.$(OBJ) : $(GLSRC)memento.c $(valgrind_h) $(memento_h)\
  $(malloc__h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)memento.$(OBJ) $(C_) $(GLSRC)memento.c -DHAVE_LIBDL
+	$(GLCC) $(GLO_)memento.$(OBJ) $(C_) $(GLSRC)memento.c
 
 $(AUX)memento.$(OBJ) : $(GLSRC)memento.c $(valgrind_h) $(memento_h)\
  $(malloc__h) $(LIB_MAK) $(MAKEDIRS)
