@@ -1492,9 +1492,10 @@ if test "x$JPX_DECODER" = "x"; then
       if test x"$PKGCONFIG" != x""; then
         AC_MSG_CHECKING(for OpenJPEG2)
         if $PKGCONFIG --exists libopenjp2; then
-          JPX_AUTOCONF_CFLAGS="`$PKGCONFIG libopenjp2 --cflags`"
+          JPX_AUTOCONF_CFLAGS="`$PKGCONFIG libopenjp2 --cflags` -DUSE_OPENJPEG_JP2"
           JPX_AUTOCONF_LIBS="`$PKGCONFIG libopenjp2 --libs`"
           SHARE_JPX=1
+          JPX_DECODER=openjpeg
           AC_MSG_RESULT([yes])
         else
           AC_MSG_RESULT([no])
