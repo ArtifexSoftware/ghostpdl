@@ -118,7 +118,7 @@ CONTRIBINCLUDE="include $srcdir/contrib/contrib.mak"
 INSTALL_CONTRIB="install-contrib-extras"
 
 case `uname` in
-    MINGW*)
+    MINGW*|MSYS*)
       AC_MSG_WARN([disabling contrib devices])
       enable_contrib=no
     ;;
@@ -495,7 +495,7 @@ AC_ARG_ENABLE([threading], AC_HELP_STRING([--disable-threading],
 if test "x$HAVE_PREAD_PWRITE" != "x"; then
   if test "$enable_threading" != "no"; then
     case `uname` in
-      MINGW*)
+      MINGW*|MSYS*)
         AC_MSG_WARN([disabling support for pthreads......])
       ;;
       *)
@@ -1233,7 +1233,7 @@ AC_ARG_WITH([ijs], AC_HELP_STRING([--without-ijs],
     [disable IJS driver support]))
 
 case `uname` in
-    MINGW*)
+    MINGW*|MSYS*)
       AC_MSG_WARN([disabling the ijs device])
       with_ijs=no
     ;;
@@ -2069,7 +2069,7 @@ case `uname` in
           fi
           SO_LIB_EXT=".so"
         ;;
-        MINGW*)
+        MINGW*|MSYS*)
           DYNAMIC_CFLAGS=""
           DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(GS_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
           SO_LIB_EXT=""
@@ -2440,7 +2440,7 @@ AC_SUBST(SUB_MAKE_OPTION)
 # --------------------------------------------------
 AUXDIRPOSTFIX=""
 case `uname` in
-    MINGW*)
+    MINGW*|MSYS*)
     AUXDIRPOSTFIX="_"
     CFLAGS="-DGS_NO_UTF8=1 $CFLAGS"
     ;;
@@ -2460,7 +2460,7 @@ if test "x"$with_exe_ext != "x"; then
   EXEEXT="$with_exe_ext"
 else
   case `uname` in
-    MINGW*)
+    MINGW*|MSYS*)
       EXEEXT=".exe"
     ;;
   esac
