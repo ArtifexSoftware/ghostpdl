@@ -1216,7 +1216,7 @@ void Memento_stats(void)
 }
 
 #ifdef MEMENTO_DETAILS
-static void showInfo(Memento_BlkHeader *b, void *arg)
+static int showInfo(Memento_BlkHeader *b, void *arg)
 {
     Memento_BlkDetails *details;
 
@@ -1233,6 +1233,7 @@ static void showInfo(Memento_BlkHeader *b, void *arg)
         Memento_showStacktrace(details->stack, details->count);
         details = details->next;
     }
+    return 0;
 }
 #endif
 
@@ -2244,6 +2245,14 @@ void (Memento_stats)(void)
 void *(Memento_label)(void *ptr, const char *label)
 {
     return ptr;
+}
+
+void (Memento_info)(void *addr)
+{
+}
+
+void (Memento_listBlockInfo)(void)
+{
 }
 
 #endif

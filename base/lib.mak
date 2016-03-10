@@ -217,7 +217,7 @@ $(GLOBJ)gsmalloc.$(OBJ) : $(GLSRC)gsmalloc.c $(malloc__h)\
 # used (as this disables Microsoft extensions, which breaks windows.h).
 # GLCC has the /Za pickled into it on windows, so we can't use GLCC.
 # Therefore use our own compiler invocation.
-MEMENTO_CC=$(CC) $(GLINCLUDES) $(CFLAGS)
+MEMENTO_CC=$(CC) $(GENOPT) $(GLINCLUDES) $(CFLAGS)
 
 # We have an extra dependency here on malloc__h. This is deliberate to allow
 # windows users to set #define MEMENTO in the top of malloc_h and have
