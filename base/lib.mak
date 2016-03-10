@@ -27,7 +27,8 @@ GLO_=$(O_)$(GLOBJ)
 AUXO_=$(O_)$(AUX)
 GLI_=$(GLGENDIR) $(II)$(GLSRCDIR) $(II)$(DEVSRCDIR)
 GLF_=
-GLCCFLAGS=$(I_)$(GLI_)$(_I) $(GLF_) $(D_)WHICH_CMS="$(WHICH_CMS)"$(_D)
+GLINCLUDES=$(I_)$(GLI_)$(_I)
+GLCCFLAGS=$(GLINCLUDES) $(GLF_) $(D_)WHICH_CMS="$(WHICH_CMS)"$(_D)
 GLCC=$(CC_) $(GLCCFLAGS)
 GLCCAUX=$(CCAUX_) $(GLCCFLAGS)
 GLJCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(JCF_) $(GLF_)
@@ -212,12 +213,18 @@ $(GLOBJ)gsmalloc.$(OBJ) : $(GLSRC)gsmalloc.c $(malloc__h)\
  $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsmalloc.$(OBJ) $(C_) $(GLSRC)gsmalloc.c
 
+# Memento uses windows.h on windows. This requires that /Za not be
+# used (as this disables Microsoft extensions, which breaks windows.h).
+# GLCC has the /Za pickled into it on windows, so we can't use GLCC.
+# Therefore use our own compiler invocation.
+MEMENTO_CC=$(CC) $(GLINCLUDES) $(CFLAGS)
+
 # We have an extra dependency here on malloc__h. This is deliberate to allow
 # windows users to set #define MEMENTO in the top of malloc_h and have
 # rebuilds work.
 $(GLOBJ)memento.$(OBJ) : $(GLSRC)memento.c $(valgrind_h) $(memento_h)\
  $(malloc__h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)memento.$(OBJ) $(C_) $(GLSRC)memento.c
+	$(MEMENTO_CC) $(GLO_)memento.$(OBJ) $(C_) $(GLSRC)memento.c
 
 $(AUX)memento.$(OBJ) : $(GLSRC)memento.c $(valgrind_h) $(memento_h)\
  $(malloc__h) $(LIB_MAK) $(MAKEDIRS)
