@@ -58,43 +58,44 @@ overview</a>.
 
 <h2><a name="Version9.19"></a>Version 9.19 (2016-03-11)</h2>
 
-<p>This is the thirteenth full release in the stable 9.x series, and is
-primarily a maintenance release.
+<p>This is the thirteenth full release in the stable 9.x series, and is mainly
+a maintenance release.
 
 <p> Highlights in this release include:
 <ul>
 <li>
 <p>
-A substantial revision of the build system and GhostPDL directory structure,
-meaning the GhostPCL and GhostXPS &quotproducts&quot are now built by the
-Ghostscript build system &quotproper&quot rather than having their own builds
-which called the Ghostscript build system for certain parts of the builds.
+New custom PJL (near) equivalents for pdfmark and setdistillerparams. These were
+primarily added to allow pdfwrite to be configured correctly for PDF/A output from
+GhostPCL.
+See: <a href="VectorDevices.htm#PXL_IN">pdfwrite with PCL input</a> for
+more details.
 <p>
-Ghostscript-only users should not be affected by this change.
-<p>
-For users of the PCL and XPS interpreters (collectively downloaded as &quotGhostPDL&quot) there
-is a new, &quotflatter&quot directory structure and only one <code>configure</code> and one
-<code>make</code> invocation to build all the products. There are also some executable default name changes
-to bring the PCL and XPS binaries in line with the Ghostscript ones. All executables now end up in
-the &quotbin&quot directory (or build specific variant thereof, e.g. &quotdebugbin&quot). The PCL
-executable, by default, is now &quotgpcl6&quot on Unix like systems and &quotgpcl6win??.exe&quot (where
-&quot??&quot is either &quot32&quot or &quot64&quot). The XPS executable remains &quotgxps&quot on Unix-like
-systems, but similarly becomes &quotgxpswin??.exe&quot on Windows.
-<p>
-Those using scripts or other automated processes will need to take steps to cope with these changes.
+Ghostscript users should continue to use the existing pdfmark and setdistillerparams
+capabilities.
 </li>
 <li>
-<p>Improved high level devices handling of Forms. Whilst High level devices (eg pdfwrite)
-already checked Forms to see if they are duplicates, and if so use the initial definition.
-However, this does not improve performance, since the Form PaintProc still needs to be executed
-for each instance of the Form, and the matching algorithm could, in very odd circumstances, be
-defeated. The new implementation benefits both causes, meaning the second and subsequent invocation
-of the form need not re-run the PaintProc, and removes the heurisic aspect of the reuse detection.
+<p>
+Metadata pdfmark is now implemented. This allows the user to
+specify an XMP stream which will be written to the Catalog of the PDF
+file.A new pdfmark 'Ext_Metadata' has bee defined. This takes a string
+parameter which contains XML to be add to the XMP normally created by
+pdfwrite.
+<p>
+See <a href="VectorDevices.htm#Extensions">pdfwrite pdfmark extensions</a> for more
+information.
 </li>
 <li>
-<p>New URW+ fonts in which the families NimbusMono, NimbusRoman and NimbusSans have been
-augmented with production quality Greek and Cyrillic glyphs. These correspond to our
-substitutes for the PDF base 14 fonts.
+An experimental, rudimentary raster trapping implementation implementation has been
+added to the Ghostscript graphics library. See <a href="Devices.htm#TIFF_trapping">Trapping</a>
+for details.
+</li>
+<li>
+<p>
+The halftone threshold array generation tools (part of <code>toolbin/halftone</code>) have been
+improved with <code>thresh_remap</code> which allows folding the transfer function (AKA toner
+response curve (TRC)) into the threshold array so that highlights are improved. Further,
+<code>gen_stochastic</code> has improved support for minimum dot size and shape.
 </li>
 <li>
 <p>Plus the usual round of bug fixes, compatibility changes, and incremental improvements.
@@ -103,11 +104,34 @@ substitutes for the PDF base 14 fonts.
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 
-<h3><a name="9.16_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="9.19_Incompatible_changes"></a>Incompatible changes</h3>
+<ul>
+<li>
 <p>
-No recorded incompatible changes.
+(Minor) API change: copy_alpha now supports 8 bit depth (as well as the previous 2 and 4).
+</li>
+<li>
+<p>
+The gs man pages are woefully out of date and basically unmaintained. With the release
+following 9.19, we intend to replace their contents with a very limited summary of (unlikely
+to ever change aspects of) calling Ghostscript, and a pointer to the (maintained) HTML
+documentation. That is, unless a volunteer is willing to update, and commit to
+maintaining the man pages.
+</li>
+<li>
+We plan (ideally for the release following 9.19) to somewhat tidy up the device API.
+We plan to remove deprecated device procs (methods/function pointers). We also
+intend to merge the imager state and graphics state (thus eliminating the
+imager state), and change the device API so every device proc takes a graphics
+state parameter (rather than the current scheme where only a very few procs
+take an imager state parameter). This should serve as notice to anyone
+maintaining a Ghostscript device outside the canonical source tree that you
+may (probably will) need to update your device(s) when these changes happen.
+Devices using only the non-deprecated procs should be trivial to update.
+</li>
+</ul>
 
-<h3><a name="9.16_changelog"></a>Changelog</h3>
+<h3><a name="9.19_changelog"></a>Changelog</h3>
 
 <p>See the <a href="History9.htm">history file</a> for complete log 
 of changes.
