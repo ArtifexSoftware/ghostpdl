@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2015 Artifex Software, Inc.
+/* Copyright (C) 2001-2016 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -33,7 +33,7 @@ const long gs_buildtime = GS_BUILDTIME;
 
 #ifndef GS_COPYRIGHT
 #  define GS_COPYRIGHT\
-        "Copyright (C) 2015 Artifex Software, Inc.  All rights reserved."
+        "Copyright (C) 2016 Artifex Software, Inc.  All rights reserved."
 #endif
 const char *const gs_copyright = GS_COPYRIGHT;
 
@@ -45,7 +45,7 @@ const char *const gs_productfamily = GS_PRODUCTFAMILY;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-        GS_PRODUCTFAMILY " GIT PRERELEASE"
+        GS_PRODUCTFAMILY " RELEASE CANDIDATE 1"
 #endif
 const char *const gs_product = GS_PRODUCT;
 
