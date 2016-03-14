@@ -1641,7 +1641,7 @@ AC_ARG_WITH([gs], AC_HELP_STRING([--with-gs=NAME],
         [GS="$with_gs"],[GS='gs'])
 AC_SUBST(GS)
 
-PCL=
+PCL=no_gpcl6
 PCL_TARGET=
 
 PLROMFS_MAK="\$(GLSRCDIR)\$(D)stub.mak"
@@ -1673,7 +1673,7 @@ AC_SUBST(PCL_TOP_MAK)
 AC_SUBST(PXL_MAK)
 
 
-XPS=
+XPS=no_gxps
 XPS_TARGET=
 
 XPS_MAK="\$(GLSRCDIR)\$(D)stub.mak"
@@ -1696,7 +1696,7 @@ AC_SUBST(XPS_TARGET)
 AC_SUBST(XPS_MAK)
 AC_SUBST(XPSROMFS_MAK)
 
-GPDL=
+GPDL=no_gpdl
 GPDL_TARGET=
 
 GPDL_MAK="\$(GLSRCDIR)\$(D)stub.mak"
