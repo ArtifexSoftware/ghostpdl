@@ -2141,6 +2141,12 @@ pdf_put_composite(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_i
                         p++;
                     }
                 }
+                if (width) {
+                    stream_write(pdev->strm, start, p - start);
+                    stream_putc(pdev->strm, (byte)'\n');
+                    width = 0;
+                    start = p;
+                }
             } else {
                 stream_write(pdev->strm, vstr, size);
             }
