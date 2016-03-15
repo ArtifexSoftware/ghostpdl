@@ -1650,18 +1650,20 @@ PCL_MAK="\$(GLSRCDIR)\$(D)stub.mak"
 PCL_TOP_MAK="\$(GLSRCDIR)\$(D)stub.mak"
 PXL_MAK="\$(GLSRCDIR)\$(D)stub.mak"
 
-if test -f $srcdir/pcl/pl/pl.mak; then
-  AC_ARG_WITH([pcl], AC_HELP_STRING([--with-pcl=NAME],
+if test x"$with_pcl" != x"no" ; then
+  if test -f $srcdir/pcl/pl/pl.mak; then
+    AC_ARG_WITH([pcl], AC_HELP_STRING([--with-pcl=NAME],
         [name of the GhostPCL executible (if the source is available, ignored otherwise) [[gpcl6]]]),
         [PCL="$with_pcl"],[PCL='gpcl6'])
 
-  PCL_TARGET=gpcl6
+    PCL_TARGET=gpcl6
 
-  PLROMFS_MAK="\$(PLSRCDIR)\$(D)plromfs.mak"
-  PL_MAK="\$(PLSRCDIR)\$(D)pl.mak"
-  PCL_MAK="\$(PCL5SRCDIR)\$(D)pcl.mak"
-  PCL_TOP_MAK="\$(PCL5SRCDIR)\$(D)pcl_top.mak"
-  PXL_MAK="\$(PXLSRCDIR)\$(D)pxl.mak"
+    PLROMFS_MAK="\$(PLSRCDIR)\$(D)plromfs.mak"
+    PL_MAK="\$(PLSRCDIR)\$(D)pl.mak"
+    PCL_MAK="\$(PCL5SRCDIR)\$(D)pcl.mak"
+    PCL_TOP_MAK="\$(PCL5SRCDIR)\$(D)pcl_top.mak"
+    PXL_MAK="\$(PXLSRCDIR)\$(D)pxl.mak"
+  fi
 fi
 AC_SUBST(PCL)
 AC_SUBST(PCL_TARGET)
@@ -1679,15 +1681,17 @@ XPS_TARGET=
 XPS_MAK="\$(GLSRCDIR)\$(D)stub.mak"
 XPSROMFS_MAK="\$(GLSRCDIR)\$(D)stub.mak"
 # gxps currently depends on code in pl
-if test "x$PCL_TARGET" != "x" ; then
-  if test -f $srcdir/xps/xps.mak; then
-    AC_ARG_WITH([xps], AC_HELP_STRING([--with-xps=NAME],
-          [name of the GhostXPS executible (if the source is available, ignored otherwise) [[gxps]]]),
-          [XPS="$with_xps"],[XPS='gxps'])
+if test x"$with_xps" != x"no" ; then
+  if test x"$PCL_TARGET" != x ; then
+    if test -f $srcdir/xps/xps.mak; then
+      AC_ARG_WITH([xps], AC_HELP_STRING([--with-xps=NAME],
+            [name of the GhostXPS executible (if the source is available, ignored otherwise) [[gxps]]]),
+            [XPS="$with_xps"],[XPS='gxps'])
 
-    XPS_TARGET=gxps
-    XPS_MAK="\$(XPSSRCDIR)\$(D)xps.mak"
-    XPSROMFS_MAK="\$(XPSSRCDIR)\$(D)xpsromfs.mak"
+      XPS_TARGET=gxps
+      XPS_MAK="\$(XPSSRCDIR)\$(D)xps.mak"
+      XPSROMFS_MAK="\$(XPSSRCDIR)\$(D)xpsromfs.mak"
+    fi
   fi
 fi
 
