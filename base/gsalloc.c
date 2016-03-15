@@ -223,7 +223,7 @@ ialloc_alloc_state(gs_memory_t * parent, uint chunk_size)
 #endif
     iimem->is_controlled = false;
     iimem->gc_status.vm_threshold = chunk_size * 3L;
-    iimem->gc_status.max_vm = 0x7fffffff;
+    iimem->gc_status.max_vm = max_long;
     iimem->gc_status.psignal = NULL;
     iimem->gc_status.signal_value = 0;
     iimem->gc_status.enabled = false;

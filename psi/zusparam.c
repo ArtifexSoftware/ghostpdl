@@ -171,7 +171,10 @@ current_MaxGlobalVM(i_ctx_t *i_ctx_p)
     gs_memory_gc_status_t stat;
 
     gs_memory_gc_status(iimemory_global, &stat);
-    return stat.max_vm;
+    if (gs_currentcpsimode(imemory))
+        return stat.max_vm & 0x7fffffff;
+    else
+        return stat.max_vm;
 }
 static int
 set_MaxGlobalVM(i_ctx_t *i_ctx_p, long val)
@@ -393,7 +396,10 @@ current_MaxLocalVM(i_ctx_t *i_ctx_p)
     gs_memory_gc_status_t stat;
 
     gs_memory_gc_status(iimemory_local, &stat);
-    return stat.max_vm;
+    if (gs_currentcpsimode(imemory))
+        return stat.max_vm & 0x7fffffff;
+    else
+        return stat.max_vm;
 }
 static int
 set_MaxLocalVM(i_ctx_t *i_ctx_p, long val)

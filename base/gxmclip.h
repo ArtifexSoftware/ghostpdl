@@ -34,7 +34,7 @@
  * stack frame.
  */
 
-#define tile_clip_buffer_request 16384	/* enough for 2400 dpi up to 54" wide */
+#define tile_clip_buffer_request 32768	/* enough for 2400 dpi up to 109" wide */
 #define tile_clip_buffer_size\
   ((tile_clip_buffer_request / ARCH_SIZEOF_LONG) * ARCH_SIZEOF_LONG)
 typedef struct gx_device_mask_clip_s {
