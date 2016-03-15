@@ -2125,11 +2125,13 @@ pdf_put_composite(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_i
                             if (*p == '/' || *p == '[' || *p == '{' || *p == '(' || *p == ' ') {
                                 stream_write(pdev->strm, start, p - start);
                                 stream_putc(pdev->strm, (byte)'\n');
+                                width = 0;
                                 start = p;
+                                break;
                             }
                             else p--;
                         }
-                        if (p == start) {
+                        if (p == start && width != 0) {
                             stream_write(pdev->strm, start, save - start);
                             stream_putc(pdev->strm, (byte)'\n');
                             start = save;
