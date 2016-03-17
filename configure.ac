@@ -395,7 +395,6 @@ fi
 AC_CHECK_LIB([dl], [dlopen],
              AC_CHECK_HEADER([dlfcn.h], [GCFLAGS="$GCFLAGS -DHAVE_LIBDL=1";LIBS="-ldl $LIBS"])
               )
-echo $LIBS
 
 large_color_index=1
 
