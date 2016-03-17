@@ -393,7 +393,7 @@ if test "x$ac_cv_header_inttypes_h" = xyes; then
 fi
 
 AC_CHECK_LIB([dl], [dlopen],
-             AC_CHECK_HEADER([dlfcn.h], [GCFLAGS="$GCFLAGS -DHAVE_LIBDL=1";LIBS="-ldl $LIBS"])
+             [AC_CHECK_HEADER([dlfcn.h], [GCFLAGS="$GCFLAGS -DHAVE_LIBDL=1";LIBS="-ldl $LIBS"])]
               )
 
 large_color_index=1
