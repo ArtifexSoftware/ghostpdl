@@ -49,6 +49,12 @@ install-gxps: $(GXPS_XE) install-exec-bindir $(UNIXINST_MAK) $(MAKEDIRS)
 install-:
 	$(NO_OP)
 
+install-no_gpcl6:
+	$(NO_OP)
+
+install-no_gxps:
+	$(NO_OP)
+
 install-scripts: $(PSLIBDIR)/gsnd $(UNIXINST_MAK) $(MAKEDIRS)
 	-mkdir -p $(DESTDIR)$(datadir)
 	-mkdir -p $(DESTDIR)$(gsdir)
