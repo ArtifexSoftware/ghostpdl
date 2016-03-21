@@ -853,6 +853,10 @@ currentdict /csncompdict undef
 
   /Indexed {
     aload pop
+    %% Resolve 'hival' in case it is an indirect reference. This is kind of
+    %% dumb, it just makes the file bigger, but it *is* legal.
+    3 1 roll oforce 3 -1 roll
+
     1 index -1 eq {
       exch pop 255 exch
       (   **** Error: Highest color index given as -1. Assuming this actually means 255.\n) pdfformaterror
