@@ -86,6 +86,7 @@ typedef enum {
     gx_path_type_even_odd = 8,
     gx_path_type_optimize = 16,	/* OK to optimize paths by merging seg.s */
     gx_path_type_always_close = 32, /* include final closepath even if not stroke */
+    gx_path_type_dashed_stroke = 64, /* for high level devices, safe to optimise rectangular subpaths as rectangles if available (not legal if dashing strokes) */
     gx_path_type_rule = gx_path_type_winding_number | gx_path_type_even_odd
 } gx_path_type_t;
 typedef enum {
@@ -306,6 +307,11 @@ void gdev_vector_dopath_init(gdev_vector_dopath_state_t *state,
 /* Write a segment of a path using the default implementation. */
 int gdev_vector_dopath_segment(gdev_vector_dopath_state_t *state, int pe_op,
                                gs_fixed_point vs[3]);
+
+typedef struct gdev_vector_path_seg_record_s {
+    int op;
+    gs_fixed_point vs[3];
+} gdev_vector_path_seg_record;
 
 /* Write a polygon as part of a path (type = gx_path_type_none) */
 /* or as a path. */

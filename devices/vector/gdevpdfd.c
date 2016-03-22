@@ -181,11 +181,6 @@ pdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
         ymin -= d;
         ymax += d;
     }
-    if (!(type & gx_path_type_clip) &&
-        (x0 > xmax || x1 < xmin || y0 > ymax || y1 < ymin ||
-         x0 > x1 || y0 > y1)
-        )
-        return 0;		/* nothing to fill or stroke */
     /*
      * Clamp coordinates to avoid tripping over Acrobat Reader's limit
      * of 32K on user coordinate values.
@@ -350,13 +345,310 @@ pdf_must_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
     return true;
 }
 
+static int pdf_write_path(gx_device_pdf * pdev, gs_path_enum *cenum, gdev_vector_dopath_state_t *state, gx_path *path, int is_clip_enum,
+                               gx_path_type_t type, const gs_matrix *pmat)
+{
+    int pe_op;
+    gdev_vector_path_seg_record segments[5];
+    int i, seg_index = 0, is_rect = 1, buffering = 0, initial_m = 0, segs = 0, code, matrix_optimisable = 0;
+    gx_path_rectangular_type rtype = prt_none;
+    gs_fixed_rect rbox;
+    gx_device_vector *vdev = (gx_device_vector *)pdev;
+    gs_fixed_point line_start = {0,0};
+    gs_point p, q;
+    bool do_close = (type & (gx_path_type_clip | gx_path_type_stroke | gx_path_type_always_close)) != 0;
+    bool stored_moveto = false;
+
+    gdev_vector_dopath_init(state, (gx_device_vector *)pdev,
+                            type, pmat);
+    if (is_clip_enum)
+        code = gx_cpath_enum_init((gs_cpath_enum *)cenum, (gx_clip_path *)path);
+    else {
+        code = gx_path_enum_init(cenum, path);
+        rtype = gx_path_is_rectangular(path, &rbox);
+    }
+    if (code < 0)
+        return code;
+
+    if((pmat == 0 || is_xxyy(pmat) || is_xyyx(pmat)) &&
+        (state->scale_mat.xx == 1.0 && state->scale_mat.yy == 1.0 &&
+        is_xxyy(&state->scale_mat) && is_fzero2(state->scale_mat.tx, state->scale_mat.ty))) {
+         matrix_optimisable = 1;
+         buffering = 1;
+    }
+    /*
+     * if the path type is stroke, we only recognize closed
+     * rectangles; otherwise, we recognize all rectangles.
+     * Note that for stroking with a transformation, we can't use dorect,
+     * which requires (untransformed) device coordinates.
+     */
+    if (rtype != prt_none &&
+        (!(type & gx_path_type_stroke) || rtype == prt_closed) &&
+          matrix_optimisable == 1)
+    {
+        gs_point p, q;
+
+        gs_point_transform_inverse((double)rbox.p.x, (double)rbox.p.y,
+                                   &state->scale_mat, &p);
+        gs_point_transform_inverse((double)rbox.q.x, (double)rbox.q.y,
+                                   &state->scale_mat, &q);
+        code = vdev_proc(vdev, dorect)(vdev, (fixed)p.x, (fixed)p.y,
+                                       (fixed)q.x, (fixed)q.y, type);
+        if (code >= 0) {
+            if (code == 0)
+                return 1;
+            return code;
+        }
+        /* If the dorect proc failed, use a general path. */
+    }
+
+    /* The following is an optimisation for space. If we see a closed subpath
+     * which is a rectangle, emit it as a 're' instead of writing the individual
+     * segments of the path. Note that 're' always applies the width before the
+     * height when constructing the path, so we must take care to ensure that
+     * we get the path direction correct. We do ths by detecting whether the path
+     * moves first in the x or y directoin, if it moves in the y direction first,
+     * we simply move one vertex round the rectangle, ie we start at point 2.
+     */
+    do {
+        if (is_clip_enum)
+            segments[seg_index].op = pe_op = gx_cpath_enum_next((gs_cpath_enum *)cenum, segments[seg_index].vs);
+        else
+            segments[seg_index].op = pe_op = gx_path_enum_next(cenum, segments[seg_index].vs);
+
+        if (segs == 0 && pe_op > 0)
+            segs = 1;
+
+        switch(pe_op) {
+            case gs_pe_moveto:
+            case gs_pe_gapto:
+                if (!buffering) {
+                    stored_moveto = true;
+                    line_start = segments[0].vs[0];
+                    seg_index = -1;
+                } else {
+                    for (i=0;i<seg_index;i++) {
+                        gdev_vector_dopath_segment(state, segments[i].op, segments[i].vs);
+                    }
+                    segments[0] = segments[seg_index];
+                    seg_index = 0;
+                    initial_m = 1;
+                    line_start = segments[i].vs[0];
+                }
+                break;
+            case gs_pe_lineto:
+                if (!buffering) {
+                    if (stored_moveto) {
+                        gdev_vector_dopath_segment(state, gs_pe_moveto, &line_start);
+                        stored_moveto = false;
+                    }
+                    for (i=0;i<=seg_index;i++)
+                        gdev_vector_dopath_segment(state, segments[i].op, segments[i].vs);
+                    seg_index = -1;
+                } else {
+                    if (!initial_m) {
+                        for (i=0;i<=seg_index;i++) {
+                            gdev_vector_dopath_segment(state, segments[i].op, segments[i].vs);
+                        }
+                        buffering = 0;
+                        seg_index = -1;
+                    }
+                    if (type & gx_path_type_optimize) {
+                        if (segments[seg_index - 1].op == gs_pe_lineto) {
+                            if (segments[seg_index].vs[0].x == segments[seg_index - 1].vs[0].x && segments[seg_index].vs[0].x == line_start.x) {
+                                if (segments[seg_index - 1].vs[0].y > line_start.y && segments[seg_index].vs[0].y >= segments[seg_index - 1].vs[0].y) {
+                                    segments[seg_index - 1].vs[0].y = segments[seg_index].vs[0].y;
+                                    seg_index--;
+                                } else {
+                                    if (segments[seg_index - 1].vs[0].y < line_start.y && segments[seg_index].vs[0].y <= segments[seg_index - 1].vs[0].y) {
+                                        segments[seg_index - 1].vs[0].y = segments[seg_index].vs[0].y;
+                                        seg_index--;
+                                    } else
+                                        line_start = segments[seg_index - 1].vs[0];
+                                }
+                            } else {
+                                if (segments[seg_index].vs[0].y == segments[seg_index - 1].vs[0].y && segments[seg_index].vs[0].y == line_start.y) {
+                                    if (segments[seg_index - 1].vs[0].x > line_start.x && segments[seg_index].vs[0].x > segments[seg_index - 1].vs[0].x) {
+                                        segments[seg_index - 1].vs[0].x = segments[seg_index].vs[0].x;
+                                        seg_index--;
+                                    } else {
+                                        if (segments[seg_index - 1].vs[0].x < line_start.x && segments[seg_index].vs[0].x < segments[seg_index - 1].vs[0].x) {
+                                            segments[seg_index - 1].vs[0].x = segments[seg_index].vs[0].x;
+                                            seg_index--;
+                                        } else
+                                            line_start = segments[seg_index - 1].vs[0];
+                                    }
+                                } else
+                                    line_start = segments[seg_index - 1].vs[0];
+                            }
+                        }
+                    }
+                }
+                break;
+            case gs_pe_curveto:
+                if (stored_moveto) {
+                    gdev_vector_dopath_segment(state, gs_pe_moveto, &line_start);
+                    stored_moveto = false;
+                }
+                for (i=0;i<=seg_index;i++) {
+                    gdev_vector_dopath_segment(state, segments[i].op, segments[i].vs);
+                }
+                seg_index = -1;
+                buffering = 0;
+                line_start = segments[i].vs[2];
+                break;
+            case gs_pe_closepath:
+                if (!buffering || seg_index < 4) {
+                    if (stored_moveto && ((type & gx_path_type_stroke) && !(type & gx_path_type_fill)))
+                        gdev_vector_dopath_segment(state, gs_pe_moveto, &line_start);
+                    stored_moveto = false;
+                    if (!do_close) {
+                        i = seg_index;
+                        while (i > 0 && segments[i - 1].op == gs_pe_moveto) {
+                            segments[i - 1] = segments[i];
+                            i--;
+                        }
+                        seg_index = i;
+                        for (i=0;i<seg_index;i++)
+                            gdev_vector_dopath_segment(state, segments[i].op, segments[i].vs);
+
+                        seg_index = 0;
+                        if (is_clip_enum)
+                            segments[seg_index].op = pe_op = gx_cpath_enum_next((gs_cpath_enum *)cenum, segments[seg_index].vs);
+                        else
+                            segments[seg_index].op = pe_op = gx_path_enum_next(cenum, segments[seg_index].vs);
+
+                        if (pe_op > 0) {
+                            gdev_vector_dopath_segment(state, gs_pe_closepath, segments[0].vs);
+                            if (pe_op == gs_pe_moveto) {
+                                if (matrix_optimisable)
+                                    buffering = 1;
+                                else
+                                    buffering = 0;
+                                seg_index = 0;
+                                initial_m = 1;
+                                line_start = segments[0].vs[0];
+                            } else {
+                                gdev_vector_dopath_segment(state, segments[0].op, segments[0].vs);
+                                buffering = 0;
+                                seg_index = -1;
+                            }
+                        }
+                    } else {
+                        for (i=0;i<=seg_index;i++)
+                            gdev_vector_dopath_segment(state, segments[i].op, segments[i].vs);
+                        if (matrix_optimisable)
+                            buffering = 1;
+                        else
+                            buffering = 0;
+                        seg_index = -1;
+                    }
+                } else {
+                    is_rect = 1;
+                    for (i=1;i<seg_index;i++) {
+                        if (segments[i - 1].vs[0].x != segments[i].vs[0].x) {
+                            if (segments[i - 1].vs[0].y != segments[i].vs[0].y) {
+                                is_rect = 0;
+                                break;
+                            } else {
+                                if (segments[i].vs[0].x != segments[i + 1].vs[0].x || segments[i].vs[0].y == segments[i + 1].vs[0].x){
+                                    is_rect = 0;
+                                    break;
+                                }
+                            }
+                        } else {
+                            if (segments[i - 1].vs[0].y == segments[i].vs[0].y) {
+                                is_rect = 0;
+                                break;
+                            } else {
+                                if (segments[i].vs[0].y != segments[i + 1].vs[0].y || segments[i].vs[0].x == segments[i + 1].vs[0].x){
+                                    is_rect = 0;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (segments[0].vs[0].x != segments[seg_index].vs[0].x || segments[0].vs[0].y != segments[seg_index].vs[0].y)
+                        is_rect = 0;
+
+                    /* If we would have to alter the starting point, and we are dashing a stroke, then don't treat
+                     * this as a rectangle. Changing the start vertex will alter the dash pattern.
+                     */
+                    if (segments[0].vs[0].x == segments[1].vs[0].x && (type & gx_path_type_dashed_stroke))
+                        is_rect = 0;
+
+                    if (is_rect == 1) {
+                        gs_fixed_point *pt = &segments[0].vs[0];
+                        fixed width, height;
+
+                        if (segments[0].vs[0].x == segments[1].vs[0].x) {
+                            pt = &segments[1].vs[0];
+                            width = segments[2].vs[0].x - segments[1].vs[0].x;
+                            height = segments[0].vs[0].y - segments[1].vs[0].y;
+                        } else {
+                            width = segments[1].vs[0].x - segments[0].vs[0].x;
+                            height = segments[2].vs[0].y - segments[1].vs[0].y;
+                        }
+
+                        gs_point_transform_inverse((double)pt->x, (double)pt->y,
+                                   &state->scale_mat, &p);
+                        gs_point_transform_inverse((double)width, (double)height,
+                                   &state->scale_mat, &q);
+                        code = vdev_proc(vdev, dorect)(vdev, (fixed)p.x, (fixed)p.y,
+                                       (fixed)p.x + (fixed)q.x, (fixed)p.y + (fixed)q.y, type);
+                        seg_index = -1;
+                    } else {
+                        for (i=0;i<=seg_index;i++) {
+                            gdev_vector_dopath_segment(state, segments[i].op, segments[i].vs);
+                        }
+                        buffering = 0;
+                        seg_index = -1;
+                    }
+                }
+                break;
+            default:
+                for (i=0;i<seg_index;i++)
+                    gdev_vector_dopath_segment(state, segments[i].op, segments[i].vs);
+                if (stored_moveto && ((type & gx_path_type_stroke) && !(type & gx_path_type_fill)))
+                    gdev_vector_dopath_segment(state, gs_pe_moveto, &line_start);
+                seg_index = -1;
+                buffering = 0;
+                break;
+        }
+        seg_index++;
+        if (seg_index > 4) {
+            for (i=0;i<seg_index;i++) {
+                gdev_vector_dopath_segment(state, segments[i].op, segments[i].vs);
+            }
+            seg_index = 0;
+            buffering = 0;
+        }
+    } while (pe_op > 0);
+
+    if (pe_op < 0)
+        return pe_op;
+
+    seg_index -= 2;
+
+    if (seg_index >= 0) {
+        if (seg_index == 0 && segments[0].op == gs_pe_moveto && !(type & gx_path_type_stroke) && (type & gx_path_type_fill))
+            seg_index--;
+
+        for (i=0;i<=seg_index;i++) {
+            gdev_vector_dopath_segment(state, segments[i].op, segments[i].vs);
+        }
+    }
+    code = vdev_proc(vdev, endpath)(vdev, type);
+    return (code < 0 ? code : segs);
+}
+
 /* Put a single element of a clipping path list. */
 static int
 pdf_put_clip_path_list_elem(gx_device_pdf * pdev, gx_cpath_path_list *e,
         gs_path_enum *cenum, gdev_vector_dopath_state_t *state,
         gs_fixed_point vs[3])
 {   /* This recursive function provides a reverse order of the list elements. */
-    int pe_op, segments = 0;
+    int segments = 0;
 
     if (e->next != NULL) {
         int code = pdf_put_clip_path_list_elem(pdev, e->next, cenum, state, vs);
@@ -364,15 +656,11 @@ pdf_put_clip_path_list_elem(gx_device_pdf * pdev, gx_cpath_path_list *e,
         if (code != 0)
             return code;
     }
-    gx_path_enum_init(cenum, &e->path);
-    while ((pe_op = gx_path_enum_next(cenum, vs)) > 0) {
-        gdev_vector_dopath_segment(state, pe_op, vs);
-        segments++;
-    }
+    segments = pdf_write_path(pdev, cenum, state, &e->path, 0, gx_path_type_clip | gx_path_type_optimize, NULL);
+    if (segments < 0)
+        return segments;
     if (segments)
         pprints1(pdev->strm, "%s n\n", (e->rule <= 0 ? "W" : "W*"));
-    if (pe_op < 0)
-        return pe_op;
     return 0;
 }
 
@@ -448,11 +736,8 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
         } else {
             gdev_vector_dopath_state_t state;
             gs_fixed_point vs[3];
-            int pe_op;
 
-            gdev_vector_dopath_init(&state, (gx_device_vector *)pdev,
-                                    gx_path_type_fill, NULL);
-            /* the comment below is (now) incorrect. Previously in gx_clip_to_rectangle()
+            /* the first comment below is (now) incorrect. Previously in gx_clip_to_rectangle()
              * we would create a rectangular clip, without using a path to do so. This results
              * in a rectangular clip, where path_valid is false. However, we did *not* clear
              * the path_list! So if there had previously been a clip path set, by setting paths,
@@ -479,12 +764,8 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
                  * This is very unfortunate, but until we can come up with
                  * a better algorithm, it's necessary.
                  */
-                gx_cpath_enum_init(&cenum, (gx_clip_path *) pcpath);
-                while ((pe_op = gx_cpath_enum_next(&cenum, vs)) > 0)
-                    gdev_vector_dopath_segment(&state, pe_op, vs);
+                code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)pcpath, 1, gx_path_type_clip | gx_path_type_optimize, NULL);
                 pprints1(s, "%s n\n", (pcpath->rule <= 0 ? "W" : "W*"));
-                if (pe_op < 0)
-                    return pe_op;
             } else {
                 gs_path_enum cenum;
 
@@ -1011,6 +1292,8 @@ lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
         cvd->mask_is_empty = false;
     } else {
         gs_matrix m;
+        gs_path_enum cenum;
+        gdev_vector_dopath_state_t state;
 
         gs_make_translation(cvd->path_offset.x, cvd->path_offset.y, &m);
         /* use the clipping. */
@@ -1022,8 +1305,7 @@ lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
             dev_proc(&cvd->mdev, fill_rectangle) = lcvd_fill_rectangle_shifted;
             cvd->mask_is_empty = true;
         }
-        code = gdev_vector_dopath((gx_device_vector *)pdev, ppath,
-                            gx_path_type_fill | gx_path_type_optimize, &m);
+        code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)ppath, 0, gx_path_type_fill | gx_path_type_optimize, &m);
         if (code < 0)
             return code;
         stream_puts(pdev->strm, "h\n");
@@ -1282,8 +1564,9 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
             pcvd->has_background = gx_dc_pattern2_has_background(pdcolor);
             stream_puts(pdev->strm, "q\n");
             if (code >= 0) {
-                code = gdev_vector_dopath((gx_device_vector *)pdev, ppath,
-                                        gx_path_type_clip, NULL);
+                gs_path_enum cenum;
+                gdev_vector_dopath_state_t state;
+                code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)ppath, 0, gx_path_type_clip | gx_path_type_optimize, NULL);
                 if (code >= 0)
                     stream_puts(pdev->strm, (params->rule < 0 ? "W n\n" : "W* n\n"));
             }
@@ -1308,6 +1591,8 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
         double scale;
         gs_matrix smat;
         gs_matrix *psmat = NULL;
+        gs_path_enum cenum;
+        gdev_vector_dopath_state_t state;
 
         if (pcpath) {
             rect_intersect(box1, box);
@@ -1324,9 +1609,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
             pdf_put_matrix(pdev, "q ", &smat, "cm\n");
             psmat = &smat;
         }
-        gdev_vector_dopath((gx_device_vector *)pdev, ppath,
-                           gx_path_type_fill | gx_path_type_optimize,
-                           psmat);
+        code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)ppath, 0, gx_path_type_fill | gx_path_type_optimize, psmat);
         stream_puts(s, (params->rule < 0 ? "f\n" : "f*\n"));
         if (psmat)
             stream_puts(s, "Q\n");
@@ -1348,6 +1631,8 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     gs_matrix mat;
     double prescale = 1;
     gs_fixed_rect bbox;
+    gs_path_enum cenum;
+    gdev_vector_dopath_state_t state;
 
     if (gx_path_is_void(ppath))
         return 0;		/* won't mark the page */
@@ -1494,13 +1779,14 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
         pdev->saved_fill_color = pdev->saved_stroke_color;
     if (set_ctm)
         pdf_put_matrix(pdev, "q ", &mat, "cm\n");
-    code = gdev_vector_dopath((gx_device_vector *)pdev, ppath,
-                              gx_path_type_stroke | gx_path_type_optimize,
-                              (set_ctm ? &mat : (const gs_matrix *)0));
+    if (pis->line_params.dash.offset != 0 || pis->line_params.dash.pattern_size != 0)
+        code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)ppath, 0, gx_path_type_stroke | gx_path_type_optimize | gx_path_type_dashed_stroke, (set_ctm ? &mat : (const gs_matrix *)0));
+    else
+        code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)ppath, 0, gx_path_type_stroke | gx_path_type_optimize, (set_ctm ? &mat : (const gs_matrix *)0));
     if (code < 0)
         return code;
     s = pdev->strm;
-    stream_puts(s, (code ? "s" : "S"));
+    stream_puts(s, "S");
     stream_puts(s, (set_ctm ? " Q\n" : "\n"));
     if (pdev->Eps2Write) {
         pdev->AccumulatingBBox++;
