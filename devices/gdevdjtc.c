@@ -224,7 +224,17 @@ djet500c_print_page(gx_device_printer *pdev, FILE *fprn)
  * where N is the original byte count (end_row - row).
  * I can't use the general pcl version, because it assume even linelength's
  */
-
+/* RJW: While the worst case given above is true for correctly
+ * encoded runs, the code below does not achieve it. Take for
+ * example ABBABBABB. This will be encoded as:
+ *    <1 byte to signal literal run of 1>A
+ *    <1 byte to signal a run of two>B
+ *    Repeated 3 times.
+ *
+ * i.e. 12 bytes to encode 9. Thus the actual worse case is 4N/3+2
+ * (e.g. for ABBA). GS gets away with this because it over
+ * allocates.
+ */
 static int
 mode2compress(byte *row, byte *end_row, byte *compressed)
 {
