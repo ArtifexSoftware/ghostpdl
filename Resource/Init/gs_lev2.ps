@@ -948,7 +948,33 @@ mark
       %% We don't, so copy the form dictionary
       1 index 4 1 roll
       %% tell devices we're starting a form, run the PaintProc, and then tell the devices we've finished
-      3 -1 roll 2 index .beginform exec .endform
+      3 -1 roll 2 index
+      .beginform exec
+
+      %% This is all horrible code to deal with illegal forms which leave junk on the operand stack
+      %% Starting from 1 (not 0, we don't want to look at the loop count) and going up to the
+      %% number of objects on the stack, check each object to see if its the Form dict (it is
+      %% *supposed* to be the top object after executing the PaintProc). I don't currently check to see if
+      %% the PaintProc ate the dict, but if there are extra objects, remove them and tell
+      %% the user.
+      %%
+      count 1 1 3 -1 roll {
+        dup index
+        dup type /dicttype eq {
+          /Implementation known {
+            2 sub 0 1 3 -1 roll {
+              QUIET not {
+                 (\n  WARNING - Form PaintProc left operands on the stack after execution.\n        This is technically illegal and these have been removed, \n        if output is incorrect run again with -dUNROLLFORMS.\n) =
+              } if
+              pop pop
+            } for
+          }if
+        } {
+          pop pop
+        }ifelse
+      } for
+
+      .endform
       %% Ask devices if they have cached the form, and what ID to use if so
       %% returning -1 means 'no ID'
       .get_form_id dup -1 eq
