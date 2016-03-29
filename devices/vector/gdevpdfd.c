@@ -596,6 +596,8 @@ static int pdf_write_path(gx_device_pdf * pdev, gs_path_enum *cenum, gdev_vector
                                    &state->scale_mat, &q);
                         code = vdev_proc(vdev, dorect)(vdev, (fixed)p.x, (fixed)p.y,
                                        (fixed)p.x + (fixed)q.x, (fixed)p.y + (fixed)q.y, type);
+                        if (code < 0)
+                            return code;
                         seg_index = -1;
                     } else {
                         for (i=0;i<=seg_index;i++) {
@@ -765,6 +767,8 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
                  * a better algorithm, it's necessary.
                  */
                 code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)pcpath, 1, gx_path_type_clip | gx_path_type_optimize, NULL);
+                if (code < 0)
+                    return code;
                 pprints1(s, "%s n\n", (pcpath->rule <= 0 ? "W" : "W*"));
             } else {
                 gs_path_enum cenum;
@@ -1610,6 +1614,9 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
             psmat = &smat;
         }
         code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)ppath, 0, gx_path_type_fill | gx_path_type_optimize, psmat);
+        if (code < 0)
+            return code;
+
         stream_puts(s, (params->rule < 0 ? "f\n" : "f*\n"));
         if (psmat)
             stream_puts(s, "Q\n");
