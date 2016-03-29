@@ -259,6 +259,26 @@ done
 AC_MSG_RESULT([ ...done.])
 
 dnl ----------------------------
+dnl check for sanitize support
+dnl ----------------------------
+AC_MSG_CHECKING([compiler/linker address santizer support])
+
+CFLAGS_SANITIZE=""
+CFLAGS_SANITIZE_TRY="-fsanitize=address -fno-omit-frame-pointer"
+CFLAGS_SAVED="$CFLAGS"
+CFLAGS="$CFLAGS_SANITIZE_TRY"
+
+
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([#include <stdio.h>], [
+  return(0);
+  ])],
+  [CFLAGS_SANITIZE="$CFLAGS"], [CFLAGS_SANITIZE="****************ADDRESS_SANITIZER_NOT_SUPPORTED*********************"])
+
+CFLAGS="$CFLAGS_SAVED"
+
+AC_MSG_RESULT([ ...done.])
+dnl ----------------------------
 dnl check for big/little endian
 dnl ----------------------------
 
@@ -2479,6 +2499,7 @@ AC_SUBST(SRCDIR)
 AC_SUBST(OPT_CFLAGS)
 AC_SUBST(DBG_CFLAGS)
 AC_SUBST(GCFLAGS)
+AC_SUBST(CFLAGS_SANITIZE)
 
 AC_OUTPUT(Makefile)
 
