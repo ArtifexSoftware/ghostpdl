@@ -2152,6 +2152,76 @@ currentdict /CMap_read_dict undef
 currentdict end readonly def
 currentdict /bndef undef
 
+% Used to create a hash for the XUID, ths combines the input PDF file name and the
+% object number (currently the object number of the FontDescriptor). NB we *must*
+% use an object number, as otherwise all fonts will have the same
+% XUID and Ghostscript will think they are the same font. Ths routine must not
+% be used unless we have an object number which is believed to be uniqe to
+% a particular font instance.
+/.CRCHashFilenameAndObject % object_number (filename) CRCHasFilename integer
+{
+    dup                     % object_number (filename) (filename)
+    length                  % object_number (filename) length
+    0 exch                  % object_number (filename) hash length
+    1 sub                   % object_number (filename) hash length-1
+    0 1 3 -1 roll           % object_number (filename) hash 0 1 length-1
+    {                       % object_number (filename) hash index
+      2 index exch get      % object_number (filename) hash char
+      exch                  % object_number (filename) char hash
+      dup 16#F8000000 and   % object_number (filename) char hash top5bits
+      -27 bitshift          % object_number (filename) char hash top5>>27
+      exch 5 bitshift       % object_number (filename) char top5>>27 hash<<5
+      16#7FFFFFFF and
+      xor                   % object_number (filename) char CRC<hash>
+      xor                   % object_number (filename) newhash
+    } for
+    exch pop              % object_number newhash
+    dup 16#F8000000 and   % object_number newhash top5bits
+    -27 bitshift          % object_number newhash top5>>27
+    exch 5 bitshift       % object_number top5>>27 newhash<<5
+    16#7FFFFFFF and
+    xor                   % object_number CRC<newhash>
+    xor                   % final hashed value
+}bind def
+
+% Either patch or create a new XUID based on the existing
+% XUID or UniqueID and incorporating the PDF object number
+% so we get an XUID we can use to improve cache efficiency
+% in multipage documents.
+/patch_font_XUID     % <font dict> <patch> patch_font_XUID <font dict'>
+{
+  %% Allow users to specify that we should not care about font object numbers
+  %% that is, don't patch the XUID with the object number and filename.
+  /PDFDontUseFontObjectNum where {/PDFDontUseFontObjectNum get}{//false}ifelse
+  %% Do not modify the XUID if we don't have an object number (see above)
+  1 index //null eq
+  or
+  {pop}
+  {
+    pdfdict /InputPDFFileName .knownget {.CRCHashFilenameAndObject} if
+    exch dup /.OrigUniqueIDXUID .knownget not
+    {
+      dup /XUID .knownget not
+      {
+        dup /UniqueID .knownget
+        {1 array astore}{ [] } ifelse
+      } if
+    } if
+
+    dup //null eq
+    {
+          pop exch pop
+    }
+    {
+      [ 1000000 3 -1 roll 4 index exch {exch} forall ]
+      exch //true .copyfontdict
+      dup 3 -1 roll /XUID exch put
+      exch pop
+      .completefont
+    } ifelse
+  } ifelse
+} bind def
+
 /resourcefont                   % <font-resource> resourcefont <font>
 {
   dup /PSFont .knownget dup {
@@ -2159,6 +2229,30 @@ currentdict /bndef undef
   } if {
     /PSFont get
   } {
+
+    dup /Subtype get /Type0 eq {
+      % if the font was defined in-line, we won't have a object number
+      dup /.gs.pdfobj# .knownget not { //null } if
+    } {
+        dup /FontDescriptor knownoget {
+          % if the font was defined in-line, we won't have a object number
+          dup /.gs.pdfobj# .knownget not { //null }if
+          dup //null eq {
+            exch pop
+          }{
+            exch dup /FontFile knownoget not {
+             dup /FontFile2 knownoget not {
+                dup /FontFile3 knownoget not {
+                  pop pop //null
+                } {pop pop}ifelse
+              } {pop pop}ifelse
+            }{pop pop}ifelse
+          }ifelse
+        }{
+          //null
+        } ifelse
+    } ifelse
+    3 1 roll
 
     % In the event we have a Type 0 dictionary with a spurious
     % FontDescriptor object, remove it here to prevent confusion
@@ -2267,6 +2361,7 @@ currentdict /bndef undef
     1 index exch
     1 index /Subtype get
     //adjustfonttypes exch .knownget { exec } { exch pop } ifelse
+    4 -1 roll patch_font_XUID
     dup 3 1 roll /PSFont exch put
   } ifelse
   dup checkGlyphNames2Unicode

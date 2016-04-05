@@ -759,6 +759,43 @@ done:
     return code;
 }
 
+/* Return the filename used to open a file object
+ * this is currently only used by the PDF interpreter to
+ * get a filename corresponding to the PDF file being
+ * executed. Since we always execute PDF files from disk
+ * this will always be OK.
+ */
+static int zgetfilename(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    uint fnlen;
+    gs_const_string pfname;
+    stream *s;
+    byte *sbody;
+    int code;
+
+    check_ostack(1);
+    check_read_type(*op, t_file);
+
+    s = (op)->value.pfile;
+
+    code = sfilename(s, &pfname);
+    if (code < 0) {
+        pfname.size = 0;
+    }
+
+    fnlen = pfname.size;
+    sbody = ialloc_string(fnlen, ".getfilename");
+    if (sbody == 0) {
+        code = gs_note_error(gs_error_VMerror);
+        return code;
+    }
+    memcpy(sbody, pfname.data, fnlen);
+    make_string(op, a_readonly | icurrent_space, fnlen, sbody);
+
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zfile_op_defs[] =
@@ -776,6 +813,7 @@ const op_def zfile_op_defs[] =
                 /* Internal operators */
     {"0%file_continue", file_continue},
     {"0%execfile_finish", execfile_finish},
+    {"1.getfilename", zgetfilename},
     op_def_end(0)
 };
 

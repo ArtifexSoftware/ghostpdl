@@ -1158,6 +1158,16 @@ pdf_find_font_resource(gx_device_pdf *pdev, gs_font *font,
             gs_font *ofont = font;
             int code;
 
+            cfont = (gs_font_base *)font;
+            if (uid_is_XUID(&cfont->UID)){
+                int size = uid_XUID_size(&cfont->UID);
+                long *xvalues = uid_XUID_values(&cfont->UID);
+                if (xvalues && size >= 2 && xvalues[0] == 1000000) {
+                    if (xvalues[size - 1] != pdfont->XUID)
+                        continue;
+                }
+            }
+
             if (font->FontType != pdfont->FontType)
                 continue;
             if (pdfont->FontType == ft_composite) {
@@ -1394,6 +1404,8 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
     pdf_standard_font_t *const psfa =
         pdev->text->outline_fonts->standard_fonts;
     int code = 0;
+    long XUID = 0;
+    gs_font_base *bfont = (gs_font_base *)font;
 
     if (pdev->version < psdf_version_level2_with_TT) {
         switch(font->FontType) {
@@ -1441,6 +1453,14 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
         return code;
     }
 
+    if (uid_is_XUID(&bfont->UID)){
+        int size = uid_XUID_size(&bfont->UID);
+        long *xvalues = uid_XUID_values(&bfont->UID);
+        if (xvalues && size >= 2 && xvalues[0] == 1000000) {
+            XUID = xvalues[size - 1];
+        }
+    }
+
     switch (font->FontType) {
     case ft_CID_encrypted:
     case ft_CID_TrueType:
@@ -1459,6 +1479,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
         code = pdf_make_font3_resource(pdev, font, ppdfont);
         if (code < 0)
             return code;
+        (*ppdfont)->XUID = XUID;
         return 1;
     default:
         return_error(gs_error_invalidfont);
@@ -1500,6 +1521,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
         )
         return code;
 
+    pdfont->XUID = XUID;
     pdf_do_subset_font(pdev, pfd->base_font, -1);
     if (font->FontType == ft_encrypted || font->FontType == ft_encrypted2
         || (font->FontType == ft_TrueType && pdev->ForOPDFRead)

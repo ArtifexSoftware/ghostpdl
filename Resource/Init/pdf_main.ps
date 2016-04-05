@@ -373,6 +373,12 @@ currentdict /runpdfstring .undef
 } bind def
 
 /runpdf {		% <file> runpdf -
+  %% Get the PDF filename (it *must* be a file even if it came from stdin it gets
+  %% copied to a temporary file) and store it in pdfdict. We will use this for
+  %% hashing fonts to detect if fonts with the same name are from different files.
+  %%
+  dup currentglobal exch true setglobal .getfilename exch setglobal /InputPDFFileName exch pdfdict 3 1 roll .forceput
+
   //runpdfbegin exec
   //pdf_collection_files exec
   dup mark eq {

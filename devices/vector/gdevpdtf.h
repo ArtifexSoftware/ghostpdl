@@ -202,6 +202,7 @@ typedef struct {
 struct pdf_font_resource_s {
     pdf_resource_common(pdf_font_resource_t);
     font_type FontType;		/* copied from font, if any */
+    long XUID;
     pdf_font_write_contents_proc_t write_contents;
     gs_string BaseFont;		/* (not used for Type 3) */
     pdf_font_descriptor_t *FontDescriptor; /* (not used for Type 0, Type 3, */

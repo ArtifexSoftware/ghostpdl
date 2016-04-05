@@ -779,6 +779,7 @@ currentdict /no_debug_dict undef
 .dicttomark readonly def
 
 /resolveR {             % <object#> <generation#> resolveR <object>
+  1 index 3 1 roll       % copy the object for the code after pdf_run_resolve (may store it)
   PDFDEBUG {
     PDFSTEPcount 1 le {
       (%Resolving: ) print 2 copy 2 array astore //== exec
@@ -832,6 +833,21 @@ currentdict /no_debug_dict undef
       exch PDFfile exch setfileposition   % Return to original file position
     } ifelse
   } ifelse
+
+   dup type /dicttype eq  % For dictionaries only
+   {
+     dup /Type .knownget  % make sure the dictionary has a type
+     {
+       dup /Font eq exch /FontDescriptor eq or          % and ensure its a Font or FontDescriptor
+       {dup 3 -1 roll /.gs.pdfobj# exch put}
+       {exch pop}
+       ifelse
+     }
+     {exch pop}
+     ifelse
+   }
+   {exch pop}
+   ifelse
 } bind def
 
 % ================================ Streams ================================ %

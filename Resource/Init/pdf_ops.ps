@@ -961,20 +961,45 @@ end readonly def
 % the UniqueID and XUID, if any.  If the original dictionary doesn't have
 % the keys being removed, don't copy it.
 /.copyfontdict		% <font> <changed> .copyfontdict <dict>
- { 1 index /FID known
+ {
+   1 index /.OrigUniqueIDXUID .knownget
+   {//false}
+   {
+     1 index /XUID .knownget
+     {
+       //true 1 index {0 gt and} forall
+       {//false}{pop //true} ifelse
+     }
+     {
+       //true
+     }ifelse
+   } ifelse
+
+   {
+     1 index /UniqueID .knownget
+     {[exch]}{//null} ifelse
+   } if
+   3 1 roll
+
+   1 index /FID known
    1 index { 2 index /UniqueID known or 2 index /XUID known or } if
     {		% We add 1 to the length just in case the original
                 % didn't have a FID.
       exch dup length 1 add dict exch
        {		% Stack: changed newfont key value
-         1 index /FID eq 4 index
-          { 2 index /UniqueID eq or 2 index /XUID eq or }
-         if not { 3 copy put } if pop pop
+         1 index /FID eq
+         not { 3 copy put } if pop pop
        }
       forall exch
     }
    if pop
- } bdef
+
+   1 index //null eq
+   {exch pop}
+   {dup 3 -1 roll /.OrigUniqueIDXUID exch put}
+   ifelse
+
+} bdef
 
 % Insert a new Encoding or Metrics into a font if necessary.
 % Return a possibly updated font, and a flag to indicate whether
