@@ -725,11 +725,10 @@ finish:
          * of the bounding box if this code is present. I can't see why
          * this clamping was done, if it turns out to be required then
          * we will need to revisit this and bug #695671.
-         */
-#if 0
         text_bbox.p.x = fixed2float(penum->origin.x);
         text_bbox.q.x = text_bbox.p.x + width_pt.x;
-#endif
+         */
+
         x0 = float2fixed(text_bbox.p.x);
         y0 = float2fixed(text_bbox.p.y);
         bx2 = float2fixed(text_bbox.q.x) - x0;

@@ -630,16 +630,6 @@ static int pdf_write_path(gx_device_pdf * pdev, gs_path_enum *cenum, gdev_vector
     if (pe_op < 0)
         return pe_op;
 
-    seg_index -= 2;
-
-    if (seg_index >= 0) {
-        if (seg_index == 0 && segments[0].op == gs_pe_moveto && !(type & gx_path_type_stroke) && (type & gx_path_type_fill))
-            seg_index--;
-
-        for (i=0;i<=seg_index;i++) {
-            gdev_vector_dopath_segment(state, segments[i].op, segments[i].vs);
-        }
-    }
     code = vdev_proc(vdev, endpath)(vdev, type);
     return (code < 0 ? code : segs);
 }
