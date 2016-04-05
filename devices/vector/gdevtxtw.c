@@ -1154,29 +1154,6 @@ txtwrite_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppa
     return 0;
 }
 
-#if 0
-static int
-txtwrite_fill_mask(gx_device * dev,
-               const byte * data, int dx, int raster, gx_bitmap_id id,
-               int x, int y, int w, int h,
-               const gx_drawing_color * pdcolor, int depth,
-               gs_logical_operation_t lop, const gx_clip_path * pcpath)
-{
-    return 0;
-}
-
-int
-txtwrite_begin_typed_image(gx_device * dev,
-                       const gs_imager_state * pis, const gs_matrix * pmat,
-                   const gs_image_common_t * pic, const gs_int_rect * prect,
-                       const gx_drawing_color * pdcolor,
-                       const gx_clip_path * pcpath,
-                       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
-{
-    return 0;
-}
-#endif
-
 /* ------ Text imaging ------ */
 
 static int
