@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2012 Artifex Software, Inc.
+/* Copyright (C) 2001-2016 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -22,7 +22,7 @@
 
 /* update package version here */
 #define PACKAGE "jbig2dec"
-#define VERSION "0.12"
+#define VERSION "0.13"
 
 #if defined(_MSC_VER) || (defined(__BORLANDC__) && defined(__WIN32__))
   /* Microsoft Visual C++ or Borland C++ */
