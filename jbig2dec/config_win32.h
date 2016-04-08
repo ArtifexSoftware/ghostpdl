@@ -17,7 +17,6 @@
     jbig2dec
 */
 
-
 /* configuration header file for compiling under Microsoft Windows */
 
 /* update package version here */
@@ -25,24 +24,25 @@
 #define VERSION "0.13"
 
 #if defined(_MSC_VER) || (defined(__BORLANDC__) && defined(__WIN32__))
-  /* Microsoft Visual C++ or Borland C++ */
-  typedef signed char             int8_t;
-  typedef short int               int16_t;
-  typedef int                     int32_t;
-  typedef __int64                 int64_t;
+/* Microsoft Visual C++ or Borland C++ */
+typedef signed char int8_t;
+typedef short int int16_t;
+typedef int int32_t;
+typedef __int64 int64_t;
 
-  typedef unsigned char             uint8_t;
-  typedef unsigned short int        uint16_t;
-  typedef unsigned int              uint32_t;
-  /* no uint64_t */
+typedef unsigned char uint8_t;
+typedef unsigned short int uint16_t;
+typedef unsigned int uint32_t;
+
+/* no uint64_t */
 
 #  if defined(_MSC_VER)
-#   if _MSC_VER < 1500	/* VS 2008 has vsnprintf */
+#   if _MSC_VER < 1500          /* VS 2008 has vsnprintf */
 #    define vsnprintf _vsnprintf
 #   endif
 #  endif
 
-#  if defined(_MSC_VER) && _MSC_VER>=1900 /* VS 2014 and later have (finally) snprintf */
+#  if defined(_MSC_VER) && _MSC_VER>=1900       /* VS 2014 and later have (finally) snprintf */
 #    define STDC99
 #  else
 #    define snprintf _snprintf

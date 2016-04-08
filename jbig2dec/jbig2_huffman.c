@@ -17,7 +17,6 @@
     jbig2dec
 */
 
-
 /* Huffman table decoding procedures
     -- See Annex B of the JBIG2 specification */
 
@@ -42,121 +41,122 @@
 #define JBIG2_HUFFMAN_FLAGS_ISLOW 2
 #define JBIG2_HUFFMAN_FLAGS_ISEXT 4
 
-
-
 struct _Jbig2HuffmanState {
-  /* The current bit offset is equal to (offset * 8) + offset_bits.
-     The MSB of this_word is the current bit offset. The MSB of next_word
-     is (offset + 4) * 8. */
-  uint32_t this_word;
-  uint32_t next_word;
-  int offset_bits;
-  int offset;
-  int offset_limit;
+    /* The current bit offset is equal to (offset * 8) + offset_bits.
+       The MSB of this_word is the current bit offset. The MSB of next_word
+       is (offset + 4) * 8. */
+    uint32_t this_word;
+    uint32_t next_word;
+    int offset_bits;
+    int offset;
+    int offset_limit;
 
-  Jbig2WordStream *ws;
-  Jbig2Ctx *ctx;
+    Jbig2WordStream *ws;
+    Jbig2Ctx *ctx;
 };
-
 
 static uint32_t
 huff_get_next_word(Jbig2HuffmanState *hs, int offset)
 {
-  uint32_t word = 0;
-  Jbig2WordStream *ws = hs->ws;
-  if ((ws->get_next_word (ws, offset, &word)) &&
-      ((hs->offset_limit == 0) || (offset < hs->offset_limit)))
-      hs->offset_limit = offset;
-  return word;
-}
+    uint32_t word = 0;
+    Jbig2WordStream *ws = hs->ws;
 
+    if ((ws->get_next_word(ws, offset, &word)) && ((hs->offset_limit == 0) || (offset < hs->offset_limit)))
+        hs->offset_limit = offset;
+    return word;
+}
 
 /** Allocate and initialize a new huffman coding state
  *  the returned pointer can simply be freed; this does
  *  not affect the associated Jbig2WordStream.
  */
 Jbig2HuffmanState *
-jbig2_huffman_new (Jbig2Ctx *ctx, Jbig2WordStream *ws)
+jbig2_huffman_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
 {
-  Jbig2HuffmanState *result = NULL;
+    Jbig2HuffmanState *result = NULL;
 
-  result = jbig2_new(ctx, Jbig2HuffmanState, 1);
+    result = jbig2_new(ctx, Jbig2HuffmanState, 1);
 
-  if (result != NULL) {
-      result->offset = 0;
-      result->offset_bits = 0;
-      result->offset_limit = 0;
-      result->ws = ws;
-      result->ctx = ctx;
-      result->this_word = huff_get_next_word(result, 0);
-      result->next_word = huff_get_next_word(result, 4);
-  } else {
-      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
-          "failed to allocate new huffman coding state");
-  }
+    if (result != NULL) {
+        result->offset = 0;
+        result->offset_bits = 0;
+        result->offset_limit = 0;
+        result->ws = ws;
+        result->ctx = ctx;
+        result->this_word = huff_get_next_word(result, 0);
+        result->next_word = huff_get_next_word(result, 4);
+    } else {
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate new huffman coding state");
+    }
 
-  return result;
+    return result;
 }
 
 /** Free an allocated huffman coding state.
  *  This just calls jbig2_free() if the pointer is not NULL
  */
 void
-jbig2_huffman_free (Jbig2Ctx *ctx, Jbig2HuffmanState *hs)
+jbig2_huffman_free(Jbig2Ctx *ctx, Jbig2HuffmanState *hs)
 {
-  if (hs != NULL) jbig2_free(ctx->allocator, hs);
-  return;
+    if (hs != NULL)
+        jbig2_free(ctx->allocator, hs);
+    return;
 }
 
 /** debug routines **/
 #ifdef JBIG2_DEBUG
 
 /** print current huffman state */
-void jbig2_dump_huffman_state(Jbig2HuffmanState *hs) {
-  fprintf(stderr, "huffman state %08x %08x offset %d.%d\n",
-	hs->this_word, hs->next_word, hs->offset, hs->offset_bits);
+void
+jbig2_dump_huffman_state(Jbig2HuffmanState *hs)
+{
+    fprintf(stderr, "huffman state %08x %08x offset %d.%d\n", hs->this_word, hs->next_word, hs->offset, hs->offset_bits);
 }
 
 /** print the binary string we're reading from */
-void jbig2_dump_huffman_binary(Jbig2HuffmanState *hs)
+void
+jbig2_dump_huffman_binary(Jbig2HuffmanState *hs)
 {
-  const uint32_t word = hs->this_word;
-  int i;
+    const uint32_t word = hs->this_word;
+    int i;
 
-  fprintf(stderr, "huffman binary ");
-  for (i = 31; i >= 0; i--)
-    fprintf(stderr, ((word >> i) & 1) ? "1" : "0");
-  fprintf(stderr, "\n");
+    fprintf(stderr, "huffman binary ");
+    for (i = 31; i >= 0; i--)
+        fprintf(stderr, ((word >> i) & 1) ? "1" : "0");
+    fprintf(stderr, "\n");
 }
 
 /** print huffman table */
-void jbig2_dump_huffman_table(const Jbig2HuffmanTable *table)
+void
+jbig2_dump_huffman_table(const Jbig2HuffmanTable *table)
 {
     int i;
     int table_size = (1 << table->log_table_size);
+
     fprintf(stderr, "huffman table %p (log_table_size=%d, %d entries, entryies=%p):\n", table, table->log_table_size, table_size, table->entries);
     for (i = 0; i < table_size; i++) {
         fprintf(stderr, "%6d: PREFLEN=%d, RANGELEN=%d, ", i, table->entries[i].PREFLEN, table->entries[i].RANGELEN);
-        if ( table->entries[i].flags & JBIG2_HUFFMAN_FLAGS_ISEXT ) {
+        if (table->entries[i].flags & JBIG2_HUFFMAN_FLAGS_ISEXT) {
             fprintf(stderr, "ext=%p", table->entries[i].u.ext_table);
         } else {
             fprintf(stderr, "RANGELOW=%d", table->entries[i].u.RANGELOW);
         }
-        if ( table->entries[i].flags ) {
+        if (table->entries[i].flags) {
             int need_comma = 0;
+
             fprintf(stderr, ", flags=0x%x(", table->entries[i].flags);
-            if ( table->entries[i].flags & JBIG2_HUFFMAN_FLAGS_ISOOB ) {
+            if (table->entries[i].flags & JBIG2_HUFFMAN_FLAGS_ISOOB) {
                 fprintf(stderr, "OOB");
                 need_comma = 1;
             }
-            if ( table->entries[i].flags & JBIG2_HUFFMAN_FLAGS_ISLOW ) {
-                if ( need_comma )
+            if (table->entries[i].flags & JBIG2_HUFFMAN_FLAGS_ISLOW) {
+                if (need_comma)
                     fprintf(stderr, ",");
                 fprintf(stderr, "LOW");
                 need_comma = 1;
             }
-            if ( table->entries[i].flags & JBIG2_HUFFMAN_FLAGS_ISEXT ) {
-                if ( need_comma )
+            if (table->entries[i].flags & JBIG2_HUFFMAN_FLAGS_ISEXT) {
+                if (need_comma)
                     fprintf(stderr, ",");
                 fprintf(stderr, "EXT");
             }
@@ -174,42 +174,40 @@ void jbig2_dump_huffman_table(const Jbig2HuffmanTable *table)
 void
 jbig2_huffman_skip(Jbig2HuffmanState *hs)
 {
-  int bits = hs->offset_bits & 7;
+    int bits = hs->offset_bits & 7;
 
-  if (bits) {
-    bits = 8 - bits;
-    hs->offset_bits += bits;
-    hs->this_word = (hs->this_word << bits) |
-	(hs->next_word >> (32 - hs->offset_bits));
-  }
-
-  if (hs->offset_bits >= 32) {
-    hs->this_word = hs->next_word;
-    hs->offset += 4;
-    hs->next_word = huff_get_next_word(hs, hs->offset + 4);
-    hs->offset_bits -= 32;
-    if (hs->offset_bits) {
-      hs->this_word = (hs->this_word << hs->offset_bits) |
-	(hs->next_word >> (32 - hs->offset_bits));
+    if (bits) {
+        bits = 8 - bits;
+        hs->offset_bits += bits;
+        hs->this_word = (hs->this_word << bits) | (hs->next_word >> (32 - hs->offset_bits));
     }
-  }
+
+    if (hs->offset_bits >= 32) {
+        hs->this_word = hs->next_word;
+        hs->offset += 4;
+        hs->next_word = huff_get_next_word(hs, hs->offset + 4);
+        hs->offset_bits -= 32;
+        if (hs->offset_bits) {
+            hs->this_word = (hs->this_word << hs->offset_bits) | (hs->next_word >> (32 - hs->offset_bits));
+        }
+    }
 }
 
 /* skip ahead a specified number of bytes in the word stream
  */
-void jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset)
+void
+jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset)
 {
-  hs->offset += offset & ~3;
-  hs->offset_bits += (offset & 3) << 3;
-  if (hs->offset_bits >= 32) {
-    hs->offset += 4;
-    hs->offset_bits -= 32;
-  }
-  hs->this_word = huff_get_next_word(hs, hs->offset);
-  hs->next_word = huff_get_next_word(hs, hs->offset + 4);
-  if (hs->offset_bits > 0)
-    hs->this_word = (hs->this_word << hs->offset_bits) |
-	(hs->next_word >> (32 - hs->offset_bits));
+    hs->offset += offset & ~3;
+    hs->offset_bits += (offset & 3) << 3;
+    if (hs->offset_bits >= 32) {
+        hs->offset += 4;
+        hs->offset_bits -= 32;
+    }
+    hs->this_word = huff_get_next_word(hs, hs->offset);
+    hs->next_word = huff_get_next_word(hs, hs->offset + 4);
+    if (hs->offset_bits > 0)
+        hs->this_word = (hs->this_word << hs->offset_bits) | (hs->next_word >> (32 - hs->offset_bits));
 }
 
 /* return the offset of the huffman decode pointer (in bytes)
@@ -218,137 +216,123 @@ void jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset)
 int
 jbig2_huffman_offset(Jbig2HuffmanState *hs)
 {
-  return hs->offset + (hs->offset_bits >> 3);
+    return hs->offset + (hs->offset_bits >> 3);
 }
 
 /* read a number of bits directly from the huffman state
  * without decoding against a table
  */
 int32_t
-jbig2_huffman_get_bits (Jbig2HuffmanState *hs, const int bits, int *err)
+jbig2_huffman_get_bits(Jbig2HuffmanState *hs, const int bits, int *err)
 {
-  uint32_t this_word = hs->this_word;
-  int32_t result;
+    uint32_t this_word = hs->this_word;
+    int32_t result;
 
-  if (hs->offset_limit && hs->offset >= hs->offset_limit) {
-    jbig2_error(hs->ctx, JBIG2_SEVERITY_FATAL, -1,
-      "end of jbig2 buffer reached at offset %d", hs->offset);
-    *err = -1;
-    return -1;
-  }
-
-  result = this_word >> (32 - bits);
-  hs->offset_bits += bits;
-  if (hs->offset_bits >= 32) {
-    hs->offset += 4;
-    hs->offset_bits -= 32;
-    hs->this_word = hs->next_word;
-    hs->next_word = huff_get_next_word(hs, hs->offset + 4);
-    if (hs->offset_bits) {
-      hs->this_word = (hs->this_word << hs->offset_bits) |
-	(hs->next_word >> (32 - hs->offset_bits));
-    } else {
-      hs->this_word = (hs->this_word << hs->offset_bits);
+    if (hs->offset_limit && hs->offset >= hs->offset_limit) {
+        jbig2_error(hs->ctx, JBIG2_SEVERITY_FATAL, -1, "end of jbig2 buffer reached at offset %d", hs->offset);
+        *err = -1;
+        return -1;
     }
-  } else {
-    hs->this_word = (this_word << bits) |
-	(hs->next_word >> (32 - hs->offset_bits));
-  }
 
-  return result;
+    result = this_word >> (32 - bits);
+    hs->offset_bits += bits;
+    if (hs->offset_bits >= 32) {
+        hs->offset += 4;
+        hs->offset_bits -= 32;
+        hs->this_word = hs->next_word;
+        hs->next_word = huff_get_next_word(hs, hs->offset + 4);
+        if (hs->offset_bits) {
+            hs->this_word = (hs->this_word << hs->offset_bits) | (hs->next_word >> (32 - hs->offset_bits));
+        } else {
+            hs->this_word = (hs->this_word << hs->offset_bits);
+        }
+    } else {
+        hs->this_word = (this_word << bits) | (hs->next_word >> (32 - hs->offset_bits));
+    }
+
+    return result;
 }
 
 int32_t
-jbig2_huffman_get (Jbig2HuffmanState *hs,
-		   const Jbig2HuffmanTable *table, bool *oob)
+jbig2_huffman_get(Jbig2HuffmanState *hs, const Jbig2HuffmanTable *table, bool *oob)
 {
-  Jbig2HuffmanEntry *entry;
-  byte flags;
-  int offset_bits = hs->offset_bits;
-  uint32_t this_word = hs->this_word;
-  uint32_t next_word;
-  int RANGELEN;
-  int32_t result;
+    Jbig2HuffmanEntry *entry;
+    byte flags;
+    int offset_bits = hs->offset_bits;
+    uint32_t this_word = hs->this_word;
+    uint32_t next_word;
+    int RANGELEN;
+    int32_t result;
 
-  if (hs->offset_limit && hs->offset >= hs->offset_limit) {
-    jbig2_error(hs->ctx, JBIG2_SEVERITY_FATAL, -1,
-      "end of Jbig2WordStream reached at offset %d", hs->offset);
-    if (oob)
-      *oob = -1;
-    return -1;
-  }
-
-  for (;;)
-    {
-      int log_table_size = table->log_table_size;
-      int PREFLEN;
-
-      /* SumatraPDF: shifting by the size of the operand is undefined */
-      entry = &table->entries[log_table_size > 0 ? this_word >> (32 - log_table_size) : 0];
-      flags = entry->flags;
-      PREFLEN = entry->PREFLEN;
-      if ((flags == (byte)-1) && (PREFLEN == (byte)-1) && (entry->u.RANGELOW == -1))
-      {
-          if (oob)
-              *oob = -1;
-          return -1;
-      }
-
-      next_word = hs->next_word;
-      offset_bits += PREFLEN;
-      if (offset_bits >= 32)
-	{
-	  this_word = next_word;
-	  hs->offset += 4;
-	  next_word = huff_get_next_word(hs, hs->offset + 4);
-	  offset_bits -= 32;
-	  hs->next_word = next_word;
-	  PREFLEN = offset_bits;
-	}
-      if (PREFLEN)
-	this_word = (this_word << PREFLEN) |
-	  (next_word >> (32 - offset_bits));
-      if (flags & JBIG2_HUFFMAN_FLAGS_ISEXT)
-	{
-	  table = entry->u.ext_table;
-	}
-      else
-	break;
-    }
-  result = entry->u.RANGELOW;
-  RANGELEN = entry->RANGELEN;
-  if (RANGELEN > 0)
-    {
-      int32_t HTOFFSET;
-
-      HTOFFSET = this_word >> (32 - RANGELEN);
-      if (flags & JBIG2_HUFFMAN_FLAGS_ISLOW)
-	result -= HTOFFSET;
-      else
-	result += HTOFFSET;
-
-      offset_bits += RANGELEN;
-      if (offset_bits >= 32)
-	{
-	  this_word = next_word;
-	  hs->offset += 4;
-	  next_word = huff_get_next_word(hs, hs->offset + 4);
-	  offset_bits -= 32;
-	  hs->next_word = next_word;
-	  RANGELEN = offset_bits;
-	}
-if (RANGELEN)
-      this_word = (this_word << RANGELEN) |
-	(next_word >> (32 - offset_bits));
+    if (hs->offset_limit && hs->offset >= hs->offset_limit) {
+        jbig2_error(hs->ctx, JBIG2_SEVERITY_FATAL, -1, "end of Jbig2WordStream reached at offset %d", hs->offset);
+        if (oob)
+            *oob = -1;
+        return -1;
     }
 
-  hs->this_word = this_word;
-  hs->offset_bits = offset_bits;
+    for (;;) {
+        int log_table_size = table->log_table_size;
+        int PREFLEN;
 
-  if (oob != NULL)
-    *oob = (flags & JBIG2_HUFFMAN_FLAGS_ISOOB);
+        /* SumatraPDF: shifting by the size of the operand is undefined */
+        entry = &table->entries[log_table_size > 0 ? this_word >> (32 - log_table_size) : 0];
+        flags = entry->flags;
+        PREFLEN = entry->PREFLEN;
+        if ((flags == (byte) - 1) && (PREFLEN == (byte) - 1) && (entry->u.RANGELOW == -1)) {
+            if (oob)
+                *oob = -1;
+            return -1;
+        }
 
-  return result;
+        next_word = hs->next_word;
+        offset_bits += PREFLEN;
+        if (offset_bits >= 32) {
+            this_word = next_word;
+            hs->offset += 4;
+            next_word = huff_get_next_word(hs, hs->offset + 4);
+            offset_bits -= 32;
+            hs->next_word = next_word;
+            PREFLEN = offset_bits;
+        }
+        if (PREFLEN)
+            this_word = (this_word << PREFLEN) | (next_word >> (32 - offset_bits));
+        if (flags & JBIG2_HUFFMAN_FLAGS_ISEXT) {
+            table = entry->u.ext_table;
+        } else
+            break;
+    }
+    result = entry->u.RANGELOW;
+    RANGELEN = entry->RANGELEN;
+    if (RANGELEN > 0) {
+        int32_t HTOFFSET;
+
+        HTOFFSET = this_word >> (32 - RANGELEN);
+        if (flags & JBIG2_HUFFMAN_FLAGS_ISLOW)
+            result -= HTOFFSET;
+        else
+            result += HTOFFSET;
+
+        offset_bits += RANGELEN;
+        if (offset_bits >= 32) {
+            this_word = next_word;
+            hs->offset += 4;
+            next_word = huff_get_next_word(hs, hs->offset + 4);
+            offset_bits -= 32;
+            hs->next_word = next_word;
+            RANGELEN = offset_bits;
+        }
+        if (RANGELEN)
+            this_word = (this_word << RANGELEN) | (next_word >> (32 - offset_bits));
+    }
+
+    hs->this_word = this_word;
+    hs->offset_bits = offset_bits;
+
+    if (oob != NULL)
+        *oob = (flags & JBIG2_HUFFMAN_FLAGS_ISOOB);
+
+    return result;
 }
 
 /* TODO: more than 8 bits here is wasteful of memory. We have support
@@ -360,152 +344,139 @@ if (RANGELEN)
  *  set of template params provided by the spec or a table segment
  */
 Jbig2HuffmanTable *
-jbig2_build_huffman_table (Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
+jbig2_build_huffman_table(Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
 {
-  int *LENCOUNT;
-  int LENMAX = -1;
-  const int lencountcount = 256;
-  const Jbig2HuffmanLine *lines = params->lines;
-  int n_lines = params->n_lines;
-  int i, j;
-  int max_j;
-  int log_table_size = 0;
-  Jbig2HuffmanTable *result;
-  Jbig2HuffmanEntry *entries;
-  int CURLEN;
-  int firstcode = 0;
-  int CURCODE;
-  int CURTEMP;
+    int *LENCOUNT;
+    int LENMAX = -1;
+    const int lencountcount = 256;
+    const Jbig2HuffmanLine *lines = params->lines;
+    int n_lines = params->n_lines;
+    int i, j;
+    int max_j;
+    int log_table_size = 0;
+    Jbig2HuffmanTable *result;
+    Jbig2HuffmanEntry *entries;
+    int CURLEN;
+    int firstcode = 0;
+    int CURCODE;
+    int CURTEMP;
 
-  LENCOUNT = jbig2_new(ctx, int, lencountcount);
-  if (LENCOUNT == NULL) {
-    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
-      "couldn't allocate storage for huffman histogram");
-    return NULL;
-  }
-  memset(LENCOUNT, 0, sizeof(int) * lencountcount);
+    LENCOUNT = jbig2_new(ctx, int, lencountcount);
 
-  /* B.3, 1. */
-  for (i = 0; i < params->n_lines; i++)
-    {
-      int PREFLEN = lines[i].PREFLEN;
-      int lts;
-
-      if (PREFLEN > LENMAX)
-		{
-			for (j = LENMAX + 1; j < PREFLEN + 1; j++)
-				LENCOUNT[j] = 0;
-			LENMAX = PREFLEN;
-		}
-      LENCOUNT[PREFLEN]++;
-
-      lts = PREFLEN + lines[i].RANGELEN;
-      if (lts > LOG_TABLE_SIZE_MAX)
-		lts = PREFLEN;
-      if (lts <= LOG_TABLE_SIZE_MAX && log_table_size < lts)
-		log_table_size = lts;
+    if (LENCOUNT == NULL) {
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "couldn't allocate storage for huffman histogram");
+        return NULL;
     }
-  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
-	"constructing huffman table log size %d", log_table_size);
-  max_j = 1 << log_table_size;
+    memset(LENCOUNT, 0, sizeof(int) * lencountcount);
 
-  result = jbig2_new(ctx, Jbig2HuffmanTable, 1);
-  if (result == NULL)
-  {
-    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
-        "couldn't allocate result storage in jbig2_build_huffman_table");
-    jbig2_free(ctx->allocator, LENCOUNT);
-    return NULL;
-  }
-  result->log_table_size = log_table_size;
-  entries = jbig2_new(ctx, Jbig2HuffmanEntry, max_j);
-  if (entries == NULL)
-  {
-    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
-        "couldn't allocate entries storage in jbig2_build_huffman_table");
-    jbig2_free(ctx->allocator, result);
-    jbig2_free(ctx->allocator, LENCOUNT);
-    return NULL;
-  }
-  /* fill now to catch missing JBIG2Globals later */
-  memset(entries, 0xFF, sizeof(Jbig2HuffmanEntry)*max_j);
-  result->entries = entries;
+    /* B.3, 1. */
+    for (i = 0; i < params->n_lines; i++) {
+        int PREFLEN = lines[i].PREFLEN;
+        int lts;
 
-  LENCOUNT[0] = 0;
+        if (PREFLEN > LENMAX) {
+            for (j = LENMAX + 1; j < PREFLEN + 1; j++)
+                LENCOUNT[j] = 0;
+            LENMAX = PREFLEN;
+        }
+        LENCOUNT[PREFLEN]++;
 
-  for (CURLEN = 1; CURLEN <= LENMAX; CURLEN++)
-    {
-      int shift = log_table_size - CURLEN;
+        lts = PREFLEN + lines[i].RANGELEN;
+        if (lts > LOG_TABLE_SIZE_MAX)
+            lts = PREFLEN;
+        if (lts <= LOG_TABLE_SIZE_MAX && log_table_size < lts)
+            log_table_size = lts;
+    }
+    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "constructing huffman table log size %d", log_table_size);
+    max_j = 1 << log_table_size;
 
-      /* B.3 3.(a) */
-      firstcode = (firstcode + LENCOUNT[CURLEN - 1]) << 1;
-      CURCODE = firstcode;
-      /* B.3 3.(b) */
-      for (CURTEMP = 0; CURTEMP < n_lines; CURTEMP++)
-	{
-	  int PREFLEN = lines[CURTEMP].PREFLEN;
-	  if (PREFLEN == CURLEN)
-	    {
-	      int RANGELEN = lines[CURTEMP].RANGELEN;
-	      int start_j = CURCODE << shift;
-	      int end_j = (CURCODE + 1) << shift;
-	      byte eflags = 0;
+    result = jbig2_new(ctx, Jbig2HuffmanTable, 1);
+    if (result == NULL) {
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "couldn't allocate result storage in jbig2_build_huffman_table");
+        jbig2_free(ctx->allocator, LENCOUNT);
+        return NULL;
+    }
+    result->log_table_size = log_table_size;
+    entries = jbig2_new(ctx, Jbig2HuffmanEntry, max_j);
+    if (entries == NULL) {
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "couldn't allocate entries storage in jbig2_build_huffman_table");
+        jbig2_free(ctx->allocator, result);
+        jbig2_free(ctx->allocator, LENCOUNT);
+        return NULL;
+    }
+    /* fill now to catch missing JBIG2Globals later */
+    memset(entries, 0xFF, sizeof(Jbig2HuffmanEntry) * max_j);
+    result->entries = entries;
 
-	      if (end_j > max_j) {
-		jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
-		  "ran off the end of the entries table! (%d >= %d)",
-		  end_j, max_j);
-		jbig2_free(ctx->allocator, result->entries);
-		jbig2_free(ctx->allocator, result);
-		jbig2_free(ctx->allocator, LENCOUNT);
-		return NULL;
-	      }
-	      /* todo: build extension tables */
-	      if (params->HTOOB && CURTEMP == n_lines - 1)
-		eflags |= JBIG2_HUFFMAN_FLAGS_ISOOB;
-	      if (CURTEMP == n_lines - (params->HTOOB ? 3 : 2))
-		eflags |= JBIG2_HUFFMAN_FLAGS_ISLOW;
-	      if (PREFLEN + RANGELEN > LOG_TABLE_SIZE_MAX) {
-		  for (j = start_j; j < end_j; j++) {
-		      entries[j].u.RANGELOW = lines[CURTEMP].RANGELOW;
-		      entries[j].PREFLEN = PREFLEN;
-		      entries[j].RANGELEN = RANGELEN;
-		      entries[j].flags = eflags;
-		    }
-	      } else {
-		  for (j = start_j; j < end_j; j++) {
-		      int32_t HTOFFSET = (j >> (shift - RANGELEN)) &
-			((1 << RANGELEN) - 1);
-		      if (eflags & JBIG2_HUFFMAN_FLAGS_ISLOW)
-			entries[j].u.RANGELOW = lines[CURTEMP].RANGELOW -
-			  HTOFFSET;
-		      else
-			entries[j].u.RANGELOW = lines[CURTEMP].RANGELOW +
-			  HTOFFSET;
-		      entries[j].PREFLEN = PREFLEN + RANGELEN;
-		      entries[j].RANGELEN = 0;
-		      entries[j].flags = eflags;
-		    }
-		}
-	      CURCODE++;
-	    }
-	}
+    LENCOUNT[0] = 0;
+
+    for (CURLEN = 1; CURLEN <= LENMAX; CURLEN++) {
+        int shift = log_table_size - CURLEN;
+
+        /* B.3 3.(a) */
+        firstcode = (firstcode + LENCOUNT[CURLEN - 1]) << 1;
+        CURCODE = firstcode;
+        /* B.3 3.(b) */
+        for (CURTEMP = 0; CURTEMP < n_lines; CURTEMP++) {
+            int PREFLEN = lines[CURTEMP].PREFLEN;
+
+            if (PREFLEN == CURLEN) {
+                int RANGELEN = lines[CURTEMP].RANGELEN;
+                int start_j = CURCODE << shift;
+                int end_j = (CURCODE + 1) << shift;
+                byte eflags = 0;
+
+                if (end_j > max_j) {
+                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "ran off the end of the entries table! (%d >= %d)", end_j, max_j);
+                    jbig2_free(ctx->allocator, result->entries);
+                    jbig2_free(ctx->allocator, result);
+                    jbig2_free(ctx->allocator, LENCOUNT);
+                    return NULL;
+                }
+                /* todo: build extension tables */
+                if (params->HTOOB && CURTEMP == n_lines - 1)
+                    eflags |= JBIG2_HUFFMAN_FLAGS_ISOOB;
+                if (CURTEMP == n_lines - (params->HTOOB ? 3 : 2))
+                    eflags |= JBIG2_HUFFMAN_FLAGS_ISLOW;
+                if (PREFLEN + RANGELEN > LOG_TABLE_SIZE_MAX) {
+                    for (j = start_j; j < end_j; j++) {
+                        entries[j].u.RANGELOW = lines[CURTEMP].RANGELOW;
+                        entries[j].PREFLEN = PREFLEN;
+                        entries[j].RANGELEN = RANGELEN;
+                        entries[j].flags = eflags;
+                    }
+                } else {
+                    for (j = start_j; j < end_j; j++) {
+                        int32_t HTOFFSET = (j >> (shift - RANGELEN)) & ((1 << RANGELEN) - 1);
+
+                        if (eflags & JBIG2_HUFFMAN_FLAGS_ISLOW)
+                            entries[j].u.RANGELOW = lines[CURTEMP].RANGELOW - HTOFFSET;
+                        else
+                            entries[j].u.RANGELOW = lines[CURTEMP].RANGELOW + HTOFFSET;
+                        entries[j].PREFLEN = PREFLEN + RANGELEN;
+                        entries[j].RANGELEN = 0;
+                        entries[j].flags = eflags;
+                    }
+                }
+                CURCODE++;
+            }
+        }
     }
 
-  jbig2_free(ctx->allocator, LENCOUNT);
+    jbig2_free(ctx->allocator, LENCOUNT);
 
-  return result;
+    return result;
 }
 
 /** Free the memory associated with the representation of table */
 void
-jbig2_release_huffman_table (Jbig2Ctx *ctx, Jbig2HuffmanTable *table)
+jbig2_release_huffman_table(Jbig2Ctx *ctx, Jbig2HuffmanTable *table)
 {
-  if (table != NULL) {
-      jbig2_free(ctx->allocator, table->entries);
-      jbig2_free(ctx->allocator, table);
-  }
-  return;
+    if (table != NULL) {
+        jbig2_free(ctx->allocator, table->entries);
+        jbig2_free(ctx->allocator, table);
+    }
+    return;
 }
 
 /* Routines to handle "code table segment (53)" */
@@ -520,9 +491,11 @@ jbig2_table_read_bits(const byte *data, size_t *bitoffset, const int bitlen)
     const int n_proc_bytes = (endbit + 7) / 8;
     const int rshift = n_proc_bytes * 8 - endbit;
     int i;
+
     for (i = n_proc_bytes - 1; i >= 0; i--) {
         uint32_t d = data[byte_offset++];
         const int nshift = i * 8 - rshift;
+
         if (nshift > 0)
             d <<= nshift;
         else if (nshift < 0)
@@ -548,45 +521,50 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
     {
         /* B.2 1) (B.2.1) Code table flags */
         const int code_table_flags = segment_data[0];
-        const int HTOOB = code_table_flags & 0x01; /* Bit 0: HTOOB */
+        const int HTOOB = code_table_flags & 0x01;      /* Bit 0: HTOOB */
+
         /* Bits 1-3: Number of bits used in code table line prefix size fields */
-        const int HTPS  = (code_table_flags >> 1 & 0x07) + 1;
+        const int HTPS = (code_table_flags >> 1 & 0x07) + 1;
+
         /* Bits 4-6: Number of bits used in code table line range size fields */
-        const int HTRS  = (code_table_flags >> 4 & 0x07) + 1;
+        const int HTRS = (code_table_flags >> 4 & 0x07) + 1;
+
         /* B.2 2) (B.2.2) The lower bound of the first table line in the encoded table */
-        const int32_t HTLOW  = jbig2_get_int32(segment_data + 1);
+        const int32_t HTLOW = jbig2_get_int32(segment_data + 1);
+
         /* B.2 3) (B.2.3) One larger than the upeer bound of
            the last normal table line in the encoded table */
         const int32_t HTHIGH = jbig2_get_int32(segment_data + 5);
+
         /* estimated number of lines int this table, used for alloacting memory for lines */
-        const size_t lines_max = (segment->data_length * 8 - HTPS * (HTOOB ? 3 : 2)) /
-                                                        (HTPS + HTRS) + (HTOOB ? 3 : 2);
+        const size_t lines_max = (segment->data_length * 8 - HTPS * (HTOOB ? 3 : 2)) / (HTPS + HTRS) + (HTOOB ? 3 : 2);
+
         /* points to a first table line data */
         const byte *lines_data = segment_data + 9;
-        const size_t lines_data_bitlen = (segment->data_length - 9) * 8;    /* length in bit */
+        const size_t lines_data_bitlen = (segment->data_length - 9) * 8;        /* length in bit */
+
         /* bit offset: controls bit reading */
         size_t boffset = 0;
+
         /* B.2 4) */
         int32_t CURRANGELOW = HTLOW;
         size_t NTEMP = 0;
 
 #ifdef JBIG2_DEBUG
-        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, 
-            "DECODING USER TABLE... Flags: %d, HTOOB: %d, HTPS: %d, HTRS: %d, HTLOW: %d, HTHIGH: %d", 
-            code_table_flags, HTOOB, HTPS, HTRS, HTLOW, HTHIGH);
+        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+                    "DECODING USER TABLE... Flags: %d, HTOOB: %d, HTPS: %d, HTRS: %d, HTLOW: %d, HTHIGH: %d",
+                    code_table_flags, HTOOB, HTPS, HTRS, HTLOW, HTHIGH);
 #endif
 
         /* allocate HuffmanParams & HuffmanLine */
         params = jbig2_new(ctx, Jbig2HuffmanParams, 1);
         if (params == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-                            "Could not allocate Huffman Table Parameter");
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Could not allocate Huffman Table Parameter");
             goto error_exit;
         }
         line = jbig2_new(ctx, Jbig2HuffmanLine, lines_max);
         if (line == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-                            "Could not allocate Huffman Table Lines");
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Could not allocate Huffman Table Lines");
             goto error_exit;
         }
         /* B.2 5) */
@@ -594,7 +572,7 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
             /* B.2 5) a) */
             if (boffset + HTPS >= lines_data_bitlen)
                 goto too_short;
-            line[NTEMP].PREFLEN  = jbig2_table_read_bits(lines_data, &boffset, HTPS);
+            line[NTEMP].PREFLEN = jbig2_table_read_bits(lines_data, &boffset, HTPS);
             /* B.2 5) b) */
             if (boffset + HTRS >= lines_data_bitlen)
                 goto too_short;
@@ -607,14 +585,14 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
         /* B.2 6), B.2 7) lower range table line */
         if (boffset + HTPS >= lines_data_bitlen)
             goto too_short;
-        line[NTEMP].PREFLEN  = jbig2_table_read_bits(lines_data, &boffset, HTPS);
+        line[NTEMP].PREFLEN = jbig2_table_read_bits(lines_data, &boffset, HTPS);
         line[NTEMP].RANGELEN = 32;
         line[NTEMP].RANGELOW = HTLOW - 1;
         NTEMP++;
         /* B.2 8), B.2 9) upper range table line */
         if (boffset + HTPS >= lines_data_bitlen)
             goto too_short;
-        line[NTEMP].PREFLEN  = jbig2_table_read_bits(lines_data, &boffset, HTPS);
+        line[NTEMP].PREFLEN = jbig2_table_read_bits(lines_data, &boffset, HTPS);
         line[NTEMP].RANGELEN = 32;
         line[NTEMP].RANGELOW = HTHIGH;
         NTEMP++;
@@ -623,33 +601,34 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
             /* B.2 10) a), B.2 10) b) out-of-bound table line */
             if (boffset + HTPS >= lines_data_bitlen)
                 goto too_short;
-            line[NTEMP].PREFLEN  = jbig2_table_read_bits(lines_data, &boffset, HTPS);
+            line[NTEMP].PREFLEN = jbig2_table_read_bits(lines_data, &boffset, HTPS);
             line[NTEMP].RANGELEN = 0;
             line[NTEMP].RANGELOW = 0;
             NTEMP++;
         }
         if (NTEMP != lines_max) {
             Jbig2HuffmanLine *new_line = jbig2_renew(ctx, line,
-                Jbig2HuffmanLine, NTEMP);
-            if ( new_line == NULL ) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-                                "Could not reallocate Huffman Table Lines");
+                                         Jbig2HuffmanLine, NTEMP);
+
+            if (new_line == NULL) {
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Could not reallocate Huffman Table Lines");
                 goto error_exit;
             }
             line = new_line;
         }
-        params->HTOOB   = HTOOB;
+        params->HTOOB = HTOOB;
         params->n_lines = NTEMP;
-        params->lines   = line;
+        params->lines = line;
         segment->result = params;
 
 #ifdef JBIG2_DEBUG
         {
             int i;
+
             for (i = 0; i < NTEMP; i++) {
-                jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, 
-                    "Line: %d, PREFLEN: %d, RANGELEN: %d, RANGELOW: %d", 
-                    i, params->lines[i].PREFLEN, params->lines[i].RANGELEN, params->lines[i].RANGELOW);
+                jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+                            "Line: %d, PREFLEN: %d, RANGELEN: %d, RANGELOW: %d",
+                            i, params->lines[i].PREFLEN, params->lines[i].RANGELEN, params->lines[i].RANGELOW);
             }
         }
 #endif
@@ -686,8 +665,8 @@ jbig2_find_table(Jbig2Ctx *ctx, Jbig2Segment *segment, int index)
     int i, table_index = 0;
 
     for (i = 0; i < segment->referred_to_segment_count; i++) {
-        const Jbig2Segment * const rsegment =
-                jbig2_find_segment(ctx, segment->referred_to_segments[i]);
+        const Jbig2Segment *const rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[i]);
+
         if (rsegment && (rsegment->flags & 63) == 53) {
             if (table_index == index)
                 return (const Jbig2HuffmanParams *)rsegment->result;
@@ -696,7 +675,6 @@ jbig2_find_table(Jbig2Ctx *ctx, Jbig2Segment *segment, int index)
     }
     return NULL;
 }
-
 
 #ifdef TEST
 #include <stdio.h>
@@ -707,61 +685,60 @@ jbig2_find_table(Jbig2Ctx *ctx, Jbig2Segment *segment, int index)
    to use in decoding it. 1 = table B.1 (A), 2 = table B.2 (B), and so on */
 /* this test stream should decode to { 8, 5, oob, 8 } */
 
-const byte	test_stream[] = { 0xe9, 0xcb, 0xf4, 0x00 };
-const byte	test_tabindex[] = { 4, 2, 2, 1 };
+const byte test_stream[] = { 0xe9, 0xcb, 0xf4, 0x00 };
+const byte test_tabindex[] = { 4, 2, 2, 1 };
 
 static int
-test_get_word (Jbig2WordStream *self, int offset, uint32_t *word)
+test_get_word(Jbig2WordStream *self, int offset, uint32_t *word)
 {
-	/* assume test_stream[] is at least 4 bytes */
-	if (offset+3 > sizeof(test_stream))
-		return -1;
-	*word = ( (test_stream[offset] << 24) |
-			 (test_stream[offset+1] << 16) |
-			 (test_stream[offset+2] << 8) |
-			 (test_stream[offset+3]) );
-	return 0;
+    /* assume test_stream[] is at least 4 bytes */
+    if (offset + 3 > sizeof(test_stream))
+        return -1;
+    *word = ((test_stream[offset] << 24) | (test_stream[offset + 1] << 16) | (test_stream[offset + 2] << 8) | (test_stream[offset + 3]));
+    return 0;
 }
 
 int
-main (int argc, char **argv)
+main(int argc, char **argv)
 {
-  Jbig2Ctx *ctx;
-  Jbig2HuffmanTable *tables[5];
-  Jbig2HuffmanState *hs;
-  Jbig2WordStream ws;
-  bool oob;
-  int32_t code;
+    Jbig2Ctx *ctx;
+    Jbig2HuffmanTable *tables[5];
+    Jbig2HuffmanState *hs;
+    Jbig2WordStream ws;
+    bool oob;
+    int32_t code;
 
-  ctx = jbig2_ctx_new(NULL, 0, NULL, NULL, NULL);
+    ctx = jbig2_ctx_new(NULL, 0, NULL, NULL, NULL);
 
-  tables[0] = NULL;
-  tables[1] = jbig2_build_huffman_table (ctx, &jbig2_huffman_params_A);
-  tables[2] = jbig2_build_huffman_table (ctx, &jbig2_huffman_params_B);
-  tables[3] = NULL;
-  tables[4] = jbig2_build_huffman_table (ctx, &jbig2_huffman_params_D);
-  ws.get_next_word = test_get_word;
-  hs = jbig2_huffman_new (ctx, &ws);
+    tables[0] = NULL;
+    tables[1] = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_A);
+    tables[2] = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_B);
+    tables[3] = NULL;
+    tables[4] = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_D);
+    ws.get_next_word = test_get_word;
+    hs = jbig2_huffman_new(ctx, &ws);
 
-  printf("testing jbig2 huffmann decoding...");
-  printf("\t(should be 8 5 (oob) 8)\n");
+    printf("testing jbig2 huffmann decoding...");
+    printf("\t(should be 8 5 (oob) 8)\n");
 
-  {
-	int i;
-	int sequence_length = sizeof(test_tabindex);
+    {
+        int i;
+        int sequence_length = sizeof(test_tabindex);
 
-	for (i = 0; i < sequence_length; i++) {
-		code = jbig2_huffman_get (hs, tables[test_tabindex[i]], &oob);
-		if (oob) printf("(oob) ");
-		else printf("%d ", code);
-	}
-  }
+        for (i = 0; i < sequence_length; i++) {
+            code = jbig2_huffman_get(hs, tables[test_tabindex[i]], &oob);
+            if (oob)
+                printf("(oob) ");
+            else
+                printf("%d ", code);
+        }
+    }
 
-  printf("\n");
+    printf("\n");
 
-  jbig2_ctx_free(ctx);
+    jbig2_ctx_free(ctx);
 
-  return 0;
+    return 0;
 }
 #endif
 
@@ -807,9 +784,8 @@ const byte test_input_A[] = {
     /* 0000 0000 0001 1100 0000 0000 0000 0000 */
        0x00,     0x1c,     0x00,     0x00,
     /* 0000 0000 0000 01 */
-       0x00,     0x04, 
+       0x00,     0x04,
 };
-
 
 /* test code for Table B.2 - Standard Huffman table B */
 const int32_t test_output_B[] = {
@@ -1962,7 +1938,7 @@ typedef struct test_huffmancodes {
     test_output_##x, countof(test_output_##x), \
 }
 
-test_huffmancodes_t   tests[] = {
+test_huffmancodes_t tests[] = {
     DEF_TEST_HUFFMANCODES(A),
     DEF_TEST_HUFFMANCODES(B),
     DEF_TEST_HUFFMANCODES(C),
@@ -1989,22 +1965,23 @@ static int
 test_get_word(Jbig2WordStream *self, int offset, uint32_t *word)
 {
     uint32_t val = 0;
-    test_stream_t *st = (test_stream_t *)self;
+    test_stream_t *st = (test_stream_t *) self;
+
     if (st != NULL) {
         if (st->h != NULL) {
             if (offset >= st->h->input_len)
                 return -1;
-            if (offset   < st->h->input_len) {
-                val |= (st->h->input[offset]   << 24);
+            if (offset < st->h->input_len) {
+                val |= (st->h->input[offset] << 24);
             }
-            if (offset+1 < st->h->input_len) {
-                val |= (st->h->input[offset+1] << 16);
+            if (offset + 1 < st->h->input_len) {
+                val |= (st->h->input[offset + 1] << 16);
             }
-            if (offset+2 < st->h->input_len) {
-                val |= (st->h->input[offset+2] << 8);
+            if (offset + 2 < st->h->input_len) {
+                val |= (st->h->input[offset + 2] << 8);
             }
-            if (offset+3 < st->h->input_len) {
-                val |=  st->h->input[offset+3];
+            if (offset + 3 < st->h->input_len) {
+                val |= st->h->input[offset + 3];
             }
         }
     }
@@ -2013,7 +1990,7 @@ test_get_word(Jbig2WordStream *self, int offset, uint32_t *word)
 }
 
 int
-main (int argc, char **argv)
+main(int argc, char **argv)
 {
     Jbig2Ctx *ctx = jbig2_ctx_new(NULL, 0, NULL, NULL, NULL);
     int i;
@@ -2035,7 +2012,7 @@ main (int argc, char **argv)
         } else {
             /* jbig2_dump_huffman_table(table); */
             hs = jbig2_huffman_new(ctx, &st.ws);
-            if ( hs == NULL ) {
+            if (hs == NULL) {
                 printf("jbig2_huffman_new() returned NULL!\n");
             } else {
                 for (j = 0; j < st.h->output_len; j++) {
@@ -2045,6 +2022,7 @@ main (int argc, char **argv)
                         printf("ok, ");
                     } else {
                         int need_comma = 0;
+
                         printf("NG(");
                         if (code != st.h->output[j]) {
                             printf("%d", code);

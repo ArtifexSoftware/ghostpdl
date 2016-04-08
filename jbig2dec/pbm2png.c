@@ -34,7 +34,8 @@
 #include "jbig2.h"
 #include "jbig2_image.h"
 
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
     Jbig2Ctx *ctx;
     Jbig2Image *image;
@@ -49,7 +50,7 @@ int main(int argc, char *argv[])
     }
 
     image = jbig2_image_read_pbm_file(ctx, argv[1]);
-    if(image == NULL) {
+    if (image == NULL) {
         fprintf(stderr, "error reading pbm file '%s'\n", argv[1]);
         return 1;
     } else {

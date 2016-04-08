@@ -13,7 +13,6 @@
    CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-
 /* Memento: A library to aid debugging of memory leaks/heap corruption.
  *
  * Usage:
@@ -187,7 +186,7 @@ void *Memento_label(void *, const char *);
 
 void *Memento_malloc(size_t s);
 void *Memento_realloc(void *, size_t s);
-void  Memento_free(void *);
+void Memento_free(void *);
 void *Memento_calloc(size_t, size_t);
 
 #ifdef MEMENTO

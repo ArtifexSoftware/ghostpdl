@@ -17,8 +17,6 @@
     jbig2dec
 */
 
-
-
 #ifndef _JBIG2_IMAGE_H
 #define _JBIG2_IMAGE_H
 
