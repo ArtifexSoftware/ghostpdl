@@ -27,7 +27,15 @@
 #include <stdlib.h>
 #include <png.h>
 
-#if PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR < 5
+#ifndef OLD_LIB_PNG
+# if PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR < 2
+#  define OLD_LIB_PNG 1
+# else
+#  define OLD_LIB_PNG 0
+# endif
+#endif
+
+#if OLD_LIB_PNG
 #include <pngstruct.h>
 #endif
 
@@ -43,7 +51,7 @@ static void
 jbig2_png_write_data(png_structp png_ptr, png_bytep data, png_size_t length)
 {
     png_size_t check;
-#if PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR < 5
+#if OLD_LIB_PNG
     png_FILE_p f = (png_FILE_p)png_ptr->io_ptr;
 #else
     png_FILE_p f = (png_FILE_p)png_get_io_ptr(png_ptr);
@@ -58,7 +66,7 @@ jbig2_png_write_data(png_structp png_ptr, png_bytep data, png_size_t length)
 static void
 jbig2_png_flush(png_structp png_ptr)
 {
-#if PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR < 5
+#if OLD_LIB_PNG
     png_FILE_p f = (png_FILE_p)png_ptr->io_ptr;
 #else
     png_FILE_p f = (png_FILE_p)png_get_io_ptr(png_ptr);
