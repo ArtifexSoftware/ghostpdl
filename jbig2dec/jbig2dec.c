@@ -433,7 +433,8 @@ main (int argc, char **argv)
       f_page = fopen(fn_page, "rb");
       if (f_page == NULL)
 	{
-	  fprintf(stderr, "error opening %s\n", fn_page);
+          fclose(f);
+          fprintf(stderr, "error opening %s\n", fn_page);
 	  return 1;
 	}
     }
