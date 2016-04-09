@@ -702,7 +702,7 @@ pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
             case resourceCIDFont:
             case resourceFont:
                 /* Ought to write the font name here */
-                pprintld1(s, "%%%%BeginResource: font (PDF Font obj_%ld)\n", id);
+                pprintld1(s, "%%%%BeginResource: procset (PDF Font obj_%ld)\n", id);
                 break;
             case resourceCharProc:
                 pprintld1(s, "%%%%BeginResource: file (PDF CharProc obj_%ld)\n", id);
