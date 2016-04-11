@@ -463,7 +463,6 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         }
     }
     {
-#if 0
         /*
          * Set ProcessColorModel now, because gx_default_put_params checks
          * it.
@@ -476,23 +475,8 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         ecode = param_put_enum(plist, "ProcessColorModel", &pcm,
                                pcm_names, ecode);
         if (pcm >= 0) {
-            pdev->color_info.cm_name = dci_std_cm_name(4);
-            pdf_set_process_color_model(pdev, pcm);
-            pdf_set_initial_color(pdev, &pdev->saved_fill_color, &pdev->saved_stroke_color,
-                            &pdev->fill_used_process_color, &pdev->stroke_used_process_color);
-        }
-#else
-        static const char *const pcm_names[] = {
-            "DeviceGray", "DeviceRGB", "DeviceCMYK", "DeviceN", 0
-        };
-        int pcm = -1;
-
-        ecode = param_put_enum(plist, "ProcessColorModel", &pcm,
-                               pcm_names, ecode);
-        if (pcm >= 0) {
             pdev->color_info.cm_name = pcm_names[pcm];
         }
-#endif
     }
     if (ecode < 0)
         goto fail;
