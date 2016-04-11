@@ -249,20 +249,17 @@ round_byte_color(gx_color_index cv)
 }
 int
 psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
-               const psdf_set_color_commands_t *ppscc, bool UseOldColor)
+               const psdf_set_color_commands_t *ppscc)
 {
     const char *setcolor;
     int num_des_comps, code;
     cmm_dev_profile_t *dev_profile;
 
-    if (UseOldColor) {
-        num_des_comps = vdev->color_info.num_components;
-    } else {
-        code = dev_proc((gx_device *)vdev, get_profile)((gx_device *)vdev, &dev_profile);
-        if (code < 0)
-            return code;
-        num_des_comps = gsicc_get_device_profile_comps(dev_profile);
-    }
+    code = dev_proc((gx_device *)vdev, get_profile)((gx_device *)vdev, &dev_profile);
+    if (code < 0)
+        return code;
+    num_des_comps = gsicc_get_device_profile_comps(dev_profile);
+
     if (!gx_dc_is_pure(pdc))
         return_error(gs_error_rangecheck);
     {

@@ -768,7 +768,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, const gs_imager_state * pis, cos_va
      * in PDF, unlike PostScript, the values from the lookup table are
      * scaled automatically.
      */
-    if (pdev->UseOldColor || cos_base == NULL) {
+    if (cos_base == NULL) {
     if ((code = pdf_color_space_named(pdev, pis, pvalue, NULL, base_space,
                                 &pdf_color_space_names, false, NULL, 0, false)) < 0 ||
         (code = cos_array_add(pca,
@@ -886,7 +886,7 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_imager_state * pis,
                 const pdf_color_space_names_t *pcsn,
                 bool by_name, const byte *res_name, int name_length, bool keepICC)
 {
-    const gs_color_space *pcs;
+    const gs_color_space *pcs = pcs_in;
     gs_color_space_index csi;
     cos_array_t *pca;
     cos_dict_t *pcd;
@@ -900,12 +900,6 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_imager_state * pis,
     int code;
     bool is_lab = false;
 
-    /* If color space is CIE based and we have compatibility then go ahead and use the ICC alternative */
-    if ((pdev->CompatibilityLevel < 1.3) || !gs_color_space_is_PSCIE(pcs_in) ) {
-        pcs = pcs_in;
-    } else {
-        pcs = pcs_in;
-    }
     csi = gs_color_space_get_index(pcs);
     /* Note that if csi is ICC, check to see if this was one of
        the default substitutes that we introduced for DeviceGray,
@@ -970,31 +964,6 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_imager_state * pis,
         break;
     default:
         break;
-    }
-    if (pdev->UseOldColor) {
-    if (pdev->params.ColorConversionStrategy == ccs_CMYK &&
-            csi != gs_color_space_index_DeviceCMYK &&
-            csi != gs_color_space_index_DeviceGray &&
-            csi != gs_color_space_index_Pattern) {
-          emprintf(pdev->memory,
-                 "\nUnable to convert color space to CMYK, reverting strategy to LeaveColorUnchanged.\n");
-          pdev->params.ColorConversionStrategy = ccs_LeaveColorUnchanged;
-    }
-    if (pdev->params.ColorConversionStrategy == ccs_sRGB &&
-            csi != gs_color_space_index_DeviceRGB &&
-            csi != gs_color_space_index_DeviceGray &&
-            csi != gs_color_space_index_Pattern) {
-          emprintf(pdev->memory,
-                 "\nUnable to convert color space to sRGB, reverting strategy to LeaveColorUnchanged.\n");
-          pdev->params.ColorConversionStrategy = ccs_LeaveColorUnchanged;
-    }
-    if (pdev->params.ColorConversionStrategy == ccs_Gray &&
-            csi != gs_color_space_index_DeviceGray &&
-            csi != gs_color_space_index_Pattern) {
-          emprintf(pdev->memory,
-                 "\nUnable to convert color space to Gray, reverting strategy to LeaveColorUnchanged.\n");
-          pdev->params.ColorConversionStrategy = ccs_LeaveColorUnchanged;
-    }
     }
     /* Check whether we already have a PDF object for this color space. */
     if (pcs->id != gs_no_id)
@@ -1061,7 +1030,7 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_imager_state * pis,
 
         pciec = (const gs_cie_common *)pcie;
         if (!pcie->common.MatrixLMN.is_identity) {
-            if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
+            if (!pdev->ForOPDFRead) {
                 if (pcs->icc_equivalent == 0) {
                     code = gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &is_lab, pdev->memory);
                     if (code < 0)
@@ -1089,7 +1058,7 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_imager_state * pis,
                    ) {
             DO_NOTHING;
         } else {
-            if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
+            if (!pdev->ForOPDFRead) {
                 if (pcs->icc_equivalent == 0) {
                     code = gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &is_lab, pdev->memory);
                     if (code < 0)
@@ -1155,7 +1124,7 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_imager_state * pis,
             code = pdf_put_lab_color_space(pdev, pca, pcd, pcie->RangeABC.ranges);
             goto cal;
         } else {
-            if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
+            if (!pdev->ForOPDFRead) {
                 int i;
 
                 if (pcs->icc_equivalent == 0) {
@@ -1207,7 +1176,7 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_imager_state * pis,
     goto cal;
 
     case gs_color_space_index_CIEDEF:
-            if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
+            if (!pdev->ForOPDFRead) {
                 int i;
                 if (pcs->icc_equivalent == 0) {
                     code = gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &is_lab, pdev->memory);
@@ -1230,7 +1199,7 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_imager_state * pis,
         break;
 
     case gs_color_space_index_CIEDEFG:
-            if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
+            if (!pdev->ForOPDFRead) {
                 int i;
                 if (pcs->icc_equivalent == 0) {
                     code = gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &is_lab, pdev->memory);

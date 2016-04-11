@@ -510,10 +510,7 @@ bugs in this initial implementation and so the following switch is available.
 
 <dl>
 <dt><code>-dPDFUseOldCMS=</code><em>boolean</em>
-<dd>Defaults to false, when true this uses the old system for color conversions.
-</dl>
-<p>If you do encounter any problems with the new color conversion code, please do open a bug report. This switch
-is temporary and will be removed in future releases, do not rely on its availability.</p>
+<dd>The old (non-ICC) colour management code has now been removed and this switch no longer has any effect.</dd>
 <p>
 The <code>ColorConversionStrategy</code> switch can now be set to <code>LeaveColorUnchanged</code>, <code>Gray</code>, <code>RGB</code>, <code>CMYK</code> or
 <code>UseDeviceIndependentColor</code>. Note that, particularly for ps2write, <code>LeaveColorUnchanged</code> may still need to convert

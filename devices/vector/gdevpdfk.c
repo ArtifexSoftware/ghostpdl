@@ -257,29 +257,6 @@ pdf_make_iccbased(gx_device_pdf *pdev, const gs_imager_state * pis,
     cos_array_t * prngca = 0;
     bool std_ranges = true;
     bool scale_inputs = false;
-    int i;
-
-    /* This code makes no sense to me, and if I remove it we get better
-     * results. So we'll chop it out for the new colour work.
-     */
-    if (pdev->UseOldColor) {
-    /* Check the ranges. */
-    if (pprange)
-        *pprange = 0;
-    for (i = 0; i < ncomps; ++i) {
-        double rmin = prange[i].rmin, rmax = prange[i].rmax;
-
-        if (rmin < 0.0 || rmax > 1.0) {
-            /* We'll have to scale the inputs.  :-( */
-            if (pprange == 0)
-                return_error(gs_error_rangecheck); /* scaling not allowed */
-            *pprange = prange;
-            scale_inputs = true;
-        }
-        else if (rmin > 0.0 || rmax < 1.0)
-            std_ranges = false;
-    }
-    }
 
     /* Range values are a bit tricky to check.
        For example, CIELAB ICC profiles have

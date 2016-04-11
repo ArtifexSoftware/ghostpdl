@@ -860,9 +860,6 @@ struct gx_device_pdf_s {
                                      * This parameter is present only to allow
                                      * ps2write output to work on those pritners.
                                      */
-    bool UseOldColor;               /* Use the old pdfwrite colour conversions instead of the CMS
-                                     * temporary variable
-                                     */
     bool Linearise;                 /* Whether to Linearizse the file, the next 2 parameter
                                      * are only used if this is true.
                                      */
