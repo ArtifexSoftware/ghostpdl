@@ -444,7 +444,56 @@ currentdict /gput_always_allow .undef
   /CalRGB /CIEBasedA load def
   /CalGray /CIEBasedA load def
   /Lab /CIEBasedA load def
-  /ICCBased /CIEBasedA load def
+  %% This section is to deal with the horrible pair of files in Bug #696690 and Bug #696120
+  %% These files have ICCBased spaces where the value of /N and the number of components
+  %% in the profile differ. In addition the profile in Bug #696690 is invalid. In the
+  %% case of Bug #696690 the /N value is correct, and the profile is wrong, in the case
+  %% of Bug #696120 the /N value is incorrect and the profile is correct.
+  %% We 'suspect' that Acrobat uses the fact that Bug #696120 is a pure image to detect
+  %% that the /N is incorrect, we can't be sure whether it uses the profile or just uses
+  %% the /N to decide on a device space. What we now do is; If the /N and device profile
+  %% number of components don't match, we assume the device profile is correct and patch
+  %% /N to be the same as the profile (see /ICCBased-resolve), but we save the original
+  %% value of /N in /OrigN. In setcolor, if the space is a genuine ICCBased space
+  %% (not a replacement for a device profile) we call set_dev_color which will actually
+  %% exercise the profile. If that fails we return an error. Here we run setcolor in a
+  %% stopped context, and if it fails we check to see if there is a /OrigN (ths occurs
+  %% only if the /N was different to the number of components in the profile). If there
+  %% is a /OrigN then prefer that to the profile, otherwise they agreed, so just use
+  %% /N and select a device space. If we can't select a device space with the correct
+  %% number of components, give up and throw an error. See also /last-ditch-bpc-csp
+  %% in pdf_draw.ps.
+  /ICCBased {
+    dup 1 get
+    dup /OrigN .knownget {exch /N get}{/N get dup} ifelse
+    3 add mark exch 2 roll
+    setgcolorspace {setcolor} stopped
+    {
+      cleartomark
+      [//null /DeviceGray //null /DeviceRGB /DeviceCMYK] exch
+      {get} stopped
+      {
+        (   **** Error: Unable to set an ICCBased colour space, and cannot set an alternate from the number of components.\n) print
+        /setcolorspace cvx /undefined signalerror
+      }
+      {
+        dup //null eq {
+          (   **** Error: Unable to set an ICCBased colour space, and cannot set an alternate from the number of components.\n) print
+          /setcolorspace cvx /undefined signalerror
+        }{
+          ICCProfileNError flush not {
+            (   **** Warning : Error setting an ICCBased colour space, using /N to set an alternate device space.\n) print
+            (                  Output may be incorrect.\n) print
+          } if
+          setcolorspace
+          /ICCProfileNError true def
+        } ifelse
+      }ifelse
+    }{
+      cleartomark pop
+    }
+    ifelse
+  } bdef
   /Separation /CIEBasedA load def
   /DeviceN /CIEBasedA load def
   /Indexed /CIEBasedA load def

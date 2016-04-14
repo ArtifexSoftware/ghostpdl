@@ -6136,7 +6136,7 @@ setcolor_cont(i_ctx_t *i_ctx_p)
 {
     ref arr, *parr = &arr;
     es_ptr ep = esp;
-    int i=0, code = 0,depth, usealternate, stage, stack_depth, CIESubst = 0;
+    int i=0, code = 0,depth, usealternate, stage, stack_depth, CIESubst = 0, IsICC = 0;
     PS_colour_space_t *obj;
 
     stack_depth = (int)ep[-3].value.intval;
@@ -6158,6 +6158,9 @@ setcolor_cont(i_ctx_t *i_ctx_p)
             code = get_space_object(i_ctx_p, parr, &obj);
             if (code < 0)
                 return code;
+
+            if (strcmp(obj->name, "ICCBased") == 0)
+                IsICC = 1;
 
             if (i < (depth)) {
                 if (!obj->alternateproc) {
@@ -6181,6 +6184,17 @@ setcolor_cont(i_ctx_t *i_ctx_p)
         } else
             break;
     }
+    /* Hack to work around broken PDF files in Bug696690 and Bug696120
+     * We want setcolor to actually exercise the link creation in case
+     * the profile is broken, in whcih case we may choose to use a different
+     * colour space altogether.
+     */
+    if (IsICC && depth == 0) {
+        code = gx_set_dev_color(i_ctx_p->pgs);
+        if (code < 0)
+            return code;
+    }
+
     /* Remove our next continuation and our data */
     obj->numcomponents(i_ctx_p, parr, &i);
     pop(i);
