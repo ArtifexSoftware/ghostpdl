@@ -1275,7 +1275,7 @@ lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
             stream_puts(pdev->strm, "Q q\n");
             dev_proc(&cvd->mdev, fill_rectangle) = lcvd_fill_rectangle_shifted2;
         }
-        if (!cvd->mask_is_clean || !cvd->path_is_empty) {
+        if (cvd->mask && (!cvd->mask_is_clean || !cvd->path_is_empty)) {
             code = (*dev_proc(cvd->mask, fill_rectangle))((gx_device *)cvd->mask,
                         0, 0, cvd->mask->width, cvd->mask->height, (gx_color_index)0);
             if (code < 0)
@@ -1283,7 +1283,8 @@ lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
             cvd->mask_is_clean = true;
         }
         cvd->path_is_empty = true;
-        cvd->mask_is_empty = false;
+        if (cvd->mask)
+            cvd->mask_is_empty = false;
     } else {
         gs_matrix m;
         gs_path_enum cenum;
