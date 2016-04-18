@@ -886,36 +886,19 @@ bbox_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     if (!GX_DC_IS_TRANSPARENT(pdevc, bdev)) {
         gs_fixed_rect ibox;
         gs_fixed_point expand;
+        int ibox_valid = 0;
 
         if (gx_stroke_path_expansion(pis, ppath, &expand) == 0 &&
             gx_path_bbox(ppath, &ibox) >= 0
             ) {
             /* The fast result is exact. */
             adjust_box(&ibox, expand);
-        } else {
-            /*
-             * The result is not exact.  Compute an exact result using
-             * strokepath.
-             */
-            gx_path *spath = gx_path_alloc(pis->memory, "bbox_stroke_path");
-            int code = 0;
-
-            if (spath)
-                code = gx_imager_stroke_add(ppath, spath, dev, pis);
-            else
-                code = -1;
-            if (code >= 0)
-                code = gx_path_bbox(spath, &ibox);
-            if (code < 0) {
-                ibox.p.x = ibox.p.y = min_fixed;
-                ibox.q.x = ibox.q.y = max_fixed;
-            }
-            if (spath)
-                gx_path_free(spath, "bbox_stroke_path");
+            ibox_valid = 1;
         }
-        if (pcpath != NULL &&
-            !gx_cpath_includes_rectangle(pcpath, ibox.p.x, ibox.p.y,
-                                         ibox.q.x, ibox.q.y)
+        if (!ibox_valid ||
+            (pcpath != NULL &&
+             !gx_cpath_includes_rectangle(pcpath, ibox.p.x, ibox.p.y,
+                                         ibox.q.x, ibox.q.y))
             ) {
             /* Let the target do the drawing, but break down the */
             /* fill path into pieces for computing the bounding box. */
