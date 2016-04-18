@@ -462,7 +462,11 @@ GSDLL=gsdll32
 # To build two large executables use MAKEDLL=0
 
 !ifndef MAKEDLL
+!if "$(PROFILE)"=="1"
+MAKEDLL=0
+!else
 MAKEDLL=1
+!endif
 !endif
 
 # Should we build in the cups device....
