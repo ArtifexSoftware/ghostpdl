@@ -326,7 +326,6 @@ struct gx_path_s {
     byte /*gx_path_state_flags*/ state_flags;		/* (see above) */
     byte /*bool*/ bbox_set;	/* true if setbbox is in effect */
     byte /*bool*/ bbox_accurate;/* true if bbox is accurate */
-    byte _pad;			/* just in case the compiler doesn't do it */
     int subpath_count;
     int curve_count;
     gs_fixed_point position;	/* current position */
