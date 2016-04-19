@@ -28,9 +28,16 @@ typedef struct gx_device_s gx_device_flp;
 /* Initialize a first/last page device. */
 void gx_device_flp_init(gx_device_flp * dev);
 
+typedef enum {none, even, odd} flp_EOType;
+
 typedef struct {
     subclass_common;
     int PageCount;
+    int ProcessedPageList;
+    void *PageArray;
+    int PageArraySize;
+    int FromToEnd;
+    flp_EOType EvenOdd;
 } first_last_subclass_data;
 
 typedef struct flp_text_enum_s {

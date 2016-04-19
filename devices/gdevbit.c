@@ -239,6 +239,7 @@ const gx_device_bit gs_bitrgbtags_device =
         0 ,                             /* parent */
         0 ,                             /* child */
         0 ,                             /* subclass data */
+        0 ,                             /* PageList */
         0 ,                             /* is open */
         0,                              /* max_fill_band */
         {                               /* color infor */

@@ -699,32 +699,54 @@ user parameter to the value of <code>RENDERTTNOTDEF</code> in systemdict,
 when rendering PDF files. To restore rendering of /.notdef glyphs from TrueType fonts in PDF files, set this parameter to true.
 </dl>
 
-<dl>
-<dt><code>-dFirstPage=</code><em>pagenumber</em>
-<dd>Begins interpreting on the designated page of the document.
-Pages of all documents in PDF collections are numbered sequentionally.
-</dl>
-
-<dl>
-<dt><code>-dLastPage=</code><em>pagenumber</em>
-<dd>Stops interpreting after the designated page of the document.
-Pages of all documents in PDF collections are numbered sequentionally.
-</dl>
-
 <p>These command line options are no longer specific to PDF, but have some specific differences with PDF files
 
 <dl>
 <dt><code>-dFirstPage=</code><em>pagenumber</em>
-<dd>Begins interpreting on the designated page of the document.
+<dd>Begin on the designated page of the document.
 Pages of all documents in PDF collections are numbered sequentionally.
 </dl>
 
 <dl>
 <dt><code>-dLastPage=</code><em>pagenumber</em>
-<dd>Stops interpreting after the designated page of the document.
+<dd>Stop after the designated page of the document.
 Pages of all documents in PDF collections are numbered sequentionally.
 </dl>
 
+<dl>
+<dt><code>-sPageList=</code><em>pagenumber</em>
+There are three possible values for this; even, odd or a list of pages to be processed.
+A list can include single pages or ranges of pages.
+Ranges of pages use the minus sign '-', individual pages and ranges of pages are separated
+by commas ','. A trailing minus '-' means process all remaining pages. For example;
+<p><blockquote><pre>
+-sPageList=1,3,5 indicates that pages 1, 3 and 5 should be processed.
+-sPageList=5-10 indicates that pages 5, 6, 7, 8, 9 and 10 should be processed.
+-sPageList=1, 5-10, 12- indicates that pages 1, 5, 6, 7, 8, 9, 10 and 12 onwards should be processed.
+</pre></blockquote>
+</p>
+</d1>
+
+<p>The PDF interpreter and the other language interpreters handle these in slightly different ways. Because
+PDF files enable random access to pages in the document the PDF inerpreter only interprets and renders
+the required pages. PCL andPostScript cannot be handled in ths way, and so all the pages must be interpreted.
+However only the requested pages are rendered, which can still lead to savings in time. Be aware that
+using the '%d' syntax for OutputFile does not reflect the page number in the original document. If you
+chose (for example) to process even pages by using <code>-sPageList=even</code>, then the output of
+<code>-sOutputFile=out%d.png</code> would still be
+out0.png, out1.png, out2.png etc......
+</p>
+<p>
+Because the PostScript and PCL interpreters cannot determine when a document terminates, sending multple
+files as input on the command line does not reset the PageList between each document, each page in the second and
+subsequent documents is treated as following on directly from the last page in the first document. The PDF
+interpreter, however, does not work this way. Since it knows about individual PDF files the PageList
+is applied to each PDF file separately. So if you were to set <code>-sPageList=1,2</code> and
+ then send two PDF files, the result would be pages 1 and 2 from the first file, and then pages 1 and 2 from the second
+ file. The PostScript interpreter, by contrast, would only render pages 1 and 2 from the first file. This means you must
+ exercise caution when using this switch, and probably should not use it at all when processing a mixture of PostScript
+ and PDF files on the same command line.
+</p>
 
 <h3><a name="PDF_problems"></a>Problems interpreting a PDF file</h3>
 
@@ -2507,13 +2529,50 @@ earlier, processing of DoPS was always enabled.
 
 <dl>
 <dt><code>-dFirstPage=</code><em>pagenumber</em>
-<dd>Begins processing on the designated page of the document.
+<dd>Begin on the designated page of the document.
+Pages of all documents in PDF collections are numbered sequentionally.
 </dl>
 
 <dl>
 <dt><code>-dLastPage=</code><em>pagenumber</em>
-<dd>Stops processing after the designated page of the document.
+<dd>Stop after the designated page of the document.
+Pages of all documents in PDF collections are numbered sequentionally.
 </dl>
+
+<dl>
+<dt><code>-sPageList=</code><em>pagenumber</em>
+There are three possible values for this; even, odd or a list of pages to be processed.
+A list can include single pages or ranges of pages.
+Ranges of pages use the minus sign '-', individual pages and ranges of pages are separated
+by commas ','. A trailing minus '-' means process all remaining pages. For example;
+<p><blockquote><pre>
+-sPageList=1,3,5 indicates that pages 1, 3 and 5 should be processed.
+-sPageList=5-10 indicates that pages 5, 6, 7, 8, 9 and 10 should be processed.
+-sPageList=1, 5-10, 12- indicates that pages 1, 5, 6, 7, 8, 9, 10 and 12 onwards should be processed.
+</pre></blockquote>
+</p>
+</d1>
+
+<p>The PDF interpreter and the other language interpreters handle these in slightly different ways. Because
+PDF files enable random access to pages in the document the PDF inerpreter only interprets and renders
+the required pages. PCL andPostScript cannot be handled in ths way, and so all the pages must be interpreted.
+However only the requested pages are rendered, which can still lead to savings in time. Be aware that
+using the '%d' syntax for OutputFile does not reflect the page number in the original document. If you
+chose (for example) to process even pages by using <code>-sPageList=even</code>, then the output of
+<code>-sOutputFile=out%d.png</code> would still be
+out0.png, out1.png, out2.png etc......
+</p>
+<p>
+Because the PostScript and PCL interpreters cannot determine when a document terminates, sending multple
+files as input on the command line does not reset the PageList between each document, each page in the second and
+subsequent documents is treated as following on directly from the last page in the first document. The PDF
+interpreter, however, does not work this way. Since it knows about individual PDF files the PageList
+is applied to each PDF file separately. So if you were to set <code>-sPageList=1,2</code> and
+ then send two PDF files, the result would be pages 1 and 2 from the first file, and then pages 1 and 2 from the second
+ file. The PostScript interpreter, by contrast, would only render pages 1 and 2 from the first file. This means you must
+ exercise caution when using this switch, and probably should not use it at all when processing a mixture of PostScript
+ and PDF files on the same command line.
+</p>
 
 <dl>
 <dt><a name="FIXEDMEDIA"></a><code>-dFIXEDMEDIA</code>

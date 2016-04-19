@@ -66,6 +66,10 @@ gx_device_finalize(const gs_memory_t *cmem, void *vptr)
         dev->child->parent = dev->parent;
     if (dev->parent)
         dev->parent->child = dev->child;
+    if (dev->PageList) {
+        rc_decrement(dev->PageList, "gx_device_finalize(PageList)");
+        dev->PageList = 0;
+    }
 
     discard(gs_closedevice(dev));
     if (dev->stype_is_dynamic)

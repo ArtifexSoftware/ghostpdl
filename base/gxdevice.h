@@ -98,10 +98,11 @@
  * Note also that the macro does not initialize procs, which is
  * the next element of the structure.
  */
-#define std_device_part1_(devtype, ptr_procs, dev_name, stype, open_init)\
+    #define std_device_part1_(devtype, ptr_procs, dev_name, stype, open_init)\
         sizeof(devtype), ptr_procs, dev_name,\
         0 /*memory*/, stype, 0 /*stype_is_dynamic*/, 0 /*finalize*/,\
-        { 0 } /*rc*/, 0 /*retained*/, 0 /* parent */, 0 /* child */, 0 /* subclass_data */, open_init() /*is_open, max_fill_band*/
+        { 0 } /*rc*/, 0 /*retained*/, 0 /* parent */, 0 /* child */, 0 /* subclass_data */, 0, /* PageList */\
+        open_init() /*is_open, max_fill_band*/
         /* color_info goes here */
 /*
  * The MetroWerks compiler has some bizarre bug that produces a spurious

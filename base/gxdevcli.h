@@ -716,6 +716,12 @@ typedef struct gdev_space_params_s {
     gdev_banding_type banding_type;	/* used to force banding or bitmap */
 } gdev_space_params;
 
+typedef struct gdev_pagelist_s {
+        rc_header rc;
+        char *Pages;
+        int PagesSize;
+} gdev_pagelist;
+
 #define gx_device_common\
         int params_size;		/* OBSOLETE if stype != 0: */\
                                         /* size of this structure */\
@@ -735,6 +741,7 @@ typedef struct gdev_space_params_s {
         gx_device *parent;\
         gx_device *child;\
         void *subclass_data;    /* Must be immovable, non-GC memory, used to store subclass data */\
+        gdev_pagelist *PageList;\
         bool is_open;			/* true if device has been opened */\
         int max_fill_band;		/* limit on band size for fill, */\
                                         /* must be 0 or a power of 2 */\

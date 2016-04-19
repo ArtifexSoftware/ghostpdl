@@ -1283,7 +1283,10 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     dev_to_subclass->procs.copy_planes = new_prototype->procs.copy_planes;
     dev_to_subclass->finalize = new_prototype->finalize;
     dev_to_subclass->dname = new_prototype->dname;
-    dev_to_subclass->icc_struct = NULL;
+    if (dev_to_subclass->icc_struct)
+        rc_increment(dev_to_subclass->icc_struct);
+    if (dev_to_subclass->PageList)
+        rc_increment(dev_to_subclass->PageList);
 
     /* In case the new device we're creating has already been initialised, copy
      * its additional data.
@@ -1364,6 +1367,10 @@ int gx_device_unsubclass(gx_device *dev)
      * their child pointer can then be NULL.
      */
     if (child) {
+        if (child->icc_struct)
+            rc_decrement(child->icc_struct, "gx_unsubclass_device, icc_struct");
+        if (child->PageList)
+            rc_decrement(child->PageList, "gx_unsubclass_device, PageList");
         /* we cannot afford to free the child device if its stype is not dynamic because
          * we can't 'null' the finalise routine, and we cannot permit the device to be finalised
          * because we have copied it up one level, not discarded it.

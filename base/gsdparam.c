@@ -438,6 +438,16 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         temp_bool = dev->DisablePageHandler;
         return param_write_bool(plist, "DisablePageHandler", &temp_bool);
     }
+    if (strcmp(Param, "PageList") == 0){
+        gs_param_string pagelist;
+        if (dev->PageList) {
+            gdev_pagelist *p = (gdev_pagelist *)dev->PageList;
+            param_string_from_string(pagelist, p->Pages);
+        }
+        else
+            param_string_from_string(pagelist, null_str);
+        return param_write_string(plist, "PageList", &pagelist);
+    }
     if (strcmp(Param, "FILTERIMAGE") == 0) {
         temp_bool = dev->ObjectFilter & FILTERIMAGE;
         return param_write_bool(plist, "FILTERIMAGE", &temp_bool);
@@ -464,7 +474,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     bool seprs = false;
     gs_param_string dns, pcms, profile_array[NUM_DEVICE_PROFILES];
-    gs_param_string postren_profile;
+    gs_param_string postren_profile, pagelist;
     gs_param_string proof_profile, link_profile, icc_colorants;
     gsicc_rendering_intents_t profile_intents[NUM_DEVICE_PROFILES];
     gsicc_blackptcomp_t blackptcomps[NUM_DEVICE_PROFILES];
@@ -691,6 +701,15 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     temp_bool = dev->DisablePageHandler;
     if ((code = param_write_bool(plist, "DisablePageHandler", &temp_bool)) < 0)
+        return code;
+
+    if (dev->PageList) {
+        gdev_pagelist *p = (gdev_pagelist *)dev->PageList;
+        param_string_from_string(pagelist, p->Pages);
+    }
+    else
+        param_string_from_string(pagelist, null_str);
+    if ((code = param_write_name(plist, "PageList", &pagelist)) < 0)
         return code;
 
     temp_bool = dev->ObjectFilter & FILTERIMAGE;
@@ -1265,6 +1284,17 @@ gx_default_put_icc(gs_param_string *icc_pro, gx_device * dev,
     return code;
 }
 
+static void
+rc_free_pages_list(gs_memory_t * mem, void *ptr_in, client_name_t cname)
+{
+    gdev_pagelist *PageList = (gdev_pagelist *)ptr_in;
+
+    if (PageList->rc.ref_count <= 1) {
+        gs_free(mem->non_gc_memory, PageList->Pages, 1, PagesSize, "free page list");
+        gs_free(mem->non_gc_memory, PageList, 1, sizeof(gdev_pagelist), "free structure to hold page list");
+    }
+}
+
 /* Set standard parameters. */
 /* Note that setting the size or resolution closes the device. */
 /* Window devices that don't want this to happen must temporarily */
@@ -1305,7 +1335,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     int rend_intent[NUM_DEVICE_PROFILES];
     int blackptcomp[NUM_DEVICE_PROFILES];
     int blackpreserve[NUM_DEVICE_PROFILES];
-    gs_param_string cms;
+    gs_param_string cms, pagelist;
     int leadingedge = dev->LeadingEdge;
     int k;
     bool devicegraytok = true;
@@ -1786,6 +1816,24 @@ label:\
         ecode = code;
     if (code == 0)
         dev->DisablePageHandler = temp_bool;
+
+    if ((code = param_read_string(plist, "PageList", &pagelist)) != 1 && pagelist.size > 0) {
+        if (dev->PageList)
+            rc_decrement(dev->PageList, "default put_params PageList");
+        dev->PageList = (gdev_pagelist *)gs_alloc_bytes(dev->memory->non_gc_memory, sizeof(gdev_pagelist), "structure to hold page list");
+        if (!dev->PageList)
+            return gs_note_error(gs_error_VMerror);
+        dev->PageList->Pages = (void *)gs_alloc_bytes(dev->memory->non_gc_memory, pagelist.size + 1, "String to hold page list");
+        if (!dev->PageList->Pages){
+            gs_free(dev->memory->non_gc_memory, dev->PageList, 1, sizeof(gdev_pagelist), "free structure to hold page list");
+            dev->PageList = 0;
+            return gs_note_error(gs_error_VMerror);
+        }
+        memset(dev->PageList->Pages, 0x00, pagelist.size + 1);
+        memcpy(dev->PageList->Pages, pagelist.data, pagelist.size);
+        dev->PageList->PagesSize = pagelist.size + 1;
+        rc_init_free(dev->PageList, dev->memory->non_gc_memory, 1, rc_free_pages_list);
+    }
 
     code = param_read_bool(plist, "FILTERIMAGE", &temp_bool);
     if (code < 0)

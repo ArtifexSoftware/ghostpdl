@@ -16,7 +16,7 @@ int install_internal_subclass_devices(gx_device **ppdev, int *devices_loaded)
 #if FORCE_TESTING_SUBCLASSING
     if (!dev->PageHandlerPushed) {
 #else
-    if (!dev->PageHandlerPushed && (dev->FirstPage != 0 || dev->LastPage != 0)) {
+    if (!dev->PageHandlerPushed && (dev->FirstPage != 0 || dev->LastPage != 0 || dev->PageList != 0)) {
 #endif
         code = gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
         if (code < 0)
