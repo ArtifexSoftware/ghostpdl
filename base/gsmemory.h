@@ -88,6 +88,7 @@ typedef struct gs_memory_status_s {
      * plus overhead.
      */
     ulong used;
+    ulong max_used;
     /* used when wrapping if underlying allocator must be thread safe */
     bool is_thread_safe;
 } gs_memory_status_t;

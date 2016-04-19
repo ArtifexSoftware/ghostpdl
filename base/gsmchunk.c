@@ -120,9 +120,9 @@ typedef struct gs_memory_chunk_s {
     chunk_mem_node_t *head_mo_chunk;	/* head of multiple object chunks */
     chunk_mem_node_t *head_so_chunk;	/* head of single object chunks */
     unsigned long used;
+    unsigned long max_used;
 #ifdef DEBUG
     unsigned long sequence_counter;
-    unsigned long max_used;
     int	     in_use;		/* 0 for idle, 1 in alloc, -1 in free */
 #endif
 } gs_memory_chunk_t;
@@ -155,9 +155,9 @@ gs_memory_chunk_wrap( gs_memory_t **wrapped,	/* chunk allocator init */
     cmem->head_mo_chunk = NULL;
     cmem->head_so_chunk = NULL;
     cmem->used = 0;
+    cmem->max_used = 0;
 #ifdef DEBUG
     cmem->sequence_counter = 0;
-    cmem->max_used = 0;
     cmem->in_use = 0;		/* idle */
 #endif
 
@@ -326,10 +326,8 @@ chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, bool is_multiple_o
     if (node == NULL)
         return -1;
     cmem->used += chunk_size;
-#ifdef DEBUG
     if (cmem->used > cmem->max_used)
         cmem->max_used = cmem->used;
-#endif
     node->size = chunk_size;	/* how much we allocated */
     node->largest_free = chunk_size - SIZEOF_ROUND_ALIGN(chunk_mem_node_t);
     node->is_multiple_object_chunk = is_multiple_object_chunk;
@@ -589,10 +587,8 @@ chunk_resize_object(gs_memory_t * mem, void *ptr, uint new_num_elements, client_
     /* get the type from the old object */
     gs_memory_type_ptr_t type = obj->type;
     void *new_ptr;
-#ifdef DEBUG
     gs_memory_chunk_t *cmem = (gs_memory_chunk_t *)mem;
     ulong save_max_used = cmem->max_used;
-#endif
 
     if (new_size == old_size)
         return ptr;
@@ -600,11 +596,9 @@ chunk_resize_object(gs_memory_t * mem, void *ptr, uint new_num_elements, client_
         return 0;
     memcpy(new_ptr, ptr, min(old_size, new_size));
     chunk_free_object(mem, ptr, cname);
-#ifdef DEBUG
     cmem->max_used = save_max_used;
     if (cmem->used > cmem->max_used)
         cmem->max_used = cmem->used;
-#endif
     return new_ptr;
 }
 
@@ -766,6 +760,7 @@ chunk_status(gs_memory_t * mem, gs_memory_status_t * pstat)
             tot_free += free_obj->size;
     }
     pstat->used = cmem->used - tot_free;
+    pstat->max_used = cmem->max_used;
 
     pstat->is_thread_safe = false;	/* this allocator does not have an internal mutex */
 }
