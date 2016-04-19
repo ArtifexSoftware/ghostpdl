@@ -892,7 +892,6 @@ int flp_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_params_t 
 {
     flp_text_enum_t *penum;
     int code;
-    code = SkipPage(dev);
 
     /* We don't want to simply ignore stringwidth for 2 reasons;
      * firstly because following elelments may be positioned based on the value returned
