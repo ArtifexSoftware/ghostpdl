@@ -1433,14 +1433,35 @@ get_int(int *v,  const cff_data_t *data, unsigned p, unsigned pe)
         return code;
 
     if (c == 28) {
-        if ((code = card16(&u, data, p + 1, pe)) < 0)
-            return code;
+        if (pe - p > 2) {
+            if ((code = card16(&u, data, p + 1, pe)) < 0)
+                return code;
+        }
+        else {
+            if ((code = card8(&u, data, p + 1, pe)) < 0)
+                return code;
+        }
         *v = ((int)u + ext16) ^ ext16;
         return 3;
     }
     if (c == 29) {
-        if ((code = card32(&u, data, p + 1, pe)) < 0)
-            return code;
+        switch (pe - p) {
+            case 2:
+              if ((code = card8(&u, data, p + 1, pe)) < 0)
+                 return code;
+              break;
+            case 3:
+              if ((code = card16(&u, data, p + 1, pe)) < 0)
+                 return code;
+              break;
+            case 4:
+              if ((code = card24(&u, data, p + 1, pe)) < 0)
+                 return code;
+              break;
+            default:
+              if ((code = card32(&u, data, p + 1, pe)) < 0)
+                 return code;
+        }
         *v = ((int)u + ext32) ^ ext32;
         return 5;
     }
@@ -2591,7 +2612,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
             return code;
     } else {
         /* Simple font */
-        unsigned int i, gid, enc_format;
+        unsigned int i, gid, enc_format = 0;
         int sid;
         ref name, cstr, charstrings_dict, encoding, notdef;
         unsigned char gid2char[256];
