@@ -255,8 +255,6 @@ pdf_make_iccbased(gx_device_pdf *pdev, const gs_imager_state * pis,
     int code;
     cos_stream_t * pcstrm = 0;
     cos_array_t * prngca = 0;
-    bool std_ranges = true;
-    bool scale_inputs = false;
 
     /* Range values are a bit tricky to check.
        For example, CIELAB ICC profiles have
@@ -280,13 +278,6 @@ pdf_make_iccbased(gx_device_pdf *pdev, const gs_imager_state * pis,
     code = cos_dict_put_c_key_int(cos_stream_dict(pcstrm), "/N", ncomps);
     if (code < 0)
         goto fail;
-
-    /* Indicate the range, if needed. */
-    if (!std_ranges && !scale_inputs) {
-        code = pdf_cie_add_ranges(pdev, cos_stream_dict(pcstrm), prange, ncomps, true);
-        if (code < 0)
-            goto fail;
-    }
 
     /* In the new design there may not be a specified alternate color space */
     if (pcs_alt != NULL){
