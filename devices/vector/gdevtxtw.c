@@ -1926,6 +1926,9 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
 
         penum->cdevproc_callout = false;
         code = txt_update_text_state(penum->text_state, (textw_text_enum_t *)pte, pte->orig_font, &font->FontMatrix);
+        if (code < 0)
+            return code;
+
         txt_char_widths_to_uts(pte->orig_font, &widths); /* convert design->text space */
         gs_distance_transform(widths.real_width.xy.x * penum->text_state->size,
                           widths.real_width.xy.y * penum->text_state->size,
