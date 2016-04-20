@@ -138,20 +138,9 @@ class="offsite">http://sourceforge.net/projects/ghostscript/</a>).
 <p>
 Stable, beta, and development releases are all available from
 <blockquote>
-<a
-href="http://sourceforge.net/project/showfiles.php?group_id=1897" 
-class="offsite">http://sourceforge.net/project/showfiles.php?group_id=1897</a>
-</blockquote>
-
-<p>
-Releases are also distributed from
-
-<blockquote>
-<a
-href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/" 
-class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/</a> and
-<br><a href="http://ghostscript.com/releases/" 
-class="offsite">http://ghostscript.com/releases/</a>
+<br>
+<a href="http://ghostscript.com/download/"
+class="offsite">http://ghostscript.com/download/</a>
 </blockquote>
 
 <h2><a name="Release_numbering"></a>Release numbering</h2>
@@ -710,33 +699,20 @@ Do the steps for distributions in general.
 
 <p>
 Upload <code>ghostscript-#.##.tar.*</code> to
-<code>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/test</code>.
+<code><a href="http://ghostscript.com/download/"
+class="offsite">http://ghostscript.com/download/</a>
+</code>.
 
 <h3><a name="Public_releases"></a>Public releases</h3>
 
 <p>
 Do the steps for distributions in general.
 
-<p>
-Create a directory at
-<code>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/GPL/gs###/</code>.  
-In that directory, store the following files:
-
-<ul>
-
-<li>Standard distribution files:
-
-<blockquote><pre>
-<code>ghostscript-#.##.tar.gz</code>
-<code>ghostscript-#.##.tar.bz2</code>
-</pre></blockquote>
-
 <li>MS Windows source and executables:
 
 <blockquote><pre>
-<code>gs###src.zip</code>
 <code>gs###w32.exe</code>
-<code>gs###w32.zip</code>
+<code>gs###w64.exe</code>
 </pre></blockquote>
 
 <li>Third-party libraries, as links (upload these if not installed), where
@@ -780,10 +756,6 @@ To: gs-announce
 </pre></blockquote>
 
 <p>
-Edit the Web pages in svn and commit to reflect the new release.
-The Wisconsin server should update automatically.
-
-<p>
 Also update the documentation snapshots on the website.
 
 <h2><a name="After_releasing"></a>After releasing</h2>
@@ -805,25 +777,8 @@ Edit <code>doc/News.htm</code> to remove all the content.
 <p>
 Artifex Software, Inc. distributes a package of the base 35 PostScript 
 fonts, and a package of other miscellaneous fonts.
-
 <p>
-To make the font packages, run the command
-
-<blockquote><pre>
-toolbin/makefonts #.##
-</pre></blockquote>
-
-<p>
-This creates the following files:
-
-<blockquote><pre>
-ghostscript-fonts-std-#.##.tar.gz
-ghostscript-fonts-other-#.##.tar.gz
-</pre></blockquote>
-
-<p>
-The first two of these use the GPL, and should be uploaded to
-<code>ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/fonts/</code>.  
+These are included in the Ghostscript release archive.
 
 <!-- [2.0 end contents] ==================================================== -->
 
