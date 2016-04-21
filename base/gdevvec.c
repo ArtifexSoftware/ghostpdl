@@ -273,7 +273,7 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
 {
     bool binary = !(open_options & VECTOR_OPEN_FILE_ASCII);
     int code = -1;		/* (only for testing, never returned) */
-    cmm_dev_profile_t *icc_struct;
+    cmm_dev_profile_t *icc_struct = 0;
 
     /* Open the file as seekable or sequential, as requested. */
     if (!(open_options & VECTOR_OPEN_FILE_SEQUENTIAL)) {
