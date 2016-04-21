@@ -651,23 +651,25 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_state * pgs)
     gs_overprint_params_t   params;
     gx_device_color        *pdc;
     cmm_dev_profile_t      *dev_profile;
-    cmm_profile_t          *output_profile;
+    cmm_profile_t          *output_profile = 0;
     int                     code;
     bool                    profile_ok = false;
     gsicc_rendering_param_t        render_cond;   
 
-    code = dev_proc(dev, get_profile)(dev, &dev_profile);
-    if (code < 0)
-        return code;
+    if (dev) {
+        code = dev_proc(dev, get_profile)(dev, &dev_profile);
+        if (code < 0)
+            return code;
 
-    gsicc_extract_profile(dev->graphics_type_tag, dev_profile, &(output_profile),
-                          &render_cond);
+        gsicc_extract_profile(dev->graphics_type_tag, dev_profile, &(output_profile),
+                              &render_cond);
 
-    /* check if color model behavior must be determined */
-    if (pcinfo->opmode == GX_CINFO_OPMODE_UNKNOWN)
-        drawn_comps = check_cmyk_color_model_comps(dev);
-    else
-        drawn_comps = pcinfo->process_comps;
+        /* check if color model behavior must be determined */
+        if (pcinfo->opmode == GX_CINFO_OPMODE_UNKNOWN)
+            drawn_comps = check_cmyk_color_model_comps(dev);
+        else
+            drawn_comps = pcinfo->process_comps;
+    }
     if (drawn_comps == 0)
         return gx_spot_colors_set_overprint(pcs, pgs);
 
@@ -753,10 +755,12 @@ int gx_set_overprint_rgb(const gs_color_space * pcs, gs_state * pgs)
     /* check if color model behavior must be determined.  This is why we 
        need the GX_CINFO_OPMODE_RGB and GX_CINFO_OPMODE_RGB_SET.  
        We only need to do this once */
-    if (pcinfo->opmode == GX_CINFO_OPMODE_RGB)
-        drawn_comps = check_rgb_color_model_comps(dev);
-    else
-        drawn_comps = pcinfo->process_comps;
+    if (dev) {
+        if (pcinfo->opmode == GX_CINFO_OPMODE_RGB)
+            drawn_comps = check_rgb_color_model_comps(dev);
+        else
+            drawn_comps = pcinfo->process_comps;
+    }
     if (drawn_comps == 0)
         return gx_spot_colors_set_overprint(pcs, pgs);
 
