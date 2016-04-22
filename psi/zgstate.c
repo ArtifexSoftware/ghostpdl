@@ -121,8 +121,9 @@ int_gstate_alloc(const gs_dual_memory_t * dmem)
         return NULL;
     int_gstate_map_refs(iigs, make_null);
     make_empty_array(&iigs->dash_pattern_array, a_all);
-    gs_alloc_ref_array(lmem, &proc0, a_readonly + a_executable, 2,
-                       "int_gstate_alloc(proc0)");
+    if (gs_alloc_ref_array(lmem, &proc0, a_readonly + a_executable, 2,
+                       "int_gstate_alloc(proc0)") < 0)
+        return NULL;
     make_oper(proc0.value.refs, 0, zpop);
     make_real(proc0.value.refs + 1, 0.0);
     iigs->black_generation = proc0;
