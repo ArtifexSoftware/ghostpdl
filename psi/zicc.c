@@ -245,7 +245,11 @@ zset_outputintent(i_ctx_t * i_ctx_p)
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     if (dev_profile == NULL) { 
         code = gsicc_init_device_profile_struct(dev, NULL, 0);
+        if (code < 0)
+            return code;
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+        if (code < 0)
+            return code;
     }
     if (dev_profile->oi_profile != NULL) {
         return 0;  /* Allow only one setting of this object */
