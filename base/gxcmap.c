@@ -592,7 +592,7 @@ gx_no_concretize_color(const gs_client_color * pcc, const gs_color_space * pcs,
 /* If someone has specified a table for handling named spot colors then we will
    be attempting to do the special handling to go directly to the device colors
    here */
-bool 
+bool
 gx_remap_named_color(const gs_client_color * pcc, const gs_color_space * pcs,
 gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 gs_color_select_t select)
@@ -655,12 +655,12 @@ gs_color_select_t select)
             "gx_remap_named_color");
 
     if (code == 0) {
-        /* Named color was found and set.  Note that  gsicc_transform_named_color 
+        /* Named color was found and set.  Note that  gsicc_transform_named_color
            MUST set ALL the colorant values AND they must be in the proper
-           order already.  If we have specified the colorants with 
-           -sICCOutputColors (i.e. if you are using an NCLR output profile) then 
+           order already.  If we have specified the colorants with
+           -sICCOutputColors (i.e. if you are using an NCLR output profile) then
            we should be good. If not or if instead one used SeparationColorNames and
-           SeparationOrder to set up the device, then we need to make a copy 
+           SeparationOrder to set up the device, then we need to make a copy
            of the imager state and make sure that we set color_component_map is
            properly set up for the gx_remap_concrete_devicen proc. */
         for (k = 0; k < num_des_comps; k++)
@@ -690,7 +690,7 @@ gs_color_select_t select)
             } else {
                 gs_imager_state temp_state = *((const gs_imager_state *)pis);
 
-                /* No NCLR profile with spot names.  So set up the 
+                /* No NCLR profile with spot names.  So set up the
                    color_component_map in the imager state.  Again, note that
                    gsicc_transform_named_color must have set ALL the device
                    colors */
@@ -712,7 +712,7 @@ gs_color_select_t select)
     return false;
 }
 
-/* By default, remap a color by concretizing it and then remapping the concrete 
+/* By default, remap a color by concretizing it and then remapping the concrete
    color. */
 int
 gx_default_remap_color(const gs_client_color * pcc, const gs_color_space * pcs,
@@ -772,9 +772,9 @@ gx_remap_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
     int code;
 
     /* We are in here due to the fact that we are using a color space that
-       was set in the graphic state before the ICC manager was intitialized 
+       was set in the graphic state before the ICC manager was intitialized
        and the color space was never actually "installed" and hence set
-       over to a proper ICC color space. We will "install" this color space 
+       over to a proper ICC color space. We will "install" this color space
        at this time */
     if (pis->icc_manager->default_gray != NULL) {
         gs_color_space *pcs_notconst = (gs_color_space*) pcs;
@@ -782,11 +782,11 @@ gx_remap_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
         pcs_notconst->cmm_icc_profile_data = pis->icc_manager->default_gray;
         rc_increment(pis->icc_manager->default_gray);
         pcs_notconst->type = &gs_color_space_type_ICC;
-        code = 
+        code =
             (*pcs_notconst->type->remap_color)(gs_currentcolor_inline(pgs),
-                                               pcs_notconst, 
+                                               pcs_notconst,
                                                gs_currentdevicecolor_inline(pgs),
-                                               pis, pgs->device, 
+                                               pis, pgs->device,
                                                gs_color_select_texture);
         return code;
     }
@@ -918,11 +918,9 @@ cmap_gray_halftoned(frac gray, gx_device_color * pdc,
             int k = dev->color_info.black_component;
 
             for (i = 0; i < ncomps; i++) {
-                if (i == k)
+                if (i == k) /* Else ignore transfer, see PLRM3 p. 494 */
                     cm_comps[i] = frac_1 - gx_map_color_frac(pis,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
-                 else
-                    cm_comps[i] = cm_comps[i]; /* Ignore transfer, see PLRM3 p. 494 */
             }
         } else {
             for (i = 0; i < ncomps; i++)
@@ -1096,7 +1094,7 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
             black_index = dev_proc(dev, get_color_comp_index)(dev, "Black",
                                     strlen("Black"), SEPARATION_NAME);
             cm_comps[black_index] = frac_1 - gx_map_color_frac(pis,
-                                    (frac)(frac_1 - cm_comps[black_index]), 
+                                    (frac)(frac_1 - cm_comps[black_index]),
                                     effective_transfer[black_index]);
         } else {
             for (i = 0; i < ncomps; i++)
@@ -1325,7 +1323,7 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
 
     dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(dev->graphics_type_tag,
-                          dev_profile, &des_profile, &render_cond);   
+                          dev_profile, &des_profile, &render_cond);
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
     if (pis->color_component_map.sep_type == SEP_ALL) {
@@ -1460,7 +1458,7 @@ devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis, gx_device *dev)
         psrc[k] = frac2cv(cm_comps[k]);
     }
     icc_link = gsicc_get_link_profile(pis, dev, pis->icc_manager->default_cmyk,
-                des_profile, &rendering_params, pis->memory, 
+                des_profile, &rendering_params, pis->memory,
                 dev_profile->devicegraytok);
     /* Transform the color */
     if (icc_link->is_identity) {
@@ -1492,7 +1490,7 @@ cmap_devicen_halftoned(const frac * pcc,
 {
     int i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    gsicc_rendering_param_t render_cond;   
+    gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
@@ -1537,7 +1535,7 @@ cmap_devicen_direct(const frac * pcc,
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
-    gsicc_rendering_param_t render_cond;   
+    gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
@@ -1549,7 +1547,7 @@ cmap_devicen_direct(const frac * pcc,
     for (i = 0; i < ncomps; i++)
         cm_comps[i] = 0;
     if (dev_profile->spotnames != NULL && dev_profile->spotnames->equiv_cmyk_set) {
-        map_components_to_colorants(pcc, dev_profile->spotnames->color_map, 
+        map_components_to_colorants(pcc, dev_profile->spotnames->color_map,
                                     cm_comps);
     } else {
         map_components_to_colorants(pcc, &(pis->color_component_map), cm_comps);
@@ -1574,7 +1572,7 @@ cmap_devicen_direct(const frac * pcc,
            in PDF and PS data. */
         devicen_icc_cmyk(cm_comps, pis, dev);
     }
-    /* apply the transfer function(s); convert to color values.  
+    /* apply the transfer function(s); convert to color values.
        assign directly if output device supports devn */
     if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
         if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -2117,7 +2115,7 @@ bool
 gx_device_uses_std_cmap_procs(gx_device * dev, const gs_imager_state * pis)
 {
     const gx_cm_color_map_procs *pprocs;
-    gsicc_rendering_param_t render_cond;   
+    gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
