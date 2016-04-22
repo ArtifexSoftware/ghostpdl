@@ -264,6 +264,7 @@ gsicc_nocm_transform_general(gx_device *dev, gsicc_link_t *icclink,
                 frac_in[2], frac_in[3], frac_out);
             break;
         default:
+            memset(&(frac_out[0]), 0, sizeof(frac_out));
             break;
     }
     if (num_bytes_out == 2) {
@@ -387,7 +388,7 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
 
     /* Now compute the link contents */
     /* Lock the cache as we alter the procs */
-    gx_monitor_enter(pis->icc_link_cache->lock);	
+    gx_monitor_enter(pis->icc_link_cache->lock);
 
     result->procs.map_buffer = gsicc_nocm_transform_color_buffer;
     result->procs.map_color = gsicc_nocm_transform_color;

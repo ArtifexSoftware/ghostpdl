@@ -261,6 +261,7 @@ gsicc_rcm_transform_general(gx_device *dev, gsicc_link_t *icclink,
                                  frac_in[3], frac_out);
             break;
         default:
+            memset(&(frac_out[0]), 0, sizeof(frac_out));
             break;
     }
     if (num_bytes_out == 2) {
