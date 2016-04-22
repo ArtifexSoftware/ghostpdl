@@ -309,9 +309,9 @@ gx_remap_concrete_icc_devicen(const frac * pconc, const gs_color_space * pcs,
     int code;
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
-    if (dev_profile->spotnames != NULL  && 
+    if (dev_profile->spotnames != NULL  &&
         !dev_profile->spotnames->equiv_cmyk_set) {
-        /* This means that someone has specified a DeviceN (Ncolor) 
+        /* This means that someone has specified a DeviceN (Ncolor)
            ICC destination profile for this device and we still need to set
            up the equivalent CMYK colors for the spot colors that are present.
            This allows us to have some sort of composite viewing of the spot
@@ -350,8 +350,8 @@ gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
             code = gx_remap_concrete_DCMYK(pconc, pcs, pdc, pis, dev, select);
             break;
         default:
-            /* This is a special case where we have a source color and our 
-               output profile must be DeviceN.   We will need to map our 
+            /* This is a special case where we have a source color and our
+               output profile must be DeviceN.   We will need to map our
                colorants to the proper planes */
             code = gx_remap_concrete_icc_devicen(pconc, pcs, pdc, pis, dev, select);
             break;
@@ -454,7 +454,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
 
 /*
  * Same as above, but there is no rescale of CIELAB colors.  This is needed
-   since the rescale is not needed when the source data is image based.  
+   since the rescale is not needed when the source data is image based.
    The DeviceN image rendering case uses the remap proc vs. the ICC based method
    which handles the remapping itself.
  */
@@ -641,13 +641,9 @@ gx_serialize_ICC(const gs_color_space * pcs, stream * s)
 static int
 gx_set_overprint_ICC(const gs_color_space * pcs, gs_state * pgs)
 {
-    gx_device *             dev = pgs->device;
-    gx_device_color_info *  pcinfo = (dev == 0 ? 0 : &dev->color_info);
-    cmm_dev_profile_t *dev_profile;
-    int code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    gx_device *dev = pgs->device;
+    gx_device_color_info *pcinfo = (dev == 0 ? 0 : &dev->color_info);
 
-    if (code < 0)
-        return code;
     /* check if we require special handling */
     if ( !pgs->overprint                      ||
          pgs->overprint_mode != 1             ||
@@ -657,7 +653,7 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_state * pgs)
             return gx_spot_colors_set_overprint(pcs, pgs);
     }
 
-    if (pcinfo->opmode == GX_CINFO_OPMODE_RGB || 
+    if (pcinfo->opmode == GX_CINFO_OPMODE_RGB ||
         pcinfo->opmode == GC_CINFO_OPMODE_RGB_SET) {
         return gx_set_overprint_rgb(pcs, pgs);
     } else {
@@ -666,7 +662,7 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_state * pgs)
 }
 
 int
-gx_default_get_profile(gx_device *dev, cmm_dev_profile_t **profile) 
+gx_default_get_profile(gx_device *dev, cmm_dev_profile_t **profile)
 {
     *profile = dev->icc_struct;
     return 0;
