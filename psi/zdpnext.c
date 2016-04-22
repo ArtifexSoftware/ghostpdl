@@ -191,6 +191,7 @@ zcomposite(i_ctx_t *i_ctx_p)
 
     check_int_leu(*op, composite_last);
     params.op = (gs_composite_op_t) op->value.intval;
+    params.delta = 0; /* prevents a Coverity warning, delta is only used for Dissolve mode */
     return composite_image(i_ctx_p, &params);
 }
 
