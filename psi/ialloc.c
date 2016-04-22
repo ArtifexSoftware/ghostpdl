@@ -186,7 +186,7 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
          *      - Large chunk: pcc unchanged, end != cc.cbot.
          *      - New chunk: pcc changed.
          */
-        chunk_t *pcc = mem->pcc;
+        clump_t *pcc = mem->pcc;
         ref *end;
         alloc_change_t *cp = 0;
         int code = 0;
@@ -213,11 +213,11 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
             /* Large chunk. */
             /* This happens only for very large arrays, */
             /* so it doesn't need to be cheap. */
-            chunk_locator_t cl;
+            clump_locator_t cl;
 
             cl.memory = mem;
             cl.cp = mem->root;
-            chunk_locate_ptr(obj, &cl);
+            clump_locate_ptr(obj, &cl);
             cl.cp->has_refs = true;
         }
         if (cp) {
@@ -309,11 +309,11 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
         /* See if this array has a chunk all to itself. */
         /* We only make this check when freeing very large objects, */
         /* so it doesn't need to be cheap. */
-        chunk_locator_t cl;
+        clump_locator_t cl;
 
         cl.memory = mem;
         cl.cp = mem->root;
-        if (chunk_locate_ptr(obj, &cl) &&
+        if (clump_locate_ptr(obj, &cl) &&
             obj == (ref *) ((obj_header_t *) (cl.cp->cbase) + 1) &&
             (byte *) (obj + (num_refs + 1)) == cl.cp->cend
             ) {
@@ -323,7 +323,7 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
                        num_refs, (ulong) obj);
             if ((gs_memory_t *)mem != mem->stable_memory)
                 alloc_save_remove(mem, (ref_packed *)obj, "gs_free_ref_array");
-                alloc_free_chunk(cl.cp, mem);
+                alloc_free_clump(cl.cp, mem);
                 return;
         }
     }

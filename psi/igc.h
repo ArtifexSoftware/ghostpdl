@@ -59,7 +59,7 @@ typedef struct name_table_s name_table;
 #endif
 struct gc_state_s {
     const gc_procs_with_refs_t *procs;	/* must be first */
-    chunk_locator_t loc;
+    clump_locator_t loc;
     vm_spaces spaces;
     int min_collect;		/* avm_space */
     bool relocating_untraced;	/* if true, we're relocating */
@@ -68,7 +68,7 @@ struct gc_state_s {
     name_table *ntable;		/* (implicitly referenced by names) */
     gs_memory_t *cur_mem;
 #ifdef DEBUG
-    chunk_t *container;
+    clump_t *container;
 #endif
 };
 
@@ -79,8 +79,8 @@ ptr_proc_mark(ptr_ref_mark);
 
 /* Exported by ilocate.c for igc.c */
 void ialloc_validate_memory(const gs_ref_memory_t *, gc_state_t *);
-void ialloc_validate_chunk(const chunk_t *, gc_state_t *);
-void ialloc_validate_object(const obj_header_t *, const chunk_t *,
+void ialloc_validate_clump(const clump_t *, gc_state_t *);
+void ialloc_validate_object(const obj_header_t *, const clump_t *,
                             gc_state_t *);
 
 /* Exported by igc.c for ilocate.c */

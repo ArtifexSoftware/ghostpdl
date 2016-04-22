@@ -3787,15 +3787,15 @@ Files:
 <p>
 The standard Ghostscript allocator gets storage from its parent (normally
 the <code>malloc</code> allocator) in large blocks called
-<em>chunks</em>, and then allocates objects up from the low end and strings
+<em>clumps</em>, and then allocates objects up from the low end and strings
 down from the high end.  Large objects or strings are allocated in their own
-chunk.
+clump.
 
 <p>
 The standard allocator maintains a set of free-block lists for small object
 sizes, one list per size (rounded up to the word size), plus a free-block
 list for large objects (but not for objects so large that they get their own
-chunk: when such an object is freed, its chunk is returned to the parent).
+clump: when such an object is freed, its chunk is returned to the parent).
 The lists are not sorted; adjacent blocks are only merged if needed.
 
 <p>
@@ -3875,7 +3875,7 @@ Using a separate memory manager object for each composite object would waste
 a lot of space for object headers.  Therefore, the interpreter's memory
 manager packs multiple composite objects (also called "ref-containing
 objects") into a single memory manager object, similar to the way the memory
-manager packs multiple objects into a chunk (see <a
+manager packs multiple objects into a clump (see <a
 href="#Standard_implementation">above</a>).  See <a
 href="../base/gxalloc.h">base/gxalloc.h</a> for details.  This memory manager
 object has a structure descriptor, like all other memory manager objects.

@@ -128,7 +128,7 @@ gs_vmreclaim(gs_dual_memory_t *dmem, bool global)
 
     /****** ABORT IF code < 0 ******/
     for (i = nmem; --i >= 0; )
-        alloc_close_chunk(memories[i]);
+        alloc_close_clump(memories[i]);
 
     /* Prune the file list so it won't retain potentially collectible */
     /* files. */
@@ -172,16 +172,16 @@ gs_vmreclaim(gs_dual_memory_t *dmem, bool global)
 
     dicts_gc_cleanup();
 
-    /* Reopen the active chunks. */
+    /* Reopen the active clumps. */
 
     for (i = 0; i < nmem; ++i)
-        alloc_open_chunk(memories[i]);
+        alloc_open_clump(memories[i]);
 
     /* Reload the context state.  Note this should be done
-       AFTER the chunks are reopened, since the context state
+       AFTER the clumps are reopened, since the context state
        load could do allocations that must remain.
-       If it were done while the chunks were still closed,
-       we would lose those allocations when the chunks were opened */
+       If it were done while the clumps were still closed,
+       we would lose those allocations when the clumps were opened */
 
     code = context_state_load(i_ctx_p);
     return code;

@@ -24,11 +24,11 @@
 #include "igc.h"
 
 /* Forward references */
-static bool gc_mark_string(const byte *, uint, bool, const chunk_t *);
+static bool gc_mark_string(const byte *, uint, bool, const clump_t *);
 
-/* (Un)mark the strings in a chunk. */
+/* (Un)mark the strings in a clump. */
 void
-gc_strings_set_marks(chunk_t * cp, bool mark)
+gc_strings_set_marks(clump_t * cp, bool mark)
 {
     if (cp->smark != 0) {
         if_debug3('6', "[6]clearing string marks 0x%lx[%u] to %d\n",
@@ -59,9 +59,9 @@ typedef string_mark_unit bword;
 #  define bword_swap_bytes(m) DO_NOTHING
 #endif
 
-/* (Un)mark a string in a known chunk.  Return true iff any new marks. */
+/* (Un)mark a string in a known clump.  Return true iff any new marks. */
 static bool
-gc_mark_string(const byte * ptr, uint size, bool set, const chunk_t * cp)
+gc_mark_string(const byte * ptr, uint size, bool set, const clump_t * cp)
 {
     uint offset = (ptr - HDR_ID_OFFSET) - cp->sbase;
     bword *bp = (bword *) (cp->smark + ((offset & -bword_bits) >> 3));
@@ -130,7 +130,7 @@ dmfwrite(const gs_memory_t *mem, const byte *ptr, uint count)
 bool
 gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
 {
-    const chunk_t *cp;
+    const clump_t *cp;
     bool marks;
 
     if (size == 0)
@@ -138,12 +138,12 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
 #define dmprintstr(mem)\
   dmputc(mem, '('); dmfwrite(mem, ptr - HDR_ID_OFFSET, min(size, 20));\
   dmputs(mem, (size <= 20 ? ")" : "...)"))
-    if (!(cp = gc_locate(ptr - HDR_ID_OFFSET, gcst))) {		/* not in a chunk */
+    if (!(cp = gc_locate(ptr - HDR_ID_OFFSET, gcst))) {		/* not in a clump */
 #ifdef DEBUG
         if (gs_debug_c('5')) {
             dmlprintf2(gcst->heap, "[5]0x%lx[%u]", (ulong) ptr - HDR_ID_OFFSET, size);
             dmprintstr(gcst->heap);
-            dmputs(gcst->heap, " not in a chunk\n");
+            dmputs(gcst->heap, " not in a clump\n");
         }
 #endif
         return false;
@@ -156,17 +156,17 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
                  (ulong) ptr - HDR_ID_OFFSET, size, (ulong) cp->ctop, (ulong) cp->climit);
         return false;
     } else if (ptr + size > cp->climit) {	/*
-                                                 * If this is the bottommost string in a chunk that has
-                                                 * an inner chunk, the string's starting address is both
-                                                 * cp->ctop of the outer chunk and cp->climit of the inner;
+                                                 * If this is the bottommost string in a clump that has
+                                                 * an inner clump, the string's starting address is both
+                                                 * cp->ctop of the outer clump and cp->climit of the inner;
                                                  * gc_locate may incorrectly attribute the string to the
-                                                 * inner chunk because of this.  This doesn't affect
+                                                 * inner clump because of this.  This doesn't affect
                                                  * marking or relocation, since the machinery for these
-                                                 * is all associated with the outermost chunk,
+                                                 * is all associated with the outermost clump,
                                                  * but it can cause the validity check to fail.
                                                  * Check for this case now.
                                                  */
-        const chunk_t *scp = cp;
+        const clump_t *scp = cp;
 
         while (ptr - HDR_ID_OFFSET == scp->climit && scp->outer != 0)
             scp = scp->outer;
@@ -194,7 +194,7 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
 /* Clear the relocation for strings. */
 /* This requires setting the marks. */
 void
-gc_strings_clear_reloc(chunk_t * cp)
+gc_strings_clear_reloc(clump_t * cp)
 {
     if (cp->sreloc != 0) {
         gc_strings_set_marks(cp, true);
@@ -218,11 +218,11 @@ static const byte count_zero_bits_table[256] =
 #define byte_count_one_bits(byt)\
   (uint)(8 - count_zero_bits_table[byt])
 
-/* Set the relocation for the strings in a chunk. */
+/* Set the relocation for the strings in a clump. */
 /* The sreloc table stores the relocated offset from climit for */
 /* the beginning of each block of string_data_quantum characters. */
 void
-gc_strings_set_reloc(chunk_t * cp)
+gc_strings_set_reloc(clump_t * cp)
 {
     if (cp->sreloc != 0 && cp->smark != 0) {
         byte *bot = cp->ctop;
@@ -280,7 +280,7 @@ void
 igc_reloc_string(gs_string * sptr, gc_state_t * gcst)
 {
     byte *ptr;
-    const chunk_t *cp;
+    const clump_t *cp;
     uint offset;
     uint reloc;
     const byte *bitp;
@@ -293,7 +293,7 @@ igc_reloc_string(gs_string * sptr, gc_state_t * gcst)
     ptr = sptr->data;
     ptr -= HDR_ID_OFFSET;
 
-    if (!(cp = gc_locate(ptr, gcst)))	/* not in a chunk */
+    if (!(cp = gc_locate(ptr, gcst)))	/* not in a clump */
         return;
     if (cp->sreloc == 0 || cp->smark == 0)	/* not marking strings */
         return;
@@ -339,9 +339,9 @@ igc_reloc_param_string(gs_param_string * sptr, gc_state_t * gcst)
     }
 }
 
-/* Compact the strings in a chunk. */
+/* Compact the strings in a clump. */
 void
-gc_strings_compact(chunk_t * cp, const gs_memory_t *mem)
+gc_strings_compact(clump_t * cp, const gs_memory_t *mem)
 {
     if (cp->smark != 0) {
         byte *hi = cp->climit;

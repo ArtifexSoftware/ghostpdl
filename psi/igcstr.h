@@ -20,14 +20,14 @@
 #  define igcstr_INCLUDED
 
 /* Exported by ilocate.c for igcstr.c */
-chunk_t *gc_locate(const void *, gc_state_t *);
+clump_t *gc_locate(const void *, gc_state_t *);
 
 /* Exported by igcstr.c for igc.c */
-void gc_strings_set_marks(chunk_t *, bool);
+void gc_strings_set_marks(clump_t *, bool);
 bool gc_string_mark(const byte *, uint, bool, gc_state_t *);
-void gc_strings_clear_reloc(chunk_t *);
-void gc_strings_set_reloc(chunk_t *);
-void gc_strings_compact(chunk_t *, const gs_memory_t *);
+void gc_strings_clear_reloc(clump_t *);
+void gc_strings_set_reloc(clump_t *);
+void gc_strings_compact(clump_t *, const gs_memory_t *);
 string_proc_reloc(igc_reloc_string);
 const_string_proc_reloc(igc_reloc_const_string);
 param_string_proc_reloc(igc_reloc_param_string);

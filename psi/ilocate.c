@@ -32,23 +32,23 @@
 #include "store.h"
 
 #ifdef DEBUG
-static int do_validate_chunk(const chunk_t * cp, gc_state_t * gcst);
-static int do_validate_object(const obj_header_t * ptr, const chunk_t * cp,
+static int do_validate_clump(const clump_t * cp, gc_state_t * gcst);
+static int do_validate_object(const obj_header_t * ptr, const clump_t * cp,
                               gc_state_t * gcst);
 #endif
 
 
 /* ================ Locating ================ */
 
-/* Locate a pointer in the chunks of a space being collected. */
+/* Locate a pointer in the clumps of a space being collected. */
 /* This is only used for string garbage collection and for debugging. */
-chunk_t *
+clump_t *
 gc_locate(const void *ptr, gc_state_t * gcst)
 {
     const gs_ref_memory_t *mem;
     const gs_ref_memory_t *other;
 
-    if (chunk_locate(ptr, &gcst->loc))
+    if (clump_locate(ptr, &gcst->loc))
         return gcst->loc.cp;
     mem = gcst->loc.memory;
 
@@ -62,7 +62,7 @@ gc_locate(const void *ptr, gc_state_t * gcst)
         ) {
         gcst->loc.memory = other;
         gcst->loc.cp = 0;
-        if (chunk_locate(ptr, &gcst->loc))
+        if (clump_locate(ptr, &gcst->loc))
             return gcst->loc.cp;
     }
 
@@ -76,13 +76,13 @@ gc_locate(const void *ptr, gc_state_t * gcst)
         gcst->loc.memory = other =
             (mem->space == avm_local ? gcst->space_global : gcst->space_local);
         gcst->loc.cp = 0;
-        if (chunk_locate(ptr, &gcst->loc))
+        if (clump_locate(ptr, &gcst->loc))
             return gcst->loc.cp;
         /* Try its stable allocator. */
         if (other->stable_memory != (const gs_memory_t *)other) {
             gcst->loc.memory = (gs_ref_memory_t *)other->stable_memory;
             gcst->loc.cp = 0;
-            if (chunk_locate(ptr, &gcst->loc))
+            if (clump_locate(ptr, &gcst->loc))
                 return gcst->loc.cp;
             gcst->loc.memory = other;
         }
@@ -90,7 +90,7 @@ gc_locate(const void *ptr, gc_state_t * gcst)
         while (gcst->loc.memory->saved != 0) {
             gcst->loc.memory = &gcst->loc.memory->saved->state;
             gcst->loc.cp = 0;
-            if (chunk_locate(ptr, &gcst->loc))
+            if (clump_locate(ptr, &gcst->loc))
                 return gcst->loc.cp;
         }
     }
@@ -103,7 +103,7 @@ gc_locate(const void *ptr, gc_state_t * gcst)
     if (mem != gcst->space_system) {
         gcst->loc.memory = gcst->space_system;
         gcst->loc.cp = 0;
-        if (chunk_locate(ptr, &gcst->loc))
+        if (clump_locate(ptr, &gcst->loc))
             return gcst->loc.cp;
     }
 
@@ -119,7 +119,7 @@ gc_locate(const void *ptr, gc_state_t * gcst)
         if (other->stable_memory != (const gs_memory_t *)other) {
             gcst->loc.memory = (gs_ref_memory_t *)other->stable_memory;
             gcst->loc.cp = 0;
-            if (chunk_locate(ptr, &gcst->loc))
+            if (clump_locate(ptr, &gcst->loc))
                 return gcst->loc.cp;
         }
         gcst->loc.memory = other;
@@ -134,7 +134,7 @@ gc_locate(const void *ptr, gc_state_t * gcst)
     for (;;) {
         if (gcst->loc.memory != mem) {	/* don't do twice */
             gcst->loc.cp = 0;
-            if (chunk_locate(ptr, &gcst->loc))
+            if (clump_locate(ptr, &gcst->loc))
                 return gcst->loc.cp;
         }
         if (gcst->loc.memory->saved == 0)
@@ -155,7 +155,7 @@ gc_locate(const void *ptr, gc_state_t * gcst)
 
 /* Define the structure for temporarily saving allocator state. */
 typedef struct alloc_temp_save_s {
-        chunk_t cc;
+        clump_t cc;
         uint rsize;
         ref rlast;
 } alloc_temp_save_t;
@@ -163,7 +163,7 @@ typedef struct alloc_temp_save_s {
 static void
 alloc_temp_save(alloc_temp_save_t *pats, gs_ref_memory_t *mem)
 {
-    chunk_t *pcc = mem->pcc;
+    clump_t *pcc = mem->pcc;
     obj_header_t *rcur = mem->cc.rcur;
 
     if (pcc != 0) {
@@ -182,7 +182,7 @@ alloc_temp_save(alloc_temp_save_t *pats, gs_ref_memory_t *mem)
 static void
 alloc_temp_restore(alloc_temp_save_t *pats, gs_ref_memory_t *mem)
 {
-    chunk_t *pcc = mem->pcc;
+    clump_t *pcc = mem->pcc;
     obj_header_t *rcur = mem->cc.rcur;
 
     if (rcur != 0) {
@@ -248,15 +248,15 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
     for (smem = mem, level = 0; smem != 0;
          smem = &smem->saved->state, --level
         ) {
-        chunk_splay_walker sw;
-        const chunk_t *cp;
+        clump_splay_walker sw;
+        const clump_t *cp;
         int i;
 
         if_debug3m('6', (gs_memory_t *)mem, "[6]validating memory 0x%lx, space %d, level %d\n",
                    (ulong) mem, mem->space, level);
-        /* Validate chunks. */
-        for (cp = chunk_splay_walk_init(&sw, smem); cp != 0; cp = chunk_splay_walk_fwd(&sw))
-            if (do_validate_chunk(cp, gcst)) {
+        /* Validate clumps. */
+        for (cp = clump_splay_walk_init(&sw, smem); cp != 0; cp = clump_splay_walk_fwd(&sw))
+            if (do_validate_clump(cp, gcst)) {
                 mlprintf3((gs_memory_t *)mem, "while validating memory 0x%lx, space %d, level %d\n",
                           (ulong) mem, mem->space, level);
                 gs_abort(gcst->heap);
@@ -290,13 +290,13 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
 
 /* Check the validity of an object's size. */
 static inline bool
-object_size_valid(const obj_header_t * pre, uint size, const chunk_t * cp)
+object_size_valid(const obj_header_t * pre, uint size, const clump_t * cp)
 {
     return (pre->o_alone ? (const byte *)pre == cp->cbase :
             size <= cp->ctop - (const byte *)(pre + 1));
 }
 
-/* Validate all the objects in a chunk. */
+/* Validate all the objects in a clump. */
 #if IGC_PTR_STABILITY_CHECK
 void ialloc_validate_pointer_stability(const obj_header_t * ptr_from,
                                    const obj_header_t * ptr_to);
@@ -307,21 +307,21 @@ static int ialloc_validate_ref(const ref *, gc_state_t *);
 static int ialloc_validate_ref_packed(const ref_packed *, gc_state_t *);
 #endif
 static int
-do_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
+do_validate_clump(const clump_t * cp, gc_state_t * gcst)
 {
     int ret = 0;
 
-    if_debug_chunk('6', gcst->heap, "[6]validating chunk", cp);
-    SCAN_CHUNK_OBJECTS(cp);
+    if_debug_clump('6', gcst->heap, "[6]validating clump", cp);
+    SCAN_CLUMP_OBJECTS(cp);
     DO_ALL
         if (pre->o_type == &st_free) {
             if (!object_size_valid(pre, size, cp)) {
-                lprintf3("Bad free object 0x%lx(%lu), in chunk 0x%lx!\n",
+                lprintf3("Bad free object 0x%lx(%lu), in clump 0x%lx!\n",
                          (ulong) (pre + 1), (ulong) size, (ulong) cp);
                 return 1;
             }
         } else if (do_validate_object(pre + 1, cp, gcst)) {
-            dmprintf_chunk(gcst->heap, "while validating chunk", cp);
+            dmprintf_clump(gcst->heap, "while validating clump", cp);
             return 1;
         }
     if_debug3m('7', gcst->heap, " [7]validating %s(%lu) 0x%lx\n",
@@ -341,7 +341,7 @@ do_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
                 mlprintf3(gcst->heap, "while validating %s(%lu) 0x%lx\n",
                          struct_type_name_string(pre->o_type),
                          (ulong) size, (ulong) pre);
-                dmprintf_chunk(gcst->heap, "in chunk", cp);
+                dmprintf_clump(gcst->heap, "in clump", cp);
                 return ret;
             }
             rp = packed_next(rp);
@@ -372,7 +372,7 @@ do_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
                     ret = ialloc_validate_ref_packed(eptr.ptr, gcst);
 #		    endif
                 if (ret) {
-                    dmprintf_chunk(gcst->heap, "while validating chunk", cp);
+                    dmprintf_clump(gcst->heap, "while validating clump", cp);
                     return ret;
                 }
             }
@@ -382,9 +382,9 @@ do_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 }
 
 void
-ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
+ialloc_validate_clump(const clump_t * cp, gc_state_t * gcst)
 {
-    if (do_validate_chunk(cp, gcst))
+    if (do_validate_clump(cp, gcst))
         gs_abort(gcst->heap);
 }
 
@@ -476,7 +476,7 @@ cks:	    if (optr != 0) {
                 if (r_space(&sref) != avm_foreign &&
                     !gc_locate(sref.value.const_bytes, gcst)
                     ) {
-                    lprintf4("At 0x%lx, bad name %u, pname = 0x%lx, string 0x%lx not in any chunk\n",
+                    lprintf4("At 0x%lx, bad name %u, pname = 0x%lx, string 0x%lx not in any clump\n",
                              (ulong) pref, (uint) r_size(pref),
                              (ulong) pref->value.pname,
                              (ulong) sref.value.const_bytes);
@@ -486,7 +486,7 @@ cks:	    if (optr != 0) {
             break;
         case t_string:
             if (r_size(pref) != 0 && !gc_locate(pref->value.bytes, gcst)) {
-                lprintf3("At 0x%lx, string ptr 0x%lx[%u] not in any chunk\n",
+                lprintf3("At 0x%lx, string ptr 0x%lx[%u] not in any clump\n",
                          (ulong) pref, (ulong) pref->value.bytes,
                          (uint) r_size(pref));
                 ret = 1;
@@ -499,7 +499,7 @@ cks:	    if (optr != 0) {
             size = r_size(pref);
             tname = "array";
 cka:	    if (!gc_locate(rptr, gcst)) {
-                lprintf3("At 0x%lx, %s 0x%lx not in any chunk\n",
+                lprintf3("At 0x%lx, %s 0x%lx not in any clump\n",
                          (ulong) pref, tname, (ulong) rptr);
                 ret = 1;
                 break;
@@ -523,7 +523,7 @@ cka:	    if (!gc_locate(rptr, gcst)) {
                 break;
             optr = pref->value.packed;
             if (!gc_locate(optr, gcst)) {
-                lprintf2("At 0x%lx, packed array 0x%lx not in any chunk\n",
+                lprintf2("At 0x%lx, packed array 0x%lx not in any clump\n",
                          (ulong) pref, (ulong) optr);
                 ret = 1;
             }
@@ -575,7 +575,7 @@ ialloc_validate_pointer_stability(const obj_header_t * ptr_fr,
 
 /* Validate an object. */
 static int
-do_validate_object(const obj_header_t * ptr, const chunk_t * cp,
+do_validate_object(const obj_header_t * ptr, const clump_t * cp,
                        gc_state_t * gcst)
 {
     const obj_header_t *pre = ptr - 1;
@@ -590,13 +590,13 @@ do_validate_object(const obj_header_t * ptr, const chunk_t * cp,
 
         st = *gcst;		/* no side effects! */
         if (!(cp = gc_locate(pre, &st))) {
-            mlprintf1(gcst->heap, "Object 0x%lx not in any chunk!\n",
+            mlprintf1(gcst->heap, "Object 0x%lx not in any clump!\n",
                       (ulong) ptr);
             return 1;		/*gs_abort(); */
         }
     }
     if (otype == &st_free) {
-        mlprintf3(gcst->heap, "Reference to free object 0x%lx(%lu), in chunk 0x%lx!\n",
+        mlprintf3(gcst->heap, "Reference to free object 0x%lx(%lu), in clump 0x%lx!\n",
                  (ulong) ptr, (ulong) size, (ulong) cp);
         return 1;
     }
@@ -608,7 +608,7 @@ do_validate_object(const obj_header_t * ptr, const chunk_t * cp,
         ) {
         mlprintf2(gcst->heap, "Bad object 0x%lx(%lu),\n",
                   (ulong) ptr, (ulong) size);
-        dmprintf2(gcst->heap, " ssize = %u, in chunk 0x%lx!\n",
+        dmprintf2(gcst->heap, " ssize = %u, in clump 0x%lx!\n",
                   otype->ssize, (ulong) cp);
         return 1;
     }
@@ -616,7 +616,7 @@ do_validate_object(const obj_header_t * ptr, const chunk_t * cp,
 }
 
 void
-ialloc_validate_object(const obj_header_t * ptr, const chunk_t * cp,
+ialloc_validate_object(const obj_header_t * ptr, const clump_t * cp,
                        gc_state_t * gcst)
 {
     if (do_validate_object(ptr, cp, gcst))
@@ -635,12 +635,12 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
 }
 
 void
-ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
+ialloc_validate_clump(const clump_t * cp, gc_state_t * gcst)
 {
 }
 
 void
-ialloc_validate_object(const obj_header_t * ptr, const chunk_t * cp,
+ialloc_validate_object(const obj_header_t * ptr, const clump_t * cp,
                        gc_state_t * gcst)
 {
 }

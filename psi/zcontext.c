@@ -248,7 +248,7 @@ context_reclaim(vm_spaces * pspaces, bool global)
     gs_context_t *pctx = 0;	/* = 0 is bogus to pacify compilers */
     gs_scheduler_t *psched = 0;
     gs_ref_memory_t *lmem = 0;	/* = 0 is bogus to pacify compilers */
-    chunk_locator_t loc;
+    clump_locator_t loc;
 
     for (i = countof(pspaces->memories.indexed) - 1; psched == 0 && i > 0; --i) {
         gs_ref_memory_t *mem = pspaces->memories.indexed[i];
@@ -273,7 +273,7 @@ context_reclaim(vm_spaces * pspaces, bool global)
     loc.cp = 0;
     for (i = 0; i < CTX_TABLE_SIZE; ++i)
         for (pctx = psched->table[i]; pctx; pctx = pctx->table_next)
-            pctx->visible = chunk_locate_ptr(pctx, &loc);
+            pctx->visible = clump_locate_ptr(pctx, &loc);
 
 #ifdef DEBUG
     if (!psched->current->visible) {
@@ -617,8 +617,8 @@ do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
             return_error(gs_error_Fatal);
         old_userdict = *puserdict;
         userdict_size = dict_maxlength(&old_userdict);
-        lmem = ialloc_alloc_state(parent, iimemory_local->chunk_size);
-        lmem_stable = ialloc_alloc_state(parent, iimemory_local->chunk_size);
+        lmem = ialloc_alloc_state(parent, iimemory_local->clump_size);
+        lmem_stable = ialloc_alloc_state(parent, iimemory_local->clump_size);
         if (lmem == 0 || lmem_stable == 0) {
             gs_free_object(parent, lmem_stable, "do_fork");
             gs_free_object(parent, lmem, "do_fork");

@@ -39,9 +39,9 @@ private_st_alloc_save();
 /* see below for details. */
 static const long max_repeated_scan = 100000;
 
-/* Define the minimum space for creating an inner chunk. */
-/* Must be at least sizeof(chunk_head_t). */
-static const long min_inner_chunk_space = sizeof(chunk_head_t) + 500;
+/* Define the minimum space for creating an inner clump. */
+/* Must be at least sizeof(clump_head_t). */
+static const long min_inner_clump_space = sizeof(clump_head_t) + 500;
 
 /*
  * The logic for saving and restoring the state is complex.
@@ -51,23 +51,23 @@ static const long min_inner_chunk_space = sizeof(chunk_head_t) + 500;
 
 /*
  * To save the state of the memory manager:
- *      Save the state of the current chunk in which we are allocating.
- *      Shrink all chunks to their inner unallocated region.
+ *      Save the state of the current clump in which we are allocating.
+ *      Shrink all clumps to their inner unallocated region.
  *      Save and reset the free block chains.
  * By doing this, we guarantee that no object older than the save
  * can be freed.
  *
  * To restore the state of the memory manager:
- *      Free all chunks newer than the save, and the descriptors for
- *        the inner chunks created by the save.
- *      Make current the chunk that was current at the time of the save.
- *      Restore the state of the current chunk.
+ *      Free all clumps newer than the save, and the descriptors for
+ *        the inner clumps created by the save.
+ *      Make current the clump that was current at the time of the save.
+ *      Restore the state of the current clump.
  *
  * In addition to save ("start transaction") and restore ("abort transaction"),
  * we support forgetting a save ("commit transation").  To forget a save:
- *      Reassign to the next outer save all chunks newer than the save.
- *      Free the descriptors for the inners chunk, updating their outer
- *        chunks to reflect additional allocations in the inner chunks.
+ *      Reassign to the next outer save all clumps newer than the save.
+ *      Free the descriptors for the inners clump, updating their outer
+ *        clumps to reflect additional allocations in the inner clumps.
  *      Concatenate the free block chains with those of the outer save.
  */
 
@@ -316,7 +316,7 @@ alloc_free_save(gs_ref_memory_t *mem, alloc_save_t *save, const char *scn)
     gs_ref_memory_t save_mem;
     save_mem = mem->saved->state;
     gs_free_object((gs_memory_t *)mem, save, scn);
-    /* Free any inner chunk structures.  This is the easiest way to do it. */
+    /* Free any inner clump structures.  This is the easiest way to do it. */
     restore_free(mem);
     /* Restore the 'saved' state - this pulls our object off the linked
      * list of states. Without this we hit a SEGV in the gc later. */
@@ -403,44 +403,44 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
 {
     gs_ref_memory_t save_mem;
     alloc_save_t *save;
-    chunk_t *cp;
-    chunk_t *new_pcc = 0;
-    chunk_splay_walker sw;
+    clump_t *cp;
+    clump_t *new_pcc = 0;
+    clump_splay_walker sw;
 
     save_mem = *mem;
-    alloc_close_chunk(mem);
+    alloc_close_clump(mem);
     mem->pcc = 0;
     gs_memory_status((gs_memory_t *) mem, &mem->previous_status);
     ialloc_reset(mem);
 
-    /* Create inner chunks wherever it's worthwhile. */
+    /* Create inner clumps wherever it's worthwhile. */
 
-    for (cp = chunk_splay_walk_init(&sw, &save_mem); cp != 0; cp = chunk_splay_walk_fwd(&sw)) {
-        if (cp->ctop - cp->cbot > min_inner_chunk_space) {
-            /* Create an inner chunk to cover only the unallocated part. */
-            chunk_t *inner =
-                gs_raw_alloc_struct_immovable(mem->non_gc_memory, &st_chunk,
+    for (cp = clump_splay_walk_init(&sw, &save_mem); cp != 0; cp = clump_splay_walk_fwd(&sw)) {
+        if (cp->ctop - cp->cbot > min_inner_clump_space) {
+            /* Create an inner clump to cover only the unallocated part. */
+            clump_t *inner =
+                gs_raw_alloc_struct_immovable(mem->non_gc_memory, &st_clump,
                                               "alloc_save_space(inner)");
 
             if (inner == 0)
                 break;		/* maybe should fail */
-            alloc_init_chunk(inner, cp->cbot, cp->ctop, cp->sreloc != 0, cp);
-            alloc_link_chunk(inner, mem);
-            if_debug2m('u', (gs_memory_t *)mem, "[u]inner chunk: cbot=0x%lx ctop=0x%lx\n",
+            alloc_init_clump(inner, cp->cbot, cp->ctop, cp->sreloc != 0, cp);
+            alloc_link_clump(inner, mem);
+            if_debug2m('u', (gs_memory_t *)mem, "[u]inner clump: cbot=0x%lx ctop=0x%lx\n",
                        (ulong) inner->cbot, (ulong) inner->ctop);
             if (cp == save_mem.pcc)
                 new_pcc = inner;
         }
     }
     mem->pcc = new_pcc;
-    alloc_open_chunk(mem);
+    alloc_open_clump(mem);
 
     save = gs_alloc_struct((gs_memory_t *) mem, alloc_save_t,
                            &st_alloc_save, "alloc_save_space(save)");
     if_debug2m('u', (gs_memory_t *)mem, "[u]save space %u at 0x%lx\n",
                mem->space, (ulong) save);
     if (save == 0) {
-        /* Free the inner chunk structures.  This is the easiest way. */
+        /* Free the inner clump structures.  This is the easiest way. */
         restore_free(mem);
         *mem = save_mem;
         return 0;
@@ -611,12 +611,12 @@ alloc_save_current(const gs_dual_memory_t * dmem)
 bool
 alloc_is_since_save(const void *vptr, const alloc_save_t * save)
 {
-    /* A reference postdates a save iff it is in a chunk allocated */
-    /* since the save (including any carried-over inner chunks). */
+    /* A reference postdates a save iff it is in a clump allocated */
+    /* since the save (including any carried-over inner clumps). */
 
     const char *const ptr = (const char *)vptr;
     register const gs_ref_memory_t *mem = save->space_local;
-    chunk_splay_walker sw;
+    clump_splay_walker sw;
 
     if_debug2m('U', (gs_memory_t *)mem, "[U]is_since_save 0x%lx, 0x%lx:\n",
                (ulong) ptr, (ulong) save);
@@ -624,15 +624,15 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
         /* alloc_restore_all. */
         return true;
     }
-    /* Check against chunks allocated since the save. */
+    /* Check against clumps allocated since the save. */
     /* (There may have been intermediate saves as well.) */
     for (;; mem = &mem->saved->state) {
-        const chunk_t *cp;
+        const clump_t *cp;
 
         if_debug1m('U', (gs_memory_t *)mem, "[U]checking mem=0x%lx\n", (ulong) mem);
-        for (cp = chunk_splay_walk_init(&sw, mem); cp != 0; cp = chunk_splay_walk_fwd(&sw)) {
-            if (ptr_is_within_chunk(ptr, cp)) {
-                if_debug3m('U', (gs_memory_t *)mem, "[U+]in new chunk 0x%lx: 0x%lx, 0x%lx\n",
+        for (cp = clump_splay_walk_init(&sw, mem); cp != 0; cp = clump_splay_walk_fwd(&sw)) {
+            if (ptr_is_within_clump(ptr, cp)) {
+                if_debug3m('U', (gs_memory_t *)mem, "[U+]in new clump 0x%lx: 0x%lx, 0x%lx\n",
                            (ulong) cp,
                            (ulong) cp->cbase, (ulong) cp->cend);
                 return true;
@@ -656,12 +656,12 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
         (mem = save->space_global) != save->space_local &&
         save->space_global->num_contexts == 1
         ) {
-        const chunk_t *cp;
+        const clump_t *cp;
 
         if_debug1m('U', (gs_memory_t *)mem, "[U]checking global mem=0x%lx\n", (ulong) mem);
-        for (cp = chunk_splay_walk_init(&sw, mem); cp != 0; cp = chunk_splay_walk_fwd(&sw))
-            if (ptr_is_within_chunk(ptr, cp)) {
-                if_debug3m('U', (gs_memory_t *)mem, "[U+]  new chunk 0x%lx: 0x%lx, 0x%lx\n",
+        for (cp = clump_splay_walk_init(&sw, mem); cp != 0; cp = clump_splay_walk_fwd(&sw))
+            if (ptr_is_within_clump(ptr, cp)) {
+                if_debug3m('U', (gs_memory_t *)mem, "[U+]  new clump 0x%lx: 0x%lx, 0x%lx\n",
                            (ulong) cp, (ulong) cp->cbase, (ulong) cp->cend);
                 return true;
             }
@@ -844,7 +844,7 @@ restore_space(gs_ref_memory_t * mem, gs_dual_memory_t *dmem)
     }
 
     /* Free memory allocated since the save. */
-    /* Note that this frees all chunks except the inner ones */
+    /* Note that this frees all clumps except the inner ones */
     /* belonging to this level. */
     saved = *save;
     restore_free(mem);
@@ -856,7 +856,7 @@ restore_space(gs_ref_memory_t * mem, gs_dual_memory_t *dmem)
         *mem = saved.state;
         mem->num_contexts = num_contexts;
     }
-    alloc_open_chunk(mem);
+    alloc_open_clump(mem);
 
     /* Make the allocator current if it was current before the save. */
     if (saved.is_current) {
@@ -933,13 +933,13 @@ alloc_restore_all(gs_dual_memory_t * dmem)
 static void
 restore_finalize(gs_ref_memory_t * mem)
 {
-    chunk_t *cp;
-    chunk_splay_walker sw;
+    clump_t *cp;
+    clump_splay_walker sw;
 
-    alloc_close_chunk(mem);
+    alloc_close_clump(mem);
     gs_enable_free((gs_memory_t *) mem, false);
-    for (cp = chunk_splay_walk_init(&sw, mem); cp != 0; cp = chunk_splay_walk_bwd(&sw)) {
-        SCAN_CHUNK_OBJECTS(cp)
+    for (cp = clump_splay_walk_init(&sw, mem); cp != 0; cp = clump_splay_walk_bwd(&sw)) {
+        SCAN_CLUMP_OBJECTS(cp)
             DO_ALL
             struct_proc_finalize((*finalize)) =
             pre->o_type->finalize;
@@ -983,7 +983,7 @@ restore_resources(alloc_save_t * sprev, gs_ref_memory_t * mem)
 static void
 restore_free(gs_ref_memory_t * mem)
 {
-    /* Free chunks allocated since the save. */
+    /* Free clumps allocated since the save. */
     gs_free_all((gs_memory_t *) mem);
 }
 
@@ -1047,31 +1047,31 @@ alloc_forget_save_in(gs_dual_memory_t *dmem, alloc_save_t * save)
     while (sprev != save);
     return 0;
 }
-/* Combine the chunks of the next outer level with those of the current one, */
+/* Combine the clumps of the next outer level with those of the current one, */
 /* and free the bookkeeping structures. */
 static void
 combine_space(gs_ref_memory_t * mem)
 {
     alloc_save_t *saved = mem->saved;
     gs_ref_memory_t *omem = &saved->state;
-    chunk_t *cp;
-    chunk_splay_walker sw;
+    clump_t *cp;
+    clump_splay_walker sw;
 
-    alloc_close_chunk(mem);
-    for (cp = chunk_splay_walk_init(&sw, mem); cp != 0; cp = chunk_splay_walk_fwd(&sw)) {
+    alloc_close_clump(mem);
+    for (cp = clump_splay_walk_init(&sw, mem); cp != 0; cp = clump_splay_walk_fwd(&sw)) {
         if (cp->outer == 0)
-            alloc_link_chunk(cp, omem);
+            alloc_link_clump(cp, omem);
         else {
-            chunk_t *outer = cp->outer;
+            clump_t *outer = cp->outer;
 
             outer->inner_count--;
             if (mem->pcc == cp)
                 mem->pcc = outer;
             if (mem->cfreed.cp == cp)
                 mem->cfreed.cp = outer;
-            /* "Free" the header of the inner chunk, */
+            /* "Free" the header of the inner clump, */
             /* and any immediately preceding gap left by */
-            /* the GC having compacted the outer chunk. */
+            /* the GC having compacted the outer clump. */
             {
                 obj_header_t *hp = (obj_header_t *) outer->cbot;
 
@@ -1086,7 +1086,7 @@ combine_space(gs_ref_memory_t * mem)
                                hp + 1, "combine_space(header)");
 #endif /* **************** */
             }
-            /* Update the outer chunk's allocation pointers. */
+            /* Update the outer clump's allocation pointers. */
             outer->cbot = cp->cbot;
             outer->rcur = cp->rcur;
             outer->rtop = cp->rtop;
@@ -1125,7 +1125,7 @@ combine_space(gs_ref_memory_t * mem)
             mem->largest_free_size = omem->largest_free_size;
     }
     gs_free_object((gs_memory_t *) mem, saved, "combine_space(saved)");
-    alloc_open_chunk(mem);
+    alloc_open_clump(mem);
 }
 /* Free the changes chain for a level 0 .forgetsave, */
 /* resetting the l_new flag in the changed refs. */
@@ -1268,11 +1268,11 @@ save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit, ulong *pscanned
         return code;
 
     /* Handle newly allocated ref objects. */
-    SCAN_MEM_CHUNKS(mem, cp) {
+    SCAN_MEM_CLUMPS(mem, cp) {
         if (cp->has_refs) {
             bool has_refs = false;
 
-            SCAN_CHUNK_OBJECTS(cp)
+            SCAN_CLUMP_OBJECTS(cp)
                 DO_ALL
                 if_debug3m('U', (gs_memory_t *)mem, "[U]set_new scan(0x%lx(%u), %d)\n",
                            (ulong) pre, size, to_new);
@@ -1291,7 +1291,7 @@ save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit, ulong *pscanned
                 cp->has_refs = has_refs;
         }
     }
-    END_CHUNKS_SCAN
+    END_CLUMPS_SCAN
     if_debug2m('u', (gs_memory_t *)mem, "[u]set_new (%s) scanned %ld\n",
                (to_new ? "restore" : "save"), scanned);
     *pscanned = scanned;
@@ -1305,14 +1305,14 @@ drop_redundant_changes(gs_ref_memory_t * mem)
     register alloc_change_t *chp = mem->changes, *chp_back = NULL, *chp_forth;
 
     /* As we are trying to throw away redundant changes in an allocator instance
-       that has already been "saved", the active chunk has already been "closed"
+       that has already been "saved", the active clump has already been "closed"
        by alloc_save_space(). Using such an allocator (for example, by calling
        gs_free_object() with it) can leave it in an unstable state, causing
-       problems for the garbage collector (specifically, the chunk validator code).
-       So, before we might use it, open the current chunk, and then close it again
+       problems for the garbage collector (specifically, the clump validator code).
+       So, before we might use it, open the current clump, and then close it again
        when we're done.
      */
-    alloc_open_chunk(mem);
+    alloc_open_clump(mem);
 
     /* First reverse the list and set all. */
     for (; chp; chp = chp_forth) {
@@ -1356,7 +1356,7 @@ drop_redundant_changes(gs_ref_memory_t * mem)
     }
     mem->changes = chp_back;
 
-    alloc_close_chunk(mem);
+    alloc_close_clump(mem);
 }
 
 /* Set or reset the l_new attribute on the changes chain. */

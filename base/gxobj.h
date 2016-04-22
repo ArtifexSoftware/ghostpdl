@@ -199,9 +199,9 @@ struct obj_header_s {		/* must be a struct because of forward reference */
 
 /*
  * Define the header that free objects point back to when relocating.
- * Every chunk, including inner chunks, has one of these.
+ * Every clump, including inner clumps, has one of these.
  */
-typedef struct chunk_head_s {
+typedef struct clump_head_s {
     byte *dest;			/* destination for objects */
 #if obj_align_mod > ARCH_SIZEOF_PTR
     byte *_pad[obj_align_mod / ARCH_SIZEOF_PTR - 1];
@@ -209,6 +209,6 @@ typedef struct chunk_head_s {
     obj_header_t free;		/* header for a free object, */
     /* in case the first real object */
     /* is in use */
-} chunk_head_t;
+} clump_head_t;
 
 #endif /* gxobj_INCLUDED */

@@ -67,17 +67,17 @@ struct gc_mark_stack_s {
 /* Forward references */
 
 static void gc_init_mark_stack(gc_mark_stack *, uint);
-static void gc_objects_clear_marks(const gs_memory_t *mem, chunk_t *);
+static void gc_objects_clear_marks(const gs_memory_t *mem, clump_t *);
 static void gc_unmark_names(name_table *, op_array_table *, op_array_table *);
 static int gc_trace(gs_gc_root_t *, gc_state_t *, gc_mark_stack *);
-static int gc_rescan_chunk(chunk_t *, gc_state_t *, gc_mark_stack *);
-static int gc_trace_chunk(const gs_memory_t *mem, chunk_t *, gc_state_t *, gc_mark_stack *);
+static int gc_rescan_clump(clump_t *, gc_state_t *, gc_mark_stack *);
+static int gc_trace_clump(const gs_memory_t *mem, clump_t *, gc_state_t *, gc_mark_stack *);
 static bool gc_trace_finish(gc_state_t *);
-static void gc_clear_reloc(chunk_t *);
-static void gc_objects_set_reloc(gc_state_t * gcst, chunk_t *);
-static void gc_do_reloc(chunk_t *, gs_ref_memory_t *, gc_state_t *);
-static void gc_objects_compact(chunk_t *, gc_state_t *);
-static void gc_free_empty_chunks(gs_ref_memory_t *);
+static void gc_clear_reloc(clump_t *);
+static void gc_objects_set_reloc(gc_state_t * gcst, clump_t *);
+static void gc_do_reloc(clump_t *, gs_ref_memory_t *, gc_state_t *);
+static void gc_objects_compact(clump_t *, gc_state_t *);
+static void gc_free_empty_clumps(gs_ref_memory_t *);
 
 /* Forward references for pointer types */
 static ptr_proc_unmark(ptr_struct_unmark);
@@ -167,7 +167,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     int min_collect_vm_space;	/* min VM space to collect */
     int ispace;
     gs_ref_memory_t *mem;
-    chunk_t *cp;
+    clump_t *cp;
     gs_gc_root_t *rp;
     gc_state_t state;
     struct _msd {
@@ -176,7 +176,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     } ms_default;
     gc_mark_stack *mark_stack = &ms_default.stack;
     const gs_memory_t *cmem;
-    chunk_splay_walker sw;
+    clump_splay_walker sw;
 
     /* Optionally force global GC for debugging. */
 
@@ -211,14 +211,14 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
   for (i = min_collect; i <= max_trace; ++i)
 #define for_space_mems(i, mem)\
   for (mem = space_memories[i]; mem != 0; mem = &mem->saved->state)
-#define for_mem_chunks(mem, cp, sw)\
-  for (cp = chunk_splay_walk_init(sw, mem); cp != 0; cp = chunk_splay_walk_fwd(sw))
-#define for_space_chunks(i, mem, cp, sw)\
-  for_space_mems(i, mem) for_mem_chunks(mem, cp, sw)
-#define for_chunks(i, n, mem, cp, sw)\
-  for_spaces(i, n) for_space_chunks(i, mem, cp, sw)
-#define for_collected_chunks(i, mem, cp, sw)\
-  for_collected_spaces(i) for_space_chunks(i, mem, cp, sw)
+#define for_mem_clumps(mem, cp, sw)\
+  for (cp = clump_splay_walk_init(sw, mem); cp != 0; cp = clump_splay_walk_fwd(sw))
+#define for_space_clumps(i, mem, cp, sw)\
+  for_space_mems(i, mem) for_mem_clumps(mem, cp, sw)
+#define for_clumps(i, n, mem, cp, sw)\
+  for_spaces(i, n) for_space_clumps(i, mem, cp, sw)
+#define for_collected_clumps(i, mem, cp, sw)\
+  for_collected_spaces(i) for_space_clumps(i, mem, cp, sw)
 #define for_roots(i, n, mem, rp)\
   for_spaces(i, n)\
     for (mem = space_memories[i], rp = mem->roots; rp != 0; rp = rp->next)
@@ -263,15 +263,15 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     /* Clear marks in spaces to be collected. */
 
     for_collected_spaces(ispace)
-        for_space_chunks(ispace, mem, cp, &sw) {
+        for_space_clumps(ispace, mem, cp, &sw) {
             gc_objects_clear_marks((const gs_memory_t *)mem, cp);
             gc_strings_set_marks(cp, false);
         }
 
-    end_phase(state.heap,"clear chunk marks");
+    end_phase(state.heap,"clear clump marks");
 
     /* Clear the marks of roots.  We must do this explicitly, */
-    /* since some roots are not in any chunk. */
+    /* since some roots are not in any clump. */
 
     for_roots(ispace, max_trace, mem, rp) {
         enum_ptr_t eptr;
@@ -301,7 +301,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     {
         gc_mark_stack *end = mark_stack;
 
-        for_chunks(ispace, max_trace, mem, cp, &sw) {
+        for_clumps(ispace, max_trace, mem, cp, &sw) {
             uint avail = cp->ctop - cp->cbot;
 
             if (avail >= sizeof(gc_mark_stack) + sizeof(ms_entry) *
@@ -338,18 +338,18 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 
         end_phase(state.heap,"mark");
 
-        /* If this is a local GC, mark from non-local chunks. */
+        /* If this is a local GC, mark from non-local clumps. */
 
         if (!global)
-            for_chunks(ispace, min_collect - 1, mem, cp, &sw)
-                more |= gc_trace_chunk((const gs_memory_t *)mem, cp, &state, mark_stack);
+            for_clumps(ispace, min_collect - 1, mem, cp, &sw)
+                more |= gc_trace_clump((const gs_memory_t *)mem, cp, &state, mark_stack);
 
         /* Handle mark stack overflow. */
 
         while (more < 0) {	/* stack overflowed */
             more = 0;
-            for_chunks(ispace, max_trace, mem, cp, &sw)
-                more |= gc_rescan_chunk(cp, &state, mark_stack);
+            for_clumps(ispace, max_trace, mem, cp, &sw)
+                more |= gc_rescan_clump(cp, &state, mark_stack);
         }
 
         end_phase(state.heap,"mark overflow");
@@ -398,17 +398,17 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     /* We have to clear the marks first, because we want the */
     /* relocation to wind up as o_untraced, not o_unmarked. */
 
-    for_chunks(ispace, min_collect - 1, mem, cp, &sw)
+    for_clumps(ispace, min_collect - 1, mem, cp, &sw)
         gc_objects_clear_marks((const gs_memory_t *)mem, cp);
 
     end_phase(state.heap,"post-clear marks");
 
-    for_chunks(ispace, min_collect - 1, mem, cp, &sw)
+    for_clumps(ispace, min_collect - 1, mem, cp, &sw)
         gc_clear_reloc(cp);
 
     end_phase(state.heap,"clear reloc");
 
-    /* Set the relocation of roots outside any chunk to o_untraced, */
+    /* Set the relocation of roots outside any clump to o_untraced, */
     /* so we won't try to relocate pointers to them. */
     /* (Currently, there aren't any.) */
 
@@ -425,7 +425,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     /* we are going to compact.  Also finalize freed objects. */
     state.cur_mem = (gs_memory_t *)mem;
 
-    for_collected_chunks(ispace, mem, cp, &sw) {
+    for_collected_clumps(ispace, mem, cp, &sw) {
         gc_objects_set_reloc(&state, cp);
         gc_strings_set_reloc(cp);
     }
@@ -443,13 +443,13 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     /* Relocate pointers. */
 
     state.relocating_untraced = true;
-    for_chunks(ispace, min_collect - 1, mem, cp, &sw)
+    for_clumps(ispace, min_collect - 1, mem, cp, &sw)
         gc_do_reloc(cp, mem, &state);
     state.relocating_untraced = false;
-    for_collected_chunks(ispace, mem, cp, &sw)
+    for_collected_clumps(ispace, mem, cp, &sw)
         gc_do_reloc(cp, mem, &state);
 
-    end_phase(state.heap,"relocate chunks");
+    end_phase(state.heap,"relocate clumps");
 
     for_roots(ispace, max_trace, mem, rp) {
         if_debug3m('6', (const gs_memory_t *)mem,
@@ -474,11 +474,11 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 
     for_collected_spaces(ispace) {
         for_space_mems(ispace, mem) {
-            for_mem_chunks(mem, cp, &sw) {
-                if_debug_chunk('6', (const gs_memory_t *)mem, "[6]compacting chunk", cp);
+            for_mem_clumps(mem, cp, &sw) {
+                if_debug_clump('6', (const gs_memory_t *)mem, "[6]compacting clump", cp);
                 gc_objects_compact(cp, &state);
                 gc_strings_compact(cp, cmem);
-                if_debug_chunk('6', (const gs_memory_t *)mem, "[6]after compaction:", cp);
+                if_debug_clump('6', (const gs_memory_t *)mem, "[6]after compaction:", cp);
                 if (mem->pcc == cp)
                     mem->cc = *cp;
             }
@@ -489,18 +489,18 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 
     end_phase(state.heap,"compact");
 
-    /* Free empty chunks. */
+    /* Free empty clumps. */
 
     for_collected_spaces(ispace) {
         for_space_mems(ispace, mem) {
-            gc_free_empty_chunks(mem);
+            gc_free_empty_clumps(mem);
         }
     }
 
-    end_phase(state.heap,"free empty chunks");
+    end_phase(state.heap,"free empty clumps");
 
     /*
-     * Update previous_status to reflect any freed chunks,
+     * Update previous_status to reflect any freed clumps,
      * and set inherited to the negative of allocated,
      * so it has no effect.  We must update previous_status by
      * working back-to-front along the save chain, using pointer reversal.
@@ -602,12 +602,12 @@ ptr_name_index_unmark(enum_ptr_t *pep, gc_state_t * gcst)
     /* Do nothing */
 }
 
-/* Unmark the objects in a chunk. */
+/* Unmark the objects in a clump. */
 static void
-gc_objects_clear_marks(const gs_memory_t *mem, chunk_t * cp)
+gc_objects_clear_marks(const gs_memory_t *mem, clump_t * cp)
 {
-    if_debug_chunk('6', mem, "[6]unmarking chunk", cp);
-    SCAN_CHUNK_OBJECTS(cp)
+    if_debug_clump('6', mem, "[6]unmarking clump", cp);
+    SCAN_CLUMP_OBJECTS(cp)
         DO_ALL
         struct_proc_clear_marks((*proc)) =
         pre->o_type->clear_marks;
@@ -658,10 +658,10 @@ gc_init_mark_stack(gc_mark_stack * pms, uint count)
     pms->entries[0].is_refs = false;
 }
 
-/* Mark starting from all marked objects in the interval of a chunk */
+/* Mark starting from all marked objects in the interval of a clump */
 /* needing rescanning. */
 static int
-gc_rescan_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
+gc_rescan_clump(clump_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 {
     byte *sbot = cp->rescan_bot;
     byte *stop = cp->rescan_top;
@@ -673,10 +673,10 @@ gc_rescan_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
     if (sbot > stop)
         return 0;
     root.p = &comp;
-    if_debug_chunk('6', mem, "[6]rescanning chunk", cp);
+    if_debug_clump('6', mem, "[6]rescanning clump", cp);
     cp->rescan_bot = cp->cend;
     cp->rescan_top = cp->cbase;
-    SCAN_CHUNK_OBJECTS(cp)
+    SCAN_CLUMP_OBJECTS(cp)
         DO_ALL
         if ((byte *) (pre + 1) + size < sbot);
     else if ((byte *) (pre + 1) > stop)
@@ -724,11 +724,11 @@ gc_rescan_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
         return more;
 }
 
-/* Mark starting from all the objects in a chunk. */
+/* Mark starting from all the objects in a clump. */
 /* We assume that pstate->min_collect > avm_system, */
 /* so we don't have to trace names. */
 static int
-gc_trace_chunk(const gs_memory_t *mem, chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
+gc_trace_clump(const gs_memory_t *mem, clump_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 {
     gs_gc_root_t root;
     void *comp;
@@ -736,8 +736,8 @@ gc_trace_chunk(const gs_memory_t *mem, chunk_t * cp, gc_state_t * pstate, gc_mar
     int min_trace = pstate->min_collect;
 
     root.p = &comp;
-    if_debug_chunk('6', mem, "[6]marking from chunk", cp);
-    SCAN_CHUNK_OBJECTS(cp)
+    if_debug_clump('6', mem, "[6]marking from clump", cp);
+    SCAN_CLUMP_OBJECTS(cp)
         DO_ALL
     {
         if_debug2m('7', mem, " [7]scanning/marking 0x%lx(%lu)\n",
@@ -1036,7 +1036,7 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
     return new;
 }
 /* Link to, attempting to allocate if necessary, */
-/* another chunk of mark stack. */
+/* another clump of mark stack. */
 static int
 gc_extend_stack(gc_mark_stack * pms, gc_state_t * pstate)
 {
@@ -1055,7 +1055,7 @@ gc_extend_stack(gc_mark_stack * pms, gc_state_t * pstate)
         if (pms->next == 0) {	/* The mark stack overflowed. */
             ms_entry *sp = pms->entries + pms->count - 1;
             byte *cptr = sp->ptr;	/* container */
-            chunk_t *cp = gc_locate(cptr, pstate);
+            clump_t *cp = gc_locate(cptr, pstate);
             int new = 1;
 
             if (cp == 0) {	/* We were tracing outside collectible */
@@ -1137,27 +1137,27 @@ gc_trace_finish(gc_state_t * pstate)
 
 /* ------ Relocation planning phase ------ */
 
-/* Initialize the relocation information in the chunk header. */
+/* Initialize the relocation information in the clump header. */
 static void
-gc_init_reloc(chunk_t * cp)
+gc_init_reloc(clump_t * cp)
 {
-    chunk_head_t *chead = cp->chead;
+    clump_head_t *chead = cp->chead;
 
     chead->dest = cp->cbase;
     chead->free.o_back =
-        offset_of(chunk_head_t, free) >> obj_back_shift;
+        offset_of(clump_head_t, free) >> obj_back_shift;
     chead->free.o_size = sizeof(obj_header_t);
     chead->free.o_nreloc = 0;
 }
 
-/* Set marks and clear relocation for chunks that won't be compacted. */
+/* Set marks and clear relocation for clumps that won't be compacted. */
 static void
-gc_clear_reloc(chunk_t * cp)
+gc_clear_reloc(clump_t * cp)
 {
     byte *pfree = (byte *) & cp->chead->free;
 
     gc_init_reloc(cp);
-    SCAN_CHUNK_OBJECTS(cp)
+    SCAN_CLUMP_OBJECTS(cp)
         DO_ALL
         const struct_shared_procs_t *procs =
     pre->o_type->shared;
@@ -1171,18 +1171,18 @@ gc_clear_reloc(chunk_t * cp)
     gc_strings_clear_reloc(cp);
 }
 
-/* Set the relocation for the objects in a chunk. */
-/* This will never be called for a chunk with any o_untraced objects. */
+/* Set the relocation for the objects in a clump. */
+/* This will never be called for a clump with any o_untraced objects. */
 static void
-gc_objects_set_reloc(gc_state_t * gcst, chunk_t * cp)
+gc_objects_set_reloc(gc_state_t * gcst, clump_t * cp)
 {
     size_t reloc = 0;
-    chunk_head_t *chead = cp->chead;
+    clump_head_t *chead = cp->chead;
     byte *pfree = (byte *) & chead->free;	/* most recent free object */
 
-    if_debug_chunk('6', gcst->heap, "[6]setting reloc for chunk", cp);
+    if_debug_clump('6', gcst->heap, "[6]setting reloc for clump", cp);
     gc_init_reloc(cp);
-    SCAN_CHUNK_OBJECTS(cp)
+    SCAN_CLUMP_OBJECTS(cp)
         DO_ALL
         struct_proc_finalize((*finalize));
     const struct_shared_procs_t *procs =
@@ -1211,21 +1211,21 @@ gc_objects_set_reloc(gc_state_t * gcst, chunk_t * cp)
 #ifdef DEBUG
     if (reloc != 0) {
         if_debug1m('6', gcst->heap, "[6]freed %u", (unsigned int)reloc);
-        if_debug_chunk('6', gcst->heap, " in", cp);
+        if_debug_clump('6', gcst->heap, " in", cp);
     }
 #endif
 }
 
 /* ------ Relocation phase ------ */
 
-/* Relocate the pointers in all the objects in a chunk. */
+/* Relocate the pointers in all the objects in a clump. */
 static void
-gc_do_reloc(chunk_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
+gc_do_reloc(clump_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
 {
-    chunk_head_t *chead = cp->chead;
+    clump_head_t *chead = cp->chead;
 
-    if_debug_chunk('6', (const gs_memory_t *)mem, "[6]relocating in chunk", cp);
-    SCAN_CHUNK_OBJECTS(cp)
+    if_debug_clump('6', (const gs_memory_t *)mem, "[6]relocating in clump", cp);
+    SCAN_CLUMP_OBJECTS(cp)
         DO_ALL
 #ifdef DEBUG
         pstate->container = cp;
@@ -1233,7 +1233,7 @@ gc_do_reloc(chunk_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
     /* We need to relocate the pointers in an object iff */
     /* it is o_untraced, or it is a useful object. */
     /* An object is free iff its back pointer points to */
-    /* the chunk_head structure. */
+    /* the clump_head structure. */
         if (o_is_untraced(pre) ||
             pre->o_back << obj_back_shift != (byte *) pre - (byte *) chead
             ) {
@@ -1285,7 +1285,7 @@ igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
         else {
 #ifdef DEBUG
             /* Do some sanity checking. */
-            chunk_t *cp = gcst->container;
+            clump_t *cp = gcst->container;
 
             if (cp != 0 && cp->cbase <= (byte *)obj && (byte *)obj <cp->ctop) {
                 if (back > (cp->ctop - cp->cbase) >> obj_back_shift) {
@@ -1294,14 +1294,14 @@ igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
                     gs_abort(NULL);
                 }
             } else {
-                /* Pointed to unknown chunk. Can't check it, sorry. */
+                /* Pointed to unknown clump. Can't check it, sorry. */
             }
 #endif
             {
                 const obj_header_t *pfree = (const obj_header_t *)
                 ((const char *)(optr - 1) -
                  (back << obj_back_shift));
-                const chunk_head_t *chead = (const chunk_head_t *)
+                const clump_head_t *chead = (const clump_head_t *)
                 ((const char *)pfree -
                  (pfree->o_back << obj_back_shift));
 
@@ -1322,19 +1322,19 @@ igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
 
 /* ------ Compaction phase ------ */
 
-/* Compact the objects in a chunk. */
-/* This will never be called for a chunk with any o_untraced objects. */
+/* Compact the objects in a clump. */
+/* This will never be called for a clump with any o_untraced objects. */
 static void
-gc_objects_compact(chunk_t * cp, gc_state_t * gcst)
+gc_objects_compact(clump_t * cp, gc_state_t * gcst)
 {
-    chunk_head_t *chead = cp->chead;
+    clump_head_t *chead = cp->chead;
     obj_header_t *dpre = (obj_header_t *) chead->dest;
     const gs_memory_t *cmem = gcst->spaces.memories.named.system->stable_memory;
 
-    SCAN_CHUNK_OBJECTS(cp)
+    SCAN_CLUMP_OBJECTS(cp)
         DO_ALL
     /* An object is free iff its back pointer points to */
-    /* the chunk_head structure. */
+    /* the clump_head structure. */
         if (pre->o_back << obj_back_shift != (byte *) pre - (byte *) chead) {
         const struct_shared_procs_t *procs = pre->o_type->shared;
 
@@ -1354,7 +1354,7 @@ gc_objects_compact(chunk_t * cp, gc_state_t * gcst)
     }
     END_OBJECTS_SCAN
         if (cp->outer == 0 && chead->dest != cp->cbase)
-        dpre = (obj_header_t *) cp->cbase;	/* compacted this chunk into another */
+        dpre = (obj_header_t *) cp->cbase;	/* compacted this clump into another */
     gs_alloc_fill(dpre, gs_alloc_fill_collected, cp->cbot - (byte *) dpre);
     cp->cbot = (byte *) dpre;
     cp->rcur = 0;
@@ -1364,27 +1364,27 @@ gc_objects_compact(chunk_t * cp, gc_state_t * gcst)
 /* ------ Cleanup ------ */
 
 static int
-free_if_empty(chunk_t *cp, void *arg)
+free_if_empty(clump_t *cp, void *arg)
 {
     gs_ref_memory_t * mem = (gs_ref_memory_t *)arg;
 
     if (cp->cbot == cp->cbase && cp->ctop == cp->climit &&
         cp->outer == 0 && cp->inner_count == 0)
     {
-        alloc_free_chunk(cp, mem);
+        alloc_free_clump(cp, mem);
         if (mem->pcc == cp)
             mem->pcc = 0;
     }
     return SPLAY_APP_CONTINUE;
 }
 
-/* Free empty chunks. */
+/* Free empty clumps. */
 static void
-gc_free_empty_chunks(gs_ref_memory_t * mem)
+gc_free_empty_clumps(gs_ref_memory_t * mem)
 {
     /* NOTE: Not in reverse order any more, so potentially
      * not quite as good for crap allocators. */
-    chunk_splay_app(mem->root, mem, free_if_empty, mem);
+    clump_splay_app(mem->root, mem, free_if_empty, mem);
 }
 
 const gs_memory_t * gcst_get_memory_ptr(gc_state_t *gcst)
