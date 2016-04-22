@@ -6068,8 +6068,11 @@ int get_space_object(i_ctx_t *i_ctx_p, ref *arr, PS_colour_space_t **obj)
     int i, nprocs = sizeof(colorProcs) / sizeof(PS_colour_space_t), code;
 
     /* If the spaece is an array, the first element is always the name */
-    if (r_is_array(arr))
+    if (r_is_array(arr)) {
         code = array_get(imemory, arr, 0, &spacename);
+        if (code < 0)
+            return code;
+    }
     else
         ref_assign(&spacename, arr);
 
