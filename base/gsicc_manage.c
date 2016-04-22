@@ -1564,8 +1564,7 @@ gsicc_init_device_profile_struct(gx_device * dev,
                             strlen(curr_profile->name)) != 0) {
                     /* A change in the profile.  rc decrement this one as it
                        will be replaced */
-                    rc_decrement(dev->icc_struct->device_profile[profile_type],
-                                 "gsicc_init_device_profile_struct");
+                    rc_decrement(curr_profile, "gsicc_init_device_profile_struct");
                 } else {
                     /* Nothing to change.  It was either the same or is the
                        output intent */
