@@ -2669,10 +2669,11 @@ dsc_check_match_prompt(CDSC *dsc, const char *str, int count)
 {
     if (count != 0) {
         char buf[MAXSTR+MAXSTR];
-        if (dsc->line_length < (unsigned int)(sizeof(buf)/2-1))  {
+
+        memset(buf, 0x00, MAXSTR+MAXSTR);
+        if (dsc->line_length < (unsigned int)(sizeof(buf)/2-1))
             strncpy(buf, dsc->line, dsc->line_length);
-            buf[dsc->line_length] = '\0';
-        }
+
         gs_sprintf(buf+strlen(buf), "\n%%%%Begin%.40s: / %%%%End%.40s\n", str, str);
         return dsc_error(dsc, CDSC_MESSAGE_BEGIN_END, buf, (int)strlen(buf));
     }
