@@ -1269,6 +1269,11 @@ gsicc_transform_named_color(const float tint_values[],
     int indices[GS_CLIENT_COLOR_MAX_COMPONENTS]; 
     gs_memory_t *nongc_mem = pis->memory->non_gc_memory;
 
+    /* Set indices to avoid use of uninitialized index. It is actually not
+       possible to access them using real data but someone could perhaps
+       be malicious and cause a problem */
+    memset(&(indices[0]), 0, sizeof(indices));
+
     /* Check if the data that we have has already been generated. */
     if (pis->icc_manager != NULL) {
         if (pis->icc_manager->device_named != NULL) {
