@@ -109,7 +109,7 @@ void smask_blend(byte *src, int width, int height, int rowstride,
 
 void smask_copy(int num_rows, int num_cols, int row_stride,
                          byte *src, const byte *des);
-void smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan, 
+void smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan,
                int row_stride, int plane_stride, byte *src, const byte *des,
                gsicc_link_t *icclink);
 /**
@@ -313,13 +313,13 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
  * @blend_mode: Blend mode for compositing.
  * @pblend_procs: Procs for handling non separable blending modes.
  *
- * Note: this is only for knockout nonisolated groups. 
+ * Note: this is only for knockout nonisolated groups.
  *
  * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
  **/
 void
-art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst, 
-        byte *dst_alpha_g, const byte *src, int n_chan, byte alpha, 
+art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
+        byte *dst_alpha_g, const byte *src, int n_chan, byte alpha,
         gs_blend_mode_t blend_mode,
         const pdf14_nonseparable_blending_procs_t * pblend_procs);
 /**
@@ -348,6 +348,21 @@ art_pdf_composite_knockout_8(byte *dst,
  **/
 void
 art_pdf_knockoutisolated_group_8(byte *dst, const byte *src, int n_chan);
+
+/**
+* art_pdf_knockoutisolated_group_8: Knockout for isolated group.
+* @dst: Destination pixel.
+* @src: Source pixel.
+* @src_alpha: current alpha from the graphic state
+* @aa_alpha:  alpha coming from the anti-aliasing buffer
+* @n_chan: Number of channels.
+*
+* This function handles the simple case with an isolated knockout group but where
+* we have an alpha from AA and from the current graphic state.
+**/
+void
+art_pdf_knockoutisolated_group_aa_8(byte *dst, const byte *src, byte src_alpha,
+    byte aa_alpha, int n_chan);
 
 /**
  * art_pdf_composite_knockout_isolated_8: Simple knockout compositing.
@@ -405,15 +420,15 @@ void pdf14_unpack_custom(int num_comp, gx_color_index color,
 
 void pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff);
 
-int pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile, 
-                               pdf14_buf *tos, cmm_profile_t *tos_profile, 
-                               gs_memory_t *memory, gs_imager_state *pis, 
+int pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
+                               pdf14_buf *tos, cmm_profile_t *tos_profile,
+                               gs_memory_t *memory, gs_imager_state *pis,
                                gx_device *dev, bool knockout_buff);
 
 void pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
               int x0, int x1, int y0, int y1, int n_chan, bool additive,
               const pdf14_nonseparable_blending_procs_t * pblend_procs,
-              bool overprint, gx_color_index drawn_comps, bool blendspot, 
+              bool overprint, gx_color_index drawn_comps, bool blendspot,
               gs_memory_t *memory);
 
 gx_color_index pdf14_encode_color(gx_device *dev, const gx_color_value colors[]);

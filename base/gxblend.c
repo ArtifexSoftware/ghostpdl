@@ -1319,6 +1319,45 @@ art_pdf_knockoutisolated_group_8(byte *dst, const byte *src, int n_chan)
     memcpy (dst, src, n_chan + 1);
 }
 
+/* An odd case where we have an alpha from the AA device and we have a current
+   source alpha.  This is done only in the case where we are doing AA and a
+   stroke fill at the same time.
+   We have to first do a blend with the AA alpha if there
+   is something to blend with and then set the alpha to the source alpha.
+   In such a case an isolated knockout group was created and in the
+   copy_alpha code we end up here to handle the alpha from the AA code
+   differently from the other alpha.  This ensures that the stroke and fill
+   end up blended with each other on the inside of the stroke path
+   but that the alpha from the AA does not end up getting blended with the
+   backdrop (unless the source alpha is not opaque) while the outside of the
+   stroke path ends up with the alpha for both the AA effect and source alpha */
+void
+art_pdf_knockoutisolated_group_aa_8(byte *dst, const byte *src, byte src_alpha, byte aa_alpha, int n_chan)
+{
+    int dst_alpha = dst[n_chan];
+    byte temp_src[ART_MAX_CHAN + 1];
+    int i;
+
+    /* Note: src[n_chan] is a blend of the aa_alpha and src_alpha */
+    if (src[n_chan] == 0)
+        return;
+
+    /* Check what is at the destination.  If nothing there then just copy */
+    if (dst_alpha == 0) {
+        memcpy(dst, src, n_chan + 1);
+        return;
+    }
+
+    /* Now the more complex case as something is there. First blend with the AA
+       alpha and then set our alpha to src_alpha so it will end up blending properly
+       with the backdrop if we had an global alpha for this fill/stroke */
+    for (i = 0; i < n_chan; i++)
+        temp_src[i] = src[i];
+    temp_src[n_chan] = aa_alpha;
+    art_pdf_composite_pixel_alpha_8(dst, temp_src, n_chan, BLEND_MODE_Normal, NULL);
+    dst[n_chan] = src_alpha;
+}
+
 void
 art_pdf_composite_knockout_8(byte *dst,
                                     const byte *src,

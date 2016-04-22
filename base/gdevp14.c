@@ -2528,7 +2528,7 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                         art_pdf_composite_knockout_8(dst, src, num_comp,
                                                             blend_mode, pdev->blend_procs);
                     } else {
-                        art_pdf_knockoutisolated_group_8(dst, src, num_comp);
+                        art_pdf_knockoutisolated_group_aa_8(dst, src, src_alpha, alpha_aa, num_comp);
                     }
                 } else {
                     art_pdf_composite_pixel_alpha_8(dst, src, num_comp,
