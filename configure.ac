@@ -158,23 +158,34 @@ dnl --------------------------------------------------
 dnl Allow excluding the contributed drivers
 dnl --------------------------------------------------
 
-AC_ARG_ENABLE([contrib], AC_HELP_STRING([--disable-contrib],
-    [Do not include contributed drivers]))
+AC_ARG_ENABLE([contrib], AC_HELP_STRING([--disable-contrib], [Do not include contributed drivers]))
+
 CONTRIBINCLUDE="include $srcdir/contrib/contrib.mak"
 INSTALL_CONTRIB="install-contrib-extras"
 
-case `uname` in
-    MINGW*|MSYS*)
-      AC_MSG_WARN([disabling contrib devices])
-      enable_contrib=no
-    ;;
-    *)
+if test x"$enable_contrib" = x; then
+  if test x"$cross_compiling" = x"yes"; then
+    enable_contrib=no
+  else
+    case `uname` in
+      MINGW*|MSYS*)
+        AC_MSG_WARN([disabling contrib devices])
+        enable_contrib=no
+      ;;
+      *)
+      ;;
+    esac
+  fi
+fi
+
+if test x"$enable_contrib" != x"no"; then
 #     This is just an arbitrary file in contrib to check
-      if ! test -f $srcdir/contrib/gdevbjc_.c; then
+      if test -f $srcdir/contrib/gdevbjc_.c; then
+        enable_contrib=yes
+      else
         enable_contrib=no
       fi
-    ;;
-esac
+fi
 
 if test x$enable_contrib = xno; then
     CONTRIBINCLUDE=""
@@ -193,7 +204,13 @@ dnl --------------------------------------------------
 CC_OPT_FLAGS_TO_TRY="-O"
 SET_DT_SONAME="-soname="
 
-case `uname` in
+if test x"$cross_compiling" = x"yes"; then
+  if test $ac_cv_prog_gcc = yes; then
+      CC_OPT_FLAGS_TO_TRY="-O2"
+      CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
+  fi
+else
+  case `uname` in
         Linux*|GNU*)
         if test $ac_cv_prog_gcc = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2"
@@ -233,7 +250,8 @@ case `uname` in
             SET_DT_SONAME="so"
         fi
         ;;
-esac
+  esac
+fi
 
 AC_SUBST(SET_DT_SONAME)
 
@@ -251,16 +269,24 @@ else
     dbgflags_to_try="$CC_DBG_FLAGS_TO_TRY"
 fi
 
+
+AC_ARG_WITH([arch_h], AC_HELP_STRING([--with-arch_h=<arch.h to use>],
+            [Use a custom arch.h (must be an absolute path)]),[], [with_arch_h=])
+
 ARCH_CONF_HEADER=
 
-case `uname` in
+if test x"$with_arch_h" = x""; then
+  case `uname` in
         Darwin*)
           ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/osx-x86-x86_64-ppc-gcc.h"
         ;;
         *)
           ARCH_CONF_HEADER=
         ;;
-esac
+  esac
+else
+  ARCH_CONF_HEADER=$with_arch_h
+fi
 
 AC_SUBST(ARCH_CONF_HEADER)
 
@@ -1275,7 +1301,7 @@ if ( test -d $srcdir/cups ); then
                 fi
             fi
         else
-            if test "$(uname)" = "Linux"; then
+            if test "$(uname)" = "Linux" && test x"$cross_compiling != x"yes" ; then
                 AC_MSG_WARN([* USING LOCAL CUPS SOURCE *])
                 SHARELCUPS=0
                 SHARELCUPSI=0
@@ -1312,15 +1338,16 @@ dnl look for IJS implementation
 AC_ARG_WITH([ijs], AC_HELP_STRING([--without-ijs],
     [disable IJS driver support]))
 
-case `uname` in
+if test x"$cross_compiling" != x"yes"; then
+  case `uname` in
     MINGW*|MSYS*)
       AC_MSG_WARN([disabling the ijs device])
       with_ijs=no
     ;;
     *)
     ;;
-esac
-
+  esac
+fi
 
 dnl set safe defaults
     IJSDIR=src
@@ -1372,21 +1399,29 @@ if test x$with_luratech != xno; then
     SHARE_JBIG2=0
     JBIG2DIR=$srcdir/luratech/ldf_jb2
 
-    case `uname` in
-      Darwin*)
-        JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DMAC -DMAC_OS_X_BUILD"
-      ;;
-      AIX)
-        if test $ac_cv_prog_gcc = yes; then
-          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX"
+    if test x"$cross_compiling" = x"yes"; then
+        if test x"$JBIG2_CFLAGS" != x""; then
+          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 $JBIG2_CFLAGS"
         else
-          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -qchars=signed -DLINUX"
+          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DLINUX"
         fi
-     ;;
-     *)
-        JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DLINUX"
-     ;;
-     esac
+    else
+      case `uname` in
+        Darwin*)
+          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DMAC -DMAC_OS_X_BUILD"
+        ;;
+        AIX)
+          if test $ac_cv_prog_gcc = yes; then
+            JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX"
+          else
+            JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -qchars=signed -DLINUX"
+          fi
+        ;;
+        *)
+          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DLINUX"
+        ;;
+      esac
+    fi
 
     JBIG2FILEDEVS='$(DD)gdevjbig2.dev'
     JBIG2DEVS='$(PSD)jbig2.dev'
@@ -1494,22 +1529,29 @@ if test x$with_luratech != xno; then
     SHARE_JPX=0
     JPXDIR=$srcdir/luratech/lwf_jp2
 
-    case `uname` in
-      Darwin*)
-        JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DMAC -DMAC_OS_X_BUILD"
-      ;;
-      AIX)
-        if test $ac_cv_prog_gcc = yes; then
-          JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -fsigned-char -DLINUX"
+    if test x"$cross_compiling" = x"yes"; then
+        if test x"$JPX_CFLAGS" != x""; then
+          JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 $JPX_CFLAGS"
         else
-          JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -qchars=signed -DLINUX"
+          JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX"
         fi
-     ;;
-     *)
-        JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX"
-     ;;
-     esac
-
+    else
+      case `uname` in
+        Darwin*)
+          JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DMAC -DMAC_OS_X_BUILD"
+        ;;
+        AIX)
+          if test $ac_cv_prog_gcc = yes; then
+            JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -fsigned-char -DLINUX"
+          else
+            JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -qchars=signed -DLINUX"
+          fi
+        ;;
+        *)
+          JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX"
+        ;;
+      esac
+    fi
     JPXDEVS='$(PSD)jpx.dev'
   else
     AC_MSG_RESULT([no])
