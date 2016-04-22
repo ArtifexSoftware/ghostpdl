@@ -904,6 +904,9 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
             code = interp_reclaim(&minst->i_ctx_p, avm_global);
 
             if (code < 0) {
+                if (tempnames)
+                    free(tempnames);
+
                 emprintf1(minst->heap,
                           "ERROR %d reclaiming the memory while the interpreter finalization.\n",
                           code);
