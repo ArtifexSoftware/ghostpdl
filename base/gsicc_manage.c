@@ -58,7 +58,7 @@ static gsicc_namelist_t* gsicc_new_namelist(gs_memory_t *memory);
 static gsicc_colorname_t* gsicc_new_colorname(gs_memory_t *memory);
 static gsicc_namelist_t* gsicc_get_spotnames(gcmmhprofile_t profile,
                                              gs_memory_t *memory);
-static void gsicc_manager_free_contents(gsicc_manager_t *icc_man, 
+static void gsicc_manager_free_contents(gsicc_manager_t *icc_man,
                                         client_name_t cname);
 
 static void rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in,
@@ -809,10 +809,6 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
                  num_comps = 3;
                  default_space = gsCIELAB;
                  break;
-            case XYZ_TYPE:
-                manager_default_profile = &(icc_manager->xyz_profile);
-                num_comps = 3;
-                default_space = gsRGB;
             case DEVICEN_TYPE:
                 manager_default_profile = NULL;
                 default_space = gsNCHANNEL;
@@ -1683,7 +1679,7 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                            "[icc] Setting device profile %d\n", pro_enum);
                 pdev->icc_struct->device_profile[pro_enum] = icc_profile;
             } else {
-                /* The proof, link or post render profile. Output intent 
+                /* The proof, link or post render profile. Output intent
                    profile is set in zicc.c */
                 if (pro_enum == gsPROOFPROFILE) {
                     if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting proof profile\n");
@@ -2068,7 +2064,7 @@ static void gsicc_manager_free_contents(gsicc_manager_t *icc_manager,
         gs_free_object(icc_manager->memory, icc_manager->device_n,
                        "gsicc_manager_free_contents");
     }
-    
+
     /* The soft mask profiles */
     if (icc_manager->smask_profiles != NULL) {
         gs_free_object(icc_manager->smask_profiles->memory, icc_manager->smask_profiles, "gsicc_manager_free_contents");
@@ -2082,7 +2078,7 @@ rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     /* Ending the manager.  Decrement the ref counts of the profiles
        and then free the structure */
     gsicc_manager_t *icc_manager = (gsicc_manager_t * ) ptr_in;
-    
+
     gs_free_object(icc_manager->memory, icc_manager, "rc_gsicc_manager_free");
 }
 

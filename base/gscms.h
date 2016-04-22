@@ -291,7 +291,6 @@ typedef enum {
     DEFAULT_CMYK,   /* The default DeviceCMYK profile */
     NAMED_TYPE,     /* The named color profile */
     LAB_TYPE,       /* The CIELAB profile */
-    XYZ_TYPE,       /* The RGB D50 CIEXYZ profile */
     DEVICEN_TYPE,   /* A special device N profile */
     DEFAULT_GRAY_s, /* Same as default but a source profile from document */
     DEFAULT_RGB_s,  /* Same as default but a source profile from document */
