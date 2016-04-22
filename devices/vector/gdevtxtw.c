@@ -1704,10 +1704,9 @@ static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short
             double_glyph_list_t *dentry = (double_glyph_list_t *)&DoubleGlyphList;
             treble_glyph_list_t *tentry = (treble_glyph_list_t *)&TrebleGlyphList;
             quad_glyph_list_t *qentry = (quad_glyph_list_t *)&QuadGlyphList;
-            int index = -1;
 
             /* Search glyph to single Unicode value table */
-            while (index >= 0 && sentry->Glyph != 0) {
+            while (sentry->Glyph != 0) {
                 if (sentry->Glyph[0] < gnstr.data[0]) {
                     sentry++;
                     continue;
@@ -1717,18 +1716,15 @@ static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short
                 }
                 if (strlen(sentry->Glyph) == gnstr.size) {
                     if(memcmp(gnstr.data, sentry->Glyph, gnstr.size) == 0) {
-                        index = 0;
-                        break;
+                        *Buffer = sentry->Unicode;
+                        return 1;
                     }
                 }
                 sentry++;
             }
-            if (index != -1) {
-                *Buffer = sentry->Unicode;
-                return 1;
-            }
+
             /* Search glyph to double Unicode value table */
-            while (index >= 0 && dentry->Glyph != 0) {
+            while (dentry->Glyph != 0) {
                 if (dentry->Glyph[0] < gnstr.data[0]) {
                     dentry++;
                     continue;
@@ -1738,19 +1734,15 @@ static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short
                 }
                 if (strlen(dentry->Glyph) == gnstr.size) {
                     if(memcmp(gnstr.data, dentry->Glyph, gnstr.size) == 0) {
-                        index = 0;
-                        break;
+                        memcpy(Buffer, dentry->Unicode, 2);
+                        return 2;
                     }
                 }
                 dentry++;
             }
-            if (index != -1) {
-                memcpy(Buffer, dentry->Unicode, 2);
-                return 2;
-            }
 
             /* Search glyph to triple Unicode value table */
-            while (index >= 0 && tentry->Glyph != 0) {
+            while (tentry->Glyph != 0) {
                 if (tentry->Glyph[0] < gnstr.data[0]) {
                     tentry++;
                     continue;
@@ -1760,19 +1752,15 @@ static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short
                 }
                 if (strlen(tentry->Glyph) == gnstr.size) {
                     if(memcmp(gnstr.data, tentry->Glyph, gnstr.size) == 0) {
-                        index = 0;
-                        break;
+                        memcpy(Buffer, tentry->Unicode, 3);
+                        return 3;
                     }
                 }
                 tentry++;
             }
-            if (index != -1) {
-                memcpy(Buffer, tentry->Unicode, 3);
-                return 3;
-            }
 
             /* Search glyph to quadruple Unicode value table */
-            while (index >= 0 && qentry->Glyph != 0) {
+            while (qentry->Glyph != 0) {
                 if (qentry->Glyph[0] < gnstr.data[0]) {
                     qentry++;
                     continue;
@@ -1782,19 +1770,17 @@ static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short
                 }
                 if (strlen(qentry->Glyph) == gnstr.size) {
                     if(memcmp(gnstr.data, qentry->Glyph, gnstr.size) == 0) {
-                        index = 0;
-                        break;
+                        memcpy(Buffer, qentry->Unicode, 4);
+                        return 4;
                     }
                 }
                 qentry++;
             }
-            if (index != -1) {
-                memcpy(Buffer, qentry->Unicode, 4);
-                return 4;
-            }
         }
-        *Buffer = fallback;
-        return 1;
+        if (unicode == GS_NO_CHAR) {
+            *Buffer = fallback;
+            return 1;
+        }
     }
     *Buffer = (unsigned short)unicode;
     return 1;
