@@ -176,6 +176,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     } ms_default;
     gc_mark_stack *mark_stack = &ms_default.stack;
     const gs_memory_t *cmem;
+    chunk_splay_walker sw;
 
     /* Optionally force global GC for debugging. */
 
@@ -210,17 +211,17 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
   for (i = min_collect; i <= max_trace; ++i)
 #define for_space_mems(i, mem)\
   for (mem = space_memories[i]; mem != 0; mem = &mem->saved->state)
-#define for_mem_chunks(mem, cp)\
-  for (cp = (mem)->cfirst; cp != 0; cp = cp->cnext)
-#define for_space_chunks(i, mem, cp)\
-  for_space_mems(i, mem) for_mem_chunks(mem, cp)
-#define for_chunks(n, mem, cp)\
-  for_spaces(ispace, n) for_space_chunks(ispace, mem, cp)
-#define for_collected_chunks(mem, cp)\
-  for_collected_spaces(ispace) for_space_chunks(ispace, mem, cp)
-#define for_roots(n, mem, rp)\
-  for_spaces(ispace, n)\
-    for (mem = space_memories[ispace], rp = mem->roots; rp != 0; rp = rp->next)
+#define for_mem_chunks(mem, cp, sw)\
+  for (cp = chunk_splay_walk_init(sw, mem); cp != 0; cp = chunk_splay_walk_fwd(sw))
+#define for_space_chunks(i, mem, cp, sw)\
+  for_space_mems(i, mem) for_mem_chunks(mem, cp, sw)
+#define for_chunks(i, n, mem, cp, sw)\
+  for_spaces(i, n) for_space_chunks(i, mem, cp, sw)
+#define for_collected_chunks(i, mem, cp, sw)\
+  for_collected_spaces(i) for_space_chunks(i, mem, cp, sw)
+#define for_roots(i, n, mem, rp)\
+  for_spaces(i, n)\
+    for (mem = space_memories[i], rp = mem->roots; rp != 0; rp = rp->next)
 
     /* Initialize the state. */
 
@@ -262,17 +263,17 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     /* Clear marks in spaces to be collected. */
 
     for_collected_spaces(ispace)
-        for_space_chunks(ispace, mem, cp) {
-        gc_objects_clear_marks((const gs_memory_t *)mem, cp);
-        gc_strings_set_marks(cp, false);
-    }
+        for_space_chunks(ispace, mem, cp, &sw) {
+            gc_objects_clear_marks((const gs_memory_t *)mem, cp);
+            gc_strings_set_marks(cp, false);
+        }
 
     end_phase(state.heap,"clear chunk marks");
 
     /* Clear the marks of roots.  We must do this explicitly, */
     /* since some roots are not in any chunk. */
 
-    for_roots(max_trace, mem, rp) {
+    for_roots(ispace, max_trace, mem, rp) {
         enum_ptr_t eptr;
 
         eptr.ptr = *rp->p;
@@ -300,7 +301,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     {
         gc_mark_stack *end = mark_stack;
 
-        for_chunks(max_trace, mem, cp) {
+        for_chunks(ispace, max_trace, mem, cp, &sw) {
             uint avail = cp->ctop - cp->cbot;
 
             if (avail >= sizeof(gc_mark_stack) + sizeof(ms_entry) *
@@ -330,7 +331,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 
         /* Mark from roots. */
 
-        for_roots(max_trace, mem, rp) {
+        for_roots(ispace, max_trace, mem, rp) {
             if_debug_root('6', (const gs_memory_t *)mem, "[6]marking root", rp);
             more |= gc_trace(rp, &state, mark_stack);
         }
@@ -340,14 +341,14 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
         /* If this is a local GC, mark from non-local chunks. */
 
         if (!global)
-            for_chunks(min_collect - 1, mem, cp)
+            for_chunks(ispace, min_collect - 1, mem, cp, &sw)
                 more |= gc_trace_chunk((const gs_memory_t *)mem, cp, &state, mark_stack);
 
         /* Handle mark stack overflow. */
 
         while (more < 0) {	/* stack overflowed */
             more = 0;
-            for_chunks(max_trace, mem, cp)
+            for_chunks(ispace, max_trace, mem, cp, &sw)
                 more |= gc_rescan_chunk(cp, &state, mark_stack);
         }
 
@@ -397,12 +398,12 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     /* We have to clear the marks first, because we want the */
     /* relocation to wind up as o_untraced, not o_unmarked. */
 
-    for_chunks(min_collect - 1, mem, cp)
+    for_chunks(ispace, min_collect - 1, mem, cp, &sw)
         gc_objects_clear_marks((const gs_memory_t *)mem, cp);
 
     end_phase(state.heap,"post-clear marks");
 
-    for_chunks(min_collect - 1, mem, cp)
+    for_chunks(ispace, min_collect - 1, mem, cp, &sw)
         gc_clear_reloc(cp);
 
     end_phase(state.heap,"clear reloc");
@@ -424,7 +425,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     /* we are going to compact.  Also finalize freed objects. */
     state.cur_mem = (gs_memory_t *)mem;
 
-    for_collected_chunks(mem, cp) {
+    for_collected_chunks(ispace, mem, cp, &sw) {
         gc_objects_set_reloc(&state, cp);
         gc_strings_set_reloc(cp);
     }
@@ -442,15 +443,15 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     /* Relocate pointers. */
 
     state.relocating_untraced = true;
-    for_chunks(min_collect - 1, mem, cp)
+    for_chunks(ispace, min_collect - 1, mem, cp, &sw)
         gc_do_reloc(cp, mem, &state);
     state.relocating_untraced = false;
-    for_collected_chunks(mem, cp)
+    for_collected_chunks(ispace, mem, cp, &sw)
         gc_do_reloc(cp, mem, &state);
 
     end_phase(state.heap,"relocate chunks");
 
-    for_roots(max_trace, mem, rp) {
+    for_roots(ispace, max_trace, mem, rp) {
         if_debug3m('6', (const gs_memory_t *)mem,
                    "[6]relocating root 0x%lx: 0x%lx -> 0x%lx\n",
                    (ulong) rp, (ulong) rp->p, (ulong) * rp->p);
@@ -473,7 +474,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 
     for_collected_spaces(ispace) {
         for_space_mems(ispace, mem) {
-            for_mem_chunks(mem, cp) {
+            for_mem_chunks(mem, cp, &sw) {
                 if_debug_chunk('6', (const gs_memory_t *)mem, "[6]compacting chunk", cp);
                 gc_objects_compact(cp, &state);
                 gc_strings_compact(cp, cmem);
@@ -1362,26 +1363,28 @@ gc_objects_compact(chunk_t * cp, gc_state_t * gcst)
 
 /* ------ Cleanup ------ */
 
+static int
+free_if_empty(chunk_t *cp, void *arg)
+{
+    gs_ref_memory_t * mem = (gs_ref_memory_t *)arg;
+
+    if (cp->cbot == cp->cbase && cp->ctop == cp->climit &&
+        cp->outer == 0 && cp->inner_count == 0)
+    {
+        alloc_free_chunk(cp, mem);
+        if (mem->pcc == cp)
+            mem->pcc = 0;
+    }
+    return SPLAY_APP_CONTINUE;
+}
+
 /* Free empty chunks. */
 static void
 gc_free_empty_chunks(gs_ref_memory_t * mem)
 {
-    chunk_t *cp;
-    chunk_t *csucc;
-
-    /* Free the chunks in reverse order, */
-    /* to encourage LIFO behavior. */
-    for (cp = mem->clast; cp != 0; cp = csucc) {	/* Make sure this isn't an inner chunk, */
-        /* or a chunk that has inner chunks. */
-        csucc = cp->cprev;	/* save before freeing */
-        if (cp->cbot == cp->cbase && cp->ctop == cp->climit &&
-            cp->outer == 0 && cp->inner_count == 0
-            ) {
-            alloc_free_chunk(cp, mem);
-            if (mem->pcc == cp)
-                mem->pcc = 0;
-        }
-    }
+    /* NOTE: Not in reverse order any more, so potentially
+     * not quite as good for crap allocators. */
+    chunk_splay_app(mem->root, mem, free_if_empty, mem);
 }
 
 const gs_memory_t * gcst_get_memory_ptr(gc_state_t *gcst)

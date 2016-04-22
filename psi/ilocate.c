@@ -248,13 +248,14 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
     for (smem = mem, level = 0; smem != 0;
          smem = &smem->saved->state, --level
         ) {
+        chunk_splay_walker sw;
         const chunk_t *cp;
         int i;
 
         if_debug3m('6', (gs_memory_t *)mem, "[6]validating memory 0x%lx, space %d, level %d\n",
                    (ulong) mem, mem->space, level);
         /* Validate chunks. */
-        for (cp = smem->cfirst; cp != 0; cp = cp->cnext)
+        for (cp = chunk_splay_walk_init(&sw, smem); cp != 0; cp = chunk_splay_walk_fwd(&sw))
             if (do_validate_chunk(cp, gcst)) {
                 mlprintf3((gs_memory_t *)mem, "while validating memory 0x%lx, space %d, level %d\n",
                           (ulong) mem, mem->space, level);

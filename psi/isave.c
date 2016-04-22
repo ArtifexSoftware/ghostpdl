@@ -405,6 +405,7 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
     alloc_save_t *save;
     chunk_t *cp;
     chunk_t *new_pcc = 0;
+    chunk_splay_walker sw;
 
     save_mem = *mem;
     alloc_close_chunk(mem);
@@ -414,7 +415,7 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
 
     /* Create inner chunks wherever it's worthwhile. */
 
-    for (cp = save_mem.cfirst; cp != 0; cp = cp->cnext) {
+    for (cp = chunk_splay_walk_init(&sw, &save_mem); cp != 0; cp = chunk_splay_walk_fwd(&sw)) {
         if (cp->ctop - cp->cbot > min_inner_chunk_space) {
             /* Create an inner chunk to cover only the unallocated part. */
             chunk_t *inner =
@@ -615,6 +616,7 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
 
     const char *const ptr = (const char *)vptr;
     register const gs_ref_memory_t *mem = save->space_local;
+    chunk_splay_walker sw;
 
     if_debug2m('U', (gs_memory_t *)mem, "[U]is_since_save 0x%lx, 0x%lx:\n",
                (ulong) ptr, (ulong) save);
@@ -628,7 +630,7 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
         const chunk_t *cp;
 
         if_debug1m('U', (gs_memory_t *)mem, "[U]checking mem=0x%lx\n", (ulong) mem);
-        for (cp = mem->cfirst; cp != 0; cp = cp->cnext) {
+        for (cp = chunk_splay_walk_init(&sw, mem); cp != 0; cp = chunk_splay_walk_fwd(&sw)) {
             if (ptr_is_within_chunk(ptr, cp)) {
                 if_debug3m('U', (gs_memory_t *)mem, "[U+]in new chunk 0x%lx: 0x%lx, 0x%lx\n",
                            (ulong) cp,
@@ -657,7 +659,7 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
         const chunk_t *cp;
 
         if_debug1m('U', (gs_memory_t *)mem, "[U]checking global mem=0x%lx\n", (ulong) mem);
-        for (cp = mem->cfirst; cp != 0; cp = cp->cnext)
+        for (cp = chunk_splay_walk_init(&sw, mem); cp != 0; cp = chunk_splay_walk_fwd(&sw))
             if (ptr_is_within_chunk(ptr, cp)) {
                 if_debug3m('U', (gs_memory_t *)mem, "[U+]  new chunk 0x%lx: 0x%lx, 0x%lx\n",
                            (ulong) cp, (ulong) cp->cbase, (ulong) cp->cend);
@@ -932,10 +934,11 @@ static void
 restore_finalize(gs_ref_memory_t * mem)
 {
     chunk_t *cp;
+    chunk_splay_walker sw;
 
     alloc_close_chunk(mem);
     gs_enable_free((gs_memory_t *) mem, false);
-    for (cp = mem->clast; cp != 0; cp = cp->cprev) {
+    for (cp = chunk_splay_walk_init(&sw, mem); cp != 0; cp = chunk_splay_walk_bwd(&sw)) {
         SCAN_CHUNK_OBJECTS(cp)
             DO_ALL
             struct_proc_finalize((*finalize)) =
@@ -1052,11 +1055,10 @@ combine_space(gs_ref_memory_t * mem)
     alloc_save_t *saved = mem->saved;
     gs_ref_memory_t *omem = &saved->state;
     chunk_t *cp;
-    chunk_t *csucc;
+    chunk_splay_walker sw;
 
     alloc_close_chunk(mem);
-    for (cp = mem->cfirst; cp != 0; cp = csucc) {
-        csucc = cp->cnext;	/* save before relinking */
+    for (cp = chunk_splay_walk_init(&sw, mem); cp != 0; cp = chunk_splay_walk_fwd(&sw)) {
         if (cp->outer == 0)
             alloc_link_chunk(cp, omem);
         else {
@@ -1095,8 +1097,7 @@ combine_space(gs_ref_memory_t * mem)
         }
     }
     /* Update relevant parts of allocator state. */
-    mem->cfirst = omem->cfirst;
-    mem->clast = omem->clast;
+    mem->root = omem->root;
     mem->allocated += omem->allocated;
     mem->gc_allocated += omem->allocated;
     mem->lost.objects += omem->lost.objects;

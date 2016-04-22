@@ -147,8 +147,9 @@ struct chunk_s {
                                 /* (bottom of strings) */
     byte *climit;		/* top of strings */
     byte *cend;			/* top of chunk */
-    chunk_t *cprev;		/* chain chunks together, */
-    chunk_t *cnext;		/*   sorted by address */
+    chunk_t *parent;            /* splay tree parent chunk */
+    chunk_t *left;		/* splay tree left chunk */
+    chunk_t *right;		/* splay tree right chunk */
     chunk_t *outer;		/* the chunk of which this is */
                                 /*   an inner chunk, if any */
     uint inner_count;		/* number of chunks of which this is */
@@ -189,8 +190,8 @@ struct chunk_s {
 /* The chunk descriptor is exported only for isave.c. */
 extern_st(st_chunk);
 #define public_st_chunk()	/* in ialloc.c */\
-  gs_public_st_ptrs2(st_chunk, chunk_t, "chunk_t",\
-    chunk_enum_ptrs, chunk_reloc_ptrs, cprev, cnext)
+  gs_public_st_ptrs3(st_chunk, chunk_t, "chunk_t",\
+    chunk_enum_ptrs, chunk_reloc_ptrs, left, right, parent)
 
 /*
  * Macros for scanning a chunk linearly, with the following schema:
@@ -250,7 +251,7 @@ void alloc_init_free_strings(chunk_t *);
 #define ptr_is_in_chunk(ptr, cp)\
   (ptr_is_within_chunk(ptr, cp) && !ptr_is_in_inner_chunk(ptr, cp))
 typedef struct chunk_locator_s {
-    const gs_ref_memory_t *memory;	/* for head & tail of chain */
+    gs_ref_memory_t *memory;	/* for head & tail of chain */
     chunk_t *cp;		/* one-element cache */
 } chunk_locator_t;
 bool chunk_locate_ptr(const void *, chunk_locator_t *);
@@ -349,8 +350,7 @@ struct gs_ref_memory_s {
                                 /* its own chunks */
     ulong limit;		/* signal a VMerror when total */
                                 /* allocated exceeds this */
-    chunk_t *cfirst;		/* head of chunk list */
-    chunk_t *clast;		/* tail of chunk list */
+    chunk_t *root;		/* root of chunk splay tree */
     chunk_t cc;			/* current chunk */
     chunk_t *pcc;		/* where to store cc */
     chunk_locator_t cfreed;	/* chunk where last object freed */
@@ -409,8 +409,9 @@ extern const gs_memory_procs_t gs_ref_memory_procs;
  *      END_CHUNKS_SCAN
  */
 #define SCAN_MEM_CHUNKS(mem, cp)\
-        {	chunk_t *cp = (mem)->cfirst;\
-                for ( ; cp != 0; cp = cp->cnext )\
+        {	chunk_splay_walker sw;\
+                chunk_t *cp;\
+                for (cp = chunk_splay_walk_init(&sw, mem); cp != 0; cp = chunk_splay_walk_fwd(&sw))\
                 {
 #define END_CHUNKS_SCAN\
                 }\
@@ -472,5 +473,27 @@ void debug_dump_allocator(const gs_ref_memory_t *mem);
 void debug_find_pointers(const gs_ref_memory_t *mem, const void *target);
 
 #endif /* DEBUG */
+
+/* Routines for walking/manipulating the splay tree of chunks */
+enum {
+    SPLAY_APP_CONTINUE = 0,
+    SPLAY_APP_STOP = 1
+};
+
+chunk_t *chunk_splay_app(chunk_t *root, gs_ref_memory_t *imem, int (*fn)(chunk_t *, void *), void *arg);
+
+typedef struct
+{
+    int from;
+    chunk_t *cp;
+} chunk_splay_walker;
+
+chunk_t *chunk_splay_walk_bwd(chunk_splay_walker *sw);
+
+chunk_t *chunk_splay_walk_fwd(chunk_splay_walker *sw);
+
+chunk_t *chunk_splay_walk_init(chunk_splay_walker *sw, const gs_ref_memory_t *imem);
+
+chunk_t *chunk_splay_walk_init_mid(chunk_splay_walker *sw, chunk_t *cp);
 
 #endif /* gxalloc_INCLUDED */

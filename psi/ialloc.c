@@ -216,7 +216,7 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
             chunk_locator_t cl;
 
             cl.memory = mem;
-            cl.cp = mem->clast;
+            cl.cp = mem->root;
             chunk_locate_ptr(obj, &cl);
             cl.cp->has_refs = true;
         }
@@ -312,7 +312,7 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
         chunk_locator_t cl;
 
         cl.memory = mem;
-        cl.cp = mem->clast;
+        cl.cp = mem->root;
         if (chunk_locate_ptr(obj, &cl) &&
             obj == (ref *) ((obj_header_t *) (cl.cp->cbase) + 1) &&
             (byte *) (obj + (num_refs + 1)) == cl.cp->cend
