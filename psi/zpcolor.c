@@ -339,7 +339,7 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
         if (pinst->templat.uses_transparency) {
             if (pinst->is_clist) {
                 /* Send the compositor command to close the PDF14 device */
-                code = (gs_pop_pdf14trans_device(pgs, true) < 0);
+                code = gs_pop_pdf14trans_device(pgs, true);
                 if (code < 0)
                     return code;
             } else {
