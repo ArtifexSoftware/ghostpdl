@@ -67,7 +67,7 @@ gsicc_nocm_planar_to_planar(gx_device *dev, gsicc_link_t *icclink,
         inputpos[k] = in_buffer_ptr + k * input_buff_desc->plane_stride;
     }
     for (k = 0; k < output_buff_desc->num_chan; k++) {
-        outputpos[k] = out_buffer_ptr + k * input_buff_desc->plane_stride;
+        outputpos[k] = out_buffer_ptr + k * output_buff_desc->plane_stride;
     }
     /* Note to self.  We currently only do this in the transparency buffer
        case which has byte representation so just stepping through
