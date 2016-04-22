@@ -1385,6 +1385,7 @@ gx_page_info_color_usage(const gx_device *dev,
     start = y / band_height;
     end = (y + height + band_height - 1) / band_height;
     if (crdev->color_usage_array == NULL) {
+        return -1;
     }
     for (i = start; i < end; ++i) {
         or |= crdev->color_usage_array[i].or;
