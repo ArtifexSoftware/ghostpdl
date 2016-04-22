@@ -332,9 +332,10 @@ cube_build_func0(const ref * pdict, gs_function_Sd_params_t * params,
         }
         else {			/* Size array specified - verify valid */
             if (code != params->m || !valid_cube_size(params->m, params->n,
-                                        params->BitsPerSample, params->Size))
-                code = gs_note_error(gs_error_rangecheck);
-                goto fail;
+                params->BitsPerSample, params->Size)) {
+                    code = gs_note_error(gs_error_rangecheck);
+                    goto fail;
+            }
         }
     }
     /*
