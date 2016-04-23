@@ -58,7 +58,7 @@ typedef struct gs_file_path_s {
 struct gs_main_instance_s {
     /* The following are set during initialization. */
     gs_memory_t *heap;		/* (C) heap allocator */
-    uint memory_chunk_size;	/* 'wholesale' allocation unit */
+    uint memory_clump_size;	/* 'wholesale' allocation unit */
     ulong name_table_size;
     uint run_buffer_size;
     int init_done;		/* highest init done so far */
@@ -86,7 +86,7 @@ struct gs_main_instance_s {
  * must include gconfig.h, because of SEARCH_HERE_FIRST.
  */
 #define gs_main_instance_default_init_values\
-  0/* heap */, 20000/* chunk_size */, 0/* name_table_size */, 0/* run_buffer_size */,\
+  0/* heap */, 20000/* clump_size */, 0/* name_table_size */, 0/* run_buffer_size */,\
   -1/* init_done */, 0/* user_errors */, SEARCH_HERE_FIRST/* duh */, 1/* run_start */,
 
 extern const gs_main_instance gs_main_instance_init_values;

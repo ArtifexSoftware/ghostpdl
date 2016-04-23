@@ -608,7 +608,7 @@ run_stdin:
                     return gs_error_Fatal;
                 }
 #endif
-                minst->memory_chunk_size = msize << 10;
+                minst->memory_clump_size = msize << 10;
             }
             break;
         case 'N':               /* set size of name table */

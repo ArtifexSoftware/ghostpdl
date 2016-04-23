@@ -191,7 +191,7 @@ gs_main_init1(gs_main_instance * minst)
         gs_dual_memory_t idmem;
         int code =
             ialloc_init(&idmem, minst->heap,
-                        minst->memory_chunk_size, gs_have_level2());
+                        minst->memory_clump_size, gs_have_level2());
 
         if (code < 0)
             return code;

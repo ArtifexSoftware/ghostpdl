@@ -765,7 +765,7 @@ alloc_render_memory(gs_memory_t **final_allocator,
 
     if (rmem == 0)
         return_error(gs_error_VMerror);
-    code = ialloc_add_chunk(rmem, space, "alloc_render_memory");
+    code = ialloc_add_clump(rmem, space, "alloc_render_memory");
     if (code < 0) {
         gs_memory_free_all((gs_memory_t *)rmem, FREE_ALL_EVERYTHING,
                            "alloc_render_memory");
@@ -774,12 +774,12 @@ alloc_render_memory(gs_memory_t **final_allocator,
     *final_allocator = (gs_memory_t *)rmem;
 
     /* Call the reclaim procedure to delete the string marking tables	*/
-    /* Only need this once since no other chunks will ever exist	*/
+    /* Only need this once since no other clump will ever exist	*/
 
     for ( i = 0; i < countof(spaces_indexed); ++i )
         spaces_indexed[i] = 0;
     space_local = space_global = (gs_ref_memory_t *)rmem;
-    spaces.vm_reclaim = gs_nogc_reclaim;	/* no real GC on this chunk */
+    spaces.vm_reclaim = gs_nogc_reclaim;	/* no real GC on this clump */
     GS_RECLAIM(&spaces, false);
 
     return 0;

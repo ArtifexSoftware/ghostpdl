@@ -80,15 +80,15 @@
  * The back pointer's meaning depends on whether the object is
  * free (unmarked) or in use (marked):
  *      - In free objects, the back pointer is an offset from the object
- * header back to a chunk_head_t structure that contains the location
- * to which all the data in this chunk will get moved; the reloc field
+ * header back to a clump_head_t structure that contains the location
+ * to which all the data in this clump will get moved; the reloc field
  * contains the amount by which the following run of useful objects
  * will be relocated downwards.
  *      - In useful objects, the back pointer is an offset from the object
  * back to the previous free object; the reloc field is not used (it
  * overlays the type field).
- * These two cases can be distinguished when scanning a chunk linearly,
- * but when simply examining an object via a pointer, the chunk pointer
+ * These two cases can be distinguished when scanning a clump linearly,
+ * but when simply examining an object via a pointer, the clump pointer
  * is also needed.
  */
 #define obj_flag_bits 1

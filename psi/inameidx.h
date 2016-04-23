@@ -32,7 +32,7 @@
 #endif
 
 /* Define the size of a name sub-table. */
-/* With NT_LOG2_SUB_SIZE >= 10 the subtable goes into a large chunk, */
+/* With NT_LOG2_SUB_SIZE >= 10 the subtable goes into a large clump, */
 /* which names_trace_finish() cannot handle. */
 # define NT_LOG2_SUB_SIZE (8 + (EXTEND_NAMES >= 2))
 # define NT_SUB_SIZE (1 << NT_LOG2_SUB_SIZE)

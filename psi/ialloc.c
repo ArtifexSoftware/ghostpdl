@@ -34,22 +34,22 @@ public_st_gs_dual_memory();
 
 /* Initialize the allocator */
 int
-ialloc_init(gs_dual_memory_t *dmem, gs_memory_t * rmem, uint chunk_size,
+ialloc_init(gs_dual_memory_t *dmem, gs_memory_t * rmem, uint clump_size,
             bool level2)
 {
-    gs_ref_memory_t *ilmem = ialloc_alloc_state(rmem, chunk_size);
-    gs_ref_memory_t *ilmem_stable = ialloc_alloc_state(rmem, chunk_size);
+    gs_ref_memory_t *ilmem = ialloc_alloc_state(rmem, clump_size);
+    gs_ref_memory_t *ilmem_stable = ialloc_alloc_state(rmem, clump_size);
     gs_ref_memory_t *igmem = 0;
     gs_ref_memory_t *igmem_stable = 0;
-    gs_ref_memory_t *ismem = ialloc_alloc_state(rmem, chunk_size);
+    gs_ref_memory_t *ismem = ialloc_alloc_state(rmem, clump_size);
     int i;
 
     if (ilmem == 0 || ilmem_stable == 0 || ismem == 0)
         goto fail;
     ilmem->stable_memory = (gs_memory_t *)ilmem_stable;
     if (level2) {
-        igmem = ialloc_alloc_state(rmem, chunk_size);
-        igmem_stable = ialloc_alloc_state(rmem, chunk_size);
+        igmem = ialloc_alloc_state(rmem, clump_size);
+        igmem_stable = ialloc_alloc_state(rmem, clump_size);
         if (igmem == 0 || igmem_stable == 0)
             goto fail;
         igmem->stable_memory = (gs_memory_t *)igmem_stable;
@@ -182,9 +182,9 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
     } else {
         /*
          * Allocate a new run.  We have to distinguish 3 cases:
-         *      - Same chunk: pcc unchanged, end == cc.cbot.
-         *      - Large chunk: pcc unchanged, end != cc.cbot.
-         *      - New chunk: pcc changed.
+         *      - Same clump: pcc unchanged, end == cc.cbot.
+         *      - Large clump: pcc unchanged, end != cc.cbot.
+         *      - New clump: pcc changed.
          */
         clump_t *pcc = mem->pcc;
         ref *end;
@@ -203,14 +203,14 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
         /* Set the terminating ref now. */
         end = (ref *) obj + num_refs;
         make_mark(end);
-        /* Set has_refs in the chunk. */
+        /* Set has_refs in the clump. */
         if (mem->pcc != pcc || mem->cc.cbot == (byte *) (end + 1)) {
-            /* Ordinary chunk. */
+            /* Ordinary clump. */
             mem->cc.rcur = (obj_header_t *) obj;
             mem->cc.rtop = (byte *) (end + 1);
             mem->cc.has_refs = true;
         } else {
-            /* Large chunk. */
+            /* Large clump. */
             /* This happens only for very large arrays, */
             /* so it doesn't need to be cheap. */
             clump_locator_t cl;
@@ -270,7 +270,7 @@ gs_resize_ref_array(gs_ref_memory_t * mem, ref * parr,
 }
 
 /* Deallocate an array of refs.  Only do this if LIFO, or if */
-/* the array occupies an entire chunk by itself. */
+/* the array occupies an entire clump by itself. */
 void
 gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
 {
@@ -279,7 +279,7 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
 
     /*
      * Compute the storage size of the array, and check for LIFO
-     * freeing or a separate chunk.  Note that the array might be packed;
+     * freeing or a separate clump.  Note that the array might be packed;
      * for the moment, if it's anything but a t_array, punt.
      * The +1s are for the extra ref for the GC.
      */
@@ -306,7 +306,7 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
         }
         return;
     } else if (num_refs >= (mem->large_size / ARCH_SIZEOF_REF - 1)) {
-        /* See if this array has a chunk all to itself. */
+        /* See if this array has a clump all to itself. */
         /* We only make this check when freeing very large objects, */
         /* so it doesn't need to be cheap. */
         clump_locator_t cl;

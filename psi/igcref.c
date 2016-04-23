@@ -329,7 +329,7 @@ refs_set_reloc(obj_header_t * hdr, uint reloc, uint size)
 #if ARCH_SIZEOF_INT > ARCH_SIZEOF_SHORT
     /*
      * If the final relocation can't fit in the r_size field
-     * (which can't happen if the object shares a chunk with
+     * (which can't happen if the object shares a clump with
      * any other objects, so we know reloc = 0 in this case),
      * we have to keep the entire object unless there are no
      * references to any ref in it.
@@ -736,7 +736,7 @@ refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, ui
     new_size = (byte *) dest - (byte *) (dpre + 1) + sizeof(ref);
 #ifdef DEBUG
     /* Check that the relocation came out OK. */
-    /* NOTE: this check only works within a single chunk. */
+    /* NOTE: this check only works within a single clump. */
     if ((byte *) src - (byte *) dest != r_size((ref *) src - 1) + sizeof(ref)) {
         mlprintf3(mem, "Reloc error for refs 0x%lx: reloc = %lu, stored = %u\n",
                  (ulong) dpre, (ulong) ((byte *) src - (byte *) dest),
