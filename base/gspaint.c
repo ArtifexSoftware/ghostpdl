@@ -524,8 +524,9 @@ gs_strokepath_aux(gs_state * pgs, bool traditional)
     /* NB: needs testing with PCL */
     if (gx_path_is_void(pgs->path))
         pgs->current_point_valid = false;
-    else
+    else {
         gx_setcurrentpoint(pgs, fixed2float(spath.position.x), fixed2float(spath.position.y));
+    }
     return 0;
 
 }
