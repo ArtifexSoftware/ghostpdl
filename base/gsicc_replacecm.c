@@ -306,21 +306,23 @@ gsicc_rcm_get_link(const gs_imager_state *pis, gx_device *dev,
     gsicc_link_t *result;
     gsicc_hashlink_t hash;
     rcm_link_t *rcm_link;
-    gs_memory_t *mem = dev->memory->non_gc_memory;
+    gs_memory_t *mem;
     const gx_cm_color_map_procs * cm_procs;
     bool pageneutralcolor = false;
     cmm_dev_profile_t *dev_profile;
     int code;
 
+    if (dev == NULL)
+        return NULL;
+
+    mem = dev->memory->non_gc_memory;
     /* Need to check if we need to monitor for color */
-    if (dev != NULL ) {
-        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-        if (code < 0)
-            return NULL;
-        if (dev_profile != NULL) {
-            pageneutralcolor = dev_profile->pageneutralcolor;
-        }
-     }
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    if (code < 0)
+        return NULL;
+    if (dev_profile != NULL) {
+        pageneutralcolor = dev_profile->pageneutralcolor;
+    }
 
     /* If the cm_procs are forwarding due to the overprint device or other
        odd thing, drill down now and get the proper ones */
