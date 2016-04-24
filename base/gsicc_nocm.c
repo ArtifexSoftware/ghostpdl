@@ -403,8 +403,7 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
     nocm_link->memory = mem;
     /* Create a dummy imager state and populate the ucr/bg values.  This
        is the only part that we need */
-    if (pis == NULL ||
-       (pis->black_generation == NULL && pis->undercolor_removal == NULL)) {
+    if ((pis->black_generation == NULL && pis->undercolor_removal == NULL)) {
         nocm_link->pis = NULL;
     } else {
         nocm_link->pis = (gs_imager_state*)
