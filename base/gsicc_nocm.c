@@ -353,15 +353,16 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
     int code;
     gsicc_colorbuffer_t data_cs = gsRGB;
 
+    if (dev == NULL)
+        return NULL;
+
     /* Need to check if we need to monitor for color */
-    if (dev != NULL ) {
-        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-        if (code < 0)
-            return NULL;
-        if (dev_profile != NULL) {
-            pageneutralcolor = dev_profile->pageneutralcolor;
-        }
-     }
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    if (code < 0)
+        return NULL;
+    if (dev_profile != NULL) {
+        pageneutralcolor = dev_profile->pageneutralcolor;
+    }
 
     /* We will add this to the link cache so that we can avoid the issue
        of black_generation and undercolor removal being GC values.
