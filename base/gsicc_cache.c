@@ -953,8 +953,6 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             if (cms_input_profile == NULL)
                 return NULL;
             gs_input_profile->profile_handle = cms_input_profile;
-            if (cms_input_profile == NULL)
-                return NULL;
             /* This *must* be a default profile that was not set up at start-up/
                However it could be one from the icc creator code which does not
                do an initialization at the time of creation from CalRGB etc. */
