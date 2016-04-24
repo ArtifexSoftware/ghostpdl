@@ -441,12 +441,15 @@ gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, gx_device *dev,
     gsicc_rendering_param_t render_cond;
     int code;
 
-    if (cmm_icc_profile_data == NULL && dev != NULL) {
+    if (cmm_icc_profile_data == NULL)
+    {
+        if (dev == NULL)
+            return -1;
         code = dev_proc(dev, get_profile)(dev, &dev_profile);
         if (code < 0)
             return code;
         gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
-                               &(icc_profile), &render_cond);
+            &(icc_profile), &render_cond);
         *hash = icc_profile->hashcode;
         return 0;
     }
