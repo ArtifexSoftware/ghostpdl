@@ -85,7 +85,7 @@ ljet5_open(gx_device * pdev)
 
         s_init(s, pdev->memory);
         swrite_file(s, ppdev->file, buf, sizeof(buf));
-        px_write_file_header(s, pdev);
+        px_write_file_header(s, pdev, false);
         sflush(s);		/* don't close */
     }
     return 0;

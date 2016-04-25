@@ -23,7 +23,7 @@
 /* ---------------- High-level constructs ---------------- */
 
 /* Write the file header, including the resolution. */
-int px_write_file_header(stream *s, const gx_device *dev);
+int px_write_file_header(stream *s, const gx_device *dev, bool staple);
 
 /* Write the page header, including orientation. */
 int px_write_page_header(stream *s, const gx_device *dev);

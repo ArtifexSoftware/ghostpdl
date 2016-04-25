@@ -29,10 +29,11 @@
 
 /* Write the file header, including the resolution. */
 int
-px_write_file_header(stream *s, const gx_device *dev)
+px_write_file_header(stream *s, const gx_device *dev, bool staple)
 {
     static const char *const enter_pjl_header =
         "\033%-12345X@PJL SET RENDERMODE=";
+    static const char *const set_staple= "\n@PJL SET FINISH=STAPLE";
     static const char *const rendermode_gray = "GRAYSCALE";
     static const char *const rendermode_color = "COLOR";
     static const char *const pjl_resolution =
@@ -64,6 +65,10 @@ px_write_file_header(stream *s, const gx_device *dev)
     else
         px_put_bytes(s, (const byte *)rendermode_color,
                      strlen(rendermode_color));
+
+    if(staple)
+        px_put_bytes(s, (const byte *)set_staple,
+                     strlen(set_staple));
 
     px_put_bytes(s, (const byte *)pjl_resolution,
                  strlen(pjl_resolution));

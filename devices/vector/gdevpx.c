@@ -72,6 +72,7 @@ typedef struct gx_device_pclxl_s {
     int MediaType_set;
     int page;			/* Page number starting at 0 */
     bool Duplex;		/* Duplex attribute */
+    bool Staple;		/* Staple attribute */
     bool Tumble;		/* Tumble attribute */
     gx_path_type_t fill_rule;	/* ...winding_number or ...even_odd  */
     gx_path_type_t clip_rule;	/* ditto */
@@ -1569,7 +1570,7 @@ pclxl_open_device(gx_device * dev)
     xdev = (gx_device_pclxl *)dev;
 
     pclxl_page_init(xdev);
-    px_write_file_header(vdev->strm, dev);
+    px_write_file_header(vdev->strm, dev, xdev->Staple);
     xdev->media_size = pxeMediaSize_next;	/* no size selected */
     memset(&xdev->chars, 0, sizeof(xdev->chars));
     xdev->chars.next_in = xdev->chars.next_out = 2;
@@ -2426,6 +2427,9 @@ pclxl_get_params(gx_device     *dev,	/* I - Device info */
       return (code);
   }
 
+  if ((code = param_write_bool(plist, "Staple", &(xdev->Staple))) < 0)
+    return (code);
+
   if ((code = param_write_bool(plist, "Tumble", &(xdev->Tumble))) < 0)
     return (code);
 
@@ -2539,6 +2543,7 @@ pclxl_put_params(gx_device     *dev,	/* I - Device info */
       strcpy(xdev->MediaType_old, xdev->MediaType);
     }
   }
+  booloption(Staple, "Staple")
   booloption(Tumble, "Tumble")
   intoption(CompressMode, "CompressMode", int)
   booloption(iccTransform, "iccTransform")
