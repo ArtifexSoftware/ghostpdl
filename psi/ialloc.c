@@ -317,12 +317,13 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
             obj == (ref *) ((obj_header_t *) (cl.cp->cbase) + 1) &&
             (byte *) (obj + (num_refs + 1)) == cl.cp->cend
             ) {
-            /* Free the chunk. */
+            /* Free the clump. */
             if_debug4m('a', (const gs_memory_t *)mem, "[a%d:-$L]%s(%u) 0x%lx\n",
                        ialloc_trace_space(mem), client_name_string(cname),
                        num_refs, (ulong) obj);
-            if ((gs_memory_t *)mem != mem->stable_memory)
+            if ((gs_memory_t *)mem != mem->stable_memory) {
                 alloc_save_remove(mem, (ref_packed *)obj, "gs_free_ref_array");
+            }
             alloc_free_clump(cl.cp, mem);
             return;
         }
