@@ -329,6 +329,7 @@ gsicc_nocm_copy_curve(gx_transfer_map *in_map, gs_memory_t *mem)
         out_map = (gx_transfer_map*) gs_alloc_bytes(mem, sizeof(gx_transfer_map),
                             "gsicc_nocm_copy_curve");
         if (out_map) {
+            memset(out_map, 0, sizeof(gx_transfer_map));
             out_map->proc = in_map->proc;
             memcpy(&(out_map->values[0]), &(in_map->values[0]),
                     sizeof(frac) * transfer_map_size);
@@ -347,7 +348,7 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
     gsicc_link_t *result;
     gsicc_hashlink_t hash;
     nocm_link_t *nocm_link;
-    gs_memory_t *mem = pis->memory->non_gc_memory;
+    gs_memory_t *mem = pis->icc_link_cache->memory->non_gc_memory;
     bool pageneutralcolor = false;
     cmm_dev_profile_t *dev_profile;
     int code;
@@ -411,6 +412,8 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
                                          "gsicc_nocm_get_link");
         if (nocm_link->pis == NULL)
             return NULL;
+        memset(nocm_link->pis, 0, sizeof(gs_imager_state));
+        /* Note if allocation of either of the maps fails, just use NULL */
         nocm_link->pis->black_generation = (gx_transfer_map*)
                             gsicc_nocm_copy_curve(pis->black_generation, mem);
         nocm_link->pis->undercolor_removal = (gx_transfer_map*)

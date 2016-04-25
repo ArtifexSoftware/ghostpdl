@@ -141,7 +141,6 @@ icc_linkcache_finalize(const gs_memory_t *mem, void *ptr)
 
     while (link_cache->head != NULL) {
         gsicc_remove_link(link_cache->head, mem);
-        link_cache->num_links--;
     }
 #ifdef DEBUG
     if (link_cache->num_links != 0) {
@@ -566,6 +565,7 @@ gsicc_remove_link(gsicc_link_t *link, const gs_memory_t *memory)
         curr = curr->next;
     }
     /* if curr != link we didn't find it: assert ? */
+    icc_link_cache->num_links--;	/* no longer in the cache */
     gx_monitor_leave(icc_link_cache->lock);
     gsicc_link_free(link, memory);	/* outside link */
 }
@@ -785,7 +785,6 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
         /* the outermost 'while' will check to make sure some other	*/
         /* thread did not grab the one we remove.			*/
         gsicc_remove_link(link, cache_mem);
-        icc_link_cache->num_links--;
     }
     /* insert an empty link that we will reserve so we */
     /* can unlock while building the link contents     */
@@ -966,7 +965,6 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                nor any defaults to use for this.  Really
                need to throw an error for this case. */
             gsicc_remove_link(link, cache_mem);
-            icc_link_cache->num_links--;
             return NULL;
         }
     }
@@ -999,7 +997,6 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                    nor any defaults to use for this.  Really
                    need to throw an error for this case. */
                 gsicc_remove_link(link, cache_mem);
-                icc_link_cache->num_links--;
                 return NULL;
             }
         }
@@ -1017,7 +1014,6 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             } else {
                 /* Cant create the link */
                 gsicc_remove_link(link, cache_mem);
-                icc_link_cache->num_links--;
                 return NULL;
             }
         }
@@ -1035,7 +1031,6 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             } else {
                 /* Cant create the link */
                 gsicc_remove_link(link, cache_mem);
-                icc_link_cache->num_links--;
                 return NULL;
             }
         }
@@ -1114,7 +1109,6 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                    (long long)gs_output_profile->hashcode);
     } else {
         gsicc_remove_link(link, cache_mem);
-        icc_link_cache->num_links--;
         return NULL;
     }
     return link;
