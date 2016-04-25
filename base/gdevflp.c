@@ -298,7 +298,13 @@ static int ParsePageList(gx_device *dev, first_last_subclass_data *psubclass_dat
                     *workstr++ = 0x00;
                     /* oldstr points to null terminated string of start, workstr to null terminated string of end */
                     Page = atoi(oldstr) - 1;
+                    if (Page < 0)
+                        Page = 0;
+
                     LastPage = atoi(workstr) - 1;
+                    if (LastPage < 0)
+                        LastPage = 0;
+
                     for (i=Page; i<= LastPage;i++) {
                         byte = (int)(i / 8);
                         bit = i % 8;
