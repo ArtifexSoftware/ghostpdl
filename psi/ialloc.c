@@ -323,8 +323,8 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
                        num_refs, (ulong) obj);
             if ((gs_memory_t *)mem != mem->stable_memory)
                 alloc_save_remove(mem, (ref_packed *)obj, "gs_free_ref_array");
-                alloc_free_clump(cl.cp, mem);
-                return;
+            alloc_free_clump(cl.cp, mem);
+            return;
         }
     }
     /* Punt, but fill the array with nulls so that there won't be */
