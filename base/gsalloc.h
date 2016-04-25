@@ -59,11 +59,11 @@ gs_ref_memory_t *ialloc_alloc_state(gs_memory_t *, uint);
 void ialloc_free_state(gs_ref_memory_t *);
 
 /*
- * Add a chunk to an externally controlled allocator.  Such allocators
+ * Add a clump to an externally controlled allocator.  Such allocators
  * allocate all objects as immovable, are not garbage-collected, and
- * don't attempt to acquire additional memory (or free chunks) on their own.
+ * don't attempt to acquire additional memory (or free clumps) on their own.
  */
-int ialloc_add_chunk(gs_ref_memory_t *, ulong, client_name_t);
+int ialloc_add_clump(gs_ref_memory_t *, ulong, client_name_t);
 
 /* ------ Internal routines ------ */
 

@@ -938,7 +938,7 @@ restore_finalize(gs_ref_memory_t * mem)
 
     alloc_close_clump(mem);
     gs_enable_free((gs_memory_t *) mem, false);
-    for (cp = clump_splay_walk_init(&sw, mem); cp != 0; cp = clump_splay_walk_bwd(&sw)) {
+    for (cp = clump_splay_walk_bwd_init(&sw, mem); cp != 0; cp = clump_splay_walk_bwd(&sw)) {
         SCAN_CLUMP_OBJECTS(cp)
             DO_ALL
             struct_proc_finalize((*finalize)) =

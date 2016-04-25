@@ -273,6 +273,25 @@ clump_splay_walk_init(clump_splay_walker *sw, const gs_ref_memory_t *mem)
     return cp;
 }
 
+clump_t *
+clump_splay_walk_bwd_init(clump_splay_walker *sw, const gs_ref_memory_t *mem)
+{
+    clump_t *cp = mem->root;
+
+    if (cp)
+    {
+        SANITY_CHECK(cp);
+
+        sw->from = SPLAY_FROM_RIGHT;
+        while (cp->right)
+        {
+            cp = cp->right;
+        }
+    }
+    sw->cp = cp;
+    return cp;
+}
+
 /* When initing 'mid walk' (i.e. with a non-root node), we want to
  * return the node we are given as the first one, and continue
  * onwards in an in order fashion.
@@ -379,8 +398,8 @@ clump_splay_walk_bwd(clump_splay_walker *sw)
             /* We have arrived from the left. Step up. */
             clump_t *old = cp;
             cp = cp->parent;
-            from = (cp == NULL || cp->left == old ? SPLAY_FROM_LEFT : SPLAY_FROM_RIGHT);
-            if (from == SPLAY_FROM_LEFT)
+            from = (cp == NULL || cp->left != old ? SPLAY_FROM_RIGHT : SPLAY_FROM_LEFT);
+            if (from == SPLAY_FROM_RIGHT)
                 break;
         }
     }
@@ -2806,6 +2825,29 @@ debug_find_pointers(const gs_ref_memory_t *mem, const void *target)
                     }
         END_OBJECTS_SCAN_NO_ABORT
     }
+}
+static void ddct(const gs_memory_t *mem, clump_t *cp, clump_t *parent, int depth)
+{
+    int i;
+
+    if (cp == NULL)
+        return;
+    for (i = 0; i < depth; i++)
+        dmlprintf(mem, " ");
+
+    dmlprintf7(mem, "Clump %p:%p parent=%p left=%p:%p right=%p:%p\n",
+        cp, cp->cbase, cp->parent,
+        cp->left, cp->left ? cp->left->cbase : NULL,
+        cp->right, cp->right ? cp->right->cbase : NULL);
+    if (cp->parent != parent)
+        dmlprintf(mem, "Parent pointer mismatch!\n");
+    ddct(mem, cp->left, cp, depth+1);
+    ddct(mem, cp->right, cp, depth+1);
+}
+void
+debug_dump_clump_tree(const gs_ref_memory_t *mem)
+{
+    ddct((const gs_memory_t *)mem, mem->root, NULL, 0);
 }
 
 #endif /* DEBUG */

@@ -472,6 +472,9 @@ void debug_dump_allocator(const gs_ref_memory_t *mem);
 /* Find all the objects that contain a given pointer. */
 void debug_find_pointers(const gs_ref_memory_t *mem, const void *target);
 
+/* Dump the splay tree of clumps */
+void debug_dump_clump_tree(const gs_ref_memory_t *mem);
+
 #endif /* DEBUG */
 
 /* Routines for walking/manipulating the splay tree of clumps */
@@ -488,12 +491,14 @@ typedef struct
     clump_t *cp;
 } clump_splay_walker;
 
-clump_t *clump_splay_walk_bwd(clump_splay_walker *sw);
-
-clump_t *clump_splay_walk_fwd(clump_splay_walker *sw);
-
 clump_t *clump_splay_walk_init(clump_splay_walker *sw, const gs_ref_memory_t *imem);
 
 clump_t *clump_splay_walk_init_mid(clump_splay_walker *sw, clump_t *cp);
+
+clump_t *clump_splay_walk_fwd(clump_splay_walker *sw);
+
+clump_t *clump_splay_walk_bwd_init(clump_splay_walker *sw, const gs_ref_memory_t *imem);
+
+clump_t *clump_splay_walk_bwd(clump_splay_walker *sw);
 
 #endif /* gxalloc_INCLUDED */
