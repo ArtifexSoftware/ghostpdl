@@ -92,7 +92,7 @@ main(int argc, char *argv[])
      */
     FILE *in = 0;
     const char *extn = "";
-    char fmode[4];
+    char fmode[5] = {0};
 #define FNSIZE 4096
     char *fnparam = NULL; /* Initialisation to shut up compilers */
     char fname[FNSIZE];
@@ -149,8 +149,10 @@ main(int argc, char *argv[])
                 argp[i] = argp[i - 1];
             argp += 2, nargs -= 2;
         }
-    } else
+    } else {
         strcpy(fname, "");
+        fnparam = fname; /* quieten static analysis */
+    }
     if (nargs > 0 && !strcmp(*argp, "-h")) {
         eputc = hputc, eputs = hputs;
         argp++, nargs--;
@@ -235,7 +237,7 @@ main(int argc, char *argv[])
                         char str[26];
 
                         time(&t);
-                        strcpy(str, ctime(&t));
+                        strncpy(str, ctime(&t), 25);
                         str[24] = 0;	/* remove \n */
                         (*eputs) (str, out);
                     } break;
