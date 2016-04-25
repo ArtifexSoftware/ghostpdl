@@ -5482,19 +5482,21 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     pdf14_device * dev_proto;
     pdf14_device * p14dev, temp_dev_proto;
     int code;
-    bool has_tags = target->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
+    bool has_tags;
     cmm_profile_t *icc_profile;
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
     int k;
-    int max_bitmap = target->space_params.MaxBitmap == 0 ? MAX_BITMAP :
-                                 target->space_params.MaxBitmap;
+    int max_bitmap;
     bool use_pdf14_accum = false;
 
     /* Guard against later seg faults, this should not be possible */
     if (target == NULL)
         return gs_throw_code(gs_error_Fatal);
 
+    has_tags = target->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
+    max_bitmap = target->space_params.MaxBitmap == 0 ? MAX_BITMAP :
+                                 target->space_params.MaxBitmap;
     /* If the device is not a printer class device, it won't support saved-pages */
     /* and so we may need to make a clist device in order to prevent very large  */
     /* or high resolution pages from having allocation problems.                 */
