@@ -667,7 +667,7 @@ pdf_finish_resources(gx_device_pdf *pdev, pdf_resource_type_t type,
                         int (*finish_proc)(gx_device_pdf *,
                                            pdf_resource_t *))
 {
-    int j;
+    int j, ecode = 0;
     pdf_resource_t *pres;
 
     for (j = 0; j < NUM_RESOURCE_CHAINS; ++j)
@@ -677,9 +677,9 @@ pdf_finish_resources(gx_device_pdf *pdev, pdf_resource_type_t type,
             int code = finish_proc(pdev, pres);
 
             if (code < 0)
-                return code;
+                ecode = code;
         }
-    return 0;
+    return ecode;
 }
 
 /* ================ CMap resource writing ================ */
