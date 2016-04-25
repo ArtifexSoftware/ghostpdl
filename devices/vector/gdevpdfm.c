@@ -729,7 +729,9 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
                 cos_dict_put_c_strings(adict, "/Type", "/Action");
             }
             if (pdf_key_eq(Action + 1, "/Article")) {
-                cos_dict_put_c_strings(adict, "/S", "/Thread");
+                code = cos_dict_put_c_strings(adict, "/S", "/Thread");
+                if (code < 0)
+                    return code;
                 coerce_dest = false; /* Dest is not a real destination */
             }
             else
