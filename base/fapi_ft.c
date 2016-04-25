@@ -1121,6 +1121,11 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                                    own_font_data_len, a_font->subfont,
                                    &ft_face);
 
+            if (ft_error) {
+                gs_memory_t * mem = (gs_memory_t *) s->ftmemory->user;
+                gs_free(mem, own_font_data, 0, 0, "FF_open_read_stream");
+                return ft_to_gs_error(ft_error);
+            }
         }
         /* Load a typeface from a file. */
         else if (a_font->font_file_path) {
@@ -1142,6 +1147,10 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
             ft_error =
                 FT_Open_Face(s->freetype_library, &args, a_font->subfont,
                              &ft_face);
+            if (ft_error) {
+                /* in the event of an error, Freetype should cleanup the stream */
+                return ft_to_gs_error(ft_error);
+            }
         }
 
         /* Load a typeface from a representation in GhostScript's memory. */
@@ -1235,7 +1244,7 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                 FF_free(s->ftmemory, own_font_data);
                 return ft_to_gs_error(ft_error);
             }
-       }
+        }
 
         if (ft_face) {
             face =
