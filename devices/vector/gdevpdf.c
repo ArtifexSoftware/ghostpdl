@@ -2499,6 +2499,9 @@ pdf_close(gx_device * dev)
             code = gdev_vector_close_file((gx_device_vector *) pdev);
             if (code != 0)
                 return code;
+            code = pdf_close_files(pdev, 0);
+            if (code < 0)
+                return code;
             code = gx_device_delete_output_file((const gx_device *)pdev, pdev->fname);
             if (code != 0)
                 return gs_note_error(gs_error_ioerror);
