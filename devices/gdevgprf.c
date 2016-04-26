@@ -1080,7 +1080,7 @@ gprf_write_image_data(gprf_write_ctx *xc)
      * at this point. Note that this does not need to be the whole tile, just
      * a row across as it can be reused */
     if (equiv_needed) {
-        build_cmyk_map((gx_device*)gprf_dev, num_comp, gprf_dev->equiv_cmyk_colors,
+        build_cmyk_map((gx_device*)gprf_dev, num_comp, &gprf_dev->equiv_cmyk_colors,
             cmyk_map);
         cmyk = gs_alloc_bytes(pdev->memory, raster_row * 4,
             "gprf_write_image_data");

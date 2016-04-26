@@ -2318,7 +2318,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
         }
     }
 
-    build_cmyk_map((gx_device*) tfdev, num_comp, tfdev->equiv_cmyk_colors, cmyk_map);
+    build_cmyk_map((gx_device*) tfdev, num_comp, &tfdev->equiv_cmyk_colors, cmyk_map);
     if (tfdev->PrintSpotCMYK) {
         code = print_cmyk_equivalent_colors(tfdev, num_comp, cmyk_map);
         if (code < 0) {

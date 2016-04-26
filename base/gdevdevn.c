@@ -98,7 +98,7 @@ cmyk_cs_to_devn_cm(gx_device * dev, const int * map,
 * device components.
 */
 void build_cmyk_map(gx_device *pdev, int num_comp,
-    equivalent_cmyk_color_params equiv_cmyk_colors,
+    equivalent_cmyk_color_params *equiv_cmyk_colors,
     cmyk_composite_map * cmyk_map)
 {
     int comp_num;
@@ -122,11 +122,11 @@ void build_cmyk_map(gx_device *pdev, int num_comp,
             }
         } else {
             sep_num -= devn_params->num_std_colorant_names;
-            if (equiv_cmyk_colors.color[sep_num].color_info_valid) {
-                cmyk_map[comp_num].c = equiv_cmyk_colors.color[sep_num].c;
-                cmyk_map[comp_num].m = equiv_cmyk_colors.color[sep_num].m;
-                cmyk_map[comp_num].y = equiv_cmyk_colors.color[sep_num].y;
-                cmyk_map[comp_num].k = equiv_cmyk_colors.color[sep_num].k;
+            if (equiv_cmyk_colors->color[sep_num].color_info_valid) {
+                cmyk_map[comp_num].c = equiv_cmyk_colors->color[sep_num].c;
+                cmyk_map[comp_num].m = equiv_cmyk_colors->color[sep_num].m;
+                cmyk_map[comp_num].y = equiv_cmyk_colors->color[sep_num].y;
+                cmyk_map[comp_num].k = equiv_cmyk_colors->color[sep_num].k;
             }
         }
     }

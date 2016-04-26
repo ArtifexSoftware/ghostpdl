@@ -439,7 +439,7 @@ void free_separation_names(gs_memory_t *mem, gs_separations * pseparation);
 
 /* Build a map for use by devices that are building composite views */
 void build_cmyk_map(gx_device *pdev, int num_comp,
-        equivalent_cmyk_color_params equiv_cmyk_colors,
+        equivalent_cmyk_color_params *equiv_cmyk_colors,
         cmyk_composite_map * cmyk_map);
 
 #endif		/* ifndef gdevdevn_INCLUDED */
