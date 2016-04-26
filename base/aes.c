@@ -522,7 +522,7 @@ void aes_setkey_enc( aes_context *ctx, const unsigned char *key, int keysize )
                     ( FSb[ ( RK[7] >>  8 ) & 0xFF ]       ) ^
                     ( FSb[ ( RK[7] >> 16 ) & 0xFF ] <<  8 ) ^
                     ( FSb[ ( RK[7] >> 24 ) & 0xFF ] << 16 ) ^
-                    ( FSb[ ( RK[7]       ) & 0xFF ] << 24 );
+                    ( ((unsigned int)FSb[ ( RK[7]       ) & 0xFF ]) << 24 );
 
                 RK[9]  = RK[1] ^ RK[8];
                 RK[10] = RK[2] ^ RK[9];
@@ -532,7 +532,7 @@ void aes_setkey_enc( aes_context *ctx, const unsigned char *key, int keysize )
                     ( FSb[ ( RK[11]       ) & 0xFF ]       ) ^
                     ( FSb[ ( RK[11] >>  8 ) & 0xFF ] <<  8 ) ^
                     ( FSb[ ( RK[11] >> 16 ) & 0xFF ] << 16 ) ^
-                    ( FSb[ ( RK[11] >> 24 ) & 0xFF ] << 24 );
+                    ( ((unsigned int)FSb[ ( RK[11] >> 24 ) & 0xFF ]) << 24 );
 
                 RK[13] = RK[5] ^ RK[12];
                 RK[14] = RK[6] ^ RK[13];
@@ -682,22 +682,22 @@ void aes_crypt_ecb( aes_context *ctx,
         X0 = *RK++ ^ ( RSb[ ( Y0       ) & 0xFF ]       ) ^
                      ( RSb[ ( Y3 >>  8 ) & 0xFF ] <<  8 ) ^
                      ( RSb[ ( Y2 >> 16 ) & 0xFF ] << 16 ) ^
-                     ( RSb[ ( Y1 >> 24 ) & 0xFF ] << 24 );
+                     ( ((unsigned int)RSb[ ( Y1 >> 24 ) & 0xFF ]) << 24 );
 
         X1 = *RK++ ^ ( RSb[ ( Y1       ) & 0xFF ]       ) ^
                      ( RSb[ ( Y0 >>  8 ) & 0xFF ] <<  8 ) ^
                      ( RSb[ ( Y3 >> 16 ) & 0xFF ] << 16 ) ^
-                     ( RSb[ ( Y2 >> 24 ) & 0xFF ] << 24 );
+                     ( ((unsigned int)RSb[ ( Y2 >> 24 ) & 0xFF ]) << 24 );
 
         X2 = *RK++ ^ ( RSb[ ( Y2       ) & 0xFF ]       ) ^
                      ( RSb[ ( Y1 >>  8 ) & 0xFF ] <<  8 ) ^
                      ( RSb[ ( Y0 >> 16 ) & 0xFF ] << 16 ) ^
-                     ( RSb[ ( Y3 >> 24 ) & 0xFF ] << 24 );
+                     ( ((unsigned int)RSb[ ( Y3 >> 24 ) & 0xFF ]) << 24 );
 
         X3 = *RK++ ^ ( RSb[ ( Y3       ) & 0xFF ]       ) ^
                      ( RSb[ ( Y2 >>  8 ) & 0xFF ] <<  8 ) ^
                      ( RSb[ ( Y1 >> 16 ) & 0xFF ] << 16 ) ^
-                     ( RSb[ ( Y0 >> 24 ) & 0xFF ] << 24 );
+                     ( ((unsigned int)RSb[ ( Y0 >> 24 ) & 0xFF ]) << 24 );
     }
     else /* AES_ENCRYPT */
     {
@@ -712,22 +712,22 @@ void aes_crypt_ecb( aes_context *ctx,
         X0 = *RK++ ^ ( FSb[ ( Y0       ) & 0xFF ]       ) ^
                      ( FSb[ ( Y1 >>  8 ) & 0xFF ] <<  8 ) ^
                      ( FSb[ ( Y2 >> 16 ) & 0xFF ] << 16 ) ^
-                     ( FSb[ ( Y3 >> 24 ) & 0xFF ] << 24 );
+                     ( ((unsigned int)FSb[ ( Y3 >> 24 ) & 0xFF ]) << 24 );
 
         X1 = *RK++ ^ ( FSb[ ( Y1       ) & 0xFF ]       ) ^
                      ( FSb[ ( Y2 >>  8 ) & 0xFF ] <<  8 ) ^
                      ( FSb[ ( Y3 >> 16 ) & 0xFF ] << 16 ) ^
-                     ( FSb[ ( Y0 >> 24 ) & 0xFF ] << 24 );
+                     ( ((unsigned int)FSb[ ( Y0 >> 24 ) & 0xFF ]) << 24 );
 
         X2 = *RK++ ^ ( FSb[ ( Y2       ) & 0xFF ]       ) ^
                      ( FSb[ ( Y3 >>  8 ) & 0xFF ] <<  8 ) ^
                      ( FSb[ ( Y0 >> 16 ) & 0xFF ] << 16 ) ^
-                     ( FSb[ ( Y1 >> 24 ) & 0xFF ] << 24 );
+                     ( ((unsigned int)FSb[ ( Y1 >> 24 ) & 0xFF ]) << 24 );
 
         X3 = *RK++ ^ ( FSb[ ( Y3       ) & 0xFF ]       ) ^
                      ( FSb[ ( Y0 >>  8 ) & 0xFF ] <<  8 ) ^
                      ( FSb[ ( Y1 >> 16 ) & 0xFF ] << 16 ) ^
-                     ( FSb[ ( Y2 >> 24 ) & 0xFF ] << 24 );
+                     ( ((unsigned int)FSb[ ( Y2 >> 24 ) & 0xFF ]) << 24 );
     }
 
     PUT_ULONG_LE( X0, output,  0 );
