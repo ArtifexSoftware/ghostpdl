@@ -138,11 +138,11 @@ gs_md5_process(gs_md5_state_t *pms, const gs_md5_byte_t *data /*[64]*/)
     gs_md5_word_t t;
 #if BYTE_ORDER > 0
     /* Define storage only for big-endian CPUs. */
-    gs_md5_word_t X[16];
+    gs_md5_word_t X[16] = {0};
 #else
     /* Define storage for little-endian or both types of CPUs. */
     gs_md5_word_t xbuf[16];
-    const gs_md5_word_t *X;
+    const gs_md5_word_t *X = xbuf;
 #endif
 
     {
