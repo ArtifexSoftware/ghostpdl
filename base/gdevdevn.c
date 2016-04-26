@@ -499,7 +499,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             pdevn_params->separations.num_separations = num_spot;
         }
         /* Process any .EquivCMYKColors info */
-        if (equiv_cmyk.data != 0) {
+        if (equiv_cmyk.data != 0 && pequiv_colors != 0) {
             int spot_num = 0;
 
             for (i=0; i < equiv_cmyk.size; i += 5) {	/* valid, C, M, Y, K for each equiv_color */
