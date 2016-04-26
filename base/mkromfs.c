@@ -1757,6 +1757,7 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
     FILE *config;
     in_block_t *in_block = NULL;
     int compaction = 1;
+    int code = 0;
 
     ubuf = malloc(ROMFS_BLOCKSIZE);
     cbuf = malloc(ROMFS_CBUFSIZE);
@@ -1766,7 +1767,8 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
         rom_filename == NULL) {
         printf("malloc fail in process_initfile\n");
         /* should free whichever buffers got allocated, but don't bother */
-        return -1;
+        code = -1;
+        goto done;
     }
 
     prefix_add(os_prefix, initfile, prefixed_path);
@@ -1775,13 +1777,15 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
     in = fopen(prefixed_path, "r");
     if (in == 0) {
         printf("cannot open initfile at: %s\n", prefixed_path);
-        return -1;
+        code = -1;
+        goto done;
     }
     config = fopen(gconfig_h, "r");
     if (config == 0) {
         printf("Cannot open gconfig file %s\n", gconfig_h);
         fclose(in);
-        return -1;
+        code = -1;
+        goto done;
     }
     memset(linebuf, 0, sizeof(linebuf));
     node = calloc(1, sizeof(romfs_inode));
@@ -1792,7 +1796,6 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
     fclose(in);
     fclose(config);
 
-/**********/
     if (compaction)
     {
         in_block_t *comp_block_head;
@@ -1852,7 +1855,8 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
             ret = compress(cbuf, &clen, in_block->data, block_len);
             if (ret != Z_OK) {
                 printf("error compressing data block!\n");
-                exit(1);
+                code = -1;
+                goto done;
             }
         } else {
             memcpy(cbuf, in_block->data, block_len);
@@ -1871,12 +1875,12 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
     inode_clear(node);
     free(node);
     (*inode_count)++;
-
+done:
     free(cbuf);
     free(ubuf);
     free(prefixed_path);
     free(rom_filename);
-    return 0;
+    return code;
 }
 
 void
