@@ -394,14 +394,14 @@ gx_ht_threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stri
    Subtractive case */
 void
 gx_ht_threshold_landscape_sub(byte *contone_align, byte *thresh_align,
-                    ht_landscape_info_t ht_landscape, byte *halftone,
+                    ht_landscape_info_t *ht_landscape, byte *halftone,
                     int data_length)
 {
     __align16 byte contone[LAND_BITS];
     int position_start, position, curr_position;
-    int *widths = &(ht_landscape.widths[0]);
+    int *widths = &(ht_landscape->widths[0]);
     int local_widths[LAND_BITS];
-    int num_contone = ht_landscape.num_contones;
+    int num_contone = ht_landscape->num_contones;
     int k, j, w, contone_out_posit;
     byte *contone_ptr, *thresh_ptr, *halftone_ptr;
 #ifdef PACIFY_VALGRIND
@@ -410,10 +410,10 @@ gx_ht_threshold_landscape_sub(byte *contone_align, byte *thresh_align,
 
     /* Work through chunks of 16.  */
     /* Data may have come in left to right or right to left. */
-    if (ht_landscape.index > 0) {
+    if (ht_landscape->index > 0) {
         position = position_start = 0;
     } else {
-        position = position_start = ht_landscape.curr_pos + 1;
+        position = position_start = ht_landscape->curr_pos + 1;
     }
     thresh_ptr = thresh_align;
     halftone_ptr = halftone;
@@ -423,7 +423,7 @@ gx_ht_threshold_landscape_sub(byte *contone_align, byte *thresh_align,
     for (j = 0; j < num_contone; j++)
         k += (local_widths[j] = widths[position_start+j]);
     if (k > LAND_BITS) {
-        if (ht_landscape.index > 0) {
+        if (ht_landscape->index > 0) {
             local_widths[num_contone-1] -= k-LAND_BITS;
         } else {
             local_widths[0] -= k-LAND_BITS;
@@ -485,14 +485,14 @@ gx_ht_threshold_landscape_sub(byte *contone_align, byte *thresh_align,
    the additive and subtractive cases */
 void
 gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
-                    ht_landscape_info_t ht_landscape, byte *halftone,
+                    ht_landscape_info_t *ht_landscape, byte *halftone,
                     int data_length)
 {
     __align16 byte contone[LAND_BITS];
     int position_start, position, curr_position;
-    int *widths = &(ht_landscape.widths[0]);
+    int *widths = &(ht_landscape->widths[0]);
     int local_widths[LAND_BITS];
-    int num_contone = ht_landscape.num_contones;
+    int num_contone = ht_landscape->num_contones;
     int k, j, w, contone_out_posit;
     byte *contone_ptr, *thresh_ptr, *halftone_ptr;
 #ifdef PACIFY_VALGRIND
@@ -501,10 +501,10 @@ gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
 
     /* Work through chunks of 16.  */
     /* Data may have come in left to right or right to left. */
-    if (ht_landscape.index > 0) {
+    if (ht_landscape->index > 0) {
         position = position_start = 0;
     } else {
-        position = position_start = ht_landscape.curr_pos + 1;
+        position = position_start = ht_landscape->curr_pos + 1;
     }
     thresh_ptr = thresh_align;
     halftone_ptr = halftone;
@@ -514,7 +514,7 @@ gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
     for (j = 0; j < num_contone; j++)
         k += (local_widths[j] = widths[position_start+j]);
     if (k > LAND_BITS) {
-        if (ht_landscape.index > 0) {
+        if (ht_landscape->index > 0) {
             local_widths[num_contone-1] -= k-LAND_BITS;
         } else {
             local_widths[0] -= k-LAND_BITS;
@@ -1059,10 +1059,10 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                     if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE
                         && is_planar_dev) {
                         gx_ht_threshold_landscape_sub(contone_align, thresh_align,
-                                            penum->ht_landscape, halftone, dest_height);
+                                            &(penum->ht_landscape), halftone, dest_height);
                     } else {
                         gx_ht_threshold_landscape(contone_align, thresh_align,
-                                            penum->ht_landscape, halftone, dest_height);
+                                            &(penum->ht_landscape), halftone, dest_height);
                     }
                     /* We may have a line left over that has to be maintained
                        due to line replication in the resolution conversion. */
