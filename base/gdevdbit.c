@@ -687,7 +687,8 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
                     } else {\
                         if (proc_mono)\
                             code = (*proc_mono)(dev, row, srcx, raster, tid, tx, ty, tw, th, color0, color1);\
-                    } else code = 0;\
+                         else code = 0;\
+                    }\
                 }\
                 if (code < 0) return_error(code);\
                 } while (0);
