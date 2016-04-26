@@ -271,11 +271,12 @@ lj3100sw_close(gx_device *pdev)
         int i;
         FILE *prn_stream = ((gx_device_printer *)pdev)->file;
 
-        lj3100sw_output_section_header(prn_stream, 0, 4, 0);
-        fputs("XX\r\n", prn_stream);
-        for (i = 0; i < 4 * ppdev->NumCopies; i++)
-                lj3100sw_output_section_header(prn_stream, 54, 0, 0);
-        lj3100sw_output_section_header(prn_stream, 2, 0, 0);
-
+        if (prn_stream) {
+            lj3100sw_output_section_header(prn_stream, 0, 4, 0);
+            fputs("XX\r\n", prn_stream);
+            for (i = 0; i < 4 * ppdev->NumCopies; i++)
+                    lj3100sw_output_section_header(prn_stream, 54, 0, 0);
+            lj3100sw_output_section_header(prn_stream, 2, 0, 0);
+        }
         return gdev_prn_close(pdev);
 }
