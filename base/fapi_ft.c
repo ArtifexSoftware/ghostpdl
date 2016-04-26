@@ -1726,7 +1726,7 @@ gs_fapi_ft_init(gs_memory_t * mem, gs_fapi_server ** server)
 {
     ff_server *serv;
     int code = 0;
-    gs_memory_t *cmem = NULL;
+    gs_memory_t *cmem = mem->non_gc_memory;
 
     code = gs_memory_chunk_wrap(&(cmem), mem);
     if (code != 0) {
@@ -1734,8 +1734,7 @@ gs_fapi_ft_init(gs_memory_t * mem, gs_fapi_server ** server)
     }
 
 
-    serv =
-        (ff_server *) gs_alloc_bytes_immovable(cmem, sizeof(ff_server), "gs_fapi_ft_init");
+    serv = (ff_server *) gs_alloc_bytes_immovable(cmem, sizeof(ff_server), "gs_fapi_ft_init");
     if (!serv) {
         return_error(gs_error_VMerror);
     }

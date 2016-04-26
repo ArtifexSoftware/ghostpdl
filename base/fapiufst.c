@@ -2152,7 +2152,7 @@ gs_fapi_ufst_init(gs_memory_t * mem, gs_fapi_server ** server)
 {
     fapi_ufst_server *serv;
     int code = 0;
-    gs_memory_t *cmem = NULL;
+    gs_memory_t *cmem = mem->non_gc_memory;
 
     code = gs_memory_chunk_wrap(&(cmem), mem);
     if (code != 0) {
