@@ -283,6 +283,7 @@ typedef struct string_list_s {
     string_item_t *items;
 } string_list_t;
 
+#define MAX_TEMPLAT 80
 #define MAX_PATTERN 60
 typedef struct string_pattern_s {
     bool upper_case;
@@ -506,7 +507,7 @@ main(int argc, char *argv[])
                 fputs("/* This file was generated automatically by genconf.c. */\n", out);
                 fputs("/* For documentation, see gsconfig.c. */\n", out);
                 {
-                    char templat[80];
+                    char templat[MAX_TEMPLAT + 1];
 
                     sprintf(templat,
                             "font_(\"0.font_%%s\",%sf_%%s,zf_%%s)\n",
@@ -692,13 +693,13 @@ dev_file_name(char *str)
 int
 process_replaces(config_t * pconf)
 {
-    char bufname[MAX_STR];
+    char bufname[MAX_STR + 1];
     int i;
 
     for (i = 0; i < pconf->replaces.count; ++i) {
         int j;
 
-        strcpy(bufname, pconf->replaces.items[i].str);
+        strncpy(bufname, pconf->replaces.items[i].str, MAX_STR);
         /* See if the file being replaced was included. */
         dev_file_name(bufname);
         for (j = 0; j < pconf->file_names.count; ++j) {
@@ -792,6 +793,12 @@ read_file(config_t * pconf, const char *fname)
     }
     fseek(in, 0L, 2 /*SEEK_END */ );
     end = ftell(in);
+    if (end < 0) {
+        fclose(in);
+        mfree(cname, "read_file(cname)");
+        fprintf(stderr, "Error reading file: %s.\n", cname);
+        exit(1);
+    }
     cont = mmalloc(end + 1, "read_file(cont)");
     if (cont == 0) {
         fprintf(stderr, "Can't allocate %d bytes to read %s.\n",
@@ -801,6 +808,13 @@ read_file(config_t * pconf, const char *fname)
     }
     rewind(in);
     nread = fread(cont, 1, end, in);
+    if (nread < 0) {
+        fclose(in);
+        mfree(cname, "read_file(cname)");
+        mfree(cont, "read_file(cont)");
+        fprintf(stderr, "Error reading file: %s.\n", cname);
+        exit(1);
+    }
     fclose(in);
     cont[nread] = 0;
     if (pconf->debug)
@@ -895,7 +909,7 @@ add_entry(config_t * pconf, char *category, const char *item, int file_index)
         return 0;
     } else {			/* add to current category */
         char str[MAX_STR];
-        char templat[80];
+        char templat[MAX_TEMPLAT + 1];
         const char *pat = 0;
         string_list_t *list = &pconf->lists.named.resources;
 
@@ -978,7 +992,7 @@ pre:		sprintf(templat, pat, pconf->name_prefix);
             case 'o':
                 if (IS_CAT("obj")) {
                     list = &pconf->lists.named.objs;
-                    strcpy(templat, pconf->file_prefix);
+                    strncpy(templat, pconf->file_prefix, MAX_TEMPLAT);
                     strcat(templat, "%s");
                     pat = templat;
                     break;
@@ -1121,7 +1135,7 @@ write_list(FILE * out, const string_list_t * list, const char *pstr)
 
     pat.upper_case = false;
     pat.drop_extn = false;
-    strcpy(pat.pattern, pstr);
+    strncpy(pat.pattern, pstr, MAX_PATTERN);
     write_list_pattern(out, list, &pat);
 }
 void
@@ -1129,7 +1143,7 @@ write_list_pattern(FILE * out, const string_list_t * list,
                    const string_pattern_t * pat)
 {
     int i;
-    char macname[40];
+    char macname[MAX_PATTERN + 1];
     int plen = strlen(pat->pattern);
 
     *macname = 0;
@@ -1169,7 +1183,7 @@ write_list_pattern(FILE * out, const string_list_t * list,
                 if (*macname)
                     fputs("#endif\n", out);
                 fprintf(out, "#ifdef %s\n", xstr);
-                strcpy(macname, xstr);
+                strncpy(macname, xstr, MAX_PATTERN);
             }
             *alist = '(';
         } else {
