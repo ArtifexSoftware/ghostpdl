@@ -65,7 +65,7 @@ mem_alpha_map_rgb_color(gx_device * dev, const gx_color_value cv[])
     gx_color_index color = gx_forward_map_rgb_color(dev, cv);
 
     return (color == 0 || color == gx_no_color_index ? color :
-            (gx_color_index) ((1 << mdev->log2_alpha_bits) - 1));
+            (((gx_color_index)1 << mdev->log2_alpha_bits) - 1));
 }
 static int
 mem_alpha_map_color_rgb(gx_device * dev, gx_color_index color,
