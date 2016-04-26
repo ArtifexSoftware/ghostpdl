@@ -676,37 +676,39 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
             proc_mono = dev_proc(dev, copy_mono);
         }
 
-#define real_copy_tile(dev, srcx, tx, ty, tw, th, id)\
-  code =\
-    (tiles->num_planes > 1 ?\
-     (*proc_planes)(dev, row, srcx, raster, id, tx, ty, tw, th, height) :\
-    (proc_color != 0 ?\
-     (*proc_color)(dev, row, srcx, raster, id, tx, ty, tw, th) :\
-     (*proc_mono)(dev, row, srcx, raster, id, tx, ty, tw, th, color0, color1)));\
-  if (code < 0) return_error(code);\
-  return_if_interrupt(dev->memory)
-#define copy_tile(dev, srcx, tx, ty, tw, th, tid)\
-  if_debug6m('t', (dev)->memory, "   copy id=%lu sx=%d => x=%d y=%d w=%d h=%d\n",\
-             tid, srcx, tx, ty, tw, th);\
-  real_copy_tile(dev, srcx, tx, ty, tw, th, tid)
+#define GX_DEFAULT_COPY_TILE(dev, srcx, tx, ty, tw, th, tid) do {\
+                if_debug6m('t', (dev)->memory, "   copy id=%lu sx=%d => x=%d y=%d w=%d h=%d\n", tid, srcx, tx, ty, tw, th);\
+                if (tiles->num_planes > 1) {\
+                    if (proc_planes)\
+                        code = (*proc_planes)(dev, row, srcx, raster, tid, tx, ty, tw, th, height);\
+                } else {\
+                    if (proc_color != 0) {\
+                        code = (*proc_color)(dev, row, srcx, raster, tid, tx, ty, tw, th);\
+                    } else {\
+                        if (proc_mono)\
+                            code = (*proc_mono)(dev, row, srcx, raster, tid, tx, ty, tw, th, color0, color1);\
+                    }\
+                }\
+                if (code < 0) return_error(code);\
+                } while (0);
+
+
         if (ch >= h) {		/* Shallow operation */
             if (icw >= w) {	/* Just one (partial) tile to transfer. */
-                copy_tile(dev, irx, x, y, w, h,
-                          (w == width && h == height ? tile_id :
-                           gs_no_bitmap_id));
+                GX_DEFAULT_COPY_TILE(dev, irx, x, y, w, h, (w == width && h == height ? tile_id : gs_no_bitmap_id));
             } else {
                 int ex = x + w;
                 int fex = ex - width;
                 int cx = x + icw;
                 ulong id = (h == height ? tile_id : gs_no_bitmap_id);
 
-                copy_tile(dev, irx, x, y, icw, h, gs_no_bitmap_id);
+                GX_DEFAULT_COPY_TILE(dev, irx, x, y, icw, h, gs_no_bitmap_id);
                 while (cx <= fex) {
-                    copy_tile(dev, 0, cx, y, width, h, id);
+                    GX_DEFAULT_COPY_TILE(dev, 0, cx, y, width, h, id);
                     cx += width;
                 }
                 if (cx < ex) {
-                    copy_tile(dev, 0, cx, y, ex - cx, h, gs_no_bitmap_id);
+                    GX_DEFAULT_COPY_TILE(dev, 0, cx, y, ex - cx, h, gs_no_bitmap_id);
                 }
             }
         } else if (icw >= w && shift == 0) {
@@ -716,11 +718,11 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
             int cy = y + ch;
             ulong id = (w == width ? tile_id : gs_no_bitmap_id);
 
-            copy_tile(dev, irx, x, y, w, ch, (ch == height ? id : gs_no_bitmap_id));
+            GX_DEFAULT_COPY_TILE(dev, irx, x, y, w, ch, (ch == height ? id : gs_no_bitmap_id));
             row = tiles->data;
             do {
                 ch = (cy > fey ? ey - cy : height);
-                copy_tile(dev, irx, x, cy, w, ch,
+                GX_DEFAULT_COPY_TILE(dev, irx, x, cy, w, ch,
                           (ch == height ? id : gs_no_bitmap_id));
             }
             while ((cy += ch) < ey);
@@ -737,17 +739,17 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
                 ulong id = (ch == height ? tile_id : gs_no_bitmap_id);
 
                 if (icw >= w) {
-                    copy_tile(dev, irx, x, cy, w, ch,
+                    GX_DEFAULT_COPY_TILE(dev, irx, x, cy, w, ch,
                               (w == width ? id : gs_no_bitmap_id));
                 } else {
-                    copy_tile(dev, irx, x, cy, icw, ch, gs_no_bitmap_id);
+                    GX_DEFAULT_COPY_TILE(dev, irx, x, cy, icw, ch, gs_no_bitmap_id);
                     cx = x + icw;
                     while (cx <= fex) {
-                        copy_tile(dev, 0, cx, cy, width, ch, id);
+                        GX_DEFAULT_COPY_TILE(dev, 0, cx, cy, width, ch, id);
                         cx += width;
                     }
                     if (cx < ex) {
-                        copy_tile(dev, 0, cx, cy, ex - cx, ch, gs_no_bitmap_id);
+                        GX_DEFAULT_COPY_TILE(dev, 0, cx, cy, ex - cx, ch, gs_no_bitmap_id);
                     }
                 }
                 if ((cy += ch) >= ey)
@@ -759,8 +761,7 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
                 row = tiles->data;
             }
         }
-#undef copy_tile
-#undef real_copy_tile
+#undef GX_DEFAULT_COPY_TILE
     }
     return 0;
 }
