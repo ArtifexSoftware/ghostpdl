@@ -613,8 +613,10 @@ fapi_copy_mono(gx_device *dev1, gs_fapi_raster *rast, int dx, int dy)
         if (p == NULL)
             return_error(gs_error_VMerror);
         pe = p + rast->height * line_step;
-        for (; q < pe; q += line_step, r += rast->line_step)
+        for (; q < pe; q += line_step, r += rast->line_step) {
             memcpy(q, r, rast->line_step);
+            memset(q + rast->line_step, 0, line_step - rast->line_step);
+        }
         code =
             dev_proc(dev1, copy_mono) (dev1, p, 0, line_step, 0, dx, dy,
                                        rast->width, rast->height, 0, 1);
