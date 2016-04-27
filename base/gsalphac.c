@@ -182,7 +182,7 @@ static int
 c_alpha_read(gs_composite_t ** ppcte, const byte * data, uint size,
              gs_memory_t * mem)
 {
-    gs_composite_alpha_params_t params;
+    gs_composite_alpha_params_t params = {composite_Clear, 0};
     int code, nbytes = 1;
 
     if (size < 1 || *data > composite_op_last)
