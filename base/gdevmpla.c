@@ -1051,7 +1051,7 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
     rop_proc cproc, mproc, yproc;
     int dbit;
     int cscolor, mscolor, yscolor, kscolor;
-    int ctcolor, mtcolor, ytcolor, ktcolor;
+    int ctcolor = 0, mtcolor = 0, ytcolor = 0, ktcolor = 0;
     int constant_s = 0;
 
     /* Modify the raster operation according to the source palette. */
