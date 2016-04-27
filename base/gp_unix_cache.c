@@ -255,6 +255,7 @@ static int gp_cache_loaditem(FILE *file, gp_cache_entry *item, gp_cache_alloc al
 #ifdef DEBUG_CACHE
         dlprintf("pcache file read failed (3)\n");
 #endif
+        free(filekey);
         return -1;
     }
     if (memcmp(filekey, item->key, keylen)) {
