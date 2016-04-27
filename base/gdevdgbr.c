@@ -373,6 +373,9 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
                     return_error(gs_error_rangecheck); /* > 1 plane */
                 plane = i;
             }
+        /* Ensure at least one plane is requested */
+        if (i < 0)
+            return_error(gs_error_rangecheck); /* No planes */
         source.data.read = src_base;
         source.raster = dev_raster;
         source.depth = depth;
