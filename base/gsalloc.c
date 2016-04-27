@@ -516,7 +516,7 @@ clump_splay_app(clump_t *root, gs_ref_memory_t *imem, int (*fn)(clump_t *, void 
                 return cp;
             cp = step_to;
         }
-    } while (cp);
+    }
     return cp;
 }
 
