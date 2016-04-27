@@ -471,10 +471,15 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
         line_pointers_adjacent = false;
     }
     if (line_pointers_adjacent) {
+        int code;
+
         if (mdev->base == 0)
             return_error(gs_error_rangecheck);
 
-        gdev_mem_bits_size(mdev, mdev->width, mdev->height, &size);
+        code = gdev_mem_bits_size(mdev, mdev->width, mdev->height, &size);
+        if (code < 0)
+            return code;
+
         mdev->line_ptrs = (byte **)(mdev->base + size);
     }
     mdev->raster = gx_device_raster((gx_device *)mdev, 1);
