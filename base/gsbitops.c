@@ -625,7 +625,7 @@ bits_expand_plane(const bits_plane_t *dest /*write*/,
                 gx_color_index pixel;
 
                 sample_load_next8(color, sptr, sbit, source_depth);
-                pixel = color << shift;
+                pixel = (gx_color_index)color << shift;
                 sample_store_next_any(pixel, dptr, dbit, dest_depth, dbbyte);
             }
             sample_store_flush(dptr, dbit, dest_depth, dbbyte);
