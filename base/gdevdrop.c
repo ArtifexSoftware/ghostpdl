@@ -730,7 +730,7 @@ mem_default_strip_copy_rop(gx_device * dev,
          * We don't want to wrap around more than once in Y when
          * copying the texture to the intermediate buffer.
          */
-        if (textures->size.y < block_height)
+        if (textures && textures->size.y < block_height)
             block_height = textures->size.y;
     }
     gs_make_mem_device(&mdev, mdproto, mem, -1, NULL);
