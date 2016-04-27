@@ -213,7 +213,7 @@ gx_cie_check_rendering_inline(const gs_color_space * pcs, frac * pconc, const gs
         if (pis->cie_joint_caches->cspace_id != pcs->id)
             pis->cie_joint_caches->status = CIE_JC_STATUS_BUILT;
     }
-    if (pis->cie_joint_caches->status != CIE_JC_STATUS_COMPLETED) {
+    if (pis->cie_render && pis->cie_joint_caches->status != CIE_JC_STATUS_COMPLETED) {
         int     code = gs_cie_jc_complete(pis, pcs);
 
         if (code < 0)
