@@ -1142,7 +1142,9 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
         mdrow = cdrow + mdev->height * draster;
         ydrow = mdrow + mdev->height * draster;
         kdrow = ydrow + mdev->height * draster;
-        traster = (textures ? textures->raster : 0);
+        if (!textures)
+            return 0;
+        traster = textures->raster;
         ty = y + phase_y;
         for (; line_count-- > 0; cdrow += draster, mdrow += draster, ydrow += draster, kdrow += draster, srow += sraster, ++ty) {
             int sx = sourcex;
