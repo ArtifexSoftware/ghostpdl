@@ -948,6 +948,10 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
                                  false);
             return code;
         }
+        /* The 'target' must not be NULL for gx_make_rop_texture_device */
+        if (!penum->clip_dev && !dev)
+            return_error(gs_error_undefined);
+
         gx_make_rop_texture_device(rtdev,
                                    (penum->clip_dev != 0 ?
                                     (gx_device *) penum->clip_dev :
