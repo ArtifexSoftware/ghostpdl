@@ -491,6 +491,8 @@ gs_stroke(gs_state * pgs)
         }
         code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path,
                                      pgs->in_charpath);
+        if (code < 0)
+            return code;
     }
     if (gs_is_null_device(pgs->device)) {
         /* Handle separately to prevent gs_state_color_load. */
