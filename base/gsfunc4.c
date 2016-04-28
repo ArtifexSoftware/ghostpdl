@@ -221,6 +221,9 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
         OP_NONE(PtCr_repeat_end)	/* repeat_end */
     };
 
+    memset(repeat_count, 0x00, MAX_PSC_FUNCTION_NESTING * sizeof(int));
+    memset(repeat_proc_size, 0x00, MAX_PSC_FUNCTION_NESTING * sizeof(int));
+
     vstack[-1].type = CVT_NONE;  /* for type dispatch in empty stack case */
     vstack[0].type = CVT_NONE;	/* catch underflow */
     for (i = 0; i < pfn->params.m; ++i)
@@ -535,6 +538,9 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
             p += 3 + (p[0] <<8) + p[1];		    /* advance just past the repeat_end */
             /* falls through */
         case PtCr_repeat_end:
+            if (repeat_nesting_level < 0)
+                return_error(gs_error_rangecheck);
+
             if ((repeat_count[repeat_nesting_level])-- <= 0)
                 repeat_nesting_level--;
             else
