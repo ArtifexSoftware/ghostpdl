@@ -1503,8 +1503,13 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
      */
     gs_deviceinitialmatrix(target, &mdev->initial_matrix);
     if (plane_index >= 0) {
-        gx_device_plane_extract *edev =
-            gs_alloc_struct(mem, gx_device_plane_extract,
+        gx_device_plane_extract *edev;
+
+        /* Guard against potential NULL dereference in gs_alloc_struct */
+        if (!mem)
+            return_error(gs_error_undefined);
+
+        edev = gs_alloc_struct(mem, gx_device_plane_extract,
                             &st_device_plane_extract, "create_buf_device");
 
         if (edev == 0) {
