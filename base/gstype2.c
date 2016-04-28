@@ -604,6 +604,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                         --csp;
                         break;
                     case ce2_div:
+                        if (*csp == 0)
+                            return_error(gs_error_invalidfont);
                         csp[-1] = float2fixed((double)csp[-1] / *csp);
                         --csp;
                         break;
