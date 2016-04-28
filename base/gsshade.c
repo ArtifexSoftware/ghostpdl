@@ -264,14 +264,16 @@ gs_shading_R_init(gs_shading_t ** ppsh,
                   const gs_shading_R_params_t * params, gs_memory_t * mem)
 {
     gs_shading_R_t *psh;
-    int code = check_CBFD((const gs_shading_params_t *)params,
+    int code;
+
+    if (params == NULL || params->Domain[0] == params->Domain[1] ||
+        params->Coords[2] < 0 || params->Coords[5] < 0)
+        return_error(gs_error_rangecheck);
+    code = check_CBFD((const gs_shading_params_t *)params,
                           params->Function, params->Domain, 1);
 
     if (code < 0)
         return code;
-    if (params == NULL || params->Domain[0] == params->Domain[1] ||
-        params->Coords[2] < 0 || params->Coords[5] < 0)
-        return_error(gs_error_rangecheck);
     ALLOC_SHADING(&st_shading_R, shading_type_Radial,
                   shading_R_procs, "gs_shading_R_init");
     return 0;
