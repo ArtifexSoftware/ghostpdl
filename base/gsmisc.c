@@ -297,9 +297,10 @@ int gs_throw_imp(const char *func, const char *file, int line, int op, int code,
 {
     char msg[1024];
     va_list ap;
+    int count;
 
     va_start(ap, fmt);
-    vsnprintf(msg, sizeof(msg), fmt, ap);
+    count = vsnprintf(msg, sizeof(msg), fmt, ap);
     msg[sizeof(msg) - 1] = 0;
     va_end(ap);
 
@@ -327,6 +328,9 @@ int gs_throw_imp(const char *func, const char *file, int line, int op, int code,
     if (op == 3)
         errprintf_nomem("  %s:%d: %s(): %s\n", file, line, func, msg);
 
+    if (count >= sizeof(msg) || count < 0)  { /* C99 || MSVC */
+        errwrite_nomem(msg_truncated, sizeof(msg_truncated) - 1);
+    }
     return code;
 }
 #endif
