@@ -67,7 +67,7 @@ gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
     if (p_ctx->profiledir != NULL && strcmp(pname,DEFAULT_DIR_ICC) == 0) {
         return;
     }
-    if (p_ctx->profiledir_len > 0) {
+    if (p_ctx->profiledir != NULL && p_ctx->profiledir_len > 0) {
         if (strncmp(pname, p_ctx->profiledir, p_ctx->profiledir_len) == 0) {
             return;
         }
