@@ -1315,25 +1315,25 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
 {
     int i, j;
     unsigned char *thresh;
-    gs_memory_t *memory = d_order->data_memory->non_gc_memory;
+    gs_memory_t *memory = d_order ? d_order->data_memory->non_gc_memory : NULL;
     uint max_value;
     unsigned long hsize, nshades;
     int t_level;
     int row, col;
     int code;
-    int num_repeat, shift, num_levels = d_order->num_levels;
+    int num_repeat, shift, num_levels = d_order ? d_order->num_levels : 0;
     int row_kk, col_kk, kk;
     frac t_level_frac_color;
     int shade, base_shade = 0;
     bool have_transfer = false, threshold_inverted = false;
 
+    if (d_order == NULL) return -1;
     /* We can have simple or complete orders.  Simple ones tile the threshold
        with shifts.   To handle those we simply loop over the number of
        repeats making sure to shift columns when we set our threshold values */
     num_repeat = d_order->full_height / d_order->height;
     shift = d_order->shift;
 
-    if (d_order == NULL) return -1;
     if (d_order->threshold != NULL) return 0;
     thresh = (byte *)gs_malloc(memory, d_order->width * d_order->full_height, 1,
                               "gx_ht_construct_threshold");
