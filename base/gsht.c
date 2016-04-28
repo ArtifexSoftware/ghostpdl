@@ -574,10 +574,10 @@ gx_ht_order_release(gx_ht_order * porder, gs_memory_t * mem, bool free_cache)
                        "gx_ht_order_release(bit_data)");
         gs_free_object(porder->data_memory, porder->levels,
                        "gx_ht_order_release(levels)");
-    }
-    if (porder->threshold != NULL) {
-        gs_free_object(porder->data_memory->non_gc_memory, porder->threshold,
+        if (porder->threshold != NULL) {
+            gs_free_object(porder->data_memory->non_gc_memory, porder->threshold,
                        "gx_ht_order_release(threshold)");
+        }
     }
     porder->threshold = 0;
     porder->levels = 0;
