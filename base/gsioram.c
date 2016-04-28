@@ -138,7 +138,7 @@ ram_open_file(gx_io_device * iodev, const char *fname, uint len,
     ramhandle * file;
     char fmode[4];  /* r/w/a, [+], [b], null */
     int openmode=RAMFS_READ;
-    ramfs * fs = GETRAMFS(iodev->state);
+    ramfs * fs;
     char * namestr = NULL;
 
     /* Is there a more efficient way to do this? */
@@ -152,6 +152,7 @@ ram_open_file(gx_io_device * iodev, const char *fname, uint len,
         gs_free_object(mem, namestr, "free temporary filename string");
         return gs_note_error(gs_error_invalidaccess);
     }
+    fs = GETRAMFS(iodev->state);
     code = file_prepare_stream(fname, len, file_access, DEFAULT_BUFFER_SIZE,
     ps, fmode, mem
     );
