@@ -175,7 +175,7 @@ gx_default_gray_fast_encode(gx_device * dev, const gx_color_value cv[])
 gx_color_index
 gx_default_gray_encode(gx_device * dev, const gx_color_value cv[])
 {
-    return cv[0] * (dev->color_info.max_gray + 1) / (gx_max_color_value + 1);
+    return (gx_color_index)(cv[0]) * (dev->color_info.max_gray + 1) / (gx_max_color_value + 1);
 }
 
 /**
