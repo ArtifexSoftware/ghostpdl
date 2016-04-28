@@ -530,7 +530,7 @@ gs_function_1ItSg_init(gs_function_t ** ppfn,
     };
     int n = (params->Range == 0 ? 0 : params->n);
     float prev = params->Domain[0];
-    int i;
+    int code, i;
 
     *ppfn = 0;			/* in case of error */
     for (i = 0; i < params->k; ++i) {
@@ -551,7 +551,11 @@ gs_function_1ItSg_init(gs_function_t ** ppfn,
     }
     if (params->Domain[1] < prev)
         return_error(gs_error_rangecheck);
-    fn_check_mnDR((const gs_function_params_t *)params, 1, n);
+
+    code = fn_check_mnDR((const gs_function_params_t *)params, 1, n);
+    if(code < 0)
+        return code;
+    else
     {
         gs_function_1ItSg_t *pfn =
             gs_alloc_struct(mem, gs_function_1ItSg_t, &st_function_1ItSg,
