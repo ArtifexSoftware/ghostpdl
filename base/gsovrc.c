@@ -200,6 +200,7 @@ c_overprint_read(
     params.retain_any_comps = (flags & OVERPRINT_ANY_COMPS) != 0;
     params.retain_spot_comps = (flags & OVERPRINT_SPOT_COMPS) != 0;
     params.idle = 0;
+    params.drawn_comps = 0;
     params.blendspot = (flags & OVERPRINT_BLEND) != 0;
     params.k_value = 0;
 
