@@ -306,11 +306,9 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 
         gx_clip_path *pcpath;
 
-        if (penum) {
-            penum->use_wxy_float = false;
-            penum->wxy_float.x = penum->wxy_float.y = 0.0;
-            penum->wxy = cc->wxy;
-        }
+        penum->use_wxy_float = false;
+        penum->wxy_float.x = penum->wxy_float.y = 0.0;
+        penum->wxy = cc->wxy;
 
         code = gx_effective_clip_path(pgs, &pcpath);
         if (code >= 0) {
