@@ -81,7 +81,7 @@ mem_gray_strip_copy_rop(gx_device * dev,
     long tdata;
     int depth = dev->color_info.depth;
     int log2_depth = depth >> 1;	/* works for 2, 4 */
-    gx_color_index max_pixel = (1 << depth) - 1;
+    gx_color_index max_pixel = ((gx_color_index)1 << depth) - 1;
     int code;
 
 #ifdef DEBUG
