@@ -411,15 +411,19 @@ ctx_reschedule(i_ctx_t **pi_ctx_p)
     /* take care of that now. */
     while (psched->dead_index != 0) {
         gs_context_t *dead = index_context(psched, psched->dead_index);
-        long next_index = dead->next_index;
+        long next_index;
 
-        if (current == dead) {
-            if_debug1('"', "[\"]storing dead %ld\n", current->index);
-            context_state_store(&current->state);
-            current = 0;
+        if (dead) {
+            next_index = dead->next_index;
+
+            if (current == dead) {
+                if_debug1('"', "[\"]storing dead %ld\n", current->index);
+                context_state_store(&current->state);
+                current = 0;
+            }
+            context_destroy(dead);
+            psched->dead_index = next_index;
         }
-        context_destroy(dead);
-        psched->dead_index = next_index;
     }
     /* Update saved_local_vm.  See above for the invariant. */
     if (current != 0)
