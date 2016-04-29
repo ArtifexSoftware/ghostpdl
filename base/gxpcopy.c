@@ -470,8 +470,8 @@ gx_curve_monotonize(gx_path * ppath, const curve_segment * pc)
 {
     fixed x0 = ppath->position.x, y0 = ppath->position.y;
     segment_notes notes = pc->notes;
-    double t[4], tt = 1, tp;
-    int c[4];
+    double t[5], tt = 1, tp;
+    int c[5];
     int n0, n1, n, i, j, k = 0;
     fixed ax, bx, cx, ay, by, cy, v01, v12;
     fixed px, py, qx, qy, rx, ry, sx, sy;
