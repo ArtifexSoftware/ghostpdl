@@ -311,7 +311,7 @@ zsizeimageparams(i_ctx_t *i_ctx_p)
              dev->color_info.max_gray :
              max(dev->color_info.max_gray, dev->color_info.max_color));
         static const gx_color_value sizes[] = {
-            1, 2, 4, 8, 12, sizeof(gx_max_color_value) * 8
+            1, 2, 4, 8, 12, gx_color_value_bits
         };
         int i;
 
