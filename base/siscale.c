@@ -227,7 +227,7 @@ calculate_contrib(
                         : src_size - (int)((int64_t)src_y_offset * dst_size % src_size);
         int center_denom = dst_size * 2;
         int64_t center_num = /* center * center_denom * 2 = */
-            (starting_output_index  + i) * src_size * 2 + src_size + dst_y_offset_fraction_num * 2 - dst_size;
+            (starting_output_index  + i) * (int64_t)src_size * 2 + src_size + dst_y_offset_fraction_num * 2 - dst_size;
         int left = (int)ceil((center_num - WidthIn * center_denom) / center_denom);
         int right = (int)floor((center_num + WidthIn * center_denom) / center_denom);
         double center = (double)center_num / center_denom;
