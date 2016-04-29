@@ -831,13 +831,11 @@ gx_san_generate_stems(gx_device_spot_analyzer *padev,
                 int (*handler)(void *client_data, gx_san_sect *ss))
 {
     int code;
-    bool got_dc = false;
     vd_save;
 
     if (vd_allowed('F') || vd_allowed('f')) {
         if (!vd_enabled) {
             vd_get_dc('f');
-            got_dc = vd_enabled;
         }
         if (vd_enabled) {
             vd_set_shift(0, 0);
@@ -847,8 +845,6 @@ gx_san_generate_stems(gx_device_spot_analyzer *padev,
     } else
         vd_disable;
     code = gx_san_generate_stems_aux(padev, overall_hints, client_data, handler);
-    if (got_dc)
-        vd_release_dc;
     vd_restore;
     return code;
 }
