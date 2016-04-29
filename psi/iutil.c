@@ -468,7 +468,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
             size = strlen((const char *)data);
             if (size > 4 && !memcmp(data + size - 4, "type", 4))
                 size -= 4;
-            if (size > sizeof(buf) - 2)
+            if (size > sizeof(buf) - 3)
                 return_error(gs_error_rangecheck);
             buf[0] = '-';
             memcpy(buf + 1, data, size);
@@ -552,7 +552,7 @@ other:
         data = (const byte *)"--nostringval--";
     }
 rs: size = strlen((const char *)data);
-nl: if (size <= start_pos)
+nl: if (size < start_pos)
         return_error(gs_error_rangecheck);
     if (!restart && size > len)
         return_error(gs_error_rangecheck);
