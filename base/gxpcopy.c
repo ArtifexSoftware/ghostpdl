@@ -281,9 +281,14 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
         }
         pseg = pseg->next;
     }
-    if (path_last_is_moveto(ppath_old))
-        gx_path_add_point(ppath, ppath_old->position.x,
+    if (path_last_is_moveto(ppath_old)) {
+        code = gx_path_add_point(ppath, ppath_old->position.x,
                           ppath_old->position.y);
+        if (code < 0) {
+            gx_path_new(ppath);
+            return code;
+        }
+    }
     if (ppath_old->bbox_set) {
         if (ppath->bbox_set) {
             ppath->bbox.p.x = min(ppath_old->bbox.p.x, ppath->bbox.p.x);
