@@ -328,8 +328,12 @@ add_last(const gs_scheduler_t *psched, ctx_list_t *pl, gs_context_t *pc)
     pc->next_index = 0;
     if (pl->head_index == 0)
         pl->head_index = pc->index;
-    else
-        index_context(psched, pl->tail_index)->next_index = pc->index;
+    else {
+        gs_context_t *ready = index_context(psched, pl->tail_index);
+        if (ready)
+            ready->next_index = pc->index;
+        /* Other cases return fatal error if there is no context, but we can't do that */
+    }
     pl->tail_index = pc->index;
 }
 
