@@ -2029,7 +2029,7 @@ stroke_add_initial_cap_compat(gx_path * ppath, pl_ptr plp, bool adlust_longitude
            const gs_imager_state * pis)
 {
     const gx_line_params *pgs_lp = gs_currentlineparams_inline(pis);
-    gs_fixed_point points[4];
+    gs_fixed_point points[5];
     int npoints = 0;
     int code;
 
