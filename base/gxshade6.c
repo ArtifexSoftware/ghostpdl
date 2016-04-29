@@ -1685,9 +1685,10 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
             }
             if (code < 0)
                 goto out;
-            else /* code == 0, the device requested to decompose the area. */
+            else {      /* code == 0, the device requested to decompose the area. */
                 code = gs_note_error(gs_error_unregistered); /* Must not happen. */
                 goto out;
+            }
         }
         if (!pfs->unlinear || !pfs->linear_color ||
                 color_span(pfs, c0, c1) > pfs->smoothness) {
