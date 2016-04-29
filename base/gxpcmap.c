@@ -1446,7 +1446,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
             return code; */
             if (pinst->is_clist) {
                 /* Send the compositor command to close the PDF14 device */
-                code = (gs_pop_pdf14trans_device(saved, true) < 0);
+                code = gs_pop_pdf14trans_device(saved, true);
                 if (code < 0)
                     return code;
             } else {
