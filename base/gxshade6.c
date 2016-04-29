@@ -3599,7 +3599,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
                 code = fill_triangle_wedge(pfs, s0.p[0][1], s1.p[1][1], s0.p[1][1]);
         }
         if (code >= 0)
-            code = fill_quadrangle(pfs, &s0, big);
+            code = fill_quadrangle(pfs, &s0, big1);
         if (code >= 0) {
             if (LAZY_WEDGES) {
                 l0.last_side = true;
