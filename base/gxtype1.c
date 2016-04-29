@@ -419,7 +419,7 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
         switch ((char_command) c) {
         default:
             cnext;
-            goto out;
+            break;
         case c2_shortint:
             {
                 short sint = *cip++;
