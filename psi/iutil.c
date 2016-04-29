@@ -552,7 +552,7 @@ other:
         data = (const byte *)"--nostringval--";
     }
 rs: size = strlen((const char *)data);
-nl: if (size < start_pos)
+nl: if (size <= start_pos)
         return_error(gs_error_rangecheck);
     if (!restart && size > len)
         return_error(gs_error_rangecheck);
