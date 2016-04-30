@@ -134,14 +134,18 @@ sfnts_reader_rword(sfnts_reader *r)
             sfnts_reader_rbyte_inline(r));
 }
 
+#define SFNTS_READER_RWORD_TO_LONG(r) ((ulong)sfnts_reader_rbyte_inline(r))
+
 static ulong
 sfnts_reader_rlong(sfnts_reader *r)
 {
-    return ((sfnts_reader_rbyte_inline(r) << 24) +
-            (sfnts_reader_rbyte_inline(r) << 16) +
-            (sfnts_reader_rbyte_inline(r) << 8) +
-            sfnts_reader_rbyte_inline(r));
+    return ((SFNTS_READER_RWORD_TO_LONG(r) << 24) +
+            (SFNTS_READER_RWORD_TO_LONG(r) << 16) +
+            (SFNTS_READER_RWORD_TO_LONG(r) << 8) +
+            SFNTS_READER_RWORD_TO_LONG(r));
 }
+
+#undef SFNTS_READER_RWORD_TO_LONG
 
 static int
 sfnts_reader_rstring(sfnts_reader *r, byte *v, int length)
@@ -676,6 +680,7 @@ FAPI_FF_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
                 }
                 switch (index) {
                     case 0:
+                    default:
                         return (mptr->xx / FontMatrix_div);
                     case 1:
                         return (mptr->xy / FontMatrix_div);
@@ -2108,7 +2113,8 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
             ref *Encoding;
             ref glyph;
 
-            name_ref(pbfont->memory, name->data, name->size, &glyph, false);
+            if ((code = name_ref(pbfont->memory, name->data, name->size, &glyph, false)) < 0)
+                return code;
 
             if (dict_find_string(osp - 1, "Encoding", &Encoding) > 0) {
                 cr->char_codes[0] =
