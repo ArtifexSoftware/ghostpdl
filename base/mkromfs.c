@@ -117,6 +117,9 @@ typedef struct Xlist_element_s {
         char *path;
     } Xlist_element;
 
+
+#define PATH_STR_LEN 1024
+
 #ifndef ARCH_IS_BIG_ENDIAN
 #define ARCH_IS_BIG_ENDIAN 0
 #endif
@@ -466,9 +469,9 @@ inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int 
     fprintf(out, "\t0 };\t/* end-of-node */\n");
 
     printf("node '%s' len=%ld", node->name, node->length);
-    printf(" %ld blocks", blocks);
+    printf(" %d blocks", blocks);
     if (compression) {
-        printf(", compressed size=%ld", clen);
+        printf(", compressed size=%d", clen);
     }
     printf("\n");
 }
@@ -1559,9 +1562,9 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
     unsigned long psc_len;
     pscompstate psc = { 0 };
 
-    prefixed_path = malloc(1024);
-    found_path = malloc(1024);
-    rom_filename = malloc(1024);
+    prefixed_path = malloc(PATH_STR_LEN);
+    found_path = malloc(PATH_STR_LEN);
+    rom_filename = malloc(PATH_STR_LEN);
     ubuf = malloc(ROMFS_BLOCKSIZE);
     cbuf = malloc(ROMFS_CBUFSIZE);
     if (ubuf == NULL || cbuf == NULL || prefixed_path == NULL ||
@@ -1800,7 +1803,7 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
     {
         in_block_t *comp_block_head;
         in_block_t *comp_block;
-        pscompstate psc;
+        pscompstate psc = {0};
         in_block_file ibf;
         int ulen;
 
@@ -2192,6 +2195,8 @@ mergefile(const char *os_prefix, const char *inname, FILE * in, FILE * config,
                     if (!strncmp(psname, "psfile_(\"", 9)) {
                         FILE *ps;
                         char *quote = strchr(psname + 9, '"');
+                        if (quote == NULL)
+                            exit(1);
 
                         *quote = 0;
                         ps = prefix_open(os_prefix, psname + 9);
@@ -2275,6 +2280,9 @@ main(int argc, char *argv[])
     int compression = 1;			/* default to doing compression */
     int compaction = 0;
     Xlist_element *Xlist_scan = NULL, *Xlist_head = NULL;
+    char pa[PATH_STR_LEN];
+
+    memset(pa, 0x00, PATH_STR_LEN);
 
     if (argc < 2) {
         printf("\n"
@@ -2391,7 +2399,8 @@ main(int argc, char *argv[])
             continue;
         }
         /* process a path or file */
-        process_path(argv[atarg], os_prefix, rom_prefix, Xlist_head,
+        strncpy(pa, argv[atarg], PATH_STR_LEN - (strlen(os_prefix) < strlen(rom_prefix) ? strlen(rom_prefix) : strlen(os_prefix)));
+        process_path(pa, os_prefix, rom_prefix, Xlist_head,
                     compression, compaction, &inode_count, &totlen, out);
     }
     /* now write out the array of nodes */
