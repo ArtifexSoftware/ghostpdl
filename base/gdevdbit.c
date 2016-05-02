@@ -627,7 +627,7 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
                                  */
             dev_proc_tile_rectangle((*tile_proc)) =
                 dev_proc(dev, tile_rectangle);
-            int code;
+            int code = 0;
 
             set_dev_proc(dev, tile_rectangle, gx_default_tile_rectangle);
             code = (*tile_proc)
@@ -658,7 +658,7 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
         dev_proc_copy_mono((*proc_mono));
         dev_proc_copy_color((*proc_color));
         dev_proc_copy_planes((*proc_planes));
-        int code;
+        int code = 0;
 
         if (color0 == gx_no_color_index && color1 == gx_no_color_index) {
             if (tiles->num_planes > 1) {
