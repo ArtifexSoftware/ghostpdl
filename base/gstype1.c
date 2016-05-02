@@ -295,7 +295,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                            Rewind the data pointer to the beginning of the glyph, re-initialise
                            the hinter, execute a '0' sbw op, and then carry on as if we had
                            actually received one. */
-                        if (pgd->bits.data)
+                        if (pgd)
                             cip = pgd->bits.data;
                         t1_hinter__init(h, pcis->path);
                         code = t1_hinter__sbw(h, fixed_0, fixed_0, fixed_0, fixed_0);
