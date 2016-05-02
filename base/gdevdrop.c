@@ -762,7 +762,7 @@ mem_default_strip_copy_rop(gx_device * dev,
         unpack_colors_to_standard(dev, source_colors, scolors, rop_depth);
         real_scolors = source_colors;
     }
-    if (expand_t) {
+    if (expand_t && textures) {
         texture_row_raster = bitmap_raster(textures->rep_width * rop_depth);
         ALLOC_BUF(texture_row, texture_buffer, texture_row_raster,
                   "copy_rop texture_row");
