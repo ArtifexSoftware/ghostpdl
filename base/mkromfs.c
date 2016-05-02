@@ -1752,9 +1752,9 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
                  int *totlen, FILE *out)
 {
     int ret, block, blocks;
-    romfs_inode *node;
-    unsigned char *ubuf, *cbuf;
-    char *prefixed_path, *rom_filename;
+    romfs_inode *node = NULL;
+    unsigned char *ubuf = NULL, *cbuf = NULL;
+    char *prefixed_path = NULL, *rom_filename = NULL;
     unsigned long clen;
     FILE *in;
     FILE *config;
@@ -1876,9 +1876,9 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
     inode_write(out, node, compression, *inode_count, totlen);
     /* clean up */
     inode_clear(node);
-    free(node);
     (*inode_count)++;
 done:
+    free(node);
     free(cbuf);
     free(ubuf);
     free(prefixed_path);
