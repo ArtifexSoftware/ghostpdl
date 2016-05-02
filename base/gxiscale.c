@@ -403,25 +403,21 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         iss.MaxValueIn = 0xff;
         if (penum->masked) {
             in_size = iss.WidthIn * iss.spp_decode;
-        } else if (pcs->type->index == gs_color_space_index_Indexed) {
-            /* If it is an index color space we will need to allocate for
-               the decoded data */
-            in_size = iss.WidthIn * iss.spp_decode;
         } else {
-            /* Non indexed case, we either use the data as
-            is, or allocate space if it is reversed in X */
+            /* We either use the data as is, or allocate space if it is
+               reversed in X or if the colorspace requires it */
             /* Do we need a buffer for reversing each scan line? */
             bool reverse = (penum->posture == image_portrait ?
                             penum->matrix.xx : penum->matrix.xy) < 0;
             in_size = (reverse ? iss.WidthIn * iss.spp_decode : 0);
             /* If it is not reversed, and we have 8 bit/color channel data then
-            no need to allocate extra as we will use the source directly */
-            /* However, if we have a nonstandard encoding and are in
-                a device color space we will need to allocate
-               in that case also. We will maintain 8 bits but
-               do the decode and then interpolate.  This is OK
-               for the linear decode */
-            if (!penum->device_color && !gs_color_space_is_CIE(pcs)){
+               we may not need to allocate extra as we will use the source directly.
+               However, if we have a nonstandard encoding and are in a device
+               color space we will need to allocate in that case also. We will
+               maintain 8 bits but do the decode and then interpolate.
+               This is OK for the linear decode
+            */
+            if (!penum->device_color ||  pcs->type->index > gs_color_space_index_DeviceCMYK) {
                 in_size = iss.WidthIn * iss.spp_decode;
             }
         }
@@ -566,7 +562,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
         if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
         penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
-        penum->icc_setup.has_transfer = 
+        penum->icc_setup.has_transfer =
             gx_has_transfer(penum->pis, num_des_comps);
         if (penum->icc_link == NULL) {
             penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL,
@@ -594,14 +590,14 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
    application of color management. */
 static void
 initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
-               stream_cursor_read *stream_r, bool is_icc) 
+               stream_cursor_read *stream_r, bool is_icc)
 {
     stream_image_scale_state *pss = penum->scaler;
     const gs_color_space *pcs = penum->pcs;
     int spp_decode = pss->params.spp_decode;
     byte *out = penum->line;
     bool need_decode;
-    int reversed = 
+    int reversed =
         (penum->posture == image_portrait ? penum->matrix.xx : penum->matrix.xy) < 0;
     /* If cs is neither a device color nor a CIE color then for an image case
        it is going to be deviceN, sep, or index. */
@@ -610,7 +606,7 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
 
     /* Determine if we need to perform any decode procedures */
     if (is_icc) {
-        /* In icc case, decode upfront occurs if specified by icc setup or if 
+        /* In icc case, decode upfront occurs if specified by icc setup or if
            cs is neither a device color nor a CIE color (i.e. if it's DeviceN,
            Index or Separation) The color space cannot be a pattern for an image */
         need_decode = (penum->icc_setup.need_decode || is_devn_sep_index);
@@ -650,7 +646,7 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                     /* 8-bit color values, possibly device  indep. or device
                        depend., not indexed. Decode range was [0 1] */
                     if (!reversed) {
-                        /* Use the input data directly. sets up data in the 
+                        /* Use the input data directly. sets up data in the
                            stream buffer structure */
                         stream_r->ptr = bdata - 1;
                     } else {
@@ -659,11 +655,11 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                         byte *q = out;
                         int i;
 
-                        for (i = 0; i < pss->params.WidthIn; 
+                        for (i = 0; i < pss->params.WidthIn;
                             p -= spp_decode, q += spp_decode, ++i)
                             memcpy(q, p, spp_decode);
                         stream_r->ptr = out - 1;
-                        out += round_up(pss->params.WidthIn * 
+                        out += round_up(pss->params.WidthIn *
                                         spp_decode, align_bitmap_mod);
                     }
                 } else {
@@ -758,7 +754,7 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                    moving it to the next desired word boundary.  This must
                    be accounted for in the memory allocation of
                    gs_image_class_0_interpolate */
-                out += round_up(pss->params.WidthIn * spp_decode, 
+                out += round_up(pss->params.WidthIn * spp_decode,
                                 align_bitmap_mod);
             }
         } else {
@@ -792,11 +788,11 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                         stream_r->ptr = (byte *) pdata - 1;
                     }
                 } else {
-                    for (i = 0; i < pss->params.WidthIn; i++, 
+                    for (i = 0; i < pss->params.WidthIn; i++,
                          psrc += spp_decode) {
-                        /* Lets get directly to a frac type loaded into psrc, 
-                           and do the interpolation in the source space. Then we 
-                           will do the appropriate remap function after 
+                        /* Lets get directly to a frac type loaded into psrc,
+                           and do the interpolation in the source space. Then we
+                           will do the appropriate remap function after
                            interpolation. */
                         for (j = 0; j < dc; ++j) {
                             DECODE_FRAC_FRAC(((const frac *)pdata)[j], psrc[j], j);
@@ -847,7 +843,7 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                    moving it to the next desired word boundary.  This must
                    be accounted for in the memory allocation of
                    gs_image_class_0_interpolate */
-                out += round_up(pss->params.WidthIn * spp_decode, 
+                out += round_up(pss->params.WidthIn * spp_decode,
                                 align_bitmap_mod);
             } /* end of else on indexed */
         }  /* end of else on more than 8 bps */
@@ -1805,7 +1801,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
         if (pss->params.early_cm && !penum->icc_link->is_identity
             && stream_r.ptr != stream_r.limit) {
             /* Get the buffers set up. */
-            p_cm_buff = 
+            p_cm_buff =
                 (byte *) gs_alloc_bytes(pis->memory,
                                         num_bytes_decode * width_in * spp_cm,
                                         "image_render_interpolate_icc");
@@ -1825,7 +1821,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
             stream_r.ptr = p_cm_buff - 1;
             stream_r.limit = stream_r.ptr + num_bytes_decode * width_in * spp_cm;
         } else {
-            /* CM after interpolation (or none).  Just set up the buffers 
+            /* CM after interpolation (or none).  Just set up the buffers
                if needed.  16 bit operations if CM takes place.  */
             if (!penum->icc_link->is_identity) {
                 p_cm_buff = (byte *) gs_alloc_bytes(pis->memory,
@@ -1868,7 +1864,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                     goto inactive;
                 if_debug1m('B', penum->memory, "[B]Interpolated row %d:\n[B]",
                            penum->line_xy);
-                /* Take care of CM on the entire interpolated row, if we 
+                /* Take care of CM on the entire interpolated row, if we
                    did not already do CM */
                 if (penum->icc_link->is_identity || pss->params.early_cm) {
                     /* Fastest case. No CM needed */
@@ -1876,9 +1872,9 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                 } else {
                     /* Transform */
                     p_cm_interp = (unsigned short *) p_cm_buff;
-                    (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, 
+                    (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
                                                         &input_buff_desc,
-                                                        &output_buff_desc, 
+                                                        &output_buff_desc,
                                                         (void*) pinterp,
                                                         (void*) p_cm_interp);
                 }
@@ -1919,7 +1915,7 @@ inactive:
         }
         /* Free cm buffer, if it was used */
         if (p_cm_buff != NULL) {
-            gs_free_object(pis->memory, (byte *)p_cm_buff, 
+            gs_free_object(pis->memory, (byte *)p_cm_buff,
                            "image_render_interpolate_icc");
         }
     }
