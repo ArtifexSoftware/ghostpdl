@@ -795,8 +795,8 @@ read_file(config_t * pconf, const char *fname)
     end = ftell(in);
     if (end < 0) {
         fclose(in);
-        mfree(cname, "read_file(cname)");
         fprintf(stderr, "Error reading file: %s.\n", cname);
+        mfree(cname, "read_file(cname)");
         exit(1);
     }
     cont = mmalloc(end + 1, "read_file(cont)");
