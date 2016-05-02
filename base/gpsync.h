@@ -51,6 +51,11 @@ int gp_semaphore_close(gp_semaphore * sema);
 int gp_semaphore_wait(gp_semaphore * sema);
 int gp_semaphore_signal(gp_semaphore * sema);
 
+void gp_semaphore_label(gp_semaphore * sema, const char *name);
+#ifndef BOBBIN
+#define gp_semaphore_label(A,B) do {} while (0)
+#endif
+
 /*
  * Monitors support enter/leave semantics: at most one thread can have
  * entered and not yet left a given monitor.
@@ -72,6 +77,11 @@ int gp_monitor_open(gp_monitor * mon);
 int gp_monitor_close(gp_monitor * mon);
 int gp_monitor_enter(gp_monitor * mon);
 int gp_monitor_leave(gp_monitor * mon);
+
+void gp_monitor_label(gp_monitor * mon, const char *name);
+#ifndef BOBBIN
+#define gp_monitor_label(A,B) do {} while (0)
+#endif
 
 /*
  * A new thread starts by calling a procedure, passing it a void * that
@@ -101,5 +111,10 @@ int gp_thread_start(gp_thread_creation_callback_t fun, void *arg, gp_thread_id *
  * the thread id. No further operations on the thread id are permitted.
  */
 void gp_thread_finish(gp_thread_id thread);
+
+void gp_thread_label(gp_thread_id thread, const char *name);
+#ifndef BOBBIN
+#define gp_thread_label(A,B) do {} while(0)
+#endif
 
 #endif /* !defined(gpsync_INCLUDED) */

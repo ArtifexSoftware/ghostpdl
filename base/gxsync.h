@@ -45,6 +45,11 @@ void
                       gx_semaphore_t * sema	/* semaphore to delete */
                       );
 
+gx_semaphore_t *gx_semaphore_label(gx_semaphore_t *mon, const char *name);
+#ifndef BOBBIN
+#define gx_semaphore_label(A,B) (A)
+#endif
+
 #define gx_semaphore_wait(sema)  gp_semaphore_wait(&(sema)->native)
 #define gx_semaphore_signal(sema)  gp_semaphore_signal(&(sema)->native)
 
@@ -64,6 +69,11 @@ void
     gx_monitor_free(
                     gx_monitor_t * mon	/* monitor to delete */
                     );
+
+gx_monitor_t *gx_monitor_label(gx_monitor_t *mon, const char *name);
+#ifndef BOBBIN
+#define gx_monitor_label(A,B) (A)
+#endif
 
 #define gx_monitor_enter(sema)  gp_monitor_enter(&(sema)->native)
 #define gx_monitor_leave(sema)  gp_monitor_leave(&(sema)->native)

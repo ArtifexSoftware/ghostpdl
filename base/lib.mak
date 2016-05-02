@@ -117,7 +117,8 @@ errno__h=$(GLSRC)errno_.h $(std_h)
 fcntl__h=$(GLSRC)fcntl_.h $(std_h)
 locale__h=$(GLSRC)locale_.h $(std_h) $(MAKEFILE)
 memento_h=$(GLSRC)memento.h $(std_h)
-malloc__h=$(GLSRC)malloc_.h $(std_h) $(memento_h)
+bobbin_h=$(GLSRC)bobbin.h $(std_h)
+malloc__h=$(GLSRC)malloc_.h $(std_h) $(memento_h) $(bobbin_h)
 math__h=$(GLSRC)math_.h $(std_h) $(vmsmath_h)
 memory__h=$(GLSRC)memory_.h $(std_h)
 setjmp__h=$(GLSRC)setjmp_.h
@@ -229,6 +230,20 @@ $(GLOBJ)memento.$(OBJ) : $(GLSRC)memento.c $(valgrind_h) $(memento_h)\
 $(AUX)memento.$(OBJ) : $(GLSRC)memento.c $(valgrind_h) $(memento_h)\
  $(malloc__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCCAUX) $(AUXO_)memento.$(OBJ) $(C_) $(GLSRC)memento.c
+
+# Bobbin uses windows.h on windows. This requires that /Za not be
+# used (as this disables Microsoft extensions, which breaks windows.h).
+# GLCC has the /Za pickled into it on windows, so we can't use GLCC.
+# Therefore use our own compiler invocation.
+BOBBIN_CC=$(CC) $(GENOPT) $(GLINCLUDES) $(CFLAGS)
+
+$(GLOBJ)bobbin.$(OBJ) : $(GLSRC)bobbin.c $(bobbin_h)\
+ $(LIB_MAK) $(MAKEDIRS)
+	$(BOBBIN_CC) $(GLO_)bobbin.$(OBJ) $(C_) $(GLSRC)bobbin.c
+
+$(AUX)bobbin.$(OBJ) : $(GLSRC)bobbin.c $(valgrind_h) $(bobbin_h)\
+ $(LIB_MAK) $(MAKEDIRS)
+	$(GLCCAUX) $(AUXO_)bobbin.$(OBJ) $(C_) $(GLSRC)bobbin.c
 
 $(GLOBJ)gsmemory.$(OBJ) : $(GLSRC)gsmemory.c $(memory__h)\
  $(gdebug_h)\
@@ -1356,7 +1371,7 @@ LIB6s=$(GLOBJ)gsfname.$(OBJ) $(GLOBJ)gsfont.$(OBJ) $(GLOBJ)gsgdata.$(OBJ) $(GLOB
 LIB7s=$(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ)
 LIB8s=$(GLOBJ)gsimage.$(OBJ) $(GLOBJ)gsimpath.$(OBJ) $(GLOBJ)gsinit.$(OBJ)
 LIB9s=$(GLOBJ)gsiodev.$(OBJ) $(GLOBJ)gsgstate.$(OBJ) $(GLOBJ)gsline.$(OBJ)
-LIB10s=$(GLOBJ)gsmalloc.$(OBJ) $(GLOBJ)memento.$(OBJ)  $(GLOBJ)gsmatrix.$(OBJ)
+LIB10s=$(GLOBJ)gsmalloc.$(OBJ) $(GLOBJ)memento.$(OBJ) $(GLOBJ)bobbin.$(OBJ) $(GLOBJ)gsmatrix.$(OBJ)
 LIB11s=$(GLOBJ)gsmemory.$(OBJ) $(GLOBJ)gsmemret.$(OBJ) $(GLOBJ)gsmisc.$(OBJ) $(GLOBJ)gsnotify.$(OBJ) $(GLOBJ)gslibctx.$(OBJ)
 LIB12s=$(GLOBJ)gspaint.$(OBJ) $(GLOBJ)gsparam.$(OBJ) $(GLOBJ)gspath.$(OBJ)
 LIB13s=$(GLOBJ)gsserial.$(OBJ) $(GLOBJ)gsstate.$(OBJ) $(GLOBJ)gstext.$(OBJ)\

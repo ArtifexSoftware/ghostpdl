@@ -24,6 +24,7 @@
 
 /* This is a good place to #define MEMENTO, if you're using it. */
 
+#include "bobbin.h"
 #include "memento.h"
 
 #ifdef __TURBOC__

@@ -1844,7 +1844,8 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
     result->isdevlink = false;  /* only used for srcgtag profiles */
     result->dev = NULL;
     result->memory = mem_nongc;
-    result->lock = gx_monitor_alloc(mem_nongc);
+    result->lock = gx_monitor_label(gx_monitor_alloc(mem_nongc),
+                                    "gsicc_manage");
     result->vers = ICCVERS_UNKNOWN;
     result->v2_data = NULL;
     result->v2_size = 0;

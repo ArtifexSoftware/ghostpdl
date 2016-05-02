@@ -1072,8 +1072,11 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                 crdev->page_info.cfile = crdev->page_info.bfile = NULL;
 
                 if (ppdev->bg_print.sema == NULL)
-                    if (((ppdev->bg_print.sema = gx_semaphore_alloc(ppdev->memory->non_gc_memory)) == NULL))
+                {
+                    ppdev->bg_print.sema = gx_semaphore_label(gx_semaphore_alloc(ppdev->memory->non_gc_memory), "BGPrint");
+                    if (ppdev->bg_print.sema == NULL)
                         break;			/* couldn't create the semaphore */
+                }
 
                 ndev = setup_device_and_mem_for_thread(pdev->memory->thread_safe_memory, pdev, true, NULL);
                 if (ndev == NULL) {
@@ -1092,6 +1095,7 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                     /* Did not start cleanly - clean up is in print_foreground block below */
                     break;
                 }
+                gp_thread_label(ppdev->bg_print.thread_id, "BG print thread");
                 /* Page was succesfully started in bg_print mode */
                 print_foreground = 0;
                 /* Now we need to set up the next page so it will use new clist files */

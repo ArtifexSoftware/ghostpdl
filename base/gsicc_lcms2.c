@@ -131,7 +131,7 @@ void *gs_lcms2_createMutex(cmsContext id)
 {
     gs_memory_t *mem = (gs_memory_t *)cmsGetContextUserData(id);
 
-    return gx_monitor_alloc(mem);
+    return gx_monitor_label(gx_monitor_alloc(mem), "lcms2");
 }
 
 static

@@ -356,8 +356,8 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
                                 band*crdev->page_band_height, NULL,
                                 thread->memory, &(crdev->color_usage_array[0])) < 0))
             break;
-        if ((thread->sema_this = gx_semaphore_alloc(thread->memory)) == NULL ||
-            (thread->sema_group = gx_semaphore_alloc(thread->memory)) == NULL) {
+        if ((thread->sema_this = gx_semaphore_label(gx_semaphore_alloc(thread->memory), "Band")) == NULL ||
+            (thread->sema_group = gx_semaphore_label(gx_semaphore_alloc(thread->memory), "Group")) == NULL) {
             code = gs_error_VMerror;
             break;
         }
@@ -573,6 +573,7 @@ clist_start_render_thread(gx_device *dev, int thread_index, int band)
     code = gp_thread_start(clist_render_thread,
                            &(crdev->render_threads[thread_index]),
                            &(crdev->render_threads[thread_index].thread));
+    gp_thread_label(crdev->render_threads[thread_index].thread, "Band");
 
     return code;
 }
@@ -1001,6 +1002,7 @@ clist_enable_multi_thread_render(gx_device *dev)
     if ((code = gp_thread_start(test_threads, NULL, &thread)) < 0 ) {
         return code;    /* Threads don't work */
     }
+    gp_thread_label(thread, "test_thread");
     gp_thread_finish(thread);
     set_dev_proc(dev, get_bits_rectangle, clist_get_bits_rect_mt);
     set_dev_proc(dev, process_page, clist_process_page_mt);

@@ -104,8 +104,10 @@ gsicc_cache_new(gs_memory_t *memory)
                              "gsicc_cache_new");
     if ( result == NULL )
         return(NULL);
-    result->lock = gx_monitor_alloc(memory->stable_memory);
-    result->wait = gx_semaphore_alloc(memory->stable_memory);
+    result->lock = gx_monitor_label(gx_monitor_alloc(memory->stable_memory),
+                                    "gsicc_cache_new");
+    result->wait = gx_semaphore_label(gx_semaphore_alloc(memory->stable_memory),
+                                      "gsicc_cache_new");
     if (result->lock == NULL || result->wait == NULL) {
         gs_free_object(memory->stable_memory, result, "gsicc_cache_new");
         return(NULL);

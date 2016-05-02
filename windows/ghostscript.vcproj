@@ -1778,6 +1778,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\bobbin.c"
+				>
+			</File>
+			<File
 				RelativePath="..\base\claptrap-init.c"
 				>
 			</File>
@@ -3307,6 +3311,10 @@
 			</File>
 			<File
 				RelativePath="..\base\assert_.h"
+				>
+			</File>
+			<File
+				RelativePath="..\base\bobbin.h"
 				>
 			</File>
 			<File

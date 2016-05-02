@@ -338,3 +338,29 @@ void gp_thread_finish(gp_thread_id thread)
         return;
     pthread_join((pthread_t)thread, NULL);
 }
+
+void (gp_monitor_label)(gp_monitor * mona, const char *name)
+{
+    pthread_mutex_t * const mon = &((gp_pthread_recursive_t *)mona)->mutex;
+
+    (void)mon;
+    (void)name;
+    Bobbin_label_mutex(mon, name);
+}
+
+void (gp_semaphore_label)(gp_semaphore * sema, const char *name)
+{
+    pt_semaphore_t * const sem = (pt_semaphore_t *)sema;
+
+    (void)sem;
+    (void)name;
+    Bobbin_label_mutex(&sem->mutex, name);
+    Bobbin_label_cond(&sem->cond, name);
+}
+
+void (gp_thread_label)(gp_thread_id thread, const char *name)
+{
+    (void)thread;
+    (void)name;
+    Bobbin_label_thread((pthread_t)thread, name);
+}
