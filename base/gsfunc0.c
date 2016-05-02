@@ -339,7 +339,7 @@ fn_Sd_encode(const gs_function_Sd_t *pfn, int i, double sample)
     if (pfn->params.Range)
         r0 = pfn->params.Range[2 * i], r1 = pfn->params.Range[2 * i + 1];
     else
-        r0 = 0, r1 = (float)((1 << bps) - 1);
+        r0 = 0, r1 = max_samp;
     if (pfn->params.Decode)
         d0 = pfn->params.Decode[2 * i], d1 = pfn->params.Decode[2 * i + 1];
     else
