@@ -2317,11 +2317,11 @@ FAPI_char(i_ctx_t *i_ctx_p, bool bBuildGlyph, ref *charstring)
          */
         if (code == gs_error_unregistered) {
             os_ptr op = osp;
-            ref *proc, gname;
+            ref *proc = NULL, gname;
 
             if (I->ff.is_type1
                 && (get_charstring(&I->ff, cindex, &proc, &gname) >= 0)
-                && (r_has_type(proc, t_array)
+                && proc != NULL && (r_has_type(proc, t_array)
                     || r_has_type(proc, t_mixedarray))) {
                 push(2);
                 ref_assign(op - 1, &gname);

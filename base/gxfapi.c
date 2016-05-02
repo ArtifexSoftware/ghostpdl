@@ -571,12 +571,11 @@ compute_em_scale(const gs_font_base *pbfont, gs_fapi_metrics *metrics,
                  double *em_scale_y)
 {                               /* optimize : move this stuff to FAPI_refine_font */
     gs_matrix mat;
-    gs_matrix *m = &pbfont->base->orig_FontMatrix;
+    gs_matrix *m = &mat;
     int rounding_x, rounding_y; /* Striking out the 'float' representation error in FontMatrix. */
     double sx, sy;
     gs_fapi_server *I = pbfont->FAPI;
 
-    m = &mat;
 #if 1
     I->get_fontmatrix(I, m);
 #else
