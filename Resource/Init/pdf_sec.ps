@@ -537,12 +537,17 @@ def
       % this step is for the AES cipher only
       Trailer /Encrypt oget
       dup /StmF knownoget {
-        exch /CF knownoget {
-          exch oget /CFM oget /AESV2 eq {
-            (sAlT) concatstrings
-          } if
+        %% Treat StmF of 'Identity' the same as if it is missing.
+        dup /Identity eq {
+          pop pop
         } {
-          pop
+          exch /CF knownoget {
+            exch oget /CFM oget /AESV2 eq {
+              (sAlT) concatstrings
+            } if
+          } {
+            pop
+          } ifelse
         } ifelse
       } {
         pop
