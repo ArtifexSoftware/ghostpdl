@@ -313,6 +313,8 @@ static int ParsePageList(gx_device *dev, first_last_subclass_data *psubclass_dat
                     }
                 } else {
                     Page = atoi(oldstr) - 1;
+                    if (Page < 0)
+                        Page = 0;
                     byte = (int)(Page / 8);
                     bit = Page % 8;
                     c = 0x01 << bit;
