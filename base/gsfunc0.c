@@ -1070,7 +1070,7 @@ is_tensor_monotonic_by_dimension(const gs_function_Sd_t *pfn, int *I, double *T0
             TT1[i] = 0;
     }
     *mask = tensor_dimension_monotonity(TT0, TT1, ii, i0, pole, 0,
-                        count_of(pole) / 4, -1, pfn->params.Order);
+                        count_of(pole) / 4, 1, pfn->params.Order);
     return 0;
 }
 
