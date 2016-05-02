@@ -726,7 +726,9 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
                 return_error(gs_error_VMerror);
             if (!for_outline) {
                 /* We aren't sure whether this is really needed.... */
-                cos_dict_put_c_strings(adict, "/Type", "/Action");
+                code = cos_dict_put_c_strings(adict, "/Type", "/Action");
+                if (code < 0)
+                    return code;
             }
             if (pdf_key_eq(Action + 1, "/Article")) {
                 code = cos_dict_put_c_strings(adict, "/S", "/Thread");
