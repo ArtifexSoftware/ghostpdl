@@ -129,7 +129,7 @@ shading_param(const_os_ptr op, const gs_shading_t ** ppsh)
          * no way to check whether a structure is actually a shading.
          */
     if (!r_is_struct(op) ||
-        r_has_masked_attrs(op, a_executable | a_execute, a_all)
+        r_has_masked_attrs(op, a_execute, a_all)
         )
         return_error(gs_error_typecheck);
     *ppsh = (gs_shading_t *) op->value.pstruct;
