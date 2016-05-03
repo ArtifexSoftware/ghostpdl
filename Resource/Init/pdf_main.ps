@@ -196,7 +196,6 @@ currentdict /runpdfstring .undef
    pdfdict begin
    pdfopen begin
    /CumulativePageCount currentpagedevice /PageCount get def
-
 } bind def
 
 /runpdfpagerange {	% - runpdfpagerange <firstpage#> <lastpage#>
@@ -1409,6 +1408,7 @@ currentdict /xref-char-dict undef
 /pdfformatwarning {	% <string> pdfformaterror -
   stdoutprint
   /Repaired //true store
+  PDFSTOPONWARNING {/warning cvx /undefined signalerror} if
 } bind def
 
 /knownoget_safe

@@ -111,6 +111,7 @@ currentdict /PDFSTEP known /PDFSTEP exch def
 PDFSTEP { /PDFDEBUG //true def } if
 
 currentdict /PDFSTOPONERROR known /PDFSTOPONERROR exch def
+currentdict /PDFSTOPONWARNING known {/PDFSTOPONWARNING true def /PDFSTOPONERROR true def}{/PDFSTOPONWARNING false def} ifelse
 currentdict /PDFNOCIDFALLBACK known /PDFNOCIDFALLBACK exch def
 
   /VMDEBUG

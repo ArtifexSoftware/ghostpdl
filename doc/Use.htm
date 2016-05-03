@@ -3593,11 +3593,13 @@ needed to investigate particular areas. For backward compatibilty, the
 </table>
 
 <p>
-Normally, PDF interpreter tries to repair all problems in PDF files.
-<code>-dPDFSTOPONERROR</code> skips some of the stopped contexts. On error,
-instead of printing a warning and continue, PDF interpreter drops into
-a PostScript error handler that prints detailed information about the problem and
-kills the job.
+The PDF interpreter normally tries to repair, or ignore, all problems encountered in PDF files.
+Setting <code>-dPDFSTOPONERROR</code> instead causes the interpreter to signal an error and
+stop processing the PDF file, instead of printing a warning.
+</p><p>
+The <code>-dPDFSTOPONWARNING</code> switch behves the same, but will stop if a condition
+which would normally merit a warning (instead of an error) is encountered. Note that
+setting <code>-dPDFSTOPONWARNING</code> also sets <code>-dPDFSTOPONERROR</code>
 </p>
 
 <p><p>
