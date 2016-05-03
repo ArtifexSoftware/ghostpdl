@@ -70,7 +70,13 @@ gp_semaphore_open(gp_semaphore * sema)
     sem->count = 0;
     scode = pthread_mutex_init(&sem->mutex, NULL);
     if (scode == 0)
+    {
         scode = pthread_cond_init(&sem->cond, NULL);
+        if (scode)
+            pthread_mutex_destroy(&sem->mutex);
+    }
+    if (scode)
+        memset(sem, 0, sizeof(sem));
     return SEM_ERROR_CODE(scode);
 }
 
