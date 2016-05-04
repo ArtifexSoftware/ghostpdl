@@ -143,7 +143,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     if ( pfont->FontType != ft_TrueType )
     {
         glyph -= 29;
-        if ( glyph >= 0 && glyph < 258 )
+        if (glyph < 258 )
         {
             pstr->data = (byte*) pl_mac_names[glyph];
             pstr->size = strlen((char*)pstr->data);
