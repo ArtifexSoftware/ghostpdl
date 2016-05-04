@@ -1405,8 +1405,7 @@ ibegin:                 if_debug0m('L', mem, "\n");
                             cmd_getw(flags, cbp);
                             for (plane = 0;
                                  plane < image_info->num_planes;
-                                 ++plane, flags >>= 1
-                                 ) {
+                                 ++plane, flags >>= 1) {
                                 if (flags & 1) {
                                     if (cbuf.end - cbp <
                                         2 * cmd_max_intsize(sizeof(uint)))
@@ -3337,8 +3336,10 @@ vhc:        E = B + D, F = D = A + C, C = B, B = A, A = 0;
             }
             goto rrc;
         case cmd_opv_closepath:
-            code = gx_path_close_subpath(ppath);
-            gx_path_current_point(ppath, (gs_fixed_point *) vs);
+            if ((code = gx_path_close_subpath(ppath)) < 0)
+                return code;;
+            if ((code = gx_path_current_point(ppath, (gs_fixed_point *) vs)) < 0)
+                return code;;
             px = A, py = B;
             break;
         default:

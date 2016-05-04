@@ -41,10 +41,13 @@ gx_image_fill_masked_start(gx_device *dev, const gx_device_color *pdevc, const g
     if (gx_dc_is_pattern2_color(pdevc) || gx_dc_is_pattern1_color_clist_based(pdevc)) {
         if (!dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_can_accum, NULL, gs_no_id)) {
             extern_st(st_device_cpath_accum);
-            gx_device_cpath_accum *pcdev =  gs_alloc_struct(mem,
-                    gx_device_cpath_accum, &st_device_cpath_accum, "gx_image_fill_masked_start");
+            gx_device_cpath_accum *pcdev;
             gs_fixed_rect cbox;
 
+            if (pcpath == NULL)
+                return_error(gs_error_nocurrentpoint);	/* close enough if no clip path */
+            pcdev =  gs_alloc_struct(mem,
+                    gx_device_cpath_accum, &st_device_cpath_accum, "gx_image_fill_masked_start");
             if (pcdev == NULL)
                 return_error(gs_error_VMerror);
             gx_cpath_accum_begin(pcdev, mem);
