@@ -37,12 +37,12 @@ do_page_save(gx_device_printer * pdev, gx_saved_page * page, clist_file_ptr *sav
     gs_c_param_list paramlist;
 
     /* Save the device information. */
-    strncpy(page->dname, pdev->dname, sizeof(page->dname));
+    strncpy(page->dname, pdev->dname, sizeof(page->dname)-1);
     page->color_info = pdev->color_info;
     page->io_procs = cdev->common.page_info.io_procs;
     /* Save the page information. */
-    strncpy(page->cfname, pcldev->page_info.cfname, sizeof(page->cfname));
-    strncpy(page->bfname, pcldev->page_info.bfname, sizeof(page->bfname));
+    strncpy(page->cfname, pcldev->page_info.cfname, sizeof(page->cfname)-1);
+    strncpy(page->bfname, pcldev->page_info.bfname, sizeof(page->bfname)-1);
     page->bfile_end_pos = pcldev->page_info.bfile_end_pos;
     if (save_files != NULL) {
       save_files[0] =  pcldev->page_info.cfile;
@@ -304,7 +304,7 @@ param_find_key(byte *token, int token_size)
     if (*token == (byte)'*')
         return PARAM_STAR;
 
-    for (i=0; i < sizeof(saved_pages_keys); i++) {
+    for (i=0; i < (sizeof(saved_pages_keys)/sizeof(saved_pages_keys[0])); i++) {
         if (strncasecmp((char *)token, saved_pages_keys[i], token_size) == 0) {
             found = (saved_pages_key_enum) (i + 1);
             break;
@@ -385,7 +385,8 @@ do_page_load(gx_device_printer *pdev, gx_saved_page *page, clist_file_ptr *save_
     /* If the device is now a writer, that means putparams realloced the device */
     /* so we need to get back to reader mode and remove the extra clist files  */
     if (CLIST_IS_WRITER((gx_device_clist *)pdev)) {
-        clist_close_writer_and_init_reader((gx_device_clist *)crdev);
+        if ((code = clist_close_writer_and_init_reader((gx_device_clist *)crdev)) < 0)
+            goto out;
         /* close and unlink the temp files just created */
         if (crdev->page_info.cfile != NULL)
             crdev->page_info.io_procs->fclose(crdev->page_info.cfile, crdev->page_info.cfname, true);
@@ -408,8 +409,8 @@ do_page_load(gx_device_printer *pdev, gx_saved_page *page, clist_file_ptr *save_
     crdev->ymin = crdev->ymax = 0;      /* invalidate buffer contents to force rasterizing */
 
     /* We probably don't need to copy in the filenames, but do it in case something expects it */
-    strncpy(crdev->page_info.cfname, page->cfname, sizeof(crdev->page_info.cfname));
-    strncpy(crdev->page_info.bfname, page->bfname, sizeof(crdev->page_info.bfname));
+    strncpy(crdev->page_info.cfname, page->cfname, sizeof(crdev->page_info.cfname)-1);
+    strncpy(crdev->page_info.bfname, page->bfname, sizeof(crdev->page_info.bfname)-1);
     if (save_files != NULL)
     {
         crdev->page_info.cfile = save_files[0];
@@ -428,7 +429,7 @@ gx_saved_page_load(gx_device_printer *pdev, gx_saved_page *page)
     code = do_page_load(pdev, page, NULL);
     if (code < 0)
         return code;
-    
+
     /* Now open this page's files */
     code = crdev->page_info.io_procs->fopen(crdev->page_info.cfname,
                gp_fmode_rb, &(crdev->page_info.cfile), crdev->bandlist_memory,
