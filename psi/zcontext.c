@@ -264,6 +264,10 @@ context_reclaim(vm_spaces * pspaces, bool global)
         }
     }
 
+    /* Ensure psched is not NULL before we try to use it, exit if it is (should be impossible) */
+    if (!psched)
+        return;
+
     /* Hide all contexts in other (local) VMs. */
     /*
      * See context_create below for why we look for the context
