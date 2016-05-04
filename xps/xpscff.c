@@ -178,6 +178,8 @@ xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
     int privatelen = 0;
     int privateofs = 0;
 
+    memset(args, 0x00, sizeof(args));
+
     offset = p - font->cffdata;
 
     n = 0;
