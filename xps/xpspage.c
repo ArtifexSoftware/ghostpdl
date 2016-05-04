@@ -193,6 +193,11 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
         {
             gs_c_param_list_read(&list);
             code = gs_putdeviceparams(dev, (gs_param_list *)&list);
+            if (code < 0) {
+                gs_c_param_list_release(&list);
+                xps_free_item(ctx, root);
+                return gs_rethrow(code, "cannot set media size");
+            }
         }
         gs_c_param_list_release(&list);
 
@@ -204,16 +209,22 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
         gs_initmatrix(pgs);
 
         code = gs_scale(pgs, 72.0/96.0, -72.0/96.0);
-        if (code < 0)
+        if (code < 0) {
+            xps_free_item(ctx, root);
             return gs_rethrow(code, "cannot set page transform");
+        }
 
         code = gs_translate(pgs, 0.0, -atoi(height_att));
-        if (code < 0)
+        if (code < 0) {
+            xps_free_item(ctx, root);
             return gs_rethrow(code, "cannot set page transform");
+        }
 
         code = gs_erasepage(pgs);
-        if (code < 0)
+        if (code < 0) {
+            xps_free_item(ctx, root);
             return gs_rethrow(code, "cannot clear page");
+        }
     }
 
     /* Pre-parse looking for transparency */
@@ -238,6 +249,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
         if (code < 0)
         {
             gs_grestore(ctx->pgs);
+            xps_free_item(ctx, root);
             return gs_rethrow(code, "cannot install transparency device");
         }
     }
@@ -253,6 +265,9 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
             {
                 gs_pop_pdf14trans_device(ctx->pgs, false);
                 gs_grestore(ctx->pgs);
+                if (dict)
+                    xps_free_resource_dictionary(ctx, dict);
+                xps_free_item(ctx, root);
                 return gs_rethrow(code, "cannot load FixedPage.Resources");
             }
         }
@@ -261,6 +276,9 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
         {
             gs_pop_pdf14trans_device(ctx->pgs, false);
             gs_grestore(ctx->pgs);
+            if (dict)
+                xps_free_resource_dictionary(ctx, dict);
+            xps_free_item(ctx, root);
             return gs_rethrow(code, "cannot parse child of FixedPage");
         }
     }
@@ -271,6 +289,9 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
         if (code < 0)
         {
             gs_grestore(ctx->pgs);
+            if (dict)
+                xps_free_resource_dictionary(ctx, dict);
+            xps_free_item(ctx, root);
             return gs_rethrow(code, "cannot uninstall transparency device");
         }
     }
@@ -281,6 +302,9 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
         if (code < 0)
         {
             gs_grestore(ctx->pgs);
+            if (dict)
+                xps_free_resource_dictionary(ctx, dict);
+            xps_free_item(ctx, root);
             return gs_rethrow(code, "cannot flush page");
         }
     }
