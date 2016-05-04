@@ -456,7 +456,8 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
     if (misc2_unknown) {
         byte buf[
-                 1 +		/* cap_join */
+                 1 +		/* cap_join: start_cap|join */
+                 1 +            /*           end_cap|dash_cap */
                  1 +		/* cj_ac_sa */
                  sizeof(float) +	/* flatness */
                  sizeof(float) +	/* line width */
@@ -803,6 +804,10 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
             re.y += re.height;
         } while (re.y < re.yend);
     } else {
+        /* We should not reach here with ppath==NULL (pdcolor != NULL, so not a shading fill */
+        if (ppath == NULL)
+            return_error(gs_error_unregistered);
+
         /* If needed, update the trans_bbox */
         if (cdev->pdf14_needed) {
             gs_int_rect bbox;
