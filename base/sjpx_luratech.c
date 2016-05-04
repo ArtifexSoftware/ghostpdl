@@ -397,6 +397,7 @@ s_jpxd_set_defaults(stream_state * ss) {
 
     state->alpha = false;
     state->image_is_indexed = false;
+    state->colorspace = gs_jpx_cs_rgb;
 }
 
 /* write component mapping into 'clut' and return number of used components
