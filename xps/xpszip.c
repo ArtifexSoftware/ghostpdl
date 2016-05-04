@@ -126,20 +126,26 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
     extralength = getshort(ctx->file);
 
     if (fseek(ctx->file, namelength + extralength, 1) != 0)
-        return gs_throw(gs_error_ioerror, "fseek to %d failed.\n", namelength + extralength);
+        return gs_throw1(gs_error_ioerror, "fseek to %d failed.\n", namelength + extralength);
 
     if (method == 0)
     {
-        fread(outbuf, 1, ent->usize, ctx->file);
+        code = fread(outbuf, 1, ent->usize, ctx->file);
+        if (code != ent->usize)
+            return gs_throw1(gs_error_ioerror, "Failed to read %d bytes", ent->usize);
     }
     else if (method == 8)
     {
         inbuf = xps_alloc(ctx, ent->csize);
         if (!inbuf) {
-            return gs_throw(gs_error_VMerror, "out of memory.\n");
+            return gs_rethrow(gs_error_VMerror, "out of memory.\n");
         }
 
-        fread(inbuf, 1, ent->csize, ctx->file);
+        code = fread(inbuf, 1, ent->csize, ctx->file);
+        if (code != ent->csize) {
+            xps_free(ctx, inbuf);
+            return gs_throw1(gs_error_ioerror, "Failed to read %d bytes", ent->csize);
+        }
 
         memset(&stream, 0, sizeof(z_stream));
         stream.zalloc = (alloc_func) xps_zip_alloc_items;
@@ -195,7 +201,7 @@ static int
 xps_read_zip_dir(xps_context_t *ctx, int start_offset)
 {
     int sig;
-    int offset, count;
+    int offset, count, read;
     int namesize, metasize, commentsize;
     int i;
 
@@ -216,11 +222,12 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
     ctx->zip_count = count;
     ctx->zip_table = xps_alloc(ctx, sizeof(xps_entry_t) * count);
     if (!ctx->zip_table)
-        return gs_throw(gs_error_VMerror, "cannot allocate zip entry table");
+        return gs_rethrow(gs_error_VMerror, "cannot allocate zip entry table");
 
     memset(ctx->zip_table, 0, sizeof(xps_entry_t) * count);
 
-    fseek(ctx->file, offset, 0);
+    if (fseek(ctx->file, offset, 0) != 0)
+        return gs_throw1(gs_error_ioerror, "fseek to offset %d failed", offset);
 
     for (i = 0; i < count; i++)
     {
@@ -247,13 +254,18 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
 
         ctx->zip_table[i].name = xps_alloc(ctx, namesize + 1);
         if (!ctx->zip_table[i].name)
-            return gs_throw(gs_error_VMerror, "cannot allocate zip entry name");
+            return gs_rethrow(gs_error_VMerror, "cannot allocate zip entry name");
 
-        fread(ctx->zip_table[i].name, 1, namesize, ctx->file);
+        read = fread(ctx->zip_table[i].name, 1, namesize, ctx->file);
+        if (read != namesize)
+            return gs_throw1(gs_error_ioerror, "failed to read %d bytes", namesize);
+
         ctx->zip_table[i].name[namesize] = 0;
 
-        fseek(ctx->file, metasize, 1);
-        fseek(ctx->file, commentsize, 1);
+        if (fseek(ctx->file, metasize, 1) != 0)
+            return gs_throw1(gs_error_ioerror, "fseek to offset %d failed", metasize);
+        if (fseek(ctx->file, commentsize, 1) != 0)
+            return gs_throw1(gs_error_ioerror, "fseek to offset %d failed", commentsize);
     }
 
     qsort(ctx->zip_table, count, sizeof(xps_entry_t), xps_compare_entries);
@@ -409,13 +421,23 @@ xps_read_dir_part(xps_context_t *ctx, const char *name)
     file = gp_fopen(buf, "rb");
     if (file)
     {
-        fseek(file, 0, SEEK_END);
+        if (fseek(file, 0, SEEK_END) != 0)
+            return NULL;
+
         size = ftell(file);
-        fseek(file, 0, SEEK_SET);
+        if (size < 0)
+            return NULL;
+
+        if (fseek(file, 0, SEEK_SET) != 0)
+            return NULL;
+
         part = xps_new_part(ctx, name, size);
-        fread(part->data, 1, size, file);
+        count = fread(part->data, 1, size, file);
         fclose(file);
-        return part;
+        if (count == size)
+            return part;
+        else
+            return NULL;
     }
 
     /* Count the number of pieces and their total size */
@@ -564,11 +586,32 @@ xps_process_file(xps_context_t *ctx, char *filename)
             ctx->directory = xps_strdup(ctx, "");
         }
 
-        fseek(ctx->file, 0, SEEK_END);
+        if (fseek(ctx->file, 0, SEEK_END) != 0) {
+            code = gs_rethrow(gs_error_ioerror, "fseek to file end failed");
+            xps_free_part(ctx, part);
+            goto cleanup;
+        }
+
         size = ftell(ctx->file);
-        fseek(ctx->file, 0, SEEK_SET);
+        if (size < 0) {
+            code = gs_rethrow(gs_error_ioerror, "ftell raised an error");
+            xps_free_part(ctx, part);
+            goto cleanup;
+        }
+
+        if (fseek(ctx->file, 0, SEEK_SET) != 0) {
+            code = gs_rethrow(gs_error_ioerror, "fseek to file begin failed");
+            xps_free_part(ctx, part);
+            goto cleanup;
+        }
+
         part = xps_new_part(ctx, filename, size);
-        fread(part->data, 1, size, ctx->file);
+        code = fread(part->data, 1, size, ctx->file);
+        if (code != size) {
+            code = gs_rethrow1(gs_error_ioerror, "failed to read %d bytes", size);
+            xps_free_part(ctx, part);
+            goto cleanup;
+        }
 
         code = xps_parse_fixed_page(ctx, part);
         if (code)
