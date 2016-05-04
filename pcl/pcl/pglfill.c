@@ -70,10 +70,12 @@ hpgl_AC(hpgl_args_t * pargs, hpgl_state_t * pgls)
 int
 hpgl_FT(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
-    int type = hpgl_FT_pattern_solid_pen1;
+    int type;
     hpgl_hatch_params_t *params;
 
-    hpgl_arg_int(pgls->memory, pargs, &type);
+    if (!hpgl_arg_int(pgls->memory, pargs, &type))
+        type = hpgl_FT_pattern_solid_pen1;
+    
     switch (type) {
 
         case hpgl_FT_pattern_solid_pen1:       /* 1 */

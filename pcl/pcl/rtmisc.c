@@ -60,8 +60,8 @@ rtl_enter_hpgl_mode(pcl_args_t * pargs, pcl_state_t * pcs)
 
         pcl_pt.x = (hpgl_real_t) pcs->cap.x;
         pcl_pt.y = (hpgl_real_t) pcs->cap.y;
-        hpgl_add_pcl_point_to_path(pcs, &pcl_pt);
-        hpgl_update_carriage_return_pos(pcs);
+        hpgl_call_mem(pcs->memory, hpgl_add_pcl_point_to_path(pcs, &pcl_pt));
+        hpgl_call_mem(pcs->memory, hpgl_update_carriage_return_pos(pcs));
     }
     hpgl_call_mem(pcs->memory, hpgl_set_ctm(pcs));
     return 0;

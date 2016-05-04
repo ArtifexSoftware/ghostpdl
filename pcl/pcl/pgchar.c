@@ -344,10 +344,15 @@ hpgl_DT(hpgl_args_t * pargs, hpgl_state_t * pgls)
 int
 hpgl_DV(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
-    int path = 0, line = 0;
+    int path;
+    int line;
 
-    hpgl_arg_c_int(pgls->memory, pargs, &path);
-    hpgl_arg_c_int(pgls->memory, pargs, &line);
+    if (!hpgl_arg_c_int(pgls->memory, pargs, &path))
+        path = 0;
+    
+    if (!hpgl_arg_c_int(pgls->memory, pargs, &line))
+        line = 0;
+
     if ((path & ~3) | (line & ~1))
         return e_Range;
     pgls->g.character.text_path = path;
@@ -388,13 +393,18 @@ hpgl_FN(hpgl_args_t * pargs, hpgl_state_t * pgls)
 int
 hpgl_LM(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
-    int mode = 0, row_number = 0;
+    int mode;
+    int row_number;
     int old_mode =
         (pgls->g.label.double_byte ? 1 : 0) +
         (pgls->g.label.write_vertical ? 2 : 0);
 
-    hpgl_arg_c_int(pgls->memory, pargs, &mode);
-    hpgl_arg_c_int(pgls->memory, pargs, &row_number);
+    if (!hpgl_arg_c_int(pgls->memory, pargs, &mode))
+        mode = 0;
+
+    if (!hpgl_arg_c_int(pgls->memory, pargs, &row_number))
+        row_number = 0;
+
     pgls->g.label.row_offset =
         (row_number < 0 ? 0 : row_number > 255 ? 255 : row_number) << 8;
     mode &= 3;
@@ -414,9 +424,11 @@ hpgl_LM(hpgl_args_t * pargs, hpgl_state_t * pgls)
 int
 hpgl_LO(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
-    int origin = 1;
+    int origin;
 
-    hpgl_arg_c_int(pgls->memory, pargs, &origin);
+    if (!hpgl_arg_c_int(pgls->memory, pargs, &origin))
+        origin = 1;
+
     if (origin < 1 || origin == 10 || origin == 20 || origin > 21)
         return e_Range;
     pgls->g.label.origin = origin;

@@ -1224,7 +1224,11 @@ pjl_process(pjl_parser_state * pst, void *pstate, stream_cursor_read * pr)
             ++p;
             /* null terminate, parse and set the pjl state */
             pst->line[pst->pos] = '\0';
-            pjl_parse_and_process_line(pst);
+            /*
+             * NB PJL continues not considering normal errors but we
+             * ignore memory failure errors here and shouldn't.
+             */
+            (void)pjl_parse_and_process_line(pst);
             pst->pos = 0;
             continue;
         }

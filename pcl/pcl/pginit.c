@@ -133,7 +133,7 @@ hpgl_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         hpgl_default_coordinate_system(pcs);
 
         /* we should not have a path at this point but we make sure */
-        hpgl_clear_current_path(pcs);
+        (void)hpgl_clear_current_path(pcs);
 
         /* Initialize stick/arc font instances */
         hpgl_initialize_stick_fonts(pcs);

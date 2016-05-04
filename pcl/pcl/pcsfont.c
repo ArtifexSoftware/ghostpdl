@@ -947,9 +947,13 @@ pcl_alphanumeric_id_data(pcl_args_t * pargs, pcl_state_t * pcs)
                comparison guide and interacts with the control panel
                so we do not implement it completely.  We have verified
                the following occurs: */
-
-            pcl_end_page_if_marked(pcs);
-            pcl_home_cursor(pcs);
+            {
+                int code = pcl_end_page_if_marked(pcs);
+                if (code < 0)
+                    return code;
+                pcl_home_cursor(pcs);
+            }
+            break;
         default:
             return e_Range;
     }
