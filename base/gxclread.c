@@ -813,8 +813,8 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
 
             /* Store the page information. */
             page_info.cfile = page_info.bfile = NULL;
-            strncpy(page_info.cfname, ppage->page->cfname, sizeof(page_info.cfname));
-            strncpy(page_info.bfname, ppage->page->bfname, sizeof(page_info.bfname));
+            strncpy(page_info.cfname, ppage->page->cfname, sizeof(page_info.cfname)-1);
+            strncpy(page_info.bfname, ppage->page->bfname, sizeof(page_info.bfname)-1);
             page_info.io_procs = ppage->page->io_procs;
             page_info.tile_cache_size = ppage->page->tile_cache_size;
             page_info.bfile_end_pos = ppage->page->bfile_end_pos;
