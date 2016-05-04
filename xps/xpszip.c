@@ -125,7 +125,8 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
     namelength = getshort(ctx->file);
     extralength = getshort(ctx->file);
 
-    fseek(ctx->file, namelength + extralength, 1);
+    if (fseek(ctx->file, namelength + extralength, 1) != 0)
+        return gs_throw(gs_error_ioerror, "fseek to %d failed.\n", namelength + extralength);
 
     if (method == 0)
     {
@@ -198,7 +199,8 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
     int namesize, metasize, commentsize;
     int i;
 
-    fseek(ctx->file, start_offset, 0);
+    if (fseek(ctx->file, start_offset, 0) != 0)
+        return gs_throw1(gs_error_ioerror, "fseek to %d failed.", start_offset);
 
     sig = getlong(ctx->file);
     if (sig != ZIP_END_OF_CENTRAL_DIRECTORY_SIG)
