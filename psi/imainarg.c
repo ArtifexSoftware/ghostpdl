@@ -507,7 +507,6 @@ run_stdin:
 
                     /* get the current device */
                     pdev = gs_currentdevice(minst->i_ctx_p->pgs);
-                        return code;
                     if ((code = gx_saved_pages_param_process((gx_device_printer *)pdev,
                                (byte *)"print normal flush", 18)) < 0)
                         return code;
