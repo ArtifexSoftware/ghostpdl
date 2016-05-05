@@ -4049,7 +4049,7 @@ fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv, int kv0, int 
             code = fill_patch(pfs, &s0, kv / 2, kv0 / 2, kv1 / 2);
         if (code >= 0)
             code = fill_patch(pfs, &s1, kv / 2, kv0 / 2, kv1 / 2);
-        /* fixme : To privide the precise filling order, we must
+        /* fixme : To provide the precise filling order, we must
            decompose left and right wedges into pieces by intersections
            with stripes, and fill each piece with its stripe.
            A lazy wedge list would be fine for storing
@@ -4059,14 +4059,14 @@ fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv, int kv0, int 
            the wedge color appears a constant, so the filling order
            isn't important. The order is important for other
            self-overlapping patches, but the visible effect is
-           just a slight norrowing the patch (as its lower layer appears
+           just a slight narrowing of the patch (as its lower layer appears
            visible through the upper layer near the side).
            This kind of dropout isn't harmful, because
-           contacring self-overlapping patches are painted
+           contacting self-overlapping patches are painted
            one after one by definition, so that a side coverage break
            appears unavoidable by definition.
 
-           Delaying this improvement because it is low important.
+           Delaying this improvement because it is low importance.
          */
         release_colors_inline(pfs, color_stack_ptr, 2);
         pfs->inside = save_inside;
@@ -4074,15 +4074,15 @@ fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv, int kv0, int 
     }
 }
 
-static inline fixed
-lcp1(fixed p0, fixed p3)
-{   /* Computing the 1st pole of a 3d order besier, which applears a line. */
-    return (p0 + p0 + p3) / 3;
+static inline int64_t
+lcp1(int64_t p0, int64_t p3)
+{   /* Computing the 1st pole of a 3d order besier, which appears a line. */
+    return (p0 + p0 + p3);
 }
-static inline fixed
-lcp2(fixed p0, fixed p3)
-{   /* Computing the 2nd pole of a 3d order besier, which applears a line. */
-    return (p0 + p3 + p3) / 3;
+static inline int64_t
+lcp2(int64_t p0, int64_t p3)
+{   /* Computing the 2nd pole of a 3d order besier, which appears a line. */
+    return (p0 + p3 + p3);
 }
 
 static void
@@ -4119,39 +4119,39 @@ make_tensor_patch(const patch_fill_state_t *pfs, tensor_patch *p, const patch_cu
         p->pole[2][2] = interior[2];
         p->pole[2][1] = interior[3];
     } else {
-        p->pole[1][1].x = lcp1(p->pole[0][1].x, p->pole[3][1].x) +
-                          lcp1(p->pole[1][0].x, p->pole[1][3].x) -
-                          lcp1(lcp1(p->pole[0][0].x, p->pole[0][3].x),
-                               lcp1(p->pole[3][0].x, p->pole[3][3].x));
-        p->pole[1][2].x = lcp1(p->pole[0][2].x, p->pole[3][2].x) +
-                          lcp2(p->pole[1][0].x, p->pole[1][3].x) -
-                          lcp1(lcp2(p->pole[0][0].x, p->pole[0][3].x),
-                               lcp2(p->pole[3][0].x, p->pole[3][3].x));
-        p->pole[2][1].x = lcp2(p->pole[0][1].x, p->pole[3][1].x) +
-                          lcp1(p->pole[2][0].x, p->pole[2][3].x) -
-                          lcp2(lcp1(p->pole[0][0].x, p->pole[0][3].x),
-                               lcp1(p->pole[3][0].x, p->pole[3][3].x));
-        p->pole[2][2].x = lcp2(p->pole[0][2].x, p->pole[3][2].x) +
-                          lcp2(p->pole[2][0].x, p->pole[2][3].x) -
-                          lcp2(lcp2(p->pole[0][0].x, p->pole[0][3].x),
-                               lcp2(p->pole[3][0].x, p->pole[3][3].x));
+        p->pole[1][1].x = (fixed)((3*(lcp1(p->pole[0][1].x, p->pole[3][1].x) +
+                                      lcp1(p->pole[1][0].x, p->pole[1][3].x)) -
+                                   lcp1(lcp1(p->pole[0][0].x, p->pole[0][3].x),
+                                        lcp1(p->pole[3][0].x, p->pole[3][3].x)))/9);
+        p->pole[1][2].x = (fixed)((3*(lcp1(p->pole[0][2].x, p->pole[3][2].x) +
+                                      lcp2(p->pole[1][0].x, p->pole[1][3].x)) -
+                                   lcp1(lcp2(p->pole[0][0].x, p->pole[0][3].x),
+                                        lcp2(p->pole[3][0].x, p->pole[3][3].x)))/9);
+        p->pole[2][1].x = (fixed)((3*(lcp2(p->pole[0][1].x, p->pole[3][1].x) +
+                                      lcp1(p->pole[2][0].x, p->pole[2][3].x)) -
+                                   lcp2(lcp1(p->pole[0][0].x, p->pole[0][3].x),
+                                        lcp1(p->pole[3][0].x, p->pole[3][3].x)))/9);
+        p->pole[2][2].x = (fixed)((3*(lcp2(p->pole[0][2].x, p->pole[3][2].x) +
+                                      lcp2(p->pole[2][0].x, p->pole[2][3].x)) -
+                                   lcp2(lcp2(p->pole[0][0].x, p->pole[0][3].x),
+                                        lcp2(p->pole[3][0].x, p->pole[3][3].x)))/9);
 
-        p->pole[1][1].y = lcp1(p->pole[0][1].y, p->pole[3][1].y) +
-                          lcp1(p->pole[1][0].y, p->pole[1][3].y) -
-                          lcp1(lcp1(p->pole[0][0].y, p->pole[0][3].y),
-                               lcp1(p->pole[3][0].y, p->pole[3][3].y));
-        p->pole[1][2].y = lcp1(p->pole[0][2].y, p->pole[3][2].y) +
-                          lcp2(p->pole[1][0].y, p->pole[1][3].y) -
-                          lcp1(lcp2(p->pole[0][0].y, p->pole[0][3].y),
-                               lcp2(p->pole[3][0].y, p->pole[3][3].y));
-        p->pole[2][1].y = lcp2(p->pole[0][1].y, p->pole[3][1].y) +
-                          lcp1(p->pole[2][0].y, p->pole[2][3].y) -
-                          lcp2(lcp1(p->pole[0][0].y, p->pole[0][3].y),
-                               lcp1(p->pole[3][0].y, p->pole[3][3].y));
-        p->pole[2][2].y = lcp2(p->pole[0][2].y, p->pole[3][2].y) +
-                          lcp2(p->pole[2][0].y, p->pole[2][3].y) -
-                          lcp2(lcp2(p->pole[0][0].y, p->pole[0][3].y),
-                               lcp2(p->pole[3][0].y, p->pole[3][3].y));
+        p->pole[1][1].y = (fixed)((3*(lcp1(p->pole[0][1].y, p->pole[3][1].y) +
+                                      lcp1(p->pole[1][0].y, p->pole[1][3].y)) -
+                                   lcp1(lcp1(p->pole[0][0].y, p->pole[0][3].y),
+                                        lcp1(p->pole[3][0].y, p->pole[3][3].y)))/9);
+        p->pole[1][2].y = (fixed)((3*(lcp1(p->pole[0][2].y, p->pole[3][2].y) +
+                                      lcp2(p->pole[1][0].y, p->pole[1][3].y)) -
+                                   lcp1(lcp2(p->pole[0][0].y, p->pole[0][3].y),
+                                        lcp2(p->pole[3][0].y, p->pole[3][3].y)))/9);
+        p->pole[2][1].y = (fixed)((3*(lcp2(p->pole[0][1].y, p->pole[3][1].y) +
+                                      lcp1(p->pole[2][0].y, p->pole[2][3].y)) -
+                                   lcp2(lcp1(p->pole[0][0].y, p->pole[0][3].y),
+                                        lcp1(p->pole[3][0].y, p->pole[3][3].y)))/9);
+        p->pole[2][2].y = (fixed)((3*(lcp2(p->pole[0][2].y, p->pole[3][2].y) +
+                                      lcp2(p->pole[2][0].y, p->pole[2][3].y)) -
+                                   lcp2(lcp2(p->pole[0][0].y, p->pole[0][3].y),
+                                        lcp2(p->pole[3][0].y, p->pole[3][3].y)))/9);
     }
     patch_set_color(pfs, p->c[0][0], curve[0].vertex.cc);
     patch_set_color(pfs, p->c[1][0], curve[1].vertex.cc);
