@@ -588,20 +588,17 @@ xps_process_file(xps_context_t *ctx, char *filename)
 
         if (fseek(ctx->file, 0, SEEK_END) != 0) {
             code = gs_rethrow(gs_error_ioerror, "fseek to file end failed");
-            xps_free_part(ctx, part);
             goto cleanup;
         }
 
         size = ftell(ctx->file);
         if (size < 0) {
             code = gs_rethrow(gs_error_ioerror, "ftell raised an error");
-            xps_free_part(ctx, part);
             goto cleanup;
         }
 
         if (fseek(ctx->file, 0, SEEK_SET) != 0) {
             code = gs_rethrow(gs_error_ioerror, "fseek to file begin failed");
-            xps_free_part(ctx, part);
             goto cleanup;
         }
 
