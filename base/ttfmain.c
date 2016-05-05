@@ -707,8 +707,8 @@ retry:
                     /* We have a range or errors that can be caused by
                      * bad bytecode
                      */
-                    if ((int)error >= TT_Err_Invalid_Opcode
-                     || (int)error <= TT_Err_Invalid_Displacement) {
+                    if ((int)code >= TT_Err_Invalid_Opcode
+                     || (int)code <= TT_Err_Invalid_Displacement) {
                         error = fBadInstruction;
                     }
                     else {
@@ -1040,7 +1040,5 @@ FontError ttfOutliner__Outline(ttfOutliner *self, int glyphIndex,
         self->post_transform.c /= pFont->nUnitsPerEm;
         self->post_transform.d /= pFont->nUnitsPerEm;
     }
-    if (error != fNoError && error != fPatented)
-        return error;
     return error;
 }

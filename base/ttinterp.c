@@ -4107,7 +4107,7 @@ static int nInstrCount=0;
     distance = CUR_Func_project( CUR.zp0.cur_x[p2] -
                                    CUR.zp1.cur_x[p1],
                                  CUR.zp0.cur_y[p2] -
-                                   CUR.zp1.cur_x[p1] ) / 2;
+                                   CUR.zp1.cur_y[p1] ) / 2;
 
     CUR_Func_move( &CUR.zp1, p1, distance );
 
@@ -5106,7 +5106,6 @@ static int nInstrCount=0;
           break;
 
         default:
-          CUR.error = CUR.error;
           goto _LErrorLabel;
           break;
         }
