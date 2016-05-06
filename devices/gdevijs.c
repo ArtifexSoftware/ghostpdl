@@ -765,10 +765,13 @@ gsijs_set_resolution(gx_device_ijs *ijsdev)
 
             if (i == sizeof(buf))
                 code = IJS_EBUF;
-            buf[i] = 0;
-            x_dpi = y_dpi = strtod (buf, &tail);
-            if (tail == buf)
-                code = IJS_ESYNTAX;
+            else
+            {
+                buf[i] = 0;
+                x_dpi = y_dpi = strtod (buf, &tail);
+                if (tail == buf)
+                    code = IJS_ESYNTAX;
+            }
         } else {
             double x, y;
 
