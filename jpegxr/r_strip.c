@@ -2318,7 +2318,7 @@ static void rflush_recover_context(jxr_image_t image)
                 MACROBLK_UP1(image,ch,tx,mx).hp_quant = image->mb_row_context[ch][off1].hp_quant;
                 MACROBLK_UP2(image,ch,tx,mx).hp_quant = image->mb_row_context[ch][off2].hp_quant;
                 MACROBLK_UP3(image,ch,tx,mx).hp_quant = image->mb_row_context[ch][off3].hp_quant;
-
+                count = (ch==0)? 256 : format_scale;
                 for (idx = 0 ; idx < count; idx += 1)
                     MACROBLK_CUR(image,ch,tx,mx).data[idx] = image->mb_row_context[ch][off0].data[idx];
                 for (idx = 0 ; idx < count; idx += 1)
