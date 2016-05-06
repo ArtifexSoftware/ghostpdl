@@ -50,7 +50,7 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
     byte *wlimit = pw->limit;
     int status = 0;
     int prev = ss->last_char;
-    int count;
+    unsigned int count;
 
     if_debug3m('w', ss->memory, "[w85]initial ss->count = %d, rcount = %d, wcount = %d\n",
                ss->count, (int)(rlimit - p), (int)(wlimit - q));
