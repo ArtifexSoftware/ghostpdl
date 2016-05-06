@@ -426,81 +426,6 @@ zgetCPSImode(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* ------ gs persistent cache operators ------ */
-/* these are for testing only. they're disabled in the normal build
- * to prevent access to the cache by malicious postscript files
- *
- * use something like this:
- *   (value) (key) .pcacheinsert
- *   (key) .pcachequery { (\n) concatstrings print } if
- */
-
-#ifdef DEBUG_CACHE
-
-/* <string> <string> .pcacheinsert */
-static int
-zpcacheinsert(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    char *key, *buffer;
-    int keylen, buflen;
-    int code = 0;
-
-    check_read_type(*op, t_string);
-    keylen = r_size(op);
-    key = op->value.bytes;
-    check_read_type(*(op - 1), t_string);
-    buflen = r_size(op - 1);
-    buffer = (op - 1)->value.bytes;
-
-    code = gp_cache_insert(0, key, keylen, buffer, buflen);
-    if (code < 0)
-                return code;
-
-        pop(2);
-
-    return code;
-}
-
-/* allocation callback for query result */
-static void *
-pcache_alloc_callback(void *userdata, int bytes)
-{
-    i_ctx_t *i_ctx_p = (i_ctx_t*)userdata;
-    return ialloc_string(bytes, "pcache buffer");
-}
-
-/* <string> .pcachequery <string> true */
-/* <string> .pcachequery false */
-static int
-zpcachequery(i_ctx_t *i_ctx_p)
-{
-        os_ptr op = osp;
-        int len;
-        char *key;
-        byte *string;
-        int code = 0;
-
-        check_read_type(*op, t_string);
-        len = r_size(op);
-        key = op->value.bytes;
-        len = gp_cache_query(GP_CACHE_TYPE_TEST, key, len, (void**)&string, &pcache_alloc_callback, i_ctx_p);
-        if (len < 0) {
-                make_false(op);
-                return 0;
-        }
-        if (string == NULL)
-                return_error(gs_error_VMerror);
-        make_string(op, a_all | icurrent_space, len, string);
-
-        push(1);
-        make_true(op);
-
-        return code;
-}
-
-#endif /* DEBUG_CACHE */
-
 /* ------ Initialization procedure ------ */
 
 const op_def zmisc_op_defs[] =
@@ -519,10 +444,5 @@ const op_def zmisc_op_defs[] =
     {"0usertime", zusertime},
     {"1.setCPSImode", zsetCPSImode},
     {"0.getCPSImode", zgetCPSImode},
-#ifdef DEBUG_CACHE
-        /* pcache test */
-    {"2.pcacheinsert", zpcacheinsert},
-    {"1.pcachequery", zpcachequery},
-#endif
     op_def_end(0)
 };

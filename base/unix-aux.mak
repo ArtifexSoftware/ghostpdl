@@ -30,7 +30,7 @@ UNIX_AUX_MAK=$(GLSRC)unix-aux.mak $(TOP_MAKEFILES)
 # (SVR4) platforms.
 unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_upapr.$(OBJ) $(GLOBJ)gp_unix.$(OBJ)\
        $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)\
-       $(GLOBJ)gp_unix_cache.$(OBJ) $(GLOBJ)gp_nxpsprn.$(OBJ)
+       $(GLOBJ)gp_nxpsprn.$(OBJ)
 
 $(GLGEN)unix_.dev: $(unix__) $(GLD)nosync.dev $(GLD)smd5.dev $(UNIX_AUX_MAK) $(MAKEDIRS)
 	$(SETMOD) $(GLGEN)unix_ $(unix__) -include $(GLD)nosync
@@ -44,11 +44,6 @@ $(AUX)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
  $(pipe__h) $(string__h) $(time__h)\
  $(gx_h) $(gsexit_h) $(gp_h) $(UNIX_AUX_MAK) $(MAKEDIRS)
 	$(GLCCAUX) $(FONTCONFIG_CFLAGS) $(AUXO_)gp_unix.$(OBJ) $(C_) $(GLSRC)gp_unix.c
-
-$(GLOBJ)gp_unix_cache.$(OBJ): $(GLSRC)gp_unix_cache.c $(AK)\
- $(stdio__h) $(string__h) $(time__h) $(gconfigd_h) $(gp_h) $(gsmd5_h)\
- $(UNIX_AUX_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gp_unix_cache.$(OBJ) $(C_) $(GLSRC)gp_unix_cache.c
 
 # assume all Unix platforms support unbuffered read
 $(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
