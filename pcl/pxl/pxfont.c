@@ -756,7 +756,7 @@ pxReadChar(px_args_t * par, px_state_t * pxs)
                         if (data)
                             memmove(data + bmp_offset, data + 10, bmp_size);
                         else
-                            code = 1;
+                            code = gs_note_error(errorInsufficientMemory);
                     }
                 }
                 break;

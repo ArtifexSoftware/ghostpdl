@@ -363,7 +363,7 @@ pl_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
     /* guess if the font type is not truetype */
     if (pfont->FontType != ft_TrueType) {
         glyph -= 29;
-        if (glyph >= 0 && glyph < 258) {
+        if (glyph < 258) {
             pstr->data = (const byte *)pl_mac_names[glyph];
             pstr->size = strlen((const char *)pstr->data);
             return 0;

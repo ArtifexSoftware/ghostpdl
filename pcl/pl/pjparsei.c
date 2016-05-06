@@ -157,14 +157,13 @@ static int                      /* ret 0 ok, else -ve error code */
 pjl_impl_init_job(pl_interp_instance_t * instance       /* interp instance to start job in */
     )
 {
-    int code = 0;
     pjl_interp_instance_t *pjli = (pjl_interp_instance_t *) instance;
 
     if (pjli->state == 0)
-        code = gs_error_VMerror;
+        return gs_error_VMerror;
     /* copy the default state to the initial state */
     pjl_set_init_from_defaults(pjli->state);
-    return code;
+    return 0;
 }
 
 /* Parse a cursor-full of data */

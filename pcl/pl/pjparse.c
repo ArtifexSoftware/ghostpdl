@@ -1003,7 +1003,7 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
         }
     }
     gs_free_object(pst->mem, token, "working buffer for PJL parsing");
-    return (tok == DONE ? 0 : -1);
+    return 0;
 }
 
 /* get a file from 0: or 1: volume */
@@ -1047,6 +1047,7 @@ int
 pjl_get_named_resource(pjl_parser_state * pst, char *name, byte * data)
 {
     long int size;
+    int code = 0;
     FILE *fp = get_fp(pst, name);
 
     if (fp == NULL)
@@ -1054,10 +1055,10 @@ pjl_get_named_resource(pjl_parser_state * pst, char *name, byte * data)
     fseek(fp, 0L, SEEK_END);
     size = ftell(fp);
     rewind(fp);
-    if (size != fread(data, 1, size, fp)) {
-        fclose(fp);
-        return -1;
+    if (size < 0 || (size != fread(data, 1, size, fp))) {
+        code = -1;
     }
+    fclose(fp);
     return 0;
 }
 
