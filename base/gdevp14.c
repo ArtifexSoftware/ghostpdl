@@ -2292,8 +2292,9 @@ pdf14_fill_path(gx_device *dev,	const gs_imager_state *pis,
     gs_pattern2_instance_t *pinst = NULL;
 
     new_is.is_gstate = false;
-
-    if (pdcolor != NULL && gx_dc_is_pattern1_color(pdcolor)){
+    if (pdcolor == NULL)
+       return_error(gs_error_unknownerror);	/* color must be defined */
+    if (gx_dc_is_pattern1_color(pdcolor)){
         if( gx_pattern1_get_transptr(pdcolor) != NULL ||
             gx_pattern1_clist_has_trans(pdcolor) ){
             /* In this case, we need to push a transparency group
@@ -2341,7 +2342,7 @@ pdf14_fill_path(gx_device *dev,	const gs_imager_state *pis,
             return code;
         }
     }
-    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor)) {
+    if (gx_dc_is_pattern2_color(pdcolor)) {
         pinst =
             (gs_pattern2_instance_t *)pdcolor->ccolor.pattern;
            pinst->saved->has_transparency = true;
@@ -2408,7 +2409,7 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
     int i, j, k;
     byte *line, *dst_ptr;
     byte src[PDF14_MAX_PLANES];
-    byte dst[PDF14_MAX_PLANES];
+    byte dst[PDF14_MAX_PLANES] = { 0 };
     gs_blend_mode_t blend_mode = pdev->blend_mode;
     bool additive = pdev->ctx->additive;
     int rowstride = buf->rowstride;
@@ -2596,9 +2597,11 @@ pdf14_fill_mask(gx_device * orig_dev,
     bool has_pattern_trans = false;
     cmm_dev_profile_t *dev_profile;
 
+    if (pdcolor == NULL)
+        return_error(gs_error_unknownerror);	/* color must be defined */
     /* If we are doing a fill with a pattern that has a transparency then
        go ahead and do a push and a pop of the transparency group */
-    if (pdcolor != NULL && gx_dc_is_pattern1_color(pdcolor)) {
+    if (gx_dc_is_pattern1_color(pdcolor)) {
         if( gx_pattern1_get_transptr(pdcolor) != NULL) {
             ptile = pdcolor->colors.pattern.p_tile;
             /* Set up things in the ptile so that we get the proper
@@ -2700,6 +2703,8 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
     gx_path path_ttrans;
     gs_blend_mode_t blend_mode;
 
+    if (ppath == NULL)
+        return_error(gs_error_unknownerror);	/* should not happen */
     if (pcpath != NULL) {
         code = gx_cpath_init_local_shared_nested(&cpath_intersection, pcpath, ppath->memory, 1);
     } else {
@@ -2709,12 +2714,10 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
     }
     if (code < 0)
         return code;
-    if (ppath != NULL) {
-        code = gx_cpath_intersect_with_params(&cpath_intersection, ppath,
-                                              params->rule, pis_noconst, params);
-        if (code < 0)
-            return code;
-    }
+    code = gx_cpath_intersect_with_params(&cpath_intersection, ppath,
+                                          params->rule, pis_noconst, params);
+    if (code < 0)
+        return code;
     /* One (common) case worth optimising for is where we have a pattern that
      * is positioned such that only one repeat of the tile is actually
      * visible. In this case, we can restrict the size of the blending group
@@ -2767,6 +2770,8 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
            occuring it will be blended in the proper manner i.e in the tile
            underlying color space. */
         if (ptile->cdev == NULL) {
+            if (ptile->ttrans == NULL)
+                return_error(gs_error_unknownerror);	/* should not happen */
             n_chan_tile = ptile->ttrans->n_chan;
         } else {
             n_chan_tile = ptile->cdev->common.color_info.num_components+1;
@@ -4076,13 +4081,15 @@ pdf14_update_device_color_procs(gx_device *dev,
                     iccprofile = gsicc_read_serial_icc((gx_device *) pcrdev,
                                                        icc_hashcode);
                     if (iccprofile == NULL)
-                        return gs_throw(-1, "ICC data not found in clist");
+                        return gs_throw(gs_error_unknownerror, "ICC data not found in clist");
                     /* Keep a pointer to the clist device */
                     iccprofile->dev = (gx_device *) pcrdev;
                 } else {
                     /* Go ahead and rc increment right now.  This way when
                        we pop, we will make sure to decrement and avoid a
                        leak for the above profile that we just created */
+                    if (iccprofile == NULL)
+                        return gs_throw(gs_error_unknownerror, "ICC data unknown");
                     rc_increment(iccprofile);
                 }
                 new_num_comps = iccprofile->num_comps;
@@ -4116,6 +4123,9 @@ pdf14_update_device_color_procs(gx_device *dev,
                             comp_bits[k] = 8;
                             comp_shift[k] = (3-k)*8;
                         }
+                        break;
+                    default:
+                        return_error(gs_error_rangecheck);
                         break;
                 }
                 break;
@@ -4662,7 +4672,7 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     int i, j, k;
     byte *dst_ptr;
     byte src[PDF14_MAX_PLANES];
-    byte dst[PDF14_MAX_PLANES];
+    byte dst[PDF14_MAX_PLANES] = { 0 };
     gs_blend_mode_t blend_mode = pdev->blend_mode;
     bool additive = pdev->ctx->additive;
     int rowstride = buf->rowstride;
@@ -4864,7 +4874,7 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev, int x, int y, int w, int h,
     int i, j, k;
     byte *bline, *bg_ptr, *line, *dst_ptr;
     byte src[PDF14_MAX_PLANES];
-    byte dst[PDF14_MAX_PLANES];
+    byte dst[PDF14_MAX_PLANES] = { 0 };
     int rowstride = buf->rowstride;
     int planestride = buf->planestride;
     int num_chan = buf->n_chan;
@@ -4962,8 +4972,8 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev, int x, int y, int w, int h,
             } else {
                 for (k = 0; k < num_comp; ++k)
                     dst[k] = 255 - bg_ptr[k * planestride];
-                dst[num_comp] = bg_ptr[num_comp * planestride];
             }
+            dst[num_comp] = bg_ptr[num_comp * planestride];	/* alpha doesn't invert */
             if (buf->isolated) {
                 art_pdf_knockoutisolated_group_8(dst, src, num_comp);
             } else {
@@ -5698,7 +5708,7 @@ c_pdf14trans_equal(const gs_composite_t	* pct0,	const gs_composite_t * pct1)
 static const char * pdf14_opcode_names[] = PDF14_OPCODE_NAMES;
 #endif
 
-#define	put_value(dp, value)\
+#define put_value(dp, value)\
     BEGIN\
         memcpy(dp, &value, sizeof(value));\
         dp += sizeof(value);\
@@ -5931,9 +5941,10 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
     }
 
     /* If we are writing more than the maximum ever expected,
-     * return a rangecheck error.
+     * return a rangecheck error. Second check is for Coverity
      */
-    if ( need + 3 > (MAX_CLIST_COMPOSITOR_SIZE) )
+    if ((need + 3 > MAX_CLIST_COMPOSITOR_SIZE) ||
+        (need + 3 - mask_size > MAX_CLIST_TRANSPARENCY_BUFFER_SIZE) )
         return_error(gs_error_rangecheck);
 
     /* Copy our serialized data into the output buffer */
