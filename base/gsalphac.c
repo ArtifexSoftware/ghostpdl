@@ -591,7 +591,8 @@ composite_values(const pixel_row_t * pdest, const const_pixel_row_t * psource,
     bool constant_colors = psource->data == 0;
     uint highlight_value = (1 << dest_bpv) - 1;
 
-    sample_load_declare(sptr, sbit);
+    const byte *sptr;
+    int sbit;
     sample_store_declare(dptr, dbit, dbyte);
 
     {
@@ -647,10 +648,6 @@ composite_values(const pixel_row_t * pdest, const const_pixel_row_t * psource,
             int j;
             uint result_alpha = dest_alpha;
 
-/* get_value does not increment the source pointer. */
-#define get_value(v, ptr, bit, bpv, vmax)\
-  sample_load16(v, ptr, bit, bpv)
-
 /* put_value increments the destination pointer. */
 #define put_value(v, ptr, bit, bpv, bbyte)\
   sample_store_next16(v, ptr, bit, bpv, bbyte)
@@ -663,7 +660,8 @@ composite_values(const pixel_row_t * pdest, const const_pixel_row_t * psource,
                 int dabit = dbit + dest_bpv * dest_alpha_j;
                 const byte *daptr = dptr + (dabit >> 3);
 
-                get_value(dest_alpha, daptr, dabit & 7, dest_bpv, dest_max);
+                if (sample_load16(&dest_alpha, daptr, dabit & 7, dest_bpv) < 0)
+                    return_error(gs_error_rangecheck);
 #ifdef PREMULTIPLY_TOWARDS_WHITE
                 dest_bias = dest_max - dest_alpha;
 #endif
@@ -677,7 +675,8 @@ composite_values(const pixel_row_t * pdest, const const_pixel_row_t * psource,
                     advance(sptr, sbit, source_bpv);
                 else
                     advance(saptr, sabit, source_bpv * source_alpha_j);
-                get_value(source_alpha, saptr, sabit, source_bpv, source_max);
+                if (sample_load16(&dest_alpha, saptr, sabit, source_bpv) < 0)
+                    return_error(gs_error_rangecheck);
 #ifdef PREMULTIPLY_TOWARDS_WHITE
                 source_bias = source_max - source_alpha;
 #endif
@@ -710,10 +709,12 @@ composite_values(const pixel_row_t * pdest, const const_pixel_row_t * psource,
                     if (constant_colors)
                         source_v = pcp->source_values[j - 1];
                     else {
-                        get_value(source_v, sptr, sbit, source_bpv, source_max);
+                        if (sample_load16(&source_v, sptr, sbit, source_bpv) < 0)
+                            return_error(gs_error_rangecheck);
                         advance(sptr, sbit, source_bpv);
                     }
-                    get_value(dest_v, dptr, dbit, dest_bpv, dest_max);
+                    if (sample_load16(&dest_v, dptr, dbit, dest_bpv) < 0)
+                        return_error(gs_error_rangecheck);
 #ifdef PREMULTIPLY_TOWARDS_WHITE
                     source_v -= source_bias;
                     dest_v -= dest_bias;
@@ -824,7 +825,6 @@ composite_values(const pixel_row_t * pdest, const const_pixel_row_t * psource,
             /* Store a trailing destination alpha value. */
             if (dest_alpha_j > 0)
                 put_value(result_alpha, dptr, dbit, dest_bpv, dbyte);
-#undef get_value
 #undef put_value
 #undef advance
         }

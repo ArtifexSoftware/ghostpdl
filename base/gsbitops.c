@@ -529,8 +529,8 @@ bits_extract_plane(const bits_plane_t *dest /*write*/,
             break;
         }
         default: {
-            sample_load_declare_setup(sptr, sbit, source_row, source_bit,
-                                      source_depth);
+            const byte *sptr = source_row;
+            int sbit = source_bit;
             sample_store_declare_setup(dptr, dbit, dbbyte, dest_row, dest_bit,
                                        dest_depth);
 
@@ -539,7 +539,12 @@ bits_extract_plane(const bits_plane_t *dest /*write*/,
                 gx_color_index color;
                 uint pixel;
 
-                sample_load_next_any(color, sptr, sbit, source_depth);
+                if (sizeof(color) > 4)
+                    if (sample_load_next64((uint64_t *)&color, &sptr, &sbit, source_depth) < 0)
+                        return_error(gs_error_rangecheck);
+                else
+                    if (sample_load_next32((uint32_t *)&color, &sptr, &sbit, source_depth) < 0)
+                        return_error(gs_error_rangecheck);
                 pixel = (color >> shift) & plane_mask;
                 sample_store_next8(pixel, dptr, dbit, dest_depth, dbbyte);
             }
@@ -614,8 +619,8 @@ bits_expand_plane(const bits_plane_t *dest /*write*/,
              ++y, source_row += source->raster, dest_row += dest->raster
              ) {
             int x;
-            sample_load_declare_setup(sptr, sbit, source_row, source_bit,
-                                      source_depth);
+            const byte *sptr = source_row;
+            int sbit = source_bit;
             sample_store_declare_setup(dptr, dbit, dbbyte, dest_row, dest_bit,
                                        dest_depth);
 
@@ -624,7 +629,9 @@ bits_expand_plane(const bits_plane_t *dest /*write*/,
                 uint color;
                 gx_color_index pixel;
 
-                sample_load_next8(color, sptr, sbit, source_depth);
+                if (sample_load_next8(&color, &sptr, &sbit, source_depth) < 0)
+                    return_error(gs_error_rangecheck);
+
                 pixel = (gx_color_index)color << shift;
                 sample_store_next_any(pixel, dptr, dbit, dest_depth, dbbyte);
             }

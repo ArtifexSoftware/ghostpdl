@@ -646,8 +646,8 @@ gx_image3x_plane_data(gx_image_enum_common_t * info,
         /* Pull apart the source data and the mask data. */
         /* We do this in the simplest (not fastest) way for now. */
         uint bit_x = bpc * (num_components + num_chunky) * planes[pi].data_x;
-        sample_load_declare_setup(sptr, sbit, planes[0].data + (bit_x >> 3),
-                                  bit_x & 7, bpc);
+        const byte *sptr = planes[0].data + (bit_x >> 3);
+        int sbit = bit_x & 7;
         sample_store_declare_setup(pptr, pbit, pbbyte,
                                    penum->pixel.data, 0, bpc);
         sample_store_declare(dptr[NUM_MASKS], dbit[NUM_MASKS],
@@ -678,12 +678,14 @@ gx_image3x_plane_data(gx_image_enum_common_t * info,
 
             for (i = 0; i < NUM_MASKS; ++i)
                 if (depth[i]) {
-                    sample_load_next12(value, sptr, sbit, bpc);
+                    if (sample_load_next12(&value, &sptr, &sbit, bpc) < 0)
+                        return_error(gs_error_rangecheck);
                     sample_store_next12(value, dptr[i], dbit[i], depth[i],
                                         dbbyte[i]);
                 }
             for (i = 0; i < num_components; ++i) {
-                sample_load_next12(value, sptr, sbit, bpc);
+                if (sample_load_next12(&value, &sptr, &sbit, bpc) < 0)
+                    return_error(gs_error_rangecheck);
                 sample_store_next12(value, pptr, pbit, bpc, pbbyte);
             }
         }

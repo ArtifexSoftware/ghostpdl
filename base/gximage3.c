@@ -545,9 +545,8 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
                 /* We do this in the simplest (not fastest) way for now. */
                 uint bit_x = bpc * (num_components + 1) * planes[0].data_x;
 
-                sample_load_declare_setup(sptr, sbit,
-                                          planes[0].data + (bit_x >> 3),
-                                          bit_x & 7, bpc);
+                const byte *sptr = planes[0].data + (bit_x >> 3);
+                int sbit = bit_x & 7;
                 sample_store_declare_setup(mptr, mbit, mbbyte,
                                            penum->mask_data, 0, 1);
                 sample_store_declare_setup(pptr, pbit, pbbyte,
@@ -565,10 +564,12 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
                     uint value;
                     int i;
 
-                    sample_load_next12(value, sptr, sbit, bpc);
+                    if (sample_load_next12(&value, &sptr, &sbit, bpc) < 0)
+                        return_error(gs_error_rangecheck);
                     sample_store_next12(value != 0, mptr, mbit, 1, mbbyte);
                     for (i = 0; i < num_components; ++i) {
-                        sample_load_next12(value, sptr, sbit, bpc);
+                        if (sample_load_next12(&value, &sptr, &sbit, bpc) < 0)
+                            return_error(gs_error_rangecheck);
                         sample_store_next12(value, pptr, pbit, bpc, pbbyte);
                     }
                 }

@@ -424,9 +424,9 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
     params->options &= ~GB_COLORS_ALL | GB_COLORS_NATIVE;
     for (; h > 0; dest_line += raster, src_line += dev_raster, --h) {
         int i;
+        const byte *src = src_line;
+        int sbit = src_bit_offset & 7;
 
-        sample_load_declare_setup(src, sbit, src_line,
-                                  src_bit_offset & 7, src_depth);
         sample_store_declare_setup(dest, dbit, dbyte, dest_line,
                                    dest_bit_offset & 7, depth);
 
@@ -444,18 +444,21 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
 
             /* Fetch the source data. */
             if (stored->options & GB_ALPHA_FIRST) {
-                sample_load_next16(va, src, sbit, src_depth);
+                if (sample_load_next16((uint *)&va, &src, &sbit, src_depth) < 0)
+                    return_error(gs_error_rangecheck);
                 va = v2cv(va);
                 do_alpha = true;
             }
             for (j = 0; j < ncolors; ++j) {
                 gx_color_value vj;
 
-                sample_load_next16(vj, src, sbit, src_depth);
+                if (sample_load_next16((uint *)&vj, &src, &sbit, src_depth) < 0)
+                    return_error(gs_error_rangecheck);
                 sc[j] = v2frac(vj);
             }
             if (stored->options & GB_ALPHA_LAST) {
-                sample_load_next16(va, src, sbit, src_depth);
+                if (sample_load_next16((uint *)&va, &src, &sbit, src_depth) < 0)
+                    return_error(gs_error_rangecheck);
                 va = v2cv(va);
                 do_alpha = true;
             }
@@ -563,15 +566,22 @@ gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
     for (i = (depth > 4 ? 16 : 1 << depth); --i >= 0; )
         mapped[i] = 0;
     for (; h > 0; dest_line += raster, src_line += dev_raster, --h) {
-        sample_load_declare_setup(src, bit, src_line,
-                                  src_bit_offset & 7, depth);
+        const byte *src = src_line;
+        int bit = src_bit_offset & 7;
         byte *dest = dest_line;
 
         for (i = 0; i < w; ++i) {
             gx_color_index pixel = 0;
             gx_color_value rgba[4];
 
-            sample_load_next_any(pixel, src, bit, depth);
+            if (sizeof(pixel) > 4) {
+                if (sample_load_next64((uint64_t *)&pixel, &src, &bit, depth) < 0)
+                    return_error(gs_error_rangecheck);
+            }
+            else {
+                if (sample_load_next32((uint32_t *)&pixel, &src, &bit, depth) < 0)
+                    return_error(gs_error_rangecheck);
+            }
             if (pixel < 16) {
                 if (mapped[pixel]) {
                     /* Use the value from the cache. */
