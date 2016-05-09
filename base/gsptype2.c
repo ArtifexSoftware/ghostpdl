@@ -201,7 +201,8 @@ gs_pattern2_set_color(const gs_client_color * pcc, gs_state * pgs)
 {
     gs_pattern2_instance_t * pinst = (gs_pattern2_instance_t *)pcc->pattern;
     gs_color_space * pcs = pinst->templat.Shading->params.ColorSpace;
-    int code, k, num_comps;
+    int code;
+    uchar k, num_comps;
 
     pinst->saved->overprint_mode = pgs->overprint_mode;
     pinst->saved->overprint = pgs->overprint;

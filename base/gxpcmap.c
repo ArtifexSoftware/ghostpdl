@@ -447,8 +447,8 @@ pattern_accum_open(gx_device * dev)
                     if (target->is_planar > 0)
                     {
                         gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
-                        int num_comp = padev->color_info.num_components;
-                        int i;
+                        uchar num_comp = padev->color_info.num_components;
+                        uchar i;
                         int depth = target->color_info.depth / target->color_info.num_components;
                         for (i = 0; i < num_comp; i++)
                         {

@@ -311,7 +311,7 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
         r.x += fixed_epsilon;
 #	if LINEAR_COLOR
 #	    ifdef DEBUG
-                if (check_gradient_overflow(left, right, num_components)) {
+                if (check_gradient_overflow(left, right)) {
                     /* The caller must care of.
                        Checking it here looses some performance with triangles. */
                     return_error(gs_error_unregistered);

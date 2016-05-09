@@ -5484,7 +5484,7 @@ cups_print_planar(gx_device_printer *pdev,
 {
   int		x;			/* Looping var */
   int		y;			/* Looping var */
-  int		z;			/* Looping var */
+  unsigned char z;			/* Looping var */
   unsigned char	srcbit;			/* Current source bit */
   unsigned char	dstbit;			/* Current destination bit */
   unsigned char	temp;			/* Temporary variable */

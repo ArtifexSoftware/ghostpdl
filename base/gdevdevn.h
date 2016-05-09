@@ -288,7 +288,7 @@ int repack_data(byte * source, byte * dest, int depth, int first_bit,
  *	and 8.
  * Input values are not tested for validity.
  */
-int bpc_to_depth(int ncomp, int bpc);
+int bpc_to_depth(uchar ncomp, int bpc);
 
 /*
  * We are using bytes to pack both which colorants are non zero and the values

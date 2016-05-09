@@ -221,8 +221,7 @@ step_gradient(trap_gradient *g, int num_components)
 }
 
 static inline bool
-check_gradient_overflow(const gs_linear_color_edge *le, const gs_linear_color_edge *re,
-                int num_components)
+check_gradient_overflow(const gs_linear_color_edge *le, const gs_linear_color_edge *re)
 {
     if (le->c1 == NULL || re->c1 == NULL) {
         /* A wedge doesn't use a gradient by X. */
@@ -476,7 +475,6 @@ gx_default_fill_linear_color_trapezoid(gx_device *dev, const gs_fill_attributes 
         const frac31 *c2, const frac31 *c3)
 {
     gs_linear_color_edge le, re;
-    int num_components = dev->color_info.num_components;
 
     le.start = *p0;
     le.end = *p1;
@@ -488,7 +486,7 @@ gx_default_fill_linear_color_trapezoid(gx_device *dev, const gs_fill_attributes 
     re.c0 = c2;
     re.c1 = c3;
     re.clip_x = fa->clip->q.x;
-    if (check_gradient_overflow(&le, &re, num_components))
+    if (check_gradient_overflow(&le, &re))
         return 0;
     return fill_linear_color_trapezoid_nocheck(dev, fa, &le, &re);
 }
@@ -501,7 +499,6 @@ fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
 {   /* p0 must be the lowest vertex. */
     int code;
     gs_linear_color_edge e0, e1, e2;
-    int num_components = dev->color_info.num_components;
 
     if (p0->y == p1->y)
         return gx_default_fill_linear_color_trapezoid(dev, fa, p0, p2, p1, p2, c0, c2, c1, c2);
@@ -523,9 +520,9 @@ fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
         e2.c0 = c1;
         e2.c1 = c2;
         e2.clip_x = fa->clip->q.x;
-        if (check_gradient_overflow(&e0, &e1, num_components))
+        if (check_gradient_overflow(&e0, &e1))
             return 0;
-        if (check_gradient_overflow(&e0, &e2, num_components))
+        if (check_gradient_overflow(&e0, &e2))
             return 0;
         code = fill_linear_color_trapezoid_nocheck(dev, fa, &e0, &e1);
         if (code <= 0) /* Sic! */
@@ -537,9 +534,9 @@ fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
         e2.c0 = c2;
         e2.c1 = c1;
         e2.clip_x = fa->clip->q.x;
-        if (check_gradient_overflow(&e0, &e1, num_components))
+        if (check_gradient_overflow(&e0, &e1))
             return 0;
-        if (check_gradient_overflow(&e2, &e1, num_components))
+        if (check_gradient_overflow(&e2, &e1))
             return 0;
         code = fill_linear_color_trapezoid_nocheck(dev, fa, &e0, &e1);
         if (code <= 0) /* Sic! */

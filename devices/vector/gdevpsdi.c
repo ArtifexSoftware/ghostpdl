@@ -828,7 +828,7 @@ psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
     int code;
     stream_state *ss = s_alloc_state(pdev->memory, s__image_colors_template.stype,
         "psdf_setup_image_colors_filter");
-    int i;
+    unsigned char i;
 
     if (ss == 0)
         return_error(gs_error_VMerror);

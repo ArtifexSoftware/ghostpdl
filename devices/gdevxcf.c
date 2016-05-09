@@ -761,7 +761,7 @@ check_process_color_names(const fixed_colorant_names_list * pcomp_list,
  * Input values are not tested for validity.
  */
 static int
-bpc_to_depth(int ncomp, int bpc)
+bpc_to_depth(uchar ncomp, int bpc)
 {
     static const byte depths[4][8] = {
         {1, 2, 0, 4, 8, 0, 0, 8},

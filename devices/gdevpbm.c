@@ -1308,7 +1308,7 @@ psm_print_page(gx_device_printer * pdev, FILE * pstream)
     uint max_raster = bitmap_raster(pdev->width * pdev->color_info.depth);
     byte *data = gs_alloc_bytes(pdev->memory, max_raster, "pksm_print_page");
     int code = 0;
-    int plane;
+    unsigned char plane;
 
     if (data == 0)
         return_error(gs_error_VMerror);

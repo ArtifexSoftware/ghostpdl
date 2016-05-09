@@ -582,7 +582,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
     gs_int_rect band_rect;
     int lines_rasterized;
     gx_device *bdev;
-    int num_planes =
+    uint num_planes =
         (options & GB_PACKING_CHUNKY ? 1 :
          options & GB_PACKING_PLANAR ? dev->color_info.num_components :
          options & GB_PACKING_BIT_PLANAR ? dev->color_info.depth :

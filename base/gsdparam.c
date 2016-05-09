@@ -127,7 +127,8 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         return param_write_float_array(plist, "Margins", &ma);
     }
     if (strcmp(Param, "MaxSeparations") == 0) {
-        return param_write_int(plist, "MaxSeparations", &dev->color_info.max_components);
+        int max_sep = dev->color_info.max_components;
+        return param_write_int(plist, "MaxSeparations", &max_sep);
     }
     if (strcmp(Param, "NumCopies") == 0) {
         if (dev->NumCopies_set < 0 || (*dev_proc(dev, get_page_device))(dev) == 0) {
@@ -183,7 +184,8 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         return param_write_string(plist, "Name", &dns);
     }
     if (strcmp(Param, "Colors") == 0) {
-        return param_write_int(plist, "Colors", &dev->color_info.num_components);
+        int colors = dev->color_info.num_components;
+        return param_write_int(plist, "Colors", &colors);
     }
     if (strcmp(Param, "BitsPerPixel") == 0) {
         return param_write_int(plist, "BitsPerPixel", &depth);

@@ -255,7 +255,7 @@ typedef enum {
  * information is required, hence the use of an enumeration with an
  * "unknown" setting.
  *
- * GX_CINFO_OPMODE_RGB is an odd case where by the device is RGB based 
+ * GX_CINFO_OPMODE_RGB is an odd case where by the device is RGB based
  * but we attempt to simulate CMY overprinting.  GC_CINFO_OPMODE_RGB_SET
  * is the value after we verify the color model and the colorant positions
  */
@@ -301,7 +301,7 @@ typedef struct gx_device_color_info_s {
      * color models supported by this device. This does not include
      * any alpha components.
      */
-    int max_components;
+    uchar max_components;
 
     /*
      * The number of color components. This does not include any
@@ -309,7 +309,7 @@ typedef struct gx_device_color_info_s {
      * the gx_color_index but is otherwise passed as a separate
      * component.
      */
-    int num_components;
+    uchar num_components;
 
     /*
      * Polarity of the components of the color space, either
@@ -451,7 +451,7 @@ typedef struct gx_device_color_info_s {
      */
     gx_cm_opmode_t opmode;
     gx_color_index process_comps;
-    int black_component;
+    uint black_component;
     bool use_antidropout_downscaler;
 } gx_device_color_info;
 
@@ -1342,9 +1342,9 @@ typedef enum {
   a proper code.
 
   Currently this function is used with gs_rectfill and gs_fillpage.  It is
-  also used for the handling of the devn color type for supporting 
-  large number of spot colorants to planar separation devices. 
-  
+  also used for the handling of the devn color type for supporting
+  large number of spot colorants to planar separation devices.
+
 */
 
 #define dev_t_proc_fill_rectangle_hl_color(proc, dev_t)\

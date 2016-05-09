@@ -3694,9 +3694,10 @@ pdf14_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
     pdf14_ctx *ctx = pdev->ctx;
 #endif
     pdf14_buf *buf = pdev->ctx->stack;
-    int num_planes = dev->color_info.num_components;
+    uchar num_planes = dev->color_info.num_components;
     byte *dptr = (byte *)data + data_x;
-    int yinc, xinc, pi;
+    int yinc, xinc;
+    uchar pi;
     gx_drawing_color dcolor;
     int code = 0;
 
@@ -3998,7 +3999,7 @@ pdf14_update_device_color_procs(gx_device *dev,
     const pdf14_procs_t *new_14procs = NULL;
     pdf14_parent_color_t *parent_color_info;
     gx_color_polarity_t new_polarity;
-    int new_num_comps;
+    uchar new_num_comps;
     bool new_additive;
     byte new_depth;
     gx_device_clist_reader *pcrdev;
@@ -5496,7 +5497,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     cmm_profile_t *icc_profile;
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
-    int k;
+    uchar k;
     int max_bitmap;
     bool use_pdf14_accum = false;
 
@@ -6733,7 +6734,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
     cmm_profile_t *target_profile;
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
-    int k;
+    uchar k;
 
     code = dev_proc(target, get_profile)(target,  &dev_profile);
     if (code < 0)

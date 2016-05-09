@@ -360,11 +360,11 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
                (stored_options & GB_PACKING_CHUNKY) &&
                ((options & stored_options) & GB_COLORS_NATIVE)
                ) {
-        int num_planes = dev->color_info.num_components;
+        uchar num_planes = dev->color_info.num_components;
         int dest_depth = depth / num_planes;
         bits_plane_t source, dest;
         int plane = -1;
-        int i;
+        uchar i;
 
         /* Make sure only one plane is being requested. */
         for (i = 0; i < num_planes; ++i)
@@ -434,6 +434,7 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
 
         for (i = 0; i < w; ++i) {
             int j;
+            uchar k;
             frac sc[4], dc[GX_DEVICE_COLOR_MAX_COMPONENTS];
             gx_color_value v[GX_DEVICE_COLOR_MAX_COMPONENTS], va = alpha_default;
             gx_color_index pixel;
@@ -487,8 +488,8 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
                     return_error(gs_error_rangecheck);
                 }
 
-                for (j = 0; j < dev->color_info.num_components; j++)
-                    v[j] = frac2cv(dc[j]);
+                for (k = 0; k < dev->color_info.num_components; k++)
+                    v[k] = frac2cv(dc[k]);
 
                 pixel = dev_proc(dev, encode_color)(dev, v);
             }

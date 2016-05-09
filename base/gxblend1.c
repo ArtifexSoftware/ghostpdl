@@ -556,8 +556,8 @@ gx_color_index
 pdf14_encode_color(gx_device *dev, const gx_color_value	colors[])
 {
     gx_color_index color = 0;
-    int i;
-    int ncomp = dev->color_info.num_components;
+    uchar i;
+    uchar ncomp = dev->color_info.num_components;
     COLROUND_VARS;
 
     COLROUND_SETUP(8);
@@ -576,8 +576,8 @@ gx_color_index
 pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[])
 {
     gx_color_index color;
-    int i;
-    int ncomp = dev->color_info.num_components;
+    uchar i;
+    uchar ncomp = dev->color_info.num_components;
     COLROUND_VARS;
 
     COLROUND_SETUP(8);
@@ -596,8 +596,8 @@ pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[])
 int
 pdf14_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
 {
-    int i;
-    int ncomp = dev->color_info.num_components;
+    uchar i;
+    uchar ncomp = dev->color_info.num_components;
 
     for (i = 0; i < ncomp; i++) {
         out[ncomp - i - 1] = (gx_color_value) ((color & 0xff) * 0x101);
@@ -609,7 +609,7 @@ pdf14_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
 void
 pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
 {
-    int num_comp = dev->color_info.num_components;
+    uchar num_comp = dev->color_info.num_components;
 
     out[0] = out[1] = out[2] = frac_0;
     out[3] = frac_1 - gray;
@@ -636,7 +636,7 @@ void
 pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_imager_state *pis,
                            frac r, frac g, frac b, frac out[])
 {
-    int num_comp = dev->color_info.num_components;
+    uchar num_comp = dev->color_info.num_components;
 
     if (pis != 0)
         color_rgb_to_cmyk(r, g, b, pis, out, dev->memory);
@@ -656,7 +656,7 @@ pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_imager_state *pis,
 void
 pdf14_cmyk_cs_to_cmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
-    int num_comp = dev->color_info.num_components;
+    uchar num_comp = dev->color_info.num_components;
 
     out[0] = c;
     out[1] = m;

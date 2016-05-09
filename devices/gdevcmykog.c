@@ -165,7 +165,7 @@ static int
 cmykog_open(gx_device * pdev)
 {
   gx_device_cmykog *dev = (gx_device_cmykog *)pdev;
-  int k;
+  unsigned char k;
 
   dev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
   dev->icc_struct->supports_devn = true;
@@ -488,7 +488,8 @@ cmykog_process(void *arg_, gx_device *dev_, gx_device *bdev, const gs_int_rect *
   cmykog_process_arg_t *arg = (cmykog_process_arg_t *)arg_;
   gx_device_cmykog *dev = (gx_device_cmykog *)dev_;
   cmykog_process_buffer_t *buffer = (cmykog_process_buffer_t *)buffer_;
-  int code, ignore_start, i;
+  int code, ignore_start;
+  unsigned char i;
   int w = rect->q.x - rect->p.x;
   int h = rect->q.y - rect->p.y;
   gs_int_rect my_rect;
@@ -580,7 +581,7 @@ cmykog_output(void *arg_, gx_device *dev_, void *buffer_)
   cmykog_process_arg_t *arg = (cmykog_process_arg_t *)arg_;
   gx_device_cmykog *dev = (gx_device_cmykog *)dev_;
   cmykog_process_buffer_t *buffer = (cmykog_process_buffer_t *)buffer_;
-  int i;
+  unsigned char i;
   int w = buffer->w;
   int h = buffer->h;
   int raster = arg->dev_raster;

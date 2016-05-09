@@ -481,7 +481,7 @@ gx_color_index
 check_cmyk_color_model_comps(gx_device * dev)
 {
     gx_device_color_info *          pcinfo = &dev->color_info;
-    int                             ncomps = pcinfo->num_components;
+    uchar                           ncomps = pcinfo->num_components;
     int                             cyan_c, magenta_c, yellow_c, black_c;
     const gx_cm_color_map_procs *   pprocs;
     cm_map_proc_cmyk((*map_cmyk));
@@ -861,9 +861,9 @@ interpolate_cc(gs_client_color *c,
 static inline bool
 is_dc_nearly_linear(const gx_device *dev, const gx_device_color *c,
         const gx_device_color *c0, const gx_device_color *c1,
-        double t, int n, float smoothness)
+        double t, uchar n, float smoothness)
 {
-    int i;
+    uchar i;
 
     if (c0->type == &gx_dc_type_data_pure) {
         gx_color_index pure0 = c0->colors.pure;
@@ -917,7 +917,7 @@ gx_cspace_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pi
     gs_client_color c01a, c01b;
     gx_device_color d[2], d01a, d01b;
     int n = cs->type->num_components(cs);
-    int ndev = dev->color_info.num_components;
+    uchar ndev = dev->color_info.num_components;
     int code;
 
     code = cc2dc(cs, pis, dev, &d[0], c0);
@@ -958,7 +958,7 @@ gx_cspace_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state 
        can have a different number of components */
 
     int n = cs->type->num_components(cs);
-    int ndev = dev->color_info.num_components;
+    uchar ndev = dev->color_info.num_components;
 
     int code;
 

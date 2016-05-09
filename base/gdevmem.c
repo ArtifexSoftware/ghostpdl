@@ -182,7 +182,7 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
     }
     if (dev->color_info.depth == 1) {
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
-        int k;
+        uchar k;
 
         if (target != 0) {
             for (k = 0; k < target->color_info.num_components; k++) {

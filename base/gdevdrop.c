@@ -162,8 +162,8 @@ gx_default_strip_copy_rop2(gx_device * dev,
     if (dev->is_planar)
     {
         gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
-        int num_comp = dev->color_info.num_components;
-        int i;
+        uchar num_comp = dev->color_info.num_components;
+        uchar i;
         plane_depth = dev->color_info.depth / num_comp;
         for (i = 0; i < num_comp; i++)
         {
@@ -472,7 +472,8 @@ pack_planar_from_standard(gx_device_memory * dev, int y, int destx,
     int shift = (~bit_x & 7) + 1;
     byte buf[GX_DEVICE_COLOR_MAX_COMPONENTS];
     const byte *sp = src;
-    int x, plane;
+    int x;
+    uchar plane;
 
     if (pdepth == 1 && dev->color_info.num_components == 4) {
         pack_planar_cmyk_1bit_from_standard(dev, y, destx, src, width,

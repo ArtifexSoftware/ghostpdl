@@ -358,6 +358,7 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_imager_state * 
                         const psdf_set_color_commands_t *ppscc, gs_client_color *pcc)
 {
     int code, i;
+    unsigned char j;
     frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     gs_color_space_index csi, csi2;
     gs_color_space *pcs2 = (gs_color_space *)pcs;
@@ -404,8 +405,8 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_imager_state * 
 		      return_error(gs_error_rangecheck);
                 }
                 pprintg1(pdev->strm, "%g", psdf_round(frac2float(conc[0]), 255, 8));
-                for (i = 1; i < pdev->color_info.num_components; i++) {
-                    pprintg1(pdev->strm, " %g", psdf_round(frac2float(conc[i]), 255, 8));
+                for (j = 1; j < pdev->color_info.num_components; j++) {
+                    pprintg1(pdev->strm, " %g", psdf_round(frac2float(conc[j]), 255, 8));
                 }
                 pprints1(pdev->strm, " %s\n", command);
                 return 0;
@@ -653,6 +654,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
         frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
         gs_client_color cc;
         int i;
+        unsigned char j;
         gs_color_space *icc_space = (gs_color_space *)pcs;
         gs_color_space *sep_space = (gs_color_space *)pcs;
         gs_color_space_index csi2;
@@ -684,8 +686,8 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
 
             memset (&conc, 0x00, sizeof(frac) * GS_CLIENT_COLOR_MAX_COMPONENTS);
             sep_space->type->concretize_color(&cc, sep_space, conc, pis, (gx_device *)pdev);
-            for (i = 0;i < pdev->color_info.num_components;i++)
-                data_buff[(loop * pdev->color_info.num_components) + i] = (int)(frac2float(conc[i]) * 255);
+            for (j = 0;j < pdev->color_info.num_components;j++)
+                data_buff[(loop * pdev->color_info.num_components) + j] = (int)(frac2float(conc[j]) * 255);
         }
     }
 
@@ -960,7 +962,7 @@ int convert_separation_alternate(gx_device_pdf * pdev, const gs_imager_state * p
     {
     frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     gs_client_color cc;
-    int i;
+    unsigned char i;
     gs_color_space *icc_space = (gs_color_space *)pcs;
     gs_color_space *sep_space = (gs_color_space *)pcs;
     gs_color_space_index csi2;

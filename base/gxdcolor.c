@@ -107,7 +107,7 @@ gx_device_black(gx_device *dev)
 {
     if (dev->cached_colors.black == gx_no_color_index) {
         const gx_cm_color_map_procs * cm_procs;
-        int i, ncomps = dev->color_info.num_components;
+        uchar i, ncomps = dev->color_info.num_components;
         frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
@@ -127,7 +127,7 @@ gx_device_white(gx_device *dev)
 {
     if (dev->cached_colors.white == gx_no_color_index) {
         const gx_cm_color_map_procs * cm_procs;
-        int i, ncomps = dev->color_info.num_components;
+        uchar i, ncomps = dev->color_info.num_components;
         frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
@@ -553,7 +553,7 @@ gx_devn_write_color(
     int                 num_bytes1, num_bytes_temp, num_bytes;
     gx_color_index      mask, mask_temp;
     int                 count;
-    int                 i, ncomps = dev->color_info.num_components;
+    uchar                 i, ncomps = dev->color_info.num_components;
 
     /* Figure out the size needed.  First find the number of non zero values */
     count = gx_dc_devn_get_nonzero_comps(pdevc, dev, &mask);
@@ -662,8 +662,8 @@ gx_devn_read_color(
     int                 size )
 {
     gx_color_index      mask = 0;
-    int                 i;
-    int                 ncomps = dev->color_info.num_components;
+    uchar                 i;
+    uchar               ncomps = dev->color_info.num_components;
     int                 pos;
     int                 num_bytes;
 
@@ -746,7 +746,7 @@ gx_dc_devn_get_nonzero_comps(
     const gx_device *       dev,
     gx_color_index *        pcomp_bits )
 {
-    int             i, ncomps = dev->color_info.num_components;
+    uchar           i, ncomps = dev->color_info.num_components;
     gx_color_index  mask = 0x1, comp_bits = 0;
     int             count = 0;
 
@@ -955,7 +955,7 @@ gx_dc_pure_get_nonzero_comps(
                                          pdevc->colors.pure,
                                          cvals );
     if (code >= 0) {
-        int             i, ncomps = dev->color_info.num_components;
+        uchar           i, ncomps = dev->color_info.num_components;
         gx_color_index  mask = 0x1, comp_bits = 0;
 
         for (i = 0; i < ncomps; i++, mask <<= 1) {

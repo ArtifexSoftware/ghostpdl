@@ -904,7 +904,7 @@ gx_color_usage_bits
 gx_color_index2usage(gx_device *dev, gx_color_index color)
 {
     gx_color_usage_bits bits = 0;
-    int i;
+    uchar i;
 
     for (i = 0; i < dev->color_info.num_components; i++) {
         if (color & dev->color_info.comp_mask[i])

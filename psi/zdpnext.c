@@ -295,7 +295,7 @@ zsizeimageparams(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gx_device *dev = gs_currentdevice(igs);
-    int ncomp = dev->color_info.num_components;
+    uchar ncomp = dev->color_info.num_components;
     int bps;
 
     push(3);
@@ -400,7 +400,7 @@ end_composite(i_ctx_t *i_ctx_p, alpha_composite_state_t * pcp)
 static int
 device_is_true_color(gx_device * dev)
 {
-    int ncomp = dev->color_info.num_components;
+    uchar ncomp = dev->color_info.num_components;
     int depth = dev->color_info.depth;
     int i, max_v;
 

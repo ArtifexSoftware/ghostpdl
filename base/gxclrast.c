@@ -986,7 +986,7 @@ in:                             /* Initialize for a new page. */
                     /* depth was set already. */
                     uint width_bits, width_bytes;
                     uint bytes;
-                    uint planes = 1;
+                    uchar planes = 1;
                     uint plane_depth = depth;
                     uint pln;
                     byte compression = op & 3;
@@ -2003,7 +2003,7 @@ idata:                  data_size = 0;
                                 right.end.x -= x0f;
                                 right.end.y -= y0f;
                                 if (options & 2) {
-                                    int num_components = tdev->color_info.num_components;
+                                    uchar num_components = tdev->color_info.num_components;
                                     frac31 c[4][GX_DEVICE_COLOR_MAX_COMPONENTS], *cc[4];
                                     byte colors_mask, i, j, m = 1;
                                     gs_fill_attributes fa;

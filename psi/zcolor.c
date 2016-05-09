@@ -758,7 +758,7 @@ zcolor_test(i_ctx_t *i_ctx_p)
 {
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_device *dev = gs_currentdevice(igs);
-    int ncomp = dev->color_info.num_components;
+    uchar ncomp = dev->color_info.num_components;
     gx_color_index color;
     os_ptr op = osp - (ncomp-1);
     int i;
@@ -796,7 +796,7 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
     gx_color_value cvbad[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int counter[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_device *dev = gs_currentdevice(igs);
-    int ncomp = dev->color_info.num_components;
+    uchar ncomp = dev->color_info.num_components;
     int steps;
     int maxerror = 0;
     int err;

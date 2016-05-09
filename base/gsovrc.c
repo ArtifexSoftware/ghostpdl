@@ -708,10 +708,10 @@ swap_color_index(int depth, gx_color_index color)
 static void
 set_retain_mask(overprint_device_t * opdev)
 {
-    int             i, ncomps = opdev->color_info.num_components;
+    uchar i, ncomps = opdev->color_info.num_components;
     gx_color_index  drawn_comps = opdev->drawn_comps, retain_mask = 0;
 #if !ARCH_IS_BIG_ENDIAN
-    int             depth = opdev->color_info.depth;
+    int depth = opdev->color_info.depth;
 #endif
 
     for (i = 0; i < ncomps; i++, drawn_comps >>= 1) {
@@ -727,10 +727,10 @@ set_retain_mask(overprint_device_t * opdev)
 
 /* enlarge mask of non-zero components */
 static gx_color_index
-check_drawn_comps(int ncomps, frac cvals[GX_DEVICE_COLOR_MAX_COMPONENTS])
+check_drawn_comps(uchar ncomps, frac cvals[GX_DEVICE_COLOR_MAX_COMPONENTS])
 {
-    int              i;
-    gx_color_index   mask = 0x1, drawn_comps = 0;
+    uchar i;
+    gx_color_index mask = 0x1, drawn_comps = 0;
 
     for (i = 0; i < ncomps; i++, mask <<= 1) {
         if (cvals[i] != frac_0)
@@ -751,7 +751,7 @@ update_overprint_params(
     overprint_device_t *            opdev,
     const gs_overprint_params_t *   pparams )
 {
-    int ncomps = opdev->color_info.num_components;
+    uchar ncomps = opdev->color_info.num_components;
     bool degenerate_k = true; /* Used only for RGB simulation case */
 
     /* check if overprint is to be turned off */
@@ -1013,8 +1013,9 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
     gs_int_rect             gb_rect;
     int                     code = 0, raster;
     int                     byte_depth;
-    int                     depth, num_comps;
-    int                     k,j;
+    int                     depth;
+    uchar                   num_comps;
+    uchar                   k,j;
     gs_memory_t *           mem = dev->memory;
     gx_color_index          comps = opdev->drawn_comps;
     byte                    *curr_data = (byte *) data + data_x;
@@ -1114,8 +1115,10 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     gs_int_rect             gb_rect;
     int                     code = 0, raster;
     int                     byte_depth;
-    int                     depth, num_comps;
-    int                     x,y,w,h,k,j;
+    int                     depth;
+    uchar                   num_comps;
+    int                     x, y, w, h;
+    uchar                   k, j;
     gs_memory_t *           mem = dev->memory;
     gx_color_index          comps = opdev->drawn_comps;
     gx_color_index          mask;

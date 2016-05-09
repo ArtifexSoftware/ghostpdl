@@ -146,7 +146,7 @@ void build_cmyk_map(gx_device *pdev, int num_comp,
  * Input values are not tested for validity.
  */
 int
-bpc_to_depth(int ncomp, int bpc)
+bpc_to_depth(uchar ncomp, int bpc)
 {
     static const byte depths[4][8] = {
         {1, 2, 0, 4, 8, 0, 0, 8},
@@ -1069,7 +1069,7 @@ gx_devn_prn_encode_color(gx_device *dev, const gx_color_value colors[])
     int bpc = ((gx_devn_prn_device *)dev)->devn_params.bitspercomponent;
     gx_color_index color = 0;
     int i = 0;
-    int ncomp = dev->color_info.num_components;
+    uchar ncomp = dev->color_info.num_components;
     COLROUND_VARS;
 
     COLROUND_SETUP(bpc);
@@ -1089,7 +1089,7 @@ gx_devn_prn_decode_color(gx_device * dev, gx_color_index color, gx_color_value *
     int bpc = ((gx_devn_prn_device *)dev)->devn_params.bitspercomponent;
     int mask = (1 << bpc) - 1;
     int i = 0;
-    int ncomp = dev->color_info.num_components;
+    uchar ncomp = dev->color_info.num_components;
     COLDUP_VARS;
 
     COLDUP_SETUP(bpc);
@@ -1291,15 +1291,16 @@ spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
     byte *in = gs_alloc_bytes(pdev->memory, line_size, "spotcmyk_print_page(in)");
     byte *buf = gs_alloc_bytes(pdev->memory, line_size + 3, "spotcmyk_print_page(buf)");
     const gx_devn_prn_device * pdevn = (gx_devn_prn_device *) pdev;
-    int npcmcolors = pdevn->devn_params.num_std_colorant_names;
-    int ncomp = pdevn->color_info.num_components;
+    uint npcmcolors = pdevn->devn_params.num_std_colorant_names;
+    uchar ncomp = pdevn->color_info.num_components;
     int depth = pdevn->color_info.depth;
     int nspot = pdevn->devn_params.separations.num_separations;
     int bpc = pdevn->devn_params.bitspercomponent;
     int lnum = 0, bottom = pdev->height;
     int width = pdev->width;
     FILE * spot_file[GX_DEVICE_COLOR_MAX_COMPONENTS] = {0};
-    int i, code = 0;
+    uint i;
+    int code = 0;
     int first_bit;
     int pcmlinelength = 0; /* Initialize against indeterminizm in case of pdev->height == 0. */
     int linelength[GX_DEVICE_COLOR_MAX_COMPONENTS];

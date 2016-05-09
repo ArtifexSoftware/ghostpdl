@@ -1059,7 +1059,7 @@ plane_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
     int plane_index = edev->plane.index;
     gs_get_bits_options_t options = params->options;
     gs_get_bits_params_t plane_params;
-    int plane;
+    uchar plane;
     int code;
 
     /*

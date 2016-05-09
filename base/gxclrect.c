@@ -199,8 +199,8 @@ cmd_write_page_rect_cmd(gx_device_clist_writer * cldev, int op)
 static inline byte *
 cmd_put_frac31_color(gx_device_clist_writer * cldev, const frac31 *c, byte *dp)
 {
-    int num_components = cldev->clist_color_info.num_components;
-    int j;
+    uchar num_components = cldev->clist_color_info.num_components;
+    uchar j;
 
     for (j = 0; j < num_components; j++)
         dp = cmd_put_frac31(c[j], dp);
@@ -210,8 +210,9 @@ cmd_put_frac31_color(gx_device_clist_writer * cldev, const frac31 *c, byte *dp)
 static inline int
 cmd_size_frac31_color(gx_device_clist_writer * cldev, const frac31 *c)
 {
-    int j, s = 0;
-    int num_components = cldev->clist_color_info.num_components;
+    uchar j;
+    int s = 0;
+    uchar num_components = cldev->clist_color_info.num_components;
 
     for (j = 0; j < num_components; j++)
         s += cmd_size_frac31(c[j]);
@@ -440,10 +441,10 @@ error_in_rect:
     return 0;
 }
 
-static void update_color_use_frac_array(int num_colors, const frac31 *color,
+static void update_color_use_frac_array(uchar num_colors, const frac31 *color,
     cmd_rects_enum_t *re)
 {
-    int k;
+    uchar k;
 
     if (color == NULL)
         return;

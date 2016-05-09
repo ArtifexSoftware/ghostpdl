@@ -182,14 +182,14 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
     const byte *row_alpha;
     gs_memory_t *mem = dev->memory;
     int bpp = dev->color_info.depth;
-    int ncomps = dev->color_info.num_components;
+    uchar ncomps = dev->color_info.num_components;
     uint out_raster;
     int code = 0;
     gx_color_value src_cv[GS_CLIENT_COLOR_MAX_COMPONENTS];
     gx_color_value curr_cv[GS_CLIENT_COLOR_MAX_COMPONENTS];
     gx_color_value blend_cv[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int ry;
-    int k, j;
+    uchar k, j;
     gs_get_bits_params_t gb_params;
     byte *src_planes[GS_CLIENT_COLOR_MAX_COMPONENTS];
     gs_int_rect gb_rect;
@@ -364,7 +364,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
         const byte *row;
         gs_memory_t *mem = dev->memory;
         int bpp = dev->color_info.depth;
-        int ncomps = dev->color_info.num_components;
+        uchar ncomps = dev->color_info.num_components;
         uint in_size = gx_device_raster(dev, false);
         byte *lin;
         uint out_size;
@@ -431,7 +431,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
                         composite = color;
                     } else {
                         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
-                        int i;
+                        uchar i;
                         int alpha2 = alpha + (alpha>>7);
 
                         if (previous == gx_no_color_index) {	/* Extract the old color. */

@@ -54,8 +54,8 @@ RELOC_PTRS_END
 gx_color_index
 gx_default_encode_color(gx_device * dev, const gx_color_value cv[])
 {
-    int             ncomps = dev->color_info.num_components;
-    int             i;
+    uchar             ncomps = dev->color_info.num_components;
+    uchar             i;
     const byte *    comp_shift = dev->color_info.comp_shift;
     const byte *    comp_bits = dev->color_info.comp_bits;
     gx_color_index  color = 0;
@@ -82,8 +82,8 @@ gx_default_encode_color(gx_device * dev, const gx_color_value cv[])
 int
 gx_default_decode_color(gx_device * dev, gx_color_index color, gx_color_value cv[])
 {
-    int                     ncomps = dev->color_info.num_components;
-    int                     i;
+    uchar                   ncomps = dev->color_info.num_components;
+    uchar                   i;
     const byte *            comp_shift = dev->color_info.comp_shift;
     const byte *            comp_bits = dev->color_info.comp_bits;
     const gx_color_index *  comp_mask = dev->color_info.comp_mask;
@@ -606,8 +606,8 @@ gs_color_select_t select)
     gsicc_namedcolor_t named_color_sep;
     gsicc_namedcolor_t *named_color_devn = NULL;
     gsicc_namedcolor_t *named_color_ptr = NULL;
-    int num_des_comps = dev->color_info.num_components;
-    int k;
+    uchar num_des_comps = dev->color_info.num_components;
+    uchar k;
     frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int i = pcs->type->num_components(pcs);
     cmm_dev_profile_t *dev_profile = NULL;
@@ -694,8 +694,8 @@ gs_color_select_t select)
                    color_component_map in the imager state.  Again, note that
                    gsicc_transform_named_color must have set ALL the device
                    colors */
-                for (i = 0; i < dev->color_info.num_components; i++)
-                    temp_state.color_component_map.color_map[i] = i;
+                for (k = 0; k < dev->color_info.num_components; k++)
+                    temp_state.color_component_map.color_map[k] = k;
                 temp_state.color_component_map.num_components = dev->color_info.num_components;
                 gx_remap_concrete_devicen(conc, pdc, &temp_state, dev, select);
             }
@@ -896,7 +896,7 @@ static void
 cmap_gray_halftoned(frac gray, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
-    int i, ncomps = dev->color_info.num_components;
+    uchar i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_cm_color_map_procs *   pprocs;
 
@@ -915,7 +915,7 @@ cmap_gray_halftoned(frac gray, gx_device_color * pdc,
         if (dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
             check_cmyk_color_model_comps(dev);
         if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
-            int k = dev->color_info.black_component;
+            uint k = dev->color_info.black_component;
 
             for (i = 0; i < ncomps; i++) {
                 if (i == k) /* Else ignore transfer, see PLRM3 p. 494 */
@@ -937,7 +937,7 @@ static void
 cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_imager_state * pis,
                  gx_device * dev, gs_color_select_t select)
 {
-    int i, ncomps = dev->color_info.num_components;
+    uchar i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
@@ -958,7 +958,7 @@ cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_imager_state * pis,
         if (dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
             check_cmyk_color_model_comps(dev);
         if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
-            int k = dev->color_info.black_component;
+            uint k = dev->color_info.black_component;
 
             for (i = 0; i < ncomps; i++) {
                 if (i == k)
@@ -989,12 +989,12 @@ static void
 cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
-    int i, ncomps = dev->color_info.num_components;
+    uchar i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_cm_color_map_procs *pprocs;
 
     /* map to the color model */
-    for (i=0; i < ncomps; i++)
+    for (i = 0; i < ncomps; i++)
         cm_comps[i] = 0;
     pprocs = get_color_mapping_procs_subclass(dev);
     map_rgb_subclass(pprocs, dev, pis, r, g, b, cm_comps);
@@ -1018,7 +1018,7 @@ static void
 cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
-    int i, ncomps = dev->color_info.num_components;
+    uchar i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
@@ -1057,11 +1057,11 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select,
      const gs_color_space *source_pcs)
 {
-    int i, ncomps = dev->color_info.num_components;
+    uchar i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
-    int black_index;
+    uint black_index;
     cmm_dev_profile_t *dev_profile;
     gsicc_colorbuffer_t src_space = gsUNDEFINED;
     bool gray_to_k;
@@ -1138,7 +1138,7 @@ cmap_rgb_alpha_halftoned(frac r, frac g, frac b, frac alpha,
         gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
                          gs_color_select_t select)
 {
-     int i, ncomps = dev->color_info.num_components;
+    uchar i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_cm_color_map_procs *   pprocs;
 
@@ -1179,7 +1179,7 @@ static void
 cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
-    int i, ncomps = dev->color_info.num_components;
+    uchar i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv_alpha, cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
@@ -1266,7 +1266,7 @@ static void
 cmap_separation_halftoned(frac all, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
-    int i, ncomps = dev->color_info.num_components;
+    uchar i, ncomps = dev->color_info.num_components;
     bool additive = dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE;
     frac comp_value = all;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -1282,8 +1282,7 @@ cmap_separation_halftoned(frac all, gx_device_color * pdc,
             comp_value = frac_1 - comp_value;
 
         /* Use the "all" value for all components */
-        i = pis->color_component_map.num_colorants - 1;
-        for (; i >= 0; i--)
+        for (i = 0; i < pis->color_component_map.num_colorants; i++)
             cm_comps[i] = comp_value;
     }
     else {
@@ -1310,7 +1309,7 @@ static void
 cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * pis,
                  gx_device * dev, gs_color_select_t select)
 {
-    int i, ncomps = dev->color_info.num_components;
+    uchar i, ncomps = dev->color_info.num_components;
     bool additive = dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE;
     frac comp_value = all;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -1335,8 +1334,7 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
             comp_value = frac_1 - comp_value;
 
         /* Use the "all" value for all components */
-        i = pis->color_component_map.num_colorants - 1;
-        for (; i >= 0; i--)
+        for (i = 0; i < pis->color_component_map.num_colorants; i++)
             cm_comps[i] = comp_value;
         /* If our device space is CIELAB then we really want to treat this
            as RGB during the fill up here of the separation value and then
@@ -1488,7 +1486,7 @@ cmap_devicen_halftoned(const frac * pcc,
     gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
     gs_color_select_t select)
 {
-    int i, ncomps = dev->color_info.num_components;
+    uchar i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile = NULL;
@@ -1531,7 +1529,7 @@ cmap_devicen_direct(const frac * pcc,
     gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
     gs_color_select_t select)
 {
-    int i, ncomps = dev->color_info.num_components;
+    uchar i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
@@ -1681,7 +1679,7 @@ gx_color_frac_map(frac cv, const frac * values)
 gx_color_index
 gx_default_w_b_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {				/* Map values >= 1/2 to 1, < 1/2 to 0. */
-    int             i, ncomps = dev->color_info.num_components;
+    int i, ncomps = dev->color_info.num_components;
     gx_color_value  cv_all = 0;
 
     for (i = 0; i < ncomps; i++)
@@ -1703,7 +1701,7 @@ gx_default_w_b_map_color_rgb(gx_device * dev, gx_color_index color,
 gx_color_index
 gx_default_b_w_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
-    int             i, ncomps = dev->color_info.num_components;
+    uchar i, ncomps = dev->color_info.num_components;
     gx_color_value  cv_all = 0;
 
     for (i = 0; i < ncomps; i++)
@@ -1964,9 +1962,9 @@ cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, bool has_transfer,
      bool has_halftone, gs_color_select_t select)
 {
-    int ncomps = dev->color_info.num_components;
+    uchar ncomps = dev->color_info.num_components;
     frac frac_value;
-    int i;
+    uchar i;
     frac cv_frac[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
     gx_color_value color_val[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -1984,7 +1982,7 @@ cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
                 check_cmyk_color_model_comps(dev);
             }
             if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
-                int k = dev->color_info.black_component;
+                uint k = dev->color_info.black_component;
                 for (i = 0; i < ncomps; i++) {
                     frac_value = cv2frac(pconc[i]);
                     if (i == k) {
@@ -2034,9 +2032,9 @@ cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
 void
 cmap_transfer(gx_color_value *pconc, const gs_imager_state * pis, gx_device * dev)
 {
-    int ncomps = dev->color_info.num_components;
+    uchar ncomps = dev->color_info.num_components;
     frac frac_value;
-    int i;
+    uchar i;
     frac cv_frac[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
     /* apply the transfer function(s) */
@@ -2052,7 +2050,7 @@ cmap_transfer(gx_color_value *pconc, const gs_imager_state * pis, gx_device * de
             check_cmyk_color_model_comps(dev);
         }
         if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
-            int k = dev->color_info.black_component;
+            uint k = dev->color_info.black_component;
             for (i = 0; i < ncomps; i++) {
                 frac_value = cv2frac(pconc[i]);
                 if (i == k) {
@@ -2092,7 +2090,7 @@ cmap_transfer_plane(gx_color_value *pconc, const gs_imager_state *pis,
             check_cmyk_color_model_comps(dev);
         }
         if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
-            int k = dev->color_info.black_component;
+            uint k = dev->color_info.black_component;
             frac_value = cv2frac(pconc[0]);
             if (plane == k) {
                 cv_frac = frac_1 - gx_map_color_frac(pis,

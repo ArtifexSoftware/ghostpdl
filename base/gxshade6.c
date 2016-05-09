@@ -3090,7 +3090,7 @@ gx_fill_triangle_small(gx_device *dev, const gs_fill_attributes *fa,
     patch_fill_state_t *pfs = fa->pfs;
     patch_color_t c[3];
     shading_vertex_t p[3];
-    int i;
+    uchar i;
 
     /* pfs->rect = *fa->clip; unused ? */
     p[0].p = *p0;

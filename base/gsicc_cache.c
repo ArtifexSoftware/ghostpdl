@@ -1241,7 +1241,7 @@ gsicc_transform_named_color(const float tint_values[],
     cmm_profile_t *named_profile;
     gsicc_namedcolortable_t *namedcolor_table;
     int num_nonnone_names;
-    int k,j,n;
+    uint k,j,n;
     float lab[3];
     char *buffptr;
     int buffer_count;
