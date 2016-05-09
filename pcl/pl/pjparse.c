@@ -806,8 +806,10 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
     token = (char *)gs_alloc_bytes(pst->mem, bufsize, "working buffer for PJL parsing");
     if (token == 0)
         return -1;
+    
     memset(token, 0x00, bufsize);
-
+    memset(pathname, 0x00, sizeof(pathname));
+           
     /* reset the line position to the beginning of the line */
     pst->pos = 0;
     /* all pjl commands start with the pjl prefix @PJL */
@@ -894,7 +896,8 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                     if ((tok = pjl_get_token(pst, token)) == FORMATBINARY) {
                         ;
                     }
-                    if (pjl_get_setting(pst, NAME, token) < 0)
+                    if (pjl_get_setting(pst, NAME, token) < 0 ||
+                        strlen(token) > MAXPATHLEN - 1)
                         return -1;
                     strcpy(pathname, token);
                     if (pjl_get_setting(pst, SIZE, token) < 0)
@@ -909,7 +912,8 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                     if ((tok = pjl_get_token(pst, token)) == FORMATBINARY) {
                         ;
                     }
-                    if (pjl_get_setting(pst, NAME, token) < 0)
+                    if (pjl_get_setting(pst, NAME, token) < 0 ||
+                        strlen(token) > MAXPATHLEN - 1)
                         return -1;
                     strcpy(pathname, token);
                     if (pjl_get_setting(pst, SIZE, token) < 0)
@@ -919,7 +923,8 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                     return pjl_set_append_state(pst, pathname, size);
                 }
             case FSDELETE:
-                if (pjl_get_setting(pst, NAME, token) < 0)
+                if (pjl_get_setting(pst, NAME, token) < 0 ||
+                    strlen(token) > MAXPATHLEN - 1)
                     return -1;
                 strcpy(pathname, token);
                 gs_free_object(pst->mem, token, "working buffer for PJL parsing");
@@ -929,7 +934,8 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
 
                     int count;
 
-                    if (pjl_get_setting(pst, NAME, token) < 0) {
+                    if (pjl_get_setting(pst, NAME, token) < 0 ||
+                        strlen(token) > MAXPATHLEN - 1) {
                         gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                         return -1;
                     }
@@ -948,7 +954,8 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                     return pjl_fsdirlist(pst, pathname, entry, count);
                 }
             case FSINIT:
-                if (pjl_get_setting(pst, VOLUME, token) < 0) {
+                if (pjl_get_setting(pst, VOLUME, token) < 0 ||
+                    strlen(token) > MAXPATHLEN - 1) {
                     gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return -1;
                 }
@@ -956,7 +963,8 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                 gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return pjl_fsinit(pst, pathname);
             case FSMKDIR:
-                if (pjl_get_setting(pst, NAME, token) < 0) {
+                if (pjl_get_setting(pst, NAME, token) < 0 ||
+                    strlen(token) > MAXPATHLEN - 1) {
                     gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return -1;
                 }
@@ -964,7 +972,8 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                 gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return pjl_fsmkdir(pst, pathname);
             case FSQUERY:
-                if (pjl_get_setting(pst, NAME, token) < 0) {
+                if (pjl_get_setting(pst, NAME, token) < 0 ||
+                    strlen(token) > MAXPATHLEN - 1) {
                     gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return -1;
                 }
@@ -979,7 +988,8 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                     if ((tok = pjl_get_token(pst, token)) == FORMATBINARY) {
                         ;
                     }
-                    if (pjl_get_setting(pst, NAME, token) < 0) {
+                    if (pjl_get_setting(pst, NAME, token) < 0 ||
+                        strlen(token) > MAXPATHLEN - 1) {
                         gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                         return -1;
                     }
@@ -995,7 +1005,7 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                     }
                     size = pjl_vartoi(token);
                     gs_free_object(pst->mem, token, "working buffer for PJL parsing");
-                    return pjl_fsupload(pst, pathname, size, offset);
+                    return pjl_fsupload(pst, pathname, offset, size);
                 }
             default:
                 gs_free_object(pst->mem, token, "working buffer for PJL parsing");
@@ -1059,7 +1069,7 @@ pjl_get_named_resource(pjl_parser_state * pst, char *name, byte * data)
         code = -1;
     }
     fclose(fp);
-    return 0;
+    return code;
 }
 
 /* set the initial environment to the default environment, this should
