@@ -43,6 +43,12 @@ const char *const gs_copyright = GS_COPYRIGHT;
 #endif
 const char *const gs_productfamily = GS_PRODUCTFAMILY;
 
+const char *
+gs_program_family_name(void)
+{
+    return gs_productfamily;
+}
+
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
         GS_PRODUCTFAMILY " GIT PRERELEASE"

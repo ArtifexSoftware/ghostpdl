@@ -406,6 +406,7 @@ void eprintf_program_ident(const char *program_name, long revision_number);
 void emprintf_program_ident(const gs_memory_t *mem,
                             const char *program_name,
                             long revision_number);
+const char *gs_program_family_name(void);
 const char *gs_program_name(void);
 long gs_revision_number(void);
 

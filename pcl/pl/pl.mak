@@ -387,7 +387,10 @@ $(PLOBJ)plwimg.$(OBJ): $(PLSRC)plwimg.c $(PL_MAK) $(MAKEDIRS)
 $(PLOBJ)plwreg.$(OBJ): $(PLSRC)plwreg.c $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC_W) $(COMPILE_FOR_CONSOLE_EXE) $(PLSRC)plwreg.c $(PLO_)plwreg.$(OBJ)
 
-WINMAINOBJS=$(MAIN_OBJ) $(PLOBJ)plwmainc.$(OBJ) $(PLOBJ)plwimg.$(OBJ) $(PLOBJ)plwreg.$(OBJ)
+WINPLOBJS=$(PLOBJ)plwimg.$(OBJ) $(PLOBJ)plwreg.$(OBJ)
+WINMAINOBJ=$(PLOBJ)plwmainc.$(OBJ)
+WINMAINOBJS=$(WINMAINOBJ) $(WINPLOBJS)
+DWMAINOBJS=$(WINMAINOBJS) $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj $(GLOBJ)gp_wutf8.obj
 
 $(PLOBJ)plimpl.$(OBJ):  $(PLSRC)plimpl.c            \
                         $(AK)                       \

@@ -23,7 +23,14 @@
 #include <stdlib.h>             /* for getenv */
 #include <string.h>
 #include "gscdefs.h"            /* for gs_productfamily and gs_revision */
+#include "plapi.h"
 #include "plwreg.h"
+
+/* this is defined in plwmainc.c
+ * there is a comment explaining the reason
+ * it exists.
+ */
+int program_family_name(char **str);
 
 /* We store registry named values under the key
  * "Software\\GPL Ghostscript"

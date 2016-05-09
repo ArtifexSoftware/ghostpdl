@@ -37,6 +37,9 @@
  */
 
 #define STRICT
+/* prevent gp.h redefining sprintf */
+#define sprintf sprintf
+
 #include <windows.h>
 #include "stdio_.h"
 
@@ -1531,7 +1534,7 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             {                   /* Save the text window size */
                 char winposbuf[64];
 
-                gs_sprintf(winposbuf, "%d %d %d %d", img->x, img->y,
+                sprintf(winposbuf, "%d %d %d %d", img->x, img->y,
                         img->cx, img->cy);
                 win_set_reg_value((img->device != NULL ? "Image" : "Tracer"),
                                   winposbuf);

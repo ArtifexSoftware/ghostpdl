@@ -37,7 +37,7 @@ xps.config-clean: clean_gs
 	$(RM_) $(XPSOBJ)*.dev
 	$(RM_) $(XPSOBJ)devs.tr5
 
-XPS_TOP_OBJ=$(XPSOBJDIR)/xpstop.$(OBJ)
+XPS_TOP_OBJ=$(XPSOBJDIR)$(D)xpstop.$(OBJ)
 XPS_TOP_OBJS= $(XPS_TOP_OBJ) $(XPSOBJDIR)$(D)xpsimpl.$(OBJ)
 
 XPSINCLUDES=$(XPSSRC)*.h $(XPSOBJ)arch.h $(XPSOBJ)jpeglib_.h

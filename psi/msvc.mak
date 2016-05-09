@@ -438,6 +438,7 @@ GPDL=gpdlwin32
 !ifndef GSCONSOLE
 GSCONSOLE=$(GS)c
 !endif
+
 !ifndef GSDLL
 !ifdef METRO
 !ifdef WIN64
@@ -454,6 +455,66 @@ GSDLL=gsdll32metro
 GSDLL=gsdll64
 !else
 GSDLL=gsdll32
+!endif
+!endif
+!endif
+
+!ifndef GPCL6DLL
+!ifdef METRO
+!ifdef WIN64
+GPCL6DLL=gpcl6dll64metro
+!else
+!ifdef ARM
+GPCL6DLL=gpcl6dllARM32metro
+!else
+GPCL6DLL=gpcl6dll32metro
+!endif
+!endif
+!else
+!ifdef WIN64
+GPCL6DLL=gpcl6dll64
+!else
+GPCL6DLL=gpcl6dll32
+!endif
+!endif
+!endif
+
+!ifndef GXPSDLL
+!ifdef METRO
+!ifdef WIN64
+GXPSDLL=gxpsdll64metro
+!else
+!ifdef ARM
+GXPSDLL=gxpsdllARM32metro
+!else
+GXPSDLL=gxpsdll32metro
+!endif
+!endif
+!else
+!ifdef WIN64
+GXPSDLL=gxpsdll64
+!else
+GXPSDLL=gxpsdll32
+!endif
+!endif
+!endif
+
+!ifndef GPDLDLL
+!ifdef METRO
+!ifdef WIN64
+GPDLDLL=gpdldll64metro
+!else
+!ifdef ARM
+GPDLDLL=gpdldllARM32metro
+!else
+GPDLDLL=gpdldll32metro
+!endif
+!endif
+!else
+!ifdef WIN64
+GPDLDLL=gpdldll64
+!else
+GPDLDLL=gpdldll32
 !endif
 !endif
 !endif
@@ -1479,6 +1540,11 @@ BEGINFILES2=$(BEGINFILES2) $(BSCFILE)
 GSCONSOLE_XE=$(BINDIR)\$(GSCONSOLE).exe
 GSDLL_DLL=$(BINDIR)\$(GSDLL).dll
 GSDLL_OBJS=$(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_msdll.$(OBJ)
+
+GPCL6DLL_DLL=$(BINDIR)\$(GPCL6DLL).dll
+GXPSDLL_DLL=$(BINDIR)\$(GXPSDLL).dll
+GPDLDLL_DLL=$(BINDIR)\$(GPDLDLL).dll
+
 INT_ARCHIVE_SOME=$(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)
 INT_ARCHIVE_ALL=$(PSOBJ)imainarg.$(OBJ) $(PSOBJ)imain.$(OBJ) $(GLOBJ)iconfig.$(OBJ) \
  $(INT_ARCHIVE_SOME)
@@ -1600,7 +1666,6 @@ $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.d
 	echo  /DEF:$(PSSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(PSGEN)gswin.rsp
 !endif
 	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(OBJC) $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res $(GLOBJ)gp_wutf8.$(OBJ)
-	del $(PSGEN)gswin.rsp
 
 # The big DLL
 $(GSDLL_DLL): $(ECHOGS_XE) $(gs_tr) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_OBJ).res $(PSGEN)lib.rsp \
@@ -1612,6 +1677,94 @@ $(GSDLL_DLL): $(ECHOGS_XE) $(gs_tr) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_
 !endif
 	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(GSDLL_OBJS) @$(gsld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) @$(PSGEN)lib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(PSGEN)gswin.rsp
+
+$(GPCL6DLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PCL_DEVS_ALL) $(PCLGEN)pcllib.rsp \
+                $(PCLOBJ)pclromfs$(COMPILE_INITS).$(OBJ) $(ld_tr) $(pcl_tr) $(MAIN_OBJ) $(TOP_OBJ) \
+                $(XOBJS) $(INT_ARCHIVE_SOME) $(TOP_MAKEFILES)
+	echo Linking $(GPCL6DLL)  $(GPCL6DLL_DLL) $(METRO)
+	copy $(ld_tr) $(PCLGEN)gpclwin.tr
+	$(ECHOGS_XE) -a $(PCLGEN)gpclwin.tr -n -R $(pcl_tr)
+	echo $(MAIN_OBJ) $(TOP_OBJ) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(PCLGEN)gpclwin.tr
+	echo $(PCLOBJ)pclromfs$(COMPILE_INITS).$(OBJ) >> $(PCLGEN)gpclwin.tr
+	echo /DLL /DEF:$(PLSRCDIR)\$(GPCL6DLL).def /OUT:$(GPCL6DLL_DLL) > $(PCLGEN)gpclwin.rsp
+!if "$(PROFILE)"=="1"
+	echo /PROFILE >> $(PSGEN)gpclwin.rsp
+!endif
+	$(LINK) $(LCT) @$(PCLGEN)gpclwin.rsp $(GPCL6DLL_OBJS) @$(PCLGEN)gpclwin.tr @$(PSGEN)pcllib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
+	del $(PCLGEN)gpclwin.rsp
+
+$(GPCL_XE): $(GPCL6DLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
+	echo /SUBSYSTEM:CONSOLE > $(PCLGEN)gpclwin.rsp
+!if "$(PROFILE)"=="1"
+	echo /PROFILE >> $(PCLGEN)gpclwin.rsp
+!endif
+!ifdef WIN64
+	echo  /OUT:$(GPCL_XE) >> $(PCLGEN)gpclwin.rsp
+!else
+	echo  /OUT:$(GPCL_XE) >> $(PCLGEN)gpclwin.rsp
+!endif
+	$(LINK) $(LCT) @$(PCLGEN)gpclwin.rsp $(DWMAINOBJS) $(BINDIR)\$(GPCL6DLL).lib $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res
+	del $(PXLGEN)gpclwin.rsp
+
+
+$(GXPSDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(XPS_DEVS_ALL) $(XPSGEN)xpslib.rsp \
+                $(XPSOBJ)xpsromfs$(COMPILE_INITS).$(OBJ) $(ld_tr) $(xps_tr) $(MAIN_OBJ) $(XPS_TOP_OBJS) \
+                $(XOBJS) $(INT_ARCHIVE_SOME) $(TOP_MAKEFILES)
+	echo Linking $(GXPSDLL)  $(GXPSDLL_DLL) $(METRO)
+	copy $(ld_tr) $(XPSGEN)gxpswin.tr
+	$(ECHOGS_XE) -a $(XPSGEN)gxpswin.tr -n -R $(xps_tr)
+	echo $(MAIN_OBJ) $(XPS_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(XPSGEN)gxpswin.tr
+	echo $(PCLOBJ)xpsromfs$(COMPILE_INITS).$(OBJ) >> $(XPSGEN)gxpswin.tr
+	echo /DLL /DEF:$(PLSRCDIR)\$(GXPSDLL).def /OUT:$(GXPSDLL_DLL) > $(XPSGEN)gxpswin.rsp
+!if "$(PROFILE)"=="1"
+	echo /PROFILE >> $(XPSGEN)gxpswin.rsp
+!endif
+	$(LINK) $(LCT) @$(XPSGEN)gxpswin.rsp $(GXPSDLL_OBJS) @$(XPSGEN)gxpswin.tr @$(XPSGEN)xpslib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
+	del $(PCLGEN)gxpswin.rsp
+
+$(GXPS_XE): $(GXPSDLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
+	echo /SUBSYSTEM:CONSOLE > $(XPSGEN)gxpswin.rsp
+!if "$(PROFILE)"=="1"
+	echo /PROFILE >> $(XPSGEN)gxpswin.rsp
+!endif
+!ifdef WIN64
+	echo  /OUT:$(GXPS_XE) >> $(XPSGEN)gxpswin.rsp
+!else
+	echo  /OUT:$(GXPS_XE) >> $(XPSGEN)gxpswin.rsp
+!endif
+	$(LINK) $(LCT) @$(XPSGEN)gxpswin.rsp $(DWMAINOBJS) $(BINDIR)\$(GXPSDLL).lib $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res
+	del $(XPSGEN)gxpswin.rsp
+
+
+
+$(GPDLDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PCL_DEVS_ALL) $(XPS_DEVS_ALL) $(GS_ALL) \
+                $(GPDLGEN)gpdllib.rsp $(GPDLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) \
+                $(ld_tr) $(gpdl_tr) $(MAIN_OBJ) $(XPS_TOP_OBJS) $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) \
+		$(REALMAIN_OBJ) $(MAIN_OBJ) $(XOBJS) $(INT_ARCHIVE_SOME) $(TOP_MAKEFILES)
+	echo Linking $(GPDLDLL)  $(GPDLDLL_DLL) $(METRO)
+	copy $(gpdlld_tr) $(GPDLGEN)gpdlwin.tr
+	echo $(MAIN_OBJ) $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(XOBJS) >> $(GPDLGEN)gpdlwin.tr
+	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) >> $(GPDLGEN)gpdlwin.tr
+	echo /DLL /DEF:$(PLSRCDIR)\$(GPDLDLL).def /OUT:$(GPDLDLL_DLL) > $(GPDLGEN)gpdlwin.rsp
+!if "$(PROFILE)"=="1"
+	echo /PROFILE >> $(GPDLGEN)gpdlwin.rsp
+!endif
+	$(LINK) $(LCT) @$(GPDLGEN)gpdlwin.rsp $(GPDLDLL_OBJS) @$(GPDLGEN)gpdlwin.tr @$(GPDLGEN)gpdllib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
+	del $(GPDLGEN)gpdlwin.rsp
+
+$(GPDL_XE): $(GPDLDLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
+	echo /SUBSYSTEM:CONSOLE > $(GPDLGEN)gpdlwin.rsp
+!if "$(PROFILE)"=="1"
+	echo /PROFILE >> $(XPSGEN)gpdlwin.rsp
+!endif
+!ifdef WIN64
+	echo  /OUT:$(GPDL_XE) >> $(GPDLGEN)gpdlwin.rsp
+!else
+	echo  /OUT:$(GPDL_XE) >> $(GPDLGEN)gpdlwin.rsp
+!endif
+	$(LINK) $(LCT) @$(GPDLGEN)gpdlwin.rsp $(DWMAINOBJS) $(BINDIR)\$(GPDLDLL).lib $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res
+	del $(GPDLGEN)gpdlwin.rsp
+
 
 !else
 # The big graphical EXE
@@ -1655,16 +1808,15 @@ $(GSCONSOLE_XE): $(ECHOGS_XE) $(gs_tr) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJ
 	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(GLOBJ)gsdll @$(PSGEN)gswin.tr $(LINKLIBPATH) @$(LIBCTR) @$(PSGEN)lib.rsp $(GS_OBJ).res $(DWTRACE)
 	del $(PSGEN)gswin.rsp
 	del $(PSGEN)gswin.tr
-!endif
 
 
 $(GPCL_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(PCL_DEVS_ALL) $(PCLGEN)pcllib.rsp \
                 $(PCLOBJ)pclromfs$(COMPILE_INITS).$(OBJ) \
-		$(ld_tr) $(pcl_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) $(INT_ARCHIVE_SOME) \
+		$(ld_tr) $(pcl_tr) $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) $(INT_ARCHIVE_SOME) \
                 $(TOP_MAKEFILES)
 	copy $(ld_tr) $(PCLGEN)gpclwin.tr
 	$(ECHOGS_XE) -a $(PCLGEN)gpclwin.tr -n -R $(pcl_tr)
-	echo $(WINMAINOBJS) $(TOP_OBJ) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(PCLGEN)gpclwin.tr
+	echo $(WINMAINOBJS) $(MAIN_OBJ) $(TOP_OBJ) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(PCLGEN)gpclwin.tr
 	echo $(PCLOBJ)pclromfs$(COMPILE_INITS).$(OBJ) >> $(PCLGEN)gpclwin.tr
 	echo /SUBSYSTEM:CONSOLE > $(PCLGEN)pclwin.rsp
         echo /OUT:$(GPCL_XE) >> $(PCLGEN)pclwin.rsp
@@ -1674,11 +1826,11 @@ $(GPCL_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(PCL_DEVS_ALL) $(P
 
 $(GXPS_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(XPS_DEVS_ALL) $(XPSGEN)xpslib.rsp \
                 $(XPS_TOP_OBJS) $(XPSOBJ)xpsromfs$(COMPILE_INITS).$(OBJ) \
-		$(ld_tr) $(xps_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(XOBJS) $(INT_ARCHIVE_SOME) \
+		$(ld_tr) $(xps_tr) $(MAIN_OBJ) $(XOBJS) $(INT_ARCHIVE_SOME) \
                 $(TOP_MAKEFILES)
 	copy $(ld_tr) $(XPSGEN)gxpswin.tr
 	$(ECHOGS_XE) -a $(PCLGEN)gxpswin.tr -n -R $(xps_tr)
-	echo $(WINMAINOBJS) $(XPS_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(XPSGEN)gxpswin.tr
+	echo $(WINMAINOBJS) $(MAIN_OBJ) $(XPS_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(XPSGEN)gxpswin.tr
 	echo $(PCLOBJ)xpsromfs$(COMPILE_INITS).$(OBJ) >> $(XPSGEN)gxpswin.tr
 	echo /SUBSYSTEM:CONSOLE > $(XPSGEN)xpswin.rsp
         echo /OUT:$(GXPS_XE) >> $(XPSGEN)xpswin.rsp
@@ -1689,16 +1841,17 @@ $(GXPS_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(XPS_DEVS_ALL) $(X
 $(GPDL_XE): $(ECHOGS_XE) $(ld_tr) $(gpdl_tr) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(XPS_DEVS_ALL) $(PCL_DEVS_ALL) $(GS_ALL) \
                 $(GPDLGEN)gpdllib.rsp $(GPDLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) \
                 $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) \
-		$(REALMAIN_OBJ) $(MAIN_OBJ) $(XOBJS) $(INT_ARCHIVE_SOME) \
+		$(MAIN_OBJ) $(XOBJS) $(INT_ARCHIVE_SOME) \
                 $(TOP_MAKEFILES)
 	copy $(gpdlld_tr) $(GPDLGEN)gpdlwin.tr
-	echo $(WINMAINOBJS) $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(XOBJS) >> $(GPDLGEN)gpdlwin.tr
+	echo $(WINMAINOBJS) $(MAIN_OBJ) $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(XOBJS) >> $(GPDLGEN)gpdlwin.tr
 	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) >> $(GPDLGEN)gpdlwin.tr
 	echo /SUBSYSTEM:CONSOLE > $(GPDLGEN)gpdlwin.rsp
         echo /OUT:$(GPDL_XE) >> $(GPDLGEN)gpdlwin.rsp
 	$(LINK) $(LCT) @$(GPDLGEN)gpdlwin.rsp @$(GPDLGEN)gpdlwin.tr $(LINKLIBPATH) @$(LIBCTR) @$(GPDLGEN)gpdllib.rsp
 	del $(GPDLGEN)gpdlwin.rsp
 	del $(GPDLGEN)gpdlwin.tr
+!endif
 
 # ---------------------- Debug targets ---------------------- #
 # Simply set some definitions and call ourselves back         #

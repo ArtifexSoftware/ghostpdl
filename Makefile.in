@@ -172,13 +172,22 @@ GS=@GS@
 GS_SO_BASE=@GS@
 
 PCL=@PCL@
+PCL_SO_BASE=@PCL@
+
 XPS=@XPS@
+XPS_SO_BASE=@XPS@
+
 GPDL=@GPDL@
+GPDL_SO_BASE=@GPDL@
 
 XE=@EXEEXT@
 XEAUX=@EXEEXT@
 
-PCL_XPS_TARGETS=@PCL_TARGET@ @XPS_TARGET@ @GPDL_TARGET@
+PCL_TARGET=@PCL_TARGET@
+XPS_TARGET=@XPS_TARGET@
+GPDL_TARGET=@GPDL_TARGET@
+
+PCL_XPS_TARGETS=$(PCL_TARGET) $(XPS_TARGET) $(GPDL_TARGET)
 
 # Define the directories for debugging and profiling binaries, relative to
 # the standard binaries.

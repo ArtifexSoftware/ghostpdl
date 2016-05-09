@@ -1,0 +1,6 @@
+;	'GhostPCL Interpreter DLL'
+LIBRARY		GPCL6DLL64
+EXPORTS	
+;		DllEntryPoint
+;		DllMain
+		pl_main_aux	@1

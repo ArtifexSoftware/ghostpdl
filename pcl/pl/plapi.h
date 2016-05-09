@@ -71,6 +71,14 @@
 # define GSDLLAPIPTR GSDLLAPI *
 #endif
 
+#ifdef _Windows
+GSDLLEXPORT int GSDLLAPI
+pl_wchar_to_utf8(char *out, const void *in);
+#endif
+
+GSDLLEXPORT int GSDLLAPI
+pl_program_family_name(char **str);
+
 /* Run this just like you would pcl6 on the command line.
  *
  * Returns:	  0	success

@@ -31,6 +31,7 @@
 #include "plwimg.h"
 #include "plapi.h"
 
+#if 0
 /* FIXME: this is purely because the gsdll.h requires psi/iapi.h and
  * we don't want that required here. But as a couple of Windows specific
  * devices depend upon pgsdll_callback being defined, having a compatible
@@ -46,6 +47,7 @@
 
 typedef int (* GSPLDLLCALLLINK GS_PL_DLL_CALLBACK) (int, char *, unsigned long);
 GS_PL_DLL_CALLBACK pgsdll_callback = NULL;
+#endif
 
 void *instance;
 
@@ -309,8 +311,21 @@ display_callback display = {
     display_separation
 };
 #endif /* !METRO */
-
 typedef BOOL (SetProcessDPIAwareFn)(void);
+
+#if 0
+/* plwreg.c needs the product family string, but
+ * for some reason on 32 bit Windows, calling
+ * the DLL method pl_program_family_name() from
+ * plwreg.c caused a link error (but 64 bit
+ * Windows worked fine - answers on a postcard?).
+ * So we call through this function from plwreg.c
+ */
+int program_family_name(char **str)
+{
+    return pl_program_family_name(str);
+}
+#endif
 
 static void
 avoid_windows_scale(void)
@@ -386,7 +401,7 @@ main_utf8(int argc, char *argv[])
             DISPLAY_DEPTH_1 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
         HDC hdc = GetDC(NULL);  /* get hdc for desktop */
         int depth = GetDeviceCaps(hdc, PLANES) * GetDeviceCaps(hdc, BITSPIXEL);
-        gs_sprintf(ddpi, "-dDisplayResolution=%d", GetDeviceCaps(hdc, LOGPIXELSY));
+        sprintf(ddpi, "-dDisplayResolution=%d", GetDeviceCaps(hdc, LOGPIXELSY));
         ReleaseDC(NULL, hdc);
         if (depth == 32)
             format = DISPLAY_COLORS_RGB |
@@ -404,7 +419,7 @@ main_utf8(int argc, char *argv[])
         else if (depth >= 4)
             format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
                 DISPLAY_DEPTH_4 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
-        gs_sprintf(dformat, "-dDisplayFormat=%d", format);
+        sprintf(dformat, "-dDisplayFormat=%d", format);
         nargc = argc + 2;
         nargv = (char **)malloc((nargc + 1) * sizeof(char *));
         nargv[0] = argv[0];
