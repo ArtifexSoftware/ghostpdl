@@ -78,7 +78,8 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
 
     /* Clone the device from the prototype device */
     if (protodev == NULL ||
-        (code = gs_copydevice((gx_device **) &ndev, protodev, thread_mem)) < 0) {
+        (code = gs_copydevice((gx_device **) &ndev, protodev, thread_mem)) < 0 ||
+        ndev == NULL) {				/* should only happen if copydevice failed */
         gs_memory_chunk_release(thread_mem);
         return NULL;
     }
@@ -254,10 +255,9 @@ out_cleanup:
         ncdev->page_info.io_procs->fclose(ncdev->page_info.cfile, ncdev->page_info.cfname, false);
     ncdev->do_not_open_or_close_bandfiles = true; /* we already closed the files */
 
-    if (ndev != NULL) {
-        gdev_prn_free_memory(ndev);
-        gs_free_object(thread_mem, ndev, "setup_device_and_mem_for_thread");
-    }
+    /* we can't get here with ndev == NULL */
+    gdev_prn_free_memory(ndev);
+    gs_free_object(thread_mem, ndev, "setup_device_and_mem_for_thread");
     gs_memory_chunk_release(thread_mem);
     return NULL;
 }
@@ -311,7 +311,7 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
 
     /* If we don't have one large enough already, create an icc cache list */
     if (crdev->num_render_threads > crdev->icc_cache_list_len) {
-        void *old = crdev->icc_cache_list;
+        void *old = &(crdev->icc_cache_list[0]);
         crdev->icc_cache_list = (gsicc_link_cache_t **)gs_alloc_byte_array(mem->thread_safe_memory,
                                     crdev->num_render_threads,
                                     sizeof(void*), "clist_render_setup_threads");
@@ -320,8 +320,8 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
             return_error(gs_error_VMerror);
         }
         if (crdev->icc_cache_list_len > 0)
-            memcpy(crdev->icc_cache_list, old, sizeof(void *)*crdev->icc_cache_list_len);
-        memset(&crdev->icc_cache_list[crdev->icc_cache_list_len], 0,
+            memcpy(crdev->icc_cache_list, old, crdev->icc_cache_list_len * sizeof(void *));
+        memset(&(crdev->icc_cache_list[crdev->icc_cache_list_len]), 0,
             (crdev->num_render_threads - crdev->icc_cache_list_len) * sizeof(void *));
         crdev->icc_cache_list_len = crdev->num_render_threads;
         gs_free_object(mem, old, "clist_render_setup_threads");
@@ -826,8 +826,7 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
     options = params->options;
     if (!(options & GB_RETURN_COPY)) {
         /* Redo the first piece with copying. */
-        params->options = options =
-            (params->options & ~GB_RETURN_ALL) | GB_RETURN_COPY;
+        params->options = (params->options & ~GB_RETURN_ALL) | GB_RETURN_COPY;
         lines_rasterized = 0;
     }
     {
@@ -854,7 +853,7 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
                 (bdev, &band_rect, &band_params, unread);
             if (code < 0)
                 break;
-            params->options = options = band_params.options;
+            params->options = band_params.options;
             if (lines_rasterized == line_count)
                 break;
         }

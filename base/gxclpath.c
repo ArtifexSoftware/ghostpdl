@@ -517,7 +517,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             bp += sizeof(cldev->imager_state.alpha);
         }
         code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc2,
-                              1 + cmd_sizew(misc2_unknown) + bp - buf);
+                              1 + cmd_sizew(misc2_unknown) + (bp - buf));
         if (code < 0)
             return 0;
         memcpy(cmd_put_w(misc2_unknown, dp + 1), buf, bp - buf);

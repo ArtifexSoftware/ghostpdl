@@ -1408,11 +1408,12 @@ ibegin:                 if_debug0m('L', mem, "\n");
                                  ++plane, flags >>= 1) {
                                 if (flags & 1) {
                                     if (cbuf.end - cbp <
-                                        2 * cmd_max_intsize(sizeof(uint)))
+                                        2 * cmd_max_intsize(sizeof(uint))) {
                                         code = top_up_cbuf(&cbuf, &cbp);
                                         if (code < 0)
                                             return code;
-                                    cmd_getw(planes[plane].raster, cbp);
+                                    }
+                                    cmd_getw(planes[plane].raster, cbp)                                ;
                                     if ((raster1 = planes[plane].raster) != 0)
                                         cmd_getw(data_x, cbp);
                                 } else {
@@ -1456,10 +1457,11 @@ idata:                  data_size = 0;
                         }
                         data_size *= data_height;
                         data_on_heap = 0;
-                        if (cbuf.end - cbp < data_size)
+                        if (cbuf.end - cbp < data_size) {
                             code = top_up_cbuf(&cbuf, &cbp);
                             if (code < 0)
                                 return code;
+                        }
                         if (cbuf.end - cbp >= data_size) {
                             planes[0].data = cbp;
                             cbp += data_size;

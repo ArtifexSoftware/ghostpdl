@@ -685,7 +685,7 @@ clist_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
                     } else if (src_profile->data_cs == gsCMYK) {
                         if (srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO] != NULL) {
                             csi = gsicc_get_default_type(src_profile);
-                            if (srcgtag_profile->rgb_rend_cond[gsSRC_IMAGPRO].override_icc ||
+                            if (srcgtag_profile->cmyk_rend_cond[gsSRC_IMAGPRO].override_icc ||
                                 csi == gs_color_space_index_DeviceCMYK) {
                                 src_profile =
                                     srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO];
