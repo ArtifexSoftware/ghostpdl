@@ -188,7 +188,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
 
     /* skip over the post header */
     numGlyphs = u16(postp + 32);
-    if ( glyph < 0 || glyph > numGlyphs - 1)
+    if (glyph > numGlyphs - 1)
     {
         return gs_throw1(-1, "glyph index %lu out of range", (ulong)glyph);
     }
@@ -197,7 +197,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     glyph_name_index = u16(postp + 34 + (glyph * 2));
 
     /* this shouldn't happen */
-    if ( glyph_name_index < 0 && glyph_name_index > 0x7fff )
+    if ( glyph_name_index > 0x7fff )
         return gs_throw(-1, "post table format error");
 
     /* mac easy */
