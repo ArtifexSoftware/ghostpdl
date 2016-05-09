@@ -704,11 +704,11 @@ retry:
                 else if (code == TT_Err_Invalid_Engine)
                     error = fPatented;
                 else {
-                    /* We have a range or errors that can be caused by
+                    /* We have a range of errors that can be caused by
                      * bad bytecode
                      */
                     if ((int)code >= TT_Err_Invalid_Opcode
-                     || (int)code <= TT_Err_Invalid_Displacement) {
+                     && (int)code <= TT_Err_Invalid_Displacement) {
                         error = fBadInstruction;
                     }
                     else {
