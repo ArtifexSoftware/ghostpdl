@@ -105,7 +105,8 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
 
     if_debug1m('|', ctx->memory, "zip: inflating entry '%s'\n", ent->name);
 
-    fseek(ctx->file, ent->offset, 0);
+    if (fseek(ctx->file, ent->offset, 0) < 0)
+        return gs_throw1(-1, "seek to offset %d failed.", ent->offset);
 
     sig = getlong(ctx->file);
     if (sig != ZIP_LOCAL_FILE_SIG)
@@ -421,15 +422,21 @@ xps_read_dir_part(xps_context_t *ctx, const char *name)
     file = gp_fopen(buf, "rb");
     if (file)
     {
-        if (fseek(file, 0, SEEK_END) != 0)
+        if (fseek(file, 0, SEEK_END) != 0) {
+            fclose(file);
             return NULL;
+        }
 
         size = ftell(file);
-        if (size < 0)
+        if (size < 0) {
+            fclose(file);
             return NULL;
+        }
 
-        if (fseek(file, 0, SEEK_SET) != 0)
+        if (fseek(file, 0, SEEK_SET) != 0) {
+            fclose(file);
             return NULL;
+        }
 
         part = xps_new_part(ctx, name, size);
         count = fread(part->data, 1, size, file);
