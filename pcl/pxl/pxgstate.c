@@ -345,12 +345,16 @@ px_image_color_space(gs_image_t * pim,
     switch (params->color_space) {
         case eGray:
             pbase_pcs = gs_cspace_new_DeviceGray(pgs->memory);
+            if (pbase_pcs == NULL)
+                return_error(errorInsufficientMemory);
             pbase_pcs->cmm_icc_profile_data = pgs->icc_manager->default_gray;
             pbase_pcs->type = &gs_color_space_type_ICC;
             rc_increment(pbase_pcs->cmm_icc_profile_data);
             break;
         case eRGB:
             pbase_pcs = gs_cspace_new_DeviceRGB(pgs->memory);
+            if (pbase_pcs == NULL)
+                return_error(errorInsufficientMemory);
             pbase_pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
             pbase_pcs->type = &gs_color_space_type_ICC;
             rc_increment(pbase_pcs->cmm_icc_profile_data);
@@ -358,6 +362,8 @@ px_image_color_space(gs_image_t * pim,
         case eSRGB:
             cie_space = true;
             pbase_pcs = gs_cspace_new_DeviceRGB(pgs->memory);
+            if (pbase_pcs == NULL)
+                return_error(errorInsufficientMemory);
             pbase_pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
             pbase_pcs->type = &gs_color_space_type_ICC;
             rc_increment(pbase_pcs->cmm_icc_profile_data);
@@ -365,8 +371,6 @@ px_image_color_space(gs_image_t * pim,
         default:
             return_error(errorIllegalAttributeValue);
     }
-    if (pbase_pcs == NULL)
-        return_error(errorInsufficientMemory);
 
     if (params->indexed) {
         pcs = gs_cspace_alloc(pgs->memory, &gs_color_space_type_Indexed);

@@ -79,7 +79,7 @@ build_foreground(pcl_state_t * pcs,
 {
     pcl_frgrnd_t *pfrgrnd = *ppfrgrnd;
     const pcl_cs_indexed_t *pindexed = ppalet->pindexed;
-    int num_entries = pindexed->num_entries;
+    int num_entries;
     bool is_default = false;
     int code = 0;
 
@@ -90,7 +90,7 @@ build_foreground(pcl_state_t * pcs,
      * the second of the two entries.
      */
     if ((pindexed != 0) &&
-        (pindexed->pfixed) && (num_entries == 2) && (pal_entry == 1)) {
+        (pindexed->pfixed) && (pindexed->num_entries == 2) && (pal_entry == 1)) {
         is_default = true;
         if (pcs->pdflt_frgrnd != 0) {
             pcl_frgrnd_copy_from(*ppfrgrnd, pcs->pdflt_frgrnd);
@@ -98,6 +98,8 @@ build_foreground(pcl_state_t * pcs,
         }
     }
 
+    num_entries = pindexed->num_entries;
+    
     /* release the existing foreground */
     if (pfrgrnd != 0) {
         rc_decrement(pfrgrnd, "build pcl foreground");
