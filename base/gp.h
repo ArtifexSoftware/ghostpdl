@@ -349,37 +349,6 @@ int gp_read_macresource(byte *buf, const char *fname,
 /* Returns true when the character can be used in the file name. */
 bool gp_file_name_good_char(unsigned char c);
 
-/* ------ persistent cache interface ------ */
-
-/*
- * This is used for access to data cached between invocations of
- * Ghostscript. It is generally used for saving reusable data that
- * is expensive to compute. Concurrent access by multiple instances
- * is safe. Because of this care should be taken to use a new data
- * type when the format of the cached data changes.
- *
- * Generic data buffers are stored under a combination of type and
- * key. It is up the to client to interpret the data buffer appropriately.
- * An insert overwrites any previous entry under that type and key.
- * A query if successful uses the passed callback to allocate a buffer
- * and fills it with the retrieved data. The caller is thus responsible
- * for the buffer's memory management.
- *
- * See zmisc.c for postscript test operators and an example implementation.
- */
-
-/* return 0 on successful insert, non-zero otherwise */
-int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen);
-
-/* return the length of the buffer on success, a negative value otherwise */
-typedef void *(*gp_cache_alloc)(void *userdata, int bytes);
-int gp_cache_query(int type, byte* key, int keylen, void **buffer,
-    gp_cache_alloc alloc, void *userdata);
-
-/* cache data types */
-#define GP_CACHE_TYPE_TEST 0
-#define GP_CACHE_TYPE_FONTMAP 1
-
 /* ------ Printer accessing ------ */
 
 /*

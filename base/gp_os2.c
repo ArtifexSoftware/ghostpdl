@@ -166,23 +166,6 @@ gp_file_is_console(FILE * f)
     return false;
 }
 
-/* ------ Persistent data cache ------*/
-
-/* insert a buffer under a (type, key) pair */
-int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
-{
-    /* not yet implemented */
-    return 0;
-}
-
-/* look up a (type, key) in the cache */
-int gp_cache_query(int type, byte* key, int keylen, void **buffer,
-    gp_cache_alloc alloc, void *userdata)
-{
-    /* not yet implemented */
-    return -1;
-}
-
 /*************************************************************/
 /* from gp_iwatc.c and gp_itbc.c */
 

@@ -154,23 +154,6 @@ gp_get_usertime(long *pdt)
     gp_get_realtime(pdt);	/* Use an approximation for now.  */
 }
 
-/* ------ Persistent data cache ------*/
-
-/* insert a buffer under a (type, key) pair */
-int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
-{
-    /* not yet implemented */
-    return 0;
-}
-
-/* look up a (type, key) in the cache */
-int gp_cache_query(int type, byte* key, int keylen, void **buffer,
-    gp_cache_alloc alloc, void *userdata)
-{
-    /* not yet implemented */
-    return -1;
-}
-
 /* ------ Screen management ------ */
 
 /* Get the environment variable that specifies the display to use. */

@@ -103,23 +103,6 @@ gp_get_usertime(long *pdt)
     return gp_get_realtime(pdt);	/* not yet implemented */
 }
 
-/* ------ Persistent data cache ------*/
-
-/* insert a buffer under a (type, key) pair */
-int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
-{
-    /* not yet implemented */
-    return 0;
-}
-
-/* look up a (type, key) in the cache */
-int gp_cache_query(int type, byte* key, int keylen, void **buffer,
-    gp_cache_alloc alloc, void *userdata)
-{
-    /* not yet implemented */
-    return -1;
-}
-
 /* ------ Printer accessing ------ */
 
 /* Open a connection to a printer.  A null file name means use the */
