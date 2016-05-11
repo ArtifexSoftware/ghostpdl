@@ -653,7 +653,6 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
     {
         frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
         gs_client_color cc;
-        int i;
         unsigned char j;
         gs_color_space *icc_space = (gs_color_space *)pcs;
         gs_color_space *sep_space = (gs_color_space *)pcs;
