@@ -387,7 +387,10 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
             byte *line;
             int sx, rx;
 
-            DECLARE_LINE_ACCUM_COPY(lout, bpp, x);
+            byte *l_dptr = lout;
+            int l_dbit = 0;
+            byte l_dbyte = ((l_dbit) ? (byte)(*(l_dptr) & (0xff00 >> (l_dbit))) : 0);
+            int l_xprev = x;
 
             code = (*dev_proc(dev, get_bits)) (dev, ry, lin, &line);
             if (code < 0)
@@ -424,7 +427,18 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
                      * tile devices). The right thing to do is to write out
                      * the buffered accumulator, and skip over any pixels that
                      * are completely clear. */
-                    LINE_ACCUM_FLUSH_AND_RESTART(dev, lout, bpp, lx, rx, out_size, ry);
+                    if (rx > l_xprev ) {
+                        sample_store_flush(l_dptr, l_dbit, l_dbyte);
+                        code = (*dev_proc(dev, copy_color))
+                          (dev, lout, l_xprev - (lx), out_size,
+                           gx_no_bitmap_id, l_xprev, ry, (rx) - l_xprev, 1);
+                        if ( code < 0 )
+                          return code;
+                    }
+                    l_dptr = lout;
+                    l_dbit = 0;
+                    l_dbyte = (l_dbit ? (byte)(*l_dptr & (0xff00 >> l_dbit)) : 0);
+                    l_xprev = rx+1;
                     lx = rx+1;
                 } else {
                     if (alpha == 255) {	/* Just write the new color. */
@@ -449,16 +463,16 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
                                 switch (bpp >> 3) {
                                     case 8:
                                         previous += (gx_color_index) * src++
-                                            << sample_bound_shift(previous, 56);
+                                            << SAMPLE_BOUND_SHIFT(previous, 56);
                                     case 7:
                                         previous += (gx_color_index) * src++
-                                            << sample_bound_shift(previous, 48);
+                                            << SAMPLE_BOUND_SHIFT(previous, 48);
                                     case 6:
                                         previous += (gx_color_index) * src++
-                                            << sample_bound_shift(previous, 40);
+                                            << SAMPLE_BOUND_SHIFT(previous, 40);
                                     case 5:
                                         previous += (gx_color_index) * src++
-                                            << sample_bound_shift(previous, 32);
+                                            << SAMPLE_BOUND_SHIFT(previous, 32);
                                     case 4:
                                         previous += (gx_color_index) * src++ << 24;
                                     case 3:
@@ -492,10 +506,24 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
                             goto blend;
                         }
                     }
-                    LINE_ACCUM(composite, bpp);
+                    if (sizeof(composite) > 4) {
+                        if (sample_store_next64(composite, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                            return_error(gs_error_rangecheck);
+                    }
+                    else {
+                        if (sample_store_next32(composite, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                            return_error(gs_error_rangecheck);
+                    }
                 }
             }
-            LINE_ACCUM_COPY(dev, lout, bpp, lx, rx, out_size, ry);
+            if ( rx > l_xprev ) {
+                sample_store_flush(l_dptr, l_dbit, l_dbyte);
+                code = (*dev_proc(dev, copy_color))
+                  (dev, lout, l_xprev - lx, out_size,
+                   gx_no_bitmap_id, l_xprev, ry, rx - l_xprev, 1);
+                if (code < 0)
+                    return code;
+            }
         }
       out:gs_free_object(mem, lout, "copy_alpha(lout)");
         gs_free_object(mem, lin, "copy_alpha(lin)");

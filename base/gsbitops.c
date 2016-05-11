@@ -531,24 +531,28 @@ bits_extract_plane(const bits_plane_t *dest /*write*/,
         default: {
             const byte *sptr = source_row;
             int sbit = source_bit;
-            sample_store_declare_setup(dptr, dbit, dbbyte, dest_row, dest_bit,
-                                       dest_depth);
+            byte *dptr = dest_row;
+            int dbit = dest_bit;
+            byte dbbyte = (dbit ? (byte)(*dptr & (0xff00 >> dbit)) : 0);
 
-            sample_store_preload(dbbyte, dptr, dbit, dest_depth);
+            dbbyte = (dbit ? (byte)(*dptr & (0xff00 >> dbit)) : 0);
             for (x = width; x > 0; --x) {
                 gx_color_index color;
                 uint pixel;
 
-                if (sizeof(color) > 4)
+                if (sizeof(color) > 4) {
                     if (sample_load_next64((uint64_t *)&color, &sptr, &sbit, source_depth) < 0)
                         return_error(gs_error_rangecheck);
-                else
+                }
+                else {
                     if (sample_load_next32((uint32_t *)&color, &sptr, &sbit, source_depth) < 0)
                         return_error(gs_error_rangecheck);
+                }
                 pixel = (color >> shift) & plane_mask;
-                sample_store_next8(pixel, dptr, dbit, dest_depth, dbbyte);
+                if (sample_store_next8(pixel, &dptr, &dbit, dest_depth, &dbbyte) < 0)
+                    return_error(gs_error_rangecheck);
             }
-            sample_store_flush(dptr, dbit, dest_depth, dbbyte);
+            sample_store_flush(dptr, dbit, dbbyte);
         }
         }
     }
@@ -621,10 +625,11 @@ bits_expand_plane(const bits_plane_t *dest /*write*/,
             int x;
             const byte *sptr = source_row;
             int sbit = source_bit;
-            sample_store_declare_setup(dptr, dbit, dbbyte, dest_row, dest_bit,
-                                       dest_depth);
+            byte *dptr = dest_row;
+            int dbit = dest_bit;
+            byte dbbyte = (dbit ? (byte)(*dptr & (0xff00 >> dbit)) : 0);
 
-            sample_store_preload(dbbyte, dptr, dbit, dest_depth);
+            dbbyte = (dbit ? (byte)(*dptr & (0xff00 >> dbit)) : 0);
             for (x = width; x > 0; --x) {
                 uint color;
                 gx_color_index pixel;
@@ -633,9 +638,16 @@ bits_expand_plane(const bits_plane_t *dest /*write*/,
                     return_error(gs_error_rangecheck);
 
                 pixel = (gx_color_index)color << shift;
-                sample_store_next_any(pixel, dptr, dbit, dest_depth, dbbyte);
+                if (sizeof(pixel) > 4) {
+                    if (sample_store_next64(pixel, &dptr, &dbit, dest_depth, &dbbyte) < 0)
+                        return_error(gs_error_rangecheck);
+                }
+                else {
+                    if (sample_store_next32(pixel, &dptr, &dbit, dest_depth, &dbbyte) < 0)
+                        return_error(gs_error_rangecheck);
+                }
             }
-            sample_store_flush(dptr, dbit, dest_depth, dbbyte);
+            sample_store_flush(dptr, dbit, dbbyte);
         }
         break;
 

@@ -593,12 +593,14 @@ composite_values(const pixel_row_t * pdest, const const_pixel_row_t * psource,
 
     const byte *sptr;
     int sbit;
-    sample_store_declare(dptr, dbit, dbyte);
+    byte *dptr;
+    int dbit;
+    byte dbyte;
 
     {
         uint xbit = pdest->initial_x * dest_bpv * dest_vpp;
 
-        sample_store_setup(dbit, xbit & 7, dest_bpv);
+        dbit =  xbit & 7;
         dptr = pdest->data + (xbit >> 3);
     }
     {
@@ -642,18 +644,11 @@ composite_values(const pixel_row_t * pdest, const const_pixel_row_t * psource,
             }
         }
         /* Preload the output byte buffer if necessary. */
-        sample_store_preload(dbyte, dptr, dbit, dest_bpv);
+        dbyte = (dbit ? (byte)(*dptr & (0xff00 >> dbit)) : 0);
 
         for (x = 0; x < num_pixels; ++x) {
             int j;
             uint result_alpha = dest_alpha;
-
-/* put_value increments the destination pointer. */
-#define put_value(v, ptr, bit, bpv, bbyte)\
-  sample_store_next16(v, ptr, bit, bpv, bbyte)
-
-#define advance(ptr, bit, bpv)\
-  sample_next(ptr, bit, bpv)
 
             /* Get destination alpha value. */
             if (dest_alpha_j >= 0) {
@@ -671,10 +666,16 @@ composite_values(const pixel_row_t * pdest, const const_pixel_row_t * psource,
                 int sabit = sbit;
                 const byte *saptr = sptr;
 
-                if (source_alpha_j == 0)
-                    advance(sptr, sbit, source_bpv);
-                else
-                    advance(saptr, sabit, source_bpv * source_alpha_j);
+                if (source_alpha_j == 0) {
+                    sbit += (source_bpv);
+                    sptr += sbit >> 3;
+                    sbit &= 7;
+                }
+                else {
+                    sabit += (source_bpv * source_alpha_j);
+                    saptr += sabit >> 3;
+                    sabit &= 7;
+                }
                 if (sample_load16(&dest_alpha, saptr, sabit, source_bpv) < 0)
                     return_error(gs_error_rangecheck);
 #ifdef PREMULTIPLY_TOWARDS_WHITE
@@ -711,7 +712,9 @@ composite_values(const pixel_row_t * pdest, const const_pixel_row_t * psource,
                     else {
                         if (sample_load16(&source_v, sptr, sbit, source_bpv) < 0)
                             return_error(gs_error_rangecheck);
-                        advance(sptr, sbit, source_bpv);
+                        sbit += (source_bpv);
+                        sptr += sbit >> 3;
+                        sbit &= 7;
                     }
                     if (sample_load16(&dest_v, dptr, dbit, dest_bpv) < 0)
                         return_error(gs_error_rangecheck);
@@ -817,19 +820,22 @@ composite_values(const pixel_row_t * pdest, const const_pixel_row_t * psource,
                     continue;
                 }
 #endif
-                put_value(result, dptr, dbit, dest_bpv, dbyte);
+                if (sample_store_next16(result, &dptr, &dbit, dest_bpv, &dbyte) < 0)
+                    return_error(gs_error_rangecheck);
             }
             /* Skip a trailing source alpha value. */
-            if (source_alpha_j > 0)
-                advance(sptr, sbit, source_bpv);
+            if (source_alpha_j > 0) {
+                sbit += (source_bpv);
+                sptr += sbit >> 3;
+                sbit &= 7;
+            }
             /* Store a trailing destination alpha value. */
             if (dest_alpha_j > 0)
-                put_value(result_alpha, dptr, dbit, dest_bpv, dbyte);
-#undef put_value
-#undef advance
+                if (sample_store_next16(result_alpha, &dptr, &dbit, dest_bpv, &dbyte) < 0)
+                    return_error(gs_error_rangecheck);
         }
         /* Store any partial output byte. */
-        sample_store_flush(dptr, dbit, dest_bpv, dbyte);
+        sample_store_flush(dptr, dbit, dbyte);
     }
     return 0;
 }

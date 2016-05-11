@@ -648,10 +648,12 @@ gx_image3x_plane_data(gx_image_enum_common_t * info,
         uint bit_x = bpc * (num_components + num_chunky) * planes[pi].data_x;
         const byte *sptr = planes[0].data + (bit_x >> 3);
         int sbit = bit_x & 7;
-        sample_store_declare_setup(pptr, pbit, pbbyte,
-                                   penum->pixel.data, 0, bpc);
-        sample_store_declare(dptr[NUM_MASKS], dbit[NUM_MASKS],
-                             dbbyte[NUM_MASKS]);
+        byte *pptr = penum->pixel.data;
+        int pbit = 0;
+        byte pbbyte = (pbit ? (byte)(*pptr & (0xff00 >> pbit)) : 0);
+        byte *dptr[NUM_MASKS];
+        int dbit[NUM_MASKS];
+        byte dbbyte[NUM_MASKS];
         int depth[NUM_MASKS];
         int x;
 
@@ -665,8 +667,8 @@ gx_image3x_plane_data(gx_image_enum_common_t * info,
                 mask_plane[i].data = dptr[i] = penum->mask[i].data;
                 mask_plane[i].data_x = 0;
                 /* raster doesn't matter */
-                sample_store_setup(dbit[i], 0, depth[i]);
-                sample_store_preload(dbbyte[i], dptr[i], 0, depth[i]);
+                dbit[i] = 0;
+                dbbyte[i] = 0;
             } else
                 depth[i] = 0;
         pixel_plane.data = pptr;
@@ -680,19 +682,22 @@ gx_image3x_plane_data(gx_image_enum_common_t * info,
                 if (depth[i]) {
                     if (sample_load_next12(&value, &sptr, &sbit, bpc) < 0)
                         return_error(gs_error_rangecheck);
-                    sample_store_next12(value, dptr[i], dbit[i], depth[i],
-                                        dbbyte[i]);
+                    if (sample_store_next12(value, &dptr[i], &dbit[i], depth[i],
+                                        &dbbyte[i]) < 0)
+                        return_error(gs_error_rangecheck);
                 }
             for (i = 0; i < num_components; ++i) {
                 if (sample_load_next12(&value, &sptr, &sbit, bpc) < 0)
                     return_error(gs_error_rangecheck);
-                sample_store_next12(value, pptr, pbit, bpc, pbbyte);
+                if (sample_store_next12(value, &pptr, &pbit, bpc, &pbbyte) < 0)
+                    return_error(gs_error_rangecheck);
             }
         }
         for (i = 0; i < NUM_MASKS; ++i)
-            if (penum->mask[i].data)
-                sample_store_flush(dptr[i], dbit[i], depth[i], dbbyte[i]);
-        sample_store_flush(pptr, pbit, bpc, pbbyte);
+            if (penum->mask[i].data) {
+                sample_store_flush(dptr[i], dbit[i], dbbyte[i]);
+            }
+        sample_store_flush(pptr, pbit, pbbyte);
         }
     /*
      * Process the mask data first, so it will set up the mask

@@ -547,10 +547,13 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
 
                 const byte *sptr = planes[0].data + (bit_x >> 3);
                 int sbit = bit_x & 7;
-                sample_store_declare_setup(mptr, mbit, mbbyte,
-                                           penum->mask_data, 0, 1);
-                sample_store_declare_setup(pptr, pbit, pbbyte,
-                                           penum->pixel_data, 0, bpc);
+
+                byte *mptr = penum->mask_data;
+                int mbit = 0;
+                byte mbbyte = (mbit ? (byte)(*mptr & (0xff00 >> mbit)) : 0);
+                byte *pptr = penum->pixel_data;
+                int pbit = 0;
+                byte pbbyte = (pbit ? (byte)(*pptr & (0xff00 >> pbit)) : 0);
                 int x;
 
                 mask_plane.data = mptr;
@@ -566,15 +569,17 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
 
                     if (sample_load_next12(&value, &sptr, &sbit, bpc) < 0)
                         return_error(gs_error_rangecheck);
-                    sample_store_next12(value != 0, mptr, mbit, 1, mbbyte);
+                    if (sample_store_next12(value != 0, &mptr, &mbit, 1, &mbbyte) < 0)
+                        return_error(gs_error_rangecheck);
                     for (i = 0; i < num_components; ++i) {
                         if (sample_load_next12(&value, &sptr, &sbit, bpc) < 0)
                             return_error(gs_error_rangecheck);
-                        sample_store_next12(value, pptr, pbit, bpc, pbbyte);
+                        if (sample_store_next12(value, &pptr, &pbit, bpc, &pbbyte) < 0)
+                            return_error (gs_error_rangecheck);
                     }
                 }
-                sample_store_flush(mptr, mbit, 1, mbbyte);
-                sample_store_flush(pptr, pbit, bpc, pbbyte);
+                sample_store_flush(mptr, mbit, mbbyte);
+                sample_store_flush(pptr, pbit, pbbyte);
             }
             break;
         case interleave_scan_lines:

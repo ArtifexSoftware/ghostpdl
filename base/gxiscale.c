@@ -966,7 +966,10 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
             gx_device_color devc;
             int status, code;
 
-            DECLARE_LINE_ACCUM_COPY(out, bpp, xo);
+            byte *l_dptr = out;
+            int l_dbit = 0;
+            byte l_dbyte = ((l_dbit) ? (byte)(*(l_dptr) & (0xff00 >> (l_dbit))) : 0);
+            int l_xprev = (xo);
             stream_w.limit = out + width *
                 max(spp_decode * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
             stream_w.ptr = stream_w.limit - width * spp_decode * sizeofPixelOut;
@@ -1000,14 +1003,28 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                         switch (spp_decode) {
                             case 1:
                                 do {
-                                    LINE_ACCUM(color, bpp);
+                                    if (sizeof(color) > 4) {
+                                        if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                            return_error(gs_error_rangecheck);
+                                    }
+                                    else {
+                                        if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                            return_error(gs_error_rangecheck);
+                                    }
                                     vd_pixel(int2fixed(x), int2fixed(ry), color);
                                     x++, psrc += 1;
                                 } while (x < xe && psrc[-1] == psrc[0]);
                                 break;
                             case 3:
                                 do {
-                                    LINE_ACCUM(color, bpp);
+                                    if (sizeof(color) > 4) {
+                                        if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                            return_error(gs_error_rangecheck);
+                                    }
+                                    else {
+                                        if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                            return_error(gs_error_rangecheck);
+                                    }
                                     vd_pixel(int2fixed(x), int2fixed(ry), color);
                                     x++, psrc += 3;
                                 } while (x < xe &&
@@ -1017,7 +1034,14 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                                 break;
                             case 4:
                                 do {
-                                    LINE_ACCUM(color, bpp);
+                                    if (sizeof(color) > 4) {
+                                        if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                            return_error(gs_error_rangecheck);
+                                    }
+                                    else {
+                                        if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                            return_error(gs_error_rangecheck);
+                                    }
                                     x++, psrc += 4;
                                 } while (x < xe &&
                                          psrc[-4] == psrc[0] &&
@@ -1026,14 +1050,28 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                                          psrc[-1] == psrc[3]);
                                 break;
                             default:
-                                LINE_ACCUM(color, bpp);
+                                if (sizeof(color) > 4) {
+                                    if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                        return_error(gs_error_rangecheck);
+                                }
+                                else {
+                                    if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                        return_error(gs_error_rangecheck);
+                                }
                                 x++, psrc += spp_decode;
                         }
                     } else {
                         int rcode, i, rep = 0;
 
                         /* do _COPY in case any pure colors were accumulated above */
-                        LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
+                        if ( x > l_xprev ) {
+                            sample_store_flush(l_dptr, l_dbit, l_dbyte);
+                            code = (*dev_proc(dev, copy_color))
+                              (dev, out, l_xprev - xo, raster,
+                               gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+                            if (code < 0)
+                                return code;
+                        }
                         /* as above, see if we can accumulate any runs */
                         switch (spp_decode) {
                             case 1:
@@ -1067,16 +1105,21 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                         rcode = gx_fill_rectangle_device_rop(x, ry, rep, 1, &devc, dev, lop);
                         if (rcode < 0)
                             return rcode;
-                        /* FIXME: LINE_ACCUM_SKIP can't handle aritrary skip lengths */
-                        /* I recommend getting rid of the macros !!! */
                         for (i = 0; i < rep; i++) {
-                            LINE_ACCUM_SKIP(bpp);
+                            sample_store_skip_next(&l_dptr, &l_dbit, bpp, &l_dbyte);
                         }
                         l_xprev = x + rep;
                         x += rep;
                     }
                 }
-                LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
+                if ( x > l_xprev ) {
+                    sample_store_flush(l_dptr, l_dbit, l_dbyte);
+                    code = (*dev_proc(dev, copy_color))
+                      (dev, out, l_xprev - xo, raster,
+                       gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+                    if (code < 0)
+                        return code;
+                }
                 /*if_debug1m('w', dev->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 inactive:
                 penum->line_xy++;
@@ -1349,7 +1392,10 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
             gx_device_color devc;
             int status;
 
-            DECLARE_LINE_ACCUM_COPY(out, bpp, xo);
+            byte *l_dptr = out;
+            int l_dbit = 0;
+            byte l_dbyte = ((l_dbit) ? (byte)(*(l_dptr) & (0xff00 >> (l_dbit))) : 0);
+            int l_xprev = (xo);
             stream_w.limit = out + width *
                 max(spp_interp * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
             stream_w.ptr = stream_w.limit - width * spp_interp * sizeofPixelOut;
@@ -1407,14 +1453,28 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                         switch (spp_cm) {
                             case 1:
                                 do {
-                                    LINE_ACCUM(color, bpp);
+                                    if (sizeof(color) > 4) {
+                                        if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                            return_error(gs_error_rangecheck);
+                                    }
+                                    else {
+                                        if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                            return_error(gs_error_rangecheck);
+                                    }
                                     vd_pixel(int2fixed(x), int2fixed(ry), color);
                                     x++, p_cm_interp += 1;
                                 } while (x < xe && p_cm_interp[-1] == p_cm_interp[0]);
                                 break;
                             case 3:
                                 do {
-                                    LINE_ACCUM(color, bpp);
+                                    if (sizeof(color) > 4) {
+                                        if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                            return_error(gs_error_rangecheck);
+                                    }
+                                    else {
+                                        if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                            return_error(gs_error_rangecheck);
+                                    }
                                     vd_pixel(int2fixed(x), int2fixed(ry), color);
                                     x++, p_cm_interp += 3;
                                 } while (x < xe && p_cm_interp[-3] == p_cm_interp[0] &&
@@ -1423,7 +1483,14 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                                 break;
                             case 4:
                                 do {
-                                    LINE_ACCUM(color, bpp);
+                                    if (sizeof(color) > 4) {
+                                        if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                            return_error(gs_error_rangecheck);
+                                    }
+                                    else {
+                                        if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                            return_error(gs_error_rangecheck);
+                                    }
                                     x++, p_cm_interp += 4;
                                 } while (x < xe && p_cm_interp[-4] == p_cm_interp[0] &&
                                      p_cm_interp[-3] == p_cm_interp[1] &&
@@ -1431,14 +1498,28 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                                      p_cm_interp[-1] == p_cm_interp[3]);
                                 break;
                             default:
-                                LINE_ACCUM(color, bpp);
+                                if (sizeof(color) > 4) {
+                                    if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                        return_error(gs_error_rangecheck);
+                                }
+                                else {
+                                    if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                        return_error(gs_error_rangecheck);
+                                }
                                 x++, p_cm_interp += spp_cm;
                         }
                     } else {
                         int rcode, i, rep = 0;
 
                         /* do _COPY in case any pure colors were accumulated above*/
-                        LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
+                        if ( x > l_xprev ) {
+                            sample_store_flush(l_dptr, l_dbit, l_dbyte);
+                            code = (*dev_proc(dev, copy_color))
+                              (dev, out, l_xprev - xo, raster,
+                               gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+                            if (code < 0)
+                                return code;
+                        }
                         /* as above, see if we can accumulate any runs */
                         switch (spp_cm) {
                             case 1:
@@ -1468,16 +1549,21 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                         rcode = gx_fill_rectangle_device_rop(x, ry, rep, 1, &devc, dev, lop);
                         if (rcode < 0)
                             return rcode;
-                        /* FIXME: LINE_ACCUM_SKIP can't handle aritrary skip lengths */
-                        /* I recommend getting rid of the macros !!! */
                         for (i = 0; i < rep; i++) {
-                            LINE_ACCUM_SKIP(bpp);
+                            sample_store_skip_next(&l_dptr, &l_dbit, bpp, &l_dbyte);
                         }
                         l_xprev = x + rep;
                         x += rep;
                     }
                 }  /* End on x loop */
-                LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
+                if ( x > l_xprev ) {
+                    sample_store_flush(l_dptr, l_dbit, l_dbyte);
+                    code = (*dev_proc(dev, copy_color))
+                      (dev, out, l_xprev - xo, raster,
+                       gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+                    if (code < 0)
+                        return code;
+                }
                 /*if_debug1m('w', penum->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 inactive:
                 penum->line_xy++;

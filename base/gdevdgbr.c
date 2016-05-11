@@ -426,9 +426,9 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
         int i;
         const byte *src = src_line;
         int sbit = src_bit_offset & 7;
-
-        sample_store_declare_setup(dest, dbit, dbyte, dest_line,
-                                   dest_bit_offset & 7, depth);
+        byte *dest = dest_line;
+        int dbit = dest_bit_offset & 7;
+        byte dbyte = (dbit ? (byte)(*dest & (0xff00 >> dbit)) : 0);
 
 #define v2frac(value) ((long)(value) * frac_1 / src_max)
 
@@ -493,9 +493,16 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
 
                 pixel = dev_proc(dev, encode_color)(dev, v);
             }
-            sample_store_next_any(pixel, dest, dbit, depth, dbyte);
+            if (sizeof(pixel) > 4) {
+                if (sample_store_next64(pixel, &dest, &dbit, depth, &dbyte) < 0)
+                    return_error(gs_error_rangecheck);
+            }
+            else {
+                if (sample_store_next32(pixel, &dest, &dbit, depth, &dbyte) < 0)
+                    return_error(gs_error_rangecheck);
+            }
         }
-        sample_store_flush(dest, dbit, depth, dbyte);
+        sample_store_flush(dest, dbit, dbyte);
     }
     return 0;
 }

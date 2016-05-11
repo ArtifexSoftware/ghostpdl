@@ -864,24 +864,27 @@ mem_planar_copy_color(gx_device * dev, const byte * base, int sourcex,
                 for (iy = 0; iy < ch; ++iy) {
                     const byte *sptr =source_base;
                     int sbit = source_bit;
-                    sample_store_declare_setup(dptr, dbit, dbbyte,
-                                               buf.b + br * iy,
-                                               0, plane_depth);
+                    byte *dptr = buf.b + br * iy;
+                    int dbit = 0;
+                    byte dbbyte = (dbit ? (byte)(*dptr & (0xff00 >> dbit)) : 0);
 
                     for (ix = 0; ix < cw; ++ix) {
                         gx_color_index value;
 
-                        if (sizeof(value) > 4)
+                        if (sizeof(value) > 4){
                             if (sample_load_next64((uint64_t *)&value, &sptr, &sbit, source_depth) < 0)
                                 return_error(gs_error_rangecheck);
-                        else
+                        }
+                        else {
                             if (sample_load_next32((uint32_t *)&value, &sptr, &sbit, source_depth) < 0)
                                 return_error(gs_error_rangecheck);
+                        }
                         value = (value >> shift) & mask;
-                        sample_store_next16(value, dptr, dbit, plane_depth,
-                                            dbbyte);
+                        if (sample_store_next16(value, &dptr, &dbit, plane_depth,
+                                            &dbbyte) < 0)
+                            return_error(gs_error_rangecheck);
                     }
-                    sample_store_flush(dptr, dbit, plane_depth, dbbyte);
+                    sample_store_flush(dptr, dbit, dbbyte);
                     source_base += sraster;
                 }
                 /*
@@ -1695,7 +1698,9 @@ planar_to_chunky(gx_device_memory *mdev, int x, int y, int w, int h,
     int num_planes = mdev->color_info.num_components;
     const byte *sptr[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int sbit[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    sample_store_declare(dptr, dbit, dbbyte);
+    byte *dptr;
+    int dbit;
+    byte dbbyte;
     int ddepth = mdev->color_info.depth;
     int direct =
         (mdev->color_info.depth != num_planes * mdev->plane_depth ? 0 :
@@ -1729,7 +1734,7 @@ planar_to_chunky(gx_device_memory *mdev, int x, int y, int w, int h,
             int xbit = offset * ddepth;
 
             dptr = dest + (iy - y) * draster + (xbit >> 3);
-            sample_store_setup(dbit, xbit & 7, ddepth);
+            dbit = xbit & 7;
         }
         if (direct == -8) {
             /* 1 byte per component, lsb first. */
@@ -1758,7 +1763,8 @@ planar_to_chunky(gx_device_memory *mdev, int x, int y, int w, int h,
                 break;
             }
         }
-        sample_store_preload(dbbyte, dptr, dbit, ddepth);
+        dbbyte = (dbit ? (byte)(*dptr & (0xff00 >> dbit)) : 0);
+/*        sample_store_preload(dbbyte, dptr, dbit, ddepth);*/
         for (ix = w; ix > 0; --ix) {
             gx_color_index color = 0;
 
@@ -1770,9 +1776,16 @@ planar_to_chunky(gx_device_memory *mdev, int x, int y, int w, int h,
                     return_error(gs_error_rangecheck);
                 color |= (gx_color_index)value << mdev->planes[pi].shift;
             }
-            sample_store_next_any(color, dptr, dbit, ddepth, dbbyte);
+            if (sizeof(color) > 4) {
+                if (sample_store_next64(color, &dptr, &dbit, ddepth, &dbbyte) < 0)
+                    return_error(gs_error_rangecheck);
+            }
+            else {
+                if (sample_store_next32(color, &dptr, &dbit, ddepth, &dbbyte) < 0)
+                    return_error(gs_error_rangecheck);
+            }
         }
-        sample_store_flush(dptr, dbit, ddepth, dbbyte);
+        sample_store_flush(dptr, dbit, dbbyte);
     }
     return 0;
 }

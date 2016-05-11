@@ -926,7 +926,10 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
             byte *line;
             int sx, rx;
 
-            DECLARE_LINE_ACCUM_COPY(lout, bpp, x);
+            byte *l_dptr = lout;
+            int l_dbit = 0;
+            byte l_dbyte = ((l_dbit) ? (byte)(*(l_dptr) & (0xff00 >> (l_dbit))) : 0);
+            int l_xprev = x;
 
             code = (*dev_proc(dev, get_bits)) (dev, ry, lin, &line);
             if (code < 0)
@@ -991,9 +994,23 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
                          */
                     }
                 }
-                LINE_ACCUM(composite, bpp);
+                if (sizeof(composite) > 4) {
+                    if (sample_store_next64(composite, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                        return_error(gs_error_rangecheck);
+                }
+                else {
+                    if (sample_store_next32(composite, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                        return_error(gs_error_rangecheck);
+                }
             }
-            LINE_ACCUM_COPY(dev, lout, bpp, x, rx, raster, ry);
+            if ( rx > l_xprev ) {
+                sample_store_flush(l_dptr, l_dbit, l_dbyte);
+                code = (*dev_proc(dev, copy_color))
+                  (dev, lout, l_xprev - x, raster,
+                   gx_no_bitmap_id, l_xprev, ry, rx - l_xprev, 1);
+                if (code < 0)
+                    return code;
+            }
         }
       out:gs_free_object(mem, lout, "copy_alpha(lout)");
         gs_free_object(mem, lin, "copy_alpha(lin)");

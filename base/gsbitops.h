@@ -17,10 +17,10 @@
 /* Interface for bitmap operations */
 
 
-#include "gxcindex.h"
-
 #ifndef gsbitops_INCLUDED
 #  define gsbitops_INCLUDED
+
+#include "gxcindex.h"
 
 /* ---------------- Pixel processing macros ---------------- */
 
@@ -38,9 +38,8 @@
  * representation for better performance.  ****** NYI ******
  */
 
-/* Declare variables for loading. */
 /* macro to eliminate compiler warning message */
-#define sample_bound_shift(value, shift)\
+#define SAMPLE_BOUND_SHIFT(value, shift)\
     ((shift) >= 8 * sizeof(value) ? (shift) & (8 * sizeof(value) - 1) : (shift))
 
 /* Load a value from memory, without incrementing. */
@@ -77,8 +76,8 @@ static int inline sample_load_next12(uint *value, const byte **sptr, int *sbit, 
             *value = **sptr;
             break;
         case 3:
-            *value = (sbit ? ((**sptr & 0xf) << 8) | *sptr[1] :
-                    (**sptr << 4) | (*sptr[1] >> 4));
+            *value = (sbit ? ((**sptr & 0xf) << 8) | (*sptr)[1] :
+                    (**sptr << 4) | ((*sptr)[1] >> 4));
           break;
         default:
             return -1;
@@ -125,11 +124,11 @@ static int inline sample_load_next16 (uint *value, const byte **sptr, int *sbit,
             *value = **sptr;
             break;
         case 3:
-            *value = (*sbit ? ((**sptr & 0xf) << 8) | *sptr[1] :
-                    (**sptr << 4) | (*sptr[1] >> 4));
+            *value = (*sbit ? ((**sptr & 0xf) << 8) | (*sptr)[1] :
+                    (**sptr << 4) | ((*sptr)[1] >> 4));
             break;
         case 4:
-            *value = (**sptr << 8) | *sptr[1];
+            *value = (**sptr << 8) | (*sptr)[1];
             break;
         default:
             return -1;
@@ -152,17 +151,17 @@ static int inline sample_load_next32(uint32_t *value, const byte **sptr, int *sb
             *value = **sptr;
             break;
         case 3:
-            *value = (*sbit ? ((**sptr & 0xf) << 8) | *sptr[1] :
-                      (**sptr << 4) | (*sptr[1] >> 4));
+            *value = (*sbit ? ((**sptr & 0xf) << 8) | (*sptr)[1] :
+                      (**sptr << 4) | ((*sptr)[1] >> 4));
             break;
         case 4:
-            *value = (**sptr << 8) | *sptr[1];
+            *value = (**sptr << 8) | (*sptr)[1];
             break;
         case 6:
-            *value = (**sptr << 16) | (*sptr[1] << 8) | *sptr[2];
+            *value = (**sptr << 16) | ((*sptr)[1] << 8) | (*sptr)[2];
             break;
         case 8:
-            *value = (**sptr << 24) | (*sptr[1] << 16) | (*sptr[2] << 8) | *sptr[3];
+            *value = (**sptr << 24) | ((*sptr)[1] << 16) | ((*sptr)[2] << 8) | (*sptr)[3];
             break;
         default:
             return -1;
@@ -185,51 +184,51 @@ static int inline sample_load_next64(uint64_t *value, const byte **sptr, int *sb
             *value = **sptr;
             break;
         case 3:
-            *value = (*sbit ? ((**sptr & 0xf) << 8) | *sptr[1] :
-                      (**sptr << 4) | (*sptr[1] >> 4));
+            *value = (*sbit ? ((**sptr & 0xf) << 8) | (*sptr)[1] :
+                      (**sptr << 4) | ((*sptr)[1] >> 4));
             break;
         case 4:
-            *value = (**sptr << 8) | *sptr[1];
+            *value = (**sptr << 8) | (*sptr)[1];
             break;
         case 6:
-            *value = (**sptr << 16) | (*sptr[1] << 8) | *sptr[2];
+            *value = (**sptr << 16) | ((*sptr)[1] << 8) | (*sptr)[2];
             break;
         case 8:
-            *value = (**sptr << 24) | (*sptr[1] << 16) | (*sptr[2] << 8) | *sptr[3];
+            *value = (**sptr << 24) | ((*sptr)[1] << 16) | ((*sptr)[2] << 8) | (*sptr)[3];
             break;
         case 10:
-            *value = ((uint64_t)(*sptr[0]) << sample_bound_shift((*value), 32)) |
-                    ((uint64_t)(*sptr[1]) << 24) |
-                    ((uint64_t)(*sptr[2]) << 16) |
-                    ((uint64_t)(*sptr[3]) << 8) |
-                    (uint64_t)(*sptr[4]);
+            *value = ((uint64_t)((*sptr)[0]) << SAMPLE_BOUND_SHIFT((*value), 32)) |
+                    ((uint64_t)((*sptr)[1]) << 24) |
+                    ((uint64_t)((*sptr)[2]) << 16) |
+                    ((uint64_t)((*sptr)[3]) << 8) |
+                    (uint64_t)((*sptr)[4]);
             break;
         case 12:
-            *value = ((uint64_t)(*sptr[0]) << sample_bound_shift((*value), 40)) |
-                    ((uint64_t)(*sptr[1]) << sample_bound_shift((*value), 32)) |
-                    ((uint64_t)(*sptr[2]) << 24) |
-                    ((uint64_t)(*sptr[3]) << 16) |
-                    ((uint64_t)(*sptr[4]) << 8) |
-                    (uint64_t)(*sptr[5]);
+            *value = ((uint64_t)((*sptr)[0]) << SAMPLE_BOUND_SHIFT((*value), 40)) |
+                    ((uint64_t)((*sptr)[1]) << SAMPLE_BOUND_SHIFT((*value), 32)) |
+                    ((uint64_t)((*sptr)[2]) << 24) |
+                    ((uint64_t)((*sptr)[3]) << 16) |
+                    ((uint64_t)((*sptr)[4]) << 8) |
+                    (uint64_t)((*sptr)[5]);
             break;
         case 14:
-            *value = ((uint64_t)(*sptr[0]) << sample_bound_shift((*value), 48)) |
-                    ((uint64_t)(*sptr[1]) << sample_bound_shift((*value), 40)) |
-                    ((uint64_t)(*sptr[2]) << sample_bound_shift((*value), 32)) |
-                    ((uint64_t)(*sptr[3]) << 24) |
-                    ((uint64_t)(*sptr[4]) << 16) |
-                    ((uint64_t)(*sptr[5]) << 8) |
-                    (uint64_t)(*sptr[6]);
+            *value = ((uint64_t)((*sptr)[0]) << SAMPLE_BOUND_SHIFT((*value), 48)) |
+                    ((uint64_t)((*sptr)[1]) << SAMPLE_BOUND_SHIFT((*value), 40)) |
+                    ((uint64_t)((*sptr)[2]) << SAMPLE_BOUND_SHIFT((*value), 32)) |
+                    ((uint64_t)((*sptr)[3]) << 24) |
+                    ((uint64_t)((*sptr)[4]) << 16) |
+                    ((uint64_t)((*sptr)[5]) << 8) |
+                    (uint64_t)((*sptr)[6]);
             break;
         case 16:
-            *value = ((uint64_t)(*sptr[0]) << sample_bound_shift((*value), 56)) |
-                    ((uint64_t)(*sptr[1]) << sample_bound_shift((*value), 48)) |
-                    ((uint64_t)(*sptr[2]) << sample_bound_shift((*value), 40)) |
-                    ((uint64_t)(*sptr[3]) << sample_bound_shift((*value), 32)) |
-                    ((uint64_t)(*sptr[4]) << 24) |
-                    ((uint64_t)(*sptr[5]) << 16) |
-                    ((uint64_t)(*sptr[6]) << 8) |
-                    (uint64_t)(*sptr[7]);
+            *value = ((uint64_t)((*sptr)[0]) << SAMPLE_BOUND_SHIFT((*value), 56)) |
+                    ((uint64_t)((*sptr)[1]) << SAMPLE_BOUND_SHIFT((*value), 48)) |
+                    ((uint64_t)((*sptr)[2]) << SAMPLE_BOUND_SHIFT((*value), 40)) |
+                    ((uint64_t)((*sptr)[3]) << SAMPLE_BOUND_SHIFT((*value), 32)) |
+                    ((uint64_t)((*sptr)[4]) << 24) |
+                    ((uint64_t)((*sptr)[5]) << 16) |
+                    ((uint64_t)((*sptr)[6]) << 8) |
+                    (uint64_t)((*sptr)[7]);
             break;
         default:
             return -1;
@@ -240,114 +239,183 @@ static int inline sample_load_next64(uint64_t *value, const byte **sptr, int *sb
     return 0;
 }
 
-/* Declare variables for storing. */
-#define sample_store_declare(dptr, dbit, dbbyte)\
-  byte *dptr;\
-  int dbit;\
-  byte dbbyte                   /* maybe should be uint? */
-#define sample_store_declare_setup(dptr, dbit, dbbyte, ptr, bitno, dbpv)\
-  byte *dptr = (ptr);\
-  int sample_store_setup(dbit, bitno, dbpv);\
-  byte /* maybe should be uint? */\
-    sample_store_preload(dbbyte, dptr, dbit, dbpv)
-
-/* Set up to store starting at a given bit number. */
-#define sample_store_setup(dbit, bitno, dbpv)\
-  dbit = (bitno)
-
-/* Prepare for storing by preloading any partial byte. */
-#define sample_store_preload(dbbyte, dptr, dbit, dbpv)\
-  dbbyte = ((dbit) ? (byte)(*(dptr) & (0xff00 >> (dbit))) : 0)
-
-/* Reset (do the same as sample_store_declare, without the declare) */
-#define sample_store_reset(dptr, dbit, dbbyte, ptr, bitno, dbpv)\
-  dptr = (ptr);\
-  dbit = (bitno);\
-  sample_store_preload(dbbyte, dptr, dbit, dbpv)
-
 /* Store a value and increment the pointer. */
-#define sample_store_next8_(value, dptr, dbit, dbpv, dbbyte)\
-  BEGIN\
-  switch ( (dbpv) >> 2 ) {\
-  case 0:\
-    if ( (dbit += (dbpv)) == 8 )\
-       *(dptr)++ = dbbyte | (byte)(value), dbbyte = 0, dbit = 0;\
-    else dbbyte |= (byte)((value) << (8 - dbit));\
-    break;\
-  case 1:\
-    if ( dbit ^= 4 ) dbbyte = (byte)((value) << 4);\
-    else *(dptr)++ = dbbyte | ((byte)(value));\
-    break;\
-  /* case 2 is deliberately omitted */
-#define sample_store_next8(value, dptr, dbit, dbpv, dbbyte)\
-  sample_store_next8_(value, dptr, dbit, dbpv, dbbyte)\
-  case 2: *(dptr)++ = (byte)(value); break;\
-  default: return_error(gs_error_rangecheck);\
-  } END
-#define sample_store_next_12_(value, dptr, dbit, dbbyte)\
-    if ( dbit ^= 4 ) *(dptr)++ = (byte)((value) >> 4), dbbyte = (byte)((value) << 4);\
-    else\
-      *(dptr) = dbbyte | (byte)((value) >> 8), (dptr)[1] = (byte)(value), dptr += 2;
-#define sample_store_next_12(value, dptr, dbit, dbbyte)\
-  BEGIN sample_store_next_12_(value, dptr, dbit, dbbyte) END
-#define sample_store_next12_(value, dptr, dbit, dbpv, dbbyte)\
-  sample_store_next8_(value, dptr, dbit, dbpv, dbbyte)\
-  /* case 2 is deliberately omitted */\
-  case 3: sample_store_next_12_(value, dptr, dbit, dbbyte) break;
-#define sample_store_next12(value, dptr, dbit, dbpv, dbbyte)\
-  sample_store_next12_(value, dptr, dbit, dbpv, dbbyte)\
-  case 2: *(dptr)++ = (byte)(value); break;\
-  default: return_error(gs_error_rangecheck);\
-  } END
-#define sample_store_next16(value, dptr, dbit, dbpv, dbbyte)\
-  sample_store_next12_(value, dptr, dbit, dbpv, dbbyte)\
-  case 4: *(dptr)++ = (byte)((value) >> 8);\
-  case 2: *(dptr)++ = (byte)(value); break;\
-  default: return_error(gs_error_rangecheck);\
-  } END
-#define sample_store_next32(value, dptr, dbit, dbpv, dbbyte)\
-  sample_store_next12_(value, dptr, dbit, dbpv, dbbyte)\
-  case 8: *(dptr)++ = (byte)((value) >> 24);\
-  case 6: *(dptr)++ = (byte)((value) >> 16);\
-  case 4: *(dptr)++ = (byte)((value) >> 8);\
-  case 2: *(dptr)++ = (byte)(value); break;\
-  default: return_error(gs_error_rangecheck);\
-  } END
-#define sample_store_next64(value, dptr, dbit, dbpv, dbbyte)\
-  sample_store_next12_(value, dptr, dbit, dbpv, dbbyte)\
-  case 16: *(dptr)++ = (byte)((value) >> sample_bound_shift((value), 56));\
-  case 14: *(dptr)++ = (byte)((value) >> sample_bound_shift((value), 48));\
-  case 12: *(dptr)++ = (byte)((value) >> sample_bound_shift((value), 40));\
-  case 10: *(dptr)++ = (byte)((value) >> sample_bound_shift((value), 32));\
-  case 8: *(dptr)++ = (byte)((value) >> 24);\
-  case 6: *(dptr)++ = (byte)((value) >> 16);\
-  case 4: *(dptr)++ = (byte)((value) >> 8);\
-  case 2: *(dptr)++ = (byte)(value); break;\
-  default: return_error(gs_error_rangecheck);\
-  } END
-#define sample_store_next_any(value, dptr, dbit, dbpv, dbbyte)\
-  if (sizeof(value) > 4)\
-    sample_store_next64(value, dptr, dbit, dbpv, dbbyte);\
-  else\
-    sample_store_next32(value, dptr, dbit, dbpv, dbbyte)
+static int inline sample_store_next8(uint value, byte **dptr, int *dbit, int dbpv, byte *dbbyte)
+{
+    switch (dbpv >> 2 ) {
+        case 0:
+            if ( (*dbit += dbpv) == 8 ) {
+               *(*dptr)++ = *dbbyte | (byte)value;
+               *dbbyte = 0;
+               *dbit = 0;
+            }
+            else
+                *dbbyte |= (byte)(value << (8 - *dbit));
+            break;
+        case 1:
+            if ( *dbit ^= 4 )
+                *dbbyte = (byte)(value << 4);
+            else
+                *(*dptr)++ = *dbbyte | ((byte)value);\
+            break;
+        case 2:
+            *(*dptr)++ = (byte)value;
+            break;
+        default:
+            return -1;
+    }
+    return 0;
+}
 
-/* Skip over storing one sample.  This may or may not store into the */
-/* skipped region. */
-#define sample_store_skip_next(dptr, dbit, dbpv, dbbyte)\
-  if ( (dbpv) < 8 ) {\
-    sample_store_flush(dptr, dbit, dbpv, dbbyte);\
-    sample_next(dptr, dbit, dbpv);\
-    dbbyte &= ~(0xff << dbit); \
-  } else dptr += ((dbpv) >> 3)
+static void inline sample_store_next_12 (uint value, byte **dptr, int *dbit, byte *dbbyte)
+{
+    if ( *dbit ^= 4 )
+        *(*dptr)++ = (byte)(value >> 4), *dbbyte = (byte)(value << 4);
+    else
+      *(*dptr) = *dbbyte | (byte)(value >> 8), (*dptr)[1] = (byte)(value), *dptr += 2;
+}
+static int sample_store_next12(uint value, byte **dptr, int *dbit, int dbpv, byte *dbbyte)
+{
+    switch (dbpv >> 2 ) {
+    case 0:
+        if ((*dbit += dbpv) == 8 )
+            *(*dptr)++ = *dbbyte | (byte)value, *dbbyte = 0, *dbit = 0;
+        else
+            *dbbyte |= (byte)(value << (8 - *dbit));
+        break;
+    case 1:
+        if ( *dbit ^= 4 )
+            *dbbyte = (byte)(value << 4);
+        else
+            *(*dptr)++ = *dbbyte | ((byte)value);
+        break;
+    case 3:
+        if ( *dbit ^= 4 )
+            *(*dptr)++ = (byte)(value >> 4), *dbbyte = (byte)(value << 4);
+        else
+          *(*dptr) = *dbbyte | (byte)(value >> 8), (*dptr)[1] = (byte)value, *dptr += 2;
+    case 2:
+        *(*dptr)++ = (byte)value;
+        break;
+    default:
+          return -1;
+    }
+    return 0;
+}
 
-/* Finish storing by flushing any partial byte. */
-#define sample_store_flush(dptr, dbit, dbpv, dbbyte)\
-  if ( (dbit) != 0 )\
-    *(dptr) = dbbyte | (*(dptr) & (0xff >> (dbit)));
+static int inline sample_store_next16(uint value, byte **dptr, int *dbit, int dbpv, byte *dbbyte)
+{
+    switch (dbpv >> 2 ) {
+        case 0:
+            if ( (*dbit += dbpv) == 8 )
+               *(*dptr)++ = *dbbyte | (byte)value, *dbbyte = 0, *dbit = 0;
+            else
+                *dbbyte |= (byte)(value << (8 - *dbit));
+            break;
+        case 1:
+            if ( *dbit ^= 4 )
+                *dbbyte = (byte)(value << 4);
+            else
+                *(*dptr)++ = *dbbyte | ((byte)value);
+            break;
+        case 3:
+            if ( *dbit ^= 4 )
+                *(*dptr)++ = (byte)(value >> 4), *dbbyte = (byte)(value << 4);
+            else
+              *(*dptr) = *dbbyte | (byte)(value >> 8), (*dptr)[1] = (byte)value, *dptr += 2;
+            break;
+        case 4:
+            *(*dptr)++ = (byte)(value >> 8);
+        case 2:
+            *(*dptr)++ = (byte)value;
+            break;
+        default:
+            return -1;
+    }
+    return 0;
+}
 
-/* Increment a pointer to the next sample. */
-#define sample_next(ptr, bit, bpv)\
-  BEGIN bit += (bpv); ptr += bit >> 3; bit &= 7; END
+static int inline sample_store_next32(uint32_t value, byte **dptr, int *dbit, int dbpv, byte *dbbyte)
+{
+    switch (dbpv >> 2 ) {
+        case 0:\
+            if ( (*dbit += dbpv) == 8 )
+               *(*dptr)++ = *dbbyte | (byte)value, *dbbyte = 0, *dbit = 0;\
+            else
+                *dbbyte |= (byte)(value << (8 - *dbit));
+            break;
+        case 1:
+            if ( *dbit ^= 4 )
+                *dbbyte = (byte)(value << 4);
+            else
+                *(*dptr)++ = *dbbyte | ((byte)value);
+            break;
+        case 3:
+            if ( *dbit ^= 4 )
+                *(*dptr)++ = (byte)(value >> 4), *dbbyte = (byte)(value << 4);
+            else
+              *(*dptr) = *dbbyte | (byte)(value >> 8), (*dptr)[1] = (byte)value, *dptr += 2;
+            break;
+        case 8: *(*dptr)++ = (byte)(value >> 24);
+        case 6: *(*dptr)++ = (byte)(value >> 16);
+        case 4: *(*dptr)++ = (byte)(value >> 8);
+        case 2: *(*dptr)++ = (byte)(value);
+            break;
+        default:
+            return -1;
+    }
+    return 0;
+}
+
+static int inline sample_store_next64(uint64_t value, byte **dptr, int *dbit, int dbpv, byte *dbbyte)
+{
+    switch (dbpv >> 2 ) {
+        case 0:
+            if ( (*dbit += dbpv) == 8 )
+               *(*dptr)++ = *dbbyte | (byte)value, *dbbyte = 0, *dbit = 0;
+            else *dbbyte |= (byte)(value << (8 - *dbit));
+            break;
+        case 1:
+            if ( *dbit ^= 4 ) *dbbyte = (byte)(value << 4);
+            else *(*dptr)++ = *dbbyte | ((byte)value);
+            break;
+        case 3:
+            if ( *dbit ^= 4 ) *(*dptr)++ = (byte)(value >> 4), *dbbyte = (byte)(value << 4);
+            else
+              *(*dptr) = *dbbyte | (byte)(value >> 8), (*dptr)[1] = (byte)value, *dptr += 2;
+            break;
+        case 16: *(*dptr)++ = (byte)(value >> SAMPLE_BOUND_SHIFT(value, 56));
+        case 14: *(*dptr)++ = (byte)(value >> SAMPLE_BOUND_SHIFT(value, 48));
+        case 12: *(*dptr)++ = (byte)(value >> SAMPLE_BOUND_SHIFT(value, 40));
+        case 10: *(*dptr)++ = (byte)(value >> SAMPLE_BOUND_SHIFT(value, 32));
+        case 8: *(*dptr)++ = (byte)(value >> 24);
+        case 6: *(*dptr)++ = (byte)(value >> 16);
+        case 4: *(*dptr)++ = (byte)(value >> 8);
+        case 2: *(*dptr)++ = (byte)(value);
+            break;
+        default:
+            return -1;
+    }
+    return 0;
+}
+
+static void inline sample_store_flush(byte *dptr, int dbit, byte dbbyte)
+{
+  if (dbit != 0 )\
+    *dptr = dbbyte | (*dptr & (0xff >> dbit));
+}
+
+static void inline sample_store_skip_next(byte **dptr, int *dbit, int dbpv, byte *dbbyte)
+{
+    if ( dbpv < 8 ) {
+        sample_store_flush(*dptr, *dbit, *dbbyte);
+        *dbit += dbpv;
+        *dptr += (*dbit) >> 3;
+        *dbit &= 7;
+        *dbbyte &= ~(0xff << (*dbit));
+  } else
+      *dptr += (dbpv >> 3);
+}
 
 /* ---------------- Definitions ---------------- */
 

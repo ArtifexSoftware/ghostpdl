@@ -291,7 +291,9 @@ x_wrap_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
     int xi;
     int sbit;
 
-    DECLARE_LINE_ACCUM(str, depth, 0);
+    byte *l_dptr = str;
+    int l_dbit = 0;
+    byte l_dbyte = ((l_dbit) ? (byte)(*(l_dptr) & (0xff00 >> (l_dbit))) : 0);
 
     if ((code = get_dev_target(&tdev, dev)) < 0)
         return code;
@@ -335,10 +337,18 @@ x_wrap_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
                 pixel_out = (*dev_proc(dev, map_cmyk_color))(dev, cmyk);
             }
         }
-        LINE_ACCUM(pixel_out, depth);
+        if (sizeof(pixel_out) > 4) {
+            if (sample_store_next64(pixel_out, &l_dptr, &l_dbit, depth, &l_dbyte) < 0)
+                return_error(gs_error_rangecheck);
+        }
+        else {
+            if (sample_store_next32(pixel_out, &l_dptr, &l_dbit, depth, &l_dbyte) < 0)
+                return_error(gs_error_rangecheck);
+        }
     }
-    LINE_ACCUM_STORE(depth);
-  gx:gs_free_object(mem, row, "x_wrap_get_bits");
+    sample_store_flush(l_dptr, l_dbit, l_dbyte);
+gx:
+    gs_free_object(mem, row, "x_wrap_get_bits");
     if (actual_data)
         *actual_data = str;
     return code;
