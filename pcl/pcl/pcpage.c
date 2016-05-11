@@ -1041,7 +1041,7 @@ pcl_set_custom_paper_size(pcl_state_t *pcs, pcl_paper_size_t *p)
     if (found)
         *psize = *p;
     else
-        /* this should never happen - the customer paper size is
+        /* this should never happen - the custom paper size is
            always in the table */
         return -1;
     
@@ -1057,16 +1057,23 @@ static int
 set_paper_length(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint decipoints = uint_arg(pargs);
+    bool found = false;
     int i;
     pcl_paper_size_t *psize;
 
     for (i = 0; i < pcl_paper_type_count; i++) {
         if (101 == PAPER_SIZES[i].tag) {
             psize = &(PAPER_SIZES[i].psize);
+            found = true;
             break;
         }
     }
-    psize->height = decipoints * 10L;
+    if (found)
+        psize->height = decipoints * 10L;
+    else
+        /* never happens the, custom paper size is always in the
+           table */
+        return -1;
     return 0;
 }
 

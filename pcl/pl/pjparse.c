@@ -1253,14 +1253,11 @@ pjl_process(pjl_parser_state * pst, void *pstate, stream_cursor_read * pr)
         /* Always leave room for a terminator. */
         if (pst->pos == pst->line_size) {
             char *temp = (char *)gs_alloc_bytes (pst->mem, pst->line_size + 256, "pjl_state increase line buffer");
-
-            if (p) {
-                memcpy(temp, pst->line, pst->line_size);
-                gs_free_object(pst->mem, pst->line, "pjl_state line buffer");
-                pst->line = temp;
-                pst->line_size += 256;
-                pst->line[pst->pos] = p[1], pst->pos++;
-            }
+            memcpy(temp, pst->line, pst->line_size);
+            gs_free_object(pst->mem, pst->line, "pjl_state line buffer");
+            pst->line = temp;
+            pst->line_size += 256;
+            pst->line[pst->pos] = p[1], pst->pos++;
         } else
             pst->line[pst->pos] = p[1], pst->pos++;
         ++p;
@@ -1815,7 +1812,7 @@ pjl_register_permanent_soft_font_addition(pjl_parser_state * pst)
     /* Find an empty slot in the table.  We have no HP documentation
        that says how a soft font gets associated with a font number */
     int font_num;
-    bool slot_found;
+    bool slot_found = false;
 
     for (font_num = 0; font_num < MAX_PERMANENT_FONTS; font_num++)
         if (!
