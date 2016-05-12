@@ -398,12 +398,8 @@ pdf_initialize_ids(gx_device_pdf * pdev)
         int timeoffset;
         char timesign;
 
-        gp_get_realtime(&gp_time);
-        if (sizeof(time_t) > 4){
-            t = gp_time[0] << 32 + gp_time[1];
-        } else {
-            t = gp_time[0];
-        }
+        gp_get_realtime((long *)&gp_time);
+        t = gp_time[0];
 
         tms = *gmtime(&t);
         tms.tm_isdst = -1;

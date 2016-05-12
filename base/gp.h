@@ -112,13 +112,13 @@ int gp_serialnumber(void);
  * Read the current time (in seconds since an implementation-defined epoch)
  * into ptm[0], and fraction (in nanoseconds) into ptm[1].
  */
-void gp_get_realtime(long ptm[2]);
+void gp_get_realtime(long *ptm);
 
 /*
  * Read the current user CPU time (in seconds) into ptm[0],
  * and fraction (in nanoseconds) into ptm[1].
  */
-void gp_get_usertime(long ptm[2]);
+void gp_get_usertime(long *ptm);
 
 /* ------ Reading lines from stdin ------ */
 
