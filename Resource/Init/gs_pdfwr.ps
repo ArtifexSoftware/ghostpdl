@@ -23,6 +23,9 @@
 % These correspond to the 4 predefined settings in Acrobat Distiller 5,
 % plus a "default" setting that doesn't downsample images.
 
+{ /pdfwrite finddevice pop } .internalstopped
+{pop pop (%END PDFWR) .skipeof} if
+
 languagelevel 2 .setlanguagelevel
 
 /.a2112 [2 1 1 2] readonly def
@@ -1037,3 +1040,5 @@ currentdict /.pdf_hook_DSC_Creator undef
 } bind .schedule_init
 
 .setlanguagelevel
+
+%END PDFWR

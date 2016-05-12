@@ -842,15 +842,17 @@ pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_)\
  $(pdfwrite5_) $(pdfwrite6_) $(pdfwrite7_) $(pdfwrite8_) $(pdfwrite9_)\
  $(pdfwrite10_) $(pdfwrite11_)
 
-# Since ps2write actually is a clone of pdfwrite,
+# Since ps2write and eps2write are actually "clones" of pdfwrite,
 # we just depend on it.
+# Also note gs_pdfwr.ps depends on pdfwrite being available. So
+# if this is changed to allow (e)ps2write to be built in without
+# pdfwrite, then gs_pdfwr.ps will need to be changed to check for
+# the three devices, rather than just pdfwrite.
 $(DD)ps2write.dev : $(DD)pdfwrite.dev $(GDEV) \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV2) $(DD)ps2write
 	$(ADDMOD) $(DD)ps2write -include $(DD)pdfwrite.dev
 
-# Since eps2write actually is a clone of pdfwrite,
-# we just depend on it.
 $(DD)eps2write.dev : $(DD)pdfwrite.dev $(GDEV) \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV2) $(DD)eps2write
