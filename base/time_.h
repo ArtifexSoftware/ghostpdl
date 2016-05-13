@@ -47,7 +47,7 @@
 #  endif
 #else
 #  include <time.h>
-#  if !defined(__DECC) && !defined(__MWERKS__) && !defined(_WINDOWS_)
+#  if !defined(__DECC) && !defined(__MWERKS__)
 struct timeval {
     long tv_sec, tv_usec;
 };

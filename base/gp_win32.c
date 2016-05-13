@@ -24,7 +24,6 @@
 #include "gsmemory.h"		/* for gp.h */
 #include "gserrors.h"
 #include "gp.h"
-#include "time_.h"
 
 /* ------ Miscellaneous ------ */
 
@@ -44,16 +43,26 @@ gp_strerror(int errnum)
 void
 gp_get_realtime(long *pdt)
 {
-    time_t t;
+    SYSTEMTIME st;
+    long idate;
+    static const int mstart[12] = {
+        0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
+    };
 
-    time(&t);
-    if (sizeof(time_t) > 4) {
-        pdt[0] = t & 0xFFFFFFFF;
-        pdt[1] = t >> 32;
-    } else {
-        pdt[0] = t;
-        pdt[1] = 0;
-    }
+    /* This gets UTC, not local time */
+    /* We have no way of knowing the time zone correction */
+    GetSystemTime(&st);
+    idate = (st.wYear - 1980) * 365 +	/* days per year */
+        ((st.wYear - 1) / 4 - 1979 / 4) +	/* intervening leap days */
+        (1979 / 100 - (st.wYear - 1) / 100) +
+        ((st.wYear - 1) / 400 - 1979 / 400) +
+        mstart[st.wMonth - 1] +	/* month is 1-origin */
+        st.wDay - 1;		/* day of month is 1-origin */
+    idate += (2 < st.wMonth
+              && (st.wYear % 4 == 0
+                  && (st.wYear % 100 != 0 || st.wYear % 400 == 0)));
+    pdt[0] = ((idate * 24 + st.wHour) * 60 + st.wMinute) * 60 + st.wSecond;
+    pdt[1] = st.wMilliseconds * 1000000;
 }
 
 /* Read the current user CPU time (in seconds) */
