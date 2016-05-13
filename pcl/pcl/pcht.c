@@ -1526,7 +1526,6 @@ pcl_ht_init_render_methods(pcl_state_t * pcs, gs_memory_t * pmem)
 
         gs_c_param_list_release(&list);
     }
-    gs_c_param_list_release(&list);
 
     /* read in a new remapping array (if any) */
     gs_c_param_list_write(&list, pmem);

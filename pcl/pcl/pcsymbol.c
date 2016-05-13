@@ -100,13 +100,15 @@ pcl_define_symbol_set(pcl_args_t * pargs, pcl_state_t * pcs)
     }
     first_code = pl_get_uint16(psm->first_code);
     last_code = pl_get_uint16(psm->last_code);
-    /* NB fixme should check psm->Format to identify the vocabulary. */
+
+    if (last_code > 255 || first_code > last_code)
+        return e_Range;
+    
     {
-        int num_codes = last_code - first_code + 1;
+        int num_codes = last_code - first_code + 1;  /* must be in [0,256] now. */
         int i;
 
-        if (num_codes <= 0 || last_code > 255
-            || (count != psm_header_size + num_codes * 2))
+        if (num_codes == 0 || (count != psm_header_size + num_codes * 2))
             return e_Range;
 
         header =
@@ -130,7 +132,7 @@ pcl_define_symbol_set(pcl_args_t * pargs, pcl_state_t * pcs)
          * Byte swap the codes now, so that we don't have to byte swap
          * them every time we access them.
          */
-        for (i = num_codes; --i >= 0;)
+        for (i = 0; i < num_codes; i++)
             header->codes[i] =
                 pl_get_uint16((byte *) psm + psm_header_size + i * 2);
     }
