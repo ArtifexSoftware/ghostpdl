@@ -430,10 +430,10 @@ static int pdf_write_path(gx_device_pdf * pdev, gs_path_enum *cenum, gdev_vector
                     for (i=0;i<seg_index;i++) {
                         gdev_vector_dopath_segment(state, segments[i].op, segments[i].vs);
                     }
+                    line_start = segments[seg_index].vs[0];
                     segments[0] = segments[seg_index];
                     seg_index = 0;
                     initial_m = 1;
-                    line_start = segments[i].vs[0];
                 }
                 break;
             case gs_pe_lineto:
@@ -493,9 +493,9 @@ static int pdf_write_path(gx_device_pdf * pdev, gs_path_enum *cenum, gdev_vector
                 for (i=0;i<=seg_index;i++) {
                     gdev_vector_dopath_segment(state, segments[i].op, segments[i].vs);
                 }
+                line_start = segments[seg_index].vs[2];
                 seg_index = -1;
                 buffering = 0;
-                line_start = segments[i].vs[2];
                 break;
             case gs_pe_closepath:
                 if (!buffering || seg_index < 4) {
