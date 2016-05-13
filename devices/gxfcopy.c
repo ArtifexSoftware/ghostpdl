@@ -2498,22 +2498,30 @@ gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont,
 int
 copied_drop_extension_glyphs(gs_font *copied)
 {
+    /* When we encounter a glyph used at multiple encoding positions, and
+     * the encoding positions have different Widths, we end up defining
+     * a new glyph name, because we can't have a PostScript glyph which has
+     * two sets of metrics. Here we are supposed to find such duplicates
+     * and 'drop' them. It appears that the original intention was to mark
+     * the 'slot'->used member as false, with the expectation that this
+     * would drop the glyph from the font.
+     */
     /* 	Note : This function drops 'used' flags for some glyphs
         and truncates glyph names. Can't use the font
         for outlining|rasterization|width after applying it.
      */
     gs_copied_font_data_t *const cfdata = cf_data(copied);
-    uint gsize = cfdata->glyphs_size, i;
+    uint gsize = cfdata->glyphs_size, ext_name;
     const int sl = strlen(gx_extendeg_glyph_name_separator);
 
-    for (i = 0; i < gsize; i++) {
-        gs_copied_glyph_t *pslot = &cfdata->glyphs[i];
+    for (ext_name = 0; ext_name < gsize; ext_name++) {
+        gs_copied_glyph_t *pslot = &cfdata->glyphs[ext_name];
         gs_copied_glyph_name_t *name;
-        int l, j, k, i0;
+        int l, j, k, non_ext_name;
 
         if (!pslot->used)
             continue;
-        name = &cfdata->names[i];
+        name = &cfdata->names[ext_name];
         l = name->str.size - sl;
 
         for (j = 0; j < l; j ++)
@@ -2523,27 +2531,29 @@ copied_drop_extension_glyphs(gs_font *copied)
             continue;
         /* Found an extension name.
            Find the corresponding non-extended one. */
-        i0 = i;
+        non_ext_name = ext_name;
         for (k = 0; k < gsize; k++)
             if (cfdata->glyphs[k].used &&
                     cfdata->names[k].str.size == j &&
                     !memcmp(cfdata->names[k].str.data, name->str.data, j) &&
                     !bytes_compare(pslot->gdata.data, pslot->gdata.size,
                             cfdata->glyphs[k].gdata.data, cfdata->glyphs[k].gdata.size)) {
-                i0 = k;
+                non_ext_name = k;
                 break;
             }
-        /* Truncate the extended glyph name. */
-        cfdata->names[i0].str.size = j;
         /* Drop others with same prefix. */
         for (k = 0; k < gsize; k++)
-            if (k != i0 && cfdata->glyphs[k].used &&
+            if (k != non_ext_name && cfdata->glyphs[k].used &&
                     cfdata->names[k].str.size >= j + sl &&
                     !memcmp(cfdata->names[k].str.data, name->str.data, j) &&
-                    !memcmp(gx_extendeg_glyph_name_separator, name + j, sl) &&
+                    !memcmp(gx_extendeg_glyph_name_separator, name->str.data + j, sl) &&
                     !bytes_compare(pslot->gdata.data, pslot->gdata.size,
-                            cfdata->glyphs[k].gdata.data, cfdata->glyphs[k].gdata.size))
+                    cfdata->glyphs[k].gdata.data, cfdata->glyphs[k].gdata.size)) {
                 cfdata->glyphs[k].used = false;
+                cfdata->names[k].str.size = j;
+            }
+        /* Truncate the extended glyph name. */
+        cfdata->names[ext_name].str.size = j;
     }
     return 0;
 }
