@@ -1294,63 +1294,50 @@ pjl_skip_to_uel(stream_cursor_read * pr)
 static const struct
 {
     const char *symname;
-    const char *pcl_selectcode;
+    const int  pcl_code;
 } symbol_sets[] = {
-    {"ROMAN8", "8U"},
-    {"ISOL1", "0N"},
-    {"ISOL2", "2N"},
-    {"ISOL5", "5N"},
-    {"PC8", "10U"},
-    {"PC8DN", "11U"},
-    {"PC850", "12U"},
-    {"PC852", "17U"},
-    {"PC8TK", "9T"},             /* pc-8 turkish ?? not sure */
-    {"WINL1", "9U"},
-    {"WINL2", "9E"},
-    {"WINL5", "5T"},
-    {"DESKTOP", "7J"},
-    {"PSTEXT", "10J"},
-    {"VNINTL", "13J"},
-    {"VNUS", "14J"},
-    {"MSPUBL", "6J"},
-    {"MATH8", "8M"},
-    {"PSMATH", "5M"},
-    {"VNMATH", "6M"},
-    {"PIFONT", "15U"},
-    {"LEGAL", "1U"},
-    {"ISO4", "1E"},
-    {"ISO6", "0U"},
-    {"ISO11", "0S"},
-    {"ISO15", "0I"},
-    {"ISO17", "2S"},
-    {"ISO21", "1G"},
-    {"ISO60", "OD"},
-    {"ISO69", "1F"},
-    {"WIN30", NULL},             /* don't know */
-    {"WIN31J", NULL},            /* don't know */
-    {"GB2312", NULL},            /* don't know */
-    {NULL, NULL}
+    {"ROMAN8",  277},
+    {"ISOL1",    14},
+    {"ISOL2",    78},
+    {"ISOL5",   174},
+    {"PC8",     341},
+    {"PC8DN",   373},
+    {"PC850",   405},
+    {"PC852",   565},
+    {"PC8TK",   308},
+    {"WINL1",   309},
+    {"WINL2",   293},
+    {"WINL5",   180},
+    {"DESKTOP", 234},
+    {"PSTEXT",  330},
+    {"VNINTL",  426},
+    {"VNUS",    458},
+    {"MSPUBL",  202},
+    {"MATH8",   269},
+    {"PSMATH",  173},
+    {"VNMATH",  205},
+    {"PIFONT",  501},
+    {"LEGAL",    53},
+    {"ISO4",     37},
+    {"ISO6",     21},
+    {"ISO11",    19},
+    {"ISO15",     9},
+    {"ISO17",    83},
+    {"ISO21",    39},
+    {"ISO60",     4},
+    {"ISO69",    38},
+    {NULL,       -1}
 };
 
-/* map a pjl symbol table name to a pcl symbol table name */
+/* map a pjl symbol table name to a pcl symbol table code */
 int
 pjl_map_pjl_sym_to_pcl_sym(const char *symname)
 {
     int i;
 
     for (i = 0; symbol_sets[i].symname; i++)
-        if (!pjl_compare(symname, symbol_sets[i].symname)) {
-            /* convert the character code to it's integer
-               representation.  NB peculiar code! */
-            char pcl_symbol[4], chr;
-            int char_pos;
-
-            strcpy(pcl_symbol, symbol_sets[i].pcl_selectcode);
-            char_pos = strlen(pcl_symbol) - 1;
-            chr = pcl_symbol[char_pos];
-            pcl_symbol[char_pos] = '\0';
-            return (atoi(pcl_symbol) << 5) + chr - 64;
-        }
+        if (!pjl_compare(symname, symbol_sets[i].symname))
+            return symbol_sets[i].pcl_code;
     return -1;
 }
 
