@@ -93,11 +93,11 @@ pdf14_unpack_custom(int num_comp, gx_color_index color,
 extern unsigned int global_index;
 #endif
 
-static void 
-copy_plane_part(byte *des_ptr, int des_rowstride, byte *src_ptr, int src_rowstride, 
+static void
+copy_plane_part(byte *des_ptr, int des_rowstride, byte *src_ptr, int src_rowstride,
                 int width, int height)
 {
-    int y; 
+    int y;
 
     for (y = 0; y < height; ++y) {
         memcpy(des_ptr, src_ptr, width);
@@ -107,7 +107,7 @@ copy_plane_part(byte *des_ptr, int des_rowstride, byte *src_ptr, int src_rowstri
 }
 
 static void
-copy_extra_planes(byte *des_buf, pdf14_buf *des_info, byte *src_buf, 
+copy_extra_planes(byte *des_buf, pdf14_buf *des_info, byte *src_buf,
                   pdf14_buf *src_info, int width, int height)
 {
     /* alpha_g and shape do not copy */
@@ -118,15 +118,15 @@ copy_extra_planes(byte *des_buf, pdf14_buf *des_info, byte *src_buf,
     /* tags plane does copy */
     if (des_info->has_tags) {
         if (src_info->has_tags) {
-            copy_plane_part(des_buf, des_info->rowstride, src_buf, 
+            copy_plane_part(des_buf, des_info->rowstride, src_buf,
                             src_info->rowstride, width, height);
-        } 
+        }
     }
 }
 
-int 
-pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile, 
-                           pdf14_buf *tos, cmm_profile_t *tos_profile, 
+int
+pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
+                           pdf14_buf *tos, cmm_profile_t *tos_profile,
                            gs_memory_t *memory, gs_imager_state *pis, gx_device *dev,
                            bool knockout_buff)
 {
@@ -164,15 +164,15 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
             return 0;
         } else {
             if (knockout_buff) {
-                buf_plane = buf->backdrop + x0 - buf->rect.p.x + 
+                buf_plane = buf->backdrop + x0 - buf->rect.p.x +
                         (y0 - buf->rect.p.y) * buf->rowstride;
-                tos_plane = tos->backdrop + x0 - tos->rect.p.x + 
+                tos_plane = tos->backdrop + x0 - tos->rect.p.x +
                         (y0 - tos->rect.p.y) * tos->rowstride;
                 memset(buf->backdrop, 0, buf->n_chan * buf->planestride);
             } else {
-                buf_plane = buf->data + x0 - buf->rect.p.x + 
+                buf_plane = buf->data + x0 - buf->rect.p.x +
                         (y0 - buf->rect.p.y) * buf->rowstride;
-                tos_plane = tos->data + x0 - tos->rect.p.x + 
+                tos_plane = tos->data + x0 - tos->rect.p.x +
                         (y0 - tos->rect.p.y) * tos->rowstride;
                 /* First clear out everything. There are cases where the incoming buf
                    has a region outside the existing tos group.  Need to check if this
@@ -181,11 +181,11 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
                 memset(buf->data, 0, buf->n_planes * buf->planestride);
             }
             /* Set up the buffer descriptors. */
-            gsicc_init_buffer(&input_buff_desc, tos_profile->num_comps, 1, false, 
-                              false, true, tos->planestride, tos->rowstride, height, 
+            gsicc_init_buffer(&input_buff_desc, tos_profile->num_comps, 1, false,
+                              false, true, tos->planestride, tos->rowstride, height,
                               width);
-            gsicc_init_buffer(&output_buff_desc, group_profile->num_comps, 1, false, 
-                              false, true, buf->planestride, buf->rowstride, height, 
+            gsicc_init_buffer(&output_buff_desc, group_profile->num_comps, 1, false,
+                              false, true, buf->planestride, buf->rowstride, height,
                               width);
             /* Transform the data.  */
             (icc_link->procs.map_buffer)(dev, icc_link, &input_buff_desc,
@@ -195,19 +195,19 @@ pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile,
         /* Copy the alpha data */
         buf_plane += buf->planestride * (buf->n_chan - 1);
         tos_plane += tos->planestride * (tos->n_chan - 1);
-        copy_plane_part(buf_plane, buf->rowstride, tos_plane, tos->rowstride, width, 
+        copy_plane_part(buf_plane, buf->rowstride, tos_plane, tos->rowstride, width,
                         height);
         buf_plane += buf->planestride;
         tos_plane += tos->planestride;
 
         if (!knockout_buff)
-            copy_extra_planes(buf_plane, buf, tos_plane, tos, width, height); 
+            copy_extra_planes(buf_plane, buf, tos_plane, tos, width, height);
     }
 #if RAW_DUMP
     if (x0 < x1 && y0 < y1) {
         byte *buf_plane = buf->data + x0 - buf->rect.p.x +
             (y0 - buf->rect.p.y) * buf->rowstride;
-        dump_raw_buffer(y1 - y0, x1 - x0, buf->n_planes, buf->planestride, 
+        dump_raw_buffer(y1 - y0, x1 - x0, buf->n_planes, buf->planestride,
                         buf->rowstride, "BackDropInit_CM", buf_plane);
         global_index++;
     }
@@ -231,15 +231,15 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff)
         int i;
 
         if (knockout_buff) {
-            buf_plane = buf->backdrop + x0 - buf->rect.p.x + 
+            buf_plane = buf->backdrop + x0 - buf->rect.p.x +
                     (y0 - buf->rect.p.y) * buf->rowstride;
-            tos_plane = tos->backdrop + x0 - tos->rect.p.x + 
+            tos_plane = tos->backdrop + x0 - tos->rect.p.x +
                     (y0 - tos->rect.p.y) * tos->rowstride;
             memset(buf->backdrop, 0, buf->n_chan * buf->planestride);
         } else {
-            buf_plane = buf->data + x0 - buf->rect.p.x + 
+            buf_plane = buf->data + x0 - buf->rect.p.x +
                     (y0 - buf->rect.p.y) * buf->rowstride;
-            tos_plane = tos->data + x0 - tos->rect.p.x + 
+            tos_plane = tos->data + x0 - tos->rect.p.x +
                     (y0 - tos->rect.p.y) * tos->rowstride;
             /* First clear out everything. There are cases where the incoming buf
                has a region outside the existing tos group.  Need to check if this
@@ -249,19 +249,19 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff)
         }
         /* Color and alpha plane */
         for (i = 0; i < tos->n_chan; i++) {
-            copy_plane_part(buf_plane, buf->rowstride, tos_plane, tos->rowstride, 
+            copy_plane_part(buf_plane, buf->rowstride, tos_plane, tos->rowstride,
                             width, height);
             buf_plane += buf->planestride;
             tos_plane += tos->planestride;
         }
         if (!knockout_buff)
-            copy_extra_planes(buf_plane, buf, tos_plane, tos, width, height); 
+            copy_extra_planes(buf_plane, buf, tos_plane, tos, width, height);
     }
 #if RAW_DUMP
     if (x0 < x1 && y0 < y1) {
         byte *buf_plane = buf->data + x0 - buf->rect.p.x +
             (y0 - buf->rect.p.y) * buf->rowstride;
-        dump_raw_buffer(y1 - y0, x1 - x0, buf->n_planes, buf->planestride, 
+        dump_raw_buffer(y1 - y0, x1 - x0, buf->n_planes, buf->planestride,
                         buf->rowstride, "BackDropInit", buf_plane);
         global_index++;
     }
@@ -310,8 +310,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     bool in_mask_rect_y = false;
     bool in_mask_rect = false;
     byte pix_alpha;
-    bool has_backdrop = false;
-    byte *backdrop_ptr = NULL; /* Quiet compiler. */
+    byte *backdrop_ptr = NULL;
 #if RAW_DUMP
     byte *composed_ptr = NULL;
 #endif
@@ -331,7 +330,6 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     } else
         nos_alpha_g_ptr = NULL;
     if (nos->backdrop != NULL) {
-        has_backdrop = true;
         backdrop_ptr = nos->backdrop + x0 - nos->rect.p.x +
                        (y0 - nos->rect.p.y) * nos->rowstride;
     }
@@ -345,7 +343,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
             mask_row_ptr = maskbuf->data + x0 - maskbuf->rect.p.x +
                     (y0 - maskbuf->rect.p.y) * maskbuf->rowstride;
             has_mask = true;
-        } 
+        }
         /* We may have a case, where we are outside the maskbuf rect. */
         /* We would have avoided creating the maskbuf->data */
         /* In that case, we should use the background alpha value */
@@ -365,9 +363,9 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     dump_raw_buffer(y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
                     "cImageNOS",nos_ptr);
     if (maskbuf !=NULL && maskbuf->data != NULL) {
-        dump_raw_buffer(maskbuf->rect.q.y - maskbuf->rect.p.y, 
+        dump_raw_buffer(maskbuf->rect.q.y - maskbuf->rect.p.y,
                         maskbuf->rect.q.x - maskbuf->rect.p.x, maskbuf->n_planes,
-                        maskbuf->planestride, maskbuf->rowstride, "dMask", 
+                        maskbuf->planestride, maskbuf->rowstride, "dMask",
                         maskbuf->data);
     }
 #endif
@@ -379,14 +377,14 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
             in_mask_rect_y = false;
         }
         for (x = 0; x < width; x++) {
-            if (in_mask_rect_y && has_mask && x0 + x >= maskbuf->rect.p.x && 
+            if (in_mask_rect_y && has_mask && x0 + x >= maskbuf->rect.p.x &&
                 x0 + x < maskbuf->rect.q.x) {
                 in_mask_rect = true;
             } else {
                 in_mask_rect = false;
             }
             pix_alpha = alpha;
-            /* If we have a soft mask, then we have some special handling of the 
+            /* If we have a soft mask, then we have some special handling of the
                group alpha value */
             if (maskbuf != NULL) {
                 if (!in_mask_rect) {
@@ -426,7 +424,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 #		    if VD_PAINT_MASK
                     vd_pixel(int2fixed(x), int2fixed(y1-y), mask);
 #		    endif
-                
+
             if (nos_knockout) {
                 /* We need to be knocking out what ever is on the nos, but may need to combine with it's backdrop */
                 byte *nos_shape_ptr = nos_shape_offset ?
@@ -435,7 +433,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     &nos_ptr[nos_tag_offset] : NULL;
                 byte tos_shape, tos_tag;
 
-                if (tos->has_shape) 
+                if (tos->has_shape)
                     tos_shape = tos_ptr[tos_shape_offset];
                 else
                     tos_shape = 255;
@@ -444,14 +442,14 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                 else
                     tos_tag = 255;
 
-                if (nos_isolated) {
+                if (nos_isolated || backdrop_ptr == NULL) {
                     /* We do not need to compose with the backdrop */
                     art_pdf_composite_knockout_isolated_8(nos_pixel, nos_shape_ptr,
                                                           nos_tag_ptr, tos_pixel,
-                                                          n_chan, tos_shape, tos_tag, 
+                                                          n_chan, tos_shape, tos_tag,
                                                           pix_alpha, shape, has_mask);
-                } else {  
-                    /* Per the PDF spec, since the tos is not isolated and we are 
+                } else {
+                    /* Per the PDF spec, since the tos is not isolated and we are
                        going onto a knock out group, we do the composition with
                        the nos initial backdrop. */
                     if (additive) {
@@ -464,15 +462,15 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                         }
                         back_drop[n_chan] = backdrop_ptr[n_chan * nos_planestride];
                     }
-                    art_pdf_composite_knockout_group_8(back_drop, tos_shape, 
-                                                       nos_pixel, nos_alpha_g_ptr, 
-                                                       tos_pixel, n_chan, pix_alpha, 
+                    art_pdf_composite_knockout_group_8(back_drop, tos_shape,
+                                                       nos_pixel, nos_alpha_g_ptr,
+                                                       tos_pixel, n_chan, pix_alpha,
                                                        blend_mode, pblend_procs);
                 }
             } else {
                 if (tos_isolated) {
-                    art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr, tos_pixel, 
-                                              n_chan, pix_alpha, blend_mode, 
+                    art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr, tos_pixel,
+                                              n_chan, pix_alpha, blend_mode,
                                               pblend_procs);
                 } else {
                     byte tos_alpha_g = tos_ptr[tos_alpha_g_offset];
@@ -528,7 +526,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 #		endif
             if (nos_alpha_g_ptr != NULL)
                 ++nos_alpha_g_ptr;
-            if (has_backdrop)
+            if (backdrop_ptr != NULL)
                 ++backdrop_ptr;
             ++tos_ptr;
             ++nos_ptr;
@@ -539,7 +537,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
             nos_alpha_g_ptr += nos->rowstride - width;
         if (mask_row_ptr != NULL)
             mask_row_ptr += maskbuf->rowstride;
-        if (has_backdrop)
+        if (backdrop_ptr != NULL)
             backdrop_ptr += nos->rowstride - width;
     }
 #if RAW_DUMP
@@ -908,7 +906,7 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
                             "pre_final_blend",buf_ptr);
             global_index++;
 #endif
-            gx_blend_image_buffer(buf_ptr, width, height, rowstride, 
+            gx_blend_image_buffer(buf_ptr, width, height, rowstride,
                                   planestride, num_comp, bg);
 #if RAW_DUMP
             /* Dump before and after the blend to make sure we are doing that ok */
