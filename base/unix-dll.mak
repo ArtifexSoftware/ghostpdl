@@ -232,9 +232,9 @@ so-only:
 	fi
 	$(MAKE) $(SUB_MAKE_OPTION) so-only-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 	$(MAKE) $(SUB_MAKE_OPTION) gs-so-links-subtarget \
-                                   @PCL_TARGET@-so-links-subtarget \
-                                   @XPS_TARGET@-so-links-subtarget \
-                                   @GPDL_TARGET@-so-links-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
+                                   $(PCL_TARGET)-so-links-subtarget \
+                                   $(XPS_TARGET)-so-links-subtarget \
+                                   $(GPDL_TARGET)-so-links-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 	
 
 # Debug shared object
