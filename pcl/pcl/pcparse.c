@@ -316,9 +316,10 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                                                        pst->param_class,
                                                        pst->param_group,
                                                        pst->args.command);
-                    if (pst->short_hand)
+                    if (pst->short_hand) {
                         pst->scan_type = scanning_parameter;
-                    else
+                        continue;
+                    } else
                         pst->scan_type = scanning_none;
                     break;
                 }
