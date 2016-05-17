@@ -78,6 +78,7 @@ stprintf(stream * s, const char *fmt, ...)
     va_start(args, fmt);
     count = gs_vsprintf(buf, fmt, args);
     sputs(s, (const byte *)buf, count, &count);
+    va_end(args);
 }
 
 /* Set up a stream for writing into the status buffer. */
