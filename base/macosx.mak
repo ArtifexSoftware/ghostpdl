@@ -254,6 +254,10 @@ XLDFLAGS=
 
 LDFLAGS=$(XLDFLAGS)
 
+GS_LDFLAGS=$(LDFLAGS)
+PCL_LDFLAGS=$(LDFLAGS)
+XPS_LDFLAGS=$(LDFLAGS)
+
 # Define any extra libraries to link into the executable.
 # ISC Unix 2.2 wants -linet.
 # SCO Unix needs -lsocket if you aren't including the X11 driver.

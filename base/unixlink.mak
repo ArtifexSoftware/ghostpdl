@@ -60,7 +60,7 @@ ldt_tr=$(PSOBJ)ldt.tr
 
 $(GS_XE): $(ld_tr) $(gs_tr) $(ECHOGS_XE) $(XE_ALL) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) \
           $(UNIXLINK_MAK)
-	$(ECHOGS_XE) -w $(ldt_tr) -n - $(CCLD) $(LDFLAGS) -o $(GS_XE)
+	$(ECHOGS_XE) -w $(ldt_tr) -n - $(CCLD) $(GS_LDFLAGS) -o $(GS_XE)
 	$(ECHOGS_XE) -a $(ldt_tr) -n -s $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) $(PSOBJ)gs.$(OBJ) -s
 	cat $(gsld_tr) >> $(ldt_tr)
 	$(ECHOGS_XE) -a $(ldt_tr) -s - $(EXTRALIBS) $(STDLIBS)
@@ -82,7 +82,7 @@ pclldt_tr=$(PSOBJ)pclldt.tr
 $(GPCL_XE): $(ld_tr) $(pcl_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) \
             $(GLOBJDIR)/pclromfs$(COMPILE_INITS).$(OBJ) \
             $(INT_ARCHIVE_SOME) $(UNIXLINK_MAK)
-	$(ECHOGS_XE) -w $(pclldt_tr) -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(GPCL_XE)
+	$(ECHOGS_XE) -w $(pclldt_tr) -n - $(CCLD) $(PCL_LDFLAGS) $(XLIBDIRS) -o $(GPCL_XE)
 	$(ECHOGS_XE) -a $(pclldt_tr) -n -x 20
 	cat $(ld_tr) >> $(pclldt_tr)
 	$(ECHOGS_XE) -a $(pclldt_tr) -n -s $(TOP_OBJ) $(INT_ARCHIVE_SOME) $(XOBJS) -s
@@ -106,7 +106,7 @@ xpsldt_tr=$(PSOBJ)xpsldt.tr
 $(GXPS_XE): $(ld_tr) $(xps_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(XPS_TOP_OBJS) \
              $(XOBJS) $(GLOBJDIR)/xpsromfs$(COMPILE_INITS).$(OBJ) \
              $(INT_ARCHIVE_SOME) $(UNIXLINK_MAK)
-	$(ECHOGS_XE) -w $(xpsldt_tr) -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(GXPS_XE)
+	$(ECHOGS_XE) -w $(xpsldt_tr) -n - $(CCLD) $(XPS_LDFLAGS) $(XLIBDIRS) -o $(GXPS_XE)
 	$(ECHOGS_XE) -a $(xpsldt_tr) -n -s $(XPS_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) -s
 	cat $(ld_tr) >> $(xpsldt_tr)
 	cat $(xps_tr) >> $(xpsldt_tr)

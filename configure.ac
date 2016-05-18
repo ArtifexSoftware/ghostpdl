@@ -2073,7 +2073,9 @@ dnl Dynamic device support.
 DYNAMIC_CFLAGS=""
 DYNAMIC_DEVS=""
 DYNAMIC_FLAGS=""
-DYNAMIC_LDFLAGS=""
+GS_DYNAMIC_LDFLAGS=""
+PCL_DYNAMIC_LDFLAGS=""
+XPS_DYNAMIC_LDFLAGS=""
 DYNAMIC_LIBS=""
 INSTALL_SHARED=""
 SO_LIB_EXT=".so"
@@ -2083,7 +2085,9 @@ SO_LIB_VERSION_SEPARATOR="."
 case `uname` in
         Linux*|GNU*)
           DYNAMIC_CFLAGS="-fPIC"
-          DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
+          GS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
+          PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
+          XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
           if test $ac_cv_prog_gcc = yes; then
             # GCC high level flag
             DYNAMIC_LIBS="-rdynamic"
@@ -2094,19 +2098,25 @@ case `uname` in
         ;;
         MINGW*|MSYS*)
           DYNAMIC_CFLAGS=""
-          DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(GS_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
+          GS_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(GS_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
+          PCL_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(PCL_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
+          XPS_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(XPS_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
           SO_LIB_EXT=""
           DLL_EXT=".dll"
           SO_LIB_VERSION_SEPARATOR="-"
         ;;
         *BSD)
           DYNAMIC_CFLAGS="-fPIC"
-          DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
+          GS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
+          PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
+          XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
           DYNAMIC_LIBS=""
           SO_LIB_EXT=".so"
         ;;
         Darwin*)
-          DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GS_SONAME_MAJOR_MINOR)"
+          GS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GS_SONAME_MAJOR_MINOR)"
+          PCL_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(PCL_SONAME_MAJOR_MINOR)"
+          XPS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(XPS_SONAME_MAJOR_MINOR)"
           DYNAMIC_LIBS=""
           SO_LIB_EXT=".dylib"
         ;;
@@ -2117,14 +2127,18 @@ case `uname` in
             DYNAMIC_CFLAGS="-KPIC"
           fi
 
-          DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
+          GS_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
+          PCL_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
+          XPS_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
           DYNAMIC_LIBS=""
           SO_LIB_EXT=".so"
         ;;
         AIX)
           DYNAMIC_CFLAGS="-fPIC"
           GCFLAGS="-Wl,-brtl $GCFLAGS"
-          DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+          GS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+          PCL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+          XPS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
           SO_LIB_EXT=".so"
         ;;
 esac
@@ -2176,7 +2190,9 @@ AC_ARG_ENABLE([dynamic], AC_HELP_STRING([--enable-dynamic],
 AC_SUBST(DYNAMIC_CFLAGS)
 AC_SUBST(DYNAMIC_DEVS)
 AC_SUBST(DYNAMIC_FLAGS)
-AC_SUBST(DYNAMIC_LDFLAGS)
+AC_SUBST(GS_DYNAMIC_LDFLAGS)
+AC_SUBST(PCL_DYNAMIC_LDFLAGS)
+AC_SUBST(XPS_DYNAMIC_LDFLAGS)
 AC_SUBST(DYNAMIC_LIBS)
 AC_SUBST(INSTALL_SHARED)
 AC_SUBST(X11_DEVS)
