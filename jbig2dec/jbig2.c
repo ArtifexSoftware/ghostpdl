@@ -387,7 +387,7 @@ jbig2_word_stream_buf_get_next_word(Jbig2WordStream *self, int offset, uint32_t 
 
     if (offset + 4 < z->size)
         result = (data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3];
-    else if (offset >= z->size)
+    else if (offset > z->size)
         return -1;
     else {
         int i;
