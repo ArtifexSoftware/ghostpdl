@@ -648,7 +648,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
         COS_FREE(pca, "convert DeviceN");
         return_error(gs_error_VMerror);
     }
-    memset(data_buff, 0x00, pdev->color_info.num_components * samples);
+    memset(data_buff, 0x00, (unsigned long)pdev->color_info.num_components * samples);
 
     {
         frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
