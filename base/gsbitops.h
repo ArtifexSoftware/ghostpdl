@@ -111,7 +111,7 @@ static int inline sample_load16(uint *value, const byte *sptr, int sbit, int sbp
     }
     return 0;
 }
-static int inline sample_load_next16 (uint *value, const byte **sptr, int *sbit, int sbpv)
+static int inline sample_load_next16 (ushort *value, const byte **sptr, int *sbit, int sbpv)
 {
     switch ( sbpv >> 2 ) {
         case 0:

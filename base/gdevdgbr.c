@@ -374,7 +374,7 @@ gx_get_bits_copy(gx_device * dev, int x, int w, int h,
                 plane = i;
             }
         /* Ensure at least one plane is requested */
-        if (i < 0 || plane < 0)
+        if (plane < 0)
             return_error(gs_error_rangecheck); /* No planes */
         source.data.read = src_base;
         source.raster = dev_raster;
@@ -436,7 +436,8 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
             int j;
             uchar k;
             frac sc[4], dc[GX_DEVICE_COLOR_MAX_COMPONENTS];
-            gx_color_value v[GX_DEVICE_COLOR_MAX_COMPONENTS], va = alpha_default;
+            gx_color_value v[GX_DEVICE_COLOR_MAX_COMPONENTS];
+            gx_color_value va = alpha_default;
             gx_color_index pixel;
             bool do_alpha = false;
             const gx_cm_color_map_procs * map_procs;
@@ -445,7 +446,7 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
 
             /* Fetch the source data. */
             if (stored->options & GB_ALPHA_FIRST) {
-                if (sample_load_next16((uint *)&va, &src, &sbit, src_depth) < 0)
+                if (sample_load_next16(&va, &src, &sbit, src_depth) < 0)
                     return_error(gs_error_rangecheck);
                 va = v2cv(va);
                 do_alpha = true;
@@ -453,12 +454,12 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
             for (j = 0; j < ncolors; ++j) {
                 gx_color_value vj;
 
-                if (sample_load_next16((uint *)&vj, &src, &sbit, src_depth) < 0)
+                if (sample_load_next16(&vj, &src, &sbit, src_depth) < 0)
                     return_error(gs_error_rangecheck);
                 sc[j] = v2frac(vj);
             }
             if (stored->options & GB_ALPHA_LAST) {
-                if (sample_load_next16((uint *)&va, &src, &sbit, src_depth) < 0)
+                if (sample_load_next16(&va, &src, &sbit, src_depth) < 0)
                     return_error(gs_error_rangecheck);
                 va = v2cv(va);
                 do_alpha = true;

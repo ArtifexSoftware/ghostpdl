@@ -1770,7 +1770,7 @@ planar_to_chunky(gx_device_memory *mdev, int x, int y, int w, int h,
 
             for (pi = 0; pi < num_planes; ++pi) {
                 int plane_depth = mdev->planes[pi].depth;
-                uint value;
+                ushort value;
 
                 if (sample_load_next16(&value, &sptr[pi], &sbit[pi], plane_depth) < 0)
                     return_error(gs_error_rangecheck);
