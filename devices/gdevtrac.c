@@ -557,7 +557,7 @@ trace_text_begin(gx_device * dev, gs_imager_state * pis,
                                                           GLYPH_SPACE_NAME);
             gs_glyph_info_t info;
 
-            if (glyph != gs_no_glyph &&
+            if (glyph != GS_NO_GLYPH &&
                 (code = font->procs.glyph_info(font, glyph, NULL,
                                                GLYPH_INFO_WIDTH0 << wmode,
                                                &info)) >= 0

@@ -83,10 +83,6 @@ typedef ulong gs_glyph;
 #define GS_MIN_GLYPH_INDEX (GS_MIN_CID_GLYPH | (GS_MIN_CID_GLYPH >> 1))
 #define GS_GLYPH_TAG (gs_glyph)(GS_MIN_CID_GLYPH | GS_MIN_GLYPH_INDEX)
 #define GS_MAX_GLYPH max_ulong
-/* Backward compatibility */
-#define gs_no_glyph GS_NO_GLYPH
-#define gs_min_cid_glyph GS_MIN_CID_GLYPH
-#define gs_max_glyph GS_MAX_GLYPH
 
 /* Define a procedure for marking a gs_glyph during garbage collection. */
 typedef bool (*gs_glyph_mark_proc_t)(const gs_memory_t *mem, gs_glyph glyph, void *proc_data);

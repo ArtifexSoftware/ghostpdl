@@ -497,7 +497,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
         }
         /* See if the glyph name is in any of the known encodings */
         glyph_known_enc = gs_c_name_glyph(gname.data, gname.size);
-        if (glyph_known_enc == gs_no_glyph) {
+        if (glyph_known_enc == GS_NO_GLYPH) {
             desc.Flags |= FONT_IS_SYMBOLIC;
             continue;
         }

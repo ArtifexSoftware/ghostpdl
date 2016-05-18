@@ -166,7 +166,7 @@ write_Encoding(stream *s, gs_font_type1 *pfont, int options,
                                                         subset_size, glyph))
                             continue;
                     }
-                    if (glyph != gs_no_glyph && glyph != notdef &&
+                    if (glyph != GS_NO_GLYPH && glyph != notdef &&
                         pfont->procs.glyph_name((gs_font *)pfont, glyph,
                                                 &namestr) >= 0
                         ) {
@@ -688,7 +688,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
         psf_enumerate_glyphs_begin(&genum, (gs_font *)pfont, subset_glyphs,
                                     (subset_glyphs ? subset_size : 0),
                                     GLYPH_SPACE_NAME);
-        for (glyph = gs_no_glyph;
+        for (glyph = GS_NO_GLYPH;
              (code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1;
              )
             if (code == 0 &&
@@ -699,7 +699,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
             }
         pprintd1(s, "2 index /CharStrings %d dict dup begin\n", num_chars);
         psf_enumerate_glyphs_reset(&genum);
-        for (glyph = gs_no_glyph;
+        for (glyph = GS_NO_GLYPH;
              (code = psf_enumerate_glyphs_next(&genum, &glyph)) != 1;
             )
             if (code == 0 &&

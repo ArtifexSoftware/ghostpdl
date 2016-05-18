@@ -47,7 +47,7 @@ int gs_cmap_create_char_identity(gs_cmap_t **ppcmap, int num_bytes,
  * Decode a character from a string using a CMap, updating the index.
  * Return 0 for a CID or name, N > 0 for a character code where N is the
  * number of bytes in the code, or an error.  Store the decoded bytes in
- * *pchr.  For undefined characters, set *pglyph = gs_no_glyph and return 0.
+ * *pchr.  For undefined characters, set *pglyph = GS_NO_GLYPH and return 0.
  */
 int gs_cmap_decode_next(const gs_cmap_t *pcmap, const gs_const_string *str,
                         uint *pindex, uint *pfidx,

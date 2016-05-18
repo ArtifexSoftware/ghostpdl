@@ -151,7 +151,7 @@ gs_multidim_CID_offset(const byte *key_str,
  * Decode a character from a string using a code map, updating the index.
  * Return 0 for a CID or name, N > 0 for a character code where N is the
  * number of bytes in the code, or an error.  Store the decoded bytes in
- * *pchr.  For undefined characters, set *pglyph = gs_no_glyph and return 0.
+ * *pchr.  For undefined characters, set *pglyph = GS_NO_GLYPH and return 0.
  */
 static int
 code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
@@ -313,13 +313,13 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
 
             switch (pclr->value_type) {
             case CODE_VALUE_CID:
-                *pglyph = gs_min_cid_glyph +
+                *pglyph = GS_MIN_CID_GLYPH +
                     bytes2int(pvalue, pclr->value_size) +
                     gs_multidim_CID_offset(str + pre_size,
                         key, key + step - key_size, key_size);
                 return 0;
             case CODE_VALUE_NOTDEF:
-                *pglyph = gs_min_cid_glyph +
+                *pglyph = GS_MIN_CID_GLYPH +
                     bytes2int(pvalue, pclr->value_size);
                 return 0;
             case CODE_VALUE_GLYPH:
@@ -340,7 +340,7 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
     *pchr = pm_chr;
     *pindex = pm_index;
     *pfidx = pm_fidx;
-    *pglyph = gs_no_glyph;
+    *pglyph = GS_NO_GLYPH;
 
 #ifndef GS_THREADSAFE
 #ifdef DEBUG
@@ -382,7 +382,7 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
         code_map_decode_next_multidim_regime(&pcmap->def, pstr, pindex, pfidx, pchr, pglyph);
 
     /* This is defined character */
-    if (code != 0 || *pglyph != gs_no_glyph)
+    if (code != 0 || *pglyph != GS_NO_GLYPH)
         return code;
 
     /* In here, this is NOT defined character */
@@ -397,7 +397,7 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
         code_map_decode_next_multidim_regime(&pcmap->notdef, pstr, pindex, pfidx, pchr, pglyph);
 
     /* This is defined "notdef" character. */
-    if (code != 0 || *pglyph != gs_no_glyph)
+    if (code != 0 || *pglyph != GS_NO_GLYPH)
         return code;
 
     /*
@@ -408,7 +408,7 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
 
         /* there was some partially matched */
 
-        *pglyph = gs_min_cid_glyph;	/* CID = 0 */
+        *pglyph = GS_MIN_CID_GLYPH;	/* CID = 0 */
         *pindex = pm_index;
         *pfidx = pm_fidx;
         *pchr = '\0';
@@ -430,7 +430,7 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
                 gs_cmap_get_shortest_chr(&pcmap->def, pfidx);
 
         if (chr_size_shortest <= ssize) {
-            *pglyph = gs_min_cid_glyph;	/* CID = 0, this is CMap fallback */
+            *pglyph = GS_MIN_CID_GLYPH;	/* CID = 0, this is CMap fallback */
             *pindex = save_index + chr_size_shortest;
             *pchr = '\0';
 #ifndef GS_THREADSAFE
@@ -448,7 +448,7 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
         }
         else {
             /* Undecodable string is shorter than the shortest character,
-             * return 'gs_no_glyph' and update index to end-of-string
+             * return 'GS_NO_GLYPH' and update index to end-of-string
              */
 #ifndef GS_THREADSAFE
 #ifdef DEBUG
@@ -458,7 +458,7 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
             }
 #endif
 #endif
-	    *pglyph = gs_no_glyph;
+            *pglyph = GS_NO_GLYPH;
             *pindex += ssize;
             return 0;			/* fixme: should return a code != 0 if caller needs to know */
         }

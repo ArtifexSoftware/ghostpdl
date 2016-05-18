@@ -596,7 +596,7 @@ xps_post_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
     int value;
     value = xps_encode_font_char(xf, chr);
     if (value == 0)
-        return gs_no_glyph;
+        return GS_NO_GLYPH;
     return value;
 }
 

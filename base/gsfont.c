@@ -844,7 +844,7 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
         /*
          * Scan the glyph space to compute the fixed width if any.
          */
-        gs_glyph notdef = gs_no_glyph;
+        gs_glyph notdef = GS_NO_GLYPH;
         gs_glyph glyph;
         int fixed_width = 0;
         int index;
@@ -867,7 +867,7 @@ gs_default_font_info(gs_font *font, const gs_point *pscale, int members,
                 ecode = code;
                 continue;
             }
-            if (notdef == gs_no_glyph && gs_font_glyph_is_notdef(bfont, glyph)) {
+            if (notdef == GS_NO_GLYPH && gs_font_glyph_is_notdef(bfont, glyph)) {
                 notdef = glyph;
                 info->MissingWidth = (int)glyph_info.width[wmode].x;
                 info->members |= FONT_INFO_MISSING_WIDTH;
@@ -965,10 +965,10 @@ gs_font_glyph_is_notdef(gs_font_base *bfont, gs_glyph glyph)
 {
     gs_const_string gnstr;
 
-    if (glyph == gs_no_glyph)
+    if (glyph == GS_NO_GLYPH)
         return false;
-    if (glyph >= gs_min_cid_glyph)
-        return (glyph == gs_min_cid_glyph);
+    if (glyph >= GS_MIN_CID_GLYPH)
+        return (glyph == GS_MIN_CID_GLYPH);
     return (bfont->procs.glyph_name((gs_font *)bfont, glyph, &gnstr) >= 0 &&
             gnstr.size == 7 && !memcmp(gnstr.data, ".notdef", 7));
 }
@@ -977,7 +977,7 @@ gs_font_glyph_is_notdef(gs_font_base *bfont, gs_glyph glyph)
 gs_glyph
 gs_no_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t glyph_space)
 {
-    return gs_no_glyph;
+    return GS_NO_GLYPH;
 }
 
 /* Dummy glyph decoding procedure */

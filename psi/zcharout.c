@@ -410,7 +410,7 @@ next:
     if (index >= 0) {
         switch (r_type(elt)) {
             case t_integer:
-                *pglyph = gs_min_cid_glyph + elt[0].value.intval;
+                *pglyph = GS_MIN_CID_GLYPH + elt[0].value.intval;
                 break;
             case t_name:
                 *pglyph = name_index(mem, elt);

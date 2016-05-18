@@ -135,8 +135,8 @@ zremoveglyphs(i_ctx_t *i_ctx_p)
         return code;
     if (range.font->FontType != ft_CID_bitmap)
         return_error(gs_error_invalidfont);
-    range.cid_min = gs_min_cid_glyph + op[-2].value.intval;
-    range.cid_max = gs_min_cid_glyph + op[-1].value.intval;
+    range.cid_min = GS_MIN_CID_GLYPH + op[-2].value.intval;
+    range.cid_max = GS_MIN_CID_GLYPH + op[-1].value.intval;
     gx_purge_selected_cached_chars(range.font->dir, select_cid_range,
                                    &range);
     pop(3);

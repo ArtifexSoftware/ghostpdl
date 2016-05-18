@@ -523,7 +523,7 @@ pl_tt_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
 }
 
 /* Return the vertical substitute for a glyph, if it has one; */
-/* otherwise return gs_no_glyph. */
+/* otherwise return GS_NO_GLYPH. */
 gs_glyph
 pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t * plfont)
 {
@@ -532,7 +532,7 @@ pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t * plfont)
     uint i, len;
 
     if (VT < 0)
-        return gs_no_glyph;
+        return GS_NO_GLYPH;
     vtseg = plfont->header + VT;
     if (plfont->large_sizes)
         len = pl_get_uint32(vtseg + 2), i = 6;
@@ -542,7 +542,7 @@ pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t * plfont)
     for (; i < len; i += 4)
         if (glyph == pl_get_uint16(vtseg + i))
             return pl_get_uint16(vtseg + i + 2);
-    return gs_no_glyph;
+    return GS_NO_GLYPH;
 }
 
 /* retrieve lsb and width metrics for Format 1 Class 2 glyphs */
@@ -613,7 +613,7 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index,
         if (plfont->allow_vertical_substitutes) {
             gs_glyph vertical = pl_font_vertical_glyph(glyph_index, plfont);
 
-            if (vertical != gs_no_glyph)
+            if (vertical != GS_NO_GLYPH)
                 glyph_index = vertical;
         }
     }
@@ -829,7 +829,7 @@ pl_tt_cmap_encode_char(gs_font_type42 * pfont, ulong cmap_offset,
         access(offset, cmap_offset + cmap_len - offset, table);
     }
     code = pl_cmap_lookup((uint) chr, table, &value);
-    return (code < 0 ? gs_no_glyph : value);
+    return (code < 0 ? GS_NO_GLYPH : value);
 }
 
 /* Encode a character using the map built for downloaded TrueType fonts. */
@@ -839,7 +839,7 @@ pl_tt_dynamic_encode_char(const gs_font_type42 * pfont, gs_char chr)
     pl_font_t *plfont = pfont->client_data;
     const pl_tt_char_glyph_t *ptcg = pl_tt_lookup_char(plfont, chr);
 
-    return (ptcg->chr == gs_no_char ? gs_no_glyph : ptcg->glyph);
+    return (ptcg->chr == gs_no_char ? GS_NO_GLYPH : ptcg->glyph);
 }
 
 /* Return the galley character for a character code, if any; */
@@ -878,7 +878,7 @@ pl_font_galley_character(gs_char chr, const pl_font_t * plfont)
 
 /* Encode a character for a TrueType font. */
 /* What we actually return is the TT glyph index.  Note that */
-/* we may return either gs_no_glyph or 0 for an undefined character. */
+/* we may return either GS_NO_GLYPH or 0 for an undefined character. */
 gs_glyph
 pl_tt_encode_char(gs_font * pfont_generic, gs_char chr,
                   gs_glyph_space_t not_used)
@@ -920,10 +920,10 @@ static int
 pl_tt_char_metrics(const pl_font_t * plfont, const void *pgs,
                    gs_char char_code, float metrics[4])
 {
-    gs_glyph unused_glyph = gs_no_glyph;
+    gs_glyph unused_glyph = GS_NO_GLYPH;
     gs_glyph glyph =
         pl_tt_encode_char(plfont->pfont, char_code, unused_glyph);
-    if (glyph == gs_no_glyph) {
+    if (glyph == GS_NO_GLYPH) {
         return 1;
     }
     return gs_type42_get_metrics((gs_font_type42 *) plfont->pfont,
@@ -937,7 +937,7 @@ pl_tt_char_width(const pl_font_t * plfont, const void *pgs, gs_char char_code,
 {
     gs_font *pfont = plfont->pfont;
     gs_char chr = char_code;
-    gs_glyph unused_glyph = gs_no_glyph;
+    gs_glyph unused_glyph = GS_NO_GLYPH;
     gs_glyph glyph = pl_tt_encode_char(pfont, chr, unused_glyph);
     int code;
     float sbw[4];
@@ -948,12 +948,12 @@ pl_tt_char_width(const pl_font_t * plfont, const void *pgs, gs_char char_code,
     if (pfont->WMode & 1) {
         gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
 
-        if (vertical != gs_no_glyph)
+        if (vertical != GS_NO_GLYPH)
             glyph = vertical;
     }
 
     /* undefined character */
-    if (glyph == 0xffff || glyph == gs_no_glyph)
+    if (glyph == 0xffff || glyph == GS_NO_GLYPH)
         return 1;
 
     code = gs_type42_get_metrics((gs_font_type42 *) pfont, glyph, sbw);
@@ -995,7 +995,7 @@ pl_tt_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
      gs_setcharwidth(penum, pgs, w2[0], w2[1]);
 #endif
     /* undefined */
-    if (glyph == gs_no_glyph)
+    if (glyph == GS_NO_GLYPH)
         return 0;
     /* Get the metrics and set the cache device. */
     code = gs_type42_get_metrics(pfont42, glyph, sbw);
@@ -1029,7 +1029,7 @@ pl_tt_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
             pl_font_t *plfont = pfont->client_data;
             gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
 
-            if (vertical != gs_no_glyph) {
+            if (vertical != GS_NO_GLYPH) {
                 glyph = vertical;
             }
         }

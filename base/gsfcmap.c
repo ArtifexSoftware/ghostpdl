@@ -64,11 +64,11 @@ identity_decode_next(const gs_cmap_t *pcmap, const gs_const_string *str,
     uint value;
 
     if (str->size < *pindex + num_bytes) {
-        *pglyph = gs_no_glyph;
+        *pglyph = GS_NO_GLYPH;
         return (*pindex == str->size ? 2 : -1);
     }
     value = get_integer_bytes(str->data + *pindex, num_bytes);
-    *pglyph = gs_min_cid_glyph + value;
+    *pglyph = GS_MIN_CID_GLYPH + value;
     *pchr = value;
     *pindex += num_bytes;
     *pfidx = 0;

@@ -44,7 +44,7 @@
  *	  lengths of the encodings.
  */
 
-const gs_glyph gs_c_min_std_encoding_glyph = gs_min_cid_glyph - 0x10000;
+const gs_glyph gs_c_min_std_encoding_glyph = GS_MIN_CID_GLYPH - 0x10000;
 
 /*
  * Encode a character in a known encoding.  The only use for glyph numbers
@@ -56,7 +56,7 @@ gs_c_known_encode(gs_char ch, int ei)
     if (ei < 0 || ei >= gs_c_known_encoding_count ||
         ch >= gs_c_known_encoding_lengths[ei]
         )
-        return gs_no_glyph;
+        return GS_NO_GLYPH;
     return gs_c_min_std_encoding_glyph + gs_c_known_encodings[ei][ch];
 }
 
@@ -121,13 +121,13 @@ gs_is_c_glyph_name(const byte *str, uint len)
 
 /*
  * Return the glyph number corresponding to a string (the inverse of
- * gs_c_glyph_name), or gs_no_glyph if the glyph name is not known.
+ * gs_c_glyph_name), or GS_NO_GLYPH if the glyph name is not known.
  */
 gs_glyph
 gs_c_name_glyph(const byte *str, uint len)
 {
     if (len == 0 || len > gs_c_known_encoding_max_length)
-        return gs_no_glyph;
+        return GS_NO_GLYPH;
     /* Binary search the character table. */
     {
         uint base = gs_c_known_encoding_offsets[len];
@@ -151,7 +151,7 @@ gs_c_name_glyph(const byte *str, uint len)
         }
     }
 
-    return gs_no_glyph;
+    return GS_NO_GLYPH;
 }
 
 #ifdef TEST

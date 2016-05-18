@@ -469,10 +469,10 @@ const op_def zchar_b_op_defs[] =
 void
 glyph_ref(const gs_memory_t *mem, gs_glyph glyph, ref * gref)
 {
-    if (glyph < gs_min_cid_glyph)
+    if (glyph < GS_MIN_CID_GLYPH)
         name_index_ref(mem, glyph, gref);
     else
-        make_int(gref, glyph - gs_min_cid_glyph);
+        make_int(gref, glyph - GS_MIN_CID_GLYPH);
 }
 
 /* Prepare to set up for a text operator. */
@@ -516,8 +516,8 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
         SHOW_IS_ALL_OF(osenum,
                        TEXT_FROM_STRING | TEXT_DO_NONE | TEXT_INTERVENE) &&
         SHOW_IS_ALL_OF(penum, TEXT_FROM_STRING | TEXT_RETURN_WIDTH) &&
-        (glyph = gs_text_current_glyph(osenum)) != gs_no_glyph &&
-        glyph >= gs_min_cid_glyph &&
+        (glyph = gs_text_current_glyph(osenum)) != GS_NO_GLYPH &&
+        glyph >= GS_MIN_CID_GLYPH &&
 
         /* According to PLRM, we don't need to raise a rangecheck error,
            if currentfont is changed in the proc of the operator 'cshow'. */
@@ -640,7 +640,7 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
                 /* Type 3 font, prefer BuildGlyph. */
                 if (level2_enabled &&
                     !r_has_type(&pfdata->BuildGlyph, t_null) &&
-                    glyph != gs_no_glyph
+                    glyph != GS_NO_GLYPH
                     ) {
                     glyph_ref(imemory, glyph, op);
                     esp[2] = pfdata->BuildGlyph;
@@ -679,7 +679,7 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 
                 if (chr != gs_no_char &&
                     !r_has_type(&pfdata->BuildChar, t_null) &&
-                    (glyph == gs_no_glyph ||
+                    (glyph == GS_NO_GLYPH ||
                      (!r_has_type(&pfdata->Encoding, t_null) &&
                        array_get(imemory, &pfdata->Encoding, (long)(chr & 0xff), &eref) >= 0 &&
                       (glyph_ref(imemory, glyph, &gref), obj_eq(imemory, &gref, &eref))))
@@ -688,7 +688,7 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
                     esp[2] = pfdata->BuildChar;
                 } else {
                     /* We might not have a glyph: substitute 0. **HACK** */
-                    if (glyph == gs_no_glyph)
+                    if (glyph == GS_NO_GLYPH)
                         make_int(op, 0);
                     else
                         glyph_ref(imemory, glyph, op);

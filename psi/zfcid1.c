@@ -73,7 +73,7 @@ static int
 z11_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
 {
     const ref *pcidmap = &pfont_data(pfont)->u.type42.CIDMap;
-    ulong cid = glyph - gs_min_cid_glyph;
+    ulong cid = glyph - GS_MIN_CID_GLYPH;
     int gdbytes = pfont->cidata.common.GDBytes;
     int gnum = 0;
     const byte *data;
@@ -527,7 +527,7 @@ ztype11mapcid(i_ctx_t *i_ctx_p)
         if (pfont->FontType != ft_CID_TrueType)
             return_error(gs_error_invalidfont);
         code = z11_CIDMap_proc((gs_font_cid2 *)pfont,
-                        (gs_glyph)(gs_min_cid_glyph + op->value.intval));
+                        (gs_glyph)(GS_MIN_CID_GLYPH + op->value.intval));
     }
     if (code < 0)
         return code;

@@ -1228,7 +1228,7 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
         SBW_FROM_RENDERER
     } sbw_state = SBW_SCALE;
 
-    if ( index == gs_no_glyph )
+    if ( index == GS_NO_GLYPH )
         return 0;
 
     I->use_outline = false;

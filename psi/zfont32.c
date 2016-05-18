@@ -30,7 +30,7 @@
 static gs_glyph
 zfont_no_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored)
 {
-    return gs_no_glyph;
+    return GS_NO_GLYPH;
 }
 
 /* <string|name> <font_dict> .buildfont32 <string|name> <font> */

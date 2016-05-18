@@ -40,7 +40,7 @@
 
 /*
  * Define the minimum gs_glyph value for glyphs in these encodings.
- * gs_glyph values from this value through gs_min_cid_glyph - 1 are reserved.
+ * gs_glyph values from this value through GS_MIN_CID_GLYPH - 1 are reserved.
  */
 extern const gs_glyph gs_c_min_std_encoding_glyph;
 

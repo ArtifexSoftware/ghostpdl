@@ -88,7 +88,7 @@ zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t gspace)
     int code = array_get(pfont->memory, pencoding, (long)index, &cname);
 
     if (code < 0 || !r_has_type(&cname, t_name))
-        return gs_no_glyph;
+        return GS_NO_GLYPH;
     if (pfont->FontType == ft_user_defined && r_type(&pdata->BuildGlyph) == t_null) {
         ref nsref, tname;
 
@@ -108,7 +108,7 @@ zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t gspace)
             int code;
 
             if (gspace == GLYPH_SPACE_NOGEN)
-                return gs_no_glyph;
+                return GS_NO_GLYPH;
             gs_sprintf(buf, "j%ld", chr); /* 'j' is arbutrary. */
             code = name_ref(pfont->memory, (const byte *)buf, strlen(buf), &tname, 1);
             if (code < 0) {
@@ -127,7 +127,7 @@ zfont_glyph_name(gs_font *font, gs_glyph index, gs_const_string *pstr)
 {
     ref nref, sref;
 
-    if (index >= gs_min_cid_glyph) {	/* Fabricate a numeric name. */
+    if (index >= GS_MIN_CID_GLYPH) {	/* Fabricate a numeric name. */
         char cid_name[sizeof(gs_glyph) * 3 + 1];
         int code;
 
@@ -148,8 +148,8 @@ static gs_char
 gs_font_map_glyph_by_dict(const gs_memory_t *mem, const ref *map, gs_glyph glyph)
 {
     ref *v, n;
-    if (glyph >= gs_min_cid_glyph) {
-        uint cid = glyph - gs_min_cid_glyph;
+    if (glyph >= GS_MIN_CID_GLYPH) {
+        uint cid = glyph - GS_MIN_CID_GLYPH;
 
         if (dict_find_string(map, "CIDCount", &v) > 0) {
             /* This is a CIDDEcoding resource. */

@@ -178,7 +178,7 @@ z9_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd,
 {
     gs_font_cid0 *pfont = (gs_font_cid0 *)pbfont;
     const font_data *pfdata = pfont_data(pfont);
-    long glyph_index = (long)(glyph - gs_min_cid_glyph);
+    long glyph_index = (long)(glyph - GS_MIN_CID_GLYPH);
     gs_glyph_data_t gdata;
     ulong fidx;
     int code;
@@ -538,7 +538,7 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
     pfcid = (gs_font_cid0 *)pfont;
     gdata.memory = pfont->memory;
     code = pfcid->cidata.glyph_data((gs_font_base *)pfcid,
-                        (gs_glyph)(gs_min_cid_glyph + op->value.intval),
+                        (gs_glyph)(GS_MIN_CID_GLYPH + op->value.intval),
                                     &gdata, &fidx);
 
     /* return code; original error-sensitive & fragile code */
@@ -552,7 +552,7 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
        /* reload glyph for default_fallback_CID */
 
        code = pfcid->cidata.glyph_data((gs_font_base *)pfcid,
-                    (gs_glyph)(gs_min_cid_glyph + default_fallback_CID),
+                    (gs_glyph)(GS_MIN_CID_GLYPH + default_fallback_CID),
                                    &gdata, &fidx);
 
        if (code < 0) {

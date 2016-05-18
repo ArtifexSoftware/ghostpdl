@@ -111,7 +111,7 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
     gs_type0_data *pdata;
     uint fidx;
     gs_char chr;
-    gs_glyph glyph = gs_no_glyph;
+    gs_glyph glyph = GS_NO_GLYPH;
     int changed = 0;
 
     pte->FontBBox_as_Metrics2.x = pte->FontBBox_as_Metrics2.y = 0;
@@ -405,8 +405,8 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
                     if_debug3m('J', pte->memory, "[J]CMap returns %d, chr=0x%lx, glyph=0x%lx\n",
                               code, (ulong) chr, (ulong) glyph);
                     if (code == 0) {
-                        if (glyph == gs_no_glyph) {
-                            glyph = gs_min_cid_glyph;
+                        if (glyph == GS_NO_GLYPH) {
+                            glyph = GS_MIN_CID_GLYPH;
                             if_debug0m('J', pte->memory, "... undefined\n");
                             /* Must select a descendant font anyway, we can't use the type 0
                              * even for the /.notdef...
@@ -415,7 +415,7 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
                             goto done;
                         }
                     } else
-                        chr = (gs_char) glyph, glyph = gs_no_glyph;
+                        chr = (gs_char) glyph, glyph = GS_NO_GLYPH;
                     /****** RESCAN chr IF DESCENDANT IS CMAP'ED ******/
                     break;
                 }
@@ -445,7 +445,7 @@ done:
                             glyph, NULL, &font_index);
         if (code < 0) { /* failed to load glyph data, reload glyph for CID 0 */
            code = ((gs_font_cid0 *)pfont)->cidata.glyph_data((gs_font_base *)pfont,
-                        (gs_glyph)(gs_min_cid_glyph + 0), NULL, &font_index);
+                        (gs_glyph)(GS_MIN_CID_GLYPH + 0), NULL, &font_index);
            if (code < 0)
                return_error(gs_error_invalidfont);
         }

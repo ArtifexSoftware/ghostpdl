@@ -48,7 +48,7 @@ enumerate_range_next(psf_glyph_enum_t *ppge, gs_glyph *pglyph)
 {
     if (ppge->index >= ppge->subset.size)
         return 1;
-    *pglyph = (gs_glyph)(ppge->index++ + gs_min_cid_glyph);
+    *pglyph = (gs_glyph)(ppge->index++ + GS_MIN_CID_GLYPH);
     return 0;
 }
 void
@@ -72,7 +72,7 @@ enumerate_bits_next(psf_glyph_enum_t *ppge, gs_glyph *pglyph)
 {
     for (; ppge->index < ppge->subset.size; ppge->index++)
         if (ppge->subset.selected.bits[ppge->index >> 3] & (0x80 >> (ppge->index & 7))) {
-            *pglyph = (gs_glyph)(ppge->index++ + gs_min_cid_glyph);
+            *pglyph = (gs_glyph)(ppge->index++ + GS_MIN_CID_GLYPH);
             return 0;
         }
     return 1;
@@ -261,7 +261,7 @@ psf_get_outline_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_base *pfont,
                        gs_glyph *orig_subset_glyphs, uint orig_subset_size,
                        glyph_data_proc_t glyph_data)
 {
-    gs_glyph notdef = gs_no_glyph;
+    gs_glyph notdef = GS_NO_GLYPH;
     gs_glyph *subset_glyphs = orig_subset_glyphs;
     uint subset_size = orig_subset_size;
 
@@ -323,7 +323,7 @@ psf_get_outline_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_base *pfont,
         if (code < 0)
             return code;
         /* Subset fonts require .notdef. */
-        if (notdef == gs_no_glyph)
+        if (notdef == GS_NO_GLYPH)
             return_error(gs_error_rangecheck);
         /* Remove undefined glyphs. */
         for (i = 0, keep_size = 0; i < subset_size; ++i) {

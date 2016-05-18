@@ -60,7 +60,7 @@ struct psf_glyph_enum_s {
 /*
  * Begin enumerating the glyphs in a font or a font subset.  If subset_size
  * > 0 but subset_glyphs == 0, enumerate all glyphs in [0 .. subset_size-1]
- * (as integer glyphs, i.e., offset by gs_min_cid_glyph).
+ * (as integer glyphs, i.e., offset by GS_MIN_CID_GLYPH).
  */
 void psf_enumerate_list_begin(psf_glyph_enum_t *ppge, gs_font *font,
                               const gs_glyph *subset_list,

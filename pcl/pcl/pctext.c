@@ -610,7 +610,7 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
 
     if (plfont->scaling_technology == plfst_bitmap) {
         gs_char chr = pbuff[0];
-        gs_glyph glyph = pfont->procs.encode_char(pfont, chr, gs_no_glyph);
+        gs_glyph glyph = pfont->procs.encode_char(pfont, chr, GS_NO_GLYPH);
         const byte *cdata = pl_font_lookup_glyph(plfont, glyph)->data;
         int nbytes;
         uint used;

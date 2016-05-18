@@ -365,8 +365,8 @@ z42_gdir_enumerate_glyph(gs_font *font, int *pindex,
         pgdict = &pfont_data(font)->CharStrings;
     /* A trick : use zchar_enumerate_glyph to enumerate GIDs : */
     code = zchar_enumerate_glyph(font->memory, pgdict, pindex, pglyph);
-    if (*pindex != 0 && *pglyph >= gs_min_cid_glyph)
-        *pglyph	= *pglyph - gs_min_cid_glyph + GS_MIN_GLYPH_INDEX;
+    if (*pindex != 0 && *pglyph >= GS_MIN_CID_GLYPH)
+        *pglyph	= *pglyph - GS_MIN_CID_GLYPH + GS_MIN_GLYPH_INDEX;
     return code;
 }
 
@@ -379,7 +379,7 @@ z42_encode_char(gs_font *font, gs_char chr, gs_glyph_space_t glyph_space)
 {
     gs_glyph glyph = zfont_encode_char(font, chr, glyph_space);
 
-    return (glyph_space == GLYPH_SPACE_INDEX && glyph != gs_no_glyph ?
+    return (glyph_space == GLYPH_SPACE_INDEX && glyph != GS_NO_GLYPH ?
             glyph_to_index(font, glyph) : glyph);
 }
 static int

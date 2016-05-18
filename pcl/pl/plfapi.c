@@ -161,7 +161,7 @@ pl_fapi_get_cid(gs_font_base * pbfont, gs_string * charstring,
     if (plfont->allow_vertical_substitutes) {
         vertical = pl_font_vertical_glyph(ccode, plfont);
 
-        if (vertical != gs_no_glyph)
+        if (vertical != GS_NO_GLYPH)
             index = vertical;
     }
     cr->char_codes[0] = index;
@@ -514,7 +514,7 @@ pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
     gs_state *rpgs = (gs_state *) vpgs;
     /* NAFF: undefined glyph would be better handled inside FAPI */
     gs_char chr = char_code;
-    gs_glyph unused_glyph = gs_no_glyph;
+    gs_glyph unused_glyph = GS_NO_GLYPH;
     gs_glyph glyph;
     gs_matrix mat = {72.0, 0.0, 0.0, 72.0, 0.0, 0.0};
     gs_matrix fmat;
@@ -529,12 +529,12 @@ pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
     if (pfont->WMode & 1) {
         gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
 
-        if (vertical != gs_no_glyph)
+        if (vertical != GS_NO_GLYPH)
             glyph = vertical;
     }
 
     /* undefined character */
-    if (glyph == 0xffff || glyph == gs_no_glyph) {
+    if (glyph == 0xffff || glyph == GS_NO_GLYPH) {
         metrics[0] = metrics[1] = metrics[2] = metrics[3] = 0;
         code = 1;
     } else {

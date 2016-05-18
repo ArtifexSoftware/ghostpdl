@@ -41,7 +41,7 @@ static int setup_unicode_decoder(i_ctx_t *i_ctx_p, ref *Decoding);
 bool
 zfont_mark_glyph_name(const gs_memory_t *mem, gs_glyph glyph, void *ignore_data)
 {
-    return (glyph >= gs_c_min_std_encoding_glyph || glyph == gs_no_glyph ? false :
+    return (glyph >= gs_c_min_std_encoding_glyph || glyph == GS_NO_GLYPH ? false :
             name_mark_index(mem, (uint) glyph));
 }
 

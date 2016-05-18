@@ -40,8 +40,8 @@ glyph_show_setup(i_ctx_t *i_ctx_p, gs_glyph *pglyph)
         case ft_CID_user_defined:
         case ft_CID_TrueType:
         case ft_CID_bitmap:
-            check_int_leu(*op, gs_max_glyph - gs_min_cid_glyph);
-            *pglyph = (gs_glyph) op->value.intval + gs_min_cid_glyph;
+            check_int_leu(*op, GS_MAX_GLYPH - GS_MIN_CID_GLYPH);
+            *pglyph = (gs_glyph) op->value.intval + GS_MIN_CID_GLYPH;
             break;
         default:
             check_type(*op, t_name);

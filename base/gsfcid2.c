@@ -31,7 +31,7 @@
 static int
 identity_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
 {
-    ulong cid = glyph - gs_min_cid_glyph;
+    ulong cid = glyph - GS_MIN_CID_GLYPH;
 
     if (cid >= pfont->cidata.common.CIDCount)
         return_error(gs_error_rangecheck);
@@ -104,7 +104,7 @@ tt_16bit_format4_decode_next(const gs_cmap_t * pcmap_in,
     uint segment2;
 
     if (pstr->size < *pindex + 2) {
-        *pglyph = gs_no_glyph;
+        *pglyph = GS_NO_GLYPH;
         return (*pindex == pstr->size ? 2 : -1);
     }
     chr = U16(pstr->data + *pindex);
@@ -135,7 +135,7 @@ tt_16bit_format4_decode_next(const gs_cmap_t * pcmap_in,
             value = chr + delta;
         break;
     }
-    *pglyph = gs_min_cid_glyph + (value & 0xffff);
+    *pglyph = GS_MIN_CID_GLYPH + (value & 0xffff);
     *pchr = chr;
     *pindex += 2;
     *pfidx = 0;

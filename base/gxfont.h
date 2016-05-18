@@ -318,7 +318,7 @@ typedef struct gs_font_procs_s {
      * did change, 2 if there are no more characters, or an error code.
      *
      * This procedure may set either *pchar to gs_no_char or *pglyph to
-     * gs_no_glyph, but not both.
+     * GS_NO_GLYPH, but not both.
      */
 
 #define font_proc_next_char_glyph(proc)\
@@ -328,7 +328,7 @@ typedef struct gs_font_procs_s {
     /*
      * Define a client-supplied BuildChar/BuildGlyph procedure.
      * The gs_char may be gs_no_char (for BuildGlyph), or the gs_glyph
-     * may be gs_no_glyph (for BuildChar), but not both.  Return 0 for
+     * may be GS_NO_GLYPH (for BuildChar), but not both.  Return 0 for
      * success, 1 if the procedure was unable to render the character
      * (but no error occurred), <0 for error.
      */

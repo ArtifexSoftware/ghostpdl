@@ -502,7 +502,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, double llx, double lly,
     pgs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;     /* disable color/gray/image operators */
     /* We can only use the cache if we know the glyph. */
     glyph = CURRENT_GLYPH(penum);
-    if (glyph == gs_no_glyph)
+    if (glyph == GS_NO_GLYPH)
         return 0;
     /* We can only use the cache if ctm is unchanged */
     /* (aside from a possible translation). */
@@ -1028,7 +1028,7 @@ show_proceed(gs_show_enum * penum)
                      * Store glyph now, because pdfwrite needs it while
                      * synthezising bitmap fonts (see assign_char_code).
                      */
-                    if (glyph == gs_no_glyph) {
+                    if (glyph == GS_NO_GLYPH) {
                         glyph = (*penum->encode_char)(pfont, chr,
                                                       GLYPH_SPACE_NAME);
                         SET_CURRENT_GLYPH(penum, glyph);
@@ -1056,7 +1056,7 @@ show_proceed(gs_show_enum * penum)
                                 return code;
                         }
                         penum->pair = pair;
-                        if (glyph == gs_no_glyph) {
+                        if (glyph == GS_NO_GLYPH) {
                             cc = 0;
                             goto no_cache;
                         }
@@ -1159,7 +1159,7 @@ show_proceed(gs_show_enum * penum)
                 }
         }
         SET_CURRENT_CHAR(penum, chr);
-        if (glyph == gs_no_glyph) {
+        if (glyph == GS_NO_GLYPH) {
             glyph = (*penum->encode_char)(pfont, chr, GLYPH_SPACE_NAME);
         }
         SET_CURRENT_GLYPH(penum, glyph);
@@ -1412,7 +1412,7 @@ show_state_setup(gs_show_enum * penum)
                                 penum->text.data.d_glyph, NULL, &fidx);
             if (code < 0) { /* failed to load glyph data, reload glyph for CID 0 */
                code = ((gs_font_cid0 *)pfont)->cidata.glyph_data((gs_font_base *)pfont,
-                            (gs_glyph)(gs_min_cid_glyph + 0), NULL, &fidx);
+                            (gs_glyph)(GS_MIN_CID_GLYPH + 0), NULL, &fidx);
                if (code < 0)
                    return_error(gs_error_invalidfont);
             }

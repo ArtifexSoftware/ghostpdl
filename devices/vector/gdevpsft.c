@@ -165,14 +165,14 @@ mac_glyph_index(gs_font *font, int ch, gs_const_string *pstr, int *index)
                                              GLYPH_SPACE_NAME);
     int code;
 
-    if (glyph == gs_no_glyph) {
+    if (glyph == GS_NO_GLYPH) {
         *index = 0;
         return 0;		/* .notdef */
     }
     code = font->procs.glyph_name(font, glyph, pstr);
     if (code < 0)
         return code;
-    if (glyph < gs_min_cid_glyph) {
+    if (glyph < GS_MIN_CID_GLYPH) {
         gs_char mac_char;
         gs_glyph mac_glyph;
         gs_const_string mstr;
@@ -187,7 +187,7 @@ mac_glyph_index(gs_font *font, int ch, gs_const_string *pstr, int *index)
             return 0;
         }
         mac_glyph = gs_c_known_encode(mac_char, ENCODING_INDEX_MACGLYPH);
-        if (mac_glyph == gs_no_glyph) {
+        if (mac_glyph == GS_NO_GLYPH) {
             *index = -1;
             return 0;
         }
@@ -366,7 +366,7 @@ write_cmap(stream *s, gs_font *font, uint first_code, int num_glyphs,
             font->procs.encode_char(font, (gs_char)i, GLYPH_SPACE_INDEX);
         uint glyph_index;
 
-        if (glyph == gs_no_glyph || glyph < GS_MIN_GLYPH_INDEX ||
+        if (glyph == GS_NO_GLYPH || glyph < GS_MIN_GLYPH_INDEX ||
             glyph > max_glyph
             )
             glyph = GS_MIN_GLYPH_INDEX;
@@ -918,7 +918,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
         uint glyph_index;
         gs_glyph_data_t glyph_data;
 
-        if (glyph < gs_min_cid_glyph)
+        if (glyph < GS_MIN_CID_GLYPH)
             return_error(gs_error_invalidfont);
         glyph_index = glyph  & ~GS_GLYPH_TAG;
         if_debug1m('L', s->memory, "[L]glyph_index %u\n", glyph_index);

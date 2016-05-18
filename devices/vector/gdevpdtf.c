@@ -761,7 +761,7 @@ has_extension_glyphs(gs_font *pfont)
     const int sl = strlen(gx_extendeg_glyph_name_separator);
 
     psf_enumerate_glyphs_begin(&genum, (gs_font *)pfont, NULL, 0, GLYPH_SPACE_NAME);
-    for (glyph = gs_no_glyph; (psf_enumerate_glyphs_next(&genum, &glyph)) != 1; ) {
+    for (glyph = GS_NO_GLYPH; (psf_enumerate_glyphs_next(&genum, &glyph)) != 1; ) {
         code = pfont->procs.glyph_name(pfont, glyph, &str);
         if (code < 0)
             return code;

@@ -723,7 +723,7 @@ gs_default_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
         if (pte->outer_CID != GS_NO_GLYPH)
             *pglyph = pte->outer_CID;
         else
-            *pglyph = gs_no_glyph;
+            *pglyph = GS_NO_GLYPH;
     } else if (pte->text.operation & TEXT_FROM_SINGLE_GLYPH) {
         /* glyphshow or glyphpath */
         *pchr = gs_no_char;
@@ -733,10 +733,10 @@ gs_default_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
         *pglyph = pte->text.data.glyphs[pte->index];
     } else if (pte->text.operation & TEXT_FROM_SINGLE_CHAR) {
         *pchr = pte->text.data.d_char;
-        *pglyph = gs_no_glyph;
+        *pglyph = GS_NO_GLYPH;
     } else if (pte->text.operation & TEXT_FROM_CHARS) {
         *pchr = pte->text.data.chars[pte->index];
-        *pglyph = gs_no_glyph;
+        *pglyph = GS_NO_GLYPH;
     } else
         return_error(gs_error_rangecheck); /* shouldn't happen */
     pte->index++;

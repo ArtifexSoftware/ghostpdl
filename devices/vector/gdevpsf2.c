@@ -822,7 +822,7 @@ cff_write_CharStrings_offsets(cff_writer_t *pcw, psf_glyph_enum_t *penum,
 
     s_init(&poss, NULL);
     psf_enumerate_glyphs_reset(penum);
-    for (glyph = gs_no_glyph, count = 0, offset = 1;
+    for (glyph = GS_NO_GLYPH, count = 0, offset = 1;
          (code = psf_enumerate_glyphs_next(penum, &glyph)) != 1;
          ) {
         gs_glyph_data_t gdata;
@@ -865,7 +865,7 @@ cff_write_CharStrings(cff_writer_t *pcw, psf_glyph_enum_t *penum,
     cff_put_Index_header(pcw, charstrings_count, charstrings_size);
     cff_write_CharStrings_offsets(pcw, penum, &ignore_count);
     psf_enumerate_glyphs_reset(penum);
-    for (glyph = gs_no_glyph;
+    for (glyph = GS_NO_GLYPH;
          (code = psf_enumerate_glyphs_next(penum, &glyph)) != 1;
          ) {
         gs_glyph_data_t gdata;
@@ -952,7 +952,7 @@ cff_Encoding_size(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
                                                   GLYPH_SPACE_NAME);
         int i;
 
-        if (glyph == gs_no_glyph || glyph == pgsub->glyphs.notdef)
+        if (glyph == GS_NO_GLYPH || glyph == pgsub->glyphs.notdef)
             continue;
         i = psf_sorted_glyphs_index_of(pgsub->glyphs.subset_data + 1,
                                        pgsub->num_encoded, glyph);
@@ -988,7 +988,7 @@ cff_write_Encoding(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
                                                   GLYPH_SPACE_NAME);
         int i;
 
-        if (glyph == gs_no_glyph || glyph == pgsub->glyphs.notdef)
+        if (glyph == GS_NO_GLYPH || glyph == pgsub->glyphs.notdef)
             continue;
         i = psf_sorted_glyphs_index_of(pgsub->glyphs.subset_data + 1,
                                        pgsub->num_encoded, glyph);
@@ -1058,8 +1058,8 @@ cff_write_cidset(cff_writer_t *pcw, psf_glyph_enum_t *penum)
     psf_enumerate_glyphs_reset(penum);
     while ((code = psf_enumerate_glyphs_next(penum, &glyph)) == 0) {
         /* Skip glyph 0 (the .notdef glyph), which is always first. */
-        if (glyph != gs_min_cid_glyph)
-            put_card16(pcw, (uint)(glyph - gs_min_cid_glyph));
+        if (glyph != GS_MIN_CID_GLYPH)
+            put_card16(pcw, (uint)(glyph - GS_MIN_CID_GLYPH));
     }
     return min(code, 0);
 }
@@ -1208,7 +1208,7 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
                               subset_size);
     if (code < 0)
         return code;
-    if (subset.glyphs.notdef == gs_no_glyph)
+    if (subset.glyphs.notdef == GS_NO_GLYPH)
         return_error(gs_error_rangecheck); /* notdef is required */
 
     /* If we're writing Type 2 CharStrings, don't encrypt them. */
@@ -1243,7 +1243,7 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
         for (j = 0, num_enc_chars = 0; j < 256; ++j) {
             glyph = pfont->procs.encode_char((gs_font *)pfont, (gs_char)j,
                                              GLYPH_SPACE_NAME);
-            if (glyph != gs_no_glyph && glyph != subset.glyphs.notdef &&
+            if (glyph != GS_NO_GLYPH && glyph != subset.glyphs.notdef &&
                 (subset.glyphs.subset_glyphs == 0 ||
                  psf_sorted_glyphs_include(subset.glyphs.subset_data,
                                             subset.glyphs.subset_size, glyph)))
@@ -1307,7 +1307,7 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     cff_string_table_init(&writer.std_strings, std_string_items,
                           MAX_CFF_STD_STRINGS);
     for (j = 0; (glyph = gs_c_known_encode((gs_char)j,
-                                ENCODING_INDEX_CFFSTRINGS)) != gs_no_glyph;
+                                ENCODING_INDEX_CFFSTRINGS)) != GS_NO_GLYPH;
          ++j) {
         gs_const_string str;
         int ignore;
