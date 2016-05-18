@@ -1260,7 +1260,7 @@ copied_type42_get_outline(gs_font_type42 *font, uint glyph_index,
 
 static int
 copied_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
-                          gs_type42_metrics_options_t options, float sbw[4])
+                          gs_type42_metrics_options_t options, float *sbw)
 {
     /* Check whether we have metrics for this (glyph,wmode) pair. */
     gs_copied_font_data_t *const cfdata = pfont->data.proc_data;
@@ -2214,15 +2214,16 @@ int gs_free_copied_font(gs_font *font)
         gs_free_object(mem, copied0->cidata.FDArray, "free copied CIDFont FDArray");
         copied0->cidata.FDArray = 0;
     }
-    /* free copied glyph data */
-    for (i=0;i < cfdata->glyphs_size;i++) {
-        pcg = &cfdata->glyphs[i];
-        if(pcg->gdata.size) {
-            gs_free_string(font->memory, (byte *)pcg->gdata.data, pcg->gdata.size, "Free copied glyph");
-        }
-    }
 
     if (cfdata) {
+        /* free copied glyph data */
+        for (i=0;i < cfdata->glyphs_size;i++) {
+            pcg = &cfdata->glyphs[i];
+            if(pcg->gdata.size) {
+                gs_free_string(font->memory, (byte *)pcg->gdata.data, pcg->gdata.size, "Free copied glyph");
+            }
+        }
+
         uncopy_string(mem, &cfdata->info.FullName,
                       "gs_free_copied_font(FullName)");
         uncopy_string(mem, &cfdata->info.FamilyName,
