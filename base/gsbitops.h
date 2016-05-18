@@ -76,7 +76,7 @@ static int inline sample_load_next12(uint *value, const byte **sptr, int *sbit, 
             *value = **sptr;
             break;
         case 3:
-            *value = (sbit ? ((**sptr & 0xf) << 8) | (*sptr)[1] :
+            *value = (*sbit ? ((**sptr & 0xf) << 8) | (*sptr)[1] :
                     (**sptr << 4) | ((*sptr)[1] >> 4));
           break;
         default:
@@ -194,7 +194,7 @@ static int inline sample_load_next64(uint64_t *value, const byte **sptr, int *sb
             *value = (**sptr << 16) | ((*sptr)[1] << 8) | (*sptr)[2];
             break;
         case 8:
-            *value = (**sptr << 24) | ((*sptr)[1] << 16) | ((*sptr)[2] << 8) | (*sptr)[3];
+            *value = ((uint64_t)(**sptr) << 24) | ((uint64_t)((*sptr)[1]) << 16) | (((uint64_t)(*sptr)[2]) << 8) | (uint64_t)((*sptr)[3]);
             break;
         case 10:
             *value = ((uint64_t)((*sptr)[0]) << SAMPLE_BOUND_SHIFT((*value), 32)) |
@@ -274,7 +274,7 @@ static void inline sample_store_next_12 (uint value, byte **dptr, int *dbit, byt
     else
       *(*dptr) = *dbbyte | (byte)(value >> 8), (*dptr)[1] = (byte)(value), *dptr += 2;
 }
-static int sample_store_next12(uint value, byte **dptr, int *dbit, int dbpv, byte *dbbyte)
+static int inline sample_store_next12(uint value, byte **dptr, int *dbit, int dbpv, byte *dbbyte)
 {
     switch (dbpv >> 2 ) {
     case 0:
