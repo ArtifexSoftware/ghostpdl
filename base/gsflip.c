@@ -310,7 +310,7 @@ flipNx1to8(byte * buffer, const byte ** planes, int offset, int nbytes,
     int bi, pi;
     byte *dptr = buffer;
     int dbit = 0;
-    byte dbbyte = (dbit ? (byte)(*dptr & (0xff00 >> dbit)) : 0);
+    byte dbbyte = 0;
 
     for (bi = 0; bi < nbytes * 8; bi += bits_per_sample) {
         for (pi = 0; pi < num_planes; ++pi) {
@@ -334,7 +334,7 @@ flipNx12(byte * buffer, const byte ** planes, int offset, int nbytes,
     int bi, pi;
     byte *dptr = buffer;
     int dbit = 0;
-    byte dbbyte = (dbit ? (byte)(*dptr & (0xff00 >> dbit)) : 0);
+    byte dbbyte = 0;
 
     for (bi = 0; bi < nbytes * 8; bi += 12) {
         for (pi = 0; pi < num_planes; ++pi) {
