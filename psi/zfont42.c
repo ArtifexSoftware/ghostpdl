@@ -265,7 +265,10 @@ glyph_to_index(const gs_font *font, gs_glyph glyph)
         ) {
         gs_glyph index_glyph = pcstr->value.intval + GS_MIN_GLYPH_INDEX;
 
-        if (index_glyph >= GS_MIN_GLYPH_INDEX && index_glyph <= gs_max_glyph)
+        /* We don't need to check the upper limit of the value, since the
+         * upper limit is the maximum value of the data type
+         */
+        if (index_glyph >= GS_MIN_GLYPH_INDEX)
             return index_glyph;
     }
     return GS_MIN_GLYPH_INDEX;	/* glyph 0 is notdef */
