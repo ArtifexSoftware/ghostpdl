@@ -550,10 +550,10 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
 
                 byte *mptr = penum->mask_data;
                 int mbit = 0;
-                byte mbbyte = (mbit ? (byte)(*mptr & (0xff00 >> mbit)) : 0);
+                byte mbbyte = 0;
                 byte *pptr = penum->pixel_data;
                 int pbit = 0;
-                byte pbbyte = (pbit ? (byte)(*pptr & (0xff00 >> pbit)) : 0);
+                byte pbbyte = 0;
                 int x;
 
                 mask_plane.data = mptr;

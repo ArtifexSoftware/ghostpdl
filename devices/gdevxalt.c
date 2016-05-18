@@ -293,7 +293,7 @@ x_wrap_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
 
     byte *l_dptr = str;
     int l_dbit = 0;
-    byte l_dbyte = ((l_dbit) ? (byte)(*(l_dptr) & (0xff00 >> (l_dbit))) : 0);
+    byte l_dbyte = 0;
 
     if ((code = get_dev_target(&tdev, dev)) < 0)
         return code;
