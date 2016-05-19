@@ -99,7 +99,7 @@ $(PSD)isupport.dev : $(ECHOGS_XE) $(isupport_) $(INT_MAK) $(MAKEDIRS)
 $(PSOBJ)ialloc.$(OBJ) : $(PSSRC)ialloc.c $(AK) $(memory__h) $(gx_h)\
  $(ierrors_h) $(gsstruct_h)\
  $(iastate_h) $(igc_h) $(ipacked_h) $(iref_h) $(iutil_h) $(ivmspace_h)\
- $(store_h) $(INT_MAK) $(MAKEDIRS)
+ $(store_h) $(gsexit_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)ialloc.$(OBJ) $(C_) $(PSSRC)ialloc.c
 
 # igc.c, igcref.c, and igcstr.c should really be in the dpsand2 list,

@@ -17,6 +17,7 @@
 /* Memory allocator for Ghostscript interpreter */
 #include "gx.h"
 #include "memory_.h"
+#include "gsexit.h"
 #include "ierrors.h"
 #include "gsstruct.h"
 #include "iref.h"		/* must precede iastate.h */
@@ -217,8 +218,13 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
 
             cl.memory = mem;
             cl.cp = mem->root;
-            clump_locate_ptr(obj, &cl);
-            cl.cp->has_refs = true;
+            /* clump_locate_ptr() should *never* fail here */
+            if (clump_locate_ptr(obj, &cl)) {
+                cl.cp->has_refs = true;
+            }
+            else {
+                gs_abort((gs_memory_t *) mem);
+            }
         }
         if (cp) {
             mem->changes = cp;
