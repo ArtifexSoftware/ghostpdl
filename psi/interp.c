@@ -863,6 +863,9 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 
     *ticks_left = i_ctx_p->time_slice_ticks;
 
+     ierror.obj = &ierror.full;
+     make_null(&ierror.full);
+
     /*
      * If we exceed the VMThreshold, set *ticks_left to -100
      * to alert the interpreter that we need to garbage collect.
