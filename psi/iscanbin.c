@@ -197,7 +197,6 @@ scan_bos(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
 
         if (top_size == 0) {
             /* Extended header (2-byte array size, 4-byte length) */
-            uint lsize;
 
             if (rcnt < 7) {
                 s_end_inline(s, p - 1, rlimit);
@@ -205,11 +204,7 @@ scan_bos(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
                 return scan_Refill;
             }
             pbs->top_size = top_size = sdecodeushort(p + 2, num_format);
-            pbs->lsize = lsize = sdecodeint32(p + 4, num_format);
-            if ((size = lsize) != lsize) {
-                scan_bos_error(pstate, "bin obj seq length too large");
-                return_error(gs_error_limitcheck);
-            }
+            pbs->lsize = size = sdecodeint32(p + 4, num_format);
             hsize = 8;
         } else {
             /* Normal header (1-byte array size, 2-byte length). */
