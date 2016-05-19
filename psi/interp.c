@@ -542,11 +542,14 @@ again:
             goto again;
         case gs_error_VMreclaim:
             /* Do the GC and continue. */
-            code = interp_reclaim(pi_ctx_p,
+            /* We ignore the return value here, if it fails here
+             * we'll call it again having jumped to the "again" label.
+             * Where, assuming it fails again, we'll handle the error.
+             */
+            (void)interp_reclaim(pi_ctx_p,
                                   (osp->value.intval == 2 ?
                                    avm_global : avm_local));
             i_ctx_p = *pi_ctx_p;
-            /****** What if code < 0? ******/
             make_oper(&doref, 0, zpop);
             epref = &doref;
             goto again;
