@@ -50,15 +50,14 @@ static int
 ireclaim(gs_dual_memory_t * dmem, int space)
 {
     bool global;
-    gs_ref_memory_t *mem;
+    gs_ref_memory_t *mem = NULL;
     int code;
 
     if (space < 0) {
         /* Determine which allocator exceeded the limit. */
         int i;
 
-        mem = dmem->space_global;	/* just in case */
-        for (i = 0; i < countof(dmem->spaces_indexed); ++i) {
+        for (i = 0; i < countof(dmem->spaces_indexed); i++) {
             mem = dmem->spaces_indexed[i];
             if (mem == 0)
                 continue;
@@ -66,6 +65,9 @@ ireclaim(gs_dual_memory_t * dmem, int space)
                 ((gs_ref_memory_t *)mem->stable_memory)->gc_status.requested > 0
                 )
                 break;
+        }
+        if (!mem) {
+            mem = dmem->space_global; /* just in case */
         }
     } else {
         mem = dmem->spaces_indexed[space >> r_space_shift];
