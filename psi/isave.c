@@ -599,7 +599,13 @@ alloc_save_current_id(const gs_dual_memory_t * dmem)
 
     while (save != 0 && save->id == 0)
         save = save->state.saved;
-    return save->id;
+    if (save)
+        return save->id;
+
+    /* This should never happen, if it does, return a totally
+     * impossible value.
+     */
+    return (ulong)-1;
 }
 alloc_save_t *
 alloc_save_current(const gs_dual_memory_t * dmem)
