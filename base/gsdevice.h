@@ -43,7 +43,7 @@ typedef struct gs_param_list_s gs_param_list;
 
 const gx_device *gs_getdevice(int);
 
-/****** DEPRECATED *********/
+/****** DEPRECATED: use  gs_getdefaultlibdevice() *********/
 const gx_device *gs_getdefaultdevice(void);
 
 const gx_device *
