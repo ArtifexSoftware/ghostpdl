@@ -404,16 +404,6 @@ typedef const char *client_name_t;
 #define client_name_string(cname) (cname)
 
 /*
- * Define the now-deprecated Pn macros for pre-ANSI compiler compatibility.
- * The double-inclusion check is replicated here because of the way that
- * jconfig.h is constructed.
- */
-#ifndef stdpn_INCLUDED
-#  define stdpn_INCLUDED
-#include "stdpn.h"
-#endif /* stdpn_INCLUDED */
-
-/*
  * Define success and failure codes for 'exit'.  The only system on which
  * they are different is VMS with older DEC C versions.  We aren't sure
  * in what version DEC C started being compatible with the rest of the
