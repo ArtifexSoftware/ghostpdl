@@ -550,7 +550,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 
         if (THIS_NEVER_HAPPENS == 0) {
             /* Just put the warning out once */
-            dmlprintf(dev->memory,
+            dmlprintf(dev2->memory,
                       "Unexpected code path in gx_alloc_char_bits taken!\n"
                       "Please contact the Ghostscript developers.\n");
             THIS_NEVER_HAPPENS = 1;
