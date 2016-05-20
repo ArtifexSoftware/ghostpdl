@@ -556,7 +556,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
             THIS_NEVER_HAPPENS = 1;
         }
         return_error(gs_error_unknownerror);
-#else
+#else /* ENABLE_IMPOSSIBLE_ALPHA_CODE */
         /* Use an alpha-buffer device to compress as we go. */
         /* Preserve the reference counts, if any. */
         rc_header rc;
@@ -577,7 +577,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
         isize += isize2;	/* Assume less than max_ulong */
         dev->HWResolution[0] = HWResolution0 * (1 >> log2_xscale);
         dev->HWResolution[1] = HWResolution1 * (1 >> log2_yscale);
-#endif
+#endif /* ENABLE_IMPOSSIBLE_ALPHA_CODE */
     }
     icdsize = isize + sizeof_cached_char;
     code = alloc_char(dir, icdsize, &cc);
@@ -607,6 +607,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 
     /* Open the cache device(s). */
 
+#ifndef ENABLE_IMPOSSIBLE_ALPHA_CODE
     if (dev2) {			/* The second device is an alpha device that targets */
         /* the real storage for the character. */
         byte *bits = cc_bits(cc);
@@ -620,6 +621,10 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
         (*dev_proc(dev, open_device)) ((gx_device *) dev);
     } else if (dev)
         gx_open_cache_device(dev, cc);
+#else /* ENABLE_IMPOSSIBLE_ALPHA_CODE */
+    if (dev)
+        gx_open_cache_device(dev, cc);
+#endif /* ENABLE_IMPOSSIBLE_ALPHA_CODE */
 
     return 0;
 }
