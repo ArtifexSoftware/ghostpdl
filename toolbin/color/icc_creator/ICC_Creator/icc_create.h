@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2012 Artifex Software, Inc.
+/* Copyright (C) 2001-2016 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -16,20 +16,22 @@
 #ifndef gsicc_create_INCLUDED
 #  define gsicc_create_INCLUDED
 
-typedef enum {
-    CMYK2GRAY,
-    CMYK2RGB,
-    GRAY2RGB,
-    GRAY2CMYK,
-    RGB2GRAY,
-    RGB2CMYK
+typedef enum
+{
+	CMYK2GRAY,
+	CMYK2RGB,
+	GRAY2RGB,
+	GRAY2CMYK,
+	RGB2GRAY,
+	RGB2CMYK
 } link_t;
 
-typedef struct ucr_bg {
-    unsigned char *cyan;
-    unsigned char *magenta;
-    unsigned char *yellow;
-    unsigned char *black;
+typedef struct ucr_bg
+{
+	unsigned char *cyan;
+	unsigned char *magenta;
+	unsigned char *yellow;
+	unsigned char *black;
 } ucrbg_t;
 
 int create_devicen_profile(cielab_t *cielab, colornames_t *colorant_names, int num_colors, int num_samples, TCHAR FileName[]);
@@ -40,6 +42,5 @@ int create_psgray_profile(TCHAR FileName[]);
 int  create_gray_threshold_profile(TCHAR FileName[], float threshold);
 int  create_rgb_threshold_profile(TCHAR FileName[], float threshold);
 int create_effect_profile(TCHAR FileName[], ucrbg_t *effect_data, char desc_ptr[]);
-
 
 #endif

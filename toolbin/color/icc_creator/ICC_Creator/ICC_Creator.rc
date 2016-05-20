@@ -16,13 +16,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -89,7 +87,7 @@ BEGIN
     LTEXT           "Artifex Software Inc.",IDC_STATIC,18,40,69,8
 END
 
-IDD_ICC_CREATOR_DIALOG DIALOGEX 0, 0, 269, 412
+IDD_ICC_CREATOR_DIALOG DIALOGEX 0, 0, 267, 338
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_APPWINDOW
 CAPTION "Artifex DeviceN/Device Link  ICC Creator"
@@ -100,24 +98,20 @@ BEGIN
     PUSHBUTTON      "Save ICC Profile",IDC_ICC_PROFILE,29,78,82,15
     LTEXT           "",IDC_STATUS,129,26,97,80,SS_SUNKEN
     LTEXT           "Status",IDC_STATIC,162,16,22,8
-    PUSHBUTTON      "PS CMYK2RGB Profile",IDC_CMYK2RGB,130,121,82,15
-    PUSHBUTTON      "PS GRAY2CMYK Profile",IDC_GRAY2CMYK,32,147,82,15
-    PUSHBUTTON      "PS RGB2CMYK Profile",IDC_RGB2CMYK,130,147,82,15
-    PUSHBUTTON      "PS CMYK2GRAY Profile",IDC_CMYK2GRAY2,31,121,82,15
-    PUSHBUTTON      "Save ICC Profiles",IDC_PSICC,44,271,82,15
-    PUSHBUTTON      "Gray Threshold Profile",IDC_GRAYTHRESH,39,194,82,15
-    EDITTEXT        IDC_EDITTHRESH,166,194,40,14,ES_AUTOHSCROLL | ES_NUMBER
-    GROUPBOX        "Device Link Profiles",IDC_STATIC,24,109,203,64
+    PUSHBUTTON      "Save ICC Profiles",IDC_PSICC,44,210,82,15
+    PUSHBUTTON      "Gray Threshold Profile",IDC_GRAYTHRESH,39,133,82,15
+    EDITTEXT        IDC_EDITTHRESH,164,137,40,14,ES_AUTOHSCROLL | ES_NUMBER
     GROUPBOX        "Device N Profiles",IDC_STATIC,23,14,99,87
-    GROUPBOX        "Thresholding Profiles",IDC_STATIC,27,179,202,42
-    PUSHBUTTON      "Load UCR/BG Table",IDC_PSTABLES,44,244,82,15
-    GROUPBOX        "PS Like Profile Generation",IDC_STATIC,29,229,202,68
-    CONTROL         "cpsi mode",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,160,259,47,10
-    PUSHBUTTON      "Save ICC Profile",IDC_EFFECTICC3,46,353,82,15
-    PUSHBUTTON      "Load Table Mapping",IDC_EFFECTTABLES2,46,326,82,15
-    GROUPBOX        "Special Effects",IDC_STATIC,31,311,202,68
-    EDITTEXT        IDC_EDIT1,151,343,72,14,ES_AUTOHSCROLL
-    LTEXT           "Profile desc",IDC_STATIC,165,332,38,8
+    GROUPBOX        "Thresholding Profiles",IDC_STATIC,27,118,202,42
+    PUSHBUTTON      "Load UCR/BG Table",IDC_PSTABLES,44,183,82,15
+    GROUPBOX        "PS Like Profile Generation",IDC_STATIC,29,168,202,68
+    CONTROL         "cpsi mode",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,160,198,47,10
+    PUSHBUTTON      "Save ICC Profile",IDC_EFFECTICC3,46,292,82,15
+    PUSHBUTTON      "Load Table Mapping",IDC_EFFECTTABLES2,46,265,82,15
+    GROUPBOX        "Special Effects",IDC_STATIC,31,250,202,68
+    EDITTEXT        IDC_EDIT1,151,282,72,14,ES_AUTOHSCROLL
+    LTEXT           "Profile description tag",IDC_STATIC,152,270,70,8
+    LTEXT           "L* Threshold",IDC_STATIC,163,126,42,8
 END
 
 
@@ -166,7 +160,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_ABOUTBOX, DIALOG
     BEGIN
@@ -179,9 +173,9 @@ BEGIN
     IDD_ICC_CREATOR_DIALOG, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 262
+        RIGHTMARGIN, 260
         TOPMARGIN, 7
-        BOTTOMMARGIN, 405
+        BOTTOMMARGIN, 331
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -192,12 +186,12 @@ END
 // String Table
 //
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_ABOUTBOX            "&About ICC_Creator..."
 END
 
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

@@ -36,10 +36,11 @@ public:
 protected:
         HICON m_hIcon;
 
-        int GetCIELAB(LPCTSTR lpszPathName);
-        int GetNames(LPCTSTR lpszPathName);
-        int ParseData(char pszInFile[], bool is_ucr);
+        int GetCIELAB(LPWSTR lpszPathName);
+        int GetNames(LPWSTR lpszPathName);
+        int ParseData(LPWSTR lpszPathName, bool is_ucr);
         int CreateICC(void);
+		void CreateLink(link_t type);
         cielab_t *m_cielab;
         colornames_t *m_colorant_names;
         bool m_cpsi_mode;
@@ -60,7 +61,6 @@ public:
     afx_msg void OnBnClickedCielab();
     afx_msg void OnBnClickedNames();
     afx_msg void OnBnClickedIccProfile();
-    afx_msg void OnBnClickedIccHelp();
 
     afx_msg void OnBnClickedCmyk2gray();
     afx_msg void OnBnClickedGray2cmyk();
@@ -77,6 +77,5 @@ public:
     afx_msg void OnBnClickedEffecttables2();
     afx_msg void OnBnClickedEffecticc3();
     CString m_effect_desc;
-    afx_msg void OnEnChangeEdit1();
     CEdit m_desc_effect_str;
 };
