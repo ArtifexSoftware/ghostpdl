@@ -545,7 +545,6 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
     int info_size;
     char *buffer_ptr, *curr_ptr, *last;
     int num_bytes;
-    char str_format_key[6], str_format_file[6];
     int k;
     static const char *const srcgtag_keys[] = {GSICC_SRCGTAG_KEYS};
     cmm_profile_t *icc_profile;
@@ -598,9 +597,6 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
         /* Create the structure in which we will store this data */
         srcgtag = gsicc_new_srcgtag_profile(mem);
         /* Now parse through the data opening the profiles that are needed */
-        /* First create the format that we should read for the key */
-        gs_sprintf(str_format_key, "%%%ds", GSICC_SRCGTAG_MAX_KEY);
-        gs_sprintf(str_format_file, "%%%ds", FILENAME_MAX);
         curr_ptr = buffer_ptr;
         /* Initialize that we want color management.  Then if profile is not
            present we know we did not want anything special done with that
