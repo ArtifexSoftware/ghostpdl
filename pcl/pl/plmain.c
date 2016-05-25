@@ -856,7 +856,7 @@ pl_main_init_instance(pl_main_instance_t * pti, gs_memory_t * mem)
     pti->pause = true;
     pti->device = 0;
     pti->implementation = 0;
-    gp_get_usertime(pti->base_time);
+    gp_get_realtime(pti->base_time);
     pti->page_count = 0;
     pti->interpolate = false;
     pti->nocache = false;
@@ -1544,7 +1544,7 @@ pl_print_usage(const pl_main_instance_t * pti, const char *msg)
 {
     long utime[2];
 
-    gp_get_usertime(utime);
+    gp_get_realtime(utime);
     dmprintf3(pti->memory, "%% %s time = %g, pages = %d\n",
               msg, utime[0] - pti->base_time[0] +
               (utime[1] - pti->base_time[1]) / 1000000000.0, pti->page_count);
