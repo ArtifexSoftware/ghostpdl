@@ -301,6 +301,7 @@ hpgl_PM(hpgl_args_t * pargs, hpgl_state_t * pgls)
                                        &pgls->g.polygon.pen_state,
                                        hpgl_pen_down | hpgl_pen_pos);
             }
+            pgls->g.subpolygon_started = false;
             hpgl_set_hpgl_path_mode(pgls, false);
             break;
         default:
