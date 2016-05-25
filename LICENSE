@@ -1,6 +1,7 @@
-The files in the base, psi, lib, toolbin, examples, doc and man
-directories (folders) and any subdirectories (sub-folders)
-thereof are part of GPL Ghostscript.
+The files in the base, psi, lib, toolbin, examples, doc, man and
+iccprofiles directories (folders), and pcl, xps and gpdl
+directories (folders), if included, and any subdirectories
+(sub-folders) thereof are part of GPL Ghostscript.
 
 The files in the Resource directory and any subdirectories thereof
 are also part of GPL Ghostscript, with the explicit exception of
@@ -16,7 +17,6 @@ As a special exception, permission is granted to include these font
 programs in a Postscript or PDF file that consists of a document that
 contains text to be displayed or printed using this font, regardless
 of the conditions or license applying to the document itself.
-
 
 
 The files under the jpegxr directory and any subdirectories
