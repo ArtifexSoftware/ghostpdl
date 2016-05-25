@@ -523,11 +523,13 @@ currentdict end readonly def
         0 4 index 2 mul 3 index length 1 sub { % e [] i offset key_size value_size (keys) (values) j
           2 index 1 index 6 index getinterval
           string2number                        % e [] i offset key_size value_size (keys) (values) j keyL
+          6 index add
           PDFDEBUG {
               ( keyL=) print dup =string cvs print
           } if
           3 index 2 index 7 index add 7 index getinterval
           string2number                        % e [] i offset key_size value_size (keys) (values) j keyL keyH
+          7 index add
           PDFDEBUG {
               ( keyH=) print dup =
           } if
