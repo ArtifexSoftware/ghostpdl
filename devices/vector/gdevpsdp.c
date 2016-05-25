@@ -418,8 +418,7 @@ int gdev_psdf_get_image_param(gx_device_psdf *pdev, const psdf_image_param_names
     if (image_names->AutoFilterStrategy != 0)
         if (strcmp(Param, image_names->AutoFilterStrategy) == 0)
             return psdf_write_name(plist, image_names->AutoFilterStrategy,
-                                   (params->AutoFilterStrategy == 0 ?
-                                   "JPEG2000" : params->AutoFilterStrategy));
+                    AutoFilterStrategy_names[params->AutoFilterStrategy]);
 #endif
     return_error(gs_error_undefined);
 }
