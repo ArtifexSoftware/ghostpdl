@@ -4125,11 +4125,11 @@
 16#F8FD    bracerightmid    enter
 16#F8FE    bracerightbt    appleopen
 16#F8FF    apple
-16#FB00    ff
-16#FB01    fi
-16#FB02    fl
-16#FB03    ffi
-16#FB04    ffl
+16#FB00    ff	f_f
+16#FB01    fi	f_i
+16#FB02    fl	f_l
+16#FB03    ffi	f_f_i
+16#FB04    ffl	f_f_l
 16#FB05        slongt longst
 16#FB06        st
 16#FB1E        varika
