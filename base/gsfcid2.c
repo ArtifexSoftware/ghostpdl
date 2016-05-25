@@ -164,8 +164,9 @@ tt_16bit_format4_enum_ranges(const gs_cmap_t *pcmap,
     gs_cmap_ranges_enum_setup(pre, pcmap, &tt_16bit_format4_range_procs);
 }
 static int
-tt_16bit_format4_next_lookup(gs_cmap_lookups_enum_t *penum)
+tt_16bit_format4_next_lookup(gs_memory_t *mem, gs_cmap_lookups_enum_t *penum)
 {
+    penum->entry.value.data = 0L;
     if (penum->index[0] == 0) {
         penum->entry.key_size = 2;
         penum->entry.key_is_range = true;

@@ -197,6 +197,14 @@ struct gs_cmap_s {
     GS_CMAP_COMMON;
 };
 
+typedef struct gs_cmap_ToUnicode_s {
+    GS_CMAP_COMMON;
+    int num_codes;
+    int key_size;
+    int value_size;
+    bool is_identity;
+} gs_cmap_ToUnicode_t;
+
 /* ---------------- Enumerators ---------------- */
 
 /*
@@ -222,7 +230,7 @@ struct gs_cmap_ranges_enum_s {
 };
 
 typedef struct gs_cmap_lookups_enum_procs_s {
-    int (*next_lookup)(gs_cmap_lookups_enum_t *penum);
+    int (*next_lookup)(gs_memory_t *mem, gs_cmap_lookups_enum_t *penum);
     int (*next_entry)(gs_cmap_lookups_enum_t *penum);
 } gs_cmap_lookups_enum_procs_t;
 struct gs_cmap_lookups_enum_s {
@@ -286,7 +294,7 @@ int gs_cmap_enum_next_range(gs_cmap_ranges_enum_t *penum);
  */
 void gs_cmap_lookups_enum_init(const gs_cmap_t *pcmap, int which,
                                gs_cmap_lookups_enum_t *penum);
-int gs_cmap_enum_next_lookup(gs_cmap_lookups_enum_t *penum);
+int gs_cmap_enum_next_lookup(gs_memory_t *mem, gs_cmap_lookups_enum_t *penum);
 int gs_cmap_enum_next_entry(gs_cmap_lookups_enum_t *penum);
 
 /* ---------------- Implementation procedures ---------------- */

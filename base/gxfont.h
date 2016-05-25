@@ -229,10 +229,17 @@ typedef struct gs_font_procs_s {
     font_proc_encode_char((*encode_char));
 
     /* Map a glyph name to Unicode UTF-16.
+     * decode_glyph procedures return '0' if the code is not in the map
+     * and could not be decoded. Otherwise they return the size of the
+     * string (in bytes) needed to contain the return values. Passing
+     * any value for the length less than the required number of bytes to the
+     * functions will cause them not to copy the data, they will still
+     * return the required size however, to allow for dynamic allocation
+     * of sufficiently large buffers.
      */
 
 #define font_proc_decode_glyph(proc)\
-  gs_char proc(gs_font *, gs_glyph, int)
+  int proc(gs_font *, gs_glyph, int, ushort *, unsigned int)
     font_proc_decode_glyph((*decode_glyph));
 
     /*

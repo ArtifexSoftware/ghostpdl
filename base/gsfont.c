@@ -981,8 +981,8 @@ gs_no_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t glyph_space)
 }
 
 /* Dummy glyph decoding procedure */
-gs_char
-gs_no_decode_glyph(gs_font *pfont, gs_glyph glyph, int ch)
+int
+gs_no_decode_glyph(gs_font *pfont, gs_glyph glyph, int ch, ushort *unicode_return, unsigned int length)
 {
     return GS_NO_CHAR;
 }

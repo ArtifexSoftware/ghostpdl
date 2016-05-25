@@ -600,10 +600,10 @@ xps_post_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
     return value;
 }
 
-static gs_char
-xps_post_callback_decode_glyph(gs_font *p42, gs_glyph glyph, int ch)
+static int
+xps_post_callback_decode_glyph(gs_font *p42, gs_glyph glyph, int ch, ushort *unicode_return, unsigned int length)
 {
-    return GS_NO_CHAR;
+    return 0;
 }
 
 static int

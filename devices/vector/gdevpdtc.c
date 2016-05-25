@@ -573,10 +573,10 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
                          * this code can be exercised.
                          */
                         if (chr == glyph - GS_MIN_CID_GLYPH)
-                            code = subfont->procs.decode_glyph((gs_font *)subfont, glyph, -1);
+                            code = subfont->procs.decode_glyph((gs_font *)subfont, glyph, -1, NULL, 0);
                         else
-                            code = subfont->procs.decode_glyph((gs_font *)subfont, glyph, chr);
-                        if (code != GS_NO_CHAR)
+                            code = subfont->procs.decode_glyph((gs_font *)subfont, glyph, chr, NULL, 0);
+                        if (code != 0)
                             /* Since PScript5.dll creates GlyphNames2Unicode with character codes
                                instead CIDs, and with the WinCharSetFFFF-H2 CMap
                                character codes appears different than CIDs (Bug 687954),

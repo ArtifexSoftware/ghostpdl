@@ -145,9 +145,10 @@ zfont_glyph_name(gs_font *font, gs_glyph index, gs_const_string *pstr)
 }
 
 static gs_char
-gs_font_map_glyph_by_dict(const gs_memory_t *mem, const ref *map, gs_glyph glyph)
+gs_font_map_glyph_by_dict(const gs_memory_t *mem, const ref *map, gs_glyph glyph, ushort *u, unsigned int length)
 {
     ref *v, n;
+    uchar *unicode_return = (uchar *)u;
     if (glyph >= GS_MIN_CID_GLYPH) {
         uint cid = glyph - GS_MIN_CID_GLYPH;
 
@@ -157,10 +158,25 @@ gs_font_map_glyph_by_dict(const gs_memory_t *mem, const ref *map, gs_glyph glyph
             if (dict_find(map, &n, &v) > 0) {
                 ref vv;
 
-                if (array_get(mem, v, cid % 256, &vv) == 0 && r_type(&vv) == t_integer)
-                    return vv.value.intval;
+                if (array_get(mem, v, cid % 256, &vv) == 0 && r_type(&vv) == t_integer) {
+                    if (v->value.intval > 65535) {
+                        if (length < 4)
+                            return 4;
+                        unicode_return[0] = v->value.intval >> 24;
+                        unicode_return[1] = (v->value.intval & 0x00FF0000) >> 16;
+                        unicode_return[2] = (v->value.intval & 0x0000FF00) >> 8;
+                        unicode_return[3] = v->value.intval & 0xFF;
+                        return 4;
+                    } else {
+                        if (length < 2)
+                            return 2;
+                        unicode_return[0] = v->value.intval >> 8;
+                        unicode_return[1] = v->value.intval & 0xFF;
+                        return 2;
+                    }
+                }
             }
-            return GS_NO_CHAR; /* Absent in the map. */
+            return 0; /* Absent in the map. */
         }
         /* This is GlyphNames2Unicode dictionary. */
         make_int(&n, cid);
@@ -168,31 +184,47 @@ gs_font_map_glyph_by_dict(const gs_memory_t *mem, const ref *map, gs_glyph glyph
         name_index_ref(mem, glyph, &n);
      if (dict_find(map, &n, &v) > 0) {
         if (r_has_type(v, t_string)) {
-            int i, l = r_size(v);
-            gs_char c = 0;
+            int l = r_size(v);
 
-            for (i = 0; i < l; i++)
-                c = (c << 8) | v->value.const_bytes[i];
-            return c;
+            if (length < l)
+                return l;
+            memcpy(unicode_return, v->value.const_bytes, l);
+            return l;
         }
-        if (r_type(v) == t_integer)
-            return v->value.intval;
+        if (r_type(v) == t_integer) {
+            if (v->value.intval > 65535) {
+                if (length < 4)
+                    return 4;
+                unicode_return[0] = v->value.intval >> 24;
+                unicode_return[1] = (v->value.intval & 0x00FF0000) >> 16;
+                unicode_return[2] = (v->value.intval & 0x0000FF00) >> 8;
+                unicode_return[3] = v->value.intval & 0xFF;
+                return 4;
+            } else {
+                if (length < 2)
+                    return 2;
+                unicode_return[0] = v->value.intval >> 8;
+                unicode_return[1] = v->value.intval & 0xFF;
+                return 2;
+            }
+        }
     }
-    return GS_NO_CHAR; /* Absent in the map. */
+    return 0; /* Absent in the map. */
 }
 
 /* Get Unicode UTF-16 code for a glyph. */
-gs_char
-gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch)
+int
+gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u, unsigned int length)
 {
     font_data *pdata = pfont_data(font);
     const ref *UnicodeDecoding;
+    uchar *unicode_return = (uchar *)u;
 
     if (r_type(&pdata->GlyphNames2Unicode) == t_dictionary) {
-        gs_char c = gs_font_map_glyph_by_dict(font->memory,
-                                              &pdata->GlyphNames2Unicode, glyph);
+        int c = gs_font_map_glyph_by_dict(font->memory,
+                                              &pdata->GlyphNames2Unicode, glyph, u, length);
 
-        if (c != GS_NO_CHAR)
+        if (c != 0)
             return c;
         if (ch != -1) { /* -1 indicates a CIDFont */
             /* Its possible that we have a GlyphNames2Unicode dictionary
@@ -207,15 +239,31 @@ gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch)
             make_int(&n, ch);
             if (dict_find(&pdata->GlyphNames2Unicode, &n, &v) > 0) {
                 if (r_has_type(v, t_string)) {
-                    int i, l = r_size(v);
-                    gs_char c = 0;
+                    int l = r_size(v);
 
-                    for (i = 0; i < l; i++)
-                        c = (c << 8) | v->value.const_bytes[i];
-                    return c;
+                    if (l > length)
+                        return l;
+
+                    memcpy(unicode_return, v->value.const_bytes, l * sizeof(short));
+                    return l;
                 }
-                if (r_type(v) == t_integer)
-                    return v->value.intval;
+                if (r_type(v) == t_integer) {
+                    if (v->value.intval > 65535) {
+                        if (length < 4)
+                            return 4;
+                        unicode_return[0] = v->value.intval >> 24;
+                        unicode_return[1] = (v->value.intval & 0x00FF0000) >> 16;
+                        unicode_return[2] = (v->value.intval & 0x0000FF00) >> 8;
+                        unicode_return[3] = v->value.intval & 0xFF;
+                        return 4;
+                    } else {
+                        if (length < 2)
+                            return 2;
+                        unicode_return[0] = v->value.intval >> 8;
+                        unicode_return[1] = v->value.intval & 0xFF;
+                        return 2;
+                    }
+                }
             }
         }
         /*
@@ -227,9 +275,9 @@ gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch)
     if (glyph <= GS_MIN_CID_GLYPH) {
         UnicodeDecoding = zfont_get_to_unicode_map(font->dir);
         if (UnicodeDecoding != NULL && r_type(UnicodeDecoding) == t_dictionary)
-            return gs_font_map_glyph_by_dict(font->memory, UnicodeDecoding, glyph);
+            return gs_font_map_glyph_by_dict(font->memory, UnicodeDecoding, glyph, u, length);
     }
-    return GS_NO_CHAR; /* No map. */
+    return 0; /* No map. */
 }
 
 /* ------ Initialization procedure ------ */

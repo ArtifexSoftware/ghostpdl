@@ -116,14 +116,17 @@ xps_true_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
     return value;
 }
 
-static gs_char
-xps_true_callback_decode_glyph(gs_font *pfont, gs_glyph glyph, int ch)
+static int
+xps_true_callback_decode_glyph(gs_font *pfont, gs_glyph glyph, int ch, ushort *unicode_return, unsigned int length)
 {
     /* We should do a reverse cmap lookup here to match PS/PDF.
      * However, a complete rearchitecture of our text and font processing
      * would be necessary to match XPS unicode mapping with the
      * cluster maps. Alas, we cheat similarly to PCL. */
-    return xps_last_char;
+    if (length == 0)
+        return 1;
+    *unicode_return = xps_last_char;
+    return 1;
 }
 
 static int

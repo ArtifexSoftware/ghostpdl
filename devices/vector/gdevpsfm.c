@@ -97,7 +97,7 @@ cmap_put_system_info(stream *s, const gs_cid_system_info_t *pcidsi)
 
 /* Write one code map. */
 static int
-cmap_put_code_map(const gs_memory_t *mem,
+cmap_put_code_map(gs_memory_t *mem,
                   stream *s, int which, const gs_cmap_t *pcmap,
                   const cmap_operators_t *pcmo,
                   psf_put_name_chars_proc_t put_name_chars,
@@ -109,7 +109,7 @@ cmap_put_code_map(const gs_memory_t *mem,
     int code;
 
     for (gs_cmap_lookups_enum_init(pcmap, which, &lenum);
-         (code = gs_cmap_enum_next_lookup(&lenum)) == 0; ) {
+         (code = gs_cmap_enum_next_lookup(mem, &lenum)) == 0; ) {
         gs_cmap_lookups_enum_t counter;
         int num_entries = 0;
         int gi;
@@ -175,21 +175,35 @@ cmap_put_code_map(const gs_memory_t *mem,
                     int code = pcmap->glyph_name(mem, (gs_glyph)value, &str,
                                                  pcmap->glyph_name_data);
 
-                    if (code < 0)
+                    if (code < 0) {
+                        if (lenum.entry.value.data && lenum.entry.value.data != lenum.temp_value) {
+                            gs_free_object(mem, (void *)lenum.entry.value.data, "working ToUnicode buffer");
+                        }
                         return code;
+                    }
                     stream_putc(s, '/');
                     code = put_name_chars(s, str.data, str.size);
-                    if (code < 0)
+                    if (code < 0) {
+                        if (lenum.entry.value.data && lenum.entry.value.data != lenum.temp_value) {
+                            gs_free_object(mem, (void *)lenum.entry.value.data, "working ToUnicode buffer");
+                        }
                         return code;
+                    }
                 }
                     break;
                 default:	/* not possible */
+                    if (lenum.entry.value.data && lenum.entry.value.data != lenum.temp_value) {
+                        gs_free_object(mem, (void *)lenum.entry.value.data, "working ToUnicode buffer");
+                    }
                     return_error(gs_error_unregistered);
                 }
                 stream_putc(s, '\n');
             }
             stream_puts(s, end);
         }
+    }
+    if (lenum.entry.value.data && lenum.entry.value.data != lenum.temp_value) {
+        gs_free_object(mem, (void *)lenum.entry.value.data, "working ToUnicode buffer");
     }
     return code;
 }
@@ -198,7 +212,7 @@ cmap_put_code_map(const gs_memory_t *mem,
 
 /* Write a CMap in its standard (source) format. */
 int
-psf_write_cmap(const gs_memory_t *mem,
+psf_write_cmap(gs_memory_t *mem,
                stream *s, const gs_cmap_t *pcmap,
                psf_put_name_chars_proc_t put_name_chars,
                const gs_const_string *alt_cmap_name, int font_index_only)

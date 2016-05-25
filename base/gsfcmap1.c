@@ -496,6 +496,7 @@ adobe1_next_lookup(gs_cmap_lookups_enum_t *penum, const gx_code_map_t *pcm)
 {
     const gx_cmap_lookup_range_t *lookup = &pcm->lookup[penum->index[0]];
 
+    penum->entry.value.data = 0L;
     if (penum->index[0] >= pcm->num_lookup)
         return 1;
     penum->entry.key_size = lookup->key_prefix_size + lookup->key_size;
@@ -508,13 +509,13 @@ adobe1_next_lookup(gs_cmap_lookups_enum_t *penum, const gx_code_map_t *pcm)
     return 0;
 }
 static int
-adobe1_next_lookup_def(gs_cmap_lookups_enum_t *penum)
+adobe1_next_lookup_def(gs_memory_t *mem, gs_cmap_lookups_enum_t *penum)
 {
     return adobe1_next_lookup(penum,
                         &((const gs_cmap_adobe1_t *)penum->cmap)->def);
 }
 static int
-adobe1_next_lookup_notdef(gs_cmap_lookups_enum_t *penum)
+adobe1_next_lookup_notdef(gs_memory_t *mem, gs_cmap_lookups_enum_t *penum)
 {
     return adobe1_next_lookup(penum,
                         &((const gs_cmap_adobe1_t *)penum->cmap)->notdef);

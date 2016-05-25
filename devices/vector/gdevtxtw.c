@@ -1669,22 +1669,20 @@ txt_shift_text_currentpoint(textw_text_enum_t *penum, gs_point *wpt)
 /* Try to convert glyph names/character codes to Unicode. We first try to see
  * if we have any Unicode information either from a ToUnicode CMap or GlyphNames2Unicode
  * table. If that fails we look at the glyph name to see if it starts 'uni'
- * in which case we assume hte remainder of the name is the Unicode value. If
- * that fails we currently just return the character code. We could go further
- * and see if the glyph name is one we recognise (eg /A etc) and convert that.
- * For CIDFonts we might be able to look at the Regiostry and Ordering and
- * perhaps convert the CID into Unicode frmo that information. These are
- * future enhancements for now.
+ * in which case we assume the remainder of the name is the Unicode value. If
+ * its not a glyph of that form then we search a bunch of tables whcih map standard
+ * glyph names to Unicode code points. If that fails we finally just return the character code.
  */
-static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short *Buffer)
+static int get_unicode(textw_text_enum_t *penum, gs_font *font, gs_glyph glyph, gs_char ch, unsigned short *Buffer)
 {
-    gs_char unicode;
     int code;
     gs_const_string gnstr;
     unsigned short fallback = ch;
+    ushort *unicode = NULL;
+    int length;
 
-    unicode = font->procs.decode_glyph((gs_font *)font, glyph, ch);
-    if (unicode == GS_NO_CHAR) {
+    length = font->procs.decode_glyph((gs_font *)font, glyph, ch, NULL, 0);
+    if (length == 0) {
         code = font->procs.glyph_name(font, glyph, &gnstr);
         if (code >= 0 && gnstr.size == 7) {
             if (!memcmp(gnstr.data, "uni", 3)) {
@@ -1694,12 +1692,14 @@ static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short
                 char *d2 = strchr(hexdigits, gnstr.data[5]);
                 char *d3 = strchr(hexdigits, gnstr.data[6]);
 
-                if (d0 != NULL && d1 != NULL && d2 != NULL && d3 != NULL)
-                    unicode = ((d0 - hexdigits) << 12) + ((d1 - hexdigits) << 8) +
-                      ((d2 - hexdigits) << 4 ) +  (d3 - hexdigits);
+                if (d0 != NULL && d1 != NULL && d2 != NULL && d3 != NULL) {
+                    *Buffer++ = ((d0 - hexdigits) << 8) + ((d1 - hexdigits));
+                    *Buffer++ = ((d2 - hexdigits) << 8) + ((d3 - hexdigits));
+                    return 2;
+                }
             }
         }
-        if (unicode == GS_NO_CHAR) {
+        if (length == 0) {
             single_glyph_list_t *sentry = (single_glyph_list_t *)&SingleGlyphList;
             double_glyph_list_t *dentry = (double_glyph_list_t *)&DoubleGlyphList;
             treble_glyph_list_t *tentry = (treble_glyph_list_t *)&TrebleGlyphList;
@@ -1777,13 +1777,15 @@ static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short
                 qentry++;
             }
         }
-        if (unicode == GS_NO_CHAR) {
-            *Buffer = fallback;
-            return 1;
-        }
+        *Buffer = fallback;
+        return 1;
+    } else {
+        unicode = (ushort *)gs_alloc_bytes(penum->dev->memory, length * sizeof(ushort), "temporary Unicode array");
+        length = font->procs.decode_glyph((gs_font *)font, glyph, ch, unicode, length);
+        memcpy(Buffer, unicode, length * sizeof(short));
+        gs_free(penum->dev->memory, unicode, length, sizeof(ushort), "free temporary unicode buffer");
+        return length * sizeof(short);
     }
-    *Buffer = (unsigned short)unicode;
-    return 1;
 }
 
 /* Routines to enumerate each glyph/character code in turn, find its width
@@ -1862,7 +1864,7 @@ txtwrite_process_cmap_text(gs_text_enum_t *pte)
                 pte->returned.total_width.x += dpt.x;
                 pte->returned.total_width.y += dpt.y;
 
-                penum->TextBufferIndex += get_unicode((gs_font *)pte->orig_font, glyph, chr, &penum->TextBuffer[penum->TextBufferIndex]);
+                penum->TextBufferIndex += get_unicode(penum, (gs_font *)pte->orig_font, glyph, chr, &penum->TextBuffer[penum->TextBufferIndex]);
                 penum->Widths[pte->index - 1] += dpt.x;
                 break;
             case 2:		/* end of string */
@@ -1942,7 +1944,7 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
         pte->returned.total_width.x += dpt.x;
         pte->returned.total_width.y += dpt.y;
 
-        penum->TextBufferIndex += get_unicode((gs_font *)pte->orig_font, glyph, ch, &penum->TextBuffer[penum->TextBufferIndex]);
+        penum->TextBufferIndex += get_unicode(penum, (gs_font *)pte->orig_font, glyph, ch, &penum->TextBuffer[penum->TextBufferIndex]);
         penum->Widths[pte->index - 1] += dpt.x;
     }
     return 0;

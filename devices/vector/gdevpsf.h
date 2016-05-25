@@ -223,7 +223,7 @@ int psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 typedef struct gs_cmap_s gs_cmap_t;
 #endif
 typedef int (*psf_put_name_chars_proc_t)(stream *, const byte *, uint);
-int psf_write_cmap(const gs_memory_t *mem, stream *s, const gs_cmap_t *pcmap,
+int psf_write_cmap(gs_memory_t *mem, stream *s, const gs_cmap_t *pcmap,
                    psf_put_name_chars_proc_t put_name_chars,
                    const gs_const_string *alt_cmap_name, int font_index_only);
 /* ------ Exported by gdevpsft.c ------ */

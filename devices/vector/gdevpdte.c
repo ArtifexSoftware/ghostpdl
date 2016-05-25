@@ -42,6 +42,8 @@
 #include "gximage.h"
 #include "gxcpath.h"
 
+#include "gsfcmap.h"
+
 static int pdf_char_widths(gx_device_pdf *const pdev,
                             pdf_font_resource_t *pdfont, int ch,
                             gs_font_base *font,
@@ -85,12 +87,13 @@ int
 pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfont,
                   gs_glyph glyph, gs_char ch, const gs_const_string *gnstr)
 {   int code;
-    gs_char unicode;
+    gs_char length;
+    ushort *unicode = 0;
 
     if (glyph == GS_NO_GLYPH)
         return 0;
-    unicode = font->procs.decode_glyph((gs_font *)font, glyph, ch);
-    if (unicode == GS_NO_CHAR && gnstr != NULL && gnstr->size == 7) {
+    length = font->procs.decode_glyph((gs_font *)font, glyph, ch, NULL, 0);
+    if ((length == 0 || length == GS_NO_CHAR) && gnstr != NULL && gnstr->size == 7) {
         if (!memcmp(gnstr->data, "uni", 3)) {
             static const char *hexdigits = "0123456789ABCDEF";
             char *d0 = strchr(hexdigits, gnstr->data[3]);
@@ -98,12 +101,16 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
             char *d2 = strchr(hexdigits, gnstr->data[5]);
             char *d3 = strchr(hexdigits, gnstr->data[6]);
 
-            if (d0 != NULL && d1 != NULL && d2 != NULL && d3 != NULL)
-                unicode = ((d0 - hexdigits) << 12) + ((d1 - hexdigits) << 8) +
-                          ((d2 - hexdigits) << 4 ) +  (d3 - hexdigits);
+            unicode = (ushort *)gs_alloc_bytes(pdev->memory, 2 * sizeof(ushort), "temporary Unicode array");
+            if (d0 != NULL && d1 != NULL && d2 != NULL && d3 != NULL) {
+                unicode[0] = ((d0 - hexdigits) << 8) + ((d1 - hexdigits));
+                unicode[1] = ((d2 - hexdigits) << 8) + ((d3 - hexdigits));
+                length = 2;
+            }
         }
     }
-    if (unicode != GS_NO_CHAR) {
+
+    if (length != 0 && length != GS_NO_CHAR) {
         if (pdfont->cmap_ToUnicode == NULL) {
             /* ToUnicode CMaps are always encoded with two byte keys. See
              * Technical Note 5411, 'ToUnicode Mapping File Tutorial'
@@ -131,14 +138,29 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
                    code count. */
                 num_codes = 65536;
             }
-            code = gs_cmap_ToUnicode_alloc(pdev->pdf_memory, pdfont->rid, num_codes, key_size,
+            code = gs_cmap_ToUnicode_alloc(pdev->pdf_memory, pdfont->rid, num_codes, key_size, length,
                                             &pdfont->cmap_ToUnicode);
-            if (code < 0)
+            if (code < 0) {
+                if (unicode)
+                    gs_free_object(pdev->memory, unicode, "temporary Unicode array");
                 return code;
+            }
+        } else {
+            if (((gs_cmap_ToUnicode_t *)pdfont->cmap_ToUnicode)->value_size < length){
+                gs_cmap_ToUnicode_realloc(pdev->pdf_memory, length, &pdfont->cmap_ToUnicode);
+            }
         }
+
+        if (!unicode) {
+            unicode = (ushort *)gs_alloc_bytes(pdev->memory, length, "temporary Unicode array");
+            length = font->procs.decode_glyph((gs_font *)font, glyph, ch, unicode, length);
+        }
+
         if (pdfont->cmap_ToUnicode != NULL)
-            gs_cmap_ToUnicode_add_pair(pdfont->cmap_ToUnicode, ch, unicode);
+            gs_cmap_ToUnicode_add_pair(pdfont->cmap_ToUnicode, ch, unicode, length);
     }
+    if (unicode)
+        gs_free_object(pdev->memory, unicode, "temporary Unicode array");
     return 0;
 }
 

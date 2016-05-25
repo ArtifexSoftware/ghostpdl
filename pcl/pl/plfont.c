@@ -459,12 +459,15 @@ pl_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
 }
 
 /* Get the unicode valude for a glyph */
-static gs_char
-pl_decode_glyph(gs_font * font, gs_glyph glyph, int ch)
+static int
+pl_decode_glyph(gs_font * font, gs_glyph glyph, int ch, ushort *unicode_return, unsigned int length)
 {
     pl_font_t *plfont = (pl_font_t *) font->client_data;
 
-    return plfont->last_char;
+    if (length == 0)
+        return 1;
+    *unicode_return = plfont->last_char;
+    return 1;
 }
 
 /* ---------------- Width cache ---------------- */
