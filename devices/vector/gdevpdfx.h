@@ -1439,7 +1439,6 @@ void pdf_text_state_copy(pdf_text_state_t *pts_to, pdf_text_state_t *pts_from);
 void pdf_reset_text_page(pdf_text_data_t *ptd);
 void pdf_reset_text_state(pdf_text_data_t *ptd);
 void pdf_close_text_page(gx_device_pdf *pdev);
-int  pdf_get_stoted_text_size(pdf_text_state_t *state);
 
 /* For gdevpdfb.c */
 

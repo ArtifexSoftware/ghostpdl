@@ -391,12 +391,6 @@ pdf_from_stream_to_text(gx_device_pdf *pdev)
     return 0;
 }
 
-int
-pdf_get_stoted_text_size(pdf_text_state_t *state)
-{
-    return state->buffer.count_chars;
-}
-
 /*
  *  Flush text from buffer.
  */
