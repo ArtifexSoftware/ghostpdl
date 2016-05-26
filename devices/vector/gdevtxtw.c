@@ -1780,10 +1780,10 @@ static int get_unicode(textw_text_enum_t *penum, gs_font *font, gs_glyph glyph, 
         *Buffer = fallback;
         return 1;
     } else {
-        unicode = (ushort *)gs_alloc_bytes(penum->dev->memory, length * sizeof(ushort), "temporary Unicode array");
+        unicode = (ushort *)gs_alloc_bytes(penum->dev->memory, length, "temporary Unicode array");
         length = font->procs.decode_glyph((gs_font *)font, glyph, ch, unicode, length);
-        memcpy(Buffer, unicode, length * sizeof(short));
-        gs_free(penum->dev->memory, unicode, length, sizeof(ushort), "free temporary unicode buffer");
+        memcpy(Buffer, unicode, length);
+        gs_free_object(penum->dev->memory, unicode, "free temporary unicode buffer");
         return length * sizeof(short);
     }
 }
