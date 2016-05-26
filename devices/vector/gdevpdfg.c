@@ -2750,13 +2750,41 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
     }
     if (pdev->CompatibilityLevel >= 1.3 && pdev->sbstack_depth == bottom) {
         if (pdev->overprint_mode != pdev->params.OPM) {
-            code = pdf_open_gstate(pdev, ppres);
-            if (code < 0)
-                return code;
-            code = cos_dict_put_c_key_int(resource_dict(*ppres), "/OPM", pdev->params.OPM);
-            if (code < 0)
-                return code;
-            pdev->overprint_mode = pdev->params.OPM;
+            if (pdev->params.OPM == 1 && pdev->PDFA == 2) {
+                switch (pdev->PDFACompatibilityPolicy) {
+                    case 0:
+                        emprintf(pdev->memory,
+                             "Setting Overprint Mode to 1\n not permitted in PDF/A-2, reverting to normal PDF output\n");
+                        pdev->AbortPDFAX = true;
+                        pdev->PDFA = 0;
+                        break;
+                    case 1:
+                        emprintf(pdev->memory,
+                             "Setting Overprint Mode to 1\n not permitted in PDF/A-2, overprint mode not set\n\n");
+                        pdev->params.OPM = 0;
+                        break;
+                    case 2:
+                        emprintf(pdev->memory,
+                             "Setting Overprint Mode to 1\n not permitted in PDF/A-2, aborting conversion\n");
+                        return_error(gs_error_undefined);
+                        break;
+                    default:
+                        emprintf(pdev->memory,
+                             "Setting Overprint Mode to 1\n not permitted in PDF/A-2, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                        pdev->AbortPDFAX = true;
+                        pdev->PDFA = 0;
+                        break;
+                }
+            }
+            if (pdev->overprint_mode != pdev->params.OPM) {
+                code = pdf_open_gstate(pdev, ppres);
+                if (code < 0)
+                    return code;
+                code = cos_dict_put_c_key_int(resource_dict(*ppres), "/OPM", pdev->params.OPM);
+                if (code < 0)
+                    return code;
+                pdev->overprint_mode = pdev->params.OPM;
+            }
         }
         if (pdev->state.smoothness != pis->smoothness) {
             code = pdf_open_gstate(pdev, ppres);
