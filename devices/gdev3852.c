@@ -123,28 +123,15 @@ jetp3852_print_page(gx_device_printer *pdev, FILE *prn_stream)
                                 /* Skip blank lines if any */
                                 if ( num_blank_lines > 0 )
                                    {
-                                        if (lnum == 0)
-                                          { /* Skip down the page from the top */
-                                         /* set line spacing = 1/8 inch */
-                                        fputs("\0330",prn_stream);
-                                        /* Set vertical tab */
-                                        vtp = (num_blank_lines  / 8);
-                                                fprintf(prn_stream,"\033B%c\000",vtp);
-                                                /* Do vertical tab */
-                                        fputs("\013",prn_stream);
+                                        /* Do "dot skips" */
+                                        while(num_blank_lines > 255)
+                                          {
+                                          fputs("\033e\377",prn_stream);
+                                          num_blank_lines -= 255;
+                                          }
+                                        vtp = num_blank_lines;
+                                        fprintf(prn_stream,"\033e%c",vtp);
                                         num_blank_lines = 0;
-                                                }
-                                         else
-                                           { /* Do "dot skips" */
-                                                while(num_blank_lines > 255)
-                                                  {
-                                                  fputs("\033e\377",prn_stream);
-                                                  num_blank_lines -= 255;
-                                                  }
-                                                vtp = num_blank_lines;
-                                                fprintf(prn_stream,"\033e%c",vtp);
-                                                num_blank_lines = 0;
-                                         }
                                    }
 
                                 /* Transfer raster graphics in the order R, G, B. */
