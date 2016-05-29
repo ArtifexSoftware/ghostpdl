@@ -309,6 +309,13 @@ psf_get_outline_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_base *pfont,
         }
     }
 
+    /* Currently its impossible to hit this code (subset_glyphs is always NULL) and if
+     * we ever did, there's a problem with countof(pglyphs->subset_data), the count
+     * will always be incorrect it seems. Since we never use the code we could just
+     * leave it in place, but Coverity complains. We could remove it, but it might
+     * actually be useful one day (if fixed) so for now, ifdef it out.
+     */
+#if 0
     if (subset_glyphs) {
         /*
          * For subset fonts, we must ensure that characters referenced
@@ -345,6 +352,7 @@ psf_get_outline_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_base *pfont,
         subset_glyphs[subset_size++] = notdef;
         subset_size = psf_sort_glyphs(subset_glyphs, subset_size);
     }
+#endif
 
     pglyphs->notdef = notdef;
     pglyphs->subset_glyphs = subset_glyphs;
