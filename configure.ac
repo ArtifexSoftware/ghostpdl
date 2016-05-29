@@ -165,7 +165,7 @@ INSTALL_CONTRIB="install-contrib-extras"
 
 if test x"$enable_contrib" = x; then
   if test x"$cross_compiling" = x"yes"; then
-    enable_contrib=no
+#    enable_contrib=no
   else
     case `uname` in
       MINGW*|MSYS*)
@@ -276,14 +276,17 @@ AC_ARG_WITH([arch_h], AC_HELP_STRING([--with-arch_h=<arch.h to use>],
 ARCH_CONF_HEADER=
 
 if test x"$with_arch_h" = x""; then
-  case `uname` in
-        Darwin*)
-          ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/osx-x86-x86_64-ppc-gcc.h"
-        ;;
-        *)
-          ARCH_CONF_HEADER=
-        ;;
-  esac
+  if test x"$cross_compiling" = x"yes"; then
+  else
+    case `uname` in
+          Darwin*)
+            ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/osx-x86-x86_64-ppc-gcc.h"
+          ;;
+          *)
+            ARCH_CONF_HEADER=
+          ;;
+    esac
+  fi
 else
   ARCH_CONF_HEADER=$with_arch_h
 fi
@@ -587,46 +590,39 @@ AC_ARG_ENABLE([threading], AC_HELP_STRING([--disable-threading],
 # if you haven't got pread/pwrite, we can't use multithreading
 if test "x$HAVE_PREAD_PWRITE" != "x"; then
   if test "$enable_threading" != "no"; then
-    case `uname` in
-      MINGW*|MSYS*)
-        AC_MSG_WARN([disabling support for pthreads......])
-      ;;
-      *)
-        AC_CHECK_LIB(pthread, pthread_create, [
-          SYNC=posync;
-          PTHREAD_LIBS="-lpthread"
-        ])
-        AC_MSG_CHECKING([recursive mutexes.......])
-        AC_TRY_COMPILE([#include <pthread.h>],
-             [
-                static int k = PTHREAD_MUTEX_RECURSIVE;
-                #ifndef pthread_mutexattr_settype
-                #ifdef __cplusplus
-                  (void) pthread_mutexattr_settype;
-                #else
-                  (void) pthread_mutexattr_settype;
-                #endif
-                #endif
-                ;
-                return 0;
-              ],
-             [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE"],
-             [AC_TRY_COMPILE([#include <pthread.h>],
-                [
-                  static int k = PTHREAD_MUTEX_RECURSIVE_NP;
-                  #ifndef pthread_mutexattr_settype
-                  #ifdef __cplusplus
-                    (void) pthread_mutexattr_settype;
-                  #else
-                    (void) pthread_mutexattr_settype;
-                  #endif
-                  #endif
-                  ;
-                  return 0;
-                ],
-                [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE_NP"])])
-      ;;
-    esac
+    AC_CHECK_LIB(pthread, pthread_create, [
+      SYNC=posync;
+      PTHREAD_LIBS="-lpthread"
+    ])
+    AC_MSG_CHECKING([recursive mutexes.......])
+    AC_TRY_COMPILE([#include <pthread.h>],
+         [
+            static int k = PTHREAD_MUTEX_RECURSIVE;
+            #ifndef pthread_mutexattr_settype
+            #ifdef __cplusplus
+              (void) pthread_mutexattr_settype;
+            #else
+              (void) pthread_mutexattr_settype;
+            #endif
+            #endif
+            ;
+            return 0;
+          ],
+         [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE"],
+         [AC_TRY_COMPILE([#include <pthread.h>],
+            [
+              static int k = PTHREAD_MUTEX_RECURSIVE_NP;
+              #ifndef pthread_mutexattr_settype
+              #ifdef __cplusplus
+                (void) pthread_mutexattr_settype;
+              #else
+                (void) pthread_mutexattr_settype;
+              #endif
+              #endif
+              ;
+              return 0;
+            ],
+            [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE_NP"])])
   fi
 fi
 
@@ -1301,15 +1297,13 @@ if ( test -d $srcdir/cups ); then
                 fi
             fi
         else
-            if test "$(uname)" = "Linux" && test x"$cross_compiling != x"yes" ; then
-                AC_MSG_WARN([* USING LOCAL CUPS SOURCE *])
-                SHARELCUPS=0
-                SHARELCUPSI=0
-                LCUPSBUILDTYPE=linux
-                LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
-                LCUPSIINCLUDE="include \$(GLSRCDIR)/lcupsi.mak"
-                CUPSDEV="cups pwgraster"
-            fi
+            AC_MSG_WARN([USING LOCAL CUPS SOURCE])
+            SHARELCUPS=0
+            SHARELCUPSI=0
+            LCUPSBUILDTYPE=linux
+            LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
+            LCUPSIINCLUDE="include \$(GLSRCDIR)/lcupsi.mak"
+            CUPSDEV="cups pwgraster"
         fi
     fi
 fi
@@ -2164,109 +2158,122 @@ SO_LIB_EXT=".so"
 DLL_EXT=""
 SO_LIB_VERSION_SEPARATOR="."
 
-case `uname` in
-        Linux*|GNU*)
-          DYNAMIC_CFLAGS="-fPIC"
-          GS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
-          PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
-          XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
-          if test $ac_cv_prog_gcc = yes; then
-            # GCC high level flag
-            DYNAMIC_LIBS="-rdynamic"
-          else
-            DYNAMIC_LIBS=""
-          fi
-          SO_LIB_EXT=".so"
-        ;;
-        MINGW*|MSYS*)
-          DYNAMIC_CFLAGS=""
-          GS_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(GS_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
-          PCL_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(PCL_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
-          XPS_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(XPS_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
-          SO_LIB_EXT=""
-          DLL_EXT=".dll"
-          SO_LIB_VERSION_SEPARATOR="-"
-        ;;
-        *BSD)
-          DYNAMIC_CFLAGS="-fPIC"
-          GS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
-          PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
-          XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
-          DYNAMIC_LIBS=""
-          SO_LIB_EXT=".so"
-        ;;
-        Darwin*)
-          GS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GS_SONAME_MAJOR_MINOR)"
-          PCL_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(PCL_SONAME_MAJOR_MINOR)"
-          XPS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(XPS_SONAME_MAJOR_MINOR)"
-          DYNAMIC_LIBS=""
-          SO_LIB_EXT=".dylib"
-        ;;
-        SunOS)
-          if test $ac_cv_prog_gcc = yes; then
-            DYNAMIC_CFLAGS="-fPIC"
-          else
-            DYNAMIC_CFLAGS="-KPIC"
-          fi
-
-          GS_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
-          PCL_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
-          XPS_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
-          DYNAMIC_LIBS=""
-          SO_LIB_EXT=".so"
-        ;;
-        AIX)
-          DYNAMIC_CFLAGS="-fPIC"
-          GCFLAGS="-Wl,-brtl -D_LARGE_FILES $GCFLAGS"
-          GS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
-          PCL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
-          XPS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
-          SO_LIB_EXT=".so"
-        ;;
-esac
+if test x"$cross_compiling" = x"yes"; then
+  DYNAMIC_CFLAGS="-fPIC"
+  GS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
+  PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
+  XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
+  if test $ac_cv_prog_gcc = yes; then
+    # GCC high level flag
+    DYNAMIC_LIBS="-rdynamic"
+  else
+    DYNAMIC_LIBS=""
+  fi
+  SO_LIB_EXT=".so"
+else
+  case `uname` in
+    Linux*|GNU*)
+      DYNAMIC_CFLAGS="-fPIC"
+      GS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
+      PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
+      XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
+      if test $ac_cv_prog_gcc = yes; then
+        # GCC high level flag
+        DYNAMIC_LIBS="-rdynamic"
+      else
+        DYNAMIC_LIBS=""
+      fi
+      SO_LIB_EXT=".so"
+    ;;
+    MINGW*|MSYS*)
+      DYNAMIC_CFLAGS=""
+      GS_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(GS_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
+      PCL_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(PCL_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
+      XPS_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(XPS_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
+      SO_LIB_EXT=""
+      DLL_EXT=".dll"
+      SO_LIB_VERSION_SEPARATOR="-"
+    ;;
+    *BSD)
+      DYNAMIC_CFLAGS="-fPIC"
+      GS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
+      PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
+      XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
+      DYNAMIC_LIBS=""
+      SO_LIB_EXT=".so"
+    ;;
+    Darwin*)
+      GS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GS_SONAME_MAJOR_MINOR)"
+      PCL_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(PCL_SONAME_MAJOR_MINOR)"
+      XPS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(XPS_SONAME_MAJOR_MINOR)"
+      DYNAMIC_LIBS=""
+      SO_LIB_EXT=".dylib"
+    ;;
+    SunOS)
+      if test $ac_cv_prog_gcc = yes; then
+        DYNAMIC_CFLAGS="-fPIC"
+      else
+        DYNAMIC_CFLAGS="-KPIC"
+      fi
+      GS_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
+      PCL_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
+      XPS_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
+      DYNAMIC_LIBS=""
+      SO_LIB_EXT=".so"
+      ;;
+    AIX)
+      DYNAMIC_CFLAGS="-fPIC"
+      GCFLAGS="-Wl,-brtl -D_LARGE_FILES $GCFLAGS"
+      GS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+      PCL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+      XPS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+      SO_LIB_EXT=".so"
+      ;;
+  esac
+fi
 
 AC_ARG_ENABLE([dynamic], AC_HELP_STRING([--enable-dynamic],
     [Enable dynamically loaded drivers]),
 [
-        if test "x$enable_dynamic" != xno; then
-                case `uname` in
-                        Linux*|GNU*)
-                        INSTALL_SHARED="install-shared"
-                        if test "x$X_DEVS" != x; then
-                                DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
-                        else
-                                DYNAMIC_DEVS=""
-                        fi
-                        DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-                        X11_DEVS=""
-                        OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
-                        DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
-                        ;;
-                        *BSD)
-                        DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
-                        DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-                        X11_DEVS=""
-                        OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
-                        DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
-                        ;;
-                        Darwin*)
-                        INSTALL_SHARED="install-shared"
-                        DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-                        X11_DEVS=""
-                        OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
-                        DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
-                        ;;
-                        SunOS)
-                        DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
-                        DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-                        OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
-                        DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
-                        ;;
-                        *)
-                        AC_MSG_ERROR([Sorry, dynamic driver support not available on this platform!])
-                        ;;
-                esac
-        fi
+  if test "x$enable_dynamic" != xno; then
+    case `uname` in
+      Linux*|GNU*)
+      INSTALL_SHARED="install-shared"
+      if test "x$X_DEVS" != x; then
+              DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
+      else
+              DYNAMIC_DEVS=""
+      fi
+      DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+      X11_DEVS=""
+      OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+      DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
+      ;;
+      *BSD)
+      DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
+      DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+      X11_DEVS=""
+      OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+      DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
+      ;;
+      Darwin*)
+      INSTALL_SHARED="install-shared"
+      DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+      X11_DEVS=""
+      OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+      DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
+      ;;
+      SunOS)
+      DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
+      DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+      OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+      DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
+      ;;
+      *)
+      AC_MSG_ERROR([Sorry, dynamic driver support not available on this platform!])
+      ;;
+    esac
+  fi
 ])
 
 AC_SUBST(DYNAMIC_CFLAGS)
@@ -2563,7 +2570,9 @@ AUXDIRPOSTFIX=""
 case `uname` in
     MINGW*|MSYS*)
     AUXDIRPOSTFIX="_"
-    CFLAGS="-DGS_NO_UTF8=1 $CFLAGS"
+    if test x"$cross_compiling" != x"yes"; then
+      CFLAGS="-DGS_NO_UTF8=1 $CFLAGS"
+    fi
     ;;
 esac
 AC_SUBST(AUXDIRPOSTFIX)
@@ -2580,11 +2589,13 @@ AC_ARG_WITH([exe-ext],  AC_HELP_STRING([--with-exe-ext=EXT],
 if test "x"$with_exe_ext != "x"; then
   EXEEXT="$with_exe_ext"
 else
-  case `uname` in
-    MINGW*|MSYS*)
-      EXEEXT=".exe"
-    ;;
-  esac
+  if test x"$cross_compiling" != x"yes"; then
+    case `uname` in
+      MINGW*|MSYS*)
+        EXEEXT=".exe"
+      ;;
+    esac
+  fi
 fi
 
 AC_SUBST(EXEEXT)
