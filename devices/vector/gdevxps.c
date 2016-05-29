@@ -700,7 +700,7 @@ static int
 zip_close_archive_file(gx_device_xps *xps_dev, const char *filename)
 {
     gx_device_xps_zinfo_t *info = zip_look_up_file_info(xps_dev, filename);
-    gx_device_xps_zdata_t data = info->data;
+    gx_device_xps_zdata_t data;
     byte buf[4];
     unsigned long crc = 0;
     int count = 0;
@@ -715,6 +715,7 @@ zip_close_archive_file(gx_device_xps *xps_dev, const char *filename)
     if (info->saved)
         return 0;
 
+    data = info->data;
     if ((int)data.count >= 0) {
         FILE *fp = data.fp;
         uint nread;
@@ -1825,7 +1826,8 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
         goto use_default;
 
     gs_matrix_invert(&pim->ImageMatrix, &mat);
-    gs_matrix_multiply(&mat, &ctm_only(pis), &mat);
+    if (pis)
+        gs_matrix_multiply(&mat, &ctm_only(pis), &mat);
 
     pie = gs_alloc_struct(mem, xps_image_enum_t, &st_xps_image_enum,
                           "xps_begin_image");
@@ -1894,8 +1896,10 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
     if (xps_find_icc(xdev, icc_profile) == NULL) {
         icc_data = (xps_icc_data_t*)gs_alloc_bytes(dev->memory->non_gc_memory,
             sizeof(xps_icc_data_t), "xps_begin_image");
-        if (icc_data == NULL)
+        if (icc_data == NULL) {
             gs_throw(gs_error_VMerror, "Allocation of icc_data failed");
+            return(gs_error_VMerror);
+        }
 
         icc_data->hash = gsicc_get_hash(icc_profile);
         if (xdev->icc_data == NULL) {
@@ -1939,6 +1943,8 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
         (*dev_proc(dev, get_clipping_box)) (dev, &bbox);
         gx_cpath_init_local(&cpath, dev->memory);
         code = gx_cpath_from_rectangle(&cpath, &bbox);
+        if (code < 0)
+            return gs_rethrow_code(code);
         pcpath = &cpath;
     } else {
         /* Force vector device to do new path as the clip path is the image
@@ -2015,14 +2021,8 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
 
     *pinfo = (gx_image_enum_common_t *)pie;
     return 0;
-use_default:
-    if (pie != NULL && pie->buffer != NULL)
-        gs_free_object(mem, pie->buffer, "xps_begin_image");
-    if (pie != NULL && pie->devc_buffer != NULL)
-        gs_free_object(mem, pie->devc_buffer, "xps_begin_image");
-    if (pie != NULL)
-        gs_free_object(mem, pie, "xps_begin_image");
 
+use_default:
     return gx_default_begin_image(dev, pis, pim, format, prect,
         pdcolor, pcpath, mem, pinfo);
 }
