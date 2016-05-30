@@ -1316,8 +1316,6 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
 	    out[3] = frac_1;
 	  else if (c3 == frac_1)
 	    out[3] = 0;
-	  else
-	    out[3] = frac_1;
 	}
         break;
 
@@ -3194,14 +3192,6 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       cups->user_icc = param_read_string(plist, "OutputICCProfile", &icc_pro_dummy) == 0;
   }
 
-  /* We set the old dimensions to 1 if we have a color depth change, so
-     that memory reallocation gets forced. This is perhaps not the correct
-     approach to prevent crashes like in bug 690435. We keep it for the
-     time being until we decide finally */
-  if (color_set) {
-    width_old = 1;
-    height_old = 1;
-  }
   /* We also recompute page size and margins if we simply get onto a new
      page without necessarily having a page size change in the PostScript
      code, as for some printers margins have to be flipped on the back sides of
