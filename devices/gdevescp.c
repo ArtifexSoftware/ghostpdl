@@ -119,7 +119,6 @@ escp2_print_page(gx_device_printer *pdev, FILE *prn_stream)
         byte *out = buf2;
 
         int skip, lnum, top, bottom, left, width;
-        int auto_feed = 1;
         int count, i;
 
         /*
@@ -187,14 +186,12 @@ escp2_print_page(gx_device_printer *pdev, FILE *prn_stream)
         ** to skip past the top margin.
         */
 
-        if( auto_feed ) {
-           top = (int)(dev_t_margin(pdev) * pdev->y_pixels_per_inch);
-           bottom = (int)(pdev->height -
-                        dev_b_margin(pdev) * pdev->y_pixels_per_inch);
-        } else {
-           top = 0;
-           bottom = pdev->height;
-        }
+        /* auto_feed was set to 1 and never altered, meaning the test here
+         * was irrelvant and led to dead code. Removed the code and 'auto_feed'.
+         */
+       top = (int)(dev_t_margin(pdev) * pdev->y_pixels_per_inch);
+       bottom = (int)(pdev->height -
+                    dev_b_margin(pdev) * pdev->y_pixels_per_inch);
 
         /*
         ** Make left margin and width sit on byte boundaries:
