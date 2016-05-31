@@ -165,7 +165,7 @@ INSTALL_CONTRIB="install-contrib-extras"
 
 if test x"$enable_contrib" = x; then
   if test x"$cross_compiling" = x"yes"; then
-#    enable_contrib=no
+    enable_contrib=
   else
     case `uname` in
       MINGW*|MSYS*)
@@ -277,6 +277,7 @@ ARCH_CONF_HEADER=
 
 if test x"$with_arch_h" = x""; then
   if test x"$cross_compiling" = x"yes"; then
+    ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/conf_arch.h"
   else
     case `uname` in
           Darwin*)
@@ -303,7 +304,7 @@ AC_SUBST(ARCH_CONF_HEADER)
 
 AC_MSG_CHECKING([supported compiler flags])
 old_cflags=$CFLAGS
-echo
+
 for flag in $optflags_to_try; do
     CFLAGS="$CFLAGS $flag"
     AC_TRY_COMPILE(, [return 0;], [
@@ -321,7 +322,7 @@ for flag in $cflags_to_try; do
         CFLAGS=$old_cflags
 done
 old_cflags=$CFLAGS
-echo
+
 for flag in $dbgflags_to_try; do
     CFLAGS="$CFLAGS $flag"
     AC_TRY_COMPILE(, [return 0;], [
@@ -499,18 +500,22 @@ if test x"$large_color_index" != "x0"; then
    AC_CHECK_SIZEOF(unsigned long long)
    if test $ac_cv_sizeof_unsigned_long_long = 8; then
           color_ind_type="unsigned long long"
+          color_ind_size=$ac_cv_sizeof_unsigned_long_long
    else
     AC_CHECK_SIZEOF(unsigned long int)
     if test $ac_cv_sizeof_unsigned_long_int = 8; then
           color_ind_type="unsigned long int"
+          color_ind_size=$ac_cv_sizeof_unsigned_long_int
     else
      AC_CHECK_SIZEOF(unsigned __int64)
      if test $ac_cv_sizeof_unsigned___int64 = 8; then
           color_ind_type="unsigned __int64"
+          color_ind_size=$ac_cv_sizeof_unsigned___int64
      else
       AC_CHECK_SIZEOF(u_int64_t)
       if test $ac_cv_sizeof_u_int64_t = 8; then
           color_ind_type="u_int64_t"
+          color_ind_size=$ac_cv_sizeof_u_int64_t
       fi
      fi
     fi
@@ -521,18 +526,22 @@ else
    AC_CHECK_SIZEOF(unsigned long int)
    if test $ac_cv_sizeof_unsigned_long_int = 4; then
           color_ind_type="unsigned long int"
+          color_ind_size=$ac_cv_sizeof_unsigned_long_int
    else
     AC_CHECK_SIZEOF(unsigned int)
     if test $ac_cv_sizeof_unsigned_int = 4; then
           color_ind_type="unsigned int"
+          color_ind_size=$ac_cv_sizeof_unsigned_int
     else
      AC_CHECK_SIZEOF(unsigned __int32)
      if test $ac_cv_sizeof_unsigned___int32 = 4; then
           color_ind_type="unsigned __int32"
+          color_in_size=$ac_cv_sizeof_unsigned___int32
      else
       AC_CHECK_SIZEOF(u_int32_t)
       if test $ac_cv_sizeof_u_int32_t = 4; then
           color_ind_type="u_int32_t"
+          color_ind_size=$ac_cv_sizeof_u_int32_t
       fi
      fi
     fi
@@ -543,7 +552,12 @@ dnl if a suitable type wasn't found above, we fall back to
 dnl a default in genarch.
 if test "$color_ind_type" != "none"; then
         GCFLAGS="$GCFLAGS -DGX_COLOR_INDEX_TYPE=\"$color_ind_type\""
+        ARCH_SIZEOF_GX_COLOR_INDEX=$color_ind_size
 fi
+
+AC_SUBST(ARCH_SIZEOF_GX_COLOR_INDEX)
+
+
 
 dnl --------------------------------------------------
 dnl Set options that we want to pass into all other
@@ -1175,7 +1189,6 @@ case "x$with_system_libtiff" in
 esac
 
 if test x"$SHARE_LIBTIFF" = x"0" ; then
-      echo
       echo "Running libtiff configure script..."
       olddir=`pwd`
       if ! test -d "$LIBTIFFCONFDIR" ; then
@@ -1280,7 +1293,6 @@ if ( test -d $srcdir/cups ); then
                 CUPSINCLUDE="include $srcdir/cups/cups.mak"
                 CUPSDEV="cups"
 
-                echo "\n\n\n $CUPSAPIVERSION \n\n\n"
                 # pwgraster support arrived in cups 1.5.x
                 if test "$CUPSAPIVERSION" ">" "1.4" ; then
                   CUPSDEV="$CUPSDEV pwgraster"
@@ -1476,7 +1488,6 @@ if test "x$JBIG2_DECODER" = x; then
             JBIG2_AUTOCONF_CFLAGS="$JBIG2_AUTOCONF_CFLAGS -DWORDS_BIGENDIAN"
         fi
 
-        echo
         AC_MSG_RESULT([$JBIG2DIR])
         echo "Continuing with Ghostscript configuration..."
     else
@@ -2600,6 +2611,123 @@ fi
 
 AC_SUBST(EXEEXT)
 
+
+if test x"$CCAUX" != x"$CC"; then
+
+  ilog2()
+  {
+    ILOG2_VAL=$1
+    ILOG2_RES=0
+    while test $ILOG2_VAL -gt 1 ; do
+      ILOG2_VAL=$((ILOG2_VAL + 1))
+      ILOG2_VAL=$((ILOG2_VAL >> 1))
+      ILOG2_RES=$((ILOG2_RES + 1))
+    done
+    return $ILOG2_RES
+  };
+
+# --------------------------------------------------
+# Generate arch.h headers
+# --------------------------------------------------
+  AC_CHECK_ALIGNOF([short])
+  AC_CHECK_ALIGNOF([int])
+  AC_CHECK_ALIGNOF([long])
+  AC_CHECK_ALIGNOF([void *])
+  AC_CHECK_ALIGNOF([float])
+  AC_CHECK_ALIGNOF([double])
+
+  AC_SUBST(ARCH_ALIGN_SHORT_MOD, $ac_cv_alignof_short)
+  AC_SUBST(ARCH_ALIGN_INT_MOD, $ac_cv_alignof_int)
+  AC_SUBST(ARCH_ALIGN_LONG_MOD, $ac_cv_alignof_long)
+  AC_SUBST(ARCH_ALIGN_PTR_MOD, $ac_cv_alignof_void_p)
+  AC_SUBST(ARCH_ALIGN_FLOAT_MOD, $ac_cv_alignof_float)
+  AC_SUBST(ARCH_ALIGN_DOUBLE_MOD, $ac_cv_alignof_double)
+
+  AC_CHECK_SIZEOF([char])
+  AC_CHECK_SIZEOF([short])
+  AC_CHECK_SIZEOF([int])
+  AC_CHECK_SIZEOF([long])
+  AC_CHECK_SIZEOF([long long])
+  AC_CHECK_SIZEOF([void *])
+  AC_CHECK_SIZEOF([float])
+  AC_CHECK_SIZEOF([double])
+
+  ilog2 $ac_cv_sizeof_char
+  AC_SUBST(ARCH_LOG2_SIZEOF_CHAR, $?)
+
+  ilog2 $ac_cv_sizeof_short
+  AC_SUBST(ARCH_LOG2_SIZEOF_SHORT, $?)
+
+  ilog2 $ac_cv_sizeof_int
+  AC_SUBST(ARCH_LOG2_SIZEOF_INT, $?)
+
+  ilog2 $ac_cv_sizeof_long
+  AC_SUBST(ARCH_LOG2_SIZEOF_LONG, $?)
+
+  ilog2 $ac_cv_sizeof_long_long
+  AC_SUBST(ARCH_LOG2_SIZEOF_LONG_LONG, $?)
+
+  AC_SUBST(ARCH_SIZEOF_PTR, $ac_cv_sizeof_void_p)
+  ilog2 $ac_cv_sizeof_void_p
+  AC_SUBST(ARCH_LOG2_SIZEOF_PTR, $?)
+
+  AC_SUBST(ARCH_SIZEOF_FLOAT, $ac_cv_sizeof_float)
+  ilog2 $ac_cv_sizeof_float
+  AC_SUBST(ARCH_LOG2_SIZEOF_FLOAT, $?)
+
+  AC_SUBST(ARCH_SIZEOF_DOUBLE, $ac_cv_sizeof_double)
+  ilog2 $ac_cv_sizeof_double
+  AC_SUBST(ARCH_LOG2_SIZEOF_DOUBLE, $?)
+
+  AC_SUBST(ARCH_IS_BIG_ENDIAN, $BIGENDIAN)
+
+  AC_MSG_CHECKING([if pointers are signed])
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([#include <stdint.h>], [
+      char b[[(char *)(uintptr_t)-1 < (char *)(uintptr_t)0 ? -1 : 0]];
+      return sizeof(b);
+    ])],
+    [ARCH_PTRS_ARE_SIGNED=0; AC_MSG_RESULT(no)], [ARCH_PTRS_ARE_SIGNED=1; AC_MSG_RESULT(yes)])
+  AC_SUBST(ARCH_PTRS_ARE_SIGNED)
+
+  AC_MSG_CHECKING([if dividing negative by positive truncates])
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([], [
+      char b[[-1 / 2 == 0 ? -1 : 0]];
+      return sizeof(b);
+    ])],
+    [ARCH_DIV_NEG_POS_TRUNCATES=0; AC_MSG_RESULT(no)], [ARCH_DIV_NEG_POS_TRUNCATES=1; AC_MSG_RESULT(yes)])
+  AC_SUBST(ARCH_DIV_NEG_POS_TRUNCATES)
+
+  AC_MSG_CHECKING([if arithmetic shift works properly])
+  ARCH_ARITH_RSHIFT=""
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([], [
+      char b[[(-1L >> 2) != -1 || (-1 >> 1) != -1 || (-1 >> 2) != -1 ? 0 : -1]];
+      return sizeof(b);
+    ])],
+    [ARCH_ARITH_RSHIFT=0; AC_MSG_RESULT(no)])
+
+  if test "x${ARCH_ARITH_RSHIFT}" = "x"; then
+    # Turbo C problem
+    AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM([], [
+        char b[[(-1L >> 2) != -1 ? 0 : -1]];
+        return sizeof(b);
+      ])],
+      [ARCH_ARITH_RSHIFT=1; AC_MSG_RESULT(no)])
+  fi
+
+  if test "x${ARCH_ARITH_RSHIFT}" = "x"; then
+    AC_MSG_RESULT(yes)
+    ARCH_ARITH_RSHIFT=2
+  fi
+  AC_SUBST(ARCH_ARITH_RSHIFT)
+
+  AC_SUBST(ARCH_SIZEOF_GX_COLOR_INDEX)
+  CONFIG_FILES_LIST="$CONFIG_FILES_LIST arch/conf_arch.h"
+fi
+
 dnl --------------------------------------------------
 dnl Do substitutions
 dnl --------------------------------------------------
@@ -2612,10 +2740,10 @@ AC_SUBST(CFLAGS_SANITIZE)
 AC_SUBST(STRIP_XE)
 AC_SUBST(JPX_SSE_CFLAGS)
 
-AC_OUTPUT($THEMAKEFILE)
+CONFIG_FILES_LIST="$CONFIG_FILES_LIST $THEMAKEFILE"
 
 if test x"$THEMAKEFILE" != x"$MAKEFILE" && test x"$CCAUX" = x"$CC"; then
-  AC_OUTPUT($AUXFLAGS_MAK)
+  CONFIG_FILES_LIST="$CONFIG_FILES_LIST $AUXFLAGS_MAK"
 fi
 
 if test "x$AFS" = "x1"; then
@@ -2627,3 +2755,7 @@ if test "x$NTS_EXCLUDES" != "x" ; then
    AC_MSG_WARN([Due to the --enable-threadsafe option, the following devices have been excluded because they are not threadsafe:])
    echo "$NTS_EXCLUDES"
 fi
+
+AC_CONFIG_FILES($CONFIG_FILES_LIST)
+
+AC_OUTPUT
