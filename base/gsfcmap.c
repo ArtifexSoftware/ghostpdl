@@ -491,7 +491,10 @@ gs_cmap_ToUnicode_next_entry(gs_cmap_lookups_enum_t *penum)
     if (i >= num_codes)
         return 1;
     c0 = map[i * (cmap->value_size + 2) + 2];
-    c1 = map[i * (cmap->value_size + 2) + 3];
+    if (cmap->value_size > 1)
+        c1 = map[i * (cmap->value_size + 2) + 3];
+    else
+        c1 = 0;
     for (j = i + 1, c2 = c1 + 1; j < num_codes; j++, c2++) {
         /* Due to PDF spec, *bfrange boundaries may differ
            in the last byte only. */
