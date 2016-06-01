@@ -366,6 +366,9 @@ stc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 #define OK4GO        ((flags &   STCOK4GO)              != 0)
 #define SORRY        ( flags &= ~STCOK4GO)
 
+   if (sd == NULL)
+        return gs_error_undefined;
+
    if(0 > (npass = stc_print_setup(sd))) return_error(npass);
 
    npass = sd->stc.escp_v / sd->stc.escp_u;
@@ -796,7 +799,7 @@ stc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 static bool
 stc_iswhite(stcolor_device *sd, int prt_pixels,byte *ext_data)
 {
-   long  b2do = (prt_pixels*sd->color_info.depth+7)>>3;
+   long  b2do = ((long)prt_pixels*sd->color_info.depth+7)>>3;
    int   bcmp = 4 * countof(sd->stc.white_run);
    byte *wht  = (byte *) sd->stc.white_run;
 
@@ -1983,7 +1986,7 @@ stc_expand(stcolor_device *sd,int i,gx_color_index col)
 {
 
    gx_color_index cv;
-   gx_color_index l = (1<<sd->stc.bits)-1;
+   gx_color_index l = ((gx_color_index)1<<sd->stc.bits)-1;
 
    if(sd->stc.code[i] != NULL) {
 
@@ -2825,7 +2828,7 @@ stc_put_params(gx_device *pdev, gs_param_list *plist)
                i = 8; /* arbitrary */
             }
 
-            if((i*sd->color_info.num_components) > (sizeof(stc_pixel)*8)) {
+            if((i * (unsigned long)sd->color_info.num_components) > (sizeof(stc_pixel)*8)) {
 
                sd->stc.bits         = (sizeof(stc_pixel)*8) /
                                        sd->color_info.num_components;
@@ -3552,7 +3555,7 @@ stc_hscmyk(stcolor_device *sdev,int npixel,byte *in,byte *buf,byte *out)
             v = kv;
             if(pixel == (CYAN|MAGENTA|YELLOW)) {
                pixel = BLACK;
-               v     = v > 511 ? v-1023 : -511;
+               v     = -511;
             }
             errv[3-(step<<2)] += ((3*v+8)>>4);        /* 3/16 */
             errv[3]            = ((5*v+errc[3]+8)>>4);/* 5/16 +1/16 (rest) */
