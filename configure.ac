@@ -38,6 +38,9 @@ OPARMS=$@
 THEMAKEFILE="${MAKEFILE:-Makefile}"
 AUXFLAGS_MAK=auxflags.mak
 
+ARCH_AUTOCONF_HEADER=arch-config/arch_autoconf.h
+ARCH_AUTOCONF_HEADER_PROTO=arch/arch_autoconf.h.in
+
 dnl --------------------------------------------------
 dnl List of non-threadsafe devices
 dnl defined at the top of the file for ease of access
@@ -277,7 +280,7 @@ ARCH_CONF_HEADER=
 
 if test x"$with_arch_h" = x""; then
   if test x"$cross_compiling" = x"yes"; then
-    ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/conf_arch.h"
+    ARCH_CONF_HEADER="\$(GLSRCDIR)/../$ARCH_AUTOCONF_HEADER"
   else
     case `uname` in
           Darwin*)
@@ -2725,7 +2728,7 @@ if test x"$CCAUX" != x"$CC"; then
   AC_SUBST(ARCH_ARITH_RSHIFT)
 
   AC_SUBST(ARCH_SIZEOF_GX_COLOR_INDEX)
-  CONFIG_FILES_LIST="$CONFIG_FILES_LIST arch/conf_arch.h"
+  CONFIG_FILES_LIST="$CONFIG_FILES_LIST $ARCH_AUTOCONF_HEADER:$ARCH_AUTOCONF_HEADER_PROTO"
 fi
 
 dnl --------------------------------------------------
