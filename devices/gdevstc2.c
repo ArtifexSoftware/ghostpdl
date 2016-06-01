@@ -147,8 +147,7 @@ stc_fs(stcolor_device *sdev,int npixel,byte *bin,byte *bbuf,byte *out)
 /*
  * check wether the number of components is valid
  */
-      if((sdev->color_info.num_components < 0)                         ||
-         (sdev->color_info.num_components >= countof(pixelconversion)) ||
+      if((sdev->color_info.num_components >= countof(pixelconversion)) ||
          (pixelconversion[sdev->color_info.num_components] == NULL)) return -1;
 
 /*
@@ -201,7 +200,10 @@ stc_fs(stcolor_device *sdev,int npixel,byte *bin,byte *bbuf,byte *out)
            if(buf[i+3] > rand_max) rand_max = buf[i+3];
         }
 
-        scale = (double) buf[1] / (double) rand_max;
+        if (rand_max != 0)
+            scale = (double) buf[1] / (double) rand_max;
+        else
+            scale = 1;
 
         for(i = 0; i < sdev->color_info.num_components; ++ i)
            buf[i+3] = (long)(0.25000*scale*(buf[i+3]-rand_max/2));
