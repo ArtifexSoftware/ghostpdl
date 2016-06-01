@@ -192,7 +192,10 @@ sgi_print_page(gx_device_printer *pdev, FILE *pstream)
        }
 
        lastval = 512+4*6*bdev->height; /* skip offset table */
-       fseek(pstream,lastval,0);
+       if (fseek(pstream,lastval,0) != 0) {
+           code = gs_note_error(gs_error_ioerror);
+           goto free_mem;
+       }
        for (separation=0; separation < 3; separation++)
          {
            cur.lnum = cur.dev->height-1;
