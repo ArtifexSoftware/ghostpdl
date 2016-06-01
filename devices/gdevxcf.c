@@ -924,7 +924,7 @@ xcf_put_params(gx_device * pdev, gs_param_list * plist)
         }
     }
     if (code < 0)
-        ecode = code;
+        return code;
 
     /*
      * Save the color_info in case gdev_prn_put_params fails, and for
