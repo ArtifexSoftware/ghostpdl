@@ -322,6 +322,7 @@ inferno_print_page(gx_device_printer *pdev, FILE *f)
                 gdev_prn_get_bits(pdev, y, buf, &p);
                 for(x=0; x<pdev->width; x++) {
                         us = (p[2*x]<<8) | p[2*x+1];
+
                         switch(ldepth) {
                         case 3:
                                 if(0){
@@ -335,6 +336,8 @@ inferno_print_page(gx_device_printer *pdev, FILE *f)
                                         p[x] = rgb2cmap(r,g,b);
                                 }
                                 if(1){
+                                        if (us < 0 || us >= p9color_size)
+                                            return_error(gs_error_rangecheck);
                                         u = bdev->p9color[us];
                                         /* the ulong in p9color is a 2x2 matrix.  pull the entry
                                          * u[x%2][y%2], more or less.
