@@ -61,7 +61,7 @@ cov_write_page(gx_device_printer *pdev, FILE *file)
         }
     }
 
-    if (pdev->width * height != total_pix)
+    if ((uint64_t)pdev->width * height != total_pix || total_pix == 0)
         code = 1;
 
     gs_free_object(pdev->memory, line, "ink coverage plugin buffer");
@@ -131,7 +131,7 @@ static int cov_write_page_ink(gx_device_printer *pdev, FILE *file)
         }
     }
 
-    if (pdev->width * height != total_pix)
+    if ((uint64_t)pdev->width * height != total_pix || total_pix == 0)
         code = 1;
 
     gs_free_object(pdev->memory, line, "ink coverage plugin buffer");
