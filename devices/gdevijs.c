@@ -685,8 +685,8 @@ gsijs_set_margin_params(gx_device_ijs *ijsdev)
     }
 
     if (code == 0) {
-        double printable_width, printable_height;
-        double printable_left, printable_top;
+        double printable_width = 0, printable_height = 0;
+        double printable_left = 0, printable_top = 0;
         float m[4];
 
         code = ijs_client_get_param(ijsdev->ctx, 0, "PrintableArea",
