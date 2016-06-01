@@ -179,6 +179,9 @@ sgi_print_page(gx_device_printer *pdev, FILE *pstream)
        long lastval;
        int rownumber;
 
+       if (code < 0)
+           return code;
+
        if (pdev->PageCount >= 1 && !pdev->file_is_new)
           return_error(gs_error_rangecheck);  /* support single page only, can't happen */
 
