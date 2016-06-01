@@ -522,17 +522,21 @@ gsijs_set_krgb_mode(gx_device_ijs *ijsdev)
 
     buf[0] = 0;
     code = ijs_client_enum_param(ijsdev->ctx, 0, "ColorSpace", buf, sizeof(buf)-1);
-    if (code >= 0)
+    if (code >= 0) {
+        if (code >= sizeof(buf))
+            return IJS_EBUF;
         buf[code] = 0;
-    if (strstr(buf, "KRGB") != NULL)
-    {
-        ijsdev->krgb_mode = 1;     /* yes KRGB is supported */
-        ijsdev->k_bits = 1;        /* KRGB = 1x8x8x8 */
-    }
-    else if (strstr(buf, "KxRGB") != NULL)
-    {
-        ijsdev->krgb_mode = 1;    /* yes KRGB is supported */
-        ijsdev->k_bits = 8;       /* KRGB = 8x8x8x8 */
+
+        if (strstr(buf, "KRGB") != NULL)
+        {
+            ijsdev->krgb_mode = 1;     /* yes KRGB is supported */
+            ijsdev->k_bits = 1;        /* KRGB = 1x8x8x8 */
+        }
+        else if (strstr(buf, "KxRGB") != NULL)
+        {
+            ijsdev->krgb_mode = 1;    /* yes KRGB is supported */
+            ijsdev->k_bits = 8;       /* KRGB = 8x8x8x8 */
+        }
     }
 
     return 0;
@@ -692,6 +696,8 @@ gsijs_set_margin_params(gx_device_ijs *ijsdev)
                That's ok. */
             return 0;
         else if (code >= 0) {
+            if (code >= sizeof(buf))
+                return IJS_EBUF;
             code = gsijs_parse_wxh (buf, code,
                                     &printable_width, &printable_height);
         }
@@ -756,6 +762,9 @@ gsijs_set_resolution(gx_device_ijs *ijsdev)
                                 buf, sizeof(buf));
     if (code >= 0) {
         int i;
+
+        if (code >= sizeof(buf))
+            return IJS_EBUF;
 
         for (i = 0; i < code; i++)
             if (buf[i] == 'x')
@@ -852,6 +861,7 @@ gsijs_open(gx_device *dev)
     if (ijsdev->ctx == (IjsClientCtx *)NULL) {
         emprintf1(ijsdev->memory,
                   "Can't start ijs server \042%s\042\n", ijsdev->IjsServer);
+        close(fd);
         return gs_note_error(gs_error_ioerror);
     }
 
@@ -859,11 +869,13 @@ gsijs_open(gx_device *dev)
 
     if (ijs_client_open(ijsdev->ctx) < 0) {
         emprintf(ijsdev->memory, "Can't open ijs\n");
+        close(fd);
         return gs_note_error(gs_error_ioerror);
     }
     if (ijs_client_begin_job(ijsdev->ctx, 0) < 0) {
         emprintf(ijsdev->memory, "Can't begin ijs job 0\n");
         ijs_client_close(ijsdev->ctx);
+        close(fd);
         return gs_note_error(gs_error_ioerror);
     }
 
