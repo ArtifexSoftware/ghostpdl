@@ -399,10 +399,10 @@ grayscale:
         if (xdev->cman.std_cmap.map ||
             (xdev->vinfo->class == StaticGray && alloc_std_cmap(xdev, false))
             ) {
-            xdev->color_info.dither_grays =
-                xdev->cman.std_cmap.map->red_max + 1;
-            if (xdev->cman.std_cmap.map)
+            if (xdev->cman.std_cmap.map) {
+                xdev->color_info.dither_grays = xdev->cman.std_cmap.map->red_max + 1;
                 set_std_cmap(xdev, xdev->cman.std_cmap.map);
+            }
         } else
 #endif
             /* Otherwise set up a gray ramp of our own */
