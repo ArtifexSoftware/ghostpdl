@@ -2134,8 +2134,9 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                            gx_extendeg_glyph_name_separator);
         if (p != NULL) {
             cr->char_name_length = p - cr->char_name;
-            name_ref(pbfont->memory, cr->char_name, cr->char_name_length,
-                     &char_name, true);
+            if ((code = name_ref(pbfont->memory, cr->char_name,
+                             cr->char_name_length, &char_name, true)) < 0)
+                return code;
         }
         if ((code =
              renderer_retcode(imemory, I,
