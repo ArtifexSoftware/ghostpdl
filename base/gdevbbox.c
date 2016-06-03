@@ -611,6 +611,7 @@ bbox_put_params(gx_device * dev, gs_param_list * plist)
         default:
             ecode = code;
             e:param_signal_error(plist, param_name, ecode);
+            /* fall through */
         case 1:
             bba.data = 0;
     }

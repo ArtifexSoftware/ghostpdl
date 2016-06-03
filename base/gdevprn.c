@@ -848,10 +848,11 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
                 code = validate_output_file(&ofs, pdev->memory);
             if (code >= 0)
                 break;
-            /* falls through */
+            /* fall through */
         default:
             ecode = code;
             param_signal_error(plist, param_name, ecode);
+            /* fall through */
         case 1:
             ofs.data = 0;
             break;
