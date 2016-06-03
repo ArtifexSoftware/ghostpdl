@@ -800,7 +800,8 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
     int code;
     ref token;                  /* token read from file or string, */
                                 /* must be declared in this scope */
-    register const ref *pvalue = 0;
+    ref *pvalue;
+    ref refnull;
     uint opindex;               /* needed for oparrays */
     os_ptr whichp;
 
@@ -863,8 +864,10 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 
     *ticks_left = i_ctx_p->time_slice_ticks;
 
-     ierror.obj = &ierror.full;
      make_null(&ierror.full);
+     ierror.obj = &ierror.full;
+     make_null(&refnull);
+     pvalue = &refnull;
 
     /*
      * If we exceed the VMThreshold, set *ticks_left to -100
@@ -1136,7 +1139,7 @@ x_sub:      INCR(x_sub);
             /* Replace with the definition and go again. */
             INCR(exec_array);
             opindex = op_index(IREF);
-            pvalue = IREF->value.const_refs;
+            pvalue = (ref *)IREF->value.const_refs;
           opst:         /* Prepare to call a t_oparray procedure in *pvalue. */
             store_state(iesp);
           oppr:         /* Record the stack depths in case of failure. */
@@ -1292,7 +1295,7 @@ remap:              if (iesp + 2 >= estop) {
                 case plain_exec(t_oparray):
                     INCR(name_oparray);
                     opindex = op_index(pvalue);
-                    pvalue = (const ref *)pvalue->value.const_refs;
+                    pvalue = (ref *)pvalue->value.const_refs;
                     goto opst;
                 case plain_exec(t_operator):
                     INCR(name_operator);
@@ -1526,7 +1529,7 @@ remap:              if (iesp + 2 >= estop) {
                             opindex = index;
                             /* Call the operator procedure. */
                             index -= op_def_count;
-                            pvalue = (const ref *)
+                            pvalue = (ref *)
                                 (index < r_size(&i_ctx_p->op_array_table_global.table) ?
                                  i_ctx_p->op_array_table_global.table.value.const_refs +
                                  index :
