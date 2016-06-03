@@ -2275,7 +2275,6 @@ main(int argc, char *argv[])
     const char *outfilename = "obj/gsromfs.c";
     const char *os_prefix = "";
     const char *rom_prefix = "";
-    char *initfile, *gconfig_h;
     int atarg = 1;
     int compression = 1;			/* default to doing compression */
     int compaction = 0;
@@ -2364,14 +2363,19 @@ main(int argc, char *argv[])
                 rom_prefix = argv[atarg];
                 break;
               case 'g':
-                if ((++atarg) + 1 == argc) {
-                    printf("   option %s missing required arguments\n", argv[atarg-1]);
-                    exit(1);
+                {
+                    char initfile[PATH_STR_LEN] = {0};
+                    char gconfig_h[PATH_STR_LEN] = {0};
+                    if ((++atarg) + 1 == argc) {
+                        printf("   option %s missing required arguments\n", argv[atarg-1]);
+                        exit(1);
+                    }
+                    strncpy(initfile, argv[atarg], PATH_STR_LEN - 1);
+                    atarg++;
+                    strncpy(gconfig_h, argv[atarg], PATH_STR_LEN - 1);
+                    process_initfile(initfile, gconfig_h, os_prefix, rom_prefix, compression,
+                                    &inode_count, &totlen, out);
                 }
-                initfile = argv[atarg++];
-                gconfig_h = argv[atarg];
-                process_initfile(initfile, gconfig_h, os_prefix, rom_prefix, compression,
-                                &inode_count, &totlen, out);
                 break;
               case 'P':
                 if (++atarg == argc) {
