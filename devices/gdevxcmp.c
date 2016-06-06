@@ -342,12 +342,13 @@ gdev_x_setup_colors(gx_device_X * xdev)
         if (xdev->cman.std_cmap.map ||
             (xdev->vinfo->class == TrueColor && alloc_std_cmap(xdev, true))
             ) {
-            xdev->color_info.dither_grays = xdev->color_info.dither_colors =
-                min(xdev->cman.std_cmap.map->red_max,
-                    min(xdev->cman.std_cmap.map->green_max,
-                        xdev->cman.std_cmap.map->blue_max)) + 1;
-            if (xdev->cman.std_cmap.map)
+            if (xdev->cman.std_cmap.map) {
+                xdev->color_info.dither_grays = xdev->color_info.dither_colors =
+                    min(xdev->cman.std_cmap.map->red_max,
+                        min(xdev->cman.std_cmap.map->green_max,
+                            xdev->cman.std_cmap.map->blue_max)) + 1;
                 set_std_cmap(xdev, xdev->cman.std_cmap.map);
+            }
         } else
 #endif
             /* Otherwise set up a rgb cube of our own */
