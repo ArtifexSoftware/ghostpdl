@@ -265,6 +265,13 @@ psf_get_outline_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_base *pfont,
     gs_glyph *subset_glyphs = orig_subset_glyphs;
     uint subset_size = orig_subset_size;
 
+    /* Currently its impossible to hit this code (subset_glyphs is always NULL) and if
+     * we ever did, there's a problem with countof(pglyphs->subset_data), the count
+     * will always be incorrect it seems. Since we never use the code we could just
+     * leave it in place, but Coverity complains. We could remove it, but it might
+     * actually be useful one day (if fixed) so for now, ifdef it out.
+     */
+#if 0
     if (subset_glyphs) {
         if (subset_size > countof(pglyphs->subset_data))
             return_error(gs_error_limitcheck);
@@ -272,6 +279,7 @@ psf_get_outline_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_base *pfont,
                sizeof(gs_glyph) * subset_size);
         subset_glyphs = pglyphs->subset_data;
     }
+#endif
 
     {
         /*
@@ -309,12 +317,6 @@ psf_get_outline_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_base *pfont,
         }
     }
 
-    /* Currently its impossible to hit this code (subset_glyphs is always NULL) and if
-     * we ever did, there's a problem with countof(pglyphs->subset_data), the count
-     * will always be incorrect it seems. Since we never use the code we could just
-     * leave it in place, but Coverity complains. We could remove it, but it might
-     * actually be useful one day (if fixed) so for now, ifdef it out.
-     */
 #if 0
     if (subset_glyphs) {
         /*
