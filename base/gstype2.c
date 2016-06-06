@@ -161,7 +161,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                             gs_currentaligntopixels(pfont->dir));
             if (code < 0)
                 return code;
-            code = t1_hinter__set_font_data(h, 2, pdata, pcis->no_grid_fitting,
+            code = t1_hinter__set_font_data(pfont->memory, h, 2, pdata, pcis->no_grid_fitting,
                             pcis->pfont->is_resource);
             if (code < 0)
                 return code;

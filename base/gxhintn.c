@@ -769,13 +769,13 @@ static bool t1_hinter__realloc_array(gs_memory_t *mem, void **a, void *a0, int *
     return false;
 }
 
-static int t1_hinter__set_alignment_zones(t1_hinter * self, float * blues, int count, enum t1_zone_type type, bool family)
+static int t1_hinter__set_alignment_zones(gs_memory_t *mem, t1_hinter * self, float * blues, int count, enum t1_zone_type type, bool family)
 {   int count2 = count / 2, i, j;
 
     if (!family) {
         /* Store zones : */
         if (count2 + self->zone_count >= self->max_zone_count)
-            if(t1_hinter__realloc_array(self->memory, (void **)&self->zone, self->zone0, &self->max_zone_count,
+            if(t1_hinter__realloc_array(mem, (void **)&self->zone, self->zone0, &self->max_zone_count,
                                         sizeof(self->zone0) / count_of(self->zone0),
                                         max(T1_MAX_ALIGNMENT_ZONES, count), s_zone_array))
                 return_error(gs_error_VMerror);
@@ -798,19 +798,19 @@ static int t1_hinter__set_alignment_zones(t1_hinter * self, float * blues, int c
     return 0;
 }
 
-static int t1_hinter__set_stem_snap(t1_hinter * self, float * value, int count, unsigned short hv)
+static int t1_hinter__set_stem_snap(gs_memory_t *mem, t1_hinter * self, float * value, int count, unsigned short hv)
 {   int count0 = self->stem_snap_count[hv], i, j;
     t1_glyph_space_coord pixel_g = (!hv ? self->pixel_gh : self->pixel_gw);
 
     if (pixel_g == 0)
         return 0;
     if (count + count0 >= self->max_stem_snap_count[hv])
-        if(t1_hinter__realloc_array(self->memory, (void **)&self->stem_snap[hv], self->stem_snap0[hv], &self->max_stem_snap_count[hv],
+        if(t1_hinter__realloc_array(mem, (void **)&self->stem_snap[hv], self->stem_snap0[hv], &self->max_stem_snap_count[hv],
                                         sizeof(self->stem_snap0[0]) / count_of(self->stem_snap0[0]),
                                         max(T1_MAX_STEM_SNAPS, count), s_stem_snap_array))
             return_error(gs_error_VMerror);
     if (count + count0 >= self->max_stem_snap_vote_count)
-        if(t1_hinter__realloc_array(self->memory, (void **)&self->stem_snap_vote, self->stem_snap_vote0, &self->max_stem_snap_vote_count,
+        if(t1_hinter__realloc_array(mem, (void **)&self->stem_snap_vote, self->stem_snap_vote0, &self->max_stem_snap_vote_count,
                                         sizeof(self->stem_snap_vote0) / count_of(self->stem_snap_vote0),
                                         max(T1_MAX_STEM_SNAPS, count), s_stem_snap_vote_array))
             return_error(gs_error_VMerror);
@@ -867,7 +867,7 @@ static void enable_draw_import(void)
     vd_setlinewidth(0);
 }
 
-int t1_hinter__set_font_data(t1_hinter * self, int FontType, gs_type1_data *pdata, bool no_grid_fitting, bool is_resource)
+int t1_hinter__set_font_data(gs_memory_t *mem, t1_hinter * self, int FontType, gs_type1_data *pdata, bool no_grid_fitting, bool is_resource)
 {   int code;
 
     t1_hinter__init_outline(self);
@@ -888,25 +888,25 @@ int t1_hinter__set_font_data(t1_hinter * self, int FontType, gs_type1_data *pdat
         enable_draw_import();
     if (self->pass_through)
         return 0;
-    code = t1_hinter__set_alignment_zones(self, pdata->OtherBlues.values, pdata->OtherBlues.count, botzone, false);
+    code = t1_hinter__set_alignment_zones(mem, self, pdata->OtherBlues.values, pdata->OtherBlues.count, botzone, false);
     if (code >= 0)
-        code = t1_hinter__set_alignment_zones(self, pdata->BlueValues.values, min(2, pdata->BlueValues.count), botzone, false);
+        code = t1_hinter__set_alignment_zones(mem, self, pdata->BlueValues.values, min(2, pdata->BlueValues.count), botzone, false);
     if (code >= 0)
-        code = t1_hinter__set_alignment_zones(self, pdata->BlueValues.values + 2, pdata->BlueValues.count - 2, topzone, false);
+        code = t1_hinter__set_alignment_zones(mem, self, pdata->BlueValues.values + 2, pdata->BlueValues.count - 2, topzone, false);
     if (code >= 0)
-        code = t1_hinter__set_alignment_zones(self, pdata->FamilyOtherBlues.values, pdata->FamilyOtherBlues.count, botzone, true);
+        code = t1_hinter__set_alignment_zones(mem, self, pdata->FamilyOtherBlues.values, pdata->FamilyOtherBlues.count, botzone, true);
     if (code >= 0)
-        code = t1_hinter__set_alignment_zones(self, pdata->FamilyBlues.values, min(2, pdata->FamilyBlues.count), botzone, true);
+        code = t1_hinter__set_alignment_zones(mem, self, pdata->FamilyBlues.values, min(2, pdata->FamilyBlues.count), botzone, true);
     if (code >= 0)
-        code = t1_hinter__set_alignment_zones(self, pdata->FamilyBlues.values + 2, pdata->FamilyBlues.count - 2, topzone, true);
+        code = t1_hinter__set_alignment_zones(mem, self, pdata->FamilyBlues.values + 2, pdata->FamilyBlues.count - 2, topzone, true);
     if (code >= 0)
-        code = t1_hinter__set_stem_snap(self, pdata->StdHW.values, pdata->StdHW.count, 0);
+        code = t1_hinter__set_stem_snap(mem, self, pdata->StdHW.values, pdata->StdHW.count, 0);
     if (code >= 0)
-        code = t1_hinter__set_stem_snap(self, pdata->StdVW.values, pdata->StdVW.count, 1);
+        code = t1_hinter__set_stem_snap(mem, self, pdata->StdVW.values, pdata->StdVW.count, 1);
     if (code >= 0)
-        code = t1_hinter__set_stem_snap(self, pdata->StemSnapH.values, pdata->StemSnapH.count, 0);
+        code = t1_hinter__set_stem_snap(mem, self, pdata->StemSnapH.values, pdata->StemSnapH.count, 0);
     if (code >= 0)
-        code = t1_hinter__set_stem_snap(self, pdata->StemSnapV.values, pdata->StemSnapV.count, 1);
+        code = t1_hinter__set_stem_snap(mem, self, pdata->StemSnapV.values, pdata->StemSnapV.count, 1);
     return code;
 }
 

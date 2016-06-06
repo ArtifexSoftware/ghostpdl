@@ -190,7 +190,7 @@ int  t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
                         int log2_pixels_x, int log2_pixels_y,
                         int log2_subpixels_x, int log2_subpixels_y,
                         fixed origin_x, fixed origin_y, bool align_to_pixels);
-int  t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata,
+int  t1_hinter__set_font_data(gs_memory_t *mem, t1_hinter * this, int FontType, gs_type1_data *pdata,
                         bool no_grid_fitting, bool is_resource);
 int  t1_hinter__set_font42_data(t1_hinter * this, int FontType, gs_type42_data *pdata,
                         bool no_grid_fitting);
