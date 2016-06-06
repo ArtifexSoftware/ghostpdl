@@ -276,7 +276,9 @@ sgi_print_page(gx_device_printer *pdev, FILE *pstream)
                }
              }
          }
-       fseek(pstream,512L,0);
+       if (fseek(pstream,512L,0) != 0)
+           return gs_error_ioerror;
+
        for(separation=0; separation<3; separation++)
          for(rownumber=0; rownumber<bdev->height; rownumber++)
            {putint(lastval,pstream);
