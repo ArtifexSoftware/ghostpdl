@@ -1428,7 +1428,7 @@ $(PSOBJ)zcharx.$(OBJ) : $(PSSRC)zcharx.c $(OP)\
 	$(PSCC) $(PSO_)zcharx.$(OBJ) $(C_) $(PSSRC)zcharx.c
 
 $(PSOBJ)zdps1.$(OBJ) : $(PSSRC)zdps1.c $(OP)\
- $(gsmatrix_h) $(gspath_h) $(gspath2_h) $(gsstate_h) $(gxgstate_h \
+ $(gsmatrix_h) $(gspath_h) $(gspath2_h) $(gsstate_h) $(gxgstate_h) \
  $(ialloc_h) $(ivmspace_h) $(igstate_h) $(store_h) $(stream_h) $(ibnum_h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zdps1.$(OBJ) $(C_) $(PSSRC)zdps1.c
