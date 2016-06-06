@@ -406,12 +406,14 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
                 case 3:		/* nearest match, adjust */
                 case 13:        /* non-standard, nearest match, scale down OR up */
                     adjust = true;
+                    /* fall through */
                 case 5:		/* nearest match, don't adjust */
                     if (fabs(mismatch) >= fabs(*best_mismatch))
                         return 0;
                     break;
                 case 4:		/* next larger match, adjust */
                     adjust = true;
+                    /* fall through */
                 case 6:		/* next larger match, don't adjust */
                     if (!larger || mismatch >= *best_mismatch)
                         return 0;

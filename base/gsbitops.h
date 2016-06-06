@@ -326,6 +326,7 @@ static int inline sample_store_next16(uint value, byte **dptr, int *dbit, int db
             break;
         case 4:
             *(*dptr)++ = (byte)(value >> 8);
+            /* fall through */
         case 2:
             *(*dptr)++ = (byte)value;
             break;
@@ -357,8 +358,11 @@ static int inline sample_store_next32(uint32_t value, byte **dptr, int *dbit, in
               *(*dptr) = *dbbyte | (byte)(value >> 8), (*dptr)[1] = (byte)value, *dptr += 2;
             break;
         case 8: *(*dptr)++ = (byte)(value >> 24);
+            /* fall through */
         case 6: *(*dptr)++ = (byte)(value >> 16);
+            /* fall through */
         case 4: *(*dptr)++ = (byte)(value >> 8);
+            /* fall through */
         case 2: *(*dptr)++ = (byte)(value);
             break;
         default:

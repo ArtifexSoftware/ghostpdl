@@ -576,6 +576,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
         case 0x04:              /* see ctrld above */
             if (c == ctrld)     /* treat as ordinary name char */
                 goto begin_name;
+            /* fall through */
         case '[':
         case ']':
             s1[0] = (byte) c;

@@ -717,6 +717,7 @@ cups_get_color_comp_index(gx_device * pdev, const char * pname,
 	    compare_color_names(pname, name_size, "Transparent") ||
 	    compare_color_names(pname, name_size, "Transparency"))
 	    return 3;
+        /* fall through */
     case CUPS_CSPACE_RGBW :
         if (compare_color_names(pname, name_size, "Red"))
 	    return 0;
@@ -761,6 +762,7 @@ cups_get_color_comp_index(gx_device * pdev, const char * pname,
 #  endif /* CUPS_RASTER_HAVE_COLORIMETRIC */
         if (compare_color_names(pname, name_size, "Black"))
 	    return 3;
+        /* fall through */
     case CUPS_CSPACE_CMY :
         if (compare_color_names(pname, name_size, "Cyan"))
 	    return 0;
@@ -775,13 +777,16 @@ cups_get_color_comp_index(gx_device * pdev, const char * pname,
         if (compare_color_names(pname, name_size, "Silver") ||
 	    compare_color_names(pname, name_size, "Silver Foil"))
 	    return 3;
+        /* fall through */
     case CUPS_CSPACE_GMCK :
         if (compare_color_names(pname, name_size, "Gold") ||
 	    compare_color_names(pname, name_size, "Gold Foil"))
 	    return 0;
+        /* fall through */
     case CUPS_CSPACE_YMCK :
         if (compare_color_names(pname, name_size, "Black"))
 	    return 3;
+        /* fall through */
     case CUPS_CSPACE_YMC :
 	if (compare_color_names(pname, name_size, "Yellow"))
 	    return 0;

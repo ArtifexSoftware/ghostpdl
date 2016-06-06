@@ -2047,6 +2047,7 @@ param_anti_alias_bits(gs_param_list * plist, gs_param_name param_name, int *pa)
         default:
             code = gs_error_rangecheck;
         }
+        /* fall through */
     default:
         param_signal_error(plist, param_name, code);
     case 1:

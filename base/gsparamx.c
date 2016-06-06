@@ -52,6 +52,7 @@ param_put_enum(gs_param_list * plist, gs_param_name param_name,
                     }
             }
             code = gs_error_rangecheck;
+            /* fall through */
         default:
             ecode = code;
             param_signal_error(plist, param_name, code);
@@ -176,6 +177,7 @@ param_list_copy(gs_param_list *plto, gs_param_list *plfrom)
             value.value.fa.persistent &= copy_persists; goto ca;
         case gs_param_type_string_array:
             value.value.sa.persistent &= copy_persists;
+            /* fall through */
         ca:
         default:
             code = param_write_typed(plto, string_key, &value);

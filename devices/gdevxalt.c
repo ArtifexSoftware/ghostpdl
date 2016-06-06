@@ -225,10 +225,13 @@ x_wrap_copy_color(gx_device * dev, const byte * base, int sourcex,
                     switch (depth_bytes) {
                         case 4:
                             *p++ = (byte) (cindex >> 24);
+                            /* fall through */
                         case 3:
                             *p++ = (byte) (cindex >> 16);
+                            /* fall through */
                         case 2:
                             *p++ = (byte) (cindex >> 8);
+                            /* fall through */
                         default /*case 1 */ :
                             *p++ = (byte) cindex;
                     }

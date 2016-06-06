@@ -1492,6 +1492,7 @@ remap:              if (iesp + 2 >= estop) {
                         goto bot;
                     case scan_Refill:   /* error */
                         code = gs_note_error(gs_error_syntaxerror);
+                        /* fall through */
                     default:    /* error */
                         ref_assign_inline(&token, IREF);
                         gs_scanner_error_object(i_ctx_p, &sstate, &token);

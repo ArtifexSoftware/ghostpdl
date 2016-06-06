@@ -507,6 +507,7 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
     case 1:
         masked = ((const gs_image1_t *)pim)->ImageMask;
         has_alpha = ((const gs_image1_t *)pim)->Alpha != 0;
+        /* fall through */
     case 4:
         if (pmat == 0)
             break;

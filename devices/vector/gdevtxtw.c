@@ -848,6 +848,7 @@ txtwrite_output_page(gx_device * dev, int num_copies, int flush)
 
         case 2:
             fwrite (&BOM, sizeof(unsigned short), 1, tdev->file);
+            /* fall through */
         case 3:
             code = simple_text_output(tdev);
             if (code < 0)
@@ -1055,6 +1056,7 @@ txtwrite_put_params(gx_device * dev, gs_param_list * plist)
         default:
             ecode = code;
           ofe:param_signal_error(plist, param_name, ecode);
+        /* fall through */
         case 1:
             ofs.data = 0;
             break;

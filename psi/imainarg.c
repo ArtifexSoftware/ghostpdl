@@ -679,6 +679,7 @@ run_stdin:
                         return gs_error_Fatal;
                     case 1:     /* -r<res> */
                         yres = xres;
+                        /* fall through */
                     case 2:     /* -r<xres>x<yres> */
                         make_real(&value, xres);
                         initial_enter_name("DEVICEXRESOLUTION", &value);

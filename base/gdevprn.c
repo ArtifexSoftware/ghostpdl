@@ -828,10 +828,11 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
             if ((bls.size > 1) && (bls.data[0] == 'm' ||
                  (clist_io_procs_file_global != NULL && bls.data[0] == 'f')))
                 break;
-            /* falls through */
+            /* fall through */
         default:
             ecode = code;
             param_signal_error(plist, param_name, ecode);
+            /* fall through */
         case 1:
             bls.data = 0;
             break;

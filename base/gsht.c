@@ -82,6 +82,7 @@ switch (hptr->type)
     case ht_type_colorscreen:
         return 0;
 }
+/* fall through */
 case 1:
 switch (hptr->type) {
     case ht_type_threshold:

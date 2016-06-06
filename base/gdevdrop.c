@@ -447,6 +447,7 @@ pack_from_standard(gx_device_memory * dev, int y, int destx, const byte * src,
             case 32:
                 *dp++ = (byte)(pixel >> 24);
                 *dp++ = (byte)(pixel >> 16);
+                /* fall through */
             case 16:
                 *dp++ = (byte)(pixel >> 8);
                 *dp++ = (byte)pixel;

@@ -816,14 +816,17 @@ in:                             /* Initialize for a new page. */
                                     data = *cbp++;
                                     delta = (((gx_color_index)
                                         ((data & 0xf0) << 4) + (data & 0x0f)) << 24) << 24;
+                                    /* fall through */
                                 case 6:
                                     data = *cbp++;
                                     delta |= (((gx_color_index)
                                         ((data & 0xf0) << 4) + (data & 0x0f)) << 16) << 16;
+                                    /* fall through */
                                 case 4:
                                     data = *cbp++;
                                     delta |= ((gx_color_index)
                                         ((data & 0xf0) << 4) + (data & 0x0f)) << 16;
+                                    /* fall through */
                                 case 2:
                                     data = *cbp++;
                                     delta |= ((gx_color_index)
@@ -834,10 +837,12 @@ in:                             /* Initialize for a new page. */
                                     data = *cbp++;
                                     delta = ((gx_color_index)
                                         ((data & 0xf0) << 4) + (data & 0x0f)) << 16;
+                                    /* fall through */
                                 case 5:
                                     data = *cbp++;
                                     delta |= ((gx_color_index)
                                         ((data & 0xf0) << 4) + (data & 0x0f));
+                                    /* fall through */
                                 case 3:
                                     data = *cbp++;
                                     odd_delta_shift = (dev_depth_bytes - 3) * 8;

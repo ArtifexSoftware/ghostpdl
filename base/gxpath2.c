@@ -262,6 +262,7 @@ gx_path_translate(gx_path * ppath, fixed dx, fixed dy)
                 update_xy(pcseg->p1);
                 update_xy(pcseg->p2);
 #undef pcseg
+                /* fall through */
             default:
                 update_xy(pseg->pt);
         }
@@ -322,6 +323,7 @@ gx_path_scale_exp2_shared(gx_path * ppath, int log2_scale_x, int log2_scale_y,
             case s_curve:
                 SCALE_XY(((curve_segment *)pseg)->p1);
                 SCALE_XY(((curve_segment *)pseg)->p2);
+                /* fall through */
             default:
                 SCALE_XY(pseg->pt);
             }

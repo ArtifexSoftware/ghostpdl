@@ -47,24 +47,28 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
         case 3 * 2:
             palette_count = 2;
             num_components = 3;
+            /* fall through */
         case 2:
             bits_per_pixel = 1;
             break;
         case 3 * 4:
             palette_count = 4;
             num_components = 3;
+            /* fall through */
         case 4:
             bits_per_pixel = 2;
             break;
         case 3 * 16:
             palette_count = 16;
             num_components = 3;
+            /* fall through */
         case 16:
             bits_per_pixel = 4;
             break;
         case 3 * 256:
             palette_count = 256;
             num_components = 3;
+            /* fall through */
         case 256:
             bits_per_pixel = 8;
             break;

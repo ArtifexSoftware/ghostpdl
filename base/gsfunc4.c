@@ -249,6 +249,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
             --p; goto sw;
         case PtCr_int2_to_float:
             store_float(vsp, (double)vsp->value.i);
+            /* fall through */
         case PtCr_2nd_int_to_float:
             store_float(vsp - 1, (double)vsp[-1].value.i);
             --p; goto sw;

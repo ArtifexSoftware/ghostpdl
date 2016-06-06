@@ -1067,6 +1067,7 @@ static int hsb2rgb(float *HSB)
     switch ((int)floor(6.0 * HSB[0])) {
         case 6:
             HSB[0] = (float)0;
+            /* fall through */
         default: /* Shuts up compiler warning about RGB being uninited */
         case 0:
             RGB[0] = HSB[2];

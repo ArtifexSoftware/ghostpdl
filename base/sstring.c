@@ -334,6 +334,7 @@ s_PSSD_process(stream_state * st, stream_cursor_read * pr,
                     continue;
                 case char_EOL:
                     c = '\n';
+                    /* fall through */
                 default:
                     check_q(1);
                     break;

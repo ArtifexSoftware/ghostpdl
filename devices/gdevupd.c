@@ -3688,6 +3688,7 @@ upd_fscomp(upd_p upd)
                       pxlset  |= 8;
                   }                                    /* "Fire" */
                   FS_DIST(3)
+                /* fall through */
 
          case 3:  FS_M_ROWERR(2)
                   FS_GOAL(comp[2]->bitmsk & (ci >> comp[2]->bitshf),2)
@@ -3706,6 +3707,7 @@ upd_fscomp(upd_p upd)
                       pxlset  |= 2;
                   }                                    /* "Fire" */
                   FS_DIST(1)
+                /* fall through */
 
          default: FS_M_ROWERR(0)
                   FS_GOAL(comp[0]->bitmsk & (ci >> comp[0]->bitshf),0)
@@ -4788,8 +4790,10 @@ upd_rascomp(upd_p upd, FILE *out) {
          byte val = 0;
          switch(upd->ncomp) { /* ??? upd->ocomp */
             case 4:  if(scan[3].bytes[ibyte] & bit) val |= 8;
+                    /* fall through */
             case 3:  if(scan[2].bytes[ibyte] & bit) val |= 4;
                      if(scan[1].bytes[ibyte] & bit) val |= 2;
+                    /* fall through */
             case 1:  if(scan[0].bytes[ibyte] & bit) val |= 1;
          }
          *buf++ = val;

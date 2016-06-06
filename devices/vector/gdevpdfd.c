@@ -285,6 +285,7 @@ pdf_is_same_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
                 if (vs0[1].x != vs1[1].x || vs0[1].y != vs1[1].y ||
                     vs0[2].x != vs1[2].x || vs0[2].y != vs1[2].y)
                     return 0;
+                /* fall through */
             case gs_pe_moveto:
             case gs_pe_lineto:
             case gs_pe_gapto:

@@ -546,6 +546,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
                 break;
             case 'g': case 'p': case 'q': case 'y': /* descender */
                 small_descent = min(small_descent, y0);
+                /* fall through */
             default:		/* no ascender or descender */
                 x_height = max(x_height, y1);
             }

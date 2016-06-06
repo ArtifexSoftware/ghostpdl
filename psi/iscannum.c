@@ -318,6 +318,7 @@ fe:
                 switch (c) {
                     case '-':
                         esign = 1;
+                        /* fall through */
                     case '+':
                         GET_NEXT(c, sp, return_error(gs_error_syntaxerror));
                 }
