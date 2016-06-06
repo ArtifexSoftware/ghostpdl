@@ -1866,6 +1866,9 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
         if (gs_color_space_is_PSCIE(pcs)) {
             if (pcs->icc_equivalent == NULL) {
                 bool is_lab;
+
+                if (pis == NULL)
+                    return(gs_error_invalidaccess);
                 gs_colorspace_set_icc_equivalent(pcs, &is_lab, pis->memory);
             }
             icc_profile = pcs->icc_equivalent->cmm_icc_profile_data;
@@ -1884,6 +1887,8 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
         rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
         rendering_params.rendering_intent = gsPERCEPTUAL;
         rendering_params.cmm = gsCMM_DEFAULT;
+        if (pis == NULL)
+            return(gs_error_invalidaccess);
         pie->icc_link = gsicc_get_link_profile(pis, dev, icc_profile,
             pis->icc_manager->default_rgb, &rendering_params, pis->memory, false);
         icc_profile = pis->icc_manager->default_rgb;
@@ -1920,6 +1925,8 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
 
         /* Add profile to the package. Here like images we are going to write
            the data now.  Rather than later. */
+        if (pis == NULL)
+            return(gs_error_invalidaccess);
         code = xps_write_profile(pis, &(pie->icc_name[0]), icc_profile, xdev);
         if (code < 0)
             return gs_rethrow_code(code);
@@ -1954,6 +1961,8 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
         ((gx_device_vector*) vdev)->clip_path_id = vdev->no_clip_path_id;
     }
 
+    if (pis == NULL)
+        return(gs_error_invalidaccess);
     code = gdev_vector_begin_image(vdev, pis, pim, format, prect,
         pdcolor, pcpath, mem, &xps_image_enum_procs,
         (gdev_vector_image_enum_t *)pie);
