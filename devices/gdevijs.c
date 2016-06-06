@@ -708,6 +708,8 @@ gsijs_set_margin_params(gx_device_ijs *ijsdev)
             if (code == IJS_EUNKPARAM)
                 return 0;
             else if (code >= 0) {
+                if (code >= sizeof(buf))
+                    return IJS_EBUF;
                 code = gsijs_parse_wxh(buf, code,
                                         &printable_left, &printable_top);
             }
@@ -848,10 +850,10 @@ gsijs_open(gx_device *dev)
            platforms. In that case, this branch should be #ifdef'ed out.
         */
         fd = dup(fileno(ijsdev->file));
-	if (fd < 0) {
-	    emprintf(ijsdev->memory, "dup() failed\n");
-	    return gs_note_error(gs_error_ioerror);
-	}
+        if (fd < 0) {
+            emprintf(ijsdev->memory, "dup() failed\n");
+            return gs_note_error(gs_error_ioerror);
+        }
     }
 
     /* WARNING: Ghostscript should be run with -dSAFER to stop
@@ -861,7 +863,8 @@ gsijs_open(gx_device *dev)
     if (ijsdev->ctx == (IjsClientCtx *)NULL) {
         emprintf1(ijsdev->memory,
                   "Can't start ijs server \042%s\042\n", ijsdev->IjsServer);
-        close(fd);
+        if (fd >= 0)
+            close(fd);
         return gs_note_error(gs_error_ioerror);
     }
 
@@ -869,13 +872,15 @@ gsijs_open(gx_device *dev)
 
     if (ijs_client_open(ijsdev->ctx) < 0) {
         emprintf(ijsdev->memory, "Can't open ijs\n");
-        close(fd);
+        if (fd >= 0)
+            close(fd);
         return gs_note_error(gs_error_ioerror);
     }
     if (ijs_client_begin_job(ijsdev->ctx, 0) < 0) {
         emprintf(ijsdev->memory, "Can't begin ijs job 0\n");
         ijs_client_close(ijsdev->ctx);
-        close(fd);
+        if (fd >= 0)
+            close(fd);
         return gs_note_error(gs_error_ioerror);
     }
 
