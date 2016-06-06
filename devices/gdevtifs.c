@@ -420,7 +420,7 @@ tiff_print_page(gx_device_printer *dev, TIFF *tif, int min_feature_size)
 #if defined(ARCH_IS_BIG_ENDIAN) && (!ARCH_IS_BIG_ENDIAN)
             if (bpc == 16)
                 TIFFSwabArrayOfShort((uint16 *)data,
-                                     dev->width * dev->color_info.num_components);
+                                     dev->width * (long)dev->color_info.num_components);
 #endif
 
             code = TIFFWriteScanline(tif, data, row - line_lag, 0);
