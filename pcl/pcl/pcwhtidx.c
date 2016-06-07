@@ -345,10 +345,10 @@ pcl_cmap_create_remap_ary(pcl_state_t * pcs, int *pfirst_white)
  * in any case.
  */
 void
-pcl_cmap_int_apply_ary(const void *vpmap,       /* remap array pointer */
-                       byte * prast,    /* array of bytes to be mapped */
-                       int b_per_p,     /* bits per pixel */
-                       int npixels)
+pcl_cmap_apply_remap_ary(const void *vpmap, /* remap array pointer */
+                         byte * prast,      /* array of bytes to be mapped */
+                         int b_per_p,       /* bits per pixel */
+                         int npixels)
 {
     if (8 % b_per_p == 0)
         remap_raster_ary8(prast, prast, npixels, b_per_p,

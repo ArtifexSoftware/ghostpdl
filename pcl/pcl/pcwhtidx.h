@@ -93,29 +93,12 @@ int pcl_cmap_map_raster(const pcl_cs_indexed_t * pindexed,
  *         by pixel)
  *     there is more than one "white" in the current palette.
  *
- * Note that the macros for apply and free a remapping array will check for
- * a null-pointer inline. Hence, the caller need not provide any other check
- * of whether or nor remapping is necessary.
  */
 const void *pcl_cmap_create_remap_ary(pcl_state_t * pcs, int *pfirst_white);
 
-void pcl_cmap_int_apply_ary(const void *vpmap,  /* remap array pointer */
-                            byte * prast,       /* array of bytes to be mapped */
-                            int b_per_p,        /* bits per pixel */
-                            int npixels);
-
-#define pcl_cmap_apply_remap_ary(pmap, prast, b_per_p, npixels)         \
-    BEGIN                                                               \
-    if ((pmap) != 0)                                                    \
-        pcl_cmap_int_apply_ary((pmap), (prast), (b_per_p), (npixels));  \
-    END
-
-#define pcl_cmap_free_remap_ary(pmap, pcs)          \
-    BEGIN                                           \
-    if ((pmap) != 0)                                \
-        gs_free_object( (pcs)->memory,              \
-                        (void *)(pmap),             \
-                        "pcl_cmap_free_remap_ary"); \
-    END
+void pcl_cmap_apply_remap_ary(const void *vpmap,  /* remap array pointer */
+                              byte * prast,       /* array of bytes to be mapped */
+                              int b_per_p,        /* bits per pixel */
+                              int npixels);
 
 #endif /* pcwhtindx_INCLUDED */

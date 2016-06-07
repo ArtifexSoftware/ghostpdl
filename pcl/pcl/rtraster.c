@@ -847,11 +847,10 @@ process_row(pcl_raster_t * prast, int comp_mode /* modified compression mode */
          * by plane case will have been collapsed to an indexed by pixel case
          * by this point.
          *
-         * (The macro pcl_cmap_apply_remap_ary checks for
-         * prast->remap_ary == 0.)
          */
-        pcl_cmap_apply_remap_ary(prast->remap_ary,
-                                 pb, b_per_p, prast->src_width);
+        if (prast->remap_ary)
+            pcl_cmap_apply_remap_ary(prast->remap_ary,
+                                     pb, b_per_p, prast->src_width);
 
         code = gs_image_next(pen, pb, nbytes, &dummy);
 
