@@ -783,6 +783,22 @@ end readonly def
    /TextFillStateNeeded //true def
  } bdef
 
+/TestDegenerateCTM {
+  matrix currentmatrix
+  dup 0 get
+  exch dup 3 get
+  exch dup 1 get
+  exch 2 get
+  mul
+  3 1 roll mul
+  exch sub
+  0 eq {
+    true
+  }{
+    false
+  } ifelse
+} bdef
+
 % Contrary to the statement in the PDF manual, BT and ET *can* be nested,
 % if the CharProc for a Type 3 font does a BT/ET itself.
 % Since we always call the CharProc inside a q/Q, we simply ensure that
@@ -790,11 +806,20 @@ end readonly def
 % graphics state.
 
 /settextmatrix {
+  matrix currentmatrix
   TextMatrix concat
+  TestDegenerateCTM {
+    (\n   **** Error:  Degenerate text matrix detected, ignoring Tm operation\n) pdfformaterror
+    (                 Output may be incorrect.\n) pdfformaterror
+    setmatrix
+  } {
+    pop
+  } ifelse
   TextHScaling 1 ne { TextHScaling 1 scale } if
   TextRise 0 ne { 0 TextRise translate } if
   TextFont dup //null eq { pop } { setfont } ifelse
 } bdef
+
 /settextstate {
         % The text state can be set even outside BT/ET.
   currentdict /TextSaveMatrix known {
