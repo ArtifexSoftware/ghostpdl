@@ -157,9 +157,8 @@ static void remap_raster_ary8(const byte * inp, /* array to read from */
 /*
  * Remap one raster array into another, using the re-map table provided. The
  * two arrays may be the same.
- *
- * This will work for any number of bits per pixel <= 8.
  */
+
 static void remap_raster_ary(const byte * inp,  /* array to read from */
                              byte * outp,       /* array to write to; may be same as inp */
                              int npixels,       /* number of pixels in raster */
@@ -167,55 +166,13 @@ static void remap_raster_ary(const byte * inp,  /* array to read from */
                              const byte * pmap  /* re-map table */
     )
 {
-    int nbytes = (npixels * b_per_p + 7) / 8;
-    ulong mask = (1UL << b_per_p) - 1;
-    ulong in_accum = 0L;
-    int in_nbits = 0;
-    ulong out_accum = 0L;
-    int out_nbits = 0;
-
     /* check if the the simpler case can be used */
     if (8 % b_per_p == 0) {
-        remap_raster_ary8(inp, outp, npixels, b_per_p, pmap);
-        return;
+        return remap_raster_ary8(inp, outp, npixels, b_per_p, pmap);
     }
 
-    while (npixels-- > 0) {
-        int val;
-
-        if (in_nbits < b_per_p) {
-            while ((nbytes-- > 0) && (in_nbits <= 8 * (sizeof(ulong) - 1))) {
-                in_accum <<= 8;
-                in_accum |= *inp++;
-                in_nbits += 8;
-            }
-        }
-
-        val = (in_accum >> (in_nbits - b_per_p)) & mask;
-        in_accum <<= b_per_p;
-        in_nbits -= b_per_p;
-
-        out_accum <<= b_per_p;
-        out_accum |= pmap[val];
-        out_nbits += b_per_p;
-
-        if (out_nbits > 8 * sizeof(ulong) - b_per_p) {
-            while (out_nbits >= 8) {
-
-                *outp++ = (out_accum >> (out_nbits - 8)) & 0xff;
-                out_nbits -= 8;
-                out_accum <<= 8;
-            }
-        }
-    }
-
-    while (out_nbits > 0) {
-        if (out_nbits < 8)
-            out_accum <<= 8 - out_nbits;
-        *outp++ = (out_accum >> (out_nbits - 8)) & 0xff;
-        out_nbits -= 8;
-        out_accum <<= 8;
-    }
+    /* should not happen */
+    gs_warn("Raster bits per pixel do not divide 8");
 }
 
 /*
