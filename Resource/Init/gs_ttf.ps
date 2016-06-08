@@ -793,24 +793,27 @@ currentdict /woff_tag_dict .undef
         dup 0 get 8 bitshift exch 1 get add dup 258 lt {
           MacGlyphEncoding exch get
         } {
-          dup 32768 ge {
-                % According to the published TrueType spec, such values are
-                % "reserved for future use", but at least some PDF files
-                % produced by the Adobe PDF library contain entries with a
-                % value of 16#ffff.
-            pop /.notdef
-          } {
-            % Get the name for this glyph
-            258 sub dup postnames length ge {
-              TTFDEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
-              pop pop
-              exit
+          % If the index we read from the table is outside the range of glyph
+          % names available, just use the /.notdef name, and carry on
+          dup 32768 ge exch 258 sub dup postnames length ge
+          3 -1 roll or {
+            % According to the published TrueType spec, such values are
+            % "reserved for future use", but at least some PDF files
+            % produced by the Adobe PDF library contain entries with a
+            % value of 16#ffff.
+            TTFDEBUG {
+              dup postnames length ge {
+                  (   *** warning: glyph index past end of 'post' table) = flush
+              } if
             } if
-            postnames exch get
-            % At least some of Microsoft's TrueType fonts use incorrect
-            % (Adobe-incompatible) names for some glyphs.
-            % Correct for this here.
-            postremap 1 index .knownget { exch pop } if
+            pop /.notdef
+          }
+          {
+              postnames exch get
+              % At least some of Microsoft's TrueType fonts use incorrect
+              % (Adobe-incompatible) names for some glyphs.
+              % Correct for this here.
+              postremap 1 index .knownget { exch pop } if
           } ifelse
         } ifelse
         2 index 3 1 roll put
