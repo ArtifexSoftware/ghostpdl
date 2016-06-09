@@ -215,41 +215,89 @@ const gs_memory_procs_t gs_ref_memory_procs =
 /* #define DEBUG_CLUMPS */
 #ifdef DEBUG_CLUMPS
 #define SANITY_CHECK(cp) sanity_check(cp)
+#define SANITY_CHECK_MID(cp) sanity_check_mid(cp)
 
-void sanity_check_rec(clump_t *cp, clump_t *p)
+static void
+broken_splay()
 {
-    if (cp->parent != p)
-        dprintf("Broken splay tree!\n");
-    if (cp->left)
+    dlprintf("Broken splay tree!\n");
+}
+
+void sanity_check_rec(clump_t *cp)
+{
+    splay_dir_t from = SPLAY_FROM_ABOVE;
+
+    while (cp)
     {
-        if (cp->left->cbase > cp->cbase || cp->left->parent != cp)
-            dprintf("Broken splay tree!\n");
-        sanity_check_rec(cp->left, cp);
-    }
-    if (cp->right)
-    {
-        if (cp->right->cbase < cp->cbase || cp->right->parent != cp)
-            dprintf("Broken splay tree!\n");
-        sanity_check_rec(cp->right, cp);
+        if (from == SPLAY_FROM_ABOVE)
+        {
+            /* We have arrived from above. Step left. */
+            if (cp->left)
+            {
+                if (cp->left->cbase > cp->cbase || cp->left->parent != cp)
+                    broken_splay();
+                cp = cp->left;
+                from = SPLAY_FROM_ABOVE;
+                continue;
+            }
+            /* No left to step to, so imagine we have just arrived from there */
+            from = SPLAY_FROM_LEFT;
+        }
+        if (from == SPLAY_FROM_LEFT)
+        {
+            /* We have arrived from the left. Step right. */
+            if (cp->right)
+            {
+                if (cp->right->cbase < cp->cbase || cp->right->parent != cp)
+                    broken_splay();
+                cp = cp->right;
+                from = SPLAY_FROM_ABOVE;
+                continue;
+            }
+            /* No right to step to, so imagine we have just arrived from there. */
+            from = SPLAY_FROM_RIGHT;
+        }
+        if (from == SPLAY_FROM_RIGHT)
+        {
+            /* We have arrived from the right. Step up. */
+            if (cp->parent == NULL)
+                break;
+            if (cp->parent->left != cp && cp->parent->right != cp)
+                broken_splay();
+            from = (cp->parent->left == cp ? SPLAY_FROM_LEFT : SPLAY_FROM_RIGHT);
+            cp = cp->parent;
+        }
     }
 }
 
 void sanity_check(clump_t *cp)
 {
-    sanity_check_rec(cp, NULL);
+    sanity_check_rec(cp);
+}
+
+void sanity_check_mid(clump_t *cp)
+{
+    clump_t *parent;
+
+    while ((parent = cp->parent) != NULL)
+    {
+        if (parent->left == cp)
+        {
+            if (parent->right == cp)
+                broken_splay();
+        }
+        else if (parent->right != cp)
+            broken_splay();
+        cp = parent;
+    }
+
+    sanity_check_rec(cp);
 }
 
 #else
 #define SANITY_CHECK(cp) while (0) {}
+#define SANITY_CHECK_MID(cp) while (0) {}
 #endif
-
-enum
-{
-    /* As we step, keep track of where we just stepped from. */
-    SPLAY_FROM_ABOVE = 0,
-    SPLAY_FROM_LEFT = 1,
-    SPLAY_FROM_RIGHT = 2
-};
 
 /* When initing with the root, we want to pass the smallest inorder one
  * back immediately, and set it up so that we step right for the next
@@ -270,6 +318,7 @@ clump_splay_walk_init(clump_splay_walker *sw, const gs_ref_memory_t *mem)
         }
     }
     sw->cp = cp;
+    sw->end = NULL;
     return cp;
 }
 
@@ -289,6 +338,7 @@ clump_splay_walk_bwd_init(clump_splay_walker *sw, const gs_ref_memory_t *mem)
         }
     }
     sw->cp = cp;
+    sw->end = NULL;
     return cp;
 }
 
@@ -301,6 +351,11 @@ clump_splay_walk_init_mid(clump_splay_walker *sw, clump_t *cp)
 {
     sw->from = SPLAY_FROM_LEFT;
     sw->cp = cp;
+    sw->end = cp;
+    if (cp)
+    {
+        SANITY_CHECK_MID(cp);
+    }
     return cp;
 }
 
@@ -326,11 +381,20 @@ clump_splay_walk_fwd(clump_splay_walker *sw)
             }
             /* No left to step to, so imagine we have just arrived from there */
             from = SPLAY_FROM_LEFT;
+            /* Have we reached the stopping point? */
+            if (cp == sw->end)
+                cp = NULL;
             /* We want to stop here, for inorder operation. So break out of the loop. */
             break;
         }
         if (from == SPLAY_FROM_LEFT)
         {
+            /* Have we reached the stopping point? */
+            if (cp == sw->end)
+            {
+                cp = NULL;
+                break;
+            }
             /* We have arrived from the left. Step right. */
             if (cp->right)
             {
@@ -346,9 +410,21 @@ clump_splay_walk_fwd(clump_splay_walker *sw)
             /* We have arrived from the right. Step up. */
             clump_t *old = cp;
             cp = cp->parent;
-            from = ((cp == NULL || cp->left == old) ? SPLAY_FROM_LEFT : SPLAY_FROM_RIGHT);
-            if (from == SPLAY_FROM_LEFT)
-                break;
+            if (cp == NULL)
+            {
+                /* We've reached the root of the tree. Is this our stopping point? */
+                if (sw->end == NULL)
+                    break;
+                /* If not, step on. */
+                cp = old;
+                from = SPLAY_FROM_ABOVE;
+            }
+            else
+            {
+                from = (cp->left == old ? SPLAY_FROM_LEFT : SPLAY_FROM_RIGHT);
+                if (from == SPLAY_FROM_LEFT)
+                    break;
+            }
         }
     }
     sw->cp = cp;
@@ -462,12 +538,12 @@ clump_splay_remove(clump_t *cp, gs_ref_memory_t *imem)
  * if it wants.
  */
 clump_t *
-clump_splay_app(clump_t *root, gs_ref_memory_t *imem, int (*fn)(clump_t *, void *), void *arg)
+clump_splay_app(clump_t *root, gs_ref_memory_t *imem, splay_app_result_t (*fn)(clump_t *, void *), void *arg)
 {
     clump_t *step_to;
     clump_t *cp = root;
     int from = SPLAY_FROM_ABOVE;
-    int res;
+    splay_app_result_t res;
 
     SANITY_CHECK(cp);
 
@@ -903,7 +979,7 @@ struct free_data
     clump_t         *allocator;
 };
 
-static int
+static splay_app_result_t
 free_all_not_allocator(clump_t *cp, void *arg)
 {
     struct free_data *fd = (struct free_data *)arg;
@@ -916,7 +992,7 @@ free_all_not_allocator(clump_t *cp, void *arg)
     return SPLAY_APP_CONTINUE;
 }
 
-static int
+static splay_app_result_t
 free_all_allocator(clump_t *cp, void *arg)
 {
     struct free_data *fd = (struct free_data *)arg;
@@ -1486,7 +1562,7 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
      * Cycle through the clumps at the current save level, starting
      * with the currently open one.
      */
-    clump_t *cp_orig = clump_splay_walk_init_mid(&sw, imem->pcc);
+    clump_t *cp = clump_splay_walk_init_mid(&sw, imem->pcc);
 
     if (nbytes + (uint)HDR_ID_OFFSET < nbytes)
         return NULL;
@@ -1497,7 +1573,7 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
     if (Memento_failThisEvent())
         return NULL;
 #endif
-    if (cp_orig == 0) {
+    if (cp == 0) {
         /* Open an arbitrary clump. */
         imem->pcc = clump_splay_walk_init(&sw, imem);
         alloc_open_clump(imem);
@@ -1514,16 +1590,14 @@ top:
         return str;
     }
     /* Try the next clump. */
-    {
-        clump_t *cp = clump_splay_walk_fwd(&sw);
+    cp = clump_splay_walk_fwd(&sw);
 
+    if (cp != NULL)
+    {
         alloc_close_clump(imem);
-        if (cp == NULL && cp_orig != NULL)
-            cp = clump_splay_walk_init(&sw, imem);
         imem->pcc = cp;
         alloc_open_clump(imem);
-        if (cp != cp_orig)
-            goto top;
+        goto top;
     }
     if (nbytes > string_space_quanta(max_uint - sizeof(clump_head_t)) *
         string_data_quantum
@@ -1533,8 +1607,7 @@ top:
     if (nbytes >= imem->large_size) {	/* Give it a clump all its own. */
         return i_alloc_string_immovable(mem, nbytes, cname);
     } else {			/* Add another clump. */
-        clump_t *cp =
-            alloc_acquire_clump(imem, (ulong) imem->clump_size, true, "clump");
+        cp = alloc_acquire_clump(imem, (ulong) imem->clump_size, true, "clump");
 
         if (cp == 0)
             return 0;
@@ -1829,7 +1902,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
          * with the currently open one.
          */
         clump_splay_walker sw;
-        clump_t *cp_orig = clump_splay_walk_init_mid(&sw, mem->pcc);
+        clump_t *cp = clump_splay_walk_init_mid(&sw, mem->pcc);
         uint asize = obj_size_round((uint) lsize);
         bool allocate_success = false;
 
@@ -1841,7 +1914,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
             }
         }
 
-        if (cp_orig == 0) {
+        if (cp == 0) {
             /* Open an arbitrary clump. */
             mem->pcc = clump_splay_walk_init(&sw, mem);
             alloc_open_clump(mem);
@@ -1864,16 +1937,15 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
                 }
             }
             /* No luck, go on to the next clump. */
-            {
-                clump_t *cp = clump_splay_walk_fwd(&sw);
+            cp = clump_splay_walk_fwd(&sw);
+            if (cp == NULL)
+                break;
 
-                alloc_close_clump(mem);
-                if (cp == NULL && cp_orig != NULL)
-                    cp = clump_splay_walk_init(&sw, mem);
-                mem->pcc = cp;
-                alloc_open_clump(mem);
-            }
-        } while (mem->pcc != cp_orig);
+            alloc_close_clump(mem);
+            mem->pcc = cp;
+            alloc_open_clump(mem);
+        }
+        while (1);
 
 #ifdef CONSOLIDATE_BEFORE_ADDING_clump
         if (!allocate_success) {
@@ -1888,8 +1960,6 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
                 alloc_close_clump(mem);
                 for (cp = clump_splay_walk_init_mid(&sw, cp_orig); cp != NULL; cp = clump_splay_walk_fwd(&sw))
                 {
-                    if (cp == NULL && cp_orig != NULL)
-                        cp = clump_splay_walk_init(&sw, mem);
                     consolidate_clump_free(cp, mem);
                     if (CAN_ALLOC_AT_END(cp)) {
                         mem->pcc = cp;
@@ -1976,7 +2046,7 @@ consolidate_clump_free(clump_t *cp, gs_ref_memory_t *mem)
     }
 }
 
-static int
+static splay_app_result_t
 consolidate(clump_t *cp, void *arg)
 {
     gs_ref_memory_t *mem = (gs_ref_memory_t *)arg;
@@ -2027,7 +2097,7 @@ typedef struct
     unsigned request_size;
 } scavenge_data;
 
-static int
+static splay_app_result_t
 scavenge(clump_t *cp, void *arg)
 {
     scavenge_data *sd = (scavenge_data *)arg;
@@ -2287,6 +2357,7 @@ void
 alloc_link_clump(clump_t * cp, gs_ref_memory_t * imem)
 {
     splay_insert(cp, imem);
+    SANITY_CHECK(cp);
 }
 
 /* Add a clump for ordinary allocation. */
@@ -2354,6 +2425,7 @@ alloc_acquire_clump(gs_ref_memory_t * mem, ulong csize, bool has_strings,
     alloc_init_clump(cp, cdata, cdata + csize, has_strings, (clump_t *) 0);
     alloc_link_clump(cp, mem);
     mem->allocated += st_clump.ssize + csize;
+    SANITY_CHECK(cp);
     return cp;
 }
 
@@ -2445,7 +2517,7 @@ alloc_open_clump(gs_ref_memory_t * mem)
 }
 
 #ifdef DEBUG
-static int
+static splay_app_result_t
 check_in_clump(clump_t *cp, void *arg)
 {
     clump_t **cpp = (clump_t **)arg;
@@ -2462,6 +2534,7 @@ check_in_clump(clump_t *cp, void *arg)
 void
 alloc_unlink_clump(clump_t * cp, gs_ref_memory_t * mem)
 {
+    SANITY_CHECK_MID(cp);
 #ifdef DEBUG
     if (gs_alloc_debug) {	/* Check to make sure this clump belongs to this allocator. */
         clump_t *found = cp;

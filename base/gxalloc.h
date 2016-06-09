@@ -478,27 +478,70 @@ void debug_dump_clump_tree(const gs_ref_memory_t *mem);
 #endif /* DEBUG */
 
 /* Routines for walking/manipulating the splay tree of clumps */
-enum {
+typedef enum {
     SPLAY_APP_CONTINUE = 0,
     SPLAY_APP_STOP = 1
-};
+} splay_app_result_t;
 
-clump_t *clump_splay_app(clump_t *root, gs_ref_memory_t *imem, int (*fn)(clump_t *, void *), void *arg);
+/* Apply function 'fn' to every node in the clump splay tree.
+ * These are applied in depth first order, which means that
+ * 'fn' is free to perform any operation it likes on the subtree
+ * rooted at the current node, as long as it doesn't affect
+ * any nodes higher in the tree than the current node. The
+ * classic example of this is deletion, which can cause the
+ * subtree to be rrarranged. */
+clump_t *clump_splay_app(clump_t *root, gs_ref_memory_t *imem, splay_app_result_t (*fn)(clump_t *, void *), void *arg);
 
+typedef enum
+{
+    /* As we step, keep track of where we just stepped from. */
+    SPLAY_FROM_ABOVE = 0,
+    SPLAY_FROM_LEFT = 1,
+    SPLAY_FROM_RIGHT = 2
+} splay_dir_t;
+
+/* Structure to contain details of a 'walker' for the clump
+ * splay tree. Treat this as opaque. Only defined at this
+ * public level to avoid the need for mallocs.
+ * No user servicable parts inside. */
 typedef struct
 {
-    int from;
+    /* The direction we most recently moved in the
+     * splay tree traversal. */
+    splay_dir_t from;
+    /* The current node in the splay tree traversal. */
     clump_t *cp;
+    /* The node that marks the end of the splay tree traversal.
+     * (NULL for top of tree). */
+    clump_t *end;
 } clump_splay_walker;
 
+/* Prepare a splay walker for walking forwards.
+ * It will perform an in-order traversal of the entire tree,
+ * starting at min and stopping after max with NULL. */
 clump_t *clump_splay_walk_init(clump_splay_walker *sw, const gs_ref_memory_t *imem);
 
+/* Prepare a splay walker for walking forwards,
+ * starting from a point somewhere in the middle of the tree.
+ * The traveral starts at cp, proceeds in-order to max, then
+ * restarts at min, stopping with NULL after reaching mid again.
+ */
 clump_t *clump_splay_walk_init_mid(clump_splay_walker *sw, clump_t *cp);
 
+/* Return the next node in the traversal of the clump
+ * splay tree as set up by clump_splay_walk_init{,_mid}.
+ * Will return NULL at the end point. */
 clump_t *clump_splay_walk_fwd(clump_splay_walker *sw);
 
+/* Prepare a splay walker for walking backwards.
+ * It will perform a reverse-in-order traversal of the
+ * entire tree, starting at max, and stopping after min
+ * with NULL. */
 clump_t *clump_splay_walk_bwd_init(clump_splay_walker *sw, const gs_ref_memory_t *imem);
 
+/* Return the next node in the traversal of the clump
+ * splay tree as set up by clump_splay_walk_bwd_init.
+ * Will return NULL at the end point. */
 clump_t *clump_splay_walk_bwd(clump_splay_walker *sw);
 
 #endif /* gxalloc_INCLUDED */

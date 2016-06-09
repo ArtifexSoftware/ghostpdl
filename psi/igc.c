@@ -1363,7 +1363,7 @@ gc_objects_compact(clump_t * cp, gc_state_t * gcst)
 
 /* ------ Cleanup ------ */
 
-static int
+static splay_app_result_t
 free_if_empty(clump_t *cp, void *arg)
 {
     gs_ref_memory_t * mem = (gs_ref_memory_t *)arg;
