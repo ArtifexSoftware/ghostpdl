@@ -18,7 +18,7 @@
 
 #include "memory_.h"
 #include "math_.h"
-
+#include "string_.h"
 #include <stdlib.h>
 #include <ctype.h> /* for toupper() */
 
@@ -128,8 +128,6 @@ void * xps_realloc_imp(xps_context_t *ctx, void *ptr, int size, const char *func
 #define xps_free(ctx, ptr) \
     gs_free_object(ctx->memory, ptr, __func__)
 
-size_t xps_strlcpy(char *destination, const char *source, size_t size);
-size_t xps_strlcat(char *destination, const char *source, size_t size);
 int xps_strcasecmp(const char *a, const char *b);
 char *xps_strdup_imp(xps_context_t *ctx, const char *str, const char *function);
 void xps_absolute_path(char *output, char *base_uri, char *path, int output_size);

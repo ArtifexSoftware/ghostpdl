@@ -415,8 +415,8 @@ xps_read_dir_part(xps_context_t *ctx, const char *name)
     FILE *file;
     int count, size, offset, i, n;
 
-    xps_strlcpy(buf, ctx->directory, sizeof buf);
-    xps_strlcat(buf, name, sizeof buf);
+    gs_strlcpy(buf, ctx->directory, sizeof buf);
+    gs_strlcat(buf, name, sizeof buf);
 
     /* All in one piece */
     file = gp_fopen(buf, "rb");
@@ -568,7 +568,7 @@ xps_process_file(xps_context_t *ctx, char *filename)
         int size;
 
         if_debug0m('|', ctx->memory, "zip: single page mode\n");
-        xps_strlcpy(buf, filename, sizeof buf);
+        gs_strlcpy(buf, filename, sizeof buf);
         while (1)
         {
             p = strrchr(buf, '/');
@@ -576,7 +576,7 @@ xps_process_file(xps_context_t *ctx, char *filename)
                 p = strrchr(buf, '\\');
             if (!p)
                 break;
-            xps_strlcpy(p, "/_rels/.rels", buf + sizeof buf - p);
+            gs_strlcpy(p, "/_rels/.rels", buf + sizeof buf - p);
             if_debug1m('|', ctx->memory, "zip: testing if '%s' exists\n", buf);
             if (isfile(buf))
             {
@@ -632,7 +632,7 @@ xps_process_file(xps_context_t *ctx, char *filename)
 
     if (strstr(filename, "/_rels/.rels") || strstr(filename, "\\_rels\\.rels"))
     {
-        xps_strlcpy(buf, filename, sizeof buf);
+        gs_strlcpy(buf, filename, sizeof buf);
         p = strstr(buf, "/_rels/.rels");
         if (!p)
             p = strstr(buf, "\\_rels\\.rels");

@@ -378,7 +378,7 @@ xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t 
         image_name = NULL;
         profile_name = NULL;
 
-        xps_strlcpy(buf, image_source_att, sizeof buf);
+        gs_strlcpy(buf, image_source_att, sizeof buf);
         p = strchr(buf, ' ');
         if (p)
         {

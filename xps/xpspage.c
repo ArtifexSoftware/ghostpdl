@@ -128,7 +128,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 
     if_debug1m('|', ctx->memory, "doc: parsing page %s\n", part->name);
 
-    xps_strlcpy(base_uri, part->name, sizeof base_uri);
+    gs_strlcpy(base_uri, part->name, sizeof base_uri);
     s = strrchr(base_uri, '/');
     if (s)
         s[1] = 0;

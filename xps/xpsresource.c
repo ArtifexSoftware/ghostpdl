@@ -46,7 +46,7 @@ xps_parse_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char *att
     if (strstr(att, "{StaticResource ") != att)
         return NULL;
 
-    xps_strlcpy(name, att + 16, sizeof name);
+    gs_strlcpy(name, att + 16, sizeof name);
     s = strrchr(name, '}');
     if (s)
         *s = 0;
@@ -102,7 +102,7 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp,
         return gs_throw1(-1, "expected ResourceDictionary element (found %s)", xps_tag(xml));
     }
 
-    xps_strlcpy(part_uri, part_name, sizeof part_uri);
+    gs_strlcpy(part_uri, part_name, sizeof part_uri);
     s = strrchr(part_uri, '/');
     if (s)
         s[1] = 0;

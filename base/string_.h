@@ -44,6 +44,7 @@
 #endif
 
 #include "gsstrtok.h"
+#include "gsstrl.h"
 
 #define strtok DO_NOT_USE_STRTOK
 

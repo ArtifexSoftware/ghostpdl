@@ -108,6 +108,7 @@ vmsmath_h=$(GLSRC)vmsmath.h
 # declare here for use by string__h
 gssprintf_h=$(GLSRC)gssprintf.h
 gsstrtok_h=$(GLSRC)gsstrtok.h
+gsstrl_h=$(GLSRC)gsstrl.h
 
 dos__h=$(GLSRC)dos_.h
 ctype__h=$(GLSRC)ctype_.h $(std_h)
@@ -346,6 +347,9 @@ $(GLOBJ)gssprintf.$(OBJ) : $(GLSRC)gssprintf.c $(gssprintf_h) $(stdio__h) \
 
 $(GLOBJ)gsstrtok.$(OBJ) : $(GLSRC)gsstrtok.c $(gsstrtok_h) $(string__h)
 	$(GLCC) $(GLO_)gsstrtok.$(OBJ) $(C_) $(GLSRC)gsstrtok.c
+
+$(GLOBJ)gsstrl.$(OBJ) : $(GLSRC)gsstrl.c $(gsstrl_h) $(string__h)
+	$(GLCC) $(GLO_)gsstrl.$(OBJ) $(C_) $(GLSRC)gsstrl.c
 
 # MD5 digest
 gsmd5_h=$(GLSRC)gsmd5.h
@@ -1356,7 +1360,7 @@ LIB10s=$(GLOBJ)gsmalloc.$(OBJ) $(GLOBJ)memento.$(OBJ)  $(GLOBJ)gsmatrix.$(OBJ)
 LIB11s=$(GLOBJ)gsmemory.$(OBJ) $(GLOBJ)gsmemret.$(OBJ) $(GLOBJ)gsmisc.$(OBJ) $(GLOBJ)gsnotify.$(OBJ) $(GLOBJ)gslibctx.$(OBJ)
 LIB12s=$(GLOBJ)gspaint.$(OBJ) $(GLOBJ)gsparam.$(OBJ) $(GLOBJ)gspath.$(OBJ)
 LIB13s=$(GLOBJ)gsserial.$(OBJ) $(GLOBJ)gsstate.$(OBJ) $(GLOBJ)gstext.$(OBJ)\
-  $(GLOBJ)gsutil.$(OBJ) $(GLOBJ)gssprintf.$(OBJ) $(GLOBJ)gsstrtok.$(OBJ)
+  $(GLOBJ)gsutil.$(OBJ) $(GLOBJ)gssprintf.$(OBJ) $(GLOBJ)gsstrtok.$(OBJ) $(GLOBJ)gsstrl.$(OBJ)
 LIB1x=$(GLOBJ)gxacpath.$(OBJ) $(GLOBJ)gxbcache.$(OBJ) $(GLOBJ)gxccache.$(OBJ)
 LIB2x=$(GLOBJ)gxccman.$(OBJ) $(GLOBJ)gxchar.$(OBJ) $(GLOBJ)gxcht.$(OBJ)
 LIB3x=$(GLOBJ)gxclip.$(OBJ) $(GLOBJ)gxcmap.$(OBJ) $(GLOBJ)gxcpath.$(OBJ)

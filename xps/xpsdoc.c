@@ -265,7 +265,7 @@ xps_parse_metadata(xps_context_t *ctx, xps_part_t *part)
     char *s;
 
     /* Save directory name part */
-    xps_strlcpy(buf, part->name, sizeof buf);
+    gs_strlcpy(buf, part->name, sizeof buf);
     s = strrchr(buf, '/');
     if (s)
         s[0] = 0;
