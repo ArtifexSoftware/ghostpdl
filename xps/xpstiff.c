@@ -247,6 +247,7 @@ xps_decode_tiff_lzw(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, by
     {
         state.EarlyChange = 0;
         state.FirstBitLowOrder = 1;
+        state.OldTiff = 1;
     }
 
     /* new-style TIFF 6.0 normal bit order, early change */
@@ -254,6 +255,7 @@ xps_decode_tiff_lzw(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, by
     {
         state.EarlyChange = 1;
         state.FirstBitLowOrder = 0;
+        state.OldTiff = 0;
     }
 
     s_LZWD_template.init((stream_state*)&state);

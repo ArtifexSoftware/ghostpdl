@@ -117,6 +117,7 @@ s_LZWD_process(stream_state * st, stream_cursor_read * pr,
     int code_escape = 1 << ss->InitialCodeLength;
     int eod = code_eod;
     bool low_order = ss->FirstBitLowOrder;
+    bool old_tiff = ss->OldTiff;
     uint len;
     int c;
     byte b;
@@ -323,7 +324,7 @@ reset:
          * lzw_decode_max every time: just checking at power
          * of 2 boundaries stops us one code too soon.
          */
-        if (next_code == lzw_decode_max) {
+        if (!old_tiff && next_code == lzw_decode_max) {
             /*
              * A few anomalous files have one data item too many before the
              * reset code.  We think this is a bug in the application that
@@ -363,12 +364,14 @@ reset:
             status = ERRC;
             goto out;
         }
-        dc_next->datum = b;	/* added char of string */
-        dc_next->len = min(prev_len, 254) + 1;
-        dc_next->prefix = prev_code;
-        dc_next++;
-        if_debug4m('W', ss->memory, "[W]adding 0x%x=0x%x+%c(%d)\n",
-                   next_code, prev_code, b, min(len, 255));
+        if (next_code < lzw_decode_max) {
+            dc_next->datum = b;	/* added char of string */
+            dc_next->len = min(prev_len, 254) + 1;
+            dc_next->prefix = prev_code;
+            dc_next++;
+            if_debug4m('W', ss->memory, "[W]adding 0x%x=0x%x+%c(%d)\n",
+                       next_code, prev_code, b, min(len, 255));
+        }
         if (++next_code == switch_code) {	/* Crossed a power of 2. */
             /* We have to make a strange special check for */
             /* reaching the end of the code space. */

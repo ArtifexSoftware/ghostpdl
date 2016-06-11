@@ -32,7 +32,8 @@ typedef struct stream_LZW_state_s {
      */
     bool FirstBitLowOrder;	/* decoding only */
     bool BlockData;		/* decoding only */
-    int EarlyChange;		/* decoding only */
+    bool EarlyChange;		/* decoding only */
+    bool OldTiff;		/* decoding only */
     /* The following are updated dynamically. */
     uint bits;			/* buffer for input bits */
     int bits_left;		/* Decode: # of valid bits left, [0..7] */
@@ -64,6 +65,7 @@ extern_st(st_LZW_state);
    (ss)->FirstBitLowOrder = false,\
    (ss)->BlockData = false,\
    (ss)->EarlyChange = 1,\
+   (ss)->OldTiff = 0,\
    /* Clear pointers */\
    (ss)->table.decode /*=encode*/ = 0)
 extern const stream_template s_LZWD_template;
