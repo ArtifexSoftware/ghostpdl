@@ -3593,8 +3593,10 @@ upd_fscomp(upd_p upd)
  */
    switch(upd->ncomp) {
      case 4:  memset(scan[3].bytes,0,upd->nbytes);
+         /* fall through */
      case 3:  memset(scan[2].bytes,0,upd->nbytes);
               memset(scan[1].bytes,0,upd->nbytes);
+         /* fall through */
      default: memset(scan[0].bytes,0,upd->nbytes);
    }
 /*
