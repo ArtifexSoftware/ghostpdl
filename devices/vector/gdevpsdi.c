@@ -745,7 +745,7 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
     return code;
 }
 
-/* Set up compression filters for a lossless image, with no downsampling, */
+/* Set up compression filters for a lossless image, downsampling is permitted, */
 /* no color space conversion, and only lossless filters. */
 /* Note that this may modify the image parameters. */
 int
@@ -760,12 +760,10 @@ psdf_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
 
     ipdev = *pdev;
     ipdev.params.ColorImage.AutoFilter = false;
-    ipdev.params.ColorImage.Downsample = false;
     ipdev.params.ColorImage.Filter = "FlateEncode";
     ipdev.params.ColorImage.filter_template = &s_zlibE_template;
     ipdev.params.ConvertCMYKImagesToRGB = false;
     ipdev.params.GrayImage.AutoFilter = false;
-    ipdev.params.GrayImage.Downsample = false;
     ipdev.params.GrayImage.Filter = "FlateEncode";
     ipdev.params.GrayImage.filter_template = &s_zlibE_template;
     return psdf_setup_image_filters(&ipdev, pbw, pim, NULL, NULL, true, in_line);
@@ -984,17 +982,16 @@ new_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 int
 new_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
                             gs_pixel_image_t *pim, bool in_line,
-                            bool colour_conversion)
+                            bool colour_conversion, const gs_matrix *pctm, gs_gstate * pgs)
 {
     /*
      * Set up a device with modified parameters for computing the image
-     * compression filters.  Don't allow downsampling or lossy compression.
+     * compression filters.  Don't allow lossy compression, but do allow downsampling.
      */
     gx_device_psdf ipdev;
 
     ipdev = *pdev;
     ipdev.params.ColorImage.AutoFilter = false;
-    ipdev.params.ColorImage.Downsample = false;
     ipdev.params.ColorImage.Filter = "FlateEncode";
     ipdev.params.ColorImage.filter_template = &s_zlibE_template;
     ipdev.params.ConvertCMYKImagesToRGB = false;
@@ -1002,7 +999,7 @@ new_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
     ipdev.params.GrayImage.Downsample = false;
     ipdev.params.GrayImage.Filter = "FlateEncode";
     ipdev.params.GrayImage.filter_template = &s_zlibE_template;
-    return new_setup_image_filters(&ipdev, pbw, pim, NULL, NULL, true, in_line, colour_conversion);
+    return new_setup_image_filters(&ipdev, pbw, pim, pctm, pgs, true, in_line, colour_conversion);
 }
 
 int new_resize_input(psdf_binary_writer *pbw, int width, int num_comps, int bpc_in, int bpc_out)

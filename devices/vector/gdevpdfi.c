@@ -1358,7 +1358,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     if (in_line) {
         code = new_setup_lossless_filters((gx_device_psdf *) pdev,
                                              &pie->writer.binary[0],
-                                             &image[0].pixel, in_line, convert_to_process_colors);
+                                             &image[0].pixel, in_line, convert_to_process_colors, (gs_matrix *)pmat, (gs_gstate *)pgs);
     } else {
         if (force_lossless) {
             /*

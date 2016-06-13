@@ -437,7 +437,7 @@ int psdf_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
                                 gs_pixel_image_t *pim, bool in_line);
 
 int new_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
-                                gs_pixel_image_t *pim, bool in_line, bool colour_conversion);
+                                gs_pixel_image_t *pim, bool in_line, bool colour_conversion, const gs_matrix *pctm, gs_gstate * pgs);
 
 
 int new_resize_input(psdf_binary_writer *pbw, int width, int num_comps, int bpc_in, int bpc_out);
