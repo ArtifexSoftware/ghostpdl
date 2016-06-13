@@ -1229,7 +1229,7 @@ int pdf_reset_color(gx_device_pdf * pdev, const gs_gstate * pgs,
                         *psc = temp;
                         return code;
                     }
-                    if (pgs && pgs->have_pattern_streams)
+                    if (pgs->have_pattern_streams)
                         code = pdf_write_ccolor(pdev, pgs, pcc);
                 } else if (pdc->type == &gx_dc_pattern2) {
                     if (pdev->CompatibilityLevel <= 1.2)
