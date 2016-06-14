@@ -2690,7 +2690,7 @@ pdfmark_Ext_Metadata(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                     break;
                 default:
                     if((pairs[1].data[i+1]) >= 0x30 && (pairs[1].data[i+1]) <= 0x39) {
-                        pdev->ExtensionMetadata[j++] = (pairs[1].data[i+1]) * 64 + (pairs[1].data[i+2]) * 8 + (pairs[1].data[i+3]);
+                        pdev->ExtensionMetadata[j++] = (pairs[1].data[i+1] - 0x30) * 64 + (pairs[1].data[i+2] - 0x30) * 8 + (pairs[1].data[i+3] - 0x30);
                         i += 3;
                     } else
                         pdev->ExtensionMetadata[j++] = pairs[1].data[i];
