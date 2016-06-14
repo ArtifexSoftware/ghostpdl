@@ -256,35 +256,23 @@ static int do_fill(gs_gstate *pgs, int rule)
     int code, abits, acode, rcode = 0;
     bool devn;
 
-    /* Here we need to distinguish text from vectors to compute the object tag.
-       Actually we need to know whether this function is called to rasterize a character,
-       or to rasterize a vector graphics to the output device.
-       Currently we assume it works for the bitrgbtags device only,
-       which is a low level device with a 4-component color model.
-       We use the fact that with printers a character is usually being rendered
-       to a 1bpp cache device rather than to the output device.
-       Therefore we hackly look whether the target device
-       "has a color" : either it's a multicomponent color model,
-       or it is not gray (such as a yellow separation).
+    /* We need to distinguish text from vectors to set the object tag.
 
-       This check has several limitations :
-       1. It doesn't work with -dNOCACHE.
-       2. It doesn't work with large characters,
-          which cannot fit into a cache cell and thus they
-          render directly to the output device.
-       3. It doesn't work for TextAlphaBits=2 or 4.
-          We don't care of this case because
-          text antialiasing usually usn't applied to printers.
-       4. It doesn't work for things like with "(xyz) true charpath stroke".
-          That's unfortunate, we'd like to improve someday.
-       5. It doesn't work for high level devices when a Type 3 character is being constructed.
-          This case is not important for low level devices
-          (which a printer is), because low level device doesn't accept
-          Type 3 charproc streams immediately.
-       6. It doesn't work properly while an insiding testing,
-          which sets gs_hit_device, which is uncolored.
+       To make that determination, we check for the show graphics state being stored
+       in the current graphics state. This works even in the case of a glyph from a
+       Type 3 Postscript/PDF font which has multiple, nested gsave/grestore pairs in
+       the BuildGlyph/BuildChar procedure. Also, it works in the case of operating
+       without a glyph cache or bypassing the cache because the glyph is too large or
+       the cache being already full.
+
+       Note that it doesn't work for a construction like:
+       "(xyz) true charpath fill/stroke"
+       where the show machinations have completed before we get to the fill operation.
+       This has implications for how we handle PDF text rendering modes 1 and 2. To
+       handle that, we'll have to add a flag to the path structure, or to the path
+       segment structure (depending on how fine grained we require it to be).
      */
-    if (gx_device_has_color(gs_currentdevice(pgs))) {
+    if (pgs->show_gstate == NULL) {
         dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_PATH_TAG);
     }
     else {
@@ -371,33 +359,23 @@ do_stroke(gs_gstate * pgs)
     int code, abits, acode, rcode = 0;
     bool devn;
 
-    /* Here we need to distinguish text from vectors to compute the object tag.
-       Actually we need to know whether this function is called to rasterize a character,
-       or to rasterize a vector graphics to the output device.
-       Currently we assume it works for the bitrgbtags device only,
-       which is a low level device with a 4-component color model.
-       We use the fact that with printers a character is usually being rendered
-       to a 1bpp cache device rather than to the output device.
-       Therefore we hackly look whether the target device
-       "has a color" : either it's a multicomponent color model,
-       or it is not gray (such as a yellow separation).
+    /* We need to distinguish text from vectors to set the object tag.
 
-       This check has several limitations :
-       1. It doesn't work with -dNOCACHE.
-       2. It doesn't work with large characters,
-          which cannot fit into a cache cell and thus they
-          render directly to the output device.
-       3. It doesn't work for TextAlphaBits=2 or 4.
-          We don't care of this case because
-          text antialiasing usually usn't applied to printers.
-       4. It doesn't work for things like with "(xyz) true charpath stroke".
-          That's unfortunate, we'd like to improve someday.
-       5. It doesn't work for high level devices when a Type 3 character is being constructed.
-          This case is not important for low level devices
-          (which a printer is), because low level device doesn't accept
-          Type 3 charproc streams immediately.
+       To make that determination, we check for the show graphics state being stored
+       in the current graphics state. This works even in the case of a glyph from a
+       Type 3 Postscript/PDF font which has multiple, nested gsave/grestore pairs in
+       the BuildGlyph/BuildChar procedure. Also, it works in the case of operating
+       without a glyph cache or bypassing the cache because the glyph is too large or
+       the cache being already full.
+
+       Note that it doesn't work for a construction like:
+       "(xyz) true charpath fill/stroke"
+       where the show machinations have completed before we get to the fill operation.
+       This has implications for how we handle PDF text rendering modes 1 and 2. To
+       handle that, we'll have to add a flag to the path structure, or to the path
+       segment structure (depending on how fine grained we require it to be).
      */
-    if (gx_device_has_color(gs_currentdevice(pgs))) {
+    if (pgs->show_gstate == NULL) {
         dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_PATH_TAG);
     }
     else {
