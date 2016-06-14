@@ -214,6 +214,7 @@ void Memento_listNewBlocks(void);
 size_t Memento_setMax(size_t);
 void Memento_stats(void);
 void *Memento_label(void *, const char *);
+void Memento_tick(void);
 
 void *Memento_malloc(size_t s);
 void *Memento_realloc(void *, size_t s);
@@ -265,6 +266,7 @@ void *Memento_reference(void *blk);
 #define Memento_takeRef(A)        (A)
 #define Memento_dropRef(A)        (A)
 #define Memento_reference(A)      (A)
+#define Memento_tick()            do {} while (0)
 
 #endif /* MEMENTO */
 

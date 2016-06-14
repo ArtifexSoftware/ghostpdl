@@ -1529,7 +1529,7 @@ static void Memento_startFailing(void)
     }
 }
 
-static void Memento_event(void)
+static int Memento_event(void)
 {
     memento.sequence++;
     if ((memento.sequence >= memento.paranoidAt) && (memento.paranoidAt != 0)) {
@@ -1550,8 +1550,9 @@ static void Memento_event(void)
 
     if (memento.sequence == memento.breakAt) {
         fprintf(stderr, "Breaking at event %d\n", memento.breakAt);
-        Memento_breakpoint();
+        return 1;
     }
+    return 0;
 }
 
 int Memento_breakAt(int event)
@@ -1573,6 +1574,14 @@ void *Memento_label(void *ptr, const char *label)
     return ptr;
 }
 
+void Memento_tick(void)
+{
+    if (!memento.inited)
+        Memento_init();
+
+    if (Memento_event()) Memento_breakpoint();
+}
+
 int Memento_failThisEvent(void)
 {
     int failThisOne;
@@ -1580,7 +1589,7 @@ int Memento_failThisEvent(void)
     if (!memento.inited)
         Memento_init();
 
-    Memento_event();
+    if (Memento_event()) Memento_breakpoint();
 
     if ((memento.sequence >= memento.failAt) && (memento.failAt != 0))
         Memento_startFailing();
@@ -1783,7 +1792,7 @@ static void do_free(void *blk, int eventType)
     if (!memento.inited)
         Memento_init();
 
-    Memento_event();
+    if (Memento_event()) Memento_breakpoint();
 
     if (blk == NULL)
         return;
