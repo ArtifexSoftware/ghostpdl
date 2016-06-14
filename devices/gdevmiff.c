@@ -13,7 +13,7 @@
    CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* MIFF file format driver */
+/* MIFF (Magick Image File Format - native for ImageMagick) file format driver */
 #include "gdevprn.h"
 
 /* ------ The device descriptor ------ */
