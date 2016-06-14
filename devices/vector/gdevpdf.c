@@ -114,12 +114,11 @@ ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
  ENUM_PTR(35, gx_device_pdf, DSCEncodingToUnicode.data);
  ENUM_PTR(36, gx_device_pdf, Identity_ToUnicode_CMaps[0]);
  ENUM_PTR(37, gx_device_pdf, Identity_ToUnicode_CMaps[1]);
- ENUM_PTR(38, gx_device_pdf, ResourceUsage);
- ENUM_PTR(39, gx_device_pdf, vgstack);
- ENUM_PTR(40, gx_device_pdf, outline_levels);
- ENUM_PTR(41, gx_device_pdf, EmbeddedFiles);
- ENUM_PTR(42, gx_device_pdf, pdf_font_dir);
- ENUM_PTR(43, gx_device_pdf, ExtensionMetadata);
+ ENUM_PTR(38, gx_device_pdf, vgstack);
+ ENUM_PTR(39, gx_device_pdf, outline_levels);
+ ENUM_PTR(40, gx_device_pdf, EmbeddedFiles);
+ ENUM_PTR(41, gx_device_pdf, pdf_font_dir);
+ ENUM_PTR(42, gx_device_pdf, ExtensionMetadata);
 #define e1(i,elt) ENUM_PARAM_STRING_PTR(i + gx_device_pdf_num_ptrs, gx_device_pdf, elt);
 gx_device_pdf_do_param_strings(e1)
 #undef e1
@@ -169,7 +168,6 @@ static RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
  RELOC_PTR(gx_device_pdf, DSCEncodingToUnicode.data);
  RELOC_PTR(gx_device_pdf, Identity_ToUnicode_CMaps[0]);
  RELOC_PTR(gx_device_pdf, Identity_ToUnicode_CMaps[1]);
- RELOC_PTR(gx_device_pdf, ResourceUsage);
  RELOC_PTR(gx_device_pdf, vgstack);
  RELOC_PTR(gx_device_pdf, EmbeddedFiles);
  RELOC_PTR(gx_device_pdf, pdf_font_dir);
@@ -2340,11 +2338,11 @@ int pdf_record_usage(gx_device_pdf *const pdev, long resource_id, int page_num)
     if (resource_id >= pdev->ResourceUsageSize) {
         if (pdev->ResourceUsageSize == 0) {
             pdev->ResourceUsageSize = resource_id + 1;
-            pdev->ResourceUsage = gs_alloc_struct_array(pdev->pdf_memory, resource_id + 1, pdf_linearisation_record_t,
+            pdev->ResourceUsage = gs_alloc_struct_array(pdev->pdf_memory->non_gc_memory, resource_id + 1, pdf_linearisation_record_t,
                               &st_pdf_linearisation_record_element, "start resource usage array");
             memset((char *)pdev->ResourceUsage, 0x00, (resource_id + 1) * sizeof(pdf_linearisation_record_t));
         } else {
-            resize = gs_resize_object(pdev->pdf_memory, pdev->ResourceUsage, resource_id + 1, "resize resource usage array");
+            resize = gs_resize_object(pdev->pdf_memory->non_gc_memory, pdev->ResourceUsage, resource_id + 1, "resize resource usage array");
             memset(&resize[pdev->ResourceUsageSize], 0x00, sizeof(pdf_linearisation_record_t) * (resource_id - pdev->ResourceUsageSize + 1));
             pdev->ResourceUsageSize = resource_id + 1;
             pdev->ResourceUsage = resize;
@@ -2374,10 +2372,10 @@ int pdf_record_usage(gx_device_pdf *const pdev, long resource_id, int page_num)
                 return 0;
         }
     }
-    Temp = gs_alloc_bytes(pdev->pdf_memory, (pdev->ResourceUsage[resource_id].NumPagesUsing + 1) * sizeof (int), "Page usage records");
+    Temp = gs_alloc_bytes(pdev->pdf_memory->non_gc_memory, (pdev->ResourceUsage[resource_id].NumPagesUsing + 1) * sizeof (int), "Page usage records");
     memset((char *)Temp, 0x00, (pdev->ResourceUsage[resource_id].NumPagesUsing + 1) * sizeof (int));
     memcpy((char *)Temp, pdev->ResourceUsage[resource_id].PageList, pdev->ResourceUsage[resource_id].NumPagesUsing * sizeof (int));
-    gs_free_object(pdev->pdf_memory, (byte *)pdev->ResourceUsage[resource_id].PageList, "Free old page usage records");
+    gs_free_object(pdev->pdf_memory->non_gc_memory, (byte *)pdev->ResourceUsage[resource_id].PageList, "Free old page usage records");
     pdev->ResourceUsage[resource_id].PageList = (int *)Temp;
     pdev->ResourceUsage[resource_id].PageList[pdev->ResourceUsage[resource_id].NumPagesUsing] = page_num;
     pdev->ResourceUsage[resource_id].NumPagesUsing++;
@@ -2951,9 +2949,9 @@ pdf_close(gx_device * dev)
         code = pdf_linearise(pdev, &linear_params);
         for (i=0; i<pdev->ResourceUsageSize; i++) {
             if (pdev->ResourceUsage[i].PageList)
-                gs_free_object(pdev->pdf_memory, pdev->ResourceUsage[i].PageList, "Free linearisation Page Usage list records");
+                gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->ResourceUsage[i].PageList, "Free linearisation Page Usage list records");
         }
-        gs_free_object(pdev->pdf_memory, pdev->ResourceUsage, "Free linearisation resource usage records");
+        gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->ResourceUsage, "Free linearisation resource usage records");
     }
 
     /* Require special handling for Fonts, ColorSpace and Pattern resources

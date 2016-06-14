@@ -912,11 +912,12 @@ struct gx_device_pdf_s {
  m(32,pres_soft_mask_dict) m(33,PDFXTrimBoxToMediaBoxOffset.data)\
  m(34,PDFXBleedBoxToTrimBoxOffset.data) m(35, DSCEncodingToUnicode.data)\
  m(36,Identity_ToUnicode_CMaps[0]) m(37,Identity_ToUnicode_CMaps[1])\
- m(38,ResourceUsage) m(39,vgstack)\
- m(40, outline_levels) m(41, EmbeddedFiles)
- m(41, gx_device_pdf, EmbeddedFiles);
- m(42, gx_device_pdf, pdf_font_dir);*/
-#define gx_device_pdf_num_ptrs 44
+ m(38,vgstack)\
+ m(39, outline_levels)
+ m(40, gx_device_pdf, EmbeddedFiles);
+ m(41, gx_device_pdf, pdf_font_dir);
+ m(42, gx_device_pdf, Extension_Metadata);*/
+#define gx_device_pdf_num_ptrs 43
 #define gx_device_pdf_do_param_strings(m)\
     m(0, OwnerPassword) m(1, UserPassword) m(2, NoEncrypt)\
     m(3, DocumentUUID) m(4, InstanceUUID)
