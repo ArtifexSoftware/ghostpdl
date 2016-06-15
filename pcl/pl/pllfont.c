@@ -234,7 +234,7 @@ pl_fill_in_mt_font(gs_font_base * pfont, pl_font_t * plfont, ushort handle,
     else {                      /* Initialize general font boilerplate. */
         code =
             pl_fill_in_font((gs_font *) pfont, plfont, pdir, mem,
-                            "illegal font");
+                            "illegal_font");
         if (code >= 0) {        /* Initialize MicroType font boilerplate. */
             plfont->header = 0;
             plfont->header_size = 0;
@@ -297,7 +297,7 @@ pl_load_ufst_lineprinter(gs_memory_t * mem, pl_dict_t * pfontdict,
                 return -1;
             if (pl_fill_in_font
                 ((gs_font *) pfont, pplfont, pdir, mem,
-                 "lineprinter fonts") < 0)
+                 "lineprinter_font") < 0)
                 return -1;
 
             pl_fill_in_bitmap_font(pfont, gs_next_ids(mem, 1));
@@ -399,7 +399,7 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
      * Open and install the various font collection objects.
      *
      * For each font collection object, step through the object until it is
-     * exhausted, placing any fonts found in the built_in_fonts dcitonary.
+     * exhausted, placing any fonts found in the built_in_fonts dictionary.
      *
      */
     ufst_root_dir = (char *)pl_fapi_ufst_get_font_dir(mem);
@@ -409,7 +409,7 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
     for (k = 0; strlen(fco) > 0 && fco < fco_lim; k++) {
         status = 0;
         /* build and open (get handle) for the k'th fco file name */
-        strcpy((char *)pthnm, ufst_root_dir);
+        gs_strlcpy((char *)pthnm, ufst_root_dir, sizeof pthnm);
 
         for (i = 2; fco[i] != gp_file_name_list_separator && (&fco[i]) < fco_lim; i++);
 

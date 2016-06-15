@@ -444,7 +444,7 @@ pl_load_ufst_lineprinter(gs_memory_t * mem, pl_dict_t * pfontdict,
             if (pplfont == 0 || pfont == 0)
                 return -1;
             if (pl_fill_in_font
-                (pfont, pplfont, pdir, mem, "lineprinter fonts") < 0)
+                (pfont, pplfont, pdir, mem, "lineprinter_fonts") < 0)
                 return -1;
 
             pl_fill_in_bitmap_font(pfont, gs_next_ids(mem, 1));

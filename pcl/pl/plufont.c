@@ -96,7 +96,7 @@ pl_load_mt_font(SW16 handle, gs_font_dir * pdir, gs_memory_t * mem,
     else {                      /* Initialize general font boilerplate. */
         code =
             pl_fill_in_font((gs_font *) pfont, plfont, pdir, mem,
-                            "illegal font");
+                            "illegal_font");
         if (code >= 0) {        /* Initialize MicroType font boilerplate. */
             plfont->header = 0;
             plfont->header_size = 0;

@@ -187,7 +187,7 @@ hpgl_select_stick_font(hpgl_state_t * pgls)
     if (pfont == 0)
         return_error(e_Memory);
     code = pl_fill_in_font((gs_font *) pfont, font, pgls->font_dir,
-                           pgls->memory, "stick/arc font");
+                           pgls->memory, "stick_arc_font");
     if (code < 0)
         return code;
     if (pfs->params.proportional_spacing)
@@ -243,7 +243,7 @@ hpgl_select_531_font(hpgl_state_t * pgls)
     if (pfont == 0)
         return_error(e_Memory);
     code = pl_fill_in_font((gs_font *) pfont, font, pgls->font_dir,
-                           pgls->memory, "531 font");
+                           pgls->memory, "531_font");
     if (code < 0)
         return code;
 

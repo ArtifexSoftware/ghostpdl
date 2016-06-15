@@ -773,12 +773,13 @@ pl_clone_font(const pl_font_t * src, gs_memory_t * mem, client_name_t cname)
 }
 
 /* Fill in generic font boilerplate. NB TODO examine duplication with
-   gs_font_alloc() */
+   gs_font_alloc().  The font name must not contain spaces.  It is
+   used for PDF output and Acrobat (some versions) do not process the
+   file correctly with spaces in the name. */
 int
 pl_fill_in_font(gs_font * pfont, pl_font_t * plfont, gs_font_dir * pdir,
                 gs_memory_t * mem, const char *font_name)
 {
-    int i;
     gs_font_base *pbfont = (gs_font_base *) pfont;
 
     plfont->pfont = pfont;
@@ -810,17 +811,21 @@ pl_fill_in_font(gs_font * pfont, pl_font_t * plfont, gs_font_dir * pdir,
     pbfont->procs.glyph_info = gs_default_glyph_info;
     pbfont->procs.glyph_outline = gs_no_glyph_outline;
     pbfont->id = gs_next_ids(mem, 1);
-    pbfont->font_name.size = strlen(font_name);
-    strncpy((char *)pbfont->font_name.chars, font_name,
-            pbfont->font_name.size);
-    /* replace spaces with '-', seems acrobat doesn't like spaces. */
-    for (i = 0; i < pbfont->font_name.size; i++) {
-        if (pbfont->font_name.chars[i] == ' ')
-            pbfont->font_name.chars[i] = '-';
+    {
+        size_t sz = strlen(font_name);
+        gs_font_name *fnm = &pbfont->font_name;
+        gs_font_name *knm = &pbfont->key_name;
+
+        if (sz > gs_font_name_max)
+            sz = gs_font_name_max;
+        fnm->size = knm->size = sz;
+
+        memcpy(fnm->chars, font_name, sz);
+        fnm->chars[sz] = 0;
+
+        memcpy(knm->chars, font_name, sz);
+        knm->chars[sz] = 0;
     }
-    strncpy((char *)pbfont->key_name.chars, font_name,
-            sizeof(pbfont->font_name.chars));
-    pbfont->key_name.size = strlen(font_name);
     return 0;
 }
 
