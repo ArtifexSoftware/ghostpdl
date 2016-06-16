@@ -106,10 +106,6 @@ CFLAGS=$save_cflags
 AC_ARG_ENABLE([save_confaux])
 
 if test x"$CCAUX" != x"" ; then
-  SUBCONFPARMS=
-  for parm in $OPARMS ; do
-    SUBCONFPARMS="$(echo $parm | grep -v CC | grep -v CCAUX | grep -v CFLAGSAUX | grep -v CFLAGS) $SUBCONFPARMS"
-  done
   # rerun configure for the AUX tools, disabling a load of tests not relevant for CCAUX
   olddir=`pwd`
   if test x"$enable_save_confaux" = x"yes"; then
