@@ -31,6 +31,7 @@ CXXFLAGS="${CXXFLAGS:=}"
 LDFLAGS="${LDFLAGS:=}"
 
 CFLAGSAUX="${CFLAGSAUX:-$CFLAGS}"
+LDFLAGSAUX="${LDFLAGSAUX:-$LDFLAGS}"
 
 # save these for later
 OPARMS=$@
@@ -115,7 +116,7 @@ if test x"$CCAUX" != x"" ; then
   fi
   mkdir $CONFAUXDIR
   cd $CONFAUXDIR
-  ../$0 CC="$CCAUX" CFLAGS="$CFLAGSAUX" CCAUX= CFLAGSAUX= MAKEFILE=../$AUXFLAGS_MAK --host= --build= --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
+  ../$0 CC="$CCAUX" CFLAGS="$CFLAGSAUX" LDFLAGS="$LDFLAGSAUX" CCAUX= CFLAGSAUX= CFLAGSAUX= MAKEFILE=../$AUXFLAGS_MAK --host= --build= --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
   status=$?
   cp config.log ../configaux.log
   cd $olddir
