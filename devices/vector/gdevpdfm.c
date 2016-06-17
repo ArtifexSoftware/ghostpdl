@@ -325,6 +325,31 @@ cos_stream_put_c_strings(cos_stream_t *pcs, const char *key, const char *value)
     return cos_dict_put_c_strings(cos_stream_dict(pcs), key, value);
 }
 
+static int
+setup_pdfmark_stream_no_compression(gx_device_psdf *pdev0,
+                        cos_stream_t *pco)
+{
+    /* This function is for pdfwrite only. */
+    gx_device_pdf *pdev = (gx_device_pdf *)pdev0;
+    gs_memory_t *mem = pdev->pdf_memory;
+
+    pco->input_strm = cos_write_stream_alloc(pco, pdev,
+                                  "setup_pdfmark_stream_compression");
+    if (pco->input_strm == 0)
+        return_error(gs_error_VMerror);
+    if (!pdev->binary_ok) {
+        stream_state *ss = s_alloc_state(mem, s_A85E_template.stype,
+                          "setup_pdfmark_stream_compression");
+        if (ss == 0)
+            return_error(gs_error_VMerror);
+        if (s_add_filter(&pco->input_strm, &s_A85E_template, ss, mem) == 0) {
+            gs_free_object(mem, ss, "setup_image_compression");
+            return_error(gs_error_VMerror);
+        }
+    }
+    return 0;
+}
+
 /* Setup pdfmak stream compression. */
 static int
 setup_pdfmark_stream_compression(gx_device_psdf *pdev0,
@@ -1656,7 +1681,7 @@ start_XObject(gx_device_pdf * pdev, bool compress, cos_stream_t **ppcs)
     if (code < 0)
         return code;
     code = pdf_enter_substream(pdev, resourceXObject, gs_no_id, &pres, false,
-                pdev->CompressFonts /* Have no better switch*/);
+                pdev->CompressStreams);
     if (code < 0)
         return code;
     pdev->accumulating_a_global_object = true;
@@ -1714,7 +1739,7 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
             code = pdf_enter_substream(pdev,
                         resourceXObject,
                         gs_no_id, &pres, true,
-                        pdev->CompressFonts /* Have no better switch*/);
+                        pdev->CompressStreams);
             if (code < 0)
                 return code;
             pcs = (cos_stream_t *)pres->object;
@@ -2178,9 +2203,14 @@ pdfmark_OBJ(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
             return 0;		/* already exists, but OK */
         return code;
     }
-    if (stream)
-        return setup_pdfmark_stream_compression((gx_device_psdf *)pdev,
+    if (stream) {
+        if (pdev->CompressStreams)
+            return setup_pdfmark_stream_compression((gx_device_psdf *)pdev,
                                                      (cos_stream_t *)pco);
+        else
+            return setup_pdfmark_stream_no_compression((gx_device_psdf *)pdev,
+                                                     (cos_stream_t *)pco);
+    }
     return 0;
 }
 
@@ -2221,7 +2251,7 @@ pdfmark_PUTDICT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                 const gs_matrix * pctm, const gs_param_string * no_objname)
 {
     cos_object_t *pco;
-    int code;
+    int code, i;
 
     if ((code = pdf_refer_named(pdev, &pairs[0], &pco)) < 0)
         return code;
@@ -2229,6 +2259,29 @@ pdfmark_PUTDICT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
         return_error(gs_error_typecheck);
     if (pco->written)
         return_error(gs_error_rangecheck);
+
+    /* If this is a stream, and we are doing PDF/A output, and the stream
+     * is a Metadata stream, then we must not write it compressed. Bizarrely PDF/A
+     * excludes this.
+     */
+    if (cos_type(pco) == cos_type_stream && pdev->PDFA) {
+        for (i=0;i<count;i++) {
+            if (pairs[i].size == 9 && strncmp((const char *)pairs[i].data, "/Metadata", 9) == 0) {
+                cos_dict_t *pcd = (cos_dict_t *)pco;
+
+                /* Close the compressed stream */
+                gs_free_object(pdev->pdf_memory, pco->input_strm, "free old stream, replacing with new stream");
+                /* And create a new uncompressed stream */
+                code = setup_pdfmark_stream_no_compression((gx_device_psdf *)pdev,
+                                                     (cos_stream_t *)pco);
+
+                /* We also need to remove any compression filters from the stream dictionary */
+                cos_dict_delete_c_key(pcd, "/Filter");
+                cos_dict_delete_c_key(pcd, "/DecodeParams");
+            }
+        }
+    }
+
     return pdfmark_put_pairs((cos_dict_t *)pco, pairs + 1, count - 1);
 }
 

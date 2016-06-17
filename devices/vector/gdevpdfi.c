@@ -2068,7 +2068,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
 
                 /* star capturing the form stream */
                 code = pdf_enter_substream(pdev, resourceXObject, id, &pres, false,
-                        pdev->CompressFonts/* Have no better switch.*/);
+                        pdev->CompressStreams);
                 if (code < 0)
                     return code;
                 pcd = cos_stream_dict((cos_stream_t *)pres->object);
@@ -2188,7 +2188,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 if (code < 0)
                     return code;
                 code = pdf_enter_substream(pdev, resourcePattern, id, &pres, false,
-                        pdev->CompressFonts/* Have no better switch.*/);
+                        pdev->CompressStreams);
                 if (code < 0)
                     return code;
                 pres->rid = id;

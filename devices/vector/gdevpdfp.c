@@ -74,6 +74,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("ReEncodeCharacters", gs_param_type_bool, ReEncodeCharacters),
     pi("FirstObjectNumber", gs_param_type_long, FirstObjectNumber),
     pi("CompressFonts", gs_param_type_bool, CompressFonts),
+    pi("CompressStreams", gs_param_type_bool, CompressStreams),
     pi("PrintStatistics", gs_param_type_bool, PrintStatistics),
     pi("MaxInlineImageSize", gs_param_type_long, MaxInlineImageSize),
     pi("DSCEncodingToUnicode", gs_param_type_int_array, DSCEncodingToUnicode),

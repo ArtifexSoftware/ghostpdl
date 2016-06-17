@@ -121,6 +121,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  1 /*true*/,			/* ReEncodeCharacters */
  1,				/* FirstObjectNumber */
  1 /*true*/,			/* CompressFonts */
+ 1 /*true*/,			/* CompressStreams */
  0 /*false*/,			/* PrintStatistics */
  {0, 0, 0},			/* DocumentUUID */
  {0, 0, 0},			/* InstanceUUID */

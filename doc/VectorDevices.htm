@@ -241,9 +241,14 @@ at lower resolution produce less consistent text rendering. Use with
 caution.
 
 <dt><code>-dCompressFonts=</code><em>boolean</em>
-<dd>Defines whether <code>ps2pdf</code> will compress embedded fonts in
+<dd>Defines whether <code>pdfwrite</code> will compress embedded fonts in
 the output.  The default value is <code>true</code>; the
-<code>false</code> setting is intended only for debugging.
+<code>false</code> setting is intended only for debugging as it will result in larger output.
+
+<dt><code>-dCompressStreams=</code><em>boolean</em>
+<dd>Defines whether <code>pdfwrite</code> will compress streams other than those in fonts or pages in
+the output.  The default value is <code>true</code>; the
+<code>false</code> setting is intended only for debugging as it will result in larger output.
 
 </dl>
 <h4><a name="distillerparams"></a>Distiller Parameters</h4>

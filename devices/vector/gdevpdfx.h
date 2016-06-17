@@ -577,6 +577,7 @@ struct gx_device_pdf_s {
     bool ReEncodeCharacters;
     long FirstObjectNumber;
     bool CompressFonts;
+    bool CompressStreams;
     bool PrintStatistics;
     gs_param_string DocumentUUID;
     gs_param_string InstanceUUID;
