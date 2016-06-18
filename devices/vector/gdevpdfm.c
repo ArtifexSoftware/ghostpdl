@@ -2274,8 +2274,13 @@ pdfmark_PUTDICT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                 /* And create a new uncompressed stream */
                 code = setup_pdfmark_stream_no_compression((gx_device_psdf *)pdev,
                                                      (cos_stream_t *)pco);
+                if (code < 0)
+                    return code;
 
-                /* We also need to remove any compression filters from the stream dictionary */
+                /* We also need to remove any compression filters from the stream dictionary
+                 * The only possible error here is that the key isn't found, which is possible
+                 * and we don't care, so ignore the return code.
+                 */
                 cos_dict_delete_c_key(pcd, "/Filter");
                 cos_dict_delete_c_key(pcd, "/DecodeParams");
             }
