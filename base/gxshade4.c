@@ -144,6 +144,7 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
                 va = vb;
                 ca = cb;
                 vb.c = cb = c;
+                /* fall through */
             case 2:
                 c = cb;
                 vb = vc;
