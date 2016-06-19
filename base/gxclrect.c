@@ -628,6 +628,7 @@ clist_fill_linear_color_triangle(gx_device * dev, const gs_fill_attributes *fa,
 }
 
 extern dev_proc_open_device(pattern_clist_open_device);
+extern dev_proc_dev_spec_op(pattern_accum_dev_spec_op);
 
 int
 clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
@@ -648,9 +649,11 @@ clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
             return 0;
         }
     }
-    /* forward to our super class */
+    /* forward to the appropriate super class */
     if (cdev->is_printer)
         return gdev_prn_forwarding_dev_spec_op(pdev, dev_spec_op, data, size);
+    if (cdev->procs.open_device == pattern_clist_open_device)
+        return pattern_accum_dev_spec_op(pdev, dev_spec_op, data, size);
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 

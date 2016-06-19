@@ -337,6 +337,7 @@ bool gx_pattern_tile_is_clist(gx_color_tile *ptile);
 bool gx_device_is_pattern_clist(gx_device *dev);
 
 dev_proc_open_device(pattern_clist_open_device);
+dev_proc_dev_spec_op(pattern_accum_dev_spec_op);
 
 /* Code to fill a pdf14 transparency rectangles with a pattern trans buffer object */
 int gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,

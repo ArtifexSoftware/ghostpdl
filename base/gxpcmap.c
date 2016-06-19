@@ -97,7 +97,8 @@ static dev_proc_copy_color(pattern_accum_copy_color);
 static dev_proc_copy_planes(pattern_accum_copy_planes);
 static dev_proc_get_bits_rectangle(pattern_accum_get_bits_rectangle);
 static dev_proc_fill_rectangle_hl_color(pattern_accum_fill_rectangle_hl_color);
-static dev_proc_dev_spec_op(pattern_accum_dev_spec_op);
+/* not static for use by clist_dev_spec_op with pattern-clist */
+dev_proc_dev_spec_op(pattern_accum_dev_spec_op);
 
 /* The device descriptor */
 static const gx_device_pattern_accum gs_pattern_accum_device =
