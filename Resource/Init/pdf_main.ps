@@ -1845,7 +1845,27 @@ currentdict /xref-char-dict undef
     /FitBH /FitH load def
     /FitBV /FitV load def
     /XYZ  {
-        aload pop
+        dup length dup 4 gt {
+          pop /viewdestprocs cvx /rangecheck signalerror
+        }{
+          dup 4 eq {
+            pop aload pop
+          } {
+            dup 3 eq {
+              pop aload pop //null
+            } {
+              dup 2 eq {
+                pop aload pop //null //null
+              } {
+                dup 1 eq {
+                  pop aload pop //null //null //null
+                } {
+                  pop /viewdestprocs cvx /rangecheck signalerror
+                } ifelse
+              } ifelse
+            } ifelse
+          } ifelse
+        } ifelse
         3 1 roll
         2 copy 7 -1 roll 1 and 0 ne { exch } if	4 2 roll    % odd rotation switches x<->y
         2 { dup //null eq { pop 0 } if exch } repeat	    % replace nulls with 0
@@ -1896,9 +1916,9 @@ end readonly def
            % stack: [/Page <page#>] <link|outline> <dest> <PDF2PS_matrix> <rot>
            3 -1 roll dup length 1	sub 1 exch getinterval /View 4 1 roll
            % stack: [/Page <page#>] <link|outline> /View <PDF2PS_matrix> <rot> <view>
-           //viewdestprocs 1 index 0 get get exec
+          //viewdestprocs 1 index 0 get get exec
            3 -1 roll
-         } {
+        } {
            dup type /integertype eq {
              /CumulativePageCount where {pop CumulativePageCount}{0}ifelse add
              /Page exch 1 add 4 2 roll
