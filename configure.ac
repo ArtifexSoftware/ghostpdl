@@ -30,11 +30,13 @@ CPPFLAGS="${CPPFLAGS:=}"
 CXXFLAGS="${CXXFLAGS:=}"
 LDFLAGS="${LDFLAGS:=}"
 
-CFLAGSAUX="${CFLAGSAUX:-$CFLAGS}"
-LDFLAGSAUX="${LDFLAGSAUX:-$LDFLAGS}"
-
-# save these for later
-OPARMS=$@
+if test x"$cross_compiling" = x"yes"; then
+  CFLAGSAUX="${CFLAGSAUX:=}"
+  LDFLAGSAUX="${LDFLAGSAUX:=}"
+else
+  CFLAGSAUX="${CFLAGSAUX:-$CFLAGS}"
+  LDFLAGSAUX="${LDFLAGSAUX:-$LDFLAGS}"
+fi
 
 THEMAKEFILE="${MAKEFILE:-Makefile}"
 AUXFLAGS_MAK=auxflags.mak
