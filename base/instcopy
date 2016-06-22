@@ -49,8 +49,8 @@ else
 fi
 dsttmp=$dstdir/#inst.$$#
 
-$doit cp $src $dsttmp &&
 $doit trap "rm -f $dsttmp" 0 &&
+$doit cp $src $dsttmp &&
 if [ x"$mode" != x ]; then $doit chmod $mode $dsttmp; else true; fi &&
 $doit rm -f $dst &&
 $doit mv $dsttmp $dst &&
