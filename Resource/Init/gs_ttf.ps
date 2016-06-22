@@ -741,11 +741,16 @@ currentdict /woff_tag_dict .undef
       % so we have to pre-process and find the highest index used.
       % We start with a base value of numglyphs as it's most common,
       % and we can safely have a array that's too large.
-      numglyphs postglyphs
-      0 1 numglyphs 1 sub
-      {
-        2 mul 34 add 1 index exch 2 //getinterval_from_stringarray exec
-        dup 0 get 8 bitshift exch 1 get add 258 sub dup 3 index gt
+      % Rather than parse out the indices twice, we store them in an
+      % array on the stack, which we then reuse, overwriting entries
+      % as we go later on.
+      numglyphs array numglyphs postglyphs
+      0 1 numglyphs 1 sub {
+        dup 2 mul 34 add 2 index exch 2 //getinterval_from_stringarray exec
+        dup 0 get 8 bitshift exch 1 get add
+        dup 5 index exch
+        4 -1 roll exch put
+        258 sub dup 3 index gt
         % if we find a reference to an index higher than the value
         % already on the stack, replace the value on the stack
         { 3 -1 roll pop 2 1 roll} {pop} ifelse
@@ -801,36 +806,21 @@ currentdict /woff_tag_dict .undef
           pop
         } ifelse
       } if
-
-      numglyphs array 0 1 numglyphs 1 sub {
-        dup 2 mul 34 add postglyphs exch 2 //getinterval_from_stringarray exec
-        dup 0 get 8 bitshift exch 1 get add dup 258 lt {
+      % Loop through the array of name indices we created above.
+      % This loop replaces name index in the array with the name
+      % it references.
+      0 1 2 index length 1 sub {
+        dup 2 index exch get dup 258 lt {
           MacGlyphEncoding exch get
         } {
-          % If the index we read from the table is outside the range of glyph
-          % names available, just use the /.notdef name, and carry on
-          dup 32768 ge exch 258 sub dup postnames length ge
-          3 -1 roll or {
-            % According to the published TrueType spec, such values are
-            % "reserved for future use", but at least some PDF files
-            % produced by the Adobe PDF library contain entries with a
-            % value of 16#ffff.
-            TTFDEBUG {
-              dup postnames length ge {
-                  (   *** warning: glyph index past end of 'post' table) = flush
-              } if
-            } if
-            pop /.notdef
-          }
-          {
-              postnames exch get
-              % At least some of Microsoft's TrueType fonts use incorrect
-              % (Adobe-incompatible) names for some glyphs.
-              % Correct for this here.
-              postremap 1 index .knownget { exch pop } if
-          } ifelse
+          258 sub postnames exch get
+          % At least some of Microsoft's TrueType fonts use incorrect
+          % (Adobe-incompatible) names for some glyphs.
+          % Correct for this here.
+          postremap 1 index .knownget { exch pop } if
         } ifelse
-        2 index 3 1 roll put
+        2 index 3 1 roll
+        put
       } for
 
       .broken_post {
