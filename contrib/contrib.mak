@@ -1098,7 +1098,7 @@ $(DEVOBJ)dviprlib.$(OBJ) : $(JAPSRC)dviprlib.c $(JAPSRC)dviprlib.h \
                            $(CONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(O_)$@ $(C_) $(JAPSRC)dviprlib.c
 
-extra-dmprt-install:
+extra-dmprt-install: install-libdata
 	$(INSTALL_DATA) $(JAPSRC)dmp_init.ps $(DESTDIR)$(gsdatadir)$(D)lib || exit 1
 	$(INSTALL_DATA) $(JAPSRC)dmp_site.ps $(DESTDIR)$(gsdatadir)$(D)lib || exit 1
 	$(INSTALL_DATA) $(JAPSRC)escp_24.src $(DESTDIR)$(gsdatadir)$(D)lib || exit 1
@@ -1266,7 +1266,7 @@ $(DEVOBJ)gdevalps.$(OBJ) : $(JAPSRC)gdevalps.c $(PDEVH) \
 
 ### ----------------- Additional .upp files ---------------- ###
 
-extra-upp-install:
+extra-upp-install: install-libdata
 	for f in $(CONTRIBSRC)uniprint$(D)*.upp; do \
 	    $(INSTALL_DATA) $$f $(DESTDIR)$(gsdatadir)$(D)lib || exit 1; \
 	done
