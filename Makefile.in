@@ -80,6 +80,7 @@ INSTALL_DATA = $(INSTALL) -m 644
 INSTALL_SHARED = @INSTALL_SHARED@
 
 prefix = @prefix@
+datarootdir = @datarootdir@
 exec_prefix = @exec_prefix@
 bindir = @bindir@
 scriptdir = $(bindir)
@@ -89,7 +90,6 @@ mandir = @mandir@
 man1ext = 1
 man1dir = $(mandir)/man$(man1ext)
 datadir = @datadir@
-datarootdir = @datarootdir@
 
 # The following must be substituted using @datadir@ and @libdir@
 # to avoid adding RPM generation paths (CUPS STR #1112)
