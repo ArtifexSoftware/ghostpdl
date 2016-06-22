@@ -478,12 +478,13 @@ static void *cups_read(ImageReader *im,
     if (skip_bytes(im->file, 1796-424) == EOF)
         return NULL;
 
-    d = data = Malloc(*width * *height * 4);
+    data = Malloc(*width * *height * 4);
     *span = *width * 4;
     *bpp = 32;
     for (y = *height; y > 0; y--) {
         b = 0;
         c = 0;
+        d = data + (y - 1) * *span;
         for (x = *width; x > 0; x--) {
             b >>= 1;
             if (b == 0) {
