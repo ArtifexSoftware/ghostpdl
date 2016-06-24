@@ -4,11 +4,11 @@ code that has not been committed to git.
 
 Usage:
 
-  clusterpush.pl [product] ['bmpcmp'] ['lowres'|'hires'] ['32'] ['relaxtimeout'] [user]
+  clusterpush.pl [product] ['bmpcmp'] ['lowres'|'hires'] ['relaxtimeout'] ['filter='] ['extras='] [user]
 
 
-Where product is one or more of gs, pcl, xps or mupdf or mujstest.
-If you do not specify a product the product(s) tested will be cased on
+Where product is one or more of gs, pcl, and xps or mupdf or mujstest.
+If you do not specify a product the product(s) tested will be based on
 what directory you are 'cd'ed to when the clusterpush.pl script is run.
 
 bmpcmp indicates that a bitmap comparison of your output to that of the
@@ -17,28 +17,38 @@ last svn commit should be performed.
 lowres or hires indicates to only perform a low-resolution or
 high-resolution cluster run; by default both are performed.
 
-32 indicates that the code is to be compiled in 32 bit mode (opposed
-to the default of 64 bit)
-
 relaxtimeout relaxes the timeout for each job, from 5 minutes to
 30 minutes.  Note that the total time for the cluster job is still
 limited to 2 hours.
 
+filter= limits jobs to those matching the specified parameter, for
+example filter=pgmraw will only test pgmraw files.
+
+This option can be specified multiple times, in which case the filters
+are or'd together; i.e. filter=pgmraw filter=ppmraw will process both
+pgmraw and ppmraw files.
+
+Separating multiple paramters seperated by a comma ands the filters
+together; i.e. filter=300,pbmraw processed only 300 dpi pbmraw files.
+
+extras= add extra command line options to a cluster job,
+i.e. extras=-dEPSCROP.
+
+This option can be specified multiple times.
+
 user is your cluster user name, if you don't specify one, clusterpush.pl
 uses, in order of preference, the value of one of the following
 environment variables: CLUSTER_USER, USER, and USERNAME This works under
-Linux, Mac OS X, Msys,  and probably cygwin.
+Linux, Mac OS X, Msys, and probably cygwin.
 
-The order of the options is not important but some of the options
-are mutually exclusive (specifically 32 and relaxtimeout cannot both
-be specfified).
+The order of the options is not important.
 
 You need to run clusterpush.pl from the top level directory (the same
-directory from where you normally run 'make').  Clusterpush prints and
+directory from where you normally run 'make').  Clusterpush prints an
 error if you try to run it from a different directory.
 
 Results will be sent via email after the run is completed, which takes
-about 30 minutes, presuming the cluster isn't busy.  Your code is compared
+about 10 minutes, presuming the cluster isn't busy.  Your code is compared
 to the most recent baseline, so for meaningful results you will want
 to sync your code with head if recent changes to head have resulted in
 regression differences.
@@ -47,12 +57,6 @@ The first time you run clusterpush.pl it will take a really long time
 to rsync your source to the master machine and then from the master to
 the nodes.  After that things will go much quicker (unless, like me,
 you accidently leave giant .ppm files in the current directory).
-
-Futhermore the first time clusterpush.pl is run each cluster node has to
-transfer your source tree from the cluster master; some of the nodes have
-relatively slow internet connections and may time out.  The transfers
-will complete, so the next time a clusterpush.pl is run everything will
-proceed normally.
 
 bmpcmp mode:
 
@@ -71,7 +75,7 @@ allows users to refer to bmpcmp output in email and IRC disucssions
 without having to email files around.
 
 You can add bmpcmp to a normal clusterpush (i.e. 'clusterpush gs bmpcmp'
-or 'clusterpush gs pcl xps ls bmpcmp').  This will queueu both jobs in
+or 'clusterpush gs pcl xps bmpcmp').  This will queueu both jobs in
 the correct sequence.
 
 abort mode:
