@@ -556,10 +556,11 @@ using Ghostscript directly but cannot be set in <code>ps2pdf</code>.
 See <a href="#Limitations">Limitations</a> below.
 
 <p>
-Ghostscript passes the orientation values from DSC comments to
+Ghostscript passes the orientation values from DSC comments to the
 <code>pdfwrite</code> driver, and these are compared with the
-auto-rotate heuristic. If they are different then the auto-rotate
-value will be used. To use the DSC comment instead select AutoRotatePages=/None
+auto-rotate heuristic. If they are different then the DSC value will be used preferentially.
+If the heuristic is to be preferred over the DSC comments then comment parsing
+can be disabled by setting <code>-dParseDSCComments=false</code>.
 <p>
 
 <hr>

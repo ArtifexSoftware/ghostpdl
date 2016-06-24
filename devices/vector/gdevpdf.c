@@ -930,11 +930,11 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
         }
 
         if (angle < 0) {
-            /* Incompatible Auto-rotation and DSC specification.
-             * Previously we used to defer to the DSC, but if the user has
-             * specified auto-rotation, I htink we should respect that instead.
-             */
-            angle = ptr->Rotate;
+        /* If DSC and heuristic disagree, prefer dsc rotation to match the documented Adobe behaviour */
+            if (dsc_orientation >= 0)
+                angle = dsc_orientation * 90;
+            else
+                angle = ptr->Rotate;
         }
 
         /* If got some, write it out : */
