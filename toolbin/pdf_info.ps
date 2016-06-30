@@ -112,6 +112,10 @@ cleartomark		% discard the dict from --where--
     dup /Rotate pget {
        (    Rotate = ) print =print
     } if
+    dup /Annots pget {
+       pop
+        (     Page contains Annotations) print
+    } if
     pageusestransparency {
         (     Page uses transparency features) print
     } if
