@@ -2715,9 +2715,9 @@ pdfmark_Ext_Metadata(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
         dmprintf(pdev->pdf_memory, "Extension metadata already defined, discarding old data.\n");
         gs_free_object(pdev->pdf_memory->stable_memory, pdev->ExtensionMetadata, "Extension metadata");
     }
-    pdev->ExtensionMetadata = (char *)gs_alloc_bytes(pdev->pdf_memory->stable_memory, pairs[1].size, "Extension metadata");
-    memset(pdev->ExtensionMetadata, 0x00, pairs[1].size);
-    for (i=1;i<pairs[1].size - 2;i++) {
+    pdev->ExtensionMetadata = (char *)gs_alloc_bytes(pdev->pdf_memory->stable_memory, pairs[1].size - 1, "Extension metadata");
+    memset(pdev->ExtensionMetadata, 0x00, pairs[1].size - 1);
+    for (i=1;i<pairs[1].size - 1;i++) {
         if (pairs[1].data[i] == '\\') {
             switch(pairs[1].data[i+1]) {
                 case '(':
