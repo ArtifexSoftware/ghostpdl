@@ -534,6 +534,46 @@ zpopextendedgstate(i_ctx_t *i_ctx_p)
     return(code);
 }
 
+static int
+zsetCA(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    double value;
+
+    if (real_param(op, &value) < 0)
+        return_op_typecheck(op);
+
+    gs_setCA(igs, (float)value);
+    pop(1);
+    return 0;
+}
+
+static int
+zgetCA(i_ctx_t *i_ctx_p)
+{
+    return current_float_value(i_ctx_p, gs_getCA);
+}
+
+static int
+zsetca(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    double value;
+
+    if (real_param(op, &value) < 0)
+        return_op_typecheck(op);
+
+    gs_setca(igs, (float)value);
+    pop(1);
+    return 0;
+}
+
+static int
+zgetca(i_ctx_t *i_ctx_p)
+{
+    return current_float_value(i_ctx_p, gs_getca);
+}
+
 /* ------ Initialization procedure ------ */
 
 /* We need to split the table because of the 16-element limit. */
@@ -562,5 +602,13 @@ const op_def ztrans2_op_defs[] = {
     {"1.pushpdf14devicefilter", zpushpdf14devicefilter},
     {"0.poppdf14devicefilter", zpoppdf14devicefilter},
     {"0.abortpdf14devicefilter", zabortpdf14devicefilter},
+    op_def_end(0)
+};
+
+const op_def ztrans3_op_defs[] = {
+    {"1.setStrokeConstantAlpha", zsetCA},
+    {"0.getStrokeConstantAlpha", zgetCA},
+    {"1.setFillConstantAlpha", zsetca},
+    {"0.getFillConstantAlpha", zgetca},
     op_def_end(0)
 };

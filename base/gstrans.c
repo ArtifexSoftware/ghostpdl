@@ -844,3 +844,25 @@ gx_abort_trans_device(gs_gstate * pgs, gx_device * pdev)
     return 0;
 }
 
+int gs_setCA(gs_gstate *pgs, float alpha)
+{
+    pgs->CA = alpha;
+    return 0;
+}
+
+float gs_getCA(const gs_gstate *pgs)
+{
+    return pgs->CA;
+}
+
+int gs_setca(gs_gstate *pgs, float alpha)
+{
+    pgs->ca = (float)alpha;
+    return 0;
+}
+
+float gs_getca(const gs_gstate *pgs)
+{
+    return pgs->ca;
+}
+

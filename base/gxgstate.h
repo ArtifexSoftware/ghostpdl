@@ -362,6 +362,12 @@ struct gs_gstate_s {
                                 /* possibly = clip_path or view_clip */ 
     bool effective_clip_shared;	/* true iff e.c.p. = c.p. or v.c. */ 
     
+    /* PDF graphics state parameters */
+    float ca, CA;
+    void *SMask;
+/*    void *BM;            Already handled (.setbelndmode) */
+    bool AIS;
+/*    bool TK;             Already handled (.settextknockout) */
     /* Current colors (non-stroking, and stroking) */ 
     gs_gstate_color color[2]; 
     
