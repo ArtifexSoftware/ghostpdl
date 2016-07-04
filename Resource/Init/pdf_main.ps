@@ -1830,16 +1830,24 @@ currentdict /xref-char-dict undef
 /viewdestprocs 8 dict dup begin
     /Fit  { exch pop exch pop } bind def
     /FitH {
-        aload pop
-        0 4 -1 roll 1 and 0 eq { exch } if
-        4 -1 roll transform exch pop
-        2 array astore
+        aload length 2 lt {
+          1 array astore
+          3 1 roll pop pop
+        }{
+          0 4 -1 roll 1 and 0 eq { exch } if
+          4 -1 roll transform exch pop
+          2 array astore
+        } ifelse
     } bind def
     /FitV {
-        aload pop
-        0 4 -1 roll 1 and 0 ne { exch } if
-        4 -1 roll transform pop
-        2 array astore
+        aload length 2 lt {
+          1 array astore
+          3 1 roll pop pop
+        }{
+          0 4 -1 roll 1 and 0 ne { exch } if
+          4 -1 roll transform pop
+          2 array astore
+        } ifelse
     } bind def
     /FitB  /Fit  load def
     /FitBH /FitH load def
