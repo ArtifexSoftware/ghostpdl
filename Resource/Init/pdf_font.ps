@@ -477,14 +477,14 @@ currentdict end readonly def
 
 /.convert_ToUnicode-into-g2u % <GlyphNames2Unicode> <Encoding|null> <CMap> .convert_ToUnicode-into-g2u -
 {
-  PDFDEBUG {
+  CMAPDEBUG {
     (.convert_ToUnicode-into-g2u beg) =
   } if
   3 2 roll begin
   /.CodeMapData get % About the data format see gs_cmap.ps, the comment after "CMap operators".
   1 get % code maps
   {
-    PDFDEBUG {
+    CMAPDEBUG {
       dup //== exec
     } if
     dup length 1 sub 0 exch 5 exch {           % e [] i
@@ -496,7 +496,7 @@ currentdict end readonly def
       dup 0 get exch 3 get                     % e [] i offset key_size value_size
       4 index 4 index 2 add get                % e [] i offset key_size value_size (keys)
       5 index 5 index 3 add get                % e [] i offset key_size value_size (keys) (values)
-      PDFDEBUG {
+      CMAPDEBUG {
         ( offset=) print 4 index =string cvs print
         ( key_size=) print 3 index =string cvs print
         ( value_size=) print 2 index =
@@ -512,7 +512,7 @@ currentdict end readonly def
           } if
         } if                                   % e [] i (values) cid|name
         exch
-        PDFDEBUG {
+        CMAPDEBUG {
           ( defined single: ) print 1 index =string cvs print ( ) print dup //== exec
         } if
         //false copy&def                       % e [] i
@@ -524,13 +524,13 @@ currentdict end readonly def
           2 index 1 index 6 index getinterval
           string2number                        % e [] i offset key_size value_size (keys) (values) j keyL
           6 index add
-          PDFDEBUG {
+          CMAPDEBUG {
               ( keyL=) print dup =string cvs print
           } if
           3 index 2 index 7 index add 7 index getinterval
           string2number                        % e [] i offset key_size value_size (keys) (values) j keyL keyH
           7 index add
-          PDFDEBUG {
+          CMAPDEBUG {
               ( keyH=) print dup =
           } if
           3 2 roll 6 index idiv 5 index mul    % e [] i offset key_size value_size (keys) (values) keyL keyH J
@@ -540,16 +540,33 @@ currentdict end readonly def
               9 index exch get                 % e [] i offset key_size value_size (keys) (values) (value) name
             } if                               % e [] i offset key_size value_size (keys) (values) (value) cid|name
             1 index                            % e [] i offset key_size value_size (keys) (values) (value) cid|name (value)
-            PDFDEBUG {
+            CMAPDEBUG {
               ( defined from range: ) print 1 index =string cvs print ( ) print dup //== exec
             } if
             //true copy&def                    % e [] i offset key_size value_size (keys) (values) (value)
-            % Assuming the lowest byte of 'value' changes, others don't.
-            dup dup length 1 sub               % e [] i offset key_size value_size (keys) (values) (value) (value) l
-            2 copy get                         % e [] i offset key_size value_size (keys) (values) (value) (value) l v
-            % Modulo 256 increment prevents a rangecheck error when the result is stored in a string.
-            % The adjustment can happen only at the end of the loop where the string is discarded. Bug 688535.
-            1 add 255 and put                  % e [] i offset key_size value_size (keys) (values) (value')
+
+            %% Calculate the value from the last string
+            dup dup length 1 sub 0 exch 0 1 3 -1 roll
+            {
+              % (string) value index
+              exch 256 mul exch
+              2 index exch get add
+            } for
+
+            %% and increment the value for the next string
+            1 add
+
+            %% Now convert the value into a string of bytes.
+            1 index length 1 sub 1 exch 0 1 3 -1 roll
+            {
+              % (string) value divisor index
+              2 index 2 index idiv 255 and % (string) value divisor index byte
+              exch 4 index length 1 sub exch sub % (string) value divisor byte string_position
+              5 index                      % (string) value divisor byte string_position (string)
+              exch 3 -1 roll put           % (string) value divisor
+              256 mul
+            } for
+            pop pop pop
           } for                                % e [] i offset key_size value_size (keys) (values) (value)
         } for
         pop pop pop pop pop pop pop            % e []
@@ -559,7 +576,7 @@ currentdict end readonly def
   } forall
   end
   pop                                          %
-  PDFDEBUG {
+  CMAPDEBUG {
     (.convert_ToUnicode-into-g2u end) =
   } if
 } bind def

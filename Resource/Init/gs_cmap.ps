@@ -278,11 +278,12 @@
     3 -1 roll pop exch () exch
   } {
                         % Range.
-    dup 0 1 put dup 1 1 put
+    dup 0 4 index length put
+    dup 1 1 put
     4 2 roll
-    dup dup length 1 sub 0 exch getinterval 5 1 roll	% prefix
+    1 index dup length 1 sub 0 exch getinterval 5 1 roll	% prefix
                         % Stack: prefix value params code_lo code_hi
-    2 { exch dup length 1 sub 1 getinterval } repeat concatstrings
+    concatstrings
     3 -1 roll
   } ifelse
   .FontIndex
