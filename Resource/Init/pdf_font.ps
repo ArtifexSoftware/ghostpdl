@@ -1206,7 +1206,14 @@ currentdict /eexec_pdf_param_dict .undef
                 % Stack: filepos stream
                 % Don't let setgcolor set the color inside the BuildGlyph
                 % procedure, because this causes an /undefined error.
-            q //null /FillColor gput //null /StrokeColor gput
+            q
+            %% This is (currently) needed to make sure that the current dictionary, which is
+            %% 'nodict' because we did a gsave, is writeable. If we don't execute gput
+            %% to make a writeable copy then it is a no access dicitonary and the 'def'
+            %% below will fail. It would be nice to fix the cases of this someday, but
+            %% we use 'nodict'[ to store other PDF state stuff that isn't gstate, and we
+            %% probably always will, so it may well be more trouble than its worth.
+            /Dummy false gput
             Font /Resources get exch pdfopdict
             /BuildCharDictDepth countdictstack def
             .pdfruncontext

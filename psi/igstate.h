@@ -170,11 +170,7 @@ typedef struct int_gstate_s {
      * procedure.
      */
     ref remap_color_info;	/* t_struct (int_remap_color_info_t) */
-    /*
-     * The opacity and shape masks are a PDF 1.4 transparency feature,
-     * not standard PostScript.
-     */
-    ref opacity_mask, shape_mask; /* dictionary|null */
+    ref SMask; /* PDF only, null | dictionary | true */
 } int_gstate;
 
 #define clear_pagedevice(pigs) make_null(&(pigs)->pagedevice)

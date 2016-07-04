@@ -211,76 +211,69 @@ currentdict /gput_always_allow .undef
   } ifelse
 } bdef
 
-% Save most of graphic state attributes.
-% - get-gs-attrs ...
-/get-gs-attrs {
-  currentsmoothness
-  currentflat
-  currentoverprint
-  currentstrokeadjust
-  currentdash
-  currentmiterlimit
-  currentlinejoin
-  currentlinecap
-  currentlinewidth
-  currentfont
-  currentcolor
-  currentcolorspace
-  { currentpoint } stopped
-  matrix currentmatrix
-} bdef
-
-% Restore most of graphic state attributes.
-% ... get-gs-attrs -
-/set-gs-attrs {
-  setmatrix
-  { newpath } { moveto } ifelse
-  setcolorspace
-  setcolor
-  setfont
-  setlinewidth
-  setlinecap
-  setlinejoin
-  setmiterlimit
-  setdash
-  setstrokeadjust
-  setoverprint
-  setflat
-  setsmoothness
-} bdef
-
 % ---------------- Color setting ---------------- %
 
-/fcput		% <color> <colorspace> fcput -
- { /FillColorSpace gput /FillColor gput
- } bdef
-/scput		% <color> <colorspace> scput -
- { /StrokeColorSpace gput /StrokeColor gput
- } bdef
-/csput		% <colorspace> csput -
- { csset 2 copy fcput scput
- } bdef
-
-/csdevgray [/DeviceGray] readonly def
-/csdevrgb [/DeviceRGB] readonly def
-/csdevcmyk [/DeviceCMYK] readonly def
-/cspattern [/Pattern] readonly def
 /nullpatternproc { pop } bdef
 /nullpattern mark
    /PatternType 1 /PaintType 1 /TilingType 3 /BBox [0 0 1 1]
    /XStep 1 /YStep 1 /PaintProc //nullpatternproc
 .dicttomark readonly def
 
-% Each entry in the color space dictionary is a procedure of the form
-%	<cspace> -proc- <cspace> <initial-color>
+/PDFsetpattern {
+     % Since multiple patterns may share
+     % same data stream, we need to ensure
+     % that the stream is at 0 position.
+     % Making this consistently with resolveshading,
+     % which applies ReusableStreamDecode filter
+     % to the PS stream, which represents the
+     % PDF stream in dynamics.
+
+     dup /Shading knownoget {
+       dup /ShadingType oget 4 ge {
+         /DataSource knownoget {
+           dup type /filetype eq {
+             0 setfileposition
+           } {
+             pop
+           } ifelse
+         } if
+       } {
+        pop
+       } ifelse
+     } if
+
+     % Associate pattern instance with the default qstate for the context.
+     % A single pattren object can be reused in several contexts.
+     dup DefaultQstate .knownget {
+       exch pop
+     } {
+       % But don't update read-only initial null pattern.
+       dup /PaintProc .knownget { //nullpatternproc ne } { //true } ifelse {
+         dup dup /Matrix knownoget not { { 1 0 0 1 0 0 } } if
+
+         gsave
+         .currentfillconstantalpha
+         .currentstrokeconstantalpha
+         DefaultQstate setqstate
+         .setstrokeconstantalpha
+         .setfillconstantalpha
+         makepattern
+         grestore
+
+         dup 3 1 roll
+         DefaultQstate exch put
+       } if
+     } ifelse
+} bdef
+
 /CSdict mark
-  /DeviceGray { pop //csdevgray 0 } bind
-  /DeviceRGB { pop //csdevrgb [0 0 0] cvx } bind
-  /DeviceCMYK { pop //csdevcmyk [0 0 0 1] cvx } bind
+  /DeviceGray { 0 } bind
+  /DeviceRGB { [0 0 0] cvx } bind
+  /DeviceCMYK { [0 0 0 1] cvx } bind
   /CIEBasedA { 0 } bind
   /CIEBasedABC { [0 0 0] cvx } bind
-  /CalGray { pop //csdevgray 0 } bind
-  /CalRGB { pop //csdevrgb [0 0 0] cvx } bind
+  /CalGray { pop /DeviceGray 0 } bind
+  /CalRGB { pop /DeviceRGB [0 0 0] cvx } bind
   /Lab {[0 0 0] cvx } bind
   /ICCBased { [ 1 index 1 oget /N get { 0 } repeat ] cvx } bind
   /Separation { 1 } bind
@@ -288,91 +281,111 @@ currentdict /gput_always_allow .undef
     [ 1 index 1 get length { 1 } repeat ] cvx
   } bind
   /Indexed { 0 } bind
-  /Pattern {
-    dup type /nametype eq 1 index length 1 eq or {
-      pop //cspattern //nullpattern matrix makepattern
-    } {
-      //nullpattern matrix makepattern 1 index 1 get csset
-                % Stack: patternspace nullpattern basecolor basespace
-      pop [ 3 1 roll dup type /arraytype eq { aload pop } if
-      counttomark -1 roll ] cvx
-    } ifelse
-  } bind
+  /Pattern { //nullpattern matrix makepattern } bind
 .dicttomark readonly def
-/csset			% <cspace> csset <color> <cspace>
- { dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch
- } bdef
 
-/g { //csdevgray fcput } bdef
-/G { //csdevgray scput } bdef
-/rg { 3 array astore cvx //csdevrgb fcput } bdef
-/RG { 3 array astore cvx //csdevrgb scput } bdef
-/k { 4 array astore cvx //csdevcmyk fcput } bdef
-/K { 4 array astore cvx //csdevcmyk scput } bdef
-%%
-%% Bug #694412, we set the colour space immediately now. Previously we
-%% only set the colour space and colour when a stroke or fill took place.
-%% if that happened inside a gsave/grestore we could end up setting the
-%% same colour space many times, which is a problem if its an expensive
-%% space, like ICCBased.
-%%
-/cs { csset dup setgcolorspace fcput } bdef
-/CS { csset dup .swapcolors setgcolorspace .swapcolors scput } bdef
-/ri { //.renderingintentdict exch .knownget { .setrenderingintent } if } bdef
-% We have to break up sc according to the number of operands.
-%%
-%% Also Bug #694412, we need to set the actual colour in response to the
-%% PDF operators as well. However, the transparenmcy code also uses the
-%% original calls (sc, SC, sc1, SC1, sc* and SC*) and so we create
-%% a duplicate set which do the same as the originals, but se the current
-%% colour as well.
-%%
-/sc1_and_set { /FillColor gput FillColor FillColorSpace setgcolor} bdef
-/sc1 { /FillColor gput } bdef
-/SC1_and_set {/StrokeColor gput .swapcolors StrokeColor StrokeColorSpace setgcolor .swapcolors } bdef
-/SC1 { /StrokeColor gput } bdef
-% We have to avoid storing into a color array associated with an outer
-% gsave level, so we do a kind of "copy on write".
-/sc* {
-  currentdict /FillColor .knownget {
-    astore pop
-  } {
-    /FillColor load
-    % FillColor may contain either a single value or an array.
-    dup type /arraytype eq { length }{ pop 1 } ifelse
-    array astore cvx /FillColor gput
-  } ifelse
-} bdef
-/SC* {
-  currentdict /StrokeColor .knownget {
-    astore pop
-  } {
-    /StrokeColor load
-    % StrokeColor may contain either a single value or an array.
-    dup type /arraytype eq { length }{ pop 1 } ifelse
-    array astore cvx /StrokeColor gput
-  } ifelse
-} bdef
+/ri {//.renderingintentdict exch .knownget { .setrenderingintent } if } bdef
+/g  {/DeviceGray .setfillcolorspace .setfillcolor } bdef
+/G  {/DeviceGray .setstrokecolorspace .setstrokecolor} bdef
+/rg {/DeviceRGB .setfillcolorspace .setfillcolor} bdef
+/RG {/DeviceRGB .setstrokecolorspace .setstrokecolor} bdef
+/k  {/DeviceCMYK .setfillcolorspace .setfillcolor} bdef
+/K  {/DeviceCMYK .setstrokecolorspace .setstrokecolor} bdef
+/cs {dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch .setfillcolorspace exec .setfillcolor} bdef
+/CS {dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch .setstrokecolorspace exec .setstrokecolor} bdef
+/sc {.setfillcolor} bdef
+/SC {.setstrokecolor} bdef
+/sc* {.setfillcolor} bdef
+/SC* {.setstrokecolor} bdef
 /sc*_and_set {
-  sc*
-  FillColor FillColorSpace setgcolor
+  dup type /dicttype eq
+  {
+    dup /Type known
+    {
+      dup /Type get /Pattern eq {PDFsetpattern} if
+    }
+    {
+      dup /PatternType known {PDFsetpattern} if
+    } ifelse
+  } if
+  .setfillcolor
 } bdef
 /SC*_and_set {
-  SC*
-  .swapcolors StrokeColor StrokeColorSpace setgcolor .swapcolors
+  dup type /dicttype eq
+  {
+    dup /Type known
+    {
+      dup /Type get /Pattern eq {PDFsetpattern} if
+    }
+    {
+      dup /PatternType known {PDFsetpattern} if
+    } ifelse
+  } if
+  .setstrokecolor
 } bdef
+/sc1 {.setfillcolor} bdef
+/SC1 {.setstrokecolor} bdef
+/sc1_and_set {
+  dup type /dicttype eq
+  {
+    dup /Type known
+    {
+      dup /Type get /Pattern eq {PDFsetpattern} if
+    }
+    {
+      dup /PatternType known {PDFsetpattern} if
+    } ifelse
+  } if
+  .setfillcolor
+} bdef
+/SC1_and_set {
+  dup type /dicttype eq
+  {
+    dup /Type known
+    {
+      dup /Type get /Pattern eq {PDFsetpattern} if
+    }
+    {
+      dup /PatternType known {PDFsetpattern} if
+    } ifelse
+  } if
+  .setstrokecolor
+} bdef
+/csput {dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch 2 copy .setfillcolorspace exec .setfillcolor .setstrokecolorspace exec .setstrokecolor} bdef
+/csset {dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch} bdef
+
+% ---------------- Color setting ---------------- %
+
 
 % ---------------- Overprint/transparency setting ---------------- %
 
-/op { /FillOverprint gput } bdef	% NB pdf_draw:gsparamdict handled /OP with no /op
-/OP { /StrokeOverprint gput } bdef
+/op { .setfilloverprint
+} bdef	% NB pdf_draw:gsparamdict handled /OP with no /op
+/OP { .setstrokeoverprint
+} bdef
 /OPM {
   /.setoverprintmode where { pop dup .setoverprintmode .swapcolors .setoverprintmode .swapcolors } { pop } ifelse
 } bdef
-/ca { /FillConstantAlpha gput } bdef
-/CA { /StrokeConstantAlpha gput } bdef
-/SMask { /SoftMask gput } bdef
-/AIS { /AlphaIsShape gput } bdef
+/ca { .setfillconstantalpha } bdef
+/CA { .setstrokeconstantalpha } bdef
+/SMask {
+  dup type /booleantype eq {
+    .currentSMask type /dicttype eq {
+      .currentSMask /Processed 2 index .forceput
+    } {
+      .setSMask
+  }ifelse
+  }{
+  .setSMask
+  }ifelse
+
+  %% This is some craziness to do with annotations and graphics states
+  %% the original nodict can't be written to, and we haven't (I think) done
+  %% a gsave, so we haven't copied it to /self, if we don't do that here
+  %% then transparent annotations cause an invalid access error.
+  currentdict //nodict eq {/self dup load end 5 dict begin def} if
+} bdef
+/AIS { .setalphaisshape } bdef
 /BM {
   /.setblendmode where {
     pop [ exch dup type /nametype ne { aload pop } if /Normal ] {
@@ -392,7 +405,8 @@ currentdict /gput_always_allow .undef
 /.settransparencyparams {	% <alpha> <smask> .settransparencyparams -
   PDFusingtransparency {
     /.begintransparencygroup where {
-      pop AlphaIsShape {
+      pop .currentalphaisshape
+      {
         1 .setopacityalpha  exch .setshapealpha 1
       } {
         1 .setshapealpha  exch .setopacityalpha 0
@@ -415,23 +429,28 @@ currentdict /gput_always_allow .undef
       dup /Draw get exec
     } ifelse
   } {
-    dup /Draw get exec
+    dup /Processed .knownget {
+      {
+        pop pop
+      } {
+        dup /Draw get exec
+      }ifelse
+    }{
+      dup /Draw get exec
+    } ifelse
   } ifelse
 } bdef
 % (Non-mask) images must execute setfillblend.
 /setfillblend {
-  FillOverprint setoverprint
-  FillConstantAlpha SoftMask .settransparencyparams
+  .currentfillconstantalpha
+  .currentSMask .settransparencyparams
 } def
 /setfillstate {
-  FillColor FillColorSpace setgcolor setfillblend
+  setfillblend
 } def
-
 /setstrokestate {
-  .swapcolors
-  StrokeColor StrokeColorSpace setgcolor StrokeOverprint setoverprint
-  StrokeConstantAlpha SoftMask .settransparencyparams
-  .swapcolors
+  .currentstrokeconstantalpha
+  .currentSMask .settransparencyparams
 } def
 /Cdict 15 dict dup begin	% <color...> <colorspace> -proc- -
   /DeviceGray { pop setgray } bdef
@@ -530,7 +549,16 @@ currentdict /gput_always_allow .undef
        % But don't update read-only initial null pattern.
        dup /PaintProc .knownget { //nullpatternproc ne } { //true } ifelse {
          dup dup /Matrix knownoget not { { 1 0 0 1 0 0 } } if
-         gsave DefaultQstate setqstate makepattern grestore
+
+         gsave
+         .currentfillconstantalpha
+         .currentstrokeconstantalpha
+         DefaultQstate setqstate
+         .setstrokeconstantalpha
+         .setfillconstantalpha
+         makepattern
+         grestore
+
          dup 3 1 roll
          DefaultQstate exch put
        } if
@@ -582,8 +610,10 @@ end def
        pop currentcolorspace 1 get	% use the base space
     } if
     known {
-      /stroke ne { FillOverprint } { StrokeOverprint } ifelse
-      .currentblendmode dup /Normal eq exch /Compatible eq or not and
+       /stroke ne { .currentfilloverprint
+       } { .currentstrokeoverprint
+       } ifelse
+       .currentblendmode dup /Normal eq exch /Compatible eq or not and
    } {
       pop //false
    } ifelse
@@ -592,7 +622,7 @@ end def
 /fsexec		% <fillop|strokeop> fsexec -
 {
    PDFusingtransparency {
-      SoftMask //null ne {
+      .currentSMask //null ne {
         mark /Subtype /Group /Isolated //true .dicttomark pathbbox .begintransparencygroup
       } if
       dup checkOPtrans exch 1 index {
@@ -607,7 +637,7 @@ end def
       {
          .endtransparencygroup .setopacityalpha .setblendmode	% end the CompatibleOverprint group
       } if
-      SoftMask //null ne {
+      .currentSMask //null ne {
         .endtransparencygroup
       } if
    } {
@@ -856,13 +886,8 @@ end readonly def
 % ---------------- Text control ---------------- %
 
 /textbeginpage
- { /TextSpacing 0 def		% 0 Tc
-   /TextLeading 0 def		% 0 TL
-   /TextRenderingMode 0 def	% 0 Tr
-   /TextRise 0 def		% 0 Ts
-   /WordSpacing 0 def		% 0 Tw
-   /TextHScaling 1.0 def	% 100 Tz
-   /TextFont //null def
+ {
+   1.0 .settexthscaling
    /FontMatrixNonHV //false def
    /Show { showfirst } def
    /TextFillStateNeeded //true def
@@ -892,7 +917,8 @@ end readonly def
 
 /settextmatrix {
   matrix currentmatrix
-  TextMatrix concat
+  matrix .currenttextmatrix
+  concat
   TestDegenerateCTM {
     (\n   **** Error:  Degenerate text matrix detected, ignoring Tm operation\n) pdfformaterror
     (                 Output may be incorrect.\n) pdfformaterror
@@ -900,9 +926,11 @@ end readonly def
   } {
     pop
   } ifelse
-  TextHScaling 1 ne { TextHScaling 1 scale } if
-  TextRise 0 ne { 0 TextRise translate } if
-  TextFont dup //null eq { pop } { setfont } ifelse
+  .currenttexthscaling
+  1 ne { .currenttexthscaling
+  1 scale } if
+  .currenttextrise 0 ne { 0 .currenttextrise
+   translate } if
 } bdef
 
 /settextstate {
@@ -927,14 +955,22 @@ end readonly def
 /settextposition {
                 % Update the TextMatrix translation.
   gsave TextSaveMatrix setmatrix
-  {currentpoint} stopped not { TextRise sub TextMatrix 4 2 getinterval astore pop
+  {currentpoint} stopped not {
+    .currenttextrise
+    sub
+    matrix .currenttextmatrix
+    dup 5 4 -1 roll put
+    dup 4 4 -1 roll put
+    .settextmatrix
                 % We would like to do "grestore currentpoint translate"
                 % here, but some PDF files set a singular text matrix
                 % (0 0 0 0 <x> <y> Tm), so we can't do this.
-  TextTempMatrix identmatrix setmatrix currentpoint
-  grestore
-  TextTempMatrix currentmatrix 4 2 getinterval astore pop
-  TextTempMatrix setmatrix
+    TextTempMatrix identmatrix setmatrix currentpoint
+    matrix .currenttextmatrix
+    grestore
+    .settextmatrix
+    TextTempMatrix currentmatrix 4 2 getinterval astore pop
+    TextTempMatrix setmatrix
   } {
       (   **** Error: Invalid currentpoint, probable degenerate CTM.\n) pdfformaterror
       (               Ignroing error, output may be incorrect.\n) pdfformaterror
@@ -980,10 +1016,9 @@ end readonly def
     currentdict end
     /.W exch def
   } if
-  currentdict /TextLineMatrix .knownget
-    { identmatrix pop TextMatrix identmatrix pop }
-    { matrix /TextLineMatrix gput matrix /TextMatrix gput }
-  ifelse
+  matrix .settextlinematrix
+  matrix .settextmatrix
+
   { showfirst } /Show gput
   currentdict /TextSaveMatrix .knownget not {
     matrix dup /TextSaveMatrix gput
@@ -1005,7 +1040,7 @@ end readonly def
 
 /ET_NO_TXT_KO {
   currentdict /TextSaveMatrix known {
-    TextRenderingMode 4 ge { .currentfilladjust 0 .setfilladjust clip .setfilladjust} if
+    .currenttextrenderingmode 4 ge { .currentfilladjust 0 .setfilladjust clip .setfilladjust} if
     newpath TextSaveMatrix setmatrix
     currentdict /TextSaveMatrix undef
 
@@ -1036,11 +1071,11 @@ end readonly def
   } if 
 } bdef
 
-/Tc { /TextSpacing gput { showfirst } /Show gput } bdef
-/TL { /TextLeading gput } bdef
-/Tr { dup .settextrenderingmode /TextRenderingMode gput { showfirst } /Show gput } bdef
-/Ts { /TextRise gput settextstate } bdef
-/Tw { /WordSpacing gput { showfirst } /Show gput } bdef
+/Tc { .settextspacing { showfirst } /Show gput } bdef
+/TL { .settextleading } bdef
+/Tr { .settextrenderingmode { showfirst } /Show gput } bdef
+/Ts { .settextrise settextstate } bdef
+/Tw { .setwordspacing { showfirst } /Show gput } bdef
 /Tz {
   dup 0 eq {
     (\n   **** Error: Invalid 0.0 horizontal text scaling given for Tz\n)
@@ -1049,7 +1084,8 @@ end readonly def
     pop 0.00000001	% handle invalid scale by using a really small value
   }{
     100 div
-  }ifelse /TextHScaling gput settextstate} bdef
+  }ifelse .settexthscaling %/TextHScaling gput
+  settextstate} bdef
 
 % ---------------- Font control ---------------- %
 
@@ -1128,7 +1164,7 @@ end readonly def
   } {
     pop
   } ifelse
-  /TextFont gput settextstate
+  setfont
 } bdef
 
 % Copy a font, removing its FID.  If changed is true, also remove
@@ -1258,11 +1294,17 @@ end readonly def
     (               Output may be incorrect.\n) pdfformaterror
     pop 0
   } if
-  TextLineMatrix transform TextLineMatrix 4 2 getinterval astore pop
-  TextLineMatrix TextMatrix copy pop settextstate
+  matrix .currenttextlinematrix transform
+  matrix .currenttextlinematrix
+  dup 3 -1 roll 5 exch put
+  dup 3 -1 roll 4 exch put
+  .settextlinematrix
+  matrix .currenttextlinematrix .settextmatrix
+
+  settextstate
 } bdef
-/TD { dup neg /TextLeading gput Td } bdef
-/T* { 0 TextLeading neg Td } bdef
+/TD { dup neg .settextleading Td } bdef
+/T* { 0 .currenttextleading neg Td } bdef
 /Tm {
   5 index 0 ne 3 index 0 ne and
   5 index 0 ne 5 index 0 ne and or not {
@@ -1274,7 +1316,9 @@ end readonly def
     0.00000001 0 0 0.00000001
     6 -2 roll
   }if
-  TextLineMatrix astore TextMatrix copy pop settextstate
+  matrix .currenttextlinematrix astore .settextlinematrix
+  matrix .currenttextlinematrix .settextmatrix
+  settextstate
 } bdef
 
 % ---------------- Text painting ---------------- %
@@ -1377,8 +1421,8 @@ end readonly def
           //false
       }ifelse
       {
-        TextRenderingMode 1 eq TextRenderingMode 2 eq or
-        TextRenderingMode 5 eq TextRenderingMode 6 eq or or {
+        .currenttextrenderingmode 1 eq .currenttextrenderingmode 2 eq or
+        .currenttextrenderingmode 5 eq .currenttextrenderingmode 6 eq or or {
           setstrokestate
           % Need to set the stroke width to a value which gives the correct
           % width under pdfwrite. Pdfwrite uses (in text mode) an identity
@@ -1408,7 +1452,7 @@ end readonly def
 /TextTransSetup {	% showarg path_valid TextTransSetup false showarg
                         % showarg path_valid false TextTransSetup prev_BM prev_opacity true showarg
    % NB: if 'show' is used, then we use the clippath, but a smaller bbox is preferred
-   SoftMask //null ne {
+   .currentSMask //null ne {
      dup mark /Subtype /Group /Isolated //true .dicttomark exch
      { pathbbox } { gsave clippath pathbbox grestore } ifelse
      .begintransparencygroup
@@ -1433,13 +1477,15 @@ end readonly def
      .endtransparencygroup
      OPsavedict dup /saveOA get .setopacityalpha /saveBM get .setblendmode
    } if
-   SoftMask //null ne {
+   .currentSMask //null ne {
      .endtransparencygroup
    } if
 } bind def
 
 /setshowstate
- { WordSpacing 0 eq TextSpacing 0 eq and FontMatrixNonHV not and
+ {
+   .currentwordspacing 0 eq .currenttextspacing
+    0 eq and FontMatrixNonHV not and
     {
       % Check to see if the current device supports Tr
       /PreserveTrMode /GetDeviceParam .special_op {
@@ -1448,16 +1494,16 @@ end readonly def
           //false
       }ifelse
       {
-              pdfwrite_textrenderingprocs TextRenderingMode get
+              pdfwrite_textrenderingprocs .currenttextrenderingmode get
       }
       {
-              TextRenderingMode 0 eq
-              currentfont /FontType get 3 eq TextRenderingMode 3 eq not
+              .currenttextrenderingmode 0 eq
+              currentfont /FontType get 3 eq .currenttextrenderingmode 3 eq not
               and or
                {
                 { settextfillstate //false TextTransSetup show TextTransTeardown }
               } {
-                TextRenderingMode 3 eq {
+                .currenttextrenderingmode 3 eq {
                         % Some PDF files execute 'tm' with a singular matrix,
                         % and then use the text rendering mode 3.
                         % The graphics library currently cannot handle text
@@ -1485,7 +1531,7 @@ end readonly def
                     moveto
                   }
                 } {
-                  { //false charpath textrenderingprocs TextRenderingMode get exec }
+                  { //false charpath textrenderingprocs .currenttextrenderingmode  get exec }
                 } ifelse
               } ifelse
        } ifelse
@@ -1494,7 +1540,7 @@ end readonly def
       % If we are doing a plain old fill, or no text at all, *or* we are going to
       % a device supporting text rendering modes, then go through this route.
       %
-      TextRenderingMode 0 eq TextRenderingMode 3 eq or
+      .currenttextrenderingmode 0 eq .currenttextrenderingmode 3 eq or
       currentfont /FontType get 3 eq or
 
       /PreserveTrMode /GetDeviceParam .special_op {
@@ -1503,7 +1549,7 @@ end readonly def
           //false
       }ifelse
       % pdfwrite can't handle rendering modes which involve clipping
-      TextRenderingMode 4 lt and or
+      .currenttextrenderingmode 4 lt and or
       % Tr was set to graphic state.
       {
         FontMatrixNonHV {
@@ -1512,7 +1558,7 @@ end readonly def
              currentlinewidth exch
              setstrokeforTrpreservation
              settextfillstate //false TextTransSetup
-             [ TextSpacing WordSpacing 3 index
+             [ .currenttextspacing .currentwordspacing 3 index
                {					    % str [... weach wword c undef|ythis xthis|undef
                  exch % will be removed, unless FontMatrix.xx/yy == 0 (FontMatrixNonHV already true)
                  Vexch pop                                  % str [... weach wword c wthis
@@ -1528,20 +1574,23 @@ end readonly def
              setlinewidth TextTransTeardown
            }
          } {
-           WordSpacing 0 eq {
+           .currentwordspacing
+           0 eq {
              {
                { setstrokeforTrpreservation
-                 settextfillstate //false TextTransSetup TextSpacing 0 Vexch 3 -1 roll ashow TextTransTeardown
+                 settextfillstate //false TextTransSetup .currenttextspacing
+                 0 Vexch 3 -1 roll ashow TextTransTeardown
                }
                currentlinewidth
                { setlinewidth }
                3 .execn
              }
            } {
-              TextSpacing 0 eq {
+              .currenttextspacing 0 eq {
                 { % preserve current line width around possible stroke setup
                   { setstrokeforTrpreservation
-                    settextfillstate //false TextTransSetup WordSpacing 0 Vexch 32 4 -1 roll .pdfwidthshow
+                    settextfillstate //false TextTransSetup .currentwordspacing
+                    0 Vexch 32 4 -1 roll .pdfwidthshow
                     TextTransTeardown
                   }
                   currentlinewidth
@@ -1551,8 +1600,9 @@ end readonly def
               } {
                 { % preserve current line width around possible stroke setup
                   { setstrokeforTrpreservation
-                    settextfillstate //false TextTransSetup WordSpacing 0 Vexch 32
-                    TextSpacing 0 Vexch 6 -1 roll .pdfawidthshow TextTransTeardown
+                    settextfillstate //false TextTransSetup .currentwordspacing
+                    0 Vexch 32
+                    .currenttextspacing 0 Vexch 6 -1 roll .pdfawidthshow TextTransTeardown
                   }
                   currentlinewidth
                   { setlinewidth }
@@ -1564,7 +1614,8 @@ end readonly def
        }
        {
          { currentlinewidth exch
-           WordSpacing TextSpacing
+           .currentwordspacing
+           .currenttextspacing
                         % Implement the combination of t3 and false charpath.
                         % Note that we must use cshow for this, because we
                         % can't parse multi-byte strings any other way.
@@ -1591,7 +1642,7 @@ end readonly def
                % or we wouldn't be here. Subtract 4 from the Tr and preserve
                % that mode, then do a charpath so the clip path gets set up
                % correctly.
-               gsave TextRenderingMode 4 sub .settextrenderingmode
+               gsave .currenttextrenderingmode 4 sub .settextrenderingmode
                setstrokeforTrpreservation
                setstrokestate settextfillstate //false TextTransSetup dup show grestore TextTransTeardown } if
              //false charpath
@@ -1617,7 +1668,7 @@ end readonly def
              }{
                  //true
              }ifelse {
-             textrenderingprocs TextRenderingMode get exec
+             textrenderingprocs .currenttextrenderingmode get exec
            } if
            setlinewidth
          }
@@ -1636,9 +1687,7 @@ end readonly def
   OFFlevels length 0 eq {
     exec
   } {
-    gsave get-gs-attrs nulldevice set-gs-attrs
-    exec
-    get-gs-attrs grestore set-gs-attrs
+    gsave nulldevice exec grestore
   } ifelse
   //true /TextFillStateNeeded gput
 } bdef
@@ -1658,9 +1707,7 @@ end readonly def
   OFFlevels length 0 eq {
     exec
   } {
-    gsave get-gs-attrs nulldevice set-gs-attrs
-    exec
-    get-gs-attrs grestore set-gs-attrs
+    gsave nulldevice exec grestore
   } ifelse
   //true /TextFillStateNeeded gput
 } bdef

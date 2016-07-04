@@ -44,9 +44,19 @@ zset_real(i_ctx_t *i_ctx_p, int (*set_proc)(gs_gstate *, double))
     if (code < 0)
         return_op_typecheck(op);
     code = set_proc(igs, param);
-    if (!code)
+    if (code == 0)
         pop(1);
     return code;
+}
+
+static int
+zcurrent_real(i_ctx_t *i_ctx_p, double (*current_proc)(const gs_gstate *))
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_real(op, current_proc(igs));
+    return 0;
 }
 
 static int
@@ -519,6 +529,57 @@ zcurrenttextrenderingmode(i_ctx_t *i_ctx_p)
 {
     return zcurrent_uint(i_ctx_p, gs_currenttextrenderingmode);
 }
+static int
+zsettextspacing(i_ctx_t *i_ctx_p)
+{
+    return zset_real(i_ctx_p, gs_settextspacing);
+}
+static int
+zcurrenttextspacing(i_ctx_t *i_ctx_p)
+{
+    return zcurrent_real(i_ctx_p, gs_currenttextspacing);
+}
+static int
+zsettextleading(i_ctx_t *i_ctx_p)
+{
+    return zset_real(i_ctx_p, gs_settextleading);
+}
+static int
+zcurrenttextleading(i_ctx_t *i_ctx_p)
+{
+    return zcurrent_real(i_ctx_p, gs_currenttextleading);
+}
+static int
+zsettextrise(i_ctx_t *i_ctx_p)
+{
+    return zset_real(i_ctx_p, gs_settextrise);
+}
+static int
+zcurrenttextrise(i_ctx_t *i_ctx_p)
+{
+    return zcurrent_real(i_ctx_p, gs_currenttextrise);
+}
+static int
+zsetwordspacing(i_ctx_t *i_ctx_p)
+{
+    return zset_real(i_ctx_p, gs_setwordspacing);
+}
+static int
+zcurrentwordspacing(i_ctx_t *i_ctx_p)
+{
+    return zcurrent_real(i_ctx_p, gs_currentwordspacing);
+}
+
+static int
+zsettexthscaling(i_ctx_t *i_ctx_p)
+{
+    return zset_real(i_ctx_p, gs_settexthscaling);
+}
+static int
+zcurrenttexthscaling(i_ctx_t *i_ctx_p)
+{
+    return zcurrent_real(i_ctx_p, gs_currenttexthscaling);
+}
 
 /* <bool> .sethpglpathmode - */
 static int
@@ -574,8 +635,18 @@ const op_def zgstate2_op_defs[] = {
     op_def_end(0)
 };
 const op_def zgstate3_op_defs[] = {
-    {"0.settextrenderingmode", zsettextrenderingmode},
+    {"1.settextrenderingmode", zsettextrenderingmode},
     {"0.currenttextrenderingmode", zcurrenttextrenderingmode},
+    {"1.settextspacing", zsettextspacing},
+    {"0.currenttextspacing", zcurrenttextspacing},
+    {"1.settextleading", zsettextleading},
+    {"0.currenttextleading", zcurrenttextleading},
+    {"1.settextrise", zsettextrise},
+    {"0.currenttextrise", zcurrenttextrise},
+    {"1.setwordspacing", zsetwordspacing},
+    {"0.currentwordspacing", zcurrentwordspacing},
+    {"1.settexthscaling", zsettexthscaling},
+    {"0.currenttexthscaling", zcurrenttexthscaling},
     {"0.sethpglpathmode", zsethpglpathmode},
     {"0.currenthpglpathmode", zcurrenthpglpathmode},
     op_def_end(0)

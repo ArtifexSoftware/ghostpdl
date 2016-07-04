@@ -234,6 +234,13 @@ int gx_pop_transparency_state(gs_gstate * pgs, gx_device * pdev);
  */
 int gs_is_pdf14trans_compositor(const gs_composite_t * pct);
 
+int gs_setstrokeconstantalpha(gs_gstate *pgs, float alpha);
+float gs_getstrokeconstantalpha(const gs_gstate *pgs);
+int gs_setfillconstantalpha(gs_gstate *pgs, float alpha);
+float gs_getfillconstantalpha(const gs_gstate *pgs);
+int gs_setalphaisshape(gs_gstate *pgs, bool AIS);
+bool gs_getalphaisshape(gs_gstate *pgs);
+
 /*
  * Estimate the amount of space that will be required by the PDF 1.4
  * transparency buffers for doing the blending operations.  These buffers

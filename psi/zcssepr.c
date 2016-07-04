@@ -73,6 +73,52 @@ zsetoverprint(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* - currentstrokeoverprint <bool> */
+static int
+zcurrentstrokeoverprint(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_bool(op, gs_currentstrokeoverprint(igs));
+    return 0;
+}
+
+/* <bool> setstrokeoverprint - */
+static int
+zsetstrokeoverprint(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    check_type(*op, t_boolean);
+    gs_setstrokeoverprint(igs, op->value.boolval);
+    pop(1);
+    return 0;
+}
+
+/* - currentfilloverprint <bool> */
+static int
+zcurrentfilloverprint(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_bool(op, gs_currentfilloverprint(igs));
+    return 0;
+}
+
+/* <bool> setfilloverprint - */
+static int
+zsetfilloverprint(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    check_type(*op, t_boolean);
+    gs_setfilloverprint(igs, op->value.boolval);
+    pop(1);
+    return 0;
+}
+
 /* - .currentoverprintmode <int> */
 static int
 zcurrentoverprintmode(i_ctx_t *i_ctx_p)
@@ -107,5 +153,9 @@ const op_def zcssepr_l2_op_defs[] =
     {"0.currentoverprintmode", zcurrentoverprintmode},
     {"1setoverprint", zsetoverprint},
     {"1.setoverprintmode", zsetoverprintmode},
+    {"0.currentstrokeoverprint", zcurrentstrokeoverprint},
+    {"1.setstrokeoverprint", zsetstrokeoverprint},
+    {"0.currentfilloverprint", zcurrentfilloverprint},
+    {"1.setfilloverprint", zsetfilloverprint},
     op_def_end(0)
 };

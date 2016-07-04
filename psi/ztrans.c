@@ -534,6 +534,90 @@ zpopextendedgstate(i_ctx_t *i_ctx_p)
     return(code);
 }
 
+static int
+zsetstrokeconstantalpha(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    double value;
+
+    if (real_param(op, &value) < 0)
+        return_op_typecheck(op);
+
+    gs_setstrokeconstantalpha(igs, (float)value);
+    pop(1);
+    return 0;
+}
+
+static int
+zgetstrokeconstantalpha(i_ctx_t *i_ctx_p)
+{
+    return current_float_value(i_ctx_p, gs_getstrokeconstantalpha);
+}
+
+static int
+zsetfillconstantalpha(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    double value;
+
+    if (real_param(op, &value) < 0)
+        return_op_typecheck(op);
+
+    gs_setfillconstantalpha(igs, (float)value);
+    pop(1);
+    return 0;
+}
+
+static int
+zgetfillconstantalpha(i_ctx_t *i_ctx_p)
+{
+    return current_float_value(i_ctx_p, gs_getfillconstantalpha);
+}
+
+static int
+zsetalphaisshape(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    check_type(*op, t_boolean);
+    gs_setalphaisshape(igs, op->value.boolval);
+    pop(1);
+
+    return 0;
+}
+
+static int
+zgetalphaisshape(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_bool(op, gs_getalphaisshape(igs));
+    return 0;
+}
+
+static int
+zsetSMask(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    check_op(1);
+
+    istate->SMask = *op;
+    pop(1);
+    return 0;
+}
+
+static int
+zcurrentSMask(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    *op = istate->SMask;
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 /* We need to split the table because of the 16-element limit. */
@@ -562,5 +646,17 @@ const op_def ztrans2_op_defs[] = {
     {"1.pushpdf14devicefilter", zpushpdf14devicefilter},
     {"0.poppdf14devicefilter", zpoppdf14devicefilter},
     {"0.abortpdf14devicefilter", zabortpdf14devicefilter},
+    op_def_end(0)
+};
+
+const op_def ztrans3_op_defs[] = {
+    {"1.setstrokeconstantalpha", zsetstrokeconstantalpha},
+    {"0.currentstrokeconstantalpha", zgetstrokeconstantalpha},
+    {"1.setfillconstantalpha", zsetfillconstantalpha},
+    {"0.currentfillconstantalpha", zgetfillconstantalpha},
+    {"1.setalphaisshape", zsetalphaisshape},
+    {"0.currentalphaisshape", zgetalphaisshape},
+    {"1.setSMask", zsetSMask},
+    {"0.currentSMask", zcurrentSMask},
     op_def_end(0)
 };

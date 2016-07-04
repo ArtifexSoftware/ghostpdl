@@ -49,6 +49,11 @@ int gs_copygstate(gs_gstate * /*to */ , const gs_gstate * /*from */ ),
 int gs_gstate_update_overprint(gs_gstate *, const gs_overprint_params_t *);
 bool gs_currentoverprint(const gs_gstate *);
 void gs_setoverprint(gs_gstate *, bool);
+bool gs_currentstrokeoverprint(const gs_gstate *);
+void gs_setstrokeoverprint(gs_gstate *, bool);
+bool gs_currentfilloverprint(const gs_gstate *);
+void gs_setfilloverprint(gs_gstate *, bool);
+
 int gs_currentoverprintmode(const gs_gstate *);
 int gs_setoverprintmode(gs_gstate *, int);
 
@@ -96,6 +101,21 @@ void gs_setlimitclamp(gs_gstate *, bool);
 bool gs_currentlimitclamp(const gs_gstate *);
 void gs_settextrenderingmode(gs_gstate * pgs, uint trm);
 uint gs_currenttextrenderingmode(const gs_gstate * pgs);
+int gs_settextspacing(gs_gstate *pgs, double Tc);
+double gs_currenttextspacing(const gs_gstate *pgs);
+int gs_settextleading(gs_gstate *pgs, double TL);
+double gs_currenttextleading(const gs_gstate *pgs);
+int gs_settextrise(gs_gstate *pgs, double Ts);
+double gs_currenttextrise(const gs_gstate *pgs);
+int gs_setwordspacing(gs_gstate *pgs, double Tz);
+double gs_currentwordspacing(const gs_gstate *pgs);
+int gs_settexthscaling(gs_gstate *pgs, double Tw);
+double gs_currenttexthscaling(const gs_gstate *pgs);
+int gs_settextlinematrix(gs_gstate *pgs, gs_matrix *m);
+int gs_gettextlinematrix(gs_gstate *pgs, gs_matrix *m);
+int gs_settextmatrix(gs_gstate *pgs, gs_matrix *m);
+int gs_gettextmatrix(gs_gstate *pgs, gs_matrix *m);
+
 #include "gscpm.h"
 gs_in_cache_device_t gs_incachedevice(const gs_gstate *);
 void gs_sethpglpathmode(gs_gstate *, bool);

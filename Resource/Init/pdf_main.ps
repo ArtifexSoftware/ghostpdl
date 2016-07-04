@@ -3130,14 +3130,16 @@ end			% pdfdict
 [
 /.pdfawidthshow /.pdfwidthshow
 /.setfillcolor /.setfillcolorspace /.setstrokecolor /.setstrokecolorspace /.currentrenderingintent /.setrenderingintent
-/.currentstrokeoverprint /.setstrokeoverprint /.currentfilloverprint /.setfilloverprint
 /.currenttextrenderingmode /.settextspacing /.currenttextspacing /.settextleading /.currenttextleading
 /.settextrise /.currenttextrise /.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling
-/.setTextLineMatrix /.currentTextLineMatrix /.currentTextMatrix /.setTextMatrix /.currentblendmode
+/.settextlinematrix /.currenttextlinematrix /.currenttextmatrix /.settextmatrix /.currentblendmode
 /.currentopacityalpha /.currentshapealpha /.currenttextknockout
 /.pushextendedgstate /.popextendedgstate /.begintransparencytextgroup
 /.endtransparencytextgroup /.begintransparencymaskgroup /.begintransparencymaskimage /.endtransparencymask /.image3x
-/.abortpdf14devicefilter /.pdfinkpath /.pdfFormName
+/.abortpdf14devicefilter /.pdfinkpath /.pdfFormName /.setstrokeconstantalpha
+/.setfillconstantalpha /.setalphaisshape /.currentalphaisshape
+/.settextspacing /.currenttextspacing /.settextleading /.currenttextleading /.settextrise /.currenttextrise
+/.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling
 
 % Used by our own test suite files
 %/.pushpdf14devicefilter    % transparency-example.ps
@@ -3146,6 +3148,8 @@ end			% pdfdict
 %/.setshapealpha            % transparency-example.ps
 %/.endtransparencygroup     % transparency-example.ps
 
-%/.settextrenderingmode /.setblendmode /.begintransparencygroup /.settextknockout /check_r6_password
+% undefining these causes errors/incorrect output
+%/.settextrenderingmode /.setblendmode /.begintransparencygroup /.settextknockout /check_r6_password /.setstrokeoverprint /.setfilloverprint
+%/.currentstrokeoverprint /.currentfilloverprint /.currentfillconstantalpha /.currentstrokeconstantalpha
 ]
 {systemdict exch .undef} forall
