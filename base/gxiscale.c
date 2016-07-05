@@ -190,10 +190,10 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     gx_color_polarity_t pol;
     int mask_col_high_level = 0;
 
-    if (!penum->interpolate)
+    if (penum->interpolate == interp_off)
         return 0;
     if (penum->masked && (mask_col_high_level = mask_suitable_for_interpolation(penum)) < 0) {
-        penum->interpolate = false;
+        penum->interpolate = interp_off;
         return 0;
     }
     if (penum->use_mask_color ||
@@ -201,15 +201,15 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
          penum->posture != image_landscape) ||
         penum->alpha) {
         /* We can't handle these cases yet.  Punt. */
-        penum->interpolate = false;
+        penum->interpolate = interp_off;
         return 0;
     }
     if (penum->Width == 0 || penum->Height == 0) {
-        penum->interpolate = false; /* No need to interpolate and      */
+        penum->interpolate = interp_off; /* No need to interpolate and      */
         return 0;                  /* causes division by 0 if we try. */
     }
     if (penum->Width == 1 && penum->Height == 1) {
-        penum->interpolate = false; /* No need to interpolate */
+        penum->interpolate = interp_off; /* No need to interpolate */
         return 0;
     }
     if (any_abs(penum->dst_width) < 0 || any_abs(penum->dst_height) < 0)
@@ -245,7 +245,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
            not go through the fast method */
         code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
         if (code) {
-            penum->interpolate = false;
+            penum->interpolate = interp_off;
             return 0;
         }
         num_des_comps = gsicc_get_device_profile_comps(dev_profile);
@@ -279,7 +279,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     if (penum->bps < 4 || penum->bps * penum->spp < 8 ||
         (fabs(penum->matrix.xx) <= 5 && fabs(penum->matrix.yy <= 5))
         ) {
-        penum->interpolate = false;
+        penum->interpolate = interp_off;
         return 0;
     }
 #endif
@@ -366,7 +366,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     iss.Active = 1;
     if (iss.EntireWidthOut == 0 || iss.EntireHeightOut == 0)
     {
-        penum->interpolate = false;
+        penum->interpolate = interp_off;
         return 0;
     }
     if (penum->masked) {
@@ -455,10 +455,12 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         templat = &s_ISpecialDownScale_template;
     } else {
         int threshold = dev_proc(penum->dev, dev_spec_op)(penum->dev, gxdso_interpolate_threshold, NULL, 0);
-        if ((threshold > 0) &&
+        if ((iss.WidthOut == iss.WidthIn && iss.HeightOut == iss.HeightIn) ||
+            (penum->interpolate != interp_force) &&
+            (threshold > 0) &&
             (iss.WidthOut < iss.WidthIn * threshold) &&
             (iss.HeightOut < iss.HeightIn * threshold)) {
-            penum->interpolate = false;
+            penum->interpolate = interp_off;
             return 0;       /* no interpolation / downsampling */
         }
     }
@@ -486,7 +488,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         gs_free_object(mem, pss, "image scale state");
         gs_free_object(mem, line, "image scale src+dst line");
         /* Try again without interpolation. */
-        penum->interpolate = false;
+        penum->interpolate = interp_off;
         return 0;
     }
     penum->line = line;  /* Set to the input and output buffer */
@@ -1875,7 +1877,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
 
         code = dev_proc(dev, get_profile)(dev, &dev_profile);
         if (code) {
-            penum->interpolate = false;
+            penum->interpolate = interp_off;
             return 0;
         }
         spp_cm = gsicc_get_device_profile_comps(dev_profile);

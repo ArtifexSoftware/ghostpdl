@@ -729,7 +729,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
      * the given sub-image, or else is constructing output out of
      * overlapping pieces.
      */
-    penum->interpolate = pim->Interpolate | force_interpolation;
+    penum->interpolate = force_interpolation ? interp_force : pim->Interpolate ? interp_on : interp_off;
     penum->x_extent = x_extent;
     penum->y_extent = y_extent;
     penum->posture =

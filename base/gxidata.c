@@ -139,7 +139,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
         dda_next(penum->dda.row.x);
         penum->cur.y = dda_current(penum->dda.row.y);
         dda_next(penum->dda.row.y);
-        if (!penum->interpolate)
+        if (penum->interpolate == interp_off)
             switch (penum->posture) {
                 case image_portrait:
                     {		/* Precompute integer y and height, */

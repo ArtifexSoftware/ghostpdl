@@ -131,6 +131,13 @@ typedef enum {
     image_skewed                /* any other transformation */
 } image_posture;
 
+/* Interpolation request allows for off, on or forced */
+typedef enum {
+    interp_off = 0,             /* no interpolation */
+    interp_on,			/* interpolation requested, but not forced */
+    interp_force		/* force interpolation */
+} image_interp;
+
 /*
  * Define an entry in the image color table.  For single-source-plane
  * images, the table index is the sample value, and the key is not used;
@@ -196,7 +203,7 @@ struct gx_image_enum_s {
     byte spread;                /* (spp if multi-plane, 1 if not) */
                                 /* << log2_xbytes */
     byte masked;                /* 0 = [color]image, 1 = imagemask */
-    byte interpolate;           /* true if Interpolate requested */
+    image_interp interpolate;	/* interpolation: off, on, forced */
     gs_matrix matrix;           /* image space -> device space */
     struct r_ {
         int x, y, w, h;         /* subrectangle for which data is supplied */
