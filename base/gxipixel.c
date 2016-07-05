@@ -394,12 +394,14 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
      * then enable interpolation, as otherwise dropouts can cause
      * serious problems. */
     if (in_pattern_accumulator) {
+        double ome = ((double)(fixed_1 - fixed_epsilon)) / (double)fixed_1; /* One Minus Epsilon */
+
         if (orthogonal == 1) {
-            if ((mat.xx > -1 && mat.xx < 1) || (mat.yy > -1 && mat.yy < 1)) {
+            if ((mat.xx > -ome && mat.xx < ome) || (mat.yy > -ome && mat.yy < ome)) {
                 force_interpolation = true;
             }
         } else if (orthogonal == 2) {
-            if ((mat.xy > -1 && mat.xy < 1) || (mat.yx > -1 && mat.yx < 1)) {
+            if ((mat.xy > -ome && mat.xy < ome) || (mat.yx > -ome && mat.yx < ome)) {
                 force_interpolation = true;
             }
         }
