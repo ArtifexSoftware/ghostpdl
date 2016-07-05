@@ -220,6 +220,8 @@ static const uint clip_interval = 10000;
 /*
  * Enumerate the rectangles of the x,w,y,h argument that fall within
  * the clipping region.
+ * NB: if the clip list is transposed, then x, y, xe, and ye are already
+ *     transposed and will need to be switched for the call to "process"
  */
 static int
 clip_enumerate_rest(gx_device_clip * rdev,
@@ -244,8 +246,13 @@ clip_enumerate_rest(gx_device_clip * rdev,
                   stats_clip.no_x);
     }
 #endif
-    pccd->x = x, pccd->y = y;
-    pccd->w = xe - x, pccd->h = ye - y;
+    if (rdev->list.transpose) {
+        pccd->x = y, pccd->y = x;
+        pccd->w = ye - y, pccd->h = xe - x;
+    } else {
+        pccd->x = x, pccd->y = y;
+        pccd->w = xe - x, pccd->h = ye - y;
+    }
     /*
      * Warp the cursor forward or backward to the first rectangle row
      * that could include a given y value.  Assumes rptr is set, and
@@ -317,7 +324,10 @@ clip_enumerate_rest(gx_device_clip * rdev,
 #else
                 rptr = rptr->next;
 #endif
-                code = process(pccd, xc, yc, xec, yec);
+                if (rdev->list.transpose)
+                    code = process(pccd, yc, xc, yec, xec);
+                else
+                    code = process(pccd, xc, yc, xec, yec);
                 if (code < 0)
                     return code;
             } else {
@@ -347,12 +357,27 @@ clip_enumerate(gx_device_clip * rdev, int x, int y, int w, int h,
     xe = x + w;
     y += rdev->translation.y;
     ye = y + h;
+    if (rdev->list.transpose) {
+        int tmp;
+
+        tmp = x;
+        x = y;
+        y = tmp;
+        tmp = xe;
+        xe = ye;
+        ye = tmp;
+    }
     /* Check for the region being entirely within the current rectangle. */
     if (y >= rptr->ymin && ye <= rptr->ymax &&
         x >= rptr->xmin && xe <= rptr->xmax
         ) {
-        pccd->x = x, pccd->y = y, pccd->w = w, pccd->h = h;
-        return INCR_THEN(in, process(pccd, x, y, xe, ye));
+        if (rdev->list.transpose) {
+            pccd->x = y, pccd->y = x, pccd->w = h, pccd->h = w;
+            return INCR_THEN(in, process(pccd, y, x, ye, xe));
+        } else {
+            pccd->x = x, pccd->y = y, pccd->w = w, pccd->h = h;
+            return INCR_THEN(in, process(pccd, x, y, xe, ye));
+        }
     }
     return clip_enumerate_rest(rdev, x, y, xe, ye, process, pccd);
 }

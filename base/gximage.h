@@ -327,6 +327,11 @@ void gx_image_scale_mask_colors(gx_image_enum *penum,
                                 int component_index);
 /* Used by icc processing to detect decode cases */
 bool gx_has_transfer(const gs_gstate *pgs, int num_comps);
+
+/* Compute the image matrix combining the ImageMatrix with either the pmat or the pgs ctm */
+/* Exported for use outside gx_image_enum_begin */
+int gx_image_compute_mat(const gs_gstate *pgs, const gs_matrix *pmat, const gs_matrix *ImageMatrix,
+                     gs_matrix_double *rmat);
 /*
  * Do common initialization for processing an ImageType 1 or 4 image.
  * Allocate the enumerator and fill in the following members:

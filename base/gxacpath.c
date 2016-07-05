@@ -132,7 +132,7 @@ static const gx_device_cpath_accum gs_cpath_accum_device =
 
 /* Start accumulating a clipping path. */
 void
-gx_cpath_accum_begin(gx_device_cpath_accum * padev, gs_memory_t * mem)
+gx_cpath_accum_begin(gx_device_cpath_accum * padev, gs_memory_t * mem, bool transpose)
 {
     gx_device_init_on_stack((gx_device *) padev,
                             (const gx_device *) & gs_cpath_accum_device, mem);
@@ -140,21 +140,30 @@ gx_cpath_accum_begin(gx_device_cpath_accum * padev, gs_memory_t * mem)
     set_dev_proc(padev, encode_color, gx_default_gray_encode);
     set_dev_proc(padev, decode_color, gx_default_decode_color);
     (*dev_proc(padev, open_device)) ((gx_device *) padev);
+    padev->list.transpose = transpose;
 }
 
 void
 gx_cpath_accum_set_cbox(gx_device_cpath_accum * padev,
                         const gs_fixed_rect * pbox)
 {
-    padev->clip_box.p.x = fixed2int_var(pbox->p.x);
-    padev->clip_box.p.y = fixed2int_var(pbox->p.y);
-    padev->clip_box.q.x = fixed2int_var_ceiling(pbox->q.x);
-    padev->clip_box.q.y = fixed2int_var_ceiling(pbox->q.y);
+    if (padev->list.transpose) {
+        padev->clip_box.p.x = fixed2int_var(pbox->p.y);
+        padev->clip_box.p.y = fixed2int_var(pbox->p.x);
+        padev->clip_box.q.x = fixed2int_var_ceiling(pbox->q.y);
+        padev->clip_box.q.y = fixed2int_var_ceiling(pbox->q.x);
+    } else {
+        padev->clip_box.p.x = fixed2int_var(pbox->p.x);
+        padev->clip_box.p.y = fixed2int_var(pbox->p.y);
+        padev->clip_box.q.x = fixed2int_var_ceiling(pbox->q.x);
+        padev->clip_box.q.y = fixed2int_var_ceiling(pbox->q.y);
+    }
 }
 
 /* Finish accumulating a clipping path. */
+/* NB: After this the padev bbox will be restored to "normal" untransposed */
 int
-gx_cpath_accum_end(const gx_device_cpath_accum * padev, gx_clip_path * pcpath)
+gx_cpath_accum_end(gx_device_cpath_accum * padev, gx_clip_path * pcpath)
 {
     int code = (*dev_proc(padev, close_device)) ((gx_device *) padev);
     /* Make an entire clipping path so we can use cpath_assign. */
@@ -168,6 +177,16 @@ gx_cpath_accum_end(const gx_device_cpath_accum * padev, gx_clip_path * pcpath)
         apath.path.bbox.p.x = apath.path.bbox.p.y =
         apath.path.bbox.q.x = apath.path.bbox.q.y = 0;
     else {
+        if (padev->list.transpose) {
+            int tmp;
+
+            tmp = padev->bbox.p.x;
+            padev->bbox.p.x = padev->bbox.p.y;
+            padev->bbox.p.y = tmp;
+            tmp = padev->bbox.q.x;
+            padev->bbox.q.x = padev->bbox.q.y;
+            padev->bbox.q.y = tmp;
+        }
         apath.path.bbox.p.x = int2fixed(padev->bbox.p.x);
         apath.path.bbox.p.y = int2fixed(padev->bbox.p.y);
         apath.path.bbox.q.x = int2fixed(padev->bbox.q.x);
@@ -212,7 +231,7 @@ gx_cpath_intersect_path_slow(gx_clip_path * pcpath, gx_path * ppath,
     gx_fill_params params;
     int code;
 
-    gx_cpath_accum_begin(&adev, pcpath->path.memory);
+    gx_cpath_accum_begin(&adev, pcpath->path.memory, false);
     set_nonclient_dev_color(&devc, 0);	/* arbitrary, but not transparent */
     gs_set_logical_op_inline(pgs, lop_default);
     if (params0 != 0)
@@ -286,8 +305,13 @@ accum_close(gx_device * dev)
 {
     gx_device_cpath_accum * const adev = (gx_device_cpath_accum *)dev;
 
-    adev->list.xmin = adev->bbox.p.x;
-    adev->list.xmax = adev->bbox.q.x;
+    if (adev->list.transpose) {
+        adev->list.xmin = adev->bbox.p.y;
+        adev->list.xmax = adev->bbox.q.y;
+    } else {
+        adev->list.xmin = adev->bbox.p.x;
+        adev->list.xmax = adev->bbox.q.x;
+    }
 #ifdef DEBUG
     if (gs_debug_c('q')) {
         gx_clip_rect *rp =
@@ -423,10 +447,12 @@ accum_alloc_rect(gx_device_cpath_accum * adev)
  * this is possible.
  */
 static int
-accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
+accum_fill_rectangle(gx_device * dev, int xi, int yi, int w, int h,
                      gx_color_index color)
 {
     gx_device_cpath_accum * const adev = (gx_device_cpath_accum *)dev;
+    int x = adev->list.transpose ? yi : xi;
+    int y = adev->list.transpose ? xi : yi;
     int xe = x + w, ye = y + h;
     gx_clip_rect *nr;
     gx_clip_rect *ar;

@@ -75,6 +75,7 @@ struct gx_clip_list_s {
     int xmin, xmax;		/* min and max X over all but head/tail */
     int count;			/* # of rectangles not counting */
                                 /* head or tail */
+    bool transpose;		/* Transpose x / y */
 };
 
 #define public_st_clip_list()	/* in gxcpath.c */\

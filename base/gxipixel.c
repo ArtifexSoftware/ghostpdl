@@ -205,14 +205,40 @@ gx_image_enum_alloc(const gs_image_common_t * pic,
 
 /* Convert and restrict to a valid range. */
 static inline fixed float2fixed_rounded_boxed(double src) {
-	float v = floor(src*fixed_scale + 0.5);
+    float v = floor(src*fixed_scale + 0.5);
 
-	if (v <= min_fixed)
-		return min_fixed;
-	else if (v >= max_fixed)
-		return max_fixed;
-	else
-		return 	(fixed)v;
+    if (v <= min_fixed)
+        return min_fixed;
+    else if (v >= max_fixed)
+        return max_fixed;
+    else
+        return 	(fixed)v;
+}
+
+/* Compute the image matrix combining the ImageMatrix with either the pmat or the pgs ctm */
+int
+gx_image_compute_mat(const gs_gstate *pgs, const gs_matrix *pmat, const gs_matrix *ImageMatrix,
+                     gs_matrix_double *rmat)
+{
+    int code = 0;
+
+    if (pmat == 0)
+        pmat = &ctm_only(pgs);
+    if (ImageMatrix->xx == pmat->xx && ImageMatrix->xy == pmat->xy &&
+        ImageMatrix->yx == pmat->yx && ImageMatrix->yy == pmat->yy) {
+        /* Process common special case separately to accept singular matrix. */
+        rmat->xx = rmat->yy = 1.;
+        rmat->xy = rmat->yx = 0.;
+        rmat->tx = pmat->tx - ImageMatrix->tx;
+        rmat->ty = pmat->ty - ImageMatrix->ty;
+    } else {
+        if ((code = gs_matrix_invert_to_double(ImageMatrix, rmat)) < 0 ||
+            (code = gs_matrix_multiply_double(rmat, pmat, rmat)) < 0
+            ) {
+            return code;
+        }
+    }
+    return code;
 }
 
 /*
@@ -260,22 +286,10 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     penum->icc_setup.need_decode = false;
     penum->Width = width;
     penum->Height = height;
-    if (pmat == 0)
-        pmat = &ctm_only(pgs);
-    if (pim->ImageMatrix.xx == pmat->xx && pim->ImageMatrix.xy == pmat->xy &&
-        pim->ImageMatrix.yx == pmat->yx && pim->ImageMatrix.yy == pmat->yy) {
-        /* Process common special case separately to accept singular matrix. */
-        mat.xx = mat.yy = 1.;
-        mat.xy = mat.yx = 0.;
-        mat.tx = pmat->tx - pim->ImageMatrix.tx;
-        mat.ty = pmat->ty - pim->ImageMatrix.ty;
-    } else {
-        if ((code = gs_matrix_invert_to_double(&pim->ImageMatrix, &mat)) < 0 ||
-            (code = gs_matrix_multiply_double(&mat, pmat, &mat)) < 0
-            ) {
-            gs_free_object(mem, penum, "gx_default_begin_image");
-            return code;
-        }
+
+    if ((code = gx_image_compute_mat(pgs, pmat, &(pim->ImageMatrix), &mat)) < 0) {
+        gs_free_object(mem, penum, "gx_default_begin_image");
+        return code;
     }
     /* Grid fit: A common construction in postscript/PDF files is for images
      * to be constructed as a series of 'stacked' 1 pixel high images.

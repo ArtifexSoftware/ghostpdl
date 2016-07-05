@@ -232,7 +232,15 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_gstate * pgs,
         gs_image_t *image = (gs_image_t *)pic;
 
         if(image->ImageMask) {
-            code = gx_image_fill_masked_start(dev, gs_currentdevicecolor_inline(pgs), pcpath, pgs->memory, &dev2);
+            bool transpose = false;
+            gs_matrix_double mat;
+
+            if((code = gx_image_compute_mat(pgs, NULL, &(image->ImageMatrix), &mat)) < 0)
+                return code;
+            if ((any_abs(mat.xy) > any_abs(mat.xx)) && (any_abs(mat.yx) > any_abs(mat.yy)))
+                transpose = true;		/* pure landscape */
+            code = gx_image_fill_masked_start(dev, gs_currentdevicecolor_inline(pgs), transpose,
+                                              pcpath, pgs->memory, &dev2);
             if (code < 0)
                 return code;
         }

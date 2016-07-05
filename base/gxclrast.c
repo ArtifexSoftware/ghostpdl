@@ -1277,7 +1277,7 @@ set_phase:      /*
                         code = gx_cpath_reset(&clip_path);
                         if (code < 0)
                             goto out;
-                        gx_cpath_accum_begin(&clip_accum, mem);
+                        gx_cpath_accum_begin(&clip_accum, mem, false);
                         gx_cpath_accum_set_cbox(&clip_accum,
                                                 &target_box);
                         tdev = (gx_device *)&clip_accum;

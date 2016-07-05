@@ -34,6 +34,7 @@ typedef struct gx_device_cpath_accum_s {
     gs_int_rect clip_box;
     gs_int_rect bbox;
     gx_clip_list list;
+    bool transpose;
 } gx_device_cpath_accum;
 
 #define public_st_device_cpath_accum()\
@@ -42,7 +43,7 @@ typedef struct gx_device_cpath_accum_s {
     device_cpath_accum_reloc_ptrs, gx_device_finalize)
 
 /* Start accumulating a clipping path. */
-void gx_cpath_accum_begin(gx_device_cpath_accum * padev, gs_memory_t * mem);
+void gx_cpath_accum_begin(gx_device_cpath_accum * padev, gs_memory_t * mem, bool transpose);
 
 /* Set the accumulator's clipping box. */
 void gx_cpath_accum_set_cbox(gx_device_cpath_accum * padev,
@@ -50,7 +51,8 @@ void gx_cpath_accum_set_cbox(gx_device_cpath_accum * padev,
 
 /* Finish accumulating a clipping path. */
 /* Note that this releases the old contents of the clipping path. */
-int gx_cpath_accum_end(const gx_device_cpath_accum * padev,
+/* Also, if the list is transposed, the adev->bbox will be set to "normal" untransposed */
+int gx_cpath_accum_end(gx_device_cpath_accum * padev,
                        gx_clip_path * pcpath);
 
 /* Discard an accumulator in case of error. */

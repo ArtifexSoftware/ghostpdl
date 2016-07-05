@@ -103,7 +103,8 @@ static const gx_clip_list clip_list_empty = {
     0, /* insert */
     0, /* xmin */
     0, /* xmax */
-    0  /* count */
+    0, /* count */
+    0  /* transpose = false */
 };
 
 /* ------ Clipping path memory management ------ */

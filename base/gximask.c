@@ -35,8 +35,8 @@
 */
 
 int
-gx_image_fill_masked_start(gx_device *dev, const gx_device_color *pdevc, const gx_clip_path *pcpath,
-                           gs_memory_t *mem, gx_device **cdev)
+gx_image_fill_masked_start(gx_device *dev, const gx_device_color *pdevc, bool transpose,
+                           const gx_clip_path *pcpath, gs_memory_t *mem, gx_device **cdev)
 {
     if (gx_dc_is_pattern2_color(pdevc) || gx_dc_is_pattern1_color_clist_based(pdevc)) {
         if (!dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_can_accum, NULL, gs_no_id)) {
@@ -50,7 +50,7 @@ gx_image_fill_masked_start(gx_device *dev, const gx_device_color *pdevc, const g
                     gx_device_cpath_accum, &st_device_cpath_accum, "gx_image_fill_masked_start");
             if (pcdev == NULL)
                 return_error(gs_error_VMerror);
-            gx_cpath_accum_begin(pcdev, mem);
+            gx_cpath_accum_begin(pcdev, mem, transpose);
             gx_cpath_outer_box(pcpath, &cbox);
             gx_cpath_accum_set_cbox(pcdev, &cbox);
             pcdev->rc.memory = mem;
@@ -107,7 +107,7 @@ gx_image_fill_masked(gx_device *dev,
     gx_device *cdev = dev;
     int code;
 
-    if ((code = gx_image_fill_masked_start(dev, pdc, pcpath, dev->memory, &cdev)) < 0)
+    if ((code = gx_image_fill_masked_start(dev, pdc, false, pcpath, dev->memory, &cdev)) < 0)
         return code;
 
     if (cdev == dev)
