@@ -60,6 +60,7 @@ void CICC_CreatorDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_EDITTHRESH, m_graythreshold);
+	DDX_Control(pDX, IDC_EDITTHRESHINPUT, m_threshold_input);
 	DDX_Text(pDX, IDC_EDIT1, m_effect_desc);
 	DDX_Control(pDX, IDC_EDIT1, m_desc_effect_str);
 }
@@ -72,9 +73,13 @@ BEGIN_MESSAGE_MAP(CICC_CreatorDlg, CDialog)
 	ON_BN_CLICKED(IDC_NAMES, &CICC_CreatorDlg::OnBnClickedNames)
 	ON_BN_CLICKED(IDC_ICC_PROFILE, &CICC_CreatorDlg::OnBnClickedIccProfile)
 	ON_BN_CLICKED(IDC_PSICC, &CICC_CreatorDlg::OnBnClickedPsicc)
-	ON_BN_CLICKED(IDC_GRAYTHRESH, &CICC_CreatorDlg::OnBnClickedGraythresh)
-	ON_EN_CHANGE(IDC_EDITTHRESH, &CICC_CreatorDlg::OnEnChangeEditthresh)
-	ON_BN_CLICKED(IDC_PSTABLES, &CICC_CreatorDlg::OnBnClickedPstables)
+    ON_BN_CLICKED(IDC_GRAYTHRESH, &CICC_CreatorDlg::OnBnClickedGraythresh)
+    ON_BN_CLICKED(IDC_GRAYTHRESHINPUT, &CICC_CreatorDlg::OnBnClickedGraythreshInput)
+    ON_BN_CLICKED(IDC_RGBTHRESHINPUT, &CICC_CreatorDlg::OnBnClickedRGBthreshInput)
+    ON_BN_CLICKED(IDC_CMYKTHRESHINPUT, &CICC_CreatorDlg::OnBnClickedCMYKthreshInput)
+    ON_EN_CHANGE(IDC_EDITTHRESH, &CICC_CreatorDlg::OnEnChangeEditthresh)
+    ON_EN_CHANGE(IDC_EDITTHRESHINPUT, &CICC_CreatorDlg::OnEnChangeEditthreshInput)
+    ON_BN_CLICKED(IDC_PSTABLES, &CICC_CreatorDlg::OnBnClickedPstables)
 	ON_BN_CLICKED(IDC_CHECK1, &CICC_CreatorDlg::OnBnClickedCheck1)
 	ON_BN_CLICKED(IDC_EFFECTTABLES2, &CICC_CreatorDlg::OnBnClickedEffecttables2)
 	ON_BN_CLICKED(IDC_EFFECTICC3, &CICC_CreatorDlg::OnBnClickedEffecticc3)
@@ -117,8 +122,11 @@ BOOL CICC_CreatorDlg::OnInitDialog()
 	m_effect_data = NULL;
 	SetDlgItemText(IDC_STATUS, _T("Ready."));
 	m_floatthreshold_gray = 50;
+    m_floatthreshold_input = 50;
 	m_effect_desc.Preallocate(0);
 	m_graythreshold.SetWindowText(_T("50"));
+	m_threshold_input.SetWindowText(_T("50"));
+
 	return TRUE;
 }
 
@@ -403,6 +411,99 @@ void CICC_CreatorDlg::OnBnClickedPsicc()
 	}
 }
 
+void CICC_CreatorDlg::OnBnClickedGraythreshInput()
+{
+	int ok;
+	TCHAR szFile[MAX_PATH];
+	OPENFILENAME ofn;
+
+	ZeroMemory(szFile, MAX_PATH);
+	ZeroMemory(&ofn, sizeof(OPENFILENAME));
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	ofn.hwndOwner = this->m_hWnd;
+	ofn.lpstrFilter = _T("Supported Files Types(*.icc)\0*.icc;*.ICC\0\0");
+	ofn.lpstrTitle = _T("Save Gray Threshold Input ICC Profile");
+	ofn.lpstrFile = szFile;
+	ofn.nMaxFile = MAX_PATH;
+
+	if (IDOK == GetSaveFileName(&ofn))
+	{
+		ok = create_input_threshold_profile(szFile, this->m_floatthreshold_input, 1);
+		if (ok == 0)
+			this->SetDlgItemText(IDC_STATUS, _T("Created Gray Threshold Input Profile"));
+	}
+}
+
+void CICC_CreatorDlg::OnBnClickedRGBthreshInput()
+{
+	int ok;
+	TCHAR szFile[MAX_PATH];
+	OPENFILENAME ofn;
+
+	ZeroMemory(szFile, MAX_PATH);
+	ZeroMemory(&ofn, sizeof(OPENFILENAME));
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	ofn.hwndOwner = this->m_hWnd;
+	ofn.lpstrFilter = _T("Supported Files Types(*.icc)\0*.icc;*.ICC\0\0");
+	ofn.lpstrTitle = _T("Save RGB Threshold Input ICC Profile");
+	ofn.lpstrFile = szFile;
+	ofn.nMaxFile = MAX_PATH;
+
+	if (IDOK == GetSaveFileName(&ofn))
+	{
+		ok = create_input_threshold_profile(szFile, this->m_floatthreshold_input, 3);
+		if (ok == 0)
+			this->SetDlgItemText(IDC_STATUS, _T("Created RGB Threshold Input Profile"));
+	}
+}
+
+void CICC_CreatorDlg::OnBnClickedCMYKthreshInput()
+{
+	int ok;
+	TCHAR szFile[MAX_PATH];
+	OPENFILENAME ofn;
+
+	ZeroMemory(szFile, MAX_PATH);
+	ZeroMemory(&ofn, sizeof(OPENFILENAME));
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+	ofn.hwndOwner = this->m_hWnd;
+	ofn.lpstrFilter = _T("Supported Files Types(*.icc)\0*.icc;*.ICC\0\0");
+	ofn.lpstrTitle = _T("Save CMYK Threshold Input ICC Profile");
+	ofn.lpstrFile = szFile;
+	ofn.nMaxFile = MAX_PATH;
+
+	if (IDOK == GetSaveFileName(&ofn))
+	{
+		ok = create_input_threshold_profile(szFile, this->m_floatthreshold_input, 4);
+		if (ok == 0)
+			this->SetDlgItemText(IDC_STATUS, _T("Created CMYK Threshold Input Profile"));
+	}
+}
+
+void CICC_CreatorDlg::OnEnChangeEditthreshInput()
+{
+	char *str;
+	WCHAR wchar_str[MAX_INT_LEN];
+
+	this->m_threshold_input.GetWindowTextW(wchar_str, MAX_INT_LEN);
+	str = wchar_t_to_char(wchar_str);
+	sscanf(str, "%f", &(m_floatthreshold_input));
+    if (m_floatthreshold_input < 0)
+	{
+        m_floatthreshold_input = 0;
+		m_threshold_input.SetWindowText(_T("0"));
+	}
+    if (m_floatthreshold_input > 100)
+	{
+        m_floatthreshold_input = 100;
+		m_threshold_input.SetWindowText(_T("100"));
+	}
+	free(str);
+}
+
 void CICC_CreatorDlg::OnBnClickedGraythresh()
 {
 	int ok;
@@ -423,7 +524,7 @@ void CICC_CreatorDlg::OnBnClickedGraythresh()
 	{
 		ok = create_gray_threshold_profile(szFile, this->m_floatthreshold_gray);
 		if (ok == 0)
-			this->SetDlgItemText(IDC_STATUS, _T("Created Gray Threshhold Profile"));
+			this->SetDlgItemText(IDC_STATUS, _T("Created Gray Threshold Profile"));
 	}
 }
 
@@ -431,7 +532,6 @@ void CICC_CreatorDlg::OnEnChangeEditthresh()
 {
 	char *str;
 	WCHAR wchar_str[MAX_INT_LEN];
-	int data;
 
 	this->m_graythreshold.GetWindowTextW(wchar_str, MAX_INT_LEN);
 	str = wchar_t_to_char(wchar_str);
@@ -606,7 +706,6 @@ void CICC_CreatorDlg::OnBnClickedEffecticc3()
 	OPENFILENAME ofn;
 	WCHAR str_wchar[MAX_INT_LEN];
 	char *des_ptr_char;
-	int data;
 
 	ZeroMemory(szFile, MAX_PATH);
 	ZeroMemory(&ofn, sizeof(OPENFILENAME));

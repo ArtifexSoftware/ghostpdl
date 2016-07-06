@@ -69,9 +69,15 @@ public:
     afx_msg void OnBnClickedCmyk2gray2();
     afx_msg void OnBnClickedPsicc();
     afx_msg void OnBnClickedGraythresh();
+    afx_msg void OnBnClickedGraythreshInput();
+    afx_msg void OnBnClickedRGBthreshInput();
+    afx_msg void OnBnClickedCMYKthreshInput();
+    afx_msg void OnEnChangeEditthreshInput();
     afx_msg void OnEnChangeEditthresh();
     CEdit m_graythreshold;
     float m_floatthreshold_gray;
+    CEdit m_threshold_input;
+    float m_floatthreshold_input;
     afx_msg void OnBnClickedPstables();
     afx_msg void OnBnClickedCheck1();
     afx_msg void OnBnClickedEffecttables2();

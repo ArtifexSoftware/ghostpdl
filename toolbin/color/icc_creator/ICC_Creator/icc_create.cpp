@@ -61,9 +61,11 @@ static const char desc_psrgb_name[] = "Artifex PS RGB Profile";
 static const char desc_pscmyk_name[] = "Artifex PS CMYK Profile";
 static const char desc_link_name[] = "Artifex Link Profile";
 static const char desc_thresh_gray_name[] = "Artifex Gray Threshold Profile";
-static const char desc_thresh_rgb_name[] = "Artifex RGB Threshold Profile";
+static const char desc_thresh_gray_input_name[] = "Artifex Gray Input Threshold Profile";
+static const char desc_thresh_rgb_input_name[] = "Artifex RGB Input Threshold Profile";
+static const char desc_thresh_cmyk_input_name[] = "Artifex CMYK Input Threshold Profile";
 
-static const char copy_right[] = "Copyright Artifex Software 2010";
+static const char copy_right[] = "Copyright Artifex Software 2016";
 
 typedef struct {
     icTagSignature      sig;            /* The tag signature */
@@ -760,7 +762,6 @@ add_namesdata(unsigned char *input_ptr, colornames_t *colorant_names, int num_co
     }
 }
 
-
 static void
 add_tabledata_withcurves(unsigned char *input_ptr, void *table_data, int num_colors,
               int num_samples, int is_link, int numout, bool pcs_is_xyz_btoa,
@@ -1390,6 +1391,116 @@ create_xyz2gray_special(unsigned short *table_data, int num_samples)
     }
 }
 
+/* This assumes we have already applied the nonlinearity to the input gray
+   values.  This table does the linear map for L* and zeros a* and b* */
+static void
+create_gray2lab_special(unsigned short *table_data, int num_samples)
+{
+    int g;
+    float lstar;
+    unsigned short encoded_value;
+    unsigned short *buffptr = table_data;
+
+    for (g = 0; g < num_samples; g++) {
+        lstar = (float)g / (float)(num_samples - 1);
+        encoded_value = lstar2_16bit(lstar * 100.0);
+        *buffptr++ = encoded_value;
+        encoded_value = abstar2_16bit(0);
+        *buffptr++ = encoded_value;
+        *buffptr++ = encoded_value;
+    }
+}
+
+/* This assumes we have already applied the nonlinearity to the input rgb
+values.  The RGB values coming in here are linear.  We need to compute an
+L* value and zero out the a* and b* values.  The output curve will do the
+threshold of the L* */
+static void
+create_rgb2lab_special(unsigned short *table_data, int num_samples)
+{
+    int r, g, b;
+    float red, green, blue;;
+    unsigned short *buffptr = table_data;
+    float rgb_values[3];
+    float xyz[3], lab_value[3];
+    unsigned short encoded_value;
+    unsigned short *curr_ptr;
+
+    curr_ptr = table_data;
+
+    /* Step through the RGB values, convert to CIEXYZ
+    then to CIELAB, then encode and place in table */
+    for (r = 0; r < num_samples; r++) {
+        red = (float)r / (float)(num_samples - 1);
+        for (g = 0; g < num_samples; g++) {
+            green = (float)g / (float)(num_samples - 1);
+            for (b = 0; b < num_samples; b++) {
+                blue = (float)b / (float)(num_samples - 1);
+                /* Now get that rgb value to CIEXYZ */
+                xyz[0] = red * 0.60974 + green * 0.20528 + blue * 0.14919;
+                xyz[1] = red * 0.31111 + green * 0.62567 + blue * 0.06322;
+                xyz[2] = red * 0.01947 + green * 0.06087 + blue * 0.74457;
+                /* Now to CIELAB */
+                xyz2lab(xyz, lab_value);
+                /* Now encode the value.  NOTE do not write bigendian here
+                 * or we end up doing the byte swap twice */
+                encoded_value = lstar2_16bit(lab_value[0]);
+                *curr_ptr++= encoded_value;
+                encoded_value = abstar2_16bit(0);
+                *curr_ptr++ = encoded_value;
+                *curr_ptr++ = encoded_value;
+            }
+        }
+    }
+}
+
+/* This assumes we have already applied the nonlinearity to the input cmyk
+values.  The cmyk values coming in here are linear.  We need to compute an
+L* value and zero out the a* and b* values.  The output curve will do the
+threshold of the L* */
+static void
+create_cmyk2lab_special(unsigned short *table_data, int num_samples)
+{
+    int c, m, y, k;
+    float cyan, magenta, yellow, black;
+    unsigned short *buffptr = table_data;
+    float rgb_values[3];
+    float xyz[3], lab_value[3];
+    unsigned short encoded_value;
+    unsigned short *curr_ptr;
+
+    curr_ptr = table_data;
+
+    /* Step through the cmyk values, convert to CIEXYZ
+       then to CIELAB, then encode and place in table */
+    for (c = 0; c < num_samples; c++) {
+        cyan = (float)c / (float)(num_samples - 1);
+        for (m = 0; m < num_samples; m++) {
+            magenta = (float)m / (float)(num_samples - 1);
+            for (y = 0; y < num_samples; y++) {
+                yellow = (float)y / (float)(num_samples - 1);
+                for (k = 0; k < num_samples; k++) {
+                    black = (float)k / (float)(num_samples - 1);
+                    color_cmyk_to_rgb(cyan, magenta, yellow, black, rgb_values, 0);
+                    /* Now get that rgb value to CIEXYZ */
+                    xyz[0] = rgb_values[0] * 0.60974 + rgb_values[1] * 0.20528 + rgb_values[2] * 0.14919;
+                    xyz[1] = rgb_values[0] * 0.31111 + rgb_values[1] * 0.62567 + rgb_values[2] * 0.06322;
+                    xyz[2] = rgb_values[0] * 0.01947 + rgb_values[1] * 0.06087 + rgb_values[2] * 0.74457;
+                    /* Now to CIELAB */
+                    xyz2lab(xyz, lab_value);
+                    /* Now encode the value.  NOTE do not write bigendian here
+                    * or we end up doing the byte swap twice */
+                    encoded_value = lstar2_16bit(lab_value[0]);
+                    *curr_ptr++ = encoded_value;
+                    encoded_value = abstar2_16bit(0);
+                    *curr_ptr++ = encoded_value;
+                    *curr_ptr++ = encoded_value;
+                }
+            }
+        }
+    }
+}
+
 static void
 create_lab2gray_special(unsigned short *table_data, int num_samples)
 {
@@ -1398,8 +1509,6 @@ create_lab2gray_special(unsigned short *table_data, int num_samples)
     unsigned short *buffptr = table_data;
     float xyz[3], lab_value[3], gray_value;
 
-    /* Step through the lab indices, convert to CIEXYZ
-       then to RGB, then to CMYK then encode into 16 bit form */
     for (l = 0; l < num_samples; l++) {
         lstar = (float) l / (float) (num_samples -1);
         for (a = 0; a < num_samples; a++) {
@@ -1910,10 +2019,195 @@ int create_gray_threshold_profile(TCHAR FileName[], float threshhold)
     return(0);
 }
 
-/* Create a gray threshold profile */
-int create_rgb_threshold_profile(TCHAR FileName[], float threshhold)
+/* Create an input threshold profile */
+int create_input_threshold_profile(TCHAR FileName[], float threshhold, int num_colors)
 {
+    icProfile iccprofile;
+    icHeader  *header = &(iccprofile.header);
+    int profile_size, k;
+    int num_tags;
+    gsicc_tag *tag_list;
+    int tag_offset = 0;
+    unsigned char *curr_ptr;
+    int last_tag;
+    icS15Fixed16Number temp_XYZ[3];
+    int tag_location;
+    int debug_catch = 1;
+    unsigned char *buffer;
+    int numout = 3;     /* PCS number... */
+    int num_samples = 2;    /* clut samples */
+    unsigned short *threshold_table;
+    int midpoint;
+    int mlut_size_atob;
+    unsigned short *table_data_AtoB;
+    unsigned short *in_LUTs, *out_LUTs, *lut_ptr, *linear_lut;
+    int tag_size;
+    unsigned short max_lstar;
+    char *profile_name;
+    char name_add_on[25];
+    const char *desc_name;
+    icColorSpaceSignature color_sig;
 
+    sprintf(name_add_on, " %2.1f ", threshhold);
+
+    switch (num_colors)
+    {
+    case 1:
+        desc_name = desc_thresh_gray_input_name;
+        color_sig = icSigGrayData;
+        break;
+    case 3:
+        desc_name = desc_thresh_rgb_input_name;
+        color_sig = icSigRgbData;
+        break;
+    case 4:
+        desc_name = desc_thresh_cmyk_input_name;
+        color_sig = icSigCmykData;
+        break;
+    }
+
+    profile_name = (char*)malloc(strlen(desc_name) + strlen(name_add_on) + 1);
+    strcpy(profile_name, desc_name);
+    strcat(profile_name, name_add_on);
+
+    /* Create the curve */
+    threshold_table = (unsigned short*)malloc(CURVE_SIZE*sizeof(unsigned short));
+    /* init it all to 0 */
+    memset(threshold_table, 0, CURVE_SIZE*sizeof(unsigned short));
+    midpoint = (float)CURVE_SIZE * (threshhold / 100.0);
+
+    /* Set the points from midpoint to white to 1.0.   */
+    max_lstar = lstar2_16bit(100.0);
+    for (k = midpoint; k < CURVE_SIZE; k++) {
+        threshold_table[k] = max_lstar;
+    }
+
+    /* Fill in the common stuff */
+    setheader_common(header);
+    header->pcs = icSigLabData;
+    profile_size = HEADER_SIZE;
+    header->deviceClass = icSigInputClass;
+    header->colorSpace = color_sig;
+    num_tags = 5;  /* common (2) + ATOB0,bkpt,wtpt */
+    tag_list = (gsicc_tag*)malloc(sizeof(gsicc_tag)*num_tags);
+    /* Let us precompute the sizes of everything and all our offsets */
+    profile_size += TAG_SIZE*num_tags;
+    profile_size += 4; /* number of tags.... */
+    last_tag = -1;
+    init_common_tags(tag_list, num_tags, &last_tag, profile_name);
+    init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
+    init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
+
+    /* Now the ATOB0 Tag. */
+    mlut_size_atob = (int)pow((float)num_samples, (int)num_colors);  /* 8 */
+    tag_size = 52 + numout * CURVE_SIZE * 2 + num_colors * CURVE_SIZE * 2 +
+        mlut_size_atob * numout * 2;
+    init_tag(tag_list, &last_tag, icSigAToB0Tag, tag_size);
+    for (k = 0; k < num_tags; k++) {
+        profile_size += tag_list[k].size;
+    }
+    /* Now we can go ahead and fill our buffer with the data */
+    buffer = (unsigned char*)malloc(profile_size);
+    curr_ptr = buffer;
+
+    /* The header */
+    header->size = profile_size;
+    copy_header(curr_ptr, header);
+    curr_ptr += HEADER_SIZE;
+    /* Tag table */
+    copy_tagtable(curr_ptr, tag_list, num_tags);
+    curr_ptr += TAG_SIZE*num_tags;
+    curr_ptr += 4;
+
+    /* Now the data.  Must be in same order as we created the tag table */
+    /* First the common tags */
+    add_common_tag_data(curr_ptr, tag_list, profile_name);
+    for (k = 0; k < NUMBER_COMMON_TAGS; k++) {
+        curr_ptr += tag_list[k].size;
+    }
+    tag_location = NUMBER_COMMON_TAGS;
+    /* White and black points */
+    get_XYZ_floatptr(temp_XYZ, (float*)&(D50WhitePoint[0]));
+    add_xyzdata(curr_ptr, temp_XYZ);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+    get_XYZ_floatptr(temp_XYZ, (float*)&(BlackPoint[0]));
+    add_xyzdata(curr_ptr, temp_XYZ);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+    /* Now the AtoB0 table */
+    table_data_AtoB = (unsigned short*)malloc(mlut_size_atob *
+        sizeof(unsigned short) * numout);
+
+    switch (num_colors)
+    {
+    case 1:
+        create_gray2lab_special(table_data_AtoB, num_samples);
+        break;
+    case 3:
+        create_rgb2lab_special(table_data_AtoB, num_samples);
+        break;
+    case 4:
+        create_cmyk2lab_special(table_data_AtoB, num_samples);
+        break;
+    }
+
+    /* RGB input. Apply proper mapping to get to L*.  This requires doing
+    * the sRGB type nonlinearity as well as the CIELAB 1/3 operation */
+    in_LUTs = (unsigned short*)malloc(CURVE_SIZE * sizeof(unsigned short) * num_colors);
+    linear_lut = (unsigned short*)malloc(CURVE_SIZE * sizeof(unsigned short));
+    for (k = 0; k < CURVE_SIZE; k++) {
+        double val;
+
+        val = (double)k / (double)CURVE_SIZE;
+
+        linear_lut[k] = ROUND(val * 65535);
+
+        /* First sRGB nonlinearity */
+        if (val <= 0.04045) {
+            val = val / 12.92;
+        }
+        else {
+            val = (val + 0.055) / (1.055);
+            val = (double)pow((double)val, (double) 2.4);
+        }
+        val = (double)pow((double)val, (double) 0.333333);
+        val = val * 65535;
+        if (val < 0)
+            val = 0;
+        if (val > 65535)
+            val = 65535;
+        in_LUTs[k] = ROUND(val);
+    }
+    /* Finish the input curves */
+    for (k = 1; k < num_colors; k++) {
+        memcpy(&(in_LUTs[k * CURVE_SIZE]), in_LUTs, CURVE_SIZE*sizeof(unsigned short));
+    }
+
+    /* LAB output. Threshold the L*, Table should have mapped a and b to zero.
+    * Just use linear lut for those */
+    out_LUTs = (unsigned short*)malloc(CURVE_SIZE * sizeof(unsigned short) * 3);
+    lut_ptr = out_LUTs;
+    memcpy(lut_ptr, threshold_table, CURVE_SIZE*sizeof(unsigned short));
+    lut_ptr += CURVE_SIZE;
+    memcpy(lut_ptr, linear_lut, CURVE_SIZE*sizeof(unsigned short));
+    lut_ptr += CURVE_SIZE;
+    memcpy(lut_ptr, linear_lut, CURVE_SIZE*sizeof(unsigned short));
+
+    /* Now the ATOB0 */
+    add_tabledata_withcurves(curr_ptr, (void*)table_data_AtoB, num_colors, num_samples,
+        1, numout, false, CURVE_SIZE, in_LUTs, CURVE_SIZE, out_LUTs, true);
+
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+    /* Dump the buffer to a file for testing, if its a valid ICC profile */
+    save_profile(buffer, FileName, profile_size);
+    free(threshold_table);
+    free(table_data_AtoB);
+    free(linear_lut);
+    free(in_LUTs);
+    free(out_LUTs);
+    free(profile_name);
     return(0);
 }
 

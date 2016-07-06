@@ -26,14 +26,19 @@
 #define IDC_EFFECTICC3                  1012
 #define IDC_EDITTHRESH2                 1013
 #define IDC_EDITTHRESHRGB               1013
+#define IDC_GRAYTHRESH2                 1013
+#define IDC_CMYKTHRESHINPUT             1013
 #define IDC_PSICC2                      1014
 #define IDC_PSTABLES                    1014
 #define IDC_CHECK1                      1015
 #define IDC_EFFECTTABLES2               1016
 #define IDC_EDIT1                       1017
+#define IDC_EDITTHRESHINPUT             1018
+#define IDC_RGBTHRESHINPUT              1019
+#define IDC_GRAYTHRESHINPUT             1020
 
 // Next default values for new objects
-// 
+//
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        132

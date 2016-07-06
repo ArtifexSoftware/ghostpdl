@@ -39,8 +39,8 @@ int create_devicelink_profile(TCHAR FileName[],link_t link_type);
 int create_psrgb_profile(TCHAR FileName[]);
 int create_pscmyk_profile(TCHAR FileName[], bool pcs_islab, bool cpsi_mode, ucrbg_t *ucr_data);
 int create_psgray_profile(TCHAR FileName[]);
-int  create_gray_threshold_profile(TCHAR FileName[], float threshold);
-int  create_rgb_threshold_profile(TCHAR FileName[], float threshold);
+int create_gray_threshold_profile(TCHAR FileName[], float threshold);
+int create_input_threshold_profile(TCHAR FileName[], float threshold, int num_colors);
 int create_effect_profile(TCHAR FileName[], ucrbg_t *effect_data, char desc_ptr[]);
 
 #endif
