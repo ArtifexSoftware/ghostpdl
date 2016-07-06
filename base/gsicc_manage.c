@@ -605,6 +605,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
         for (k = 0; k < NUM_SOURCE_PROFILES; k++) {
             srcgtag->rgb_rend_cond[k].cmm = gsCMM_DEFAULT;
             srcgtag->cmyk_rend_cond[k].cmm = gsCMM_DEFAULT;
+            srcgtag->gray_rend_cond[k].cmm = gsCMM_DEFAULT;
         }
         while (start || strlen(curr_ptr) > 0) {
             if (start) {
@@ -723,6 +724,33 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                     srcgtag->rgb_rend_cond[gsSRC_TEXTPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
                         code = gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_TEXTPRO]), &last, false);
+                        if (code < 0)
+                            return code;
+                    }
+                    break;
+                case GRAPHIC_GRAY:
+                    srcgtag->gray_profiles[gsSRC_GRAPPRO] = icc_profile;
+                    srcgtag->gray_rend_cond[gsSRC_GRAPPRO].cmm = cmm;
+                    if (cmm == gsCMM_DEFAULT) {
+                        code = gsicc_fill_srcgtag_item(&(srcgtag->gray_rend_cond[gsSRC_GRAPPRO]), &last, false);
+                        if (code < 0)
+                            return code;
+                    }
+                    break;
+                case IMAGE_GRAY:
+                    srcgtag->gray_profiles[gsSRC_IMAGPRO] = icc_profile;
+                    srcgtag->gray_rend_cond[gsSRC_IMAGPRO].cmm = cmm;
+                    if (cmm == gsCMM_DEFAULT) {
+                        code = gsicc_fill_srcgtag_item(&(srcgtag->gray_rend_cond[gsSRC_IMAGPRO]), &last, false);
+                        if (code < 0)
+                            return code;
+                    }
+                    break;
+                case TEXT_GRAY:
+                    srcgtag->gray_profiles[gsSRC_TEXTPRO] = icc_profile;
+                    srcgtag->gray_rend_cond[gsSRC_TEXTPRO].cmm = cmm;
+                    if (cmm == gsCMM_DEFAULT) {
+                        code = gsicc_fill_srcgtag_item(&(srcgtag->gray_rend_cond[gsSRC_TEXTPRO]), &last, false);
                         if (code < 0)
                             return code;
                     }
@@ -1132,17 +1160,21 @@ rc_free_srcgtag_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     if (srcgtag_profile->rc.ref_count <= 1 ) {
         /* Decrement any profiles. */
         for (k = 0; k < NUM_SOURCE_PROFILES; k++) {
+            if (srcgtag_profile->gray_profiles[k] != NULL) {
+                rc_decrement(srcgtag_profile->gray_profiles[k],
+                    "rc_free_srcgtag_profile(gray)");
+            }
             if (srcgtag_profile->rgb_profiles[k] != NULL) {
                 rc_decrement(srcgtag_profile->rgb_profiles[k],
-                             "rc_free_srcgtag_profile");
+                             "rc_free_srcgtag_profile(rgb)");
             }
             if (srcgtag_profile->cmyk_profiles[k] != NULL) {
                 rc_decrement(srcgtag_profile->cmyk_profiles[k],
-                             "rc_free_srcgtag_profile");
+                             "rc_free_srcgtag_profile(cmyk)");
             }
             if (srcgtag_profile->color_warp_profile != NULL) {
                 rc_decrement(srcgtag_profile->color_warp_profile,
-                             "rc_free_srcgtag_profile");
+                             "rc_free_srcgtag_profile(warp)");
             }
         }
         gs_free_object(mem_nongc, srcgtag_profile->name, "rc_free_srcgtag_profile");
@@ -1167,6 +1199,12 @@ gsicc_new_srcgtag_profile(gs_memory_t *memory)
     for (k = 0; k < NUM_SOURCE_PROFILES; k++) {
         result->rgb_profiles[k] = NULL;
         result->cmyk_profiles[k] = NULL;
+        result->gray_profiles[k] = NULL;
+        result->gray_rend_cond[k].black_point_comp = gsBPNOTSPECIFIED;
+        result->gray_rend_cond[k].rendering_intent = gsRINOTSPECIFIED;
+        result->gray_rend_cond[k].override_icc = false;
+        result->gray_rend_cond[k].preserve_black = gsBKPRESNOTSPECIFIED;
+        result->gray_rend_cond[k].cmm = gsCMM_DEFAULT;
         result->rgb_rend_cond[k].black_point_comp = gsBPNOTSPECIFIED;
         result->rgb_rend_cond[k].rendering_intent = gsRINOTSPECIFIED;
         result->rgb_rend_cond[k].override_icc = false;
@@ -2498,6 +2536,9 @@ gsicc_get_srcprofile(gsicc_colorbuffer_t data_cs,
             } else if (data_cs == gsCMYK) {
                 (*profile) = srcgtag_profile->cmyk_profiles[gsSRC_GRAPPRO];
                 *render_cond = srcgtag_profile->cmyk_rend_cond[gsSRC_GRAPPRO];
+            } else if (data_cs == gsGRAY) {
+                (*profile) = srcgtag_profile->gray_profiles[gsSRC_GRAPPRO];
+                *render_cond = srcgtag_profile->gray_rend_cond[gsSRC_GRAPPRO];
             }
             break;
         case GS_IMAGE_TAG:
@@ -2507,6 +2548,9 @@ gsicc_get_srcprofile(gsicc_colorbuffer_t data_cs,
             } else if (data_cs == gsCMYK) {
                 (*profile) = srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO];
                 *render_cond = srcgtag_profile->cmyk_rend_cond[gsSRC_IMAGPRO];
+            } else if (data_cs == gsGRAY) {
+                (*profile) = srcgtag_profile->gray_profiles[gsSRC_IMAGPRO];
+                *render_cond = srcgtag_profile->gray_rend_cond[gsSRC_IMAGPRO];
             }
             break;
         case GS_TEXT_TAG:
@@ -2516,6 +2560,9 @@ gsicc_get_srcprofile(gsicc_colorbuffer_t data_cs,
             } else if (data_cs == gsCMYK) {
                 (*profile) = srcgtag_profile->cmyk_profiles[gsSRC_TEXTPRO];
                 *render_cond = srcgtag_profile->cmyk_rend_cond[gsSRC_TEXTPRO];
+            } else if (data_cs == gsGRAY) {
+                (*profile) = srcgtag_profile->gray_profiles[gsSRC_TEXTPRO];
+                *render_cond = srcgtag_profile->gray_rend_cond[gsSRC_TEXTPRO];
             }
             break;
         }

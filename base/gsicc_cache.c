@@ -615,7 +615,8 @@ gsicc_get_link(const gs_gstate *pgs1, gx_device *dev_in,
     if (pgs->icc_manager != NULL &&
         pgs->icc_manager->srcgtag_profile != NULL) {
             if (gs_input_profile->data_cs == gsRGB
-                || gs_input_profile->data_cs == gsCMYK) {
+                || gs_input_profile->data_cs == gsCMYK
+                || gs_input_profile->data_cs == gsGRAY) {
                 gsicc_get_srcprofile(gs_input_profile->data_cs,
                                       dev->graphics_type_tag,
                                       pgs->icc_manager->srcgtag_profile,
@@ -634,7 +635,8 @@ gsicc_get_link(const gs_gstate *pgs1, gx_device *dev_in,
                     csi = gsicc_get_default_type(gs_input_profile);
                     if (render_cond.override_icc ||
                         csi == gs_color_space_index_DeviceRGB ||
-                        csi == gs_color_space_index_DeviceCMYK) {
+                        csi == gs_color_space_index_DeviceCMYK ||
+                        csi == gs_color_space_index_DeviceGray) {
                         gs_input_profile = gs_srcgtag_profile;
                         (*rendering_params) = render_cond;
                     }

@@ -30,11 +30,11 @@
 #define NUM_DEVICE_PROFILES 4
 #define NUM_SOURCE_PROFILES 3
 
-#define AB_NEUTRAL_8 5 
-#define AB_NEUTRAL_16 5 
+#define AB_NEUTRAL_8 5
+#define AB_NEUTRAL_16 5
 
-#define DEV_NEUTRAL_8 5 
-#define DEV_NEUTRAL_16 5 
+#define DEV_NEUTRAL_8 5
+#define DEV_NEUTRAL_16 5
 
 /* Define the preferred size of the output by the CMS */
 /* This can be different than the size of gx_color_value
@@ -73,7 +73,7 @@ typedef struct gsicc_device_cm_s {
 
 /*  The buffer description.  We handle a variety of different types */
 typedef enum {
-    gsUNDEFINED = 0, 
+    gsUNDEFINED = 0,
     gsGRAY,
     gsRGB,
     gsCMYK,
@@ -98,7 +98,7 @@ typedef struct gsicc_bufferdesc_s {
 
 /* Mapping procedures to allow easy vectoring depending upon if we are using
    the CMM or doing "dumb" color transforms */
-typedef int (*gscms_trans_color_proc_t) (gx_device * dev, gsicc_link_t *icclink, 
+typedef int (*gscms_trans_color_proc_t) (gx_device * dev, gsicc_link_t *icclink,
                                          void *inputcolor, void *outputcolor,
                                          int num_bytes);
 
@@ -121,7 +121,7 @@ typedef struct gscms_procs_s {
 /* Allow different methods for releasing the opaque profile contents */
 typedef void(*gscms_free_profile_proc_t) (void *profile_handle);
 
-/* Enumerate the ICC rendering intents and other parameters.  A note on 
+/* Enumerate the ICC rendering intents and other parameters.  A note on
    these.  0-3 are for different values.   4-7 are for Override cases
    where we are trying to override some value specified in the document.
    8 is reserved for not specified.  This is used in the case were we
@@ -134,23 +134,23 @@ typedef enum {
     gsRELATIVECOLORIMETRIC,
     gsSATURATION,
     gsABSOLUTECOLORIMETRIC,
-    gsPERCEPTUAL_OR,            /* These are needed for keeping track  */                                   
+    gsPERCEPTUAL_OR,            /* These are needed for keeping track  */
     gsRELATIVECOLORIMETRIC_OR,  /* of when the source ri is going to */
     gsSATURATION_OR,            /* override the destination profile intent */
     gsABSOLUTECOLORIMETRIC_OR,  /* in particular through the clist */
-    gsRINOTSPECIFIED = 8            /* Used to ignore value when source based setting */  
+    gsRINOTSPECIFIED = 8            /* Used to ignore value when source based setting */
 } gsicc_rendering_intents_t;
 
 /* We make an enumerated type in case someone wants to add different types
-   of black point compensation.  Like lcms provides the option for. If 
-   any are added, be sure to add in the regular and the source overide 
+   of black point compensation.  Like lcms provides the option for. If
+   any are added, be sure to add in the regular and the source overide
    option. Also not that we have at most 4 options due to gsBP_OVERRIDE  */
 typedef enum {
     gsBLACKPTCOMP_OFF = 0,
     gsBLACKPTCOMP_ON,
-    gsBLACKPTCOMP_OFF_OR = 4, /* These are needed for keeping track of the  */                                   
+    gsBLACKPTCOMP_OFF_OR = 4, /* These are needed for keeping track of the  */
     gsBLACKPTCOMP_ON_OR,      /* source blackpt is to overide dest. setting */
-    gsBPNOTSPECIFIED = 8     /* Used to ignore value when source based setting */  
+    gsBPNOTSPECIFIED = 8     /* Used to ignore value when source based setting */
 } gsicc_blackptcomp_t;
 
 /* This is used mainly for when the sourcegtag option specifies us to use no
@@ -161,17 +161,17 @@ typedef enum {
     gsCMM_REPLACE
 } gsicc_cmm_t;
 
-/* Since this is not specified by the source document we don't need to worry 
+/* Since this is not specified by the source document we don't need to worry
    about override values */
 typedef enum {
     gsBLACKPRESERVE_OFF = 0,
     gsBLACKPRESERVE_KONLY,
     gsBLACKPRESERVE_KPLANE,
-    gsBKPRESNOTSPECIFIED = 8   /* Used to ignore value when source based setting */  
+    gsBKPRESNOTSPECIFIED = 8   /* Used to ignore value when source based setting */
 } gsicc_blackpreserve_t;
-  
+
 #define gsRI_OVERRIDE 0x4
-#define gsBP_OVERRIDE 0x4 
+#define gsBP_OVERRIDE 0x4
 #define gsKP_OVERRIDE 0x4
 #define gsRI_MASK 0x3;
 #define gsBP_MASK 0x3;
@@ -223,6 +223,8 @@ typedef struct cmm_srcgtag_profile_s {
     gsicc_rendering_param_t rgb_rend_cond[NUM_SOURCE_PROFILES];
     cmm_profile_t  *cmyk_profiles[NUM_SOURCE_PROFILES];
     gsicc_rendering_param_t cmyk_rend_cond[NUM_SOURCE_PROFILES];
+    cmm_profile_t  *gray_profiles[NUM_SOURCE_PROFILES];
+    gsicc_rendering_param_t gray_rend_cond[NUM_SOURCE_PROFILES];
     cmm_profile_t  *color_warp_profile;
     gs_memory_t *memory;
     int name_length;            /* Length of file name */
@@ -429,7 +431,7 @@ typedef struct gsicc_hashlink_s {
 
 struct gsicc_link_s {
     void *link_handle;
-    gscms_procs_t procs;  
+    gscms_procs_t procs;
     gsicc_hashlink_t hashcode;
     struct gsicc_link_cache_s *icc_link_cache;
     int ref_count;
@@ -495,8 +497,8 @@ struct gsicc_devicen_s {
 };
 
 /* Had to add bool so that we know if things were swapped.
-   The reason is that if we are in a swapped state and 
-   there is a vmreclaim we then end up sending the user 
+   The reason is that if we are in a swapped state and
+   there is a vmreclaim we then end up sending the user
    params again and we will find that there is a mismatch */
 typedef struct gsicc_smask_s {
     cmm_profile_t *smask_gray;

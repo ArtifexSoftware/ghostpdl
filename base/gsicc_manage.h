@@ -51,7 +51,10 @@ typedef enum {
     TEXT_CMYK,
     GRAPHIC_RGB,
     IMAGE_RGB,
-    TEXT_RGB
+    TEXT_RGB,
+    GRAPHIC_GRAY,
+    IMAGE_GRAY,
+    TEXT_GRAY
 } gsicc_srcgtagkey_t;
 
 #define GSICC_SRCTAG_NOCM "None"
@@ -59,9 +62,9 @@ typedef enum {
 
 #define GSICC_SRCGTAG_KEYS\
   "ColorTune", "Graphic_CMYK", "Image_CMYK", "Text_CMYK",\
-  "Graphic_RGB", "Image_RGB", "Text_RGB"
-#define GSICC_NUM_SRCGTAG_KEYS 7
-#define GSICC_SRCGTAG_MAX_KEY 12
+  "Graphic_RGB", "Image_RGB", "Text_RGB",\
+  "Graphic_GRAY", "Image_GRAY", "Text_GRAY"
+#define GSICC_NUM_SRCGTAG_KEYS 10
 
 #include "gsicc_cms.h"
 
