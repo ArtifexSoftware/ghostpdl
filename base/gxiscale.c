@@ -1651,18 +1651,46 @@ image_render_interpolate_landscape(gx_image_enum * penum,
                     code = handle_colors(penum, psrc, spp_decode, &devc, islab, dev);
                     if (code < 0)
                         return code;
-                    /* Cannot collate runs of pixels for landscape cases.
-                     * Every pixel gets sent directly. Even if we tried to
-                     * collate runs, they'd end up being split up in most
-                     * cases within copy_color_unaligned anyway. */
+                    /* We scan for vertical runs of pixels, even if they end up
+                     * being split up in most cases within copy_color_unaligned anyway. */
                     {
                         int rcode;
+                        int rep = 0;
 
-                        rcode = gx_fill_rectangle_device_rop(ry, x, 1, 1,
-                                                             &devc, dev, lop);
+                        /* as above, see if we can accumulate any runs */
+                        switch (spp_decode) {
+                            case 1:
+                                do {
+                                    rep++, psrc += 1;
+                                } while ((rep + x) < xe &&
+                                         psrc[-1] == psrc[0]);
+                                break;
+                            case 3:
+                                do {
+                                    rep++, psrc += 3;
+                                } while ((rep + x) < xe &&
+                                         psrc[-3] == psrc[0] &&
+                                         psrc[-2] == psrc[1] &&
+                                         psrc[-1] == psrc[2]);
+                                break;
+                            case 4:
+                                do {
+                                    rep++, psrc += 4;
+                                } while ((rep + x) < xe &&
+                                         psrc[-4] == psrc[0] &&
+                                         psrc[-3] == psrc[1] &&
+                                         psrc[-2] == psrc[2] &&
+                                         psrc[-1] == psrc[3]);
+                                break;
+                            default:
+                                rep = 1;
+                                psrc += spp_decode;
+                                break;
+                        }
+                        rcode = gx_fill_rectangle_device_rop(ry, x, 1, rep, &devc, dev, lop);
                         if (rcode < 0)
                             return rcode;
-                        x++, psrc += spp_decode;
+                        x += rep;
                     }
                 }
                 /*if_debug1m('w', dev->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
@@ -1979,18 +2007,42 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
 #endif
                     /* Get the device color */
                     get_device_color(penum, p_cm_interp, &devc, &color, dev);
-                    /* Cannot collate runs of pixels for landscape cases.
-                     * Every pixel gets sent directly. Even if we tried to
-                     * collate runs, they'd end up being split up in most
-                     * cases within copy_color_unaligned anyway. */
+                    /* We scan for vertical runs of pixels, even if they end up
+                     * being split up in most cases within copy_color_unaligned anyway. */
                     {
                         int rcode;
+                        int rep = 0;
 
-                        rcode = gx_fill_rectangle_device_rop(ry, x, 1, 1,
-                                                             &devc, dev, lop);
+                        switch (spp_cm) {
+                            case 1:
+                                do {
+                                    rep++, p_cm_interp += 1;
+                                } while ((rep + x) < xe && p_cm_interp[-1] == p_cm_interp[0]);
+                                break;
+                            case 3:
+                                do {
+                                    rep++, p_cm_interp += 3;
+                                } while ((rep + x) < xe && p_cm_interp[-3] == p_cm_interp[0] &&
+                                     p_cm_interp[-2] == p_cm_interp[1] &&
+                                     p_cm_interp[-1] == p_cm_interp[2]);
+                                break;
+                            case 4:
+                                do {
+                                    rep++, p_cm_interp += 4;
+                                } while ((rep + x) < xe && p_cm_interp[-4] == p_cm_interp[0] &&
+                                     p_cm_interp[-3] == p_cm_interp[1] &&
+                                     p_cm_interp[-2] == p_cm_interp[2] &&
+                                     p_cm_interp[-1] == p_cm_interp[3]);
+                                break;
+                            default:
+                                rep = 1, p_cm_interp += spp_cm;
+                                break;
+                        }
+
+                        rcode = gx_fill_rectangle_device_rop(ry, x, 1, rep, &devc, dev, lop);
                         if (rcode < 0)
                             return rcode;
-                        x++, p_cm_interp += spp_cm;
+                        x += rep;
                     }
                 }  /* End on x loop */
                 /*if_debug1m('w', penum->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
