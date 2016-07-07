@@ -100,10 +100,10 @@ dnl --------------------------------------------------
 
 dnl AC_PROG_CC likes to add '-g -O2' to CFLAGS. however,
 dnl we ignore those flags and construct our own.
-save_cflags=$CFLAGS
+save_cflags="$CFLAGS"
 AC_PROG_CC
 AC_PROG_CPP
-CFLAGS=$save_cflags
+CFLAGS="$save_cflags"
 
 # purposefully do not include "help" output for this
 AC_ARG_ENABLE([save_confaux])
@@ -1263,16 +1263,20 @@ if ( test -d $srcdir/cups ); then
     CUPS_DIR="$srcdir/cups"
     if test x$enable_cups != xno; then
         if test x$with_local_cups != xyes; then
-            AC_PATH_PROG(CUPSCONFIG,cups-config)
+            if test x"$CUPSCONFIG" = x""; then
+              AC_PATH_TOOL(CUPSCONFIG,cups-config)
+              if test x"$cross_compiling" = x"yes"; then
+                AC_PATH_PROG(BUILD_CUPSCONFIG, cups-config)
+                if test x"$BUILD_CUPSCONFIG" = x"$CUPSCONFIG" ; then
+                  CUPSCONFIG=
+                fi
+              fi
+            fi
             # check for a libcups header
             AC_CHECK_HEADER([cups/cups.h],[],[CUPSCONFIG=""])
             # And check for a libcupsimage header
             if test "x$CUPSCONFIG" != x; then
                 AC_CHECK_HEADER([cups/raster.h],[],[CUPSCONFIG=""])
-            fi
-            # cross compiling - don't use cups-config
-            if test x"$host_alias" != x"" ; then
-              CUPSCONFIG=""
             fi
 
             if test "x$CUPSCONFIG" != x; then
