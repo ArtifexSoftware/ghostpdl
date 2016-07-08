@@ -23,6 +23,7 @@
 #include "gxcolor2.h"
 #include "gsicc_cache.h"
 #include "gsicc_manage.h"
+#include "gdevp14.h"
 
 typedef int art_s32;
 
@@ -577,7 +578,8 @@ const byte art_blend_soft_light_8[256] = {
 void
 art_blend_pixel_8(byte *dst, const byte *backdrop,
                   const byte *src, int n_chan, gs_blend_mode_t blend_mode,
-                  const pdf14_nonseparable_blending_procs_t * pblend_procs)
+                  const pdf14_nonseparable_blending_procs_t * pblend_procs,
+                  pdf14_device *p14dev)
 {
     int i;
     byte b, s;
@@ -726,136 +728,48 @@ art_blend_pixel_8(byte *dst, const byte *backdrop,
                 pblend_procs->blend_saturation(n_chan, dst, tmp, backdrop);
             }
             break;
+            /* This mode requires information about the color space as
+             * well as the overprint mode.  See Section 7.6.3 of
+             * PDF specification */
+        case BLEND_MODE_CompatibleOverprint:
+            {
+                gx_color_index drawn_comps = p14dev->drawn_comps;
+                gx_color_index comps;
+                /* If overprint mode is true and the current color space and
+                 * the group color space are CMYK (or CMYK and spots), then
+                 * B(cb, cs) = cs if cs is nonzero otherwise it is cb for CMYK.
+                 * Spot colors are always set to cb.  The nice thing about the PDF14
+                 * compositor is that it always has CMYK + spots with spots after
+                 * the CMYK colorants (see gx_put_blended_image_cmykspot).
+                 * that way we don't have to worry about where the process colors
+                 * are. */
+                if (p14dev->overprint_mode && p14dev->color_info.num_components > 3
+                    && !(p14dev->ctx->additive)) {
+                    for (i = 0; i < 4; i++) {
+                        b = backdrop[i];
+                        s = src[i];
+                        dst[i] = s > 0 ? s : b;
+                    }
+                    for (i = 4; i < n_chan; i++) {
+                        dst[i] = backdrop[i];
+                    }
+                } else {
+                    /* Otherwise we have B(cb, cs)= cs if cs is specified in
+                     * the current color space all other color should get cb.
+                     * Essentially the standard overprint case. */
+                    for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
+                        if ((comps & 0x1) != 0) {
+                            dst[i] = src[i];
+                        } else {
+                            dst[i] = backdrop[i];
+                        }
+                    }
+                }
+                break;
+            }
         default:
 #ifndef GS_THREADSAFE
             dlprintf1("art_blend_pixel_8: blend mode %d not implemented\n",
-                      blend_mode);
-#endif
-            memcpy(dst, src, n_chan);
-            break;
-    }
-}
-
-void
-art_blend_pixel(ArtPixMaxDepth* dst, const ArtPixMaxDepth *backdrop,
-                const ArtPixMaxDepth* src, int n_chan,
-                gs_blend_mode_t blend_mode)
-{
-    int i;
-    ArtPixMaxDepth b, s;
-    bits32 t;
-
-    switch (blend_mode) {
-        case BLEND_MODE_Normal:
-        case BLEND_MODE_Compatible:	/* todo */
-            memcpy(dst, src, n_chan * sizeof(ArtPixMaxDepth));
-            break;
-        case BLEND_MODE_Multiply:
-            for (i = 0; i < n_chan; i++) {
-                t = ((bits32) backdrop[i]) * ((bits32) src[i]);
-                t += 0x8000;
-                t += (t >> 16);
-                dst[i] = t >> 16;
-            }
-            break;
-        case BLEND_MODE_Screen:
-            for (i = 0; i < n_chan; i++) {
-                t =
-                    ((bits32) (0xffff - backdrop[i])) *
-                    ((bits32) (0xffff - src[i]));
-                t += 0x8000;
-                t += (t >> 16);
-                dst[i] = 0xffff - (t >> 16);
-            }
-            break;
-        case BLEND_MODE_Overlay:
-            for (i = 0; i < n_chan; i++) {
-                b = backdrop[i];
-                s = src[i];
-                if (b < 0x8000)
-                    t = 2 * ((bits32) b) * ((bits32) s);
-                else
-                    t = 0xfffe0001u -
-                        2 * ((bits32) (0xffff - b)) * ((bits32) (0xffff - s));
-                t += 0x8000;
-                t += (t >> 16);
-                dst[i] = t >> 16;
-            }
-            break;
-        case BLEND_MODE_HardLight:
-            for (i = 0; i < n_chan; i++) {
-                b = backdrop[i];
-                s = src[i];
-                if (s < 0x8000)
-                    t = 2 * ((bits32) b) * ((bits32) s);
-                else
-                    t = 0xfffe0001u -
-                        2 * ((bits32) (0xffff - b)) * ((bits32) (0xffff - s));
-                t += 0x8000;
-                t += (t >> 16);
-                dst[i] = t >> 16;
-            }
-            break;
-        case BLEND_MODE_ColorDodge:
-            for (i = 0; i < n_chan; i++) {
-                b = backdrop[i];
-                s = src[i];
-                if (b == 0)
-                    dst[i] = 0;
-                else if (s >= b)
-                    dst[i] = 0xffff;
-                else
-                    dst[i] = (0x1fffe * s + b) / (b << 1);
-            }
-            break;
-        case BLEND_MODE_ColorBurn:
-            for (i = 0; i < n_chan; i++) {
-                b = 0xffff - backdrop[i];
-                s = src[i];
-                if (b == 0)
-                    dst[i] = 0xffff;
-                else if (b >= s)
-                    dst[i] = 0;
-                else
-                    dst[i] = 0xffff - (0x1fffe * b + s) / (s << 1);
-            }
-            break;
-        case BLEND_MODE_Darken:
-            for (i = 0; i < n_chan; i++) {
-                b = backdrop[i];
-                s = src[i];
-                dst[i] = b < s ? b : s;
-            }
-            break;
-        case BLEND_MODE_Lighten:
-            for (i = 0; i < n_chan; i++) {
-                b = backdrop[i];
-                s = src[i];
-                dst[i] = b > s ? b : s;
-            }
-            break;
-        case BLEND_MODE_Difference:
-            for (i = 0; i < n_chan; i++) {
-                art_s32 tmp;
-
-                tmp = ((art_s32) backdrop[i]) - ((art_s32) src[i]);
-                dst[i] = tmp < 0 ? -tmp : tmp;
-            }
-            break;
-        case BLEND_MODE_Exclusion:
-            for (i = 0; i < n_chan; i++) {
-                b = backdrop[i];
-                s = src[i];
-                t = ((bits32) (0xffff - b)) * ((bits32) s) +
-                    ((bits32) b) * ((bits32) (0xffff - s));
-                t += 0x8000;
-                t += (t >> 16);
-                dst[i] = t >> 16;
-            }
-            break;
-        default:
-#ifndef GS_THREADSAFE
-            dlprintf1("art_blend_pixel: blend mode %d not implemented\n",
                       blend_mode);
 #endif
             memcpy(dst, src, n_chan);
@@ -891,7 +805,8 @@ art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask)
 static void
 art_pdf_knockout_composite_pixel_alpha_8(byte *backdrop, byte tos_shape, byte *dst,
                         const byte *src, int n_chan, gs_blend_mode_t blend_mode,
-                        const pdf14_nonseparable_blending_procs_t * pblend_procs)
+                        const pdf14_nonseparable_blending_procs_t * pblend_procs,
+                        pdf14_device *p14dev)
 {
     byte a_b, a_s;
     unsigned int a_r;
@@ -938,7 +853,8 @@ art_pdf_knockout_composite_pixel_alpha_8(byte *backdrop, byte tos_shape, byte *d
         /* Do compositing with blending */
         byte blend[ART_MAX_CHAN];
 
-        art_blend_pixel_8(blend, backdrop, src, n_chan, blend_mode, pblend_procs);
+        art_blend_pixel_8(blend, backdrop, src, n_chan, blend_mode, pblend_procs,
+                        p14dev);
         for (i = 0; i < n_chan; i++) {
             int c_bl;		/* Result of blend function */
             int c_mix;		/* Blend result mixed with source color */
@@ -958,7 +874,7 @@ art_pdf_knockout_composite_pixel_alpha_8(byte *backdrop, byte tos_shape, byte *d
 void
 art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
         gs_blend_mode_t blend_mode,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs)
+        const pdf14_nonseparable_blending_procs_t * pblend_procs, pdf14_device *p14dev)
 {
     byte a_b, a_s;
     unsigned int a_r;
@@ -1004,7 +920,7 @@ art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
         /* Do compositing with blending */
         byte blend[ART_MAX_CHAN];
 
-        art_blend_pixel_8(blend, dst, src, n_chan, blend_mode, pblend_procs);
+        art_blend_pixel_8(blend, dst, src, n_chan, blend_mode, pblend_procs, p14dev);
         for (i = 0; i < n_chan; i++) {
             int c_bl;		/* Result of blend function */
             int c_mix;		/* Blend result mixed with source color */
@@ -1025,7 +941,7 @@ void
 art_pdf_composite_pixel_alpha_8_fast(byte *dst, const byte *src, int n_chan,
                                      gs_blend_mode_t blend_mode,
                                      const pdf14_nonseparable_blending_procs_t * pblend_procs,
-                                     int stride)
+                                     int stride, pdf14_device *p14dev)
 {
     byte a_b, a_s;
     unsigned int a_r;
@@ -1062,7 +978,7 @@ art_pdf_composite_pixel_alpha_8_fast(byte *dst, const byte *src, int n_chan,
         for (i = 0; i < n_chan; i++) {
             dst_tmp[i] = dst[i * stride];
         }
-        art_blend_pixel_8(blend, dst_tmp, src, n_chan, blend_mode, pblend_procs);
+        art_blend_pixel_8(blend, dst_tmp, src, n_chan, blend_mode, pblend_procs, p14dev);
         for (i = 0; i < n_chan; i++) {
             int c_bl;		/* Result of blend function */
             int c_mix;		/* Blend result mixed with source color */
@@ -1083,7 +999,7 @@ void
 art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
                                           gs_blend_mode_t blend_mode,
                                           const pdf14_nonseparable_blending_procs_t * pblend_procs,
-                                          int stride)
+                                          int stride, pdf14_device *p14dev)
 {
     byte a_b, a_s;
     unsigned int a_r;
@@ -1113,7 +1029,7 @@ art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
         /* Do compositing with blending */
         byte blend[ART_MAX_CHAN];
 
-        art_blend_pixel_8(blend, dst, src, 1, blend_mode, pblend_procs);
+        art_blend_pixel_8(blend, dst, src, 1, blend_mode, pblend_procs, p14dev);
         {
             int c_bl;		/* Result of blend function */
             int c_mix;		/* Blend result mixed with source color */
@@ -1131,45 +1047,11 @@ art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
 }
 
 void
-art_pdf_uncomposite_group_8(byte *dst,
-                            const byte *backdrop,
-                            const byte *src, byte src_alpha_g, int n_chan)
-{
-    byte backdrop_alpha = backdrop[n_chan];
-    int i;
-    int tmp;
-    int scale;
-
-    dst[n_chan] = src_alpha_g;
-
-    if (src_alpha_g == 0)
-        return;
-
-    scale = (backdrop_alpha * 255 * 2 + src_alpha_g) / (src_alpha_g << 1) -
-        backdrop_alpha;
-    for (i = 0; i < n_chan; i++) {
-        int si, di;
-
-        si = src[i];
-        di = backdrop[i];
-        tmp = (si - di) * scale + 0x80;
-        tmp = si + ((tmp + (tmp >> 8)) >> 8);
-
-        /* todo: it should be possible to optimize these cond branches */
-        if (tmp < 0)
-            tmp = 0;
-        if (tmp > 255)
-            tmp = 255;
-        dst[i] = tmp;
-    }
-
-}
-
-void
 art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
         const byte *src, byte src_alpha_g, int n_chan,
         byte alpha, gs_blend_mode_t blend_mode,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs)
+        const pdf14_nonseparable_blending_procs_t * pblend_procs,
+        pdf14_device *p14dev)
 {
     byte dst_alpha;
     int i;
@@ -1201,11 +1083,6 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
         } else {
             /* Uncomposite the color. In other words, solve
                "src = (ca, src_alpha_g) over dst" for ca */
-
-            /* todo (maybe?): replace this code with call to
-               art_pdf_uncomposite_group_8() to reduce code
-               duplication. */
-
             scale = (dst_alpha * 255 * 2 + src_alpha_g) / (src_alpha_g << 1) -
                 dst_alpha;
             for (i = 0; i < n_chan; i++) {
@@ -1232,8 +1109,8 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
             tmp = (255 - *dst_alpha_g) * (255 - tmp) + 0x80;
             *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
         }
-        art_pdf_composite_pixel_alpha_8(dst, ca, n_chan,
-                                        blend_mode, pblend_procs);
+        art_pdf_composite_pixel_alpha_8(dst, ca, n_chan, blend_mode,
+                            pblend_procs, p14dev);
     }
     /* todo: optimize BLEND_MODE_Normal buf alpha != 255 case */
 }
@@ -1242,7 +1119,8 @@ void
 art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
         byte *dst_alpha_g, const byte *src, int n_chan, byte alpha,
         gs_blend_mode_t blend_mode,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs)
+        const pdf14_nonseparable_blending_procs_t * pblend_procs,
+        pdf14_device *p14dev)
 {
     byte src_alpha;		/* $\alpha g_n$ */
     byte src_tmp[ART_MAX_CHAN + 1];
@@ -1250,7 +1128,8 @@ art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
 
     if (alpha == 255) {
         art_pdf_knockout_composite_pixel_alpha_8(backdrop, tos_shape, dst, src,
-                                                 n_chan, blend_mode, pblend_procs);
+                                                 n_chan, blend_mode, pblend_procs,
+                                                 p14dev);
         if (dst_alpha_g != NULL) {
             tmp = (255 - *dst_alpha_g) * (255 - src[n_chan]) + 0x80;
             *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
@@ -1265,7 +1144,8 @@ art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
         src_tmp[n_chan] = (tmp + (tmp >> 8)) >> 8;
         art_pdf_knockout_composite_pixel_alpha_8(backdrop, tos_shape, dst,
                                                  src_tmp, n_chan,
-                                                 blend_mode, pblend_procs);
+                                                 blend_mode, pblend_procs,
+                                                 p14dev);
         if (dst_alpha_g != NULL) {
             tmp = (255 - *dst_alpha_g) * (255 - src_tmp[n_chan]) + 0x80;
             *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
@@ -1276,7 +1156,8 @@ art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
 void
 art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
         const byte *src, int n_chan, byte alpha, gs_blend_mode_t blend_mode,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs)
+        const pdf14_nonseparable_blending_procs_t * pblend_procs,
+        pdf14_device *p14dev)
 {
     byte src_alpha;		/* $\alpha g_n$ */
     byte src_tmp[ART_MAX_CHAN + 1];
@@ -1284,7 +1165,7 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
 
     if (alpha == 255) {
         art_pdf_composite_pixel_alpha_8(dst, src, n_chan,
-                                        blend_mode, pblend_procs);
+            blend_mode, pblend_procs, p14dev);
         if (dst_alpha_g != NULL) {
             tmp = (255 - *dst_alpha_g) * (255 - src[n_chan]) + 0x80;
             *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
@@ -1297,7 +1178,8 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
         tmp = src_alpha * alpha + 0x80;
         src_tmp[n_chan] = (tmp + (tmp >> 8)) >> 8;
         art_pdf_composite_pixel_alpha_8(dst, src_tmp, n_chan,
-                                        blend_mode, pblend_procs);
+                                        blend_mode, pblend_procs,
+                                        p14dev);
         if (dst_alpha_g != NULL) {
             tmp = (255 - *dst_alpha_g) * (255 - src_tmp[n_chan]) + 0x80;
             *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
@@ -1332,7 +1214,8 @@ art_pdf_knockoutisolated_group_8(byte *dst, const byte *src, int n_chan)
    backdrop (unless the source alpha is not opaque) while the outside of the
    stroke path ends up with the alpha for both the AA effect and source alpha */
 void
-art_pdf_knockoutisolated_group_aa_8(byte *dst, const byte *src, byte src_alpha, byte aa_alpha, int n_chan)
+art_pdf_knockoutisolated_group_aa_8(byte *dst, const byte *src, byte src_alpha,
+                        byte aa_alpha, int n_chan, pdf14_device *p14dev)
 {
     int dst_alpha = dst[n_chan];
     byte temp_src[ART_MAX_CHAN + 1];
@@ -1354,7 +1237,8 @@ art_pdf_knockoutisolated_group_aa_8(byte *dst, const byte *src, byte src_alpha, 
     for (i = 0; i < n_chan; i++)
         temp_src[i] = src[i];
     temp_src[n_chan] = aa_alpha;
-    art_pdf_composite_pixel_alpha_8(dst, temp_src, n_chan, BLEND_MODE_Normal, NULL);
+    art_pdf_composite_pixel_alpha_8(dst, temp_src, n_chan, BLEND_MODE_Normal,
+        NULL, p14dev);
     dst[n_chan] = src_alpha;
 }
 
@@ -1363,7 +1247,8 @@ art_pdf_composite_knockout_8(byte *dst,
                                     const byte *src,
                                     int n_chan,
                                     gs_blend_mode_t blend_mode,
-                                    const pdf14_nonseparable_blending_procs_t * pblend_procs)
+                                    const pdf14_nonseparable_blending_procs_t * pblend_procs,
+                                    pdf14_device *p14dev)
 {
     byte src_shape = src[n_chan];
     int i, tmp;
@@ -1413,7 +1298,7 @@ art_pdf_composite_knockout_8(byte *dst,
         /* Compute a_s / a_r in 16.16 format */
         src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
 
-        art_blend_pixel_8(blend, dst, src, n_chan, blend_mode, pblend_procs);
+        art_blend_pixel_8(blend, dst, src, n_chan, blend_mode, pblend_procs, p14dev);
         for (i = 0; i < n_chan; i++) {
             int c_bl;		/* Result of blend function */
             int c_mix;		/* Blend result mixed with source color */

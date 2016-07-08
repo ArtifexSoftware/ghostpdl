@@ -42,7 +42,8 @@ typedef enum {
     BLEND_MODE_Hue,
     BLEND_MODE_Saturation,
     BLEND_MODE_Color,
-#define MAX_BLEND_MODE BLEND_MODE_Color
+    BLEND_MODE_CompatibleOverprint,
+#define MAX_BLEND_MODE BLEND_MODE_CompatibleOverprint
 
     /* For compatibility with old PDFs */
     BLEND_MODE_Compatible
@@ -51,7 +52,7 @@ typedef enum {
   "Normal", "Multiply", "Screen", "Difference",\
   "Darken", "Lighten", "ColorDodge", "ColorBurn", "Exclusion",\
   "HardLight", "Overlay", "SoftLight", "Luminosity", "Hue",\
-  "Saturation", "Color", "Compatible"
+  "Saturation", "Color", "CompatibleOverprint", "Compatible"
 
 /* Define the parameter structure for a transparency group. */
 #ifndef gs_color_space_DEFINED

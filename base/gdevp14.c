@@ -1164,17 +1164,17 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
                             "aCMTrans_Group_ColorConv",ctx->stack->data);
 #endif
              /* compose. never do overprint in this case */
-             pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1, nos->n_chan,
+            pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1, nos->n_chan,
                  nos->parent_color_info_procs->isadditive,
                  nos->parent_color_info_procs->parent_blending_procs,
-                 false, drawn_comps, false, ctx->memory);
+                 false, drawn_comps, false, ctx->memory, dev);
         }
     } else {
         /* Group color spaces are the same.  No color conversions needed */
         if (x0 < x1 && y0 < y1)
-            pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1,nos->n_chan,
+            pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1, nos->n_chan,
                                 ctx->additive, pblend_procs, overprint,
-                                drawn_comps, blendspot, ctx->memory);
+                                drawn_comps, blendspot, ctx->memory, dev);
     }
 exit:
     ctx->stack = nos;
@@ -2523,14 +2523,15 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                 }
                 if (knockout) {
                     if (has_shape) {
-                        art_pdf_composite_knockout_8(dst, src, num_comp,
-                                                            blend_mode, pdev->blend_procs);
+                        art_pdf_composite_knockout_8(dst, src, num_comp, blend_mode,
+                                            pdev->blend_procs, pdev);
                     } else {
-                        art_pdf_knockoutisolated_group_aa_8(dst, src, src_alpha, alpha_aa, num_comp);
+                        art_pdf_knockoutisolated_group_aa_8(dst, src, src_alpha,
+                                            alpha_aa, num_comp, pdev);
                     }
                 } else {
-                    art_pdf_composite_pixel_alpha_8(dst, src, num_comp,
-                                                    blend_mode, pdev->blend_procs);
+                    art_pdf_composite_pixel_alpha_8(dst, src, num_comp, blend_mode,
+                                                    pdev->blend_procs, pdev);
                 }
                 /* Complement the results for subtractive color spaces */
                 if (additive) {
@@ -4766,7 +4767,8 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                     dst_ptr[planestride] = src[1];
                 } else {
                     art_pdf_composite_pixel_alpha_8_fast_mono(dst_ptr, src,
-                                                blend_mode, pdev->blend_procs, planestride);
+                                                blend_mode, pdev->blend_procs,
+                                                planestride, pdev);
                 }
                 if (alpha_g_off) {
                     int tmp = (255 - dst_ptr[alpha_g_off]) * src_alpha + 0x80;
@@ -4799,15 +4801,16 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                             dst_ptr[k * planestride] = src[k];
                     } else {
                         art_pdf_composite_pixel_alpha_8_fast(dst_ptr, src, num_comp,
-                                                blend_mode, pdev->blend_procs, planestride);
+                                                blend_mode, pdev->blend_procs, planestride,
+                                                pdev);
                     }
                 } else {
                     /* Complement the components for subtractive color spaces */
                     for (k = 0; k < num_comp; ++k)
                         dst[k] = 255 - dst_ptr[k * planestride];
                     dst[num_comp] = dst_ptr[num_comp * planestride];
-                    art_pdf_composite_pixel_alpha_8(dst, src, num_comp,
-                                                    blend_mode, pdev->blend_procs);
+                    art_pdf_composite_pixel_alpha_8(dst, src, num_comp, blend_mode,
+                                                pdev->blend_procs, pdev);
                     /* Complement the results for subtractive color spaces */
                     if (overprint && dst_ptr[num_comp * planestride] != 0) {
                         for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
@@ -4975,7 +4978,7 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev, int x, int y, int w, int h,
                 art_pdf_knockoutisolated_group_8(dst, src, num_comp);
             } else {
                 art_pdf_composite_knockout_8(dst, src, num_comp,
-                                                    blend_mode, pdev->blend_procs);
+                                             blend_mode, pdev->blend_procs, pdev);
             }
             /* Complement the results for subtractive color spaces */
             if (additive) {

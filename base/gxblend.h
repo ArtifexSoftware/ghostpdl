@@ -112,35 +112,6 @@ void smask_copy(int num_rows, int num_cols, int row_stride,
 void smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan,
                int row_stride, int plane_stride, byte *src, const byte *des,
                gsicc_link_t *icclink);
-/**
- * art_blend_pixel: Compute PDF 1.4 blending function.
- * @dst: Where to store resulting pixel.
- * @backdrop: Backdrop pixel color.
- * @src: Source pixel color.
- * @n_chan: Number of channels.
- * @blend_mode: Blend mode.
- *
- * Computes the blend of two pixels according the PDF 1.4 transparency
- * spec (section 3.2, Blend Mode). A few things to keep in mind about
- * this implementation:
- *
- * 1. This is a reference implementation, not a high-performance one.
- * Blending using this function will incur a function call and switch
- * statement per pixel, and will also incur the extra cost of 16 bit
- * math.
- *
- * 2. Zero is black, one is white. In a subtractive color space such
- * as CMYK, all pixels should be represented as "complemented", as
- * described in section 3.1 (Blending Color Space) of the PDF 1.4
- * transparency spec.
- *
- * 3. I haven't really figured out how to handle the Compatible blend
- * mode. I wouldn't be surprised if it required an API change.
- **/
-void
-art_blend_pixel(ArtPixMaxDepth * dst, const ArtPixMaxDepth * backdrop,
-                const ArtPixMaxDepth * src, int n_chan,
-                gs_blend_mode_t blend_mode);
 
 /**
  * art_blend_pixel_8: Compute PDF 1.4 blending function on 8-bit pixels.
@@ -150,6 +121,7 @@ art_blend_pixel(ArtPixMaxDepth * dst, const ArtPixMaxDepth * backdrop,
  * @n_chan: Number of channels.
  * @blend_mode: Blend mode.
  * @pblend_procs: Procs for handling non separable blending modes.
+ * @p14dev: pdf14 device.  Needed for handling CompatibleOverprint mode
  *
  * Computes the blend of two pixels according the PDF 1.4 transparency
  * spec (section 3.2, Blend Mode). A few things to keep in mind about
@@ -171,7 +143,8 @@ art_blend_pixel(ArtPixMaxDepth * dst, const ArtPixMaxDepth * backdrop,
 void
 art_blend_pixel_8(byte *dst, const byte *backdrop,
                 const byte *src, int n_chan, gs_blend_mode_t blend_mode,
-                const pdf14_nonseparable_blending_procs_t * pblend_procs);
+                const pdf14_nonseparable_blending_procs_t * pblend_procs,
+                pdf14_device *p14dev);
 
 /**
  * art_pdf_union_8: Union together two alpha values.
@@ -199,6 +172,7 @@ byte art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask);
  * @n_chan: Number of channels.
  * @blend_mode: Blend mode.
  * @pblend_procs: Procs for handling non separable blending modes.
+ * @p14dev: pdf14 device.
  *
  * Composites two pixels using the basic compositing operation. A few
  * things to keep in mind:
@@ -216,7 +190,8 @@ byte art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask);
 void
 art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
         gs_blend_mode_t blend_mode,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs);
+        const pdf14_nonseparable_blending_procs_t * pblend_procs,
+        pdf14_device *p14dev);
 
 
 /**
@@ -230,12 +205,13 @@ void
 art_pdf_composite_pixel_alpha_8_fast(byte *dst, const byte *src, int n_chan,
         gs_blend_mode_t blend_mode,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        int stride);
+        int stride, pdf14_device *p14dev);
 
 /**
  * art_pdf_composite_pixel_alpha_8_fast_mono: Tweaked version of art_pdf_composite_pixel_alpha_8_fast.
  * Same args, except n_chan, which is assumed to be 1:
  * @stride: stride between dst pixel values.
+ * @p14dev: pdf14 device
  * Dst data is therefore in dst[i * stride] for 0 <= i <= 1.
  * Called with the guarantee that dst[stride] != 0, src[1] != 0
  */
@@ -243,23 +219,7 @@ void
 art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
         gs_blend_mode_t blend_mode,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        int stride);
-
-/**
- * art_pdf_uncomposite_group_8: Uncomposite group pixel.
- * @dst: Where to store uncomposited pixel.
- * @backdrop: Backdrop.
- * @src: Composited source pixel.
- * @src_alpha_g: alpha_g value associated with @src.
- * @n_chan: Number of channels.
- *
- * Performs uncompositing operation as described in 5.3 of the Adobe spec.
- **/
-void
-art_pdf_uncomposite_group_8(byte *dst,
-                            const byte *backdrop,
-
-                            const byte *src, byte src_alpha_g, int n_chan);
+        int stride, pdf14_device *p14dev);
 
 /**
  * art_pdf_recomposite_group_8: Recomposite group pixel.
@@ -269,6 +229,7 @@ art_pdf_uncomposite_group_8(byte *dst,
  * @src_alpha_g: alpha_g value associated with @src.
  * @blend_mode: Blend mode for compositing.
  * @pblend_procs: Procs for handling non separable blending modes.
+ * @p14dev: pdf14 device
  *
  * Note: this is only for non-isolated groups. This covers only the
  * single-alpha case. A separate function is needed for dual-alpha,
@@ -282,7 +243,8 @@ void
 art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
         const byte *src, byte src_alpha_g, int n_chan,
         byte alpha, gs_blend_mode_t blend_mode,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs);
+        const pdf14_nonseparable_blending_procs_t * pblend_procs,
+        pdf14_device *p14dev);
 
 /**
  * art_pdf_composite_group_8: Composite group pixel.
@@ -301,7 +263,8 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
 void
 art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
         const byte *src, int n_chan, byte alpha, gs_blend_mode_t blend_mode,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs);
+        const pdf14_nonseparable_blending_procs_t * pblend_procs,
+        pdf14_device *p14dev);
 
 /**
  * art_pdf_composite_knockout_group_8: Composite group pixel.
@@ -321,12 +284,14 @@ void
 art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
         byte *dst_alpha_g, const byte *src, int n_chan, byte alpha,
         gs_blend_mode_t blend_mode,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs);
+        const pdf14_nonseparable_blending_procs_t * pblend_procs,
+        pdf14_device *p14dev);
 /**
  * art_pdf_composite_knockout_8: knockout compositing.
  * @dst: Destination pixel array -- has been initialized with background
  * @src: Source pixel.
  * n_chan: Number of channels.
+ * p14dev: pdf14 device
  *
  * This function handles the knockout case: an isolated knockout group,
  * and an elementary shape. The alpha channel of @src is interpreted as shape.
@@ -336,7 +301,8 @@ art_pdf_composite_knockout_8(byte *dst,
                                     const byte *src,
                                     int n_chan,
                                     gs_blend_mode_t blend_mode,
-                                    const pdf14_nonseparable_blending_procs_t * pblend_procs);
+                                    const pdf14_nonseparable_blending_procs_t * pblend_procs,
+                                    pdf14_device *p14dev);
 
 /**
  * art_pdf_knockoutisolated_group_8: Knockout for isolated group.
@@ -356,13 +322,14 @@ art_pdf_knockoutisolated_group_8(byte *dst, const byte *src, int n_chan);
 * @src_alpha: current alpha from the graphic state
 * @aa_alpha:  alpha coming from the anti-aliasing buffer
 * @n_chan: Number of channels.
+* @p14dev: pdf14 device
 *
 * This function handles the simple case with an isolated knockout group but where
 * we have an alpha from AA and from the current graphic state.
 **/
 void
 art_pdf_knockoutisolated_group_aa_8(byte *dst, const byte *src, byte src_alpha,
-    byte aa_alpha, int n_chan);
+    byte aa_alpha, int n_chan, pdf14_device *p14dev);
 
 /**
  * art_pdf_composite_knockout_isolated_8: Simple knockout compositing.
@@ -429,7 +396,7 @@ void pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
               int x0, int x1, int y0, int y1, int n_chan, bool additive,
               const pdf14_nonseparable_blending_procs_t * pblend_procs,
               bool overprint, gx_color_index drawn_comps, bool blendspot,
-              gs_memory_t *memory);
+              gs_memory_t *memory, gx_device *dev);
 
 gx_color_index pdf14_encode_color(gx_device *dev, const gx_color_value colors[]);
 gx_color_index pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[]);

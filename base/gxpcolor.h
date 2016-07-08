@@ -130,7 +130,7 @@ extern const gs_color_space_type gs_color_space_type_Pattern;
  * device color type.
  */
 extern const gx_device_color_type_t
-    gx_dc_pattern, gx_dc_pure_masked, gx_dc_binary_masked, 
+    gx_dc_pattern, gx_dc_pure_masked, gx_dc_binary_masked,
     gx_dc_colored_masked, gx_dc_devn_masked;
 
 #ifndef gx_dc_type_pattern
@@ -225,10 +225,10 @@ struct gx_color_tile_s {
     /* The following is neither key nor value. */
     uint index;			/* the index of the tile within */
     bool trans_group_popped;    /* Used to avoid multiple group pops in image mask fills */
-    bool is_planar;             /* Has to be stored here due to the device 
-                                   change that can occur when the tile is 
+    bool is_planar;             /* Has to be stored here due to the device
+                                   change that can occur when the tile is
                                    created and when it is written in the clist
-                                   when we are writing to a transparency 
+                                   when we are writing to a transparency
                                    device which, is not planar but the target
                                    is */
     /* the cache (for GC) */
@@ -357,7 +357,7 @@ void tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px,
    it would be best to avoid doing it if not needed. */
 void tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax, int px,
                            int py, const gx_color_tile *ptile,
-                            gx_pattern_trans_t *fill_trans_buffer);
+                           gx_pattern_trans_t *fill_trans_buffer);
 
 /* File a colored pattern with white */
 int gx_erase_colored_pattern(gs_gstate *pgs);

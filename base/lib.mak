@@ -1159,7 +1159,7 @@ $(GLOBJ)gdevm64.$(OBJ) : $(GLSRC)gdevm64.c $(AK) $(gx_h) $(memory__h)\
 $(GLOBJ)gdevmx.$(OBJ) : $(GLSRC)gdevmx.c $(AK) $(gx_h) $(memory__h)\
  $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevmx.$(OBJ) $(C_) $(GLSRC)gdevmx.c
-	
+
 $(GLOBJ)gdevmpla.$(OBJ) : $(GLSRC)gdevmpla.c $(AK) $(gx_h)\
  $(gserrors_h) $(memory__h) $(gsbitops_h) $(gxdcolor_h) $(gxpcolor_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h) $(gdevmem_h) $(gdevmpla_h)\
@@ -3121,7 +3121,7 @@ $(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(AK) $(gx_h)\
 
 $(GLOBJ)gxblend.$(OBJ) : $(GLSRC)gxblend.c $(AK) $(gx_h) $(memory__h)\
  $(gstparam_h) $(gxblend_h) $(gxcolor2_h) $(gsicc_cache_h)\
- $(gsicc_manage_h) $(gp_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gsicc_manage_h) $(gdevp14_h) $(gp_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxblend.$(OBJ) $(C_) $(GLSRC)gxblend.c
 
 $(GLOBJ)gxblend1.$(OBJ) : $(GLSRC)gxblend1.c $(AK) $(gx_h) $(memory__h)\

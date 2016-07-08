@@ -690,9 +690,8 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
                 /* We only go through blending during tiling, if
                    there was overlap as defined by the step matrix
                    and the bounding box */
-
                 ptile->ttrans->pat_trans_fill(x, y, x+w, y+h, px, py, ptile,
-                        fill_trans_buffer);
+                    fill_trans_buffer);
             }
         }
     return 0;
@@ -844,6 +843,7 @@ tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax,
     int tile_width  = ptile->ttrans->width;
     int tile_height = ptile->ttrans->height;
     int num_chan    = ptile->ttrans->n_chan;  /* Includes alpha */
+    pdf14_device *p14dev = (pdf14_device *) fill_trans_buffer->pdev14;
 
     /* Update the bbox in the topmost stack entry to reflect the fact that we
      * have drawn into it. FIXME: This makes the groups too large! */
@@ -907,10 +907,9 @@ tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax,
             }
 
             /* Blend */
-            art_pdf_composite_pixel_alpha_8(dst, src,
-                                            ptile->ttrans->n_chan-1,
+            art_pdf_composite_pixel_alpha_8(dst, src, ptile->ttrans->n_chan-1,
                                             ptile->blending_mode,
-                                            ptile->ttrans->blending_procs);
+                                            ptile->ttrans->blending_procs, p14dev);
 
             /* Store the color values */
             for (kk = 0; kk < num_chan; kk++) {
@@ -956,11 +955,11 @@ gx_dc_pat_trans_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 #if 0
     if_debug8m('v', ptile->ttrans->mem,
             "[v]gx_dc_pat_trans_fill_rectangle, Fill: (%d, %d), %d x %d To Buffer: (%d, %d), %d x %d \n",
-            x, y, w, h,  ptile->ttrans->fill_trans_buffer->rect.p.x, 
-            ptile->ttrans->fill_trans_buffer->rect.p.y, 
-            ptile->ttrans->fill_trans_buffer->rect.q.x - 
+            x, y, w, h,  ptile->ttrans->fill_trans_buffer->rect.p.x,
+            ptile->ttrans->fill_trans_buffer->rect.p.y,
+            ptile->ttrans->fill_trans_buffer->rect.q.x -
             ptile->ttrans->fill_trans_buffer->rect.p.x,
-            ptile->ttrans->fill_trans_buffer->rect.q.y - 
+            ptile->ttrans->fill_trans_buffer->rect.q.y -
             ptile->ttrans->fill_trans_buffer->rect.p.y);
 #endif
     code = gx_trans_pattern_fill_rect(x, y, x+w, y+h, ptile,
@@ -986,9 +985,9 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
 
     if (ptile == 0)             /* null pattern */
         return 0;
-   
+
     fit_fill_xywh(dev, xmin, ymin, w, h);
-    if (w < 0 || h < 0) 
+    if (w < 0 || h < 0)
         return 0;
     xmax = w + xmin;
     ymax = h + ymin;

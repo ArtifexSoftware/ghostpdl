@@ -273,7 +273,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
               int x0, int x1, int y0, int y1, int n_chan, bool additive,
               const pdf14_nonseparable_blending_procs_t * pblend_procs,
               bool overprint, gx_color_index drawn_comps, bool blendspot,
-              gs_memory_t *memory)
+              gs_memory_t *memory, gx_device *dev)
 {
     byte alpha = tos->alpha;
     byte shape = tos->shape;
@@ -311,6 +311,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     bool in_mask_rect = false;
     byte pix_alpha;
     byte *backdrop_ptr = NULL;
+    pdf14_device *pdev = (pdf14_device *)dev;
 #if RAW_DUMP
     byte *composed_ptr = NULL;
 #endif
@@ -465,18 +466,19 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     art_pdf_composite_knockout_group_8(back_drop, tos_shape,
                                                        nos_pixel, nos_alpha_g_ptr,
                                                        tos_pixel, n_chan, pix_alpha,
-                                                       blend_mode, pblend_procs);
+                                                       blend_mode, pblend_procs,
+                                                       pdev);
                 }
             } else {
                 if (tos_isolated) {
                     art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr, tos_pixel,
                                               n_chan, pix_alpha, blend_mode,
-                                              pblend_procs);
+                                              pblend_procs, pdev);
                 } else {
                     byte tos_alpha_g = tos_ptr[tos_alpha_g_offset];
                     art_pdf_recomposite_group_8(nos_pixel, nos_alpha_g_ptr,
                                         tos_pixel, tos_alpha_g, n_chan,
-                                        pix_alpha, blend_mode, pblend_procs);
+                                        pix_alpha, blend_mode, pblend_procs, pdev);
                 }
                 if (tos_has_tag) {
                     if (pix_alpha == 255) {
