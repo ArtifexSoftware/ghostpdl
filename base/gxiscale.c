@@ -1769,6 +1769,7 @@ image_render_interpolate_landscape_masked(gx_image_enum * penum,
                         gx_no_bitmap_id, ry, x, 1, 1, color, 8);
                     if (code < 0)
                         return code;
+                    psrc += spp_decode;
                 }
                 /*if_debug1m('w', dev->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 inactive:
@@ -1845,6 +1846,7 @@ image_render_interpolate_landscape_masked_hl(gx_image_enum * penum,
                         gx_no_bitmap_id, ry, x, 1, 1, penum->icolor1, 8);
                     if (code < 0)
                         return code;
+                    psrc += spp_decode;
                 }
                 /*if_debug1m('w', dev->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 inactive:
