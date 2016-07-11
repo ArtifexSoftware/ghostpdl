@@ -2158,6 +2158,19 @@ currentdict /last-ditch-bpc-csp undef
 } bdef
 
 /DoForm {
+  %% We may alter the Default* colour spaces, if the Resources
+  %% ColorSpace entry contains one of them. But we don't want that
+  %% to become the new default, we want to revert to any existing
+  %% definition, or the Device space. The Default* spaces are defined
+  %% as ColorSpace resources, so the only way to handle them is to
+  %% save and restore round the definitions
+  3 dict dup begin
+  /saved_DG /DefaultGray /ColorSpace findresource def
+  /saved_DRGB /DefaultRGB /ColorSpace findresource def
+  /saved_DCMYK /DefaultCMYK /ColorSpace findresource def
+  end
+  exch
+
     % Adobe 2nd edition of the PDF 1.3 spec makes /FormType
     % and /Matrix keys optional. Cope with the missing keys.
   begin <<
@@ -2189,6 +2202,68 @@ currentdict /last-ditch-bpc-csp undef
   currentdict end { oforce } forall
   >>
   dup [ 2 index /Resources knownoget { oforce } { 0 dict } ifelse
+
+  %% Ugly hackery for Default* colour spaces in forms
+  %%
+  dup /ColorSpace knownoget {
+    oforce {
+      //false 3 1 roll
+      exch dup /DefaultGray eq
+      {
+      pop exec resolvecolorspace dup csncomp 1 eq {
+        dup type /nametype eq { 1 array astore } if
+        /DefaultGray exch /ColorSpace defineresource pop
+        pop //true
+      }{
+        pop
+        (   **** Error: ignoring invalid /DefaultGray color space.\n)
+        pdfformaterror
+        (                 Output may be incorrect.\n) pdfformaterror
+      } ifelse
+      }{
+        dup /DefaultRGB eq {
+          pop exec resolvecolorspace dup csncomp 3 eq {
+            dup type /nametype eq { 1 array astore } if
+            /DefaultRGB exch /ColorSpace defineresource pop
+            pop //true
+          }{
+            pop
+            (   **** Error: ignoring invalid /DefaultRGB color space in Form Resources.\n)
+            pdfformaterror
+            (                 Output may be incorrect.\n) pdfformaterror
+          } ifelse
+        }{
+          /DefaultCMYK eq {
+            exec resolvecolorspace dup csncomp 4 eq {
+              dup type /nametype eq { 1 array astore } if
+              /DefaultCMYK exch /ColorSpace defineresource pop
+              pop //true
+            }{
+              pop
+              (   **** Error: ignoring invalid /DefaultCMYK color space in Form Resources.\n)
+              pdfformaterror
+              (                 Output may be incorrect.\n) pdfformaterror
+            } ifelse
+          }{
+            pop
+          } ifelse
+        } ifelse
+      }ifelse
+      { % if using color space substitution, "transition" the current color space
+        currentcolorspace dup length 1 eq {  % always an array
+          0 get
+          dup /DeviceGray eq 1 index /DeviceRGB eq or 1 index /DeviceCMYK eq or {
+            /Pattern setcolorspace setcolorspace
+          } {
+            pop
+          } ifelse
+        } {
+          pop
+        } ifelse
+      } if
+    } forall
+  } if
+
   3 index //false /resolvestream cvx
   /.paintform cvx
   ] cvx /PaintProc exch put
@@ -2213,6 +2288,15 @@ currentdict /last-ditch-bpc-csp undef
   } if
   pop
   /pdfemptycount exch store
+
+  %% Put back pre-existing Default* ColorSpace definitions.
+  dup type /dicttype eq {
+  begin
+  saved_DG /DefaultGray exch /ColorSpace defineresource pop
+  saved_DRGB /DefaultRGB exch /ColorSpace defineresource pop
+  saved_DCMYK /DefaultCMYK exch /ColorSpace defineresource pop
+  end
+} if
 } bdef
 
 /_dops_save 1 array def

@@ -2810,6 +2810,105 @@ currentdict /PDF2PS_matrix_key undef
 
 % ------ ColorSpace substitution support ------ %
 
+%%
+%% <pagedict> pdf_colorspace_detect_cspacesub <boolean>
+%%
+/pdf_colorspace_detect_cspacesub {
+  //false exch
+  /Resources knownoget {
+    /ColorSpace knownoget {
+      dup /DefaultGray knownoget {
+        resolvecolorspace csncomp 1 eq {
+          pop pop //true
+        } if
+      } {
+        dup /DefaultRGB knownoget {
+          resolvecolorspace csncomp 3 eq {
+            pop pop //true
+          } if
+        } {
+          /DefaultCMYK knownoget {
+            resolvecolorspace csncomp 4 eq {
+              pop //true
+            } if
+          } if
+        } ifelse
+      } ifelse
+    } if
+  } if
+} bind def
+
+%%<Objectdict>  <calling obj_num> pdfform_detect_cspacesub <boolean>
+%%
+/pdf_object_detect_cspacesub {
+  exch                                      %%  <calling obj_num> <Objectdict>
+  dup pdf_colorspace_detect_cspacesub {
+    pop //true
+  }{                                        %%  <calling obj_num> <Objectdict>
+    /Resources knownoget {                  %%  <calling obj_num> <Resourcesdict>
+      /XObject knownoget {                  %%  <calling obj_num> <XObjectdict>
+        //false exch                        %%  <calling obj_num> <XObjectdict> false
+        %% We have files where the XObject Resource is not a dictionary
+        dup type /dicttype eq {             %%  <calling obj_num> <XObjectdict> false
+
+          %% check each Xobject entry in the dictionary,
+          %% forall purs a key/value pair on the stack for us.
+          %%
+          {                                 %%  <calling obj_num> <XObjectdict> false key value
+            exch pop                        %%  <calling obj_num> <XObjectdict> false value
+
+            %% If this is an indirect reference, check if its the smae object
+            %% as the current one. If its not indirect, make the object number 0
+            %% for comparison purposes.
+            dup type /packedarraytype eq {
+              dup 0 get dup 4 index
+              eq
+            } {
+              0 false
+            }ifelse
+
+            %%  <calling obj_num> <XObjectdict> false value <form object or 0 if not indirect> <boolean>
+            not {
+              %% swap object number and value, and dereference value
+              exch oforce
+              %% Apparently we have files where the content of the XObject Resource dictionary is null
+              dup //null ne {
+                %% and files where the indivudal XObjects are not dictionaries
+                dup type /dicttype eq {
+                  dup /Subtype get /Form eq {
+                    exch
+                    pdf_object_detect_cspacesub {
+                      pop //true exit
+                    } if
+                  } {
+                    pop pop
+                  }ifelse
+                }{
+                  pop pop
+                } ifelse
+              }{
+                pop pop
+              }
+              ifelse
+            }{
+              pop pop
+            } ifelse
+          } forall
+        }{
+          pop
+        }ifelse
+      } {
+        %% No forms, so can't be any Default* spaces
+        //false
+      }ifelse
+    } {
+      //false
+    } ifelse
+  } ifelse
+  %% Remove the calling object ID, return our boolean
+  exch pop
+} bind def
+
 %
 % <pagedict> pdfshowpage_detect_cspacesub <pagedict> <boolean>
 %
@@ -2821,24 +2920,7 @@ currentdict /PDF2PS_matrix_key undef
 % not using UseCIEColor with pdfwrite.
 %
 /pdfshowpage_detect_cspacesub {
-  //false
-  /DefaultGray 2 index /ColorSpace //rget exec {
-    resolvecolorspace csncomp 1 eq {
-      pop //true
-    } if
-  } if
-
-  /DefaultRGB 2 index /ColorSpace //rget exec {
-    resolvecolorspace csncomp 3 eq {
-      pop //true
-    } if
-  } if
-
-  /DefaultCMYK 2 index /ColorSpace //rget exec {
-    resolvecolorspace csncomp 4 eq {
-      pop //true
-    } if
-  } if
+  dup 0 pdf_object_detect_cspacesub
 
   /HighLevelDevice /GetDeviceParam .special_op {
       exch pop not exch pop
@@ -2909,12 +2991,12 @@ currentdict /PDF2PS_matrix_key undef
     currentcolorspace dup length 1 eq {  % always an array
       0 get
       dup /DeviceGray eq 1 index /DeviceRGB eq or 1 index /DeviceCMYK eq or { 
-        /Pattern setcolorspace setcolorspace 
-      } { 
-        pop 
+        /Pattern setcolorspace setcolorspace
+      } {
+        pop
       } ifelse
-    } { 
-      pop 
+    } {
+      pop
     } ifelse
   } if
 } bind def
