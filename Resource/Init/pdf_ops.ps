@@ -364,7 +364,7 @@ currentdict /gput_always_allow .undef
 
 % ---------------- Overprint/transparency setting ---------------- %
 
-/op { /FillOverprint gput } bdef
+/op { /FillOverprint gput } bdef	% NB pdf_draw:gsparamdict handled /OP with no /op
 /OP { /StrokeOverprint gput } bdef
 /OPM {
   /.setoverprintmode where { pop dup .setoverprintmode .swapcolors .setoverprintmode .swapcolors } { pop } ifelse
@@ -567,16 +567,42 @@ end def
     setcolorspace
   } ifelse
 } bdef
+
+/OPsavedict 2 dict def		% for saveOP, saveBM
+
+/checkOPtrans	% <fillop|strokeop> checkOPtrans <bool>
+% return true if OP needs special transparency treatment
+% NB: This will get replaced with a quick "no-op" if the device doesn't support Overprint
+{  % Check OP and BM in case we need to push a group
+   /stroke ne { FillOverprint } { StrokeOverprint } ifelse
+   .currentblendmode dup /Normal eq exch /Compatible eq or not and
+} bdef
+
 /fsexec		% <fillop|strokeop> fsexec -
- {
-   SoftMask //null ne {
-     mark /Subtype /Group /Isolated //true .dicttomark pathbbox .begintransparencygroup
-   } if
-   cvx exec
-   SoftMask //null ne {
-     .endtransparencygroup
-   } if
- } bdef
+{
+   PDFusingtransparency {
+      SoftMask //null ne {
+        mark /Subtype /Group /Isolated //true .dicttomark pathbbox .begintransparencygroup
+      } if
+      dup checkOPtrans exch 1 index {
+         % We need to push a non-isolated, non-knockout transparency group and
+         % perform the operation in CompatibleOverprint mode, then end the
+         % transparency group. Do the begintransparencygroup step here.
+         mark /Subtype /Group /Isolated //false .dicttomark pathbbox .begintransparencygroup
+         exch .currentblendmode exch .currentopacityalpha exch 4 -1 roll % save current values
+         /CompatibleOverprint .setblendmode 1 .setopacityalpha
+      } if
+      cvx exec
+      {
+         .endtransparencygroup .setopacityalpha .setblendmode	% end the CompatibleOverprint group
+      } if
+      SoftMask //null ne {
+        .endtransparencygroup
+      } if
+   } {
+      cvx exec
+   } ifelse
+} bdef
 
 % ---------------- Path painting and clipping ---------------- %
 
@@ -1304,21 +1330,35 @@ end readonly def
   TextFillStateNeeded { setfillstate //false /TextFillStateNeeded gput } if
 } bind def
 
-/TextTransSetup {	% true TextTransSetup -		% if current path is valid
-                        % false TextTransSetup -	% no path, use clip box
+% If current path is not known to be valid, use the clip path
+/TextTransSetup {	% showarg path_valid TextTransSetup false showarg
+                        % showarg path_valid false TextTransSetup prev_BM prev_opacity true showarg
    % NB: if 'show' is used, then we use the clippath, but a smaller bbox is preferred
    SoftMask //null ne {
-     mark /Subtype /Group /Isolated //true .dicttomark exch
+     dup mark /Subtype /Group /Isolated //true .dicttomark exch
      { pathbbox } { gsave clippath pathbbox grestore } ifelse
      .begintransparencygroup
-   }
-   {
-     pop
-   }	% discard path_valid boolean
-   ifelse
+   } if
+   //null checkOPtrans {
+     % We need to push a non-isolated, non-knockout transparency group and
+     % perform the operation in CompatibleOverprint mode, then end the
+     % transparency group. Do the begintransparencygroup step here.
+     mark /Subtype /Group /Isolated //false .dicttomark exch
+     { pathbbox } { gsave clippath pathbbox grestore } ifelse
+     .begintransparencygroup
+     OPsavedict dup /saveBM .currentblendmode put /saveOA .currentopacityalpha put % save current values
+     /CompatibleOverprint .setblendmode 1 .setopacityalpha
+   } {
+     pop	% discard path_valid boolean
+   } ifelse
 } bind def
 
-/TextTransTeardown {
+/TextTransTeardown {	% stack: path_valid
+   .currentblendmode /CompatibleOverprint eq {
+     % end the CompatibleOverprint group and restore the opacity and BM
+     .endtransparencygroup
+     OPsavedict dup /saveOA get .setopacityalpha /saveBM get .setblendmode
+   } if
    SoftMask //null ne {
      .endtransparencygroup
    } if
@@ -1526,7 +1566,7 @@ end readonly def
     exec
     get-gs-attrs grestore set-gs-attrs
   } ifelse
-    //true /TextFillStateNeeded gput
+  //true /TextFillStateNeeded gput
 } bdef
 /' { T* Tj } bdef
 /" { exch Tc exch Tw T* Tj } bdef

@@ -216,7 +216,7 @@ currentdict /runpdfstring .undef
        3 index 2 index gt { % a > fp
          1
        } {
-         1 index 4 index sub 1 add  
+         1 index 4 index sub 1 add
        } ifelse
      } ifelse                                                % a b fp lp f
      3 index 2 index lt { % b < bp
@@ -230,10 +230,10 @@ currentdict /runpdfstring .undef
      } ifelse                                                % a b fp lp f l
      6 2 roll pop pop pop pop
 
-     QUIET not { 
-       1 index 1 index gt { 
+     QUIET not {
+       1 index 1 index gt {
          (Skipping the subfile.) = flush
-       } { 
+       } {
            (Processing pages ) print 1 index =only ( through ) print dup =only
            (.) = flush
        } ifelse
@@ -476,7 +476,7 @@ currentdict /runpdfstring .undef
     } forall
   } {
     /Kids knownoget {
-      { oforce 
+      { oforce
         dup //null ne {
           pdf_collection_names
         } {
@@ -524,7 +524,7 @@ currentdict /runpdfstring .undef
     //runpdfend exec
   } {
     //runpdfend exec
-    ] 
+    ]
     (1         ) 10 string copy exch
     {
         dup type /filetype eq {
@@ -591,7 +591,7 @@ pdfdict begin
   12  1 index   % \f
   13  1 index   % \n
   32  1 index   % ' '
-  
+
   48  { exit } bind % '0'
   49  1 index   % '1'
   50  1 index   % '2'
@@ -679,7 +679,7 @@ pdfdict begin
      exch pop
      } ifelse
      PDFfile token pop		% entry count
- 
+
      % remaining must be whitespace only (otherwise this xref Size was invalid.
      { PDFfile (0) .peekstring not { pop exit } if
        0 get //xref-char-dict exch .knownget {
@@ -1080,7 +1080,7 @@ currentdict /xref-char-dict undef
     } ifelse
   } if
   } if
-  
+
   % Use OutputIntent ICC profile
   systemdict /UsePDFX3Profile .knownget {
     dup //false eq {
@@ -1272,8 +1272,8 @@ currentdict /xref-char-dict undef
      Trailer
      { /Prev knownoget not {	% If no previous xref table then ...
          Classic-xref {
-           /NoVerifyXref where { pop } { verify_xref } ifelse 
-         } if  
+           /NoVerifyXref where { pop } { verify_xref } ifelse
+         } if
          exit
        } if
        { readxref }
@@ -2330,7 +2330,7 @@ currentdict /PDF2PS_matrix_key undef
   } if		% end .writepdfmarks
 
         % Display the actual page contents.
-   8 dict begin
+   9 dict begin
    /BXlevel 0 def
    /BMClevel 0 def
    /OFFlevels 0 dict def
@@ -2348,8 +2348,16 @@ currentdict /PDF2PS_matrix_key undef
 
   count 1 sub /pdfemptycount exch store
         % If the page uses any transparency features, show it within
-        % a transparency group.
-  dup pageusestransparency dup /PDFusingtransparency exch def {
+        % a transparency group. The scan was performed during pdfshowpage_setpage
+        % and the result was set in the pagedevice dictionary. Use it rather than
+        % scanning again.
+  currentpagedevice /PageUsesTransparency get dup /PDFusingtransparency exch def {
+    % If the current device isn't ProcessColorModel /DeviceCMYK, or if it is a
+    % HighLevelDevice (pdfwrite) we don't need the special handling of Overprint
+    % transparency, so disable the checking.
+    currentpagedevice dup /ProcessColorModel get /DeviceCMYK ne exch /HighLevelDevice known or {
+      /checkOPtrans { pop false } def	% NB: original will be restored from PDFsave
+    } if
     % Show the page within a PDF 1.4 device filter.
     0 .pushpdf14devicefilter {
       /DefaultQstate qstate store		% device has changed -- reset DefaultQstate
@@ -2361,14 +2369,14 @@ currentdict /PDF2PS_matrix_key undef
         } {
           1 index get_media_box pop /MediaBox exch
         } ifelse
-        oforce_elems normrect_elems fix_empty_rect_elems 4 array astore .beginformgroup 
+        oforce_elems normrect_elems fix_empty_rect_elems 4 array astore .beginformgroup
         showpagecontents
         .endtransparencygroup
       } {
         showpagecontents
       } ifelse
     } stopped {
-      % abort the transparency device 
+      % abort the transparency device
       .abortpdf14devicefilter
       /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
       stop
@@ -2377,6 +2385,8 @@ currentdict /PDF2PS_matrix_key undef
     .poppdf14devicefilter	% NB: reset to DefaultQstate will also restore transfer function
     /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
   } {
+    /checkOPtrans { pop false } def	% no-op the check if the page doesn't use transparency
+                                % NB: original will be restored from PDFsave
     showpagecontents
   } ifelse
   .free_page_resources
@@ -2386,7 +2396,7 @@ currentdict /PDF2PS_matrix_key undef
   end			% scratch dict
   % Some PDF files don't have matching q/Q (gsave/grestore) so we need
   % to clean up any left over dicts from the dictstack
-  
+
   PDFdictstackcount //false
   { countdictstack 2 index le { exit } if
     currentdict /n known not or
@@ -2565,7 +2575,7 @@ currentdict /PDF2PS_matrix_key undef
       dup type /dicttype eq {
         //false exch
         {
-          exch pop oforce 
+          exch pop oforce
           dup //null ne {
             dup type /dicttype eq {
                 dup /Subtype get
@@ -2690,12 +2700,12 @@ currentdict /PDF2PS_matrix_key undef
       { exch pop oforce 3 index colorspacespotcolors } forall
     } if
     dup /Pattern knownoget {
-      { exch pop oforce 
+      { exch pop oforce
         dup /Shading knownoget {
           exch pop
           /ColorSpace oget 3 index colorspacespotcolors
         } {
-          4 copy exch pop resourcespotcolors pop pop pop 
+          4 copy exch pop resourcespotcolors pop pop pop
         } ifelse
       } forall
     } if
@@ -2708,7 +2718,7 @@ currentdict /PDF2PS_matrix_key undef
           (   **** Error: invalid color space in shading, output may be incorrect.\n) pdfformaterror
         }
         { 3 index colorspacespotcolors}
-        ifelse        
+        ifelse
       } forall
     } if
     /XObject knownoget {
@@ -2776,7 +2786,7 @@ currentdict /PDF2PS_matrix_key undef
   0 dict exch
   % Create a dict to be used to check for reference loops.
   4 dict exch
-  % Check for color spaces in the Resources  
+  % Check for color spaces in the Resources
   resourcespotcolors
   % now check upwards in the object hierarchy in case of inherited resources
   2 index
@@ -2954,7 +2964,7 @@ currentdict /PDF2PS_matrix_key undef
       /DefaultGray exch /ColorSpace defineresource pop
       pop //true
     } {
-      pop 
+      pop
       (   **** Error: ignoring invalid /DefaultGray color space.\n)
       pdfformaterror
       (                 Output may be incorrect.\n) pdfformaterror
@@ -2990,7 +3000,7 @@ currentdict /PDF2PS_matrix_key undef
   { % if using color space substitution, "transition" the current color space
     currentcolorspace dup length 1 eq {  % always an array
       0 get
-      dup /DeviceGray eq 1 index /DeviceRGB eq or 1 index /DeviceCMYK eq or { 
+      dup /DeviceGray eq 1 index /DeviceRGB eq or 1 index /DeviceCMYK eq or {
         /Pattern setcolorspace setcolorspace
       } {
         pop

@@ -1266,33 +1266,60 @@ drawopdict begin
 
   /sh_save 1 array def
   /sh_group  << /Subtype /Group /Isolated //true >> readonly def
+
+  /do_shade {
+    0 .setoverprintmode
+    { dup /.shading .knownget {
+        exch pop
+      } {
+       .buildshading
+      } ifelse
+      .shfill
+    } stopped {
+      pop
+      (   **** Error: Ignoring invalid smooth shading object, output may be incorrect.\n)
+      pdfformaterror
+    } if
+  } bdef
+
   /sh {
       OFFlevels length 0 eq {
         setfillstate resolvesh
         //sh_save 0 save put
-        SoftMask //null ne {
-          //sh_group
-          1 index /BBox knownoget {
-            { oforce } forall
-          } {
-            gsave clippath pathbbox grestore
-          } ifelse
-          .begintransparencygroup
-        } if
-        0 .setoverprintmode
-        { dup /.shading .knownget {
-            exch
-            pop
-          } {
-           .buildshading
-          } ifelse
-          .shfill
-        } stopped {
-          pop
-          (   **** Error: Ignoring invalid smooth shading object, output may be incorrect.\n)
-          pdfformaterror
-        } if
-        SoftMask //null ne { .endtransparencygroup } if
+        PDFusingtransparency {
+           SoftMask //null ne {
+             //sh_group
+             1 index /BBox knownoget {
+               { oforce } forall
+             } {
+               gsave clippath pathbbox grestore
+             } ifelse
+             .begintransparencygroup
+           } if
+           dup checkOPtrans exch 1 index {
+              % We need to push a non-isolated, non-knockout transparency group and
+              % perform the operation in CompatibleOverprint mode, then end the
+              % transparency group. Do the begintransparencygroup step here.
+              mark /Subtype /Group /Isolated //false .dicttomark
+              1 index /BBox knownoget {
+                { oforce } forall
+              } {
+                gsave clippath pathbbox grestore
+              } ifelse
+              .begintransparencygroup
+               exch .currentblendmode exch .currentopacityalpha exch 4 -1 roll % save current values
+               /CompatibleOverprint .setblendmode 1 .setopacityalpha
+           } if
+           //do_shade exec
+           {
+               .endtransparencygroup .setopacityalpha .setblendmode	% end the CompatibleOverprint group
+           } if
+           SoftMask //null ne {
+             .endtransparencygroup
+           } if
+        } {
+           //do_shade exec
+        } ifelse
         //sh_save 0 get restore
       } {
         pop
@@ -2095,6 +2122,14 @@ currentdict /last-ditch-bpc-csp undef
 
 /doimage {	% <imagemask> doimage -
                 % imagedict is currentdict, gets popped from dstack
+  //null checkOPtrans {
+     % We need to push a non-isolated, non-knockout transparency group and
+     % perform the operation in CompatibleOverprint mode, then end the
+     % transparency group. Do the begintransparencygroup step here.
+     mark /Subtype /Group /Isolated //false .dicttomark 0 0 1 1 .begintransparencygroup
+     OPsavedict dup /saveBM .currentblendmode put /saveOA .currentopacityalpha put % save current values
+     /CompatibleOverprint .setblendmode 1 .setopacityalpha
+  } if
   DataSource exch
   PDFusingtransparency
   /PreserveSMask /GetDeviceParam .special_op {
@@ -2146,6 +2181,10 @@ currentdict /last-ditch-bpc-csp undef
                 % Close the input stream, unless it is PDFfile or
                 % PDFsource.
   dup dup PDFfile eq exch PDFsource eq or { pop } { closefile } ifelse
+  .currentblendmode /CompatibleOverprint eq {
+     .endtransparencygroup
+     OPsavedict dup /saveOA get .setopacityalpha /saveBM get .setblendmode
+  } if
 } bdef
 
 /.paintform {	% <formdict> <resdict> <stream> .paintform -
