@@ -1070,7 +1070,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     } else {
         const byte *p = v_mediabox->contents.chars.data;
         char buf[100];
-        int l = min (v_mediabox->contents.chars.size, sizeof(buf) - 1);
+        int i, l = min (v_mediabox->contents.chars.size, sizeof(buf) - 1);
         float temp[4]; /* the type is float for sscanf. */
 
         temp[0] = temp[1] = 0;
@@ -1084,6 +1084,8 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
         }
         pprintg4(s, "<</Type/Page/MediaBox [%g %g %g %g]\n",
                 temp[0], temp[1], temp[2], temp[3]);
+        for (i=0;i<4;i++)
+            mediabox[i] = temp[i];
     }
     if (pdev->PDFX) {
         const cos_value_t *v_trimbox = cos_dict_find_c_key(page->Page, "/TrimBox");
