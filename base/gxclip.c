@@ -426,6 +426,16 @@ clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     xe = x + w;
     y += rdev->translation.y;
     ye = y + h;
+    /* ccdata is non-transposed */
+    ccdata.x = x, ccdata.y = y;
+    ccdata.w = w, ccdata.h = h;
+    /* transpose x, y, xe, ye for clip checking */
+    if (rdev->list.transpose) {
+        x = ccdata.y;
+        y = ccdata.x;
+        xe = x + h;
+        ye = y + w;
+    }
     /* We open-code the most common cases here. */
     if ((y >= rptr->ymin && ye <= rptr->ymax) ||
         ((rptr = rptr->next) != 0 &&
@@ -494,6 +504,16 @@ clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     xe = x + w;
     y += rdev->translation.y;
     ye = y + h;
+    /* ccdata is non-transposed */
+    ccdata.x = x, ccdata.y = y;
+    ccdata.w = w, ccdata.h = h;
+    /* transpose x, y, xe, ye for clip checking */
+    if (rdev->list.transpose) {
+        x = ccdata.y;
+        y = ccdata.x;
+        xe = x + h;
+        ye = y + w;
+    }
     /* We open-code the most common cases here. */
     if ((y >= rptr->ymin && ye <= rptr->ymax) ||
         ((rptr = rptr->next) != 0 &&
