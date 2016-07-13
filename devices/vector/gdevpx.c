@@ -1984,6 +1984,9 @@ pclxl_begin_image(gx_device * dev,
     if (pclxl_nontrivial_transfer(pgs))
         goto use_default;
 
+    if (pim->Width == 0 || pim->Height == 0)
+        goto use_default;
+    
     /* 
      * NOTE: this predicate should be fixed to be readable and easily
      * debugged.  Each condition should be separate.  See the large
