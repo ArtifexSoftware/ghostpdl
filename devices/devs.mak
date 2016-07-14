@@ -21,7 +21,7 @@ DEVSRC=$(DEVSRCDIR)$(D)
 DEVVEC=$(DEVSRC)vector
 DEVVECSRC=$(DEVVEC)$(D)
 
-DEVI_=$(DEVGENDIR) $(II)$(GLSRCDIR) $(II)$(GLGENDIR) $(II)$(DEVSRCDIR) 
+DEVI_=$(DEVGENDIR) $(II)$(GLSRCDIR) $(II)$(GLGENDIR) $(II)$(DEVSRCDIR)
 DEVF_=
 
 DEVCCFLAGS=$(I_)$(DEVI_)$(_I) $(I_)$(DEVVEC)$(_I) $(DEVF_)
@@ -615,7 +615,7 @@ $(DD)ljetplus.dev : $(HPMONO) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)ljetplus $(HPMONO)
 
 ### Selecting ljet2p provides TIFF (mode 2) compression on LaserJet III,
-### IIIp, IIId, IIIsi, IId, and IIp. 
+### IIIp, IIId, IIIsi, IId, and IIp.
 
 $(DD)ljet2p.dev : $(HPMONO) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)ljet2p $(HPMONO)
@@ -890,7 +890,7 @@ gdevpdfg_h=$(DEVVECSRC)gdevpdfg.h $(gscspace_h)
 gdevpdfo_h=$(DEVVECSRC)gdevpdfo.h $(gsparam_h)
 gdevpdfx_h=$(DEVVECSRC)gdevpdfx.h\
  $(gsparam_h) $(gsuid_h) $(gxdevice_h) $(gxfont_h) $(gxline_h)\
- $(spprint_h) $(stream_h) $(gdevpsdf_h) $(gxdevmem_h) $(sarc4_h) 
+ $(spprint_h) $(stream_h) $(gdevpsdf_h) $(gxdevmem_h) $(sarc4_h)
 
 opdfread_h=$(DEVVECSRC)opdfread.h
 
@@ -1450,7 +1450,7 @@ $(DEVOBJ)gdevjbig2.$(OBJ) : $(DEVSRC)gdevjbig2.c $(PDEVH)\
  $(stream_h) $(strimpl_h) $(sjbig2_luratech_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(GDEVLDFJB2CC) $(DEVO_)gdevjbig2.$(OBJ) $(C_) $(DEVSRC)gdevjbig2.c
 
-### ------------------------ JPX testing device ---------------------- 
+### ------------------------ JPX testing device ----------------------
 ###
 
 gdevjpx_=$(DEVOBJ)gdevjpx.$(OBJ)
@@ -1805,7 +1805,7 @@ tiffs_=$(DEVOBJ)gdevtifs.$(OBJ) $(DEVOBJ)minftrsz.$(OBJ)
 tiffgray_=$(DEVOBJ)gdevtsep.$(OBJ) $(GLOBJ)gsequivc.$(OBJ) $(DEVOBJ)minftrsz.$(OBJ)
 
 tiffsep_=$(tiffgray_) $(GLOBJ)gdevdevn.$(OBJ) $(GLOBJ)gsequivc.$(OBJ) \
-$(GLOBJ)gdevppla.$(OBJ) 
+$(GLOBJ)gdevppla.$(OBJ)
 
 $(DD)tiffs.dev : $(libtiff_dev) $(tiffs_) $(GLD)page.dev\
  $(minftrsz_) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
@@ -1813,7 +1813,8 @@ $(DD)tiffs.dev : $(libtiff_dev) $(tiffs_) $(GLD)page.dev\
 	$(ADDMOD) $(DD)tiffs -include $(GLD)page $(tiff_i_)
 
 $(DEVOBJ)gdevtifs.$(OBJ) : $(DEVSRC)gdevtifs.c $(PDEVH) $(stdint__h) $(stdio__h) $(time__h)\
- $(gdevtifs_h) $(gscdefs_h) $(gstypes_h) $(stream_h) $(strmio_h) $(gstiffio_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(gdevtifs_h) $(gscdefs_h) $(gstypes_h) $(stream_h) $(strmio_h) $(gstiffio_h)\
+ $(gsicc_cache_h) $(gscms_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(I_)$(DEVI_) $(II)$(TI_)$(_I) $(DEVO_)gdevtifs.$(OBJ) $(C_) $(DEVSRC)gdevtifs.c
 
 # Black & white, G3/G4 fax
@@ -1954,7 +1955,7 @@ $(DD)tiffsep.dev : $(libtiff_dev) $(tiffsep_) $(DD)tiffs.dev\
 	$(ADDMOD) $(DD)tiffsep -include $(DD)tiffs $(tiff_i_)
 
 #
-# Create separation files (tiff 1-bit) 
+# Create separation files (tiff 1-bit)
 
 $(DD)tiffsep1.dev : $(tiffsep_) $(DD)tiffs.dev $(minftrsz_h)\
  $(GDEV) $(DEVS_MAK) $(MAKEDIRS)

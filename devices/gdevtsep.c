@@ -82,12 +82,14 @@ const gx_device_tiff gs_tiffgray_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
-    GX_DOWNSCALER_PARAMS_DEFAULTS
+    GX_DOWNSCALER_PARAMS_DEFAULTS,
+    0
 };
 
 /* ------ The tiffscaled device ------ */
 
 static dev_proc_print_page(tiffscaled_print_page);
+static int tiff_set_icc_color_fields(gx_device_printer *pdev);
 
 static const gx_device_procs tiffscaled_procs =
 prn_color_params_procs(tiff_open,
@@ -115,7 +117,8 @@ const gx_device_tiff gs_tiffscaled_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
-    GX_DOWNSCALER_PARAMS_DEFAULTS
+    GX_DOWNSCALER_PARAMS_DEFAULTS,
+    0
 };
 
 /* ------ The tiffscaled8 device ------ */
@@ -148,7 +151,8 @@ const gx_device_tiff gs_tiffscaled8_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
-    GX_DOWNSCALER_PARAMS_DEFAULTS
+    GX_DOWNSCALER_PARAMS_DEFAULTS,
+    0
 };
 
 /* ------ The tiffscaled24 device ------ */
@@ -181,7 +185,8 @@ const gx_device_tiff gs_tiffscaled24_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
-    GX_DOWNSCALER_PARAMS_DEFAULTS
+    GX_DOWNSCALER_PARAMS_DEFAULTS,
+    0
 };
 
 /* ------ The tiffscaled32 device ------ */
@@ -212,7 +217,8 @@ const gx_device_tiff gs_tiffscaled32_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
-    GX_DOWNSCALER_PARAMS_DEFAULTS
+    GX_DOWNSCALER_PARAMS_DEFAULTS,
+    0
 };
 
 /* ------ The tiffscaled4 device ------ */
@@ -243,7 +249,8 @@ const gx_device_tiff gs_tiffscaled4_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
-    GX_DOWNSCALER_PARAMS_DEFAULTS
+    GX_DOWNSCALER_PARAMS_DEFAULTS,
+    0
 };
 
 /* ------ Private functions ------ */
@@ -291,7 +298,9 @@ tiffscaled_print_page(gx_device_printer * pdev, FILE * file)
     if (code < 0)
         return code;
 
-    tiff_set_gray_fields(pdev, tfdev->tif, 1, tfdev->Compression, tfdev->MaxStripSize);
+    tiff_set_gray_fields(pdev, tfdev->tif, 1, tfdev->Compression,
+        tfdev->MaxStripSize);
+
 
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
                                          tfdev->downscale.downscale_factor,
@@ -311,8 +320,15 @@ tiffscaled8_print_page(gx_device_printer * pdev, FILE * file)
     if (code < 0)
         return code;
 
-    tiff_set_gray_fields(pdev, tfdev->tif, 8, tfdev->Compression, tfdev->MaxStripSize);
-
+    if (tfdev->icclink != NULL && tfdev->icclink->num_output != 1)
+    {
+        code = tiff_set_icc_color_fields(pdev);
+        if (code < 0)
+            return code;
+    } else {
+        tiff_set_gray_fields(pdev, tfdev->tif, 8, tfdev->Compression,
+            tfdev->MaxStripSize);
+    }
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
                                          tfdev->downscale.downscale_factor,
                                          tfdev->downscale.min_feature_size,
@@ -324,8 +340,16 @@ tiffscaled8_print_page(gx_device_printer * pdev, FILE * file)
 static void
 tiff_set_rgb_fields(gx_device_tiff *tfdev)
 {
-    /* Put in a switch statement in case we want to have others */
-    switch (tfdev->icc_struct->device_profile[0]->data_cs) {
+    cmm_profile_t *icc_profile;
+
+    if (tfdev->icc_struct->postren_profile != NULL)
+        icc_profile = tfdev->icc_struct->postren_profile;
+    else if (tfdev->icc_struct->oi_profile != NULL)
+        icc_profile = tfdev->icc_struct->oi_profile;
+    else
+        icc_profile = tfdev->icc_struct->device_profile[0];
+
+    switch (icc_profile->data_cs) {
         case gsRGB:
             TIFFSetField(tfdev->tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
             break;
@@ -354,8 +378,15 @@ tiffscaled24_print_page(gx_device_printer * pdev, FILE * file)
     if (code < 0)
         return code;
 
-    TIFFSetField(tfdev->tif, TIFFTAG_BITSPERSAMPLE, 8);
-    tiff_set_rgb_fields(tfdev);
+    if (tfdev->icclink != NULL && tfdev->icclink->num_output != 3)
+    {
+        code = tiff_set_icc_color_fields(pdev);
+        if (code < 0)
+            return code;
+    } else {
+        TIFFSetField(tfdev->tif, TIFFTAG_BITSPERSAMPLE, 8);
+        tiff_set_rgb_fields(tfdev);
+    }
 
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
                                          tfdev->downscale.downscale_factor,
@@ -389,11 +420,15 @@ tiffscaled32_print_page(gx_device_printer * pdev, FILE * file)
     if (code < 0)
         return code;
 
-    tiff_set_cmyk_fields(pdev,
-                         tfdev->tif,
-                         8,
-                         tfdev->Compression,
-                         tfdev->MaxStripSize);
+    if (tfdev->icclink != NULL && tfdev->icclink->num_output != 4)
+    {
+        code = tiff_set_icc_color_fields(pdev);
+        if (code < 0)
+            return code;
+    } else {
+        tiff_set_cmyk_fields(pdev, tfdev->tif, 8, tfdev->Compression,
+            tfdev->MaxStripSize);
+    }
 
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
                                          tfdev->downscale.downscale_factor,
@@ -429,6 +464,34 @@ tiffscaled4_print_page(gx_device_printer * pdev, FILE * file)
                                          tfdev->downscale.trap_order);
 }
 
+/* Called when the post render ICC profile is in a different color space
+* type compared to the output ICC profile (e.g. cmyk vs rgb) */
+static int
+tiff_set_icc_color_fields(gx_device_printer *pdev)
+{
+    gx_device_tiff *tfdev = (gx_device_tiff *)pdev;
+
+    TIFFSetField(tfdev->tif, TIFFTAG_BITSPERSAMPLE, 8);
+    switch (tfdev->icclink->num_output)
+    {
+    case 1:
+        tiff_set_gray_fields(pdev, tfdev->tif, 8, tfdev->Compression,
+            tfdev->MaxStripSize);
+        break;
+    case 3:
+        tiff_set_rgb_fields(tfdev);
+        break;
+    case 4:
+        tiff_set_cmyk_fields(pdev, tfdev->tif,
+            pdev->color_info.depth / pdev->color_info.num_components,
+            tfdev->Compression, tfdev->MaxStripSize);
+        break;
+    default:
+        return gs_error_undefined;
+    }
+    return 0;
+}
+
 /* ------ The cmyk devices ------ */
 
 static dev_proc_print_page(tiffcmyk_print_page);
@@ -457,7 +520,8 @@ const gx_device_tiff gs_tiff32nc_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
-    GX_DOWNSCALER_PARAMS_DEFAULTS
+    GX_DOWNSCALER_PARAMS_DEFAULTS,
+    0
 };
 
 /* 16-bit-per-plane separated CMYK color. */
@@ -478,7 +542,8 @@ const gx_device_tiff gs_tiff64nc_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     false, /* write_datetime */
-    GX_DOWNSCALER_PARAMS_DEFAULTS
+    GX_DOWNSCALER_PARAMS_DEFAULTS,
+    0
 };
 
 /* ------ Private functions ------ */
@@ -1053,7 +1118,7 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
         case 1:
             break;
     }
-    switch (code = param_read_bool(plist, (param_name = "LockColorants"), 
+    switch (code = param_read_bool(plist, (param_name = "LockColorants"),
             &(pdevn->lock_colorants))) {
         case 0:
             break;
@@ -1585,16 +1650,16 @@ tiffsep_prn_open(gx_device * pdev)
     /* Use our own warning and error message handlers in libtiff */
     tiff_set_handlers();
 
-    /* There are 2 approaches to the use of a DeviceN ICC output profile.  
+    /* There are 2 approaches to the use of a DeviceN ICC output profile.
        One is to simply limit our device to only output the colorants
-       defined in the output ICC profile.   The other is to use the 
+       defined in the output ICC profile.   The other is to use the
        DeviceN ICC profile to color manage those N colorants and
-       to let any other separations pass through unmolested.   The define 
+       to let any other separations pass through unmolested.   The define
        LIMIT_TO_ICC sets the option to limit our device to only the ICC
        colorants defined by -sICCOutputColors (or to the ones that are used
-       as default names if ICCOutputColors is not used).  The pass through option 
-       (LIMIT_TO_ICC set to 0) makes life a bit more difficult since we don't 
-       know if the page_spot_colors overlap with any spot colorants that exist 
+       as default names if ICCOutputColors is not used).  The pass through option
+       (LIMIT_TO_ICC set to 0) makes life a bit more difficult since we don't
+       know if the page_spot_colors overlap with any spot colorants that exist
        in the DeviceN ICC output profile. Hence we don't know how many planes
        to use for our device.  This is similar to the issue when processing
        a PostScript file.  So that I remember, the cases are
@@ -1638,8 +1703,8 @@ tiffsep_prn_open(gx_device * pdev)
             /* Use the information that is in the ICC profle.  We will be here
                anytime that we have limited ourselves to a fixed number
                of colorants specified by the DeviceN ICC profile */
-            pdev->color_info.num_components = 
-                (pdev_sep->devn_params.separations.num_separations 
+            pdev->color_info.num_components =
+                (pdev_sep->devn_params.separations.num_separations
                  + pdev_sep->devn_params.num_std_colorant_names);
             if (pdev->color_info.num_components > pdev->color_info.max_components)
                 pdev->color_info.num_components = pdev->color_info.max_components;
@@ -2308,7 +2373,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
             goto done;
         }
 
-        
+
         code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], factor, 0, tfdev->write_datetime);
         tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], dst_bpc, tfdev->Compression, tfdev->MaxStripSize);
         pdev->color_info.depth = save_depth;

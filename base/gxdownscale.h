@@ -27,7 +27,7 @@
 
 /* Function to apply color management to a rectangle of data.
  *
- * data points to an array of pointers, 1 per component.
+ * dst/src point to arrays of pointers, 1 per component.
  * In the chunky case, only the first pointer is valid.
  * In the planar case, with n planes, the first n pointers
  * are valid.
@@ -38,7 +38,8 @@
  * in chunky cases.
  */
 typedef int (gx_downscale_cm_fn)(void  *arg,
-                                 byte **data,
+                                 byte **dst,
+                                 byte **src,
                                  int    w,
                                  int    h,
                                  int    raster);
@@ -67,7 +68,6 @@ struct gx_downscaler_s {
     byte                 *mfs_data;   /* MinFeatureSize data */
     int                   src_bpc;    /* Source bpc */
     int                  *errors;     /* Error diffusion table */
-    byte                 *data;       /* Downscaling buffer */
     byte                 *scaled_data;/* Downscaled data (only used for non
                                        * integer downscales). */
     int                   scaled_span;/* Num bytes in scaled scanline */
@@ -82,6 +82,10 @@ struct gx_downscaler_s {
     int                   early_cm;
     gx_downscale_cm_fn   *apply_cm;
     void                 *apply_cm_arg;
+    int                   post_cm_num_comps;
+
+    byte                 *pre_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    byte                 *post_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
 };
 
 /* To use the downscaler:
@@ -139,7 +143,8 @@ int gx_downscaler_init_cm(gx_downscaler_t    *ds,
                           int               (*adjust_width_proc)(int, int),
                           int                 adjust_width,
                           gx_downscale_cm_fn *apply_cm,
-                          void               *apply_cm_arg);
+                          void               *apply_cm_arg,
+                          int                 post_cm_num_comps);
 
 int gx_downscaler_init_trapped_cm(gx_downscaler_t    *ds,
                                   gx_device          *dev,
@@ -151,10 +156,11 @@ int gx_downscaler_init_trapped_cm(gx_downscaler_t    *ds,
                                   int               (*adjust_width_proc)(int, int),
                                   int                 adjust_width,
                                   int                 trap_w,
-                                  int                  trap_h,
+                                  int                 trap_h,
                                   const int          *comp_order,
                                   gx_downscale_cm_fn *apply_cm,
-                                  void               *apply_cm_arg);
+                                  void               *apply_cm_arg,
+                                  int                 post_cm_num_comps);
 
 int gx_downscaler_init_planar(gx_downscaler_t      *ds,
                               gx_device            *dev,
@@ -186,7 +192,8 @@ int gx_downscaler_init_planar_cm(gx_downscaler_t      *ds,
                                  int                   src_bpc,
                                  int                   dst_bpc,
                                  gx_downscale_cm_fn   *apply_cm,
-                                 void                 *apply_cm_arg);
+                                 void                 *apply_cm_arg,
+                                 int                   post_cm_num_comps);
 
 int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
                                          gx_device            *dev,
@@ -200,7 +207,8 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
                                          int                   trap_h,
                                          const int            *comp_order,
                                          gx_downscale_cm_fn   *apply_cm,
-                                         void                 *apply_cm_arg);
+                                         void                 *apply_cm_arg,
+                                         int                   post_cm_num_comps);
 
 int gx_downscaler_getbits(gx_downscaler_t *ds,
                           byte            *out_data,
@@ -213,12 +221,6 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
 /* Must only fin a device that has been inited (though you can safely
  * fin several times) */
 void gx_downscaler_fin(gx_downscaler_t *ds);
-
-/* A deliberate analogue to gdev_prn_copy_scan_lines, which despite being
- * deprecated is still massively popular. */
-int
-gx_downscaler_copy_scan_lines(gx_downscaler_t *ds, int y,
-                              byte *str, uint size);
 
 int
 gx_downscaler_scale(int width, int factor);

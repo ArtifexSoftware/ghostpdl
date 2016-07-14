@@ -37,6 +37,7 @@ typedef struct gx_device_tiff_s {
     long AdjustWidth;            /* 0 = no adjust, 1 = adjust to fax values, >1 = adjust to this */
     bool write_datetime;
     gx_downscaler_params downscale;
+    gsicc_link_t *icclink;
     TIFF *tif;                  /* TIFF file opened on gx_device_common.file */
 } gx_device_tiff;
 

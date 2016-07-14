@@ -1656,8 +1656,8 @@ int gx_downscaler_init_planar(gx_downscaler_t      *ds,
                               int                   src_bpc,
                               int                   dst_bpc)
 {
-    return gx_downscaler_init_planar_trapped(ds, dev, params, num_comps,
-        factor, mfs, src_bpc, dst_bpc, 0, 0, NULL);
+    return gx_downscaler_init_planar_trapped_cm(ds, dev, params, num_comps,
+        factor, mfs, src_bpc, dst_bpc, 0, 0, NULL, NULL, NULL, num_comps);
 }
 
 int gx_downscaler_init_planar_trapped(gx_downscaler_t      *ds,
@@ -1675,24 +1675,26 @@ int gx_downscaler_init_planar_trapped(gx_downscaler_t      *ds,
     return gx_downscaler_init_planar_trapped_cm(ds, dev, params, num_comps,
                                                 factor, mfs, src_bpc, dst_bpc,
                                                 trap_w, trap_h, comp_order,
-                                                NULL, NULL);
+                                                NULL, NULL, num_comps);
 }
 
 int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
-                                      gx_device            *dev,
-                                      gs_get_bits_params_t *params,
-                                      int                   num_comps,
-                                      int                   factor,
-                                      int                   mfs,
-                                      int                   src_bpc,
-                                      int                   dst_bpc,
-                                      int                   trap_w,
-                                      int                   trap_h,
-                                      const int            *comp_order,
-                                      gx_downscale_cm_fn   *apply_cm,
-                                      void                 *apply_cm_arg)
+                                         gx_device            *dev,
+                                         gs_get_bits_params_t *params,
+                                         int                   num_comps,
+                                         int                   factor,
+                                         int                   mfs,
+                                         int                   src_bpc,
+                                         int                   dst_bpc,
+                                         int                   trap_w,
+                                         int                   trap_h,
+                                         const int            *comp_order,
+                                         gx_downscale_cm_fn   *apply_cm,
+                                         void                 *apply_cm_arg,
+                                         int                   post_cm_num_comps)
 {
     int                span = bitmap_raster(dev->width * src_bpc);
+    int                post_span = bitmap_raster(dev->width * src_bpc);
     int                width;
     int                code;
     gx_downscale_core *core;
@@ -1704,30 +1706,41 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
     /* width = scaled width */
     width = (dev->width*upfactor + downfactor-1)/downfactor;
     memset(ds, 0, sizeof(*ds));
-    ds->dev         = dev;
-    ds->width       = width;
-    ds->awidth      = width;
-    ds->span        = span;
-    ds->factor      = factor;
-    ds->num_planes  = num_comps;
-    ds->src_bpc     = src_bpc;
-    ds->scaled_data = NULL;
-    ds->scaled_span = bitmap_raster((dst_bpc*dev->width*upfactor + downfactor-1)/downfactor);
-    ds->apply_cm    = apply_cm;
-    ds->apply_cm_arg= apply_cm_arg;
-    ds->early_cm    = dst_bpc != 8;
+    ds->dev               = dev;
+    ds->width             = width;
+    ds->awidth            = width;
+    ds->span              = span;
+    ds->factor            = factor;
+    ds->num_planes        = num_comps;
+    ds->src_bpc           = src_bpc;
+    ds->scaled_data       = NULL;
+    ds->scaled_span       = bitmap_raster((dst_bpc*dev->width*upfactor + downfactor-1)/downfactor);
+    ds->apply_cm          = apply_cm;
+    ds->apply_cm_arg      = apply_cm_arg;
+    ds->early_cm          = dst_bpc < src_bpc;
+    ds->post_cm_num_comps = post_cm_num_comps;
+
+    if (apply_cm) {
+        for (i = 0; i < post_cm_num_comps; i++) {
+            ds->post_cm[i] = gs_alloc_bytes(dev->memory, post_span * downfactor,
+                                                "gx_downscaler(planar_data)");
+            if (ds->post_cm[i] == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                goto cleanup;
+            }
+        }
+    }
 
     code = check_trapping(dev->memory, trap_w, trap_h, num_comps, comp_order);
     if (code < 0)
         return code;
 
-    if (trap_w > 0 || trap_h > 0)
-    {
+    if (trap_w > 0 || trap_h > 0) {
         ds->claptrap = ClapTrap_Init(dev->memory, width, dev->height, num_comps, comp_order, trap_w, trap_h, get_planar_line_for_trap, ds);
-        if (ds->claptrap == NULL)
-        {
+        if (ds->claptrap == NULL) {
             emprintf(dev->memory, "Trapping initialisation failed");
-            return_error(gs_error_VMerror);
+            code = gs_note_error(gs_error_VMerror);
+            goto cleanup;
         }
     }
     else
@@ -1735,17 +1748,15 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
 
     memcpy(&ds->params, params, sizeof(*params));
     ds->params.raster = span;
-    for (i = 0; i < num_comps; i++)
-    {
-        ds->params.data[i] = gs_alloc_bytes(dev->memory, span * downfactor,
+    for (i = 0; i < num_comps; i++) {
+        ds->pre_cm[i] = gs_alloc_bytes(dev->memory, span * downfactor,
                                             "gx_downscaler(planar_data)");
-        if (ds->params.data[i] == NULL) {
+        if (ds->pre_cm[i] == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto cleanup;
         }
     }
-    if (upfactor > 1)
-    {
+    if (upfactor > 1) {
         ds->scaled_data = gs_alloc_bytes(dev->memory, ds->scaled_span * upfactor * num_comps,
                                          "gx_downscaler(scaled_data)");
         if (ds->scaled_data == NULL) {
@@ -1754,21 +1765,14 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
         }
     }
 
-    if ((src_bpc == 8) && (dst_bpc == 8) && (factor == 32))
-    {
+    if ((src_bpc == 8) && (dst_bpc == 8) && (factor == 32)) {
         core = &down_core8_3_2;
-    }
-    else if ((src_bpc == 8) && (dst_bpc == 8) && (factor == 34))
-    {
+    } else if ((src_bpc == 8) && (dst_bpc == 8) && (factor == 34)) {
         core = &down_core8_3_4;
-    }
-    else if (factor > 8)
-    {
+    } else if (factor > 8) {
         code = gs_note_error(gs_error_rangecheck);
         goto cleanup;
-    }
-    else if (dst_bpc == 1)
-    {
+    } else if (dst_bpc == 1) {
         if (mfs > 1)
             core = &down_core_mfs;
         else if (factor == 4)
@@ -1781,8 +1785,7 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
             core = &down_core_1;
         else
             core = &down_core;
-    }
-    else if (factor == 1)
+    } else if (factor == 1)
         core = NULL;
     else if (src_bpc == 16)
         core = &down_core16;
@@ -1806,8 +1809,7 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
         }
         memset(ds->mfs_data, 0, (width+1) * num_comps);
     }
-    if (dst_bpc == 1)
-    {
+    if (dst_bpc == 1) {
         ds->errors = (int *)gs_alloc_bytes(dev->memory,
                                            num_comps*(width+3)*sizeof(int),
                                            "gx_downscaler(errors)");
@@ -1848,7 +1850,7 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
                        int                adjust_width)
 {
     return gx_downscaler_init_trapped_cm(ds, dev, src_bpc, dst_bpc, num_comps,
-        factor, mfs, adjust_width_proc, adjust_width, 0, 0, NULL, NULL, NULL);
+        factor, mfs, adjust_width_proc, adjust_width, 0, 0, NULL, NULL, NULL, 0);
 }
 
 int gx_downscaler_init_trapped(gx_downscaler_t   *ds,
@@ -1868,7 +1870,7 @@ int gx_downscaler_init_trapped(gx_downscaler_t   *ds,
                                          num_comps, factor, mfs,
                                          adjust_width_proc, adjust_width,
                                          trap_w, trap_h, comp_order,
-                                         NULL, NULL);
+                                         NULL, NULL, 0);
 }
 
 int gx_downscaler_init_cm(gx_downscaler_t    *ds,
@@ -1881,13 +1883,14 @@ int gx_downscaler_init_cm(gx_downscaler_t    *ds,
                           int               (*adjust_width_proc)(int, int),
                           int                 adjust_width,
                           gx_downscale_cm_fn *apply_cm,
-                          void               *apply_cm_arg)
+                          void               *apply_cm_arg,
+                          int                 post_cm_num_comps)
 {
     return gx_downscaler_init_trapped_cm(ds, dev, src_bpc, dst_bpc,
                                          num_comps, factor, mfs,
                                          adjust_width_proc, adjust_width,
                                          0, 0, NULL,
-                                         apply_cm, apply_cm_arg);
+                                         apply_cm, apply_cm_arg, post_cm_num_comps);
 }
 
 int gx_downscaler_init_trapped_cm(gx_downscaler_t    *ds,
@@ -1903,9 +1906,11 @@ int gx_downscaler_init_trapped_cm(gx_downscaler_t    *ds,
                                   int                  trap_h,
                                   const int          *comp_order,
                                   gx_downscale_cm_fn *apply_cm,
-                                  void               *apply_cm_arg)
+                                  void               *apply_cm_arg,
+                                  int                 post_cm_num_comps)
 {
-    int                size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
+    int                size;
+    int                post_size;
     int                span;
     int                width;
     int                awidth;
@@ -1914,7 +1919,10 @@ int gx_downscaler_init_trapped_cm(gx_downscaler_t    *ds,
     gx_downscale_core *core;
     int                upfactor;
     int                downfactor;
-    
+
+    size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
+    post_size = bitmap_raster(dev->width * src_bpc * post_cm_num_comps);
+
     decode_factor(factor, &upfactor, &downfactor);
 
     /* width = scaled width */
@@ -1929,95 +1937,122 @@ int gx_downscaler_init_trapped_cm(gx_downscaler_t    *ds,
     /* size = unscaled size. span = unscaled size + padding */
     span = size + pad_white*downfactor*num_comps/upfactor + downfactor-1;
     memset(ds, 0, sizeof(*ds));
-    ds->dev          = dev;
-    ds->width        = width;
-    ds->awidth       = awidth;
-    ds->span         = span;
-    ds->factor       = factor;
-    ds->num_planes   = 0;
-    ds->src_bpc      = src_bpc;
-    ds->apply_cm     = apply_cm;
-    ds->apply_cm_arg = apply_cm_arg;
-    ds->early_cm     = dst_bpc != 8;
+    ds->dev               = dev;
+    ds->width             = width;
+    ds->awidth            = awidth;
+    ds->span              = span;
+    ds->factor            = factor;
+    ds->num_planes        = 0;
+    ds->src_bpc           = src_bpc;
+    ds->apply_cm          = apply_cm;
+    ds->apply_cm_arg      = apply_cm_arg;
+    ds->early_cm          = dst_bpc < src_bpc;
+    ds->post_cm_num_comps = post_cm_num_comps;
 
     code = check_trapping(dev->memory, trap_w, trap_h, num_comps, comp_order);
     if (code < 0)
         return code;
 
-    if (trap_w > 0 || trap_h > 0)
-    {
+    if (trap_w > 0 || trap_h > 0) {
         ds->claptrap = ClapTrap_Init(dev->memory, width, dev->height, num_comps, comp_order, trap_w, trap_h, get_line_for_trap, ds);
-        if (ds->claptrap == NULL)
-        {
+        if (ds->claptrap == NULL) {
             emprintf(dev->memory, "Trapping initialisation failed");
-            return_error(gs_error_VMerror);
+            code = gs_note_error(gs_error_VMerror);
+            goto cleanup;
         }
-    }
-    else
+    } else
         ds->claptrap = NULL;
 
-    /* Choose an appropriate core */
-    if (factor > 8)
+    /* Choose an appropriate core. Try to honour our early_cm
+     * choice, and fallback to late cm if we can't. */
+    core = NULL;
+    while (1)
     {
-        code = gs_note_error(gs_error_rangecheck);
-        goto cleanup;
+        int nc = ds->early_cm ? post_cm_num_comps : num_comps;
+
+        if (factor > 8) {
+            code = gs_note_error(gs_error_rangecheck);
+            goto cleanup;
+        }
+        else if ((src_bpc == 16) && (dst_bpc == 16) && (nc == 1))
+        {
+            core = &down_core16;
+        }
+        else if ((src_bpc == 8) && (dst_bpc == 1) && (nc == 4))
+        {
+            if (mfs > 1)
+                core = &down_core4_mfs;
+            else
+                core = &down_core4;
+        }
+        else if ((src_bpc == 8) && (dst_bpc == 1) && (nc == 1))
+        {
+            if (mfs > 1)
+                core = &down_core_mfs;
+            else if (factor == 4)
+                core = &down_core_4;
+            else if (factor == 3)
+                core = &down_core_3;
+            else if (factor == 2)
+                core = &down_core_2;
+            else if (factor == 1)
+                core = &down_core_1;
+            else
+                core = &down_core;
+        }
+        else if ((factor == 1) && (src_bpc == dst_bpc))
+            break;
+        else if ((src_bpc == 8) && (dst_bpc == 8) && (nc == 1))
+        {
+            if (factor == 4)
+                core = &down_core8_4;
+            else if (factor == 3)
+                core = &down_core8_3;
+            else if (factor == 2)
+                core = &down_core8_2;
+            else
+                core = &down_core8;
+        }
+        else if ((src_bpc == 8) && (dst_bpc == 8) && (nc == 3))
+            core = &down_core24;
+        else if ((src_bpc == 8) && (dst_bpc == 8) && (nc == 4))
+            core = &down_core32;
+
+        /* If we found one, or we have nothing to fallback to, exit */
+        if (core || !ds->early_cm)
+            break;
+
+        /* Fallback */
+        ds->early_cm = false;
     }
-    else if ((src_bpc == 16) && (dst_bpc == 16) && (num_comps == 1))
-    {
-        core = &down_core16;
-    }
-    else if ((src_bpc == 8) && (dst_bpc == 1) && (num_comps == 4))
-    {
-        if (mfs > 1)
-            core = &down_core4_mfs;
-        else
-            core = &down_core4;
-    }
-    else if ((src_bpc == 8) && (dst_bpc == 1) && (num_comps == 1))
-    {
-        if (mfs > 1)
-            core = &down_core_mfs;
-        else if (factor == 4)
-            core = &down_core_4;
-        else if (factor == 3)
-            core = &down_core_3;
-        else if (factor == 2)
-            core = &down_core_2;
-        else if (factor == 1)
-            core = &down_core_1;
-        else
-            core = &down_core;
-    }
-    else if ((factor == 1) && (src_bpc == dst_bpc))
-        core = NULL;
-    else if ((src_bpc == 8) && (dst_bpc == 8) && (num_comps == 1))
-    {
-        if (factor == 4)
-            core = &down_core8_4;
-        else if (factor == 3)
-            core = &down_core8_3;
-        else if (factor == 2)
-            core = &down_core8_2;
-        else
-            core = &down_core8;
-    }
-    else if ((src_bpc == 8) && (dst_bpc == 8) && (num_comps == 3))
-        core = &down_core24;
-    else if ((src_bpc == 8) && (dst_bpc == 8) && (num_comps == 4))
-         core = &down_core32;
-    else {
+    if (factor == 1 && src_bpc == dst_bpc) {
+        /* core can permissibly be NULL */
+    } else if (core == NULL) {
         code = gs_note_error(gs_error_rangecheck);
         goto cleanup;
     }
     ds->down_core = core;
-    
+
+    if (apply_cm) {
+        ds->post_cm[0] = gs_alloc_bytes(dev->memory,
+                                        post_size * downfactor,
+                                        "gx_downscaler(data)");
+        if (ds->post_cm[0] == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto cleanup;
+        }
+    }
+
+    if (core != NULL || apply_cm) {
+        ds->pre_cm[0] = gs_alloc_bytes(dev->memory,
+            span * downfactor,
+            "gx_downscaler(data)");
+        if (ds->pre_cm[0] == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto cleanup;
+        }
+    }
     if (core != NULL) {
-        ds->data = gs_alloc_bytes(dev->memory,
-                                  span * downfactor,
-                                  "gx_downscaler(data)");
-        if (ds->data == NULL)
-            return_error(gs_error_VMerror);
-    
         if (mfs > 1) {
             ds->mfs_data = (byte *)gs_alloc_bytes(dev->memory,
                                                   awidth+1,
@@ -2028,20 +2063,18 @@ int gx_downscaler_init_trapped_cm(gx_downscaler_t    *ds,
             }
             memset(ds->mfs_data, 0, awidth+1);
         }
-        if (dst_bpc == 1)
-        {
+        if (dst_bpc == 1) {
             ds->errors = (int *)gs_alloc_bytes(dev->memory,
                                                num_comps*(awidth+3)*sizeof(int),
                                                "gx_downscaler(errors)");
-            if (ds->errors == NULL)
-            {
+            if (ds->errors == NULL) {
                 code = gs_note_error(gs_error_VMerror);
                 goto cleanup;
             }
             memset(ds->errors, 0, num_comps * (awidth+3) * sizeof(int));
         }
     }
-    
+
     return 0;
 
   cleanup:
@@ -2052,9 +2085,10 @@ int gx_downscaler_init_trapped_cm(gx_downscaler_t    *ds,
 void gx_downscaler_fin(gx_downscaler_t *ds)
 {
     int plane;
-    for (plane=0; plane < ds->num_planes; plane++)
-    {
-        gs_free_object(ds->dev->memory, ds->params.data[plane],
+    for (plane=0; plane < GS_CLIENT_COLOR_MAX_COMPONENTS; plane++) {
+        gs_free_object(ds->dev->memory, ds->pre_cm[plane],
+                       "gx_downscaler(planar_data)");
+        gs_free_object(ds->dev->memory, ds->post_cm[plane],
                        "gx_downscaler(planar_data)");
     }
     ds->num_planes = 0;
@@ -2063,8 +2097,6 @@ void gx_downscaler_fin(gx_downscaler_t *ds)
     ds->mfs_data = NULL;
     gs_free_object(ds->dev->memory, ds->errors, "gx_downscaler(errors)");
     ds->errors = NULL;
-    gs_free_object(ds->dev->memory, ds->data, "gx_downscaler(data)");
-    ds->data = NULL;
     gs_free_object(ds->dev->memory, ds->scaled_data, "gx_downscaler(scaled_data)");
     ds->scaled_data = NULL;
 
@@ -2072,6 +2104,7 @@ void gx_downscaler_fin(gx_downscaler_t *ds)
         ClapTrap_Fin(ds->dev->memory, ds->claptrap);
 }
 
+/* Chunky case */
 int gx_downscaler_getbits(gx_downscaler_t *ds,
                           byte            *out_data,
                           int              row)
@@ -2082,18 +2115,24 @@ int gx_downscaler_getbits(gx_downscaler_t *ds,
 
     /* Check for the simple case */
     if (ds->down_core == NULL) {
-        if (ds->claptrap) {
-            return ClapTrap_GetLine(ds->claptrap, out_data);
+        if (ds->claptrap)
+            code = ClapTrap_GetLine(ds->claptrap, ds->apply_cm ? ds->pre_cm[0] : out_data);
+        else
+            code = (*dev_proc(ds->dev, get_bits))(ds->dev, row, ds->apply_cm ? ds->pre_cm[0] : out_data, NULL);
+        if (code < 0)
+            return code;
+        if (ds->apply_cm) {
+            data_ptr = out_data;
+            return ds->apply_cm(ds->apply_cm_arg, &data_ptr, ds->pre_cm, ds->width, 1, 0);
         }
-        return (*dev_proc(ds->dev, get_bits))(ds->dev, row, out_data, NULL);
+        return 0;
     }
 
     /* Get factor rows worth of data */
     y        = row * ds->factor;
     y_end    = y + ds->factor;
-    data_ptr = ds->data;
-    if (ds->claptrap)
-    {
+    data_ptr = ds->pre_cm[0];
+    if (ds->claptrap) {
         do {
             code = ClapTrap_GetLine(ds->claptrap, data_ptr);
             if (code < 0)
@@ -2101,9 +2140,7 @@ int gx_downscaler_getbits(gx_downscaler_t *ds,
             data_ptr += ds->span;
             y++;
         } while (y < y_end);
-    }
-    else
-    {
+    } else {
         do {
             code = (*dev_proc(ds->dev, get_bits))(ds->dev, y, data_ptr, NULL);
             if (code < 0)
@@ -2113,19 +2150,21 @@ int gx_downscaler_getbits(gx_downscaler_t *ds,
         } while (y < y_end);
     }
 
-    if (ds->early_cm && ds->apply_cm)
-    {
-        byte *data = ds->data;
-        code = ds->apply_cm(ds->apply_cm_arg, &data, ds->dev->width, 1, 0);
-    }
-    
-    (ds->down_core)(ds, out_data, ds->data, row, 0, ds->span);
-
-    if (ds->early_cm && ds->apply_cm)
-    {
-        byte *data = ds->data;
-        code = ds->apply_cm(ds->apply_cm_arg, &data, ds->width, 1, 0);
-    }
+    if (ds->apply_cm) {
+        if (ds->early_cm) {
+            code = ds->apply_cm(ds->apply_cm_arg, ds->post_cm, ds->pre_cm, ds->dev->width, 1, 0);
+            if (code < 0)
+                return code;
+            (ds->down_core)(ds, out_data, ds->post_cm[0], row, 0, ds->span);
+        } else {
+            data_ptr = out_data;
+            (ds->down_core)(ds, ds->post_cm[0], ds->pre_cm[0], row, 0, ds->span);
+            code = ds->apply_cm(ds->apply_cm_arg, &out_data, ds->post_cm, ds->width, 1, 0);
+            if (code < 0)
+                return code;
+        }
+    } else
+        (ds->down_core)(ds, out_data, ds->pre_cm[0], row, 0, ds->span);
 
     return code;
 }
@@ -2143,17 +2182,15 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     int                   upfactor, downfactor;
     int                   subrow;
     int                   copy = (ds->dev->width * ds->src_bpc + 7)>>3;
+    int                   i, j;
 
     decode_factor(factor, &upfactor, &downfactor);
 
     subrow = row % upfactor;
-    if (subrow)
-    {
+    if (subrow) {
         /* Just copy a previous row from our stored buffer */
         for (plane=0; plane < ds->num_planes; plane++)
-        {
             params->data[plane] = ds->scaled_data + (upfactor * plane + subrow) * ds->scaled_span;
-        }
         return 0;
     }
 
@@ -2164,30 +2201,46 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
 
     /* Check for the simple case */
     if (ds->down_core == NULL && ds->claptrap == NULL) {
-        /* If we're going to be applying color management to the returned
-         * data, we can't be working on the original data. */
-        if (ds->apply_cm)
-            params->options &= ~GB_RETURN_POINTER;
+        gs_get_bits_params_t saved;
+        if (ds->apply_cm) {
+            /* Always do the request giving our own workspace,
+             * and be prepared to accept a pointer */
+            saved = *params;
+            for (i = 0; i < ds->num_planes; i++)
+                params->data[i] = ds->pre_cm[i];
+            params->options |= GB_RETURN_POINTER;
+        }
         code = (*dev_proc(ds->dev, get_bits_rectangle))(ds->dev, &rect, params, NULL);
         if (code < 0)
             return code;
-        if (ds->apply_cm)
-            code = ds->apply_cm(ds->apply_cm_arg, params->data, ds->dev->width, rect.q.y - rect.p.y, params->raster);
+        if (ds->apply_cm) {
+            byte **buffer;
+            if (saved.options & GB_RETURN_COPY) {
+                /* They will accept a copy. Let's use the buffer they supplied */
+                params->options &= ~GB_RETURN_POINTER;
+                buffer = saved.data;
+            } else
+                buffer = ds->pre_cm;
+            code = ds->apply_cm(ds->apply_cm_arg, params->data, buffer, ds->dev->width, rect.q.y - rect.p.y, params->raster);
+            if ((saved.options & GB_RETURN_COPY) == 0)
+                for (i = 0; i < ds->num_planes; i++)
+                    params->data[i] = buffer[i];
+        }
         return code;
     }
 
     /* Copy the params, because get_bits_rectangle can helpfully overwrite
      * them. */
     memcpy(&params2, &ds->params, sizeof(params2));
+    for (i = 0; i < ds->num_planes; i++)
+         params2.data[i] = ds->pre_cm[i];
 
     /* Get downfactor rows worth of data */
     if (ds->claptrap)
         code = gs_error_rangecheck; /* Always work a line at a time with claptrap */
     else
         code = (*dev_proc(ds->dev, get_bits_rectangle))(ds->dev, &rect, &params2, NULL);
-    if (code == gs_error_rangecheck)
-    {
-        int i, j;
+    if (code == gs_error_rangecheck) {
         /* At the bottom of a band, the get_bits_rectangle call can fail to be
          * able to return us enough lines of data at the same time. We therefore
          * drop back to reading them one at a time, and copying them into our
@@ -2197,101 +2250,66 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
             if (rect.q.y > ds->dev->height)
                 break;
             memcpy(&params2, &ds->params, sizeof(params2));
-            if (ds->claptrap)
-            {
+            for (j = 0; j < ds->num_planes; j++)
+                params2.data[j] = ds->pre_cm[j] + i * ds->span;
+            if (ds->claptrap) {
                 ds->claptrap_params = &params2;
                 code = ClapTrap_GetLinePlanar(ds->claptrap, &params2.data[0]);
-            }
-            else
+            } else {
+                /* We always want a copy */
+                params2.options &= ~GB_RETURN_POINTER;
+                params2.options |=  GB_RETURN_COPY;
                 code = (*dev_proc(ds->dev, get_bits_rectangle))(ds->dev, &rect, &params2, NULL);
+            }
             if (code < 0)
                 break;
-            for (j = 0; j < ds->num_planes; j++) {
-                memcpy(ds->params.data[j] + i*ds->span, params2.data[j], copy);
-            }
             rect.p.y++;
         }
         if (i == 0)
             return code;
         /* If we still haven't got enough, we've hit the end of the page; just
          * duplicate the last line we did get. */
-        for (;i < downfactor; i++) {
-            for (j = 0; j < ds->num_planes; j++) {
-                memcpy(ds->params.data[j] + i*ds->span, ds->params.data[j] + (i-1)*ds->span, copy);
-            }
-        }
-        for (j = 0; j < ds->num_planes; j++) {
-            params2.data[j] = ds->params.data[j];
-        }
+        for (;i < downfactor; i++)
+            for (j = 0; j < ds->num_planes; j++)
+                memcpy(ds->pre_cm[j] + i*ds->span, ds->pre_cm[j] + (i-1)*ds->span, copy);
     }
     if (code < 0)
         return code;
 
-    if (ds->early_cm && ds->apply_cm)
-    {
-        if (ds->apply_cm)
-            code = ds->apply_cm(ds->apply_cm_arg, ds->params.data, ds->dev->width, downfactor, params->raster);
+    if (ds->early_cm && ds->apply_cm) {
+        code = ds->apply_cm(ds->apply_cm_arg, ds->params.data, ds->post_cm, ds->dev->width, downfactor, params->raster);
         if (code < 0)
             return code;
+        for (j = 0; j < ds->num_planes; j++)
+            params2.data[j] = ds->post_cm[j];
     }
 
-    if (upfactor > 1)
-    {
+    if (upfactor > 1) {
         /* Downscale the block of lines into our output buffer */
-        for (plane=0; plane < ds->num_planes; plane++)
-        {
+        for (plane=0; plane < ds->num_planes; plane++) {
             byte *scaled = ds->scaled_data + upfactor * plane * ds->scaled_span;
             (ds->down_core)(ds, scaled, params2.data[plane], row, plane, params2.raster);
             params->data[plane] = scaled;
         }
-    }
-    else if (ds->down_core != NULL)
-    {
+    } else if (ds->down_core != NULL) {
         /* Downscale direct into output buffer */
         for (plane=0; plane < ds->num_planes; plane++)
-        {
             (ds->down_core)(ds, params->data[plane], params2.data[plane], row, plane, params2.raster);
-        }
-    }
-    else
-    {
+    } else {
         /* Copy into output buffer */
         /* No color management can be required here */
         assert(!ds->early_cm || ds->apply_cm == NULL);
         for (plane=0; plane < ds->num_planes; plane++)
-        {
             memcpy(params->data[plane], params2.data[plane], params2.raster);
-        }
     }
 
-    if (!ds->early_cm && ds->apply_cm)
-    {
-        if (ds->apply_cm)
-            code = ds->apply_cm(ds->apply_cm_arg, ds->params.data, ds->width, 1, params->raster);
+    if (!ds->early_cm && ds->apply_cm) {
+        code = ds->apply_cm(ds->apply_cm_arg, ds->params.data, params2.data, ds->width, 1, params->raster);
         if (code < 0)
             return code;
     }
 
     return code;
-}
-
-int
-gx_downscaler_copy_scan_lines(gx_downscaler_t *ds, int y,
-                              byte * str, uint size)
-{
-    uint line_size = gx_device_raster(ds->dev, 0);
-    int count = size / line_size;
-    int i;
-    int height = ds->dev->height/ds->factor;
-    byte *dest = str;
-
-    count = min(count, height - y);
-    for (i = 0; i < count; i++, dest += line_size) {
-        int code = gx_downscaler_getbits(ds, dest, y+i);
-        if (code < 0)
-            return code;
-    }
-    return count;
 }
 
 typedef struct downscaler_process_page_arg_s

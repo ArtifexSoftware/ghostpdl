@@ -674,7 +674,7 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
     {
         /* Write the contents of the image. */
         for (y = 0; y < height; y++) {
-            gx_downscaler_copy_scan_lines(&ds, y, row, raster);
+            gx_downscaler_getbits(&ds, row, y);
             png_write_rows(png_ptr, &row, 1);
         }
         gx_downscaler_fin(&ds);

@@ -28,7 +28,8 @@
 #include "scommon.h"
 #include "stream.h"
 #include "strmio.h"
-
+#include "gsicc_cache.h"
+#include "gscms.h"
 #include "gstiffio.h"
 #include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 
@@ -75,6 +76,12 @@ tiff_close(gx_device * pdev)
     if (tfdev->tif)
         TIFFCleanup(tfdev->tif);
 
+    if (tfdev->icclink != NULL)
+    {
+        tfdev->icclink->procs.free_link(tfdev->icclink);
+        gsicc_free_link_dev(pdev->memory, tfdev->icclink);
+        tfdev->icclink = NULL;
+    }
     return gdev_prn_close(pdev);
 }
 
@@ -276,12 +283,46 @@ int gdev_tiff_begin_page(gx_device_tiff *tfdev,
                          FILE *file)
 {
     gx_device_printer *const pdev = (gx_device_printer *)tfdev;
+    cmm_dev_profile_t *profile_struct;
+    gsicc_rendering_param_t rendering_params;
+    int code;
 
     if (gdev_prn_file_is_new(pdev)) {
         /* open the TIFF device */
         tfdev->tif = tiff_from_filep(pdev, pdev->dname, file, tfdev->BigEndian, tfdev->UseBigTIFF);
         if (!tfdev->tif)
             return_error(gs_error_invalidfileaccess);
+        /* Set up the icc link settings at this time */
+        code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
+        if (code < 0)
+            return_error(gs_error_undefined);
+        if (profile_struct->postren_profile != NULL) {
+            rendering_params.black_point_comp = gsBLACKPTCOMP_ON;
+            rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;
+            rendering_params.override_icc = false;
+            rendering_params.preserve_black = gsBLACKPRESERVE_OFF;
+            rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
+            rendering_params.cmm = gsCMM_DEFAULT;
+            if (profile_struct->oi_profile != NULL) {
+                tfdev->icclink = gsicc_alloc_link_dev(pdev->memory,
+                    profile_struct->oi_profile, profile_struct->postren_profile,
+                    &rendering_params);
+            } else if (profile_struct->link_profile != NULL) {
+                tfdev->icclink = gsicc_alloc_link_dev(pdev->memory,
+                    profile_struct->link_profile, profile_struct->postren_profile,
+                    &rendering_params);
+            } else {
+                tfdev->icclink = gsicc_alloc_link_dev(pdev->memory,
+                    profile_struct->device_profile[0], profile_struct->postren_profile,
+                    &rendering_params);
+            }
+            /* If it is identity, release it now and set link to NULL */
+            if (tfdev->icclink->is_identity) {
+                tfdev->icclink->procs.free_link(tfdev->icclink);
+                gsicc_free_link_dev(pdev->memory, tfdev->icclink);
+                tfdev->icclink = NULL;
+            }
+        }
     }
 
     return tiff_set_fields_for_printer(pdev, tfdev->tif, tfdev->downscale.downscale_factor,
@@ -365,13 +406,20 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
        NOT set the profile if the bit depth is less than 8 or if fast color
        was used. */
     if (pdev->color_info.depth >= 8) {
-        if (pdev->icc_struct != NULL && pdev->icc_struct->device_profile[0] != NULL) {
-            cmm_profile_t *icc_profile = pdev->icc_struct->device_profile[0];
-            if (icc_profile->num_comps == pdev->color_info.num_components &&
-                icc_profile->data_cs != gsCIELAB && !(pdev->icc_struct->usefastcolor)) {
-                TIFFSetField(tif, TIFFTAG_ICCPROFILE, icc_profile->buffer_size, 
-                             icc_profile->buffer);
-            }
+        /* Select from one of three profiles.. */
+        cmm_profile_t *icc_profile;
+
+        if (pdev->icc_struct->postren_profile != NULL)
+            icc_profile = pdev->icc_struct->postren_profile;
+        else if (pdev->icc_struct->oi_profile != NULL)
+            icc_profile = pdev->icc_struct->oi_profile;
+        else
+            icc_profile = pdev->icc_struct->device_profile[0];
+
+        if (icc_profile->num_comps == pdev->color_info.num_components &&
+            icc_profile->data_cs != gsCIELAB && !(pdev->icc_struct->usefastcolor)) {
+            TIFFSetField(tif, TIFFTAG_ICCPROFILE, icc_profile->buffer_size,
+                icc_profile->buffer);
         }
     }
     return 0;
@@ -442,6 +490,26 @@ cleanup:
     return code;
 }
 
+/* void gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan,
+    unsigned char bytes_per_chan, bool has_alpha, bool alpha_first,
+    bool is_planar, int plane_stride, int row_stride, int num_rows,
+    int pixels_per_row); */
+
+static int tiff_chunky_post_cm(void  *arg, byte **dst, byte **src, int w, int h,
+    int raster)
+{
+    gsicc_bufferdesc_t input_buffer_desc, output_buffer_desc;
+    gsicc_link_t *icclink = (gsicc_link_t*)arg;
+
+    gsicc_init_buffer(&input_buffer_desc, icclink->num_input, 1, false,
+        false, false, 0, raster, h, w);
+    gsicc_init_buffer(&output_buffer_desc, icclink->num_output, 1, false,
+        false, false, 0, raster, h, w);
+    icclink->procs.map_buffer(NULL, icclink, &input_buffer_desc, &output_buffer_desc,
+        src[0], dst[0]);
+    return 0;
+}
+
 /* Special version, called with 8 bit grey input to be downsampled to 1bpp
  * output. */
 int
@@ -449,6 +517,7 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
                               int mfs, int aw, int bpc, int num_comps,
                               int trap_w, int trap_h, const int *trap_order)
 {
+    gx_device_tiff *const tfdev = (gx_device_tiff *)dev;
     int code = 0;
     byte *data = NULL;
     int size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
@@ -462,11 +531,23 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
         return code;
 
     if (num_comps == 4) {
-        code = gx_downscaler_init_trapped(&ds, (gx_device *)dev, 8, bpc, num_comps,
-                                          factor, mfs, &fax_adjusted_width, aw, trap_w, trap_h, trap_order);
+        if (tfdev->icclink == NULL) {
+            code = gx_downscaler_init_trapped(&ds, (gx_device *)dev, 8, bpc, num_comps,
+                factor, mfs, &fax_adjusted_width, aw, trap_w, trap_h, trap_order);
+        } else {
+            code = gx_downscaler_init_trapped_cm(&ds, (gx_device *)dev, 8, bpc, num_comps,
+                factor, mfs, &fax_adjusted_width, aw, trap_w, trap_h, trap_order,
+                tiff_chunky_post_cm, tfdev->icclink, tfdev->icclink->num_output);
+        }
     } else {
-        code = gx_downscaler_init(&ds, (gx_device *)dev, 8, bpc, num_comps,
-                                  factor, mfs, &fax_adjusted_width, aw);
+        if (tfdev->icclink == NULL) {
+            code = gx_downscaler_init(&ds, (gx_device *)dev, 8, bpc, num_comps,
+                factor, mfs, &fax_adjusted_width, aw);
+        } else {
+            code = gx_downscaler_init_cm(&ds, (gx_device *)dev, 8, bpc, num_comps,
+                factor, mfs, &fax_adjusted_width, aw, tiff_chunky_post_cm, tfdev->icclink,
+                tfdev->icclink->num_output);
+        }
     }
     if (code < 0)
         return code;
@@ -478,7 +559,7 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
     }
 
     for (row = 0; row < height && code >= 0; row++) {
-        code = gx_downscaler_copy_scan_lines(&ds, row, data, size);
+        code = gx_downscaler_getbits(&ds, data, row);
         if (code < 0)
             break;
 
