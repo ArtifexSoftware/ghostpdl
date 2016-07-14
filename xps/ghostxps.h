@@ -75,6 +75,8 @@
 #include "gsicc_cache.h"
 #include "gxpcolor.h"
 
+#include "gxdevsop.h"       /* For special ops */
+
 #include "xpsfapi.h"
 
 #ifndef MIN
