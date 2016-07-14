@@ -165,7 +165,7 @@ DEBUGSYM=0
 !if $(TDEBUG)!=0
 # /Fd designates the directory for the .pdb file.
 # Note that it must be followed by a space.
-CT=/Od /Fd$(GLOBJDIR) $(NULL) $(CDCC) $(CPCH)
+CT=/Od /Fd$(GLOBJDIR)\ $(NULL) $(CDCC) $(CPCH)
 LCT=/DEBUG /INCREMENTAL:YES
 COMPILE_FULL_OPTIMIZED=    # no optimization when debugging
 COMPILE_WITH_FRAMES=    # no optimization when debugging
@@ -178,7 +178,7 @@ LCT=
 CMT=/MT
 !else
 # Assume that DEBUGSYM != 0 implies a PROFILE build
-CT=/Zi /Fd$(GLOBJDIR) $(NULL)
+CT=/Zi /Fd$(GLOBJDIR)\ $(NULL)
 LCT=/DEBUG /PROFILE
 CMT=/MTd
 !endif
