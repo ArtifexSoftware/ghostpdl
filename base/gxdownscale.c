@@ -18,6 +18,7 @@
 #include "gserrors.h"
 #include "string_.h"
 #include "gdevprn.h"
+#include "assert_.h"
 
 /* Error diffusion data is stored in errors block.
  * We have 1 empty entry at each end to avoid overflow. When
@@ -1671,6 +1672,26 @@ int gx_downscaler_init_planar_trapped(gx_downscaler_t      *ds,
                                       int                   trap_h,
                                       const int            *comp_order)
 {
+    return gx_downscaler_init_planar_trapped_cm(ds, dev, params, num_comps,
+                                                factor, mfs, src_bpc, dst_bpc,
+                                                trap_w, trap_h, comp_order,
+                                                NULL, NULL);
+}
+
+int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
+                                      gx_device            *dev,
+                                      gs_get_bits_params_t *params,
+                                      int                   num_comps,
+                                      int                   factor,
+                                      int                   mfs,
+                                      int                   src_bpc,
+                                      int                   dst_bpc,
+                                      int                   trap_w,
+                                      int                   trap_h,
+                                      const int            *comp_order,
+                                      gx_downscale_cm_fn   *apply_cm,
+                                      void                 *apply_cm_arg)
+{
     int                span = bitmap_raster(dev->width * src_bpc);
     int                width;
     int                code;
@@ -1681,7 +1702,7 @@ int gx_downscaler_init_planar_trapped(gx_downscaler_t      *ds,
     decode_factor(factor, &upfactor, &downfactor);
 
     /* width = scaled width */
-    width = (dev->width*upfactor)/downfactor;
+    width = (dev->width*upfactor + downfactor-1)/downfactor;
     memset(ds, 0, sizeof(*ds));
     ds->dev         = dev;
     ds->width       = width;
@@ -1692,6 +1713,9 @@ int gx_downscaler_init_planar_trapped(gx_downscaler_t      *ds,
     ds->src_bpc     = src_bpc;
     ds->scaled_data = NULL;
     ds->scaled_span = bitmap_raster((dst_bpc*dev->width*upfactor + downfactor-1)/downfactor);
+    ds->apply_cm    = apply_cm;
+    ds->apply_cm_arg= apply_cm_arg;
+    ds->early_cm    = dst_bpc != 8;
 
     code = check_trapping(dev->memory, trap_w, trap_h, num_comps, comp_order);
     if (code < 0)
@@ -1823,8 +1847,8 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
                        int              (*adjust_width_proc)(int, int),
                        int                adjust_width)
 {
-    return gx_downscaler_init_trapped(ds, dev, src_bpc, dst_bpc, num_comps,
-        factor, mfs, adjust_width_proc, adjust_width, 0, 0, NULL);
+    return gx_downscaler_init_trapped_cm(ds, dev, src_bpc, dst_bpc, num_comps,
+        factor, mfs, adjust_width_proc, adjust_width, 0, 0, NULL, NULL, NULL);
 }
 
 int gx_downscaler_init_trapped(gx_downscaler_t   *ds,
@@ -1840,6 +1864,47 @@ int gx_downscaler_init_trapped(gx_downscaler_t   *ds,
                                int                trap_h,
                                const int         *comp_order)
 {
+    return gx_downscaler_init_trapped_cm(ds, dev, src_bpc, dst_bpc,
+                                         num_comps, factor, mfs,
+                                         adjust_width_proc, adjust_width,
+                                         trap_w, trap_h, comp_order,
+                                         NULL, NULL);
+}
+
+int gx_downscaler_init_cm(gx_downscaler_t    *ds,
+                          gx_device          *dev,
+                          int                 src_bpc,
+                          int                 dst_bpc,
+                          int                 num_comps,
+                          int                 factor,
+                          int                 mfs,
+                          int               (*adjust_width_proc)(int, int),
+                          int                 adjust_width,
+                          gx_downscale_cm_fn *apply_cm,
+                          void               *apply_cm_arg)
+{
+    return gx_downscaler_init_trapped_cm(ds, dev, src_bpc, dst_bpc,
+                                         num_comps, factor, mfs,
+                                         adjust_width_proc, adjust_width,
+                                         0, 0, NULL,
+                                         apply_cm, apply_cm_arg);
+}
+
+int gx_downscaler_init_trapped_cm(gx_downscaler_t    *ds,
+                                  gx_device          *dev,
+                                  int                 src_bpc,
+                                  int                 dst_bpc,
+                                  int                 num_comps,
+                                  int                 factor,
+                                  int                 mfs,
+                                  int               (*adjust_width_proc)(int, int),
+                                  int                 adjust_width,
+                                  int                 trap_w,
+                                  int                  trap_h,
+                                  const int          *comp_order,
+                                  gx_downscale_cm_fn *apply_cm,
+                                  void               *apply_cm_arg)
+{
     int                size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
     int                span;
     int                width;
@@ -1853,7 +1918,7 @@ int gx_downscaler_init_trapped(gx_downscaler_t   *ds,
     decode_factor(factor, &upfactor, &downfactor);
 
     /* width = scaled width */
-    width = (dev->width*upfactor)/downfactor;
+    width = (dev->width * upfactor + downfactor-1)/downfactor;
     awidth = width;
     if (adjust_width_proc != NULL)
         awidth = (*adjust_width_proc)(width, adjust_width);
@@ -1864,13 +1929,16 @@ int gx_downscaler_init_trapped(gx_downscaler_t   *ds,
     /* size = unscaled size. span = unscaled size + padding */
     span = size + pad_white*downfactor*num_comps/upfactor + downfactor-1;
     memset(ds, 0, sizeof(*ds));
-    ds->dev        = dev;
-    ds->width      = width;
-    ds->awidth     = awidth;
-    ds->span       = span;
-    ds->factor     = factor;
-    ds->num_planes = 0;
-    ds->src_bpc    = src_bpc;
+    ds->dev          = dev;
+    ds->width        = width;
+    ds->awidth       = awidth;
+    ds->span         = span;
+    ds->factor       = factor;
+    ds->num_planes   = 0;
+    ds->src_bpc      = src_bpc;
+    ds->apply_cm     = apply_cm;
+    ds->apply_cm_arg = apply_cm_arg;
+    ds->early_cm     = dst_bpc != 8;
 
     code = check_trapping(dev->memory, trap_w, trap_h, num_comps, comp_order);
     if (code < 0)
@@ -2044,12 +2112,25 @@ int gx_downscaler_getbits(gx_downscaler_t *ds,
             y++;
         } while (y < y_end);
     }
+
+    if (ds->early_cm && ds->apply_cm)
+    {
+        byte *data = ds->data;
+        code = ds->apply_cm(ds->apply_cm_arg, &data, ds->dev->width, 1, 0);
+    }
     
     (ds->down_core)(ds, out_data, ds->data, row, 0, ds->span);
+
+    if (ds->early_cm && ds->apply_cm)
+    {
+        byte *data = ds->data;
+        code = ds->apply_cm(ds->apply_cm_arg, &data, ds->width, 1, 0);
+    }
 
     return code;
 }
 
+/* Planar case */
 int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
                                      gs_get_bits_params_t *params,
                                      int                   row)
@@ -2083,12 +2164,22 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
 
     /* Check for the simple case */
     if (ds->down_core == NULL && ds->claptrap == NULL) {
-        return (*dev_proc(ds->dev, get_bits_rectangle))(ds->dev, &rect, params, NULL);
+        /* If we're going to be applying color management to the returned
+         * data, we can't be working on the original data. */
+        if (ds->apply_cm)
+            params->options &= ~GB_RETURN_POINTER;
+        code = (*dev_proc(ds->dev, get_bits_rectangle))(ds->dev, &rect, params, NULL);
+        if (code < 0)
+            return code;
+        if (ds->apply_cm)
+            code = ds->apply_cm(ds->apply_cm_arg, params->data, ds->dev->width, rect.q.y - rect.p.y, params->raster);
+        return code;
     }
 
     /* Copy the params, because get_bits_rectangle can helpfully overwrite
      * them. */
     memcpy(&params2, &ds->params, sizeof(params2));
+
     /* Get downfactor rows worth of data */
     if (ds->claptrap)
         code = gs_error_rangecheck; /* Always work a line at a time with claptrap */
@@ -2136,6 +2227,14 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     if (code < 0)
         return code;
 
+    if (ds->early_cm && ds->apply_cm)
+    {
+        if (ds->apply_cm)
+            code = ds->apply_cm(ds->apply_cm_arg, ds->params.data, ds->dev->width, downfactor, params->raster);
+        if (code < 0)
+            return code;
+    }
+
     if (upfactor > 1)
     {
         /* Downscale the block of lines into our output buffer */
@@ -2157,10 +2256,20 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     else
     {
         /* Copy into output buffer */
+        /* No color management can be required here */
+        assert(!ds->early_cm || ds->apply_cm == NULL);
         for (plane=0; plane < ds->num_planes; plane++)
         {
             memcpy(params->data[plane], params2.data[plane], params2.raster);
         }
+    }
+
+    if (!ds->early_cm && ds->apply_cm)
+    {
+        if (ds->apply_cm)
+            code = ds->apply_cm(ds->apply_cm_arg, ds->params.data, ds->width, 1, params->raster);
+        if (code < 0)
+            return code;
     }
 
     return code;
