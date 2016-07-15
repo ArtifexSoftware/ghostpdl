@@ -451,13 +451,19 @@ accum_fill_rectangle(gx_device * dev, int xi, int yi, int w, int h,
                      gx_color_index color)
 {
     gx_device_cpath_accum * const adev = (gx_device_cpath_accum *)dev;
-    int x = adev->list.transpose ? yi : xi;
-    int y = adev->list.transpose ? xi : yi;
-    int xe = x + w, ye = y + h;
+    int x, y, xe, ye;
     gx_clip_rect *nr;
     gx_clip_rect *ar;
     register gx_clip_rect *rptr;
     int ymin, ymax;
+
+    if (adev->list.transpose) {
+        x = yi, xe = yi + h;
+        y = xi, ye = xi + w;
+    } else {
+        x = xi, xe = x + w;
+        y = yi, ye = y + h;
+    }
 
     /* Clip the rectangle being added. */
     if (y < adev->clip_box.p.y)

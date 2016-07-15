@@ -246,13 +246,6 @@ clip_enumerate_rest(gx_device_clip * rdev,
                   stats_clip.no_x);
     }
 #endif
-    if (rdev->list.transpose) {
-        pccd->x = y, pccd->y = x;
-        pccd->w = ye - y, pccd->h = xe - x;
-    } else {
-        pccd->x = x, pccd->y = y;
-        pccd->w = xe - x, pccd->h = ye - y;
-    }
     /*
      * Warp the cursor forward or backward to the first rectangle row
      * that could include a given y value.  Assumes rptr is set, and
@@ -357,25 +350,23 @@ clip_enumerate(gx_device_clip * rdev, int x, int y, int w, int h,
     xe = x + w;
     y += rdev->translation.y;
     ye = y + h;
+    /* pccd is non-transposed */
+    pccd->x = x, pccd->y = y;
+    pccd->w = w, pccd->h = h;
+    /* transpose x, y, xe, ye for clip checking */
     if (rdev->list.transpose) {
-        int tmp;
-
-        tmp = x;
-        x = y;
-        y = tmp;
-        tmp = xe;
-        xe = ye;
-        ye = tmp;
+        x = pccd->y;
+        y = pccd->x;
+        xe = x + h;
+        ye = y + w;
     }
     /* Check for the region being entirely within the current rectangle. */
     if (y >= rptr->ymin && ye <= rptr->ymax &&
         x >= rptr->xmin && xe <= rptr->xmax
         ) {
         if (rdev->list.transpose) {
-            pccd->x = y, pccd->y = x, pccd->w = h, pccd->h = w;
             return INCR_THEN(in, process(pccd, y, x, ye, xe));
         } else {
-            pccd->x = x, pccd->y = y, pccd->w = w, pccd->h = h;
             return INCR_THEN(in, process(pccd, x, y, xe, ye));
         }
     }
@@ -445,7 +436,10 @@ clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
         INCR(in_y);
         if (x >= rptr->xmin && xe <= rptr->xmax) {
             INCR(in);
-            return dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color);
+            if (rdev->list.transpose)
+                return dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color);
+            else
+                return dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color);
         }
         else if ((rptr->prev == 0 || rptr->prev->ymax != rptr->ymax) &&
                  (rptr->next == 0 || rptr->next->ymax != rptr->ymax)
@@ -455,15 +449,17 @@ clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                 x = rptr->xmin;
             if (xe > rptr->xmax)
                 xe = rptr->xmax;
-            return
-                (x >= xe ? 0 :
-                 dev_proc(tdev, fill_rectangle)(tdev, x, y, xe - x, h, color));
+            if (x >= xe)
+                 return 0;
+            if (rdev->list.transpose)
+                return dev_proc(tdev, fill_rectangle)(tdev, y, x, h, xe - x, color);
+            else
+                return dev_proc(tdev, fill_rectangle)(tdev, x, y, xe - x, h, color);
         }
     }
     ccdata.tdev = tdev;
     ccdata.color[0] = color;
-    return clip_enumerate_rest(rdev, x, y, xe, ye,
-                               clip_call_fill_rectangle, &ccdata);
+    return clip_enumerate_rest(rdev, x, y, xe, ye, clip_call_fill_rectangle, &ccdata);
 }
 
 int
@@ -523,10 +519,17 @@ clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         INCR(in_y);
         if (x >= rptr->xmin && xe <= rptr->xmax) {
             INCR(in);
-            newrect.p.x = int2fixed(x);
-            newrect.p.y = int2fixed(y);
-            newrect.q.x = int2fixed(x + w);
-            newrect.q.y = int2fixed(y + h);
+            if (rdev->list.transpose) {
+                newrect.p.x = int2fixed(y);
+                newrect.p.y = int2fixed(x);
+                newrect.q.x = int2fixed(y + h);
+                newrect.q.y = int2fixed(x + w);
+            } else {
+                newrect.p.x = int2fixed(x);
+                newrect.p.y = int2fixed(y);
+                newrect.q.x = int2fixed(x + w);
+                newrect.q.y = int2fixed(y + h);
+            }
             return dev_proc(tdev, fill_rectangle_hl_color)(tdev, &newrect, pgs,
                                                            pdcolor, pcpath);
         }
@@ -541,10 +544,17 @@ clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
             if (x >= xe)
                 return 0;
             else {
-                newrect.p.x = int2fixed(x);
-                newrect.p.y = int2fixed(y);
-                newrect.q.x = int2fixed(xe);
-                newrect.q.y = int2fixed(y + h);
+                if (rdev->list.transpose) {
+                    newrect.p.x = int2fixed(y);
+                    newrect.p.y = int2fixed(x);
+                    newrect.q.x = int2fixed(y+h);
+                    newrect.q.y = int2fixed(xe);
+                } else {
+                    newrect.p.x = int2fixed(x);
+                    newrect.p.y = int2fixed(y);
+                    newrect.q.x = int2fixed(xe);
+                    newrect.q.y = int2fixed(y + h);
+                }
                 return dev_proc(tdev, fill_rectangle_hl_color)(tdev, &newrect, pgs,
                                                                pdcolor, pcpath);
             }
@@ -586,12 +596,26 @@ clip_copy_mono(gx_device * dev,
     xe = x + w;
     y += rdev->translation.y;
     ye = y + h;
+    /* ccdata is non-transposed */
+    ccdata.x = x, ccdata.y = y;
+    ccdata.w = w, ccdata.h = h;
+    /* transpose x, y, xe, ye for clip checking */
+    if (rdev->list.transpose) {
+        x = ccdata.y;
+        y = ccdata.x;
+        xe = x + h;
+        ye = y + w;
+    }
     if (y >= rptr->ymin && ye <= rptr->ymax) {
         INCR(in_y);
         if (x >= rptr->xmin && xe <= rptr->xmax) {
             INCR(in);
-            return dev_proc(tdev, copy_mono)
-                (tdev, data, sourcex, raster, id, x, y, w, h, color0, color1);
+            if (rdev->list.transpose)
+                return dev_proc(tdev, copy_mono)
+                    (tdev, data, sourcex, raster, id, y, x, h, w, color0, color1);
+            else
+                return dev_proc(tdev, copy_mono)
+                    (tdev, data, sourcex, raster, id, x, y, w, h, color0, color1);
         }
     }
     ccdata.tdev = tdev;
@@ -628,12 +652,26 @@ clip_copy_planes(gx_device * dev,
     xe = x + w;
     y += rdev->translation.y;
     ye = y + h;
+    /* ccdata is non-transposed */
+    ccdata.x = x, ccdata.y = y;
+    ccdata.w = w, ccdata.h = h;
+    /* transpose x, y, xe, ye for clip checking */
+    if (rdev->list.transpose) {
+        x = ccdata.y;
+        y = ccdata.x;
+        xe = x + h;
+        ye = y + w;
+    }
     if (y >= rptr->ymin && ye <= rptr->ymax) {
         INCR(in_y);
         if (x >= rptr->xmin && xe <= rptr->xmax) {
             INCR(in);
-            return dev_proc(tdev, copy_planes)
-                (tdev, data, sourcex, raster, id, x, y, w, h, plane_height);
+            if (rdev->list.transpose)
+                return dev_proc(tdev, copy_planes)
+                    (tdev, data, sourcex, raster, id, y, x, h, w, plane_height);
+            else
+                return dev_proc(tdev, copy_planes)
+                    (tdev, data, sourcex, raster, id, x, y, w, h, plane_height);
         }
     }
     ccdata.tdev = tdev;
