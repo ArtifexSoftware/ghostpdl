@@ -26,6 +26,7 @@
 #include "gxdevice.h"
 #include "gxpath.h"
 #include "gdevvec.h"
+#include "gdevmrop.h"
 #include "strimpl.h"
 #include "srlx.h"
 #include "jpeglib_.h"
@@ -1917,7 +1918,7 @@ pclxl_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
 {
   /* Improvements possible here using PXL ROP3
      for some combinations of args; use gx_default for now */
-  if (!rop3_uses_D(lop)) /* gx_default() cannot cope with D ops */
+    if (!rop3_uses_D(gs_transparent_rop(lop))) /* gx_default() cannot cope with D ops */
     return gx_default_strip_copy_rop(dev, sdata, sourcex,
                                      sraster, id,
                                      scolors,
