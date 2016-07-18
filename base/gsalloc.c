@@ -1947,7 +1947,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
         }
         while (1);
 
-#ifdef CONSOLIDATE_BEFORE_ADDING_clump
+#ifdef CONSOLIDATE_BEFORE_ADDING_CLUMP
         if (!allocate_success) {
             /*
              * Try consolidating free space before giving up.
