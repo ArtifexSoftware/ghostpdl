@@ -255,6 +255,7 @@ typedef struct clump_locator_s {
     clump_t *cp;		/* one-element cache */
 } clump_locator_t;
 bool clump_locate_ptr(const void *, clump_locator_t *);
+bool ptr_is_within_mem_clumps(const void *ptr, gs_ref_memory_t *mem);
 
 #define clump_locate(ptr, clp)\
   (((clp)->cp != 0 && ptr_is_in_clump(ptr, (clp)->cp)) ||\

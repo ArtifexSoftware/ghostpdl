@@ -2616,6 +2616,29 @@ clump_locate_ptr(const void *ptr, clump_locator_t * clp)
     return false;
 }
 
+bool ptr_is_within_mem_clumps(const void *ptr, gs_ref_memory_t *mem)
+{
+    clump_t *cp = mem->root;
+
+    while (cp)
+    {
+        if (PTR_LT(ptr, cp->cbase))
+        {
+            cp = cp->left;
+            continue;
+        }
+        if (PTR_GE(ptr, cp->cend))
+        {
+            cp = cp->right;
+            continue;
+        }
+        /* Found it! */
+        splay_move_to_root(cp, mem);
+        return true;
+    }
+    return false;
+}
+
 /* ------ Debugging ------ */
 
 #ifdef DEBUG

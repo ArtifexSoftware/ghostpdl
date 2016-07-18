@@ -621,8 +621,7 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
     /* since the save (including any carried-over inner clumps). */
 
     const char *const ptr = (const char *)vptr;
-    register const gs_ref_memory_t *mem = save->space_local;
-    clump_splay_walker sw;
+    register gs_ref_memory_t *mem = save->space_local;
 
     if_debug2m('U', (gs_memory_t *)mem, "[U]is_since_save 0x%lx, 0x%lx:\n",
                (ulong) ptr, (ulong) save);
@@ -633,18 +632,14 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
     /* Check against clumps allocated since the save. */
     /* (There may have been intermediate saves as well.) */
     for (;; mem = &mem->saved->state) {
-        const clump_t *cp;
-
         if_debug1m('U', (gs_memory_t *)mem, "[U]checking mem=0x%lx\n", (ulong) mem);
-        for (cp = clump_splay_walk_init(&sw, mem); cp != 0; cp = clump_splay_walk_fwd(&sw)) {
-            if (ptr_is_within_clump(ptr, cp)) {
-                if_debug3m('U', (gs_memory_t *)mem, "[U+]in new clump 0x%lx: 0x%lx, 0x%lx\n",
-                           (ulong) cp,
-                           (ulong) cp->cbase, (ulong) cp->cend);
-                return true;
-            }
-            if_debug1m('U', (gs_memory_t *)mem, "[U-]not in 0x%lx\n", (ulong) cp);
+        if (ptr_is_within_mem_clumps(ptr, mem)) {
+            if_debug3m('U', (gs_memory_t *)mem, "[U+]in new clump 0x%lx: 0x%lx, 0x%lx\n",
+                       (ulong) cp,
+                       (ulong) cp->cbase, (ulong) cp->cend);
+            return true;
         }
+        if_debug1m('U', (gs_memory_t *)mem, "[U-]not in any chunks belonging to 0x%lx\n", (ulong) mem);
         if (mem->saved == save) {	/* We've checked all the more recent saves, */
             /* must be OK. */
             break;
@@ -662,15 +657,12 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
         (mem = save->space_global) != save->space_local &&
         save->space_global->num_contexts == 1
         ) {
-        const clump_t *cp;
-
         if_debug1m('U', (gs_memory_t *)mem, "[U]checking global mem=0x%lx\n", (ulong) mem);
-        for (cp = clump_splay_walk_init(&sw, mem); cp != 0; cp = clump_splay_walk_fwd(&sw))
-            if (ptr_is_within_clump(ptr, cp)) {
-                if_debug3m('U', (gs_memory_t *)mem, "[U+]  new clump 0x%lx: 0x%lx, 0x%lx\n",
-                           (ulong) cp, (ulong) cp->cbase, (ulong) cp->cend);
-                return true;
-            }
+        if (ptr_is_within_mem_clumps(ptr, mem)) {
+            if_debug3m('U', (gs_memory_t *)mem, "[U+]  new clump 0x%lx: 0x%lx, 0x%lx\n",
+                       (ulong) cp, (ulong) cp->cbase, (ulong) cp->cend);
+            return true;
+        }
     }
     return false;
 
