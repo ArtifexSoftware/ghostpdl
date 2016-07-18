@@ -1786,7 +1786,7 @@ static int get_unicode(textw_text_enum_t *penum, gs_font *font, gs_glyph glyph, 
         length = font->procs.decode_glyph((gs_font *)font, glyph, ch, unicode, length);
         memcpy(Buffer, unicode, length);
         gs_free_object(penum->dev->memory, unicode, "free temporary unicode buffer");
-        return length * sizeof(short);
+        return length / sizeof(short);
     }
 }
 
