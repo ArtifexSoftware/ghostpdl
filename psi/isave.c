@@ -634,9 +634,7 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
     for (;; mem = &mem->saved->state) {
         if_debug1m('U', (gs_memory_t *)mem, "[U]checking mem=0x%lx\n", (ulong) mem);
         if (ptr_is_within_mem_clumps(ptr, mem)) {
-            if_debug3m('U', (gs_memory_t *)mem, "[U+]in new clump 0x%lx: 0x%lx, 0x%lx\n",
-                       (ulong) cp,
-                       (ulong) cp->cbase, (ulong) cp->cend);
+            if_debug0m('U', (gs_memory_t *)mem, "[U+]found\n");
             return true;
         }
         if_debug1m('U', (gs_memory_t *)mem, "[U-]not in any chunks belonging to 0x%lx\n", (ulong) mem);
@@ -659,8 +657,7 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
         ) {
         if_debug1m('U', (gs_memory_t *)mem, "[U]checking global mem=0x%lx\n", (ulong) mem);
         if (ptr_is_within_mem_clumps(ptr, mem)) {
-            if_debug3m('U', (gs_memory_t *)mem, "[U+]  new clump 0x%lx: 0x%lx, 0x%lx\n",
-                       (ulong) cp, (ulong) cp->cbase, (ulong) cp->cend);
+            if_debug0m('U', (gs_memory_t *)mem, "[U+]  found\n");
             return true;
         }
     }
