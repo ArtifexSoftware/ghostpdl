@@ -2020,7 +2020,7 @@ if test x$enable_threadsafe = xyes; then
   NTS_EXCLUDES=`echo "$NTS_EXCLUDES" | tr " " "\n" | sort | uniq | tr "\n" " "`
 fi # x$enable_threadsafe = xyes
 
-noncontribmakefiles=`find $srcdir -name '*.mak' -print | grep -v '^\./contrib/'`
+noncontribmakefiles=`find $srcdir -name '*.mak' -print | grep -v '/contrib/'`
 
 # No need to include opvp/oprp driver without iconv/libiconv.
 if test -n "$P_DEVS0"; then
