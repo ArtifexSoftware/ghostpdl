@@ -184,7 +184,7 @@ struct gs_fapi_font_s
                                            byte *buf, ushort buf_length);
     int (*get_glyphdirectory_data) (gs_fapi_font *ff, int char_code,
                                     const byte **ptr);
-    int (*get_glyphname_or_cid) (gs_font_base *pbfont,
+    int (*get_glyphname_or_cid) (gs_text_enum_t *penum, gs_font_base *pbfont,
                                  gs_string *charstring, gs_string *name,
                                  int ccode, gs_string *enc_char_name,
                                  char *font_file_path, gs_fapi_char_ref *cr,

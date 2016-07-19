@@ -65,7 +65,7 @@ static ulong
 pl_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index);
 
 static int
-pl_fapi_get_cid(gs_font_base * pbfont, gs_string * charstring,
+pl_fapi_get_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charstring,
                 gs_string * name, int ccode, gs_string * enc_char_name,
                 char *font_file_path, gs_fapi_char_ref * cr, bool bCID);
 
@@ -146,7 +146,7 @@ pl_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index)
 }
 
 static int
-pl_fapi_get_cid(gs_font_base * pbfont, gs_string * charstring,
+pl_fapi_get_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_string * charstring,
                 gs_string * name, int ccode, gs_string * enc_char_name,
                 char *font_file_path, gs_fapi_char_ref * cr, bool bCID)
 {
@@ -157,6 +157,7 @@ pl_fapi_get_cid(gs_font_base * pbfont, gs_string * charstring,
     (void)enc_char_name;
     (void)font_file_path;
     (void)bCID;
+    (void)penum;
 
     if (plfont->allow_vertical_substitutes) {
         vertical = pl_font_vertical_glyph(ccode, plfont);

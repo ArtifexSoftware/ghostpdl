@@ -227,6 +227,7 @@ gs_text_enum_copy_dynamic(gs_text_enum_t *pto, const gs_text_enum_t *pfrom,
 
     pto->current_font = pfrom->current_font;
     pto->index = pfrom->index;
+    pto->bytes_decoded = pfrom->bytes_decoded;
     pto->xy_index = pfrom->xy_index;
     pto->fstack.depth = depth;
     pto->FontBBox_as_Metrics2 = pfrom->FontBBox_as_Metrics2;

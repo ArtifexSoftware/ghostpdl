@@ -1322,7 +1322,8 @@ ps_fapi_get_metrics(gs_fapi_font *ff, gs_string *char_name, int cid,
 
 
 /* forward declaration for the ps_ff_stub assignment */
-static int ps_get_glyphname_or_cid(gs_font_base *pbfont,
+static int ps_get_glyphname_or_cid(gs_text_enum_t *penum,
+                                   gs_font_base *pbfont,
                                    gs_string *charstring, gs_string *name,
                                    int ccode, gs_string *enc_char_name,
                                    char *font_file_path,
@@ -1809,7 +1810,8 @@ find_substring(const byte *where, int length, const char *what)
 }
 
 static int
-ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
+ps_get_glyphname_or_cid(gs_text_enum_t *penum,
+                        gs_font_base *pbfont, gs_string *charstring,
                         gs_string *name, int ccode,
                         gs_string *enc_char_name, char *font_file_path,
                         gs_fapi_char_ref *cr, bool bCID)
@@ -1825,9 +1827,35 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
         ((pbfont->FontType == ft_encrypted
           || pbfont->FontType == ft_encrypted2) && font_file_path == NULL);
     i_ctx_t *i_ctx_p = (i_ctx_t *) I->client_ctx_p;
+    bool unicode_cp = false;
 
     /* Obtain the character name : */
     if (bCID) {
+        if (pbfont->FontType == ft_CID_TrueType && font_file_path) {
+            ref *pdr2, *fidr, *dummy;
+            pdr2 = pfont_dict(gs_rootfont(igs));
+            if (dict_find_string(pdr2, "FontInfo", &fidr) &&
+                dict_find_string(fidr, "GlyphNames2Unicode", &dummy))
+            {
+                unsigned char uc[4] = {0};
+                unsigned int cc = 0;
+                int i, l;
+                byte *c = (byte *)&penum->text.data.bytes[penum->index - penum->bytes_decoded];
+
+                for (i = 0; i < penum->bytes_decoded ; i++) {
+                  cc |= c[i] << ((penum->bytes_decoded - 1) - i) * 8;
+                }
+                l = ((gs_font_base *)gs_rootfont(igs))->procs.decode_glyph(gs_rootfont(igs), cc + GS_MIN_CID_GLYPH, ccode, (unsigned short *)uc, sizeof(uc));
+                if (l > 0 && l < sizeof(uc)) {
+                    cc = 0;
+                    for (i = 0; i < l; i++) {
+                        cc |= uc[i] << ((penum->bytes_decoded - 1) - i) * 8;
+                    }
+                    ccode = cc;
+                    unicode_cp = true;
+                }
+            }
+        }
         client_char_code = ccode;
         make_null(&char_name);
         enc_char_name->data = NULL;
@@ -1877,7 +1905,7 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
     cr->char_codes_count = 1;
     if (bCID) {
         if (font_file_path != NULL) {
-            ref *Decoding, *TT_cmap, *SubstNWP;
+            ref *Decoding, *TT_cmap = NULL, *SubstNWP;
             ref src_type, dst_type;
             uint c = 0;
 
@@ -1949,7 +1977,7 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                 }
                 /* We only have to lookup the char code if we're *not* using an identity ordering 
                    with the exception of Identity-UTF16 which is a different beast altogether */
-                if ((cmapnmlen > 0 && !strncmp(cmapnm, utfcmap, cmapnmlen > utfcmaplen ? utfcmaplen : cmapnmlen))
+                if (unicode_cp || (cmapnmlen > 0 && !strncmp(cmapnm, utfcmap, cmapnmlen > utfcmaplen ? utfcmaplen : cmapnmlen))
                     || (dict_find_string(pdr, "CIDSystemInfo", &CIDSystemInfo) >= 0
                     && r_has_type(CIDSystemInfo, t_dictionary)
                     && dict_find_string(CIDSystemInfo, "Ordering",
@@ -1974,6 +2002,13 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                         c = client_char_code;
                     }
                 }
+            }
+            if (pbfont->FontType == ft_CID_TrueType && c == 0 && TT_cmap) {
+                ref cc32;
+                ref *gid;
+                make_int(&cc32, 32);
+                if (dict_find(TT_cmap, &cc32, &gid) >= 0)
+                    c = gid->value.intval;
             }
             cr->char_codes[0] = c;
             cr->is_glyph_index = is_glyph_index;

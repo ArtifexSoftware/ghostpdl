@@ -1391,7 +1391,7 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
 
     if (I->ff.get_glyphname_or_cid) {
         if ((code =
-             I->ff.get_glyphname_or_cid(pbfont, charstring, glyphname, index,
+             I->ff.get_glyphname_or_cid(penum, pbfont, charstring, glyphname, index,
                                         &enc_char_name_string, font_file_path,
                                         &cr, bCID)) < 0)
             return (code);

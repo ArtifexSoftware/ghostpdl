@@ -582,103 +582,147 @@ currentdict end readonly def
   } if
 } bind def
 
+/.DoToUnicode?
+{
+  /IgnoreToUnicode where
+  {/IgnoreToUnicode get not}
+  {//true} ifelse
+} bind def
+
 /.processToUnicode   % <font-resource> <font-dict> <encoding|null> .processToUnicode -
 {
-  % Currently pdfwrite is only device which can handle GlyphNames2Unicoide to
-  % generate a ToUnicode CMaps. So don't bother with other devices.
-  /WantsToUnicode /GetDeviceParam .special_op {
-      exch pop
-  }{
-      //false
-  }ifelse
+  //.DoToUnicode? exec
   {
-    PDFDEBUG {
-      (.processToUnicode beg) =
-    } if
-    2 index /ToUnicode knownoget {
-      dup type /dicttype eq { dup /File known not } { //true } ifelse {
-        % We undefine wrong /Length and define /File in stream dictionaries.
-        % Bug687351.pdf defines /ToUnicode /Identity-H, what is incorrect.
-        (   **** Warning: Ignoring bad ToUnicode CMap.\n)  pdfformatwarning
-        pop
-      } {
-        /PDFScanRules .getuserparam dup //null eq {
-          pop //PDFScanRules_null
-        } {
-          1 dict dup /PDFScanRules 4 -1 roll put
-        } ifelse
-        //PDFScanRules_true setuserparams
-        PDFfile fileposition 
-        3 -1 roll
-        count 1 sub
-        countdictstack
-        { //false resolvestream
-          % Following Acrobat we ignore everything outside
-          %   begincodespacerange .. endcmap.
-          dup 0 (begincodespacerange) /SubFileDecode filter flushfile
-          /CIDInit /ProcSet findresource begin
-          //ToUnicodeCMapReader begin
-          12 dict begin
-          /CMapType 2 def
-          mark exch % emulate 'begincodespacerange'
-          0 (endcmap) /SubFileDecode filter cvx /begincmap cvx exch 2 .execn
-          endcmap
-          userdict /.lastToUnicode currentdict put
-          end end end
-        }
-
-        PDFSTOPONERROR {
-          { exec } 0 get
-          //false
-          5 -2 roll
-          5
-        } {
-          { stopped } 0 get
-          4 2 roll
-          4
-        } ifelse
-        array astore cvx exec
-
-        countdictstack exch sub 0 .max { end } repeat
-        count exch sub 2 sub 0 .max { exch pop } repeat
-        3 1 roll                     % Stach the stop flag.
-        PDFfile exch setfileposition
-        setuserparams
+    currentdict count 1 sub /.stackdepth exch .forceput
+    currentdict countdictstack /.dstackdepth exch .forceput
+    {
+      1 index /FontType get 0 eq
+      {
+        1 index /FDepVector get 0 get
+        dup /FontType .knownget not
         {
-          (   **** Warning: Failed to read ToUnicode CMap.\n)  pdfformatwarning
-        } {
-          1 index /FontInfo .knownget not {
-            currentglobal 2 index dup gcheck setglobal
-            /FontInfo 5 dict dup 5 1 roll .forceput
-            setglobal
-          } if
-          dup /GlyphNames2Unicode .knownget not {
-            //true			    % No existing G2U, make one
+          dup /CIDFontType .knownget
+          { dup 2 eq {pop 11} if }
+          {-1} % just some value that's not a valid font type
+          ifelse
+        }if
+        11 eq
+        { /Path known}
+       {pop //false}
+        ifelse
+      }
+      {//false} ifelse
+      % Currently pdfwrite is only device which can handle GlyphNames2Unicoide to
+      % generate a ToUnicode CMaps. So don't bother with other devices.
+      /WantsToUnicode /GetDeviceParam .special_op {
+        exch pop
+      }{
+        //false
+      }ifelse
+      or
+      {
+        PDFDEBUG {
+          (.processToUnicode beg) =
+        } if
+        2 index /ToUnicode knownoget {
+          dup type /dicttype eq { dup /File known not } { //true } ifelse {
+            % We undefine wrong /Length and define /File in stream dictionaries.
+            % Bug687351.pdf defines /ToUnicode /Identity-H, what is incorrect.
+            (   **** Warning: Ignoring bad ToUnicode CMap.\n)  pdfformatwarning
+            pop
           } {
-            dup wcheck {
-              //false			    % Existing, writeable G2U, don't make new one
+            /PDFScanRules .getuserparam dup //null eq {
+              pop //PDFScanRules_null
             } {
-              pop //true			    % Existing read only G2U, make new one
+              1 dict dup /PDFScanRules 4 -1 roll put
+            } ifelse
+            //PDFScanRules_true setuserparams
+            PDFfile fileposition
+            3 -1 roll
+            count 1 sub
+            countdictstack
+            { //false resolvestream
+              % Following Acrobat we ignore everything outside
+              %   begincodespacerange .. endcmap.
+              dup 0 (begincodespacerange) /SubFileDecode filter flushfile
+              /CIDInit /ProcSet findresource begin
+              //ToUnicodeCMapReader begin
+              12 dict begin
+              /CMapType 2 def
+              mark exch % emulate 'begincodespacerange'
+              0 (endcmap) /SubFileDecode filter cvx /begincmap cvx exch 2 .execn
+              endcmap
+              userdict /.lastToUnicode currentdict put
+              end end end
+            }
+
+            PDFSTOPONERROR {
+              { exec } 0 get
+              //false
+              5 -2 roll
+              5
+            } {
+              { stopped } 0 get
+              4 2 roll
+              4
+            } ifelse
+            array astore cvx exec
+
+            countdictstack exch sub 0 .max { end } repeat
+            count exch sub 2 sub 0 .max { exch pop } repeat
+            3 1 roll                     % Stach the stop flag.
+            PDFfile exch setfileposition
+            setuserparams
+            {
+              (   **** Warning: Failed to read ToUnicode CMap.\n)  pdfformatwarning
+            } {
+              1 index /FontInfo .knownget not {
+                currentglobal 2 index dup gcheck setglobal
+                /FontInfo 5 dict dup 5 1 roll .forceput
+                setglobal
+              } if
+              dup /GlyphNames2Unicode .knownget not {
+                //true                        % No existing G2U, make one
+              } {
+                dup wcheck {
+                  //false                     % Existing, writeable G2U, don't make new one
+                } {
+                  pop //true                          % Existing read only G2U, make new one
+                } ifelse
+              } ifelse
+              {
+                currentglobal exch dup gcheck setglobal
+                dup /GlyphNames2Unicode 100 dict dup 4 1 roll .forceput
+                3 2 roll setglobal
+              } if                                 % font-res font-dict encoding|null font-info g2u
+              exch pop exch                        % font-res font-dict g2u encoding|null
+              userdict /.lastToUnicode get         % font-res font-dict g2u Encoding|null CMap
+              .convert_ToUnicode-into-g2u          % font-res font-dict
+              //null                               % font-res font-dict null
             } ifelse
           } ifelse
-          {
-            currentglobal exch dup gcheck setglobal
-            dup /GlyphNames2Unicode 100 dict dup 4 1 roll .forceput
-            3 2 roll setglobal
-          } if                                 % font-res font-dict encoding|null font-info g2u
-          exch pop exch                        % font-res font-dict g2u encoding|null
-          userdict /.lastToUnicode get         % font-res font-dict g2u Encoding|null CMap
-          .convert_ToUnicode-into-g2u          % font-res font-dict
-          //null                               % font-res font-dict null
-        } ifelse
-      } ifelse
+        } if
+        PDFDEBUG {
+          (.processToUnicode end) =
+        } if
+      } if
+    } stopped
+    {
+      .dstackdepth 1 countdictstack 1 sub
+      {pop end} for
+      .stackdepth 1 count 3 sub
+      {pop pop} for
     } if
-    PDFDEBUG {
-      (.processToUnicode end) =
-    } if
-  } if
-  pop pop pop
+    pop pop pop
+    currentdict /.stackdepth .forceundef
+    currentdict /.dstackdepth .forceundef
+  }
+  {pop pop pop}
+  ifelse
+
 } bind def
+
+currentdict /.DoToUnicode? .forceundef
 
 % ---------------- Descriptors ---------------- %
 
@@ -1445,6 +1489,7 @@ currentdict /CMap_read_dict undef
                     % Stack: fontres name font
   3 copy exch pop //null .processToUnicode
   exch pop .completefont % Stack: fontres font
+
   1 index /FontMatrix knownoget {
     dup aload pop //true {0 0 1 0 0 1} {3 -1 roll eq and} forall {
       1 index exch makefont exch /FontName get exch
