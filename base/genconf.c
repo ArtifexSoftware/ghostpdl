@@ -242,7 +242,7 @@
 
 #define MAX_STR 120
 
-static const char const * empty_str = "";
+static const char * const empty_str = "";
 
 #if DEBUG_GENCONF_MEMORY
 static long long int mem_alloc_count = 0;
