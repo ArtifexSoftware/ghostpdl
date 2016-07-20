@@ -156,7 +156,7 @@ zreadhexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start, int odd)
     }
     nread = cw.ptr + 1 - str;
     if (status != EOFC) {	/* Error */
-        nread |= odd_byte << 24;
+        nread |= ((uchar)odd_byte) << 24;
         return handle_read_status(i_ctx_p, status, op - 1, &nread,
                                   zreadhexstring_continue);
     }
@@ -185,7 +185,7 @@ zreadhexstring_continue(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     length = op->value.intval & 0xFFFFFF;
-    odd = (char)(op->value.intval >> 24);
+    odd = (schar)(op->value.intval >> 24);
 
     if (length > r_size(op - 1) || odd < -1 || odd > 0xF)
         return_error(gs_error_rangecheck);

@@ -259,6 +259,9 @@ typedef unsigned short ushort;
 typedef unsigned int uint;
 typedef unsigned long ulong;
 
+/* And for signed char */
+typedef signed char schar;
+
 /* Since sys/types.h may define one or more of these (depending on
  * the platform), we have to take steps to prevent name clashes.
  * Unfortunately this can clobber valid definitions for the size-
@@ -273,12 +276,14 @@ typedef unsigned long ulong;
 #define uint uint_
 #define ushort ushort_
 #define ulong ulong_
+#define schar schar_
 #include <sys/types.h>
 #undef bool
 #undef uchar
 #undef uint
 #undef ushort
 #undef ulong
+#undef schar
 
 /*
  * Define a Boolean type.  Even though we would like it to be
