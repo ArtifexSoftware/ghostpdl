@@ -294,6 +294,7 @@ static int inline sample_store_next12(uint value, byte **dptr, int *dbit, int db
             *(*dptr)++ = (byte)(value >> 4), *dbbyte = (byte)(value << 4);
         else
           *(*dptr) = *dbbyte | (byte)(value >> 8), (*dptr)[1] = (byte)value, *dptr += 2;
+        break;
     case 2:
         *(*dptr)++ = (byte)value;
         break;
