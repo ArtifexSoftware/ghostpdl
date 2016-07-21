@@ -108,16 +108,17 @@ pdfdict begin
            (   **** Warning: Encoding is an array, not name or dictionary.\n)  pdfformatwarning
          }
          { dup /BaseEncoding knownoget
-             { dup / eq
-                 { pop
-                   (   **** Error: Invalid BaseEncoding name, ignoring BaseEncoding.\n)  pdfformaterror
-                   (               Output may be incorrect.\n) pdfformaterror
-                   % as found in a PDF file from J.D.Edwards OneWorld (B7333), bug 687786
-                 }
-                 { findencoding 3 -1 roll pop exch }
-               ifelse
-             }
-           if
+             {
+               %% Originally we ignored the specific invalid name '/' here from Bug #687786, however
+               %% Bug #696942 contains an invalid BaseEncoding '/utf-8', so now we check all BaseEncoding
+               %% against the permitted names, just as we do for Encodings.
+               //good_encoding_names 1 index known{
+                 findencoding 3 -1 roll pop exch
+               }{
+                 (   **** Error: Invalid BaseEncoding name ") print 256 string cvs print (" ignoring BaseEncoding.\n)  pdfformaterror
+                 (               Output may be incorrect.\n) pdfformaterror
+               }ifelse
+             } if
            /Differences knownoget { updateencoding } if
          }
          ifelse
