@@ -51,6 +51,36 @@ HWND hwndforeground;    /* our best guess for our console window handle */
 
 char start_string[] = "systemdict /start get exec\n";
 
+#ifndef NDEBUG
+static void windows_debug_out(const char *str, int len)
+{
+    char buf[4096];
+    int n;
+
+    /* Stupid windows only lets us have a way to print
+     * null terminated strings. This means we need to
+     * perform all sorts of operations on the data
+     * we get in. */
+    while (len)
+    {
+        const char *p = str;
+        const char *q;
+        /* Skip leading 0's */
+        while (len > 0 && *p == 0)
+            p++, len--;
+        /* Copy a run of as many non-zeros as we can into the buffer
+         * without overflowing it. */
+        for (n = 0, q = p; n < sizeof(buf)-1 && *p != 0; p++, n++)
+            buf[n] = *p;
+        /* NULL terminate the buffer */
+        buf[n] = 0;
+        /* And output it */
+        len -= n;
+        OutputDebugStringA(buf);
+    }
+}
+#endif
+
 /*********************************************************************/
 /* stdio functions */
 
@@ -63,6 +93,9 @@ gsdll_stdin(void *instance, char *buf, int len)
 static int GSDLLCALL
 gsdll_stdout(void *instance, const char *str, int len)
 {
+#ifndef NDEBUG
+    windows_debug_out(str, len);
+#endif
     fwrite(str, 1, len, stdout);
     fflush(stdout);
     return len;
@@ -71,6 +104,9 @@ gsdll_stdout(void *instance, const char *str, int len)
 static int GSDLLCALL
 gsdll_stderr(void *instance, const char *str, int len)
 {
+#ifndef NDEBUG
+    windows_debug_out(str, len);
+#endif
     fwrite(str, 1, len, stderr);
     fflush(stderr);
     return len;
@@ -237,6 +273,10 @@ gsdll_stdout_utf8(void *instance, const char *utf8str, int bytelen)
     static WCHAR thiswchar = 0; /* accumulates the bits from multiple encoding bytes */
     static int nmore = 0;       /* expected number of additional encoding bytes */
 
+#ifndef NDEBUG
+    windows_debug_out(utf8str, bytelen);
+#endif
+
     gsdll_utf8write(stdout, utf8str, bytelen, &thiswchar, &nmore);
     return bytelen;
 }
@@ -246,6 +286,10 @@ gsdll_stderr_utf8(void *instance, const char *utf8str, int bytelen)
 {
     static WCHAR thiswchar = 0; /* accumulates the bits from multiple encoding bytes */
     static int nmore = 0;       /* expected number of additional encoding bytes */
+
+#ifndef NDEBUG
+    windows_debug_out(utf8str, bytelen);
+#endif
 
     gsdll_utf8write(stderr, utf8str, bytelen, &thiswchar, &nmore);
     return bytelen;
