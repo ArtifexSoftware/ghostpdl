@@ -79,7 +79,7 @@ static const font_resident_t resident_table[] = {
 #define EXBOLD          (4)
     
     {
-        fontnames("Courier", "CourierMT", "NimbusMono-Reg"),
+        fontnames("Courier", "CourierMT", "NimbusMono-Regular"),
         {'C', 'o', 'u', 'r', 'i', 'e', 'r', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
          ' ', ' '},
         {0, 0, {600.0, 720000.0 / 600.0}, 0, REGULAR, NOBOLD, 4099, 0},
@@ -87,7 +87,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("CGTimes", "CGTimes", "NimbusRomanNo4-Lig"),
+        fontnames("CGTimes", "CGTimes", "NimbusRomanNo4-Regular"),
         {'C', 'G', ' ', 'T', 'i', 'm', 'e', 's', ' ', ' ', ' ', ' ', ' ', ' ',
          ' ', ' '},
         {0, 1, {295.0, 720000.0 / 295.0}, 0, REGULAR, NOBOLD, 4101, 1},
@@ -95,7 +95,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("CGTimesBold", "CGTimes-Bold", "NimbusRomanNo4-Bol"),
+        fontnames("CGTimesBold", "CGTimes-Bold", "NimbusRomanNo4-Bold"),
         {'C', 'G', ' ', 'T', 'i', 'm', 'e', 's', ' ', ' ', ' ', ' ', ' ', ' ',
          'B', 'd'},
         {0, 1, {295.0, 720000.0 / 295.0}, 0, REGULAR, BOLD, 4101, 2},
@@ -103,7 +103,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("CGTimesItalic", "CGTimes-Italic", "NimbusRomanNo4-LigIta"),
+        fontnames("CGTimesItalic", "CGTimes-Italic", "NimbusRomanNo4-Italic"),
         {'C', 'G', ' ', 'T', 'i', 'm', 'e', 's', ' ', ' ', ' ', ' ', ' ', ' ',
          'I', 't'},
         {0, 1, {295.0, 720000.0 / 295.0}, 0, ITALIC, NOBOLD, 4101, 3},
@@ -111,7 +111,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("CGTimesBoldItalic", "CGTimes-BoldItalic",
-                  "NimbusRomanNo4-BolIta"),
+                  "NimbusRomanNo4-BoldItalic"),
         {'C', 'G', ' ', 'T', 'i', 'm', 'e', 's', ' ', ' ', ' ', ' ', 'B', 'd',
          'I', 't'},
         {0, 1, {295.0, 720000.0 / 295.0}, 0, ITALIC, BOLD, 4101, 4},
@@ -119,7 +119,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("CGOmega", "CGOmega", "URWClassico-Reg"),
+        fontnames("CGOmega", "CGOmega", "URWClassico-Regular"),
         {'C', 'G', ' ', 'O', 'm', 'e', 'g', 'a', ' ', ' ', ' ', ' ', ' ', ' ',
          ' ', ' '},
         {0, 1, {276.0, 720000.0 / 276.0}, 0, REGULAR, NOBOLD, 4113, 5},
@@ -127,7 +127,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("CGOmegaBold", "CGOmega-Bold", "URWClassico-Bol"),
+        fontnames("CGOmegaBold", "CGOmega-Bold", "URWClassico-Bold"),
         {'C', 'G', ' ', 'O', 'm', 'e', 'g', 'a', ' ', ' ', ' ', ' ', ' ', ' ',
          'B', 'd'},
         {0, 1, {276.0, 720000.0 / 276.0}, 0, REGULAR, BOLD, 4113, 6},
@@ -135,7 +135,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("CGOmegaItalic", "CGOmega-Italic", "URWClassico-Ita"),
+        fontnames("CGOmegaItalic", "CGOmega-Italic", "URWClassico-Italic"),
         {'C', 'G', ' ', 'O', 'm', 'e', 'g', 'a', ' ', ' ', ' ', ' ', ' ', ' ',
          'I', 't'},
         {0, 1, {276.0, 720000.0 / 276.0}, 0, ITALIC, NOBOLD, 4113, 7},
@@ -144,7 +144,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("CGOmegaBoldItalic", "CGOmega-BoldItalic",
-                  "URWClassico-BolIta"),
+                  "URWClassico-BoldItalic"),
         {'C', 'G', ' ', 'O', 'm', 'e', 'g', 'a', ' ', ' ', ' ', ' ', 'B', 'd',
          'I', 't'},
         {0, 1, {276.0, 720000.0 / 276.0}, 0, ITALIC, BOLD, 4113, 8},
@@ -152,7 +152,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Coronet", "Coronet", "Coronet"),
+        fontnames("Coronet", "Coronet", "C093-Regular"),
         {'C', 'o', 'r', 'o', 'n', 'e', 't', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
          ' ', ' '},
         {0, 1, {203.0, 720000.0 / 203.0}, 0, ITALIC, NOBOLD, 4116, 9},
@@ -161,7 +161,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("ClarendonCondensedBold", "Clarendon-Condensed-Bold",
-                  "ClarendonURW-BolCon"),
+                  "C011Condensed-Bold"),
         {'C', 'l', 'a', 'r', 'e', 'n', 'd', 'o', 'n', ' ', ' ', ' ', 'C', 'd',
          'B', 'd'},
         {0, 1, {221.0, 720000.0 / 221.0}, 0, CONDENSED, BOLD, 4140, 10},
@@ -169,7 +169,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("UniversMedium", "Univers-Medium", "U001-Reg"),
+        fontnames("UniversMedium", "Univers-Medium", "URWClassicSans-Regular"),
         {'U', 'n', 'i', 'v', 'e', 'r', 's', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
          'M', 'd'},
         {0, 1, {332.0, 720000.0 / 332.0}, 0, REGULAR, NOBOLD, 4148, 11},
@@ -177,7 +177,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("UniversBold", "Univers-Bold", "U001-Bol"),
+        fontnames("UniversBold", "Univers-Bold", "URWClassicSans-Bold"),
         {'U', 'n', 'i', 'v', 'e', 'r', 's', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
          'B', 'd'},
         {0, 1, {332.0, 720000.0 / 332.0}, 0, REGULAR, BOLD, 4148, 12},
@@ -185,7 +185,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("UniversMediumItalic", "Univers-MediumItalic", "U001-Ita"),
+        fontnames("UniversMediumItalic", "Univers-MediumItalic", "URWClassicSans-RegularItalic"),
         {'U', 'n', 'i', 'v', 'e', 'r', 's', ' ', ' ', ' ', ' ', ' ', 'M', 'd',
          'I', 't'},
         {0, 1, {332.0, 720000.0 / 332.0}, 0, ITALIC, NOBOLD, 4148, 13},
@@ -193,7 +193,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("UniversBoldItalic", "Univers-BoldItalic", "U001-BolIta"),
+        fontnames("UniversBoldItalic", "Univers-BoldItalic", "URWClassicSans-BoldItalic"),
         {'U', 'n', 'i', 'v', 'e', 'r', 's', ' ', ' ', ' ', ' ', ' ', 'B', 'd',
          'I', 't'},
         {0, 1, {332.0, 720000.0 / 332.0}, 0, ITALIC, BOLD, 4148, 14},
@@ -202,7 +202,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("UniversCondensedMedium", "Univers-Condensed-Medium",
-                  "U001Con-Reg"),
+                  "URWClassicSansCond-Regular"),
         {'U', 'n', 'i', 'v', 'e', 'r', 's', ' ', ' ', ' ', ' ', ' ', 'C', 'd',
          'M', 'd'},
         {0, 1, {221.0, 720000.0 / 221.0}, 0, CONDENSED, NOBOLD, 4148, 15},
@@ -211,7 +211,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("UniversCondensedBold", "Univers-Condensed-Bold",
-                  "U001Con-Bol"),
+                  "URWClassicSansCond-Bold"),
         {'U', 'n', 'i', 'v', 'e', 'r', 's', ' ', ' ', ' ', ' ', ' ', 'C', 'd',
          'B', 'd'},
         {0, 1, {221.0, 720000.0 / 221.0}, 0, CONDENSED, BOLD, 4148, 16},
@@ -220,7 +220,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("UniversCondensedMediumItalic",
-                  "Univers-Condensed-MediumItalic", "U001Con-Ita"),
+                  "Univers-Condensed-MediumItalic", "URWClassicSansCond-Italic"),
         {'U', 'n', 'i', 'v', 'e', 'r', 's', ' ', ' ', ' ', 'C', 'd', 'M', 'd',
          'I', 't'},
         {0, 1, {221.0, 720000.0 / 221.0}, 0, CONDENSEDITALIC, NOBOLD, 4148, 17},
@@ -229,7 +229,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("UniversCondensedBoldItalic", "Univers-Condensed-BoldItalic",
-                  "U001Con-BolIta"),
+                  "URWClassicSansCond-BoldItalic"),
         {'U', 'n', 'i', 'v', 'e', 'r', 's', ' ', ' ', ' ', 'C', 'd', 'B', 'd',
          'I', 't'},
         {0, 1, {221.0, 720000.0 / 221.0}, 0, CONDENSEDITALIC, BOLD, 4148, 18},
@@ -237,7 +237,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("AntiqueOlive", "AntiqueOlive", "AntiqueOlive-Reg"),
+        fontnames("AntiqueOlive", "AntiqueOlive", "AntiqueOlive-Regular"),
         {'A', 'n', 't', 'i', 'q', 'O', 'l', 'i', 'v', 'e', ' ', ' ', ' ', ' ',
          ' ', ' '},
         {0, 1, {295.0, 720000.0 / 295.0}, 0, REGULAR, NOBOLD, 4168, 19},
@@ -245,7 +245,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("AntiqueOliveBold", "AntiqueOlive-Bold", "AntiqueOlive-Bol"),
+        fontnames("AntiqueOliveBold", "AntiqueOlive-Bold", "AntiqueOlive-Bold"),
         {'A', 'n', 't', 'i', 'q', 'O', 'l', 'i', 'v', 'e', ' ', ' ', ' ', ' ',
          'B', 'd'},
         {0, 1, {332.0, 720000.0 / 332.0}, 0, REGULAR, BOLD, 4168, 20},
@@ -254,7 +254,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("AntiqueOliveItalic", "AntiqueOlive-Italic",
-                  "AntiqueOlive-Ita"),
+                  "AntiqueOlive-Italic"),
         {'A', 'n', 't', 'i', 'q', 'O', 'l', 'i', 'v', 'e', ' ', ' ', ' ', ' ',
          'I', 't'},
         {0, 1, {294.0, 720000.0 / 294.0}, 0, ITALIC, NOBOLD, 4168, 21},
@@ -262,7 +262,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("GaramondAntiqua", "Garamond-Antiqua", "GaramondNo8-Reg"),
+        fontnames("GaramondAntiqua", "Garamond-Antiqua", "Garamond-Antiqua"),
         {'G', 'a', 'r', 'a', 'm', 'o', 'n', 'd', ' ', 'A', 'n', 't', 'i', 'q',
          'u', 'a'},
         {0, 1, {258.0, 720000.0 / 258.0}, 0, REGULAR, NOBOLD, 4197, 22},
@@ -270,7 +270,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("GaramondHalbfett", "Garamond-Halbfett", "GaramondNo8-Med"),
+        fontnames("GaramondHalbfett", "Garamond-Halbfett", "Garamond-Halbfett"),
         {'G', 'a', 'r', 'a', 'm', 'o', 'n', 'd', ' ', ' ', ' ', ' ', ' ', 'H',
          'l', 'b'},
         {0, 1, {276.0, 720000.0 / 276.0}, 0, REGULAR, BOLD, 4197, 23},
@@ -278,7 +278,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("GaramondKursiv", "Garamond-Kursiv", "GaramondNo8-Ita"),
+        fontnames("GaramondKursiv", "Garamond-Kursiv", "Garamond-Kursiv"),
         {'G', 'a', 'r', 'a', 'm', 'o', 'n', 'd', ' ', ' ', ' ', ' ', 'K', 'r',
          's', 'v'},
         {0, 1, {240.0, 720000.0 / 240.0}, 0, ITALIC, NOBOLD, 4197, 24},
@@ -287,7 +287,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("GaramondKursivHalbfett", "Garamond-KursivHalbfett",
-                  "GaramondNo8-MedIta"),
+                  "Garamond-KursivHalbfett"),
         {'G', 'a', 'r', 'a', 'm', 'o', 'n', 'd', ' ', 'K', 'r', 's', 'v', 'H',
          'l', 'b'},
         {0, 1, {258.0, 720000.0 / 258.0}, 0, ITALIC, BOLD, 4197, 25},
@@ -295,7 +295,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Marigold", "Marigold", "Mauritius-Reg"),
+        fontnames("Marigold", "Marigold", "Mauritius-Regular"),
         {'M', 'a', 'r', 'i', 'g', 'o', 'l', 'd', ' ', ' ', ' ', ' ', ' ', ' ',
          ' ', ' '},
         {0, 1, {221.0, 720000.0 / 221.0}, 0, REGULAR, NOBOLD, 4297, 26},
@@ -303,7 +303,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("AlbertusMedium", "Albertus-Medium", "A028-Med"),
+        fontnames("AlbertusMedium", "Albertus-Medium", "Algiers-Medium"),
         {'A', 'l', 'b', 'e', 'r', 't', 'u', 's', ' ', ' ', ' ', ' ', ' ', ' ',
          'M', 'd'},
         {0, 1, {313.0, 720000.0 / 313.0}, 0, REGULAR, MEDIUMBOLD, 4362, 27},
@@ -311,7 +311,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("AlbertusExtraBold", "Albertus-ExtraBold", "A028-Ext"),
+        fontnames("AlbertusExtraBold", "Albertus-ExtraBold", "Algiers-ExtraBold"),
         {'A', 'l', 'b', 'e', 'r', 't', 'u', 's', ' ', ' ', ' ', ' ', ' ', ' ',
          'X', 'b'},
         {0, 1, {369.0, 720000.0 / 369.0}, 0, REGULAR, EXBOLD, 4362, 28},
@@ -319,7 +319,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Arial", "Arial", "A030-Reg"),
+        fontnames("Arial", "Arial", "NimbusSansNo2-Regular"),
         {'A', 'r', 'i', 'a', 'l', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
          ' ', ' '},
         {0, 1, {278.0, 720000.0 / 278.0}, 0, REGULAR, NOBOLD, 16602, 29},
@@ -327,7 +327,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Arial-BoldMT", "Arial-Bold", "A030-Bol"),
+        fontnames("Arial-BoldMT", "Arial-Bold", "NimbusSansNo2-Bold"),
         {'A', 'r', 'i', 'a', 'l', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
          'B', 'd'},
         {0, 1, {278.0, 720000.0 / 278.0}, 0, REGULAR, BOLD, 16602, 30},
@@ -335,7 +335,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Arial-ItalicMT", "Arial-Italic", "A030-Ita"),
+        fontnames("Arial-ItalicMT", "Arial-Italic", "NimbusSansNo2-Italic"),
         {'A', 'r', 'i', 'a', 'l', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
          'I', 't'},
         {0, 1, {278.0, 720000.0 / 278.0}, 0, ITALIC, NOBOLD, 16602, 31},
@@ -343,7 +343,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Arial-BoldItalicMT", "Arial-BoldItalic", "A030-BolIta"),
+        fontnames("Arial-BoldItalicMT", "Arial-BoldItalic", "NimbusSansNo2-BoldItalic"),
         {'A', 'r', 'i', 'a', 'l', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'B', 'd',
          'I', 't'},
         {0, 1, {278.0, 720000.0 / 278.0}, 0, ITALIC, BOLD, 16602, 32},
@@ -351,7 +351,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("TimesNewRoman", "TimesNewRoman", "NimbusRomanNo9-Reg"),
+        fontnames("TimesNewRoman", "TimesNewRoman", "NimbusRomanNo9-Regular"),
         {'T', 'i', 'm', 'e', 's', 'N', 'e', 'w', 'R', 'm', 'n', ' ', ' ', ' ',
          ' ', ' '},
         {0, 1, {250.0, 720000.0 / 250.0}, 0, REGULAR, NOBOLD, 16901, 33},
@@ -360,7 +360,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("TimesNewRoman-Bold", "TimesNewRoman-Bold",
-                  "NimbusRomanNo9-Med"),
+                  "NimbusRomanNo9-Bold"),
         {'T', 'i', 'm', 'e', 's', 'N', 'e', 'w', 'R', 'm', 'n', ' ', ' ', ' ',
          'B', 'd'},
         {0, 1, {250.0, 720000.0 / 250.0}, 0, REGULAR, BOLD, 16901, 34},
@@ -369,7 +369,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("TimesNewRoman-Italic", "TimesNewRoman-Italic",
-                  "NimbusRomanNo9-Ita"),
+                  "NimbusRomanNo9-Italic"),
         {'T', 'i', 'm', 'e', 's', 'N', 'e', 'w', 'R', 'm', 'n', ' ', ' ', ' ',
          'I', 't'},
         {0, 1, {250.0, 720000.0 / 250.0}, 0, ITALIC, NOBOLD, 16901, 36},
@@ -378,7 +378,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("TimesNewRoman-BoldItalic", "TimesNewRoman-BoldItalic",
-                  "NimbusRomanNo9-MedIta"),
+                  "NimbusRomanNo9-BoldItalic"),
         {'T', 'i', 'm', 'e', 's', 'N', 'e', 'w', 'R', 'm', 'n', ' ', 'B', 'd',
          'I', 't'},
         {0, 1, {250.0, 720000.0 / 250.0}, 0, ITALIC, BOLD, 16901, 35},
@@ -386,7 +386,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Helvetica", "Helvetica", "NimbusSanL-Regu"),
+        fontnames("Helvetica", "Helvetica", "NimbusSans-Regular"),
         {'H', 'e', 'l', 'v', 'e', 't', 'i', 'c', 'a', ' ', ' ', ' ', ' ', ' ',
          ' ', ' '},
         {0, 1, {278.0, 720000.0 / 278.0}, 0, REGULAR, NOBOLD, 24580, 37},
@@ -394,7 +394,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Helvetica-Bold", "Helvetica-Bold", "NimbusSanL-Bold"),
+        fontnames("Helvetica-Bold", "Helvetica-Bold", "NimbusSans-Bold"),
         {'H', 'e', 'l', 'v', 'e', 't', 'i', 'c', 'a', ' ', ' ', ' ', ' ', ' ',
          'B', 'd'},
         {0, 1, {278.0, 720000.0 / 278.0}, 0, REGULAR, BOLD, 24580, 38},
@@ -403,7 +403,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("Helvetica-BoldOblique", "Helvetica-BoldOblique",
-                  "NimbusSanL-BoldItal"),
+                  "NimbusSans-BoldOblique"),
         {'H', 'e', 'l', 'v', 'e', 't', 'i', 'c', 'a', ' ', ' ', ' ', 'B', 'd',
          'O', 'b'},
         {0, 1, {278.0, 720000.0 / 278.0}, 0, ITALIC, BOLD, 24580, 40},
@@ -411,7 +411,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Helvetica-Narrow", "Helvetica-Narrow", "NimbusSanL-ReguCond"),
+        fontnames("Helvetica-Narrow", "Helvetica-Narrow", "NimbusSansNarrow-Regular"),
         {'H', 'e', 'l', 'v', 'e', 't', 'i', 'c', 'a', ' ', ' ', ' ', ' ', ' ',
          'N', 'r'},
         {0, 1, {228.0, 720000.0 / 228.0}, 0, CONDENSED, NOBOLD, 24580, 41},
@@ -420,7 +420,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("Helvetica-Narrow-Bold", "Helvetica-Narrow-Bold",
-                  "NimbusSanL-BoldCond"),
+                  "NimbusSansNarrow-Bold"),
         {'H', 'e', 'l', 'v', 'e', 't', 'i', 'c', 'a', ' ', ' ', ' ', 'N', 'r',
          'B', 'd'},
         {0, 1, {228.0, 720000.0 / 228.0}, 0, CONDENSED, BOLD, 24580, 42},
@@ -429,7 +429,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("Helvetica-Narrow-BoldOblique", "Helvetica-Narrow-BoldOblique",
-                  "NimbusSanL-BoldCondItal"),
+                  "NimbusSansNarrow-BoldOblique"),
         {'H', 'e', 'l', 'v', 'e', 't', 'i', 'c', 'a', ' ', 'N', 'r', 'B', 'd',
          'O', 'b'},
         {0, 1, {228.0, 720000.0 / 228.0}, 0, CONDENSEDITALIC, BOLD, 24580, 44},
@@ -438,7 +438,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("Helvetica-Narrow-Oblique", "Helvetica-Narrow-Oblique",
-                  "NimbusSanL-ReguCondItal"),
+                  "NimbusSansNarrow-Oblique"),
         {'H', 'e', 'l', 'v', 'e', 't', 'i', 'c', 'a', ' ', ' ', ' ', 'N', 'r',
          'O', 'b'},
         {0, 1, {228.0, 720000.0 / 228.0}, 0, CONDENSEDITALIC, NOBOLD, 24580, 43},
@@ -447,7 +447,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("Helvetica-Oblique", "Helvetica-Oblique",
-                  "NimbusSanL-ReguItal"),
+                  "NimbusSans-Oblique"),
         {'H', 'e', 'l', 'v', 'e', 't', 'i', 'c', 'a', ' ', ' ', ' ', ' ', ' ',
          'O', 'b'},
         {0, 1, {278.0, 720000.0 / 278.0}, 0, ITALIC, NOBOLD, 24580, 39},
@@ -455,7 +455,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Palatino-Roman", "Palatino-Roman", "URWPalladioL-Roma"),
+        fontnames("Palatino-Roman", "Palatino-Roman", "P052-Roman"),
         {'P', 'a', 'l', 'a', 't', 'i', 'n', 'o', ' ', ' ', ' ', ' ', ' ', 'R',
          'm', 'n'},
         {0, 1, {250.0, 720000.0 / 250.0}, 0, REGULAR, NOBOLD, 24591, 45},
@@ -463,7 +463,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Palatino-Italic", "Palatino-Italic", "URWPalladioL-Ital"),
+        fontnames("Palatino-Italic", "Palatino-Italic", "P052-Italic"),
         {'P', 'a', 'l', 'a', 't', 'i', 'n', 'o', ' ', ' ', ' ', ' ', ' ', ' ',
          'I', 't'},
         {0, 1, {250.0, 720000.0 / 250.0}, 0, ITALIC, NOBOLD, 24591, 47},
@@ -471,7 +471,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Palatino-Bold", "Palatino-Bold", "URWPalladioL-Bold"),
+        fontnames("Palatino-Bold", "Palatino-Bold", "P052-Bold"),
         {'P', 'a', 'l', 'a', 't', 'i', 'n', 'o', ' ', ' ', ' ', ' ', ' ', ' ',
          'B', 'd'},
         {0, 1, {250.0, 720000.0 / 250.0}, 0, REGULAR, BOLD, 24591, 46},
@@ -480,7 +480,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("Palatino-BoldItalic", "Palatino-BoldItalic",
-                  "URWPalladioL-BoldItal"),
+                  "P052-BoldItalic"),
         {'P', 'a', 'l', 'a', 't', 'i', 'n', 'o', ' ', ' ', ' ', ' ', 'B', 'd',
          'I', 't'},
         {0, 1, {250.0, 720000.0 / 250.0}, 0, ITALIC, BOLD, 24591, 48},
@@ -488,7 +488,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("AvantGarde-Book", "AvantGarde-Book", "URWGothicL-Book"),
+        fontnames("AvantGarde-Book", "AvantGarde-Book", "URWGothic-Book"),
         {'I', 'T', 'C', 'A', 'v', 'a', 'n', 't', 'G', 'a', 'r', 'd', ' ', ' ',
          'B', 'k'},
         {0, 1, {277.0, 720000.0 / 277.0}, 0, REGULAR, NOBOLD, 24607, 49},
@@ -496,7 +496,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("AvantGarde-Demi", "AvantGarde-Demi", "URWGothicL-Demi"),
+        fontnames("AvantGarde-Demi", "AvantGarde-Demi", "URWGothic-Demi"),
         {'I', 'T', 'C', 'A', 'v', 'a', 'n', 't', 'G', 'a', 'r', 'd', ' ', ' ',
          'D', 'b'},
         {0, 1, {280.0, 720000.0 / 280.0}, 0, REGULAR, TWOBOLD, 24607, 50},
@@ -505,7 +505,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("AvantGarde-BookOblique", "AvantGarde-BookOblique",
-                  "URWGothicL-BookObli"),
+                  "URWGothic-BookOblique"),
         {'I', 'T', 'C', 'A', 'v', 'a', 'n', 't', 'G', 'a', 'r', 'd', 'B', 'k',
          'O', 'b'},
         {0, 1, {277.0, 720000.0 / 277.0}, 0, ITALIC, NOBOLD, 24607, 51},
@@ -514,7 +514,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("AvantGarde-DemiOblique", "AvantGarde-DemiOblique",
-                  "URWGothicL-DemiObli"),
+                  "URWGothic-DemiOblique"),
         {'I', 'T', 'C', 'A', 'v', 'a', 'n', 't', 'G', 'a', 'r', 'd', 'D', 'b',
          'O', 'b'},
         {0, 1, {280.0, 720000.0 / 280.0}, 0, ITALIC, TWOBOLD, 24607, 52},
@@ -522,7 +522,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Bookman-Light", "Bookman-Light", "URWBookmanL-Ligh"),
+        fontnames("Bookman-Light", "Bookman-Light", "URWBookman-Light"),
         {'I', 'T', 'C', 'B', 'o', 'o', 'k', 'm', 'a', 'n', ' ', ' ', ' ', ' ',
          'L', 't'},
         {0, 1, {320.0, 720000.0 / 320.0}, 0, REGULAR, LIGHT, 24623, 53},
@@ -530,7 +530,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Bookman-Demi", "Bookman-Demi", "URWBookmanL-DemiBold"),
+        fontnames("Bookman-Demi", "Bookman-Demi", "URWBookman-Demi"),
         {'I', 'T', 'C', 'B', 'o', 'o', 'k', 'm', 'a', 'n', ' ', ' ', ' ', ' ',
          'D', 'b'},
         {0, 1, {340.0, 720000.0 / 340.0}, 0, REGULAR, TWOBOLD, 24623, 54},
@@ -539,7 +539,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("Bookman-LightItalic", "Bookman-LightItalic",
-                  "URWBookmanL-LighItal"),
+                  "URWBookman-LightItalic"),
         {'I', 'T', 'C', 'B', 'o', 'o', 'k', 'm', 'a', 'n', ' ', ' ', 'L', 't',
          'I', 't'},
         {0, 1, {300.0, 720000.0 / 300.0}, 0, ITALIC, LIGHT, 24623, 55},
@@ -548,7 +548,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("Bookman-DemiItalic", "Bookman-DemiItalic",
-                  "URWBookmanL-DemiBoldItal"),
+                  "URWBookman-DemiItalic"),
         {'I', 'T', 'C', 'B', 'o', 'o', 'k', 'm', 'a', 'n', ' ', ' ', 'D', 'b',
          'I', 't'},
         {0, 1, {340.0, 720000.0 / 340.0}, 0, ITALIC, TWOBOLD, 24623, 56},
@@ -557,7 +557,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("NewCenturySchlbk-Bold", "NewCenturySchlbk-Bold",
-                  "CenturySchL-Bold"),
+                  "C059-Bold"),
         {'N', 'w', 'C', 'e', 'n', 't', 'S', 'c', 'h', 'l', 'b', 'k', ' ', ' ',
          'B', 'd'},
         {0, 1, {287.0, 720000.0 / 287.0}, 0, REGULAR, BOLD, 24703, 57},
@@ -566,7 +566,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("NewCenturySchlbk-BoldItalic", "NewCenturySchlbk-BoldItalic",
-                  "CenturySchL-BoldItal"),
+                  "C059-BdIta"),
         {'N', 'w', 'C', 'e', 'n', 't', 'S', 'c', 'h', 'l', 'b', 'k', 'B', 'd',
          'I', 't'},
         {0, 1, {287.0, 720000.0 / 287.0}, 0, ITALIC, BOLD, 24703, 58},
@@ -575,7 +575,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("NewCenturySchlbk-Italic", "NewCenturySchlbk-Italic",
-                  "CenturySchL-Ital"),
+                  "C059-Italic"),
         {'N', 'w', 'C', 'e', 'n', 't', 'S', 'c', 'h', 'l', 'b', 'k', ' ', ' ',
          'I', 't'},
         {0, 1, {278.0, 720000.0 / 278.0}, 0, ITALIC, NOBOLD, 24703, 59},
@@ -584,7 +584,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("NewCenturySchlbk-Roman", "NewCenturySchlbk-Roman",
-                  "CenturySchL-Roma"),
+                  "C059-Roman"),
         {'N', 'w', 'C', 'e', 'n', 't', 'S', 'c', 'h', 'l', 'b', 'k', ' ', 'R',
          'm', 'n'},
         {0, 1, {278.0, 720000.0 / 278.0}, 0, REGULAR, NOBOLD, 24703, 60},
@@ -592,7 +592,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Times-Roman", "Times-Roman", "NimbusRomNo9L-Regu"),
+        fontnames("Times-Roman", "Times-Roman", "NimbusRoman-Regular"),
         {'T', 'i', 'm', 'e', 's', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'R',
          'm', 'n'},
         {0, 1, {250.0, 720000.0 / 250.0}, 0, REGULAR, NOBOLD, 25093, 61},
@@ -600,7 +600,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Times-Bold", "Times-Bold", "NimbusRomNo9L-Medi"),
+        fontnames("Times-Bold", "Times-Bold", "NimbusRoman-Bold"),
         {'T', 'i', 'm', 'e', 's', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
          'B', 'd'},
         {0, 1, {250.0, 720000.0 / 250.0}, 0, REGULAR, BOLD, 25093, 62},
@@ -608,7 +608,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Times-Italic", "Times-Italic", "NimbusRomNo9L-ReguItal"),
+        fontnames("Times-Italic", "Times-Italic", "NimbusRoman-Italic"),
         {'T', 'i', 'm', 'e', 's', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
          'I', 't'},
         {0, 1, {250.0, 720000.0 / 250.0}, 0, ITALIC, NOBOLD, 25093, 63},
@@ -617,7 +617,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("Times-BoldItalic", "Times-BoldItalic",
-                  "NimbusRomNo9L-MediItal"),
+                  "NimbusRoman-BoldItalic"),
         {'T', 'i', 'm', 'e', 's', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'B', 'd',
          'I', 't'},
         {0, 1, {250.0, 720000.0 / 250.0}, 0, ITALIC, BOLD, 25093, 64},
@@ -626,7 +626,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("ZapfChancery-MediumItalic", "ZapfChancery-MediumItalic",
-                  "URWChanceryL-MediItal"),
+                  "Z003-MediumItalic"),
         {'Z', 'a', 'p', 'f', 'C', 'h', 'a', 'n', 'c', 'e', 'r', 'y', 'M', 'd',
          'I', 't'},
         {0, 1, {220.0, 720000.0 / 220.0}, 0, ITALIC, NOBOLD, 45099, 65},
@@ -634,18 +634,15 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("SymbolMT", "Symbol", "StandardSymL"),
+        fontnames("SymbolMT", "Symbol", "Symbols"),
         {'S', 'y', 'm', 'b', 'o', 'l', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
          ' ', ' '},
         {621, 1, {250.0, 720000.0 / 250.0}, 0, REGULAR, NOBOLD, 16686, 66},
         cc_symbol, plft_8bit_printable
     },
     
-    /* NB Symbol - Symbol PS for URW are the same.  Adding the
-       confusion AGFA has 2 different fonts presumably Symbol and
-       SymbolPS, each called Symbol. */
     {
-        fontnames("SymbPS", "SymbPS", "StandardSymL"),
+        fontnames("SymbPS", "SymbPS", "StandardSymbolsPS"),
         {'S', 'y', 'm', 'b', 'o', 'l', 'P', 'S', ' ', ' ', ' ', ' ', ' ', ' ',
          ' ', ' '},
         {621, 1, {250.0, 720000.0 / 250.0}, 0, REGULAR, NOBOLD, 45358, 67},
@@ -653,21 +650,21 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Wingdings-Regular", "Wingdings-Regular", "New Dingbats"),
+        fontnames("Wingdings-Regular", "Wingdings-Regular", "URWDings"),
         {'W', 'i', 'n', 'g', 'd', 'i', 'n', 'g', 's', ' ', ' ', ' ', ' ', ' ',
          ' ', ' '},
         {18540, 1, {1000.0, 720000.0 / 1000.0}, 0, REGULAR, NOBOLD, 31402, 68},
         cc_dingbats, plft_8bit},
     
     {
-        fontnames("ZapfDingbats", "ZapfDingbats", "Dingbats"),
+        fontnames("ZapfDingbats", "ZapfDingbats", "D050000L"),
         {'Z', 'a', 'p', 'f', 'D', 'i', 'n', 'g', 'b', 'a', 't', 's', ' ', ' ',
          ' ', ' '},
         {460, 1, {280.0, 720000.0 / 280.0}, 0, REGULAR, NOBOLD, 45101, 69},
         cc_dingbats, plft_8bit},
     
     {
-        fontnames("CourierBold", "CourierMT-Bold", "NimbusMono-Bol"),
+        fontnames("CourierBold", "CourierMT-Bold", "NimbusMono-Bold"),
         {'C', 'o', 'u', 'r', 'i', 'e', 'r', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
          'B', 'd'},
         {0, 0, {600.0, 720000.0 / 600.0}, 0, REGULAR, BOLD, 4099, 70},
@@ -675,7 +672,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("CourierItalic", "CourierMT-Italic", "NimbusMono-Ita"),
+        fontnames("CourierItalic", "CourierMT-Italic", "NimbusMono-Italic"),
         {'C', 'o', 'u', 'r', 'i', 'e', 'r', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
          'I', 't'},
         {0, 0, {600.0, 720000.0 / 600.0}, 0, ITALIC, NOBOLD, 4099, 71},
@@ -684,7 +681,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("CourierBoldItalic", "CourierMT-BoldItalic",
-                  "NimbusMono-BolIta"),
+                  "NimbusMono-BoldItalic"),
         {'C', 'o', 'u', 'r', 'i', 'e', 'r', ' ', ' ', ' ', ' ', ' ', 'B', 'd',
          'I', 't'},
         {0, 0, {600.0, 720000.0 / 600.0}, 0, ITALIC, BOLD, 4099, 72},
@@ -692,7 +689,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("LetterGothic", "LetterGothic", "LetterGothic-Reg"),
+        fontnames("LetterGothic", "LetterGothic", "LetterGothic-Regular"),
         {'L', 'e', 't', 't', 'e', 'r', 'G', 'o', 't', 'h', 'i', 'c', ' ', ' ',
          ' ', ' '},
         {0, 0, {500.0, 720000.0 / 500.0}, 0, REGULAR, NOBOLD, 4102, 73},
@@ -700,7 +697,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("LetterGothicBold", "LetterGothic-Bold", "LetterGothic-Bol"),
+        fontnames("LetterGothicBold", "LetterGothic-Bold", "LetterGothic-Bold"),
         {'L', 'e', 't', 't', 'e', 'r', 'G', 'o', 't', 'h', 'i', 'c', ' ', ' ',
          'B', 'd'},
         {0, 0, {500.0, 720000.0 / 500.0}, 0, REGULAR, BOLD, 4102, 74},
@@ -709,7 +706,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("LetterGothicItalic", "LetterGothic-Italic",
-                  "LetterGothic-Ita"),
+                  "LetterGothic-Italic"),
         {'L', 'e', 't', 't', 'e', 'r', 'G', 'o', 't', 'h', 'i', 'c', ' ', ' ',
          'I', 't'},
         {0, 0, {500.0, 720000.0 / 500.0}, 0, ITALIC, NOBOLD, 4102, 75},
@@ -717,7 +714,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Courier", "Courier", "NimbusMonL-Regu"),
+        fontnames("Courier", "Courier", "NimbusMonoPS-Regular"),
         {'C', 'o', 'u', 'r', 'i', 'e', 'r', 'P', 'S', ' ', ' ', ' ', ' ', ' ',
          ' ', ' '},
         {0, 0, {600.0, 720000.0 / 600.0}, 0, REGULAR, NOBOLD, 24579, 76},
@@ -725,7 +722,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Courier-Bold", "Courier-Bold", "NimbusMonL-Bold"),
+        fontnames("Courier-Bold", "Courier-Bold", "NimbusMonoPS-Bold"),
         {'C', 'o', 'u', 'r', 'i', 'e', 'r', 'P', 'S', ' ', ' ', ' ', ' ', ' ',
          'B', 'd'},
         {0, 0, {600.0, 720000.0 / 600.0}, 0, REGULAR, BOLD, 24579, 77},
@@ -734,7 +731,7 @@ static const font_resident_t resident_table[] = {
     
     {
         fontnames("Courier-BoldOblique", "Courier-BoldOblique",
-                  "NimbusMonL-BoldObli"),
+                  "NimbusMonoPS-BoldItalic"),
         {'C', 'o', 'u', 'r', 'i', 'e', 'r', 'P', 'S', ' ', ' ', ' ', 'B', 'd',
          'O', 'b'},
         {0, 0, {600.0, 720000.0 / 600.0}, 0, ITALIC, BOLD, 24579, 78},
@@ -742,7 +739,7 @@ static const font_resident_t resident_table[] = {
     },
     
     {
-        fontnames("Courier-Oblique", "Courier-Oblique", "NimbusMonL-ReguObli"),
+        fontnames("Courier-Oblique", "Courier-Oblique", "NimbusMonoPS-Italic"),
         {'C', 'o', 'u', 'r', 'i', 'e', 'r', 'P', 'S', ' ', ' ', ' ', ' ', ' ',
          'O', 'b'},
         {0, 0, {600.0, 720000.0 / 600.0}, 0, ITALIC, NOBOLD, 24579, 79},
