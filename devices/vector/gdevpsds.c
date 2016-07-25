@@ -1091,7 +1091,7 @@ s_compr_chooser__unpack_and_recognize(stream_compr_chooser_state *const ss,
     int l = length;
 
     while (l) {
-        if (ss->bits_left < 8) {
+        if (ss->bits_left <= 8) {
             uint k = (sizeof(ss->packed_data) * 8 - ss->bits_left) / 8;
 
             k = min(k, l);
