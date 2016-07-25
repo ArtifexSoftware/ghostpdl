@@ -500,7 +500,16 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     nos_ptr[i * nos_planestride] = nos_pixel[i];
                 }
             } else {
-                if (overprint) {
+                /* If we were running in the compatible overprint blend mode
+                * and popping the group, we don't need to fool with the
+                * drawn components as that should have already have been
+                * handled during the blending within our special non-isolated
+                * group.  So in other words, if the blend mode is normal
+                * (or compatible) and we are doing overprint, the overprint
+                * has NOT been handled by compatible overprint mode and we
+                * need to take care of it now */
+                if (overprint && (blend_mode == BLEND_MODE_Compatible ||
+                    blend_mode == BLEND_MODE_Normal)) {
                     for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
                         if ((comps & 0x1) != 0) {
                             nos_ptr[i * nos_planestride] = 255 - nos_pixel[i];
