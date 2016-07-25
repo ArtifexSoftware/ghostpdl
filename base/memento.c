@@ -171,7 +171,8 @@ enum {
     Memento_Flag_HasParent = 2,
     Memento_Flag_BreakOnFree = 4,
     Memento_Flag_BreakOnRealloc = 8,
-    Memento_Flag_Freed = 16
+    Memento_Flag_Freed = 16,
+    Memento_Flag_KnownLeak = 32
 };
 
 enum {
@@ -206,7 +207,7 @@ static const char *eventType[] =
 /* When we list leaked blocks at the end of execution, we search for pointers
  * between blocks in order to be able to give a nice nested view.
  * Unfortunately, if you have are running your own allocator (such as
- * ghostscripts chunk allocator) you can often find that the header of the
+ * postscript's chunk allocator) you can often find that the header of the
  * block always contains pointers to next or previous blocks. This tends to
  * mean the nesting displayed is "uninteresting" at best :)
  *
@@ -294,6 +295,7 @@ static struct {
     int            pattern;
     int            nextPattern;
     int            patternBit;
+    int            leaking;
     size_t         maxMemory;
     size_t         alloc;
     size_t         peakAlloc;
@@ -562,7 +564,7 @@ typedef struct MY_SYMBOL_INFO {
     ULONG64     Reserved[2];
     ULONG       info;
     ULONG       Size;
-    ULONG64     ModBase;          // Base Address of module comtaining this symbol
+    ULONG64     ModBase;          // Base Address of module containing this symbol
     ULONG       Flags;
     ULONG64     Value;            // Value of symbol, ValuePresent should be 1
     ULONG64     Address;          // Address of symbol including base address of module
@@ -675,6 +677,9 @@ static void Memento_storeDetails(Memento_BlkHeader *head, int type)
     Memento_BlkDetails *details;
     int count;
     int skip;
+
+    if (head == NULL)
+        return;
 
 #ifdef MEMENTO_STACKTRACE_METHOD
     count = Memento_getStacktrace(stack, &skip);
@@ -1010,6 +1015,8 @@ static void showBlock(Memento_BlkHeader *b, int space)
             MEMBLK_TOBLK(b), (int)b->rawsize, b->sequence);
     if (b->label)
         fprintf(stderr, "%c(%s)", space, b->label);
+    if (b->flags & Memento_Flag_KnownLeak)
+        fprintf(stderr, "(Known Leak)");
 }
 
 static void blockDisplay(Memento_BlkHeader *b, int n)
@@ -1259,11 +1266,23 @@ void Memento_listBlockInfo(void)
 #endif
 }
 
+static int Memento_nonLeakBlocksLeaked(void)
+{
+    Memento_BlkHeader *blk = memento.used.head;
+    while (blk)
+    {
+        if ((blk->flags & Memento_Flag_KnownLeak) == 0)
+            return 1;
+        blk = blk->next;
+    }
+    return 0;
+}
+
 static void Memento_fin(void)
 {
     Memento_checkAllMemory();
     Memento_endStats();
-    if (memento.used.head != NULL) {
+    if (Memento_nonLeakBlocksLeaked()) {
         Memento_listBlocks();
 #ifdef MEMENTO_DETAILS
         fprintf(stderr, "\n");
@@ -1401,7 +1420,7 @@ void Memento_info(void *addr)
 /* MacOSX has 10240, Ubuntu seems to have 256 */
 #define OPEN_MAX 10240
 
-/* stashed_map[j] = i means that filedescriptor i-1 was duplicated to j */
+/* stashed_map[j] = i means that file descriptor i-1 was duplicated to j */
 int stashed_map[OPEN_MAX];
 
 static void Memento_signal(void)
@@ -1561,16 +1580,47 @@ int Memento_breakAt(int event)
     return event;
 }
 
+static void *safe_find_block(void *ptr)
+{
+    Memento_BlkHeader *block;
+    int valid;
+
+    block = MEMBLK_FROMBLK(ptr);
+    /* Sometimes wrapping allocators can mean Memento_label
+     * is called with a value within the block, rather than
+     * at the start of the block. If we detect this, find it
+     * the slow way. */
+    VALGRIND_MAKE_MEM_DEFINED(&block->child, sizeof(block->child));
+    VALGRIND_MAKE_MEM_DEFINED(&block->sibling, sizeof(block->sibling));
+    valid = (block->child == MEMENTO_CHILD_MAGIC &&
+             block->sibling == MEMENTO_SIBLING_MAGIC);
+    VALGRIND_MAKE_MEM_NOACCESS(&block->child, sizeof(block->child));
+    VALGRIND_MAKE_MEM_NOACCESS(&block->sibling, sizeof(block->sibling));
+    if (!valid);
+    {
+        findBlkData data;
+
+        data.addr  = ptr;
+        data.blk   = NULL;
+        data.flags = 0;
+        Memento_appBlocks(&memento.used, Memento_containsAddr, &data);
+        if (data.blk == NULL)
+            return ptr;
+        block = data.blk;
+    }
+    return block;
+}
+
 void *Memento_label(void *ptr, const char *label)
 {
     Memento_BlkHeader *block;
 
     if (ptr == NULL)
         return NULL;
-    block = MEMBLK_FROMBLK(ptr);
+    block = safe_find_block(ptr);
     VALGRIND_MAKE_MEM_DEFINED(&block->label, sizeof(block->label));
     block->label = label;
-    VALGRIND_MAKE_MEM_UNDEFINED(&block->label, sizeof(block->label));
+    VALGRIND_MAKE_MEM_NOACCESS(&block->label, sizeof(block->label));
     return ptr;
 }
 
@@ -1657,6 +1707,10 @@ static void *do_malloc(size_t s, int eventType)
     Memento_storeDetails(memblk, Memento_EventType_malloc);
 #endif /* MEMENTO_DETAILS */
     Memento_addBlockHead(&memento.used, memblk, 0);
+
+    if (memento.leaking > 0)
+        memblk->flags |= Memento_Flag_KnownLeak;
+
     return MEMBLK_TOBLK(memblk);
 }
 
@@ -1684,21 +1738,21 @@ static void do_reference(Memento_BlkHeader *blk, int event)
 void *Memento_takeRef(void *blk)
 {
     if (blk)
-        do_reference(MEMBLK_FROMBLK(blk), Memento_EventType_takeRef);
+        do_reference(safe_find_block(blk), Memento_EventType_takeRef);
     return blk;
 }
 
 void *Memento_dropRef(void *blk)
 {
     if (blk)
-        do_reference(MEMBLK_FROMBLK(blk), Memento_EventType_dropRef);
+        do_reference(safe_find_block(blk), Memento_EventType_dropRef);
     return blk;
 }
 
 void *Memento_reference(void *blk)
 {
     if (blk)
-        do_reference(MEMBLK_FROMBLK(blk), Memento_EventType_reference);
+        do_reference(safe_find_block(blk), Memento_EventType_reference);
     return blk;
 }
 
@@ -2157,6 +2211,17 @@ size_t Memento_setMax(size_t max)
     memento.maxMemory = max;
     return max;
 }
+
+void Memento_startLeaking(void)
+{
+    memento.leaking++;
+}
+
+void Memento_stopLeaking(void)
+{
+    memento.leaking--;
+}
+
 #endif /* MEMENTO_CPP_EXTRAS_ONLY */
 
 #ifdef __cplusplus
@@ -2318,6 +2383,14 @@ void (Memento_info)(void *addr)
 }
 
 void (Memento_listBlockInfo)(void)
+{
+}
+
+void (Memento_startLeaking)(void)
+{
+}
+
+void (Memento_stopLeaking)(void)
 {
 }
 
