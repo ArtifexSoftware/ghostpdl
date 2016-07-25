@@ -70,7 +70,7 @@ static void windows_debug_out(const char *str, int len)
             p++, len--;
         /* Copy a run of as many non-zeros as we can into the buffer
          * without overflowing it. */
-        for (n = 0, q = p; n < sizeof(buf)-1 && *p != 0; p++, n++)
+        for (n = 0, q = p; n < sizeof(buf)-1 && n < len && *p != 0; p++, n++)
             buf[n] = *p;
         /* NULL terminate the buffer */
         buf[n] = 0;
