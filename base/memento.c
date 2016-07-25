@@ -1605,7 +1605,7 @@ static void *safe_find_block(void *ptr)
         data.flags = 0;
         Memento_appBlocks(&memento.used, Memento_containsAddr, &data);
         if (data.blk == NULL)
-            return ptr;
+            return NULL;
         block = data.blk;
     }
     return block;
