@@ -54,7 +54,7 @@ char start_string[] = "systemdict /start get exec\n";
 #ifndef NDEBUG
 static void windows_debug_out(const char *str, int len)
 {
-    char buf[4096];
+    char buf[256];
     int n;
 
     /* Stupid windows only lets us have a way to print
@@ -63,15 +63,13 @@ static void windows_debug_out(const char *str, int len)
      * we get in. */
     while (len)
     {
-        const char *p = str;
-        const char *q;
         /* Skip leading 0's */
-        while (len > 0 && *p == 0)
-            p++, len--;
+        while (len > 0 && *str == 0)
+            len--, str++;
         /* Copy a run of as many non-zeros as we can into the buffer
          * without overflowing it. */
-        for (n = 0, q = p; n < sizeof(buf)-1 && n < len && *p != 0; p++, n++)
-            buf[n] = *p;
+        for (n = 0; n < sizeof(buf)-1 && n < len && *str != 0; str++, n++)
+            buf[n] = *str;
         /* NULL terminate the buffer */
         buf[n] = 0;
         /* And output it */
