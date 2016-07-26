@@ -505,7 +505,8 @@ userdict /.pdfcvstring () put
 /.ExtractLeafs
 {
   {
-    oforce /Nums knownoget {
+    oforce dup /Nums knownoget {
+      exch pop
       dup length 1 sub 0 2 3 -1 roll {
                           %% dict array index
         dup               %% dict array index index
