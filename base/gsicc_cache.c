@@ -1046,10 +1046,14 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
     }
     /* We may have to worry about special handling for DeviceGray to
        DeviceCMYK to ensure that Gray is mapped to K only.  This is only
-       done once and then it is cached and the link used */
+       done once and then it is cached and the link used.  Note that Adobe
+       appears to do this only when the source color space was DeviceGray.
+       For us, this requirement is meant by the test of
+       gs_input_profile->default_match == DEFAULT_GRAY */
     if (!src_dev_link && gs_output_profile->data_cs == gsCMYK &&
-        gs_input_profile->data_cs == gsGRAY && pgs->icc_manager != NULL &&
-        devicegraytok) {
+        gs_input_profile->data_cs == gsGRAY &&
+        gs_input_profile->default_match == DEFAULT_GRAY &&
+        pgs->icc_manager != NULL && devicegraytok) {
         if (icc_manager->graytok_profile == NULL) {
             icc_manager->graytok_profile =
                 gsicc_set_iccsmaskprofile(GRAY_TO_K, strlen(GRAY_TO_K),
