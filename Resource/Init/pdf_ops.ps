@@ -665,7 +665,7 @@ end def
    4 2 roll moveto  exch dup 0 rlineto  0 3 -1 roll rlineto  neg 0 rlineto
    closepath
   } bdef
-/inside_text__re {
+/inside_text_re {
    matrix currentmatrix 5 1 roll
    check_and_set_saved_matrix
    4 2 roll moveto  exch dup 0 rlineto  0 3 -1 roll rlineto  neg 0 rlineto
@@ -863,7 +863,7 @@ end readonly def
     pdfopdict /c {inside_text_c} bind .forceput
     pdfopdict /v {inside_text_v} bind .forceput
     pdfopdict /y {inside_text_y} bind .forceput
-    pdfopdict /rey {inside_text_re} bind .forceput
+    pdfopdict /re {inside_text_re} bind .forceput
 } bdef
 
 /switch_to_normal_marking_ops {
