@@ -76,7 +76,7 @@
       %% that offset, otherwise prefer the later object.
       %% NB check first to see that the object number is in the range of the original
       %% xref. If it isn't, set the 'original' Offset to 0.
-      3 index Orig_Objects length pstack le {Orig_Objects 4 index get}{0}ifelse
+      3 index Orig_Objects length le {Orig_Objects 4 index get}{0}ifelse
       Objects 5 index get eq not
       {
         ObjectStream 4 index 4 index cvx put % Save ObjectStream object number
