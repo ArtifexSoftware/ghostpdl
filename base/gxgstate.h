@@ -436,9 +436,10 @@ struct gs_gstate_s {
     s->show_gstate = NULL; \
   } while (0)
 
+struct_proc_finalize(gs_gstate_finalize);
 #define public_st_gs_gstate()	/* in gsstate.c */\
-  gs_public_st_composite(st_gs_gstate, gs_gstate, "gs_gstate",\
-    gs_gstate_enum_ptrs, gs_gstate_reloc_ptrs)
+  gs_public_st_composite_use_final(st_gs_gstate, gs_gstate, "gs_gstate",\
+    gs_gstate_enum_ptrs, gs_gstate_reloc_ptrs, gs_gstate_finalize)
 
 /*
  * Enumerate the pointers in a graphics state

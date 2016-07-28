@@ -149,10 +149,12 @@ icc_linkcache_finalize(const gs_memory_t *mem, void *ptr)
         emprintf1(mem, "num_links is %d, should be 0.\n", link_cache->num_links);
     }
 #endif
-    gx_semaphore_free(link_cache->wait);
-    link_cache->wait = NULL;
-    gx_monitor_free(link_cache->lock);
-    link_cache->lock = NULL;
+    if (link_cache->rc.ref_count == 0) {
+        gx_semaphore_free(link_cache->wait);
+        link_cache->wait = NULL;
+        gx_monitor_free(link_cache->lock);
+        link_cache->lock = NULL;
+    }
 }
 
 /* This is a special allocation for a link that is used by devices for

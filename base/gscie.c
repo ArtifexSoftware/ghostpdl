@@ -1385,6 +1385,7 @@ gx_cie_to_xyz_alloc(gs_gstate **ppgs, const gs_color_space *pcs,
         gs_free_object(mem, pgs, "gx_cie_to_xyz_alloc(gs_gstate)");
         return_error(gs_error_VMerror);
     }
+    rc_init(pjc, mem, 1);
 
     /*
      * Perform an abbreviated version of cie_joint_caches_complete.

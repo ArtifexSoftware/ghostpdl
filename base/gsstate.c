@@ -188,6 +188,7 @@ gs_gstate *
 gs_gstate_alloc(gs_memory_t * mem)
 {
     gs_gstate *pgs = gstate_alloc(mem, "gs_gstate_alloc", NULL);
+    gs_memory_t *path_mem = gstate_path_memory(mem);
     int code;
 
     if (pgs == 0)
@@ -223,10 +224,10 @@ gs_gstate_alloc(gs_memory_t * mem)
 
     /* Initialize other things not covered by initgraphics */
 
-    pgs->path = gx_path_alloc(gstate_path_memory(mem), "gs_gstate_alloc(path)");
-    pgs->clip_path = gx_cpath_alloc(mem, "gs_gstate_alloc(clip_path)");
+    pgs->path = gx_path_alloc(path_mem, "gs_gstate_alloc(path)");
+    pgs->clip_path = gx_cpath_alloc(path_mem, "gs_gstate_alloc(clip_path)");
     pgs->clip_stack = 0;
-    pgs->view_clip = gx_cpath_alloc(mem, "gs_gstate_alloc(view_clip)");
+    pgs->view_clip = gx_cpath_alloc(path_mem, "gs_gstate_alloc(view_clip)");
     if (pgs->view_clip == NULL)
         goto fail;
     pgs->view_clip->rule = 0;   /* no clipping */
@@ -387,6 +388,7 @@ int     /* return 0 if ok, 1 if stack was empty */
 gs_grestore_only(gs_gstate * pgs)
 {
     gs_gstate *saved = pgs->saved;
+    gs_gstate tmp_gstate;
     void *pdata = pgs->client_data;
     void *sdata;
     bool prior_overprint = pgs->overprint;
@@ -404,9 +406,11 @@ gs_grestore_only(gs_gstate * pgs)
     if (pdata != 0 && sdata != 0)
         gstate_copy_client_data(pgs, pdata, sdata, copy_for_grestore);
     gstate_free_contents(pgs);
+    tmp_gstate = *pgs;              /* temp after contents freed (with pointers zeroed) */
     *pgs = *saved;
     if (pgs->show_gstate == saved)
         pgs->show_gstate = pgs;
+    *saved = tmp_gstate;            /* restore "freed" state (pointers zeroed after contents freed) */
     gs_free_object(pgs->memory, saved, "gs_grestore");
 
     /* update the overprint compositor, if necessary */
@@ -858,17 +862,26 @@ gs_currenthpglpathmode(const gs_gstate * pgs)
 
 /* Free the privately allocated parts of a gstate. */
 static void
-gstate_free_parts(const gs_gstate * parts, gs_memory_t * mem, client_name_t cname)
+gstate_free_parts(gs_gstate * parts, gs_memory_t * mem, client_name_t cname)
 {
     gs_free_object(mem, parts->color[1].dev_color, cname);
     gs_free_object(mem, parts->color[1].ccolor, cname);
     gs_free_object(mem, parts->color[0].dev_color, cname);
     gs_free_object(mem, parts->color[0].ccolor, cname);
-    if (!parts->effective_clip_shared)
+    parts->color[1].dev_color = 0;
+    parts->color[1].ccolor = 0;
+    parts->color[0].dev_color = 0;
+    parts->color[0].ccolor = 0;
+    if (!parts->effective_clip_shared && parts->effective_clip_path) {
         gx_cpath_free(parts->effective_clip_path, cname);
+        parts->effective_clip_path = 0;
+    }
     gx_cpath_free(parts->clip_path, cname);
-    if (parts->path)
+    parts->clip_path = 0;
+    if (parts->path) {
         gx_path_free(parts->path, cname);
+        parts->path = 0;
+    }
 }
 
 /* Allocate the privately allocated parts of a gstate. */
@@ -1027,6 +1040,21 @@ clip_stack_rc_adjust(gx_clip_stack_t *cs, int delta, client_name_t cname)
     }
 }
 
+/*
+ * Finalization for graphics states. This is where we handle RC for those
+ * elements.
+ */
+void
+gs_gstate_finalize(const gs_memory_t *cmem,void *vptr)
+{
+    gs_gstate *pgs = (gs_gstate *)vptr;
+    (void)cmem;	/* unused */
+
+    if (cmem == NULL)
+        return;			/* place for breakpoint */
+    gstate_free_contents(pgs);
+}
+
 /* Release the composite parts of a graphics state, */
 /* but not the state itself. */
 static void
@@ -1036,16 +1064,23 @@ gstate_free_contents(gs_gstate * pgs)
     const char *const cname = "gstate_free_contents";
 
     rc_decrement(pgs->device, cname);
+    pgs->device = 0;
     clip_stack_rc_adjust(pgs->clip_stack, -1, cname);
+    pgs->clip_stack = 0;
     rc_decrement(pgs->dfilter_stack, cname);
+    pgs->dfilter_stack = 0;
     gs_swapcolors_quick(pgs);
     cs_adjust_counts_icc(pgs, -1);
     gs_swapcolors_quick(pgs);
     cs_adjust_counts_icc(pgs, -1);
+    pgs->color[0].color_space = 0;
+    pgs->color[1].color_space = 0;
     if (pgs->client_data != 0)
         (*pgs->client_procs.free) (pgs->client_data, mem);
+    pgs->client_data = 0;
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
-    gstate_free_parts(pgs, mem, cname);
+    pgs->line_params.dash.pattern = 0;
+    gstate_free_parts(pgs, mem, cname);     /* this also clears pointers to freed elements */
     gs_gstate_release(pgs);
 }
 

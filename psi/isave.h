@@ -43,6 +43,12 @@ typedef struct alloc_save_s alloc_save_t;
 #  define alloc_save_t_DEFINED
 #endif
 
+/* 'Save' structure */
+typedef struct vm_save_s vm_save_t;
+struct vm_save_s {
+    gs_gstate *gsave;          /* old graphics state */
+};
+
 /* Initialize the save machinery. */
 extern void alloc_save_init(gs_dual_memory_t *);
 
@@ -93,7 +99,7 @@ int alloc_restore_step_in(gs_dual_memory_t *, alloc_save_t *);
 int alloc_forget_save_in(gs_dual_memory_t *, alloc_save_t *);
 
 /* Release all memory -- like doing a restore "past the bottom". */
-int alloc_restore_all(gs_dual_memory_t *);
+int alloc_restore_all(i_ctx_t *i_ctx_p);
 /* Filter save change lists. */
 void alloc_save__filter_changes(gs_ref_memory_t *mem);
 

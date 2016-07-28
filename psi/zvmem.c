@@ -38,12 +38,6 @@ static const bool I_VALIDATE_AFTER_SAVE = true;
 static const bool I_VALIDATE_BEFORE_RESTORE = true;
 static const bool I_VALIDATE_AFTER_RESTORE = true;
 
-/* 'Save' structure */
-typedef struct vm_save_s vm_save_t;
-struct vm_save_s {
-    gs_gstate *gsave;		/* old graphics state */
-};
-
 gs_private_st_ptrs1(st_vm_save, vm_save_t, "savetype",
                     vm_save_enum_ptrs, vm_save_reloc_ptrs, gsave);
 

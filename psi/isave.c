@@ -27,10 +27,12 @@
 #include "ipacked.h"
 #include "isave.h"
 #include "isstate.h"
+#include "gsstate.h"
 #include "store.h"		/* for ref_assign */
 #include "ivmspace.h"
 #include "igc.h"
 #include "gsutil.h"		/* gs_next_ids prototype */
+#include "icstate.h"
 
 /* Structure descriptor */
 private_st_alloc_save();
@@ -863,21 +865,26 @@ restore_space(gs_ref_memory_t * mem, gs_dual_memory_t *dmem)
 /* Restore to the initial state, releasing all resources. */
 /* The allocator is no longer usable after calling this routine! */
 int
-alloc_restore_all(gs_dual_memory_t * dmem)
+alloc_restore_all(i_ctx_t *i_ctx_p)
 {
     /*
      * Save the memory pointers, since freeing space_local will also
      * free dmem itself.
      */
-    gs_ref_memory_t *lmem = dmem->space_local;
-    gs_ref_memory_t *gmem = dmem->space_global;
-    gs_ref_memory_t *smem = dmem->space_system;
+    gs_ref_memory_t *lmem = idmemory->space_local;
+    gs_ref_memory_t *gmem = idmemory->space_global;
+    gs_ref_memory_t *smem = idmemory->space_system;
+
     gs_ref_memory_t *mem;
     int code;
 
     /* Restore to a state outside any saves. */
     while (lmem->save_level != 0) {
-        code = alloc_restore_step_in(dmem, lmem->saved);
+        vm_save_t *vmsave = alloc_save_client_data(alloc_save_current(idmemory));
+        gs_grestoreall_for_restore(i_ctx_p->pgs, vmsave->gsave);
+        vmsave->gsave = 0;
+        code = alloc_restore_step_in(idmemory, lmem->saved);
+
         if (code < 0)
             return code;
     }
@@ -898,7 +905,7 @@ alloc_restore_all(gs_dual_memory_t * dmem)
     {
         alloc_save_t empty_save;
 
-        empty_save.spaces = dmem->spaces;
+        empty_save.spaces = idmemory->spaces;
         empty_save.restore_names = false;	/* don't bother to release */
         code = restore_resources(&empty_save, NULL);
         if (code < 0)
