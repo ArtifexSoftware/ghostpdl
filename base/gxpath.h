@@ -231,6 +231,32 @@ gx_path_is_rectangular(const gx_path *, gs_fixed_rect *);
 #define gx_path_is_null_inline(ppath)\
   (gx_path_is_void(ppath) && !path_position_valid(ppath))
 
+/* Macro to test if a curve is actually a line (i.e. that
+ * both control points are at one end or the other).
+ * (Yes, there are cases where the curve can be a line
+ * where this does not apply, but they are not trivial to
+ * to test for)
+ */
+#define gx_curve_is_really_line(x0, y0, seg)            \
+    (((((curve_segment *)seg)->p1.x == x0 &&            \
+       ((curve_segment *)seg)->p1.y == y0) ||           \
+      (((curve_segment *)seg)->p1.x == (seg)->pt.x &&   \
+       ((curve_segment *)seg)->p1.y == (seg)->pt.y)) && \
+     ((((curve_segment *)seg)->p2.x == x0 &&            \
+       ((curve_segment *)seg)->p2.y == y0) ||           \
+      (((curve_segment *)seg)->p2.x == (seg)->pt.x &&   \
+       ((curve_segment *)seg)->p2.y == (seg)->pt.y)))
+
+/* Macro to test if a curve is actually a point (i.e. that
+ * start/end and both control points are coincident).
+ */
+#define gx_curve_is_really_point(x0, y0, seg)           \
+    (x0 == (seg)->pt.y && y0 == (seg)->pt.y &&          \
+     ((curve_segment *)seg)->p1.x == x0 &&              \
+     ((curve_segment *)seg)->p1.y == y0 &&              \
+     ((curve_segment *)seg)->p2.x == x0 &&              \
+     ((curve_segment *)seg)->p2.y == y0)
+
 /* Path transformers */
 
 /* The gs_gstate is only needed when flattening for stroke. */

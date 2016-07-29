@@ -179,50 +179,104 @@ gx_subpath_is_rectangular(const subpath * pseg0, gs_fixed_rect * pbox,
                           const subpath ** ppnext)
 {
     const segment *pseg1, *pseg2, *pseg3, *pseg4;
-    gx_path_rectangular_type type;
+    gx_path_rectangular_type type = prt_none;
+    fixed x0 = pseg0->pt.x, y0 = pseg0->pt.y;
+    fixed x1, y1, x2, y2, x3, y3;
 
-    if (pseg0->curve_count == 0 &&
-        (pseg1 = pseg0->next) != 0 &&
-        (pseg2 = pseg1->next) != 0 &&
-        (pseg3 = pseg2->next) != 0
-        ) {
-        if ((pseg4 = pseg3->next) == 0 || pseg4->type == s_start)
-            type = prt_open;	/* M, L, L, L */
-        else if (pseg4->type != s_line && pseg4->type != s_gap) /* must be s_line_close */
-            type = prt_closed;	/* M, L, L, L, C */
-        else if (pseg4->pt.x != pseg0->pt.x ||
-                 pseg4->pt.y != pseg0->pt.y
-            )
+    pseg1 = (const segment *)pseg0;
+    do {
+        pseg1 = pseg1->next;
+        if (pseg1 == NULL)
             return prt_none;
-        else if (pseg4->next == 0 || pseg4->next->type == s_start)
-            type = prt_fake_closed;	/* Mo, L, L, L, Lo */
-        else if (pseg4->next->type != s_line && pseg4->next->type != s_gap) /* must be s_line_close */
-            type = prt_closed;	/* Mo, L, L, L, Lo, C */
-        else
+        x1 = pseg1->pt.x;
+        y1 = pseg1->pt.y;
+        if (pseg1->type == s_curve) {
+            if (gx_curve_is_really_point(x0, y0, pseg1))
+                continue; /* Ignore this one and try again */
+            if (gx_curve_is_really_line(x0, y0, pseg1))
+                break; /* That'll do! */
             return prt_none;
-        {
-            fixed x0 = pseg0->pt.x, y0 = pseg0->pt.y;
-            fixed x2 = pseg2->pt.x, y2 = pseg2->pt.y;
+        } else if (pseg1->type != s_line && pseg1->type != s_gap)
+            return prt_none;
+    } while (x1 == x0 && y1 == y0);
 
-            if ((x0 == pseg1->pt.x && pseg1->pt.y == y2 &&
-                 x2 == pseg3->pt.x && pseg3->pt.y == y0) ||
-                (x0 == pseg3->pt.x && pseg3->pt.y == y2 &&
-                 x2 == pseg1->pt.x && pseg1->pt.y == y0)
-                ) {		/* Path is a rectangle.  Return the bounding box. */
-                if (x0 < x2)
-                    pbox->p.x = x0, pbox->q.x = x2;
-                else
-                    pbox->p.x = x2, pbox->q.x = x0;
-                if (y0 < y2)
-                    pbox->p.y = y0, pbox->q.y = y2;
-                else
-                    pbox->p.y = y2, pbox->q.y = y0;
-                while (pseg4 != 0 && pseg4->type != s_start)
-                    pseg4 = pseg4->next;
-                *ppnext = (const subpath *)pseg4;
-                return type;
-            }
+    pseg2 = pseg1;
+    do {
+        pseg2 = pseg2->next;
+        if (pseg2 == NULL)
+            return prt_none;
+        x2 = pseg2->pt.x;
+        y2 = pseg2->pt.y;
+        if (pseg2->type == s_curve) {
+            if (gx_curve_is_really_point(x1, y1, pseg2))
+                continue; /* Ignore this one and try again */
+            if (gx_curve_is_really_line(x1, y1, pseg2))
+                break; /* That'll do! */
+            return prt_none;
+        } else if (pseg2->type != s_line && pseg2->type != s_gap)
+            return prt_none;
+    } while (x2 == x1 && y2 == y1);
+
+    pseg3 = pseg2;
+    do {
+        pseg3 = pseg3->next;
+        if (pseg3 == NULL)
+            return prt_none;
+        x3 = pseg3->pt.x;
+        y3 = pseg3->pt.y;
+        if (pseg3->type == s_curve) {
+            if (gx_curve_is_really_point(x2, y2, pseg3))
+                continue; /* Ignore this one and try again */
+            if (gx_curve_is_really_line(x2, y2, pseg3))
+                break; /* That'll do! */
+            return prt_none;
+        } else if (pseg3->type != s_line && pseg3->type != s_gap)
+            return prt_none;
+    } while (x3 == x2 && y3 == y2);
+
+    pseg4 = pseg3;
+    do {
+        pseg4 = pseg4->next;
+        if (pseg4 == NULL || pseg4->type == s_start) {
+            type = prt_open; /* M, L, L, L */
+            goto type_known;
         }
+        if (pseg4->type == s_curve) {
+            if (gx_curve_is_really_point(x3, y3, pseg4))
+                continue; /* Ignore this one and try again */
+            if (gx_curve_is_really_line(x3, y3, pseg4))
+                break; /* That'll do! */
+            return prt_none;
+        } else if (pseg4->type == s_line_close) {
+            type = prt_closed; /* M, L, L, L, C */
+            goto type_known;
+        }
+    } while (pseg4->pt.x == x3 && pseg4->pt.y == y3);
+
+    if (pseg4->pt.x != pseg0->pt.x || pseg4->pt.y != pseg0->pt.y)
+        return prt_none;
+    else if (pseg4->next == NULL || pseg4->next->type == s_start)
+        type = prt_fake_closed;	/* Mo, L, L, L, L, Mo */
+    else
+        return prt_none;
+
+type_known:
+
+    if ((x0 == x1 && y1 == y2 && x2 == x3 && y3 == y0) ||
+        (x0 == x3 && y3 == y2 && x2 == x1 && y1 == y0)) {
+        /* Path is a rectangle.  Return the bounding box. */
+        if (x0 < x2)
+            pbox->p.x = x0, pbox->q.x = x2;
+        else
+            pbox->p.x = x2, pbox->q.x = x0;
+        if (y0 < y2)
+            pbox->p.y = y0, pbox->q.y = y2;
+        else
+            pbox->p.y = y2, pbox->q.y = y0;
+        while (pseg4 != 0 && pseg4->type != s_start)
+            pseg4 = pseg4->next;
+        *ppnext = (const subpath *)pseg4;
+        return type;
     }
     return prt_none;
 }
