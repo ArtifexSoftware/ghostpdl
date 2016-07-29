@@ -142,8 +142,6 @@ TEMPLATE_slant_into_trapezoids (const line_list *ll,
             code = LOOP_FILL_RECTANGLE_DIRECT(fo,
                      xli, fixed2int_pixround(y1 - fo->adjust_below),
                      xri - xli, 1);
-            vd_rect(flp->x_next - fo->adjust_left, y1 - fo->adjust_below,
-                    alp->x_next + fo->adjust_right, y1, 1, VD_TRAP_COLOR);
             if (code < 0)
                 return code;
         }
@@ -208,8 +206,6 @@ TEMPLATE_slant_into_trapezoids (const line_list *ll,
             code = LOOP_FILL_RECTANGLE_DIRECT(fo,
                      xli, fixed2int_pixround(y - fo->adjust_below),
                      xri - xli, 1);
-            vd_rect(flp->x_current - fo->adjust_left, y - fo->adjust_below,
-                    alp->x_current + fo->adjust_right, y, 1, VD_TRAP_COLOR);
             if (code < 0)
                 return code;
         }

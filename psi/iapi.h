@@ -303,12 +303,6 @@ gsapi_run_fileW(void *instance,
 GSDLLEXPORT int GSDLLAPI
 gsapi_exit(void *instance);
 
-/* Visual Tracer */
-/* This function is only for debug purpose clients */
-struct vd_trace_interface_s;
-GSDLLEXPORT void GSDLLAPI
-gsapi_set_visual_tracer(struct vd_trace_interface_s *I);
-
 /* function prototypes */
 typedef int (GSDLLAPIPTR PFN_gsapi_revision)(
     gsapi_revision_t *pr, int len);
@@ -360,8 +354,6 @@ typedef int (GSDLLAPIPTR PFN_gsapi_run_fileW)(void *instance,
     const wchar_t *file_name, int user_errors, int *pexit_code);
 #endif
 typedef int (GSDLLAPIPTR PFN_gsapi_exit)(void *instance);
-typedef void (GSDLLAPIPTR PFN_gsapi_set_visual_tracer)
-    (struct vd_trace_interface_s *I);
 
 #ifdef __MACOS__
 #pragma export off

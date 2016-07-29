@@ -39,10 +39,6 @@
 #include "ierrors.h"
 #include "iapi.h"
 
-#if DEBUG
-#include "vdtrace.h"
-#endif
-
 #include "gdevdsp.h"
 
 #define kScrollBarWidth   15
@@ -654,11 +650,6 @@ void main(void)
        return;
     }
 
-#ifdef DEBUG
-    visual_tracer_init();
-    set_visual_tracer(&visual_tracer);
-#endif
-
     gsapi_set_stdio(instance, gsdll_stdin, gsdll_stdout, gsdll_stderr);
     gsapi_set_poll(instance, gsdll_poll);
     gsapi_set_display_callback(instance, &display);
@@ -679,10 +670,6 @@ void main(void)
     }
 
     gsapi_delete_instance(instance);
-
-#ifdef DEBUG
-    visual_tracer_close();
-#endif
 
     /* Ghostscript has finished - let user see output before quitting */
     WriteCharsToConsole("\r[Finished - hit any key to quit]", 33);

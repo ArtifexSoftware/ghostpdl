@@ -20,7 +20,6 @@
 #include "gsstruct.h"
 #include "gxfixed.h"
 #include "gzpath.h"
-#include "vdtrace.h"
 
 /* These routines all assume that all points are */
 /* already in device coordinates, and in fixed representation. */
@@ -799,11 +798,6 @@ fixed x3, fixed y3, fixed xt, fixed yt, double fraction, segment_notes notes)
 {
     fixed x0 = ppath->position.x, y0 = ppath->position.y;
 
-    vd_curveto(x0 + (fixed) ((xt - x0) * fraction),
-                                   y0 + (fixed) ((yt - y0) * fraction),
-                                   x3 + (fixed) ((xt - x3) * fraction),
-                                   y3 + (fixed) ((yt - y3) * fraction),
-                                   x3, y3);
     return gx_path_add_curve_notes(ppath,
                                    x0 + (fixed) ((xt - x0) * fraction),
                                    y0 + (fixed) ((yt - y0) * fraction),

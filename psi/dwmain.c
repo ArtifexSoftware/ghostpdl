@@ -24,7 +24,6 @@
 #define GSREVISION gs_revision
 #include "ierrors.h"
 #include "iapi.h"
-#include "vdtrace.h"
 
 #include "dwres.h"
 #include "dwdll.h"
@@ -287,11 +286,6 @@ int new_main(int argc, char *argv[])
         return 1;
     }
 
-#ifdef DEBUG
-    visual_tracer_init();
-    gsdll.set_visual_tracer(&visual_tracer);
-#endif
-
     gsdll.set_stdio(instance, gsdll_stdin, gsdll_stdout, gsdll_stderr);
     gsdll.set_poll(instance, gsdll_poll);
     gsdll.set_display_callback(instance, &display);
@@ -345,10 +339,6 @@ int new_main(int argc, char *argv[])
 #endif
 
     gsdll.delete_instance(instance);
-
-#ifdef DEBUG
-    visual_tracer_close();
-#endif
 
     unload_dll(&gsdll);
 

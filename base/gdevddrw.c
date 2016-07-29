@@ -29,13 +29,10 @@
 #include "gxgstate.h"
 #include "gxhldevc.h"
 #include "gdevddrw.h"
-#include "vdtrace.h"
 /*
 #include "gxdtfill.h" - Do not remove this comment.
                         "gxdtfill.h" is included below.
 */
-
-#define VD_RECT_COLOR RGB(0, 0, 255)
 
 #define SWAP(a, b, t)\
   (t = a, a = b, b = t)
@@ -591,8 +588,6 @@ gx_default_fill_parallelogram(gx_device * dev,
         gs_int_rect r;
 
         INT_RECT_FROM_PARALLELOGRAM(&r, px, py, ax, ay, bx, by);
-        vd_rect(int2fixed(r.p.x), int2fixed(r.p.y), int2fixed(r.q.x), int2fixed(r.q.y),
-                    1, (int)pdevc->colors.pure);
         return gx_fill_rectangle_device_rop(r.p.x, r.p.y, r.q.x - r.p.x,
                                             r.q.y - r.p.y, pdevc, dev, lop);
     }
@@ -1072,16 +1067,7 @@ gx_default_image_data(gx_device *dev, gx_image_enum_common_t * info,
                       const byte ** plane_data,
                       int data_x, uint raster, int height)
 {
-    int code;
-
-    vd_get_dc('i');
-    vd_set_shift(0, 0);
-    vd_set_scale(0.01);
-    vd_set_origin(0, 0);
-    /* vd_erase(RGB(192, 192, 192)); */
-    code = gx_image_data(info, plane_data, data_x, raster, height);
-    vd_release_dc;
-    return code;
+    return gx_image_data(info, plane_data, data_x, raster, height);
 }
 
 int

@@ -25,7 +25,6 @@
 #include "gxmatrix.h"
 #include "gxhintn.h"
 #include "gzpath.h"
-#include "vdtrace.h"
 
 #define CURVE_FLATTENING (fixed_1) /* Design units in 'fixed'. */
 

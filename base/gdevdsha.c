@@ -19,7 +19,6 @@
 #include "gserrors.h"
 #include "gxdevice.h"
 #include "gxcindex.h"
-#include "vdtrace.h"
 #include "gxdevsop.h"
 
 static bool 
@@ -264,10 +263,8 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
             ei = min(i, fixed2int_ceiling(fa->clip->q.x));  /* Must be compatible to the clipping logic. */
             if (si < ei) {
                 if (fa->swap_axes) {
-                    vd_rect(int2fixed(j), int2fixed(si), int2fixed(j + 1), int2fixed(ei), 1, (ulong)ci0);
                     code = dev_proc(dev, fill_rectangle)(dev, j, si, 1, ei - si, ci0);
                 } else {
-                    vd_rect(int2fixed(si), int2fixed(j), int2fixed(ei), int2fixed(j + 1), 1, (ulong)ci0);
                     code = dev_proc(dev, fill_rectangle)(dev, si, j, ei - si, 1, ci0);
                 }
                 if (code < 0)
@@ -317,10 +314,8 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
     ei = min(i, fixed2int_ceiling(fa->clip->q.x));  /* Must be compatible to the clipping logic. */
     if (si < ei) {
         if (fa->swap_axes) {
-            vd_rect(int2fixed(j), int2fixed(si), int2fixed(j + 1), int2fixed(ei), 1, (ulong)ci0);
             return dev_proc(dev, fill_rectangle)(dev, j, si, 1, ei - si, ci0);
         } else {
-            vd_rect(int2fixed(si), int2fixed(j), int2fixed(ei), int2fixed(j + 1), 1, (ulong)ci0);
             return dev_proc(dev, fill_rectangle)(dev, si, j, ei - si, 1, ci0);
         }
     }

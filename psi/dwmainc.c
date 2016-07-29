@@ -26,7 +26,6 @@
 #include <process.h>
 #include "ierrors.h"
 #include "iapi.h"
-#include "vdtrace.h"
 #include "gdevdsp.h"
 #include "dwdll.h"
 #include "dwimg.h"
@@ -603,11 +602,6 @@ static int main_utf8(int argc, char *argv[])
     }
 
 #ifndef METRO
-#ifdef DEBUG
-    visual_tracer_init();
-    gsdll.set_visual_tracer(&visual_tracer);
-#endif
-
     if (_beginthread(winthread, 65535, NULL) == -1) {
         fprintf(stderr, "GUI thread creation failed\n");
     }
@@ -700,12 +694,6 @@ static int main_utf8(int argc, char *argv[])
 #endif
 
         gsdll.delete_instance(instance);
-
-#ifndef METRO
-#ifdef DEBUG
-        visual_tracer_close();
-#endif
-#endif
 
         unload_dll(&gsdll);
 

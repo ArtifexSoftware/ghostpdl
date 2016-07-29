@@ -26,7 +26,6 @@
 #include "gxgstate.h"
 #include "gdevdevn.h"
 #include "gdevp14.h"
-#include "vdtrace.h"
 #include "gxdcconv.h"
 #include "gsicc_cache.h"
 
@@ -422,9 +421,6 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     mask_curr_ptr++;
                 }
             }
-#		    if VD_PAINT_MASK
-                    vd_pixel(int2fixed(x), int2fixed(y1-y), mask);
-#		    endif
 
             if (nos_knockout) {
                 /* We need to be knocking out what ever is on the nos, but may need to combine with it's backdrop */
@@ -516,16 +512,6 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                 }
                 nos_ptr[n_chan * nos_planestride] = nos_pixel[n_chan];
             }
-#		if VD_PAINT_COLORS
-                vd_pixel(int2fixed(x), int2fixed(y1-y), n_chan == 0 ?
-                    (nos_pixel[0] << 16) + (nos_pixel[0] << 8) + nos_pixel[0] :
-                    (nos_pixel[0] << 16) + (nos_pixel[1] << 8) + nos_pixel[2]);
-#		endif
-#		if VD_PAINT_ALPHA
-                vd_pixel(int2fixed(x), int2fixed(y1-y),
-                    (nos_pixel[n_chan] << 16) + (nos_pixel[n_chan] << 8) +
-                     nos_pixel[n_chan]);
-#		endif
             if (nos_alpha_g_ptr != NULL)
                 ++nos_alpha_g_ptr;
             if (backdrop_ptr != NULL)

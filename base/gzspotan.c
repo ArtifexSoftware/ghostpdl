@@ -28,13 +28,6 @@
 #include "gzpath.h"
 #include "memory_.h"
 #include "math_.h"
-#include "vdtrace.h"
-
-#define VD_TRAP_N_COLOR RGB(128, 128, 0)
-#define VD_TRAP_U_COLOR RGB(0, 0, 255)
-#define VD_CONT_COLOR RGB(0, 255, 0)
-#define VD_STEM_COLOR RGB(255, 255, 255)
-#define VD_HINT_COLOR RGB(255, 0, 0)
 
 public_st_device_spot_analyzer();
 private_st_san_trap();
@@ -357,8 +350,6 @@ try_unite_last_trap(gx_device_spot_analyzer *padev, fixed xlbot)
                 t->xrtop = last->xrtop;
                 t->rightmost &= last->rightmost;
                 t->leftmost &= last->leftmost;
-                vd_quad(t->xlbot, t->ybot, t->xrbot, t->ybot,
-                        t->xrtop, t->ytop, t->xltop, t->ytop, 1, VD_TRAP_U_COLOR);
                 code = trap_unreserve(padev, last);
                 if (code < 0)
                     return code;
@@ -522,8 +513,6 @@ gx_san_trap_store(gx_device_spot_analyzer *padev,
     last->fork = 0;
     last->visited = false;
     last->leftmost = last->rightmost = true;
-    vd_quad(last->xlbot, last->ybot, last->xrbot, last->ybot,
-            last->xrtop, last->ytop, last->xltop, last->ytop, 1, VD_TRAP_N_COLOR);
     if (padev->top_band != NULL) {
         padev->top_band->rightmost = false;
         last->leftmost = false;
@@ -546,9 +535,6 @@ gx_san_trap_store(gx_device_spot_analyzer *padev,
                 return_error(gs_error_VMerror);
             cont->lower = t;
             cont->upper = last;
-            vd_bar((t->xltop + t->xrtop + t->xlbot + t->xrbot) / 4, (t->ytop + t->ybot) / 2,
-                   (last->xltop + last->xrtop + last->xlbot + last->xrbot) / 4,
-                   (last->ytop + last->ybot) / 2, 0, VD_CONT_COLOR);
             cont_list_insert_last(&t->upper, cont);
             last->fork++;
             if (t == bot_last)
@@ -608,7 +594,6 @@ hint_by_trap(gx_device_spot_analyzer *padev, int side_mask,
         sect.xr = at_top ? best_trap->xrtop : best_trap->xrbot;
         sect.l = best_trap->l;
         sect.r = best_trap->r;
-        vd_bar(sect.xl, sect.yl, sect.xr, sect.yr, 0, VD_HINT_COLOR);
         code = handler(client_data, &sect);
         if (code < 0)
             return code;
@@ -641,14 +626,11 @@ choose_by_tangent(const segment *p, const segment *s,
 {
     if (s->type == s_curve) {
         const curve_segment *c = (const curve_segment *)s;
-        vd_curve(p->pt.x, p->pt.y, c->p1.x, c->p1.y, c->p2.x, c->p2.y,
-                 s->pt.x, s->pt.y, 0, VD_HINT_COLOR);
         if (ybot <= p->pt.y && p->pt.y <= ytop)
             choose_by_vector(c->p1.x, c->p1.y, p->pt.x, p->pt.y, s, slope, len, store_segm, store_x, store_y);
         if (ybot <= s->pt.y && s->pt.y <= ytop)
             choose_by_vector(c->p2.x, c->p2.y, s->pt.x, s->pt.y, s, slope, len, store_segm, store_x, store_y);
     } else {
-        vd_bar(p->pt.x, p->pt.y, s->pt.x, s->pt.y, 0, VD_HINT_COLOR);
         choose_by_vector(s->pt.x, s->pt.y, p->pt.x, p->pt.y, s, slope, len, store_segm, store_x, store_y);
     }
 }
@@ -718,7 +700,6 @@ hint_by_tangent(gx_device_spot_analyzer *padev, int side_mask,
                 return 0;
             sect.xr = padev->xmax + 1000; /* ignore side */
         }
-        vd_bar(sect.xl, sect.yl, sect.xr, sect.yr, 0, VD_HINT_COLOR);
         code = handler(client_data, &sect);
         if (code < 0)
             return code;
@@ -800,8 +781,6 @@ gx_san_generate_stems_aux(gx_device_spot_analyzer *padev,
                     t1->visited = true;
                 }
                 /* We've got a stem suspection from t0 to t1. */
-                vd_quad(t0->xlbot, t0->ybot, t0->xrbot, t0->ybot,
-                        t1->xrtop, t1->ytop, t1->xltop, t1->ytop, 1, VD_STEM_COLOR);
                 for (t = t0; ; t = t->upper->upper) {
                     length += trap_axis_length(t);
                     area += trap_area(t);
@@ -824,27 +803,10 @@ gx_san_generate_stems_aux(gx_device_spot_analyzer *padev,
     return 0;
 }
 
-#define VD_SCALE 0.03
 int
 gx_san_generate_stems(gx_device_spot_analyzer *padev,
                 bool overall_hints, void *client_data,
                 int (*handler)(void *client_data, gx_san_sect *ss))
 {
-    int code;
-    vd_save;
-
-    if (vd_allowed('F') || vd_allowed('f')) {
-        if (!vd_enabled) {
-            vd_get_dc('f');
-        }
-        if (vd_enabled) {
-            vd_set_shift(0, 0);
-            vd_set_scale(VD_SCALE);
-            vd_set_origin(0, 0);
-        }
-    } else
-        vd_disable;
-    code = gx_san_generate_stems_aux(padev, overall_hints, client_data, handler);
-    vd_restore;
-    return code;
+    return gx_san_generate_stems_aux(padev, overall_hints, client_data, handler);
 }

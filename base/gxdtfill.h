@@ -208,11 +208,6 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
         (FILL_DIRECT ? FILL_TRAP_RECT_DIRECT(x,y,w,h) : FILL_TRAP_RECT_INDIRECT(x,y,w,h))
 #endif
 
-#define VD_RECT_SWAPPED(rxl, ry, rxr, iy)\
-    vd_rect(int2fixed(SWAP_AXES ? ry : rxl), int2fixed(SWAP_AXES ? rxl : ry),\
-            int2fixed(SWAP_AXES ? iy : rxr), int2fixed(SWAP_AXES ? rxr : iy),\
-            1, VD_RECT_COLOR);
-
         /* Compute the dx/dy ratios. */
 
         /*
@@ -248,7 +243,6 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 #define CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, adj1, adj2, fill)\
     if (adj1 < adj2) {\
         if (iy - ry > 1) {\
-            VD_RECT_SWAPPED(rxl, ry, rxr, iy - 1);\
             code = fill(rxl, ry, rxr - rxl, iy - ry - 1);\
             if (code < 0)\
                 goto xit;\
@@ -278,7 +272,6 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
                     rxl = fixed2int_var(l.x);
                     rxr = fixed2int_var(r.x);
                     SET_MINIMAL_WIDTH(rxl, rxr, l, r);
-                    VD_RECT_SWAPPED(rxl, ry, rxr, iy1);
                     code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy1 - ry);
                     goto xit;
                 }
@@ -351,7 +344,6 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
                     code = set_x_gradient(&xg, &lg, &rg, &l, &r, rxl, rxr, num_components);
                     if (code < 0)
                         goto xit;
-                    /*VD_RECT_SWAPPED(rxl, iy, rxr, iy + 1);*/
                     code = FILL_TRAP_RECT(rxl, iy, rxr - rxl, 1);
                     if (code < 0)
                         goto xit;
@@ -371,7 +363,6 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
                 if (ixl != rxl || ixr != rxr) {
                     CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, rxr, ixl, FILL_TRAP_RECT);
                     CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, ixr, rxl, FILL_TRAP_RECT);
-                    VD_RECT_SWAPPED(rxl, ry, rxr, iy);
                     code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
                     if (code < 0)
                         goto xit;
@@ -380,7 +371,6 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 #	    endif
         }
 #	if !LINEAR_COLOR
-            VD_RECT_SWAPPED(rxl, ry, rxr, iy);
             code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
 #	else
             code = 0;
@@ -392,7 +382,6 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 #undef FILL_TRAP_RECT_DIRECT
 #undef FILL_TRAP_RECT_INRECT
 #undef YMULT_QUO
-#undef VD_RECT_SWAPPED
 xit:	if (code < 0 && FILL_DIRECT)
             return_error(code);
         return_if_interrupt(dev->memory);

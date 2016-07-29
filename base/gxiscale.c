@@ -38,7 +38,6 @@
 #include "siinterp.h"           /* for spatial interpolation */
 #include "siscale.h"            /* for Mitchell filtering */
 #include "sidscale.h"           /* for special case downscale filter */
-#include "vdtrace.h"
 #include "gscindex.h"           /* included for proper handling of index color spaces
                                 and keeping data in source color space */
 #include "gxcolor2.h"           /* define of float_color_to_byte_color */
@@ -1013,7 +1012,6 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                                         if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
                                             return_error(gs_error_rangecheck);
                                     }
-                                    vd_pixel(int2fixed(x), int2fixed(ry), color);
                                     x++, psrc += 1;
                                 } while (x < xe && psrc[-1] == psrc[0]);
                                 break;
@@ -1027,7 +1025,6 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                                         if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
                                             return_error(gs_error_rangecheck);
                                     }
-                                    vd_pixel(int2fixed(x), int2fixed(ry), color);
                                     x++, psrc += 3;
                                 } while (x < xe &&
                                          psrc[-3] == psrc[0] &&
@@ -1463,7 +1460,6 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                                         if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
                                             return_error(gs_error_rangecheck);
                                     }
-                                    vd_pixel(int2fixed(x), int2fixed(ry), color);
                                     x++, p_cm_interp += 1;
                                 } while (x < xe && p_cm_interp[-1] == p_cm_interp[0]);
                                 break;
@@ -1477,7 +1473,6 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                                         if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
                                             return_error(gs_error_rangecheck);
                                     }
-                                    vd_pixel(int2fixed(x), int2fixed(ry), color);
                                     x++, p_cm_interp += 3;
                                 } while (x < xe && p_cm_interp[-3] == p_cm_interp[0] &&
                                      p_cm_interp[-2] == p_cm_interp[1] &&

@@ -29,10 +29,7 @@
 #include "gxpath.h"
 #include "gxshade.h"
 #include "gxshade4.h"
-#include "vdtrace.h"
 #include "gsicc_cache.h"
-
-#define VD_TRACE_TRIANGLE_PATCH 1
 
 /* Initialize the fill state for triangle shading. */
 int
@@ -103,12 +100,6 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
                                         provides a non-const access. */
     int code;
 
-    if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s')) {
-        vd_get_dc('s');
-        vd_set_shift(0, 0);
-        vd_set_scale(0.01);
-        vd_set_origin(0, 0);
-    }
     code = shade_init_fill_state((shading_fill_state_t *)&pfs,
                                  (const gs_shading_t *)psh, dev, pgs);
     if (code < 0)
@@ -157,8 +148,6 @@ v2:		if ((code = Gt_next_vertex(pshm, &cs, &vc, cc)) < 0)
         }
         cs.align(&cs, 8); /* Debugged with 12-14O.PS page 2. */
     }
-    if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s'))
-        vd_release_dc;
     release_colors(&pfs, pfs.color_stack, 3);
     if (pfs.icclink != NULL) gsicc_release_link(pfs.icclink);
     if (term_patch_fill_state(&pfs))
@@ -185,12 +174,6 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     patch_color_t *c, *cn; /* cn == next.c always, provides a non-contst access. */
     int i, code;
 
-    if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s')) {
-        vd_get_dc('s');
-        vd_set_shift(0, 0);
-        vd_set_scale(0.01);
-        vd_set_origin(0, 0);
-    }
     code = shade_init_fill_state((shading_fill_state_t *)&pfs,
                                  (const gs_shading_t *)psh, dev, pgs);
     if (code < 0)
@@ -254,8 +237,6 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
         next.c = cn = c;
     }
 out:
-    if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s'))
-        vd_release_dc;
     gs_free_object(pgs->memory, vertex, "gs_shading_LfGt_render");
     gs_free_object(pgs->memory, color_buffer, "gs_shading_LfGt_render");
     gs_free_object(pgs->memory, color_buffer_ptrs, "gs_shading_LfGt_render");

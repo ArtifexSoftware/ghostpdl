@@ -46,7 +46,6 @@
 #include "gxcldev.h"
 #include "gxclpath.h"
 #include "gxdcconv.h"
-#include "vdtrace.h"
 #include "gscolorbuffer.h"
 #include "gsptype2.h"
 #include "gxpcolor.h"
@@ -3934,11 +3933,6 @@ pdf14_end_transparency_group(gx_device *dev,
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &group_profile,
                           &render_cond);
     if_debug0m('v', dev->memory, "[v]pdf14_end_transparency_group\n");
-    vd_get_dc('c');
-    vd_set_shift(0, 0);
-    vd_set_scale(0.01);
-    vd_set_origin(0, 0);
-    vd_erase(RGB(192, 192, 192));
     code = pdf14_pop_transparency_group(pgs, pdev->ctx, pdev->blend_procs,
                                 pdev->color_info.num_components, group_profile,
                                 (gx_device *) pdev);
@@ -3981,7 +3975,6 @@ pdf14_end_transparency_group(gx_device *dev,
             parent_color->icc_profile = NULL;
         }
     }
-    vd_release_dc;
     return code;
 }
 

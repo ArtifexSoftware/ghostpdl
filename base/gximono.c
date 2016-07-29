@@ -34,7 +34,6 @@
 #include "gxcpath.h"
 #include "gximage.h"
 #include "gzht.h"
-#include "vdtrace.h"
 #include "gsicc.h"
 #include "gsicc_cache.h"
 #include "gsicc_cms.h"
@@ -732,8 +731,6 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
                             }
                             code = gx_fill_rectangle_device_rop(xi, yt, wi, iht,
                                                                  pdevc, dev, lop);
-                            vd_rect(int2fixed(xi), int2fixed(yt), int2fixed(xi + wi), int2fixed(yt + iht),
-                                0, pdevc->colors.pure /* wrong with halftones */);
                     }
                     if (code < 0)
                         goto err;

@@ -31,7 +31,6 @@
 #include "gdevp14.h"
 #include "gsmemory.h"
 #include "gsmemlok.h"
-#include "vdtrace.h"
 #include "gsicc_cache.h"
 /*
  * We really don't like the fact that gdevprn.h is included here, since
@@ -915,16 +914,7 @@ clist_playback_file_bands(clist_playback_action action,
         s.foreign = 1;
         s.state = (stream_state *)&rs;
 
-        if (vd_allowed('s')) {
-            vd_get_dc('s');
-        } else if (vd_allowed('i')) {
-            vd_get_dc('i');
-        }
-        vd_set_shift(0, 0);
-        vd_set_scale(0.01);
-        vd_set_origin(0, 0);
         code = clist_playback_band(action, crdev, &s, target, x0, y0, mem);
-        vd_release_dc;
 #	ifdef DEBUG
         s_band_read_dnit_offset_map(crdev, (stream_state *)&rs);
 #	endif

@@ -32,12 +32,7 @@
 #include "gxshade.h"
 #include "gxdevcli.h"
 #include "gxshade4.h"
-#include "vdtrace.h"
 #include "gsicc_cache.h"
-
-#define VD_TRACE_AXIAL_PATCH 1
-#define VD_TRACE_RADIAL_PATCH 1
-#define VD_TRACE_FUNCTIONAL_PATCH 1
 
 /* ---------------- Function-based shading ---------------- */
 
@@ -90,12 +85,6 @@ Fb_fill_region(Fb_fill_state_t * pfs, const gs_fixed_rect *rect)
     Fb_frame_t * fp = &pfs->frame;
     int code;
 
-    if (VD_TRACE_FUNCTIONAL_PATCH && vd_allowed('s')) {
-        vd_get_dc('s');
-        vd_set_shift(0, 0);
-        vd_set_scale(0.01);
-        vd_set_origin(0, 0);
-    }
     memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
     pfs1.Function = pfs->psh->params.Function;
     code = init_patch_fill_state(&pfs1);
@@ -116,8 +105,6 @@ Fb_fill_region(Fb_fill_state_t * pfs, const gs_fixed_rect *rect)
     code = patch_fill(&pfs1, curve, NULL, NULL);
     if (term_patch_fill_state(&pfs1))
         return_error(gs_error_unregistered); /* Must not happen. */
-    if (VD_TRACE_FUNCTIONAL_PATCH && vd_allowed('s'))
-        vd_release_dc;
     return code;
 }
 
@@ -302,18 +289,7 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
                             const gs_fixed_rect * rect_clip,
                             gx_device * dev, gs_gstate * pgs)
 {
-    int code;
-
-    if (VD_TRACE_AXIAL_PATCH && vd_allowed('s')) {
-        vd_get_dc('s');
-        vd_set_shift(0, 0);
-        vd_set_scale(0.01);
-        vd_set_origin(0, 0);
-    }
-    code = gs_shading_A_fill_rectangle_aux(psh0, rect, rect_clip, dev, pgs);
-    if (VD_TRACE_AXIAL_PATCH && vd_allowed('s'))
-        vd_release_dc;
-    return code;
+    return gs_shading_A_fill_rectangle_aux(psh0, rect, rect_clip, dev, pgs);
 }
 
 /* ---------------- Radial shading ---------------- */
@@ -1310,16 +1286,5 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
                             const gs_fixed_rect * rect_clip,
                             gx_device * dev, gs_gstate * pgs)
 {
-    int code;
-
-    if (VD_TRACE_RADIAL_PATCH && vd_allowed('s')) {
-        vd_get_dc('s');
-        vd_set_shift(0, 0);
-        vd_set_scale(0.01);
-        vd_set_origin(0, 0);
-    }
-    code = gs_shading_R_fill_rectangle_aux(psh0, rect, rect_clip, dev, pgs);
-    if (VD_TRACE_FUNCTIONAL_PATCH && vd_allowed('s'))
-        vd_release_dc;
-    return code;
+    return gs_shading_R_fill_rectangle_aux(psh0, rect, rect_clip, dev, pgs);
 }

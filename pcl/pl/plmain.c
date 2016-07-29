@@ -53,11 +53,6 @@
 #include "gdevdsp.h"
 #include "gdevdsp2.h"
 
-#if defined(DEBUG) && defined(ALLOW_VD_TRACE)
-#include "dwtrace.h"
-#include "vdtrace.h"
-#endif
-
 #ifdef _Windows
 /* FIXME: this is purely because the gsdll.h requires psi/iapi.h and
  * we don't want that required here. But as a couple of Windows specific
@@ -112,10 +107,6 @@ Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -l<PCL5C|PCL5E|RTL> -Z...\n\
 /* ---------------- Static data for memory management ------------------ */
 
 static gs_gc_root_t device_root;
-
-#if defined(DEBUG) && defined(ALLOW_VD_TRACE)
-void *hwndtext;                 /* Hack: Should be of HWND type. */
-#endif
 
 void pl_print_usage(const pl_main_instance_t *, const char *);
 
@@ -395,9 +386,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
             errprintf(mem, "Unable to open %s for reading.\n", filename);
             return -1;
         }
-#if defined(DEBUG) && defined(ALLOW_VD_TRACE)
-        vd_trace0 = visual_tracer_init();
-#endif
 
 #ifdef DEBUG
         if (gs_debug_c(':'))
@@ -572,9 +560,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
      */
     arg_finit(&args);
 
-#if defined(DEBUG) && defined(ALLOW_VD_TRACE)
-    visual_tracer_close();
-#endif
     if (gs_debug_c('A'))
         dmprintf(mem, "Final time");
     pl_platform_dnit(0);
@@ -1455,11 +1440,6 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     }
                 }
                 break;
-#if defined(DEBUG) && defined(ALLOW_VD_TRACE)
-            case 'T':
-                set_debug_flags(arg, vd_flags);
-                break;
-#endif
             case 'Z':
                 set_debug_flags(arg, gs_debug);
                 break;

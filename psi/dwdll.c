@@ -200,14 +200,6 @@ gsapi_revision_t rv;
         return 1;
     }
 
-    gsdll->set_visual_tracer = (PFN_gsapi_set_visual_tracer)
-        GetProcAddress(gsdll->hmodule, "gsapi_set_visual_tracer");
-    if (gsdll->set_visual_tracer == NULL) {
-        strncpy(last_error, "Can't find gsapi_set_visual_tracer\n", len-1);
-        unload_dll(gsdll);
-        return 1;
-    }
-
     return 0;
 }
 
@@ -223,7 +215,6 @@ void unload_dll(GSDLL *gsdll)
     gsdll->set_stdio = NULL;
     gsdll->set_poll = NULL;
     gsdll->set_display_callback = NULL;
-    gsdll->set_visual_tracer = NULL;
 
     if (gsdll->hmodule != (HINSTANCE)NULL)
             FreeLibrary(gsdll->hmodule);

@@ -25,7 +25,6 @@
 #include <io.h>
 #include <fcntl.h>
 #include <process.h>
-#include "vdtrace.h"
 #include "gserrors.h"
 #include "gdevdsp.h"
 #include "plwimg.h"

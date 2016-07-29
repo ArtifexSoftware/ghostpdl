@@ -34,7 +34,6 @@
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gxpaint.h"
-#include "vdtrace.h"
 #include "gsstate.h"            /* for gs_currentcpsimode */
 
 /* RJW: There appears to be a difference in the xps and postscript models
@@ -1079,23 +1078,7 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                const gs_gstate * pgs, const gx_stroke_params * params,
                  const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
-    int code;
-
-    if (vd_allowed('S')) {
-        vd_get_dc('S');
-        if (vd_enabled) {
-            vd_set_shift(0, 100);
-            vd_set_scale(0.03);
-            vd_set_origin(0, 0);
-            vd_erase(RGB(192, 192, 192));
-        }
-    }
-    if (vd_enabled)
-        vd_setcolor(pdevc->colors.pure);
-    code = gx_stroke_path_only_aux(ppath, to_path, pdev, pgs, params, pdevc, pcpath);
-    if (vd_allowed('S'))
-        vd_release_dc;
-    return code;
+    return gx_stroke_path_only_aux(ppath, to_path, pdev, pgs, params, pdevc, pcpath);
 }
 
 /* ------ Internal routines ------ */
@@ -1564,7 +1547,6 @@ stroke_add(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
     }
     /* Create an initial cap if desired. */
     if (first == 0 && start_cap == gs_cap_round) {
-        vd_moveto(plp->o.co.x, plp->o.co.y);
         if ((code = gx_path_add_point(ppath, plp->o.co.x, plp->o.co.y)) < 0 ||
             (code = add_pie_cap(ppath, &plp->o)) < 0)
             return code;
@@ -1579,7 +1561,6 @@ stroke_add(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
         /* Add a final cap. */
         if (end_cap == gs_cap_round) {
             ASSIGN_POINT(&points[npoints], plp->e.co);
-            vd_lineto(points[npoints].x, points[npoints].y);
             ++npoints;
             if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
                 return code;
@@ -1591,7 +1572,6 @@ stroke_add(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
         code = cap_points(gs_cap_butt, &plp->e, points + npoints);
     else if (join == gs_join_round) {
         ASSIGN_POINT(&points[npoints], plp->e.co);
-        vd_lineto(points[npoints].x, points[npoints].y);
         ++npoints;
         if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
             return code;
@@ -1602,7 +1582,6 @@ stroke_add(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
          * then the join should actually be a round one, because it would
          * have been round if we had flattened it enough. */
         ASSIGN_POINT(&points[npoints], plp->e.co);
-        vd_lineto(points[npoints].x, points[npoints].y);
         ++npoints;
         if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
             return code;
@@ -1618,7 +1597,6 @@ stroke_add(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
   done:
     if (code < 0)
         return code;
-    vd_closepath;
     if ((flags & nf_some_from_arc) && (!plp->thin) &&
         (nplp != NULL) && (!nplp->thin))
         code = join_under_pie(ppath, plp, nplp, reflected);
@@ -1713,7 +1691,6 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
     if (first == 0) {
         /* Create an initial cap. */
         if (start_cap == gs_cap_round) {
-            vd_moveto(plp->o.co.x, plp->o.co.y);
             if ((code = gx_path_add_point(ppath, plp->o.co.x, plp->o.co.y)) < 0 ||
                 (code = add_pie_cap(ppath, &plp->o)) < 0)
                 return code;
@@ -1904,7 +1881,6 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
         if (code < 0)
             return code;
     }
-    vd_closepath;
     if (ensure_closed)
         return gx_join_path_and_reverse(ppath, rpath);
     return 0;
@@ -1952,7 +1928,6 @@ stroke_add_compat(gx_path * ppath, gx_path *rpath, bool ensure_closed,
     code = gx_path_close_subpath(ppath);
     if (code < 0)
         return code;
-    vd_closepath;
     npoints = 0;
     if (nplp == 0) {
         /* Add a final cap. */
@@ -1960,7 +1935,6 @@ stroke_add_compat(gx_path * ppath, gx_path *rpath, bool ensure_closed,
             return 0;
         if (pgs_lp->start_cap == gs_cap_round) {
             ASSIGN_POINT(&points[npoints], plp->e.co);
-            vd_lineto(points[npoints].x, points[npoints].y);
             ++npoints;
             if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
                 return code;
@@ -1976,7 +1950,6 @@ stroke_add_compat(gx_path * ppath, gx_path *rpath, bool ensure_closed,
         npoints += code;
     } else if (join == gs_join_round) {
         ASSIGN_POINT(&points[npoints], plp->e.co);
-        vd_lineto(points[npoints].x, points[npoints].y);
         ++npoints;
         if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
             return code;
@@ -1990,7 +1963,6 @@ stroke_add_compat(gx_path * ppath, gx_path *rpath, bool ensure_closed,
 
         if (ccw ^ reflected) {
             ASSIGN_POINT(&points[0], plp->e.co);
-            vd_lineto(points[0].x, points[0].y);
             ++npoints;
             code = line_join_points(pgs_lp, plp, nplp, points + npoints,
                                     (uniform ? (gs_matrix *) 0 : &ctm_only(pgs)),
@@ -2013,7 +1985,6 @@ stroke_add_compat(gx_path * ppath, gx_path *rpath, bool ensure_closed,
     if (code < 0)
         return code;
     code = gx_path_close_subpath(ppath);
-    vd_closepath;
     return code;
 }
 
@@ -2044,7 +2015,6 @@ stroke_add_initial_cap_compat(gx_path * ppath, pl_ptr plp, bool adlust_longitude
     }
     /* Create an initial cap if desired. */
     if (pgs_lp->start_cap == gs_cap_round) {
-        vd_moveto(plp->o.co.x, plp->o.co.y);
         if ((code = gx_path_add_point(ppath, plp->o.co.x, plp->o.co.y)) < 0 ||
             (code = add_round_cap(ppath, &plp->o)) < 0
             )
@@ -2072,17 +2042,12 @@ add_points(gx_path * ppath, const gs_fixed_point * points, int npoints,
 {
     int code;
 
-    /* vd_setcolor(0); */
-    vd_setlinewidth(0);
     if (moveto_first) {
         code = gx_path_add_point(ppath, points[0].x, points[0].y);
-        vd_moveto(points[0].x, points[0].y);
         if (code < 0)
             return code;
-        vd_lineto_multi(points + 1, npoints - 1);
         return gx_path_add_lines(ppath, points + 1, npoints - 1);
     } else {
-        vd_lineto_multi(points, npoints);
         return gx_path_add_lines(ppath, points, npoints);
     }
 }
@@ -2498,7 +2463,6 @@ add_round_cap(gx_path * ppath, const_ep_ptr endp)
         (code = gx_path_add_line(ppath, xe, ye)) < 0
         )
         return code;
-    vd_lineto(xe, ye);
     return 0;
 }
 
@@ -2516,7 +2480,6 @@ add_pie_cap(gx_path * ppath, const_ep_ptr endp)
                                         quarter_arc_fraction)) < 0 ||
         (code = gx_path_add_line(ppath, xe, ye)) < 0)
         return code;
-    vd_lineto(xe, ye);
     return 0;
 }
 
@@ -2637,7 +2600,6 @@ add_pie_join(gx_path * ppath, pl_ptr plp, pl_ptr nplp, bool reflected,
          (code = gx_path_add_line(ppath, plp->e.ce.x, plp->e.ce.y)) < 0))
         return code;
 
-    vd_lineto(plp->e.ce.x, plp->e.ce.y);
     return 0;
 }
 

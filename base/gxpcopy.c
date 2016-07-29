@@ -22,7 +22,6 @@
 #include "gxfarith.h"
 #include "gxgstate.h"		/* for access to line params */
 #include "gzpath.h"
-#include "vdtrace.h"
 
 /* Forward declarations */
 static void adjust_point_to_tangent(segment *, const segment *,
@@ -113,14 +112,12 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
             float2fixed((fabs(pgs->ctm.xy) + fabs(pgs->ctm.yy)) * width) * 2;
     } else
         expansion.x = expansion.y = 0; /* Quiet gcc warning. */
-    vd_setcolor(RGB(255,255,0));
     pseg = (const segment *)(ppath_old->first_subpath);
     while (pseg) {
         switch (pseg->type) {
             case s_start:
                 code = gx_path_add_point(ppath,
                                          pseg->pt.x, pseg->pt.y);
-                vd_moveto(pseg->pt.x, pseg->pt.y);
                 break;
             case s_curve:
                 {
@@ -204,7 +201,6 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
                                                           notes);
                             if (code < 0)
                                 break;
-                            vd_lineto(x0, y0);
                             start = ppath->current_subpath->last;
                             notes |= sn_not_first;
                             cseg = *pc;
@@ -216,7 +212,6 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
                              * they line up with the tangents.
                              */
                             end = ppath->current_subpath->last;
-                            vd_lineto(ppath->position.x, ppath->position.y);
                             if ((code = gx_path_add_line_notes(ppath,
                                                           ppath->position.x,
                                                           ppath->position.y,
@@ -247,7 +242,6 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
                     break;
                 code = gx_path_add_line_notes(ppath,
                                        pseg->pt.x, pseg->pt.y, pseg->notes);
-                vd_lineto(pseg->pt.x, pseg->pt.y);
                 break;
             case s_gap:
                 code = break_gap_if_long(ppath, pseg);
@@ -255,7 +249,6 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
                     break;
                 code = gx_path_add_gap_notes(ppath,
                                        pseg->pt.x, pseg->pt.y, pseg->notes);
-                vd_lineto(pseg->pt.x, pseg->pt.y);
                 break;
             case s_dash:
                 {
@@ -270,7 +263,6 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
                 if (code < 0)
                     break;
                 code = gx_path_close_subpath(ppath);
-                vd_closepath;
                 break;
             default:		/* can't happen */
                 code = gs_note_error(gs_error_unregistered);

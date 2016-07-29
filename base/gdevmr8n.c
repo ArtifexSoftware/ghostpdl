@@ -26,7 +26,6 @@
 #include "gxdevrop.h"
 #include "gdevmem.h"
 #include "gdevmrop.h"
-#include "vdtrace.h"
 
 /* Enable the following to use RUN_ROPs. Benefits of this are not proven yet
  * so disabled, even though cluster testing shows that the results are the
@@ -219,15 +218,11 @@ df:         return mem_default_strip_copy_rop(dev,
                 if (bpp == 1)
 /**** 8-bit destination ****/
                     for (; left > 0; ++dptr, --left) {
-                        vd_pixel(int2fixed((dptr - base) % draster),
-                                 int2fixed((dptr - base) / draster + y), const_texture);
                         rop_body_8((byte)const_source, (byte)const_texture);
                     }
                 else
 /**** 24-bit destination ****/
                     for (; left > 0; dptr += 3, --left) {
-                        vd_pixel(int2fixed((dptr - base) % draster / 3),
-                                 int2fixed((dptr - base) / draster + y), const_texture);
                         rop_body_24(const_source, const_texture);
                     }
                 if (memcmp(testbuffer, start, bytelen) != 0) {
@@ -263,8 +258,6 @@ df:         return mem_default_strip_copy_rop(dev,
                         for (; left > 0; ++dptr, ++sx, --left) {
                             byte s_pixel = cbit8(srow, sx, scolors);
 
-                            vd_pixel(int2fixed((dptr - base) % draster),
-                                 int2fixed((dptr - base) / draster + y), const_texture);
                             rop_body_8(s_pixel, (byte)const_texture);
                         }
                     else
@@ -272,8 +265,6 @@ df:         return mem_default_strip_copy_rop(dev,
                         for (; left > 0; dptr += 3, ++sx, --left) {
                             bits32 s_pixel = cbit24(srow, sx, scolors);
 
-                            vd_pixel(int2fixed((dptr - base) % draster / 3),
-                                 int2fixed((dptr - base) / draster + y), const_texture);
                             rop_body_24(s_pixel, const_texture);
                         }
                     if (memcmp(testbuffer, start, bytelen) != 0) {
@@ -309,8 +300,6 @@ df:         return mem_default_strip_copy_rop(dev,
                         for (; left > 0; ++dptr, ++sptr, --left) {
                             byte s_pixel = *sptr;
 
-                            vd_pixel(int2fixed((dptr - base) % draster),
-                                     int2fixed((dptr - base) / draster + y), const_texture);
                             rop_body_8(s_pixel, (byte)const_texture);
                         }
                     } else {
@@ -323,8 +312,6 @@ df:         return mem_default_strip_copy_rop(dev,
                         for (; left > 0; dptr += 3, sptr += 3, --left) {
                             bits32 s_pixel = get24(sptr);
 
-                            vd_pixel(int2fixed((dptr - base) % draster / 3),
-                                     int2fixed((dptr - base) / draster + y), const_texture);
                             rop_body_24(s_pixel, const_texture);
                         }
                     }
@@ -372,8 +359,6 @@ df:         return mem_default_strip_copy_rop(dev,
                         for (; left > 0; ++dptr, ++tx, --left) {
                             byte t_pixel = cbit8(tptr, tx, tcolors);
 
-                            vd_pixel(int2fixed((dptr - base) % draster),
-                                 int2fixed((dptr - base) / draster + y), t_pixel);
                             rop_body_8((byte)const_source, t_pixel);
                         }
                     else
@@ -381,8 +366,6 @@ df:         return mem_default_strip_copy_rop(dev,
                         for (; left > 0; dptr += 3, ++tx, --left) {
                             bits32 t_pixel = cbit24(tptr, tx, tcolors);
 
-                            vd_pixel(int2fixed((dptr - base) % draster / 3),
-                                 int2fixed((dptr - base) / draster + y), t_pixel);
                             rop_body_24(const_source, t_pixel);
                         }
                     if (memcmp(testbuffer, start, bytelen) != 0) {
@@ -422,8 +405,6 @@ df:         return mem_default_strip_copy_rop(dev,
                         for (; left > 0; ++dptr, ++tptr, --left) {
                             byte t_pixel = *tptr;
 
-                            vd_pixel(int2fixed((dptr - base) % draster),
-                                    int2fixed((dptr - base) / draster + y), t_pixel);
                             rop_body_8((byte)const_source, t_pixel);
                         }
                     } else {
@@ -431,8 +412,6 @@ df:         return mem_default_strip_copy_rop(dev,
                         for (; left > 0; dptr += 3, tptr += 3, --left) {
                             bits32 t_pixel = get24(tptr);
 
-                            vd_pixel(int2fixed((dptr - base) % draster / 3),
-                                     int2fixed((dptr - base) / draster + y), t_pixel);
                             rop_body_24(const_source, t_pixel);
                         }
                     }
@@ -506,8 +485,6 @@ df:         return mem_default_strip_copy_rop(dev,
                             byte t_pixel =
                                 (tcolors ? cbit8(trow, tx, tcolors) : *tptr);
 
-                            vd_pixel(int2fixed((dptr - base) % draster),
-                                     int2fixed((dptr - base) / draster + y), t_pixel);
                             rop_body_8(s_pixel, t_pixel);
                         }
                     } else {
@@ -520,8 +497,6 @@ df:         return mem_default_strip_copy_rop(dev,
                                 (tcolors ? cbit24(tptr, tx, tcolors) :
                                  get24(tptr));
 
-                            vd_pixel(int2fixed((dptr - base) % draster / 3),
-                                     int2fixed((dptr - base) / draster + y), t_pixel);
                             rop_body_24(s_pixel, t_pixel);
                         }
                     }
@@ -635,15 +610,11 @@ df:         return mem_default_strip_copy_rop(dev,
                 if (bpp == 1)
 /**** 8-bit destination ****/
                     for (; left > 0; ++dptr, --left) {
-                        vd_pixel(int2fixed((dptr - base) % draster),
-                                 int2fixed((dptr - base) / draster + y), const_texture);
                         rop_body_8((byte)const_source, (byte)const_texture);
                     }
                 else
 /**** 24-bit destination ****/
                     for (; left > 0; dptr += 3, --left) {
-                        vd_pixel(int2fixed((dptr - base) % draster / 3),
-                                 int2fixed((dptr - base) / draster + y), const_texture);
                         rop_body_24(const_source, const_texture);
                     }
             }
@@ -664,8 +635,6 @@ df:         return mem_default_strip_copy_rop(dev,
                         for (; left > 0; ++dptr, ++sx, --left) {
                             byte s_pixel = cbit8(srow, sx, scolors);
 
-                            vd_pixel(int2fixed((dptr - base) % draster),
-                                 int2fixed((dptr - base) / draster + y), const_texture);
                             rop_body_8(s_pixel, (byte)const_texture);
                         }
                     else
@@ -673,8 +642,6 @@ df:         return mem_default_strip_copy_rop(dev,
                         for (; left > 0; dptr += 3, ++sx, --left) {
                             bits32 s_pixel = cbit24(srow, sx, scolors);
 
-                            vd_pixel(int2fixed((dptr - base) % draster / 3),
-                                 int2fixed((dptr - base) / draster + y), const_texture);
                             rop_body_24(s_pixel, const_texture);
                         }
                 } else if (bpp == 1) {
@@ -684,8 +651,6 @@ df:         return mem_default_strip_copy_rop(dev,
                     for (; left > 0; ++dptr, ++sptr, --left) {
                         byte s_pixel = *sptr;
 
-                        vd_pixel(int2fixed((dptr - base) % draster),
-                                 int2fixed((dptr - base) / draster + y), const_texture);
                         rop_body_8(s_pixel, (byte)const_texture);
                     }
                 } else {
@@ -695,8 +660,6 @@ df:         return mem_default_strip_copy_rop(dev,
                     for (; left > 0; dptr += 3, sptr += 3, --left) {
                         bits32 s_pixel = get24(sptr);
 
-                        vd_pixel(int2fixed((dptr - base) % draster / 3),
-                                 int2fixed((dptr - base) / draster + y), const_texture);
                         rop_body_24(s_pixel, const_texture);
                     }
                 }
@@ -726,8 +689,6 @@ df:         return mem_default_strip_copy_rop(dev,
                         for (; left > 0; ++dptr, ++tx, --left) {
                             byte t_pixel = cbit8(tptr, tx, tcolors);
 
-                            vd_pixel(int2fixed((dptr - base) % draster),
-                                 int2fixed((dptr - base) / draster + y), t_pixel);
                             rop_body_8((byte)const_source, t_pixel);
                         }
                     else
@@ -735,8 +696,6 @@ df:         return mem_default_strip_copy_rop(dev,
                         for (; left > 0; dptr += 3, ++tx, --left) {
                             bits32 t_pixel = cbit24(tptr, tx, tcolors);
 
-                            vd_pixel(int2fixed((dptr - base) % draster / 3),
-                                 int2fixed((dptr - base) / draster + y), t_pixel);
                             rop_body_24(const_source, t_pixel);
                         }
                 } else if (bpp == 1) {
@@ -745,8 +704,6 @@ df:         return mem_default_strip_copy_rop(dev,
                     for (; left > 0; ++dptr, ++tptr, --left) {
                         byte t_pixel = *tptr;
 
-                        vd_pixel(int2fixed((dptr - base) % draster),
-                                 int2fixed((dptr - base) / draster + y), t_pixel);
                         rop_body_8((byte)const_source, t_pixel);
                     }
                 } else {
@@ -755,8 +712,6 @@ df:         return mem_default_strip_copy_rop(dev,
                     for (; left > 0; dptr += 3, tptr += 3, --left) {
                         bits32 t_pixel = get24(tptr);
 
-                        vd_pixel(int2fixed((dptr - base) % draster / 3),
-                                 int2fixed((dptr - base) / draster + y), t_pixel);
                         rop_body_24(const_source, t_pixel);
                     }
                 }
@@ -803,8 +758,6 @@ df:         return mem_default_strip_copy_rop(dev,
                         byte t_pixel =
                             (tcolors ? cbit8(tptr, tx, tcolors) : *tptr);
 
-                        vd_pixel(int2fixed((dptr - base) % draster),
-                                 int2fixed((dptr - base) / draster + y), t_pixel);
                         rop_body_8(s_pixel, t_pixel);
                     }
                 } else {
@@ -820,8 +773,6 @@ df:         return mem_default_strip_copy_rop(dev,
                             (tcolors ? cbit24(tptr, tx, tcolors) :
                              get24(tptr));
 
-                        vd_pixel(int2fixed((dptr - base) % draster / 3),
-                                 int2fixed((dptr - base) / draster + y), t_pixel);
                         rop_body_24(s_pixel, t_pixel);
                     }
                 }

@@ -30,7 +30,6 @@
 #include "gximask.h"
 #include "gzstate.h"
 #include "gsutil.h"
-#include "vdtrace.h"
 #include "gxdevsop.h"
 
 /*
@@ -508,10 +507,6 @@ gs_image_next_planes(gs_image_enum * penum,
     int code = 0;
 
 #ifdef DEBUG
-    vd_get_dc('i');
-    vd_set_shift(0, 0);
-    vd_set_scale(0.01);
-    vd_set_origin(0, 0);
     if (gs_debug_c('b')) {
         int pi;
 
@@ -642,7 +637,6 @@ gs_image_next_planes(gs_image_enum * penum,
     /* Return the retained data pointers. */
     for (i = 0; i < num_planes; ++i)
         plane_data[i] = penum->planes[i].source;
-    vd_release_dc;
     return code;
 }
 

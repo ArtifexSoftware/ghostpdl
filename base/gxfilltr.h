@@ -81,7 +81,6 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
                     xi = fixed2int_pixround(yll->end.x - (!FILL_ADJUST ? 0 : fo.adjust_left));
                     wi = fixed2int_pixround(yll->start.x + (!FILL_ADJUST ? 0 : fo.adjust_right)) - xi;
                 }
-                VD_RECT(xi, yi, wi, 1, VD_TRAP_COLOR);
                 code = LOOP_FILL_RECTANGLE_DIRECT(&fo, xi, yi, wi, 1);
                 if (code < 0)
                     return code;
@@ -99,10 +98,6 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
             ll->h_list1 = ll->h_list0;
             ll->h_list0 = 0;
             continue;
-        }
-        if (vd_enabled) {
-            vd_circle(0, y, 3, RGB(255, 0, 0));
-            y += 0; /* Just a good place for a debugger breakpoint */
         }
         /* Find the next evaluation point. */
         /* Start by finding the smallest y value */
@@ -247,7 +242,6 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
                                     else
                                         --xli;
                                 }
-                                vd_rect(flp->end.x, y, alp->end.x, y1, 1, VD_TRAP_COLOR);
                                 code = LOOP_FILL_RECTANGLE_DIRECT(&fo, xli, yi, xi - xli, hi);
                             } else
                                 code = 0;
@@ -258,7 +252,6 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
                             le.end = flp->end;
                             re.start = alp->start;
                             re.end = alp->end;
-                            vd_quad(flp->x_current, ybot, alp->x_current, ybot, alp->x_next, ytop, flp->x_next, ytop, 1, VD_TRAP_COLOR);
                             code = fo.fill_trap(fo.dev,
                                     &le, &re, ybot, ytop, false, fo.pdevc, fo.lop);
                         } else

@@ -30,7 +30,6 @@
 #include "gxhintn.h"
 #include "gzpath.h"
 #include "gserrors.h"
-#include "vdtrace.h"
 
 /*  todo :
     - Diagonal stems are not hinted;
@@ -114,13 +113,6 @@
     With type 1 it is handled with t1_hinter__flex_* functions.
     With type 2 it is handled by gstype2.c .
  */
-
-#define VD_DRAW_IMPORT 0 /* CAUTION: with 1 can't close DC on import error */
-#define VD_SCALE  (4.0 / 4096.0)
-#define VD_SHIFT_X 50
-#define VD_SHIFT_Y 100
-#define VD_PAINT_POLE_IDS 1
-#define VD_IMPORT_COLOR RGB(255, 0, 0)
 
 #define ADOBE_OVERSHOOT_COMPATIBILIY 0
 #define ADOBE_SHIFT_CHARPATH 0
@@ -340,13 +332,6 @@ static inline t1_glyph_space_coord o2g_dist(t1_hinter * h, t1_hinter_space_coord
 {   return shift_rounded(mul_shift(od, coef, split_bits), h->g2o_fraction_bits + h->ctmi.bitshift - _fixed_shift - split_bits);
 }
 
-#if VD_TRACE
-static inline void o2g_float(t1_hinter * h, t1_hinter_space_coord ox, t1_hinter_space_coord oy, t1_glyph_space_coord *gx, t1_glyph_space_coord *gy)
-{   *gx = (long)(((double)ox * h->ctmi.xx + (double)oy * h->ctmi.yx) * fixed_scale / h->g2o_fraction / h->ctmi.denominator);
-    *gy = (long)(((double)ox * h->ctmi.xy + (double)oy * h->ctmi.yy) * fixed_scale / h->g2o_fraction / h->ctmi.denominator);
-}
-#endif
-
 /* --------------------- t1_hint class members ---------------------*/
 
 static void t1_hint__set_aligned_coord(t1_hint * self, t1_glyph_space_coord gc, t1_pole * pole, enum t1_align_type align, int quality)
@@ -359,111 +344,6 @@ static void t1_hint__set_aligned_coord(t1_hint * self, t1_glyph_space_coord gc, 
         if (self->aligned1 <= align && self->q1 > quality)
             self->ag1 = gc, self->aligned1 = align, self->q1 = quality;
     }
-}
-
-/* --------------------- t1_hinter class members - debug graphics --------------------*/
-
-static void t1_hinter__paint_glyph(t1_hinter * self, bool aligned)
-{
-#if VD_TRACE
-#define X(j) *member_prt(t1_glyph_space_coord, &self->pole[j], offset_x)
-#define Y(j) *member_prt(t1_glyph_space_coord, &self->pole[j], offset_y)
-    t1_glyph_space_coord *p_x = (aligned ? &self->pole[0].ax : &self->pole[0].gx);
-    t1_glyph_space_coord *p_y = (aligned ? &self->pole[0].ay : &self->pole[0].gy);
-    int offset_x = (char *)p_x - (char *)&self->pole[0];
-    int offset_y = (char *)p_y - (char *)&self->pole[0];
-    int i, j;
-    char buf[15];
-
-    if (!vd_enabled)
-        return;
-#   if VD_PAINT_POLE_IDS
-    for(i = 0; i < self->contour_count; i++) {
-        int beg_pole = self->contour[i];
-        int end_pole = self->contour[i + 1] - 2;
-
-        for(j = beg_pole; j <= end_pole; j++) {
-            vd_circle(X(j), Y(j), 3, RGB(0,0,255));
-            gs_sprintf(buf, "%d", j);
-            vd_text(self->pole[j].gx, self->pole[j].gy, buf, RGB(0,0,0));
-            if (self->pole[j + 1].type == offcurve)
-                j+=2;
-        }
-    }
-#   endif
-    vd_setcolor(aligned ? RGB(0,255,0) : RGB(0,0,255));
-    for(i = 0; i < self->contour_count; i++) {
-        int beg_pole = self->contour[i];
-        int end_pole = self->contour[i + 1] - 2;
-
-        vd_moveto(X(beg_pole), Y(beg_pole));
-        for(j = beg_pole + 1; j <= end_pole; j++) {
-            if (self->pole[j].type == oncurve) {
-                vd_lineto(X(j), Y(j));
-            } else {
-                int jj = (j + 2 > end_pole ? beg_pole : j + 2);
-                vd_curveto(X(j), Y(j), X(j + 1), Y(j + 1), X(jj), Y(jj));
-                j+=2;
-            }
-        }
-        vd_lineto(X(beg_pole), Y(beg_pole));
-    }
-#undef X
-#undef Y
-#endif
-}
-
-static void  t1_hinter__paint_raster_grid(t1_hinter * self)
-{
-#if VD_TRACE
-    int i;
-    double j; /* 'long' can overflow */
-    unsigned long c0 = RGB(192, 192, 192), c1 = RGB(64, 64, 64);
-    t1_hinter_space_coord min_ox, max_ox, min_oy, max_oy;
-    long div_x = self->g2o_fraction, div_xx = div_x << self->log2_pixels_x;
-    long div_y = self->g2o_fraction, div_yy = div_y << self->log2_pixels_y;
-    long ext_x = div_x * 5;
-    long ext_y = div_y * 5;
-    long sx = self->orig_ox % div_xx;
-    long sy = self->orig_oy % div_yy;
-
-    if (!vd_enabled)
-        return;
-    g2o(self, self->pole[0].gx, self->pole[0].gy, &min_ox, &min_oy);
-    max_ox = min_ox, max_oy = min_oy;
-    /* Compute BBox in outliner's space : */
-    for (i = 1; i < self->pole_count - 1; i++) {
-        t1_hinter_space_coord ox, oy;
-
-        g2o(self, self->pole[i].gx, self->pole[i].gy, &ox, &oy);
-        min_ox = min(min_ox, ox);
-        min_oy = min(min_oy, oy);
-        max_ox = max(max_ox, ox);
-        max_oy = max(max_oy, oy);
-    }
-    min_ox -= ext_x;
-    min_oy -= ext_y;
-    max_ox += ext_x;
-    max_oy += ext_y;
-    /* Paint columns : */
-    for (j = min_ox / div_x * div_x; j < (double)max_ox + div_x; j += div_x) {
-        t1_glyph_space_coord gx0, gy0, gx1, gy1;
-        bool pix = ((int)j / div_xx * div_xx == (int)j);
-
-        o2g_float(self, (int)j - sx, min_oy - sy, &gx0, &gy0); /* o2g may overflow here due to ext. */
-        o2g_float(self, (int)j - sx, max_oy - sy, &gx1, &gy1);
-        vd_bar(gx0, gy0, gx1, gy1, 1, (!j ? 0 : pix ? c1 : c0));
-    }
-    /* Paint rows : */
-    for (j = min_oy / div_y * div_y; j < max_oy + div_y; j += div_y) {
-        t1_glyph_space_coord gx0, gy0, gx1, gy1;
-        bool pix = ((int)j / div_yy * div_yy == (int)j);
-
-        o2g_float(self, min_ox - sx, (int)j - sy, &gx0, &gy0);
-        o2g_float(self, max_ox - sx, (int)j - sy, &gx1, &gy1);
-        vd_bar(gx0, gy0, gx1, gy1, 1, (!j ? 0 : pix ? c1 : c0));
-    }
-#endif
 }
 
 /* --------------------- t1_hinter class members - import --------------------*/
@@ -856,17 +736,6 @@ static int t1_hinter__set_stem_snap(gs_memory_t *mem, t1_hinter * self, float * 
        */
 }
 
-static void enable_draw_import(void)
-{   /* CAUTION: can't close DC on import error */
-    vd_get_dc('h');
-    vd_set_shift(VD_SHIFT_X, VD_SHIFT_Y);
-    vd_set_scale(VD_SCALE);
-    vd_set_origin(0,0);
-    vd_erase(RGB(255, 255, 255));
-    vd_setcolor(VD_IMPORT_COLOR);
-    vd_setlinewidth(0);
-}
-
 int t1_hinter__set_font_data(gs_memory_t *mem, t1_hinter * self, int FontType, gs_type1_data *pdata, bool no_grid_fitting, bool is_resource)
 {   int code;
 
@@ -884,8 +753,6 @@ int t1_hinter__set_font_data(gs_memory_t *mem, t1_hinter * self, int FontType, g
     self->fix_contour_sign = (!is_resource && self->memory != NULL);
     if (self->fix_contour_sign)
         self->pass_through = false;
-    if (!vd_enabled && (VD_DRAW_IMPORT || self->pass_through))
-        enable_draw_import();
     if (self->pass_through)
         return 0;
     code = t1_hinter__set_alignment_zones(mem, self, pdata->OtherBlues.values, pdata->OtherBlues.count, botzone, false);
@@ -923,8 +790,6 @@ int t1_hinter__set_font42_data(t1_hinter * self, int FontType, gs_type42_data *p
     self->pass_through |= no_grid_fitting;
     self->charpath_flag = no_grid_fitting;
     self->autohinting = true;
-    if (!vd_enabled && (VD_DRAW_IMPORT || self->pass_through))
-        enable_draw_import();
     if (self->pass_through)
         return 0;
     /* Currently we don't provice alignments zones or stem snap. */
@@ -1077,7 +942,7 @@ static void t1_hinter__compact_flex(t1_hinter * self, int contour_beg, int conto
         t1_hinter__compact_flex(self, contour_beg, contour_end, i0, contour_end, pi);
         t1_hinter__compact_flex(self, contour_beg, contour_end, contour_beg, i1, pi);
     } else if (i0 < i1) {
-        int i, j;
+        int j;
         int s = i1 - i0 - 1;
 
         for (j = 0; j < self->hint_range_count; j++) {
@@ -1089,10 +954,6 @@ static void t1_hinter__compact_flex(t1_hinter * self, int contour_beg, int conto
                 self->hint_range[j].end_pole -= s;
             else if (self->hint_range[j].end_pole > i0)
                 self->hint_range[j].end_pole = i0;
-        }
-        if (VD_DRAW_IMPORT) {
-            for (i = i0; i <= i1; i++)
-                vd_square(self->pole[i].gx, self->pole[i].gy, 7, RGB(0,0,0));
         }
         memmove(&self->pole[i0 + 1], &self->pole[i1], sizeof(*self->pole) * (self->pole_count - i1));
         self->contour[self->contour_count] -= s;
@@ -1233,8 +1094,6 @@ int t1_hinter__rmoveto(t1_hinter * self, fixed xx, fixed yy)
             }
             g2d(self, gx, gy, &fx, &fy);
             code = gx_path_add_point(self->output_path, fx, fy);
-            vd_circle(self->cx, self->cy, 2, RGB(255, 0, 0));
-            vd_moveto(self->cx, self->cy);
             if (self->flex_count == 0) {
                 self->bx = self->cx;
                 self->by = self->cy;
@@ -1256,8 +1115,6 @@ int t1_hinter__rmoveto(t1_hinter * self, fixed xx, fixed yy)
         self->bx = self->cx;
         self->by = self->cy;
     }
-    vd_circle(self->cx, self->cy, 2, RGB(255, 0, 0));
-    vd_moveto(self->cx, self->cy);
     return code;
 }
 
@@ -1281,7 +1138,6 @@ int t1_hinter__rlineto(t1_hinter * self, fixed xx, fixed yy)
         t1_glyph_space_coord gy = self->cy += yy;
         fixed fx, fy;
 
-        vd_lineto(self->cx, self->cy);
         self->path_opened = true;
         g2d(self, gx, gy, &fx, &fy);
         return gx_path_add_line(self->output_path, fx, fy);
@@ -1290,7 +1146,6 @@ int t1_hinter__rlineto(t1_hinter * self, fixed xx, fixed yy)
 
         if (code < 0)
             return code;
-        vd_lineto(self->cx, self->cy);
         t1_hinter__skip_degenerate_segnment(self, 1);
         return 0;
     }
@@ -1310,7 +1165,6 @@ int t1_hinter__rcurveto(t1_hinter * self, fixed xx0, fixed yy0, fixed xx1, fixed
         t1_glyph_space_coord gy2 = self->cy += yy2;
         fixed fx0, fy0, fx1, fy1, fx2, fy2;
 
-        vd_curveto(gx0, gy0, gx1, gy1, gx2, gy2);
         self->path_opened = true;
         g2d(self, gx0, gy0, &fx0, &fy0);
         g2d(self, gx1, gy1, &fx1, &fy1);
@@ -1328,9 +1182,6 @@ int t1_hinter__rcurveto(t1_hinter * self, fixed xx0, fixed yy0, fixed xx1, fixed
         code = t1_hinter__add_pole(self, xx2, yy2, oncurve);
         if (code < 0)
             return code;
-        vd_curveto(self->pole[self->pole_count - 3].gx, self->pole[self->pole_count - 3].gy,
-                   self->pole[self->pole_count - 2].gx, self->pole[self->pole_count - 2].gy,
-                   self->cx, self->cy);
         t1_hinter__skip_degenerate_segnment(self, 3);
         return 0;
     }
@@ -1361,7 +1212,6 @@ void t1_hinter__setcurrentpoint(t1_hinter * self, fixed xx, fixed yy)
 
 int t1_hinter__closepath(t1_hinter * self)
 {   if (self->pass_through) {
-        vd_lineto(self->bx, self->by);
         self->path_opened = false;
         return gx_path_close_subpath(self->output_path);
     } else {
@@ -1369,11 +1219,6 @@ int t1_hinter__closepath(t1_hinter * self)
 
         if (contour_beg == self->pole_count)
             return 0; /* maybe a single trailing moveto */
-        if (vd_enabled && (VD_DRAW_IMPORT || self->pass_through)) {
-            vd_setcolor(VD_IMPORT_COLOR);
-            vd_setlinewidth(0);
-            vd_lineto(self->bx, self->by);
-        }
         if (self->bx == self->cx && self->by == self->cy) {
             /* Don't create degenerate segment */
             self->pole[self->pole_count - 1].type = closepath;
@@ -1453,9 +1298,6 @@ int t1_hinter__flex_end(t1_hinter * self, fixed flex_height)
     if (any_abs(ox) > div_x * fixed2float(flex_height) / 100 ||
         any_abs(oy) > div_y * fixed2float(flex_height) / 100) {
         /* do with curves */
-        vd_moveto (pole0[0].gx, pole0[0].gy);
-        vd_curveto(pole0[2].gx, pole0[2].gy, pole0[3].gx, pole0[3].gy, pole0[4].gx, pole0[4].gy);
-        vd_curveto(pole0[5].gx, pole0[5].gy, pole0[6].gx, pole0[6].gy, pole0[7].gx, pole0[7].gy);
         if (self->pass_through) {
             fixed fx0, fy0, fx1, fy1, fx2, fy2;
             int code;
@@ -1482,8 +1324,6 @@ int t1_hinter__flex_end(t1_hinter * self, fixed flex_height)
         }
     } else {
         /* do with line */
-        vd_moveto(pole0[0].gx, pole0[0].gy);
-        vd_lineto(pole0[7].gx, pole0[7].gy);
         if (self->pass_through) {
             fixed fx, fy;
 
@@ -2151,7 +1991,6 @@ static enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * self,
     }
     gx0 = gx;
     gy0 = gy;
-    vd_circle(gx, gy, 7, RGB(255,0,0));
     if (horiz) {
         t1_pole * pole = &self->pole[segment_index];
         int contour_index = pole->contour_index;
@@ -2214,7 +2053,6 @@ static enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * self,
             }
         }
     }
-    vd_circle(gx, gy, 7, RGB(0,255,0));
     if (align_by_stem) {
         t1_glyph_space_coord gx1, gy1;
 
@@ -2248,7 +2086,6 @@ static enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * self,
     if (!align_by_stem)
         t1_hinter__align_to_grid(self, self->g2o_fraction, &gx, &gy,
                             CONTRAST_STEMS || self->align_to_pixels);
-    vd_circle(gx, gy, 7, RGB(0,0,255));
     *gc = gc0 + (horiz ? gy - gy0 : gx - gx0);
     return (align == unaligned ? aligned : align);
 }
@@ -2400,8 +2237,6 @@ static void t1_hinter__align_stem_commands(t1_hinter * self)
                         }
                         align = t1_hinter__compute_aligned_coord(self, &gc,
                                     segment_index, t, &self->hint[i], align);
-                        vd_square(self->pole[segment_index].gx, self->pole[segment_index].gy,
-                                    (horiz ? 7 : 9), (i < self->primary_hint_count ? RGB(0,0,255) : RGB(0,255,0)));
                         /* todo: optimize: primary commands don't need to align, if suppressed by secondary ones. */
                         t1_hint__set_aligned_coord(&self->hint[i], gc, &self->pole[j], align, quality);
                         jj = j;
@@ -2691,7 +2526,6 @@ static void t1_hinter__process_dotsection(t1_hinter * self, int beg_pole, int en
         return; /* The contour was aligned with stem commands - nothing to do. */
     center_gx = center_agx = (min_gx + max_gx) / 2;
     center_gy = center_agy = (min_gy + max_gy) / 2;
-    vd_circle(center_agx, center_agy, 7, RGB(255,0,0));
     if (!aligned_x) {
         /* Heuristic : apply vstem if it is close to the center : */
         t1_hint * hint = t1_hinter__find_vstem_by_center(self, center_gx);
@@ -2700,10 +2534,8 @@ static void t1_hinter__process_dotsection(t1_hinter * self, int beg_pole, int en
             aligned_x = true;
         }
     }
-    vd_circle(center_agx, center_agy, 7, RGB(0,255,0));
     t1_hinter__align_to_grid(self, self->g2o_fraction / 2, &center_agx, &center_agy,
                                 CONTRAST_STEMS || self->align_to_pixels);
-    vd_circle(center_agx, center_agy, 7, RGB(0,0,255));
     sx = center_agx - center_gx;
     sy = center_agy - center_gy;
     if (aligned_x)
@@ -2913,8 +2745,6 @@ static int t1_hinter__export(t1_hinter * self)
             return code;
         if (i >= self->contour_count)
             break;
-        vd_setcolor(RGB(255,0,0));
-        vd_moveto(fx,fy);
         end_pole = self->contour[i + 1] - 2;
         for(j = beg_pole + 1; j <= end_pole; j++) {
             pole = & self->pole[j];
@@ -2923,8 +2753,6 @@ static int t1_hinter__export(t1_hinter * self)
                 code = gx_path_add_line(self->output_path, fx, fy);
                 if (code < 0)
                     return code;
-                vd_setcolor(RGB(255,0,0));
-                vd_lineto(fx,fy);
             } else {
                 int j1 = j + 1, j2 = (j + 2 > end_pole ? beg_pole : j + 2);
                 fixed fx1, fy1, fx2, fy2;
@@ -2934,8 +2762,6 @@ static int t1_hinter__export(t1_hinter * self)
                 code = gx_path_add_curve(self->output_path, fx, fy, fx1, fy1, fx2, fy2);
                 if (code < 0)
                     return code;
-                vd_setcolor(RGB(255,0,0));
-                vd_curveto(fx,fy,fx1,fy1,fx2,fy2);
                 j+=2;
             }
         }
@@ -2968,23 +2794,12 @@ static int t1_hinter__add_trailing_moveto(t1_hinter * self)
 int t1_hinter__endglyph(t1_hinter * self)
 {   int code = 0;
 
-    if (!vd_enabled) { /* Maybe enabled in t1_hinter__set_mapping. */
-        vd_get_dc('h');
-        vd_set_shift(VD_SHIFT_X, VD_SHIFT_Y);
-        vd_set_scale(VD_SCALE);
-        vd_set_origin(0, 0);
-        if (!VD_DRAW_IMPORT && !self->disable_hinting)
-            vd_erase(RGB(255, 255, 255));
-    }
-    if (vd_enabled && self->g2o_fraction != 0 && !self->disable_hinting)
-        t1_hinter__paint_raster_grid(self);
     code = t1_hinter__add_trailing_moveto(self);
     if (code < 0)
         goto exit;
     code = t1_hinter__end_subglyph(self);
     if (code < 0)
         goto exit;
-    t1_hinter__paint_glyph(self, false);
     t1_hinter__adjust_matrix_precision(self, self->orig_gx, self->orig_gy);
     t1_hinter__compute_y_span(self);
     t1_hinter__simplify_representation(self);
@@ -3004,27 +2819,14 @@ int t1_hinter__endglyph(t1_hinter * self)
             goto exit;
         t1_hinter__process_dotsections(self);
         t1_hinter__interpolate_other_poles(self);
-        t1_hinter__paint_glyph(self, true);
     }
     if (self->pole_count) {
         if (self->fix_contour_sign) {
             t1_hinter__fix_contour_signs(self);
-            t1_hinter__paint_glyph(self, true);
-        }
-        if (vd_enabled) {
-            double_matrix m;
-
-            fraction_matrix__to_double(&self->ctmi, &m);
-            vd_set_scaleXY(vd_get_scale_x * m.xx, vd_get_scale_y * m.yy);
-            vd_set_origin(self->orig_dx, self->orig_dy);
-            /*  fixme : general transform requires changes to vdtrace.
-                Current implementation paints exported rotated glyph in wrong coordinates.
-            */
         }
         code = t1_hinter__export(self);
     }
 exit:
     t1_hinter__free_arrays(self);
-    vd_release_dc;
     return code;
 }

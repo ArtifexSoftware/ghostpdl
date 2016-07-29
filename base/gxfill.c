@@ -48,7 +48,6 @@
 #include "gzspotan.h" /* Only for gx_san_trap_store. */
 #include "memory_.h"
 #include "stdint_.h"
-#include "vdtrace.h"
 #include "gsstate.h"            /* for gs_currentcpsimode */
 #include "gxdevsop.h"
 /*
@@ -317,17 +316,6 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
     lst.windings = NULL;
     lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
     lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
-    if (vd_enabled) {
-        fixed x0 = int2fixed(fixed2int(ibox.p.x - adjust.x - fixed_epsilon));
-        fixed x1 = int2fixed(fixed2int(ibox.q.x + adjust.x + fixed_scale - fixed_epsilon));
-        fixed y0 = int2fixed(fixed2int(ibox.p.y - adjust.y - fixed_epsilon));
-        fixed y1 = int2fixed(fixed2int(ibox.q.y + adjust.y + fixed_scale - fixed_epsilon)), k;
-
-        for (k = x0; k <= x1; k += fixed_scale)
-            vd_bar(k, y0, k, y1, 1, RGB(128, 128, 128));
-        for (k = y0; k <= y1; k += fixed_scale)
-            vd_bar(x0, k, x1, k, 1, RGB(128, 128, 128));
-    }
     /* Check the bounding boxes. */
     if_debug6m('f', pdev->memory, "[f]adjust=%g,%g bbox=(%g,%g),(%g,%g)\n",
                fixed2float(adjust.x), fixed2float(adjust.y),
@@ -620,35 +608,7 @@ gx_default_fill_path(gx_device * pdev, const gs_gstate * pgs,
         if (pcpath1 != pcpath2)
             gx_cpath_free(&cpath_with_shading_bbox, "shading_fill_cpath_intersection");
     } else {
-#ifndef GS_THREADSAFE
-        bool got_dc = false;
-        vd_save;
-        if (vd_allowed('F') || vd_allowed('f')) {
-            if (!vd_enabled) {
-                vd_get_dc( (params->adjust.x > 0 || params->adjust.y > 0)  ? 'F' : 'f');
-                got_dc = vd_enabled;
-            }
-#define VD_SCALE 0.03
-#define VD_RECT(x, y, w, h, c) vd_rect(int2fixed(x), int2fixed(y), int2fixed(x + w), int2fixed(y + h), 1, c)
-#define VD_TRAP_COLOR RGB(0, 255, 255)
-#define VD_MARG_COLOR RGB(255, 0, 0)
-            if (vd_enabled) {
-                vd_set_shift(0, 100);
-                vd_set_scale(VD_SCALE);
-                vd_set_origin(0, 0);
-                vd_erase(RGB(192, 192, 192));
-            }
-        } else
-            vd_disable;
-#endif
-
         code = gx_general_fill_path(pdev, pgs, ppath, params, pdevc, pcpath);
-
-#ifndef GS_THREADSAFE
-        if (got_dc)
-            vd_release_dc;
-        vd_restore;
-#endif
     }
     return code;
 }
@@ -696,7 +656,6 @@ insert_y_line(line_list *ll, active_line *alp)
     active_line *nyp;
     fixed y_start = alp->start.y;
 
-    vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 0, RGB(255, 0, 0));
     if (yp == 0) {
         alp->next = alp->prev = 0;
         ll->y_list = alp;
@@ -726,7 +685,6 @@ insert_y_line(line_list *ll, active_line *alp)
             ll->y_list = alp;
     }
     ll->y_line = alp;
-    vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(0, 255, 0));
     print_al(ll->memory, "add ", alp);
 }
 
@@ -891,7 +849,6 @@ init_contour_cursor(const fill_options * const fo, contour_cursor *q)
         q->dir = compute_dir(fo, q->prev->pt.y, q->pseg->pt.y);
         gx_flattened_iterator__init_line(&q->fi,
             q->prev->pt.x, q->prev->pt.y, q->pseg->pt.x, q->pseg->pt.y); /* fake for curves. */
-        vd_bar(q->prev->pt.x, q->prev->pt.y, q->pseg->pt.x, q->pseg->pt.y, 1, RGB(0, 0, 255));
     }
     q->first_flattened = true;
     return 0;
@@ -1139,8 +1096,7 @@ step_al(active_line *alp, bool move_iterator)
         if (code < 0)
             return code;
         alp->more_flattened = code;
-    } else
-        vd_bar(alp->fi.lx0, alp->fi.ly0, alp->fi.lx1, alp->fi.ly1, 1, RGB(0, 0, 255));
+    }
     /* Note that we can get alp->fi.ly0 == alp->fi.ly1
        if the curve tangent is horizontal. */
     alp->start.x = (forth ? alp->fi.lx0 : alp->fi.lx1);
@@ -1261,7 +1217,6 @@ insert_x_new(active_line * alp, line_list *ll)
     active_line *next;
     active_line *prev = &ll->x_head;
 
-    vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(128, 128, 0));
     alp->x_current = alp->start.x;
     alp->x_next = alp->start.x; /*      If the spot starts with a horizontal segment,
                                     we need resort_x_line to work properly
@@ -1362,7 +1317,6 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
         return true;
     }
     alp->x_current = alp->x_next = alp->start.x;
-    vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(128, 0, 128));
     print_al(ll->memory, "repl", alp);
     return false;
 }
@@ -1386,8 +1340,6 @@ fill_slant_adjust(const line_list *ll,
     int code;
 
     INCR(slant);
-    vd_quad(flp->x_current, y, alp->x_current, y,
-            alp->x_next, y1, flp->x_next, y1, 1, VD_TRAP_COLOR); /* fixme: Wrong X. */
 
     /* Set up all the edges, even though we may not need them all. */
 
@@ -1671,7 +1623,6 @@ loop_fill_trap_np(const line_list *ll, const gs_fixed_edge *le, const gs_fixed_e
 
     if (ybot >= ytop)
         return 0;
-    vd_quad(le->start.x, ybot, re->start.x, ybot, re->end.x, ytop, le->end.x, ytop, 1, VD_TRAP_COLOR);
     return (*fo->fill_trap)
         (fo->dev, le, re, ybot, ytop, false, fo->pdevc, fo->lop);
 }
@@ -2301,7 +2252,6 @@ merge_ranges(coord_range_list_t *pcrl, const line_list *ll, fixed y_min, fixed y
         if (alp->start.y < y_min)
             continue;
         if (alp->monotonic_x && alp->monotonic_y && ye <= y_top) {
-            vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 0, RGB(255, 0, 0));
             x1 = xe;
             if (x0 > x1)
                 xt = x0, x0 = x1, x1 = xt;

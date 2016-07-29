@@ -53,7 +53,6 @@
 #include "interp.h"
 #include "iutil.h"
 #include "ivmspace.h"
-#include "vdtrace.h"
 
 /* Import operator procedures */
 extern int zflush(i_ctx_t *);
@@ -813,9 +812,6 @@ run_stdin:
                 initial_enter_name(adef, &value);
                 break;
             }
-        case 'T':
-            set_debug_flags(arg, vd_flags);
-            break;
         case 'u':               /* undefine name */
             if (!*arg) {
                 puts(minst->heap, "-u requires a name to undefine.");
