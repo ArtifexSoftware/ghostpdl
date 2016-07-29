@@ -986,7 +986,7 @@ $(GLOBJ)gshtscr.$(OBJ) : $(GLSRC)gshtscr.c $(AK) $(gx_h) $(gserrors_h)\
 	$(GLCC) $(GLO_)gshtscr.$(OBJ) $(C_) $(GLSRC)gshtscr.c
 
 $(GLOBJ)gsimage.$(OBJ) : $(GLSRC)gsimage.c $(AK) $(gx_h) $(gserrors_h)\
- $(memory__h) $(math__h) $(gscspace_h) $(gsimage_h) $(gsmatrix_h)\
+ $(memory__h) $(math__h) $(gscspace_h) $(gsimage_h) $(gsmatrix_h) $(gximage_h)\
  $(gsstruct_h) $(gxarith_h) $(gxdevice_h) $(gxiparam_h) $(gxpath_h)\
  $(gximask_h) $(gzstate_h) $(gxdevsop_h) $(gsutil_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsimage.$(OBJ) $(C_) $(GLSRC)gsimage.c

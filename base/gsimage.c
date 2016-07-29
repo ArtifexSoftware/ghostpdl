@@ -31,6 +31,7 @@
 #include "gzstate.h"
 #include "gsutil.h"
 #include "gxdevsop.h"
+#include "gximage.h"
 
 /*
   The main internal invariant for the gs_image machinery is
