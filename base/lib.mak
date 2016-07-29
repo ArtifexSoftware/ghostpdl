@@ -631,7 +631,6 @@ gxfill_h=$(GLSRC)gxfill.h
 gxfilltr_h=$(GLSRC)gxfilltr.h
 gxfillsl_h=$(GLSRC)gxfillsl.h
 gxfillts_h=$(GLSRC)gxfillts.h
-gxfdrop_h=$(GLSRC)gxfdrop.h
 gxdtfill_h=$(GLSRC)gxdtfill.h
 
 ttfoutl_h=$(GLSRC)ttfoutl.h
@@ -753,16 +752,11 @@ $(GLOBJ)gxhldevc.$(OBJ) : $(GLSRC)gxhldevc.c $(AK) $(gx_h)\
 $(GLOBJ)gxfill.$(OBJ) : $(GLSRC)gxfill.c $(AK) $(gx_h) $(gserrors_h)\
  $(gsstruct_h) $(gxdevsop_h) $(assert__h)\
  $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxhttile_h)\
- $(gxgstate_h) $(gxpaint_h) $(gxfdrop_h) $(gxfill_h) $(gxpath_h)\
+ $(gxgstate_h) $(gxpaint_h) $(gxfill_h) $(gxpath_h)\
  $(gsptype1_h) $(gsptype2_h) $(gxpcolor_h) $(gsstate_h)\
  $(gzcpath_h) $(gzpath_h) $(gzspotan_h) $(gdevddrw_h) $(memory__h)\
  $(stdint__h) $(vdtrace_h) $(gxfilltr_h) $(gxfillsl_h) $(gxfillts_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxfill.$(OBJ) $(C_) $(GLSRC)gxfill.c
-
-$(GLOBJ)gxfdrop.$(OBJ) : $(GLSRC)gxfdrop.c $(AK) $(gx_h) $(gserrors_h)\
- $(gsstruct_h) $(gzpath_h) $(gxfixed_h) $(gxdevice_h) $(gxdcolor_h)\
- $(gxfill_h) $(gxfdrop_h) $(vdtrace_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gxfdrop.$(OBJ) $(C_) $(GLSRC)gxfdrop.c
 
 $(GLOBJ)gxht.$(OBJ) : $(GLSRC)gxht.c $(AK) $(gx_h) $(gserrors_h)\
  $(memory__h) $(gsbitops_h) $(gsstruct_h) $(gsutil_h)\
@@ -1380,7 +1374,7 @@ LIB1x=$(GLOBJ)gxacpath.$(OBJ) $(GLOBJ)gxbcache.$(OBJ) $(GLOBJ)gxccache.$(OBJ)
 LIB2x=$(GLOBJ)gxccman.$(OBJ) $(GLOBJ)gxchar.$(OBJ) $(GLOBJ)gxcht.$(OBJ)
 LIB3x=$(GLOBJ)gxclip.$(OBJ) $(GLOBJ)gxcmap.$(OBJ) $(GLOBJ)gxcpath.$(OBJ)
 LIB4x=$(GLOBJ)gxdcconv.$(OBJ) $(GLOBJ)gxdcolor.$(OBJ) $(GLOBJ)gxhldevc.$(OBJ)
-LIB5x=$(GLOBJ)gxfill.$(OBJ) $(GLOBJ)gxfdrop.$(OBJ) $(GLOBJ)gxht.$(OBJ) $(GLOBJ)gxhtbit.$(OBJ)\
+LIB5x=$(GLOBJ)gxfill.$(OBJ) $(GLOBJ)gxht.$(OBJ) $(GLOBJ)gxhtbit.$(OBJ)\
   $(GLOBJ)gxht_thresh.$(OBJ)
 LIB6x=$(GLOBJ)gxidata.$(OBJ) $(GLOBJ)gxifast.$(OBJ) $(GLOBJ)gximage.$(OBJ) $(GLOBJ)gximdecode.$(OBJ)
 LIB7x=$(GLOBJ)gximage1.$(OBJ) $(GLOBJ)gximono.$(OBJ) $(GLOBJ)gxipixel.$(OBJ) $(GLOBJ)gximask.$(OBJ)
@@ -2446,7 +2440,7 @@ $(GLOBJ)gxttfb.$(OBJ) : $(GLSRC)gxttfb.c $(AK) $(gx_h) $(gserrors_h) \
 
 $(GLOBJ)gzspotan.$(OBJ) : $(GLSRC)gzspotan.c $(AK) $(gx_h)\
  $(gserrors_h) $(gsdevice_h) $(gzspotan_h) $(gxfixed_h) $(gxdevice_h)\
- $(gxfdrop_h) $(gzpath_h) $(memory__h) $(math__h) $(vdtrace_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gzpath_h) $(memory__h) $(math__h) $(vdtrace_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gzspotan.$(OBJ) $(C_) $(GLSRC)gzspotan.c
 
 

@@ -25,7 +25,6 @@
 #include "gzspotan.h"
 #include "gxfixed.h"
 #include "gxdevice.h"
-#include "gxfdrop.h" /* Only for VD_* constants. */
 #include "gzpath.h"
 #include "memory_.h"
 #include "math_.h"
@@ -825,6 +824,7 @@ gx_san_generate_stems_aux(gx_device_spot_analyzer *padev,
     return 0;
 }
 
+#define VD_SCALE 0.03
 int
 gx_san_generate_stems(gx_device_spot_analyzer *padev,
                 bool overall_hints, void *client_data,

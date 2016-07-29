@@ -25,8 +25,6 @@
         3. Fixed the contiguity of a spot covering
            for shading fills with no dropouts.
 */
-/* See PSEUDO_RASTERIZATION and "pseudo_rasterization".
-   about the dropout prevention logics. */
 /* See is_spotan about the spot topology analysis support. */
 /* Also defining lower-level path filling procedures */
 
@@ -41,7 +39,6 @@
 #include "gxhttile.h"
 #include "gxgstate.h"
 #include "gxpaint.h"            /* for prototypes */
-#include "gxfdrop.h"
 #include "gxfill.h"
 #include "gxpath.h"
 #include "gsptype1.h"
@@ -221,7 +218,6 @@ static FILL_LOOP_PROC(spot_into_trapezoids);
 /*
  * This is the general path filling algorithm.
  * It uses the center-of-pixel rule for filling
- * (except for pseudo_rasterization - see below).
  * We can implement Microsoft's upper-left-corner-of-pixel rule
  * by subtracting (0.5, 0.5) from all the coordinates in the path.
  *
@@ -246,13 +242,6 @@ init_line_list(line_list *ll, gs_memory_t * mem)
     ll->y_list = 0;
     ll->y_line = 0;
     ll->h_list0 = ll->h_list1 = 0;
-    ll->margin_set0.margin_list = ll->margin_set1.margin_list = 0;
-    ll->margin_set0.margin_touched = ll->margin_set1.margin_touched = 0;
-    ll->margin_set0.y = ll->margin_set1.y = 0; /* A stub against indeterminism. Don't use it. */
-    ll->free_margin_list = 0;
-    ll->local_margin_alloc_count = 0;
-    ll->margin_set0.sect = ll->local_section0;
-    ll->margin_set1.sect = ll->local_section1;
 
     ll->x_head.prev = NULL;
     /* Bug 695234: Initialise the following to pacify valgrind */
@@ -306,7 +295,6 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
 #define NO_BAND_MASK ((fixed)(-1) << (sizeof(fixed) * 8 - 1))
     const bool is_character = params->adjust.x == -1; /* See gxgstate.h */
     bool fill_by_trapezoids;
-    bool pseudo_rasterization;
     bool big_path = ppath->subpath_count > 50;
     fill_options fo;
     line_list lst;
@@ -321,11 +309,6 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
      * but right now we don't bother.
      */
     gx_path_bbox(ppath, &ibox);
-#   define SMALL_CHARACTER 500
-    pseudo_rasterization = (is_character &&
-                            !is_spotan_device(dev) &&
-                            ibox.q.y - ibox.p.y < SMALL_CHARACTER * fixed_scale &&
-                            ibox.q.x - ibox.p.x < SMALL_CHARACTER * fixed_scale);
     if (is_character)
         adjust.x = adjust.y = 0;
     else
@@ -412,7 +395,6 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
     sbox.p.y = ibox.p.y - adjust.y;
     sbox.q.x = ibox.q.x + adjust.x;
     sbox.q.y = ibox.q.y + adjust.y;
-    fo.pseudo_rasterization = pseudo_rasterization;
     fo.pdevc = pdevc;
     fo.lop = lop;
     fo.fixed_flat = float2fixed(params->flatness);
@@ -442,9 +424,8 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
      * pixel writing must be avoided, and the trapezoid algorithm otherwise.
      * However, we always use the trapezoid algorithm for rectangles.
      */
-    fill_by_trapezoids =
-        (pseudo_rasterization || !gx_path_has_curves(ppath) ||
-         params->flatness >= 1.0 || fo.is_spotan);
+    fill_by_trapezoids = (!gx_path_has_curves(ppath) ||
+                          params->flatness >= 1.0 || fo.is_spotan);
     if (fill_by_trapezoids && !fo.is_spotan && !lop_is_idempotent(lop)) {
         gs_fixed_rect rbox;
 
@@ -490,24 +471,6 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
             fill_loop = spot_into_trapezoids;
         else
             fill_loop = spot_into_scan_lines;
-        if (lst.bbox_width > MAX_LOCAL_SECTION && fo.pseudo_rasterization) {
-            /*
-             * Note that execution pass here only for character size
-             * grater that MAX_LOCAL_SECTION and lesser than
-             * SMALL_CHARACTER. Therefore with !ARCH_SMALL_MEMORY
-             * the dynamic allocation only happens for characters
-             * wider than 100 pixels.
-             */
-            lst.margin_set0.sect = (section *)gs_alloc_struct_array(pdev->memory, lst.bbox_width * 2,
-                                                   section, &st_section, "gx_general_fill_path");
-            if (lst.margin_set0.sect == 0)
-                return_error(gs_error_VMerror);
-            lst.margin_set1.sect = lst.margin_set0.sect + lst.bbox_width;
-        }
-        if (fo.pseudo_rasterization) {
-            init_section(lst.margin_set0.sect, 0, lst.bbox_width);
-            init_section(lst.margin_set1.sect, 0, lst.bbox_width);
-        }
         if (gs_currentcpsimode(pgs->memory) && is_character) {
             if (lst.contour_count > countof(lst.local_windings)) {
                 lst.windings = (int *)gs_alloc_byte_array(pdev->memory, lst.contour_count,
@@ -518,9 +481,6 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
         }
         code = (*fill_loop)
             (&lst, (max_fill_band == 0 ? NO_BAND_MASK : int2fixed(-max_fill_band)));
-        if (lst.margin_set0.sect != lst.local_section0 &&
-            lst.margin_set0.sect != lst.local_section1)
-            gs_free_object(pdev->memory, min(lst.margin_set0.sect, lst.margin_set1.sect), "gx_general_fill_path");
         if (lst.windings != NULL && lst.windings != lst.local_windings)
             gs_free_object(pdev->memory, lst.windings, "gx_general_fill_path");
     }
@@ -668,6 +628,10 @@ gx_default_fill_path(gx_device * pdev, const gs_gstate * pgs,
                 vd_get_dc( (params->adjust.x > 0 || params->adjust.y > 0)  ? 'F' : 'f');
                 got_dc = vd_enabled;
             }
+#define VD_SCALE 0.03
+#define VD_RECT(x, y, w, h, c) vd_rect(int2fixed(x), int2fixed(y), int2fixed(x + w), int2fixed(y + h), 1, c)
+#define VD_TRAP_COLOR RGB(0, 255, 255)
+#define VD_MARG_COLOR RGB(255, 0, 0)
             if (vd_enabled) {
                 vd_set_shift(0, 100);
                 vd_set_scale(VD_SCALE);
@@ -703,7 +667,6 @@ free_line_list(line_list *ll)
         gs_free_object(mem, alp, "active line");
         ll->active_area = next;
     }
-    free_all_margins(ll);
 }
 
 static inline active_line *
@@ -1042,22 +1005,14 @@ scan_contour(line_list *ll, segment *pfirst, segment *plast, segment *prev)
             added = 0;
             if (p.dir == DIR_HORIZONTAL) {
                 if (p.monotonic_y) {
-                    if (!fo->pseudo_rasterization) {
-                        if (
+                    if (
 #ifdef FILL_ZERO_WIDTH
-                            (fo->adjust_below | fo->adjust_above) != 0) {
+                        (fo->adjust_below | fo->adjust_above) != 0) {
 #else
-                            (fo->adjust_below + fo->adjust_above >= (fixed_1 - fixed_epsilon) ||
-                             fixed2int_pixround(p.pseg->pt.y - fo->adjust_below) <
-                             fixed2int_pixround(p.pseg->pt.y + fo->adjust_above))) {
+                        (fo->adjust_below + fo->adjust_above >= (fixed_1 - fixed_epsilon) ||
+                         fixed2int_pixround(p.pseg->pt.y - fo->adjust_below) <
+                         fixed2int_pixround(p.pseg->pt.y + fo->adjust_above))) {
 #endif
-                            /* Add it here to avoid double processing in process_h_segments. */
-                            code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
-                            if (code < 0)
-                                return code;
-                            added = 1;
-                        }
-                    } else if (only_horizontal) {
                         /* Add it here to avoid double processing in process_h_segments. */
                         code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
                         if (code < 0)
@@ -1161,11 +1116,6 @@ add_y_list(gx_path * ppath, line_list *ll)
             ll->close_count++;
         }
         prev = plast->prev;
-        if (ll->fo->pseudo_rasterization && prev != pfirst &&
-                prev->pt.x == plast->pt.x && prev->pt.y == plast->pt.y) {
-            plast = prev;
-            prev = prev->prev;
-        }
         code = scan_contour(ll, pfirst, plast, prev);
         if (code < 0)
             return code;
@@ -1415,25 +1365,6 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
     vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(128, 0, 128));
     print_al(ll->memory, "repl", alp);
     return false;
-}
-
-static inline int
-add_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
-{   vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(255, 255, 255));
-    vd_bar(flp->start.x, flp->start.y, flp->end.x, flp->end.y, 1, RGB(255, 255, 255));
-    return continue_margin_common(ll, &ll->margin_set0, flp, alp, y0, y1);
-}
-
-static inline int
-continue_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
-{
-    return continue_margin_common(ll, &ll->margin_set0, flp, alp, y0, y1);
-}
-
-static inline int
-complete_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
-{
-    return continue_margin_common(ll, &ll->margin_set1, flp, alp, y0, y1);
 }
 
 /*
@@ -1711,36 +1642,6 @@ move_al_by_y(line_list *ll, fixed y1)
             }
         }
     }
-    if (ll->x_list != 0 && ll->fo->pseudo_rasterization) {
-        /* Ensure that contacting vertical stems are properly ordered.
-           We don't want to unite contacting stems into
-           a single margin, because it can cause a dropout :
-           narrow stems are widened against a dropout, but
-           an united wide one may be left unwidened.
-         */
-        for (alp = ll->x_list; alp->next != 0; ) {
-            if (alp->start.x == alp->end.x &&
-                alp->start.x == alp->next->start.x &&
-                alp->next->start.x == alp->next->end.x &&
-                alp->direction > alp->next->direction) {
-                /* Exchange. */
-                active_line *prev = alp->prev;
-                active_line *next = alp->next;
-                active_line *next2 = next->next;
-                if (prev)
-                    prev->next = next;
-                else
-                    ll->x_list = next;
-                next->prev = prev;
-                alp->prev = next;
-                alp->next = next2;
-                next->next = alp;
-                if (next2)
-                    next2->prev = alp;
-            } else
-                alp = alp->next;
-        }
-    }
     return 0;
 }
 
@@ -1749,16 +1650,11 @@ static inline int
 process_h_segments(line_list *ll, fixed y)
 {
     active_line *alp, *nlp;
-    int code, inserted = 0;
+    int inserted = 0;
 
     for (alp = ll->x_list; alp != 0; alp = nlp) {
         nlp = alp->next;
         if (alp->start.y == y && alp->end.y == y) {
-            if (ll->fo->pseudo_rasterization) {
-                code = add_y_line_aux(NULL, NULL, &alp->start, &alp->end, DIR_HORIZONTAL, ll);
-                if (code < 0)
-                    return code;
-            }
             inserted = 1;
         }
     }
@@ -1893,13 +1789,12 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
     active_line *alp, *stopx = NULL;
     active_line *endp = NULL;
 
-    /* don't bother if no pixels with no pseudo_rasterization */
     if (y == y1) {
         /* Rather the intersection algorithm can handle this case with
            retrieving x_next equal to x_current,
            we bypass it for safety reason.
          */
-    } else if (ll->fo->pseudo_rasterization || draw >= 0 || all_bands) {
+    } else if (draw >= 0 || all_bands) {
         /*
          * Loop invariants:
          *      alp = endp->next;
@@ -2043,56 +1938,24 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
                 }
 
 #define IS_SPOTAN 0
-#define PSEUDO_RASTERIZATION 1
-#define SMART_WINDING 1
-#define FILL_ADJUST 0
-#define FILL_DIRECT 1
-#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__pr_fd_sw
-#include "gxfilltr.h"
-#undef IS_SPOTAN
-#undef PSEUDO_RASTERIZATION
-#undef SMART_WINDING
-#undef FILL_ADJUST
-#undef FILL_DIRECT
-#undef TEMPLATE_spot_into_trapezoids
-
-#define IS_SPOTAN 0
-#define PSEUDO_RASTERIZATION 1
-#define SMART_WINDING 1
-#define FILL_ADJUST 0
-#define FILL_DIRECT 0
-#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__pr_nd_sw
-#include "gxfilltr.h"
-#undef IS_SPOTAN
-#undef PSEUDO_RASTERIZATION
-#undef SMART_WINDING
-#undef FILL_ADJUST
-#undef FILL_DIRECT
-#undef TEMPLATE_spot_into_trapezoids
-
-#define IS_SPOTAN 0
-#define PSEUDO_RASTERIZATION 0
 #define SMART_WINDING 1
 #define FILL_ADJUST 0
 #define FILL_DIRECT 1
 #define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__nj_fd_sw
 #include "gxfilltr.h"
 #undef IS_SPOTAN
-#undef PSEUDO_RASTERIZATION
 #undef SMART_WINDING
 #undef FILL_ADJUST
 #undef FILL_DIRECT
 #undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
-#define PSEUDO_RASTERIZATION 0
 #define SMART_WINDING 1
 #define FILL_ADJUST 0
 #define FILL_DIRECT 0
 #define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__nj_nd_sw
 #include "gxfilltr.h"
 #undef IS_SPOTAN
-#undef PSEUDO_RASTERIZATION
 #undef SMART_WINDING
 #undef FILL_ADJUST
 #undef FILL_DIRECT
@@ -2104,98 +1967,60 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
 #define ADVANCE_WINDING(inside, alp, ll) inside += alp->direction
 
 #define IS_SPOTAN 1
-#define PSEUDO_RASTERIZATION 0
 #define SMART_WINDING 0
 #define FILL_ADJUST 0
 #define FILL_DIRECT 1
 #define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__spotan
 #include "gxfilltr.h"
 #undef IS_SPOTAN
-#undef PSEUDO_RASTERIZATION
 #undef SMART_WINDING
 #undef FILL_ADJUST
 #undef FILL_DIRECT
 #undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
-#define PSEUDO_RASTERIZATION 1
-#define SMART_WINDING 0
-#define FILL_ADJUST 0
-#define FILL_DIRECT 1
-#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__pr_fd
-#include "gxfilltr.h"
-#undef IS_SPOTAN
-#undef PSEUDO_RASTERIZATION
-#undef SMART_WINDING
-#undef FILL_ADJUST
-#undef FILL_DIRECT
-#undef TEMPLATE_spot_into_trapezoids
-
-#define IS_SPOTAN 0
-#define PSEUDO_RASTERIZATION 1
-#define SMART_WINDING 0
-#define FILL_ADJUST 0
-#define FILL_DIRECT 0
-#define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__pr_nd
-#include "gxfilltr.h"
-#undef IS_SPOTAN
-#undef PSEUDO_RASTERIZATION
-#undef SMART_WINDING
-#undef FILL_ADJUST
-#undef FILL_DIRECT
-#undef TEMPLATE_spot_into_trapezoids
-
-#define IS_SPOTAN 0
-#define PSEUDO_RASTERIZATION 0
 #define SMART_WINDING 0
 #define FILL_ADJUST 1
 #define FILL_DIRECT 1
 #define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__aj_fd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
-#undef PSEUDO_RASTERIZATION
 #undef SMART_WINDING
 #undef FILL_ADJUST
 #undef FILL_DIRECT
 #undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
-#define PSEUDO_RASTERIZATION 0
 #define SMART_WINDING 0
 #define FILL_ADJUST 1
 #define FILL_DIRECT 0
 #define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__aj_nd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
-#undef PSEUDO_RASTERIZATION
 #undef SMART_WINDING
 #undef FILL_ADJUST
 #undef FILL_DIRECT
 #undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
-#define PSEUDO_RASTERIZATION 0
 #define SMART_WINDING 0
 #define FILL_ADJUST 0
 #define FILL_DIRECT 1
 #define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__nj_fd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
-#undef PSEUDO_RASTERIZATION
 #undef SMART_WINDING
 #undef FILL_ADJUST
 #undef FILL_DIRECT
 #undef TEMPLATE_spot_into_trapezoids
 
 #define IS_SPOTAN 0
-#define PSEUDO_RASTERIZATION 0
 #define SMART_WINDING 0
 #define FILL_ADJUST 0
 #define FILL_DIRECT 0
 #define TEMPLATE_spot_into_trapezoids spot_into_trapezoids__nj_nd
 #include "gxfilltr.h"
 #undef IS_SPOTAN
-#undef PSEUDO_RASTERIZATION
 #undef SMART_WINDING
 #undef FILL_ADJUST
 #undef FILL_DIRECT
@@ -2214,19 +2039,6 @@ spot_into_trapezoids(line_list *ll, fixed band_mask)
 
     if (fo->is_spotan)
         return spot_into_trapezoids__spotan(ll, band_mask);
-    if (fo->pseudo_rasterization) {
-        if (ll->windings != NULL) {
-            if (fo->fill_direct)
-                return spot_into_trapezoids__pr_fd_sw(ll, band_mask);
-            else
-                return spot_into_trapezoids__pr_nd_sw(ll, band_mask);
-        } else {
-            if (fo->fill_direct)
-                return spot_into_trapezoids__pr_fd(ll, band_mask);
-            else
-                return spot_into_trapezoids__pr_nd(ll, band_mask);
-        }
-    }
     if (fo->adjust_below | fo->adjust_above | fo->adjust_left | fo->adjust_right) {
         if (fo->fill_direct)
             return spot_into_trapezoids__aj_fd(ll, band_mask);

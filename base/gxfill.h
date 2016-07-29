@@ -96,7 +96,6 @@ struct active_line_s {
 };
 
 typedef struct fill_options_s {
-    bool pseudo_rasterization;  /* See comment about "pseudo-rasterization". */
     fixed ymin, ymax;
     const gx_device_color * pdevc;
     gs_logical_operation_t lop;
@@ -129,10 +128,7 @@ struct line_list_s {
     active_line x_head; 	/* X-sorted list of active lines */
 #define x_list x_head.next
     active_line *h_list0, *h_list1; /* lists of horizontal lines for y, y1 */
-    margin_set margin_set0, margin_set1;
-    margin *free_margin_list;
     int *windings;
-    int local_margin_alloc_count;
     int bbox_left, bbox_width;
     int main_dir;
     fixed y_break;
@@ -150,9 +146,6 @@ struct line_list_s {
 #  define MAX_LOCAL_SECTION 100
 #endif
     active_line local_active[MAX_LOCAL_ACTIVE];
-    margin local_margins[MAX_LOCAL_ACTIVE];
-    section local_section0[MAX_LOCAL_SECTION];
-    section local_section1[MAX_LOCAL_SECTION];
     int local_windings[MAX_LOCAL_ACTIVE];
 };
 
