@@ -455,10 +455,10 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     } else {
         int threshold = dev_proc(penum->dev, dev_spec_op)(penum->dev, gxdso_interpolate_threshold, NULL, 0);
         if ((iss.WidthOut == iss.WidthIn && iss.HeightOut == iss.HeightIn) ||
-            (penum->interpolate != interp_force) &&
-            (threshold > 0) &&
-            (iss.WidthOut < iss.WidthIn * threshold) &&
-            (iss.HeightOut < iss.HeightIn * threshold)) {
+            ((penum->interpolate != interp_force) &&
+             (threshold > 0) &&
+             (iss.WidthOut < iss.WidthIn * threshold) &&
+             (iss.HeightOut < iss.HeightIn * threshold))) {
             penum->interpolate = interp_off;
             return 0;       /* no interpolation / downsampling */
         }
