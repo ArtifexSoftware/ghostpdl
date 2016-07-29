@@ -1010,7 +1010,7 @@ scan_contour(line_list *ll, segment *pfirst, segment *plast, segment *prev)
         bool added;
         p.pseg = p.prev->next;
         /* Can we ignore this segment entirely? */
-        if (fo->pseudo_rasterization && !only_horizontal && p.pseg->type != s_curve &&
+        if (!only_horizontal && p.pseg->type != s_curve &&
             p.prev->pt.x == p.pseg->pt.x && p.prev->pt.y == p.pseg->pt.y)
             continue;
 
