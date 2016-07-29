@@ -375,8 +375,8 @@ static int SkipPage(gx_device *dev)
                     return 1;
             }
         } else {
-            if (psubclass_data->PageCount >= dev->FirstPage)
-                if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage)
+            if (psubclass_data->PageCount >= dev->FirstPage - 1)
+                if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1)
                     return 0;
         }
     }
