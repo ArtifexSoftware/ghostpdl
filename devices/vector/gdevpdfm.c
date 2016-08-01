@@ -199,7 +199,6 @@ pdfmark_coerce_dest(gs_param_string *dstr, char dest[MAX_DEST_STRING])
 {
     const byte *data = dstr->data;
     uint size = dstr->size;
-
     if (size == 0 || data[0] != '(')
         return 0;
     /****** HANDLE ESCAPES ******/
@@ -845,8 +844,17 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
                 }
                 if (pdf_key_eq(&key, "/Dest") || pdf_key_eq(&key, "/D")) {
                     param_string_from_string(key, "/D");
-                    if (value.data[0] == '(') {
-                        /****** HANDLE ESCAPES ******/
+                    if (value.data[0] == '(' && pdev->CompatibilityLevel < 1.2) {
+                        int i;
+
+                        for (i = 0;i < value.size; i++) {
+                            if (value.data[i] == '\\') {
+                                emprintf(pdev->memory,
+                                         "Link Destination contains characters which cannot be represented in a name.\nDestinations cannot be strings in versions prior to PDF 1.2. Annotation removed in the output.\n");
+                                return gs_error_typecheck;
+                            }
+                        }
+                        /****** FIXME: DETECT ESCAPES ******/
                         pdfmark_coerce_dest(&value, dest);
                     }
                 } else if (pdf_key_eq(&key, "/File"))
