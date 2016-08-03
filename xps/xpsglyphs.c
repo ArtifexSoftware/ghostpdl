@@ -374,15 +374,19 @@ static inline int is_real_num_char(int c)
 }
 
 static char *
-xps_parse_real_num(char *s, float *number)
+xps_parse_real_num(char *s, float *number, bool *number_parsed)
 {
     char buf[64];
     char *p = buf;
+    *number_parsed = false;
+    
     while (is_real_num_char(*s))
         *p++ = *s++;
     *p = 0;
-    if (buf[0])
+    if (buf[0]) {
         *number = atof(buf);
+        *number_parsed = true;
+    }
     return s;
 }
 
@@ -407,14 +411,42 @@ xps_parse_glyph_index(char *s, int *glyph_index)
 }
 
 static char *
-xps_parse_glyph_metrics(char *s, float *advance, float *uofs, float *vofs)
+xps_parse_glyph_advance(char *s, float *advance, int bidi_level)
 {
+    bool advance_overridden = false;
+    
+    if (*s == ',') {
+        s = xps_parse_real_num(s + 1, advance, &advance_overridden);
+
+        /*
+         * If the advance has been derived from the font and not
+         * overridden by the Indices Attribute the sign has already
+         * been direction adjusted.
+         */
+
+        if (advance_overridden && (bidi_level & 1))
+            *advance *= -1;
+    }
+    return s;
+}
+        
+static char *
+xps_parse_glyph_offsets(char *s, float *uofs, float *vofs)
+{
+    bool offsets_overridden; /* not used */
+
     if (*s == ',')
-        s = xps_parse_real_num(s + 1, advance);
+        s = xps_parse_real_num(s + 1, uofs, &offsets_overridden);
     if (*s == ',')
-        s = xps_parse_real_num(s + 1, uofs);
-    if (*s == ',')
-        s = xps_parse_real_num(s + 1, vofs);
+        s = xps_parse_real_num(s + 1, vofs, &offsets_overridden);
+    return s;
+}
+
+static char *
+xps_parse_glyph_metrics(char *s, float *advance, float *uofs, float *vofs, int bidi_level)
+{
+    s = xps_parse_glyph_advance(s, advance, bidi_level);
+    s = xps_parse_glyph_offsets(s, uofs, vofs);
     return s;
 }
 
@@ -498,7 +530,7 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
 
             if (is && *is)
             {
-                is = xps_parse_glyph_metrics(is, &advance, &u_offset, &v_offset);
+                is = xps_parse_glyph_metrics(is, &advance, &u_offset, &v_offset, bidi_level);
                 if (*is == ';')
                     is ++;
             }
