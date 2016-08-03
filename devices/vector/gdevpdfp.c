@@ -684,7 +684,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         pdev->Linearise = false;
     }
 
-    if (pdev->OwnerPassword.size != 0) {
+    if (pdev->Linearise && pdev->OwnerPassword.size != 0) {
         emprintf(pdev->memory, "Can't linearise encrypted PDF, ignoring\n");
         pdev->Linearise = false;
     }
