@@ -2144,6 +2144,8 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 pdev->HighLevelForm--;
                 if (pdev->accumulating_substream_resource) {
                     code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pres);
+                    if (code < 0)
+                        return code;
                 }
                 pdev->LastFormID = pdf_resource_id(pres);
             }
@@ -2180,6 +2182,8 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 pres->where_used |= pdev->used_mask;
                 if (pdev->accumulating_substream_resource) {
                     code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pres);
+                    if (code < 0)
+                        return code;
                 }
             }
             return 0;
