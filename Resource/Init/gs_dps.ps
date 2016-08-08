@@ -68,8 +68,7 @@
   } forall /internaldict dup load
   .dicttomark readonly put
                 % Save a copy of the initial gstate.
-  //true .setglobal
-  //systemdict /savedinitialgstate gstate readonly put
+  //systemdict /savedinitialgstate gstate readonly .forceput
   .setglobal
 } .bind def
 
