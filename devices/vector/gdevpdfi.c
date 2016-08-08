@@ -2043,7 +2043,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
         case gxdso_pattern_can_accum:
             return 1;
         case gxdso_form_begin:
-            if (pdev->HighLevelForm == 0 && pdev->PatternDepth == 0) {
+            if ((!pdev->ForOPDFRead || pdev->HighLevelForm == 0) && pdev->PatternDepth == 0) {
                 gs_form_template_t *tmplate = (gs_form_template_t *)data;
                 float arry[6];
                 cos_dict_t *pcd = NULL, *pcd_Resources = NULL;
@@ -2122,7 +2122,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             return code;
         case gxdso_form_end:
             /* This test must be the same as the one in gxdso_form_begin, above */
-            if (pdev->HighLevelForm == 1 && pdev->PatternDepth == 0) {
+            if ((!pdev->ForOPDFRead || pdev->HighLevelForm == 1) && pdev->PatternDepth == 0) {
                 code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
                 if (code < 0)
                     return code;
@@ -2142,6 +2142,9 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     pdf_reserve_object_id(pdev, pres, 0);
                 pprintld1(pdev->strm, "/R%ld Do Q\n", pdf_resource_id(pres));
                 pdev->HighLevelForm--;
+                if (pdev->accumulating_substream_resource) {
+                    code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pres);
+                }
                 pdev->LastFormID = pdf_resource_id(pres);
             }
             return 0;
@@ -2175,6 +2178,9 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 pprintld1(pdev->strm, "/R%ld Do Q\n", tmplate->FormID);
                 pres = pdf_find_resource_by_resource_id(pdev, resourceXObject, tmplate->FormID);
                 pres->where_used |= pdev->used_mask;
+                if (pdev->accumulating_substream_resource) {
+                    code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pres);
+                }
             }
             return 0;
         case gxdso_pattern_start_accum:
