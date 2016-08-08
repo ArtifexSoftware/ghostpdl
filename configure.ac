@@ -2135,7 +2135,7 @@ case `uname` in
         ;;
         AIX)
           DYNAMIC_CFLAGS="-fPIC"
-          GCFLAGS="-Wl,-brtl $GCFLAGS"
+          GCFLAGS="-Wl,-brtl -D_LARGE_FILES $GCFLAGS"
           GS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
           PCL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
           XPS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
