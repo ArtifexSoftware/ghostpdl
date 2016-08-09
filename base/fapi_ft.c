@@ -949,12 +949,29 @@ transform_decompose(FT_Matrix * a_transform, FT_UInt * xresp, FT_UInt * yresp,
                     FT_Fixed * a_x_scale, FT_Fixed * a_y_scale)
 {
     double scalex, scaley, fact = 1.0;
+    double factx = 1.0, facty = 1.0;
     FT_Matrix ftscale_mat;
     FT_UInt xres;
     FT_UInt yres;
 
     scalex = hypot((double)a_transform->xx, (double)a_transform->xy);
     scaley = hypot((double)a_transform->yx, (double)a_transform->yy);
+
+    /* In addition to all the wrangling below, we have to make sure that
+     * that the contents of a_transform can also be understood by Freetype.
+     */
+    if (scalex < 64.0 || scaley < 64.0) {
+        factx = 64.0/scalex;
+        facty = 64.0/scaley;
+
+        ftscale_mat.xx = a_transform->xx * factx;
+        ftscale_mat.xy = a_transform->xy * facty;
+        ftscale_mat.yx = a_transform->yx * factx;
+        ftscale_mat.yy = a_transform->yy * facty;
+        memcpy(a_transform, &ftscale_mat, sizeof(ftscale_mat));
+        scalex = hypot((double)a_transform->xx, (double)a_transform->xy);
+        scaley = hypot((double)a_transform->yx, (double)a_transform->yy);
+    }
 
     if (*xresp != *yresp) {
         /* To get good results, we have to pull the implicit scaling from
@@ -980,11 +997,13 @@ transform_decompose(FT_Matrix * a_transform, FT_UInt * xresp, FT_UInt * yresp,
         FT_Matrix_Multiply(&ftscale_mat, a_transform);
 
         xres = yres = (use_x ? (*xresp) : (*yresp));
+        xres = xres / factx;
+        yres = yres / facty;
     }
     else {
         /* Life is considerably easier when square resolutions are in use! */
-        xres = *xresp;
-        yres = *yresp;
+        xres = *xresp / factx;
+        yres = *yresp / facty;
     }
 
     scalex *= 1.0 / 65536.0;
