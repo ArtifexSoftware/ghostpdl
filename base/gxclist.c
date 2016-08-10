@@ -574,8 +574,6 @@ clist_init(gx_device * dev)
 
     if (code >= 0) {
         cdev->image_enum_id = gs_no_id;
-        cdev->error_is_retryable = 0;
-        cdev->driver_call_nesting = 0;
         cdev->ignore_lo_mem_warnings = 0;
     }
     return code;
@@ -599,14 +597,6 @@ clist_reinit_output_file(gx_device *dev)
     int c_block =
         cdev->cend - cdev->cbuf + 2 + cdev->nbands * 2 + (cdev->nbands + 1);
 
-    /* All this is for partial page rendering's benefit, do only */
-    /* if partial page rendering is available */
-    if ( clist_test_VMerror_recoverable(cdev) )
-        { if (cdev->page_bfile != 0)
-            code = cdev->page_info.io_procs->set_memory_warning(cdev->page_bfile, b_block);
-        if (code >= 0 && cdev->page_cfile != 0)
-            code = cdev->page_info.io_procs->set_memory_warning(cdev->page_cfile, c_block);
-        }
     return code;
 }
 
@@ -620,13 +610,8 @@ clist_emit_page_header(gx_device *dev)
     int code = 0;
 
     if ((cdev->disable_mask & clist_disable_pass_thru_params)) {
-        do
-            if ((code = clist_put_current_params(cdev)) >= 0)
-                break;
-        while ((code = clist_VMerror_recover(cdev, code)) >= 0);
+        code = clist_put_current_params(cdev);
         cdev->permanent_error = (code < 0 ? code : 0);
-        if (cdev->permanent_error < 0)
-            cdev->error_is_retryable = 0;
     }
     return code;
 }
@@ -669,7 +654,6 @@ clist_open_output_file(gx_device *dev)
         ) {
         clist_close_output_file(dev);
         cdev->permanent_error = code;
-        cdev->error_is_retryable = 0;
     }
     return code;
 }
@@ -907,78 +891,6 @@ gx_color_index2usage(gx_device *dev, gx_color_index color)
     }
 
     return bits;
-}
-
-/* Recover recoverable VM error if possible without flushing */
-int     /* ret -ve err, >= 0 if recovered w/# = cnt pages left in page queue */
-clist_VMerror_recover(gx_device_clist_writer *cldev,
-                      int old_error_code)
-{
-    int code = old_error_code;
-    int pages_remain;
-
-    if (!clist_test_VMerror_recoverable(cldev) ||
-        !cldev->error_is_retryable ||
-        old_error_code != gs_error_VMerror
-        )
-        return old_error_code;
-
-    /* Do some rendering, return if enough memory is now free */
-    do {
-        pages_remain =
-            (*cldev->free_up_bandlist_memory)( (gx_device *)cldev, false );
-        if (pages_remain < 0) {
-            code = pages_remain;        /* abort, error or interrupt req */
-            break;
-        }
-        if (clist_reinit_output_file( (gx_device *)cldev ) == 0) {
-            code = pages_remain;        /* got enough memory to continue */
-            break;
-        }
-    } while (pages_remain);
-
-    if_debug1m('L', cldev->memory, "[L]soft flush of command list, status: %d\n", code);
-    return code;
-}
-
-/* If recoverable VM error, flush & try to recover it */
-int     /* ret 0 ok, else -ve error */
-clist_VMerror_recover_flush(gx_device_clist_writer *cldev,
-                            int old_error_code)
-{
-    int free_code = 0;
-    int reset_code = 0;
-    int code;
-
-    /* If the device has the ability to render partial pages, flush
-     * out the bandlist, and reset the writing state. Then, get the
-     * device to render this band. When done, see if there's now enough
-     * memory to satisfy the minimum low-memory guarantees. If not,
-     * get the device to render some more. If there's nothing left to
-     * render & still insufficient memory, declare an error condition.
-     */
-    if (!clist_test_VMerror_recoverable(cldev) ||
-        old_error_code != gs_error_VMerror
-        )
-        return old_error_code;  /* sorry, don't have any means to recover this error */
-    free_code = (*cldev->free_up_bandlist_memory)( (gx_device *)cldev, true );
-
-    /* Reset the state of bands to "don't know anything" */
-    reset_code = clist_reset( (gx_device *)cldev );
-    if (reset_code >= 0)
-        reset_code = clist_open_output_file( (gx_device *)cldev );
-    if ( reset_code >= 0 &&
-         (cldev->disable_mask & clist_disable_pass_thru_params)
-         )
-        reset_code = clist_put_current_params(cldev);
-    if (reset_code < 0) {
-        cldev->permanent_error = reset_code;
-        cldev->error_is_retryable = 0;
-    }
-
-    code = (reset_code < 0 ? reset_code : free_code < 0 ? old_error_code : 0);
-    if_debug1m('L', cldev->memory, "[L]hard flush of command list, status: %d\n", code);
-    return code;
 }
 
 /* Write the target device's current parameter list */
@@ -1472,7 +1384,6 @@ clist_make_accum_device(gx_device *target, const char *dname, void *base, int sp
             bool  IgnoreNumCopies;
             int   disable_mask;
             gx_page_device_procs page_procs;
-            proc_free_up_bandlist_memory *free_up_bandlist_memory;
 
         */
         return cdev;

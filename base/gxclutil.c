@@ -304,14 +304,6 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
         if ((cldev->error_code =
              cmd_write_buffer(cldev, cmd_opv_end_run)) != 0 ||
             (size + cmd_headroom > cldev->cend - cldev->cnext)) {
-            if (cldev->error_code < 0)
-                cldev->error_is_retryable = 0;	/* hard error */
-            else {
-                /* upgrade lo-mem warning into an error */
-                if (!cldev->ignore_lo_mem_warnings)
-                    cldev->error_code = gs_note_error(gs_error_VMerror);
-                cldev->error_is_retryable = 1;
-            }
             return 0;
         }
         else
@@ -368,7 +360,6 @@ cmd_get_buffer_space(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint
     if (size + cmd_headroom > cldev->cend - cldev->cnext) {
         cldev->error_code = cmd_write_buffer(cldev, cmd_opv_end_run);
         if (cldev->error_code < 0) {
-            cldev->error_is_retryable = 0;	/* hard error */
             return cldev->error_code;
         }
     }
@@ -399,13 +390,6 @@ cmd_put_range_op(gx_device_clist_writer * cldev, int band_min, int band_max,
          band_max != cldev->band_range_max)
         ) {
         if ((cldev->error_code = cmd_write_buffer(cldev, cmd_opv_end_run)) != 0) {
-            if (cldev->error_code < 0)
-                cldev->error_is_retryable = 0;	/* hard error */
-            else {
-                /* upgrade lo-mem warning into an error */
-                cldev->error_code = gs_error_VMerror;
-                cldev->error_is_retryable = 1;
-            }
             return 0;
         }
         cldev->band_range_min = band_min;

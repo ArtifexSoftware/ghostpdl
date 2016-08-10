@@ -95,13 +95,6 @@ typedef struct gx_placed_page_s {
     gs_int_point offset;
 } gx_placed_page;
 
-/*
- * Define a procedure to cause some bandlist memory to be freed up,
- * probably by rendering current bandlist contents.
- */
-#define proc_free_up_bandlist_memory(proc)\
-  int proc(gx_device *dev, bool flush_current)
-
 /* ---------------- Internal structures ---------------- */
 
 /*
@@ -345,14 +338,9 @@ struct gx_device_clist_writer_s {
     gs_id device_halftone_id;	/* id of device halftone */
     gs_id image_enum_id;	/* non-0 if we are inside an image */
                                 /* that we are passing through */
-    int error_is_retryable;		/* Extra status used to distinguish hard VMerrors */
-                               /* from warnings upgraded to VMerrors. */
-                               /* T if err ret'd by cmd_put_op et al can be retried */
     int permanent_error;		/* if < 0, error only cleared by clist_reset() */
-    int driver_call_nesting;	/* nesting level of non-retryable driver calls */
     int ignore_lo_mem_warnings;	/* ignore warnings from clist file/mem */
             /* Following must be set before writing */
-    proc_free_up_bandlist_memory((*free_up_bandlist_memory)); /* if nz, proc to free some bandlist memory */
     int disable_mask;		/* mask of routines to disable clist_disable_xxx */
     gs_pattern1_instance_t *pinst; /* Used when it is a pattern clist. */
     int cropping_min, cropping_max;
@@ -434,7 +422,7 @@ extern_st(st_device_clist);
 #define CLIST_IS_WRITER(cdev) ((cdev)->common.ymin < 0)
 
 /* setup before opening clist device */
-#define clist_init_params(xclist, xdata, xdata_size, xtarget, xbuf_procs, xband_params, xexternal, xmemory, xfree_bandlist, xdisable, pageusestransparency)\
+#define clist_init_params(xclist, xdata, xdata_size, xtarget, xbuf_procs, xband_params, xexternal, xmemory, xdisable, pageusestransparency)\
     BEGIN\
         (xclist)->common.data = (xdata);\
         (xclist)->common.data_size = (xdata_size);\
@@ -443,15 +431,10 @@ extern_st(st_device_clist);
         (xclist)->common.band_params = (xband_params);\
         (xclist)->common.do_not_open_or_close_bandfiles = (xexternal);\
         (xclist)->common.bandlist_memory = (xmemory);\
-        (xclist)->writer.free_up_bandlist_memory = (xfree_bandlist);\
         (xclist)->writer.disable_mask = (xdisable);\
         (xclist)->writer.page_uses_transparency = (pageusestransparency);\
         (xclist)->writer.pinst = NULL;\
     END
-
-/* Determine whether this clist device is able to recover VMerrors */
-#define clist_test_VMerror_recoverable(cldev)\
-  ((cldev)->free_up_bandlist_memory != 0)
 
 /* The device template itself is never used, only the procedures. */
 extern const gx_device_procs gs_clist_device_procs;

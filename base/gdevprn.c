@@ -265,7 +265,6 @@ open_c:
                       false, /* do_not_open_or_close_bandfiles */
                       (ppdev->bandlist_memory == 0 ? pdev->memory->non_gc_memory:
                        ppdev->bandlist_memory),
-                      ppdev->free_up_bandlist_memory,
                       ppdev->clist_disable_mask,
                       ppdev->page_uses_transparency);
     code = (*gs_clist_device_procs.open_device)( (gx_device *)pcldev );
@@ -974,7 +973,7 @@ gx_default_get_space_params(const gx_device_printer *printer_dev,
 /* background printing, i.e., thread safe and does not change the device.        */
 /* If the printer device is in 'saved_pages' mode, then background printing is   */
 /* irrelevant and is ignored. In this case, pages are saved to the list.         */
-static int	/* 0 ok, -ve error, or 1 if successfully upgraded to buffer_page */
+static int	/* 0 ok, -ve error                                               */
 gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seekable, bool bg_print_ok)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
@@ -994,13 +993,7 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
         if ((code = gdev_prn_open_printer_seekable(pdev, 1, seekable)) < 0)
             return code;
 
-        /* If copypage request, try to do it using buffer_page */
-        if ( !flush &&
-             (*ppdev->printer_procs.buffer_page)(ppdev, ppdev->file, num_copies) >= 0) {
-            upgraded_copypage = true;
-            flush = true;
-
-        } else if (num_copies > 0) {
+        if (num_copies > 0) {
             int threads_enabled = 0;
             int print_foreground = 1;		/* default to foreground printing */
 
@@ -1195,18 +1188,6 @@ gx_default_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     /* Print the last (or only) page. */
     pdev->PageCount -= num_copies - 1;
     return (*pdev->printer_procs.print_page) (pdev, prn_stream);
-}
-
-/*
- * Buffer a (partial) rasterized page & optionally print result multiple times.
- * The default implementation returns error, since the driver needs to override
- * this (in procedure vector) in configurations where this call may occur.
- */
-int
-gx_default_buffer_page(gx_device_printer *pdev, FILE *prn_stream,
-                       int num_copies)
-{
-    return_error(gs_error_unknownerror);
 }
 
 /*

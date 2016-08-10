@@ -113,26 +113,6 @@ typedef struct gx_printer_device_procs_s {
 #define prn_dev_proc_get_space_params(proc)\
   void proc(const gx_device_printer *, gdev_prn_space_params *)
     prn_dev_proc_get_space_params((*get_space_params));
-    /*
-     * Buffer a page on the output device. A page may or may not have been
-     * fully rendered, but the rasterizer needs to realize the page to free
-     * up resources or support copypage. Printing a page may involve zero or
-     * more buffer_pages. All buffer_page output is overlaid in the buffer
-     * until a terminating print_page or print_page_copies clears the
-     * buffer. Note that, after the first buffer_page, the driver must call
-     * the lower-level gdev_prn_render_lines procedure instead of
-     * get_bits. The difference is that gdev_prn_render_lines requires the
-     * caller to supply the same buffered bitmap that was computed as a
-     * result of a previous buffer_page, so that gdev_prn_render_lines can
-     * add further marks to the existing buffered image. NB that output must
-     * be accumulated in buffer even if num_copies == 0.
-     *
-     * Caller is expected to be gdevprn, calls driver implementation or
-     * default.  */
-
-#define prn_dev_proc_buffer_page(proc)\
-  int proc(gx_device_printer *, FILE *, int)
-    prn_dev_proc_buffer_page((*buffer_page));
 
 } gx_printer_device_procs;
 
@@ -179,7 +159,6 @@ typedef struct bg_print_s {
         byte *buf;			/* buffer for rendering */\
         gs_memory_t *buffer_memory;	/* allocator for command list */\
         gs_memory_t *bandlist_memory;	/* allocator for bandlist files */\
-        proc_free_up_bandlist_memory((*free_up_bandlist_memory));  	/* if nz, proc to free some bandlist memory */\
         uint clist_disable_mask;	/* mask of clist options to disable */\
         bool bg_print_requested;	/* request background printing of page from clist */\
         bg_print_t bg_print;            /* background printing data shared with thread */\
@@ -227,7 +206,6 @@ int gdev_prn_get_param(gx_device *dev, char *Param, void *list);
 prn_dev_proc_get_space_params(gx_default_get_space_params);
 /* BACKWARD COMPATIBILITY */
 #define gdev_prn_default_get_space_params gx_default_get_space_params
-prn_dev_proc_buffer_page(gx_default_buffer_page); /* returns an error */
 
 /* Macro for generating procedure table */
 #define prn_procs(p_open, p_output_page, p_close)\
@@ -342,8 +320,7 @@ extern const gx_device_procs prn_bg_procs;
              gx_default_setup_buf_device,\
              gx_default_destroy_buf_device\
            },\
-           gdev_prn_default_get_space_params,\
-           gx_default_buffer_page\
+           gdev_prn_default_get_space_params\
          },\
          { 0 },		/* fname */\
         0/*false*/,     /* BLS_force_memory */\
@@ -356,7 +333,6 @@ extern const gx_device_procs prn_bg_procs;
         0,		/* *buf */\
         0,		/* *buffer_memory */\
         0,		/* *bandlist_memory */\
-        0,		/* *free_up_bandlist_memory */\
         0,		/* clist_disable_mask */\
         0/*false*/,	/* bg_print_requested */\
         {  0/*sema*/, 0/*device*/, 0/*thread_id*/, 0/*num_copies*/, 0/*return_code*/ }, /* bg_print */\

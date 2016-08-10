@@ -640,7 +640,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
             if (code >= 0)
                 code = end_code;	/* take the first failure seen */
-            if (end_code < 0 && cldev->error_is_retryable) {
+            if (end_code < 0) {
                 /*
                  * end_clip has to work despite lo-mem to maintain consistency.
                  * This isn't error recovery, but just to prevent dangling
