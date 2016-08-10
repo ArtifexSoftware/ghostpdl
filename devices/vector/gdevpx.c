@@ -2002,7 +2002,8 @@ pclxl_begin_image(gx_device * dev,
          (!gx_dc_is_pure(pdcolor) || pim->CombineWithColor) :
          ((!pclxl_can_handle_color_space(pcs) ||
            (bits_per_pixel != 1 && bits_per_pixel != 4 &&
-            bits_per_pixel != 8 && bits_per_pixel !=24))
+            bits_per_pixel != 8 && bits_per_pixel !=24 &&
+            bits_per_pixel != 32 ))
           && !(pclxl_can_icctransform(pim) && xdev->iccTransform) )) ||
         format != gs_image_format_chunky || pim->Interpolate ||
         prect
@@ -2149,7 +2150,7 @@ pclxl_begin_image(gx_device * dev,
                 goto fail;
             pclxl_set_color_palette(xdev, eGray, palette, 2);
         } else {
-            if (bits_per_pixel == 24 ) {
+            if (bits_per_pixel == 24 || bits_per_pixel == 32) {
                 code = gdev_vector_update_log_op
                     (vdev, (pim->CombineWithColor ? lop : rop3_know_T_0(lop)));
                 if (code < 0)
@@ -2278,6 +2279,68 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
             }
           }
           }
+        }
+    } else if (pie->bits_per_pixel == 32) {
+        static const byte ci_[] = {
+            DA(pxaColorDepth),
+            DUB(eDirectPixel), DA(pxaColorMapping)
+        };
+
+        px_put_ub(s, eBit_values[8]);
+        PX_PUT_LIT(s, ci_);
+        if (xdev->color_info.depth == 8) {
+            /* CMYK to Gray */
+            rows_raster /= 4;
+            if (!pie->icclink) {
+                byte *in = pie->rows.data + offset_lastflippedstrip;
+                byte *out = pie->rows.data + offset_lastflippedstrip;
+                int i;
+                int j;
+
+                for (j = 0; j < h; j++) {
+                    for (i = 0; i < rows_raster; i++) {
+                        /* DeviceCMYK to DeviceGray */
+                        int v =
+                            (255 - (*(in + 3))) * (int)lum_all_weights
+                            + (lum_all_weights / 2)
+                            - (*(in + 0) * (int)lum_red_weight)
+                            - (*(in + 1) * (int)lum_green_weight)
+                            - (*(in + 2) * (int)lum_blue_weight);
+
+                        *out = max(v, 0) / lum_all_weights;
+                        in += 4;
+                        out++;
+                    }
+                }
+            }
+        } else {
+            /* CMYK to RGB */
+            rows_raster /= 4;
+            if (!pie->icclink) {
+                byte *in = pie->rows.data + offset_lastflippedstrip;
+                byte *out = pie->rows.data + offset_lastflippedstrip;
+                int i;
+                int j;
+
+                for (j = 0; j < h; j++) {
+                    for (i = 0; i < rows_raster; i++) {
+                        /* DeviceCMYK to DeviceRGB */
+                        int r = (int)255 - (*(in + 0)) - (*(in + 3));
+                        int g = (int)255 - (*(in + 1)) - (*(in + 3));
+                        int b = (int)255 - (*(in + 2)) - (*(in + 3));
+
+                        /* avoid trashing the first 12->9 conversion */
+                        *out = max(r, 0);
+                        out++;
+                        *out = max(g, 0);
+                        out++;
+                        *out = max(b, 0);
+                        out++;
+                        in += 4;
+                    }
+                }
+            }
+            rows_raster *= 3;
         }
     } else {
         static const byte ii_[] = {
