@@ -1323,50 +1323,6 @@ $(DD)bmp32b.dev : $(bmp_) $(GLD)page.dev $(GDEV) \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)bmp32b $(bmp_)
 
-### ------------- BMP driver that serves as demo of async rendering ---- ###
-
-bmpa_=$(DEVOBJ)gdevbmpa.$(OBJ) $(DEVOBJ)gdevbmpc.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ) $(DEVOBJ)gdevppla.$(OBJ)
-
-$(DEVOBJ)gdevbmpa.$(OBJ) : $(DEVSRC)gdevbmpa.c $(AK) $(stdio__h)\
- $(gdevbmp_h) $(gdevprna_h) $(gdevpccm_h) $(gdevppla_h)\
- $(gserrors_h) $(gpsync_h) $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevbmpa.$(OBJ) $(C_) $(DEVSRC)gdevbmpa.c
-
-$(DD)bmpamono.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev\
- $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETPDEV2) $(DD)bmpamono $(bmpa_)
-	$(ADDMOD) $(DD)bmpamono -include $(GLD)async
-
-$(DD)bmpasep1.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev\
- $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETPDEV2) $(DD)bmpasep1 $(bmpa_)
-	$(ADDMOD) $(DD)bmpasep1 -include $(GLD)async
-
-$(DD)bmpasep8.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev\
- $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETPDEV2) $(DD)bmpasep8 $(bmpa_)
-	$(ADDMOD) $(DD)bmpasep8 -include $(GLD)async
-
-$(DD)bmpa16.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev\
- $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETPDEV2) $(DD)bmpa16 $(bmpa_)
-	$(ADDMOD) $(DD)bmpa16 -include $(GLD)async
-
-$(DD)bmpa256.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev\
- $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETPDEV2) $(DD)bmpa256 $(bmpa_)
-	$(ADDMOD) $(DD)bmpa256 -include $(GLD)async
-
-$(DD)bmpa16m.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev\
- $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETPDEV2) $(DD)bmpa16m $(bmpa_)
-	$(ADDMOD) $(DD)bmpa16m -include $(GLD)async
-
-$(DD)bmpa32b.dev : $(bmpa_) $(GLD)page.dev $(GLD)async.dev\
- $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETPDEV2) $(DD)bmpa32b $(bmpa_)
-	$(ADDMOD) $(DD)bmpa32b -include $(GLD)async
-
 ### --------------------------- The XCF device ------------------------- ###
 
 xcf_=$(DEVOBJ)gdevxcf.$(OBJ)

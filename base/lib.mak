@@ -264,6 +264,11 @@ $(GLOBJ)gsnogc.$(OBJ) : $(GLSRC)gsnogc.c $(AK) $(gx_h)\
  $(gsmdebug_h) $(gsnogc_h) $(gsstruct_h) $(gxalloc_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsnogc.$(OBJ) $(C_) $(GLSRC)gsnogc.c
 
+# ---------------- Wrapper to add a 'monitor' lock to an allocator ------ #
+$(GLOBJ)gsmemlok.$(OBJ) : $(GLSRC)gsmemlok.c $(AK) $(gx_h)\
+ $(gserrors_h) $(gsmemlok_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gsmemlok.$(OBJ) $(C_) $(GLSRC)gsmemlok.c
+
 ### Bitmap processing
 
 $(GLOBJ)gsbitcom.$(OBJ) : $(GLSRC)gsbitcom.c $(AK) $(std_h)\
@@ -2330,30 +2335,6 @@ gsroprun24_h=$(GLSRC)gsroprun24.h
 $(GLOBJ)gsroprun.$(OBJ) : $(GLSRC)gsroprun.c $(std_h) $(stdpre_h) $(gsropt_h)\
  $(gsroprun1_h) $(gsroprun8_h) $(gsroprun24_h) $(gp_h) $(arch_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsroprun.$(OBJ) $(C_) $(GLSRC)gsroprun.c
-
-# ---------------- Async rendering ---------------- #
-
-gxpageq_h=$(GLSRC)gxpageq.h $(gsmemory_h) $(gxband_h) $(gxsync_h)
-gdevprna_h=$(GLSRC)gdevprna.h $(gdevprn_h) $(gxsync_h)
-
-async_=$(GLOBJ)gdevprna.$(OBJ) $(GLOBJ)gxpageq.$(OBJ) $(GLOBJ)gsmemlok.$(OBJ)
-async_inc=$(GLD)clist.dev $(GLD)gsnogc.dev $(GLD)$(SYNC).dev
-$(GLD)async.dev : $(LIB_MAK) $(ECHOGS_XE) $(async_) $(async_inc) $(LIB_MAK) $(MAKEDIRS)
-	$(SETMOD) $(GLD)async $(async_)
-	$(ADDMOD) $(GLD)async -include $(async_inc)
-
-$(GLOBJ)gdevprna.$(OBJ) : $(GLSRC)gdevprna.c $(AK) $(gdevprna_h)\
- $(gsalloc_h) $(gsdevice_h) $(gsmemlok_h) $(gsmemret_h) $(gsnogc_h)\
- $(gxcldev_h) $(gxclpath_h) $(gxpageq_h) $(gzht_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gdevprna.$(OBJ) $(C_) $(GLSRC)gdevprna.c
-
-$(GLOBJ)gxpageq.$(OBJ) : $(GLSRC)gxpageq.c $(AK) $(gx_h) $(gserrors_h)\
- $(gsstruct_h) $(gxdevice_h) $(gxclist_h) $(gxpageq_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gxpageq.$(OBJ) $(C_) $(GLSRC)gxpageq.c
-
-$(GLOBJ)gsmemlok.$(OBJ) : $(GLSRC)gsmemlok.c $(AK) $(gx_h)\
- $(gserrors_h) $(gsmemlok_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gsmemlok.$(OBJ) $(C_) $(GLSRC)gsmemlok.c
 
 # ---------------- TrueType and PostScript Type 42 fonts ---------------- #
 

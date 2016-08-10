@@ -67,12 +67,6 @@ typedef struct gdev_banding_type gdev_prn_banding_type;
 /* Define the abstract type for some band device procedures' arguments. */
 typedef struct gdev_prn_start_render_params_s gdev_prn_start_render_params;
 
-/* Define the abstract type for a page queue for async rendering. */
-#ifndef gx_page_queue_DEFINED
-#  define gx_page_queue_DEFINED
-typedef struct gx_page_queue_s gx_page_queue_t;
-#endif
-
 /*
  * Define the special procedures for band devices.
  */
@@ -119,42 +113,6 @@ typedef struct gx_printer_device_procs_s {
 #define prn_dev_proc_get_space_params(proc)\
   void proc(const gx_device_printer *, gdev_prn_space_params *)
     prn_dev_proc_get_space_params((*get_space_params));
-
-    /*
-     * Only for gx_device_printer devices that overlap interpreting and
-     * rasterizing. Since there are 2 instances of the device (1 for writing
-     * the cmd list & 1 for rasterizing it), and each device is associated
-     * with an different thread, this function is called to start the
-     * rasterizer's thread. Once started, the rasterizer thread must call
-     * down to gdev_prn_asnyc_render_thread, which will only return after
-     * device closes.
-     *
-     * Caller is gdevprna.open, calls driver implementation or default.
-     */
-
-#define prn_dev_proc_start_render_thread(proc)\
-  int proc(gdev_prn_start_render_params *)
-    prn_dev_proc_start_render_thread((*start_render_thread));
-
-    /*
-     * Only for gx_device_printer devices that overlap interpreting and
-     * rasterizing. Since there are 2 instances of the device (1 for writing
-     * the cmd list & 1 for rasterizing it), these fns are called to
-     * open/close the rasterizer's instance, once the writer's instance has
-     * been created & init'd. These procs must cascade down to
-     * gdev_prn_async_render_open/close.
-     *
-     * Caller is gdevprna, calls driver implementation or default.
-     */
-
-#define prn_dev_proc_open_render_device(proc)\
-  int proc(gx_device_printer *)
-    prn_dev_proc_open_render_device((*open_render_device));
-
-#define prn_dev_proc_close_render_device(proc)\
-  int proc(gx_device_printer *)
-    prn_dev_proc_close_render_device((*close_render_device));
-
     /*
      * Buffer a page on the output device. A page may or may not have been
      * fully rendered, but the rasterizer needs to realize the page to free
@@ -219,15 +177,10 @@ typedef struct bg_print_s {
         long buffer_space;	        /* amount of space for clist buffer, */\
                                         /* 0 means not using clist */\
         byte *buf;			/* buffer for rendering */\
-                /* ---- Begin async rendering support --- */\
         gs_memory_t *buffer_memory;	/* allocator for command list */\
         gs_memory_t *bandlist_memory;	/* allocator for bandlist files */\
         proc_free_up_bandlist_memory((*free_up_bandlist_memory));  	/* if nz, proc to free some bandlist memory */\
-        gx_page_queue_t *page_queue;	/* if <> 0,page queue for gdevprna NOT GC'd */\
-        bool is_async_renderer;		/* device is only the rendering part of async device */\
-        gx_device_printer *async_renderer;	/* in async writer, pointer to async renderer */\
         uint clist_disable_mask;	/* mask of clist options to disable */\
-                /* ---- End async rendering support --- */\
         bool bg_print_requested;	/* request background printing of page from clist */\
         bg_print_t bg_print;            /* background printing data shared with thread */\
         int num_render_threads_requested;	/* for multiple band rendering threads */\
@@ -274,9 +227,6 @@ int gdev_prn_get_param(gx_device *dev, char *Param, void *list);
 prn_dev_proc_get_space_params(gx_default_get_space_params);
 /* BACKWARD COMPATIBILITY */
 #define gdev_prn_default_get_space_params gx_default_get_space_params
-prn_dev_proc_start_render_thread(gx_default_start_render_thread); /* for async rendering only, see gdevprna.c */
-prn_dev_proc_open_render_device(gx_default_open_render_device);
-prn_dev_proc_close_render_device(gx_default_close_render_device);
 prn_dev_proc_buffer_page(gx_default_buffer_page); /* returns an error */
 
 /* Macro for generating procedure table */
@@ -393,9 +343,6 @@ extern const gx_device_procs prn_bg_procs;
              gx_default_destroy_buf_device\
            },\
            gdev_prn_default_get_space_params,\
-           gx_default_start_render_thread,\
-           gx_default_open_render_device,\
-           gx_default_close_render_device,\
            gx_default_buffer_page\
          },\
          { 0 },		/* fname */\
@@ -410,9 +357,6 @@ extern const gx_device_procs prn_bg_procs;
         0,		/* *buffer_memory */\
         0,		/* *bandlist_memory */\
         0,		/* *free_up_bandlist_memory */\
-        0,		/* *page_queue; */\
-        0/*false*/,	/* is_async_renderer */\
-        0,		/* *async_renderer */\
         0,		/* clist_disable_mask */\
         0/*false*/,	/* bg_print_requested */\
         {  0/*sema*/, 0/*device*/, 0/*thread_id*/, 0/*num_copies*/, 0/*return_code*/ }, /* bg_print */\

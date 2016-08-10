@@ -426,9 +426,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
         space_params = ppdev->space_params;
         space_params.BufferSpace = 0;
         (*ppdev->printer_procs.get_space_params)(ppdev, &space_params);
-        if (ppdev->is_async_renderer && space_params.band.BandBufferSpace != 0)
-            space_params.BufferSpace = space_params.band.BandBufferSpace;
-        else if (space_params.BufferSpace == 0) {
+        if (space_params.BufferSpace == 0) {
             if (space_params.band.BandBufferSpace > 0)
                 space_params.BufferSpace = space_params.band.BandBufferSpace;
             else {
@@ -599,29 +597,6 @@ gdev_prn_free_memory(gx_device *pdev)
     gdev_prn_tear_down(pdev, &the_memory);
     gs_free_object(buffer_memory, the_memory, "gdev_prn_free_memory");
     return 0;
-}
-
-/* ------------- Stubs related only to async rendering ------- */
-
-int	/* rets 0 ok, -ve error if couldn't start thread */
-gx_default_start_render_thread(gdev_prn_start_render_params *params)
-{
-    return_error(gs_error_unknownerror);
-}
-
-/* Open the renderer's copy of a device. */
-/* This is overriden in gdevprna.c */
-int
-gx_default_open_render_device(gx_device_printer *pdev)
-{
-    return_error(gs_error_unknownerror);
-}
-
-/* Close the renderer's copy of a device. */
-int
-gx_default_close_render_device(gx_device_printer *pdev)
-{
-    return gdev_prn_close( (gx_device *)pdev );
 }
 
 /* ------ Get/put parameters ------ */
