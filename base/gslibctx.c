@@ -186,6 +186,9 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     
     gp_get_realtime(pio->real_time_0);
 
+    /* Set scanconverter to 1 (default) */
+    pio->scanconverter = GS_SCANCONVERTER_DEFAULT;
+
     return 0;
 }
 

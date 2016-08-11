@@ -144,6 +144,7 @@ pxPassthrough_init(px_state_t * pxs)
     global_pcs->page_set_on_command_line = false;
     global_pcs->res_set_on_command_line = false;
     global_pcs->high_level_device = false;
+    global_pcs->scanconverter = GS_SCANCONVERTER_DEFAULT;
 
     {
         char buf[100];

@@ -797,6 +797,7 @@ pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select fr
         universe->curr_instance->res_set_on_command_line =
             pti->res_set_on_command_line;
         universe->curr_instance->high_level_device = pti->high_level_device;
+        universe->curr_instance->scanconverter = pti->scanconverter;
         universe->curr_instance->piccdir = pti->piccdir;
         universe->curr_instance->pdefault_gray_icc = pti->pdefault_gray_icc;
         universe->curr_instance->pdefault_rgb_icc = pti->pdefault_rgb_icc;
@@ -849,6 +850,7 @@ pl_main_init_instance(pl_main_instance_t * pti, gs_memory_t * mem)
     pti->res_set_on_command_line = false;
     pti->high_level_device = false;
     pti->saved_pages_test_mode = false;
+    pti->scanconverter = GS_SCANCONVERTER_DEFAULT;
     pti->piccdir = NULL;
     pti->pdefault_gray_icc = NULL;
     pti->pdefault_rgb_icc = NULL;
@@ -960,6 +962,10 @@ static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int 
         pmi->nocache = !!b;
         return 0;
     }
+    if (!strncmp(arg, "SCANCONVERTERTYPE", 17)) {
+        pmi->scanconverter = b;
+        return 0;
+    }
     return 1;
 }
 
@@ -968,7 +974,8 @@ static int check_for_special_float(pl_main_instance_t * pmi, const char *arg, fl
     if (!strncmp(arg, "BATCH", 5) ||
         !strncmp(arg, "NOPAUSE", 6) ||
         !strncmp(arg, "DOINTERPOLATE", 13) ||
-        !strncmp(arg, "NOCACHE", 7)) {
+        !strncmp(arg, "NOCACHE", 7) ||
+        !strncmp(arg, "SCANCONVERTERTYPE", 17)) {
         return gs_note_error(gs_error_rangecheck);
     }
     return 1;
@@ -979,7 +986,8 @@ static int check_for_special_str(pl_main_instance_t * pmi, const char *arg, gs_p
     if (!strncmp(arg, "BATCH", 5) ||
         !strncmp(arg, "NOPAUSE", 6) ||
         !strncmp(arg, "DOINTERPOLATE", 13) ||
-        !strncmp(arg, "NOCACHE", 7)) {
+        !strncmp(arg, "NOCACHE", 7) ||
+        !strncmp(arg, "SCANCONVERTERTYPE", 17)) {
         return gs_note_error(gs_error_rangecheck);
     }
     return 1;
@@ -1679,4 +1687,11 @@ bool
 pl_get_interpolation(pl_interp_instance_t * instance)
 {
     return instance->interpolate;
+}
+
+
+bool
+pl_get_scanconverter(pl_interp_instance_t * instance)
+{
+    return instance->scanconverter;
 }

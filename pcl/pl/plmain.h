@@ -62,6 +62,7 @@ typedef struct pl_main_instance_s
 #ifndef OMIT_SAVED_PAGES_TEST
     bool saved_pages_test_mode;
 #endif
+    int scanconverter;
     /* we have to store these in the main instance until the languages
        state is sufficiently initialized to set the parameters. */
     char *piccdir;
@@ -96,5 +97,6 @@ int pl_finish_page(pl_main_instance_t * pmi, gs_gstate * pgs,
 /* Main instance accessors */
 bool pl_get_nocache(pl_interp_instance_t * instance);
 bool pl_get_interpolation(pl_interp_instance_t * instance);
+int pl_get_scanconverter(pl_interp_instance_t * instance);
 
 #endif /* plmain_INCLUDED */

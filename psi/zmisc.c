@@ -426,9 +426,38 @@ zgetCPSImode(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* <int> .setscanconverter - */
+static int
+zsetscanconverter(i_ctx_t *i_ctx_p)
+{
+    int val;
+
+    os_ptr op = osp;
+    if (r_has_type(op, t_boolean))
+        val = (int)op->value.boolval;
+    else if (r_has_type(op, t_integer))
+        val = op->value.intval;
+    else
+        return_op_typecheck(op);
+
+    gs_setscanconverter(imemory, val);
+    pop(1);
+    return 0;
+}
+
+/* - .getscanconverter <int> */
+static int
+zgetscanconverter(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_int(op, gs_getscanconverter(imemory));
+    return 0;
+}
 /* ------ Initialization procedure ------ */
 
-const op_def zmisc_op_defs[] =
+const op_def zmisc_a_op_defs[] =
 {
     {"1bind", zbind},
     {"1getenv", zgetenv},
@@ -442,7 +471,14 @@ const op_def zmisc_op_defs[] =
     {"0.mementolistnewblocks", zmementolistnewblocks},
     {"1.setoserrno", zsetoserrno},
     {"0usertime", zusertime},
+    op_def_end(0)
+};
+
+const op_def zmisc_b_op_defs[] =
+{
     {"1.setCPSImode", zsetCPSImode},
     {"0.getCPSImode", zgetCPSImode},
+    {"1.setscanconverter", zsetscanconverter},
+    {"0.getscanconverter", zgetscanconverter},
     op_def_end(0)
 };

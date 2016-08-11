@@ -188,6 +188,10 @@ currentdict /STRICT known   /STRICT exch def
 currentdict /TTYPAUSE known   /TTYPAUSE exch def
 currentdict /WRITESYSTEMDICT known   /WRITESYSTEMDICT exch def
 currentdict /RENDERTTNOTDEF known /RENDERTTNOTDEF exch def
+currentdict /SCANCONVERTERTYPE known
+{
+  currentdict /SCANCONVERTERTYPE get .setscanconverter
+} if
 
 % We rely on PSFitPage to actually implement EPSFitPage
 currentdict /EPSFitPage known { /PSFitPage //true def } if

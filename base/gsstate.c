@@ -721,6 +721,23 @@ gs_currentcpsimode(const gs_memory_t * mem)
     return libctx->CPSI_mode;
 }
 
+void
+gs_setscanconverter(gs_memory_t *mem, int converter)
+{
+    gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
+
+    libctx->scanconverter = converter;
+}
+
+/* currentcpsimode */
+int
+gs_getscanconverter(const gs_memory_t * mem)
+{
+    gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
+
+    return libctx->scanconverter;
+}
+
 /* setrenderingintent
  *
  *  Use ICC numbers from Table 18 (section 6.1.11) rather than the PDF order

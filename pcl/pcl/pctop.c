@@ -417,6 +417,7 @@ pcl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to us
     pcli->pcs.page_set_on_command_line = pcl_get_page_set(instance);
     pcli->pcs.res_set_on_command_line = pcl_get_res_set(instance);
     pcli->pcs.high_level_device = pcl_get_high_level(instance);
+    gs_setscanconverter(pcli->memory, pl_get_scanconverter(instance));
 
     /* Set the device into the pcl_state & gstate */
     stage = Ssetdevice;

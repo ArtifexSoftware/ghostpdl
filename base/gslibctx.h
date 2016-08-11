@@ -84,7 +84,13 @@ typedef struct gs_lib_ctx_s
     gs_fapi_server **fapi_servers;
     char *default_device_list;
     int gcsignal;
+    int scanconverter;
 } gs_lib_ctx_t;
+
+enum {
+    GS_SCANCONVERTER_OLD = 0,
+    GS_SCANCONVERTER_DEFAULT = 1
+};
 
 /** initializes and stores itself in the given gs_memory_t pointer.
  * it is the responsibility of the gs_memory_t objects to copy

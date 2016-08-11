@@ -374,6 +374,7 @@ struct pcl_state_s
     bool high_level_device;
     /* last entry mode to hpgl/2 */
     int hpgl_mode;
+    int scanconverter;
 };
 
 /* accessor functions for the pcl target device.  These live in
