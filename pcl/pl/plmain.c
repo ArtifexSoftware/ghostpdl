@@ -944,6 +944,47 @@ parse_floats(gs_memory_t * mem, uint arg_count, char *arg, float *f)
     return float_index;
 }
 
+static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int b)
+{
+    if (!strncmp(arg, "BATCH", 5))
+        return (b == 0) ? 0 : gs_note_error(gs_error_rangecheck);
+    if (!strncmp(arg, "NOPAUSE", 6)) {
+        pmi->pause = !b;
+        return 0;
+    }
+    if (!strncmp(arg, "DOINTERPOLATE", 13)) {
+        pmi->interpolate = !!b;
+        return 0;
+    }
+    if (!strncmp(arg, "NOCACHE", 7)) {
+        pmi->nocache = !!b;
+        return 0;
+    }
+    return 1;
+}
+
+static int check_for_special_float(pl_main_instance_t * pmi, const char *arg, float f)
+{
+    if (!strncmp(arg, "BATCH", 5) ||
+        !strncmp(arg, "NOPAUSE", 6) ||
+        !strncmp(arg, "DOINTERPOLATE", 13) ||
+        !strncmp(arg, "NOCACHE", 7)) {
+        return gs_note_error(gs_error_rangecheck);
+    }
+    return 1;
+}
+
+static int check_for_special_str(pl_main_instance_t * pmi, const char *arg, gs_param_string *f)
+{
+    if (!strncmp(arg, "BATCH", 5) ||
+        !strncmp(arg, "NOPAUSE", 6) ||
+        !strncmp(arg, "DOINTERPOLATE", 13) ||
+        !strncmp(arg, "NOCACHE", 7)) {
+        return gs_note_error(gs_error_rangecheck);
+    }
+    return 1;
+}
+
 #define arg_heap_copy(str) arg_copy(str, pmi->memory)
 int
 pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
@@ -1037,21 +1078,6 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 continue;
             case 'd':
             case 'D':
-                if (!strcmp(arg, "BATCH"))
-                    continue;
-                if (!strcmp(arg, "NOPAUSE")) {
-                    pmi->pause = false;
-                    continue;
-                }
-                if (!strcmp(arg, "DOINTERPOLATE")) {
-                    pmi->interpolate = true;
-                    continue;
-                }
-                if (!strcmp(arg, "NOCACHE")) {
-                    pmi->nocache = true;
-                    continue;
-                }
-
                 {
                     /* We're setting a device parameter to a non-string value. */
                     char *eqp = strchr(arg, '=');
@@ -1065,9 +1091,11 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         value = eqp + 1;
                     else {
                         /* -dDefaultBooleanIs_TRUE */
-                        code =
-                            param_write_bool((gs_param_list *) params,
-                                             arg_heap_copy(arg), &bval);
+                        code = check_for_special_int(pmi, arg, (int)bval);
+                        if (code == 1)
+                            code =
+                                param_write_bool((gs_param_list *) params,
+                                                 arg_heap_copy(arg), &bval);
                         continue;
                     }
 
@@ -1077,8 +1105,10 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         strncpy(buffer, arg, eqp - arg);
                         buffer[eqp - arg] = '\0';
                         param_string_from_transient_string(str, value + 1);
-                        code = param_write_name((gs_param_list *) params,
-                                                arg_heap_copy(buffer), &str);
+                        code = check_for_special_str(pmi, arg, &str);
+                        if (code == 1)
+                            code = param_write_name((gs_param_list *) params,
+                                                    arg_heap_copy(buffer), &str);
                         continue;
                     }
                     /* Search for a non-decimal 'radix' number */
@@ -1114,9 +1144,11 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         }
                         strncpy(buffer, arg, eqp - arg);
                         buffer[eqp - arg] = '\0';
-                        code =
-                            param_write_int((gs_param_list *) params,
-                                            arg_heap_copy(buffer), &number);
+                        code = check_for_special_int(pmi, arg, number);
+                        if (code == 1)
+                            code =
+                                param_write_int((gs_param_list *) params,
+                                                arg_heap_copy(buffer), &number);
                     } else if ((!strchr(value, '.')) &&
                                /* search for an int (no decimal), if fail try a float */
                                (sscanf(value, "%d", &vi) == 1)) {
@@ -1144,30 +1176,38 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         /* create a null terminated string for the key */
                         strncpy(buffer, arg, eqp - arg);
                         buffer[eqp - arg] = '\0';
-                        code =
-                            param_write_int((gs_param_list *) params,
-                                            arg_heap_copy(buffer), &vi);
+                        code = check_for_special_int(pmi, arg, vi);
+                        if (code == 1)
+                            code =
+                                param_write_int((gs_param_list *) params,
+                                                arg_heap_copy(buffer), &vi);
                     } else if (sscanf(value, "%f", &vf) == 1) {
                         /* create a null terminated string.  NB duplicated code. */
                         strncpy(buffer, arg, eqp - arg);
                         buffer[eqp - arg] = '\0';
-                        code =
-                            param_write_float((gs_param_list *) params,
-                                              arg_heap_copy(buffer), &vf);
+                        code = check_for_special_float(pmi, arg, vf);
+                        if (code == 1)
+                            code =
+                                param_write_float((gs_param_list *) params,
+                                                  arg_heap_copy(buffer), &vf);
                     } else if (!strcmp(value, "true")) {
                         /* bval = true; */
                         strncpy(buffer, arg, eqp - arg);
                         buffer[eqp - arg] = '\0';
-                        code =
-                            param_write_bool((gs_param_list *) params,
-                                             arg_heap_copy(buffer), &bval);
+                        code = check_for_special_int(pmi, arg, (int)bval);
+                        if (code == 1)
+                            code =
+                                param_write_bool((gs_param_list *) params,
+                                                 arg_heap_copy(buffer), &bval);
                     } else if (!strcmp(value, "false")) {
                         bval = false;
                         strncpy(buffer, arg, eqp - arg);
                         buffer[eqp - arg] = '\0';
-                        code =
-                            param_write_bool((gs_param_list *) params,
-                                             arg_heap_copy(buffer), &bval);
+                        code = check_for_special_int(pmi, arg, (int)bval);
+                        if (code == 1)
+                            code =
+                                param_write_bool((gs_param_list *) params,
+                                                 arg_heap_copy(buffer), &bval);
                     } else {
                         dmprintf(pmi->memory,
                                  "Usage for -d is -d<option>=[<integer>|<float>|true|false]\n");
