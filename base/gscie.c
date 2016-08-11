@@ -1413,8 +1413,8 @@ gx_cie_to_xyz_free(gs_gstate *pgs)
 {
     gs_memory_t *mem = pgs->memory;
 
-    gs_free_object(mem, pgs->cie_joint_caches,
-                   "gx_cie_to_xyz_free(joint caches)");
+    rc_decrement(pgs->cie_joint_caches,"gx_cie_to_xyz_free");
+
     /* Free up the ICC objects if created */
     if (pgs->icc_link_cache != NULL) {
         rc_decrement(pgs->icc_link_cache,"gx_cie_to_xyz_free");
