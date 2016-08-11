@@ -168,7 +168,8 @@ static void remap_raster_ary(const byte * inp,  /* array to read from */
 {
     /* check if the the simpler case can be used */
     if (8 % b_per_p == 0) {
-        return remap_raster_ary8(inp, outp, npixels, b_per_p, pmap);
+        remap_raster_ary8(inp, outp, npixels, b_per_p, pmap);
+        return;
     }
 
     /* should not happen */
