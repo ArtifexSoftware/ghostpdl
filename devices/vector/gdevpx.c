@@ -367,7 +367,7 @@ pclxl_can_icctransform(const gs_image_t * pim)
 	 pim->BitsPerComponent * gs_color_space_num_components(pcs));
 
     if ((gs_color_space_get_index(pcs) == gs_color_space_index_ICC)
-	&& (bits_per_pixel == 24))
+	&& (bits_per_pixel == 24 || bits_per_pixel == 32))
 	return true;
 
     return false;
@@ -2110,7 +2110,30 @@ pclxl_begin_image(gx_device * dev,
     pie->rows.num_rows = num_rows;
     pie->rows.first_y = 0;
     pie->rows.raster = row_raster;
-    if (!pim->ImageMask && !pclxl_can_handle_color_space(pcs)
+    /*
+      pclxl_can_handle_color_space() is here to avoid regression,
+      to avoid icc if traditional code path works (somewhat).
+      It is flawed in that it claims to handles device colors with
+      icc profiles (and output device colours); so that "can transform"
+      won't transform; we need to override it for the case of
+      32-bit colour, except when usefastcolor is specified.
+
+      "can_icctransform" should have been accompanied by a
+      "will tranform" (xdev->iccTransform) check. However, since
+      we want to transform for CMYK regardless, so just as well
+      there was not such a check, and we are not adding one now.
+
+      In other words, the bizarre logic in the middle is to keep
+      the current workflow as much as possible, but force icc mode
+      or confirm fastcolor mode only for 32-bit image, regardless
+      of whether xdev->iccTransform is on.
+
+      Whole-sale icc mode is to simply remove entire middle part,
+      a risky change.
+    */
+    if (!pim->ImageMask && (!pclxl_can_handle_color_space(pcs)
+                            || (bits_per_pixel == 32 && dev->icc_struct
+                                && !dev->icc_struct->usefastcolor))
 	&& pclxl_can_icctransform(pim) && pcs->cmm_icc_profile_data) {
 	gsicc_rendering_param_t rendering_params;
 
@@ -2391,9 +2414,9 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
         else {
           gsicc_bufferdesc_t input_buff_desc;
           gsicc_bufferdesc_t output_buff_desc;
-          int pixels_per_row = pie->rows.raster / 3 ;
+          int pixels_per_row = pie->rows.raster / (pie->bits_per_pixel >> 3) ;
           int out_raster_stride = pixels_per_row * info->dev->color_info.num_components;
-          gsicc_init_buffer(&input_buff_desc, 3 /*num_chan*/, 1 /*bytes_per_chan*/,
+          gsicc_init_buffer(&input_buff_desc, (pie->bits_per_pixel >> 3) /*num_chan*/, 1 /*bytes_per_chan*/,
                             false/*has_alpha*/, false/*alpha_first*/, false /*is_planar*/,
                             0 /*plane_stride*/, pie->rows.raster /*row_stride*/,
                             1/*num_rows*/, pixels_per_row /*pixels_per_row*/);
