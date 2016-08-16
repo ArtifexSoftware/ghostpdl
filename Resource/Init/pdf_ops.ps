@@ -106,7 +106,6 @@ end def
 currentdict /gput_always_allow .undef
 
 /q {
-(q) == flush
   %% Special case, if we get a 'q' while accumulating clip/eoclip then
   %% we need to make sure we close the current dictionary, and reopen it after
   %% performing the gsave, so that the redefinition of 'n' in particular is correct
@@ -144,7 +143,6 @@ currentdict /gput_always_allow .undef
 
 % Some PDF files have excess Q operators!
 /Q {
-(Q) == flush
   //false
   { currentdict /n known { end pop //true } { exit } ifelse
   } loop {
@@ -204,7 +202,6 @@ currentdict /gput_always_allow .undef
 
 % Set PDF gstate
 /setqstate {    % <qstate> setqstate -
-(setqstate) == flush
   { matrix setmatrix //false upath } stopped {
     pop setgstate newpath
   } {
@@ -372,8 +369,8 @@ currentdict /gput_always_allow .undef
 /OPM {
   /.setoverprintmode where { pop dup .setoverprintmode .swapcolors .setoverprintmode .swapcolors } { pop } ifelse
 } bdef
-/ca { (set FillConstantAlpha = ) print dup == flush dup .setFillConstantAlpha /FillConstantAlpha gput } bdef
-/CA { dup .setStrokeConstantAlpha /StrokeConstantAlpha gput } bdef
+/ca { .setFillConstantAlpha } bdef
+/CA { .setStrokeConstantAlpha } bdef
 /SMask { /SoftMask gput } bdef
 /AIS { /AlphaIsShape gput } bdef
 /BM {
@@ -424,11 +421,6 @@ currentdict /gput_always_allow .undef
 % (Non-mask) images must execute setfillblend.
 /setfillblend {
   FillOverprint setoverprint
-  .getFillConstantAlpha FillConstantAlpha eq not {
-  (Differences in Alpha\n) print
-  (getFillConstantAlpha = ) print .getFillConstantAlpha == flush
-  (   FillConstantAlpha = ) print FillConstantAlpha == flush
-  } if
   .getFillConstantAlpha
   SoftMask .settransparencyparams
 } def
@@ -439,11 +431,6 @@ currentdict /gput_always_allow .undef
 /setstrokestate {
   .swapcolors
   StrokeColor StrokeColorSpace setgcolor StrokeOverprint setoverprint
-  .getStrokeConstantAlpha StrokeConstantAlpha eq not {
-  (Differences in Alpha\n) print
-  (getStrokeConstantAlpha = ) print .getStrokeConstantAlpha == flush
-  (   StrokeConstantAlpha = ) print StrokeConstantAlpha == flush
-  } if
   .getStrokeConstantAlpha
   SoftMask .settransparencyparams
   .swapcolors
@@ -545,7 +532,16 @@ currentdict /gput_always_allow .undef
        % But don't update read-only initial null pattern.
        dup /PaintProc .knownget { //nullpatternproc ne } { //true } ifelse {
          dup dup /Matrix knownoget not { { 1 0 0 1 0 0 } } if
-         gsave DefaultQstate setqstate makepattern grestore
+
+         gsave
+         .getFillConstantAlpha
+         .getStrokeConstantAlpha
+         DefaultQstate setqstate
+         .setStrokeConstantAlpha
+         .setFillConstantAlpha
+         makepattern
+         grestore
+
          dup 3 1 roll
          DefaultQstate exch put
        } if
