@@ -535,8 +535,8 @@ const gx_device_pdf14_accum pdf14_accum_CMYK = {
                     &st_pdf14_accum,
                     0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
                     0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
-                    4/*ncomp*/, 32/*depth*/, 0/*max_gray*/, 255/*max_color*/,
-                    1/*dither_grays*/, 256/*dither_colors*/,
+                    4/*ncomp*/, 32/*depth*/, 255/*max_gray*/, 255/*max_color*/,
+                    256/*dither_grays*/, 256/*dither_colors*/,
                     no_print_page),
     0/*save_p14dev*/
 };
