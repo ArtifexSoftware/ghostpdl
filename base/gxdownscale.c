@@ -1704,7 +1704,7 @@ int gx_downscaler_init_planar_trapped_cm(gx_downscaler_t      *ds,
     decode_factor(factor, &upfactor, &downfactor);
 
     /* width = scaled width */
-    width = (dev->width*upfactor + downfactor-1)/downfactor;
+    width = (dev->width*upfactor)/downfactor;
     memset(ds, 0, sizeof(*ds));
     ds->dev               = dev;
     ds->width             = width;
@@ -1926,7 +1926,7 @@ int gx_downscaler_init_trapped_cm(gx_downscaler_t    *ds,
     decode_factor(factor, &upfactor, &downfactor);
 
     /* width = scaled width */
-    width = (dev->width * upfactor + downfactor-1)/downfactor;
+    width = (dev->width * upfactor)/downfactor;
     awidth = width;
     if (adjust_width_proc != NULL)
         awidth = (*adjust_width_proc)(width, adjust_width);
@@ -2112,6 +2112,10 @@ int gx_downscaler_getbits(gx_downscaler_t *ds,
     int   code = 0;
     int   y, y_end;
     byte *data_ptr;
+    int   upfactor, downfactor;
+    int   dup;
+
+    decode_factor(ds->factor, &upfactor, &downfactor);
 
     /* Check for the simple case */
     if (ds->down_core == NULL) {
@@ -2129,8 +2133,8 @@ int gx_downscaler_getbits(gx_downscaler_t *ds,
     }
 
     /* Get factor rows worth of data */
-    y        = row * ds->factor;
-    y_end    = y + ds->factor;
+    y        = row * downfactor;
+    y_end    = y + downfactor;
     data_ptr = ds->pre_cm[0];
     if (ds->claptrap) {
         do {
