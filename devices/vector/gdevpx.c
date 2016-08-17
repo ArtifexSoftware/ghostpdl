@@ -2377,7 +2377,8 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
     /* 8-bit gray image may compress with jpeg, but we
        cannot tell if it is 8-bit gray or 8-bit indexed */
     pclxl_write_image_data(xdev, pie->rows.data + offset_lastflippedstrip, 0, rows_raster,
-                           rows_raster << 3, 0, h, (pie->bits_per_pixel==24 ? true : false));
+                           rows_raster << 3, 0, h,
+                           ((pie->bits_per_pixel==24 || pie->bits_per_pixel==32) ? true : false));
     pclxl_write_end_image(xdev);
     return 0;
 }
