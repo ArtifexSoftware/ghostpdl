@@ -23,8 +23,8 @@
 #include "gscdefs.h"		/* for gs_productfamily and gs_revision */
 
 /* We store registry named values under the key
- * "Software\\GPL Ghostscript"
- * where "GPL Ghostscript" is actually gs_productfamily.
+ * "Software\\Ghostscript"
+ * where "Ghostscript" is actually gs_productfamily.
  * Either HKEY_LOCAL_MACHINE or HKEY_CURRENT_USER will be used.
  */
 int
