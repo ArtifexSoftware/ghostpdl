@@ -4202,6 +4202,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\gxgstate.h"
+				>
+			</File>
+			<File
 				RelativePath="..\base\gxhintn.h"
 				>
 			</File>
@@ -4255,10 +4259,6 @@
 			</File>
 			<File
 				RelativePath="..\base\gxiparam.h"
-				>
-			</File>
-			<File
-				RelativePath="..\base\gxgstate.h"
 				>
 			</File>
 			<File
