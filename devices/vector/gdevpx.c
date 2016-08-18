@@ -2270,9 +2270,15 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
     int rows_raster=pie->rows.raster;
     int offset_lastflippedstrip = 0;
 
-    if (pie->flipped) yo = -yo -dh;
-    if (pie->flipped)
-      offset_lastflippedstrip = pie->rows.raster * (pie->rows.num_rows - h);
+    if (pie->flipped) {
+        yo = -yo -dh;
+        if (!pie->icclink)
+            offset_lastflippedstrip = pie->rows.raster * (pie->rows.num_rows - h);
+        else
+            offset_lastflippedstrip = ( pie->rows.raster / (pie->bits_per_pixel >> 3) )
+              * xdev->color_info.num_components * (pie->rows.num_rows - h);
+    };
+
     if (dw <= 0 || dh <= 0)
         return 0;
     pclxl_set_cursor(xdev, xo, yo);
