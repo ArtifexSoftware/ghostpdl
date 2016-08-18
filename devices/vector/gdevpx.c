@@ -1988,6 +1988,26 @@ pclxl_begin_image(gx_device * dev,
     if (pim->Width == 0 || pim->Height == 0)
         goto use_default;
     
+    if (bits_per_pixel == 32) {
+        /*
+           32-bit cmyk depends on transformable to 24-bit rgb.
+           Some 32-bit aren't cmyk's. (e.g. DeviceN)
+         */
+        if (!pclxl_can_icctransform(pim))
+            goto use_default;
+
+        /*
+           Strictly speaking, regardless of bits_per_pixel,
+           we cannot handle non-Identity Decode array.
+           Historically we did (wrongly), so this is inside
+           a 32-bit conditional to avoid regression, but shouldn't.
+         */
+        if (pim->Decode[0] != 0 || pim->Decode[1] != 1 ||
+            pim->Decode[2] != 0 || pim->Decode[3] != 1 ||
+            pim->Decode[4] != 0 || pim->Decode[5] != 1)
+            goto use_default;
+    }
+
     /* 
      * NOTE: this predicate should be fixed to be readable and easily
      * debugged.  Each condition should be separate.  See the large
