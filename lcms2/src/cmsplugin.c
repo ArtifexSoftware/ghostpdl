@@ -758,6 +758,39 @@ cmsContext CMSEXPORT cmsCreateContext(void* Plugin, void* UserData)
     struct _cmsContext_struct* ctx;
     struct _cmsContext_struct  fakeContext;
         
+    // See the comments regarding locking in lcms2_internal.h
+    // for an explanation of why we need the following code.
+#ifdef CMS_IS_WINDOWS_
+#ifndef CMS_RELY_ON_WINDOWS_STATIC_MUTEX_INIT
+    {
+        static HANDLE _cmsWindowsInitMutex = NULL;
+        static volatile HANDLE *mutex = &_cmsWindowsInitMutex;
+
+        if (*mutex == NULL)
+        {
+            HANDLE p = CreateMutex(NULL, FALSE, NULL);
+            /* This is a funky MS API call that does:
+             * void *ICEP(void **ptr, void *newval, void *expected)
+             * {
+             *     void *actual = *PTR;
+             *     if (actual == expected) *ptr = newval;
+             *     return actual;
+             * }
+             * But atomically, with memory fences as required.
+             */
+            if (InterlockedCompareExchangePointer((void **)mutex, (void*)p, NULL) != NULL)
+                CloseHandle(p);
+        }
+        if (WaitForSingleObject(*mutex, INFINITE) == WAIT_FAILED)
+            return NULL;
+        if (((void **)&_cmsContextPoolHeadMutex)[0] == NULL)
+            InitializeCriticalSection(&_cmsContextPoolHeadMutex);
+        if (!ReleaseMutex(*mutex))
+            return NULL;
+    }
+#endif
+#endif
+
     _cmsInstallAllocFunctions(_cmsFindMemoryPlugin(Plugin), &fakeContext.DefaultMemoryManager);
     
     fakeContext.chunks[UserPtr]     = UserData;
