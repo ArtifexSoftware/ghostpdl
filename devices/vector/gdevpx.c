@@ -2319,7 +2319,8 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
           int j;
           for (j=0;  j<h;  j++) {
             for (i=0;  i<rows_raster;  i++) {
-              *out = (byte)( ((*(in+0) * (ulong) lum_red_weight) +
+              *out =
+                     (byte)( ((*(in+0) * (ulong) lum_red_weight) +
                               (*(in+1) * (ulong) lum_green_weight) +
                               (*(in+2) * (ulong) lum_blue_weight) +
                               (lum_all_weights / 2)) / lum_all_weights);
@@ -2435,7 +2436,8 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
         }
         if (!pie->icclink)
         memcpy(pie->rows.data +
-                 pie->rows.raster * (pie->flipped ? (pie->rows.num_rows - (pie->y - pie->rows.first_y) -1) :(pie->y - pie->rows.first_y)),
+                 pie->rows.raster * (pie->flipped ?
+                                                    (pie->rows.num_rows - (pie->y - pie->rows.first_y) -1) :(pie->y - pie->rows.first_y)),
                planes[0].data + planes[0].raster * i + (data_bit >> 3),
                pie->rows.raster);
         else {
@@ -2454,9 +2456,11 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
           gscms_transform_color_buffer(info->dev, pie->icclink,
                                        &input_buff_desc,
                                        &output_buff_desc,
-                                       (void *)(planes[0].data + planes[0].raster * i + (data_bit >> 3)), /*src*/
+                                       (void *)(planes[0].data + planes[0].raster * i + (data_bit >> 3)) /*src*/,
                                        pie->rows.data +
-                                       out_raster_stride * (pie->flipped ? (pie->rows.num_rows - (pie->y - pie->rows.first_y) -1) : (pie->y - pie->rows.first_y)) /*des*/
+                                       out_raster_stride * (pie->flipped ?
+                                                                           (pie->rows.num_rows - (pie->y - pie->rows.first_y) -1) :
+                                                                                                                                    (pie->y - pie->rows.first_y)) /*des*/
                                        );
         }
     }
@@ -2634,13 +2638,13 @@ pclxl_put_params(gx_device     *dev,	/* I - Device info */
   }
 
   /* We need to have *_set to distinguish defaults from explicitly sets */
-  booloption(Duplex, "Duplex")
+  booloption(Duplex, "Duplex");
   if (code == 0)
     if (xdev->Duplex) {
       if_debug0('|', "round up page count\n");
       xdev->page = (xdev->page+1) & ~1 ;
     }
-  intoption(MediaPosition, "MediaPosition", int)
+  intoption(MediaPosition, "MediaPosition", int);
   if (code == 0) {
     xdev->MediaPosition_set = true;
     /* round up for duplex */
@@ -2650,7 +2654,7 @@ pclxl_put_params(gx_device     *dev,	/* I - Device info */
       xdev->MediaPosition_old = xdev->MediaPosition;
     }
   }
-  stringoption(MediaType, "MediaType")
+  stringoption(MediaType, "MediaType");
   if (code == 0) {
     xdev->MediaType_set = true;
     /* round up for duplex */
@@ -2660,10 +2664,10 @@ pclxl_put_params(gx_device     *dev,	/* I - Device info */
       strcpy(xdev->MediaType_old, xdev->MediaType);
     }
   }
-  booloption(Staple, "Staple")
-  booloption(Tumble, "Tumble")
-  intoption(CompressMode, "CompressMode", int)
-  booloption(iccTransform, "iccTransform")
+  booloption(Staple, "Staple");
+  booloption(Tumble, "Tumble");
+  intoption(CompressMode, "CompressMode", int);
+  booloption(iccTransform, "iccTransform");
 
  /*
   * Then process standard page device parameters...
