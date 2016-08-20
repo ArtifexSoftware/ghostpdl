@@ -238,6 +238,8 @@ int gs_setCA(gs_gstate *pgs, float alpha);
 float gs_getCA(const gs_gstate *pgs);
 int gs_setca(gs_gstate *pgs, float alpha);
 float gs_getca(const gs_gstate *pgs);
+int gs_setAIS(gs_gstate *pgs, bool AIS);
+bool gs_getAIS(gs_gstate *pgs);
 
 /*
  * Estimate the amount of space that will be required by the PDF 1.4

@@ -365,7 +365,7 @@ struct gs_gstate_s {
     /* PDF graphics state parameters */
     float ca, CA;
     void *SMask;
-/*    void *BM;            Already handled (.setbelndmode) */
+/*    void *BM;            Already handled (.setblendmode) */
     bool AIS;
 /*    bool TK;             Already handled (.settextknockout) */
     /* Current colors (non-stroking, and stroking) */ 

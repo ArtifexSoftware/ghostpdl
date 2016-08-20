@@ -866,3 +866,13 @@ float gs_getca(const gs_gstate *pgs)
     return pgs->ca;
 }
 
+int gs_setAIS(gs_gstate *pgs, bool AIS)
+{
+    pgs->AIS = AIS;
+    return 0;
+}
+
+bool gs_getAIS(gs_gstate *pgs)
+{
+    return pgs->AIS;
+}

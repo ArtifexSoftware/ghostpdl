@@ -372,7 +372,8 @@ currentdict /gput_always_allow .undef
 /ca { .setFillConstantAlpha } bdef
 /CA { .setStrokeConstantAlpha } bdef
 /SMask { /SoftMask gput } bdef
-/AIS { /AlphaIsShape gput } bdef
+/AIS { .setAIS %/AlphaIsShape gput
+} bdef
 /BM {
   /.setblendmode where {
     pop [ exch dup type /nametype ne { aload pop } if /Normal ] {
@@ -392,7 +393,8 @@ currentdict /gput_always_allow .undef
 /.settransparencyparams {	% <alpha> <smask> .settransparencyparams -
   PDFusingtransparency {
     /.begintransparencygroup where {
-      pop AlphaIsShape {
+      pop .getAIS %AlphaIsShape
+      {
         1 .setopacityalpha  exch .setshapealpha 1
       } {
         1 .setshapealpha  exch .setopacityalpha 0

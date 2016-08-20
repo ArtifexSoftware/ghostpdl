@@ -574,6 +574,29 @@ zgetca(i_ctx_t *i_ctx_p)
     return current_float_value(i_ctx_p, gs_getca);
 }
 
+static int
+zsetAIS(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    bool value;
+
+    check_type(*op, t_boolean);
+    gs_setAIS(igs, op->value.boolval);
+    pop(1);
+
+    return 0;
+}
+
+static int
+zgetAIS(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_bool(op, gs_getAIS(igs));
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 /* We need to split the table because of the 16-element limit. */
@@ -610,5 +633,7 @@ const op_def ztrans3_op_defs[] = {
     {"0.getStrokeConstantAlpha", zgetCA},
     {"1.setFillConstantAlpha", zsetca},
     {"0.getFillConstantAlpha", zgetca},
+    {"1.setAIS", zsetAIS},
+    {"0.getAIS", zgetAIS},
     op_def_end(0)
 };

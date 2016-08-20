@@ -28,7 +28,7 @@ pdfdict begin
 
 /SetGroupExtGStateDict
 <<
-  /AlphaIsShape //AIS
+%  /AlphaIsShape //AIS
 %  /FillConstantAlpha //ca
   % We don't have to worry about the enumeration order, even
   % with the color/space settings, since we only store, not
@@ -730,7 +730,9 @@ def
   DataDict /Matte knownoget {
     /Matte exch def
   } if
-  AlphaIsShape { /ShapeMaskDict } { /OpacityMaskDict } ifelse exch def
+%  AlphaIsShape
+  .getAIS
+  { /ShapeMaskDict } { /OpacityMaskDict } ifelse exch def
   /ColorSpace DataDict /ColorSpace get def
 } bdef
 
