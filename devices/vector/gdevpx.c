@@ -2484,6 +2484,8 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
     if (height > pie->height - pie->y)
         height = pie->height - pie->y;
     for (i = 0; i < height; pie->y++, ++i) {
+        int flipped_strip_offset;
+
         if (pie->y - pie->rows.first_y == pie->rows.num_rows) {
             int code = pclxl_image_write_rows(pie);
 
@@ -2491,12 +2493,13 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
                 return code;
             pie->rows.first_y = pie->y;
         }
+        flipped_strip_offset = (pie->flipped ?
+                                (pie->rows.num_rows -
+                                 (pie->y - pie->rows.first_y) -
+                                 1) : (pie->y - pie->rows.first_y));
         if (!pie->icclink)
             memcpy(pie->rows.data +
-                   pie->rows.raster * (pie->flipped ?
-                                       (pie->rows.num_rows -
-                                        (pie->y - pie->rows.first_y) -
-                                        1) : (pie->y - pie->rows.first_y)),
+                   pie->rows.raster * flipped_strip_offset,
                    planes[0].data + planes[0].raster * i + (data_bit >> 3),
                    pie->rows.raster);
         else {
@@ -2524,7 +2527,7 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
                                          (void *)(planes[0].data +
                                                   planes[0].raster * i +
                                                   (data_bit >> 3)) /*src */ ,
-                                         pie->rows.data + out_raster_stride * (pie->flipped ? (pie->rows.num_rows - (pie->y - pie->rows.first_y) - 1) : (pie->y - pie->rows.first_y))   /*des */
+                                         pie->rows.data + out_raster_stride * flipped_strip_offset      /*des */
                 );
         }
     }
