@@ -54,14 +54,12 @@
 
 /* Structure definition */
 #define NUM_POINTS 40           /* must be >= 3 and <= 255 */
-typedef enum
-{
+typedef enum {
     POINTS_NONE,
     POINTS_LINES,
     POINTS_CURVES
 } point_type_t;
-typedef struct gx_device_pclxl_s
-{
+typedef struct gx_device_pclxl_s {
     gx_device_vector_common;
     /* Additional state information */
     pxeMediaSize_t media_size;
@@ -80,27 +78,25 @@ typedef struct gx_device_pclxl_s
     gx_path_type_t fill_rule;   /* ...winding_number or ...even_odd  */
     gx_path_type_t clip_rule;   /* ditto */
     pxeColorSpace_t color_space;
-    struct pal_
-    {
+    struct pal_ {
         int size;               /* # of bytes */
         byte data[256 * 3];     /* up to 8-bit samples */
     } palette;
-    struct pts_
-    {                           /* buffer for accumulating path points */
+    struct pts_ {
+        /* buffer for accumulating path points */
         gs_int_point current;   /* current point as of start of data */
         point_type_t type;
         int count;
         gs_int_point data[NUM_POINTS];
     } points;
-    struct ch_
-    {                           /* cache for downloaded characters */
+    struct ch_ {
+    /* cache for downloaded characters */
 #define MAX_CACHED_CHARS 400
 #define MAX_CHAR_DATA 500000
 #define MAX_CHAR_SIZE 5000
 #define CHAR_HASH_FACTOR 247
         ushort table[MAX_CACHED_CHARS * 3 / 2];
-        struct cd_
-        {
+        struct cd_ {
             gs_id id;           /* key */
             uint size;
         } data[MAX_CACHED_CHARS];
@@ -1976,12 +1972,10 @@ pclxl_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
 /* ------ High-level images ------ */
 
 #define MAX_ROW_DATA 500000     /* arbitrary */
-typedef struct pclxl_image_enum_s
-{
+typedef struct pclxl_image_enum_s {
     gdev_vector_image_enum_common;
     gs_matrix mat;
-    struct ir_
-    {
+    struct ir_ {
         byte *data;
         int num_rows;           /* # of allocated rows */
         int first_y;
