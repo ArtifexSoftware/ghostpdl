@@ -871,7 +871,7 @@ $(GLOBJ)gxsample.$(OBJ) : $(GLSRC)gxsample.c $(AK) $(gx_h)\
  $(gxsample_h) $(gxfixed_h) $(gximage_h) $(gxsamplp_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxsample.$(OBJ) $(C_) $(GLSRC)gxsample.c
 
-$(GLOBJ)gxscanc.$(OBJ) : $(GLSRC)gxscanc.c $(GX) $(gxscanc_h)
+$(GLOBJ)gxscanc.$(OBJ) : $(GLSRC)gxscanc.c $(GX) $(gxscanc_h) $(gx_h)
 	$(GLCC) $(GLO_)gxscanc.$(OBJ) $(C_) $(GLSRC)gxscanc.c
 
 $(GLOBJ)gxstroke.$(OBJ) : $(GLSRC)gxstroke.c $(AK) $(gx_h)\
