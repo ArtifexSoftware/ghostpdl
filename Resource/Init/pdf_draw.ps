@@ -1687,6 +1687,14 @@ currentdict /jp2_csp_dict .undef
                 % Handle 0-height images specially.
     Height dup 0 eq { pop 1 } if neg 0 1 index neg
     6 array astore def
+
+  %% If the image has a rendering intent, get its numeric equivalent
+  %% from renderingintentdict, and save it in the dictionary we pass
+  %% on to render images.
+  dup /Intent knownoget {
+    //.renderingintentdict exch .knownget { /Intent exch def } if
+  } if
+
   dup /ImageMask knownoget dup { and } if {
                 % Image mask
                 % Decode is required for the PostScript image operators.
@@ -2130,6 +2138,16 @@ currentdict /last-ditch-bpc-csp undef
      OPsavedict dup /saveBM .currentblendmode put /saveOA .currentopacityalpha put % save current values
      /CompatibleOverprint .setblendmode 1 .setopacityalpha
   } if
+
+  %% save the current rendering intent
+  .currentrenderintent exch
+
+  %% Check the image dictionary to see if there is a /Intent
+  currentdict /Intent known {
+    %% and set the current rendering intent to match if so
+    Intent .setrenderingintent
+  } if
+
   DataSource exch
   PDFusingtransparency
   /PreserveSMask /GetDeviceParam .special_op {
@@ -2181,6 +2199,10 @@ currentdict /last-ditch-bpc-csp undef
                 % Close the input stream, unless it is PDFfile or
                 % PDFsource.
   dup dup PDFfile eq exch PDFsource eq or { pop } { closefile } ifelse
+
+  %% restore the rendering intent
+  .setrenderingintent
+
   .currentblendmode /CompatibleOverprint eq {
      .endtransparencygroup
      OPsavedict dup /saveOA get .setopacityalpha /saveBM get .setblendmode
