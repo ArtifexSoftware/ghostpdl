@@ -193,7 +193,7 @@ gs_output_page(gs_gstate * pgs, int num_copies, int flush)
     code = gs_gsave(pgs);
     if (code < 0)
         return code;
-    if (((code = gs_newpath(pgs)) < 0) || 
+    if (((code = gs_newpath(pgs)) < 0) ||
         ((code = gs_moveto(pgs, 0.0, 0.0)) < 0) ||
 	((code = gs_setgray(pgs, 0.0) < 0)) ||
 	((code = gs_fill(pgs)) < 0))
@@ -522,7 +522,7 @@ gs_setdevice_no_erase(gs_gstate * pgs, gx_device * dev)
                                                         gsDEFAULTPROFILE)) < 0)
                     return(code);
                 /* set the intent too */
-                if ((code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
+                if ((code = gsicc_set_device_profile_intent(dev, gsRINOTSPECIFIED,
                                                        gsDEFAULTPROFILE)) < 0)
                     return(code);
             }
@@ -696,12 +696,12 @@ gs_nulldevice(gs_gstate * pgs)
            is one */
         rc_init(ndev, pgs->memory, 0);
         if (pgs->device != NULL) {
-            if ((code = dev_proc(pgs->device, get_profile)(pgs->device, 
+            if ((code = dev_proc(pgs->device, get_profile)(pgs->device,
                                                &(ndev->icc_struct))) < 0)
                 return code;
             rc_increment(ndev->icc_struct);
             set_dev_proc(ndev, get_profile, gx_default_get_profile);
-        } 
+        }
 
         return gs_setdevice_no_erase(pgs, ndev);
     }
@@ -1126,7 +1126,7 @@ int gx_device_delete_output_file(const gx_device * dev, const char *fname)
         code = gs_note_error(gs_error_VMerror);
 	goto done;
     }
-    
+
     code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname),
                                          dev->memory);
     if (code < 0) {
@@ -1174,7 +1174,7 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
     const char *fmt;
     char *pfname = (char *)gs_alloc_bytes(dev->memory, gp_file_name_sizeof, "gx_device_open_output_file(pfname)");
     int code;
-    
+
     if (pfname == NULL) {
         code = gs_note_error(gs_error_VMerror);
 	goto done;

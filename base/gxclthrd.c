@@ -137,6 +137,15 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
             goto out_cleanup;
         }
     }
+    if (dev->icc_struct != NULL && dev->icc_struct->postren_profile != NULL) {
+        if ((code = gsicc_clone_profile(dev->icc_struct->postren_profile,
+            &ndev->icc_struct->postren_profile, ndev->memory)) < 0) {
+            emprintf1(dev->memory,
+                "Error setting up postren_profile, code=%d. Rendering threads not started.\n",
+                code);
+            goto out_cleanup;
+        }
+    }
     /* Finally set the OI profile also if needed */
     if (dev->icc_struct != NULL && dev->icc_struct->oi_profile != NULL) {
         if ((code = gsicc_clone_profile(dev->icc_struct->oi_profile,

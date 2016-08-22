@@ -1276,6 +1276,10 @@ rc_free_profile_array(gs_memory_t * mem, void *ptr_in, client_name_t cname)
             if_debug0m(gs_debug_flag_icc,mem_nongc,"[icc] Releasing oi profile\n");
             rc_decrement(icc_struct->oi_profile, "rc_free_profile_array");
         }
+        if (icc_struct->postren_profile != NULL) {
+            if_debug0m(gs_debug_flag_icc, mem_nongc, "[icc] Releasing postren profile\n");
+            rc_decrement(icc_struct->postren_profile, "rc_free_profile_array");
+        }
         if (icc_struct->spotnames != NULL) {
             if_debug0m(gs_debug_flag_icc, mem_nongc, "[icc] Releasing spotnames\n");
             /* Free the linked list in this object */
