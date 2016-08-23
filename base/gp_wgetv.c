@@ -203,10 +203,10 @@ gp_getenv(const char *name, char *ptr, int *plen)
     {
         /* If using Win32, look in the registry for a value with
          * the given name.  The registry value will be under the key
-         * HKEY_CURRENT_USER\Software\Ghostscript\N.NN
+         * HKEY_CURRENT_USER\Software\GPL Ghostscript\N.NN
          * or if that fails under the key
-         * HKEY_LOCAL_MACHINE\Software\Ghostscript\N.NN
-         * where "Ghostscript" is actually gs_productfamily
+         * HKEY_LOCAL_MACHINE\Software\GPL Ghostscript\N.NN
+         * where "GPL Ghostscript" is actually gs_productfamily
          * and N.NN is obtained from gs_revision.
          */
         DWORD version = GetVersion();

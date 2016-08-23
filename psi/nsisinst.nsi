@@ -133,7 +133,7 @@ CRCCheck on
 !searchparse /ignorecase /noerrors "${TARGET}" w WINTYPE
 !echo "Building ${WINTYPE}-bit installer"
 
-Name "Ghostscript"
+Name "GPL Ghostscript"
 OutFile "${TARGET}.exe"
 !if "${WINTYPE}" == "64"
 Icon   obj64\gswin.ico
@@ -167,7 +167,7 @@ InstallDir "$PROGRAMFILES64\gs\gs${VERSION}"
 InstallDir "$PROGRAMFILES\gs\gs${VERSION}"
 !endif
 
-DirText "Select the directory to install Ghostscript in:"
+DirText "Select the directory to install GPL Ghostscript in:"
 
 Section "" ; (default section)
 SetOutPath "$INSTDIR"
@@ -186,17 +186,17 @@ File /oname=bin\gswin${WINTYPE}c.exe .\bin\gswin${WINTYPE}c.exe
   SetRegView 64
 !endif
 
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Ghostscript\${VERSION}" "GS_DLL" "$INSTDIR\bin\gsdll${WINTYPE}.dll"
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Ghostscript\${VERSION}" "GS_LIB" "$INSTDIR\bin;$INSTDIR\lib;$INSTDIR\fonts"
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Artifex\Ghostscript\${VERSION}" "" "$INSTDIR"
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ghostscript ${VERSION}" "DisplayName" "Ghostscript"
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ghostscript ${VERSION}" "UninstallString" '"$INSTDIR\uninstgs.exe"'
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ghostscript ${VERSION}" "Publisher" "Artifex Software Inc."
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ghostscript ${VERSION}" "HelpLink" "http://www.ghostscript.com/"
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ghostscript ${VERSION}" "URLInfoAbout" "http://www.ghostscript.com/"
-WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ghostscript ${VERSION}" "DisplayVersion" "${VERSION}"
-WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ghostscript ${VERSION}" "NoModify" "1"
-WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ghostscript ${VERSION}" "NoRepair" "1"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${VERSION}" "GS_DLL" "$INSTDIR\bin\gsdll${WINTYPE}.dll"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${VERSION}" "GS_LIB" "$INSTDIR\bin;$INSTDIR\lib;$INSTDIR\fonts"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Artifex\GPL Ghostscript\${VERSION}" "" "$INSTDIR"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "DisplayName" "GPL Ghostscript"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "UninstallString" '"$INSTDIR\uninstgs.exe"'
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "Publisher" "Artifex Software Inc."
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "HelpLink" "http://www.ghostscript.com/"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "URLInfoAbout" "http://www.ghostscript.com/"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "DisplayVersion" "${VERSION}"
+WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "NoModify" "1"
+WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "NoRepair" "1"
 ; write out uninstaller
 WriteUninstaller "$INSTDIR\uninstgs.exe"
 SectionEnd ; end of default section
@@ -238,7 +238,7 @@ Function Un.onInit
 FunctionEnd
 
 ; begin uninstall settings/section
-UninstallText "This will uninstall Ghostscript from your system"
+UninstallText "This will uninstall GPL Ghostscript from your system"
 
 Section Uninstall
 ; add delete commands to delete whatever files/registry keys/etc you installed here.
@@ -251,9 +251,9 @@ Delete   "$INSTDIR\uninstgs.exe"
 !if "${WINTYPE}" == "64"
     SetRegView 64
 !endif
-DeleteRegKey HKEY_LOCAL_MACHINE "SOFTWARE\Artifex\Ghostscript\${VERSION}"
-DeleteRegKey HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\Ghostscript ${VERSION}"
-DeleteRegKey HKEY_LOCAL_MACHINE "Software\Ghostscript\${VERSION}"
+DeleteRegKey HKEY_LOCAL_MACHINE "SOFTWARE\Artifex\GPL Ghostscript\${VERSION}"
+DeleteRegKey HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}"
+DeleteRegKey HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${VERSION}"
 RMDir /r "$INSTDIR\doc"
 RMDir /r "$INSTDIR\examples"
 RMDir /r "$INSTDIR\lib"

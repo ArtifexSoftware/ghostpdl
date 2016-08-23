@@ -39,7 +39,7 @@ const char *const gs_copyright = GS_COPYRIGHT;
 
 #ifndef GS_PRODUCTFAMILY
 #  define GS_PRODUCTFAMILY\
-        "Ghostscript"
+        "GPL Ghostscript"
 #endif
 const char *const gs_productfamily = GS_PRODUCTFAMILY;
 
