@@ -86,6 +86,7 @@ set_vm_threshold(i_ctx_t *i_ctx_p, long val)
         val = MIN_VM_THRESHOLD;
     else if (val > MAX_VM_THRESHOLD)
         val = MAX_VM_THRESHOLD;
+    gs_memory_set_vm_threshold(idmemory->space_system, val);
     gs_memory_set_vm_threshold(idmemory->space_global, val);
     gs_memory_set_vm_threshold(idmemory->space_local, val);
     return 0;

@@ -965,8 +965,8 @@ ialloc_set_limit(register gs_ref_memory_t * mem)
     } else
         mem->limit = min(max_allocated, mem->gc_allocated + FORCE_GC_LIMIT);
     if_debug7m('0', (const gs_memory_t *)mem,
-               "[0]space=%d, max_vm=%ld, prev.alloc=%ld, enabled=%d,\n"
-               "      gc_alloc=%ld, threshold=%ld => limit=%ld\n",
+               "[0]space=%d, max_vm=%ld, prev.alloc=%ld, enabled=%d, "
+               "gc_alloc=%ld, threshold=%ld => limit=%ld\n",
                mem->space, (long)mem->gc_status.max_vm,
                (long)mem->previous_status.allocated,
                mem->gc_status.enabled, (long)mem->gc_allocated,
