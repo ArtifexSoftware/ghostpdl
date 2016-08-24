@@ -1832,6 +1832,7 @@ gsicc_clone_profile(cmm_profile_t *source, cmm_profile_t **destination,
     }
     memcpy(des->buffer, source->buffer, source->buffer_size);
     des->buffer_size = source->buffer_size;
+    gsicc_init_profile_info(des);
     *destination = des;
     return 0;
 }

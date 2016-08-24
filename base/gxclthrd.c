@@ -116,7 +116,8 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     gs_c_param_list_release(&paramlist);
 
     /* If the device ICC profile (or proof) is OI_PROFILE, then that was not handled
-     * by put/get params.  In this case we need to clone the profiles */
+     * by put/get params.  In this case we need to clone the profiles.  The clone
+     * operation also initializes some of the required data */
     if (dev->icc_struct != NULL && dev->icc_struct->device_profile[0] != NULL &&
         strncmp(dev->icc_struct->device_profile[0]->name, OI_PROFILE, strlen(OI_PROFILE)) == 0) {
         if ((code = gsicc_clone_profile(dev->icc_struct->device_profile[0],
@@ -133,25 +134,6 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
             &ndev->icc_struct->proof_profile, ndev->memory)) < 0) {
             emprintf1(dev->memory,
                 "Error setting up proof profile, code=%d. Rendering threads not started.\n",
-                code);
-            goto out_cleanup;
-        }
-    }
-    if (dev->icc_struct != NULL && dev->icc_struct->postren_profile != NULL) {
-        if ((code = gsicc_clone_profile(dev->icc_struct->postren_profile,
-            &ndev->icc_struct->postren_profile, ndev->memory)) < 0) {
-            emprintf1(dev->memory,
-                "Error setting up postren_profile, code=%d. Rendering threads not started.\n",
-                code);
-            goto out_cleanup;
-        }
-    }
-    /* Finally set the OI profile also if needed */
-    if (dev->icc_struct != NULL && dev->icc_struct->oi_profile != NULL) {
-        if ((code = gsicc_clone_profile(dev->icc_struct->oi_profile,
-            &ndev->icc_struct->oi_profile, ndev->memory)) < 0) {
-            emprintf1(dev->memory,
-                "Error setting up OI profile, code=%d. Rendering threads not started.\n",
                 code);
             goto out_cleanup;
         }
