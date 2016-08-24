@@ -463,6 +463,12 @@ pattern_accum_open(gx_device * dev)
                         code = (*dev_proc(bits, open_device)) ((gx_device *) bits);
                         gx_device_set_target((gx_device_forward *)padev,
                                              (gx_device *)bits);
+                        /* The update_spot_equivalent_color proc for the bits device
+                           should forward to the real target device.  This will ensure
+                           that the target device can get equivalent CMYK values for
+                           spot colors if we are using a separation device and the spot
+                           color occurs only in patterns on the page. */
+                        bits->procs.update_spot_equivalent_colors = gx_forward_update_spot_equivalent_colors;
                     }
                 }
             }
@@ -532,8 +538,8 @@ pattern_accum_close(gx_device * dev)
 /* _hl_color */
 static int
 pattern_accum_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
-                                      const gs_gstate *pgs, 
-                                      const gx_drawing_color *pdcolor, 
+                                      const gs_gstate *pgs,
+                                      const gx_drawing_color *pdcolor,
                                       const gx_clip_path *pcpath)
 {
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
@@ -1232,7 +1238,7 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
             fwrite(Buffer,1,max_bands*height*width,fid);
         }
     } else {
-        /* Binary Data. Lets get to 8 bit for debugging.  We have to 
+        /* Binary Data. Lets get to 8 bit for debugging.  We have to
            worry about planar vs. chunky.  Note this assumes 1 bit data
            only. */
         if (is_planar) {
@@ -1254,17 +1260,17 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
                 for (k = 0; k < width; k++) {
                     for (m = 0; m < max_bands; m++) {
                         /* index current byte */
-                        byte_number = 
-                            (int) ceil((( (float) k * (float) max_bands + 
+                        byte_number =
+                            (int) ceil((( (float) k * (float) max_bands +
                                           (float) m + 1.0) / 8.0)) - 1;
                         /* get byte of interest */
-                        current_byte = 
+                        current_byte =
                                 curr_ptr[j*(mdev->raster) + byte_number];
                         /* get bit position */
-                        bit_position = 
+                        bit_position =
                                 7 - (k * max_bands + m -  byte_number * 8);
                         /* extract and create byte */
-                        output_val = 
+                        output_val =
                                 ((current_byte >> bit_position) & 0x1) * 255;
                         fwrite(&output_val,1,1,fid);
                     }
@@ -1451,7 +1457,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
                     return code;
             } else {
                 /* Not a clist, get PDF14 buffer information */
-                code = 
+                code =
                     pdf14_get_buffer_information(saved->device,
                                                 ((gx_device_pattern_accum*)adev)->transbuff,
                                                  saved->memory,
