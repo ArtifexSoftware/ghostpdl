@@ -1833,7 +1833,7 @@ $(DD)tiffscaled.dev : $(libtiff_dev) $(tiffscaled_) $(DD)tiffs.dev\
 
 # TIFF Scaled 8 (downscaled gray -> gray), configurable compression
 
-tiffscaled8_=$(tiffseop_)
+tiffscaled8_=$(tiffsep_)
 
 $(DD)tiffscaled8.dev : $(libtiff_dev) $(tiffscaled8_)\
  $(DD)tiffs.dev $(minftrsz_h) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
