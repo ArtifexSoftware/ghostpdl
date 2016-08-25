@@ -39,7 +39,7 @@ XE_ALL=$(PSOBJ)gs.$(OBJ) $(INT_ARCHIVE_ALL) $(INT_ALL) $(DEVS_ALL)
 # Build a library archive for the entire interpreter.
 # This is not used in a standard build.
 liar_tr=$(GLOBJ)liar.tr
-GS_A=$(GS).a
+GS_A=$(BINDIR)$(D)$(GS).a
 $(GS_A): $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) \
          $(obj_tr) $(ECHOGS_XE) $(INT_ARCHIVE_ALL) $(INT_ALL) $(DEVS_ALL) \
          $(UNIXLINK_MAK)
@@ -51,6 +51,9 @@ $(GS_A): $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) \
 	$(ECHOGS_XE) -a $(liar_tr) -s -
 	$(SH) <$(liar_tr)
 	$(RANLIB) $(GS_A)
+
+libgs: $(GS_A)
+	$(NO_OP)
 
 # Here is the final link step.  The stuff with LD_RUN_PATH is for SVR4
 # systems with dynamic library loading; I believe it's harmless elsewhere.
