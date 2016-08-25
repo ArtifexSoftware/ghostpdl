@@ -3490,7 +3490,7 @@ $(GLD)posync.dev : $(LIB_MAK) $(ECHOGS_XE) $(pthreads_) $(LIB_MAK) $(MAKEDIRS)
 	$(SETMOD) $(GLD)posync $(pthreads_)
 	$(ADDMOD) $(GLD)posync -replace $(GLD)nosync
 
-$(GLOBJ)gp_psync.$(OBJ) : $(GLSRC)gp_psync.c $(AK) $(malloc__h)\
+$(GLOBJ)gp_psync.$(OBJ) : $(GLSRC)gp_psync.c $(AK) $(malloc__h) $(string__h) \
  $(std_h) $(gpsync_h) $(gserrors_h) $(assert__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gp_psync.$(OBJ) $(C_) $(GLSRC)gp_psync.c
 

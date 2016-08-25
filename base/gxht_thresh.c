@@ -17,6 +17,7 @@
 /*$Id: gxhts_thresh.c  $ */
 /* Halftone thresholding code */
 
+#include <stdlib.h> /* abs() */
 #include "memory_.h"
 #include "gx.h"
 #include "gxgstate.h"
