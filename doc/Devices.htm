@@ -743,8 +743,8 @@ revealed in the final printout if the different color plates do not exactly
 line up.
 
 <p>This trapping is controlled by 3 device parameters. Firstly the maximum
-X and Y offsets are specified using <tt>-dTrapX=N</tt> and <tt>-dTrapY=N</tt>
-(where <tt>N</tt> is a figure in pixels, before the downscaler is applied).
+X and Y offsets are specified using <code>-dTrapX=N</code> and <code>-dTrapY=N</code>
+(where <code>N</code> is a figure in pixels, before the downscaler is applied).
 
 <p>The final control is to inform the trapping process in what order inks
 should be processed, from darkest to lightest. For a typical CMYK device
@@ -753,11 +753,11 @@ This is the default. In the case where CMYK + spots are used, the code
 defaults to assuming that the spots are lighter than the standard colours
 and are sent darkest first (thus [ 3 1 0 2 4 5 6 ... ]).
 
-<p>To override these defaults, the TrapOrder parameter can be used, for
+<p>To override these defaults, the <code>TrapOrder</code> parameter can be used, for
 example:
   
 <blockquote><code>
-    gs -sDEVICE=psdcmyk -dTrapX=2 -dTrapY=2 -o out.psd -c "&lt;&lt; [ 4 5 3 1 0 2 ] &gt;&gt; setpagedevice" -f examples\tiger.eps
+    gs -sDEVICE=psdcmyk -dTrapX=2 -dTrapY=2 -o out.psd -c "&lt;&lt; /TrapOrder [ 4 5 3 1 0 2 ] &gt;&gt; setpagedevice" -f examples\tiger.eps
 </code></blockquote>
 
 <h4><a name="trapping_patent_note"></a>Trapping patents</h4>
@@ -766,7 +766,7 @@ example:
 we can convince ourselves that our trapping code is not covered by
 any of these patents, the functionality is disabled by default.</p>
 
-<p>It can be enabled by building with the <tt>ENABLE_TRAPPING</tt>
+<p>It can be enabled by building with the <code>ENABLE_TRAPPING</code>
 define, but before you do so you should convince yourself that
 either:</p>
 
