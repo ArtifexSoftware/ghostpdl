@@ -127,22 +127,32 @@ sfnts_reader_rbyte(sfnts_reader *r)
     return (sfnts_reader_rbyte_inline(r));
 }
 
+#define SFNTS_READER_RBYTE_TO_USHORT(r) ((ulong)sfnts_reader_rbyte_inline(r))
+
 static ushort
 sfnts_reader_rword(sfnts_reader *r)
 {
-    return ((sfnts_reader_rbyte_inline(r) << 8) +
-            sfnts_reader_rbyte_inline(r));
+    ushort retval;
+
+    retval = SFNTS_READER_RBYTE_TO_USHORT(r) << 8;
+    retval += SFNTS_READER_RBYTE_TO_USHORT(r);
+
+    return retval;
 }
 
-#define SFNTS_READER_RWORD_TO_LONG(r) ((ulong)sfnts_reader_rbyte_inline(r))
+#undef SFNTS_READER_RBYTE_TO_USHORT
+
+#define SFNTS_READER_RBYTE_TO_ULONG(r) ((ulong)sfnts_reader_rbyte_inline(r))
 
 static ulong
 sfnts_reader_rlong(sfnts_reader *r)
 {
-    return ((SFNTS_READER_RWORD_TO_LONG(r) << 24) +
-            (SFNTS_READER_RWORD_TO_LONG(r) << 16) +
-            (SFNTS_READER_RWORD_TO_LONG(r) << 8) +
-            SFNTS_READER_RWORD_TO_LONG(r));
+    ulong retval;
+    retval = SFNTS_READER_RBYTE_TO_ULONG(r) << 24;
+    retval += SFNTS_READER_RBYTE_TO_ULONG(r) << 16;
+    retval += SFNTS_READER_RBYTE_TO_ULONG(r) << 8;
+    retval += SFNTS_READER_RBYTE_TO_ULONG(r);
+    return retval;
 }
 
 #undef SFNTS_READER_RWORD_TO_LONG
