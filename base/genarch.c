@@ -184,7 +184,14 @@ main(int argc, char *argv[])
 #if defined (GS_MEMPTR_ALIGNMENT) && GS_MEMPTR_ALIGNMENT != 0
     define_int(f, "ARCH_ALIGN_PTR_MOD", GS_MEMPTR_ALIGNMENT);
 #else
+#if defined (sparc) || defined (__hpux)
+# ifndef __BIGGEST_ALIGNMENT__
+#  define __BIGGEST_ALIGNMENT__ 8
+# endif
+    define_int(f, "ARCH_ALIGN_PTR_MOD", __BIGGEST_ALIGNMENT__);
+#else
     define_int(f, "ARCH_ALIGN_PTR_MOD", OFFSET_IN(sp, p));
+#endif
 #endif
 
     define_int(f, "ARCH_ALIGN_FLOAT_MOD", OFFSET_IN(sf, f));
