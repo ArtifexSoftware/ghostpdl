@@ -2088,7 +2088,7 @@ pclxl_begin_image(gx_device * dev,
                                    &pclxl_image_enum_procs,
                                    (gdev_vector_image_enum_t *) pie);
     if (code < 0)
-        return code;
+        goto fail;
 
     /* emit a PXL XL rotation and adjust mat correspondingly */
     pie->flipped = false;
