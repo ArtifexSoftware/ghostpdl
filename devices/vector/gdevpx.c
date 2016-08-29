@@ -1314,6 +1314,14 @@ pclxl_setmiterlimit(gx_device_vector * vdev, double limit)
     return 0;
 }
 
+/*
+ * The number of elements in the dash pattern array is device
+ * dependent but a maximum of 20 has been observed on several HP
+ * printers.
+ */
+
+#define MAX_DASH_ELEMENTS 20
+
 static int
 pclxl_setdash(gx_device_vector * vdev, const float *pattern, uint count,
               double offset)
@@ -1326,7 +1334,7 @@ pclxl_setdash(gx_device_vector * vdev, const float *pattern, uint count,
         };
 
         PX_PUT_LIT(s, nac_);
-    } else if (count > 255)
+    } else if (count > MAX_DASH_ELEMENTS)
         return_error(gs_error_limitcheck);
     else {
         uint i;
