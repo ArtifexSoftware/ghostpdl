@@ -51,9 +51,6 @@
 #   define MAX_CHAN 15
 #endif
 
-/* Enable logic for a local ICC output profile. */
-#define ENABLE_ICC_PROFILE 0
-
 /* Define the device parameters. */
 #ifndef X_DPI
 #  define X_DPI 72
@@ -680,105 +677,17 @@ psd_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
     return 0;
 }
 
-#if ENABLE_ICC_PROFILE
-static int
-psd_open_profile(const char *profile_out_fn, cmm_profile_t *icc_profile, gcmmhlink_t icc_link, gs_memory_t *memory)
-{
-
-    gsicc_rendering_param_t rendering_params;
-
-    icc_profile = gsicc_get_profile_handle_file(profile_out_fn,
-                    strlen(profile_out_fn), memory);
-
-    if (icc_profile == NULL)
-        return gs_throw(-1, "Could not create profile for psd device");
-
-    /* Set up the rendering parameters */
-
-    rendering_params.black_point_comp = gsBPNOTSPECIFIED;
-    rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;  /* Already rendered */
-    rendering_params.rendering_intent = gsPERCEPTUAL;
-
-    /* Call with a NULL destination profile since we are using a device link profile here */
-    icc_link = gscms_get_link(icc_profile,
-                    NULL, &rendering_params);
-
-    if (icc_link == NULL)
-        return gs_throw(-1, "Could not create link handle for psd device");
-
-    return(0);
-
-}
-
-static int
-psd_open_profiles(psd_device *xdev)
-{
-    int code = 0;
-
-    if (xdev->output_icc_link == NULL && xdev->profile_out_fn[0]) {
-
-        code = psd_open_profile(xdev->profile_out_fn, xdev->output_profile,
-            xdev->output_icc_link, xdev->memory);
-
-    }
-
-    if (code >= 0 && xdev->rgb_icc_link == NULL && xdev->profile_rgb_fn[0]) {
-
-        code = psd_open_profile(xdev->profile_rgb_fn, xdev->rgb_profile,
-            xdev->rgb_icc_link, xdev->memory);
-
-    }
-
-    if (code >= 0 && xdev->cmyk_icc_link == NULL && xdev->profile_cmyk_fn[0]) {
-
-        code = psd_open_profile(xdev->profile_cmyk_fn, xdev->cmyk_profile,
-            xdev->cmyk_icc_link, xdev->memory);
-
-    }
-
-    return code;
-
-}
-#endif
-
 /* Get parameters.  We provide a default CRD. */
 static int
 psd_get_params_generic(gx_device * pdev, gs_param_list * plist, int cmyk)
 {
     psd_device *xdev = (psd_device *)pdev;
     int code;
-#if ENABLE_ICC_PROFILE
-    gs_param_string pos;
-    gs_param_string prgbs;
-    gs_param_string pcmyks;
-#endif
 
     code = gx_devn_prn_get_params(pdev, plist);
     if (code < 0)
         return code;
 
-#if ENABLE_ICC_PROFILE
-    pos.data = (const byte *)xdev->profile_out_fn,
-        pos.size = strlen(xdev->profile_out_fn),
-        pos.persistent = false;
-    code = param_write_string(plist, "ProfileOut", &pos);
-    if (code < 0)
-        return code;
-
-    prgbs.data = (const byte *)xdev->profile_rgb_fn,
-        prgbs.size = strlen(xdev->profile_rgb_fn),
-        prgbs.persistent = false;
-    code = param_write_string(plist, "ProfileRgb", &prgbs);
-    if (code < 0)
-        return code;
-
-    pcmyks.data = (const byte *)xdev->profile_cmyk_fn,
-        pcmyks.size = strlen(xdev->profile_cmyk_fn),
-        pcmyks.persistent = false;
-    code = param_write_string(plist, "ProfileCmyk", &prgbs);
-    if (code < 0)
-        return code;
-#endif
     code = gx_downscaler_write_params(plist, &xdev->downscale,
                                       cmyk ? GX_DOWNSCALER_PARAMS_TRAP : 0);
     if (code < 0)
@@ -803,22 +712,6 @@ psd_get_params_cmyk(gx_device * pdev, gs_param_list * plist)
 }
 
 
-#if ENABLE_ICC_PROFILE
-static int
-psd_param_read_fn(gs_param_list *plist, const char *name,
-                  gs_param_string *pstr, uint max_len)
-{
-    int code = param_read_string(plist, name, pstr);
-
-    if (code == 0) {
-        if (pstr->size >= max_len)
-            param_signal_error(plist, name, code = gs_error_rangecheck);
-    } else {
-        pstr->data = 0;
-    }
-    return code;
-}
-#endif
 
 /* Compare a C string and a gs_param_string. */
 static bool
@@ -865,11 +758,6 @@ psd_put_params_generic(gx_device * pdev, gs_param_list * plist, int cmyk)
 {
     psd_device * const pdevn = (psd_device *) pdev;
     int code = 0;
-#if ENABLE_ICC_PROFILE
-    gs_param_string po;
-    gs_param_string prgb;
-    gs_param_string pcmyk;
-#endif
     gs_param_string pcm;
     psd_color_model color_model = pdevn->color_model;
     gx_device_color_info save_info = pdevn->color_info;
@@ -906,17 +794,6 @@ psd_put_params_generic(gx_device * pdev, gs_param_list * plist, int cmyk)
             break;
     }
 
-#if ENABLE_ICC_PROFILE
-    code = psd_param_read_fn(plist, "ProfileOut", &po,
-                                 sizeof(pdevn->profile_out_fn));
-    if (code >= 0)
-        code = psd_param_read_fn(plist, "ProfileRgb", &prgb,
-                                 sizeof(pdevn->profile_rgb_fn));
-    if (code >= 0)
-        code = psd_param_read_fn(plist, "ProfileCmyk", &pcmyk,
-                                 sizeof(pdevn->profile_cmyk_fn));
-#endif
-
     if (code >= 0)
         code = param_read_name(plist, "ProcessColorModel", &pcm);
     if (code == 0) {
@@ -946,24 +823,6 @@ psd_put_params_generic(gx_device * pdev, gs_param_list * plist, int cmyk)
         return code;
     }
 
-#if ENABLE_ICC_PROFILE
-    /* Open any ICC profiles that have been specified. */
-    if (po.data != 0) {
-        memcpy(pdevn->profile_out_fn, po.data, po.size);
-        pdevn->profile_out_fn[po.size] = 0;
-    }
-    if (prgb.data != 0) {
-        memcpy(pdevn->profile_rgb_fn, prgb.data, prgb.size);
-        pdevn->profile_rgb_fn[prgb.size] = 0;
-    }
-    if (pcmyk.data != 0) {
-        memcpy(pdevn->profile_cmyk_fn, pcmyk.data, pcmyk.size);
-        pdevn->profile_cmyk_fn[pcmyk.size] = 0;
-    }
-    if (memcmp(&pdevn->color_info, &save_info,
-                            size_of(gx_device_color_info)) != 0)
-        code = psd_open_profiles(pdevn);
-#endif
     return code;
 }
 
