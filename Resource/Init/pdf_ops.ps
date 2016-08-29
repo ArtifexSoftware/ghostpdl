@@ -871,7 +871,6 @@ end readonly def
 /textbeginpage
  {
    /TextLeading 0 def		% 0 TL
-   /TextRenderingMode 0 def	% 0 Tr
    /TextRise 0 def		% 0 Ts
    /WordSpacing 0 def		% 0 Tw
    /TextHScaling 1.0 def	% 100 Tz
@@ -1018,7 +1017,7 @@ end readonly def
 
 /ET_NO_TXT_KO {
   currentdict /TextSaveMatrix known {
-    TextRenderingMode 4 ge { .currentfilladjust 0 .setfilladjust clip .setfilladjust} if
+    .currenttextrenderingmode 4 ge { .currentfilladjust 0 .setfilladjust clip .setfilladjust} if
     newpath TextSaveMatrix setmatrix
     currentdict /TextSaveMatrix undef
 
@@ -1051,7 +1050,7 @@ end readonly def
 
 /Tc { .settextspacing { showfirst } /Show gput } bdef
 /TL { /TextLeading gput } bdef
-/Tr { dup .settextrenderingmode /TextRenderingMode gput { showfirst } /Show gput } bdef
+/Tr { .settextrenderingmode { showfirst } /Show gput } bdef
 /Ts { /TextRise gput settextstate } bdef
 /Tw { /WordSpacing gput { showfirst } /Show gput } bdef
 /Tz {
@@ -1390,8 +1389,8 @@ end readonly def
           //false
       }ifelse
       {
-        TextRenderingMode 1 eq TextRenderingMode 2 eq or
-        TextRenderingMode 5 eq TextRenderingMode 6 eq or or {
+        .currenttextrenderingmode 1 eq .currenttextrenderingmode 2 eq or
+        .currenttextrenderingmode 5 eq .currenttextrenderingmode 6 eq or or {
           setstrokestate
           % Need to set the stroke width to a value which gives the correct
           % width under pdfwrite. Pdfwrite uses (in text mode) an identity
@@ -1463,16 +1462,16 @@ WordSpacing 0 eq .currenttextspacing
           //false
       }ifelse
       {
-              pdfwrite_textrenderingprocs TextRenderingMode get
+              pdfwrite_textrenderingprocs .currenttextrenderingmode get
       }
       {
-              TextRenderingMode 0 eq
-              currentfont /FontType get 3 eq TextRenderingMode 3 eq not
+              .currenttextrenderingmode 0 eq
+              currentfont /FontType get 3 eq .currenttextrenderingmode 3 eq not
               and or
                {
                 { settextfillstate //false TextTransSetup show TextTransTeardown }
               } {
-                TextRenderingMode 3 eq {
+                .currenttextrenderingmode 3 eq {
                         % Some PDF files execute 'tm' with a singular matrix,
                         % and then use the text rendering mode 3.
                         % The graphics library currently cannot handle text
@@ -1500,7 +1499,7 @@ WordSpacing 0 eq .currenttextspacing
                     moveto
                   }
                 } {
-                  { //false charpath textrenderingprocs TextRenderingMode get exec }
+                  { //false charpath textrenderingprocs .currenttextrenderingmode  get exec }
                 } ifelse
               } ifelse
        } ifelse
@@ -1509,7 +1508,7 @@ WordSpacing 0 eq .currenttextspacing
       % If we are doing a plain old fill, or no text at all, *or* we are going to
       % a device supporting text rendering modes, then go through this route.
       %
-      TextRenderingMode 0 eq TextRenderingMode 3 eq or
+      .currenttextrenderingmode 0 eq .currenttextrenderingmode 3 eq or
       currentfont /FontType get 3 eq or
 
       /PreserveTrMode /GetDeviceParam .special_op {
@@ -1518,7 +1517,7 @@ WordSpacing 0 eq .currenttextspacing
           //false
       }ifelse
       % pdfwrite can't handle rendering modes which involve clipping
-      TextRenderingMode 4 lt and or
+      .currenttextrenderingmode 4 lt and or
       % Tr was set to graphic state.
       {
         FontMatrixNonHV {
@@ -1607,7 +1606,7 @@ WordSpacing 0 eq .currenttextspacing
                % or we wouldn't be here. Subtract 4 from the Tr and preserve
                % that mode, then do a charpath so the clip path gets set up
                % correctly.
-               gsave TextRenderingMode 4 sub .settextrenderingmode
+               gsave .currenttextrenderingmode 4 sub .settextrenderingmode
                setstrokeforTrpreservation
                setstrokestate settextfillstate //false TextTransSetup dup show grestore TextTransTeardown } if
              //false charpath
@@ -1633,7 +1632,7 @@ WordSpacing 0 eq .currenttextspacing
              }{
                  //true
              }ifelse {
-             textrenderingprocs TextRenderingMode get exec
+             textrenderingprocs .currenttextrenderingmode get exec
            } if
            setlinewidth
          }

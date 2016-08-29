@@ -875,6 +875,13 @@ gs_settextrenderingmode(gs_gstate * pgs, uint trm)
     pgs->text_rendering_mode = trm;
 }
 
+/* currenttextrenderingmode */
+uint
+gs_currenttextrenderingmode(const gs_gstate * pgs)
+{
+    return pgs->text_rendering_mode;
+}
+
 double
 gs_currenttextspacing(const gs_gstate *pgs)
 {
@@ -886,13 +893,6 @@ gs_settextspacing(gs_gstate *pgs, double Tc)
 {
     pgs->Tc = (float)Tc;
     return 0;
-}
-
-/* currenttextrenderingmode */
-uint
-gs_currenttextrenderingmode(const gs_gstate * pgs)
-{
-    return pgs->text_rendering_mode;
 }
 
 /* sethpglpathmode */
