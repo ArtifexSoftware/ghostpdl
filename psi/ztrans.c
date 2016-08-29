@@ -578,7 +578,6 @@ static int
 zsetAIS(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    bool value;
 
     check_type(*op, t_boolean);
     gs_setAIS(igs, op->value.boolval);
