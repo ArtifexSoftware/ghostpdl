@@ -367,7 +367,17 @@ struct gs_gstate_s {
     void *SMask;
 /*    void *BM;            Already handled (.setblendmode) */
     bool AIS;
+    bool OP;            /* Stroke overprint, for fill we will use existing overprint */
 /*    bool TK;             Already handled (.settextknockout) */
+    float Tc;
+    float TL;
+/*    float Tr;             Already handled (.settextrenderingmode) */
+    float Ts;
+    float Tw;
+    float Tz;
+    float TD;
+    gs_matrix TextLineMatrix;
+    gs_matrix TextMatrix;
     /* Current colors (non-stroking, and stroking) */ 
     gs_gstate_color color[2]; 
     

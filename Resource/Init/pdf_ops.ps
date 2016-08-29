@@ -869,7 +869,7 @@ end readonly def
 % ---------------- Text control ---------------- %
 
 /textbeginpage
- { /TextSpacing 0 def		% 0 Tc
+ {
    /TextLeading 0 def		% 0 TL
    /TextRenderingMode 0 def	% 0 Tr
    /TextRise 0 def		% 0 Ts
@@ -1049,7 +1049,7 @@ end readonly def
   } if 
 } bdef
 
-/Tc { /TextSpacing gput { showfirst } /Show gput } bdef
+/Tc { .settextspacing { showfirst } /Show gput } bdef
 /TL { /TextLeading gput } bdef
 /Tr { dup .settextrenderingmode /TextRenderingMode gput { showfirst } /Show gput } bdef
 /Ts { /TextRise gput settextstate } bdef
@@ -1452,7 +1452,9 @@ end readonly def
 } bind def
 
 /setshowstate
- { WordSpacing 0 eq TextSpacing 0 eq and FontMatrixNonHV not and
+ {
+WordSpacing 0 eq .currenttextspacing
+ 0 eq and FontMatrixNonHV not and
     {
       % Check to see if the current device supports Tr
       /PreserveTrMode /GetDeviceParam .special_op {
@@ -1525,7 +1527,7 @@ end readonly def
              currentlinewidth exch
              setstrokeforTrpreservation
              settextfillstate //false TextTransSetup
-             [ TextSpacing WordSpacing 3 index
+             [ .currenttextspacing WordSpacing 3 index
                {					    % str [... weach wword c undef|ythis xthis|undef
                  exch % will be removed, unless FontMatrix.xx/yy == 0 (FontMatrixNonHV already true)
                  Vexch pop                                  % str [... weach wword c wthis
@@ -1544,14 +1546,15 @@ end readonly def
            WordSpacing 0 eq {
              {
                { setstrokeforTrpreservation
-                 settextfillstate //false TextTransSetup TextSpacing 0 Vexch 3 -1 roll ashow TextTransTeardown
+                 settextfillstate //false TextTransSetup .currenttextspacing
+                 0 Vexch 3 -1 roll ashow TextTransTeardown
                }
                currentlinewidth
                { setlinewidth }
                3 .execn
              }
            } {
-              TextSpacing 0 eq {
+              .currenttextspacing 0 eq {
                 { % preserve current line width around possible stroke setup
                   { setstrokeforTrpreservation
                     settextfillstate //false TextTransSetup WordSpacing 0 Vexch 32 4 -1 roll .pdfwidthshow
@@ -1565,7 +1568,7 @@ end readonly def
                 { % preserve current line width around possible stroke setup
                   { setstrokeforTrpreservation
                     settextfillstate //false TextTransSetup WordSpacing 0 Vexch 32
-                    TextSpacing 0 Vexch 6 -1 roll .pdfawidthshow TextTransTeardown
+                    .currenttextspacing 0 Vexch 6 -1 roll .pdfawidthshow TextTransTeardown
                   }
                   currentlinewidth
                   { setlinewidth }
@@ -1577,7 +1580,7 @@ end readonly def
        }
        {
          { currentlinewidth exch
-           WordSpacing TextSpacing
+           WordSpacing .currenttextspacing
                         % Implement the combination of t3 and false charpath.
                         % Note that we must use cshow for this, because we
                         % can't parse multi-byte strings any other way.

@@ -96,6 +96,9 @@ void gs_setlimitclamp(gs_gstate *, bool);
 bool gs_currentlimitclamp(const gs_gstate *);
 void gs_settextrenderingmode(gs_gstate * pgs, uint trm);
 uint gs_currenttextrenderingmode(const gs_gstate * pgs);
+int gs_settextspacing(gs_gstate *pgs, double Tc);
+double gs_currenttextspacing(const gs_gstate *pgs);
+
 #include "gscpm.h"
 gs_in_cache_device_t gs_incachedevice(const gs_gstate *);
 void gs_sethpglpathmode(gs_gstate *, bool);
