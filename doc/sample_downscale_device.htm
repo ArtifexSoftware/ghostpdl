@@ -75,6 +75,10 @@ a 200dpi image.
 <dt><code>-sPostRenderProfile=<em>path</em></code> (path to an ICC profile)
 <dd>If this option set then the page will be color transformed using that
 profile <b>after</b> downscaling.
+<p>
+This is useful when the file uses overprint to separately paint to some
+subset of the C, M, Y, and K colorants, but the final CMYK is to be color
+corrected for printing or display.
 </dl></blockquote>
 
 <p>The <code>ds32</code> device can perform rudimentary automatic bitmap

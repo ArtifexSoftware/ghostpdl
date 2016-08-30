@@ -60,7 +60,7 @@
 <li><a href="#Test">Test devices</a>
 <ul>
 <li><a href="#Permute">Permutation (DeviceN color model)</a>
-<li><a href="#SPOT">spotcmyk (DeviceN color model)</a> 
+<li><a href="#SPOT">spotcmyk (DeviceN color model)</a>
 <li><a href="#XCF">XCF (DeviceN color model)</a>
 <li><a href="#bitraw">Raw 'bit' devices</a>
 </ul>
@@ -106,9 +106,9 @@ inches).</dd>
 
 <dt>Inches</dt>
 <dd>1 inch equals 2.54 centimeters.  The inch measure is sometimes
-represented by <dfn><abbr>in</abbr></dfn> or a quotation mark 
+represented by <dfn><abbr>in</abbr></dfn> or a quotation mark
 (<abbr>&quot;</abbr>) to the right
-of a measure, like 8.5in or 8.5&quot;. 
+of a measure, like 8.5in or 8.5&quot;.
 U.S. "letter" paper is exactly
 8.5in&times;11in, approximately 21.6cm&times;27.9cm.  (See in the usage
 documentation all the <a href="Use.htm#Known_paper_sizes">paper sizes
@@ -122,11 +122,11 @@ known to Ghostscript</a> are defined in the initialization file
 <tt>gs_statd.ps</tt> in terms of points.</dd>
 
 <dt>Dots per inch</dt>
-<dd>Dots per inch or <dfn><abbr>dpi</abbr></dfn> is the common measure of 
+<dd>Dots per inch or <dfn><abbr>dpi</abbr></dfn> is the common measure of
 printing resolution in the US.</dd>
 
 <dt>Bits per pixel</dt>
-<dd>Commonly abbreviated <dfn><abbr>bpp</abbr></dfn> this is the number of 
+<dd>Commonly abbreviated <dfn><abbr>bpp</abbr></dfn> this is the number of
 digital bits used to represent the color of each pixel. This is also referred
 to as 'bit depth' or 'pixel depth'.</dd>
 
@@ -151,7 +151,7 @@ sections below.</p>
 <blockquote><dl>
 
 <dt>-sOutputFile=<em>filename</em></dt>
-<dd><p>This is a general option telling Ghostscript what to name the output. 
+<dd><p>This is a general option telling Ghostscript what to name the output.
 It can either be a single filename '<tt>tiger.png</tt>' or a template
 '<tt>figure-%03d.jpg</tt>' where the <tt>%03d</tt> is replaced by the page number.</p>
 
@@ -174,17 +174,17 @@ an error on attempted use, with any of the vector output devices.
 
 <p>
 It is also conventional to call Ghostscript with the '<tt>-dSAFER -dBATCH -dNOPAUSE</tt>' trio
-of options when rasterizing to a file. These suppress interactive prompts and enable some 
+of options when rasterizing to a file. These suppress interactive prompts and enable some
 security checks on the file to be run. Please see the <a href="Use.htm">Use documentation</a>
 for a complete description.
 </p>
- 
+
 <h3><a name="PNG"></a>PNG file format</h3>
 
 <p><acronym>PNG</acronym> (pronounced 'ping') stands for Portable Network Graphics,
 and is the recommended format for high-quality images. It supports full quality
 color and transparency, offers excellent lossless compression of the image data,
-and is widely supported. Please see the 
+and is widely supported. Please see the
 <a href="http://www.libpng.org/pub/png/pngintro.html" class="offsite">PNG website</a>
 for a complete description of the format.</p>
 
@@ -196,10 +196,10 @@ black-and-white for special needs. The <tt>pngmonod</tt> device is also a
 black-and-white device, but the output is formed from an internal 8 bit grayscale
 rendering which is then error diffused and converted down to 1bpp.</p>
 
-<p>The <tt>pngalpha</tt> device is 32-bit RGBA color with transparency 
+<p>The <tt>pngalpha</tt> device is 32-bit RGBA color with transparency
 indicating pixel coverage.  The background is transparent unless
 it has been explicitly filled.  PDF 1.4 transparent files do not
-give a transparent background with this device.  Text and graphics 
+give a transparent background with this device.  Text and graphics
 anti-aliasing are enabled by default.</p>
 
 <h4>Options</h4>
@@ -245,8 +245,8 @@ behave as for 2.
 <blockquote>
 <dl>
 <dt><code>-dBackgroundColor=</code><b><em>16#RRGGBB</em></b> (RGB color, default white = 16#ffffff)
-<dd>For the <tt>pngalpha</tt> device only, 
-set the suggested background color in the PNG bKGD chunk.  
+<dd>For the <tt>pngalpha</tt> device only,
+set the suggested background color in the PNG bKGD chunk.
 When a program reading a PNG file does not support alpha
 transparency, the PNG library converts the image using
 either a background color if supplied by the program
@@ -267,18 +267,18 @@ page.
 <pre>
  <kbd>gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=png16m -dGraphicsAlphaBits=4 \
       -sOutputFile=tiger.png examples/tiger.png</kbd>
-      
+
  <kbd>gs -dSAFER -dBATCH -dNOPAUSE -r150 -sDEVICE=pnggray -dTextAlphaBits=4 \
       -sOutputFile=doc-%02d.png doc.pdf</kbd>
 </pre>
 </blockquote>
-<p></p> 
+<p></p>
 
 <h3><a name="JFIF"></a>JPEG file format (JFIF)</h3>
 
 <p>
 Ghostscript includes output drivers that can produce jpeg files
-from postscript or pdf images. These are the <tt>jpeg</tt> and 
+from postscript or pdf images. These are the <tt>jpeg</tt> and
 <tt>jpeggray</tt> devices.
 
 <p>Technically these produce <a href="http://www.ijg.org/">Independent JPEG Group</a>
@@ -351,14 +351,14 @@ utility.</p>
    pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm
    pksmraw</tt>.
 </p>
- 
+
 <h3><a name="TIFF"></a>TIFF file formats</h3>
 
 <p><acronym>TIFF</acronym> is a loose collection of formats, now largely
 superceded by <acronym>PNG</acronym> except in applications where backward
-compatibility or special compression is required. The <acronym>TIFF</acronym> 
+compatibility or special compression is required. The <acronym>TIFF</acronym>
 file format is described in the
-<a href="http://partners.adobe.com/asn/developer/pdfs/tn/TIFF6.pdf" class="offsite">TIFF 6.0 Specification</a> 
+<a href="http://partners.adobe.com/asn/developer/pdfs/tn/TIFF6.pdf" class="offsite">TIFF 6.0 Specification</a>
 published by Adobe Systems Incorporated.</p>
 <p>Note that, due to the structure of the TIFF format, writing TIFF output
 requires that the target file be seekable. Writing to stdout, pipes or other
@@ -390,34 +390,34 @@ separation.  The default compression is <code>lzw</code> but this
 may be overridden by the <code>-sCompression=</code> option.
 
 <p>
-The file specified via the OutputFile command line parameter will contain 
-CMYK data. This data is based upon the CMYK data within the file plus 
+The file specified via the OutputFile command line parameter will contain
+CMYK data. This data is based upon the CMYK data within the file plus
 an equivalent CMYK color for each spot color. The equivalent
 CMYK color for each spot color is determined using the alternate tint transform
-function specified in the Separation and DeviceN color spaces. Since 
+function specified in the Separation and DeviceN color spaces. Since
 this file is created based upon having color planes for each colorant, the
 file will correctly represent the appearance of overprinting with spot colors.
 
 <p>
-File names for the separations for the CMYK colorants are created by appending 
-'.Cyan.tif', '.Magenta.tif' '.Yellow.tif' or '.Black.tif' to the 
-end of the file name specified via the OutputFile parameter. 
-File names for the spot color separation files are created by appending the 
-Spot color name in '(' and ').tif' to the filename.  
+File names for the separations for the CMYK colorants are created by appending
+'.Cyan.tif', '.Magenta.tif' '.Yellow.tif' or '.Black.tif' to the
+end of the file name specified via the OutputFile parameter.
+File names for the spot color separation files are created by appending the
+Spot color name in '(' and ').tif' to the filename.
 
 <p>
-If desired the file names for the spot color separation files can be created 
-by appending '.sn.tif'  (where n is the spot color number, see below) to the end 
+If desired the file names for the spot color separation files can be created
+by appending '.sn.tif'  (where n is the spot color number, see below) to the end
 of the file name specified via the OutputFile parameter.   This change is a
 compile time edit.  To obtain this type
 of output the function create_separation_file_name in gdevtsep.c should be
 called with a true value for its use_sep_name parameter.
 
 <p>
-The <tt>tiffsep</tt> device will automatically recognize spot colors. In this 
-case their order is determined by when they are found in the input file. 
-The names of spot colors may be specified via the SeparationColorNames 
-device parameters. 
+The <tt>tiffsep</tt> device will automatically recognize spot colors. In this
+case their order is determined by when they are found in the input file.
+The names of spot colors may be specified via the SeparationColorNames
+device parameters.
 
 <p>
 Internally each spot color is assigned a spot color number.  These
@@ -432,7 +432,7 @@ If only a subset of the colorants for a file is desired, then the separations
 to be output can be selected via the SeparationOrder
 device parameter.  When colorants are selected via the
 SeparationOrder parameter, the composite CMYK output contains
-the equivalent CMYK data only for the selected colorants.  
+the equivalent CMYK data only for the selected colorants.
 
 <p>
 NOTE: the composite CMYK output, because it uses the tint transformed
@@ -449,25 +449,25 @@ provides a simple mechanism for users and external applications to be informed a
 the names of spot colors within a document.
 
 <p>
-Generally Ghostscript will support a maximum of 64 process and spot 
+Generally Ghostscript will support a maximum of 64 process and spot
 colors.   The <tt>tiffsep</tt> device and the <tt>psdcmyk</tt> device maintain rendered data
-in a planar form with a maximum of 64 planes set by the definition of 
-GS_CLIENT_COLOR_MAX_COMPONENTS in the code.  That is there can be up to 
+in a planar form with a maximum of 64 planes set by the definition of
+GS_CLIENT_COLOR_MAX_COMPONENTS in the code.  That is there can be up to
 64 colorants accurately handled with overprint on a single page.  If more
 than 64 colorants are encountered, those beyond 64 will be mapped to CMYK using the
-alternate tint transform.  
+alternate tint transform.
 
 <p>
-When rendering a PDF document,  Ghostscript can deteremine prior to rendering how 
+When rendering a PDF document,  Ghostscript can deteremine prior to rendering how
 many colorants occur on a particular page.  With Postscript, this is not possible
-in general.  To optimize for this, when rendering Postscript, it is possible to specify 
+in general.  To optimize for this, when rendering Postscript, it is possible to specify
 at run-time the number of spot colorants you wish to have the device capable
 of handling using the -dMaxSpots=N command option, where N is the number of spot
-colorants that you wish to be able to handle and must be 
-less than 60 (60 + 4 CMYK process colorants gets us to a 
-maximum of 64 colorants on a page).   If you specify more than 
-is needed, the document will render more slowly.   The ideal case is to use 
-the same number as the maximum number of spot colorants that occur on a single page 
+colorants that you wish to be able to handle and must be
+less than 60 (60 + 4 CMYK process colorants gets us to a
+maximum of 64 colorants on a page).   If you specify more than
+is needed, the document will render more slowly.   The ideal case is to use
+the same number as the maximum number of spot colorants that occur on a single page
 of the document.  If more spot colorants are encountered than is specified by
 -dMaxSpots, then a warning will be printed indicating that some spot colorants will
 be mapped to CMYK using the alternate tint transform.
@@ -479,9 +479,9 @@ down to 1bpp with error diffusion before output as described below in
 the <code>tiffscaled</code> device. No composite file is produced in
 1bpp mode, only individual separations.
 
-<p>The device also accepts the -dDownScaleFactor= and -dMinFeatureSize=
-parameters as described below in the tiffscaled device, but
-MinFeatureSize is only honoured in 1bpp mode.
+<p>The device also accepts the -dDownScaleFactor= -dTrapX= -dTrapy= and -sPostRenderProfile=
+parameters as described below in the tiffscaled device, and
+-dMinFeatureSize= in 1bpp mode.
 
 <p>When -dDownScaleFactor= is used in 8 bit mode with the <tt>tiffsep</tt>
 (and <tt>psdcmyk</tt>/<tt>psdrgb</tt>) device(s) 2 additional &quot;special&quot; ratios
@@ -499,12 +499,12 @@ array dither to be used. This is faster than error diffusion.
 
 <p>
 The file specified via the OutputFile command line parameter will not be
-created (it is opened, but deleted prior to finishing each page). 
+created (it is opened, but deleted prior to finishing each page).
 
 <p>
-File names for the separations for the CMYK colorants are created by appending 
-'(Cyan).tif', '(Magenta).tif' '(Yellow).tif' or '(Black).tif' to the to the 
-end of the file name specified via the OutputFile parameter. File names 
+File names for the separations for the CMYK colorants are created by appending
+'(Cyan).tif', '(Magenta).tif' '(Yellow).tif' or '(Black).tif' to the to the
+end of the file name specified via the OutputFile parameter. File names
 for the spot color separation files are created by appending the Spot color
 name in '(' and ').tif' to the filename.
 If the file name specified via the OutputFile parameter ends with the suffix
@@ -665,7 +665,7 @@ devices with:
 
 <p>
 For the <code>tiffsep</code> device, it changes the compression scheme
-of the separation files and composite cmyk file (which is 
+of the separation files and composite cmyk file (which is
 <code>lzw</code> by default).  It defaults to <code>g4</code> for the
 <code>tiffsep1</code> device.
 
@@ -709,7 +709,7 @@ accepted for compatibility) will behave as for 2.
 <p>
 The <tt>tiffscaled</tt>, <tt>tiffscaled4</tt>, <tt>tiffscaled8</tt>,
 <tt>tiffscaled24</tt> and <tt>tiffscaled32</tt> TIFF
-drivers also provide this parameter:
+drivers also provide the following two parameters:
 
 <blockquote><dl>
 <dt><code>-dDownScaleFactor=<em>factor</em></code> (small non-negative integer; default = 1)
@@ -717,6 +717,16 @@ drivers also provide this parameter:
 axes before error diffusion takes place. For example rendering with
 <tt>-r600</tt> and then specifying <tt>-dDownScaleFactor=3</tt> will produce
 a 200dpi image.
+</dl></blockquote>
+
+<blockquote><dl>
+<dt><code>-sPostRenderProfile=<em>path</em></code> (path to an ICC profile)
+<dd>If this option set then the page will be color transformed using that
+profile <b>after</b> downscaling.
+<p>
+This is useful when the file uses overprint to separately paint to some
+subset of the C, M, Y, and K colorants, but the final CMYK is to be color
+corrected for printing or display.
 </dl></blockquote>
 
 <p>
@@ -755,7 +765,7 @@ and are sent darkest first (thus [ 3 1 0 2 4 5 6 ... ]).
 
 <p>To override these defaults, the <code>TrapOrder</code> parameter can be used, for
 example:
-  
+
 <blockquote><code>
     gs -sDEVICE=psdcmyk -dTrapX=2 -dTrapY=2 -o out.psd -c "&lt;&lt; /TrapOrder [ 4 5 3 1 0 2 ] &gt;&gt; setpagedevice" -f examples\tiger.eps
 </code></blockquote>
@@ -784,7 +794,7 @@ jurisdiction.
 <h3><a name="fax"></a>FAX</h3>
 
 <p>
-Ghostscript supports a variety of fax encodings, both encapsulated in 
+Ghostscript supports a variety of fax encodings, both encapsulated in
 <acronym>TIFF</acronym> (see above) and as raw files. The later case is
 described here.
 </p>
@@ -811,8 +821,8 @@ It is supported by the devices <tt>bmpmono bmpgray bmpsep1
 <p>
 PCX is an image format sometimes used on MS Windows. It has some support
 for image compression and alternate color spaces, and so can be a useful
-way to output CMYK. 
-It is supported by the <tt>pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk</tt> 
+way to output CMYK.
+It is supported by the <tt>pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk</tt>
 series of devices.
 </p>
 
@@ -822,11 +832,11 @@ series of devices.
 PSD is the image format used by Adobe Photoshop.
 It is supported by the <tt>psdcmyk</tt> and <tt>psdrgb</tt> devices.
 Of special interest with the <tt>psdcmyk</tt> device is that it supports spot
-colors.  <a href="#tiffsep">See the comments under the <tt>tiffsep</tt> and <tt>tiffsep1</tt> 
+colors.  <a href="#tiffsep">See the comments under the <tt>tiffsep</tt> and <tt>tiffsep1</tt>
 device about the maximum number of spot colors supported by Ghostscript</a>
 <p>
 The <tt>psdcmykog</tt> device produces PSD files with 6 components:
-Cyan, Magenta, Yellow, blacK, Orange, and Green.  This device does not support the -dDownScaleFactor= 
+Cyan, Magenta, Yellow, blacK, Orange, and Green.  This device does not support the -dDownScaleFactor=
 option (see below), instead it always scales down by a factor of two.
 
 <p>
@@ -909,7 +919,7 @@ The available devices are:
 
 <dt><b>x11alpha</b>
 <dd>This is the <tt>x11</tt> device, but with antialiasing. It is equivalent to
-invoking the <tt>x11</tt> device with the options <tt>-dGraphicsAlphaBits=4 
+invoking the <tt>x11</tt> device with the options <tt>-dGraphicsAlphaBits=4
 -dTextAlphaBits=4 -dMaxBitmap=50000000</tt>.
 
 <dt><b>x11cmyk</b>
@@ -936,7 +946,7 @@ defaults write org.x.X11 depth 24
 
 <h3><a name="display_device"></a>display device (MS Windows, OS/2, gtk+)</h3>
 <p>
-The <code>display</code> device is used by the MS Windows, 
+The <code>display</code> device is used by the MS Windows,
 OS/2 and the gtk+ versions of ghostscript.
 </p>
 
@@ -948,11 +958,11 @@ OS/2 and the gtk+ versions of ghostscript.
 <dl>
 <dt><code>-dDisplayFormat=</code><b><em>N</em></b> (integer bit-field)
 <dd>Some common values are 16#30804 for Windows RGB, 16#804 for gtk+ RGB,
-16#20101 for Windows monochrome, 16#102 for gtk+ monochrome, 
+16#20101 for Windows monochrome, 16#102 for gtk+ monochrome,
 16#20802 grayscale, 16#20808 for CMYK, 16#a0800 for separations.
 The bit fields are
 <ul>
-<li> native (1), gray (2), RGB (4), CMYK (8), or separation (80000) 
+<li> native (1), gray (2), RGB (4), CMYK (8), or separation (80000)
   color spaces.
 <li> unused first byte (40) or last byte (80).
 <li> 1 (100), 4 (400), or 8 (800) bits/component.
@@ -960,13 +970,13 @@ The bit fields are
 <li> top first (20000) or bottom first (00000) raster.
 <li> 16 bits/pixel with 555 (00000) or 565 (40000) bitfields.
 </ul>
-For more details, see the <a href="API.htm#display">Ghostscript 
+For more details, see the <a href="API.htm#display">Ghostscript
 Interpreter API.</a>
 <dt><code>-dDisplayResolution=</code><b><em>DPI</em></b>
 <dd>Set the initial resolution resolution for the display device.
 This is used by the Windows clients to set the display device
 resolution to the Windows display logical resolution.
-This can be overriden by the command line option 
+This can be overriden by the command line option
 <code>-r<em>DPI</em></code>.
 </dl>
 
@@ -981,7 +991,7 @@ using setpagedevice, as described in the PostScript Language Reference:
 <dd>An array giving the names of the spot colors
 
 <dt><code>SeparationOrder</code>
-<dd>An array giving the names and order of the colorants 
+<dd>An array giving the names and order of the colorants
 to be output.
 </dl>
 </blockquote>
@@ -1011,7 +1021,7 @@ A typical command line for IJS is:
 
 <blockquote>
 <code>
-gs -dSAFER -sDEVICE=ijs -sIjsServer=hpijs 
+gs -dSAFER -sDEVICE=ijs -sIjsServer=hpijs
  -sDeviceManufacturer=HEWLETT-PACKARD -sDeviceModel='DESKJET 990'
  -dIjsUseOutputFD -sOutputFile=/dev/usb/lp1 -dNOPAUSE --
  examples/tiger.eps
@@ -1288,9 +1298,9 @@ integrate it with Ghostscript.
 <h2><a name="gimp-print"></a>Gimp-Print driver collection</h2>
 
 <p>
-The Gimp-Print project provides a large collection of printer drivers 
-with an IJS interface. Please see their 
-<a href="http://gimp-print.sourceforge.net/" class="offsite">website</a> 
+The Gimp-Print project provides a large collection of printer drivers
+with an IJS interface. Please see their
+<a href="http://gimp-print.sourceforge.net/" class="offsite">website</a>
 for details.
 </p>
 
@@ -1479,7 +1489,7 @@ program could check these values and print only the selected page range.</dd>
 <dt><code>/MaxResolution <em>dpi</em></code></dt>
 <dd>Specifies the maximum tolerated output resolution. If the selected printer has
 a higher resolution than <code>dpi</code>, then Ghostscript will render the
-document with a submultiple of the printer resolution. For example, if 
+document with a submultiple of the printer resolution. For example, if
 <code>MaxResolution</code> is set to 360 and the output printer supports
 up to 1200 dpi, then Ghostscript renders the document with an internal
 resolution of 1200/4=300 dpi. This can be very useful to reduce the memory
@@ -1804,8 +1814,8 @@ After the <tt>spotcmyk</tt> device produces the binary data files, the files are
 and PCX format versions of these files are created with ".pcx" appended to the binary
 source file name.
 
-<p> If the the <tt>spotcmyk</tt> is being used with three spot colors and the 
-"OutputFile" parameter is <tt>xxx</tt> then the following files would be created 
+<p> If the the <tt>spotcmyk</tt> is being used with three spot colors and the
+"OutputFile" parameter is <tt>xxx</tt> then the following files would be created
 by the device:
 
 <blockquote>
@@ -1854,7 +1864,7 @@ a normal XCF file.
 <p>
 The <tt>xcfcmyk</tt> device was created as a means of viewing spot colors for
 those users that do not have access to either Photoshop <a href="#PSD">(see the PSD
-devices)</a> or a PCX viewer <a href="#SPOT">(see the <tt>spotcmyk</tt> 
+devices)</a> or a PCX viewer <a href="#SPOT">(see the <tt>spotcmyk</tt>
 device)</a>.
 
 <p>
