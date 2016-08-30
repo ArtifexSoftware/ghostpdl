@@ -50,13 +50,13 @@ dnl Local utilities
 dnl --------------------------------------------------
 
 dnl GS_SPLIT_LIBS( LIBS, LINKLINE )
-dnl Split a unix-style link line into a list of 
+dnl Split a unix-style link line into a list of
 dnl bare library names. For example, the line
 dnl '-L/usr/X11R6/lib -lX11 -lXt' splits into
 dnl LIB='X11 Xt'
 dnl
 AC_DEFUN([GS_SPLIT_LIBS], [
-# the makefile wants a list of just the library names 
+# the makefile wants a list of just the library names
 for gs_item in $2; do
   gs_stripped_item=`echo "$gs_item" | sed -e 's/^-l//'`
   if test "x$gs_stripped_item" != "x$gs_item"; then
@@ -80,9 +80,9 @@ for gs_item in $2; do
 done
 ])
 
-dnl --------------------------------------------------  
+dnl --------------------------------------------------
 dnl Check for programs
-dnl --------------------------------------------------  
+dnl --------------------------------------------------
 
 dnl AC_PROG_CC likes to add '-g -O2' to CFLAGS. however,
 dnl we ignore those flags and construct our own.
@@ -108,9 +108,9 @@ AC_PROG_RANLIB
 dnl pkg-config is used for several tests now...
 AC_PATH_PROG(PKGCONFIG, pkg-config)
 
-dnl --------------------------------------------------  
+dnl --------------------------------------------------
 dnl Allow excluding the contributed drivers
-dnl --------------------------------------------------  
+dnl --------------------------------------------------
 
 AC_ARG_ENABLE([contrib], AC_HELP_STRING([--disable-contrib],
     [Do not include contributed drivers]))
@@ -365,7 +365,7 @@ AC_STRUCT_ST_BLOCKS
 AC_HEADER_TIME
 AC_STRUCT_TM
 
-dnl see if we're on a system that puts the *int*_t types 
+dnl see if we're on a system that puts the *int*_t types
 dnl from stdint.h in sys/types.h
 if test "x$ac_cv_header_stdint_h" != xyes; then
     AC_CHECK_TYPES([int8_t, int16_t, int32_t, uint8_t, uint16_t, uint32_t],,,[#include <sys/types.h>])
@@ -766,7 +766,7 @@ if test x"$enable_fapi" != xno; then
       GCFLAGS="$tmp_cflags"
 
       FAPIUFST_MAK="\$(UFST_ROOT)\$(D)fapiufst.mak"
-    
+
       if ! test -f $UFST_ROOT/fapiufst.mak ; then
         echo $UFST_ROOT/fapiufst.mak
         AC_MSG_ERROR([UFST: fapiufst.mak not found])
@@ -823,13 +823,13 @@ if test x"$enable_fapi" != xno; then
                 AC_MSG_WARN([freetype library source not found...using native rasterizer])
                 AFS=1
             fi
-      else        
+      else
         AC_CHECK_HEADER([ft2build.h], [FT_BRIDGE=1], [AFS=1])
-        
+
         if test "x$FT_BRIDGE" = x1; then
           AC_CHECK_LIB(freetype, FT_Init_FreeType,
             [FT_BRIDGE=1], [FT_BRIDGE=0; AFS=1])
-          
+
           if test "x$FT_BRIDGE" = x1; then
             AC_MSG_CHECKING(for system freetype2 library >= 2.4.2)
             AC_COMPILE_IFELSE(
@@ -849,7 +849,6 @@ if test x"$enable_fapi" != xno; then
               [FT_BRIDGE=1;AC_MSG_RESULT(yes)], [FT_BRIDGE=0; AFS=1;AC_MSG_RESULT(no)])
           fi
         fi
-        
       fi
     fi
   fi
@@ -866,7 +865,7 @@ AC_SUBST(SHARE_FT)
 AC_SUBST(FTSRCDIR)
 AC_SUBST(FT_CFLAGS)
 AC_SUBST(FT_LIBS)
-  
+
 AC_MSG_CHECKING([for local jpeg library source])
 dnl At present, we give the local source priority over the shared
 dnl build, so that the D_MAX_BLOCKS_IN_MCU patch will be applied.
@@ -904,7 +903,7 @@ if test -r $LIBJPEGDIR/jmemsys.h; then
   AC_MSG_RESULT([yes])
 else
   AC_MSG_RESULT([no])
-  AC_DEFINE([DONT_HAVE_JMEMSYS_H], 1, 
+  AC_DEFINE([DONT_HAVE_JMEMSYS_H], 1,
     [define if the libjpeg memory system prototypes aren't available])
 fi
 
@@ -1506,7 +1505,7 @@ if test "x$JPX_DECODER" = "x"; then
       else
         JPX_AUTOCONF_CFLAGS="-D\"memalign(a,b)=malloc(b)\""
       fi
-      
+
       JPX_AUTOCONF_CFLAGS="$JPX_AUTOCONF_CFLAGS $OPJ_LRINTF_SUBST -DUSE_JPIP -DUSE_OPENJPEG_JP2 $CFLAGS_OPJ_HAVE_STDINT_H $CFLAGS_OPJ_HAVE_INTTYPES_H $CFLAGS_OPJ_BIGENDIAN $CFLAGS_OPJ_HAVE_FSEEKO"
 
       JPXDEVS='$(PSD)jpx.dev'
@@ -2025,11 +2024,11 @@ noncontribmakefiles=`find $srcdir -name '*.mak' -print | grep -v '/contrib/'`
 # No need to include opvp/oprp driver without iconv/libiconv.
 if test -n "$P_DEVS0"; then
     if test x$found_iconv = xno ; then
-        P_DEVS0=`echo $P_DEVS0 | sed -e 's|opvp||' -e 's|oprp||'` 
+        P_DEVS0=`echo $P_DEVS0 | sed -e 's|opvp||' -e 's|oprp||'`
         AC_MSG_WARN(Unable to include opvp/oprp driver due to missing iconv/libiconv...)
     fi
 
-#    Remove contributed drivers if requested and make sure we don't have any 
+#    Remove contributed drivers if requested and make sure we don't have any
 #   duplicates in there, add $(DD)foo.dev constructs
     P_DEVS=`(for i in $P_DEVS0; do d='$(DD)'${i}.dev; if ( grep '^'$d $noncontribmakefiles 2>&1 >/dev/null ) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012\015' '  '`
 fi
@@ -2444,7 +2443,7 @@ AC_ARG_ENABLE([byteswap-h], AC_HELP_STRING([--disable-byteswap-h],
              if test "x$enable_byteswap-h" = xno; then
                 HAVE_BYTESWAP_H=""
              fi])
- 
+
 if test "x$HAVE_BYTESWAP_H" != x; then
   AC_MSG_RESULT(yes)
 else
