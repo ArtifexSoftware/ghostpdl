@@ -895,6 +895,19 @@ gs_settextspacing(gs_gstate *pgs, double Tc)
     return 0;
 }
 
+double
+gs_currenttextleading(const gs_gstate *pgs)
+{
+    return pgs->TL;
+}
+
+int
+gs_settextleading(gs_gstate *pgs, double TL)
+{
+    pgs->TL = (float)TL;
+    return 0;
+}
+
 /* sethpglpathmode */
 void
 gs_sethpglpathmode(gs_gstate * pgs, bool path)

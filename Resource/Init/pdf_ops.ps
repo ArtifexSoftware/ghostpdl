@@ -870,7 +870,7 @@ end readonly def
 
 /textbeginpage
  {
-   /TextLeading 0 def		% 0 TL
+%   /TextLeading 0 def		% 0 TL
    /TextRise 0 def		% 0 Ts
    /WordSpacing 0 def		% 0 Tw
    /TextHScaling 1.0 def	% 100 Tz
@@ -1049,7 +1049,8 @@ end readonly def
 } bdef
 
 /Tc { .settextspacing { showfirst } /Show gput } bdef
-/TL { /TextLeading gput } bdef
+/TL { .settextleading %/TextLeading gput
+ } bdef
 /Tr { .settextrenderingmode { showfirst } /Show gput } bdef
 /Ts { /TextRise gput settextstate } bdef
 /Tw { /WordSpacing gput { showfirst } /Show gput } bdef
@@ -1273,8 +1274,11 @@ end readonly def
   TextLineMatrix transform TextLineMatrix 4 2 getinterval astore pop
   TextLineMatrix TextMatrix copy pop settextstate
 } bdef
-/TD { dup neg /TextLeading gput Td } bdef
-/T* { 0 TextLeading neg Td } bdef
+/TD { dup neg .settextleading
+%/TextLeading gput
+ Td } bdef
+/T* { 0 .currenttextleading %TextLeading
+ neg Td } bdef
 /Tm {
   5 index 0 ne 3 index 0 ne and
   5 index 0 ne 5 index 0 ne and or not {
