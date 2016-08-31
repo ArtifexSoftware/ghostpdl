@@ -908,6 +908,19 @@ gs_settextleading(gs_gstate *pgs, double TL)
     return 0;
 }
 
+double
+gs_currenttextrise(const gs_gstate *pgs)
+{
+    return pgs->Ts;
+}
+
+int
+gs_settextrise(gs_gstate *pgs, double Ts)
+{
+    pgs->Ts = (float)Ts;
+    return 0;
+}
+
 /* sethpglpathmode */
 void
 gs_sethpglpathmode(gs_gstate * pgs, bool path)

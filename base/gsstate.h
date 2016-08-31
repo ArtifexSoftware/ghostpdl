@@ -100,6 +100,8 @@ int gs_settextspacing(gs_gstate *pgs, double Tc);
 double gs_currenttextspacing(const gs_gstate *pgs);
 int gs_settextleading(gs_gstate *pgs, double TL);
 double gs_currenttextleading(const gs_gstate *pgs);
+int gs_settextrise(gs_gstate *pgs, double Ts);
+double gs_currenttextrise(const gs_gstate *pgs);
 
 #include "gscpm.h"
 gs_in_cache_device_t gs_incachedevice(const gs_gstate *);
