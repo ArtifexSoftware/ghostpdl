@@ -1050,7 +1050,7 @@ def
 
 % The following functions emulate the actions of findcmykcustomcolor and
 % setcustomcolor.  These functions are described in Adobe's TN 5044.  That
-% same document also says "The following �operators� are not defined in the
+% same document also says "The following "operators" are not defined in the
 % PostScript Language Reference Manual, but should be used as pseudo-operators
 % in your PostScript language output. Separation applications from Adobe
 % Systems and other vendors will redefine these convention operators to
@@ -1061,6 +1061,10 @@ def
 % "QuarkXPress: pictwpstops filter 1.0" which produce bad shading dictionaries
 % if these operators are not defined.
 
+% Also we add a findrgbcustomcolor that was discovered in Adobe Illustrator
+% AI5 (Adobe Illustrator (R) Version 7.0 Full Prolog) ProcSet that allows
+% us to create Separation colorspace with a /DeviceRGB tint transform.
+
 % Conditionally disable the TN 5044 psuedo-ops if NO_TN5044 specified
 /NO_TN5044 where { pop (%END TN 5044 psuedo-ops) .skipeof } if
 
@@ -1069,20 +1073,57 @@ def
 % testing with Adobe Distiller 6.0.
 %   <cyan> <magenta> <yellow> <black> <key> findcmykcustomcolor <array>
 /findcmykcustomcolor { 5 array astore } bind def
+% The following isn't documented by Adobe, but was found in Adobe Illustrator (R)
+% Version 7.0 Full Prolog
+/findrgbcustomcolor { 4 array astore } bind def
 
 % Build a tint transform function for use by setcustomcolor.  This function
-% is for a Separation color space which has a DeviceCMYK base color space
-% (i.e. 1 input and 4 outputs).  The input to buildcustomtinttransform is the
-% array created by findcmykcustomcolor.  The resulting function is:
+% is for a Separation color space which has either a DeviceCMYK base color space
+% (i.e. 1 input and 4 outputs) or a DeviceRGB colorspace (1 in, 3 out).
+% The input to buildcustomtinttransform is the array created by findcmykcustomcolor
+% and the length of the array is used to determine the alternate colorspace.
+% The resulting function for CMYK is:
 %   { dup cyan mul exch dup magenta mul exch dup yellow mul exch black mul }
 %   Where cyan, magenta, yellow, and black are values from the array.
+% For RGB, since the resulting function is:
+%    { dup red mul exch dup green mul exch blue mul }
 /buildcustomtinttransform	% <array> buildcustomtinttransform <function>
-{ [ /dup load 2 index 0 get /mul load
-  /exch load /dup load 6 index 1 get /mul load
-  /exch load /dup load 10 index 2 get /mul load
-  /exch load 13 index 3 get /mul load
-  ] cvx bind
-  exch pop			% Remove the input array
+{
+  dup length 5 eq {
+  % CMYK
+    [ /dup load 2 index 0 get /mul load
+      /exch load /dup load 6 index 1 get /mul load
+      /exch load /dup load 10 index 2 get /mul load
+      /exch load 13 index 3 get /mul load
+    ]
+  } {
+    % RGB is assumed
+    [ /dup load 2 index 0 get /mul load
+      /exch load /dup load 6 index 1 get /mul load
+      /exch load 9 index 2 get /mul load
+    ]
+  } ifelse
+  cvx bind exch pop		%  Make executable and remove the input array
+} bind def
+
+% Construct the colorspace array to be used by setcolorspace from the array
+% result of either findcmykcustomcolor or findrgbcustomcolor.
+/buildcolorspacearray	% <array> buildcustomtinttransform <colorspace_array>
+{ % as with buildcustomtinttransform, the length of the array is used to
+  % determine the alternate colorspace
+  dup length 5 eq {
+    % Start building Separation colorspace with CMYK alternate
+    [ /Separation 2 index 4 get	% Get separation name from array's key
+      /DeviceCMYK
+      4 index //buildcustomtinttransform exec % build the tint transform function
+    ]
+  } {
+    [ /Separation 2 index 3 get	% Get separation name from array's key
+      /DeviceRGB
+      4 index //buildcustomtinttransform exec % build the tint transform function
+    ]
+  } ifelse
+  exch pop		% remove the input array
 } bind def
 
 % Set a custom color based upon a tint and array which describes the custom
@@ -1093,15 +1134,11 @@ def
 % 					    null setcustomcolor -
 /setcustomcolor			% <array> <tint> setcustomcolor -
 { dup //null ne {
-    % Start building Separation colorspace
-    [ /Separation 3 index 4 get	% Get separation name from array's key
-    /DeviceCMYK
-    5 index //buildcustomtinttransform exec] % build the tint transform function
+    exch //buildcolorspacearray exec
     setcolorspace			% Set the Separation color space as current
     setcolor			% Set the tint as the current color
-    pop				% Remove the input array
   }
-  { pop }	% 'null' as the tint is ignored
+  { pop pop }	% 'null' as the tint is ignored. pop tint and array
   ifelse
 } bind def
 
@@ -1139,7 +1176,7 @@ def
 % <width> <height> <bits/sample> <matrix> <proc> <array> customcolorimage -
 /customcolorimage {
   gsave
-  [ /Separation 2 index 4 get /DeviceCMYK 5 -1 roll //buildcustomtinttransform exec] setcolorspace
+  //buildcolorspacearray exec setcolorspace
   //args2dict exec image
   grestore
 } bind def
@@ -1153,7 +1190,7 @@ def
   grestore
 } bind def
 
-{ /buildcustomtinttransform /separation_all /args2dict }
+{ /buildcustomtinttransform /buildcolorspacearray /separation_all /args2dict }
 { currentdict exch undef } forall
 
 %END TN 5044 psuedo-ops
