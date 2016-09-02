@@ -2111,8 +2111,8 @@ currentdict /last-ditch-bpc-csp undef
 } if
 
 /is_big_mask {  % - is_big_mask <bool>
-  1 0 dtransform dup mul exch dup mul sqrt add
-  0 1 dtransform dup mul exch dup mul sqrt add mul
+  1 0 dtransform dup mul exch dup mul add sqrt
+  0 1 dtransform dup mul exch dup mul add sqrt mul
   currentdevice getdeviceprops .dicttomark /BufferSpace .knownget not {
     4000000 % hack: Can't get the real default value from C source.
   } if
