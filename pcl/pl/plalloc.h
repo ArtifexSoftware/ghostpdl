@@ -16,3 +16,4 @@
 
 /* initialize the gs allocator. */
 gs_memory_t *pl_alloc_init(void);
+void pl_alloc_finit(gs_memory_t *mem);

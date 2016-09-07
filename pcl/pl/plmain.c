@@ -257,6 +257,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
     pl_interp_instance_t *curr_instance = 0;
     gs_c_param_list params;
     int (*arg_get_codepoint) (FILE * file, const char **astr) = NULL;
+    int code = 0;
 
     mem = pl_alloc_init();
 
@@ -303,7 +304,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
                               pjl_instance, &inst, &pl_pre_finish_page,
                               &pl_post_finish_page) < 0) {
         errprintf(mem, "%s", err_buf);
-        return -1;
+        code = -1;
+        goto done;
     }
 #ifdef DEBUG
     if (gs_debug_c(':'))
@@ -327,7 +329,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
 
         if (pl_init_job(pjl_instance) < 0) {
             errprintf(mem, "Unable to init PJL job.\n");
-            return -1;
+            code = -1;
+            goto done;
         }
 
         /* Process any new options. May request new device. */
@@ -360,7 +363,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
             }
             errprintf(mem, "\n");
 
-            return -1;
+            code = -1;
+            goto done;
         }
 
         if (!filename)
@@ -384,7 +388,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
            characteristics structure */
         if (pl_main_cursor_open(mem, &r, filename, buf, sizeof(buf)) < 0) {
             errprintf(mem, "Unable to open %s for reading.\n", filename);
-            return -1;
+            code = -1;
+            goto done;
         }
 
 #ifdef DEBUG
@@ -407,7 +412,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
                     pl_process_eof(curr_instance);
                     if (close_job(&universe, &inst) < 0) {
                         dmprintf(mem, "Unable to deinit PDL job.\n");
-                        return -1;
+                        code = -1;
+                        goto done;
                     }
                 }
                 break;
@@ -424,7 +430,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
             if (new_job) {
                 if (mem->gs_lib_ctx->gs_next_id > 0xFF000000) {
                     dmprintf(mem, "Once a year reset the gs_next_id.\n");
-                    return -1;
+                    code = -1;
+                    goto done;
                 }
 
                 if_debug0m('I', mem, "Selecting PDL\n");
@@ -437,12 +444,14 @@ pl_main_aux(int argc, char *argv[], void *disp)
                                                         params);
                 if (curr_instance == NULL) {
                     errprintf(mem, "%s", err_buf);
-                    return -1;
+                    code = -1;
+                    goto done;
                 }
 
                 if (pl_init_job(curr_instance) < 0) {
                     dmprintf(mem, "Unable to init PDL job.\n");
-                    return -1;
+                    code = -1;
+                    goto done;
                 }
                 if_debug1m('I', mem, "selected and initializing (%s)\n",
                            pl_characteristics(curr_instance->interp->
@@ -484,11 +493,13 @@ pl_main_aux(int argc, char *argv[], void *disp)
                                                   implementation)->language);
                     if (close_job(&universe, &inst) < 0) {
                         dmprintf(mem, "Unable to deinit PDL job.\n");
-                        return -1;
+                        code = -1;
+                        goto done;
                     }
                     if (pl_init_job(pjl_instance) < 0) {
                         dmprintf(mem, "Unable to init PJL job.\n");
-                        return -1;
+                        code = -1;
+                        goto done;
                     }
                     pl_renew_cursor_status(&r);
                 } else if (code < 0) {  /* error and not exit language */
@@ -517,7 +528,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
                                      inst.error_report > 0);
                     if (close_job(&universe, &inst) < 0) {
                         dmprintf(mem, "Unable to deinit PJL.\n");
-                        return -1;
+                        code = -1;
+                        goto done;
                     }
                     /* Print PDL status if applicable, then dnit PDL job */
                     code = 0;
@@ -538,7 +550,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
         if (gx_saved_pages_param_process((gx_device_printer *)pdev,
                                   (byte *)"print normal flush", 18) < 0) {
             errprintf(mem, "Unable to print saved-pages.\n");
-            return -1;
+            code = -1;
+            goto done;
         }
      }
     /* release param list */
@@ -546,13 +559,15 @@ pl_main_aux(int argc, char *argv[], void *disp)
     /* Dnit PDLs */
     if (pl_main_universe_dnit(&universe, err_buf)) {
         errprintf(mem, "%s", err_buf);
-        return -1;
+        code = -1;
+        goto done;
     }
     /* dnit pjl */
     if (pl_deallocate_interp_instance(pjl_instance) < 0
         || pl_deallocate_interp(pjl_interp) < 0) {
         dmprintf(mem, "Unable to close out PJL instance.\n");
-        return -1;
+        code = -1;
+        goto done;
     }
 
     /* We lost the ability to print peak memory usage with the loss
@@ -563,8 +578,9 @@ pl_main_aux(int argc, char *argv[], void *disp)
     if (gs_debug_c('A'))
         dmprintf(mem, "Final time");
     pl_platform_dnit(0);
-    gs_malloc_release(mem);
-    return 0;
+    pl_alloc_finit(mem);
+done:
+    return code;
 }
 
 GSDLLEXPORT int GSDLLAPI

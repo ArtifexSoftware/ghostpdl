@@ -31,6 +31,13 @@ int gs_memory_chunk_wrap(gs_memory_t **wrapped,	/* chunk allocator init */
 /* Release a chunk memory manager and all of the memory it held */
 void gs_memory_chunk_release(gs_memory_t *cmem);
 
+/* Release chunk memory manager, and return the target */
+/* if "mem" is not a chunk memory manager instance, "mem"
+ * is return untouched
+ */
+gs_memory_t * /* Always succeeds */
+gs_memory_chunk_unwrap(gs_memory_t *mem);
+
 /* ---------- Accessors ------------- */
 
 /* Retrieve this allocator's target */

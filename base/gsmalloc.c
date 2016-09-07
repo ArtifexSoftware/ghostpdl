@@ -337,7 +337,8 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         bp->next->prev = bp->prev;
     if (bp == mmem->allocated) {
         mmem->allocated = bp->next;
-        mmem->allocated->prev = NULL;
+        if (mmem->allocated)
+            mmem->allocated->prev = NULL;
     }
     mmem->used -= bp->size + sizeof(gs_malloc_block_t);
     if (mmem->monitor)

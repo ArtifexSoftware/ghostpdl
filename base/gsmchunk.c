@@ -175,6 +175,22 @@ gs_memory_chunk_release(gs_memory_t *mem)
                        "gs_memory_chunk_release");
 }
 
+/* Release chunk memory manager, and return the target */
+gs_memory_t * /* Always succeeds */
+gs_memory_chunk_unwrap(gs_memory_t *mem)
+{
+    gs_memory_t *tmem;
+
+    if (mem->procs.status != chunk_status) {
+        tmem = mem;
+    }
+    else {
+        tmem = ((gs_memory_chunk_t *)mem)->target;
+        gs_memory_chunk_release(mem);
+    }
+    return tmem;
+}
+
 /* ---------- Accessors ------------- */
 
 /* Retrieve this allocator's target */

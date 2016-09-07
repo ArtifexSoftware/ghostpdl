@@ -42,3 +42,10 @@ pl_alloc_init()
 
     return pl_mem;
 }
+
+void
+pl_alloc_finit(gs_memory_t *mem)
+{
+    gs_memory_t *tmem = gs_memory_chunk_unwrap(mem);
+    gs_malloc_release(tmem);
+}
