@@ -91,9 +91,11 @@ struct gs_pdf14trans_params_s {
     gs_transparency_channel_selector_t csel;
     /* Parameters from the gx_transparency_mask_params_t structure */
     gs_transparency_mask_subtype_t subtype;
-    int Background_components;
     bool function_is_identity;
+    int Background_components;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    int Matte_components;
+    float Matte[GS_CLIENT_COLOR_MAX_COMPONENTS];
     float GrayBackground;  /* This is used to determine if the
                               softmask's bbox needs to be adjusted
                               to the parent groups bbox.  Since

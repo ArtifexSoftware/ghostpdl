@@ -507,6 +507,7 @@ gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
     ptmp->ColorSpace = 0;
     ptmp->subtype = subtype;
     ptmp->Background_components = 0;
+    ptmp->Matte_components = 0;
     ptmp->GrayBackground = 0.0;
     ptmp->TransferFunction = mask_transfer_identity;
     ptmp->TransferFunction_data = 0;
@@ -522,6 +523,7 @@ gs_begin_transparency_mask(gs_gstate * pgs,
     gs_pdf14trans_params_t params = { 0 };
     gs_pdf14trans_params_t params_color = { 0 };
     const int l = sizeof(params.Background[0]) * ptmp->Background_components;
+    const int m = sizeof(params.Matte[0]) * ptmp->Matte_components;
     int i, code;
     gs_color_space *blend_color_space;
     gsicc_manager_t *icc_manager = pgs->icc_manager;
@@ -535,6 +537,8 @@ gs_begin_transparency_mask(gs_gstate * pgs,
     params.subtype = ptmp->subtype;
     params.Background_components = ptmp->Background_components;
     memcpy(params.Background, ptmp->Background, l);
+    params.Matte_components = ptmp->Matte_components;
+    memcpy(params.Matte, ptmp->Matte, m);
     params.GrayBackground = ptmp->GrayBackground;
     params.transfer_function = ptmp->TransferFunction_data;
     params.function_is_identity =
@@ -566,10 +570,11 @@ gs_begin_transparency_mask(gs_gstate * pgs,
         blend_color_space = gs_cspace_new_DeviceGray(pgs->memory);
         blend_color_space->cmm_icc_profile_data = pgs->icc_manager->default_gray;
         rc_increment(blend_color_space->cmm_icc_profile_data);
-        if_debug8m('v', pgs->memory, "[v](0x%lx)gs_begin_transparency_mask [%g %g %g %g]\n\
-          subtype = %d  Background_components = %d %s\n",
+        if_debug9m('v', pgs->memory, "[v](0x%lx)gs_begin_transparency_mask [%g %g %g %g]\n\
+          subtype = %d  Background_components = %d, Matte_components = %d, %s\n",
                   (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,
                   (int)ptmp->subtype, ptmp->Background_components,
+                  ptmp->Matte_components,
                   (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
                    "has TR"));
         /* Sample the transfer function */
@@ -614,12 +619,15 @@ gx_begin_transparency_mask(gs_gstate * pgs, gx_device * pdev,
 {
     gx_transparency_mask_params_t tmp;
     const int l = sizeof(pparams->Background[0]) * pparams->Background_components;
+    const int m = sizeof(pparams->Matte[0]) * pparams->Matte_components;
 
     tmp.group_color = pparams->group_color;
     tmp.subtype = pparams->subtype;
     tmp.group_color_numcomps = pparams->group_color_numcomps;
     tmp.Background_components = pparams->Background_components;
     memcpy(tmp.Background, pparams->Background, l);
+    tmp.Matte_components = pparams->Matte_components;
+    memcpy(tmp.Matte, pparams->Matte, m);
     tmp.GrayBackground = pparams->GrayBackground;
     tmp.function_is_identity = pparams->function_is_identity;
     tmp.idle = pparams->idle;
@@ -635,12 +643,12 @@ gx_begin_transparency_mask(gs_gstate * pgs, gx_device * pdev,
         tmp.icc_hashcode = 0;
     }
     memcpy(tmp.transfer_fn, pparams->transfer_fn, size_of(tmp.transfer_fn));
-    if_debug9m('v', pgs->memory,
+    if_debug10m('v', pgs->memory,
                "[v](0x%lx)gx_begin_transparency_mask [%g %g %g %g]\n"
-               "      subtype = %d  Background_components = %d  Num_grp_clr_comp = %d %s\n",
+               "      subtype = %d  Background_components = %d Matte_components = %d Num_grp_clr_comp = %d %s\n",
               (ulong)pgs, pparams->bbox.p.x, pparams->bbox.p.y,
               pparams->bbox.q.x, pparams->bbox.q.y,
-              (int)tmp.subtype, tmp.Background_components,
+              (int)tmp.subtype, tmp.Background_components, tmp.Matte_components,
               tmp.group_color_numcomps,
               (tmp.function_is_identity ? "no TR" :
                "has TR"));

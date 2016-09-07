@@ -231,7 +231,7 @@ zbegintransparencygroup(i_ctx_t *i_ctx_p)
     } else {
         /* the PDF interpreter sets the colorspace, so use it */
         params.ColorSpace = gs_currentcolorspace(igs);
-        /* Lets make sure that it is not an ICC color space that came from 
+        /* Lets make sure that it is not an ICC color space that came from
            a PS CIE color space or a PS color space. These are 1-way color
            spaces and cannot be used for group color spaces */
         if (gs_color_space_is_PSCIE(params.ColorSpace))
@@ -287,6 +287,7 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
         return code;
     else if (code > 0)
         params.Background_components = code;
+
     if ((code = dict_floats_param(imemory, dop, "GrayBackground",
                     1, &params.GrayBackground, NULL)) < 0)
         return code;
@@ -325,18 +326,28 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
     return code;
 }
 
-/* - .begintransparencymaskimage - */
+/* <paramdict> .begintransparencymaskimage <paramdict> */
 static int
 zbegintransparencymaskimage(i_ctx_t *i_ctx_p)
 {
+    os_ptr dop = osp;
     gs_transparency_mask_params_t params;
     gs_rect bbox = { { 0, 0} , { 1, 1} };
     int code;
     gs_color_space *gray_cs = gs_cspace_new_DeviceGray(imemory);
 
+    check_type(*dop, t_dictionary);
+    check_dict_read(*dop);
     if (!gray_cs)
         return_error(gs_error_VMerror);
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
+    if ((code = dict_float_array_check_param(imemory, dop, "Matte",
+                                  GS_CLIENT_COLOR_MAX_COMPONENTS,
+                                  params.Matte, NULL, 0,
+                                  gs_error_rangecheck)) < 0)
+        return code;
+    else if (code > 0)
+        params.Matte_components = code;
     code = gs_begin_transparency_mask(igs, &params, &bbox, true);
     if (code < 0)
         return code;
@@ -527,7 +538,7 @@ const op_def ztrans2_op_defs[] = {
     {"5.begintransparencygroup", zbegintransparencygroup},
     {"0.endtransparencygroup", zendtransparencygroup},
     {"5.begintransparencymaskgroup", zbegintransparencymaskgroup},
-    {"5.begintransparencymaskimage", zbegintransparencymaskimage},
+    {"1.begintransparencymaskimage", zbegintransparencymaskimage},
     {"1.endtransparencymask", zendtransparencymask},
     {"1.image3x", zimage3x},
     {"1.pushpdf14devicefilter", zpushpdf14devicefilter},

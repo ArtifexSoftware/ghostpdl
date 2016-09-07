@@ -130,10 +130,10 @@ static void pdf14_debug_mask_stack_state(pdf14_ctx *ctx);
 #endif
 
 /* Buffer stack	data structure */
-gs_private_st_ptrs6(st_pdf14_buf, pdf14_buf, "pdf14_buf",
+gs_private_st_ptrs7(st_pdf14_buf, pdf14_buf, "pdf14_buf",
                     pdf14_buf_enum_ptrs, pdf14_buf_reloc_ptrs,
                     saved, data, backdrop, transfer_fn, mask_stack,
-                    parent_color_info_procs);
+                    matte, parent_color_info_procs);
 
 gs_private_st_ptrs2(st_pdf14_ctx, pdf14_ctx, "pdf14_ctx",
                     pdf14_ctx_enum_ptrs, pdf14_ctx_reloc_ptrs,
@@ -624,6 +624,8 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
     result->n_planes = n_planes;
     result->rowstride = rowstride;
     result->transfer_fn = NULL;
+    result->matte_num_comps = 0;
+    result->matte = NULL;
     result->mask_stack = NULL;
     result->idle = idle;
     result->mask_id = 0;
@@ -685,6 +687,7 @@ pdf14_buf_free(pdf14_buf *buf, gs_memory_t *memory)
 
     gs_free_object(memory, buf->mask_stack, "pdf14_buf_free");
     gs_free_object(memory, buf->transfer_fn, "pdf14_buf_free");
+    gs_free_object(memory, buf->matte, "pdf14_buf_free");
     gs_free_object(memory, buf->data, "pdf14_buf_free");
 
     while (old_parent_color_info) {
@@ -1200,8 +1203,9 @@ static	int
 pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
                              byte *transfer_fn, bool idle, bool replacing,
                              uint mask_id, gs_transparency_mask_subtype_t subtype,
-                             int numcomps, int Background_components,
-                             const float Background[],
+                             int numcomps,
+                             int Background_components, const float Background[],
+                             int Matte_components, const float Matte[],
                              const float GrayBackground)
 {
     pdf14_buf *buf;
@@ -1230,6 +1234,14 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     buf->shape = 0xff;
     buf->blend_mode = BLEND_MODE_Normal;
     buf->transfer_fn = transfer_fn;
+    buf->matte_num_comps = Matte_components;
+    if (Matte_components) {
+        buf->matte = (byte *)gs_alloc_bytes(ctx->memory, sizeof(float)*Matte_components,
+                                            "pdf14_push_transparency_mask");
+        if (buf->matte == NULL)
+            return_error(gs_error_VMerror);
+        memcpy(buf->matte, Matte, size_of(float)*Matte_components);
+    }
     buf->mask_id = mask_id;
     /* If replacing=false, we start the mask for an image with SMask.
        In this case the image's SMask temporary replaces the
@@ -2083,6 +2095,7 @@ pdf14_discard_trans_layer(gx_device *dev, gs_gstate * pgs)
             next = buf->saved;
 
             gs_free_object(ctx->memory, buf->transfer_fn, "pdf14_discard_trans_layer");
+            gs_free_object(ctx->memory, buf->matte, "pdf14_discard_trans_layer");
             gs_free_object(ctx->memory, buf->data, "pdf14_discard_trans_layer");
             gs_free_object(ctx->memory, buf->backdrop, "pdf14_discard_trans_layer");
             /* During the soft mask push, the mask_stack was copied (not moved) from
@@ -4598,6 +4611,8 @@ pdf14_begin_transparency_mask(gx_device	*dev,
                                         group_color_numcomps,
                                         ptmp->Background_components,
                                         ptmp->Background,
+                                        ptmp->Matte_components,
+                                        ptmp->Matte,
                                         ptmp->GrayBackground);
 }
 
@@ -5850,6 +5865,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             *pbuf++ = pparams->replacing;
             *pbuf++ = pparams->function_is_identity;
             *pbuf++ = pparams->Background_components;
+            *pbuf++ = pparams->Matte_components;
             put_value(pbuf, pparams->bbox);
             mask_id = pparams->mask_id;
             put_value(pbuf, mask_id);
@@ -5860,6 +5876,12 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
                 pbuf += l;
                 memcpy(pbuf, &pparams->GrayBackground, sizeof(pparams->GrayBackground));
                 pbuf += sizeof(pparams->GrayBackground);
+            }
+            if (pparams->Matte_components) {
+                const int m = sizeof(pparams->Matte[0]) * pparams->Matte_components;
+
+                memcpy(pbuf, pparams->Matte, m);
+                pbuf += m;
             }
             if (!pparams->function_is_identity)
                 mask_size = sizeof(pparams->transfer_fn);
@@ -6024,9 +6046,9 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             break;
         case PDF14_BEGIN_TRANS_MASK:
                 /* This is the largest transparency parameter at this time (potentially
-                 * 1275 bytes in size if Background_components =
-                 * GS_CLIENT_COLOR_MAX_COMPONENTS and we have a transfer function
-                 * as well).
+                 * 1531 bytes in size if Background_components =
+                 * GS_CLIENT_COLOR_MAX_COMPONENTS and Matte_components =
+                 * GS_CLIENT_COLOR_MAX_COMPONENTS and we have a transfer function as well).
                  *
                  * NOTE:
                  * The clist reader must be able to handle this sized device.
@@ -6042,6 +6064,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             params.replacing = *data++;
             params.function_is_identity = *data++;
             params.Background_components = *data++;
+            params.Matte_components = *data++;
             read_value(data, params.bbox);
             read_value(data, params.mask_id);
             if (params.Background_components) {
@@ -6051,6 +6074,12 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
                 data += l;
                 memcpy(&params.GrayBackground, data, sizeof(params.GrayBackground));
                 data += sizeof(params.GrayBackground);
+            }
+            if (params.Matte_components) {
+                const int m = sizeof(params.Matte[0]) * params.Matte_components;
+
+                memcpy(params.Matte, data, m);
+                data += m;
             }
             read_value(data, params.icc_hash);
             if (params.function_is_identity) {

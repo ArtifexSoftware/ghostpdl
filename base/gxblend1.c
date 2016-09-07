@@ -311,6 +311,8 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     byte pix_alpha;
     byte *backdrop_ptr = NULL;
     pdf14_device *pdev = (pdf14_device *)dev;
+    bool has_matte = false;
+    byte matte_alpha = 0xff;
 #if RAW_DUMP
     byte *composed_ptr = NULL;
 #endif
@@ -354,6 +356,8 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
         mask_bg_alpha = mask_tr_fn[mask_bg_alpha];
         tmp = alpha * mask_bg_alpha + 0x80;
         mask_bg_alpha = (tmp + (tmp >> 8)) >> 8;
+        if (maskbuf->matte != NULL)
+            has_matte = true;
     }
     n_chan--;
 #if RAW_DUMP
@@ -388,30 +392,58 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                group alpha value */
             if (maskbuf != NULL) {
                 if (!in_mask_rect) {
-                    /* Special case where we have a soft mask but are outside the
-                       range of the soft mask and must use the background alpha value */
+                    /* Special case where we have a soft mask but are outside
+                       the range of the soft mask and must use the background
+                       alpha value */
                     pix_alpha = mask_bg_alpha;
+                    matte_alpha = 0xff;
                 } else {
                     /* If we are isolated, do not double apply the alpha */
-                    if (tos_isolated) {
+                    if (tos_isolated)
                         pix_alpha = 0xff;
-                    }
+                    /* If we have a matte entry (pre-multiplied) then get
+                       the mask alpha so we can undo for proper blending */
+                    if (has_matte)
+                        matte_alpha = mask_tr_fn[*mask_curr_ptr];
                 }
             }
-             /* Complement the components for subtractive color spaces */
-            if (additive) {
-                for (i = 0; i <= n_chan; ++i) {
-                    tos_pixel[i] = tos_ptr[i * tos_planestride];
-                    nos_pixel[i] = nos_ptr[i * nos_planestride];
+
+            if (has_matte && matte_alpha != 0 && matte_alpha < 0xff) {
+                for (i = 0; i < n_chan; i++) {
+                    int val = (tos_ptr[i * tos_planestride] - maskbuf->matte[i] < 0 ?
+                        0 : tos_ptr[i * tos_planestride] - maskbuf->matte[i]);
+                    int temp = ((((val * 0xff) << 8) / matte_alpha) >> 8) + maskbuf->matte[i];
+
+                    if (temp > 0xff)
+                        tos_pixel[i] = 0xff;
+                    else
+                        tos_pixel[i] = temp;
+
+                    if (!additive) {
+                        tos_pixel[i] = 255 - tos_pixel[i];
+                        nos_pixel[i] = 255 - nos_ptr[i * nos_planestride];
+                    } else
+                        nos_pixel[i] = nos_ptr[i * nos_planestride];
                 }
-            } else {
-                for (i = 0; i < n_chan; ++i) {
-                    tos_pixel[i] = 255 - tos_ptr[i * tos_planestride];
-                    nos_pixel[i] = 255 - nos_ptr[i * nos_planestride];
-                }
+                /* alpha */
                 tos_pixel[n_chan] = tos_ptr[n_chan * tos_planestride];
                 nos_pixel[n_chan] = nos_ptr[n_chan * nos_planestride];
+            } else {
+                if (additive) {
+                    for (i = 0; i <= n_chan; ++i) {
+                        tos_pixel[i] = tos_ptr[i * tos_planestride];
+                        nos_pixel[i] = nos_ptr[i * nos_planestride];
+                    }
+                } else {
+                    for (i = 0; i < n_chan; ++i) {
+                        tos_pixel[i] = 255 - tos_ptr[i * tos_planestride];
+                        nos_pixel[i] = 255 - nos_ptr[i * nos_planestride];
+                    }
+                    tos_pixel[n_chan] = tos_ptr[n_chan * tos_planestride];
+                    nos_pixel[n_chan] = nos_ptr[n_chan * nos_planestride];
+                }
             }
+
             if (mask_curr_ptr != NULL) {
                 if (in_mask_rect) {
                     byte mask = mask_tr_fn[*mask_curr_ptr++];

@@ -2110,24 +2110,6 @@ currentdict /last-ditch-bpc-csp undef
   } bdef
 } if
 
-/is_big_mask {  % - is_big_mask <bool>
-  1 0 dtransform dup mul exch dup mul add sqrt
-  0 1 dtransform dup mul exch dup mul add sqrt mul
-  currentdevice getdeviceprops .dicttomark /BufferSpace .knownget not {
-    4000000 % hack: Can't get the real default value from C source.
-  } if
-  2 % arbitrary
-  div gt
-} bind def
-
-% For development needs we define a special option for running with a new handler
-% for images with a soft mask.
-//systemdict /NEW_IMAGE3X .knownget not { //false } if {
-  /is_big_mask {  % - is_big_mask <bool>
-    //false
-  } bdef
-} if
-
 /doimage {	% <imagemask> doimage -
                 % imagedict is currentdict, gets popped from dstack
   //null checkOPtrans {
@@ -2149,38 +2131,19 @@ currentdict /last-ditch-bpc-csp undef
   } if
 
   DataSource exch
-  PDFusingtransparency
-  /PreserveSMask /GetDeviceParam .special_op {
-    exch pop not
-  }{
-    //true
-  }ifelse
-  {
-    % This is a temporary workaround for the bug 689080,
-    % which is done under a rush of 8.63 release.
-    % The purpose is to disable a conversion of an image with soft mask
-    % into a Type 103 image, which currently allocates a full mask buffer
-    % before writing clist.
-    % With this workaround the Matte color is not working (ignored).
-    is_big_mask not
-  } {
-    //true % pdfwrite doesn't need the workaround explained above,
-           % and cannot work with it.
-  } ifelse
- and {
-    currentdict /SMask knownoget
-  } {
-    //false
-  } ifelse {
-    makesoftmaskimage
-  } {
-    currentdict /Mask knownoget {
-      makemaskimage
+  currentdict /SMask known PDFusingtransparency and {
+    /PreserveSMask /GetDeviceParam .special_op {
+      pop pop
+      currentdict /SMask oget
+      makesoftmaskimage
     } if
-  } ifelse
+  } if
+  currentdict /Mask knownoget {
+      makemaskimage
+  } if
                 % Stack: datasource imagemask
-   { currentdict end setfillstate { imagemask } }
-   { ColorSpace setgcolorspace currentdict end setfillblend { image } }
+  { currentdict end setfillstate { imagemask } }
+  { ColorSpace setgcolorspace currentdict end setfillblend { image } }
   ifelse
   PDFSTOPONERROR { exec //false } { stopped } ifelse {
     dup type /dicttype eq { pop } if % Sometimes image fails to restore the stack

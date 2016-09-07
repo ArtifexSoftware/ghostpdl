@@ -94,7 +94,9 @@ typedef struct gs_transparency_mask_params_s {
     const gs_color_space *ColorSpace;
     gs_transparency_mask_subtype_t subtype;
     int Background_components;
+    int Matte_components;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    float Matte[GS_CLIENT_COLOR_MAX_COMPONENTS];
     float GrayBackground;
     int (*TransferFunction)(double in, float *out, void *proc_data);
     gs_function_t *TransferFunction_data;
@@ -111,7 +113,9 @@ typedef struct gx_transparency_mask_params_s {
     int group_color_numcomps;
     gs_transparency_color_t group_color;
     int Background_components;
+    int Matte_components;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    float Matte[GS_CLIENT_COLOR_MAX_COMPONENTS];
     float GrayBackground;
     bool function_is_identity;
     bool idle;
@@ -132,10 +136,11 @@ typedef struct gx_transparency_mask_params_s {
              1 + sizeof(float) * 6 /* See sput_matrix. */ + \
              sizeof(((gs_pdf14trans_params_t *)0)->subtype) + \
              sizeof(((gs_pdf14trans_params_t *)0)->group_color_numcomps) + \
-             4 /* group color, replacing, function_is_identity, Background_components */ + \
+             5 /* group color, replacing, function_is_identity, Background_components, Matte_components */ + \
              sizeof(((gs_pdf14trans_params_t *)0)->bbox) + \
              sizeof(((gs_pdf14trans_params_t *)0)->mask_id) + \
              sizeof(((gs_pdf14trans_params_t *)0)->Background) + \
+             sizeof(((gs_pdf14trans_params_t *)0)->Matte) + \
              sizeof(float)*4 + /* If cmyk background */ \
              sizeof(((gs_pdf14trans_params_t *)0)->GrayBackground) + \
              sizeof(int64_t)) /* ICC band information */
