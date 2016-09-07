@@ -563,15 +563,17 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
             gs_fixed_rect clip_bbox;
             gs_rect rect;
 
-            gx_cpath_outer_box(penum->pcpath, &clip_bbox);
-            rect.p.x = fixed2float(clip_bbox.p.x);
-            rect.p.y = fixed2float(clip_bbox.p.y);
-            rect.q.x = fixed2float(clip_bbox.q.x);
-            rect.q.y = fixed2float(clip_bbox.q.y);
-            rect_intersect(rect, text_bbox);
-            if (rect.p.x > rect.q.x || rect.p.y > rect.q.y) {
-                penum->index += pstr->size;
-                goto finish;
+            if (penum->pcpath) {
+                gx_cpath_outer_box(penum->pcpath, &clip_bbox);
+                rect.p.x = fixed2float(clip_bbox.p.x);
+                rect.p.y = fixed2float(clip_bbox.p.y);
+                rect.q.x = fixed2float(clip_bbox.q.x);
+                rect.q.y = fixed2float(clip_bbox.q.y);
+                rect_intersect(rect, text_bbox);
+                if (rect.p.x > rect.q.x || rect.p.y > rect.q.y) {
+                    penum->index += pstr->size;
+                    goto finish;
+                }
             }
         } else {
             gs_matrix m;
