@@ -357,10 +357,13 @@ static const gs_depth_bitmap bi_pixmap_array[PCL_NUM_CROSSHATCH_PATTERNS +
  * pattern above, two copies of this structure are required: a prototype
  * (qualified as const) and the pattern actually used.
  */
-static const byte solid_pattern_data = 0xff;
+/* Although only a byte is used, the 1bpp rendering code expects at least
+ * a short.
+ */
+static const byte solid_pattern_data[2] = { 0xff, 0xff };
 
 static const gs_depth_bitmap solid_pattern_pixmap = {
-    (byte *) & solid_pattern_data, 1, {1, 1}, 0, 1, 1
+    (byte *) & solid_pattern_data[0], 1, {1, 1}, 0, 1, 1
 };
 
 /*
