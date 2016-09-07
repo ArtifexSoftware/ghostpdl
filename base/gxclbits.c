@@ -752,7 +752,7 @@ clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                                 loc.tile->width * pdepth,
                                 loc.tile->height * loc.tile->num_planes, loc.tile->cb_raster,
                                 rsize,
-                              decompress_elsewhere | (((gx_device_printer *)cldev->target)->BLS_force_memory ? (1 << cmd_compress_cfe) : 0),
+                              decompress_elsewhere | (cldev->target->BLS_force_memory ? (1 << cmd_compress_cfe) : 0),
                                 &dp, &csize);
 
             if (code < 0)

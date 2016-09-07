@@ -781,6 +781,7 @@ typedef struct gdev_pagelist_s {
         bool LockSafetyParams;		/* If true, prevent unsafe changes */\
         long band_offset_x;		/* offsets of clist band base to (mem device) buffer */\
         long band_offset_y;		/* for rendering that is phase sensitive (old wtsimdi) */\
+        bool BLS_force_memory;\
         gx_stroked_gradient_recognizer_t sgr;\
         int MaxPatternBitmap;		/* Threshold for switching to pattern_clist mode */\
         bool page_uses_transparency;    /* PDF 1.4 transparency is used. */\

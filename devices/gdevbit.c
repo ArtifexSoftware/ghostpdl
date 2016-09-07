@@ -305,6 +305,7 @@ const gx_device_bit gs_bitrgbtags_device =
         0 , /*LockSafetyParams*/
         0,  /*band_offset_x*/
         0,  /*band_offset_*/
+        false, /*BLS_force_memory*/
         {false}, /*sgr*/
         0, /*MaxPatternBitmap*/
         0, /*page_uses_transparency*/

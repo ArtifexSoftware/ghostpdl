@@ -145,7 +145,6 @@ typedef struct bg_print_s {
                 /* ------ Device parameters that must be set ------ */\
                 /* ------ before calling the device open routine. ------ */\
         char fname[prn_fname_sizeof];	/* OutputFile */\
-        bool BLS_force_memory;\
                 /* ------ Other device parameters ------ */\
         bool OpenOutputFile;\
         bool ReopenPerPage;\
@@ -323,7 +322,6 @@ extern const gx_device_procs prn_bg_procs;
            gdev_prn_default_get_space_params\
          },\
          { 0 },		/* fname */\
-        0/*false*/,     /* BLS_force_memory */\
         0/*false*/,	/* OpenOutputFile */\
         0/*false*/,	/* ReopenPerPage */\
         0/*false*/, duplex_set,	/* Duplex[_set] */\
