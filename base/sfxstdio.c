@@ -70,7 +70,7 @@ sread_file(register stream * s, FILE * file, byte * buf, uint len)
     s->file = file;
     s->file_modes = s->modes;
     s->file_offset = 0;
-    s->file_limit = sizeof(gs_offset_t) > 4 ? max_int64_t : max_long;
+    s->file_limit = (sizeof(gs_offset_t) > 4 ? max_int64_t : max_long);
 }
 
 /* Confine reading to a subfile.  This is primarily for reusable streams. */
@@ -78,9 +78,9 @@ int
 sread_subfile(stream *s, gs_offset_t start, gs_offset_t length)
 {
     if (s->file == 0 || s->modes != s_mode_read + s_mode_seek ||
-        s->file_offset != 0 || s->file_limit != max_long ||
-        ((s->position < start || s->position > start + length) &&
-         sseek(s, start) < 0)
+        s->file_offset != 0 ||
+        s->file_limit != (sizeof(gs_offset_t) > 4 ? max_int64_t : max_long) ||
+        ((s->position < start || s->position > start + length) && sseek(s, start) < 0)
         )
         return ERRC;
     s->position -= start;
@@ -193,7 +193,7 @@ swrite_file(register stream * s, FILE * file, byte * buf, uint len)
     s->file = file;
     s->file_modes = s->modes;
     s->file_offset = 0;		/* in case we switch to reading later */
-    s->file_limit = sizeof(gs_offset_t) > 4 ? max_int64_t : max_long;	/* ibid. */
+    s->file_limit = (sizeof(gs_offset_t) > 4 ? max_int64_t : max_long);	/* ibid. */
 }
 /* Initialize for appending to an OS file. */
 void
