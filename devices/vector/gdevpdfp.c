@@ -635,25 +635,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     }
     if (ecode < 0)
         goto fail;
-    /*
-     * Acrobat Reader doesn't handle user-space coordinates larger than
-     * MAX_USER_COORD.  To compensate for this, reduce the resolution so
-     * that the page size in device space (which we equate to user space) is
-     * significantly less than MAX_USER_COORD.  Note that this still does
-     * not protect us against input files that use coordinates far outside
-     * the page boundaries.
-     */
-#define MAX_EXTENT ((int)(MAX_USER_COORD * 0.9))
-    /* Changing resolution or page size requires closing the device, */
-    if (dev->height > MAX_EXTENT || dev->width > MAX_EXTENT) {
-        double factor =
-            max(dev->height / (double)MAX_EXTENT,
-                dev->width / (double)MAX_EXTENT);
 
-        gx_device_set_resolution(dev, dev->HWResolution[0] / factor,
-                                 dev->HWResolution[1] / factor);
-    }
-#undef MAX_EXTENT
     if (pdev->FirstObjectNumber != save_dev->FirstObjectNumber) {
         if (pdev->xref.file != 0) {
             if (gp_fseek_64(pdev->xref.file, 0L, SEEK_SET) != 0) {
