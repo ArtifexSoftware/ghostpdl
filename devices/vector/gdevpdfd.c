@@ -181,18 +181,20 @@ pdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
         ymin -= d;
         ymax += d;
     }
-    /*
-     * Clamp coordinates to avoid tripping over Acrobat Reader's limit
-     * of 32K on user coordinate values.
-     */
-    if (x0 < xmin)
-        x0 = xmin;
-    if (x1 > xmax)
-        x1 = xmax;
-    if (y0 < ymin)
-        y0 = ymin;
-    if (y1 > ymax)
-        y1 = ymax;
+    if (pdev->CompatibilityLevel < 1.5) {
+        /*
+         * Clamp coordinates to avoid tripping over Acrobat Reader's limit
+         * of 32K on user coordinate values.
+         */
+        if (x0 < xmin)
+            x0 = xmin;
+        if (x1 > xmax)
+            x1 = xmax;
+        if (y0 < ymin)
+            y0 = ymin;
+        if (y1 > ymax)
+            y1 = ymax;
+    }
     return psdf_dorect(vdev, x0, y0, x1, y1, type);
 }
 
@@ -786,6 +788,11 @@ make_rect_scaling(const gx_device_pdf *pdev, const gs_fixed_rect *bbox,
                   double prescale, double *pscale)
 {
     double bmin, bmax;
+
+    if (pdev->CompatibilityLevel > 1.4) {
+        *pscale = 1;
+        return false;
+    }
 
     bmin = min(bbox->p.x / pdev->scale.x, bbox->p.y / pdev->scale.y) * prescale;
     bmax = max(bbox->q.x / pdev->scale.x, bbox->q.y / pdev->scale.y) * prescale;
