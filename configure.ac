@@ -154,8 +154,6 @@ AC_PROG_RANLIB
 dnl pkg-config is used for several tests now...
 AC_PATH_TOOL(PKGCONFIG, pkg-config)
 
-AC_PATH_PROG(STRIP_XE, strip)
-
 # this is an unpleasant hack
 # but if we are cross compiling, and there isn't a matching
 # pkconfig for the --host setting, then don't use the 'local'
@@ -164,6 +162,19 @@ if test x"$cross_compiling" = x"yes"; then
   AC_PATH_PROG(BUILD_PKGCONFIG, pkg-config)
   if test x"$BUILD_PKGCONFIG" = x"$PKGCONFIG" ; then
     PKGCONFIG=
+  fi
+fi
+
+AC_PATH_TOOL(STRIP_XE, strip)
+
+# this is an unpleasant hack
+# but if we are cross compiling, and there isn't a matching
+# pkconfig for the --host setting, then don't use the 'local'
+# pkconfig at all
+if test x"$cross_compiling" = x"yes"; then
+  AC_PATH_PROG(BUILD_STRIP_XE, strip)
+  if test x"$BUILD_STRIP_XE" = x"$STRIP_XE" ; then
+    STRIP_XE=
   fi
 fi
 
