@@ -397,4 +397,7 @@ bool pcl_downloaded_and_bound(pl_font_t * plfont);
 
 void pcl_font_scale(pcl_state_t *, gs_point * psz);
 
+/* exported from pcl to support HPGL label */
+bool char_is_printable(const pl_font_t *font, const pl_symbol_map_t *map, gs_char chr, bool is_stick, bool literal);
+
 #endif /* pcstate_INCLUDED */

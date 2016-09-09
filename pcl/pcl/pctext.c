@@ -75,43 +75,50 @@ pcl_downloaded_and_bound(pl_font_t * plfont)
 /*
  * Check if a character code is considered "printable" by given symbol set.
  */
-static bool
-is_printable(const pcl_state_t * pcs, gs_char chr, bool literal)
+bool
+char_is_printable(const pl_font_t *font, const pl_symbol_map_t *map, gs_char chr, bool is_stick, bool literal)
 {
-    int map_type;
     bool printable = false;
 
-    if (literal)                /* transparent data */
+    if (literal) {              /* transparent data */
         printable = true;
-    else {
-        if (pcs->map == 0 || pcl_downloaded_and_bound(pcs->font)) {
-            /* PCL TRM 11-18 */
-            map_type = pcs->font->font_type;
+    } else {
+    if (is_stick) {
+        printable = (chr >= ' ') && (chr <= 0xff);
+    } else {
+        int map_type = 0;
+        if (map == 0 || pcl_downloaded_and_bound(font)) {
+        /* PCL TRM 11-18 */
+            if (font)
+            {
+            map_type = font->font_type;
+        }
         } else {
-            /* PCL TRM 10-7
-             * symbol map type overrides, font map type
-             */
-            map_type = pcs->map->type;
+        /* PCL TRM 10-7
+         * symbol map type overrides, font map type
+         */
+        map_type = map->type;
         }
 
 #ifndef USE_MAP_TYPE_IN_SPECIFICATION
         if (map_type == 0)
-            map_type = 1;
+        map_type = 1;
 #endif /* USE_MAP_TYPE_IN_SPECIFICATION */
 
         if (map_type == 0)
-            printable = (chr >= ' ') && (chr <= '\177');
+        printable = (chr >= ' ') && (chr <= '\177');
         else if (map_type == 1) {
-            chr &= 0x7f;
-            printable = (chr >= ' ');   /* 0-31 and 128-159 are not printable */
+        chr &= 0x7f;
+        printable = (chr >= ' ');   /* 0-31 and 128-159 are not printable */
         } else if (map_type >= 2) {
-            /* 2 is correct but will force all types above 2 here */
-            if ((chr == 0) || (chr == '\033') ||
-                ((chr >= '\007') && (chr <= '\017')))
-                printable = false;
-            else
-                printable = true;
+        /* 2 is correct but will force all types above 2 here */
+        if ((chr == 0) || (chr == '\033') ||
+            ((chr >= '\007') && (chr <= '\017')))
+            printable = false;
+        else
+            printable = true;
         }
+    }
     }
     return printable;
 }
@@ -222,7 +229,7 @@ get_next_char(pcl_state_t * pcs,
     *plen = len;
     *porig_char = chr;
     /* check if the code is considered "printable" in the current symbol set */
-    if (!is_printable(pcs, chr, literal)) {
+    if (!char_is_printable(pcs->font, pcs->map, chr, false, literal)) {
         *pis_space = literal;
         *pchr = 0xffff;
         return 0;
