@@ -105,8 +105,11 @@ AC_SUBST(SED_EXTENDED_REGEX_OPT)
 AC_PROG_RANLIB
 #AC_PROG_INSTALL
 
+
 dnl pkg-config is used for several tests now...
 AC_PATH_PROG(PKGCONFIG, pkg-config)
+
+AC_PATH_PROG(STRIP_XE, strip)
 
 dnl --------------------------------------------------
 dnl Allow excluding the contributed drivers
@@ -2515,6 +2518,7 @@ AC_SUBST(OPT_CFLAGS)
 AC_SUBST(DBG_CFLAGS)
 AC_SUBST(GCFLAGS)
 AC_SUBST(CFLAGS_SANITIZE)
+AC_SUBST(STRIP_XE)
 
 AC_OUTPUT(Makefile)
 

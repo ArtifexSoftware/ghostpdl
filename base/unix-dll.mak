@@ -199,6 +199,24 @@ gpdl-so-loader: $(GPDLSOC_XE)
 -so-loader:
 	$(NO_OP)
 
+
+gs-so-strip:
+	$(STRIP_XE) $(STRIP_XE_OPTS) $(GS_XE)
+
+gpcl6-so-strip:
+	$(STRIP_XE) $(STRIP_XE_OPTS) $(GPCL_XE)
+
+gxps-so-strip:
+	$(STRIP_XE) $(STRIP_XE_OPTS) $(GXPS_XE)
+
+gpdl-so-strip:
+	$(STRIP_XE)$(STRIP_XE_OPTS)  $(GPDL_XE)
+
+# dummy for when only GS source is available
+-so-strip:
+	$(NO_OP)
+
+
 # ------------------------- Recursive make targets ------------------------- #
 
 SODEFS=\
@@ -239,6 +257,13 @@ so-only:
                                    $(GPDL_TARGET)-so-links-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 	
 
+so-only-stripped:
+	$(MAKE) $(SUB_MAKE_OPTION) so-only-stripped-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
+	$(MAKE) $(SUB_MAKE_OPTION) gs-so-links-subtarget \
+                                   $(PCL_TARGET)-so-links-subtarget \
+                                   $(XPS_TARGET)-so-links-subtarget \
+                                   $(GPDL_TARGET)-so-links-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
+
 # Debug shared object
 so-onlydebug:
 	@if test -z "$(MAKE) $(SUB_MAKE_OPTION)" -o -z "`$(MAKE) $(SUB_MAKE_OPTION) --version 2>&1 | grep GNU`";\
@@ -263,6 +288,9 @@ so-only-subtarget:
          PCL_LDFLAGS='$(LDFLAGS) $(PCL_LDFLAGS_SO)' XPS_LDFLAGS='$(LDFLAGS) $(XPS_LDFLAGS_SO)' \
 	 CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)'\
 	 prefix=$(prefix)
+
+so-only-stripped-subtarget: so-only-subtarget
+	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) gs-so-strip $(PCL_TARGET)-so-strip $(XPS_TARGET)-so-strip $(GPDL_TARGET)-so-strip
 
 so-subtarget: so-only-subtarget
 	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS_FINAL) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
