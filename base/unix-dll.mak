@@ -202,6 +202,8 @@ gpdl-so-loader: $(GPDLSOC_XE)
 # ------------------------- Recursive make targets ------------------------- #
 
 SODEFS=\
+ GS_DOT_O= \
+ REALMAIN_OBJ= \
  GS_XE=$(BINDIR)/$(GS_SONAME_MAJOR_MINOR) \
  GPCL_XE=$(BINDIR)/$(PCL_SONAME_MAJOR_MINOR) \
  GXPS_XE=$(BINDIR)/$(XPS_SONAME_MAJOR_MINOR) \

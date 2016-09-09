@@ -55,6 +55,8 @@ $(GS_A): $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) \
 libgs: $(GS_A)
 	$(NO_OP)
 
+GS_DOT_O=$(PSOBJ)gs.$(OBJ)
+
 # Here is the final link step.  The stuff with LD_RUN_PATH is for SVR4
 # systems with dynamic library loading; I believe it's harmless elsewhere.
 # The resetting of the environment variables to empty strings is for SCO Unix,
@@ -64,7 +66,7 @@ ldt_tr=$(PSOBJ)ldt.tr
 $(GS_XE): $(ld_tr) $(gs_tr) $(ECHOGS_XE) $(XE_ALL) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) \
           $(UNIXLINK_MAK)
 	$(ECHOGS_XE) -w $(ldt_tr) -n - $(CCLD) $(GS_LDFLAGS) -o $(GS_XE)
-	$(ECHOGS_XE) -a $(ldt_tr) -n -s $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) $(PSOBJ)gs.$(OBJ) -s
+	$(ECHOGS_XE) -a $(ldt_tr) -n -s $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) $(GS_DOT_O) -s
 	cat $(gsld_tr) >> $(ldt_tr)
 	$(ECHOGS_XE) -a $(ldt_tr) -s - $(EXTRALIBS) $(STDLIBS)
 	if [ x$(XLIBDIR) != x ]; then LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; fi; \
