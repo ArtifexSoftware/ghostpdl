@@ -928,6 +928,19 @@ gs_currentwordspacing(const gs_gstate *pgs)
 }
 
 int
+gs_settexthscaling(gs_gstate *pgs, double Tz)
+{
+    pgs->Tz = (float)Tz;
+    return 0;
+}
+
+double
+gs_currenttexthscaling(const gs_gstate *pgs)
+{
+    return pgs->Tz;
+}
+
+int
 gs_setwordspacing(gs_gstate *pgs, double Tw)
 {
     pgs->Tw = (float)Tw;

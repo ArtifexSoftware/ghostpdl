@@ -570,6 +570,17 @@ zcurrentwordspacing(i_ctx_t *i_ctx_p)
     return zcurrent_real(i_ctx_p, gs_currentwordspacing);
 }
 
+static int
+zsettexthscaling(i_ctx_t *i_ctx_p)
+{
+    return zset_real(i_ctx_p, gs_settexthscaling);
+}
+static int
+zcurrenttexthscaling(i_ctx_t *i_ctx_p)
+{
+    return zcurrent_real(i_ctx_p, gs_currenttexthscaling);
+}
+
 /* <bool> .sethpglpathmode - */
 static int
 zsethpglpathmode(i_ctx_t *i_ctx_p)
@@ -634,6 +645,8 @@ const op_def zgstate3_op_defs[] = {
     {"0.currenttextrise", zcurrenttextrise},
     {"1.setwordspacing", zsetwordspacing},
     {"0.currentwordspacing", zcurrentwordspacing},
+    {"1.settexthscaling", zsettexthscaling},
+    {"0.currenttexthscaling", zcurrenttexthscaling},
     {"0.sethpglpathmode", zsethpglpathmode},
     {"0.currenthpglpathmode", zcurrenthpglpathmode},
     op_def_end(0)

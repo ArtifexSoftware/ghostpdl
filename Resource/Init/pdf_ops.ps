@@ -873,7 +873,8 @@ end readonly def
 %   /TextLeading 0 def		% 0 TL
 %   /TextRise 0 def		% 0 Ts
 %   /WordSpacing 0 def		% 0 Tw
-   /TextHScaling 1.0 def	% 100 Tz
+%   /TextHScaling 1.0 def	% 100 Tz
+1.0 .settexthscaling
    /TextFont //null def
    /FontMatrixNonHV //false def
    /Show { showfirst } def
@@ -912,7 +913,9 @@ end readonly def
   } {
     pop
   } ifelse
-  TextHScaling 1 ne { TextHScaling 1 scale } if
+  .currenttexthscaling  %TextHScaling
+  1 ne { .currenttexthscaling  %TextHScaling
+  1 scale } if
 %  TextRise
   .currenttextrise 0 ne { 0 .currenttextrise %TextRise
    translate } if
@@ -1066,7 +1069,8 @@ end readonly def
     pop 0.00000001	% handle invalid scale by using a really small value
   }{
     100 div
-  }ifelse /TextHScaling gput settextstate} bdef
+  }ifelse .settexthscaling %/TextHScaling gput
+  settextstate} bdef
 
 % ---------------- Font control ---------------- %
 
