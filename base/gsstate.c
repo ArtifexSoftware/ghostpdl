@@ -921,6 +921,19 @@ gs_settextrise(gs_gstate *pgs, double Ts)
     return 0;
 }
 
+double
+gs_currentwordspacing(const gs_gstate *pgs)
+{
+    return pgs->Tw;
+}
+
+int
+gs_setwordspacing(gs_gstate *pgs, double Tw)
+{
+    pgs->Tw = (float)Tw;
+    return 0;
+}
+
 /* sethpglpathmode */
 void
 gs_sethpglpathmode(gs_gstate * pgs, bool path)

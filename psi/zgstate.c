@@ -559,6 +559,16 @@ zcurrenttextrise(i_ctx_t *i_ctx_p)
 {
     return zcurrent_real(i_ctx_p, gs_currenttextrise);
 }
+static int
+zsetwordspacing(i_ctx_t *i_ctx_p)
+{
+    return zset_real(i_ctx_p, gs_setwordspacing);
+}
+static int
+zcurrentwordspacing(i_ctx_t *i_ctx_p)
+{
+    return zcurrent_real(i_ctx_p, gs_currentwordspacing);
+}
 
 /* <bool> .sethpglpathmode - */
 static int
@@ -622,6 +632,8 @@ const op_def zgstate3_op_defs[] = {
     {"0.currenttextleading", zcurrenttextleading},
     {"1.settextrise", zsettextrise},
     {"0.currenttextrise", zcurrenttextrise},
+    {"1.setwordspacing", zsetwordspacing},
+    {"0.currentwordspacing", zcurrentwordspacing},
     {"0.sethpglpathmode", zsethpglpathmode},
     {"0.currenthpglpathmode", zcurrenthpglpathmode},
     op_def_end(0)
