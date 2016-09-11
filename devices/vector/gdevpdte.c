@@ -713,7 +713,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 
 finish:
     /* Finally, return the total width if requested. */
-    if (pdev->Eps2Write) {
+    if (pdev->Eps2Write && penum->pcpath) {
         gx_device_clip cdev;
         gx_drawing_color devc;
         fixed x0, y0, bx2, by2;
