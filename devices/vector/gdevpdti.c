@@ -789,7 +789,14 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     /* Do not alter type3charpath, inherit the current value. We need to know if */
     /* we are inside a charpath operation, and only reset this when the charpath */
     /* is complete */
-    pdf_reset_graphics(pdev);
+    if (rtype != resourceXObject)
+        pdf_reset_graphics(pdev);
+    else {
+        if (pdev->vg_initial_set) {
+            pdev->state.blend_mode = pdev->vg_initial.blend_mode;
+            pdev->state.shape.alpha = pdev->vg_initial.shape_alpha;
+        }
+    }
     *ppres = pres;
     return 0;
 }
