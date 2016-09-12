@@ -79,7 +79,7 @@ sread_subfile(stream *s, gs_offset_t start, gs_offset_t length)
 {
     if (s->file == 0 || s->modes != s_mode_read + s_mode_seek ||
         s->file_offset != 0 ||
-        s->file_limit != (sizeof(gs_offset_t) > 4 ? max_int64_t : max_long) ||
+        s->file_limit != S_FILE_LIMIT_MAX ||
         ((s->position < start || s->position > start + length) && sseek(s, start) < 0)
         )
         return ERRC;
@@ -161,7 +161,7 @@ s_file_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     int status = 1;
     int count;
 
-    if (s->file_limit < max_long) {
+    if (s->file_limit < S_FILE_LIMIT_MAX) {
         gs_offset_t limit_count = s->file_offset + s->file_limit - gp_ftell_64(file);
 
         if (max_count > limit_count)
@@ -193,7 +193,7 @@ swrite_file(register stream * s, FILE * file, byte * buf, uint len)
     s->file = file;
     s->file_modes = s->modes;
     s->file_offset = 0;		/* in case we switch to reading later */
-    s->file_limit = (sizeof(gs_offset_t) > 4 ? max_int64_t : max_long);	/* ibid. */
+    s->file_limit = S_FILE_LIMIT_MAX;
 }
 /* Initialize for appending to an OS file. */
 void

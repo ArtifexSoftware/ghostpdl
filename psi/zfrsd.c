@@ -370,7 +370,7 @@ make_aos(i_ctx_t *i_ctx_p, os_ptr op, int blk_sz, int blk_sz_last, uint file_sz)
     s_std_init(s, buf, aos_buf_size, &s_aos_procs, s_mode_read + s_mode_seek);
     s->state = (stream_state *)ss;
     s->file_offset = 0;
-    s->file_limit = max_long;
+    s->file_limit = S_FILE_LIMIT_MAX;
     s->close_at_eod = false;
     s->read_id = 1;
     make_stream_file(op, s, "r");

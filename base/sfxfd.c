@@ -128,7 +128,7 @@ sread_fileno(register stream * s, FILE * file, byte * buf, uint len)
     s->file = file;
     s->file_modes = s->modes;
     s->file_offset = 0;
-    s->file_limit = max_long;
+    s->file_limit = S_FILE_LIMIT_MAX;
 }
 
 /* Confine reading to a subfile.  This is primarily for reusable streams. */
@@ -141,7 +141,7 @@ int
 sread_subfile(stream *s, gs_offset_t start, gs_offset_t length)
 {
     if (s->file == 0 || s->modes != s_mode_read + s_mode_seek ||
-        s->file_offset != 0 || s->file_limit != max_long ||
+        s->file_offset != 0 || s->file_limit != S_FILE_LIMIT_MAX ||
         ((s->position < start || s->position > start + length) &&
          sseek(s, start) < 0)
         )
@@ -226,7 +226,7 @@ s_fileno_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 again:
     max_count = pw->limit - pw->ptr;
     status = 1;
-    if (s->file_limit < max_long) {
+    if (s->file_limit < S_FILE_LIMIT_MAX) {
         gs_offset_t limit_count = s->file_offset + s->file_limit - ltell(fd);
 
         if (max_count > limit_count)
@@ -269,7 +269,7 @@ swrite_fileno(register stream * s, FILE * file, byte * buf, uint len)
     s->file = file;
     s->file_modes = s->modes;
     s->file_offset = 0;		/* in case we switch to reading later */
-    s->file_limit = max_long;	/* ibid. */
+    s->file_limit = S_FILE_LIMIT_MAX;
 }
 /* Initialize for appending to an OS file. */
 void

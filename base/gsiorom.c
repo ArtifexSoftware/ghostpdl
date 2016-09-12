@@ -114,7 +114,7 @@ sread_block(register stream *s,  const byte *ptr, uint len, const uint32_t *node
     s->file = (FILE *)node;	/* convenient place to put it for %rom% files */
     s->file_modes = s->modes;
     s->file_offset = 0;
-    s->file_limit = max_long;
+    s->file_limit = S_FILE_LIMIT_MAX;
 }
 
 /* Return the number of available bytes */
@@ -193,7 +193,7 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 
     if (s->position + (s->cursor.r.limit - s->cbuf + 1) >= filelen || block_data == NULL)
         return EOFC;			/* at EOF */
-    if (s->file_limit < max_long) {
+    if (s->file_limit < S_FILE_LIMIT_MAX) {
         /* Adjust count for subfile limit */
         uint32_t limit_count = s->file_offset + s->file_limit - s->position;
 

@@ -143,7 +143,7 @@ stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
         s->file = 0;
         s->file_modes = s->modes;
         s->file_offset = 0;
-        s->file_limit = max_long;
+        s->file_limit = S_FILE_LIMIT_MAX;
         s->save_close = s_std_null;
         make_file(&ref_stdin, a_readonly | avm_system, s->read_id, s);
         *ps = s;
@@ -220,7 +220,7 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
         s->file = 0;
         s->file_modes = s->modes;
         s->file_offset = 0;		/* in case we switch to reading later */
-        s->file_limit = max_long;	/* ibid. */
+        s->file_limit = S_FILE_LIMIT_MAX;
         s->save_close = s->procs.flush;
         make_file(&ref_stdout, a_write | avm_system, s->write_id, s);
         *ps = s;
@@ -291,7 +291,7 @@ stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
         s->file = 0;
         s->file_modes = s->modes;
         s->file_offset = 0;		/* in case we switch to reading later */
-        s->file_limit = max_long;	/* ibid. */
+        s->file_limit = S_FILE_LIMIT_MAX;
         s->save_close = s->procs.flush;
         make_file(&ref_stderr, a_write | avm_system, s->write_id, s);
         *ps = s;

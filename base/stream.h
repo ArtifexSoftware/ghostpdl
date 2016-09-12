@@ -190,6 +190,8 @@ extern_st(st_stream);
     stream_enum_ptrs, stream_reloc_ptrs, stream_finalize)
 #define STREAM_NUM_PTRS 6
 
+#define S_FILE_LIMIT_MAX (sizeof(gs_offset_t) > 4 ? max_int64_t : max_long)
+
 /* Initialize the checking IDs of a stream. */
 #define s_init_ids(s) ((s)->read_id = (s)->write_id = 1)
 #define s_init_read_id(s) ((s)->read_id = 1, (s)->write_id = 0)

@@ -207,7 +207,7 @@ sread_ram(register stream * s, ramhandle * file, byte * buf, uint len)
     s->file_modes = s->modes;
     s->file_offset = 0;
     /* XXX get a more sensible number from the fs? */
-    s->file_limit = max_long;
+    s->file_limit = S_FILE_LIMIT_MAX;
 }
 
 /* Procedures for reading from a file */
@@ -268,7 +268,7 @@ s_ram_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     int status = 1;
     int count;
 
-    if (s->file_limit < max_long) {
+    if (s->file_limit < S_FILE_LIMIT_MAX) {
     long limit_count = s->file_offset + s->file_limit -
     ramfile_tell(file);
 
@@ -298,7 +298,7 @@ swrite_ram(register stream * s, ramhandle * file, byte * buf, uint len)
     s->file = (FILE*)file;
     s->file_modes = s->modes;
     s->file_offset = 0;        /* in case we switch to reading later */
-    s->file_limit = max_long;    /* ibid. */
+    s->file_limit = S_FILE_LIMIT_MAX;
 }
 
 /* Initialize for appending to a file. */
