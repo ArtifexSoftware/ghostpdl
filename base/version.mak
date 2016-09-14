@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2010 Artifex Software, Inc.
+#  Copyright (C) 2001-2016 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -15,10 +15,10 @@
 # Major and minor version numbers.
 # MINOR0 is different from MINOR only if MINOR is a single digit.
 GS_VERSION_MAJOR=9
-GS_VERSION_MINOR=20
-GS_VERSION_MINOR0=20
+GS_VERSION_MINOR=21
+GS_VERSION_MINOR0=21
 # Revision date: year x 10000 + month x 100 + day.
-GS_REVISIONDATE=20160926
+GS_REVISIONDATE=20160914
 # Derived values
 GS_VERSION=$(GS_VERSION_MAJOR)$(GS_VERSION_MINOR0)
 GS_DOT_VERSION=$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR0)
