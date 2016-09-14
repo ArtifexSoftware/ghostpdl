@@ -2350,8 +2350,10 @@ currentdict /PDF2PS_matrix_key undef
         % If the page uses any transparency features, show it within
         % a transparency group. The scan was performed during pdfshowpage_setpage
         % and the result was set in the pagedevice dictionary. Use it rather than
-        % scanning again.
-  currentpagedevice /PageUsesTransparency get dup /PDFusingtransparency exch def {
+        % scanning again IF it is present. If the pdfshowpage_setup was not called
+        % (eg GSView 5) then it will not be present, so we must rescan.
+  currentpagedevice /PageUsesTransparency .knownget not {dup pageusestransparency} if
+  dup /PDFusingtransparency exch def {
     % If the current device isn't ProcessColorModel /DeviceCMYK, or if it is a
     % HighLevelDevice (pdfwrite) we don't need the special handling of Overprint
     % transparency, so disable the checking.
