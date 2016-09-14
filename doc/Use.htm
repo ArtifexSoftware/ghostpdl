@@ -3405,6 +3405,11 @@ the <code>-sOutputFile=...</code> on the command line is unrestricted.
 SAFER mode also prevents changing the /GenericResourceDir, /FontResourceDir
 and either the /SystemParamsPassword or the /StartJobPassword.
 <p>
+<b>Note: </b>While SAFER mode is not the default, in a subsequent release of
+Ghostscript, SAFER mode will be the default thus scripts or programs that need
+to open files or set restricted parameters will require the <code>-dNOSAFER</code>
+command line option.
+<p>
 When running -dNOSAFER it is possible to perform a <code>save</code>,
 followed by <code>.setsafe</code>, execute a file or procedure in SAFER mode,
 then use <code>restore</code> to return to NOSAFER mode. In order to prevent
@@ -4425,7 +4430,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.19, 23 March 2016
+<small>Ghostscript version 9.20, 26 September 2016
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

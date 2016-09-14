@@ -338,11 +338,6 @@ future.  There is currently no support for any additional JPEG
 compression options, such as the other DCTEncode filter parameters.
 </p>
 
-<p>
-The JPEG devices also accept the same downscaling factors as documented
-in the <a href="#TIFF">TIFF</a> devices below.
-</p>
-
 
 <h3><a name="PNM"></a>PNM</h3>
 
@@ -482,9 +477,7 @@ option, which may be set to 8 (the default) or 1. In 1bpp mode, the
 device renders each component internally in 8 bits, but then converts
 down to 1bpp with error diffusion before output as described below in
 the <code>tiffscaled</code> device. No composite file is produced in
-1bpp mode, only individual separations. To create no individual separations
-in the <code>tiffsep</code> device, use the -dNoSeparationFiles option.  In
-this case, only a composite file will be created.
+1bpp mode, only individual separations.
 
 <p>The device also accepts the -dDownScaleFactor= -dTrapX= -dTrapy= and -sPostRenderProfile=
 parameters as described below in the tiffscaled device, and
@@ -1911,7 +1904,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.19, 23 March 2016
+<small>Ghostscript version 9.20, 26 September 2016
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

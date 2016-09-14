@@ -1800,11 +1800,16 @@ Display drivers:
 <dd>
 <a href="../devices/gdev8bcm.c">devices/gdev8bcm.c</a>,
 <a href="../devices/gdev8bcm.h">devices/gdev8bcm.h</a>,
+<a href="../devices/gdevevga.c">devices/gdevevga.c</a>,
+<a href="../devices/gdevl256.c">devices/gdevl256.c</a>,
 <a href="../base/gdevpccm.c">base/gdevpccm.c</a>,
 <a href="../base/gdevpccm.h">base/gdevpccm.h</a>,
 <a href="../devices/gdevpcfb.c">devices/gdevpcfb.c</a>,
 <a href="../devices/gdevpcfb.h">devices/gdevpcfb.h</a>,
+<a href="../devices/gdevs3ga.c">devices/gdevs3ga.c</a>,
 <a href="../devices/gdevsco.c">devices/gdevsco.c</a>,
+<a href="../devices/gdevsvga.c">devices/gdevsvga.c</a>,
+<a href="../devices/gdevsvga.h">devices/gdevsvga.h</a>,
 <a href="../devices/gdevvglb.c">devices/gdevvglb.c</a>.
 
 <dt>
@@ -1823,6 +1828,15 @@ X Windows:
 <a href="../devices/gdevxcmp.h">devices/gdevxcmp.h</a>,
 <a href="../devices/gdevxini.c">devices/gdevxini.c</a>,
 <a href="../devices/gdevxres.c">devices/gdevxres.c</a>.
+
+<dt>
+Microsoft Windows:
+<dd>
+<a href="../devices/gdevmswn.c">devices/gdevmswn.c</a>,
+<a href="../devices/gdevmswn.h">devices/gdevmswn.h</a>,
+<a href="../devices/gdevmsxf.c">devices/gdevmsxf.c</a>,
+<a href="../devices/gdevwddb.c">devices/gdevwddb.c</a>,
+<a href="../devices/gdevwdib.c">devices/gdevwdib.c</a>.
 
 <dt>
 OS/2 Presentation Manager:
@@ -1887,7 +1901,9 @@ Printer drivers:
 <dt>
 Operating system printer services:
 <dd>
+<a href="../devices/gdevos2p.c">devices/gdevos2p.c</a>,
 <a href="../devices/gdevwpr2.c">devices/gdevwpr2.c</a>,
+<a href="../devices/gdevwprn.c">devices/gdevwprn.c</a>.
 
 <dt>
 H-P monochrome printers:
@@ -1918,8 +1934,12 @@ This list is likely to be incomplete and inaccurate: see
 <dt>
 Display and window system drivers:
 <dd>
+<a href="../devices/gdev3b1.c">devices/gdev3b1.c</a>,
+<a href="../devices/gdevherc.c">devices/gdevherc.c</a>,
 <a href="../devices/gdevpe.c">devices/gdevpe.c</a>,
 <a href="../devices/gdevsnfb.c">devices/gdevsnfb.c</a>,
+<a href="../devices/gdevsun.c">devices/gdevsun.c</a>.
+
 <dt>
 Raster file output drivers:
 <dd>
@@ -1929,6 +1949,9 @@ Raster file output drivers:
 <a href="../devices/gdevifno.c">devices/gdevifno.c</a>,
 <a href="../devices/gdevmgr.c">devices/gdevmgr.c</a>,
 <a href="../devices/gdevmgr.h">devices/gdevmgr.h</a>,
+<a href="../devices/gdevsgi.c">devices/gdevsgi.c</a>,
+<a href="../devices/gdevsgi.h">devices/gdevsgi.h</a>,
+<a href="../devices/gdevsunr.c">devices/gdevsunr.c</a>,
 <a href="../devices/gdevjbig2.c">devices/gdevjbig2.c</a>,
 <a href="../devices/gdevjpx.c">devices/gdevjpx.c</a>.
 
@@ -1942,6 +1965,7 @@ Printer drivers:
 <a href="../devices/gdev4081.c">devices/gdev4081.c</a>,
 <a href="../devices/gdev4693.c">devices/gdev4693.c</a>,
 <a href="../devices/gdev8510.c">devices/gdev8510.c</a>,
+<a href="../devices/gdevadmp.c">devices/gdevadmp.c</a>,
 <a href="../devices/gdevbj10.c">devices/gdevbj10.c</a>,
 <a href="../devices/gdevbjc.h">devices/gdevbjc.h</a>,
 <a href="../devices/gdevbjcl.c">devices/gdevbjcl.c</a>,
@@ -1972,6 +1996,7 @@ Printer drivers:
 <a href="../devices/gdevphex.c">devices/gdevphex.c</a>,
 <a href="../devices/gdevpjet.c">devices/gdevpjet.c</a>,
 <a href="../devices/gdevsj48.c">devices/gdevsj48.c</a>,
+<a href="../devices/gdevsppr.c">devices/gdevsppr.c</a>,
 <a href="../devices/gdevstc.c">devices/gdevstc.c</a>,
 <a href="../devices/gdevstc.h">devices/gdevstc.h</a>,
 <a href="../devices/gdevstc1.c">devices/gdevstc1.c</a>,
@@ -4526,6 +4551,14 @@ Unix files:
 <dt>
 Macintosh files:
 <dd>
+<a href="../devices/gdevmac.c">devices/gdevmac.c</a>,
+<a href="../devices/gdevmac.h">devices/gdevmac.h</a>,
+<a href="../devices/gdevmacpictop.h">devices/gdevmacpictop.h</a>,
+<a href="../devices/gdevmacttf.h">devices/gdevmacttf.h</a>,
+<a href="../base/gp_mac.c">base/gp_mac.c</a>,
+<a href="../base/gp_mac.h">base/gp_mac.h</a>,
+<a href="../base/gp_macio.c">base/gp_macio.c</a>,
+<a href="../base/gp_macpoll.c">base/gp_macpoll.c</a>,
 <a href="../base/gsiomacres.c">base/gsiomacres.c</a>,
 <a href="../base/macgenmcpxml.sh">base/macgenmcpxml.sh</a>,
 <a href="../base/macsystypes.h">base/macsystypes.h</a>,
@@ -4728,7 +4761,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.19, 23 March 2016
+<small>Ghostscript version 9.20, 26 September 2016
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
