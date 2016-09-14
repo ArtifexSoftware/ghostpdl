@@ -33,7 +33,7 @@ const long gs_buildtime = GS_BUILDTIME;
 
 #ifndef GS_COPYRIGHT
 #  define GS_COPYRIGHT\
-        "Copyright (C) 2015 Artifex Software, Inc.  All rights reserved."
+        "Copyright (C) 2016 Artifex Software, Inc.  All rights reserved."
 #endif
 const char *const gs_copyright = GS_COPYRIGHT;
 
@@ -51,7 +51,7 @@ gs_program_family_name(void)
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-        GS_PRODUCTFAMILY " GIT PRERELEASE"
+        GS_PRODUCTFAMILY " RELEASE CANDIDATE 1"
 #endif
 const char *const gs_product = GS_PRODUCT;
 
