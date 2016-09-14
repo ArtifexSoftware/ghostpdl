@@ -45,14 +45,13 @@ pdfdict begin
   % We can't use //Tz as we've stored the value we actually use,
   % not value * 100 (see /Tz in pdf_ops.ps)
 %  /TextHScaling { /TextHScaling gput } bind
-  /TextHScaling { .settexthscaling } bind
-  /Leading //TD
+%  /Leading //TD
   /TextFont { /TextFont gput} bind
   /TextLineMatrix { /TextLineMatrix gput } bind
   /TextMatrix { /TextMatrix gput } bind
 %  /TextRise { /TextRise gput } bind
 %  /TextRenderingMode { /TextRenderingMode gput } bind
-  /WordSpacing //Tw
+%  /WordSpacing //Tw
 >> def
 
 % ================================ Graphics ================================ %
