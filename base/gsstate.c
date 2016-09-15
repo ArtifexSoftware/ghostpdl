@@ -671,6 +671,7 @@ gs_setoverprint(gs_gstate * pgs, bool ovp)
     bool    prior_ovp = pgs->overprint;
 
     pgs->overprint = ovp;
+    pgs->overprint_stroke = ovp;
     if (prior_ovp != ovp)
         (void)gs_do_set_overprint(pgs);
 }
@@ -678,6 +679,40 @@ gs_setoverprint(gs_gstate * pgs, bool ovp)
 /* currentoverprint */
 bool
 gs_currentoverprint(const gs_gstate * pgs)
+{
+    return pgs->overprint;
+}
+
+/* setstrokeoverprint */
+void
+gs_setstrokeoverprint(gs_gstate * pgs, bool ovp)
+{
+    bool    prior_ovp = pgs->overprint_stroke;
+
+    pgs->overprint_stroke = ovp;
+}
+
+/* currentstrokeoverprint */
+bool
+gs_currentstrokeoverprint(const gs_gstate * pgs)
+{
+    return pgs->overprint_stroke;
+}
+
+/* setstrokeoverprint */
+void
+gs_setfilloverprint(gs_gstate * pgs, bool ovp)
+{
+    bool    prior_ovp = pgs->overprint;
+
+    pgs->overprint = ovp;
+    if (prior_ovp != ovp)
+        (void)gs_do_set_overprint(pgs);
+}
+
+/* currentstrokeoverprint */
+bool
+gs_currentfilloverprint(const gs_gstate * pgs)
 {
     return pgs->overprint;
 }
@@ -1309,8 +1344,8 @@ void gs_swapcolors_quick(gs_gstate *pgs)
     pgs->color_component_map_alt = tmp_ccm;
 
     tmp                = pgs->overprint;
-    pgs->overprint     = pgs->overprint_alt;
-    pgs->overprint_alt = tmp;
+    pgs->overprint     = pgs->overprint_stroke;
+    pgs->overprint_stroke = tmp;
 
     tmp                     = pgs->overprint_mode;
     pgs->overprint_mode     = pgs->overprint_mode_alt;

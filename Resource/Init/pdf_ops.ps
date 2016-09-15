@@ -217,6 +217,8 @@ currentdict /gput_always_allow .undef
   currentsmoothness
   currentflat
   currentoverprint
+  .currentstrokeoverprint
+  .currentfilloverprint
   currentstrokeadjust
   currentdash
   currentmiterlimit
@@ -244,6 +246,8 @@ currentdict /gput_always_allow .undef
   setmiterlimit
   setdash
   setstrokeadjust
+  .setfilloverprint
+  .setstrokeoverprint
   setoverprint
   setflat
   setsmoothness
@@ -364,8 +368,10 @@ currentdict /gput_always_allow .undef
 
 % ---------------- Overprint/transparency setting ---------------- %
 
-/op { /FillOverprint gput } bdef	% NB pdf_draw:gsparamdict handled /OP with no /op
-/OP { /StrokeOverprint gput } bdef
+/op { .setfilloverprint %/FillOverprint gput
+} bdef	% NB pdf_draw:gsparamdict handled /OP with no /op
+/OP { .setstrokeoverprint %/StrokeOverprint gput
+} bdef
 /OPM {
   /.setoverprintmode where { pop dup .setoverprintmode .swapcolors .setoverprintmode .swapcolors } { pop } ifelse
 } bdef
@@ -422,7 +428,7 @@ currentdict /gput_always_allow .undef
 } bdef
 % (Non-mask) images must execute setfillblend.
 /setfillblend {
-  FillOverprint setoverprint
+%  FillOverprint setoverprint
   .getFillConstantAlpha
   SoftMask .settransparencyparams
 } def
@@ -432,7 +438,7 @@ currentdict /gput_always_allow .undef
 
 /setstrokestate {
   .swapcolors
-  StrokeColor StrokeColorSpace setgcolor StrokeOverprint setoverprint
+  StrokeColor StrokeColorSpace setgcolor %StrokeOverprint setoverprint
   .getStrokeConstantAlpha
   SoftMask .settransparencyparams
   .swapcolors
@@ -595,8 +601,10 @@ end def
        pop currentcolorspace 1 get	% use the base space
     } if
     known {
-      /stroke ne { FillOverprint } { StrokeOverprint } ifelse
-      .currentblendmode dup /Normal eq exch /Compatible eq or not and
+       /stroke ne { .currentfilloverprint %FillOverprint
+       } { .currentstrokeoverprint %StrokeOverprint
+       } ifelse
+       .currentblendmode dup /Normal eq exch /Compatible eq or not and
    } {
       pop //false
    } ifelse

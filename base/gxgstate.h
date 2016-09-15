@@ -321,7 +321,7 @@ struct gs_gstate_s {
     bool overprint;
     int overprint_mode;
     int effective_overprint_mode;
-    bool overprint_alt;
+    bool overprint_stroke;
     int overprint_mode_alt;
     int effective_overprint_mode_alt;
     float flatness;
@@ -367,7 +367,7 @@ struct gs_gstate_s {
     void *SMask;
 /*    void *BM;            Already handled (.setblendmode) */
     bool AIS;
-    bool OP;            /* Stroke overprint, for fill we will use existing overprint */
+/*    bool OP;            /* Stroke overprint, for fill we will use existing overprint */
 /*    bool TK;             Already handled (.settextknockout) */
     float Tc;
     float TL;
@@ -434,7 +434,7 @@ struct gs_gstate_s {
     s->overprint = __state_init.overprint; \
     s->overprint_mode = __state_init.overprint_mode; \
     s->effective_overprint_mode = __state_init.effective_overprint_mode; \
-    s->overprint_alt = __state_init.overprint_alt; \
+    s->overprint_stroke = __state_init.overprint_stroke; \
     s->overprint_mode_alt = __state_init.overprint_mode_alt; \
     s->effective_overprint_mode_alt = __state_init.effective_overprint_mode_alt; \
     s->flatness = __state_init.flatness; \

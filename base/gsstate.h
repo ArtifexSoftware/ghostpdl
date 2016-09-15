@@ -49,6 +49,11 @@ int gs_copygstate(gs_gstate * /*to */ , const gs_gstate * /*from */ ),
 int gs_gstate_update_overprint(gs_gstate *, const gs_overprint_params_t *);
 bool gs_currentoverprint(const gs_gstate *);
 void gs_setoverprint(gs_gstate *, bool);
+bool gs_currentstrokeoverprint(const gs_gstate *);
+void gs_setstrokeoverprint(gs_gstate *, bool);
+bool gs_currentfilloverprint(const gs_gstate *);
+void gs_setfilloverprint(gs_gstate *, bool);
+
 int gs_currentoverprintmode(const gs_gstate *);
 int gs_setoverprintmode(gs_gstate *, int);
 
