@@ -913,6 +913,7 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
     pnext = penum->dda.pixel0;
     xrun = xprev = dda_current(pnext.x);
+    dda_translate(pnext.x,  (-fixed_epsilon));
     yrun = yprev = dda_current(pnext.y);
     pdyx = dda_current(penum->dda.row.x) - penum->cur.x;
     pdyy = dda_current(penum->dda.row.y) - penum->cur.y;
