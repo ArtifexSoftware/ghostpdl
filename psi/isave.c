@@ -1282,7 +1282,7 @@ save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit, ulong *pscanned
                 /* These are refs, scan them. */
                 ref_packed *prp = (ref_packed *) (pre + 1);
                 uint size;
-                has_refs = true;
+                has_refs = true && to_new;
                 code = mark_allocated(prp, to_new, &size);
                 if (code < 0)
                     return code;
