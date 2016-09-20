@@ -229,6 +229,8 @@ void *Memento_reference(void *blk);
 void Memento_startLeaking(void);
 void Memento_stopLeaking(void);
 
+void Memento_fin(void);
+
 #ifdef MEMENTO
 
 #ifndef COMPILING_MEMENTO_C
@@ -271,6 +273,7 @@ void Memento_stopLeaking(void);
 #define Memento_tick()            do {} while (0)
 #define Memento_startLeaking()    do {} while (0)
 #define Memento_stopLeaking()     do {} while (0)
+#define Memento_fin()             do {} while (0)
 
 #endif /* MEMENTO */
 
