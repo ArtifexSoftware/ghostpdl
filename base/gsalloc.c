@@ -368,6 +368,9 @@ clump_splay_walk_fwd(clump_splay_walker *sw)
     if (cp == NULL)
         return NULL;
 
+    /* We step through the tree, and stop when we arrive
+     * at sw->end in an in order manner (i.e. by moving from
+     * the left). */
     while (1)
     {
         if (from == SPLAY_FROM_ABOVE)
@@ -389,12 +392,6 @@ clump_splay_walk_fwd(clump_splay_walker *sw)
         }
         if (from == SPLAY_FROM_LEFT)
         {
-            /* Have we reached the stopping point? */
-            if (cp == sw->end)
-            {
-                cp = NULL;
-                break;
-            }
             /* We have arrived from the left. Step right. */
             if (cp->right)
             {
@@ -423,7 +420,12 @@ clump_splay_walk_fwd(clump_splay_walker *sw)
             {
                 from = (cp->left == old ? SPLAY_FROM_LEFT : SPLAY_FROM_RIGHT);
                 if (from == SPLAY_FROM_LEFT)
+                {
+                    /* Have we reached the stopping point? */
+                    if (cp == sw->end)
+                        cp = NULL;
                     break;
+                }
             }
         }
     }
@@ -441,6 +443,9 @@ clump_splay_walk_bwd(clump_splay_walker *sw)
     if (cp == NULL)
         return NULL;
 
+    /* We step backwards through the tree, and stop when we arrive
+     * at sw->end in a reverse in order manner (i.e. by moving from
+     * the right). */
     while (1)
     {
         if (from == SPLAY_FROM_ABOVE)
@@ -454,6 +459,9 @@ clump_splay_walk_bwd(clump_splay_walker *sw)
             }
             /* No right to step to, so imagine we have just arrived from there. */
             from = SPLAY_FROM_RIGHT;
+            /* Have we reached our end? */
+            if (cp == sw->end)
+                cp = NULL;
             /* Stop to run inorder operation */
             break;
         }
@@ -476,7 +484,11 @@ clump_splay_walk_bwd(clump_splay_walker *sw)
             cp = cp->parent;
             from = (cp == NULL || cp->left != old ? SPLAY_FROM_RIGHT : SPLAY_FROM_LEFT);
             if (from == SPLAY_FROM_RIGHT)
+            {
+                if (cp == sw->end)
+                    cp = NULL;
                 break;
+            }
         }
     }
     sw->cp = cp;
