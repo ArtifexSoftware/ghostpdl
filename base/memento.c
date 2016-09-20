@@ -33,13 +33,7 @@
 #ifdef MEMENTO_GS_HACKS
 /* For GS we include malloc_.h. Anyone else would just include memento.h */
 #include "malloc_.h"
-#ifdef __MACH__
-#include <string.h>
-#else
-#ifndef memset
-void *memset(void *,int,size_t);
-#endif
-#endif
+#include "memory_.h"
 int atexit(void (*)(void));
 #else
 #include "memento.h"
