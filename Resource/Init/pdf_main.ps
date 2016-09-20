@@ -2126,8 +2126,10 @@ end readonly def
     7 index aload pop 3 -1 roll sub 3 1 roll exch sub exch
     10 index /Rotate pget not { 0 } if cvi 90 idiv 1 and 0 ne { exch } if
     gt	% Box_is_landscape
-    ne {
+    xor		% PageSize_is_landscape(or square) xor'ed with Box_is_lanscape suggests rotate
+    2 index 2 index eq not and {	% don't rotate if Page is square
       1 index 0 translate 90 rotate	% add in a rotation
+      PDFDEBUG { (    Rotating the page for best fit) = flush } if
       2 copy ne {
         % rotate the .HWMargins
         2 copy lt {
