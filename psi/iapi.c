@@ -80,7 +80,7 @@ static int GSDLLCALL metro_stderr(void *v, const char *str, int len)
 #ifdef __ANDROID__
 #include <android/log.h>
 
-#ifndef NDEBUG
+#ifdef DEBUG
 #define ENABLE_ANDROID_LOGGING
 #endif
 
