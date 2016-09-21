@@ -77,6 +77,93 @@ static int GSDLLCALL metro_stderr(void *v, const char *str, int len)
 }
 #endif
 
+#ifdef __ANDROID__
+#include <android/log.h>
+
+#ifndef NDEBUG
+#define ENABLE_ANDROID_LOGGING
+#endif
+
+#ifdef ENABLE_ANDROID_LOGGING
+typedef struct
+{
+    int fill;
+    char buffer[4096];
+} android_out;
+
+static android_out android_stdout_buffer = { 0 };
+static android_out android_stderr_buffer = { 0 };
+
+extern void usleep(int);
+
+static int
+android_output(android_out *log, const char *str, int len)
+{
+    const char *p, *q, *end;
+
+    end = str + len;
+    p = str;
+    q = p;
+    do
+    {
+        /* Find the end of the string, or the next \n */
+        while (p != end && *p != '\n')
+            p++;
+
+        /* We need to output from q to p. Limit ourselves to what
+         * will fit in the existing */
+        if (p - q >= sizeof(log->buffer)-1 - log->fill)
+                p = q + sizeof(log->buffer)-1 - log->fill;
+
+        memcpy(&log->buffer[log->fill], q, p-q);
+        log->fill += p-q;
+        if (*p == '\n')
+        {
+            log->buffer[log->fill] = 0;
+            __android_log_print(ANDROID_LOG_ERROR, "ghostscript", "%s", log->buffer);
+            usleep(1);
+            log->fill = 0;
+            p++; /* Skip over the \n */
+        }
+        else if (log->fill >= sizeof(log->buffer)-1)
+        {
+            log->buffer[sizeof(log->buffer)-1] = 0;
+            __android_log_print(ANDROID_LOG_ERROR, "ghostscript", "%s", log->buffer);
+            usleep(1);
+            log->fill = 0;
+        }
+        q = p;
+    }
+    while (p != end);
+
+    return len;
+}
+#endif
+
+static int GSDLLCALL android_stdin(void *v, char *buf, int len)
+{
+    return 0;
+}
+
+static int GSDLLCALL android_stdout(void *v, const char *str, int len)
+{
+#ifdef ENABLE_ANDROID_LOGGING
+    return android_output(&android_stdout_buffer, str, len);
+#else
+    return len;
+#endif
+}
+
+static int GSDLLCALL android_stderr(void *v, const char *str, int len)
+{
+#ifdef ENABLE_ANDROID_LOGGING
+    return android_output(&android_stderr_buffer, str, len);
+#else
+    return len;
+#endif
+}
+#endif
+
 /* Create a new instance of Ghostscript.
  * First instance per process call with *pinstance == NULL
  * next instance in a proces call with *pinstance == copy of valid_instance pointer
@@ -122,6 +209,10 @@ gsapi_new_instance(void **pinstance, void *caller_handle)
     mem->gs_lib_ctx->stdin_fn = metro_stdin;
     mem->gs_lib_ctx->stdout_fn = metro_stdout;
     mem->gs_lib_ctx->stderr_fn = metro_stderr;
+#elif defined(__ANDROID__)
+    mem->gs_lib_ctx->stdin_fn = android_stdin;
+    mem->gs_lib_ctx->stdout_fn = android_stdout;
+    mem->gs_lib_ctx->stderr_fn = android_stderr;
 #else
     mem->gs_lib_ctx->stdin_fn = NULL;
     mem->gs_lib_ctx->stdout_fn = NULL;
