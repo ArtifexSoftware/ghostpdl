@@ -1195,6 +1195,33 @@ currentdict /eexec_pdf_param_dict .undef
 
 /buildTrueType {	% <TrueType-font-resource> buildTrueType <font>
   dup /BaseFont oget
+  dup /font_name gput
+
+  1 index /FontDescriptor knownoget
+  {
+    /Flags knownoget
+    {
+      4 and 0 ne
+      { //true } %  symbolic
+      { 1 index /Encoding oknown not}  % no encoding => symbolic
+      ifelse
+    }
+    {//false}
+    ifelse
+  }
+  {//false}
+  ifelse
+
+  /is_symbolic gput
+  1 index /Encoding oknown {
+    StandardEncoding
+    3 index getencoding
+  } {
+    //null
+  } ifelse
+  /prebuilt_encoding gput
+  //false /.render_notdef gput % set the default
+
   dup /Font resourcestatus dup { exch pop exch pop } if not
   TTfonts 2 index known and {
     dup TTfonts exch get

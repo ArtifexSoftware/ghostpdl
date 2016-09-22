@@ -1515,7 +1515,11 @@ currentdict /postalias undef
   .getpost
   .pickcmap
   mark
-  .charkeys
+  % if we're loading to substitute for TTF in a PDF,
+  % load the font the "PDF way"
+  /prebuilt_encoding where
+  {pop .pdfcharkeys}
+  {.charkeys} ifelse
   .ttkeys
   /FontType 42
   /PaintType 0
