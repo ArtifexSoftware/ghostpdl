@@ -1623,12 +1623,6 @@ pclxl_open_device(gx_device * dev)
     xdev->media_size = pxeMediaSize_next;       /* no size selected */
     memset(&xdev->chars, 0, sizeof(xdev->chars));
     xdev->chars.next_in = xdev->chars.next_out = 2;
-    xdev->MediaPosition_set = false;
-    xdev->MediaType_set = false;
-    xdev->MediaPosition_old = eAutoSelect;
-    xdev->MediaPosition = eAutoSelect;
-    xdev->MediaType_old[0] = '\0';
-    xdev->MediaType[0] = '\0';
     /* xdev->iccTransform = false; *//* set true/false here to ignore command line */
     return 0;
 }
@@ -2606,17 +2600,18 @@ pclxl_get_params(gx_device * dev,       /* I - Device info */
     if ((code = param_write_bool(plist, "Duplex", &(xdev->Duplex))) < 0)
         return (code);
 
-    if (xdev->MediaPosition_set)
-        if ((code = param_write_int(plist, "MediaPosition",
-                                    &(xdev->MediaPosition))) < 0)
-            return (code);
+    if ((code = param_write_bool(plist, "ManualFeed",
+				 &(xdev->ManualFeed))) < 0)
+        return (code);
 
-    if (xdev->MediaType_set) {
-        if ((code = param_string_from_string(s, xdev->MediaType)) < 0)
-            return (code);
-        if ((code = param_write_string(plist, "MediaType", &s)) < 0)
-            return (code);
-    }
+    if ((code = param_write_int(plist, "MediaPosition",
+				&(xdev->MediaPosition))) < 0)
+        return (code);
+
+    if ((code = param_string_from_string(s, xdev->MediaType)) < 0)
+        return (code);
+    if ((code = param_write_string(plist, "MediaType", &s)) < 0)
+        return (code);
 
     if ((code = param_write_bool(plist, "Staple", &(xdev->Staple))) < 0)
         return (code);
@@ -2648,6 +2643,10 @@ pclxl_put_params(gx_device * dev,       /* I - Device info */
     int intval;                 /* Integer value */
     bool boolval;               /* Boolean value */
     gs_param_string stringval;  /* String value */
+    bool ManualFeed;
+    bool ManualFeed_set = false;
+    int MediaPosition;
+    bool MediaPosition_set = false;
 
     /*
      * Process PCL-XL driver parameters...
@@ -2715,15 +2714,17 @@ pclxl_put_params(gx_device * dev,       /* I - Device info */
             if_debug0('|', "round up page count\n");
             xdev->page = (xdev->page + 1) & ~1;
         }
-    intoption(MediaPosition, "MediaPosition", int);
-
-    if (code == 0) {
-        xdev->MediaPosition_set = true;
-        /* round up for duplex */
-        if (xdev->MediaPosition_old != xdev->MediaPosition) {
-            if_debug0('|', "round up page count\n");
-            xdev->page = (xdev->page + 1) & ~1;
-            xdev->MediaPosition_old = xdev->MediaPosition;
+    code = param_read_bool(plist, "ManualFeed", &ManualFeed);
+    if (code == 0)
+        ManualFeed_set = true;
+    if (code >= 0) {
+        code = param_read_int(plist, "MediaPosition", &MediaPosition);
+        if (code == 0)
+            MediaPosition_set = true;
+        else if (code < 0) {
+            if (param_read_null(plist, "MediaPosition") == 0) {
+                code = 0;
+            }
         }
     }
     stringoption(MediaType, "MediaType");
@@ -2746,8 +2747,25 @@ pclxl_put_params(gx_device * dev,       /* I - Device info */
      * Then process standard page device parameters...
      */
 
-    if ((code = gdev_vector_put_params(dev, plist)) < 0)
-        return (code);
+    if (code >= 0)
+        if ((code = gdev_vector_put_params(dev, plist)) < 0)
+            return (code);
+
+    if (code >= 0) {
+        if (ManualFeed_set) {
+            xdev->ManualFeed = ManualFeed;
+            xdev->ManualFeed_set = true;
+        }
+        if (MediaPosition_set) {
+            xdev->MediaPosition = MediaPosition;
+            xdev->MediaPosition_set = true;
+            if (xdev->MediaPosition_old != xdev->MediaPosition) {
+                if_debug0('|', "round up page count\n");
+                xdev->page = (xdev->page+1) & ~1 ;
+                xdev->MediaPosition_old = xdev->MediaPosition;
+            }
+        }
+    }
 
     return (0);
 }
