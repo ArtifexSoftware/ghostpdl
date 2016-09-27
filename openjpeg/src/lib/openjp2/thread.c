@@ -287,7 +287,7 @@ void opj_thread_join( opj_thread_t* thread )
     opj_free(thread);
 }
 
-#elif MUTEX_pthread
+#elif defined(MUTEX_pthread)
 
 #include <pthread.h>
 #include <stdlib.h>
