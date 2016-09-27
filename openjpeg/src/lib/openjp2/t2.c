@@ -1049,6 +1049,12 @@ static OPJ_BOOL opj_t2_read_packet_header( opj_t2_t* p_t2,
                                 l_cblk->segs[l_segno].newlen = opj_bio_read(l_bio, l_cblk->numlenbits + opj_uint_floorlog2(l_cblk->segs[l_segno].numnewpasses));
                                         JAS_FPRINTF(stderr, "included=%d numnewpasses=%d increment=%d len=%d \n", l_included, l_cblk->segs[l_segno].numnewpasses, l_increment, l_cblk->segs[l_segno].newlen );
 
+                                /* testcase 1802.pdf.SIGSEGV.36e.894 */
+                                if (l_cblk->segs[l_segno].newlen > *l_modified_length_ptr) {
+                                    opj_bio_destroy(l_bio);
+                                    return OPJ_FALSE;
+                                }
+
                                 n -= (OPJ_INT32)l_cblk->segs[l_segno].numnewpasses;
                                 if (n > 0) {
                                         ++l_segno;

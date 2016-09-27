@@ -3303,7 +3303,7 @@ static OPJ_BOOL opj_j2k_read_poc (  opj_j2k_t *p_j2k,
         l_old_poc_nb = l_tcp->POC ? l_tcp->numpocs + 1 : 0;
         l_current_poc_nb += l_old_poc_nb;
 
-        if(l_current_poc_nb >= 32)
+        if(l_current_poc_nb >= sizeof(l_tcp->pocs) / sizeof(l_tcp->pocs[0]))
           {
           opj_event_msg(p_manager, EVT_ERROR, "Too many POCs %d\n", l_current_poc_nb);
           return OPJ_FALSE;
@@ -4151,6 +4151,10 @@ static OPJ_BOOL opj_j2k_read_sot ( opj_j2k_t *p_j2k,
                                         p_j2k->m_specific_param.m_decoder.m_last_tile_part = 1;
                                         return OPJ_FALSE;
                                 }
+                        }
+                        /* cf. https://code.google.com/p/openjpeg/issues/detail?id=254 */
+                        if (++l_num_parts < l_tcp->m_nb_tile_parts) {
+                            l_num_parts = l_tcp->m_nb_tile_parts;
                         }
                         if( l_current_part >= l_num_parts ) {
                           /* testcase 451.pdf.SIGSEGV.ce9.3723 */
