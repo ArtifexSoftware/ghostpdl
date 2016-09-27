@@ -228,9 +228,15 @@ typedef struct opj_simple_mcc_decorrelation_data
 	OPJ_UINT32			 m_nb_comps;
 	opj_mct_data_t *	 m_decorrelation_array;
 	opj_mct_data_t *	 m_offset_array;
-	OPJ_UINT32			 m_is_irreversible : 1;
+	OPJ_BITFIELD		 m_is_irreversible : 1;
 }
 opj_simple_mcc_decorrelation_data_t;
+
+typedef struct opj_ppx_struct
+{
+	OPJ_BYTE*   m_data; /* m_data == NULL => Zppx not read yet */
+	OPJ_UINT32	m_data_size;
+} opj_ppx;
 
 /**
 Tile coding parameters :
@@ -254,7 +260,13 @@ typedef struct opj_tcp
 	OPJ_UINT32 numpocs;
 	/** progression order changes */
 	opj_poc_t pocs[32];
-	/** packet header store there for futur use in t2_decode_packet */
+	
+	/** number of ppt markers (reserved size) */
+	OPJ_UINT32 ppt_markers_count;
+	/** ppt markers data (table indexed by Zppt) */
+	opj_ppx* ppt_markers;
+	
+	/** packet header store there for future use in t2_decode_packet */
 	OPJ_BYTE *ppt_data;
 	/** used to keep a track of the allocated memory */
 	OPJ_BYTE *ppt_buffer;
@@ -293,10 +305,12 @@ typedef struct opj_tcp
 
 
 	/***** FLAGS *******/
+	/** If cod == 1 --> there was a COD marker for the present tile */
+	OPJ_BITFIELD cod : 1;
 	/** If ppt == 1 --> there was a PPT marker for the present tile */
-	OPJ_UINT32 ppt : 1;
+	OPJ_BITFIELD ppt : 1;
 	/** indicates if a POC marker has been used O:NO, 1:YES */
-	OPJ_UINT32 POC : 1;
+	OPJ_BITFIELD POC : 1;
 } opj_tcp_t;
 
 
@@ -313,13 +327,13 @@ typedef struct opj_encoding_param
 	/** Flag determining tile part generation*/
 	OPJ_BYTE m_tp_flag;
 	/** allocation by rate/distortion */
-	OPJ_UINT32 m_disto_alloc : 1;
+	OPJ_BITFIELD m_disto_alloc : 1;
 	/** allocation by fixed layer */
-	OPJ_UINT32 m_fixed_alloc : 1;
+	OPJ_BITFIELD m_fixed_alloc : 1;
 	/** add fixed_quality */
-	OPJ_UINT32 m_fixed_quality : 1;
+	OPJ_BITFIELD m_fixed_quality : 1;
 	/** Enabling Tile part generation*/
-	OPJ_UINT32 m_tp_on : 1;
+	OPJ_BITFIELD m_tp_on : 1;
 }
 opj_encoding_param_t;
 
@@ -357,7 +371,12 @@ typedef struct opj_cp
 	/** number of tiles in heigth */
 	OPJ_UINT32 th;
 
-	/** packet header store there for futur use in t2_decode_packet */
+	/** number of ppm markers (reserved size) */
+	OPJ_UINT32 ppm_markers_count;
+	/** ppm markers data (table indexed by Zppm) */
+	opj_ppx* ppm_markers;
+	
+	/** packet header store there for future use in t2_decode_packet */
 	OPJ_BYTE *ppm_data;
 	/** size of the ppm_data*/
 	OPJ_UINT32 ppm_len;
@@ -434,9 +453,9 @@ typedef struct opj_cp
 
 	/******** FLAGS *********/
 	/** if ppm == 1 --> there was a PPM marker*/
-	OPJ_UINT32 ppm : 1;
+	OPJ_BITFIELD ppm : 1;
 	/** tells if the parameter is a coding or decoding one */
-	OPJ_UINT32 m_is_decoder : 1;
+	OPJ_BITFIELD m_is_decoder : 1;
 /* <<UniPG */
 } opj_cp_t;
 
@@ -478,9 +497,12 @@ typedef struct opj_j2k_dec
 	 */
 	OPJ_BOOL   m_last_tile_part;
 	/** to tell that a tile can be decoded. */
-	OPJ_UINT32 m_can_decode			: 1;
-	OPJ_UINT32 m_discard_tiles		: 1;
-	OPJ_UINT32 m_skip_data			: 1;
+	OPJ_BITFIELD m_can_decode : 1;
+	OPJ_BITFIELD m_discard_tiles : 1;
+	OPJ_BITFIELD m_skip_data : 1;
+	/** TNsot correction : see issue 254 **/
+	OPJ_BITFIELD m_nb_tile_parts_correction_checked : 1;
+	OPJ_BITFIELD m_nb_tile_parts_correction : 1;
 
 } opj_j2k_dec_t;
 
@@ -568,6 +590,11 @@ typedef struct opj_j2k
 	/** the current tile coder/decoder **/
 	struct opj_tcd *	m_tcd;
 
+    /** Number of threads to use */
+    int m_num_threads;
+
+    /** Thread pool */
+    opj_thread_pool_t* m_tp;
 }
 opj_j2k_t;
 
@@ -586,6 +613,8 @@ Decoding parameters are returned in j2k->cp.
 */
 void opj_j2k_setup_decoder(opj_j2k_t *j2k, opj_dparameters_t *parameters);
 
+OPJ_BOOL opj_j2k_set_threads(opj_j2k_t *j2k, OPJ_UINT32 num_threads);
+
 /**
  * Creates a J2K compression structure
  *
@@ -594,7 +623,7 @@ void opj_j2k_setup_decoder(opj_j2k_t *j2k, opj_dparameters_t *parameters);
 opj_j2k_t* opj_j2k_create_compress(void);
 
 
-void opj_j2k_setup_encoder(	opj_j2k_t *p_j2k,
+OPJ_BOOL opj_j2k_setup_encoder(	opj_j2k_t *p_j2k,
 						    opj_cparameters_t *parameters,
 						    opj_image_t *image,
 						    opj_event_mgr_t * p_manager);

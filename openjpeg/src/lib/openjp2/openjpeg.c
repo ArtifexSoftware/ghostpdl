@@ -132,7 +132,7 @@ static OPJ_BOOL opj_seek_from_file (OPJ_OFF_T p_nb_bytes, FILE * p_user_data)
 #ifdef _WIN32
 #ifndef OPJ_STATIC
 BOOL APIENTRY
-DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
+DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
 
 	OPJ_ARG_NOT_USED(lpReserved);
 	OPJ_ARG_NOT_USED(hModule);
@@ -169,7 +169,6 @@ opj_codec_t* OPJ_CALLCONV opj_create_decompress(OPJ_CODEC_FORMAT p_format)
 	if (!l_codec){
 		return 00;
 	}
-	memset(l_codec, 0, sizeof(opj_codec_private_t));
 
 	l_codec->is_decompressor = 1;
 
@@ -239,6 +238,9 @@ opj_codec_t* OPJ_CALLCONV opj_create_decompress(OPJ_CODEC_FORMAT p_format)
                     (OPJ_BOOL (*) ( void * p_codec,
 									OPJ_UINT32 res_factor,
 									struct opj_event_mgr * p_manager)) opj_j2k_set_decoded_resolution_factor;
+
+            l_codec->opj_set_threads = 
+                    (OPJ_BOOL (*) ( void * p_codec, OPJ_UINT32 num_threads )) opj_j2k_set_threads;
 
 			l_codec->m_codec = opj_j2k_create_decompress();
 
@@ -316,6 +318,9 @@ opj_codec_t* OPJ_CALLCONV opj_create_decompress(OPJ_CODEC_FORMAT p_format)
 						    		OPJ_UINT32 res_factor,
 							    	opj_event_mgr_t * p_manager)) opj_jp2_set_decoded_resolution_factor;
 
+            l_codec->opj_set_threads = 
+                    (OPJ_BOOL (*) ( void * p_codec, OPJ_UINT32 num_threads )) opj_jp2_set_threads;
+
 			l_codec->m_codec = opj_jp2_create(OPJ_TRUE);
 
 			if (! l_codec->m_codec) {
@@ -353,6 +358,18 @@ void OPJ_CALLCONV opj_set_default_decoder_parameters(opj_dparameters_t *paramete
 #endif /* USE_JPWL */
 /* <<UniPG */
 	}
+}
+
+
+OPJ_BOOL OPJ_CALLCONV opj_codec_set_threads(opj_codec_t *p_codec,
+                                                    int num_threads)
+{
+	if (p_codec && (num_threads >= 0)) {
+		opj_codec_private_t * l_codec = (opj_codec_private_t *) p_codec;
+
+		return l_codec->opj_set_threads(l_codec->m_codec, (OPJ_UINT32)num_threads);
+	}
+	return OPJ_FALSE;
 }
 
 OPJ_BOOL OPJ_CALLCONV opj_setup_decoder(opj_codec_t *p_codec,
@@ -525,14 +542,12 @@ OPJ_BOOL OPJ_CALLCONV opj_set_decoded_resolution_factor(opj_codec_t *p_codec,
 	opj_codec_private_t * l_codec = (opj_codec_private_t *) p_codec;
 
 	if ( !l_codec ){
-		fprintf(stderr, "[ERROR] Input parameters of the setup_decoder function are incorrect.\n");
 		return OPJ_FALSE;
 	}
 
-	l_codec->m_codec_data.m_decompression.opj_set_decoded_resolution_factor(l_codec->m_codec, 
+	return l_codec->m_codec_data.m_decompression.opj_set_decoded_resolution_factor(l_codec->m_codec,
 																			res_factor,
 																			&(l_codec->m_event_mgr) );
-	return OPJ_TRUE;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -546,7 +561,6 @@ opj_codec_t* OPJ_CALLCONV opj_create_compress(OPJ_CODEC_FORMAT p_format)
 	if (!l_codec) {
 		return 00;
 	}
-	memset(l_codec, 0, sizeof(opj_codec_private_t));
 	
 	l_codec->is_decompressor = 0;
 
@@ -574,7 +588,7 @@ opj_codec_t* OPJ_CALLCONV opj_create_compress(OPJ_CODEC_FORMAT p_format)
 
 			l_codec->m_codec_data.m_compression.opj_destroy = (void (*) (void *)) opj_j2k_destroy;
 
-			l_codec->m_codec_data.m_compression.opj_setup_encoder = (void (*) (	void *,
+			l_codec->m_codec_data.m_compression.opj_setup_encoder = (OPJ_BOOL (*) (	void *,
 																				opj_cparameters_t *,
 																				struct opj_image *,
 																				struct opj_event_mgr * )) opj_j2k_setup_encoder;
@@ -611,7 +625,7 @@ opj_codec_t* OPJ_CALLCONV opj_create_compress(OPJ_CODEC_FORMAT p_format)
 
 			l_codec->m_codec_data.m_compression.opj_destroy = (void (*) (void *)) opj_jp2_destroy;
 
-			l_codec->m_codec_data.m_compression.opj_setup_encoder = (void (*) (	void *,
+			l_codec->m_codec_data.m_compression.opj_setup_encoder = (OPJ_BOOL (*) (	void *,
 																				opj_cparameters_t *,
 																				struct opj_image *,
 																				struct opj_event_mgr * )) opj_jp2_setup_encoder;
@@ -702,11 +716,10 @@ OPJ_BOOL OPJ_CALLCONV opj_setup_encoder(opj_codec_t *p_codec,
 		opj_codec_private_t * l_codec = (opj_codec_private_t *) p_codec;
 
 		if (! l_codec->is_decompressor) {
-			l_codec->m_codec_data.m_compression.opj_setup_encoder(	l_codec->m_codec,
+			return l_codec->m_codec_data.m_compression.opj_setup_encoder(	l_codec->m_codec,
 																	parameters,
 																	p_image,
 																	&(l_codec->m_event_mgr) );
-			return OPJ_TRUE;
 		}
 	}
 
@@ -871,7 +884,8 @@ void OPJ_CALLCONV opj_dump_codec(	opj_codec_t *p_codec,
 		return;
 	}
 
-	fprintf(stderr, "[ERROR] Input parameter of the dump_codec function are incorrect.\n");
+	/* TODO return error */
+	/* fprintf(stderr, "[ERROR] Input parameter of the dump_codec function are incorrect.\n"); */
 	return;
 }
 

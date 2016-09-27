@@ -65,6 +65,7 @@ open_jpeg_OBJS = \
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tgt.$(OBJ)			\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)thix_manager.$(OBJ)			\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tpix_manager.$(OBJ)			\
+	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)thread.$(OBJ)			\
 
 open_jpeg_HDRS = \
 	$(OPEN_JPEG_SRC)bio.h		\
@@ -96,6 +97,8 @@ open_jpeg_HDRS = \
 	$(OPEN_JPEG_SRC)t2.h	\
 	$(OPEN_JPEG_SRC)tcd.h		\
 	$(OPEN_JPEG_SRC)tgt.h	\
+	$(OPEN_JPEG_SRC)thread.h	\
+	$(OPEN_JPEG_SRC)tls_keys.h	\
 
 # switch in the selected library .dev
 $(OPEN_JPEG_GEN)openjpeg.dev : $(OPEN_JPEG_GEN)openjpeg_$(SHARE_JPX).dev \
@@ -192,5 +195,8 @@ $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)ppix_manager.$(OBJ) : $(OPEN_JPEG_SRC)ppix_ma
 
 $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)phix_manager.$(OBJ) : $(OPEN_JPEG_SRC)phix_manager.c $(open_jpeg_HDRS) $(OPEN_JPEG_DEP)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)phix_manager.$(OBJ) $(C_) $(OPEN_JPEG_SRC)phix_manager.c
+
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)thread.$(OBJ) : $(OPEN_JPEG_SRC)thread.c $(open_jpeg_HDRS) $(OPEN_JPEG_DEP)
+	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)thread.$(OBJ) $(C_) $(OPEN_JPEG_SRC)thread.c
 
 # end of file

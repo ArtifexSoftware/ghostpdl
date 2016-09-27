@@ -1076,6 +1076,15 @@ s_jpxe_release(stream_state *ss)
     gs_free_object(state->memory->non_gc_memory, state->inbuf, "s_jpxe_release(inbuf)");
 }
 
+int sjpxd_create(gs_memory_t *mem)
+{
+    return 0;
+}
+
+void sjpxd_destroy(gs_memory_t *mem)
+{
+}
+
 /* encoder stream template */
 const stream_template s_jpxe_template = {
     &st_jpxe_state,
