@@ -85,6 +85,7 @@ typedef struct gs_lib_ctx_s
     char *default_device_list;
     int gcsignal;
     int scanconverter;
+    void *sjpxd_private; /* optional for use of jpx codec */
 } gs_lib_ctx_t;
 
 enum {
@@ -134,5 +135,10 @@ gs_lib_ctx_get_default_device_list(const gs_memory_t *mem, char** dev_list_str,
 
 #define IS_LIBCTX_STDOUT(mem, f) (f == mem->gs_lib_ctx->fstdout)
 #define IS_LIBCTX_STDERR(mem, f) (f == mem->gs_lib_ctx->fstderr)
+
+/* Functions to init/fin JPX decoder libctx entry */
+int sjpxd_create(gs_memory_t *mem);
+
+void sjpxd_destroy(gs_memory_t *mem);
 
 #endif /* GSLIBCTX_H */

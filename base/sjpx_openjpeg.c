@@ -22,6 +22,144 @@
 #include "gdebug.h"
 #include "strimpl.h"
 #include "sjpx_openjpeg.h"
+#include "gxsync.h"
+#include "assert_.h"
+#include "opj_malloc.h"
+
+/* Some locking to get around the criminal lack of context
+ * in the openjpeg library. */
+static gs_memory_t *opj_memory;
+
+int sjpxd_create(gs_memory_t *mem)
+{
+#if !defined(SHARE_JPX) || (SHARE_JPX == 0)
+    gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
+
+    ctx->sjpxd_private = gx_monitor_label(gx_monitor_alloc(mem), "sjpxd_monitor");
+    if (ctx->sjpxd_private == NULL)
+        return gs_error_VMerror;
+#endif
+    return 0;
+}
+
+void sjpxd_destroy(gs_memory_t *mem)
+{
+#if !defined(SHARE_JPX) || (SHARE_JPX == 0)
+    gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
+
+    gx_monitor_free((gx_monitor_t *)ctx->sjpxd_private);
+    ctx->sjpxd_private = NULL;
+#endif
+}
+
+static int opj_lock(gs_memory_t *mem)
+{
+#if !defined(SHARE_JPX) || (SHARE_JPX == 0)
+    gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
+    int ret;
+
+    ret = gx_monitor_enter((gx_monitor_t *)ctx->sjpxd_private);
+    assert(opj_memory == NULL);
+    opj_memory = mem->non_gc_memory;
+    return ret;
+#else
+    return 0;
+#endif
+}
+
+static int opj_unlock(gs_memory_t *mem)
+{
+#if !defined(SHARE_JPX) || (SHARE_JPX == 0)
+    gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
+
+    assert(opj_memory != NULL);
+    opj_memory = NULL;
+    return gx_monitor_leave((gx_monitor_t *)ctx->sjpxd_private);
+#else
+    return 0;
+#endif
+}
+
+#if !defined(SHARE_JPX) || (SHARE_JPX == 0)
+/* Allocation routines that use the memory pointer given above */
+void *opj_malloc(size_t size)
+{
+    if (size == 0)
+        return NULL;
+
+    assert(opj_memory != NULL);
+
+    return (void *)gs_alloc_bytes(opj_memory, size, "opj_malloc");
+}
+
+void *opj_calloc(size_t n, size_t size)
+{
+    void *ptr;
+
+    /* FIXME: Check for overflow? */
+    size *= n;
+
+    ptr = opj_malloc(size);
+    if (ptr)
+        memset(ptr, 0, size);
+    return ptr;
+}
+
+void *opj_realloc(void *ptr, size_t size)
+{
+    if (ptr == NULL)
+        return opj_malloc(size);
+
+    if (size == 0)
+    {
+        opj_free(ptr);
+        return NULL;
+    }
+
+    return gs_resize_object(opj_memory, ptr, size, "opj_malloc");
+}
+
+void opj_free(void *ptr)
+{
+    gs_free_object(opj_memory, ptr, "opj_malloc");
+}
+
+void * opj_aligned_malloc(size_t size)
+{
+    uint8_t *ptr;
+    int off;
+
+    if (size == 0)
+        return NULL;
+
+    size += 16 + sizeof(uint8_t);
+    ptr = opj_malloc(size);
+    if (ptr == NULL)
+        return NULL;
+    off = 16-(((int)(intptr_t)ptr) & 15);
+    ptr[off-1] = off;
+    return ptr + off;
+}
+
+void opj_aligned_free(void* ptr_)
+{
+    uint8_t *ptr = (uint8_t *)ptr_;
+    uint8_t off;
+    if (ptr == NULL)
+        return;
+
+    off = ptr[-1];
+    opj_free((void *)(((unsigned char *)ptr) - off));
+}
+
+#if 0
+/* UNUSED currently, and moderately tricky, so deferred until required */
+void * opj_aligned_realloc(void *ptr, size_t size)
+{
+	return opj_realloc(ptr, size);
+}
+#endif
+#endif
 
 gs_private_st_simple(st_jpxd_state, stream_jpxd_state,
     "JPXDecode filter state"); /* creates a gc object for our state,
@@ -536,11 +674,17 @@ s_opjd_process(stream_state * ss, stream_cursor_read * pr,
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
     long in_size = pr->limit - pr->ptr;
+    int locked = 0;
+    int code;
 
     if (in_size > 0) 
     {
         /* buffer available data */
-        int code = s_opjd_accumulate_input(state, pr);
+        code = opj_lock(ss->memory);
+        if (code < 0) return code;
+        locked = 1;
+
+        code = s_opjd_accumulate_input(state, pr);
         if (code < 0) return code;
 
         if (state->codec == NULL) {
@@ -550,7 +694,11 @@ s_opjd_process(stream_state * ss, stream_cursor_read * pr,
                 code = s_opjd_set_codec_format(ss, OPJ_CODEC_J2K);
             else
                 code = s_opjd_set_codec_format(ss, OPJ_CODEC_JP2);
-            if (code < 0) return code;
+            if (code < 0)
+            {
+                (void)opj_unlock(ss->memory);
+                return code;
+            }
         }
     }
 
@@ -558,7 +706,15 @@ s_opjd_process(stream_state * ss, stream_cursor_read * pr,
     {
         if (state->image == NULL)
         {
-            int ret = ERRC;
+            int ret;
+
+            if (locked == 0)
+            {
+                ret = opj_lock(ss->memory);
+                if (ret < 0) return ret;
+                locked = 1;
+            }
+
 #if OPJ_VERSION_MAJOR >= 2 && OPJ_VERSION_MINOR >= 1
             opj_stream_set_user_data(state->stream, &(state->sb), NULL);
 #else
@@ -567,13 +723,25 @@ s_opjd_process(stream_state * ss, stream_cursor_read * pr,
             opj_stream_set_user_data_length(state->stream, state->sb.size);
             ret = decode_image(state);
             if (ret != 0)
+            {
+                (void)opj_unlock(ss->memory);
                 return ret;
+            }
+        }
+
+        if (locked)
+        {
+            code = opj_unlock(ss->memory);
+            if (code < 0) return code;
         }
 
         /* copy out available data */
         return process_one_trunk(state, pw);
 
     }
+
+    if (locked)
+        return opj_unlock(ss->memory);
 
     /* ask for more data */
     return 0;
@@ -600,6 +768,8 @@ s_opjd_release(stream_state *ss)
     if (state->codec == NULL)
         return;
 
+    (void)opj_lock(ss->memory);
+
     /* free image data structure */
     if (state->image)
         opj_image_destroy(state->image);
@@ -611,6 +781,8 @@ s_opjd_release(stream_state *ss)
     /* free decoder handle */
     if (state->codec)
 	opj_destroy_codec(state->codec);
+
+    (void)opj_unlock(ss->memory);
 
     /* free input buffer */
     if (state->sb.data)

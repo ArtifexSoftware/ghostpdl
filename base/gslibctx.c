@@ -175,13 +175,19 @@ int gs_lib_ctx_init( gs_memory_t *mem )
 
     /* Initialise the underlying CMS. */
     if (gscms_create(mem)) {
-
+Failure:
         gs_free_object(mem, mem->gs_lib_ctx->default_device_list,
                 "gs_lib_ctx_fin");
 
         gs_free_object(mem, pio, "gs_lib_ctx_init");
         mem->gs_lib_ctx = NULL;
         return -1;
+    }
+
+    /* Initialise any lock required for the jpx codec */
+    if (sjpxd_create(mem)) {
+        gscms_destroy(mem);
+        goto Failure;
     }
     
     gp_get_realtime(pio->real_time_0);
@@ -214,6 +220,7 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
     ctx = mem->gs_lib_ctx;
     ctx_mem = ctx->memory;
 
+    sjpxd_destroy(mem);
     gscms_destroy(ctx_mem);
     gs_free_object(ctx_mem, ctx->profiledir,
         "gs_lib_ctx_fin");
