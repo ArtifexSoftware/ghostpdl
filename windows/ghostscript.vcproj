@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
@@ -7929,6 +7929,18 @@
 			</File>
 			<File
 				RelativePath="..\openjpeg\src\lib\openjp2\thix_manager.c"
+				>
+			</File>
+			<File
+				RelativePath="..\openjpeg\src\lib\openjp2\thread.c"
+				>
+			</File>
+			<File
+				RelativePath="..\openjpeg\src\lib\openjp2\thread.h"
+				>
+			</File>
+			<File
+				RelativePath="..\openjpeg\src\lib\openjp2\tls_keys.h"
 				>
 			</File>
 			<File
