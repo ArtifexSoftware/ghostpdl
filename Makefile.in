@@ -373,9 +373,7 @@ STRIP_XE_OPTS=
 # Define the name of the C compiler (target and host (AUX))
 
 CC=@CC@
-
-# CCAUX and it's flags come from:
-include auxflags.mak
+CCAUX=@CCAUX@
 
 # Define the name of the linker for the final link step.
 # Normally this is the same as the C compiler.
@@ -385,6 +383,7 @@ CCAUXLD=$(CCAUX)
 
 # Define the default gcc flags.
 GCFLAGS=@CPPFLAGS@ @GCFLAGS@ @CFLAGS@
+GCFLAGSAUX=@GCFLAGSAUX@
 
 # Define the added flags for standard, debugging, profiling 
 # and shared object builds.
@@ -393,6 +392,10 @@ CFLAGS_STANDARD=@OPT_CFLAGS@
 CFLAGS_DEBUG=@DBG_CFLAGS@
 CFLAGS_PROFILE=-pg @OPT_CFLAGS@
 CFLAGS_SO=@DYNAMIC_CFLAGS@
+
+CFLAGSAUX_STANDARD=@CFLAGSAUX_STANDARD@
+CFLAGSAUX_DEBUG=@CFLAGSAUX_DEBUG@
+CFLAGSAUX_PROFILE=-pg @CFLAGSAUX_STANDARD@
 
 # Define the extra flags added for address sanitizer builds
 
@@ -439,6 +442,8 @@ AC_LDFLAGS=@X_LDFLAGS@
 
 LDFLAGS=@LDFLAGS@ $(AC_LDFLAGS) $(XLDFLAGS)
 
+LDFLAGSAUX=@LDFLAGSAUX@
+
 GS_LDFLAGS=$(LDFLAGS)
 PCL_LDFLAGS=$(LDFLAGS)
 XPS_LDFLAGS=$(LDFLAGS)
@@ -455,7 +460,7 @@ XPS_LDFLAGS_SO=@XPS_DYNAMIC_LDFLAGS@
 # (Libraries required by individual drivers are handled automatically.)
 
 EXTRALIBS=$(XTRALIBS) @LIBS@ @DYNAMIC_LIBS@ @FONTCONFIG_LIBS@ @FT_LIBS@ @JPX_AUTOCONF_LIBS@
-AUXEXTRALIBS=$(XTRALIBS) @LIBS@ @DYNAMIC_LIBS@ @FONTCONFIG_LIBS@ @FT_LIBS@ @JPX_AUTOCONF_LIBS@ @AUX_SHARED_ZLIB@
+AUXEXTRALIBS=@AUXEXTRALIBS@
 
 # Define the standard libraries to search at the end of linking.
 # Most platforms require -lpthread for the POSIX threads library;

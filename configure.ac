@@ -105,6 +105,25 @@ AC_PROG_CC
 AC_PROG_CPP
 CFLAGS="$save_cflags"
 
+AUXFLAGS_MAK_CONTENTS=\
+"CCAUX=@CC@\n\
+GCFLAGSAUX=@CPPFLAGS@ @GCFLAGS@ @CFLAGS@\n\
+CAPOPTAUX=\n\
+CFLAGSAUX_STANDARD=@OPT_CFLAGS@\n\
+CFLAGSAUX_DEBUG=@DBG_CFLAGS@\n\
+CFLAGSAUX_PROFILE=-pg @OPT_CFLAGS@\n\
+LDFLAGSAUX=@LDFLAGS@\n\
+AUXEXTRALIBS=@LIBS@"
+
+GCFLAGSAUXTMP="\$(GCFLAGS)"
+CAPOPTAUXTMP="\$(CAPOPT)"
+CFLAGSAUX_STANDARDTMP="\$(CFLAGS_STANDARD)"
+CFLAGSAUX_DEBUGTMP="\$(CFLAGS_DEBUG)"
+CFLAGSAUX_PROFILETMP="\$(CFLAGS_PROFILE)"
+LDFLAGSAUXTMP="\$(LDFLAGS)"
+AUXEXTRALIBSTMP="\$(EXTRALIBS)"
+
+
 # purposefully do not include "help" output for this
 AC_ARG_ENABLE([save_confaux])
 
@@ -118,9 +137,20 @@ if test x"$CCAUX" != x"" ; then
   fi
   mkdir $CONFAUXDIR
   cd $CONFAUXDIR
-  ../$0 CC="$CCAUX" CFLAGS="$CFLAGSAUX" LDFLAGS="$LDFLAGSAUX" CCAUX= CFLAGSAUX= CFLAGSAUX= MAKEFILE=../$AUXFLAGS_MAK --host= --build= --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
+  echo -e $AUXFLAGS_MAK_CONTENTS > $AUXFLAGS_MAK.in
+  ../$0 CC="$CCAUX" CFLAGS="$CFLAGSAUX" LDFLAGS="$LDFLAGSAUX" CCAUX= CFLAGSAUX= CFLAGSAUX= MAKEFILE=$AUXFLAGS_MAK --host= --build= --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
   status=$?
   cp config.log ../configaux.log
+  if test $status -eq 0 ; then
+    CCAUX=$(grep CCAUX $AUXFLAGS_MAK | sed "s/\bCCAUX=//g")
+    GCFLAGSAUXTMP=$(grep GCFLAGSAUX $AUXFLAGS_MAK | sed "s/\bGCFLAGSAUX=//g")
+    CAPOPTAUXTMP=$(grep CAPOPTAUX $AUXFLAGS_MAK | sed "s/\bCAPOPTAUX=//g")
+    CFLAGSAUX_STANDARDTMP=$(grep CFLAGSAUX_STANDARD $AUXFLAGS_MAK | sed "s/\bCFLAGSAUX_STANDARD=//g")
+    CFLAGSAUX_DEBUGTMP=$(grep CFLAGSAUX_DEBUG $AUXFLAGS_MAK | sed "s/\bCFLAGSAUX_DEBUG=//g")
+    CFLAGS_PROFILETMP=$(grep CFLAGS_PROFILE $AUXFLAGS_MAK | sed "s/\bCFLAGS_PROFILE=//g")
+    LDFLAGSAUXTMP=$(grep LDFLAGSAUX $AUXFLAGS_MAK | sed "s/\bLDFLAGSAUX=//g")
+    AUXEXTRALIBSTMP=$(grep AUXEXTRALIBS$ $AUXFLAGS_MAK | sed "s/\bAUXEXTRALIBS$=//g")
+  fi
   cd $olddir
 
   if test x"$enable_save_confaux" != x"yes"; then
@@ -131,6 +161,14 @@ if test x"$CCAUX" != x"" ; then
     AC_MSG_ERROR([Recursive call to configure (for auxiliary tools) script failed], $status)
   fi
 fi
+
+GCFLAGSAUX=$GCFLAGSAUXTMP
+CAPOPTAUX=$CAPOPTAUXTMP
+CFLAGSAUX_STANDARD=$CFLAGSAUX_STANDARDTMP
+CFLAGSAUX_DEBUG=$CFLAGSAUX_DEBUGTMP
+CFLAGS_PROFILE=$CFLAGS_PROFILETMP
+LDFLAGSAUX=$LDFLAGSAUXTMP
+AUXEXTRALIBS=$AUXEXTRALIBSTMP
 
 # we have to do this here in case it took
 # AC_PROG_CC to set CC (as it usually does)
@@ -2392,7 +2430,6 @@ AC_SUBST(HAVE_ISNAN)
 AC_CHECK_FUNCS([isinf], [HAVE_ISINF=-DHAVE_ISINF])
 AC_SUBST(HAVE_ISINF)
 
-
 AC_PROG_GCC_TRADITIONAL
 
 dnl NB: We don't actually provide autoconf-switched fallbacks for any
@@ -2768,10 +2805,20 @@ AC_SUBST(CFLAGS_SANITIZE)
 AC_SUBST(STRIP_XE)
 AC_SUBST(JPX_SSE_CFLAGS)
 
+AC_SUBST(CCAUX)
+AC_SUBST(GCFLAGSAUX)
+AC_SUBST(CAPOPTAUX)
+AC_SUBST(CFLAGSAUX_STANDARD)
+AC_SUBST(CFLAGSAUX_DEBUG)
+AC_SUBST(CFLAGSAUX_PROFILE)
+AC_SUBST(LDFLAGSAUX)
+AC_SUBST(AUXEXTRALIBS)
+
+
 CONFIG_FILES_LIST="$CONFIG_FILES_LIST $THEMAKEFILE"
 
 if test x"$THEMAKEFILE" != x"$MAKEFILE" && test x"$CCAUX" = x"$CC"; then
-  CONFIG_FILES_LIST="$CONFIG_FILES_LIST $AUXFLAGS_MAK"
+  CONFIG_FILES_LIST="$CONFIG_FILES_LIST"
 fi
 
 if test "x$AFS" = "x1"; then
