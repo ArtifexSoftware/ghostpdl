@@ -354,7 +354,7 @@ static const char firstByteMark[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC 
 static int gs_ConvertUTF16(char *UTF16, int UTF16Len, unsigned char **UTF8Start, int UTF8Len)
 {
     int i, bytes = 0;
-    short U16;
+    unsigned short U16;
     unsigned char *UTF8 = *UTF8Start;
     unsigned char *UTF8End = UTF8 + UTF8Len;
 
