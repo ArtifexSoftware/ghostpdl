@@ -52,7 +52,6 @@ GLLCMS2CC=$(CC) $(LCMS2_CFLAGS) $(CFLAGS) $(I_)$(GLI_) $(II)$(LCMS2SRCDIR)$(D)in
 lcms2_h=$(LCMS2SRCDIR)$(D)include$(D)lcms2.h
 lcms2_plugin_h=$(LCMS2SRCDIR)$(D)include$(D)lcms2_plugin.h
 
-ConvertUTF_h=$(GLSRC)ConvertUTF.h
 gdevdcrd_h=$(GLSRC)gdevdcrd.h
 gdevpccm_h=$(GLSRC)gdevpccm.h
 
@@ -1096,9 +1095,6 @@ $(GLOBJ)gsiodevs.$(OBJ) : $(GLSRC)gsiodevs.c $(AK) $(gx_h)\
 $(GLOBJ)gdevpccm.$(OBJ) : $(GLSRC)gdevpccm.c $(AK)\
  $(gx_h) $(gsmatrix_h) $(gxdevice_h) $(gdevpccm_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevpccm.$(OBJ) $(C_) $(GLSRC)gdevpccm.c
-
-$(GLOBJ)ConvertUTF.$(OBJ) : $(GLSRC)ConvertUTF.c $(ConvertUTF_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)ConvertUTF.$(OBJ) $(C_) $(GLSRC)ConvertUTF.c
 
 ### Memory devices
 

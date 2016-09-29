@@ -835,9 +835,8 @@ pdfwrite5_=$(DEVOBJ)gdevpdfm.$(OBJ)
 pdfwrite6_=$(DEVOBJ)gdevpdfo.$(OBJ) $(DEVOBJ)gdevpdfp.$(OBJ) $(DEVOBJ)gdevpdft.$(OBJ)
 pdfwrite7_=$(DEVOBJ)gdevpdfr.$(OBJ)
 pdfwrite8_=$(DEVOBJ)gdevpdfu.$(OBJ) $(DEVOBJ)gdevpdfv.$(OBJ) $(DEVOBJ)gdevagl.$(OBJ)
-pdfwrite9_= $(GLOBJ)ConvertUTF.$(OBJ)
-pdfwrite10_=$(DEVOBJ)gsflip.$(OBJ)
-pdfwrite11_=$(DEVOBJ)scantab.$(OBJ) $(DEVOBJ)sfilter2.$(OBJ)
+pdfwrite9_=$(DEVOBJ)gsflip.$(OBJ)
+pdfwrite10_=$(DEVOBJ)scantab.$(OBJ) $(DEVOBJ)sfilter2.$(OBJ)
 pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_)\
  $(pdfwrite5_) $(pdfwrite6_) $(pdfwrite7_) $(pdfwrite8_) $(pdfwrite9_)\
  $(pdfwrite10_) $(pdfwrite11_)

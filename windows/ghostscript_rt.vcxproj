@@ -427,7 +427,6 @@
   <ItemGroup>
     <ClCompile Include="..\base\aes.c" />
     <ClCompile Include="..\base\bench.c" />
-    <ClCompile Include="..\base\ConvertUTF.c" />
     <ClCompile Include="..\base\echogs.c" />
     <ClCompile Include="..\base\gconf.c" />
     <ClCompile Include="..\base\genarch.c" />
@@ -1689,7 +1688,6 @@
     <ClInclude Include="..\jasper\src\libjasper\ras\ras_enc.h" />
     <ClInclude Include="..\base\aes.h" />
     <ClInclude Include="..\base\assert_.h" />
-    <ClInclude Include="..\base\ConvertUTF.h" />
     <ClInclude Include="..\base\ctype_.h" />
     <ClInclude Include="..\base\dirent_.h" />
     <ClInclude Include="..\base\dos_.h" />

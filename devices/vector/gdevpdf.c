@@ -111,14 +111,13 @@ ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
  ENUM_PTR(32, gx_device_pdf, pres_soft_mask_dict);
  ENUM_PTR(33, gx_device_pdf, PDFXTrimBoxToMediaBoxOffset.data);
  ENUM_PTR(34, gx_device_pdf, PDFXBleedBoxToTrimBoxOffset.data);
- ENUM_PTR(35, gx_device_pdf, DSCEncodingToUnicode.data);
- ENUM_PTR(36, gx_device_pdf, Identity_ToUnicode_CMaps[0]);
- ENUM_PTR(37, gx_device_pdf, Identity_ToUnicode_CMaps[1]);
- ENUM_PTR(38, gx_device_pdf, vgstack);
- ENUM_PTR(39, gx_device_pdf, outline_levels);
- ENUM_PTR(40, gx_device_pdf, EmbeddedFiles);
- ENUM_PTR(41, gx_device_pdf, pdf_font_dir);
- ENUM_PTR(42, gx_device_pdf, ExtensionMetadata);
+ ENUM_PTR(35, gx_device_pdf, Identity_ToUnicode_CMaps[0]);
+ ENUM_PTR(36, gx_device_pdf, Identity_ToUnicode_CMaps[1]);
+ ENUM_PTR(37, gx_device_pdf, vgstack);
+ ENUM_PTR(38, gx_device_pdf, outline_levels);
+ ENUM_PTR(39, gx_device_pdf, EmbeddedFiles);
+ ENUM_PTR(40, gx_device_pdf, pdf_font_dir);
+ ENUM_PTR(41, gx_device_pdf, ExtensionMetadata);
 #define e1(i,elt) ENUM_PARAM_STRING_PTR(i + gx_device_pdf_num_ptrs, gx_device_pdf, elt);
 gx_device_pdf_do_param_strings(e1)
 #undef e1
@@ -165,7 +164,6 @@ static RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
  RELOC_PTR(gx_device_pdf, pres_soft_mask_dict);
  RELOC_PTR(gx_device_pdf, PDFXTrimBoxToMediaBoxOffset.data);
  RELOC_PTR(gx_device_pdf, PDFXBleedBoxToTrimBoxOffset.data);
- RELOC_PTR(gx_device_pdf, DSCEncodingToUnicode.data);
  RELOC_PTR(gx_device_pdf, Identity_ToUnicode_CMaps[0]);
  RELOC_PTR(gx_device_pdf, Identity_ToUnicode_CMaps[1]);
  RELOC_PTR(gx_device_pdf, vgstack);

@@ -141,7 +141,6 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  12000,				/* MaxClipPathSize */ /* HP LaserJet 1320 hangs with 14000. */
  256000,			/* MaxShadingBitmapSize */
  PDF_DEVICE_MaxInlineImageSize,	/* MaxInlineImageSize */
- {0, 0},                        /* DSCEncodingToUnicode */
  {0, 0, 0},			/* OwnerPassword */
  {0, 0, 0},			/* UserPassword */
  0,				/* KeyLength */

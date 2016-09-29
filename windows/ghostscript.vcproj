@@ -1794,10 +1794,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\base\ConvertUTF.c"
-				>
-			</File>
-			<File
 				RelativePath="..\base\echogs.c"
 				>
 			</File>
@@ -3327,10 +3323,6 @@
 			</File>
 			<File
 				RelativePath="..\base\claptrap.h"
-				>
-			</File>
-			<File
-				RelativePath="..\base\ConvertUTF.h"
 				>
 			</File>
 			<File
