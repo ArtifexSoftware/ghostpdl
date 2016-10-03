@@ -1081,6 +1081,9 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
     gs_main_instance *minst = get_minst_from_memory(mem);
     int code;
 
+    if (i_ctx_p && starting_arg_file)
+        i_ctx_p->starting_arg_file = false;
+
     /* when starting arg files (@ files) iodev_default is not yet set */
     if (iodev == 0)
         iodev = (gx_io_device *)gx_io_device_table[0];
