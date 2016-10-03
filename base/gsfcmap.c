@@ -502,7 +502,7 @@ gs_cmap_ToUnicode_next_entry(gs_cmap_lookups_enum_t *penum)
             break;
         if ((uchar)c2 == 0)
             break;
-        if (map[j + j + 0] != c0 || map[j + j + 1] != c2)
+        if (map[j * (cmap->value_size + 2) + 2] != c0 || map[i * (cmap->value_size + 2) + 3] != c2)
             break;
     }
     penum->index[1] = j;
