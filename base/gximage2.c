@@ -123,10 +123,8 @@ gx_begin_image2(gx_device * dev,
     int code;
 
     /* verify that color models are the same for PixelCopy */
-    if ( pixel_copy                            &&
-         memcmp( &dev->color_info,
-                 &sdev->color_info,
-                 sizeof(dev->color_info) ) != 0  )
+    if ( pixel_copy &&
+        !gx_color_info_equal(&dev->color_info, &sdev->color_info))
         return_error(gs_error_typecheck);
 
 /****** ONLY HANDLE depth <= 8 FOR PixelCopy ******/

@@ -1929,4 +1929,7 @@ const gx_device_type dtname = { &stype, initproc }
 void gx_device_dump(gx_device *dev, const char *text);
 #endif
 
+/* Compare color information structures */
+bool gx_color_info_equal(const gx_device_color_info *p1, const gx_device_color_info *p2);
+
 #endif /* gxdevcli_INCLUDED */

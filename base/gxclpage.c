@@ -122,8 +122,7 @@ gdev_prn_render_pages(gx_device_printer * pdev,
             /* We would like to fully check the color representation, */
             /* but we don't have enough information to do that. */
             if (strcmp(page->dname, pdev->dname) != 0 ||
-                memcmp(&page->color_info, &pdev->color_info,
-                       sizeof(pdev->color_info)) != 0
+                !gx_color_info_equal(&page->color_info, &pdev->color_info)
                 )
                 return_error(gs_error_rangecheck);
             /* Currently we don't allow translation in Y. */
