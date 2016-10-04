@@ -661,6 +661,58 @@ cie_cache_mult3(gx_cie_vector_cache3_t * pvc, const gs_matrix3 * pmat,
 
 /* ------ Install a rendering dictionary ------ */
 
+static bool vector_equal(gs_vector3 *p1, gs_vector3 *p2)
+{
+    if (p1->u != p2->u)
+        return false;
+    if (p1->v != p2->v)
+        return false;
+    if (p1->w != p2->w)
+        return false;
+    return true;
+}
+
+static bool matrix_equal(gs_matrix3 *p1, gs_matrix3 *p2)
+{
+    if (p1->is_identity != p2->is_identity)
+        return false;
+    if (!vector_equal(&(p1->cu), &(p2->cu)))
+        return false;
+    if (!vector_equal(&(p1->cv), &(p2->cv)))
+        return false;
+    if (!vector_equal(&(p1->cw), &(p2->cw)))
+        return false;
+    return true;
+}
+
+static bool transform_equal(const gs_cie_transform_proc3 *p1, const gs_cie_transform_proc3 *p2)
+{
+    if (p1->proc != p2->proc)
+        return false;
+    if (p1->proc_data.size != p2->proc_data.size)
+        return false;
+    if (memcmp(p1->proc_data.data, p2->proc_data.data, p1->proc_data.size) != 0)
+        return false;
+    if (p1->driver_name != p2->driver_name)
+        return false;
+    if (p1->proc_name != p2->proc_name)
+        return false;
+    return true;
+}
+
+static bool range_equal(const gs_range3 *p1, const gs_range3 *p2)
+{
+    int k;
+
+    for (k = 0; k < 3; k++) {
+        if (p1->ranges[k].rmax != p2->ranges[k].rmax)
+            return false;
+        if (p1->ranges[k].rmin != p2->ranges[k].rmin)
+            return false;
+    }
+    return true;
+}
+
 /* setcolorrendering */
 int
 gs_setcolorrendering(gs_gstate * pgs, gs_cie_render * pcrd)
@@ -675,11 +727,11 @@ gs_setcolorrendering(gs_gstate * pgs, gs_cie_render * pcrd)
         return 0;		/* detect needless reselecting */
     joint_ok =
         pcrd_old != 0 &&
-#define CRD_SAME(elt) !memcmp(&pcrd->elt, &pcrd_old->elt, sizeof(pcrd->elt))
-        CRD_SAME(points.WhitePoint) && CRD_SAME(points.BlackPoint) &&
-        CRD_SAME(MatrixPQR) && CRD_SAME(RangePQR) &&
-        CRD_SAME(TransformPQR);
-#undef CRD_SAME
+        vector_equal(&pcrd->points.WhitePoint, &pcrd_old->points.WhitePoint) &&
+        vector_equal(&pcrd->points.BlackPoint, &pcrd_old->points.BlackPoint) &&
+        matrix_equal(&pcrd->MatrixPQR, &pcrd_old->MatrixPQR) &&
+        range_equal(&pcrd->RangePQR, &pcrd_old->RangePQR) &&
+        transform_equal(&pcrd->TransformPQR, &pcrd_old->TransformPQR);
     rc_assign(pgs->cie_render, pcrd, "gs_setcolorrendering");
     /* Initialize the joint caches if needed. */
     if (!joint_ok)
