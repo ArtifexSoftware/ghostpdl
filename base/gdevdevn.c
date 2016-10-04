@@ -88,7 +88,7 @@ cmyk_cs_to_devn_cm(gx_device * dev, const int * map,
         out[i] = k;
 }
 
-/* Some devices need to create composite mappings of the spot colorants. 
+/* Some devices need to create composite mappings of the spot colorants.
    This code was originally in the tiffsep device but was moved here to be
    sharable across multiple separation devices that need this capability */
 
@@ -104,7 +104,7 @@ void build_cmyk_map(gx_device *pdev, int num_comp,
     int comp_num;
     gs_devn_params *devn_params =  dev_proc(pdev, ret_devn_params)(pdev);
 
-    if (devn_params == NULL) 
+    if (devn_params == NULL)
         return;
 
     for (comp_num = 0; comp_num < num_comp; comp_num++) {
@@ -302,7 +302,7 @@ devn_get_color_comp_index(gx_device * dev, gs_devn_params * pdevn_params,
             pdevn_params->num_separation_order_names != 0)
         return -1;      /* Do not add --> indicate colorant unknown. */
 
-    /* Make sure the name is not "None"  this is sometimes 
+    /* Make sure the name is not "None"  this is sometimes
        within a DeviceN list and should not be added as one of the
        separations.  */
     if (strncmp(pname, "None", name_size) == 0) {
@@ -494,7 +494,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             }
             num_spot_changed = true;
             for (i = pdevn_params->separations.num_separations; i < num_spot; i++)
-                pdevn_params->separation_order_map[i + pdevn_params->num_std_colorant_names] = 
+                pdevn_params->separation_order_map[i + pdevn_params->num_std_colorant_names] =
                 i + pdevn_params->num_std_colorant_names;
             pdevn_params->separations.num_separations = num_spot;
         }
@@ -740,6 +740,45 @@ compare_equivalent_cmyk_color_params(const equivalent_cmyk_color_params *pequiv_
   return(0);
 }
 
+static bool separations_equal(const gs_separations *p1, const gs_separations *p2)
+{
+    int k;
+
+    if (p1->num_separations != p2->num_separations)
+        return false;
+    for (k = 0; k < p1->num_separations; k++) {
+        if (p1->names[k].size != p2->names[k].size)
+            return false;
+        else if (p1->names[k].size > 0) {
+            if (memcmp(p1->names[k].data, p2->names[k].data, p1->names[k].size) != 0)
+                return false;
+        }
+    }
+    return true;
+}
+
+static bool devn_params_equal(const gs_devn_params *p1, const gs_devn_params *p2)
+{
+    if (p1->bitspercomponent != p2->bitspercomponent)
+        return false;
+    if (p1->max_separations != p2->max_separations)
+        return false;
+    if (p1->num_separation_order_names != p2->num_separation_order_names)
+        return false;
+    if (p1->num_std_colorant_names != p2->num_std_colorant_names)
+        return false;
+    if (p1->page_spot_colors != p2->page_spot_colors)
+        return false;
+    if (!separations_equal(&p1->pdf14_separations, &p2->pdf14_separations))
+        return false;
+    if (!separations_equal(&p1->separations, &p2->separations))
+        return false;
+    if (memcmp(p1->separation_order_map, p2->separation_order_map, sizeof(gs_separation_map) != 0))
+        return false;
+    if (p1->std_colorant_names != p2->std_colorant_names)
+        return false;
+    return true;
+}
 
 /*
  * Utility routine for handling DeviceN related parameters in a
@@ -775,9 +814,8 @@ devn_printer_put_params(gx_device * pdev, gs_param_list * plist,
     }
 
     /* If anything changed, then close the device, etc. */
-    if (memcmp(&pdev->color_info, &save_info, sizeof(gx_device_color_info)) ||
-        memcmp(pdevn_params, &saved_devn_params,
-                                        sizeof(gs_devn_params)) ||
+    if (!gx_color_info_equal(&pdev->color_info, &save_info) ||
+        !devn_params_equal(pdevn_params, &saved_devn_params) ||
         (pequiv_colors != NULL &&
             compare_equivalent_cmyk_color_params(pequiv_colors, &saved_equiv_colors))) {
         gs_closedevice(pdev);
@@ -1725,7 +1763,7 @@ done:
       fclose(in);
     if (out)
       fclose(out);
-      
+
     if (outname)
       gs_free_object(pdev->memory, outname, "spotcmyk_print_page(outname)");
 
