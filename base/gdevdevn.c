@@ -773,7 +773,7 @@ static bool devn_params_equal(const gs_devn_params *p1, const gs_devn_params *p2
         return false;
     if (!separations_equal(&p1->separations, &p2->separations))
         return false;
-    if (memcmp(p1->separation_order_map, p2->separation_order_map, sizeof(gs_separation_map) != 0))
+    if (memcmp(p1->separation_order_map, p2->separation_order_map, sizeof(gs_separation_map)) != 0)
         return false;
     if (p1->std_colorant_names != p2->std_colorant_names)
         return false;

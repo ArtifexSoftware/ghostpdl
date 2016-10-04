@@ -661,7 +661,7 @@ cie_cache_mult3(gx_cie_vector_cache3_t * pvc, const gs_matrix3 * pmat,
 
 /* ------ Install a rendering dictionary ------ */
 
-static bool vector_equal(gs_vector3 *p1, gs_vector3 *p2)
+static bool vector_equal(const gs_vector3 *p1, const gs_vector3 *p2)
 {
     if (p1->u != p2->u)
         return false;
@@ -672,7 +672,7 @@ static bool vector_equal(gs_vector3 *p1, gs_vector3 *p2)
     return true;
 }
 
-static bool matrix_equal(gs_matrix3 *p1, gs_matrix3 *p2)
+static bool matrix_equal(const gs_matrix3 *p1, const gs_matrix3 *p2)
 {
     if (p1->is_identity != p2->is_identity)
         return false;
