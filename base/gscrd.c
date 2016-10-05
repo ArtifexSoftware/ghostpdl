@@ -262,6 +262,29 @@ gs_cie_render1_build(gs_cie_render ** ppcrd, gs_memory_t * mem,
     return 0;
 }
 
+static bool render_proc3_equal(const gs_cie_render_proc3 *p1, const gs_cie_render_proc3 *p2)
+{
+    int k;
+
+    for (k = 0; k < 3; k++) {
+        if (p1->procs[k] != p2->procs[k])
+            return false;
+    }
+    return true;
+}
+
+static bool render_table_procs_equal(const gs_cie_render_table_procs *p1,
+    const gs_cie_render_table_procs *p2)
+{
+    int k;
+
+    for (k = 0; k < 4; k++) {
+        if (p1->procs[k] != p2->procs[k])
+            return false;
+    }
+    return true;
+}
+
 /*
  * Initialize a CRD given all of the relevant parameters.
  * Any of the pointers except WhitePoint may be zero, meaning
@@ -305,28 +328,20 @@ gs_cie_render1_init_from(const gs_memory_t *mem,
         *(TransformPQR ? TransformPQR : &TransformPQR_default);
     pcrd->MatrixLMN = *(MatrixLMN ? MatrixLMN : &Matrix3_default);
     pcrd->EncodeLMN = *(EncodeLMN ? EncodeLMN : &Encode_default);
-    if (pfrom_crd &&
-        !memcmp(&pcrd->EncodeLMN, &EncodeLMN_from_cache,
-                sizeof(EncodeLMN_from_cache))
-        )
+    if (pfrom_crd && render_proc3_equal(&pcrd->EncodeLMN, &EncodeLMN_from_cache))
         memcpy(&pcrd->caches.EncodeLMN, &pfrom_crd->caches.EncodeLMN,
                sizeof(pcrd->caches.EncodeLMN));
     pcrd->RangeLMN = *(RangeLMN ? RangeLMN : &Range3_default);
     pcrd->MatrixABC = *(MatrixABC ? MatrixABC : &Matrix3_default);
     pcrd->EncodeABC = *(EncodeABC ? EncodeABC : &Encode_default);
-    if (pfrom_crd &&
-        !memcmp(&pcrd->EncodeABC, &EncodeABC_from_cache,
-                sizeof(EncodeABC_from_cache))
-        )
+    if (pfrom_crd && render_proc3_equal(&pcrd->EncodeABC, &EncodeABC_from_cache))
         memcpy(pcrd->caches.EncodeABC, pfrom_crd->caches.EncodeABC,
                sizeof(pcrd->caches.EncodeABC));
     pcrd->RangeABC = *(RangeABC ? RangeABC : &Range3_default);
     if (RenderTable) {
         pcrd->RenderTable = *RenderTable;
-        if (pfrom_crd &&
-            !memcmp(&pcrd->RenderTable.T, &RenderTableT_from_cache,
-                    sizeof(RenderTableT_from_cache))
-            ) {
+        if (pfrom_crd && render_table_procs_equal(&pcrd->RenderTable.T,
+            &RenderTableT_from_cache)) {
             memcpy(pcrd->caches.RenderTableT, pfrom_crd->caches.RenderTableT,
                    sizeof(pcrd->caches.RenderTableT));
             pcrd->caches.RenderTableT_is_identity =
