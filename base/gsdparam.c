@@ -43,7 +43,7 @@ gs_get_device_or_hw_params(gx_device * orig_dev, gs_param_list * plist,
      * prototype.
      */
     gx_device *dev;
-    int code;
+    int code = 0;
 
     if (orig_dev->memory)
         dev = orig_dev;
@@ -56,9 +56,13 @@ gs_get_device_or_hw_params(gx_device * orig_dev, gs_param_list * plist,
     fill_dev_proc(dev, get_params, gx_default_get_params);
     fill_dev_proc(dev, get_page_device, gx_default_get_page_device);
     fill_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
-    code = (is_hardware ?
-            (*dev_proc(dev, get_hardware_params)) (dev, plist) :
-            (*dev_proc(dev, get_params)) (dev, plist));
+    if (is_hardware) {
+        if (dev_proc(dev, get_hardware_params) != NULL)
+            code = (*dev_proc(dev, get_hardware_params)) (dev, plist);
+    } else {
+        if (dev_proc(dev, get_params) != NULL)
+            code = (*dev_proc(dev, get_params)) (dev, plist);
+    }
     if (dev != orig_dev)
         gx_device_retain(dev, false);  /* frees the copy */
     return code;
