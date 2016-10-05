@@ -661,7 +661,8 @@ cie_cache_mult3(gx_cie_vector_cache3_t * pvc, const gs_matrix3 * pmat,
 
 /* ------ Install a rendering dictionary ------ */
 
-static bool vector_equal(const gs_vector3 *p1, const gs_vector3 *p2)
+bool
+vector_equal(const gs_vector3 *p1, const gs_vector3 *p2)
 {
     if (p1->u != p2->u)
         return false;
@@ -672,7 +673,8 @@ static bool vector_equal(const gs_vector3 *p1, const gs_vector3 *p2)
     return true;
 }
 
-static bool matrix_equal(const gs_matrix3 *p1, const gs_matrix3 *p2)
+bool
+matrix_equal(const gs_matrix3 *p1, const gs_matrix3 *p2)
 {
     if (p1->is_identity != p2->is_identity)
         return false;
@@ -685,7 +687,8 @@ static bool matrix_equal(const gs_matrix3 *p1, const gs_matrix3 *p2)
     return true;
 }
 
-static bool transform_equal(const gs_cie_transform_proc3 *p1, const gs_cie_transform_proc3 *p2)
+static bool
+transform_equal(const gs_cie_transform_proc3 *p1, const gs_cie_transform_proc3 *p2)
 {
     if (p1->proc != p2->proc)
         return false;
@@ -700,7 +703,8 @@ static bool transform_equal(const gs_cie_transform_proc3 *p1, const gs_cie_trans
     return true;
 }
 
-static bool range_equal(const gs_range3 *p1, const gs_range3 *p2)
+bool
+range_equal(const gs_range3 *p1, const gs_range3 *p2)
 {
     int k;
 

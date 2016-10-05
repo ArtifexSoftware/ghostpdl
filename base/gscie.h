@@ -850,4 +850,8 @@ void cie_matrix_mult3(const gs_matrix3 *, const gs_matrix3 *,
                               gs_matrix3 *);
 void  cie_matrix_transpose3(const gs_matrix3 *, gs_matrix3 *);
 
+bool matrix_equal(const gs_matrix3 *p1, const gs_matrix3 *p2);
+bool range_equal(const gs_range3 *p1, const gs_range3 *p2);
+bool vector_equal(const gs_vector3 *p1, const gs_vector3 *p2);
+
 #endif /* gscie_INCLUDED */
