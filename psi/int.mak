@@ -2024,7 +2024,7 @@ $(PSOBJ)imain.$(OBJ) : $(PSSRC)imain.c $(GH) $(memory__h) $(string__h)\
  $(ialloc_h) $(iconf_h) $(idebug_h) $(idict_h) $(idisp_h) $(iinit_h)\
  $(iname_h) $(interp_h) $(iplugin_h) $(isave_h) $(iscan_h) $(ivmspace_h)\
  $(iinit_h) $(main_h) $(oper_h) $(ostack_h)\
- $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)\
+ $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h) $(zfile_h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)imain.$(OBJ) $(C_) $(PSSRC)imain.c
 

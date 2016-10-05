@@ -1124,10 +1124,12 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
     }
 
     /* First just try it like it is */
-    str = sfopen(pname, "r", mem_gc);
-    if (str != NULL) {
-        *strp = str;
-        return 0;
+    if (gs_check_file_permission(mem_gc, pname, namelen, "r") >= 0) {
+        str = sfopen(pname, "r", mem_gc);
+        if (str != NULL) {
+            *strp = str;
+            return 0;
+        }
     }
 
     /* If that fails, try %rom% */ /* FIXME: Not sure this is needed or correct */
