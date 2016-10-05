@@ -150,11 +150,16 @@ zinitialize_dsc_parser(i_ctx_t *i_ctx_p)
     ref local_ref;
     int code;
     os_ptr const op = osp;
-    dict * const pdict = op->value.pdict;
-    gs_memory_t * const mem = (gs_memory_t *)dict_memory(pdict);
-    dsc_data_t * const data =
-        gs_alloc_struct(mem, dsc_data_t, &st_dsc_data_t, "DSC parser init");
+    dict *pdict;
+    gs_memory_t *mem;
+    dsc_data_t *data;
 
+    check_read_type(*op, t_dictionary);
+
+    pdict = op->value.pdict;
+    mem = (gs_memory_t *)dict_memory(pdict);
+
+    data = gs_alloc_struct(mem, dsc_data_t, &st_dsc_data_t, "DSC parser init");
     if (!data)
         return_error(gs_error_VMerror);
     data->document_level = 0;
