@@ -63,20 +63,6 @@ DEVGEN=$(DEVGENDIR)$(D)
 ###### --------------------------- Catalog -------------------------- ######
 
 # MS-DOS displays (note: not usable with Desqview/X):
-#   MS-DOS EGA and VGA:
-#	ega		EGA (640x350, 16-color)
-#	vga		VGA (640x480, 16-color)
-#   MS-DOS SuperVGA:
-# *	ali		SuperVGA using Avance Logic Inc. chipset, 256-color modes
-# *	atiw		ATI Wonder SuperVGA, 256-color modes
-# *	cirr		SuperVGA using Cirrus Logic CL-GD54XX chips, 256-color modes
-# *	s3vga		SuperVGA using S3 86C911 chip (e.g., Diamond Stealth board)
-#	svga16		Generic SuperVGA in 800x600, 16-color mode
-# *	tseng		SuperVGA using Tseng Labs ET3000/4000 chips, 256-color modes
-# *	tvga		SuperVGA using Trident chipset, 256-color modes
-#   ****** NOTE: The vesa device does not work with the Watcom (32-bit MS-DOS)
-#   ****** compiler or executable.
-#	vesa		SuperVGA with VESA standard API driver
 # Other displays:
 #	display		For use on any platform that supports DLLs
 #   MS Windows:
@@ -86,8 +72,6 @@ DEVGEN=$(DEVGENDIR)$(D)
 #   OS/2:
 # *	os2prn		OS/2 printer                [OS/2 only]
 #   Unix and VMS:
-#   ****** NOTE: For direct frame buffer addressing under SCO Unix or Xenix,
-#   ****** edit the definition of EGAVGA below.
 #	x11		X Windows version 11, release >=4   [Unix and VMS only]
 #	x11alpha	X Windows masquerading as a device with alpha capability
 #	x11cmyk		X Windows masquerading as a 1-bit-per-plane CMYK device
@@ -275,7 +259,6 @@ gxfcopy_h=$(DEVSRC)gxfcopy.h $(gsccode_h)
 gdev8bcm_h=$(DEVSRC)gdev8bcm.h
 gdevcbjc_h=$(DEVSRC)gdevcbjc.h $(stream_h)
 
-gdevpcfb_h=$(DEVSRC)gdevpcfb.h $(dos__h)
 gdevpcl_h=$(DEVSRC)gdevpcl.h
 gdevpsu_h=$(DEVVECSRC)gdevpsu.h
 # Out of order
@@ -303,43 +286,6 @@ $(DEVOBJ)gdevpsu.$(OBJ) : $(DEVVECSRC)gdevpsu.c $(GX) $(GDEV) $(math__h) $(time_
  $(gdevpsu_h) $(gscdefs_h) $(gxdevice_h)\
  $(spprint_h) $(stream_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevpsu.$(OBJ) $(C_) $(DEVVECSRC)gdevpsu.c
-
-###### ------------------- MS-DOS display devices ------------------- ######
-
-# There are really only three drivers: an EGA/VGA driver (4 bit-planes,
-# plane-addressed), a SuperVGA driver (8 bit-planes, byte addressed),
-# and a special driver for the S3 chip.
-
-### ----------------------- EGA and VGA displays ----------------------- ###
-
-EGAVGA_DOS=$(DEVOBJ)gdevevga.$(OBJ) $(DEVOBJ)gdevpcfb.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ)
-EGAVGA_SCO=$(DEVOBJ)gdevsco.$(OBJ) $(DEVOBJ)gdevpcfb.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ)
-# NOTE: for direct frame buffer addressing under SCO Unix or Xenix,
-# change DOS to SCO in the following line.
-EGAVGA=$(EGAVGA_DOS)
-
-#**************** $(CCD) gdevevga.c
-$(DEVOBJ)gdevevga.$(OBJ) : $(DEVSRC)gdevevga.c $(GDEV) $(memory__h) $(gdevpcfb_h) \
- $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevevga.$(OBJ) $(C_) $(DEVSRC)gdevevga.c
-
-$(DEVOBJ)gdevsco.$(OBJ) : $(DEVSRC)gdevsco.c $(GDEV) $(memory__h) $(gdevpcfb_h) \
- $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevsco.$(OBJ) $(C_) $(DEVSRC)gdevsco.c
-
-# Common code for MS-DOS and SCO.
-#**************** $(CCD) gdevpcfb.c
-$(DEVOBJ)gdevpcfb.$(OBJ) : $(DEVSRC)gdevpcfb.c $(GDEV) $(memory__h)\
- $(gdevpccm_h) $(gdevpcfb_h) $(gsparam_h) $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevpcfb.$(OBJ) $(C_) $(DEVSRC)gdevpcfb.c
-
-# The EGA/VGA family includes EGA and VGA.  Many SuperVGAs in 800x600,
-# 16-color mode can share the same code; see the next section below.
-$(DD)ega.dev : $(EGAVGA) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)ega $(EGAVGA)
-
-$(DD)vga.dev : $(EGAVGA) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)vga $(EGAVGA)
 
 ### ------------------ Display device for DLL platforms ----------------- ###
 

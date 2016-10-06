@@ -5758,10 +5758,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdevevga.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevfax.c"
 				>
 			</File>
@@ -5935,10 +5931,6 @@
 			</File>
 			<File
 				RelativePath="..\devices\gdevrinkj.c"
-				>
-			</File>
-			<File
-				RelativePath="..\devices\gdevsco.c"
 				>
 			</File>
 			<File
@@ -6327,10 +6319,6 @@
 			</File>
 			<File
 				RelativePath="..\devices\gdevmswn.h"
-				>
-			</File>
-			<File
-				RelativePath="..\devices\gdevpcfb.h"
 				>
 			</File>
 			<File
