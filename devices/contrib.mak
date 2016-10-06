@@ -117,7 +117,6 @@ CONTRIB_MAK=$(DEVSRC)contrib.mak $(TOP_MAKEFILES)
 #	mgr4	4-bit (VGA) color MGR devices
 #	mgr8	8-bit color MGR devices
 #	sgirgb	SGI RGB pixmap format
-#	sunhmono  Harlequin variant of 1-bit Sun raster file
 
 # If you add drivers, it would be nice if you kept each list
 # in alphabetical order.
@@ -794,17 +793,6 @@ gdevsgi_h=$(DEVSRC)gdevsgi.h
 
 $(DEVOBJ)gdevsgi.$(OBJ) : $(DEVSRC)gdevsgi.c $(PDEVH) $(gdevsgi_h) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevsgi.$(OBJ) $(C_) $(DEVSRC)gdevsgi.c
-
-### ---------------- Sun raster files ---------------- ###
-
-sunr_=$(DEVOBJ)gdevsunr.$(OBJ)
-
-# Harlequin variant, 1-bit
-$(DD)sunhmono.dev : $(sunr_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
-	$(SETPDEV) $(DD)sunhmono $(sunr_)
-
-$(DEVOBJ)gdevsunr.$(OBJ) : $(DEVSRC)gdevsunr.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevsunr.$(OBJ) $(C_) $(DEVSRC)gdevsunr.c
 
 
 #########################################################################
