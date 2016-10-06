@@ -395,11 +395,6 @@ $(DD)s3vga.dev : $(SVGA) $(s3vga_) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV) $(DD)s3vga $(SVGA)
 	$(ADDMOD) $(DD)s3vga -obj $(s3vga_)
 
-#**************** $(CCD) gdevs3ga.c
-$(DEVOBJ)gdevs3ga.$(OBJ) : $(DEVSRC)gdevs3ga.c $(GDEV) $(gdevpcfb_h) $(gdevsvga_h) \
- $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevs3ga.$(OBJ) $(C_) $(DEVSRC)gdevs3ga.c
-
 ###### ----------------------- Other displays ------------------------ ######
 
 ### ------------------ Display device for DLL platforms ----------------- ###

@@ -1460,7 +1460,6 @@
     <ClCompile Include="..\devices\gdevpsd.c" />
     <ClCompile Include="..\devices\gdevpsim.c" />
     <ClCompile Include="..\devices\gdevrinkj.c" />
-    <ClCompile Include="..\devices\gdevs3ga.c" />
     <ClCompile Include="..\devices\gdevsco.c" />
     <ClCompile Include="..\devices\gdevsgi.c" />
     <ClCompile Include="..\devices\gdevsj48.c" />

@@ -5950,10 +5950,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdevs3ga.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevsco.c"
 				>
 			</File>
