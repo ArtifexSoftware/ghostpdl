@@ -278,7 +278,6 @@ gdevcbjc_h=$(DEVSRC)gdevcbjc.h $(stream_h)
 gdevpcfb_h=$(DEVSRC)gdevpcfb.h $(dos__h)
 gdevpcl_h=$(DEVSRC)gdevpcl.h
 gdevpsu_h=$(DEVVECSRC)gdevpsu.h
-gdevsvga_h=$(DEVSRC)gdevsvga.h
 # Out of order
 gdevdljm_h=$(DEVSRC)gdevdljm.h $(gdevpcl_h)
 
@@ -341,59 +340,6 @@ $(DD)ega.dev : $(EGAVGA) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 
 $(DD)vga.dev : $(EGAVGA) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV) $(DD)vga $(EGAVGA)
-
-### ------------------------- SuperVGA displays ------------------------ ###
-
-# SuperVGA displays in 16-color, 800x600 mode are really just slightly
-# glorified VGA's, so we can handle them all with a single driver.
-# The way to select them on the command line is with
-#	-sDEVICE=svga16 -dDisplayMode=NNN
-# where NNN is the display mode in decimal.  See Use.htm for the modes
-# for some popular display chipsets.
-
-$(DD)svga16.dev : $(EGAVGA) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)svga16 $(EGAVGA)
-
-# More capable SuperVGAs have a wide variety of slightly differing
-# interfaces, so we need a separate driver for each one.
-
-SVGA=$(DEVOBJ)gdevsvga.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ)
-
-#**************** $(CCD) gdevsvga.c
-$(DEVOBJ)gdevsvga.$(OBJ) : $(DEVSRC)gdevsvga.c $(GDEV) $(memory__h)\
- $(gsparam_h) $(gxarith_h) $(gdevpccm_h) $(gdevpcfb_h) $(gdevsvga_h) \
-  $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevsvga.$(OBJ) $(C_) $(DEVSRC)gdevsvga.c
-
-# The SuperVGA family includes: Avance Logic Inc., ATI Wonder, S3,
-# Trident, Tseng ET3000/4000, and VESA.
-
-$(DD)ali.dev : $(SVGA) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)ali $(SVGA)
-
-$(DD)atiw.dev : $(SVGA) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)atiw $(SVGA)
-
-$(DD)cirr.dev : $(SVGA) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)cirr $(SVGA)
-
-$(DD)tseng.dev : $(SVGA) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)tseng $(SVGA)
-
-$(DD)tvga.dev : $(SVGA) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)tvga $(SVGA)
-
-$(DD)vesa.dev : $(SVGA) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)vesa $(SVGA)
-
-# The S3 driver doesn't share much code with the others.
-
-s3vga_=$(DEVOBJ)gdevs3ga.$(OBJ) $(DEVOBJ)gdevsvga.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ)
-$(DD)s3vga.dev : $(SVGA) $(s3vga_) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)s3vga $(SVGA)
-	$(ADDMOD) $(DD)s3vga -obj $(s3vga_)
-
-###### ----------------------- Other displays ------------------------ ######
 
 ### ------------------ Display device for DLL platforms ----------------- ###
 

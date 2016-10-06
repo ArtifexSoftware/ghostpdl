@@ -5974,10 +5974,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdevsvga.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevtfax.c"
 				>
 			</File>
@@ -6359,10 +6355,6 @@
 			</File>
 			<File
 				RelativePath="..\devices\gdevstc.h"
-				>
-			</File>
-			<File
-				RelativePath="..\devices\gdevsvga.h"
 				>
 			</File>
 			<File
