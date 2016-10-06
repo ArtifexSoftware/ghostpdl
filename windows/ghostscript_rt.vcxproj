@@ -883,7 +883,6 @@
     <ClCompile Include="..\contrib\gdevmd2k.c" />
     <ClCompile Include="..\contrib\gdevop4w.c" />
     <ClCompile Include="..\contrib\gdevxes.c" />
-    <ClCompile Include="..\contrib\gomni.c" />
     <ClCompile Include="..\contrib\eplaser\gdevescv.c" />
     <ClCompile Include="..\contrib\japanese\dviprlib.c" />
     <ClCompile Include="..\contrib\japanese\gdev10v.c" />

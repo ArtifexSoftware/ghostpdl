@@ -1585,22 +1585,6 @@ AC_SUBST(SOC_CFLAGS)
 AC_SUBST(SOC_LIBS)
 AC_SUBST(SOC_LOADER)
 
-dnl look for omni implementation
-AC_ARG_WITH([omni], AC_HELP_STRING([--with-omni],
-        [enable the omni driver]))
-dnl set safe defaults
-OMNIDEVS=''
-INCLUDEOMNI=no
-if ( ! test -z "$CONTRIBINCLUDE" ) && ( test x$with_omni = xyes ); then
-        INCLUDEOMNI=yes
-        OMNIDEVS='$(DD)omni.dev'
-
-        if test -n "$GCC"; then
-                LIBS="$LIBS -lstdc++"
-        fi
-fi
-AC_SUBST(OMNIDEVS)
-
 dnl optional X11 for display devices
 AC_PATH_XTRA
 

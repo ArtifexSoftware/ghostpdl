@@ -4941,10 +4941,6 @@
 				RelativePath="..\contrib\gdevxes.c"
 				>
 			</File>
-			<File
-				RelativePath="..\contrib\gomni.c"
-				>
-			</File>
 			<Filter
 				Name="eplaser"
 				>
