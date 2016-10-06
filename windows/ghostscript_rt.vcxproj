@@ -1420,7 +1420,6 @@
     <ClCompile Include="..\devices\gdevescp.c" />
     <ClCompile Include="..\devices\gdevevga.c" />
     <ClCompile Include="..\devices\gdevfax.c" />
-    <ClCompile Include="..\devices\gdevherc.c" />
     <ClCompile Include="..\devices\gdevhl7x.c" />
     <ClCompile Include="..\devices\gdevicov.c" />
     <ClCompile Include="..\devices\gdevifno.c" />

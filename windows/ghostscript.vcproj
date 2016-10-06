@@ -5782,10 +5782,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\devices\gdevherc.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevhl7x.c"
 				>
 			</File>

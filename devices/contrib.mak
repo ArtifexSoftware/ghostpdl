@@ -129,16 +129,6 @@ CONTRIB_MAK=$(DEVSRC)contrib.mak $(TOP_MAKEFILES)
 
 ###### ------------------- MS-DOS display devices ------------------- ######
 
-### ------------------- The Hercules Graphics display ------------------- ###
-
-herc_=$(DEVOBJ)gdevherc.$(OBJ)
-$(DD)herc.dev : $(herc_) $(CONTRIB_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)herc $(herc_)
-
-$(DEVOBJ)gdevherc.$(OBJ) : $(DEVSRC)gdevherc.c $(GDEV) $(dos__h)\
- $(gsmatrix_h) $(gxbitmap_h) $(CONTRIB_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevherc.$(OBJ) $(C_) $(DEVSRC)gdevherc.c
-
 ### ---------------------- The Private Eye display ---------------------- ###
 ### Note: this driver was contributed by a user:                          ###
 ###   please contact narf@media-lab.media.mit.edu if you have questions.  ###
