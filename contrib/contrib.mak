@@ -131,11 +131,6 @@ CONTRIBSRC=$(CONTRIBDIR)$(D)
 #
 #       None currently
 #
-# Other raster file formats and devices:
-#
-#	mag16	 MAG file format (from Red Hat's japanese driver pack)
-#	mag256	 MAG file format (from Red Hat's japanese driver pack)
-#
 # Special features
 #
 #	uniprint/: Some additional .upp files
@@ -1066,21 +1061,6 @@ $(DEVOBJ)gdev10v.$(OBJ) : $(JAPSRC)gdev10v.c $(PDEVH) \
 	$(DEVCC) $(O_)$@ $(C_) $(JAPSRC)gdev10v.c
 #	$(DEVCC) -DPC9801 $(O_)$@ $(C_) $(JAPSRC)gdev10v.c
 
-
-### ------------------------- MAG file formats ------------------------- ###
-
-maguro_=$(DEVOBJ)gdevmag.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
-$(DEVOBJ)gdevmag.$(OBJ) : $(JAPSRC)gdevmag.c $(PDEVH) \
-                           $(CONTRIB_MAK) $(MAKEDIRS)
-	$(DEVCC) $(O_)$@ $(C_) $(JAPSRC)gdevmag.c
-
-$(DD)mag16.dev : $(maguro_) \
-                           $(CONTRIB_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)mag16 $(maguro_)
-
-$(DD)mag256.dev : $(maguro_) \
-                           $(CONTRIB_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)mag256 $(maguro_)
 
 ### ---------------- Dot matrix printer device ---------------- ###
 dmprt_=$(DEVOBJ)gdevdmpr.$(OBJ) $(DEVOBJ)dviprlib.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
