@@ -95,7 +95,6 @@ CONTRIB_MAK=$(DEVSRC)contrib.mak $(TOP_MAKEFILES)
 #		also good for PaintJet 1200C and CopyJet
 #	r4081	Ricoh 4081 laser printer
 #	sj48	StarJet 48 inkjet printer
-#	sparc	SPARCprinter
 #	st800	Epson Stylus 800 printer
 #	stcolor	Epson Stylus Color
 #	t4693d2  Tektronix 4693d color printer, 2 bits per R/G/B component
@@ -651,19 +650,6 @@ $(DD)nwp533.dev : $(nwp533_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
 
 $(DEVOBJ)gdevn533.$(OBJ) : $(DEVSRC)gdevn533.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevn533.$(OBJ) $(C_) $(DEVSRC)gdevn533.c
-
-### ------------------------- The SPARCprinter ------------------------- ###
-### Note: this driver was contributed by users: please contact Martin    ###
-###       Schulte (schulte@thp.uni-koeln.de) if you have questions.      ###
-###       He would also like to hear from anyone using the driver.       ###
-### Please consult the source code for additional documentation.         ###
-
-sparc_=$(DEVOBJ)gdevsppr.$(OBJ)
-$(DD)sparc.dev : $(sparc_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
-	$(SETPDEV) $(DD)sparc $(sparc_)
-
-$(DEVOBJ)gdevsppr.$(OBJ) : $(DEVSRC)gdevsppr.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevsppr.$(OBJ) $(C_) $(DEVSRC)gdevsppr.c
 
 ### ----------------- The StarJet SJ48 device -------------------------- ###
 ### Note: this driver was contributed by a user: if you have questions,  ###

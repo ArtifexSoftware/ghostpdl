@@ -5954,10 +5954,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdevsppr.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevstc.c"
 				>
 			</File>
