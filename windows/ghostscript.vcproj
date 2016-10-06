@@ -5974,10 +5974,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdevsun.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevsvga.c"
 				>
 			</File>

@@ -30,7 +30,6 @@ CONTRIB_MAK=$(DEVSRC)contrib.mak $(TOP_MAKEFILES)
 #	pe	Private Eye display
 #   Unix and VMS:
 #	sonyfb	Sony Microsystems monochrome display   [Sony only]
-#	sunview  SunView window system   [SunOS only]
 # Printers:
 #	ap3250	Epson AP3250 printer
 #	appledmp  Apple Dot Matrix Printer (should also work with Imagewriter)
@@ -149,19 +148,6 @@ $(DD)sonyfb.dev : $(sonyfb_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
 
 $(DEVOBJ)gdevsnfb.$(OBJ) : $(DEVSRC)gdevsnfb.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevsnfb.$(OBJ) $(C_) $(DEVSRC)gdevsnfb.c
-
-### ------------------------ The SunView device ------------------------ ###
-### Note: this driver is maintained by a user: if you have questions,    ###
-###       please contact Andreas Stolcke (stolcke@icsi.berkeley.edu).    ###
-
-sunview_=$(DEVOBJ)gdevsun.$(OBJ)
-$(DD)sunview.dev : $(sunview_) $(CONTRIB_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)sunview $(sunview_)
-	$(ADDMOD) $(DEVGENDIR)sunview -lib suntool sunwindow pixrect
-
-$(DEVOBJ)gdevsun.$(OBJ) : $(DEVSRC)gdevsun.c $(GDEV) $(malloc__h)\
- $(gscdefs_h) $(gserrors_h) $(gsmatrix_h) $(CONTRIB_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevsun.$(OBJ) $(C_) $(DEVSRC)gdevsun.c
 
 ###### --------------- Memory-buffered printer devices --------------- ######
 
