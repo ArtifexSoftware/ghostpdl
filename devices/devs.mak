@@ -432,15 +432,6 @@ $(DD)lvga256.dev : $(lvga256_) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 $(DEVOBJ)gdevl256.$(OBJ) : $(DEVSRC)gdevl256.c $(GDEV) $(memory__h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCCSHARED) $(DEVO_)gdevl256.$(OBJ) $(C_) $(DEVSRC)gdevl256.c
 
-vgalib_=$(DEVOBJ)gdevvglb.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ)
-$(DD)vgalib.dev : $(vgalib_) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETDEV2) $(DD)vgalib $(vgalib_)
-	$(ADDMOD) $(DD)vgalib -lib vga
-
-$(DEVOBJ)gdevvglb.$(OBJ) : $(DEVSRC)gdevvglb.c $(GDEV) $(gdevpccm_h) $(gsparam_h) \
- $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCCSHARED) $(DEVO_)gdevvglb.$(OBJ) $(C_) $(DEVSRC)gdevvglb.c
-
 ### Shared library object supporting vgalib.
 ### NON PORTABLE, ONLY UNIX WITH GCC SUPPORT
 

@@ -1481,7 +1481,6 @@
     <ClCompile Include="..\devices\gdevtrac.c" />
     <ClCompile Include="..\devices\gdevtsep.c" />
     <ClCompile Include="..\devices\gdevupd.c" />
-    <ClCompile Include="..\devices\gdevvglb.c" />
     <ClCompile Include="..\devices\gdevwddb.c" />
     <ClCompile Include="..\devices\gdevwdib.c" />
     <ClCompile Include="..\devices\gdevwpr2.c" />

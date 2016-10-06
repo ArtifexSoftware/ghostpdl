@@ -6034,10 +6034,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdevvglb.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevwddb.c"
 				>
 			</File>
