@@ -88,8 +88,6 @@ DEVGEN=$(DEVGENDIR)$(D)
 #   Unix and VMS:
 #   ****** NOTE: For direct frame buffer addressing under SCO Unix or Xenix,
 #   ****** edit the definition of EGAVGA below.
-# *	lvga256		Linux vgalib, 256-color VGA modes  [Linux only]
-# +	vgalib		Linux vgalib, 16-color VGA modes   [Linux only]
 #	x11		X Windows version 11, release >=4   [Unix and VMS only]
 #	x11alpha	X Windows masquerading as a device with alpha capability
 #	x11cmyk		X Windows masquerading as a 1-bit-per-plane CMYK device
@@ -409,32 +407,6 @@ $(DEVOBJ)gdevdsp.$(OBJ) : $(DEVSRC)gdevdsp.c $(string__h)\
  $(GDEVH) $(gxdevmem_h) $(gdevdevn_h) $(gsequivc_h) $(gdevdsp_h) $(gdevdsp2_h) \
   $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevdsp.$(OBJ) $(C_) $(DEVSRC)gdevdsp.c
-
-
-### ---------------------- Linux PC with vgalib ------------------------- ###
-### Note: these drivers were contributed by users.                        ###
-### For questions about the lvga256 driver, please contact                ###
-###       Ludger Kunz (ludger.kunz@fernuni-hagen.de).                     ###
-### For questions about the vgalib driver, please contact                 ###
-###       Erik Talvola (talvola@gnu.ai.mit.edu).                          ###
-### Note that the vgalib device supports only 16-color VGA modes.         ###
-
-lvga256_=$(DEVOBJ)gdevl256.$(OBJ)
-$(DD)lvga256.dev : $(lvga256_) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)lvga256 $(lvga256_)
-	$(ADDMOD) $(DD)lvga256 -lib vga vgagl
-
-$(DEVOBJ)gdevl256.$(OBJ) : $(DEVSRC)gdevl256.c $(GDEV) $(memory__h) $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCCSHARED) $(DEVO_)gdevl256.$(OBJ) $(C_) $(DEVSRC)gdevl256.c
-
-### Shared library object supporting vgalib.
-### NON PORTABLE, ONLY UNIX WITH GCC SUPPORT
-
-$(DEVOBJ)lvga256.so : $(lvga256_) $(DEVS_MAK) $(MAKEDIRS)
-	$(CCLD) $(LDFLAGS) -shared -o $(DEVOBJ)lvga256.so $(lvga256_) -lvga -lvgagl
-
-$(DEVOBJ)vgalib.so : $(vgalib_) $(DEVS_MAK) $(MAKEDIRS)
-	$(CCLD) $(LDFLAGS) -shared -o $(DEVOBJ)vgalib.so $(vgalib_) -lvga -lvgagl
 
 ### -------------------------- The X11 device -------------------------- ###
 

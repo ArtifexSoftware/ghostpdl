@@ -1429,7 +1429,6 @@
     <ClCompile Include="..\devices\gdevjbig2.c" />
     <ClCompile Include="..\devices\gdevjpeg.c" />
     <ClCompile Include="..\devices\gdevjpx.c" />
-    <ClCompile Include="..\devices\gdevl256.c" />
     <ClCompile Include="..\devices\gdevl31s.c" />
     <ClCompile Include="..\devices\gdevlbp8.c" />
     <ClCompile Include="..\devices\gdevlp8k.c" />

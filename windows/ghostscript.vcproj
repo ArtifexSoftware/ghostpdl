@@ -5818,10 +5818,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdevl256.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevl31s.c"
 				>
 			</File>
