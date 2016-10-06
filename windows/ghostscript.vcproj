@@ -5638,10 +5638,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdev3b1.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdev4081.c"
 				>
 			</File>

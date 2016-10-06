@@ -1388,7 +1388,6 @@
     <ClCompile Include="..\lcms2\src\cmswtpnt.c" />
     <ClCompile Include="..\lcms2\src\cmsxform.c" />
     <ClCompile Include="..\devices\gdev3852.c" />
-    <ClCompile Include="..\devices\gdev3b1.c" />
     <ClCompile Include="..\devices\gdev4081.c" />
     <ClCompile Include="..\devices\gdev4693.c" />
     <ClCompile Include="..\devices\gdev8510.c" />

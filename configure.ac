@@ -351,8 +351,6 @@ case `uname` in
         ;;
 esac
 AC_SUBST(OBJDIR_BSDMAKE_WORKAROUND)
-
-# for gdev3b1.c (AT&T terminal interface)
 AC_CHECK_HEADER([sys/window.h])
 
 dnl --------------------------------------------------

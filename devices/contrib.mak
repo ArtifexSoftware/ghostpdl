@@ -27,10 +27,8 @@ CONTRIB_MAK=$(DEVSRC)contrib.mak $(TOP_MAKEFILES)
 
 # Displays:
 #   MS-DOS (note: not usable with Desqview/X):
-#	herc	Hercules Graphics display   [MS-DOS only]
 #	pe	Private Eye display
 #   Unix and VMS:
-#	att3b1	AT&T 3b1/Unixpc monochrome display   [3b1 only]
 #	sonyfb	Sony Microsystems monochrome display   [Sony only]
 #	sunview  SunView window system   [SunOS only]
 # Printers:
@@ -141,17 +139,6 @@ $(DEVOBJ)gdevpe.$(OBJ) : $(DEVSRC)gdevpe.c $(GDEV) $(memory__h) $(CONTRIB_MAK) $
 	$(DEVCC) $(DEVO_)gdevpe.$(OBJ) $(C_) $(DEVSRC)gdevpe.c
 
 ###### ----------------------- Other displays ------------------------ ######
-
-### -------------- The AT&T 3b1 Unixpc monochrome display --------------- ###
-### Note: this driver was contributed by a user: please contact           ###
-###       Andy Fyfe (andy@cs.caltech.edu) if you have questions.          ###
-
-att3b1_=$(DEVOBJ)gdev3b1.$(OBJ)
-$(DD)att3b1.dev : $(att3b1_) $(CONTRIB_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)att3b1 $(att3b1_)
-
-$(DEVOBJ)gdev3b1.$(OBJ) : $(DEVSRC)gdev3b1.c $(GDEV) $(CONTRIB_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdev3b1.$(OBJ) $(C_) $(DEVSRC)gdev3b1.c
 
 ### ------------------- Sony NeWS frame buffer device ------------------ ###
 ### Note: this driver was contributed by a user: please contact          ###
