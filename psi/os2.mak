@@ -419,7 +419,7 @@ STDIO_IMPLEMENTATION=c
 # devs.mak, pcwin.mak, and contrib.mak for the list of available devices.
 
 !if $(MAKEDLL)
-DEVICE_DEVS=$(DD)display.dev $(DD)os2prn.dev
+DEVICE_DEVS=$(DD)display.dev
 !endif
 !if $(BUILD_X11)
 DEVICE_DEVS1=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DD)x11gray2.dev $(DD)x11gray4.dev $(DD)x11mono.dev

@@ -67,8 +67,6 @@ DEVGEN=$(DEVGENDIR)$(D)
 #	display		For use on any platform that supports DLLs
 #   MS Windows:
 #	mswinpr2	Microsoft Windows 3.0, 3.1 DIB printer  [MS Windows only]
-#   OS/2:
-# *	os2prn		OS/2 printer                [OS/2 only]
 #   Unix and VMS:
 #	x11		X Windows version 11, release >=4   [Unix and VMS only]
 #	x11alpha	X Windows masquerading as a device with alpha capability

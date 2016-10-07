@@ -5854,10 +5854,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdevos2p.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevp2up.c"
 				>
 			</File>

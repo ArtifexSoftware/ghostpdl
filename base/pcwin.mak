@@ -37,12 +37,3 @@ $(DD)mswinpr2.dev: $(mswinpr2_) $(GLD)page.dev $(PCWIN_MAK)
 $(GLOBJ)gdevwpr2.$(OBJ): $(DEVSRC)gdevwpr2.c $(PDEVH) $(windows__h)\
  $(gdevpccm_h) $(gp_h) $(gp_mswin_h) $(gsicc_manage_h) $(PCWIN_MAK)
 	$(GLCCWIN) $(GLO_)gdevwpr2.$(OBJ) $(C_) $(DEVSRC)gdevwpr2.c
-
-### --------------------------- The OS/2 printer ------------------------ ###
-
-os2prn_=$(GLOBJ)gdevos2p.$(OBJ)
-$(DD)os2prn.dev: $(os2prn_) $(GLD)page.dev $(PCWIN_MAK)
-	$(SETPDEV) $(DD)os2prn $(os2prn_)
-
-$(GLOBJ)gdevos2p.$(OBJ): $(GLSRC)gdevos2p.c $(gp_h) $(gdevpccm_h) $(gdevprn_h) $(gscdefs_h) $(PCWIN_MAK)
-	$(GLCC) $(GLO_)gdevos2p.$(OBJ) $(C_) $(GLSRC)gdevos2p.c
