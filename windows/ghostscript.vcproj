@@ -5834,10 +5834,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdevmswn.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevmsxf.c"
 				>
 			</File>
@@ -5990,15 +5986,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdevwdib.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevwpr2.c"
-				>
-			</File>
-			<File
-				RelativePath="..\devices\gdevwprn.c"
 				>
 			</File>
 			<File
@@ -6295,10 +6283,6 @@
 			</File>
 			<File
 				RelativePath="..\devices\gdevmgr.h"
-				>
-			</File>
-			<File
-				RelativePath="..\devices\gdevmswn.h"
 				>
 			</File>
 			<File

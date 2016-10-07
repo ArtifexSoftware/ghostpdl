@@ -122,7 +122,7 @@ src/dvx-gcc.mak:DEVICE_DEVS12=$(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
 src/dvx-gcc.mak:DEVICE_DEVS13=
 src/dvx-gcc.mak:DEVICE_DEVS14=
 src/dvx-gcc.mak:DEVICE_DEVS15=$(DD)pdfwrite.dev
-src/bcwin32.mak:DEVICE_DEVS=$(DD)mswindll.dev $(DD)mswinprn.dev $(DD)mswinpr2.dev
+src/bcwin32.mak:DEVICE_DEVS=$(DD)mswinpr2.dev
 src/bcwin32.mak:DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 src/bcwin32.mak:DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev $(DD)ljet3.dev $(DD)ljet4.dev
 src/bcwin32.mak:DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev $(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev
@@ -138,7 +138,7 @@ src/bcwin32.mak:DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $
 src/bcwin32.mak:DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
 src/bcwin32.mak:DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)eps2write.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
 src/msvc32.mak:!ifndef DEVICE_DEVS
-src/msvc32.mak:DEVICE_DEVS=$(DD)mswindll.dev $(DD)mswinprn.dev $(DD)mswinpr2.dev
+src/msvc32.mak:DEVICE_DEVS=$(DD)mswinpr2.dev
 src/msvc32.mak:DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 src/msvc32.mak:DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev $(DD)ljet3.dev $(DD)ljet4.dev
 src/msvc32.mak:DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev $(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev

@@ -9,11 +9,6 @@ EXPORTS
 		gsdll_execute_cont	@4
 		gsdll_execute_end	@5
 		gsdll_exit		@6
-;		gsdll_lock_device	@7
-;		gsdll_copy_dib  	@8
-;		gsdll_copy_palette 	@9
-;		gsdll_draw		@10
-;		gsdll_get_bitmap_row	@11
 		gsdll_init_with_encoding
 		gsdll_initA
 		gsdll_initW

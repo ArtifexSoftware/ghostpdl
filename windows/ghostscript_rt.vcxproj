@@ -1433,7 +1433,6 @@
     <ClCompile Include="..\devices\gdevmeds.c" />
     <ClCompile Include="..\devices\gdevmgr.c" />
     <ClCompile Include="..\devices\gdevmiff.c" />
-    <ClCompile Include="..\devices\gdevmswn.c" />
     <ClCompile Include="..\devices\gdevmsxf.c" />
     <ClCompile Include="..\devices\gdevn533.c" />
     <ClCompile Include="..\devices\gdevo182.c" />
@@ -1470,9 +1469,7 @@
     <ClCompile Include="..\devices\gdevtsep.c" />
     <ClCompile Include="..\devices\gdevupd.c" />
     <ClCompile Include="..\devices\gdevwddb.c" />
-    <ClCompile Include="..\devices\gdevwdib.c" />
     <ClCompile Include="..\devices\gdevwpr2.c" />
-    <ClCompile Include="..\devices\gdevwprn.c" />
     <ClCompile Include="..\devices\gdevx.c" />
     <ClCompile Include="..\devices\gdevxalt.c" />
     <ClCompile Include="..\devices\gdevxcf.c" />
@@ -2198,7 +2195,6 @@
     <ClInclude Include="..\devices\gdevfax.h" />
     <ClInclude Include="..\devices\gdevmeds.h" />
     <ClInclude Include="..\devices\gdevmgr.h" />
-    <ClInclude Include="..\devices\gdevmswn.h" />
     <ClInclude Include="..\devices\gdevpcl.h" />
     <ClInclude Include="..\devices\gdevplib.h" />
     <ClInclude Include="..\devices\gdevpm.h" />

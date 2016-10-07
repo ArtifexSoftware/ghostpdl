@@ -1446,8 +1446,7 @@ STDIO_IMPLEMENTATION=c
 !ifdef METRO
 DEVICE_DEVS=
 !else
-# $(DD)mswindll.dev 
-DEVICE_DEVS=$(DD)display.dev $(DD)mswinpr2.dev $(DD)ijs.dev $(DD)mswindll.dev 
+DEVICE_DEVS=$(DD)display.dev $(DD)mswinpr2.dev $(DD)ijs.dev
 !endif
 DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev

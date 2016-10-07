@@ -66,8 +66,6 @@ DEVGEN=$(DEVGENDIR)$(D)
 # Other displays:
 #	display		For use on any platform that supports DLLs
 #   MS Windows:
-#	mswindll	Microsoft Windows 3.1 DLL  [MS Windows only]
-#	mswinprn	Microsoft Windows 3.0, 3.1 DDB printer  [MS Windows only]
 #	mswinpr2	Microsoft Windows 3.0, 3.1 DIB printer  [MS Windows only]
 #   OS/2:
 # *	os2prn		OS/2 printer                [OS/2 only]
