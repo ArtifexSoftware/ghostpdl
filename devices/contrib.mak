@@ -115,7 +115,6 @@ CONTRIB_MAK=$(DEVSRC)contrib.mak $(TOP_MAKEFILES)
 #	mgrgray8  8-bit gray scale MGR devices
 #	mgr4	4-bit (VGA) color MGR devices
 #	mgr8	8-bit color MGR devices
-#	sgirgb	SGI RGB pixmap format
 
 # If you add drivers, it would be nice if you kept each list
 # in alphabetical order.
@@ -768,18 +767,6 @@ $(DD)mgr4.dev : $(MGR) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
 
 $(DD)mgr8.dev : $(MGR) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)mgr8 $(MGR)
-
-### -------------------------- SGI RGB pixmaps -------------------------- ###
-
-sgirgb_=$(DEVOBJ)gdevsgi.$(OBJ)
-$(DD)sgirgb.dev : $(sgirgb_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
-	$(SETPDEV) $(DD)sgirgb $(sgirgb_)
-
-gdevsgi_h=$(DEVSRC)gdevsgi.h
-
-$(DEVOBJ)gdevsgi.$(OBJ) : $(DEVSRC)gdevsgi.c $(PDEVH) $(gdevsgi_h) $(CONTRIB_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevsgi.$(OBJ) $(C_) $(DEVSRC)gdevsgi.c
-
 
 #########################################################################
 ### --------------------Japanese printer addons --------------------- ###

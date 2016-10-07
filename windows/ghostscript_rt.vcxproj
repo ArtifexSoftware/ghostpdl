@@ -1456,7 +1456,6 @@
     <ClCompile Include="..\devices\gdevpsd.c" />
     <ClCompile Include="..\devices\gdevpsim.c" />
     <ClCompile Include="..\devices\gdevrinkj.c" />
-    <ClCompile Include="..\devices\gdevsgi.c" />
     <ClCompile Include="..\devices\gdevsj48.c" />
     <ClCompile Include="..\devices\gdevsnfb.c" />
     <ClCompile Include="..\devices\gdevstc.c" />
@@ -2208,7 +2207,6 @@
     <ClInclude Include="..\devices\gdevplib.h" />
     <ClInclude Include="..\devices\gdevpm.h" />
     <ClInclude Include="..\devices\gdevprna.h" />
-    <ClInclude Include="..\devices\gdevsgi.h" />
     <ClInclude Include="..\devices\gdevstc.h" />
     <ClInclude Include="..\devices\gdevtfax.h" />
     <ClInclude Include="..\devices\gdevtifs.h" />

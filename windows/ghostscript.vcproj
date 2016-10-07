@@ -5934,10 +5934,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdevsgi.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevsj48.c"
 				>
 			</File>
@@ -6335,10 +6331,6 @@
 			</File>
 			<File
 				RelativePath="..\devices\gdevprna.h"
-				>
-			</File>
-			<File
-				RelativePath="..\devices\gdevsgi.h"
 				>
 			</File>
 			<File
