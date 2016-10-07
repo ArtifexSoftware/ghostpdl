@@ -5822,10 +5822,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdevmac.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevmeds.c"
 				>
 			</File>
@@ -6291,18 +6287,6 @@
 			</File>
 			<File
 				RelativePath="..\devices\gdevfax.h"
-				>
-			</File>
-			<File
-				RelativePath="..\devices\gdevmac.h"
-				>
-			</File>
-			<File
-				RelativePath="..\devices\gdevmacpictop.h"
-				>
-			</File>
-			<File
-				RelativePath="..\devices\gdevmacttf.h"
 				>
 			</File>
 			<File

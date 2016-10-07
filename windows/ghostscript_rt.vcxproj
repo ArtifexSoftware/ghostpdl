@@ -1430,7 +1430,6 @@
     <ClCompile Include="..\devices\gdevlbp8.c" />
     <ClCompile Include="..\devices\gdevlp8k.c" />
     <ClCompile Include="..\devices\gdevlxm.c" />
-    <ClCompile Include="..\devices\gdevmac.c" />
     <ClCompile Include="..\devices\gdevmeds.c" />
     <ClCompile Include="..\devices\gdevmgr.c" />
     <ClCompile Include="..\devices\gdevmiff.c" />
@@ -2197,9 +2196,6 @@
     <ClInclude Include="..\devices\gdevdsp.h" />
     <ClInclude Include="..\devices\gdevdsp2.h" />
     <ClInclude Include="..\devices\gdevfax.h" />
-    <ClInclude Include="..\devices\gdevmac.h" />
-    <ClInclude Include="..\devices\gdevmacpictop.h" />
-    <ClInclude Include="..\devices\gdevmacttf.h" />
     <ClInclude Include="..\devices\gdevmeds.h" />
     <ClInclude Include="..\devices\gdevmgr.h" />
     <ClInclude Include="..\devices\gdevmswn.h" />

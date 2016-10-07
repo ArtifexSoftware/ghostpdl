@@ -100,8 +100,6 @@ checkDirs = [
       'dwuninst.h',
       'gdevhpij.c',
       'dmmain.c',
-      'gdevmac.c',
-      'gdevmacxf.c',
       'gdevwdib.c',
       'gp_mac.c',
       'gp_macio.c',
