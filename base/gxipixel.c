@@ -575,6 +575,8 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
            eliminate the 256 bytes for the >8bpp image enumerator */
         penum->clues = (gx_image_clue*) gs_alloc_bytes(mem, sizeof(gx_image_clue)*256,
                              "gx_image_enum_begin");
+        if (penum->clues == NULL)
+            return_error(gs_error_VMerror);
         penum->icolor0 = &(penum->clues[0].dev_color);
         penum->icolor1 = &(penum->clues[255].dev_color);
     } else {
