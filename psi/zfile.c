@@ -209,10 +209,13 @@ z_check_file_permissions(gs_memory_t *mem, const char *fname, const int len, con
     if (code < 0)
         return code;
 
-    if (pname.iodev && i_ctx_p->LockFilePermissions && strcmp(pname.iodev->dname, "%pipe%") == 0)
-        return gs_error_invalidfileaccess;
-        
-    code = check_file_permissions(i_ctx_p, fname, len, permitgroup);
+    if (pname.iodev && i_ctx_p->LockFilePermissions
+         && strcmp(pname.iodev->dname, "%pipe%") == 0) {
+        code = gs_note_error(gs_error_invalidfileaccess);
+    }
+    else {
+        code = check_file_permissions(i_ctx_p, fname, len, permitgroup);
+    }
     return code;
 }
 
@@ -503,8 +506,11 @@ zstatus(i_ctx_t *i_ctx_p)
                 code = gs_terminate_file_name(&pname, imemory, "status");
                 if (code < 0)
                     return code;
-                code = (*pname.iodev->procs.file_status)(pname.iodev,
+                if ((code = check_file_permissions(i_ctx_p, pname.fname, pname.len,
+                                       "PermitFileReading")) >= 0) {
+                    code = (*pname.iodev->procs.file_status)(pname.iodev,
                                                        pname.fname, &fstat);
+                }
                 switch (code) {
                     case 0:
                         check_ostack(4);
