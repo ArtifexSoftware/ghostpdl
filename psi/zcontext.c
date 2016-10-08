@@ -983,6 +983,7 @@ zlock(i_ctx_t *i_ctx_p)
         return_error(gs_error_VMerror);
     plock->holder_index = 0;
     plock->waiting.head_index = plock->waiting.tail_index = 0;
+    plock->scheduler = NULL;
     push(1);
     make_istruct(op, a_all, plock);
     return 0;
