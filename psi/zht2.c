@@ -82,14 +82,22 @@ zsethalftone5(i_ctx_t *i_ctx_p)
     gs_memory_t *mem;
     uint edepth = ref_stack_count(&e_stack);
     int npop = 2;
-    int dict_enum = dict_first(op);
+    int dict_enum;
     ref rvalue[2];
     int cname, colorant_number;
     byte * pname;
     uint name_size;
     int halftonetype, type = 0;
     gs_gstate *pgs = igs;
-    int space_index = r_space_index(op - 1);
+    int space_index;
+
+    if (ref_stack_count(&o_stack) < 2)
+        return_error(gs_error_stackunderflow);
+    check_type(*op, t_dictionary);
+    check_type(*(op - 1), t_dictionary);
+
+    dict_enum = dict_first(op);
+    space_index = r_space_index(op - 1);
 
     mem = (gs_memory_t *) idmemory->spaces_indexed[space_index];
 
