@@ -32,7 +32,6 @@ CONTRIB_MAK=$(DEVSRC)contrib.mak $(TOP_MAKEFILES)
 #	sonyfb	Sony Microsystems monochrome display   [Sony only]
 # Printers:
 #	ap3250	Epson AP3250 printer
-#	appledmp  Apple Dot Matrix Printer (should also work with Imagewriter)
 #	bj10e	Canon BubbleJet BJ10e
 #	bj200	Canon BubbleJet BJ200; also good for BJ300 in ProPrinter mode
 #		(see comments in source code)
@@ -67,9 +66,6 @@ CONTRIB_MAK=$(DEVSRC)contrib.mak $(TOP_MAKEFILES)
 #		also usable with the MFC6550MC Fax Machine.
 #	ibmpro  IBM 9-pin Proprinter
 #	imagen	Imagen ImPress printers
-#	iwhi	Apple Imagewriter in high-resolution mode
-#	iwlo	Apple Imagewriter in low-resolution mode
-#	iwlq	Apple Imagewriter LQ in 320 x 216 dpi mode
 #	jetp3852  IBM Jetprinter ink-jet color printer (Model #3852)
 #	lbp8	Canon LBP-8II laser printer
 #	lips3	Canon LIPS III laser printer in English (CaPSL) mode
@@ -149,32 +145,6 @@ $(DEVOBJ)gdevsnfb.$(OBJ) : $(DEVSRC)gdevsnfb.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIR
 	$(DEVCC) $(DEVO_)gdevsnfb.$(OBJ) $(C_) $(DEVSRC)gdevsnfb.c
 
 ###### --------------- Memory-buffered printer devices --------------- ######
-
-### --------------------- The Apple printer devices --------------------- ###
-### Note: these drivers were contributed by users.                        ###
-###   If you have questions about the DMP driver, please contact          ###
-###	Mark Wedel (master@cats.ucsc.edu).                                ###
-###   If you have questions about the Imagewriter drivers, please contact ###
-###	Jonathan Luckey (luckey@rtfm.mlb.fl.us).                          ###
-###   If you have questions about the Imagewriter LQ driver, please       ###
-###	contact Scott Barker (barkers@cuug.ab.ca).                        ###
-
-appledmp_=$(DEVOBJ)gdevadmp.$(OBJ)
-
-$(DEVOBJ)gdevadmp.$(OBJ) : $(DEVSRC)gdevadmp.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevadmp.$(OBJ) $(C_) $(DEVSRC)gdevadmp.c
-
-$(DD)appledmp.dev : $(appledmp_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
-	$(SETPDEV) $(DD)appledmp $(appledmp_)
-
-$(DD)iwhi.dev : $(appledmp_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
-	$(SETPDEV) $(DD)iwhi $(appledmp_)
-
-$(DD)iwlo.dev : $(appledmp_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
-	$(SETPDEV) $(DD)iwlo $(appledmp_)
-
-$(DD)iwlq.dev : $(appledmp_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
-	$(SETPDEV) $(DD)iwlq $(appledmp_)
 
 ### ------------ The Canon BubbleJet BJ10e and BJ200 devices ------------ ###
 
