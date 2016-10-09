@@ -332,6 +332,9 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
                 gs_grestore(igs);
             }
             pinst = (gs_pattern1_instance_t *)gs_currentcolor(igs->saved)->pattern;
+            /* If pinst is NULL after all of that then we are not going to recover */
+            if (pinst == NULL)
+                return_error(gs_error_unknownerror);
         }
         pgs = igs;
 
