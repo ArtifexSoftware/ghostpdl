@@ -390,9 +390,6 @@ static int gs_ConvertUTF16(char *UTF16, int UTF16Len, unsigned char **UTF8Start,
         UTF8 += bytes;
 
         switch(bytes) {
-            case 4:
-                *--UTF8 = (unsigned char)((U16 | 0x80) & 0xBF);
-                U16 >>= 6;
             case 3:
                 *--UTF8 = (unsigned char)((U16 | 0x80) & 0xBF);
                 U16 >>= 6;
