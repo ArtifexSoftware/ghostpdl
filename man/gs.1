@@ -322,22 +322,6 @@ the command line is unrestricted.
 .PP
 SAFER mode prevents changing the /GenericResourceDir, /FontResourceDir,
 /SystemParamsPassword, and /StartJobPassword.
-.PP
-While SAFER mode is not the default, it is the default for many wrapper scripts
-such as ps2pdf and may be the default in a subsequent release of Ghostscript.
-Thus when running programs that need to open files or set restricted parameters
-you should pass the
-.B \-dNOSAFER
-command line option or its synonym
-.BR \-dDELAYSAFER .
-.PP
-When running with
-.B \-dNOSAFER
-it is possible to perform a "save" followed by ".setsafe", execute a file or
-procedure in SAFER mode, and then use "restore" to return to NOSAFER mode.  In
-order to prevent the save object from being restored by the foreign file or
-procedure, the ".runandhide" operator should be used to hide the save object
-from the restricted procedure.
 .SH FILES
 .PP
 The locations of many Ghostscript run-time files are compiled into the
