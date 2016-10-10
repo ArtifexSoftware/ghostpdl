@@ -578,6 +578,12 @@ userdict /.pdfcvstring () put
 } bind def
 
 /pdfmark {		% -mark- <key> <value> ... <markname> pdfmark -
+  counttomark 0 eq {
+    /pdfmark /stackunderflow signalerror
+  } if
+  dup type /nametype eq not {
+    /pdfmark /typecheck signalerror
+  } if
   dup /SP eq {
     % A hack for synchronizing the clipping path.
     gsave
