@@ -152,10 +152,10 @@ typedef struct xps_image_enum_s {
     FILE *fid;
 } xps_image_enum_t;
 
-gs_private_st_suffix_add3(st_xps_image_enum, xps_image_enum_t,
+gs_private_st_suffix_add4(st_xps_image_enum, xps_image_enum_t,
     "xps_image_enum_t", xps_image_enum_enum_ptrs,
     xps_image_enum_reloc_ptrs, st_vector_image_enum,
-    buffer, devc_buffer, pgs);
+    buffer, devc_buffer, pcs, pgs);
 
 typedef struct gx_device_xps_s {
     /* superclass state */
