@@ -286,6 +286,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             pcls1->pattern_id = pcls->pattern_id;
             pcls1->tile_phase.x = pcls->tile_phase.x;
             pcls1->tile_phase.y = pcls->tile_phase.y;
+            pcls1->color_usage.or = pcls->color_usage.or;
         }
     }
     return code;
