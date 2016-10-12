@@ -17,6 +17,7 @@
 /* XPS interpreter - text drawing support */
 
 #include "ghostxps.h"
+#include <stdlib.h>
 
 #define XPS_TEXT_BUFFER_SIZE 300
 
@@ -368,26 +369,16 @@ xps_parse_digits(char *s, int *digit)
     return s;
 }
 
-static inline int is_real_num_char(int c)
-{
-    return (c >= '0' && c <= '9') || c == 'e' || c == 'E' || c == '+' || c == '-' || c == '.';
-}
-
 static char *
 xps_parse_real_num(char *s, float *number, bool *number_parsed)
 {
-    char buf[64];
-    char *p = buf;
-    *number_parsed = false;
-    
-    while (is_real_num_char(*s))
-        *p++ = *s++;
-    *p = 0;
-    if (buf[0]) {
-        *number = atof(buf);
-        *number_parsed = true;
-    }
-    return s;
+    char *tail;
+    float v;
+    v = (float)strtod(s, &tail);
+    *number_parsed = tail != s;
+    if (*number_parsed)
+        *number = v;
+    return tail;
 }
 
 static char *
