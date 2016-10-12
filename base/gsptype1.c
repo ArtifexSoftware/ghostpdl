@@ -598,14 +598,18 @@ gs_pattern1_get_pattern(const gs_pattern_instance_t *pinst)
 void *
 gx_pattern1_get_transptr(const gx_device_color *pdevc)
 {
-    return pdevc->colors.pattern.p_tile->ttrans;
+    if (pdevc->colors.pattern.p_tile != NULL)
+        return pdevc->colors.pattern.p_tile->ttrans;
+    else
+        return NULL;
 }
 
 /* Check for if the clist in the pattern has transparency */
 int
 gx_pattern1_clist_has_trans(const gx_device_color *pdevc)
 {
-    if (pdevc->colors.pattern.p_tile->cdev != NULL) {
+    if (pdevc->colors.pattern.p_tile != NULL &&
+        pdevc->colors.pattern.p_tile->cdev != NULL) {
         return pdevc->colors.pattern.p_tile->cdev->common.page_uses_transparency;
     } else {
         return 0;
@@ -1603,7 +1607,7 @@ enum {
 };
 
 static int
-gx_dc_pattern_write_raster(gx_color_tile *ptile, int64_t offset, byte *data, 
+gx_dc_pattern_write_raster(gx_color_tile *ptile, int64_t offset, byte *data,
                            uint *psize, const gx_device *dev)
 {
     int size_b, size_c;
@@ -1611,7 +1615,7 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, int64_t offset, byte *data,
     int left = *psize;
     int64_t offset1 = offset;
 
-    size_b = sizeof(gx_strip_bitmap) + 
+    size_b = sizeof(gx_strip_bitmap) +
          ptile->tbits.size.y * ptile->tbits.raster * ptile->tbits.num_planes;
     size_c = ptile->tmask.data ? sizeof(gx_strip_bitmap) + ptile->tmask.size.y * ptile->tmask.raster : 0;
     if (data == NULL) {
