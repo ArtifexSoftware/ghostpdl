@@ -297,14 +297,14 @@ const gx_device_pngalpha gs_pngalpha_device = {
          256 /* dither grays */,
          256 /* dither colors */,
          { 4, 4 } /* antialias info text, graphics */,
-         GX_CINFO_SEP_LIN_NONE /* separable_and_linear */,
+         GX_CINFO_UNKNOWN_SEP_LIN /* separable_and_linear */,
          { 0 } /* component shift */,
          { 0 } /* component bits */,
          { 0 } /* component mask */,
          "DeviceRGB" /* process color name */,
          GX_CINFO_OPMODE_UNKNOWN /* opmode */,
          0 /* process_cmps */,
-         0 /* icc_locations */    
+         0 /* icc_locations */
         },
         std_device_part2_(
           (int)((float)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10 + 0.5),
@@ -341,7 +341,7 @@ png_put_params_downscale(gx_device *dev, gs_param_list *plist)
 {
     gx_device_png *pdev = (gx_device_png *)dev;
     int code, ecode;
-    
+
     ecode = gx_downscaler_read_params(plist, &pdev->downscale, 0);
 
     code = gdev_prn_put_params(dev, plist);
@@ -356,7 +356,7 @@ png_get_params_downscale_mfs(gx_device *dev, gs_param_list *plist)
 {
     gx_device_png *pdev = (gx_device_png *)dev;
     int code, ecode;
-    
+
     ecode = gx_downscaler_write_params(plist, &pdev->downscale,
                                       GX_DOWNSCALER_PARAMS_MFS);
 
@@ -372,7 +372,7 @@ png_put_params_downscale_mfs(gx_device *dev, gs_param_list *plist)
 {
     gx_device_png *pdev = (gx_device_png *)dev;
     int code, ecode;
-    
+
     ecode = gx_downscaler_read_params(plist, &pdev->downscale,
                                       GX_DOWNSCALER_PARAMS_MFS);
 
@@ -628,7 +628,7 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
     if (pdev->icc_struct != NULL && pdev->icc_struct->device_profile[0] != NULL) {
         cmm_profile_t *icc_profile = pdev->icc_struct->device_profile[0];
         /* PNG can only be RGB or gray.  No CIELAB :(  */
-        if (icc_profile->data_cs == gsRGB || icc_profile->data_cs == gsGRAY) { 
+        if (icc_profile->data_cs == gsRGB || icc_profile->data_cs == gsGRAY) {
             if (icc_profile->num_comps == pdev->color_info.num_components &&
                 !(pdev->icc_struct->usefastcolor)) {
                 info_ptr->iccp_name = icc_profile->name;
@@ -637,7 +637,7 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
                 info_ptr->valid |= PNG_INFO_iCCP;
             }
         }
-    } 
+    }
 #endif
     if (invert) {
         if (depth == 32)
