@@ -637,7 +637,13 @@ def
   3 -1 roll dup /GroupGState .knownget { 2 index /GroupGState 3 -1 roll put} if
   /GroupExtGState .knownget { 1 index /GroupExtGState 3 -1 roll put} if
   exch //false resolvestream
-  .execgroup .endtransparencymask
+  1 index exch .execgroup
+  % We have to remove these in case the Form XObject is subsequently used as
+  % a form rather than a group - they remain in the paramdict for the SMask
+  % so this will all still work if the SMask is re-evaluated.
+  dup /GroupGState undef
+  /GroupExtGState undef
+  .endtransparencymask
   PDFfile exch setfileposition
   mark exch /OverrideICC exch .dicttomark setuserparams
   .setuseciecolor setcolorspace setcolor
