@@ -2201,6 +2201,14 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                         pdev->CompressStreams);
                 if (code < 0)
                     return code;
+                /* We have started a new substream, to avoid confusing the 'saved viewer state'
+                 * (the stack of pdfwrite's saved copies of graophics states) we need to reset the
+                 * soft_mask_id, which is the ID of the SMask we have already created in the pdfwrite
+                 * output. The gsave/grestore round the spec_op to start and finish the pattern
+                 * accumulator (see pattern_paint_prepare and pattern_paint_finish) will ensure that
+                 * the ID is restored when we finish capturing the pattern.
+                 */
+                pdev->state.soft_mask_id = pgs->soft_mask_id;
                 pres->rid = id;
                 code = pdf_store_pattern1_params(pdev, pres, pinst);
                 if (code < 0)
