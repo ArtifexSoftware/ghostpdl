@@ -6571,12 +6571,12 @@ currentbasecolor_cont(i_ctx_t *i_ctx_p)
         code = obj->basecolorproc(i_ctx_p, parr, base, &stage, &cont, &stack_depth);
         make_int(&ep[-4], stack_depth);
         make_int(&ep[-1], stage);
-        if (code != 0)
+        if (code > 0)
             return code;
         /* Completed that space, increment the 'depth' */
         make_int(&ep[-2], ++depth);
     }
-    if (code == 0) {
+    if (code <= 0) {
         /* Remove our next continuation and our data */
         esp -= 7;
         code = o_pop_estack;
