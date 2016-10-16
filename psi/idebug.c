@@ -257,10 +257,10 @@ void
 debug_dump_stack(const gs_memory_t *mem,
                  const ref_stack_t * pstack, const char *msg)
 {
-    uint i;
+    int i;
     const char *m = msg;
 
-    for (i = ref_stack_count(pstack); i != 0;) {
+    for (i = ref_stack_count(pstack); i > 0;) {
         const ref *p = ref_stack_index(pstack, --i);
 
         if (m) {
