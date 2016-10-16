@@ -178,7 +178,7 @@ index_context(const gs_scheduler_t *psched, long index)
 {
     gs_context_t *pctx;
 
-    if (index == 0)
+    if (index <= 0)
         return NULL;
     pctx = psched->table[index % CTX_TABLE_SIZE];
     while (pctx != NULL && pctx->index != index)
