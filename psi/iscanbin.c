@@ -602,13 +602,13 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     make_empty_string(op, attrs);
                     break;
                 }
-                if (value < max_array_index * SIZEOF_BIN_SEQ_OBJ ||
+                if (value < (int)(max_array_index * SIZEOF_BIN_SEQ_OBJ) ||
                     value + osize > size
                     ) {
                     scan_bos_error(pstate, "invalid string offset");
                     return_error(gs_error_syntaxerror);
                 }
-                if (value < min_string_index) {
+                if (value < (int)min_string_index) {
                     /* We have to (re)allocate the strings. */
                     uint str_size = size - value;
                     byte *sbase;
@@ -656,7 +656,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             case BS_TYPE_ARRAY:
                 atype = t_array;
               arr:
-                if (value + osize > min_string_index ||
+                if (value + osize > (int)min_string_index ||
                     value & (SIZEOF_BIN_SEQ_OBJ - 1)
                     ) {
                     scan_bos_error(pstate, "bad array offset");
