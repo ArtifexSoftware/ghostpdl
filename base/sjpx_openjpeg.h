@@ -61,12 +61,13 @@ typedef struct stream_jpxd_state_s
 
     unsigned long totalbytes; /* output total */
     unsigned long out_offset; /* output bytes already returned previously */
-    unsigned long img_offset; /* offset in the image data buffer for each channel, only used when output bpp%8 !=0 */
 
     int **pdata; /* pointers to image data */
     int out_numcomps; /* real number of channels to use */
     int alpha_comp; /* input index of alpha channel */
     int *sign_comps; /* compensate for signed data (signed => unsigned) */
+
+    unsigned char *row_data;
 } stream_jpxd_state;
 
 extern const stream_template s_jpxd_template;

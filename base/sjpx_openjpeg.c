@@ -235,10 +235,10 @@ s_opjd_init(stream_state * ss)
     state->sb.pos = 0;
     state->sb.fill = 0;
     state->out_offset = 0;
-    state->img_offset = 0;
     state->pdata = NULL;
     state->sign_comps = NULL;
     state->stream = NULL;
+    state->row_data = NULL;
 
     return 0;
 }
@@ -300,6 +300,79 @@ get_scaled_idx(stream_jpxd_state *state, int compno, unsigned long idx, unsigned
 	return idx;
 	
     return (y/state->image->comps[compno].dy*state->width + x)/state->image->comps[compno].dx;
+}
+
+static void
+ycc_to_rgb_8(unsigned char *row, unsigned long row_size)
+{
+    unsigned char y;
+    signed char u, v;
+    int r,g,b;
+    do
+    {
+        y = row[0];
+        u = row[1] - 128;
+        v = row[2] - 128;
+        r = (int)((double)y + 1.402 * v);
+        if (r < 0)
+            r = 0;
+        if (r > 255)
+            r = 255;
+        g = (int)((double)y - 0.34413 * u - 0.71414 * v);
+        if (g < 0)
+            g = 0;
+        if (g > 255)
+            g = 255;
+        b = (int)((double)y + 1.772 * u);
+        if (b < 0)
+            b = 0;
+        if (b > 255)
+            b = 255;
+        row[0] = r;
+        row[1] = g;
+        row[2] = b;
+        row += 3;
+        row_size -= 3;
+    }
+    while (row_size);
+}
+
+static void
+ycc_to_rgb_16(unsigned char *row, unsigned long row_size)
+{
+    unsigned short y;
+    signed short u, v;
+    int r,g,b;
+    do
+    {
+        y = (row[0]<<8) | row[1];
+        u = ((row[2]<<8) | row[3]) - 32768;
+        v = ((row[4]<<8) | row[5]) - 32768;
+        r = (int)((double)y + 1.402 * v);
+        if (r < 0)
+            r = 0;
+        if (r > 65535)
+            r = 65535;
+        g = (int)((double)y - 0.34413 * u - 0.71414 * v);
+        if (g < 0)
+            g = 0;
+        if (g > 65535)
+            g = 65535;
+        b = (int)((double)y + 1.772 * u);
+        if (b < 0)
+            b = 0;
+        if (b > 65535)
+            b = 65535;
+        row[0] = r>>8;
+        row[1] = r;
+        row[2] = g>>8;
+        row[3] = g;
+        row[4] = b>>8;
+        row[5] = b;
+        row += 6;
+        row_size -= 6;
+    }
+    while (row_size);
 }
 
 /* convert state->image from YCrCb to RGB */
@@ -463,10 +536,6 @@ static int decode_image(stream_jpxd_state * const state)
     rowbytes =  (state->width*state->bpp*state->out_numcomps+7)/8;
     state->totalbytes = rowbytes*state->height;
 
-    /* convert input from YCC to RGB */
-    if (state->image->color_space == OPJ_CLRSPC_SYCC || state->image->color_space == OPJ_CLRSPC_EYCC)
-        s_jpxd_ycc_to_rgb(state);
-
     state->pdata = (int **)gs_alloc_byte_array(state->memory->non_gc_memory, sizeof(int*)*state->image->numcomps, 1, "decode_image(pdata)");
     if (!state->pdata)
         return_error(gs_error_VMerror);
@@ -489,181 +558,179 @@ static int decode_image(stream_jpxd_state * const state)
 
 static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_write * pw)
 {
-     /* read data from image to pw */
-     unsigned long out_size = pw->limit - pw->ptr;
-     int bytepp1 = state->bpp/8; /* bytes / pixel for one output component */
-     int bytepp = state->out_numcomps*state->bpp/8; /* bytes / pixel all components */
-     unsigned long write_size = min(out_size-(bytepp?(out_size%bytepp):0), state->totalbytes-state->out_offset);
-     unsigned long in_offset = state->out_offset*8/state->bpp/state->out_numcomps; /* component data offset */
-     int shift_bit = state->bpp-state->image->comps[0].prec; /*difference between input and output bit-depth*/
-     int img_numcomps = min(state->out_numcomps, state->image->numcomps), /* the actual number of channel data used */
-             compno;
-     unsigned long i; int b;
-     byte *pend = pw->ptr+write_size+1; /* end of write data */
+    /* read data from image to pw */
+    unsigned long out_size = pw->limit - pw->ptr;
+    int bytepp1 = state->bpp/8; /* bytes / pixel for one output component */
+    int bytepp = state->out_numcomps*state->bpp/8; /* bytes / pixel all components */
+    unsigned long write_size = min(out_size-(bytepp?(out_size%bytepp):0), state->totalbytes-state->out_offset);
+    int shift_bit = state->bpp-state->image->comps[0].prec; /*difference between input and output bit-depth*/
+    int img_numcomps = min(state->out_numcomps, state->image->numcomps); /* the actual number of channel data used */
+    int compno;
+    unsigned long i;
+    int b;
+    byte *pend = pw->ptr+write_size+1; /* end of write data */
+    byte *row;
+    unsigned int x_offset;
+    unsigned int y_offset;
+    unsigned int row_size = (state->width * state->out_numcomps * state->bpp + 7)>>3;
+    unsigned long image_total = state->width * state->height;
 
-     if (state->bpp < 8)
-         in_offset = state->img_offset;
+    /* If nothing to write, nothing to do */
+    if (write_size == 0)
+        return 0;
 
-     pw->ptr++;
+    if (state->row_data == NULL)
+    {
+        state->row_data = gs_alloc_byte_array(state->memory->non_gc_memory, row_size, 1, "jpxd_openjpeg(row_data)");
+        if (state->row_data == NULL)
+            return gs_error_VMerror;
+    }
 
-     if (state->alpha && state->alpha_comp == -1)
-     {/* return 0xff for all */
-         memset(pw->ptr, 0xff, write_size);
-         pw->ptr += write_size;
-     }
-     else if (state->samescale)
-     {
-         if (state->alpha)
-             state->pdata[0] = &(state->image->comps[state->alpha_comp].data[in_offset]);
-         else
-         {
-             for (compno=0; compno<img_numcomps; compno++)
-                 state->pdata[compno] = &(state->image->comps[compno].data[in_offset]);
-         }
-         if (shift_bit == 0 && state->bpp == 8) /* optimized for the most common case */
-         {
-             while (pw->ptr < pend)
-             {
-                 for (compno=0; compno<img_numcomps; compno++)
-                     *(pw->ptr++) = *(state->pdata[compno]++) + state->sign_comps[compno]; /* copy input buffer to output */
-             }
-         }
-         else
-         {
-             if ((state->bpp%8)==0)
-             {
-                 while (pw->ptr < pend)
-                 {
-                     for (compno=0; compno<img_numcomps; compno++)
-                     {
-                         for (b=0; b<bytepp1; b++)
-                             *(pw->ptr++) = (((*(state->pdata[compno]) << shift_bit) >> (8*(bytepp1-b-1))))
-                                                                         + (b==0 ? state->sign_comps[compno] : 0); /* split and shift input int to output bytes */
-                         state->pdata[compno]++; 
-                     }
-                 }
-             }
-             else
-             {   
-                 /* shift_bit = 0, bpp < 8 */
-                 unsigned long image_total = state->width*state->height;
-                 int bt=0; int bit_pos = 0;
-                 int rowbytes =  (state->width*state->bpp*state->out_numcomps+7)/8; /*row bytes */
-                 int currowcnt = state->out_offset % rowbytes; /* number of bytes filled in current row */
-                 int start_comp = (currowcnt*8) % img_numcomps; /* starting component for this round of output*/
-                 if (start_comp != 0)
-                 {
-                     for (compno=start_comp; compno<img_numcomps; compno++)
-                     {
-                         if (state->img_offset < image_total)
-                         {
-                             bt <<= state->bpp;
-                             bt += *(state->pdata[compno]-1) + state->sign_comps[compno];
-                         }
-                         bit_pos += state->bpp;
-                         if (bit_pos >= 8)
-                         {
-                             *(pw->ptr++) = bt >> (bit_pos-8);
-                             bit_pos -= 8;
-                             bt &= (1<<bit_pos)-1;
-                         }
-                     }
-                 }
-                 while (pw->ptr < pend)
-                 {
-                     for (compno=0; compno<img_numcomps; compno++)
-                     {
-                         if (state->img_offset < image_total)
-                         {
-                             bt <<= state->bpp;
-                             bt += *(state->pdata[compno]++) + state->sign_comps[compno];
-                         }
-                         bit_pos += state->bpp;
-                         if (bit_pos >= 8)
-                         {
-                             *(pw->ptr++) = bt >> (bit_pos-8);
-                             bit_pos -= 8;
-                             bt &= (1<<bit_pos)-1;
-                         }
-                     }
-                     state->img_offset++;
-                     if (bit_pos != 0 && state->img_offset % state->width == 0)
-                     {
-                         /* row padding */
-                         *(pw->ptr++) = bt << (8 - bit_pos);
-                         bit_pos = 0;
-                         bt = 0;
-                     }
-                 }
-             }
-         }
-     }
-     else
-     {
-		 /* sampling required */
-         unsigned long y_offset = in_offset / state->width;
-         unsigned long x_offset = in_offset % state->width;
-         while (pw->ptr < pend)
-         {
-             if ((state->bpp%8)==0)
-             {
-                 if (state->alpha)
-                 {
-                     int in_offset_scaled = (y_offset/state->image->comps[state->alpha_comp].dy*state->width + x_offset)/state->image->comps[state->alpha_comp].dx;
-                     for (b=0; b<bytepp1; b++)
-                             *(pw->ptr++) = (((state->image->comps[state->alpha_comp].data[in_offset_scaled] << shift_bit) >> (8*(bytepp1-b-1))))
+    while (state->out_offset != state->totalbytes)
+    {
+        y_offset = state->out_offset / row_size;
+        x_offset = state->out_offset % row_size;
+
+        if (x_offset == 0)
+        {
+            /* Decode another rows worth */
+            row = state->row_data;
+            if (state->alpha && state->alpha_comp == -1)
+            {
+                /* return 0xff for all */
+                memset(row, 0xff, row_size);
+            }
+            else if (state->samescale)
+            {
+                if (state->alpha)
+                    state->pdata[0] = &(state->image->comps[state->alpha_comp].data[y_offset * state->width]);
+                else
+                {
+                    for (compno=0; compno<img_numcomps; compno++)
+                        state->pdata[compno] = &(state->image->comps[compno].data[y_offset * state->width]);
+                }
+                if (shift_bit == 0 && state->bpp == 8) /* optimized for the most common case */
+                {
+                    for (i = state->width; i > 0; i--)
+                        for (compno=0; compno<img_numcomps; compno++)
+                            *row++ = *(state->pdata[compno]++) + state->sign_comps[compno]; /* copy input buffer to output */
+                }
+                else if ((state->bpp%8)==0)
+                {
+                    for (i = state->width; i > 0; i--)
+                    {
+                        for (compno=0; compno<img_numcomps; compno++)
+                        {
+                            for (b=0; b<bytepp1; b++)
+                                *row++ = (((*(state->pdata[compno]) << shift_bit) >> (8*(bytepp1-b-1))))
+                                                        + (b==0 ? state->sign_comps[compno] : 0); /* split and shift input int to output bytes */
+                            state->pdata[compno]++; 
+                        }
+                    }
+                }
+                else
+                {   
+                    /* shift_bit = 0, bpp < 8 */
+                    int bt=0;
+                    int bit_pos = 0;
+                    int rowbytes = (state->width*state->bpp*state->out_numcomps+7)/8; /*row bytes */
+                    for (i = state->width; i > 0; i--)
+                    {
+                        for (compno=0; compno<img_numcomps; compno++)
+                        {
+                            bt <<= state->bpp;
+                            bt += *(state->pdata[compno]++) + state->sign_comps[compno];
+                            bit_pos += state->bpp;
+                            if (bit_pos >= 8)
+                            {
+                                *row++ = bt >> (bit_pos-8);
+                                bit_pos -= 8;
+                                bt &= (1<<bit_pos)-1;
+                            }
+                        }
+                    }
+                    if (bit_pos != 0)
+                    {
+                        /* row padding */
+                        *row++ = bt << (8 - bit_pos);
+                        bit_pos = 0;
+                        bt = 0;
+                    }
+                }
+            }
+            else if ((state->bpp%8)==0)
+            {
+                /* sampling required */
+                if (state->alpha)
+                {
+                    for (i = 0; i < state->width; i++)
+                    {
+                        int in_offset_scaled = (y_offset/state->image->comps[state->alpha_comp].dy*state->width + i)/state->image->comps[state->alpha_comp].dx;
+                        for (b=0; b<bytepp1; b++)
+                            *row++ = (((state->image->comps[state->alpha_comp].data[in_offset_scaled] << shift_bit) >> (8*(bytepp1-b-1))))
                                                                      + (b==0 ? state->sign_comps[state->alpha_comp] : 0);
-                 }
-                 else
-                 {
-                     for (compno=0; compno<img_numcomps; compno++)
-                     {
-                         int in_offset_scaled = (y_offset/state->image->comps[compno].dy*state->width + x_offset)/state->image->comps[compno].dx;
-                         for (b=0; b<bytepp1; b++)
-                             *(pw->ptr++) = (((state->image->comps[compno].data[in_offset_scaled] << shift_bit) >> (8*(bytepp1-b-1))))
-                                                                             + (b==0 ? state->sign_comps[compno] : 0);
-                     }
-                 }
-                 x_offset++;
-                 if (x_offset >= state->width)
-                 {
-                     y_offset++;
-                     x_offset = 0;
-                 }
-             }
-             else
-             {
-                 unsigned long image_total = state->width*state->height;
-                 int compno = state->alpha ? state->alpha_comp : 0;
-                 /* only grayscale can have such bit-depth, also shift_bit = 0, bpp < 8 */
-                  int bt=0;
-                  for (i=0; i<8/state->bpp; i++)
-                  {
-                      bt = bt<<state->bpp;
-                      if (state->img_offset < image_total && !(i!=0 && state->img_offset % state->width == 0))
-                      {
-                          int in_offset_scaled = (y_offset/state->image->comps[compno].dy*state->width + x_offset)/state->image->comps[compno].dx;
-                          bt += state->image->comps[compno].data[in_offset_scaled] + state->sign_comps[compno];
-                          state->img_offset++;
-                          x_offset++;
-                          if (x_offset >= state->width)
-                          {
-                              y_offset++;
-                              x_offset = 0;
-                          }
-                      }
-                   }
-                  *(pw->ptr++) = bt;
-             }
-         }
-     }
-     state->out_offset += write_size;
-     pw->ptr--;
-     if (state->out_offset == state->totalbytes)
-         return EOFC; /* all data returned */
-     else
-         return 1; /* need more calls */
- }
+                    }
+                }
+                else
+                {
+                    for (i = 0; i < state->width; i++)
+                    {
+                        for (compno=0; compno<img_numcomps; compno++)
+                        {
+                            int in_offset_scaled = (y_offset/state->image->comps[compno].dy*state->width + i)/state->image->comps[compno].dx;
+                            for (b=0; b<bytepp1; b++)
+                                *row++ = (((state->image->comps[compno].data[in_offset_scaled] << shift_bit) >> (8*(bytepp1-b-1))))
+                                                                                + (b==0 ? state->sign_comps[compno] : 0);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                unsigned long image_total = state->width*state->height;
+                int compno = state->alpha ? state->alpha_comp : 0;
+                int bt=0;
+                int ppbyte1 = 8/state->bpp;
+                /* sampling required */
+                /* only grayscale can have such bit-depth, also shift_bit = 0, bpp < 8 */
+                for (i = 0; i < state->width; i++)
+                {
+                    for (b=0; b<ppbyte1; b++)
+                    {
+                        int in_offset_scaled = (y_offset/state->image->comps[compno].dy*state->width + i)/state->image->comps[compno].dx;
+                        bt = bt<<state->bpp;
+                        bt += state->image->comps[compno].data[in_offset_scaled] + state->sign_comps[compno];
+                    }
+                    *row++ = bt;
+                }
+            }
+
+            if (state->image->color_space == OPJ_CLRSPC_SYCC || state->image->color_space == OPJ_CLRSPC_EYCC)
+            {
+                /* bpp >= 8 always, as bpp < 8 only for grayscale */
+                if (state->bpp == 8)
+                    ycc_to_rgb_8(state->row_data, row_size);
+                else
+                    ycc_to_rgb_16(state->row_data, row_size);
+            }
+        }
+
+        pw->ptr++;
+        i = (write_size > (unsigned long)(row_size - x_offset)) ? (row_size - x_offset) : (unsigned int)write_size;
+        memcpy(pw->ptr, &state->row_data[x_offset], i);
+        pw->ptr += i;
+        pw->ptr--;
+        state->out_offset += i;
+        write_size -= i;
+        if (write_size == 0)
+            break;
+    }
+
+    if (state->out_offset == state->totalbytes)
+        return EOFC; /* all data returned */
+    else
+        return 1; /* need more calls */
+}
 
 /* process a section of the input and return any decoded data.
    see strimpl.h for return codes.
@@ -793,6 +860,9 @@ s_opjd_release(stream_state *ss)
 
     if (state->sign_comps)
         gs_free_object(state->memory->non_gc_memory, state->sign_comps, "s_opjd_release(sign_comps)");
+
+    if (state->row_data)
+        gs_free_object(state->memory->non_gc_memory, state->row_data, "s_opjd_release(row_data)");
 }
 
 
