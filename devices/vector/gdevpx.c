@@ -1987,10 +1987,10 @@ typedef struct pclxl_image_enum_s {
     gsicc_link_t *icclink;
 } pclxl_image_enum_t;
 
-gs_private_st_suffix_add1(st_pclxl_image_enum, pclxl_image_enum_t,
+gs_private_st_suffix_add2(st_pclxl_image_enum, pclxl_image_enum_t,
                           "pclxl_image_enum_t", pclxl_image_enum_enum_ptrs,
                           pclxl_image_enum_reloc_ptrs, st_vector_image_enum,
-                          rows.data);
+                          rows.data, icclink);
 
 /* Start processing an image. */
 static int
