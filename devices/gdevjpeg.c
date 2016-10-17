@@ -27,7 +27,6 @@
 typedef struct gx_device_jpeg_s {
     gx_device_common;
     gx_prn_device_common;
-    gx_downscaler_params downscale;
     /* Additional parameters */
     int JPEGQ;			/* quality on IJG scale */
     float QFactor;		/* quality per DCTEncode conventions */
@@ -41,6 +40,7 @@ typedef struct gx_device_jpeg_s {
      */
     gs_point ViewTrans;
 
+    gx_downscaler_params downscale;
 } gx_device_jpeg;
 
 /* The device descriptor */
@@ -248,7 +248,7 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
     float qf = jdev->QFactor;
     float fparam;
 
-    ecode = gx_downscaler_read_params(plist, &pdev->downscale, 0);
+    ecode = gx_downscaler_read_params(plist, &jdev->downscale, 0);
 
     switch (code = param_read_int(plist, (param_name = "JPEGQ"), &jq)) {
         case 0:
@@ -433,8 +433,8 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
         code = gs_note_error(gs_error_VMerror);
         goto fail;
     }
-    code = gx_downscaler_init(&ds, (gx_device *)pdev, 8, 8,
-                              pdev->color_info.depth/8, pdev->downscale.downscale_factor, 0, NULL, 0);
+    code = gx_downscaler_init(&ds, (gx_device *)jdev, 8, 8,
+                              jdev->color_info.depth/8, jdev->downscale.downscale_factor, 0, NULL, 0);
     if (code < 0)
         goto done;
 
@@ -474,8 +474,8 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
      * the stack based state...
      */
     state.memory = NULL;
-    jcdp->cinfo.image_width = pdev->width;
-    jcdp->cinfo.image_height = pdev->height;
+    jcdp->cinfo.image_width = gx_downscaler_scale(pdev->width, jdev->downscale.downscale_factor);
+    jcdp->cinfo.image_height = gx_downscaler_scale(pdev->height, jdev->downscale.downscale_factor);
     switch (pdev->color_info.depth) {
         case 32:
             jcdp->cinfo.input_components = 4;
@@ -540,7 +540,7 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
         (*state.templat->init) (jstrm.state);
 
     /* Copy the data to the output. */
-    for (lnum = 0; lnum < pdev->height; ++lnum) {
+    for (lnum = 0; lnum < jcdp->cinfo.image_height; ++lnum) {
         byte *data;
         uint ignore_used;
 
