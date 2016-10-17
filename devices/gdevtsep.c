@@ -45,6 +45,8 @@
 #include "gxdownscale.h"
 #include "gp.h"
 #include "gstiffio.h"
+#include "gscms.h"
+#include "gsicc_cache.h"
 
 /*
  * Some of the code in this module is based upon the gdevtfnx.c module.
@@ -626,6 +628,7 @@ typedef struct tiffsep_device_s {
     tiffsep_devices_common;
     FILE *comp_file;            /* Underlying file for tiff_comp */
     TIFF *tiff_comp;            /* tiff file for comp file */
+    gsicc_link_t *icclink;      /* link profile if we are doing post rendering */
     bool warning_given;
 } tiffsep_device;
 
@@ -1646,6 +1649,7 @@ tiffsep_prn_open(gx_device * pdev)
     int code, k;
     bool force_pdf, limit_icc, force_ps;
     cmm_dev_profile_t *profile_struct;
+    gsicc_rendering_param_t rendering_params;
 
     /* Use our own warning and error message handlers in libtiff */
     tiff_set_handlers();
@@ -1750,6 +1754,41 @@ tiffsep_prn_open(gx_device * pdev)
 
     ppdev->file = NULL;
     pdev->icc_struct->supports_devn = true;
+
+    /* Set up the icc link settings at this time.  Only CMYK post render profiles
+       are allowed */
+    code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
+    if (code < 0)
+        return_error(gs_error_undefined);
+
+    if (profile_struct->postren_profile != NULL &&
+        profile_struct->postren_profile->data_cs == gsCMYK) {
+        rendering_params.black_point_comp = gsBLACKPTCOMP_ON;
+        rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;
+        rendering_params.override_icc = false;
+        rendering_params.preserve_black = gsBLACKPRESERVE_OFF;
+        rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
+        rendering_params.cmm = gsCMM_DEFAULT;
+        if (profile_struct->oi_profile != NULL) {
+            pdev_sep->icclink = gsicc_alloc_link_dev(pdev->memory,
+                profile_struct->oi_profile, profile_struct->postren_profile,
+                &rendering_params);
+        } else if (profile_struct->link_profile != NULL) {
+            pdev_sep->icclink = gsicc_alloc_link_dev(pdev->memory,
+                profile_struct->link_profile, profile_struct->postren_profile,
+                &rendering_params);
+        } else {
+            pdev_sep->icclink = gsicc_alloc_link_dev(pdev->memory,
+                profile_struct->device_profile[0], profile_struct->postren_profile,
+                &rendering_params);
+        }
+        /* If it is identity, release it now and set link to NULL */
+        if (pdev_sep->icclink->is_identity) {
+            pdev_sep->icclink->procs.free_link(pdev_sep->icclink);
+            gsicc_free_link_dev(pdev->memory, pdev_sep->icclink);
+            pdev_sep->icclink = NULL;
+        }
+    }
     return code;
 }
 
@@ -1804,8 +1843,13 @@ tiffsep_prn_close(gx_device * pdev)
     int comp_num;
     int num_comp = number_output_separations(num_dev_comp, num_std_colorants,
                                         num_order, num_spot);
+    if (pdevn->icclink != NULL) {
+        pdevn->icclink->procs.free_link(pdevn->icclink);
+        gsicc_free_link_dev(pdevn->memory, pdevn->icclink);
+        pdevn->icclink = NULL;
+    }
 
-    name = (char *)gs_alloc_bytes(pdev->memory, gp_file_name_sizeof, "tiffsep_prn_close(name)");
+    name = (char *)gs_alloc_bytes(pdevn->memory, gp_file_name_sizeof, "tiffsep_prn_close(name)");
     if (!name)
         return_error(gs_error_VMerror);
 
@@ -1856,6 +1900,7 @@ build_cmyk_raster_line_fromplanar(gs_get_bits_params_t params, byte * dest,
     int pixel, comp_num;
     uint temp, cyan, magenta, yellow, black;
     cmyk_composite_map * cmyk_map_entry;
+    byte *start = dest;
 
     for (pixel = 0; pixel < width; pixel++) {
         cmyk_map_entry = cmyk_map;
@@ -1890,6 +1935,16 @@ build_cmyk_raster_line_fromplanar(gs_get_bits_params_t params, byte * dest,
         *dest++ = magenta;
         *dest++ = yellow;
         *dest++ = black;
+    }
+    /* And now apply the post rendering profile to the scan line if it exists.
+       In place conversion */
+    if (tfdev->icclink != NULL) {
+        gsicc_bufferdesc_t buffer_desc;
+
+        gsicc_init_buffer(&buffer_desc, tfdev->icclink->num_input, 1, false,
+            false, false, 0, width * 4, 1, width);
+        tfdev->icclink->procs.map_buffer(NULL, tfdev->icclink, &buffer_desc,
+            &buffer_desc, start, start);
     }
 }
 
