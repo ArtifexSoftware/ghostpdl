@@ -21,11 +21,13 @@
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"
+#include "gxdownscale.h"
 
 /* Structure for the JPEG-writing device. */
 typedef struct gx_device_jpeg_s {
     gx_device_common;
     gx_prn_device_common;
+    gx_downscaler_params downscale;
     /* Additional parameters */
     int JPEGQ;			/* quality on IJG scale */
     float QFactor;		/* quality per DCTEncode conventions */
@@ -211,6 +213,9 @@ jpeg_get_params(gx_device * dev, gs_param_list * plist)
     if (code < 0)
         return code;
 
+    ecode = 0;
+    if ((code = gx_downscaler_write_params(plist, &jdev->downscale, 0)) < 0)
+        ecode = code;
     if ((ecode = param_write_int(plist, "JPEGQ", &jdev->JPEGQ)) < 0)
         code = ecode;
     if ((ecode = param_write_float(plist, "QFactor", &jdev->QFactor)) < 0)
@@ -242,6 +247,8 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
     int jq = jdev->JPEGQ;
     float qf = jdev->QFactor;
     float fparam;
+
+    ecode = gx_downscaler_read_params(plist, &pdev->downscale, 0);
 
     switch (code = param_read_int(plist, (param_name = "JPEGQ"), &jq)) {
         case 0:
@@ -420,11 +427,17 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int code;
     stream_DCT_state state;
     stream fstrm, jstrm;
+    gx_downscaler_t ds;
 
     if (jcdp == 0 || in == 0) {
         code = gs_note_error(gs_error_VMerror);
         goto fail;
     }
+    code = gx_downscaler_init(&ds, (gx_device *)pdev, 8, 8,
+                              pdev->color_info.depth/8, pdev->downscale.downscale_factor, 0, NULL, 0);
+    if (code < 0)
+        goto done;
+
     /* Create the DCT encoder state. */
     jcdp->templat = s_DCTE_template;
     s_init_state((stream_state *)&state, &jcdp->templat, 0);
@@ -453,7 +466,10 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     /* We need state.memory for gs_jpeg_create_compress().... */
     jcdp->memory = state.jpeg_memory = state.memory = mem;
     if ((code = gs_jpeg_create_compress(&state)) < 0)
+    {
+        gx_downscaler_fin(&ds);
         goto fail;
+    }
     /* ....but we need it to be NULL so we don't try to free
      * the stack based state...
      */
@@ -532,8 +548,8 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
             code = gs_note_error(gs_error_ioerror);
             goto done;
         }
-        gdev_prn_get_bits(pdev, lnum, in, &data);
-        sputs(&jstrm, data, state.scan_line_size, &ignore_used);
+        gx_downscaler_getbits(&ds, in, lnum);
+        sputs(&jstrm, in, state.scan_line_size, &ignore_used);
     }
 
     /* Wrap up. */
@@ -545,6 +561,7 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     gs_free_object(mem, fbuf, "jpeg_print_page(fbuf)");
     if (jcdp)
         gs_jpeg_destroy(&state);	/* frees *jcdp */
+    gx_downscaler_fin(&ds);
     gs_free_object(mem, in, "jpeg_print_page(in)");
     return code;
   fail:
