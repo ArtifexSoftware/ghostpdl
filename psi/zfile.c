@@ -121,7 +121,7 @@ make_invalid_file(i_ctx_t *i_ctx_p, ref * fp)
 /* strings of the permitgroup array. */
 static int
 check_file_permissions_reduced(i_ctx_t *i_ctx_p, const char *fname, int len,
-                        const char *permitgroup)
+                        gx_io_device *iodev, const char *permitgroup)
 {
     long i;
     ref *permitlist = NULL;
@@ -131,8 +131,14 @@ check_file_permissions_reduced(i_ctx_t *i_ctx_p, const char *fname, int len,
     bool use_windows_pathsep = (gs_file_name_check_separator(win_sep2, 1, win_sep2) == 1);
     uint plen = gp_file_name_parents(fname, len);
 
-    /* Assuming a reduced file name. */
+    /* we're protecting arbitrary file system accesses, not Postscript device accesses.
+     * Although, note that %pipe% is explicitly checked for and disallowed elsewhere
+     */
+    if (iodev && iodev->procs.open_file != iodev_os_open_file) {
+        return 0;
+    }
 
+    /* Assuming a reduced file name. */
     if (dict_find_string(&(i_ctx_p->userparams), permitgroup, &permitlist) <= 0)
         return 0;       /* if Permissions not found, just allow access */
 
@@ -187,14 +193,14 @@ check_file_permissions_reduced(i_ctx_t *i_ctx_p, const char *fname, int len,
 /* strings of the permitgroup array */
 static int
 check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
-                        const char *permitgroup)
+                        gx_io_device *iodev, const char *permitgroup)
 {
     char fname_reduced[gp_file_name_sizeof];
     uint rlen = sizeof(fname_reduced);
 
     if (gp_file_name_reduce(fname, len, fname_reduced, &rlen) != gp_combine_success)
         return gs_error_invalidaccess;         /* fail if we couldn't reduce */
-    return check_file_permissions_reduced(i_ctx_p, fname_reduced, rlen, permitgroup);
+    return check_file_permissions_reduced(i_ctx_p, fname_reduced, rlen, iodev, permitgroup);
 }
 
 /* z_check_file_permissions: see zfile.h for explanation
@@ -214,7 +220,7 @@ z_check_file_permissions(gs_memory_t *mem, const char *fname, const int len, con
         code = gs_note_error(gs_error_invalidfileaccess);
     }
     else {
-        code = check_file_permissions(i_ctx_p, fname, len, permitgroup);
+        code = check_file_permissions(i_ctx_p, pname.fname, pname.len, pname.iodev, permitgroup);
     }
     return code;
 }
@@ -320,7 +326,7 @@ zdeletefile(i_ctx_t *i_ctx_p)
         return code;
     if (pname.iodev == iodev_default(imemory)) {
         if ((code = check_file_permissions(i_ctx_p, pname.fname, pname.len,
-                "PermitFileControl")) < 0 &&
+                pname.iodev, "PermitFileControl")) < 0 &&
                  !file_is_tempfile(i_ctx_p, op->value.bytes, r_size(op))) {
             return code;
         }
@@ -404,7 +410,7 @@ file_continue(i_ctx_t *i_ctx_p)
         } else if (code > len)      /* overran string */
             return_error(gs_error_rangecheck);
         else if (iodev != iodev_default(imemory)
-              || (check_file_permissions_reduced(i_ctx_p, (char *)pscratch->value.bytes, code + devlen, "PermitFileReading")) == 0) {
+              || (check_file_permissions_reduced(i_ctx_p, (char *)pscratch->value.bytes, code + devlen, NULL, "PermitFileReading")) == 0) {
             push(1);
             ref_assign(op, pscratch);
             r_set_size(op, code + devlen);
@@ -454,12 +460,12 @@ zrenamefile(i_ctx_t *i_ctx_p)
                  * and FileWriting permissions to the destination file/path.
                  */
               ((check_file_permissions(i_ctx_p, pname1.fname, pname1.len,
-                                        "PermitFileControl") < 0 &&
+                                        pname1.iodev, "PermitFileControl") < 0 &&
                   !file_is_tempfile(i_ctx_p, op[-1].value.bytes, r_size(op - 1))) ||
               (check_file_permissions(i_ctx_p, pname2.fname, pname2.len,
-                                        "PermitFileControl") < 0 ||
+                                        pname2.iodev, "PermitFileControl") < 0 ||
               check_file_permissions(i_ctx_p, pname2.fname, pname2.len,
-                                        "PermitFileWriting") < 0 )))) {
+                                        pname2.iodev, "PermitFileWriting") < 0 )))) {
             code = gs_note_error(gs_error_invalidfileaccess);
         } else {
             code = (*pname1.iodev->procs.rename_file)(pname1.iodev,
@@ -507,7 +513,7 @@ zstatus(i_ctx_t *i_ctx_p)
                 if (code < 0)
                     return code;
                 if ((code = check_file_permissions(i_ctx_p, pname.fname, pname.len,
-                                       "PermitFileReading")) >= 0) {
+                                       pname.iodev, "PermitFileReading")) >= 0) {
                     code = (*pname.iodev->procs.file_status)(pname.iodev,
                                                        pname.fname, &fstat);
                 }
@@ -729,7 +735,7 @@ ztempfile(i_ctx_t *i_ctx_p)
 
     if (gp_file_name_is_absolute(pstr, strlen(pstr))) {
         if (check_file_permissions(i_ctx_p, pstr, strlen(pstr),
-                                   "PermitFileWriting") < 0) {
+                                   NULL, "PermitFileWriting") < 0) {
             code = gs_note_error(gs_error_invalidfileaccess);
             goto done;
         }
@@ -939,7 +945,7 @@ zopen_file(i_ctx_t *i_ctx_p, const gs_parsed_file_name_t *pfn,
             open_file = iodev_os_open_file;
         /* Check OS files to make sure we allow the type of access */
         if (open_file == iodev_os_open_file) {
-            code = check_file_permissions(i_ctx_p, pfn->fname, pfn->len,
+            code = check_file_permissions(i_ctx_p, pfn->fname, pfn->len, pfn->iodev,
                 file_access[0] == 'r' ? "PermitFileReading" : "PermitFileWriting");
 
             if (code < 0 && !file_is_tempfile(i_ctx_p,
@@ -986,7 +992,7 @@ check_file_permissions_aux(i_ctx_t *i_ctx_p, char *fname, uint flen)
     /* fname must be reduced. */
     if (i_ctx_p == NULL)
         return 0;
-    if (check_file_permissions_reduced(i_ctx_p, fname, flen, "PermitFileReading") < 0)
+    if (check_file_permissions_reduced(i_ctx_p, fname, flen, NULL, "PermitFileReading") < 0)
         return_error(gs_error_invalidfileaccess);
     return 0;
 }
