@@ -328,7 +328,7 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
  * quadrant and moving anticlockwise, we now draw the 'undermost' quadrant,
  * then the two adjacent quadrants, then the topmost quadrant.
  *
- * For the purposes of explaination, we shall label the octants as below:
+ * For the purposes of explanation, we shall label the octants as below:
  *
  *     \2|1/       and Quadrants as:       |
  *     3\|/0                            Q1 | Q0 
@@ -1224,7 +1224,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
         if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
         return code;
     }
-    pfs1.function_arg_shift = 1;
+    pfs1.function_arg_shift = 0;
     pfs1.rect = *clip_rect;
     pfs1.maybe_self_intersecting = false;
     if (is_radial_shading_large(x0, y0, r0, x1, y1, r1, rect))

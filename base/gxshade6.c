@@ -3570,6 +3570,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
     return code;
 }
 
+/* This splits tensor patch p->pole[v][u] on u to give s0->pole[v][u] and s1->pole[v][u] */
 static inline void
 split_stripe(patch_fill_state_t *pfs, tensor_patch *s0, tensor_patch *s1, const tensor_patch *p, patch_color_t *c[2])
 {
@@ -3589,6 +3590,7 @@ split_stripe(patch_fill_state_t *pfs, tensor_patch *s0, tensor_patch *s1, const 
     s1->c[1][1] = p->c[1][1];
 }
 
+/* This splits tensor patch p->pole[v][u] on v to give s0->pole[v][u] and s1->pole[v][u] */
 static inline void
 split_patch(patch_fill_state_t *pfs, tensor_patch *s0, tensor_patch *s1, const tensor_patch *p, patch_color_t *c[2])
 {
@@ -4160,9 +4162,9 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
     ku[3] = curve_samples(pfs, p.pole[3], 1, pfs->fixed_flat);
     kum = max(max(ku[0], ku[1]), max(ku[2], ku[3]));
 #   if NOFILL_TEST
-        dbg_nofill = false;
+    dbg_nofill = false;
 #   endif
-        code = fill_wedges(pfs, ku[0], kum, p.pole[0], 1, p.c[0][0], p.c[0][1],
+    code = fill_wedges(pfs, ku[0], kum, p.pole[0], 1, p.c[0][0], p.c[0][1],
         interpatch_padding | inpatch_wedge);
     if (code >= 0) {
         /* We would like to apply iterations for enumerating the kvm curve parts,
