@@ -107,6 +107,8 @@ void smask_copy(int num_rows, int num_cols, int row_stride,
 void smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan,
                int row_stride, int plane_stride, byte *src, const byte *des,
                gsicc_link_t *icclink);
+/* For spot colors, blend modes must be white preserving and separable */
+bool blend_valid_for_spot(gs_blend_mode_t blend_mode);
 
 /**
  * art_blend_pixel_8: Compute PDF 1.4 blending function on 8-bit pixels.
@@ -371,6 +373,12 @@ void art_blend_luminosity_custom_8(int n_chan, byte *dst, const byte *backdrop,
 void art_blend_saturation_custom_8(int n_chan, byte *dst, const byte *backdrop,
                            const byte *src);
 
+void pdf14_unpack_rgb_mix(int num_comp, gx_color_index color,
+                                pdf14_device * p14dev, byte * out);
+
+void pdf14_unpack_gray_mix(int num_comp, gx_color_index color,
+    pdf14_device * p14dev, byte * out);
+
 void pdf14_unpack_additive(int num_comp, gx_color_index color,
                                 pdf14_device * p14dev, byte * out);
 void pdf14_unpack_subtractive(int num_comp, gx_color_index color,
@@ -401,6 +409,16 @@ void pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[]);
 void pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_gstate *pgs,
                            frac r, frac g, frac b, frac out[]);
 void pdf14_cmyk_cs_to_cmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[]);
+
+void pdf14_gray_cs_to_rgbspot_cm(gx_device * dev, frac gray, frac out[]);
+void pdf14_rgb_cs_to_rgbspot_cm(gx_device * dev, const gs_gstate *pgs,
+    frac r, frac g, frac b, frac out[]);
+void pdf14_cmyk_cs_to_rgbspot_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[]);
+
+void pdf14_gray_cs_to_grayspot_cm(gx_device * dev, frac gray, frac out[]);
+void pdf14_rgb_cs_to_grayspot_cm(gx_device * dev, const gs_gstate *pgs,
+    frac r, frac g, frac b, frac out[]);
+void pdf14_cmyk_cs_to_grayspot_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[]);
 
 void gx_build_blended_image_row(byte *buf_ptr, int y, int planestride,
                            int width, int num_comp, byte bg, byte *linebuf);

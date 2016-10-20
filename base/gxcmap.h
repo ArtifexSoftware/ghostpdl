@@ -165,30 +165,6 @@ void gx_set_cmap_procs(gs_gstate *, const gx_device *);
 #include "gxcvalue.h"
 
 /*
- * These are the default routines for converting a color space into
- * a list of device colorants.
- */
-extern cm_map_proc_gray(gx_default_gray_cs_to_gray_cm);
-extern cm_map_proc_rgb(gx_default_rgb_cs_to_gray_cm);
-extern cm_map_proc_cmyk(gx_default_cmyk_cs_to_gray_cm);
-
-extern cm_map_proc_gray(gx_default_gray_cs_to_rgb_cm);
-extern cm_map_proc_rgb(gx_default_rgb_cs_to_rgb_cm);
-extern cm_map_proc_cmyk(gx_default_cmyk_cs_to_rgb_cm);
-
-extern cm_map_proc_gray(gx_default_gray_cs_to_cmyk_cm);
-extern cm_map_proc_rgb(gx_default_rgb_cs_to_cmyk_cm);
-extern cm_map_proc_cmyk(gx_default_cmyk_cs_to_cmyk_cm);
-
-extern cm_map_proc_gray(gx_default_gray_cs_to_cmyk_cm);
-extern cm_map_proc_rgb(gx_default_rgb_cs_to_cmyk_cm);
-extern cm_map_proc_cmyk(gx_default_cmyk_cs_to_cmyk_cm);
-
-extern cm_map_proc_gray(gx_error_gray_cs_to_cmyk_cm);
-extern cm_map_proc_rgb(gx_error_rgb_cs_to_cmyk_cm);
-extern cm_map_proc_cmyk(gx_error_cmyk_cs_to_cmyk_cm);
-
-/*
   Get the mapping procedures appropriate for the currently set
   color model.
  */
@@ -292,7 +268,7 @@ frac gx_unit_frac(float fvalue);
 /* Determine if the device is using the standard color mapping procs.  In
    such a case, we can make use of the faster icc color conversions for
    images */
-bool gx_device_uses_std_cmap_procs(gx_device * dev, 
+bool gx_device_uses_std_cmap_procs(gx_device * dev,
                                    const gs_gstate * pgs);
 bool fwd_uses_fwd_cmap_procs(gx_device * dev);
 const gx_cm_color_map_procs* fwd_get_target_cmap_procs(gx_device * dev);
@@ -301,6 +277,6 @@ void cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
      bool has_halftone, gs_color_select_t select);
 void cmap_transfer(gx_color_value *pconc, const gs_gstate * pgs,
                    gx_device * dev);
-void cmap_transfer_plane(gx_color_value *pconc, const gs_gstate *pgs, 
+void cmap_transfer_plane(gx_color_value *pconc, const gs_gstate *pgs,
                     gx_device *dev, int plane);
 #endif /* gxcmap_INCLUDED */

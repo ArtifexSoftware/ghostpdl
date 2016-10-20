@@ -307,6 +307,10 @@ enum {
      * device.
      */
     gxdso_in_pattern_accumulator,
+    /* Determine if we are in a PDF14 device and the target is a separation
+     * device.   In this case, we may want to not use the alternate tint
+     * tranform even if the blending color space is RGB or Gray. */
+    gxdso_pdf14_sep_device,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

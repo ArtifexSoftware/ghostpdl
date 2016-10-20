@@ -133,7 +133,7 @@ struct pdf14_buf_s {
     byte alpha;
     byte shape;
     gs_blend_mode_t blend_mode;
-
+    int num_spots;  /* helpful when going between Gray+spots, RGB+spots, CMYK+spots */
     bool has_alpha_g;
     bool has_shape;
     bool has_tags;
@@ -146,7 +146,7 @@ struct pdf14_buf_s {
 
     int rowstride;
     int planestride;
-    int n_chan; /* number of pixel planes including alpha */
+    int n_chan;   /* number of pixel planes including alpha */
     int n_planes; /* total number of planes including alpha, shape, alpha_g */
     byte *data;
     byte *transfer_fn;
@@ -229,7 +229,8 @@ typedef struct pdf14_device_s {
     bool blendspot;
     gx_color_index drawn_comps;		/* Used for overprinting.  Passed from overprint compositor */
     gx_device * pclist_device;
-    bool free_devicen;                  /* Used to avoid freeing a deviceN parameter from target clist device */
+    bool free_devicen;              /* Used to avoid freeing a deviceN parameter from target clist device */
+    bool sep_device;
     const gx_color_map_procs *(*save_get_cmap_procs)(const gs_gstate *,
                                                      const gx_device *);
     gx_device_color_info saved_target_color_info;

@@ -23,6 +23,7 @@
 #include "gxpcolor.h"
 #include "gxdevice.h"
 #include "gxdevcli.h"
+#include "gxclist.h"
 
 /* Define the standard device color types. */
 
@@ -417,7 +418,7 @@ static void
 gx_dc_devn_save_dc(const gx_device_color * pdevc, gx_device_color_saved * psdc)
 {
     psdc->type = pdevc->type;
-    memcpy(&(psdc->colors.devn.values[0]), &(pdevc->colors.devn.values[0]), 
+    memcpy(&(psdc->colors.devn.values[0]), &(pdevc->colors.devn.values[0]),
            GX_DEVICE_COLOR_MAX_COMPONENTS*sizeof(ushort));
 }
 
@@ -431,8 +432,8 @@ gx_dc_devn_load(gx_device_color * pdevc, const gs_gstate * ignore_pgs,
 /* Fill a rectangle with a devicen color. */
 static int
 gx_dc_devn_fill_rectangle(const gx_device_color * pdevc, int x, int y,
-                          int w, int h, gx_device * dev, 
-                          gs_logical_operation_t lop, 
+                          int w, int h, gx_device * dev,
+                          gs_logical_operation_t lop,
                           const gx_rop_source_t * source)
 {
     gs_fixed_rect rect;
@@ -445,8 +446,8 @@ gx_dc_devn_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 }
 
 /* Fill a mask with a DeviceN color. */
-/* Note that there is no source in this case: the mask is the source. 
-   I would like to add a device proc that was fill_masked_hl for 
+/* Note that there is no source in this case: the mask is the source.
+   I would like to add a device proc that was fill_masked_hl for
    handling this instead of breaking this down to hl rect fills */
 int
 gx_dc_devn_fill_masked(const gx_device_color * pdevc, const byte * data,
@@ -538,8 +539,8 @@ gx_dc_devn_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
 
 /*
  * Utility to write a devn color into the clist.   We should only be here
- * if the device can handle these colors (e.g. a separation device like 
- * tiffsep).  TODO:  Reduce the size of this by removing leading zeros in 
+ * if the device can handle these colors (e.g. a separation device like
+ * tiffsep).  TODO:  Reduce the size of this by removing leading zeros in
  * the mask.
  *
  */
@@ -551,12 +552,22 @@ gx_devn_write_color(
     uint *              psize )
 {
     int                 num_bytes1, num_bytes_temp, num_bytes;
-    gx_color_index      mask, mask_temp;
-    int                 count;
-    uchar                 i, ncomps = dev->color_info.num_components;
+    gx_color_index      mask_temp;
+    int                 count = 0;
+    uchar               i;
+    gx_device_clist_writer* const cdev = &((gx_device_clist *)dev)->writer;
+    uchar ncomps = cdev->clist_color_info.num_components; /* Could be different than target if 1.4 device */
+    gx_color_index  mask = 0x1, comp_bits = 0;
 
-    /* Figure out the size needed.  First find the number of non zero values */
-    count = gx_dc_devn_get_nonzero_comps(pdevc, dev, &mask);
+    /* First find the number of non zero values */
+    for (i = 0; i < ncomps; i++, mask <<= 1) {
+        if (pdevc->colors.devn.values[i] != 0) {
+            comp_bits |= mask;
+            count++;
+        }
+    }
+    mask = comp_bits;
+
     num_bytes1 = sizeof(gx_color_index);
     num_bytes = num_bytes1 + count * 2;
     num_bytes_temp = num_bytes1;
@@ -688,7 +699,7 @@ gx_devn_read_color(
             values[i] = 0;
         }
         mask >>= 1;
-    } 
+    }
     return num_bytes;
 }
 
@@ -736,10 +747,10 @@ gx_dc_devn_read(
     return gx_devn_read_color(&(pdevc->colors.devn.values[0]), dev, pdata, size);
 }
 
-/* Remember these are 16 bit values.   Also here we return the number of 
+/* Remember these are 16 bit values.   Also here we return the number of
    nonzero entries so we can figure out the size for the clist more
    easily.   Hopefully that does not cause any confusion in overprint
-   situations where is where this operation is also used. */
+   situations where this operation is also used. */
 int
 gx_dc_devn_get_nonzero_comps(
     const gx_device_color * pdevc,

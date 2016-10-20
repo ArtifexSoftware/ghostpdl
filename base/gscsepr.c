@@ -35,6 +35,7 @@
 #include "gsicc_cache.h"
 #include "gxdevice.h"
 #include "gxcie.h"
+#include "gxdevsop.h"
 
 /* ---------------- Color space ---------------- */
 
@@ -150,10 +151,10 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_gstate * pgs)
     gs_devicen_color_map *  pcmap = &pgs->color_component_map;
     gx_device *dev = pgs->device;
     cmm_dev_profile_t *dev_profile;
-    
+
     dev_proc(dev, get_profile)(dev, &(dev_profile));
     if (pcmap->use_alt_cspace)
-        if (dev_profile->sim_overprint && 
+        if (dev_profile->sim_overprint &&
             dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE &&
             !gx_device_must_halftone(dev))
             return gx_simulated_set_overprint(pcs->base_space, pgs);
@@ -433,9 +434,17 @@ check_Separation_component_name(const gs_color_space * pcs, gs_gstate * pgs)
     /*
      * Always use the alternate color space if the current device is
      * using an additive color model.  Separations are only for use
-     * with a subtractive color model.
+     * with a subtractive color model.  The exception is if we have a separation
+     * device and we are doing transparency blending in an additive color
+     * space.  In that case, the spots are kept separated and blended
+     * individually per the PDF specification.   Note however, if the spot is
+     * a CMYK process color and we are doing the blend in an additive color space
+     * the alternate color space is used.  This matches AR.
      */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+
+    if (!(dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0) &&
+        dev_proc(dev, dev_spec_op)(dev, gxdso_is_pdf14_device, NULL, 0)) &&
+        dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
         pcolor_component_map->use_alt_cspace = true;
         return 0;
     }

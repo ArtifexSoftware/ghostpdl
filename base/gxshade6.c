@@ -1279,7 +1279,7 @@ dc2fc(const patch_fill_state_t *pfs, gx_device_color *pdevc,
                 int shift = cinfo->comp_shift[j];
                 int bits = cinfo->comp_bits[j];
 
-                fc[j] = ((pdevc->colors.pure >> shift) & ((1 << bits) - 1)) << 
+                fc[j] = ((pdevc->colors.pure >> shift) & ((1 << bits) - 1)) <<
                         (sizeof(frac31) * 8 - 1 - bits);
         }
     } else {
@@ -1292,8 +1292,8 @@ dc2fc(const patch_fill_state_t *pfs, gx_device_color *pdevc,
 #define DEBUG_COLOR_INDEX_CACHE 0
 
 static inline int
-patch_color_to_device_color_inline(const patch_fill_state_t *pfs, 
-                                   const patch_color_t *c, gx_device_color *pdevc, 
+patch_color_to_device_color_inline(const patch_fill_state_t *pfs,
+                                   const patch_color_t *c, gx_device_color *pdevc,
                                    frac31 *frac_values)
 {
     /* Must return 2 if the color is not pure.
@@ -1323,12 +1323,12 @@ patch_color_to_device_color_inline(const patch_fill_state_t *pfs,
             memcpy(fcc.paint.values, c->cc.paint.values,
                         sizeof(fcc.paint.values[0]) * pfs->num_components);
             code = pcs->type->remap_color(&fcc, pcs, pdevc, pfs->pgs,
-                                      pfs->dev, gs_color_select_texture);
+                                      pfs->trans_device, gs_color_select_texture);
             if (code < 0)
                 return code;
             if (frac_values != NULL) {
                 if (!(pdevc->type == &gx_dc_type_data_devn ||
-                      pdevc->type == &gx_dc_type_data_pure)) 
+                      pdevc->type == &gx_dc_type_data_pure))
                     return 2;
                 dc2fc(pfs, pdevc, frac_values);
             }
@@ -2045,7 +2045,7 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
         code = patch_color_to_device_color_inline(pfs, p0->c, &dc[0], fc[0]);
         if (code != 0)
             return code;
-        if (!(dc[0].type == &gx_dc_type_data_pure || 
+        if (!(dc[0].type == &gx_dc_type_data_pure ||
             dc[0].type == &gx_dc_type_data_devn))
             return 2;
         if (!wedge) {
@@ -3899,7 +3899,7 @@ fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv, int kv0, int 
 
         if (!pfs->inside) {
             gs_fixed_rect r, r1;
-            
+
             tensor_patch_bbox(&r, p);
             r.p.x -= INTERPATCH_PADDING;
             r.p.y -= INTERPATCH_PADDING;

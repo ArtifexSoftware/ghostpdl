@@ -33,6 +33,31 @@
 #include "png_.h"
 #endif
 
+/* A case where we have RGB + spots.  This is actually an RGB color and we
+ * should zero out the spot colorants */
+void
+pdf14_unpack_rgb_mix(int num_comp, gx_color_index color,
+    pdf14_device * p14dev, byte * out)
+{
+    int i;
+
+    memset(out, 0, num_comp);
+    for (i = 2; i >= 0; i--) {
+        out[i] = (byte)(color & 0xff);
+        color >>= 8;
+    }
+}
+
+/* A case where we have Gray + spots.  This is actually a Gray color and we
+* should zero out the spot colorants */
+void
+pdf14_unpack_gray_mix(int num_comp, gx_color_index color,
+    pdf14_device * p14dev, byte * out)
+{
+    memset(out, 0, num_comp);
+    out[0] = (byte)(color & 0xff);
+}
+
 /*
  * Unpack a device color.  This routine is similar to the device's
  * decode_color procedure except for two things.  The procedure produces 1
@@ -274,6 +299,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
               bool overprint, gx_color_index drawn_comps, bool blendspot,
               gs_memory_t *memory, gx_device *dev)
 {
+    int num_spots = tos->num_spots;
     byte alpha = tos->alpha;
     byte shape = tos->shape;
     gs_blend_mode_t blend_mode = tos->blend_mode;
@@ -359,7 +385,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
         if (maskbuf->matte != NULL)
             has_matte = true;
     }
-    n_chan--;
+    n_chan--; /* Now the true number of colorants (i.e. not including alpha)*/
 #if RAW_DUMP
     composed_ptr = nos_ptr;
     dump_raw_buffer(y1-y0, width, tos->n_planes, tos_planestride, tos->rowstride,
@@ -408,41 +434,56 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                 }
             }
 
+            /* Matte present, need to undo premultiplied alpha prior to blend */
             if (has_matte && matte_alpha != 0 && matte_alpha < 0xff) {
                 for (i = 0; i < n_chan; i++) {
+                    /* undo */
                     int val = (tos_ptr[i * tos_planestride] - maskbuf->matte[i] < 0 ?
                         0 : tos_ptr[i * tos_planestride] - maskbuf->matte[i]);
                     int temp = ((((val * 0xff) << 8) / matte_alpha) >> 8) + maskbuf->matte[i];
 
+                    /* clip */
                     if (temp > 0xff)
                         tos_pixel[i] = 0xff;
                     else
                         tos_pixel[i] = temp;
 
                     if (!additive) {
+                        /* Pure subtractive */
                         tos_pixel[i] = 255 - tos_pixel[i];
                         nos_pixel[i] = 255 - nos_ptr[i * nos_planestride];
-                    } else
-                        nos_pixel[i] = nos_ptr[i * nos_planestride];
-                }
-                /* alpha */
-                tos_pixel[n_chan] = tos_ptr[n_chan * tos_planestride];
-                nos_pixel[n_chan] = nos_ptr[n_chan * nos_planestride];
-            } else {
-                if (additive) {
-                    for (i = 0; i <= n_chan; ++i) {
-                        tos_pixel[i] = tos_ptr[i * tos_planestride];
-                        nos_pixel[i] = nos_ptr[i * nos_planestride];
+                    } else {
+                        /* additive or hybrid */
+                        if (i >= n_chan - num_spots)
+                            nos_pixel[i] = 255 - nos_ptr[i * nos_planestride];
+                        else
+                            nos_pixel[i] = nos_ptr[i * nos_planestride];
                     }
-                } else {
+                }
+            } else {
+                /* No matte present */
+                if (!additive) {
+                    /* Pure subtractive */
                     for (i = 0; i < n_chan; ++i) {
                         tos_pixel[i] = 255 - tos_ptr[i * tos_planestride];
                         nos_pixel[i] = 255 - nos_ptr[i * nos_planestride];
                     }
-                    tos_pixel[n_chan] = tos_ptr[n_chan * tos_planestride];
-                    nos_pixel[n_chan] = nos_ptr[n_chan * nos_planestride];
+                } else {
+                    /* Additive or hybrid */
+                    for (i = 0; i < (n_chan - num_spots); ++i) {
+                        tos_pixel[i] = tos_ptr[i * tos_planestride];
+                        nos_pixel[i] = nos_ptr[i * nos_planestride];
+                    }
+                    for (i = n_chan - num_spots; i < n_chan; i++) {
+                        tos_pixel[i] = 255 - tos_ptr[i * tos_planestride];
+                        nos_pixel[i] = 255 - nos_ptr[i * nos_planestride];
+                    }
                 }
             }
+            /* alpha */
+            tos_pixel[n_chan] = tos_ptr[n_chan * tos_planestride];
+            nos_pixel[n_chan] = nos_ptr[n_chan * nos_planestride];
+
 
             if (mask_curr_ptr != NULL) {
                 if (in_mask_rect) {
@@ -455,7 +496,8 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
             }
 
             if (nos_knockout) {
-                /* We need to be knocking out what ever is on the nos, but may need to combine with it's backdrop */
+                /* We need to be knocking out what ever is on the nos, but may
+                need to combine with it's backdrop */
                 byte *nos_shape_ptr = nos_shape_offset ?
                     &nos_ptr[nos_shape_offset] : NULL;
                 byte *nos_tag_ptr = nos_tag_offset ?
@@ -482,15 +524,22 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                        going onto a knock out group, we do the composition with
                        the nos initial backdrop. */
                     if (additive) {
-                        for (i = 0; i <= n_chan; ++i) {
+                        /* additive or hybrid */
+                        for (i = 0; i < (n_chan - num_spots); ++i) {
                             back_drop[i] = backdrop_ptr[i * nos_planestride];
                         }
+                        for (i = n_chan - num_spots; i < n_chan; i++) {
+                            back_drop[i] = 255 - backdrop_ptr[i * nos_planestride];
+                        }
                     } else {
+                        /* pure subtractive */
                         for (i = 0; i < n_chan; ++i) {
                             back_drop[i] = 255 - backdrop_ptr[i * nos_planestride];
                         }
-                        back_drop[n_chan] = backdrop_ptr[n_chan * nos_planestride];
                     }
+                    /* alpha */
+                    back_drop[n_chan] = backdrop_ptr[n_chan * nos_planestride];
+
                     art_pdf_composite_knockout_group_8(back_drop, tos_shape,
                                                        nos_pixel, nos_alpha_g_ptr,
                                                        tos_pixel, n_chan, pix_alpha,
@@ -526,12 +575,19 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                                             tos_ptr[tos_shape_offset],
                                             shape);
             }
-            /* Complement the results for subtractive color spaces */
+            /* Complement the results for subtractive color spaces.  Again,
+             * if we are in an additive blending color space, we are not
+             * going to be fooling with overprint of spot colors */
             if (additive) {
-                for (i = 0; i <= n_chan; ++i) {
+                /* additive or hybrid */
+                for (i = 0; i < (n_chan - num_spots); ++i) {
                     nos_ptr[i * nos_planestride] = nos_pixel[i];
                 }
+                for (i = n_chan - num_spots; i < n_chan; i++) {
+                    nos_ptr[i * nos_planestride] = 255 - nos_pixel[i];
+                }
             } else {
+                /* Pure subtractive */
                 /* If we were running in the compatible overprint blend mode
                 * and popping the group, we don't need to fool with the
                 * drawn components as that should have already have been
@@ -551,8 +607,10 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     for (i = 0; i < n_chan; ++i)
                         nos_ptr[i * nos_planestride] = 255 - nos_pixel[i];
                 }
-                nos_ptr[n_chan * nos_planestride] = nos_pixel[n_chan];
             }
+            /* alpha */
+            nos_ptr[n_chan * nos_planestride] = nos_pixel[n_chan];
+
             if (nos_alpha_g_ptr != NULL)
                 ++nos_alpha_g_ptr;
             if (backdrop_ptr != NULL)
@@ -641,6 +699,72 @@ pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
     out[0] = out[1] = out[2] = frac_0;
     out[3] = frac_1 - gray;
     for (--num_comp; num_comp > 3; num_comp--)
+        out[num_comp] = 0;
+}
+
+/* These three must handle rgb + spot */
+void
+pdf14_gray_cs_to_rgbspot_cm(gx_device * dev, frac gray, frac out[])
+{
+    uchar num_comp = dev->color_info.num_components;
+
+    out[0] = out[1] = out[2] = gray;
+    for (--num_comp; num_comp > 2; num_comp--)
+        out[num_comp] = 0;
+}
+
+void
+pdf14_rgb_cs_to_rgbspot_cm(gx_device * dev, const gs_gstate *pgs,
+    frac r, frac g, frac b, frac out[])
+{
+    uchar num_comp = dev->color_info.num_components;
+
+    out[0] = r;
+    out[1] = g;
+    out[2] = b;
+    for (--num_comp; num_comp > 2; num_comp--)
+        out[num_comp] = 0;
+}
+
+void
+pdf14_cmyk_cs_to_rgbspot_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+{
+    uchar num_comp = dev->color_info.num_components;
+
+    color_cmyk_to_rgb(c, m, y, k, NULL, out, dev->memory);
+    for (--num_comp; num_comp > 2; num_comp--)
+        out[num_comp] = 0;
+}
+
+/* These three must handle gray + spot */
+void
+pdf14_gray_cs_to_grayspot_cm(gx_device * dev, frac gray, frac out[])
+{
+    uchar num_comp = dev->color_info.num_components;
+
+    out[0] = gray;
+    for (--num_comp; num_comp > 0; num_comp--)
+        out[num_comp] = 0;
+}
+
+void
+pdf14_rgb_cs_to_grayspot_cm(gx_device * dev, const gs_gstate *pgs,
+    frac r, frac g, frac b, frac out[])
+{
+    uchar num_comp = dev->color_info.num_components;
+
+    out[0] = (r + g + b) / 3;
+    for (--num_comp; num_comp > 0; num_comp--)
+        out[num_comp] = 0;
+}
+
+void
+pdf14_cmyk_cs_to_grayspot_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+{
+    uchar num_comp = dev->color_info.num_components;
+
+    out[0] = color_cmyk_to_gray(c, m, y, k, NULL);
+    for (--num_comp; num_comp > 0; num_comp--)
         out[num_comp] = 0;
 }
 
@@ -865,10 +989,10 @@ gx_blend_image_buffer(byte *buf_ptr, int width, int height, int rowstride,
 }
 
 int
-gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
-                      int planestride, int rowstride,
-                      int x0, int y0, int width, int height, int num_comp, byte bg,
-                      bool has_tags, gs_int_rect rect, gs_separations * pseparations)
+gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride,
+                      int rowstride, int x0, int y0, int width, int height,
+                      int num_comp, byte bg, bool has_tags, gs_int_rect rect,
+                      gs_separations * pseparations)
 {
     int code = 0;
     int x, y, tmp, comp_num, output_comp_num;
@@ -915,7 +1039,7 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
         }
     }
     /* See if the target device has a put_image command.  If
-       yes then see if it can handle the image data directly.  */
+       yes then see if it can handle the image data directly. */
     if (target->procs.put_image != NULL) {
         /* See if the target device can handle the data in its current
            form with the alpha component */
@@ -1001,8 +1125,7 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
                 }
             }
             color = dev_proc(target, encode_color)(target, cv);
-            code = dev_proc(target, fill_rectangle)(target, x + x0,
-                                                            y + y0, 1, 1, color);
+            code = dev_proc(target, fill_rectangle)(target, x + x0, y + y0, 1, 1, color);
             if (code < 0)
                 return code;
         }

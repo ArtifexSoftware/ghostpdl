@@ -218,6 +218,24 @@ int devn_put_params(gx_device * pdev, gs_param_list * plist,
                         equivalent_cmyk_color_params * pequiv_colors);
 
 /*
+* This routine will check to see if the color component name match those
+* of the SeparationColorNames list.  Needed for case where we have RGB
+* blending color spaces in transparency and need to maintain the spot colorants
+*
+* Parameters:
+*   dev - pointer to device data structure.
+*   pname - pointer to name (zero termination not required)
+*   nlength - length of the name
+*   index into colorants offset of device
+*
+* This routine returns a positive value (0 to n) which is the device colorant
+* number if the name is found.  It returns a negative value if not found.
+*/
+int check_separation_names(const gx_device * dev, const gs_devn_params * pparams,
+    const char * pname, int name_size, int component_type, int number);
+
+
+/*
  * This routine will check to see if the color component name  match those
  * of either the process color model colorants or the names on the
  * SeparationColorNames list.

@@ -1980,6 +1980,7 @@ idata:                  data_size = 0;
                                        the information that is used in the trap code */
                                     ttdev->color_info.num_components = tdev->color_info.num_components;
                                     ttdev->color_info.depth = tdev->color_info.depth;
+                                    ttdev->color_info.polarity = tdev->color_info.polarity;
                                     memcpy(&(ttdev->color_info.comp_bits),&(tdev->color_info.comp_bits),GX_DEVICE_COLOR_MAX_COMPONENTS);
                                     memcpy(&(ttdev->color_info.comp_shift),&(tdev->color_info.comp_shift),GX_DEVICE_COLOR_MAX_COMPONENTS);
                                 }

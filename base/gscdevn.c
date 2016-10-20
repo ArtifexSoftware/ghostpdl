@@ -42,6 +42,7 @@
 #include "gsicc_cache.h"
 #include "gxdevice.h"
 #include "gxcie.h"
+#include "gxdevsop.h"
 
 /* ---------------- Color space ---------------- */
 
@@ -513,7 +514,7 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
                                 (pconc, pacs, pdc, pgs, dev, select);
     } else {
     /* If we are going DeviceN out to real sep device that understands these,
-       and if the destination profile is DeviceN, we print the colors directly. 
+       and if the destination profile is DeviceN, we print the colors directly.
        Make sure to disable the DeviceN profile color map so that is does not
        get used in gx_remap_concrete_devicen.  We probably should pass something
        through here but it is a pain due to the change in the proc. */
@@ -558,15 +559,24 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_gstate * pgs)
     pcolor_component_map->sep_type = SEP_OTHER;
     /*
      * Always use the alternate color space if the current device is
-     * using an additive color model.
+     * using an additive color model. The exception is if we have a separation
+     * device and we are doing transparency blending in an additive color
+     * space.  In that case, the spots are kept separated and blended
+     * individually per the PDF specification.  However, if any of the spots are
+     * CMYK process colors, we use the alternate color space.  This matches AR.
      */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+    if (!(dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0) &&
+        dev_proc(dev, dev_spec_op)(dev, gxdso_is_pdf14_device, NULL, 0)) &&
+        dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
         pcolor_component_map->use_alt_cspace = true;
         return 0;
     }
     /*
-     * Now check the names of the color components.
+     * Now check the names of the color components.  If any of the colorants
+     * come back as process type (i.e. CMYK) and we are drawing in a pdf14
+     * additive color space then use the alternate tint transform.
      */
+
     non_match = false;
     for(i = 0; i < num_comp; i++ ) {
         /*
@@ -589,11 +599,11 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_gstate * pgs)
             if (strncmp((char *) pname, "None", name_size) != 0) {
                     non_match = true;
             } else {
-                /* Device N includes one or more None Entries. We can't reduce 
+                /* Device N includes one or more None Entries. We can't reduce
                    the number of components in the list count, since the None Name(s)
                    are present in the list and GCd and we may need the None
                    entries in the alternate tint trasform calcuation.
-                   So we will detect the presence of them by setting 
+                   So we will detect the presence of them by setting
                    pcolor_component_map->color_map[i] = -1 and watching
                    for this case later during the remap operation. */
                 pcolor_component_map->color_map[i] = -1;
@@ -660,10 +670,10 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_gstate * pgs)
     int code;
     gx_device *dev = pgs->device;
     cmm_dev_profile_t *dev_profile;
-    
+
     dev_proc(dev, get_profile)(dev, &(dev_profile));
     /* It is possible that the color map information in the graphic state
-       is not current due to save/restore and or if we are coming from 
+       is not current due to save/restore and or if we are coming from
        a color space that is inside a PatternType 2 */
     code = check_DeviceN_component_names(pcs, pgs);
     if (code < 0)

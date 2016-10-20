@@ -32,6 +32,22 @@ extern unsigned int global_index;
 extern unsigned int clist_band_count;
 #endif
 
+/* For spot colors, blend modes must be white preserving and separable.  The
+ * order of the blend modes should be reordered so this is a single compare */
+bool
+blend_valid_for_spot(gs_blend_mode_t blend_mode)
+{
+    if (blend_mode == BLEND_MODE_Difference ||
+        blend_mode == BLEND_MODE_Exclusion ||
+        blend_mode == BLEND_MODE_Hue ||
+        blend_mode == BLEND_MODE_Saturation ||
+        blend_mode == BLEND_MODE_Color ||
+        blend_mode == BLEND_MODE_Luminosity)
+        return false;
+    else
+        return true;
+}
+
 /* This function is used for mapping the SMask source to a
    monochrome luminosity value which basically is the alpha value
    Note, that separation colors are not allowed here.  Everything
