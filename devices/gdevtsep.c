@@ -606,6 +606,7 @@ static dev_proc_output_page(tiffseps_output_page);
         /* tiff state for separation files */\
     FILE *sep_file[GX_DEVICE_COLOR_MAX_COMPONENTS];\
     TIFF *tiff[GX_DEVICE_COLOR_MAX_COMPONENTS]; \
+    bool  NoSeparationFiles;    /* true = no separation files created only a composite file */\
     bool  BigEndian;            /* true = big endian; false = little endian */\
     bool  UseBigTIFF;           /* true = output bigtiff, false don't */ \
     bool  write_datetime;       /* true = write DATETIME tag, false = don't */ \
@@ -778,6 +779,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
         prn_device_body_rest2_(print_page, print_page_copies, -1),\
         { 0 },                  /* tiff state for separation files */\
         { 0 },                  /* separation files */\
+        false,                  /* NoSeparationFiles */\
         ARCH_IS_BIG_ENDIAN      /* true = big endian; false = little endian */,\
         false,                  /* UseBigTIFF */\
         true,                   /* write_datetime */ \
@@ -1010,6 +1012,8 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
     if (code < 0)
         return code;
 
+    if ((code = param_write_bool(plist, "NoSeparationFiles", &pdevn->NoSeparationFiles)) < 0)
+        ecode = code;
     if ((code = param_write_bool(plist, "BigEndian", &pdevn->BigEndian)) < 0)
         ecode = code;
     if ((code = tiff_compression_param_string(&comprstr, pdevn->Compression)) < 0 ||
@@ -1025,7 +1029,6 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
         ecode = code;
     if ((code = param_write_bool(plist, "PrintSpotCMYK", &pdevn->PrintSpotCMYK)) < 0)
         ecode = code;
-
     if ((code = gx_downscaler_write_params(plist, &pdevn->downscale,
                                            GX_DOWNSCALER_PARAMS_MFS |
                                            GX_DOWNSCALER_PARAMS_TRAP)) < 0)
@@ -1046,6 +1049,15 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
     long bpc = pdevn->BitsPerComponent;
     int max_spots = pdevn->max_spots;
 
+    switch (code = param_read_bool(plist, (param_name = "NoSeparationFiles"),
+        &pdevn->NoSeparationFiles)) {
+    default:
+        param_signal_error(plist, param_name, code);
+        return code;
+    case 0:
+    case 1:
+        break;
+    }
     /* Read BigEndian option as bool */
     switch (code = param_read_bool(plist, (param_name = "BigEndian"), &pdevn->BigEndian)) {
         default:
@@ -2390,51 +2402,53 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     num_comp = number_output_separations( tfdev->color_info.num_components,
                                         num_std_colorants, num_order, num_spot);
 
-    if (!num_order && num_comp < num_std_colorants + num_spot) {
+    if (!tfdev->NoSeparationFiles && !num_order && num_comp < num_std_colorants + num_spot) {
         dmlprintf(pdev->memory, "Warning: skipping one or more colour separations, see: Devices.htm#TIFF\n");
     }
 
-    for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
-        int sep_num = tfdev->devn_params.separation_order_map[comp_num];
+    if (!tfdev->NoSeparationFiles) {
+        for (comp_num = 0; comp_num < num_comp; comp_num++) {
+            int sep_num = tfdev->devn_params.separation_order_map[comp_num];
 
-        code = create_separation_file_name(tfdev, name, gp_file_name_sizeof,
-                                            sep_num, true);
-        if (code < 0) {
-            goto done;
-        }
-
-        /* Open the separation file, if not already open */
-        if (tfdev->sep_file[comp_num] == NULL) {
-            code = gx_device_open_output_file((gx_device *)pdev, name,
-                    true, true, &(tfdev->sep_file[comp_num]));
+            code = create_separation_file_name(tfdev, name, gp_file_name_sizeof,
+                sep_num, true);
             if (code < 0) {
                 goto done;
             }
-            tfdev->tiff[comp_num] = tiff_from_filep(pdev, name,
-                                                    tfdev->sep_file[comp_num],
-                                                    tfdev->BigEndian, tfdev->UseBigTIFF);
-            if (!tfdev->tiff[comp_num]) {
-                code = gs_note_error(gs_error_ioerror);
+
+            /* Open the separation file, if not already open */
+            if (tfdev->sep_file[comp_num] == NULL) {
+                code = gx_device_open_output_file((gx_device *)pdev, name,
+                    true, true, &(tfdev->sep_file[comp_num]));
+                if (code < 0) {
+                    goto done;
+                }
+                tfdev->tiff[comp_num] = tiff_from_filep(pdev, name,
+                    tfdev->sep_file[comp_num],
+                    tfdev->BigEndian, tfdev->UseBigTIFF);
+                if (!tfdev->tiff[comp_num]) {
+                    code = gs_note_error(gs_error_ioerror);
+                    goto done;
+                }
+            }
+
+            pdev->color_info.depth = dst_bpc;     /* Create files for 8 bit gray */
+            pdev->color_info.num_components = 1;
+            if (tfdev->Compression == COMPRESSION_NONE &&
+                height * 8 / dst_bpc > ((unsigned long)0xFFFFFFFF - (file ? ftell(file) : 0)) / width) /* note width is never 0 in print_page */
+            {
+                code = gs_note_error(gs_error_rangecheck);  /* this will overflow 32 bits */
                 goto done;
             }
-        }
-
-        pdev->color_info.depth = dst_bpc;     /* Create files for 8 bit gray */
-        pdev->color_info.num_components = 1;
-        if (tfdev->Compression==COMPRESSION_NONE &&
-            height*8/dst_bpc > ((unsigned long) 0xFFFFFFFF - (file ? ftell(file): 0))/width) /* note width is never 0 in print_page */
-        {
-            code = gs_note_error(gs_error_rangecheck);  /* this will overflow 32 bits */
-            goto done;
-        }
 
 
-        code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], factor, 0, tfdev->write_datetime);
-        tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], dst_bpc, tfdev->Compression, tfdev->MaxStripSize);
-        pdev->color_info.depth = save_depth;
-        pdev->color_info.num_components = save_numcomps;
-        if (code < 0) {
-            goto done;
+            code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], factor, 0, tfdev->write_datetime);
+            tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], dst_bpc, tfdev->Compression, tfdev->MaxStripSize);
+            pdev->color_info.depth = save_depth;
+            pdev->color_info.num_components = save_numcomps;
+            if (code < 0) {
+                goto done;
+            }
         }
     }
 
@@ -2462,8 +2476,9 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
             goto done;
         }
 
-        for (comp_num = 0; comp_num < num_comp; comp_num++ )
-            TIFFCheckpointDirectory(tfdev->tiff[comp_num]);
+        if (!tfdev->NoSeparationFiles)
+            for (comp_num = 0; comp_num < num_comp; comp_num++ )
+                TIFFCheckpointDirectory(tfdev->tiff[comp_num]);
         TIFFCheckpointDirectory(tfdev->tiff_comp);
 
         /* Write the page data. */
@@ -2547,17 +2562,20 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
                 if (code < 0)
                     goto cleanup;
                 /* Write separation data (tiffgray format) */
-                for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
-                    byte *src;
-                    byte *dest = sep_line;
+                if (!tfdev->NoSeparationFiles) {
+                    for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                        byte *src;
+                        byte *dest = sep_line;
 
-                    if (num_order > 0) {
-                        src = params.data[tfdev->devn_params.separation_order_map[comp_num]];
-                    } else
-                        src = params.data[comp_num];
-                    for (pixel = 0; pixel < byte_width; pixel++, dest++, src++)
-                        *dest = MAX_COLOR_VALUE - *src;    /* Gray is additive */
-                    TIFFWriteScanline(tfdev->tiff[comp_num], (tdata_t)sep_line, y, 0);
+                        if (num_order > 0) {
+                            src = params.data[tfdev->devn_params.separation_order_map[comp_num]];
+                        }
+                        else
+                            src = params.data[comp_num];
+                        for (pixel = 0; pixel < byte_width; pixel++, dest++, src++)
+                            *dest = MAX_COLOR_VALUE - *src;    /* Gray is additive */
+                        TIFFWriteScanline(tfdev->tiff[comp_num], (tdata_t)sep_line, y, 0);
+                    }
                 }
                 /* Write CMYK equivalent data */
                 switch(dst_bpc)
@@ -2607,23 +2625,24 @@ cleanup:
             gs_free_object(pdev->memory, sep_line, "tiffsep_print_page");
         }
         code1 = code;
-        for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
-            TIFFWriteDirectory(tfdev->tiff[comp_num]);
-            if (fmt) {
-                int sep_num = tfdev->devn_params.separation_order_map[comp_num];
+        if (!tfdev->NoSeparationFiles) {
+            for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                TIFFWriteDirectory(tfdev->tiff[comp_num]);
+                if (fmt) {
+                    int sep_num = tfdev->devn_params.separation_order_map[comp_num];
 
-                code = create_separation_file_name(tfdev, name, gp_file_name_sizeof, sep_num, false);
-                if (code < 0) {
-                    code1 = code;
-                    continue;
-                }
-                code = tiffsep_close_sep_file(tfdev, name, comp_num);
-                if (code < 0) {
-                    code1 = code;
+                    code = create_separation_file_name(tfdev, name, gp_file_name_sizeof, sep_num, false);
+                    if (code < 0) {
+                        code1 = code;
+                        continue;
+                    }
+                    code = tiffsep_close_sep_file(tfdev, name, comp_num);
+                    if (code < 0) {
+                        code1 = code;
+                    }
                 }
             }
         }
-
         TIFFWriteDirectory(tfdev->tiff_comp);
         if (fmt) {
             code = tiffsep_close_comp_file(tfdev, pdev->fname);

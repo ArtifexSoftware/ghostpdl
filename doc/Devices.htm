@@ -482,7 +482,9 @@ option, which may be set to 8 (the default) or 1. In 1bpp mode, the
 device renders each component internally in 8 bits, but then converts
 down to 1bpp with error diffusion before output as described below in
 the <code>tiffscaled</code> device. No composite file is produced in
-1bpp mode, only individual separations.
+1bpp mode, only individual separations. To create no individual separations
+in the <code>tiffsep</code> device, use the -dNoSeparationFiles option.  In
+this case, only a composite file will be created.
 
 <p>The device also accepts the -dDownScaleFactor= -dTrapX= -dTrapy= and -sPostRenderProfile=
 parameters as described below in the tiffscaled device, and
