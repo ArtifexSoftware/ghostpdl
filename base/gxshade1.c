@@ -550,8 +550,7 @@ R_fill_triangle_new(patch_fill_state_t *pfs, const gs_rect *rect,
 static int
 R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
         double x0, double y0, double r0,
-        double x1, double y1, double r1, double t0, double r_rect,
-        bool inwards)
+        double x1, double y1, double r1, double t0, double r_rect)
 {
     double dx = x1 - x0, dy = y1 - y0, dr = any_abs(r1 - r0);
     double d = hypot(dx, dy);
@@ -604,12 +603,8 @@ R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
         code = R_tensor_annulus(pfs, x0, y0, r0, t0, ex, ey, er, t0);
         if (code < 0)
             return code;
-        /* Fill entire ending circle to ensure entire rect is covered, but
-         * only if we are filling "inwards" (as otherwise we will overwrite
-         * all the hard work we have done to this point) */
-        if (inwards)
-            code = R_tensor_annulus(pfs, ex, ey, er, t0, ex, ey, 0, t0);
-        return code;
+        /* Fill entire ending circle to ensure entire rect is covered. */
+        return R_tensor_annulus(pfs, ex, ey, er, t0, ex, ey, 0, t0);
     }
 }
 
@@ -683,7 +678,43 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
     double d = hypot(dx, dy), r;
     int code;
 
-    if (dr >= d - 1e-7 * (d + dr)) {
+    /* In order for the circles to be nested, one end circle
+     * needs to be sufficiently large to cover the entirety
+     * of the other end circle. i.e.
+     *
+     *     max(r0,r1) >= d + min(r0,r1)
+     * === min(r0,r1) + dr >= d + min(r0,r1)
+     * === dr >= d
+     *
+     * This, plus a fudge factor for FP operation is what we use below.
+     *
+     * An "Obtuse Cone" is defined to be one for which the "opening
+     * angle" is obtuse.
+     *
+     * Consider two circles; one at (r0,r0) of radius r0, and one at
+     * (r1,r1) of radius r1. These clearly lie on the acute/obtuse
+     * boundary. The distance between the centres of these two circles
+     * is d = sqr(2.(r0-r1)^2) by pythagoras. Thus d = sqr(2).dr.
+     * By observation if d gets longer, we become acute, shorter, obtuse.
+     * i.e. if sqr(2).dr > d we are obtuse, if d > sqr(2).dr we are acute.
+     * (Thanks to Paul Gardiner for this reasoning).
+     *
+     * The code below tests (dr > d/3) (i.e. 3.dr > d). This
+     * appears to be a factor of 2 and a bit out, so I am confused
+     * by it.
+     *
+     * Either Igor meant something different to the standard meaning
+     * of "Obtuse Cone", or he got his maths wrong. Or he was more
+     * cunning than I can understand. Leave it as it until we find
+     * an actual example that goes wrong.
+     */
+
+    /* Tests with Acrobat seem to indicate that it uses a fudge factor
+     * of around .0001. (i.e. [1.0001 0 0 0 0 1] is accepted as a
+     * non nested circle, but [1.00009 0 0 0 0 1] is a nested one.
+     * Approximate the same sort of value here to appease bug 690831.
+     */
+    if (dr >= d - 1e-4 * (d + dr)) {
         /* Nested circles, or degenerate. */
         if (r0 > r1) {
             if (Extend0) {
@@ -713,7 +744,7 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
         if (r0 > r1) {
             if (Extend0) {
                 r = R_rect_radius(rect, x0, y0);
-                code = R_obtuse_cone(pfs, rect, x0, y0, r0, x1, y1, r1, t0, r, true);
+                code = R_obtuse_cone(pfs, rect, x0, y0, r0, x1, y1, r1, t0, r);
                 if (code < 0)
                     return code;
             }
@@ -723,7 +754,7 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
         } else {
             if (Extend1) {
                 r = R_rect_radius(rect, x1, y1);
-                code = R_obtuse_cone(pfs, rect, x1, y1, r1, x0, y0, r0, t1, r, false);
+                code = R_obtuse_cone(pfs, rect, x1, y1, r1, x0, y0, r0, t1, r);
                 if (code < 0)
                     return code;
             }
