@@ -367,6 +367,7 @@ R_tensor_annulus(patch_fill_state_t *pfs,
         p0.x = 0, p0.y = -1, dirn = 0;
         /* Align stripes along radii for faster triangulation : */
         inside = 1;
+        pfs->function_arg_shift = !pfs->function_arg_shift;
     } else {
         /* Must generate canonic quadrangle arcs,
            because we approximate them with curves. */
