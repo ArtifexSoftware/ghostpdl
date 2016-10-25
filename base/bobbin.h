@@ -28,7 +28,7 @@
 
 #define BOBBIN_H
 
-#if BOBBIN
+#if defined(BOBBIN) && BOBBIN
 
 #ifdef _WIN32
 #include <windows.h>
