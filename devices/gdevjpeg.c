@@ -95,7 +95,8 @@ const gx_device_jpeg gs_jpeg_device =
  0,				/* JPEGQ: 0 indicates not specified */
  0.0,				/* QFactor: 0 indicates not specified */
  { 1.0, 1.0 },                  /* ViewScale 1 to 1 */
- { 0.0, 0.0 }                   /* translation 0 */
+ { 0.0, 0.0 },                  /* translation 0 */
+ GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
 /* 8-bit gray */
@@ -462,7 +463,7 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
             !(pdev->icc_struct->usefastcolor)) {
             state.icc_profile = icc_profile;
         }
-    } 
+    }
     /* We need state.memory for gs_jpeg_create_compress().... */
     jcdp->memory = state.jpeg_memory = state.memory = mem;
     if ((code = gs_jpeg_create_compress(&state)) < 0)
