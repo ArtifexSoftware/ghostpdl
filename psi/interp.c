@@ -1156,6 +1156,12 @@ x_sub:      INCR(x_sub);
           prst:         /* Prepare to call the procedure (array) in *pvalue. */
             store_state(iesp);
           pr:                   /* Call the array in *pvalue.  State has been stored. */
+            /* We want to do this check before assigning icount so icount is correct
+             * in the event of a gs_error_execstackoverflow
+             */
+            if (iesp >= estop) {
+                return_with_error_iref(gs_error_execstackoverflow);
+            }
             if ((icount = r_size(pvalue) - 1) <= 0) {
                 if (icount < 0)
                     goto up;    /* 0-element proc */
@@ -1163,8 +1169,6 @@ x_sub:      INCR(x_sub);
                 if (--(*ticks_left) > 0)
                     goto top;
             }
-            if (iesp >= estop)
-                return_with_error_iref(gs_error_execstackoverflow);
             ++iesp;
             /* Do a ref_assign, but also set iref. */
             iesp->tas = pvalue->tas;
