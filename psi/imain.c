@@ -856,6 +856,19 @@ static char *gs_main_tempnames(gs_main_instance *minst)
     return tempnames;
 }
 
+static void
+gs_finit_push_systemdict(i_ctx_t *i_ctx_p)
+{
+  if (dsp == dstop ) {
+      if (ref_stack_extend(&d_stack, 1) < 0) {
+          /* zend() cannot fail */
+          (void)zend(i_ctx_p);
+      }
+  }
+  dsp++;
+  ref_assign(dsp, systemdict);
+}
+
 /* Free all resources and return. */
 int
 gs_main_finit(gs_main_instance * minst, int exit_status, int code)
@@ -876,6 +889,13 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
      */
     tempnames = gs_main_tempnames(minst);
 
+    /* by the time we get here, we *must* avoid any random redefinitions of
+     * operators etc, so we push systemdict onto the top of the dict stack.
+     * We do this in C to avoid running into any other re-defininitions in the
+     * Postscript world.
+     */
+    gs_finit_push_systemdict(i_ctx_p);
+
 #ifndef PSI_INCLUDED
     /* We have to disable BGPrint before we call interp_reclaim() to prevent the
      * parent rendering thread initialising for the next page, whilst we are
@@ -885,11 +905,10 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
      */
     if (minst->init_done >= 1) {
         gs_main_run_string(minst,
-            "/systemdict .systemexec /begin .systemexec \
-            /BGPrint /GetDeviceParam .special_op \
+            "/BGPrint /GetDeviceParam .special_op \
             {{ <</BeginPage {pop} /EndPage {pop pop //false } \
               /BGPrint false /NumRenderingThreads 0>> setpagedevice} if} if \
-              serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse end \
+              serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse \
               .systemvar exec",
             0 , &exit_code, &error_object);
     }
@@ -959,10 +978,8 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     if (minst->init_done >= 2)
       gs_main_run_string(minst,
         "(%stdout) (w) file closefile (%stderr) (w) file closefile \
-        /systemdict .systemexec /begin .systemexec \
-          serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemexec \
-          systemdict /savedinitialgstate .forceundef \
-        end ",
+        serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemexec \
+          systemdict /savedinitialgstate .forceundef",
         0 , &exit_code, &error_object);
     gp_readline_finit(minst->readline_data);
     i_ctx_p = minst->i_ctx_p;		/* get current interp context */
