@@ -971,7 +971,7 @@ clip_call_fill_path(clip_callback_data_t * pccd, int xc, int yc, int xec, int ye
 
     if (pcpath != NULL) {
         gx_path rect_path;
-        code = gx_cpath_init_local_shared(&cpath_intersection, pcpath, pccd->ppath->memory);
+        code = gx_cpath_init_local_shared_nested(&cpath_intersection, pcpath, pccd->ppath->memory, 1);
         if (code < 0)
             return code;
         gx_path_init_local(&rect_path, pccd->ppath->memory);
