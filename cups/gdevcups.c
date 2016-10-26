@@ -3548,18 +3548,32 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
 	cups->landscape = 0;
 
-	margins[0] = best_size->left / 72.0;
-	margins[1] = best_size->bottom / 72.0;
-	margins[2] = (best_size->width - best_size->right) / 72.0;
-	margins[3] = (best_size->length - best_size->top) / 72.0;
-	if (xflip == 1)
+#ifdef CUPS_RASTER_SYNCv1
+	if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
 	{
-	  swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+#endif
+	  margins[0] = best_size->left / 72.0;
+	  margins[1] = best_size->bottom / 72.0;
+	  margins[2] = (best_size->width - best_size->right) / 72.0;
+	  margins[3] = (best_size->length - best_size->top) / 72.0;
+	  if (xflip == 1)
+	  {
+	    swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+	  }
+	  if (yflip == 1)
+	  {
+	    swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+	  }
+#ifdef CUPS_RASTER_SYNCv1
 	}
-	if (yflip == 1)
+	else
 	{
-	  swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+	  margins[0] = 0.0;
+	  margins[1] = 0.0;
+	  margins[2] = 0.0;
+	  margins[3] = 0.0;
 	}
+#endif
       }
       else
       {
@@ -3656,18 +3670,32 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
           cups->landscape = 1;
 
-	  margins[0] = (best_size->length - best_size->top) / 72.0;
-	  margins[1] = best_size->left / 72.0;
-	  margins[2] = best_size->bottom / 72.0;
-	  margins[3] = (best_size->width - best_size->right) / 72.0;
-	  if (xflip == 1)
+#ifdef CUPS_RASTER_SYNCv1
+	  if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
 	  {
-	    swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+#endif
+	    margins[0] = (best_size->length - best_size->top) / 72.0;
+	    margins[1] = best_size->left / 72.0;
+	    margins[2] = best_size->bottom / 72.0;
+	    margins[3] = (best_size->width - best_size->right) / 72.0;
+	    if (xflip == 1)
+	    {
+	      swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+	    }
+	    if (yflip == 1)
+	    {
+	      swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+	    }
+#ifdef CUPS_RASTER_SYNCv1
 	  }
-	  if (yflip == 1)
+	  else
 	  {
-	    swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+	    margins[0] = 0.0;
+	    margins[1] = 0.0;
+	    margins[2] = 0.0;
+	    margins[3] = 0.0;
 	  }
+#endif
 	}
 	else
 	{
@@ -3691,32 +3719,62 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
 	    cups->landscape = 1;
 
-	    margins[0] = cups->PPD->custom_margins[3] / 72.0;
-	    margins[1] = cups->PPD->custom_margins[0] / 72.0;
-	    margins[2] = cups->PPD->custom_margins[1] / 72.0;
-	    margins[3] = cups->PPD->custom_margins[2] / 72.0;
-	    if (xflip == 1)
+#ifdef CUPS_RASTER_SYNCv1
+	    if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
 	    {
-	      swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+#endif
+	      margins[0] = cups->PPD->custom_margins[3] / 72.0;
+	      margins[1] = cups->PPD->custom_margins[0] / 72.0;
+	      margins[2] = cups->PPD->custom_margins[1] / 72.0;
+	      margins[3] = cups->PPD->custom_margins[2] / 72.0;
+	      if (xflip == 1)
+	      {
+		swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+	      }
+	      if (yflip == 1)
+	      {
+		swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+	      }
+#ifdef CUPS_RASTER_SYNCv1
 	    }
-	    if (yflip == 1)
+	    else
 	    {
-	      swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+	      margins[0] = 0.0;
+	      margins[1] = 0.0;
+	      margins[2] = 0.0;
+	      margins[3] = 0.0;
 	    }
-	  } else {
+#endif
+	  }
+	  else
+	  {
 	    /* Do not rotate */
 	    cups->landscape = 0;
 
-	    for (i = 0; i < 4; i ++)
-	      margins[i] = cups->PPD->custom_margins[i] / 72.0;
-	    if (xflip == 1)
+#ifdef CUPS_RASTER_SYNCv1
+	    if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
 	    {
-	      swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+#endif
+	      for (i = 0; i < 4; i ++)
+		margins[i] = cups->PPD->custom_margins[i] / 72.0;
+	      if (xflip == 1)
+	      {
+		swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+	      }
+	      if (yflip == 1)
+	      {
+		swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+	      }
+#ifdef CUPS_RASTER_SYNCv1
 	    }
-	    if (yflip == 1)
+	    else
 	    {
-	      swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+	      margins[0] = 0.0;
+	      margins[1] = 0.0;
+	      margins[2] = 0.0;
+	      margins[3] = 0.0;
 	    }
+#endif
 	  }
 	}
       }
@@ -3728,14 +3786,28 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     }
     else
     {
-      /* If we do not have a PPD file, make sure that margins given via the
-	 input file or via something like
-	 "-c '<</.HWMargins[12 12 12 12] /Margins[0 0]>>setpagedevice'"
-	 on the command line are conserved */
-      margins[0] = pdev->HWMargins[0] / 72.0;
-      margins[1] = pdev->HWMargins[1] / 72.0;
-      margins[2] = pdev->HWMargins[2] / 72.0;
-      margins[3] = pdev->HWMargins[3] / 72.0;
+#ifdef CUPS_RASTER_SYNCv1
+      if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
+      {
+#endif
+	/* If we do not have a PPD file, make sure that margins given via the
+	   input file or via something like
+	   "-c '<</.HWMargins[12 12 12 12] /Margins[0 0]>>setpagedevice'"
+	   on the command line are conserved */
+	margins[0] = pdev->HWMargins[0] / 72.0;
+	margins[1] = pdev->HWMargins[1] / 72.0;
+	margins[2] = pdev->HWMargins[2] / 72.0;
+	margins[3] = pdev->HWMargins[3] / 72.0;
+#ifdef CUPS_RASTER_SYNCv1
+      }
+      else
+      {
+	margins[0] = 0.0;
+	margins[1] = 0.0;
+	margins[2] = 0.0;
+	margins[3] = 0.0;
+      }
+#endif
     }
 
    /*
