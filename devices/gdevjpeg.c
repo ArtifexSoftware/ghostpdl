@@ -135,7 +135,8 @@ const gx_device_jpeg gs_jpeggray_device =
  0,				/* JPEGQ: 0 indicates not specified */
  0.0,				/* QFactor: 0 indicates not specified */
  { 1.0, 1.0 },                  /* ViewScale 1 to 1 */
- { 0.0, 0.0 }                   /* translation 0 */
+ { 0.0, 0.0 },                   /* translation 0 */
+ GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 /* 32-bit CMYK */
 
@@ -170,7 +171,8 @@ const gx_device_jpeg gs_jpegcmyk_device =
  0,				/* JPEGQ: 0 indicates not specified */
  0.0,				/* QFactor: 0 indicates not specified */
  { 1.0, 1.0 },                  /* ViewScale 1 to 1 */
- { 0.0, 0.0 }                   /* translation 0 */
+ { 0.0, 0.0 },                   /* translation 0 */
+ GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
 /* Apparently Adobe Photoshop and some other applications that	*/
