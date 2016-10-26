@@ -298,6 +298,7 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
     bool big_path = ppath->subpath_count > 50;
     fill_options fo;
     line_list lst;
+    int clipping = 0;
 
     *(const fill_options **)&lst.fo = &fo; /* break 'const'. */
     /*
@@ -355,6 +356,7 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
             dev = (gx_device *) & cdev;
             gx_make_clip_device_on_stack(&cdev, pcpath, save_dev);
             cdev.max_fill_band = save_dev->max_fill_band;
+            clipping = 1;
         }
     }
     /*
@@ -585,6 +587,8 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
                    stats_fill.slow_order);
     }
 #endif
+    if (clipping)
+        gx_destroy_clip_device_on_stack(&cdev);
     return code;
 }
 

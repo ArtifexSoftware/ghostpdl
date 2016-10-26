@@ -42,13 +42,16 @@ private_st_cpath_path_list();
 
 /* GC procedures for gx_clip_path */
 static
-ENUM_PTRS_WITH(clip_path_enum_ptrs, gx_clip_path *cptr) return ENUM_USING(st_path, &cptr->path, sizeof(cptr->path), index - 2);
+ENUM_PTRS_WITH(clip_path_enum_ptrs, gx_clip_path *cptr) return ENUM_USING(st_path, &cptr->path, sizeof(cptr->path), index - 3);
 
 case 0:
 return ENUM_OBJ((cptr->rect_list == &cptr->local_list ? 0 :
              cptr->rect_list));
 case 1:
 return ENUM_OBJ(cptr->path_list);
+case 2:
+return ENUM_OBJ((cptr->cached == &cptr->rect_list->list.single ? 0 :
+             cptr->cached));
 ENUM_PTRS_END
 static
 RELOC_PTRS_WITH(clip_path_reloc_ptrs, gx_clip_path *cptr)
@@ -56,6 +59,8 @@ RELOC_PTRS_WITH(clip_path_reloc_ptrs, gx_clip_path *cptr)
     if (cptr->rect_list != &cptr->local_list)
         RELOC_VAR(cptr->rect_list);
     RELOC_VAR(cptr->path_list);
+    if (cptr->cached != &cptr->rect_list->list.single)
+        RELOC_VAR(cptr->cached);
     RELOC_USING(st_path, &cptr->path, sizeof(gx_path));
 }
 RELOC_PTRS_END
@@ -64,16 +69,18 @@ RELOC_PTRS_END
 static
 ENUM_PTRS_WITH(device_clip_enum_ptrs, gx_device_clip *cptr)
 {
-    if (index < st_clip_list_max_ptrs + 1)
+    if (index < st_clip_list_max_ptrs + 2)
         return ENUM_USING(st_clip_list, &cptr->list,
-                          sizeof(gx_clip_list), index - 1);
+                          sizeof(gx_clip_list), index - 2);
     return ENUM_USING(st_device_forward, vptr,
                       sizeof(gx_device_forward),
-                      index - (st_clip_list_max_ptrs + 1));
+                      index - (st_clip_list_max_ptrs + 2));
 }
 case 0:
 ENUM_RETURN((cptr->current == &cptr->list.single ? NULL :
              (void *)cptr->current));
+case 1:
+ENUM_RETURN((cptr->cpath));
 ENUM_PTRS_END
 static
 RELOC_PTRS_WITH(device_clip_reloc_ptrs, gx_device_clip *cptr)
@@ -82,6 +89,7 @@ RELOC_PTRS_WITH(device_clip_reloc_ptrs, gx_device_clip *cptr)
         cptr->current = &((gx_device_clip *)RELOC_OBJ(vptr))->list.single;
     else
         RELOC_PTR(gx_device_clip, current);
+    RELOC_PTR(gx_device_clip, cpath);
     RELOC_USING(st_clip_list, &cptr->list, sizeof(gx_clip_list));
     RELOC_USING(st_device_forward, vptr, sizeof(gx_device_forward));
 }
@@ -126,6 +134,7 @@ cpath_init_rectangle(gx_clip_path * pcpath, gs_fixed_rect * pbox)
     pcpath->path.bbox = *pbox;
     gx_cpath_set_outer_box(pcpath);
     pcpath->id = gs_next_ids(pcpath->path.memory, 1);	/* path changed => change id */
+    pcpath->cached = NULL;
 }
 static void
 cpath_init_own_contents(gx_clip_path * pcpath)
@@ -143,6 +152,7 @@ cpath_share_own_contents(gx_clip_path * pcpath, const gx_clip_path * shared)
     pcpath->path_valid = shared->path_valid;
     pcpath->outer_box = shared->outer_box;
     pcpath->id = shared->id;
+    pcpath->cached = NULL;
 }
 
 /* Allocate only the segments of a clipping path on the heap. */
@@ -602,6 +612,7 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
     gs_fixed_rect old_box, new_box;
     int code;
 
+    pcpath->cached = NULL;
     /* Flatten the path if necessary. */
     if (gx_path_has_curves_inline(ppath)) {
         gx_path_init_local(&fpath, pgs->memory);
@@ -1078,6 +1089,7 @@ gx_cpath_copy(const gx_clip_path * from, gx_clip_path * pcpath)
     pcpath->rule = from->rule;
     pcpath->outer_box = from->outer_box;
     pcpath->inner_box = from->inner_box;
+    pcpath->cached = NULL;
     l->single = from->rect_list->list.single;
     for (r = from->rect_list->list.head; r != NULL; r = r->next) {
         s = gs_alloc_struct(from->rect_list->rc.memory, gx_clip_rect, &st_clip_rect, "gx_cpath_copy");

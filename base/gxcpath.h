@@ -105,6 +105,7 @@ struct gx_device_clip_s {
     gs_int_point translation;
     gs_fixed_rect clipping_box;
     bool clipping_box_set;
+    const gx_clip_path *cpath;
 };
 
 extern_st(st_device_clip);
@@ -113,6 +114,7 @@ extern_st(st_device_clip);
     "gx_device_clip", device_clip_enum_ptrs, device_clip_reloc_ptrs,\
     gx_device_finalize)
 void gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target);
+void gx_destroy_clip_device_on_stack(gx_device_clip * dev);
 gx_device *gx_make_clip_device_on_stack_if_needed(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target, gs_fixed_rect *rect);
 void gx_make_clip_device_in_heap(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target,
                               gs_memory_t *mem);

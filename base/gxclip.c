@@ -131,6 +131,7 @@ void
 gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target)
 {
     gx_device_init_on_stack((gx_device *)dev, (const gx_device *)&gs_clip_device, target->memory);
+    dev->cpath = pcpath;
     dev->list = *gx_cpath_list(pcpath);
     dev->translation.x = 0;
     dev->translation.y = 0;
@@ -144,6 +145,13 @@ gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, g
     dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
     /* There is no finalization for device on stack so no rc increment */
     (*dev_proc(dev, open_device)) ((gx_device *)dev);
+}
+
+void
+gx_destroy_clip_device_on_stack(gx_device_clip * dev)
+{
+    if (dev->cpath)
+        ((gx_clip_path *)dev->cpath)->cached = (dev->current == &dev->list.single ? NULL : dev->current); /* Cast away const */
 }
 
 gx_device *
@@ -382,7 +390,7 @@ clip_open(gx_device * dev)
 
     /* Initialize the cursor. */
     rdev->current =
-        (rdev->list.head == 0 ? &rdev->list.single : rdev->list.head);
+        (rdev->list.head == 0 ? &rdev->list.single : (rdev->cpath && rdev->cpath->cached ? rdev->cpath->cached : rdev->list.head));
     rdev->color_info = tdev->color_info;
     rdev->cached_colors = tdev->cached_colors;
     rdev->width = tdev->width;

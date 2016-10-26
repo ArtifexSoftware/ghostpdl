@@ -77,6 +77,8 @@ struct gx_clip_path_s {
     gx_cpath_path_list *path_list;
     /* The id changes whenever the clipping region changes. */
     gs_id id;
+    /* The last rectangle we accessed while using this clip_path */
+    gx_clip_rect *cached;
 };
 
 extern_st(st_clip_path);
