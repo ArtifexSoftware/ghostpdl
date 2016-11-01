@@ -485,7 +485,10 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     int log2_yscale = pscale->y;
     int log2_depth = ilog2(depth);
     uint nwidth_bits = (iwidth >> log2_xscale) << log2_depth;
-    ulong isize, icdsize, isize2;
+    ulong isize, icdsize;
+#ifdef ENABLE_IMPOSSIBLE_ALPHA_CODE
+    ulong isize2;
+#endif
     uint iraster;
     cached_char *cc;
     gx_device_memory mdev;
