@@ -76,15 +76,19 @@ cid_font_data_param(os_ptr op, gs_font_cid_data *pdata, ref *pGlyphDirectory)
          * the number of CIDs in the font. We need to know the maximum CID
          * when copying fonts, so calculate and store it now.
          */
-        index = dict_first(pgdir);
-        while (index >= 0) {
-            index = dict_next(pgdir, index, (ref *)&element);
-            if (index >= 0) {
-                if (element[0].value.intval > pdata->MaxCID)
-                    pdata->MaxCID = element[0].value.intval;
+        if (r_has_type(pgdir, t_dictionary)) {
+            index = dict_first(pgdir);
+            while (index >= 0) {
+                index = dict_next(pgdir, index, (ref *)&element);
+                if (index >= 0) {
+                    if (element[0].value.intval > pdata->MaxCID)
+                        pdata->MaxCID = element[0].value.intval;
+                }
             }
         }
-
+        else {
+            pdata->MaxCID = r_size(pgdir) - 1;
+        }
         return code;
     } else {
         return_error(gs_error_typecheck);
