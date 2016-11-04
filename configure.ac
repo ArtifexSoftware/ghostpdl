@@ -1278,6 +1278,45 @@ AC_SUBST(SHARE_LIBTIFF)
 AC_SUBST(LIBTIFFDIR)
 AC_SUBST(LIBTIFFCONFDIR)
 
+SHARE_EXPAT=0
+EXPATDIR=src
+EXPAT_CFLAGS=
+EXPAT_LIBS=
+
+if test x"$with_xps" != x"no" ; then
+  if test -f $srcdir/xps/xps.mak; then
+    AC_MSG_CHECKING([for local expat library source])
+    if test -f $srcdir/expat/lib/expat.h ; then
+      AC_MSG_RESULT([yes])
+      SHARE_EXPAT=0
+      EXPATDIR=$srcdir/expat
+      EXPAT_CFLAGS="-DHAVE_MEMMOVE"
+    else
+      AC_CHECK_LIB(expat, XML_ParserCreateNS, [
+           AC_CHECK_HEADER([expat.h], [SHARE_EXPAT=1])
+          ], [
+        AC_MSG_ERROR([expat lib not found])
+      ])
+      if test $SHARE_EXPAT = 1; then
+        if test "x$PKGCONFIG" != x; then
+          if $PKGCONFIG --exists expat; then
+            EXPAT_LIBS="`$PKGCONFIG --libs expat`"
+            CFLAGS="$CFLAGS `$PKGCONFIG --cflags expat`"
+          fi
+        fi
+        if test x"$XPS_LDFLAGS" = x ; then
+            EXPAT_LIBS="-lexpat"
+        fi
+      fi
+    fi
+  fi
+fi
+
+
+AC_SUBST(SHARE_EXPAT)
+AC_SUBST(EXPATDIR)
+AC_SUBST(EXPAT_CFLAGS)
+AC_SUBST(EXPAT_LIBS)
 
 dnl look for CUPS...
 AC_ARG_ENABLE([cups], AC_HELP_STRING([--disable-cups],
