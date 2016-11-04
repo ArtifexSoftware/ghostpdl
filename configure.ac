@@ -1291,6 +1291,11 @@ if test x"$with_xps" != x"no" ; then
       SHARE_EXPAT=0
       EXPATDIR=$srcdir/expat
       EXPAT_CFLAGS="-DHAVE_MEMMOVE"
+      if test x"$BIGENDIAN" != x"0"; then
+        EXPAT_CFLAGS="$EXPAT_CFLAGS -DBYTEORDER=4321"
+      else
+        EXPAT_CFLAGS="$EXPAT_CFLAGS -DBYTEORDER=1234"
+      fi
     else
       AC_CHECK_LIB(expat, XML_ParserCreateNS, [
            AC_CHECK_HEADER([expat.h], [SHARE_EXPAT=1])
@@ -2505,7 +2510,7 @@ dnl --------------------------------------------------
 LCMS_ENDIAN=
 LCMS2_ENDIAN=
 
-if test x"$BIGENDIAN" != x""; then
+if test x"$BIGENDIAN" != x"0"; then
   LCMS_ENDIAN="-DUSE_BIG_ENDIAN=$BIGENDIAN"
   LCMS2_ENDIAN="-DCMS_USE_BIG_ENDIAN=$BIGENDIAN"
 fi
