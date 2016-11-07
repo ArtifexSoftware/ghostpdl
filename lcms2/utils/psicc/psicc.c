@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2016 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining 
 // a copy of this software and associated documentation files (the "Software"), 
@@ -185,7 +185,8 @@ void GenerateCRD(void)
 	if (n == 0) return;
 
 	Buffer = (char*) malloc(n + 1);
-    cmsGetPostScriptCRD(0, hProfile, Intent, dwFlags, Buffer, (cmsUInt32Number) n);
+	if (Buffer == NULL) return;
+        cmsGetPostScriptCRD(0, hProfile, Intent, dwFlags, Buffer, (cmsUInt32Number) n);
 	Buffer[n] = 0;
 
 	fprintf(OutFile, "%s", Buffer);			

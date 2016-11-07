@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2016 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining 
 // a copy of this software and associated documentation files (the "Software"), 
@@ -657,13 +657,16 @@ static
 void DoEmbedProfile(TIFF* Out, const char* ProfileFile)
 {
     FILE* f;
-    cmsUInt32Number size, EmbedLen;
+    cmsInt32Number size;
+    cmsUInt32Number EmbedLen;
     cmsUInt8Number* EmbedBuffer;
 
     f = fopen(ProfileFile, "rb");
     if (f == NULL) return;
 
     size = cmsfilelength(f);
+    if (size < 0) return;
+
     EmbedBuffer = (cmsUInt8Number*) malloc(size + 1);
     if (EmbedBuffer == NULL) { 
         OutOfMem(size+1);
@@ -705,7 +708,7 @@ cmsHPROFILE GetTIFFProfile(TIFF* in)
         hProfile = cmsOpenProfileFromMem(EmbedBuffer, EmbedLen);
 
         // Print description found in the profile
-        if (Verbose) {
+        if (Verbose & hProfile != NULL) {
 
             fprintf(stdout, "\n[Embedded profile]\n");
             PrintProfileInformation(hProfile);                       

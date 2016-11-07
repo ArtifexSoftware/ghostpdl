@@ -63,7 +63,8 @@ lcms2_OBJS=\
 	$(LCMS2OBJ)cmstypes.$(OBJ) \
 	$(LCMS2OBJ)cmsvirt.$(OBJ) \
 	$(LCMS2OBJ)cmswtpnt.$(OBJ) \
-	$(LCMS2OBJ)cmsxform.$(OBJ)
+	$(LCMS2OBJ)cmsxform.$(OBJ) \
+	$(LCMS2OBJ)cmsalpha.$(OBJ)
 
 LCMS2_DEPS=\
         $(LCMS2SRCDIR)$(D)include$(D)lcms2.h \
@@ -168,3 +169,6 @@ $(LCMS2OBJ)cmsvirt.$(OBJ) : $(LCMS2SRC)cmsvirt.c $(LCMS2_DEPS)
 
 $(LCMS2OBJ)cmsxform.$(OBJ) : $(LCMS2SRC)cmsxform.c $(LCMS2_DEPS)
 	$(LCMS2_CC) $(LCMS2O_)cmsxform.$(OBJ) $(C_) $(LCMS2SRC)cmsxform.c
+
+$(LCMS2OBJ)cmsalpha.$(OBJ) : $(LCMS2SRC)cmsalpha.c $(LCMS2_DEPS)
+	$(LCMS2_CC) $(LCMS2O_)cmsalpha.$(OBJ) $(C_) $(LCMS2SRC)cmsalpha.c

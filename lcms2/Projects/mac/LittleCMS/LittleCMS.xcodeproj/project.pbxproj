@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 44;
+	objectVersion = 46;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -40,7 +40,27 @@
 		8D07F2BE0486CC7A007CD1D0 /* LittleCMS_Prefix.pch in Headers */ = {isa = PBXBuildFile; fileRef = 32BAE0B70371A74B00C91783 /* LittleCMS_Prefix.pch */; settings = {ATTRIBUTES = (Private, ); }; };
 		8D07F2C00486CC7A007CD1D0 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C1666FE841158C02AAC07 /* InfoPlist.strings */; };
 		8D07F2C40486CC7A007CD1D0 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 08FB77AAFE841565C02AAC07 /* Carbon.framework */; };
+		CE509F071A31DF4100A1D3F6 /* new.icc in CopyFiles */ = {isa = PBXBuildFile; fileRef = CE509F011A31DF4100A1D3F6 /* new.icc */; };
+		CE509F081A31DF4100A1D3F6 /* test1.icc in CopyFiles */ = {isa = PBXBuildFile; fileRef = CE509F021A31DF4100A1D3F6 /* test1.icc */; };
+		CE509F091A31DF4100A1D3F6 /* test2.icc in CopyFiles */ = {isa = PBXBuildFile; fileRef = CE509F031A31DF4100A1D3F6 /* test2.icc */; };
+		CE509F0A1A31DF4100A1D3F6 /* test3.icc in CopyFiles */ = {isa = PBXBuildFile; fileRef = CE509F041A31DF4100A1D3F6 /* test3.icc */; };
+		CE509F0B1A31DF4100A1D3F6 /* test4.icc in CopyFiles */ = {isa = PBXBuildFile; fileRef = CE509F051A31DF4100A1D3F6 /* test4.icc */; };
+		CE509F0C1A31DF4100A1D3F6 /* test5.icc in CopyFiles */ = {isa = PBXBuildFile; fileRef = CE509F061A31DF4100A1D3F6 /* test5.icc */; };
+		CE509F0E1A31DFB200A1D3F6 /* ibm-t61.icc in CopyFiles */ = {isa = PBXBuildFile; fileRef = CE509F0D1A31DFB200A1D3F6 /* ibm-t61.icc */; };
+		CE790F6B1A31C2400083D722 /* lcms2_internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 546B29AC10AC682F0054D33A /* lcms2_internal.h */; };
+		CEBB92E41BF8EF2700B79324 /* cmsalpha.c in Sources */ = {isa = PBXBuildFile; fileRef = CEBB92E31BF8EF2700B79324 /* cmsalpha.c */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXBuildRule section */
+		CE509EFF1A31D4C500A1D3F6 /* PBXBuildRule */ = {
+			isa = PBXBuildRule;
+			compilerSpec = com.apple.compilers.proxy.script;
+			fileType = pattern.proxy;
+			isEditable = 1;
+			outputFiles = (
+			);
+		};
+/* End PBXBuildRule section */
 
 /* Begin PBXContainerItemProxy section */
 		546B29A710AC67870054D33A /* PBXContainerItemProxy */ = {
@@ -52,10 +72,29 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		CE509F001A31DEDD00A1D3F6 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				CE509F071A31DF4100A1D3F6 /* new.icc in CopyFiles */,
+				CE509F0E1A31DFB200A1D3F6 /* ibm-t61.icc in CopyFiles */,
+				CE509F081A31DF4100A1D3F6 /* test1.icc in CopyFiles */,
+				CE509F091A31DF4100A1D3F6 /* test2.icc in CopyFiles */,
+				CE509F0A1A31DF4100A1D3F6 /* test3.icc in CopyFiles */,
+				CE509F0B1A31DF4100A1D3F6 /* test4.icc in CopyFiles */,
+				CE509F0C1A31DF4100A1D3F6 /* test5.icc in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		089C1667FE841158C02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		08FB77AAFE841565C02AAC07 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
-		32BAE0B70371A74B00C91783 /* LittleCMS_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LittleCMS_Prefix.pch; sourceTree = "<group>"; };
+		32BAE0B70371A74B00C91783 /* LittleCMS_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LittleCMS_Prefix.pch; sourceTree = SOURCE_ROOT; };
 		546B293110AC5E4A0054D33A /* cmscam02.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmscam02.c; path = ../../../src/cmscam02.c; sourceTree = SOURCE_ROOT; };
 		546B293210AC5E4A0054D33A /* cmscgats.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmscgats.c; path = ../../../src/cmscgats.c; sourceTree = SOURCE_ROOT; };
 		546B293310AC5E4A0054D33A /* cmscnvrt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmscnvrt.c; path = ../../../src/cmscnvrt.c; sourceTree = SOURCE_ROOT; };
@@ -82,15 +121,23 @@
 		546B294810AC5E4A0054D33A /* cmsxform.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmsxform.c; path = ../../../src/cmsxform.c; sourceTree = SOURCE_ROOT; };
 		546B296110AC5E600054D33A /* lcms2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lcms2.h; path = ../../../include/lcms2.h; sourceTree = SOURCE_ROOT; };
 		546B296210AC5E600054D33A /* lcms2_plugin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lcms2_plugin.h; path = ../../../include/lcms2_plugin.h; sourceTree = SOURCE_ROOT; };
-		546B296B10AC5EAA0054D33A /* TestBed-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "TestBed-Info.plist"; sourceTree = "<group>"; };
 		546B29A310AC677E0054D33A /* testbed */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = testbed; sourceTree = BUILT_PRODUCTS_DIR; };
 		546B29AC10AC682F0054D33A /* lcms2_internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lcms2_internal.h; path = ../../../src/lcms2_internal.h; sourceTree = SOURCE_ROOT; };
 		546B29AD10AC68410054D33A /* testcms2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = testcms2.c; path = ../../../testbed/testcms2.c; sourceTree = SOURCE_ROOT; };
-		54DBD06015A202B200180017 /* cmshalf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmshalf.c; path = ../../../src/cmshalf.c; sourceTree = "<group>"; };
+		54DBD06015A202B200180017 /* cmshalf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmshalf.c; path = ../../../src/cmshalf.c; sourceTree = SOURCE_ROOT; };
 		54E6DC7D18AE052800445185 /* testplugin.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = testplugin.c; path = ../../../testbed/testplugin.c; sourceTree = SOURCE_ROOT; };
 		54E6DC7F18AE054800445185 /* zoo_icc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = zoo_icc.c; path = ../../../testbed/zoo_icc.c; sourceTree = SOURCE_ROOT; };
-		8D07F2C70486CC7A007CD1D0 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		8D07F2C70486CC7A007CD1D0 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = SOURCE_ROOT; };
 		8D07F2C80486CC7A007CD1D0 /* LittleCMS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = LittleCMS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		CE509F011A31DF4100A1D3F6 /* new.icc */ = {isa = PBXFileReference; lastKnownFileType = file; name = new.icc; path = ../../../testbed/new.icc; sourceTree = "<group>"; };
+		CE509F021A31DF4100A1D3F6 /* test1.icc */ = {isa = PBXFileReference; lastKnownFileType = file; name = test1.icc; path = ../../../testbed/test1.icc; sourceTree = "<group>"; };
+		CE509F031A31DF4100A1D3F6 /* test2.icc */ = {isa = PBXFileReference; lastKnownFileType = file; name = test2.icc; path = ../../../testbed/test2.icc; sourceTree = "<group>"; };
+		CE509F041A31DF4100A1D3F6 /* test3.icc */ = {isa = PBXFileReference; lastKnownFileType = file; name = test3.icc; path = ../../../testbed/test3.icc; sourceTree = "<group>"; };
+		CE509F051A31DF4100A1D3F6 /* test4.icc */ = {isa = PBXFileReference; lastKnownFileType = file; name = test4.icc; path = ../../../testbed/test4.icc; sourceTree = "<group>"; };
+		CE509F061A31DF4100A1D3F6 /* test5.icc */ = {isa = PBXFileReference; lastKnownFileType = file; name = test5.icc; path = ../../../testbed/test5.icc; sourceTree = "<group>"; };
+		CE509F0D1A31DFB200A1D3F6 /* ibm-t61.icc */ = {isa = PBXFileReference; lastKnownFileType = file; name = "ibm-t61.icc"; path = "../../../testbed/ibm-t61.icc"; sourceTree = "<group>"; };
+		CE790F6F1A31C3110083D722 /* testcms2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = testcms2.h; path = ../../../testbed/testcms2.h; sourceTree = SOURCE_ROOT; };
+		CEBB92E31BF8EF2700B79324 /* cmsalpha.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmsalpha.c; path = ../../../src/cmsalpha.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -124,13 +171,21 @@
 		0867D691FE84028FC02AAC07 /* LittleCMS */ = {
 			isa = PBXGroup;
 			children = (
+				CE509F0D1A31DFB200A1D3F6 /* ibm-t61.icc */,
+				CE509F011A31DF4100A1D3F6 /* new.icc */,
+				CE509F021A31DF4100A1D3F6 /* test1.icc */,
+				CE509F031A31DF4100A1D3F6 /* test2.icc */,
+				CE509F041A31DF4100A1D3F6 /* test3.icc */,
+				CE509F051A31DF4100A1D3F6 /* test4.icc */,
+				CE509F061A31DF4100A1D3F6 /* test5.icc */,
+				CE790F6F1A31C3110083D722 /* testcms2.h */,
 				54E6DC7F18AE054800445185 /* zoo_icc.c */,
+				546B29AD10AC68410054D33A /* testcms2.c */,
 				54E6DC7D18AE052800445185 /* testplugin.c */,
 				08FB77ACFE841707C02AAC07 /* Source */,
 				089C1665FE841158C02AAC07 /* Resources */,
 				0867D69AFE84028FC02AAC07 /* External Frameworks and Libraries */,
 				034768DDFF38A45A11DB9C8B /* Products */,
-				546B296B10AC5EAA0054D33A /* TestBed-Info.plist */,
 			);
 			name = LittleCMS;
 			sourceTree = "<group>";
@@ -155,8 +210,8 @@
 		08FB77ACFE841707C02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				CEBB92E31BF8EF2700B79324 /* cmsalpha.c */,
 				54DBD06015A202B200180017 /* cmshalf.c */,
-				546B29AD10AC68410054D33A /* testcms2.c */,
 				546B29AC10AC682F0054D33A /* lcms2_internal.h */,
 				546B296110AC5E600054D33A /* lcms2.h */,
 				546B296210AC5E600054D33A /* lcms2_plugin.h */,
@@ -199,6 +254,7 @@
 				8D07F2BE0486CC7A007CD1D0 /* LittleCMS_Prefix.pch in Headers */,
 				546B296310AC5E600054D33A /* lcms2.h in Headers */,
 				546B296410AC5E600054D33A /* lcms2_plugin.h in Headers */,
+				CE790F6B1A31C2400083D722 /* lcms2_internal.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -211,6 +267,7 @@
 			buildPhases = (
 				546B29A010AC677E0054D33A /* Sources */,
 				546B29A110AC677E0054D33A /* Frameworks */,
+				CE509F001A31DEDD00A1D3F6 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -233,6 +290,7 @@
 				8D07F2C50486CC7A007CD1D0 /* Rez */,
 			);
 			buildRules = (
+				CE509EFF1A31D4C500A1D3F6 /* PBXBuildRule */,
 			);
 			dependencies = (
 			);
@@ -247,9 +305,17 @@
 /* Begin PBXProject section */
 		0867D690FE84028FC02AAC07 /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0460;
+				ORGANIZATIONNAME = LittleCMS;
+			};
 			buildConfigurationList = 4FADC24608B4156D00ABE55E /* Build configuration list for PBXProject "LittleCMS" */;
-			compatibilityVersion = "Xcode 3.0";
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
 			hasScannedForEncodings = 1;
+			knownRegions = (
+				en,
+			);
 			mainGroup = 0867D691FE84028FC02AAC07 /* LittleCMS */;
 			productRefGroup = 034768DDFF38A45A11DB9C8B /* Products */;
 			projectDirPath = "";
@@ -322,6 +388,7 @@
 				546B295F10AC5E4A0054D33A /* cmswtpnt.c in Sources */,
 				546B296010AC5E4A0054D33A /* cmsxform.c in Sources */,
 				54DBD06215A202BB00180017 /* cmshalf.c in Sources */,
+				CEBB92E41BF8EF2700B79324 /* cmsalpha.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -342,7 +409,7 @@
 				089C1667FE841158C02AAC07 /* English */,
 			);
 			name = InfoPlist.strings;
-			sourceTree = "<group>";
+			sourceTree = SOURCE_ROOT;
 		};
 /* End PBXVariantGroup section */
 
@@ -350,13 +417,15 @@
 		4FADC24308B4156D00ABE55E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				"ARCHS[sdk=*]" = "$(ARCHS_STANDARD_32_64_BIT)";
+				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				FRAMEWORK_VERSION = A;
 				GCC_CHAR_IS_UNSIGNED_CHAR = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -366,6 +435,7 @@
 				LIBRARY_STYLE = DYNAMIC;
 				MACH_O_TYPE = mh_dylib;
 				PRODUCT_NAME = LittleCMS;
+				SDKROOT = "";
 				WRAPPER_EXTENSION = framework;
 				ZERO_LINK = YES;
 			};
@@ -374,10 +444,9 @@
 		4FADC24408B4156D00ABE55E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = (
-					ppc,
-					i386,
-				);
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
@@ -391,6 +460,7 @@
 				LIBRARY_STYLE = DYNAMIC;
 				MACH_O_TYPE = mh_dylib;
 				PRODUCT_NAME = LittleCMS;
+				SDKROOT = "";
 				WRAPPER_EXTENSION = framework;
 			};
 			name = Release;
@@ -400,11 +470,12 @@
 			buildSettings = {
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = ../../include;
 				LINK_WITH_STANDARD_LIBRARIES = YES;
 				MACH_O_TYPE = mh_execute;
+				MACOSX_DEPLOYMENT_TARGET = "";
 				OTHER_LDFLAGS = "";
-				PREBINDING = NO;
-				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.5.sdk";
+				SDKROOT = "";
 				STANDARD_C_PLUS_PLUS_LIBRARY_TYPE = static;
 			};
 			name = Debug;
@@ -414,11 +485,12 @@
 			buildSettings = {
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = ../../include;
 				LINK_WITH_STANDARD_LIBRARIES = YES;
 				MACH_O_TYPE = mh_execute;
+				MACOSX_DEPLOYMENT_TARGET = "";
 				OTHER_LDFLAGS = "";
-				PREBINDING = NO;
-				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.5.sdk";
+				SDKROOT = "";
 				STANDARD_C_PLUS_PLUS_LIBRARY_TYPE = static;
 			};
 			name = Release;
@@ -428,19 +500,17 @@
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/Carbon.framework/Headers/Carbon.h";
-				INSTALL_PATH = /usr/local/bin;
+				INSTALL_PATH = ../../testbed;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Carbon,
 					"-framework",
 					LittleCMS,
 				);
-				PREBINDING = NO;
 				PRODUCT_NAME = testbed;
 				ZERO_LINK = YES;
 			};
@@ -451,18 +521,16 @@
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/Carbon.framework/Headers/Carbon.h";
-				INSTALL_PATH = /usr/local/bin;
+				INSTALL_PATH = ../../testbed;
 				OTHER_LDFLAGS = (
 					"-framework",
 					Carbon,
 					"-framework",
 					LittleCMS,
 				);
-				PREBINDING = NO;
 				PRODUCT_NAME = testbed;
 				ZERO_LINK = NO;
 			};

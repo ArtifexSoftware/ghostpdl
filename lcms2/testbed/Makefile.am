@@ -5,7 +5,7 @@
 # Don't require all the GNU mandated files
 AUTOMAKE_OPTIONS = 1.7 foreign
 
-INCLUDES	=  -I$(top_builddir)/include -I$(top_srcdir)/include -I$(top_srcdir)/src
+AM_CPPFLAGS    =  -I$(top_builddir)/include -I$(top_srcdir)/include -I$(top_srcdir)/src
 
 check_PROGRAMS = testcms
 
@@ -23,7 +23,7 @@ check:
 	if [ $(top_srcdir) != $(top_builddir) ]; then \
 		cp $(top_srcdir)/testbed/*.ic? $(top_builddir)/testbed; \
 	fi
-	./testcms
+	LD_LIBRARY_PATH=$(top_builddir)/src/.libs ./testcms
 	if [ $(top_srcdir) != $(top_builddir) ]; then \
 		rm -f $(top_builddir)/testbed/*.ic?; \
 	fi

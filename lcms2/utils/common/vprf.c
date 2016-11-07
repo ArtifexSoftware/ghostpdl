@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2016 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -146,7 +146,7 @@ void PrintBuiltins(void)
 }
 
 
-// Auxiliar for printing information on profile
+// Auxiliary for printing information on profile
 static
 void PrintInfo(cmsHPROFILE h, cmsInfoType Info)
 {
@@ -156,7 +156,7 @@ void PrintInfo(cmsHPROFILE h, cmsInfoType Info)
     len = cmsGetProfileInfoASCII(h, Info, "en", "US", NULL, 0);
     if (len == 0) return;
 
-    text = malloc(len * sizeof(char));
+    text = (char*) malloc(len * sizeof(char));
     if (text == NULL) return;
 
     cmsGetProfileInfoASCII(h, Info, "en", "US", text, len);
@@ -180,7 +180,7 @@ void PrintColorantTable(cmsHPROFILE hInput, cmsTagSignature Sig, const char* Tit
 
         printf("%s:\n", Title);
 
-        list = cmsReadTag(hInput, Sig);
+        list = (cmsNAMEDCOLORLIST*) cmsReadTag(hInput, Sig);
         if (list == NULL) {
             printf("(Unavailable)\n");
             return;
@@ -203,6 +203,11 @@ void PrintColorantTable(cmsHPROFILE hInput, cmsTagSignature Sig, const char* Tit
 
 void PrintProfileInformation(cmsHPROFILE hInput)
 {
+    if (hInput == NULL) {
+			fprintf(stderr, "*Wrong or corrupted profile*\n");
+            return;
+    }
+
     PrintInfo(hInput, cmsInfoDescription);
     PrintInfo(hInput, cmsInfoManufacturer);
     PrintInfo(hInput, cmsInfoModel);
@@ -329,5 +334,3 @@ int ChanCountFromPixelType(int ColorChannels)
           return -1;
     }
 }
-
-

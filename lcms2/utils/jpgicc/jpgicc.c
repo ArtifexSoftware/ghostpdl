@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2016 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -891,7 +891,7 @@ int DoTransform(cmsHTRANSFORM hXForm, int OutputColorSpace)
 // Transform one image
 
 static
-int TransformImage(char *cDefInpProf, char *cOutProf)
+int TransformImage(char *cDefInpProf, char *cOutputProf)
 {
        cmsHPROFILE hIn, hOut, hProof;
        cmsHTRANSFORM xform;
@@ -963,10 +963,10 @@ int TransformImage(char *cDefInpProf, char *cOutProf)
                 hIn = OpenStockProfile(0, cDefInpProf);
        }
 
-        if (cOutProf != NULL && cmsstrcasecmp(cOutProf, "*lab") == 0)
+        if (cOutputProf != NULL && cmsstrcasecmp(cOutputProf, "*lab") == 0)
             hOut = CreatePCS2ITU_ICC();
         else
-        hOut = OpenStockProfile(0, cOutProf);
+        hOut = OpenStockProfile(0, cOutputProf);
 
        hProof = NULL;
        if (cProofing != NULL) {

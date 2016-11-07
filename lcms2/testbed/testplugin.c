@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2014 Marti Maria Saguer
+//  Copyright (c) 1998-2016 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -494,7 +494,7 @@ cmsFloat64Number my_fns2(cmsInt32Number Type,
 
 static double Rec709Math(int Type, const double Params[], double R)
 { 
-    double Fun;
+    double Fun = 0;
 
     switch (Type)
     {
@@ -1165,7 +1165,7 @@ cmsInt32Number CheckOptimizationPlugin(void)
     cmsHTRANSFORM xform;
     cmsUInt8Number In[]= { 10, 20, 30, 40 };
     cmsUInt8Number Out[4];
-    cmsToneCurve* Linear;
+    cmsToneCurve* Linear[1];
     cmsHPROFILE h;
     int i;
     
@@ -1174,9 +1174,9 @@ cmsInt32Number CheckOptimizationPlugin(void)
     cpy = DupContext(ctx, NULL);
     cpy2 = DupContext(cpy, NULL);
     
-    Linear = cmsBuildGamma(cpy2, 1.0);
-    h = cmsCreateLinearizationDeviceLinkTHR(cpy2, cmsSigGrayData, &Linear);
-    cmsFreeToneCurve(Linear);
+    Linear[0] = cmsBuildGamma(cpy2, 1.0);
+    h = cmsCreateLinearizationDeviceLinkTHR(cpy2, cmsSigGrayData, Linear);
+    cmsFreeToneCurve(Linear[0]);
 
     xform = cmsCreateTransformTHR(cpy2, h, TYPE_GRAY_8, h, TYPE_GRAY_8, INTENT_PERCEPTUAL, 0);
     cmsCloseProfile(h);
