@@ -1,8 +1,8 @@
 /* pngfix.c
  *
- * Copyright (c) 2014-2015 John Cunningham Bowler
+ * Copyright (c) 2014-2016 John Cunningham Bowler
  *
- * Last changed in libpng 1.6.17 [March 26, 2015]
+ * Last changed in libpng 1.6.26 [October 20, 2016]
  *
  * This code is released under the libpng license.
  * For conditions of distribution and use, see the disclaimer
@@ -52,7 +52,10 @@
 #ifdef PNG_SETJMP_SUPPORTED
 #include <setjmp.h>
 
-#if defined(PNG_READ_SUPPORTED) && defined(PNG_EASY_ACCESS_SUPPORTED)
+#if defined(PNG_READ_SUPPORTED) && defined(PNG_EASY_ACCESS_SUPPORTED) &&\
+   (defined(PNG_READ_DEINTERLACE_SUPPORTED) ||\
+    defined(PNG_READ_INTERLACING_SUPPORTED))
+
 /* zlib.h defines the structure z_stream, an instance of which is included
  * in this structure and is required for decompressing the LZ compressed
  * data in PNG files.
@@ -71,8 +74,8 @@
  * with older builds.
  */
 #if ZLIB_VERNUM < 0x1260
-#  define PNGZ_MSG_CAST(s) png_constcast(char*,s)
-#  define PNGZ_INPUT_CAST(b) png_constcast(png_bytep,b)
+#  define PNGZ_MSG_CAST(s) constcast(char*,s)
+#  define PNGZ_INPUT_CAST(b) constcast(png_bytep,b)
 #else
 #  define PNGZ_MSG_CAST(s) (s)
 #  define PNGZ_INPUT_CAST(b) (b)
@@ -86,17 +89,17 @@
 
 /* Copied from pngpriv.h */
 #ifdef __cplusplus
-#  define png_voidcast(type, value) static_cast<type>(value)
-#  define png_constcast(type, value) const_cast<type>(value)
-#  define png_aligncast(type, value) \
+#  define voidcast(type, value) static_cast<type>(value)
+#  define constcast(type, value) const_cast<type>(value)
+#  define aligncast(type, value) \
    static_cast<type>(static_cast<void*>(value))
-#  define png_aligncastconst(type, value) \
+#  define aligncastconst(type, value) \
    static_cast<type>(static_cast<const void*>(value))
 #else
-#  define png_voidcast(type, value) (value)
-#  define png_constcast(type, value) ((type)(value))
-#  define png_aligncast(type, value) ((void*)(value))
-#  define png_aligncastconst(type, value) ((const void*)(value))
+#  define voidcast(type, value) (value)
+#  define constcast(type, value) ((type)(value))
+#  define aligncast(type, value) ((void*)(value))
+#  define aligncastconst(type, value) ((const void*)(value))
 #endif /* __cplusplus */
 
 #if PNG_LIBPNG_VER < 10700
@@ -134,7 +137,7 @@
 #define png_zTXt PNG_U32(122,  84,  88, 116)
 #endif
 
-/* The 8 byte signature as a pair of 32 bit quantities */
+/* The 8-byte signature as a pair of 32-bit quantities */
 #define sig1 PNG_U32(137,  80,  78,  71)
 #define sig2 PNG_U32( 13,  10,  26,  10)
 
@@ -156,7 +159,7 @@
  */
 #define UNREACHED 0
 
-/* 80-bit number handling - a PNG image can be up to (2^31-1)x(2^31-1) 8 byte
+/* 80-bit number handling - a PNG image can be up to (2^31-1)x(2^31-1) 8-byte
  * (16-bit RGBA) pixels in size; that's less than 2^65 bytes or 2^68 bits, so
  * arithmetic of 80-bit numbers is sufficient.  This representation uses an
  * arbitrary length array of png_uint_16 digits (0..65535).  The representation
@@ -316,13 +319,13 @@ uarb_mult32(uarb acc, int a_digits, uarb num, int n_digits, png_uint_32 val)
       a_digits = uarb_mult_digit(acc, a_digits, num, n_digits,
          (png_uint_16)(val & 0xffff));
 
-      /* Because n_digits and val are >0 the following must be true: */
-      assert(a_digits > 0);
-
       val >>= 16;
       if (val > 0)
          a_digits = uarb_mult_digit(acc+1, a_digits-1, num, n_digits,
             (png_uint_16)val) + 1;
+
+      /* Because n_digits and val are >0 the following must be true: */
+      assert(a_digits > 0);
    }
 
    return a_digits;
@@ -446,7 +449,7 @@ static void
 make_random_bytes(png_uint_32* seed, void* pv, size_t size)
 {
    png_uint_32 u0 = seed[0], u1 = seed[1];
-   png_bytep bytes = png_voidcast(png_bytep, pv);
+   png_bytep bytes = voidcast(png_bytep, pv);
 
    /* There are thirty-three bits; the next bit in the sequence is bit-33 XOR
     * bit-20.  The top 1 bit is in u1, the bottom 32 are in u0.
@@ -584,7 +587,7 @@ chunk_type_valid(png_uint_32 c)
    c &= ~PNG_U32(32,32,0,32);
    t = (c & ~0x1f1f1f1f) ^ 0x40404040;
 
-   /* Subtract 65 for each 8 bit quantity, this must not overflow
+   /* Subtract 65 for each 8-bit quantity, this must not overflow
     * and each byte must then be in the range 0-25.
     */
    c -= PNG_U32(65,65,65,65);
@@ -667,8 +670,8 @@ IDAT_list_extend(struct IDAT_list *tail)
 
       if (length < tail->length) /* arithmetic overflow */
          length = tail->length;
-            
-      next = png_voidcast(IDAT_list*, malloc(IDAT_list_size(NULL, length)));
+
+      next = voidcast(IDAT_list*, malloc(IDAT_list_size(NULL, length)));
       CLEAR(*next);
 
       /* The caller must handle this: */
@@ -921,7 +924,7 @@ emit_string(const char *str, FILE *out)
 
       else if (isspace(UCHAR_MAX & *str))
          putc('_', out);
-   
+
       else
          fprintf(out, "\\%.3o", *str);
 }
@@ -1821,7 +1824,7 @@ IDAT_init(struct IDAT * const idat, struct file * const file)
 }
 
 static png_uint_32
-rechunk_length(struct IDAT *idat)
+rechunk_length(struct IDAT *idat, int start)
    /* Return the length for the next IDAT chunk, taking into account
     * rechunking.
     */
@@ -1833,7 +1836,7 @@ rechunk_length(struct IDAT *idat)
       const struct IDAT_list *cur;
       unsigned int count;
 
-      if (idat->idat_index == 0) /* at the new chunk (first time) */
+      if (start)
          return idat->idat_length; /* use the cache */
 
       /* Otherwise rechunk_length is called at the end of a chunk for the length
@@ -1945,7 +1948,7 @@ process_IDAT(struct file *file)
       list->count = 0;
       file->idat->idat_list_tail = list;
    }
-   
+
    /* And fill in the next IDAT information buffer. */
    list->lengths[(list->count)++] = file->chunk->chunk_length;
 
@@ -1992,7 +1995,7 @@ process_IDAT(struct file *file)
       idat->idat_index = 0; /* Index into chunk data */
 
       /* Update the chunk length to the correct value for the IDAT chunk: */
-      file->chunk->chunk_length = rechunk_length(idat);
+      file->chunk->chunk_length = rechunk_length(idat, 1/*start*/);
 
       /* Change the state to writing IDAT chunks */
       file->state = STATE_IDAT;
@@ -2218,7 +2221,7 @@ zlib_init(struct zlib *zlib, struct IDAT *idat, struct chunk *chunk,
    /* These values are sticky across reset (in addition to the stuff in the
     * first block, which is actually constant.)
     */
-   zlib->file_bits = 16;
+   zlib->file_bits = 24;
    zlib->ok_bits = 16; /* unset */
    zlib->cksum = 0; /* set when a checksum error is detected */
 
@@ -2301,10 +2304,12 @@ zlib_advance(struct zlib *zlib, png_uint_32 nbytes)
                zlib->file_bits = file_bits;
 
                /* Check against the existing value - it may not need to be
-                * changed.
+                * changed.  Note that a bogus file_bits is allowed through once,
+                * to see if it works, but the window_bits value is set to 15,
+                * the maximum.
                 */
                if (new_bits == 0) /* no change */
-                  zlib->window_bits = file_bits;
+                  zlib->window_bits = ((file_bits > 15) ? 15 : file_bits);
 
                else if (new_bits != file_bits) /* rewrite required */
                   bIn = (png_byte)((bIn & 0xf) + ((new_bits-8) << 4));
@@ -2325,8 +2330,7 @@ zlib_advance(struct zlib *zlib, png_uint_32 nbytes)
                if (bIn != b2)
                {
                   /* If the first byte wasn't changed this indicates an error in
-                   * the checksum calculation; signal this by setting file_bits
-                   * (not window_bits) to 0.
+                   * the checksum calculation; signal this by setting 'cksum'.
                    */
                   if (zlib->file_bits == zlib->window_bits)
                      zlib->cksum = 1;
@@ -2585,7 +2589,7 @@ zlib_run(struct zlib *zlib)
    {
       struct chunk *chunk = zlib->chunk;
       int rc;
-      
+
       assert(zlib->rewrite_offset < chunk->chunk_length);
 
       rc = zlib_advance(zlib, chunk->chunk_length - zlib->rewrite_offset);
@@ -3469,7 +3473,8 @@ read_callback(png_structp png_ptr, png_bytep buffer, size_t count)
                      /* Write another IDAT chunk.  Call rechunk_length to
                       * calculate the length required.
                       */
-                     length = chunk->chunk_length = rechunk_length(file->idat);
+                     length = chunk->chunk_length =
+                         rechunk_length(file->idat, 0/*end*/);
                      assert(type == png_IDAT);
                      file->write_count = 0; /* for the new chunk */
                      --(file->write_count); /* fake out the increment below */
@@ -3535,7 +3540,7 @@ get_control(png_const_structrp png_ptr)
    /* This just returns the (file*).  The chunk and idat control structures
     * don't always exist.
     */
-   struct control *control = png_voidcast(struct control*,
+   struct control *control = voidcast(struct control*,
       png_get_error_ptr(png_ptr));
    return &control->file;
 }
@@ -3543,7 +3548,7 @@ get_control(png_const_structrp png_ptr)
 static void
 allocate(struct file *file, int allocate_idat)
 {
-   struct control *control = png_voidcast(struct control*, file->alloc_ptr);
+   struct control *control = voidcast(struct control*, file->alloc_ptr);
 
    if (allocate_idat)
    {
@@ -3853,6 +3858,7 @@ usage(const char *prog)
 int
 main(int argc, const char **argv)
 {
+   char temp_name[FILENAME_MAX+1];
    const char *  prog = *argv;
    const char *  outfile = NULL;
    const char *  suffix = NULL;
@@ -3955,7 +3961,6 @@ main(int argc, const char **argv)
       else
       {
          size_t outlen = strlen(*argv);
-         char temp_name[FILENAME_MAX+1];
 
          if (outfile == NULL) /* else this takes precedence */
          {
@@ -4030,7 +4035,7 @@ main(void)
 int
 main(void)
 {
-   fprintf(stderr, "pngfix does not work without read support\n");
+   fprintf(stderr, "pngfix does not work without read deinterlace support\n");
    return 77;
 }
 #endif /* PNG_READ_SUPPORTED && PNG_EASY_ACCESS_SUPPORTED */

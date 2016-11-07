@@ -1,6 +1,6 @@
 /*
  *  png2pnm.c --- conversion from PNG-file to PGM/PPM-file
- *  copyright (C) 1999 by Willem van Schaik <willem@schaik.com>
+ *  copyright (C) 1999 by Willem van Schaik <willem at schaik.com>
  *
  *  version 1.0 - 1999.10.15 - First version.
  *
@@ -266,7 +266,7 @@ BOOL png2pnm (FILE *png_file, FILE *pnm_file, FILE *alpha_file,
     png_set_expand (png_ptr);
 
 #ifdef NJET
-  /* downgrade 16-bit images to 8 bit */
+  /* downgrade 16-bit images to 8-bit */
   if (bit_depth == 16)
     png_set_strip_16 (png_ptr);
   /* transform grayscale images into full-color */
