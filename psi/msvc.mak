@@ -715,7 +715,7 @@ SHARE_EXPAT=0
 !endif
 
 !ifndef EXPAT_CFLAGS
-EXPAT_CFLAGS=/DHAVE_MEMMOVE
+EXPAT_CFLAGS=/DWIN32
 !endif
 
 # Define any other compilation flags.
