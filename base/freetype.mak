@@ -52,7 +52,7 @@ ft_autofit=\
 	$(FTOBJ)afwarp.$(OBJ) \
 	$(FTOBJ)afblue.$(OBJ) \
 	$(FTOBJ)afranges.$(OBJ) \
-	$(FTOBJ)hbshim.$(OBJ)
+	$(FTOBJ)afshaper.$(OBJ)
 
 ft_base=\
 	$(FTOBJ)ftadvanc.$(OBJ) \
@@ -83,9 +83,9 @@ ft_base=\
 	$(FTOBJ)ftsystem.$(OBJ) \
 	$(FTOBJ)fttype1.$(OBJ) \
 	$(FTOBJ)ftwinfnt.$(OBJ) \
-	$(FTOBJ)ftxf86.$(OBJ) \
 	$(FTOBJ)ftpatent.$(OBJ) \
-	$(FTOBJ)ftmd5.$(OBJ)
+	$(FTOBJ)ftmd5.$(OBJ) \
+	$(FTOBJ)fthash.$(OBJ)
 
 
 ft_bdf=\
@@ -284,8 +284,8 @@ $(FTOBJ)afblue.$(OBJ) : $(FTSRC)autofit$(D)afblue.c $(FT_MAK) $(MAKEDIRS)
 $(FTOBJ)afranges.$(OBJ) : $(FTSRC)autofit$(D)afranges.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afranges.$(OBJ) $(C_) $(FTSRC)autofit$(D)afranges.c
 
-$(FTOBJ)hbshim.$(OBJ) : $(FTSRC)autofit$(D)hbshim.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)hbshim.$(OBJ) $(C_) $(FTSRC)autofit$(D)hbshim.c
+$(FTOBJ)afshaper.$(OBJ) : $(FTSRC)autofit$(D)afshaper.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)afshaper.$(OBJ) $(C_) $(FTSRC)autofit$(D)afshaper.c
 
 $(FTOBJ)ftadvanc.$(OBJ) : $(FTSRC)base$(D)ftadvanc.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftadvanc.$(OBJ) $(C_) $(FTSRC)base$(D)ftadvanc.c
@@ -371,14 +371,14 @@ $(FTOBJ)fttype1.$(OBJ) : $(FTSRC)base$(D)fttype1.c $(FT_MAK) $(MAKEDIRS)
 $(FTOBJ)ftwinfnt.$(OBJ) : $(FTSRC)base$(D)ftwinfnt.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftwinfnt.$(OBJ) $(C_) $(FTSRC)base$(D)ftwinfnt.c
 
-$(FTOBJ)ftxf86.$(OBJ) : $(FTSRC)base$(D)ftxf86.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)ftxf86.$(OBJ) $(C_) $(FTSRC)base$(D)ftxf86.c
-
 $(FTOBJ)ftpatent.$(OBJ) : $(FTSRC)base$(D)ftpatent.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftpatent.$(OBJ) $(C_) $(FTSRC)base$(D)ftpatent.c
 
 $(FTOBJ)ftmd5.$(OBJ) : $(FTSRC)base$(D)md5.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftmd5.$(OBJ) $(C_) $(FTSRC)base$(D)md5.c
+
+$(FTOBJ)fthash.$(OBJ) : $(FTSRC)base$(D)fthash.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)fthash.$(OBJ) $(C_) $(FTSRC)base$(D)fthash.c
 
 $(FTOBJ)bdflib.$(OBJ) : $(FTSRC)bdf$(D)bdflib.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)bdflib.$(OBJ) $(C_) $(FTSRC)bdf$(D)bdflib.c

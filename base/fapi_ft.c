@@ -53,6 +53,7 @@
 #include FT_OUTLINE_H
 #include FT_IMAGE_H
 #include FT_BITMAP_H
+#include FT_TRUETYPE_DRIVER_H
 
 /* Note: structure definitions here start with FF_, which stands for 'FAPI FreeType". */
 
@@ -901,7 +902,9 @@ gs_fapi_ft_ensure_open(gs_fapi_server * a_server, const char * server_param,
             gs_free(s->mem, s->ftmemory, 0, 0, "gs_fapi_ft_ensure_open");
         }
         else {
+            FT_UInt tt_ins_version = TT_INTERPRETER_VERSION_35;
             FT_Add_Default_Modules(s->freetype_library);
+            FT_Property_Set( s->freetype_library, "truetype", "interpreter-version", &tt_ins_version);
         }
 
         if (ft_error)
