@@ -924,9 +924,9 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
         }
 
         if (ctile->ttrans != NULL) {
-			if_debug2m('?', mem,
-				"[v*] Freeing trans pattern from cache, uid = %ld id = %ld \n",
-				ctile->uid.id, ctile->id);
+            if_debug2m('?', mem,
+                       "[v*] Freeing trans pattern from cache, uid = %ld id = %ld \n",
+                       ctile->uid.id, ctile->id);
             if ( ctile->ttrans->pdev14 == NULL) {
                 /* This can happen if we came from the clist */
                 if (ctile->ttrans->mem != NULL)
@@ -1105,9 +1105,9 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
         } else
             ctile->tmask.data = 0;
         if (trans != 0) {
-			if_debug2m('?', pgs->memory,
-				"[v*] Adding trans pattern to cache, uid = %ld id = %ld \n",
-				ctile->uid.id, ctile->id);
+            if_debug2m('?', pgs->memory,
+                       "[v*] Adding trans pattern to cache, uid = %ld id = %ld \n",
+                       ctile->uid.id, ctile->id);
             ctile->ttrans = trans;
         }
 
@@ -1431,15 +1431,18 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
          * saved->device == adev. So unretain it, close it, and the
          * gs_gstate_free(saved) will remove it. In the transparency case,
          * saved->device = the pdf14 device. So we need to unretain it,
-         * close adev, and finally close saved->device
-         * (which frees adev). */
+         * close adev, and finally close saved->device.
+         */
         gx_device_retain(saved->device, false);         /* device no longer retained */
         if (pinst->templat.uses_transparency) {
-            if (pinst->is_clist == 0)
+            if (pinst->is_clist == 0) {
                 gs_free_object(((gx_device_pattern_accum *)adev)->bitmap_memory,
                                ((gx_device_pattern_accum *)adev)->transbuff,
                                "gx_pattern_load");
+            }
             dev_proc(adev, close_device)((gx_device *)adev);
+            /* adev was the target of the pdf14 device, so also is no longer retained */
+            gx_device_retain(adev, false);         /* device no longer retained */
         }
         dev_proc(saved->device, close_device)((gx_device *)saved->device);
         /* Freeing the state should now free the device which may be the pdf14 compositor. */
