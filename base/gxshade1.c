@@ -454,7 +454,7 @@ R_tensor_annulus(patch_fill_state_t *pfs,
  */
 static int find_arc_control_points(gs_point *from, gs_point *to, gs_point *from_control, gs_point *to_control, gs_point *centre)
 {
-    double from_tan_alpha, to_tan_alpha, half_inscribed_engle, from_alpha, to_alpha;
+    double from_tan_alpha, to_tan_alpha, from_alpha, to_alpha;
     double half_inscribed_angle, intersect_x, intersect_y, intersect_dist;
     double radius = sqrt(((from->x - centre->x) * (from->x - centre->x)) + ((from->y - centre->y) * (from->y - centre->y)));
     double tangent_intersect_dist;
@@ -749,13 +749,9 @@ static int R_tensor_annulus_extend_tangent(patch_fill_state_t *pfs,
     double x0, double y0, double r0, double t0,
     double x1, double y1, double r1, double t1, double r2)
 {
-    gs_point p[4];
     patch_curve_t curve[4];
-    gs_point p0, p1, pc0;
+    gs_point p0, p1;
     int code = 0, q = 0;
-    double rd = r2 - r1, rd_third = rd / 3, rd_2third = rd_third * 2;
-    double r1_third = r1 / 3, r1_2third = r1_third * 2;
-    double r2_third = r2 / 3, r2_2third = r2_third * 2;
 
     /* special case axis aligned circles. Its quicker to handle these specially as it
      * avoid lots of trigonometry in the general case code, and avoids us
@@ -812,7 +808,6 @@ static int R_tensor_annulus_extend_tangent(patch_fill_state_t *pfs,
         }
     }
     else {
-        patch_curve_t curve_3[3];
         double tx, ty, endx, endy, intersectx, intersecty, alpha, sinalpha, cosalpha, tanalpha;
         gs_point centre;
 
@@ -1634,7 +1629,7 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
      * Approximate the same sort of value here to appease bug 690831.
      */
     if (any_abs (dr - d) < 0.001) {
-        if (r0 > r1 && Extend0 || r1 > r0 && Extend1) {
+        if ((r0 > r1 && Extend0) || (r1 > r0 && Extend1)) {
             r = R_rect_radius(rect, x0, y0);
             if (r0 < r1)
                 code = R_tensor_annulus_extend_tangent(pfs, x0, y0, r0, t1, x1, y1, r1, t1, r);
