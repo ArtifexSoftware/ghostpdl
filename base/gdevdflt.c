@@ -1382,6 +1382,7 @@ int gx_device_unsubclass(gx_device *dev)
             /* We definitley do *not* want to finalise the device, we just copied it up a level */
             b_std->finalize = 0;
             gs_free_object(dev->memory, child, "gx_unsubclass_device(device)");
+            child = 0;
         }
     }
     if(child)
