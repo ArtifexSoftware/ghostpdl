@@ -237,7 +237,7 @@ static int process_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
 
         gp_fseek_64(f, 0, SEEK_SET);
         code = fread(stream_data, 1, bytes, f);
-        if (code != 1) {
+        if (code != bytes) {
             gs_free_object(mem, stream_data, "PJL pdfmark, stream");
             gs_free_object(mem, copy, "working buffer for pdfmark processing");
             gs_free_object(mem, parray, "temporary pdfmark array");
@@ -269,6 +269,7 @@ static int process_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
 int pcl_pjl_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
 {
     char *pdfmark_start, *token_start, end, *p;
+    int code;
 
     p = token_start = pdfmark_start = pdfmark + 1;
 
@@ -284,7 +285,10 @@ int pcl_pjl_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
             token_start--;
             end = *token_start;
             *token_start = 0x00;
-            process_pdfmark(mem, device, pdfmark_start);
+            code = process_pdfmark(mem, device, pdfmark_start);
+            if (code < 0)
+                return code;
+
             *token_start = end;
             token_start = pdfmark_start = ++p;
         }
