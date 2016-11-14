@@ -2833,7 +2833,6 @@ pdf_close(gx_device * dev)
                     if (!pdev->Eps2Write)
                         pprintd2(pdev->strm, "%%%%PageBoundingBox: 0 0 %d %d\n", (int)page->MediaBox.x, (int)page->MediaBox.y);
                     stream_puts(pdev->strm, "%%BeginPageSetup\n");
-                    stream_puts(pdev->strm, "/pagesave save def\n");
 
                     if (pdev->params.PSPageOptions.size) {
                         int i, index = (pagecount - 1) % pdev->params.PSPageOptions.size;
@@ -2847,6 +2846,7 @@ pdf_close(gx_device * dev)
                     pdf_write_page(pdev, pagecount++);
 
                     stream_puts(pdev->strm, "%%EndPageSetup\n");
+                    stream_puts(pdev->strm, "/pagesave save def\n");
                     pprintld1(pdev->strm, "%ld 0 obj\n", pres->object->id);
                     code = cos_write(pres->object, pdev, pres->object->id);
                     stream_puts(pdev->strm, "endobj\n");

@@ -924,7 +924,6 @@ currentdict end readonly def
         2 array astore                                    % bw bh px0 py0 bw bh bool []
         dup /MediaRequested exch def
         << exch /PageSize exch >> setpagedevice           % bw bh px0 py0 bw bh bool
-        /pagesave save def
       } if
     } ifelse
     userdict /PDFR_InitialGS gstate put

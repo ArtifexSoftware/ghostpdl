@@ -754,7 +754,6 @@ const char *opdfread_ps [] = {
 "2 array astore\n",
 "dup /MediaRequested exch def\n",
 "<< exch /PageSize exch >> setpagedevice\n",
-"/pagesave save def\n",
 "}if\n",
 "}ifelse\n",
 "userdict/PDFR_InitialGS gstate put\n",
