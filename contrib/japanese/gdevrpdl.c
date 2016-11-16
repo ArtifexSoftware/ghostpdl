@@ -22,6 +22,7 @@
 
 #include "gdevlprn.h"
 #include "gdevlips.h"
+#include <stdlib.h>
 
 #define DPI 240
 
@@ -232,6 +233,9 @@ rpdl_paper_set(gx_device_printer * pdev, FILE * prn_stream)
 {
     int width, height, w, h;
 
+    /* Page size match tolerance in points */
+    #define TOL 5
+
     width = pdev->MediaSize[0];
     height = pdev->MediaSize[1];
 
@@ -243,45 +247,42 @@ rpdl_paper_set(gx_device_printer * pdev, FILE * prn_stream)
         h = width;
     }
 
-    if (w == 1684 && h == 2380) /* A1 */
+    if (abs(w - 1684) <= TOL && abs(h - 2380) <= TOL) /* A1 */
       fprintf(prn_stream, "\033\02251@A1R\033 ");
-    else if (w == 1190 && h == 1684) { /* A2 */
+    else if (abs(w - 1190) <= TOL && abs(h - 1684) <= TOL) { /* A2 */
       fprintf(prn_stream, "\033\02251@A2R\033 ");
       fprintf(prn_stream, "\033\02251@A2\033 ");
-    } else if (w == 842 && h == 1190) { /* A3 */
+    } else if (abs(w - 842) <= TOL && abs(h - 1190) <= TOL) { /* A3 */
       fprintf(prn_stream, "\033\02251@A3R\033 ");
       fprintf(prn_stream, "\033\02251@A3\033 ");
-    } else if (w == 595 && h == 842) { /* A4 */
+    } else if (abs(w - 595) <= TOL && abs(h - 842) <= TOL) { /* A4 */
       fprintf(prn_stream, "\033\02251@A4R\033 ");
       fprintf(prn_stream, "\033\02251@A4\033 ");
-    } else if (w == 597 && h == 842) { /* A4 */
-      fprintf(prn_stream, "\033\02251@A4R\033 ");
-      fprintf(prn_stream, "\033\02251@A4\033 ");
-    } else if (w == 421 && h == 595) { /* A5 */
+    } else if (abs(w - 421) <= TOL && abs(h - 595) <= TOL) { /* A5 */
       fprintf(prn_stream, "\033\02251@A5R\033 ");
       fprintf(prn_stream, "\033\02251@A5\033 ");
-    } else if (w == 297 && h == 421) { /* A6 */
+    } else if (abs(w - 297) <= TOL && abs(h - 421) <= TOL) { /* A6 */
       fprintf(prn_stream, "\033\02251@A6R\033 ");
       fprintf(prn_stream, "\033\02251@A6\033 ");
-    } else if (w == 729 && h == 1032) { /* B4 */
+    } else if (abs(w - 729) <= TOL && abs(h - 1032) <= TOL) { /* B4 */
       fprintf(prn_stream, "\033\02251@B4R\033 ");
       fprintf(prn_stream, "\033\02251@B4\033 ");
-    } else if (w == 516 && h == 729) { /* B5 */
+    } else if (abs(w - 516) <= TOL && abs(h - 729) <= TOL) { /* B5 */
       fprintf(prn_stream, "\033\02251@B5R\033 ");
       fprintf(prn_stream, "\033\02251@B5\033 ");
-    } else if (w == 363 && h == 516) { /* B6 */
+    } else if (abs(w - 363) <= TOL && abs(h - 516) <= TOL) { /* B6 */
       fprintf(prn_stream, "\033\02251@A6R\033 ");
       fprintf(prn_stream, "\033\02251@A6\033 ");
-    } else if (w == 612 && h == 792) { /* Letter */
+    } else if (abs(w - 612) <= TOL && abs(h - 792) <= TOL) { /* Letter */
       fprintf(prn_stream, "\033\02251@LTR\033 ");
       fprintf(prn_stream, "\033\02251@LT\033 ");
-    } else if (w == 612 && h == 1008) { /* Legal */
+    } else if (abs(w - 612) <= TOL && abs(h - 1008) <= TOL) { /* Legal */
       fprintf(prn_stream, "\033\02251@LGR\033 ");
       fprintf(prn_stream, "\033\02251@LG\033 ");
-    } else if (w == 396 && h == 612) { /* Half Letter */
+    } else if (abs(w - 396) <= TOL && abs(h - 612) <= TOL) { /* Half Letter */
       fprintf(prn_stream, "\033\02251@HLR\033 ");
       fprintf(prn_stream, "\033\02251@HLT\033 ");
-    } else if (w == 792 && h == 1224) { /* Ledger */
+    } else if (abs(w - 792) <= TOL && abs(h - 1224) <= TOL) { /* Ledger */
       fprintf(prn_stream, "\033\02251@DLT\033 ");
       fprintf(prn_stream, "\033\02251@DLR\033 ");
     } else { /* Free Size (mm) */
