@@ -150,7 +150,8 @@ static pl_interp_implementation_t const
 static FILE *pl_main_arg_fopen(const char *fname, void *ignore_data);
 
 /* Initialize the instance parameters. */
-void pl_main_init_instance(pl_main_instance_t * pmi, gs_memory_t * memory);
+pl_main_instance_t *
+pl_main_alloc_instance(gs_memory_t * memory);
 
 void pl_main_reinit_instance(pl_main_instance_t * pmi);
 
@@ -247,7 +248,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
 {
     gs_memory_t *mem;
     gs_memory_t *pjl_mem;
-    pl_main_instance_t inst;
+    pl_main_instance_t *inst;
     arg_list args = { 0 };
     char *filename = NULL;
     char err_buf[256];
@@ -287,7 +288,10 @@ pl_main_aux(int argc, char *argv[], void *disp)
     /* Init the top-level instance */
     gs_c_param_list_write(&params, pjl_mem);
     gs_param_list_set_persistent_keys((gs_param_list *) & params, false);
-    pl_main_init_instance(&inst, mem);
+    inst = pl_main_alloc_instance(mem);
+    if (inst == NULL)
+        return -1;
+
 #if defined(__WIN32__) && !defined(GS_NO_UTF8)
     arg_get_codepoint = gp_local_arg_encoding_get_codepoint;
 #endif
@@ -304,14 +308,14 @@ pl_main_aux(int argc, char *argv[], void *disp)
 
     /* Create PDL instances, etc */
     if (pl_main_universe_init(&universe, err_buf, mem, pdl_implementation,
-                              pjl_instance, &inst, &pl_pre_finish_page,
+                              pjl_instance, inst, &pl_pre_finish_page,
                               &pl_post_finish_page) < 0) {
         errprintf(mem, "%s", err_buf);
         goto done;
     }
 #ifdef DEBUG
     if (gs_debug_c(':'))
-        pl_print_usage(&inst, "Start");
+        pl_print_usage(inst, "Start");
 #endif
 
     /* ------ Begin Main LOOP ------- */
@@ -337,7 +341,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
 
         /* Process any new options. May request new device. */
         if (argc == 1 ||
-            pl_main_process_options(&inst,
+            pl_main_process_options(inst,
                                     &args,
                                     &params,
                                     pjl_instance, pdl_implementation,
@@ -373,7 +377,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
             break;              /* no nore files to process */
 
         /* If the display device is selected (default), set up the callback */
-        if (strcmp(inst.device->dname, "display") == 0) {
+        if (strcmp(inst->device->dname, "display") == 0) {
             gx_device_display *ddev;
 
             if (!disp) {
@@ -381,7 +385,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
                           "Display device selected, but no display device configured.\n");
                 return -1;
             }
-            ddev = (gx_device_display *) inst.device;
+            ddev = (gx_device_display *) inst->device;
             ddev->callback = (display_callback *) disp;
         }
 
@@ -412,7 +416,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
                     if_debug0m('I', mem,
                                "end of data stream found in middle of job\n");
                     pl_process_eof(curr_instance);
-                    if (close_job(&universe, &inst) < 0) {
+                    if (close_job(&universe, inst) < 0) {
                         dmprintf(mem, "Unable to deinit PDL job.\n");
                         code = -1;
                         goto done;
@@ -440,8 +444,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
                 curr_instance = pl_main_universe_select(&universe, err_buf,
                                                         pjl_instance,
                                                         pl_select_implementation
-                                                        (pjl_instance, &inst,
-                                                         r), &inst,
+                                                        (pjl_instance, inst,
+                                                         r), inst,
                                                         (gs_param_list *) &
                                                         params);
                 if (curr_instance == NULL) {
@@ -475,7 +479,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
                                   "Warning interpreter exited with error code %d\n",
                                   code);
                     }
-                    if (close_job(&universe, &inst) < 0) {
+                    if (close_job(&universe, inst) < 0) {
                         dmprintf(mem, "Unable to deinit PJL.\n");
                         return -1;
                     }
@@ -493,7 +497,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
                     if_debug1m('I', mem, "exiting (%s) job back to pjl\n",
                                pl_characteristics(curr_instance->interp->
                                                   implementation)->language);
-                    if (close_job(&universe, &inst) < 0) {
+                    if (close_job(&universe, inst) < 0) {
                         dmprintf(mem, "Unable to deinit PDL job.\n");
                         code = -1;
                         goto done;
@@ -527,8 +531,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
                     }
                     pl_report_errors(curr_instance, code,
                                      pl_main_cursor_position(&r),
-                                     inst.error_report > 0);
-                    if (close_job(&universe, &inst) < 0) {
+                                     inst->error_report > 0);
+                    if (close_job(&universe, inst) < 0) {
                         dmprintf(mem, "Unable to deinit PJL.\n");
                         code = -1;
                         goto done;
@@ -546,8 +550,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
 
     /* ----- End Main loop ----- */
     /* If we were accumulating saved-pages, print them now */
-    if (inst.saved_pages_test_mode) {
-        gx_device *pdev = inst.device;
+    if (inst->saved_pages_test_mode) {
+        gx_device *pdev = inst->device;
 
         if (gx_saved_pages_param_process((gx_device_printer *)pdev,
                                   (byte *)"print normal flush", 18) < 0) {
@@ -848,38 +852,50 @@ pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select fr
 /* ------- Functions related to pl_main_instance_t ------ */
 
 /* Initialize the instance parameters. */
-void
-pl_main_init_instance(pl_main_instance_t * pti, gs_memory_t * mem)
+pl_main_instance_t *
+pl_main_alloc_instance(gs_memory_t * mem)
 {
-    pti->memory = mem;
+    pl_main_instance_t *minst;
+    if (mem == NULL)
+        return NULL;
+
+    minst = (pl_main_instance_t *)gs_alloc_bytes_immovable(mem,
+                                                           sizeof(pl_main_instance_t),
+                                                           "pl_main_instance");
+    if (minst == NULL)
+        return 0;
+    
+    minst->memory = mem;
+    
     {
         int i;
 
-        for (i = 0; i < countof(pti->spaces.memories.indexed); ++i)
-            pti->spaces.memories.indexed[i] = 0;
-        pti->spaces.memories.named.local =
-            pti->spaces.memories.named.global = (gs_ref_memory_t *) mem;
+        for (i = 0; i < countof(minst->spaces.memories.indexed); ++i)
+            minst->spaces.memories.indexed[i] = 0;
+        minst->spaces.memories.named.local =
+            minst->spaces.memories.named.global = (gs_ref_memory_t *) mem;
     }
 
-    pti->error_report = -1;
-    pti->pause = true;
-    pti->device = 0;
-    pti->implementation = 0;
-    gp_get_realtime(pti->base_time);
-    pti->page_count = 0;
-    pti->interpolate = false;
-    pti->nocache = false;
-    pti->page_set_on_command_line = false;
-    pti->res_set_on_command_line = false;
-    pti->high_level_device = false;
-    pti->saved_pages_test_mode = false;
-    pti->scanconverter = GS_SCANCONVERTER_DEFAULT;
-    pti->piccdir = NULL;
-    pti->pdefault_gray_icc = NULL;
-    pti->pdefault_rgb_icc = NULL;
-    pti->pdefault_cmyk_icc = NULL;
-    strncpy(&pti->pcl_personality[0], "PCL",
-            sizeof(pti->pcl_personality) - 1);
+    minst->error_report = -1;
+    minst->pause = true;
+    minst->device = 0;
+    minst->implementation = 0;
+    gp_get_realtime(minst->base_time);
+    minst->page_count = 0;
+    minst->interpolate = false;
+    minst->nocache = false;
+    minst->page_set_on_command_line = false;
+    minst->res_set_on_command_line = false;
+    minst->high_level_device = false;
+    minst->saved_pages_test_mode = false;
+    minst->scanconverter = GS_SCANCONVERTER_DEFAULT;
+    minst->piccdir = NULL;
+    minst->pdefault_gray_icc = NULL;
+    minst->pdefault_rgb_icc = NULL;
+    minst->pdefault_cmyk_icc = NULL;
+    strncpy(&minst->pcl_personality[0], "PCL",
+            sizeof(minst->pcl_personality) - 1);
+    return minst;
 }
 
 /* -------- Command-line processing ------ */
