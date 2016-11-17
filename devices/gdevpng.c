@@ -845,9 +845,9 @@ pngalpha_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
 
 /* Handle the RGBA planes from the PDF 1.4 compositor */
 static int
-pngalpha_put_image (gx_device *pdev, const byte *buffer, int num_chan, int xstart,
+pngalpha_put_image (gx_device *pdev, const byte **buffers, int num_chan, int xstart,
               int ystart, int width, int height, int row_stride,
-              int plane_stride, int alpha_plane_index, int tag_plane_index)
+              int alpha_plane_index, int tag_plane_index)
 {
     gx_device_memory *pmemdev = (gx_device_memory *)pdev;
     byte *buffer_prn;
@@ -856,9 +856,6 @@ pngalpha_put_image (gx_device *pdev, const byte *buffer, int num_chan, int xstar
     int x, y;
     int src_position, des_position;
 
-    /* Eventually, the pdf14 device might be chunky pixels, punt for now */
-    if (plane_stride == 0)
-        return 0;
     if (num_chan != 3 || alpha_plane_index <= 0)
             return_error(gs_error_unknownerror);        /* can't handle these cases */
 
@@ -873,11 +870,11 @@ pngalpha_put_image (gx_device *pdev, const byte *buffer, int num_chan, int xstar
         src_position = (y - ystart) * row_stride;
         des_position = y * pmemdev->raster + xstart * 4;
         for ( x = xstart; x < xend; x++ ) {
-            buffer_prn[des_position++] =  buffer[src_position];
-            buffer_prn[des_position++] =  buffer[src_position + plane_stride];
-            buffer_prn[des_position++] =  buffer[src_position + 2 * plane_stride];
+            buffer_prn[des_position++] =  buffers[0][src_position];
+            buffer_prn[des_position++] =  buffers[1][src_position];
+            buffer_prn[des_position++] =  buffers[2][src_position];
             /* Alpha data in low bits. Note that Alpha is inverted. */
-            buffer_prn[des_position++] = (255 - buffer[src_position + alpha_plane_index * plane_stride]);
+            buffer_prn[des_position++] = (255 - buffers[alpha_plane_index][src_position]);
             src_position += 1;
         }
     }

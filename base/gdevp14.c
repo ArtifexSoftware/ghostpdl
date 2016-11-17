@@ -1777,10 +1777,14 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
            form with the alpha component */
         int alpha_offset = num_comp;
         int tag_offset = buf->has_tags ? num_comp+1 : 0;
-        code = dev_proc(target, put_image) (target, buf_ptr, num_comp,
+        const byte *buf_ptrs[GS_CLIENT_COLOR_MAX_COMPONENTS];
+        int i;
+        for (i = 0; i < num_comp; i++)
+            buf_ptrs[i] = buf_ptr + i * buf->planestride;
+        code = dev_proc(target, put_image) (target, buf_ptrs, num_comp,
                                             rect.p.x, rect.p.y, width, height,
-                                            buf->rowstride, buf->planestride,
-                                            num_comp,tag_offset);
+                                            buf->rowstride,
+                                            num_comp, tag_offset);
         if (code == 0) {
             /* Device could not handle the alpha data.  Go ahead and
                preblend now. Note that if we do this, and we end up in the
@@ -1805,19 +1809,18 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
             data_blended = true;
             /* Try again now */
             alpha_offset = 0;
-            code = dev_proc(target, put_image) (target, buf_ptr, num_comp,
+            code = dev_proc(target, put_image) (target, buf_ptrs, num_comp,
                                                 rect.p.x, rect.p.y, width, height,
-                                                buf->rowstride, buf->planestride,
+                                                buf->rowstride,
                                                 alpha_offset, tag_offset);
         }
         if (code > 0) {
             /* We processed some or all of the rows.  Continue until we are done */
             num_rows_left = height - code;
             while (num_rows_left > 0) {
-                code = dev_proc(target, put_image) (target, buf_ptr, buf->n_planes,
+                code = dev_proc(target, put_image) (target, buf_ptrs, buf->n_planes,
                                                     rect.p.x, rect.p.y+code, width,
                                                     num_rows_left, buf->rowstride,
-                                                    buf->planestride,
                                                     alpha_offset, tag_offset);
                 num_rows_left = num_rows_left - code;
             }

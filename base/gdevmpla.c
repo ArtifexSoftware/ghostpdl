@@ -211,25 +211,61 @@ typedef struct mem_save_params_s {
    mdev->base = msp.base,\
    mdev->line_ptrs = msp.line_ptrs)
 
+static int
+put_image_copy_planes(gx_device * dev, const byte **base_ptr, int sourcex,
+                      int sraster, gx_bitmap_id id,
+                      int x, int y, int w, int h)
+{
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+    int plane_depth;
+    mem_save_params_t save;
+    const gx_device_memory *mdproto;
+    int code = 0;
+    uchar plane;
+
+    MEM_SAVE_PARAMS(mdev, save);
+    for (plane = 0; plane < mdev->color_info.num_components; plane++)
+    {
+        const byte *base = base_ptr[plane];
+        plane_depth = mdev->planes[plane].depth;
+        mdproto = gdev_mem_device_for_bits(plane_depth);
+        if (base == NULL) {
+            /* Blank the plane */
+            code = dev_proc(mdproto, fill_rectangle)(dev, x, y, w, h,
+                (gx_color_index)(dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE ? 0 : -1));
+        } else if (plane_depth == 1)
+            code = dev_proc(mdproto, copy_mono)(dev, base, sourcex, sraster, id,
+                                                x, y, w, h,
+                                                (gx_color_index)0,
+                                                (gx_color_index)1);
+        else
+            code = dev_proc(mdproto, copy_color)(dev, base, sourcex, sraster,
+                                                 id, x, y, w, h);
+        mdev->line_ptrs += mdev->height;
+    }
+    MEM_RESTORE_PARAMS(mdev, save);
+    return code;
+}
+
 /* Put image command for copying the planar image buffers with or without
    alpha directly to the device buffer */
 static int
-mem_planar_put_image(gx_device *pdev, const byte *buffer, int num_chan, int xstart,
+mem_planar_put_image(gx_device *pdev, const byte **buffers, int num_chan, int xstart,
               int ystart, int width, int height, int row_stride,
-              int plane_stride, int alpha_plane_index, int tag_plane_index)
+              int alpha_plane_index, int tag_plane_index)
 {
     gx_device_memory * const mdev = (gx_device_memory *)pdev;
 
     /* We don't want alpha, return 0 to ask for the pdf14 device to do the
        alpha composition. We also do not want chunky data coming in or to deal
        with planar devices that are not 8 bit per colorant */
-    if (alpha_plane_index != 0 || plane_stride == 0 ||
+    if (alpha_plane_index != 0 ||
         mdev->planes[0].depth != 8)
         return 0;
 
-    (*dev_proc(pdev, copy_planes)) (pdev, buffer, 0, row_stride,
-                                 gx_no_bitmap_id, xstart, ystart,
-                                 width, height, plane_stride/row_stride);
+    put_image_copy_planes(pdev, buffers, 0, row_stride,
+                          gx_no_bitmap_id, xstart, ystart,
+                          width, height);
     /* we used all of the data */
     return height;
 }

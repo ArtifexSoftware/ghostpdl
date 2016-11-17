@@ -777,9 +777,9 @@ bittags_print_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 static int
-bit_put_image(gx_device *pdev, const byte *buffer, int num_chan, int xstart,
+bit_put_image(gx_device *pdev, const byte **buffers, int num_chan, int xstart,
               int ystart, int width, int height, int row_stride,
-              int plane_stride, int alpha_plane_index, int tag_plane_index)
+              int alpha_plane_index, int tag_plane_index)
 {
     gx_device_memory *pmemdev = (gx_device_memory *)pdev;
     byte *buffer_prn;
@@ -791,9 +791,6 @@ bit_put_image(gx_device *pdev, const byte *buffer, int num_chan, int xstart,
     if (alpha_plane_index != 0)
         return 0;                /* we don't want alpha, return 0 to ask for the    */
                                  /* pdf14 device to do the alpha composition        */
-    /* Eventually, the pdf14 device might be chunky pixels, punt for now */
-    if (plane_stride == 0)
-        return 0;
     if (num_chan != 3 || tag_plane_index <= 0)
             return_error(gs_error_unknownerror);        /* can't handle these cases */
     /* Drill down to get the appropriate memory buffer pointer */
@@ -805,11 +802,11 @@ bit_put_image(gx_device *pdev, const byte *buffer, int num_chan, int xstart,
         for ( x = xstart; x < xend; x++ ) {
             /* Tag data first, then RGB */
             buffer_prn[des_position] =
-                buffer[src_position + tag_plane_index * plane_stride];
+                buffers[tag_plane_index][src_position];
                 des_position += 1;
             for ( k = 0; k < 3; k++) {
                 buffer_prn[des_position] =
-                    buffer[src_position + k * plane_stride];
+                    buffers[k][src_position];
                     des_position += 1;
             }
             src_position += 1;

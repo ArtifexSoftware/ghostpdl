@@ -921,9 +921,13 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
            form with the alpha component */
         int alpha_offset = num_comp;
         int tag_offset = has_tags ? num_comp+1 : 0;
-        code = dev_proc(target, put_image) (target, buf_ptr, num_comp,
+        const byte *buf_ptrs[GS_CLIENT_COLOR_MAX_COMPONENTS];
+        int i;
+        for (i = 0; i < num_comp; i++)
+            buf_ptrs[i] = buf_ptr + i * planestride;
+        code = dev_proc(target, put_image) (target, buf_ptrs, num_comp,
                                             rect.p.x, rect.p.y, width, height,
-                                            rowstride, planestride,
+                                            rowstride,
                                             num_comp,tag_offset);
         if (code == 0) {
             /* Device could not handle the alpha data.  Go ahead and
@@ -946,19 +950,18 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
 #endif
             /* Try again now */
             alpha_offset = 0;
-            code = dev_proc(target, put_image) (target, buf_ptr, num_comp,
+            code = dev_proc(target, put_image) (target, buf_ptrs, num_comp,
                                                 rect.p.x, rect.p.y, width, height,
-                                                rowstride, planestride,
+                                                rowstride,
                                                 alpha_offset, tag_offset);
         }
         if (code > 0) {
             /* We processed some or all of the rows.  Continue until we are done */
             num_rows_left = height - code;
             while (num_rows_left > 0) {
-                code = dev_proc(target, put_image) (target, buf_ptr, num_comp,
+                code = dev_proc(target, put_image) (target, buf_ptrs, num_comp,
                                                     rect.p.x, rect.p.y+code, width,
                                                     num_rows_left, rowstride,
-                                                    planestride,
                                                     alpha_offset, tag_offset);
                 if (code < 0)
                     return code;

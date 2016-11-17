@@ -852,12 +852,12 @@ int default_subclass_pop_transparency_state(gx_device *dev, gs_gstate *pgs)
     return 0;
 }
 
-int default_subclass_put_image(gx_device *dev, const byte *buffer, int num_chan, int x, int y,
-            int width, int height, int row_stride, int plane_stride,
+int default_subclass_put_image(gx_device *dev, const byte **buffers, int num_chan, int x, int y,
+            int width, int height, int row_stride,
             int alpha_plane_index, int tag_plane_index)
 {
     if (dev->child && dev->child->procs.put_image)
-        return dev->child->procs.put_image(dev->child, buffer, num_chan, x, y, width, height, row_stride, plane_stride, alpha_plane_index, tag_plane_index);
+        return dev->child->procs.put_image(dev->child, buffers, num_chan, x, y, width, height, row_stride, alpha_plane_index, tag_plane_index);
 
     return 0;
 }
