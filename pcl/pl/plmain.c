@@ -71,20 +71,6 @@ typedef int (* GSPLDLLCALLLINK GS_PL_DLL_CALLBACK) (int, char *, unsigned long);
 GS_PL_DLL_CALLBACK pgsdll_callback = NULL;
 #endif
 
-/*
- * Define bookeeping for interpreters and devices
- */
-typedef struct pl_main_universe_s
-{
-    gs_memory_t *mem;           /* mem alloc to dealloc devices */
-    pl_interp_implementation_t const *const *pdl_implementation;        /* implementations to choose from */
-    pl_interp_instance_t *pdl_instance_array[100];      /* parallel to pdl_implementation */
-    pl_interp_t *pdl_interp_array[100]; /* parallel to pdl_implementation */
-    pl_interp_implementation_t const *curr_implementation;
-    pl_interp_instance_t *curr_instance;
-    gx_device *curr_device;
-} pl_main_universe_t;
-
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
 
@@ -254,7 +240,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
     char err_buf[256];
     pl_interp_t *pjl_interp = NULL;
     pl_interp_instance_t *pjl_instance = NULL;
-    pl_main_universe_t universe;
     pl_interp_instance_t *curr_instance = 0;
     gs_c_param_list params = { 0 };
     int (*arg_get_codepoint) (FILE * file, const char **astr) = NULL;
@@ -307,7 +292,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
     }
 
     /* Create PDL instances, etc */
-    if (pl_main_universe_init(&universe, err_buf, mem, pdl_implementation,
+    if (pl_main_universe_init(&inst->universe, err_buf, mem, pdl_implementation,
                               pjl_instance, inst, &pl_pre_finish_page,
                               &pl_post_finish_page) < 0) {
         errprintf(mem, "%s", err_buf);
@@ -416,7 +401,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
                     if_debug0m('I', mem,
                                "end of data stream found in middle of job\n");
                     pl_process_eof(curr_instance);
-                    if (close_job(&universe, inst) < 0) {
+                    if (close_job(&inst->universe, inst) < 0) {
                         dmprintf(mem, "Unable to deinit PDL job.\n");
                         code = -1;
                         goto done;
@@ -441,7 +426,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
                 }
 
                 if_debug0m('I', mem, "Selecting PDL\n");
-                curr_instance = pl_main_universe_select(&universe, err_buf,
+                curr_instance = pl_main_universe_select(&inst->universe, err_buf,
                                                         pjl_instance,
                                                         pl_select_implementation
                                                         (pjl_instance, inst,
@@ -479,7 +464,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
                                   "Warning interpreter exited with error code %d\n",
                                   code);
                     }
-                    if (close_job(&universe, inst) < 0) {
+                    if (close_job(&inst->universe, inst) < 0) {
                         dmprintf(mem, "Unable to deinit PJL.\n");
                         return -1;
                     }
@@ -497,7 +482,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
                     if_debug1m('I', mem, "exiting (%s) job back to pjl\n",
                                pl_characteristics(curr_instance->interp->
                                                   implementation)->language);
-                    if (close_job(&universe, inst) < 0) {
+                    if (close_job(&inst->universe, inst) < 0) {
                         dmprintf(mem, "Unable to deinit PDL job.\n");
                         code = -1;
                         goto done;
@@ -532,7 +517,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
                     pl_report_errors(curr_instance, code,
                                      pl_main_cursor_position(&r),
                                      inst->error_report > 0);
-                    if (close_job(&universe, inst) < 0) {
+                    if (close_job(&inst->universe, inst) < 0) {
                         dmprintf(mem, "Unable to deinit PJL.\n");
                         code = -1;
                         goto done;
@@ -563,7 +548,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
     /* release param list */
     gs_c_param_list_release(&params);
     /* Dnit PDLs */
-    if (pl_main_universe_dnit(&universe, err_buf)) {
+    if (pl_main_universe_dnit(&inst->universe, err_buf)) {
         errprintf(mem, "%s", err_buf);
         code = -1;
         goto done;
