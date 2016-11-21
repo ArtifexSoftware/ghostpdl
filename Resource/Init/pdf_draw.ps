@@ -2620,7 +2620,7 @@ end
 
 % Get and normalize an annotation's rectangle.
 /annotrect {		% <annot> annotrect <x> <y> <w> <h>
-  /Rect oget aload pop
+  /Rect oget oforce_recursive aload pop
   exch 3 index sub dup 0 lt { dup 5 -1 roll add 4 1 roll neg } if
   exch 2 index sub dup 0 lt { dup 4 -1 roll add 3 1 roll neg } if
 } bdef
