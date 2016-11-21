@@ -1,4 +1,4 @@
-/* $Id: tiffio.h,v 1.89 2012-02-18 16:20:26 bfriesen Exp $ */
+/* $Id: tiffio.h,v 1.92 2016-01-23 21:20:34 erouault Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -208,7 +208,7 @@ struct _TIFFRGBAImage {
 	uint16 orientation;                     /* image orientation */
 	uint16 req_orientation;                 /* requested orientation */
 	uint16 photometric;                     /* image photometric interp */
-	uint16* redcmap;                        /* colormap pallete */
+	uint16* redcmap;                        /* colormap palette */
 	uint16* greencmap;
 	uint16* bluecmap;
 	/* get image data routine */
@@ -225,7 +225,7 @@ struct _TIFFRGBAImage {
 	TIFFYCbCrToRGB* ycbcr;                  /* YCbCr conversion state */
 	TIFFCIELabToRGB* cielab;                /* CIE L*a*b conversion state */
 
-	uint8* UaToAa;                          /* Unassociated alpha to associated alpha convertion LUT */
+	uint8* UaToAa;                          /* Unassociated alpha to associated alpha conversion LUT */
 	uint8* Bitdepth16To8;                   /* LUT for conversion from 16bit to 8bit values */
 
 	int row_offset;
@@ -319,6 +319,13 @@ extern const TIFFField* TIFFFindField(TIFF *, uint32, TIFFDataType);
 extern const TIFFField* TIFFFieldWithTag(TIFF*, uint32);
 extern const TIFFField* TIFFFieldWithName(TIFF*, const char *);
 
+extern uint32 TIFFFieldTag(const TIFFField*);
+extern const char* TIFFFieldName(const TIFFField*);
+extern TIFFDataType TIFFFieldDataType(const TIFFField*);
+extern int TIFFFieldPassCount(const TIFFField*);
+extern int TIFFFieldReadCount(const TIFFField*);
+extern int TIFFFieldWriteCount(const TIFFField*);
+
 typedef int (*TIFFVSetMethod)(TIFF*, uint32, va_list);
 typedef int (*TIFFVGetMethod)(TIFF*, uint32, va_list);
 typedef void (*TIFFPrintMethod)(TIFF*, FILE*, long);
@@ -392,6 +399,8 @@ extern int TIFFSetupStrips(TIFF *);
 extern int TIFFWriteCheck(TIFF*, int, const char *);
 extern void TIFFFreeDirectory(TIFF*);
 extern int TIFFCreateDirectory(TIFF*);
+extern int TIFFCreateCustomDirectory(TIFF*,const TIFFFieldArray*);
+extern int TIFFCreateEXIFDirectory(TIFF*);
 extern int TIFFLastDirectory(TIFF*);
 extern int TIFFSetDirectory(TIFF*, uint16);
 extern int TIFFSetSubDirectory(TIFF*, uint64);
@@ -400,6 +409,7 @@ extern int TIFFSetField(TIFF*, uint32, ...);
 extern int TIFFVSetField(TIFF*, uint32, va_list);
 extern int TIFFUnsetField(TIFF*, uint32);
 extern int TIFFWriteDirectory(TIFF *);
+extern int TIFFWriteCustomDirectory(TIFF *, uint64 *);
 extern int TIFFCheckpointDirectory(TIFF *);
 extern int TIFFRewriteDirectory(TIFF *);
 

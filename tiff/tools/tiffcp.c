@@ -1,4 +1,4 @@
-/* $Id: tiffcp.c,v 1.49 2010-12-23 13:38:47 dron Exp $ */
+/* $Id: tiffcp.c,v 1.55 2016-10-08 15:54:57 erouault Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -168,12 +168,14 @@ main(int argc, char* argv[])
 	char mode[10];
 	char* mp = mode;
 	int c;
+#if !HAVE_DECL_OPTARG
 	extern int optind;
 	extern char* optarg;
+#endif
 
 	*mp++ = 'w';
 	*mp = '\0';
-	while ((c = getopt(argc, argv, ",:b:c:f:l:o:z:p:r:w:aistBLMC8x")) != -1)
+	while ((c = getopt(argc, argv, ",:b:c:f:l:o:p:r:w:aistBLMC8x")) != -1)
 		switch (c) {
 		case ',':
 			if (optarg[0] != '=') usage();
@@ -408,7 +410,12 @@ char* stuff[] = {
 " -p separate     store samples separately (e.g. RRR...GGG...BBB...)",
 " -s              write output in strips",
 " -t              write output in tiles",
+" -x              force the merged tiff pages in sequence",
 " -8              write BigTIFF instead of default ClassicTIFF",
+" -B              write big-endian instead of native byte order",
+" -L              write little-endian instead of native byte order",
+" -M              disable use of memory-mapped files",
+" -C              disable strip chopping",
 " -i              ignore read errors",
 " -b file[,#]     bias (dark) monochrome image to be subtracted from all others",
 " -,=%            use % rather than , to separate image #'s (per Note below)",
@@ -430,7 +437,6 @@ char* stuff[] = {
 " -c g4           compress output with CCITT Group 4 encoding",
 " -c sgilog       compress output with SGILOG encoding",
 " -c none         use no compression algorithm on output",
-" -x              force the merged tiff pages in sequence",
 "",
 "Group 3 options:",
 " 1d              use default CCITT Group 3 1D-encoding",
@@ -586,8 +592,8 @@ static	copyFunc pickCopyFunc(TIFF*, TIFF*, uint16, uint16);
 static int
 tiffcp(TIFF* in, TIFF* out)
 {
-	uint16 bitspersample, samplesperpixel;
-	uint16 input_compression, input_photometric;
+	uint16 bitspersample, samplesperpixel = 1;
+	uint16 input_compression, input_photometric = PHOTOMETRIC_MINISBLACK;
 	copyFunc cf;
 	uint32 width, length;
 	struct cpTag* p;
@@ -629,6 +635,12 @@ tiffcp(TIFF* in, TIFF* out)
 		TIFFSetField(out, TIFFTAG_PHOTOMETRIC,
 		    samplesperpixel == 1 ?
 		    PHOTOMETRIC_LOGL : PHOTOMETRIC_LOGLUV);
+	else if (input_compression == COMPRESSION_JPEG &&
+			 samplesperpixel == 3 ) {
+		/* RGB conversion was forced above
+		hence the output will be of the same type */
+		TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+	}
 	else
 		CopyTag(TIFFTAG_PHOTOMETRIC, 1, TIFF_SHORT);
 	if (fillorder != 0)
@@ -1060,7 +1072,7 @@ DECLAREcpFunc(cpContig2SeparateByRow)
 	inbuf = _TIFFmalloc(scanlinesizein);
 	outbuf = _TIFFmalloc(scanlinesizeout);
 	if (!inbuf || !outbuf)
-		return 0;
+		goto bad;
 	_TIFFmemset(inbuf, 0, scanlinesizein);
 	_TIFFmemset(outbuf, 0, scanlinesizeout);
 	/* unpack channels */
@@ -1113,7 +1125,7 @@ DECLAREcpFunc(cpSeparate2ContigByRow)
 	inbuf = _TIFFmalloc(scanlinesizein);
 	outbuf = _TIFFmalloc(scanlinesizeout);
 	if (!inbuf || !outbuf)
-		return 0;
+                goto bad;
 	_TIFFmemset(inbuf, 0, scanlinesizein);
 	_TIFFmemset(outbuf, 0, scanlinesizeout);
 	for (row = 0; row < imagelength; row++) {
@@ -1326,7 +1338,7 @@ DECLAREreadFunc(readContigTilesIntoBuffer)
 		uint32 colb = 0;
 		uint32 col;
 
-		for (col = 0; col < imagewidth; col += tw) {
+		for (col = 0; col < imagewidth && colb < imagew; col += tw) {
 			if (TIFFReadTile(in, tilebuf, col, row, 0, 0) < 0
 			    && !ignore) {
 				TIFFError(TIFFFileName(in),
@@ -1511,7 +1523,7 @@ DECLAREwriteFunc(writeBufferToContigTiles)
 		uint32 colb = 0;
 		uint32 col;
 
-		for (col = 0; col < imagewidth; col += tw) {
+		for (col = 0; col < imagewidth && colb < imagew; col += tw) {
 			/*
 			 * Tile is clipped horizontally.  Calculate
 			 * visible portion and skewing factors.

@@ -1,4 +1,4 @@
-/* $Id: tif_fax3.c,v 1.72 2010-06-09 17:17:13 bfriesen Exp $ */
+/* $Id: tif_fax3.c,v 1.78 2016-09-04 21:32:56 erouault Exp $ */
 
 /*
  * Copyright (c) 1990-1997 Sam Leffler
@@ -442,8 +442,9 @@ _TIFFFax3fillruns(unsigned char* buf, uint32* runs, uint32* erun, uint32 lastx)
 			FILL(n, cp);
 			run &= 7;
 		    }
+                    /* Explicit 0xff masking to make icc -check=conversions happy */
 		    if (run)
-			cp[0] |= 0xff00 >> run;
+			cp[0] = (unsigned char)((cp[0] | (0xff00 >> run))&0xff);
 		} else
 		    cp[0] |= _fillmasks[run]>>bx;
 		x += runs[1];
@@ -526,6 +527,7 @@ Fax3SetupState(TIFF* tif)
 					       "for Group 3/4 run arrays");
 	if (dsp->runs == NULL)
 		return (0);
+	memset( dsp->runs, 0, TIFFSafeMultiply(uint32,nruns,2)*sizeof(uint32));
 	dsp->curruns = dsp->runs;
 	if (needsRefLine)
 		dsp->refruns = dsp->runs + nruns;
@@ -642,7 +644,8 @@ putspan(TIFF* tif, int32 span, const tableentry* tab)
 
 	while (span >= 2624) {
 		const tableentry* te = &tab[63 + (2560>>6)];
-		code = te->code, length = te->length;
+		code = te->code;
+		length = te->length;
 #ifdef FAX3_DEBUG
 		DEBUG_PRINT("MakeUp", te->runlen);
 #endif
@@ -652,14 +655,16 @@ putspan(TIFF* tif, int32 span, const tableentry* tab)
 	if (span >= 64) {
 		const tableentry* te = &tab[63 + (span>>6)];
 		assert(te->runlen == 64*(span>>6));
-		code = te->code, length = te->length;
+		code = te->code;
+		length = te->length;
 #ifdef FAX3_DEBUG
 		DEBUG_PRINT("MakeUp", te->runlen);
 #endif
 		_PutBits(tif, code, length);
 		span -= te->runlen;
 	}
-	code = tab[span].code, length = tab[span].length;
+	code = tab[span].code;
+	length = tab[span].length;
 #ifdef FAX3_DEBUG
 	DEBUG_PRINT("  Term", tab[span].runlen);
 #endif
@@ -695,14 +700,16 @@ Fax3PutEOL(TIFF* tif)
 				align = sp->bit + (8 - align);
 			else
 				align = sp->bit - align;
-			code = 0;
 			tparm=align; 
 			_PutBits(tif, 0, tparm);
 		}
 	}
-	code = EOL, length = 12;
-	if (is2DEncoding(sp))
-		code = (code<<1) | (sp->tag == G3_1D), length++;
+	code = EOL;
+	length = 12;
+	if (is2DEncoding(sp)) {
+		code = (code<<1) | (sp->tag == G3_1D);
+		length++;
+	}
 	_PutBits(tif, code, length);
 
 	sp->data = data;
@@ -813,7 +820,7 @@ find0span(unsigned char* bp, int32 bs, int32 be)
 	/*
 	 * Check partial byte on lhs.
 	 */
-	if (bits > 0 && (n = (bs & 7))) {
+	if (bits > 0 && (n = (bs & 7)) != 0) {
 		span = zeroruns[(*bp << n) & 0xff];
 		if (span > 8-n)		/* table value too generous */
 			span = 8-n;
@@ -833,12 +840,14 @@ find0span(unsigned char* bp, int32 bs, int32 be)
 		while (!isAligned(bp, long)) {
 			if (*bp != 0x00)
 				return (span + zeroruns[*bp]);
-			span += 8, bits -= 8;
+			span += 8;
+			bits -= 8;
 			bp++;
 		}
 		lp = (long*) bp;
 		while ((bits >= (int32)(8 * sizeof(long))) && (0 == *lp)) {
-			span += 8*sizeof (long), bits -= 8*sizeof (long);
+			span += 8*sizeof (long);
+			bits -= 8*sizeof (long);
 			lp++;
 		}
 		bp = (unsigned char*) lp;
@@ -849,7 +858,8 @@ find0span(unsigned char* bp, int32 bs, int32 be)
 	while (bits >= 8) {
 		if (*bp != 0x00)	/* end of run */
 			return (span + zeroruns[*bp]);
-		span += 8, bits -= 8;
+		span += 8;
+		bits -= 8;
 		bp++;
 	}
 	/*
@@ -872,7 +882,7 @@ find1span(unsigned char* bp, int32 bs, int32 be)
 	/*
 	 * Check partial byte on lhs.
 	 */
-	if (bits > 0 && (n = (bs & 7))) {
+	if (bits > 0 && (n = (bs & 7)) != 0) {
 		span = oneruns[(*bp << n) & 0xff];
 		if (span > 8-n)		/* table value too generous */
 			span = 8-n;
@@ -892,12 +902,14 @@ find1span(unsigned char* bp, int32 bs, int32 be)
 		while (!isAligned(bp, long)) {
 			if (*bp != 0xff)
 				return (span + oneruns[*bp]);
-			span += 8, bits -= 8;
+			span += 8;
+			bits -= 8;
 			bp++;
 		}
 		lp = (long*) bp;
 		while ((bits >= (int32)(8 * sizeof(long))) && (~0 == *lp)) {
-			span += 8*sizeof (long), bits -= 8*sizeof (long);
+			span += 8*sizeof (long);
+			bits -= 8*sizeof (long);
 			lp++;
 		}
 		bp = (unsigned char*) lp;
@@ -908,7 +920,8 @@ find1span(unsigned char* bp, int32 bs, int32 be)
 	while (bits >= 8) {
 		if (*bp != 0xff)	/* end of run */
 			return (span + oneruns[*bp]);
-		span += 8, bits -= 8;
+		span += 8;
+		bits -= 8;
 		bp++;
 	}
 	/*
@@ -1092,8 +1105,10 @@ Fax3Close(TIFF* tif)
 		unsigned int length = 12;
 		int i;
 
-		if (is2DEncoding(sp))
-			code = (code<<1) | (sp->tag == G3_1D), length++;
+		if (is2DEncoding(sp)) {
+			code = (code<<1) | (sp->tag == G3_1D);
+			length++;
+		}
 		for (i = 0; i < 6; i++)
 			Fax3PutBits(tif, code, length);
 		Fax3FlushBits(tif, sp);
@@ -1180,7 +1195,7 @@ Fax3VSetField(TIFF* tif, uint32 tag, va_list ap)
 		return (*sp->vsetparent)(tif, tag, ap);
 	}
 	
-	if ((fip = TIFFFieldWithTag(tif, tag)))
+	if ((fip = TIFFFieldWithTag(tif, tag)) != NULL)
 		TIFFSetFieldBit(tif, fip->field_bit);
 	else
 		return 0;
@@ -1239,10 +1254,14 @@ Fax3PrintDir(TIFF* tif, FILE* fd, long flags)
 		} else {
 
 			fprintf(fd, "  Group 3 Options:");
-			if (sp->groupoptions & GROUP3OPT_2DENCODING)
-				fprintf(fd, "%s2-d encoding", sep), sep = "+";
-			if (sp->groupoptions & GROUP3OPT_FILLBITS)
-				fprintf(fd, "%sEOL padding", sep), sep = "+";
+			if (sp->groupoptions & GROUP3OPT_2DENCODING) {
+				fprintf(fd, "%s2-d encoding", sep);
+				sep = "+";
+			}
+			if (sp->groupoptions & GROUP3OPT_FILLBITS) {
+				fprintf(fd, "%sEOL padding", sep);
+				sep = "+";
+			}
 			if (sp->groupoptions & GROUP3OPT_UNCOMPRESSED)
 				fprintf(fd, "%suncompressed data", sep);
 		}

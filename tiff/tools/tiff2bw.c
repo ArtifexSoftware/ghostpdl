@@ -1,4 +1,4 @@
-/* $Id: tiff2bw.c,v 1.15 2010-07-02 12:02:56 dron Exp $ */
+/* $Id: tiff2bw.c,v 1.19 2016-08-15 22:01:31 erouault Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -45,7 +45,7 @@
 #define	strneq(a,b,n)	(strncmp(a,b,n) == 0)
 
 /* x% weighting -> fraction of full color */
-#define	PCT(x)	(((x)*255+127)/100)
+#define	PCT(x)	(((x)*256+50)/100)
 int	RED = PCT(30);		/* 30% */
 int	GREEN = PCT(59);	/* 59% */
 int	BLUE = PCT(11);		/* 11% */
@@ -127,8 +127,10 @@ main(int argc, char* argv[])
 	unsigned char *inbuf, *outbuf;
 	char thing[1024];
 	int c;
+#if !HAVE_DECL_OPTARG
 	extern int optind;
 	extern char *optarg;
+#endif
 
 	while ((c = getopt(argc, argv, "c:r:R:G:B:")) != -1)
 		switch (c) {
@@ -171,6 +173,11 @@ main(int argc, char* argv[])
 		    argv[optind], samplesperpixel);
 		return (-1);
 	}
+	if( photometric == PHOTOMETRIC_RGB && samplesperpixel != 3) {
+		fprintf(stderr, "%s: Bad samples/pixel %u for PHOTOMETRIC_RGB.\n",
+		    argv[optind], samplesperpixel);
+		return (-1);
+	}
 	TIFFGetField(in, TIFFTAG_BITSPERSAMPLE, &bitspersample);
 	if (bitspersample != 8) {
 		fprintf(stderr,
@@ -205,7 +212,7 @@ main(int argc, char* argv[])
 		}
 	}
 	TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-	sprintf(thing, "B&W version of %s", argv[optind]);
+	snprintf(thing, sizeof(thing), "B&W version of %s", argv[optind]);
 	TIFFSetField(out, TIFFTAG_IMAGEDESCRIPTION, thing);
 	TIFFSetField(out, TIFFTAG_SOFTWARE, "tiff2bw");
 	outbuf = (unsigned char *)_TIFFmalloc(TIFFScanlineSize(out));

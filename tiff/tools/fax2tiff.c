@@ -1,4 +1,4 @@
-/* $Id: fax2tiff.c,v 1.22 2010-03-10 18:56:49 bfriesen Exp $ */
+/* $Id: fax2tiff.c,v 1.25 2016-10-25 22:22:45 erouault Exp $ */
 
 /*
  * Copyright (c) 1990-1997 Sam Leffler
@@ -72,11 +72,26 @@ uint32	badfaxlines;
 int	copyFaxFile(TIFF* tifin, TIFF* tifout);
 static	void usage(void);
 
+/*
+  Struct to carry client data.  Note that it does not appear that the client
+  data is actually used in this program.
+*/
+typedef struct _FAX_Client_Data
+{
+#if defined(_WIN32) && defined(USE_WIN32_FILEIO)
+        intptr_t fh; /* Operating system file handle */
+#else
+        int fd;      /* Integer file descriptor */
+#endif
+
+} FAX_Client_Data;
+
 int
 main(int argc, char* argv[])
 {
 	FILE *in;
 	TIFF *out = NULL;
+        FAX_Client_Data client_data;
 	TIFFErrorHandler whandler = NULL;
 	int compression_in = COMPRESSION_CCITTFAX3;
 	int compression_out = COMPRESSION_CCITTFAX3;
@@ -95,11 +110,13 @@ main(int argc, char* argv[])
 	int c;
 	int pn, npages;
 	float resY = 196.0;
+
+#if !HAVE_DECL_OPTARG
 	extern int optind;
 	extern char* optarg;
+#endif
 
-
-	while ((c = getopt(argc, argv, "R:X:o:1234ABLMPUW5678abcflmprsuvwz?")) != -1)
+	while ((c = getopt(argc, argv, "R:X:o:r:1234ABLMPUW5678abcflmprsuvwz?")) != -1)
 		switch (c) {
 			/* input-related options */
 		case '3':		/* input is g3-encoded */
@@ -265,10 +282,11 @@ main(int argc, char* argv[])
 			continue;
 		}
 #if defined(_WIN32) && defined(USE_WIN32_FILEIO)
-                TIFFSetClientdata(faxTIFF, (thandle_t)_get_osfhandle(fileno(in)));
+                client_data.fh = _get_osfhandle(fileno(in));
 #else
-                TIFFSetClientdata(faxTIFF, (thandle_t)fileno(in));
+                client_data.fd = fileno(in);
 #endif
+                TIFFSetClientdata(faxTIFF, (thandle_t) &client_data);
 		TIFFSetFileName(faxTIFF, (const char*)argv[optind]);
 		TIFFSetField(out, TIFFTAG_IMAGEWIDTH, xsize);
 		TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 1);

@@ -23,7 +23,7 @@
 
 # Process this file with automake to produce Makefile.in.
 
-AUTOMAKE_OPTIONS = 1.11 color-tests parallel-tests foreign
+AUTOMAKE_OPTIONS = 1.12 color-tests parallel-tests foreign
 
 LIBTIFF = $(top_builddir)/libtiff/libtiff.la
 
@@ -36,7 +36,11 @@ TESTS_ENVIRONMENT = \
 EXTRA_DIST = \
 	$(TESTSCRIPTS) \
 	$(IMAGES_EXTRA_DIST) \
-	common.sh
+	CMakeLists.txt \
+	common.sh \
+	TiffSplitTest.cmake \
+	TiffTestCommon.cmake \
+	TiffTest.cmake
 
 # All of the tests to execute via 'make check'
 TESTS = $(check_PROGRAMS) $(TESTSCRIPTS)
@@ -47,14 +51,21 @@ XFAIL_TESTS =
 # Extra files which should be cleaned by 'make clean'
 CLEANFILES = test_packbits.tif o-*
 
+if HAVE_JPEG
+JPEG_DEPENDENT_CHECK_PROG=raw_decode
+JPEG_DEPENDENT_TESTSCRIPTS=tiff2rgba-quad-tile.jpg.sh
+else
+JPEG_DEPENDENT_CHECK_PROG=
+JPEG_DEPENDENT_TESTSCRIPTS=
+endif
+
 # Executable programs which need to be built in order to support tests
-check_PROGRAMS = ascii_tag long_tag short_tag strip_rw rewrite
+check_PROGRAMS = \
+	ascii_tag long_tag short_tag strip_rw rewrite custom_dir \
+	$(JPEG_DEPENDENT_CHECK_PROG)
 
 # Test scripts to execute
 TESTSCRIPTS = \
-	bmp2tiff_palette.sh \
-	bmp2tiff_rgb.sh \
-	gif2tiff.sh \
 	ppm2tiff_pbm.sh \
 	ppm2tiff_pgm.sh \
 	ppm2tiff_ppm.sh \
@@ -124,7 +135,8 @@ TESTSCRIPTS = \
 	tiff2rgba-palette-1c-4b.sh \
 	tiff2rgba-palette-1c-8b.sh \
 	tiff2rgba-rgb-3c-16b.sh \
-	tiff2rgba-rgb-3c-8b.sh
+	tiff2rgba-rgb-3c-8b.sh \
+	$(JPEG_DEPENDENT_TESTSCRIPTS)
 
 # This list should contain all of the TIFF files in the 'images'
 # subdirectory which are intended to be used as input images for
@@ -139,14 +151,8 @@ TIFFIMAGES = \
 	images/palette-1c-4b.tiff \
 	images/palette-1c-8b.tiff \
 	images/rgb-3c-16b.tiff \
-	images/rgb-3c-8b.tiff
-
-BMPIMAGES = \
-	images/palette-1c-8b.bmp \
-	images/rgb-3c-8b.bmp
-
-GIFIMAGES = \
-	images/palette-1c-8b.gif
+	images/rgb-3c-8b.tiff \
+	images/quad-tile.jpg.tiff
 
 PNMIMAGES = \
 	images/minisblack-1c-8b.pgm \
@@ -158,8 +164,6 @@ PNMIMAGES = \
 # files which are not currently used by the tests.
 IMAGES_EXTRA_DIST = \
 	images/README.txt \
-	$(BMPIMAGES) \
-	$(GIFIMAGES) \
 	$(PNMIMAGES) \
 	$(TIFFIMAGES)
 
@@ -175,12 +179,29 @@ strip_rw_SOURCES = strip_rw.c strip.c test_arrays.c test_arrays.h
 strip_rw_LDADD = $(LIBTIFF)
 rewrite_SOURCES = rewrite_tag.c
 rewrite_LDADD = $(LIBTIFF)
+raw_decode_SOURCES = raw_decode.c
+raw_decode_LDADD = $(LIBTIFF)
+custom_dir_SOURCES = custom_dir.c
+custom_dir_LDADD = $(LIBTIFF)
 
-INCLUDES = -I$(top_srcdir)/libtiff
+AM_CPPFLAGS = -I$(top_srcdir)/libtiff
 
-# memcheck: valgrind's memory access checker
+# memcheck: valgrind's memory access checker.
+#
+# The suppressions which come with valgrind are sometimes insufficient
+# to handle certain system library aspects which may be reported and
+# which are unrelated to libtiff.  When first starting with a new
+# system (or after a major system update), it is good to execute the
+# test suite (known to already be passing!) like 'make memcheck
+# VALGRIND_EXTRA_OPTS=--gen-suppressions=all' to create valgrind
+# suppression entries in the test log.  Make sure that none of the
+# suppressions are due to libtiff itself.  Tell valgrind about the
+# suppressions by creating a .valgrindrc file with content like:
+# --memcheck:suppressions=mysupp.supp
 memcheck:
-	$(MAKE) MEMCHECK='valgrind --tool=memcheck --leak-check=full --read-var-info=yes --track-origins=yes --num-callers=12 --quiet $(VALGRIND_EXTRA_OPTS)' check
+	$(MAKE) MEMCHECK='valgrind --tool=memcheck --leak-check=full --read-var-info=yes \
+	--error-exitcode=2 --track-origins=yes --num-callers=12 \
+	--quiet $(VALGRIND_EXTRA_OPTS)' check
 
 # ptrcheck: valgrind's experimental pointer checking tool.
 ptrcheck:
