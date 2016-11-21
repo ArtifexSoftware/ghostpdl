@@ -2590,7 +2590,9 @@ currentdict /PDF2PS_matrix_key undef
                   } if
                 } if
                 /Form eq {
+                  dup /Group known {pop pop true exit}{
                   3 index exch resourceusestransparency { not exit } if
+                  } ifelse
                 } {
                   pop
                 } ifelse
