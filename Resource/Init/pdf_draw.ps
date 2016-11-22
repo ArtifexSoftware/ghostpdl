@@ -831,6 +831,10 @@ currentdict /csncompdict undef
                 % Contrary to PDF manuals up to v.1.5, Acrobat Distiller 3.01
                 % can use /Identity name here instead of a function.
     exch oforce resolveidfnproc
+
+    %% Make sure the ink name is not an indirect object....
+    3 -1 roll oforce 3 1 roll
+
     4 array astore
   } bdef
 
