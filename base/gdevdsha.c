@@ -192,7 +192,6 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
      */
     /* First determine if we are doing high level style colors or pure colors */
     bool devn = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);
-    bool is_pdf14 = dev_proc(dev, dev_spec_op)(dev, gxdso_is_pdf14_device, NULL, 0);
     frac31 c[GX_DEVICE_COLOR_MAX_COMPONENTS];
     ulong f[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int i, i1 = i0 + w, bi = i0, k;
@@ -202,8 +201,7 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
     int si, ei, di, code;
 
     /* Todo: set this up to vector earlier */
-    if ((devn && cinfo->polarity == GX_CINFO_POLARITY_SUBTRACTIVE) ||
-        (devn && is_pdf14))  /* PDF14 could be additive and doing devn */
+    if (devn)  /* Note, PDF14 could be additive and doing devn */
         return gx_hl_fill_linear_color_scanline(dev, fa, i0, j, w, c0, c0f,
                                                 cg_num, cg_den);
     if (j < fixed2int(fa->clip->p.y) ||
