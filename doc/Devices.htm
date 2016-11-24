@@ -386,8 +386,13 @@ drivers that produce uncompressed output:
 <dd>
 The <tt>tiffsep</tt> device creates multiple output files: a single 32 bit
 composite CMYK file and multiple tiffgray files, one for each
-separation.  The default compression is <code>lzw</code> but this
-may be overridden by the <code>-sCompression=</code> option.
+separation (unless <code>-dNoSeparationFiles</code> is specified). If separation
+files are being produced and more than one page is being generated, the output file
+specification <b>must</b> include a format specifier (e.g <code>-o outfile-%d.tif</code>)
+so that each page can have a uniquely named set of separation files.
+
+<p>The default compression is <code>lzw</code> but this may be overridden by
+the <code>-sCompression=</code> option.
 
 <p>
 The file specified via the OutputFile command line parameter will contain
@@ -409,9 +414,9 @@ Spot color name in '(' and ').tif' to the filename.
 If desired the file names for the spot color separation files can be created
 by appending '.sn.tif'  (where n is the spot color number, see below) to the end
 of the file name specified via the OutputFile parameter.   This change is a
-compile time edit.  To obtain this type
-of output the function create_separation_file_name in gdevtsep.c should be
-called with a true value for its use_sep_name parameter.
+compile time edit.  To obtain this type of output the function
+create_separation_file_name in gdevtsep.c should be called with a true value
+for its use_sep_name parameter.
 
 <p>
 The <tt>tiffsep</tt> device will automatically recognize spot colors. In this
@@ -472,18 +477,18 @@ of the document.  If more spot colorants are encountered than is specified by
 -dMaxSpots, then a warning will be printed indicating that some spot colorants will
 be mapped to CMYK using the alternate tint transform.
 
-<p>The <code>tiffsep</code> device accepts a -dBitsPerComponent=
+<p>The <code>tiffsep</code> device accepts a <code>-dBitsPerComponent=</code>
 option, which may be set to 8 (the default) or 1. In 1bpp mode, the
 device renders each component internally in 8 bits, but then converts
 down to 1bpp with error diffusion before output as described below in
 the <code>tiffscaled</code> device. No composite file is produced in
 1bpp mode, only individual separations.
 
-<p>The device also accepts the -dDownScaleFactor= -dTrapX= -dTrapy= and -sPostRenderProfile=
-parameters as described below in the tiffscaled device, and
--dMinFeatureSize= in 1bpp mode.
+<p>The device also accepts the <code>-dDownScaleFactor= -dTrapX= -dTrapy=</code> and
+<code>-sPostRenderProfile=</code> parameters as described below in the tiffscaled device,
+and <code>-dMinFeatureSize=</code> in 1bpp mode.
 
-<p>When -dDownScaleFactor= is used in 8 bit mode with the <tt>tiffsep</tt>
+<p>When <code>-dDownScaleFactor=</code> is used in 8 bit mode with the <tt>tiffsep</tt>
 (and <tt>psdcmyk</tt>/<tt>psdrgb</tt>) device(s) 2 additional &quot;special&quot; ratios
 are available, 32 and 34. 32 provides a 3:2 downscale (so from 300 to
 200 dpi, say). 34 produces a 3:4 upscale (so from 300 to 400 dpi, say).
@@ -515,7 +520,7 @@ If the file name specified via the OutputFile parameter ends with the suffix
 <dd>
 The <tt>tiffscaled</tt> device renders internally at the specified resolution to an
 8 bit greyscale image. This is then scaled down by an integer scale factor
-(set by -dDownScaleFactor= described below) and then error diffused to give
+(set by <code>-dDownScaleFactor=</code> described below) and then error diffused to give
 1bpp output. The compression can be set using -sCompression= as described
 below.
 
@@ -523,7 +528,7 @@ below.
 <dd>
 The <tt>tiffscaled4</tt> device renders internally at the specified resolution to an
 8 bit cmyk image. This is then scaled down by an integer scale factor
-(set by -dDownScaleFactor= described below) and then error diffused to give
+(set by <code>-dDownScaleFactor</code>= described below) and then error diffused to give
 4bpp cmyk output. The compression can be set using -sCompression= as described
 below.
 
@@ -531,14 +536,14 @@ below.
 <dd>
 The <tt>tiffscaled8</tt> device renders internally at the specified resolution to an
 8 bit greyscale image. This is then scaled down by an integer scale factor
-(set by -dDownScaleFactor= described below). The compression can be set using
+(set by <code>-dDownScaleFactor</code>= described below). The compression can be set using
 -sCompression= as described below.
 
 <a name="tiffscaled24"></a><dt><code>tiffscaled24</code>
 <dd>
 The <tt>tiffscaled24</tt> device renders internally at the specified resolution to a
 24 bit rgb image. This is then scaled down by an integer scale factor
-(set by -dDownScaleFactor= described below). The compression can be set using
+(set by <code>-dDownScaleFactor</code>= described below). The compression can be set using
 -sCompression= as described below.
 
 
@@ -546,7 +551,7 @@ The <tt>tiffscaled24</tt> device renders internally at the specified resolution 
 <dd>
 The <tt>tiffscaled32</tt> device renders internally at the specified resolution to a
 32 bit cmyk image. This is then scaled down by an integer scale factor
-(set by -dDownScaleFactor= described below). The compression can be set using
+(set by <code>-dDownScaleFactor</code>= described below). The compression can be set using
 -sCompression= as described below.
 
 </dl>
