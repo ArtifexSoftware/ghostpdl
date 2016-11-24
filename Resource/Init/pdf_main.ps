@@ -566,6 +566,13 @@ pdfdict begin
 
 % Read the cross-reference and trailer sections.
 
+% I believe the definitions here are only used when parsing the trailer
+% dictionary and cross-reference table. So, following on from bug 697351
+% we will validate the operands to /R here, because the trailer and xref
+% are comparatively small. Note that the bug does not expose a problem
+% here, but we probably ought to validate the operands. Of course, if
+% they are invalid, the PDF file is probably unreadable anyway.
+
 /traileropdict mark
   (<<) cvn { /dictlevelcount dictlevelcount 1 add store mark } bind
   (>>) cvn { { .dicttomark } stopped {
@@ -579,7 +586,14 @@ pdfdict begin
 %  /true true		% see .pdfexectoken in pdf_base.ps
 %  /false false		% ibid.
 %  /null null		% ibid.
-  /R { /resolveR cvx 3 packedarray cvx } bind	% see Objects below
+  /R {
+  1 index type /integertype eq 1 index type /integertype eq and {
+    /resolveR cvx 3 packedarray cvx
+  } {
+    (   **** Error: indirect object reference \(R\) encountered with invalid arguments.) pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
+  } ifelse
+  } bind	% see Objects below
 .dicttomark readonly def
 
 % After reading entry count: skip whitespace, exit on a digit

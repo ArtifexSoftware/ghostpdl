@@ -527,7 +527,21 @@ currentdict /token_nofail_dict .undef
   } ifelse
 } bind def
 /R {		% <object#> <generation#> R <object>
-  /resolveR cvx 3 packedarray cvx
+  %% Parameter validation; this should not be required but we have found files
+  %% (Bug 697351) which are corrupted in ways that mean we see a 'R' in a stream
+  %% even though it is not an indirect object reference. Because a stream
+  %% may reference objetcs which have not been resolved, we cannot simply
+  %% 'undef' teh R operator, the only solution is to have it chekc the
+  %% types of its operands. This is poterntially slow of course, we may
+  %% need to remove this in future if the performance penalty is too great.
+  %% We cannot slow down all files significantly purely to work-around
+  %% files which are invalid.
+  1 index type /integertype eq 1 index type /integertype eq and {
+    /resolveR cvx 3 packedarray cvx
+  } {
+    (   **** Error: indirect object reference \(R\) encountered with invalid arguments.) pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
+  } ifelse
 } bind def
 
 % If we encounter an object definition while reading sequentially,
