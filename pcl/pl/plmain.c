@@ -233,7 +233,6 @@ GSDLLEXPORT int GSDLLAPI
 pl_main_aux(int argc, char *argv[], void *disp)
 {
     gs_memory_t *mem;
-    gs_memory_t *pjl_mem;
     pl_main_instance_t *inst;
     arg_list args = { 0 };
     char *filename = NULL;
@@ -251,9 +250,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
 
     pl_platform_init(mem->gs_lib_ctx->fstdout);
 
-    pjl_mem = mem;
-
-    if (gs_lib_init1(pjl_mem) < 0)
+    if (gs_lib_init1(mem) < 0)
         goto fail;
 
     /* Create a memory allocator to allocate various states from */
@@ -266,12 +263,12 @@ pl_main_aux(int argc, char *argv[], void *disp)
          */
         extern int gs_iodev_init(gs_memory_t *);
 
-        if (gs_iodev_init(pjl_mem) < 0)
+        if (gs_iodev_init(mem) < 0)
             goto fail;
     }
 
     /* Init the top-level instance */
-    gs_c_param_list_write(&params, pjl_mem);
+    gs_c_param_list_write(&params, mem);
     gs_param_list_set_persistent_keys((gs_param_list *) & params, false);
     inst = pl_main_alloc_instance(mem);
     if (inst == NULL)
@@ -284,9 +281,9 @@ pl_main_aux(int argc, char *argv[], void *disp)
              arg_get_codepoint, mem);
 
     /* Create PJL instance */
-    if (pl_allocate_interp(&pjl_interp, &pjl_implementation, pjl_mem) < 0
+    if (pl_allocate_interp(&pjl_interp, &pjl_implementation, mem) < 0
         || pl_allocate_interp_instance(&pjl_instance, pjl_interp,
-                                       pjl_mem) < 0) {
+                                       mem) < 0) {
         errprintf(mem, "Unable to create PJL interpreter.\n");
 	goto fail;
     }
