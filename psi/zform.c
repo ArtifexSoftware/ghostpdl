@@ -76,6 +76,8 @@ static int zbeginform(i_ctx_t *i_ctx_p)
     tmplate.form_matrix.ty = Matrix[5];
 
     tmplate.pcpath = igs->clip_path;
+
+    tmplate.pgs = igs;
     code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_form_begin,
                             &tmplate, 0);
 

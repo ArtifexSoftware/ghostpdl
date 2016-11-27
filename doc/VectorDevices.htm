@@ -723,6 +723,16 @@ multple times, just as the input did. This can lead to a small increase in the s
 PDF file (but no other problems). If this should happen, and is important to you, you can use this switch to disable the
 use of the object number (and filename) in determining the uniqueness of fonts.</dd>
 </dt>
+
+<dl>
+<dt><code>-dPreserveAnnots=</code><em>boolean</em>
+<dd>We now attempt to preserve most annotations from input PDF files as annotations in the output PDF file (note, not in output PostScript!)
+There are a few annotation types which are not preserved, most notably Link and Widget annotations. However, should you wisht to revert
+to the old behaviour, or find tht the new behaviour leads to problems, you can set this switch to false which will cause all annotations to be
+inserted into the page content stream, instead of preserved as annotations.
+</dd>
+</dt>
+
 <p>
 The following options are useful for creating PDF 1.2 files:
 <p>

@@ -2199,7 +2199,48 @@ currentdict /last-ditch-bpc-csp undef
   } ifelse
 } bdef
 
+/IncrementAppearanceNumber {
+  pdfdict /AppearanceNumber .knownget {
+    1 add pdfdict /AppearanceNumber 3 -1 roll .forceput
+  }{
+    pdfdict /AppearanceNumber 0 .forceput
+  } ifelse
+}bdef
+
+/MakeAppearanceName {
+  pdfdict /AppearanceNumber get
+  10 string cvs
+  dup length 10 add string dup 0 (\{FormName) putinterval
+  dup 3 -1 roll
+  9 exch putinterval
+  dup dup length 1 sub (\}) putinterval
+} bdef
+
+/MakeNewAppearanceName {
+  IncrementAppearanceNumber
+  MakeAppearanceName
+}bdef
+
+/DoAppearance {
+%% Might need to rethink this. The problem is that if the page has a CropBox, we apply
+%% that as an initial clip. When we run the form, we don't apply the /Rect from the
+%% annotation, which means that the form could be out of the clip, which results in
+%% content going missing. Resetting the clip prevents this.
+  gsave initclip
+  MakeNewAppearanceName
+  .pdfFormName
+  pdfdict /.PreservePDFForm known {pdfdict /.PreservePDFForm get} {//false}ifelse exch
+  pdfdict /.PreservePDFForm true .forceput
+  DoForm
+  pdfdict /.PreservePDFForm 3 -1 roll .forceput
+  grestore
+} bdef
+
 /DoForm {
+  %% save the current value, if its true we will set it to false later, in order
+  %% to prevent us preserving Forms which are used *from* an annotation /Appearance.
+  pdfdict /.PreservePDFForm known {pdfdict /.PreservePDFForm get} {//false}ifelse exch
+
   %% We may alter the Default* colour spaces, if the Resources
   %% ColorSpace entry contains one of them. But we don't want that
   %% to become the new default, we want to revert to any existing
@@ -2312,7 +2353,19 @@ currentdict /last-ditch-bpc-csp undef
     % Adjust pdfemptycount since we have an extra dictionary on the stack
   pdfemptycount countdictstack 3 -1 roll
   /pdfemptycount count 4 sub store
-  /q cvx /PDFexecform cvx 5 -2 roll
+
+  pdfdict /.PreservePDFForm known {pdfdict /.PreservePDFForm get}{//false} ifelse
+  {
+    %% We must *not* preserve any subsidiary forms (curently at least) as PDF
+    %% form preservation doesn't really work. This is used just for Annotation
+    %% Appearances currently, and if they should happen to use a form, we do not
+    %% want to preserve it.
+    pdfdict /.PreservePDFForm false .forceput
+    /q cvx /execform cvx 5 -2 roll
+  }{
+    /q cvx /PDFexecform cvx 5 -2 roll
+  } ifelse
+
   4 .execn
   % Restore pdfemptycount
   0
@@ -2332,13 +2385,14 @@ currentdict /last-ditch-bpc-csp undef
   /pdfemptycount exch store
 
   %% Put back pre-existing Default* ColorSpace definitions.
-  dup type /dicttype eq {
-  begin
-  saved_DG /DefaultGray exch /ColorSpace defineresource pop
-  saved_DRGB /DefaultRGB exch /ColorSpace defineresource pop
-  saved_DCMYK /DefaultCMYK exch /ColorSpace defineresource pop
-  end
-} if
+    dup type /dicttype eq {
+    begin
+    saved_DG /DefaultGray exch /ColorSpace defineresource pop
+    saved_DRGB /DefaultRGB exch /ColorSpace defineresource pop
+    saved_DCMYK /DefaultCMYK exch /ColorSpace defineresource pop
+    end
+  } if
+  pdfdict /.PreservePDFForm 3 -1 roll .forceput
 } bdef
 
 /_dops_save 1 array def
@@ -3210,7 +3264,6 @@ currentdict /set_bc_color undef
   /emptydict 0 dict readonly def
 
   /Highlight {
-    % Acrobat ignores /AP and uses transparent highlighting
     0 setlinecap
     dup annotsetcolor {
       /QuadPoints knownoget {
@@ -3349,7 +3402,7 @@ currentdict /set_bc_color undef
     {
       gsave
 
-      dup annotrect rectclip
+      dup annotrect (rectclip from freetext annotation) == flush rectclip
 
       dup /CA knownoget {
         .setopacityalpha
@@ -3675,6 +3728,209 @@ currentdict end readonly def
   } if pop			% annotvisible
 } bdef
 currentdict /drawannottypes undef
+
+% Draw an annotation.
+
+/loadannot {
+  dup /AP .knownget {                                       % <<Annot dict>> <<Appearance dictionary>> true | false
+    oforce
+
+    dup {                                                       % <<Annot dict>> <<Appearance dict>> /Key <</Key dict>>
+    oforce                                                  % <<Annot dict>> <<Appearance dict>> /Key <<resolved /Key dict>>
+
+    %%
+    %% Check to see if the apperance key has a simple stream or a dictionary of states
+    %%
+    dup /Subtype known                                      % <<Annot dict>> <<Appearance dict>> /Key <<resolved /Key dict>> bool
+    {
+      %% Simple appearance stream
+      DoAppearance                                          % <<Annot dict>> <<Appearance dict>> /Key
+      2 index                                               % <<Annot dict>> <<Appearance dict>> /Key <<Annot dict>>
+      /AP <<                                                % <<Annot dict>> <<Appearance dict>> /Key <<Annot dict>> /AP <<
+      4 -1 roll MakeAppearanceName cvx cvn >> put           % <<Annot dict>> <<Appearance dict>>
+    } {
+      %% dictionary of states   <<Annot dict>> <<Appearance dict>> /Key <<appearance states dict>>
+      dup                                                   % <<Annot dict>> <<Appearance dict>> /Key <<appearance states dict>> <<appearance states dict>>
+      {                                                     % <<Annot dict>> <<Appearance dict>> /Key <<appearance states dict>> /StateKey <<State dictionary>>
+        oforce                                              % <<Annot dict>> <<Appearance dict>> /Key <<appearance states dict>> /StateKey <<resolved State dictionary>>
+        DoAppearance                                        % <<Annot dict>> <<Appearance dict>> /Key <<appearance states dict>> /StateKey
+        1 index exch                                        % <<Annot dict>> <<Appearance dict>> /Key <<appearance states dict>> <<appearance states dict>> /StateKey
+        MakeAppearanceName cvx cvn                          % <<Annot dict>> <<Appearance dict>> /Key <<appearance states dict>> <<appearance states dict>> /StateKey {}
+        put                                                 % <<Annot dict>> <<Appearance dict>> /Key <<appearance states dict>>
+      } forall
+      put                                                   % <<Annot dict>> <<Appearance dict>> /Key
+      dup
+    }ifelse
+    } forall
+    pop                                                   % <<Annot dict>>
+  } if
+
+  %% Parent (or /P) references will be incorrect. Remove them
+  %% for now as they are optional.
+  dup /Popup known {dup /Popup undef} if
+  dup /IRT known {dup /IRT undef} if
+  dup /RT known {dup /RT undef} if
+  dup /P known {dup /P undef} if
+  dup /Parent known {dup /Parent undef} if
+
+  %% Resolve any indirect references. May need further work :-(
+  {
+    %% We know /AP doesn't need processing, we handled that above...
+    1 index /AP eq not {
+      dup {oforce} stopped not {exch pop} if
+      dup type /dicttype eq{
+        dup
+        {
+          dup {oforce} stopped not {exch pop} if
+          2 index 3 1 roll put
+        } forall
+      } if
+      dup type /arraytype eq {
+        0 1 2 index length 1 sub{
+          dup 2 index exch get dup {oforce} stopped not {exch pop} if
+          2 index 3 1 roll put
+        } for
+      } if
+    } if
+  } forall
+} bdef
+
+
+/ApplyCTMToQuadPoints {
+  %% Nasty hackery here really. We need to undo the HWResolution scaling which
+  %% is done by pdfwrite. Default is 720 dpi, so 0.1. We also need to make
+  %% sure that any translation of the page (because its been rotated for example)
+  %% is also modified by the requisite amount. SO we ned to calculate a matrix
+  %% which does the scaling and concatenate it with the current matrix.
+  %% Do this inside a gsave/grestore pair to avoid side effects!
+
+  gsave
+  currentpagedevice /HWResolution get
+  aload pop exch 72 exch div exch 72 exch div
+  matrix 3 1 roll 2 index 3 3 -1 roll put
+  1 index 0 3 -1 roll put
+  matrix currentmatrix exch matrix concatmatrix
+  setmatrix
+
+  oforce
+
+  %% QuadPoints are given as 'n' sequences of 8 numbers.
+
+  mark exch aload counttomark 1 roll
+  counttomark 1 sub 2 div cvi {
+    transform
+    counttomark 1 sub 2 roll
+  } repeat
+  counttomark -1 roll astore
+
+  exch pop % the mark
+
+  grestore
+} bdef
+
+/preserveannottypes 20 dict begin
+
+/Circle {mark exch loadannot /ANN pdfmark  false} bdef
+/FileAttachment {mark exch loadannot /ANN pdfmark  false} bdef
+/FreeText {mark exch loadannot /ANN pdfmark  false} bdef
+
+/Highlight {
+  mark exch
+  dup /QuadPoints .knownget {
+    1 index /QuadPoints 3 -1 roll
+    ApplyCTMToQuadPoints
+    put
+  } if
+  loadannot /ANN pdfmark  false
+} bdef
+
+/Ink {mark exch loadannot /ANN pdfmark  false} bdef
+
+/Line {
+  mark exch dup /L .knownget {
+    aload 5 1 roll transform 4 -2 roll transform 4 2 roll
+    5 -1 roll astore
+    1 index /L 3 -1 roll put
+  } if
+  loadannot /ANN pdfmark false
+} bdef
+
+/Link {mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse cleartomark false} bdef
+
+/Movie {mark exch loadannot /ANN pdfmark  false} bdef
+/Popup {mark exch loadannot /ANN pdfmark  false} bdef
+/Sound {mark exch loadannot /ANN pdfmark  false} bdef
+/Square {mark exch loadannot /ANN pdfmark false} bdef
+/Stamp {mark exch loadannot /ANN pdfmark  false} bdef
+
+/StrikeOut {
+  mark exch
+  dup /QuadPoints .knownget {
+    1 index /QuadPoints 3 -1 roll
+    ApplyCTMToQuadPoints
+    put
+  } if
+  loadannot /ANN pdfmark  false
+} bdef
+
+/Squiggly {
+  mark exch
+  dup /QuadPoints .knownget {
+    1 index /QuadPoints 3 -1 roll
+    ApplyCTMToQuadPoints
+    put
+  } if
+  loadannot /ANN pdfmark  false
+} bdef
+
+/Text {mark exch loadannot /ANN pdfmark  false} bdef
+/TrapNet {mark exch loadannot /ANN pdfmark  false} bdef
+
+/Underline {
+  mark exch
+  dup /QuadPoints .knownget {
+    1 index /QuadPoints 3 -1 roll
+    ApplyCTMToQuadPoints
+    put
+  } if
+  loadannot /ANN pdfmark  false
+} bdef
+
+%% Widget annotations are only used with AcroForms, and since we don't preserve AcroForms
+%% we don't want to preserve widget annotations either, because the consumer of the new
+%% PDF won't know what values they should take. So we draw widget annotations instead. If we
+%% ever preserve AcroForms then we should alter this to preserve Widgets as well.
+%% simply chane "drawannot" to "mark exch loadannot /ANN pdfmark"
+/Widget {mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse cleartomark false} bdef
+
+currentdict end readonly def
+
+/preserveannot {		% <annot> preserveannot -
+  dup annotvisible {
+    gsave
+    dup dup /Subtype knownoget {
+      //preserveannottypes exch .knownget { exec } { //true } ifelse
+      {
+        dup calc_annot_scale 2 copy mul 0 ne
+        {
+          3 -1 roll drawwidget
+        }
+        {
+          (   **** Error: ignoring annotation with scale factor of 0\n) pdfformaterror
+          (               Output may be incorrect.\n) pdfformaterror
+        }ifelse % Draw rejected annots as widgets
+      } if			% type known
+    } {
+      pop
+      (   **** Error: Ignoring /Annot dict without required /Subtype entry.\n)
+      pdfformaterror
+      (               Output may be incorrect.\n) pdfformaterror
+    } ifelse
+    grestore
+  } if pop			% annotvisible
+} bdef
+
+currentdict /preserveannottypes undef
 
 % ============================ AcroForm fields ============================ %
 

@@ -2486,7 +2486,23 @@ currentdict /PDF2PS_matrix_key undef
     /Annots knownoget {
       { oforce
         dup //null ne {
-          mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse cleartomark
+        .writepdfmarks
+        %%
+        %% We don't want to preserve annotations with ps2write, because we don't convert them
+        %% back into pdfmarks on output.
+        %%
+        /ForOPDFRead /GetDeviceParam .special_op {
+          exch pop
+        }{
+          //false
+        }ifelse
+        not
+        and
+        //systemdict /PreserveAnnots .knownget not {//true} if and {
+            mark exch {preserveannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse cleartomark
+          }{
+            mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse cleartomark
+          } ifelse
         } {
           pop
         } ifelse

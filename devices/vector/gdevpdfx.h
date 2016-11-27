@@ -883,6 +883,12 @@ struct gx_device_pdf_s {
                                      * used, the content of ths string is written out as part of the
                                      * metadata referenced by the Catalog.
                                      */
+    char *PDFFormName;              /* If present, we are processing (or about to process) a Form XObject
+                                     * which we wish to handle as a Form XObject, not flatten. Currently
+                                     * this is only the case for Annotation Appearances. This must be NULL
+                                     * after the form is processed. The name will be used to create a
+                                     * local named object which pdfmark can reference.
+                                     */
 };
 
 #define is_in_page(pdev)\
@@ -1073,6 +1079,13 @@ pdf_resource_t *pdf_find_resource_by_resource_id(gx_device_pdf * pdev,
 pdf_resource_t *pdf_find_resource_by_gs_id(gx_device_pdf * pdev,
                                            pdf_resource_type_t rtype,
                                            gs_id rid);
+
+/* Remove a resource from a chain of resources but do not free it. The resource will
+ * have to be listed elsewhere. This is primarily useful for moving existing resources
+ * to local named resources.
+ */
+void
+pdf_drop_resource_from_chain(gx_device_pdf * pdev, pdf_resource_t *pres1, pdf_resource_type_t rtype);
 
 void pdf_drop_resources(gx_device_pdf * pdev, pdf_resource_type_t rtype,
         int (*cond)(gx_device_pdf * pdev, pdf_resource_t *pres));

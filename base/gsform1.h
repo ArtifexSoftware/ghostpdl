@@ -22,5 +22,6 @@ typedef struct gs_form_template_s {
     gs_matrix CTM;
     gx_clip_path * pcpath;
     int FormID;
+    gs_gstate *pgs;
 } gs_form_template_t;
 

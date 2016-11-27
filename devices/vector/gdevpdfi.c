@@ -2035,13 +2035,27 @@ int
 gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
 {
     gx_device_pdf *pdev = (gx_device_pdf *)pdev1;
-    int code=0;
+    int code=0, force_CTM_change=0;
     pdf_resource_t *pres, *pres1;
     gx_bitmap_id id = (gx_bitmap_id)size;
 
     switch (dev_spec_op) {
         case gxdso_pattern_can_accum:
             return 1;
+        case gxdso_pdf_form_name:
+            if (pdev->PDFFormName) {
+                gs_free_object(pdev->memory->non_gc_memory, pdev->PDFFormName, "free Name of Form for pdfmark");
+            }
+            pdev->PDFFormName = (char *)gs_alloc_bytes(pdev->memory->non_gc_memory, size + 1, "Name of Form for pdfmark");
+            memset(pdev->PDFFormName, 0x00, size + 1);
+            memcpy(pdev->PDFFormName, data, size);
+            return 0;
+        case gxdso_pdf_last_form_ID:
+            {
+            int *i = (int *)data;
+            *i = pdev->LastFormID;
+            }
+            return 0;
         case gxdso_form_begin:
             if ((!pdev->ForOPDFRead || pdev->HighLevelForm == 0) && pdev->PatternDepth == 0) {
                 gs_form_template_t *tmplate = (gs_form_template_t *)data;
@@ -2055,18 +2069,20 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 code = pdf_open_contents(pdev, PDF_IN_STREAM);
                 if (code < 0)
                     return code;
-                /* Put any extant clip out before we start the form */
-                code = pdf_put_clip_path(pdev, tmplate->pcpath);
-                if (code < 0)
-                    return code;
-                /* Set the CTM to be the one passed in from the interpreter,
-                 * this allows us to spot forms even when translation/rotation takes place
-                 * as we remove the CTN from the form stream before capture
-                 */
-                pprintg6(pdev->strm, "q %g %g %g %g %g %g cm\n", tmplate->CTM.xx, tmplate->CTM.xy,
-                         tmplate->CTM.yx, tmplate->CTM.yy, tmplate->CTM.tx, tmplate->CTM.ty);
+                if (!pdev->PDFFormName) {
+                    /* Put any extant clip out before we start the form */
+                    code = pdf_put_clip_path(pdev, tmplate->pcpath);
+                    if (code < 0)
+                        return code;
+                    /* Set the CTM to be the one passed in from the interpreter,
+                     * this allows us to spot forms even when translation/rotation takes place
+                     * as we remove the CTN from the form stream before capture
+                     */
+                    pprintg6(pdev->strm, "q %g %g %g %g %g %g cm\n", tmplate->CTM.xx, tmplate->CTM.xy,
+                             tmplate->CTM.yx, tmplate->CTM.yy, tmplate->CTM.tx, tmplate->CTM.ty);
+                }
 
-                /* star capturing the form stream */
+                /* start capturing the form stream */
                 code = pdf_enter_substream(pdev, resourceXObject, id, &pres, false,
                         pdev->CompressStreams);
                 if (code < 0)
@@ -2082,42 +2098,153 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     code = cos_dict_put_c_strings(pcd, "/FormType", "1");
                 if (code >= 0)
                     code = cos_dict_put_c_key_object(pcd, "/Resources", COS_OBJECT(pcd_Resources));
-                arry[0] = tmplate->BBox.p.x;
-                arry[1] = tmplate->BBox.p.y;
-                arry[2] = tmplate->BBox.q.x;
-                arry[3] = tmplate->BBox.q.y;
-                if (code >= 0)
-                    code = cos_dict_put_c_key_floats(pdev, pcd, "/BBox", arry, 4);
+
+                if (pdev->PDFFormName) {
+                    /* This is not (I think) required when executing PS forms, because the
+                     * CTM is written out before we execute the Form. It *is* required for
+                     * PDF Appearance Forms, because the Form is written directly from the
+                     * outer context, not from the page, so we don't emit the CTM first.
+                     * We want to alter the Form BBox to take any required rotation and scaling
+                     * (from FitPage and /Rotate) into account so that the form appearance is
+                     * properly scaled and rotated.
+                     */
+                    gs_rect bbox_out;
+                    gs_matrix cmat, new_mat = tmplate->CTM;
+
+                    /* We don't want anything left over from the page content stream, or other
+                     * annotation appearances, to affect whether or not we emit any graphics
+                     * state, so reset the state here to the defaults.
+                     */
+                    pdf_viewer_state_from_gs_gstate(pdev, tmplate->pgs, NULL);
+                    /* For PDF Appearance streams at least, the Form BBox is modified by the
+                     * Form Matrix.
+                     */
+                    code = gs_matrix_multiply(&tmplate->form_matrix, &tmplate->CTM, &cmat);
+                    if (code < 0)
+                        return code;
+                    code = gs_bbox_transform(&tmplate->BBox, &cmat, &bbox_out);
+                    if (code < 0)
+                        return code;
+
+                    /* Check the BBox is on the page. Modify it if it is not (this can happen
+                     * if the MediaBox does not have bottom left at 0,0)
+                     */
+                    cmat.xx = cmat.yy = 1.0f;
+                    cmat.xy = cmat.yx = cmat.tx = cmat.ty = 0.0f;
+                    if(bbox_out.q.x - bbox_out.p.x > pdev->width) {
+                        cmat.xx = pdev->width / (bbox_out.q.x - bbox_out.p.x);
+                        bbox_out.q.x = bbox_out.p.x + ((bbox_out.q.x - bbox_out.p.x) * cmat.xx);
+                        force_CTM_change = 1;
+                    }
+                    if(bbox_out.q.y - bbox_out.p.y > pdev->height) {
+                        cmat.yy = pdev->height / (bbox_out.q.y - bbox_out.p.y);
+                        bbox_out.q.y = bbox_out.p.y + ((bbox_out.q.y - bbox_out.p.y) * cmat.yy);
+                        force_CTM_change = 1;
+                    }
+
+                    if (bbox_out.p.x < 0) {
+                        cmat.tx = bbox_out.p.x * -1;
+                        bbox_out.q.x += cmat.tx;
+                        force_CTM_change = 1;
+                    }
+                    if (floor(bbox_out.q.x) > pdev->width) {
+                        cmat.tx -= bbox_out.p.x;
+                        bbox_out.q.x -= bbox_out.p.x;
+                        bbox_out.p.x = 0;
+                        force_CTM_change = 1;
+                    }
+                    if (bbox_out.p.y < 0) {
+                        cmat.ty = bbox_out.p.y * -1;
+                        bbox_out.q.y += cmat.ty;
+                        force_CTM_change = 1;
+                    }
+                    if (floor(bbox_out.q.y) > pdev->height) {
+                        cmat.ty += pdev->height - bbox_out.q.y;
+                        force_CTM_change = 1;
+                    }
+
+                    if (force_CTM_change) {
+                        code = gs_matrix_multiply(&tmplate->CTM, &cmat, &new_mat);
+                        if (code < 0)
+                            return code;
+                        code = gs_matrix_multiply(&tmplate->form_matrix, &new_mat, &cmat);
+                        if (code < 0)
+                            return code;
+                        code = gs_bbox_transform(&tmplate->BBox, &cmat, &bbox_out);
+                        if (code < 0)
+                            return code;
+                        tmplate->CTM = cmat;
+                    }
+                    arry[0] = bbox_out.p.x;
+                    arry[1] = bbox_out.p.y;
+                    arry[2] = bbox_out.q.x;
+                    arry[3] = bbox_out.q.y;
+                    if (code >= 0)
+                        code = cos_dict_put_c_key_floats(pdev, pcd, "/BBox", arry, 4);
+                    if (code < 0)
+                        return code;
+
+                    /* Note that we will apply the CTM to the form, and the Form Matrix. To prevcent
+                     * us applying the Matrix twice, we need to set it to the identity in the Form
+                     * dictionary. I'm not sure why we don't need to do that for PostScript Forms.
+                     */
+                    arry[0] = arry[3] = 1.0f;
+                    arry[1] = arry[2] = arry[4] = arry[5] = 0.0f;
+                } else {
+                    arry[0] = tmplate->BBox.p.x;
+                    arry[1] = tmplate->BBox.p.y;
+                    arry[2] = tmplate->BBox.q.x;
+                    arry[3] = tmplate->BBox.q.y;
+                    if (code >= 0)
+                        code = cos_dict_put_c_key_floats(pdev, pcd, "/BBox", arry, 4);
+                    if (code < 0)
+                        return code;
+
+                    arry[0] = tmplate->form_matrix.xx;
+                    arry[1] = tmplate->form_matrix.xy;
+                    arry[2] = tmplate->form_matrix.yx;
+                    arry[3] = tmplate->form_matrix.yy;
+                    arry[4] = tmplate->form_matrix.tx;
+                    arry[5] = tmplate->form_matrix.ty;
+
+                    pprintg2(pdev->strm, "%g 0 0 %g 0 0 cm\n",
+                         72.0 / pdev->HWResolution[0], 72.0 / pdev->HWResolution[1]);
+                }
+
+                code = cos_dict_put_c_key_floats(pdev, pcd, "/Matrix", arry, 6);
                 if (code < 0)
                     return code;
-
-                arry[0] = tmplate->form_matrix.xx;
-                arry[1] = tmplate->form_matrix.xy;
-                arry[2] = tmplate->form_matrix.yx;
-                arry[3] = tmplate->form_matrix.yy;
-                arry[4] = tmplate->form_matrix.tx;
-                arry[5] = tmplate->form_matrix.ty;
-                code = cos_dict_put_c_key_floats(pdev, pcd, "/Matrix", arry, 6);
-                pprintg2(pdev->strm, "%g 0 0 %g 0 0 cm\n",
-                         72.0 / pdev->HWResolution[0], 72.0 / pdev->HWResolution[1]);
 
                 /* We'll return this to the interpreter and have it set
                  * as the CTM, so that we remove the prior CTM before capturing the form.
                  * This is safe because forms are always run inside a gsave/grestore, so
                  * CTM will be put back for us.
                  */
-                tmplate->CTM.xx = pdev->HWResolution[0] / 72;
-                tmplate->CTM.xy = 0.0;
-                tmplate->CTM.yx = 0.0;
-                tmplate->CTM.yy = pdev->HWResolution[0] / 72;
-                tmplate->CTM.tx = 0.0;
-                tmplate->CTM.ty = 0.0;
+                if (!pdev->PDFFormName) {
+                    tmplate->CTM.xx = pdev->HWResolution[0] / 72;
+                    tmplate->CTM.xy = 0.0;
+                    tmplate->CTM.yx = 0.0;
+                    tmplate->CTM.yy = pdev->HWResolution[0] / 72;
+                    tmplate->CTM.tx = 0.0;
+                    tmplate->CTM.ty = 0.0;
 
-                pdev->substream_Resources = pcd_Resources;
-                pres->rid = id;
-                if (code >= 0)
-                    pdev->HighLevelForm++;
-                return 1;
+                    pdev->substream_Resources = pcd_Resources;
+                    pres->rid = id;
+                    if (code >= 0)
+                        pdev->HighLevelForm++;
+                    return 1;
+                } else {
+                    /* For PDF Appearance streams (Forms) we *must* apply the
+                     * CTM. This is because if the PDF has a non-zero Rotate key
+                     * we bake that rotation into the CTM. If we didn't apply that
+                     * then the annotation wouldn't get rotated :-(
+                     */
+                    pdev->substream_Resources = pcd_Resources;
+                    pres->rid = id;
+                    if (code >= 0)
+                        pdev->HighLevelForm++;
+                    return force_CTM_change;
+                }
             }
             return code;
         case gxdso_form_end:
@@ -2140,7 +2267,21 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     pres->where_used |= pdev->used_mask;
                 } else if (pres->object->id < 0)
                     pdf_reserve_object_id(pdev, pres, 0);
-                pprintld1(pdev->strm, "/R%ld Do Q\n", pdf_resource_id(pres));
+                if (pdev->PDFFormName) {
+                    cos_value_t value;
+
+                    code = cos_dict_put(pdev->local_named_objects, (const byte *)pdev->PDFFormName,
+                        strlen(pdev->PDFFormName), cos_object_value(&value, pres->object));
+
+                    if (code < 0)
+                        return code;
+                    pdf_drop_resource_from_chain(pdev, pres, resourceXObject);
+
+                    gs_free_object(pdev->memory->non_gc_memory, pdev->PDFFormName, "free Name oof Form for pdfmark");
+                    pdev->PDFFormName = 0x00;
+                } else {
+                    pprintld1(pdev->strm, "/R%ld Do Q\n", pdf_resource_id(pres));
+                }
                 pdev->HighLevelForm--;
                 if (pdev->accumulating_substream_resource) {
                     code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pres);

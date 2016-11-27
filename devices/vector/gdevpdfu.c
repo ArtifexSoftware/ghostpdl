@@ -1338,6 +1338,53 @@ pdf_find_same_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, pdf_reso
     return 0;
 }
 
+void
+pdf_drop_resource_from_chain(gx_device_pdf * pdev, pdf_resource_t *pres1, pdf_resource_type_t rtype)
+{
+    pdf_resource_t **pchain = pdev->resources[rtype].chains;
+    pdf_resource_t *pres;
+    pdf_resource_t **pprev = &pdev->last_resource;
+    int i;
+
+    /* since we're about to free the resource, we can just set
+       any of these references to null
+    */
+    for (i = 0; i < pdev->sbstack_size; i++) {
+        if (pres1 == pdev->sbstack[i].font3) {
+            pdev->sbstack[i].font3 = NULL;
+        }
+        else if (pres1 == pdev->sbstack[i].accumulating_substream_resource) {
+            pdev->sbstack[i].accumulating_substream_resource = NULL;
+        }
+        else if (pres1 == pdev->sbstack[i].pres_soft_mask_dict) {
+            pdev->sbstack[i].pres_soft_mask_dict = NULL;
+        }
+    }
+
+    for (; (pres = *pprev) != 0; pprev = &pres->prev)
+        if (pres == pres1) {
+            *pprev = pres->prev;
+            break;
+        }
+
+    for (i = (gs_id_hash(pres1->rid) % NUM_RESOURCE_CHAINS); i < NUM_RESOURCE_CHAINS; i++) {
+        pprev = pchain + i;
+        for (; (pres = *pprev) != 0; pprev = &pres->next)
+            if (pres == pres1) {
+                *pprev = pres->next;
+#if 0
+                if (pres->object) {
+                    COS_RELEASE(pres->object, "pdf_forget_resource");
+                    gs_free_object(pdev->pdf_memory, pres->object, "pdf_forget_resource");
+                    pres->object = 0;
+                }
+                gs_free_object(pdev->pdf_memory, pres, "pdf_forget_resource");
+#endif
+                return;
+            }
+    }
+}
+
 /* Drop resources by a condition. */
 void
 pdf_drop_resources(gx_device_pdf * pdev, pdf_resource_type_t rtype,
