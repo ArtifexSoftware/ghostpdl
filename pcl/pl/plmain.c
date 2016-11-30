@@ -248,6 +248,10 @@ pl_main_aux(int argc, char *argv[], void *disp)
     if (mem == NULL || mem->gs_lib_ctx == NULL)
         return -1;
 
+    inst = pl_main_alloc_instance(mem);
+    if (inst == NULL)
+        return -1;
+
     pl_platform_init(mem->gs_lib_ctx->fstdout);
 
     if (gs_lib_init1(mem) < 0)
@@ -266,13 +270,12 @@ pl_main_aux(int argc, char *argv[], void *disp)
         if (gs_iodev_init(mem) < 0)
             goto fail;
     }
+    
+    gp_get_realtime(inst->base_time);
 
     /* Init the top-level instance */
     gs_c_param_list_write(&params, mem);
     gs_param_list_set_persistent_keys((gs_param_list *) & params, false);
-    inst = pl_main_alloc_instance(mem);
-    if (inst == NULL)
-        return -1;
 
 #if defined(__WIN32__) && !defined(GS_NO_UTF8)
     arg_get_codepoint = gp_local_arg_encoding_get_codepoint;
@@ -862,7 +865,8 @@ pl_main_alloc_instance(gs_memory_t * mem)
     minst->pause = true;
     minst->device = 0;
     minst->implementation = 0;
-    gp_get_realtime(minst->base_time);
+    minst->base_time[0] = 0;
+    minst->base_time[1] = 1;
     minst->page_count = 0;
     minst->interpolate = false;
     minst->nocache = false;
