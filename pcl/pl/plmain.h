@@ -87,6 +87,7 @@ typedef struct pl_main_instance_s
     char *pdefault_rgb_icc;
     char *pdefault_cmyk_icc;
     pl_main_universe_t universe;
+    byte buf[8192]; /* languages read buffer */
 } pl_main_instance_t;
 
 /* initialize gs_stdin, gs_stdout, and gs_stderr.  Eventually the gs

@@ -308,11 +308,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
         /* Process one input file. */
         /* for debugging we test the parser with a small 256 byte
            buffer - for production systems use 8192 bytes */
-#ifdef DEBUG
-        byte buf[1 << 9];
-#else
-        byte buf[1 << 13];
-#endif
         pl_top_cursor_t r;
         bool in_pjl = true;
         bool new_job = false;
@@ -377,7 +372,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
         /* open file for reading - NB we should respect the minimum
            requirements specified by each implementation in the
            characteristics structure */
-        if (pl_main_cursor_open(mem, &r, filename, buf, sizeof(buf)) < 0) {
+        if (pl_main_cursor_open(mem, &r, filename, inst->buf, sizeof(inst->buf)) < 0) {
             errprintf(mem, "Unable to open %s for reading.\n", filename);
             code = -1;
             goto done;
@@ -866,7 +861,7 @@ pl_main_alloc_instance(gs_memory_t * mem)
     minst->device = 0;
     minst->implementation = 0;
     minst->base_time[0] = 0;
-    minst->base_time[1] = 1;
+    minst->base_time[1] = 0;
     minst->page_count = 0;
     minst->interpolate = false;
     minst->nocache = false;
