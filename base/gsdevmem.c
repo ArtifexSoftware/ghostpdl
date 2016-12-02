@@ -189,10 +189,8 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
     rc_init(new_dev, new_dev->memory, 1);
 
     new_dev->initial_matrix = *pmat;
-    new_dev->MarginsHWResolution[0] = new_dev->HWResolution[0] =
-        fabs(x_pixels_per_unit) * 72;
-    new_dev->MarginsHWResolution[1] = new_dev->HWResolution[1] =
-        fabs(y_pixels_per_unit) * 72;
+    new_dev->HWResolution[0] = fabs(x_pixels_per_unit) * 72;
+    new_dev->HWResolution[1] = fabs(y_pixels_per_unit) * 72;
     gx_device_set_width_height((gx_device *) new_dev, width, height);
     /* Set the ImagingBBox so we get a correct clipping region. */
     {

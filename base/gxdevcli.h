@@ -758,12 +758,9 @@ typedef struct gdev_pagelist_s {
         float ImagingBBox[4];		/* imageable region in points */\
         bool ImagingBBox_set;\
         float HWResolution[2];		/* resolution, dots per inch */\
-        float MarginsHWResolution[2];	/* resolution for Margins. The pagedevice */\
-                                        /* documentation implies these units might be */\
-                                        /* different than the physical device units. */\
         float Margins[2];		/* offset of physical page corner */\
                                         /* from device coordinate (0,0), */\
-                                        /* in units given by MarginsHWResolution */\
+                                        /* in units given by HWResolution */\
         float HWMargins[4];		/* margins around imageable area, */\
                                         /* in default user units ("points") */\
         int FirstPage;\
@@ -821,8 +818,8 @@ typedef struct gdev_pagelist_s {
 #define no_margins margin_values(0, 0, 0, 0)
 #define no_margins_() no_margins
 /* Define macros that give the page offset ("Margins") in inches. */
-#define dev_x_offset(dev) ((dev)->Margins[0] / (dev)->MarginsHWResolution[0])
-#define dev_y_offset(dev) ((dev)->Margins[1] / (dev)->MarginsHWResolution[1])
+#define dev_x_offset(dev) ((dev)->Margins[0] / (dev)->HWResolution[0])
+#define dev_y_offset(dev) ((dev)->Margins[1] / (dev)->HWResolution[1])
 #define dev_y_offset_points(dev) (dev_y_offset(dev) * 72.0)
 /* Note that left/right/top/bottom are defined relative to */
 /* the physical paper, not the coordinate system. */

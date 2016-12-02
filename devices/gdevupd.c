@@ -1669,7 +1669,7 @@ upd_put_params(gx_device *pdev, gs_param_list *plist)
    upd_p                  upd        = udev->upd;
    int                    error      = 0, code,i;
 
-   float                  MarginsHWResolution[2],Margins[2];
+   float                  Margins[2];
    gx_device_color_info   color_info;
    uint32_t                 flags      = 0;
    int                   *choice     = NULL;
@@ -1783,8 +1783,6 @@ the data, that it might change, except for color_info that might
 be changed in the device-structure, all manipulations are carried
 out on this copies.
 */
-   MarginsHWResolution[0] = udev->MarginsHWResolution[0];
-   MarginsHWResolution[1] = udev->MarginsHWResolution[1];
                Margins[0] = udev->Margins[0];
                Margins[1] = udev->Margins[1];
 
@@ -2056,17 +2054,14 @@ In addition to that, Resolution & Margin-Parameters are tested & adjusted.
  */
       if((0 == param_read_float_array(plist,"HWResolution",&mfa)) &&
          (2 == mfa.size) && (0 != mfa.data)) {
-         udev->MarginsHWResolution[0] = mfa.data[0];
-         udev->MarginsHWResolution[1] = mfa.data[1];
-      } else {
-         udev->MarginsHWResolution[0] = udev->HWResolution[0];
-         udev->MarginsHWResolution[1] = udev->HWResolution[1];
+         udev->HWResolution[0] = mfa.data[0];
+         udev->HWResolution[1] = mfa.data[1];
       }
 
       if((0 == param_read_float_array(plist,".HWMargins",&mfa)) &&
          (4 == mfa.size) && (0 != mfa.data)) {
-         udev->Margins[0] = -mfa.data[0] * udev->MarginsHWResolution[0] / 72.0;
-         udev->Margins[1] = -mfa.data[3] * udev->MarginsHWResolution[1] / 72.0;
+         udev->Margins[0] = -mfa.data[0] * udev->HWResolution[0] / 72.0;
+         udev->Margins[1] = -mfa.data[3] * udev->HWResolution[1] / 72.0;
       }
    }                                       /* Change the color-Info */
 
@@ -2122,8 +2117,6 @@ transferred into the device-structure. In the case of "uniprint", this may
 
                   udev->Margins[0] =             Margins[0];
                   udev->Margins[1] =             Margins[1];
-      udev->MarginsHWResolution[0] = MarginsHWResolution[0];
-      udev->MarginsHWResolution[1] = MarginsHWResolution[1];
 
       udev->color_info = color_info;
       UPD_MM_DEL_ARRAY(udev->memory, choice,  countof(upd_choice),  UPD_MM_DEL_VALUE);

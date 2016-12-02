@@ -283,7 +283,6 @@ const gx_device_bit gs_bitrgbtags_device =
         } ,
         0 ,
         { X_DPI, Y_DPI } ,
-        { X_DPI, Y_DPI },
         {(float)(-(0) * (X_DPI)),
          (float)(-(0) * (Y_DPI))},
         {(float)((0) * 72.0),

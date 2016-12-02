@@ -172,11 +172,6 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         set_param_array(hwma, dev->HWMargins, 4);
         return param_write_float_array(plist, ".HWMargins", &hwma);
     }
-    if (strcmp(Param, ".MarginsHWResolution") == 0) {
-        gs_param_float_array mhwra;
-        set_param_array(mhwra, dev->MarginsHWResolution, 2);
-        return param_write_float_array(plist, ".MarginsHWResolution", &mhwra);
-    }
     if (strcmp(Param, ".MediaSize") == 0) {
         gs_param_float_array msa;
         set_param_array(msa, dev->MediaSize, 2);
@@ -505,7 +500,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     int GrayValues = dev->color_info.max_gray + 1;
     int HWSize[2];
     gs_param_int_array hwsa;
-    gs_param_float_array hwma, mhwra;
+    gs_param_float_array hwma;
     cmm_dev_profile_t *dev_profile;
 
     /* Fill in page device parameters. */
@@ -533,7 +528,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     HWSize[1] = dev->height;
     set_param_array(hwsa, HWSize, 2);
     set_param_array(hwma, dev->HWMargins, 4);
-    set_param_array(mhwra, dev->MarginsHWResolution, 2);
     /* Check if the device profile is null.  If it is, then we need to
        go ahead and get it set up at this time.  If the proc is not
        set up yet then we are not going to do anything yet */
@@ -667,7 +661,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_int(plist,"TextKPreserve", (const int *) &(blackpreserve[3]))) < 0 ||
         (code = param_write_int_array(plist, "HWSize", &hwsa)) < 0 ||
         (code = param_write_float_array(plist, ".HWMargins", &hwma)) < 0 ||
-        (code = param_write_float_array(plist, ".MarginsHWResolution", &mhwra)) < 0 ||
         (code = param_write_float_array(plist, ".MediaSize", &msa)) < 0 ||
         (code = param_write_string(plist, "Name", &dns)) < 0 ||
         (code = param_write_int(plist, "Colors", &colors)) < 0 ||
@@ -1317,7 +1310,6 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     gs_param_float_array msa;
     gs_param_float_array ma;
     gs_param_float_array hwma;
-    gs_param_float_array mhwra;
     gs_param_string_array scna;
     int nci = dev->NumCopies;
     int ncset = dev->NumCopies_set;
@@ -1507,15 +1499,6 @@ e:	param_signal_error(plist, param_name, ecode);\
     BEGIN_ARRAY_PARAM(param_read_float_array, ".HWMargins", hwma, 4, hwme) {
         break;
     } END_ARRAY_PARAM(hwma, hwme);
-    /* MarginsHWResolution cannot be changed, only checked. */
-    BEGIN_ARRAY_PARAM(param_read_float_array, ".MarginsHWResolution", mhwra, 2, mhwre) {
-        if (mhwra.data[0] != dev->MarginsHWResolution[0] ||
-            mhwra.data[1] != dev->MarginsHWResolution[1]
-        )
-            ecode = gs_note_error(gs_error_rangecheck);
-        else
-            break;
-    } END_ARRAY_PARAM(mhwra, mhwre);
     switch (code = param_read_bool(plist, (param_name = ".IgnoreNumCopies"), &ignc)) {
         default:
             ecode = code;

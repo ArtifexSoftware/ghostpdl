@@ -364,18 +364,6 @@ gdev_x_open(gx_device_X * xdev)
                 (float)xdev->height / xdev->y_pixels_per_inch * 72;
         }
 
-        /*
-         * If the margins' resolution values are not initialized
-         * default to the device resolution, most devices initialize
-         * this at compile time because they don't "detect" the
-         * resolution as we do here.
-         */
-        if (xdev->MarginsHWResolution[0] == FAKE_RES ||
-            xdev->MarginsHWResolution[1] == FAKE_RES) {
-            xdev->MarginsHWResolution[0] = xdev->x_pixels_per_inch;
-            xdev->MarginsHWResolution[1] = xdev->y_pixels_per_inch;
-        }
-
         sizehints.x = 0;
         sizehints.y = 0;
         sizehints.width = xdev->width;

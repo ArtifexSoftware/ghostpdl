@@ -1374,7 +1374,6 @@ clist_make_accum_device(gx_device *target, const char *dname, void *base, int sp
             float MediaSize[2];
             float ImagingBBox[4];
             bool  ImagingBBox_set;
-            float MarginsHWResolution[2];
             float Margins[2];
             float HWMargins[4];
             long  PageCount;

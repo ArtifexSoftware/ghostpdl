@@ -65,7 +65,7 @@ own files:
 where
         ml = L * 72, mb = B * 72, mr = R * 72, mt = T * 72,
 %END
-/res currentpagedevice /.MarginsHWResolution get def
+/res currentpagedevice /HWResolution get def
 (        x = (1 - H) * ) show res 0 get =string cvs show
 (, y = (V - 1) * ) show res 1 get =string cvs show
 

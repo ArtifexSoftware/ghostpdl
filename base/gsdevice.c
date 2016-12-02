@@ -827,8 +827,8 @@ gx_device_set_margins(gx_device * dev, const float *margins /*[4] */ ,
     for (i = 0; i < 4; ++i)
         dev->HWMargins[i] = margins[i] * 72.0;
     if (move_origin) {
-        dev->Margins[0] = -margins[0] * dev->MarginsHWResolution[0];
-        dev->Margins[1] = -margins[3] * dev->MarginsHWResolution[1];
+        dev->Margins[0] = -margins[0] * dev->HWResolution[0];
+        dev->Margins[1] = -margins[3] * dev->HWResolution[1];
     }
 }
 
@@ -961,7 +961,6 @@ gx_device_copy_params(gx_device *dev, const gx_device *target)
         COPY_ARRAY_PARAM(ImagingBBox);
         COPY_PARAM(ImagingBBox_set);
         COPY_ARRAY_PARAM(HWResolution);
-        COPY_ARRAY_PARAM(MarginsHWResolution);
         COPY_ARRAY_PARAM(Margins);
         COPY_ARRAY_PARAM(HWMargins);
         COPY_PARAM(PageCount);

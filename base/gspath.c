@@ -585,10 +585,8 @@ gx_default_clip_box(const gs_gstate * pgs, gs_fixed_rect * pbox)
         /* we don't think we can do any better.) */
         (*dev_proc(dev, get_initial_matrix)) (dev, &imat);
         /* Adjust for the Margins. */
-        imat.tx += dev->Margins[0] * dev->HWResolution[0] /
-            dev->MarginsHWResolution[0];
-        imat.ty += dev->Margins[1] * dev->HWResolution[1] /
-            dev->MarginsHWResolution[1];
+        imat.tx += dev->Margins[0];
+        imat.ty += dev->Margins[1];
         bbox.p.x = dev->HWMargins[0];
         bbox.p.y = dev->HWMargins[1];
         bbox.q.x = dev->MediaSize[0] - dev->HWMargins[2];

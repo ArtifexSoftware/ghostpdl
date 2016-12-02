@@ -448,7 +448,6 @@ get_target_info(gx_device * dev)
     copy4(ImagingBBox);
     copy(ImagingBBox_set);
     copy2(HWResolution);
-    copy2(MarginsHWResolution);
     copy2(Margins);
     copy4(HWMargins);
     if (dev->color_info.num_components == 3) {

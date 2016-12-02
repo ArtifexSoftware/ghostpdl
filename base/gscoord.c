@@ -122,10 +122,8 @@ gs_defaultmatrix(const gs_gstate * pgs, gs_matrix * pmat)
     dev = gs_currentdevice_inline(pgs);
     gs_deviceinitialmatrix(dev, pmat);
     /* Add in the translation for the Margins. */
-    pmat->tx += dev->Margins[0] *
-        dev->HWResolution[0] / dev->MarginsHWResolution[0];
-    pmat->ty += dev->Margins[1] *
-        dev->HWResolution[1] / dev->MarginsHWResolution[1];
+    pmat->tx += dev->Margins[0];
+    pmat->ty += dev->Margins[1];
     return 0;
 }
 
