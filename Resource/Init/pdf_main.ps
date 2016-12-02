@@ -1420,7 +1420,7 @@ currentdict /xref-char-dict undef
 } bind def
 
 /pdfformatwarning {	% <string> pdfformaterror -
-  stdoutprint
+  QUIET not {stdoutprint}{pop}ifelse
   /Repaired //true store
   PDFSTOPONWARNING {/warning cvx /undefined signalerror} if
 } bind def
