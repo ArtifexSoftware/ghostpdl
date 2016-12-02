@@ -960,6 +960,11 @@ setup or configuration options into the output on a page by page basis. The stri
 pages than strings then we 'wrap round' and start again with the first string. This makes it convenient to do setup for even/odd pages
 by simply including 2 strings in the array.
 </dd>
+<p>
+Note: exeuting setpagedevice will reset distiller parameters to the default, if you use any of these options via setdistillerparams, and
+ expect to execute setpagedevice, you should set /LockDistillerParams true. Ordinarily the PDF interpreter executes setpagedevice for
+ every page in order to set the media size.
+</p>
 </dt>
 </d1>
 
