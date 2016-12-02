@@ -485,6 +485,10 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
         ss->AntiAlias = pdip->AntiAlias;
         ss->padX = ss->padY = false; /* should be true */
 
+        if (pim->BitsPerComponent == 1) {
+            if (floor(ss->XFactor) != ss->XFactor)
+                factor = ss->YFactor = ss->XFactor = floor(ss->XFactor + 0.5);
+        }
         if (templat->init) {
             code = templat->init(st);
             if (code < 0) {
