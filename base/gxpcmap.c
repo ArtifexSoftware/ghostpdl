@@ -1219,11 +1219,11 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
     is_planar = mdev->is_planar;
     max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
     if (is_planar) {
-        gs_sprintf(full_file_name,"%d)PATTERN_PLANE_%dx%dx%d.raw",global_pat_index,
-                width,height,max_bands);
+        gs_sprintf(full_file_name, "%d)PATTERN_PLANE_%dx%dx%d.raw", global_pat_index,
+                mdev->raster, height, max_bands);
     } else {
-        gs_sprintf(full_file_name,"%d)PATTERN_CHUNK_%dx%dx%d.raw",global_pat_index,
-                width,height,max_bands);
+        gs_sprintf(full_file_name, "%d)PATTERN_CHUNK_%dx%dx%d.raw", global_pat_index,
+                width, height, max_bands);
     }
     fid = gp_fopen(full_file_name,"wb");
     if (depth >= 8) {
@@ -1231,11 +1231,11 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
         if (is_planar) {
             for (m = 0; m < max_bands; m++) {
                 curr_ptr = mdev->line_ptrs[m*mdev->height];
-                fwrite(curr_ptr,1,height*width,fid);
+                fwrite(curr_ptr, 1, mdev->height * mdev->raster, fid);
             }
         } else {
             /* Just dump it like it is */
-            fwrite(Buffer,1,max_bands*height*width,fid);
+            fwrite(Buffer, 1, max_bands * height * width, fid);
         }
     } else {
         /* Binary Data. Lets get to 8 bit for debugging.  We have to
