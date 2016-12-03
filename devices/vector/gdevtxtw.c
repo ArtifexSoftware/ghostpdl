@@ -1782,9 +1782,22 @@ static int get_unicode(textw_text_enum_t *penum, gs_font *font, gs_glyph glyph, 
         *Buffer = fallback;
         return 1;
     } else {
+        char *b, *u;
+        int l = length - 1;
+
         unicode = (ushort *)gs_alloc_bytes(penum->dev->memory, length, "temporary Unicode array");
         length = font->procs.decode_glyph((gs_font *)font, glyph, ch, unicode, length);
+#if ARCH_IS_BIG_ENDIAN
         memcpy(Buffer, unicode, length);
+#else
+        b = (char *)Buffer;
+        u = (char *)unicode;
+        while (l >= 0) {
+            *b++ = *(u + l);
+            l--;
+        }
+
+#endif
         gs_free_object(penum->dev->memory, unicode, "free temporary unicode buffer");
         return length / sizeof(short);
     }
