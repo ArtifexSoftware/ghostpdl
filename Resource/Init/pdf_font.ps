@@ -336,6 +336,7 @@ currentdict /known_symbolic_fonts undef
          1 index FirstChar lt { MissingWidth } {
            1 index LastChar gt { MissingWidth } { Widths 2 index FirstChar sub get } ifelse
          } ifelse
+         oforce
 
                 % Stack: font font-res mscale first-char index charname width
          4 index mul
@@ -1554,7 +1555,6 @@ currentdict /CMap_read_dict undef
 } bdef
 
 /.pdfMakeInternalMTXArray { % <mtx_array> <item_size> .pdfConvertInternalW <mtx_array'>
-
   % convert /W or /W2 to internal expression
   %
   %   mtx_array: original /W or /W2 array
@@ -1610,8 +1610,8 @@ currentdict /CMap_read_dict undef
   end
 } def
 
-/.pdfMakeInternalW  { dup length 0 gt { 1 .pdfMakeInternalMTXArray } if } def
-/.pdfMakeInternalW2 { dup length 0 gt { 3 .pdfMakeInternalMTXArray } if } def
+/.pdfMakeInternalW  { dup length 0 gt { oforce_recursive 1 .pdfMakeInternalMTXArray } if } def
+/.pdfMakeInternalW2 { dup length 0 gt { oforce_recursive 3 .pdfMakeInternalMTXArray } if } def
 
 /.pdfGetMTXByCID { % <internalMTXArray> <cid>
                    %     .pdfGetMTXByCID
