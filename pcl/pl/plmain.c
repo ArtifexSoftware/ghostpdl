@@ -144,7 +144,6 @@ void pl_main_reinit_instance(pl_main_instance_t * pmi);
 /* Process the options on the command line, including making the
    initial device and setting its parameters.  */
 int pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
-                            gs_c_param_list * params,
                             pl_interp_instance_t * pjl_instance,
                             pl_interp_implementation_t const *const
                             impl_array[], char **filename);
@@ -240,7 +239,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
     pl_interp_t *pjl_interp = NULL;
     pl_interp_instance_t *pjl_instance = NULL;
     pl_interp_instance_t *curr_instance = 0;
-    gs_c_param_list params = { 0 };
     int (*arg_get_codepoint) (FILE * file, const char **astr) = NULL;
     int code = -1;
 
@@ -274,8 +272,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
     gp_get_realtime(inst->base_time);
 
     /* Init the top-level instance */
-    gs_c_param_list_write(&params, mem);
-    gs_param_list_set_persistent_keys((gs_param_list *) & params, false);
+    gs_c_param_list_write(&inst->params, mem);
+    gs_param_list_set_persistent_keys((gs_param_list *)&inst->params, false);
 
 #if defined(__WIN32__) && !defined(GS_NO_UTF8)
     arg_get_codepoint = gp_local_arg_encoding_get_codepoint;
@@ -323,7 +321,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
         if (argc == 1 ||
             pl_main_process_options(inst,
                                     &args,
-                                    &params,
                                     pjl_instance, pdl_implementation,
                                     &filename) < 0) {
             /* Print error verbage and return */
@@ -427,7 +424,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
                                                         (pjl_instance, inst,
                                                          r), inst,
                                                         (gs_param_list *) &
-                                                        params);
+                                                        inst->params);
                 if (curr_instance == NULL) {
                     errprintf(mem, "%s", err_buf);
                     code = -1;
@@ -541,7 +538,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
         }
      }
     /* release param list */
-    gs_c_param_list_release(&params);
+    gs_c_param_list_release(&inst->params);
     /* Dnit PDLs */
     if (pl_main_universe_dnit(&inst->universe, err_buf)) {
         errprintf(mem, "%s", err_buf);
@@ -1002,7 +999,6 @@ static int check_for_special_str(pl_main_instance_t * pmi, const char *arg, gs_p
 #define arg_heap_copy(str) arg_copy(str, pmi->memory)
 int
 pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
-                        gs_c_param_list * params,
                         pl_interp_instance_t * pjl_instance,
                         pl_interp_implementation_t const *const impl_array[],
                         char **filename)
@@ -1010,7 +1006,8 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     int code = 0;
     bool help = false;
     char *arg;
-
+    gs_c_param_list *params = &pmi->params;
+    
     gs_c_param_list_write_more(params);
     while ((code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0 && *arg == '-') { /* just - read from stdin */
         if (arg[1] == '\0')
