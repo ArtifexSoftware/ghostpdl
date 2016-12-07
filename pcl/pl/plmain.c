@@ -601,7 +601,6 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
     memset(universe, 0, sizeof(*universe));
     universe->pdl_implementation = pdl_implementation;
     universe->mem = mem;
-    mem->gs_lib_ctx->top_of_system = universe;
     inst->device_memory = mem;
 
     /* Create & init PDL all instances. Could do this lazily to save memory, */
@@ -651,11 +650,13 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
     return -1;
 }
 
+/* NB this doesn't seem to be used */
 pl_interp_instance_t *
 get_interpreter_from_memory(const gs_memory_t * mem)
 {
-    pl_main_universe_t *universe =
-        (pl_main_universe_t *) mem->gs_lib_ctx->top_of_system;
+    pl_main_instance_t *minst    = (pl_main_instance_t *)mem->gs_lib_ctx;
+    pl_main_universe_t *universe = (pl_main_universe_t *)&minst->universe;
+    
     return universe->curr_instance;
 }
 
@@ -876,6 +877,7 @@ pl_main_alloc_instance(gs_memory_t * mem)
     minst->pdefault_cmyk_icc = NULL;
     strncpy(&minst->pcl_personality[0], "PCL",
             sizeof(minst->pcl_personality) - 1);
+    mem->gs_lib_ctx->top_of_system = minst;
     return minst;
 }
 
