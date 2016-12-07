@@ -654,8 +654,8 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
 pl_interp_instance_t *
 get_interpreter_from_memory(const gs_memory_t * mem)
 {
-    pl_main_instance_t *minst    = (pl_main_instance_t *)mem->gs_lib_ctx;
-    pl_main_universe_t *universe = (pl_main_universe_t *)&minst->universe;
+    pl_main_instance_t *minst    = mem->gs_lib_ctx->top_of_system;
+    pl_main_universe_t *universe = &minst->universe;
     
     return universe->curr_instance;
 }
@@ -795,22 +795,6 @@ pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select fr
             } else
                 universe->curr_device = desired_device;
         }
-
-        /* NB fix me, these parameters should not be passed this way */
-        universe->curr_instance->pcl_personality = pti->pcl_personality;
-        universe->curr_instance->interpolate = pti->interpolate;
-        universe->curr_instance->nocache = pti->nocache;
-        universe->curr_instance->page_set_on_command_line =
-            pti->page_set_on_command_line;
-        universe->curr_instance->res_set_on_command_line =
-            pti->res_set_on_command_line;
-        universe->curr_instance->high_level_device = pti->high_level_device;
-        universe->curr_instance->scanconverter = pti->scanconverter;
-        universe->curr_instance->piccdir = pti->piccdir;
-        universe->curr_instance->pdefault_gray_icc = pti->pdefault_gray_icc;
-        universe->curr_instance->pdefault_rgb_icc = pti->pdefault_rgb_icc;
-        universe->curr_instance->pdefault_cmyk_icc = pti->pdefault_cmyk_icc;
-
 
         /* Select curr/new device into PDL instance */
         if (pl_set_device(universe->curr_instance, universe->curr_device) < 0) {
@@ -1694,26 +1678,4 @@ pl_main_cursor_close(pl_top_cursor_t * cursor   /* cursor to operate on */
 {
     pl_top_cursor_dnit(cursor);
     fclose(cursor->strm);
-}
-
-
-/* plmain accessors */
-bool
-pl_get_nocache(pl_interp_instance_t *instance)
-{
-    return instance->nocache;
-}
-
-
-bool
-pl_get_interpolation(pl_interp_instance_t * instance)
-{
-    return instance->interpolate;
-}
-
-
-bool
-pl_get_scanconverter(pl_interp_instance_t * instance)
-{
-    return instance->scanconverter;
 }

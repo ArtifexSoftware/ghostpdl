@@ -323,22 +323,32 @@ pcl_impl_set_post_page_action(pl_interp_instance_t * instance,  /* interp instan
     return 0;
 }
 
+static pl_main_instance_t *
+pcl_get_minst(pl_interp_instance_t *plinst)
+{
+    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)plinst;
+    gs_memory_t *mem            = pcli->memory;
+
+    return mem->gs_lib_ctx->top_of_system;
+}
+
 /* if the device option string PCL is not given, the default
    arrangement is 1 bit devices use pcl5e other devices use pcl5c. */
 static pcl_personality_t
 pcl_get_personality(pl_interp_instance_t * instance, gx_device * device)
 {
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
-
-    if (!strcmp(instance->pcl_personality, "PCL5C"))
+    pcl_interp_instance_t *pcli  = (pcl_interp_instance_t *) instance;
+    pl_main_instance_t *   minst = pcl_get_minst(instance);
+    
+    if (!strcmp(minst->pcl_personality, "PCL5C"))
         return pcl5c;
-    else if (!strcmp(instance->pcl_personality, "PCL5E"))
+    else if (!strcmp(minst->pcl_personality, "PCL5E"))
         return pcl5e;
     /* 
      * match RTL or any string containing "GL" we see many variants in
      * test files: HPGL/2, HPGL2 etc.
      */
-    else if (!strcmp(instance->pcl_personality, "RTL") ||
+    else if (!strcmp(minst->pcl_personality, "RTL") ||
              strstr(pjl_proc_get_envvar(pcli->pcs.pjls, "language"),
                     "GL"))
         return rtl;
@@ -353,23 +363,24 @@ pcl_set_icc_params(pl_interp_instance_t * instance, gs_gstate * pgs)
 {
     gs_param_string p;
     int code = 0;
-
-    if (instance->pdefault_gray_icc) {
-        param_string_from_transient_string(p, instance->pdefault_gray_icc);
+    pl_main_instance_t *   minst = pcl_get_minst(instance);
+    
+    if (minst->pdefault_gray_icc) {
+        param_string_from_transient_string(p, minst->pdefault_gray_icc);
         code = gs_setdefaultgrayicc(pgs, &p);
         if (code < 0)
             return gs_throw_code(gs_error_Fatal);
     }
 
-    if (instance->pdefault_rgb_icc) {
-        param_string_from_transient_string(p, instance->pdefault_rgb_icc);
+    if (minst->pdefault_rgb_icc) {
+        param_string_from_transient_string(p, minst->pdefault_rgb_icc);
         code = gs_setdefaultrgbicc(pgs, &p);
         if (code < 0)
             return gs_throw_code(gs_error_Fatal);
     }
 
-    if (instance->piccdir) {
-        param_string_from_transient_string(p, instance->piccdir);
+    if (minst->piccdir) {
+        param_string_from_transient_string(p, minst->piccdir);
         code = gs_seticcdirectory(pgs, &p);
         if (code < 0)
             return gs_throw_code(gs_error_Fatal);
@@ -380,20 +391,21 @@ pcl_set_icc_params(pl_interp_instance_t * instance, gs_gstate * pgs)
 static bool
 pcl_get_page_set(pl_interp_instance_t * instance)
 {
-    return instance->page_set_on_command_line;
+    return pcl_get_minst(instance)->page_set_on_command_line;
 }
 
 static bool
 pcl_get_res_set(pl_interp_instance_t * instance)
 {
-    return instance->res_set_on_command_line;
+    return pcl_get_minst(instance)->res_set_on_command_line;
 }
 
 static bool
 pcl_get_high_level(pl_interp_instance_t * instance)
 {
-    return instance->high_level_device;
+    return pcl_get_minst(instance)->high_level_device;
 }
+
 
 /* Set a device into an interperter instance */
 static int                      /* ret 0 ok, else -ve error code */
@@ -410,14 +422,15 @@ pcl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to us
             Sdone } stage;
 
     stage = Sbegin;
-    /* get ad hoc paramaters personality and interpolation, etc. */
+
+    /* Set parameters from the main instance */
     pcli->pcs.personality = pcl_get_personality(instance, device);
-    pcli->pcs.interpolate = pl_get_interpolation(instance);
-    pcli->pcs.nocache = pl_get_nocache(instance);
+    pcli->pcs.interpolate = pcl_get_minst(instance)->interpolate;
+    pcli->pcs.nocache = pcl_get_minst(instance)->nocache;
     pcli->pcs.page_set_on_command_line = pcl_get_page_set(instance);
     pcli->pcs.res_set_on_command_line = pcl_get_res_set(instance);
     pcli->pcs.high_level_device = pcl_get_high_level(instance);
-    gs_setscanconverter(pcli->pcs.pgs, pl_get_scanconverter(instance));
+    gs_setscanconverter(pcli->pcs.pgs, pcl_get_minst(instance)->scanconverter);
 
     /* Set the device into the pcl_state & gstate */
     stage = Ssetdevice;

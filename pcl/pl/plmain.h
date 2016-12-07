@@ -113,9 +113,4 @@ void pl_print_usage(const pl_main_instance_t * pmi, const char *msg);
 int pl_finish_page(pl_main_instance_t * pmi, gs_gstate * pgs,
                    int num_copies, int flush);
 
-/* Main instance accessors */
-bool pl_get_nocache(pl_interp_instance_t * instance);
-bool pl_get_interpolation(pl_interp_instance_t * instance);
-int pl_get_scanconverter(pl_interp_instance_t * instance);
-
 #endif /* plmain_INCLUDED */

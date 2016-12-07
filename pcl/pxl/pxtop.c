@@ -283,28 +283,38 @@ pxl_impl_set_post_page_action(pl_interp_instance_t * instance,
     return 0;
 }
 
+static pl_main_instance_t *
+pxl_get_minst(pl_interp_instance_t *plinst)
+{
+    pxl_interp_instance_t *pcli = (pxl_interp_instance_t *)plinst;
+    gs_memory_t *mem            = pcli->memory;
+
+    return mem->gs_lib_ctx->top_of_system;
+}
+
 static int
 pxl_set_icc_params(pl_interp_instance_t * instance, gs_gstate * pgs)
 {
     gs_param_string p;
     int code = 0;
-
-    if (instance->pdefault_gray_icc) {
-        param_string_from_transient_string(p, instance->pdefault_gray_icc);
+    pl_main_instance_t *minst = pxl_get_minst(instance);
+    
+    if (minst->pdefault_gray_icc) {
+        param_string_from_transient_string(p, minst->pdefault_gray_icc);
         code = gs_setdefaultgrayicc(pgs, &p);
         if (code < 0)
             return gs_throw_code(gs_error_Fatal);
     }
 
-    if (instance->pdefault_rgb_icc) {
-        param_string_from_transient_string(p, instance->pdefault_rgb_icc);
+    if (minst->pdefault_rgb_icc) {
+        param_string_from_transient_string(p, minst->pdefault_rgb_icc);
         code = gs_setdefaultrgbicc(pgs, &p);
         if (code < 0)
             return gs_throw_code(gs_error_Fatal);
     }
 
-    if (instance->piccdir) {
-        param_string_from_transient_string(p, instance->piccdir);
+    if (minst->piccdir) {
+        param_string_from_transient_string(p, minst->piccdir);
         code = gs_seticcdirectory(pgs, &p);
         if (code < 0)
             return gs_throw_code(gs_error_Fatal);
@@ -328,10 +338,10 @@ pxl_impl_set_device(pl_interp_instance_t * instance,
     if ((code = gs_opendevice(device)) < 0)
         goto pisdEnd;
 
-    pxs->interpolate = pl_get_interpolation(instance);
-    pxs->nocache = pl_get_nocache(instance);
-    gs_setscanconverter(pxli->pgs, pl_get_scanconverter(instance));
-    
+    pxs->interpolate = pxl_get_minst(instance)->interpolate;
+    pxs->nocache = pxl_get_minst(instance)->nocache;
+    gs_setscanconverter(pxli->pgs, pxl_get_minst(instance)->scanconverter);
+
     if (pxs->nocache)
         gs_setcachelimit(pxs->font_dir, 0);
 

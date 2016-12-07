@@ -20,6 +20,8 @@
 #include "ghostxps.h"
 
 #include "pltop.h"
+#include "plmain.h"
+
 #include "plparse.h" /* for e_ExitLanguage */
 #include "plmain.h"
 #include "gxdevice.h" /* so we can include gxht.h below */
@@ -43,7 +45,7 @@ typedef struct xps_interp_instance_s xps_interp_instance_t;
 struct xps_interp_instance_s
 {
     pl_interp_instance_t pl;            /* common part: must be first */
-
+    gs_memory_t *memory;                /* memory allocator to use */
     pl_page_action_t pre_page_action;   /* action before page out */
     void *pre_page_closure;             /* closure to call pre_page_action with */
     pl_page_action_t post_page_action;  /* action before page out */
@@ -83,39 +85,50 @@ xps_imp_allocate_interp(pl_interp_t **ppinterp,
     return 0;
 }
 
+static pl_main_instance_t *
+xps_get_minst(pl_interp_instance_t *plinst)
+{
+    xps_interp_instance_t *pcli = (xps_interp_instance_t *)plinst;
+    gs_memory_t *mem            = pcli->memory;
+
+    return mem->gs_lib_ctx->top_of_system;
+}
+
 static void
 xps_set_nocache(pl_interp_instance_t *instance, gs_font_dir *font_dir)
 {
-    if (instance->nocache)
+    if (xps_get_minst(instance)->nocache)
         gs_setcachelimit(font_dir, 0);
     return;
 }
 
 static int
 xps_set_icc_user_params(pl_interp_instance_t *instance, gs_gstate *pgs)
-{    gs_param_string p;
+{
+    gs_param_string p;
     int code = 0;
-
-    if (instance->pdefault_gray_icc) {
-        param_string_from_transient_string(p, instance->pdefault_gray_icc);
+    pl_main_instance_t *minst = xps_get_minst(instance);
+    
+    if (minst->pdefault_gray_icc) {
+        param_string_from_transient_string(p, minst->pdefault_gray_icc);
         code = gs_setdefaultgrayicc(pgs, &p);
         if (code < 0)
             return gs_throw_code(gs_error_Fatal);
     }
-    if (instance->pdefault_rgb_icc) {
-        param_string_from_transient_string(p, instance->pdefault_rgb_icc);
+    if (minst->pdefault_rgb_icc) {
+        param_string_from_transient_string(p, minst->pdefault_rgb_icc);
         code = gs_setdefaultrgbicc(pgs, &p);
         if (code < 0)
             return gs_throw_code(gs_error_Fatal);
     }
-    if (instance->pdefault_cmyk_icc) {
-        param_string_from_transient_string(p, instance->pdefault_cmyk_icc);
+    if (minst->pdefault_cmyk_icc) {
+        param_string_from_transient_string(p, minst->pdefault_cmyk_icc);
         code = gs_setdefaultcmykicc(pgs, &p);
         if (code < 0)
             return gs_throw_code(gs_error_Fatal);
     }
-    if (instance->piccdir) {
-        param_string_from_transient_string(p, instance->piccdir);
+    if (minst->piccdir) {
+        param_string_from_transient_string(p, minst->piccdir);
         code = gs_seticcdirectory(pgs, &p);
         if (code < 0)
             return gs_throw_code(gs_error_Fatal);
@@ -184,7 +197,8 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     instance->ctx = ctx;
     instance->scratch_file = NULL;
     instance->scratch_name[0] = 0;
-
+    instance->memory = pmem;
+    
     /* NB needs error handling */
     ctx->fontdir = gs_font_dir_alloc(ctx->memory);
 
@@ -257,7 +271,7 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     gs_setfilladjust(ctx->pgs, 0, 0);
     (void)xps_set_icc_user_params((pl_interp_instance_t *)instance, ctx->pgs);
     xps_set_nocache((pl_interp_instance_t *)instance, ctx->fontdir);
-    gs_setscanconverter(ctx->pgs, pl_get_scanconverter(pinstance));
+    gs_setscanconverter(ctx->pgs, xps_get_minst(pinstance)->scanconverter);
     
     /* gsave and grestore (among other places) assume that */
     /* there are at least 2 gstates on the graphics stack. */
