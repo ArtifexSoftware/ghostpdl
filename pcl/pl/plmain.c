@@ -41,7 +41,6 @@
 #include "gslib.h"
 #include "pjtop.h"
 #include "plparse.h"
-#include "plplatf.h"
 #include "plmain.h"
 #include "pltop.h"
 #include "pltoputl.h"
@@ -249,7 +248,15 @@ pl_main_aux(int argc, char *argv[], void *disp)
     if (inst == NULL)
         return -1;
 
-    pl_platform_init(mem->gs_lib_ctx->fstdout);
+    gp_init();
+    /* debug flags we reset this out of gs_lib_init0 which sets these
+       and the allocator we want the debug setting but we do our own
+       allocator */
+#ifdef PACIFY_VALGRIND
+    VALGRIND_HG_DISABLE_CHECKING(gs_debug, 128);
+#endif
+    memset(gs_debug, 0, 128);
+    gs_log_errors = 0;
 
     if (gs_lib_init1(mem) < 0)
         goto fail;
@@ -564,7 +571,8 @@ fail:
 
     if (gs_debug_c('A'))
         dmprintf(mem, "Final time");
-    pl_platform_dnit(0);
+
+    gp_exit(0, 0);
     pl_alloc_finit(mem);
 done:
     return code;
@@ -1617,15 +1625,6 @@ pl_post_finish_page(pl_interp_instance_t * interp, void *closure)
     } else if (gs_debug_c(':'))
         pl_print_usage(pti, "render done :");
     return 0;
-}
-
-/* ---------------- Stubs ---------------- */
-/* Error termination, called back from plplatf.c */
-/* Only called back if abnormal termination */
-void
-pl_exit(int exit_status)
-{
-    gp_do_exit(exit_status);
 }
 
 /* -------------- Read file cursor operations ---------- */

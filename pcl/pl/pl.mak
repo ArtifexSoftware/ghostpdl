@@ -68,7 +68,6 @@ pldraw_h=$(PLSRC)pldraw.h $(gsiparam_h)
 plht_h=$(PLSRC)plht.h
 pllfont_h=$(PLSRC)pllfont.h
 plmain_h=$(PLSRC)plmain.h $(gsargs_h) $(gsgc_h)
-plplatf_h=$(PLSRC)plplatf.h
 plparse_h=$(PLSRC)plparse.h $(scommon_h)
 plsymbol_h=$(PLSRC)plsymbol.h
 plvalue_h=$(PLSRC)plvalue.h
@@ -160,7 +159,6 @@ pldraw_h=$(PLSRC)pldraw.h $(gsiparam_h)
 plfapi_h=$(PLSRC)plfapi.h
 pllfont_h=$(PLSRC)pllfont.h
 plmain_h=$(PLSRC)plmain.h $(gsargs_h) $(gsgc_h)
-plplatf_h=$(PLSRC)plplatf.h
 plparse_h=$(PLSRC)plparse.h $(scommon_h)
 plsymbol_h=$(PLSRC)plsymbol.h
 plvalue_h=$(PLSRC)plvalue.h
@@ -234,12 +232,6 @@ $(PLOBJ)plufont.$(OBJ): $(PLSRC)plufont.c $(AK) $(memory__h) $(stdio__h)\
  $(plfont_h) $(plvalue_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(UFST_CFLAGS) $(UFST_INCLUDES) $(PLSRC)plufont.c $(PLO_)plufont.$(OBJ)
 
-$(PLOBJ)plplatf$(PLPLATFORM).$(OBJ): $(PLSRC)plplatf$(PLPLATFORM).c $(AK) $(string__h)\
- $(string__h)\
- $(gdebug_h) $(gp_h) $(gsio_h) $(gslib_h) $(gsmemory_h) $(gstypes_h)\
- $(gsstruct_h) $(plplatf_h) $(PL_MAK) $(MAKEDIRS)
-	$(PLCCC) $(PLSRC)plplatf$(PLPLATFORM).c $(PLO_)plplatf$(PLPLATFORM).$(OBJ)
-
 plftable_h=$(PLSRC)plftable.h
 
 # hack - need ufst included for -DAGFA_FONT_TABLE
@@ -302,7 +294,7 @@ $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(pllfont_h) $(AK)\
 
 pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plht.$(OBJ)
 pl_obj2=$(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pltop.$(OBJ) $(PLOBJ)pltoputl.$(OBJ)
-pl_obj3=$(PLOBJ)plplatf$(PLPLATFORM).$(OBJ) $(PLOBJ)plalloc.$(OBJ)
+pl_obj3=$(PLOBJ)plalloc.$(OBJ)
 
 # shared objects - non font
 pl_obj=$(pl_obj1) $(pl_obj2) $(pl_obj3)
@@ -366,7 +358,7 @@ $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(string__h)\
  $(gdebug_h) $(gscdefs_h) $(gsio_h) $(gstypes_h) $(gserrors_h) \
  $(gsmemory_h) $(plalloc_h) $(gsmalloc_h) $(gsmchunk_h) $(gsstruct_h) $(gxalloc_h)\
  $(gsalloc_h) $(gsargs_h) $(gp_h) $(gsdevice_h) $(gslib_h) $(gslibctx_h)\
- $(gxdevice_h) $(gsparam_h) $(pjtop_h) $(plapi_h) $(plparse_h) $(plplatf_h)\
+ $(gxdevice_h) $(gsparam_h) $(pjtop_h) $(plapi_h) $(plparse_h)\
  $(plmain_h) $(pltop_h) $(pltoputl_h) $(gsargs_h) $(dwtrace_h) $(vdtrace_h)\
  $(gxclpage_h) $(gdevprn_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plmain.c $(PLO_)plmain.$(OBJ)
