@@ -2103,6 +2103,11 @@ currentdict /last-ditch-bpc-csp undef
     >> 0 0 1 1 .begintransparencygroup
     doimage
     .endtransparencygroup
+    % tell the compositor we're done with the SMask.
+    % Note that any SMask in the ExtGState should be reapplied
+    % by the next call to setfill(stroke)state AND this relies
+    % on our lazy evaulation of SMask groups
+    false << /Subtype /None >> 0 0 0 0 .begintransparencymaskgroup
   } {
     SoftMask //null ne {
       % the image doesn't have an SMask, but the ExtGState does, force a group.
