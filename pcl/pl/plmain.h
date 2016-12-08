@@ -39,7 +39,6 @@ typedef struct gx_device_s gx_device;
 typedef struct pl_main_universe_s
 {
     gs_memory_t *mem;           /* mem alloc to dealloc devices */
-    pl_interp_implementation_t const *const *pdl_implementation;        /* implementations to choose from */
     pl_interp_instance_t *pdl_instance_array[100];      /* parallel to pdl_implementation */
     pl_interp_t *pdl_interp_array[100]; /* parallel to pdl_implementation */
     pl_interp_implementation_t const *curr_implementation;

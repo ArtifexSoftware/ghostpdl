@@ -101,7 +101,6 @@ void pl_print_usage(const pl_main_instance_t *, const char *);
 int pl_main_universe_init(pl_main_universe_t * universe,        /* universe to init */
                           char *err_str,        /* RETURNS error str if error */
                           gs_memory_t * mem,    /* deallocator for devices */
-                          pl_interp_implementation_t const *const pdl_implementation[], /* implementations to choose from */
                           pl_interp_instance_t * pjl_instance,  /* pjl to reference */
                           pl_main_instance_t * inst,    /* instance for pre/post print */
                           pl_page_action_t pl_pre_finish_page,  /* pre-page action */
@@ -122,11 +121,6 @@ pl_interp_instance_t *pl_main_universe_select(pl_main_universe_t * universe,    
                                               gs_param_list * params     /* device params to use */
     );
 
-static pl_interp_implementation_t const *pl_auto_sense(const char *name,        /* stream  */
-                                                       int buffer_length,       /* length of stream */
-                                                       pl_interp_implementation_t const *const impl_array[]     /* implementations to choose from */
-    );
-
 static pl_interp_implementation_t const
     *pl_select_implementation(pl_interp_instance_t * pjl_instance,
                               pl_main_instance_t * pmi, pl_top_cursor_t r);
@@ -144,19 +138,9 @@ void pl_main_reinit_instance(pl_main_instance_t * pmi);
    initial device and setting its parameters.  */
 int pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                             pl_interp_instance_t * pjl_instance,
-                            pl_interp_implementation_t const *const
-                            impl_array[], char **filename);
+                            char **filename);
 
-/* Find default language implementation */
-pl_interp_implementation_t const *pl_auto_sense(const char *buf, int buf_len,
-                                                pl_interp_implementation_t
-                                                const *const impl_array[]);
-
-static pl_interp_implementation_t const *pl_pjl_select(pl_interp_instance_t *
-                                                       pjl_instance,
-                                                       pl_interp_implementation_t
-                                                       const *const
-                                                       impl_array[]);
+static pl_interp_implementation_t const *pl_pjl_select(pl_interp_instance_t *pjl_instance);
 
 /* Pre-page portion of page finishing routine */
 int                             /* ret 0 if page should be printed, 1 if no print, else -ve error */
@@ -296,7 +280,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
     }
 
     /* Create PDL instances, etc */
-    if (pl_main_universe_init(&inst->universe, err_buf, mem, pdl_implementation,
+    if (pl_main_universe_init(&inst->universe, err_buf, mem,
                               pjl_instance, inst, &pl_pre_finish_page,
                               &pl_post_finish_page) < 0) {
         errprintf(mem, "%s", err_buf);
@@ -327,7 +311,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
         if (argc == 1 ||
             pl_main_process_options(inst,
                                     &inst->args,
-                                    pjl_instance, pdl_implementation,
+                                    pjl_instance,
                                     &filename) < 0) {
             /* Print error verbage and return */
             int i;
@@ -591,7 +575,6 @@ int                             /* 0 ok, else -1 error */
 pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
                       char *err_str,    /* RETURNS error str if error */
                       gs_memory_t * mem,        /* deallocator for devices */
-                      pl_interp_implementation_t const *const pdl_implementation[],     /* implementations to choose from */
                       pl_interp_instance_t * pjl_instance,      /* pjl to
                                                                    reference */
                       pl_main_instance_t * inst,        /* instance for pre/post print */
@@ -603,7 +586,6 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
 
     /* 0-init everything */
     memset(universe, 0, sizeof(*universe));
-    universe->pdl_implementation = pdl_implementation;
     universe->mem = mem;
     inst->device_memory = mem;
 
@@ -682,7 +664,7 @@ pl_main_universe_dnit(pl_main_universe_t * universe,    /* universe to dnit */
 
     /* dnit interps */
     for (index = 0;
-         universe->pdl_implementation[index] != 0;
+         pdl_implementation[index] != 0;
          ++index, universe->curr_instance =
          universe->pdl_instance_array[index])
         if ((universe->pdl_instance_array[index]
@@ -693,8 +675,7 @@ pl_main_universe_dnit(pl_main_universe_t * universe,    /* universe to dnit */
                 0)) {
             if (err_str)
                 gs_sprintf(err_str, "Unable to close out %s instance.\n",
-                        pl_characteristics(universe->
-                                           pdl_implementation[index])->
+                        pl_characteristics(pdl_implementation[index])->
                         language);
             return -1;
         }
@@ -776,7 +757,7 @@ pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select fr
             /* find instance corresponding to implementation */
             for (index = 0;
                  desired_implementation !=
-                 universe->pdl_implementation[index]; ++index);
+                 pdl_implementation[index]; ++index);
             universe->curr_instance = universe->pdl_instance_array[index];
             universe->curr_implementation = desired_implementation;
         }
@@ -1007,7 +988,6 @@ static int check_for_special_str(pl_main_instance_t * pmi, const char *arg, gs_p
 int
 pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         pl_interp_instance_t * pjl_instance,
-                        pl_interp_implementation_t const *const impl_array[],
                         char **filename)
 {
     int code = 0;
@@ -1388,19 +1368,19 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 {
                     int index;
 
-                    for (index = 0; impl_array[index] != 0; ++index)
+                    for (index = 0; pdl_implementation[index] != 0; ++index)
                         if (!strcmp(arg,
-                                    pl_characteristics(impl_array[index])->
+                                    pl_characteristics(pdl_implementation[index])->
                                     language))
                             break;
-                    if (impl_array[index] != 0)
-                        pmi->implementation = impl_array[index];
+                    if (pdl_implementation[index] != 0)
+                        pmi->implementation = pdl_implementation[index];
                     else {
                         dmprintf(pmi->memory,
                                  "Choose language in -L<language> from: ");
-                        for (index = 0; impl_array[index] != 0; ++index)
+                        for (index = 0; pdl_implementation[index] != 0; ++index)
                             dmprintf1(pmi->memory, "%s ",
-                                      pl_characteristics(impl_array[index])->
+                                      pl_characteristics(pdl_implementation[index])->
                                       language);
                         dmprintf(pmi->memory, "\n");
                         return -1;
@@ -1516,6 +1496,25 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     return 0;
 }
 
+/* Find default language implementation */
+static pl_interp_implementation_t const *
+pl_auto_sense(const char *name,  int buffer_length)
+{
+    /* Lookup this string in the auto sense field for each implementation */
+    pl_interp_implementation_t const *const *impl;
+
+    for (impl = pdl_implementation; *impl != 0; ++impl) {
+        if (buffer_length >=
+            (strlen(pl_characteristics(*impl)->auto_sense_string)))
+            if (!strncmp
+                (pl_characteristics(*impl)->auto_sense_string, name,
+                 (strlen(pl_characteristics(*impl)->auto_sense_string))))
+                return *impl;
+    }
+    /* Defaults to PCL */
+    return pdl_implementation[0];
+}
+
 /* either the (1) implementation has been selected on the command line or
    (2) it has been selected in PJL or (3) we need to auto sense. */
 static pl_interp_implementation_t const *
@@ -1530,50 +1529,26 @@ pl_select_implementation(pl_interp_instance_t * pjl_instance,
     if (pmi->implementation)
         return pmi->implementation;     /* was specified as cmd opt */
     /* select implementation */
-    if ((impl = pl_pjl_select(pjl_instance, pdl_implementation)) != 0)
+    if ((impl = pl_pjl_select(pjl_instance)) != 0)
         return impl;
     /* lookup string in name field for each implementation */
     return pl_auto_sense((const char *)r.cursor.ptr + 1,
-                         (r.cursor.limit - r.cursor.ptr), pdl_implementation);
+                         (r.cursor.limit - r.cursor.ptr));
 }
 
 /* Find default language implementation */
 static pl_interp_implementation_t const *
-pl_pjl_select(pl_interp_instance_t * pjl_instance, pl_interp_implementation_t const *const impl_array[] /* implementations to choose from */
-    )
+pl_pjl_select(pl_interp_instance_t * pjl_instance)
 {
     pjl_envvar_t *language;
     pl_interp_implementation_t const *const *impl;
 
     language = pjl_proc_get_envvar(pjl_instance, "language");
-    for (impl = impl_array; *impl != 0; ++impl) {
+    for (impl = pdl_implementation; *impl != 0; ++impl) {
         if (!strcmp(pl_characteristics(*impl)->language, language))
             return *impl;
     }
-    /* Defaults to NULL */
     return 0;
-}
-
-/* Find default language implementation */
-static pl_interp_implementation_t const *
-pl_auto_sense(const char *name, /* stream  */
-              int buffer_length,        /* length of stream */
-              pl_interp_implementation_t const *const impl_array[]      /* implementations to choose from */
-    )
-{
-    /* Lookup this string in the auto sense field for each implementation */
-    pl_interp_implementation_t const *const *impl;
-
-    for (impl = impl_array; *impl != 0; ++impl) {
-        if (buffer_length >=
-            (strlen(pl_characteristics(*impl)->auto_sense_string)))
-            if (!strncmp
-                (pl_characteristics(*impl)->auto_sense_string, name,
-                 (strlen(pl_characteristics(*impl)->auto_sense_string))))
-                return *impl;
-    }
-    /* Defaults to PCL */
-    return impl_array[0];
 }
 
 /* Print memory and time usage. */
