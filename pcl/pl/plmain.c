@@ -233,7 +233,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
 {
     gs_memory_t *mem;
     pl_main_instance_t *inst;
-    arg_list args = { 0 };
     char *filename = NULL;
     char err_buf[256];
     pl_interp_t *pjl_interp = NULL;
@@ -278,7 +277,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
 #if defined(__WIN32__) && !defined(GS_NO_UTF8)
     arg_get_codepoint = gp_local_arg_encoding_get_codepoint;
 #endif
-    arg_init(&args, (const char **)argv, argc, pl_main_arg_fopen, NULL,
+    arg_init(&inst->args, (const char **)argv, argc, pl_main_arg_fopen, NULL,
              arg_get_codepoint, mem);
 
     /* Create PJL instance */
@@ -320,7 +319,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
         /* Process any new options. May request new device. */
         if (argc == 1 ||
             pl_main_process_options(inst,
-                                    &args,
+                                    &inst->args,
                                     pjl_instance, pdl_implementation,
                                     &filename) < 0) {
             /* Print error verbage and return */
@@ -561,7 +560,7 @@ fail:
     /* We lost the ability to print peak memory usage with the loss
      * of the memory wrappers.
      */
-    arg_finit(&args);
+    arg_finit(&inst->args);
 
     if (gs_debug_c('A'))
         dmprintf(mem, "Final time");

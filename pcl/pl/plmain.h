@@ -87,6 +87,7 @@ typedef struct pl_main_instance_s
     char *pdefault_rgb_icc;
     char *pdefault_cmyk_icc;
     gs_c_param_list params;
+    arg_list args;
     pl_main_universe_t universe;
     byte buf[8192]; /* languages read buffer */
 } pl_main_instance_t;
