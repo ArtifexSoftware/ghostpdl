@@ -230,7 +230,7 @@ static dev_proc_print_page(tiffscaled4_print_page);
 static const gx_device_procs tiffscaled4_procs = {
     tiff_open, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
     NULL, cmyk_8bit_map_color_cmyk, NULL, NULL, NULL, NULL, NULL, NULL,
-    tiff_get_params_downscale, tiff_put_params_downscale,
+    tiff_get_params_downscale_cmyk_ets, tiff_put_params_downscale_cmyk_ets,
     cmyk_8bit_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
 };
 
@@ -309,7 +309,8 @@ tiffscaled_print_page(gx_device_printer * pdev, FILE * file)
                                          tfdev->downscale.min_feature_size,
                                          tfdev->AdjustWidth,
                                          1, 1,
-                                         0, 0, NULL);
+                                         0, 0, NULL,
+                                         tfdev->downscale.ets);
 }
 
 static int
@@ -336,7 +337,8 @@ tiffscaled8_print_page(gx_device_printer * pdev, FILE * file)
                                          tfdev->downscale.min_feature_size,
                                          tfdev->AdjustWidth,
                                          8, 1,
-                                         0, 0, NULL);
+                                         0, 0, NULL,
+                                         0);
 }
 
 static void
@@ -395,7 +397,8 @@ tiffscaled24_print_page(gx_device_printer * pdev, FILE * file)
                                          tfdev->downscale.min_feature_size,
                                          tfdev->AdjustWidth,
                                          8, 3,
-                                         0, 0, NULL);
+                                         0, 0, NULL,
+                                         0);
 }
 
 static void
@@ -438,7 +441,8 @@ tiffscaled32_print_page(gx_device_printer * pdev, FILE * file)
                                          tfdev->AdjustWidth,
                                          8, 4,
                                          tfdev->downscale.trap_w, tfdev->downscale.trap_h,
-                                         tfdev->downscale.trap_order);
+                                         tfdev->downscale.trap_order,
+                                         0);
 }
 
 static int
@@ -463,7 +467,8 @@ tiffscaled4_print_page(gx_device_printer * pdev, FILE * file)
                                          tfdev->AdjustWidth,
                                          1, 4,
                                          tfdev->downscale.trap_w, tfdev->downscale.trap_h,
-                                         tfdev->downscale.trap_order);
+                                         tfdev->downscale.trap_order,
+                                         tfdev->downscale.ets);
 }
 
 /* Called when the post render ICC profile is in a different color space

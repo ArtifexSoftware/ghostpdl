@@ -1341,10 +1341,19 @@ $(GLOBJ)claptrap-planar.$(OBJ) : $(GLSRC)claptrap-planar.c $(AK) \
  $(claptrap_h) $(claptrap_impl_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)claptrap-planar.$(OBJ) $(C_) $(GLSRC)claptrap-planar.c
 
+# ----------- ETS routines ------------ #
+ets_h=$(GLSRC)ets.h
+ets_impl_h=$(GLSRC)ets_tm.h
+ets=$(GLOBJ)ets.$(OBJ)
+
+$(GLOBJ)ets.$(OBJ) : $(GLSRC)ets.c $(AK) \
+ $(ets_h) $(ets_impl_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)ets.$(OBJ) $(C_) $(GLSRC)ets.c
+
 # ----------- Downsampling routines ------------ #
 gxdownscale_h=$(GLSRC)gxdownscale.h $(gsmemory_h) $(gxdevcli_h) $(ctype__h) \
  $(gstypes_h) $(gxgetbit_h) $(claptrap_h)
-downscale_=$(GLOBJ)gxdownscale.$(OBJ) $(claptrap)
+downscale_=$(GLOBJ)gxdownscale.$(OBJ) $(claptrap) $(ets)
 
 $(GLOBJ)gxdownscale.$(OBJ) : $(GLSRC)gxdownscale.c $(AK) $(string__h) \
  $(gxdownscale_h) $(gserrors_h) $(gdevprn_h) $(LIB_MAK) $(MAKEDIRS)

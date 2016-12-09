@@ -1798,6 +1798,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\ets.c"
+				>
+			</File>
+			<File
 				RelativePath="..\base\fapi_ft.c"
 				>
 			</File>
@@ -3339,6 +3343,14 @@
 			</File>
 			<File
 				RelativePath="..\base\errno_.h"
+				>
+			</File>
+			<File
+				RelativePath="..\base\ets.h"
+				>
+			</File>
+			<File
+				RelativePath="..\base\ets_tm.h"
 				>
 			</File>
 			<File

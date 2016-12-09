@@ -110,7 +110,9 @@ tiff_get_some_params(gx_device * dev, gs_param_list * plist, int which)
         ecode = code;
     if (which & 1) {
         if ((code = gx_downscaler_write_params(plist, &tfdev->downscale,
-                                               GX_DOWNSCALER_PARAMS_MFS | (which & 2 ? GX_DOWNSCALER_PARAMS_TRAP : 0))) < 0)
+                                               GX_DOWNSCALER_PARAMS_MFS |
+                                               (which & 2 ? GX_DOWNSCALER_PARAMS_TRAP : 0) |
+                                               (which & 4 ? GX_DOWNSCALER_PARAMS_ETS : 0))) < 0)
             ecode = code;
     }
     return ecode;
@@ -132,6 +134,12 @@ int
 tiff_get_params_downscale_cmyk(gx_device * dev, gs_param_list * plist)
 {
     return tiff_get_some_params(dev, plist, 3);
+}
+
+int
+tiff_get_params_downscale_cmyk_ets(gx_device * dev, gs_param_list * plist)
+{
+    return tiff_get_some_params(dev, plist, 7);
 }
 
 static int
@@ -211,7 +219,8 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
     {
         code = gx_downscaler_read_params(plist, &tfdev->downscale,
                                          (GX_DOWNSCALER_PARAMS_MFS |
-                                          (which & 2 ? GX_DOWNSCALER_PARAMS_TRAP : 0)));
+                                          (which & 2 ? GX_DOWNSCALER_PARAMS_TRAP : 0) |
+                                          (which & 4 ? GX_DOWNSCALER_PARAMS_ETS : 0)));
         if (code < 0)
         {
             ecode = code;
@@ -277,6 +286,12 @@ int
 tiff_put_params_downscale_cmyk(gx_device * dev, gs_param_list * plist)
 {
     return tiff_put_some_params(dev, plist, 3);
+}
+
+int
+tiff_put_params_downscale_cmyk_ets(gx_device * dev, gs_param_list * plist)
+{
+    return tiff_put_some_params(dev, plist, 7);
 }
 
 int gdev_tiff_begin_page(gx_device_tiff *tfdev,
@@ -515,7 +530,8 @@ static int tiff_chunky_post_cm(void  *arg, byte **dst, byte **src, int w, int h,
 int
 tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
                               int mfs, int aw, int bpc, int num_comps,
-                              int trap_w, int trap_h, const int *trap_order)
+                              int trap_w, int trap_h, const int *trap_order,
+                              int ets)
 {
     gx_device_tiff *const tfdev = (gx_device_tiff *)dev;
     int code = 0;
@@ -532,21 +548,21 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
 
     if (num_comps == 4) {
         if (tfdev->icclink == NULL) {
-            code = gx_downscaler_init_trapped(&ds, (gx_device *)dev, 8, bpc, num_comps,
-                factor, mfs, &fax_adjusted_width, aw, trap_w, trap_h, trap_order);
+            code = gx_downscaler_init_trapped_ets(&ds, (gx_device *)dev, 8, bpc, num_comps,
+                factor, mfs, &fax_adjusted_width, aw, trap_w, trap_h, trap_order, ets);
         } else {
-            code = gx_downscaler_init_trapped_cm(&ds, (gx_device *)dev, 8, bpc, num_comps,
+            code = gx_downscaler_init_trapped_cm_ets(&ds, (gx_device *)dev, 8, bpc, num_comps,
                 factor, mfs, &fax_adjusted_width, aw, trap_w, trap_h, trap_order,
-                tiff_chunky_post_cm, tfdev->icclink, tfdev->icclink->num_output);
+                tiff_chunky_post_cm, tfdev->icclink, tfdev->icclink->num_output, ets);
         }
     } else {
         if (tfdev->icclink == NULL) {
-            code = gx_downscaler_init(&ds, (gx_device *)dev, 8, bpc, num_comps,
-                factor, mfs, &fax_adjusted_width, aw);
+            code = gx_downscaler_init_ets(&ds, (gx_device *)dev, 8, bpc, num_comps,
+                factor, mfs, &fax_adjusted_width, aw, ets);
         } else {
-            code = gx_downscaler_init_cm(&ds, (gx_device *)dev, 8, bpc, num_comps,
+            code = gx_downscaler_init_cm_ets(&ds, (gx_device *)dev, 8, bpc, num_comps,
                 factor, mfs, &fax_adjusted_width, aw, tiff_chunky_post_cm, tfdev->icclink,
-                tfdev->icclink->num_output);
+                tfdev->icclink->num_output, ets);
         }
     }
     if (code < 0)

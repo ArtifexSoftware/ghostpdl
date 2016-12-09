@@ -493,6 +493,14 @@ and <code>-dMinFeatureSize=</code> in 1bpp mode.
 are available, 32 and 34. 32 provides a 3:2 downscale (so from 300 to
 200 dpi, say). 34 produces a 3:4 upscale (so from 300 to 400 dpi, say).
 
+<p>The <code>tiffscaled</code> and <code>tiffscaled4</code> devices
+can optionally use Even Toned Screening, rather than simple Floyd Steinberg
+error diffusion. This patented technique gives better quality at the
+expense of some speed. While the code used has many quality tuning
+options, none of these are currently exposed. Any device author
+interested in trying these options should contact Artifex for more
+information. Currently ETS can be enabled using -dDownScaleETS=1.
+  
 <a name="tiffsep1"></a><dt><code>tiffsep1</code>
 <dd>
 The <tt>tiffsep1</tt> device creates multiple output files, one for each component
