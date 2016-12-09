@@ -145,13 +145,6 @@ pjl_impl_set_post_page_action(pl_interp_instance_t * instance,  /* interp instan
     return 0;
 }
 
-static int
-pjl_impl_get_device_memory(pl_interp_instance_t * instance,     /* interp instance to use */
-                           gs_memory_t ** pmem)
-{
-    return 0;
-}
-
 /* Prepare interp instance for the next "job" */
 static int                      /* ret 0 ok, else -ve error code */
 pjl_impl_init_job(pl_interp_instance_t * instance       /* interp instance to start job in */
@@ -387,8 +380,7 @@ pjl_implementation_t pjl_implementation = {
      pjl_impl_dnit_job,
      pjl_impl_remove_device,
      pjl_impl_deallocate_interp_instance,
-     pjl_impl_deallocate_interp,
-     pjl_impl_get_device_memory,
+     pjl_impl_deallocate_interp
     },
     /* PJL-specific portion */
     pjl_impl_get_envvar,

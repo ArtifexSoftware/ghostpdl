@@ -568,7 +568,6 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
     /* 0-init everything */
     memset(universe, 0, sizeof(*universe));
     universe->mem = mem;
-    inst->device_memory = mem;
 
     /* Create & init PDL all instances. Could do this lazily to save memory, */
     /* but for now it's simpler to just create all instances up front. */
@@ -601,8 +600,7 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
                                    PCL_CLIENT)
             || pl_set_pre_page_action(instance, pl_pre_finish_page, inst) < 0
             || pl_set_post_page_action(instance, pl_post_finish_page,
-                                       inst) < 0
-            || pl_get_device_memory(instance, &inst->device_memory) < 0) {
+                                       inst) < 0) {
             if (err_str)
                 gs_sprintf(err_str, "Unable to init %s interpreter.\n",
                         pl_characteristics(pdl_implementation[index])->
@@ -846,24 +844,21 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
            Due to that device_root is always consistent with pti->device,
            and it is regisrtered if and only if pti->device != NULL.
          */
-        if (pti->device != NULL) {
+        if (pti->device != NULL)
             pti->device = NULL;
-            gs_unregister_root(pti->device_memory, &device_root,
-                               "pl_main_universe_select");
-        }
 
         if (index == -1) {
-            dev = gs_getdefaultlibdevice(pti->device_memory);
+            dev = gs_getdefaultlibdevice(pti->memory);
         }
         else {
             const gx_device **list;
             gs_lib_device_list((const gx_device * const **)&list, NULL);
             dev = list[index];
         }
-        code = gs_copydevice(&pti->device, dev, pti->device_memory);
+        code = gs_copydevice(&pti->device, dev, pti->memory);
 
         if (pti->device != NULL)
-            gs_register_struct_root(pti->device_memory, &device_root,
+            gs_register_struct_root(pti->memory, &device_root,
                                     (void **)&pti->device,
                                     "pl_top_create_device");
         /* NB this needs a better solution */

@@ -207,11 +207,6 @@ int pl_deallocate_interp(pl_interp_t *);
 
 typedef int (*pl_interp_proc_deallocate_interp_t) (pl_interp_t *);
 
-int pl_get_device_memory(pl_interp_instance_t *, gs_memory_t **);
-
-typedef int (*pl_interp_proc_get_device_memory_t) (pl_interp_instance_t *,
-                                                   gs_memory_t **);
-
 pl_interp_instance_t *get_interpreter_from_memory(const gs_memory_t * mem);
 
 /*
@@ -238,7 +233,6 @@ struct pl_interp_implementation_s
     pl_interp_proc_deallocate_interp_instance_t
         proc_deallocate_interp_instance;
     pl_interp_proc_deallocate_interp_t proc_deallocate_interp;
-    pl_interp_proc_get_device_memory_t proc_get_device_memory;
 };
 
 #endif /* pltop_INCLUDED */

@@ -101,14 +101,6 @@ pl_set_post_page_action(pl_interp_instance_t * instance,        /* interp instan
         (instance, action, closure);
 }
 
-int                             /* ret 0 ok, else -ve err */
-pl_get_device_memory(pl_interp_instance_t * instance,   /* interp instance to use */
-                     gs_memory_t ** memory)
-{
-    return instance->interp->implementation->proc_get_device_memory(instance,
-                                                                    memory);
-}
-
 /* Get and interpreter prefered device memory allocator if any */
 int                             /* ret 0 ok, else -ve error code */
 pl_set_device(pl_interp_instance_t * instance,  /* interp instance to use */

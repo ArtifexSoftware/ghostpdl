@@ -304,13 +304,6 @@ cleanup_setdevice:
     return code;
 }
 
-static int
-xps_imp_get_device_memory(pl_interp_instance_t *pinstance, gs_memory_t **ppmem)
-{
-    /* huh? we do nothing here */
-    return 0;
-}
-
 /* Parse an entire random access file */
 static int
 xps_imp_process_file(pl_interp_instance_t *pinstance, char *filename)
@@ -533,8 +526,7 @@ const pl_interp_implementation_t xps_implementation =
     xps_imp_dnit_job,
     xps_imp_remove_device,
     xps_imp_deallocate_interp_instance,
-    xps_imp_deallocate_interp,
-    xps_imp_get_device_memory,
+    xps_imp_deallocate_interp
 };
 
 /*

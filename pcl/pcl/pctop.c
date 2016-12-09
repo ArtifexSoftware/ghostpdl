@@ -503,13 +503,6 @@ pcl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to us
     return code;
 }
 
-static int
-pcl_impl_get_device_memory(pl_interp_instance_t * instance,     /* interp instance to use */
-                           gs_memory_t ** pmem)
-{
-    return 0;
-}
-
 /* Prepare interp instance for the next "job" */
 static int                      /* ret 0 ok, else -ve error code */
 pcl_impl_init_job(pl_interp_instance_t * instance       /* interp instance to start job in */
@@ -728,5 +721,4 @@ const pl_interp_implementation_t pcl_implementation = {
     pcl_impl_remove_device,
     pcl_impl_deallocate_interp_instance,
     pcl_impl_deallocate_interp,
-    pcl_impl_get_device_memory
 };

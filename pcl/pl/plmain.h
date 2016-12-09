@@ -54,7 +54,6 @@ typedef struct pl_main_instance_s
 {
     /* The following are set at initialization time. */
     gs_memory_t *memory;
-    gs_memory_t *device_memory;
     long base_time[2];          /* starting time */
     int error_report;           /* -E# */
     bool pause;                 /* -dNOPAUSE => false */

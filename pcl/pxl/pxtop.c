@@ -400,13 +400,6 @@ pxl_impl_set_device(pl_interp_instance_t * instance,
     return code;
 }
 
-static int
-pxl_impl_get_device_memory(pl_interp_instance_t * instance,
-                           gs_memory_t ** pmem)
-{
-    return 0;
-}
-
 /* Prepare interp instance for the next "job" */
 /* ret 0 ok, else -ve error code */
 static int
@@ -675,8 +668,7 @@ const pl_interp_implementation_t pxl_implementation = {
     pxl_impl_dnit_job,
     pxl_impl_remove_device,
     pxl_impl_deallocate_interp_instance,
-    pxl_impl_deallocate_interp,
-    pxl_impl_get_device_memory,
+    pxl_impl_deallocate_interp
 };
 
 /* ---------- Utility Procs ----------- */

@@ -258,24 +258,6 @@ ps_impl_set_device(
     return exit_code;
 }
 
-/* fetch the gs_memory_t ptr so that the device and ps use the same
- * garbage collection aware a memory
- */
-static int
-ps_impl_get_device_memory(
-  pl_interp_instance_t   *instance,     /* interp instance to use */
-  gs_memory_t **pmem)
-{
-    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-    gs_dual_memory_t *dmem = &psi->minst->i_ctx_p->memory;
-    gs_ref_memory_t *mem = dmem->spaces.memories.named.global;
-
-    *pmem = mem->stable_memory;
-    /* Lock against alloc_restore_all to release the device when called from gsapi_exit : */
-    mem->num_contexts++;
-    return 0;
-}
-
 gs_main_instance *ps_impl_get_minst( const gs_memory_t *mem )
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)get_interpreter_from_memory(mem);
@@ -598,6 +580,5 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_dnit_job,
   ps_impl_remove_device,
   ps_impl_deallocate_interp_instance,
-  ps_impl_deallocate_interp,
-  ps_impl_get_device_memory,
+  ps_impl_deallocate_interp
 };
