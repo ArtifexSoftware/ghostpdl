@@ -1270,6 +1270,7 @@ clist_create_compositor(gx_device * dev,
         return code;
 
     cropping_op = code;
+    code = 0;
 
     if (cropping_op == PUSHCROP || cropping_op == SAMEAS_PUSHCROP_BUTNOPUSH) {
         first_band = ry / band_height;
