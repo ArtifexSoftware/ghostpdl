@@ -122,7 +122,7 @@ pjl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to us
                     gx_device * device  /* device to set (open or closed) */
     )
 {
-    return gs_error_undefined;  /* this operation is undefined for PJL */
+    return 0;
 }
 
 /* Set an interpreter instance's pre-page action */
@@ -132,7 +132,7 @@ pjl_impl_set_pre_page_action(pl_interp_instance_t * instance,   /* interp instan
                              void *closure      /* closure to call action with */
     )
 {
-    return gs_error_undefined;  /* this operation is undefined for PJL */
+    return 0;
 }
 
 /* Set an interpreter instance's post-page action */
@@ -142,7 +142,7 @@ pjl_impl_set_post_page_action(pl_interp_instance_t * instance,  /* interp instan
                               void *closure     /* closure to call action with */
     )
 {
-    return gs_error_undefined;  /* this operation is undefined for PJL */
+    return 0;
 }
 
 static int
@@ -228,7 +228,7 @@ static int                      /* ret 0 ok, else -ve error code */
 pjl_impl_remove_device(pl_interp_instance_t * instance  /* interp instance to use */
     )
 {
-    return gs_error_undefined;  /* this operation is undefined for PJL */
+    return 0;
 }
 
 /* Deallocate a interpreter instance */

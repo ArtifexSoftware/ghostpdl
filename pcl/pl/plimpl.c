@@ -23,6 +23,8 @@
 
 #include "gsmemory.h" /* for gs_ptr_procs_t */
 
+extern pl_interp_implementation_t pjl_implementation;
+
 extern pl_interp_implementation_t pcl_implementation;
 
 extern pl_interp_implementation_t pxl_implementation;
@@ -37,6 +39,7 @@ extern pl_interp_implementation_t ps_implementation;
 
 /* Zero-terminated list of pointers to implementations */
 pl_interp_implementation_t const *const pdl_implementation[] = {
+    &pjl_implementation,
 #ifdef PCL_INCLUDED
     &pcl_implementation,
     &pxl_implementation,

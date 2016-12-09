@@ -101,7 +101,6 @@ void pl_print_usage(const pl_main_instance_t *, const char *);
 int pl_main_universe_init(pl_main_universe_t * universe,        /* universe to init */
                           char *err_str,        /* RETURNS error str if error */
                           gs_memory_t * mem,    /* deallocator for devices */
-                          pl_interp_instance_t * pjl_instance,  /* pjl to reference */
                           pl_main_instance_t * inst,    /* instance for pre/post print */
                           pl_page_action_t pl_pre_finish_page,  /* pre-page action */
                           pl_page_action_t pl_post_finish_page  /* post-page action */
@@ -218,8 +217,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
     pl_main_instance_t *inst;
     char *filename = NULL;
     char err_buf[256];
-    pl_interp_t *pjl_interp = NULL;
-    pl_interp_instance_t *pjl_instance = NULL;
     pl_interp_instance_t *curr_instance = 0;
     int (*arg_get_codepoint) (FILE * file, const char **astr) = NULL;
     int code = -1;
@@ -271,17 +268,9 @@ pl_main_aux(int argc, char *argv[], void *disp)
     arg_init(&inst->args, (const char **)argv, argc, pl_main_arg_fopen, NULL,
              arg_get_codepoint, mem);
 
-    /* Create PJL instance */
-    if (pl_allocate_interp(&pjl_interp, &pjl_implementation, mem) < 0
-        || pl_allocate_interp_instance(&pjl_instance, pjl_interp,
-                                       mem) < 0) {
-        errprintf(mem, "Unable to create PJL interpreter.\n");
-	goto fail;
-    }
-
     /* Create PDL instances, etc */
     if (pl_main_universe_init(&inst->universe, err_buf, mem,
-                              pjl_instance, inst, &pl_pre_finish_page,
+                              inst, &pl_pre_finish_page,
                               &pl_post_finish_page) < 0) {
         errprintf(mem, "%s", err_buf);
         goto done;
@@ -299,6 +288,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
         pl_top_cursor_t r;
         bool in_pjl = true;
         bool new_job = false;
+        pl_interp_instance_t *pjl_instance = inst->universe.pdl_instance_array[0];
 
         code = 0;
         if (pl_init_job(pjl_instance) < 0) {
@@ -540,13 +530,6 @@ fail:
         if (code >= 0)
             code = -1;
     }
-    /* dnit pjl */
-    if (pl_deallocate_interp_instance(pjl_instance) < 0
-        || pl_deallocate_interp(pjl_interp) < 0) {
-        dmprintf(mem, "Unable to close out PJL instance.\n");
-        code = -1;
-        goto done;
-    }
 
     /* We lost the ability to print peak memory usage with the loss
      * of the memory wrappers.
@@ -575,8 +558,6 @@ int                             /* 0 ok, else -1 error */
 pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
                       char *err_str,    /* RETURNS error str if error */
                       gs_memory_t * mem,        /* deallocator for devices */
-                      pl_interp_instance_t * pjl_instance,      /* pjl to
-                                                                   reference */
                       pl_main_instance_t * inst,        /* instance for pre/post print */
                       pl_page_action_t pl_pre_finish_page,      /* pre-page action */
                       pl_page_action_t pl_post_finish_page      /* post-page action */
@@ -615,8 +596,8 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
         }
 
         instance = universe->pdl_instance_array[index];
-        if (pl_set_client_instance(instance, pjl_instance, PJL_CLIENT) < 0 ||
-            pl_set_client_instance(instance, universe->pdl_instance_array[0],
+        if (pl_set_client_instance(instance, universe->pdl_instance_array[0], PJL_CLIENT) < 0 ||
+            pl_set_client_instance(instance, universe->pdl_instance_array[1],
                                    PCL_CLIENT)
             || pl_set_pre_page_action(instance, pl_pre_finish_page, inst) < 0
             || pl_set_post_page_action(instance, pl_post_finish_page,
@@ -1504,15 +1485,14 @@ pl_auto_sense(const char *name,  int buffer_length)
     pl_interp_implementation_t const *const *impl;
 
     for (impl = pdl_implementation; *impl != 0; ++impl) {
-        if (buffer_length >=
-            (strlen(pl_characteristics(*impl)->auto_sense_string)))
-            if (!strncmp
-                (pl_characteristics(*impl)->auto_sense_string, name,
-                 (strlen(pl_characteristics(*impl)->auto_sense_string))))
+        int auto_string_len = strlen(pl_characteristics(*impl)->auto_sense_string);
+        const char *sense   = pl_characteristics(*impl)->auto_sense_string;
+        if (auto_string_len != 0 && buffer_length >= auto_string_len)
+            if (!memcmp(sense, name, auto_string_len))
                 return *impl;
     }
-    /* Defaults to PCL */
-    return pdl_implementation[0];
+    /* Defaults to first language PJL is first in the table */
+    return pdl_implementation[1];
 }
 
 /* either the (1) implementation has been selected on the command line or
