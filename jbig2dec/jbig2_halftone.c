@@ -257,8 +257,8 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
 {
     uint8_t **GSVALS = NULL;
     size_t consumed_bytes = 0;
-    int i, j, code, stride;
-    int x, y;
+    uint32_t i, j, stride, x, y;
+    int code;
     Jbig2Image **GSPLANES;
     Jbig2GenericRegionParams rparams;
     Jbig2WordStream *ws = NULL;
@@ -276,9 +276,8 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
         if (GSPLANES[i] == NULL) {
             jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate %dx%d image for GSPLANES", GSW, GSH);
             /* free already allocated */
-            for (j = i - 1; j >= 0; --j) {
-                jbig2_image_release(ctx, GSPLANES[j]);
-            }
+            for (j = i; j > 0;)
+                jbig2_image_release(ctx, GSPLANES[--j]);
             jbig2_free(ctx->allocator, GSPLANES);
             return NULL;
         }
@@ -323,9 +322,10 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
     }
 
     /* C.5 step 2. Set j = GSBPP-2 */
-    j = GSBPP - 2;
+    j = GSBPP - 1;
     /* C.5 step 3. decode loop */
-    while (j >= 0) {
+    while (j > 0) {
+        j--;
         /*  C.5 step 3. (a) */
         if (GSMMR) {
             code = jbig2_decode_halftone_mmr(ctx, &rparams, data + consumed_bytes, size - consumed_bytes, GSPLANES[j], &consumed_bytes);
@@ -345,7 +345,6 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
             GSPLANES[j]->data[i] ^= GSPLANES[j + 1]->data[i];
 
         /*  C.5 step 3. (c) */
-        --j;
     }
 
     /* allocate GSVALS */
@@ -359,9 +358,8 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
         if (GSVALS[i] == NULL) {
             jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate GSVALS: %d bytes", GSH * GSW);
             /* free already allocated */
-            for (j = i - 1; j >= 0; --j) {
-                jbig2_free(ctx->allocator, GSVALS[j]);
-            }
+            for (j = i; j > 0;)
+                jbig2_free(ctx->allocator, GSVALS[--j]);
             jbig2_free(ctx->allocator, GSVALS);
             GSVALS = NULL;
             goto cleanup;
@@ -450,7 +448,7 @@ jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     uint8_t **GI;
     Jbig2Image *HSKIP = NULL;
     Jbig2PatternDict *HPATS;
-    int i;
+    uint32_t i;
     uint32_t mg, ng;
     int32_t x, y;
     uint8_t gray_val;
@@ -476,7 +474,7 @@ jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
     /* calculate ceil(log2(HNUMPATS)) */
     HBPP = 0;
-    while (HNUMPATS > (1 << ++HBPP));
+    while (HNUMPATS > (1U << ++HBPP));
 
     /* 6.6.5 point 4. decode gray-scale image as mentioned in annex C */
     GI = jbig2_decode_gray_scale_image(ctx, segment, data, size,

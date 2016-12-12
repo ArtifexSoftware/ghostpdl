@@ -718,7 +718,7 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte 
     byte seg_flags;
     int8_t gbat[8];
     int offset;
-    int gbat_bytes = 0;
+    uint32_t gbat_bytes = 0;
     Jbig2GenericRegionParams params;
     int code = 0;
     Jbig2Image *image = NULL;

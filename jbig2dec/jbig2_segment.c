@@ -39,10 +39,10 @@ jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t 
     uint8_t rtscarf;
     uint32_t rtscarf_long;
     uint32_t *referred_to_segments;
-    int referred_to_segment_count;
-    int referred_to_segment_size;
-    int pa_size;
-    int offset;
+    uint32_t referred_to_segment_count;
+    uint32_t referred_to_segment_size;
+    uint32_t pa_size;
+    uint32_t offset;
 
     /* minimum possible size of a jbig2 segment header */
     if (buf_size < 11)
@@ -83,7 +83,7 @@ jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t 
 
     /* 7.2.5 */
     if (referred_to_segment_count) {
-        int i;
+        uint32_t i;
 
         referred_to_segments = jbig2_new(ctx, uint32_t, referred_to_segment_count * referred_to_segment_size);
         if (referred_to_segments == NULL) {

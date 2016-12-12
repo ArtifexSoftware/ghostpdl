@@ -47,16 +47,16 @@ struct _Jbig2HuffmanState {
        is (offset + 4) * 8. */
     uint32_t this_word;
     uint32_t next_word;
-    int offset_bits;
-    int offset;
-    int offset_limit;
+    uint32_t offset_bits;
+    uint32_t offset;
+    uint32_t offset_limit;
 
     Jbig2WordStream *ws;
     Jbig2Ctx *ctx;
 };
 
 static uint32_t
-huff_get_next_word(Jbig2HuffmanState *hs, int offset)
+huff_get_next_word(Jbig2HuffmanState *hs, uint32_t offset)
 {
     uint32_t word = 0;
     Jbig2WordStream *ws = hs->ws;
@@ -213,7 +213,7 @@ jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset)
 /* return the offset of the huffman decode pointer (in bytes)
  * from the beginning of the WordStream
  */
-int
+uint32_t
 jbig2_huffman_offset(Jbig2HuffmanState *hs)
 {
     return hs->offset + (hs->offset_bits >> 3);

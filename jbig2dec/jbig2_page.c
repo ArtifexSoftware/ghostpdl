@@ -155,9 +155,9 @@ int
 jbig2_end_of_stripe(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
 {
     Jbig2Page page = ctx->pages[ctx->current_page];
-    int end_row;
+    uint32_t end_row;
 
-    end_row = jbig2_get_int32(segment_data);
+    end_row = jbig2_get_uint32(segment_data);
     if (end_row < page.end_row) {
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
                     "end of stripe segment with non-positive end row advance" " (new end row %d vs current end row %d)", end_row, page.end_row);
@@ -248,7 +248,7 @@ jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, int x, 
 
     /* grow the page to accomodate a new stripe if necessary */
     if (page->striped) {
-        int new_height = y + image->height + page->end_row;
+        uint32_t new_height = y + image->height + page->end_row;
 
         if (page->image->height < new_height) {
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "growing page buffer to %d rows " "to accomodate new stripe", new_height);

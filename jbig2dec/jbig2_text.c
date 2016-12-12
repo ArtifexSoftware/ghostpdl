@@ -55,7 +55,7 @@
 int
 jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                          const Jbig2TextRegionParams *params,
-                         const Jbig2SymbolDict *const *dicts, const int n_dicts,
+                         const Jbig2SymbolDict *const *dicts, const uint32_t n_dicts,
                          Jbig2Image *image, const byte *data, const size_t size, Jbig2ArithCx *GR_stats, Jbig2ArithState *as, Jbig2WordStream *ws)
 {
     /* relevent bits of 6.4.4 */
@@ -476,19 +476,19 @@ cleanup2:
 int
 jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
 {
-    int offset = 0;
+    uint32_t offset = 0;
     Jbig2RegionSegmentInfo region_info;
     Jbig2TextRegionParams params;
     Jbig2Image *image = NULL;
     Jbig2SymbolDict **dicts = NULL;
-    int n_dicts = 0;
+    uint32_t n_dicts = 0;
     uint16_t flags = 0;
     uint16_t huffman_flags = 0;
     Jbig2ArithCx *GR_stats = NULL;
     int code = 0;
     Jbig2WordStream *ws = NULL;
     Jbig2ArithState *as = NULL;
-    int table_index = 0;
+    uint32_t table_index = 0;
     const Jbig2HuffmanParams *huffman_params = NULL;
 
     /* 7.4.1 */
@@ -779,7 +779,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unable to retrive symbol dictionaries! previous parsing error?");
         goto cleanup1;
     } else {
-        int index;
+        uint32_t index;
 
         if (dicts[0] == NULL) {
             code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to find first referenced symbol dictionary!");
@@ -823,8 +823,8 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     }
 
     if (!params.SBHUFF) {
-        int SBSYMCODELEN, index;
-        int SBNUMSYMS = 0;
+        uint32_t SBSYMCODELEN, index;
+        uint32_t SBNUMSYMS = 0;
 
         for (index = 0; index < n_dicts; index++) {
             SBNUMSYMS += dicts[index]->n_symbols;
@@ -840,7 +840,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         }
 
         /* Table 31 */
-        for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < SBNUMSYMS; SBSYMCODELEN++) {
+        for (SBSYMCODELEN = 0; (1U << SBSYMCODELEN) < SBNUMSYMS; SBSYMCODELEN++) {
         }
         params.IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
         params.IARI = jbig2_arith_int_ctx_new(ctx);

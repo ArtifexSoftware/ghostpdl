@@ -32,18 +32,18 @@ int jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *se
 Jbig2Image *jbig2_sd_glyph(Jbig2SymbolDict *dict, unsigned int id);
 
 /* return a new empty symbol dict */
-Jbig2SymbolDict *jbig2_sd_new(Jbig2Ctx *ctx, int n_symbols);
+Jbig2SymbolDict *jbig2_sd_new(Jbig2Ctx *ctx, uint32_t n_symbols);
 
 /* release the memory associated with a symbol dict */
 void jbig2_sd_release(Jbig2Ctx *ctx, Jbig2SymbolDict *dict);
 
 /* generate a new symbol dictionary by concatenating a list of
    existing dictionaries */
-Jbig2SymbolDict *jbig2_sd_cat(Jbig2Ctx *ctx, int n_dicts, Jbig2SymbolDict **dicts);
+Jbig2SymbolDict *jbig2_sd_cat(Jbig2Ctx *ctx, uint32_t n_dicts, Jbig2SymbolDict **dicts);
 
 /* count the number of dictionary segments referred
    to by the given segment */
-int jbig2_sd_count_referred(Jbig2Ctx *ctx, Jbig2Segment *segment);
+uint32_t jbig2_sd_count_referred(Jbig2Ctx *ctx, Jbig2Segment *segment);
 
 /* return an array of pointers to symbol dictionaries referred
    to by a segment */

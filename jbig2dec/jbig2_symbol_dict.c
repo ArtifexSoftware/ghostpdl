@@ -88,40 +88,40 @@ jbig2_dump_symbol_dict(Jbig2Ctx *ctx, Jbig2Segment *segment)
 
 /* return a new empty symbol dict */
 Jbig2SymbolDict *
-jbig2_sd_new(Jbig2Ctx *ctx, int n_symbols)
+jbig2_sd_new(Jbig2Ctx *ctx, uint32_t n_symbols)
 {
-    Jbig2SymbolDict *new = NULL;
+    Jbig2SymbolDict *new_dict = NULL;
 
     if (n_symbols < 0) {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "Negative number of symbols in symbol dict: %d", n_symbols);
         return NULL;
     }
 
-    new = jbig2_new(ctx, Jbig2SymbolDict, 1);
-    if (new != NULL) {
-        new->glyphs = jbig2_new(ctx, Jbig2Image *, n_symbols);
-        new->n_symbols = n_symbols;
+    new_dict = jbig2_new(ctx, Jbig2SymbolDict, 1);
+    if (new_dict != NULL) {
+        new_dict->glyphs = jbig2_new(ctx, Jbig2Image *, n_symbols);
+        new_dict->n_symbols = n_symbols;
     } else {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "unable to allocate new empty symbol dict");
         return NULL;
     }
 
-    if (new->glyphs != NULL) {
-        memset(new->glyphs, 0, n_symbols * sizeof(Jbig2Image *));
+    if (new_dict->glyphs != NULL) {
+        memset(new_dict->glyphs, 0, n_symbols * sizeof(Jbig2Image *));
     } else {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "unable to allocate glyphs for new empty symbol dict");
-        jbig2_free(ctx->allocator, new);
+        jbig2_free(ctx->allocator, new_dict);
         return NULL;
     }
 
-    return new;
+    return new_dict;
 }
 
 /* release the memory associated with a symbol dict */
 void
 jbig2_sd_release(Jbig2Ctx *ctx, Jbig2SymbolDict *dict)
 {
-    int i;
+    uint32_t i;
 
     if (dict == NULL)
         return;
@@ -142,12 +142,12 @@ jbig2_sd_glyph(Jbig2SymbolDict *dict, unsigned int id)
 }
 
 /* count the number of dictionary segments referred to by the given segment */
-int
+uint32_t
 jbig2_sd_count_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
 {
     int index;
     Jbig2Segment *rsegment;
-    int n_dicts = 0;
+    uint32_t n_dicts = 0;
 
     for (index = 0; index < segment->referred_to_segment_count; index++) {
         rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
@@ -166,8 +166,8 @@ jbig2_sd_list_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
     int index;
     Jbig2Segment *rsegment;
     Jbig2SymbolDict **dicts;
-    int n_dicts = jbig2_sd_count_referred(ctx, segment);
-    int dindex = 0;
+    uint32_t n_dicts = jbig2_sd_count_referred(ctx, segment);
+    uint32_t dindex = 0;
 
     dicts = jbig2_new(ctx, Jbig2SymbolDict *, n_dicts);
     if (dicts == NULL) {
@@ -195,10 +195,10 @@ jbig2_sd_list_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
 /* generate a new symbol dictionary by concatenating a list of
    existing dictionaries */
 Jbig2SymbolDict *
-jbig2_sd_cat(Jbig2Ctx *ctx, int n_dicts, Jbig2SymbolDict **dicts)
+jbig2_sd_cat(Jbig2Ctx *ctx, uint32_t n_dicts, Jbig2SymbolDict **dicts)
 {
-    int i, j, k, symbols;
-    Jbig2SymbolDict *new = NULL;
+    uint32_t i, j, k, symbols;
+    Jbig2SymbolDict *new_dict = NULL;
 
     /* count the imported symbols and allocate a new array */
     symbols = 0;
@@ -206,17 +206,17 @@ jbig2_sd_cat(Jbig2Ctx *ctx, int n_dicts, Jbig2SymbolDict **dicts)
         symbols += dicts[i]->n_symbols;
 
     /* fill a new array with cloned glyph pointers */
-    new = jbig2_sd_new(ctx, symbols);
-    if (new != NULL) {
+    new_dict = jbig2_sd_new(ctx, symbols);
+    if (new_dict != NULL) {
         k = 0;
         for (i = 0; i < n_dicts; i++)
             for (j = 0; j < dicts[i]->n_symbols; j++)
-                new->glyphs[k++] = jbig2_image_clone(ctx, dicts[i]->glyphs[j]);
+                new_dict->glyphs[k++] = jbig2_image_clone(ctx, dicts[i]->glyphs[j]);
     } else {
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to allocate new symbol dictionary");
     }
 
-    return new;
+    return new_dict;
 }
 
 /* Decoding routines */
@@ -431,7 +431,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
                     if (REFAGGNINST > 1) {
                         Jbig2Image *image;
-                        int i;
+                        uint32_t i;
 
                         if (tparams == NULL) {
                             /* First time through, we need to initialise the */
@@ -512,7 +512,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                         uint32_t ID;
                         int32_t RDX, RDY;
                         int BMSIZE = 0;
-                        int ninsyms = params->SDNUMINSYMS;
+                        uint32_t ninsyms = params->SDNUMINSYMS;
                         int code1 = 0;
                         int code2 = 0;
                         int code3 = 0;
@@ -609,8 +609,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         if (params->SDHUFF && !params->SDREFAGG) {
             /* 6.5.9 */
             Jbig2Image *image;
-            int BMSIZE = jbig2_huffman_get(hs, params->SDHUFFBMSIZE, &code);
-            int j, x;
+            uint32_t BMSIZE = jbig2_huffman_get(hs, params->SDHUFFBMSIZE, &code);
+            uint32_t j;
+            int x;
 
             if (code || (BMSIZE < 0)) {
                 jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error decoding size of collective bitmap!");
@@ -700,22 +701,22 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate symbols exported from symbols dictionary");
         goto cleanup4;
     } else {
-        int i = 0;
-        int j = 0;
-        int k;
+        uint32_t i = 0;
+        uint32_t j = 0;
+        uint32_t k;
         int exflag = 0;
-        int64_t limit = params->SDNUMINSYMS + params->SDNUMNEWSYMS;
-        int32_t exrunlength;
+        uint32_t limit = params->SDNUMINSYMS + params->SDNUMNEWSYMS;
+        uint32_t exrunlength;
         int zerolength = 0;
 
         while (i < limit) {
             if (params->SDHUFF)
                 exrunlength = jbig2_huffman_get(hs, SBHUFFRSIZE, &code);
             else
-                code = jbig2_arith_int_decode(IAEX, as, &exrunlength);
+                code = jbig2_arith_int_decode(IAEX, as, (int32_t *)&exrunlength);
             /* prevent infinite loop */
             zerolength = exrunlength > 0 ? 0 : zerolength + 1;
-            if (code || (exrunlength > limit - i) || (exrunlength < 0) || (zerolength > 4) || (exflag && (exrunlength > params->SDNUMEXSYMS - j))) {
+            if (code || (exrunlength > limit - i) || (exrunlength < 0) || (zerolength > 4) || (exflag && (exrunlength + j > params->SDNUMEXSYMS))) {
                 if (code)
                     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode exrunlength for exported symbols");
                 else if (exrunlength <= 0)
@@ -797,8 +798,8 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 {
     Jbig2SymbolDictParams params;
     uint16_t flags;
-    int sdat_bytes;
-    int offset;
+    uint32_t sdat_bytes;
+    uint32_t offset;
     Jbig2ArithCx *GB_stats = NULL;
     Jbig2ArithCx *GR_stats = NULL;
     int table_index = 0;
@@ -951,7 +952,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
     /* 7.4.2.2 (2) */
     {
-        int n_dicts = jbig2_sd_count_referred(ctx, segment);
+        uint32_t n_dicts = jbig2_sd_count_referred(ctx, segment);
         Jbig2SymbolDict **dicts = NULL;
 
         if (n_dicts > 0) {
