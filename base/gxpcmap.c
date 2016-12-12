@@ -1442,7 +1442,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
             }
             dev_proc(adev, close_device)((gx_device *)adev);
             /* adev was the target of the pdf14 device, so also is no longer retained */
-            gx_device_retain(adev, false);         /* device no longer retained */
+            gx_device_retain((gx_device *)adev, false);         /* device no longer retained */
         }
         dev_proc(saved->device, close_device)((gx_device *)saved->device);
         /* Freeing the state should now free the device which may be the pdf14 compositor. */
