@@ -497,28 +497,18 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 
             if (nos_knockout) {
                 /* We need to be knocking out what ever is on the nos, but may
-                need to combine with it's backdrop */
-                byte *nos_shape_ptr = nos_shape_offset ?
-                    &nos_ptr[nos_shape_offset] : NULL;
-                byte *nos_tag_ptr = nos_tag_offset ?
-                    &nos_ptr[nos_tag_offset] : NULL;
-                byte tos_shape, tos_tag;
+                   need to combine with it's backdrop */
+                byte tos_shape = 255;
 
                 if (tos->has_shape)
                     tos_shape = tos_ptr[tos_shape_offset];
-                else
-                    tos_shape = 255;
-                if (tos->has_tags)
-                    tos_tag = tos_ptr[tos_tag_offset];
-                else
-                    tos_tag = 255;
 
                 if (nos_isolated || backdrop_ptr == NULL) {
                     /* We do not need to compose with the backdrop */
-                    art_pdf_composite_knockout_isolated_8(nos_pixel, nos_shape_ptr,
-                                                          nos_tag_ptr, tos_pixel,
-                                                          n_chan, tos_shape, tos_tag,
-                                                          pix_alpha, shape, has_mask);
+                    back_drop[n_chan] = 0;
+                    art_pdf_composite_knockout_group_8(back_drop, tos_shape,
+                        nos_pixel, nos_alpha_g_ptr, tos_pixel, n_chan, pix_alpha,
+                        blend_mode, pblend_procs, pdev, has_mask);
                 } else {
                     /* Per the PDF spec, since the tos is not isolated and we are
                        going onto a knock out group, we do the composition with
@@ -539,12 +529,11 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     }
                     /* alpha */
                     back_drop[n_chan] = backdrop_ptr[n_chan * nos_planestride];
-
                     art_pdf_composite_knockout_group_8(back_drop, tos_shape,
                                                        nos_pixel, nos_alpha_g_ptr,
                                                        tos_pixel, n_chan, pix_alpha,
                                                        blend_mode, pblend_procs,
-                                                       pdev);
+                                                       pdev, false);
                 }
             } else {
                 if (tos_isolated) {

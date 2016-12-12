@@ -275,6 +275,8 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
  * @alpha: Alpha mask value.
  * @blend_mode: Blend mode for compositing.
  * @pblend_procs: Procs for handling non separable blending modes.
+ * @p14dev: PDF14 device
+ * @has_mask: needed for knowing to pass back the soft mask value if shape = 0
  *
  * Note: this is only for knockout nonisolated groups.
  *
@@ -285,7 +287,7 @@ art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
         byte *dst_alpha_g, const byte *src, int n_chan, byte alpha,
         gs_blend_mode_t blend_mode,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        pdf14_device *p14dev);
+        pdf14_device *p14dev, bool has_mask);
 /**
  * art_pdf_composite_knockout_8: knockout compositing.
  * @dst: Destination pixel array -- has been initialized with background
@@ -330,32 +332,6 @@ art_pdf_knockoutisolated_group_8(byte *dst, const byte *src, int n_chan);
 void
 art_pdf_knockoutisolated_group_aa_8(byte *dst, const byte *src, byte src_alpha,
     byte aa_alpha, int n_chan, pdf14_device *p14dev);
-
-/**
- * art_pdf_composite_knockout_isolated_8: Simple knockout compositing.
- * @dst: Destination pixel.
- * @dst_shape: Shape associated with @dst.
- * @dst_tag: Tag associated with @dst.
- * @src: Source pixel.
- * @n_chan: Number of channels.
- * @shape: Shape.
- * @tag: Tag.
- * @alpha_mask: Alpha mask.
- * @shape_mask: Shape mask.
- *
- * This function handles compositin in an isolated knockout case. The
- * alpha channel of @src is interpreted as alpha.
- **/
-void
-art_pdf_composite_knockout_isolated_8(byte *dst,
-                                      byte *dst_shape,
-                                      byte *dst_tag,
-                                      const byte *src,
-                                      int n_chan,
-                                      byte shape,
-                                      byte tag,
-                                      byte alpha_mask, byte shape_mask,
-                                      bool has_mask);
 
 /*
  * Routines for handling the non separable blending modes.

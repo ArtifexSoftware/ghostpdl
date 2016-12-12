@@ -1157,11 +1157,18 @@ art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
         byte *dst_alpha_g, const byte *src, int n_chan, byte alpha,
         gs_blend_mode_t blend_mode,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        pdf14_device *p14dev)
+        pdf14_device *p14dev, bool has_mask)
 {
     byte src_alpha;		/* $\alpha g_n$ */
     byte src_tmp[ART_MAX_CHAN + 1];
     int tmp;
+
+    if (tos_shape == 0) {
+        /* If a softmask was present pass it along Bug 693548 */
+        if (has_mask)
+            dst[n_chan] = alpha;
+        return;
+    }
 
     if (alpha == 255) {
         art_pdf_knockout_composite_pixel_alpha_8(backdrop, tos_shape, dst, src,
@@ -1349,73 +1356,6 @@ art_pdf_composite_knockout_8(byte *dst,
             dst[i] = tmp >> 16;
         }
         dst[n_chan] = a_r;
-    }
-}
-
-void
-art_pdf_composite_knockout_isolated_8(byte *dst,
-                                      byte *dst_shape,
-                                      byte *dst_tag,
-                                      const byte *src,
-                                      int n_chan,
-                                      byte shape,
-                                      byte tag,
-                                      byte alpha_mask, byte shape_mask,
-                                      bool has_mask)
-{
-    int tmp;
-    int i;
-
-    if (shape == 0) {
-        /* If a softmask was present pass it along Bug 693548 */
-        if (has_mask)
-            dst[n_chan] = alpha_mask;
-        return;
-    } else if ((shape & shape_mask) == 255) {
-
-        memcpy(dst, src, n_chan + 3);
-        tmp = src[n_chan] * alpha_mask + 0x80;
-        dst[n_chan] = (tmp + (tmp >> 8)) >> 8;
-        if (dst_shape != NULL)
-            *dst_shape = 255;
-        if (dst_tag != NULL)
-            *dst_tag = tag;
-    } else {
-        /* Use src_shape to interpolate (in premultiplied alpha space)
-           between dst and (src, opacity). */
-        byte src_shape, src_alpha;
-        int dst_alpha = dst[n_chan];
-        byte result_alpha;
-        int tmp;
-
-        tmp = shape * shape_mask + 0x80;
-        src_shape = (tmp + (tmp >> 8)) >> 8;
-
-        tmp = src[n_chan] * alpha_mask + 0x80;
-        src_alpha = (tmp + (tmp >> 8)) >> 8;
-
-        tmp = (src_alpha - dst_alpha) * src_shape + 0x80;
-        result_alpha = dst_alpha + ((tmp + (tmp >> 8)) >> 8);
-
-        if (result_alpha != 0)
-            for (i = 0; i < n_chan; i++) {
-                /* todo: optimize this - can strength-reduce so that
-                   inner loop is a single interpolation */
-                tmp = dst[i] * dst_alpha * (255 - src_shape) +
-                    ((int)src[i]) * src_alpha * src_shape +
-                    (result_alpha << 7);
-                dst[i] = tmp / (result_alpha * 255);
-            }
-        dst[n_chan] = result_alpha;
-
-        /* union in dst_shape if non-null */
-        if (dst_shape != NULL) {
-            tmp = (255 - *dst_shape) * (255 - src_shape) + 0x80;
-            *dst_shape = 255 - ((tmp + (tmp >> 8)) >> 8);
-        }
-        if (dst_tag != NULL) {
-            *dst_tag = (*dst_tag | tag) & ~GS_UNTOUCHED_TAG;
-        }
     }
 }
 

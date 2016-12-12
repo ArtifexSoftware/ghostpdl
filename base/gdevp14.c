@@ -918,6 +918,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
     /* We are going to use the shape in the knockout computation.  If previous
        buffer has a shape or if this is a knockout then we will have a shape here */
     has_shape = tos->has_shape || tos->knockout;
+   // has_shape = false;
     /* If previous buffer has tags, then add tags here */
     has_tags = tos->has_tags;
 
