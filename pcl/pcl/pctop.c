@@ -226,6 +226,15 @@ pcl_impl_allocate_interp(pl_interp_t ** interp, /* RETURNS abstract interpreter 
     return 0;                   /* success */
 }
 
+static pl_main_instance_t *
+pcl_get_minst(pl_interp_instance_t *plinst)
+{
+    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)plinst;
+    gs_memory_t *mem            = pcli->memory;
+
+    return mem->gs_lib_ctx->top_of_system;
+}
+
 /* Do per-instance interpreter allocation/init. No device is set yet */
 static int                      /* ret 0 ok, else -ve error code */
 pcl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,     /* RETURNS instance struct */
@@ -276,22 +285,11 @@ pcl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,     /* RETUR
             return (code);
     }
 
+    pcli->pcs.pjls =
+        pcl_get_minst((pl_interp_instance_t *)pcli)->universe.pdl_instance_array[0];
+    
     /* Return success */
-    *instance = (pl_interp_instance_t *) pcli;
-    return 0;
-}
-
-/* Set a client language into an interperter instance */
-static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_set_client_instance(pl_interp_instance_t * instance,   /* interp instance to use */
-                             pl_interp_instance_t * client,     /* client to set */
-                             pl_interp_instance_clients_t which_client)
-{
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
-
-    if (which_client == PJL_CLIENT)
-        pcli->pcs.pjls = client;
-    /* ignore unknown clients */
+    *instance = (pl_interp_instance_t *)pcli;
     return 0;
 }
 
@@ -321,15 +319,6 @@ pcl_impl_set_post_page_action(pl_interp_instance_t * instance,  /* interp instan
     pcli->post_page_action = action;
     pcli->post_page_closure = closure;
     return 0;
-}
-
-static pl_main_instance_t *
-pcl_get_minst(pl_interp_instance_t *plinst)
-{
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)plinst;
-    gs_memory_t *mem            = pcli->memory;
-
-    return mem->gs_lib_ctx->top_of_system;
 }
 
 /* if the device option string PCL is not given, the default
@@ -707,7 +696,6 @@ const pl_interp_implementation_t pcl_implementation = {
     pcl_impl_characteristics,
     pcl_impl_allocate_interp,
     pcl_impl_allocate_interp_instance,
-    pcl_impl_set_client_instance,
     pcl_impl_set_pre_page_action,
     pcl_impl_set_post_page_action,
     pcl_impl_set_device,

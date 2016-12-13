@@ -76,7 +76,6 @@ typedef struct pl_interp_characteristics_s
  *  pl_allocate_interp(&interp, &an_implementation, ...);
  *  for (1 or more sessions)
  *    pl_allocate_interp_instance(&instance, interp, ...);
- *    pl_set_client_instance(instance, ...); // lang-specific client (e.g. PJL)
  *    pl_set_pre_page_action(instance, ...); // opt rtn called B4 each pageout
  *    pl_set_post_page_action(instance,...); // opt rtn called after pageout
  *    for (each device that needs output)
@@ -132,13 +131,6 @@ typedef enum
     /* needed by all interpreters to query pjl state */
     PJL_CLIENT
 } pl_interp_instance_clients_t;
-
-int pl_set_client_instance(pl_interp_instance_t *, pl_interp_instance_t *,
-                           pl_interp_instance_clients_t client);
-typedef int (*pl_interp_proc_set_client_instance_t) (pl_interp_instance_t *,
-                                                     pl_interp_instance_t *,
-                                                     pl_interp_instance_clients_t
-                                                     client);
 
 int pl_set_pre_page_action(pl_interp_instance_t *, pl_page_action_t, void *);
 
@@ -218,7 +210,6 @@ struct pl_interp_implementation_s
     pl_interp_proc_characteristics_t proc_characteristics;
     pl_interp_proc_allocate_interp_t proc_allocate_interp;
     pl_interp_proc_allocate_interp_instance_t proc_allocate_interp_instance;
-    pl_interp_proc_set_client_instance_t proc_set_client_instance;
     pl_interp_proc_set_pre_page_action_t proc_set_pre_page_action;
     pl_interp_proc_set_post_page_action_t proc_set_post_page_action;
     pl_interp_proc_set_device_t proc_set_device;

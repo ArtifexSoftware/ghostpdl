@@ -567,7 +567,6 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
 
     /* 0-init everything */
     memset(universe, 0, sizeof(*universe));
-    universe->mem = mem;
 
     /* Create & init PDL all instances. Could do this lazily to save memory, */
     /* but for now it's simpler to just create all instances up front. */
@@ -595,10 +594,7 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
         }
 
         instance = universe->pdl_instance_array[index];
-        if (pl_set_client_instance(instance, universe->pdl_instance_array[0], PJL_CLIENT) < 0 ||
-            pl_set_client_instance(instance, universe->pdl_instance_array[1],
-                                   PCL_CLIENT)
-            || pl_set_pre_page_action(instance, pl_pre_finish_page, inst) < 0
+        if (pl_set_pre_page_action(instance, pl_pre_finish_page, inst) < 0
             || pl_set_post_page_action(instance, pl_post_finish_page,
                                        inst) < 0) {
             if (err_str)

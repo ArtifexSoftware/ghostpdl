@@ -187,6 +187,16 @@ pxl_impl_allocate_interp(pl_interp_t ** interp,
     return 0;                   /* success */
 }
 
+static pl_main_instance_t *
+pxl_get_minst(pl_interp_instance_t *plinst)
+{
+    pxl_interp_instance_t *pcli = (pxl_interp_instance_t *)plinst;
+    gs_memory_t *mem            = pcli->memory;
+
+    return mem->gs_lib_ctx->top_of_system;
+}
+
+
 /* Do per-instance interpreter allocation/init. No device is set yet */
 static int                      /* ret 0 ok, else -ve error code */
 pxl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,
@@ -233,25 +243,15 @@ pxl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,
     pxs->client_data = pxli;
     pxs->end_page = pxl_end_page_top;   /* after px_state_init */
 
+    pxs->pjls =
+        pxl_get_minst((pl_interp_instance_t *)pxli)->universe.pdl_instance_array[0];
+
+    /* The PCL instance is needed for PassThrough mode */
+    pxs->pcls =
+        pxl_get_minst((pl_interp_instance_t *)pxli)->universe.pdl_instance_array[1];
+
     /* Return success */
     *instance = (pl_interp_instance_t *) pxli;
-    return 0;
-}
-
-/* Set a client language into an interperter instance */
-/* ret 0 ok, else -ve error code */
-static int
-pxl_impl_set_client_instance(pl_interp_instance_t * instance,
-                             pl_interp_instance_t * client,
-                             pl_interp_instance_clients_t which_client)
-{
-    pxl_interp_instance_t *pxli = (pxl_interp_instance_t *) instance;
-
-    if (which_client == PCL_CLIENT)
-        pxli->pxs->pcls = client;
-    else if (which_client == PJL_CLIENT)
-        pxli->pxs->pjls = client;
-    /* ignore unknown clients */
     return 0;
 }
 
@@ -281,15 +281,6 @@ pxl_impl_set_post_page_action(pl_interp_instance_t * instance,
     pxli->post_page_action = action;
     pxli->post_page_closure = closure;
     return 0;
-}
-
-static pl_main_instance_t *
-pxl_get_minst(pl_interp_instance_t *plinst)
-{
-    pxl_interp_instance_t *pcli = (pxl_interp_instance_t *)plinst;
-    gs_memory_t *mem            = pcli->memory;
-
-    return mem->gs_lib_ctx->top_of_system;
 }
 
 static int
@@ -655,7 +646,6 @@ const pl_interp_implementation_t pxl_implementation = {
     pxl_impl_characteristics,
     pxl_impl_allocate_interp,
     pxl_impl_allocate_interp_instance,
-    pxl_impl_set_client_instance,
     pxl_impl_set_pre_page_action,
     pxl_impl_set_post_page_action,
     pxl_impl_set_device,

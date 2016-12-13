@@ -210,16 +210,6 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     return 0;
 }
 
-/* Set a client language into an interperter instance */
-static int
-xps_imp_set_client_instance(pl_interp_instance_t *pinstance,
-        pl_interp_instance_t *pclient,
-        pl_interp_instance_clients_t which_client)
-{
-    /* ignore */
-    return 0;
-}
-
 static int
 xps_imp_set_pre_page_action(pl_interp_instance_t *pinstance,
         pl_page_action_t action, void *closure)
@@ -513,7 +503,6 @@ const pl_interp_implementation_t xps_implementation =
     xps_imp_characteristics,
     xps_imp_allocate_interp,
     xps_imp_allocate_interp_instance,
-    xps_imp_set_client_instance,
     xps_imp_set_pre_page_action,
     xps_imp_set_post_page_action,
     xps_imp_set_device,
