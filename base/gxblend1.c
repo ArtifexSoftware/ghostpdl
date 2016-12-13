@@ -296,8 +296,8 @@ void
 pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
               int x0, int x1, int y0, int y1, int n_chan, bool additive,
               const pdf14_nonseparable_blending_procs_t * pblend_procs,
-              bool overprint, gx_color_index drawn_comps, bool blendspot,
-              gs_memory_t *memory, gx_device *dev)
+              bool overprint, gx_color_index drawn_comps, gs_memory_t *memory,
+              gx_device *dev)
 {
     int num_spots = tos->num_spots;
     byte alpha = tos->alpha;

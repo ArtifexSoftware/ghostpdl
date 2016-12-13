@@ -668,10 +668,7 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_gstate * pgs)
 {
     gs_devicen_color_map *  pcmap = &pgs->color_component_map;
     int code;
-    gx_device *dev = pgs->device;
-    cmm_dev_profile_t *dev_profile;
 
-    dev_proc(dev, get_profile)(dev, &(dev_profile));
     /* It is possible that the color map information in the graphic state
        is not current due to save/restore and or if we are coming from
        a color space that is inside a PatternType 2 */
@@ -681,17 +678,11 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_gstate * pgs)
     if (pcmap->use_alt_cspace) {
         const gs_color_space_type* base_type = pcs->base_space->type;
 
-        if (dev_profile->sim_overprint &&
-            dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE &&
-            !gx_device_must_halftone(dev))
-            return gx_simulated_set_overprint(pcs->base_space, pgs);
-        else {
-            /* If the base space is DeviceCMYK, handle overprint as DeviceCMYK */
-            if ( base_type->index == gs_color_space_index_DeviceCMYK )
-                return base_type->set_overprint( pcs->base_space, pgs );
-            else
-                return gx_spot_colors_set_overprint( pcs->base_space, pgs);
-        }
+        /* If the base space is DeviceCMYK, handle overprint as DeviceCMYK */
+        if ( base_type->index == gs_color_space_index_DeviceCMYK )
+            return base_type->set_overprint( pcs->base_space, pgs );
+        else
+            return gx_spot_colors_set_overprint( pcs->base_space, pgs);
     }
     else {
         gs_overprint_params_t   params;
@@ -701,17 +692,14 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_gstate * pgs)
 
             params.retain_spot_comps = false;
             params.drawn_comps = 0;
-            params.k_value = 0;
-            /* We should not have to blend if we don't need the alternate tint transform */
-            params.blendspot = false;
             for (i = 0; i < ncomps; i++) {
-                int     mcomp = pcmap->color_map[i];
-
+                int mcomp = pcmap->color_map[i];
                 if (mcomp >= 0)
                     gs_overprint_set_drawn_comp( params.drawn_comps, mcomp);
             }
         }
 
+        /* Only DeviceCMYK can use overprint mode */
         pgs->effective_overprint_mode = 0;
         return gs_gstate_update_overprint(pgs, &params);
     }

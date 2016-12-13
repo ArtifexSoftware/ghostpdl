@@ -255,16 +255,11 @@ typedef enum {
  * information is required, hence the use of an enumeration with an
  * "unknown" setting.
  *
- * GX_CINFO_OPMODE_RGB is an odd case where by the device is RGB based
- * but we attempt to simulate CMY overprinting.  GC_CINFO_OPMODE_RGB_SET
- * is the value after we verify the color model and the colorant positions
  */
 typedef enum {
     GX_CINFO_OPMODE_UNKNOWN = -1,
     GX_CINFO_OPMODE_NOT = 0,
-    GX_CINFO_OPMODE = 1,
-    GX_CINFO_OPMODE_RGB,
-    GC_CINFO_OPMODE_RGB_SET
+    GX_CINFO_OPMODE = 1
 } gx_cm_opmode_t;
 
 /* component index value used to indicate no color component.  */

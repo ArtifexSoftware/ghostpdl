@@ -562,7 +562,7 @@ gx_remap_color(gs_gstate * pgs)
                                           (gs_gstate *) pgs, pgs->device,
                                           gs_color_select_texture);
     /* if overprint mode is in effect, update the overprint information */
-    if (code >= 0 && pgs->effective_overprint_mode == 1)
+   if (code >= 0 && pgs->overprint)
         code = gs_do_set_overprint(pgs);
     return code;
 }
@@ -660,7 +660,7 @@ gs_color_select_t select)
            order already.  If we have specified the colorants with
            -sICCOutputColors (i.e. if you are using an NCLR output profile) then
            we should be good. If not or if instead one used SeparationColorNames and
-           SeparationOrder to set up the device, then we need to make a copy 
+           SeparationOrder to set up the device, then we need to make a copy
            of the gs_gstate and make sure that we set color_component_map is
            properly set up for the gx_remap_concrete_devicen proc. */
         for (k = 0; k < num_des_comps; k++)
@@ -690,7 +690,7 @@ gs_color_select_t select)
             } else {
                 gs_gstate temp_state = *((const gs_gstate *)pgs);
 
-                /* No NCLR profile with spot names.  So set up the 
+                /* No NCLR profile with spot names.  So set up the
                    color_component_map in the gs_gstate.  Again, note that
                    gsicc_transform_named_color must have set ALL the device
                    colors */
@@ -785,7 +785,7 @@ gx_remap_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
             (*pcs_notconst->type->remap_color)(gs_currentcolor_inline(pgs),
                                                pcs_notconst,
                                                gs_currentdevicecolor_inline(pgs),
-                                               pgs, pgs->device, 
+                                               pgs, pgs->device,
                                                gs_color_select_texture);
         return code;
     }

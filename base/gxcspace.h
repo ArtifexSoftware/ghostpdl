@@ -247,7 +247,6 @@ cs_proc_remap_color(gx_default_remap_color);
 cs_proc_remap_color(gx_remap_named_color);
 cs_proc_install_cspace(gx_no_install_cspace);
 cs_proc_set_overprint(gx_spot_colors_set_overprint);
-cs_proc_set_overprint(gx_simulated_set_overprint);
 cs_proc_adjust_color_count(gx_no_adjust_color_count);
 cs_proc_serialize(gx_serialize_cspace_type);
 cs_proc_is_linear(gx_cspace_no_linear);
@@ -275,13 +274,10 @@ gs_color_space *
 gs_cspace_alloc(gs_memory_t *mem, const gs_color_space_type *pcstype);
 
 /* Determine if the current color model is a "DeviceCMYK" color model, and */
-/* if so what are its process color components. Also the same for the RGB */
-/* device that simulates CMYK overprinting */
+/* if so what are its process color components. */
 gx_color_index check_cmyk_color_model_comps(gx_device * dev);
-gx_color_index check_rgb_color_model_comps(gx_device * dev);
 
 /* Shared code with ICC overprint */
 int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs);
-int gx_set_overprint_rgb(const gs_color_space * pcs, gs_gstate * pgs);
 
 #endif /* gxcspace_INCLUDED */

@@ -434,6 +434,14 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
             if_debug1m(gs_debug_flag_icc, dev->memory, "%d ", psrc_temp[k]);
         }
         if_debug0m(gs_debug_flag_icc, dev->memory, "]\n");
+    } else {
+        num_src_comps = pcs->cmm_icc_profile_data->num_comps;
+        if_debug0m(gs_debug_flag_icc, dev->memory, "[icc] Identity mapping\n");
+        if_debug0m(gs_debug_flag_icc, dev->memory, "[icc] [ ");
+        for (k = 0; k < num_src_comps; k++) {
+            if_debug1m(gs_debug_flag_icc, dev->memory, "%d ", psrc[k]);
+        }
+        if_debug0m(gs_debug_flag_icc, dev->memory, "]\n");
     }
 #endif
     /* Release the link */
@@ -652,22 +660,26 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_gstate * pgs)
 {
     gx_device *dev = pgs->device;
     gx_device_color_info *pcinfo = (dev == 0 ? 0 : &dev->color_info);
+    bool cs_ok;
+    cmm_dev_profile_t *dev_profile;
+    bool gray_to_k;
 
-    /* check if we require special handling */
-    if ( !pgs->overprint                      ||
-         pgs->overprint_mode != 1             ||
-         pcinfo == 0                          ||
-         pcs->cmm_icc_profile_data->data_cs != gsCMYK ||
-         pcinfo->opmode == GX_CINFO_OPMODE_NOT  ) {
-            return gx_spot_colors_set_overprint(pcs, pgs);
-    }
+    if (dev == 0 || pcinfo == NULL)
+        return gx_spot_colors_set_overprint(pcs, pgs);
 
-    if (pcinfo->opmode == GX_CINFO_OPMODE_RGB ||
-        pcinfo->opmode == GC_CINFO_OPMODE_RGB_SET) {
-        return gx_set_overprint_rgb(pcs, pgs);
-    } else {
+    dev_proc(dev, get_profile)(dev, &dev_profile);
+    gray_to_k = dev_profile->devicegraytok;
+
+    /* Possibly do CMYK based overprinting if profile is CMYK based or if we
+       are gray source based and doing gray to k mapping
+       (Ghent GWG 3.0 Gray Overprint Patch (030_Gray_K_black_OP_x1a.pdf) */
+    cs_ok = ((pcs->cmm_icc_profile_data->data_cs == gsCMYK) ||
+        (pcs->cmm_icc_profile_data->data_cs == gsGRAY && gray_to_k));
+
+    if (!pgs->overprint || pcinfo->opmode == GX_CINFO_OPMODE_NOT || !cs_ok)
+        return gx_spot_colors_set_overprint(pcs, pgs);
+    else
         return gx_set_overprint_cmyk(pcs, pgs);
-    }
 }
 
 int
