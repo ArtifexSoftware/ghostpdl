@@ -62,8 +62,6 @@ typedef struct pl_main_instance_s
     vm_spaces spaces;           /* spaces for "ersatz" garbage collector */
 
     pl_interp_implementation_t const *implementation; /*-L<Language>*/
-    /* The following are updated dynamically. */
-    int page_count;             /* # of pages printed */
 
     char pcl_personality[6];    /* a character string to set pcl's
                                    personality - rtl, pcl5c, pcl5e, and
@@ -111,5 +109,6 @@ void pl_print_usage(const pl_main_instance_t * pmi, const char *msg);
 /* Finish a page, possibly printing usage statistics and/or pausing. */
 int pl_finish_page(pl_main_instance_t * pmi, gs_gstate * pgs,
                    int num_copies, int flush);
+
 
 #endif /* plmain_INCLUDED */

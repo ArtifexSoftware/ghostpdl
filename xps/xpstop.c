@@ -524,35 +524,8 @@ const pl_interp_implementation_t xps_implementation =
 int
 xps_show_page(xps_context_t *ctx, int num_copies, int flush)
 {
-    pl_interp_instance_t *pinstance = ctx->instance;
-    xps_interp_instance_t *instance = ctx->instance;
-
-    int code = 0;
-
-    /* do pre-page action */
-    if (instance->pre_page_action)
-    {
-        code = instance->pre_page_action(pinstance, instance->pre_page_closure);
-        if (code < 0)
-            return code;
-        if (code != 0)
-            return 0;    /* code > 0 means abort w/no error */
-    }
-
-    /* output the page */
-    code = gs_output_page(ctx->pgs, num_copies, flush);
-    if (code < 0)
-        return code;
-
-    /* do post-page action */
-    if (instance->post_page_action)
-    {
-        code = instance->post_page_action(pinstance, instance->post_page_closure);
-        if (code < 0)
-            return code;
-    }
-
-    return 0;
+    return pl_finish_page(xps_get_minst(ctx->instance),
+                          ctx->pgs, num_copies, flush);
 }
 
 /*

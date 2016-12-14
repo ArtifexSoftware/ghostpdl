@@ -807,7 +807,6 @@ pl_main_alloc_instance(gs_memory_t * mem)
     minst->implementation = 0;
     minst->base_time[0] = 0;
     minst->base_time[1] = 0;
-    minst->page_count = 0;
     minst->interpolate = false;
     minst->nocache = false;
     minst->page_set_on_command_line = false;
@@ -1527,11 +1526,12 @@ void
 pl_print_usage(const pl_main_instance_t * pti, const char *msg)
 {
     long utime[2];
-
+    gx_device *pdev = pti->device;
+    
     gp_get_realtime(utime);
-    dmprintf3(pti->memory, "%% %s time = %g, pages = %d\n",
+    dmprintf3(pti->memory, "%% %s time = %g, pages = %ld\n",
               msg, utime[0] - pti->base_time[0] +
-              (utime[1] - pti->base_time[1]) / 1000000000.0, pti->page_count);
+              (utime[1] - pti->base_time[1]) / 1000000000.0, pdev->PageCount);
 }
 
 /* Log a string to console, optionally wait for input */
@@ -1543,15 +1543,34 @@ pl_log_string(const gs_memory_t * mem, const char *str, int wait_for_key)
         (void)fgetc(mem->gs_lib_ctx->fstdin);
 }
 
+int
+pl_finish_page(pl_main_instance_t * pmi, gs_gstate * pgs, int num_copies, int flush)
+{
+    int code        = 0;
+    gx_device *pdev = pmi->device;
+
+    /* output the page */
+    if (gs_debug_c(':'))
+        pl_print_usage(pmi, "parse done :");
+    code = gs_output_page(pgs, num_copies, flush);
+    if (code < 0)
+        return code;
+
+    if (pmi->pause) {
+        char strbuf[256];
+
+        gs_sprintf(strbuf, "End of page %d, press <enter> to continue.\n",
+                pdev->PageCount);
+        pl_log_string(pmi->memory, strbuf, 1);
+    } else if (gs_debug_c(':'))
+        pl_print_usage(pmi, "render done :");
+    return 0;
+}
+
 /* Pre-page portion of page finishing routine */
 int                             /* ret 0 if page should be printed, 1 if no print, else -ve error */
 pl_pre_finish_page(pl_interp_instance_t * interp, void *closure)
 {
-    pl_main_instance_t *pti = (pl_main_instance_t *) closure;
-
-    /* up the page count */
-    ++(pti->page_count);
-
     /* print the page */
     return 0;
 }
@@ -1561,12 +1580,13 @@ int                             /* ret 0, else -ve error */
 pl_post_finish_page(pl_interp_instance_t * interp, void *closure)
 {
     pl_main_instance_t *pti = (pl_main_instance_t *) closure;
+    gx_device *pdev = pti->device;
 
     if (pti->pause) {
         char strbuf[256];
 
         gs_sprintf(strbuf, "End of page %d, press <enter> to continue.\n",
-                pti->page_count);
+                pdev->PageCount);
         pl_log_string(pti->memory, strbuf, 1);
     } else if (gs_debug_c(':'))
         pl_print_usage(pti, "render done :");

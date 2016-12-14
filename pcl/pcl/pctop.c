@@ -664,31 +664,10 @@ pcl_end_page_top(pcl_state_t * pcs, int num_copies, int flush)
     pcl_interp_instance_t *pcli =
         (pcl_interp_instance_t *) (pcs->client_data);
     pl_interp_instance_t *instance = (pl_interp_instance_t *) pcli;
-    int code = 0;
 
-    /* do pre-page action */
-    if (pcli->pre_page_action) {
-        code = pcli->pre_page_action(instance, pcli->pre_page_closure);
-        if (code < 0)
-            return code;
-        if (code > 0)
-            /* don't print case */
-            return 0;
-    }
+    return pl_finish_page(pcl_get_minst(instance),
+                          pcs->pgs, num_copies, flush);
 
-    /* output the page */
-    if (gs_debug_c(':'))
-        pl_print_usage(pcli->post_page_closure, "parse done :");
-    code = gs_output_page(pcs->pgs, num_copies, flush);
-    if (code < 0)
-        return code;
-    /* do post-page action */
-    if (pcli->post_page_action) {
-        code = pcli->post_page_action(instance, pcli->post_page_closure);
-        if (code < 0)
-            return code;
-    }
-    return 0;
 }
 
 /* Parser implementation descriptor */

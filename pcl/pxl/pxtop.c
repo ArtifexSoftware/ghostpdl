@@ -615,30 +615,8 @@ pxl_end_page_top(px_state_t * pxls, int num_copies, int flush)
         (pxl_interp_instance_t *) (pxls->client_data);
     pl_interp_instance_t *instance = (pl_interp_instance_t *) pxli;
 
-    int code = 0;
-
-    /* do pre-page action */
-    if (pxli->pre_page_action) {
-        code = pxli->pre_page_action(instance, pxli->pre_page_closure);
-        if (code < 0)
-            return code;
-        if (code != 0)
-            return 0;           /* code > 0 means abort w/no error */
-    }
-
-    /* output the page */
-    code = gs_output_page(pxli->pgs, num_copies, flush);
-    if (code < 0)
-        return code;
-
-    /* do post-page action */
-    if (pxli->post_page_action) {
-        code = pxli->post_page_action(instance, pxli->post_page_closure);
-        if (code < 0)
-            return code;
-    }
-
-    return 0;
+    return pl_finish_page(pxl_get_minst(instance),
+                          pxli->pgs, num_copies, flush);
 }
 
 /* Parser implementation descriptor */
