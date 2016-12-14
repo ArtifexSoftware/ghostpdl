@@ -256,7 +256,7 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
     /* general OR case */
     s = ss;
     d = dd = dst->data + y * dst->stride + leftbyte;
-    if (d < dst->data || leftbyte > dst->stride || h * dst->stride < 0 || d - leftbyte + h * dst->stride > dst->data + dst->height * dst->stride) {
+    if (d < dst->data || leftbyte > dst->stride || d - leftbyte + h * dst->stride > dst->data + dst->height * dst->stride) {
         return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "preventing heap overflow in jbig2_image_compose");
     }
     if (leftbyte == rightbyte) {

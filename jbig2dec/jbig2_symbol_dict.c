@@ -92,11 +92,6 @@ jbig2_sd_new(Jbig2Ctx *ctx, uint32_t n_symbols)
 {
     Jbig2SymbolDict *new_dict = NULL;
 
-    if (n_symbols < 0) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "Negative number of symbols in symbol dict: %d", n_symbols);
-        return NULL;
-    }
-
     new_dict = jbig2_new(ctx, Jbig2SymbolDict, 1);
     if (new_dict != NULL) {
         new_dict->glyphs = jbig2_new(ctx, Jbig2Image *, n_symbols);
@@ -613,7 +608,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             uint32_t j;
             int x;
 
-            if (code || (BMSIZE < 0)) {
+            if (code) {
                 jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error decoding size of collective bitmap!");
                 goto cleanup4;
             }
@@ -716,7 +711,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 code = jbig2_arith_int_decode(IAEX, as, (int32_t *)&exrunlength);
             /* prevent infinite loop */
             zerolength = exrunlength > 0 ? 0 : zerolength + 1;
-            if (code || (exrunlength > limit - i) || (exrunlength < 0) || (zerolength > 4) || (exflag && (exrunlength + j > params->SDNUMEXSYMS))) {
+            if (code || (exrunlength > limit - i) || (zerolength > 4) || (exflag && (exrunlength + j > params->SDNUMEXSYMS))) {
                 if (code)
                     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode exrunlength for exported symbols");
                 else if (exrunlength <= 0)

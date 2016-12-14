@@ -977,7 +977,7 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
             if (b1 < 2)
                 break;
             if (c) {
-                if (b1 - 2 < a0 || a0 < 0)
+                if (a0 == MINUS1 || b1 - 2 < a0)
                     return -1;
                 jbig2_set_bits(dst, a0, b1 - 2);
             }
