@@ -571,7 +571,6 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
     /* Create & init PDL all instances. Could do this lazily to save memory, */
     /* but for now it's simpler to just create all instances up front. */
     for (index = 0; pdl_implementation[index] != 0; ++index) {
-        pl_interp_instance_t *instance;
         int code;
 
         code = pl_allocate_interp(&universe->pdl_interp_array[index],
@@ -593,16 +592,6 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
             goto pmui_err;
         }
 
-        instance = universe->pdl_instance_array[index];
-        if (pl_set_pre_page_action(instance, pl_pre_finish_page, inst) < 0
-            || pl_set_post_page_action(instance, pl_post_finish_page,
-                                       inst) < 0) {
-            if (err_str)
-                gs_sprintf(err_str, "Unable to init %s interpreter.\n",
-                        pl_characteristics(pdl_implementation[index])->
-                        language);
-            goto pmui_err;
-        }
     }
     return 0;
 

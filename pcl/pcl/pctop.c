@@ -178,10 +178,6 @@ typedef struct pcl_interp_instance_s
     gs_memory_t *memory;        /* memory allocator to use */
     pcl_state_t pcs;            /* pcl state */
     pcl_parser_state_t pst;     /* parser state */
-    pl_page_action_t pre_page_action;   /* action before page out */
-    void *pre_page_closure;     /* closure to call pre_page_action with */
-    pl_page_action_t post_page_action;  /* action before page out */
-    void *post_page_closure;    /* closure to call post_page_action with */
 } pcl_interp_instance_t;
 
 /* Get implemtation's characteristics */
@@ -265,9 +261,6 @@ pcl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,     /* RETUR
 
 
     pcli->memory = mem;
-    /* zero-init pre/post page actions for now */
-    pcli->pre_page_action = 0;
-    pcli->post_page_action = 0;
     /* General init of pcl_state */
     pcl_init_state(&pcli->pcs, mem);
     pcli->pcs.client_data = pcli;
@@ -290,34 +283,6 @@ pcl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,     /* RETUR
     
     /* Return success */
     *instance = (pl_interp_instance_t *)pcli;
-    return 0;
-}
-
-/* Set an interpreter instance's pre-page action */
-static int                      /* ret 0 ok, else -ve err */
-pcl_impl_set_pre_page_action(pl_interp_instance_t * instance,   /* interp instance to use */
-                             pl_page_action_t action,   /* action to execute (rets 1 to abort w/o err) */
-                             void *closure      /* closure to call action with */
-    )
-{
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
-
-    pcli->pre_page_action = action;
-    pcli->pre_page_closure = closure;
-    return 0;
-}
-
-/* Set an interpreter instance's post-page action */
-static int                      /* ret 0 ok, else -ve err */
-pcl_impl_set_post_page_action(pl_interp_instance_t * instance,  /* interp instance to use */
-                              pl_page_action_t action,  /* action to execute */
-                              void *closure     /* closure to call action with */
-    )
-{
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
-
-    pcli->post_page_action = action;
-    pcli->post_page_closure = closure;
     return 0;
 }
 
@@ -675,8 +640,6 @@ const pl_interp_implementation_t pcl_implementation = {
     pcl_impl_characteristics,
     pcl_impl_allocate_interp,
     pcl_impl_allocate_interp_instance,
-    pcl_impl_set_pre_page_action,
-    pcl_impl_set_post_page_action,
     pcl_impl_set_device,
     pcl_impl_init_job,
     NULL,                       /* process_file */

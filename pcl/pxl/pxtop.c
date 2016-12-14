@@ -144,10 +144,6 @@ typedef struct pxl_interp_instance_s
     px_parser_state_t *st;      /* parser state */
     px_state_t *pxs;            /* interp state */
     gs_gstate *pgs;              /* grafix state */
-    pl_page_action_t pre_page_action;   /* action before page out */
-    void *pre_page_closure;     /* closure to call pre_page_action with */
-    pl_page_action_t post_page_action;  /* action before page out */
-    void *post_page_closure;    /* closure to call post_page_action with */
     enum
     { PSHeader, PSXL, PSDone }
     processState;               /* interp's processing state */
@@ -234,10 +230,6 @@ pxl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,
     pxli->pxs = pxs;
     pxli->st = st;
 
-    /* zero-init pre/post page actions for now */
-    pxli->pre_page_action = 0;
-    pxli->post_page_action = 0;
-
     /* General init of pxl_state */
     px_state_init(pxs, pgs);    /*pgs only needed to set pxs as pgs' client */
     pxs->client_data = pxli;
@@ -252,34 +244,6 @@ pxl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,
 
     /* Return success */
     *instance = (pl_interp_instance_t *) pxli;
-    return 0;
-}
-
-/* Set an interpreter instance's pre-page action */
-/* ret 0 ok, else -ve err */
-static int
-pxl_impl_set_pre_page_action(pl_interp_instance_t * instance,
-                             pl_page_action_t action,
-                             void *closure)
-{
-    pxl_interp_instance_t *pxli = (pxl_interp_instance_t *) instance;
-
-    pxli->pre_page_action = action;
-    pxli->pre_page_closure = closure;
-    return 0;
-}
-
-/* Set an interpreter instance's post-page action */
-/* ret 0 ok, else -ve err */
-static int
-pxl_impl_set_post_page_action(pl_interp_instance_t * instance,
-                              pl_page_action_t action,
-                              void *closure)
-{
-    pxl_interp_instance_t *pxli = (pxl_interp_instance_t *) instance;
-
-    pxli->post_page_action = action;
-    pxli->post_page_closure = closure;
     return 0;
 }
 
@@ -624,8 +588,6 @@ const pl_interp_implementation_t pxl_implementation = {
     pxl_impl_characteristics,
     pxl_impl_allocate_interp,
     pxl_impl_allocate_interp_instance,
-    pxl_impl_set_pre_page_action,
-    pxl_impl_set_post_page_action,
     pxl_impl_set_device,
     pxl_impl_init_job,
     NULL,                       /* process_file */

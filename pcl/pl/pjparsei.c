@@ -116,26 +116,6 @@ pjl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to us
     return 0;
 }
 
-/* Set an interpreter instance's pre-page action */
-static int                      /* ret 0 ok, else -ve err */
-pjl_impl_set_pre_page_action(pl_interp_instance_t * instance,   /* interp instance to use */
-                             pl_page_action_t action,   /* action to execute */
-                             void *closure      /* closure to call action with */
-    )
-{
-    return 0;
-}
-
-/* Set an interpreter instance's post-page action */
-static int                      /* ret 0 ok, else -ve err */
-pjl_impl_set_post_page_action(pl_interp_instance_t * instance,  /* interp instance to use */
-                              pl_page_action_t action,  /* action to execute */
-                              void *closure     /* closure to call action with */
-    )
-{
-    return 0;
-}
-
 /* Prepare interp instance for the next "job" */
 static int                      /* ret 0 ok, else -ve error code */
 pjl_impl_init_job(pl_interp_instance_t * instance       /* interp instance to start job in */
@@ -358,8 +338,6 @@ pjl_implementation_t pjl_implementation = {
     {pjl_impl_characteristics,
      pjl_impl_allocate_interp,
      pjl_impl_allocate_interp_instance,
-     pjl_impl_set_pre_page_action,
-     pjl_impl_set_post_page_action,
      pjl_impl_set_device,
      pjl_impl_init_job,
      NULL,                      /* process_file */

@@ -46,10 +46,6 @@ struct xps_interp_instance_s
 {
     pl_interp_instance_t pl;            /* common part: must be first */
     gs_memory_t *memory;                /* memory allocator to use */
-    pl_page_action_t pre_page_action;   /* action before page out */
-    void *pre_page_closure;             /* closure to call pre_page_action with */
-    pl_page_action_t post_page_action;  /* action before page out */
-    void *post_page_closure;            /* closure to call post_page_action with */
 
     xps_context_t *ctx;
     FILE *scratch_file;
@@ -189,11 +185,6 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     ctx->srgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
     ctx->scrgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
 
-    instance->pre_page_action = 0;
-    instance->pre_page_closure = 0;
-    instance->post_page_action = 0;
-    instance->post_page_closure = 0;
-
     instance->ctx = ctx;
     instance->scratch_file = NULL;
     instance->scratch_name[0] = 0;
@@ -207,26 +198,6 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
 
     *ppinstance = (pl_interp_instance_t *)instance;
 
-    return 0;
-}
-
-static int
-xps_imp_set_pre_page_action(pl_interp_instance_t *pinstance,
-        pl_page_action_t action, void *closure)
-{
-    xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
-    instance->pre_page_action = action;
-    instance->pre_page_closure = closure;
-    return 0;
-}
-
-static int
-xps_imp_set_post_page_action(pl_interp_instance_t *pinstance,
-        pl_page_action_t action, void *closure)
-{
-    xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
-    instance->post_page_action = action;
-    instance->post_page_closure = closure;
     return 0;
 }
 
@@ -503,8 +474,6 @@ const pl_interp_implementation_t xps_implementation =
     xps_imp_characteristics,
     xps_imp_allocate_interp,
     xps_imp_allocate_interp_instance,
-    xps_imp_set_pre_page_action,
-    xps_imp_set_post_page_action,
     xps_imp_set_device,
     xps_imp_init_job,
     xps_imp_process_file,

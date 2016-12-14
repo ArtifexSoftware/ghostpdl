@@ -69,28 +69,6 @@ pl_allocate_interp_instance(pl_interp_instance_t ** instance,   /* RETURNS insta
     return code;
 }
 
-/* Set an interpreter instance's pre-page action */
-int                             /* ret 0 ok, else -ve err */
-pl_set_pre_page_action(pl_interp_instance_t * instance, /* interp instance to use */
-                       pl_page_action_t action, /* action to execute (rets 1 to abort w/o err) */
-                       void *closure    /* closure to call action with */
-    )
-{
-    return instance->interp->implementation->proc_set_pre_page_action
-        (instance, action, closure);
-}
-
-/* Set an interpreter instance's post-page action */
-int                             /* ret 0 ok, else -ve err */
-pl_set_post_page_action(pl_interp_instance_t * instance,        /* interp instance to use */
-                        pl_page_action_t action,        /* action to execute */
-                        void *closure   /* closure to call action with */
-    )
-{
-    return instance->interp->implementation->proc_set_post_page_action
-        (instance, action, closure);
-}
-
 /* Get and interpreter prefered device memory allocator if any */
 int                             /* ret 0 ok, else -ve error code */
 pl_set_device(pl_interp_instance_t * instance,  /* interp instance to use */
