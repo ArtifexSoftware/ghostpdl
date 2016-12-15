@@ -1282,6 +1282,10 @@ rc_free_profile_array(gs_memory_t * mem, void *ptr_in, client_name_t cname)
             if_debug0m(gs_debug_flag_icc, mem_nongc, "[icc] Releasing postren profile\n");
             rc_decrement(icc_struct->postren_profile, "rc_free_profile_array");
         }
+        if (icc_struct->blend_profile != NULL) {
+            if_debug0m(gs_debug_flag_icc, mem_nongc, "[icc] Releasing blend profile\n");
+            rc_decrement(icc_struct->blend_profile, "rc_free_profile_array");
+        }
         if (icc_struct->spotnames != NULL) {
             if_debug0m(gs_debug_flag_icc, mem_nongc, "[icc] Releasing spotnames\n");
             /* Free the linked list in this object */
@@ -1321,6 +1325,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     result->proof_profile = NULL;
     result->link_profile = NULL;
     result->postren_profile = NULL;
+    result->blend_profile = NULL;
     result->oi_profile = NULL;
     result->spotnames = NULL;
     result->devicegraytok = true;  /* Default is to map gray to pure K */
@@ -1589,9 +1594,11 @@ gsicc_init_device_profile_struct(gx_device * dev,
                 curr_profile = profile_struct->proof_profile;
             } else if (profile_type == gsLINKPROFILE) {
                 curr_profile = profile_struct->link_profile;
-            } else {
+            } else if (profile_type == gsPRPROFILE) {
                 curr_profile = profile_struct->postren_profile;
-            }
+            } else
+                curr_profile = profile_struct->blend_profile;
+
         }
         /* See if we have the same profile in this location */
         if (curr_profile != NULL) {
@@ -1726,9 +1733,12 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                 } else if (pro_enum ==  gsLINKPROFILE) {
                     if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting link profile\n");
                     pdev->icc_struct->link_profile = icc_profile;
-                } else {
+                } else if (pro_enum == gsPRPROFILE) {
                     if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting postrender profile\n");
                     pdev->icc_struct->postren_profile = icc_profile;
+                } else {
+                    if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting blend profile\n");
+                    pdev->icc_struct->blend_profile = icc_profile;
                 }
             }
             /* Get the profile handle */

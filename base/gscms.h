@@ -186,7 +186,8 @@ typedef enum {
     gsPROOFPROFILE,
     gsLINKPROFILE,
     gsOIPROFILE,
-    gsPRPROFILE
+    gsPRPROFILE,
+    gsBLENDPROFILE
 } gsicc_profile_types_t;
 
 typedef enum {
@@ -265,6 +266,7 @@ typedef struct cmm_dev_profile_s {
         cmm_profile_t  *proof_profile;
         cmm_profile_t  *link_profile;
         cmm_profile_t  *oi_profile;  /* output intent profile */
+        cmm_profile_t  *blend_profile; /* blending color space */
         cmm_profile_t  *postren_profile;  /* Profile for use by devices post render */
         gsicc_rendering_param_t rendercond[NUM_DEVICE_PROFILES];
         bool devicegraytok;        /* Used for forcing gray to pure black */

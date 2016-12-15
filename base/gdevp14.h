@@ -231,6 +231,7 @@ typedef struct pdf14_device_s {
     gx_device * pclist_device;
     bool free_devicen;              /* Used to avoid freeing a deviceN parameter from target clist device */
     bool sep_device;
+    bool using_blend_cs;
     const gx_color_map_procs *(*save_get_cmap_procs)(const gs_gstate *,
                                                      const gx_device *);
     gx_device_color_info saved_target_color_info;

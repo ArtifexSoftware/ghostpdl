@@ -73,7 +73,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     gs_param_list * plist = (gs_param_list *)list;
     int k, colors = dev->color_info.num_components;
     gs_param_string profile_array[NUM_DEVICE_PROFILES];
-    gs_param_string postren_profile;
+    gs_param_string postren_profile, blend_profile;
     gs_param_string proof_profile, link_profile, icc_colorants;
     gsicc_rendering_intents_t profile_intents[NUM_DEVICE_PROFILES];
     gsicc_blackptcomp_t blackptcomps[NUM_DEVICE_PROFILES];
@@ -303,6 +303,12 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
                 blackpreserve[k] = dev_profile->rendercond[k].preserve_black;
             }
         }
+        if (dev_profile->blend_profile == NULL) {
+            param_string_from_string(blend_profile, null_str);
+        } else {
+            param_string_from_transient_string(blend_profile,
+                dev_profile->blend_profile->name);
+        }
         if (dev_profile->postren_profile == NULL) {
             param_string_from_string(postren_profile, null_str);
         } else {
@@ -349,6 +355,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
             blackptcomps[k] = gsBPNOTSPECIFIED;
             blackpreserve[k] = gsBKPRESNOTSPECIFIED;
         }
+        param_string_from_string(blend_profile, null_str);
         param_string_from_string(postren_profile, null_str);
         param_string_from_string(proof_profile, null_str);
         param_string_from_string(link_profile, null_str);
@@ -368,9 +375,12 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     }
     if (strcmp(Param, "PreBandThreshold") == 0) {
         return param_write_bool(plist, "PreBandThreshold", &prebandthreshold);
-    }  
+    }
     if (strcmp(Param, "PostRenderProfile") == 0) {
         return param_write_string(plist, "PostRenderProfile", &(postren_profile));
+    }
+    if (strcmp(Param, "BlendColorProfile") == 0) {
+        return param_write_string(plist, "BlendColorProfile", &(blend_profile));
     }
     if (strcmp(Param, "ProofProfile") == 0) {
         return param_write_string(plist,"ProofProfile", &(proof_profile));
@@ -475,7 +485,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     bool seprs = false;
     gs_param_string dns, pcms, profile_array[NUM_DEVICE_PROFILES];
-    gs_param_string postren_profile, pagelist;
+    gs_param_string blend_profile, postren_profile, pagelist;
     gs_param_string proof_profile, link_profile, icc_colorants;
     gsicc_rendering_intents_t profile_intents[NUM_DEVICE_PROFILES];
     gsicc_blackptcomp_t blackptcomps[NUM_DEVICE_PROFILES];
@@ -575,6 +585,12 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
             param_string_from_transient_string(postren_profile,
                 dev_profile->postren_profile->name);
         }
+        if (dev_profile->blend_profile == NULL) {
+            param_string_from_string(blend_profile, null_str);
+        } else {
+            param_string_from_transient_string(blend_profile,
+                dev_profile->blend_profile->name);
+        }
         devicegraytok = dev_profile->devicegraytok;
         graydetection = dev_profile->graydetection;
         usefastcolor = dev_profile->usefastcolor;
@@ -607,6 +623,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         param_string_from_string(link_profile, null_str);
         param_string_from_string(icc_colorants, null_str);
         param_string_from_string(postren_profile, null_str);
+        param_string_from_string(blend_profile, null_str);
     }
     /* Transmit the values. */
     /* Standard parameters */
@@ -645,6 +662,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_string(plist,"TextICCProfile", &(profile_array[3]))) < 0 ||
         (code = param_write_string(plist,"ProofProfile", &(proof_profile))) < 0 ||
         (code = param_write_string(plist, "PostRenderProfile", &(postren_profile))) < 0 ||
+        (code = param_write_string(plist, "BlendColorProfile", &(blend_profile))) < 0 ||
         (code = param_write_string(plist,"DeviceLinkProfile", &(link_profile))) < 0 ||
         (code = param_write_string(plist,"ICCOutputColors", &(icc_colorants))) < 0 ||
         (code = param_write_int(plist,"RenderIntent", (const int *) (&(profile_intents[0])))) < 0 ||
@@ -1557,6 +1575,9 @@ nce:
     }
     if ((code = param_read_string(plist, "PostRenderProfile", &icc_pro)) != 1) {
         gx_default_put_icc(&icc_pro, dev, gsPRPROFILE);
+    }
+    if ((code = param_read_string(plist, "BlendColorProfile", &icc_pro)) != 1) {
+        gx_default_put_icc(&icc_pro, dev, gsBLENDPROFILE);
     }
     if ((code = param_read_int(plist, (param_name = "RenderIntent"),
                                                     &(rend_intent[0]))) < 0) {
