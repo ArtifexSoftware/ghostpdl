@@ -101,9 +101,7 @@ void pl_print_usage(const pl_main_instance_t *, const char *);
 int pl_main_universe_init(pl_main_universe_t * universe,        /* universe to init */
                           char *err_str,        /* RETURNS error str if error */
                           gs_memory_t * mem,    /* deallocator for devices */
-                          pl_main_instance_t * inst,    /* instance for pre/post print */
-                          pl_page_action_t pl_pre_finish_page,  /* pre-page action */
-                          pl_page_action_t pl_post_finish_page  /* post-page action */
+                          pl_main_instance_t * inst     /* instance for pre/post print */
     );
 
 /* 0 ok, else -1 error */
@@ -140,14 +138,6 @@ int pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                             char **filename);
 
 static pl_interp_implementation_t const *pl_pjl_select(pl_interp_instance_t *pjl_instance);
-
-/* Pre-page portion of page finishing routine */
-int                             /* ret 0 if page should be printed, 1 if no print, else -ve error */
-    pl_pre_finish_page(pl_interp_instance_t * interp, void *closure);
-
-/* Post-page portion of page finishing routine */
-int                             /* ret 0, else -ve error */
-    pl_post_finish_page(pl_interp_instance_t * interp, void *closure);
 
       /* -------------- Read file cursor operations ---------- */
 /* Open a read cursor w/specified file */
@@ -270,8 +260,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
 
     /* Create PDL instances, etc */
     if (pl_main_universe_init(&inst->universe, err_buf, mem,
-                              inst, &pl_pre_finish_page,
-                              &pl_post_finish_page) < 0) {
+                              inst) < 0) {
         errprintf(mem, "%s", err_buf);
         goto done;
     }
@@ -558,9 +547,7 @@ int                             /* 0 ok, else -1 error */
 pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
                       char *err_str,    /* RETURNS error str if error */
                       gs_memory_t * mem,        /* deallocator for devices */
-                      pl_main_instance_t * inst,        /* instance for pre/post print */
-                      pl_page_action_t pl_pre_finish_page,      /* pre-page action */
-                      pl_page_action_t pl_post_finish_page      /* post-page action */
+                      pl_main_instance_t * inst         /* instance for pre/post print */
     )
 {
     int index;
@@ -1553,32 +1540,6 @@ pl_finish_page(pl_main_instance_t * pmi, gs_gstate * pgs, int num_copies, int fl
         pl_log_string(pmi->memory, strbuf, 1);
     } else if (gs_debug_c(':'))
         pl_print_usage(pmi, "render done :");
-    return 0;
-}
-
-/* Pre-page portion of page finishing routine */
-int                             /* ret 0 if page should be printed, 1 if no print, else -ve error */
-pl_pre_finish_page(pl_interp_instance_t * interp, void *closure)
-{
-    /* print the page */
-    return 0;
-}
-
-/* Post-page portion of page finishing routine */
-int                             /* ret 0, else -ve error */
-pl_post_finish_page(pl_interp_instance_t * interp, void *closure)
-{
-    pl_main_instance_t *pti = (pl_main_instance_t *) closure;
-    gx_device *pdev = pti->device;
-
-    if (pti->pause) {
-        char strbuf[256];
-
-        gs_sprintf(strbuf, "End of page %d, press <enter> to continue.\n",
-                pdev->PageCount);
-        pl_log_string(pti->memory, strbuf, 1);
-    } else if (gs_debug_c(':'))
-        pl_print_usage(pti, "render done :");
     return 0;
 }
 
