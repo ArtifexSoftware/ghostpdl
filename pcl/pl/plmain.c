@@ -99,19 +99,15 @@ void pl_print_usage(const pl_main_instance_t *, const char *);
 /* Functions to encapsulate pl_main_universe_t */
 /* 0 ok, else -1 error */
 int pl_main_universe_init(pl_main_universe_t * universe,        /* universe to init */
-                          char *err_str,        /* RETURNS error str if error */
                           gs_memory_t * mem,    /* deallocator for devices */
                           pl_main_instance_t * inst     /* instance for pre/post print */
     );
 
 /* 0 ok, else -1 error */
-int pl_main_universe_dnit(pl_main_universe_t * universe,        /* universe to dnit */
-                          char *err_str /* RETRUNS errmsg if error return */
-    );
+int pl_main_universe_dnit(pl_main_universe_t * universe);
 
 /* rets current interp_instance, 0 if err */
 pl_interp_instance_t *pl_main_universe_select(pl_main_universe_t * universe,     /* universe to select from */
-                                              char *err_str,     /* RETURNS error str if error */
                                               pl_interp_instance_t * pjl_instance,       /* pjl */
                                               pl_interp_implementation_t const *desired_implementation,  /* impl to select */
                                               pl_main_instance_t * pti,  /* inst contains device */
@@ -206,7 +202,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
     gs_memory_t *mem;
     pl_main_instance_t *inst;
     char *filename = NULL;
-    char err_buf[256];
     pl_interp_instance_t *curr_instance = 0;
     int (*arg_get_codepoint) (FILE * file, const char **astr) = NULL;
     int code = -1;
@@ -259,9 +254,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
              arg_get_codepoint, mem);
 
     /* Create PDL instances, etc */
-    if (pl_main_universe_init(&inst->universe, err_buf, mem,
-                              inst) < 0) {
-        errprintf(mem, "%s", err_buf);
+    if (pl_main_universe_init(&inst->universe, mem, inst) < 0) {
         goto done;
     }
 #ifdef DEBUG
@@ -387,7 +380,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
                 }
 
                 if_debug0m('I', mem, "Selecting PDL\n");
-                curr_instance = pl_main_universe_select(&inst->universe, err_buf,
+                curr_instance = pl_main_universe_select(&inst->universe,
                                                         pjl_instance,
                                                         pl_select_implementation
                                                         (pjl_instance, inst,
@@ -395,7 +388,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
                                                         (gs_param_list *) &
                                                         inst->params);
                 if (curr_instance == NULL) {
-                    errprintf(mem, "%s", err_buf);
                     code = -1;
                     goto done;
                 }
@@ -509,8 +501,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
     /* release param list */
     gs_c_param_list_release(&inst->params);
     /* Dnit PDLs */
-    if (pl_main_universe_dnit(&inst->universe, err_buf)) {
-        errprintf(mem, "%s", err_buf);
+    if (pl_main_universe_dnit(&inst->universe)) {
         code = -1;
         goto done;
     }
@@ -545,7 +536,6 @@ pl_main(int argc, char *argv[]
 /* Init main_universe from pdl_implementation */
 int                             /* 0 ok, else -1 error */
 pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
-                      char *err_str,    /* RETURNS error str if error */
                       gs_memory_t * mem,        /* deallocator for devices */
                       pl_main_instance_t * inst         /* instance for pre/post print */
     )
@@ -572,8 +562,7 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
         }
         universe->pdl_instance_array[index] = universe->curr_instance;
         if (code < 0) {
-            if (err_str)
-                gs_sprintf(err_str, "Unable to create %s interpreter.\n",
+            errprintf(mem, "Unable to create %s interpreter.\n",
                         pl_characteristics(pdl_implementation[index])->
                         language);
             goto pmui_err;
@@ -583,7 +572,7 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
     return 0;
 
   pmui_err:
-    pl_main_universe_dnit(universe, 0);
+    pl_main_universe_dnit(universe);
     return -1;
 }
 
@@ -599,17 +588,13 @@ get_interpreter_from_memory(const gs_memory_t * mem)
 
 /* Undo pl_main_universe_init */
 int                             /* 0 ok, else -1 error */
-pl_main_universe_dnit(pl_main_universe_t * universe,    /* universe to dnit */
-                      char *err_str     /* RETRUNS errmsg if error return */
-    )
+pl_main_universe_dnit(pl_main_universe_t * universe)
 {
     int index;
 
     /* Deselect last-selected device */
     if (universe->curr_instance
         && pl_remove_device(universe->curr_instance) < 0) {
-        if (err_str)
-            gs_sprintf(err_str, "Unable to close out PDL instance.\n");
         return -1;
     }
 
@@ -624,10 +609,6 @@ pl_main_universe_dnit(pl_main_universe_t * universe,    /* universe to dnit */
             || (universe->pdl_interp_array[index]
                 && pl_deallocate_interp(universe->pdl_interp_array[index]) <
                 0)) {
-            if (err_str)
-                gs_sprintf(err_str, "Unable to close out %s instance.\n",
-                        pl_characteristics(pdl_implementation[index])->
-                        language);
             return -1;
         }
 
@@ -639,23 +620,21 @@ pl_main_universe_dnit(pl_main_universe_t * universe,    /* universe to dnit */
         gx_device_retain(universe->curr_device, false);
         universe->curr_device = NULL;
     }
-
     return 0;
 }
 
 /* Select new device and/or implementation, deselect one one (opt) */
 pl_interp_instance_t *          /* rets current interp_instance, 0 if err */
 pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select from */
-                        char *err_str,  /* RETURNS error str if error */
                         pl_interp_instance_t * pjl_instance,    /* pjl */
                         pl_interp_implementation_t const *desired_implementation,       /* impl to select */
-                        pl_main_instance_t * pti,       /* inst contains device */
+                        pl_main_instance_t * pmi,       /* inst contains device */
                         gs_param_list * params  /* device params to set */
     )
 {
     int params_are_set = 0;
     /* requesting the device in the main instance */
-    gx_device *desired_device = pti->device;
+    gx_device *desired_device = pmi->device;
 
     /* If new interpreter/device is different, deselect it from old interp */
     if ((universe->curr_implementation
@@ -663,9 +642,7 @@ pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select fr
         || (universe->curr_device && universe->curr_device != desired_device)) {
         if (universe->curr_instance
             && pl_remove_device(universe->curr_instance) < 0) {
-            if (err_str)
-                strcpy(err_str,
-                       "Unable to deselect device from interp instance.\n");
+            errprintf(pmi->memory, "Unable to deselect device from interp instance.\n");
             return 0;
         }
         if (universe->curr_device && universe->curr_device != desired_device) {
@@ -677,8 +654,7 @@ pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select fr
             /* rendering until it is closed. So, we close devices here to */
             /* avoid things like intevermingling of output streams. */
             if (gs_closedevice(universe->curr_device) < 0) {
-                if (err_str)
-                    strcpy(err_str, "Unable to close device.\n");
+                errprintf(pmi->memory, "Unable to close device.\n");
                 return 0;
             } else {
                 /* Delete the device. */
@@ -719,14 +695,13 @@ pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select fr
             /* Do this here because PCL5 will do some 1-time initializations based */
             /* on device geometry when pl_set_device, below, selects the device. */
             if (gs_putdeviceparams(desired_device, params) < 0) {
-                strcpy(err_str, "Unable to set params into device.\n");
+                errprintf(pmi->memory, "Unable to set params into device.\n");
                 return 0;
             }
             params_are_set = 1;
 
             if (gs_opendevice(desired_device) < 0) {
-                if (err_str)
-                    strcpy(err_str, "Unable to open new device.\n");
+                errprintf(pmi->memory, "Unable to open new device.\n");
                 return 0;
             } else
                 universe->curr_device = desired_device;
@@ -734,9 +709,7 @@ pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select fr
 
         /* Select curr/new device into PDL instance */
         if (pl_set_device(universe->curr_instance, universe->curr_device) < 0) {
-            if (err_str)
-                strcpy(err_str,
-                       "Unable to install device into PDL interp.\n");
+            errprintf(pmi->memory, "Unable to install device into PDL interp.\n");
             return 0;
         }
     }
@@ -744,7 +717,7 @@ pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select fr
     /* Set latest params into device. Write them all in case any changed */
     if (!params_are_set
         && gs_putdeviceparams(universe->curr_device, params) < 0) {
-        strcpy(err_str, "Unable to set params into device.\n");
+        errprintf(pmi->memory, "Unable to set params into device.\n");
         return 0;
     }
     return universe->curr_instance;
