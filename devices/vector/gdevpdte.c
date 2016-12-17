@@ -101,10 +101,11 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
             char *d2 = strchr(hexdigits, gnstr->data[5]);
             char *d3 = strchr(hexdigits, gnstr->data[6]);
 
-            unicode = (ushort *)gs_alloc_bytes(pdev->memory, 2 * sizeof(ushort), "temporary Unicode array");
+            unicode = (ushort *)gs_alloc_bytes(pdev->memory, sizeof(ushort), "temporary Unicode array");
             if (d0 != NULL && d1 != NULL && d2 != NULL && d3 != NULL) {
-                unicode[0] = ((d0 - hexdigits) << 8) + ((d1 - hexdigits));
-                unicode[1] = ((d2 - hexdigits) << 8) + ((d3 - hexdigits));
+                char *u = (char *)unicode;
+                u[0] = ((d0 - hexdigits) << 4) + ((d1 - hexdigits));
+                u[1] = ((d2 - hexdigits) << 4) + ((d3 - hexdigits));
                 length = 2;
             }
         }
