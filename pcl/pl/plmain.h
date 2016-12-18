@@ -85,6 +85,7 @@ typedef struct pl_main_instance_s
     arg_list args;
     pl_main_universe_t universe;
     byte buf[8192]; /* languages read buffer */
+    void *disp; /* display device pointer NB wrong - remove */
 } pl_main_instance_t;
 
 /* initialize gs_stdin, gs_stdout, and gs_stderr.  Eventually the gs
@@ -110,5 +111,8 @@ void pl_print_usage(const pl_main_instance_t * pmi, const char *msg);
 int pl_finish_page(pl_main_instance_t * pmi, gs_gstate * pgs,
                    int num_copies, int flush);
 
+int pl_main_run_file(pl_main_instance_t *minst, const char *filename);
+int pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[]);
 
+    
 #endif /* plmain_INCLUDED */
