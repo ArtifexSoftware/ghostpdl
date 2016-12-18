@@ -74,6 +74,7 @@ typedef struct pl_main_instance_s
 #ifndef OMIT_SAVED_PAGES_TEST
     bool saved_pages_test_mode;
 #endif
+    bool pjl_from_args; /* pjl was passed on the command line */
     int scanconverter;
     /* we have to store these in the main instance until the languages
        state is sufficiently initialized to set the parameters. */

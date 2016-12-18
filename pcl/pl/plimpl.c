@@ -33,10 +33,6 @@ extern pl_interp_implementation_t xps_implementation;
 
 extern pl_interp_implementation_t svg_implementation;
 
-#ifdef PSI_INCLUDED
-extern pl_interp_implementation_t ps_implementation;
-#endif
-
 /* Zero-terminated list of pointers to implementations */
 pl_interp_implementation_t const *const pdl_implementation[] = {
     &pjl_implementation,
@@ -49,9 +45,6 @@ pl_interp_implementation_t const *const pdl_implementation[] = {
 #endif
 #ifdef SVG_INCLUDED
     &svg_implementation,
-#endif
-#ifdef PSI_INCLUDED
-    &ps_implementation,
 #endif
     0
 };

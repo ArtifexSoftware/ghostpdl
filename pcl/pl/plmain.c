@@ -304,6 +304,13 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
     if (pl_main_cursor_open(mem, &r, filename, minst->buf, sizeof(minst->buf)) < 0) {
         return gs_error_Fatal;
     }
+
+    /* Don't reset PJL if there is PJL state from the command line arguments. */
+    if (minst->pjl_from_args == false) {
+        if (pl_init_job(pjl_instance) < 0)
+            return gs_error_Fatal;
+    } else
+        minst->pjl_from_args = false;
     
     for (;;) {
         if_debug1m('I', mem, "[i][file pos=%ld]\n",
@@ -708,6 +715,7 @@ pl_main_alloc_instance(gs_memory_t * mem)
             minst->spaces.memories.named.global = (gs_ref_memory_t *) mem;
     }
 
+    minst->pjl_from_args = false;
     minst->error_report = -1;
     minst->pause = true;
     minst->device = 0;
@@ -1193,7 +1201,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     cursor.limit = cursor.ptr + buf_len;
                     /* process the pjl */
                     code = pl_process(pjl_instance, &cursor);
-
+                    pmi->pjl_from_args = true;
                     /* we expect the language to exit properly otherwise
                        there was some sort of problem */
                     if (code != e_ExitLanguage)
