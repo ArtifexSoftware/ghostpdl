@@ -1973,6 +1973,7 @@ static void mark_line_tr_app(cursor_tr *cr, fixed sx, fixed sy, fixed ex, fixed 
 {
     int isy = fixed2int(sy) - cr->base;
     int iey = fixed2int(ey) - cr->base;
+    fixed y_steps;
 
     if (sx == ex && sy == ey)
         return;
@@ -1981,6 +1982,24 @@ static void mark_line_tr_app(cursor_tr *cr, fixed sx, fixed sy, fixed ex, fixed 
 #endif
 
     assert(cr->y == sy && cr->left <= sx && cr->right >= sx && cr->d >= DIRN_UNSET && cr->d <= DIRN_DOWN);
+
+    /* A note: The code below used to be of the form:
+     *   if (isy == iey)   ... deal with horizontal lines
+     *   else if (ey > sy) {
+     *     fixed y_steps = ey - sy;
+     *      ... deal with rising lines ...
+     *   } else {
+     *     fixed y_steps = ey - sy;
+     *     ... deal with falling lines
+     *   }
+     * but that lead to problems, for instance, an example seen
+     * has sx=2aa8e, sy=8aee7, ex=7ffc1686, ey=8003e97a.
+     * Thus isy=84f, iey=ff80038a. We can see that ey < sy, but
+     * sy - ey < 0!
+     * We therefore rejig our code so that the choice between
+     * cases is done based on the sign of y_steps rather than
+     * the relative size of ey and sy.
+     */
 
     /* First, deal with lines that don't change scanline.
      * This accommodates horizontal lines. */
@@ -2018,9 +2037,8 @@ static void mark_line_tr_app(cursor_tr *cr, fixed sx, fixed sy, fixed ex, fixed 
             }
         }
         cr->y = ey;
-    } else if (sy < ey) {
+    } else if ((y_steps = ey - sy) > 0) {
         /* So lines increasing in y. */
-        fixed y_steps = ey - sy;
         /* We want to change from sy to ey, which are guaranteed to be on
          * different scanlines. We do this in 3 phases.
          * Phase 1 gets us from sy to the next scanline boundary.
@@ -2158,7 +2176,6 @@ static void mark_line_tr_app(cursor_tr *cr, fixed sx, fixed sy, fixed ex, fixed 
         }
     } else {
         /* So lines decreasing in y. */
-        fixed y_steps = sy - ey;
         /* We want to change from sy to ey, which are guaranteed to be on
          * different scanlines. We do this in 3 phases.
          * Phase 1 gets us from sy to the next scanline boundary.
@@ -2167,6 +2184,18 @@ static void mark_line_tr_app(cursor_tr *cr, fixed sx, fixed sy, fixed ex, fixed 
          */
         int phase1_y_steps = sy & (fixed_1 - 1);
         int phase3_y_steps = (fixed_1 - ey) & (fixed_1 - 1);
+
+        y_steps = -y_steps;
+        /* Cope with the awkward 0x80000000 case. */
+        if (y_steps < 0)
+        {
+          int mx, my;
+          mx = sx + ((ex-sx)>>1);
+          my = sy + ((ey-sy)>>1);
+          mark_line_tr_app(cr, sx, sy, mx, my, id);
+          mark_line_tr_app(cr, mx, my, ex, ey, id);
+          return;
+        }
 
         if (cr->d == DIRN_UP)
             output_cursor_tr(cr, sx, id);
