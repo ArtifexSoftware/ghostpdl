@@ -433,7 +433,6 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
     return 0;
 }
 
-
 /*
  * Here is the real main program.
  */
@@ -469,25 +468,9 @@ pl_main_aux(int argc, char *argv[], void *disp)
             return code;
         
     }
-
-    /* release param list */
-    gs_c_param_list_release(&minst->params);
-    /* Dnit PDLs */
-    if (pl_main_universe_dnit(&minst->universe)) {
-        code = -1;
-        goto done;
-    }
-    if (0) {
-fail:
-        if (code >= 0)
-            code = -1;
-    }
-
-    arg_finit(&minst->args);
-    gp_exit(0, 0);
-    gs_malloc_release(gs_memory_chunk_unwrap(mem));
-done:
-    return code;
+    pl_to_exit(minst->memory);
+    pl_main_delete_instance(minst);
+    return 0;
 }
 
 GSDLLEXPORT int GSDLLAPI
@@ -495,6 +478,27 @@ pl_main(int argc, char *argv[]
     )
 {
     return pl_main_aux(argc, argv, NULL);
+}
+
+void
+pl_main_delete_instance(pl_main_instance_t *minst)
+{
+    gs_malloc_release(gs_memory_chunk_unwrap(minst->memory));
+}
+
+int
+pl_to_exit(const gs_memory_t *mem)
+{
+    pl_main_instance_t *minst = mem->gs_lib_ctx->top_of_system;
+    /* release param list */
+    gs_c_param_list_release(&minst->params);
+    /* Dnit PDLs */
+    if (pl_main_universe_dnit(&minst->universe))
+        return gs_error_Fatal;
+
+    arg_finit(&minst->args);
+    gp_exit(0, 0);
+    return 0;
 }
 
 /* --------- Functions operating on pl_main_universe_t ----- */
