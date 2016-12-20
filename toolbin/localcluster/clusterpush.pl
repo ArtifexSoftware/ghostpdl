@@ -127,7 +127,7 @@ if ($directory ne 'gs' && $directory ne 'ghostpdl' && $directory ne 'mupdf' && $
   if (-d "pxl" && -d "pcl") {
     $directory='ghostpdl';
   }
-  if (-d "source/fitz" && -d "source/draw" && -d "source/pdf") {
+  if (-d "source/fitz" && -d "source/pdf") {
     $directory='mupdf';
   }
 }
