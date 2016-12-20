@@ -813,6 +813,7 @@ bbox_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
         (tdev == 0 ? dev_proc(&gs_null_device, fill_path) :
          dev_proc(tdev, fill_path));
     int code;
+    gx_drawing_color devc;
 
     if (ppath == NULL) {
         /* A special handling of shfill with no path. */
@@ -850,23 +851,20 @@ bbox_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
         code = fill_path(tdev, pgs, ppath, params, pdevc, pcpath);
         if (code < 0)
             return code;
-        if (pcpath != NULL &&
-            !gx_cpath_includes_rectangle(pcpath, ibox.p.x, ibox.p.y,
-                                         ibox.q.x, ibox.q.y)
-            ) {
-            /*
-             * Let the target do the drawing, but break down the
-             * fill path into pieces for computing the bounding box.
-             */
-            gx_drawing_color devc;
+        /* Previously we would use the path bbox above usually, but that bbox is
+         * inaccurate for curves, because it considers the control points of the
+         * curves to be included whcih of course they are not. Now we scan-convert
+         * the path to get an accurate result, just as we do for strokes.
+         */
+        /*
+         * Draw the path, but break down the
+         * fill path into pieces for computing the bounding box accurately.
+         */
 
-            set_nonclient_dev_color(&devc, bdev->black);  /* any non-white color will do */
-            bdev->target = NULL;
-            code = gx_default_fill_path(dev, pgs, ppath, params, &devc, pcpath);
-            bdev->target = tdev;
-        } else {		/* Just use the path bounding box. */
-            BBOX_ADD_RECT(bdev, ibox.p.x, ibox.p.y, ibox.q.x, ibox.q.y);
-        }
+        set_nonclient_dev_color(&devc, bdev->black);  /* any non-white color will do */
+        bdev->target = NULL;
+        code = gx_default_fill_path(dev, pgs, ppath, params, &devc, pcpath);
+        bdev->target = tdev;
         return code;
     } else
         return fill_path(tdev, pgs, ppath, params, pdevc, pcpath);
