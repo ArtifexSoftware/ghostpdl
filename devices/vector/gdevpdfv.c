@@ -953,6 +953,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gs_gstate * pgs, const gx_drawing_co
     int code = pdf_cs_Pattern_colored(pdev, &v);
     int code1 = 0;
     gs_matrix smat;
+    gs_point dist;
 
     if (code < 0)
         return code;
@@ -1010,6 +1011,21 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gs_gstate * pgs, const gx_drawing_co
         smat.xx *= xscale, smat.yx *= xscale, smat.tx *= xscale;
         smat.xy *= yscale, smat.yy *= yscale, smat.ty *= yscale;
     }
+
+    /* Bug #697451, if we emit a PDF with a type 2 Pattern where the
+     * Matrix is degenerate, Acrobat throws an error and aborts the
+     * page content stream. Distiller refuses to embed the shfill,
+     * it silently (!) ignores the problem. So here we test to see
+     * if the CTM is degenerate, if it is, replace it with the
+     * smallest Matrix we can.
+     */
+    code = gs_distance_transform_inverse(1, 1, &smat, &dist);
+    if (code == gs_error_undefinedresult) {
+        smat.xx = smat.yy = 0.00000001;
+        smat.xy = smat.yx = smat.tx = smat.ty = 0;
+        code = 0;
+    }
+
     if (code < 0 ||
         (code = cos_dict_put_c_key_int(pcd, "/PatternType", 2)) < 0 ||
         (code = cos_dict_put_c_key_object(pcd, "/Shading", psco)) < 0 ||
