@@ -225,6 +225,18 @@ gs_makewordimagedevice(gx_device ** pnew_dev, const gs_matrix * pmat,
 
     if (pnew == 0)
         return_error(gs_error_VMerror);
+
+    /* Bug #697450 "Null pointer dereference in gx_device_finalize()"
+     * If we have incorrect data passed to gs_initialise_wordimagedevice() then the
+     * initialisation will fail, crucially it will fail *before* it calls
+     * gs_make_mem_device() which initialises the device. This means that the
+     * icc_struct member will be uninitialsed, but the device finalise method
+     * will unconditionally free that memory. Since its a garbage pointer, bad things happen.
+     * Apparently we do still need makeimagedevice to be available from
+     * PostScript, so in here just zero the device memory, which means that
+     * the finalise routine won't have a problem.
+     */
+    memset(pnew, 0x00, st_device_memory.ssize);
     code = gs_initialize_wordimagedevice(pnew, pmat, width, height,
                                          colors, num_colors, word_oriented,
                                          page_device, mem);
