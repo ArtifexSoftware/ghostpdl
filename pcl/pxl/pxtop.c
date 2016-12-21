@@ -23,7 +23,6 @@
 #include "gserrors.h"
 #include "gstypes.h"
 #include "gsmemory.h"
-#include "gsnogc.h"
 #include "gsstate.h"            /* must precede gsdevice.h */
 #include "gsdevice.h"
 #include "gsstruct.h"           /* for gxalloc.h */

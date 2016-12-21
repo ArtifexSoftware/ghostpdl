@@ -511,9 +511,6 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
 {
     int index;
 
-    /* 0-init everything */
-    memset(universe, 0, sizeof(*universe));
-
     /* Create & init PDL all instances. Could do this lazily to save memory, */
     /* but for now it's simpler to just create all instances up front. */
     for (index = 0; pdl_implementation[index] != 0; ++index) {
@@ -707,18 +704,11 @@ pl_main_alloc_instance(gs_memory_t * mem)
                                                            "pl_main_instance");
     if (minst == NULL)
         return 0;
-    
+
+    memset(minst, 0, sizeof(*minst));
+
     minst->memory = mem;
     
-    {
-        int i;
-
-        for (i = 0; i < countof(minst->spaces.memories.indexed); ++i)
-            minst->spaces.memories.indexed[i] = 0;
-        minst->spaces.memories.named.local =
-            minst->spaces.memories.named.global = (gs_ref_memory_t *) mem;
-    }
-
     minst->pjl_from_args = false;
     minst->error_report = -1;
     minst->pause = true;

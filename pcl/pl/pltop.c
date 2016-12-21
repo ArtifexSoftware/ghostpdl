@@ -19,7 +19,6 @@
 
 #include "string_.h"
 #include "gdebug.h"
-#include "gsnogc.h"
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "gsstruct.h"

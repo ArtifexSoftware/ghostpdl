@@ -775,7 +775,6 @@ $(PCLOBJ)pcpage.$(OBJ): $(PCLSRC)pcpage.c   \
 			$(plmain_h)         \
                         $(plvalue_h)        \
                         $(gsmatrix_h)       \
-                        $(gsnogc_h)         \
                         $(gscoord_h)        \
                         $(gsdevice_h)       \
                         $(gspaint_h)        \

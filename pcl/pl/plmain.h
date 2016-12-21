@@ -59,7 +59,6 @@ typedef struct pl_main_instance_s
     int first_page;             /* -dFirstPage= */
     int last_page;              /* -dLastPage= */
     gx_device *device;
-    vm_spaces spaces;           /* spaces for "ersatz" garbage collector */
 
     pl_interp_implementation_t const *implementation; /*-L<Language>*/
 

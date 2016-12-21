@@ -222,7 +222,7 @@ pxl_ops_obj=$(pxl_ops_obj1) $(pxl_ops_obj2) $(pxl_ops_obj3)
 $(PXL_TOP_OBJ): $(PXLSRC)pxtop.c $(AK) $(stdio__h)\
  $(string__h) $(gdebug_h) $(gp_h) $(gsdevice_h) $(gserrors_h) $(gsmemory_h)\
  $(gsstate_h) $(gsfont_h) $(gsstruct_h) $(gspaint_h) $(gstypes_h) $(gxalloc_h) $(gxstate_h)\
- $(gsnogc_h) $(pltop_h) $(plparse_h)\
+ $(pltop_h) $(plparse_h)\
  $(pxattr_h) $(pxerrors_h) $(pxoper_h) $(pxparse_h) $(pxptable_h) $(pxstate_h)\
  $(pxfont_h) $(pxvalue_h) $(plfont_h) $(pconfig_h) $(plmain_h) \
  $(PXL_MAK) $(MAKEDIRS)
