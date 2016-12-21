@@ -249,31 +249,8 @@ pxl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,
 static int
 pxl_set_icc_params(pl_interp_instance_t * instance, gs_gstate * pgs)
 {
-    gs_param_string p;
-    int code = 0;
-    pl_main_instance_t *minst = pxl_get_minst(instance);
-    
-    if (minst->pdefault_gray_icc) {
-        param_string_from_transient_string(p, minst->pdefault_gray_icc);
-        code = gs_setdefaultgrayicc(pgs, &p);
-        if (code < 0)
-            return gs_throw_code(gs_error_Fatal);
-    }
-
-    if (minst->pdefault_rgb_icc) {
-        param_string_from_transient_string(p, minst->pdefault_rgb_icc);
-        code = gs_setdefaultrgbicc(pgs, &p);
-        if (code < 0)
-            return gs_throw_code(gs_error_Fatal);
-    }
-
-    if (minst->piccdir) {
-        param_string_from_transient_string(p, minst->piccdir);
-        code = gs_seticcdirectory(pgs, &p);
-        if (code < 0)
-            return gs_throw_code(gs_error_Fatal);
-    }
-    return code;
+    pxl_interp_instance_t *pxli  = (pxl_interp_instance_t *) instance;
+    return pl_set_icc_params(pxli->memory, pgs);
 }
 
 /* Set a device into an interperter instance */

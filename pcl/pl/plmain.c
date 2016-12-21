@@ -45,6 +45,8 @@
 #include "pltoputl.h"
 #include "plapi.h"
 #include "gslibctx.h"
+#include "gsicc_manage.h"
+
 /* includes for the display device */
 #include "gdevdevn.h"
 #include "gsequivc.h"
@@ -551,6 +553,19 @@ get_interpreter_from_memory(const gs_memory_t * mem)
     
     return universe->curr_instance;
 }
+
+static pl_main_instance_t *
+pl_get_main_instance(const gs_memory_t *mem)
+{
+    return mem->gs_lib_ctx->top_of_system;
+}
+
+char *
+pl_get_main_pcl_personality(const gs_memory_t *mem)
+{
+    return pl_get_main_instance(mem)->pcl_personality;
+}
+
 
 /* Undo pl_main_universe_init */
 int                             /* 0 ok, else -1 error */
@@ -1451,6 +1466,36 @@ pl_log_string(const gs_memory_t * mem, const char *str, int wait_for_key)
     errwrite(mem, str, strlen(str));
     if (wait_for_key)
         (void)fgetc(mem->gs_lib_ctx->fstdin);
+}
+
+int
+pl_set_icc_params(const gs_memory_t *mem, gs_gstate *pgs)
+{
+    pl_main_instance_t *minst = pl_get_main_instance(mem);
+    gs_param_string p;
+    int code;
+    
+    if (minst->pdefault_gray_icc) {
+        param_string_from_transient_string(p, minst->pdefault_gray_icc);
+        code = gs_setdefaultgrayicc(pgs, &p);
+        if (code < 0)
+            return gs_throw_code(gs_error_Fatal);
+    }
+
+    if (minst->pdefault_rgb_icc) {
+        param_string_from_transient_string(p, minst->pdefault_rgb_icc);
+        code = gs_setdefaultrgbicc(pgs, &p);
+        if (code < 0)
+            return gs_throw_code(gs_error_Fatal);
+    }
+
+    if (minst->piccdir) {
+        param_string_from_transient_string(p, minst->piccdir);
+        code = gs_seticcdirectory(pgs, &p);
+        if (code < 0)
+            return gs_throw_code(gs_error_Fatal);
+    }
+    return code;
 }
 
 int

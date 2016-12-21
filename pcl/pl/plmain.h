@@ -111,9 +111,15 @@ void pl_print_usage(const pl_main_instance_t * pmi, const char *msg);
 int pl_finish_page(pl_main_instance_t * pmi, gs_gstate * pgs,
                    int num_copies, int flush);
 
+/* common routine to set icc parameters usually passed from the command line. */
+int pl_set_icc_params(const gs_memory_t *mem, gs_gstate *pgs);
+
 int pl_main_run_file(pl_main_instance_t *minst, const char *filename);
 int pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[]);
 void pl_main_delete_instance(pl_main_instance_t *minst);
 int pl_to_exit(const gs_memory_t *mem);
-    
+
+/* instance accessors */
+char *pl_get_main_pcl_personality(const gs_memory_t *mem);
+
 #endif /* plmain_INCLUDED */

@@ -101,35 +101,8 @@ xps_set_nocache(pl_interp_instance_t *instance, gs_font_dir *font_dir)
 static int
 xps_set_icc_user_params(pl_interp_instance_t *instance, gs_gstate *pgs)
 {
-    gs_param_string p;
-    int code = 0;
-    pl_main_instance_t *minst = xps_get_minst(instance);
-    
-    if (minst->pdefault_gray_icc) {
-        param_string_from_transient_string(p, minst->pdefault_gray_icc);
-        code = gs_setdefaultgrayicc(pgs, &p);
-        if (code < 0)
-            return gs_throw_code(gs_error_Fatal);
-    }
-    if (minst->pdefault_rgb_icc) {
-        param_string_from_transient_string(p, minst->pdefault_rgb_icc);
-        code = gs_setdefaultrgbicc(pgs, &p);
-        if (code < 0)
-            return gs_throw_code(gs_error_Fatal);
-    }
-    if (minst->pdefault_cmyk_icc) {
-        param_string_from_transient_string(p, minst->pdefault_cmyk_icc);
-        code = gs_setdefaultcmykicc(pgs, &p);
-        if (code < 0)
-            return gs_throw_code(gs_error_Fatal);
-    }
-    if (minst->piccdir) {
-        param_string_from_transient_string(p, minst->piccdir);
-        code = gs_seticcdirectory(pgs, &p);
-        if (code < 0)
-            return gs_throw_code(gs_error_Fatal);
-    }
-    return code;
+    xps_interp_instance_t *pxli  = (xps_interp_instance_t *) instance;
+    return pl_set_icc_params(pxli->memory, pgs);
 }
 
 /* Do per-instance interpreter allocation/init. No device is set yet */

@@ -292,17 +292,17 @@ static pcl_personality_t
 pcl_get_personality(pl_interp_instance_t * instance, gx_device * device)
 {
     pcl_interp_instance_t *pcli  = (pcl_interp_instance_t *) instance;
-    pl_main_instance_t *   minst = pcl_get_minst(instance);
+    char *personality = pl_get_main_pcl_personality(pcli->memory);
     
-    if (!strcmp(minst->pcl_personality, "PCL5C"))
+    if (!strcmp(personality, "PCL5C"))
         return pcl5c;
-    else if (!strcmp(minst->pcl_personality, "PCL5E"))
+    else if (!strcmp(personality, "PCL5E"))
         return pcl5e;
     /* 
      * match RTL or any string containing "GL" we see many variants in
      * test files: HPGL/2, HPGL2 etc.
      */
-    else if (!strcmp(minst->pcl_personality, "RTL") ||
+    else if (!strcmp(personality, "RTL") ||
              strstr(pjl_proc_get_envvar(pcli->pcs.pjls, "language"),
                     "GL"))
         return rtl;
@@ -315,31 +315,8 @@ pcl_get_personality(pl_interp_instance_t * instance, gx_device * device)
 static int
 pcl_set_icc_params(pl_interp_instance_t * instance, gs_gstate * pgs)
 {
-    gs_param_string p;
-    int code = 0;
-    pl_main_instance_t *   minst = pcl_get_minst(instance);
-    
-    if (minst->pdefault_gray_icc) {
-        param_string_from_transient_string(p, minst->pdefault_gray_icc);
-        code = gs_setdefaultgrayicc(pgs, &p);
-        if (code < 0)
-            return gs_throw_code(gs_error_Fatal);
-    }
-
-    if (minst->pdefault_rgb_icc) {
-        param_string_from_transient_string(p, minst->pdefault_rgb_icc);
-        code = gs_setdefaultrgbicc(pgs, &p);
-        if (code < 0)
-            return gs_throw_code(gs_error_Fatal);
-    }
-
-    if (minst->piccdir) {
-        param_string_from_transient_string(p, minst->piccdir);
-        code = gs_seticcdirectory(pgs, &p);
-        if (code < 0)
-            return gs_throw_code(gs_error_Fatal);
-    }
-    return code;
+    pcl_interp_instance_t *pcli  = (pcl_interp_instance_t *) instance;
+    return pl_set_icc_params(pcli->memory, pgs);
 }
 
 static bool
