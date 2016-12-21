@@ -1341,7 +1341,7 @@ gx_filter_edgebuffer_app(gx_device       * pdev,
             if (lr > ll) {
                 *rowout++ = ll;
                 *rowout++ = lr;
-                marked_to = ll;
+                marked_to = lr;
             }
         }
         rowstart[-1] = rowout - rowstart;
@@ -2554,7 +2554,7 @@ gx_filter_edgebuffer_tr_app(gx_device       * pdev,
                 *rowout++ = llid;
                 *rowout++ = lr;
                 *rowout++ = lrid;
-                marked_to = ll;
+                marked_to = lr;
             }
         }
         rowstart[-1] = (rowout - rowstart)>>2;
