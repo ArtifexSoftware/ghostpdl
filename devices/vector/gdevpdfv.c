@@ -981,7 +981,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gs_gstate * pgs, const gx_drawing_co
         cos_become(psco, cos_type_dict);
         code = pdf_put_shading_common(pdev, (cos_dict_t *)psco, pgs, psh, pinst->shfill, &pranges);
         if (code >= 0)
-            code = pdf_put_scalar_shading(pdev, (cos_dict_t *)psco, psh, pranges);
+            code1 = pdf_put_scalar_shading(pdev, (cos_dict_t *)psco, psh, pranges);
         else
             /* We won't use this shading, we fall back because we couldn't write it */
             psres->where_used = 0;
