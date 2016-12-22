@@ -596,6 +596,18 @@ int gx_scan_convert(gx_device     * pdev,
     /* Step 2 complete: We now have a complete list of intersection data in
      * table, indexed by index. */
 
+    edgebuffer->base   = ibox.p.y;
+    edgebuffer->height = scanlines;
+    edgebuffer->xmin   = ibox.p.x;
+    edgebuffer->xmax   = ibox.q.x;
+    edgebuffer->index  = index;
+    edgebuffer->table  = table;
+
+#ifdef DEBUG_SCAN_CONVERTER
+    dlprintf("Before sorting:\n");
+    gx_edgebuffer_print(edgebuffer);
+#endif
+
     /* Step 3: Sort the intersects on x */
     for (i=0; i < scanlines; i++) {
         int *row = &table[index[i]];
@@ -606,13 +618,6 @@ int gx_scan_convert(gx_device     * pdev,
          * will be a killer */
         qsort(row, rowlen, sizeof(int), intcmp);
     }
-
-    edgebuffer->base   = ibox.p.y;
-    edgebuffer->height = scanlines;
-    edgebuffer->xmin   = ibox.p.x;
-    edgebuffer->xmax   = ibox.q.x;
-    edgebuffer->index  = index;
-    edgebuffer->table  = table;
 
     return 0;
 }
@@ -626,6 +631,7 @@ gx_filter_edgebuffer(gx_device       * pdev,
     int i;
 
 #ifdef DEBUG_SCAN_CONVERTER
+    dlprintf("Before filtering:\n");
     gx_edgebuffer_print(edgebuffer);
 #endif
 
@@ -1242,6 +1248,18 @@ int gx_scan_convert_app(gx_device     * pdev,
     /* Step 2 complete: We now have a complete list of intersection data in
      * table, indexed by index. */
 
+    edgebuffer->base   = ibox.p.y;
+    edgebuffer->height = scanlines;
+    edgebuffer->xmin   = ibox.p.x;
+    edgebuffer->xmax   = ibox.q.x;
+    edgebuffer->index  = index;
+    edgebuffer->table  = table;
+
+#ifdef DEBUG_SCAN_CONVERTER
+    dlprintf("Before sorting:\n");
+    gx_edgebuffer_print_app(edgebuffer);
+#endif
+
     /* Step 3: Sort the intersects on x */
     for (i=0; i < scanlines; i++) {
         int *row = &table[index[i]];
@@ -1252,13 +1270,6 @@ int gx_scan_convert_app(gx_device     * pdev,
          * will be a killer */
         qsort(row, rowlen, 2*sizeof(int), edgecmp);
     }
-
-    edgebuffer->base   = ibox.p.y;
-    edgebuffer->height = scanlines;
-    edgebuffer->xmin   = ibox.p.x;
-    edgebuffer->xmax   = ibox.q.x;
-    edgebuffer->index  = index;
-    edgebuffer->table  = table;
 
     return 0;
 }
@@ -1272,6 +1283,7 @@ gx_filter_edgebuffer_app(gx_device       * pdev,
     int i;
 
 #ifdef DEBUG_SCAN_CONVERTER
+    dlprintf("Before filtering:\n");
     gx_edgebuffer_print_app(edgebuffer);
 #endif
 
@@ -1642,6 +1654,18 @@ int gx_scan_convert_tr(gx_device     * pdev,
     /* Step 2 complete: We now have a complete list of intersection data in
      * table, indexed by index. */
 
+    edgebuffer->base   = ibox.p.y;
+    edgebuffer->height = scanlines;
+    edgebuffer->xmin   = ibox.p.x;
+    edgebuffer->xmax   = ibox.q.x;
+    edgebuffer->index  = index;
+    edgebuffer->table  = table;
+
+#ifdef DEBUG_SCAN_CONVERTER
+    dlprintf("Before sorting:\n");
+    gx_edgebuffer_print(edgebuffer);
+#endif
+
     /* Step 4: Sort the intersects on x */
     for (i=0; i < scanlines; i++) {
         int *row = &table[index[i]];
@@ -1652,13 +1676,6 @@ int gx_scan_convert_tr(gx_device     * pdev,
          * will be a killer */
         qsort(row, rowlen, 2*sizeof(int), intcmp_tr);
     }
-
-    edgebuffer->base   = ibox.p.y;
-    edgebuffer->height = scanlines;
-    edgebuffer->xmin   = ibox.p.x;
-    edgebuffer->xmax   = ibox.q.x;
-    edgebuffer->index  = index;
-    edgebuffer->table  = table;
 
     return 0;
 }
@@ -1672,6 +1689,7 @@ gx_filter_edgebuffer_tr(gx_device       * pdev,
     int i;
 
 #ifdef DEBUG_SCAN_CONVERTER
+    dlprintf("Before filtering\n");
     gx_edgebuffer_print(edgebuffer);
 #endif
 
@@ -1826,16 +1844,42 @@ static int edgecmp_tr(const void *a, const void *b)
     int right = ((int*)b)[0];
     if (left != right)
         return left - right;
-    left = ((int*)a)[1] - ((int*)b)[1];
+    left = ((int*)a)[2] - ((int*)b)[2];
     if (left != 0)
         return left;
-    left = ((int*)a)[2] - ((int*)b)[2];
+    left = ((int*)a)[1] - ((int*)b)[1];
     if (left != 0)
         return left;
     return ((int*)a)[3] - ((int*)b)[3];
 }
 
 #ifdef DEBUG_SCAN_CONVERTER
+static void
+gx_edgebuffer_print_filtered_tr_app(gx_edgebuffer * edgebuffer)
+{
+    int i;
+
+    dlprintf1("Edgebuffer %x\n", edgebuffer);
+    dlprintf4("xmin=%d xmax=%d base=%d height=%d\n",
+              edgebuffer->xmin, edgebuffer->xmax, edgebuffer->base, edgebuffer->height);
+    for (i=0; i < edgebuffer->height; i++)
+    {
+        int  offset = edgebuffer->index[i];
+        int *row    = &edgebuffer->table[offset];
+        int count   = *row++;
+        int c       = count;
+        dlprintf3("%x @ %d: %d =", i, offset, count);
+        while (count-- > 0) {
+            int left  = *row++;
+            int lid   = *row++;
+            int right = *row++;
+            int rid   = *row++;
+            dlprintf4(" (%x:%d,%x:%d)", left, lid, right, rid);
+        }
+        dlprintf("\n");
+    }
+}
+
 static void
 gx_edgebuffer_print_tr_app(gx_edgebuffer * edgebuffer)
 {
@@ -2435,6 +2479,18 @@ int gx_scan_convert_tr_app(gx_device     * pdev,
     /* Step 2 complete: We now have a complete list of intersection data in
      * table, indexed by index. */
 
+    edgebuffer->base   = ibox.p.y;
+    edgebuffer->height = scanlines;
+    edgebuffer->xmin   = ibox.p.x;
+    edgebuffer->xmax   = ibox.q.x;
+    edgebuffer->index  = index;
+    edgebuffer->table  = table;
+
+#ifdef DEBUG_SCAN_CONVERTER
+    dlprintf("Before sorting\n");
+    gx_edgebuffer_print_tr_app(edgebuffer);
+#endif
+
     /* Step 3: Sort the intersects on x */
     for (i=0; i < scanlines; i++) {
         int *row = &table[index[i]];
@@ -2445,13 +2501,6 @@ int gx_scan_convert_tr_app(gx_device     * pdev,
          * will be a killer */
         qsort(row, rowlen, 4*sizeof(int), edgecmp_tr);
     }
-
-    edgebuffer->base   = ibox.p.y;
-    edgebuffer->height = scanlines;
-    edgebuffer->xmin   = ibox.p.x;
-    edgebuffer->xmax   = ibox.q.x;
-    edgebuffer->index  = index;
-    edgebuffer->table  = table;
 
     return 0;
 }
@@ -2466,6 +2515,7 @@ gx_filter_edgebuffer_tr_app(gx_device       * pdev,
     int marked_id = 0;
 
 #ifdef DEBUG_SCAN_CONVERTER
+    dlprintf("Before filtering:\n");
     gx_edgebuffer_print_tr_app(edgebuffer);
 #endif
 
@@ -2570,6 +2620,11 @@ gx_fill_edgebuffer_tr_app(gx_device       * pdev,
                           int               log_op)
 {
     int i, j, code;
+
+#ifdef DEBUG_SCAN_CONVERTER
+    dlprintf("Filling:\n");
+    gx_edgebuffer_print_filtered_tr_app(edgebuffer);
+#endif
 
     for (i=0; i < edgebuffer->height; ) {
         int *row    = &edgebuffer->table[edgebuffer->index[i]];
