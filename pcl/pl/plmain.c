@@ -90,9 +90,69 @@ Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -l<PCL5C|PCL5E|RTL> -Z...\n\
          -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
          -J<PJL commands>\n";
 
+
+/*
+ * Define bookeeping for interpreters and devices.
+ */
+
+typedef struct pl_main_universe_s
+{
+    pl_interp_instance_t *pdl_instance_array[100];      /* parallel to pdl_implementation */
+    pl_interp_t *pdl_interp_array[100]; /* parallel to pdl_implementation */
+    pl_interp_implementation_t const *curr_implementation;
+    pl_interp_instance_t *curr_instance;
+    gx_device *curr_device;
+} pl_main_universe_t;
+
+/*
+ * Main instance for all interpreters.
+ */
+
+struct pl_main_instance_s
+{
+    /* The following are set at initialization time. */
+    gs_memory_t *memory;
+    long base_time[2];          /* starting time */
+    int error_report;           /* -E# */
+    bool pause;                 /* -dNOPAUSE => false */
+    int first_page;             /* -dFirstPage= */
+    int last_page;              /* -dLastPage= */
+    gx_device *device;
+
+    pl_interp_implementation_t const *implementation; /*-L<Language>*/
+
+    char pcl_personality[6];    /* a character string to set pcl's
+                                   personality - rtl, pcl5c, pcl5e, and
+                                   pcl == default.  NB doesn't belong here. */
+    bool interpolate;
+    bool nocache;
+    bool page_set_on_command_line;
+    bool res_set_on_command_line;
+    bool high_level_device;
+#ifndef OMIT_SAVED_PAGES_TEST
+    bool saved_pages_test_mode;
+#endif
+    bool pjl_from_args; /* pjl was passed on the command line */
+    int scanconverter;
+    /* we have to store these in the main instance until the languages
+       state is sufficiently initialized to set the parameters. */
+    char *piccdir;
+    char *pdefault_gray_icc;
+    char *pdefault_rgb_icc;
+    char *pdefault_cmyk_icc;
+    gs_c_param_list params;
+    arg_list args;
+    pl_main_universe_t universe;
+    byte buf[8192]; /* languages read buffer */
+    void *disp; /* display device pointer NB wrong - remove */
+};
+
+
 /* ---------------- Static data for memory management ------------------ */
 
 static gs_gc_root_t device_root;
+
+
 
 void pl_print_usage(const pl_main_instance_t *, const char *);
 
@@ -555,15 +615,15 @@ get_interpreter_from_memory(const gs_memory_t * mem)
 }
 
 static pl_main_instance_t *
-pl_get_main_instance(const gs_memory_t *mem)
+pl_main_get_instance(const gs_memory_t *mem)
 {
     return mem->gs_lib_ctx->top_of_system;
 }
 
 char *
-pl_get_main_pcl_personality(const gs_memory_t *mem)
+pl_main_get_pcl_personality(const gs_memory_t *mem)
 {
-    return pl_get_main_instance(mem)->pcl_personality;
+    return pl_main_get_instance(mem)->pcl_personality;
 }
 
 
@@ -1468,10 +1528,52 @@ pl_log_string(const gs_memory_t * mem, const char *str, int wait_for_key)
         (void)fgetc(mem->gs_lib_ctx->fstdin);
 }
 
+pl_interp_instance_t *
+pl_main_get_pcl_instance(const gs_memory_t *mem)
+{
+    return pl_main_get_instance(mem)->universe.pdl_instance_array[1];
+}
+
+pl_interp_instance_t *
+pl_main_get_pjl_instance(const gs_memory_t *mem)
+{
+    return pl_main_get_instance(mem)->universe.pdl_instance_array[0];
+}
+
+bool pl_main_get_interpolate(const gs_memory_t *mem)
+{
+    return pl_main_get_instance(mem)->interpolate;
+}
+
+bool pl_main_get_nocache(const gs_memory_t *mem)
+{
+    return pl_main_get_instance(mem)->nocache;
+}
+
+bool pl_main_get_page_set_on_command_line(const gs_memory_t *mem)
+{
+    return pl_main_get_instance(mem)->page_set_on_command_line;
+}
+
+bool pl_main_get_res_set_on_command_line(const gs_memory_t *mem)
+{
+    return pl_main_get_instance(mem)->res_set_on_command_line;
+}
+
+bool pl_main_get_high_level_device(const gs_memory_t *mem)
+{
+    return pl_main_get_instance(mem)->high_level_device;
+}
+
+bool pl_main_get_scanconverter(const gs_memory_t *mem)
+{
+    return pl_main_get_instance(mem)->scanconverter;
+}
+
 int
 pl_set_icc_params(const gs_memory_t *mem, gs_gstate *pgs)
 {
-    pl_main_instance_t *minst = pl_get_main_instance(mem);
+    pl_main_instance_t *minst = pl_main_get_instance(mem);
     gs_param_string p;
     int code;
     

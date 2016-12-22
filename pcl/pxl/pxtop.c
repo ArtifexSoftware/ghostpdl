@@ -234,12 +234,10 @@ pxl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,
     pxs->client_data = pxli;
     pxs->end_page = pxl_end_page_top;   /* after px_state_init */
 
-    pxs->pjls =
-        pxl_get_minst((pl_interp_instance_t *)pxli)->universe.pdl_instance_array[0];
+    pxs->pjls = pl_main_get_pjl_instance(mem);
 
     /* The PCL instance is needed for PassThrough mode */
-    pxs->pcls =
-        pxl_get_minst((pl_interp_instance_t *)pxli)->universe.pdl_instance_array[1];
+    pxs->pcls =pl_main_get_pcl_instance(mem);
 
     /* Return success */
     *instance = (pl_interp_instance_t *) pxli;
@@ -262,6 +260,8 @@ pxl_impl_set_device(pl_interp_instance_t * instance,
     int code;
     pxl_interp_instance_t *pxli = (pxl_interp_instance_t *) instance;
     px_state_t *pxs = pxli->pxs;
+    gs_memory_t *mem = pxli->memory;
+    
     enum { Sbegin, Ssetdevice, Sinitg, Sgsave, Serase, Sdone } stage;
 
     stage = Sbegin;
@@ -269,9 +269,9 @@ pxl_impl_set_device(pl_interp_instance_t * instance,
     if ((code = gs_opendevice(device)) < 0)
         goto pisdEnd;
 
-    pxs->interpolate = pxl_get_minst(instance)->interpolate;
-    pxs->nocache = pxl_get_minst(instance)->nocache;
-    gs_setscanconverter(pxli->pgs, pxl_get_minst(instance)->scanconverter);
+    pxs->interpolate = pl_main_get_interpolate(mem);
+    pxs->nocache = pl_main_get_nocache(mem);
+    gs_setscanconverter(pxli->pgs, pl_main_get_scanconverter(mem));
 
     if (pxs->nocache)
         gs_setcachelimit(pxs->font_dir, 0);

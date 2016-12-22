@@ -93,16 +93,16 @@ xps_get_minst(pl_interp_instance_t *plinst)
 static void
 xps_set_nocache(pl_interp_instance_t *instance, gs_font_dir *font_dir)
 {
-    if (xps_get_minst(instance)->nocache)
-        gs_setcachelimit(font_dir, 0);
+    xps_interp_instance_t *xpsi  = (xps_interp_instance_t *) instance;
+    pl_main_get_nocache(xpsi->memory);
     return;
 }
 
 static int
 xps_set_icc_user_params(pl_interp_instance_t *instance, gs_gstate *pgs)
 {
-    xps_interp_instance_t *pxli  = (xps_interp_instance_t *) instance;
-    return pl_set_icc_params(pxli->memory, pgs);
+    xps_interp_instance_t *xpsi  = (xps_interp_instance_t *) instance;
+    return pl_set_icc_params(xpsi->memory, pgs);
 }
 
 /* Do per-instance interpreter allocation/init. No device is set yet */
@@ -205,7 +205,7 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     gs_setfilladjust(ctx->pgs, 0, 0);
     (void)xps_set_icc_user_params((pl_interp_instance_t *)instance, ctx->pgs);
     xps_set_nocache((pl_interp_instance_t *)instance, ctx->fontdir);
-    gs_setscanconverter(ctx->pgs, xps_get_minst(pinstance)->scanconverter);
+    gs_setscanconverter(ctx->pgs, pl_main_get_scanconverter(ctx->memory));
     
     /* gsave and grestore (among other places) assume that */
     /* there are at least 2 gstates on the graphics stack. */

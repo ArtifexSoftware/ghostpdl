@@ -278,8 +278,7 @@ pcl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,     /* RETUR
             return (code);
     }
 
-    pcli->pcs.pjls =
-        pcl_get_minst((pl_interp_instance_t *)pcli)->universe.pdl_instance_array[0];
+    pcli->pcs.pjls = pl_main_get_pjl_instance(mem);
     
     /* Return success */
     *instance = (pl_interp_instance_t *)pcli;
@@ -292,7 +291,7 @@ static pcl_personality_t
 pcl_get_personality(pl_interp_instance_t * instance, gx_device * device)
 {
     pcl_interp_instance_t *pcli  = (pcl_interp_instance_t *) instance;
-    char *personality = pl_get_main_pcl_personality(pcli->memory);
+    char *personality = pl_main_get_pcl_personality(pcli->memory);
     
     if (!strcmp(personality, "PCL5C"))
         return pcl5c;
@@ -319,25 +318,6 @@ pcl_set_icc_params(pl_interp_instance_t * instance, gs_gstate * pgs)
     return pl_set_icc_params(pcli->memory, pgs);
 }
 
-static bool
-pcl_get_page_set(pl_interp_instance_t * instance)
-{
-    return pcl_get_minst(instance)->page_set_on_command_line;
-}
-
-static bool
-pcl_get_res_set(pl_interp_instance_t * instance)
-{
-    return pcl_get_minst(instance)->res_set_on_command_line;
-}
-
-static bool
-pcl_get_high_level(pl_interp_instance_t * instance)
-{
-    return pcl_get_minst(instance)->high_level_device;
-}
-
-
 /* Set a device into an interperter instance */
 static int                      /* ret 0 ok, else -ve error code */
 pcl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to use */
@@ -347,7 +327,8 @@ pcl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to us
     /* NB REVIEW ME -- ROUGH DRAFT */
     int code;
     pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
-
+    gs_memory_t *mem = pcli->memory;
+    
     enum
     { Sbegin, Ssetdevice, Sinitg, Sgsave1, Spclgsave, Sreset, Serase,
             Sdone } stage;
@@ -356,12 +337,12 @@ pcl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to us
 
     /* Set parameters from the main instance */
     pcli->pcs.personality = pcl_get_personality(instance, device);
-    pcli->pcs.interpolate = pcl_get_minst(instance)->interpolate;
-    pcli->pcs.nocache = pcl_get_minst(instance)->nocache;
-    pcli->pcs.page_set_on_command_line = pcl_get_page_set(instance);
-    pcli->pcs.res_set_on_command_line = pcl_get_res_set(instance);
-    pcli->pcs.high_level_device = pcl_get_high_level(instance);
-    gs_setscanconverter(pcli->pcs.pgs, pcl_get_minst(instance)->scanconverter);
+    pcli->pcs.interpolate = pl_main_get_interpolate(mem);
+    pcli->pcs.nocache = pl_main_get_nocache(mem);
+    pcli->pcs.page_set_on_command_line = pl_main_get_page_set_on_command_line(mem);
+    pcli->pcs.res_set_on_command_line = pl_main_get_res_set_on_command_line(mem);
+    pcli->pcs.high_level_device = pl_main_get_high_level_device(mem);
+    gs_setscanconverter(pcli->pcs.pgs, pl_main_get_scanconverter(mem));
 
     /* Set the device into the pcl_state & gstate */
     stage = Ssetdevice;

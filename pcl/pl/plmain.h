@@ -32,61 +32,7 @@
 typedef struct gx_device_s gx_device;
 #endif
 
-/*
- * Define bookeeping for interpreters and devices.
- */
-
-typedef struct pl_main_universe_s
-{
-    pl_interp_instance_t *pdl_instance_array[100];      /* parallel to pdl_implementation */
-    pl_interp_t *pdl_interp_array[100]; /* parallel to pdl_implementation */
-    pl_interp_implementation_t const *curr_implementation;
-    pl_interp_instance_t *curr_instance;
-    gx_device *curr_device;
-} pl_main_universe_t;
-
-/*
- * Main instance for all interpreters.
- */
-
-typedef struct pl_main_instance_s
-{
-    /* The following are set at initialization time. */
-    gs_memory_t *memory;
-    long base_time[2];          /* starting time */
-    int error_report;           /* -E# */
-    bool pause;                 /* -dNOPAUSE => false */
-    int first_page;             /* -dFirstPage= */
-    int last_page;              /* -dLastPage= */
-    gx_device *device;
-
-    pl_interp_implementation_t const *implementation; /*-L<Language>*/
-
-    char pcl_personality[6];    /* a character string to set pcl's
-                                   personality - rtl, pcl5c, pcl5e, and
-                                   pcl == default.  NB doesn't belong here. */
-    bool interpolate;
-    bool nocache;
-    bool page_set_on_command_line;
-    bool res_set_on_command_line;
-    bool high_level_device;
-#ifndef OMIT_SAVED_PAGES_TEST
-    bool saved_pages_test_mode;
-#endif
-    bool pjl_from_args; /* pjl was passed on the command line */
-    int scanconverter;
-    /* we have to store these in the main instance until the languages
-       state is sufficiently initialized to set the parameters. */
-    char *piccdir;
-    char *pdefault_gray_icc;
-    char *pdefault_rgb_icc;
-    char *pdefault_cmyk_icc;
-    gs_c_param_list params;
-    arg_list args;
-    pl_main_universe_t universe;
-    byte buf[8192]; /* languages read buffer */
-    void *disp; /* display device pointer NB wrong - remove */
-} pl_main_instance_t;
+typedef struct pl_main_instance_s pl_main_instance_t;
 
 /* initialize gs_stdin, gs_stdout, and gs_stderr.  Eventually the gs
    library should provide an interface for doing this */
@@ -114,12 +60,26 @@ int pl_finish_page(pl_main_instance_t * pmi, gs_gstate * pgs,
 /* common routine to set icc parameters usually passed from the command line. */
 int pl_set_icc_params(const gs_memory_t *mem, gs_gstate *pgs);
 
+
 int pl_main_run_file(pl_main_instance_t *minst, const char *filename);
 int pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[]);
 void pl_main_delete_instance(pl_main_instance_t *minst);
 int pl_to_exit(const gs_memory_t *mem);
 
 /* instance accessors */
-char *pl_get_main_pcl_personality(const gs_memory_t *mem);
+bool pl_main_get_interpolate(const gs_memory_t *mem);
+bool pl_main_get_nocache(const gs_memory_t *mem);
+bool pl_main_get_page_set_on_command_line(const gs_memory_t *mem);
+bool pl_main_get_res_set_on_command_line(const gs_memory_t *mem);
+bool pl_main_get_high_level_device(const gs_memory_t *mem);
+int pl_main_get_scanconverter(const gs_memory_t *mem);
 
+/* retrieve the PJL instance so languages can query PJL. */
+bool pl_main_get_pjl_from_args(const gs_memory_t *mem); /* pjl was passed on the command line */
+
+/* retrieve the PCL instance, used by PXL for pass through mode */
+char *pl_main_get_pcl_personality(const gs_memory_t *mem);
+
+pl_interp_instance_t *pl_main_get_pcl_instance(const gs_memory_t *mem);
+pl_interp_instance_t *pl_main_get_pjl_instance(const gs_memory_t *mem);
 #endif /* plmain_INCLUDED */
