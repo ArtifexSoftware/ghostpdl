@@ -1341,6 +1341,9 @@ gx_filter_edgebuffer_app(gx_device       * pdev,
                 } while (rowlen > 0);
             }
 
+            if (marked_to >= lr)
+                continue;
+
             if (marked_to > ll) {
                 if (rowout == rowstart)
                     ll = marked_to;
@@ -2585,7 +2588,7 @@ gx_filter_edgebuffer_tr_app(gx_device       * pdev,
                 } while (rowlen > 0);
             }
 
-            if (lr < 0)
+            if (lr < marked_to)
                 continue;
 
             if (marked_to > ll) {
