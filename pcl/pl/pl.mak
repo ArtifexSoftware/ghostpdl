@@ -246,6 +246,7 @@ $(PLOBJ)pltop.$(OBJ): $(PLSRC)pltop.c $(AK) $(string__h)\
 
 $(PLOBJ)pltoputl.$(OBJ): $(PLSRC)pltoputl.c $(AK) $(string__h)\
  $(gdebug_h) $(gsmemory_h) $(gstypes_h) $(gsstruct_h) $(pltoputl_h) \
+ $(gserrors_h) $(gp_h)\
  $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)pltoputl.c $(PLO_)pltoputl.$(OBJ)
 

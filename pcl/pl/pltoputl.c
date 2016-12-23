@@ -19,13 +19,15 @@
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "gsstruct.h"
+#include "gserrors.h"
 #include "pltoputl.h"
+#include "gp.h"
 
 /* -------------- Read stream cursor operations ---------- */
 
 /* Initialize cursor */
 int                             /* returns 0 ok, else -ve error code */
-pl_top_cursor_init(pl_top_cursor_t * cursor,    /* cursor to init/open */
+pl_cursor_init(pl_top_cursor_t * cursor,    /* cursor to init/open */
                    FILE * strm, /* open stream to read from */
                    byte * buffer,       /* buffer to use for reading */
                    unsigned buffer_length       /* length of *buffer */
@@ -39,7 +41,7 @@ pl_top_cursor_init(pl_top_cursor_t * cursor,    /* cursor to init/open */
     cursor->cursor.limit = cursor->cursor.ptr = buffer - 1;
     cursor->status = 1;         /* non-status */
 
-    status = pl_top_cursor_next(cursor);
+    status = pl_cursor_next(cursor);
     return status < 0 ? status : 0;     /* report errors, not EOF */
 }
 
@@ -53,7 +55,7 @@ pl_cursor_EOD(pl_top_cursor_t * cursor)
 }
 
 void
-pl_renew_cursor_status(pl_top_cursor_t * cursor)
+pl_cursor_renew_status(pl_top_cursor_t * cursor)
 {
     if (pl_cursor_EOD(cursor)) {
         cursor->status = 1;
@@ -62,7 +64,7 @@ pl_renew_cursor_status(pl_top_cursor_t * cursor)
 
 /* Refill from input */
 int                             /* rets 1 ok, else 0 EOF, -ve error */
-pl_top_cursor_next(pl_top_cursor_t * cursor     /* cursor to operate on */
+pl_cursor_next(pl_top_cursor_t * cursor     /* cursor to operate on */
     )
 {
     int len;
@@ -90,10 +92,38 @@ pl_top_cursor_next(pl_top_cursor_t * cursor     /* cursor to operate on */
     return cursor->cursor.limit == cursor->cursor.ptr ? cursor->status : 1;
 }
 
-/* Deinit a read cursor */
-void
-pl_top_cursor_dnit(pl_top_cursor_t * cursor     /* cursor to operate on */
+/* Open a read cursor w/specified file */
+int                             /* returns 0 ok, else -ve error code */
+pl_cursor_open(const gs_memory_t * mem, pl_top_cursor_t * cursor,  /* cursor to init/open */
+               const char *fname,  /* name of file to open */
+               byte * buffer,      /* buffer to use for reading */
+               unsigned buffer_length      /* length of *buffer */
     )
 {
-    return;
+    /* try to open file */
+    if (fname[0] == '-' && fname[1] == 0)
+        cursor->strm = mem->gs_lib_ctx->fstdin;
+    else
+        cursor->strm = gp_fopen(fname, "rb");
+    if (!cursor->strm)
+        return gs_error_ioerror;
+
+    return pl_cursor_init(cursor, cursor->strm, buffer, buffer_length);
+}
+
+/* Read back curr file position */
+long                            /* offset from beginning of file */
+pl_cursor_position(pl_top_cursor_t * cursor        /* cursor to operate on */
+    )
+{
+    return (long)ftell(cursor->strm)
+        - (cursor->cursor.limit - cursor->cursor.ptr);
+}
+
+/* Close read cursor */
+void
+pl_cursor_close(pl_top_cursor_t * cursor   /* cursor to operate on */
+    )
+{
+    fclose(cursor->strm);
 }

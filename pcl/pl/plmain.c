@@ -195,24 +195,6 @@ int pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
 
 static pl_interp_implementation_t const *pl_pjl_select(pl_interp_instance_t *pjl_instance);
 
-      /* -------------- Read file cursor operations ---------- */
-/* Open a read cursor w/specified file */
-int pl_main_cursor_open(const gs_memory_t *, pl_top_cursor_t *, const char *,
-                        byte *, unsigned);
-
-#ifdef DEBUG
-/* Refill from input, avoid extra call level for efficiency */
-int pl_main_cursor_next(pl_top_cursor_t * cursor);
-#else
-#define pl_main_cursor_next(curs) (pl_top_cursor_next(curs))
-#endif
-
-/* Read back curr file position */
-long pl_main_cursor_position(pl_top_cursor_t * cursor);
-
-/* Close read cursor */
-void pl_main_cursor_close(pl_top_cursor_t * cursor);
-
 /* return index in gs device list -1 if not found */
 static inline int
 get_device_index(const gs_memory_t * mem, const char *value)
@@ -363,7 +345,7 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
     int code = 0;
     pl_interp_instance_t *curr_instance = 0;
     
-    if (pl_main_cursor_open(mem, &r, filename, minst->buf, sizeof(minst->buf)) < 0) {
+    if (pl_cursor_open(mem, &r, filename, minst->buf, sizeof(minst->buf)) < 0) {
         return gs_error_Fatal;
     }
 
@@ -376,11 +358,11 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
     
     for (;;) {
         if_debug1m('I', mem, "[i][file pos=%ld]\n",
-                   pl_main_cursor_position(&r));
+                   pl_cursor_position(&r));
 
         /* end of data - if we are not back in pjl the job has
            ended in the middle of the data stream. */
-        if (pl_main_cursor_next(&r) <= 0) {
+        if (pl_cursor_next(&r) <= 0) {
             if_debug0m('I', mem, "End of of data\n");
             if (!in_pjl) {
                 if_debug0m('I', mem,
@@ -462,7 +444,7 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                 if (pl_init_job(pjl_instance) < 0)
                     return gs_error_Fatal;
 
-                pl_renew_cursor_status(&r);
+                pl_cursor_renew_status(&r);
                 
             } else if (code < 0) {  /* error and not exit language */
                 dmprintf1(mem,
@@ -471,14 +453,14 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                 dmprintf(mem, "Flushing to end of job\n");
                 /* flush eoj may require more data */
                 while ((pl_flush_to_eoj(curr_instance, &r.cursor)) == 0) {
-                    if (pl_main_cursor_next(&r) <= 0) {
+                    if (pl_cursor_next(&r) <= 0) {
                         if_debug0m('I', mem,
                                    "end of data found while flushing\n");
                         break;
                     }
                 }
                 pl_report_errors(curr_instance, code,
-                                 pl_main_cursor_position(&r),
+                                 pl_cursor_position(&r),
                                  minst->error_report > 0);
                 if (close_job(&minst->universe, minst) < 0)
                     return gs_error_Fatal;
@@ -491,7 +473,7 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
             }
         }
     }
-    pl_main_cursor_close(&r);
+    pl_cursor_close(&r);
     return 0;
 }
 
@@ -1622,52 +1604,4 @@ pl_finish_page(pl_main_instance_t * pmi, gs_gstate * pgs, int num_copies, int fl
     } else if (gs_debug_c(':'))
         pl_print_usage(pmi, "render done :");
     return 0;
-}
-
-/* -------------- Read file cursor operations ---------- */
-/* Open a read cursor w/specified file */
-int                             /* returns 0 ok, else -ve error code */
-pl_main_cursor_open(const gs_memory_t * mem, pl_top_cursor_t * cursor,  /* cursor to init/open */
-                    const char *fname,  /* name of file to open */
-                    byte * buffer,      /* buffer to use for reading */
-                    unsigned buffer_length      /* length of *buffer */
-    )
-{
-    /* try to open file */
-    if (fname[0] == '-' && fname[1] == 0)
-        cursor->strm = mem->gs_lib_ctx->fstdin;
-    else
-        cursor->strm = gp_fopen(fname, "rb");
-    if (!cursor->strm)
-        return gs_error_ioerror;
-
-    return pl_top_cursor_init(cursor, cursor->strm, buffer, buffer_length);
-}
-
-#ifdef DEBUG
-/* Refill from input */
-int                             /* rets 1 ok, else 0 EOF, -ve error */
-pl_main_cursor_next(pl_top_cursor_t * cursor    /* cursor to operate on */
-    )
-{
-    return pl_top_cursor_next(cursor);
-}
-#endif /* DEBUG */
-
-/* Read back curr file position */
-long                            /* offset from beginning of file */
-pl_main_cursor_position(pl_top_cursor_t * cursor        /* cursor to operate on */
-    )
-{
-    return (long)ftell(cursor->strm)
-        - (cursor->cursor.limit - cursor->cursor.ptr);
-}
-
-/* Close read cursor */
-void
-pl_main_cursor_close(pl_top_cursor_t * cursor   /* cursor to operate on */
-    )
-{
-    pl_top_cursor_dnit(cursor);
-    fclose(cursor->strm);
 }
