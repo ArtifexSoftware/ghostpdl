@@ -165,7 +165,7 @@ gx_edgebuffer_print(gx_edgebuffer * edgebuffer)
         dlprintf3("%d @ %d: %d =", i, offset, count);
         while (count-- > 0) {
             int v = *row++;
-            dlprintf2(" %d:%d", v&~1, v&1);
+            dlprintf2(" %x:%d", v&~1, v&1);
         }
         dlprintf("\n");
     }
@@ -180,7 +180,8 @@ static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int he
     int dirn = DIRN_UP;
 
 #ifdef DEBUG_SCAN_CONVERTER
-    dlprintf2("Marking line from %d to %d\n", isy, iey);
+    dlprintf6("Marking line from %x,%x to %x,%x (%x,%x)\n", sx, sy, ex, ey, isy, iey);
+#endif
 #endif
 
     if (isy == iey)
@@ -1428,7 +1429,7 @@ gx_edgebuffer_print_tr(gx_edgebuffer * edgebuffer)
         while (count-- > 0) {
             int e  = *row++;
             int id = *row++;
-            dlprintf3(" %d%c%d", e, id&1 ? 'v' : '^', id>>1);
+            dlprintf3(" %x%c%d", e, id&1 ? 'v' : '^', id>>1);
         }
         dlprintf("\n");
     }
@@ -1443,7 +1444,8 @@ static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int
     int dirn = DIRN_UP;
 
 #ifdef DEBUG_SCAN_CONVERTER
-    dlprintf2("Marking line from %d to %d\n", isy, iey);
+    dlprintf6("Marking line from %x,%x to %x,%x (%x,%x)\n", sx, sy, ex, ey, isy, iey);
+#endif
 #endif
 
     if (isy == iey)
@@ -1666,7 +1668,7 @@ int gx_scan_convert_tr(gx_device     * pdev,
 
 #ifdef DEBUG_SCAN_CONVERTER
     dlprintf("Before sorting:\n");
-    gx_edgebuffer_print(edgebuffer);
+    gx_edgebuffer_print_tr(edgebuffer);
 #endif
 
     /* Step 4: Sort the intersects on x */
@@ -1693,7 +1695,7 @@ gx_filter_edgebuffer_tr(gx_device       * pdev,
 
 #ifdef DEBUG_SCAN_CONVERTER
     dlprintf("Before filtering\n");
-    gx_edgebuffer_print(edgebuffer);
+    gx_edgebuffer_print_tr(edgebuffer);
 #endif
 
     for (i=0; i < edgebuffer->height; i++) {
@@ -1772,7 +1774,7 @@ gx_fill_edgebuffer_tr(gx_device       * pdev,
                     goto rowdifferent;
                 rowptr  += 2;
                 row2ptr += 2;
-                row2len -= 2;
+                row2len--;
             }
         }
 rowdifferent:{}
@@ -2686,10 +2688,13 @@ rowdifferent:{}
             gs_fixed_edge re;
             fixed ybot = int2fixed(edgebuffer->base+i+1);
             fixed ytop = int2fixed(edgebuffer->base+j-1);
+            int *row3, *row4;
+            int offset = 1;
             row    = &edgebuffer->table[edgebuffer->index[i]];
-            rowlen = *row++;
-            row2    = &edgebuffer->table[edgebuffer->index[j-1]];
-            row2++;
+            row2    = &edgebuffer->table[edgebuffer->index[i+1]];
+            row3    = &edgebuffer->table[edgebuffer->index[j-2]];
+            row4    = &edgebuffer->table[edgebuffer->index[j-1]];
+            rowlen = *row;
             while (rowlen > 0) {
                 /* The fill rules used by fill_trap state that if a
                  * pixel centre is touched by a boundary, the pixel
@@ -2698,53 +2703,68 @@ rowdifferent:{}
                  * not horizontal, and the filled region is to the
                  * right of it.
                  *
-                 * Therefore, we move the left edge back by just less
-                 * than half, so ...00 goes to ...81 and therefore
-                 * does not cause an extra pixel to get filled.
+                 * We need to fill "any part of a pixel", not just
+                 * "centre covered", so we need to adjust our edges
+                 * by half a pixel in both X and Y.
                  *
-                 * We move the right edge forward by half, so ...00
-                 * goes to ...80 and therefore does not cause an extra
-                 * pixel to get filled.
+                 * X is relatively easy. We move the left edge back by
+                 * just less than half, so ...00 goes to ...81 and
+                 * therefore does not cause an extra pixel to get filled.
+                 *
+                 * Similarly, we move the right edge forward by half, so
+                 *  ...00 goes to ...80 and therefore does not cause an
+                 * extra pixel to get filled.
+                 *
+                 * For y, we can adjust edges up or down as appropriate.
+                 * We move up by half, so ...0 goes to ..80 and therefore
+                 * does not cause an extra pixel to get filled. We move
+                 * down by just less than a half so that ...0 goes to
+                 * ...81 and therefore does not cause an extra pixel to
+                 * get filled.
+                 *
+                 * We use ybot = ...80 and ytop = ...81 in the trap call
+                 * so that it just covers the pixel centres.
                  */
-                le.start.x = row[0] - (fixed_half-1);
-                re.start.x = row[2] + fixed_half;
-                le.end.x   = row2[0] - (fixed_half-1);
-                re.end.x   = row2[2] + fixed_half;
-                row += 4;
-                row2 += 4;
+                if (row[offset] <= row4[offset]) {
+                    le.start.x = row2[offset] - (fixed_half-1);
+                    le.end.x   = row4[offset] - (fixed_half-1);
+                    le.start.y = ybot + fixed_half;
+                    le.end.y   = ytop + fixed_half;
+                } else {
+                    le.start.x = row [offset] - (fixed_half-1);
+                    le.end.x   = row3[offset] - (fixed_half-1);
+                    le.start.y = ybot - (fixed_half-1);
+                    le.end.y   = ytop - (fixed_half-1);
+                }
+                if (row[offset+2] <= row4[offset+2]) {
+                    re.start.x = row [offset+2] + fixed_half;
+                    re.end.x   = row3[offset+2] + fixed_half;
+                    re.start.y = ybot - (fixed_half-1);
+                    re.end.y   = ytop - (fixed_half-1);
+                } else {
+                    re.start.x = row2[offset+2] + fixed_half;
+                    re.end.x   = row4[offset+2] + fixed_half;
+                    re.start.y = ybot + fixed_half;
+                    re.end.y   = ytop + fixed_half;
+                }
+                offset += 4;
                 rowlen--;
-
-                if (le.start.x <= le.end.x) {
-                    le.start.y = ybot - fixed_1 + fixed_half;
-                    le.end.y   = ytop           + fixed_half;
-                } else {
-                    le.start.y = ybot           - fixed_half;
-                    le.end.y   = ytop + fixed_1 - fixed_half;
-                }
-
-                if (re.start.x <= re.end.x) {
-                    re.start.y = ybot           - fixed_half;
-                    re.end.y   = ytop + fixed_1 - fixed_half;
-                } else {
-                    re.start.y = ybot - fixed_1 + fixed_half;
-                    re.end.y   = ytop           + fixed_half;
-                }
 
                 assert(le.start.x >= -fixed_half);
                 assert(le.end.x >= -fixed_half);
                 assert(re.start.x >= le.start.x);
                 assert(re.end.x >= le.end.x);
-                assert(le.start.y <= ybot);
-                assert(re.start.y <= ybot);
-                assert(le.end.y >= ytop);
-                assert(re.end.y >= ytop);
+                assert(le.start.y <= ybot + fixed_half);
+                assert(re.start.y <= ybot + fixed_half);
+                assert(le.end.y >= ytop - (fixed_half - 1));
+                assert(re.end.y >= ytop - (fixed_half - 1));
 
                 code = dev_proc(pdev, fill_trapezoid)(
                                 pdev,
                                 &le,
                                 &re,
-                                ybot,
-                                ytop,
+                                ybot + fixed_half,
+                                ytop - (fixed_half - 1),
                                 0, /* bool swap_axes */
                                 pdevc, /*const gx_drawing_color *pdcolor */
                                 log_op);
