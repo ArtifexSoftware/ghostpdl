@@ -134,6 +134,7 @@
  * interchangably. */
 
 #undef DEBUG_SCAN_CONVERTER
+#undef DEBUG_OUTPUT_SC_AS_PS
 
 enum
 {
@@ -182,6 +183,11 @@ static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int he
 #ifdef DEBUG_SCAN_CONVERTER
     dlprintf6("Marking line from %x,%x to %x,%x (%x,%x)\n", sx, sy, ex, ey, isy, iey);
 #endif
+#ifdef DEBUG_OUTPUT_SC_AS_PS
+    dlprintf("0.001 setlinewidth 0 0 0 setrgbcolor %%PS\n");
+    dlprintf2("16#%x 16#%x moveto %%PS\n", sx, sy);
+    dlprintf2("16#%x 16#%x lineto %%PS\n", ex, ey);
+    dlprintf("stroke %%PS\n");
 #endif
 
     if (isy == iey)
@@ -845,6 +851,12 @@ static void mark_line_app(cursor *cr, fixed sx, fixed sy, fixed ex, fixed ey)
 #ifdef DEBUG_SCAN_CONVERTER
     dlprintf6("Marking line from %x,%x to %x,%x (%x,%x)\n", sx, sy, ex, ey, isy, iey);
 #endif
+#ifdef DEBUG_OUTPUT_SC_AS_PS
+    dlprintf("0.001 setlinewidth 0 0 0 setrgbcolor %%PS\n");
+    dlprintf2("16#%x 16#%x moveto %%PS\n", sx, sy);
+    dlprintf2("16#%x 16#%x lineto %%PS\n", ex, ey);
+    dlprintf("stroke %%PS\n");
+#endif
 
     assert(cr->y == sy && cr->left <= sx && cr->right >= sx && cr->d >= DIRN_UNSET && cr->d <= DIRN_DOWN);
 
@@ -1446,6 +1458,11 @@ static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int
 #ifdef DEBUG_SCAN_CONVERTER
     dlprintf6("Marking line from %x,%x to %x,%x (%x,%x)\n", sx, sy, ex, ey, isy, iey);
 #endif
+#ifdef DEBUG_OUTPUT_SC_AS_PS
+    dlprintf("0.001 setlinewidth 0 0 0 setrgbcolor %%PS\n");
+    dlprintf2("16#%x 16#%x moveto %%PS\n", sx, sy);
+    dlprintf2("16#%x 16#%x lineto %%PS\n", ex, ey);
+    dlprintf("stroke %%PS\n");
 #endif
 
     if (isy == iey)
@@ -1794,6 +1811,14 @@ rowdifferent:{}
                 right = fixed2int(right + fixed_half);
                 right -= left;
                 if (right > 0) {
+#ifdef DEBUG_OUTPUT_SC_AS_PS
+                    dlprintf("0.001 setlinewidth 1 0 0 setrgbcolor %%PS\n");
+                    dlprintf2("16#%x 16#%x moveto %%PS\n", int2fixed(left), int2fixed(edgebuffer->base+i));
+                    dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left+right), int2fixed(edgebuffer->base+i));
+                    dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left+right), int2fixed(edgebuffer->base+i+1));
+                    dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left), int2fixed(edgebuffer->base+i+1));
+                    dlprintf("closepath stroke %%PS\n");
+#endif
                     if (log_op < 0)
                         code = dev_proc(pdev, fill_rectangle)(pdev, left, edgebuffer->base+i, right, 1, pdevc->colors.pure);
                     else
@@ -1822,6 +1847,14 @@ rowdifferent:{}
                 assert(re.start.x >= le.start.x);
                 assert(re.end.x >= le.end.x);
 
+#ifdef DEBUG_OUTPUT_SC_AS_PS
+                dlprintf("0.001 setlinewidth 0 1 0 setrgbcolor %%PS\n");
+                dlprintf2("16#%x 16#%x moveto %%PS\n", le.start.x, le.start.y);
+                dlprintf2("16#%x 16#%x lineto %%PS\n", le.end.x, le.end.y);
+                dlprintf2("16#%x 16#%x lineto %%PS\n", re.end.x, re.end.y);
+                dlprintf2("16#%x 16#%x lineto %%PS\n", re.start.x, re.start.y);
+                dlprintf("closepath stroke %%PS\n");
+#endif
                 code = dev_proc(pdev, fill_trapezoid)(
                                 pdev,
                                 &le,
@@ -2028,6 +2061,12 @@ static void mark_line_tr_app(cursor_tr *cr, fixed sx, fixed sy, fixed ex, fixed 
         return;
 #ifdef DEBUG_SCAN_CONVERTER
     dlprintf6("Marking line from %x,%x to %x,%x (%x,%x)\n", sx, sy, ex, ey, isy, iey);
+#endif
+#ifdef DEBUG_OUTPUT_SC_AS_PS
+    dlprintf("0.001 setlinewidth 0 0 0 setrgbcolor %%PS\n");
+    dlprintf2("16#%x 16#%x moveto %%PS\n", sx, sy);
+    dlprintf2("16#%x 16#%x lineto %%PS\n", ex, ey);
+    dlprintf("stroke %%PS\n");
 #endif
 
     assert(cr->y == sy && cr->left <= sx && cr->right >= sx && cr->d >= DIRN_UNSET && cr->d <= DIRN_DOWN);
@@ -2672,6 +2711,14 @@ rowdifferent:{}
 
             right -= left;
             if (right > 0) {
+#ifdef DEBUG_OUTPUT_SC_AS_PS
+                dlprintf("0.001 setlinewidth 1 0 0 setrgbcolor %%PS\n");
+                dlprintf2("16#%x 16#%x moveto %%PS\n", int2fixed(left), int2fixed(edgebuffer->base+i));
+                dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left+right), int2fixed(edgebuffer->base+i));
+                dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left+right), int2fixed(edgebuffer->base+i+1));
+                dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left), int2fixed(edgebuffer->base+i+1));
+                dlprintf("closepath stroke %%PS\n");
+#endif
                 if (log_op < 0)
                     code = dev_proc(pdev, fill_rectangle)(pdev, left, edgebuffer->base+i, right, 1, pdevc->colors.pure);
                 else
@@ -2759,6 +2806,14 @@ rowdifferent:{}
                 assert(le.end.y >= ytop - (fixed_half - 1));
                 assert(re.end.y >= ytop - (fixed_half - 1));
 
+#ifdef DEBUG_OUTPUT_SC_AS_PS
+                dlprintf("0.001 setlinewidth 0 1 0 setrgbcolor %%PS\n");
+                dlprintf2("16#%x 16#%x moveto %%PS\n", le.start.x, le.start.y);
+                dlprintf2("16#%x 16#%x lineto %%PS\n", le.end.x, le.end.y);
+                dlprintf2("16#%x 16#%x lineto %%PS\n", re.end.x, re.end.y);
+                dlprintf2("16#%x 16#%x lineto %%PS\n", re.start.x, re.start.y);
+                dlprintf("closepath stroke %%PS\n");
+#endif
                 code = dev_proc(pdev, fill_trapezoid)(
                                 pdev,
                                 &le,
@@ -2788,6 +2843,14 @@ rowdifferent:{}
 
                 right -= left;
                 if (right > 0) {
+#ifdef DEBUG_OUTPUT_SC_AS_PS
+                    dlprintf("0.001 setlinewidth 0 0 1 setrgbcolor %%PS\n");
+                    dlprintf2("16#%x 16#%x moveto %%PS\n", int2fixed(left), int2fixed(edgebuffer->base+j-1));
+                    dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left+right), int2fixed(edgebuffer->base+j-1));
+                    dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left+right), int2fixed(edgebuffer->base+j));
+                    dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left), int2fixed(edgebuffer->base+j));
+                    dlprintf("closepath stroke %%PS\n");
+#endif
                     if (log_op < 0)
                         code = dev_proc(pdev, fill_rectangle)(pdev, left, edgebuffer->base+j-1, right, 1, pdevc->colors.pure);
                     else
