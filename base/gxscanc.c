@@ -382,6 +382,18 @@ static int make_table(gx_device     * pdev,
         const segment *pseg = (const segment *)psub;
         fixed          ey = pseg->pt.y + adjust;
         fixed          iy = ey;
+        int            iey = fixed2int(iy) - ibox->p.y;
+
+        assert(pseg->type == s_start);
+
+        /* Allow for 2 extra intersections on the start scanline.
+         * This copes with the 'zero height rectangle' case. */
+        if (iey >= 0 && iey < scanlines)
+        {
+            index[iey] += 2;
+            if (iey+1 < scanlines)
+                index[iey+1] -= 2;
+        }
 
         while ((pseg = pseg->next) != 0 &&
                pseg->type != s_start
@@ -816,9 +828,21 @@ output_cursor(cursor *cr, fixed x)
 static void
 flush_cursor(cursor *cr, fixed x)
 {
-    /* This should only happen if we were entirely out of bounds */
-    if (cr->first)
+    /* This should only happen if we were entirely out of bounds,
+     * or if everything was within a zero height horizontal
+     * rectangle from the start point. */
+    if (cr->first) {
+        int iy = fixed2int(cr->y) - cr->base;
+        if (iy >= 0 && iy < cr->scanlines) {
+            int *row = &cr->table[cr->index[iy]];
+            int count = *row = (*row)+2; /* Increment the count */
+            row[2 * count - 3] = (cr->left & ~1) | DIRN_UP;
+            row[2 * count - 2] = (cr->right & ~1);
+            row[2 * count - 1] = (cr->right & ~1) | DIRN_DOWN;
+            row[2 * count    ] = cr->right;
+        }
         return;
+    }
 
     /* Merge save into current if we can */
     if (fixed2int(cr->y) == fixed2int(cr->save_y) &&
@@ -2020,9 +2044,25 @@ output_cursor_tr(cursor_tr *cr, fixed x, int id)
 static void
 flush_cursor_tr(cursor_tr *cr, fixed x, int id)
 {
-    /* This should only happen if we were entirely out of bounds */
-    if (cr->first)
+    /* This should only happen if we were entirely out of bounds,
+     * or if everything was within a zero height horizontal
+     * rectangle from the start point. */
+    if (cr->first) {
+        int iy = fixed2int(cr->y) - cr->base;
+        if (iy >= 0 && iy < cr->scanlines) {
+            int *row = &cr->table[cr->index[iy]];
+            int count = *row = (*row)+2; /* Increment the count */
+            row[4 * count - 7] = cr->left;
+            row[4 * count - 6] = DIRN_UP | (cr->lid<<1);
+            row[4 * count - 5] = cr->right;
+            row[4 * count - 4] = cr->rid;
+            row[4 * count - 3] = cr->right;
+            row[4 * count - 2] = DIRN_DOWN | (cr->rid<<1);
+            row[4 * count - 1] = cr->right;
+            row[4 * count    ] = cr->rid;
+        }
         return;
+    }
 
     /* Merge save into current if we can */
     if (fixed2int(cr->y) == fixed2int(cr->save_y) &&
@@ -2093,7 +2133,7 @@ static void mark_line_tr_app(cursor_tr *cr, fixed sx, fixed sy, fixed ex, fixed 
      * This accommodates horizontal lines. */
     if (isy == iey) {
         if (sy == ey) {
-            /* Horzizontal line. Don't change cr->d, don't flush. */
+            /* Horizontal line. Don't change cr->d, don't flush. */
         } else if (sy > ey) {
             /* Falling line, flush if previous was rising */
             if (cr->d == DIRN_UP)
