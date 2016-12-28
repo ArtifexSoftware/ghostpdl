@@ -1108,11 +1108,12 @@ static void mark_line_app(cursor *cr, fixed sx, fixed sy, fixed ex, fixed ey)
             }
 
             /* Phase 3 */
-            if (phase3_y_steps > 0)
+            if (phase3_y_steps > 0) {
                 output_cursor(cr, sx);
-            cr->left  = sx;
-            cr->right = ex;
-            cr->y -= phase3_y_steps;
+                cr->left  = sx;
+                cr->right = ex;
+                cr->y -= phase3_y_steps;
+            }
         } else {
             /* Lines decreasing in x. */
             int phase1_x_steps, phase3_x_steps;
@@ -1162,11 +1163,12 @@ static void mark_line_app(cursor *cr, fixed sx, fixed sy, fixed ex, fixed ey)
             }
 
             /* Phase 3 */
-            if (phase3_y_steps > 0)
+            if (phase3_y_steps > 0) {
                 output_cursor(cr, sx);
-            cr->right = sx;
-            cr->left  = ex;
-            cr->y -= phase3_y_steps;
+                cr->right = sx;
+                cr->left  = ex;
+                cr->y -= phase3_y_steps;
+            }
         }
     }
 }
@@ -2381,11 +2383,12 @@ static void mark_line_tr_app(cursor_tr *cr, fixed sx, fixed sy, fixed ex, fixed 
             }
 
             /* Phase 3 */
-            if (phase3_y_steps > 0)
+            if (phase3_y_steps > 0) {
                 output_cursor_tr(cr, sx, id);
-            cr->left  = sx;
-            cr->right = ex;
-            cr->y -= phase3_y_steps;
+                cr->left  = sx;
+                cr->right = ex;
+                cr->y -= phase3_y_steps;
+            }
         } else {
             /* Lines decreasing in x. */
             int phase1_x_steps, phase3_x_steps;
@@ -2437,11 +2440,12 @@ static void mark_line_tr_app(cursor_tr *cr, fixed sx, fixed sy, fixed ex, fixed 
             }
 
             /* Phase 3 */
-            if (phase3_y_steps > 0)
+            if (phase3_y_steps > 0) {
                 output_cursor_tr(cr, sx, id);
-            cr->right = sx;
-            cr->left  = ex;
-            cr->y -= phase3_y_steps;
+                cr->right = sx;
+                cr->left  = ex;
+                cr->y -= phase3_y_steps;
+            }
         }
     }
 }
