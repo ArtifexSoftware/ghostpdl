@@ -1066,6 +1066,9 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     gx_color_index drawn_comps = pdev->drawn_comps;
     bool nonicc_conversion = true;
 
+    if (nos == NULL)
+        return_error(gs_error_unknownerror);  /* Unmatched group pop */
+
     nos_num_color_comp = nos->parent_color_info_procs->num_components - nos->num_spots;
     tos_num_color_comp = tos_num_color_comp - tos->num_spots;
 
