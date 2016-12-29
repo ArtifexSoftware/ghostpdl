@@ -934,7 +934,7 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
             for (sx = data_x, rx = x; sx < data_x + width; ++sx, ++rx) {
                 gx_color_index previous = gx_no_color_index;
                 gx_color_index composite;
-                int alpha2, alpha;
+                uint32_t alpha2, alpha;
 
                 switch(depth)
                 {
@@ -967,8 +967,8 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
                     } else {	/* Blend values. */
                         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
                         int i;
-                        int old_coverage;
-                        int new_coverage;
+                        uint32_t old_coverage;
+                        uint32_t new_coverage;
 
                         (*dev_proc(dev, decode_color)) (dev, previous, cv);
                         /* decode color doesn't give us coverage */
@@ -978,8 +978,8 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
                             (255 * alpha + old_coverage * (255 - alpha)) / 255;
                         for (i=0; i<ncomps; i++)
                             cv[i] = min(((255 * alpha * color_cv[i]) +
-                                (old_coverage * (255 - alpha ) * cv[i]))
-                                / (new_coverage * 255), gx_max_color_value);
+                                         (old_coverage * (255 - alpha ) * cv[i]))
+                                        / (new_coverage * 255), gx_max_color_value);
                         composite =
                             (*dev_proc(dev, encode_color)) (dev, cv);
                         /* encode color doesn't include coverage */
