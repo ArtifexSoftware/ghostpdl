@@ -1669,8 +1669,10 @@ pdf14_open(gx_device *dev)
     rect.p.y = 0;
     rect.q.x = dev->width;
     rect.q.y = dev->height;
-    pdev->ctx = pdf14_ctx_new(&rect, dev->color_info.num_components,
-        pdev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, dev);
+    /* If we are reenabling the device dont create a new ctx. Bug 697456 */
+    if (pdev->ctx == NULL)
+        pdev->ctx = pdf14_ctx_new(&rect, dev->color_info.num_components,
+            pdev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, dev);
     if (pdev->ctx == NULL)
         return_error(gs_error_VMerror);
     pdev->free_devicen = true;
