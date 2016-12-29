@@ -721,15 +721,33 @@ gs_currentcpsimode(const gs_memory_t * mem)
     return libctx->CPSI_mode;
 }
 
-void
-gs_setscanconverter(gs_memory_t *mem, int converter)
+/* The edgebuffer based scanconverter can only cope with values of 0
+ * or 0.5 (i.e. 'center of pixel' or 'any part of pixel'). These
+ * are the only values required for correct behaviour according to
+ * the PDF and PS specs. Therefore, if we are using the edgebuffer
+ * based scan converter, force these values. */
+static void
+sanitize_fill_adjust(gs_gstate * pgs)
 {
-    gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
-
-    libctx->scanconverter = converter;
+    int scanconverter = gs_getscanconverter(pgs->memory);
+    if (scanconverter >= GS_SCANCONVERTER_EDGEBUFFER || (GS_SCANCONVERTER_DEFAULT_IS_EDGEBUFFER && scanconverter == GS_SCANCONVERTER_DEFAULT)) {
+        fixed adjust = (pgs->fill_adjust.x >= float2fixed(0.25) || pgs->fill_adjust.y >= float2fixed(0.25) ? fixed_half : 0);
+        pgs->fill_adjust.x = adjust;
+        pgs->fill_adjust.y = adjust;
+    }
 }
 
-/* currentcpsimode */
+void
+gs_setscanconverter(gs_gstate * gs, int converter)
+{
+    gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(gs->memory);
+
+    libctx->scanconverter = converter;
+
+    sanitize_fill_adjust(gs);
+}
+
+/* getscanconverter */
 int
 gs_getscanconverter(const gs_memory_t * mem)
 {
@@ -820,6 +838,9 @@ gs_setfilladjust(gs_gstate * pgs, double adjust_x, double adjust_y)
 
     pgs->fill_adjust.x = CLAMP_TO_HALF(adjust_x);
     pgs->fill_adjust.y = CLAMP_TO_HALF(adjust_y);
+
+    sanitize_fill_adjust(pgs);
+
     return 0;
 #undef CLAMP_TO_HALF
 }

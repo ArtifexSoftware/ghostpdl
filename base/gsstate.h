@@ -66,7 +66,7 @@ bool gs_currentcpsimode(const gs_memory_t *);
 void gs_setcpsimode(gs_memory_t *, bool);
 
 int gs_getscanconverter(const gs_memory_t *);
-void gs_setscanconverter(gs_memory_t *, int);
+void gs_setscanconverter(gs_gstate *, int);
 
 /* Device control */
 #include "gsdevice.h"

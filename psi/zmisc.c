@@ -440,7 +440,7 @@ zsetscanconverter(i_ctx_t *i_ctx_p)
     else
         return_op_typecheck(op);
 
-    gs_setscanconverter(imemory, val);
+    gs_setscanconverter(igs, val);
     pop(1);
     return 0;
 }

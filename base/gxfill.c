@@ -299,6 +299,7 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
     fill_options fo;
     line_list lst;
     int clipping = 0;
+    int scanconverter;
 
     *(const fill_options **)&lst.fo = &fo; /* break 'const'. */
     /*
@@ -434,7 +435,8 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
             fill_by_trapezoids = false; /* avoid double writing pixels */
     }
 
-    if (!fo.is_spotan && gs_getscanconverter(pdev->memory) >= GS_SCANCONVERTER_EDGEBUFFER) {
+    if (!fo.is_spotan && ((scanconverter = gs_getscanconverter(pdev->memory)) >= GS_SCANCONVERTER_EDGEBUFFER ||
+                          (scanconverter == GS_SCANCONVERTER_DEFAULT && GS_SCANCONVERTER_DEFAULT_IS_EDGEBUFFER))) {
         gx_edgebuffer eb = { 0 };
         if (fill_by_trapezoids && !lop_is_idempotent(lop))
             fill_by_trapezoids = 0;
