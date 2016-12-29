@@ -1741,7 +1741,7 @@ intersect(active_line *endp, active_line *alp, fixed y, fixed y1, fixed *p_y_new
     fixed dx_old = alp->x_current - endp->x_current;
     fixed dx_den = dx_old + endp->x_next - alp->x_next;
 
-    if (dx_den <= dx_old)
+    if (dx_den <= dx_old || dx_den == 0)
         return false; /* Intersection isn't possible. */
     dy = y1 - y;
     if_debug3('F', "[F]cross: dy=%g, dx_old=%g, dx_new=%g\n",
@@ -1750,7 +1750,7 @@ intersect(active_line *endp, active_line *alp, fixed y, fixed y1, fixed *p_y_new
     /* Do the computation in single precision */
     /* if the values are small enough. */
     y_new =
-        ((dy | dx_old) < 1L << (size_of(fixed) * 4 - 1) ?
+        (((ufixed)(dy | dx_old)) < (1L << (size_of(fixed) * 4 - 1)) ?
          dy * dx_old / dx_den :
          (INCR_EXPR(mq_cross), fixed_mult_quo(dy, dx_old, dx_den)))
         + y;
