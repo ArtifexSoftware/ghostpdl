@@ -527,6 +527,9 @@ pl_main(int argc, char *argv[]
 void
 pl_main_delete_instance(pl_main_instance_t *minst)
 {
+#ifdef PL_LEAK_CHECK
+    gs_memory_chunk_dump_memory(minst->memory);
+#endif
     gs_malloc_release(gs_memory_chunk_unwrap(minst->memory));
 }
 
