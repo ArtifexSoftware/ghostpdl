@@ -20,7 +20,7 @@
 #include "gsmemory.h"
 #include "gsstruct.h"
 #include "gserrors.h"
-#include "pltoputl.h"
+#include "plcursor.h"
 #include "gp.h"
 
 /* -------------- Read stream cursor operations ---------- */

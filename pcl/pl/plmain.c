@@ -42,7 +42,7 @@
 #include "plparse.h"
 #include "plmain.h"
 #include "pltop.h"
-#include "pltoputl.h"
+#include "plcursor.h"
 #include "plapi.h"
 #include "gslibctx.h"
 #include "gsicc_manage.h"

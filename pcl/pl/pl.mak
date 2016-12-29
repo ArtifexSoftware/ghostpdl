@@ -53,7 +53,7 @@ pl.config-clean:
 
 ########### Common definitions ######
 pltop_h=$(PLSRC)pltop.h $(scommon_h) $(gsgc_h)
-pltoputl_h=$(PLSRC)pltoputl.h $(scommon_h)
+plcursor_h=$(PLSRC)plcursor.h $(scommon_h)
 
 PL_SCALER=afs
 PCL_FONT_SCALER=$(PL_SCALER)
@@ -244,11 +244,11 @@ $(PLOBJ)pltop.$(OBJ): $(PLSRC)pltop.c $(AK) $(string__h)\
  $(gstypes_h) $(pltop_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)pltop.c $(PLO_)pltop.$(OBJ)
 
-$(PLOBJ)pltoputl.$(OBJ): $(PLSRC)pltoputl.c $(AK) $(string__h)\
- $(gdebug_h) $(gsmemory_h) $(gstypes_h) $(gsstruct_h) $(pltoputl_h) \
+$(PLOBJ)plcursor.$(OBJ): $(PLSRC)plcursor.c $(AK) $(string__h)\
+ $(gdebug_h) $(gsmemory_h) $(gstypes_h) $(gsstruct_h) $(plcursor_h) \
  $(gserrors_h) $(gp_h)\
  $(PL_MAK) $(MAKEDIRS)
-	$(PLCCC) $(PLSRC)pltoputl.c $(PLO_)pltoputl.$(OBJ)
+	$(PLCCC) $(PLSRC)plcursor.c $(PLO_)plcursor.$(OBJ)
 
 $(PLOBJ)plsymbol.$(OBJ): $(PLSRC)plsymbol.c $(AK) $(stdpre_h)\
  $(std_h) $(gdebug_h) $(plsymbol_h) $(plvocab_h) $(plvalue_h) \
@@ -286,7 +286,7 @@ $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(pllfont_h) $(AK)\
 	$(PLCCC) $(PLSRC)pllfont.c $(PLO_)pllfont.$(OBJ)
 
 pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plht.$(OBJ)
-pl_obj2=$(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pltop.$(OBJ) $(PLOBJ)pltoputl.$(OBJ)
+pl_obj2=$(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pltop.$(OBJ) $(PLOBJ)plcursor.$(OBJ)
 
 # shared objects - non font
 pl_obj=$(pl_obj1) $(pl_obj2)
@@ -351,7 +351,7 @@ $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(string__h)\
  $(gsmemory_h) $(gsmalloc_h) $(gsmchunk_h) $(gsstruct_h) $(gxalloc_h)\
  $(gsalloc_h) $(gsargs_h) $(gp_h) $(gsdevice_h) $(gslib_h) $(gslibctx_h)\
  $(gxdevice_h) $(gsparam_h) $(pjtop_h) $(plapi_h) $(plparse_h)\
- $(plmain_h) $(pltop_h) $(pltoputl_h) $(gsargs_h) $(dwtrace_h) $(vdtrace_h)\
+ $(plmain_h) $(pltop_h) $(plcursor_h) $(gsargs_h) $(dwtrace_h) $(vdtrace_h)\
  $(gxclpage_h) $(gdevprn_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plmain.c $(PLO_)plmain.$(OBJ)
 

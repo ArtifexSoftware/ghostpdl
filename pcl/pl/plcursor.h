@@ -14,10 +14,10 @@
 */
 
 
-/* pltoputl.h   Useful utilities for use w/pltop.c interface */
+/* plcursor.h   stream routines */
 
-#ifndef pltoputl_INCLUDED
-#  define pltoputl_INCLUDED
+#ifndef plcursor_INCLUDED
+#  define plcursor_INCLUDED
 
 #include "scommon.h"
 
@@ -58,4 +58,4 @@ void pl_cursor_renew_status(pl_top_cursor_t * cursor);
 /* the offset within the stream */
 long pl_cursor_position(pl_top_cursor_t * cursor);
 
-#endif /* pltoputl_INCLUDED */
+#endif /* plcursor_INCLUDED */
