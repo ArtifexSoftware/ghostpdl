@@ -191,8 +191,8 @@ static void coord(const char *str, fixed x, fixed y)
 static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int height, int *table, int *index)
 {
     int delta;
-    int isy = fixed2int(sy + fixed_half);
-    int iey = fixed2int(ey + fixed_half);
+    int isy = fixed2int(sy + fixed_half-1);
+    int iey = fixed2int(ey + fixed_half-1);
     int dirn = DIRN_UP;
 
 #ifdef DEBUG_SCAN_CONVERTER
@@ -210,55 +210,75 @@ static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int he
     if (isy > iey) {
         int t;
         t = isy; isy = iey; iey = t;
+        t = sy; sy = ey; ey = t;
         t = sx; sx = ex; ex = t;
         dirn = DIRN_DOWN;
     }
     /* So we now have to mark a line of intersects from (sx,sy) to (ex,ey) */
-    iey -= isy;
-    ex -= sx;
+    /* We know we're going to cross at least 1 'centre of pixel'
+     * scanline. Adjust us to the first. */
+    delta = int2fixed(isy) + fixed_half - sy;
+    assert(delta >= 0 && delta < fixed_1);
+    if (delta > 0)
+    {
+        int dx = ex - sx;
+        int dy = ey - sy;
+        int advance = (int)(((int64_t)dx * delta + (dy>>1)) / dy);
+        sx += advance;
+        sy += delta;
+    }
+    /* Adjust us back from any 'partial' scanline we cross at the
+     * end. */
+    delta = (ey - fixed_half) & (fixed_1-1);
+    assert(delta >= 0 && delta < fixed_1);
+    if (delta > 0)
+    {
+        int dx = ex - sx;
+        int dy = ey - sy;
+        int advance = (int)(((int64_t)dx * delta + (dy>>1)) / dy);
+        ex -= advance;
+        ey -= delta;
+    }
+    iey -= isy+1;
     isy -= base_y;
+    ex -= sx;
+    ey -= sy;
+    assert(ey >= 0);
 #ifdef DEBUG_SCAN_CONVERTER
     dlprintf2("    sy=%d ey=%d\n", isy, iey);
 #endif
+    assert(iey >= 0);
+    /* We always cross at least one scanline */
+    if (isy >= 0 && isy < height) {
+        int *row = &table[index[isy]];
+        *row = (*row)+1; /* Increment the count */
+        row[*row] = (sx&~1) | dirn;
+    }
+    if (iey == 0)
+        return;
     if (ex >= 0) {
         int x_inc, n_inc, f;
 
         /* We want to change sx by ex in iey steps. So each step, we add
          * ex/iey to sx. That's x_inc + n_inc/iey.
          */
-       x_inc = ex/iey;
-       n_inc = ex-(x_inc*iey);
-       f     = iey>>1;
-       /* Do a half step to start us off */
-       sx += x_inc>>1;
-       f  -= n_inc>>1;
-       if (f < 0) {
-           f += iey;
-           sx++;
-       }
-       if (x_inc & 1) {
-           f -= n_inc>>2;
-           if (f < 0) {
-               f += iey;
-               sx++;
-           }
-       }
-       delta = iey;
-       do {
-           int *row;
-
-           if (isy >= 0 && isy < height) {
-               row = &table[index[isy]];
-               *row = (*row)+1; /* Increment the count */
-               row[*row] = (sx&~1) | dirn;
-           }
-           isy++;
-           sx += x_inc;
-           f  -= n_inc;
-           if (f < 0) {
-               f += iey;
-               sx++;
-           }
+        x_inc = ex/iey;
+        n_inc = ex-(x_inc*iey);
+        f     = iey>>1;
+        delta = iey;
+        do {
+            isy++;
+            sx += x_inc;
+            f  -= n_inc;
+            if (f < 0) {
+                f += iey;
+                sx++;
+            }
+            if (isy >= 0 && isy < height) {
+                int *row = &table[index[isy]];
+                *row = (*row)+1; /* Increment the count */
+                row[*row] = (sx&~1) | dirn;
+            }
         } while (--delta);
     } else {
         int x_dec, n_dec, f;
@@ -270,29 +290,8 @@ static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int he
         x_dec = ex/iey;
         n_dec = ex-(x_dec*iey);
         f     = iey>>1;
-        /* Do a half step to start us off */
-        sx -= x_dec>>1;
-        f  -= n_dec>>1;
-        if (f < 0) {
-            f += iey;
-            sx--;
-        }
-        if (x_dec & 1) {
-            f -= n_dec>>2;
-            if (f < 0) {
-                f += iey;
-                sx--;
-            }
-        }
-        delta = iey;
+         delta = iey;
         do {
-            int *row;
-
-            if (isy >= 0 && isy < height) {
-                row = &table[index[isy]];
-                (*row)++; /* Increment the count */
-                row[*row] = (sx&~1) | dirn;
-            }
             isy++;
             sx -= x_dec;
             f  -= n_dec;
@@ -300,7 +299,12 @@ static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int he
                 f += iey;
                 sx--;
             }
-         } while (--delta);
+            if (isy >= 0 && isy < height) {
+                int *row = &table[index[isy]];
+                (*row)++; /* Increment the count */
+                row[*row] = (sx&~1) | dirn;
+            }
+        } while (--delta);
     }
 }
 
@@ -579,7 +583,7 @@ int gx_scan_convert(gx_device     * pdev,
     if (ibox.q.y <= ibox.p.y)
         return 0;
 
-    code = make_table(pdev, path, &ibox, 1, fixed_half, &scanlines, &index, &table);
+    code = make_table(pdev, path, &ibox, 1, fixed_half-1, &scanlines, &index, &table);
     if (code < 0)
         return code;
 
@@ -1519,57 +1523,78 @@ static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int
     if (isy > iey) {
         int t;
         t = isy; isy = iey; iey = t;
+        t = sy; sy = ey; ey = t;
         t = sx; sx = ex; ex = t;
         dirn = DIRN_DOWN;
     }
     id = (id<<1) | dirn;
     /* So we now have to mark a line of intersects from (sx,sy) to (ex,ey) */
-    iey -= isy;
-    ex -= sx;
+    /* We know we're going to cross at least 1 'centre of pixel'
+     * scanline. Adjust us to the first. */
+    delta = int2fixed(isy) + fixed_half - sy;
+    assert(delta >= 0 && delta < fixed_1);
+    if (delta > 0)
+    {
+        int dx = ex - sx;
+        int dy = ey - sy;
+        int advance = (int)(((int64_t)dx * delta + (dy>>1)) / dy);
+        sx += advance;
+        sy += delta;
+    }
+    /* Adjust us back from any 'partial' scanline we cross at the
+     * end. */
+    delta = (ey - fixed_half) & (fixed_1-1);
+    assert(delta >= 0 && delta < fixed_1);
+    if (delta > 0)
+    {
+        int dx = ex - sx;
+        int dy = ey - sy;
+        int advance = (int)(((int64_t)dx * delta + (dy>>1)) / dy);
+        ex -= advance;
+        ey -= delta;
+    }
+    iey -= isy+1;
     isy -= base_y;
+    ex -= sx;
+    ey -= sy;
+    assert(ey >= 0);
 #ifdef DEBUG_SCAN_CONVERTER
     dlprintf2("    sy=%d ey=%d\n", isy, iey);
 #endif
+    assert(iey >= 0);
+    /* We always cross at least one scanline */
+    if (isy >= 0 && isy < height) {
+        int *row = &table[index[isy]];
+        *row = (*row)+1; /* Increment the count */
+        row[*row * 2 - 1] = sx;
+        row[*row * 2    ] = id;
+    }
+    if (iey == 0)
+        return;
     if (ex >= 0) {
         int x_inc, n_inc, f;
 
         /* We want to change sx by ex in iey steps. So each step, we add
          * ex/iey to sx. That's x_inc + n_inc/iey.
          */
-       x_inc = ex/iey;
-       n_inc = ex-(x_inc*iey);
-       f     = iey>>1;
-       /* Do a half step to start us off */
-       sx += x_inc>>1;
-       f  -= n_inc>>1;
-       if (f < 0) {
-           f += iey;
-           sx++;
-       }
-       if (x_inc & 1) {
-           f -= n_inc>>2;
-           if (f < 0) {
-               f += iey;
-               sx++;
-           }
-       }
-       delta = iey;
-       do {
-           int *row;
-
-           if (isy >= 0 && isy < height) {
-               row = &table[index[isy]];
-               *row = (*row)+1; /* Increment the count */
-               row[*row * 2 - 1] = sx;
-               row[*row * 2    ] = id;
-           }
-           isy++;
-           sx += x_inc;
-           f  -= n_inc;
-           if (f < 0) {
-               f += iey;
-               sx++;
-           }
+        x_inc = ex/iey;
+        n_inc = ex-(x_inc*iey);
+        f     = iey>>1;
+        delta = iey;
+        do {
+            isy++;
+            sx += x_inc;
+            f  -= n_inc;
+            if (f < 0) {
+                f += iey;
+                sx++;
+            }
+            if (isy >= 0 && isy < height) {
+                int * row = &table[index[isy]];
+                *row = (*row)+1; /* Increment the count */
+                row[*row * 2 - 1] = sx;
+                row[*row * 2    ] = id;
+            }
         }
         while (--delta);
     } else {
@@ -1582,37 +1607,20 @@ static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int
         x_dec = ex/iey;
         n_dec = ex-(x_dec*iey);
         f     = iey>>1;
-        /* Do a half step to start us off */
-        sx -= x_dec>>1;
-        f  -= n_dec>>1;
-        if (f < 0) {
-            f += iey;
-            sx--;
-        }
-        if (x_dec & 1) {
-            f -= n_dec>>2;
-            if (f < 0)
-            {
-                f += iey;
-                sx--;
-            }
-        }
         delta = iey;
         do {
-            int *row;
-
-            if (isy >= 0 && isy < height) {
-                row = &table[index[isy]];
-                (*row)++; /* Increment the count */
-                row[*row * 2 - 1] = sx;
-                row[*row * 2    ] = id;
-            }
             isy++;
             sx -= x_dec;
             f  -= n_dec;
             if (f < 0) {
                 f += iey;
                 sx--;
+            }
+            if (isy >= 0 && isy < height) {
+                int *row = &table[index[isy]];
+                (*row)++; /* Increment the count */
+                row[*row * 2 - 1] = sx;
+                row[*row * 2    ] = id;
             }
          }
          while (--delta);
@@ -1674,7 +1682,7 @@ int gx_scan_convert_tr(gx_device     * pdev,
     if (ibox.q.y <= ibox.p.y)
         return 0;
 
-    code = make_table(pdev, path, &ibox, 2, fixed_half, &scanlines, &index, &table);
+    code = make_table(pdev, path, &ibox, 2, fixed_half-1, &scanlines, &index, &table);
     if (code < 0)
         return code;
 
@@ -1884,8 +1892,6 @@ rowdifferent:{}
         } else {
             gs_fixed_edge le;
             gs_fixed_edge re;
-            le.start.y = re.start.y = int2fixed(edgebuffer->base+i);
-            le.end.y   = re.end.y   = int2fixed(edgebuffer->base+j)-1;
 
 #ifdef DEBUG_OUTPUT_SC_AS_PS
 #ifdef DEBUG_OUTPUT_SC_AS_PS_TRAPS_AS_RECTS
@@ -1918,12 +1924,14 @@ rowdifferent:{}
 #endif
 #endif
 
+            le.start.y = re.start.y = int2fixed(edgebuffer->base+i) + fixed_half;
+            le.end.y   = re.end.y   = int2fixed(edgebuffer->base+j) - (fixed_half-1);
             row2    = &edgebuffer->table[edgebuffer->index[j-1]+1];
             while (rowlen > 0) {
-                le.start.x = row[0] - fixed_half;
-                re.start.x = row[2] + fixed_half;
-                le.end.x   = row2[0] - fixed_half;
-                re.end.x   = row2[2] + fixed_half;
+                le.start.x = row[0];
+                re.start.x = row[2];
+                le.end.x   = row2[0];
+                re.end.x   = row2[2];
                 row += 4;
                 row2 += 4;
                 rowlen -= 2;
