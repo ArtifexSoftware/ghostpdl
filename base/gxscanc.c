@@ -173,6 +173,21 @@ gx_edgebuffer_print(gx_edgebuffer * edgebuffer)
 }
 #endif
 
+#ifdef DEBUG_OUTPUT_SC_AS_PS
+static void coord(const char *str, fixed x, fixed y)
+{
+    if (x > 0)
+        dlprintf1(" 16#%x ", x);
+    else
+        dlprintf1("0 16#%x sub ", -x);
+    if (y > 0)
+        dlprintf1(" 16#%x ", y);
+    else
+        dlprintf1("0 16#%x sub ", -y);
+    dlprintf1("%s %%PS\n", str);
+}
+#endif
+
 static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int height, int *table, int *index)
 {
     int delta;
@@ -185,8 +200,8 @@ static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int he
 #endif
 #ifdef DEBUG_OUTPUT_SC_AS_PS
     dlprintf("0.001 setlinewidth 0 0 0 setrgbcolor %%PS\n");
-    dlprintf2("16#%x 16#%x moveto %%PS\n", sx, sy);
-    dlprintf2("16#%x 16#%x lineto %%PS\n", ex, ey);
+    coord("moveto", sx, sy);
+    coord("lineto", ex, ey);
     dlprintf("stroke %%PS\n");
 #endif
 
@@ -718,6 +733,14 @@ gx_fill_edgebuffer(gx_device       * pdev,
             right = fixed2int(right + fixed_half);
             right -= left;
             if (right > 0) {
+#ifdef DEBUG_OUTPUT_SC_AS_PS
+                dlprintf("0.001 setlinewidth 1 0.5 0 setrgbcolor %% orange %%PS\n");
+                coord("moveto", int2fixed(left), int2fixed(edgebuffer->base+i));
+                coord("lineto", int2fixed(left+right), int2fixed(edgebuffer->base+i));
+                coord("lineto", int2fixed(left+right), int2fixed(edgebuffer->base+i+1));
+                coord("lineto", int2fixed(left), int2fixed(edgebuffer->base+i+1));
+                dlprintf("closepath stroke %%PS\n");
+#endif
                 if (log_op < 0)
                     code = dev_proc(pdev, fill_rectangle)(pdev, left, edgebuffer->base+i, right, 1, pdevc->colors.pure);
                 else
@@ -877,8 +900,8 @@ static void mark_line_app(cursor *cr, fixed sx, fixed sy, fixed ex, fixed ey)
 #endif
 #ifdef DEBUG_OUTPUT_SC_AS_PS
     dlprintf("0.001 setlinewidth 0 0 0 setrgbcolor %%PS\n");
-    dlprintf2("16#%x 16#%x moveto %%PS\n", sx, sy);
-    dlprintf2("16#%x 16#%x lineto %%PS\n", ex, ey);
+    coord("moveto", sx, sy);
+    coord("lineto", ex, ey);
     dlprintf("stroke %%PS\n");
 #endif
 
@@ -1477,8 +1500,8 @@ gx_edgebuffer_print_tr(gx_edgebuffer * edgebuffer)
 static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int height, int *table, int *index, int id)
 {
     int delta;
-    int isy = fixed2int(sy + fixed_half);
-    int iey = fixed2int(ey + fixed_half);
+    int isy = fixed2int(sy + fixed_half-1);
+    int iey = fixed2int(ey + fixed_half-1);
     int dirn = DIRN_UP;
 
 #ifdef DEBUG_SCAN_CONVERTER
@@ -1486,8 +1509,8 @@ static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int
 #endif
 #ifdef DEBUG_OUTPUT_SC_AS_PS
     dlprintf("0.001 setlinewidth 0 0 0 setrgbcolor %%PS\n");
-    dlprintf2("16#%x 16#%x moveto %%PS\n", sx, sy);
-    dlprintf2("16#%x 16#%x lineto %%PS\n", ex, ey);
+    coord("moveto", sx, sy);
+    coord("lineto", ex, ey);
     dlprintf("stroke %%PS\n");
 #endif
 
@@ -1794,6 +1817,11 @@ gx_fill_edgebuffer_tr(gx_device       * pdev,
 {
     int i, j, code;
 
+#ifdef DEBUG_SCAN_CONVERTER
+    dlprintf("Before filling\n");
+    gx_edgebuffer_print_tr(edgebuffer);
+#endif
+
     for (i=0; i < edgebuffer->height; ) {
         int *row    = &edgebuffer->table[edgebuffer->index[i]];
         int  rowlen = *row++;
@@ -1838,11 +1866,11 @@ rowdifferent:{}
                 right -= left;
                 if (right > 0) {
 #ifdef DEBUG_OUTPUT_SC_AS_PS
-                    dlprintf("0.001 setlinewidth 1 0 0 setrgbcolor %%PS\n");
-                    dlprintf2("16#%x 16#%x moveto %%PS\n", int2fixed(left), int2fixed(edgebuffer->base+i));
-                    dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left+right), int2fixed(edgebuffer->base+i));
-                    dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left+right), int2fixed(edgebuffer->base+i+1));
-                    dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left), int2fixed(edgebuffer->base+i+1));
+                    dlprintf("0.001 setlinewidth 1 0 1 setrgbcolor %% purple %%PS\n");
+                    coord("moveto", int2fixed(left), int2fixed(edgebuffer->base+i));
+                    coord("lineto", int2fixed(left+right), int2fixed(edgebuffer->base+i));
+                    coord("lineto", int2fixed(left+right), int2fixed(edgebuffer->base+i+1));
+                    coord("lineto", int2fixed(left), int2fixed(edgebuffer->base+i+1));
                     dlprintf("closepath stroke %%PS\n");
 #endif
                     if (log_op < 0)
@@ -1858,6 +1886,38 @@ rowdifferent:{}
             gs_fixed_edge re;
             le.start.y = re.start.y = int2fixed(edgebuffer->base+i);
             le.end.y   = re.end.y   = int2fixed(edgebuffer->base+j)-1;
+
+#ifdef DEBUG_OUTPUT_SC_AS_PS
+#ifdef DEBUG_OUTPUT_SC_AS_PS_TRAPS_AS_RECTS
+            int k;
+            for (k = i; k < j; k++)
+            {
+                int row2len;
+                int left, right;
+                row2    = &edgebuffer->table[edgebuffer->index[k]];
+                row2len = *row2++;
+                while (row2len > 0) {
+                    left = row2[0];
+                    right = row2[2];
+                    row2 += 4;
+                    row2len -= 2;
+
+                    left  = fixed2int(left + fixed_half);
+                    right = fixed2int(right + fixed_half);
+                    right -= left;
+                    if (right > 0) {
+                        dlprintf("0.001 setlinewidth 1 0 0.5 setrgbcolor %%PS\n");
+                        coord("moveto", int2fixed(left), int2fixed(edgebuffer->base+k));
+                        coord("lineto", int2fixed(left+right), int2fixed(edgebuffer->base+k));
+                        coord("lineto", int2fixed(left+right), int2fixed(edgebuffer->base+k+1));
+                        coord("lineto", int2fixed(left), int2fixed(edgebuffer->base+k+1));
+                        dlprintf("closepath stroke %%PS\n");
+                    }
+                }
+            }
+#endif
+#endif
+
             row2    = &edgebuffer->table[edgebuffer->index[j-1]+1];
             while (rowlen > 0) {
                 le.start.x = row[0] - fixed_half;
@@ -1874,11 +1934,11 @@ rowdifferent:{}
                 assert(re.end.x >= le.end.x);
 
 #ifdef DEBUG_OUTPUT_SC_AS_PS
-                dlprintf("0.001 setlinewidth 0 1 0 setrgbcolor %%PS\n");
-                dlprintf2("16#%x 16#%x moveto %%PS\n", le.start.x, le.start.y);
-                dlprintf2("16#%x 16#%x lineto %%PS\n", le.end.x, le.end.y);
-                dlprintf2("16#%x 16#%x lineto %%PS\n", re.end.x, re.end.y);
-                dlprintf2("16#%x 16#%x lineto %%PS\n", re.start.x, re.start.y);
+                dlprintf("0.001 setlinewidth 0 1 1 setrgbcolor %%cyan %%PS\n");
+                coord("moveto", le.start.x, le.start.y);
+                coord("lineto", le.end.x, le.end.y);
+                coord("lineto", re.end.x, re.end.y);
+                coord("lineto", re.start.x, re.start.y);
                 dlprintf("closepath stroke %%PS\n");
 #endif
                 code = dev_proc(pdev, fill_trapezoid)(
@@ -2106,8 +2166,8 @@ static void mark_line_tr_app(cursor_tr *cr, fixed sx, fixed sy, fixed ex, fixed 
 #endif
 #ifdef DEBUG_OUTPUT_SC_AS_PS
     dlprintf("0.001 setlinewidth 0 0 0 setrgbcolor %%PS\n");
-    dlprintf2("16#%x 16#%x moveto %%PS\n", sx, sy);
-    dlprintf2("16#%x 16#%x lineto %%PS\n", ex, ey);
+    coord("moveto", sx, sy);
+    coord("lineto", ex, ey);
     dlprintf("stroke %%PS\n");
 #endif
 
@@ -2756,11 +2816,11 @@ rowdifferent:{}
             right -= left;
             if (right > 0) {
 #ifdef DEBUG_OUTPUT_SC_AS_PS
-                dlprintf("0.001 setlinewidth 1 0 0 setrgbcolor %%PS\n");
-                dlprintf2("16#%x 16#%x moveto %%PS\n", int2fixed(left), int2fixed(edgebuffer->base+i));
-                dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left+right), int2fixed(edgebuffer->base+i));
-                dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left+right), int2fixed(edgebuffer->base+i+1));
-                dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left), int2fixed(edgebuffer->base+i+1));
+                dlprintf("0.001 setlinewidth 1 0 0 setrgbcolor %%red %%PS\n");
+                coord("moveto", int2fixed(left), int2fixed(edgebuffer->base+i));
+                coord("lineto", int2fixed(left+right), int2fixed(edgebuffer->base+i));
+                coord("lineto", int2fixed(left+right), int2fixed(edgebuffer->base+i+1));
+                coord("lineto", int2fixed(left), int2fixed(edgebuffer->base+i+1));
                 dlprintf("closepath stroke %%PS\n");
 #endif
                 if (log_op < 0)
@@ -2851,11 +2911,11 @@ rowdifferent:{}
                 assert(re.end.y >= ytop - (fixed_half - 1));
 
 #ifdef DEBUG_OUTPUT_SC_AS_PS
-                dlprintf("0.001 setlinewidth 0 1 0 setrgbcolor %%PS\n");
-                dlprintf2("16#%x 16#%x moveto %%PS\n", le.start.x, le.start.y);
-                dlprintf2("16#%x 16#%x lineto %%PS\n", le.end.x, le.end.y);
-                dlprintf2("16#%x 16#%x lineto %%PS\n", re.end.x, re.end.y);
-                dlprintf2("16#%x 16#%x lineto %%PS\n", re.start.x, re.start.y);
+                dlprintf("0.001 setlinewidth 0 1 0 setrgbcolor %% green %%PS\n");
+                coord("moveto", le.start.x, le.start.y);
+                coord("lineto", le.end.x, le.end.y);
+                coord("lineto", re.end.x, re.end.y);
+                coord("lineto", re.start.x, re.start.y);
                 dlprintf("closepath stroke %%PS\n");
 #endif
                 code = dev_proc(pdev, fill_trapezoid)(
@@ -2888,11 +2948,11 @@ rowdifferent:{}
                 right -= left;
                 if (right > 0) {
 #ifdef DEBUG_OUTPUT_SC_AS_PS
-                    dlprintf("0.001 setlinewidth 0 0 1 setrgbcolor %%PS\n");
-                    dlprintf2("16#%x 16#%x moveto %%PS\n", int2fixed(left), int2fixed(edgebuffer->base+j-1));
-                    dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left+right), int2fixed(edgebuffer->base+j-1));
-                    dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left+right), int2fixed(edgebuffer->base+j));
-                    dlprintf2("16#%x 16#%x lineto %%PS\n", int2fixed(left), int2fixed(edgebuffer->base+j));
+                    dlprintf("0.001 setlinewidth 0 0 1 setrgbcolor %% blue %%PS\n");
+                    coord("moveto", int2fixed(left), int2fixed(edgebuffer->base+j-1));
+                    coord("lineto", int2fixed(left+right), int2fixed(edgebuffer->base+j-1));
+                    coord("lineto", int2fixed(left+right), int2fixed(edgebuffer->base+j));
+                    coord("lineto", int2fixed(left), int2fixed(edgebuffer->base+j));
                     dlprintf("closepath stroke %%PS\n");
 #endif
                     if (log_op < 0)
