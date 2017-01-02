@@ -182,10 +182,6 @@ static pl_interp_implementation_t const
 /* Process the options on the command line. */
 static FILE *pl_main_arg_fopen(const char *fname, void *ignore_data);
 
-/* Initialize the instance parameters. */
-pl_main_instance_t *
-pl_main_alloc_instance(gs_memory_t * memory);
-
 void pl_main_reinit_instance(pl_main_instance_t * pmi);
 
 /* Process the options on the command line, including making the
@@ -235,6 +231,13 @@ pl_program_family_name(char **str)
 }
 
 int
+pl_main_set_display_callback(pl_main_instance_t *inst, void *callback)
+{
+    inst->disp = callback;
+    return 0;
+}
+
+int
 pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
 {
     gs_memory_t *mem = inst->memory;
@@ -254,7 +257,6 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
     if (gs_lib_init1(mem) < 0)
         return -1;
 
-    /* Create a memory allocator to allocate various states from */
     {
         /*
          * gs_iodev_init has to be called here (late), rather than
@@ -599,7 +601,7 @@ get_interpreter_from_memory(const gs_memory_t * mem)
     return universe->curr_instance;
 }
 
-static pl_main_instance_t *
+pl_main_instance_t *
 pl_main_get_instance(const gs_memory_t *mem)
 {
     return mem->gs_lib_ctx->top_of_system;
@@ -935,8 +937,8 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     gs_c_param_list *params = &pmi->params;
     
     gs_c_param_list_write_more(params);
-    while ((code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0 && *arg == '-') { /* just - read from stdin */
-        if (arg[1] == '\0')
+    while ((code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0 && *arg == '-') {
+        if (arg[1] == '\0') /* not an option, stdin */
             break;
         arg += 2;
         switch (arg[-1]) {
@@ -1430,11 +1432,20 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     gs_c_param_list_read(params);
     pl_top_create_device(pmi, -1, true); /* create default device if needed */
 
-    /* The last argument wasn't a switch filename else NULL.  NB process many files. */
-    if (arg)
-        return pl_main_run_file(pmi, arg);
-    else
+    /* No file names to process.*/
+    if (!arg)
         return 0;
+
+    code = arg_push_string(pal, arg, true /* parsed */);
+    if (code < 0)
+        return code;
+    
+    while (arg_next(pal, (const char **)&arg, pmi->memory) > 0) {
+        code = pl_main_run_file(pmi, arg);
+        if (code < 0)
+            return code;
+    }
+    return 0;
 }
 
 /* Find default language implementation */

@@ -14,9 +14,28 @@
 */
 
 #include "plapi.h"
+#include "gserrors.h"
 
 int
 main(int argc, char *argv[])
 {
-    return pl_main(argc, argv);
+    int code, code1;
+    void *minst;
+    
+    code = plapi_new_instance(&minst, (void *)0);
+    if (code < 0)
+	return 1;
+
+    if (code == 0)
+        code = plapi_init_with_args(minst, argc, argv);
+
+    code1 = plapi_exit(minst);
+    if ((code == 0) || (code == gs_error_Quit))
+	code = code1;
+
+    plapi_delete_instance(minst);
+
+    if ((code == 0) || (code == gs_error_Quit))
+	return 0;
+    return 1;
 }

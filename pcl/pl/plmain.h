@@ -20,17 +20,9 @@
 #ifndef plmain_INCLUDED
 #  define plmain_INCLUDED
 
-#include "gsargs.h"
-#include "gsgc.h"
+#include "stdpre.h"
+#include "gsmemory.h"
 #include "pltop.h"
-
-/*
- * Define the parameters for running the interpreter.
- */
-#ifndef gx_device_DEFINED
-#  define gx_device_DEFINED
-typedef struct gx_device_s gx_device;
-#endif
 
 typedef struct pl_main_instance_s pl_main_instance_t;
 
@@ -60,11 +52,13 @@ int pl_finish_page(pl_main_instance_t * pmi, gs_gstate * pgs,
 /* common routine to set icc parameters usually passed from the command line. */
 int pl_set_icc_params(const gs_memory_t *mem, gs_gstate *pgs);
 
-
+pl_main_instance_t *pl_main_alloc_instance(gs_memory_t * memory);
+int pl_main_set_display_callback(pl_main_instance_t *inst, void *callback);
 int pl_main_run_file(pl_main_instance_t *minst, const char *filename);
 int pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[]);
 void pl_main_delete_instance(pl_main_instance_t *minst);
 int pl_to_exit(const gs_memory_t *mem);
+
 
 /* instance accessors */
 bool pl_main_get_interpolate(const gs_memory_t *mem);
@@ -73,6 +67,7 @@ bool pl_main_get_page_set_on_command_line(const gs_memory_t *mem);
 bool pl_main_get_res_set_on_command_line(const gs_memory_t *mem);
 bool pl_main_get_high_level_device(const gs_memory_t *mem);
 int pl_main_get_scanconverter(const gs_memory_t *mem);
+pl_main_instance_t *pl_main_get_instance(const gs_memory_t *mem);
 
 /* retrieve the PJL instance so languages can query PJL. */
 bool pl_main_get_pjl_from_args(const gs_memory_t *mem); /* pjl was passed on the command line */

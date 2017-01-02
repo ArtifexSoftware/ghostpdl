@@ -79,13 +79,18 @@ pl_wchar_to_utf8(char *out, const void *in);
 GSDLLEXPORT int GSDLLAPI
 pl_program_family_name(char **str);
 
-/* Run this just like you would pcl6 on the command line.
- *
- * Returns:	  0	success
- *		< 0	error code
- */
 GSDLLEXPORT int GSDLLAPI pl_main(int argc, char *argv[]);
 
 GSDLLEXPORT int GSDLLAPI pl_main_aux(int argc, char *argv[], void *disp);
+
+GSDLLEXPORT int GSDLLAPI plapi_run_file(void *instance, const char *file_name);
+
+GSDLLEXPORT int GSDLLAPI plapi_exit(void *instance);
+
+GSDLLEXPORT int GSDLLAPI plapi_init_with_args(void *instance, int argc, char **argv);
+
+GSDLLEXPORT int GSDLLAPI plapi_new_instance(void **instance, void *caller_handle);
+
+GSDLLEXPORT int GSDLLAPI plapi_delete_instance(void *instance);
 
 #endif /* plapi_INCLUDED */
