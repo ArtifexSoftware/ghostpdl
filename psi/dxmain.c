@@ -1182,10 +1182,10 @@ int main(int argc, char *argv[])
             DISPLAY_COLORS_RGB | DISPLAY_ALPHA_NONE | DISPLAY_DEPTH_8 |
             DISPLAY_BIGENDIAN | DISPLAY_TOPFIRST);
     nargc = argc + 1;
-    nargv = (char **)malloc((nargc + 1) * sizeof(char *));
+    nargv = (char **)malloc(nargc * sizeof(char *));
     nargv[0] = argv[0];
     nargv[1] = dformat;
-    memcpy(&nargv[2], &argv[1], argc * sizeof(char *));
+    memcpy(&nargv[2], &argv[1], (argc-1) * sizeof(char *));
 
     /* run Ghostscript */
     if ((code = gsapi_new_instance(&instance, NULL)) == 0) {

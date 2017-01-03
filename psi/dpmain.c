@@ -1029,10 +1029,10 @@ main(int argc, char *argv[])
         fprintf(stdout, "%s\n", dformat);
 #endif
     nargc = argc + 1;
-    nargv = (char **)malloc((nargc + 1) * sizeof(char *));
+    nargv = (char **)malloc(nargc * sizeof(char *));
     nargv[0] = argv[0];
     nargv[1] = dformat;
-    memcpy(&nargv[2], &argv[1], argc * sizeof(char *));
+    memcpy(&nargv[2], &argv[1], (argc-1) * sizeof(char *));
 
     if ( (code = gsdll.new_instance(&instance, NULL)) == 0) {
         gsdll.set_stdio(instance, gsdll_stdin, gsdll_stdout, gsdll_stderr);

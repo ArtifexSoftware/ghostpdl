@@ -316,11 +316,11 @@ int new_main(int argc, char *argv[])
         sprintf(dformat, "-dDisplayFormat=%d", format);
     }
     nargc = argc + 2;
-    nargv = (char **)malloc((nargc + 1) * sizeof(char *));
+    nargv = (char **)malloc(nargc * sizeof(char *));
     nargv[0] = argv[0];
     nargv[1] = dformat;
     nargv[2] = ddpi;
-    memcpy(&nargv[3], &argv[1], argc * sizeof(char *));
+    memcpy(&nargv[3], &argv[1], (argc-1) * sizeof(char *));
 
 #if defined(_MSC_VER) || defined(__BORLANDC__)
     __try {

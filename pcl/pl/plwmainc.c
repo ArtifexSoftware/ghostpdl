@@ -420,11 +420,11 @@ main_utf8(int argc, char *argv[])
                 DISPLAY_DEPTH_4 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
         sprintf(dformat, "-dDisplayFormat=%d", format);
         nargc = argc + 2;
-        nargv = (char **)malloc((nargc + 1) * sizeof(char *));
+        nargv = (char **)malloc(nargc * sizeof(char *));
         nargv[0] = argv[0];
         nargv[1] = dformat;
         nargv[2] = ddpi;
-        memcpy(&nargv[3], &argv[1], argc * sizeof(char *));
+        memcpy(&nargv[3], &argv[1], (argc-1) * sizeof(char *));
     }
 
     code = pl_main_aux(nargc, nargv, &display);
