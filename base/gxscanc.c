@@ -229,20 +229,18 @@ static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int he
     }
     /* Adjust us back from any 'partial' scanline we cross at the
      * end. */
+    ex -= sx;
+    ey -= sy;
     delta = (ey - fixed_half) & (fixed_1-1);
     assert(delta >= 0 && delta < fixed_1);
     if (delta > 0)
     {
-        int dx = ex - sx;
-        int dy = ey - sy;
-        int advance = (int)(((int64_t)dx * delta + (dy>>1)) / dy);
+        int advance = (int)(((int64_t)ex * delta + (ey>>1)) / ey);
         ex -= advance;
         ey -= delta;
     }
     iey -= isy+1;
     isy -= base_y;
-    ex -= sx;
-    ey -= sy;
     assert(ey >= 0);
 #ifdef DEBUG_SCAN_CONVERTER
     dlprintf2("    sy=%d ey=%d\n", isy, iey);
@@ -1543,20 +1541,18 @@ static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int
     }
     /* Adjust us back from any 'partial' scanline we cross at the
      * end. */
+    ex -= sx;
+    ey -= sy;
     delta = (ey - fixed_half) & (fixed_1-1);
     assert(delta >= 0 && delta < fixed_1);
     if (delta > 0)
     {
-        int dx = ex - sx;
-        int dy = ey - sy;
-        int advance = (int)(((int64_t)dx * delta + (dy>>1)) / dy);
+        int advance = (int)(((int64_t)ex * delta + (ey>>1)) / ey);
         ex -= advance;
         ey -= delta;
     }
     iey -= isy+1;
     isy -= base_y;
-    ex -= sx;
-    ey -= sy;
     assert(ey >= 0);
 #ifdef DEBUG_SCAN_CONVERTER
     dlprintf2("    sy=%d ey=%d\n", isy, iey);
