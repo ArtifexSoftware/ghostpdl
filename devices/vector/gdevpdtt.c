@@ -3419,16 +3419,15 @@ pdf_text_process(gs_text_enum_t *pte)
         {
             gs_show_enum *penum = (gs_show_enum *)pte_default;
             int save_can_cache = penum->can_cache;
-            const gs_color_space *pcs;
-            const gs_client_color *pcc;
-            gs_gstate * pgs = pte->pgs;
 
             /* If we are using a high level pattern, we must not use the cached character, as the
              * cache hasn't seen the pattern. So set can_cache to < 0, which prevents us consulting
              * the cache, or storing the result in it.
+             * We actually don't want to use the cache for any Type 3 font where we're trying to
+             * capture the charproc - if we want to have a chance of capturing the charproc, we
+             * need it to execute, and not use a cache entry.
              */
-            if (gx_hld_get_color_space_and_ccolor(pgs, (const gx_drawing_color *)pgs->color[0].dev_color, &pcs, &pcc) == pattern_color_space)
-                penum->can_cache = -1;
+            penum->can_cache = -1;
             pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
             code = gs_text_process(pte_default);
 
