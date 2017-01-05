@@ -206,13 +206,13 @@ GSDLLEXPORT int GSDLLAPI gsapi_set_display_callback(
  * gsapi_init_with_args().
  */
 GSDLLEXPORT int GSDLLAPI
-gsapi_set_default_device_list(void *lib, char *list, int listlen);
+gsapi_set_default_device_list(void *instance, char *list, int listlen);
 
 /* Returns a pointer to the current default device string
  * *Must* be called after gsapi_new_instance().
  */
 GSDLLEXPORT int GSDLLAPI
-gsapi_get_default_device_list(void *lib, char **list, int *listlen);
+gsapi_get_default_device_list(void *instance, char **list, int *listlen);
 
 /* Set the encoding used for the args. By default we assume
  * 'local' encoding. For windows this equates to whatever the current
@@ -319,9 +319,9 @@ typedef int (GSDLLAPIPTR PFN_gsapi_set_poll)(void *instance,
 typedef int (GSDLLAPIPTR PFN_gsapi_set_display_callback)(
     void *instance, display_callback *callback);
 typedef int (GSDLLAPIPTR PFN_gsapi_set_default_device_list)(
-    void *lib, char *list, int listlen);
+    void *instance, char *list, int listlen);
 typedef int (GSDLLAPIPTR PFN_gsapi_get_default_device_list)(
-    void *lib, char **list, int *listlen);
+    void *instance, char **list, int *listlen);
 typedef int (GSDLLAPIPTR PFN_gsapi_init_with_args)(
     void *instance, int argc, char **argv);
 #ifdef __WIN32__

@@ -138,9 +138,9 @@ gsapi_new_instance(void **pinstance, void *caller_handle)
  * we use the default instance only once.
  */
 GSDLLEXPORT void GSDLLAPI
-gsapi_delete_instance(void *lib)
+gsapi_delete_instance(void *instance)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if ((ctx != NULL)) {
         gs_main_instance *minst = get_minst_from_memory(ctx->memory);
 
@@ -162,13 +162,13 @@ gsapi_delete_instance(void *lib)
 
 /* Set the callback functions for stdio */
 GSDLLEXPORT int GSDLLAPI
-gsapi_set_stdio(void *lib,
+gsapi_set_stdio(void *instance,
     int(GSDLLCALL *stdin_fn)(void *caller_handle, char *buf, int len),
     int(GSDLLCALL *stdout_fn)(void *caller_handle, const char *str, int len),
     int(GSDLLCALL *stderr_fn)(void *caller_handle, const char *str, int len))
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
-    if (lib == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
         return gs_error_Fatal;
     ctx->stdin_fn = stdin_fn;
     ctx->stdout_fn = stdout_fn;
@@ -178,11 +178,11 @@ gsapi_set_stdio(void *lib,
 
 /* Set the callback function for polling */
 GSDLLEXPORT int GSDLLAPI
-gsapi_set_poll(void *lib,
+gsapi_set_poll(void *instance,
     int(GSDLLCALL *poll_fn)(void *caller_handle))
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
-    if (lib == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
         return gs_error_Fatal;
     ctx->poll_fn = poll_fn;
     return 0;
@@ -190,10 +190,10 @@ gsapi_set_poll(void *lib,
 
 /* Set the display callback structure */
 GSDLLEXPORT int GSDLLAPI
-gsapi_set_display_callback(void *lib, display_callback *callback)
+gsapi_set_display_callback(void *instance, display_callback *callback)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
-    if (lib == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
         return gs_error_Fatal;
     get_minst_from_memory(ctx->memory)->display = callback;
     /* not in a language switched build */
@@ -202,19 +202,19 @@ gsapi_set_display_callback(void *lib, display_callback *callback)
 
 /* Set/Get the default device list string */
 GSDLLEXPORT int GSDLLAPI
-gsapi_set_default_device_list(void *lib, char *list, int listlen)
+gsapi_set_default_device_list(void *instance, char *list, int listlen)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
-    if (lib == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
         return gs_error_Fatal;
     return gs_lib_ctx_set_default_device_list(ctx->memory, list, listlen);
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_get_default_device_list(void *lib, char **list, int *listlen)
+gsapi_get_default_device_list(void *instance, char **list, int *listlen)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
-    if (lib == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
         return gs_error_Fatal;
     return gs_lib_ctx_get_default_device_list(ctx->memory, list, listlen);
 }
@@ -305,10 +305,10 @@ static int clean8bit_get_codepoint(FILE *file, const char **astr)
 
 /* Initialise the interpreter */
 GSDLLEXPORT int GSDLLAPI
-gsapi_set_arg_encoding(void *lib, int encoding)
+gsapi_set_arg_encoding(void *instance, int encoding)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
-    if (lib == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
         return gs_error_Fatal;
 
 #if defined(GS_NO_UTF8)
@@ -344,10 +344,10 @@ gsapi_set_arg_encoding(void *lib, int encoding)
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_init_with_args(void *lib, int argc, char **argv)
+gsapi_init_with_args(void *instance, int argc, char **argv)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
-    if (lib == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
         return gs_error_Fatal;
 
     return gs_main_init_with_args(get_minst_from_memory(ctx->memory), argc, argv);
@@ -360,11 +360,11 @@ gsapi_init_with_args(void *lib, int argc, char **argv)
 
 /* Setup up a suspendable run_string */
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_string_begin(void *lib, int user_errors,
+gsapi_run_string_begin(void *instance, int user_errors,
         int *pexit_code)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
-    if (lib == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
         return gs_error_Fatal;
 
     return gs_main_run_string_begin(get_minst_from_memory(ctx->memory),
@@ -373,11 +373,11 @@ gsapi_run_string_begin(void *lib, int user_errors,
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_string_continue(void *lib,
+gsapi_run_string_continue(void *instance,
         const char *str, uint length, int user_errors, int *pexit_code)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
-    if (lib == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
         return gs_error_Fatal;
 
     return gs_main_run_string_continue(get_minst_from_memory(ctx->memory),
@@ -386,11 +386,11 @@ gsapi_run_string_continue(void *lib,
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_string_end(void *lib,
+gsapi_run_string_end(void *instance,
         int user_errors, int *pexit_code)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
-    if (lib == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
         return gs_error_Fatal;
 
     return gs_main_run_string_end(get_minst_from_memory(ctx->memory),
@@ -399,11 +399,11 @@ gsapi_run_string_end(void *lib,
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_string_with_length(void *lib,
+gsapi_run_string_with_length(void *instance,
         const char *str, uint length, int user_errors, int *pexit_code)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
-    if (lib == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
         return gs_error_Fatal;
 
     return gs_main_run_string_with_length(get_minst_from_memory(ctx->memory),
@@ -412,15 +412,15 @@ gsapi_run_string_with_length(void *lib,
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_string(void *lib,
+gsapi_run_string(void *instance,
         const char *str, int user_errors, int *pexit_code)
 {
-    return gsapi_run_string_with_length(lib,
+    return gsapi_run_string_with_length(instance,
         str, (uint)strlen(str), user_errors, pexit_code);
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_file(void *lib, const char *file_name,
+gsapi_run_file(void *instance, const char *file_name,
         int user_errors, int *pexit_code)
 {
 #ifndef GS_NO_UTF8
@@ -429,9 +429,9 @@ gsapi_run_file(void *lib, const char *file_name,
     char dummy[6];
     int rune, code, len;
 #endif
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     gs_main_instance *minst;
-    if (lib == NULL)
+    if (instance == NULL)
         return gs_error_Fatal;
     minst = get_minst_from_memory(ctx->memory);
 
@@ -466,85 +466,85 @@ gsapi_run_file(void *lib, const char *file_name,
 
 #ifdef __WIN32__
 GSDLLEXPORT int GSDLLAPI
-gsapi_init_with_argsW(void *lib, int argc, wchar_t **argv)
+gsapi_init_with_argsW(void *instance, int argc, wchar_t **argv)
 {
 #ifdef GS_NO_UTF8
     /* Cannot call the W entrypoints in a GS_NO_UTF8 build */
     return gs_error_Fatal;
 #else
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     int code;
     gs_arg_get_codepoint *old;
-    if (lib == NULL)
+    if (instance == NULL)
         return gs_error_Fatal;
 
     old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
-    code = gsapi_set_arg_encoding(lib, GS_ARG_ENCODING_UTF16LE);
+    code = gsapi_set_arg_encoding(instance, GS_ARG_ENCODING_UTF16LE);
     if (code != 0)
         return code;
-    code = gsapi_init_with_args(lib, 2*argc, (char **)argv);
+    code = gsapi_init_with_args(instance, 2*argc, (char **)argv);
     gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), old);
     return code;
 #endif
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_init_with_argsA(void *lib, int argc, char **argv)
+gsapi_init_with_argsA(void *instance, int argc, char **argv)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     int code;
     gs_arg_get_codepoint *old;
-    if (lib == NULL)
+    if (instance == NULL)
         return gs_error_Fatal;
 
     old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
-    code = gsapi_set_arg_encoding(lib, GS_ARG_ENCODING_LOCAL);
+    code = gsapi_set_arg_encoding(instance, GS_ARG_ENCODING_LOCAL);
     if (code != 0)
         return code;
-    code = gsapi_init_with_args(lib, 2*argc, (char **)argv);
+    code = gsapi_init_with_args(instance, 2*argc, (char **)argv);
     gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), old);
     return code;
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_fileW(void *lib, const wchar_t *file_name,
+gsapi_run_fileW(void *instance, const wchar_t *file_name,
         int user_errors, int *pexit_code)
 {
 #ifdef GS_NO_UTF8
     /* Cannot call the W entrypoints in a GS_NO_UTF8 build */
     return gs_error_Fatal;
 #else
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     int code;
     gs_arg_get_codepoint *old;
-    if (lib == NULL)
+    if (instance == NULL)
         return gs_error_Fatal;
 
     old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
-    code = gsapi_set_arg_encoding(lib, GS_ARG_ENCODING_UTF16LE);
+    code = gsapi_set_arg_encoding(instance, GS_ARG_ENCODING_UTF16LE);
     if (code != 0)
         return code;
-    code = gsapi_run_file(lib, (const char *)file_name, user_errors, pexit_code);
+    code = gsapi_run_file(instance, (const char *)file_name, user_errors, pexit_code);
     gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), old);
     return code;
 #endif
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_fileA(void *lib, const char *file_name,
+gsapi_run_fileA(void *instance, const char *file_name,
         int user_errors, int *pexit_code)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     int code;
     gs_arg_get_codepoint *old;
-    if (lib == NULL)
+    if (instance == NULL)
         return gs_error_Fatal;
 
     old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
-    code = gsapi_set_arg_encoding(lib, GS_ARG_ENCODING_LOCAL);
+    code = gsapi_set_arg_encoding(instance, GS_ARG_ENCODING_LOCAL);
     if (code != 0)
         return code;
-    code = gsapi_run_file(lib, (const char *)file_name, user_errors, pexit_code);
+    code = gsapi_run_file(instance, (const char *)file_name, user_errors, pexit_code);
     gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), old);
     return code;
 }
@@ -552,10 +552,10 @@ gsapi_run_fileA(void *lib, const char *file_name,
 
 /* Exit the interpreter */
 GSDLLEXPORT int GSDLLAPI
-gsapi_exit(void *lib)
+gsapi_exit(void *instance)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
-    if (lib == NULL)
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
         return gs_error_Fatal;
 
     gs_to_exit(ctx->memory, 0);
