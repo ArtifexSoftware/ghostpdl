@@ -1960,7 +1960,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                           &(pcs->cmm_icc_profile_data), &render_cond);
     /* pcs takes a reference to the profile data it just retrieved. */
     rc_increment(pcs->cmm_icc_profile_data);
-    gscms_set_icc_range(&(pcs->cmm_icc_profile_data));
+    gsicc_set_icc_range(&(pcs->cmm_icc_profile_data));
     gs_image_t_init_adjust(&image, pcs, false);
     image.ImageMatrix.xx = (float)width;
     image.ImageMatrix.yy = (float)height;
@@ -7425,7 +7425,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                               &(pcs->cmm_icc_profile_data), &render_cond);
         /* pcs takes a reference to the profile data it just retrieved. */
         rc_increment(pcs->cmm_icc_profile_data);
-        gscms_set_icc_range(&(pcs->cmm_icc_profile_data));
+        gsicc_set_icc_range(&(pcs->cmm_icc_profile_data));
 
         gs_image_t_init_adjust(&image, pcs, false);
         image.ImageMatrix.xx = (float)pdev->width;

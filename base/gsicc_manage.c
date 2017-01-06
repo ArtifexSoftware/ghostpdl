@@ -122,7 +122,7 @@ unsigned int gsicc_getprofilesize(unsigned char *buffer)
              (buffer[2] << 8)  +  buffer[3] );
 }
 
-void gscms_set_icc_range(cmm_profile_t **icc_profile)
+void gsicc_set_icc_range(cmm_profile_t **icc_profile)
 {
     int num_comp = (*icc_profile)->num_comps;
     int k;
@@ -170,7 +170,7 @@ gsicc_set_iccsmaskprofile(const char *pname,
             gscms_get_output_channel_count(icc_profile->profile_handle);
     icc_profile->data_cs =
             gscms_get_profile_data_space(icc_profile->profile_handle);
-    gscms_set_icc_range(&icc_profile);
+    gsicc_set_icc_range(&icc_profile);
     return icc_profile;
 }
 
@@ -535,7 +535,7 @@ gsicc_get_device_class(cmm_profile_t *icc_profile)
 }
 
 /* This inititializes the srcgtag structure in the ICC manager */
-int
+static int
 gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                         int namelen)
 {
@@ -942,7 +942,7 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
                profile now, since we don't know the number of components etc */
             icc_profile->num_comps = num_comps;
             icc_profile->num_comps_out = 3;
-            gscms_set_icc_range(&icc_profile);
+            gsicc_set_icc_range(&icc_profile);
             icc_profile->data_cs = default_space;
         }
         return 0;
@@ -2534,58 +2534,6 @@ gsicc_profile_reference(cmm_profile_t *icc_profile, int delta)
 }
 
 void
-gsicc_get_srcprofile(gsicc_colorbuffer_t data_cs,
-                     gs_graphics_type_tag_t graphics_type_tag,
-                     cmm_srcgtag_profile_t *srcgtag_profile,
-                     cmm_profile_t **profile, gsicc_rendering_param_t *render_cond)
-{
-    (*profile) = NULL;
-    (*render_cond).rendering_intent = gsPERCEPTUAL;
-    switch (graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS) {
-        case GS_UNKNOWN_TAG:
-        case GS_UNTOUCHED_TAG:
-        default:
-            break;
-        case GS_PATH_TAG:
-            if (data_cs == gsRGB) {
-                (*profile) = srcgtag_profile->rgb_profiles[gsSRC_GRAPPRO];
-                *render_cond = srcgtag_profile->rgb_rend_cond[gsSRC_GRAPPRO];
-            } else if (data_cs == gsCMYK) {
-                (*profile) = srcgtag_profile->cmyk_profiles[gsSRC_GRAPPRO];
-                *render_cond = srcgtag_profile->cmyk_rend_cond[gsSRC_GRAPPRO];
-            } else if (data_cs == gsGRAY) {
-                (*profile) = srcgtag_profile->gray_profiles[gsSRC_GRAPPRO];
-                *render_cond = srcgtag_profile->gray_rend_cond[gsSRC_GRAPPRO];
-            }
-            break;
-        case GS_IMAGE_TAG:
-            if (data_cs == gsRGB) {
-                (*profile) = srcgtag_profile->rgb_profiles[gsSRC_IMAGPRO];
-                *render_cond = srcgtag_profile->rgb_rend_cond[gsSRC_IMAGPRO];
-            } else if (data_cs == gsCMYK) {
-                (*profile) = srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO];
-                *render_cond = srcgtag_profile->cmyk_rend_cond[gsSRC_IMAGPRO];
-            } else if (data_cs == gsGRAY) {
-                (*profile) = srcgtag_profile->gray_profiles[gsSRC_IMAGPRO];
-                *render_cond = srcgtag_profile->gray_rend_cond[gsSRC_IMAGPRO];
-            }
-            break;
-        case GS_TEXT_TAG:
-            if (data_cs == gsRGB) {
-                (*profile) = srcgtag_profile->rgb_profiles[gsSRC_TEXTPRO];
-                *render_cond = srcgtag_profile->rgb_rend_cond[gsSRC_TEXTPRO];
-            } else if (data_cs == gsCMYK) {
-                (*profile) = srcgtag_profile->cmyk_profiles[gsSRC_TEXTPRO];
-                *render_cond = srcgtag_profile->cmyk_rend_cond[gsSRC_TEXTPRO];
-            } else if (data_cs == gsGRAY) {
-                (*profile) = srcgtag_profile->gray_profiles[gsSRC_TEXTPRO];
-                *render_cond = srcgtag_profile->gray_rend_cond[gsSRC_TEXTPRO];
-            }
-            break;
-        }
-}
-
-void
 gsicc_extract_profile(gs_graphics_type_tag_t graphics_type_tag,
                        cmm_dev_profile_t *profile_struct,
                        cmm_profile_t **profile, gsicc_rendering_param_t *render_cond)
@@ -2641,6 +2589,7 @@ gs_currentoverrideicc(const gs_gstate *pgs)
         return false;
     }
 }
+
 void
 gsicc_setrange_lab(cmm_profile_t *profile)
 {

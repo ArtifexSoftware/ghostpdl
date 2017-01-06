@@ -193,11 +193,11 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
             default:
                 break;
         }
-        /* Have one increment from the color space.  Having these tied 
+        /* Have one increment from the color space.  Having these tied
            together is not really correct.  Need to fix that.  ToDo.  MJV */
         rc_adjust(picc_profile, -2, "seticc");
         rc_increment(pcs->cmm_icc_profile_data);
-    } 
+    }
     /* Set the color space.  We are done.  No joint cache here... */
     code = gs_setcolorspace(igs, pcs);
     /* The context has taken a reference to the colorspace. We no longer need
@@ -215,7 +215,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 /*
  *   <dict>  .set_outputintent  -
  *
- * Set and use the specified output intent.  
+ * Set and use the specified output intent.
  *
  */
 static int
@@ -241,7 +241,7 @@ zset_outputintent(i_ctx_t * i_ctx_p)
 
     /* Get the device structure */
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-    if (dev_profile == NULL) { 
+    if (dev_profile == NULL) {
         code = gsicc_init_device_profile_struct(dev, NULL, 0);
         if (code < 0)
             return code;
@@ -293,8 +293,8 @@ zset_outputintent(i_ctx_t * i_ctx_p)
         case gsNCHANNEL:
             expected = 0;
             break;
-        case gsNAMED:            
-        case gsUNDEFINED:        
+        case gsNAMED:
+        case gsUNDEFINED:
             break;
     }
     if (expected && ncomps != expected) {
@@ -305,21 +305,21 @@ zset_outputintent(i_ctx_t * i_ctx_p)
 
     /* All is well with the profile.  Lets set the stuff that needs to be set */
     dev_profile->oi_profile = picc_profile;
-    picc_profile->name = (char *) gs_alloc_bytes(picc_profile->memory, 
+    picc_profile->name = (char *) gs_alloc_bytes(picc_profile->memory,
                                                  MAX_DEFAULT_ICC_LENGTH,
                                                  "zset_outputintent");
     strncpy(picc_profile->name, OI_PROFILE, strlen(OI_PROFILE));
     picc_profile->name[strlen(OI_PROFILE)] = 0;
     picc_profile->name_length = strlen(OI_PROFILE);
     /* Set the range of the profile */
-    gscms_set_icc_range(&picc_profile);
+    gsicc_set_icc_range(&picc_profile);
 
-    /* If the output device has a different number of componenets, then we are 
-       going to set the output intent as the proofing profile, unless the 
-       proofing profile has already been set. 
+    /* If the output device has a different number of componenets, then we are
+       going to set the output intent as the proofing profile, unless the
+       proofing profile has already been set.
 
-       If the device has the same number of components (and color model) then as 
-       the profile we will use this as the output profile, unless someone has 
+       If the device has the same number of components (and color model) then as
+       the profile we will use this as the output profile, unless someone has
        explicitly set the output profile.
 
        Finally, we will use the output intent profile for the default profile
@@ -329,22 +329,22 @@ zset_outputintent(i_ctx_t * i_ctx_p)
     dev_comps = dev_profile->device_profile[0]->num_comps;
     index = gsicc_get_default_type(dev_profile->device_profile[0]);
     if (ncomps == dev_comps && index < gs_color_space_index_DevicePixel) {
-        /* The OI profile is the same type as the profile for the device and a 
-           "default" profile for the device was not externally set. So we go 
-           ahead and use the OI profile as the device profile.  Care needs to be 
-           taken here to keep from screwing up any device parameters.   We will 
-           use a keyword of OIProfile for the user/device parameter to indicate 
-           its usage.  Also, note conflicts if one is setting object dependent 
+        /* The OI profile is the same type as the profile for the device and a
+           "default" profile for the device was not externally set. So we go
+           ahead and use the OI profile as the device profile.  Care needs to be
+           taken here to keep from screwing up any device parameters.   We will
+           use a keyword of OIProfile for the user/device parameter to indicate
+           its usage.  Also, note conflicts if one is setting object dependent
            color management */
-        rc_assign(dev_profile->device_profile[0], picc_profile, 
+        rc_assign(dev_profile->device_profile[0], picc_profile,
                   "zset_outputintent");
         if_debug0m(gs_debug_flag_icc, imemory, "[icc] OutputIntent used for device profile\n");
     } else {
         if (dev_profile->proof_profile == NULL) {
-            /* This means that we should use the OI profile as the proofing 
-               profile.  Note that if someone already has specified a 
+            /* This means that we should use the OI profile as the proofing
+               profile.  Note that if someone already has specified a
                proofing profile it is unclear what they are trying to do
-               with the output intent.  In this case, we will use it 
+               with the output intent.  In this case, we will use it
                just for the source data below */
             dev_profile->proof_profile = picc_profile;
             rc_increment(picc_profile);
@@ -359,17 +359,17 @@ zset_outputintent(i_ctx_t * i_ctx_p)
         switch (picc_profile->data_cs) {
             case gsGRAY:
                 if_debug0m(gs_debug_flag_icc, imemory, "[icc] OutputIntent used source Gray\n");
-                rc_assign(icc_manager->default_gray, picc_profile, 
+                rc_assign(icc_manager->default_gray, picc_profile,
                           "zset_outputintent");
                 break;
             case gsRGB:
                 if_debug0m(gs_debug_flag_icc, imemory, "[icc] OutputIntent used source RGB\n");
-                rc_assign(icc_manager->default_rgb, picc_profile, 
+                rc_assign(icc_manager->default_rgb, picc_profile,
                           "zset_outputintent");
                 break;
             case gsCMYK:
                 if_debug0m(gs_debug_flag_icc, imemory, "[icc] OutputIntent used source CMYK\n");
-                rc_assign(icc_manager->default_cmyk, picc_profile, 
+                rc_assign(icc_manager->default_cmyk, picc_profile,
                           "zset_outputintent");
                 break;
             default:
@@ -622,7 +622,7 @@ znumicc_components(i_ctx_t * i_ctx_p)
 
 const op_def    zicc_ll3_op_defs[] = {
     op_def_begin_ll3(),
-    { "1.seticcspace", zseticcspace },    
+    { "1.seticcspace", zseticcspace },
     { "1.set_outputintent", zset_outputintent },
     { "1.numicc_components", znumicc_components },
     op_def_end(0)
