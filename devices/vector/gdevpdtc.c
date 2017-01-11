@@ -880,6 +880,7 @@ process_cmap_text(gs_text_enum_t *penum, void *vbuf, uint bsize)
     int code;
     pdf_text_enum_t *pte = (pdf_text_enum_t *)penum;
     byte *save;
+    uint start = pte->index;
 
     if (pte->text.operation &
         (TEXT_FROM_ANY - (TEXT_FROM_STRING | TEXT_FROM_BYTES))
@@ -906,6 +907,7 @@ process_cmap_text(gs_text_enum_t *penum, void *vbuf, uint bsize)
     code = scan_cmap_text(pte, vbuf);
     gs_free_string(pte->memory, (byte *)pte->text.data.bytes,  pte->text.size, "pdf_text_process");
     pte->text.data.bytes = save;
+    pte->bytes_decoded = pte->index - start;
 
     if (code == TEXT_PROCESS_CDEVPROC)
         pte->cdevproc_callout = true;
