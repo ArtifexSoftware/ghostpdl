@@ -952,10 +952,10 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
         return 0;
     backdrop = pdf14_find_backdrop_buf(ctx);
     if (backdrop == NULL) {
+        /* Note, don't clear out tags set by pdf14_buf_new == GS_UNKNOWN_TAG */
         memset(buf->data, 0, buf->planestride * (buf->n_chan +
                                                  (buf->has_shape ? 1 : 0) +
-                                                 (buf->has_alpha_g ? 1 : 0) +
-                                                 (buf->has_tags ? 1 : 0)));
+                                                 (buf->has_alpha_g ? 1 : 0)));
     } else {
         if (!buf->knockout) {
             if (!cm_back_drop) {
@@ -1244,7 +1244,7 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
             }
              /* Adjust the plane and channel size now */
              tos->n_chan = nos->n_chan;
-             tos->n_planes = nos->n_planes;
+             tos->n_planes = new_num_planes;
 #if RAW_DUMP
             /* Dump the current buffer to see what we have. */
             dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y,
@@ -1888,12 +1888,12 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
         int tag_offset = buf->has_tags ? num_comp+1 : 0;
         const byte *buf_ptrs[GS_CLIENT_COLOR_MAX_COMPONENTS];
         int i;
-        for (i = 0; i < num_comp; i++)
+        for (i = 0; i < buf->n_planes; i++)
             buf_ptrs[i] = buf_ptr + i * buf->planestride;
         code = dev_proc(target, put_image) (target, buf_ptrs, num_comp,
                                             rect.p.x, rect.p.y, width, height,
                                             buf->rowstride,
-                                            num_comp, tag_offset);
+                                            alpha_offset, tag_offset);
         if (code == 0) {
             /* Device could not handle the alpha data.  Go ahead and
                preblend now. Note that if we do this, and we end up in the
