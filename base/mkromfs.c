@@ -2280,6 +2280,8 @@ main(int argc, char *argv[])
     int compaction = 0;
     Xlist_element *Xlist_scan = NULL, *Xlist_head = NULL;
     char pa[PATH_STR_LEN];
+    time_t buildtime = 0;
+    char* env_source_date_epoch;
 
     memset(pa, 0x00, PATH_STR_LEN);
 
@@ -2336,7 +2338,13 @@ main(int argc, char *argv[])
 #endif
     fprintf(out,"\n#include \"stdint_.h\"\n");
     fprintf(out,"\n#include \"time_.h\"\n\n");
-    fprintf(out,"    time_t gs_romfs_buildtime = %ld;\n\n", time(NULL));
+
+    if ((env_source_date_epoch = getenv("SOURCE_DATE_EPOCH"))) {
+        buildtime = strtoul(env_source_date_epoch, NULL, 10);
+    }
+    if (!buildtime)
+        buildtime = time(NULL);
+    fprintf(out,"    time_t gs_romfs_buildtime = %ld;\n\n", buildtime);
 
     /* process the remaining arguments (options interspersed with paths) */
     for (; atarg < argc; atarg++) {
