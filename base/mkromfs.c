@@ -344,6 +344,7 @@ const gs_malloc_memory_t minimal_memory = {
     0  /* max used */
 };
 
+int cmpstringp(const void *p1, const void *p2);
 void put_uint32(FILE *out, const unsigned int q);
 void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len);
 void inode_clear(romfs_inode* node);
@@ -1542,6 +1543,15 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
     return out-ubuf;
 }
 
+int cmpstringp(const void *p1, const void *p2)
+{
+   /* The actual arguments to this function are "pointers to
+      pointers to char", but strcmp(3) arguments are "pointers
+      to char", hence the following cast plus dereference */
+
+   return strcmp(* (char * const *) p1, * (char * const *) p2);
+}
+
 /* This relies on the gp_enumerate_* which should not return directories, nor	*/
 /* should it recurse into directories (unlike Adobe's implementation)		*/
 /* paths are checked to see if they are an ordinary file or a path		*/
@@ -1561,6 +1571,8 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
     FILE *in;
     unsigned long psc_len;
     pscompstate psc = { 0 };
+    unsigned long numfiles = 0;
+    char **foundfiles = NULL;
 
     prefixed_path = malloc(PATH_STR_LEN);
     found_path = malloc(PATH_STR_LEN);
@@ -1597,6 +1609,17 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
         }
         if (excluded)
             continue;
+
+        numfiles++;
+        foundfiles = realloc(foundfiles, sizeof(char *) * numfiles);
+        foundfiles[numfiles - 1] = strdup(found_path);
+    }
+
+    qsort(foundfiles, numfiles, sizeof(char *), cmpstringp);
+
+    while (numfiles--) {
+        found_path = *foundfiles;
+        foundfiles++;
 
         /* process a file */
         node = calloc(1, sizeof(romfs_inode));
