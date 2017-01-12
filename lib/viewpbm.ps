@@ -90,6 +90,30 @@
   /ncomp 3 def /invert false def /DeviceRGB setcolorspace
         { readstring pop }
 } bind
+/P7 {			% Assume Binary 8-bit CMYK -- assumes 'pf' is the input file
+% P7
+% WIDTH 612	%% used to set rsize and w
+% HEIGHT 792	%% used to set h
+% DEPTH 4	%% if present and not 4, then bail
+% MAXVAL 255	%% used to set maxv
+% TUPLTYPE CMYK	%% if present and not CMYK, then bail
+% ENDHDR	%% skip everything else up to this
+  /P7KEYS <<
+    /WIDTH { /w pf token pop def }
+    /HEIGHT { /h pf token pop def }
+    /DEPTH { /d pf token pop def d 4 ne { (*** Only CMYK PAM files supported at this time. ***) = quit } if }
+    /MAXVAL { /maxv pf token pop def }
+    /TUPLTYPE { pf token pop /CMYK ne { (*** Only CMYK PAM files supported at this time. ***) = quit } if }
+    /ENDHDR { exit }
+    (#) cvn { pf 255 string readline pop pop }
+  >> def
+  { pf token not { exit } if P7KEYS exch .knownget { exec } if } loop
+  /bpc 8 def
+  /rsize w 4 mul def
+  /ncomp 4 def /invert false def /DeviceCMYK setcolorspace
+  w h { readstring pop }
+} bind
+
 .dicttomark readonly def
 /pbmsetup {			% <file> <w> <h> <readproc> runpbm -
    /readproc exch def
