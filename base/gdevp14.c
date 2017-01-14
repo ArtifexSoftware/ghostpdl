@@ -46,7 +46,6 @@
 #include "gxcldev.h"
 #include "gxclpath.h"
 #include "gxdcconv.h"
-#include "gscolorbuffer.h"
 #include "gsptype2.h"
 #include "gxpcolor.h"
 #include "gsptype1.h"
@@ -680,7 +679,7 @@ pdf14_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     int des_planestride = src_planestride;
     int des_rowstride = src_rowstride;
     int des_n_planes = src_n_planes;
-    int des_n_chan = des_n_chan;
+    int des_n_chan = src_n_chan;
     int diff;
     int k, j;
     byte *des_data = NULL;
@@ -1250,31 +1249,8 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
                 curr_icc_profile, nos->parent_color_info_procs->icc_profile,
                 tos->rect.p.x, tos->rect.p.y, tos->rect.q.x - tos->rect.p.x,
                 tos->rect.q.y - tos->rect.p.y, &did_alloc);
-
-            /* ICC failed for some reason.  Lets try non-ICC */
-            if (result == NULL) {
-
-                byte *buff;
-                int diff = curr_icc_profile->num_comps -
-                    nos->parent_color_info_procs->icc_profile->num_comps;
-                int num_noncolor_planes = tos->n_planes -
-                    curr_icc_profile->num_comps;
-
-                buff = gs_alloc_bytes(ctx->memory,
-                    tos->planestride * (tos->n_planes - diff), "pdf14_pop_transparency_group");
-                if (buff == NULL)
-                    return_error(gs_error_VMerror);
-                gs_transform_color_buffer_generic(tos->data, tos->rowstride,
-                    tos->planestride, tos_num_color_comp, tos->rect,
-                    buff, nos_num_color_comp, num_noncolor_planes);
-                /* Adjust the plane and channel size */
-                tos->n_chan = nos->n_chan;
-                tos->n_planes = tos->n_planes - diff;
-                gs_free_object(ctx->memory, tos->data,
-                    "pdf14_pop_transparency_group");
-                tos->data = buff;
-            }
-
+            if (result == NULL)
+                return_error(gs_error_unknownerror);  /* transform failed */
 
 #if RAW_DUMP
             /* Dump the current buffer to see what we have. */

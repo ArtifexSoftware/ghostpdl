@@ -3001,10 +3001,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\base\gscolorbuffer.c"
-					>
-				</File>
-				<File
 					RelativePath="..\base\gstrans.c"
 					>
 				</File>
@@ -3515,10 +3511,6 @@
 			</File>
 			<File
 				RelativePath="..\base\gscolor3.h"
-				>
-			</File>
-			<File
-				RelativePath="..\base\gscolorbuffer.h"
 				>
 			</File>
 			<File

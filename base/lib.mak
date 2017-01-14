@@ -561,7 +561,6 @@ gxpcolor_h=$(GLSRC)gxpcolor.h\
 gscolor_h=$(GLSRC)gscolor.h $(gxtmap_h)
 gsstate_h=$(GLSRC)gsstate.h\
  $(gscolor_h) $(gscpm_h) $(gscsel_h) $(gsdevice_h) $(gsht_h) $(gsline_h)
-gscolorbuffer_h=$(GLSRC)gscolorbuffer.h
 gsicc_create_h=$(GLSRC)gsicc_create.h $(gscie_h)
 gximdecode_h=$(GLSRC)gximdecode.h $(gx_h) $(gxfixed_h) $(gximage_h) $(gxsample_h) $(gxfrac_h)
 
@@ -2944,14 +2943,6 @@ $(GLOBJ)gsncdummy.$(OBJ) : $(GLSRC)gsncdummy.c $(AK) $(gx_h)\
  $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsncdummy.$(OBJ) $(C_) $(GLSRC)gsncdummy.c
 
-# ---------------- Color Buffer Proc. Support Used In Trans. ---------------- #
-
-$(GLOBJ)gscolorbuffer.$(OBJ) : $(GLSRC)gscolorbuffer.c $(AK)\
- $(string__h)\
- $(stdpre_h) $(gstypes_h) $(gsmemory_h) $(gxblend_h) $(gscolorbuffer_h)\
- $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gscolorbuffer.$(OBJ) $(C_) $(GLSRC)gscolorbuffer.c
-
 # ------------- Image Color Decode.  Used in color mon and xpswrite --------- #
 
 $(GLOBJ)gximdecode.$(OBJ) : $(GLSRC)gximdecode.c $(gximdecode_h) $(string__h)\
@@ -3114,7 +3105,7 @@ $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(AK) $(gx_h) $(gserrors_h)\
  $(gstparam_h) $(gxblend_h) $(gxtext_h) $(gsdfilt_h) $(gsimage_h)\
  $(gsrect_h) $(gzstate_h) $(gdevdevn_h) $(gdevp14_h) $(gdevprn_h) $(gsovrc_h) $(gxcmap_h)\
  $(gscolor1_h) $(gstrans_h) $(gsutil_h) $(gxcldev_h) $(gxclpath_h)\
- $(gxdcconv_h) $(gscolorbuffer_h) $(gsptype2_h) $(gxpcolor_h)\
+ $(gxdcconv_h) $(gsptype2_h) $(gxpcolor_h)\
  $(gsptype1_h) $(gzcpath_h) $(gxpaint_h) $(gsicc_manage_h) $(gxclist_h)\
  $(gxiclass_h) $(gximage_h) $(gsmatrix_h) $(gsicc_cache_h) $(gxdevsop_h)\
  $(gsicc_h) $(gdevmem_h) $(LIB_MAK) $(MAKEDIRS)
@@ -3122,7 +3113,7 @@ $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(AK) $(gx_h) $(gserrors_h)\
 
 translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\
  $(GLOBJ)gxblend.$(OBJ) $(GLOBJ)gxblend1.$(OBJ) $(GLOBJ)gdevp14.$(OBJ) $(GLOBJ)gdevdevn.$(OBJ)\
- $(GLOBJ)gsequivc.$(OBJ)  $(GLOBJ)gdevdcrd.$(OBJ) $(GLOBJ)gscolorbuffer.$(OBJ)
+ $(GLOBJ)gsequivc.$(OBJ)  $(GLOBJ)gdevdcrd.$(OBJ)
 
 $(GLD)translib.dev : $(LIB_MAK) $(ECHOGS_XE) $(translib_)\
  $(GLD)cspixlib.dev $(GLD)bboxutil.dev $(GLD)cielib.dev $(LIB_MAK) $(MAKEDIRS)
