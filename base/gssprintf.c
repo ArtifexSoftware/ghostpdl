@@ -1441,7 +1441,7 @@ static int snprintf_flush(apr_vformatter_buff_t *vbuff)
     return -1;
 }
 
-int gs_snprintf(char *buf, int32_t len,
+int gs_snprintf(char *buf, int len,
                                      const char *format, ...)
 {
     int cc;
@@ -1491,7 +1491,7 @@ int gs_sprintf(char *buf, const char *format, ...)
 }
 
 
-int gs_vsnprintf(char *buf, int32_t len, const char *format,
+int gs_vsnprintf(char *buf, int len, const char *format,
                                va_list ap)
 {
     int cc;
