@@ -3586,7 +3586,7 @@ pdf14_ok_to_optimize(gx_device *dev)
     dev_icc_cs = dev_profile->device_profile[0]->data_cs;
     /* If the outputprofile is not "standard" then colors converted to device color */
     /* during clist writing won't match the colors written for the pdf14 clist dev  */
-    if (!(dev_icc_cs == gsGRAY || dev_icc_cs == gsRGB || dev_icc_cs == gsCMYK) || using_blend_cs)
+    if (!(dev_icc_cs == gsGRAY || dev_icc_cs == gsRGB || dev_icc_cs == gsCMYK))
         return false;                           /* can't handle funky output profiles */
 
     switch (pdf14_cs) {
@@ -7064,15 +7064,20 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
                          (const gx_device *) dev_proto, mem);
     if (code < 0)
         return code;
-    /* The number of color planes should not exceed that of the target */
-    if (pdev->color_info.num_components > target->color_info.num_components)
-        pdev->color_info.num_components = target->color_info.num_components;
-    if (pdev->color_info.max_components > target->color_info.max_components)
-        pdev->color_info.max_components = target->color_info.max_components;
+
+    /* If we are not using a blending color space, the number of color planes
+       should not exceed that of the target */
+    if (!pdev->using_blend_cs) {
+        if (pdev->color_info.num_components > target->color_info.num_components)
+            pdev->color_info.num_components = target->color_info.num_components;
+        if (pdev->color_info.max_components > target->color_info.max_components)
+            pdev->color_info.max_components = target->color_info.max_components;
+    }
     pdev->color_info.depth = pdev->color_info.num_components * 8;
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
     pdev->is_planar = target->is_planar;
+
     /* If we have a tag device then go ahead and do a special encoder decoder
        for the pdf14 device to make sure we maintain this information in the
        encoded color information.  We could use the target device's methods but
@@ -7087,6 +7092,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     gx_device_fill_in_procs((gx_device *)pdev);
     gs_pdf14_device_copy_params((gx_device *)pdev, target);
     gx_device_set_target((gx_device_forward *)pdev, target);
+
     /* Components shift, etc have to be based upon 8 bit */
     for (k = 0; k < pdev->color_info.num_components; k++) {
         pdev->color_info.comp_bits[k] = 8;
@@ -8103,12 +8109,17 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
     dev_proc(cdev, get_profile)(cdev,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &cl_icc_profile,
                           &render_cond);
+
+    /* If we are using the blending color space, then be sure to use that. */
+    if (p14dev->using_blend_cs && dev_profile->blend_profile != NULL)
+        cl_icc_profile = dev_profile->blend_profile;
+
     dev_proc(p14dev, get_profile)((gx_device *)p14dev,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &p14_icc_profile,
                           &render_cond);
     /*
      * We only handle the push/pop operations. Save and restore the color_info
-     * field for the clist device.  (This is needed since the process color
+     * field for the clist device.  This is needed since the process color
      * model of the clist device needs to match the PDF 1.4 compositing
      * device.
      */
@@ -8116,7 +8127,7 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
         case PDF14_PUSH_DEVICE:
             /* If the CMM is not threadsafe, then the pdf14 device actually
                needs to inherit the ICC profile from the clist thread device
-               not the target device.   */
+               not the target device. */
 #if !CMM_THREAD_SAFE
             gx_monitor_enter(p14_icc_profile->lock);
             rc_assign(p14dev->icc_struct->device_profile[0], cl_icc_profile,
