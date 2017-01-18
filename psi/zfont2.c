@@ -2364,10 +2364,16 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
 
     if ((code = parse_dict(i_ctx_p, topdict, &offsets, strings, data, p_top, pe_top)) < 0)
         return code;
-    if ((code = parse_dict(i_ctx_p, topdict, &offsets, strings, data,
+
+    /* if the values for the /Private dict are nonsensical, ignore it
+     * and hope the font doesn't actually need it!
+     */
+    if ((offsets.private_off + offsets.private_size) <= pe_all) {
+        if ((code = parse_dict(i_ctx_p, topdict, &offsets, strings, data,
                       p_all + offsets.private_off,
                       p_all + offsets.private_off + offsets.private_size)) < 0)
-        return code;
+            return code;
+    }
     if ((code = parse_index(&local_subrs, data,
                (offsets.local_subrs_off ? p_all + offsets.private_off + offsets.local_subrs_off : 0),
                 pe_all)) < 0)
