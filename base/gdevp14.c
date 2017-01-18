@@ -4619,7 +4619,7 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
             pdev->color_info.max_color = 255;
             pdev->color_info.max_gray = 255;
             pdev->pdf14_procs = new_14procs;
-            pdev->color_info.depth = new_num_comps * 8;
+            pdev->color_info.depth = new_depth;
             memset(&(pdev->color_info.comp_bits),0,GX_DEVICE_COLOR_MAX_COMPONENTS);
             memset(&(pdev->color_info.comp_shift),0,GX_DEVICE_COLOR_MAX_COMPONENTS);
             memcpy(&(pdev->color_info.comp_bits),comp_bits,4);
