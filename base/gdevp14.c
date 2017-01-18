@@ -8066,9 +8066,11 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
             code = 0;
             break;
         case PDF14_PUSH_SMASK_COLOR:
+            *pcdev = dev;
             return 0;
             break;
         case PDF14_POP_SMASK_COLOR:
+            *pcdev = dev;
             return 0;
             break;
         default:
