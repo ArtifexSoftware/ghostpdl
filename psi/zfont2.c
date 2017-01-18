@@ -2362,11 +2362,11 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
 
     memset(&offsets, 0, sizeof(offsets)); /* set defaults for charset_off, encoding_off */
 
-    if ((code = parse_dict(i_ctx_p, topdict, &offsets, strings, data, p_top, pe_top) < 0))
+    if ((code = parse_dict(i_ctx_p, topdict, &offsets, strings, data, p_top, pe_top)) < 0)
         return code;
     if ((code = parse_dict(i_ctx_p, topdict, &offsets, strings, data,
                       p_all + offsets.private_off,
-                      p_all + offsets.private_off + offsets.private_size) < 0))
+                      p_all + offsets.private_off + offsets.private_size)) < 0)
         return code;
     if ((code = parse_index(&local_subrs, data,
                (offsets.local_subrs_off ? p_all + offsets.private_off + offsets.local_subrs_off : 0),
@@ -2463,10 +2463,10 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
                 return code;
             if ((code = dict_create(5, fdfont)) < 0)
                 return code;
-            if ((code = parse_dict(i_ctx_p, fdfont, &offsets, strings, data, doff, doff + len) < 0))
+            if ((code = parse_dict(i_ctx_p, fdfont, &offsets, strings, data, doff, doff + len)) < 0)
                 return code;
             if ((code = parse_dict(i_ctx_p, fdfont, &offsets, strings, data,
-              p_all + offsets.private_off, p_all + offsets.private_off + offsets.private_size) < 0))
+              p_all + offsets.private_off, p_all + offsets.private_off + offsets.private_size)) < 0)
                 return code;
             if ((code = find_font_dict(i_ctx_p, fdfont, &fdprivate, "Private")) < 0)
                 return code;
