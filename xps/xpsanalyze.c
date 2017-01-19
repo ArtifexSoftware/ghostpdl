@@ -22,6 +22,7 @@
 #include "ghostxps.h"
 
 static int xps_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root);
+static int xps_glyphs_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root);
 
 static int
 xps_remote_resource_dictionary_has_transparency(xps_context_t *ctx, char *base_uri, char *source_att)
@@ -48,6 +49,9 @@ xps_resource_dictionary_has_transparency(xps_context_t *ctx, char *base_uri, xps
                 !strcmp(xps_tag(node), "VisualBrush") ||
                 !strcmp(xps_tag(node), "ImageBrush"))
             if (xps_brush_has_transparency(ctx, base_uri, node))
+                return 1;
+        if (!strcmp(xps_tag(node), "Glyphs"))
+            if (xps_glyphs_has_transparency(ctx, base_uri, node))
                 return 1;
     }
 

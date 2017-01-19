@@ -235,9 +235,15 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     {
         if (!strcmp(xps_tag(node), "FixedPage.Resources") && xps_down(node))
             if (xps_resource_dictionary_has_transparency(ctx, base_uri, xps_down(node)))
+            {
                 ctx->has_transparency = 1;
+                break;
+            }
         if (xps_element_has_transparency(ctx, base_uri, node))
+        {
             ctx->has_transparency = 1;
+            break;
+        }
     }
 
     /* save the state with the original device before we push */
