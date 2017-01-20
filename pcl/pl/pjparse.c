@@ -640,7 +640,11 @@ pjl_fsinit(pjl_parser_state_t * pst, char *pathname)
     pjl_parsed_filename_to_string(fname, pathname);
     if (pjl_verify_file_operation(pst, fname) < 0)
         return -1;
+#ifdef GS_NO_FILESYSTEM
+    return -1;
+#else
     return mkdir(fname, 0777);
+#endif
 }
 
 /* make a pjl directory */
@@ -652,7 +656,11 @@ pjl_fsmkdir(pjl_parser_state_t * pst, char *pathname)
     pjl_parsed_filename_to_string(fname, pathname);
     if (pjl_verify_file_operation(pst, fname) < 0)
         return -1;
+#ifdef GS_NO_FILESYSTEM
+    return -1;
+#else
     return mkdir(fname, 0777);
+#endif
 }
 
 /* query a file in the pjl sandbox */

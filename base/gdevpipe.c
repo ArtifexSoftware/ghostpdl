@@ -43,6 +43,9 @@ static int
 pipe_fopen(gx_io_device * iodev, const char *fname, const char *access,
            FILE ** pfile, char *rfname, uint rnamelen)
 {
+#ifdef GS_NO_FILESYSTEM
+    return 0;
+#else
     errno = 0;
     /*
      * Some platforms allow opening a pipe with a '+' in the access
@@ -60,11 +63,14 @@ pipe_fopen(gx_io_device * iodev, const char *fname, const char *access,
     if (rfname != NULL)
         strcpy(rfname, fname);
     return 0;
+#endif
 }
 
 static int
 pipe_fclose(gx_io_device * iodev, FILE * file)
 {
+#ifndef GS_NO_FILESYSTEM
     pclose(file);
+#endif
     return 0;
 }

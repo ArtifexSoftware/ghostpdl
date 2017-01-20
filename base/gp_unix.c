@@ -213,28 +213,38 @@ gp_open_printer(const gs_memory_t *mem,
                       char         fname[gp_file_name_sizeof],
                       int          binary_mode)
 {
+#ifdef GS_NO_FILESYSTEM
+    return NULL;
+#else
     const char *fmode = (binary_mode ? "wb" : "w");
 
     return (strlen(fname) == 0 ? 0 : gp_fopen(fname, fmode));
+#endif
 }
 FILE *
 gp_open_printer_64(const gs_memory_t *mem,
                          char         fname[gp_file_name_sizeof],
                          int          binary_mode)
 {
+#ifdef GS_NO_FILESYSTEM
+    return NULL;
+#else
     const char *fmode = (binary_mode ? "wb" : "w");
 
     return (strlen(fname) == 0 ? 0 : gp_fopen_64(fname, fmode));
+#endif
 }
 
 /* Close the connection to the printer. */
 void
 gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
 {
+#ifndef GS_NO_FILESYSTEM
     if (fname[0] == '|')
         pclose(pfile);
     else
         fclose(pfile);
+#endif
 }
 
 /* ------ Font enumeration ------ */

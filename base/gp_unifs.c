@@ -77,6 +77,9 @@ gp_open_scratch_file_generic(const gs_memory_t *mem,
                              const char        *mode,
                                    bool         b64)
 {       /* The -8 is for XXXXXX plus a possible final / and -. */
+#ifdef GS_NO_FILESYSTEM
+    return NULL;
+#else
     int prefix_length = strlen(prefix);
     int len = gp_file_name_sizeof - prefix_length - 8;
     FILE *fp;
@@ -134,6 +137,7 @@ gp_open_scratch_file_generic(const gs_memory_t *mem,
     if (fp == NULL)
         emprintf1(mem, "**** Could not open temporary file %s\n", fname);
     return fp;
+#endif
 }
 FILE *
 gp_open_scratch_file(const gs_memory_t *mem,
@@ -181,6 +185,9 @@ FILE *gp_open_scratch_file_rm(const gs_memory_t *mem,
 
 FILE *gp_fdup(FILE *f, const char *mode)
 {
+#ifdef GS_NO_FILESYSTEM
+    return NULL;
+#else
     int fd = fileno(f);
     if (fd < 0)
         return NULL;
@@ -188,11 +195,14 @@ FILE *gp_fdup(FILE *f, const char *mode)
     if (fd < 0)
         return NULL;
     return fdopen(fd, mode);
+#endif
 }
 
 int gp_fpread(char *buf, uint count, int64_t offset, FILE *f)
 {
-#if defined(HAVE_PREAD_PWRITE) && HAVE_PREAD_PWRITE == 1
+#ifdef GS_NO_FILESYSTEM
+    return 0;
+#elif defined(HAVE_PREAD_PWRITE) && HAVE_PREAD_PWRITE == 1
     return pread(fileno(f), buf, count, offset);
 #else
     int c;
@@ -214,7 +224,9 @@ int gp_fpread(char *buf, uint count, int64_t offset, FILE *f)
 
 int gp_fpwrite(char *buf, uint count, int64_t offset, FILE *f)
 {
-#if defined(HAVE_PREAD_PWRITE) && HAVE_PREAD_PWRITE == 1
+#ifdef GS_NO_FILESYSTEM
+    return 0;
+#elif defined(HAVE_PREAD_PWRITE) && HAVE_PREAD_PWRITE == 1
     return pwrite(fileno(f), buf, count, offset);
 #else
     int c;
@@ -247,6 +259,13 @@ gp_setmode_binary(FILE * pfile, bool mode)
 /* the original version of the following code, and Richard Mlynarik */
 /* (mly@adoc.xerox.com) for an improved version. */
 
+#ifdef GS_NO_FILESYSTEM
+struct file_enum_s {
+    int dummy;
+};
+
+static file_enum dummy_enum;
+#else
 typedef struct dirstack_s dirstack;
 struct dirstack_s {
     dirstack *next;
@@ -323,11 +342,15 @@ popdir(file_enum * pfen)
     gs_free_object(pfen->memory, d, "gp_enumerate_files(popdir)");
     return true;
 }
+#endif
 
 /* Initialize an enumeration. */
 file_enum *
 gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 {
+#ifdef GS_NO_FILESYSTEM
+    return &dummy_enum;
+#else
     file_enum *pfen;
     char *p;
     char *work;
@@ -406,12 +429,16 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     }
 
     return pfen;
+#endif
 }
 
 /* Enumerate the next file. */
 uint
 gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 {
+#ifdef GS_NO_FILESYSTEM
+    return ~(uint)0;
+#else
     const dir_entry *de;
     char *work = pfen->work;
     int worklen = pfen->worklen;
@@ -563,12 +590,16 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
     memcpy(ptr, work, len > maxlen ? maxlen : len);
 
     return len;
+#endif
 }
 
 /* Clean up the file enumeration. */
 void
 gp_enumerate_files_close(file_enum * pfen)
 {
+#ifdef GS_NO_FILESYSTEM
+    /* No cleanup necessary */
+#else
     gs_memory_t *mem = pfen->memory;
 
     if_debug0m('e', mem, "[e]file_enum:Cleanup\n");
@@ -579,6 +610,7 @@ gp_enumerate_files_close(file_enum * pfen)
     gs_free_object(mem, (byte *) pfen->pattern,
                    "gp_enumerate_files_close(pattern)");
     gs_free_object(mem, pfen, "gp_enumerate_files_close");
+#endif
 }
 
 /* Test-cases:
