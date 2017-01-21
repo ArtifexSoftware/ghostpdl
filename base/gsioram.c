@@ -75,8 +75,7 @@ typedef struct ramfs_state_s {
 
 #define GETRAMFS(state) (((ramfs_state*)(state))->fs)
 
-gs_private_st_ptrs2_final(st_ramfs_state, struct ramfs_state_s,
-    "ramfs_state", ramfs_state_enum_ptrs, ramfs_state_reloc_ptrs, ram_finalize, memory, fs);
+gs_private_st_simple_final(st_ramfs_state, struct ramfs_state_s, "ramfs_state", ram_finalize);
 
 typedef struct gsram_enum_s {
     char *pattern;
@@ -206,8 +205,9 @@ sread_ram(register stream * s, ramhandle * file, byte * buf, uint len)
     s->file = (FILE*)file;
     s->file_modes = s->modes;
     s->file_offset = 0;
-    /* XXX get a more sensible number from the fs? */
-    s->file_limit = S_FILE_LIMIT_MAX;
+    ramfile_seek(file, 0, RAMFS_SEEK_END);
+    s->file_limit = ramfile_tell(file);
+    ramfile_seek(file, 0, RAMFS_SEEK_SET);
 }
 
 /* Procedures for reading from a file */
@@ -215,9 +215,8 @@ static int
 s_ram_available(register stream * s, gs_offset_t *pl)
 {
     long max_avail = s->file_limit - stell(s);
-    long buf_avail = sbufavailable(s);
 
-    *pl = min(max_avail, buf_avail);
+    *pl = max_avail;
     if(*pl == 0 && ramfile_eof((ramhandle*)s->file))
     *pl = -1;        /* EOF */
     return 0;
