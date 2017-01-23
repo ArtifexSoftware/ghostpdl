@@ -2206,6 +2206,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\gsioram.c"
+				>
+			</File>
+			<File
 				RelativePath="..\base\gsiorom.c"
 				>
 			</File>
@@ -2527,6 +2531,10 @@
 			</File>
 			<File
 				RelativePath="..\base\mkromfs.c"
+				>
+			</File>
+			<File
+				RelativePath="..\base\ramfs.c"
 				>
 			</File>
 			<File
@@ -4447,6 +4455,10 @@
 			</File>
 			<File
 				RelativePath="..\base\png_.h"
+				>
+			</File>
+			<File
+				RelativePath="..\base\ramfs.h"
 				>
 			</File>
 			<File
