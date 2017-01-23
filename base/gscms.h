@@ -138,7 +138,10 @@ typedef enum {
     gsRELATIVECOLORIMETRIC_OR,  /* of when the source ri is going to */
     gsSATURATION_OR,            /* override the destination profile intent */
     gsABSOLUTECOLORIMETRIC_OR,  /* in particular through the clist */
-    gsRINOTSPECIFIED = 8            /* Used to ignore value when source based setting */
+    gsRINOTSPECIFIED = 8,       /* Used to ignore value when source based setting */
+
+    /* Stop modern C shrinking this enum to a byte */
+    gsicc_rendering_intent__FORCE_SIZE= 0x10000
 } gsicc_rendering_intents_t;
 
 /* We make an enumerated type in case someone wants to add different types
@@ -150,7 +153,10 @@ typedef enum {
     gsBLACKPTCOMP_ON,
     gsBLACKPTCOMP_OFF_OR = 4, /* These are needed for keeping track of the  */
     gsBLACKPTCOMP_ON_OR,      /* source blackpt is to overide dest. setting */
-    gsBPNOTSPECIFIED = 8     /* Used to ignore value when source based setting */
+    gsBPNOTSPECIFIED = 8,    /* Used to ignore value when source based setting */
+
+    /* Stop modern C shrinking this enum to a byte */
+    gsicc_blackptcomp__FORCE_SIZE= 0x10000
 } gsicc_blackptcomp_t;
 
 /* This is used mainly for when the sourcegtag option specifies us to use no
@@ -167,7 +173,10 @@ typedef enum {
     gsBLACKPRESERVE_OFF = 0,
     gsBLACKPRESERVE_KONLY,
     gsBLACKPRESERVE_KPLANE,
-    gsBKPRESNOTSPECIFIED = 8   /* Used to ignore value when source based setting */
+    gsBKPRESNOTSPECIFIED = 8,   /* Used to ignore value when source based setting */
+
+    /* Stop modern C shrinking this enum to a byte */
+    gsicc_blackpreserve__FORCE_SIZE= 0x10000
 } gsicc_blackpreserve_t;
 
 #define gsRI_OVERRIDE 0x4
