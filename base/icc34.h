@@ -161,13 +161,11 @@ typedef @INT16_T@	icInt16Number;
 typedef @INT32_T@	icInt32Number;
 typedef @INT32_T@	icInt64Number[2];
 
-#else
+#elif defined (__digital__) && defined (__unix__)
 
 /* 
  *Apr-17-2002: Modified by Marti Maria in order to provide wider portability.
  */
-
-#if defined (__digital__) && defined (__unix__)
 
 /* Tru64 */
 
@@ -183,8 +181,7 @@ typedef int16_t    icInt16Number;
 typedef int32_t    icInt32Number;
 typedef int32_t    icInt64Number[2];
 
-#else
-#ifdef __sgi
+#elif defined(__sgi)
 #include "sgidefs.h"
 
 
@@ -205,14 +202,13 @@ typedef __int32_t       icInt32Number;
 typedef __int32_t       icInt64Number[2];
 
 
-#else   
-#if defined(__GNUC__) || defined(__unix__) || defined(__unix)
+#elif defined(__GNUC__) || defined(__unix__) || defined(__unix)
 
 #include <sys/types.h>
 
-#if defined(__sun) || defined(__hpux) || defined (__MINGW) || defined(__MINGW32__)
+#if defined(__sun) || defined(__hpux) || defined (__MINGW) || defined(__MINGW32__) || defined(HAVE_STDINT_H)
 
-#if defined (__MINGW) || defined(__MINGW32__)
+#if defined (__MINGW) || defined(__MINGW32__) || defined(HAVE_STDINT_H)
 #include <stdint.h>
 #endif
 
@@ -230,7 +226,7 @@ typedef u_int16_t  icUInt16Number;
 typedef u_int32_t  icUInt32Number;
 typedef u_int32_t  icUInt64Number[2];
 
-#endif
+#endif /* defined(__sun) || defined(__hpux) || defined (__MINGW) || defined(__MINGW32__) || defined(HAVE_STDINT_H) */
 
 
 /* Signed numbers */
@@ -260,9 +256,6 @@ typedef long            icInt64Number[2];
 
 
 #endif  /* default defs */
-#endif
-#endif
-#endif
 
 /* Base types */
 
