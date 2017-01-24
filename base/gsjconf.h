@@ -153,6 +153,11 @@
 #define jpeg_fdct_islow               gpeg_fdct_islow
 #define jpeg_aritab                   gpeg_aritab
 #define jpeg_gen_optimal_table        gpeg_gen_optimal_table
+#define jinit_marker_reader           ginit_marker_reader
+#define jdiv_round_up                 gdiv_round_up
+#define jround_up                     ground_up
+#define jcopy_block_row               gcopy_block_row
+#define jcopy_sample_rows             gcopy_sample_rows
 #endif
 
 /* See IJG's jconfig.doc for the contents of this file. */
