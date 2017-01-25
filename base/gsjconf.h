@@ -158,6 +158,37 @@
 #define jround_up                     ground_up
 #define jcopy_block_row               gcopy_block_row
 #define jcopy_sample_rows             gcopy_sample_rows
+#define jinit_input_controller        ginit_input_controller
+#define jinit_memory_mgr              ginit_memory_mgr
+#define jinit_master_decompress       ginit_master_decompress
+#define jinit_huff_decoder            ginit_huff_decoder
+#define jinit_d_coef_controller       ginit_d_coef_controller
+#define jinit_color_deconverter       ginit_color_deconverter
+#define jinit_inverse_dct             ginit_inverse_dct
+#define jinit_d_main_controller       ginit_d_main_controller
+#define jinit_arith_decoder           ginit_arith_decoder
+#define jinit_color_deconverter       ginit_color_deconverter
+#define jinit_d_coef_controller       ginit_d_coef_controller
+#define jinit_d_main_controller       ginit_d_main_controller
+#define jinit_d_post_controller       ginit_d_post_controller
+#define jinit_huff_decoder            ginit_huff_decoder
+#define jinit_master_decompress       ginit_master_decompress
+#define jinit_upsampler               ginit_upsampler
+#define jinit_d_post_controller       ginit_d_post_controller
+#define jinit_downsampler             ginit_downsampler
+#define jinit_arith_decoder           ginit_arith_decoder
+#define jinit_marker_writer           ginit_marker_writer
+#define jinit_marker_mgr              ginit_marker_mgr
+#define jinit_compress_master         ginit_compress_master
+#define jinit_c_coef_controller       ginit_c_coef_controller
+#define jinit_color_converter         ginit_color_converter
+#define jinit_forward_dct             ginit_forward_dct
+#define jinit_arith_encoder           ginit_arith_encoder
+#define jinit_huff_encoder            ginit_huff_encoder
+#define jinit_c_main_controller       ginit_c_main_controller
+#define jinit_marker_writer           ginit_marker_writer
+#define jinit_c_master_control        ginit_c_master_control
+#define jinit_c_prep_controller       ginit_c_prep_controller
 #endif
 
 /* See IJG's jconfig.doc for the contents of this file. */
