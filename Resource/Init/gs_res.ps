@@ -567,13 +567,23 @@ status {
   dup status {
     pop pop pop pop exch pop                  % (scr) (p/c/n)
   } {
-    .libfile {
-      dup .filename pop                       % (scr) (p/c/n) file (p/c/n')
-      exch closefile                          % (scr) (p/c/n) (p/c/n')
-      exch pop                                % (scr) (p/c/n')
-    } {
-      pop                                     % (scr) (p/c/n)
+    exch
+    .libfile
+    {//true}
+    {
+      pop dup .libfile
+      {//true}
+      {//false}
+      ifelse
     } ifelse
+
+    {
+      dup .filename pop
+      exch closefile
+      exch pop
+    }
+    {pop}
+    ifelse
   } ifelse
   exch copy                                   % (p/c/n)
 } bind
