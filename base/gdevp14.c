@@ -1683,6 +1683,7 @@ pdf14_open(gx_device *dev)
     if (pdev->ctx == NULL)
         return_error(gs_error_VMerror);
     pdev->free_devicen = true;
+    pdev->text_group = PDF14_TEXTGROUP_NO_BT;
     return 0;
 }
 
@@ -3727,6 +3728,14 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_gstate * pgs,
         case PDF14_END_TRANS_GROUP:
             code = gx_end_transparency_group(pgs, pdev);
             break;
+        case PDF14_BEGIN_TRANS_TEXT_GROUP:
+            p14dev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
+            break;
+        case PDF14_END_TRANS_TEXT_GROUP:
+            if (p14dev->text_group == PDF14_TEXTGROUP_BT_PUSHED)
+                code = gx_end_transparency_group(pgs, pdev);
+            p14dev->text_group = PDF14_TEXTGROUP_NO_BT; /* Hit ET */
+            break;
         case PDF14_BEGIN_TRANS_MASK:
             code = gx_begin_transparency_mask(pgs, pdev, &params);
             break;
@@ -3826,6 +3835,33 @@ pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
         return gx_no_create_compositor(dev, pcdev, pct, pgs, mem, cdev);
 }
 
+static int
+pdf14_push_text_group(gx_device *dev, gs_gstate *pgs, gx_path *path,
+    const gx_clip_path *pcpath, gs_blend_mode_t blend_mode, float opacity,
+    bool is_clist)
+{
+    int code;
+    gs_transparency_group_params_t params = { 0 };
+    gs_rect bbox = { 0 }; /* Bounding box is set by parent */
+    pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
+
+    /* Push a non-isolated knock-out group making sure the opacity and blend
+       mode are correct */
+    params.Isolated = false;
+    params.Knockout = true;
+    params.text_group = PDF14_TEXTGROUP_BT_PUSHED;
+    gs_setopacityalpha(pgs, 1.0);
+    gs_setblendmode(pgs, BLEND_MODE_Normal);
+    if (is_clist)
+        code = pdf14_clist_update_params(pdev, pgs, false, NULL);
+    code = gs_begin_transparency_group(pgs, &params, &bbox);
+    gs_setopacityalpha(pgs, opacity);
+    gs_setblendmode(pgs, blend_mode);
+    if (is_clist)
+        code = pdf14_clist_update_params(pdev, pgs, false, NULL);
+    return code;
+}
+
 static	int
 pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
                  const gs_text_params_t * text, gs_font * font,
@@ -3835,6 +3871,10 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
 {
     int code;
     gs_text_enum_t *penum;
+    gs_blend_mode_t blend_mode = gs_currentblendmode(pgs);
+    float opacity = gs_currentopacityalpha(pgs);
+    bool blend_issue = !(blend_mode == BLEND_MODE_Normal || blend_mode == BLEND_MODE_Compatible);
+    pdf14_device *pdev = (pdf14_device*)dev;
 
     if_debug0m('v', memory, "[v]pdf14_text_begin\n");
     pdf14_set_marking_params(dev, pgs);
@@ -3842,6 +3882,22 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
                                  memory, &penum);
     if (code < 0)
         return code;
+
+    /* We may need to push a non-isolated transparency group if the following
+       is true.
+       1) We are not currently in one that we pushed for text and we are in
+          a BT/ET pair.  This is determined by looking at the pdf14 text_group.
+       2) The blend mode is not Normal or the opacity is not 1.0
+       3) Text knockout is set to true
+
+       Special note:  If text-knockout is set to false while we are within a
+       BT ET pair, we should pop the group.  I need to create a test file for
+       this case.  */
+    if (gs_currenttextknockout(pgs) && (blend_issue || opacity != 1.0) &&
+        pdev->text_group == PDF14_TEXTGROUP_BT_NOT_PUSHED)
+        code = pdf14_push_text_group(dev, pgs, path, pcpath, blend_mode, opacity,
+            false);
+
     *ppenum = (gs_text_enum_t *)penum;
     return code;
 }
@@ -4069,7 +4125,12 @@ pdf14_begin_transparency_group(gx_device *dev,
         return code;
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &tos_profile, &render_cond);
 
-    code = compute_group_device_int_rect(pdev, &rect, pbbox, pgs);
+    if (ptgp->text_group == PDF14_TEXTGROUP_BT_PUSHED) {
+        rect = pdev->ctx->rect; /* Use parent group for text_group. */
+        pdev->text_group = PDF14_TEXTGROUP_BT_PUSHED;  /* For immediate mode and clist reading */
+    } else
+        code = compute_group_device_int_rect(pdev, &rect, pbbox, pgs);
+
     if (code < 0)
         return code;
     if_debug4m('v', pdev->memory,
@@ -4658,6 +4719,9 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_gstate *pgs)
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_parent_color_t *parent_color = pdev->trans_group_parent_cmap_procs;
     gx_device_clist_writer * cldev = (gx_device_clist_writer *)pdev->pclist_device;
+
+    if (parent_color == NULL)
+        return_error(gs_error_unknownerror);  /* Unmatched group pop */
 
     if_debug0m('v', pdev->memory, "[v]pdf14_update_device_color_procs_pop_c\n");
     /* The color procs are always pushed.  Simply restore them. */
@@ -6090,6 +6154,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             put_value(pbuf, pparams->is_pattern);
             break;
         case PDF14_END_TRANS_GROUP:
+        case PDF14_END_TRANS_TEXT_GROUP:
             trans_group_level--;	/* if now at page level, pdf14_needed will be updated */
             if (smask_level == 0 && trans_group_level == 0)
                 pdf14_needed = cdev->page_pdf14_needed;
@@ -6107,6 +6172,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             put_value(pbuf, pparams->opacity.alpha);
             put_value(pbuf, pparams->shape.alpha);
             put_value(pbuf, pparams->bbox);
+            put_value(pbuf, pparams->text_group);
             mask_id = pparams->mask_id;
             put_value(pbuf, mask_id);
             /* Color space information maybe ICC based
@@ -6296,6 +6362,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             read_value(data, params.is_pattern);
             break;
         case PDF14_END_TRANS_GROUP:
+        case PDF14_END_TRANS_TEXT_GROUP:
             code += 0; /* A good place for a breakpoint. */
             break;			/* No data */
         case PDF14_PUSH_TRANS_STATE:
@@ -6316,6 +6383,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             read_value(data, params.opacity.alpha);
             read_value(data, params.shape.alpha);
             read_value(data, params.bbox);
+            read_value(data, params.text_group);
             read_value(data, params.mask_id);
             read_value(data, params.icc_hash);
             break;
@@ -6482,7 +6550,8 @@ find_opening_op(int opening_op, gs_composite_t **ppcte,
                 }
                 if (opening_op == PDF14_PUSH_DEVICE) {
                     if (op != PDF14_BEGIN_TRANS_MASK && op != PDF14_END_TRANS_MASK &&
-                        op != PDF14_BEGIN_TRANS_GROUP && op != PDF14_END_TRANS_GROUP)
+                        op != PDF14_BEGIN_TRANS_GROUP && op != PDF14_END_TRANS_GROUP &&
+                        op != PDF14_END_TRANS_TEXT_GROUP)
                         return COMP_ENQUEUE;
                 }
             }
@@ -6557,6 +6626,7 @@ c_pdf14trans_is_closing(const gs_composite_t * composite_action, gs_composite_t 
         case PDF14_BEGIN_TRANS_GROUP:
             return COMP_ENQUEUE;
         case PDF14_END_TRANS_GROUP:
+        case PDF14_END_TRANS_TEXT_GROUP:
             if (*ppcte == NULL)
                 return COMP_EXEC_QUEUE;
             return find_opening_op(PDF14_BEGIN_TRANS_GROUP, ppcte, COMP_MARK_IDLE);
@@ -6593,7 +6663,8 @@ c_pdf14trans_is_friendly(const gs_composite_t * composite_action, byte cmd0, byt
     gs_pdf14trans_t *pct0 = (gs_pdf14trans_t *)composite_action;
     int op0 = pct0->params.pdf14_op;
 
-    if (op0 == PDF14_PUSH_DEVICE || op0 == PDF14_END_TRANS_GROUP) {
+    if (op0 == PDF14_PUSH_DEVICE || op0 == PDF14_END_TRANS_GROUP ||
+        op0 == PDF14_END_TRANS_TEXT_GROUP) {
         /* Halftone commands are always passed to the target printer device,
            because transparency buffers are always contone.
            So we're safe to execute them before queued transparency compositors. */
@@ -7408,6 +7479,20 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                   determining the range of bands in which this mask can affect.
                   So, if needed change the masks bounding box at this time */
                 break;
+            case PDF14_BEGIN_TRANS_TEXT_GROUP:
+                pdev->text_group = PDF14_TEXTGROUP_BT_NOT_PUSHED;
+                *pcdev = dev;
+                return 0; /* Never put into clist. Only used during writing */
+            case PDF14_END_TRANS_TEXT_GROUP:
+                if (pdev->text_group != PDF14_TEXTGROUP_BT_PUSHED) {
+                    *pcdev = dev;
+                    return 0; /* Avoids spurious ET calls in interpreter */
+                }
+                pdev->text_group = PDF14_TEXTGROUP_NO_BT; /* These can't be nested */
+                code = pdf14_update_device_color_procs_pop_c(dev, pgs);
+                if (code < 0)
+                    return code;
+                break;
             case PDF14_END_TRANS_GROUP:
             case PDF14_END_TRANS_MASK:
                 /* We need to update the clist writer device procs based upon the
@@ -7764,6 +7849,9 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
     pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     gs_text_enum_t *penum;
     int code;
+    gs_blend_mode_t blend_mode = gs_currentblendmode(pgs);
+    float opacity = gs_currentopacityalpha(pgs);
+    bool blend_issue = !(blend_mode == BLEND_MODE_Normal || blend_mode == BLEND_MODE_Compatible);
 
     if_debug0m('v', memory, "[v]pdf14_clist_text_begin\n");
     /*
@@ -7780,6 +7868,20 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
                                 pdcolor, pcpath, memory, &penum);
     if (code < 0)
         return code;
+
+    /* We may need to push a non-isolated transparency group if the following
+    is true.
+    1) We are not currently in one that we pushed for text.  This is
+    is determined by looking at the pdf14 device.
+    2) The blend mode is not Normal or the opacity is not 1.0
+    3) Text knockout is set to true
+    */
+    if (gs_currenttextknockout(pgs) && (blend_issue || opacity != 1.0) &&
+        pdev->text_group == PDF14_TEXTGROUP_BT_NOT_PUSHED) {
+        code = pdf14_push_text_group(dev, pgs, path, pcpath, blend_mode, opacity, true);
+        if (code == 0)
+            pdev->text_group = PDF14_TEXTGROUP_BT_PUSHED;  /* Needed during clist writing */
+    }
     *ppenum = (gs_text_enum_t *)penum;
     return code;
 }
@@ -8034,6 +8136,7 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
             }
             break;
         case PDF14_END_TRANS_GROUP:
+        case PDF14_END_TRANS_TEXT_GROUP:
             code = 0; /* A place for breakpoint. */
             break;
         case PDF14_BEGIN_TRANS_MASK:
@@ -8235,11 +8338,17 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight,
         case PDF14_BEGIN_TRANS_GROUP:
             {	gs_int_rect rect;
 
-                pdf14_compute_group_device_int_rect(&pdf14pct->params.ctm,
-                                                &pdf14pct->params.bbox, &rect);
-                /* We have to crop this by the parent object.   */
-                *ry = max(rect.p.y, cropping_min);
-                *rheight = min(rect.q.y, cropping_max) - *ry;
+                /* Text group always uses parents size*/
+                if (pdf14pct->params.text_group == PDF14_TEXTGROUP_BT_PUSHED) {
+                    *ry = cropping_min;
+                    *rheight = cropping_max - *ry;
+                } else {
+                    pdf14_compute_group_device_int_rect(&pdf14pct->params.ctm,
+                        &pdf14pct->params.bbox, &rect);
+                    /* We have to crop this by the parent object.   */
+                    *ry = max(rect.p.y, cropping_min);
+                    *rheight = min(rect.q.y, cropping_max) - *ry;
+                }
                 return PUSHCROP; /* Push cropping. */
             }
         case PDF14_BEGIN_TRANS_MASK:
@@ -8269,12 +8378,14 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight,
                 }
             }
         case PDF14_END_TRANS_GROUP: return POPCROP; /* Pop cropping. */
+        case PDF14_END_TRANS_TEXT_GROUP: return POPCROP; /* Pop cropping. */
         case PDF14_END_TRANS_MASK: return POPCROP;   /* Pop the cropping */
         case PDF14_PUSH_TRANS_STATE: return CURRBANDS;
         case PDF14_POP_TRANS_STATE: return CURRBANDS;
         case PDF14_SET_BLEND_PARAMS: return ALLBANDS;
         case PDF14_PUSH_SMASK_COLOR: return POPCROP; /* Pop cropping. */
         case PDF14_POP_SMASK_COLOR: return POPCROP;   /* Pop the cropping */
+        case PDF14_BEGIN_TRANS_TEXT_GROUP: return ALLBANDS; /* should never occur */
     }
     return ALLBANDS;
 }

@@ -33,6 +33,8 @@ typedef enum {
     PDF14_ABORT_DEVICE,
     PDF14_BEGIN_TRANS_GROUP,
     PDF14_END_TRANS_GROUP,
+    PDF14_BEGIN_TRANS_TEXT_GROUP,
+    PDF14_END_TRANS_TEXT_GROUP,
     PDF14_BEGIN_TRANS_MASK,
     PDF14_END_TRANS_MASK,
     PDF14_SET_BLEND_PARAMS,
@@ -49,6 +51,8 @@ typedef enum {
     "PDF14_ABORT_DEVICE     ",\
     "PDF14_BEGIN_TRANS_GROUP",\
     "PDF14_END_TRANS_GROUP  ",\
+    "PDF14_BEGIN_TRANS_TEXT_GROUP  ",\
+    "PDF14_END_TRANS_TEXT_GROUP  ",\
     "PDF14_BEGIN_TRANS_MASK ",\
     "PDF14_END_TRANS_MASK   ",\
     "PDF14_SET_BLEND_PARAMS ",\
@@ -65,6 +69,16 @@ typedef enum {
 #define PDF14_SET_OPACITY_ALPHA (1 << 3)
 #define PDF14_SET_OVERPRINT		(1 << 4)
 #define PDF14_SET_OVERPRINT_MODE (1 << 5)
+
+/* Used for keeping track of the text group madness, since we have the pdf14
+   device needs to know if we are int an BT/ET group vs. a FreeText Annotation
+   as well as if we have already pushed a special knockout non-isolated group
+   for doing text knockout */
+typedef enum {
+    PDF14_TEXTGROUP_NO_BT,  /* We are not in a BT/ET.  Avoids Annotation Texts */
+    PDF14_TEXTGROUP_BT_NOT_PUSHED, /* We are in a BT/ET but no group pushed */
+    PDF14_TEXTGROUP_BT_PUSHED   /* We are in a BT/ET section and group was pushed */
+} pdf14_text_group_state;
 
 #ifndef gs_function_DEFINED
 typedef struct gs_function_s gs_function_t;
@@ -106,6 +120,7 @@ struct gs_pdf14trans_params_s {
     /* Individual transparency parameters */
     gs_blend_mode_t blend_mode;
     bool text_knockout;
+    int text_group;
     gs_transparency_source_t opacity;
     gs_transparency_source_t shape;
     bool mask_is_image;
@@ -168,6 +183,9 @@ int gs_begin_transparency_group(gs_gstate * pgs,
                                 const gs_rect *pbbox);
 
 int gs_end_transparency_group(gs_gstate *pgs);
+
+int gs_end_transparency_text_group(gs_gstate *pgs);
+int gs_begin_transparency_text_group(gs_gstate *pgs);
 
 void gs_trans_mask_params_init(gs_transparency_mask_params_t *ptmp,
                                gs_transparency_mask_subtype_t subtype);

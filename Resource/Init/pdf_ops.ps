@@ -906,7 +906,7 @@ end readonly def
     (   **** Error: illegal nested BT operator detected.\n)
     pdfformaterror
     (               Output may be incorrect.\n) pdfformaterror
-    ET
+    ET_NO_TXT_KO  %% Does not push any compositor actions
   } if
 
   %% Bug #695897 see the explanation in /q defined above.
@@ -915,15 +915,12 @@ end readonly def
     (   **** Error: Illegal nested BT operator (inside a gsave) detected.\n)
     pdfformaterror
     (               Output may be incorrect.\n) pdfformaterror
-    ET
-  }if
-  % If we are in a W/W* "context", pack away the dictionary
-  % into a temporary place, and pop it off the dict stack
+    ET_NO_TXT_KO  %% Does not push any compositor actions
+  } if
   currentdict /n known {
     currentdict end
     /.W exch def
   } if
-
   currentdict /TextLineMatrix .knownget
     { identmatrix pop TextMatrix identmatrix pop }
     { matrix /TextLineMatrix gput matrix /TextMatrix gput }
@@ -937,8 +934,17 @@ end readonly def
   %% Set the special version of the path constructoin operators, so that
   %% they will work as expected if they are illgeally present in a text block.
   switch_to_text_marking_ops
+  
+  %% If needed, let the pdf14 device know we are in a BT condition.  This
+  %% distinguishes BT from an Annotation /FreeText show command which also
+  %% can come into pdf_text_begin with an opacity not equal to 1.
+  PDFusingtransparency .currenttextknockout and {
+    .begintransparencytextgroup
+  } if
+  
 } bdef
-/ET {
+
+/ET_NO_TXT_KO {
   currentdict /TextSaveMatrix known {
     TextRenderingMode 4 ge { .currentfilladjust 0 .setfilladjust clip .setfilladjust} if
     newpath TextSaveMatrix setmatrix
@@ -962,6 +968,15 @@ end readonly def
     switch_to_normal_marking_ops
   } if
 } bdef
+
+/ET {
+  //ET_NO_TXT_KO exec
+  % Group push occurred in pdf14_text_begin.
+  PDFusingtransparency .currenttextknockout and {
+    .endtransparencytextgroup
+  } if 
+} bdef
+
 /Tc { /TextSpacing gput { showfirst } /Show gput } bdef
 /TL { /TextLeading gput } bdef
 /Tr { dup .settextrenderingmode /TextRenderingMode gput { showfirst } /Show gput } bdef

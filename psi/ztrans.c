@@ -257,6 +257,20 @@ zendtransparencygroup(i_ctx_t *i_ctx_p)
     return gs_end_transparency_group(igs);
 }
 
+/* - .endtransparencytextgroup - */
+static int
+zendtransparencytextgroup(i_ctx_t *i_ctx_p)
+{
+    return gs_end_transparency_text_group(igs);
+}
+
+/* - .begintransparencytextgroup - */
+static int
+zbegintransparencytextgroup(i_ctx_t *i_ctx_p)
+{
+    return gs_begin_transparency_text_group(igs);
+}
+
 /* <cs_set?> <paramdict> <llx> <lly> <urx> <ury> .begintransparencymaskgroup -	*/
 /*             cs_set == false if we are inheriting the colorspace		*/
 static int tf_using_function(double, float *, void *);
@@ -537,6 +551,8 @@ const op_def ztrans1_op_defs[] = {
 const op_def ztrans2_op_defs[] = {
     {"5.begintransparencygroup", zbegintransparencygroup},
     {"0.endtransparencygroup", zendtransparencygroup},
+    { "0.endtransparencytextgroup", zendtransparencytextgroup },
+    { "0.begintransparencytextgroup", zbegintransparencytextgroup },
     {"5.begintransparencymaskgroup", zbegintransparencymaskgroup},
     {"1.begintransparencymaskimage", zbegintransparencymaskimage},
     {"1.endtransparencymask", zendtransparencymask},

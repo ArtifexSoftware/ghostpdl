@@ -191,6 +191,7 @@ gs_trans_group_params_init(gs_transparency_group_params_t *ptgp)
     ptgp->ColorSpace = NULL;    /* bogus, but can't do better */
     ptgp->Isolated = false;
     ptgp->Knockout = false;
+    ptgp->text_group = PDF14_TEXTGROUP_NO_BT;
     ptgp->image_with_SMask = false;
     ptgp->mask_id = 0;
     ptgp->iccprofile = NULL;
@@ -231,6 +232,7 @@ gs_begin_transparency_group(gs_gstate *pgs,
     params.opacity = pgs->opacity;
     params.shape = pgs->shape;
     params.blend_mode = pgs->blend_mode;
+    params.text_group = ptgp->text_group;
     /* This function is called during the c-list writer side.
        Store some information so that we know what the color space is
        so that we can adjust according later during the clist reader.
@@ -253,7 +255,7 @@ gs_begin_transparency_group(gs_gstate *pgs,
        target device (process color model).  Here we just want
        to set it as a unknown type for clist writing, as we will take care
        of using the parent group color space later during clist reading.
-       Also, if the group was not isolated we MUST use the parent group 
+       Also, if the group was not isolated we MUST use the parent group
        color space regardless of what the group color space is specified to be
        */
     if (ptgp->ColorSpace == NULL || params.Isolated != true) {
@@ -320,8 +322,8 @@ gs_begin_transparency_group(gs_gstate *pgs,
         else
             dmputs(pgs->memory, "     (no CS)");
 
-        dmprintf2(pgs->memory, "  Isolated = %d  Knockout = %d\n",
-                 ptgp->Isolated, ptgp->Knockout);
+        dmprintf3(pgs->memory, "  Isolated = %d  Knockout = %d text_group = %d\n",
+                 ptgp->Isolated, ptgp->Knockout, ptgp->text_group);
     }
 #endif
     params.bbox = *pbbox;
@@ -342,6 +344,7 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
     tgp.Knockout = pparams->Knockout;
     tgp.idle = pparams->idle;
     tgp.mask_id = pparams->mask_id;
+    tgp.text_group = pparams->text_group;
 
     /* Needed so that we do proper blending */
     tgp.group_color = pparams->group_color;
@@ -390,6 +393,34 @@ gs_end_transparency_group(gs_gstate *pgs)
     }
     if_debug0m('v', pgs->memory, "[v]gs_end_transparency_group\n");
     params.pdf14_op = PDF14_END_TRANS_GROUP;  /* Other parameters not used */
+    return gs_gstate_update_pdf14trans(pgs, &params);
+}
+
+int
+gs_end_transparency_text_group(gs_gstate *pgs)
+{
+    gs_pdf14trans_params_t params = { 0 };
+
+    if (check_for_nontrans_pattern(pgs,
+        (unsigned char *)"gs_end_transparency_text_group")) {
+        return(0);
+    }
+    if_debug0m('v', pgs->memory, "[v]gs_end_transparency_text_group\n");
+    params.pdf14_op = PDF14_END_TRANS_TEXT_GROUP;  /* Other parameters not used */
+    return gs_gstate_update_pdf14trans(pgs, &params);
+}
+
+int
+gs_begin_transparency_text_group(gs_gstate *pgs)
+{
+    gs_pdf14trans_params_t params = { 0 };
+
+    if (check_for_nontrans_pattern(pgs,
+        (unsigned char *)"gs_begin_transparency_text_group")) {
+        return(0);
+    }
+    if_debug0m('v', pgs->memory, "[v]gs_begin_transparency_text_group\n");
+    params.pdf14_op = PDF14_BEGIN_TRANS_TEXT_GROUP;  /* Other parameters not used */
     return gs_gstate_update_pdf14trans(pgs, &params);
 }
 

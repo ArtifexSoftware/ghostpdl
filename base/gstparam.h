@@ -70,6 +70,7 @@ typedef struct gs_transparency_group_params_s {
     bool Isolated;
     bool Knockout;
     bool image_with_SMask;
+    int text_group;
     bool idle;
     uint mask_id;
     int group_color_numcomps;
