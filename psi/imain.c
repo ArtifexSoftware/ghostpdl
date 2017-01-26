@@ -905,7 +905,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
      * We also have to mess with the BeginPage/EndPage procs so that we don't
      * trigger a spurious extra page to be emitted.
      */
-    if (minst->init_done >= 1) {
+    if (minst->init_done >= 2) {
         gs_main_run_string(minst,
             "/BGPrint /GetDeviceParam .special_op \
             {{ <</BeginPage {pop} /EndPage {pop pop //false } \
@@ -920,7 +920,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
      * Close the "main" device, because it may need to write out
      * data before destruction. pdfwrite needs so.
      */
-    if (minst->init_done >= 1) {
+    if (minst->init_done >= 2) {
         int code = 0;
 
         if (idmemory->reclaim != 0) {
@@ -975,14 +975,13 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
                 exit_status = code;
         }
 #endif
-    }
-    /* Flush stdout and stderr */
-    if (minst->init_done >= 2)
+      /* Flush stdout and stderr */
       gs_main_run_string(minst,
         "(%stdout) (w) file closefile (%stderr) (w) file closefile \
         serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemexec \
           systemdict /savedinitialgstate .forceundef",
         0 , &exit_code, &error_object);
+    }
     gp_readline_finit(minst->readline_data);
     i_ctx_p = minst->i_ctx_p;		/* get current interp context */
     if (gs_debug_c(':')) {
