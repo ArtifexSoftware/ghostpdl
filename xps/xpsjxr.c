@@ -199,7 +199,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
         xps_free(ctx, name);
         return gs_throw(gs_error_invalidfileaccess, "cannot write to scratch file");
     }
-    fseek(file, 0, SEEK_SET);
+    xps_fseek(file, 0, SEEK_SET);
 
     container = jxr_create_container();
     rc = jxr_read_image_container(container, file);
@@ -232,7 +232,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
     state.output = output;
     jxr_set_user_data(image, &state);
 
-    fseek(file, offset, SEEK_SET);
+    xps_fseek(file, offset, SEEK_SET);
     rc = jxr_read_image_bitstream(image, file);
     if (rc < 0) {
         xps_free(ctx, name);
@@ -261,7 +261,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
         state.output = output;
         jxr_set_user_data(image, &state);
 
-        fseek(file, alpha_offset, SEEK_SET);
+        xps_fseek(file, alpha_offset, SEEK_SET);
         rc = jxr_read_image_bitstream(image, file);
         if (rc < 0) {
             xps_free(ctx, name);
