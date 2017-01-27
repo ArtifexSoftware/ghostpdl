@@ -337,7 +337,8 @@ xps_read_zip_part(xps_context_t *ctx, const char *partname)
     if (ent)
     {
         part = xps_new_part(ctx, partname, ent->usize);
-        code = xps_read_zip_entry(ctx, ent, part->data);
+        if (part != NULL)
+            code = xps_read_zip_entry(ctx, ent, part->data);
         if (code < 0)
         {
             xps_free_part(ctx, part);
