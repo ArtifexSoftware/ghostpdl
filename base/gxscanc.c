@@ -229,10 +229,10 @@ static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int he
     }
     /* Adjust us back from any 'partial' scanline we cross at the
      * end. */
-    ex -= sx;
-    ey -= sy;
     delta = (ey - fixed_half) & (fixed_1-1);
     assert(delta >= 0 && delta < fixed_1);
+    ex -= sx;
+    ey -= sy;
     if (delta > 0)
     {
         int advance = (int)(((int64_t)ex * delta + (ey>>1)) / ey);
