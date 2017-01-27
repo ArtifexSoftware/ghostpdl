@@ -124,7 +124,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     char *height_att;
     char base_uri[1024];
     char *s;
-    int code;
+    int code, code1, code2;
 
     if_debug1m('|', ctx->memory, "doc: parsing page %s\n", part->name);
 
@@ -188,15 +188,33 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
         fa.data = fv;
         fa.size = 2;
 
-        code = param_write_float_array((gs_param_list *)&list, ".MediaSize", &fa);
-        if ( code >= 0 )
+        /* Pre-parse looking for transparency */
+        ctx->has_transparency = false;
+        for (node = xps_down(root); node; node = xps_next(node))
+        {
+            if (!strcmp(xps_tag(node), "FixedPage.Resources") && xps_down(node))
+                if (xps_resource_dictionary_has_transparency(ctx, base_uri, xps_down(node)))
+                {
+                    ctx->has_transparency = true;
+                    break;
+                }
+            if (xps_element_has_transparency(ctx, base_uri, node))
+            {
+                ctx->has_transparency = true;
+                break;
+            }
+        }
+
+        code1 = param_write_bool((gs_param_list *)&list, "PageUsesTransparency", &(ctx->has_transparency));
+        code2 = param_write_float_array((gs_param_list *)&list, ".MediaSize", &fa);
+        if ( code1 >= 0 || code2 >= 0)
         {
             gs_c_param_list_read(&list);
             code = gs_putdeviceparams(dev, (gs_param_list *)&list);
             if (code < 0) {
                 gs_c_param_list_release(&list);
                 xps_free_item(ctx, root);
-                return gs_rethrow(code, "cannot set media size");
+                return gs_rethrow(code, "cannot set device parameters");
             }
         }
         gs_c_param_list_release(&list);
@@ -224,25 +242,6 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
         if (code < 0) {
             xps_free_item(ctx, root);
             return gs_rethrow(code, "cannot clear page");
-        }
-    }
-
-    /* Pre-parse looking for transparency */
-
-    ctx->has_transparency = 0;
-
-    for (node = xps_down(root); node; node = xps_next(node))
-    {
-        if (!strcmp(xps_tag(node), "FixedPage.Resources") && xps_down(node))
-            if (xps_resource_dictionary_has_transparency(ctx, base_uri, xps_down(node)))
-            {
-                ctx->has_transparency = 1;
-                break;
-            }
-        if (xps_element_has_transparency(ctx, base_uri, node))
-        {
-            ctx->has_transparency = 1;
-            break;
         }
     }
 
