@@ -320,19 +320,6 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
         errprintf(mem, "\n");
         return gs_error_Fatal;
     }
-
-    /* If the display device is selected (default), set up the callback.  NB Move me. */
-    if (strcmp(inst->device->dname, "display") == 0) {
-        gx_device_display *ddev;
-        
-        if (!inst->disp) {
-            errprintf(mem,
-                      "Display device selected, but no display device configured.\n");
-            return -1;
-        }
-        ddev = (gx_device_display *) inst->device;
-        ddev->callback = (display_callback *) inst->disp;
-    }
     return 0;
 }
 
@@ -831,6 +818,19 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
         if (!strcmp(gs_devicename(pti->device), "pdfwrite") ||
             !strcmp(gs_devicename(pti->device), "ps2write"))
             pti->high_level_device = true;
+
+            /* If the display device is selected (default), set up the callback.  NB Move me. */
+        if (strcmp(gs_devicename(pti->device), "display") == 0) {
+            gx_device_display *ddev;
+        
+            if (!pti->disp) {
+                code = -1;
+            } else {
+                ddev = (gx_device_display *) pti->device;
+                ddev->callback = (display_callback *) pti->disp;
+
+            }
+        }
     }
     return code;
 }

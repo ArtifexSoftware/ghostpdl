@@ -82,3 +82,14 @@ plapi_delete_instance(void *lib)
     pl_main_delete_instance(pl_main_get_instance(ctx->memory));
     return 0;
 }
+
+/* Set the display callback structure */
+GSDLLEXPORT int GSDLLAPI
+plapi_set_display_callback(void *lib, void *callback)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
+        return gs_error_Fatal;
+    pl_main_set_display_callback(pl_main_get_instance(ctx->memory), callback);
+    return 0;
+}

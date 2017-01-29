@@ -356,7 +356,6 @@ main_utf8(int argc, char *argv[])
     int code, code1;
     int exit_code;
     int exit_status;
-#ifndef METRO
     int nargc;
     char **nargv;
     char dformat[64];
@@ -369,9 +368,16 @@ main_utf8(int argc, char *argv[])
         _setmode(fileno(stdin), _O_BINARY);
     _setmode(fileno(stdout), _O_BINARY);
     _setmode(fileno(stderr), _O_BINARY);
-
+#ifndef METRO
     hwndforeground = GetForegroundWindow();     /* assume this is ours */
+#endif
 
+    if (plapi_new_instance(&instance, NULL) < 0) {
+        fprintf(stderr, "Cannot create instance\n");
+        return 1;
+    }
+
+#ifndef METRO    
     if (_beginthread(winthread, 65535, NULL) == -1) {
         fprintf(stderr, "GUI thread creation failed\n");
     }
@@ -390,11 +396,14 @@ main_utf8(int argc, char *argv[])
         if (n == 0)
             fprintf(stderr, "Can't post message to GUI thread\n");
     }
+
 #endif
 
 #ifdef METRO
-    code = pl_main_aux(argc, argv, NULL);
+    nargc = argc;
+    nargv = argv;
 #else
+    plapi_set_display_callback(instance, &display);
     {
         int format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
             DISPLAY_DEPTH_1 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
@@ -419,18 +428,28 @@ main_utf8(int argc, char *argv[])
             format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
                 DISPLAY_DEPTH_4 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
         sprintf(dformat, "-dDisplayFormat=%d", format);
-        nargc = argc + 2;
-        nargv = (char **)malloc(nargc * sizeof(char *));
+    }
+    nargc = argc + 2;
+    nargv = (char **)malloc((nargc + 1) * sizeof(char *));
+    if (nargv == NULL) {
+        fprintf(stderr, "Malloc failure!\n");
+    } else {
         nargv[0] = argv[0];
         nargv[1] = dformat;
         nargv[2] = ddpi;
-        memcpy(&nargv[3], &argv[1], (argc-1) * sizeof(char *));
-    }
+        memcpy(&nargv[3], &argv[1], argc * sizeof(char *));
+#endif
+        code = plapi_init_with_args(instance, nargc, nargv);
+        code1 = plapi_exit(instance);
+        if (code == 0 || (code == gs_error_Quit && code1 != 0))
+            code = code1;
+        plapi_delete_instance(instance);
 
-    code = pl_main_aux(nargc, nargv, &display);
-
+#ifndef METRO
     free(nargv);
-
+#endif
+    }
+#ifndef METRO
     /* close other thread */
     quitnow = TRUE;
     PostThreadMessage(thread_id, WM_QUIT, 0, (LPARAM) 0);

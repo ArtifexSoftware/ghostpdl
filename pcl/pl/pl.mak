@@ -285,7 +285,9 @@ $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(pllfont_h) $(AK)\
         $(gxfapi_h) $(plufstlp_h) $(plvocab_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)pllfont.c $(PLO_)pllfont.$(OBJ)
 
-$(PLOBJ)plapi.$(OBJ): $(PLSRC)plapi.c $(plmain_h) $(plapi_h)
+$(PLOBJ)plapi.$(OBJ): $(PLSRC)plapi.c $(plmain_h) $(plapi_h)\
+	$(gsmchunk_h) $(gsmalloc_h) $(gserrors_h) $(gsexit_h)\
+         $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plapi.c $(PLO_)plapi.$(OBJ)
 
 pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plht.$(OBJ)

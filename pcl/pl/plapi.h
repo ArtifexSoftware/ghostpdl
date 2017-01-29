@@ -93,4 +93,21 @@ GSDLLEXPORT int GSDLLAPI plapi_new_instance(void **instance, void *caller_handle
 
 GSDLLEXPORT int GSDLLAPI plapi_delete_instance(void *instance);
 
+GSDLLEXPORT int GSDLLAPI plapi_set_display_callback(void *lib, void *callback);
+
+
+
+typedef int (GSDLLAPIPTR PFN_plapi_run_file)(void *instance, const char *file_name);
+
+typedef int (GSDLLAPIPTR PFN_plapi_exit)(void *instance);
+
+typedef int (GSDLLAPIPTR PFN_plapi_init_with_args)(void *instance, int argc, char **argv);
+
+typedef int (GSDLLAPIPTR PFN_plapi_new_instance)(void **instance, void *caller_handle);
+
+typedef int (GSDLLAPIPTR PFN_plapi_delete_instance)(void *instance);
+
+typedef int (GSDLLAPIPTR PFN_plapi_set_display_callback)(void *lib, void *callback);
+
+
 #endif /* plapi_INCLUDED */
