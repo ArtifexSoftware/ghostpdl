@@ -322,7 +322,7 @@ gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
         was_command_list = true;
 
         prn_finish_bg_print(ppdev);
-        
+
         gs_free_object(pcldev->memory->non_gc_memory, pcldev->cache_chunk, "free tile cache for clist");
         pcldev->cache_chunk = 0;
 
@@ -414,7 +414,6 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
             pdf14_trans_buffer_size = (ESTIMATED_PDF14_ROW_SPACE(max(1, pdev->width), pdev->color_info.num_components) >> 3);
             if (new_height < (max_ulong - mem_space) / pdf14_trans_buffer_size) {
                 pdf14_trans_buffer_size *= pdev->height;
-                mem_space += pdf14_trans_buffer_size;
             } else {
                 size_ok = 0;
             }
@@ -440,11 +439,14 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
         else {
             is_command_list = space_params.banding_type == BandingAlways ||
                 ppdev->saved_pages_list != NULL ||
-                mem_space >= space_params.MaxBitmap ||
+                mem_space + pdf14_trans_buffer_size >= space_params.MaxBitmap ||
                 !size_ok;	    /* too big to allocate */
         }
         if (!is_command_list) {
-            /* Try to allocate memory for full memory buffer */
+            byte *trans_buffer_reserve_space = NULL;
+
+            /* Try to allocate memory for full memory buffer, then allocate the
+               pdf14_trans_buffer_size to make sure we have enough space for that */
             base =
                 (reallocate ?
                  (byte *)gs_resize_object(buffer_memory, the_memory,
@@ -455,6 +457,14 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
                 is_command_list = true;
             else
                 the_memory = base;
+                trans_buffer_reserve_space = gs_alloc_bytes(buffer_memory, (uint)pdf14_trans_buffer_size,
+                                                            "pdf14_trans_buffer_reserve test");
+                if (trans_buffer_reserve_space == NULL) {
+                    /* the pdf14 reserve test failed, switch to clist mode, the 'base' memory freed below */
+                    is_command_list = true;
+                } else {
+                    gs_free_object(buffer_memory, trans_buffer_reserve_space, "pdf14_trans_buffer_reserve OK");
+                }
         }
         if (!is_command_list && pass == 1 && PRN_MIN_MEMORY_LEFT != 0
             && buffer_memory == pdev->memory->non_gc_memory) {
@@ -1703,6 +1713,8 @@ compare_gdev_prn_space_params(const gdev_prn_space_params sp1,
   if (sp1.band.BandHeight != sp2.band.BandHeight)
     return(1);
   if (sp1.band.BandBufferSpace != sp2.band.BandBufferSpace)
+    return(1);
+  if (sp1.band.tile_cache_size != sp2.band.tile_cache_size)
     return(1);
   if (sp1.params_are_read_only != sp2.params_are_read_only)
     return(1);

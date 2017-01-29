@@ -281,6 +281,7 @@ gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
                                         "alloc_ht_order_data(levels)");
         if (porder->levels == 0)
             return_error(gs_error_VMerror);
+        memset(porder->levels, 0, sizeof(uint) * porder->num_levels);
     } else
         porder->levels = 0;
 

@@ -2295,14 +2295,14 @@ gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory)
                                             "gsicc_get_profile_handle_clist");
         if (buffer_ptr == NULL)
             return 0;
-        picc_profile->buffer = buffer_ptr;
         clist_read_chunk(pcrdev, position + GSICC_SERIALIZED_SIZE,
             profile_size, (unsigned char *) buffer_ptr);
         profile_handle = gscms_get_profile_handle_mem(memory->non_gc_memory, buffer_ptr, profile_size);
         /* We also need to get some of the serialized information */
         clist_read_chunk(pcrdev, position, GSICC_SERIALIZED_SIZE,
                         (unsigned char *) (&profile_header));
-        picc_profile->buffer_size = profile_header.buffer_size;
+        picc_profile->buffer = NULL;
+        picc_profile->buffer_size = 0;
         picc_profile->data_cs = profile_header.data_cs;
         picc_profile->default_match = profile_header.default_match;
         picc_profile->hash_is_valid = profile_header.hash_is_valid;
@@ -2318,6 +2318,7 @@ gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory)
             picc_profile->Range.ranges[k].rmin =
                 profile_header.Range.ranges[k].rmin;
         }
+        gs_free_object(memory->non_gc_memory, buffer_ptr, "gsicc_get_profile_handle_clist");
         return profile_handle;
      }
      return 0;

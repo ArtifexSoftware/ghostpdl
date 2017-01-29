@@ -438,7 +438,12 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
                     pbdev->finalize(pbdev);
                 return_error(gs_error_rangecheck);
             }
-            bits_size = min(band_space - band_data_size, data_size >> 1);
+            /* If the tile_cache_size is specified, use it */
+            if (cdev->space_params.band.tile_cache_size == 0) {
+                bits_size = min(band_space - band_data_size, data_size >> 1);
+            } else {
+                bits_size = cdev->space_params.band.tile_cache_size;
+            }
         } else {
             int adjusted;
             /*

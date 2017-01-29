@@ -690,9 +690,10 @@ typedef struct gx_band_params_s {
     int BandWidth;		/* (optional) band width in pixels */
     int BandHeight;		/* (optional) */
     long BandBufferSpace;	/* (optional) */
+    long tile_cache_size;	/* (optional) */
 } gx_band_params_t;
 
-#define BAND_PARAMS_INITIAL_VALUES 0, 0, 0
+#define BAND_PARAMS_INITIAL_VALUES 0, 0, 0, 0
 
 typedef enum {
     BandingAuto = 0,

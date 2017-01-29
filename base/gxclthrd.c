@@ -36,6 +36,8 @@
 #include "gdevdevn.h"
 #include "gsicc_cache.h"
 #include "gsicc_manage.h"
+#include "gstrans.h"
+#include "gzht.h"		/* for gx_ht_cache_default_bits_size */
 
 /* Forward reference prototypes */
 static int clist_start_render_thread(gx_device *dev, int thread_index, int band);
@@ -62,6 +64,9 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     gx_device *protodev;
     gs_c_param_list paramlist;
     gs_devn_params *pclist_devn_params;
+    gx_device_buf_space_t buf_space;
+    ulong state_size;
+
 
     /* Every thread will have a 'chunk allocator' to reduce the interaction
      * with the 'base' allocator which has 'mutex' (locking) protection.
@@ -162,12 +167,35 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     if ((ncdev->is_planar = cdev->is_planar))
         gdev_prn_set_procs_planar(ndev);
 
+    /* Make sure that the ncdev BandHeight matches what we used when writing the clist, but
+     * re-calculate the BandBufferSpace so we don't over-allocate (in case the page uses
+     * transparency so that the BandHeight was reduced.)
+     */
+    ncdev->space_params.band = cdev->page_info.band_params;
+    ncdev->space_params.banding_type = BandingAlways;
+    code = npdev->printer_procs.buf_procs.size_buf_device
+                (&buf_space, (gx_device *)ncdev, NULL, ncdev->space_params.band.BandHeight, false);
+    /* The 100 is bogus, we are just matching what is in clist_init_states */
+    state_size = cdev->nbands * (ulong) sizeof(gx_clist_state) + sizeof(cmd_prefix) + cmd_largest_size + 100;
+    ncdev->space_params.band.BandBufferSpace = buf_space.bits + buf_space.line_ptrs;
+    if (state_size > ncdev->space_params.band.BandBufferSpace)
+        ncdev->space_params.band.BandBufferSpace = state_size;
+    ncdev->space_params.band.tile_cache_size = cdev->page_info.tile_cache_size;	/* must be the same */
+    ncdev->space_params.band.BandBufferSpace += cdev->page_info.tile_cache_size;
+
     /* gdev_prn_allocate_memory sets the clist for writing, creating new files.
      * We need  to unlink those files and open the main thread's files, then
      * reset the clist state for reading/rendering
      */
     if ((code = gdev_prn_allocate_memory(ndev, NULL, ndev->width, ndev->height)) < 0)
         goto out_cleanup;
+
+    if (ncdev->page_info.tile_cache_size != cdev->page_info.tile_cache_size) {
+        emprintf2(thread_mem,
+                   "clist_setup_render_threads: tile_cache_size mismatch. New size=%d, should be %d\n",
+                   ncdev->page_info.tile_cache_size, cdev->page_info.tile_cache_size);
+        goto out_cleanup;
+    }
 
     /* close and unlink the temp files just created */
     ncdev->page_info.io_procs->fclose(ncdev->page_info.cfile, ncdev->page_info.cfname, true);
@@ -264,30 +292,61 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
     gs_memory_t *mem = cdev->bandlist_memory;
     gs_memory_t *chunk_base_mem = mem->thread_safe_memory;
     gs_memory_status_t mem_status;
-    int i, band;
+    int i, j, band;
     int code = 0;
     int band_count = cdev->nbands;
     int band_height = crdev->page_info.band_params.BandHeight;
+    byte **reserve_memory_array = NULL;
+    int reserve_pdf14_memory_size = 0;
+    /* space for the halftone cache plus 2Mb for other allocations during rendering (paths, etc.) */
+    /* this will be increased by the measured profile storage and icclinks (estimated).		  */
+    int reserve_size = 2 * 1024 * 1024 + (gx_ht_cache_default_bits_size() * dev->color_info.num_components);
+    clist_icctable_entry_t *curr_entry;
+
     crdev->num_render_threads = pdev->num_render_threads_requested;
 
     if(gs_debug[':'] != 0)
         dmprintf1(mem, "%% %d rendering threads requested.\n", pdev->num_render_threads_requested);
 
+    if (crdev->page_uses_transparency) {
+        reserve_pdf14_memory_size = (ESTIMATED_PDF14_ROW_SPACE(max(1, crdev->width), crdev->color_info.num_components) >> 3);
+        reserve_pdf14_memory_size *= crdev->page_info.band_params.BandHeight;	/* BandHeight set by writer */
+    }
+    /* scan the profile table sizes to get the total each thread will need */
+    if (crdev->icc_table != NULL) {
+        for (curr_entry = crdev->icc_table->head; curr_entry != NULL; curr_entry = curr_entry->next) {
+            reserve_size += curr_entry->serial_data.size;
+            /* FIXME: Should actually measure the icclink size to device (or pdf14 blend space) */
+            reserve_size += 2 * 1024 * 1024;		/* a worst case estimate */
+        }
+    }
     if (crdev->num_render_threads > band_count)
         crdev->num_render_threads = band_count; /* don't bother starting more threads than bands */
 
     /* Allocate and initialize an array of thread control structures */
     crdev->render_threads = (clist_render_thread_control_t *)
               gs_alloc_byte_array(mem, crdev->num_render_threads,
-              sizeof(clist_render_thread_control_t), "clist_setup_render_threads" );
+                                  sizeof(clist_render_thread_control_t),
+                                  "clist_setup_render_threads");
     /* fallback to non-threaded if allocation fails */
     if (crdev->render_threads == NULL) {
         emprintf(mem, " VMerror prevented threads from starting.\n");
         return_error(gs_error_VMerror);
     }
-
+    reserve_memory_array = (byte **)gs_alloc_byte_array(mem,
+                                                        crdev->num_render_threads,
+                                                        sizeof(void *),
+                                                        "clist_setup_render_threads");
+    if (reserve_memory_array == NULL) {
+        gs_free_object(mem, crdev->render_threads, "clist_setup_render_threads");
+        crdev->render_threads = NULL;
+        emprintf(mem, " VMerror prevented threads from starting.\n");
+        return_error(gs_error_VMerror);
+    }
+    memset(reserve_memory_array, 0, crdev->num_render_threads * sizeof(void *));
     memset(crdev->render_threads, 0, crdev->num_render_threads *
             sizeof(clist_render_thread_control_t));
+
     crdev->main_thread_data = cdev->data;               /* save data area */
     /* Based on the line number requested, decide the order of band rendering */
     /* Almost all devices go in increasing line order (except the bmp* devices ) */
@@ -324,6 +383,14 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
         gx_device *ndev;
         clist_render_thread_control_t *thread = &(crdev->render_threads[i]);
 
+        /* arbitrary extra reserve for other allocation by threads (paths, etc.) */
+        /* plus the amount estimated for the pdf14 buffers */
+        reserve_memory_array[i] = (byte *)gs_alloc_bytes(mem, reserve_size + reserve_pdf14_memory_size,
+                                                         "clist_render_setup_threads");
+        if (reserve_memory_array[i] == NULL) {
+            code = gs_error_VMerror;	/* set code to an error for cleanup after the loop */
+        break;
+        }
         ndev = setup_device_and_mem_for_thread(chunk_base_mem, dev, false, &crdev->icc_cache_list[i]);
         if (ndev == NULL) {
             code = gs_error_VMerror;	/* set code to an error for cleanup after the loop */
@@ -352,13 +419,13 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
             code = gs_error_VMerror;
             break;
         }
-        /* Start thread 'i' to do band */
-        if ((code = clist_start_render_thread(dev, i, band)) < 0)
-            break;
+        /* We don't start the threads yet until we  free up the */
+        /* reserve memory we have allocated for that band. */
+        thread->band = band;
     }
     /* If the code < 0, the last thread creation failed -- clean it up */
     if (code < 0) {
-        band -= crdev->thread_lookahead_direction;	/* update for 'next_band' usage */
+        /* NB: 'band' will be the one that failed, so will be the next_band needed to start */
         /* the following relies on 'free' ignoring NULL pointers */
         gx_semaphore_free(crdev->render_threads[i].sema_group);
         gx_semaphore_free(crdev->render_threads[i].sema_this);
@@ -415,14 +482,24 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
         emprintf1(mem, "Rendering threads not started, code=%d.\n", code);
         return_error(code);
     }
+    /* Free up any "reserve" memory we may have allocated, and start the
+     * threads since we deferred that in the thread setup loop above.
+     * We know if we get here we can start at least 1 thread.
+     */
+    for (j=0, code = 0; j<crdev->num_render_threads; j++) {
+        gs_free_object(mem, reserve_memory_array[j], "clist_setup_render_threads");
+        if (code == 0 && j < i)
+            code = clist_start_render_thread(dev, j, crdev->render_threads[j].band);
+    }
+    gs_free_object(mem, reserve_memory_array, "clist_setup_render_threads");
     crdev->num_render_threads = i;
     crdev->curr_render_thread = 0;
-        crdev->next_band = band;
+    crdev->next_band = band;
 
     if(gs_debug[':'] != 0)
         dmprintf1(mem, "%% Using %d rendering threads\n", i);
 
-    return 0;
+    return code;
 }
 
 /* This is also exported for teardown after background printing */
@@ -657,6 +734,10 @@ clist_get_band_from_thread(gx_device *dev, int band_needed, gx_process_page_opti
     if (thread->band != band_needed) {
         int band = band_needed;
 
+        emprintf3(thread->memory,
+                  "thread->band = %d, band_needed = %d, direction = %d, ",
+                  thread->band, band_needed, crdev->thread_lookahead_direction);
+
         /* Probably we went in the wrong direction, so let the threads */
         /* all complete, then restart them in the opposite direction   */
         /* If the caller is 'bouncing around' we may end up back here, */
@@ -672,7 +753,10 @@ clist_get_band_from_thread(gx_device *dev, int band_needed, gx_process_page_opti
             crdev->thread_lookahead_direction = -1;   /* assume backwards if we are asking for the last band */
         if (band_needed == 0)
             crdev->thread_lookahead_direction = 1;    /* force forward if we are looking for band 0 */
-        /* Loop creating the devices and semaphores for each thread, then start them */
+
+        dmprintf1(thread->memory, "new_direction = %d\n", crdev->thread_lookahead_direction);
+
+        /* Loop starting the threads in the new lookahead_direction */
         for (i=0; (i < crdev->num_render_threads) && (band >= 0) && (band < band_count);
                 i++, band += crdev->thread_lookahead_direction) {
             thread = &(crdev->render_threads[i]);

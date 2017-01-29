@@ -584,8 +584,10 @@ gx_ht_read_and_install(
         for (i = 0; i < num_dev_comps; i++)
             components_save[i] = components[i];
         code = gx_gstate_dev_ht_install(pgs, &dht, dht.type, dev);
-        for (i = 0; i < num_dev_comps; i++)
-            gx_ht_order_release(&components_save[i].corder, mem, false);
+        if (code >= 0) {
+            for (i = 0; i < num_dev_comps; i++)
+                gx_ht_order_release(&components_save[i].corder, mem, false);
+        }
     }
 
     /*
