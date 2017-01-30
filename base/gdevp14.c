@@ -1039,11 +1039,11 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
        shape (if present), then alpha_g (if present), then tags (if present) */
     buf = pdf14_buf_new(rect, has_tags, !isolated, has_shape, idle, numcomps + 1,
                         tos->num_spots, ctx->memory);
-    if_debug4m('v', ctx->memory,
-               "[v]base buf: %d x %d, %d color channels, %d planes\n",
-               buf->rect.q.x, buf->rect.q.y, buf->n_chan, buf->n_planes);
     if (buf == NULL)
         return_error(gs_error_VMerror);
+    if_debug4m('v', ctx->memory,
+        "[v]base buf: %d x %d, %d color channels, %d planes\n",
+        buf->rect.q.x, buf->rect.q.y, buf->n_chan, buf->n_planes);
     buf->isolated = isolated;
     buf->knockout = knockout;
     buf->alpha = alpha;
