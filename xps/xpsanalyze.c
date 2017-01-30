@@ -27,8 +27,43 @@ static int xps_glyphs_has_transparency(xps_context_t *ctx, char *base_uri, xps_i
 static int
 xps_remote_resource_dictionary_has_transparency(xps_context_t *ctx, char *base_uri, char *source_att)
 {
-    //dmputs(ctx->memory, "page has transparency: uses a remote resource; not parsed; being conservative\n");
-    return 1;
+    char part_name[1024];
+    char part_uri[1024];
+    xps_part_t *part;
+    xps_item_t *xml;
+    char *s;
+    int has_transparency;
+
+    xps_absolute_path(part_name, base_uri, source_att, sizeof part_name);
+    part = xps_read_part(ctx, part_name);
+    if (!part)
+    {
+        return gs_throw1(-1, "cannot find remote resource part '%s'", part_name);
+    }
+
+    xml = xps_parse_xml(ctx, part->data, part->size);
+    if (!xml)
+    {
+        xps_free_part(ctx, part);
+        return gs_rethrow(-1, "cannot parse xml");
+    }
+
+    if (strcmp(xps_tag(xml), "ResourceDictionary"))
+    {
+        xps_free_item(ctx, xml);
+        xps_free_part(ctx, part);
+        return gs_throw1(-1, "expected ResourceDictionary element (found %s)", xps_tag(xml));
+    }
+
+    gs_strlcpy(part_uri, part_name, sizeof part_uri);
+    s = strrchr(part_uri, '/');
+    if (s)
+        s[1] = 0;
+
+    has_transparency = xps_resource_dictionary_has_transparency(ctx, part_uri, xml);
+    xps_free_item(ctx, xml);
+    xps_free_part(ctx, part);
+    return has_transparency;
 }
 
 int
