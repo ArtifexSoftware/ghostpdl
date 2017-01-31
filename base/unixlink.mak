@@ -68,12 +68,12 @@ $(GPCL_A): $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) \
 
 libgxps_a_tr=$(GLOBJ)libgxps_a.tr
 GXPS_A=$(BINDIR)$(D)$(XPS).a
-$(GXPS_A): $(MAIN_OBJ) $(TOP_OBJ) $(XPS_TOP_OBJS) $(XOBJS) \
+$(GXPS_A): $(MAIN_OBJ) $(XPS_TOP_OBJS) $(XOBJS) \
            $(GLOBJDIR)/xpsromfs$(COMPILE_INITS).$(OBJ)  $(XPS_DEVS_ALL) \
            $(INT_ARCHIVE_SOME) $(xpsobj_tr) $(ECHOGS_XE) $(DEVS_ALL) $(UNIXLINK_MAK)
 	rm -f $(GXPS_A)
 	$(ECHOGS_XE) -w $(libgxps_a_tr) -n - $(AR) $(ARFLAGS) $(GXPS_A)
-	$(ECHOGS_XE) -a $(libgxps_a_tr) -n -s $(TOP_OBJ) $(INT_ARCHIVE_SOME) $(XOBJS) -s
+	$(ECHOGS_XE) -a $(libgxps_a_tr) -n -s $(XPS_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) -s
 	$(ECHOGS_XE) -a $(libgxps_a_tr) -n -s $(PSOBJ)xpsromfs$(COMPILE_INITS).$(OBJ) $(MAIN_OBJ) -s
 	cat $(xpsobj_tr) >> $(libgxps_a_tr)
 	$(ECHOGS_XE) -a $(libgxps_a_tr) -s -
