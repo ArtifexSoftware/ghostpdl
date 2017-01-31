@@ -3,4 +3,4 @@ LIBRARY		GPDLDLL64
 EXPORTS	
 ;		DllEntryPoint
 ;		DllMain
-		pl_main_aux	@1
+

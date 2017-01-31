@@ -53,24 +53,6 @@
 #include "gdevdsp.h"
 #include "gdevdsp2.h"
 
-#ifdef _Windows
-/* FIXME: this is purely because the gsdll.h requires psi/iapi.h and
- * we don't want that required here. But as a couple of Windows specific
- * devices depend upon pgsdll_callback being defined, having a compatible
- * set of declarations here saves having to have different device lists
- * for Ghostscript and the other languages, and as both devices are
- * deprecated, a simple solution seems best = for now.
- */
-#ifdef __IBMC__
-#define GSPLDLLCALLLINK _System
-#else
-#define GSPLDLLCALLLINK
-#endif
-
-typedef int (* GSPLDLLCALLLINK GS_PL_DLL_CALLBACK) (int, char *, unsigned long);
-GS_PL_DLL_CALLBACK pgsdll_callback = NULL;
-#endif
-
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
 
@@ -213,21 +195,6 @@ static int
 close_job(pl_main_universe_t * universe, pl_main_instance_t * pti)
 {
     return pl_dnit_job(universe->curr_instance);
-}
-
-#ifdef _Windows
-GSDLLEXPORT int GSDLLAPI
-pl_wchar_to_utf8(char *out, const void *in)
-{
-    return wchar_to_utf8(out, in);
-}
-#endif
-
-GSDLLEXPORT int GSDLLAPI
-pl_program_family_name(char **str)
-{
-    *str = (char *)gs_program_family_name();
-    return 0;
 }
 
 int
@@ -464,53 +431,6 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
     }
     pl_cursor_close(&r);
     return 0;
-}
-
-/*
- * Here is the real main program.
- */
-GSDLLEXPORT int GSDLLAPI
-pl_main_aux(int argc, char *argv[], void *disp)
-{
-    gs_memory_t *mem;
-    pl_main_instance_t *minst;
-    char *filename = NULL;
-    int code = 0;
-
-    code = gs_memory_chunk_wrap(&mem, gs_malloc_init());
-    if (code < 0)
-        return gs_error_Fatal;
-
-    minst = pl_main_alloc_instance(mem);
-    if (minst == NULL)
-        return gs_error_Fatal;
-
-#ifdef DEBUG
-    if (gs_debug_c(':'))
-        pl_print_usage(minst, "Start");
-#endif
-    /* NB wrong */
-    minst->disp = disp;
-    
-    code = pl_main_init_with_args(minst, argc, argv);
-    if (code < 0)
-        return code;
-    while (arg_next(&minst->args, (const char **)&filename, minst->memory) > 0) {
-        code = pl_main_run_file(minst, filename);
-        if (code < 0)
-            return code;
-        
-    }
-    pl_to_exit(minst->memory);
-    pl_main_delete_instance(minst);
-    return 0;
-}
-
-GSDLLEXPORT int GSDLLAPI
-pl_main(int argc, char *argv[]
-    )
-{
-    return pl_main_aux(argc, argv, NULL);
 }
 
 void

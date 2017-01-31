@@ -312,20 +312,6 @@ display_callback display = {
 #endif /* !METRO */
 typedef BOOL (SetProcessDPIAwareFn)(void);
 
-#if 0
-/* plwreg.c needs the product family string, but
- * for some reason on 32 bit Windows, calling
- * the DLL method pl_program_family_name() from
- * plwreg.c caused a link error (but 64 bit
- * Windows worked fine - answers on a postcard?).
- * So we call through this function from plwreg.c
- */
-int program_family_name(char **str)
-{
-    return pl_program_family_name(str);
-}
-#endif
-
 static void
 avoid_windows_scale(void)
 {

@@ -76,13 +76,6 @@ GSDLLEXPORT int GSDLLAPI
 pl_wchar_to_utf8(char *out, const void *in);
 #endif
 
-GSDLLEXPORT int GSDLLAPI
-pl_program_family_name(char **str);
-
-GSDLLEXPORT int GSDLLAPI pl_main(int argc, char *argv[]);
-
-GSDLLEXPORT int GSDLLAPI pl_main_aux(int argc, char *argv[], void *disp);
-
 GSDLLEXPORT int GSDLLAPI plapi_run_file(void *instance, const char *file_name);
 
 GSDLLEXPORT int GSDLLAPI plapi_exit(void *instance);
