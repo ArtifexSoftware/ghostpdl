@@ -32,7 +32,7 @@ LANG_CFLAGS=$(D_)PCL_INCLUDED$(_D) $(D_)PSI_INCLUDED$(_D) $(D_)XPS_INCLUDED$(_D)
 
 GPDLCC=$(CC_) $(LANG_CFLAGS) $(I_)$(PSSRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
-$(GPDLGEN)gpdlimpl.c: $(PLSRC)plimpl.c
+$(GPDLGEN)gpdlimpl.c: $(PLSRC)plimpl.c $(MAKEDIRS)
 	$(CP_) $(PLSRC)plimpl.c $(GPDLGEN)gpdlimpl.c
 
 $(GPDLOBJ)gpdlimpl.$(OBJ): $(GPDLGEN)gpdlimpl.c          \

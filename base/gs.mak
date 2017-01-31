@@ -486,14 +486,24 @@ $(gs_tr): $(GS_MAK) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_t
 	$(EXP)$(GENCONF_XE) $(gs_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) $(CONFLDTR) $(gsld_tr)
 
 pcl_tr=$(GLGENDIR)$(D)pcl.tr
+ipcl_tr=$(GLGENDIR)$(D)ipcl.tr
+pclld_tr=$(GLGENDIR)$(D)pclld.tr
 $(pcl_tr): $(GS_MAK) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_tr) $(devs_tr) $(PCL_DEVS_ALL) \
                                              $(devs_tr) $(PCL_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev $(MAKEDIRS)
-	$(EXP)$(GENCONF_XE) -n pcl $(PCL_FEATURE_DEVS) $(CONFILES) -o $(pcl_tr)
+	$(EXP)$(ECHOGS_XE) -w $(ipcl_tr) - -include $(PCL_FEATURE_DEVS)
+	$(EXP)$(ECHOGS_XE) -w $(pcl_tr) -R $(devs_tr)
+	$(EXP)$(ECHOGS_XE) -a $(pcl_tr) -R $(ipcl_tr)
+	$(EXP)$(GENCONF_XE) $(pcl_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) $(CONFLDTR) $(pclld_tr)
 
 xps_tr=$(GLGENDIR)$(D)xps.tr
+ixps_tr=$(GLGENDIR)$(D)ixps.tr
+xpsld_tr=$(GLGENDIR)$(D)xpsld.tr
 $(xps_tr): $(GS_MAK) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_tr) $(devs_tr) $(XPS_DEVS_ALL) \
                                              $(devs_tr) $(XPS_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev $(MAKEDIRS)
-	$(EXP)$(GENCONF_XE) -n xps $(XPS_FEATURE_DEVS) $(CONFILES) -o $(xps_tr)
+	$(EXP)$(ECHOGS_XE) -w $(ixps_tr) - -include $(XPS_FEATURE_DEVS)
+	$(EXP)$(ECHOGS_XE) -w $(xps_tr) -R $(devs_tr)
+	$(EXP)$(ECHOGS_XE) -a $(xps_tr) -R $(ixps_tr)
+	$(EXP)$(GENCONF_XE) $(xps_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) $(CONFLDTR) $(xpsld_tr)
 
 gpdl_tr=$(GLGENDIR)$(D)gpdl.tr
 igpdl_tr=$(GLGENDIR)$(D)igpdl.tr
@@ -531,5 +541,20 @@ $(gconfigd_h) : $(ECHOGS_XE) $(GS_MAK) $(GLSRCDIR)$(D)version.mak $(MAKEDIRS)
 obj_tr=$(GLGENDIR)$(D)obj.tr
 $(obj_tr) : $(gs_tr)
 	$(EXP)$(GENCONF_XE) $(gs_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) -o $(obj_tr)
+
+
+pclobj_tr=$(GLGENDIR)$(D)pclobj.tr
+$(pclobj_tr) : $(pcl_tr)
+	$(EXP)$(GENCONF_XE) $(pcl_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) -o $(pclobj_tr)
+
+
+xpsobj_tr=$(GLGENDIR)$(D)xpsobj.tr
+$(xpsobj_tr) : $(xps_tr)
+	$(EXP)$(GENCONF_XE) $(xps_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) -o $(xpsobj_tr)
+
+
+pdlobj_tr=$(GLGENDIR)$(D)pdlobj.tr
+$(pdlobj_tr) : $(gpdl_tr)
+	$(EXP)$(GENCONF_XE) $(gpdl_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) -o $(pdlobj_tr)
 
 

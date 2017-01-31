@@ -38,22 +38,78 @@ XE_ALL=$(PSOBJ)gs.$(OBJ) $(INT_ARCHIVE_ALL) $(INT_ALL) $(DEVS_ALL)
 
 # Build a library archive for the entire interpreter.
 # This is not used in a standard build.
-liar_tr=$(GLOBJ)liar.tr
+libgs_a_tr=$(GLOBJ)libgs_a.tr
 GS_A=$(BINDIR)$(D)$(GS).a
 $(GS_A): $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) \
          $(obj_tr) $(ECHOGS_XE) $(INT_ARCHIVE_ALL) $(INT_ALL) $(DEVS_ALL) \
          $(UNIXLINK_MAK)
 	rm -f $(GS_A)
-	$(ECHOGS_XE) -w $(liar_tr) -n - $(AR) $(ARFLAGS) $(GS_A)
-	$(ECHOGS_XE) -a $(liar_tr) -n -s $(INT_ARCHIVE_ALL) -s
-	$(ECHOGS_XE) -a $(liar_tr) -n -s $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) -s
-	cat $(obj_tr) >>$(liar_tr)
-	$(ECHOGS_XE) -a $(liar_tr) -s -
-	$(SH) <$(liar_tr)
+	$(ECHOGS_XE) -w $(libgs_a_tr) -n - $(AR) $(ARFLAGS) $(GS_A)
+	$(ECHOGS_XE) -a $(libgs_a_tr) -n -s $(INT_ARCHIVE_ALL) -s
+	$(ECHOGS_XE) -a $(libgs_a_tr) -n -s $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) -s
+	cat $(obj_tr) >>$(libgs_a_tr)
+	$(ECHOGS_XE) -a $(libgs_a_tr) -s -
+	$(SH) <$(libgs_a_tr)
 	$(RANLIB) $(GS_A)
 
 libgs: $(GS_A)
 	$(NO_OP)
+
+libgpcl6_a_tr=$(GLOBJ)libgpcl6_a.tr
+GPCL_A=$(BINDIR)$(D)$(PCL).a
+$(GPCL_A): $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) \
+           $(GLOBJDIR)/pclromfs$(COMPILE_INITS).$(OBJ) $(PCL_DEVS_ALL) \
+           $(INT_ARCHIVE_SOME) $(pclobj_tr) $(ECHOGS_XE) $(DEVS_ALL) $(UNIXLINK_MAK)
+	rm -f $(GPCL_A)
+	$(ECHOGS_XE) -w $(libgpcl6_a_tr) -n - $(AR) $(ARFLAGS) $(GPCL_A)
+	$(ECHOGS_XE) -a $(libgpcl6_a_tr) -n -s $(TOP_OBJ) $(INT_ARCHIVE_SOME) $(XOBJS)  -s
+	$(ECHOGS_XE) -a $(libgpcl6_a_tr) -n -s $(PSOBJ)pclromfs$(COMPILE_INITS).$(OBJ) $(MAIN_OBJ) -s
+	cat $(pclobj_tr) >>$(libgpcl6_a_tr)
+	$(ECHOGS_XE) -a $(libgpcl6_a_tr) -s -
+	$(SH) <$(libgpcl6_a_tr)
+	$(RANLIB) $(GPCL_A)
+
+libgpcl6: $(GPCL_A)
+	$(NO_OP)
+
+
+libgxps_a_tr=$(GLOBJ)libgxps_a.tr
+GXPS_A=$(BINDIR)$(D)$(XPS).a
+$(GXPS_A): $(MAIN_OBJ) $(TOP_OBJ) $(XPS_TOP_OBJS) $(XOBJS) \
+           $(GLOBJDIR)/xpsromfs$(COMPILE_INITS).$(OBJ)  $(XPS_DEVS_ALL) \
+           $(INT_ARCHIVE_SOME) $(xpsobj_tr) $(ECHOGS_XE) $(DEVS_ALL) $(UNIXLINK_MAK)
+	rm -f $(GXPS_A)
+	$(ECHOGS_XE) -w $(libgxps_a_tr) -n - $(AR) $(ARFLAGS) $(GXPS_A)
+	$(ECHOGS_XE) -a $(libgxps_a_tr) -n -s $(TOP_OBJ) $(INT_ARCHIVE_SOME) $(XOBJS) -s
+	$(ECHOGS_XE) -a $(libgxps_a_tr) -n -s $(PSOBJ)xpsromfs$(COMPILE_INITS).$(OBJ) $(MAIN_OBJ) -s
+	cat $(xpsobj_tr) >> $(libgxps_a_tr)
+	$(ECHOGS_XE) -a $(libgxps_a_tr) -s -
+	$(SH) <$(libgxps_a_tr)
+	$(RANLIB) $(GXPS_A)
+
+libgxps: $(GXPS_A)
+	$(NO_OP)
+
+
+libgpdl_tr=$(GLOBJ)libgpdl.tr
+GPDL_A=$(BINDIR)$(D)$(GPDL).a
+$(GPDL_A): $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(MAIN_OBJ) \
+         $(XOBJS) $(GLOBJDIR)/pdlromfs$(COMPILE_INITS).$(OBJ) \
+         $(PSINT_ARCHIVE_ALL) \
+         $(pdlobj_tr) $(ECHOGS_XE) $(INT_ARCHIVE_ALL) $(INT_ALL) $(DEVS_ALL) \
+         $(UNIXLINK_MAK)
+	rm -f $(GPDL_A)
+	$(ECHOGS_XE) -w $(libgpdl_tr) -n - $(AR) $(ARFLAGS) $(GPDL_A)
+	$(ECHOGS_XE) -a $(libgpdl_tr) -n -s $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(XOBJS) -s
+	$(ECHOGS_XE) -a $(libgpdl_tr) -n -s $(GLOBJDIR)/pdlromfs$(COMPILE_INITS).$(OBJ) $(MAIN_OBJ) -s
+	cat $(pdlobj_tr) >>$(libgpdl_tr)
+	$(ECHOGS_XE) -a $(libgpdl_tr) -s -
+	$(SH) <$(libgpdl_tr)
+	$(RANLIB) $(GPDL_A)
+
+libgpdl: $(GPDL_A)
+	$(NO_OP)
+
 
 GS_DOT_O=$(PSOBJ)gs.$(OBJ)
 
@@ -89,9 +145,8 @@ $(GPCL_XE): $(ld_tr) $(pcl_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) \
             $(INT_ARCHIVE_SOME) $(UNIXLINK_MAK)
 	$(ECHOGS_XE) -w $(pclldt_tr) -n - $(CCLD) $(PCL_LDFLAGS) $(XLIBDIRS) -o $(GPCL_XE)
 	$(ECHOGS_XE) -a $(pclldt_tr) -n -x 20
-	cat $(ld_tr) >> $(pclldt_tr)
 	$(ECHOGS_XE) -a $(pclldt_tr) -n -s $(TOP_OBJ) $(INT_ARCHIVE_SOME) $(XOBJS) -s
-	cat $(pcl_tr) >> $(pclldt_tr)
+	cat $(pclld_tr) >> $(pclldt_tr)
 	$(ECHOGS_XE) -a $(pclldt_tr) -n -s - $(GLOBJDIR)/pclromfs$(COMPILE_INITS).$(OBJ) $(REALMAIN_OBJ) $(MAIN_OBJ)
 	$(ECHOGS_XE) -a $(pclldt_tr) -s - $(EXTRALIBS) $(STDLIBS)
 	if [ x$(XLIBDIR) != x ]; then LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; fi; \
@@ -113,8 +168,7 @@ $(GXPS_XE): $(ld_tr) $(xps_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(XPS_TOP_OBJS) \
              $(INT_ARCHIVE_SOME) $(UNIXLINK_MAK)
 	$(ECHOGS_XE) -w $(xpsldt_tr) -n - $(CCLD) $(XPS_LDFLAGS) $(XLIBDIRS) -o $(GXPS_XE)
 	$(ECHOGS_XE) -a $(xpsldt_tr) -n -s $(XPS_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) -s
-	cat $(ld_tr) >> $(xpsldt_tr)
-	cat $(xps_tr) >> $(xpsldt_tr)
+	cat $(xpsld_tr) >> $(xpsldt_tr)
 	$(ECHOGS_XE) -a $(xpsldt_tr) -s - $(GLOBJDIR)/xpsromfs$(COMPILE_INITS).$(OBJ) $(REALMAIN_OBJ) $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
 	if [ x$(XLIBDIR) != x ]; then LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; fi; \
 	XCFLAGS= XINCLUDE= XLDFLAGS= XLIBDIRS= XLIBS= \
