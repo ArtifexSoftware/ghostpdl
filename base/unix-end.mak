@@ -49,6 +49,19 @@ gpdl: .gpdlsubtarget $(UNIX_END_MAK)
 gpdlclean: .cleansub
 	$(NO_OP)
 
+libgs: $(GS_A)
+	$(NO_OP)
+
+libgpcl6: $(GPCL_A)
+	$(NO_OP)
+
+
+libgxps: $(GXPS_A)
+	$(NO_OP)
+
+libgpdl: $(GPDL_A)
+	$(NO_OP)
+
 # Define a rule for building profiling configurations.
 PGDEFS=GENOPT='-DPROFILE' CFLAGS='-pg $(CFLAGS_PROFILE) $(GCFLAGS) $(XCFLAGS)'\
  LDFLAGS='$(XLDFLAGS) -pg' XLIBS='Xt SM ICE Xext X11' GENOPTAUX= \
@@ -128,6 +141,18 @@ gpdldebugclean:
 	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) cleansub
 
 
+libgsdebug:
+	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) libgs
+
+libgpcl6debug:
+	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) libgpcl6
+
+
+libgxpsdebug:
+	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) libgxps
+
+libgpdldebug:
+	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) libgpdl
 
 # Define a rule for building memento configurations.
 MEMENTODEFS=GENOPT='-DMEMENTO -DDEBUG' \

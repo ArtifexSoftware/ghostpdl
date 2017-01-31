@@ -52,9 +52,6 @@ $(GS_A): $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) \
 	$(SH) <$(libgs_a_tr)
 	$(RANLIB) $(GS_A)
 
-libgs: $(GS_A)
-	$(NO_OP)
-
 libgpcl6_a_tr=$(GLOBJ)libgpcl6_a.tr
 GPCL_A=$(BINDIR)$(D)$(PCL).a
 $(GPCL_A): $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) \
@@ -69,10 +66,6 @@ $(GPCL_A): $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) \
 	$(SH) <$(libgpcl6_a_tr)
 	$(RANLIB) $(GPCL_A)
 
-libgpcl6: $(GPCL_A)
-	$(NO_OP)
-
-
 libgxps_a_tr=$(GLOBJ)libgxps_a.tr
 GXPS_A=$(BINDIR)$(D)$(XPS).a
 $(GXPS_A): $(MAIN_OBJ) $(TOP_OBJ) $(XPS_TOP_OBJS) $(XOBJS) \
@@ -86,10 +79,6 @@ $(GXPS_A): $(MAIN_OBJ) $(TOP_OBJ) $(XPS_TOP_OBJS) $(XOBJS) \
 	$(ECHOGS_XE) -a $(libgxps_a_tr) -s -
 	$(SH) <$(libgxps_a_tr)
 	$(RANLIB) $(GXPS_A)
-
-libgxps: $(GXPS_A)
-	$(NO_OP)
-
 
 libgpdl_tr=$(GLOBJ)libgpdl.tr
 GPDL_A=$(BINDIR)$(D)$(GPDL).a
@@ -106,9 +95,6 @@ $(GPDL_A): $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ
 	$(ECHOGS_XE) -a $(libgpdl_tr) -s -
 	$(SH) <$(libgpdl_tr)
 	$(RANLIB) $(GPDL_A)
-
-libgpdl: $(GPDL_A)
-	$(NO_OP)
 
 
 GS_DOT_O=$(PSOBJ)gs.$(OBJ)
