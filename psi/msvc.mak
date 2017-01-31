@@ -1681,8 +1681,7 @@ $(GPCL6DLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PCL_DEVS_A
                 $(PCLOBJ)pclromfs$(COMPILE_INITS).$(OBJ) $(ld_tr) $(pcl_tr) $(MAIN_OBJ) $(TOP_OBJ) \
                 $(XOBJS) $(INT_ARCHIVE_SOME) $(TOP_MAKEFILES)
 	echo Linking $(GPCL6DLL)  $(GPCL6DLL_DLL) $(METRO)
-	copy $(ld_tr) $(PCLGEN)gpclwin.tr
-	$(ECHOGS_XE) -a $(PCLGEN)gpclwin.tr -n -R $(pcl_tr)
+	copy $(pclld_tr) $(PCLGEN)gpclwin.tr
 	echo $(MAIN_OBJ) $(TOP_OBJ) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(PCLGEN)gpclwin.tr
 	echo $(PCLOBJ)pclromfs$(COMPILE_INITS).$(OBJ) >> $(PCLGEN)gpclwin.tr
 	echo /DLL /DEF:$(PLSRCDIR)\$(GPCL6DLL).def /OUT:$(GPCL6DLL_DLL) > $(PCLGEN)gpclwin.rsp
@@ -1710,8 +1709,7 @@ $(GXPSDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(XPS_DEVS_AL
                 $(XPSOBJ)xpsromfs$(COMPILE_INITS).$(OBJ) $(ld_tr) $(xps_tr) $(MAIN_OBJ) $(XPS_TOP_OBJS) \
                 $(XOBJS) $(INT_ARCHIVE_SOME) $(TOP_MAKEFILES)
 	echo Linking $(GXPSDLL)  $(GXPSDLL_DLL) $(METRO)
-	copy $(ld_tr) $(XPSGEN)gxpswin.tr
-	$(ECHOGS_XE) -a $(XPSGEN)gxpswin.tr -n -R $(xps_tr)
+	copy $(xpsld_tr) $(XPSGEN)gxpswin.tr
 	echo $(MAIN_OBJ) $(XPS_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(XPSGEN)gxpswin.tr
 	echo $(PCLOBJ)xpsromfs$(COMPILE_INITS).$(OBJ) >> $(XPSGEN)gxpswin.tr
 	echo /DLL /DEF:$(PLSRCDIR)\$(GXPSDLL).def /OUT:$(GXPSDLL_DLL) > $(XPSGEN)gxpswin.rsp
@@ -1813,8 +1811,7 @@ $(GPCL_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(PCL_DEVS_ALL) $(P
                 $(PCLOBJ)pclromfs$(COMPILE_INITS).$(OBJ) \
 		$(ld_tr) $(pcl_tr) $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) $(INT_ARCHIVE_SOME) \
                 $(TOP_MAKEFILES)
-	copy $(ld_tr) $(PCLGEN)gpclwin.tr
-	$(ECHOGS_XE) -a $(PCLGEN)gpclwin.tr -n -R $(pcl_tr)
+	copy $(pclld_tr) $(PCLGEN)gpclwin.tr
 	echo $(WINMAINOBJS) $(MAIN_OBJ) $(TOP_OBJ) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(PCLGEN)gpclwin.tr
 	echo $(PCLOBJ)pclromfs$(COMPILE_INITS).$(OBJ) >> $(PCLGEN)gpclwin.tr
 	echo /SUBSYSTEM:CONSOLE > $(PCLGEN)pclwin.rsp
@@ -1827,8 +1824,7 @@ $(GXPS_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(XPS_DEVS_ALL) $(X
                 $(XPS_TOP_OBJS) $(XPSOBJ)xpsromfs$(COMPILE_INITS).$(OBJ) \
 		$(ld_tr) $(xps_tr) $(MAIN_OBJ) $(XOBJS) $(INT_ARCHIVE_SOME) \
                 $(TOP_MAKEFILES)
-	copy $(ld_tr) $(XPSGEN)gxpswin.tr
-	$(ECHOGS_XE) -a $(PCLGEN)gxpswin.tr -n -R $(xps_tr)
+	copy $(xpsld_tr) $(XPSGEN)gxpswin.tr
 	echo $(WINMAINOBJS) $(MAIN_OBJ) $(XPS_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(XPSGEN)gxpswin.tr
 	echo $(PCLOBJ)xpsromfs$(COMPILE_INITS).$(OBJ) >> $(XPSGEN)gxpswin.tr
 	echo /SUBSYSTEM:CONSOLE > $(XPSGEN)xpswin.rsp
