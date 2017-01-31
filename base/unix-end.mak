@@ -68,91 +68,94 @@ PGDEFS=GENOPT='-DPROFILE' CFLAGS='-pg $(CFLAGS_PROFILE) $(GCFLAGS) $(XCFLAGS)'\
  CFLAGSAUX='$(CFLAGSAUX_STANDARD) $(GCFLAGSAUX) $(XCFLAGSAUX)'\
  LDFLAGSAUX='$(XLDFLAGSAUX)'
 
+PROFILEMAKE=$(MAKE) $(SUB_MAKE_OPTION) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX)
+
 pg:
-	$(MAKE) $(SUB_MAKE_OPTION) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) default
+	$(PROFILEMAKE) default
 
 pgclean:
-	$(MAKE) $(SUB_MAKE_OPTION) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) cleansub
+	$(PROFILEMAKE) cleansub
 
 gspg:
-	$(MAKE) $(SUB_MAKE_OPTION) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) .gssubtarget
+	$(PROFILEMAKE) .gssubtarget
 
 gpcl6pg:
-	$(MAKE) $(SUB_MAKE_OPTION) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) .pcl6subtarget
+	$(PROFILEMAKE) .pcl6subtarget
 
 gpcl6pgclean:
-	$(MAKE) $(SUB_MAKE_OPTION) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) cleansub
+	$(PROFILEMAKE) cleansub
 
 gxpspg:
-	$(MAKE) $(SUB_MAKE_OPTION) $(PGDEFS) BUILDDIRPREFIX=(PGDIRPREFIX) .xpssubtarget
+	$(PROFILEMAKE) .xpssubtarget
 
 gxpspgclean:
-	$(MAKE) $(SUB_MAKE_OPTION) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) cleansub
+	$(PROFILEMAKE) cleansub
 
 gpdlpg:
-	$(MAKE) $(SUB_MAKE_OPTION) $(PGDEFS) BUILDDIRPREFIX=(PGDIRPREFIX) .gpdlsubtarget
+	$(PROFILEMAKE) .gpdlsubtarget
 
 gpdlpgclean:
-	$(MAKE) $(SUB_MAKE_OPTION) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) cleansub
+	$(PROFILEMAKE) cleansub
 
 # Define a rule for building debugging configurations.
 DEBUGDEFS=GENOPT='-DDEBUG' CFLAGS='$(CFLAGS_DEBUG) $(GCFLAGS) $(XCFLAGS)' \
 GENOPTAUX= CFLAGSAUX='$(CFLAGSAUX_DEBUG) $(GCFLAGSAUX) $(XCFLAGSAUX)'
 
+DEBUGMAKE=$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX)
 
 debug:
-	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) default
+	$(DEBUGMAKE) default
 
 debug-apitest:
-	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) apitest
+	$(DEBUGMAKE) apitest
 
 debugclean:
-	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) cleansub
+	$(DEBUGMAKE) cleansub
 
 
 gsdebug:
-	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) .gssubtarget
+	$(DEBUGMAKE) .gssubtarget
 
 gpcl6debug:
-	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) .pcl6subtarget
+	$(DEBUGMAKE) .pcl6subtarget
 
 #gpcl6-debug-apitest:
-#	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) apitest
+#	$(DEBUGMAKE) apitest
 
 gpcl6debugclean:
-	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) cleansub
+	$(DEBUGMAKE) cleansub
 
 gxpsdebug:
-	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) .xpssubtarget
+	$(DEBUGMAKE) .xpssubtarget
 
 #gpcl6-debug-apitest:
-#	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) apitest
+#	$(DEBUGMAKE) apitest
 
 gxpsdebugclean:
-	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) cleansub
+	$(DEBUGMAKE) cleansub
 
 gpdldebug:
-	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) .gpdlsubtarget
+	$(DEBUGMAKE) .gpdlsubtarget
 
 #gpcl6-debug-apitest:
-#	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) apitest
+#	$(DEBUGMAKE) apitest
 
 gpdldebugclean:
-	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) cleansub
+	$(DEBUGMAKE) cleansub
 
 
 libgsdebug:
-	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) libgs
+	$(DEBUGMAKE) libgs
 
 libgpcl6debug:
-	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) libgpcl6
+	$(DEBUGMAKE) libgpcl6
 
 
 libgxpsdebug:
-	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) libgxps
+	$(DEBUGMAKE) libgxps
 
 libgpdldebug:
-	$(MAKE) $(SUB_MAKE_OPTION) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) libgpdl
+	$(DEBUGMAKE) libgpdl
 
 # Define a rule for building memento configurations.
 MEMENTODEFS=GENOPT='-DMEMENTO -DDEBUG' \
@@ -160,20 +163,22 @@ MEMENTODEFS=GENOPT='-DMEMENTO -DDEBUG' \
  BUILDDIRPREFIX=$(MEMENTODIRPREFIX) GENOPTAUX='-DMEMENTO' \
  CFLAGSAUX='$(CFLAGSAUX_DEBUG) $(GCFLAGSAUX) $(XCFLAGSAUX)'
 
+MEMENTOMAKE=$(MAKE) $(SUB_MAKE_OPTION) $(MEMENTODEFS)
+
 memento:
-	$(MAKE) $(SUB_MAKE_OPTION) $(MEMENTODEFS) default
+	$(MEMENTOMAKE) default
 
 gsmemento:
-	$(MAKE) $(SUB_MAKE_OPTION) $(MEMENTODEFS) .gssubtarget
+	$(MEMENTOMAKE) .gssubtarget
 
 gpcl6memento:
-	$(MAKE) $(SUB_MAKE_OPTION) $(MEMENTODEFS) .pcl6subtarget
+	$(MEMENTOMAKE) .pcl6subtarget
 
 gxpsmemento:
-	$(MAKE) $(SUB_MAKE_OPTION) $(MEMENTODEFS) .xpssubtarget
+	$(MEMENTOMAKE) .xpssubtarget
 
 mementoclean:
-	$(MAKE) $(SUB_MAKE_OPTION) $(MEMENTODEFS) cleansub
+	$(MEMENTOMAKE) cleansub
 
 gpcl6_gxps_clean: gpcl6clean gxpsclean
 	$(NO_OP)
@@ -184,20 +189,22 @@ SANITIZEDEFS=GENOPT='-DDEBUG' \
  LDFLAGS='$(LDFLAGS) $(LDFLAGS_SANITIZE)' \
  BUILDDIRPREFIX=$(SANITIZEDIRPREFIX)
 
+SANITIZEMAKE=$(MAKE) $(SUB_MAKE_OPTION) $(SANITIZEDEFS)
+
 sanitize:
-	$(MAKE) $(SUB_MAKE_OPTION) $(SANITIZEDEFS) default
+	$(SANITIZEMAKE) default
 
 gssanitize:
-	$(MAKE) $(SUB_MAKE_OPTION) $(SANITIZEDEFS) .gssubtarget
+	$(SANITIZEMAKE) .gssubtarget
 
 gpcl6sanitize:
-	$(MAKE) $(SUB_MAKE_OPTION) $(SANITIZEDEFS) .pcl6subtarget
+	$(SANITIZEMAKE) .pcl6subtarget
 
 gxpssanitize:
-	$(MAKE) $(SUB_MAKE_OPTION) $(SANITIZEDEFS) .xpssubtarget
+	$(SANITIZEMAKE) .xpssubtarget
 
 sanitizeclean:
-	$(MAKE) $(SUB_MAKE_OPTION) $(SANITIZEDEFS) cleansub
+	$(SANITIZEMAKE) cleansub
 
 # Emacs tags maintenance.
 
