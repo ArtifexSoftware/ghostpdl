@@ -1609,7 +1609,26 @@ static int squeeze(void)
     memento.patternBit <<= 1;
 
     /* Wait for pid to finish */
+#if 1
+    {
+        int timeout = 30;
+        while (waitpid(pid, &status, WNOHANG) == 0) {
+            sleep(1);
+	    timeout--;
+	    if (timeout == 0) {
+                char text[32];
+                fprintf(stderr, "Child is taking a long time to die. Killing it.\n");
+		sprintf(text, "kill %d", pid);
+		system(text);
+		break;
+	    }
+        }
+    }
+#else
+    fprintf(stderr, "Child=%d\n", pid);
     waitpid(pid, &status, 0);
+    fprintf(stderr, "Child exited, parent continuing\n");
+#endif
 
     if (status != 0) {
         fprintf(stderr, "Child status=%d\n", status);
