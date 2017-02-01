@@ -1527,7 +1527,7 @@ if test x$with_luratech != xno; then
         if test x"$JBIG2_CFLAGS" != x""; then
           JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 $JBIG2_CFLAGS"
         else
-          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DLINUX"
+          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DLINUX=1 -DFORTE"
         fi
     else
       case `uname` in
@@ -1536,13 +1536,13 @@ if test x$with_luratech != xno; then
         ;;
         AIX)
           if test $ac_cv_prog_gcc = yes; then
-            JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX"
+            JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX=1 -DFORTE"
           else
-            JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -qchars=signed -DLINUX"
+            JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -qchars=signed -DLINUX=1 -DFORTE"
           fi
         ;;
         *)
-          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DLINUX"
+          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DLINUX=1 -DFORTE"
         ;;
       esac
     fi
@@ -1656,7 +1656,7 @@ if test x$with_luratech != xno; then
         if test x"$JPX_CFLAGS" != x""; then
           JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 $JPX_CFLAGS"
         else
-          JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX"
+          JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX=1 -DFORTE"
         fi
     else
       case `uname` in
@@ -1665,13 +1665,13 @@ if test x$with_luratech != xno; then
         ;;
         AIX)
           if test $ac_cv_prog_gcc = yes; then
-            JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -fsigned-char -DLINUX"
+            JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -fsigned-char -DLINUX=1 -DFORTE"
           else
-            JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -qchars=signed -DLINUX"
+            JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -qchars=signed -DLINUX=1 -DFORTE"
           fi
         ;;
         *)
-          JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX"
+          JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX=1 -DFORTE"
         ;;
       esac
     fi
