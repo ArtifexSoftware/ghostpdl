@@ -52,14 +52,25 @@ gpdlclean: .cleansub
 libgs: $(GS_A)
 	$(NO_OP)
 
+libgsexe: $(GS_A_XE)
+	$(NO_OP)
+
 libgpcl6: $(GPCL_A)
 	$(NO_OP)
 
+libgpcl6exe: $(GPCL_A_XE)
+	$(NO_OP)
 
 libgxps: $(GXPS_A)
 	$(NO_OP)
 
+libgxpsexe: $(GXPS_A_XE)
+	$(NO_OP)
+
 libgpdl: $(GPDL_A)
+	$(NO_OP)
+
+libgpdlexe: $(GPDL_A_XE)
 	$(NO_OP)
 
 # Define a rule for building profiling configurations.

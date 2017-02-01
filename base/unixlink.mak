@@ -36,8 +36,15 @@ INT_ARCHIVE_ALL=$(PSINT_ARCHIVE_ALL) $(INT_ARCHIVE_SOME)
 
 XE_ALL=$(PSOBJ)gs.$(OBJ) $(INT_ARCHIVE_ALL) $(INT_ALL) $(DEVS_ALL)
 
+GS_DOT_O=$(PSOBJ)gs.$(OBJ)
+
 # Build a library archive for the entire interpreter.
 # This is not used in a standard build.
+
+# options for genconf, to *just* output the libs to link
+# and search paths for them
+CONFLIBSTR=-pl "&-l%s&s&&" -pL "&-L%s&s&&" -l
+
 libgs_a_tr=$(GLOBJ)libgs_a.tr
 GS_A=$(BINDIR)$(D)$(GS).a
 $(GS_A): $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) \
@@ -51,6 +58,17 @@ $(GS_A): $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) \
 	$(ECHOGS_XE) -a $(libgs_a_tr) -s -
 	$(SH) <$(libgs_a_tr)
 	$(RANLIB) $(GS_A)
+
+GS_A_XE=$(BINDIR)$(D)$(GS)_aexe$(XE)
+gs_a_xeld_tr=$(GLOBJ)$(D)$(GS)_aexeld.tr
+gs_a_xeldt_tr=$(GLOBJ)$(D)$(GS)_aexeldt.tr
+$(GS_A_XE): $(GS_A) $(GS_DOT_O)
+	$(EXP)$(GENCONF_XE) $(gs_tr) -h $(GLGENDIR)$(D)unused.h $(CONFLIBSTR) $(gs_a_xeld_tr)
+	$(ECHOGS_XE) -w $(gs_a_xeldt_tr) -n - $(CCLD) $(GS_LDFLAGS) -o $(GS_A_XE)
+	$(ECHOGS_XE) -a $(gs_a_xeldt_tr) -n -s $(GS_DOT_O) -s
+	$(ECHOGS_XE) -a $(gs_a_xeldt_tr) -n -s - $(GS_A) $(EXTRALIBS) $(STDLIBS) -s
+	$(ECHOGS_XE) -a $(gs_a_xeldt_tr) -n -s -R $(gs_a_xeld_tr)
+	$(SH) < $(gs_a_xeldt_tr)
 
 libgpcl6_a_tr=$(GLOBJ)libgpcl6_a.tr
 GPCL_A=$(BINDIR)$(D)$(PCL).a
@@ -66,6 +84,17 @@ $(GPCL_A): $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) \
 	$(SH) <$(libgpcl6_a_tr)
 	$(RANLIB) $(GPCL_A)
 
+GPCL_A_XE=$(BINDIR)$(D)$(PCL)_aexe$(XE)
+gpcl_a_xeld_tr=$(GLOBJ)$(D)$(PCL)_aexeld.tr
+gpcl_a_xeldt_tr=$(GLOBJ)$(D)$(PCL)_aexeldt.tr
+$(GPCL_A_XE): $(GPCL_A) $(REALMAIN_OBJ)
+	$(EXP)$(GENCONF_XE) $(pcl_tr) -h $(GLGENDIR)$(D)unused.h $(CONFLIBSTR) $(gpcl_a_xeld_tr)
+	$(ECHOGS_XE) -w $(gpcl_a_xeldt_tr) -n - $(CCLD) $(GS_LDFLAGS) -o $(GPCL_A_XE)
+	$(ECHOGS_XE) -a $(gpcl_a_xeldt_tr) -n -s $(REALMAIN_OBJ) -s
+	$(ECHOGS_XE) -a $(gpcl_a_xeldt_tr) -n -s - $(GPCL_A) $(EXTRALIBS) $(STDLIBS) -s
+	$(ECHOGS_XE) -a $(gpcl_a_xeldt_tr) -n -s -R $(gpcl_a_xeld_tr)
+	$(SH) < $(gpcl_a_xeldt_tr)
+
 libgxps_a_tr=$(GLOBJ)libgxps_a.tr
 GXPS_A=$(BINDIR)$(D)$(XPS).a
 $(GXPS_A): $(MAIN_OBJ) $(XPS_TOP_OBJS) $(XOBJS) \
@@ -79,6 +108,17 @@ $(GXPS_A): $(MAIN_OBJ) $(XPS_TOP_OBJS) $(XOBJS) \
 	$(ECHOGS_XE) -a $(libgxps_a_tr) -s -
 	$(SH) <$(libgxps_a_tr)
 	$(RANLIB) $(GXPS_A)
+
+GXPS_A_XE=$(BINDIR)$(D)$(XPS)_aexe$(XE)
+gxps_a_xeld_tr=$(GLOBJ)$(D)$(XPS)_aexeld.tr
+gxps_a_xeldt_tr=$(GLOBJ)$(D)$(XPS)_aexeldt.tr
+$(GXPS_A_XE): $(GXPS_A) $(REALMAIN_OBJ)
+	$(EXP)$(GENCONF_XE) $(xps_tr) -h $(GLGENDIR)$(D)unused.h $(CONFLIBSTR) $(gxps_a_xeld_tr)
+	$(ECHOGS_XE) -w $(gxps_a_xeldt_tr) -n - $(CCLD) $(GS_LDFLAGS) -o $(GXPS_A_XE)
+	$(ECHOGS_XE) -a $(gxps_a_xeldt_tr) -n -s $(REALMAIN_OBJ) -s
+	$(ECHOGS_XE) -a $(gxps_a_xeldt_tr) -n -s - $(GXPS_A) $(EXTRALIBS) $(STDLIBS) -s
+	$(ECHOGS_XE) -a $(gxps_a_xeldt_tr) -n -s -R $(gxps_a_xeld_tr)
+	$(SH) < $(gxps_a_xeldt_tr)
 
 libgpdl_tr=$(GLOBJ)libgpdl.tr
 GPDL_A=$(BINDIR)$(D)$(GPDL).a
@@ -96,8 +136,17 @@ $(GPDL_A): $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ
 	$(SH) <$(libgpdl_tr)
 	$(RANLIB) $(GPDL_A)
 
+GPDL_A_XE=$(BINDIR)$(D)$(GPDL)_aexe$(XE)
+gpdl_a_xeld_tr=$(GLOBJ)$(D)$(GPDL)_aexeld.tr
+gpdl_a_xeldt_tr=$(GLOBJ)$(D)$(GPDL)_aexeldt.tr
+$(GPDL_A_XE): $(GPDL_A) $(REALMAIN_OBJ)
+	$(EXP)$(GENCONF_XE) $(gpdl_tr) -h $(GLGENDIR)$(D)unused.h $(CONFLIBSTR) $(gpdl_a_xeld_tr)
+	$(ECHOGS_XE) -w $(gpdl_a_xeldt_tr) -n - $(CCLD) $(GS_LDFLAGS) -o $(GPDL_A_XE)
+	$(ECHOGS_XE) -a $(gpdl_a_xeldt_tr) -n -s $(REALMAIN_OBJ) -s
+	$(ECHOGS_XE) -a $(gpdl_a_xeldt_tr) -n -s - $(GPDL_A) $(EXTRALIBS) $(STDLIBS) -s
+	$(ECHOGS_XE) -a $(gpdl_a_xeldt_tr) -n -s -R $(gpdl_a_xeld_tr)
+	$(SH) < $(gpdl_a_xeldt_tr)
 
-GS_DOT_O=$(PSOBJ)gs.$(OBJ)
 
 # Here is the final link step.  The stuff with LD_RUN_PATH is for SVR4
 # systems with dynamic library loading; I believe it's harmless elsewhere.
