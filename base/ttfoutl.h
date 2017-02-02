@@ -19,6 +19,9 @@
 #ifndef incl_ttfoutl
 #define incl_ttfoutl
 
+/* For memento */
+#include "malloc_.h"
+
 #ifndef TFace_defined
 #define TFace_defined
 typedef struct _TFace TFace;

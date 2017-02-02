@@ -631,7 +631,7 @@ gxfillsl_h=$(GLSRC)gxfillsl.h
 gxfillts_h=$(GLSRC)gxfillts.h
 gxdtfill_h=$(GLSRC)gxdtfill.h
 
-ttfoutl_h=$(GLSRC)ttfoutl.h
+ttfoutl_h=$(GLSRC)ttfoutl.h $(memento_h)
 gxttfb_h = $(GLSRC)gxttfb.h $(ttfoutl_h)
 gzspotan_h = $(GLSRC)gzspotan.h $(gxdevcli_h)
 
@@ -2703,7 +2703,7 @@ $(GLOBJ)gsdps1.$(OBJ) : $(GLSRC)gsdps1.c $(AK) $(gx_h) $(gserrors_h)\
 # the implementation of Separation colors also uses them.
 
 gsdsrc_h=$(GLSRC)gsdsrc.h $(gsstruct_h)
-gsfunc_h=$(GLSRC)gsfunc.h $(gstypes_h)
+gsfunc_h=$(GLSRC)gsfunc.h $(gstypes_h) $(memento_h)
 gsfunc0_h=$(GLSRC)gsfunc0.h $(gsdsrc_h) $(gsfunc_h)
 gxfunc_h=$(GLSRC)gxfunc.h $(gsfunc_h) $(gsstruct_h)
 
