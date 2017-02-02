@@ -104,6 +104,10 @@ gsicc_cache_new(gs_memory_t *memory)
                              "gsicc_cache_new");
     if ( result == NULL )
         return(NULL);
+#ifdef MEMENTO_SQUEEZE_BUILD
+    result->lock = NULL;
+    result->wait = NULL;
+#else
     result->lock = gx_monitor_label(gx_monitor_alloc(memory->stable_memory),
                                     "gsicc_cache_new");
     result->wait = gx_semaphore_label(gx_semaphore_alloc(memory->stable_memory),
@@ -112,6 +116,7 @@ gsicc_cache_new(gs_memory_t *memory)
         gs_free_object(memory->stable_memory, result, "gsicc_cache_new");
         return(NULL);
     }
+#endif
     result->num_waiting = 0;
     rc_init_free(result, memory->stable_memory, 1, rc_gsicc_link_cache_free);
     result->head = NULL;
@@ -150,10 +155,12 @@ icc_linkcache_finalize(const gs_memory_t *mem, void *ptr)
     }
 #endif
     if (link_cache->rc.ref_count == 0) {
+#ifndef MEMENTO_SQUEEZE_BUILD
         gx_semaphore_free(link_cache->wait);
         link_cache->wait = NULL;
         gx_monitor_free(link_cache->lock);
         link_cache->lock = NULL;
+#endif
     }
 }
 
@@ -254,11 +261,15 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
                              "gsicc_alloc_link");
     if (result == NULL)
         return NULL;
+#ifdef MEMENTO_SQUEEZE_BUILD
+    result->wait = NULL;
+#else
     result->wait = gx_semaphore_alloc(memory->stable_memory);
     if (result->wait == NULL) {
         gs_free_object(memory->stable_memory, result, "gsicc_alloc_link(wait)");
         return NULL;
     }
+#endif
     /* set up placeholder values */
     result->is_monitored = false;
     result->orig_procs.map_buffer = NULL;
@@ -288,7 +299,9 @@ gsicc_set_link_data(gsicc_link_t *icc_link, void *link_handle,
                     bool includes_softproof, bool includes_devlink,
                     bool pageneutralcolor, gsicc_colorbuffer_t data_cs)
 {
+#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_enter(lock);		/* lock the cache while changing data */
+#endif
     icc_link->link_handle = link_handle;
     gscms_get_link_dim(link_handle, &(icc_link->num_input), &(icc_link->num_output));
     icc_link->hashcode.link_hashcode = hashcode.link_hashcode;
@@ -312,18 +325,24 @@ gsicc_set_link_data(gsicc_link_t *icc_link, void *link_handle,
 
     /* Now release any tasks/threads waiting for these contents */
     while (icc_link->num_waiting > 0) {
+#ifndef MEMENTO_SQUEEZE_BUILD
         gx_semaphore_signal(icc_link->wait);
+#endif
         icc_link->num_waiting--;
     }
+#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_leave(lock);	/* done with updating, let everyone run */
+#endif
 }
 
 static void
 gsicc_link_free_contents(gsicc_link_t *icc_link)
 {
     icc_link->procs.free_link(icc_link);
+#ifndef MEMENTO_SQUEEZE_BUILD
     gx_semaphore_free(icc_link->wait);
     icc_link->wait = NULL;
+#endif
 }
 
 void
@@ -476,7 +495,9 @@ gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache,
     int64_t hashcode = hash.link_hashcode;
 
     /* Look through the cache for the hashcode */
+#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_enter(icc_link_cache->lock);
+#endif
 
     /* List scanning is fast, so we scan the entire list, this includes   */
     /* links that are currently unused, but still in the cache (zero_ref) */
@@ -499,17 +520,23 @@ gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache,
             /* bump the ref_count since we will be using this one */
             while (curr->valid == false) {
                 curr->num_waiting++;
+#ifndef MEMENTO_SQUEEZE_BUILD
                 gx_monitor_leave(icc_link_cache->lock);
                 gx_semaphore_wait(curr->wait);
                 gx_monitor_enter(icc_link_cache->lock);	/* re-enter breifly */
+#endif
             }
+#ifndef MEMENTO_SQUEEZE_BUILD
             gx_monitor_leave(icc_link_cache->lock);
+#endif
             return(curr);	/* success */
         }
         prev = curr;
         curr = curr->next;
     }
+#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_leave(icc_link_cache->lock);
+#endif
     return NULL;
 }
 
@@ -552,7 +579,9 @@ gsicc_remove_link(gsicc_link_t *link, const gs_memory_t *memory)
                "[icc] Removing link = 0x%p memory = 0x%p\n", link,
                memory->stable_memory);
     /* NOTE: link->ref_count must be 0: assert ? */
+#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_enter(icc_link_cache->lock);
+#endif
     curr = icc_link_cache->head;
     prev = NULL;
 
@@ -570,7 +599,9 @@ gsicc_remove_link(gsicc_link_t *link, const gs_memory_t *memory)
     }
     /* if curr != link we didn't find it: assert ? */
     icc_link_cache->num_links--;	/* no longer in the cache */
+#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_leave(icc_link_cache->lock);
+#endif
     gsicc_link_free(link, memory);	/* outside link */
 }
 
@@ -824,15 +855,19 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
 
     /* First see if we can add a link */
     /* TODO: this should be based on memory usage, not just num_links */
+#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_enter(icc_link_cache->lock);
+#endif
     while (icc_link_cache->num_links >= ICC_CACHE_MAXLINKS) {
         /* If not, see if there is anything we can remove from cache. */
         while ((link = gsicc_find_zeroref_cache(icc_link_cache)) == NULL) {
             icc_link_cache->num_waiting++;
+#ifndef MEMENTO_SQUEEZE_BUILD
             /* safe to unlock since above will make sure semaphore is signalled */
             gx_monitor_leave(icc_link_cache->lock);
             /* we get signalled (released from wait) when a link goes to zero ref */
             gx_semaphore_wait(icc_link_cache->wait);
+#endif
             /* repeat the findcachelink to see if some other thread has	*/
             /*already started building the link	we need			*/
             *ret_link = gsicc_findcachelink(hash, icc_link_cache,
@@ -840,7 +875,9 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
             /* Got a hit, return link (ref_count for the link was already bumped */
             if (*ret_link != NULL)
                 return true;
+#ifndef MEMENTO_SQUEEZE_BUILD
             gx_monitor_enter(icc_link_cache->lock);	    /* restore the lock */
+#endif
             /* we will re-test the num_links above while locked to insure */
             /* that some other thread didn't grab the slot and max us out */
         }
@@ -861,7 +898,9 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
         /* now that we own this link we can release
           the lock since it is not valid */
     }
+#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_leave(icc_link_cache->lock);
+#endif
     return false;
 }
 
@@ -1074,7 +1113,9 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
                                                     proof_profile->buffer_size,
                                                     memory);
                 proof_profile->profile_handle = cms_proof_profile;
+#ifndef MEMENTO_SQUEEZE_BUILD
                 gx_monitor_enter(proof_profile->lock);
+#endif
             } else {
                 /* Cant create the link */
                 gsicc_remove_link(link, cache_mem);
@@ -1091,7 +1132,9 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
                                                     devlink_profile->buffer_size,
                                                     memory);
                 devlink_profile->profile_handle = cms_devlink_profile;
+#ifndef MEMENTO_SQUEEZE_BUILD
                 gx_monitor_enter(devlink_profile->lock);
+#endif
             } else {
                 /* Cant create the link */
                 gsicc_remove_link(link, cache_mem);
@@ -1100,10 +1143,12 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
         }
     }
     /* Profile reading of same structure not thread safe in lcms */
+#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_enter(gs_input_profile->lock);
     if (!src_dev_link) {
         gx_monitor_enter(gs_output_profile->lock);
     }
+#endif
     /* We may have to worry about special handling for DeviceGray to
        DeviceCMYK to ensure that Gray is mapped to K only.  This is only
        done once and then it is cached and the link used.  Note that Adobe
@@ -1143,21 +1188,25 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
                                                    rendering_params,
                                                    src_dev_link, cms_flags,
                                                    cache_mem->non_gc_memory);
+#ifndef MEMENTO_SQUEEZE_BUILD
         if (include_softproof) {
             gx_monitor_leave(proof_profile->lock);
         }
         if (include_devicelink) {
             gx_monitor_leave(devlink_profile->lock);
         }
+#endif
     } else {
         link_handle = gscms_get_link(cms_input_profile, cms_output_profile,
                                      rendering_params, cms_flags,
                                      cache_mem->non_gc_memory);
     }
+#ifndef MEMENTO_SQUEEZE_BUILD
     if (!src_dev_link) {
         gx_monitor_leave(gs_output_profile->lock);
     }
     gx_monitor_leave(gs_input_profile->lock);
+#endif
     if (link_handle != NULL) {
         if (gs_input_profile->data_cs == gsGRAY)
             pageneutralcolor = false;
@@ -1551,7 +1600,9 @@ gsicc_release_link(gsicc_link_t *icclink)
 {
     gsicc_link_cache_t *icc_link_cache = icclink->icc_link_cache;
 
+#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_enter(icc_link_cache->lock);
+#endif
     /* Decrement the reference count */
     if (--(icclink->ref_count) == 0) {
 
@@ -1590,11 +1641,15 @@ gsicc_release_link(gsicc_link_t *icclink)
 
         /* now release any tasks waiting for a cache slot */
         while (icclink->icc_link_cache->num_waiting > 0) {
+#ifndef MEMENTO_SQUEEZE_BUILD
             gx_semaphore_signal(icclink->icc_link_cache->wait);
+#endif
             icclink->icc_link_cache->num_waiting--;
         }
     }
+#ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_leave(icc_link_cache->lock);
+#endif
 }
 
 /* Used to initialize the buffer description prior to color conversion */

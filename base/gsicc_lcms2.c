@@ -25,7 +25,9 @@
 #include "gsicc_cms.h"
 #include "gxdevice.h"
 
+#ifndef MEMENTO_SQUEEZE_BUILD
 #define USE_LCMS2_LOCKING
+#endif
 
 #ifdef USE_LCMS2_LOCKING
 #include "gxsync.h"

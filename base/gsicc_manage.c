@@ -1899,18 +1899,22 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
     result->isdevlink = false;  /* only used for srcgtag profiles */
     result->dev = NULL;
     result->memory = mem_nongc;
-    result->lock = gx_monitor_label(gx_monitor_alloc(mem_nongc),
-                                    "gsicc_manage");
     result->vers = ICCVERS_UNKNOWN;
     result->v2_data = NULL;
     result->v2_size = 0;
     result->release = gscms_release_profile; /* Default case */
 
+#ifdef MEMENTO_SQUEEZE_BUILD
+    result->lock = NULL;
+#else
+    result->lock = gx_monitor_label(gx_monitor_alloc(mem_nongc),
+                                    "gsicc_manage");
     if (result->lock == NULL) {
         gs_free_object(mem_nongc, result, "gsicc_profile_new");
         gs_free_object(mem_nongc, nameptr, "gsicc_profile_new");
         return NULL;
     }
+#endif
     if_debug1m(gs_debug_flag_icc, mem_nongc,
                "[icc] allocating ICC profile = 0x%p\n", result);
     return result;
@@ -1944,10 +1948,12 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
             profile->name_length = 0;
         }
         profile->hash_is_valid = 0;
+#ifndef MEMENTO_SQUEEZE_BUILD
         if (profile->lock != NULL) {
             gx_monitor_free(profile->lock);
             profile->lock = NULL;
         }
+#endif
         /* If we had a DeviceN profile with names deallocate that now */
         if (profile->spotnames != NULL) {
             /* Free the linked list in this object */

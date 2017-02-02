@@ -66,6 +66,12 @@ gp_semaphore_open(gp_semaphore * sema)
     pt_semaphore_t * const sem = (pt_semaphore_t *)sema;
     int scode;
 
+#ifdef MEMENTO_SQUEEZE_BUILD
+    eprintf("Can't create semaphores when memory squeezing with forks\n");
+    Memento_bt();
+    return_error(gs_error_VMerror);
+#endif
+
     if (!sema)
         return -1;		/* semaphores are not movable */
     sem->count = 0;
@@ -99,6 +105,12 @@ gp_semaphore_wait(gp_semaphore * sema)
 {
     pt_semaphore_t * const sem = (pt_semaphore_t *)sema;
     int scode, scode2;
+
+#ifdef MEMENTO_SQUEEZE_BUILD
+    eprintf("Can't create mutexes when memory squeezing with forks\n");
+    Memento_bt();
+    return_error(gs_error_VMerror);
+#endif
 
     scode = pthread_mutex_lock(&sem->mutex);
     if (scode != 0)
@@ -165,6 +177,12 @@ gp_monitor_open(gp_monitor * mona)
     int scode;
     pthread_mutexattr_t attr;
     pthread_mutexattr_t *attrp = NULL;
+
+#ifdef MEMENTO_SQUEEZE_BUILD
+    eprintf("Can't create monitors when memory squeezing with forks\n");
+    Memento_bt();
+    return_error(gs_error_VMerror);
+#endif
 
     if (!mona)
         return -1;		/* monitors are not movable */
@@ -290,6 +308,12 @@ gp_create_thread(gp_thread_creation_callback_t proc, void *proc_data)
     pthread_t ignore_thread;
     pthread_attr_t attr;
     int code;
+
+#ifdef MEMENTO_SQUEEZE_BUILD
+    eprintf("Can't create threads when memory squeezing with forks\n");
+    Memento_bt();
+    return_error(gs_error_VMerror);
+#endif
 
     if (!closure)
         return_error(gs_error_VMerror);
