@@ -231,6 +231,8 @@ void Memento_stopLeaking(void);
 
 void Memento_fin(void);
 
+void Memento_bt(void);
+
 #ifdef MEMENTO
 
 #ifndef COMPILING_MEMENTO_C
@@ -274,6 +276,7 @@ void Memento_fin(void);
 #define Memento_startLeaking()    do {} while (0)
 #define Memento_stopLeaking()     do {} while (0)
 #define Memento_fin()             do {} while (0)
+#define Memento_bt()              do {} while (0)
 
 #endif /* MEMENTO */
 

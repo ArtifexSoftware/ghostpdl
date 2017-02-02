@@ -823,6 +823,30 @@ static void Memento_storeDetails(Memento_BlkHeader *head, int type)
 }
 #endif
 
+void (Memento_bt)(void)
+{
+#ifdef MEMENTO_STACKTRACE_METHOD
+    void *stack[MEMENTO_BACKTRACE_MAX];
+    int count;
+    int skip;
+
+    count = Memento_getStacktrace(stack, &skip);
+    Memento_showStacktrace(&stack[skip-2], count-skip+2);
+#endif
+}
+
+static void Memento_bt_internal(int skip2)
+{
+#ifdef MEMENTO_STACKTRACE_METHOD
+    void *stack[MEMENTO_BACKTRACE_MAX];
+    int count;
+    int skip;
+
+    count = Memento_getStacktrace(stack, &skip);
+    Memento_showStacktrace(&stack[skip+skip2], count-skip-skip2);
+#endif
+}
+
 void Memento_breakpoint(void)
 {
     /* A handy externally visible function for breakpointing */
@@ -1396,22 +1420,25 @@ static int Memento_nonLeakBlocksLeaked(void)
 void Memento_fin(void)
 {
     Memento_checkAllMemory();
-    Memento_endStats();
-    if (Memento_nonLeakBlocksLeaked()) {
-        Memento_listBlocks();
+    if (!memento.segv)
+    {
+        Memento_endStats();
+        if (Memento_nonLeakBlocksLeaked()) {
+            Memento_listBlocks();
 #ifdef MEMENTO_DETAILS
-        fprintf(stderr, "\n");
-        Memento_listBlockInfo();
+            fprintf(stderr, "\n");
+            Memento_listBlockInfo();
 #endif
-        Memento_breakpoint();
+            Memento_breakpoint();
+	}
     }
-    if (memento.segv) {
-        fprintf(stderr, "Memory dumped on SEGV while squeezing @ %d\n", memento.failAt);
-    } else if (memento.squeezing) {
+    if (memento.squeezing) {
         if (memento.pattern == 0)
-            fprintf(stderr, "Memory squeezing @ %d complete\n", memento.squeezeAt);
+            fprintf(stderr, "Memory squeezing @ %d complete%s\n", memento.squeezeAt, memento.segv ? " (with SEGV)" : "");
         else
-            fprintf(stderr, "Memory squeezing @ %d (%d) complete\n", memento.squeezeAt, memento.pattern);
+            fprintf(stderr, "Memory squeezing @ %d (%d) complete%s\n", memento.squeezeAt, memento.pattern, memento.segv ? " (with SEGV)" : "");
+    } else if (memento.segv) {
+        fprintf(stderr, "Memory squeezing complete (with SEGV)\n", memento.failAt);
     }
     if (memento.failing)
     {
@@ -1525,6 +1552,7 @@ void Memento_info(void *addr)
 #ifdef MEMENTO_HAS_FORK
 #include <unistd.h>
 #include <sys/wait.h>
+#include <time.h>
 #ifdef MEMENTO_STACKTRACE_METHOD
 #if MEMENTO_STACKTRACE_METHOD == 1
 #include <signal.h>
@@ -1542,22 +1570,9 @@ int stashed_map[OPEN_MAX];
 
 static void Memento_signal(void)
 {
-    fprintf(stderr, "SEGV after Memory squeezing @ %d\n", memento.squeezeAt);
-
-#ifdef MEMENTO_STACKTRACE_METHOD
-#if MEMENTO_STACKTRACE_METHOD == 1
-    {
-      void *array[100];
-      size_t size;
-
-      size = backtrace(array, 100);
-      fprintf(stderr, "------------------------------------------------------------------------\n");
-      fprintf(stderr, "Backtrace:\n");
-      backtrace_symbols_fd(array, size, 2);
-      fprintf(stderr, "------------------------------------------------------------------------\n");
-    }
-#endif
-#endif
+    fprintf(stderr, "SEGV at:\n");
+    memento.segv = 1;
+    Memento_bt_internal(0);
 
     exit(1);
 }
@@ -1590,6 +1605,8 @@ static int squeeze(void)
         }
     }
 
+    fprintf(stderr, "Failing at:\n");
+    Memento_bt_internal(2);
     pid = fork();
     if (pid == 0) {
         /* Child */
@@ -1608,27 +1625,25 @@ static int squeeze(void)
     memento.pattern |= memento.patternBit;
     memento.patternBit <<= 1;
 
-    /* Wait for pid to finish */
-#if 1
+    /* Wait for pid to finish, with a timeout. */
     {
-        int timeout = 30;
+        struct timespec tm = { 0, 10 * 1000 * 1000 }; /* 10ms = 100th sec */
+        int timeout = 30 * 1000 * 1000; /* time out in microseconds! */
         while (waitpid(pid, &status, WNOHANG) == 0) {
-            sleep(1);
-	    timeout--;
-	    if (timeout == 0) {
+            nanosleep(&tm, NULL);
+            timeout -= (tm.tv_nsec/1000);
+            tm.tv_nsec *= 2;
+            if (tm.tv_nsec > 999999999)
+                tm.tv_nsec = 999999999;
+            if (timeout <= 0) {
                 char text[32];
                 fprintf(stderr, "Child is taking a long time to die. Killing it.\n");
-		sprintf(text, "kill %d", pid);
-		system(text);
-		break;
-	    }
+                sprintf(text, "kill %d", pid);
+                system(text);
+                break;
+            }
         }
     }
-#else
-    fprintf(stderr, "Child=%d\n", pid);
-    waitpid(pid, &status, 0);
-    fprintf(stderr, "Child exited, parent continuing\n");
-#endif
 
     if (status != 0) {
         fprintf(stderr, "Child status=%d\n", status);
