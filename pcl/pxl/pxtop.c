@@ -377,7 +377,6 @@ pxl_impl_process(pl_interp_instance_t * instance,
         code = px_process(pxli->st, pxli->pxs, cursor);
         if (code == e_ExitLanguage) {
             pxli->processState = PSDone;
-            code = 0;
         } else if (code == errorWarningsReported) {
             /* The parser doesn't skip over the EndSession */
             /* operator, because an "error" occurred. */

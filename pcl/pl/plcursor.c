@@ -40,7 +40,8 @@ pl_cursor_init(pl_top_cursor_t * cursor,    /* cursor to init/open */
     cursor->buffer_length = buffer_length;
     cursor->cursor.limit = cursor->cursor.ptr = buffer - 1;
     cursor->status = 1;         /* non-status */
-
+    cursor->position = 0;
+    
     status = pl_cursor_next(cursor);
     return status < 0 ? status : 0;     /* report errors, not EOF */
 }
@@ -52,14 +53,6 @@ pl_cursor_EOD(pl_top_cursor_t * cursor)
 
     /* NB review history of the second predicate. */
     return (cursor->status <= 0 && cursor->cursor.ptr <= cursor->buffer);
-}
-
-void
-pl_cursor_renew_status(pl_top_cursor_t * cursor)
-{
-    if (pl_cursor_EOD(cursor)) {
-        cursor->status = 1;
-    }
 }
 
 /* Refill from input */
@@ -84,8 +77,11 @@ pl_cursor_next(pl_top_cursor_t * cursor     /* cursor to operate on */
     if (cursor->status > 0 && len < cursor->buffer_length) {
         cursor->status = fread((byte *) (cursor->cursor.limit + 1),
                                1, cursor->buffer_length - len, cursor->strm);
-        if (cursor->status > 0)
+        
+        if (cursor->status > 0) {
             cursor->cursor.limit += cursor->status;
+            cursor->position += cursor->status;
+        }
     }
 
     /* Return success if there's anything in the buffer */
@@ -116,8 +112,11 @@ long                            /* offset from beginning of file */
 pl_cursor_position(pl_top_cursor_t * cursor        /* cursor to operate on */
     )
 {
-    return (long)ftell(cursor->strm)
-        - (cursor->cursor.limit - cursor->cursor.ptr);
+    long pos1 = (long)ftell(cursor->strm) - (cursor->cursor.limit - cursor->cursor.ptr);
+    long pos2 = cursor->position - (cursor->cursor.limit - cursor->cursor.ptr);
+    if (pos1 != pos2)
+        return -1;
+    return pos2;
 }
 
 /* Close read cursor */

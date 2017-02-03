@@ -400,8 +400,6 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                 if (pl_init_job(pjl_instance) < 0)
                     return gs_error_Fatal;
 
-                pl_cursor_renew_status(&r);
-                
             } else if (code < 0) {  /* error and not exit language */
                 dmprintf1(mem,
                           "Warning interpreter exited with error code %d\n",

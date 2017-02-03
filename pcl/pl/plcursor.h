@@ -31,6 +31,7 @@ typedef struct pl_top_cursor_s
     FILE *strm;                 /* stream that data comes from */
     unsigned char *buffer;      /* buffer to use */
     unsigned buffer_length;     /* # bytes in buffer */
+    size_t position;            /* position since beginning of stream */
     int status;                 /* if <=0, status to report to caller */
 } pl_top_cursor_t;
 
@@ -50,10 +51,6 @@ int pl_cursor_next(pl_top_cursor_t * cursor);
 
 /* Close read cursor */
 void pl_cursor_close(pl_top_cursor_t * cursor);
-
-/* renew a cursor if EOD condition has been set.  This can happen if a
-   PDL does not consume any data even though data is avaiable */
-void pl_cursor_renew_status(pl_top_cursor_t * cursor);
 
 /* the offset within the stream */
 long pl_cursor_position(pl_top_cursor_t * cursor);
