@@ -300,7 +300,7 @@ gs_interp_init(i_ctx_t **pi_ctx_p, const ref *psystem_dict,
     if (code >= 0)
         code = context_state_load(pcst);
     if (code < 0)
-        lprintf1("Fatal error %d in gs_interp_init!", code);
+        lprintf1("Fatal error %d in gs_interp_init!\n", code);
     *pi_ctx_p = pcst;
     return code;
 }
