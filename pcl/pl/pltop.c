@@ -190,10 +190,10 @@ int                             /* ret 0 ok, else -ve error code */
 pl_dnit_job(pl_interp_instance_t * instance     /* interp instance to wrap up job in */
     )
 {
-    if (instance)
-        return instance->interp->implementation->proc_dnit_job(instance);
-    else
+    if (!instance || !instance->interp || !instance->interp->implementation)
         return 0;
+
+    return instance->interp->implementation->proc_dnit_job(instance);
 }
 
 /* Remove a device from an interperter instance */
@@ -201,9 +201,10 @@ int                             /* ret 0 ok, else -ve error code */
 pl_remove_device(pl_interp_instance_t * instance        /* interp instance to use */
     )
 {
-    int code = instance->interp->implementation->proc_remove_device(instance);
+    if (!instance || !instance->interp || !instance->interp->implementation)
+        return 0;
 
-    return code;
+    return instance->interp->implementation->proc_remove_device(instance);
 }
 
 /* Deallocate a interpreter instance */
@@ -211,11 +212,11 @@ int                             /* ret 0 ok, else -ve error code */
 pl_deallocate_interp_instance(pl_interp_instance_t * instance   /* instance to dealloc */
     )
 {
-    int code
-        =
-        instance->interp->implementation->
-        proc_deallocate_interp_instance(instance);
-    return code;
+    if (!instance || !instance->interp || !instance->interp->implementation)
+        return 0;
+
+    return instance->interp->implementation->
+                proc_deallocate_interp_instance(instance);
 }
 
 /* Do static deinit of interpreter */
@@ -223,7 +224,8 @@ int                             /* ret 0 ok, else -ve error code */
 pl_deallocate_interp(pl_interp_t * interp       /* interpreter to deallocate */
     )
 {
-    int code = interp->implementation->proc_deallocate_interp(interp);
+    if (!interp || !interp->implementation)
+        return 0;
 
-    return code;
+    return interp->implementation->proc_deallocate_interp(interp);
 }
