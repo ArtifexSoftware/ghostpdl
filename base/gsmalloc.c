@@ -125,6 +125,10 @@ gs_malloc_memory_init(void)
     mem->monitor = NULL;	/* prevent use during initial allocation */
 #ifndef MEMENTO_SQUEEZE_BUILD
     mem->monitor = gx_monitor_label(gx_monitor_alloc((gs_memory_t *)mem), "heap");
+    if (mem->monitor == NULL) {
+        free(mem);
+        return NULL;
+    }
 #endif
 
     return mem;
@@ -569,8 +573,10 @@ gs_malloc_init(void)
     if (malloc_memory_default == NULL)
         return NULL;
 
-    if (gs_lib_ctx_init((gs_memory_t *)malloc_memory_default) != 0)
+    if (gs_lib_ctx_init((gs_memory_t *)malloc_memory_default) != 0) {
+        gs_malloc_release((gs_memory_t *)malloc_memory_default);
         return NULL;
+    }
 
 #if defined(USE_RETRY_MEMORY_WRAPPER)
     gs_malloc_wrap(&memory_t_default, malloc_memory_default);

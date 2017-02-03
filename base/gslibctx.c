@@ -25,7 +25,7 @@
 #include "gp.h"
 #include "gsicc_manage.h"
 #include "gserrors.h"
-#include "gscdefs.h"		/* for gs_lib_device_list */
+#include "gscdefs.h"            /* for gs_lib_device_list */
 
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
@@ -53,9 +53,9 @@ gs_lib_ctx_get_non_gc_memory_t()
 
 /*  This sets the directory to prepend to the ICC profile names specified for
     defaultgray, defaultrgb, defaultcmyk, proofing, linking, named color and device */
-void
+int
 gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
-                        int dir_namelen)
+                             int dir_namelen)
 {
     char *result;
     gs_lib_ctx_t *p_ctx = mem_gc->gs_lib_ctx;
@@ -65,11 +65,11 @@ gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
        as we are coming from a VMreclaim which is trying to reset the user
        parameter */
     if (p_ctx->profiledir != NULL && strcmp(pname,DEFAULT_DIR_ICC) == 0) {
-        return;
+        return 0;
     }
     if (p_ctx->profiledir != NULL && p_ctx->profiledir_len > 0) {
         if (strncmp(pname, p_ctx->profiledir, p_ctx->profiledir_len) == 0) {
-            return;
+            return 0;
         }
         gs_free_object(p_ctx_mem, p_ctx->profiledir,
                        "gs_lib_ctx_set_icc_directory");
@@ -77,11 +77,12 @@ gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
     /* User param string.  Must allocate in non-gc memory */
     result = (char*) gs_alloc_bytes(p_ctx_mem, dir_namelen+1,
                                      "gs_lib_ctx_set_icc_directory");
-    if (result != NULL) {
-        strcpy(result, pname);
-        p_ctx->profiledir = result;
-        p_ctx->profiledir_len = dir_namelen;
-    }
+    if (result == NULL)
+        return -1;
+    strcpy(result, pname);
+    p_ctx->profiledir = result;
+    p_ctx->profiledir_len = dir_namelen;
+    return 0;
 }
 
 /* Sets/Gets the string containing the list of default devices we should try */
@@ -164,31 +165,21 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     /* Initialize our default ICCProfilesDir */
     pio->profiledir = NULL;
     pio->profiledir_len = 0;
-    gs_lib_ctx_set_icc_directory(mem, DEFAULT_DIR_ICC, strlen(DEFAULT_DIR_ICC));
+    if (gs_lib_ctx_set_icc_directory(mem, DEFAULT_DIR_ICC, strlen(DEFAULT_DIR_ICC)) < 0)
+      goto Failure;
 
     if (gs_lib_ctx_set_default_device_list(mem, gs_dev_defaults,
-                        strlen(gs_dev_defaults)) < 0) {
-        
-        gs_free_object(mem, pio, "gs_lib_ctx_init");
-        mem->gs_lib_ctx = NULL;
-    }
+                                           strlen(gs_dev_defaults)) < 0)
+        goto Failure;
 
     /* Initialise the underlying CMS. */
-    if (gscms_create(mem)) {
-Failure:
-        gs_free_object(mem, mem->gs_lib_ctx->default_device_list,
-                "gs_lib_ctx_fin");
-
-        gs_free_object(mem, pio, "gs_lib_ctx_init");
-        mem->gs_lib_ctx = NULL;
-        return -1;
-    }
+    if (gscms_create(mem))
+        goto Failure;
 
     /* Initialise any lock required for the jpx codec */
-    if (sjpxd_create(mem)) {
-        gscms_destroy(mem);
+    if (sjpxd_create(mem))
         goto Failure;
-    }
+
     pio->client_check_file_permission = NULL;
     gp_get_realtime(pio->real_time_0);
 
@@ -196,6 +187,10 @@ Failure:
     pio->scanconverter = GS_SCANCONVERTER_DEFAULT;
 
     return 0;
+
+Failure:
+    gs_lib_ctx_fin(mem);
+    return -1;
 }
 
 static void remove_ctx_pointers(gs_memory_t *mem)

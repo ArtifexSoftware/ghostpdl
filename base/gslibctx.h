@@ -121,8 +121,8 @@ void gs_lib_ctx_set_cms_context( const gs_memory_t *mem, void *cms_context );
 gs_memory_t * gs_lib_ctx_get_non_gc_memory_t(void);
 #endif
 
-void gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
-                        int dir_namelen);
+int gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
+                                 int dir_namelen);
 
 
 /* Sets/Gets the string containing the list of device names we should search

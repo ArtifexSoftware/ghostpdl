@@ -248,25 +248,27 @@ pl_main_aux(int argc, char *argv[], void *disp)
     gs_memory_t *mem;
     gs_memory_t *pjl_mem;
     pl_main_instance_t inst;
-    arg_list args;
+    arg_list args = { 0 };
     char *filename = NULL;
     char err_buf[256];
-    pl_interp_t *pjl_interp;
-    pl_interp_instance_t *pjl_instance;
+    pl_interp_t *pjl_interp = NULL;
+    pl_interp_instance_t *pjl_instance = NULL;
     pl_main_universe_t universe;
     pl_interp_instance_t *curr_instance = 0;
-    gs_c_param_list params;
+    gs_c_param_list params = { 0 };
     int (*arg_get_codepoint) (FILE * file, const char **astr) = NULL;
-    int code = 0;
+    int code = -1;
 
     mem = pl_alloc_init();
+    if (mem == NULL || mem->gs_lib_ctx == NULL)
+        return -1;
 
     pl_platform_init(mem->gs_lib_ctx->fstdout);
 
-
     pjl_mem = mem;
 
-    gs_lib_init1(pjl_mem);
+    if (gs_lib_init1(pjl_mem) < 0)
+        goto fail;
 
     /* Create a memory allocator to allocate various states from */
     {
@@ -276,9 +278,10 @@ pl_main_aux(int argc, char *argv[], void *disp)
          * some hacks specific to MS Windows for patching the
          * stdxxx IODevices.
          */
-        extern void gs_iodev_init(gs_memory_t *);
+        extern int gs_iodev_init(gs_memory_t *);
 
-        gs_iodev_init(pjl_mem);
+        if (gs_iodev_init(pjl_mem) < 0)
+            goto fail;
     }
 
     /* Init the top-level instance */
@@ -295,8 +298,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
     if (pl_allocate_interp(&pjl_interp, &pjl_implementation, pjl_mem) < 0
         || pl_allocate_interp_instance(&pjl_instance, pjl_interp,
                                        pjl_mem) < 0) {
-        errprintf(mem, "Unable to create PJL interpreter.");
-        return -1;
+        errprintf(mem, "Unable to create PJL interpreter.\n");
+	goto fail;
     }
 
     /* Create PDL instances, etc */
@@ -304,7 +307,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
                               pjl_instance, &inst, &pl_pre_finish_page,
                               &pl_post_finish_page) < 0) {
         errprintf(mem, "%s", err_buf);
-        code = -1;
         goto done;
     }
 #ifdef DEBUG
@@ -323,10 +325,10 @@ pl_main_aux(int argc, char *argv[], void *disp)
         byte buf[1 << 13];
 #endif
         pl_top_cursor_t r;
-        int code = 0;
         bool in_pjl = true;
         bool new_job = false;
 
+        code = 0;
         if (pl_init_job(pjl_instance) < 0) {
             errprintf(mem, "Unable to init PJL job.\n");
             code = -1;
@@ -561,6 +563,11 @@ pl_main_aux(int argc, char *argv[], void *disp)
         errprintf(mem, "%s", err_buf);
         code = -1;
         goto done;
+    }
+    if (0) {
+fail:
+        if (code >= 0)
+            code = -1;
     }
     /* dnit pjl */
     if (pl_deallocate_interp_instance(pjl_instance) < 0

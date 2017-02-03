@@ -38,7 +38,10 @@ pl_alloc_init()
 
     code = gs_memory_chunk_wrap(&pl_mem, mem);
     if (code < 0)
+    {
+        gs_malloc_release(mem);
         return NULL;
+    }
 
     return pl_mem;
 }

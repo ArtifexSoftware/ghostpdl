@@ -1119,7 +1119,7 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
         gs_free_object(mem_gc, buffer, "gsicc_open_search");
         if (str != NULL) {
             *strp = str;
-	    return 0;
+            return 0;
         }
     }
 
@@ -2764,18 +2764,21 @@ gs_seticcdirectory(const gs_gstate * pgs, gs_param_string * pval)
 {
     char *pname;
     int namelen = (pval->size)+1;
-    const gs_memory_t *mem = pgs->memory;
+    gs_memory_t *mem = (gs_memory_t *)pgs->memory;
 
     /* Check if it was "NULL" */
     if (pval->size != 0 ) {
-        pname = (char *)gs_alloc_bytes((gs_memory_t *)mem, namelen,
-                                       "set_icc_directory");
+        pname = (char *)gs_alloc_bytes(mem, namelen,
+                                       "gs_seticcdirectory");
         if (pname == NULL)
             return gs_rethrow(-1, "cannot allocate directory name");
         memcpy(pname,pval->data,namelen-1);
         pname[namelen-1] = 0;
-        gs_lib_ctx_set_icc_directory(mem, (const char*) pname, namelen);
-        gs_free_object((gs_memory_t *)mem, pname, "set_icc_directory");
+        if (gs_lib_ctx_set_icc_directory(mem, (const char*) pname, namelen) < 0) {
+            gs_free_object(mem, pname, "gs_seticcdirectory");
+            return -1;
+        }
+        gs_free_object(mem, pname, "gs_seticcdirectory");
     }
     return 0;
 }
