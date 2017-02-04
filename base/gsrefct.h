@@ -19,6 +19,8 @@
 #ifndef gsrefct_INCLUDED
 #  define gsrefct_INCLUDED
 
+#include "memento.h"
+
 /* Remove this, hopefully */
 #ifndef gs_memory_DEFINED
 #  define gs_memory_DEFINED
