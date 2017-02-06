@@ -96,7 +96,7 @@ lead: /* We've just read a byte >= 0x80, presumably a leading byte */
             if (c == EOF)
                 return EOF;
             rune = (rune<<6) | (c & 0x3f);
-        } while (((c & 0xC0) == 0xC0) && --len);
+        } while (((c & 0xC0) == 0x80) && --len);
         if (len) {
             /* The rune we are collecting is improperly formed. */
             if (c < 0x80) {
