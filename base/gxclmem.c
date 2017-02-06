@@ -159,8 +159,8 @@ static const int64_t COMPRESSION_THRESHOLD =
 #define MALLOC(f, siz, cname)\
   (void *)gs_alloc_bytes((f)->data_memory, siz, cname)
 #define FREE(f, obj, cname)\
-  (gs_free_object((f)->data_memory, obj, cname),\
-   (f)->total_space -= sizeof(*(obj)))
+  do {gs_free_object((f)->data_memory, obj, cname);\
+    (f)->total_space -= sizeof(*(obj));} while (0)
 
 /* Structure descriptor for GC */
 private_st_MEMFILE();

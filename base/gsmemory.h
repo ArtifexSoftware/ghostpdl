@@ -136,7 +136,7 @@ typedef struct gs_memory_status_s {
   void proc(mem_t *mem, void *data, client_name_t cname)
 
 #define gs_free_object(mem, data, cname)\
-  ((mem)->procs.free_object(mem, data, cname))
+  do { if (mem != NULL) {((mem)->procs.free_object(mem, data, cname));} } while (0)
 
                 /*
                  * Report status (assigned, used).
