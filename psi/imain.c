@@ -137,7 +137,6 @@ int
 gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
               int max_lib_paths)
 {
-    ref *paths;
     ref *array;
 
     /* Do platform-dependent initialization. */
@@ -160,12 +159,6 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     gp_get_realtime(minst->base_time);
 
     /* Initialize the file search paths. */
-    paths = (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
-                                        "lib_path array");
-    if (paths == 0) {
-        gs_lib_finit(1, gs_error_VMerror, minst->heap);
-        return_error(gs_error_VMerror);
-    }
     array = (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
                                         "lib_path array");
     if (array == 0) {
