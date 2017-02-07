@@ -18,7 +18,8 @@
 
 % Dump some info from a PDF file
 
-% usage: gs -dNODISPLAY -q -sFile=____.pdf [-dDumpMediaSizes] [-dDumpFontsUsed [-dShowEmbeddedFonts] ] toolbin/pdf_info.ps
+% usage: gs -dNODISPLAY -q -sFile=____.pdf [-dDumpMediaSizes=false] [-dDumpFontsNeeded=false] [-dDumpXML]
+%                                          [-dDumpFontsUsed [-dShowEmbeddedFonts] ] toolbin/pdf_info.ps
 
 128 dict begin
 
@@ -28,6 +29,7 @@
   (           where "options" are:) =
   (           -dDumpMediaSizes=false    (default true) MediaBox and CropBox for each page) =
   (           -dDumpFontsNeeded=false   (default true)Fonts used, but not embedded) =
+  (           -dDumpXML                 print the XML Metadata from the PDF, if present) =
   (           -dDumpFontsUsed           List all fonts used) =
   (           -dShowEmbeddedFonts       only meaningful with -dDumpFontsUsed) =
   (\n          If no options are given, the default is -dDumpMediaSizes -dDumpFontsNeeded) =
@@ -66,9 +68,33 @@ cleartomark		% discard the dict from --where--
 % ---- No more executable code on the top level after this line -----
 % ---- except 2 lines at the very end                           -----
 
+/printXML {	% <string> printXML -
+  % print non-blank lines without trailing spaces
+  dup dup length 1 sub -1 0 {
+    1 index 1 index get 32 eq {
+      0 exch getinterval exch
+    } {
+      exch = exit	% non-blank on this line
+    }
+    ifelse
+  } for
+  pop pop		% clean up
+} bind def
+
 /dump-pdf-info {    % (fname) -> -
   () = (        ) print print ( has ) print 
   PDFPageCount dup =print 10 mod 1 eq { ( page.\n) } { ( pages\n) } ifelse = flush
+
+  /DumpXML where {
+    pop
+    Trailer /Root oget /Metadata knownoget {
+      //false resolvestream
+      { dup 256 string readline exch printXML not { exit } if } loop
+      pop		% done with the stream
+      (_____________________________________________________________) =
+      flush
+    } if
+  } if
 
   % Print out the "Info" dictionary if present
   Trailer /Info knownoget {
@@ -280,7 +306,9 @@ currentdict /res-type-dict undef
         pop
         (\nNo system fonts are needed.) =
       } ifelse
-    } if
+    } {
+      pop
+    } ifelse
   } ifelse
   pop
 } bind def
