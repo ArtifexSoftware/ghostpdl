@@ -102,14 +102,12 @@ xps_true_callback_string_proc(gs_font_type42 *p42, ulong offset, uint length, co
     return 0;
 }
 
-static gs_char xps_last_char = GS_NO_CHAR; /* same hack as in PCL */
-
 static gs_glyph
 xps_true_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
 {
     xps_font_t *font = pfont->client_data;
     int value;
-    xps_last_char = chr; /* save the char we're encoding for the decode_glyph hack */
+
     value = xps_encode_font_char(font, chr);
     if (value == 0)
         return GS_NO_GLYPH;
@@ -119,14 +117,19 @@ xps_true_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
 static int
 xps_true_callback_decode_glyph(gs_font *pfont, gs_glyph glyph, int ch, ushort *unicode_return, unsigned int length)
 {
-    /* We should do a reverse cmap lookup here to match PS/PDF.
-     * However, a complete rearchitecture of our text and font processing
-     * would be necessary to match XPS unicode mapping with the
-     * cluster maps. Alas, we cheat similarly to PCL. */
+    xps_font_t *font = pfont->client_data;
+    char *ur = (char *)unicode_return;
+    int u;
+
     if (length == 0)
-        return 1;
-    *unicode_return = xps_last_char;
-    return 1;
+        return 2;
+    u = xps_decode_font_char(font, glyph);
+    /* Unfortunate assumptions in the pdfwrite code mea that we have to return the
+     * value as a big-endian short, no matter what platform we are on
+     */
+    ur[1] = u & 0xff;
+    ur[0] = u >> 8;
+    return 2;
 }
 
 static int

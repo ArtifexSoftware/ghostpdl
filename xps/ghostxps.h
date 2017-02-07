@@ -268,6 +268,7 @@ void xps_free_font(xps_context_t *ctx, xps_font_t *font);
 int xps_count_font_encodings(xps_font_t *font);
 void xps_identify_font_encoding(xps_font_t *font, int idx, int *pid, int *eid);
 void xps_select_font_encoding(xps_font_t *font, int idx);
+int xps_decode_font_char(xps_font_t *font, int key);
 int xps_encode_font_char(xps_font_t *font, int key);
 
 void xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_glyph_metrics_t *mtx);
