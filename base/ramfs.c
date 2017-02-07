@@ -114,7 +114,7 @@ void ramfs_destroy(gs_memory_t *mem, ramfs * fs)
         ent = ent->next;
         gs_free_object(mem, prev, "ramfs_destroy, entry");
     }
-    gs_free_object(mem, fs, "ramfs_destroy");
+    gs_free_object(fs->memory, fs, "ramfs_destroy");
 }
 
 int ramfs_error(const ramfs* fs) { return fs->last_error; }
