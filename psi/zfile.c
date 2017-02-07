@@ -134,7 +134,7 @@ check_file_permissions_reduced(i_ctx_t *i_ctx_p, const char *fname, int len,
     /* we're protecting arbitrary file system accesses, not Postscript device accesses.
      * Although, note that %pipe% is explicitly checked for and disallowed elsewhere
      */
-    if (iodev && iodev->procs.open_file != iodev_os_open_file) {
+    if (iodev != iodev_default(imemory)) {
         return 0;
     }
 
