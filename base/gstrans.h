@@ -247,13 +247,13 @@ int gs_is_pdf14trans_compositor(const gs_composite_t * pct);
  * since it is a hack, we may exceed our desired buffer space while
  * processing the file.
  */
-#define NUM_PDF14_BUFFERS 3     /* totally a random guess */
+#define NUM_PDF14_BUFFERS 4     /* totally a random guess */
 #define NUM_ALPHA_CHANNELS 1    /* common, but doesn't include possible tag, shape or group alpha */
 #define NUM_COLOR_CHANNELS 4    /* CMYK is most common 'worst case' */
 #define BITS_PER_CHANNEL 8      /* currently pdf14 device is always 8-bit */
 /* The estimated size of an individual PDF 1.4 buffer row (in bits) */
 #define ESTIMATED_PDF14_ROW_SIZE(width, target_num_components) ((width) * BITS_PER_CHANNEL\
-        * (NUM_ALPHA_CHANNELS + NUM_COLOR_CHANNELS))
+        * (NUM_ALPHA_CHANNELS + max(target_num_components,NUM_COLOR_CHANNELS)))
 /* The estimated size of one row in all PDF 1.4 buffers (in bits) */
 #define ESTIMATED_PDF14_ROW_SPACE(width, target_num_components) \
         (NUM_PDF14_BUFFERS * ESTIMATED_PDF14_ROW_SIZE(width, target_num_components))
