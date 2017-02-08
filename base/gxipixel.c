@@ -174,10 +174,12 @@ gx_image_enum_alloc(const gs_image_common_t * pic,
             )
             return_error(gs_error_rangecheck);
     }
+    *ppenum = NULL;		/* in case alloc fails and caller doesn't check code */
     penum = gs_alloc_struct(mem, gx_image_enum, &st_gx_image_enum,
                             "gx_default_begin_image");
     if (penum == 0)
         return_error(gs_error_VMerror);
+    memset(penum, 0, sizeof(gx_image_enum));	/* in case of failure, no dangling pointers */
     if (prect) {
         penum->rect.x = prect->p.x;
         penum->rect.y = prect->p.y;

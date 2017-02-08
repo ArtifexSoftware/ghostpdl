@@ -85,7 +85,6 @@ gx_begin_image1(gx_device * dev,
 
     if (code < 0)
         return code;
-    memset(penum, 0, sizeof(gx_image_enum));	/* in case of failure, no dangling pointers */
     penum->alpha = pim->Alpha;
     penum->use_mask_color = false;
     penum->image_parent_type = pim->image_parent_type;
@@ -96,6 +95,10 @@ gx_begin_image1(gx_device * dev,
                                penum);
     if (code >= 0)
         *pinfo = (gx_image_enum_common_t *)penum;
+    else {
+        gs_free_object(mem, penum, "gx_begin_image1");
+        *pinfo = NULL;
+    }
     return code;
 }
 
