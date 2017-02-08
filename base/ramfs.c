@@ -108,11 +108,11 @@ void ramfs_destroy(gs_memory_t *mem, ramfs * fs)
     ent = fs->files;
     while(ent) {
         ramdirent* prev;
-        gs_free_object(mem, ent->filename, "ramfs_destroy, filename");
+        gs_free_object(fs->memory, ent->filename, "ramfs_destroy, filename");
         unlink_node(ent->inode);
         prev = ent;
         ent = ent->next;
-        gs_free_object(mem, prev, "ramfs_destroy, entry");
+        gs_free_object(fs->memory, prev, "ramfs_destroy, entry");
     }
     gs_free_object(fs->memory, fs, "ramfs_destroy");
 }
