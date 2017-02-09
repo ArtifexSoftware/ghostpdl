@@ -1559,7 +1559,7 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
                   Xlist_element *Xlist_head, int compression,
                   int compaction, int *inode_count, int *totlen, FILE *out)
 {
-    int namelen, excluded, save_count=*inode_count;
+    int i, namelen, excluded, save_count=*inode_count;
     Xlist_element *Xlist_scan;
     char *prefixed_path;
     char *found_path, *rom_filename;
@@ -1617,23 +1617,22 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
 
     qsort(foundfiles, numfiles, sizeof(char *), cmpstringp);
 
-    while (numfiles--) {
-        found_path = *foundfiles;
-        foundfiles++;
+    for (i = 0; i < numfiles; i++) {
+        char *fpath = foundfiles[i];
 
         /* process a file */
         node = calloc(1, sizeof(romfs_inode));
         /* get info for this file */
-        in = fopen(found_path, "rb");
+        in = fopen(fpath, "rb");
         if (in == NULL) {
-            printf("unable to open file for processing: %s\n", found_path);
+            printf("unable to open file for processing: %s\n", fpath);
             continue;
         }
-        /* printf("compacting %s\n", found_path); */
+        /* printf("compacting %s\n", fpath); */
         /* rom_filename + strlen(rom_prefix) is first char after the new prefix we want to add */
-        /* found_path + strlen(os_prefix) is the file name after the -P prefix */
+        /* fpath + strlen(os_prefix) is the file name after the -P prefix */
         rom_filename[strlen(rom_prefix)] = 0;		/* truncate afater prefix */
-        strcat(rom_filename, found_path + strlen(os_prefix));
+        strcat(rom_filename, fpath + strlen(os_prefix));
         node->name = rom_filename;	/* without -P prefix, with -d rom_prefix */
         fseek(in, 0, SEEK_END);
         node->disc_length = node->length = ftell(in);
@@ -1641,8 +1640,8 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
         node->data_lengths = calloc(blocks, sizeof(*node->data_lengths));
         node->data = calloc(blocks, sizeof(*node->data));
         fclose(in);
-        in = fopen(found_path, "rb");
-        ulen = strlen(found_path);
+        in = fopen(fpath, "rb");
+        ulen = strlen(fpath);
         block = 0;
         psc_len = 0;
         if (compaction)
@@ -1674,7 +1673,7 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
         fclose(in);
         if (compaction) {
             /* printf("%s: Compaction saved %d bytes (before compression)\n",
-             *        found_path, node->length - psc_len); */
+             *        fpath, node->length - psc_len); */
             pscompact_end(&psc);
             node->length = psc_len;
         }
@@ -1684,10 +1683,12 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
         inode_clear(node);
         free(node);
         (*inode_count)++;
+        free(fpath);
     }
     free(cbuf);
     free(ubuf);
     free(found_path);
+    free(foundfiles);
     free(prefixed_path);
     free(rom_filename);
     if (save_count == *inode_count) {
