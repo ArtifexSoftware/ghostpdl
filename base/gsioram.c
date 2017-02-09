@@ -161,8 +161,20 @@ ram_open_file(gx_io_device * iodev, const char *fname, uint len,
         return 0;
     }
 
-    if (fmode[0] != 'r' || fmode[1] == '+') openmode |= RAMFS_WRITE;
-    if (fmode[0] != 'r') openmode |= RAMFS_CREATE;
+    switch (fmode[0]) {
+        case 'a':
+          openmode = RAMFS_WRITE | RAMFS_APPEND;
+          break;
+        case 'r':
+          openmode = RAMFS_READ;
+          if (fmode[1] == '+')
+            openmode |= RAMFS_WRITE;
+          break;
+        case 'w':
+          openmode |= RAMFS_WRITE | RAMFS_TRUNC | RAMFS_CREATE;
+          if (fmode[1] == '+')
+             openmode |= RAMFS_READ;
+    }
 
     /* For now, we cheat here in the same way that sfxstdio.c et al cheat -
        append mode is faked by opening in write mode and seeking to EOF just
@@ -182,6 +194,9 @@ ram_open_file(gx_io_device * iodev, const char *fname, uint len,
     break;
     case 'w':
     swrite_ram(*ps, file, (*ps)->cbuf, (*ps)->bsize);
+    }
+    if (fmode[1] == '+') {
+      (*ps)->modes = (*ps)->file_modes |= s_mode_read | s_mode_write;
     }
     (*ps)->save_close = (*ps)->procs.close;
     (*ps)->procs.close = file_close_file;

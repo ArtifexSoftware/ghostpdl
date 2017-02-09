@@ -16,6 +16,8 @@
 #ifndef __RAMFS_H__
 #define __RAMFS_H__
 
+#include "stream.h"
+
 #define RAMFS_BLOCKSIZE 1024
 
 typedef struct _ramfs ramfs;
@@ -44,11 +46,13 @@ typedef struct _ramfs_enum ramfs_enum;
 #define RAMFS_NOSPACE 7
 
 /* Open mode flags */
-#define RAMFS_READ 1
-#define RAMFS_CREATE 2
-#define RAMFS_WRITE 4
-#define RAMFS_TRUNC 8
-#define RAMFS_APPEND 16
+#define RAMFS_READ   s_mode_read      /* 1 */
+#define RAMFS_WRITE  s_mode_write    /* 2 */
+#define RAMFS_SEEK   s_mode_seek      /* 4 */
+#define RAMFS_APPEND s_mode_append  /* 8 */
+#define RAMFS_CREATE 16
+#define RAMFS_TRUNC  32
+#define RAMFS_APPEND 64
 
 #define RAMFS_SEEK_SET 0
 #define RAMFS_SEEK_CUR 1

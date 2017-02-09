@@ -197,6 +197,7 @@ gstrans_h=$(GLSRC)gstrans.h $(gstparam_h) $(gxcomp_h) $(gsmatrix_h) $(gxblend_h)
 # Streams
 scommon_h=$(GLSRC)scommon.h $(gsmemory_h) $(gstypes_h) $(gsstype_h) $(stdint__h)
 stream_h=$(GLSRC)stream.h $(scommon_h) $(srdline_h) $(gxiodev_h)
+ramfs_h=$(GLSRC)ramfs.h $(stream_h)
 
 ### Memory manager
 
