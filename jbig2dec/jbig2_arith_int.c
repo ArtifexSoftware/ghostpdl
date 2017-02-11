@@ -63,36 +63,24 @@ jbig2_arith_int_decode(Jbig2ArithIntCtx *ctx, Jbig2ArithState *as, int32_t *p_re
     int i;
 
     S = jbig2_arith_decode(as, &IAx[PREV]);
-    if (S < 0)
-        return -1;
     PREV = (PREV << 1) | S;
 
     bit = jbig2_arith_decode(as, &IAx[PREV]);
-    if (bit < 0)
-        return -1;
     PREV = (PREV << 1) | bit;
     if (bit) {
         bit = jbig2_arith_decode(as, &IAx[PREV]);
-        if (bit < 0)
-            return -1;
         PREV = (PREV << 1) | bit;
 
         if (bit) {
             bit = jbig2_arith_decode(as, &IAx[PREV]);
-            if (bit < 0)
-                return -1;
             PREV = (PREV << 1) | bit;
 
             if (bit) {
                 bit = jbig2_arith_decode(as, &IAx[PREV]);
-                if (bit < 0)
-                    return -1;
                 PREV = (PREV << 1) | bit;
 
                 if (bit) {
                     bit = jbig2_arith_decode(as, &IAx[PREV]);
-                    if (bit < 0)
-                        return -1;
                     PREV = (PREV << 1) | bit;
 
                     if (bit) {
@@ -122,8 +110,6 @@ jbig2_arith_int_decode(Jbig2ArithIntCtx *ctx, Jbig2ArithState *as, int32_t *p_re
     V = 0;
     for (i = 0; i < n_tail; i++) {
         bit = jbig2_arith_decode(as, &IAx[PREV]);
-        if (bit < 0)
-            return -1;
         PREV = ((PREV << 1) & 511) | (PREV & 256) | bit;
         V = (V << 1) | bit;
     }

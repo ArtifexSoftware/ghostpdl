@@ -96,8 +96,6 @@ jbig2_generic_stats_size(Jbig2Ctx *ctx, int template)
                 bool bit;
 
                 bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
-                if (bit < 0)
-                            return -1;
                 result |= bit << (7 - x_minor);
                 CONTEXT = ((CONTEXT & 0x7bf7) << 1) | bit | ((line_m1 >> (7 - x_minor)) & 0x10) | ((line_m2 >> (7 - x_minor)) & 0x800);
             }
@@ -145,8 +143,6 @@ jbig2_decode_generic_template0_unopt(Jbig2Ctx *ctx,
             CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 2) << 14;
             CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[6], y + params->gbat[7]) << 15;
             bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
-            if (bit < 0)
-                        return -1;
             jbig2_image_set_pixel(image, x, y, bit);
         }
     }
@@ -200,8 +196,6 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
                 bool bit;
 
                 bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
-                if (bit < 0)
-                            return -1;
                 result |= bit << (7 - x_minor);
                 CONTEXT = ((CONTEXT & 0xefb) << 1) | bit | ((line_m1 >> (8 - x_minor)) & 0x8) | ((line_m2 >> (8 - x_minor)) & 0x200);
             }
@@ -263,8 +257,6 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
                 bool bit;
 
                 bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
-                if (bit < 0)
-                            return -1;
                 result |= bit << (7 - x_minor);
                 CONTEXT = ((CONTEXT & 0x1bd) << 1) | bit | ((line_m1 >> (10 - x_minor)) & 0x4) | ((line_m2 >> (10 - x_minor)) & 0x80);
             }
@@ -326,8 +318,6 @@ jbig2_decode_generic_template2a(Jbig2Ctx *ctx,
                 bool bit;
 
                 bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
-                if (bit < 0)
-                            return -1;
                 result |= bit << (7 - x_minor);
                 CONTEXT = ((CONTEXT & 0x1b9) << 1) | bit |
                            ((line_m1 >> (10 - x_minor)) & 0x8) | ((line_m1 >> (9 - x_minor)) & 0x4) | ((line_m2 >> (10 - x_minor)) & 0x80);
@@ -386,8 +376,6 @@ jbig2_decode_generic_template3(Jbig2Ctx *ctx,
                 bool bit;
 
                 bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
-                if (bit < 0)
-                            return -1;
                 result |= bit << (7 - x_minor);
                 CONTEXT = ((CONTEXT & 0x1f7) << 1) | bit | ((line_m1 >> (10 - x_minor)) & 0x010);
             }
@@ -430,8 +418,6 @@ jbig2_decode_generic_template3_unopt(Jbig2Ctx *ctx,
             CONTEXT |= jbig2_image_get_pixel(image, x - 2, y - 1) << 8;
             CONTEXT |= jbig2_image_get_pixel(image, x - 3, y - 1) << 9;
             bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
-            if (bit < 0)
-                        return -1;
             jbig2_image_set_pixel(image, x, y, bit);
         }
     }
@@ -465,10 +451,7 @@ jbig2_decode_generic_template0_TPGDON(Jbig2Ctx *ctx,
     int LTP = 0;
 
     for (y = 0; y < GBH; y++) {
-        bit = jbig2_arith_decode(as, &GB_stats[0x9B25]);
-        if (bit < 0)
-                    return -1;
-        LTP ^= bit;
+        LTP ^= jbig2_arith_decode(as, &GB_stats[0x9B25]);
         if (!LTP) {
             for (x = 0; x < GBW; x++) {
                 CONTEXT = jbig2_image_get_pixel(image, x - 1, y);
@@ -488,8 +471,6 @@ jbig2_decode_generic_template0_TPGDON(Jbig2Ctx *ctx,
                 CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 2) << 14;
                 CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[6], y + params->gbat[7]) << 15;
                 bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
-                if (bit < 0)
-                            return -1;
                 jbig2_image_set_pixel(image, x, y, bit);
             }
         } else {
@@ -513,10 +494,7 @@ jbig2_decode_generic_template1_TPGDON(Jbig2Ctx *ctx,
     int LTP = 0;
 
     for (y = 0; y < GBH; y++) {
-        bit = jbig2_arith_decode(as, &GB_stats[0x0795]);
-        if (bit < 0)
-                    return -1;
-        LTP ^= bit;
+        LTP ^= jbig2_arith_decode(as, &GB_stats[0x0795]);
         if (!LTP) {
             for (x = 0; x < GBW; x++) {
                 CONTEXT = jbig2_image_get_pixel(image, x - 1, y);
@@ -533,8 +511,6 @@ jbig2_decode_generic_template1_TPGDON(Jbig2Ctx *ctx,
                 CONTEXT |= jbig2_image_get_pixel(image, x, y - 2) << 11;
                 CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 2) << 12;
                 bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
-                if (bit < 0)
-                            return -1;
                 jbig2_image_set_pixel(image, x, y, bit);
             }
         } else {
@@ -558,10 +534,7 @@ jbig2_decode_generic_template2_TPGDON(Jbig2Ctx *ctx,
     int LTP = 0;
 
     for (y = 0; y < GBH; y++) {
-        bit = jbig2_arith_decode(as, &GB_stats[0xE5]);
-        if (bit < 0)
-                    return -1;
-        LTP ^= bit;
+        LTP ^= jbig2_arith_decode(as, &GB_stats[0xE5]);
         if (!LTP) {
             for (x = 0; x < GBW; x++) {
                 CONTEXT = jbig2_image_get_pixel(image, x - 1, y);
@@ -575,8 +548,6 @@ jbig2_decode_generic_template2_TPGDON(Jbig2Ctx *ctx,
                 CONTEXT |= jbig2_image_get_pixel(image, x, y - 2) << 8;
                 CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 2) << 9;
                 bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
-                if (bit < 0)
-                            return -1;
                 jbig2_image_set_pixel(image, x, y, bit);
             }
         } else {
@@ -600,10 +571,7 @@ jbig2_decode_generic_template3_TPGDON(Jbig2Ctx *ctx,
     int LTP = 0;
 
     for (y = 0; y < GBH; y++) {
-        bit = jbig2_arith_decode(as, &GB_stats[0x0195]);
-        if (bit < 0)
-                    return -1;
-        LTP ^= bit;
+        LTP ^= jbig2_arith_decode(as, &GB_stats[0x0195]);
         if (!LTP) {
             for (x = 0; x < GBW; x++) {
                 CONTEXT = jbig2_image_get_pixel(image, x - 1, y);
@@ -617,8 +585,6 @@ jbig2_decode_generic_template3_TPGDON(Jbig2Ctx *ctx,
                 CONTEXT |= jbig2_image_get_pixel(image, x - 2, y - 1) << 8;
                 CONTEXT |= jbig2_image_get_pixel(image, x - 3, y - 1) << 9;
                 bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
-                if (bit < 0)
-                            return -1;
                 jbig2_image_set_pixel(image, x, y, bit);
             }
         } else {

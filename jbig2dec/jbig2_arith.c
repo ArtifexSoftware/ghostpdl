@@ -40,8 +40,6 @@ struct _Jbig2ArithState {
 
     Jbig2WordStream *ws;
     int offset;
-
-    Jbig2Ctx *ctx;
 };
 
 #undef SOFTWARE_CONVENTION
@@ -60,7 +58,7 @@ struct _Jbig2ArithState {
 
  */
 
-static int
+static void
 jbig2_arith_bytein(Jbig2ArithState *as)
 {
     byte B;
@@ -75,10 +73,7 @@ jbig2_arith_bytein(Jbig2ArithState *as)
         if (as->next_word_bytes == 1) {
             Jbig2WordStream *ws = as->ws;
 
-            if (ws->get_next_word(ws, as->offset, &as->next_word)) {
-                jbig2_error(as->ctx, JBIG2_SEVERITY_FATAL, -1, "end of jbig2 buffer reached at offset %d", as->offset);
-                return -1;
-            }
+            ws->get_next_word(ws, as->offset, &as->next_word);
             as->offset += 4;
             B1 = (byte)((as->next_word >> 24) & 0xFF);
             if (B1 > 0x8F) {
@@ -138,10 +133,7 @@ jbig2_arith_bytein(Jbig2ArithState *as)
         if (as->next_word_bytes == 0) {
             Jbig2WordStream *ws = as->ws;
 
-            if (ws->get_next_word(ws, as->offset, &as->next_word)) {
-                jbig2_error(as->ctx, JBIG2_SEVERITY_FATAL, -1, "end of jbig2 buffer reached at offset %d", as->offset);
-                return -1;
-            }
+            ws->get_next_word(ws, as->offset, &as->next_word);
             as->offset += 4;
             as->next_word_bytes = 4;
         }
@@ -152,7 +144,6 @@ jbig2_arith_bytein(Jbig2ArithState *as)
         as->C += (B << 8);
 #endif
     }
-    return 0;
 }
 
 #if defined(JBIG2_DEBUG) || defined(JBIG2_DEBUG_ARITH)
@@ -179,13 +170,8 @@ jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
     }
 
     result->ws = ws;
-    result->ctx = ctx;
 
-    if (ws->get_next_word(ws, 0, &result->next_word)) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "unable to get first word in jbig2_arith_new");
-        jbig2_free(ctx->allocator, result);
-        return NULL;
-    }
+    ws->get_next_word(ws, 0, &result->next_word);
     result->next_word_bytes = 4;
     result->offset = 4;
 
@@ -196,10 +182,7 @@ jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
     result->C = (result->next_word >> 8) & 0xFF0000;
 #endif
 
-    if (jbig2_arith_bytein(result)) {
-        jbig2_free(ctx->allocator, result);
-        return NULL;
-    }
+    jbig2_arith_bytein(result);
     result->C <<= 7;
     result->CT -= 7;
     result->A = 0x8000;
@@ -266,18 +249,17 @@ const Jbig2ArithQe jbig2_arith_Qe[MAX_QE_ARRAY_SIZE] = {
     {0x5601, 46 ^ 46, 46 ^ 46}
 };
 
-static int
+static void
 jbig2_arith_renormd(Jbig2ArithState *as)
 {
     /* Figure E.18 */
     do {
-        if ((as->CT == 0) && (jbig2_arith_bytein(as) < 0))
-            return -1;
+        if (as->CT == 0)
+	    jbig2_arith_bytein(as);
         as->A <<= 1;
         as->C <<= 1;
         as->CT--;
     } while ((as->A & 0x8000) == 0);
-    return 0;
 }
 
 bool
@@ -316,8 +298,7 @@ jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx)
                 D = cx >> 7;
                 *pcx ^= pqe->mps_xor;
             }
-            if (jbig2_arith_renormd(as))
-                return -1;
+            jbig2_arith_renormd(as);
             return D;
         } else
             return cx >> 7;
@@ -335,8 +316,7 @@ jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx)
             D = 1 - (cx >> 7);
             *pcx ^= pqe->lps_xor;
         }
-        if (jbig2_arith_renormd(as))
-            return -1;
+        jbig2_arith_renormd(as);
         return D;
     }
 }
@@ -349,7 +329,7 @@ jbig2_arith_has_reached_marker(Jbig2ArithState *as)
 
 #ifdef TEST
 
-static int
+static uint32_t
 test_get_word(Jbig2WordStream *self, int offset, uint32_t *word)
 {
     byte stream[] = {
@@ -359,8 +339,10 @@ test_get_word(Jbig2WordStream *self, int offset, uint32_t *word)
         0x00, 0x00
     };
     if (offset >= sizeof(stream))
-        return -1;
-    *word = (stream[offset] << 24) | (stream[offset + 1] << 16) | (stream[offset + 2] << 8) | stream[offset + 3];
+        *word = 0;
+    else
+        *word = (stream[offset] << 24) | (stream[offset + 1] << 16) |
+	    (stream[offset + 2] << 8) | stream[offset + 3];
     return 0;
 }
 

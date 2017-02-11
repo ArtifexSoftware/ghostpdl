@@ -182,7 +182,7 @@ int jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segm
 typedef struct _Jbig2WordStream Jbig2WordStream;
 
 struct _Jbig2WordStream {
-    int (*get_next_word)(Jbig2WordStream *self, size_t offset, uint32_t *word);
+    void (*get_next_word)(Jbig2WordStream *self, size_t offset, uint32_t *word);
 };
 
 Jbig2WordStream *jbig2_word_stream_buf_new(Jbig2Ctx *ctx, const byte *data, size_t size);
