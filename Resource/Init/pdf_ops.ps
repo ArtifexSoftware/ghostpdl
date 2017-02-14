@@ -913,7 +913,8 @@ end readonly def
 
 /settextmatrix {
   matrix currentmatrix
-  TextMatrix concat
+  matrix .currentTextMatrix
+  concat
   TestDegenerateCTM {
     (\n   **** Error:  Degenerate text matrix detected, ignoring Tm operation\n) pdfformaterror
     (                 Output may be incorrect.\n) pdfformaterror
@@ -924,7 +925,6 @@ end readonly def
   .currenttexthscaling  %TextHScaling
   1 ne { .currenttexthscaling  %TextHScaling
   1 scale } if
-%  TextRise
   .currenttextrise 0 ne { 0 .currenttextrise %TextRise
    translate } if
   TextFont dup //null eq { pop } { setfont } ifelse
@@ -952,15 +952,22 @@ end readonly def
 /settextposition {
                 % Update the TextMatrix translation.
   gsave TextSaveMatrix setmatrix
-  {currentpoint} stopped not { .currenttextrise %TextRise
-   sub TextMatrix 4 2 getinterval astore pop
+  {currentpoint} stopped not {
+    .currenttextrise %TextRise
+    sub
+    matrix .currentTextMatrix
+    dup 5 4 -1 roll put
+    dup 4 4 -1 roll put
+    .setTextMatrix
                 % We would like to do "grestore currentpoint translate"
                 % here, but some PDF files set a singular text matrix
                 % (0 0 0 0 <x> <y> Tm), so we can't do this.
-  TextTempMatrix identmatrix setmatrix currentpoint
-  grestore
-  TextTempMatrix currentmatrix 4 2 getinterval astore pop
-  TextTempMatrix setmatrix
+    TextTempMatrix identmatrix setmatrix currentpoint
+    matrix .currentTextMatrix
+    grestore
+    .setTextMatrix
+    TextTempMatrix currentmatrix 4 2 getinterval astore pop
+    TextTempMatrix setmatrix
   } {
       (   **** Error: Invalid currentpoint, probable degenerate CTM.\n) pdfformaterror
       (               Ignroing error, output may be incorrect.\n) pdfformaterror
@@ -1006,10 +1013,9 @@ end readonly def
     currentdict end
     /.W exch def
   } if
-  currentdict /TextLineMatrix .knownget
-    { identmatrix pop TextMatrix identmatrix pop }
-    { matrix /TextLineMatrix gput matrix /TextMatrix gput }
-  ifelse
+  matrix .setTextLineMatrix
+  matrix .setTextMatrix
+
   { showfirst } /Show gput
   currentdict /TextSaveMatrix .knownget not {
     matrix dup /TextSaveMatrix gput
@@ -1287,8 +1293,14 @@ end readonly def
     (               Output may be incorrect.\n) pdfformaterror
     pop 0
   } if
-  TextLineMatrix transform TextLineMatrix 4 2 getinterval astore pop
-  TextLineMatrix TextMatrix copy pop settextstate
+  matrix .currentTextLineMatrix transform
+  matrix .currentTextLineMatrix
+  dup 3 -1 roll 5 exch put
+  dup 3 -1 roll 4 exch put
+  .setTextLineMatrix
+  matrix .currentTextLineMatrix .setTextMatrix
+
+  settextstate
 } bdef
 /TD { dup neg .settextleading
 %/TextLeading gput
@@ -1306,7 +1318,9 @@ end readonly def
     0.00000001 0 0 0.00000001
     6 -2 roll
   }if
-  TextLineMatrix astore TextMatrix copy pop settextstate
+  matrix .currentTextLineMatrix astore .setTextLineMatrix
+  matrix .currentTextLineMatrix .setTextMatrix
+  settextstate
 } bdef
 
 % ---------------- Text painting ---------------- %

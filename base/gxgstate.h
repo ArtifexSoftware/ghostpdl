@@ -367,7 +367,7 @@ struct gs_gstate_s {
     void *SMask;
 /*    void *BM;            Already handled (.setblendmode) */
     bool AIS;
-/*    bool OP;            /* Stroke overprint, for fill we will use existing overprint */
+/*    bool OP;             Stroke overprint, for fill we will use existing overprint */
 /*    bool TK;             Already handled (.settextknockout) */
     float Tc;
     float TL;

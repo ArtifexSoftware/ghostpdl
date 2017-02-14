@@ -391,6 +391,72 @@ zbbox_transform(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* <matrix> .xurrentTextLineMatrix <matrix> */
+static int
+zcurrentTextLineMatrix(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_matrix mat;
+
+    gs_getTextLineMatrix(igs, &mat);
+    return write_matrix(op, &mat);
+}
+
+static int
+zsetTextLineMatrix(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code;
+
+    if (r_has_type(op, t_array)) {
+        gs_matrix mat;
+
+        code = read_matrix(imemory, op, &mat);
+        if (code < 0)
+            return code;
+        code = gs_setTextLineMatrix(igs, &mat);
+    } else
+        code = gs_error_typecheck;
+
+    if (code < 0)
+        return code;
+    pop(1);
+    return 0;
+}
+
+/* <matrix> .xurrentTextMatrix <matrix> */
+static int
+zcurrentTextMatrix(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_matrix mat;
+
+    gs_getTextMatrix(igs, &mat);
+    return write_matrix(op, &mat);
+}
+
+static int
+zsetTextMatrix(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code;
+
+    if (r_has_type(op, t_array)) {
+        gs_matrix mat;
+
+        code = read_matrix(imemory, op, &mat);
+        if (code < 0)
+            return code;
+        code = gs_setTextMatrix(igs, &mat);
+    } else
+        code = gs_error_typecheck;
+
+    if (code < 0)
+        return code;
+    pop(1);
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zmatrix_op_defs[] =
@@ -416,5 +482,9 @@ const op_def zmatrix_op_defs[] =
 const op_def zmatrix2_op_defs[] =
 {
     {"2.bbox_transform", zbbox_transform},
+    {"1.currentTextLineMatrix", zcurrentTextLineMatrix},
+    {"1.setTextLineMatrix", zsetTextLineMatrix},
+    {"1.currentTextMatrix", zcurrentTextMatrix},
+    {"1.setTextMatrix", zsetTextMatrix},
     op_def_end(0)
 };

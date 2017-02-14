@@ -111,6 +111,10 @@ int gs_setwordspacing(gs_gstate *pgs, double Tz);
 double gs_currentwordspacing(const gs_gstate *pgs);
 int gs_settexthscaling(gs_gstate *pgs, double Tw);
 double gs_currenttexthscaling(const gs_gstate *pgs);
+int gs_setTextLineMatrix(gs_gstate *pgs, gs_matrix *m);
+int gs_getTextLineMatrix(gs_gstate *pgs, gs_matrix *m);
+int gs_setTextMatrix(gs_gstate *pgs, gs_matrix *m);
+int gs_getTextMatrix(gs_gstate *pgs, gs_matrix *m);
 
 #include "gscpm.h"
 gs_in_cache_device_t gs_incachedevice(const gs_gstate *);

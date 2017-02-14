@@ -687,8 +687,6 @@ gs_currentoverprint(const gs_gstate * pgs)
 void
 gs_setstrokeoverprint(gs_gstate * pgs, bool ovp)
 {
-    bool    prior_ovp = pgs->overprint_stroke;
-
     pgs->overprint_stroke = ovp;
 }
 
@@ -981,6 +979,53 @@ gs_setwordspacing(gs_gstate *pgs, double Tw)
     pgs->Tw = (float)Tw;
     return 0;
 }
+
+int
+gs_setTextLineMatrix(gs_gstate *pgs, gs_matrix *m)
+{
+    pgs->TextLineMatrix.xx = m->xx;
+    pgs->TextLineMatrix.xy = m->xy;
+    pgs->TextLineMatrix.yx = m->yx;
+    pgs->TextLineMatrix.yy = m->yy;
+    pgs->TextLineMatrix.tx = m->tx;
+    pgs->TextLineMatrix.ty = m->ty;
+    return 0;
+}
+int
+gs_getTextLineMatrix(gs_gstate *pgs, gs_matrix *m)
+{
+    m->xx = pgs->TextLineMatrix.xx;
+    m->xy = pgs->TextLineMatrix.xy;
+    m->yx = pgs->TextLineMatrix.yx;
+    m->yy = pgs->TextLineMatrix.yy;
+    m->tx = pgs->TextLineMatrix.tx;
+    m->ty = pgs->TextLineMatrix.ty;
+    return 0;
+}
+
+int
+gs_setTextMatrix(gs_gstate *pgs, gs_matrix *m)
+{
+    pgs->TextMatrix.xx = m->xx;
+    pgs->TextMatrix.xy = m->xy;
+    pgs->TextMatrix.yx = m->yx;
+    pgs->TextMatrix.yy = m->yy;
+    pgs->TextMatrix.tx = m->tx;
+    pgs->TextMatrix.ty = m->ty;
+    return 0;
+}
+int
+gs_getTextMatrix(gs_gstate *pgs, gs_matrix *m)
+{
+    m->xx = pgs->TextMatrix.xx;
+    m->xy = pgs->TextMatrix.xy;
+    m->yx = pgs->TextMatrix.yx;
+    m->yy = pgs->TextMatrix.yy;
+    m->tx = pgs->TextMatrix.tx;
+    m->ty = pgs->TextMatrix.ty;
+    return 0;
+}
+
 
 /* sethpglpathmode */
 void
