@@ -459,6 +459,10 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
         case 0: /* Apple standard 1-to-1 mapping. */
             {
                 int i, length = u16(&table[2]) - 6;
+
+                if (length < 0 || length > 256)
+                    return gs_error_invalidfont;
+
                 for (i=0;i<length;i++) {
                     if (table[6 + i] == code)
                         return i;
@@ -474,12 +478,18 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
                 byte *idRangeOffset = idDelta + segCount2;
                 int i2;
 
+                if (segCount2 < 3 || segCount2 > 65535)
+                    return gs_error_invalidfont;
+
                 for (i2 = 0; i2 < segCount2 - 3; i2 += 2)
                 {
                     int delta = s16(idDelta + i2), roff = s16(idRangeOffset + i2);
                     int start = u16(startCount + i2);
                     int end = u16(endCount + i2);
                     int glyph, i;
+
+                    if (end < start)
+                        return gs_error_invalidfont;
 
                     for (i=start;i<=end;i++) {
                         if (roff == 0) {
@@ -498,6 +508,10 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
             {
                 int ch, i, length = u16(&table[8]);
                 int firstCode = u16(&table[6]);
+
+                if (length < 0 || length > 65535)
+                    return gs_error_invalidfont;
+
                 for (i=0;i<length;i++) {
                     ch = u16(&table[10 + (i * 2)]);
                     if (ch == code)
@@ -507,7 +521,7 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
             return 0;
         case 10: /* Trimmed array (like 6) */
             {
-                int ch, i, length = u32(&table[20]);
+                unsigned int ch, i, length = u32(&table[20]);
                 int firstCode = u32(&table[16]);
                 for (i=0;i<length;i++) {
                     ch = u16(&table[10 + (i * 2)]);
@@ -518,7 +532,7 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
             return 0;
         case 12: /* Segmented coverage. (like 4) */
             {
-                int nGroups = u32(&table[12]);
+                unsigned int nGroups = u32(&table[12]);
                 int Group;
 
                 for (Group=0;Group<nGroups;Group++)
