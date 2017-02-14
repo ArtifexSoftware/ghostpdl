@@ -1264,7 +1264,7 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
 }
 
 static inline void
-dc2fc(const patch_fill_state_t *pfs, gx_device_color *pdevc,
+dc2fc31(const patch_fill_state_t *pfs, gx_device_color *pdevc,
             frac31 fc[GX_DEVICE_COLOR_MAX_COMPONENTS])
 {
     int j;
@@ -1284,7 +1284,7 @@ dc2fc(const patch_fill_state_t *pfs, gx_device_color *pdevc,
         }
     } else {
         for (j = 0; j < cinfo->num_components; j++) {
-                fc[j] = cv2frac(pdevc->colors.devn.values[j]);
+                fc[j] = cv2frac31(pdevc->colors.devn.values[j]);
         }
     }
 }
@@ -1330,7 +1330,7 @@ patch_color_to_device_color_inline(const patch_fill_state_t *pfs,
                 if (!(pdevc->type == &gx_dc_type_data_devn ||
                       pdevc->type == &gx_dc_type_data_pure))
                     return 2;
-                dc2fc(pfs, pdevc, frac_values);
+                dc2fc31(pfs, pdevc, frac_values);
             }
 #           if DEBUG_COLOR_INDEX_CACHE
             if (cindex != pdevc->colors.pure)

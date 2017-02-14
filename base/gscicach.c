@@ -261,7 +261,7 @@ compute_frac_values(gs_color_index_cache_t *self, uint i)
         /* Must be devn */
         for (j = 0; j < device_num_components; j++) {
             self->frac_values[i * device_num_components + j] = 
-                cv2frac(self->buf[i].color.devn[j]);
+                cv2frac31(self->buf[i].color.devn[j]);
         }
         self->buf[i].frac_values_done = true;
     }

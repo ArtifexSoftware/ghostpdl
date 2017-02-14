@@ -37,6 +37,10 @@ typedef unsigned short gx_color_value;
 #define frac2cv(fr) frac2ushort(fr)
 #define cv2frac(cv) ushort2frac(cv)
 
+/* Convert between gx_color_values and frac31s. */
+#define frac312cv(fr) frac312ushort(fr)
+#define cv2frac31(cv) ushort2frac31(cv)
+
 /* At various points in the code (particularly inside encode_color and
  * decode_color functions), we need to convert colour values between
  * different bitdepths.

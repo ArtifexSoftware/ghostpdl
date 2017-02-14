@@ -109,7 +109,7 @@ gx_hl_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
                     rect.q.y = int2fixed(j + 1);
                 }
                 for (k = 0; k < n; k++) {
-                    devc.colors.devn.values[k] = frac2cv(curr[k]);
+                    devc.colors.devn.values[k] = frac312cv(curr[k]);
                 }
                 code = dev_proc(dev, fill_rectangle_hl_color) (dev, &rect, NULL, &devc, NULL);
                 if (code < 0)
@@ -124,7 +124,7 @@ gx_hl_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
             i++;
             break;
         } else {
-            /* Compute a color change pixel analitically. */
+            /* Compute a color change pixel analytically. */
             di = i1 - i;
             for (k = 0; k < n; k++) {
                 int32_t a;
@@ -172,7 +172,7 @@ gx_hl_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
             rect.q.y = int2fixed(j + 1);
         }
         for (k = 0; k < n; k++) {
-            devc.colors.devn.values[k] = frac2cv(curr[k]);
+            devc.colors.devn.values[k] = frac312cv(curr[k]);
         }
         return dev_proc(dev, fill_rectangle_hl_color) (dev, &rect, NULL, &devc, NULL);
     }

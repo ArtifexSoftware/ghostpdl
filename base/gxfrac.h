@@ -78,6 +78,24 @@ typedef short signed_frac;
 #define ushort2frac(us) ((frac)(\
   ((us) >> (ushort_bits - frac_bits)) -\
   ((us) >> (ushort_bits - frac_1_0bits)) ))
+
+/*
+ * Conversion between frac31s and unsigned shorts.
+ */
+#define ushort_bits (ARCH_SIZEOF_SHORT * 8)
+#define frac31_bits 31
+#if 0
+#define frac312ushort(fr) ((ushort)(\
+  ((fr) >> (frac31_bits - ushort_bits)) +\
+  ((fr) >> (frac31_bits - ushort_bits + frac_bits - frac_1_0bits)) ))
+#define ushort2frac31(us) ((frac31)(\
+  ((us) << (frac31_bits - ushort_bits)) -\
+  ((us) << (frac31_bits - ushort_bits - frac_bits + frac_1_0bits)) ))
+#else
+#define frac312ushort(fr) ((ushort)((fr) >> (frac31_bits - ushort_bits)))
+#define ushort2frac31(us) ((frac31)((us) << (frac31_bits - ushort_bits)))
+#endif
+
 /*
  * Compute the quotient Q = floor(P / frac_1),
  * where P is the (ulong) product of a uint or ushort V and a frac F.
