@@ -986,17 +986,6 @@ make_stream_file(ref * pfile, stream * s, const char *access)
     }
 }
 
-static int
-check_file_permissions_aux(i_ctx_t *i_ctx_p, char *fname, uint flen)
-{   /* i_ctx_p is NULL running init files. */
-    /* fname must be reduced. */
-    if (i_ctx_p == NULL)
-        return 0;
-    if (check_file_permissions_reduced(i_ctx_p, fname, flen, NULL, "PermitFileReading") < 0)
-        return_error(gs_error_invalidfileaccess);
-    return 0;
-}
-
 /* return zero for success, -ve for error, +1 for continue */
 static int
 lib_file_open_search_with_no_combine(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx_p,
@@ -1006,16 +995,17 @@ lib_file_open_search_with_no_combine(gs_file_path_ptr  lib_path, const gs_memory
     stream *s;
     uint blen1 = blen;
     struct stat fstat;
+    int code = 1;
 
     if (gp_file_name_reduce(fname, flen, buffer, &blen1) != gp_combine_success)
       goto skip;
 
-    if (starting_arg_file || check_file_permissions_aux(i_ctx_p, buffer, blen1) >= 0) {
+    if (starting_arg_file || check_file_permissions(i_ctx_p, buffer, blen1, iodev, "PermitFileReading") >= 0) {
         if (iodev_os_open_file(iodev, (const char *)buffer, blen1,
                        (const char *)fmode, &s, (gs_memory_t *)mem) == 0) {
             *pclen = blen1;
             make_stream_file(pfile, s, "r");
-            return 0;
+            code = 0;
         }
     }
     else {
@@ -1024,12 +1014,12 @@ lib_file_open_search_with_no_combine(gs_file_path_ptr  lib_path, const gs_memory
          * Otherwise, keep searching.
          */
         if ((*iodev->procs.file_status)(iodev,  buffer, &fstat) >= 0) {
-            return_error(gs_error_invalidfileaccess);
+            code = gs_note_error(gs_error_invalidfileaccess);
         }
     }
 
  skip:
-    return 1;
+    return code;
 }
 
 /* return zero for success, -ve for error, +1 for continue */
@@ -1041,8 +1031,9 @@ lib_file_open_search_with_combine(gs_file_path_ptr  lib_path, const gs_memory_t 
     stream *s;
     const gs_file_path *pfpath = lib_path;
     uint pi;
+    int code = 1;
 
-    for (pi = 0; pi < r_size(&pfpath->list); ++pi) {
+    for (pi = 0; pi < r_size(&pfpath->list) && code == 1; ++pi) {
         const ref *prdir = pfpath->list.value.refs + pi;
         const char *pstr = (const char *)prdir->value.const_bytes;
         uint plen = r_size(prdir), blen1 = blen;
@@ -1052,46 +1043,57 @@ lib_file_open_search_with_combine(gs_file_path_ptr  lib_path, const gs_memory_t 
         /* We need to concatenate and parse the file name here
          * if this path has a %device% prefix.              */
         if (pstr[0] == '%') {
-            int code;
-
             /* We concatenate directly since gp_file_name_combine_*
              * rules are not correct for other devices such as %rom% */
             code = gs_parse_file_name(&pname, pstr, plen, mem);
-            if (code < 0)
+            if (code < 0) {
+                code = 1;
                 continue;
+            }
             if (blen < max(pname.len, plen) + flen)
             	return_error(gs_error_limitcheck);
             memcpy(buffer, pname.fname, pname.len);
             memcpy(buffer+pname.len, fname, flen);
             code = pname.iodev->procs.open_file(pname.iodev, buffer, pname.len + flen, fmode,
                                           &s, (gs_memory_t *)mem);
-            if (code < 0)
+            if (code < 0) {
+                code = 1;
                 continue;
+            }
             make_stream_file(pfile, s, "r");
             /* fill in the buffer with the device concatenated */
             memcpy(buffer, pstr, plen);
             memcpy(buffer+plen, fname, flen);
             *pclen = plen + flen;
-            return 0;
+            code = 0;
         } else {
             r = gp_file_name_combine(pstr, plen,
                     fname, flen, false, buffer, &blen1);
             if (r != gp_combine_success)
                 continue;
-            if (iodev_os_open_file(iodev, (const char *)buffer, blen1, (const char *)fmode,
-                                    &s, (gs_memory_t *)mem) == 0) {
-                if (starting_arg_file ||
-                    check_file_permissions_aux(i_ctx_p, buffer, blen1) >= 0) {
+            if (starting_arg_file || check_file_permissions(i_ctx_p, buffer,
+                                      blen1, iodev, "PermitFileReading") >= 0) {
+
+                if (iodev_os_open_file(iodev, (const char *)buffer, blen1,
+                            (const char *)fmode, &s, (gs_memory_t *)mem) == 0) {
                     *pclen = blen1;
                     make_stream_file(pfile, s, "r");
-                    return 0;
+                    code = 0;
                 }
-                sclose(s);
-                return_error(gs_error_invalidfileaccess);
+            }
+            else {
+                struct stat fstat;
+                /* If we are not allowed to open the file by check_file_permissions_aux()
+                 * and if the file exists, throw an error.......
+                 * Otherwise, keep searching.
+                 */
+                if ((*iodev->procs.file_status)(iodev,  (const char *)buffer, &fstat) >= 0) {
+                    code = gs_note_error(gs_error_invalidfileaccess);
+                }
             }
         }
     }
-    return 1;
+    return code;
 }
 
 /* Return a file object of of the file searched for using the search paths. */
