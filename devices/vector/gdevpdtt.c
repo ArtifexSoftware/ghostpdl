@@ -2953,7 +2953,7 @@ static int install_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *pte
             return code;
         pdev->font3 = (pdf_resource_t *)pdfont;
         if (pdfont == 0L)
-            return gs_error_invalidfont;
+            return gs_note_error(gs_error_invalidfont);
 
         pdev->substream_Resources = pdfont->u.simple.s.type3.Resources;
         penum->charproc_accum = true;
@@ -3171,9 +3171,9 @@ pdf_text_process(gs_text_enum_t *pte)
                 return code;
 
             if (pdfont == 0L)
-                return gs_error_invalidfont;
+                return gs_note_error(gs_error_invalidfont);
 
-            if (pdfont && pdfont->u.simple.s.type3.cached[cdata[pte->index] >> 3] & (0x80 >> (cdata[pte->index] & 7)))
+            if (pdfont->u.simple.s.type3.cached[cdata[pte->index] >> 3] & (0x80 >> (cdata[pte->index] & 7)))
                 early_accumulator = 0;
             else
                 early_accumulator = 1;
