@@ -2931,13 +2931,17 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
             /* Only the 0th repeat is visible. Restrict the size further to
              * just the used area of that patch. */
             gx_path_init_local(&path_ttrans, ppath->memory);
-            gx_path_add_rectangle(&path_ttrans,
-                                  int2fixed(ptile->ttrans->rect.p.x),
-                                  int2fixed(ptile->ttrans->rect.p.y),
-                                  int2fixed(ptile->ttrans->rect.q.x),
-                                  int2fixed(ptile->ttrans->rect.q.y));
+            code = gx_path_add_rectangle(&path_ttrans,
+                                         int2fixed(ptile->ttrans->rect.p.x),
+                                         int2fixed(ptile->ttrans->rect.p.y),
+                                         int2fixed(ptile->ttrans->rect.q.x),
+                                         int2fixed(ptile->ttrans->rect.q.y));
+            if (code < 0)
+                return code;
             code = gx_cpath_intersect(&cpath_intersection, &path_ttrans,
                                       params->rule, pgs_noconst);
+            if (code < 0)
+                return code;
         }
     }
     /* Now let us push a transparency group into which we are
@@ -3007,9 +3011,11 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
                                curr_clip_rect->xmin, curr_clip_rect->ymin,
                                curr_clip_rect->xmax-curr_clip_rect->xmin,
                                curr_clip_rect->ymax-curr_clip_rect->ymin, (int)ptile->id);
-                    gx_trans_pattern_fill_rect(curr_clip_rect->xmin, curr_clip_rect->ymin,
-                                curr_clip_rect->xmax, curr_clip_rect->ymax, ptile,
-                                fill_trans_buffer, phase, pdev, pdevc);
+                    code = gx_trans_pattern_fill_rect(curr_clip_rect->xmin, curr_clip_rect->ymin,
+                                                      curr_clip_rect->xmax, curr_clip_rect->ymax, ptile,
+                                                      fill_trans_buffer, phase, pdev, pdevc);
+                    if (code < 0)
+                        return code;
                     curr_clip_rect = curr_clip_rect->next;
                 }
             } else if (cpath_intersection.rect_list->list.count == 1) {
@@ -3023,11 +3029,14 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
                            cpath_intersection.rect_list->list.single.ymax-
                               cpath_intersection.rect_list->list.single.ymin,
                            (int)ptile->id);
-                gx_trans_pattern_fill_rect(cpath_intersection.rect_list->list.single.xmin,
-                                                cpath_intersection.rect_list->list.single.ymin,
-                                                cpath_intersection.rect_list->list.single.xmax,
-                                                cpath_intersection.rect_list->list.single.ymax,
-                                                ptile, fill_trans_buffer, phase, pdev, pdevc);
+                code = gx_trans_pattern_fill_rect(cpath_intersection.rect_list->list.single.xmin,
+                                                  cpath_intersection.rect_list->list.single.ymin,
+                                                  cpath_intersection.rect_list->list.single.xmax,
+                                                  cpath_intersection.rect_list->list.single.ymax,
+                                                  ptile, fill_trans_buffer, phase, pdev, pdevc);
+                if (code < 0)
+                    return code;
+
             }
         } else {
             /* Clist pattern with transparency.  Create a clip device from our
@@ -3041,9 +3050,11 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
             dev = (gx_device *)&clipdev;
             phase.x = pdevc->phase.x;
             phase.y = pdevc->phase.y;
-            gx_trans_pattern_fill_rect(rect.p.x, rect.p.y, rect.q.x, rect.q.y,
-                                            ptile, fill_trans_buffer, phase,
-                                            dev, pdevc);
+            code = gx_trans_pattern_fill_rect(rect.p.x, rect.p.y, rect.q.x, rect.q.y,
+                                              ptile, fill_trans_buffer, phase,
+                                              dev, pdevc);
+            if (code < 0)
+                return code;
         }
         /* free our buffer object */
         if (fill_trans_buffer != NULL) {
