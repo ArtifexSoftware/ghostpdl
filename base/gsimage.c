@@ -307,6 +307,8 @@ gs_image_init(gs_image_enum * penum, const gs_image_t * pim, bool multi,
              * incorrect, but it appears this case doesn't arise.
              */
             image.ColorSpace = gs_cspace_new_DeviceGray(pgs->memory);
+            if (image.ColorSpace == NULL)
+                return_error(gs_error_VMerror);
         }
     }
     code = gs_image_begin_typed((const gs_image_common_t *)&image, pgs,

@@ -1986,6 +1986,8 @@ gsicc_init_gs_colors(gs_gstate *pgs)
         /* First do color space 0 */
         cs_old = pgs->color[k].color_space;
         cs_new = gs_cspace_new_DeviceGray(pgs->memory);
+        if (cs_new == NULL)
+            return_error(gs_error_VMerror);
         rc_increment_cs(cs_new);
         pgs->color[k].color_space = cs_new;
         if ( (code = cs_new->type->install_cspace(cs_new, pgs)) < 0 ) {

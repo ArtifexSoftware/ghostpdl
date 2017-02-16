@@ -334,6 +334,10 @@ pdf_cspace_init_Device(gs_memory_t *mem, gs_color_space **ppcs,
     case 4: *ppcs = gs_cspace_new_DeviceCMYK(mem); break;
     default: return_error(gs_error_rangecheck);
     }
+
+    if (*ppcs == NULL)
+        return_error(gs_error_VMerror);
+
     return 0;
 }
 
@@ -750,6 +754,8 @@ pdf_indexed_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, cos_value_t 
                 palette[i] = palette[i * 3];
             table_size = num_entries;
             base_space = gs_cspace_new_DeviceGray(mem);
+            if (base_space == NULL)
+                return_error(gs_error_VMerror);
         }
     }
     stream_write(&es, palette, table_size);

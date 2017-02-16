@@ -715,6 +715,8 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
             /* {csrc} decref old colorspace? */
             rc_decrement_only_cs(pim->ColorSpace, "psdf_setup_image_filters");
             pim->ColorSpace = gs_cspace_new_DeviceRGB(mem);
+            if (pim->ColorSpace == NULL)
+                return_error(gs_error_VMerror);
         }
         if (params.Depth == -1)
             params.Depth = (cmyk_to_rgb ? 8 : bpc_out);

@@ -140,6 +140,8 @@ gs_gstate_initialize(gs_gstate * pgs, gs_memory_t * mem)
     pgs->have_pattern_streams = false;
     pgs->devicergb_cs = gs_cspace_new_DeviceRGB(mem);
     pgs->devicecmyk_cs = gs_cspace_new_DeviceCMYK(mem);
+    if (pgs->devicergb_cs == NULL || pgs->devicecmyk_cs == NULL)
+        return_error(gs_error_VMerror);
     pgs->icc_link_cache = gsicc_cache_new(pgs->memory);
     pgs->icc_manager = gsicc_manager_new(pgs->memory);
     pgs->icc_profile_cache = gsicc_profilecache_new(pgs->memory);

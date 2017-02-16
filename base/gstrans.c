@@ -599,6 +599,8 @@ gs_begin_transparency_mask(gs_gstate * pgs,
         if (code < 0)
             return(code);
         blend_color_space = gs_cspace_new_DeviceGray(pgs->memory);
+        if (blend_color_space == NULL)
+            return_error(gs_error_VMerror);
         blend_color_space->cmm_icc_profile_data = pgs->icc_manager->default_gray;
         rc_increment(blend_color_space->cmm_icc_profile_data);
         if_debug9m('v', pgs->memory, "[v](0x%lx)gs_begin_transparency_mask [%g %g %g %g]\n\

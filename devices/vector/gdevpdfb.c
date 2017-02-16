@@ -214,9 +214,13 @@ pdf_copy_mono(gx_device_pdf *pdev,
         set_image_color(pdev, zero);
     } else if (zero == pdev->black && one == pdev->white) {
         pcs = gs_cspace_new_DeviceGray(pdev->memory);
+        if (pcs == NULL)
+            return_error(gs_error_VMerror);
         gs_image_t_init(&image, pcs);
     } else if (zero == pdev->white && one == pdev->black) {
         pcs = gs_cspace_new_DeviceGray(pdev->memory);
+        if (pcs == NULL)
+            return_error(gs_error_VMerror);
         gs_image_t_init(&image, pcs);
         invert = 0xff;
     } else {

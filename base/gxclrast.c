@@ -2748,6 +2748,11 @@ read_set_color_space(command_buf_t *pcb, gs_gstate *pgs,
         goto out;
     }
 
+    if (pcs == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto out;
+    }
+
     if (b & 8) {
         bool use_proc = (b & 4) != 0;
         int hival;

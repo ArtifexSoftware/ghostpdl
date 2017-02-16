@@ -824,6 +824,8 @@ image_PaintProc(const gs_client_color * pcolor, gs_gstate * pgs)
 
     if (ppmap->pcspace == 0) {
         pcspace = gs_cspace_new_DeviceGray(pgs->memory);
+        if (pcspace == NULL)
+            return_error(gs_error_VMerror);
     } else
         pcspace = ppmap->pcspace;
     code = gs_gsave(pgs);
@@ -943,6 +945,8 @@ int pixmap_high_level_pattern(gs_gstate * pgs)
         code = image_PaintProc(&pdc->ccolor, pgs);
     else {
         pcs = gs_cspace_new_DeviceGray(pgs->memory);
+        if (pcs == NULL)
+            return_error(gs_error_VMerror);
         gs_setcolorspace(pgs, pcs);
         code = mask_PaintProc(&pdc->ccolor, pgs);
     }

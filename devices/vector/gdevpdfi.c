@@ -266,8 +266,10 @@ make_device_color_space(gx_device_pdf *pdev,
             emprintf(mem, "Unsupported ProcessColorModel");
             return_error(gs_error_undefined);
     }
+
     if (cs == NULL)
         return_error(gs_error_VMerror);
+
     *ppcs = cs;
     return 0;
 }
@@ -1191,6 +1193,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
          */
         /* {csrc} make sure this gets freed */
         pcs = gs_cspace_new_DeviceGray(pdev->memory);
+        if (pcs == NULL)
+            code = gs_note_error(gs_error_VMerror);
     } else if (is_mask)
         code = pdf_prepare_imagemask(pdev, pgs, pdcolor);
     else
