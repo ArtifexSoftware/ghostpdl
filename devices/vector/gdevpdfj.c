@@ -392,10 +392,16 @@ pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
                      int alt_writer_index)
 {
 
-    cos_stream_t *s = cos_stream_from_pipeline(piw->binary[alt_writer_index].strm);
-    cos_dict_t *pcd = cos_stream_dict(s);
-    int code = pdf_put_image_values(pcd, pdev, pim, piw->pin, pcsvalue);
+    cos_stream_t *s;
+    cos_dict_t *pcd;
+    int code;
 
+    s = cos_stream_from_pipeline(piw->binary[alt_writer_index].strm);
+    if (s == 0L)
+        return gs_note_error(gs_error_ioerror);
+
+    pcd = cos_stream_dict(s);
+    code = pdf_put_image_values(pcd, pdev, pim, piw->pin, pcsvalue);
     if (code >= 0)
         code = pdf_put_image_filters(pcd, pdev, &piw->binary[alt_writer_index], piw->pin);
     if (code < 0) {
@@ -660,11 +666,19 @@ int
 pdf_choose_compression(pdf_image_writer * piw, bool end_binary)
 {
     cos_stream_t *s[2];
+    int status;
+
     s[0] = cos_stream_from_pipeline(piw->binary[0].strm);
     s[1] = cos_stream_from_pipeline(piw->binary[1].strm);
-    if (end_binary) {
-        int status;
 
+    if (s[0] == 0L) {
+        return_error(gs_error_ioerror);
+    }
+    if (s[1] == 0L) {
+        status = s_close_filters(&piw->binary[0].strm, piw->binary[0].target);
+        return_error(gs_error_ioerror);
+    }
+    if (end_binary) {
         status = s_close_filters(&piw->binary[0].strm, piw->binary[0].target);
         if (status < 0)
             return_error(gs_error_ioerror);

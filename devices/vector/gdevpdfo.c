@@ -2060,8 +2060,12 @@ cos_stream_from_pipeline(stream *s)
 {
     cos_write_stream_state_t *ss;
 
-    while(s->procs.process != cos_s_procs.process)
+    while(s && s->procs.process != cos_s_procs.process) {
         s = s->strm;
+        if (s == 0L)
+            return 0L;
+    }
+
     ss = (cos_write_stream_state_t *)s->state;
     return ss->pcs;
 }

@@ -1411,6 +1411,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
                 cos_stream_t *pcos = cos_stream_from_pipeline(pie->writer.binary[i].strm);
                 s_close_filters(&s, NULL);
                 gs_free_object(pdev->pdf_memory, s, "compressed image stream");
+                if (pcos == 0L)
+                    return gs_note_error(gs_error_ioerror);
                 pcos->cos_procs->release((cos_object_t *)pcos, "pdf_begin_typed_image_impl");
                 gs_free_object(pdev->pdf_memory, pcos, "compressed image cos_stream");
             }

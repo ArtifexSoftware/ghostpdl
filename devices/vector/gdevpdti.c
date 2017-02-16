@@ -722,6 +722,9 @@ pdf_close_aside(gx_device_pdf *pdev)
     if (status < 0)
          return(gs_note_error(gs_error_ioerror));
 
+    if (!pcs)
+        return gs_note_error(gs_error_ioerror);
+
     pcs->is_open = false;
     return 0;
 }

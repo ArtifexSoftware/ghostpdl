@@ -313,13 +313,19 @@ pdf_copy_mono(gx_device_pdf *pdev,
         psdf_setup_image_filters((gx_device_psdf *) pdev, &writer.binary[0],
                                  (gs_pixel_image_t *)&image, NULL, NULL, true, in_line);
     }
-    pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image,
+    code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image,
                          pcsvalue, 0);
+    if (code < 0)
+        return code;
+
     code = pdf_copy_mask_bits(writer.binary[0].strm, base, sourcex, raster,
                               w, h, invert);
     if (code < 0)
         return code;
-    pdf_end_image_binary(pdev, &writer, writer.height);
+    code = pdf_end_image_binary(pdev, &writer, writer.height);
+    if (code < 0)
+        return code;
+
     if (!pres) {
         switch ((code = pdf_end_write_image(pdev, &writer))) {
             default:                /* error */
