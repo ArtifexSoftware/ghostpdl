@@ -883,7 +883,7 @@ end readonly def
 %   /WordSpacing 0 def		% 0 Tw
 %   /TextHScaling 1.0 def	% 100 Tz
 1.0 .settexthscaling
-   /TextFont //null def
+%   /TextFont //null def
    /FontMatrixNonHV //false def
    /Show { showfirst } def
    /TextFillStateNeeded //true def
@@ -927,7 +927,6 @@ end readonly def
   1 scale } if
   .currenttextrise 0 ne { 0 .currenttextrise %TextRise
    translate } if
-  TextFont dup //null eq { pop } { setfont } ifelse
 } bdef
 
 /settextstate {
@@ -1163,7 +1162,7 @@ end readonly def
   } {
     pop
   } ifelse
-  /TextFont gput settextstate
+  setfont
 } bdef
 
 % Copy a font, removing its FID.  If changed is true, also remove
