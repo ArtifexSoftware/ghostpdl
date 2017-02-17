@@ -4670,8 +4670,8 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                      for (k = 0; k < new_num_comps; k++) {
                          comp_bits[k] = 8;
                          comp_shift[k] = (new_num_comps - k - 1) * 8;
-                         new_depth += 8;
                      }
+                     new_depth = 8 * new_num_comps;
                  }
              }
              if (has_tags) {
