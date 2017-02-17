@@ -352,7 +352,7 @@ static int pdf_write_path(gx_device_pdf * pdev, gs_path_enum *cenum, gdev_vector
                                gx_path_type_t type, const gs_matrix *pmat)
 {
     int pe_op;
-    gdev_vector_path_seg_record segments[5];
+    gdev_vector_path_seg_record segments[5] = {0};
     int i, seg_index = 0, is_rect = 1, buffering = 0, initial_m = 0, segs = 0, code, matrix_optimisable = 0;
     gx_path_rectangular_type rtype = prt_none;
     gs_fixed_rect rbox;
