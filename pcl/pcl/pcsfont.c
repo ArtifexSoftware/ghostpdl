@@ -653,37 +653,24 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
                 return e_Range;
             switch (data[3]) {
                 case 3:        /* non-compound character */
-                    /* See TRM Figure 11-16 (p. 11-67) for the following. */
+                    /* See TRM Table 11-41 (p. 11-60) for the following. */
                     if (count < 14)
                         return e_Range;
                     {
                         uint data_size = pl_get_uint16(data + 4);
-                        uint contour_offset = pl_get_uint16(data + 6);
-                        uint metric_offset = pl_get_uint16(data + 8);
-                        uint outline_offset = pl_get_uint16(data + 10);
-                        uint xy_offset = pl_get_uint16(data + 12);
 
                         /* The contour data excludes 4 initial bytes of header */
                         /* and 2 final bytes of padding/checksum. */
-                        if (data_size != count - 6 ||
-                            contour_offset < 10 ||
-                            metric_offset < contour_offset ||
-                            outline_offset < metric_offset ||
-                            xy_offset < outline_offset ||
-                            xy_offset > count - 6)
+                        if (data_size != count - 6)
                             return e_Range;
                     }
                     break;
                 case 4:        /* compound character */
-                    /* See TRM Figure 11-18 (p. 11-68) and 11-19 (p. 11-73) */
+                    /* See TRM Figure 11-42 and 11-43 (p. 11-61) */
                     /* for the following. */
                     if (count < 8)
                         return e_Range;
-                    {           /*
-                                 * TRM Figure 11-18 is wrong: the number of components
-                                 * is a byte, not a 16-bit quantity.  (It is identified
-                                 * correctly as a UB on p. 11-70, however.)
-                                 */
+                    {
                         uint num_components = data[6];
 
                         if (count != 8 + num_components * 6 + 2)
