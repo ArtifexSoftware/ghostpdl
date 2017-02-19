@@ -447,24 +447,23 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 
             /* Try to allocate memory for full memory buffer, then allocate the
                pdf14_trans_buffer_size to make sure we have enough space for that */
-            base =
-                (reallocate ?
-                 (byte *)gs_resize_object(buffer_memory, the_memory,
-                                          (uint)mem_space, "printer buffer") :
-                 gs_alloc_bytes(buffer_memory, (uint)mem_space,
-                                "printer_buffer"));
+            base = (reallocate ?
+                       (byte *)gs_resize_object(buffer_memory, the_memory,
+                                         (uint)mem_space, "printer buffer") :
+                       gs_alloc_bytes(buffer_memory, (uint)mem_space,
+                                      "printer_buffer"));
             if (base == 0)
                 is_command_list = true;
             else
                 the_memory = base;
-                trans_buffer_reserve_space = gs_alloc_bytes(buffer_memory, (uint)pdf14_trans_buffer_size,
-                                                            "pdf14_trans_buffer_reserve test");
-                if (trans_buffer_reserve_space == NULL) {
-                    /* the pdf14 reserve test failed, switch to clist mode, the 'base' memory freed below */
-                    is_command_list = true;
-                } else {
-                    gs_free_object(buffer_memory, trans_buffer_reserve_space, "pdf14_trans_buffer_reserve OK");
-                }
+            trans_buffer_reserve_space = gs_alloc_bytes(buffer_memory, (uint)pdf14_trans_buffer_size,
+                                                        "pdf14_trans_buffer_reserve test");
+            if (trans_buffer_reserve_space == NULL) {
+                /* the pdf14 reserve test failed, switch to clist mode, the 'base' memory freed below */
+                is_command_list = true;
+            } else {
+                gs_free_object(buffer_memory, trans_buffer_reserve_space, "pdf14_trans_buffer_reserve OK");
+            }
         }
         if (!is_command_list && pass == 1 && PRN_MIN_MEMORY_LEFT != 0
             && buffer_memory == pdev->memory->non_gc_memory) {
