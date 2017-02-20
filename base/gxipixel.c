@@ -290,7 +290,6 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     penum->Height = height;
 
     if ((code = gx_image_compute_mat(pgs, pmat, &(pim->ImageMatrix), &mat)) < 0) {
-        gs_free_object(mem, penum, "gx_default_begin_image");
         return code;
     }
     /* Grid fit: A common construction in postscript/PDF files is for images
@@ -587,7 +586,6 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     }
     if (masked) {       /* This is imagemask. */
         if (bps != 1 || pcs != NULL || penum->alpha || decode[0] == decode[1]) {
-            gs_free_object(mem, penum, "gx_default_begin_image");
             return_error(gs_error_rangecheck);
         }
         /* Initialize color entries 0 and 255. */
@@ -607,7 +605,6 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
 
         spp = cs_num_components(pcs);
         if (spp < 0) {          /* Pattern not allowed */
-            gs_free_object(mem, penum, "gx_default_begin_image");
             return_error(gs_error_rangecheck);
         }
         if (penum->alpha)
@@ -715,7 +712,6 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     bsize = ((bps > 8 ? width * 2 : width) + 15) * spp;
     buffer = gs_alloc_bytes(mem, bsize, "image buffer");
     if (buffer == 0) {
-        gs_free_object(mem, penum, "gx_default_begin_image");
         return_error(gs_error_VMerror);
     }
     penum->bps = bps;
