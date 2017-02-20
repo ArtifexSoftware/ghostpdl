@@ -764,7 +764,8 @@ bittags_print_page(gx_device_printer * pdev, FILE * prn_stream)
     if (in == 0)
         return_error(gs_error_VMerror);
 
-    fprintf(prn_stream, "P6\n%d %d\n255\n", pdev->width, pdev->height);
+    if (!nul)
+        fprintf(prn_stream, "P7\nWIDTH %d\nHEIGHT %d\nMAXVAL 255\nTUPLETYPE RGB_TAG\nENDHDR\n", pdev->width, pdev->height);
     if ((lnum == 0) && (bottom == 0))
         line_count = pdev->height - 1;		/* default when LastLine == 0, FirstLine == 0 */
     for (i = 0; i <= line_count; i++, lnum += step) {
