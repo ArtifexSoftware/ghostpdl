@@ -924,8 +924,10 @@ static void pam_header_read(FILE *file,
         } else if (skip_string(file, "MAXVAL")) {
             *maxval = get_pnm_num(file);
         } else if (skip_string(file, "TUPLTYPE")) {
-            if (!skip_string(file, "CMYK")) {
-                fprintf(stderr, "bmpcmp: Only CMYK PAMs!\n");
+            if (skip_string(file, "RGB_TAG")) {
+                /* Treat as CMYK. */
+            } else if (!skip_string(file, "CMYK")) {
+                fprintf(stderr, "bmpcmp: Only CMYK or RGB_ALPHA PAMs!\n");
                 exit(1);
             }
         } else if (skip_string(file, "ENDHDR")) {
