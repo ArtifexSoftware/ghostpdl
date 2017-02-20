@@ -1016,6 +1016,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 #ifndef PSI_INCLUDED
     gs_lib_finit(exit_status, code, minst->heap);
 #endif
+    gs_free_object(minst->heap, minst->lib_path.container.value.refs, "lib_path array");
     return exit_status;
 }
 int

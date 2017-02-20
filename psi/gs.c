@@ -137,6 +137,7 @@ main(int argc, char *argv[])
 
     if (minst)
         gs_to_exit_with_code(minst->heap, exit_status, code);
+    gs_free_object(mem, minst, "init_main_instance");
     gs_malloc_release(mem);
 
     switch (exit_status) {
