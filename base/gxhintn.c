@@ -313,7 +313,8 @@ static inline t1_hinter_space_coord g2o_dist(t1_glyph_space_coord gd, int19 coef
 }
 
 static inline void g2d(t1_hinter * h, t1_glyph_space_coord gx, t1_glyph_space_coord gy, fixed *dx, fixed *dy)
-{   *dx = fraction_matrix__transform_x(&h->ctmf, gx, gy, g2o_bitshift);
+{
+    *dx = fraction_matrix__transform_x(&h->ctmf, gx, gy, g2o_bitshift);
     *dy = fraction_matrix__transform_y(&h->ctmf, gx, gy, g2o_bitshift);
     *dx = o2d(h, *dx);
     *dy = o2d(h, *dy);
@@ -349,7 +350,8 @@ static void t1_hint__set_aligned_coord(t1_hint * self, t1_glyph_space_coord gc, 
 /* --------------------- t1_hinter class members - import --------------------*/
 
 void t1_hinter__init(t1_hinter * self, gx_path *output_path)
-{   self->max_import_coord = (1 << max_coord_bits);
+{
+    self->max_import_coord = (1 << max_coord_bits);
     self->stem_snap_count[0] = self->stem_snap_count[1] = 0;
     self->stem_snap_vote_count = 0;
     self->zone_count = 0;
@@ -402,8 +404,15 @@ void t1_hinter__init(t1_hinter * self, gx_path *output_path)
     self->pass_through = self->disable_hinting;
     self->autohinting = false;
     self->fix_contour_sign = false;
+    self->path_opened = false;
+    self->orig_dx = 0;
+    self->orig_dy = 0;
+    self->g2o_fraction_bits = 0;
 
     self->stem_snap[0][0] = self->stem_snap[1][0] = 100; /* default */
+
+    memset(&self->ctmf, 0x00, sizeof(self->ctmf));
+    memset(&self->ctmi, 0x00, sizeof(self->ctmi));
 }
 
 static inline void t1_hinter__free_arrays(t1_hinter * self)
@@ -438,7 +447,8 @@ static inline void t1_hinter__free_arrays(t1_hinter * self)
 }
 
 static inline void t1_hinter__init_outline(t1_hinter * self)
-{   self->contour_count = 0;
+{
+    self->contour_count = 0;
     self->pole_count = 0;
     self->contour[0] = 0;
     self->hint_count = 0;

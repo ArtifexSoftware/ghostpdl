@@ -167,6 +167,7 @@ typedef fixed *cs_ptr;
 /* Copy the operand stack out of the saved state. */
 #define INIT_CSTACK(cstack, csp, pcis)\
   BEGIN\
+    memset(cstack, 0x00, sizeof(cstack));\
     if ( pcis->os_count == 0 )\
       CLEAR_CSTACK(cstack, csp);\
     else {\

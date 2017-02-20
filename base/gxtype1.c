@@ -650,6 +650,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
         if (code < 0)
             return code;
         cis.no_grid_fitting = true;
+        memset(&path, 0x00, sizeof(path));
         gx_path_init_bbox_accumulator(&path);
         cis.path = &path;
         code = pdata->interpret(&cis, &gdata, &value);

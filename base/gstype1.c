@@ -127,7 +127,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
     cs_ptr csp;
 #define clear CLEAR_CSTACK(cstack, csp)
     ip_state_t *ipsp = &pcis->ipstack[pcis->ips_count - 1];
-    const byte *cip;
+    const byte *cip, *cipend;
     crypt_state state;
     register int c;
     int code = 0;
@@ -163,6 +163,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
     cip = pgd->bits.data;
     if (cip == 0)
         return (gs_note_error(gs_error_invalidfont));
+    cipend = cip + pgd->bits.size;
   call:state = crypt_charstring_seed;
     if (encrypted) {
         int skip = pdata->lenIV;
@@ -175,9 +176,12 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
   cont:if (ipsp < pcis->ipstack || ipsp->ip == 0)
         return (gs_note_error(gs_error_invalidfont));
     cip = ipsp->ip;
+    cipend = ipsp->cs_data.bits.data + ipsp->cs_data.bits.size;
     state = ipsp->dstate;
   top:for (;;) {
         uint c0 = *cip++;
+        if (cip > cipend)
+            return_error(gs_error_invalidfont);
 
         charstring_next(c0, state, c, encrypted);
         if (c >= c_num1) {
@@ -243,6 +247,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 ++ipsp;
                 CS_CHECK_IPSTACK(ipsp, pcis->ipstack);
                 cip = ipsp->cs_data.bits.data;
+                cipend = ipsp->cs_data.bits.data + ipsp->cs_data.bits.size;
                 goto call;
             case c_return:
                 gs_glyph_data_free(&ipsp->cs_data, "gs_type1_interpret");
@@ -295,8 +300,10 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                            Rewind the data pointer to the beginning of the glyph, re-initialise
                            the hinter, execute a '0' sbw op, and then carry on as if we had
                            actually received one. */
-                        if (pgd)
+                        if (pgd) {
                             cip = pgd->bits.data;
+                            cipend = pgd->bits.data + pgd->bits.size;
+                        }
                         t1_hinter__init(h, pcis->path);
                         code = t1_hinter__sbw(h, fixed_0, fixed_0, fixed_0, fixed_0);
                         if (code < 0)
@@ -321,6 +328,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     /* do accent of seac */
                     ipsp = &pcis->ipstack[pcis->ips_count - 1];
                     cip = ipsp->cs_data.bits.data;
+                    cipend = ipsp->cs_data.bits.data + ipsp->cs_data.bits.size;
                     goto call;
                 }
                 return code;
@@ -384,6 +392,8 @@ rsbw:		/* Give the caller the opportunity to intervene. */
             case cx_escape:
                 charstring_next(*cip, state, c, encrypted);
                 ++cip;
+                if (cip > cipend)
+                    return_error(gs_error_invalidfont);
 #ifdef DEBUG
                 if (gs_debug['1'] && c < char1_extended_command_count) {
                     static const char *const ce1names[] =
@@ -422,6 +432,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                         }
                         clear;
                         cip = ipsp->cs_data.bits.data;
+                        cipend = ipsp->cs_data.bits.data + ipsp->cs_data.bits.size;
                         goto call;
                     case ce1_sbw:
                         if (!pcis->seac_flag)
