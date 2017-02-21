@@ -6547,6 +6547,70 @@ zswapcolors(i_ctx_t * i_ctx_p)
     return gs_swapcolors(igs);
 }
 
+static int
+zsetfillcolor(i_ctx_t * i_ctx_p)
+{
+    return zsetcolor(i_ctx_p);
+}
+static int
+zsetfillcolorspace(i_ctx_t * i_ctx_p)
+{
+    return zsetcolorspace(i_ctx_p);
+}
+static int
+setstrokecolor_cont(i_ctx_t * i_ctx_p)
+{
+    return zswapcolors(i_ctx_p);
+}
+static int
+zsetstrokecolor(i_ctx_t * i_ctx_p)
+{
+    int code;
+
+    code = zswapcolors(i_ctx_p);
+    if (code < 0)
+        return code;
+
+    /* Set up for the continuation procedure which will finish by restoring the fill colour space */
+    /* Make sure the exec stack has enough space */
+    check_estack(1);
+    /* Now, the actual continuation routine */
+    push_op_estack(setstrokecolor_cont);
+
+    code = zsetcolor(i_ctx_p);
+
+    if (code >= 0)
+        return o_push_estack;
+
+    return code;
+}
+static int
+setstrokecolorspace_cont(i_ctx_t * i_ctx_p)
+{
+    return zswapcolors(i_ctx_p);
+}
+static int
+zsetstrokecolorspace(i_ctx_t * i_ctx_p)
+{
+    int code;
+
+    code = zswapcolors(i_ctx_p);
+    if (code < 0)
+        return code;
+
+    /* Set up for the continuation procedure which will finish by restoring the fill colour space */
+    /* Make sure the exec stack has enough space */
+    check_estack(1);
+    /* Now, the actual continuation routine */
+    push_op_estack(setstrokecolorspace_cont);
+
+    code = zsetcolorspace(i_ctx_p);
+    if (code >= 0)
+        return o_push_estack;
+
+    return code;
+}
+
 /* ------ Initialization procedure ------ */
 
 /* We need to split the table because of the 16-element limit. */
@@ -6596,5 +6660,14 @@ const op_def    zcolor_ext_op_defs[] =
     { "0%indexed_cont", indexed_cont },
     { "0%setdevicecolor_cont", setdevicecolor_cont },
     { "0%currentbasecolor_cont", currentbasecolor_cont },
+op_def_end(0)
+};
+
+const op_def    zcolor_pdf_op_defs[] =
+{
+    { "1.setfillcolor", zsetfillcolor },
+    { "1.setfillcolorspace", zsetfillcolorspace },
+    { "1.setstrokecolor", zsetstrokecolor },
+    { "1.setstrokecolorspace", zsetstrokecolorspace },
 op_def_end(0)
 };

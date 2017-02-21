@@ -255,36 +255,20 @@ currentdict /gput_always_allow .undef
 
 % ---------------- Color setting ---------------- %
 
-/fcput		% <color> <colorspace> fcput -
- { /FillColorSpace gput /FillColor gput
- } bdef
-/scput		% <color> <colorspace> scput -
- { /StrokeColorSpace gput /StrokeColor gput
- } bdef
-/csput		% <colorspace> csput -
- { csset 2 copy fcput scput
- } bdef
-
-/csdevgray [/DeviceGray] readonly def
-/csdevrgb [/DeviceRGB] readonly def
-/csdevcmyk [/DeviceCMYK] readonly def
-/cspattern [/Pattern] readonly def
 /nullpatternproc { pop } bdef
-/nullpattern mark
-   /PatternType 1 /PaintType 1 /TilingType 3 /BBox [0 0 1 1]
-   /XStep 1 /YStep 1 /PaintProc //nullpatternproc
-.dicttomark readonly def
+%/nullpattern mark
+%   /PatternType 1 /PaintType 1 /TilingType 3 /BBox [0 0 1 1]
+%   /XStep 1 /YStep 1 /PaintProc //nullpatternproc
+%.dicttomark readonly def
 
-% Each entry in the color space dictionary is a procedure of the form
-%	<cspace> -proc- <cspace> <initial-color>
 /CSdict mark
-  /DeviceGray { pop //csdevgray 0 } bind
-  /DeviceRGB { pop //csdevrgb [0 0 0] cvx } bind
-  /DeviceCMYK { pop //csdevcmyk [0 0 0 1] cvx } bind
+  /DeviceGray { 0 } bind
+  /DeviceRGB { [0 0 0] cvx } bind
+  /DeviceCMYK { [0 0 0 1] cvx } bind
   /CIEBasedA { 0 } bind
   /CIEBasedABC { [0 0 0] cvx } bind
-  /CalGray { pop //csdevgray 0 } bind
-  /CalRGB { pop //csdevrgb [0 0 0] cvx } bind
+  /CalGray { pop /DeviceGray 0 } bind
+  /CalRGB { pop /DeviceRGB [0 0 0] cvx } bind
   /Lab {[0 0 0] cvx } bind
   /ICCBased { [ 1 index 1 oget /N get { 0 } repeat ] cvx } bind
   /Separation { 1 } bind
@@ -293,78 +277,142 @@ currentdict /gput_always_allow .undef
   } bind
   /Indexed { 0 } bind
   /Pattern {
-    dup type /nametype eq 1 index length 1 eq or {
-      pop //cspattern //nullpattern matrix makepattern
-    } {
-      //nullpattern matrix makepattern 1 index 1 get csset
-                % Stack: patternspace nullpattern basecolor basespace
-      pop [ 3 1 roll dup type /arraytype eq { aload pop } if
-      counttomark -1 roll ] cvx
-    } ifelse
   } bind
 .dicttomark readonly def
-/csset			% <cspace> csset <color> <cspace>
- { dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch
- } bdef
 
-/g { //csdevgray fcput } bdef
-/G { //csdevgray scput } bdef
-/rg { 3 array astore cvx //csdevrgb fcput } bdef
-/RG { 3 array astore cvx //csdevrgb scput } bdef
-/k { 4 array astore cvx //csdevcmyk fcput } bdef
-/K { 4 array astore cvx //csdevcmyk scput } bdef
-%%
-%% Bug #694412, we set the colour space immediately now. Previously we
-%% only set the colour space and colour when a stroke or fill took place.
-%% if that happened inside a gsave/grestore we could end up setting the
-%% same colour space many times, which is a problem if its an expensive
-%% space, like ICCBased.
-%%
-/cs { csset dup setgcolorspace fcput } bdef
-/CS { csset dup .swapcolors setgcolorspace .swapcolors scput } bdef
 /ri { //.renderingintentdict exch .knownget { .setrenderingintent } if } bdef
-% We have to break up sc according to the number of operands.
-%%
-%% Also Bug #694412, we need to set the actual colour in response to the
-%% PDF operators as well. However, the transparenmcy code also uses the
-%% original calls (sc, SC, sc1, SC1, sc* and SC*) and so we create
-%% a duplicate set which do the same as the originals, but se the current
-%% colour as well.
-%%
-/sc1_and_set { /FillColor gput FillColor FillColorSpace setgcolor} bdef
-/sc1 { /FillColor gput } bdef
-/SC1_and_set {/StrokeColor gput .swapcolors StrokeColor StrokeColorSpace setgcolor .swapcolors } bdef
-/SC1 { /StrokeColor gput } bdef
-% We have to avoid storing into a color array associated with an outer
-% gsave level, so we do a kind of "copy on write".
-/sc* {
-  currentdict /FillColor .knownget {
-    astore pop
-  } {
-    /FillColor load
-    % FillColor may contain either a single value or an array.
-    dup type /arraytype eq { length }{ pop 1 } ifelse
-    array astore cvx /FillColor gput
-  } ifelse
-} bdef
-/SC* {
-  currentdict /StrokeColor .knownget {
-    astore pop
-  } {
-    /StrokeColor load
-    % StrokeColor may contain either a single value or an array.
-    dup type /arraytype eq { length }{ pop 1 } ifelse
-    array astore cvx /StrokeColor gput
-  } ifelse
-} bdef
-/sc*_and_set {
-  sc*
-  FillColor FillColorSpace setgcolor
-} bdef
-/SC*_and_set {
-  SC*
-  .swapcolors StrokeColor StrokeColorSpace setgcolor .swapcolors
-} bdef
+/g  {/DeviceGray .setfillcolorspace .setfillcolor} bdef
+/G  {/DeviceGray .setstrokecolorspace .setstrokecolor} bdef
+/rg {/DeviceRGB .setfillcolorspace .setfillcolor} bdef
+/RG {/DeviceRGB .setstrokecolorspace .setstrokecolor} bdef
+/k  {/DeviceCMYK .setfillcolorspace .setfillcolor} bdef
+/K  {/DeviceCMYK .setstrokecolorspace .setstrokecolor} bdef
+/cs {dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch .setfillcolorspace exec .setfillcolor} bdef
+/CS {dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch .setstrokecolorspace exec .setstrokecolor} bdef
+/sc {.setfillcolor} bdef
+/SC {.setstrokecolor} bdef
+/sc* {.setfillcolor} bdef
+/SC* {.setstrokecolor} bdef
+/sc*_and_set {.setfillcolor pstack} bdef
+/SC*_and_set {.setstrokecolor} bdef
+/sc1 {.setfillcolor} bdef
+/SC1 {.setstroecolor} bdef
+/sc1_and_set {.setfillcolor} bdef
+/SC1_and_set {.setstrokecolor} bdef
+
+% ---------------- Color setting ---------------- %
+
+%/fcput		% <color> <colorspace> fcput -
+% { /FillColorSpace gput /FillColor gput
+% } bdef
+%/scput		% <color> <colorspace> scput -
+% { /StrokeColorSpace gput /StrokeColor gput
+% } bdef
+%/csput		% <colorspace> csput -
+% { csset 2 copy fcput scput
+% } bdef
+%
+%/csdevgray [/DeviceGray] readonly def
+%/csdevrgb [/DeviceRGB] readonly def
+%/csdevcmyk [/DeviceCMYK] readonly def
+%/cspattern [/Pattern] readonly def
+%/nullpatternproc { pop } bdef
+%/nullpattern mark
+%   /PatternType 1 /PaintType 1 /TilingType 3 /BBox [0 0 1 1]
+%   /XStep 1 /YStep 1 /PaintProc //nullpatternproc
+%.dicttomark readonly def
+%
+%% Each entry in the color space dictionary is a procedure of the form
+%%	<cspace> -proc- <cspace> <initial-color>
+%/CSdict mark
+%  /DeviceGray { pop //csdevgray 0 } bind
+%  /DeviceRGB { pop //csdevrgb [0 0 0] cvx } bind
+%  /DeviceCMYK { pop //csdevcmyk [0 0 0 1] cvx } bind
+%  /CIEBasedA { 0 } bind
+%  /CIEBasedABC { [0 0 0] cvx } bind
+%  /CalGray { pop //csdevgray 0 } bind
+%  /CalRGB { pop //csdevrgb [0 0 0] cvx } bind
+%  /Lab {[0 0 0] cvx } bind
+%  /ICCBased { [ 1 index 1 oget /N get { 0 } repeat ] cvx } bind
+%  /Separation { 1 } bind
+%  /DeviceN {	% What is the correct value??
+%    [ 1 index 1 get length { 1 } repeat ] cvx
+%  } bind
+%  /Indexed { 0 } bind
+%  /Pattern {
+%    dup type /nametype eq 1 index length 1 eq or {
+%      pop //cspattern //nullpattern matrix makepattern
+%    } {
+%      //nullpattern matrix makepattern 1 index 1 get csset
+%                % Stack: patternspace nullpattern basecolor basespace
+%      pop [ 3 1 roll dup type /arraytype eq { aload pop } if
+%      counttomark -1 roll ] cvx
+%    } ifelse
+%  } bind
+%.dicttomark readonly def
+%/csset			% <cspace> csset <color> <cspace>
+% { dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch
+% } bdef
+%
+%/g { //csdevgray fcput } bdef
+%/G { //csdevgray scput } bdef
+%/rg { 3 array astore cvx //csdevrgb fcput } bdef
+%/RG { 3 array astore cvx //csdevrgb scput } bdef
+%/k { 4 array astore cvx //csdevcmyk fcput } bdef
+%/K { 4 array astore cvx //csdevcmyk scput } bdef
+%%%
+%%% Bug #694412, we set the colour space immediately now. Previously we
+%%% only set the colour space and colour when a stroke or fill took place.
+%%% if that happened inside a gsave/grestore we could end up setting the
+%%% same colour space many times, which is a problem if its an expensive
+%%% space, like ICCBased.
+%%%
+%/cs { csset dup setgcolorspace fcput } bdef
+%/CS { csset dup .swapcolors setgcolorspace .swapcolors scput } bdef
+%/ri { //.renderingintentdict exch .knownget { .setrenderingintent } if } bdef
+%% We have to break up sc according to the number of operands.
+%%%
+%%% Also Bug #694412, we need to set the actual colour in response to the
+%%% PDF operators as well. However, the transparenmcy code also uses the
+%%% original calls (sc, SC, sc1, SC1, sc* and SC*) and so we create
+%%% a duplicate set which do the same as the originals, but se the current
+%%% colour as well.
+%%%
+%/sc1_and_set { /FillColor gput FillColor FillColorSpace setgcolor} bdef
+%/sc1 { /FillColor gput } bdef
+%/SC1_and_set {/StrokeColor gput .swapcolors StrokeColor StrokeColorSpace setgcolor .swapcolors } bdef
+%/SC1 { /StrokeColor gput } bdef
+%% We have to avoid storing into a color array associated with an outer
+%% gsave level, so we do a kind of "copy on write".
+%/sc* {
+%  currentdict /FillColor .knownget {
+%    astore pop
+%  } {
+%    /FillColor load
+%    % FillColor may contain either a single value or an array.
+%    dup type /arraytype eq { length }{ pop 1 } ifelse
+%    array astore cvx /FillColor gput
+%  } ifelse
+%} bdef
+%/SC* {
+%  currentdict /StrokeColor .knownget {
+%    astore pop
+%  } {
+%    /StrokeColor load
+%    % StrokeColor may contain either a single value or an array.
+%    dup type /arraytype eq { length }{ pop 1 } ifelse
+%    array astore cvx /StrokeColor gput
+%  } ifelse
+%} bdef
+%/sc*_and_set {
+%  sc*
+%  FillColor FillColorSpace setgcolor
+%} bdef
+%/SC*_and_set {
+%  SC*
+%  .swapcolors StrokeColor StrokeColorSpace setgcolor .swapcolors
+%} bdef
+%
 
 % ---------------- Overprint/transparency setting ---------------- %
 
@@ -433,15 +481,16 @@ currentdict /gput_always_allow .undef
   SoftMask .settransparencyparams
 } def
 /setfillstate {
-  FillColor FillColorSpace setgcolor setfillblend
+%  FillColor FillColorSpace setgcolor
+  setfillblend
 } def
 
 /setstrokestate {
-  .swapcolors
-  StrokeColor StrokeColorSpace setgcolor %StrokeOverprint setoverprint
+%  .swapcolors
+%  StrokeColor StrokeColorSpace setgcolor %StrokeOverprint setoverprint
   .getStrokeConstantAlpha
   SoftMask .settransparencyparams
-  .swapcolors
+%  .swapcolors
 } def
 /Cdict 15 dict dup begin	% <color...> <colorspace> -proc- -
   /DeviceGray { pop setgray } bdef

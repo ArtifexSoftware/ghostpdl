@@ -1206,8 +1206,7 @@ currentdict /eexec_pdf_param_dict .undef
                 % Stack: filepos stream
                 % Don't let setgcolor set the color inside the BuildGlyph
                 % procedure, because this causes an /undefined error.
-            q //null /FillColor gput //null /StrokeColor gput
-            Font /Resources get exch pdfopdict
+            q Font /Resources get exch pdfopdict
             /BuildCharDictDepth countdictstack def
             .pdfruncontext
             countdictstack BuildCharDictDepth sub
