@@ -1127,6 +1127,7 @@ show_proceed(gs_show_enum * penum)
             }
         }
     } else {
+        start = penum->index;
         /* Can't use cache */
         switch ((code = get_next_char_glyph((gs_text_enum_t *)penum,
                                             &chr, &glyph))
@@ -1145,6 +1146,7 @@ show_proceed(gs_show_enum * penum)
                     gs_log2_scale_point log2_scale;
                     gs_fixed_point subpix_origin;
 
+                    penum->bytes_decoded = penum->index - start;
                     code = compute_glyph_raster_params(penum, false, &alpha_bits, &depth, &subpix_origin, &log2_scale);
                     if (code < 0)
                         return code;
