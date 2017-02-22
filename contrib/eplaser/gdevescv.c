@@ -2496,7 +2496,6 @@ escv_begin_image(gx_device * dev,
   int				code;
   int				ty, bx, by, cy, sx, sy;
 
-  gx_color_index		color = gx_dc_pure_color(pdcolor);
   char		        obuf[128];
 
   if (pie == 0) return_error(gs_error_VMerror);
@@ -2597,6 +2596,7 @@ escv_begin_image(gx_device * dev,
     if (pdev->MaskState != 1) {
 
       if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
+        gx_color_index color = gx_dc_pure_color(pdcolor);
 
         /*	    lputs(s, ESC_GS "1owE");*/
         (void)gs_sprintf(obuf, ESC_GS "1;1;%ldccE", color);
