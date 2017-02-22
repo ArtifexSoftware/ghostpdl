@@ -19,6 +19,10 @@
 % If SCALE is defined, maps input pixels to output pixels with that scale;
 % if SCALE is undefined, scales the image to fit the page.
 % If FITPAGE true, it fits the output page size to the image, honouring SCALE
+% When the input is PAM (P7) RGBTAG from bitrgbtags device, -dTAG will show
+% the tags is pseudo color:
+% TEXT=1, IMAGE=2, PATH=4, UNTOUCHED=8
+%  red     green   blue      gray
 
 /s 100 string def
 /readmaxv {		% <file> readmaxv -
@@ -96,26 +100,76 @@
 % HEIGHT 792	%% used to set h
 % DEPTH 4	%% if present and not 4, then bail
 % MAXVAL 255	%% used to set maxv
-% TUPLTYPE CMYK	%% if present and not CMYK, then bail
+% TUPLTYPE CMYK | RGB_TAG	%% if present and not CMYK or RGB_TAG, then bail
 % ENDHDR	%% skip everything else up to this
   /P7KEYS <<
     /WIDTH { /w pf token pop def }
     /HEIGHT { /h pf token pop def }
     /DEPTH { /d pf token pop def d 4 ne { (*** Only CMYK PAM files supported at this time. ***) = quit } if }
     /MAXVAL { /maxv pf token pop def }
-    /TUPLTYPE { pf token pop /CMYK ne { (*** Only CMYK PAM files supported at this time. ***) = quit } if }
+    /TUPLTYPE { pf token pop dup /CMYK eq 1 index /RGB_TAG eq or not {
+                  (*** Only CMYK and RGB_TAG PAM files supported at this time. ***) = quit
+                } if
+                /T exch def
+              }
     /ENDHDR { exit }
     (#) cvn { pf 255 string readline pop pop }
   >> def
   { pf token not { exit } if P7KEYS exch .knownget { exec } if } loop
   /bpc 8 def
-  /rsize w 4 mul def
-  /ncomp 4 def /invert false def /DeviceCMYK setcolorspace
-  w h { readstring pop }
+  /rsize w 4 mul def		% same bytes per line for CMYK or RGB_TAG
+  /T load /CMYK eq {
+    /ncomp 4 def /invert false def /DeviceCMYK setcolorspace
+    w h { readstring pop }
+  } {
+    % not CMYK, must be RGB_TAG since was checked above
+    /TAG where {
+      pop
+      % show the tags as pseudo-color image
+      /ncomp 1 def /invert false def /maxv 1 def
+      [ /Indexed /DeviceRGB 255
+        % TEXT=1, IMAGE=2, PATH=4, UNTOUCHED=8
+        %  red     green   blue      gray
+        768 string
+        dup 0 <000000 ff0000 00ff00 ffff00 0000ff ff00ff 00ffff ffffff cccccc> putinterval
+      ] setcolorspace
+      w h {
+        readstring pop
+        % discard all but the tag
+        dup length 4 div cvi
+        string	% destination string
+        0 1 2 index length 1 sub {
+          2 index 1 index 4 mul get
+          2 index exch 2 index exch
+          put
+          pop % done with pixel#
+        } for
+        exch pop
+      }
+    } {
+      % show the image as RGB (ignore tags)
+      /ncomp 3 def /invert false def /DeviceRGB setcolorspace
+      w h {
+        readstring pop
+        % re-pack the RGB, discard the tag
+        dup length 4 div 3 mul cvi string	% destination string
+        0 1 2 index length 3 idiv 1 sub {
+          % stack: RGBTstring destRGBstring pixel#
+          2 index 1 index 4 mul 4 getinterval
+          1 3 getinterval	% RGB values
+          % stack RGBTstring destRGBstring pixel# RGBstring
+          2 index exch 2 index 3 mul exch
+          putinterval
+          pop % done with pixel#
+        } for
+        exch pop
+      }
+    } ifelse
+  } ifelse
 } bind
 
 .dicttomark readonly def
-/pbmsetup {			% <file> <w> <h> <readproc> runpbm -
+/pbmsetup {			% <file> <w> <h> <readproc> pbmsetup <imagedict>
    /readproc exch def
    /h exch def
    /w exch def
@@ -146,20 +200,35 @@
     } {
       /FITPAGE where {/FITPAGE get}{false} ifelse
       {
-          Width 72 mul Height 72 mul
+        0 0 translate
+        612 765
       }
       {
           % Scale the image (uniformly) to fit the page.
-        clippath pathbbox pop pop translate
-        pathbbox .min exch pop exch pop ceiling
-        dup Height Width gt {
-          Width mul Height div exch
+        clippath pathbbox pop pop translate	% offset to the printable origin
+        pathbbox 3 -1 roll sub exch 3 -1 roll sub exch
+        % stack printable_width printable_height
+        2 copy gt 3 1 roll .min exch
+        % stack: min(printable_w, printable_h) landscape?
+        {
+          % printable height is less than width (landscape)
+          dup Height Width gt {
+            Width mul Height div exch
+          } {
+            Height mul Width div
+          } ifelse
         } {
-          Height mul Width div
+          % printable width is less than height (portrait)
+          dup Height Width lt {
+            Width mul Height div exch
+          } {
+            Height mul Width div
+          } ifelse
         } ifelse
       } ifelse
     }
-    ifelse scale
+    ifelse
+    scale
   end
 } def
 
@@ -169,6 +238,7 @@
     (r) file /pf exch def {
       pf token not { exit } if
       pbmtypes exch get pf exch exec pbmsetup
+      currentcolorspace			% preserve colorspace around setpagedevice
       /FITPAGE where
       {
         /FITPAGE get
@@ -176,14 +246,15 @@
           /SCALE where
           {
             pop
-            <</PageSize [w 72 mul SCALE mul h 72 mul SCALE mul] >>
+            <</PageSize [ 1 1 dtransform h SCALE mul exch abs div exch w SCALE mul exch abs div exch ] >>
           }
           {
-            <</PageSize [w 72 mul h 72 mul] >>
+            <</PageSize [ 1 1 dtransform h exch abs div exch w exch abs div exch ] >>
           } ifelse
           setpagedevice
         } if
       } if
+      setcolorspace			% restore colorspave in case we did setpagedevice
       dup imagescale image showpage
     } loop
   end
@@ -239,8 +310,10 @@
     { ] { viewpbm } forall
     }
     { cleartomark
-      (Usage: gs [--] viewpbm.ps filename.p*m ...\n) print
-      ( e.g.: gs [--] viewpbm.ps my.ppm another.ppm\n) print flush
+      (Usage: gs [-dSCALE=#.#] [-dFITPAGE] [--] viewpbm.ps filename.p*m ...\n) print
+      ( e.g.: gs [-dSCALE=#.#] [-dFITPAGE] [--] viewpbm.ps my.ppm another.ppm\n) print flush
+      (    also -dTAG option can be used to show the pseudo-color tag image from a\n) print flush
+      (    P7 RGB_TAG PAM file created by the bitrgbtags device.\n) print flush
     }
    ifelse
  }
