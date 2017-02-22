@@ -49,7 +49,7 @@ pjl_impl_characteristics(const pl_interp_implementation_t * impl        /* imple
 {
     static const pl_interp_characteristics_t pjl_characteristics = {
         "PJL",
-        "",
+        "@PJL",
         "Artifex",
         PJLVERSION,
         PJLBUILDDATE,

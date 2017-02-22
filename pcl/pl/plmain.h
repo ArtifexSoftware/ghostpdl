@@ -57,8 +57,10 @@ int pl_main_set_display_callback(pl_main_instance_t *inst, void *callback);
 int pl_main_run_file(pl_main_instance_t *minst, const char *filename);
 int pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[]);
 void pl_main_delete_instance(pl_main_instance_t *minst);
+int pl_main_run_string_begin(void *instance);
+int pl_main_run_string_continue(void *instance, const char *str, unsigned int length);
+int pl_main_run_string_end(void *instance);
 int pl_to_exit(const gs_memory_t *mem);
-
 
 /* instance accessors */
 bool pl_main_get_interpolate(const gs_memory_t *mem);

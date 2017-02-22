@@ -93,3 +93,31 @@ plapi_set_display_callback(void *lib, void *callback)
     pl_main_set_display_callback(pl_main_get_instance(ctx->memory), callback);
     return 0;
 }
+
+GSDLLEXPORT int GSDLLAPI
+plapi_run_string_begin(void *lib)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
+        return gs_error_Fatal;
+    return pl_main_run_string_begin(pl_main_get_instance(ctx->memory));
+}
+
+GSDLLEXPORT int GSDLLAPI
+plapi_run_string_continue(void *lib, const char *str, unsigned int length)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
+        return gs_error_Fatal;
+    return pl_main_run_string_continue(pl_main_get_instance(ctx->memory), str, length);
+}
+
+GSDLLEXPORT int GSDLLAPI
+plapi_run_string_end(void *lib)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
+        return gs_error_Fatal;
+    return pl_main_run_string_end(pl_main_get_instance(ctx->memory));
+}
+    

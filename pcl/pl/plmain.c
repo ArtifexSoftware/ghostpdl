@@ -151,7 +151,6 @@ int pl_main_universe_dnit(pl_main_universe_t * universe);
 
 /* rets current interp_instance, 0 if err */
 pl_interp_instance_t *pl_main_universe_select(pl_main_universe_t * universe,     /* universe to select from */
-                                              pl_interp_instance_t * pjl_instance,       /* pjl */
                                               pl_interp_implementation_t const *desired_implementation,  /* impl to select */
                                               pl_main_instance_t * pti,  /* inst contains device */
                                               gs_param_list * params     /* device params to use */
@@ -290,11 +289,29 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
     return 0;
 }
 
+
+int
+pl_main_run_string_begin(void *instance)
+{
+    return 0;
+}
+
+int
+pl_main_run_string_continue(void *instance, const char *str, unsigned int length)
+{
+    return 0;
+}
+
+int
+pl_main_run_string_end(void *instance)
+{
+    return 0;
+}
+
 int
 pl_main_run_file(pl_main_instance_t *minst, const char *filename)
 {
-    bool new_job = false;
-    bool in_pjl  = true;
+    bool new_job = true;
     pl_interp_instance_t *pjl_instance = minst->universe.pdl_instance_array[0];
     gs_memory_t *mem = minst->memory;
     pl_top_cursor_t r;
@@ -305,46 +322,21 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
         return gs_error_Fatal;
     }
 
-    /* Don't reset PJL if there is PJL state from the command line arguments. */
-    if (minst->pjl_from_args == false) {
-        if (pl_init_job(pjl_instance) < 0)
-            return gs_error_Fatal;
-    } else
-        minst->pjl_from_args = false;
-    
     for (;;) {
         if_debug1m('I', mem, "[i][file pos=%ld]\n",
                    pl_cursor_position(&r));
 
-        /* end of data - if we are not back in pjl the job has
-           ended in the middle of the data stream. */
         if (pl_cursor_next(&r) <= 0) {
             if_debug0m('I', mem, "End of of data\n");
-            if (!in_pjl) {
-                if_debug0m('I', mem,
-                           "end of data stream found in middle of job\n");
-                pl_process_eof(curr_instance);
-                if (close_job(&minst->universe, minst) < 0) {
-                    return gs_error_Fatal;
-                }
-            }
+            pl_process_eof(curr_instance);
+            if (close_job(&minst->universe, minst) < 0)
+                return gs_error_Fatal;
             break;
-        }
-        
-        if (in_pjl) {
-            if_debug0m('I', mem, "Processing pjl\n");
-            code = pl_process(pjl_instance, &r.cursor);
-            if (code == e_ExitLanguage) {
-                if_debug0m('I', mem, "Exiting pjl\n");
-                in_pjl = false;
-                new_job = true;
-            }
         }
         
         if (new_job) {
             if_debug0m('I', mem, "Selecting PDL\n");
             curr_instance = pl_main_universe_select(&minst->universe,
-                                                    pjl_instance,
                                                     pl_select_implementation
                                                     (pjl_instance, minst,
                                                      r), minst,
@@ -354,8 +346,17 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                 return gs_error_Fatal;
             }
 
-            if (pl_init_job(curr_instance) < 0)
-                return gs_error_Fatal;
+            /* Don't reset PJL if there is PJL state from the command line arguments. */
+            if (curr_instance == pjl_instance) {
+                if (minst->pjl_from_args == false) {
+                    if (pl_init_job(pjl_instance) < 0)
+                        return gs_error_Fatal;
+                } else
+                    minst->pjl_from_args = false;
+            } else {
+                if (pl_init_job(curr_instance) < 0)
+                    return gs_error_Fatal;
+            }
             
             if_debug1m('I', mem, "selected and initializing (%s)\n",
                        pl_characteristics(curr_instance->interp->
@@ -388,17 +389,14 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                        pl_characteristics(curr_instance->interp->
                                           implementation)->language);
             if (code == e_ExitLanguage) {
-                in_pjl = true;
-
-                if_debug1m('I', mem, "exiting (%s) job back to pjl\n",
-                           pl_characteristics(curr_instance->interp->
-                                              implementation)->language);
-
                 if (close_job(&minst->universe, minst) < 0)
                     return gs_error_Fatal;
 
-                if (pl_init_job(pjl_instance) < 0)
-                    return gs_error_Fatal;
+                new_job = true;
+
+                if (curr_instance != pjl_instance)
+                    if (pl_init_job(pjl_instance) < 0)
+                        return gs_error_Fatal;
 
             } else if (code < 0) {  /* error and not exit language */
                 dmprintf1(mem,
@@ -418,12 +416,11 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                                  minst->error_report > 0);
                 if (close_job(&minst->universe, minst) < 0)
                     return gs_error_Fatal;
+                if (pl_init_job(pjl_instance) < 0)
+                    return gs_error_Fatal;
 
-                /* Print PDL status if applicable, then dnit PDL job */
                 code = 0;
                 new_job = true;
-                /* go back to pjl */
-                in_pjl = true;
             }
         }
     }
@@ -559,7 +556,6 @@ pl_main_universe_dnit(pl_main_universe_t * universe)
 /* Select new device and/or implementation, deselect one one (opt) */
 pl_interp_instance_t *          /* rets current interp_instance, 0 if err */
 pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select from */
-                        pl_interp_instance_t * pjl_instance,    /* pjl */
                         pl_interp_implementation_t const *desired_implementation,       /* impl to select */
                         pl_main_instance_t * pmi,       /* inst contains device */
                         gs_param_list * params  /* device params to set */
@@ -1366,13 +1362,22 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     return 0;
 }
 
+#define PJL_UEL "\033%-12345X"
+
 /* Find default language implementation */
 static pl_interp_implementation_t const *
 pl_auto_sense(const char *name,  int buffer_length)
 {
     /* Lookup this string in the auto sense field for each implementation */
     pl_interp_implementation_t const *const *impl;
+    size_t uel_len = strlen(PJL_UEL);
 
+    /* first check for a UEL */
+    if (buffer_length >= uel_len) {
+        if (!memcmp(name, PJL_UEL, uel_len))
+            return pdl_implementation[0];
+    }
+    
     for (impl = pdl_implementation; *impl != 0; ++impl) {
         int auto_string_len = strlen(pl_characteristics(*impl)->auto_sense_string);
         const char *sense   = pl_characteristics(*impl)->auto_sense_string;

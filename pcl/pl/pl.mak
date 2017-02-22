@@ -365,7 +365,8 @@ $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(string__h)\
 # Real top level; provides main that just calls pl_main
 # On Windows this also sets up the display device so that we
 # can view the output.
-$(PLOBJ)$(REALMAIN_SRC).$(OBJ): $(PLSRC)$(REALMAIN_SRC).c $(PL_MAK) $(MAKEDIRS)
+$(PLOBJ)$(REALMAIN_SRC).$(OBJ): $(PLSRC)$(REALMAIN_SRC).c $(PL_MAK) $(MAKEDIRS) \
+ $(string__h) $(plapi_h) $(gserrors_h)                                
 	$(PLATCCC) $(PLSRC)$(REALMAIN_SRC).c $(PLO_)$(REALMAIN_SRC).$(OBJ)
 
 

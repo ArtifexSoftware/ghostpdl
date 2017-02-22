@@ -112,11 +112,7 @@ long                            /* offset from beginning of file */
 pl_cursor_position(pl_top_cursor_t * cursor        /* cursor to operate on */
     )
 {
-    long pos1 = (long)ftell(cursor->strm) - (cursor->cursor.limit - cursor->cursor.ptr);
-    long pos2 = cursor->position - (cursor->cursor.limit - cursor->cursor.ptr);
-    if (pos1 != pos2)
-        return -1;
-    return pos2;
+    return cursor->position - (cursor->cursor.limit - cursor->cursor.ptr);
 }
 
 /* Close read cursor */
