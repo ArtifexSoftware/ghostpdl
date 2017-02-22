@@ -105,7 +105,6 @@ extern "C" int gp_xpsprint(char *filename, char *printername, int *result)
     if (SUCCEEDED(hr))
     {
         WCHAR MBStr[64];
-        int code;
 
         code = MultiByteToWideChar(CP_ACP, 0, printername, -1, MBStr, 64);
         if (code != 0) {
@@ -152,7 +151,6 @@ extern "C" int gp_xpsprint(char *filename, char *printername, int *result)
     if (SUCCEEDED(hr))
     {
         WCHAR MBStr[MAX_PATH];
-        int code;
 
         code = MultiByteToWideChar(CP_ACP, 0, filename, -1, MBStr, MAX_PATH);
         if (code != 0) {
