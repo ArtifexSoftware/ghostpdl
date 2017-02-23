@@ -199,8 +199,10 @@ gs_main_init1(gs_main_instance * minst)
             gs_memory_t *mem = (gs_memory_t *)idmem.space_system;
             nt = names_init(minst->name_table_size, idmem.space_system);
 
-            if (nt == 0)
-                return_error(gs_error_VMerror);
+            if (nt == 0) {
+                code = gs_note_error(gs_error_VMerror);
+                goto fail;
+            }
             mem->gs_lib_ctx->gs_name_table = nt;
             code = gs_register_struct_root(mem, NULL,
                                            (void **)&mem->gs_lib_ctx->gs_name_table,
@@ -224,6 +226,7 @@ gs_main_init1(gs_main_instance * minst)
 
 fail:
     names_free(nt);
+    ialloc_finit(&idmem);
     return code;
 }
 

@@ -87,6 +87,31 @@ ialloc_init(gs_dual_memory_t *dmem, gs_memory_t * rmem, uint clump_size,
     return_error(gs_error_VMerror);
 }
 
+/* Free the allocator */
+void
+ialloc_finit(gs_dual_memory_t *mem)
+{
+    if (mem != NULL) {
+        gs_ref_memory_t *ilmem = mem->space_local;
+        gs_ref_memory_t *igmem = mem->space_global;
+        gs_ref_memory_t *ismem = mem->space_system;
+
+        if (ilmem != NULL) {
+            gs_ref_memory_t *ilmem_stable = (gs_ref_memory_t *)(ilmem->stable_memory);
+            ialloc_free_state(ilmem_stable);
+            ialloc_free_state(ilmem);
+        }
+
+        if (igmem != NULL) {
+            gs_ref_memory_t *igmem_stable = (gs_ref_memory_t *)(igmem->stable_memory);
+            ialloc_free_state(igmem_stable);
+            ialloc_free_state(igmem);
+        }
+
+        ialloc_free_state(ismem);
+    }
+}
+
 /* ================ Local/global VM ================ */
 
 /* Get the space attribute of an allocator */

@@ -62,6 +62,9 @@
 /* Initialize the interpreter's allocator. */
 int ialloc_init(gs_dual_memory_t *, gs_memory_t *, uint, bool);
 
+/* Free the interpreter's allocator. */
+void ialloc_finit(gs_dual_memory_t *);
+
 /* ------ Internal routines ------ */
 
 /* Reset the request values that identify the cause of a GC. */
