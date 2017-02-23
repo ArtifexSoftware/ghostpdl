@@ -267,19 +267,6 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
     loca_size >>= pfont->data.indexToLocFormat + 1;
     pfont->data.numGlyphs = (loca_size == 0 ? 0 : loca_size - 1);
     if (pfont->data.numGlyphs > pfont->data.trueNumGlyphs) {
-        /* Some fonts have excessive data at end of 'loca' table -
-           see bug 688467.
-           We're not sure why old versions of Ghostscript maintain
-           two different fileds - numGlyphs and trueNumGlyphs.
-           (A related comment in gxfont42.h isn't explanatory about important cases.)
-           Our reading of TrueType specification and FreeType experience
-           is that only trueNumGlyphs should be used.
-           Maybe (I guess) sometimes somebody observed a font,
-           in which trueNumGlyphs counts real glyphs,
-           and numGlyphs counts all subglyphs ?
-           Continue using trueNumGlyphs since the document of
-           the bug 688467 fails otherwise.
-         */
         /* pfont->key_name.chars is ASCIIZ due to copy_font_name. */
         char buf[gs_font_name_max + 2];
 
@@ -307,13 +294,12 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
                 if (glyph_offset < glyph_size)
                     break;
             }
-            if (i > pfont->data.trueNumGlyphs) {
-                /* loca contains more good offsets, fix maxp.numGlyphs.
+            if (i > pfont->data.numGlyphs) {
+                /* loca contains more good offsets .
                    Note a code below will fix bad offsets if any. */
-                 pfont->data.numGlyphs = pfont->data.trueNumGlyphs = loca_size - 1;
+                 pfont->data.numGlyphs = loca_size - 1;
             }
         }
-        pfont->data.numGlyphs = pfont->data.trueNumGlyphs;
         loca_size = pfont->data.numGlyphs + 1;
     }
 
@@ -630,7 +616,7 @@ default_get_outline(gs_font_type42 * pfont, uint glyph_index,
     uint glyph_length;
     int code;
 
-     if (glyph_index >= pfont->data.trueNumGlyphs)
+     if (glyph_index >= pfont->data.numGlyphs)
         return_error(gs_error_invalidfont);
     glyph_start = get_glyph_offset(pfont, glyph_index);
     if (pfont->data.len_glyphs)

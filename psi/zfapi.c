@@ -1033,11 +1033,16 @@ sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index,
     sfnts_reader r;
     int glyf_elem_size = (pfont42->data.indexToLocFormat) ? 4 : 2;
 
-    sfnts_reader_init(&r, pdr);
-    r.seek(&r, pfont42->data.loca + index * glyf_elem_size);
-    *offset0 =
-        pfont42->data.glyf + (glyf_elem_size ==
+    if (index < pfont42->data.trueNumGlyphs) {
+        sfnts_reader_init(&r, pdr);
+        r.seek(&r, pfont42->data.loca + index * glyf_elem_size);
+        *offset0 =
+            pfont42->data.glyf + (glyf_elem_size ==
                               2 ? r.rword(&r) * 2 : r.rlong(&r));
+    }
+    else {
+        r.error = true;
+    }
     return (r.error);
 }
 
