@@ -34,10 +34,13 @@
 #endif
 
 /* The device descriptor */
+static dev_proc_open_device(bittag_open);
 static dev_proc_get_color_mapping_procs(bittag_get_color_mapping_procs);
 static dev_proc_map_rgb_color(bittag_rgb_map_rgb_color);
 static dev_proc_map_color_rgb(bittag_map_color_rgb);
 static dev_proc_put_params(bittag_put_params);
+static dev_proc_create_buf_device(bittag_create_buf_device);
+static dev_proc_fillpage(bittag_fillpage);
 static dev_proc_map_rgb_color(bit_mono_map_color);
 #if 0 /* unused */
 static dev_proc_map_rgb_color(bit_forcemono_map_rgb_color);
@@ -158,7 +161,7 @@ const gx_device_bit gs_bitcmyk_device =
 
 static const gx_device_procs bitrgbtags_procs =
     {
-        gdev_prn_open,                        /* open_device */
+        bittag_open,                        /* open_device */
         gx_default_get_initial_matrix,        /* initial_matrix */
         ((void *)0),                        /* sync_output */
         gdev_prn_output_page,                 /* output page */
@@ -219,7 +222,7 @@ static const gx_device_procs bitrgbtags_procs =
         ((void *)0),                        /* fill_linear_color_triangle */
         ((void *)0),                        /* update_spot_equivalent_colors */
         ((void *)0),                        /* ret_devn_params */
-        ((void *)0),                        /* fillpage */
+        bittag_fillpage,                    /* fillpage */
         ((void *)0),                        /* push_transparency_state */
         ((void *)0),                        /* pop_transparency_state */
         bit_put_image                        /* put_image */
@@ -324,7 +327,7 @@ const gx_device_bit gs_bitrgbtags_device =
         { 0 },
         { bittags_print_page,
           gx_default_print_page_copies,
-          { gx_default_create_buf_device,
+          { bittag_create_buf_device,
             gx_default_size_buf_device,
             gx_default_setup_buf_device,
             gx_default_destroy_buf_device },
@@ -528,6 +531,40 @@ bit_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
     (cv[3] >> drop);
 
     return (color == gx_no_color_index ? color ^ 1 : color);
+}
+
+static int
+bittag_open(gx_device * pdev)
+{
+    gx_device_printer *ppdev = (gx_device_printer *)pdev;
+    int code;
+    /* We replace create_buf_device so we can replace copy_alpha
+     * for memory device, but not clist. We also have our own
+     * fillpage proc to fill with UNTOUCHED tag
+     */
+    ppdev->printer_procs.buf_procs.create_buf_device = bittag_create_buf_device;
+    code = gdev_prn_open(pdev);
+    return code;
+}
+
+/* fill the page fills with unmarked white */
+static int
+bittag_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
+{
+    return (*dev_proc(dev, fill_rectangle))(dev, 0, 0, dev->width, dev->height,
+                                            GS_UNTOUCHED_TAG << 24 | 0xffffff);
+}
+
+static int
+bittag_create_buf_device(gx_device **pbdev, gx_device *target, int y,
+   const gx_render_plane_t *render_plane, gs_memory_t *mem,
+   gx_color_usage_t *color_usage)
+{
+    gx_device_printer *ptarget = (gx_device_printer *)target;
+    int code = gx_default_create_buf_device(pbdev, target, y,
+        render_plane, mem, color_usage);
+    set_dev_proc(*pbdev, fillpage, bittag_fillpage);
+    return code;
 }
 
 static int
