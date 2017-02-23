@@ -241,7 +241,7 @@ static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int he
     }
     iey -= isy+1;
     isy -= base_y;
-    assert(ey >= 0);
+    assert(ey >= -fixed_half);
 #ifdef DEBUG_SCAN_CONVERTER
     dlprintf2("    sy=%d ey=%d\n", isy, iey);
 #endif
@@ -1553,7 +1553,7 @@ static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int
     }
     iey -= isy+1;
     isy -= base_y;
-    assert(ey >= 0);
+    assert(ey >= -fixed_half);
 #ifdef DEBUG_SCAN_CONVERTER
     dlprintf2("    sy=%d ey=%d\n", isy, iey);
 #endif
