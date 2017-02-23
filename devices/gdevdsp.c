@@ -1032,9 +1032,20 @@ display_put_params(gx_device * dev, gs_param_list * plist)
 
         code = display_alloc_bitmap(ddev, dev);
         if (code < 0) {
-            /* No bitmap, so tell the caller it is zero size */
-            (*ddev->callback->display_size)(ddev->pHandle, dev,
-                0, 0, 0, ddev->nFormat, NULL);
+            int ecode;
+
+            /* if we failed (probably VMerror) try to revert to old settings */
+            *pdevn_params = saved_devn_params;
+            *pequiv_colors = saved_equiv_colors;
+            display_set_color_format(ddev, old_format);
+            ddev->nFormat = old_format;
+            dev->width = old_width;
+            dev->height = old_height;
+            ecode = display_alloc_bitmap(ddev, dev);
+            if (ecode < 0) {
+                emprintf(dev->memory, "*** Fatal error in display_put_params, could not allocate bitmap ***\n");
+                gs_abort();
+            }
             return_error(code);
         }
 
