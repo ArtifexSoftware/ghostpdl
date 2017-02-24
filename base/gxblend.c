@@ -764,7 +764,7 @@ art_blend_pixel_8(byte *dst, const byte *backdrop,
                     for (i = 0; i < 4; i++) {
                         b = backdrop[i];
                         s = src[i];
-                        dst[i] = s > 0 ? s : b;
+                        dst[i] = s < 0xff ? s : b; /* Subtractive zero */
                     }
                     for (i = 4; i < n_chan; i++) {
                         dst[i] = backdrop[i];
