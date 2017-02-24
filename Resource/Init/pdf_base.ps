@@ -666,7 +666,6 @@ currentdict /token_nofail_dict .undef
                 % Stack: objstreamdict First N objectstream [obj#] [loc]
                 %        bytestring loopindex object#
     dup resolved? {		% If we already have this object
-        (yyy) = pstack (yyy) = flush xxx
       pop pop			% Remove object and object number
       1 add 2 index exch get	% Get location of next object
       6 index add 6 index exch	% Form location of next object and get stream
