@@ -789,24 +789,24 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                         stream_r->ptr = (byte *) pdata - 1;
                     }
                 } else {
-                    for (i = 0; i < pss->params.WidthIn; i++,
-                         psrc += spp_decode) {
-                        /* Lets get directly to a frac type loaded into psrc,
-                           and do the interpolation in the source space. Then we
-                           will do the appropriate remap function after
-                           interpolation. */
-                        for (j = 0; j < dc; ++j) {
-                            DECODE_FRAC_FRAC(((const frac *)pdata)[j], psrc[j], j);
-                        }
-                        pdata += dpd;
+                    if (sizeof(frac) * dc == dpd) {
+                        stream_r->ptr = (byte *) pdata - 1;
+                    } else {
+                        for (i = 0; i < pss->params.WidthIn; i++,
+                             psrc += spp_decode) {
+                            for (j = 0; j < dc; ++j) {
+                                psrc[j] = ((const frac *)pdata)[j];
+                            }
+                            pdata += dpd;
     #ifdef DEBUG
-                        if (gs_debug_c('B')) {
-                            int ci;
+                            if (gs_debug_c('B')) {
+                                int ci;
 
-                            for (ci = 0; ci < spp_decode; ++ci)
-                                dmprintf2(penum->memory, "%c%04x", (ci == 0 ? ' ' : ','), psrc[ci]);
-                        }
+                                for (ci = 0; ci < spp_decode; ++ci)
+                                    dmprintf2(penum->memory, "%c%04x", (ci == 0 ? ' ' : ','), psrc[ci]);
+                            }
     #endif
+                        }
                     }
                 }
                 out += round_up(pss->params.WidthIn * spp_decode * sizeof(frac),
@@ -901,13 +901,39 @@ static int handle_colors(gx_image_enum *penum, const frac *psrc, int spp_decode,
         int j;
         int num_components = gs_color_space_num_components(pactual_cs);
 
-        for (j = 0; j < num_components; ++j) {
-            /* If we were indexed, dont use the decode procedure for the index
-            values just get to float directly */
-            if (is_index_space || islab) {
-                cc.paint.values[j] = frac2float(psrc[j]);
+        if (islab) {
+            /* LAB colors are normally decoded with a decode array
+             * of [0 100  -128 127   -128 127 ]. The color management
+             * however, expects this decode array NOT to have been
+             * applied.
+             *
+             * It would be possible for an LAB image to be given a
+             * non-standard decode array, in which case, we should
+             * take account of that. The easiest way is to apply the
+             * decode array as given, and then 'undo' the standard
+             * one.
+             */
+            decode_sample_frac_to_float(penum, psrc[0], &cc, 0);
+            decode_sample_frac_to_float(penum, psrc[1], &cc, 1);
+            decode_sample_frac_to_float(penum, psrc[2], &cc, 2);
+            if (penum->bps <= 8) {
+                cc.paint.values[0] /= 100.0;
+                cc.paint.values[1] = (cc.paint.values[1] + 128) / 255.0;
+                cc.paint.values[2] = (cc.paint.values[2] + 128) / 255.0;
             } else {
-                decode_sample_frac_to_float(penum, psrc[j], &cc, j);
+                cc.paint.values[0] *= 0x7ff8 / 25500.0;
+                cc.paint.values[1] = (cc.paint.values[1] + 128) * 0x7ff8 / 65025.0;
+                cc.paint.values[2] = (cc.paint.values[2] + 128) * 0x7ff8 / 65025.0;
+            }
+        } else {
+            for (j = 0; j < num_components; ++j) {
+                /* If we were indexed, dont use the decode procedure for the index
+                   values just get to float directly */
+                if (is_index_space) {
+                    cc.paint.values[j] = frac2float(psrc[j]);
+                } else {
+                    decode_sample_frac_to_float(penum, psrc[j], &cc, j);
+                }
             }
         }
         /* If the source colors are LAB then use the mapping that does not
