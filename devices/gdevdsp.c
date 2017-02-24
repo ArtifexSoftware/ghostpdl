@@ -1044,7 +1044,7 @@ display_put_params(gx_device * dev, gs_param_list * plist)
             ecode = display_alloc_bitmap(ddev, dev);
             if (ecode < 0) {
                 emprintf(dev->memory, "*** Fatal error in display_put_params, could not allocate bitmap ***\n");
-                gs_abort();
+                return_error(gs_error_Fatal);
             }
             return_error(code);
         }
