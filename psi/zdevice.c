@@ -431,7 +431,7 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
     iparam_list_release(&list);
     if (code < 0) {		/* There were errors reported. */
         ref_stack_pop(&o_stack, dest + 1);
-        return 0;
+        return (code == gs_error_Fatal) ? code : 0;	/* cannot continue from Fatal */
     }
     if (code > 0 || (code == 0 && (dev->width != old_width || dev->height != old_height))) {
         /*
