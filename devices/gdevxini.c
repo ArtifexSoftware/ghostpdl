@@ -569,9 +569,19 @@ x_set_buffer(gx_device_X * xdev)
         /* Check that we can set up a memory device. */
         gx_device_memory *mdev = (gx_device_memory *)xdev->target;
 
-        if (mdev == 0 || mdev->color_info.depth != xdev->color_info.depth) {
+        /* This is icky, but is pickled into the architecture of the x11 devices.
+         * This function is called (amongst other places) after a put_params that
+         * changes the page buffer parameters.
+         * If we're running one of the "wrapped" x11 devices (x11mono etc), we have to "patch"
+         * the color_info so it matches the actual x11 device (because of the ways get_params
+         * interacts with put_params in the Postscript world), rather than the "wrapping" device
+         * (for example, x11mono "wraps" x11).
+         * *But* if we run buffered, we have to use the real specs of the real x11 device.
+         * Hence, the real color_info is saved into orig_color_info, and we use that here.
+         */
+        if (mdev == 0 || mdev->color_info.depth != xdev->orig_color_info.depth) {
             const gx_device_memory *mdproto =
-                gdev_mem_device_for_bits(xdev->color_info.depth);
+                gdev_mem_device_for_bits(xdev->orig_color_info.depth);
 
             if (!mdproto) {
                 buffered = false;
@@ -622,7 +632,7 @@ x_set_buffer(gx_device_X * xdev)
             mdev->height = xdev->height;
             mdev->icc_struct = xdev->icc_struct;
             rc_increment(xdev->icc_struct);
-            mdev->color_info = xdev->color_info;
+            mdev->color_info = xdev->orig_color_info;
             mdev->base = xdev->buffer;
             gdev_mem_open_scan_lines(mdev, xdev->height);
         }

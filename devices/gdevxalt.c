@@ -362,13 +362,17 @@ x_wrap_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device *tdev;
     /* We assume that a get_params call has no side effects.... */
-    gx_device_X save_dev;
+    gx_device_X save_dev, *xdev;
     int ecode;
     int code;
 
     if ((code = get_dev_target(&tdev, dev)) < 0)
         return code;
-    save_dev = *(gx_device_X *) tdev;
+    xdev = (gx_device_X *) tdev;
+    xdev->orig_color_info = xdev->color_info;
+
+    save_dev = *xdev;
+
     if (tdev->is_open)
         tdev->color_info = dev->color_info;
     tdev->dname = dev->dname;
@@ -381,7 +385,7 @@ static int
 x_wrap_put_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device *tdev;
-    gx_device_color_info cinfo;
+    gx_device_X *xdev;
     const char *dname;
     int rcode, code;
 
@@ -391,12 +395,13 @@ x_wrap_put_params(gx_device * dev, gs_param_list * plist)
      * put_params will choke if we simply feed it the output of
      * get_params; we have to substitute color_info the same way.
      */
-    cinfo = tdev->color_info;
+    xdev = (gx_device_X *) tdev;
+    xdev->orig_color_info = xdev->color_info;
     dname = tdev->dname;
     tdev->color_info = dev->color_info;
     tdev->dname = dev->dname;
     rcode = (*dev_proc(tdev, put_params)) (tdev, plist);
-    tdev->color_info = cinfo;
+    tdev->color_info = xdev->orig_color_info;
     tdev->dname = dname;
     if (rcode < 0)
         return rcode;

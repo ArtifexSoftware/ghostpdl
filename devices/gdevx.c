@@ -131,6 +131,7 @@ const gx_device_X this_device = { \
     1 /*true*/,			/* IsPageDevice */ \
     NULL,			/* buffer */ \
     0,				/* buffer_size */ \
+    {0},                        /* orig_color_info */ \
     {				/* image */ \
         0, 0,			/* width, height */ \
         0, XYBitmap, NULL,	/* xoffset, format, data */ \
@@ -249,6 +250,7 @@ x_open(gx_device * dev)
     if (xdev->color_info.anti_alias.text_bits > 1 ||
         xdev->color_info.anti_alias.graphics_bits > 1)
         xdev->space_params.MaxBitmap = 50000000;		/* default MaxBitmap when using AA */
+    xdev->orig_color_info = xdev->color_info;
     code = gdev_x_open(xdev);
 
     if (code < 0)

@@ -43,6 +43,7 @@ typedef struct gx_device_X_s {
     bool IsPageDevice;
     byte *buffer;		/* full-window image */
     long buffer_size;
+    gx_device_color_info        orig_color_info;
 
     /* An XImage object for writing bitmap images to the screen */
     XImage image;
