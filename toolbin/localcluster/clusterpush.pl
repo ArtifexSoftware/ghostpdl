@@ -7,7 +7,7 @@ use Data::Dumper;
 
 my $verbose=0;
 
-# bmpcmp usage: [gs] [pcl] [xps] [mupdf] [mujstest] [bmpcmp] [lowres] [highres] [32] [pdfwrite] [ps2write] [xpswrite] [relaxtimeout] [$user] | abort
+# bmpcmp usage: [gs] [pcl] [xps] [mupdf] [mujstest] [bmpcmp] [lowres] [highres] [32] [pdfwrite] [ps2write] [xpswrite] [relaxtimeout] [extended] [cull] [$user] | abort
 
 
 
@@ -29,12 +29,15 @@ my $extras="";
 my $command="";
 my $res="";
 my $w32="";
+my $win32="";
 my $nr="";
 my $pdfwrite="";
 my $ps2write="";
 my $xpswrite="";
 my $singlePagePDF="";
 my $relaxTimeout="";
+my $extended="";
+my $cull="";
 my $t1;
 while ($t1=shift) {
   if ($t1 eq "lowres") {
@@ -46,6 +49,12 @@ while ($t1=shift) {
     $pdfwrite="pdfwrite";
   } elsif ($t1 eq "32") {
     $w32="32";
+  } elsif ($t1 eq "win32") {
+    $win32="win32";
+  } elsif ($t1 eq "extended") {
+    $win32="extended";
+  } elsif ($t1 eq "cull") {
+    $win32="cull";
   } elsif ($t1 eq "nr" || $t1 eq "nonredundnat") {
     $nr="nonredundant";
   } elsif ($t1 eq "pdfwrite" || $t1 eq "ps2write" || $t1 eq "xpswrite") {
@@ -82,7 +91,7 @@ $user=""    if (!$user);
 
 unlink "cluster_command.run";
 
-my $host="cluster.ghostscript.com";
+my $host="casper.ghostscript.com";
 my $dir="/home/regression/cluster/users";
 
 # To cater for those whose cluster user name doesn't match the user name
@@ -204,7 +213,7 @@ if ($product ne "abort" ) { #&& $product ne "bmpcmp") {
 }
 
 open(F,">cluster_command.run");
-print F "$user $product $res $w32 $nr $pdfwrite $relaxTimeout $singlePagePDF\n";
+print F "$user $product $res $w32 $win32 $nr $pdfwrite $relaxTimeout $singlePagePDF $extended $cull\n";
 print F "$command\n";
 print F "$filters\n";
 print F "$extras\n";
