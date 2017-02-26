@@ -706,8 +706,10 @@ run_stdin:
                     eqp = strchr(adef, '#');
                 /* Initialize the object memory, scanner, and */
                 /* name table now if needed. */
-                if ((code = gs_main_init1(minst)) < 0)
+                if ((code = gs_main_init1(minst)) < 0) {
+                    arg_free((char *)adef, minst->heap);
                     return code;
+                }
                 if (eqp == adef) {
                     puts(minst->heap, "Usage: -dNAME, -dNAME=TOKEN, -sNAME=STRING");
                     return gs_error_Fatal;
