@@ -307,8 +307,14 @@ cmd_drawing_color_usage(gx_device_clist_writer *cldev,
         return gx_color_index2usage((gx_device *)cldev, colored_halftone_color_usage(cldev, pdcolor));
     else if (gx_dc_is_devn(pdcolor)) {
         gx_color_usage_bits bits = 0;		/* NB, gx_color_usage_bits is actually gx_color_index */
+        gx_color_polarity_t save_polarity = cldev->color_info.polarity;
+        int save_num_components = cldev->color_info.num_components;
 
+        cldev->color_info.polarity = cldev->clist_color_info.polarity;
+        cldev->color_info.num_components = cldev->clist_color_info.num_components;
         gx_dc_devn_get_nonzero_comps(pdcolor, (gx_device *)cldev, &bits);
+        cldev->color_info.polarity = save_polarity;
+        cldev->color_info.num_components = save_num_components;
         return bits;
     }
     else

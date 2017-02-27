@@ -760,9 +760,10 @@ gx_dc_devn_get_nonzero_comps(
     uchar           i, ncomps = dev->color_info.num_components;
     gx_color_index  mask = 0x1, comp_bits = 0;
     int             count = 0;
+    ushort          white_value = (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) ? 0 : 1;
 
     for (i = 0; i < ncomps; i++, mask <<= 1) {
-        if (pdevc->colors.devn.values[i] != 0) {
+        if (pdevc->colors.devn.values[i] != white_value) {
             comp_bits |= mask;
             count++;
         }
