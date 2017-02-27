@@ -52,6 +52,8 @@ void pcl_mark_page_for_path(pcl_state_t * pcs);
 
 void pcl_mark_page_for_current_pos(pcl_state_t * pcs);
 
+void pcl_mark_page_for_character(pcl_state_t * pcs, gs_fixed_point *org);
+
 int new_logical_page_for_passthrough_snippet(pcl_state_t * pcs, int orient,
                                              int tag);
 pcl_paper_size_t *pcl_get_default_paper(pcl_state_t * pcs);

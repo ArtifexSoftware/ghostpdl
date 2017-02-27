@@ -885,6 +885,9 @@ pcl_show_chars_slow(pcl_state_t * pcs,
 
         if (chr != 0xffff || print_undefined) {
             /* if source is opaque, show and opaque background */
+	    /* retrieve the current cursor position: leftside of character */
+            gs_fixed_point pt;
+            code = gx_path_current_point(gx_current_path(pcs->pgs), &pt);
             if (source_opaque)
                 code = show_char_background(pcs, buff);
             if (code < 0)
@@ -898,7 +901,7 @@ pcl_show_chars_slow(pcl_state_t * pcs,
             if (code < 0)
                 break;
 
-            pcl_mark_page_for_current_pos(pcs);
+            pcl_mark_page_for_character(pcs, &pt);
         }
 
         /*

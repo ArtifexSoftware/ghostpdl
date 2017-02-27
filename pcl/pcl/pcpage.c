@@ -533,6 +533,39 @@ pcl_mark_page_for_current_pos(pcl_state_t * pcs)
     }
 }
 
+
+void
+pcl_mark_page_for_character(pcl_state_t * pcs, gs_fixed_point *org)
+{
+    /* nothing to do */
+    if (pcs->page_marked)
+        return;
+
+    /* convert current point to device space and check if it is inside
+       device rectangle for the page */
+    {
+        gs_fixed_rect page_box;
+        gs_fixed_point pt;
+        int code;
+
+        code = gx_default_clip_box(pcs->pgs, &page_box);
+        if (code < 0)
+            /* shouldn't happen. */
+            return;
+
+        code = gx_path_current_point(gx_current_path(pcs->pgs), &pt);
+        if (code < 0)
+            /* shouldn't happen */
+            return;
+
+
+        /* half-open lower - not sure this is correct */
+        if (pt.x >= page_box.p.x && pt.y >= page_box.p.y &&
+            org->x < page_box.q.x && org->y < page_box.q.y)
+            pcs->page_marked = true;
+    }
+}
+
 /* 
  *  Just use the current position to see if we marked the page.  This
  *  could be improved by using the bounding box of the path object but
