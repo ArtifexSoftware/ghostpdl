@@ -1758,6 +1758,7 @@ gs_fapi_ft_init(gs_memory_t * mem, gs_fapi_server ** server)
 
     serv = (ff_server *) gs_alloc_bytes_immovable(cmem, sizeof(ff_server), "gs_fapi_ft_init");
     if (!serv) {
+        gs_memory_chunk_release(cmem);
         return_error(gs_error_VMerror);
     }
     memset(serv, 0, sizeof(*serv));
