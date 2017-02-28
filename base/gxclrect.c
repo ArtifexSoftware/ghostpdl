@@ -626,6 +626,15 @@ clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
             return 0;
         }
     }
+    if (dev_spec_op == gxdso_restrict_bbox) {
+        gx_device_clist_writer *cwdev = &((gx_device_clist *)pdev)->writer;
+        gs_int_rect *ibox = (gs_int_rect *)data;
+        if (ibox->p.y < cwdev->cropping_min)
+            ibox->p.y = cwdev->cropping_min;
+        if (ibox->q.y > cwdev->cropping_max)
+            ibox->q.y = cwdev->cropping_max;
+        return 0;
+    }
     /* forward to the appropriate super class */
     if (cdev->is_printer)
         return gdev_prn_forwarding_dev_spec_op(pdev, dev_spec_op, data, size);

@@ -185,6 +185,13 @@ scale_dash_pattern(gs_gstate * pgs, double scale)
     if (pgs->line_params.dot_length_absolute)
         pgs->line_params.dot_length *= scale;
 }
+
+/*
+ Returns 0 for OK.
+ Returns 1 for "OK, buffer needs releasing"
+ Returns 2 for "Empty region"
+ Returns -ve for error
+ */
 static int
 alpha_buffer_init(gs_gstate * pgs, fixed extra_x, fixed extra_y, int alpha_bits, 
                   bool devn)
@@ -194,7 +201,7 @@ alpha_buffer_init(gs_gstate * pgs, fixed extra_x, fixed extra_y, int alpha_bits,
     gs_fixed_rect bbox;
     gs_int_rect ibox;
     uint width, raster, band_space;
-    uint height;
+    uint height, height2;
     gs_log2_scale_point log2_scale;
     gs_memory_t *mem;
     gx_device_memory *mdev;
@@ -205,12 +212,19 @@ alpha_buffer_init(gs_gstate * pgs, fixed extra_x, fixed extra_y, int alpha_bits,
     ibox.p.y = fixed2int(bbox.p.y - extra_y) - 1;
     ibox.q.x = fixed2int_ceiling(bbox.q.x + extra_x) + 1;
     ibox.q.y = fixed2int_ceiling(bbox.q.y + extra_y) + 1;
+    (void)dev_proc(dev, dev_spec_op)(dev, gxdso_restrict_bbox, &ibox, sizeof(ibox));
     width = (ibox.q.x - ibox.p.x) << log2_scale.x;
     raster = bitmap_raster(width);
     band_space = raster << log2_scale.y;
-    height = (abuf_nominal / band_space) << log2_scale.y;
+    if (ibox.q.y <= ibox.p.y)
+        return 2;
+    height2 = (ibox.q.y - ibox.p.y);
+    height = (abuf_nominal / band_space);
     if (height == 0)
-        height = 1 << log2_scale.y;
+        height = 1;
+    if (height > height2)
+        height = height2;
+    height <<= log2_scale.y;
     mem = pgs->memory;
     mdev = gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
                            "alpha_buffer_init");
@@ -295,6 +309,8 @@ static int do_fill(gs_gstate *pgs, int rule)
     if (abits > 1) {
         acode = alpha_buffer_init(pgs, pgs->fill_adjust.x,
                                   pgs->fill_adjust.y, abits, devn);
+        if (acode == 2) /* Special case for no fill required */
+            return 0;
         if (acode < 0)
             return acode;
     } else
@@ -418,6 +434,8 @@ do_stroke(gs_gstate * pgs)
                                   pgs->fill_adjust.x + extra_adjust,
                                   pgs->fill_adjust.y + extra_adjust,
                                   abits, devn);
+        if (acode == 2) /* Special code meaning no fill required */
+            return 0;
         if (acode < 0)
             return acode;
         gs_setlinewidth(pgs, new_width);

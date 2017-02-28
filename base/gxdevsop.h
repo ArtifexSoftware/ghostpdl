@@ -306,7 +306,7 @@ enum {
      * Returns +ve value if we are rendering into a pattern accumulator
      * device.
      */
-        gxdso_in_pattern_accumulator,
+    gxdso_in_pattern_accumulator,
     /* Determine if we are in a PDF14 device and the target is a separation
      * device.   In this case, we may want to not use the alternate tint
      * tranform even if the blending color space is RGB or Gray. */
@@ -314,8 +314,11 @@ enum {
     /* Used only by pdfwrite to paa a Form Appearance Name, so that
      * we can use the name in a pdfmark.
      */
-     gxdso_pdf_form_name,
-     gxdso_pdf_last_form_ID,
+    gxdso_pdf_form_name,
+    gxdso_pdf_last_form_ID,
+    /* Restrict the supplied bbox to that actually used by the underlying device.
+     * Used to restrict alphabits drawing to the area defined by compositors etc.*/
+    gxdso_restrict_bbox,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };
