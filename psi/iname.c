@@ -102,9 +102,7 @@ names_init(ulong count, gs_ref_memory_t *imem)
         int code = name_alloc_sub(nt);
 
         if (code < 0) {
-            while (nt->sub_next > 0)
-                name_free_sub(nt, --(nt->sub_next), false);
-            gs_free_object(mem, nt, "name_init(nt)");
+            names_free(nt);
             return 0;
         }
     }
@@ -129,6 +127,17 @@ names_init(ulong count, gs_ref_memory_t *imem)
     nt->free = 0;
     names_trace_finish(nt, NULL);
     return nt;
+}
+
+/* Free a name table */
+void
+names_free(name_table *nt)
+{
+    if (nt == NULL) return;
+
+    while (nt->sub_count > 0)
+        name_free_sub(nt, --(nt->sub_count), false);
+    gs_free_object(nt->memory, nt, "name_init(nt)");
 }
 
 static void

@@ -48,6 +48,9 @@ typedef struct gs_ref_memory_s gs_ref_memory_t;
 /* Allocate and initialize a name table. */
 name_table *names_init(ulong size, gs_ref_memory_t *imem);
 
+/* Free a name table */
+void names_free(name_table *nt);
+
 /* Get the allocator for a name table. */
 gs_memory_t *names_memory(const name_table * nt);
 
