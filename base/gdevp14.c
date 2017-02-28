@@ -3005,7 +3005,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
             phase.y = pdevc->phase.y;
             if (cpath_intersection.rect_list->list.head != NULL){
                 curr_clip_rect = cpath_intersection.rect_list->list.head->next;
-                for( k = 0; k< cpath_intersection.rect_list->list.count; k++){
+                for( k = 0; k < cpath_intersection.rect_list->list.count && code >= 0; k++){
                     if_debug5m('v', pgs->memory,
                                "[v]pdf14_tile_pattern_fill, (%d, %d), %d x %d pat_id %d \n",
                                curr_clip_rect->xmin, curr_clip_rect->ymin,
@@ -3014,8 +3014,6 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
                     code = gx_trans_pattern_fill_rect(curr_clip_rect->xmin, curr_clip_rect->ymin,
                                                       curr_clip_rect->xmax, curr_clip_rect->ymax, ptile,
                                                       fill_trans_buffer, phase, pdev, pdevc);
-                    if (code < 0)
-                        return code;
                     curr_clip_rect = curr_clip_rect->next;
                 }
             } else if (cpath_intersection.rect_list->list.count == 1) {
@@ -3034,9 +3032,6 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
                                                   cpath_intersection.rect_list->list.single.xmax,
                                                   cpath_intersection.rect_list->list.single.ymax,
                                                   ptile, fill_trans_buffer, phase, pdev, pdevc);
-                if (code < 0)
-                    return code;
-
             }
         } else {
             /* Clist pattern with transparency.  Create a clip device from our
@@ -3053,9 +3048,15 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
             code = gx_trans_pattern_fill_rect(rect.p.x, rect.p.y, rect.q.x, rect.q.y,
                                               ptile, fill_trans_buffer, phase,
                                               dev, pdevc);
-            if (code < 0)
-                return code;
+
         }
+        /* We're done drawing with the pattern, remove the reference to the
+         * pattern device
+         */
+        p14dev->pclist_device = NULL;
+        if (code < 0)
+            return code;
+
         /* free our buffer object */
         if (fill_trans_buffer != NULL) {
             gs_free_object(pgs->memory, fill_trans_buffer, "pdf14_tile_pattern_fill");
