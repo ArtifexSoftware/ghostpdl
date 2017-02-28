@@ -1385,7 +1385,7 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
         int x;
         gs_sprintf(full_file_name,"%02d)%s.pam",global_index,filename);
         fid = gp_fopen(full_file_name,"wb");
-        fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL 255\nTUPLTYPE GRAYSCALE_ALPHA\nENDHDR\n",
+        fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 2\nMAXVAL 255\nTUPLTYPE GRAYSCALE_ALPHA\nENDHDR\n",
                 width, num_rows);
         for(y=0; y<num_rows; y++)
             for(x=0; x<width; x++)
