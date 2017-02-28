@@ -38,6 +38,13 @@ jbig2_image_new(Jbig2Ctx *ctx, uint32_t width, uint32_t height)
     uint32_t stride;
     int64_t check;
 
+    if (width == 0 || height == 0) {
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
+            "zero width (%d) or height (%d) in jbig2_image_new",
+            width, height);
+        return NULL;
+    }
+
     image = jbig2_new(ctx, Jbig2Image, 1);
     if (image == NULL) {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "could not allocate image structure in jbig2_image_new");
