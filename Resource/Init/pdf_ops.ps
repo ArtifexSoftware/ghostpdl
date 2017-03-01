@@ -570,12 +570,23 @@ end def
 
 /OPsavedict 2 dict def		% for saveOP, saveBM
 
+% colorspaces that don't require special overprint transparency handling
+/okOPcs mark /DeviceGray 0 /DeviceCMYK 1 /DeviceN 2 /Separation 3 .dicttomark def
+
 /checkOPtrans	% <fillop|strokeop> checkOPtrans <bool>
 % return true if OP needs special transparency treatment
+% If the colorspace is not one where overprint makes sense, no special handling (return false)
 % NB: This will get replaced with a quick "no-op" if the device doesn't support Overprint
 {  % Check OP and BM in case we need to push a group
-   /stroke ne { FillOverprint } { StrokeOverprint } ifelse
-   .currentblendmode dup /Normal eq exch /Compatible eq or not and
+    okOPcs currentcolorspace 0 get dup /Indexed eq {
+       pop currentcolorspace 1 get	% use the base space
+    } if
+    known {
+      /stroke ne { FillOverprint } { StrokeOverprint } ifelse
+      .currentblendmode dup /Normal eq exch /Compatible eq or not and
+   } {
+      pop //false
+   } ifelse
 } bdef
 
 /fsexec		% <fillop|strokeop> fsexec -
