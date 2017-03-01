@@ -546,9 +546,14 @@ pcl_set_current_font_environment(pcl_state_t * pcs)
                     (pjl_proc_fontsource_to_path(pcs->pjls, fontsource),
                      pcs->memory, &pcs->built_in_fonts, pcs->font_dir,
                      (int)pcds_internal,
-                     false /* do not use unicode font names for keys */ ))
-                    /* simply continue without fonts if none are found */
-                    return 0;
+                     false /* do not use unicode font names for keys */ )) {
+
+                    /* PCL requires the fonts, RTL does not use the fonts */
+                    if (pcs->personality == rtl)
+                        return 0;
+                    else
+                        return gs_error_Fatal;
+                }
                 pcl_data_storage = pcds_internal;
                 break;
             case 'S':
