@@ -352,8 +352,7 @@ struct gs_ref_memory_s {
     ulong limit;		/* signal a VMerror when total */
                                 /* allocated exceeds this */
     clump_t *root;		/* root of clump splay tree */
-    clump_t cc;			/* current clump */
-    clump_t *pcc;		/* where to store cc */
+    clump_t *cc;		/* current clump */
     clump_locator_t cfreed;	/* clump where last object freed */
     ulong allocated;		/* total size of all clumps */
                                 /* allocated at this save level */

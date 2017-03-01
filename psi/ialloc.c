@@ -165,29 +165,29 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
 
     /* If we're allocating a run of refs already, */
     /* and we aren't about to overflow the maximum run length, use it. */
-    if (mem->cc.has_refs == true && mem->cc.rtop == mem->cc.cbot &&
-        num_refs < (mem->cc.ctop - mem->cc.cbot) / sizeof(ref) &&
-        mem->cc.rtop - (byte *) mem->cc.rcur + num_refs * sizeof(ref) <
+    if (mem->cc && mem->cc->has_refs == true && mem->cc->rtop == mem->cc->cbot &&
+        num_refs < (mem->cc->ctop - mem->cc->cbot) / sizeof(ref) &&
+        mem->cc->rtop - (byte *) mem->cc->rcur + num_refs * sizeof(ref) <
         max_size_st_refs
         ) {
         ref *end;
 
-        obj = (ref *) mem->cc.rtop - 1;		/* back up over last ref */
+        obj = (ref *) mem->cc->rtop - 1;		/* back up over last ref */
         if_debug4m('A', (const gs_memory_t *)mem, "[a%d:+$ ]%s(%u) = 0x%lx\n",
                    ialloc_trace_space(mem), client_name_string(cname),
                    num_refs, (ulong) obj);
-        mem->cc.rcur[-1].o_size += num_refs * sizeof(ref);
-        end = (ref *) (mem->cc.rtop = mem->cc.cbot +=
+        mem->cc->rcur[-1].o_size += num_refs * sizeof(ref);
+        end = (ref *) (mem->cc->rtop = mem->cc->cbot +=
                        num_refs * sizeof(ref));
         make_mark(end - 1);
     } else {
         /*
          * Allocate a new run.  We have to distinguish 3 cases:
-         *      - Same clump: pcc unchanged, end == cc.cbot.
-         *      - Large clump: pcc unchanged, end != cc.cbot.
-         *      - New clump: pcc changed.
+         *      - Same clump: cc unchanged, end == cc->cbot.
+         *      - Large clump: cc unchanged, end != cc->cbot.
+         *      - New clump: cc changed.
          */
-        clump_t *pcc = mem->pcc;
+        clump_t *cc = mem->cc;
         ref *end;
         alloc_change_t *cp = 0;
         int code = 0;
@@ -205,11 +205,11 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
         end = (ref *) obj + num_refs;
         make_mark(end);
         /* Set has_refs in the clump. */
-        if (mem->pcc != pcc || mem->cc.cbot == (byte *) (end + 1)) {
+        if (mem->cc && (mem->cc != cc || mem->cc->cbot == (byte *) (end + 1))) {
             /* Ordinary clump. */
-            mem->cc.rcur = (obj_header_t *) obj;
-            mem->cc.rtop = (byte *) (end + 1);
-            mem->cc.has_refs = true;
+            mem->cc->rcur = (obj_header_t *) obj;
+            mem->cc->rtop = (byte *) (end + 1);
+            mem->cc->has_refs = true;
         } else {
             /* Large clump. */
             /* This happens only for very large arrays, */
@@ -252,17 +252,17 @@ gs_resize_ref_array(gs_ref_memory_t * mem, ref * parr,
         return_error(gs_error_Fatal);
     diff = old_num_refs - new_num_refs;
     /* Check for LIFO.  See gs_free_ref_array for more details. */
-    if (mem->cc.rtop == mem->cc.cbot &&
-        (byte *) (obj + (old_num_refs + 1)) == mem->cc.rtop
+    if (mem->cc && mem->cc->rtop == mem->cc->cbot &&
+        (byte *) (obj + (old_num_refs + 1)) == mem->cc->rtop
         ) {
         /* Shorten the refs object. */
-        ref *end = (ref *) (mem->cc.cbot = mem->cc.rtop -=
+        ref *end = (ref *) (mem->cc->cbot = mem->cc->rtop -=
                             diff * sizeof(ref));
 
         if_debug4m('A', (const gs_memory_t *)mem, "[a%d:<$ ]%s(%u) 0x%lx\n",
                    ialloc_trace_space(mem), client_name_string(cname), diff,
                    (ulong) obj);
-        mem->cc.rcur[-1].o_size -= diff * sizeof(ref);
+        mem->cc->rcur[-1].o_size -= diff * sizeof(ref);
         make_mark(end - 1);
     } else {
         /* Punt. */
@@ -291,23 +291,23 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
      */
     if (!r_has_type(parr, t_array))
         DO_NOTHING;		/* don't look for special cases */
-    else if (mem->cc.rtop == mem->cc.cbot &&
-             (byte *) (obj + (num_refs + 1)) == mem->cc.rtop
+    else if (mem->cc && mem->cc->rtop == mem->cc->cbot &&
+             (byte *) (obj + (num_refs + 1)) == mem->cc->rtop
         ) {
-        if ((obj_header_t *) obj == mem->cc.rcur) {
+        if ((obj_header_t *) obj == mem->cc->rcur) {
             /* Deallocate the entire refs object. */
             if ((gs_memory_t *)mem != mem->stable_memory)
                 alloc_save_remove(mem, (ref_packed *)obj, "gs_free_ref_array");
             gs_free_object((gs_memory_t *) mem, obj, cname);
-            mem->cc.rcur = 0;
-            mem->cc.rtop = 0;
+            mem->cc->rcur = 0;
+            mem->cc->rtop = 0;
         } else {
             /* Deallocate it at the end of the refs object. */
             if_debug4m('A', (const gs_memory_t *)mem, "[a%d:-$ ]%s(%u) 0x%lx\n",
                        ialloc_trace_space(mem), client_name_string(cname),
                        num_refs, (ulong) obj);
-            mem->cc.rcur[-1].o_size -= num_refs * sizeof(ref);
-            mem->cc.rtop = mem->cc.cbot = (byte *) (obj + 1);
+            mem->cc->rcur[-1].o_size -= num_refs * sizeof(ref);
+            mem->cc->rtop = mem->cc->cbot = (byte *) (obj + 1);
             make_mark(obj);
         }
         return;

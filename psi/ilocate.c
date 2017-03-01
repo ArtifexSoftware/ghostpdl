@@ -45,8 +45,8 @@ static int do_validate_object(const obj_header_t * ptr, const clump_t * cp,
 clump_t *
 gc_locate(const void *ptr, gc_state_t * gcst)
 {
-    const gs_ref_memory_t *mem;
-    const gs_ref_memory_t *other;
+    gs_ref_memory_t *mem;
+    gs_ref_memory_t *other;
 
     if (clump_locate(ptr, &gcst->loc))
         return gcst->loc.cp;
@@ -57,7 +57,7 @@ gc_locate(const void *ptr, gc_state_t * gcst)
      * is the stable one, the non-stable allocator of this space.
      */
 
-    if ((other = (const gs_ref_memory_t *)mem->stable_memory) != mem ||
+    if ((other = (gs_ref_memory_t *)mem->stable_memory) != mem ||
         (other = gcst->spaces_indexed[mem->space >> r_space_shift]) != mem
         ) {
         gcst->loc.memory = other;
@@ -155,7 +155,7 @@ gc_locate(const void *ptr, gc_state_t * gcst)
 
 /* Define the structure for temporarily saving allocator state. */
 typedef struct alloc_temp_save_s {
-        clump_t cc;
+        clump_t *cc;
         uint rsize;
         ref rlast;
 } alloc_temp_save_t;
@@ -163,34 +163,31 @@ typedef struct alloc_temp_save_s {
 static void
 alloc_temp_save(alloc_temp_save_t *pats, gs_ref_memory_t *mem)
 {
-    clump_t *pcc = mem->pcc;
-    obj_header_t *rcur = mem->cc.rcur;
+    obj_header_t *rcur;
 
-    if (pcc != 0) {
-        pats->cc = *pcc;
-        *pcc = mem->cc;
-    }
+    pats->cc = mem->cc;
+    if (mem->cc == NULL)
+        return;
+    rcur = mem->cc->rcur;
     if (rcur != 0) {
         pats->rsize = rcur[-1].o_size;
-        rcur[-1].o_size = mem->cc.rtop - (byte *) rcur;
+        rcur[-1].o_size = mem->cc->rtop - (byte *) rcur;
         /* Create the final ref, reserved for the GC. */
-        pats->rlast = ((ref *) mem->cc.rtop)[-1];
-        make_mark((ref *) mem->cc.rtop - 1);
+        pats->rlast = ((ref *) mem->cc->rtop)[-1];
+        make_mark((ref *) mem->cc->rtop - 1);
     }
 }
 /* Restore the temporarily saved state. */
 static void
 alloc_temp_restore(alloc_temp_save_t *pats, gs_ref_memory_t *mem)
 {
-    clump_t *pcc = mem->pcc;
-    obj_header_t *rcur = mem->cc.rcur;
+    obj_header_t *rcur;
 
-    if (rcur != 0) {
+    if (mem->cc && (rcur = mem->cc->rcur) != NULL) {
         rcur[-1].o_size = pats->rsize;
-        ((ref *) mem->cc.rtop)[-1] = pats->rlast;
+        ((ref *) mem->cc->rtop)[-1] = pats->rlast;
     }
-    if (pcc != 0)
-        *pcc = pats->cc;
+    mem->cc = pats->cc;
 }
 
 /* Validate the contents of an allocator. */

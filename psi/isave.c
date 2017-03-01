@@ -406,12 +406,12 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
     gs_ref_memory_t save_mem;
     alloc_save_t *save;
     clump_t *cp;
-    clump_t *new_pcc = 0;
+    clump_t *new_cc = NULL;
     clump_splay_walker sw;
 
     save_mem = *mem;
     alloc_close_clump(mem);
-    mem->pcc = 0;
+    mem->cc = NULL;
     gs_memory_status((gs_memory_t *) mem, &mem->previous_status);
     ialloc_reset(mem);
 
@@ -430,11 +430,11 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
             alloc_link_clump(inner, mem);
             if_debug2m('u', (gs_memory_t *)mem, "[u]inner clump: cbot=0x%lx ctop=0x%lx\n",
                        (ulong) inner->cbot, (ulong) inner->ctop);
-            if (cp == save_mem.pcc)
-                new_pcc = inner;
+            if (cp == save_mem.cc)
+                new_cc = inner;
         }
     }
-    mem->pcc = new_pcc;
+    mem->cc = new_cc;
     alloc_open_clump(mem);
 
     save = gs_alloc_struct((gs_memory_t *) mem, alloc_save_t,
@@ -1067,8 +1067,8 @@ combine_space(gs_ref_memory_t * mem)
             clump_t *outer = cp->outer;
 
             outer->inner_count--;
-            if (mem->pcc == cp)
-                mem->pcc = outer;
+            if (mem->cc == cp)
+                mem->cc = outer;
             if (mem->cfreed.cp == cp)
                 mem->cfreed.cp = outer;
             /* "Free" the header of the inner clump, */

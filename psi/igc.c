@@ -479,8 +479,6 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
                 gc_objects_compact(cp, &state);
                 gc_strings_compact(cp, cmem);
                 if_debug_clump('6', (const gs_memory_t *)mem, "[6]after compaction:", cp);
-                if (mem->pcc == cp)
-                    mem->cc = *cp;
             }
             mem->saved = mem->reloc_saved;
             ialloc_reset_free(mem);
@@ -1372,8 +1370,8 @@ free_if_empty(clump_t *cp, void *arg)
         cp->outer == 0 && cp->inner_count == 0)
     {
         alloc_free_clump(cp, mem);
-        if (mem->pcc == cp)
-            mem->pcc = 0;
+        if (mem->cc == cp)
+            mem->cc = NULL;
     }
     return SPLAY_APP_CONTINUE;
 }

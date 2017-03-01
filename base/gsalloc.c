@@ -724,12 +724,6 @@ splay_move_to_root(clump_t *x, gs_ref_memory_t *mem)
         }
     }
     mem->root = x;
-
-    if (mem->pcc != 0) {
-        mem->cc.left = mem->pcc->left;
-        mem->cc.right = mem->pcc->right;
-        mem->cc.parent = mem->pcc->parent;
-    }
 }
 
 static void
@@ -790,8 +784,7 @@ ialloc_alloc_state(gs_memory_t * parent, uint clump_size)
     ialloc_reset(iimem);
     iimem->root = cp;
     ialloc_set_limit(iimem);
-    iimem->cc.cbot = iimem->cc.ctop = 0;
-    iimem->pcc = 0;
+    iimem->cc = NULL;
     iimem->save_level = 0;
     iimem->new_mask = 0;
     iimem->test_mask = ~0;
@@ -914,10 +907,7 @@ void
 ialloc_reset(gs_ref_memory_t * mem)
 {
     mem->root = 0;
-    mem->cc.rcur = 0;
-    mem->cc.rtop = 0;
-    mem->cc.has_refs = false;
-    mem->cc.c_alone = false;
+    mem->cc = NULL;
     mem->allocated = 0;
     mem->changes = 0;
     mem->scan_limit = 0;
@@ -1136,12 +1126,12 @@ gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled)
                 gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
 #define ELSEIF_LIFO_ALLOC(ptr, imem, size, pstype)\
         }\
-        else if ( !imem->cc.c_alone && \
-                (imem->cc.ctop - (byte *)(ptr = (obj_header_t *)imem->cc.cbot))\
+        else if ( imem->cc && !imem->cc->c_alone && \
+                (imem->cc->ctop - (byte *)(ptr = (obj_header_t *)imem->cc->cbot))\
                 >= size + (obj_align_mod + sizeof(obj_header_t) * 2) &&\
              size < imem->large_size\
            )\
-        {	imem->cc.cbot = (byte *)ptr + obj_size_round(size);\
+        {	imem->cc->cbot = (byte *)ptr + obj_size_round(size);\
                 ptr->o_pad = 0;\
                 ptr->o_alone = 0;\
                 ptr->o_size = size;\
@@ -1372,9 +1362,9 @@ i_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
         pp->o_size = new_size;
         new_obj = obj;
     } else
-        if ((byte *)obj + old_size_rounded == imem->cc.cbot &&
-            imem->cc.ctop - (byte *)obj >= new_size_rounded ) {
-            imem->cc.cbot = (byte *)obj + new_size_rounded;
+        if (imem->cc && (byte *)obj + old_size_rounded == imem->cc->cbot &&
+            imem->cc->ctop - (byte *)obj >= new_size_rounded ) {
+            imem->cc->cbot = (byte *)obj + new_size_rounded;
             pp->o_size = new_size;
             new_obj = obj;
         } else /* try and trim the object -- but only if room for a dummy header */
@@ -1441,8 +1431,6 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
             cld.memory = (gs_ref_memory_t *) cld.memory->saved;
         }
         /* Check that the object is in the allocated region. */
-        if (cld.memory == imem && cld.cp == imem->pcc)
-            cld.cp = &imem->cc;
         if (!(PTR_BETWEEN((const byte *)pp, cld.cp->cbase,
                           cld.cp->cbot))
             ) {
@@ -1473,14 +1461,14 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         if (gs_debug['a'] || gs_debug['A'])
             pstype = &saved_stype;
     }
-    if ((byte *) ptr + rounded_size == imem->cc.cbot) {
+    if (imem->cc && (byte *) ptr + rounded_size == imem->cc->cbot) {
         alloc_trace(":-o ", imem, cname, pstype, size, ptr);
         gs_alloc_fill(ptr, gs_alloc_fill_free, size);
-        imem->cc.cbot = (byte *) pp;
+        imem->cc->cbot = (byte *) pp;
         /* IFF this object is adjacent to (or below) the byte after the
          * highest free object, do the consolidation within this clump. */
-        if ((byte *)pp <= imem->cc.int_freed_top) {
-            consolidate_clump_free(&(imem->cc), imem);
+        if ((byte *)pp <= imem->cc->int_freed_top) {
+            consolidate_clump_free(imem->cc, imem);
         }
         return;
     }
@@ -1536,9 +1524,9 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
                (in imem->cc) update that, otherwise, update the clump in
                the clump list (in imem->cfreed.cp)
              */
-            if (imem->cfreed.cp->chead == imem->cc.chead) {
-                if ((byte *)pp >= imem->cc.int_freed_top) {
-                    imem->cc.int_freed_top = (byte *)ptr + rounded_size;
+            if (imem->cc && imem->cfreed.cp->chead == imem->cc->chead) {
+                if ((byte *)pp >= imem->cc->int_freed_top) {
+                    imem->cc->int_freed_top = (byte *)ptr + rounded_size;
                 }
             }
             else {
@@ -1574,7 +1562,7 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
      * Cycle through the clumps at the current save level, starting
      * with the currently open one.
      */
-    clump_t *cp = clump_splay_walk_init_mid(&sw, imem->pcc);
+    clump_t *cp = clump_splay_walk_init_mid(&sw, imem->cc);
 
     if (nbytes + (uint)HDR_ID_OFFSET < nbytes)
         return NULL;
@@ -1587,15 +1575,15 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 #endif
     if (cp == 0) {
         /* Open an arbitrary clump. */
-        imem->pcc = clump_splay_walk_init(&sw, imem);
+        imem->cc = clump_splay_walk_init(&sw, imem);
         alloc_open_clump(imem);
     }
 top:
-    if (imem->cc.ctop - imem->cc.cbot > nbytes) {
+    if (imem->cc && imem->cc->ctop - imem->cc->cbot > nbytes) {
         if_debug4m('A', mem, "[a%d:+> ]%s(%u) = 0x%lx\n",
                    alloc_trace_space(imem), client_name_string(cname), nbytes,
-                   (ulong) (imem->cc.ctop - nbytes));
-        str = imem->cc.ctop -= nbytes;
+                   (ulong) (imem->cc->ctop - nbytes));
+        str = imem->cc->ctop -= nbytes;
         gs_alloc_fill(str, gs_alloc_fill_alloc, nbytes);
         str += HDR_ID_OFFSET;
         ASSIGN_HDR_ID(str);
@@ -1607,7 +1595,7 @@ top:
     if (cp != NULL)
     {
         alloc_close_clump(imem);
-        imem->pcc = cp;
+        imem->cc = cp;
         alloc_open_clump(imem);
         goto top;
     }
@@ -1624,10 +1612,9 @@ top:
         if (cp == 0)
             return 0;
         alloc_close_clump(imem);
-        imem->pcc = clump_splay_walk_init_mid(&sw, cp);
-        imem->cc = *imem->pcc;
-        gs_alloc_fill(imem->cc.cbase, gs_alloc_fill_free,
-                      imem->cc.climit - imem->cc.cbase);
+        imem->cc = clump_splay_walk_init_mid(&sw, cp);
+        gs_alloc_fill(imem->cc->cbase, gs_alloc_fill_free,
+                      imem->cc->climit - imem->cc->cbase);
         goto top;
     }
 }
@@ -1679,9 +1666,9 @@ i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
     old_num += HDR_ID_OFFSET;
     new_num += HDR_ID_OFFSET;
 
-    if ( data == imem->cc.ctop &&	/* bottom-most string */
+    if ( imem->cc && data == imem->cc->ctop &&	/* bottom-most string */
         (new_num < old_num ||
-         imem->cc.ctop - imem->cc.cbot > new_num - old_num)
+         imem->cc->ctop - imem->cc->cbot > new_num - old_num)
         ) {			/* Resize in place. */
         ptr = data + old_num - new_num;
         if_debug6m('A', mem, "[a%d:%c> ]%s(%u->%u) 0x%lx\n",
@@ -1689,7 +1676,7 @@ i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
                    (new_num > old_num ? '>' : '<'),
                    client_name_string(cname), old_num, new_num,
                    (ulong) ptr);
-        imem->cc.ctop = ptr;
+        imem->cc->ctop = ptr;
         memmove(ptr, data, min(old_num, new_num));
 #ifdef DEBUG
         if (new_num > old_num)
@@ -1736,11 +1723,11 @@ i_free_string(gs_memory_t * mem, byte * data, uint nbytes,
     if (data) {
         data -= HDR_ID_OFFSET;
         nbytes += HDR_ID_OFFSET;
-        if (data == imem->cc.ctop) {
+        if (imem->cc && data == imem->cc->ctop) {
             if_debug4m('A', mem, "[a%d:-> ]%s(%u) 0x%lx\n",
                        alloc_trace_space(imem), client_name_string(cname), nbytes,
                        (ulong) data);
-            imem->cc.ctop += nbytes;
+            imem->cc->ctop += nbytes;
         } else {
             if_debug4m('A', mem, "[a%d:->#]%s(%u) 0x%lx\n",
                        alloc_trace_space(imem), client_name_string(cname), nbytes,
@@ -1914,7 +1901,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
          * with the currently open one.
          */
         clump_splay_walker sw;
-        clump_t *cp = clump_splay_walk_init_mid(&sw, mem->pcc);
+        clump_t *cp = clump_splay_walk_init_mid(&sw, mem->cc);
         uint asize = obj_size_round((uint) lsize);
         bool allocate_success = false;
 
@@ -1928,22 +1915,22 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
 
         if (cp == 0) {
             /* Open an arbitrary clump. */
-            mem->pcc = clump_splay_walk_init(&sw, mem);
+            mem->cc = clump_splay_walk_init(&sw, mem);
             alloc_open_clump(mem);
         }
 
 #define CAN_ALLOC_AT_END(cp)\
-  (!((cp)->c_alone) && (cp)->ctop - (byte *) (ptr = (obj_header_t *) (cp)->cbot)\
+  ((cp) && !((cp)->c_alone) && (cp)->ctop - (byte *) (ptr = (obj_header_t *) (cp)->cbot)\
    > asize + sizeof(obj_header_t))
 
         do {
-            if (CAN_ALLOC_AT_END(&mem->cc)) {
+            if (CAN_ALLOC_AT_END(mem->cc)) {
                 allocate_success = true;
                 break;
             } else if (mem->is_controlled) {
                 /* Try consolidating free space. */
                 gs_consolidate_free((gs_memory_t *)mem);
-                if (CAN_ALLOC_AT_END(&mem->cc)) {
+                if (CAN_ALLOC_AT_END(mem->cc)) {
                     allocate_success = true;
                     break;
                 }
@@ -1954,7 +1941,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
                 break;
 
             alloc_close_clump(mem);
-            mem->pcc = cp;
+            mem->cc = cp;
             alloc_open_clump(mem);
         }
         while (1);
@@ -1974,7 +1961,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
                 {
                     consolidate_clump_free(cp, mem);
                     if (CAN_ALLOC_AT_END(cp)) {
-                        mem->pcc = cp;
+                        mem->cc = cp;
                         alloc_open_clump(mem);
                         allocate_success = true;
                         break;
@@ -1992,7 +1979,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
                 alloc_add_clump(mem, (ulong)mem->clump_size, "clump");
 
             if (cp) {
-                /* mem->pcc == cp, mem->cc == *mem->pcc. */
+                /* mem->cc == cp */
                 ptr = (obj_header_t *)cp->cbot;
                 allocate_success = true;
             }
@@ -2005,7 +1992,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
          * examining outer save levels in the general case.
          */
         if (allocate_success)
-            mem->cc.cbot = (byte *) ptr + asize;
+            mem->cc->cbot = (byte *) ptr + asize;
         else if (!mem->is_controlled ||
                  (ptr = scavenge_low_free(mem, (uint)lsize)) == 0)
             return 0;	/* allocation failed */
@@ -2068,8 +2055,8 @@ consolidate(clump_t *cp, void *arg)
         /* The entire clump is free. */
         if (!mem->is_controlled) {
             alloc_free_clump(cp, mem);
-            if (mem->pcc == cp)
-                mem->pcc = NULL;
+            if (mem->cc == cp)
+                mem->cc = NULL;
         }
     }
 
@@ -2090,8 +2077,8 @@ ialloc_consolidate_free(gs_ref_memory_t *mem)
 
     /* NOTE: Previously, if we freed the current clump, we'd move to whatever the
      * bigger of it's children was. We now just move to the root. */
-    if (mem->pcc == NULL)
-        mem->pcc = mem->root;
+    if (mem->cc == NULL)
+        mem->cc = mem->root;
 
     alloc_open_clump(mem);
 }
@@ -2296,8 +2283,8 @@ trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size, clump_t *cp)
         /* Put excess object on a freelist */
         obj_header_t **pfl;
 
-        if ((byte *)excess_pre >= mem->cc.int_freed_top)
-            mem->cc.int_freed_top = (byte *)excess_pre + excess_size;
+        if (mem->cc && (byte *)excess_pre >= mem->cc->int_freed_top)
+            mem->cc->int_freed_top = (byte *)excess_pre + excess_size;
         if (excess_size <= max_freelist_size)
             pfl = &mem->freelists[(excess_size + obj_align_mask) >>
                                  log2_obj_align_mod];
@@ -2380,10 +2367,9 @@ alloc_add_clump(gs_ref_memory_t * mem, ulong csize, client_name_t cname)
 
     if (cp) {
         alloc_close_clump(mem);
-        mem->pcc = cp;
-        mem->cc = *mem->pcc;
-        gs_alloc_fill(mem->cc.cbase, gs_alloc_fill_free,
-                      mem->cc.climit - mem->cc.cbase);
+        mem->cc = cp;
+        gs_alloc_fill(mem->cc->cbase, gs_alloc_fill_free,
+                      mem->cc->climit - mem->cc->cbase);
     }
     return cp;
 }
@@ -2502,30 +2488,24 @@ alloc_init_free_strings(clump_t * cp)
 void
 alloc_close_clump(gs_ref_memory_t * mem)
 {
-    if (mem->pcc != 0) {
-        *mem->pcc = mem->cc;
 #ifdef DEBUG
-        if (gs_debug_c('A')) {
-            dmlprintf1((const gs_memory_t *)mem, "[a%d]", alloc_trace_space(mem));
-            dmprintf_clump((const gs_memory_t *)mem, "closing clump", mem->pcc);
-        }
-#endif
+    if (gs_debug_c('A')) {
+        dmlprintf1((const gs_memory_t *)mem, "[a%d]", alloc_trace_space(mem));
+        dmprintf_clump((const gs_memory_t *)mem, "closing clump", mem->cc);
     }
+#endif
 }
 
 /* Reopen the current clump after a GC or restore. */
 void
 alloc_open_clump(gs_ref_memory_t * mem)
 {
-    if (mem->pcc != 0) {
-        mem->cc = *mem->pcc;
 #ifdef DEBUG
-        if (gs_debug_c('A')) {
-            dmlprintf1((const gs_memory_t *)mem, "[a%d]", alloc_trace_space(mem));
-            dmprintf_clump((const gs_memory_t *)mem, "opening clump", mem->pcc);
-        }
-#endif
+    if (gs_debug_c('A')) {
+        dmlprintf1((const gs_memory_t *)mem, "[a%d]", alloc_trace_space(mem));
+        dmprintf_clump((const gs_memory_t *)mem, "opening clump", mem->cc);
     }
+#endif
 }
 
 #ifdef DEBUG
@@ -2560,14 +2540,8 @@ alloc_unlink_clump(clump_t * cp, gs_ref_memory_t * mem)
     }
 #endif
     (void)clump_splay_remove(cp, mem);
-    if (mem->pcc != NULL) {
-        mem->cc.left = mem->pcc->left;
-        mem->cc.right = mem->pcc->right;
-        mem->cc.parent = mem->pcc->parent;
-        if (mem->pcc == cp) {
-            mem->pcc = NULL;
-            mem->cc.cbot = mem->cc.ctop = 0;
-        }
+    if (mem->cc == cp) {
+        mem->cc = NULL;
     }
 }
 
@@ -2886,13 +2860,11 @@ debug_print_clump(const gs_memory_t *mem, const clump_t * cp)
 void
 debug_dump_memory(const gs_ref_memory_t * mem, const dump_control_t * control)
 {
-    const clump_t *mcp;
+    const clump_t *cp;
     clump_splay_walker sw;
 
-    for (mcp = clump_splay_walk_init(&sw, mem); mcp != NULL; mcp = clump_splay_walk_fwd(&sw))
+    for (cp = clump_splay_walk_init(&sw, mem); cp != NULL; cp = clump_splay_walk_fwd(&sw))
     {
-        const clump_t *cp = (mcp == mem->pcc ? &mem->cc : mcp);
-
         if (obj_in_control_region(cp->cbase, cp->cend, control))
             debug_dump_clump((const gs_memory_t *)mem, cp, control);
     }
@@ -2910,13 +2882,11 @@ debug_find_pointers(const gs_ref_memory_t *mem, const void *target)
 {
     clump_splay_walker sw;
     dump_control_t control;
-    const clump_t *mcp;
+    const clump_t *cp;
 
     control.options = 0;
-    for (mcp = clump_splay_walk_init(&sw, mem); mcp; mcp = clump_splay_walk_fwd(&sw))
+    for (cp = clump_splay_walk_init(&sw, mem); cp; cp = clump_splay_walk_fwd(&sw))
     {
-        const clump_t *cp = (mcp == mem->pcc ? &mem->cc : mcp);
-
         SCAN_CLUMP_OBJECTS(cp);
         DO_ALL
             struct_proc_enum_ptrs((*proc)) = pre->o_type->enum_ptrs;
