@@ -435,6 +435,10 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
     cmem->in_use = 1;	/* alloc */
 #endif
     newsize = round_up_to_align(size + SIZEOF_ROUND_ALIGN(chunk_obj_node_t));	/* space we will need */
+    /* Protect against overflow */
+    if (newsize < size) {
+        return NULL;
+    }
     is_multiple_object_size = ! IS_SINGLE_OBJ_SIZE(newsize);
 
     if ( is_multiple_object_size ) {
