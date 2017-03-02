@@ -1057,13 +1057,16 @@ currentdict end readonly def
   } {
     % For uncolored patterns, we have to unbind the current
     % color and color space before running the PaintProc.
-    //null sc1 //null SC1
+    % Not true since moving the ExtGState parameters into the gstate.
+    %    //null sc1 //null SC1
   } ifelse
 
   % Save old values on opstack, set pdfemptycount to new value.
   pdfemptycount countdictstack mark
 
-  /pdfemptycount count 3 sub def 5 3 roll
+  %% We can't simply 'def' into the dictionary saved by 'q' above, we need to
+  %% call gput to copy it and store inside it. Stupid or what....
+  /pdfemptycount count 3 sub gput 5 3 roll
   %
   % Stack: ... <old emptycount> <dictcount> mark <patdict> <resdict>
   %                                                  |

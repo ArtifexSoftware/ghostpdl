@@ -256,10 +256,57 @@ currentdict /gput_always_allow .undef
 % ---------------- Color setting ---------------- %
 
 /nullpatternproc { pop } bdef
-%/nullpattern mark
-%   /PatternType 1 /PaintType 1 /TilingType 3 /BBox [0 0 1 1]
-%   /XStep 1 /YStep 1 /PaintProc //nullpatternproc
-%.dicttomark readonly def
+/nullpattern mark
+   /PatternType 1 /PaintType 1 /TilingType 3 /BBox [0 0 1 1]
+   /XStep 1 /YStep 1 /PaintProc //nullpatternproc
+.dicttomark readonly def
+
+/PDFsetpattern {
+     % Since multiple patterns may share
+     % same data stream, we need to ensure
+     % that the stream is at 0 position.
+     % Making this consistently with resolveshading,
+     % which applies ReusableStreamDecode filter
+     % to the PS stream, which represents the
+     % PDF stream in dynamics.
+
+     dup /Shading knownoget {
+       dup /ShadingType oget 4 ge {
+         /DataSource knownoget {
+           dup type /filetype eq {
+             0 setfileposition
+           } {
+             pop
+           } ifelse
+         } if
+       } {
+        pop
+       } ifelse
+     } if
+
+     % Associate pattern instance with the default qstate for the context.
+     % A single pattren object can be reused in several contexts.
+     dup DefaultQstate .knownget {
+       exch pop
+     } {
+       % But don't update read-only initial null pattern.
+       dup /PaintProc .knownget { //nullpatternproc ne } { //true } ifelse {
+         dup dup /Matrix knownoget not { { 1 0 0 1 0 0 } } if
+
+         gsave
+         .getFillConstantAlpha
+         .getStrokeConstantAlpha
+         DefaultQstate setqstate
+         .setStrokeConstantAlpha
+         .setFillConstantAlpha
+         makepattern
+         grestore
+
+         dup 3 1 roll
+         DefaultQstate exch put
+       } if
+     } ifelse
+} bdef
 
 /CSdict mark
   /DeviceGray { 0 } bind
@@ -276,29 +323,105 @@ currentdict /gput_always_allow .undef
     [ 1 index 1 get length { 1 } repeat ] cvx
   } bind
   /Indexed { 0 } bind
-  /Pattern {
-  } bind
+  /Pattern { //nullpattern matrix makepattern } bind
 .dicttomark readonly def
 
-/ri { //.renderingintentdict exch .knownget { .setrenderingintent } if } bdef
-/g  {/DeviceGray .setfillcolorspace .setfillcolor} bdef
-/G  {/DeviceGray .setstrokecolorspace .setstrokecolor} bdef
-/rg {/DeviceRGB .setfillcolorspace .setfillcolor} bdef
-/RG {/DeviceRGB .setstrokecolorspace .setstrokecolor} bdef
-/k  {/DeviceCMYK .setfillcolorspace .setfillcolor} bdef
-/K  {/DeviceCMYK .setstrokecolorspace .setstrokecolor} bdef
-/cs {dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch .setfillcolorspace exec .setfillcolor} bdef
-/CS {dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch .setstrokecolorspace exec .setstrokecolor} bdef
-/sc {.setfillcolor} bdef
-/SC {.setstrokecolor} bdef
-/sc* {.setfillcolor} bdef
-/SC* {.setstrokecolor} bdef
-/sc*_and_set {.setfillcolor pstack} bdef
-/SC*_and_set {.setstrokecolor} bdef
-/sc1 {.setfillcolor} bdef
-/SC1 {.setstroecolor} bdef
-/sc1_and_set {.setfillcolor} bdef
-/SC1_and_set {.setstrokecolor} bdef
+/ri {%(in ri) == flush
+//.renderingintentdict exch .knownget { .setrenderingintent } if } bdef
+/g  {%(in g) == flush
+/DeviceGray .setfillcolorspace .setfillcolor } bdef
+/G  {%(in G) == flush
+/DeviceGray .setstrokecolorspace .setstrokecolor} bdef
+/rg {%(in rg) == flush
+/DeviceRGB .setfillcolorspace .setfillcolor} bdef
+/RG {%(in RG) == flush
+/DeviceRGB .setstrokecolorspace .setstrokecolor} bdef
+/k  {%(in k) == flush
+ /DeviceCMYK .setfillcolorspace .setfillcolor} bdef
+/K  {%(in K) == flush
+ /DeviceCMYK .setstrokecolorspace .setstrokecolor} bdef
+/cs {%dup == flush (in cs) == flush
+ dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch .setfillcolorspace exec .setfillcolor %(end cs) == flush
+ } bdef
+/CS {%dup == flush (in CS) == flush
+ dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch .setstrokecolorspace exec .setstrokecolor} bdef
+/sc {%(in sc) == flush
+ .setfillcolor} bdef
+/SC {%(in SC) == flush
+ .setstrokecolor} bdef
+/sc* {%(in sc*) == flush
+ .setfillcolor} bdef
+/SC* {%(in SC*) == flush
+ .setstrokecolor} bdef
+/sc*_and_set {
+%(in sc*_and_set) == flush
+  dup type /dicttype eq
+  {
+%  (currentcolorspace = ) print currentcolorspace == flush
+    dup /Type known
+    {
+      dup /Type get /Pattern eq {PDFsetpattern} if
+    }
+    {
+      dup /PatternType known {(executing PDFsetpattern) == flush PDFsetpattern} if
+    } ifelse
+  } if
+  .setfillcolor
+%(/in sc*_and_set) == flush
+} bdef
+/SC*_and_set {
+  dup type /dicttype eq
+  {
+%  (currentcolorspace = ) print currentcolorspace == flush
+    dup /Type known
+    {
+      dup /Type get /Pattern eq {PDFsetpattern} if
+    }
+    {
+      dup /PatternType known {(executing PDFsetpattern) == flush PDFsetpattern} if
+    } ifelse
+  } if
+  .setstrokecolor
+} bdef
+/sc1 {%(in sc1) == flush
+ .setfillcolor} bdef
+/SC1 {%(in SC1) == flush
+ .setstroecolor} bdef
+/sc1_and_set {
+%(in sc1_and_set) == flush
+  dup type /dicttype eq
+  {
+%  (currentcolorspace = ) print currentcolorspace == flush
+    dup /Type known
+    {
+      dup /Type get /Pattern eq {PDFsetpattern} if
+    }
+    {
+      dup /PatternType known {(executing PDFsetpattern) == flush PDFsetpattern} if
+    } ifelse
+  } if
+%  (in sc1_and_set) == flush
+  .setfillcolor
+} bdef
+/SC1_and_set {
+%(in SC1_and_set) == flush
+  dup type /dicttype eq
+  {
+    dup /Type known
+    {
+      dup /Type get /Pattern eq {PDFsetpattern} if
+    }
+    {
+      dup /PatternType known {(executing PDFsetpattern) == flush PDFsetpattern} if
+    } ifelse
+  } if
+%  (in SC1_and_set) == flush
+  .setstrokecolor
+} bdef
+/csput {%(scput) == flush
+ dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch 2 copy .setfillcolorspace exec .setfillcolor .setstrokecolorspace exec .setstrokecolor} bdef
+/csset {%(csset) == flush
+ dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch} bdef
 
 % ---------------- Color setting ---------------- %
 
