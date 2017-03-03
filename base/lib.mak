@@ -3386,20 +3386,6 @@ $(GLOBJ)gsiodisk.$(OBJ) : $(GLSRC)gsiodisk.c $(AK) $(gx_h)\
  $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsiodisk.$(OBJ) $(C_) $(GLSRC)gsiodisk.c
 
-# ------------ Support for %macresource% IODevice ------------- #
-# This is used to load native-format fonts on MacOS
-# Define the macres.dev FEATURE
-macres_=$(GLOBJ)gsiomacres.$(OBJ)
-$(GLD)macres.dev : $(LIB_MAK) $(ECHOGS_XE) $(macres_) $(LIB_MAK) $(MAKEDIRS)
-	$(SETMOD) $(GLD)macres $(macres_)
-	$(ADDMOD) $(GLD)macres -iodev macresource
-
-# The following module is included only if the macres.dev FEATURE is enabled
-$(GLOBJ)gsiomacres.$(OBJ) : $(GLSRC)gsiomacres.c $(gdebug_h) $(gp_h)\
- $(std_h) $(gstypes_h) $(gsmemory_h) $(gxiodev_h) $(ierrors_h)\
- $(malloc__h) $(stdio__h) $(stream_h) $(string__h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gsiomacres.$(OBJ) $(C_) $(GLSRC)gsiomacres.c
-
 # ================ Platform-specific modules ================ #
 # Platform-specific code doesn't really belong here: this is code that is
 # shared among multiple platforms.

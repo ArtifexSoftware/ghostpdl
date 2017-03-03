@@ -4418,22 +4418,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\base\macos_carbon_d_pre.h"
-				>
-			</File>
-			<File
-				RelativePath="..\base\macos_carbon_pre.h"
-				>
-			</File>
-			<File
-				RelativePath="..\base\macos_classic_d_pre.h"
-				>
-			</File>
-			<File
-				RelativePath="..\base\macsystypes.h"
-				>
-			</File>
-			<File
 				RelativePath="..\base\malloc_.h"
 				>
 			</File>

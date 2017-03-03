@@ -1933,10 +1933,6 @@
     <ClInclude Include="..\base\icc34.h" />
     <ClInclude Include="..\base\jerror_.h" />
     <ClInclude Include="..\base\locale_.h" />
-    <ClInclude Include="..\base\macos_carbon_d_pre.h" />
-    <ClInclude Include="..\base\macos_carbon_pre.h" />
-    <ClInclude Include="..\base\macos_classic_d_pre.h" />
-    <ClInclude Include="..\base\macsystypes.h" />
     <ClInclude Include="..\base\malloc_.h" />
     <ClInclude Include="..\base\math_.h" />
     <ClInclude Include="..\base\gsmd5.h" />
