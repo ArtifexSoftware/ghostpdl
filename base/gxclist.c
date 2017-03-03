@@ -890,11 +890,13 @@ gx_color_index2usage(gx_device *dev, gx_color_index color)
     gx_color_usage_bits bits = 0;
     uchar i;
 
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+        color = color ^ ~0;		/* white is 0 */
+
     for (i = 0; i < dev->color_info.num_components; i++) {
         if (color & dev->color_info.comp_mask[i])
             bits |= (1<<i);
     }
-
     return bits;
 }
 

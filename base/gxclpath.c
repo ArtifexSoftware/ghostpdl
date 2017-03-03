@@ -293,10 +293,19 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 }
 
 /* Compute the colors used by a drawing color. */
+/* If the device is using transparency, the pdf14 compositor may have */
+/* altered the colorspace. If so, just flag all components used.      */
 gx_color_usage_bits
 cmd_drawing_color_usage(gx_device_clist_writer *cldev,
                         const gx_drawing_color * pdcolor)
 {
+    if (cldev->page_uses_transparency &&
+        (cldev->color_info.polarity != cldev->clist_color_info.polarity ||
+        (cldev->color_info.num_components != cldev->clist_color_info.num_components))) {
+        /* we would have to transform the color which would impact performance */
+        return gx_color_usage_all(cldev);
+    }
+
     if (gx_dc_is_pure(pdcolor))
         return gx_color_index2usage((gx_device *)cldev, gx_dc_pure_color(pdcolor));
     else if (gx_dc_is_binary_halftone(pdcolor))
@@ -306,15 +315,9 @@ cmd_drawing_color_usage(gx_device_clist_writer *cldev,
     else if (gx_dc_is_colored_halftone(pdcolor))
         return gx_color_index2usage((gx_device *)cldev, colored_halftone_color_usage(cldev, pdcolor));
     else if (gx_dc_is_devn(pdcolor)) {
-        gx_color_usage_bits bits = 0;		/* NB, gx_color_usage_bits is actually gx_color_index */
-        gx_color_polarity_t save_polarity = cldev->color_info.polarity;
-        int save_num_components = cldev->color_info.num_components;
+        gx_color_usage_bits bits = 0;
 
-        cldev->color_info.polarity = cldev->clist_color_info.polarity;
-        cldev->color_info.num_components = cldev->clist_color_info.num_components;
         gx_dc_devn_get_nonzero_comps(pdcolor, (gx_device *)cldev, &bits);
-        cldev->color_info.polarity = save_polarity;
-        cldev->color_info.num_components = save_num_components;
         return bits;
     }
     else
