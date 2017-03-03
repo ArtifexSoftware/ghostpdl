@@ -1194,7 +1194,12 @@ drawopdict begin
   /sc { .incachedevice {
           .pdfcount { pop } repeat //ignore_color_op pdfformaterror
         } {
-          scresolve { sc*_and_set } { sc1_and_set } ifelse
+          scresolve 1 index //null eq {
+            pop pop
+            //ignore_color_op pdfformaterror
+          } {
+            { sc*_and_set } { sc1_and_set } ifelse
+          } ifelse
         } ifelse
       } bdef
 
@@ -1238,7 +1243,12 @@ drawopdict begin
   /SC { .incachedevice {
           .pdfcount { pop } repeat //ignore_color_op pdfformaterror
         } {
-          scresolve { SC*_and_set } { SC1_and_set } ifelse
+          scresolve 1 index //null eq {
+            pop pop
+            //ignore_color_op pdfformaterror
+          }{
+            { SC*_and_set } { SC1_and_set } ifelse
+          }ifelse
         } ifelse
       } bdef
 
@@ -2280,6 +2290,9 @@ currentdict /last-ditch-bpc-csp undef
 } bdef
 
 /DoForm {
+(entereing DoForm\n) print
+(stack count is ) print count == flush
+
   %% save the current value, if its true we will set it to false later, in order
   %% to prevent us preserving Forms which are used *from* an annotation /Appearance.
   pdfdict /.PreservePDFForm known {pdfdict /.PreservePDFForm get} {//false}ifelse exch
@@ -2436,6 +2449,8 @@ currentdict /last-ditch-bpc-csp undef
     end
   } if
   pdfdict /.PreservePDFForm 3 -1 roll .forceput
+(exiting DoForm\n) print
+(stack count is ) print count == flush
 } bdef
 
 /_dops_save 1 array def
