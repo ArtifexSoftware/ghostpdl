@@ -40,7 +40,7 @@ else:
 
   # Create a list of commit SHA1 sums we want to log
   commit_list = []
-  cmd="git log --cc --topo-order --pretty=oneline " + sys.argv[1] + "..." + sys.argv[2]
+  cmd="git log --topo-order --pretty=oneline " + sys.argv[1] + "..." + sys.argv[2]
   res = os.popen(cmd, "r")
   line1=res.readline()
 
@@ -55,7 +55,7 @@ else:
   for csum in commit_list:
     # we have to use the slightly baroque syntax: git log --cc --topo-order <commit>^...<commit>
     # where the "^" indicates the commit prior to the one we're processing with
-    cmd="git log --name-only --cc --topo-order --date=iso -n1 " + csum + "^" + "..." + csum
+    cmd="git log --name-only --topo-order --date=iso -n1 " + csum + "^" + "..." + csum
     res = os.popen(cmd, "r")
     commit=res.readlines()
     # This assumes the order of the lines.....
