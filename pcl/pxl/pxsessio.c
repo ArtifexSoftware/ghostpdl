@@ -276,12 +276,12 @@ pxBeginSession(px_args_t * par, px_state_t * pxs)
         /* NB reverse orientations missing */
 
         /* install the built in fonts */
-        if (pl_load_built_in_fonts
+        if (!pl_load_built_in_fonts
             (pjl_proc_fontsource_to_path(pxs->pjls, "I"), pxs->memory,
              &pxs->builtin_font_dict, pxs->font_dir, (int)pxfsInternal,
-             true /* use unicode key names */ ) < 0) {
-            dmprintf(pxs->memory, "Fatal error - no resident fonts\n");
-            return -1;
+             true /* use unicode key names */ )) {
+            errprintf(pxs->memory, "Fonts not found\n");
+            return gs_error_Fatal;
 
         }
     }

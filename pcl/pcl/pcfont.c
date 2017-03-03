@@ -551,8 +551,10 @@ pcl_set_current_font_environment(pcl_state_t * pcs)
                     /* PCL requires the fonts, RTL does not use the fonts */
                     if (pcs->personality == rtl)
                         return 0;
-                    else
+                    else {
+                        errprintf(pcs->memory, "Fonts not found\n");
                         return gs_error_Fatal;
+                    }
                 }
                 pcl_data_storage = pcds_internal;
                 break;
@@ -583,7 +585,7 @@ pcl_set_current_font_environment(pcl_state_t * pcs)
                 pcl_data_storage = pcds_all_simms;
                 break;
             default:
-                dmprintf(pcs->memory, "pcfont.c: unknown pjl resource\n");
+                errprintf(pcs->memory, "pcfont.c: unknown pjl resource\n");
                 return -1;
         }
         {
