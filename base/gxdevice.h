@@ -422,6 +422,11 @@ void gx_device_forward_color_procs(gx_device_forward *);
  */
 void check_device_separable(gx_device * dev);
 /*
+ * Check if the device's encode_color routine uses a pdf14 compatible
+ * encoding.  For more info see the routine's header.
+ */
+void check_device_compatible_encoding(gx_device * dev);
+/*
  * If a device has a linear and separable encode color function then
  * set up the comp_bits, comp_mask, and comp_shift fields.
  */

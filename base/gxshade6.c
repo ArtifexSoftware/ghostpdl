@@ -217,7 +217,7 @@ is_linear_color_applicable(const patch_fill_state_t *pfs)
 {
     if (!USE_LINEAR_COLOR_PROCS)
         return false;
-    if (pfs->dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
+    if (!colors_are_separable_and_linear(&pfs->dev->color_info))
         return false;
     if (gx_get_cmap_procs(pfs->pgs, pfs->dev)->is_halftoned(pfs->pgs, pfs->dev))
         return false;

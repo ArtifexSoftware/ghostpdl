@@ -368,6 +368,9 @@ clist_close_writer_and_init_reader(gx_device_clist *cldev)
 
         code = (crdev->icc_cache_cl = gsicc_cache_new(base_mem)) == NULL ? gs_error_VMerror : code;
     }
+
+    check_device_compatible_encoding((gx_device *)cldev);
+
     return code;
 }
 

@@ -3596,6 +3596,12 @@ pdf14_ok_to_optimize(gx_device *dev)
 
     if (code < 0)
         return false;
+
+    check_device_compatible_encoding(dev);
+
+    if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN_STANDARD)
+        return false;
+
     dev_icc_cs = dev_profile->device_profile[0]->data_cs;
     /* If the outputprofile is not "standard" then colors converted to device color */
     /* during clist writing won't match the colors written for the pdf14 clist dev  */

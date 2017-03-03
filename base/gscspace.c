@@ -845,7 +845,7 @@ gx_cspace_is_linear_default(const gs_color_space *cs, const gs_gstate * pgs,
     /* With nc == 4 assuming a convex plain quadrangle in the client color space. */
     int code;
 
-    if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
+    if (!colors_are_separable_and_linear(&dev->color_info))
         return_error(gs_error_rangecheck);
     if (c2 == NULL)
         return gx_cspace_is_linear_in_line(cs, pgs, dev, c0, c1, smoothness);

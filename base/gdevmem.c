@@ -173,6 +173,7 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
         /* Forward the color mapping operations to the target. */
         gx_device_forward_color_procs((gx_device_forward *) dev);
         gx_device_copy_color_procs((gx_device *)dev, target);
+        dev->color_info.separable_and_linear = target->color_info.separable_and_linear;
         dev->cached_colors = target->cached_colors;
         dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
         /* Do a copy of put_image since it needs the source buffer */

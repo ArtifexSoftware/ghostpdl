@@ -228,13 +228,42 @@ typedef struct gs_linear_color_edge_s {
  *    by the comp_shift array. Hence, there is no need to provide
  *    an encode_color procedure for such devices, though the device
  *    creator may choose to do so for performance reasons (e.g.: when
- *     each color component is assigned a byte).
+ *    each color component is assigned a byte).
+ *
+ *  GX_CINFO_SEP_LIN_NON_STANDARD
+ *    A separable and linear encoding has the separability and
+ *    linearity properties. In addition, we know that this encoding
+ *    is NOT the 'standard' one. (i.e. it is not compatible with the
+ *    encoding used by the pdf14 compositor).
+ *
+ *    Encodings with this property are completely characterized
+ *    by the comp_shift array. Hence, there is no need to provide
+ *    an encode_color procedure for such devices, though the device
+ *    creator may choose to do so for performance reasons (e.g.: when
+ *    each color component is assigned a byte).
+ *
+ *  GX_CINFO_SEP_LIN_STANDARD
+ *    A separable and linear encoding has the separability and
+ *    linearity properties. In addition, we know that this encoding
+ *    is the 'standard' one. (i.e. it is compatible with the encoding
+ *    used by the pd14 compositor).
+ *
+ *    Encodings with this property are completely characterized
+ *    by the comp_shift array. Hence, there is no need to provide
+ *    an encode_color procedure for such devices, though the device
+ *    creator may choose to do so for performance reasons (e.g.: when
+ *    each color component is assigned a byte).
  */
 
+/* Note: The arithmetic ordering for these values is relied upon
+ * in tests (see colors_are_separable_and_linear below) for
+ * separability and linearity. Change them with care! */
 typedef enum {
     GX_CINFO_UNKNOWN_SEP_LIN = -1,
     GX_CINFO_SEP_LIN_NONE = 0,
-    GX_CINFO_SEP_LIN
+    GX_CINFO_SEP_LIN = 1,
+    GX_CINFO_SEP_LIN_NON_STANDARD = 2,
+    GX_CINFO_SEP_LIN_STANDARD = 3
 } gx_color_enc_sep_lin_t;
 
 /*
@@ -449,6 +478,13 @@ typedef struct gx_device_color_info_s {
     uint black_component;
     bool use_antidropout_downscaler;
 } gx_device_color_info;
+
+/* Test to see if colors are separable and linear */
+static inline int colors_are_separable_and_linear(gx_device_color_info *info)
+{
+    return (info->separable_and_linear >= GX_CINFO_SEP_LIN);
+}
+
 
 /* NB encoding flag ignored */
 #define dci_extended_alpha_values(mcmp, nc, p, d, gi, mg, \

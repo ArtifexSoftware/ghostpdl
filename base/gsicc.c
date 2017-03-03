@@ -219,7 +219,7 @@ gx_cspace_is_linear_ICC(const gs_color_space *cs, const gs_gstate * pgs,
     if (gx_device_must_halftone(dev)) return 0;
     if (icclink->is_identity) return 1; /* Transform is identity, linear! */
 
-    if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
+    if (!colors_are_separable_and_linear(&dev->color_info))
         return_error(gs_error_rangecheck);
     if (c2 == NULL)
         return gx_icc_is_linear_in_line(cs, pgs, dev, c0, c1, smoothness, icclink);

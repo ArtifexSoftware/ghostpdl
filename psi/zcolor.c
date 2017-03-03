@@ -845,7 +845,9 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
 
     dmprintf1(dev->memory, "separable_and_linear = %s\n",
       linsep == GX_CINFO_SEP_LIN_NONE ? "No" :
-      linsep == GX_CINFO_SEP_LIN ? "Yes" :
+      linsep == GX_CINFO_SEP_LIN_STANDARD ? "Yes (Encoding unknown)" :
+      linsep == GX_CINFO_SEP_LIN_NON_STANDARD ? "Yes (Non-standard encoding)" :
+      linsep == GX_CINFO_SEP_LIN_STANDARD ? "Yes (Standard encoding)" :
       "Unknown");
     if (dev->color_info.gray_index == GX_CINFO_COMP_INDEX_UNKNOWN)
         dmprintf(dev->memory, "gray_index is unknown\n");

@@ -734,7 +734,7 @@ update_overprint_params(
     }
 
     /* set the procedures according to the color model */
-    if (opdev->color_info.separable_and_linear == GX_CINFO_SEP_LIN)
+    if (colors_are_separable_and_linear(&opdev->color_info))
         memcpy( &opdev->procs,
                 &opdev->sep_overprint_procs,
                 sizeof(opdev->sep_overprint_procs) );
@@ -783,7 +783,7 @@ update_overprint_params(
     }
 
     /* if appropriate, update the retain_mask field */
-    if (opdev->color_info.separable_and_linear == GX_CINFO_SEP_LIN)
+    if (colors_are_separable_and_linear(&opdev->color_info))
         set_retain_mask(opdev);
 
     return 0;

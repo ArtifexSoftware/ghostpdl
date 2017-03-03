@@ -61,7 +61,7 @@ gx_default_encode_color(gx_device * dev, const gx_color_value cv[])
     gx_color_index  color = 0;
 
 #ifdef DEBUG
-    if ( dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN ) {
+    if (!colors_are_separable_and_linear(&dev->color_info)) {
         dmprintf(dev->memory, "gx_default_encode_color() requires separable and linear\n" );
         return gx_no_color_index;
     }
@@ -90,7 +90,7 @@ gx_default_decode_color(gx_device * dev, gx_color_index color, gx_color_value cv
     uint shift, ivalue, nbits, scale;
 
 #ifdef DEBUG
-    if ( dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN ) {
+    if (!colors_are_separable_and_linear(&dev->color_info)) {
         dmprintf(dev->memory, "gx_default_decode_color() requires separable and linear\n" );
         return_error(gs_error_rangecheck);
     }
