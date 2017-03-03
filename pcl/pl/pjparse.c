@@ -124,7 +124,7 @@ static pjl_envir_var_t pjl_factory_defaults[] = {
    source table. */
 static pjl_fontsource_t pjl_fontsource_table[] = {
     {"I",
-     "%rom%ttfonts/;fonts/;urwfonts/;/windows/fonts/;/win95/fonts/;/winnt/fonts/", ""},
+     "%rom%ttfonts/;urwfonts/;pcl/urwfonts/;ghostpdl/pcl/urwfonts/;/windows/fonts/;", ""},
     {"C", "CART0/", ""},
     {"C1", "CART1/", ""},
     {"C2", "CART2/", ""},
