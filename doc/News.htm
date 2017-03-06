@@ -56,13 +56,39 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h2><a name="Version9.20"></a>Version 9.21 (2017-03-06)</h2>
+<h2><a name="Version9.21"></a>Version 9.21 (2017-03-06)</h2>
 
-<p>This is the fourteenth full release in the stable 9.x series, and is purely
-a maintenance release.
+<p>This is the fifteenth full release in the stable 9.x series.
 
 <p> Highlights in this release include:
 <ul>
+<li>
+<p>pdfwrite now preserves annotations from input PDFs (where possible).
+</li>
+<li>
+<p>The GhostXPS interpreter now provides the pdfwrite device with the data
+it requires to emit a ToUnicode CMap: thus allowing fully searchable PDFs to
+be created from XPS input (in the vast majority of cases).
+</li>
+<li>
+<p>Ghostscript now allows the default color space for PDF transparency blends.
+</li>
+<li>
+<p>The Ghostscript/GhostPDL configure script now has much better/fuller support
+for cross compiling.
+</li>
+<li>
+<p>The tiffscaled and tiffscaled4 devices can now use ETS (Even Tone Screening)
+</li>
+<li>
+<p>The toolbin/pdf_info.ps utility can now emit the PDF XML metadata.
+</li>
+<li>
+<p>Ghostscript has a new scan converter available (currently optional, but will
+become the default in a near future release). It can be enabled by using the command
+line option: '-dSCANCONVERTERTYPE=2'. This new implementation provides vastly improved
+performance with large and complex paths.
+</li>
 <li>
 <p>The usual round of bug fixes, compatibility changes, and incremental improvements.
 </li>
@@ -74,7 +100,7 @@ please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 <ul>
 <li>
 <p>
-The planned device API tidy did not happen for this release, due to time pressures,
+The planned device API tidy (still!) did not happen for this release, due to time pressures,
 but we still intend to undertake the following:
 We plan to somewhat tidy up the device API. We intend to remove deprecated device
 procs (methods/function pointers) and change the device API so every device proc
@@ -86,7 +112,7 @@ Devices using only the non-deprecated procs should be trivial to update.
 </li>
 </ul>
 
-<h3><a name="9.20_changelog"></a>Changelog</h3>
+<h3><a name="9.21_changelog"></a>Changelog</h3>
 
 <p>See the <a href="History9.htm">history file</a> for complete log 
 of changes.
