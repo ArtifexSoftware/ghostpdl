@@ -121,6 +121,7 @@ mapped8_copy01(chunk * dest, const byte * line, int first_bit,
                     goto enter7;
             }
             do {
+                sbyte = *sptr++;
                 /* In true gs fashion: Do not be tempted to replace the
                  * following lines with: *pptr++ = (condition ? b1 : b0);
                  * without good reason as gcc on ARM takes 4 cycles to do that
@@ -133,11 +134,12 @@ mapped8_copy01(chunk * dest, const byte * line, int first_bit,
                 enter5: if (sbyte &   4) *pptr++ = b1; else *pptr++ = b0;
                 enter6: if (sbyte &   2) *pptr++ = b1; else *pptr++ = b0;
                 enter7: if (sbyte &   1) *pptr++ = b1; else *pptr++ = b0;
-                sbyte = *sptr++;
                 count -= 8;
             } while (count >= 0);
             bit = 128;
             count += 8;
+            if (count > 0)
+                sbyte = *sptr++;
         } else {
             /* Less than 1 byte to do */
             bit = 0x80>>first_bit;
