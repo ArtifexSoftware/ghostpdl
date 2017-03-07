@@ -2518,6 +2518,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\jmemcust.c"
+				>
+			</File>
+			<File
 				RelativePath="..\base\md5main.c"
 				>
 			</File>
@@ -4411,6 +4415,10 @@
 			</File>
 			<File
 				RelativePath="..\base\jerror_.h"
+				>
+			</File>
+			<File
+				RelativePath="..\base\jmemcust.h"
 				>
 			</File>
 			<File
