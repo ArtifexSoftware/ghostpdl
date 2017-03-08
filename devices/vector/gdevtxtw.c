@@ -1695,9 +1695,8 @@ static int get_unicode(textw_text_enum_t *penum, gs_font *font, gs_glyph glyph, 
                 char *d3 = strchr(hexdigits, gnstr.data[6]);
 
                 if (d0 != NULL && d1 != NULL && d2 != NULL && d3 != NULL) {
-                    *Buffer++ = ((d0 - hexdigits) << 8) + ((d1 - hexdigits));
-                    *Buffer++ = ((d2 - hexdigits) << 8) + ((d3 - hexdigits));
-                    return 2;
+                    *Buffer++ = ((d0 - hexdigits) << 12) + ((d1 - hexdigits) << 8) + ((d2 - hexdigits) << 4) + (d3 - hexdigits);
+                    return 1;
                 }
             }
         }
