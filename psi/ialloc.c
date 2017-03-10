@@ -98,18 +98,18 @@ ialloc_finit(gs_dual_memory_t *mem)
 
         if (ilmem != NULL) {
             gs_ref_memory_t *ilmem_stable = (gs_ref_memory_t *)(ilmem->stable_memory);
-            ialloc_free_state(ilmem_stable);
-            ialloc_free_state(ilmem);
+            gs_memory_free_all((gs_memory_t *)ilmem_stable, FREE_ALL_EVERYTHING, "ialloc_finit");
+            gs_memory_free_all((gs_memory_t *)ilmem, FREE_ALL_EVERYTHING, "ialloc_finit");
         }
 
         if (igmem != NULL) {
             gs_ref_memory_t *igmem_stable = (gs_ref_memory_t *)(igmem->stable_memory);
-            ialloc_free_state(igmem_stable);
-            ialloc_free_state(igmem);
+            gs_memory_free_all((gs_memory_t *)igmem_stable, FREE_ALL_EVERYTHING, "ialloc_finit");
+            gs_memory_free_all((gs_memory_t *)igmem, FREE_ALL_EVERYTHING, "ialloc_finit");
         }
 
-        ialloc_free_state(ismem);
-    }
+        gs_memory_free_all((gs_memory_t *)ismem, FREE_ALL_EVERYTHING, "ialloc_finit");
+     }
 }
 
 /* ================ Local/global VM ================ */

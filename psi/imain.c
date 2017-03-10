@@ -226,7 +226,8 @@ gs_main_init1(gs_main_instance * minst)
 
 fail:
     names_free(nt);
-    ialloc_finit(&idmem);
+    if (minst->i_ctx_p == NULL)
+        ialloc_finit(&idmem);
     return code;
 }
 
@@ -941,7 +942,11 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
                 else {
                     emprintf1(imemory, "UNKNOWN ERROR %d reclaiming the memory while the interpreter finalization.\n", code);
                 }
+#ifdef MEMENTO_SQUEEZE_BUILD
+                if (code != gs_error_VMerror ) return gs_error_Fatal;
+#else
                 return gs_error_Fatal;
+#endif
             }
             i_ctx_p = minst->i_ctx_p; /* interp_reclaim could change it. */
         }
