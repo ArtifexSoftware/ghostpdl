@@ -2884,74 +2884,87 @@ currentdict /PDF2PS_matrix_key undef
   } if
 } bind def
 
-%%<Objectdict>  <calling obj_num> pdfform_detect_cspacesub <boolean>
+%% <loopdict> <Objectdict>  <calling obj_num> pdfform_detect_cspacesub <boolean>
 %%
 /pdf_object_detect_cspacesub {
-  exch                                      %%  <calling obj_num> <Objectdict>
-  dup pdf_colorspace_detect_cspacesub {
-    pop //true
-  }{                                        %%  <calling obj_num> <Objectdict>
-    /Resources knownoget {                  %%  <calling obj_num> <Resourcesdict>
-      /XObject knownoget {                  %%  <calling obj_num> <XObjectdict>
-        //false exch                        %%  <calling obj_num> <XObjectdict> false
-        %% We have files where the XObject Resource is not a dictionary
-        dup type /dicttype eq {             %%  <calling obj_num> <XObjectdict> false
+  %% use loop operator for an exitable context
+  %% we need this to detect recursion/looping
+  {
+    exch                                      %%  <loopdict> <calling obj_num> <Objectdict>
+    dup pdf_colorspace_detect_cspacesub {
+      pop pop //true exit
+    }{                                        %%  <loopdict> <calling obj_num> <Objectdict>
+      /Resources knownoget {                  %%  <loopdict> <calling obj_num> <Resourcesdict>
+        2 index 1 index known {
+          %% We've already seen this object, ignore it and exit
+          pop pop //false exit
+        }{
+          2 index 1 index //null put
+        } ifelse
 
-          %% check each Xobject entry in the dictionary,
-          %% forall purs a key/value pair on the stack for us.
-          %%
-          {                                 %%  <calling obj_num> <XObjectdict> false key value
-            exch pop                        %%  <calling obj_num> <XObjectdict> false value
+        /XObject knownoget {                  %%  <loopdict> <calling obj_num> <XObjectdict>
+         //false exch                        %%  <loopdict> <calling obj_num> <XObjectdict> false
+          %% We have files where the XObject Resource is not a dictionary
+          dup type /dicttype eq {             %%  <loopdict> <calling obj_num> <XObjectdict> false
 
-            %% If this is an indirect reference, check if its the smae object
-            %% as the current one. If its not indirect, make the object number 0
-            %% for comparison purposes.
-            dup type /packedarraytype eq {
-              dup 0 get dup 4 index
-              eq
-            } {
-              0 false
-            }ifelse
+            %% check each Xobject entry in the dictionary,
+            %% forall purs a key/value pair on the stack for us.
+            %%
+            {                                 %%  <loopdict> <calling obj_num> <XObjectdict> false key value
+              exch pop                        %%  <loopdict> <calling obj_num> <XObjectdict> false value
 
-            %%  <calling obj_num> <XObjectdict> false value <form object or 0 if not indirect> <boolean>
-            not {
-              %% swap object number and value, and dereference value
-              exch oforce
-              %% Apparently we have files where the content of the XObject Resource dictionary is null
-              dup //null ne {
-                %% and files where the indivudal XObjects are not dictionaries
-                dup type /dicttype eq {
-                  dup /Subtype get /Form eq {
-                    exch
-                    pdf_object_detect_cspacesub {
-                      pop //true exit
-                    } if
-                  } {
+              %% If this is an indirect reference, check if its the smae object
+              %% as the current one. If its not indirect, make the object number 0
+              %% for comparison purposes.
+              dup type /packedarraytype eq {
+                dup 0 get dup 4 index
+                eq
+              } {
+                0 false
+              }ifelse
+
+              %%  <calling obj_num> <XObjectdict> false value <form object or 0 if not indirect> <boolean>
+              not {
+                %% swap object number and value, and dereference value
+                exch oforce
+                %% Apparently we have files where the content of the XObject Resource dictionary is null
+                dup //null ne {
+                  %% and files where the indivudal XObjects are not dictionaries
+                  dup type /dicttype eq {
+                    dup /Subtype get /Form eq {
+                      exch
+                      4 index 3 1 roll pdf_object_detect_cspacesub {
+                        pop //true exit
+                      } if
+                    } {
+                      pop pop
+                    }ifelse
+                  }{
                     pop pop
-                  }ifelse
+                  } ifelse
                 }{
                   pop pop
-                } ifelse
+                }
+                ifelse
               }{
                 pop pop
-              }
-              ifelse
-            }{
-              pop pop
-            } ifelse
-          } forall
-        }{
-          pop
+              } ifelse
+            } forall
+          }{
+            pop
+          }ifelse
+        } {
+          %% No forms, so can't be any Default* spaces
+          //false
         }ifelse
       } {
-        %% No forms, so can't be any Default* spaces
         //false
-      }ifelse
-    } {
-      //false
+      } ifelse
     } ifelse
-  } ifelse
-  %% Remove the calling object ID, return our boolean
+    %% Remove the calling object ID, return our boolean
+    exch pop exit
+  } loop
+  %% remove and discard the loopdict
   exch pop
 } bind def
 
@@ -2966,12 +2979,11 @@ currentdict /PDF2PS_matrix_key undef
 % not using UseCIEColor with pdfwrite.
 %
 /pdfshowpage_detect_cspacesub {
-  dup 0 pdf_object_detect_cspacesub
+  dup 0 1 dict 3 1 roll pdf_object_detect_cspacesub
 
   /HighLevelDevice /GetDeviceParam .special_op {
       exch pop not exch pop
   }if
-
 } bind def
 
 %
