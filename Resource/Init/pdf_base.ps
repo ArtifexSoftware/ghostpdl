@@ -269,6 +269,7 @@ currentdict /num-chars-dict .undef
   } if
   /PDFsource PDFsource                  % file [ { {cnt <<>> file ... } loop } stopped /PDFsource PDFsource
   { store {
+  pstack
       /StreamRunAborted //true store
       (   **** Error reading a content stream. The page may be incomplete.\n)
       pdfformaterror

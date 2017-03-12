@@ -637,7 +637,7 @@ def
   3 -1 roll dup /GroupGState .knownget { 2 index /GroupGState 3 -1 roll put} if
   /GroupExtGState .knownget { 1 index /GroupExtGState 3 -1 roll put} if
   exch //false resolvestream
-  1 index exch .execgroup
+  1 index exch currentcolorspace 3 1 roll .execgroup
   % We have to remove these in case the Form XObject is subsequently used as
   % a form rather than a group - they remain in the paramdict for the SMask
   % so this will all still work if the SMask is re-evaluated.
@@ -654,8 +654,10 @@ def
 
 % Paint a Form+Group XObject, either for a transparency mask or for a Do.
 /.execgroup {		% <resdict> <stream> .execgroup -
+count == flush
+(entering .execgroup) == flush
   pdfemptycount 3 1 roll
-  /pdfemptycount count 3 sub store
+  /pdfemptycount count 4 sub store
   gsave //nodict begin
 
   % We have to set the gstate correctly for lazy evaluation of a softmask group.
@@ -675,9 +677,16 @@ def
   1 CA 1 ca
   /Compatible .setblendmode
         % Execute the body of the Form, similar to DoForm.
-  pdfopdict .pdfruncontext
+  pdfopdict
+  5 -1 roll
+  (current color space is ) print currentcolorspace == flush
+  (saved colour space is ) print dup == flush
+   pop %setcolorspace
+  .pdfruncontext
   end grestore
   /pdfemptycount exch store
+count == flush
+(exiting .execgroup) == flush
 } bdef
 
 /.beginformgroup {	% groupdict bbox .beginformgroup -
@@ -694,11 +703,16 @@ def
 % .paintgroupform implements the Form PaintProc in the case where the
 % Form XObject dictionary includes a Group key.  See .paintform below.
 /.paintgroupform {	% <resdict> <stream> <formdict> .paintgroupform -
+count == flush
+(.paintformgroup) print currentcolorspace == flush
+currentcolorspace 4 1 roll
   dup /Group oget exch /BBox oget
                 % Stack: resdict stream groupdict bbox
   .beginformgroup
   .execgroup
   .endtransparencygroup
+count == flush
+(exit .paintformgroup) == flush
 } bdef
 
 % Make an ImageType 103 (soft-masked) image.
@@ -2449,6 +2463,7 @@ currentdict /last-ditch-bpc-csp undef
     end
   } if
   pdfdict /.PreservePDFForm 3 -1 roll .forceput
+pstack
 (exiting DoForm\n) print
 (stack count is ) print count == flush
 } bdef
