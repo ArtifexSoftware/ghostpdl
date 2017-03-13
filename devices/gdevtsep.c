@@ -2104,7 +2104,6 @@ threshold_from_order( gx_ht_order *d_order, int *Width, int *Height, gs_memory_t
    unsigned char *thresh;
    gx_ht_bit *bits = (gx_ht_bit *)d_order->bit_data;
     int num_repeat, shift;
-    int row_kk, col_kk, kk;
 
     /* We can have simple or complete orders.  Simple ones tile the threshold
        with shifts.   To handle those we simply loop over the number of
@@ -2144,32 +2143,25 @@ if ( gs_debug_c('h') ) {
    while( l < d_order->num_levels ) {
       if( d_order->levels[l] > d_order->levels[prev_l] ) {
          int t_level = (256*l)/d_order->num_levels;
-         int row, col;
+
 #ifdef DEBUG
          if ( gs_debug_c('h') )
             dmprintf2(memory, "  level[%3d]=%3d\n", l, d_order->levels[l]);
 #endif
          for( j=d_order->levels[prev_l]; j<d_order->levels[l]; j++) {
-#ifdef DEBUG
-            if ( gs_debug_c('h') )
-               dmprintf2(memory, "       bits.offset=%3d, bits.mask=%8x  ",
-                   bits[j].offset, bits[j].mask);
-#endif
-            row = bits[j].offset / d_order->raster;
-            for( col=0; col < (8*sizeof(ht_mask_t)); col++ ) {
-               if( bits[j].mask & bit_order[col] )
-                  break;
-            }
-            col += 8 * ( bits[j].offset - (row * d_order->raster) );
+            gs_int_point col_row = { 0, 0 };
+            int col_kk, row_kk, kk;
+
+            d_order->procs->bit_index(d_order, j, &col_row);
 #ifdef DEBUG
             if ( gs_debug_c('h') )
                dmprintf3(memory, "row=%2d, col=%2d, t_level=%3d\n",
-                  row, col, t_level);
+                  col_row.y, col_row.x, t_level);
 #endif
-            if( col < (int)d_order->width ) {
+            if( col_row.x < (int)d_order->width ) {
                 for (kk = 0; kk < num_repeat; kk++) {
-                    row_kk = row + kk * d_order->height;
-                    col_kk = col + kk * shift;
+                    row_kk = col_row.y + kk * d_order->height;
+                    col_kk = col_row.x + kk * shift;
                     col_kk = col_kk % d_order->width;
                     *(thresh + col_kk + (row_kk * d_order->width)) = t_level;
                 }
