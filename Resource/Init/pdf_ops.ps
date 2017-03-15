@@ -792,19 +792,67 @@ end def
 
 % Clipping:
 
-/Wdict 4 dict dup begin
+/Wdict 8 dict dup begin
 /S { OFFlevels length 0 eq { gsave setstrokestate .swapcolors stroke .swapcolors grestore } if n } bdef
 /f { OFFlevels length 0 eq { gsave setfillstate fill grestore } if n } bdef
 /f* { OFFlevels length 0 eq { gsave setfillstate eofill grestore } if n } bdef
+/B {
+  OFFlevels length 0 eq {
+    PDFusingtransparency {
+      % knockout trans group around the filled and stroked object
+      mark
+      /Isolated //true /Knockout //true
+      .dicttomark
+      % strokepath will return empty path (no currentpoint) if nothing is stroked
+      gsave {strokepath pathbbox } stopped grestore not
+      {
+        1 .setopacityalpha
+        .begintransparencygroup
+        gsave setfillstate fill grestore
+        setstrokestate .swapcolors /stroke fsexec .swapcolors
+        .endtransparencygroup
+      } {
+        newpath pop
+      } ifelse
+    } {
+      gsave setfillstate fill grestore
+      setstrokestate .swapcolors /stroke fsexec .swapcolors
+    } ifelse
+  } if
+  n
+} bdef
+/b { closepath B } bdef
+/B* {
+  OFFlevels length 0 eq {
+    PDFusingtransparency {
+      % knockout trans group around the filled and stroked object
+      mark
+      /Isolated //true /Knockout //true
+      .dicttomark
+      % strokepath will return empty path (no currentpoint) if nothing is stroked
+      gsave {strokepath pathbbox} stopped grestore not {
+        1 .setopacityalpha
+        .begintransparencygroup
+        gsave setfillstate eofill grestore
+        setstrokestate .swapcolors /stroke fsexec .swapcolors
+        .endtransparencygroup
+      } { newpath pop } ifelse
+    } {
+      gsave setfillstate eofill grestore
+      setstrokestate .swapcolors /stroke fsexec .swapcolors
+    } ifelse
+  } if
+  n
+} bdef
+/b { closepath B* } bdef
 /n { end { currentpoint } stopped not { pop pop clip } if newpath } bdef
 end readonly def
 /W { //Wdict begin } bdef
-/W*dict 4 dict dup begin
+/W*dict 8 dict dup begin
 Wdict { def } forall
 /n { end { currentpoint } stopped not { pop pop eoclip } if newpath } bdef
 end readonly def
 /W* { //W*dict begin } bdef
-
 % ---------------- Text control ---------------- %
 
 /textbeginpage
