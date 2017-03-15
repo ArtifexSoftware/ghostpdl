@@ -767,6 +767,9 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
     int h, padbytes, cpbytes, dstr = bitmap_raster(rast->width);
     int sstr = rast->line_step;
 
+    double dx = penum_pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + 0.5;
+    double dy = penum_pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + 0.5;
+
     /* we can only safely use the gx_image_fill_masked() "shortcut" if we're drawing
      * a "simple" colour, rather than a pattern.
      */
@@ -813,30 +816,13 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
         }
 
         if (gs_object_type(penum->memory, penum) == &st_gs_show_enum) {
-            code = gx_image_fill_masked(dev, r, 0, dstr, 0,
-                                        (int)(penum_pgs->ctm.tx +
-                                              (double)rast_orig_x /
-                                              (1 << frac_pixel_shift) +
-                                              penum->fapi_glyph_shift.x +
-                                              0.5),
-                                        (int)(penum_pgs->ctm.ty +
-                                              (double)rast_orig_y /
-                                              (1 << frac_pixel_shift) +
-                                              penum->fapi_glyph_shift.y +
-                                              0.5), rast->width, rast->height,
-                                        pdcolor, 1, rop3_default, pcpath);
+            dx += penum->fapi_glyph_shift.x;
+            dy += penum->fapi_glyph_shift.y;
         }
-        else {
-            code = gx_image_fill_masked(dev, r, 0, dstr, 0,
-                                        (int)(penum_pgs->ctm.tx +
-                                              (double)rast_orig_x /
-                                              (1 << frac_pixel_shift) + 0.5),
-                                        (int)(penum_pgs->ctm.ty +
-                                              (double)rast_orig_y /
-                                              (1 << frac_pixel_shift) + 0.5),
-                                        rast->width, rast->height, pdcolor, 1,
-                                        rop3_default, pcpath);
-        }
+        code = gx_image_fill_masked(dev, r, 0, dstr, gx_no_bitmap_id,
+                                    (int)dx, (int)dy,
+                                    rast->width, rast->height,
+                                    pdcolor, 1, rop3_default, pcpath);
         if (rast->p != r) {
             gs_free_object(penum->memory, r, "fapi_finish_render_aux");
         }
@@ -848,7 +834,9 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
         int iy, nbytes;
         uint used;
         int code1;
-        int x, y, w, h;
+        int w, h;
+        int x = (int)dx;
+        int y = (int)dy;
         uint bold = 0;
         byte *bold_lines = NULL;
         byte *line = NULL;
@@ -859,10 +847,6 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
             return_error(gs_error_VMerror);
         }
 
-        x = (int)(penum_pgs->ctm.tx +
-                  (double)rast_orig_x / (1 << frac_pixel_shift) + 0.5);
-        y = (int)(penum_pgs->ctm.ty +
-                  (double)rast_orig_y / (1 << frac_pixel_shift) + 0.5);
         w = rast->width;
         h = rast->height;
         if (I->ff.embolden != 0.0) {
