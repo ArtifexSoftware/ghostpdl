@@ -538,23 +538,24 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
     gs_point width_pt;
     int accepted;
     gs_rect text_bbox = {{0, 0}, {0, 0}}, glyphs_bbox = {{10000,10000}, {0,0}};
+    unsigned int operation = text->operation;
 
     code = pdf_obtain_font_resource(penum, pstr, &pdfont);
     if (code < 0)
         return code;
     if (pfmat == 0)
         pfmat = &font->FontMatrix;
-    if (text->operation & TEXT_RETURN_WIDTH) {
+    if (operation & TEXT_RETURN_WIDTH) {
         code = gx_path_current_point(penum->path, &penum->origin);
         if (code < 0)
             return code;
     }
     if (text->size == 0)
         return 0;
-    if (penum->pgs->text_rendering_mode != 3 && !(text->operation & TEXT_DO_NONE)) {
+    if (penum->pgs->text_rendering_mode != 3 && !(operation & TEXT_DO_NONE)) {
         /*
          * Acrobat Reader can't handle text with huge coordinates,
-         * so skip the text if it is outside the clip bbox
+         * so don't emit the text if it is outside the clip bbox
          * (Note : it ever fails with type 3 fonts).
          */
 
@@ -573,7 +574,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
                 rect_intersect(rect, text_bbox);
                 if (rect.p.x > rect.q.x || rect.p.y > rect.q.y) {
                     penum->index += pstr->size;
-                    goto finish;
+                    operation &= ~TEXT_DO_DRAW;
                 }
             }
         } else {
@@ -633,7 +634,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
         return code;
     mask = code;
 
-    if (text->operation & TEXT_REPLACE_WIDTHS)
+    if (operation & TEXT_REPLACE_WIDTHS)
         mask |= TEXT_REPLACE_WIDTHS;
 
     /*
@@ -646,7 +647,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
          * the string character-by-character.  process_text_return_width
          * will tell us what we need to know.
          */
-        if (!(text->operation & (TEXT_DO_DRAW | TEXT_RETURN_WIDTH)))
+        if (!(operation & (TEXT_DO_DRAW | TEXT_RETURN_WIDTH)))
             return 0;
         code = process_text_return_width(penum, font, ppts,
                                          (gs_const_string *)pstr, gdata,
@@ -655,14 +656,14 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
             return code;
         if (code == 0) {
             /* No characters with redefined widths -- the fast case. */
-            if (text->operation & TEXT_DO_DRAW || penum->pgs->text_rendering_mode == 3) {
+            if (operation & TEXT_DO_DRAW || penum->pgs->text_rendering_mode == 3) {
                 code = pdf_append_chars(pdev, pstr->data, accepted,
                                         width_pt.x, width_pt.y, false);
                 if (code < 0)
                     return code;
                 adjust_first_last_char(pdfont, pstr->data, accepted);
                 penum->index += accepted;
-            } else if (text->operation & TEXT_DO_NONE)
+            } else if (operation & TEXT_DO_NONE)
                 penum->index += accepted;
         } else {
             /* Use the slow case.  Set mask to any non-zero value. */
@@ -712,7 +713,6 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
             return code;
     }
 
-finish:
     /* Finally, return the total width if requested. */
     if (pdev->Eps2Write && penum->pcpath) {
         gx_device_clip cdev;
@@ -770,9 +770,9 @@ finish:
                                  bx2, by2, &devc, lop_default);
         pdev->AccumulatingBBox--;
     }
-    if (!(text->operation & TEXT_RETURN_WIDTH))
+    if (!(operation & TEXT_RETURN_WIDTH))
         return 0;
-    if (text->operation & TEXT_DO_NONE) {
+    if (operation & TEXT_DO_NONE) {
         /* stringwidth needs to transform to user space. */
         gs_point p;
 
