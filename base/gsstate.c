@@ -1036,6 +1036,7 @@ gstate_clone(gs_gstate * pfrom, gs_memory_t * mem, client_name_t cname,
     cs_adjust_counts_icc(pgs, 1);
     return pgs;
   fail:
+    memset(pgs->color, 0, 2*sizeof(gs_gstate_color));
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
     GSTATE_ASSIGN_PARTS(pgs, &parts);
     gstate_free_parts(pgs, mem, cname);
