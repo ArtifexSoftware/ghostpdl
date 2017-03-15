@@ -167,7 +167,7 @@ clist_fill_mask(gx_device * dev,
     y0 = ry;                    /* must do after fit_copy */
 
     /* If non-trivial clipping & complex clipping disabled, default */
-    /* Also default for uncached bitmap or non-defaul lop; */
+    /* Also default for uncached bitmap or non-default lop; */
     /* We could handle more RasterOp cases here directly, but it */
     /* doesn't seem worth the trouble right now. */
     /* Lastly, the command list will translate calls with depth > 1 to */
