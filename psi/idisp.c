@@ -87,7 +87,7 @@ display_set_callback(gs_main_instance *minst, display_callback *callback)
         if (was_open) {
             code = gs_closedevice(dev);
             if (code < 0)
-                return_error(code);
+                return code;
         }
 
         ddev = (gx_device_display *) dev;
@@ -97,7 +97,7 @@ display_set_callback(gs_main_instance *minst, display_callback *callback)
             code = gs_opendevice(dev);
             if (code < 0) {
                 dmprintf(dev->memory, "**** Unable to open the display device, quitting.\n");
-                return_error(code);
+                return code;
             }
         }
         pop(1);	/* device */
