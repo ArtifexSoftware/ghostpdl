@@ -620,7 +620,8 @@ static dev_proc_fill_path(sep1_fill_path);
     bool lock_colorants;\
     gx_downscaler_params downscale;\
     gs_devn_params devn_params;         /* DeviceN generated parameters */\
-    equivalent_cmyk_color_params equiv_cmyk_colors
+    equivalent_cmyk_color_params equiv_cmyk_colors;\
+    bool warning_given		/* avoid issuing lots of warnings */
 
 /*
  * A structure definition for a DeviceN type device
@@ -630,7 +631,6 @@ typedef struct tiffsep_device_s {
     FILE *comp_file;            /* Underlying file for tiff_comp */
     TIFF *tiff_comp;            /* tiff file for comp file */
     gsicc_link_t *icclink;      /* link profile if we are doing post rendering */
-    bool warning_given;
 } tiffsep_device;
 
 /* threshold array structure */
@@ -641,7 +641,6 @@ typedef struct threshold_array_s {
 
 typedef struct tiffsep1_device_s {
     tiffsep_devices_common;
-    bool warning_given;
     threshold_array_t thresholds[GX_DEVICE_COLOR_MAX_COMPONENTS + 1]; /* one extra for Default */
     dev_t_proc_fill_path((*fill_path), gx_device); /* we forward to here */
 } tiffsep1_device;
@@ -813,6 +812,7 @@ const tiffsep_device gs_tiffsep_device =
       {0, 1, 2, 3, 4, 5, 6, 7 } /* Initial component SeparationOrder */
     },
     { true },                   /* equivalent CMYK colors for spot colors */
+    false,			/* warning_given */
 };
 
 const tiffsep1_device gs_tiffsep1_device =
