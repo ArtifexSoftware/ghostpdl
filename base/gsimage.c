@@ -202,7 +202,7 @@ is_image_visible(const gs_image_common_t * pic, gs_gstate * pgs, gx_clip_path *p
 /* Create an image enumerator given image parameters and a graphics state. */
 int
 gs_image_begin_typed(const gs_image_common_t * pic, gs_gstate * pgs,
-                     bool uses_color, gx_image_enum_common_t ** ppie)
+                     bool uses_color, bool image_is_text, gx_image_enum_common_t ** ppie)
 {
     gx_device *dev = gs_currentdevice(pgs);
     gx_clip_path *pcpath;
@@ -213,7 +213,7 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_gstate * pgs,
     if (code < 0)
         return code;
     /* Processing an image object operation */
-    dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_IMAGE_TAG);
+    dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, image_is_text ? GS_TEXT_TAG : GS_IMAGE_TAG);
 
     if (uses_color) {
         code = gx_set_dev_color(pgs);
@@ -287,7 +287,7 @@ gs_image_enum_alloc(gs_memory_t * mem, client_name_t cname)
 /* Start processing an ImageType 1 image. */
 int
 gs_image_init(gs_image_enum * penum, const gs_image_t * pim, bool multi,
-              gs_gstate * pgs)
+              bool image_is_text, gs_gstate * pgs)
 {
     gs_image_t image;
     gx_image_enum_common_t *pie;
@@ -313,7 +313,7 @@ gs_image_init(gs_image_enum * penum, const gs_image_t * pim, bool multi,
     }
     code = gs_image_begin_typed((const gs_image_common_t *)&image, pgs,
                                 image.ImageMask | image.CombineWithColor,
-                                &pie);
+                                image_is_text, &pie);
     if (code < 0)
         return code;
     return gs_image_enum_init(penum, pie, (const gs_data_image_t *)&image,

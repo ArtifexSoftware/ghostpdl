@@ -873,7 +873,7 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
         image.Width = w + bold;
         image.Height = h + bold;
         image.adjust = false;
-        code = gs_image_init(pie, &image, false, penum_pgs);
+        code = gs_image_init(pie, &image, false, false, penum_pgs);
         nbytes = (rast->width + 7) >> 3;
 
         switch (code) {

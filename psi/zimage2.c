@@ -34,7 +34,7 @@ process_non_source_image(i_ctx_t *i_ctx_p, const gs_image_common_t * pic,
 {
     gx_image_enum_common_t *pie;
     int code = gs_image_begin_typed(pic, igs, false /****** WRONG ******/ ,
-                                    &pie);
+                                    false, &pie);
 
     /* We didn't pass any data, so there's nothing to clean up. */
     return code;

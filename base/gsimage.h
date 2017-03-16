@@ -120,7 +120,8 @@ typedef struct gx_image_enum_common_s gx_image_enum_common_t;
 
 typedef struct gs_image_enum_s gs_image_enum;
 int gs_image_begin_typed(const gs_image_common_t * pic, gs_gstate * pgs,
-                         bool uses_color, gx_image_enum_common_t ** ppie);
+                         bool uses_color, bool image_is_text,
+                         gx_image_enum_common_t ** ppie);
 
 gs_image_enum *gs_image_enum_alloc(gs_memory_t *, client_name_t);
 
@@ -145,7 +146,7 @@ int gs_image_common_init(gs_image_enum * penum,
 
 /* Initialize an enumerator for an ImageType 1 image. */
 int gs_image_init(gs_image_enum * penum, const gs_image_t * pim,
-                  bool MultipleDataSources, gs_gstate * pgs);
+                  bool MultipleDataSources, bool image_is_text, gs_gstate * pgs);
 
 /* Initialize an enumerator for a general image.
    penum->memory must be initialized in advance.

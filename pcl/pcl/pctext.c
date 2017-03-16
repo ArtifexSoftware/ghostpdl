@@ -650,7 +650,7 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
         mask.Width = pl_get_uint16(cdata + 10);
         mask.Height = pl_get_uint16(cdata + 12);
         nbytes = ((mask.Width + 7) / 8) * mask.Height;
-        gs_image_init(pen, &mask, false, pgs);
+        gs_image_init(pen, &mask, false, false, pgs);
         code = gs_image_next(pen, cdata + 16, nbytes, &used);
 
         /* clean up */

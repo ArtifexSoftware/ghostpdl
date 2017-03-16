@@ -182,7 +182,7 @@ zimage_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
     gx_image_enum_common_t *pie;
     int code =
         gs_image_begin_typed((const gs_image_common_t *)pim, igs,
-                             uses_color, &pie);
+                             uses_color, false, &pie);
 
     if (code < 0)
         return code;

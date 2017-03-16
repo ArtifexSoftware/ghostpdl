@@ -266,7 +266,7 @@ xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
     if (!penum)
         return gs_throw(gs_error_VMerror, "gs_enum_allocate failed");
 
-    if ((code = gs_image_init(penum, &gsimage, false, ctx->pgs)) < 0)
+    if ((code = gs_image_init(penum, &gsimage, false, false, ctx->pgs)) < 0)
         return gs_throw(code, "gs_image_init failed");
 
     if ((code = gs_image_next(penum, samples, count, &used)) < 0)

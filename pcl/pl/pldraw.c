@@ -73,7 +73,7 @@ pl_begin_image2(gs_image_enum ** ppenum, gs_image_t * pimage, gs_gstate * pgs)
     if (*ppenum == 0)
         return_error(gs_error_VMerror);
 
-    return gs_image_init(*ppenum, pimage, 0, pgs);
+    return gs_image_init(*ppenum, pimage, 0, false, pgs);
 }
 
 int

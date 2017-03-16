@@ -367,7 +367,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
         image.Width = w;
         image.Height = h;
         image.adjust = false;
-        code = gs_image_init(pie, &image, false, pgs);
+        code = gs_image_init(pie, &image, false, true, pgs);
         switch (code) {
             case 1:		/* empty image */
                 code = 0;

@@ -401,7 +401,7 @@ create_mask_enumerator(pcl_raster_t * prast)
             image.i4.MaskColor[0] = 0;
 
         code = gs_image_begin_typed((const gs_image_common_t *)&image,
-                                    pcs->pgs, true, &pie);
+                                    pcs->pgs, true, false, &pie);
 
         if (code >= 0)
             code = gs_image_common_init(pen,
@@ -516,7 +516,7 @@ create_image_enumerator(pcl_raster_t * prast)
     }
 
     code = gs_image_begin_typed((const gs_image_common_t *)&image,
-                                prast->pcs->pgs, true, &pie);
+                                prast->pcs->pgs, true, false, &pie);
     if (code >= 0)
         code = gs_image_common_init(pen,
                                     pie,
