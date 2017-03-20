@@ -53,7 +53,7 @@ CLEAR_MARKS_PROC(context_state_clear_marks)
 }
 static
 ENUM_PTRS_WITH(context_state_enum_ptrs, gs_context_state_t *pcst) {
-    index -= 10;
+    index -= 11;
     if (index < st_gs_dual_memory_num_ptrs)
         return ENUM_USING(st_gs_dual_memory, &pcst->memory,
                           sizeof(pcst->memory), index);
@@ -74,11 +74,12 @@ ENUM_PTRS_WITH(context_state_enum_ptrs, gs_context_state_t *pcst) {
     case 2: ENUM_RETURN_REF(&pcst->stdio[1]);
     case 3: ENUM_RETURN_REF(&pcst->stdio[2]);
     case 4: ENUM_RETURN_REF(&pcst->error_object);
-    case 5: ENUM_RETURN_REF(&pcst->userparams);
-    ENUM_PTR(6, gs_context_state_t, op_array_table_global.nx_table);
-    ENUM_PTR(7, gs_context_state_t, op_array_table_local.nx_table);
-    case 8: ENUM_RETURN_REF(&pcst->op_array_table_global.table);
-    case 9: ENUM_RETURN_REF(&pcst->op_array_table_local.table);
+    ENUM_PTR(5, gs_context_state_t, invalid_file_stream);
+    case 6: ENUM_RETURN_REF(&pcst->userparams);
+    ENUM_PTR(7, gs_context_state_t, op_array_table_global.nx_table);
+    ENUM_PTR(8, gs_context_state_t, op_array_table_local.nx_table);
+    case 9:  ENUM_RETURN_REF(&pcst->op_array_table_global.table);
+    case 10: ENUM_RETURN_REF(&pcst->op_array_table_local.table);
 ENUM_PTRS_END
 static RELOC_PTRS_WITH(context_state_reloc_ptrs, gs_context_state_t *pcst);
     RELOC_PTR(gs_context_state_t, pgs);
@@ -87,6 +88,7 @@ static RELOC_PTRS_WITH(context_state_reloc_ptrs, gs_context_state_t *pcst);
     RELOC_REF_VAR(pcst->stdio[0]);
     RELOC_REF_VAR(pcst->stdio[1]);
     RELOC_REF_VAR(pcst->stdio[2]);
+    RELOC_PTR(gs_context_state_t, invalid_file_stream);
     RELOC_REF_VAR(pcst->error_object);
     r_clear_attrs(&pcst->error_object, l_mark);
     RELOC_REF_VAR(pcst->userparams);
@@ -173,26 +175,19 @@ context_state_alloc(gs_context_state_t ** ppcst,
     pcst->LockFilePermissions = false;
     pcst->starting_arg_file = false;
     pcst->RenderTTNotdef = true;
-    /* Create and initialize an invalid (closed) stream. */
-    /* Initialize the stream for the sake of the GC, */
-    /* and so it can act as an empty input stream. */
-    {
-        stream *s;
 
-        s = (stream*)gs_alloc_bytes_immovable(mem->non_gc_memory->stable_memory,
-                                              sizeof(*s),
-                                              "context_state_alloc");
-        if (s == NULL) {
-            code = gs_error_VMerror;
-            goto x3;
-        }
-        pcst->invalid_file_stream = s;
-
-        s_init(s, NULL);
-        sread_string(s, NULL, 0);
-        s->next = s->prev = 0;
-        s_init_no_id(s);
+    pcst->invalid_file_stream = (stream*)gs_alloc_struct_immovable(mem->stable_memory,
+                                          stream, &st_stream,
+                                          "context_state_alloc");
+    if (pcst->invalid_file_stream == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto x3;
     }
+
+    s_init(pcst->invalid_file_stream, mem->stable_memory);
+    sread_string(pcst->invalid_file_stream, NULL, 0);
+    s_init_no_id(pcst->invalid_file_stream);
+
     /* The initial stdio values are bogus.... */
     make_file(&pcst->stdio[0], a_readonly | avm_invalid_file_entry, 1,
               pcst->invalid_file_stream);
@@ -307,9 +302,6 @@ context_state_free(gs_context_state_t * pcst)
     int freed = 0;
     int i;
 
-    /* Invalid file stream is always in static space, so needs to be done
-     * separately. */
-    gs_free_object(mem->non_gc_memory->stable_memory, pcst->invalid_file_stream, "context_state_alloc");
     /*
      * If this context is the last one referencing a particular VM
      * (local / global / system), free the entire VM space;
