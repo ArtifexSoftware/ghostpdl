@@ -606,6 +606,8 @@ mem_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
             GB_PACKING_CHUNKY | GB_COLORS_NATIVE | GB_ALPHA_NONE;
         return_error(gs_error_rangecheck);
     }
+    if (mdev->line_ptrs == 0x00)
+        return_error(gs_error_rangecheck);
     if ((w <= 0) | (h <= 0)) {
         if ((w | h) < 0)
             return_error(gs_error_rangecheck);
