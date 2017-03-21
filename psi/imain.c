@@ -878,9 +878,14 @@ int
 gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 {
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
+    gs_dual_memory_t dmem = {0};
     int exit_code;
     ref error_object;
     char *tempnames;
+
+    if (i_ctx_p != NULL) {
+        dmem = *idmemory;
+    }
 
     /* NB: need to free gs_name_table
      */
@@ -1030,6 +1035,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     gs_lib_finit(exit_status, code, minst->heap);
 #endif
     gs_free_object(minst->heap, minst->lib_path.container.value.refs, "lib_path array");
+    ialloc_finit(&dmem);
     return exit_status;
 }
 int

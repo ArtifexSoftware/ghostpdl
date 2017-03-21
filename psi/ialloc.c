@@ -108,7 +108,8 @@ ialloc_finit(gs_dual_memory_t *mem)
             gs_memory_free_all((gs_memory_t *)igmem, FREE_ALL_EVERYTHING, "ialloc_finit");
         }
 
-        gs_memory_free_all((gs_memory_t *)ismem, FREE_ALL_EVERYTHING, "ialloc_finit");
+        if (ismem != NULL)
+            gs_memory_free_all((gs_memory_t *)ismem, FREE_ALL_EVERYTHING, "ialloc_finit");
      }
 }
 
