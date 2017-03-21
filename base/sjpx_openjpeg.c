@@ -24,8 +24,9 @@
 #include "sjpx_openjpeg.h"
 #include "gxsync.h"
 #include "assert_.h"
+#if !defined(SHARE_JPX) || (SHARE_JPX == 0)
 #include "opj_malloc.h"
-
+#endif
 /* Some locking to get around the criminal lack of context
  * in the openjpeg library. */
 static gs_memory_t *opj_memory;
