@@ -1851,7 +1851,7 @@ $(GLOBJ)sjpx_openjpeg.$(OBJ) : $(GLSRC)sjpx_openjpeg.c $(AK) \
  $(memory__h) $(gserror_h) $(gserrors_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_openjpeg_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLJPXOPJCC) $(GLO_)sjpx_openjpeg.$(OBJ) \
-		$(C_) -DOPJ_STATIC $(GLSRC)sjpx_openjpeg.c
+		$(C_) $(GLSRC)sjpx_openjpeg.c
 
 # no jpx version
 sjpx_none=$(GLOBJ)sjpx_none.$(OBJ)
