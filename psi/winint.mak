@@ -187,6 +187,9 @@ $(PSOBJ)zwinutf8.$(OBJ) : $(PSSRC)zwinutf8.c $(OP)\
 nsis: $(PSSRC)nsisinst.nsi $(GSCONSOLE_XE) $(GS_ALL) $(GS_XE) $(GSDLL_DLL) $(BINDIR)\$(GSDLL).lib \
       $(WININT_MAK)
 	$(MAKENSIS_XE) -NOCD -DTARGET=$(NSISTARGET) -DVERSION=$(GS_DOT_VERSION) $(PSSRC)nsisinst.nsi
+!if defined(KEYFILE) && defined(KEYPWORD) && defined(TIMESTAMP)
+        signtool sign -f $(KEYFILE) /p $(KEYPWORD) /t $(TIMESTAMP) $(NSISTARGET)$(XE)
+!endif
 
 # -------------------- Distribution source archive ------------------- #
 # This creates a zip file containing the files needed to build 
