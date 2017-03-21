@@ -1824,9 +1824,6 @@ $(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
  $(gdebug_h) $(strimpl_h) $(sjpx_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLJASCC) $(GLO_)sjpx.$(OBJ) $(C_) $(GLSRC)sjpx.c
 
-$(GLD)sjpx_.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIB_MAK) $(MAKEDIRS)
-	$(SETMOD) $(GLD)sjpx_
-
 # luratech version
 sjpx_luratech=$(GLOBJ)sjpx_luratech.$(OBJ)
 $(GLD)sjpx_luratech.dev : $(LIB_MAK) $(ECHOGS_XE) \
@@ -1855,6 +1852,16 @@ $(GLOBJ)sjpx_openjpeg.$(OBJ) : $(GLSRC)sjpx_openjpeg.c $(AK) \
  $(gdebug_h) $(strimpl_h) $(sjpx_openjpeg_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLJPXOPJCC) $(GLO_)sjpx_openjpeg.$(OBJ) \
 		$(C_) -DOPJ_STATIC $(GLSRC)sjpx_openjpeg.c
+
+# no jpx version
+sjpx_none=$(GLOBJ)sjpx_none.$(OBJ)
+$(GLD)sjpx_.dev : $(LIB_MAK) $(ECHOGS_XE) \
+ $(sjpx_none) $(LIB_MAK) $(MAKEDIRS)
+	$(SETMOD) $(GLD)sjpx_ $(sjpx_none)
+
+$(GLOBJ)sjpx_none.$(OBJ) : $(GLSRC)sjpx_none.c $(AK) \
+ $(memory__h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLJPXOPJCC) $(GLO_)sjpx_none.$(OBJ) $(C_) $(GLSRC)sjpx_none.c
 
 # ---------------- Pixel-difference filters ---------------- #
 # The Predictor facility of the LZW and Flate filters uses these.
