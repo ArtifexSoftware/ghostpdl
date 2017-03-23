@@ -437,8 +437,6 @@ void *gs_raw_alloc_struct_immovable(gs_memory_t * rmem,
                                     gs_memory_type_ptr_t pstype,
                                     client_name_t cname);
 
-typedef struct pl_mem_node_s pl_mem_node_t;
-
 /*
  * Define an abstract allocator instance.
  * Subclasses may have state as well
