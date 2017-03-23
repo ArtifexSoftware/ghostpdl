@@ -214,13 +214,13 @@ gs_main_init1(gs_main_instance * minst)
         code = obj_init(&minst->i_ctx_p, &idmem);  /* requires name_init */
         if (code < 0)
             goto fail;
+        minst->init_done = 1;
         code = i_plugin_init(minst->i_ctx_p);
         if (code < 0)
             goto fail;
         code = i_iodev_init(minst->i_ctx_p);
         if (code < 0)
             goto fail;
-        minst->init_done = 1;
     }
     return 0;
 
@@ -883,10 +883,6 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     ref error_object;
     char *tempnames;
 
-    if (i_ctx_p != NULL) {
-        dmem = *idmemory;
-    }
-
     /* NB: need to free gs_name_table
      */
 
@@ -1004,6 +1000,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     if (minst->init_done >= 1) {
         gs_memory_t *mem_raw = i_ctx_p->memory.current->non_gc_memory;
         i_plugin_holder *h = i_ctx_p->plugin_list;
+        dmem = *idmemory;
         code = alloc_restore_all(i_ctx_p);
         if (code < 0)
             emprintf1(mem_raw,
