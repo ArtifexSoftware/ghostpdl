@@ -92,7 +92,7 @@ gs_iodev_init(gs_memory_t * mem)
     }
 
     libctx->io_device_table = table;
-    code = gs_register_struct_root(mem, NULL,
+    code = gs_register_struct_root(mem, mem->gs_lib_ctx->io_device_table_root,
                                    (void **)&libctx->io_device_table,
                                    "io_device_table");
     if (code < 0)

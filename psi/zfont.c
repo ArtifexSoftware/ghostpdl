@@ -67,8 +67,8 @@ zfont_init(i_ctx_t *i_ctx_p)
         return gs_error_VMerror;
     ifont_dir->ccache.mark_glyph = zfont_mark_glyph_name;
     ifont_dir->global_glyph_code = zfont_global_glyph_code;
-    return gs_register_struct_root(imemory, NULL, (void **)&ifont_dir,
-                                   "ifont_dir");
+    return gs_register_struct_root(imemory, imemory->gs_lib_ctx->font_dir_root,
+        (void **)&ifont_dir, "ifont_dir");
 }
 
 /* <font> <scale> scalefont <new_font> */

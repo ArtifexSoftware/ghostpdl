@@ -26,6 +26,7 @@
 #include "gsicc_manage.h"
 #include "gserrors.h"
 #include "gscdefs.h"            /* for gs_lib_device_list */
+#include "gsstruct.h"           /* for gs_gc_root_t */
 
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
@@ -129,6 +130,18 @@ gs_lib_ctx_get_default_device_list(const gs_memory_t *mem, char** dev_list_str,
     return 0;
 }
 
+static int
+gs_lib_ctx_alloc_root_structure(gs_memory_t *mem, gs_gc_root_ptr *rp)
+{
+	int code = 0;
+
+	*rp = gs_raw_alloc_struct_immovable(mem, &st_gc_root_t, "gs_lib_ctx_alloc_root_structure");
+	if (*rp == 0)
+		code = gs_note_error(gs_error_VMerror);
+
+	return code;
+}
+
 int gs_lib_ctx_init( gs_memory_t *mem )
 {
     gs_lib_ctx_t *pio = 0;
@@ -186,6 +199,15 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     /* Set scanconverter to 1 (default) */
     pio->scanconverter = GS_SCANCONVERTER_DEFAULT;
 
+    if (gs_lib_ctx_alloc_root_structure(mem, &pio->name_table_root))
+        goto Failure;
+
+    if (gs_lib_ctx_alloc_root_structure(mem, &pio->io_device_table_root))
+        goto Failure;
+
+    if (gs_lib_ctx_alloc_root_structure(mem, &pio->font_dir_root))
+        goto Failure;
+
     return 0;
 
 Failure:
@@ -222,6 +244,10 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
         
     gs_free_object(ctx_mem, ctx->default_device_list,
                 "gs_lib_ctx_fin");
+
+    gs_free_object(ctx_mem, ctx->name_table_root, "gs_lib_ctx_fin");
+    gs_free_object(ctx_mem, ctx->io_device_table_root, "gs_lib_ctx_fin");
+    gs_free_object(ctx_mem, ctx->font_dir_root, "gs_lib_ctx_fin");
 
 #ifndef GS_THREADSAFE
     mem_err_print = NULL;

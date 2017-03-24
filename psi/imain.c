@@ -204,7 +204,7 @@ gs_main_init1(gs_main_instance * minst)
                 goto fail;
             }
             mem->gs_lib_ctx->gs_name_table = nt;
-            code = gs_register_struct_root(mem, NULL,
+            code = gs_register_struct_root(mem, mem->gs_lib_ctx->name_table_root,
                                            (void **)&mem->gs_lib_ctx->gs_name_table,
                                            "the_gs_name_table");
             if (code < 0)

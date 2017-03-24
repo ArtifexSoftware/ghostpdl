@@ -23,6 +23,10 @@
 
 typedef struct name_table_s *name_table_ptr;
 
+/* Opaque type for root pointer here, because including gsstruct.h for the
+   original gs_gc_root_t definition resulted in a circular header dependency. */
+typedef struct gs_gc_root_s *gs_gc_root_ptr;
+
 #ifndef gs_fapi_server_DEFINED
 #define gs_fapi_server_DEFINED
 typedef struct gs_fapi_server_s gs_fapi_server;
@@ -58,12 +62,14 @@ typedef struct gs_lib_ctx_s
     name_table_ptr gs_name_table;  /* hack this is the ps interpreters name table
                                     * doesn't belong here
                                     */
+    gs_gc_root_ptr name_table_root;
     /* Define whether dictionaries expand automatically when full. */
     bool dict_auto_expand;  /* ps dictionary: false level 1 true level 2 or 3 */
     /* A table of local copies of the IODevices */
     struct gx_io_device_s **io_device_table;
     int io_device_table_count;
     int io_device_table_size;
+    gs_gc_root_ptr io_device_table_root;
     client_check_file_permission_t client_check_file_permission;
     /* Define the default value of AccurateScreens that affects setscreen
        and setcolorscreen. */
@@ -75,6 +81,7 @@ typedef struct gs_lib_ctx_s
 
     /* font directory - see gsfont.h */
     gs_font_dir *font_dir;
+    gs_gc_root_ptr font_dir_root;
     /* True if we are emulating CPSI. Ideally this would be in the imager
      * state, but this can't be done due to problems detecting changes in it
      * for the clist based devices. */
