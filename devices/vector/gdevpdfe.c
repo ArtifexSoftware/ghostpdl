@@ -417,6 +417,9 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
     int i, j=0;
     unsigned char *buf0;
 
+    if (data_length == 0)
+        return 0;
+
     buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, data_length * sizeof(unsigned char),
                     "pdf_xmp_write_translated");
     if (buf0 == NULL)
