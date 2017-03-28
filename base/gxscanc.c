@@ -36,6 +36,13 @@
 #include "assert_.h"
 #include <stdlib.h>             /* for qsort */
 
+#ifndef restrict
+#define restrict __restrict
+#endif /* restrict */
+#ifndef inline
+#define inline __inline
+#endif /* inline */
+
 /* Overview of the scan conversion algorithm.
  *
  * The normal scan conversion algorithm runs through a path, converting
@@ -821,8 +828,8 @@ typedef struct
     int    base;
 } cursor;
 
-static void
-output_cursor(cursor *cr, fixed x)
+static inline void
+output_cursor(cursor * restrict cr, fixed x)
 {
     int iy = fixed2int(cr->y) - cr->base;
     int *row;
@@ -851,7 +858,7 @@ output_cursor(cursor *cr, fixed x)
 }
 
 static void
-flush_cursor(cursor *cr, fixed x)
+flush_cursor(cursor * restrict cr, fixed x)
 {
     /* This should only happen if we were entirely out of bounds,
      * or if everything was within a zero height horizontal
@@ -890,7 +897,7 @@ flush_cursor(cursor *cr, fixed x)
     output_cursor(cr, x);
 }
 
-static void mark_line_app(cursor *cr, fixed sx, fixed sy, fixed ex, fixed ey)
+static void mark_line_app(cursor * restrict cr, fixed sx, fixed sy, fixed ex, fixed ey)
 {
     int isy = fixed2int(sy) - cr->base;
     int iey = fixed2int(ey) - cr->base;
@@ -2071,8 +2078,8 @@ typedef struct
     int    base;
 } cursor_tr;
 
-static void
-output_cursor_tr(cursor_tr *cr, fixed x, int id)
+static inline void
+output_cursor_tr(cursor_tr * restrict cr, fixed x, int id)
 {
     int iy = fixed2int(cr->y) - cr->base;
     int *row;
@@ -2107,8 +2114,8 @@ output_cursor_tr(cursor_tr *cr, fixed x, int id)
     cr->rid   = id;
 }
 
-static void
-flush_cursor_tr(cursor_tr *cr, fixed x, int id)
+static inline void
+flush_cursor_tr(cursor_tr * restrict cr, fixed x, int id)
 {
     /* This should only happen if we were entirely out of bounds,
      * or if everything was within a zero height horizontal
@@ -2157,7 +2164,7 @@ flush_cursor_tr(cursor_tr *cr, fixed x, int id)
     output_cursor_tr(cr, x, id);
 }
 
-static void mark_line_tr_app(cursor_tr *cr, fixed sx, fixed sy, fixed ex, fixed ey, int id)
+static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed ex, fixed ey, int id)
 {
     int isy = fixed2int(sy) - cr->base;
     int iey = fixed2int(ey) - cr->base;
@@ -2514,7 +2521,7 @@ static void mark_line_tr_app(cursor_tr *cr, fixed sx, fixed sy, fixed ex, fixed 
     }
 }
 
-static void mark_curve_tr_app(cursor_tr *cr, fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, int depth, int *id)
+static void mark_curve_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, int depth, int * restrict id)
 {
         int ax = (sx + c1x)>>1;
         int ay = (sy + c1y)>>1;
@@ -2540,11 +2547,11 @@ static void mark_curve_tr_app(cursor_tr *cr, fixed sx, fixed sy, fixed c1x, fixe
         }
 }
 
-int gx_scan_convert_tr_app(gx_device     * pdev,
-                           gx_path       * path,
-                     const gs_fixed_rect * clip,
-                           gx_edgebuffer * edgebuffer,
-                           fixed           fixed_flat)
+int gx_scan_convert_tr_app(gx_device     * restrict pdev,
+                           gx_path       * restrict path,
+                     const gs_fixed_rect * restrict clip,
+                           gx_edgebuffer * restrict edgebuffer,
+                           fixed                    fixed_flat)
 {
     gs_fixed_rect  ibox;
     int            scanlines;
@@ -2659,9 +2666,9 @@ int gx_scan_convert_tr_app(gx_device     * pdev,
 
 /* Step 5: Filter the intersections according to the rules */
 int
-gx_filter_edgebuffer_tr_app(gx_device       * pdev,
-                            gx_edgebuffer   * edgebuffer,
-                            int               rule)
+gx_filter_edgebuffer_tr_app(gx_device       * restrict pdev,
+                            gx_edgebuffer   * restrict edgebuffer,
+                            int                        rule)
 {
     int i;
     int marked_id = 0;
@@ -2766,10 +2773,10 @@ gx_filter_edgebuffer_tr_app(gx_device       * pdev,
 
 /* Step 6: Fill */
 int
-gx_fill_edgebuffer_tr_app(gx_device       * pdev,
-                    const gx_device_color * pdevc,
-                          gx_edgebuffer   * edgebuffer,
-                          int               log_op)
+gx_fill_edgebuffer_tr_app(gx_device       * restrict pdev,
+                    const gx_device_color * restrict pdevc,
+                          gx_edgebuffer   * restrict edgebuffer,
+                          int                        log_op)
 {
     int i, j, code;
 
