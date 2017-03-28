@@ -274,7 +274,7 @@ static	const gx_color_map_procs *
         pdf14_dev_spec_op,               /* dev_spec_op */\
         pdf14_copy_planes,               /* copy_planes */\
         NULL,                           /*  */\
-        NULL,                           /* set_graphics_type_tag */\
+        gx_forward_set_graphics_type_tag, /* set_graphics_type_tag */\
         NULL,                           /* strip_copy_rop2 */\
         NULL,                           /* strip_tile_rect_devn */\
         pdf14_copy_alpha_hl_color       /* copy_alpha_hl_color */\
@@ -1183,8 +1183,6 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
     } else {
         maskbuf = mask_stack->rc_mask->mask_buf;
     }
-    if (nos == NULL)
-        return_error(gs_error_rangecheck);
     /* Sanitise the dirty rectangles, in case some of the drawing routines
      * have made them overly large. */
     rect_intersect(tos->dirty, tos->rect);
@@ -1748,6 +1746,7 @@ pdf14_get_buffer_information(const gx_device * dev,
     if (width <= 0 || height <= 0 || buf->data == NULL)
         return 0;
     transbuff->n_chan    = buf->n_chan;
+    transbuff->has_tags  = buf->has_tags;
     transbuff->has_shape = buf->has_shape;
     transbuff->width     = buf->rect.q.x - buf->rect.p.x;
     transbuff->height    = buf->rect.q.y - buf->rect.p.y;
@@ -1766,7 +1765,7 @@ pdf14_get_buffer_information(const gx_device * dev,
 
             transbuff->planestride = planestride;
             transbuff->rowstride = rowstride;
-            transbuff->transbytes = gs_alloc_bytes(mem, planestride*buf->n_chan,
+            transbuff->transbytes = gs_alloc_bytes(mem, planestride*(buf->n_chan + buf->has_tags ? 1 : 0),
                                                    "pdf14_get_buffer_information");
             transbuff->mem = mem;
             for (j = 0; j < transbuff->n_chan; j++) {
@@ -5950,7 +5949,8 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         p14dev->color_info.comp_shift[p14dev->color_info.num_components] = p14dev->color_info.depth;
         p14dev->color_info.depth += 8;
     }
-    check_device_separable((gx_device *)p14dev);
+    /* by definition pdf14_encode _is_ standard */
+    p14dev->color_info.separable_and_linear = GX_CINFO_SEP_LIN_STANDARD;
     gx_device_fill_in_procs((gx_device *)p14dev);
     p14dev->save_get_cmap_procs = pgs->get_cmap_procs;
     pgs->get_cmap_procs = pdf14_get_cmap_procs;
@@ -6905,7 +6905,7 @@ send_pdf14trans(gs_gstate	* pgs, gx_device * dev,
         pdf14_dev_spec_op,\
         NULL,                           /* copy planes */\
         NULL,                           /* get_profile */\
-        NULL,                           /* set_graphics_type_tag */\
+        gx_forward_set_graphics_type_tag, /* set_graphics_type_tag */\
         NULL,                           /* strip_copy_rop2 */\
         NULL,                           /* strip_tile_rect_devn */\
         gx_forward_copy_alpha_hl_color\
@@ -7188,7 +7188,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
         pdev->color_info.comp_shift[pdev->color_info.num_components] = pdev->color_info.depth;
         pdev->color_info.depth += 8;
     }
-    check_device_separable((gx_device *)pdev);
+    pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN_STANDARD;	/* this is the standard */
     gx_device_fill_in_procs((gx_device *)pdev);
     gs_pdf14_device_copy_params((gx_device *)pdev, target);
     gx_device_set_target((gx_device_forward *)pdev, target);

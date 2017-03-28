@@ -93,6 +93,12 @@ gs_shfill(gs_gstate * pgs, const gs_shading_t * psh)
     if (pcs == NULL)
         return_error(gs_error_VMerror);
 
+    /* make sure the tag gets set correctly */
+    if (pgs->show_gstate == NULL)
+        ensure_tag_is_set(pgs, pgs->device, GS_PATH_TAG);	/* NB: may unset_dev_color */
+    else
+        ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
+
     pcs->params.pattern.has_base_space = false;
     code = pcs->type->remap_color(&cc, pcs, &devc, pgs,
                                   pgs->device, gs_color_select_texture);
@@ -100,12 +106,6 @@ gs_shfill(gs_gstate * pgs, const gs_shading_t * psh)
         gx_device *dev = pgs->device;
         bool need_path = !dev_proc(dev, dev_spec_op)(dev,
                              gxdso_pattern_shfill_doesnt_need_path, NULL, 0);
-
-        /* make sure the tag gets set correctly */
-        if (pgs->show_gstate == NULL)
-            ensure_tag_is_set(pgs, pgs->device, GS_PATH_TAG);	/* NB: may unset_dev_color */
-        else
-            ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
         if (need_path) {
             gx_path cpath;

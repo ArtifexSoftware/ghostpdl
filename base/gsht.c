@@ -1209,8 +1209,7 @@ gx_ht_install(gs_gstate * pgs, const gs_halftone * pht,
         new_ht->rc = rc;
     }
     pgs->halftone = new_ht;
-    gx_unset_dev_color(pgs);
-    gx_unset_alt_dev_color(pgs);
+    gx_unset_both_dev_colors(pgs);
     return 0;
 }
 

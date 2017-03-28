@@ -20,6 +20,7 @@
 #  define gsdcolor_INCLUDED
 
 #include "gsccolor.h"
+#include "gscms.h"		/* for gs_graphics_type_tag_t */
 #include "gxarith.h"		/* for imod */
 #include "gxbitmap.h"
 #include "gxhttile.h"
@@ -101,7 +102,7 @@ bool gx_device_color_equal(const gx_device_color *pdevc1,
 #define color_is_set(pdc)\
   ((pdc)->type != gx_dc_type_none)
 #define color_unset(pdc)\
-  ((pdc)->type = gx_dc_type_none)
+  (((pdc)->type = gx_dc_type_none), ((pdc)->tag = 0))
 
 #define gx_dc_is_null(pdc)\
   ((pdc)->type == gx_dc_type_null)
@@ -266,6 +267,7 @@ struct gx_device_color_s {
      * union, we put the type first.
      */
     gx_device_color_type type;
+    gs_graphics_type_tag_t tag;	/* value used to set dev_color */
     /*
      * See the comment above for descriptions of the members.  We use
      * b_, c_, and p_ member names because some old compilers don't
@@ -375,6 +377,7 @@ struct gx_device_color_s {
 
 struct gx_device_color_saved_s {
     gx_device_color_type    type;
+    gs_graphics_type_tag_t tag;	/* value used to set dev_color */
     union _svc {
         gx_color_index  pure;
         struct _svbin {

@@ -266,8 +266,8 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
         if (ci1 != ci0) {
             si = max(bi, fixed2int(fa->clip->p.x));	    /* Must be compatible to the clipping logic. */
             ei = min(i, fixed2int_ceiling(fa->clip->q.x));  /* Must be compatible to the clipping logic. */
-            ci0 |= tag;		/* set tag (may be 0 if the device doesn't use tags) */
             if (si < ei) {
+                ci0 |= tag;		/* set tag (may be 0 if the device doesn't use tags) */
                 if (fa->swap_axes) {
                     code = dev_proc(dev, fill_rectangle)(dev, j, si, 1, ei - si, ci0);
                 } else {

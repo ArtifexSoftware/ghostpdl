@@ -346,9 +346,14 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     if ((tos->n_chan == 0) || (nos->n_chan == 0))
         return;
     rect_merge(nos->dirty, tos->dirty);
-    if_debug6m('v', memory,
-               "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, tag =  bm = %d\n",
-               y0, y1, width, alpha, shape, blend_mode);
+    if (nos->has_tags)
+        if_debug7m('v', memory,
+                   "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, tag = %d, bm = %d\n",
+                   y0, y1, width, alpha, shape, dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS, blend_mode);
+    else
+        if_debug6m('v', memory,
+                   "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, bm = %d\n",
+                   y0, y1, width, alpha, shape, blend_mode);
     if (!nos->has_shape)
         nos_shape_offset = 0;
     if (!nos->has_tags)
@@ -573,13 +578,6 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                                         pix_alpha, blend_mode, pblend_procs, pdev,
                                         num_spots);
                 }
-                if (tos_has_tag) {
-                    if (pix_alpha == 255) {
-                        nos_ptr[nos_tag_offset] = tos_ptr[tos_tag_offset];
-                    } else if (pix_alpha != 0) {
-                        nos_ptr[nos_tag_offset] |= tos_ptr[tos_tag_offset];
-                    }
-                }
             }
             if (nos_shape_offset) {
                 nos_ptr[nos_shape_offset] =
@@ -620,6 +618,10 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                         nos_ptr[i * nos_planestride] = 255 - nos_pixel[i];
                 }
             }
+            /* tags */
+            if (nos_tag_offset && tos_has_tag) {
+                nos_ptr[nos_tag_offset] |= tos_ptr[tos_tag_offset];
+             }
             /* alpha */
             nos_ptr[n_chan * nos_planestride] = nos_pixel[n_chan];
 

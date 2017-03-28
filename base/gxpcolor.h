@@ -168,6 +168,7 @@ struct gx_pattern_trans_s {
     int planestride;
     int n_chan; /* number of pixel planes including alpha */
     bool has_shape;  /* extra plane inserted */
+    bool has_tags;	/* and yet another plane for the tag */
     int width; /* Complete plane width/height; rect may be a subset of this */
     int height;
     const pdf14_nonseparable_blending_procs_t *blending_procs;

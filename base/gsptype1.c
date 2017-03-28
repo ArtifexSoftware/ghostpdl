@@ -1587,6 +1587,7 @@ typedef struct tile_trans_clist_info_s {
     int rowstride;
     int planestride;
     int n_chan; /* number of pixel planes including alpha */
+    bool has_tags;	/* extra plane for tags */
     int width;
     int height;
 } tile_trans_clist_info_t;
@@ -1717,6 +1718,8 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, int64_t offset, byte *dat
     /* Everything that we need to handle the transparent tile */
 
     size = size_h + ptile->ttrans->n_chan * ptile->ttrans->planestride;
+    if (ptile->ttrans->has_tags)
+        size += ptile->ttrans->planestride;
 
     /* data is sent with NULL if the clist writer just wanted the size */
     if (data == NULL) {
@@ -1752,6 +1755,7 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, int64_t offset, byte *dat
         /* Do the transparency information now */
         trans_info.height = ptile->ttrans->height;
         trans_info.n_chan = ptile->ttrans->n_chan;
+        trans_info.has_tags = ptile->ttrans->has_tags;
         trans_info.planestride = ptile->ttrans->planestride;
         trans_info.rect.p.x = ptile->ttrans->rect.p.x;
         trans_info.rect.p.y = ptile->ttrans->rect.p.y;
@@ -1769,11 +1773,11 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, int64_t offset, byte *dat
         offset1 += sizeof(trans_info);
     }
 
-    /* Now do the transparency tile data itself.  Note that it may
-       be split up in the writing stage if it is large */
+    /* Now do the transparency tile data itself.  Note that it may be split up
+     * in the writing stage if it is large. The size include n_chan + the tag
+     * plane if this buffer has_tags. */
 
     /* check if we have written it all */
-
     if (offset1 <= size) {
         /* Get the most that we can write */
         int u = min(size, left);
@@ -1817,10 +1821,10 @@ gx_dc_pattern_write(
         /* A special case for writing a known pattern :
            Just write the tile id. */
         gs_id id = ptile->id; /* Ensure sizeof(gs_id). */
-		if_debug2m('?', dev->memory,
-			"[v*] Writing trans tile ID into clist, uid = %ld id = %ld \n",
-			ptile->uid.id, ptile->id);
-		memcpy(dp, &ptile->id, sizeof(id));
+        if_debug2m('?', dev->memory,
+                   "[v*] Writing trans tile ID into clist, uid = %ld id = %ld \n",
+                   ptile->uid.id, ptile->id);
+        memcpy(dp, &ptile->id, sizeof(id));
         *psize = sizeof(gs_id);
         return 0;
     }
@@ -1828,12 +1832,12 @@ gx_dc_pattern_write(
     /* Check if pattern has transparency object
        If so then that is what we will stuff in
        the clist */
-	if (ptile->ttrans != NULL) {
-		if_debug2m('?', dev->memory,
-			"[v*] Writing trans tile into clist, uid = %ld id = %ld \n",
-			ptile->uid.id, ptile->id);
-		return gx_dc_pattern_trans_write_raster(ptile, offset, data, psize);
-	}
+        if (ptile->ttrans != NULL) {
+            if_debug2m('?', dev->memory,
+                       "[v*] Writing trans tile into clist, uid = %ld id = %ld \n",
+                       ptile->uid.id, ptile->id);
+            return gx_dc_pattern_trans_write_raster(ptile, offset, data, psize);
+        }
 
     if (ptile->cdev == NULL)
         return gx_dc_pattern_write_raster(ptile, offset, data, psize, dev);
@@ -1979,6 +1983,9 @@ gx_dc_pattern_read_trans_buff(gx_color_tile *ptile, int64_t offset,
     int data_size;
 
     data_size = trans_pat->planestride * trans_pat->n_chan;
+    if (trans_pat->has_tags)
+        data_size += trans_pat->planestride;
+
     /* Allocate the bytes */
     if (trans_pat->transbytes == NULL){
         trans_pat->transbytes = gs_alloc_bytes(mem, data_size, "gx_dc_pattern_read_raster");
@@ -2102,6 +2109,7 @@ gx_dc_pattern_read(
 
                 ptile->ttrans->height = trans_info.height;
                 ptile->ttrans->n_chan = trans_info.n_chan;
+                ptile->ttrans->has_tags = trans_info.has_tags;
                 ptile->ttrans->pdev14 = NULL;
                 ptile->ttrans->planestride = trans_info.planestride;
                 ptile->ttrans->rect.p.x = trans_info.rect.p.x;
@@ -2111,9 +2119,9 @@ gx_dc_pattern_read(
                 ptile->ttrans->rowstride = trans_info.rowstride;
                 ptile->ttrans->width = trans_info.width;
                 pdevc->type = &gx_dc_pattern_trans;
-				if_debug2m('?', pgs->memory,
-					"[v*] Reading trans tile from clist into cache, uid = %ld id = %ld \n",
-					ptile->uid.id, ptile->id);
+                if_debug2m('?', pgs->memory,
+                           "[v*] Reading trans tile from clist into cache, uid = %ld id = %ld \n",
+                           ptile->uid.id, ptile->id);
 
                 code = gx_dc_pattern_read_trans_buff(ptile, offset1, dp, left, mem);
                 if (code < 0)

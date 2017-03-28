@@ -720,6 +720,7 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax,
     int mid_copy_width, right_copy_width;
     int tile_width  = ptile->ttrans->width;
     int tile_height = ptile->ttrans->height;
+    int src_planes = fill_trans_buffer->n_chan + (fill_trans_buffer->has_tags ? 1 : 0);
 
     /* Update the bbox in the topmost stack entry to reflect the fact that we
      * have drawn into it. FIXME: This makes the groups too large! */
@@ -778,10 +779,12 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax,
     if (right_copy_width < 0)
         right_copy_width = 0;
 
-    for (kk = 0; kk < fill_trans_buffer->n_chan; kk++) {
+    for (kk = 0; kk < src_planes; kk++) {
 
         ptr_out = buff_out + kk * fill_trans_buffer->planestride;
         ptr_in  = buff_in  + kk * ptile->ttrans->planestride;
+        if (fill_trans_buffer->has_shape && kk == fill_trans_buffer->n_chan)
+            ptr_out += fill_trans_buffer->planestride;	/* tag plane follows shape plane */
 
         for (jj = 0; jj < h; jj++, ptr_out += fill_trans_buffer->rowstride) {
 
@@ -843,7 +846,11 @@ tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax,
     int tile_width  = ptile->ttrans->width;
     int tile_height = ptile->ttrans->height;
     int num_chan    = ptile->ttrans->n_chan;  /* Includes alpha */
+    int tag_offset = fill_trans_buffer->n_chan + (fill_trans_buffer->has_shape ? 1 : 0);
     pdf14_device *p14dev = (pdf14_device *) fill_trans_buffer->pdev14;
+
+    if (fill_trans_buffer->has_tags == 0)
+        tag_offset = 0;
 
     /* Update the bbox in the topmost stack entry to reflect the fact that we
      * have drawn into it. FIXME: This makes the groups too large! */
@@ -914,6 +921,14 @@ tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax,
             /* Store the color values */
             for (kk = 0; kk < num_chan; kk++) {
                 *(buff_ptr + kk * fill_trans_buffer->planestride) = dst[kk];
+            }
+            /* Now handle the blending of the tag. NB: dst tag_offset follows shape */
+            if (tag_offset > 0) {
+                int src_tag = *(tile_ptr + num_chan * ptile->ttrans->planestride);
+                int dst_tag = *(buff_ptr + tag_offset * fill_trans_buffer->planestride);
+
+                dst_tag |= src_tag;	/* simple blend combines tags */
+                *(buff_ptr + tag_offset * fill_trans_buffer->planestride) = dst_tag;
             }
         }
     }

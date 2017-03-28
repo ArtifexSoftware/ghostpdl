@@ -504,14 +504,17 @@ int gs_currentscreenphase_pgs(const gs_gstate *, gs_int_point *, gs_color_select
 int gs_swapcolors(gs_gstate *);
 void gs_swapcolors_quick(gs_gstate *);
 
-/* Set the graphics_type_tag iff the requested tag bit is not set, and unset	*/
-/* the dev_color so that gx_set_dev_color will remap (encode) with the new tag	*/
+/* Set the graphics_type_tag iff the requested tag bit is not set in the dev_color and	*/
+/* unset the dev_color so that gx_set_dev_color will remap (encode) with the new tag.	*/
+/* Also make sure the tag is set in the device so the two remain in sync.               */
 static inline void ensure_tag_is_set(gs_gstate *pgs, gx_device *dev, gs_graphics_type_tag_t tag)
 {
-    if ((dev->graphics_type_tag & tag) == 0) {
-        if (device_encodes_tags(dev)) {
-            gx_unset_dev_color(pgs);	/* current dev_color needs update to new tag */
+    if (device_encodes_tags(dev)) {
+        if ((dev->graphics_type_tag & tag) == 0)
             dev_proc(dev, set_graphics_type_tag)(dev, tag);
+        if ((pgs->color[0].dev_color->tag & tag) == 0) {
+            gx_unset_dev_color(pgs);	/* current dev_color needs update to new tag */
+            pgs->color[0].dev_color->tag = tag;	/* after unset, now set it */
         }
     }
 }

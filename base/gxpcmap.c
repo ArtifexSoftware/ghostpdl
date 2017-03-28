@@ -332,7 +332,6 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     fdev->log2_align_mod = tdev->log2_align_mod;
     fdev->pad = tdev->pad;
     fdev->is_planar = tdev->is_planar;
-    check_device_separable((gx_device *)fdev);
     gx_device_forward_fill_in_procs(fdev);
     return fdev;
 }
