@@ -625,8 +625,10 @@ run_stdin:
             break;
         case 'o':               /* set output file name and batch mode */
             {
+                i_ctx_t *i_ctx_p = minst->i_ctx_p;
+                uint space = icurrent_space;
                 const char *adef;
-                char *str;
+                byte *str;
                 ref value;
                 int len;
 
@@ -638,13 +640,14 @@ run_stdin:
                     adef = arg;
                 if ((code = gs_main_init1(minst)) < 0)
                     return code;
+                ialloc_set_space(idmemory, avm_system);
                 len = strlen(adef);
-                str = (char *)gs_alloc_bytes(minst->heap, (uint)len, "-o");
+                str = ialloc_string(len, "-o");
                 if (str == NULL)
                     return gs_error_VMerror;
                 memcpy(str, adef, len);
-                make_const_string(&value, a_readonly | avm_foreign,
-                                  len, (const byte *)str);
+                make_const_string(&value, a_readonly | avm_system, len, str);
+                ialloc_set_space(idmemory, space);
                 initial_enter_name("OutputFile", &value);
                 initial_enter_name("NOPAUSE", &vtrue);
                 initial_enter_name("BATCH", &vtrue);
@@ -793,18 +796,14 @@ run_stdin:
                         }
                     } else {
                         int len = strlen(eqp);
-                        char *str =
-                        (char *)gs_alloc_bytes(minst->heap,
-                                               (uint) len, "-s");
+                        byte *body = ialloc_string(len, "-s");
 
-                        if (str == 0) {
+                        if (body == NULL) {
                             lprintf("Out of memory!\n");
                             return gs_error_Fatal;
                         }
-                        memcpy(str, eqp, len);
-                        make_const_string(&value,
-                                          a_readonly | avm_foreign,
-                                          len, (const byte *)str);
+                        memcpy(body, eqp, len);
+                        make_const_string(&value, a_readonly | avm_system, len, body);
                         if ((code = try_stdout_redirect(minst, adef, eqp)) < 0)
                             return code;
                     }
