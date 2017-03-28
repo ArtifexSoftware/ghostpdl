@@ -358,6 +358,7 @@ static int
 clist_fwrite_chars(const void *data, uint len, clist_file_ptr cf)
 {
     int res = 0;
+    IFILE *icf = (IFILE *)cf;
 
     if (gp_can_share_fdesc()) {
         res = gp_fpwrite((char *)data, len, ((IFILE *)cf)->pos, ((IFILE *)cf)->f);
@@ -365,8 +366,13 @@ clist_fwrite_chars(const void *data, uint len, clist_file_ptr cf)
         res = fwrite(data, 1, len, ((IFILE *)cf)->f);
     }
     if (res >= 0)
-        ((IFILE *)cf)->pos += len;
-    ((IFILE *)cf)->filesize = ((IFILE *)cf)->pos;	/* write truncates file */
+        icf->pos += len;
+    icf->filesize = icf->pos;	/* write truncates file */
+    if (!CL_CACHE_NEEDS_INIT(icf->cache)) {
+        /* writing invalidates the read cache */
+        cl_cache_destroy(icf->cache);
+        icf->cache = NULL;
+    }
     return res;
 }
 
