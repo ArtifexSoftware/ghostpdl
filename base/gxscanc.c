@@ -960,7 +960,41 @@ static void mark_line_app(cursor * restrict cr, fixed sx, fixed sy, fixed ex, fi
             output_cursor(cr, sx);
         cr->d = DIRN_UP;
 
-        if (sx <= ex) {
+        if (sx == ex) {
+            /* Vertical line. */
+
+            assert(cr->left <= sx);
+            assert(cr->right >= sx);
+            /* Phase 1: */
+            if (phase1_y_steps) {
+                /* If phase 1 will move us into a new scanline, then we must
+                 * flush it before we move. */
+                if (fixed2int(cr->y) != fixed2int(cr->y + phase1_y_steps))
+                    output_cursor(cr, sx);
+                cr->y += phase1_y_steps;
+                sy += phase1_y_steps;
+                y_steps -= phase1_y_steps;
+                if (y_steps == 0)
+                    return;
+            }
+
+            /* Phase 3: precalculation */
+            y_steps -= phase3_y_steps;
+
+            /* Phase 2: */
+            y_steps = fixed2int(y_steps);
+            assert(y_steps >= 0);
+            cr->left = sx;
+            cr->right = sx;
+            while (y_steps) {
+                output_cursor(cr, sx);
+                cr->y += fixed_1;
+                y_steps--;
+            }
+
+            /* Phase 3 */
+            cr->y += phase3_y_steps;
+        } else if (sx < ex) {
             /* Lines increasing in x. */
             int phase1_x_steps, phase3_x_steps;
             fixed x_steps = ex - sx;
@@ -1090,7 +1124,40 @@ static void mark_line_app(cursor * restrict cr, fixed sx, fixed sy, fixed ex, fi
             output_cursor(cr, sx);
         cr->d = DIRN_DOWN;
 
-        if (sx <= ex) {
+        if (sx == ex) {
+            /* Vertical line. */
+
+            /* Phase 1: */
+            assert(cr->left <= sx);
+            assert(cr->right >= sx);
+            if (phase1_y_steps) {
+                /* Phase 1 in a falling line never moves us into a new scanline. */
+                sy -= phase1_y_steps;
+                cr->y -= phase1_y_steps;
+                y_steps -= phase1_y_steps;
+                if (y_steps == 0)
+                    return;
+            }
+
+            /* Phase 3: precalculation */
+            y_steps -= phase3_y_steps;
+
+            /* Phase 2: */
+            assert((y_steps & (fixed_1 - 1)) == 0);
+            y_steps = fixed2int(y_steps);
+            assert(y_steps >= 0);
+            while (y_steps) {
+                output_cursor(cr, sx);
+                cr->y -= fixed_1;
+                y_steps--;
+            }
+
+            /* Phase 3 */
+            if (phase3_y_steps > 0) {
+                output_cursor(cr, sx);
+                cr->y -= phase3_y_steps;
+            }
+        } else if (sx <= ex) {
             /* Lines increasing in x. */
             int phase1_x_steps, phase3_x_steps;
             fixed x_steps = ex - sx;
@@ -2252,7 +2319,47 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
             output_cursor_tr(cr, sx, id);
         cr->d = DIRN_UP;
 
-        if (sx <= ex) {
+        if (sx == ex) {
+            /* Vertical line. */
+
+            assert(cr->left <= sx);
+            assert(cr->right >= sx);
+            /* Phase 1: */
+            if (phase1_y_steps) {
+                if (cr->right <= sx) {
+                    cr->right = sx;
+                    cr->rid   = id;
+                }
+                /* If phase 1 will move us into a new scanline, then we must
+                 * flush it before we move. */
+                if (fixed2int(cr->y) != fixed2int(cr->y + phase1_y_steps))
+                    output_cursor_tr(cr, sx, id);
+                cr->y += phase1_y_steps;
+                sy += phase1_y_steps;
+                y_steps -= phase1_y_steps;
+                if (y_steps == 0)
+                    return;
+            }
+
+            /* Phase 3: precalculation */
+            y_steps -= phase3_y_steps;
+
+            /* Phase 2: */
+            cr->left = sx;
+            cr->lid = id;
+            cr->right = sx;
+            cr->rid = id;
+            y_steps = fixed2int(y_steps);
+            assert(y_steps >= 0);
+            while (y_steps) {
+                output_cursor_tr(cr, sx, id);
+                cr->y += fixed_1;
+                y_steps--;
+            }
+
+            /* Phase 3 */
+            cr->y += phase3_y_steps;
+        } else if (sx < ex) {
             /* Lines increasing in x. */
             int phase1_x_steps, phase3_x_steps;
             fixed x_steps = ex - sx;
@@ -2401,7 +2508,44 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
             output_cursor_tr(cr, sx, id);
         cr->d = DIRN_DOWN;
 
-        if (sx <= ex) {
+        if (sx == ex) {
+            /* Vertical line. */
+
+            /* Phase 1: */
+            assert(cr->left <= sx);
+            assert(cr->right >= sx);
+            if (phase1_y_steps) {
+                if (cr->right < sx) {
+                    cr->right = sx;
+                    cr->rid   = id;
+                }
+                /* Phase 1 in a falling line never moves us into a new scanline. */
+                sy -= phase1_y_steps;
+                cr->y -= phase1_y_steps;
+                y_steps -= phase1_y_steps;
+                if (y_steps == 0)
+                    return;
+            }
+
+            /* Phase 3: precalculation */
+            y_steps -= phase3_y_steps;
+
+            /* Phase 2: */
+            assert((y_steps & (fixed_1 - 1)) == 0);
+            y_steps = fixed2int(y_steps);
+            assert(y_steps >= 0);
+            while (y_steps) {
+                output_cursor_tr(cr, sx, id);
+                cr->y -= fixed_1;
+                y_steps--;
+            }
+
+            /* Phase 3 */
+            if (phase3_y_steps > 0) {
+                output_cursor_tr(cr, sx, id);
+                cr->y -= phase3_y_steps;
+            }
+        } else if (sx < ex) {
             /* Lines increasing in x. */
             int phase1_x_steps, phase3_x_steps;
             fixed x_steps = ex - sx;
