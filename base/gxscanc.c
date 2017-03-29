@@ -2225,9 +2225,9 @@ flush_cursor_tr(cursor_tr * restrict cr, fixed x, int id)
 
 static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed ex, fixed ey, int id)
 {
-    int isy = fixed2int(sy) - cr->base;
-    int iey = fixed2int(ey) - cr->base;
-    fixed y_steps;
+    int isy, iey;
+    fixed y_steps, saved_ex, saved_ey;
+    int truncated;
 
     if (sx == ex && sy == ey)
         return;
@@ -2242,6 +2242,85 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
 #endif
 
     assert(cr->y == sy && cr->left <= sx && cr->right >= sx && cr->d >= DIRN_UNSET && cr->d <= DIRN_DOWN);
+
+    isy = fixed2int(sy) - cr->base;
+    iey = fixed2int(ey) - cr->base;
+
+    if (isy < iey) {
+        /* Rising line */
+        if (iey < 0 || isy >= cr->scanlines) {
+            /* All line is outside. Just move the cursor to the end. */
+            cr->left = ex;
+            cr->lid = id;
+            cr->right = ex;
+            cr->rid = id;
+            cr->d = DIRN_UP;
+            cr->y = ey;
+            return;
+        }
+        if (isy < 0) {
+            /* Move sy up */
+            int y = ey - sy;
+            int new_sy = int2fixed(cr->base);
+            int dy = new_sy - sy;
+            sx += (int)((((int64_t)(ex-sx))*dy + y/2)/y);
+            sy = new_sy;
+            cr->left = sx;
+            cr->lid = id;
+            cr->right = sx;
+            cr->rid = id;
+            cr->d = DIRN_UP;
+            cr->y = sy;
+        }
+        truncated = iey > cr->scanlines;
+        if (truncated) {
+            /* Move ey down */
+            int y = ey - sy;
+            int new_ey = int2fixed(cr->base + cr->scanlines);
+            int dy = ey - new_ey;
+            saved_ex = ex;
+            saved_ey = ey;
+            ex -= (int)((((int64_t)(ex-sx))*dy + y/2)/y);
+            ey = new_ey;
+        }
+    } else {
+        /* Falling line */
+        if (isy < 0 || iey >= cr->scanlines) {
+            /* All line is outside. Just move the cursor to the end. */
+            cr->left = ex;
+            cr->lid = id;
+            cr->right = ex;
+            cr->rid = id;
+            cr->d = DIRN_DOWN;
+            cr->y = ey;
+            return;
+        }
+        truncated = iey < -1;
+        if (truncated) {
+            /* Move ey up */
+            int y = ey - sy;
+            int new_ey = int2fixed(cr->base-1);
+            int dy = ey - new_ey;
+            saved_ex = ex;
+            saved_ey = ey;
+            ex -= (int)((((int64_t)(ex-sx))*dy + y/2)/y);
+            ey = new_ey;
+        }
+        if (isy >= cr->scanlines) {
+            /* Move sy down */
+            int y = ey - sy;
+            int new_sy = int2fixed(cr->base + cr->scanlines);
+            int dy = new_sy - sy;
+            sx += (int)((((int64_t)(ex-sx))*dy + y/2)/y);
+            sy = new_sy;
+            cr->left = sx;
+            cr->lid = id;
+            cr->right = sx;
+            cr->rid = id;
+            cr->d = DIRN_DOWN;
+            cr->y = sy;
+        }
+    }
 
     /* A note: The code below used to be of the form:
      *   if (isy == iey)   ... deal with horizontal lines
@@ -2331,7 +2410,7 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
                 sy += phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
-                    return;
+                    goto end;
             }
 
             /* Phase 3: precalculation */
@@ -2375,7 +2454,7 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
                 sy += phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
-                    return;
+                    goto end;
             }
 
             /* Phase 3: precalculation */
@@ -2435,7 +2514,7 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
                 sy += phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
-                    return;
+                    goto end;
             }
 
             /* Phase 3: precalculation */
@@ -2517,7 +2596,7 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
                 cr->y -= phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
-                    return;
+                    goto end;
             }
 
             /* Phase 3: precalculation */
@@ -2558,7 +2637,7 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
                 cr->y -= phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
-                    return;
+                    goto end;
             }
 
             /* Phase 3: precalculation */
@@ -2615,7 +2694,7 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
                 cr->y -= phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
-                    return;
+                    goto end;
             }
 
             /* Phase 3: precalculation */
@@ -2652,6 +2731,15 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
                 cr->y -= phase3_y_steps;
             }
         }
+    }
+
+end:
+    if (truncated) {
+        cr->left = saved_ex;
+        cr->lid = id;
+        cr->right = saved_ex;
+        cr->rid = id;
+        cr->y = saved_ey;
     }
 }
 
