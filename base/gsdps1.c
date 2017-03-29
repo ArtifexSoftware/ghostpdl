@@ -201,7 +201,7 @@ gs_rectfill(gs_gstate * pgs, const gs_rect * pr, uint count)
     bool center_of_pixel = (pgs->fill_adjust.x == 0 && pgs->fill_adjust.y == 0);
 
     /* Processing a fill object operation */
-    dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_PATH_TAG);
+    ensure_tag_is_set(pgs, pgs->device, GS_PATH_TAG);	/* NB: may unset_dev_color */
 
     code = gx_set_dev_color(pgs);
     if (code != 0)

@@ -257,7 +257,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
                        gs_pattern1_instance_t *pinst, client_name_t cname)
 {
     gx_device *tdev = pinst->saved->device;
-    bool has_tags = (tdev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) != 0;
+    bool has_tags = device_encodes_tags(tdev);
     int size = gx_pattern_size_estimate(pinst, has_tags);
     gx_device_forward *fdev;
     int force_no_clist = 0;
@@ -1376,7 +1376,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
     gs_gstate *saved;
     gx_color_tile *ctile;
     gs_memory_t *mem = pgs->memory;
-    bool has_tags = (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) != 0;
+    bool has_tags = device_encodes_tags(dev);
     int code;
 
     if (pgs->pattern_cache == NULL)

@@ -1010,9 +1010,6 @@ gx_default_begin_image(gx_device * dev,
     const gs_image_t *ptim;
     int code;
 
-    /* Processing an image object operation */
-    dev_proc(dev, set_graphics_type_tag)(dev, GS_IMAGE_TAG);
-
     set_dev_proc(dev, begin_image, gx_no_begin_image);
     if (pim->format == format)
         ptim = pim;
@@ -1035,10 +1032,6 @@ gx_default_begin_typed_image(gx_device * dev,
               const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
                       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
 {
-    /* Processing an image object operation */
-    if (pgs != NULL)   /* Null can happen when generating image3 mask */
-        dev_proc(dev, set_graphics_type_tag)(dev, GS_IMAGE_TAG);
-
     /* If this is an ImageType 1 image using the gs_gstate's CTM,
          * defer to begin_image.
          */

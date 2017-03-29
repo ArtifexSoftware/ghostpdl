@@ -130,8 +130,10 @@ zinustroke(i_ctx_t *i_ctx_p)
     }
     if (npop > 1)		/* matrix was supplied */
         code = gs_concat(igs, &mat);
-    if (code >= 0)
+    if (code >= 0) {
+        dev_proc(&hdev, set_graphics_type_tag)(&hdev, GS_PATH_TAG);	/* so that fills don't unset dev_color */
         code = gs_stroke(igs);
+    }
     return in_upath_result(i_ctx_p, npop + spop, code);
 }
 
@@ -148,6 +150,7 @@ in_test(i_ctx_t *i_ctx_p, int (*paintproc)(gs_gstate *))
 
     if (npop < 0)
         return npop;
+    dev_proc(&hdev, set_graphics_type_tag)(&hdev, GS_PATH_TAG);	/* so that fills don't unset dev_color */
     code = (*paintproc)(igs);
     return in_path_result(i_ctx_p, npop, code);
 }
@@ -239,6 +242,7 @@ in_utest(i_ctx_t *i_ctx_p, int (*paintproc)(gs_gstate *))
 
     if (npop < 0)
         return npop;
+    dev_proc(&hdev, set_graphics_type_tag)(&hdev, GS_PATH_TAG);	/* so that fills don't unset dev_color */
     code = (*paintproc)(igs);
     return in_upath_result(i_ctx_p, npop, code);
 }

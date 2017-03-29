@@ -287,12 +287,11 @@ static int do_fill(gs_gstate *pgs, int rule)
        handle that, we'll have to add a flag to the path structure, or to the path
        segment structure (depending on how fine grained we require it to be).
      */
-    if (pgs->show_gstate == NULL) {
-        dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_PATH_TAG);
-    }
-    else {
-        dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_TEXT_TAG);
-    }
+    if (pgs->show_gstate == NULL)
+        ensure_tag_is_set(pgs, pgs->device, GS_PATH_TAG);	/* NB: may unset_dev_color */
+    else
+        ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
+
     code = gx_set_dev_color(pgs);
     if (code != 0)
         return code;
@@ -392,12 +391,11 @@ do_stroke(gs_gstate * pgs)
        handle that, we'll have to add a flag to the path structure, or to the path
        segment structure (depending on how fine grained we require it to be).
      */
-    if (pgs->show_gstate == NULL) {
-        dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_PATH_TAG);
-    }
-    else {
-        dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_TEXT_TAG);
-    }
+    if (pgs->show_gstate == NULL)
+        ensure_tag_is_set(pgs, pgs->device, GS_PATH_TAG);	/* NB: may unset_dev_color */
+    else
+        ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
+
     code = gx_set_dev_color(pgs);
     if (code != 0)
         return code;

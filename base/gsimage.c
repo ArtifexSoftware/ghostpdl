@@ -212,8 +212,8 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_gstate * pgs,
 
     if (code < 0)
         return code;
-    /* Processing an image object operation */
-    dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, image_is_text ? GS_TEXT_TAG : GS_IMAGE_TAG);
+    /* Processing an image object operation, but this may be for a text object */
+    ensure_tag_is_set(pgs, pgs->device, image_is_text ? GS_TEXT_TAG : GS_IMAGE_TAG);	/* NB: may unset_dev_color */
 
     if (uses_color) {
         code = gx_set_dev_color(pgs);

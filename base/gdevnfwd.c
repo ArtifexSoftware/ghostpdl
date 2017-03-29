@@ -44,7 +44,8 @@ gx_device_set_target(gx_device_forward *fdev, gx_device *target)
     if (target && !fdev->finalize)
         fdev->finalize = gx_device_forward_finalize;
     rc_assign(fdev->target, target, "gx_device_set_target");
-    fdev->graphics_type_tag = target != NULL ? target->graphics_type_tag : 0;	/* initialize to same as target */
+    /* try to initialize to same as target, otherwise UNKNOWN */
+    fdev->graphics_type_tag = target != NULL ? target->graphics_type_tag : GS_UNKNOWN_TAG;
 }
 
 /* Fill in NULL procedures in a forwarding device procedure record. */

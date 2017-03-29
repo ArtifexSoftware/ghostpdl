@@ -926,7 +926,7 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gx_device *dev)
     pdf14_ctx *result;
     pdf14_buf *buf;
     gs_memory_t	*memory = dev->memory;
-    bool has_tags = dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
+    bool has_tags = device_encodes_tags(dev);
     pdf14_device *pdev = (pdf14_device *)dev;
 
     result = gs_alloc_struct(memory, pdf14_ctx, &st_pdf14_ctx, "pdf14_ctx_new");
@@ -3590,7 +3590,7 @@ pdf14_ok_to_optimize(gx_device *dev)
         pdf14_determine_default_blend_cs(dev, false, &using_blend_cs);
     gsicc_colorbuffer_t dev_icc_cs;
     bool ok = false;
-    int tag_depth = (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) ? 8 : 0;
+    int tag_depth = device_encodes_tags(dev) ? 8 : 0;
     cmm_dev_profile_t *dev_profile;
     int code = dev_proc(dev, get_profile)(dev,  &dev_profile);
 
@@ -3650,7 +3650,7 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
     gx_device * target = pdev->target;
     pdf14_device * dev_proto;
     pdf14_device temp_dev_proto;
-    bool has_tags = dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
+    bool has_tags = device_encodes_tags(dev);
     int code;
 
     if_debug0m('v', dev->memory, "[v]pdf14_recreate_device\n");
@@ -4285,7 +4285,7 @@ pdf14_update_device_color_procs(gx_device *dev,
     byte comp_bits[GX_DEVICE_COLOR_MAX_COMPONENTS];
     byte comp_shift[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int k;
-    bool has_tags = dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
+    bool has_tags = device_encodes_tags(dev);
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
 
@@ -4530,7 +4530,7 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
     byte comp_bits[GX_DEVICE_COLOR_MAX_COMPONENTS];
     byte comp_shift[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int k;
-    bool has_tags = dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
+    bool has_tags = device_encodes_tags(dev);
     cmm_profile_t *icc_profile_dev;
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
@@ -5874,7 +5874,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     if (target == NULL)
         return gs_throw_code(gs_error_Fatal);
 
-    has_tags = target->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
+    has_tags = device_encodes_tags(target);
     max_bitmap = target->space_params.MaxBitmap == 0 ? MAX_BITMAP :
                                  target->space_params.MaxBitmap;
     /* If the device is not a printer class device, it won't support saved-pages */
@@ -6029,7 +6029,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
             goto no_clist_accum;
         }
         /* Do the initial fillpage into the pdf14-accum device we just created */
-        dev_proc(new_target, set_graphics_type_tag)(new_target, GS_PATH_TAG);
+        dev_proc(new_target, set_graphics_type_tag)(new_target, GS_UNTOUCHED_TAG);
         if ((code = gx_remap_concrete_DGray(&pconc_white,
                                             gs_currentcolorspace_inline((gs_gstate *)pgs),
                                             &pdcolor, pgs, new_target, gs_color_select_all)) < 0)
@@ -7140,7 +7140,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     pdf14_clist_device * dev_proto;
     pdf14_clist_device * pdev, temp_dev_proto;
     int code;
-    bool has_tags = target->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
+    bool has_tags = device_encodes_tags(target);
     cmm_profile_t *target_profile;
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;

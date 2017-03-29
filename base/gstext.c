@@ -280,7 +280,7 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
        Unfortunately we can't effectively know a leaf font type here,
        so we load the color unconditionally . */
     /* Processing a text object operation */
-    dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_TEXT_TAG);
+    ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
     code = gx_set_dev_color(pgs);
     if (code != 0)
@@ -311,7 +311,7 @@ gs_text_update_dev_color(gs_gstate * pgs, gs_text_enum_t * pte)
      * well.
      */
     /* Processing a text object operation */
-    dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_TEXT_TAG);
+    ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
     if (pte->pdcolor != 0) {
         int code = gx_set_dev_color(pgs);

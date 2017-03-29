@@ -1839,6 +1839,12 @@ void map_cmyk_subclass(const gx_cm_color_map_procs *procs, gx_device *dev, frac 
     procs->map_cmyk(dev, c, m, y, k, out);
 }
 
+/* Test to see if the device wants to use tags */
+static inline bool device_encodes_tags(gx_device *dev)
+{
+    return (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) != 0;
+}
+
 /* A null device.  This is used to temporarily disable output. */
 #ifndef gx_device_null_DEFINED
 #  define gx_device_null_DEFINED
