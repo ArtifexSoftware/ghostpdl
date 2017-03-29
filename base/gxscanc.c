@@ -1197,7 +1197,6 @@ static void mark_line_app(cursor * restrict cr, fixed sx, fixed sy, fixed ex, fi
             /* Phase 3 */
             if (phase3_y_steps > 0) {
                 output_cursor(cr, sx);
-                cr->right = sx;
                 cr->left  = ex;
                 cr->y -= phase3_y_steps;
             }
@@ -2456,7 +2455,6 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
             /* Phase 3 */
             if (phase3_y_steps > 0) {
                 output_cursor_tr(cr, sx, id);
-                cr->left  = sx;
                 cr->right = ex;
                 cr->y -= phase3_y_steps;
             }
@@ -2513,7 +2511,6 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
             /* Phase 3 */
             if (phase3_y_steps > 0) {
                 output_cursor_tr(cr, sx, id);
-                cr->right = sx;
                 cr->left  = ex;
                 cr->y -= phase3_y_steps;
             }
