@@ -3,7 +3,7 @@
  */
 
 /* Compile from inside ghostpdl with:
- * gcc -I./libpng -I./zlib -o bmpcmp -DHAVE_LIBPNG ./toolbin/bmpcmp.c ./libpng/png.c ./libpng/pngerror.c ./libpng/pngget.c ./libpng/pngmem.c ./libpng/pngpread.c ./libpng/pngread.c ./libpng/pngrio.c ./libpng/pngrtran.c ./libpng/pngrutil.c ./libpng/pngset.c ./libpng/pngtrans.c ./libpng/pngwio.c ./libpng/pngwrite.c ./libpng/pngwtran.c ./libpng/pngwutil.c ./zlib/adler32.c ./zlib/crc32.c ./zlib/infback.c ./zlib/inflate.c ./zlib/uncompr.c ./zlib/compress.c ./zlib/deflate.c ./zlib/gzio.c ./zlib/inffast.c ./zlib/inftrees.c ./zlib/trees.c ./zlib/zutil.c -lm
+ * gcc -I./obj -I./libpng -I./zlib -o bmpcmp -DHAVE_LIBPNG ./toolbin/bmpcmp.c ./libpng/png.c ./libpng/pngerror.c ./libpng/pngget.c ./libpng/pngmem.c ./libpng/pngpread.c ./libpng/pngread.c ./libpng/pngrio.c ./libpng/pngrtran.c ./libpng/pngrutil.c ./libpng/pngset.c ./libpng/pngtrans.c ./libpng/pngwio.c ./libpng/pngwrite.c ./libpng/pngwtran.c ./libpng/pngwutil.c ./zlib/adler32.c ./zlib/crc32.c ./zlib/infback.c ./zlib/inflate.c ./zlib/uncompr.c ./zlib/compress.c ./zlib/deflate.c ./zlib/inffast.c ./zlib/inftrees.c ./zlib/trees.c ./zlib/zutil.c -lm
  */
 
 #include <stdio.h>
@@ -906,11 +906,12 @@ static int skip_string(FILE *file, const char *string)
     return 1;
 }
 
-static void pam_header_read(FILE *file,
-                            int  *width,
-                            int  *height,
-                            int  *maxval)
+static int pam_header_read(FILE *file,
+                           int  *width,
+                           int  *height,
+                           int  *maxval)
 {
+    int cmyk = 0;
     while (1) {
         if        (skip_string(file, "WIDTH")) {
             *width = get_pnm_num(file);
@@ -925,14 +926,16 @@ static void pam_header_read(FILE *file,
             *maxval = get_pnm_num(file);
         } else if (skip_string(file, "TUPLTYPE")) {
             if (skip_string(file, "RGB_TAG")) {
-                /* Treat as CMYK. */
+                cmyk = 2;
             } else if (!skip_string(file, "CMYK")) {
                 fprintf(stderr, "bmpcmp: Only CMYK or RGB_ALPHA PAMs!\n");
                 exit(1);
+            } else {
+                cmyk = 1;
             }
         } else if (skip_string(file, "ENDHDR")) {
           skip_to_eol(file);
-          return;
+          return cmyk;
         } else {
             /* Unknown header string. Just skip to the end of the line */
             skip_to_eol(file);
@@ -981,7 +984,6 @@ static void *pnm_read(ImageReader *im,
             break;
         case 7:
             read = pam_read;
-            *cmyk = 1;
             break;
         default:
             /* Eh? */
@@ -989,7 +991,7 @@ static void *pnm_read(ImageReader *im,
             return NULL;
     }
     if (read == pam_read) {
-        pam_header_read(im->file, width, height, &maxval);
+        *cmyk = pam_header_read(im->file, width, height, &maxval);
     } else {
         *width  = get_pnm_num(im->file);
         *height = get_pnm_num(im->file);
@@ -2423,6 +2425,56 @@ static void uncmyk_bmp(unsigned char *bmp,
     }
 }
 
+static void untag_bmp(unsigned char *bmp,
+                      BBox          *bbox,
+                      int            span)
+{
+    int w, h;
+    int x, y;
+
+    bmp  += span    *(bbox->ymin)+(bbox->xmin*4);
+    w     = bbox->xmax - bbox->xmin;
+    h     = bbox->ymax - bbox->ymin;
+    span -= 4*w;
+    for (y = 0; y < h; y++)
+    {
+        for (x = 0; x < w; x++)
+        {
+            int R, G, B, T, r, g, b;
+ 
+            T = *bmp++;
+            R = *bmp++;
+            G = *bmp++;
+            B = *bmp++;
+
+            r = (R>>2);
+            g = (G>>2);
+            b = (B>>2);
+            if (T & 1)
+              r |= 128;
+            if (T & 2)
+              g |= 128;
+            if (T & 4)
+              b |= 128;
+            if (T & 248)
+            {
+                r |= 64;
+                g |= 64;
+                b |= 64;
+                if ((x^y) & 1)
+                  r |= 128;
+                else
+                  g |= 128;
+            }
+            bmp[-1] = 0;
+            bmp[-2] = r;
+            bmp[-3] = g;
+            bmp[-4] = b;
+        }
+        bmp += span;
+    }
+}
+
 static void diff_bmp(unsigned char *bmp,
                      unsigned char *map,
                      BBox          *bbox,
@@ -3113,10 +3165,18 @@ int main(int argc, char *argv[])
                     DEBUG_BBOX(fprintf(stderr, "bmpcmp: Reduced bbox=%d %d %d %d\n",
                                        boxlist->xmin, boxlist->ymin,
                                        boxlist->xmax, boxlist->ymax));
-                    if (cmyk)
+                    switch(cmyk)
                     {
+                    case 1:
                         uncmyk_bmp(bmp,  boxlist, s);
                         uncmyk_bmp(bmp2, boxlist, s);
+                        break;
+                    case 2:
+                        untag_bmp(bmp,  boxlist, s);
+                        untag_bmp(bmp2, boxlist, s);
+                        break;
+                    default:
+                        break;
                     }
 #ifdef HAVE_LIBPNG
                     sprintf(str1, "%s.%05d.png", params.outroot, n);
