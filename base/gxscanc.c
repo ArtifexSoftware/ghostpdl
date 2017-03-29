@@ -36,13 +36,6 @@
 #include "assert_.h"
 #include <stdlib.h>             /* for qsort */
 
-#ifndef restrict
-#define restrict __restrict
-#endif /* restrict */
-#ifndef inline
-#define inline __inline
-#endif /* inline */
-
 /* Overview of the scan conversion algorithm.
  *
  * The normal scan conversion algorithm runs through a path, converting
@@ -560,11 +553,11 @@ static int make_table(gx_device     * pdev,
     return 0;
 }
 
-int gx_scan_convert(gx_device     * pdev,
-                    gx_path       * path,
-              const gs_fixed_rect * clip,
-                    gx_edgebuffer * edgebuffer,
-                    fixed           fixed_flat)
+int gx_scan_convert(gx_device     * restrict pdev,
+                    gx_path       * restrict path,
+              const gs_fixed_rect * restrict clip,
+                    gx_edgebuffer * restrict edgebuffer,
+                    fixed                    fixed_flat)
 {
     gs_fixed_rect  ibox;
     int            scanlines;
@@ -667,9 +660,9 @@ int gx_scan_convert(gx_device     * pdev,
 
 /* Step 5: Filter the intersections according to the rules */
 int
-gx_filter_edgebuffer(gx_device       * pdev,
-                     gx_edgebuffer   * edgebuffer,
-                     int               rule)
+gx_filter_edgebuffer(gx_device       * restrict pdev,
+                     gx_edgebuffer   * restrict edgebuffer,
+                     int                        rule)
 {
     int i;
 
@@ -721,10 +714,10 @@ gx_filter_edgebuffer(gx_device       * pdev,
 
 /* Step 6: Fill the edgebuffer */
 int
-gx_fill_edgebuffer(gx_device       * pdev,
-             const gx_device_color * pdevc,
-                   gx_edgebuffer   * edgebuffer,
-                   int               log_op)
+gx_fill_edgebuffer(gx_device       * restrict pdev,
+             const gx_device_color * restrict pdevc,
+                   gx_edgebuffer   * restrict edgebuffer,
+                   int                        log_op)
 {
     int i, code;
 
@@ -1296,11 +1289,11 @@ static void mark_curve_app(cursor *cr, fixed sx, fixed sy, fixed c1x, fixed c1y,
         }
 }
 
-int gx_scan_convert_app(gx_device     * pdev,
-                        gx_path       * path,
-                  const gs_fixed_rect * clip,
-                        gx_edgebuffer * edgebuffer,
-                        fixed           fixed_flat)
+int gx_scan_convert_app(gx_device     * restrict pdev,
+                        gx_path       * restrict path,
+                  const gs_fixed_rect * restrict clip,
+                        gx_edgebuffer * restrict edgebuffer,
+                        fixed                    fixed_flat)
 {
     gs_fixed_rect  ibox;
     int            scanlines;
@@ -1413,9 +1406,9 @@ int gx_scan_convert_app(gx_device     * pdev,
 
 /* Step 5: Filter the intersections according to the rules */
 int
-gx_filter_edgebuffer_app(gx_device       * pdev,
-                         gx_edgebuffer   * edgebuffer,
-                         int               rule)
+gx_filter_edgebuffer_app(gx_device       * restrict pdev,
+                         gx_edgebuffer   * restrict edgebuffer,
+                         int                        rule)
 {
     int i;
 
@@ -1503,10 +1496,10 @@ gx_filter_edgebuffer_app(gx_device       * pdev,
 
 /* Step 6: Fill */
 int
-gx_fill_edgebuffer_app(gx_device       * pdev,
-                 const gx_device_color * pdevc,
-                       gx_edgebuffer   * edgebuffer,
-                       int               log_op)
+gx_fill_edgebuffer_app(gx_device       * restrict pdev,
+                 const gx_device_color * restrict pdevc,
+                       gx_edgebuffer   * restrict edgebuffer,
+                       int                        log_op)
 {
     int i, code;
 
@@ -1722,11 +1715,11 @@ static void mark_curve_tr(fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, f
     }
 }
 
-int gx_scan_convert_tr(gx_device     * pdev,
-                       gx_path       * path,
-                 const gs_fixed_rect * clip,
-                       gx_edgebuffer * edgebuffer,
-                       fixed           fixed_flat)
+int gx_scan_convert_tr(gx_device     * restrict pdev,
+                       gx_path       * restrict path,
+                 const gs_fixed_rect * restrict clip,
+                       gx_edgebuffer * restrict edgebuffer,
+                       fixed                    fixed_flat)
 {
     gs_fixed_rect  ibox;
     int            scanlines;
@@ -1830,9 +1823,9 @@ int gx_scan_convert_tr(gx_device     * pdev,
 
 /* Step 5: Filter the intersections according to the rules */
 int
-gx_filter_edgebuffer_tr(gx_device       * pdev,
-                        gx_edgebuffer   * edgebuffer,
-                        int               rule)
+gx_filter_edgebuffer_tr(gx_device       * restrict pdev,
+                        gx_edgebuffer   * restrict edgebuffer,
+                        int                        rule)
 {
     int i;
 
@@ -1887,10 +1880,10 @@ gx_filter_edgebuffer_tr(gx_device       * pdev,
 
 /* Step 6: Fill the edgebuffer */
 int
-gx_fill_edgebuffer_tr(gx_device       * pdev,
-                const gx_device_color * pdevc,
-                      gx_edgebuffer   * edgebuffer,
-                      int               log_op)
+gx_fill_edgebuffer_tr(gx_device       * restrict pdev,
+                const gx_device_color * restrict pdevc,
+                      gx_edgebuffer   * restrict edgebuffer,
+                      int                        log_op)
 {
     int i, j, code;
 
