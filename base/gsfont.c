@@ -278,9 +278,28 @@ static void
 gs_font_dir_finalize(const gs_memory_t *cmem, void *vptr)
 {
     gs_font_dir *pdir = vptr;
+    gx_bits_cache_chunk *chunk = pdir->ccache.chunks;
+    gx_bits_cache_chunk *start_chunk = chunk;
+    gx_bits_cache_chunk *prev_chunk;
+
     if (pdir == cmem->gs_lib_ctx->font_dir) {
         cmem->gs_lib_ctx->font_dir = NULL;
     }
+
+    /* free the circular list of memory chunks */
+    while (chunk) {
+        if (start_chunk == chunk->next) {
+            gs_free_object(pdir->ccache.bits_memory, chunk->data, "gs_font_dir_finalize");
+            gs_free_object(pdir->ccache.bits_memory, chunk, "gs_font_dir_finalize");
+            break;
+        }
+
+        prev_chunk = chunk;
+        chunk = chunk->next;
+        gs_free_object(pdir->ccache.bits_memory, prev_chunk->data, "gs_font_dir_finalize");
+        gs_free_object(pdir->ccache.bits_memory, prev_chunk, "gs_font_dir_finalize");
+    }
+    pdir->ccache.chunks = NULL;
 }
 
 

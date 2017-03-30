@@ -2442,6 +2442,7 @@ static void pdf_free_pdf_font_cache(gx_device_pdf *pdev)
                 gs_free_object(pdev->pdf_font_dir->ccache.bits_memory, prev_chunk, "pdf_free_pdf_font_cache");
             }
 
+            pdev->pdf_font_dir->ccache.chunks = NULL;
             gs_free_object(pdev->pdf_font_dir->memory, pdev->pdf_font_dir->ccache.table, "pdf_free_pdf_font_cache");
             gs_free_object(pdev->pdf_font_dir->memory, pdev->pdf_font_dir, "pdf_free_pdf_font_cache");
             pdev->pdf_font_dir = 0;

@@ -742,6 +742,7 @@ pcfont_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
                     gs_free_object(pcs->font_dir->ccache.bits_memory, prev_chunk, "pcsfont_do_reset");
                 }
 
+                pcs->font_dir->ccache.chunks = NULL;
                 gs_free_object(pcs->font_dir->memory, pcs->font_dir->ccache.table, "pcfont_do_reset");
                 gs_free_object(pcs->font_dir->memory, pcs->font_dir, "pcfont_do_reset");
                 pcs->font_dir = 0;
