@@ -2756,7 +2756,7 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                     if (src[num_comp] == 255) {
                         dst_ptr[tag_off] = curr_tag;
                     } else {
-                        dst_ptr[tag_off] = ( dst_ptr[tag_off] |curr_tag ) & ~GS_UNTOUCHED_TAG;
+                        dst_ptr[tag_off] |= curr_tag;
                     }
                 }
             }
@@ -5133,7 +5133,7 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                     if (dst_ptr[planestride] == 255) {
                         dst_ptr[tag_off] = curr_tag;
                     } else {
-                        dst_ptr[tag_off] = ( dst_ptr[tag_off] |curr_tag ) & ~GS_UNTOUCHED_TAG;
+                        dst_ptr[tag_off] |= curr_tag;
                     }
                 }
                 ++dst_ptr;
@@ -5257,7 +5257,7 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                     if (dst[num_comp] == 255) {
                         dst_ptr[tag_off] = curr_tag;
                     } else {
-                        dst_ptr[tag_off] = ( dst_ptr[tag_off] |curr_tag ) & ~GS_UNTOUCHED_TAG;
+                        dst_ptr[tag_off] |= curr_tag;
                     }
                 }
                 ++dst_ptr;
@@ -5306,7 +5306,7 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev, int x, int y, int w, int h,
                               (has_shape ? planestride : 0);
     bool has_tags = buf->has_tags;
     bool additive = pdev->ctx->additive;
-    gs_graphics_type_tag_t curr_tag = dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS;
+    gs_graphics_type_tag_t curr_tag = GS_UNKNOWN_TAG;  /* Quiet compiler */
     gx_color_index mask = ((gx_color_index)1 << 8) - 1;
     int shift = 8;
     byte shape = 0; /* Quiet compiler. */

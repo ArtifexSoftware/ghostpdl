@@ -131,7 +131,7 @@
            BandingAuto /* banding_type */\
         }, /*space_params*/\
         0/*Profile Array*/,\
-        0/* graphics_type_tag default GS_UNKNOWN_TAG */,\
+        0/* graphics_type_tag default GS_UNTOUCHED_TAG */,\
         { gx_default_install, gx_default_begin_page, gx_default_end_page }
 /*
  * We need a number of different variants of the std_device_ macro simply

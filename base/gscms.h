@@ -209,11 +209,11 @@ typedef enum {
 
 /* The default is "unknown" which has value 0 and by default devices don't encode tags */
 typedef enum {
-    GS_UNKNOWN_TAG = 0x0,
+    GS_UNTOUCHED_TAG = 0x0,	/* UNTOUCHED *must* be 0 -- transparency code relies on this */
     GS_TEXT_TAG = 0x1,
     GS_IMAGE_TAG = 0x2,
     GS_PATH_TAG = 0x4,
-    GS_UNTOUCHED_TAG = 0x8,
+    GS_UNKNOWN_TAG = 0x40,
     GS_DEVICE_ENCODES_TAGS = 0x80
 } gs_graphics_type_tag_t;
 

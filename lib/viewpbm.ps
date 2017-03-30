@@ -128,10 +128,10 @@
       % show the tags as pseudo-color image
       /ncomp 1 def /invert false def /maxv 1 def
       [ /Indexed /DeviceRGB 255
-        % TEXT=1, IMAGE=2, PATH=4, UNTOUCHED=8
-        %  red     green   blue      gray
+        % UNTOUCHED=0, TEXT=1, IMAGE=2, PATH=4
+        %     gray      red     green    blue
         768 string
-        dup 0 <000000 ff0000 00ff00 ffff00 0000ff ff00ff 00ffff ffffff cccccc> putinterval
+        dup 0 <cccccc ff0000 00ff00 ffff00 0000ff ff00ff 00ffff ffffff 000000> putinterval
       ] setcolorspace
       w h {
         readstring pop

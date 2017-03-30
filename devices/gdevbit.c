@@ -547,12 +547,15 @@ bittag_open(gx_device * pdev)
     return code;
 }
 
-/* fill the page fills with unmarked white */
+/*
+ * Fill the page fills with unmarked white, As with the pdf14 device, we treat
+ * GS_UNTOUCHED_TAG == 0 as an invariant
+*/
 static int
 bittag_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
 {
     return (*dev_proc(dev, fill_rectangle))(dev, 0, 0, dev->width, dev->height,
-                                            GS_UNTOUCHED_TAG << 24 | 0xffffff);
+                                            0x00ffffff);	/* GS_UNTOUCHED_TAG == 0 */
 }
 
 static int
