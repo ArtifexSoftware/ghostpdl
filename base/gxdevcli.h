@@ -230,6 +230,10 @@ typedef struct gs_linear_color_edge_s {
  *    creator may choose to do so for performance reasons (e.g.: when
  *    each color component is assigned a byte).
  *
+ *    Note that if the device encodes tags, the comp_shift array must
+ *    provide a shift (and mask) for the tag component in the num_components
+ *    element of the array. Used in gx_default_fill_linear_color_scanline.
+ *
  *  GX_CINFO_SEP_LIN_NON_STANDARD
  *    A separable and linear encoding has the separability and
  *    linearity properties. In addition, we know that this encoding

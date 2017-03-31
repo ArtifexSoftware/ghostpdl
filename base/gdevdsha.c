@@ -199,6 +199,11 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
     const gx_device_color_info *cinfo = &dev->color_info;
     int n = cinfo->num_components;
     int si, ei, di, code;
+    /* If the device encodes tags, we expect the comp_shift[num_components] to be valid */
+    /* for the tag part of the color (usually the high order bits of the color_index).  */
+    gx_color_index tag = device_encodes_tags(dev) ?
+                         (gx_color_index)(dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS) << cinfo->comp_shift[n]
+                         : 0;
 
     /* Todo: set this up to vector earlier */
     if (devn)  /* Note, PDF14 could be additive and doing devn */
@@ -261,6 +266,7 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
         if (ci1 != ci0) {
             si = max(bi, fixed2int(fa->clip->p.x));	    /* Must be compatible to the clipping logic. */
             ei = min(i, fixed2int_ceiling(fa->clip->q.x));  /* Must be compatible to the clipping logic. */
+            ci0 |= tag;		/* set tag (may be 0 if the device doesn't use tags) */
             if (si < ei) {
                 if (fa->swap_axes) {
                     code = dev_proc(dev, fill_rectangle)(dev, j, si, 1, ei - si, ci0);
@@ -313,6 +319,7 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
     si = max(bi, fixed2int(fa->clip->p.x));	    /* Must be compatible to the clipping logic. */
     ei = min(i, fixed2int_ceiling(fa->clip->q.x));  /* Must be compatible to the clipping logic. */
     if (si < ei) {
+        ci0 |= tag;		/* set tag (may be 0 if the device doesn't use tags) */
         if (fa->swap_axes) {
             return dev_proc(dev, fill_rectangle)(dev, j, si, 1, ei - si, ci0);
         } else {

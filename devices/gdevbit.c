@@ -233,17 +233,17 @@ const gx_device_bit gs_bitrgbtags_device =
         sizeof(gx_device_bit),
         &bitrgbtags_procs,
         "bitrgbtags",
-        0 ,                             /* memory */
+        0,                              /* memory */
         &st_device_printer,
-        0 ,                             /* stype_is_dynamic */
-        0 ,                             /* finalize */
-        { 0 } ,                         /* rc header */
-        0 ,                             /* retained */
-        0 ,                             /* parent */
-        0 ,                             /* child */
-        0 ,                             /* subclass data */
-        0 ,                             /* PageList */
-        0 ,                             /* is open */
+        0,                              /* stype_is_dynamic */
+        0,                              /* finalize */
+        { 0 },                          /* rc header */
+        0,                              /* retained */
+        0,                              /* parent */
+        0,                              /* child */
+        0,                              /* subclass data */
+        0,                              /* PageList */
+        0,                              /* is open */
         0,                              /* max_fill_band */
         {                               /* color infor */
             3,                          /* max_components */
@@ -251,17 +251,17 @@ const gx_device_bit gs_bitrgbtags_device =
             GX_CINFO_POLARITY_ADDITIVE, /* polarity */
             32,                         /* depth */
             GX_CINFO_COMP_NO_INDEX,     /* gray index */
-            255 ,                         /* max_gray */
-            255 ,                         /* max_colors */
-            256 ,                         /* dither grays */
-            256 ,                         /* dither colors */
-            { 1, 1 } ,                  /* antialiasing */
+            255,                        /* max_gray */
+            255,                        /* max_colors */
+            256,                        /* dither grays */
+            256,                        /* dither colors */
+            { 1, 1 },                   /* antialiasing */
             GX_CINFO_UNKNOWN_SEP_LIN,   /* sep and linear */
-            { 16, 8, 0, 0 } ,                    /* comp shift */
-            { 8, 8, 8, 8 } ,                     /* comp bits */
-            { 0xFF0000, 0x00FF00, 0x0000FF } ,     /* comp mask */
+            { 16, 8, 0, 24 },           /* comp shift */	/* tag is upper byte */
+            { 8, 8, 8, 8 },             /* comp bits */
+            { 0xFF0000, 0x00FF00, 0x0000FF, 0xFF000000 },  /* comp mask */
             ( "DeviceRGBT" ),            /* color model name */
-            GX_CINFO_OPMODE_UNKNOWN ,   /* overprint mode */
+            GX_CINFO_OPMODE_UNKNOWN,     /* overprint mode */
             0,                           /* process comps */
             0                            /* icc_locations */
         },
@@ -276,35 +276,35 @@ const gx_device_bit gs_bitrgbtags_device =
         0, /* Num planes */
         0,
         {
-            (float)(((((int)((float)(85) * (X_DPI) / 10 + 0.5)) * 72.0 + 0.5) - 0.5) / (X_DPI)) ,
+            (float)(((((int)((float)(85) * (X_DPI) / 10 + 0.5)) * 72.0 + 0.5) - 0.5) / (X_DPI)),
             (float)(((((int)((float)(110) * (Y_DPI) / 10 + 0.5)) * 72.0 + 0.5) - 0.5) / (Y_DPI)) },
         {
             0,
             0,
             0,
             0
-        } ,
-        0 ,
-        { X_DPI, Y_DPI } ,
+        },
+        0,
+        { X_DPI, Y_DPI },
         {(float)(-(0) * (X_DPI)),
          (float)(-(0) * (Y_DPI))},
         {(float)((0) * 72.0),
          (float)((0) * 72.0),
          (float)((0) * 72.0),
          (float)((0) * 72.0)},
-        0 , /*FirstPage*/
-        0 , /*LastPage*/
-        0 , /*PageHandlerPushed*/
-        0 , /*DisablePageHandler*/
-        0 , /*ObjectFilter*/
-        0 , /*ObjectHandlerPushed*/
-        0 , /*PageCount*/
-        0 , /*ShowPageCount*/
-        1 , /*NumCopies*/
-        0 , /*NumCopiesSet*/
-        0 , /*IgnoreNumCopies*/
-        0 , /*UseCIEColor*/
-        0 , /*LockSafetyParams*/
+        0,  /*FirstPage*/
+        0,  /*LastPage*/
+        0,  /*PageHandlerPushed*/
+        0,  /*DisablePageHandler*/
+        0,  /*ObjectFilter*/
+        0,  /*ObjectHandlerPushed*/
+        0,  /*PageCount*/
+        0,  /*ShowPageCount*/
+        1,  /*NumCopies*/
+        0,  /*NumCopiesSet*/
+        0,  /*IgnoreNumCopies*/
+        0,  /*UseCIEColor*/
+        0,  /*LockSafetyParams*/
         0,  /*band_offset_x*/
         0,  /*band_offset_*/
         false, /*BLS_force_memory*/
@@ -333,11 +333,10 @@ const gx_device_bit gs_bitrgbtags_device =
             gx_default_destroy_buf_device },
           gx_default_get_space_params },
         { 0 },
-        0 ,
-        0 ,
-        0 ,
+        0,
+        0,
+        0,
         -1,
-        0 ,
         0,
         0,
         0,
@@ -345,7 +344,8 @@ const gx_device_bit gs_bitrgbtags_device =
         0,
         0,
         0,
-        0 ,
+        0,
+        0,
         0,
         0,
         0
