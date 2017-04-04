@@ -889,11 +889,6 @@ currentdict /no_debug_dict undef
 % may have preceded the EOL, such as spaces or tabs. Thus we back up one
 % character and scan until we find the \n terminator.
 /stream {	% <dict> stream <modified_dict>
-  dup /Length knownoget { 
-    0 eq {
-      dup /Filter undef	% don't confuse any filters that require data
-    } if
-  } if
   dup /F known dup PDFsource PDFfile eq or {
     not {
       dup /File PDFfile put
