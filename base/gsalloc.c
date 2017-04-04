@@ -774,7 +774,7 @@ ialloc_alloc_state(gs_memory_t * parent, uint clump_size)
 #endif
     iimem->is_controlled = false;
     iimem->gc_status.vm_threshold = clump_size * 3L;
-    iimem->gc_status.max_vm = max_long;
+    iimem->gc_status.max_vm = max_int64_t;
     iimem->gc_status.signal_value = 0;
     iimem->gc_status.enabled = false;
     iimem->gc_status.requested = 0;
@@ -861,8 +861,8 @@ ialloc_add_clump(gs_ref_memory_t *imem, ulong space, client_name_t cname)
     /* Allow acquisition of this clump. */
     imem->is_controlled = false;
     imem->large_size = imem->clump_size;
-    imem->limit = max_long;
-    imem->gc_status.max_vm = max_long;
+    imem->limit = max_int64_t;
+    imem->gc_status.max_vm = max_int64_t;
 
     /* Acquire the clump. */
     cp = alloc_add_clump(imem, space, cname);
