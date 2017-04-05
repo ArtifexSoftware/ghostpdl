@@ -193,13 +193,14 @@ static void coord(const char *str, fixed x, fixed y)
 static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int height, int *table, int *index)
 {
     int delta;
-    int isy = fixed2int(sy + fixed_half-1);
-    int iey = fixed2int(ey + fixed_half-1);
+    int iy, ih;
+    fixed clip_sy, clip_ey;
     int dirn = DIRN_UP;
+    int *row;
 
 #ifdef DEBUG_SCAN_CONVERTER
     if (debugging_scan_converter)
-        dlprintf6("Marking line from %x,%x to %x,%x (%x,%x)\n", sx, sy, ex, ey, isy, iey);
+        dlprintf6("Marking line from %x,%x to %x,%x (%x,%x)\n", sx, sy, ex, ey, fixed2int(sy + fixed_half-1) - base_y, fixed2int(ey + fixed_half-1) - base_y);
 #endif
 #ifdef DEBUG_OUTPUT_SC_AS_PS
     dlprintf("0.001 setlinewidth 0 0 0 setrgbcolor %%PS\n");
@@ -208,20 +209,30 @@ static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int he
     dlprintf("stroke %%PS\n");
 #endif
 
-    if (isy == iey)
+    if (fixed2int(sy + fixed_half-1) == fixed2int(ey + fixed_half-1))
         return;
-    if (isy > iey) {
+    if (sy > ey) {
         int t;
-        t = isy; isy = iey; iey = t;
         t = sy; sy = ey; ey = t;
         t = sx; sx = ex; ex = t;
         dirn = DIRN_DOWN;
     }
-    /* So we now have to mark a line of intersects from (sx,sy) to (ex,ey) */
-    /* We know we're going to cross at least 1 'centre of pixel'
-     * scanline. Adjust us to the first. */
-    delta = int2fixed(isy) + fixed_half - sy;
-    assert(delta >= 0 && delta < fixed_1);
+    /* Lines go from sy to ey, closed at the start, open at the end. */
+    /* We clip them to a region to make them closed at both ends. */
+    /* Thus the first scanline marked (>= sy) is: */
+    clip_sy = ((sy + fixed_half - 1) & ~(fixed_1-1)) | fixed_half;
+    /* The last scanline marked (< ey) is: */
+    clip_ey = ((ey - fixed_half - 1) & ~(fixed_1-1)) | fixed_half;
+    /* Now allow for banding */
+    if (clip_sy < int2fixed(base_y) + fixed_half)
+        clip_sy = int2fixed(base_y) + fixed_half;
+    if (ey <= clip_sy)
+        return;
+    if (clip_ey > int2fixed(base_y + height - 1) + fixed_half)
+        clip_ey = int2fixed(base_y + height - 1) + fixed_half;
+    if (sy > clip_ey)
+        return;
+    delta = clip_sy - sy;
     if (delta > 0)
     {
         int dx = ex - sx;
@@ -230,82 +241,78 @@ static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int he
         sx += advance;
         sy += delta;
     }
-    /* Adjust us back from any 'partial' scanline we cross at the
-     * end. */
-    delta = (ey - fixed_half) & (fixed_1-1);
-    assert(delta >= 0 && delta < fixed_1);
     ex -= sx;
     ey -= sy;
+    clip_ey -= clip_sy;
+    delta = ey - clip_ey;
     if (delta > 0)
     {
         int advance = (int)(((int64_t)ex * delta + (ey>>1)) / ey);
         ex -= advance;
         ey -= delta;
     }
-    iey -= isy+1;
-    isy -= base_y;
-    assert(ey >= -fixed_half);
+    ih = fixed2int(ey);
+    assert(ih >= 0);
+    iy = fixed2int(sy) - base_y;
 #ifdef DEBUG_SCAN_CONVERTER
     if (debugging_scan_converter)
-        dlprintf2("    sy=%d ey=%d\n", isy, iey);
+        dlprintf2("    iy=%x ih=%x\n", iy, ih);
 #endif
-    assert(iey >= 0);
+    assert(iy >= 0 && iy < height);
     /* We always cross at least one scanline */
-    if (isy >= 0 && isy < height) {
-        int *row = &table[index[isy]];
-        *row = (*row)+1; /* Increment the count */
-        row[*row] = (sx&~1) | dirn;
-    }
-    if (iey == 0)
+    row = &table[index[iy]];
+    *row = (*row)+1; /* Increment the count */
+    row[*row] = (sx&~1) | dirn;
+    if (ih == 0)
         return;
     if (ex >= 0) {
         int x_inc, n_inc, f;
 
-        /* We want to change sx by ex in iey steps. So each step, we add
-         * ex/iey to sx. That's x_inc + n_inc/iey.
+        /* We want to change sx by ex in ih steps. So each step, we add
+         * ex/ih to sx. That's x_inc + n_inc/ih.
          */
-        x_inc = ex/iey;
-        n_inc = ex-(x_inc*iey);
-        f     = iey>>1;
-        delta = iey;
+        x_inc = ex/ih;
+        n_inc = ex-(x_inc*ih);
+        f     = ih>>1;
+        delta = ih;
         do {
-            isy++;
+            int count;
+            iy++;
             sx += x_inc;
             f  -= n_inc;
             if (f < 0) {
-                f += iey;
+                f += ih;
                 sx++;
             }
-            if (isy >= 0 && isy < height) {
-                int *row = &table[index[isy]];
-                *row = (*row)+1; /* Increment the count */
-                row[*row] = (sx&~1) | dirn;
-            }
+            assert(iy >= 0 && iy < height);
+            row = &table[index[iy]];
+            count = *row = (*row)+1; /* Increment the count */
+            row[count] = (sx&~1) | dirn;
         } while (--delta);
     } else {
         int x_dec, n_dec, f;
 
         ex = -ex;
-        /* We want to change sx by ex in iey steps. So each step, we subtract
-         * ex/iey from sx. That's x_dec + n_dec/iey.
+        /* We want to change sx by ex in ih steps. So each step, we subtract
+         * ex/ih from sx. That's x_dec + n_dec/ih.
          */
-        x_dec = ex/iey;
-        n_dec = ex-(x_dec*iey);
-        f     = iey>>1;
-         delta = iey;
+        x_dec = ex/ih;
+        n_dec = ex-(x_dec*ih);
+        f     = ih>>1;
+        delta = ih;
         do {
-            isy++;
+            int count;
+            iy++;
             sx -= x_dec;
             f  -= n_dec;
             if (f < 0) {
-                f += iey;
+                f += ih;
                 sx--;
             }
-            if (isy >= 0 && isy < height) {
-                int *row = &table[index[isy]];
-                (*row)++; /* Increment the count */
-                row[*row] = (sx&~1) | dirn;
-            }
+            assert(iy >= 0 && iy < height);
+            row = &table[index[iy]];
+            count = *row = (*row)+1; /* Increment the count */
+            row[count] = (sx&~1) | dirn;
         } while (--delta);
     }
 }
@@ -1589,13 +1596,14 @@ gx_edgebuffer_print_tr(gx_edgebuffer * edgebuffer)
 static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int height, int *table, int *index, int id)
 {
     int delta;
-    int isy = fixed2int(sy + fixed_half-1);
-    int iey = fixed2int(ey + fixed_half-1);
+    int iy, ih;
+    fixed clip_sy, clip_ey;
     int dirn = DIRN_UP;
+    int *row;
 
 #ifdef DEBUG_SCAN_CONVERTER
     if (debugging_scan_converter)
-        dlprintf6("Marking line (tr) from %x,%x to %x,%x (%x,%x)\n", sx, sy, ex, ey, isy, iey);
+        dlprintf6("Marking line (tr) from %x,%x to %x,%x (%x,%x)\n", sx, sy, ex, ey, fixed2int(sy + fixed_half-1) - base_y, fixed2int(ey + fixed_half-1) - base_y);
 #endif
 #ifdef DEBUG_OUTPUT_SC_AS_PS
     dlprintf("0.001 setlinewidth 0 0 0 setrgbcolor %%PS\n");
@@ -1604,21 +1612,30 @@ static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int
     dlprintf("stroke %%PS\n");
 #endif
 
-    if (isy == iey)
+    if (fixed2int(sy + fixed_half-1) == fixed2int(ey + fixed_half-1))
         return;
-    if (isy > iey) {
+    if (sy > ey) {
         int t;
-        t = isy; isy = iey; iey = t;
         t = sy; sy = ey; ey = t;
         t = sx; sx = ex; ex = t;
         dirn = DIRN_DOWN;
     }
-    id = (id<<1) | dirn;
-    /* So we now have to mark a line of intersects from (sx,sy) to (ex,ey) */
-    /* We know we're going to cross at least 1 'centre of pixel'
-     * scanline. Adjust us to the first. */
-    delta = int2fixed(isy) + fixed_half - sy;
-    assert(delta >= 0 && delta < fixed_1);
+    /* Lines go from sy to ey, closed at the start, open at the end. */
+    /* We clip them to a region to make them closed at both ends. */
+    /* Thus the first scanline marked (>= sy) is: */
+    clip_sy = ((sy + fixed_half - 1) & ~(fixed_1-1)) | fixed_half;
+    /* The last scanline marked (< ey) is: */
+    clip_ey = ((ey - fixed_half - 1) & ~(fixed_1-1)) | fixed_half;
+    /* Now allow for banding */
+    if (clip_sy < int2fixed(base_y) + fixed_half)
+        clip_sy = int2fixed(base_y) + fixed_half;
+    if (ey <= clip_sy)
+        return;
+    if (clip_ey > int2fixed(base_y + height - 1) + fixed_half)
+        clip_ey = int2fixed(base_y + height - 1) + fixed_half;
+    if (sy > clip_ey)
+        return;
+    delta = clip_sy - sy;
     if (delta > 0)
     {
         int dx = ex - sx;
@@ -1627,86 +1644,83 @@ static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int
         sx += advance;
         sy += delta;
     }
-    /* Adjust us back from any 'partial' scanline we cross at the
-     * end. */
     ex -= sx;
     ey -= sy;
-    delta = (ey - fixed_half) & (fixed_1-1);
-    assert(delta >= 0 && delta < fixed_1);
+    clip_ey -= clip_sy;
+    delta = ey - clip_ey;
     if (delta > 0)
     {
         int advance = (int)(((int64_t)ex * delta + (ey>>1)) / ey);
         ex -= advance;
         ey -= delta;
     }
-    iey -= isy+1;
-    isy -= base_y;
-    assert(ey >= -fixed_half);
+    ih = fixed2int(ey);
+    assert(ih >= 0);
+    iy = fixed2int(sy) - base_y;
 #ifdef DEBUG_SCAN_CONVERTER
     if (debugging_scan_converter)
-        dlprintf2("    sy=%d ey=%d\n", isy, iey);
+        dlprintf2("    iy=%x ih=%x\n", iy, ih);
 #endif
-    assert(iey >= 0);
+    assert(iy >= 0 && iy < height);
+    id = (id<<1) | dirn;
     /* We always cross at least one scanline */
-    if (isy >= 0 && isy < height) {
-        int *row = &table[index[isy]];
-        *row = (*row)+1; /* Increment the count */
-        row[*row * 2 - 1] = sx;
-        row[*row * 2    ] = id;
-    }
-    if (iey == 0)
+    row = &table[index[iy]];
+    *row = (*row)+1; /* Increment the count */
+    row[*row * 2 - 1] = sx;
+    row[*row * 2    ] = id;
+    if (ih == 0)
         return;
     if (ex >= 0) {
         int x_inc, n_inc, f;
 
-        /* We want to change sx by ex in iey steps. So each step, we add
-         * ex/iey to sx. That's x_inc + n_inc/iey.
+        /* We want to change sx by ex in ih steps. So each step, we add
+         * ex/ih to sx. That's x_inc + n_inc/ih.
          */
-        x_inc = ex/iey;
-        n_inc = ex-(x_inc*iey);
-        f     = iey>>1;
-        delta = iey;
+        x_inc = ex/ih;
+        n_inc = ex-(x_inc*ih);
+        f     = ih>>1;
+        delta = ih;
         do {
-            isy++;
+            int count;
+            iy++;
             sx += x_inc;
             f  -= n_inc;
             if (f < 0) {
-                f += iey;
+                f += ih;
                 sx++;
             }
-            if (isy >= 0 && isy < height) {
-                int * row = &table[index[isy]];
-                *row = (*row)+1; /* Increment the count */
-                row[*row * 2 - 1] = sx;
-                row[*row * 2    ] = id;
-            }
+            assert(iy >= 0 && iy < height);
+            row = &table[index[iy]];
+            count = *row = (*row)+1; /* Increment the count */
+            row[count * 2 - 1] = sx;
+            row[count * 2    ] = id;
         }
         while (--delta);
     } else {
         int x_dec, n_dec, f;
 
         ex = -ex;
-        /* We want to change sx by ex in iey steps. So each step, we subtract
-         * ex/iey from sx. That's x_dec + n_dec/iey.
+        /* We want to change sx by ex in ih steps. So each step, we subtract
+         * ex/ih from sx. That's x_dec + n_dec/ih.
          */
-        x_dec = ex/iey;
-        n_dec = ex-(x_dec*iey);
-        f     = iey>>1;
-        delta = iey;
+        x_dec = ex/ih;
+        n_dec = ex-(x_dec*ih);
+        f     = ih>>1;
+        delta = ih;
         do {
-            isy++;
+            int count;
+            iy++;
             sx -= x_dec;
             f  -= n_dec;
             if (f < 0) {
-                f += iey;
+                f += ih;
                 sx--;
             }
-            if (isy >= 0 && isy < height) {
-                int *row = &table[index[isy]];
-                (*row)++; /* Increment the count */
-                row[*row * 2 - 1] = sx;
-                row[*row * 2    ] = id;
-            }
+            assert(iy >= 0 && iy < height);
+            row = &table[index[iy]];
+            count = *row = (*row)+1; /* Increment the count */
+            row[count * 2 - 1] = sx;
+            row[count * 2    ] = id;
          }
          while (--delta);
     }
@@ -2093,7 +2107,6 @@ gx_edgebuffer_print_filtered_tr_app(gx_edgebuffer * edgebuffer)
         int  offset = edgebuffer->index[i];
         int *row    = &edgebuffer->table[offset];
         int count   = *row++;
-        int c       = count;
         dlprintf3("%x @ %d: %d =", i, offset, count);
         while (count-- > 0) {
             int left  = *row++;
@@ -2266,14 +2279,9 @@ cursor_step_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
 static inline void
 cursor_never_step_vertical_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
 {
-    int iy = fixed2int(cr->y) - cr->base;
-    int new_iy;
+    assert(fixed2int(cr->y+dy) == fixed2int(cr->y));
 
     cr->y += dy;
-    new_iy = fixed2int(cr->y) - cr->base;
-    (void)iy;
-    (void)new_iy;
-    assert(new_iy == iy);
 }
 
 /* Step the cursor in y, never by enough to cross a scanline,
@@ -2282,8 +2290,7 @@ cursor_never_step_vertical_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id
 static inline void
 cursor_never_step_left_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
 {
-    int iy = fixed2int(cr->y) - cr->base;
-    int new_iy;
+    assert(fixed2int(cr->y+dy) == fixed2int(cr->y));
 
     if (x < cr->left)
     {
@@ -2291,8 +2298,6 @@ cursor_never_step_left_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
         cr->lid = id;
     }
     cr->y += dy;
-    new_iy = fixed2int(cr->y) - cr->base;
-    assert(new_iy == iy);
 }
 
 /* Step the cursor in y, never by enough to cross a scanline,
@@ -2301,8 +2306,7 @@ cursor_never_step_left_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
 static inline void
 cursor_never_step_right_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
 {
-    int iy = fixed2int(cr->y) - cr->base;
-    int new_iy;
+    assert(fixed2int(cr->y+dy) == fixed2int(cr->y));
 
     if (x > cr->right)
     {
@@ -2310,8 +2314,6 @@ cursor_never_step_right_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
         cr->rid = id;
     }
     cr->y += dy;
-    new_iy = fixed2int(cr->y) - cr->base;
-    assert(new_iy == iy);
 }
 
 /* Step the cursor in y, always by enough to cross a scanline. */
