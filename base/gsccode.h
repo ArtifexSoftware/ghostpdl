@@ -26,7 +26,7 @@
  */
 typedef ulong gs_char;
 
-#define GS_NO_CHAR ((gs_char)~0L)
+#define GS_NO_CHAR ((gs_char)~0UL)
 /* Backward compatibility */
 #define gs_no_char GS_NO_CHAR
 
