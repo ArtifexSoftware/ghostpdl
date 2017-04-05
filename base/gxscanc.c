@@ -2204,6 +2204,37 @@ cursor_output_tr(cursor_tr * restrict cr, int iy)
 }
 
 static inline void
+cursor_output_inrange_tr(cursor_tr * restrict cr, int iy)
+{
+    int *row;
+    int count;
+
+    assert(iy >= 0 && iy < cr->scanlines);
+    if (cr->first) {
+        /* Save it for later in case we join up */
+        cr->save_left  = cr->left;
+        cr->save_lid   = cr->lid;
+        cr->save_right = cr->right;
+        cr->save_rid   = cr->rid;
+        cr->save_iy    = iy;
+        cr->save_d     = cr->d;
+        cr->saved      = 1;
+    } else {
+        /* Enter it into the table */
+        assert(cr->d != DIRN_UNSET);
+
+        row = &cr->table[cr->index[iy]];
+        *row = count = (*row)+1; /* Increment the count */
+        row[4 * count - 3] = cr->left;
+        row[4 * count - 2] = cr->d | (cr->lid<<1);
+        row[4 * count - 1] = cr->right;
+        row[4 * count    ] = cr->rid;
+    }
+    cr->first = 0;
+}
+
+/* Step the cursor in y, allowing for maybe crossing a scanline */
+static inline void
 cursor_step_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
 {
     int new_iy;
@@ -2229,6 +2260,112 @@ cursor_step_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
             cr->rid = id;
         }
     }
+}
+
+/* Step the cursor in y, never by enough to cross a scanline. */
+static inline void
+cursor_never_step_vertical_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+{
+    int iy = fixed2int(cr->y) - cr->base;
+    int new_iy;
+
+    cr->y += dy;
+    new_iy = fixed2int(cr->y) - cr->base;
+    (void)iy;
+    (void)new_iy;
+    assert(new_iy == iy);
+}
+
+/* Step the cursor in y, never by enough to cross a scanline,
+ * knowing that we are moving left, and that the right edge
+ * has already been accounted for. */
+static inline void
+cursor_never_step_left_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+{
+    int iy = fixed2int(cr->y) - cr->base;
+    int new_iy;
+
+    if (x < cr->left)
+    {
+        cr->left = x;
+        cr->lid = id;
+    }
+    cr->y += dy;
+    new_iy = fixed2int(cr->y) - cr->base;
+    assert(new_iy == iy);
+}
+
+/* Step the cursor in y, never by enough to cross a scanline,
+ * knowing that we are moving right, and that the left edge
+ * has already been accounted for. */
+static inline void
+cursor_never_step_right_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+{
+    int iy = fixed2int(cr->y) - cr->base;
+    int new_iy;
+
+    if (x > cr->right)
+    {
+        cr->right = x;
+        cr->rid = id;
+    }
+    cr->y += dy;
+    new_iy = fixed2int(cr->y) - cr->base;
+    assert(new_iy == iy);
+}
+
+/* Step the cursor in y, always by enough to cross a scanline. */
+static inline void
+cursor_always_step_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+{
+    int iy = fixed2int(cr->y) - cr->base;
+
+    cursor_output_tr(cr, iy);
+    cr->y += dy;
+    cr->left = x;
+    cr->lid = id;
+    cr->right = x;
+    cr->rid = id;
+}
+
+/* Step the cursor in y, always by enough to cross a scanline, as
+ * part of a vertical line, knowing that we are moving from a
+ * position guaranteed to be in the valid y range. */
+static inline void
+cursor_always_step_inrange_vertical_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+{
+    int iy = fixed2int(cr->y) - cr->base;
+
+    cursor_output_tr(cr, iy);
+    cr->y += dy;
+}
+
+/* Step the cursor in y, always by enough to cross a scanline, as
+ * part of a left moving line, knowing that we are moving from a
+ * position guaranteed to be in the valid y range. */
+static inline void
+cursor_always_inrange_step_left_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+{
+    int iy = fixed2int(cr->y) - cr->base;
+
+    cr->y += dy;
+    cursor_output_inrange_tr(cr, iy);
+    cr->right = x;
+    cr->rid = id;
+}
+
+/* Step the cursor in y, always by enough to cross a scanline, as
+ * part of a right moving line, knowing that we are moving from a
+ * position guaranteed to be in the valid y range. */
+static inline void
+cursor_always_inrange_step_right_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+{
+    int iy = fixed2int(cr->y) - cr->base;
+
+    cr->y += dy;
+    cursor_output_inrange_tr(cr, iy);
+    cr->left = x;
+    cr->lid = id;
 }
 
 static inline void cursor_init_tr(cursor_tr * restrict cr, fixed y, fixed x, int id)
@@ -2527,9 +2664,13 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
             /* Phase 2: */
             y_steps = fixed2int(y_steps);
             assert(y_steps >= 0);
-            while (y_steps) {
-                cursor_step_tr(cr, fixed_1, sx, id);
+            if (y_steps > 0) {
+                cursor_always_step_tr(cr, fixed_1, sx, id);
                 y_steps--;
+                while (y_steps) {
+                    cursor_always_step_inrange_vertical_tr(cr, fixed_1, sx, id);
+                    y_steps--;
+                }
             }
 
             /* Phase 3 */
@@ -2570,21 +2711,31 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
                 int n_inc = x_steps - (x_inc * y_steps);
                 int f = y_steps/2;
                 int d = y_steps;
-                do {
+
+                /* Special casing the first iteration, allows us to simplify
+                 * the following loop. */
+                sx += x_inc;
+                f -= n_inc;
+                if (f < 0)
+                    f += d, sx++;
+                cursor_right_merge_tr(cr, sx, id);
+                cursor_always_step_tr(cr, fixed_1, sx, id);
+                y_steps--;
+
+                while (y_steps) {
                     sx += x_inc;
                     f -= n_inc;
                     if (f < 0)
                         f += d, sx++;
-                    cursor_right_merge_tr(cr, sx, id); /* FIXME: Only needs to be _merge the first time */
-                    cursor_step_tr(cr, fixed_1, sx, id);
+                    cursor_right_tr(cr, sx, id);
+                    cursor_always_inrange_step_right_tr(cr, fixed_1, sx, id);
                     y_steps--;
-                } while (y_steps);
+                };
             }
 
             /* Phase 3 */
             assert(cr->left <= ex && cr->lid == id && cr->right >= sx);
-            cr->right = ex;
-            cr->rid = id;
+            cursor_right_tr(cr, ex, id);
             cr->y += phase3_y_steps;
         } else {
             /* Lines decreasing in x. (Leftwards, rising) */
@@ -2595,9 +2746,9 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
             cursor_right_merge_tr(cr, sx, id);
             if (phase1_y_steps) {
                 phase1_x_steps = (int)(((int64_t)x_steps * phase1_y_steps + y_steps/2) / y_steps);
+                x_steps -= phase1_x_steps;
                 sx -= phase1_x_steps;
                 cursor_left_merge_tr(cr, sx, id);
-                x_steps -= phase1_x_steps;
                 cursor_step_tr(cr, phase1_y_steps, sx, id);
                 sy += phase1_y_steps;
                 y_steps -= phase1_y_steps;
@@ -2621,21 +2772,31 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
                 int n_inc = x_steps - (x_inc * y_steps);
                 int f = y_steps/2;
                 int d = y_steps;
-                do {
+
+                /* Special casing the first iteration, allows us to simplify
+                 * the following loop. */
+                sx -= x_inc;
+                f -= n_inc;
+                if (f < 0)
+                    f += d, sx--;
+                cursor_left_merge_tr(cr, sx, id);
+                cursor_always_step_tr(cr, fixed_1, sx, id);
+                y_steps--;
+
+                while (y_steps) {
                     sx -= x_inc;
                     f -= n_inc;
                     if (f < 0)
                         f += d, sx--;
-                    cursor_left_merge_tr(cr, sx, id); /* FIXME: Only needs to be _merge the first time */
-                    cursor_step_tr(cr, fixed_1, sx, id);
+                    cursor_left_tr(cr, sx, id);
+                    cursor_always_inrange_step_left_tr(cr, fixed_1, sx, id);
                     y_steps--;
-                } while (y_steps);
+                }
             }
 
             /* Phase 3 */
             assert(cr->right >= ex && cr->rid == id && cr->left <= sx);
-            cr->left = ex;
-            cr->lid = id;
+            cursor_left_tr(cr, ex, id);
             cr->y += phase3_y_steps;
         }
     } else {
@@ -2653,12 +2814,12 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
         /* Cope with the awkward 0x80000000 case. */
         if (y_steps < 0)
         {
-          int mx, my;
-          mx = sx + ((ex-sx)>>1);
-          my = sy + ((ey-sy)>>1);
-          mark_line_tr_app(cr, sx, sy, mx, my, id);
-          mark_line_tr_app(cr, mx, my, ex, ey, id);
-          return;
+            int mx, my;
+            mx = sx + ((ex-sx)>>1);
+            my = sy + ((ey-sy)>>1);
+            mark_line_tr_app(cr, sx, sy, mx, my, id);
+            mark_line_tr_app(cr, mx, my, ex, ey, id);
+            return;
         }
 
         cursor_down_tr(cr, sx, id);
@@ -2671,8 +2832,7 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
             cursor_right_merge_tr(cr, sx, id);
             if (phase1_y_steps) {
                 /* Phase 1 in a falling line never moves us into a new scanline. */
-                /* FIXME: Doing too much in the next call */
-                cursor_step_tr(cr, -phase1_y_steps, sx, id);
+                cursor_never_step_vertical_tr(cr, -phase1_y_steps, sx, id);
                 sy -= phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
@@ -2686,9 +2846,13 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
             /* Phase 2: */
             y_steps = fixed2int(y_steps);
             assert(y_steps >= 0);
-            while (y_steps) {
-                cursor_step_tr(cr, -fixed_1, sx, id);
+            if (y_steps) {
+                cursor_always_step_tr(cr, -fixed_1, sx, id);
                 y_steps--;
+                while (y_steps) {
+                    cursor_always_step_inrange_vertical_tr(cr, -fixed_1, sx, id);
+                    y_steps--;
+                }
             }
 
             /* Phase 3 */
@@ -2705,12 +2869,10 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
             cursor_left_merge_tr(cr, sx, id);
             if (phase1_y_steps) {
                 phase1_x_steps = (int)(((int64_t)x_steps * phase1_y_steps + y_steps/2) / y_steps);
-                sx += phase1_x_steps;
-                cursor_right_merge_tr(cr, sx, id);
                 x_steps -= phase1_x_steps;
+                sx += phase1_x_steps;
                 /* Phase 1 in a falling line never moves us into a new scanline. */
-                /* FIXME: Doing too much in the next call */
-                cursor_step_tr(cr, -phase1_y_steps, sx, id);
+                cursor_never_step_right_tr(cr, -phase1_y_steps, sx, id);
                 sy -= phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
@@ -2734,15 +2896,24 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
                 int n_inc = x_steps - (x_inc * y_steps);
                 int f = y_steps/2;
                 int d = y_steps;
-                do {
-                    cursor_step_tr(cr, -fixed_1, sx, id);
+
+                cursor_always_step_tr(cr, -fixed_1, sx, id);
+                sx += x_inc;
+                f -= n_inc;
+                if (f < 0)
+                    f += d, sx++;
+                cursor_right_tr(cr, sx, id);
+                y_steps--;
+
+                while (y_steps) {
+                    cursor_always_inrange_step_right_tr(cr, -fixed_1, sx, id);
                     sx += x_inc;
                     f -= n_inc;
                     if (f < 0)
                         f += d, sx++;
                     cursor_right_tr(cr, sx, id);
                     y_steps--;
-                } while (y_steps);
+                }
             }
 
             /* Phase 3 */
@@ -2760,12 +2931,10 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
             cursor_right_merge_tr(cr, sx, id);
             if (phase1_y_steps) {
                 phase1_x_steps = (int)(((int64_t)x_steps * phase1_y_steps + y_steps/2) / y_steps);
-                sx -= phase1_x_steps;
-                cursor_left_merge_tr(cr, sx, id);
                 x_steps -= phase1_x_steps;
+                sx -= phase1_x_steps;
                 /* Phase 1 in a falling line never moves us into a new scanline. */
-                /* FIXME: Doing too much in the next call */
-                cursor_step_tr(cr, -phase1_y_steps, sx, id);
+                cursor_never_step_left_tr(cr, -phase1_y_steps, sx, id);
                 sy -= phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
@@ -2789,15 +2958,24 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
                 int n_inc = x_steps - (x_inc * y_steps);
                 int f = y_steps/2;
                 int d = y_steps;
-                do {
-                    cursor_step_tr(cr, -fixed_1, sx, id);
+
+                cursor_always_step_tr(cr, -fixed_1, sx, id);
+                sx -= x_inc;
+                f -= n_inc;
+                if (f < 0)
+                    f += d, sx--;
+                cursor_left_tr(cr, sx, id);
+                y_steps--;
+
+                while (y_steps) {
+                    cursor_always_inrange_step_left_tr(cr, -fixed_1, sx, id);
                     sx -= x_inc;
                     f -= n_inc;
                     if (f < 0)
                         f += d, sx--;
                     cursor_left_tr(cr, sx, id);
                     y_steps--;
-                } while (y_steps);
+                }
             }
 
             /* Phase 3 */
