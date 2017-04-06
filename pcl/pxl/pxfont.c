@@ -458,7 +458,8 @@ px_text(px_args_t * par, px_state_t * pxs, bool to_path)
 
         code = px_text_setup(pgs, pchr, len, fxvals, fyvals,
                              len, mem, &penum, to_path,
-                             pxgs->char_bold_value == 0);
+                             pxgs->char_bold_value == 0 &&
+                             plfont->allow_vertical_substitutes == 0);
 
         if (code >= 0) {
             code = gs_text_process(penum);
