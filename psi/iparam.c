@@ -770,12 +770,13 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
                 gs_param_enumerator_t enumr;
                 gs_param_key_t key;
                 ref_type keytype;
+                dict_param_list *dlist = (dict_param_list *) pvalue->value.d.list;
 
                 param_init_enumerator(&enumr);
-                if (!(*((iparam_list *) plist)->enumerate)
-                    ((iparam_list *) pvalue->value.d.list, &enumr, &key, &keytype)
+                if (!(*(dlist->enumerate))
+                    ((iparam_list *) dlist, &enumr, &key, &keytype)
                     && keytype == t_integer) {
-                    ((dict_param_list *) pvalue->value.d.list)->int_keys = 1;
+                    dlist->int_keys = 1;
                     pvalue->type = gs_param_type_dict_int_keys;
                 }
             }
