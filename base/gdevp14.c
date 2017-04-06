@@ -4494,8 +4494,8 @@ pdf14_update_device_color_procs(gx_device *dev,
     }
     memset(&(pdev->color_info.comp_bits), 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
     memset(&(pdev->color_info.comp_shift), 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
-    memcpy(&(pdev->color_info.comp_bits), comp_bits, 4);
-    memcpy(&(pdev->color_info.comp_shift), comp_shift, 4);
+    memcpy(&(pdev->color_info.comp_bits), comp_bits, new_num_comps);
+    memcpy(&(pdev->color_info.comp_shift), comp_shift, new_num_comps);
     pdev->color_info.max_color = 255;
     pdev->color_info.max_gray = 255;
     /* If the CS was ICC based, we need to update the device ICC profile
@@ -4701,8 +4701,8 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
             pdev->color_info.depth = new_depth;
             memset(&(pdev->color_info.comp_bits),0,GX_DEVICE_COLOR_MAX_COMPONENTS);
             memset(&(pdev->color_info.comp_shift),0,GX_DEVICE_COLOR_MAX_COMPONENTS);
-            memcpy(&(pdev->color_info.comp_bits),comp_bits,4);
-            memcpy(&(pdev->color_info.comp_shift),comp_shift,4);
+            memcpy(&(pdev->color_info.comp_bits), comp_bits, new_num_comps);
+            memcpy(&(pdev->color_info.comp_shift), comp_shift, new_num_comps);
             /* If we have a compressed color codec, and we are doing a soft mask
                push operation then go ahead and update the color encode and
                decode for the pdf14 device to not used compressed color
