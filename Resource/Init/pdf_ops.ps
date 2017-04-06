@@ -357,22 +357,20 @@ currentdict /gput_always_allow .undef
 %(in sc*_and_set) == flush
   dup type /dicttype eq
   {
-%  (currentcolorspace = ) print currentcolorspace == flush
     dup /Type known
     {
       dup /Type get /Pattern eq {PDFsetpattern} if
     }
     {
-      dup /PatternType known {(executing PDFsetpattern) == flush PDFsetpattern} if
+      dup /PatternType known {PDFsetpattern} if
     } ifelse
   } if
   .setfillcolor
-%(/in sc*_and_set) == flush
 } bdef
 /SC*_and_set {
+%(in SC*_and_set) == flush
   dup type /dicttype eq
   {
-%  (currentcolorspace = ) print currentcolorspace == flush
     dup /Type known
     {
       dup /Type get /Pattern eq {PDFsetpattern} if
@@ -391,16 +389,14 @@ currentdict /gput_always_allow .undef
 %(in sc1_and_set) == flush
   dup type /dicttype eq
   {
-%  (currentcolorspace = ) print currentcolorspace == flush
     dup /Type known
     {
       dup /Type get /Pattern eq {PDFsetpattern} if
     }
     {
-      dup /PatternType known {(executing PDFsetpattern) == flush PDFsetpattern} if
+      dup /PatternType known {PDFsetpattern} if
     } ifelse
   } if
-%  (in sc1_and_set) == flush
   .setfillcolor
 } bdef
 /SC1_and_set {
@@ -412,13 +408,12 @@ currentdict /gput_always_allow .undef
       dup /Type get /Pattern eq {PDFsetpattern} if
     }
     {
-      dup /PatternType known {(executing PDFsetpattern) == flush PDFsetpattern} if
+      dup /PatternType known {PDFsetpattern} if
     } ifelse
   } if
-%  (in SC1_and_set) == flush
   .setstrokecolor
 } bdef
-/csput {%(scput) == flush
+/csput {%dup == flush (csput) == flush
  dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch 2 copy .setfillcolorspace exec .setfillcolor .setstrokecolorspace exec .setstrokecolor} bdef
 /csset {%(csset) == flush
  dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch} bdef

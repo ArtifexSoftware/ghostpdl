@@ -637,7 +637,15 @@ def
   3 -1 roll dup /GroupGState .knownget { 2 index /GroupGState 3 -1 roll put} if
   /GroupExtGState .knownget { 1 index /GroupExtGState 3 -1 roll put} if
   exch //false resolvestream
-  1 index exch currentcolorspace 3 1 roll .execgroup
+  1 index exch
+
+  %% Get the current colour space and colour values (as an array), we need to pass these to .execgroup
+  %% as well, so that it can restore them, in case the colour space gets changed by transparency
+  %% graphics state stuff.
+  mark currentcolor counttomark array astore exch pop
+  currentcolorspace 4 2 roll
+
+  .execgroup
   % We have to remove these in case the Form XObject is subsequently used as
   % a form rather than a group - they remain in the paramdict for the SMask
   % so this will all still work if the SMask is re-evaluated.
@@ -653,40 +661,39 @@ def
 } bdef
 
 % Paint a Form+Group XObject, either for a transparency mask or for a Do.
-/.execgroup {		% <resdict> <stream> .execgroup -
-count == flush
-(entering .execgroup) == flush
+/.execgroup {		% [colour values] <colour space> <resdict> <stream> .execgroup -
   pdfemptycount 3 1 roll
-  /pdfemptycount count 4 sub store
+  /pdfemptycount count 5 sub store
   gsave //nodict begin
 
   % We have to set the gstate correctly for lazy evaluation of a softmask group.
-  % we also must preserve the color(space) as setup in .execmaskgroup.
+  % we also must restore the color(space) as setup in .execmaskgroup or paintformgroup.
   % This stuff must be done here, as .execmaskgroup can't use gsave/grestore to
   % manipulate the gstates, due to the requirements of .begintransparencymaskgroup.
   % We also must set the ExtGState values.
   % It may seem redundant to do the color(space) twice (once here and once in
   % .execmaskgroup) but we have to set it in .execmaskgroup for the background
   % color and set it here once in the correct gstate.
-  mark currentcolor currentcolorspace counttomark 2 add index dup
+  1 index dup
   /GroupGState .knownget { setgstate } if
   /GroupExtGState .knownget { { exch exec } forall } if
-  setcolorspace setcolor pop
+
   newpath //null SMask
   1 .setopacityalpha 1 .setshapealpha
   1 CA 1 ca
   /Compatible .setblendmode
         % Execute the body of the Form, similar to DoForm.
   pdfopdict
-  5 -1 roll
-  (current color space is ) print currentcolorspace == flush
-  (saved colour space is ) print dup == flush
-   pop %setcolorspace
+
+  %% Restore the colour space (passed in on the stack) and current colour
+  %%
+  6 -2 roll
+  setcolorspace
+  aload pop setcolor
+
   .pdfruncontext
   end grestore
   /pdfemptycount exch store
-count == flush
-(exiting .execgroup) == flush
 } bdef
 
 /.beginformgroup {	% groupdict bbox .beginformgroup -
@@ -703,16 +710,16 @@ count == flush
 % .paintgroupform implements the Form PaintProc in the case where the
 % Form XObject dictionary includes a Group key.  See .paintform below.
 /.paintgroupform {	% <resdict> <stream> <formdict> .paintgroupform -
-count == flush
-(.paintformgroup) print currentcolorspace == flush
-currentcolorspace 4 1 roll
+  %% Pass the current color space, and an array with the current color vales
+  %% as arguments to .execgroup
+  mark currentcolor counttomark array astore exch pop
+  currentcolorspace 5 2 roll
+
   dup /Group oget exch /BBox oget
                 % Stack: resdict stream groupdict bbox
   .beginformgroup
   .execgroup
   .endtransparencygroup
-count == flush
-(exit .paintformgroup) == flush
 } bdef
 
 % Make an ImageType 103 (soft-masked) image.
@@ -2304,9 +2311,6 @@ currentdict /last-ditch-bpc-csp undef
 } bdef
 
 /DoForm {
-(entereing DoForm\n) print
-(stack count is ) print count == flush
-
   %% save the current value, if its true we will set it to false later, in order
   %% to prevent us preserving Forms which are used *from* an annotation /Appearance.
   pdfdict /.PreservePDFForm known {pdfdict /.PreservePDFForm get} {//false}ifelse exch
@@ -2463,9 +2467,6 @@ currentdict /last-ditch-bpc-csp undef
     end
   } if
   pdfdict /.PreservePDFForm 3 -1 roll .forceput
-pstack
-(exiting DoForm\n) print
-(stack count is ) print count == flush
 } bdef
 
 /_dops_save 1 array def
