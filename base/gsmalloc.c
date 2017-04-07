@@ -115,7 +115,7 @@ gs_malloc_memory_init(void)
     mem->stable_memory = 0;	/* just for tidyness, never referenced */
     mem->procs = gs_malloc_memory_procs;
     mem->allocated = 0;
-    mem->limit = max_int64_t;
+    mem->limit = max_long;
     mem->used = 0;
     mem->max_used = 0;
     mem->gs_lib_ctx = 0;
