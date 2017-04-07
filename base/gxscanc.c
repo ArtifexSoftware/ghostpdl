@@ -13,6 +13,8 @@
 
 /* Path stroking procedures for Ghostscript library */
 #include "math_.h"
+#include "memory_.h"
+#include "string_.h"
 #include "gx.h"
 #include "gpcheck.h"
 #include "gserrors.h"
@@ -371,46 +373,46 @@ static int make_bbox(gx_path       * path,
     return 0;
 }
 
-static int make_table(gx_device     * pdev,
-                      gx_path       * path,
-                const gs_fixed_rect * ibox,
-                      int             intersection_size,
-                      fixed           adjust,
-                      int           * scanlinesp,
-                      int          ** indexp,
-                      int          ** tablep)
+static inline int
+make_table_template(gx_device     * pdev,
+                    gx_path       * path,
+              const gs_fixed_rect * ibox,
+                    int             intersection_size,
+                    fixed           adjust,
+                    int           * scanlinesp,
+                    int          ** indexp,
+                    int          ** tablep)
 {
-    int            scanlines;
-    const subpath *psub;
-    int           *index;
-    int           *table;
-    int            i;
-    int            offset, delta;
+    int             scanlines;
+    const subpath * restrict psub;
+    int           * restrict index;
+    int           * restrict table;
+    int             i;
+    int             offset, delta;
+    fixed           base_y = ibox->p.y;
 
     *scanlinesp = 0;
     *indexp     = NULL;
     *tablep     = NULL;
 
     /* Step 1: Make us a table */
-    scanlines = ibox->q.y-ibox->p.y;
+    scanlines = ibox->q.y-base_y;
     /* +1 simplifies the loop below */
-    index     = (int *)gs_alloc_bytes(pdev->memory,
-                                      (scanlines+1) * sizeof(*index),
-                                      "scanc index buffer");
+    index = (int *)gs_alloc_bytes(pdev->memory,
+                                  (scanlines+1) * sizeof(*index),
+                                  "scanc index buffer");
     if (index == NULL)
         return_error(gs_error_VMerror);
 
     /* Step 1 continued: Blank the index */
-    for (i=0; i < scanlines+1; i++) {
-        index[i] = 0;
-    }
+    memset(index, 0, (scanlines+1)*sizeof(int));
 
     /* Step 1 continued: Run through the path, filling in the index */
     for (psub = path->first_subpath; psub != 0;) {
-        const segment *pseg = (const segment *)psub;
+        const segment * restrict pseg = (const segment *)psub;
         fixed          ey = pseg->pt.y + adjust;
         fixed          iy = ey;
-        int            iey = fixed2int(iy) - ibox->p.y;
+        int            iey = fixed2int(iy) - base_y;
 
         assert(pseg->type == s_start);
 
@@ -440,7 +442,7 @@ static int make_table(gx_device     * pdev,
                     assert("This should never happen" == NULL);
                     break;
                 case s_curve: {
-                    const curve_segment *const pcur = (const curve_segment *)pseg;
+                    const curve_segment *const restrict pcur = (const curve_segment *)pseg;
                     fixed c1y = pcur->p1.y + adjust;
                     fixed c2y = pcur->p2.y + adjust;
                     fixed maxy = sy, miny = sy;
@@ -457,11 +459,11 @@ static int make_table(gx_device     * pdev,
                         maxy = c2y;
                     if (maxy < ey)
                         maxy = ey;
-                    iminy = fixed2int(miny) - ibox->p.y;
+                    iminy = fixed2int(miny) - base_y;
                     if (iminy < 0)
                         iminy = 0;
                     if (iminy < scanlines) {
-                        imaxy = fixed2int(maxy) - ibox->p.y;
+                        imaxy = fixed2int(maxy) - base_y;
                         if (imaxy >= 0) {
                             index[iminy]+=3;
                             if (imaxy < scanlines)
@@ -481,11 +483,11 @@ static int make_table(gx_device     * pdev,
                         miny = sy, maxy = ey;
                     else
                         miny = ey, maxy = sy;
-                    iminy = fixed2int(miny) - ibox->p.y;
+                    iminy = fixed2int(miny) - base_y;
                     if (iminy < 0)
                         iminy = 0;
                     if (iminy < scanlines) {
-                        imaxy = fixed2int(maxy) - ibox->p.y;
+                        imaxy = fixed2int(maxy) - base_y;
                         if (imaxy >= 0) {
                             index[iminy]++;
                             if (imaxy < scanlines) {
@@ -505,11 +507,11 @@ static int make_table(gx_device     * pdev,
                     miny = iy, maxy = ey;
                 else
                     miny = ey, maxy = iy;
-                iminy = fixed2int(miny) - ibox->p.y;
+                iminy = fixed2int(miny) - base_y;
                 if (iminy < 0)
                     iminy = 0;
                 if (iminy < scanlines) {
-                    imaxy = fixed2int(maxy) - ibox->p.y;
+                    imaxy = fixed2int(maxy) - base_y;
                     if (imaxy >= 0) {
                         index[iminy]++;
                         if (imaxy < scanlines) {
@@ -566,6 +568,16 @@ static int make_table(gx_device     * pdev,
     return 0;
 }
 
+static int make_table(gx_device     * pdev,
+                      gx_path       * path,
+                const gs_fixed_rect * ibox,
+                      int           * scanlines,
+                      int          ** index,
+                      int          ** table)
+{
+    return make_table_template(pdev, path, ibox, 1, fixed_half-1, scanlines, index, table);
+}
+
 int gx_scan_convert(gx_device     * restrict pdev,
                     gx_path       * restrict path,
               const gs_fixed_rect * restrict clip,
@@ -594,7 +606,7 @@ int gx_scan_convert(gx_device     * restrict pdev,
     if (ibox.q.y <= ibox.p.y)
         return 0;
 
-    code = make_table(pdev, path, &ibox, 1, fixed_half-1, &scanlines, &index, &table);
+    code = make_table(pdev, path, &ibox, &scanlines, &index, &table);
     if (code < 0)
         return code;
 
@@ -1634,6 +1646,16 @@ static void mark_curve_app(cursor *cr, fixed sx, fixed sy, fixed c1x, fixed c1y,
         }
 }
 
+static int make_table_app(gx_device     * pdev,
+                          gx_path       * path,
+                    const gs_fixed_rect * ibox,
+                          int           * scanlines,
+                          int          ** index,
+                          int          ** table)
+{
+    return make_table_template(pdev, path, ibox, 2, 0, scanlines, index, table);
+}
+
 int gx_scan_convert_app(gx_device     * restrict pdev,
                         gx_path       * restrict path,
                   const gs_fixed_rect * restrict clip,
@@ -1663,7 +1685,7 @@ int gx_scan_convert_app(gx_device     * restrict pdev,
     if (ibox.q.y <= ibox.p.y)
         return 0;
 
-    code = make_table(pdev, path, &ibox, 2, 0, &scanlines, &index, &table);
+    code = make_table_app(pdev, path, &ibox, &scanlines, &index, &table);
     if (code < 0)
         return code;
 
@@ -2070,6 +2092,16 @@ static void mark_curve_tr(fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, f
     }
 }
 
+static int make_table_tr(gx_device     * pdev,
+                         gx_path       * path,
+                   const gs_fixed_rect * ibox,
+                         int           * scanlines,
+                         int          ** index,
+                         int          ** table)
+{
+    return make_table_template(pdev, path, ibox, 2, fixed_half-1, scanlines, index, table);
+}
+
 int gx_scan_convert_tr(gx_device     * restrict pdev,
                        gx_path       * restrict path,
                  const gs_fixed_rect * restrict clip,
@@ -2099,7 +2131,7 @@ int gx_scan_convert_tr(gx_device     * restrict pdev,
     if (ibox.q.y <= ibox.p.y)
         return 0;
 
-    code = make_table(pdev, path, &ibox, 2, fixed_half-1, &scanlines, &index, &table);
+    code = make_table_tr(pdev, path, &ibox, &scanlines, &index, &table);
     if (code < 0)
         return code;
 
@@ -3348,6 +3380,16 @@ static void mark_curve_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed
         }
 }
 
+static int make_table_tr_app(gx_device     * pdev,
+                             gx_path       * path,
+                       const gs_fixed_rect * ibox,
+                             int           * scanlines,
+                             int          ** index,
+                             int          ** table)
+{
+    return make_table_template(pdev, path, ibox, 4, 0, scanlines, index, table);
+}
+
 int gx_scan_convert_tr_app(gx_device     * restrict pdev,
                            gx_path       * restrict path,
                      const gs_fixed_rect * restrict clip,
@@ -3378,7 +3420,7 @@ int gx_scan_convert_tr_app(gx_device     * restrict pdev,
     if (ibox.q.y <= ibox.p.y)
         return 0;
 
-    code = make_table(pdev, path, &ibox, 4, 0, &scanlines, &index, &table);
+    code = make_table_tr_app(pdev, path, &ibox, &scanlines, &index, &table);
     if (code < 0)
         return code;
 
