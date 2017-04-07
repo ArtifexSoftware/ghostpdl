@@ -676,10 +676,20 @@ int gx_scan_convert(gx_device     * restrict pdev,
         int *row = &table[index[i]];
         int  rowlen = *row++;
 
-        /* Sort the 'rowlen' entries - *must* be faster to do this with
-         * custom code, as the function call overhead on the comparisons
-         * will be a killer */
-        qsort(row, rowlen, sizeof(int), intcmp);
+        /* Bubblesort short runs, qsort longer ones. */
+        /* FIXME: Check "6" below */
+        if (rowlen <= 6) {
+            int j, k;
+            for (j = 0; j < rowlen-1; j++) {
+                int t = row[j];
+                for (k = j+1; k < rowlen; k++) {
+                    int s = row[k];
+                    if (t > s)
+                         row[k] = t, t = row[j] = s;
+                }
+            }
+        } else
+            qsort(row, rowlen, sizeof(int), intcmp);
     }
 
     return 0;
@@ -1766,10 +1776,30 @@ int gx_scan_convert_app(gx_device     * restrict pdev,
         int *row = &table[index[i]];
         int  rowlen = *row++;
 
-        /* Sort the 'rowlen' entries - *must* be faster to do this with
-         * custom code, as the function call overhead on the comparisons
-         * will be a killer */
-        qsort(row, rowlen, 2*sizeof(int), edgecmp);
+        /* Bubblesort short runs, qsort longer ones. */
+        /* FIXME: Verify the figure 6 below */
+        if (rowlen <= 6) {
+            int j, k;
+            for (j = 0; j < rowlen-1; j++) {
+                int * restrict t = &row[j<<1];
+                for (k = j+1; k < rowlen; k++) {
+                    int * restrict s = &row[k<<1];
+                    int tmp;
+                    if (t[0] < s[0])
+                        continue;
+                    if (t[0] > s[0])
+                        goto swap01;
+                    if (t[1] <= s[1])
+                        continue;
+                    if (0) {
+swap01:
+                        tmp = t[0], t[0] = s[0], s[0] = tmp;
+                    }
+                    tmp = t[1], t[1] = s[1], s[1] = tmp;
+                }
+            }
+        } else
+            qsort(row, rowlen, 2*sizeof(int), edgecmp);
     }
 
     return 0;
@@ -2202,10 +2232,27 @@ int gx_scan_convert_tr(gx_device     * restrict pdev,
         int *row = &table[index[i]];
         int  rowlen = *row++;
 
-        /* Sort the 'rowlen' entries - *must* be faster to do this with
-         * custom code, as the function call overhead on the comparisons
-         * will be a killer */
-        qsort(row, rowlen, 2*sizeof(int), intcmp_tr);
+        /* Bubblesort short runs, qsort longer ones. */
+        /* FIXME: Verify the figure 6 below */
+        if (rowlen <= 6) {
+            int j, k;
+            for (j = 0; j < rowlen-1; j++) {
+                int * restrict t = &row[j<<1];
+                for (k = j+1; k < rowlen; k++) {
+                    int * restrict s = &row[k<<1];
+                    int tmp;
+                    if (t[0] < s[0])
+                        continue;
+                    if (t[0] == s[0]) {
+                        if (t[1] <= s[1])
+                            continue;
+                    } else
+                        tmp = t[0], t[0] = s[0], s[0] = tmp;
+                    tmp = t[1], t[1] = s[1], s[1] = tmp;
+                }
+            }
+        } else
+            qsort(row, rowlen, 2*sizeof(int), intcmp_tr);
     }
 
     return 0;
@@ -3502,10 +3549,42 @@ int gx_scan_convert_tr_app(gx_device     * restrict pdev,
         int *row = &table[index[i]];
         int  rowlen = *row++;
 
-        /* Sort the 'rowlen' entries - *must* be faster to do this with
-         * custom code, as the function call overhead on the comparisons
-         * will be a killer */
-        qsort(row, rowlen, 4*sizeof(int), edgecmp_tr);
+        /* Bubblesort short runs, qsort longer ones. */
+        /* Figure of '6' comes from testing */
+        if (rowlen <= 6) {
+            int j, k;
+            for (j = 0; j < rowlen-1; j++) {
+                int * restrict t = &row[j<<2];
+                for (k = j+1; k < rowlen; k++) {
+                    int * restrict s = &row[k<<2];
+                    int tmp;
+                    if (t[0] < s[0])
+                        continue;
+                    if (t[0] > s[0])
+                        goto swap0213;
+                    if (t[2] < s[2])
+                        continue;
+                    if (t[2] > s[2])
+                        goto swap213;
+                    if (t[1] < s[1])
+                        continue;
+                    if (t[1] > s[1])
+                        goto swap13;
+                    if (t[3] <= s[3])
+                        continue;
+                    if (0) {
+swap0213:
+                        tmp = t[0], t[0] = s[0], s[0] = tmp;
+swap213:
+                        tmp = t[2], t[2] = s[2], s[2] = tmp;
+swap13:
+                        tmp = t[1], t[1] = s[1], s[1] = tmp;
+                    }
+                    tmp = t[3], t[3] = s[3], s[3] = tmp;
+                }
+            }
+        } else
+            qsort(row, rowlen, 4*sizeof(int), edgecmp_tr);
     }
 
     return 0;
