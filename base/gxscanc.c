@@ -1780,22 +1780,15 @@ gx_filter_edgebuffer_app(gx_device       * restrict pdev,
             if (rule == gx_rule_even_odd) {
                 /* Even Odd */
                 ll = (*row++)&~1;
-                lr = (*row++);
-                rowlen--;
-                wind = 1;
+                lr = *row;
+                row += 2;
+                rowlen-=2;
 
                 /* We will fill solidly from ll to at least lr, possibly further */
-                assert(rowlen > 0);
-                do {
-                    rl = (*row++)&~1;
-                    rr = (*row++);
-                    rowlen--;
-                    if (rr > lr)
-                        lr = rr;
-                    wind ^= 1;
-                    if (wind == 0)
-                        break;
-                } while (rowlen > 0);
+                assert(rowlen >= 0);
+                rr = (*row++);
+                if (rr > lr)
+                    lr = rr;
             } else {
                 /* Non-Zero */
                 int w;
@@ -1808,8 +1801,8 @@ gx_filter_edgebuffer_app(gx_device       * restrict pdev,
 
                 assert(rowlen > 0);
                 do {
-                    rl = (*row++);
-                    rr = (*row++);
+                    rl = *row++;
+                    rr = *row++;
                     w = -(rl&1) | 1;
                     rl &= ~1;
                     rowlen--;
@@ -1824,7 +1817,7 @@ gx_filter_edgebuffer_app(gx_device       * restrict pdev,
             if (marked_to >= lr)
                 continue;
 
-            if (marked_to > ll) {
+            if (marked_to >= ll) {
                 if (rowout == rowstart)
                     ll = marked_to;
                 else {
