@@ -179,7 +179,7 @@ CMT=/MT
 !else
 # Assume that DEBUGSYM != 0 implies a PROFILE build
 CT=/Zi /Fd$(GLOBJDIR)\ $(NULL)
-LCT=/DEBUG /PROFILE
+LCT=/DEBUG /PROFILE /OPT:REF /OPT:ICF
 CMT=/MTd
 !endif
 !if $(MSVC_VERSION) == 5
