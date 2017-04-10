@@ -788,10 +788,11 @@ gx_fill_edgebuffer(gx_device       * restrict pdev,
 
 static int edgecmp(const void *a, const void *b)
 {
-    int left  = ((int*)a)[0]&~1;
-    int right = ((int*)b)[0]&~1;
-    if (left != right)
-        return left - right;
+    int left  = ((int*)a)[0];
+    int right = ((int*)b)[0];
+    left -= right;
+    if (left)
+        return left;
     return ((int*)a)[1] - ((int*)b)[1];
 }
 
