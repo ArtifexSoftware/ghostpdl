@@ -921,7 +921,7 @@ static int handle_colors(gx_image_enum *penum, const frac *psrc, int spp_decode,
                 cc.paint.values[1] = (cc.paint.values[1] + 128) / 255.0;
                 cc.paint.values[2] = (cc.paint.values[2] + 128) / 255.0;
             } else {
-                cc.paint.values[0] *= 0x7ff8 / 25500.0;
+                cc.paint.values[0] *= 0x7ff8 / 25500.0f;
                 cc.paint.values[1] = (cc.paint.values[1] + 128) * 0x7ff8 / 65025.0;
                 cc.paint.values[2] = (cc.paint.values[2] + 128) * 0x7ff8 / 65025.0;
             }
