@@ -256,7 +256,7 @@ const gx_device_bit gs_bitrgbtags_device =
             256,                        /* dither grays */
             256,                        /* dither colors */
             { 1, 1 },                   /* antialiasing */
-            GX_CINFO_UNKNOWN_SEP_LIN,   /* sep and linear */
+            GX_CINFO_SEP_LIN_STANDARD,  /* sep and linear */
             { 16, 8, 0, 24 },           /* comp shift */	/* tag is upper byte */
             { 8, 8, 8, 8 },             /* comp bits */
             { 0xFF0000, 0x00FF00, 0x0000FF, 0xFF000000 },  /* comp mask */
