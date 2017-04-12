@@ -1281,10 +1281,13 @@ pdf_refine_encoding_index(const gx_device_pdf *pdev, int index, bool is_standard
     if (pdev->ForOPDFRead) {
         /*
         * Allow Postscript encodings only.
+        * No, also allow MacRoman because if we have a TT font, and subset it, then opdfread
+        * will prefer thte MacRoman CMAP from the subset TT font.
         */
         switch (index) {
 
             case ENCODING_INDEX_STANDARD: return index;
+            case ENCODING_INDEX_MACROMAN: return index;
             case ENCODING_INDEX_ISOLATIN1: return index;
             default:
                 return ENCODING_INDEX_STANDARD;
@@ -1521,8 +1524,24 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 
     pdfont->XUID = XUID;
     pdf_do_subset_font(pdev, pfd->base_font, -1);
+
+    /* If we have a TrueType font to embed, and we're producing an (E)PS output
+     * file, and we are subsetting the font, then the font we produce will *NOT*
+     * have the CMAP from the original TrueType font, we will generate a Windows 3,1
+     * and a MacRoman 1,0 CMAP, and the opdfread.ps code will prefer to use the
+     * MacRoman one. So, in this case, use MacRoman otherwise we will end up
+     * with erroneous encodings. Of course, when we are not subssetting the font
+     * we do want ot use the original fonts encoding.
+     */
+    if ((font->FontType == ft_TrueType && pdev->ForOPDFRead)) {
+        if (pfd->base_font->do_subset == DO_SUBSET_YES)
+            BaseEncoding = pdf_refine_encoding_index(pdev,
+                ENCODING_INDEX_MACROMAN, false);
+        else
+            BaseEncoding = pdf_refine_encoding_index(pdev,
+                ((const gs_font_base *)base_font)->nearest_encoding_index, false);
+    }
     if (font->FontType == ft_encrypted || font->FontType == ft_encrypted2
-        || (font->FontType == ft_TrueType && pdev->ForOPDFRead)
         || (font->FontType == ft_TrueType && ((const gs_font_base *)base_font)->nearest_encoding_index != ENCODING_INDEX_UNKNOWN && pfd->base_font->do_subset == DO_SUBSET_NO)) {
         /* Yet more crazy heuristics. If we embed a TrueType font and don't subset it, then
          * we preserve the CMAP subtable(s) rather than generatng new ones. The problem is
