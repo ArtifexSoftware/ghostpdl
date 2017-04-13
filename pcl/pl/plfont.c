@@ -360,6 +360,9 @@ pl_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
     uint table_length;
     ulong table_offset;
 
+    if (glyph >= GS_MIN_GLYPH_INDEX)
+        glyph -= GS_MIN_GLYPH_INDEX;
+
     /* guess if the font type is not truetype */
     if (pfont->FontType != ft_TrueType) {
         glyph -= 29;
