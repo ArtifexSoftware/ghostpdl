@@ -611,6 +611,19 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
         png_set_PLTE(png_ptr, info_ptr, palettep, num_palette);
 
     png_set_text(png_ptr, info_ptr, &text_png, 1);
+
+    if (pdev->icc_struct != NULL && pdev->icc_struct->device_profile[0] != NULL) {
+        cmm_profile_t *icc_profile = pdev->icc_struct->device_profile[0];
+        /* PNG can only be RGB or gray.  No CIELAB :(  */
+        if (icc_profile->data_cs == gsRGB || icc_profile->data_cs == gsGRAY) {
+            if (icc_profile->num_comps == pdev->color_info.num_components &&
+                !(pdev->icc_struct->usefastcolor)) {
+                png_set_iCCP(png_ptr, info_ptr, icc_profile->name,
+                    PNG_COMPRESSION_TYPE_DEFAULT, icc_profile->buffer,
+                    icc_profile->buffer_size);
+            }
+        }
+    }
 #else
     info_ptr->bit_depth = bit_depth;
     info_ptr->color_type = color_type;
