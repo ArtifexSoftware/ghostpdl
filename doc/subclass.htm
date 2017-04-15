@@ -186,6 +186,14 @@ The ICC profile code has a 'get_profile' method in the device API to retrieve a 
  would still be NULL. Since the ICC code didn't test the result on the second call this caused a segmentation fault. I've modified
  the ICC code to set the profile in the lowest device, but this probably ought to be improved to define a new 'set_profile' method.
 </p>
+<p>The tag devices write an extra colour plane in the output, where the value of the sample encodes the type of graphic that was
+ rendered at that point (text, image, path, untouched or unknown). This is done by encoding the type in the color, which is performed
+ by the graphics library. Now, when the type of operation changes (eg from image to text) we need to tell the graphics library that
+ there has been a change. We do this by calling the set_graphics_type_tag device method. However, when encoding a color, the graphics
+ library does not, as one might expect call a matching get_graphics_type method, instead it directly inspects the devcie structure and
+ reads the graphics_type_tag member. This means that all devices in the chain must maintain this member, the implication is that if
+ a subclassing device should implement its own set_graphics_type_tag method, it must update the graphics_type_tag in its device
+ structure appropriately, and pass the method on to the next device in the chain. The default method already does this.</p>
 <p>
 Its pretty clear from reading through the code that the original intention of the device methods is that all methods in a device
  should be filled in, they should never be NULL (exception; fill_rectangle is deliberately excluded from this) if a device does not

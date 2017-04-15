@@ -100,7 +100,6 @@ static dev_proc_push_transparency_state(flp_push_transparency_state);
 static dev_proc_pop_transparency_state(flp_pop_transparency_state);
 static dev_proc_put_image(flp_put_image);
 static dev_proc_copy_planes(flp_copy_planes);
-static dev_proc_set_graphics_type_tag(flp_set_graphics_type_tag);
 static dev_proc_strip_copy_rop2(flp_strip_copy_rop2);
 static dev_proc_strip_tile_rect_devn(flp_strip_tile_rect_devn);
 static dev_proc_copy_alpha_hl_color(flp_copy_alpha_hl_color);
@@ -203,7 +202,7 @@ gx_device_flp gs_flp_device =
      default_subclass_dev_spec_op,                      /* dev_spec_op */
      flp_copy_planes,                      /* copy_planes */
      default_subclass_get_profile,                      /* get_profile */
-     flp_set_graphics_type_tag,                      /* set_graphics_type_tag */
+     default_subclass_set_graphics_type_tag,        /* set_graphics_type_tag */
      flp_strip_copy_rop2,
      flp_strip_tile_rect_devn,
      flp_copy_alpha_hl_color,
@@ -1126,18 +1125,6 @@ int flp_copy_planes(gx_device *dev, const byte *data, int data_x, int raster, gx
         return default_subclass_copy_planes(dev, data, data_x, raster, id, x, y, width, height, plane_height);
 
     return 0;
-}
-
-void flp_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t tag)
-{
-    int code = SkipPage(dev);
-
-    if (code < 0)
-        return;
-    if (!code)
-        default_subclass_set_graphics_type_tag(dev, tag);
-
-    return;
 }
 
 int flp_strip_copy_rop2(gx_device *dev, const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,

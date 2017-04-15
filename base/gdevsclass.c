@@ -75,8 +75,15 @@
  */
 
 /* We have a device method for 'get_profile' but we don't have one for 'set_profile' which causes some
- * problems, the 'set' simply sets the profile in the top device. THs is modified in gsicc_set_device_profile
+ * problems, the 'set' simply sets the profile in the top device. This is modified in gsicc_set_device_profile
  * for now but really should have a method to itself.
+ *
+ * And in a delightful asymmetry, we have a set_graphics_type_tag, but no get_graphics_type_tag. Instead
+ * (shudder) the code pulls the currently encoded colour and tag *directly* from the current device.
+ * This means we have to copy the ENCODE_TAGS from the device we are subclassing, into the device which
+ * is newly created at installation time. We also have to have our default set_graphics_type_tag method
+ * update its graphics_type_tag, even though this device has no interest in it, just in case we happen
+ * to be the top device in the chain......
  */
 
 /*
@@ -894,8 +901,23 @@ int default_subclass_get_profile(gx_device *dev, cmm_dev_profile_t **dev_profile
     return 0;
 }
 
+/* In a delightful asymmetry, we have a set_graphics_type_tag, but no get_graphics_type_tag. Instead
+ * (shudder) the code pulls the currently encoded colour and tag *directly* from the current device.
+ * This means we have to copy the ENCODE_TAGS from the device we are subclassing, into the device which
+ * is newly created at installation time. We also have to have our default set_graphics_type_tag method
+ * update its graphics_type_tag, even though this device has no interest in it, just in case we happen
+ * to be the top device in the chain......
+ */
+
 void default_subclass_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t tag)
 {
+    /*
+     * AIUI we should not be calling this method *unless* the ENCODE_TAGS bit is set, so we don't need
+     * to do any checking. Just set the supplied tag in the current device, and pass it on to the underlying
+     * device(s). This line is a direct copy from gx_default_set_graphics_type_tag.
+     */
+    dev->graphics_type_tag = (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) | tag;
+
     if (dev->child && dev->child->procs.set_graphics_type_tag)
         dev->child->procs.set_graphics_type_tag(dev->child, tag);
 
