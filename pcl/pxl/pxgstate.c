@@ -616,11 +616,7 @@ int
 pxSetCharAttributes(px_args_t * par, px_state_t * pxs)
 {
     pxeWritingMode_t arg = par->pv[0]->value.i;
-
-    if (arg != pxs->pxgs->writing_mode) {
-        pxs->pxgs->writing_mode = arg;
-        px_purge_character_cache(pxs);
-    }
+    pxs->pxgs->writing_mode = arg;
     return 0;
 }
 
