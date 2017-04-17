@@ -3476,7 +3476,7 @@ currentdict /set_bc_color undef
     {
       gsave
 
-      dup annotrect (rectclip from freetext annotation) == flush rectclip
+      dup annotrect rectclip
 
       dup /CA knownoget {
         .setopacityalpha

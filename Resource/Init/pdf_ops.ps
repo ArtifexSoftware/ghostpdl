@@ -326,35 +326,20 @@ currentdict /gput_always_allow .undef
   /Pattern { //nullpattern matrix makepattern } bind
 .dicttomark readonly def
 
-/ri {%(in ri) == flush
-//.renderingintentdict exch .knownget { .setrenderingintent } if } bdef
-/g  {%(in g) == flush
-/DeviceGray .setfillcolorspace .setfillcolor } bdef
-/G  {%(in G) == flush
-/DeviceGray .setstrokecolorspace .setstrokecolor} bdef
-/rg {%(in rg) == flush
-/DeviceRGB .setfillcolorspace .setfillcolor} bdef
-/RG {%(in RG) == flush
-/DeviceRGB .setstrokecolorspace .setstrokecolor} bdef
-/k  {%(in k) == flush
- /DeviceCMYK .setfillcolorspace .setfillcolor} bdef
-/K  {%(in K) == flush
- /DeviceCMYK .setstrokecolorspace .setstrokecolor} bdef
-/cs {%dup == flush (in cs) == flush
- dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch .setfillcolorspace exec .setfillcolor %(end cs) == flush
- } bdef
-/CS {%dup == flush (in CS) == flush
- dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch .setstrokecolorspace exec .setstrokecolor} bdef
-/sc {%(in sc) == flush
- .setfillcolor} bdef
-/SC {%(in SC) == flush
- .setstrokecolor} bdef
-/sc* {%(in sc*) == flush
- .setfillcolor} bdef
-/SC* {%(in SC*) == flush
- .setstrokecolor} bdef
+/ri {//.renderingintentdict exch .knownget { .setrenderingintent } if } bdef
+/g  {/DeviceGray .setfillcolorspace .setfillcolor } bdef
+/G  {/DeviceGray .setstrokecolorspace .setstrokecolor} bdef
+/rg {/DeviceRGB .setfillcolorspace .setfillcolor} bdef
+/RG {/DeviceRGB .setstrokecolorspace .setstrokecolor} bdef
+/k  {/DeviceCMYK .setfillcolorspace .setfillcolor} bdef
+/K  {/DeviceCMYK .setstrokecolorspace .setstrokecolor} bdef
+/cs {dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch .setfillcolorspace exec .setfillcolor} bdef
+/CS {dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch .setstrokecolorspace exec .setstrokecolor} bdef
+/sc {.setfillcolor} bdef
+/SC {.setstrokecolor} bdef
+/sc* {.setfillcolor} bdef
+/SC* {.setstrokecolor} bdef
 /sc*_and_set {
-%(in sc*_and_set) == flush
   dup type /dicttype eq
   {
     dup /Type known
@@ -368,7 +353,6 @@ currentdict /gput_always_allow .undef
   .setfillcolor
 } bdef
 /SC*_and_set {
-%(in SC*_and_set) == flush
   dup type /dicttype eq
   {
     dup /Type known
@@ -376,17 +360,14 @@ currentdict /gput_always_allow .undef
       dup /Type get /Pattern eq {PDFsetpattern} if
     }
     {
-      dup /PatternType known {(executing PDFsetpattern) == flush PDFsetpattern} if
+      dup /PatternType known {PDFsetpattern} if
     } ifelse
   } if
   .setstrokecolor
 } bdef
-/sc1 {%(in sc1) == flush
- .setfillcolor} bdef
-/SC1 {%(in SC1) == flush
- .setstroecolor} bdef
+/sc1 {.setfillcolor} bdef
+/SC1 {.setstroecolor} bdef
 /sc1_and_set {
-%(in sc1_and_set) == flush
   dup type /dicttype eq
   {
     dup /Type known
@@ -400,7 +381,6 @@ currentdict /gput_always_allow .undef
   .setfillcolor
 } bdef
 /SC1_and_set {
-%(in SC1_and_set) == flush
   dup type /dicttype eq
   {
     dup /Type known
@@ -413,10 +393,8 @@ currentdict /gput_always_allow .undef
   } if
   .setstrokecolor
 } bdef
-/csput {%dup == flush (csput) == flush
- dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch 2 copy .setfillcolorspace exec .setfillcolor .setstrokecolorspace exec .setstrokecolor} bdef
-/csset {%(csset) == flush
- dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch} bdef
+/csput {dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch 2 copy .setfillcolorspace exec .setfillcolor .setstrokecolorspace exec .setstrokecolor} bdef
+/csset {dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch} bdef
 
 % ---------------- Color setting ---------------- %
 
