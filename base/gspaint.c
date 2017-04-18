@@ -88,8 +88,10 @@ gs_fillpage(gs_gstate * pgs)
                   dev->dname);
         return_error(gs_error_Fatal);
     }
-    /* Processing a fill object operation */
-    dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_PATH_TAG);
+    /* Processing a fill object operation, but this counts as "UNTOUCHED" */
+    gx_unset_dev_color(pgs);		/* force update so we pick up the new tag */
+    gx_unset_alt_dev_color(pgs);
+    dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_UNTOUCHED_TAG);
 
     code = gx_set_dev_color(pgs);
     if (code != 0)
