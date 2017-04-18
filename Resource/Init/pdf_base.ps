@@ -774,6 +774,11 @@ currentdict /no_debug_dict undef
 % When resolving an object reference, we stop at the endobj or endstream.
 /resolveopdict mark
   valueopdict { } forall
+  /xref { % Bug 697761
+     (   **** Error: Encountered 'xref' while expecting 'endjobj'.\n) pdfformaterror
+     (               Treating this as a missing 'endobj', output may be incorrect.\n) pdfformaterror
+     endobj exit
+  } bind
   /endstream { endobj exit } bind
   /endobj { endobj exit } bind
   /endjobj { % Bug 689876.
@@ -786,9 +791,13 @@ currentdict /no_debug_dict undef
      (               Output may be incorrect.\n) pdfformaterror
      endobj exit
   } bind
+  /obj {
                 % OmniForm generates PDF file with endobj missing in some
                 % objects. AR ignores this. So we have to do it too.
-  /obj { pop pop endobj exit } bind
+     (   **** Error: Encountered 'obj' while expecting 'endjobj'.\n) pdfformaterror
+     (               Treating this as a missing 'endobj', output may be incorrect.\n) pdfformaterror
+     pop pop endobj exit
+  } bind
 .dicttomark readonly def
 
 /resolveR {             % <object#> <generation#> resolveR <object>
