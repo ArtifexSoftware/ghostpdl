@@ -344,6 +344,41 @@ static void mark_curve(fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixe
     }
 }
 
+static void mark_curve_big(fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, fixed base_y, fixed height, int *table, int *index, int depth)
+{
+    fixed ax = (sx>>1) + (c1x>>1);
+    fixed ay = (sy>>1) + (c1y>>1);
+    fixed bx = (c1x>>1) + (c2x>>1);
+    fixed by = (c1y>>1) + (c2y>>1);
+    fixed cx = (c2x>>1) + (ex>>1);
+    fixed cy = (c2y>>1) + (ey>>1);
+    fixed dx = (ax>>1) + (bx>>1);
+    fixed dy = (ay>>1) + (by>>1);
+    fixed fx = (bx>>1) + (cx>>1);
+    fixed fy = (by>>1) + (cy>>1);
+    fixed gx = (dx>>1) + (fx>>1);
+    fixed gy = (dy>>1) + (fy>>1);
+
+    assert(depth >= 0);
+    if (depth == 0)
+        mark_line(sx, sy, ex, ey, base_y, height, table, index);
+    else {
+        depth--;
+        mark_curve_big(sx, sy, ax, ay, dx, dy, gx, gy, base_y, height, table, index, depth);
+        mark_curve_big(gx, gy, fx, fy, cx, cy, ex, ey, base_y, height, table, index, depth);
+    }
+}
+
+static void mark_curve_top(fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, fixed base_y, fixed height, int *table, int *index, int depth)
+{
+    fixed test = (sx^(sx<<1))|(sy^(sy<<1))|(c1x^(c1x<<1))|(c1y^(c1y<<1))|(c2x^(c2x<<1))|(c2y^(c2y<<1))|(ex^(ex<<1))|(ey^(ey<<1));
+
+    if (test < 0)
+        mark_curve_big(sx, sy, c1x, c1y, c2x, c2y, ex, ey, base_y, height, table, index, depth);
+    else
+        mark_curve(sx, sy, c1x, c1y, c2x, c2y, ex, ey, base_y, height, table, index, depth);
+}
+
 static int make_bbox(gx_path       * path,
                const gs_fixed_rect * clip,
                      gs_fixed_rect * ibox,
@@ -431,10 +466,6 @@ make_table_template(gx_device     * pdev,
             fixed sy = ey;
             ey = pseg->pt.y + adjust;
 
-#ifdef DEBUG_SCAN_CONVERTER
-            if (debugging_scan_converter)
-                dlprintf1("%d ", pseg->type);
-#endif
             switch (pseg->type) {
                 default:
                 case s_start: /* Should never happen */
@@ -459,17 +490,33 @@ make_table_template(gx_device     * pdev,
                         maxy = c2y;
                     if (maxy < ey)
                         maxy = ey;
+#ifdef DEBUG_SCAN_CONVERTER
+                    if (debugging_scan_converter)
+                        dlprintf2("Curve (%x->%x) ", miny, maxy);
+#endif
                     iminy = fixed2int(miny) - base_y;
                     if (iminy < 0)
                         iminy = 0;
                     if (iminy < scanlines) {
                         imaxy = fixed2int(maxy) - base_y;
                         if (imaxy >= 0) {
+#ifdef DEBUG_SCAN_CONVERTER
+                            if (debugging_scan_converter)
+                                dlprintf1("+%x ", iminy);
+#endif
                             index[iminy]+=3;
                             if (imaxy < scanlines)
+#ifdef DEBUG_SCAN_CONVERTER
+                                if (debugging_scan_converter)
+                                    dlprintf1("-%x ", imaxy+1);
+#endif
                                 index[imaxy+1]-=3;
                         }
                     }
+#ifdef DEBUG_SCAN_CONVERTER
+                    if (debugging_scan_converter)
+                        dlprintf("\n");
+#endif
                     break;
                 }
                 case s_gap:
@@ -477,49 +524,86 @@ make_table_template(gx_device     * pdev,
                 case s_line_close: {
                     fixed miny, maxy;
                     int imaxy, iminy;
-                    if (sy == ey)
+                    if (sy == ey) {
+#ifdef DEBUG_SCAN_CONVERTER
+                        if (debugging_scan_converter)
+                            dlprintf("Line (Horiz)\n");
+#endif
                         break;
+                    }
                     if (sy < ey)
                         miny = sy, maxy = ey;
                     else
                         miny = ey, maxy = sy;
+#ifdef DEBUG_SCAN_CONVERTER
+                    if (debugging_scan_converter)
+                        dlprintf2("Line (%x->%x) ", miny, maxy);
+#endif
                     iminy = fixed2int(miny) - base_y;
                     if (iminy < 0)
                         iminy = 0;
                     if (iminy < scanlines) {
                         imaxy = fixed2int(maxy) - base_y;
                         if (imaxy >= 0) {
+#ifdef DEBUG_SCAN_CONVERTER
+                            if (debugging_scan_converter)
+                                dlprintf1("+%x ", iminy);
+#endif
                             index[iminy]++;
                             if (imaxy < scanlines) {
+#ifdef DEBUG_SCAN_CONVERTER
+                                if (debugging_scan_converter)
+                                    dlprintf1("-%x ", imaxy+1);
+#endif
                                 index[imaxy+1]--;
                             }
                         }
                     }
+#ifdef DEBUG_SCAN_CONVERTER
+                    if (debugging_scan_converter)
+                        dlprintf("\n");
+#endif
                     break;
                 }
             }
+        }
 
-            /* And close any segments that need it */
-            if (ey != iy) {
-                fixed miny, maxy;
-                int imaxy, iminy;
-                if (iy < ey)
-                    miny = iy, maxy = ey;
-                else
-                    miny = ey, maxy = iy;
-                iminy = fixed2int(miny) - base_y;
-                if (iminy < 0)
-                    iminy = 0;
-                if (iminy < scanlines) {
-                    imaxy = fixed2int(maxy) - base_y;
-                    if (imaxy >= 0) {
-                        index[iminy]++;
-                        if (imaxy < scanlines) {
-                            index[imaxy+1]--;
-                        }
+        /* And close any segments that need it */
+        if (ey != iy) {
+            fixed miny, maxy;
+            int imaxy, iminy;
+            if (iy < ey)
+                miny = iy, maxy = ey;
+            else
+                miny = ey, maxy = iy;
+#ifdef DEBUG_SCAN_CONVERTER
+            if (debugging_scan_converter)
+                dlprintf2("Close (%x->%x) ", miny, maxy);
+#endif
+            iminy = fixed2int(miny) - base_y;
+            if (iminy < 0)
+                iminy = 0;
+            if (iminy < scanlines) {
+                imaxy = fixed2int(maxy) - base_y;
+                if (imaxy >= 0) {
+#ifdef DEBUG_SCAN_CONVERTER
+                    if (debugging_scan_converter)
+                        dlprintf1("+%x ", iminy);
+#endif
+                    index[iminy]++;
+                    if (imaxy < scanlines) {
+#ifdef DEBUG_SCAN_CONVERTER
+                        if (debugging_scan_converter)
+                            dlprintf1("-%x ", imaxy+1);
+#endif
+                        index[imaxy+1]--;
                     }
                 }
             }
+#ifdef DEBUG_SCAN_CONVERTER
+            if (debugging_scan_converter)
+                dlprintf("\n");
+#endif
         }
 #ifdef DEBUG_SCAN_CONVERTER
         if (debugging_scan_converter)
@@ -637,7 +721,7 @@ int gx_scan_convert(gx_device     * restrict pdev,
                     const curve_segment *const pcur = (const curve_segment *)pseg;
                     int k = gx_curve_log2_samples(sx, sy, pcur, fixed_flat);
 
-                    mark_curve(sx, sy, pcur->p1.x, pcur->p1.y, pcur->p2.x, pcur->p2.y, ex, ey, ibox.p.y, scanlines, table, index, k);
+                    mark_curve_top(sx, sy, pcur->p1.x, pcur->p1.y, pcur->p2.x, pcur->p2.y, ex, ey, ibox.p.y, scanlines, table, index, k);
                     break;
                 }
                 case s_gap:
@@ -1657,6 +1741,41 @@ static void mark_curve_app(cursor *cr, fixed sx, fixed sy, fixed c1x, fixed c1y,
         }
 }
 
+static void mark_curve_big_app(cursor *cr, fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, int depth)
+{
+    fixed ax = (sx>>1) + (c1x>>1);
+    fixed ay = (sy>>1) + (c1y>>1);
+    fixed bx = (c1x>>1) + (c2x>>1);
+    fixed by = (c1y>>1) + (c2y>>1);
+    fixed cx = (c2x>>1) + (ex>>1);
+    fixed cy = (c2y>>1) + (ey>>1);
+    fixed dx = (ax>>1) + (bx>>1);
+    fixed dy = (ay>>1) + (by>>1);
+    fixed fx = (bx>>1) + (cx>>1);
+    fixed fy = (by>>1) + (cy>>1);
+    fixed gx = (dx>>1) + (fx>>1);
+    fixed gy = (dy>>1) + (fy>>1);
+
+    assert(depth >= 0);
+    if (depth == 0)
+        mark_line_app(cr, sx, sy, ex, ey);
+    else {
+        depth--;
+        mark_curve_big_app(cr, sx, sy, ax, ay, dx, dy, gx, gy, depth);
+        mark_curve_big_app(cr, gx, gy, fx, fy, cx, cy, ex, ey, depth);
+    }
+}
+
+static void mark_curve_top_app(cursor *cr, fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, int depth)
+{
+    fixed test = (sx^(sx<<1))|(sy^(sy<<1))|(c1x^(c1x<<1))|(c1y^(c1y<<1))|(c2x^(c2x<<1))|(c2y^(c2y<<1))|(ex^(ex<<1))|(ey^(ey<<1));
+
+    if (test < 0)
+        mark_curve_big_app(cr, sx, sy, c1x, c1y, c2x, c2y, ex, ey, depth);
+    else
+        mark_curve_app(cr, sx, sy, c1x, c1y, c2x, c2y, ex, ey, depth);
+}
+
 static int make_table_app(gx_device     * pdev,
                           gx_path       * path,
                     const gs_fixed_rect * ibox,
@@ -1738,7 +1857,7 @@ int gx_scan_convert_app(gx_device     * restrict pdev,
                     const curve_segment *const pcur = (const curve_segment *)pseg;
                     int k = gx_curve_log2_samples(sx, sy, pcur, fixed_flat);
 
-                    mark_curve_app(&cr, sx, sy, pcur->p1.x, pcur->p1.y, pcur->p2.x, pcur->p2.y, ex, ey, k);
+                    mark_curve_top_app(&cr, sx, sy, pcur->p1.x, pcur->p1.y, pcur->p2.x, pcur->p2.y, ex, ey, k);
                     break;
                 }
                 case s_gap:
@@ -2123,6 +2242,42 @@ static void mark_curve_tr(fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, f
     }
 }
 
+static void mark_curve_big_tr(fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, fixed base_y, fixed height, int *table, int *index, int *id, int depth)
+{
+    fixed ax = (sx>>1) + (c1x>>1);
+    fixed ay = (sy>>1) + (c1y>>1);
+    fixed bx = (c1x>>1) + (c2x>>1);
+    fixed by = (c1y>>1) + (c2y>>1);
+    fixed cx = (c2x>>1) + (ex>>1);
+    fixed cy = (c2y>>1) + (ey>>1);
+    fixed dx = (ax>>1) + (bx>>1);
+    fixed dy = (ay>>1) + (by>>1);
+    fixed fx = (bx>>1) + (cx>>1);
+    fixed fy = (by>>1) + (cy>>1);
+    fixed gx = (dx>>1) + (fx>>1);
+    fixed gy = (dy>>1) + (fy>>1);
+
+    assert(depth >= 0);
+    if (depth == 0) {
+        *id += 1;
+        mark_line_tr(sx, sy, ex, ey, base_y, height, table, index, *id);
+    } else {
+        depth--;
+        mark_curve_big_tr(sx, sy, ax, ay, dx, dy, gx, gy, base_y, height, table, index, id, depth);
+        mark_curve_big_tr(gx, gy, fx, fy, cx, cy, ex, ey, base_y, height, table, index, id, depth);
+    }
+}
+
+static void mark_curve_top_tr(fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, fixed base_y, fixed height, int *table, int *index, int *id, int depth)
+{
+    fixed test = (sx^(sx<<1))|(sy^(sy<<1))|(c1x^(c1x<<1))|(c1y^(c1y<<1))|(c2x^(c2x<<1))|(c2y^(c2y<<1))|(ex^(ex<<1))|(ey^(ey<<1));
+
+    if (test < 0)
+        mark_curve_big_tr(sx, sy, c1x, c1y, c2x, c2y, ex, ey, base_y, height, table, index, id, depth);
+    else
+        mark_curve_tr(sx, sy, c1x, c1y, c2x, c2y, ex, ey, base_y, height, table, index, id, depth);
+}
+
 static int make_table_tr(gx_device     * pdev,
                          gx_path       * path,
                    const gs_fixed_rect * ibox,
@@ -2193,7 +2348,7 @@ int gx_scan_convert_tr(gx_device     * restrict pdev,
                     const curve_segment *const pcur = (const curve_segment *)pseg;
                     int k = gx_curve_log2_samples(sx, sy, pcur, fixed_flat);
 
-                    mark_curve_tr(sx, sy, pcur->p1.x, pcur->p1.y, pcur->p2.x, pcur->p2.y, ex, ey, ibox.p.y, scanlines, table, index, &id, k);
+                    mark_curve_top_tr(sx, sy, pcur->p1.x, pcur->p1.y, pcur->p2.x, pcur->p2.y, ex, ey, ibox.p.y, scanlines, table, index, &id, k);
                     break;
                 }
                 case s_gap:
@@ -3428,6 +3583,42 @@ static void mark_curve_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed
         }
 }
 
+static void mark_curve_big_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, int depth, int * restrict id)
+{
+    fixed ax = (sx>>1) + (c1x>>1);
+    fixed ay = (sy>>1) + (c1y>>1);
+    fixed bx = (c1x>>1) + (c2x>>1);
+    fixed by = (c1y>>1) + (c2y>>1);
+    fixed cx = (c2x>>1) + (ex>>1);
+    fixed cy = (c2y>>1) + (ey>>1);
+    fixed dx = (ax>>1) + (bx>>1);
+    fixed dy = (ay>>1) + (by>>1);
+    fixed fx = (bx>>1) + (cx>>1);
+    fixed fy = (by>>1) + (cy>>1);
+    fixed gx = (dx>>1) + (fx>>1);
+    fixed gy = (dy>>1) + (fy>>1);
+
+    assert(depth >= 0);
+    if (depth == 0) {
+        *id += 1;
+        mark_line_tr_app(cr, sx, sy, ex, ey, *id);
+    } else {
+        depth--;
+        mark_curve_big_tr_app(cr, sx, sy, ax, ay, dx, dy, gx, gy, depth, id);
+        mark_curve_big_tr_app(cr, gx, gy, fx, fy, cx, cy, ex, ey, depth, id);
+    }
+}
+
+static void mark_curve_top_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, int depth, int * restrict id)
+{
+    fixed test = (sx^(sx<<1))|(sy^(sy<<1))|(c1x^(c1x<<1))|(c1y^(c1y<<1))|(c2x^(c2x<<1))|(c2y^(c2y<<1))|(ex^(ex<<1))|(ey^(ey<<1));
+
+    if (test < 0)
+        mark_curve_big_tr_app(cr, sx, sy, c1x, c1y, c2x, c2y, ex, ey, depth, id);
+    else
+        mark_curve_tr_app(cr, sx, sy, c1x, c1y, c2x, c2y, ex, ey, depth, id);
+}
+
 static int make_table_tr_app(gx_device     * pdev,
                              gx_path       * path,
                        const gs_fixed_rect * ibox,
@@ -3511,7 +3702,7 @@ int gx_scan_convert_tr_app(gx_device     * restrict pdev,
                     const curve_segment *const pcur = (const curve_segment *)pseg;
                     int k = gx_curve_log2_samples(sx, sy, pcur, fixed_flat);
 
-                    mark_curve_tr_app(&cr, sx, sy, pcur->p1.x, pcur->p1.y, pcur->p2.x, pcur->p2.y, ex, ey, k, &id);
+                    mark_curve_top_tr_app(&cr, sx, sy, pcur->p1.x, pcur->p1.y, pcur->p2.x, pcur->p2.y, ex, ey, k, &id);
                     break;
                 }
                 case s_gap:
