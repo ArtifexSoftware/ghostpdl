@@ -625,13 +625,18 @@ run_stdin:
             break;
         case 'o':               /* set output file name and batch mode */
             {
-                i_ctx_t *i_ctx_p = minst->i_ctx_p;
-                uint space = icurrent_space;
+                i_ctx_t *i_ctx_p;
+                uint space;
                 const char *adef;
                 byte *str;
                 ref value;
                 int len;
 
+                if ((code = gs_main_init1(minst)) < 0)
+                    return code;
+
+                i_ctx_p = minst->i_ctx_p;
+                space = icurrent_space;
                 if (arg[0] == 0) {
                     code = arg_next(pal, (const char **)&adef, minst->heap);
                     if (code < 0)
