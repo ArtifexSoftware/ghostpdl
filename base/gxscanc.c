@@ -2595,8 +2595,6 @@ rowdifferent:{}
                 row2 += 4;
                 rowlen -= 2;
 
-                assert(le.start.x >= 0);
-                assert(le.end.x >= 0);
                 assert(re.start.x >= le.start.x);
                 assert(re.end.x >= le.end.x);
 
