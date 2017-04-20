@@ -505,12 +505,13 @@ make_table_template(gx_device     * pdev,
                                 dlprintf1("+%x ", iminy);
 #endif
                             index[iminy]+=3;
-                            if (imaxy < scanlines)
+                            if (imaxy < scanlines) {
 #ifdef DEBUG_SCAN_CONVERTER
                                 if (debugging_scan_converter)
                                     dlprintf1("-%x ", imaxy+1);
 #endif
                                 index[imaxy+1]-=3;
+                            }
                         }
                     }
 #ifdef DEBUG_SCAN_CONVERTER
