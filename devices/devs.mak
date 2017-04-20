@@ -737,7 +737,10 @@ gdevpdfx_h=$(DEVVECSRC)gdevpdfx.h\
  $(gsparam_h) $(gsuid_h) $(gxdevice_h) $(gxfont_h) $(gxline_h)\
  $(spprint_h) $(stream_h) $(gdevpsdf_h) $(gxdevmem_h) $(sarc4_h)
 
-opdfread_h=$(DEVVECSRC)opdfread.h
+opdfread_h=$(DEVGEN)opdfread.h
+
+$(DEVGEN)opdfread.h : $(PACKPS_XE) $(DEVVECSRC)opdfread.ps
+	$(EXP)$(PACKPS_XE) -c -n opdfread_ps -o $(opdfread_h) $(DEVVECSRC)opdfread.ps
 
 $(DEVOBJ)gdevpdf.$(OBJ) : $(DEVVECSRC)gdevpdf.c $(GDEVH)\
  $(fcntl__h) $(memory__h) $(string__h) $(time__h) $(unistd__h) $(gp_h)\

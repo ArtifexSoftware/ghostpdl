@@ -65,6 +65,9 @@ MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(AUX)gp_ntfs.$(OBJ) $(AUX)gp_win32.$(OBJ) $(A
 $(MKROMFS_XE): $(GLSRC)mkromfs.c $(GLGENDIR)\ccf32.tr $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS) $(MSVCTAIL_MAK)
 	$(CCAUX_) -I$(GLOBJ) -I$(ZSRCDIR) $(GLSRC)mkromfs.c /Fo$(AUX)mkromfs.obj /Fe$(MKROMFS_XE) $(MKROMFS_OBJS) $(CCAUX_TAIL)
 
+$(PACKPS_XE): $(GLSRC)pack_ps.c $(GLSRC)stdpre.h $(MSVCTAIL_MAK)
+	$(CCAUX_) -I$(GLOBJ) -I$(ZSRCDIR) $(GLSRC)pack_ps.c /Fo$(AUX)pack_ps.obj /Fe$(PACKPS_XE) $(CCAUX_TAIL)
+
 # -------------------------------- Library -------------------------------- #
 
 # See winlib.mak

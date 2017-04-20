@@ -263,6 +263,7 @@ GENCONF_XE=$(AUX)genconf$(XEAUX)
 GENDEV_XE=$(AUX)gendev$(XEAUX)
 GENHT_XE=$(AUX)genht$(XEAUX)
 MKROMFS_XE=$(AUX)mkromfs$(XEAUX)
+PACKPS_XE=$(AUX)packps$(XEAUX)
 
 # Define the names of the generated header files.
 # gconfig*.h and gconfx*.h are generated dynamically.
@@ -304,6 +305,7 @@ mostlyclean : config-clean
 	$(RMN_) $(MKROMFS_XE)
 	$(RMN_) $(MKROMFS_XE)_0
 	$(RMN_) $(MKROMFS_XE)_1
+	$(RMN_) $(PACKPS_XE)
 	$(RMN_) $(GSGEN)gsromfs1.c $(GSGEN)gsromfs1_.c $(GSGEN)gsromfs1_1.c
 	$(RMN_) $(AUX)*.$(OBJ) $(AUX)gscdefs*.c
 

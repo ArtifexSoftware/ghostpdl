@@ -1493,10 +1493,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\Resource\Init\opdfread.ps"
-					>
-				</File>
-				<File
 					RelativePath="..\Resource\Init\pdf_base.ps"
 					>
 				</File>
@@ -6205,6 +6201,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\devices\vector\opdfread.ps"
+					>
+				</File>
+				<File
 					RelativePath="..\devices\vector\whitelst.c"
 					>
 				</File>
@@ -6414,10 +6414,6 @@
 				</File>
 				<File
 					RelativePath="..\devices\vector\gdevpxut.h"
-					>
-				</File>
-				<File
-					RelativePath="..\devices\vector\opdfread.h"
 					>
 				</File>
 				<File
