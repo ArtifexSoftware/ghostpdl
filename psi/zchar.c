@@ -722,12 +722,13 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
                     code = z1_set_cache(i_ctx_p, (gs_font_base *)pfont,
                                     &cnref, glyph, cont, &exec_cont);
                 else
-                    return_error(gs_error_unregistered); /* Unimplemented. */
+                    code = gs_note_error(gs_error_unregistered); /* Unimplemented. */
                 if (exec_cont != 0)
-                    return_error(gs_error_unregistered); /* Must not happen. */
+                    code = gs_note_error(gs_error_unregistered); /* Must not happen. */
                 if (code < 0)
-                    return op_show_free(i_ctx_p, code);
-                return code;
+                  goto err;
+                else
+                  return code;
             }
         default:		/* error */
 err:
