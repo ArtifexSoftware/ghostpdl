@@ -236,6 +236,7 @@ gx_path_init_bbox_accumulator(gx_path * ppath)
     ppath->segments = 0;
     path_update_newpath(ppath);
     ppath->bbox_set = 0;
+    ppath->bbox.p.x = ppath->bbox.p.y = ppath->bbox.q.x = ppath->bbox.q.y = 0;
     ppath->bbox_accurate = 1;
     ppath->memory = NULL; /* Won't allocate anything. */
     ppath->allocation = path_allocated_on_stack;
