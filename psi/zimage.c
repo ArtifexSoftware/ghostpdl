@@ -94,9 +94,9 @@ data_image_params(const gs_memory_t *mem,
         code = dict_floats_param(mem, op, "Decode", 4,
                                  &pim->Decode[2], NULL);
         if (code < 0) {
-            /* Try for all three pairs. Ignore more than 6 elements */
-                code = dict_float_array_check_param(mem, op, "Decode", 6,
-                                                    &pim->Decode[0], NULL, gs_error_rangecheck, 0);	/* over_error = 0 */
+            /* Try for all three */
+            code = dict_floats_param(mem, op, "Decode", 6,
+                                                        &pim->Decode[0], NULL);
         } else {
             /* Set the range on the L */
             pim->Decode[0] = 0;
@@ -105,9 +105,9 @@ data_image_params(const gs_memory_t *mem,
         if (code < 0)
             return code;
     } else {
-            /* more elements than we need is OK */
-        code = dict_float_array_check_param(mem, op, "Decode", 2 * num_components,
-                                            &pim->Decode[0], NULL, gs_error_rangecheck, 0);	/* over_error = 0 */
+        code = dict_floats_param(mem, op, "Decode",
+                                                    num_components * 2,
+                                                    &pim->Decode[0], NULL);
         if (code < 0)
             return code;
     }

@@ -2128,6 +2128,35 @@ currentdict /last-ditch-bpc-csp undef
   } bdef
 } if
 
+/ValidateDecode { % <<image dict>> ValidateDecode <<image dict>>
+  dup /Decode .knownget {
+    dup length                      % <<image dict>> [Decode] length
+    mark currentcolor counttomark   % <<image dict>> [Decode] length [ ... component_count
+    dup 2 add 1 roll                % <<image dict>> [Decode] length component_count [ ....
+    cleartomark                     % <<image dict>> [Decode] length component_count
+    2 mul dup                       % <<image dict>> [Decode] length comp_count*2 comp_count*2
+    3 1 roll                        % <<image dict>> [Decode] comp_count*2 length comp_count*2
+     eq {                           % <<image dict>> length of Decode matches colour space requirement
+      pop pop                       % <<image dict>> remove [Decode] and comp_count*2
+    }{                              % <<image dict>> Decode array incorrect
+      dup 2 index length            % <<image dict>> [Decode] comp_count*2 comp_count*2 length
+      exch sub 0 gt {               % Decode is too long
+      (\n   **** Warning:  Decode array for an image is too long\n) pdfformatwarning
+      (                  Output may be incorrect.\n) pdfformatwarning
+        0 exch                      % <<image dict>> [Decode] 0 comp_count*2
+        getinterval                 % <<image dict>> [subarray of Decode]
+        1 index exch /Decode exch   % <<image dict>> <<image dict>> /Decode [subarray]
+        put                         % <<image dict>>
+      }{
+                                    % Decode is too short, Acrobat throws errors on this
+        (\n   **** ERROR:  Decode array for an image is too short\n) pdfformaterror
+        (                Output may be incorrect.\n) pdfformaterror
+        pop pop                     % remove [Decode] and comp_count*2
+      } ifelse
+    } ifelse
+  } if
+}bdef
+
 /doimage {	% <imagemask> doimage -
                 % imagedict is currentdict, gets popped from dstack
   //null checkOPtrans {
@@ -2160,8 +2189,8 @@ currentdict /last-ditch-bpc-csp undef
       makemaskimage
   } if
                 % Stack: datasource imagemask
-  { currentdict end setfillstate { imagemask } }
-  { ColorSpace setgcolorspace currentdict end setfillblend { image } }
+  { currentdict end setfillstate ValidateDecode { imagemask } }
+  { ColorSpace setgcolorspace currentdict end setfillblend ValidateDecode { image } }
   ifelse
   PDFSTOPONERROR { exec //false } { stopped } ifelse {
     dup type /dicttype eq { pop } if % Sometimes image fails to restore the stack
