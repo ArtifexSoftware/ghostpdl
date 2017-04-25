@@ -2242,9 +2242,9 @@ DELAYBIND not {
   systemdict /.forceundef .undef	% ditto
 } if
 % Move superexec to internaldict if superexec is defined.
-currentdict /superexec .knownget {
+systemdict /superexec .knownget {
   1183615869 internaldict /superexec 3 -1 roll put
-  currentdict /superexec .undef
+  systemdict /superexec .undef
 } if
 WRITESYSTEMDICT not { systemdict readonly pop } if
 (END GC) VMDEBUG
