@@ -242,10 +242,10 @@ s_LZWD_process(stream_state * st, stream_cursor_read * pr,
      * equal to next_code.
      */
     if (code >= next_code) {
-        if (code > next_code) {
+        if ((code > next_code) || (prev_code < 0)) {
 #ifdef DEBUG
-            mlprintf2(ss->memory, "[W]code = %d > next_code = %d\n",
-                     code, next_code);
+            mlprintf3(ss->memory, "[W]code = %d > next_code = %d  or prev_code = %d < 0\n",
+                     code, next_code, prev_code);
 #endif
             status = ERRC;
             goto out;
