@@ -154,6 +154,9 @@ zinitialize_dsc_parser(i_ctx_t *i_ctx_p)
     gs_memory_t *mem;
     dsc_data_t *data;
 
+    if (ref_stack_count(&o_stack) < 1)
+        return_error(gs_error_stackunderflow);
+
     check_read_type(*op, t_dictionary);
 
     pdict = op->value.pdict;
@@ -442,9 +445,8 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
      * handle any errors that may result.  (Crude handling but the comment
      * is bad, so ...).
      */
-    if (ref_stack_count(&o_stack) < 2)
-        return_error(gs_error_stackunderflow);
     check_type(*opString, t_string);
+    check_type(*opDict, t_dictionary);
     check_dict_write(*opDict);
     ssize = r_size(opString);
     if (ssize > MAX_DSC_MSG_SIZE)   /* need room for EOL + \0 */
