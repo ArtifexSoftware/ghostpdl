@@ -442,6 +442,8 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
      * handle any errors that may result.  (Crude handling but the comment
      * is bad, so ...).
      */
+    if (ref_stack_count(&o_stack) < 2)
+        return_error(gs_error_stackunderflow);
     check_type(*opString, t_string);
     check_dict_write(*opDict);
     ssize = r_size(opString);
