@@ -421,8 +421,8 @@ jbig2_build_huffman_table(Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
 
             if (PREFLEN == CURLEN) {
                 int RANGELEN = lines[CURTEMP].RANGELEN;
-                int start_j = CURCODE << shift;
-                int end_j = (CURCODE + 1) << shift;
+                uint32_t start_j = CURCODE << shift;
+                uint32_t end_j = (CURCODE + 1) << shift;
                 byte eflags = 0;
 
                 if (end_j > max_j) {
