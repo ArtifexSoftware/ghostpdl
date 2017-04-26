@@ -268,7 +268,6 @@ currentdict /known_symbolic_fonts undef
 /getfontmetrics {       % <font-resource> <font> <Encoding|null> getfontmetrics
                         %   <font-resource> <font> <Encoding|null>
                         %   <Metrics|null> <GlyphMap|null>
-
   2 index /Widths oknown {
     dup //null eq { pop dup /Encoding get } if
     7 dict begin
@@ -1185,15 +1184,26 @@ currentdict /eexec_pdf_param_dict .undef
       1 index begin 3 dict begin
       /Font 3 -1 roll def /CharCode 1 index def
       Encoding exch get CharProcs exch knownoget {
-        { //false resolvestream
+        dup /Length get 0 eq {
+          pop
+          %% Detect a 0 length stream. If this occurs
+          %% then we won't execute d0 or d1, and so won't adjust the
+          %% character width. So, pretend we got a
+          %% null d1, just so that we can adjust using the /Widths
+          %% (Bug 697805)
+          0 0 0 0 0 0
+          pdfopdict /d1 get exec
+        }{
+          { //false resolvestream
                 % Stack: filepos stream
                 % Don't let setgcolor set the color inside the BuildGlyph
                 % procedure, because this causes an /undefined error.
-          q //null /FillColor gput //null /StrokeColor gput
-          Font /Resources get exch pdfopdict .pdfruncontext
-          Q
-        } PDFfile fileposition 2 .execn % Keep pdfcount valid.
-        PDFfile exch setfileposition
+            q //null /FillColor gput //null /StrokeColor gput
+            Font /Resources get exch pdfopdict .pdfruncontext
+            Q
+          } PDFfile fileposition 2 .execn % Keep pdfcount valid.
+          PDFfile exch setfileposition
+        } ifelse
       } {
         % PDF Type 3 fonts don't use .notdef
         % d1 implementation adjusts the width as needed
