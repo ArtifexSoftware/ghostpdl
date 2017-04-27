@@ -539,9 +539,19 @@ currentdict /woff_tag_dict .undef
       glyphs code 3 -1 roll put /code code 1 add def
     } bind def
     /glyphs 0 dict def
-    /numcodes 0 def
-    /code 0 def
-    0 2 nseg2 3 sub {
+
+    /numcodes 0 def /code 0 def
+    % neg2 is number of segments x 2. A format 4 cmap, with usable
+    % mappings cannot (according to the spec) have only 1 segment,
+    % since format 4 requires a closing segment with start and end
+    % codes being 0xffff. Unfortunately, we have found badly subsetted
+    % TTF fonts which have one segment with valid mappings, and no
+    % closing segment.
+    % In such a case, force the loop to work as though as we have two
+    % segments - this works as we don't rely on the terminating segment
+    % but use the loop counter to spot completion - effrectively, we
+    % ignore the closing segment when it's present, anyway.
+    0 2 nseg2 dup 4 lt {pop 4}if 3 sub {
       /i2 exch def
       /scode startc i2 getu16a def
       /ecode endc i2 getu16a def
@@ -1818,7 +1828,7 @@ currentdict /postalias undef
         % The following algorithms are per the PDF 1.7 Reference.
   TTFDEBUG { (.pdfcharkeys beg) = } if
 
-  % if the flags say symbolic, *and* the font contains a symbol
+  % if the flags say symbolic, *and* the font contains a symbol or UCS-2
   % cmap table, ignore Encoding if there is one, treat as symbolic.
   % If the flags say symbolic, and the font doesn't have a symbol cmap
   % and we have an Encoding, treat it as non-symbolic
@@ -1826,7 +1836,20 @@ currentdict /postalias undef
   % Finally, if none of that works, remove the Encoding, and treat it
   % as non-symbolic.
   is_symbolic {
-    <00030000> .findcmap { //true } { prebuilt_encoding //null eq { <00010000> .findcmap}{//false}ifelse } ifelse {
+    <00030000> .findcmap
+    { //true }
+    {
+      prebuilt_encoding //null eq {
+        <00030001> .findcmap
+        {//true}
+        {<00010000> .findcmap}
+        ifelse
+      }
+      {//false}
+      ifelse
+    } ifelse
+
+    {
       .pdfmapsymbolic
       /prebuilt_encoding //null def
       //false
