@@ -56,6 +56,12 @@ zeqproc(i_ctx_t *i_ctx_p)
     ref2_t stack[MAX_DEPTH + 1];
     ref2_t *top = stack;
 
+    if (ref_stack_count(&o_stack) < 2)
+        return_error(gs_error_stackunderflow);
+    if (!r_is_array(op - 1) || !r_is_array(op)) {
+        return_error(gs_error_typecheck);
+    }
+
     make_array(&stack[0].proc1, 0, 1, op - 1);
     make_array(&stack[0].proc2, 0, 1, op);
     for (;;) {
