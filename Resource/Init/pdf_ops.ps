@@ -521,7 +521,23 @@ currentdict /gput_always_allow .undef
 } bdef
 /ca { .setFillConstantAlpha } bdef
 /CA { .setStrokeConstantAlpha } bdef
-/SMask { /SoftMask gput } bdef
+/SMask {
+  dup type /booleantype eq {
+    .currentSMask type /dicttype eq {
+      .currentSMask /Processed 2 index .forceput
+    } {
+      .setSMask
+  }ifelse
+  }{
+  .setSMask
+  }ifelse
+
+  %% This is some craziness to do with annotations and graphics states
+  %% the original nodict can't be written to, and we haven't (I think) done
+  %% a gsave, so we haven't copied it to /self, if we don't do that here
+  %% then transparent annotations cause an invalid access error.
+  currentdict //nodict eq {/self dup load end 5 dict begin def} if
+} bdef
 /AIS { .setAIS %/AlphaIsShape gput
 } bdef
 /BM {
@@ -567,14 +583,22 @@ currentdict /gput_always_allow .undef
       dup /Draw get exec
     } ifelse
   } {
-    dup /Draw get exec
+    dup /Processed .knownget {
+      {
+        pop pop
+      } {
+        dup /Draw get exec
+      }ifelse
+    }{
+      dup /Draw get exec
+    } ifelse
   } ifelse
 } bdef
 % (Non-mask) images must execute setfillblend.
 /setfillblend {
 %  FillOverprint setoverprint
   .getFillConstantAlpha
-  SoftMask .settransparencyparams
+  .currentSMask .settransparencyparams
 } def
 /setfillstate {
 %  FillColor FillColorSpace setgcolor
@@ -585,7 +609,7 @@ currentdict /gput_always_allow .undef
 %  .swapcolors
 %  StrokeColor StrokeColorSpace setgcolor %StrokeOverprint setoverprint
   .getStrokeConstantAlpha
-  SoftMask .settransparencyparams
+  .currentSMask .settransparencyparams
 %  .swapcolors
 } def
 /Cdict 15 dict dup begin	% <color...> <colorspace> -proc- -
@@ -758,7 +782,7 @@ end def
 /fsexec		% <fillop|strokeop> fsexec -
 {
    PDFusingtransparency {
-      SoftMask //null ne {
+      .currentSMask //null ne {
         mark /Subtype /Group /Isolated //true .dicttomark pathbbox .begintransparencygroup
       } if
       dup checkOPtrans exch 1 index {
@@ -773,7 +797,7 @@ end def
       {
          .endtransparencygroup .setopacityalpha .setblendmode	% end the CompatibleOverprint group
       } if
-      SoftMask //null ne {
+      .currentSMask //null ne {
         .endtransparencygroup
       } if
    } {
@@ -1598,7 +1622,7 @@ end readonly def
 /TextTransSetup {	% showarg path_valid TextTransSetup false showarg
                         % showarg path_valid false TextTransSetup prev_BM prev_opacity true showarg
    % NB: if 'show' is used, then we use the clippath, but a smaller bbox is preferred
-   SoftMask //null ne {
+   .currentSMask //null ne {
      dup mark /Subtype /Group /Isolated //true .dicttomark exch
      { pathbbox } { gsave clippath pathbbox grestore } ifelse
      .begintransparencygroup
@@ -1623,7 +1647,7 @@ end readonly def
      .endtransparencygroup
      OPsavedict dup /saveOA get .setopacityalpha /saveBM get .setblendmode
    } if
-   SoftMask //null ne {
+   .currentSMask //null ne {
      .endtransparencygroup
    } if
 } bind def

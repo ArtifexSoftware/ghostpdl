@@ -364,7 +364,7 @@ struct gs_gstate_s {
     
     /* PDF graphics state parameters */
     float ca, CA;
-    void *SMask;
+/*    void *SMask;         stored in int_gstate as its a ref object */
 /*    void *BM;            Already handled (.setblendmode) */
     bool AIS;
 /*    bool OP;             Stroke overprint, for fill we will use existing overprint */

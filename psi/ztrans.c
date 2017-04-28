@@ -596,6 +596,26 @@ zgetAIS(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+static int
+zsetSMask(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    istate->SMask = *op;
+    pop(1);
+    return 0;
+}
+
+static int
+zcurrentSMask(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    *op = istate->SMask;
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 /* We need to split the table because of the 16-element limit. */
@@ -634,5 +654,7 @@ const op_def ztrans3_op_defs[] = {
     {"0.getFillConstantAlpha", zgetca},
     {"1.setAIS", zsetAIS},
     {"0.getAIS", zgetAIS},
+    {"1.setSMask", zsetSMask},
+    {"0.currentSMask", zcurrentSMask},
     op_def_end(0)
 };

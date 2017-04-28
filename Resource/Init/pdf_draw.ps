@@ -36,7 +36,7 @@ pdfdict begin
 %  /FillColor //sc1
 %  /FillColorSpace { /FillColorSpace gput } bind
 %  /FillOverprint //op
-  /SoftMask //SMask
+%  /SoftMask //SMask
 %  /StrokeConstantAlpha //CA
 %  /StrokeColor //SC1
 %  /StrokeColorSpace { /StrokeColorSpace gput } bind
@@ -502,7 +502,8 @@ end
 
     dup /None eq 1 index //null eq or PDFusingtransparency not or {
       pop //null
-      SoftMask //null ne {
+
+      .currentSMask //null ne {
         % get rid of the current SMask (Bug 695471)
         false			% colorspace not set
         << /Subtype /None >>	% Special type for this purpose
@@ -657,7 +658,7 @@ def
   .setuseciecolor setcolorspace setcolor
   setmatrix
   end	% restore colorspace, color and ExtGState (end)
-  /SoftMask where pop /SoftMask //true put	% special setting to tell us it has been rendered
+  .currentSMask /Processed //true put % special setting to tell us it has been rendered
 } bdef
 
 % Paint a Form+Group XObject, either for a transparency mask or for a Do.
@@ -1336,7 +1337,7 @@ drawopdict begin
         setfillstate resolvesh
         //sh_save 0 save put
         PDFusingtransparency {
-           SoftMask //null ne {
+           .currentSMask //null ne {
              //sh_group
              1 index /BBox knownoget {
                { oforce } forall
@@ -1363,7 +1364,7 @@ drawopdict begin
            {
                .endtransparencygroup .setopacityalpha .setblendmode	% end the CompatibleOverprint group
            } if
-           SoftMask //null ne {
+           .currentSMask //null ne {
              .endtransparencygroup
            } if
         } {
@@ -2125,7 +2126,7 @@ currentdict /last-ditch-bpc-csp undef
       .begintransparencymaskimage
       PDFfile fileposition exch
       gsave //nodict begin
-      //null /SoftMask gput
+      //null .setSMask
       1 .setopacityalpha 1 .setshapealpha
       1 CA 1 ca
       /Compatible .setblendmode
@@ -2145,7 +2146,7 @@ currentdict /last-ditch-bpc-csp undef
     % on our lazy evaulation of SMask groups
     false << /Subtype /None >> 0 0 0 0 .begintransparencymaskgroup
   } {
-    SoftMask //null ne {
+    .currentSMask //null ne {
       % the image doesn't have an SMask, but the ExtGState does, force a group.
       << /Subtype /Group /Isolated //true >> 0 0 1 1 .begintransparencygroup
       doimage
