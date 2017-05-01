@@ -398,6 +398,10 @@ zcurrentTextLineMatrix(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_matrix mat;
 
+    check_op(1);
+    if (!r_has_type(op, t_array))
+        return_error(gs_error_typecheck);
+
     gs_getTextLineMatrix(igs, &mat);
     return write_matrix(op, &mat);
 }
@@ -408,6 +412,7 @@ zsetTextLineMatrix(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
+    check_op(1);
     if (r_has_type(op, t_array)) {
         gs_matrix mat;
 
@@ -431,6 +436,10 @@ zcurrentTextMatrix(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_matrix mat;
 
+    check_op(1);
+    if (!r_has_type(op, t_array))
+        return_error(gs_error_typecheck);
+
     gs_getTextMatrix(igs, &mat);
     return write_matrix(op, &mat);
 }
@@ -441,6 +450,7 @@ zsetTextMatrix(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
+    check_op(1);
     if (r_has_type(op, t_array)) {
         gs_matrix mat;
 
