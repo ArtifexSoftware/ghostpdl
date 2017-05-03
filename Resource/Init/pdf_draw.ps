@@ -3732,21 +3732,46 @@ currentdict /set_bc_color undef
   currentdict /quadpoints2basis undef
 currentdict end readonly def
 
+/.PDFDrawAnnotType?
+{
+    //false exch
+    /ShowAnnotTypes where
+    {
+      /ShowAnnotTypes get
+      {
+        1 index eq
+        {
+          pop //true exch
+          exit
+        } if
+     } forall
+     pop
+   }
+   {pop pop //true}
+   ifelse
+} bind def
+
 /drawannot {		% <annot> drawannot -
   dup annotvisible {
     gsave
     dup dup /Subtype knownoget {
-      //drawannottypes exch .knownget { exec } { //true } ifelse
+      dup //.PDFDrawAnnotType? exec
       {
-        dup calc_annot_scale 2 copy mul 0 ne
+        //drawannottypes exch .knownget { exec } { //true } ifelse
         {
-          3 -1 roll drawwidget
-        }
-        {
-          (   **** Error: ignoring annotation with scale factor of 0\n) pdfformaterror
-          (               Output may be incorrect.\n) pdfformaterror
-        }ifelse % Draw rejected annots as widgets
-      } if			% type known
+          dup calc_annot_scale 2 copy mul 0 ne
+          {
+            3 -1 roll drawwidget
+          }
+          {
+            (   **** Error: ignoring annotation with scale factor of 0\n) pdfformaterror
+            (               Output may be incorrect.\n) pdfformaterror
+          }ifelse % Draw rejected annots as widgets
+        } if			% type known
+      }
+      {
+        pop
+      }ifelse
     } {
       pop
       (   **** Error: Ignoring /Annot dict without required /Subtype entry.\n)
@@ -3757,6 +3782,7 @@ currentdict end readonly def
   } if pop			% annotvisible
 } bdef
 currentdict /drawannottypes undef
+currentdict /.PDFDrawAnnotType? undef
 
 % Draw an annotation.
 

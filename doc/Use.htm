@@ -665,6 +665,16 @@ set (Ghostscript tries both).
 <dd>
 Don't enumerate anntoations associated with the page objects through
 <code>Annots</code> attribute. Annotations are shown by default.
+<p> In addition, finer control is available by defining an array
+<code>/ShowAnnotTypes</code>. Annoation types listed in this array will
+be drawn, whilst those not listed will not be drawn.
+<p> To use this feature:
+<code>-c "/ShowAnnotTypes [....]" -f &ltinput file&gt</code>
+<br> Where the array can contain one or more of the following names:
+<code>/Stamp</code>, <code>/Squiggly</code>, <code>/Underline</code>, <code>/Link</code>, <code>/Text</code>, <code>/Highlight</code>, <code>/Ink</code>, <code>/FreeText</code>, <code>/StrikeOut</code> and <code>/stamp_dict</code>.
+<p> For example, adding the follow to the command line:
+<code>-c "/ShowAnnotTypes [/Text /UnderLine]" -f &ltinput file&gt</code>
+<br> would draw only annoations with the subtypes &quotText&quot and &quotUnderLine&quot
 </dl>
 
 
