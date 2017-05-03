@@ -38,6 +38,15 @@ zcliprestore(i_ctx_t *i_ctx_p)
     return gs_cliprestore(igs);
 }
 
+static inline bool
+eqproc_check_type(ref *r)
+{
+    return r_has_type(r, t_array)
+           || r_has_type(r, t_mixedarray)
+           || r_has_type(r, t_shortarray)
+           || r_has_type(r, t_oparray);
+}
+
 /* <proc1> <proc2> .eqproc <bool> */
 /*
  * Test whether two procedures are equal to depth 10.
@@ -58,8 +67,10 @@ zeqproc(i_ctx_t *i_ctx_p)
 
     if (ref_stack_count(&o_stack) < 2)
         return_error(gs_error_stackunderflow);
-    if (!r_is_array(op - 1) || !r_is_array(op)) {
-        return_error(gs_error_typecheck);
+    if (!eqproc_check_type(op -1) || !eqproc_check_type(op)) {
+        make_false(op - 1);
+        pop(1);
+        return 0;
     }
 
     make_array(&stack[0].proc1, 0, 1, op - 1);
