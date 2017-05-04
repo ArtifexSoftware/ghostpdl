@@ -163,16 +163,28 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_font *pfont;
-    int code = font_param(op - 3, &pfont);
-    gs_font_base *const pbfont = (gs_font_base *) pfont;
-    gs_font_type42 *const pfont42 = (gs_font_type42 *) pfont;
+    int code;
+    gs_font_base *pbfont;
+    gs_font_type42 *pfont42;
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
-    op_proc_t cont = (pbfont->PaintType == 0 ? type42_fill : type42_stroke), exec_cont = 0;
+    op_proc_t cont, exec_cont = 0;
     ref *cnref;
     uint glyph_index;
 
+    check_op(4);
+    check_type(*(op - 1), t_name);
+    if (!r_has_type((op - 2), t_name)) {
+        check_type(*(op - 2), t_integer);
+    }
+
+    code = font_param(op - 3, &pfont);
     if (code < 0)
         return code;
+
+    pbfont = (gs_font_base *) pfont;
+    cont = (pbfont->PaintType == 0 ? type42_fill : type42_stroke);
+    pfont42 = (gs_font_type42 *) pfont;
+
     if (penum == 0 ||
         (pfont->FontType != ft_TrueType &&
          pfont->FontType != ft_CID_TrueType)
