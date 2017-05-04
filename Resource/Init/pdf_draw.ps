@@ -3739,7 +3739,7 @@ currentdict end readonly def
     {
       /ShowAnnotTypes get
       {
-        1 index eq
+        dup /* eq exch 2 index eq or
         {
           pop //true exch
           exit
@@ -3782,7 +3782,6 @@ currentdict end readonly def
   } if pop			% annotvisible
 } bdef
 currentdict /drawannottypes undef
-currentdict /.PDFDrawAnnotType? undef
 
 % Draw an annotation.
 
@@ -3964,17 +3963,22 @@ currentdict end readonly def
   dup annotvisible {
     gsave
     dup dup /Subtype knownoget {
-      //preserveannottypes exch .knownget { exec } { //true } ifelse
+      dup //.PDFDrawAnnotType? exec
       {
-        dup calc_annot_scale 2 copy mul 0 ne
+        //preserveannottypes exch .knownget { exec } { //true } ifelse
         {
-          3 -1 roll drawwidget
-        }
-        {
-          (   **** Error: ignoring annotation with scale factor of 0\n) pdfformaterror
-          (               Output may be incorrect.\n) pdfformaterror
-        }ifelse % Draw rejected annots as widgets
-      } if			% type known
+          dup calc_annot_scale 2 copy mul 0 ne
+          {
+            3 -1 roll drawwidget
+          }
+          {
+            (   **** Error: ignoring annotation with scale factor of 0\n) pdfformaterror
+            (               Output may be incorrect.\n) pdfformaterror
+          }ifelse % Draw rejected annots as widgets
+        } if
+      }
+      {pop} ifelse
+      % type known
     } {
       pop
       (   **** Error: Ignoring /Annot dict without required /Subtype entry.\n)
@@ -3986,6 +3990,7 @@ currentdict end readonly def
 } bdef
 
 currentdict /preserveannottypes undef
+currentdict /.PDFDrawAnnotType? undef
 
 % ============================ AcroForm fields ============================ %
 
