@@ -239,6 +239,10 @@ zget_device_params(i_ctx_t *i_ctx_p, bool is_hardware)
     ref *pmark;
 
     check_read_type(op[-1], t_device);
+
+    if(!r_has_type(op, t_null)) {
+        check_type(*op, t_dictionary);
+    }
     rkeys = *op;
     dev = op[-1].value.pdevice;
     pop(1);
