@@ -260,7 +260,7 @@ fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
     }
     params.m = code >> 1;
     for (j = 0; j < params.m << 1; j += 2) {
-        if (params.Domain[j] >= params.Domain[j + 1]) {
+        if (params.Domain[j] > params.Domain[j + 1]) {
           code = gs_note_error(gs_error_rangecheck);
           gs_errorinfo_put_pair_from_dict(i_ctx_p, op, "Domain");
           goto fail;
