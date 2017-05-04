@@ -316,6 +316,8 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
     code = rect_param(&bbox, op);
     if (code < 0)
         return code;
+    check_type(op[-5], t_boolean);
+
     /* Is the colorspace set for this mask ? */
     if (op[-5].value.boolval) {
                 params.ColorSpace = gs_currentcolorspace(igs);
