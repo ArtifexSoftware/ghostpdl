@@ -3893,6 +3893,7 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
     float opacity = gs_currentopacityalpha(pgs);
     bool blend_issue = !(blend_mode == BLEND_MODE_Normal || blend_mode == BLEND_MODE_Compatible);
     pdf14_device *pdev = (pdf14_device*)dev;
+    bool draw = !(text->operation & TEXT_DO_NONE);
 
     if_debug0m('v', memory, "[v]pdf14_text_begin\n");
     pdf14_set_marking_params(dev, pgs);
@@ -3907,15 +3908,17 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
           a BT/ET pair.  This is determined by looking at the pdf14 text_group.
        2) The blend mode is not Normal or the opacity is not 1.0
        3) Text knockout is set to true
+       4) We are actually doing a text drawing
 
        Special note:  If text-knockout is set to false while we are within a
        BT ET pair, we should pop the group.  I need to create a test file for
        this case.  */
     if (gs_currenttextknockout(pgs) && (blend_issue || opacity != 1.0) &&
         pdev->text_group == PDF14_TEXTGROUP_BT_NOT_PUSHED)
-        code = pdf14_push_text_group(dev, pgs, path, pcpath, blend_mode, opacity,
-            false);
-
+        if (draw) {
+            code = pdf14_push_text_group(dev, pgs, path, pcpath, blend_mode, opacity,
+                false);
+        }
     *ppenum = (gs_text_enum_t *)penum;
     return code;
 }
@@ -7881,6 +7884,7 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
     gs_blend_mode_t blend_mode = gs_currentblendmode(pgs);
     float opacity = gs_currentopacityalpha(pgs);
     bool blend_issue = !(blend_mode == BLEND_MODE_Normal || blend_mode == BLEND_MODE_Compatible);
+    bool draw = !(text->operation & TEXT_DO_NONE);
 
     if_debug0m('v', memory, "[v]pdf14_clist_text_begin\n");
     /*
@@ -7904,12 +7908,15 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
     is determined by looking at the pdf14 device.
     2) The blend mode is not Normal or the opacity is not 1.0
     3) Text knockout is set to true
+    4) And we are actually drawing text
     */
     if (gs_currenttextknockout(pgs) && (blend_issue || opacity != 1.0) &&
         pdev->text_group == PDF14_TEXTGROUP_BT_NOT_PUSHED) {
-        code = pdf14_push_text_group(dev, pgs, path, pcpath, blend_mode, opacity, true);
-        if (code == 0)
-            pdev->text_group = PDF14_TEXTGROUP_BT_PUSHED;  /* Needed during clist writing */
+        if (draw) {
+            code = pdf14_push_text_group(dev, pgs, path, pcpath, blend_mode, opacity, true);
+            if (code == 0)
+                pdev->text_group = PDF14_TEXTGROUP_BT_PUSHED;  /* Needed during clist writing */
+        }
     }
     *ppenum = (gs_text_enum_t *)penum;
     return code;
