@@ -172,7 +172,7 @@ static int zget_form_id(i_ctx_t *i_ctx_p)
 }
 
 /*
- * <int> .repeatform -
+ * [matrix] <dict> <int> .repeatform -
  */
 static int zrepeatform(i_ctx_t *i_ctx_p)
 {
@@ -187,6 +187,9 @@ static int zrepeatform(i_ctx_t *i_ctx_p)
     code = read_matrix(imemory, op - 2, &tmplate.CTM);
     if (code < 0)
         return code;
+
+    check_type(op[- 1], t_dictionary);
+    check_dict_read(*(op - 1));
 
     code = dict_floats_param(imemory, op - 1, "BBox", 4, BBox, NULL);
     if (code < 0)
