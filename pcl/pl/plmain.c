@@ -61,7 +61,7 @@ extern pl_interp_implementation_t pjl_implementation;
 
 /* Extern for PDL(s): currently in one of: plimpl.c (XL & PCL), */
 /* pcimpl.c (PCL only), or pximpl (XL only) depending on make configuration.*/
-extern pl_interp_implementation_t const *const pdl_implementation[];    /* zero-terminated list */
+extern pl_interp_implementation_t *pdl_implementations[];    /* zero-terminated list */
 
 /* Define the usage message. */
 static const char *pl_usage = "\
@@ -79,10 +79,8 @@ Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -l<PCL5C|PCL5E|RTL> -Z...\n\
 
 typedef struct pl_main_universe_s
 {
-    pl_interp_instance_t *pdl_instance_array[100];      /* parallel to pdl_implementation */
-    pl_interp_t *pdl_interp_array[100]; /* parallel to pdl_implementation */
-    pl_interp_implementation_t const *curr_implementation;
-    pl_interp_instance_t *curr_instance;
+    pl_interp_implementation_t *curr_implementation;
+    pl_interp_implementation_t **implementations;
     gx_device *curr_device;
 } pl_main_universe_t;
 
@@ -101,7 +99,7 @@ struct pl_main_instance_s
     int last_page;              /* -dLastPage= */
     gx_device *device;
 
-    pl_interp_implementation_t const *implementation; /*-L<Language>*/
+    pl_interp_implementation_t *implementation; /*-L<Language>*/
 
     char pcl_personality[6];    /* a character string to set pcl's
                                    personality - rtl, pcl5c, pcl5e, and
@@ -147,17 +145,18 @@ int pl_main_universe_init(pl_main_universe_t * universe,        /* universe to i
     );
 
 /* 0 ok, else -1 error */
-int pl_main_universe_dnit(pl_main_universe_t * universe);
+int pl_main_universe_dnit(pl_main_universe_t * universe,
+                          gs_memory_t * mem);
 
 /* rets current interp_instance, 0 if err */
-pl_interp_instance_t *pl_main_universe_select(pl_main_universe_t * universe,     /* universe to select from */
-                                              pl_interp_implementation_t const *desired_implementation,  /* impl to select */
+pl_interp_implementation_t *pl_main_universe_select(pl_main_universe_t * universe,     /* universe to select from */
+                                              pl_interp_implementation_t *desired_implementation,  /* impl to select */
                                               pl_main_instance_t * pti,  /* inst contains device */
                                               gs_param_list * params     /* device params to use */
     );
 
-static pl_interp_implementation_t const
-    *pl_select_implementation(pl_interp_instance_t * pjl_instance,
+static pl_interp_implementation_t
+    *pl_select_implementation(pl_interp_implementation_t * pjl_instance,
                               pl_main_instance_t * pmi, pl_top_cursor_t r);
 
 /* Process the options on the command line. */
@@ -168,9 +167,9 @@ void pl_main_reinit_instance(pl_main_instance_t * pmi);
 /* Process the options on the command line, including making the
    initial device and setting its parameters.  */
 int pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
-                            pl_interp_instance_t * pjl_instance);
+                            pl_interp_implementation_t * pjl_instance);
 
-static pl_interp_implementation_t const *pl_pjl_select(pl_interp_instance_t *pjl_instance);
+static pl_interp_implementation_t *pl_pjl_select(pl_main_instance_t * pmi, pl_interp_implementation_t *pjl_instance);
 
 /* return index in gs device list -1 if not found */
 static inline int
@@ -193,7 +192,7 @@ get_device_index(const gs_memory_t * mem, const char *value)
 static int
 close_job(pl_main_universe_t * universe, pl_main_instance_t * pti)
 {
-    return pl_dnit_job(universe->curr_instance);
+    return pl_dnit_job(universe->curr_implementation);
 }
 
 int
@@ -208,7 +207,7 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
 {
     gs_memory_t *mem = inst->memory;
     int (*arg_get_codepoint) (FILE * file, const char **astr) = NULL;
-    pl_interp_instance_t *pjl_instance;
+    pl_interp_implementation_t *pjl_instance;
     
     gp_init();
     /* debug flags we reset this out of gs_lib_init0 which sets these
@@ -251,7 +250,8 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
         return gs_error_Fatal;
     }
 
-    pjl_instance = inst->universe.pdl_instance_array[0];
+    pjl_instance = inst->universe.curr_implementation =
+        inst->universe.implementations[0];
     
     /* initialize pjl, needed for option processing. */
     if (pl_init_job(pjl_instance) < 0) {
@@ -312,11 +312,13 @@ int
 pl_main_run_file(pl_main_instance_t *minst, const char *filename)
 {
     bool new_job = true;
-    pl_interp_instance_t *pjl_instance = minst->universe.pdl_instance_array[0];
+    /* NB */
+    pl_interp_implementation_t *pjl_instance =
+        minst->universe.implementations[0];
     gs_memory_t *mem = minst->memory;
     pl_top_cursor_t r;
     int code = 0;
-    pl_interp_instance_t *curr_instance = 0;
+    pl_interp_implementation_t *curr_implementation = 0;
     
     if (pl_cursor_open(mem, &r, filename, minst->buf, sizeof(minst->buf)) < 0) {
         return gs_error_Fatal;
@@ -328,7 +330,7 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
 
         if (pl_cursor_next(&r) <= 0) {
             if_debug0m('I', mem, "End of of data\n");
-            pl_process_eof(curr_instance);
+            pl_process_eof(curr_implementation);
             if (close_job(&minst->universe, minst) < 0)
                 return gs_error_Fatal;
             break;
@@ -336,44 +338,43 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
         
         if (new_job) {
             if_debug0m('I', mem, "Selecting PDL\n");
-            curr_instance = pl_main_universe_select(&minst->universe,
+            curr_implementation = pl_main_universe_select(&minst->universe,
                                                     pl_select_implementation
                                                     (pjl_instance, minst,
                                                      r), minst,
                                                     (gs_param_list *) &
                                                     minst->params);
-            if (curr_instance == NULL) {
+            if (curr_implementation == NULL) {
                 return gs_error_Fatal;
             }
 
             /* Don't reset PJL if there is PJL state from the command line arguments. */
-            if (curr_instance == pjl_instance) {
+            if (curr_implementation == pjl_instance) {
                 if (minst->pjl_from_args == false) {
                     if (pl_init_job(pjl_instance) < 0)
                         return gs_error_Fatal;
                 } else
                     minst->pjl_from_args = false;
             } else {
-                if (pl_init_job(curr_instance) < 0)
+                if (pl_init_job(curr_implementation) < 0)
                     return gs_error_Fatal;
             }
             
             if_debug1m('I', mem, "selected and initializing (%s)\n",
-                       pl_characteristics(curr_instance->interp->
-                                          implementation)->language);
+                       pl_characteristics(curr_implementation)->language);
             new_job = false;
         }
 
-        if (curr_instance) {
+        if (curr_implementation) {
             /* Special case when the job resides in a seekable file and
                the implementation has a function to process a file at a
                time. */
-            if (curr_instance->interp->implementation->proc_process_file
+            if (curr_implementation->proc_process_file
                 && r.strm != mem->gs_lib_ctx->fstdin) {
                 if_debug1m('I', mem, "processing job from file (%s)\n",
                            filename);
 
-                code = pl_process_file(curr_instance, (char *)filename);
+                code = pl_process_file(curr_implementation, (char *)filename);
                 if (code < 0) {
                     errprintf(mem, "Warning interpreter exited with error code %d\n",
                               code);
@@ -384,17 +385,16 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                 break;      /* break out of the loop to process the next file */
             }
 
-            code = pl_process(curr_instance, &r.cursor);
+            code = pl_process(curr_implementation, &r.cursor);
             if_debug1m('I', mem, "processing (%s) job\n",
-                       pl_characteristics(curr_instance->interp->
-                                          implementation)->language);
+                       pl_characteristics(curr_implementation)->language);
             if (code == e_ExitLanguage) {
                 if (close_job(&minst->universe, minst) < 0)
                     return gs_error_Fatal;
 
                 new_job = true;
 
-                if (curr_instance != pjl_instance)
+                if (curr_implementation != pjl_instance)
                     if (pl_init_job(pjl_instance) < 0)
                         return gs_error_Fatal;
 
@@ -404,14 +404,14 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                           code);
                 dmprintf(mem, "Flushing to end of job\n");
                 /* flush eoj may require more data */
-                while ((pl_flush_to_eoj(curr_instance, &r.cursor)) == 0) {
+                while ((pl_flush_to_eoj(curr_implementation, &r.cursor)) == 0) {
                     if (pl_cursor_next(&r) <= 0) {
                         if_debug0m('I', mem,
                                    "end of data found while flushing\n");
                         break;
                     }
                 }
-                pl_report_errors(curr_instance, code,
+                pl_report_errors(curr_implementation, code,
                                  pl_cursor_position(&r),
                                  minst->error_report > 0);
                 if (close_job(&minst->universe, minst) < 0)
@@ -431,22 +431,22 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
 void
 pl_main_delete_instance(pl_main_instance_t *minst)
 {
+    gs_memory_t *mem = minst->memory;
+    /* Dnit PDLs */
+    if (pl_main_universe_dnit(&minst->universe, mem) < 0)
+        errprintf(minst->memory, "Failed to deallocate interpreters\n");
+
 #ifdef PL_LEAK_CHECK
-    gs_memory_chunk_dump_memory(minst->memory);
+    gs_memory_chunk_dump_memory(mem);
 #endif
-    gs_malloc_release(gs_memory_chunk_unwrap(minst->memory));
+    gs_malloc_release(gs_memory_chunk_unwrap(mem));
 }
 
 int
-pl_to_exit(const gs_memory_t *mem)
+pl_to_exit(gs_memory_t *mem)
 {
     pl_main_instance_t *minst = mem->gs_lib_ctx->top_of_system;
-    /* release param list */
     gs_c_param_list_release(&minst->params);
-    /* Dnit PDLs */
-    if (pl_main_universe_dnit(&minst->universe))
-        return gs_error_Fatal;
-
     arg_finit(&minst->args);
     gp_exit(0, 0);
     return 0;
@@ -461,46 +461,57 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
     )
 {
     int index;
+    int count;
+    int sz;
+    pl_interp_implementation_t **impls;
 
+    for (count = 0; pdl_implementations[count] != 0; ++count)
+        ;
+
+    /* add one so we can zero terminate the table */
+    sz = sizeof(pl_interp_implementation_t *) * (count + 1);
+
+    impls = (pl_interp_implementation_t **)gs_alloc_bytes_immovable(mem, sz, "pl_main_universe_init");
+
+    if (impls == NULL)
+        goto pmui_err;
+
+    universe->implementations = impls;
+
+    memset(impls, 0, sz);
+    
     /* Create & init PDL all instances. Could do this lazily to save memory, */
     /* but for now it's simpler to just create all instances up front. */
-    for (index = 0; pdl_implementation[index] != 0; ++index) {
+    for (index = 0; index < count; ++index) {
         int code;
+        impls[index] = (pl_interp_implementation_t *)
+            gs_alloc_bytes_immovable(mem,
+                                     sizeof(pl_interp_implementation_t),
+                                     "pl_main_universe_init interp");
+        
+        if (impls[index] == NULL)
+            goto pmui_err;
+            
+        *impls[index] = *pdl_implementations[index];
+        
+        /* Whatever instance we allocate here will become the current
+         * instance during initialisation; this allows init files to be
+         * successfully read etc. */
+        code = pl_allocate_interp_instance(impls[index], mem);
 
-        code = pl_allocate_interp(&universe->pdl_interp_array[index],
-                                  pdl_implementation[index], mem);
-        if (code >= 0) {
-            /* Whatever instance we allocate here will become the current
-             * instance during initialisation; this allows init files to be
-             * successfully read etc. */
-            code = pl_allocate_interp_instance(&universe->curr_instance,
-                                               universe->
-                                               pdl_interp_array[index], mem);
-        }
-        universe->pdl_instance_array[index] = universe->curr_instance;
         if (code < 0) {
             errprintf(mem, "Unable to create %s interpreter.\n",
-                        pl_characteristics(pdl_implementation[index])->
+                        pl_characteristics(impls[index])->
                         language);
             goto pmui_err;
         }
 
     }
+    
     return 0;
 
-  pmui_err:
-    pl_main_universe_dnit(universe);
+ pmui_err:
     return -1;
-}
-
-/* NB this doesn't seem to be used */
-pl_interp_instance_t *
-get_interpreter_from_memory(const gs_memory_t * mem)
-{
-    pl_main_instance_t *minst    = mem->gs_lib_ctx->top_of_system;
-    pl_main_universe_t *universe = &minst->universe;
-    
-    return universe->curr_instance;
 }
 
 pl_main_instance_t *
@@ -518,29 +529,28 @@ pl_main_get_pcl_personality(const gs_memory_t *mem)
 
 /* Undo pl_main_universe_init */
 int                             /* 0 ok, else -1 error */
-pl_main_universe_dnit(pl_main_universe_t * universe)
+pl_main_universe_dnit(pl_main_universe_t * universe, gs_memory_t * mem)
 {
     int index;
+    pl_interp_implementation_t **impl = universe->implementations;
 
+    if (!impl)
+        return gs_error_Fatal; 
+        
     /* Deselect last-selected device */
-    if (universe->curr_instance
-        && pl_remove_device(universe->curr_instance) < 0) {
+    if (universe->curr_implementation
+        && pl_remove_device(universe->curr_implementation) < 0) {
         return -1;
     }
 
     /* dnit interps */
-    for (index = 0;
-         pdl_implementation[index] != 0;
-         ++index, universe->curr_instance =
-         universe->pdl_instance_array[index])
-        if ((universe->pdl_instance_array[index]
-             && pl_deallocate_interp_instance(universe->
-                                              pdl_instance_array[index]) < 0)
-            || (universe->pdl_interp_array[index]
-                && pl_deallocate_interp(universe->pdl_interp_array[index]) <
-                0)) {
+    for (index = 0; impl[index] != 0; ++index) {
+        if (pl_deallocate_interp_instance(impl[index]) < 0) {
             return -1;
         }
+    }
+
+    gs_free_object(mem, impl, "pl_main_universe_dnit()");
 
     /* close and dealloc the device if selected. */
     if (universe->curr_device) {
@@ -554,102 +564,39 @@ pl_main_universe_dnit(pl_main_universe_t * universe)
 }
 
 /* Select new device and/or implementation, deselect one one (opt) */
-pl_interp_instance_t *          /* rets current interp_instance, 0 if err */
+pl_interp_implementation_t *          /* rets current interp_instance, 0 if err */
 pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select from */
-                        pl_interp_implementation_t const *desired_implementation,       /* impl to select */
+                        pl_interp_implementation_t *desired_implementation,       /* impl to select */
                         pl_main_instance_t * pmi,       /* inst contains device */
                         gs_param_list * params  /* device params to set */
     )
 {
-    int params_are_set = 0;
-    /* requesting the device in the main instance */
-    gx_device *desired_device = pmi->device;
+    /*
+     * if a device has not been set up for the languages, yet set the
+     * parameters and open it.
+     */
 
-    /* If new interpreter/device is different, deselect it from old interp */
-    if ((universe->curr_implementation
-         && universe->curr_implementation != desired_implementation)
-        || (universe->curr_device && universe->curr_device != desired_device)) {
-        if (universe->curr_instance
-            && pl_remove_device(universe->curr_instance) < 0) {
-            errprintf(pmi->memory, "Unable to deselect device from interp instance.\n");
-            return 0;
-        }
-        if (universe->curr_device && universe->curr_device != desired_device) {
-            /* Here, we close the device. Note that this is not an absolute */
-            /* requirement: we could have a pool of open devices & select them */
-            /* into interp_instances as needed. The reason we force a close */
-            /* here is that multiple *async* devices would need coordination */
-            /* since an async device is not guaranteed to have completed */
-            /* rendering until it is closed. So, we close devices here to */
-            /* avoid things like intevermingling of output streams. */
-            if (gs_closedevice(universe->curr_device) < 0) {
-                errprintf(pmi->memory, "Unable to close device.\n");
-                return 0;
-            } else {
-                /* Delete the device. */
-                gs_unregister_root(universe->curr_device->memory,
-                                   &device_root, "pl_main_universe_select");
-                gs_free_object(universe->curr_device->memory,
-                               universe->curr_device,
-                               "pl_main_universe_select(gx_device)");
-                universe->curr_device = 0;
-            }
-        }
+    if (universe->curr_device == NULL) {
+        if ((gs_putdeviceparams(pmi->device, params) < 0) ||
+            (gs_opendevice(pmi->device) < 0))
+            return NULL;
+
+        universe->curr_device = pmi->device;
     }
 
-    /* Switch to/select new interperter if indicated. */
-    /* Here, we assume that instances of all interpreters are open & ready */
-    /* to go. If memory were scarce, we could dynamically destroy/create */
-    /* interp_instances here (or even de/init the entire interp for greater */
-    /* memory savings). */
-    if ((!universe->curr_implementation
-         || universe->curr_implementation != desired_implementation)
-        || !universe->curr_device) {
-        int index;
+    /*
+     * Changed languages, reinstall the device in the new implementation.
+     */
+    if (universe->curr_implementation != desired_implementation) {
 
-        /* Select/change PDL if needed */
-        if (!universe->curr_implementation
-            || universe->curr_implementation != desired_implementation) {
-            /* find instance corresponding to implementation */
-            for (index = 0;
-                 desired_implementation !=
-                 pdl_implementation[index]; ++index);
-            universe->curr_instance = universe->pdl_instance_array[index];
-            universe->curr_implementation = desired_implementation;
-        }
+        if ((pl_remove_device(universe->curr_implementation) < 0) ||
+            (pl_set_device(desired_implementation, universe->curr_device) < 0))
+            return NULL;
 
-        /* Open a new device if needed. */
-        if (!universe->curr_device) {   /* remember that curr_device==0 if we closed it above */
-            /* Set latest params into device BEFORE setting into device. */
-            /* Do this here because PCL5 will do some 1-time initializations based */
-            /* on device geometry when pl_set_device, below, selects the device. */
-            if (gs_putdeviceparams(desired_device, params) < 0) {
-                errprintf(pmi->memory, "Unable to set params into device.\n");
-                return 0;
-            }
-            params_are_set = 1;
-
-            if (gs_opendevice(desired_device) < 0) {
-                errprintf(pmi->memory, "Unable to open new device.\n");
-                return 0;
-            } else
-                universe->curr_device = desired_device;
-        }
-
-        /* Select curr/new device into PDL instance */
-        if (pl_set_device(universe->curr_instance, universe->curr_device) < 0) {
-            errprintf(pmi->memory, "Unable to install device into PDL interp.\n");
-            return 0;
-        }
+        universe->curr_implementation = desired_implementation;
     }
 
-    /* Set latest params into device. Write them all in case any changed */
-    if (!params_are_set
-        && gs_putdeviceparams(universe->curr_device, params) < 0) {
-        errprintf(pmi->memory, "Unable to set params into device.\n");
-        return 0;
-    }
-    return universe->curr_instance;
+    return universe->curr_implementation;
 }
 
 /* ------- Functions related to pl_main_instance_t ------ */
@@ -724,10 +671,16 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
         }
         code = gs_copydevice(&pti->device, dev, pti->memory);
 
-        if (pti->device != NULL)
-            gs_register_struct_root(pti->memory, &device_root,
-                                    (void **)&pti->device,
-                                    "pl_top_create_device");
+        if (code < 0)
+            return code;
+
+        if (pti->device == NULL)
+            return gs_error_VMerror;
+
+        gs_register_struct_root(pti->memory, &device_root,
+                                (void **)&pti->device,
+                                "pl_top_create_device");
+        
         /* NB this needs a better solution */
         if (!strcmp(gs_devicename(pti->device), "pdfwrite") ||
             !strcmp(gs_devicename(pti->device), "ps2write"))
@@ -843,7 +796,7 @@ static int check_for_special_str(pl_main_instance_t * pmi, const char *arg, gs_p
 #define arg_heap_copy(str) arg_copy(str, pmi->memory)
 int
 pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
-                        pl_interp_instance_t * pjl_instance)
+                        pl_interp_implementation_t * pjl_instance)
 {
     int code = 0;
     bool help = false;
@@ -1183,16 +1136,10 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
             case 'K':          /* max memory in K */
                 {
                     int maxk;
-#ifdef HEAP_ALLOCATOR_ONLY
-                    gs_malloc_memory_t *rawheap =
-                        (gs_malloc_memory_t *)
-                        gs_malloc_wrapped_contents(pmi->memory);
-#else
                     gs_malloc_memory_t *rawheap =
                         (gs_malloc_memory_t *) gs_memory_chunk_target(pmi->
                                                                       memory)->
                         non_gc_memory;
-#endif
                     if (sscanf(arg, "%d", &maxk) != 1) {
                         dmprintf(pmi->memory,
                                  "-K must be followed by a number\n");
@@ -1222,20 +1169,26 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
             case 'L':          /* language */
                 {
                     int index;
+                    pl_interp_implementation_t **impls = pmi->universe.implementations;
 
-                    for (index = 0; pdl_implementation[index] != 0; ++index)
+                    /* 
+                     * the 0th entry always holds the PJL
+                     * implementation, which is never explicitly
+                     * selected.
+                     */
+                    for (index = 1; impls[index] != 0; ++index)
                         if (!strcmp(arg,
-                                    pl_characteristics(pdl_implementation[index])->
+                                    pl_characteristics(impls[index])->
                                     language))
                             break;
-                    if (pdl_implementation[index] != 0)
-                        pmi->implementation = pdl_implementation[index];
+                    if (impls[index] != 0)
+                        pmi->implementation = impls[index];
                     else {
                         dmprintf(pmi->memory,
                                  "Choose language in -L<language> from: ");
-                        for (index = 0; pdl_implementation[index] != 0; ++index)
+                        for (index = 1; impls[index] != 0; ++index)
                             dmprintf1(pmi->memory, "%s ",
-                                      pl_characteristics(pdl_implementation[index])->
+                                      pl_characteristics(impls[index])->
                                       language);
                         dmprintf(pmi->memory, "\n");
                         return -1;
@@ -1344,7 +1297,9 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
         return -1;
     }
     gs_c_param_list_read(params);
-    pl_top_create_device(pmi, -1, true); /* create default device if needed */
+    code = pl_top_create_device(pmi, -1, true); /* create default device if needed */
+    if (code < 0)
+        return code;
 
     /* No file names to process.*/
     if (!arg)
@@ -1365,20 +1320,21 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
 #define PJL_UEL "\033%-12345X"
 
 /* Find default language implementation */
-static pl_interp_implementation_t const *
-pl_auto_sense(const char *name,  int buffer_length)
+static pl_interp_implementation_t *
+pl_auto_sense(pl_main_instance_t *minst, const char *name,  int buffer_length)
 {
     /* Lookup this string in the auto sense field for each implementation */
-    pl_interp_implementation_t const *const *impl;
+    pl_interp_implementation_t **impls = minst->universe.implementations;
+    pl_interp_implementation_t **impl;
     size_t uel_len = strlen(PJL_UEL);
 
     /* first check for a UEL */
     if (buffer_length >= uel_len) {
         if (!memcmp(name, PJL_UEL, uel_len))
-            return pdl_implementation[0];
+            return impls[0];
     }
     
-    for (impl = pdl_implementation; *impl != 0; ++impl) {
+    for (impl = impls; *impl != 0; ++impl) {
         int auto_string_len = strlen(pl_characteristics(*impl)->auto_sense_string);
         const char *sense   = pl_characteristics(*impl)->auto_sense_string;
         if (auto_string_len != 0 && buffer_length >= auto_string_len)
@@ -1386,39 +1342,40 @@ pl_auto_sense(const char *name,  int buffer_length)
                 return *impl;
     }
     /* Defaults to first language PJL is first in the table */
-    return pdl_implementation[1];
+    return impls[1];
 }
 
 /* either the (1) implementation has been selected on the command line or
    (2) it has been selected in PJL or (3) we need to auto sense. */
-static pl_interp_implementation_t const *
-pl_select_implementation(pl_interp_instance_t * pjl_instance,
+static pl_interp_implementation_t *
+pl_select_implementation(pl_interp_implementation_t * pjl_instance,
                          pl_main_instance_t * pmi, pl_top_cursor_t r)
 {
     /* Determine language of file to interpret. We're making the incorrect */
     /* assumption that any file only contains jobs in one PDL. The correct */
     /* way to implement this would be to have a language auto-detector. */
-    pl_interp_implementation_t const *impl;
+    pl_interp_implementation_t *impl;
 
     if (pmi->implementation)
         return pmi->implementation;     /* was specified as cmd opt */
     /* select implementation */
-    if ((impl = pl_pjl_select(pjl_instance)) != 0)
+    if ((impl = pl_pjl_select(pmi, pjl_instance)) != 0)
         return impl;
     /* lookup string in name field for each implementation */
-    return pl_auto_sense((const char *)r.cursor.ptr + 1,
+    return pl_auto_sense(pmi, (const char *)r.cursor.ptr + 1,
                          (r.cursor.limit - r.cursor.ptr));
 }
 
 /* Find default language implementation */
-static pl_interp_implementation_t const *
-pl_pjl_select(pl_interp_instance_t * pjl_instance)
+static pl_interp_implementation_t *
+pl_pjl_select(pl_main_instance_t * pmi, pl_interp_implementation_t * pjl_instance)
 {
     pjl_envvar_t *language;
-    pl_interp_implementation_t const *const *impl;
+    pl_interp_implementation_t **impls = pmi->universe.implementations;
+    pl_interp_implementation_t **impl;
 
     language = pjl_proc_get_envvar(pjl_instance, "language");
-    for (impl = pdl_implementation; *impl != 0; ++impl) {
+    for (impl = impls; *impl != 0; ++impl) {
         if (!strcmp(pl_characteristics(*impl)->language, language))
             return *impl;
     }
@@ -1447,16 +1404,16 @@ pl_log_string(const gs_memory_t * mem, const char *str, int wait_for_key)
         (void)fgetc(mem->gs_lib_ctx->fstdin);
 }
 
-pl_interp_instance_t *
+pl_interp_implementation_t *
 pl_main_get_pcl_instance(const gs_memory_t *mem)
 {
-    return pl_main_get_instance(mem)->universe.pdl_instance_array[1];
+    return pl_main_get_instance(mem)->universe.implementations[1];
 }
 
-pl_interp_instance_t *
+pl_interp_implementation_t *
 pl_main_get_pjl_instance(const gs_memory_t *mem)
 {
-    return pl_main_get_instance(mem)->universe.pdl_instance_array[0];
+    return pl_main_get_instance(mem)->universe.implementations[0];
 }
 
 bool pl_main_get_interpolate(const gs_memory_t *mem)

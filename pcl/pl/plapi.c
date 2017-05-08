@@ -23,20 +23,27 @@
 GSDLLEXPORT int GSDLLAPI
 plapi_new_instance(void **lib, void *caller_handle)
 {
-    gs_memory_t *mem = NULL;
-    pl_main_instance_t *minst = NULL;
-    int code = gs_memory_chunk_wrap(&mem, gs_malloc_init());
+    gs_memory_t *heap_mem = gs_malloc_init();
+    gs_memory_t *chunk_mem;
+    pl_main_instance_t *minst;
+    int code;
 
-    if (code < 0)
+    if (heap_mem == NULL)
         return gs_error_Fatal;
-
-    minst = pl_main_alloc_instance(mem);
-    if (minst == NULL) {
-        gs_malloc_release(gs_memory_chunk_unwrap(mem));
+    
+    code = gs_memory_chunk_wrap(&chunk_mem, heap_mem);
+    if (code < 0) {
+        gs_malloc_release(heap_mem);
         return gs_error_Fatal;
     }
 
-    *lib = (void *)(mem->gs_lib_ctx);
+    minst = pl_main_alloc_instance(chunk_mem);
+    if (minst == NULL) {
+        gs_malloc_release(gs_memory_chunk_unwrap(chunk_mem));
+        return gs_error_Fatal;
+    }
+
+    *lib = (void *)(chunk_mem->gs_lib_ctx);
 
     return 0;
 }

@@ -28,7 +28,7 @@ main(int argc, char *argv[])
     
     code = plapi_new_instance(&minst, (void *)0);
     if (code < 0)
-	return 1;
+	return EXIT_FAILURE;
 
     if (code == 0)
         code = plapi_init_with_args(minst, argc, argv);

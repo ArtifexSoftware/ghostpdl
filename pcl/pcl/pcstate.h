@@ -340,7 +340,7 @@ struct pcl_state_s
     /* ---------------- HP-GL/2 state ---------------- */
     pcl_hpgl_state_t g;         /* see pgstate.h */
     /* ---------------- PJL state -------------------- */
-    pl_interp_instance_t *pjls;
+    pl_interp_implementation_t *pjls;
     /* ---------------- page size table -------------- */
     pcl_paper_type_t *ppaper_type_table;
     /* yet another poorly documented pjl variable - this should widen

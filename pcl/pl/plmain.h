@@ -60,7 +60,7 @@ void pl_main_delete_instance(pl_main_instance_t *minst);
 int pl_main_run_string_begin(void *instance);
 int pl_main_run_string_continue(void *instance, const char *str, unsigned int length);
 int pl_main_run_string_end(void *instance);
-int pl_to_exit(const gs_memory_t *mem);
+int pl_to_exit(gs_memory_t *mem);
 
 /* instance accessors */
 bool pl_main_get_interpolate(const gs_memory_t *mem);
@@ -77,6 +77,6 @@ bool pl_main_get_pjl_from_args(const gs_memory_t *mem); /* pjl was passed on the
 /* retrieve the PCL instance, used by PXL for pass through mode */
 char *pl_main_get_pcl_personality(const gs_memory_t *mem);
 
-pl_interp_instance_t *pl_main_get_pcl_instance(const gs_memory_t *mem);
-pl_interp_instance_t *pl_main_get_pjl_instance(const gs_memory_t *mem);
+pl_interp_implementation_t *pl_main_get_pcl_instance(const gs_memory_t *mem);
+pl_interp_implementation_t *pl_main_get_pjl_instance(const gs_memory_t *mem);
 #endif /* plmain_INCLUDED */

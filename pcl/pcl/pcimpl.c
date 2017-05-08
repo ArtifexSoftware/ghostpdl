@@ -15,7 +15,7 @@
 
 
 /* pcimpl.c - PCL5c pl_interp_implementation_t descriptor */
-
+#if 0
 #include "memory_.h"
 #include "scommon.h"
 #include "gxdevice.h"
@@ -28,3 +28,5 @@ pl_interp_implementation_t const *const pdl_implementation[] = {
     &pcl_implementation,
     0
 };
+
+#endif

@@ -33,57 +33,30 @@ pl_characteristics(const pl_interp_implementation_t * impl      /* implementatio
     return impl->proc_characteristics(impl);
 }
 
-/* Do init of interp */
+/* Do instance interpreter allocation/init. No device is set yet */
 int                             /* ret 0 ok, else -ve error code */
-pl_allocate_interp(pl_interp_t ** interp,       /* RETURNS abstract interpreter struct */
-                   const pl_interp_implementation_t * impl,     /* implementation of interpereter to alloc */
-                   gs_memory_t * mem    /* allocator to allocate interp from */
-    )
-{
-    int code = impl->proc_allocate_interp(interp, impl, mem);
-
-    if (code < 0)
-        return code;
-    (*interp)->implementation = impl;
-    return code;
-}
-
-/* Do per-instance interpreter allocation/init. No device is set yet */
-int                             /* ret 0 ok, else -ve error code */
-pl_allocate_interp_instance(pl_interp_instance_t ** instance,   /* RETURNS instance struct */
-                            pl_interp_t * interp,       /* dummy interpreter */
+pl_allocate_interp_instance(pl_interp_implementation_t * impl,
                             gs_memory_t * mem   /* allocator to allocate instance from */
     )
 {
-    pl_interp_instance_t *pli;
-
-    int code =
-        interp->implementation->proc_allocate_interp_instance(instance,
-                                                              interp, mem);
-    if (code < 0)
-        return code;
-    pli = *instance;
-    pli->interp = interp;
-
-    return code;
+    return impl->proc_allocate_interp_instance(impl, mem);
 }
 
 /* Get and interpreter prefered device memory allocator if any */
 int                             /* ret 0 ok, else -ve error code */
-pl_set_device(pl_interp_instance_t * instance,  /* interp instance to use */
+pl_set_device(pl_interp_implementation_t * impl,  /* interp instance to use */
               gx_device * device        /* device to set (open or closed) */
     )
 {
-    return instance->interp->implementation->proc_set_device(instance,
-                                                             device);
+    return impl->proc_set_device(impl, device);
 }
 
 /* Prepare interp instance for the next "job" */
 int                             /* ret 0 ok, else -ve error code */
-pl_init_job(pl_interp_instance_t * instance     /* interp instance to start job in */
+pl_init_job(pl_interp_implementation_t * impl     /* interp instance to start job in */
     )
 {
-    return instance->interp->implementation->proc_init_job(instance);
+    return impl->proc_init_job(impl);
 }
 
 /* Parse a random access seekable file.
@@ -92,10 +65,9 @@ pl_init_job(pl_interp_instance_t * instance     /* interp instance to start job 
    not NULL.
  */
 int
-pl_process_file(pl_interp_instance_t * instance, char *filename)
+pl_process_file(pl_interp_implementation_t * impl, char *filename)
 {
-    return instance->interp->implementation->proc_process_file(instance,
-                                                               filename);
+    return impl->proc_process_file(impl, filename);
 }
 
 /* Parse a cursor-full of data */
@@ -107,84 +79,64 @@ pl_process_file(pl_interp_instance_t * instance, char *filename)
  *      other <0 value - an error was detected.
  */
 int
-pl_process(pl_interp_instance_t * instance,     /* interp instance to process data job in */
+pl_process(pl_interp_implementation_t * impl,     /* interp instance to process data job in */
            stream_cursor_read * cursor  /* data to process */
     )
 {
-    return instance->interp->implementation->proc_process(instance, cursor);
+    return impl->proc_process(impl, cursor);
 }
 
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
 int
-pl_flush_to_eoj(pl_interp_instance_t * instance,        /* interp instance to flush for */
+pl_flush_to_eoj(pl_interp_implementation_t * impl,        /* interp instance to flush for */
                 stream_cursor_read * cursor     /* data to process */
     )
 {
-    return instance->interp->implementation->proc_flush_to_eoj(instance,
-                                                               cursor);
+    return impl->proc_flush_to_eoj(impl, cursor);
 }
 
 /* Parser action for end-of-file (also resets after unexpected EOF) */
 int                             /* ret 0 or +ve if ok, else -ve error code */
-pl_process_eof(pl_interp_instance_t * instance  /* interp instance to process data job in */
+pl_process_eof(pl_interp_implementation_t * impl  /* interp instance to process data job in */
     )
 {
-    return instance->interp->implementation->proc_process_eof(instance);
+    return impl->proc_process_eof(impl);
 }
 
 /* Report any errors after running a job */
 int                             /* ret 0 ok, else -ve error code */
-pl_report_errors(pl_interp_instance_t * instance,       /* interp instance to wrap up job in */
+pl_report_errors(pl_interp_implementation_t * impl,       /* interp instance to wrap up job in */
                  int code,      /* prev termination status */
                  long file_position,    /* file position of error, -1 if unknown */
                  bool force_to_cout     /* force errors to cout */
     )
 {
-    return instance->interp->implementation->proc_report_errors
-        (instance, code, file_position, force_to_cout);
+    return impl->proc_report_errors
+        (impl, code, file_position, force_to_cout);
 }
 
 /* Wrap up interp instance after a "job" */
 int                             /* ret 0 ok, else -ve error code */
-pl_dnit_job(pl_interp_instance_t * instance     /* interp instance to wrap up job in */
+pl_dnit_job(pl_interp_implementation_t * impl     /* interp instance to wrap up job in */
     )
 {
-    if (!instance || !instance->interp || !instance->interp->implementation)
-        return 0;
-
-    return instance->interp->implementation->proc_dnit_job(instance);
+    return impl->proc_dnit_job(impl);
 }
 
 /* Remove a device from an interperter instance */
 int                             /* ret 0 ok, else -ve error code */
-pl_remove_device(pl_interp_instance_t * instance        /* interp instance to use */
+pl_remove_device(pl_interp_implementation_t * impl        /* interp instance to use */
     )
 {
-    if (!instance || !instance->interp || !instance->interp->implementation)
-        return 0;
-
-    return instance->interp->implementation->proc_remove_device(instance);
+    return impl->proc_remove_device(impl);
 }
 
 /* Deallocate a interpreter instance */
 int                             /* ret 0 ok, else -ve error code */
-pl_deallocate_interp_instance(pl_interp_instance_t * instance   /* instance to dealloc */
+pl_deallocate_interp_instance(pl_interp_implementation_t * impl   /* instance to dealloc */
     )
 {
-    if (!instance || !instance->interp || !instance->interp->implementation)
+    if (impl->interp_client_data == NULL)
         return 0;
-
-    return instance->interp->implementation->
-                proc_deallocate_interp_instance(instance);
-}
-
-/* Do static deinit of interpreter */
-int                             /* ret 0 ok, else -ve error code */
-pl_deallocate_interp(pl_interp_t * interp       /* interpreter to deallocate */
-    )
-{
-    if (!interp || !interp->implementation)
-        return 0;
-
-    return interp->implementation->proc_deallocate_interp(interp);
+    return impl->proc_deallocate_interp_instance(impl);
 }

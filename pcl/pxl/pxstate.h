@@ -174,9 +174,9 @@ struct px_state_s
     uint warning_length;
     char warnings[px_max_warning_message + 1];
     /* ---------------- PJL state -------------------- */
-    pl_interp_instance_t *pjls;
+    pl_interp_implementation_t *pjls;
     /* ---------------- PCL state -------------------- */
-    pl_interp_instance_t *pcls;
+    pl_interp_implementation_t *pcls;
 };
 
 /* Allocate a px_state_t. */

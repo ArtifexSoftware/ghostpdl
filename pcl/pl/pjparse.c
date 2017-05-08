@@ -1740,8 +1740,10 @@ pjl_compare(const pjl_envvar_t * s1, const char *s2)
 
 /* free all memory associated with the PJL state */
 void
-pjl_process_destroy(pjl_parser_state * pst, gs_memory_t * mem)
+pjl_process_destroy(pjl_parser_state * pst)
 {
+    gs_memory_t *mem = pst->mem;
+    
     free_pjl_defaults(mem, &pst->defaults);
     free_pjl_environment(mem, &pst->envir);
     free_pjl_fontsource(mem, &pst->font_envir);

@@ -46,7 +46,7 @@ typedef char pjl_envvar_t;
 pjl_parser_state *pjl_process_init(gs_memory_t * mem);
 
 /* Destroy an instance of the the PJL parser and state. */
-void pjl_process_destroy(pjl_parser_state * pst, gs_memory_t * mem);
+void pjl_process_destroy(pjl_parser_state * pst);
 
 /* Process a buffer of PJL commands. */
 /* Return 1 if we are no longer in PJL mode. */

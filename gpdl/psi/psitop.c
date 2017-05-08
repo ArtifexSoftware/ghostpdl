@@ -52,10 +52,10 @@
 extern int zflush(i_ctx_t *);
 
 /*
- * PS interpreter instance: derived from pl_interp_instance_t
+ * PS interpreter instance: derived from pl_interp_implementation_t
  */
 typedef struct ps_interp_instance_s {
-    pl_interp_instance_t     pl;                 /* common part: must be first */
+    pl_interp_implementation_t     pl;                 /* common part: must be first */
     gs_memory_t              *plmemory;          /* memory allocator to use with pl objects */
     gs_main_instance	     *minst;	         /* PS interp main instance */
     pl_page_action_t         pre_page_action;    /* action before page out */
@@ -111,7 +111,7 @@ ps_impl_allocate_interp(
 /* Do per-instance interpreter allocation/init. No device is set yet */
 static int   /* ret 0 ok, else -ve error code */
 ps_impl_allocate_interp_instance(
-  pl_interp_instance_t   **instance,     /* RETURNS instance struct */
+  pl_interp_implementation_t   **instance,     /* RETURNS instance struct */
   pl_interp_t            *interp,        /* dummy interpreter */
   gs_memory_t            *mem            /* allocator to allocate instance from */
 )
@@ -148,7 +148,7 @@ ps_impl_allocate_interp_instance(
         psi->plmemory = mem;
         psi->minst = gs_main_alloc_instance(mem->non_gc_memory);
 
-        *instance = (pl_interp_instance_t *)psi;
+        *instance = (pl_interp_implementation_t *)psi;
         code = gs_main_init_with_args(psi->minst, argc, (char**)argv);
         if (code<0)
             return code;
@@ -177,8 +177,8 @@ ps_impl_allocate_interp_instance(
 /* Set a client language into an interpreter instance */
 static int   /* ret 0 ok, else -ve error code */
 ps_impl_set_client_instance(
-  pl_interp_instance_t   *instance,     /* interp instance to use */
-  pl_interp_instance_t   *client,       /* client to set */
+  pl_interp_implementation_t   *instance,     /* interp instance to use */
+  pl_interp_implementation_t   *client,       /* client to set */
   pl_interp_instance_clients_t which_client
 )
 {
@@ -188,7 +188,7 @@ ps_impl_set_client_instance(
 /* Set an interpreter instance's pre-page action */
 static int   /* ret 0 ok, else -ve err */
 ps_impl_set_pre_page_action(
-  pl_interp_instance_t   *instance,     /* interp instance to use */
+  pl_interp_implementation_t   *instance,     /* interp instance to use */
   pl_page_action_t       action,        /* action to execute (rets 1 to abort w/o err) */
   void                   *closure       /* closure to call action with */
 )
@@ -202,7 +202,7 @@ ps_impl_set_pre_page_action(
 /* Set an interpreter instance's post-page action */
 static int   /* ret 0 ok, else -ve err */
 ps_impl_set_post_page_action(
-  pl_interp_instance_t   *instance,     /* interp instance to use */
+  pl_interp_implementation_t   *instance,     /* interp instance to use */
   pl_page_action_t       action,        /* action to execute */
   void                   *closure       /* closure to call action with */
 )
@@ -216,7 +216,7 @@ ps_impl_set_post_page_action(
 /* Set a device into an interpreter instance */
 static int   /* ret 0 ok, else -ve error code */
 ps_impl_set_device(
-  pl_interp_instance_t   *instance,     /* interp instance to use */
+  pl_interp_implementation_t   *instance,     /* interp instance to use */
   gx_device              *device        /* device to set (open or closed) */
 )
 {
@@ -267,7 +267,7 @@ gs_main_instance *ps_impl_get_minst( const gs_memory_t *mem )
 /* Prepare interp instance for the next "job" */
 static int	/* ret 0 ok, else -ve error code */
 ps_impl_init_job(
-        pl_interp_instance_t   *instance         /* interp instance to start job in */
+        pl_interp_implementation_t   *instance         /* interp instance to start job in */
 )
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
@@ -283,7 +283,7 @@ ps_impl_init_job(
 /* Parse a buffer full of data */
 static int	/* ret 0 or +ve if ok, else -ve error code */
 ps_impl_process(
-        pl_interp_instance_t *instance,        /* interp instance to process data job in */
+        pl_interp_implementation_t *instance,        /* interp instance to process data job in */
         stream_cursor_read   *cursor           /* data to process */
 )
 {
@@ -357,7 +357,7 @@ ps_impl_process(
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
 static int
 ps_impl_flush_to_eoj(
-        pl_interp_instance_t *instance,        /* interp instance to flush for */
+        pl_interp_implementation_t *instance,        /* interp instance to flush for */
         stream_cursor_read   *cursor           /* data to process */
 )
 {
@@ -383,7 +383,7 @@ ps_impl_flush_to_eoj(
 /* Parser action for end-of-file */
 static int	/* ret 0 or +ve if ok, else -ve error code */
 ps_impl_process_eof(
-        pl_interp_instance_t *instance        /* interp instance to process data job in */
+        pl_interp_implementation_t *instance        /* interp instance to process data job in */
 )
 {
     int code = 0;
@@ -393,7 +393,7 @@ ps_impl_process_eof(
 
 /* Report any errors after running a job */
 static int   /* ret 0 ok, else -ve error code */
-ps_impl_report_errors(pl_interp_instance_t *instance,      /* interp instance to wrap up job in */
+ps_impl_report_errors(pl_interp_implementation_t *instance,      /* interp instance to wrap up job in */
                       int                  code,           /* prev termination status */
                       long                 file_position,  /* file position of error, -1 if unknown */
                       bool                 force_to_cout    /* force errors to cout */
@@ -407,7 +407,7 @@ ps_impl_report_errors(pl_interp_instance_t *instance,      /* interp instance to
 /* Wrap up interp instance after a "job" */
 static int	/* ret 0 ok, else -ve error code */
 ps_impl_dnit_job(
-        pl_interp_instance_t *instance         /* interp instance to wrap up job in */
+        pl_interp_implementation_t *instance         /* interp instance to wrap up job in */
 )
 {
     int code = 0;
@@ -476,7 +476,7 @@ ps_impl_dnit_job(
 /* Remove a device from an interpreter instance */
 static int   /* ret 0 ok, else -ve error code */
 ps_impl_remove_device(
-  pl_interp_instance_t   *instance     /* interp instance to use */
+  pl_interp_implementation_t   *instance     /* interp instance to use */
 )
 {
     /* Assuming the interpreter's stack contains a single graphic state.
@@ -495,7 +495,7 @@ ps_impl_remove_device(
 /* Deallocate a interpreter instance */
 static int   /* ret 0 ok, else -ve error code */
 ps_impl_deallocate_interp_instance(
-  pl_interp_instance_t   *instance     /* instance to dealloc */
+  pl_interp_implementation_t   *instance     /* instance to dealloc */
 )
 {
         int code = 0, exit_code;
@@ -528,7 +528,7 @@ ps_impl_deallocate_interp(
 int
 ps_end_page_top(const gs_memory_t *mem, int num_copies, bool flush)
 {
-    pl_interp_instance_t *instance = get_interpreter_from_memory(mem);
+    pl_interp_implementation_t *instance = get_interpreter_from_memory(mem);
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
     int code = 0;
 

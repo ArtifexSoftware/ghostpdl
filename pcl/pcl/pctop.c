@@ -160,21 +160,9 @@ static const gs_gstate_client_procs pcl_gstate_procs = {
 /******** Language wrapper implementation (see pltop.h) *****/
 /************************************************************/
 
-/*
- * PCL interpeter: derived from pl_interp_t
- */
-typedef struct pcl_interp_s
-{
-    pl_interp_t pl;             /* common part: must be first */
-    gs_memory_t *memory;        /* memory allocator to use */
-} pcl_interp_t;
-
-/*
- * PCL interpreter instance: derived from pl_interp_instance_t
- */
 typedef struct pcl_interp_instance_s
 {
-    pl_interp_instance_t pl;    /* common part: must be first */
+    pl_interp_implementation_t pl;    /* common part: must be first */
     gs_memory_t *memory;        /* memory allocator to use */
     pcl_state_t pcs;            /* pcl state */
     pcl_parser_state_t pst;     /* parser state */
@@ -200,41 +188,16 @@ pcl_impl_characteristics(const pl_interp_implementation_t * impl        /* imple
 
 /* yuck */
 pcl_state_t *
-pcl_get_gstate(pl_interp_instance_t * instance)
+pcl_get_gstate(pl_interp_implementation_t * impl)
 {
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
+    pcl_interp_instance_t *pcli = impl->interp_client_data;
 
     return &pcli->pcs;
 }
 
-/* Do static init of PCL interpreter, since there's nothing to allocate */
-static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_allocate_interp(pl_interp_t ** interp, /* RETURNS abstract interpreter struct */
-                         const pl_interp_implementation_t * impl,       /* implementation of interpereter to alloc */
-                         gs_memory_t * mem      /* allocator to allocate interp from */
-    )
-{
-    static pcl_interp_t pi;     /* there's only one interpreter possible, so static */
-
-    /* There's only one possible PCL interp, so return the static */
-    pi.memory = mem;
-    *interp = (pl_interp_t *) & pi;
-    return 0;                   /* success */
-}
-
-static pl_main_instance_t *
-pcl_get_minst(pl_interp_instance_t *plinst)
-{
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)plinst;
-    gs_memory_t *mem            = pcli->memory;
-
-    return mem->gs_lib_ctx->top_of_system;
-}
-
 /* Do per-instance interpreter allocation/init. No device is set yet */
 static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,     /* RETURNS instance struct */
-                                  pl_interp_t * interp, /* dummy interpreter */
+pcl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
                                   gs_memory_t * mem     /* allocator to allocate instance from */
     )
 {
@@ -281,16 +244,16 @@ pcl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,     /* RETUR
     pcli->pcs.pjls = pl_main_get_pjl_instance(mem);
     
     /* Return success */
-    *instance = (pl_interp_instance_t *)pcli;
+    impl->interp_client_data = pcli;
     return 0;
 }
 
 /* if the device option string PCL is not given, the default
    arrangement is 1 bit devices use pcl5e other devices use pcl5c. */
 static pcl_personality_t
-pcl_get_personality(pl_interp_instance_t * instance, gx_device * device)
+pcl_get_personality(pl_interp_implementation_t * impl, gx_device * device)
 {
-    pcl_interp_instance_t *pcli  = (pcl_interp_instance_t *) instance;
+    pcl_interp_instance_t *pcli  = impl->interp_client_data;
     char *personality = pl_main_get_pcl_personality(pcli->memory);
     
     if (!strcmp(personality, "PCL5C"))
@@ -312,21 +275,21 @@ pcl_get_personality(pl_interp_instance_t * instance, gx_device * device)
 }
 
 static int
-pcl_set_icc_params(pl_interp_instance_t * instance, gs_gstate * pgs)
+pcl_set_icc_params(pl_interp_implementation_t * impl, gs_gstate * pgs)
 {
-    pcl_interp_instance_t *pcli  = (pcl_interp_instance_t *) instance;
+    pcl_interp_instance_t *pcli  = impl->interp_client_data;
     return pl_set_icc_params(pcli->memory, pgs);
 }
 
 /* Set a device into an interperter instance */
 static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to use */
+pcl_impl_set_device(pl_interp_implementation_t * impl,    /* interp instance to use */
                     gx_device * device  /* device to set (open or closed) */
     )
 {
     /* NB REVIEW ME -- ROUGH DRAFT */
     int code;
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
+    pcl_interp_instance_t *pcli = impl->interp_client_data;
     gs_memory_t *mem = pcli->memory;
     
     enum
@@ -336,7 +299,7 @@ pcl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to us
     stage = Sbegin;
 
     /* Set parameters from the main instance */
-    pcli->pcs.personality = pcl_get_personality(instance, device);
+    pcli->pcs.personality = pcl_get_personality(impl, device);
     pcli->pcs.interpolate = pl_main_get_interpolate(mem);
     pcli->pcs.nocache = pl_main_get_nocache(mem);
     pcli->pcs.page_set_on_command_line = pl_main_get_page_set_on_command_line(mem);
@@ -366,7 +329,7 @@ pcl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to us
     if (code < 0)
         goto pisdEnd;
 
-    code = pcl_set_icc_params(instance, pcli->pcs.pgs);
+    code = pcl_set_icc_params(impl, pcli->pcs.pgs);
     if (code < 0)
         goto pisdEnd;
 
@@ -417,11 +380,11 @@ pcl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to us
 
 /* Prepare interp instance for the next "job" */
 static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_init_job(pl_interp_instance_t * instance       /* interp instance to start job in */
+pcl_impl_init_job(pl_interp_implementation_t * impl       /* interp instance to start job in */
     )
 {
     int code = 0;
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
+    pcl_interp_instance_t *pcli = impl->interp_client_data;
 
     pcl_process_init(&pcli->pst);
     return code;
@@ -429,11 +392,11 @@ pcl_impl_init_job(pl_interp_instance_t * instance       /* interp instance to st
 
 /* Parse a cursor-full of data */
 static int                      /* ret 0 or +ve if ok, else -ve error code */
-pcl_impl_process(pl_interp_instance_t * instance,       /* interp instance to process data job in */
+pcl_impl_process(pl_interp_implementation_t * impl,       /* interp instance to process data job in */
                  stream_cursor_read * cursor    /* data to process */
     )
 {
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
+    pcl_interp_instance_t *pcli = impl->interp_client_data;
     int code = pcl_process(&pcli->pst, &pcli->pcs, cursor);
 
     return code;
@@ -441,7 +404,7 @@ pcl_impl_process(pl_interp_instance_t * instance,       /* interp instance to pr
 
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
 static int
-pcl_impl_flush_to_eoj(pl_interp_instance_t * instance,  /* interp instance to flush for */
+pcl_impl_flush_to_eoj(pl_interp_implementation_t * impl,  /* interp instance to flush for */
                       stream_cursor_read * cursor       /* data to process */
     )
 {
@@ -466,11 +429,11 @@ pcl_impl_flush_to_eoj(pl_interp_instance_t * instance,  /* interp instance to fl
 
 /* Parser action for end-of-file */
 static int                      /* ret 0 or +ve if ok, else -ve error code */
-pcl_impl_process_eof(pl_interp_instance_t * instance    /* interp instance to process data job in */
+pcl_impl_process_eof(pl_interp_implementation_t * impl    /* interp instance to process data job in */
     )
 {
     int code;
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
+    pcl_interp_instance_t *pcli = impl->interp_client_data;
 
     pcl_process_init(&pcli->pst);
     code = pcl_end_page_if_marked(&pcli->pcs);
@@ -482,13 +445,13 @@ pcl_impl_process_eof(pl_interp_instance_t * instance    /* interp instance to pr
 
 /* Report any errors after running a job */
 static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_report_errors(pl_interp_instance_t * instance, /* interp instance to wrap up job in */
+pcl_impl_report_errors(pl_interp_implementation_t * impl, /* interp instance to wrap up job in */
                        int code,        /* prev termination status */
                        long file_position,      /* file position of error, -1 if unknown */
                        bool force_to_cout       /* force errors to cout */
     )
 {
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
+    pcl_interp_instance_t *pcli = impl->interp_client_data;
     byte buf[200];
     uint count;
 
@@ -500,10 +463,10 @@ pcl_impl_report_errors(pl_interp_instance_t * instance, /* interp instance to wr
 
 /* Wrap up interp instance after a "job" */
 static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_dnit_job(pl_interp_instance_t * instance       /* interp instance to wrap up job in */
+pcl_impl_dnit_job(pl_interp_implementation_t * impl       /* interp instance to wrap up job in */
     )
 {
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
+    pcl_interp_instance_t *pcli = impl->interp_client_data;
     pcl_state_t *pcs = &pcli->pcs;
 
     if (pcs->raster_state.graphics_mode)
@@ -513,11 +476,11 @@ pcl_impl_dnit_job(pl_interp_instance_t * instance       /* interp instance to wr
 
 /* Remove a device from an interperter instance */
 static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_remove_device(pl_interp_instance_t * instance  /* interp instance to use */
+pcl_impl_remove_device(pl_interp_implementation_t * impl  /* interp instance to use */
     )
 {
     int code;
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
+    pcl_interp_instance_t *pcli = impl->interp_client_data;
 
     /* NB use the PXL code */
     /* return to the original graphic state w/color mapper, bbox, target */
@@ -541,10 +504,10 @@ pcl_impl_remove_device(pl_interp_instance_t * instance  /* interp instance to us
 
 /* Deallocate a interpreter instance */
 static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_deallocate_interp_instance(pl_interp_instance_t * instance     /* instance to dealloc */
+pcl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* instance to dealloc */
     )
 {
-    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
+    pcl_interp_instance_t *pcli = impl->interp_client_data;
     gs_memory_t *mem = pcli->memory;
 
     /* free memory used by the parsers */
@@ -568,15 +531,6 @@ pcl_impl_deallocate_interp_instance(pl_interp_instance_t * instance     /* insta
     return 0;
 }
 
-/* Do static deinit of PCL interpreter */
-static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_deallocate_interp(pl_interp_t * interp /* interpreter to deallocate */
-    )
-{
-    /* Deinit interp */
-    return 0;
-}
-
 /*
  * End-of-page called back by PCL - NB now exported.
  */
@@ -584,19 +538,13 @@ int
 pcl_end_page_top(pcl_state_t * pcs, int num_copies, int flush)
 {
 
-    pcl_interp_instance_t *pcli =
-        (pcl_interp_instance_t *) (pcs->client_data);
-    pl_interp_instance_t *instance = (pl_interp_instance_t *) pcli;
-
-    return pl_finish_page(pcl_get_minst(instance),
+    return pl_finish_page(pcs->memory->gs_lib_ctx->top_of_system,
                           pcs->pgs, num_copies, flush);
-
 }
 
 /* Parser implementation descriptor */
-const pl_interp_implementation_t pcl_implementation = {
+pl_interp_implementation_t pcl_implementation = {
     pcl_impl_characteristics,
-    pcl_impl_allocate_interp,
     pcl_impl_allocate_interp_instance,
     pcl_impl_set_device,
     pcl_impl_init_job,
@@ -608,5 +556,5 @@ const pl_interp_implementation_t pcl_implementation = {
     pcl_impl_dnit_job,
     pcl_impl_remove_device,
     pcl_impl_deallocate_interp_instance,
-    pcl_impl_deallocate_interp,
+    NULL
 };

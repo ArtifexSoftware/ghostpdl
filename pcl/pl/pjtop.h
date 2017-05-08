@@ -46,39 +46,39 @@ typedef char pjl_envvar_t;      /* opaque decl */
          }
    Both variables and values are case insensitive.
 */
-typedef pjl_envvar_t *(*pjl_proc_get_envvar_t) (pl_interp_instance_t * pli,
+typedef pjl_envvar_t *(*pjl_proc_get_envvar_t) (pl_interp_implementation_t * pli,
                                                 const char *pjl_var);
-pjl_envvar_t *pjl_proc_get_envvar(pl_interp_instance_t * pli,
+pjl_envvar_t *pjl_proc_get_envvar(pl_interp_implementation_t * pli,
                                   const char *pjl_var);
 
 /* compare a pjl environment variable to a string values. */
-typedef int (*pjl_proc_compare_t) (pl_interp_instance_t * pli,
+typedef int (*pjl_proc_compare_t) (pl_interp_implementation_t * pli,
                                    const pjl_envvar_t * s1, const char *s2);
-int pjl_proc_compare(pl_interp_instance_t * pli, const pjl_envvar_t * s1,
+int pjl_proc_compare(pl_interp_implementation_t * pli, const pjl_envvar_t * s1,
                      const char *s2);
 
 /* map a pjl symbol set name to a pcl integer */
-typedef int (*pjl_proc_map_pjl_sym_to_pcl_sym_t) (pl_interp_instance_t * pli,
+typedef int (*pjl_proc_map_pjl_sym_to_pcl_sym_t) (pl_interp_implementation_t * pli,
                                                   const pjl_envvar_t *
                                                   symname);
-int pjl_proc_map_pjl_sym_to_pcl_sym(pl_interp_instance_t * pli,
+int pjl_proc_map_pjl_sym_to_pcl_sym(pl_interp_implementation_t * pli,
                                     const pjl_envvar_t * symname);
 
 /* pjl environment variable to integer. */
-typedef int (*pjl_proc_vartoi_t) (pl_interp_instance_t * pli,
+typedef int (*pjl_proc_vartoi_t) (pl_interp_implementation_t * pli,
                                   const pjl_envvar_t * s);
-int pjl_proc_vartoi(pl_interp_instance_t * pli, const pjl_envvar_t * s);
+int pjl_proc_vartoi(pl_interp_implementation_t * pli, const pjl_envvar_t * s);
 
 /* pjl envioronment variable to float. */
-typedef double(*pjl_proc_vartof_t) (pl_interp_instance_t * pli,
+typedef double(*pjl_proc_vartof_t) (pl_interp_implementation_t * pli,
                                     const pjl_envvar_t * s);
-double pjl_proc_vartof(pl_interp_instance_t * pli, const pjl_envvar_t * s);
+double pjl_proc_vartof(pl_interp_implementation_t * pli, const pjl_envvar_t * s);
 
 /* convert a pjl designated fontsource to a subdirectory pathname. */
-typedef char *(*pjl_proc_fontsource_to_path_t) (pl_interp_instance_t * pli,
+typedef char *(*pjl_proc_fontsource_to_path_t) (pl_interp_implementation_t * pli,
                                                 const pjl_envvar_t *
                                                 fontsource);
-char *pjl_proc_fontsource_to_path(pl_interp_instance_t * pli,
+char *pjl_proc_fontsource_to_path(pl_interp_implementation_t * pli,
                                   const pjl_envvar_t * fontsource);
 
 /* Change to next highest priority font source.  The following events
@@ -94,40 +94,40 @@ char *pjl_proc_fontsource_to_path(pl_interp_instance_t * pli,
    bookkeeping.  PJLTRM is not careful to define distinguish between
    default font source vs environment font source.  Both are set when
    the font source is changed. */
-typedef void (*pjl_proc_set_next_fontsource_t) (pl_interp_instance_t * pli);
+typedef void (*pjl_proc_set_next_fontsource_t) (pl_interp_implementation_t * pli);
 
-void pjl_proc_set_next_fontsource(pl_interp_instance_t * pli);
+void pjl_proc_set_next_fontsource(pl_interp_implementation_t * pli);
 
 /* tell pjl that a soft font is being deleted.  We return 0 if no
    state change is required and 1 if the pdl should update its font
    state.  (see discussion above) */
 typedef
     int (*pjl_proc_register_permanent_soft_font_deletion_t)
-    (pl_interp_instance_t * pli, int font_number);
-int pjl_proc_register_permanent_soft_font_deletion(pl_interp_instance_t * pli,
+    (pl_interp_implementation_t * pli, int font_number);
+int pjl_proc_register_permanent_soft_font_deletion(pl_interp_implementation_t * pli,
                                                    int font_number);
 
 /* request that pjl add a soft font and return a pjl font number for
    the font.   */
 typedef
     int (*pjl_proc_register_permanent_soft_font_addition_t)
-    (pl_interp_instance_t * pli);
-int pjl_proc_register_permanent_soft_font_addition(pl_interp_instance_t *
+    (pl_interp_implementation_t * pli);
+int pjl_proc_register_permanent_soft_font_addition(pl_interp_implementation_t *
                                                    pli);
 
-typedef long int (*pjl_proc_get_named_resource_size_t) (pl_interp_instance_t *
+typedef long int (*pjl_proc_get_named_resource_size_t) (pl_interp_implementation_t *
                                                         pli, char *name);
-long int pjl_proc_get_named_resource_size(pl_interp_instance_t * pli,
+long int pjl_proc_get_named_resource_size(pl_interp_implementation_t * pli,
                                           char *name);
 
-typedef int (*pjl_proc_get_named_resource_t) (pl_interp_instance_t * pli,
+typedef int (*pjl_proc_get_named_resource_t) (pl_interp_implementation_t * pli,
                                               char *name, byte * data);
-int pjl_proc_get_named_resource(pl_interp_instance_t * pli, char *name,
+int pjl_proc_get_named_resource(pl_interp_implementation_t * pli, char *name,
                                 byte * data);
 
-typedef int (*pjl_proc_process_t) (pl_interp_instance_t * pli,
+typedef int (*pjl_proc_process_t) (pl_interp_implementation_t * pli,
                                    stream_cursor_read * pr);
-int pjl_proc_process(pl_interp_instance_t * pli, stream_cursor_read * pr);
+int pjl_proc_process(pl_interp_implementation_t * pli, stream_cursor_read * pr);
 
 /*
  * Define a generic interpreter implementation
