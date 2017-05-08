@@ -2710,10 +2710,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\base\smtf.c"
-				>
-			</File>
-			<File
 				RelativePath="..\base\spdiff.c"
 				>
 			</File>
@@ -8116,10 +8112,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\psi\zcidtest.c"
-				>
-			</File>
-			<File
 				RelativePath="..\psi\zcie.c"
 				>
 			</File>
@@ -8181,10 +8173,6 @@
 			</File>
 			<File
 				RelativePath="..\psi\zdict.c"
-				>
-			</File>
-			<File
-				RelativePath="..\psi\zdosio.c"
 				>
 			</File>
 			<File
@@ -8269,10 +8257,6 @@
 			</File>
 			<File
 				RelativePath="..\psi\zfilter2.c"
-				>
-			</File>
-			<File
-				RelativePath="..\psi\zfilterx.c"
 				>
 			</File>
 			<File
@@ -8465,10 +8449,6 @@
 			</File>
 			<File
 				RelativePath="..\psi\zrelbit.c"
-				>
-			</File>
-			<File
-				RelativePath="..\psi\zrop.c"
 				>
 			</File>
 			<File

@@ -1157,7 +1157,6 @@
     <ClCompile Include="..\psi\zcharout.c" />
     <ClCompile Include="..\psi\zcharx.c" />
     <ClCompile Include="..\psi\zcid.c" />
-    <ClCompile Include="..\psi\zcidtest.c" />
     <ClCompile Include="..\psi\zcie.c" />
     <ClCompile Include="..\psi\zcolor.c" />
     <ClCompile Include="..\psi\zcolor1.c" />
@@ -1174,7 +1173,6 @@
     <ClCompile Include="..\psi\zdevice2.c" />
     <ClCompile Include="..\psi\zdfilter.c" />
     <ClCompile Include="..\psi\zdict.c" />
-    <ClCompile Include="..\psi\zdosio.c" />
     <ClCompile Include="..\psi\zdouble.c" />
     <ClCompile Include="..\psi\zdpnext.c" />
     <ClCompile Include="..\psi\zdps.c" />
@@ -1196,7 +1194,6 @@
     <ClCompile Include="..\psi\zfileio.c" />
     <ClCompile Include="..\psi\zfilter.c" />
     <ClCompile Include="..\psi\zfilter2.c" />
-    <ClCompile Include="..\psi\zfilterx.c" />
     <ClCompile Include="..\psi\zfimscale.c" />
     <ClCompile Include="..\psi\zfjbig2.c" />
     <ClCompile Include="..\psi\zfjpx.c" />
@@ -1245,7 +1242,6 @@
     <ClCompile Include="..\psi\zpcolor.c" />
     <ClCompile Include="..\psi\zpdfops.c" />
     <ClCompile Include="..\psi\zrelbit.c" />
-    <ClCompile Include="..\psi\zrop.c" />
     <ClCompile Include="..\psi\zshade.c" />
     <ClCompile Include="..\psi\zstack.c" />
     <ClCompile Include="..\psi\zstring.c" />
@@ -1970,7 +1966,6 @@
     <ClInclude Include="..\base\sjpx_openjpeg.h" />
     <ClInclude Include="..\base\slzwx.h" />
     <ClInclude Include="..\base\smd5.h" />
-    <ClInclude Include="..\base\smtf.h" />
     <ClInclude Include="..\base\spdiffx.h" />
     <ClInclude Include="..\base\spngpx.h" />
     <ClInclude Include="..\base\spprint.h" />

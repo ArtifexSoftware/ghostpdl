@@ -323,19 +323,6 @@ PLATOPT=-DFOR80386
 !endif
 !endif
 
-# ---------------------- MS-DOS I/O debugging option ---------------------- #
-
-dosio_=$(PSOBJ)zdosio.$(OBJ)
-dosio.dev: $(PSGEN)dosio.dev
-	$(NO_OP)
-
-$(PSGEN)dosio.dev: $(dosio_)
-	$(SETMOD) $(PSGEN)dosio $(dosio_)
-	$(ADDMOD) $(PSGEN)dosio -oper zdosio
-
-$(PSOBJ)zdosio.$(OBJ): $(PSSRC)zdosio.c $(OP) $(store_h)
-	$(PSCC) $(PSO_)zdosio.$(OBJ) $(C_) $(PSSRC)zdosio.c
-
 # Define the compilation flags.
 
 !if $(DEBUG)

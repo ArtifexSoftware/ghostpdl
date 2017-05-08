@@ -760,24 +760,6 @@ $(PSD)gs_pdfwr.dev : $(ECHOGS_XE) $(PSD)psl3.dev $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)gs_pdfwr -include $(PSD)psl3
 	$(ADDMOD) $(PSD)gs_pdfwr -ps gs_pdfwr
 
-# ---------------- RasterOp ---------------- #
-# This should be a separable feature in the core also....
-
-$(PSD)rasterop.dev : $(ECHOGS_XE) $(GLD)roplib.dev $(PSD)ropread.dev\
- $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)rasterop -include $(GLD)roplib $(PSD)ropread
-
-ropread_=$(PSOBJ)zrop.$(OBJ)
-$(PSD)ropread.dev : $(ECHOGS_XE) $(ropread_) $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)ropread $(ropread_)
-	$(ADDMOD) $(PSD)ropread -oper zrop
-
-$(PSOBJ)zrop.$(OBJ) : $(PSSRC)zrop.c $(OP) $(memory__h)\
- $(gsrop_h) $(gsutil_h) $(gxdevice_h)\
- $(idict_h) $(idparam_h) $(igstate_h) $(store_h)\
- $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zrop.$(OBJ) $(C_) $(PSSRC)zrop.c
-
 # ---------------- PostScript Type 1 (and Type 4) fonts ---------------- #
 
 $(PSD)type1.dev : $(ECHOGS_XE) $(GLD)psf1lib.dev $(PSD)psf1read.dev\
@@ -1182,24 +1164,6 @@ $(PSOBJ)zfilter2.$(OBJ) : $(PSSRC)zfilter2.c $(OP) $(memory__h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zfilter2.$(OBJ) $(C_) $(PSSRC)zfilter2.c
 
-# Extensions beyond Level 2 standard.
-xfilter_=$(GLD)smtf.$(OBJ) $(PSOBJ)zfilterx.$(OBJ)
-$(PSD)xfilter.dev : $(ECHOGS_XE) $(xfilter_) $(GLD)pngp.dev\
- $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)xfilter $(xfilter_)
-	$(ADDMOD) $(PSD)xfilter -include $(GLD)pngp
-	$(ADDMOD) $(PSD)xfilter -oper zfilterx
-
-$(PSOBJ)smtf.$(OBJ) : $(PSSRC)smtf.c $(AK) $(stdio__h)\
- $(smtf_h) $(strimpl_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)smtf.$(OBJ) $(C_) $(PSSRC)smtf.c
-
-$(PSOBJ)zfilterx.$(OBJ) : $(PSSRC)zfilterx.c $(OP) $(memory__h)\
- $(gsstruct_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifilter_h)\
- $(store_h) $(sfilter_h) $(sbtx_h) $(smtf_h) $(strimpl_h)\
- $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zfilterx.$(OBJ) $(C_) $(PSSRC)zfilterx.c
-
 # MD5 digest filter
 fmd5_=$(PSOBJ)zfmd5.$(OBJ)
 $(PSD)fmd5.dev : $(ECHOGS_XE) $(fmd5_) $(GLD)smd5.dev\
@@ -1528,24 +1492,6 @@ $(PSOBJ)zfcid1.$(OBJ) : $(PSSRC)zfcid1.c $(OP) $(memory__h)\
  $(ifcid_h) $(ifont42_h) $(store_h) $(stream_h) $(files_h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zfcid1.$(OBJ) $(C_) $(PSSRC)zfcid1.c
-
-# Testing only (CIDFont and CMap)
-
-cidtest_=$(PSOBJ)zcidtest.$(OBJ) $(GLOBJ)gsfont0c.$(OBJ)
-$(PSD)cidtest.dev : $(ECHOGS_XE) $(cidtest_)\
- $(PSD)cidfont.dev $(PSD)cmapread.dev $(GLD)psf.dev $(GLD)psf0lib.dev\
- $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)cidtest $(cidtest_)
-	$(ADDMOD) $(PSD)cidtest -oper zcidtest
-	$(ADDMOD) $(PSD)cidtest -include $(PSD)cidfont $(PSD)cmapread
-	$(ADDMOD) $(PSD)cidtest -include $(GLD)psf $(GLD)psf0lib
-
-$(PSOBJ)zcidtest.$(OBJ) : $(PSSRC)zcidtest.c $(string__h) $(OP)\
- $(gdevpsf_h) $(gxfont_h) $(gxfont0c_h)\
- $(spprint_h) $(stream_h)\
- $(files_h) $(idict_h) $(ifont_h) $(igstate_h) $(iname_h) $(store_h)\
- $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zcidtest.$(OBJ) $(C_) $(PSSRC)zcidtest.c
 
 # ---------------- CIE color ---------------- #
 
