@@ -2296,6 +2296,9 @@ FAPI_char(i_ctx_t *i_ctx_p, bool bBuildGlyph, ref *charstring)
         int cindex = -1;
         ref gname;
 
+        if (I == NULL)
+            return_error(gs_error_invalidfont);
+
         /* initialise the FAPI font, this includes language specific stuff */
         I->ff = ps_ff_stub;
 
