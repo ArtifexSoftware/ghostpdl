@@ -28,8 +28,6 @@
 #include "store.h"
 #include "zfunc.h"
 
-/*#define TEST*/
-
 /* Define the maximum depth of nesting of subsidiary functions. */
 #define MAX_SUB_FUNCTION_DEPTH 3
 
@@ -90,54 +88,6 @@ int buildfunction(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, int type)
     }
     return code;
 }
-
-#ifdef TEST
-
-/* <function_proc> <array> .scalefunction <function_proc> */
-static int
-zscalefunction(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    gs_function_t *pfn;
-    gs_function_t *psfn;
-    gs_range_t *ranges;
-    int code;
-    uint i;
-
-    check_proc(op[-1]);
-    pfn = ref_function(op - 1);
-    if (pfn == 0 || !r_is_array(op))
-        return_error(gs_error_typecheck);
-    if (r_size(op) != 2 * pfn->params.n)
-        return_error(gs_error_rangecheck);
-    ranges = (gs_range_t *)
-        gs_alloc_byte_array(imemory, pfn->params.n, sizeof(gs_range_t),
-                            "zscalefunction");
-    if (ranges == 0)
-        return_error(gs_error_VMerror);
-    for (i = 0; i < pfn->params.n; ++i) {
-        ref rval[2];
-        float val[2];
-
-        if ((code = array_get(op, 2 * i, &rval[0])) < 0 ||
-            (code = array_get(op, 2 * i + 1, &rval[1])) < 0 ||
-            (code = float_params(rval + 1, 2, val)) < 0)
-            return code;
-        ranges[i].rmin = val[0];
-        ranges[i].rmax = val[1];
-    }
-    code = gs_function_make_scaled(pfn, &psfn, ranges, imemory);
-    gs_free_object(imemory, ranges, "zscalefunction");
-    if (code < 0 ||
-        (code = make_function_proc(i_ctx_p, op - 1, psfn)) < 0) {
-        gs_function_free(psfn, true, imemory);
-        return code;
-    }
-    pop(1);
-    return 0;
-}
-
-#endif /* TEST */
 
 /* <in1> ... <function_struct> %execfunction <out1> ... */
 int
@@ -408,9 +358,6 @@ ref_function(const ref *op)
 const op_def zfunc_op_defs[] =
 {
     {"1.buildfunction", zbuildfunction},
-#ifdef TEST
-    {"2.scalefunction", zscalefunction},
-#endif /* TEST */
     {"1%execfunction", zexecfunction},
     {"1.isencapfunction", zisencapfunction},
     op_def_end(0)

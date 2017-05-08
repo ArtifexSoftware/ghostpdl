@@ -30,12 +30,8 @@
 #include "ifilter.h"
 #include "iparam.h"
 
-/*#define TEST*/
 /* Import the parameter processing procedure from sdeparam.c */
 stream_state_proc_put_params(s_DCTE_put_params, stream_DCT_state);
-#ifdef TEST
-stream_state_proc_get_params(s_DCTE_get_params, stream_DCT_state);
-#endif
 
 /* <target> <dict> DCTEncode/filter <file> */
 static int
@@ -99,44 +95,10 @@ fail:
     return code;
 }
 
-#ifdef TEST
-#include "stream.h"
-#include "files.h"
-/* <dict> <filter> <bool> .dcteparams <dict> */
-static int
-zdcteparams(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    stream *s;
-    dict_param_list list;
-    int code;
-
-    check_type(*op, t_boolean);
-    check_write_file(s, op - 1);
-    check_type(op[-2], t_dictionary);
-    /* The DCT filters copy the template.... */
-    if (s->state->templat->process != s_DCTE_template.process)
-        return_error(gs_error_rangecheck);
-    code = dict_param_list_write(&list, op - 2, NULL, iimemory);
-    if (code < 0)
-        return code;
-    code = s_DCTE_get_params((gs_param_list *) & list,
-                             (stream_DCT_state *) s->state,
-                             op->value.boolval);
-    iparam_list_release(&list);
-    if (code >= 0)
-        pop(2);
-    return code;
-}
-#endif
-
 /* ------ Initialization procedure ------ */
 
 const op_def zfdcte_op_defs[] =
 {
-#ifdef TEST
-    {"3.dcteparams", zdcteparams},
-#endif
     op_def_begin_filter(),
     {"2DCTEncode", zDCTE},
     op_def_end(0)
