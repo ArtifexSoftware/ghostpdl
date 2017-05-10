@@ -423,7 +423,8 @@ make_table_template(gx_device     * pdev,
     int           * restrict index;
     int           * restrict table;
     int             i;
-    int             offset, delta;
+    int64_t         offset;
+    int             delta;
     fixed           base_y = ibox->p.y;
 
     *scanlinesp = 0;
@@ -626,16 +627,22 @@ make_table_template(gx_device     * pdev,
         index[i]  = offset;                      /* Offset into table for this lines data. */
         offset   += delta+1;                     /* Adjust offset for next line. */
     }
+    offset *= sizeof(*table);
+    if (offset != (int64_t)(uint)offset)
+    {
+        gs_free_object(pdev->memory, index, "scanc index buffer");
+        return_error(gs_error_VMerror);
+    }
 
     /* End of step 1: index[i] = offset into table 2 for scanline i's
      * intersection data. offset = Total number of int entries required for
      * table. */
 
     /* Step 2: Collect the real intersections */
-    table = (int *)gs_alloc_bytes(pdev->memory, offset * sizeof(*table),
+    table = (int *)gs_alloc_bytes(pdev->memory, offset,
                                   "scanc intersects buffer");
     if (table == NULL) {
-        gs_free_object(pdev->memory, table, "scanc index buffer");
+        gs_free_object(pdev->memory, index, "scanc index buffer");
         return_error(gs_error_VMerror);
     }
 
