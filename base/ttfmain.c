@@ -738,7 +738,7 @@ retry:
                 error = fBadFontData; goto ex;
             }
         nPoints = gOutline->pointCount = endPoints[gOutline->contourCount - 1] + 1;
-        if (self->nPointsTotal + nPoints + 2 > exec->n_points) {
+        if (nPoints < 0 || self->nPointsTotal + nPoints + 2 > exec->n_points) {
             error = fBadFontData; goto ex;
         }
         n_ins = ttfReader__Short(r);
