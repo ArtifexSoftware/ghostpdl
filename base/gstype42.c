@@ -1203,6 +1203,11 @@ gs_type42_default_get_metrics(gs_font_type42 * pfont, uint glyph_index,
             do {
                 uint comp_index = U16(gdata + 2);
 
+                if (comp_index == glyph_index) {
+                    result = gs_note_error(gs_error_invalidfont);
+                    goto done;
+                }
+
                 gs_type42_parse_component(&gdata, &flags, &mat, NULL, pfont, &mat);
                 if (flags & TT_CG_USE_MY_METRICS) {
                     result = pfont->data.get_metrics(pfont, comp_index, wmode, sbw);
