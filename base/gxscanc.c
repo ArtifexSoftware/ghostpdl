@@ -138,6 +138,8 @@
 #undef DEBUG_SCAN_CONVERTER
 #undef DEBUG_OUTPUT_SC_AS_PS
 
+typedef int64_t fixed64;
+
 enum
 {
     DIRN_UNSET = -1,
@@ -344,24 +346,24 @@ static void mark_curve(fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixe
     }
 }
 
-static void mark_curve_big(fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, fixed base_y, fixed height, int *table, int *index, int depth)
+static void mark_curve_big(fixed64 sx, fixed64 sy, fixed64 c1x, fixed64 c1y, fixed64 c2x, fixed64 c2y, fixed64 ex, fixed64 ey, fixed base_y, fixed height, int *table, int *index, int depth)
 {
-    fixed ax = (sx>>1) + (c1x>>1);
-    fixed ay = (sy>>1) + (c1y>>1);
-    fixed bx = (c1x>>1) + (c2x>>1);
-    fixed by = (c1y>>1) + (c2y>>1);
-    fixed cx = (c2x>>1) + (ex>>1);
-    fixed cy = (c2y>>1) + (ey>>1);
-    fixed dx = (ax>>1) + (bx>>1);
-    fixed dy = (ay>>1) + (by>>1);
-    fixed fx = (bx>>1) + (cx>>1);
-    fixed fy = (by>>1) + (cy>>1);
-    fixed gx = (dx>>1) + (fx>>1);
-    fixed gy = (dy>>1) + (fy>>1);
+    fixed64 ax = (sx + c1x)>>1;
+    fixed64 ay = (sy + c1y)>>1;
+    fixed64 bx = (c1x + c2x)>>1;
+    fixed64 by = (c1y + c2y)>>1;
+    fixed64 cx = (c2x + ex)>>1;
+    fixed64 cy = (c2y + ey)>>1;
+    fixed64 dx = (ax + bx)>>1;
+    fixed64 dy = (ay + by)>>1;
+    fixed64 fx = (bx + cx)>>1;
+    fixed64 fy = (by + cy)>>1;
+    fixed64 gx = (dx + fx)>>1;
+    fixed64 gy = (dy + fy)>>1;
 
     assert(depth >= 0);
     if (depth == 0)
-        mark_line(sx, sy, ex, ey, base_y, height, table, index);
+        mark_line((fixed)sx, (fixed)sy, (fixed)ex, (fixed)ey, base_y, height, table, index);
     else {
         depth--;
         mark_curve_big(sx, sy, ax, ay, dx, dy, gx, gy, base_y, height, table, index, depth);
