@@ -193,6 +193,7 @@ zlz_setup(os_ptr op, stream_LZW_state * plzs)
     int code;
     const ref *dop;
 
+    s_LZW_set_defaults_inline(plzs);
     if (r_has_type(op, t_dictionary)) {
         check_dict_read(*op);
         dop = op;
