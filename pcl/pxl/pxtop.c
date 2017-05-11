@@ -330,7 +330,8 @@ pxl_impl_set_device(pl_interp_instance_t * instance,
 
     pxs->interpolate = pl_get_interpolation(instance);
     pxs->nocache = pl_get_nocache(instance);
-
+    gs_setscanconverter(pxli->pgs, pl_get_scanconverter(instance));
+    
     if (pxs->nocache)
         gs_setcachelimit(pxs->font_dir, 0);
 

@@ -21,7 +21,7 @@
 
 #include "pltop.h"
 #include "plparse.h" /* for e_ExitLanguage */
-
+#include "plmain.h"
 #include "gxdevice.h" /* so we can include gxht.h below */
 #include "gxht.h" /* gsht1.h is incomplete, we need storage size of gs_halftone */
 #include "gsht1.h"
@@ -257,7 +257,8 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     gs_setfilladjust(ctx->pgs, 0, 0);
     (void)xps_set_icc_user_params((pl_interp_instance_t *)instance, ctx->pgs);
     xps_set_nocache((pl_interp_instance_t *)instance, ctx->fontdir);
-
+    gs_setscanconverter(ctx->pgs, pl_get_scanconverter(pinstance));
+    
     /* gsave and grestore (among other places) assume that */
     /* there are at least 2 gstates on the graphics stack. */
     /* Ensure that now. */
