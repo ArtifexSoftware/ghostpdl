@@ -176,21 +176,23 @@ CMT=/MTd
 CT=
 LCT=
 CMT=/MT
+COMPILE_WITHOUT_FRAMES=/Oy
 !else
 # Assume that DEBUGSYM != 0 implies a PROFILE build
-CT=/Zi /Fd$(GLOBJDIR)\ $(NULL)
+CT=/Zi /Fd$(GLOBJDIR)\ $(NULL) $(CDCC) $(CPCH)
 LCT=/DEBUG /PROFILE /OPT:REF /OPT:ICF
 CMT=/MTd
+# Do not disable frame pointers in profile builds.
+COMPILE_WITHOUT_FRAMES=/Oy-
 !endif
 !if $(MSVC_VERSION) == 5
 # NOTE: With MSVC++ 5.0, /O2 produces a non-working executable.
 # We believe the following list of optimizations works around this bug.
-COMPILE_FULL_OPTIMIZED=/GF /Ot /Oi /Ob2 /Oy /Oa- /Ow-
+COMPILE_FULL_OPTIMIZED=/GF /Ot /Oi /Ob2 /Oa- /Ow- $(COMPILE_WITHOUT_FRAMES)
 !else
-COMPILE_FULL_OPTIMIZED=/GF /O2 /Ob2
+COMPILE_FULL_OPTIMIZED=/GF /O2 /Ob2 $(COMPILE_WITHOUT_FRAMES)
 !endif
-COMPILE_WITH_FRAMES=
-COMPILE_WITHOUT_FRAMES=/Oy
+COMPILE_WITH_FRAMES=/Oy-
 !endif
 
 !if $(MSVC_VERSION) >= 8
