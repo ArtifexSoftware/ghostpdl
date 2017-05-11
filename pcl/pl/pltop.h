@@ -51,45 +51,7 @@ typedef struct pl_interp_characteristics_s
 } pl_interp_characteristics_t;
 
 /*
- * NB rewrite this, it multiple instances of interpreters are no longer supported.
- *
- * The pl_interp_t and pl_interp_instance are intended to provide a generic
- * front end for language interpreters, in tandem with a
- * pl_interp_implementation_t. pl_interp_t and pl_interp_impmementation_t
- * together are used to describe a particular implementation. An implementation
- * can then generate one or more instances, which are more-or-less
- * independent sessions.
- *
- * The pattern for a client using these objects is:
- *  match desired characteristics vs. pl_characteristics(&an_implementation);
- *  pl_allocate_interp(&interp, &an_implementation, ...);
- *  for (1 or more sessions)
- *    pl_allocate_interp_instance(&instance, interp, ...);
- *    for (each device that needs output)
- *      pl_set_device(instance, device);  //device is already open
- *      for (each print job)
- *        pl_init_job(instance)
- *        while (!end of job stream && no error)
- *          pl_process(instance, cursor);
- *        if (error || (end of input stream && pl_process didn't end normally yet))
- *          while (!pl_flush_to_eoj(instance, cursor))
- *            ; // positions cursor at eof or 1 past EOD marker
- *        if (end of input stream &&n pl_process didnt' end normally yet)
- *          pl_process_eof(instance);  // will reset instance's parser state
- *        if (errors)
- *          pl_report_errors(instance, ...);
- *        pl_dnit_job(instance);
- *      pl_remove_device(instance);  //device still open
- *    pl_deallocate_interp_instance(instance);
- *  pl_deallocte_interp(interp);
- *
- * Notice that this API allows you to have multiple instances, of multiple
- * implementations, open at once, but some implementations may impose restrictions
- * on the number of instances that may be open at one time (e.g. one).
- */
-
-/*
- * Define interp procedures: See comments in pltop.c for descriptions/ret vals
+ * Function to return the characteristics to the main loop.
  */
 const pl_interp_characteristics_t *pl_characteristics(const
                                                       pl_interp_implementation_t
@@ -97,71 +59,82 @@ const pl_interp_characteristics_t *pl_characteristics(const
 typedef const pl_interp_characteristics_t
     *(*pl_interp_proc_characteristics_t) (const pl_interp_implementation_t *);
 
+/*
+ * Allocate language client data.
+ */
 int pl_allocate_interp_instance(pl_interp_implementation_t *, gs_memory_t *);
 typedef int (*pl_interp_proc_allocate_interp_instance_t) (pl_interp_implementation_t *,
                                                           gs_memory_t *);
 
-/* clients that can be set into an interpreter's state */
-typedef enum
-{
-    /* needed to access the pcl interpreter in pxl (passthrough mode) */
-    PCL_CLIENT,
-    /* needed by all interpreters to query pjl state */
-    PJL_CLIENT
-} pl_interp_instance_clients_t;
+/*
+ * Set a device, possibly shared, into the graphics state of the language.
+ */
 
 int pl_set_device(pl_interp_implementation_t *, gx_device *);
-
 typedef int (*pl_interp_proc_set_device_t) (pl_interp_implementation_t *,
                                             gx_device *);
 
+/*
+ * Work to be done when a job begins.
+ */
 int pl_init_job(pl_interp_implementation_t *);
-
 typedef int (*pl_interp_proc_init_job_t) (pl_interp_implementation_t *);
 
-/* The process_file function is an optional optimized path
-   for languages that want to use a random access file. If this
-   function is called for a job, pl_process, pl_flush_to_eoj and
-   pl_process_eof are not called.
+/*
+ * The process_file function is an optional optimized path for
+ * languages that want to use a random access file. If this function
+ * is called for a job, pl_process, pl_flush_to_eoj and
+ * pl_process_eof are not called.
  */
-int pl_process_file(pl_interp_implementation_t *, char *);
 
+int pl_process_file(pl_interp_implementation_t *, char *);
 typedef int (*pl_interp_proc_process_file_t) (pl_interp_implementation_t *, char *);
 
+/*
+ * Process a stream of PDL data.
+ */
 int pl_process(pl_interp_implementation_t *, stream_cursor_read *);
-
 typedef int (*pl_interp_proc_process_t) (pl_interp_implementation_t *,
                                          stream_cursor_read *);
 
+/*
+ * Process and ignore all data until an end of job delimiter is
+ * reached or end of data.
+ */
 int pl_flush_to_eoj(pl_interp_implementation_t *, stream_cursor_read *);
-
 typedef int (*pl_interp_proc_flush_to_eoj_t) (pl_interp_implementation_t *,
                                               stream_cursor_read *);
 
+/*
+ * Actions to be be performed upon end of file.
+ */
 int pl_process_eof(pl_interp_implementation_t *);
-
 typedef int (*pl_interp_proc_process_eof_t) (pl_interp_implementation_t *);
 
+/*
+ * Perform any error reporting.
+ */
 int pl_report_errors(pl_interp_implementation_t *, int, long, bool);
-
 typedef int (*pl_interp_proc_report_errors_t) (pl_interp_implementation_t *, int,
                                                long, bool);
 
+/*
+ * Actions associated with ending a job
+ */
 int pl_dnit_job(pl_interp_implementation_t *);
-
 typedef int (*pl_interp_proc_dnit_job_t) (pl_interp_implementation_t *);
 
+/*
+ * Remove the device from the graphics state and reset.
+ */
 int pl_remove_device(pl_interp_implementation_t *);
-
 typedef int (*pl_interp_proc_remove_device_t) (pl_interp_implementation_t *);
 
+/*
+ * Free everything.
+ */
 int pl_deallocate_interp_instance(pl_interp_implementation_t *);
-
-typedef
-    int (*pl_interp_proc_deallocate_interp_instance_t) (pl_interp_implementation_t
-                                                        *);
-
-pl_interp_implementation_t *get_interpreter_from_memory(const gs_memory_t * mem);
+typedef int (*pl_interp_proc_deallocate_interp_instance_t) (pl_interp_implementation_t *);
 
 /*
  * Define a generic interpreter implementation

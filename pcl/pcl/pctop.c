@@ -14,8 +14,6 @@
 */
 
 
-/* implement device switching NB */
-
 /* pctop.c - PCL5c and pcl5e top-level API */
 
 #include "malloc_.h"
@@ -287,7 +285,7 @@ pcl_impl_set_device(pl_interp_implementation_t * impl,    /* interp instance to 
                     gx_device * device  /* device to set (open or closed) */
     )
 {
-    /* NB REVIEW ME -- ROUGH DRAFT */
+
     int code;
     pcl_interp_instance_t *pcli = impl->interp_client_data;
     gs_memory_t *mem = pcli->memory;
@@ -482,23 +480,16 @@ pcl_impl_remove_device(pl_interp_implementation_t * impl  /* interp instance to 
     int code;
     pcl_interp_instance_t *pcli = impl->interp_client_data;
 
-    /* NB use the PXL code */
-    /* return to the original graphic state w/color mapper, bbox, target */
+    /* Note: "PCL" grestore. */
     code = pcl_grestore(&pcli->pcs);
     if (code < 0)
-        dmprintf1(pcli->memory,
-                  "error code %d restoring gstate, continuing\n", code);
-    /* return to original gstate w/bbox, target */
+        return code;
+
+    /* return to original gstate */
     code = gs_grestore_only(pcli->pcs.pgs);     /* destroys gs_save stack */
     if (code < 0)
-        dmprintf1(pcli->memory,
-                  "error code %d destroying gstate, continuing\n", code);
+        return code;
 
-    /* Deselect bbox. Bbox has been prevented from auto-closing/deleting */
-    code = gs_nulldevice(pcli->pcs.pgs);
-    if (code < 0)
-        dmprintf1(pcli->memory,
-                  "error code %d installing nulldevice, continuing\n", code);
     return pcl_do_resets(&pcli->pcs, pcl_reset_permanent);
 }
 

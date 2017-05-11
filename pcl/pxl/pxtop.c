@@ -461,19 +461,10 @@ pxl_impl_dnit_job(pl_interp_implementation_t * impl)
 static int
 pxl_impl_remove_device(pl_interp_implementation_t * impl)
 {
-    int code = 0;               /* first error status encountered */
-    int error;
     pxl_interp_instance_t *pxli = impl->interp_client_data;
 
     /* return to original gstate  */
-    gs_grestore_only(pxli->pgs);        /* destroys gs_save stack */
-    /* Deselect device */
-    /* NB */
-    error = gs_nulldevice(pxli->pgs);
-    if (code >= 0)
-        code = error;
-
-    return code;
+    return gs_grestore_only(pxli->pgs);        /* destroys gs_save stack */
 }
 
 /* Deallocate a interpreter instance */

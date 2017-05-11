@@ -380,19 +380,8 @@ xps_imp_remove_device(pl_interp_implementation_t *impl)
     xps_interp_instance_t *instance = impl->interp_client_data;
     xps_context_t *ctx = instance->ctx;
 
-    int code = 0; /* first error status encountered */
-    int error;
-
     /* return to original gstate */
-    gs_grestore_only(ctx->pgs); /* destroys gs_save stack */
-
-    /* Deselect device */
-    /* NB */
-    error = gs_nulldevice(ctx->pgs);
-    if (code >= 0)
-        code = error;
-
-    return code;
+    return gs_grestore_only(ctx->pgs); /* destroys gs_save stack */
 }
 
 /* Deallocate a interpreter instance */
