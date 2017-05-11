@@ -3122,3 +3122,30 @@ currentdict /PDF2PS_matrix_key undef
 
 end			% pdfdict
 .setglobal
+
+%% This list of operators are used internally by various parts of the Ghostscript PDF interpreter.
+%% Since each operator is a potential security vulnerability, and any operator listed here
+%% is not required once the initislisation is complete and functions are bound, we undefine
+%% the ones that aren't needed at runtime.
+[
+/.pdfawidthshow /.pdfwidthshow
+/.setfillcolor /.setfillcolorspace /.setstrokecolor /.setstrokecolorspace /.currentrenderingintent /.setrenderingintent
+/.currentstrokeoverprint /.setstrokeoverprint /.currentfilloverprint /.setfilloverprint
+/.currenttextrenderingmode /.settextspacing /.currenttextspacing /.settextleading /.currenttextleading
+/.settextrise /.currenttextrise /.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling
+/.setTextLineMatrix /.currentTextLineMatrix /.currentTextMatrix /.setTextMatrix /.currentblendmode
+/.currentopacityalpha /.currentshapealpha /.currenttextknockout
+/.pushextendedgstate /.popextendedgstate /.begintransparencytextgroup
+/.endtransparencytextgroup /.begintransparencymaskgroup /.begintransparencymaskimage /.endtransparencymask /.image3x
+/.abortpdf14devicefilter /.pdfinkpath /.pdfFormName
+
+% Used by our own test suite files
+%/.pushpdf14devicefilter    % transparency-example.ps
+%/.poppdf14devicefilter     % transparency-example.ps
+%/.setopacityalpha          % transparency-example.ps
+%/.setshapealpha            % transparency-example.ps
+%/.endtransparencygroup     % transparency-example.ps
+
+%/.settextrenderingmode /.setblendmode /.begintransparencygroup /.settextknockout /check_r6_password
+]
+{systemdict exch .undef} forall

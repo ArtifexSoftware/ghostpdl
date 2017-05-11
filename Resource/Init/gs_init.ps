@@ -2229,6 +2229,80 @@ currentdict /.patterntypes .undef
 currentdict /.shadingtypes .undef
 currentdict /.wheredict .undef
 currentdict /.renderingintentdict .undef
+
+%% This list is of Display PostScript operators. We believe that Display PostScript
+%% was never fully implemented and the only known user, GNUStep, is no longer
+%% using it. So lets remove it.
+[
+/condition /currentcontext /detach /.fork /join /.localfork /lock /monitor /notify
+/wait /yield /.currentscreenphase /.setscreenphase /.image2 /eoviewclip /initviewclip
+/viewclip /viewclippath /defineusername
+%% NeXT DPS extensions
+/currentalpha /setalpha /.alphaimage /composite /compositerect /dissolve /sizeimagebox /.sizeimageparams
+]
+{currentdict exch .undef} forall
+
+%% This list is of operators which no longer appear to be used, and which we do not believe
+%% to have any real use. For now we will undefine the operstors so they cannot easily be used
+%% but can be easily restored (just delete the name from the list in the array). In future
+%% we may remove the operator and the code implementation entirely.
+[
+/.bitadd /.charboxpath /.currentblackptcomp /.setblackptcomp /.cond /.countexecstack /.execstack /.runandhide /.popdevicefilter
+/.execfile /.filenamesplit /.file_name_parent
+/.setdefaultmatrix /.isprocfilter /.unread /.psstringencode
+/.buildsampledfunction /.isencapfunction /.currentaccuratecurves /.currentcurvejoin /.currentdashadapt /.currentdotlength
+/.currentlimitclamp /.dotorientation /.setaccuratecurves /.setcurvejoin /.setdashadapt /.setdotorientation
+/.setlimitclamp /.currentscreenlevels /.dashpath /.pathbbox /.identeq /.identne /.tokenexec /.forgetsave /.pantonecallback
+
+% Used by our own test suite files
+%/.setdotlength % Bug687720.ps
+]
+{currentdict exch .undef} forall
+
+%% This list of operators are used internally by various parts of the Ghostscript startup code.
+%% Since each operator is a potential security vulnerability, and any operator listed here
+%% is not required once the initislisation is complete and functions are bound, we undefine
+%% the ones that aren't needed at runtime.
+[
+/.callinstall /.callbeginpage /.callendpage
+/.currentstackprotect /.setstackprotect /.errorexec /.finderrorobject /.installsystemnames /.bosobject /.fontbbox
+/.type1execchar /.type2execchar /.type42execchar /.setweightvector /.getuseciecolor /processcolors /.includecolorspace
+/.execn /.instopped /.stop /.stopped /.setcolorrendering /.setdevicecolorrendering /.buildcolorrendering1 /.builddevicecolorrendering1
+/.TransformPQR_scale_WB0 /.TransformPQR_scale_WB1 /.TransformPQR_scale_WB2 /.currentoverprintmode /.copydevice2
+/.devicename /.doneshowpage /flushpage /.getbitsrect /.getdevice /.getdefaultdevice /.getdeviceparams /.gethardwareparams
+/makewordimagedevice /.outputpage /.putdeviceparams /.setdevice /.currentshowpagecount
+/.setpagedevice /.currentpagedevice /.knownundef /.setmaxlength /.rectappend /.initialize_dsc_parser /.parse_dsc_comments
+/.fillCIDMap /.fillIdentityCIDMap /.buildcmap /.filenamelistseparator /.libfile /.getfilename
+/.file_name_combine /.file_name_is_absolute /.file_name_separator /.file_name_directory_separator /.file_name_current /.filename
+/.peekstring /.writecvp /.subfiledecode /.setupUnicodeDecoder /.jbig2makeglobalctx /.registerfont /.parsecff
+/.getshowoperator /.getnativefonts /.beginform /.endform /.get_form_id /.repeatform /.reusablestream /.rsdparams
+/.buildfunction /.currentfilladjust2 /.setfilladjust2 /.sethpglpathmode /.currenthpglpathmode
+/.currenthalftone /.sethalftone5 /.image1 /.imagemask1 /.image3 /.image4
+/.getiodevice /.getdevparms /.putdevparams /.bbox_transform /.matchmedia /.matchpagesize /.defaultpapersize
+/.oserrno /.setoserrno /.oserrorstring /.getCPSImode
+/.getscanconverter /.setscanconverter /.type1encrypt /.type1decrypt/.languagelevel /.setlanguagelevel /.eqproc /.fillpage /.buildpattern1 /.saslprep
+/.buildshading1 /.buildshadin2 /.buildshading3 /.buildshading4 /.buildshading5 /.buildshading6 /.buildshading7 /.buildshadingpattern
+/.argindex /.bytestring /.namestring /.stringbreak /.stringmatch /.globalvmarray /.globalvmdict /.globalvmpackedarray /.globalvmstring
+/.localvmarray /.localvmdict /.localvmpackedarray /.localvmstring /.systemvmarray /.systemvmdict /.systemvmpackedarray /.systemvmstring /.systemvmfile /.systemvmlibfile
+/.systemvmSFD /.settrapparams /.currentsystemparams /.currentuserparams /.getsystemparam /.getuserparam /.setsystemparams /.setuserparams
+/.checkpassword /.locale_to_utf8 /.currentglobal /.gcheck /.imagepath
+
+% Used by our own test suite files
+%/.fileposition %image-qa.ps
+%/.makeoperator /.setCPSImode % gs_cet.ps
+
+% Either our code uses these in ways which mean they can't be undefined, or they are used directly by
+% test files/utilities, or engineers expressed a desire to keep them visible.
+%
+%/currentdevice /.sort /.buildfont0 /.buildfont1 /.buildfont2 /.buildfont3 /.buildfont4 /.buildfont9 /.buildfont10 /.buildfont11
+%/.buildfotn32 /.buildfont42 /.type9mapcid /.type11mapcid /.swapcolors
+%/currentdevice  /.quit /.setuseciecolor /.needinput /.setoverprintmode /.special_op /.dicttomark /.knownget
+%/.FAPIavailable /.FAPIpassfont /.FAPIrebuildfont /.FAPIBuildGlyph /.FAPIBuildChar /.FAPIBuildGlyph9
+%/.tempfile /.numicc_components /.set_outputintent  /.max /.min /.shfill /.vmreclaim /.getpath /.setglobal
+%/.setdebug /.mementolistnewblocks /getenv
+]
+{currentdict exch .undef} forall
+
 end
 
 % Clean up VM, and enable GC. Use .vmreclaim to force the GC.
@@ -2246,6 +2320,10 @@ systemdict /superexec .knownget {
   1183615869 internaldict /superexec 3 -1 roll put
   systemdict /superexec .undef
 } if
+
+%% Can't remove this one until the last minute :-)
+systemdict /.undef .undef
+
 WRITESYSTEMDICT not { systemdict readonly pop } if
 (END GC) VMDEBUG
 
