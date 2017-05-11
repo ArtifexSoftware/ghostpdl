@@ -2128,12 +2128,19 @@ currentdict /last-ditch-bpc-csp undef
   } bdef
 } if
 
-/ValidateDecode { % <<image dict>> ValidateDecode <<image dict>>
+/ValidateDecode { % <<image dict>> -imagemask- ValidateDecode <<image dict>>
+  exch
   dup /Decode .knownget {
-    dup length                      % <<image dict>> [Decode] length
-    mark currentcolor counttomark   % <<image dict>> [Decode] length [ ... component_count
-    dup 2 add 1 roll                % <<image dict>> [Decode] length component_count [ ....
-    cleartomark                     % <<image dict>> [Decode] length component_count
+    dup length                      % -imagemask- <<image dict>> [Decode] length
+    4 -1 roll                       % <<image dict>> [Decode] length -imagemask-
+    {
+      1                             % ImageMask Decode arrays must be [0 1] or [1 0]
+    }
+    {
+      mark currentcolor counttomark % <<image dict>> [Decode] length [ ... component_count
+      dup 2 add 1 roll              % <<image dict>> [Decode] length component_count [ ....
+      cleartomark                   % <<image dict>> [Decode] length component_count
+    } ifelse
     2 mul dup                       % <<image dict>> [Decode] length comp_count*2 comp_count*2
     3 1 roll                        % <<image dict>> [Decode] comp_count*2 length comp_count*2
      eq {                           % <<image dict>> length of Decode matches colour space requirement
@@ -2154,7 +2161,9 @@ currentdict /last-ditch-bpc-csp undef
         pop pop                     % remove [Decode] and comp_count*2
       } ifelse
     } ifelse
-  } if
+  } {
+    exch pop
+  }ifelse
 }bdef
 
 /doimage {	% <imagemask> doimage -
@@ -2189,8 +2198,8 @@ currentdict /last-ditch-bpc-csp undef
       makemaskimage
   } if
                 % Stack: datasource imagemask
-  { currentdict end setfillstate ValidateDecode { imagemask } }
-  { ColorSpace setgcolorspace currentdict end setfillblend ValidateDecode { image } }
+  { currentdict end setfillstate true ValidateDecode { imagemask } }
+  { ColorSpace setgcolorspace currentdict end setfillblend false ValidateDecode { image } }
   ifelse
   PDFSTOPONERROR { exec //false } { stopped } ifelse {
     dup type /dicttype eq { pop } if % Sometimes image fails to restore the stack
