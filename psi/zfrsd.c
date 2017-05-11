@@ -54,8 +54,7 @@ zrsdparams(i_ctx_t *i_ctx_p)
     uint i;
     int code = 0;
 
-    if (ref_stack_count(&o_stack) < 1)
-        return_error(gs_error_stackunderflow);
+    check_op(1);
     if (!r_has_type(op, t_dictionary) && !r_has_type(op, t_null)) {
         return_error(gs_error_typecheck);
     }

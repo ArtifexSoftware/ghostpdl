@@ -65,8 +65,7 @@ zeqproc(i_ctx_t *i_ctx_p)
     ref2_t stack[MAX_DEPTH + 1];
     ref2_t *top = stack;
 
-    if (ref_stack_count(&o_stack) < 2)
-        return_error(gs_error_stackunderflow);
+    check_op(2);
     if (!eqproc_check_type(op -1) || !eqproc_check_type(op)) {
         make_false(op - 1);
         pop(1);
