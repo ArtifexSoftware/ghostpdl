@@ -399,7 +399,11 @@ currentdict readonly end pop		% pcldict
    dup dup 0 get exch 3 get negY sub abs 0.5 ge
     { (Only identical scaling in X and Y is supported:\n) print
       exch flipY 3 array astore ==
-      currentdevice .devicename ==
+%
+% .devicename has been deprecated
+%      currentdevice .devicename ==
+%
+      currentpagedevice /Name get ==
       matrix defaultmatrix == flush
       saved end end end restore stop
     }

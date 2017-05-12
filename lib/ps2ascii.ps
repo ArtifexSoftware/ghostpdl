@@ -250,7 +250,17 @@ ifelse
  } odef
 /eofill { COMPLEX { .fillcomplex } if newpath } codef
 /fill { COMPLEX { .fillcomplex } if newpath } codef
-/rectfill { gsave newpath .rectappend fill grestore } codef
+/rectfill { gsave newpath
+ % .rectappend is deprecated, build the path from scratch
+ %.rectappend
+
+ 3 index 3 index moveto
+ 3 index 3 index 2 index add lineto
+ 3 index 2 index add 3 index 2 index add lineto
+ 3 index 2 index add 3 index lineto
+ pop pop lineto closepath
+
+ fill grestore } codef
 /ueofill { gsave newpath uappend eofill grestore } codef
 /ufill { gsave newpath uappend fill grestore } codef
 

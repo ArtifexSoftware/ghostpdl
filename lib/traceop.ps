@@ -25,7 +25,7 @@
 /traceflush true def
 
 currentpacking true setpacking
-.currentglobal true .setglobal
+currentglobal true setglobal
 
 % Define the default "before" action
 /tracebefore { vmstatus 3 traceprint pop pop pop } def
@@ -56,7 +56,7 @@ currentpacking true setpacking
     pop userdict
   } if
   /.tddict exch def   /.tdict exch def   /.tname exch cvlit def
-  .currentglobal [
+  currentglobal [
   .tname /=only cvx ( ) /print cvx
     /.tpre load /traceprint cvx /traceend cvx
     .tdict .tname get /.tdef 1 index cvlit def
@@ -66,17 +66,17 @@ currentpacking true setpacking
       } if
     } if
     /.tpost load /traceprint cvx () /= cvx /traceend cvx
-  .tdef gcheck /.tpre load gcheck and /.tpost load gcheck and .setglobal
+  .tdef gcheck /.tpre load gcheck and /.tpost load gcheck and setglobal
   ] cvx
   .tdef type /operatortype eq {
     .tname exch .makeoperator
   } if
-  exch .setglobal
+  exch setglobal
   .tddict exch .tname exch put
   end		% userdict
 } bind def
 /tracebind /bind load def	% in case someone wants to put it back
 /bind { } def		% disable
 
-.setglobal
+setglobal
 setpacking

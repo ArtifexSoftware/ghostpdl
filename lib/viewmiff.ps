@@ -100,7 +100,7 @@
   { f token pop
     dup (:) eq { pop exit } if
     dup type /nametype eq {
-      .namestring (=) search {
+      1024 string cvs (=) search {
         exch pop miffwords exch .knownget { exec } { pop } ifelse
       } {
         pop	% who knows?

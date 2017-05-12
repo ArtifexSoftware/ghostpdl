@@ -373,7 +373,8 @@ currentdict /res-type-dict undef
           runpdfend
           closefile
         } {
-          .namestring
+          1024 string cvs % .namestring is deprecated
+%          .namestring
           dup (r) file
           runpdfbegin
           exch dump
