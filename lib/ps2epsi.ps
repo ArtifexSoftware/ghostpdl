@@ -164,7 +164,9 @@ ps2edict begin
           dup rm gt
           % If the new index is greater, we save index and element
           { /rm exch def } { pop } ifelse
-        } if
+        } {
+          pop
+        } ifelse
       } for
 
     % Write out the magic string and bounding box information
