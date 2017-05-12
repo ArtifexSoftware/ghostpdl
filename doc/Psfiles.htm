@@ -327,13 +327,6 @@ These files are found in the <code>lib</code> subdirectory of
 the Ghostscript source distribution.
 
 <dl>
-<dt><a href="../lib/font2c.ps"><tt>font2c.ps</tt></a>
-<dd>Convert a PostScript Type 0 or Type 1 font to C code that can be compiled
-and linked into Ghostscript; see the documentation on fonts for <a
-href="Fonts.htm#Precompiling">how to do this</a>.
-</dl>
-
-<dl>
 <dt><a href="../Resource/Init/gs_agl.ps"><tt>gs_agl.ps</tt></a>
 <dd>Contains the mapping from Adobe glyph names to Unicode values, used to
 support TrueType fonts.
@@ -388,12 +381,6 @@ included automatically in any configuration.
 <dd>This file contains some patches for providing information to the
 <code>pdfwrite</code> driver.  It is included only if the
 <code>pdfwrite</code> driver is included.
-</dl>
-
-<dl>
-<dt><a href="../lib/gs_pfile.ps"><tt>gs_pfile.ps</tt></a>
-<dd>This file provides runtime support for packed fonts.  It is not
-included automatically in any configuration.
 </dl>
 
 <dl>
@@ -463,12 +450,6 @@ the Ghostscript source distribution.
 <dl>
 <dt><a href="../Resource/Init/pdf_cslayer.ps"><tt>pdf_cslayer.ps</tt></a>
 <dd>Layer data extraction utilities of Illustrator files.
-</dl>
-
-<dl>
-<dt><a href="../lib/pdfwrite.ps"><tt>pdfwrite.ps</tt></a>
-<dd>Support for writing PDF files.  Currently used only by the linearizer,
-but potentially useful for other kinds of PDF-processing utilities.
 </dl>
 
 <dl>
@@ -632,12 +613,6 @@ These files are found in the <code>lib</code> subdirectory of
 the Ghostscript source distribution.
 
 <dl>
-<dt><a href="../lib/addxchar.ps"><tt>addxchar.ps</tt></a>
-<dd>A utility to add Central European and other Adobe extended Latin
-characters to a Type 1 font.
-</dl>
-
-<dl>
 <dt><a href="../lib/align.ps"><tt>align.ps</tt></a>
 <dd>A test page for determining the proper margin and offset parameters for
 your printer.
@@ -710,31 +685,15 @@ procedures refer to JIS B paper sizes rather than ISO B.
 
 
 <dl>
-<dt><a href="../lib/impath.ps"><tt>impath.ps</tt></a>
-<dd>A utility for reconstructing outlines from bitmap images, used by
-<code>bdftops</code>.
-</dl>
-
-<dl>
 <dt><a href="../lib/landscap.ps"><tt>landscap.ps</tt></a>
 <dd>A file that you can put in front of your own files to get them rendered
 in landscape mode.
 </dl>
 
 <dl>
-<dt><a href="../lib/level1.ps"><tt>level1.ps</tt></a>
-<dd>A file that turns off any Level 2 features.
-</dl>
-
-<dl>
 <dt><a href="../lib/mkcidfm.ps"><tt>mkcidfm.ps</tt></a>
 <dd>A utility for creating a CID font mapping table <code>cidfmap</code>
 from fonts found in a specified directory.
-</dl>
-
-<dl>
-<dt><a href="../lib/packfile.ps"><tt>packfile.ps</tt></a>
-<dd>A utility for compressing fonts into a single file.
 </dl>
 
 <dl>
@@ -781,13 +740,6 @@ file.
 <dl>
 <dt><a href="../lib/ps2epsi.ps"><tt>ps2epsi.ps</tt></a> *
 <dd>A utility for converting an arbitrary PostScript file into EPSI form.
-</dl>
-
-<dl>
-<dt><a href="../lib/quit.ps"><tt>quit.ps</tt></a>
-<dd>A file containing just the word "<code>quit</code>".  (The
-<code>-c</code> switch now makes this unnecessary; this file exists for
-backward compatibility.)
 </dl>
 
 <dl>
@@ -871,24 +823,8 @@ restrictions.
 </dl>
 
 <dl>
-<dt><a href="../lib/decrypt.ps"><tt>decrypt.ps</tt></a>
-<dd>A utility for decrypting the <code>eexec</code> section of a font.
-</dl>
-
-<dl>
 <dt><a href="../lib/image-qa.ps"><tt>image-qa.ps</tt></a>
 <dd>A comprehensive test of the image display operators.
-</dl>
-
-<dl>
-<dt><a href="../lib/markpath.ps"><tt>markpath.ps</tt></a>
-<dd>A utility for showing the points on a path.
-</dl>
-
-<dl>
-<dt><a href="../lib/pcharstr.ps"><tt>pcharstr.ps</tt></a>
-<dd>A utility for printing out the <code>CharStrings</code> and
-<code>Subrs</code> in a Type 1 font.
 </dl>
 
 <dl>
@@ -912,19 +848,8 @@ restrictions.
 </dl>
 
 <dl>
-<dt><a href="../lib/type1enc.ps"><tt>type1enc.ps</tt></a>
-<dd>The Type 1 font format encryption and decryption algorithms, written in
-PostScript.
-</dl>
-
-<dl>
 <dt><a href="../lib/uninfo.ps"><tt>uninfo.ps</tt></a>
 <dd>Some utilities for printing out PostScript data structures.
-</dl>
-
-<dl>
-<dt><a href="../lib/unprot.ps"><tt>unprot.ps</tt></a>
-<dd>A prologue to disable access checking.
 </dl>
 
 <dl>
@@ -942,12 +867,6 @@ PostScript.
 <dt><a href="../lib/winmaps.ps"><tt>winmaps.ps</tt></a>
 <dd>A utility for creating mappings between the Adobe encodings and the
 Microsoft Windows character sets.
-</dl>
-
-<dl>
-<dt><a href="../lib/wrfont.ps"><tt>wrfont.ps</tt></a>
-<dd>A utility for writing out an unprotected Type 1 font, such as the
-standard Ghostscript fonts.
 </dl>
 
 <dl>
@@ -975,23 +894,8 @@ when passing files with -dJOBSERVER.
 </dl>
 
 <dl>
-<dt><a href="../lib/markhint.ps"><tt>markhint.ps</tt></a>
-<dd>Draw the hints for a Type 1 font.
-</dl>
-
-<dl>
-<dt><a href="../lib/showchar.ps"><tt>showchar.ps</tt></a>
-<dd>Show a character's outline and rasterized forms.
-</dl>
-
-<dl>
 <dt><a href="../lib/stcinfo.ps"><tt>stcinfo.ps</tt></a>
 <dd>Print and show parameters of the (Epson) <code>stcolor</code> driver.
-</dl>
-
-<dl>
-<dt><a href="../lib/type1ops.ps"><tt>type1ops.ps</tt></a>
-<dd>The Type 1 font format opcodes.
 </dl>
 
 <!-- [2.0 end contents] ==================================================== -->
