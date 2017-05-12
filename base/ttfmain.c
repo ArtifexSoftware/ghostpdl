@@ -734,7 +734,7 @@ retry:
         for (i = 0; i < gOutline->contourCount; i++)
             endPoints[i] = ttfReader__Short(r);
         for (i = 1; i < gOutline->contourCount; i++)
-            if (endPoints[i - 1] >= endPoints[i]) {
+            if (endPoints[i - 1] < 0 || endPoints[i - 1] >= endPoints[i]) {
                 error = fBadFontData; goto ex;
             }
         nPoints = gOutline->pointCount = endPoints[gOutline->contourCount - 1] + 1;
@@ -882,11 +882,11 @@ void ttfOutliner__DrawGlyphOutline(ttfOutliner *self)
     ttfFont *pFont = self->pFont;
     ttfExport *exp = self->exp;
     TExecution_Context *exec = pFont->exec;
-    TGlyph_Zone *pts = &exec->pts;
-    short* endP = pts->contours;
-    byte* onCurve = pts->touch;
-    F26Dot6* x = pts->org_x;
-    F26Dot6* y = pts->org_y;
+    TGlyph_Zone *epts = &exec->pts;
+    short* endP = epts->contours;
+    byte* onCurve = epts->touch;
+    F26Dot6* x = epts->org_x;
+    F26Dot6* y = epts->org_y;
     F26Dot6 px, py;
     short sp, ctr;
     FloatPoint p0, p1, p2, p3;
