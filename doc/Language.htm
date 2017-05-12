@@ -40,18 +40,14 @@
 <li><a href="#Transparency_ImageType">New ImageType</a>
 </ul>
 <li><a href="#Graphics_state">Other graphics state operators</a>
-<li><a href="#Path">Path operators</a>
-<li><a href="#Painting">Painting operators</a>
 <li><a href="#Character">Character operators</a>
 </ul>
 <li><a href="#Other">Other operators</a>
 <ul>
 <li><a href="#Mathematical">Mathematical operators</a>
 <li><a href="#Dictionary">Dictionary operators</a>
-<li><a href="#String">String and name operators</a>
 <li><a href="#Relational">Relational operators</a>
 <li><a href="#File">File operators</a>
-<li><a href="#Virtual_memory">Virtual memory operators</a>
 <li><a href="#Miscellaneous">Miscellaneous operators</a>
 <li><a href="#Device">Device operators</a>
 </ul>
@@ -427,19 +423,9 @@ the blending mode is <code>/Compatible</code>.
 </dl>
 
 <dl>
-<dt><code>- .currentblendmode &lt;modename&gt;</code>
-<dd>Returns the current blending mode.
-</dl>
-
-<dl>
 <dt><code>&lt;0..1&gt; .setopacityalpha -</code>
 <dd>Sets the opacity alpha value in the graphics state.
 The initial opacity alpha value is 1.
-</dl>
-
-<dl>
-<dt><code>- .currentopacityalpha &lt;0..1&gt;</code>
-<dd>Returns the current opacity alpha value.
 </dl>
 
 <dl>
@@ -449,19 +435,9 @@ The initial shape alpha value is 1.
 </dl>
 
 <dl>
-<dt><code>- .currentshapealpha &lt;0..1&gt;</code>
-<dd>Returns the current shape alpha value.
-</dl>
-
-<dl>
 <dt><code>&lt;bool&gt; .settextknockout -</code>
 <dd>Sets the text knockout flag in the graphics state.
 The initial value of the text knockout flag is <code>true</code>.
-</dl>
-
-<dl>
-<dt><code>- .currenttextknockout &lt;bool&gt;</code>
-<dd>Returns the current text knockout flag.
 </dl>
 
 <h5><a name="Transparency_rendering_stack_operators"></a>Rendering stack
@@ -498,11 +474,6 @@ are the bounding box of the group in the current user coordinate system.
 </dl>
 
 <dl>
-<dt><code>- .discardtransparencygroup -</code>
-<dd>Ends and discards the current transparency group.
-</dl>
-
-<dl>
 <dt><code>- .endtransparencygroup -</code>
 <dd>Ends the current transparency group, compositing the group being ended
 onto the group that now becomes current.
@@ -525,30 +496,6 @@ are the bounding box of the mask in the current user coordinate system.
 <dd>(optional) Function object (produced by applying
 <code>.buildfunction</code> to a Function dictionary).
 </dl>
-</dl>
-
-<dl>
-<dt><code>- .begintransparencymaskimage -</code>
-<dd>Begins a new transparency mask, which is represented as a single image.
-</dl>
-
-<dl>
-<dt><code>- .discardtransparencymask -</code>
-<dd>Ends and discards the current transparency mask.
-</dl>
-
-<dl>
-<dt><code>&lt;masknum&gt; .endtransparencymask -</code>
-<dd>Ends the current transparency mask, installing it as the current opacity
-(<code>masknum</code> = 0) or shape (<code>masknum</code> = 1) mask in
-the graphics state.
-</dl>
-
-<dl>
-<dt><code>&lt;masknum&gt; .inittransparencymask -</code>
-<dd>Resets the current opacity (<code>masknum</code> = 0) or shape
-(<code>masknum</code> = 1) mask to an infinite mask with alpha = 1
-everywhere.
 </dl>
 
 <h5><a name="Transparency_ImageType"></a>New ImageType</h5>
@@ -582,117 +529,7 @@ not the <code>DataDict</code>, because each mask has its own
 
 <h4><a name="Graphics_state"></a>Other graphics state operators</h4>
 
-<dl>
-<dt><code>&lt;bool&gt; .setaccuratecurves -</code>
-<dd>Sets a graphics state flag that determines whether curves and arcs,
-when flattened, always start and end with a line that is a segment of the
-tangent; this also causes butt and square caps to be properly perpendicular
-to the tangent.  <code>initgraphics</code> sets this flag to false, to
-match other PostScript implementations.
-</dl>
-
-<dl>
-<dt><code>- .currentaccuratecurves &lt;bool&gt;</code>
-<dd>Returns the current value of the accurate curves flag.
-</dl>
-
-<dl>
-<dt><code>&lt;int&gt; .setcurvejoin -</code>
-<dd>Obsolete, left for backward compatibility.
-<dd>Sets a graphics state parameter that determines how to treat the joins
-between the line segments produced when a curve is flattened.  The parameter
-value may be either -1 or a value acceptable to <code>setlinejoin</code>.
-If the parameter value is -1, the join used for flattened curve line
-segments is given by the current line join parameter in the graphics state
-(except that if the line join value is "none", a bevel join is used), which
-matches the Adobe Red Book, but not some old Adobe implementations; if the curve
-join parameter value is a line join value, that type of join is used for
-flattened curve line segments, regardless of the value of the graphics state
-line join parameter.  The initial (and default) value of the curve join
-parameter is -1, causing the compatibility to Red Book and to modern Adobe
-implementations.  <code>initgraphics</code> sets the parameter to its
-default value.
-</dl>
-
-<dl>
-<dt><code>- .currentcurvejoin &lt;int&gt;</code>
-<dd>Obsolete, left for backward compatibility.
-<dd>Returns the current value of the curve join parameter.
-</dl>
-
-<dl>
-<dt><code>&lt;bool&gt; .setdashadapt -</code>
-<dd>Sets a graphics state flag that determines whether dash patterns do
-(true) or do not (false) automatically scale themselves so that each line
-segment consists of an integral number of pattern repetitions.
-<code>initgraphics</code> sets this flag to false.
-</dl>
-
-<dl>
-<dt><code>- .currentdashadapt &lt;bool&gt;</code>
-<dd>Returns the current value of the dash adaptation flag.
-</dl>
-
-<dl>
-<dt><code>&lt;matrix&gt; .setdefaultmatrix -</code>
-<dd>Sets the default matrix that is returned by
-<code>defaultmatrix</code> and installed by <code>initmatrix</code>.
-Ordinary programs should not use this operator.
-</dl>
-
-<dl>
-<dt><code>&lt;num&gt; &lt;bool&gt; .setdotlength -</code>
-<dd>Sets a graphics state parameter that determines the handling of
-zero-length lines (dots).  If the dot length is zero, dots are painted as
-circles if round line caps are in effect, otherwise they are not painted at
-all.  If the dot length is non-zero, dots are treated exactly like lines of
-the given length: the length is specified in user coordinates (like line
-width) if <code>bool</code> is false, or in default user coordinates of
-points (units of 1/72in; see the <a href="Devices.htm#Measurements">notes
-on measurements</a> in the documentation on devices) if
-<code>bool</code> is true.  Dots occurring as part of dash patterns will
-be oriented correctly; isolated dots will be oriented as though they were
-part of a vertical line.  <code>initgraphics</code> sets the dot length
-to zero.
-</dl>
-
-<dl>
-<dt><code>- .currentdotlength &lt;num&gt; &lt;bool&gt;</code>
-<dd>Returns the current dot length and dot length mode.
-</dl>
-
-<dl>
-<dt><code>&lt;dx&gt; &lt;dy&gt; .setfilladjust2 -</code>
-<dd>Sets graphics state parameters that cause all filled and stroked
-regions to be "fattened" by the given amount relative to an algorithm that
-only paints pixels whose centers fall within the region to be painted.
-<code>dx</code> and <code>dy</code> are numbers between 0 and 0.5,
-measured in device space.  The only two values that are likely to be useful
-are 0, which gives a pure center-of-pixel rule, and 0.5, which gives
-Adobe's any-part-of-pixel rule.  (0.5 is treated slightly specially in
-order to create half-open pixels per Adobe's specification.)
-</dl>
-
-<dl>
-<dt><code>- .currentfilladjust2 &lt;dx&gt; &lt;dy&gt;</code>
-<dd>Returns the current fill adjustment values.
-</dl>
-
-<dl>
-<dt><code>&lt;bool&gt; .setlimitclamp -</code>
-<dd>Sets a graphics state flag that determines whether attempts to set the
-current point outside the internally representable range should clamp the
-value to the largest representable value (true) or give a
-<code>limitcheck</code> error (false).  <code>initgraphics</code> sets
-this flag to false, to match other PostScript implementations.
-</dl>
-
-<dl>
-<dt><code>- .currentlimitclamp &lt;bool&gt;</code>
-<dd>Returns the current value of the limit clamp flag.
-</dl>
-
-<dl>
+    <dl>
 <dt><code>&lt;int&gt; .setoverprintmode -</code>
 <dd>Sets the overprint mode in the graphics state.  Legal values are 0 or 1.
 Per the PDF 1.3 specification, if the overprint mode is 1, then when the
@@ -707,185 +544,9 @@ mode is 0.
 <dd>Returns the current overprint mode.
 </dl>
 
-<h4><a name="Path"></a>Path operators</h4>
 
-<dl>
-<dt><code>- .dashpath -</code>
-<dd>If there is no current dash pattern, does nothing.  Otherwise, does the
-equivalent of <code>flattenpath</code> and then chops up the path as
-determined by the dash pattern.
-</dl>
-
-<dl>
-<dt><code>&lt;x&gt; &lt;y&gt; &lt;width&gt; &lt;height&gt; .rectappend -</code>
-<dt><code>&lt;numarray&gt; .rectappend -</code>
-<dt><code>&lt;numstring&gt; .rectappend -</code>
-<dd>Appends a rectangle or rectangles to the current path, in the same
-manner as <code>rectfill</code>, <code>rectclip</code>, etc.  Defined
-only if the <code>dps</code> or <code>level2</code> option was
-selected when Ghostscript was built.
-</dl>
-
-<dl>
-<dt><code>- .getpath &lt;array&gt;</code>
-<dd>Export the current path to an array of executable arrays. This
-operator is similar to <code>upath</code>, except
-
-<ul>
-<li>array of arrays is used to overcome 64K-1 limit on the
-array lemgth.
-<li>no <code>ucache</code> or <code>setbbox</code> entries are generated.
-<li>operators are used instead of executable names.
-<li>there's no special handling of an empty path or trailing <code>moveto</code>.
-The saved path can be restored by <code>newpath { exec } forall</code>.
-</ul>
-</dl>
-
-<dl>
-<dt><code>- .sethpglpathmode</code>
-<dd>If the single numerical parameter is non zero, then future path
-creation operations will make an HPGL-style path. HPGL style paths
-differ from postscript style paths in that moveto operations only
-begin a new subpath if there is not already an open subpath. (i.e.
-<code>a b moveto c d moveto e f lineto closepath</code> will draw
-back to (a,b), not (c,d). HPGL paths treat these non-subpath starting
-<tt>moveto</tt>s as <tt>lineto</tt> segments when filling, and as
-unstroked gaps when stroking.
-</dl>
-
-<dl>
-<dt><code>.currenthpglpathmode -</code>
-<dd>Leave the current hpglpathmode on the stack. The initial value
-of hpglpathmode is 0.
-</dl>
-
-<h4><a name="Painting"></a>Painting operators</h4>
-
-<p>
-Ghostscript supports an experimental extension of the PostScript imaging
-model to include <code>RasterOp</code> and some related facilities.
-This extension is available only if the <code>rasterop</code> option was
-selected when building Ghostscript.
-
-<p>
-With the <code>RasterOp</code> extension, imaging operations compute a
-function <b>D&nbsp;=&nbsp;f(D,S,T)</b> in RGB space, where <b>f</b> is an
-arbitrary 3-input Boolean function, <b>D</b> is the destination (frame
-buffer or print buffer), <b>S</b> is the source (described below), and
-<b>T</b> is the texture (the current PostScript color, which may be a
-pattern).  The source and texture depend on the PostScript imaging
-operation:
-
-<ul>
-<li>For <code>fill</code> and <code>stroke</code>, the source is
-solid black, covering the region to be painted; the texture is the current
-PostScript color.
-
-<li>For <code>show</code> and <code>imagemask</code>, the source is
-solid black, covering the pixels to be painted; the texture is the current
-PostScript color.
-
-<li>For <code>image</code> and <code>colorimage</code>, the source is
-the image data; the texture depends on an optional Boolean parameter,
-<code>CombineWithColor</code>, in the image dictionary.  If
-<code>CombineWithColor</code> is false (the default), the texture is
-solid black.  If <code>CombineWithColor</code> is true, the texture is
-the current color.  For the non-dictionary form of the image operator,
-<code>CombineWithColor</code> is considered to be false.
-</ul>
-
-<p>
-The <code>rasterop</code> option adds the following operators:
-
-<dl>
-<dt><code>&lt;int8&gt; .setrasterop -</code>
-<dd>Sets the <code>RasterOp</code> function in the graphics state.  The
-default function is 252, Source | Texture.
-</dl>
-
-<dl>
-<dt><code>- .currentrasterop &lt;int8&gt;</code>
-<dd>Returns the current <code>RasterOp</code> function.
-</dl>
-
-<dl>
-<dt><code>&lt;bool&gt; .setsourcetransparent -</code>
-<dd>Sets source transparency in the graphics state.  When source
-transparency is true, white source pixels prevent storing into the
-destination, regardless of what the <code>RasterOp</code> function
-returns.  The default source transparency is false.
-</dl>
-
-<dl>
-<dt><code>- .currentsourcetransparent &lt;bool&gt; -</code>
-<dd>Returns the current source transparency.
-</dl>
-
-<dl>
-<dt><code>&lt;bool&gt; .settexturetransparent -</code>
-<dd>Sets texture transparency in the graphics state.  When texture
-transparency is true, white texture pixels prevent storing into the
-destination, regardless of what the <code>RasterOp</code> function
-returns.  The default texture transparency is false.
-</dl>
-
-<dl>
-<dt><code>- .currenttexturetransparent &lt;bool&gt; -</code>
-<dd>Returns the current texture transparency.
-</dl>
-
-<p>
-For more information on RasterOp and transparency, please consult chapter 5
-of the "<a href="http://www.hp.com/ctg/Manual/bpl13212.pdf">Hewlett-Packard
-PCL 5 Color Technical Reference Manual</a>".
 
 <h4><a name="Character"></a>Character operators</h4>
-
-<dl>
-<dt><code>&lt;string&gt; &lt;bool&gt; .charboxpath -</code>
-<dd>For each character <b>C</b> in the rendering of &lt;string&gt;, let the
-bounding box of <b>C</b> <b><em>in device space</em></b> be the four
-<b><em>user-space</em></b> points p1x/y, p2x/y, p3x/y, and p4x/y.  For each
-character in order, <code>.charboxpath</code> appends the following to
-the current path:
-
-<ul><li>If <code>&lt;bool&gt;</code> is true, the equivalent of:
-
-<blockquote>
-p1x p1y <code>moveto</code><br>
-p2x p2y <code>lineto</code><br>
-p3x p3y <code>lineto</code><br>
-p4x p4y <code>lineto</code><br>
-<code>closepath</code>
-</blockquote>
-</ul>
-
-<p>
-This creates a path whose <code>pathbbox</code> is the
-<code>bbox</code> of the string.
-
-<ul><li>If <code>&lt;bool&gt;</code> is false, the equivalent of:
-
-<blockquote>
-p1x p1y <code>moveto</code><br>
-p3x p3y <code>lineto</code>
-</blockquote>
-</ul>
-
-<p>
-If the CTM is well-behaved (consists only of reflection, scaling, and
-rotation by multiples of 90 degrees), this too creates a (simpler) path
-whose <code>pathbbox</code> is the <code>bbox</code> of the string.
-</dl>
-
-<dl>
-<dt><code>&lt;font&gt; &lt;charname|charcode&gt; &lt;charname&gt; &lt;charstring&gt; .type1execchar -</code>
-<dd>Does all the work for rendering a Type 1 outline.  This operator, like
-<code>setcharwidth</code> and <code>setcachedevice</code>, is valid
-only in the context of a show operator -- that is, it must only be called
-from within a <code>BuildChar</code> or <code>BuildGlyph</code>
-procedure.
-</dl>
 
 <dl>
 <dt><code>&lt;font&gt; &lt;charcode&gt; %Type1BuildChar -</code>
@@ -934,88 +595,12 @@ but is available even in Level 1 configurations.
 </dl>
 
 <dl>
-<dt><code>&lt;dict&gt; &lt;key&gt; &lt;value&gt; .forceput - </code>
-<dd>Equivalent to <code>put</code>, but works even if
-<code>dict</code> is not writable, and (if <code>dict</code> is
-<code>systemdict</code> or the current save level is 0) even if
-<code>dict</code> is in global VM and <code>key</code> and/or
-<code>value</code> is in local VM.  <strong>This operator should be used
-only initialization code, and only in executeonly procedures: it must not be
-accessible after initialization.</strong>
-</dl>
-
-<dl>
-<dt><code>&lt;dict&gt; &lt;key&gt; .forceundef - </code>
-<dd>Equivalent to <code>undef</code>, but works even if
-<code>dict</code> is not writable.  <strong>This operator should be used
-only initialization code, and only in executeonly procedures: it must not be
-accessible after initialization.</strong>
-</dl>
-
-
-<dl>
 <dt><code>&lt;dict&gt; &lt;key&gt; .knownget &lt;value&gt; true</code>
 <dt><code>&lt;dict&gt; &lt;key&gt; .knownget false</code>
 <dd>Combines <code>known</code> and <code>get</code> in the
 obvious way.
 </dl>
 
-<dl>
-<dt><code>&lt;dict&gt; &lt;integer&gt; .setmaxlength -</code>
-<dd>Sets the capacity (<code>maxlength</code>) of a dictionary.
-Causes a <code>dictfull</code> error if the dictionary has more
-occupied entries than the requested capacity.
-</dl>
-
-<h4><a name="String"></a>String and name operators</h4>
-
-<dl>
-<dt><code>&lt;integer&gt; .bytestring &lt;bytestring&gt;</code>
-<dd>Allocates and returns a bytestring, a special data type that can be
-larger than the maximum size of a string (64K-1 bytes) and can be used in
-place of a string with a very few operators.
-</dl>
-
-<dl>
-<dt><code>&lt;name&gt; .namestring &lt;string&gt;</code>
-<dd>Returns the (read-only) string for a name.
-</dl>
-
-<dl>
-<dt><code>&lt;string&gt; &lt;charstring&gt; .stringbreak &lt;index|null&gt;</code>
-<dd>Searches for a character in <code>string</code> that appears
-somewhere in <code>charstring</code>.  If such a character is found,
-returns the index of the first such character; if no such character is
-found, returns <code>null</code>.
-</dl>
-
-<dl>
-<dt><code>&lt;obj&gt; &lt;pattern&gt; .stringmatch &lt;bool&gt;</code>
-<dd>Matches <code>obj</code> against a pattern in which '*' matches 0 or
-more characters and '?' matches any single character.  If
-<code>obj</code> is a string or a name, matches its characters against
-the pattern; if <code>obj</code> is of any other type, the result is
-<code>true</code> if the pattern is the single character "*" and
-<code>false</code> otherwise.
-</dl>
-
-<dl>
-<dt><code>&lt;state&gt; &lt;fromString&gt; &lt;toString&gt; .type1encrypt &lt;newState&gt; &lt;toSubstring&gt;</code>
-<dd>Encrypts <code>fromString</code> according to the algorithm for
-Adobe Type 1 fonts, writing the result into <code>toString</code>.
-<code>toString</code> must be at least as long as
-<code>fromString</code>, or a rangecheck error occurs.
-<code>state</code> is the initial state of the encryption algorithm (a
-16-bit non-negative integer); <code>newState</code> is the new state of
-the algorithm.
-</dl>
-
-<dl>
-<dt><code>&lt;state&gt; &lt;fromString&gt; &lt;toString&gt; .type1decrypt &lt;newState&gt; &lt;toSubstring&gt;</code>
-<dd>Decrypts <code>fromString</code> according to the algorithm for
-Adobe Type 1 fonts, writing the result into <code>toString</code>.
-Other specifications are as for <code>type1encrypt</code>.
-</dl>
 
 <h4><a name="Relational"></a>Relational operators</h4>
 
@@ -1030,15 +615,6 @@ Other specifications are as for <code>type1encrypt</code>.
 </dl>
 
 <h4><a name="File"></a>File operators</h4>
-
-<dl>
-<dt><code>&lt;file&gt; .filename &lt;string&gt; true</code>
-<dt><code>&lt;file&gt; .filename false</code>
-<dd>If the file was opened by the <code>file</code> or
-<code>.tempfile</code> operator, returns the file name and
-<code>true</code>; if the file is a filter, returns
-<code>false</code>.
-</dl>
 
 <dl>
 <dt><code>&lt;file&gt; .fileposition &lt;integer&gt; true</code>
@@ -1056,14 +632,6 @@ of bytes read or written since the file was opened.
 directories <a href="Use.htm#Finding_files">as described in the usage
 documentation</a>.  If the search fails, <code>findlibfile</code> simply
 pushes false on the stack and returns, rather than causing an error.
-</dl>
-
-<dl>
-<dt><code>&lt;file&gt; &lt;string&gt; .peekstring &lt;substring&gt; &lt;filled_bool&gt;</code>
-<dd>Reads bytes from a file like <code>readstring</code>, but also leaves
-the bytes in the file buffer so they will be read again by a subsequent read
-operation.  Currently gives a <code>rangecheck</code> error if
-<code>string</code> is larger than the file's buffer.
 </dl>
 
 <a name=Tempfile></a>
@@ -1103,16 +671,6 @@ paths.
 
 </dl>
 
-<dl>
-<dt><code>&lt;file&gt; &lt;integer&gt; .unread -</code>
-<dd>Pushes back the last-read character onto the front of the file.  If the
-file is open only for writing, or if the integer argument is not the same
-as the last character read from the file, causes an <code>ioerror</code>
-error.  May also cause an <code>ioerror</code> if the last operation on
-the file was not a reading operation.  This operator is now deprecated:
-use <code>.peekstring</code> in new code.
-</dl>
-
 <p>
 Ghostscript also supports the following <code>IODevice</code> in
 addition to a subset of those defined in the Adobe documentation:
@@ -1146,14 +704,6 @@ A mapping file is used to store the association between the file
 names given for the file operations on the %diskn# device and the file
 that resides in the /Root directory.
 </ul>
-
-<h4><a name="Virtual_memory"></a>Virtual memory operators</h4>
-
-<dl>
-<dt><code>&lt;save&gt; .forgetsave -</code>
-<dd>Cancels the effect of a save, making it as though the save never
-happened.
-</dl>
 
 <h4><a name="Miscellaneous"></a>Miscellaneous operators</h4>
 
@@ -1204,32 +754,11 @@ This is necessary for correct behavior with later code that uses the <code>bind<
 </dl>
 
 <dl>
-<dt><code>&lt;obj1&gt; &lt;obj2&gt; ... &lt;objn&gt; &lt;n&gt; .execn ...</code>
-<dd>This executes <code>obj1</code> through <code>objn</code> in that
-order, essentially equivalent to
-
-<blockquote><pre>
-&lt;obj1&gt; &lt;obj2&gt; ... &lt;objn&gt; &lt;n&gt; array astore {exec} forall
-</pre></blockquote>
-
-<p>
-except that it doesn't actually create the array.
-</dl>
-
-<dl>
 <dt><code>&lt;string&gt; getenv &lt;string&gt; true</code>
 <dt><code>&lt;string&gt; getenv false</code>
 <dd>Looks up a name in the shell environment.  If the name is found,
 returns the corresponding value and true; if the name is not found, returns
 false.
-</dl>
-
-<dl>
-<dt><code>.defaultpapersize &lt;string&gt; true</code>
-<dt><code>.defaultpapersize false</code>
-<dd>Get the system default paper size, which is usually
-<code>a4</code> for countries using the metric system, and
-<code>letter</code> for countries using the imperial system.
 </dl>
 
 <dl>
@@ -1267,60 +796,6 @@ array, indexed by character value. The <code>zsetdebug</code> function will
 be entered, and <code>gs_debug[]</code> updated, whether or not Ghostscript
 is built with the <code>DEBUG</code> preprocessor symbol defined, so this
 is useful even with release builds.
-</dl>
-
-<dl>
-<dt><code>- .oserrno &lt;errno&gt;</code>
-<dd>Returns the error code for the most recent operating system error.
-</dl>
-
-<dl>
-<dt><code>- .oserrorstring &lt;string&gt;</code>
-<dd>Returns the error string for the most recent operating system error.
-</dl>
-
-<a name="Runandhide"></a>
-<dl>
-<dt><code>&lt;array&gt; &lt;procedure&gt; .runandhide ... &lt;array&gt;</code>
-<dd>Runs the <i><tt>&lt;procedure&gt;</tt></i> after removing the
-<i><tt>&lt;array&gt;</tt></i> from the stack. As long as <i><tt>&lt;array&gt;</tt></i>
-is not contained in any readable dictionaries or elsewhere on stacks, it
-will not be accessible to <i><tt>&lt;procedure&gt;</tt></i>.
-<p>
-This operator is intended to allow hiding a <i><tt>&lt;save&gt;</tt></i> object
-during execution of procedures or files that run in <b>SAFER</b> mode.
-If a <code>save</code> is performed prior to entering <b>SAFER</b> mode
-with <code>.setsafe</code>, using the save object as the operand to
-<code>restore</code> will return to <b>NOSAFER</b> mode. In order to
-prevent the procedures running in <b>SAFER</b> mode from being able to
-return to <b>NOSAFER</b> mode, this operator should be used.
-Upon return from the file or procedure <code>restore</code> can be used
-to return to <b>NOSAFER</b> mode.
-<p>
-<b>Note:</b> The array operand hidden during the execution of the file or
-procedure will be placed at the top of the operand stack which may be on
-top of objects that the file or procedure leaves on top of the stack.
-Thus removing objects below the array may be needed to prevent an
-<code>invalidrestore</code> error.
-<p>
-For example, in order for a script or job server to execute a file
-<tt>somefile.ps</tt> with the <b>SAFER</b> mode restrictions in place, returning
-to unrestricted <b>NOSAFER</b> mode when the procedure exits is as follows:
-<pre>
-	Start Ghostscript with <b>-dNOSAFER</b>
-
-	...			% perform any device set up w/o restrictions
-	[ save ]		% create a save object before SAFER
-	(somefile.ps) (r) file cvx	% open the file to process
-	.setsafe		% enter SAFER mode
-	.runandhide		% run the file hiding the save object
-	count 1 roll		% place array below anything left over
-	count 1 sub { pop } repeat	% pop left over stuff
-	cleardictstack		% prevent invalidrestore from dicts
-	0 get restore		% go back to NOSAFER mode
-</pre>
-Another refinement on the above would be to execute <code>.runandhide</code>
-using <code>stopped</code> in order to report errors but continue processing.
 </dl>
 
 <dl>
@@ -1393,20 +868,6 @@ accumulating shared object data and to reduce the incidence of garbage
 collection as a performance improvement. Additional settings may be added in the future.
 </dl>
 
-<dl>
-<dt><code>.color_test</code> and <code>.color_test_all</code></dt>
-<dd>These operators are used for the verification of device encode_color and
-decode_color routines. They are for internal use only. Their function
-can, and probably will, change as Artifex's requirements change.
-<p>
-<dd>Currently these operators loop through a set of possible values for the inputs
-to the encode_color routine and then veify that the decode_color routines produce
-values that match the input set to within a tolerance which is based upon the number
-of bits used to encode a pixel. The operators also verify that if the device
-is 'separable' then that the values produced by gx_default_encode_color and
-gx_default_decode_color (the default encode/decode color handlers for a separable
-device) are consistent to within the same tolerance.
-</dl>
 
 <h4><a name="Device"></a>Device operators</h4>
 
@@ -1431,33 +892,6 @@ time, and returns the same instance thereafter.
 used with <code>.getdeviceparams</code> or other parameter-reading
 operators, but it is read-only and cannot be set with
 <code>setdevice</code>: it must be copied first.
-</dl>
-
-<dl>
-<dt><code>&lt;device&gt; &lt;x&gt; &lt;y&gt; &lt;width&gt; &lt;max_height&gt; &lt;alpha?&gt; &lt;std_depth|null&gt; &lt;string&gt; .getbitsrect &lt;height&gt; &lt;substring&gt;</code>
-<dd>Reads a rectangle of rendered bits back from a device.  This is only
-guaranteed to be implemented for image devices (see below).
-<code>alpha?</code> is 0 for no alpha, -1 for alpha first, 1 for alpha
-last.  <code>std_depth</code> is null for native pixels, number of bits
-per component for a standard color space.
-</dl>
-
-<dl>
-<dt><code>&lt;index&gt; .getdevice &lt;device&gt;</code>
-<dd>Returns a device from the set of devices known to the system.  The
-first device is numbered 0.  If the <code>index</code> is out of
-range, a <code>rangecheck</code> error occurs.
-This device is actually a prototype, not a directly usable device,
-and is marked read-only; it cannot have its parameters changed or be
-installed as the current device.
-</dl>
-
-<dl>
-<dt><code>- .getdefaultdevice &lt;device&gt;</code>
-<dd>Returns the default device. This device is actually a prototype,
-and is marked read-only; it cannot have its parameters changed or
-be installed as the current device.
-Use <code>copydevice</code> to obtain a workable device.
 </dl>
 
 <dl>
@@ -1510,14 +944,6 @@ existing image device) by copying a device using the
 </dl>
 
 <dl>
-<dt><code>&lt;matrix&gt; &lt;width&gt; &lt;height&gt; &lt;palette&gt; &lt;word?&gt; makewordimagedevice &lt;device&gt;</code>
-<dd>Makes an image device as described above.  <code>word?</code> is a
-Boolean value indicating whether the data should be stored in a
-word-oriented format internally.  No ordinary PostScript programs should
-use this operator.
-</dl>
-
-<dl>
 <dt><code>&lt;device&gt; &lt;index&gt; &lt;string&gt; copyscanlines &lt;substring&gt;</code>
 <dd>Copies one or more scan lines from an image device into a string,
 starting at a given scan line in the image.  The data is in the same format
@@ -1563,12 +989,6 @@ method in such cases is to use the level 2 operator instead:
 <dd>Sets properties of a device.  May cause <code>undefined</code>,
 <code>invalidaccess</code>, <code>typecheck</code>, <code>rangecheck</code>, or
 <code>limitcheck</code> errors.
-</dl>
-
-<dl>
-<dt><code>- flushpage -</code>
-<dd>On displays, flushes any buffered output, so that it is guaranteed to
-show up on the screen; on printers, has no effect.
 </dl>
 
 <hr>
@@ -1813,19 +1233,6 @@ for more information.  The only recognized dictionary key is:
 <blockquote>
 <code>BlockSize &lt;integer&gt;</code> (default=16384)
 </blockquote>
-</dl>
-
-<dl>
-<dt><code>&lt;target/source&gt; MoveToFrontEncode/Decode filter &lt;file&gt;</code>
-
-<dd>The <code>Encode</code> filter starts by initializing an internal
-256-byte array <code>a</code> to the values 0 .. 255.  This array will
-always hold a permutation of these values.  Then for each input byte
-<em>b</em>, the filter outputs the index <em>i</em> such that
-<code>a</code>[<em>i</em>] = <em>b</em>, and moves that element to the
-front (element 0) of <code>a</code>, moving elements 0 .. <em>i-1</em> to
-positions 1 .. <em>i</em>.  The <code>Decode</code> filter inverts this
-process.
 </dl>
 
 <hr>
