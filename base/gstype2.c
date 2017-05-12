@@ -581,13 +581,16 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     case ce2_store:
                         {
                             int i, n = fixed2int_var(*csp);
-                            float *to = Registry[fixed2int_var(csp[-3])].values +
-                            fixed2int_var(csp[-2]);
-                            const fixed *from =
-                            pcis->transient_array + fixed2int_var(csp[-1]);
+                            int ind = fixed2int_var(csp[-3]);
+                            int offs = fixed2int_var(csp[-2]);
+                            float *to;
+                            const fixed *from = pcis->transient_array + fixed2int_var(csp[-1]);
 
-                            for (i = 0; i < n; ++i)
-                                to[i] = fixed2float(from[i]);
+                            if (ind < countof(Registry)) {
+                                to = Registry[ind].values + offs;
+                                for (i = 0; i < n; ++i)
+                                    to[i] = fixed2float(from[i]);
+                            }
                         }
                         csp -= 4;
                         break;
@@ -614,12 +617,15 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                         /* in registry array) argument.... */
                         {
                             int i, n = fixed2int_var(*csp);
-                            const float *from = Registry[fixed2int_var(csp[-2])].values;
-                            fixed *to =
-                            pcis->transient_array + fixed2int_var(csp[-1]);
+                            int ind = fixed2int_var(csp[-2]);
+                            const float *from;
+                            fixed *to = pcis->transient_array + fixed2int_var(csp[-1]);
 
-                            for (i = 0; i < n; ++i)
-                                to[i] = float2fixed(from[i]);
+                            if (ind < countof(Registry)) {
+                                from = Registry[ind].values;
+                                for (i = 0; i < n; ++i)
+                                    to[i] = float2fixed(from[i]);
+                            }
                         }
                         csp -= 3;
                         break;
