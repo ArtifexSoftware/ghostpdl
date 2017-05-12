@@ -62,10 +62,10 @@ install-scripts: $(PSLIBDIR)/gsnd $(UNIXINST_MAK) $(MAKEDIRS)
 	-mkdir -p $(DESTDIR)$(scriptdir)
 	$(SH) -c 'for f in \
 gsbj gsdj gsdj500 gslj gslp gsnd \
-bdftops dvipdf eps2eps font2c \
+bdftops dvipdf eps2eps \
 pdf2dsc pdf2ps pf2afm pfbtopfa pphs printafm \
 ps2ascii ps2epsi ps2pdf ps2pdf12 ps2pdf13 ps2pdf14 ps2pdfwr ps2ps ps2ps2 \
-wftopfa fixmswrd.pl lprsetup.sh pj-gs.sh pv.sh sysvlp.sh unix-lpr.sh ;\
+fixmswrd.pl lprsetup.sh pj-gs.sh pv.sh sysvlp.sh unix-lpr.sh ;\
 	do if ( test -f $(PSLIBDIR)/$$f ); then \
 	  (cat $(PSLIBDIR)/$$f | sed -e "s/GS_EXECUTABLE=gs/GS_EXECUTABLE=$(GS)/" > $(PSOBJDIR)/$$f); \
 	  $(INSTALL_PROGRAM) $(PSOBJDIR)/$$f $(DESTDIR)$(scriptdir)/$$f; \
@@ -91,20 +91,20 @@ install-libdata:
 	$(SH) -c 'for f in \
 $(EXTRA_INIT_FILES) Fontmap.GS \
 ht_ccsto.ps \
-acctest.ps addxchar.ps align.ps bdftops.ps \
-caption.ps cid2code.ps decrypt.ps docie.ps \
-errpage.ps font2c.ps font2pcl.ps gslp.ps gsnup.ps image-qa.ps impath.ps \
-jispaper.ps landscap.ps level1.ps lines.ps markhint.ps markpath.ps \
+acctest.ps align.ps bdftops.ps \
+caption.ps cid2code.ps docie.ps \
+errpage.ps font2pcl.ps gslp.ps gsnup.ps image-qa.ps \
+jispaper.ps landscap.ps lines.ps \
 mkcidfm.ps PDFA_def.ps PDFX_def.ps \
-packfile.ps pcharstr.ps pf2afm.ps pfbtopfa.ps ppath.ps \
+pf2afm.ps pfbtopfa.ps ppath.ps \
 pphs.ps \
 prfont.ps printafm.ps \
-ps2ai.ps ps2ascii.ps ps2epsi.ps quit.ps rollconv.ps \
-showchar.ps showpage.ps stcinfo.ps stcolor.ps stocht.ps \
-traceimg.ps traceop.ps type1enc.ps type1ops.ps uninfo.ps unprot.ps \
+ps2ai.ps ps2ascii.ps ps2epsi.ps rollconv.ps \
+stcinfo.ps stcolor.ps stocht.ps \
+traceimg.ps traceop.ps uninfo.ps \
 viewcmyk.ps viewgif.ps viewjpeg.ps viewmiff.ps \
 viewpcx.ps viewpbm.ps viewps2a.ps \
-winmaps.ps wftopfa.ps wrfont.ps zeroline.ps \
+winmaps.ps zeroline.ps \
 pdf2dsc.ps ;\
 	do if ( test -f $(PSLIBDIR)/$$f ); then $(INSTALL_DATA) $(PSLIBDIR)/$$f $(DESTDIR)$(gsdatadir)/lib; fi;\
 	done'
