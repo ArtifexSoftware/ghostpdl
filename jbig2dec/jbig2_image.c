@@ -149,18 +149,32 @@ jbig2_image_compose_unopt(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x
     /* clip to the dst image boundaries */
     if (x < 0) {
         sx += -x;
-        sw -= -x;
+        if (sw < (uint32_t)-x)
+            sw = 0;
+        else
+            sw -= -x;
         x = 0;
     }
     if (y < 0) {
         sy += -y;
-        sh -= -y;
+        if (sh < (uint32_t)-y)
+            sh = 0;
+        else
+            sh -= -y;
         y = 0;
     }
-    if (x + sw >= dst->width)
-        sw = dst->width - x;
-    if (y + sh >= dst->height)
-        sh = dst->height - y;
+    if ((uint32_t)x + sw >= dst->width) {
+        if (dst->width >= (uint32_t)x)
+            sw = dst->width - x;
+        else
+            sw = 0;
+    }
+    if ((uint32_t)y + sh >= dst->height) {
+        if (dst->height >= (uint32_t)y)
+            sh = dst->height - y;
+        else
+            sh = 0;
+    }
 
     switch (op) {
     case JBIG2_COMPOSE_OR:
@@ -226,11 +240,17 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
     ss = src->data;
 
     if (x < 0) {
-        w += x;
+        if (w < (uint32_t)-x)
+            w = 0;
+        else
+            w += x;
         x = 0;
     }
     if (y < 0) {
-        h += y;
+        if (h < (uint32_t)-y)
+            h = 0;
+        else
+            h += y;
         y = 0;
     }
     w = ((uint32_t)x + w < dst->width) ? w : ((dst->width >= (uint32_t)x) ? dst->width - (uint32_t)x : 0);
