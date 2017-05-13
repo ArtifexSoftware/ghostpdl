@@ -440,7 +440,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                             refagg_dicts[0] = jbig2_sd_new(ctx, params->SDNUMINSYMS + params->SDNUMNEWSYMS);
                             if (refagg_dicts[0] == NULL) {
                                 code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Out of memory allocating symbol dictionary");
-                                jbig2_free(ctx->allocator, refagg_dicts);
                                 goto cleanup4;
                             }
                             for (i = 0; i < params->SDNUMINSYMS; i++) {
@@ -760,7 +759,8 @@ cleanup4:
         jbig2_free(ctx->allocator, tparams);
     }
     if (refagg_dicts != NULL) {
-        jbig2_sd_release(ctx, refagg_dicts[0]);
+        if (refagg_dicts[0] != NULL)
+            jbig2_sd_release(ctx, refagg_dicts[0]);
         jbig2_free(ctx->allocator, refagg_dicts);
     }
 
