@@ -2134,6 +2134,13 @@ pdfmark_EP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     pdf_resource_t *pres = pdev->accumulating_substream_resource;
     gs_const_string objname = pdev->objname;
 
+    /* We are not currently accumulating a resource, this suggests an /EP
+     * without an opening /BP. This is (obviously) an error, Distiller throws
+     * an 'undefined' error, so we will too.
+     */
+    if (pres == NULL)
+        return_error(gs_error_undefined);
+
     code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
     if (code < 0)
         return code;
