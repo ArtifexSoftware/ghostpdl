@@ -349,6 +349,11 @@ cleanup1:
 
                 /* 6.4.11 (6) */
                 IBO = IB;
+                if (((int32_t) IBO->width) + RDW < 0 || ((int32_t) IBO->height) + RDH < 0) {
+                    jbig2_image_release(ctx, IBO);
+                    code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "reference image dimensions negative");
+                    goto cleanup2;
+                }
                 refimage = jbig2_image_new(ctx, IBO->width + RDW, IBO->height + RDH);
                 if (refimage == NULL) {
                     jbig2_image_release(ctx, IBO);
