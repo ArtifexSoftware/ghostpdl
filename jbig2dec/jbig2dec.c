@@ -390,6 +390,7 @@ main(int argc, char **argv)
     uint8_t buf[4096];
     jbig2dec_params_t params;
     int filearg;
+    int result = 0;
 
     /* set defaults */
     params.mode = render;
@@ -421,7 +422,7 @@ main(int argc, char **argv)
             f = fopen(fn, "rb");
             if (f == NULL) {
                 fprintf(stderr, "error opening %s\n", fn);
-                return 1;
+                goto cleanup;
             }
         } else if ((argc - filearg) == 2)
             /* two arguments open as separate global and page streams */
@@ -432,18 +433,20 @@ main(int argc, char **argv)
             f = fopen(fn, "rb");
             if (f == NULL) {
                 fprintf(stderr, "error opening %s\n", fn);
-                return 1;
+                goto cleanup;
             }
 
             f_page = fopen(fn_page, "rb");
             if (f_page == NULL) {
                 fclose(f);
                 fprintf(stderr, "error opening %s\n", fn_page);
-                return 1;
+                goto cleanup;
             }
-        } else
+        } else {
             /* any other number of arguments */
-            return print_usage();
+            result = print_usage();
+            goto cleanup;
+        }
 
         ctx = jbig2_ctx_new(NULL, (Jbig2Options)(f_page != NULL ? JBIG2_OPTIONS_EMBEDDED : 0), NULL, error_callback, &params);
 
@@ -514,11 +517,14 @@ main(int argc, char **argv)
 
     }                           /* end params.mode switch */
 
+    /* fin */
+    result = 1;
+
+cleanup:
     if (params.output_file)
         free(params.output_file);
     if (params.hash)
         hash_free(&params);
 
-    /* fin */
-    return 0;
+    return result;
 }
