@@ -247,7 +247,7 @@ jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, int x, 
     }
 
     /* grow the page to accomodate a new stripe if necessary */
-    if (page->striped) {
+    if (page->striped && page->height == 0xFFFFFFFF) {
         uint32_t new_height = y + image->height + page->end_row;
 
         if (page->image->height < new_height) {
