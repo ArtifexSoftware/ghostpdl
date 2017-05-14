@@ -269,16 +269,17 @@ check_cid_hdr(pcl_state_t * pcs, pcl_cid_data_t * pcid)
             dmprintf(pcs->memory, "pcl5e personality with color primaries\n");
     }
 
+    if (pcidh->bits_per_index > 8)
+        return -1;
+
     switch (pcidh->encoding) {
 
         case pcl_penc_indexed_by_pixel:
             if ((pcidh->bits_per_index & (pcidh->bits_per_index - 1)) != 0)
                 return -1;
-            /* fall through */
+            break;
 
         case pcl_penc_indexed_by_plane:
-            if (pcidh->bits_per_index > 8)
-                return -1;
             break;
 
         case pcl_penc_direct_by_plane:
