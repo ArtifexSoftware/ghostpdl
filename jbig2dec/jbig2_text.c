@@ -342,6 +342,7 @@ cleanup1:
                 }
 
                 if ((code1 < 0) || (code2 < 0) || (code3 < 0) || (code4 < 0) || (code5 < 0)) {
+                    jbig2_image_release(ctx, IB);
                     code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode data");
                     goto cleanup2;
                 }
@@ -368,11 +369,12 @@ cleanup1:
                 code = jbig2_decode_refinement_region(ctx, segment, &rparams, as, refimage, GR_stats);
                 if (code < 0) {
                     jbig2_image_release(ctx, refimage);
+                    jbig2_image_release(ctx, IBO);
                     goto cleanup2;
                 }
-                IB = refimage;
 
                 jbig2_image_release(ctx, IBO);
+                IB = refimage;
 
                 /* 6.4.11 (7) */
                 if (params->SBHUFF) {
