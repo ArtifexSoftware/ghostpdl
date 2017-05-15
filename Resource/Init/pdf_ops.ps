@@ -211,48 +211,6 @@ currentdict /gput_always_allow .undef
   } ifelse
 } bdef
 
-% Save most of graphic state attributes.
-% - get-gs-attrs ...
-/get-gs-attrs {
-  currentsmoothness
-  currentflat
-  currentoverprint
-  .currentstrokeoverprint
-  .currentfilloverprint
-  currentstrokeadjust
-  currentdash
-  currentmiterlimit
-  currentlinejoin
-  currentlinecap
-  currentlinewidth
-  currentfont
-  currentcolor
-  currentcolorspace
-  { currentpoint } stopped
-  matrix currentmatrix
-} bdef
-
-% Restore most of graphic state attributes.
-% ... get-gs-attrs -
-/set-gs-attrs {
-  setmatrix
-  { newpath } { moveto } ifelse
-  setcolorspace
-  setcolor
-  setfont
-  setlinewidth
-  setlinecap
-  setlinejoin
-  setmiterlimit
-  setdash
-  setstrokeadjust
-  .setfilloverprint
-  .setstrokeoverprint
-  setoverprint
-  setflat
-  setsmoothness
-} bdef
-
 % ---------------- Color setting ---------------- %
 
 /nullpatternproc { pop } bdef
@@ -398,123 +356,12 @@ currentdict /gput_always_allow .undef
 
 % ---------------- Color setting ---------------- %
 
-%/fcput		% <color> <colorspace> fcput -
-% { /FillColorSpace gput /FillColor gput
-% } bdef
-%/scput		% <color> <colorspace> scput -
-% { /StrokeColorSpace gput /StrokeColor gput
-% } bdef
-%/csput		% <colorspace> csput -
-% { csset 2 copy fcput scput
-% } bdef
-%
-%/csdevgray [/DeviceGray] readonly def
-%/csdevrgb [/DeviceRGB] readonly def
-%/csdevcmyk [/DeviceCMYK] readonly def
-%/cspattern [/Pattern] readonly def
-%/nullpatternproc { pop } bdef
-%/nullpattern mark
-%   /PatternType 1 /PaintType 1 /TilingType 3 /BBox [0 0 1 1]
-%   /XStep 1 /YStep 1 /PaintProc //nullpatternproc
-%.dicttomark readonly def
-%
-%% Each entry in the color space dictionary is a procedure of the form
-%%	<cspace> -proc- <cspace> <initial-color>
-%/CSdict mark
-%  /DeviceGray { pop //csdevgray 0 } bind
-%  /DeviceRGB { pop //csdevrgb [0 0 0] cvx } bind
-%  /DeviceCMYK { pop //csdevcmyk [0 0 0 1] cvx } bind
-%  /CIEBasedA { 0 } bind
-%  /CIEBasedABC { [0 0 0] cvx } bind
-%  /CalGray { pop //csdevgray 0 } bind
-%  /CalRGB { pop //csdevrgb [0 0 0] cvx } bind
-%  /Lab {[0 0 0] cvx } bind
-%  /ICCBased { [ 1 index 1 oget /N get { 0 } repeat ] cvx } bind
-%  /Separation { 1 } bind
-%  /DeviceN {	% What is the correct value??
-%    [ 1 index 1 get length { 1 } repeat ] cvx
-%  } bind
-%  /Indexed { 0 } bind
-%  /Pattern {
-%    dup type /nametype eq 1 index length 1 eq or {
-%      pop //cspattern //nullpattern matrix makepattern
-%    } {
-%      //nullpattern matrix makepattern 1 index 1 get csset
-%                % Stack: patternspace nullpattern basecolor basespace
-%      pop [ 3 1 roll dup type /arraytype eq { aload pop } if
-%      counttomark -1 roll ] cvx
-%    } ifelse
-%  } bind
-%.dicttomark readonly def
-%/csset			% <cspace> csset <color> <cspace>
-% { dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch
-% } bdef
-%
-%/g { //csdevgray fcput } bdef
-%/G { //csdevgray scput } bdef
-%/rg { 3 array astore cvx //csdevrgb fcput } bdef
-%/RG { 3 array astore cvx //csdevrgb scput } bdef
-%/k { 4 array astore cvx //csdevcmyk fcput } bdef
-%/K { 4 array astore cvx //csdevcmyk scput } bdef
-%%%
-%%% Bug #694412, we set the colour space immediately now. Previously we
-%%% only set the colour space and colour when a stroke or fill took place.
-%%% if that happened inside a gsave/grestore we could end up setting the
-%%% same colour space many times, which is a problem if its an expensive
-%%% space, like ICCBased.
-%%%
-%/cs { csset dup setgcolorspace fcput } bdef
-%/CS { csset dup .swapcolors setgcolorspace .swapcolors scput } bdef
-%/ri { //.renderingintentdict exch .knownget { .setrenderingintent } if } bdef
-%% We have to break up sc according to the number of operands.
-%%%
-%%% Also Bug #694412, we need to set the actual colour in response to the
-%%% PDF operators as well. However, the transparenmcy code also uses the
-%%% original calls (sc, SC, sc1, SC1, sc* and SC*) and so we create
-%%% a duplicate set which do the same as the originals, but se the current
-%%% colour as well.
-%%%
-%/sc1_and_set { /FillColor gput FillColor FillColorSpace setgcolor} bdef
-%/sc1 { /FillColor gput } bdef
-%/SC1_and_set {/StrokeColor gput .swapcolors StrokeColor StrokeColorSpace setgcolor .swapcolors } bdef
-%/SC1 { /StrokeColor gput } bdef
-%% We have to avoid storing into a color array associated with an outer
-%% gsave level, so we do a kind of "copy on write".
-%/sc* {
-%  currentdict /FillColor .knownget {
-%    astore pop
-%  } {
-%    /FillColor load
-%    % FillColor may contain either a single value or an array.
-%    dup type /arraytype eq { length }{ pop 1 } ifelse
-%    array astore cvx /FillColor gput
-%  } ifelse
-%} bdef
-%/SC* {
-%  currentdict /StrokeColor .knownget {
-%    astore pop
-%  } {
-%    /StrokeColor load
-%    % StrokeColor may contain either a single value or an array.
-%    dup type /arraytype eq { length }{ pop 1 } ifelse
-%    array astore cvx /StrokeColor gput
-%  } ifelse
-%} bdef
-%/sc*_and_set {
-%  sc*
-%  FillColor FillColorSpace setgcolor
-%} bdef
-%/SC*_and_set {
-%  SC*
-%  .swapcolors StrokeColor StrokeColorSpace setgcolor .swapcolors
-%} bdef
-%
 
 % ---------------- Overprint/transparency setting ---------------- %
 
-/op { .setfilloverprint %/FillOverprint gput
+/op { .setfilloverprint
 } bdef	% NB pdf_draw:gsparamdict handled /OP with no /op
-/OP { .setstrokeoverprint %/StrokeOverprint gput
+/OP { .setstrokeoverprint
 } bdef
 /OPM {
   /.setoverprintmode where { pop dup .setoverprintmode .swapcolors .setoverprintmode .swapcolors } { pop } ifelse
@@ -538,7 +385,7 @@ currentdict /gput_always_allow .undef
   %% then transparent annotations cause an invalid access error.
   currentdict //nodict eq {/self dup load end 5 dict begin def} if
 } bdef
-/AIS { .setAIS %/AlphaIsShape gput
+/AIS { .setAIS
 } bdef
 /BM {
   /.setblendmode where {
@@ -559,7 +406,7 @@ currentdict /gput_always_allow .undef
 /.settransparencyparams {	% <alpha> <smask> .settransparencyparams -
   PDFusingtransparency {
     /.begintransparencygroup where {
-      pop .getAIS %AlphaIsShape
+      pop .getAIS
       {
         1 .setopacityalpha  exch .setshapealpha 1
       } {
@@ -596,21 +443,15 @@ currentdict /gput_always_allow .undef
 } bdef
 % (Non-mask) images must execute setfillblend.
 /setfillblend {
-%  FillOverprint setoverprint
   .getFillConstantAlpha
   .currentSMask .settransparencyparams
 } def
 /setfillstate {
-%  FillColor FillColorSpace setgcolor
   setfillblend
 } def
-
 /setstrokestate {
-%  .swapcolors
-%  StrokeColor StrokeColorSpace setgcolor %StrokeOverprint setoverprint
   .getStrokeConstantAlpha
   .currentSMask .settransparencyparams
-%  .swapcolors
 } def
 /Cdict 15 dict dup begin	% <color...> <colorspace> -proc- -
   /DeviceGray { pop setgray } bdef
@@ -770,8 +611,8 @@ end def
        pop currentcolorspace 1 get	% use the base space
     } if
     known {
-       /stroke ne { .currentfilloverprint %FillOverprint
-       } { .currentstrokeoverprint %StrokeOverprint
+       /stroke ne { .currentfilloverprint
+       } { .currentstrokeoverprint
        } ifelse
        .currentblendmode dup /Normal eq exch /Compatible eq or not and
    } {
@@ -1047,12 +888,7 @@ end readonly def
 
 /textbeginpage
  {
-%   /TextLeading 0 def		% 0 TL
-%   /TextRise 0 def		% 0 Ts
-%   /WordSpacing 0 def		% 0 Tw
-%   /TextHScaling 1.0 def	% 100 Tz
-1.0 .settexthscaling
-%   /TextFont //null def
+   1.0 .settexthscaling
    /FontMatrixNonHV //false def
    /Show { showfirst } def
    /TextFillStateNeeded //true def
@@ -1091,10 +927,10 @@ end readonly def
   } {
     pop
   } ifelse
-  .currenttexthscaling  %TextHScaling
-  1 ne { .currenttexthscaling  %TextHScaling
+  .currenttexthscaling
+  1 ne { .currenttexthscaling
   1 scale } if
-  .currenttextrise 0 ne { 0 .currenttextrise %TextRise
+  .currenttextrise 0 ne { 0 .currenttextrise
    translate } if
 } bdef
 
@@ -1121,7 +957,7 @@ end readonly def
                 % Update the TextMatrix translation.
   gsave TextSaveMatrix setmatrix
   {currentpoint} stopped not {
-    .currenttextrise %TextRise
+    .currenttextrise
     sub
     matrix .currentTextMatrix
     dup 5 4 -1 roll put
@@ -1237,11 +1073,9 @@ end readonly def
 } bdef
 
 /Tc { .settextspacing { showfirst } /Show gput } bdef
-/TL { .settextleading %/TextLeading gput
- } bdef
+/TL { .settextleading } bdef
 /Tr { .settextrenderingmode { showfirst } /Show gput } bdef
-/Ts { .settextrise %/TextRise gput
- settextstate } bdef
+/Ts { .settextrise settextstate } bdef
 /Tw { .setwordspacing { showfirst } /Show gput } bdef
 /Tz {
   dup 0 eq {
@@ -1470,11 +1304,8 @@ end readonly def
 
   settextstate
 } bdef
-/TD { dup neg .settextleading
-%/TextLeading gput
- Td } bdef
-/T* { 0 .currenttextleading %TextLeading
- neg Td } bdef
+/TD { dup neg .settextleading Td } bdef
+/T* { 0 .currenttextleading neg Td } bdef
 /Tm {
   5 index 0 ne 3 index 0 ne and
   5 index 0 ne 5 index 0 ne and or not {
@@ -1654,9 +1485,8 @@ end readonly def
 
 /setshowstate
  {
-%WordSpacing
-.currentwordspacing 0 eq .currenttextspacing
- 0 eq and FontMatrixNonHV not and
+   .currentwordspacing 0 eq .currenttextspacing
+    0 eq and FontMatrixNonHV not and
     {
       % Check to see if the current device supports Tr
       /PreserveTrMode /GetDeviceParam .special_op {
@@ -1729,8 +1559,7 @@ end readonly def
              currentlinewidth exch
              setstrokeforTrpreservation
              settextfillstate //false TextTransSetup
-             [ .currenttextspacing .currentwordspacing %WordSpacing
-             3 index
+             [ .currenttextspacing .currentwordspacing 3 index
                {					    % str [... weach wword c undef|ythis xthis|undef
                  exch % will be removed, unless FontMatrix.xx/yy == 0 (FontMatrixNonHV already true)
                  Vexch pop                                  % str [... weach wword c wthis
@@ -1746,7 +1575,7 @@ end readonly def
              setlinewidth TextTransTeardown
            }
          } {
-           .currentwordspacing %WordSpacing
+           .currentwordspacing
            0 eq {
              {
                { setstrokeforTrpreservation
@@ -1761,7 +1590,7 @@ end readonly def
               .currenttextspacing 0 eq {
                 { % preserve current line width around possible stroke setup
                   { setstrokeforTrpreservation
-                    settextfillstate //false TextTransSetup .currentwordspacing %WordSpacing
+                    settextfillstate //false TextTransSetup .currentwordspacing
                     0 Vexch 32 4 -1 roll .pdfwidthshow
                     TextTransTeardown
                   }
@@ -1772,7 +1601,7 @@ end readonly def
               } {
                 { % preserve current line width around possible stroke setup
                   { setstrokeforTrpreservation
-                    settextfillstate //false TextTransSetup .currentwordspacing %WordSpacing
+                    settextfillstate //false TextTransSetup .currentwordspacing
                     0 Vexch 32
                     .currenttextspacing 0 Vexch 6 -1 roll .pdfawidthshow TextTransTeardown
                   }
@@ -1786,7 +1615,7 @@ end readonly def
        }
        {
          { currentlinewidth exch
-           .currentwordspacing %WordSpacing
+           .currentwordspacing
            .currenttextspacing
                         % Implement the combination of t3 and false charpath.
                         % Note that we must use cshow for this, because we
@@ -1859,9 +1688,7 @@ end readonly def
   OFFlevels length 0 eq {
     exec
   } {
-    gsave get-gs-attrs nulldevice set-gs-attrs
-    exec
-    get-gs-attrs grestore set-gs-attrs
+    gsave nulldevice exec grestore
   } ifelse
   //true /TextFillStateNeeded gput
 } bdef
@@ -1881,9 +1708,7 @@ end readonly def
   OFFlevels length 0 eq {
     exec
   } {
-    gsave get-gs-attrs nulldevice set-gs-attrs
-    exec
-    get-gs-attrs grestore set-gs-attrs
+    gsave nulldevice exec grestore
   } ifelse
   //true /TextFillStateNeeded gput
 } bdef
