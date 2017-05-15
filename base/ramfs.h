@@ -52,7 +52,6 @@ typedef struct _ramfs_enum ramfs_enum;
 #define RAMFS_APPEND s_mode_append  /* 8 */
 #define RAMFS_CREATE 16
 #define RAMFS_TRUNC  32
-#define RAMFS_APPEND 64
 
 #define RAMFS_SEEK_SET 0
 #define RAMFS_SEEK_CUR 1
