@@ -2459,7 +2459,7 @@ static void pdf_free_pdf_font_cache(gx_device_pdf *pdev)
 
 /* Close the device. */
 static int
-pdf_close(gx_device * dev)
+do_pdf_close(gx_device * dev)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *) dev;
     gs_memory_t *mem = pdev->pdf_memory;
@@ -3268,5 +3268,19 @@ pdf_close(gx_device * dev)
         return code;
 
     pdf_free_pdf_font_cache(pdev);
+    return code;
+}
+
+static int
+pdf_close(gx_device * dev)
+{
+    int code;
+#ifdef GS_MEMORY_CAN_DEFER_FREES
+    gs_defer_frees(dev->memory, 1);
+#endif
+    code = do_pdf_close(dev);
+#ifdef GS_MEMORY_CAN_DEFER_FREES
+    gs_defer_frees(dev->memory, 0);
+#endif
     return code;
 }

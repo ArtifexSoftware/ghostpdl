@@ -166,6 +166,7 @@ static gs_memory_proc_register_root(i_register_root);
 static gs_memory_proc_unregister_root(i_unregister_root);
 static gs_memory_proc_enable_free(i_enable_free);
 static gs_memory_proc_set_object_type(i_set_object_type);
+static gs_memory_proc_defer_frees(i_defer_frees);
 
 /* We export the procedures for subclasses. */
 const gs_memory_procs_t gs_ref_memory_procs =
@@ -195,7 +196,8 @@ const gs_memory_procs_t gs_ref_memory_procs =
     i_register_root,
     i_unregister_root,
     i_enable_free,
-    i_set_object_type
+    i_set_object_type,
+    i_defer_frees
 };
 
 /*
@@ -1793,6 +1795,10 @@ static void i_set_object_type(gs_memory_t *mem, void *ptr, gs_memory_type_ptr_t 
         return;
     pp = (obj_header_t *) ptr - 1;
     pp->o_type = type;
+}
+
+static void i_defer_frees(gs_memory_t *mem, int defer)
+{
 }
 
 /* ------ Internal procedures ------ */

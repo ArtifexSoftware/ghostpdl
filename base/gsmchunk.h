@@ -45,8 +45,6 @@ gs_memory_t *gs_memory_chunk_target(const gs_memory_t *cmem);
 
 #ifdef DEBUG
     void gs_memory_chunk_dump_memory(const gs_memory_t *mem);
-
-    int chunk_allocator_unit_test(gs_memory_t *mem);
 #endif /* DEBUG */
 
 #endif /* gsmchunk_INCLUDED */

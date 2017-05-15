@@ -393,6 +393,13 @@ typedef struct gs_memory_procs_s {
   (*(mem)->procs.set_object_type)(mem, data, type)
     gs_memory_proc_set_object_type((*set_object_type));
 
+#define gs_memory_proc_defer_frees(proc)\
+  void proc(gs_memory_t *mem, int defer)
+#define gs_defer_frees(mem, defer)\
+  (*(mem)->procs.defer_frees)(mem, defer)
+    gs_memory_proc_defer_frees((*defer_frees));
+#define GS_MEMORY_CAN_DEFER_FREES
+
 } gs_memory_procs_t;
 
 /*
