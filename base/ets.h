@@ -99,7 +99,7 @@ ETS_Ctx *
 ets_create(void *malloc_arg, const ETS_Params *params);
 
 void
-ets_line(ETS_Ctx *ctx, unsigned char **dest, const ETS_SrcPixel * const * src);
+ets_line(ETS_Ctx *ctx, unsigned char **dest, const ETS_SrcPixel * const * restrict src);
 
 void
 ets_destroy(void *malloc_arg, ETS_Ctx *ctx);
