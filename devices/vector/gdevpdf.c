@@ -949,6 +949,13 @@ pdf_close_page(gx_device_pdf * pdev, int num_copies)
     pdf_page_t *page;
     int code, i;
 
+    while (pdev->FormDepth > 0) {
+        pdev->FormDepth--;
+        code = pdf_exit_substream(pdev);
+        if (code < 0)
+            return code;
+    }
+
     /*
      * If the very first page is blank, we need to open the document
      * before doing anything else.
