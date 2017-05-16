@@ -472,6 +472,8 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
     }
     /* Extract common parameters from the font header. */
     plfont->params.symbol_set = pl_get_uint16(pfh->SymbolSet);
+    if (pfh->Spacing > 1)
+        return_error(e_Range);
     plfont->params.proportional_spacing = pfh->Spacing;
     plfont->params.style = (pfh->StyleMSB << 8) + pfh->StyleLSB;
     plfont->params.stroke_weight =      /* signed byte */
