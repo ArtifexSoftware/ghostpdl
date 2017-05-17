@@ -391,9 +391,9 @@ zbbox_transform(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* <matrix> .xurrentTextLineMatrix <matrix> */
+/* <matrix> .currenttextlinematrix <matrix> */
 static int
-zcurrentTextLineMatrix(i_ctx_t *i_ctx_p)
+zcurrenttextlinematrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_matrix mat;
@@ -402,12 +402,12 @@ zcurrentTextLineMatrix(i_ctx_t *i_ctx_p)
     if (!r_has_type(op, t_array))
         return_error(gs_error_typecheck);
 
-    gs_getTextLineMatrix(igs, &mat);
+    gs_gettextlinematrix(igs, &mat);
     return write_matrix(op, &mat);
 }
 
 static int
-zsetTextLineMatrix(i_ctx_t *i_ctx_p)
+zsettextlinematrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int code;
@@ -419,7 +419,7 @@ zsetTextLineMatrix(i_ctx_t *i_ctx_p)
         code = read_matrix(imemory, op, &mat);
         if (code < 0)
             return code;
-        code = gs_setTextLineMatrix(igs, &mat);
+        code = gs_settextlinematrix(igs, &mat);
     } else
         code = gs_error_typecheck;
 
@@ -429,9 +429,9 @@ zsetTextLineMatrix(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* <matrix> .xurrentTextMatrix <matrix> */
+/* <matrix> .currenttextmatrix <matrix> */
 static int
-zcurrentTextMatrix(i_ctx_t *i_ctx_p)
+zcurrenttextmatrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_matrix mat;
@@ -440,12 +440,12 @@ zcurrentTextMatrix(i_ctx_t *i_ctx_p)
     if (!r_has_type(op, t_array))
         return_error(gs_error_typecheck);
 
-    gs_getTextMatrix(igs, &mat);
+    gs_gettextmatrix(igs, &mat);
     return write_matrix(op, &mat);
 }
 
 static int
-zsetTextMatrix(i_ctx_t *i_ctx_p)
+zsettextmatrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int code;
@@ -457,7 +457,7 @@ zsetTextMatrix(i_ctx_t *i_ctx_p)
         code = read_matrix(imemory, op, &mat);
         if (code < 0)
             return code;
-        code = gs_setTextMatrix(igs, &mat);
+        code = gs_settextmatrix(igs, &mat);
     } else
         code = gs_error_typecheck;
 
@@ -492,9 +492,9 @@ const op_def zmatrix_op_defs[] =
 const op_def zmatrix2_op_defs[] =
 {
     {"2.bbox_transform", zbbox_transform},
-    {"1.currentTextLineMatrix", zcurrentTextLineMatrix},
-    {"1.setTextLineMatrix", zsetTextLineMatrix},
-    {"1.currentTextMatrix", zcurrentTextMatrix},
-    {"1.setTextMatrix", zsetTextMatrix},
+    {"1.currenttextlinematrix", zcurrenttextlinematrix},
+    {"1.settextlinematrix", zsettextlinematrix},
+    {"1.currenttextmatrix", zcurrenttextmatrix},
+    {"1.settextmatrix", zsettextmatrix},
     op_def_end(0)
 };

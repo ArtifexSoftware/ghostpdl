@@ -535,7 +535,7 @@ zpopextendedgstate(i_ctx_t *i_ctx_p)
 }
 
 static int
-zsetCA(i_ctx_t *i_ctx_p)
+zsetstrokeconstantalpha(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double value;
@@ -543,19 +543,19 @@ zsetCA(i_ctx_t *i_ctx_p)
     if (real_param(op, &value) < 0)
         return_op_typecheck(op);
 
-    gs_setCA(igs, (float)value);
+    gs_setstrokeconstantalpha(igs, (float)value);
     pop(1);
     return 0;
 }
 
 static int
-zgetCA(i_ctx_t *i_ctx_p)
+zgetstrokeconstantalpha(i_ctx_t *i_ctx_p)
 {
-    return current_float_value(i_ctx_p, gs_getCA);
+    return current_float_value(i_ctx_p, gs_getstrokeconstantalpha);
 }
 
 static int
-zsetca(i_ctx_t *i_ctx_p)
+zsetfillconstantalpha(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double value;
@@ -563,36 +563,36 @@ zsetca(i_ctx_t *i_ctx_p)
     if (real_param(op, &value) < 0)
         return_op_typecheck(op);
 
-    gs_setca(igs, (float)value);
+    gs_setfillconstantalpha(igs, (float)value);
     pop(1);
     return 0;
 }
 
 static int
-zgetca(i_ctx_t *i_ctx_p)
+zgetfillconstantalpha(i_ctx_t *i_ctx_p)
 {
-    return current_float_value(i_ctx_p, gs_getca);
+    return current_float_value(i_ctx_p, gs_getfillconstantalpha);
 }
 
 static int
-zsetAIS(i_ctx_t *i_ctx_p)
+zsetalphaisshape(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
     check_type(*op, t_boolean);
-    gs_setAIS(igs, op->value.boolval);
+    gs_setalphaisshape(igs, op->value.boolval);
     pop(1);
 
     return 0;
 }
 
 static int
-zgetAIS(i_ctx_t *i_ctx_p)
+zgetalphaisshape(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
     push(1);
-    make_bool(op, gs_getAIS(igs));
+    make_bool(op, gs_getalphaisshape(igs));
     return 0;
 }
 
@@ -650,12 +650,12 @@ const op_def ztrans2_op_defs[] = {
 };
 
 const op_def ztrans3_op_defs[] = {
-    {"1.setStrokeConstantAlpha", zsetCA},
-    {"0.getStrokeConstantAlpha", zgetCA},
-    {"1.setFillConstantAlpha", zsetca},
-    {"0.getFillConstantAlpha", zgetca},
-    {"1.setAIS", zsetAIS},
-    {"0.getAIS", zgetAIS},
+    {"1.setstrokeconstantalpha", zsetstrokeconstantalpha},
+    {"0.currentstrokeconstantalpha", zgetstrokeconstantalpha},
+    {"1.setfillconstantalpha", zsetfillconstantalpha},
+    {"0.currentfillconstantalpha", zgetfillconstantalpha},
+    {"1.setalphaisshape", zsetalphaisshape},
+    {"0.currentalphaisshape", zgetalphaisshape},
     {"1.setSMask", zsetSMask},
     {"0.currentSMask", zcurrentSMask},
     op_def_end(0)

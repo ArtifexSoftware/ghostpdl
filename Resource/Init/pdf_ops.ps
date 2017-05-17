@@ -252,11 +252,11 @@ currentdict /gput_always_allow .undef
          dup dup /Matrix knownoget not { { 1 0 0 1 0 0 } } if
 
          gsave
-         .getFillConstantAlpha
-         .getStrokeConstantAlpha
+         .currentfillconstantalpha
+         .currentstrokeconstantalpha
          DefaultQstate setqstate
-         .setStrokeConstantAlpha
-         .setFillConstantAlpha
+         .setstrokeconstantalpha
+         .setfillconstantalpha
          makepattern
          grestore
 
@@ -324,7 +324,7 @@ currentdict /gput_always_allow .undef
   .setstrokecolor
 } bdef
 /sc1 {.setfillcolor} bdef
-/SC1 {.setstroecolor} bdef
+/SC1 {.setstrokecolor} bdef
 /sc1_and_set {
   dup type /dicttype eq
   {
@@ -366,8 +366,8 @@ currentdict /gput_always_allow .undef
 /OPM {
   /.setoverprintmode where { pop dup .setoverprintmode .swapcolors .setoverprintmode .swapcolors } { pop } ifelse
 } bdef
-/ca { .setFillConstantAlpha } bdef
-/CA { .setStrokeConstantAlpha } bdef
+/ca { .setfillconstantalpha } bdef
+/CA { .setstrokeconstantalpha } bdef
 /SMask {
   dup type /booleantype eq {
     .currentSMask type /dicttype eq {
@@ -385,8 +385,7 @@ currentdict /gput_always_allow .undef
   %% then transparent annotations cause an invalid access error.
   currentdict //nodict eq {/self dup load end 5 dict begin def} if
 } bdef
-/AIS { .setAIS
-} bdef
+/AIS { .setalphaisshape } bdef
 /BM {
   /.setblendmode where {
     pop [ exch dup type /nametype ne { aload pop } if /Normal ] {
@@ -406,7 +405,7 @@ currentdict /gput_always_allow .undef
 /.settransparencyparams {	% <alpha> <smask> .settransparencyparams -
   PDFusingtransparency {
     /.begintransparencygroup where {
-      pop .getAIS
+      pop .currentalphaisshape
       {
         1 .setopacityalpha  exch .setshapealpha 1
       } {
@@ -443,14 +442,14 @@ currentdict /gput_always_allow .undef
 } bdef
 % (Non-mask) images must execute setfillblend.
 /setfillblend {
-  .getFillConstantAlpha
+  .currentfillconstantalpha
   .currentSMask .settransparencyparams
 } def
 /setfillstate {
   setfillblend
 } def
 /setstrokestate {
-  .getStrokeConstantAlpha
+  .currentstrokeconstantalpha
   .currentSMask .settransparencyparams
 } def
 /Cdict 15 dict dup begin	% <color...> <colorspace> -proc- -
@@ -552,11 +551,11 @@ currentdict /gput_always_allow .undef
          dup dup /Matrix knownoget not { { 1 0 0 1 0 0 } } if
 
          gsave
-         .getFillConstantAlpha
-         .getStrokeConstantAlpha
+         .currentfillconstantalpha
+         .currentstrokeconstantalpha
          DefaultQstate setqstate
-         .setStrokeConstantAlpha
-         .setFillConstantAlpha
+         .setstrokeconstantalpha
+         .setfillconstantalpha
          makepattern
          grestore
 
@@ -918,7 +917,7 @@ end readonly def
 
 /settextmatrix {
   matrix currentmatrix
-  matrix .currentTextMatrix
+  matrix .currenttextmatrix
   concat
   TestDegenerateCTM {
     (\n   **** Error:  Degenerate text matrix detected, ignoring Tm operation\n) pdfformaterror
@@ -959,17 +958,17 @@ end readonly def
   {currentpoint} stopped not {
     .currenttextrise
     sub
-    matrix .currentTextMatrix
+    matrix .currenttextmatrix
     dup 5 4 -1 roll put
     dup 4 4 -1 roll put
-    .setTextMatrix
+    .settextmatrix
                 % We would like to do "grestore currentpoint translate"
                 % here, but some PDF files set a singular text matrix
                 % (0 0 0 0 <x> <y> Tm), so we can't do this.
     TextTempMatrix identmatrix setmatrix currentpoint
-    matrix .currentTextMatrix
+    matrix .currenttextmatrix
     grestore
-    .setTextMatrix
+    .settextmatrix
     TextTempMatrix currentmatrix 4 2 getinterval astore pop
     TextTempMatrix setmatrix
   } {
@@ -1017,8 +1016,8 @@ end readonly def
     currentdict end
     /.W exch def
   } if
-  matrix .setTextLineMatrix
-  matrix .setTextMatrix
+  matrix .settextlinematrix
+  matrix .settextmatrix
 
   { showfirst } /Show gput
   currentdict /TextSaveMatrix .knownget not {
@@ -1295,12 +1294,12 @@ end readonly def
     (               Output may be incorrect.\n) pdfformaterror
     pop 0
   } if
-  matrix .currentTextLineMatrix transform
-  matrix .currentTextLineMatrix
+  matrix .currenttextlinematrix transform
+  matrix .currenttextlinematrix
   dup 3 -1 roll 5 exch put
   dup 3 -1 roll 4 exch put
-  .setTextLineMatrix
-  matrix .currentTextLineMatrix .setTextMatrix
+  .settextlinematrix
+  matrix .currenttextlinematrix .settextmatrix
 
   settextstate
 } bdef
@@ -1317,8 +1316,8 @@ end readonly def
     0.00000001 0 0 0.00000001
     6 -2 roll
   }if
-  matrix .currentTextLineMatrix astore .setTextLineMatrix
-  matrix .currentTextLineMatrix .setTextMatrix
+  matrix .currenttextlinematrix astore .settextlinematrix
+  matrix .currenttextlinematrix .settextmatrix
   settextstate
 } bdef
 

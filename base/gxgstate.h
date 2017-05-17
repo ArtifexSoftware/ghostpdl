@@ -321,7 +321,7 @@ struct gs_gstate_s {
     bool overprint;
     int overprint_mode;
     int effective_overprint_mode;
-    bool overprint_stroke;
+    bool stroke_overprint;
     int overprint_mode_alt;
     int effective_overprint_mode_alt;
     float flatness;
@@ -363,17 +363,16 @@ struct gs_gstate_s {
     bool effective_clip_shared;	/* true iff e.c.p. = c.p. or v.c. */ 
     
     /* PDF graphics state parameters */
-    float ca, CA;
+    float strokeconstantalpha, fillconstantalpha;
                                 /* *SMask is stored in int_gstate as its a ref object */
-    bool AIS;
-    float Tc;
-    float TL;
-    float Ts;
-    float Tw;
-    float Tz;
-    float TD;
-    gs_matrix TextLineMatrix;
-    gs_matrix TextMatrix;
+    bool alphaisshape;
+    float textspacing;
+    float textleading;
+    float textrise;
+    float wordspacing;
+    float texthscaling;
+    gs_matrix textlinematrix;
+    gs_matrix textmatrix;
     /* Current colors (non-stroking, and stroking) */ 
     gs_gstate_color color[2]; 
     
@@ -430,7 +429,7 @@ struct gs_gstate_s {
     s->overprint = __state_init.overprint; \
     s->overprint_mode = __state_init.overprint_mode; \
     s->effective_overprint_mode = __state_init.effective_overprint_mode; \
-    s->overprint_stroke = __state_init.overprint_stroke; \
+    s->stroke_overprint = __state_init.stroke_overprint; \
     s->overprint_mode_alt = __state_init.overprint_mode_alt; \
     s->effective_overprint_mode_alt = __state_init.effective_overprint_mode_alt; \
     s->flatness = __state_init.flatness; \

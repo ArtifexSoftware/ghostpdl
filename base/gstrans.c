@@ -844,35 +844,35 @@ gx_abort_trans_device(gs_gstate * pgs, gx_device * pdev)
     return 0;
 }
 
-int gs_setCA(gs_gstate *pgs, float alpha)
+int gs_setstrokeconstantalpha(gs_gstate *pgs, float alpha)
 {
-    pgs->CA = alpha;
+    pgs->strokeconstantalpha = alpha;
     return 0;
 }
 
-float gs_getCA(const gs_gstate *pgs)
+float gs_getstrokeconstantalpha(const gs_gstate *pgs)
 {
-    return pgs->CA;
+    return pgs->strokeconstantalpha;
 }
 
-int gs_setca(gs_gstate *pgs, float alpha)
+int gs_setfillconstantalpha(gs_gstate *pgs, float alpha)
 {
-    pgs->ca = (float)alpha;
+    pgs->fillconstantalpha = (float)alpha;
     return 0;
 }
 
-float gs_getca(const gs_gstate *pgs)
+float gs_getfillconstantalpha(const gs_gstate *pgs)
 {
-    return pgs->ca;
+    return pgs->fillconstantalpha;
 }
 
-int gs_setAIS(gs_gstate *pgs, bool AIS)
+int gs_setalphaisshape(gs_gstate *pgs, bool AIS)
 {
-    pgs->AIS = AIS;
+    pgs->alphaisshape = AIS;
     return 0;
 }
 
-bool gs_getAIS(gs_gstate *pgs)
+bool gs_getalphaisshape(gs_gstate *pgs)
 {
-    return pgs->AIS;
+    return pgs->alphaisshape;
 }

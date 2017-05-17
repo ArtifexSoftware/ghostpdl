@@ -671,7 +671,7 @@ gs_setoverprint(gs_gstate * pgs, bool ovp)
     bool    prior_ovp = pgs->overprint;
 
     pgs->overprint = ovp;
-    pgs->overprint_stroke = ovp;
+    pgs->stroke_overprint = ovp;
     if (prior_ovp != ovp)
         (void)gs_do_set_overprint(pgs);
 }
@@ -687,14 +687,14 @@ gs_currentoverprint(const gs_gstate * pgs)
 void
 gs_setstrokeoverprint(gs_gstate * pgs, bool ovp)
 {
-    pgs->overprint_stroke = ovp;
+    pgs->stroke_overprint = ovp;
 }
 
 /* currentstrokeoverprint */
 bool
 gs_currentstrokeoverprint(const gs_gstate * pgs)
 {
-    return pgs->overprint_stroke;
+    return pgs->stroke_overprint;
 }
 
 /* setstrokeoverprint */
@@ -918,111 +918,111 @@ gs_currenttextrenderingmode(const gs_gstate * pgs)
 double
 gs_currenttextspacing(const gs_gstate *pgs)
 {
-    return pgs->Tc;
+    return pgs->textspacing;
 }
 
 int
 gs_settextspacing(gs_gstate *pgs, double Tc)
 {
-    pgs->Tc = (float)Tc;
+    pgs->textspacing = (float)Tc;
     return 0;
 }
 
 double
 gs_currenttextleading(const gs_gstate *pgs)
 {
-    return pgs->TL;
+    return pgs->textleading;
 }
 
 int
 gs_settextleading(gs_gstate *pgs, double TL)
 {
-    pgs->TL = (float)TL;
+    pgs->textleading = (float)TL;
     return 0;
 }
 
 double
 gs_currenttextrise(const gs_gstate *pgs)
 {
-    return pgs->Ts;
+    return pgs->textrise;
 }
 
 int
 gs_settextrise(gs_gstate *pgs, double Ts)
 {
-    pgs->Ts = (float)Ts;
+    pgs->textrise = (float)Ts;
     return 0;
 }
 
 double
 gs_currentwordspacing(const gs_gstate *pgs)
 {
-    return pgs->Tw;
+    return pgs->wordspacing;
+}
+
+int
+gs_setwordspacing(gs_gstate *pgs, double Tw)
+{
+    pgs->wordspacing = (float)Tw;
+    return 0;
 }
 
 int
 gs_settexthscaling(gs_gstate *pgs, double Tz)
 {
-    pgs->Tz = (float)Tz;
+    pgs->texthscaling = (float)Tz;
     return 0;
 }
 
 double
 gs_currenttexthscaling(const gs_gstate *pgs)
 {
-    return pgs->Tz;
+    return pgs->texthscaling;
 }
 
 int
-gs_setwordspacing(gs_gstate *pgs, double Tw)
+gs_settextlinematrix(gs_gstate *pgs, gs_matrix *m)
 {
-    pgs->Tw = (float)Tw;
-    return 0;
-}
-
-int
-gs_setTextLineMatrix(gs_gstate *pgs, gs_matrix *m)
-{
-    pgs->TextLineMatrix.xx = m->xx;
-    pgs->TextLineMatrix.xy = m->xy;
-    pgs->TextLineMatrix.yx = m->yx;
-    pgs->TextLineMatrix.yy = m->yy;
-    pgs->TextLineMatrix.tx = m->tx;
-    pgs->TextLineMatrix.ty = m->ty;
+    pgs->textlinematrix.xx = m->xx;
+    pgs->textlinematrix.xy = m->xy;
+    pgs->textlinematrix.yx = m->yx;
+    pgs->textlinematrix.yy = m->yy;
+    pgs->textlinematrix.tx = m->tx;
+    pgs->textlinematrix.ty = m->ty;
     return 0;
 }
 int
-gs_getTextLineMatrix(gs_gstate *pgs, gs_matrix *m)
+gs_gettextlinematrix(gs_gstate *pgs, gs_matrix *m)
 {
-    m->xx = pgs->TextLineMatrix.xx;
-    m->xy = pgs->TextLineMatrix.xy;
-    m->yx = pgs->TextLineMatrix.yx;
-    m->yy = pgs->TextLineMatrix.yy;
-    m->tx = pgs->TextLineMatrix.tx;
-    m->ty = pgs->TextLineMatrix.ty;
+    m->xx = pgs->textlinematrix.xx;
+    m->xy = pgs->textlinematrix.xy;
+    m->yx = pgs->textlinematrix.yx;
+    m->yy = pgs->textlinematrix.yy;
+    m->tx = pgs->textlinematrix.tx;
+    m->ty = pgs->textlinematrix.ty;
     return 0;
 }
 
 int
-gs_setTextMatrix(gs_gstate *pgs, gs_matrix *m)
+gs_settextmatrix(gs_gstate *pgs, gs_matrix *m)
 {
-    pgs->TextMatrix.xx = m->xx;
-    pgs->TextMatrix.xy = m->xy;
-    pgs->TextMatrix.yx = m->yx;
-    pgs->TextMatrix.yy = m->yy;
-    pgs->TextMatrix.tx = m->tx;
-    pgs->TextMatrix.ty = m->ty;
+    pgs->textmatrix.xx = m->xx;
+    pgs->textmatrix.xy = m->xy;
+    pgs->textmatrix.yx = m->yx;
+    pgs->textmatrix.yy = m->yy;
+    pgs->textmatrix.tx = m->tx;
+    pgs->textmatrix.ty = m->ty;
     return 0;
 }
 int
-gs_getTextMatrix(gs_gstate *pgs, gs_matrix *m)
+gs_gettextmatrix(gs_gstate *pgs, gs_matrix *m)
 {
-    m->xx = pgs->TextMatrix.xx;
-    m->xy = pgs->TextMatrix.xy;
-    m->yx = pgs->TextMatrix.yx;
-    m->yy = pgs->TextMatrix.yy;
-    m->tx = pgs->TextMatrix.tx;
-    m->ty = pgs->TextMatrix.ty;
+    m->xx = pgs->textmatrix.xx;
+    m->xy = pgs->textmatrix.xy;
+    m->yx = pgs->textmatrix.yx;
+    m->yy = pgs->textmatrix.yy;
+    m->tx = pgs->textmatrix.tx;
+    m->ty = pgs->textmatrix.ty;
     return 0;
 }
 
@@ -1389,8 +1389,8 @@ void gs_swapcolors_quick(gs_gstate *pgs)
     pgs->color_component_map_alt = tmp_ccm;
 
     tmp                = pgs->overprint;
-    pgs->overprint     = pgs->overprint_stroke;
-    pgs->overprint_stroke = tmp;
+    pgs->overprint     = pgs->stroke_overprint;
+    pgs->stroke_overprint = tmp;
 
     tmp                     = pgs->overprint_mode;
     pgs->overprint_mode     = pgs->overprint_mode_alt;
