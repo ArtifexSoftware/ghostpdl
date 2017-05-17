@@ -2242,10 +2242,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\base\gsmemlok.c"
-				>
-			</File>
-			<File
 				RelativePath="..\base\gsmemory.c"
 				>
 			</File>
@@ -3743,10 +3739,6 @@
 			</File>
 			<File
 				RelativePath="..\base\gsmdebug.h"
-				>
-			</File>
-			<File
-				RelativePath="..\base\gsmemlok.h"
 				>
 			</File>
 			<File

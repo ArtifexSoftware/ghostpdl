@@ -31,7 +31,6 @@
 #include "gdevppla.h"
 #include "gsmemory.h"
 #include "gsmchunk.h"
-#include "gsmemlok.h"
 #include "gxclthrd.h"
 #include "gdevdevn.h"
 #include "gsicc_cache.h"
@@ -458,9 +457,7 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
     if (i == 0) {
         if (crdev->render_threads[0].memory != NULL) {
             gs_memory_chunk_release(crdev->render_threads[0].memory);
-            /* free up the locking wrapper if we allocated one */
             if (chunk_base_mem != mem) {
-                gs_memory_locked_release((gs_memory_locked_t *)chunk_base_mem);
                 gs_free_object(mem, chunk_base_mem, "clist_setup_render_threads(locked allocator)");
             }
         }

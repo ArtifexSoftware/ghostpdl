@@ -30,7 +30,6 @@
 #include "gdevplnx.h"
 #include "gdevp14.h"
 #include "gsmemory.h"
-#include "gsmemlok.h"
 #include "gsicc_cache.h"
 /*
  * We really don't like the fact that gdevprn.h is included here, since

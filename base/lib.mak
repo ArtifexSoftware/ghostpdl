@@ -166,7 +166,6 @@ gxsync_h=$(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h)
 gxclthrd_h=$(GLSRC)gxclthrd.h $(gxsync_h)
 
 # Out of order
-gsmemlok_h=$(GLSRC)gsmemlok.h $(gsmemory_h) $(gxsync_h)
 gsnotify_h=$(GLSRC)gsnotify.h $(gsstype_h)
 gsstruct_h=$(GLSRC)gsstruct.h $(gsstype_h)
 
@@ -263,11 +262,6 @@ $(GLD)gsnogc.dev : $(ECHOGS_XE) $(gsnogc_) $(LIB_MAK) $(MAKEDIRS)
 $(GLOBJ)gsnogc.$(OBJ) : $(GLSRC)gsnogc.c $(AK) $(gx_h)\
  $(gsmdebug_h) $(gsnogc_h) $(gsstruct_h) $(gxalloc_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsnogc.$(OBJ) $(C_) $(GLSRC)gsnogc.c
-
-# ---------------- Wrapper to add a 'monitor' lock to an allocator ------ #
-$(GLOBJ)gsmemlok.$(OBJ) : $(GLSRC)gsmemlok.c $(AK) $(gx_h)\
- $(gserrors_h) $(gsmemlok_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gsmemlok.$(OBJ) $(C_) $(GLSRC)gsmemlok.c
 
 ### Bitmap processing
 
@@ -2080,7 +2074,7 @@ clbase3_=$(GLOBJ)gxclutil.$(OBJ) $(GLOBJ)gsparams.$(OBJ) $(GLOBJ)gxshade6.$(OBJ)
 # gxclrect.c requires rop_proc_table, so we need gsroptab here.
 clbase4_=$(GLOBJ)gsroptab.$(OBJ) $(GLOBJ)gsroprun.$(OBJ) $(GLOBJ)stream.$(OBJ)
 clpath_=$(GLOBJ)gxclimag.$(OBJ) $(GLOBJ)gxclpath.$(OBJ) $(GLOBJ)gxdhtserial.$(OBJ)
-clthread_=$(GLOBJ)gxclthrd.$(OBJ) $(GLOBJ)gsmchunk.$(OBJ) $(GLOBJ)gsmemlok.$(OBJ)
+clthread_=$(GLOBJ)gxclthrd.$(OBJ) $(GLOBJ)gsmchunk.$(OBJ)
 clist_=$(clbase1_) $(clbase2_) $(clbase3_) $(clbase4_) $(clpath_) $(clthread_)
 
 # The old code selected one of clmemory, clfile depending on BAND_LIST_STORAGE.
@@ -2135,7 +2129,7 @@ $(GLOBJ)gxclrast.$(OBJ) : $(GLSRC)gxclrast.c $(AK) $(gx_h)\
 	$(GLCC) $(GLO_)gxclrast.$(OBJ) $(C_) $(GLSRC)gxclrast.c
 
 $(GLOBJ)gxclread.$(OBJ) : $(GLSRC)gxclread.c $(AK) $(gx_h)\
- $(gserrors_h) $(memory__h) $(gp_h) $(gpcheck_h) $(gsmemlok_h)\
+ $(gserrors_h) $(memory__h) $(gp_h) $(gpcheck_h)\
  $(gdevplnx_h) $(gdevprn_h)\
  $(gscoord_h) $(gsdevice_h)\
  $(gxcldev_h) $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h) $(gxhttile_h)\
@@ -2221,7 +2215,7 @@ $(GLOBJ)gxclzlib.$(OBJ) : $(GLSRC)gxclzlib.c $(std_h) $(AK)\
 # memory allocator must implement the mutex (non-gc memory is usually gsmalloc)
 $(GLOBJ)gxclthrd.$(OBJ) :  $(GLSRC)gxclthrd.c $(gxsync_h) $(AK)\
  $(gxclthrd_h) $(gdevplnx_h) $(gdevprn_h) $(gp_h)\
- $(gpcheck_h) $(gsdevice_h) $(gserrors_h) $(gsmchunk_h) $(gsmemlok_h)\
+ $(gpcheck_h) $(gsdevice_h) $(gserrors_h) $(gsmchunk_h)\
  $(gsmemory_h) $(gx_h) $(gxcldev_h) $(gdevdevn_h) $(gsicc_cache_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h) $(memory__h) $(gsicc_manage_h)\
  $(LIB_MAK) $(MAKEDIRS)
