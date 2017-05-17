@@ -71,12 +71,7 @@
 gs_main_instance*
 get_minst_from_memory(const gs_memory_t *mem)
 {
-#ifdef PSI_INCLUDED
-    extern gs_main_instance *ps_impl_get_minst( const gs_memory_t *mem );
-    return ps_impl_get_minst(mem);
-#else
     return (gs_main_instance*)mem->gs_lib_ctx->top_of_system;
-#endif
 }
 
 /** construct main instance caller needs to retain */
@@ -94,12 +89,7 @@ gs_main_alloc_instance(gs_memory_t *mem)
         return NULL;
     memcpy(minst, &gs_main_instance_init_values, sizeof(gs_main_instance_init_values));
     minst->heap = mem;
-
-#   ifndef PSI_INCLUDED
     mem->gs_lib_ctx->top_of_system = minst;
-    /* else top of system is pl_universe */
-#   endif
-
     return minst;
 }
 
@@ -146,16 +136,14 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     gp_init();
 
     /* Initialize the imager. */
-#   ifndef PSI_INCLUDED
+
     /* Reset debugging flags */
 #ifdef PACIFY_VALGRIND
     VALGRIND_HG_DISABLE_CHECKING(gs_debug, 128);
 #endif
     memset(gs_debug, 0, 128);
     gs_log_errors = 0;  /* gs_debug['#'] = 0 */
-#   else
-    /* plmain settings remain in effect */
-#   endif
+
     gp_get_realtime(minst->base_time);
 
     /* Initialize the file search paths. */
@@ -303,7 +291,6 @@ int gs_main_init2aux(gs_main_instance * minst) {
         if ((code = display_set_callback(minst, minst->display)) < 0)
             return code;
 
-#ifndef PSI_INCLUDED
         if ((code = gs_main_run_string(minst,
                 "JOBSERVER "
                 " { false 0 .startnewjob } "
@@ -311,7 +298,6 @@ int gs_main_init2aux(gs_main_instance * minst) {
                 "ifelse", 0, &exit_code,
                 &error_object)) < 0)
            return code;
-#endif /* PSI_INCLUDED */
     }
     return 0;
 }
@@ -901,7 +887,6 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
      */
     gs_finit_push_systemdict(i_ctx_p);
 
-#ifndef PSI_INCLUDED
     /* We have to disable BGPrint before we call interp_reclaim() to prevent the
      * parent rendering thread initialising for the next page, whilst we are
      * removing objects it may want to access - for example, the I/O device table.
@@ -917,7 +902,6 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
               .systemvar exec",
             0 , &exit_code, &error_object);
     }
-#endif
 
     /*
      * Close the "main" device, because it may need to write out
@@ -951,7 +935,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
             }
             i_ctx_p = minst->i_ctx_p; /* interp_reclaim could change it. */
         }
-#ifndef PSI_INCLUDED
+
         if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
             gx_device *pdev = i_ctx_p->pgs->device;
             const char * dname = pdev->dname;
@@ -981,7 +965,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
             if (exit_status == 0 || exit_status == gs_error_Quit)
                 exit_status = code;
         }
-#endif
+
       /* Flush stdout and stderr */
       gs_main_run_string(minst,
         "(%stdout) (w) file closefile (%stderr) (w) file closefile \
@@ -1008,7 +992,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
                       code);
         i_plugin_finit(mem_raw, h);
     }
-#ifndef PSI_INCLUDED
+
     /* clean up redirected stdout */
     if (minst->heap->gs_lib_ctx->fstdout2
         && (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstdout)
@@ -1016,7 +1000,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         fclose(minst->heap->gs_lib_ctx->fstdout2);
         minst->heap->gs_lib_ctx->fstdout2 = (FILE *)NULL;
     }
-#endif
+
     minst->heap->gs_lib_ctx->stdout_is_redirected = 0;
     minst->heap->gs_lib_ctx->stdout_to_stderr = 0;
     /* remove any temporary files, after ghostscript has closed files */
@@ -1028,9 +1012,9 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         }
         free(tempnames);
     }
-#ifndef PSI_INCLUDED
+
     gs_lib_finit(exit_status, code, minst->heap);
-#endif
+
     gs_free_object(minst->heap, minst->lib_path.container.value.refs, "lib_path array");
     ialloc_finit(&dmem);
     return exit_status;

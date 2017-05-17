@@ -366,13 +366,8 @@ zoutputpage(i_ctx_t *i_ctx_p)
 
         print_resource_usage(minst, &(i_ctx_p->memory), "Outputpage start");
     }
-#ifdef PSI_INCLUDED
-    code = ps_end_page_top(imemory,
-                           (int)op[-1].value.intval, op->value.boolval);
-#else
     code = gs_output_page(igs, (int)op[-1].value.intval,
                           op->value.boolval);
-#endif
     if (code < 0)
         return code;
     pop(2);
@@ -476,10 +471,6 @@ zsetdevice(i_ctx_t *i_ctx_p)
             return_error(gs_error_invalidaccess);
     }
     dev->ShowpageCount = 0;
-#ifndef PSI_INCLUDED
-    /* the language switching build shouldn't install a new device
-       here.  The language switching machinery installs a shared
-       device. */
 
     if (op->value.pdevice == 0)
         return gs_note_error(gs_error_undefined);
@@ -488,7 +479,6 @@ zsetdevice(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
 
-#endif
     make_bool(op, code != 0);	/* erase page if 1 */
     invalidate_stack_devices(i_ctx_p);
     clear_pagedevice(istate);

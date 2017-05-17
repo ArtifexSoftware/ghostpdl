@@ -220,7 +220,6 @@ pcl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
 
     gsicc_init_iccmanager(pgs);
 
-
     pcli->memory = mem;
     /* General init of pcl_state */
     pcl_init_state(&pcli->pcs, mem);

@@ -15,10 +15,8 @@
 
 
 /* pltop.h */
-/* Interface to main API for interpreters */
+/* API for language interpreters */
 
-/* define this hack to allow xml parsing instead of PK zip XPS input.
- */
 
 #ifndef pltop_INCLUDED
 #  define pltop_INCLUDED
@@ -81,21 +79,20 @@ int pl_init_job(pl_interp_implementation_t *);
 typedef int (*pl_interp_proc_init_job_t) (pl_interp_implementation_t *);
 
 /*
- * The process_file function is an optional optimized path for
- * languages that want to use a random access file. If this function
- * is called for a job, pl_process, pl_flush_to_eoj and
- * pl_process_eof are not called.
- */
-
-int pl_process_file(pl_interp_implementation_t *, char *);
-typedef int (*pl_interp_proc_process_file_t) (pl_interp_implementation_t *, char *);
-
-/*
  * Process a stream of PDL data.
  */
 int pl_process(pl_interp_implementation_t *, stream_cursor_read *);
 typedef int (*pl_interp_proc_process_t) (pl_interp_implementation_t *,
                                          stream_cursor_read *);
+
+/*
+ * The process_file function is an optional optimized path for
+ * languages that want to use a random access file. If this function
+ * is called for a job, pl_process, pl_flush_to_eoj and
+ * pl_process_eof are not called.
+ */
+int pl_process_file(pl_interp_implementation_t *, char *);
+typedef int (*pl_interp_proc_process_file_t) (pl_interp_implementation_t *, char *);
 
 /*
  * Process and ignore all data until an end of job delimiter is

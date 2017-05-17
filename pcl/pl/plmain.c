@@ -1451,7 +1451,7 @@ pl_set_icc_params(const gs_memory_t *mem, gs_gstate *pgs)
 {
     pl_main_instance_t *minst = pl_main_get_instance(mem);
     gs_param_string p;
-    int code;
+    int code = 0;
     
     if (minst->pdefault_gray_icc) {
         param_string_from_transient_string(p, minst->pdefault_gray_icc);
