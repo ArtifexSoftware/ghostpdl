@@ -60,7 +60,7 @@ set_gs_font(pcl_state_t * pcs)
 }
 
 bool
-pcl_downloaded_and_bound(pl_font_t * plfont)
+pcl_downloaded_and_bound(const pl_font_t * plfont)
 {
     return (plfont->storage != pcds_internal && pl_font_is_bound(plfont));
 }

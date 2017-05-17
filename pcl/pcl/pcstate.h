@@ -393,7 +393,7 @@ int pcl_do_printer_reset(pcl_state_t * pcs);
 int pcl_end_page_top(pcl_state_t * pcs, int num_copies, int flush);
 
 /* exported from pcl to support PCL XL pass through mode */
-bool pcl_downloaded_and_bound(pl_font_t * plfont);
+bool pcl_downloaded_and_bound(const pl_font_t * plfont);
 
 void pcl_font_scale(pcl_state_t *, gs_point * psz);
 
