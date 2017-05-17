@@ -1375,7 +1375,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     /* We have to patch up the "type" parameters that the memory manage/garbage
      * collector will use, as well.
      */
-    (((obj_header_t *)dev_to_subclass) - 1)->o_type = new_prototype->stype;
+    gs_set_object_type(child_dev->memory, dev_to_subclass, new_prototype->stype);
 
     /* If the original device's stype structure was dynamically allocated, we need
      * to 'fixup' the contents, it's procs need to point to the new device's procs

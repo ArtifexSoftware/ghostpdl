@@ -52,6 +52,7 @@ static gs_memory_proc_free_string(chunk_free_string);
 static gs_memory_proc_register_root(chunk_register_root);
 static gs_memory_proc_unregister_root(chunk_unregister_root);
 static gs_memory_proc_enable_free(chunk_enable_free);
+static gs_memory_proc_set_object_type(chunk_set_object_type);
 static const gs_memory_procs_t chunk_procs =
 {
     /* Raw memory procedures */
@@ -78,7 +79,8 @@ static const gs_memory_procs_t chunk_procs =
     chunk_free_string,
     chunk_register_root,
     chunk_unregister_root,
-    chunk_enable_free
+    chunk_enable_free,
+    chunk_set_object_type
 };
 
 typedef struct chunk_obj_node_s {
@@ -794,6 +796,15 @@ chunk_stable(gs_memory_t * mem)
 static void
 chunk_enable_free(gs_memory_t * mem, bool enable)
 {
+}
+
+static void chunk_set_object_type(gs_memory_t *mem, void *ptr, gs_memory_type_ptr_t type)
+{
+    chunk_obj_node_t *obj = (chunk_obj_node_t *)(((byte *)ptr) - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
+
+    if (ptr == 0)
+        return;
+    obj->type = type;
 }
 
 static void

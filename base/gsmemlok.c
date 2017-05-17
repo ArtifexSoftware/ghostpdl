@@ -51,6 +51,7 @@ static gs_memory_proc_free_string(gs_locked_free_string);
 static gs_memory_proc_register_root(gs_locked_register_root);
 static gs_memory_proc_unregister_root(gs_locked_unregister_root);
 static gs_memory_proc_enable_free(gs_locked_enable_free);
+static gs_memory_proc_set_object_type(gs_locked_set_object_type);
 static const gs_memory_procs_t locked_procs =
 {
     /* Raw memory procedures */
@@ -77,7 +78,8 @@ static const gs_memory_procs_t locked_procs =
     gs_locked_free_string,
     gs_locked_register_root,
     gs_locked_unregister_root,
-    gs_locked_enable_free
+    gs_locked_enable_free,
+    gs_locked_set_object_type
 };
 
 /* ---------- Public constructors/destructors ---------- */
@@ -392,5 +394,12 @@ gs_locked_enable_free(gs_memory_t * mem, bool enable)
 {
     DO_MONITORED(
                  (*lmem->target->procs.enable_free)(lmem->target, enable)
+                 );
+}
+
+static void gs_locked_set_object_type(gs_memory_t *mem, void *ptr, gs_memory_type_ptr_t type)
+{
+    DO_MONITORED(
+                 (*lmem->target->procs.set_object_type)(lmem->target, ptr, type);
                  );
 }

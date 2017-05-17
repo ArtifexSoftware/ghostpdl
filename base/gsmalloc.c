@@ -52,6 +52,7 @@ static gs_memory_proc_free_string(gs_heap_free_string);
 static gs_memory_proc_register_root(gs_heap_register_root);
 static gs_memory_proc_unregister_root(gs_heap_unregister_root);
 static gs_memory_proc_enable_free(gs_heap_enable_free);
+static gs_memory_proc_set_object_type(gs_heap_set_object_type);
 static const gs_memory_procs_t gs_malloc_memory_procs =
 {
     /* Raw memory procedures */
@@ -78,7 +79,8 @@ static const gs_memory_procs_t gs_malloc_memory_procs =
     gs_heap_free_string,
     gs_heap_register_root,
     gs_heap_unregister_root,
-    gs_heap_enable_free
+    gs_heap_enable_free,
+    gs_heap_set_object_type
 };
 
 /* We must make sure that malloc_blocks leave the block aligned. */
@@ -460,6 +462,15 @@ gs_heap_enable_free(gs_memory_t * mem, bool enable)
     else
         mem->procs.free_object = gs_ignore_free_object,
             mem->procs.free_string = gs_ignore_free_string;
+}
+
+static void gs_heap_set_object_type(gs_memory_t *mem, void *ptr, gs_memory_type_ptr_t type)
+{
+    gs_malloc_block_t *bp = (gs_malloc_block_t *) ptr;
+
+    if (ptr == 0)
+        return;
+    bp[-1].type = type;
 }
 
 /* Release all memory acquired by this allocator. */

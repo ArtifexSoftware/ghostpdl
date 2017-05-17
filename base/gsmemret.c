@@ -46,6 +46,7 @@ static gs_memory_proc_free_string(gs_forward_free_string);
 static gs_memory_proc_register_root(gs_retrying_register_root);
 static gs_memory_proc_unregister_root(gs_forward_unregister_root);
 static gs_memory_proc_enable_free(gs_forward_enable_free);
+static gs_memory_proc_set_object_type(gs_forward_set_object_type);
 static const gs_memory_procs_t retrying_procs = {
     /* Raw memory procedures */
     gs_retrying_alloc_bytes_immovable,
@@ -71,7 +72,8 @@ static const gs_memory_procs_t retrying_procs = {
     gs_forward_free_string,
     gs_retrying_register_root,
     gs_forward_unregister_root,
-    gs_forward_enable_free
+    gs_forward_enable_free,
+    gs_forward_set_object_type
 };
 
 /* Define a vacuous recovery procedure. */
@@ -362,4 +364,9 @@ static void
 gs_forward_enable_free(gs_memory_t * mem, bool enable)
 {
     DO_FORWARD(target->procs.enable_free(target, enable));
+}
+
+static void gs_forward_set_object_type(gs_memory_t *mem, void *ptr, gs_memory_type_ptr_t type)
+{
+    DO_FORWARD(target->procs.set_object_type(target, ptr, type));
 }

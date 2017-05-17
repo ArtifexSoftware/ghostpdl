@@ -203,6 +203,7 @@ typedef struct gs_memory_status_s {
 #define gs_consolidate_free(mem)\
   ((mem)->procs.consolidate_free(mem))
 
+
 /* Define the members of the procedure structure. */
 #define gs_raw_memory_procs(mem_t)\
     gs_memory_t_proc_alloc_bytes((*alloc_bytes_immovable), mem_t);\
@@ -385,6 +386,12 @@ typedef struct gs_memory_procs_s {
 #define gs_enable_free(mem, enable)\
   (*(mem)->procs.enable_free)(mem, enable)
     gs_memory_proc_enable_free((*enable_free));
+
+#define gs_memory_proc_set_object_type(proc)\
+  void proc(gs_memory_t *mem, void *data, gs_memory_type_ptr_t type)
+#define gs_set_object_type(mem, data, type)\
+  (*(mem)->procs.set_object_type)(mem, data, type)
+    gs_memory_proc_set_object_type((*set_object_type));
 
 } gs_memory_procs_t;
 
