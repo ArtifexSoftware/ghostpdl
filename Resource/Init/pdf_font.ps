@@ -1181,7 +1181,7 @@ currentdict /eexec_pdf_param_dict .undef
                 % the character code to access the Widths.
     /BuildChar {
                 % Stack: font charcode
-      1 index begin 3 dict begin
+      1 index begin 4 dict begin
       /Font 3 -1 roll def /CharCode 1 index def
       Encoding exch get CharProcs exch knownoget {
         dup /Length get 0 eq {
@@ -1199,7 +1199,19 @@ currentdict /eexec_pdf_param_dict .undef
                 % Don't let setgcolor set the color inside the BuildGlyph
                 % procedure, because this causes an /undefined error.
             q //null /FillColor gput //null /StrokeColor gput
-            Font /Resources get exch pdfopdict .pdfruncontext
+            Font /Resources get exch pdfopdict
+            /BuildCharDictDepth countdictstack def
+            .pdfruncontext
+            countdictstack BuildCharDictDepth sub
+            {
+              pdfdict /.Qqwarning_issued .knownget {not}{//true} ifelse
+              {
+                (\n   **** Warning: Type 3 glyph has unbalanced q/Q operators \(too many q's\)\n               Output may be incorrect.\n)
+                pdfformatwarning
+                pdfdict /.Qqwarning_issued //true .forceput
+              } if
+              Q
+            } repeat
             Q
           } PDFfile fileposition 2 .execn % Keep pdfcount valid.
           PDFfile exch setfileposition
