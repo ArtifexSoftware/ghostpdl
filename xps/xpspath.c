@@ -256,7 +256,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
     float smooth_x, smooth_y; /* saved cubic bezier control point for smooth curves */
     int reset_smooth;
 
-    args = xps_alloc(ctx, sizeof(char*) * (strlen(geom) + 1));
+    args = xps_alloc(ctx, sizeof(char*) * (strlen(geom) + 2));
     if (!args) {
         gs_throw(gs_error_VMerror, "out of memory: args.\n");
         return;
