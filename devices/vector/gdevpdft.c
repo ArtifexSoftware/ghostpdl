@@ -358,6 +358,12 @@ pdf_end_transparency_mask(gs_gstate * pgs, gx_device_pdf * pdev,
         /* We need to update the 'where_used' field, in case we substituted a resource */
         pres->where_used |= pdev->used_mask;
         gs_sprintf(buf, "%ld 0 R", pdf_resource_id(pres));
+        if (pdev->pres_soft_mask_dict == 0L) {
+            /* something went horribly wrong, we have an 'end' wihtout a matching 'begin'
+             * Give up, throw an error.
+             */
+            return_error(gs_error_undefined);
+        }
         code = cos_dict_put_c_key_string((cos_dict_t *)pdev->pres_soft_mask_dict->object,
                 "/G", (const byte *)buf, strlen(buf));
         if (code < 0)
