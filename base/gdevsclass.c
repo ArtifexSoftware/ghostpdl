@@ -567,7 +567,7 @@ int default_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const 
         if (code < 0)
             return code;
 
-        if (*pcdev != dev->child){
+        if (*pcdev != 0L && *pcdev != dev->child){
             /* If the child created a new compositor, which it wants to be the new 'device' in the
              * graphics state, it sets it in the returned pcdev variable. When we return from this
              * method, if pcdev is not the same as the device in the graphics state then the interpreter
