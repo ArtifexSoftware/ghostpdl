@@ -2022,9 +2022,9 @@ currentdict /last-ditch-bpc-csp undef
       pdfformaterror
       (               Output may be incorrect.\n) pdfformaterror
 
-      ColorSpace dup type /arraytype eq { 0 oget } if /Indexed eq
+      ColorSpace dup type /arraytype eq { 0 oget } if dup /Indexed eq exch /DeviceGray eq or
       BitsPerComponent 1 eq and {
-        % AR9 treats Indexed 1 bpc images specially. Bug 692852.
+        % AR9 treats Indexed 1 bpc images specially. Bug 692852 see also 697919 and 689717.
         dup 0 oget
         dup 0 lt exch 1 BitsPerComponent bitshift ge or {
           % First component is invalid - AR9 ignores the mask
