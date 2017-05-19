@@ -116,6 +116,15 @@ typedef struct px_bitmap_enum_s
     stream_DCT_state dct_stream_state;
     jpeg_decompress_data jdd;
     deltarow_state_t deltarow_state;
+
+    /* Entries to deal with 'rebuffering' - the idea of making
+     * input image data appear a different (but equivalent) shape.
+     * Currently just morphing '1xH' bitmaps into 'Hx1' ones. */
+    uint rebuffered_data_per_row; /* equal to data_per_row except when flipping */
+    bool rebuffered;
+    uint rebuffered_width;
+    uint rebuffered_height;
+    int rebuffered_row_pos;
 } px_bitmap_enum_t;
 
 /* Define our image enumerator. */
@@ -167,6 +176,31 @@ begin_bitmap(px_bitmap_params_t * params, px_bitmap_enum_t * benum,
     benum->mem = pxs->memory;
     benum->initialized = false;
     return 0;
+}
+
+/* Extract the parameters for reading a bitmap image or raster pattern. */
+/* Attributes: pxaColorMapping, pxaColorDepth, pxaSourceWidth, */
+/* pxaSourceHeight, pxaDestinationSize. */
+static int
+begin_rebuffered_bitmap(px_bitmap_params_t * params, px_bitmap_enum_t * benum,
+                        const px_args_t * par, const px_state_t * pxs)
+{
+    int code = begin_bitmap(params, benum, par, pxs);
+
+    if (params->width == 1 && params->height > 1) {
+        benum->rebuffered_data_per_row = benum->data_per_row * params->height;
+        benum->rebuffered = 1;
+        benum->rebuffered_width = params->height;
+        benum->rebuffered_height = params->width;
+        benum->rebuffered_row_pos = 0;
+    } else {
+        benum->rebuffered_data_per_row = benum->data_per_row;
+        benum->rebuffered = 0;
+        benum->rebuffered_width = params->width;
+        benum->rebuffered_height = params->height;
+    }
+
+    return code;
 }
 
 static int
@@ -562,6 +596,40 @@ read_bitmap(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par)
     return -1;
 }
 
+static int read_rebuffered_bitmap(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par)
+{
+    int code;
+
+    if (!benum->rebuffered)
+        return read_bitmap(benum, pdata, par);
+
+    {
+        int w = benum->rebuffered_width;
+        byte *rowptr = *pdata;
+        byte *data2 = rowptr + benum->rebuffered_row_pos * benum->data_per_row;
+        for (; benum->rebuffered_row_pos < w; benum->rebuffered_row_pos++) {
+            byte *data3 = data2;
+            code = read_bitmap(benum, &data3, par);
+            if (code == 0) {
+                return 0;
+            } else if (code == 1) {
+                /* got a scanline! (well, 1 pixel really, cos we are flipping) */
+            } else {
+                if (par->source.available == 0)
+                    return pxNeedData;
+                return code;
+            }
+            if (data3 != data2) {
+                memcpy(data2, data3, benum->data_per_row);
+            }
+            data2 += benum->data_per_row;
+        }
+        benum->rebuffered_row_pos = 0;
+    }
+    return code;
+}
+
+
 /* ---------------- Image operators ---------------- */
 
 const byte apxBeginImage[] = {
@@ -600,7 +668,7 @@ pxBeginImage(px_args_t * par, px_state_t * pxs)
     code = px_set_halftone(pxs);
     if (code < 0)
         return code;
-    code = begin_bitmap(&params, &benum, par, pxs);
+    code = begin_rebuffered_bitmap(&params, &benum, par, pxs);
     if (code < 0)
         return code;
     pxenum =
@@ -610,7 +678,7 @@ pxBeginImage(px_args_t * par, px_state_t * pxs)
     if (pxenum == 0)
         return_error(errorInsufficientMemory);
     {
-        pxenum->raster = round_up(benum.data_per_row, align_bitmap_mod);
+        pxenum->raster = round_up(benum.rebuffered_data_per_row, align_bitmap_mod);
         pxenum->row = gs_alloc_byte_array(pxs->memory, 1, pxenum->raster,
                                           "pxReadImage(row)");
         if (pxenum->row == 0)
@@ -626,8 +694,8 @@ pxBeginImage(px_args_t * par, px_state_t * pxs)
         return code;
     }
     /* Set up the image parameters. */
-    pxenum->image.Width = params.width;
-    pxenum->image.Height = params.height;
+    pxenum->image.Width = benum.rebuffered_width;
+    pxenum->image.Height = benum.rebuffered_height;
     {
         gs_matrix imat, dmat;
 
@@ -635,6 +703,10 @@ pxBeginImage(px_args_t * par, px_state_t * pxs)
         /* We also need to account for the upside-down H-P */
         /* coordinate system. */
         gs_make_scaling(params.width, params.height, &imat);
+        if (benum.rebuffered) {
+            imat.xy = imat.xx; imat.xx = 0;
+            imat.yx = imat.yy; imat.yy = 0;
+        }
         gs_make_translation(origin.x, origin.y, &dmat);
         gs_matrix_scale(&dmat, params.dest_width, params.dest_height, &dmat);
         /* The ImageMatrix is dmat' * imat. */
@@ -672,12 +744,12 @@ pxReadImage(px_args_t * par, px_state_t * pxs)
         return pxNeedData;
     for (;;) {
         byte *data = pxenum->row;
-        int code = read_bitmap(&pxenum->benum, &data, par);
+        int code = read_rebuffered_bitmap(&pxenum->benum, &data, par);
 
         if (code != 1)
             return code;
         code = pl_image_data(pxs->pgs, pxenum->info, (const byte **)&data, 0,
-                             pxenum->benum.data_per_row, 1);
+                             pxenum->benum.rebuffered_data_per_row, 1);
         if (code < 0)
             return code;
         pxs->have_page = true;
