@@ -985,48 +985,62 @@ setglobal
 .dicttomark readonly def
 
 % When Type 1 font reading procedure is executing, a copy of this dictionary is current.
-% We have to do something special about embedded fonts that execute definefont
-% more than once -- that is the function of topFontDict.
+% topFontDict allows us to *attempt* to handle the case where a Type 1 font definition
+% does not start by creating it's own dictionary (i.e. a number of the keys end up in
+% the currentdict rather than the font dictionary).
 % The whole type1 stream can be executed directly. There's no need to process
 % Length1, 2, 3 keys.
 
 /readtype1dict 10 dict dup begin
-  /definefont {
-    exch pop
+  /prev_definefont /definefont load def
 
-    /topFontDict where {
-      { /FontType    % in PLRM order
-        /FontMatrix
-        /FontName
-        /FontInfo
-        /WMode
-        /Encoding
-        /FontBBox
-        /UniqueID
-        /XUID
-        /PaintType
-        /StrokeWidth
-        /Metrics
-        /Metrics2
-        /CDevProc
-        /CharStrings
-        /Private
-        /WeightVector
-      } {
-        2 copy .knownget {
-          % Stack: font topFontDict /key val
-          3 index 3 1 roll put
+  /definefont {
+    % if a font defines any keys outside it's own dictionary,
+    % this attempts to cope by copying them into the font dictionary
+    [
+      /FontType    % in PLRM order
+      /FontMatrix
+      /FontName
+      /FontInfo
+      /WMode
+      /Encoding
+      /FontBBox
+      /UniqueID
+      /XUID
+      /PaintType
+      /StrokeWidth
+      /Metrics
+      /Metrics2
+      /CDevProc
+      /CharStrings
+      /Private
+      /WeightVector
+    ]
+    {
+      2 copy known
+      {pop}
+      {
+        dup where
+        {
+          1 index get
+          2 index
+          3 1 roll put
           dup /MisplacedKey 0 put
-        } {
-          pop
-        } ifelse
-      } forall
-      /MisplacedKey known {
-        (   **** Warning: Type 1 font defines some of the keys in the external scope.\n)
-        pdfformatwarning
-      } if
+        }
+        {pop} ifelse
+      } ifelse
+    } forall
+    dup /MisplacedKey known {
+      (   **** Warning: Type 1 font defines some required keys outside the font dictionary.\n)
+      pdfformatwarning
     } if
 
+    dup /CharStrings get /.notdef known not {
+      dup /CharStrings get
+        /.notdef <9E35CED7FFD3622F09> put
+        (   **** Warning: Type 1 font has no /.notdef entry in /CharString dictionary.\n)
+        pdfformatwarning
+    } if
     dup /UniqueID .knownget {
       dup dup 0 lt exch 16#ffffff gt or {
         (   **** Warning: Ignoring invalid /UniqueID = ) exch =string cvs
@@ -1036,17 +1050,11 @@ setglobal
         pop
       } ifelse
     } if
-    dup /CharStrings get /.notdef known not {
-      dup /CharStrings get
-        /.notdef <9E35CED7FFD3622F09> put
-        (   **** Warning: Type 1 font has no /.notdef entry in /CharString dictionary.\n)
-        pdfformatwarning
-    } if
-    .completefont
+    prev_definefont
   } bdef
 
   /undef_proc_warning {
-    /Repaired //true store	% flag that we have warnings
+    /Repaired //true store     % flag that we have warnings
     UndefProcList exch 2 copy .knownget { 1 add } { 1 } ifelse put
   } bdef
 
