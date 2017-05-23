@@ -464,6 +464,13 @@ pdf_replace_names(gx_device_pdf * pdev, const gs_param_string * from,
         if (pco) {
             gs_sprintf(ref, " %ld 0 R ", pco->id);
             size += strlen(ref);
+            /* Special 'name' escaping convention (see gs_pdfwr.ps, /.pdf===dict
+             * the /nametype procedure). We do not want to write out the NULL
+             * characters, we'll remove them in pass 2, for now don't count
+             * them into the string size.
+             */
+            if (sname >= (start + 2) && sname[-1] == 0x00 && sname[-2] == 0x00 && next[0] == 0x00)
+                size -= 3;
         }
         scan = next;
         any |= next != sname;
@@ -492,6 +499,10 @@ pdf_replace_names(gx_device_pdf * pdev, const gs_param_string * from,
         if (pco) {
             gs_sprintf(ref, " %ld 0 R ", pco->id);
             rlen = strlen(ref);
+            if (sname >= (start + 2) && sname[-1] == 0x00 && sname[-2] == 0x00 && next[0] == 0x00) {
+                sto -= 2;
+                next++;
+            }
             memcpy(sto, ref, rlen);
             sto += rlen;
         }
