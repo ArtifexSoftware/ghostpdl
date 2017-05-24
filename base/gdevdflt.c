@@ -1409,7 +1409,7 @@ int gx_device_unsubclass(gx_device *dev)
     void *psubclass_data;
     gx_device *parent, *child;
     gs_memory_struct_type_t *a_std = 0;
-    int dynamic;
+    int dynamic, ref_count = dev->rc.ref_count;
 
     /* This should not happen... */
     if (!dev)
@@ -1434,8 +1434,17 @@ int gx_device_unsubclass(gx_device *dev)
         gs_free_object(dev->memory->non_gc_memory, psubclass_data, "subclass memory for first-last page");
 
     /* Copy the child device into ths device's memory */
-    if (child)
+    if (child) {
         memcpy(dev, child, child->stype->ssize);
+        /* Patch back the 'stype' in the memory manager */
+        gs_set_object_type(child->memory, dev, child->stype);
+        /* The reference count of the subclassing device may have been changed
+         * (eg graphics states pointing to it) after we subclassed the device. We
+         * need to ensure that we do not overwrite this when we copy back the subclassed
+         * device.
+         */
+        dev->rc.ref_count = ref_count;
+    }
 
     /* How can we have a subclass device with no child ? Simples; when we hit the end of job
      * restore, the devices are not freed in device chain order. To make sure we don't end up
