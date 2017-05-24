@@ -2751,8 +2751,9 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                     dst_ptr[shape_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
                 }
                 if (has_tags) {
-                    /* If alpha is 100% then set to pure path, else or */
-                    if (src[num_comp] == 255) {
+                    /* If alpha is 100% then set to curr_tag, else or */
+                    /* other than Normal BM, we always OR */
+                    if (src[num_comp] == 255 && blend_mode == BLEND_MODE_Normal) {
                         dst_ptr[tag_off] = curr_tag;
                     } else {
                         dst_ptr[tag_off] |= curr_tag;
@@ -5114,15 +5115,25 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     if (num_comp == 1 && additive && num_spots == 0) {
         for (j = h; j > 0; --j) {
             for (i = w; i > 0; --i) {
-                if (src[1] == 0) {
+                if (src[1] != 0) {
                     /* background empty, nothing to change */
-                } else if (dst_ptr[planestride] == 0) {
-                    dst_ptr[0] = src[0];
-                    dst_ptr[planestride] = src[1];
-                } else {
-                    art_pdf_composite_pixel_alpha_8_fast_mono(dst_ptr, src,
+                    if (dst_ptr[planestride] == 0) {
+                        dst_ptr[0] = src[0];
+                        dst_ptr[planestride] = src[1];
+                    } else {
+                        art_pdf_composite_pixel_alpha_8_fast_mono(dst_ptr, src,
                                                 blend_mode, pdev->blend_procs,
                                                 planestride, pdev);
+                    }
+                    if (tag_off) {
+                        /* If src alpha is 100% then set to curr_tag, else or */
+                        /* other than Normal BM, we always OR */
+                        if (src[1] == 255 && blend_mode == BLEND_MODE_Normal) {
+                            dst_ptr[tag_off] = curr_tag;
+                        } else {
+                            dst_ptr[tag_off] |= curr_tag;
+                        }
+                    }
                 }
                 if (alpha_g_off) {
                     int tmp = (255 - dst_ptr[alpha_g_off]) * src_alpha + 0x80;
@@ -5131,14 +5142,6 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                 if (shape_off) {
                     int tmp = (255 - dst_ptr[shape_off]) * shape + 0x80;
                     dst_ptr[shape_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
-                }
-                if (tag_off) {
-                    /* If alpha is 100% then set to pure path, else or */
-                    if (dst_ptr[planestride] == 255) {
-                        dst_ptr[tag_off] = curr_tag;
-                    } else {
-                        dst_ptr[tag_off] |= curr_tag;
-                    }
                 }
                 ++dst_ptr;
             }
@@ -5247,6 +5250,15 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                         /* The alpha channel */
                         dst_ptr[num_comp * planestride] = dst[num_comp];
                     }
+                    if (tag_off) {
+                        /* If src alpha is 100% then set to curr_tag, else or */
+                        /* other than Normal BM, we always OR */
+                        if (src[num_comp] == 255 && blend_mode == BLEND_MODE_Normal) {
+                            dst_ptr[tag_off] = curr_tag;
+                        } else {
+                            dst_ptr[tag_off] |= curr_tag;
+                        }
+                    }
                 }
                 if (alpha_g_off) {
                     int tmp = (255 - dst_ptr[alpha_g_off]) * src_alpha + 0x80;
@@ -5255,14 +5267,6 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                 if (shape_off) {
                     int tmp = (255 - dst_ptr[shape_off]) * shape + 0x80;
                     dst_ptr[shape_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
-                }
-                if (tag_off) {
-                    /* If alpha is 100% then set to pure path, else or */
-                    if (dst[num_comp] == 255) {
-                        dst_ptr[tag_off] = curr_tag;
-                    } else {
-                        dst_ptr[tag_off] |= curr_tag;
-                    }
                 }
                 ++dst_ptr;
             }
@@ -5413,7 +5417,13 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev, int x, int y, int w, int h,
                 dst_ptr[num_comp * planestride] = dst[num_comp];
             }
             if (tag_off) {
-                dst_ptr[tag_off] = curr_tag;
+                /* If src alpha is 100% then set to curr_tag, else or */
+                /* other than Normal BM, we always OR */
+                if (src[num_comp] == 255 && blend_mode == BLEND_MODE_Normal) {
+                    dst_ptr[tag_off] = curr_tag;
+                } else {
+                    dst_ptr[tag_off] |= curr_tag;
+                }
             }
             if (alpha_g_off) {
                 int tmp = (255 - dst_ptr[alpha_g_off]) * src_alpha + 0x80;
