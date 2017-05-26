@@ -39,6 +39,7 @@ static int
 zsetuseciecolor(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;
+    check_type(*op, t_boolean);
 
     istate->use_cie_color = *op;
     pop(1);
@@ -103,7 +104,7 @@ zsetblackptcomp(i_ctx_t * i_ctx_p)
 
 const op_def    zcolor3_l3_op_defs[] = {
     op_def_begin_ll3(),
-    { "0.setuseciecolor", zsetuseciecolor },
+    { "1.setuseciecolor", zsetuseciecolor },
     { "0.currentrenderintent", zcurrentrenderingintent },
     { "1.setrenderingintent", zsetrenderingintent },
     { "2.currentblackptcomp", zcurrentblackptcomp },
