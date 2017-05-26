@@ -449,6 +449,18 @@ size_cmap(gs_font *font, uint first_code, int num_glyphs, gs_glyph max_glyph,
 
 /* ------ hmtx/vmtx ------ */
 
+/* The HMTX and VMTX generation code here is broken. It assumes that its legal
+ * to write out only the metrics for the number of glyphs we include outlines for
+ * but in fact we must include data for every single glyph, even if we don't
+ * actually write the glyph data.
+ * It really should have been obvious that this is incorrect, since there is no
+ * mapping other than GID to find the correct metrics in this table. So simply
+ * writing out the minimum number of metrics would only work if we wrote a
+ * contiguous range of GIDs, which we don't
+ * By setting generate_mtx to false in psf_write_truetype_data() below, we prevent
+ * the use of this code and instead simply copy out the original table.
+ * Bug #697376.
+ */
 static void
 write_mtx(stream *s, gs_font_type42 *pfont, const gs_type42_mtx_t *pmtx,
           int wmode)
@@ -780,7 +792,8 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     bool
         writing_cid = (options & WRITE_TRUETYPE_CID) != 0,
         writing_stripped = (options & WRITE_TRUETYPE_STRIPPED) != 0,
-        generate_mtx = (options & WRITE_TRUETYPE_HVMTX) != 0,
+        /* see size_mtx() and write_mtx() above for reasons why this is disabled */
+        generate_mtx = 0, /*(options & WRITE_TRUETYPE_HVMTX) != 0,*/
         no_generate = writing_cid | writing_stripped,
         have_cmap = no_generate,
         have_name = !(options & WRITE_TRUETYPE_NAME),
