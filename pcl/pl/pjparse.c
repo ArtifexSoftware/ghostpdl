@@ -1254,6 +1254,7 @@ pjl_process(pjl_parser_state * pst, void *pstate, stream_cursor_read * pr)
         
         if (!legal_pjl_char(p[1])) {
             code = 1;
+            ++p;
             break;
         }
 
