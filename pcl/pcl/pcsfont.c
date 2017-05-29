@@ -225,6 +225,11 @@ pcl_font_control(pcl_args_t * pargs, pcl_state_t * pcs)
                     code = gs_definefont(pcs->font_dir, plfont->pfont);
                     if (code < 0)
                         return code;
+                    if (plfont->scaling_technology == plfst_TrueType)
+                        code = pl_fapi_passfont(plfont, 0, NULL, NULL, NULL, 0);
+                    if (code < 0)
+                        return code;
+
                     pcl_delete_soft_font(pcs, current_font_id,
                                          current_font_id_size, NULL);
                     plfont->storage = pcds_temporary;
