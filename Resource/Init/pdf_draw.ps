@@ -3738,7 +3738,82 @@ currentdict /set_bc_color undef
     } ifelse
   } bdef
 
-  currentdict /quadpoints2basis undef
+  /Popup {
+    dup /Open oknown {
+      dup /Open get {
+        dup /AP oknown {
+          //true
+        }{
+          gsave
+          newpath
+          0.05 setlinewidth
+          dup /Parent .knownget {
+            oforce
+          } {
+            dup /P .knownget {
+              oforce
+            } {
+              dup
+            } ifelse
+          } ifelse
+          /C .knownget {
+            aload pop
+          }{
+            1 1 0
+          }ifelse
+          setrgbcolor
+          dup /Rect get
+          dup aload pop
+          2 index sub
+          exch 3 index sub exch
+          4 copy
+          gsave 1 setgray rectfill grestore
+          gsave 0 setgray rectstroke grestore
+          1 index /Parent .knownget {
+            oforce
+          }{
+            1 index /P .knownget {
+              oforce
+            }{
+              1 index
+            } ifelse
+          }ifelse
+          dup
+          /Contents .knownget {
+            gsave
+            0 setgray
+            /Helvetica findfont 9 scalefont setfont
+            2 index aload pop 3 1 roll pop pop 30 sub exch 5 add exch
+            moveto show
+            grestore
+          } if
+          exch
+          dup aload pop 3 -1 roll pop exch 2 index sub -15
+          4 copy rectfill
+          0 setgray rectstroke
+          exch
+          /T .knownget {
+            gsave
+            0 setgray
+            /Helvetica findfont 9 scalefont setfont
+            dup stringwidth pop
+            2 index aload pop pop exch pop exch sub
+            exch sub 2 div 2 index aload pop 3 1 roll pop pop 11 sub 3 1 roll add exch moveto
+            show
+            grestore
+          } if
+          grestore
+          //false
+        } ifelse
+      } {
+        pop //false
+      }ifelse
+    } {
+      pop //false
+    }ifelse
+  } bdef
+
+currentdict /quadpoints2basis undef
 currentdict end readonly def
 
 /.PDFDrawAnnotType?
