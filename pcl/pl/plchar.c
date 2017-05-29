@@ -652,6 +652,9 @@ pl_tt_get_outline(gs_font_type42 * pfont, uint index, gs_glyph_data_t * pdata)
             (*cdata == 15 ? cdata[2] /* PCL5 */ : 0 /* PCL XL */ );
         uint data_size = pl_get_uint16(cdata + 2 + desc_size);
 
+        if (data_size > pfg->data_len)
+            data_size = pfg->data_len;
+
         if (data_size <= 4) {
             /* empty outline */
             gs_glyph_data_from_null(pdata);
@@ -1245,14 +1248,15 @@ static int
 pl_intelli_show_char(gs_gstate * pgs, const pl_font_t * plfont, gs_glyph glyph)
 {
     int code;
-    const byte *cdata;
+    const byte *cdata, *cdata_end;
     pl_font_glyph_t *font_glyph;
     const intelli_metrics_t *metrics;
-    int *xBuffer, *yBuffer;
+    int *xBuffer = NULL, *yBuffer = NULL;
     client_name_t cname = (client_name_t) "pl_intelli_show_char";
 
     font_glyph = pl_font_lookup_glyph(plfont, glyph);
     cdata = font_glyph->data;
+    cdata_end = cdata + font_glyph->data_len;
 
     if (cdata == 0) {
         if_debug1m('1', pgs->memory, "[1] no character data for glyph %ld\n",
@@ -1287,6 +1291,9 @@ pl_intelli_show_char(gs_gstate * pgs, const pl_font_t * plfont, gs_glyph glyph)
 
         cdata += 4;             /* skip PCL character header */
         outlines = cdata + pl_get_uint16(cdata + 6);
+        if (outlines >= cdata_end)
+            return 0;
+
         num_loops = pl_get_uint16(outlines);
 
         if_debug2m('1', pgs->memory, "[1]ifont glyph %lu: loops=%u\n",
@@ -1308,12 +1315,22 @@ pl_intelli_show_char(gs_gstate * pgs, const pl_font_t * plfont, gs_glyph glyph)
             int pointBufferSize;
             uint sz;
 
+            if ((outlines + 4 + i * 8) >= cdata_end) {
+                code = gs_note_error(gs_error_invalidfont);
+                break;
+            }
             num_points = pl_get_uint16(xyc);
             num_aux_points = pl_get_uint16(xyc + 2);
 
             x_coords = xyc + 4;
             y_coords = x_coords + num_points * 2;
             x_coords_last = y_coords;
+
+            if (x_coords_last >= cdata_end
+                || (y_coords + num_points * 2) >= cdata_end) {
+                code = 0;
+                break;
+            }
 
             metrics =
                 (const intelli_metrics_t *)(cdata + pl_get_uint16(cdata + 2));
@@ -1328,6 +1345,24 @@ pl_intelli_show_char(gs_gstate * pgs, const pl_font_t * plfont, gs_glyph glyph)
                 x_aux_coords = y_coords + num_points * 2;
                 y_aux_coords = x_aux_coords + num_aux_points;
                 x_aux_coords_last = y_coords;
+                if ((y_aux_coords + num_aux_points * 2) >= cdata_end) {
+                    if (x_aux_coords_last >= cdata_end) {
+                        pointBufferSize -= num_aux_points;
+                        num_aux_points = 0xffff;
+                        x_aux_coords = NULL;
+                        y_aux_coords = NULL;
+                        x_aux_coords_last = NULL;
+                    }
+                    else {
+                        /* if we don't have enough data for all the declared points
+                         * use as much as we have.
+                         */
+                        pointBufferSize -= num_aux_points;
+                        num_aux_points = (cdata_end - y_aux_coords) / 2;
+                        pointBufferSize += num_aux_points;
+                        x_aux_coords_last = x_aux_coords + num_aux_points;
+                    }
+                }
             } else {
                 x_aux_coords = NULL;
                 y_aux_coords = NULL;
@@ -1735,7 +1770,7 @@ match_font_glyph(const gs_memory_t * mem, cached_char * cc, void *vpfg)
     return (cc->pair->font == pfg->font && cc->code == pfg->glyph);
 }
 int
-pl_font_add_glyph(pl_font_t * plfont, gs_glyph glyph, const byte * cdata)
+pl_font_add_glyph(pl_font_t * plfont, gs_glyph glyph, const byte * cdata, const int cdata_len)
 {
     gs_font *pfont = plfont->pfont;
     gs_glyph key = glyph;
@@ -1800,6 +1835,7 @@ pl_font_add_glyph(pl_font_t * plfont, gs_glyph glyph, const byte * cdata)
     }
     pfg->glyph = key;
     pfg->data = cdata;
+    pfg->data_len = cdata_len;
     return 0;
 }
 

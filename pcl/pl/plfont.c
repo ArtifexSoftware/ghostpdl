@@ -746,27 +746,14 @@ pl_clone_font(const pl_font_t * src, gs_memory_t * mem, client_name_t cname)
 
             plfont->glyphs.table[i].glyph = src->glyphs.table[i].glyph;
             plfont->glyphs.table[i].data = 0;
-            if (data) {         /* ARGH --- */
-                uint size;
-
-                if (plfont->scaling_technology == plfst_bitmap) {
-                    size = 16 +
-                        ((pl_get_uint16(data + 10) + 7) >> 3) *
-                        pl_get_uint16(data + 12);
-                } else if (plfont->scaling_technology == plfst_Intellifont) {
-                    /* non compound characters */
-                    if (data[3] == 3)
-                        size = 6 + pl_get_uint16(data + 4);
-                    else        /* assume data[3] == 4 (compound) */
-                        size = 8 + data[6] * 6 + 2;
-                } else          /* truetype */
-                    size = 2 + 2 + data[2] +
-                        pl_get_uint16(data + 2 + data[2]);
+            if (data) {
+                uint size = src->glyphs.table[i].data_len;
                 char_data = gs_alloc_bytes(mem, size, cname);
                 if (char_data == 0)
                     return 0;
                 memcpy(char_data, data, size);
                 plfont->glyphs.table[i].data = char_data;
+                plfont->glyphs.table[i].data_len = size;
             }
 
         }

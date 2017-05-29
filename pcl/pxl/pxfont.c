@@ -775,7 +775,8 @@ pxReadChar(px_args_t * par, px_state_t * pxs)
                 code = gs_note_error(errorUnsupportedCharacterFormat);
         }
         if (code >= 0) {
-            code = pl_font_add_glyph(pxs->download_font, char_code, (byte *) data);     /* const cast */
+            code = pl_font_add_glyph(pxs->download_font, char_code,
+                                    (byte *) data, pxs->download_bytes.size);     /* const cast */
             if (code < 0)
                 code = gs_note_error(errorInternalOverflow);
         }

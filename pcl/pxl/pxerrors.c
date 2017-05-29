@@ -62,14 +62,15 @@ px_error_setfont(px_state_t * pxs)
                           px_bitmap_font_header_size,
                           gs_next_ids(pxs->memory, 1), pxs);
     {
-        const byte *cdata = px_bitmap_font_char_data;
+        const byte *cdatanext, *cdata = px_bitmap_font_char_data;
 
         while (*cdata && code >= 0) {
-            code = pl_font_add_glyph(pxfont, *cdata, cdata + 1);
-            ++cdata;
-            cdata = cdata + 16 +
+           cdatanext = cdata + 16 +
                 ((uint16at(cdata + 10, true) + 7) >> 3) *
-                uint16at(cdata + 12, true);
+                uint16at(cdata + 12, true) + 1; /* add one to clear the char code */
+
+            code = pl_font_add_glyph(pxfont, *cdata, cdata + 1, (int)(cdatanext - cdata - 2));
+            cdata = cdatanext;
         }
     }
     if (code < 0) {

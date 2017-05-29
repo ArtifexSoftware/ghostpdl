@@ -608,9 +608,11 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
                             uint width_bytes = (width + 7) >> 3;
                             byte *row;
 
+                            font_data_size = 16 + width_bytes * height;
+
                             char_data =
                                 gs_alloc_bytes(pcs->memory,
-                                               16 + width_bytes * height,
+                                               font_data_size,
                                                "pcl_character_data(compressed bitmap)");
                             if (char_data == 0)
                                 return_error(e_Memory);
@@ -723,7 +725,7 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
 
         plfont->orient = header->Orientation;
     }
-    code = pl_font_add_glyph(plfont, pcs->character_code, char_data);
+    code = pl_font_add_glyph(plfont, pcs->character_code, char_data, font_data_size);
     if (code < 0)
         return code;
 #ifdef DISABLE_USE_MY_METRICS

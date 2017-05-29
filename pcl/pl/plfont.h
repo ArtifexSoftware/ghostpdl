@@ -323,7 +323,7 @@ int pl_alloc_tt_fontfile_buffer(stream * in, gs_memory_t * mem,
 int pl_free_tt_fontfile_buffer(gs_memory_t * mem, byte * ptt_font_data);
 
 /* Add a glyph to a font.  Return -1 if the table is full. */
-int pl_font_add_glyph(pl_font_t * plfont, gs_glyph glyph, const byte * cdata);
+int pl_font_add_glyph(pl_font_t * plfont, gs_glyph glyph, const byte * cdata, const int cdata_len);
 
 void
 pl_font_glyph_width_cache_remove_nodes(pl_font_t *plfont);

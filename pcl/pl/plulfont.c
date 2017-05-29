@@ -487,7 +487,7 @@ pl_load_ufst_lineprinter(gs_memory_t * mem, pl_dict_t * pfontdict,
                 /* NB this shouldn't happen but it does, should be
                    looked at */
                 if (ucode != 0xffff)
-                    code = pl_font_add_glyph(pplfont, ucode, char_data + 2);
+                    code = pl_font_add_glyph(pplfont, ucode, char_data + 2, ccode_plus_header_plus_data);
 
                 if (code < 0)
                     /* shouldn't happen */
