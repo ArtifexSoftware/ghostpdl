@@ -213,6 +213,14 @@ hpgl_process(hpgl_parser_state_t * pst, hpgl_state_t * pgls,
     }
   x:pr->ptr = p;
     pst->exit_to_parser = NULL;
+
+    /*
+     * Within a macro we can't run out of data since all the data is
+     * available in memory.
+     */
+    if (pgls->macro_level > 0 && (code == gs_error_NeedInput))
+        code = gs_error_Fatal;
+        
     return (code == gs_error_NeedInput ? 0 : code);
 }
 
