@@ -611,6 +611,7 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
     /*const*/ gx_path *ppath = ppath_orig;
     gs_fixed_rect old_box, new_box;
     int code;
+    int pcpath_is_rect;
 
     pcpath->cached = NULL;
     /* Flatten the path if necessary. */
@@ -624,7 +625,8 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
         ppath = &fpath;
     }
 
-    if (gx_cpath_inner_box(pcpath, &old_box) &&
+    pcpath_is_rect = gx_cpath_inner_box(pcpath, &old_box);
+    if (pcpath_is_rect &&
         ((code = gx_path_is_rectangle(ppath, &new_box)) ||
          gx_path_is_void(ppath))
         ) {
@@ -689,7 +691,7 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
         /* New clip path is nontrivial.  Intersect the slow way. */
         gx_cpath_path_list *next = pcpath->path_list;
         bool path_valid =
-            gx_cpath_inner_box(pcpath, &old_box) &&
+            pcpath_is_rect &&
             gx_path_bbox(ppath, &new_box) >= 0 &&
             gx_cpath_includes_rectangle(pcpath,
                                         new_box.p.x, new_box.p.y,
