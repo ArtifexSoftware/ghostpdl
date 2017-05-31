@@ -415,7 +415,7 @@ make_table_template(gx_device     * pdev,
                     gx_path       * path,
               const gs_fixed_rect * ibox,
                     int             intersection_size,
-                    fixed           adjust,
+                    int             adjust,
                     int           * scanlinesp,
                     int          ** indexp,
                     int          ** tablep)
@@ -433,11 +433,18 @@ make_table_template(gx_device     * pdev,
     *indexp     = NULL;
     *tablep     = NULL;
 
+    /* Previously we took adjust as a fixed distance to add to miny/maxy
+     * to allow for the expansion due to 'any part of a pixel'. This causes
+     * problems with over/underflow near INT_MAX/INT_MIN, so instead we
+     * take adjust as boolean telling us whether to expand y by 1 or not, and
+     * then adjust the assignments into the index as appropriate. This
+     * solves Bug 697970. */
+
     /* Step 1: Make us a table */
     scanlines = ibox->q.y-base_y;
-    /* +1 simplifies the loop below */
+    /* +1+adjust simplifies the loop below */
     index = (int *)gs_alloc_bytes(pdev->memory,
-                                  (scanlines+1) * sizeof(*index),
+                                  (scanlines+1+adjust) * sizeof(*index),
                                   "scanc index buffer");
     if (index == NULL)
         return_error(gs_error_VMerror);
@@ -448,7 +455,7 @@ make_table_template(gx_device     * pdev,
     /* Step 1 continued: Run through the path, filling in the index */
     for (psub = path->first_subpath; psub != 0;) {
         const segment * restrict pseg = (const segment *)psub;
-        fixed          ey = pseg->pt.y + adjust;
+        fixed          ey = pseg->pt.y;
         fixed          iy = ey;
         int            iey = fixed2int(iy) - base_y;
 
@@ -467,7 +474,7 @@ make_table_template(gx_device     * pdev,
                pseg->type != s_start
             ) {
             fixed sy = ey;
-            ey = pseg->pt.y + adjust;
+            ey = pseg->pt.y;
 
             switch (pseg->type) {
                 default:
@@ -477,8 +484,8 @@ make_table_template(gx_device     * pdev,
                     break;
                 case s_curve: {
                     const curve_segment *const restrict pcur = (const curve_segment *)pseg;
-                    fixed c1y = pcur->p1.y + adjust;
-                    fixed c2y = pcur->p2.y + adjust;
+                    fixed c1y = pcur->p1.y;
+                    fixed c2y = pcur->p2.y;
                     fixed maxy = sy, miny = sy;
                     int imaxy, iminy;
                     if (miny > c1y)
@@ -498,8 +505,10 @@ make_table_template(gx_device     * pdev,
                         dlprintf2("Curve (%x->%x) ", miny, maxy);
 #endif
                     iminy = fixed2int(miny) - base_y;
-                    if (iminy < 0)
+                    if (iminy <= 0)
                         iminy = 0;
+                    else
+                        iminy -= adjust;
                     if (iminy < scanlines) {
                         imaxy = fixed2int(maxy) - base_y;
                         if (imaxy >= 0) {
@@ -513,7 +522,7 @@ make_table_template(gx_device     * pdev,
                                 if (debugging_scan_converter)
                                     dlprintf1("-%x ", imaxy+1);
 #endif
-                                index[imaxy+1]-=3;
+                                index[imaxy+1+adjust]-=3;
                             }
                         }
                     }
@@ -544,8 +553,10 @@ make_table_template(gx_device     * pdev,
                         dlprintf2("Line (%x->%x) ", miny, maxy);
 #endif
                     iminy = fixed2int(miny) - base_y;
-                    if (iminy < 0)
+                    if (iminy <= 0)
                         iminy = 0;
+                    else
+                        iminy -= adjust;
                     if (iminy < scanlines) {
                         imaxy = fixed2int(maxy) - base_y;
                         if (imaxy >= 0) {
@@ -559,7 +570,7 @@ make_table_template(gx_device     * pdev,
                                 if (debugging_scan_converter)
                                     dlprintf1("-%x ", imaxy+1);
 #endif
-                                index[imaxy+1]--;
+                                index[imaxy+1+adjust]--;
                             }
                         }
                     }
@@ -585,8 +596,10 @@ make_table_template(gx_device     * pdev,
                 dlprintf2("Close (%x->%x) ", miny, maxy);
 #endif
             iminy = fixed2int(miny) - base_y;
-            if (iminy < 0)
+            if (iminy <= 0)
                 iminy = 0;
+            else
+                iminy -= adjust;
             if (iminy < scanlines) {
                 imaxy = fixed2int(maxy) - base_y;
                 if (imaxy >= 0) {
@@ -600,7 +613,7 @@ make_table_template(gx_device     * pdev,
                         if (debugging_scan_converter)
                             dlprintf1("-%x ", imaxy+1);
 #endif
-                        index[imaxy+1]--;
+                        index[imaxy+1+adjust]--;
                     }
                 }
             }
@@ -624,7 +637,7 @@ make_table_template(gx_device     * pdev,
      * buffer. */
     offset = 0;
     delta  = 0;
-    for (i=0; i < scanlines; i++) {
+    for (i=0; i < scanlines+adjust; i++) {
         delta    += intersection_size*index[i];  /* delta = Num ints on this scanline. */
         index[i]  = offset;                      /* Offset into table for this lines data. */
         offset   += delta+1;                     /* Adjust offset for next line. */
@@ -669,7 +682,7 @@ static int make_table(gx_device     * pdev,
                       int          ** index,
                       int          ** table)
 {
-    return make_table_template(pdev, path, ibox, 1, fixed_half-1, scanlines, index, table);
+    return make_table_template(pdev, path, ibox, 1, 1, scanlines, index, table);
 }
 
 int gx_scan_convert(gx_device     * restrict pdev,
@@ -2295,7 +2308,7 @@ static int make_table_tr(gx_device     * pdev,
                          int          ** index,
                          int          ** table)
 {
-    return make_table_template(pdev, path, ibox, 2, fixed_half-1, scanlines, index, table);
+    return make_table_template(pdev, path, ibox, 2, 1, scanlines, index, table);
 }
 
 int gx_scan_convert_tr(gx_device     * restrict pdev,
