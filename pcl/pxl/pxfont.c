@@ -491,6 +491,8 @@ pxSetFont(px_args_t * par, px_state_t * pxs)
     int code;
 
     if (!par->pv[3]) {
+         if (!par->pv[0] || !par->pv[1] || !par->pv[2])
+             return gs_note_error(errorMissingAttribute);
         pfnv = par->pv[0];
         /* force "find_font" to fail if the symbol set is not
            specified */
