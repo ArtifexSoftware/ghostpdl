@@ -977,7 +977,11 @@ clip_call_fill_path(clip_callback_data_t * pccd, int xc, int yc, int xec, int ye
     gx_clip_path cpath_intersection;
     gx_clip_path *pcpath = (gx_clip_path *)pccd->pcpath;
 
-    if (pcpath != NULL) {
+    /* Previously the code here tested for pcpath != NULL, but
+     * we can commonly (such as from clist_playback_band) be
+     * called with a non-NULL, but still invalid clip path.
+     * Detect this by the list having at least one entry in it. */
+    if (pcpath != NULL && pcpath->rect_list->list.count != 0) {
         gx_path rect_path;
         code = gx_cpath_init_local_shared_nested(&cpath_intersection, pcpath, pccd->ppath->memory, 1);
         if (code < 0)
