@@ -2486,7 +2486,61 @@ currentdict end readonly def
         //ocg_pocs exch get exec             % bool
       } ifelse
     } {
-      /OFF known not % OFF is inserted by process_trailer_attrs
+      dup /OFF known not % OFF is inserted by process_trailer_attrs
+      {
+        %% /OC is not in the OCProperties /OFF array, so we need to
+        %% test its usage. We may eventually have to add a /ON to the dictionary
+        %% if the OCProperties /ON array defines the /OC, I think that should override
+        % the Usage, but I don't have an example to test.
+        /Usage .knownget {
+          oforce
+          /Printed where {
+            /Printed get
+          } {
+            //false
+          }ifelse
+          {
+            %% We are behaving as a printer, check the Print state
+            /Print .knownget {
+              /PrintState .knownget {
+                oforce
+                /OFF eq {
+                  //false
+                }{
+                  //true
+                } ifelse
+              }{
+                //true
+              } ifelse
+            }{
+              %% If we don't know, assume its visible
+              //true
+            } ifelse
+          }{
+            %% We are behaving as a viewer, check the View state
+            /View .knownget {
+              oforce
+              /ViewState .knownget {
+                /OFF eq {
+                  //false
+                }{
+                  //true
+                } ifelse
+              }{
+                //true
+              } ifelse
+            }{
+              %% If we don't know, assume its visible
+              //true
+            } ifelse
+          } ifelse
+        }{
+          %% If we don't know, assume its visible
+          //true
+        } ifelse
+      }{
+        pop //false
+      }ifelse
     } ifelse
   } {
     /OFF known not % OFF is inserted by process_trailer_attrs
