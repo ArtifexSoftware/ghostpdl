@@ -38,7 +38,7 @@
 /* #define PACIFY_VALGRIND */
 
 #ifndef __WIN32__
-#define __align16  __attribute__((align(16)))
+#define __align16  __attribute__((aligned(16)))
 #else
 #define __align16 __declspec(align(16))
 #endif
