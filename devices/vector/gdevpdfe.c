@@ -588,7 +588,7 @@ pdf_make_document_uuid(gx_device_pdf *pdev, const byte digest[6], char *buf, int
         int l = min(buf_length - 6, pdev->DocumentUUID.size);
 
         memcpy(buf+5, pdev->DocumentUUID.data, l);
-        buf[l] = 0;
+        buf[l+5] = 0;
     } else
         pdf_make_uuid(digest, pdf_uuid_time(pdev), pdev->DocumentTimeSeq, buf+5, buf_length - 5);
     return 0;
