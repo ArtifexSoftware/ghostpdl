@@ -1021,7 +1021,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gs_gstate * pgs, const gx_drawing_co
      */
     code = gs_distance_transform_inverse(1, 1, &smat, &dist);
     if (code == gs_error_undefinedresult) {
-        smat.xx = smat.yy = 0.00000001;
+        smat.xx = smat.yy = 0.00000001f;
         smat.xy = smat.yx = smat.tx = smat.ty = 0;
         code = 0;
     }
