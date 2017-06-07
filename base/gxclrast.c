@@ -1261,6 +1261,11 @@ set_phase:      /*
                         break;
                     case cmd_opv_enable_clip:
                         pcpath = (use_clip ? &clip_path : NULL);
+                        if (pcpath) {
+                            code = gx_cpath_ensure_path_list(pcpath);
+                            if (code < 0)
+                                goto out;
+                        }
                         clipper_dev_open = false;
                         if_debug0m('L', mem, "\n");
                         break;
@@ -1307,6 +1312,11 @@ set_phase:      /*
                                   cbox.q.y >= target_box.q.y);
                         }
                         pcpath = (use_clip ? &clip_path : NULL);
+                        if (pcpath) {
+                            code = gx_cpath_ensure_path_list(pcpath);
+                            if (code < 0)
+                                goto out;
+                        }
                         clipper_dev_open = false;
                         state.lop_enabled = clip_save.lop_enabled;
                         gs_gstate.log_op =

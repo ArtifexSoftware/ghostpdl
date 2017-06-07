@@ -388,6 +388,7 @@ int
                                bool segments_shared),
     gx_cpath_to_path(gx_clip_path *, gx_path *),
     gx_cpath_to_path_synthesize(const gx_clip_path * pcpath, gx_path * ppath);
+int gx_cpath_ensure_path_list(gx_clip_path *pcpath);
 bool
     gx_cpath_inner_box(const gx_clip_path *, gs_fixed_rect *),
     gx_cpath_outer_box(const gx_clip_path *, gs_fixed_rect *),

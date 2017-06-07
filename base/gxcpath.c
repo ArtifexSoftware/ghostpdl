@@ -604,6 +604,15 @@ gx_cpath_clip(gs_gstate *pgs, gx_clip_path *pcpath,
 }
 
 int
+gx_cpath_ensure_path_list(gx_clip_path *pcpath)
+{
+    if (pcpath == NULL || pcpath->path_list)
+        return 0;
+    return gx_cpath_path_list_new(pcpath->path.memory, pcpath, pcpath->rule,
+                                  &pcpath->path, NULL, &pcpath->path_list);
+}
+
+int
 gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
                    int rule, gs_gstate *pgs, const gx_fill_params * params)
 {
@@ -689,7 +698,7 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
         }
     } else {
         /* New clip path is nontrivial.  Intersect the slow way. */
-        gx_cpath_path_list *next = pcpath->path_list;
+        gx_cpath_path_list *next = NULL;
         bool path_valid =
             pcpath_is_rect &&
             gx_path_bbox(ppath, &new_box) >= 0 &&
@@ -698,10 +707,15 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
                                         new_box.q.x, new_box.q.y);
 
         if (!path_valid && next == NULL) {
-            code = gx_cpath_path_list_new(pcpath->path.memory, pcpath, pcpath->rule,
-                                            &pcpath->path, NULL, &next);
+            /* gx_cpaths should generally have a path_list set within
+             * them. In some cases (filled images), they may not. Ensure
+             * that they do, and remember the path_list */
+            code = gx_cpath_ensure_path_list(pcpath);
             if (code < 0)
                 goto ex;
+            /* gx_cpath_intersect_path_slow NULLs pcpath->path_list, so
+             * remember it here. */
+            next = pcpath->path_list;
         }
         code = gx_cpath_intersect_path_slow(pcpath, (params != NULL ? ppath_orig : ppath),
                             rule, pgs, params);
@@ -713,7 +727,7 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
             pcpath->rule = rule;
         } else {
             code = gx_cpath_path_list_new(pcpath->path.memory, NULL, rule,
-                                            ppath_orig, next, &pcpath->path_list);
+                                          ppath_orig, next, &pcpath->path_list);
         }
     }
 ex:
