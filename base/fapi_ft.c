@@ -967,10 +967,10 @@ transform_decompose(FT_Matrix * a_transform, FT_UInt * xresp, FT_UInt * yresp,
         factx = 64.0/scalex;
         facty = 64.0/scaley;
 
-        ftscale_mat.xx = a_transform->xx * factx;
-        ftscale_mat.xy = a_transform->xy * facty;
-        ftscale_mat.yx = a_transform->yx * factx;
-        ftscale_mat.yy = a_transform->yy * facty;
+        ftscale_mat.xx = (FT_Fixed)(a_transform->xx * factx);
+        ftscale_mat.xy = (FT_Fixed)(a_transform->xy * facty);
+        ftscale_mat.yx = (FT_Fixed)(a_transform->yx * factx);
+        ftscale_mat.yy = (FT_Fixed)(a_transform->yy * facty);
         memcpy(a_transform, &ftscale_mat, sizeof(ftscale_mat));
         scalex = hypot((double)a_transform->xx, (double)a_transform->xy);
         scaley = hypot((double)a_transform->yx, (double)a_transform->yy);
@@ -1000,13 +1000,13 @@ transform_decompose(FT_Matrix * a_transform, FT_UInt * xresp, FT_UInt * yresp,
         FT_Matrix_Multiply(&ftscale_mat, a_transform);
 
         xres = yres = (use_x ? (*xresp) : (*yresp));
-        xres = xres / factx;
-        yres = yres / facty;
+        xres = (FT_UInt)(xres / factx);
+        yres = (FT_UInt)(yres / facty);
     }
     else {
         /* Life is considerably easier when square resolutions are in use! */
-        xres = *xresp / factx;
-        yres = *yresp / facty;
+        xres = (FT_UInt)(*xresp / factx);
+        yres = (FT_UInt)(*yresp / facty);
     }
 
     scalex *= 1.0 / 65536.0;
