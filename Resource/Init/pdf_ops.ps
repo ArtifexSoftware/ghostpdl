@@ -1723,6 +1723,7 @@ end readonly def
 /Tmatrix matrix def
 /tS
  {
+   currentlinecap 0 setlinecap
    currentfont /FontType get 3 eq
    {
      settextfillstate //true TextTransSetup currentpoint fill TextTransTeardown moveto
@@ -1733,6 +1734,7 @@ end readonly def
      setmatrix moveto
    } ifelse
    //true /TextFillStateNeeded gput
+   setlinecap
  } bdef
 
 % Handle transparency the same as /B operator
