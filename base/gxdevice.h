@@ -272,6 +272,7 @@ dev_proc_copy_rop(gx_no_copy_rop);      /* gives error */
 dev_proc_copy_rop(gx_default_copy_rop);
 dev_proc_fill_path(gx_default_fill_path);
 dev_proc_stroke_path(gx_default_stroke_path);
+dev_proc_fill_stroke_path(gx_default_fill_stroke_path);
 dev_proc_fill_mask(gx_default_fill_mask);
 dev_proc_fill_trapezoid(gx_default_fill_trapezoid);
 dev_proc_fill_parallelogram(gx_default_fill_parallelogram);
@@ -379,6 +380,7 @@ dev_proc_get_band(gx_forward_get_band);
 dev_proc_copy_rop(gx_forward_copy_rop);
 dev_proc_fill_path(gx_forward_fill_path);
 dev_proc_stroke_path(gx_forward_stroke_path);
+dev_proc_fill_stroke_path(gx_forward_fill_stroke_path);
 dev_proc_fill_mask(gx_forward_fill_mask);
 dev_proc_fill_trapezoid(gx_forward_fill_trapezoid);
 dev_proc_fill_parallelogram(gx_forward_fill_parallelogram);

@@ -525,7 +525,7 @@ $(PSOBJ)zmatrix.$(OBJ) : $(PSSRC)zmatrix.c $(OP)\
 	$(PSCC) $(PSO_)zmatrix.$(OBJ) $(C_) $(PSSRC)zmatrix.c
 
 $(PSOBJ)zpaint.$(OBJ) : $(PSSRC)zpaint.c $(OP)\
- $(gspaint_h) $(igstate_h) $(INT_MAK) $(MAKEDIRS)
+ $(gspaint_h) $(igstate_h) $(store_h) $(estack_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zpaint.$(OBJ) $(C_) $(PSSRC)zpaint.c
 
 $(PSOBJ)zpath.$(OBJ) : $(PSSRC)zpath.c $(OP) $(math__h)\

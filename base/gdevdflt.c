@@ -613,6 +613,7 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, copy_rop, gx_default_copy_rop);
     fill_dev_proc(dev, fill_path, gx_default_fill_path);
     fill_dev_proc(dev, stroke_path, gx_default_stroke_path);
+    fill_dev_proc(dev, fill_stroke_path, gx_default_fill_stroke_path);
     fill_dev_proc(dev, fill_mask, gx_default_fill_mask);
     fill_dev_proc(dev, fill_trapezoid, gx_default_fill_trapezoid);
     fill_dev_proc(dev, fill_parallelogram, gx_default_fill_parallelogram);

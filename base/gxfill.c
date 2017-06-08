@@ -663,6 +663,27 @@ gx_default_fill_path(gx_device * pdev, const gs_gstate * pgs,
     return code;
 }
 
+/*
+ * Fill/Stroke a path.  This is the default implementation of the driver
+ * fill_path procedure.
+ */
+int
+gx_default_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
+                            gx_path * ppath,
+                            const gx_fill_params * params_fill,
+                            const gx_device_color * pdevc_fill,
+                            const gx_stroke_params * params_stroke,
+                            const gx_device_color * pdevc_stroke,
+                            const gx_clip_path * pcpath)
+{
+    int code = gx_default_fill_path(pdev, pgs, ppath, params_fill, pdevc_fill, pcpath);
+
+    if (code < 0)
+        return code;
+
+    return gx_default_stroke_path(pdev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
+}
+
 /* Free the line list. */
 static void
 free_line_list(line_list *ll)

@@ -36,6 +36,7 @@
 #include "gxdevsop.h"
 #include "gsicc_cms.h"
 #include "gdevepo.h"
+#include "assert_.h"
 
 /* Define the nominal size for alpha buffers. */
 #define abuf_nominal_SMALL 500
@@ -538,4 +539,186 @@ int
 gs_strokepath2(gs_gstate * pgs)
 {
     return gs_strokepath_aux(pgs, false);
+}
+
+static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
+{
+    int code, abits, acode, rcode = 0;
+    bool devn;
+    float orig_width, scale, orig_flatness;
+
+    switch (*restart)
+    {
+    case 1:
+        goto restart1;
+    case 2:
+        goto restart2;
+    default:
+        assert("This should never happen" == NULL);
+        break;
+    case 0:
+        break;
+    }
+
+    /* We need to distinguish text from vectors to set the object tag.
+
+       To make that determination, we check for the show graphics state being stored
+       in the current graphics state. This works even in the case of a glyph from a
+       Type 3 Postscript/PDF font which has multiple, nested gsave/grestore pairs in
+       the BuildGlyph/BuildChar procedure. Also, it works in the case of operating
+       without a glyph cache or bypassing the cache because the glyph is too large or
+       the cache being already full.
+
+       Note that it doesn't work for a construction like:
+       "(xyz) true charpath fill/stroke"
+       where the show machinations have completed before we get to the fill operation.
+       This has implications for how we handle PDF text rendering modes 1 and 2. To
+       handle that, we'll have to add a flag to the path structure, or to the path
+       segment structure (depending on how fine grained we require it to be).
+     */
+    if (pgs->show_gstate == NULL)
+        ensure_tag_is_set(pgs, pgs->device, GS_PATH_TAG);	/* NB: may unset_dev_color */
+    else
+        ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
+
+    code = gx_set_dev_color(pgs);
+    *restart = 1;
+    if (code != 0)
+        return code;
+restart1:
+    code = gs_gstate_color_load(pgs);
+    if (code < 0)
+        return code;
+    gs_swapcolors_quick(pgs);
+    code = gx_set_dev_color(pgs);
+    *restart = 2;
+    if (code != 0)
+        return code;
+restart2:
+    *restart = 0;
+    code = gs_gstate_color_load(pgs);
+    if (code < 0)
+        return code;
+    gs_swapcolors_quick(pgs);
+    abits = 0;
+    {
+        gx_device_color *col_fill = gs_currentdevicecolor_inline(pgs);
+        gx_device_color *col_stroke = gs_altdevicecolor_inline(pgs);
+        devn = color_is_devn(col_fill);
+        assert(devn == color_is_devn(col_stroke));
+        if (color_is_pure(col_fill) || color_is_pure(col_stroke) || devn)
+            abits = alpha_buffer_bits(pgs);
+    }
+    if (abits > 1) {
+        /*
+         * Expand the bounding box by the line width.
+         * This is expensive to compute, so we only do it
+         * if we know we're going to buffer.
+         */
+        float new_width;
+        gx_path spath;
+        fixed extra_adjust;
+        float xxyy = fabs(pgs->ctm.xx) + fabs(pgs->ctm.yy);
+        float xyyx = fabs(pgs->ctm.xy) + fabs(pgs->ctm.yx);
+        gs_logical_operation_t orig_lop = pgs->log_op;
+        pgs->log_op |= lop_pdf14; /* Force stroking to happen all in 1 go */
+        scale = (float)(1 << (abits / 2));
+        orig_width = gs_currentlinewidth(pgs);
+        new_width = orig_width * scale;
+        extra_adjust =
+                float2fixed(max(xxyy, xyyx) * new_width / 2);
+        orig_flatness = gs_currentflat(pgs);
+
+        /* Scale up the line width, dash pattern, and flatness. */
+        if (extra_adjust < fixed_1)
+            extra_adjust = fixed_1;
+        acode = alpha_buffer_init(pgs,
+                                  pgs->fill_adjust.x + extra_adjust,
+                                  pgs->fill_adjust.y + extra_adjust,
+                                  abits, devn);
+        if (acode == 2) /* Special case for no fill required */
+            return 0;
+        if (acode < 0)
+            return acode;
+        gs_setlinewidth(pgs, new_width);
+        scale_dash_pattern(pgs, scale);
+        gs_setflat(pgs, orig_flatness * scale);
+        pgs->log_op = orig_lop;
+    } else
+        acode = 0;
+    code = gx_fill_stroke_path(pgs, rule);
+    if (abits > 0)
+    {
+        gs_setlinewidth(pgs, orig_width);
+        scale_dash_pattern(pgs, 1.0 / scale);
+        gs_setflat(pgs, orig_flatness);
+        rcode = alpha_buffer_release(pgs, code >= 0);
+    }
+    if (code >= 0 && rcode < 0)
+        code = rcode;
+    return code;
+}
+
+/* Fill the current path using a specified rule. */
+static int
+fill_stroke_with_rule(gs_gstate * pgs, int rule, int *restart)
+{
+    int code;
+
+    /* If we're inside a charpath, just merge the current path */
+    /* into the parent's path. */
+    if (pgs->in_charpath) {
+        /* If we're rendering a glyph cached, the show machinery decides
+         * whether to actually image it on the output or not, but uncached
+         * will render directly to the output, so for text rendering
+         * mode 3, we have to short circuit it here, but keep the
+         * current point
+         */
+        *restart = 0;
+        code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path,
+                                     pgs->in_charpath);
+        if (code < 0)
+            return code;
+        if (pgs->in_charpath == cpm_true_charpath) {
+            /*
+             * A stroke inside a true charpath should do the
+             * equivalent of strokepath.
+             */
+            code = gs_strokepath(pgs);
+            if (code < 0)
+                return code;
+            code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path,
+                                         pgs->in_charpath);
+            if (code < 0)
+                return code;
+        }
+    }
+    else if (gs_is_null_device(pgs->device) ||
+             (pgs->show_gstate && pgs->text_rendering_mode == 3 &&
+              pgs->in_cachedevice == CACHE_DEVICE_NOT_CACHING)) {
+        /* Text Rendering Mode = 3 => Neither stroke, nor fill */
+        /* Handle separately to prevent gs_gstate_color_load - bug 688308. */
+        *restart = 0;
+        gs_newpath(pgs);
+        code = 0;
+    } else {
+        code = do_fill_stroke(pgs, rule, restart);
+        if (code >= 0)
+            gs_newpath(pgs);
+    }
+    return code;
+}
+/* Fill using the winding number rule */
+int
+gs_fillstroke(gs_gstate * pgs, int *restart)
+{
+    pgs->device->sgr.stroke_stored = false;
+    return fill_stroke_with_rule(pgs, gx_rule_winding_number, restart);
+}
+/* Fill using the even/odd rule */
+int
+gs_eofillstroke(gs_gstate * pgs, int *restart)
+{
+    pgs->device->sgr.stroke_stored = false;
+    return fill_stroke_with_rule(pgs, gx_rule_even_odd, restart);
 }

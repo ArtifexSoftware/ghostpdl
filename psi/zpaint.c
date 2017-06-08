@@ -19,6 +19,8 @@
 #include "oper.h"
 #include "gspaint.h"
 #include "igstate.h"
+#include "store.h"
+#include "estack.h"
 
 /* - fill - */
 static int
@@ -39,6 +41,64 @@ static int
 zstroke(i_ctx_t *i_ctx_p)
 {
     return gs_stroke(igs);
+}
+
+static int
+fillstroke_cont2(i_ctx_t *i_ctx_p)
+{
+    int restart = 2;
+    return gs_fillstroke(igs, &restart);
+}
+
+static int
+fillstroke_cont1(i_ctx_t *i_ctx_p)
+{
+    int restart = 1;
+    int code = gs_fillstroke(igs, &restart);
+    if (restart == 2)
+        push_op_estack(fillstroke_cont2);
+    return code;
+}
+
+static int
+zfillstroke(i_ctx_t *i_ctx_p)
+{
+    int restart;
+    int code = gs_fillstroke(igs, &restart);
+    if (restart == 1)
+        push_op_estack(fillstroke_cont1);
+    else
+        push_op_estack(fillstroke_cont2);
+    return code;
+}
+
+static int
+eofillstroke_cont2(i_ctx_t *i_ctx_p)
+{
+    int restart = 2;
+    return gs_eofillstroke(igs, &restart);
+}
+
+static int
+eofillstroke_cont1(i_ctx_t *i_ctx_p)
+{
+    int restart = 1;
+    int code = gs_eofillstroke(igs, &restart);
+    if (restart == 2)
+        push_op_estack(eofillstroke_cont2);
+    return code;
+}
+
+static int
+zeofillstroke(i_ctx_t *i_ctx_p)
+{
+    int restart;
+    int code = gs_eofillstroke(igs, &restart);
+    if (restart == 1)
+        push_op_estack(eofillstroke_cont1);
+    else
+        push_op_estack(eofillstroke_cont2);
+    return code;
 }
 
 /* ------ Non-standard operators ------ */
@@ -80,5 +140,11 @@ const op_def zpaint_op_defs[] =
                 /* Non-standard operators */
     {"0.fillpage", zfillpage},
     {"3.imagepath", zimagepath},
+    {"0.eofillstroke", zeofillstroke},
+    {"0.fillstroke", zfillstroke},
+    {"0%eofillstroke_cont1", eofillstroke_cont1 },
+    {"0%eofillstroke_cont2", eofillstroke_cont2 },
+    {"0%fillstroke_cont1", fillstroke_cont1 },
+    {"0%fillstroke_cont2", fillstroke_cont2 },
     op_def_end(0)
 };
