@@ -454,7 +454,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
              * an integer if we're close to one (< 0.1) or silently switch to
              * bicubic transform otherwise. See bug #693917. */
             float rfactor = floor(factor + 0.5);
-            if (fabs(rfactor-factor) < 0.1)
+            if (fabs(rfactor-factor) < 0.1 || pim->ColorSpace->type->index == gs_color_space_index_Indexed)
                 factor = rfactor;  /* round factor to nearest integer */
             else
                 templat = &s_Bicubic_template;  /* switch to bicubic */
