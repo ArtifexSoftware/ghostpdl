@@ -571,6 +571,7 @@ gx_cpath_reset(gx_clip_path * pcpath)
     gs_fixed_rect null_rect;
 
     null_rect.p.x = null_rect.p.y = null_rect.q.x = null_rect.q.y = 0;
+    rc_decrement(pcpath->path_list, "gx_cpath_reset");
     return gx_cpath_from_rectangle(pcpath, &null_rect);
 }
 
