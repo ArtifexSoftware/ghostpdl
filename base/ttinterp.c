@@ -4129,7 +4129,9 @@ static int nInstrCount=0;
     Int         point;
     (void)args;
 
-    if ( CUR.top < CUR.GS.loop )
+    if ( CUR.top < CUR.GS.loop ||
+         BOUNDS(CUR.GS.rp1, CUR.zp0.n_points) ||
+         BOUNDS(CUR.GS.rp2, CUR.zp1.n_points))
     {
       CUR.error = TT_Err_Invalid_Reference;
       return;
