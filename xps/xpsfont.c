@@ -182,11 +182,26 @@ xps_load_sfnt_name(xps_font_t *font, char *namep)
         return;
     }
 
+    /* validate the offset, and the data for the two
+     * values we're about to read
+     */
+    if (offset + 6 > font->length)
+    {
+        gs_warn("name table byte offset invalid");
+        return;
+    }
     namedata = font->data + offset;
 
     /*format = u16(namedata + 0);*/
     count = u16(namedata + 2);
     stringoffset = u16(namedata + 4);
+
+    if (stringoffset + offset > font->length
+        || offset + 6 + count * 12 > font->length)
+    {
+        gs_warn("name table invalid");
+        return;
+    }
 
     if (length < 6 + (count * 12))
     {
