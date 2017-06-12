@@ -460,7 +460,7 @@ XPS_LDFLAGS_SO=@XPS_DYNAMIC_LDFLAGS@
 # (Libraries required by individual drivers are handled automatically.)
 
 EXTRALIBS=$(XTRALIBS) @LIBS@ @DYNAMIC_LIBS@ @FONTCONFIG_LIBS@ @FT_LIBS@ @JPX_AUTOCONF_LIBS@ @EXPAT_LIBS@
-AUXEXTRALIBS=@AUXEXTRALIBS@
+AUXEXTRALIBS=@AUXEXTRALIBS@ @AUX_SHARED_ZLIB@
 
 # Define the standard libraries to search at the end of linking.
 # Most platforms require -lpthread for the POSIX threads library;
