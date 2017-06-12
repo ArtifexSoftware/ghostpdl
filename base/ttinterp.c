@@ -3858,7 +3858,8 @@ static int nInstrCount=0;
     /* XXX: UNDOCUMENTED! cvt[-1] = 0 always */
 
     if ( BOUNDS( args[0],   CUR.zp1.n_points ) ||
-         BOUNDS( args[1]+1, CUR.cvtSize+1 )    )
+         BOUNDS( args[1]+1, CUR.cvtSize+1 )    ||
+         BOUNDS(CUR.GS.rp0,  CUR.zp0.n_points) )
     {
       CUR.error = TT_Err_Invalid_Reference;
       return;
