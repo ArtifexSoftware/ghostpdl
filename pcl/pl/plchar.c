@@ -519,6 +519,10 @@ pl_tt_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
 
     *pdata = plfont->header + plfont->offsets.GT +
         (plfont->large_sizes ? 6 : 4) + offset;
+
+    if (*pdata > plfont->header + plfont->header_size)
+        return_error(gs_error_invalidfont);
+
     return 0;
 }
 
