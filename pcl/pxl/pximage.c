@@ -864,6 +864,8 @@ pxReadRastPattern(px_args_t * par, px_state_t * pxs)
     px_pattern_enum_t *pxenum = pxs->pattern_enum;
     int code;
     uint input_per_row = round_up(pxenum->benum.data_per_row, 4);
+    byte *plimit = pxenum->pattern->data +
+        (pxenum->benum.data_per_row * pxenum->pattern->params.height);
 
     if (par->pv[3])
         input_per_row =
@@ -887,6 +889,8 @@ pxReadRastPattern(px_args_t * par, px_state_t * pxs)
         code = read_bitmap(&pxenum->benum, &rdata, par);
         if (code != 1)
             break;
+        if (data >= plimit)
+            return_error(gs_error_rangecheck);
         if (rdata != data)
             memcpy(data, rdata, pxenum->benum.data_per_row);
     }
