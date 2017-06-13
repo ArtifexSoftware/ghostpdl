@@ -437,7 +437,7 @@ int
 pcl_reselect_font(pcl_font_selection_t * pfs, const pcl_state_t * pcs,
                   bool internal_only)
 {
-    if (pfs->font == 0) {
+    if (pfs->font == 0 || pfs->font->pfont == 0) {
         pl_dict_enum_t dictp;
         gs_const_string key;
         void *value;

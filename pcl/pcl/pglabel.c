@@ -183,6 +183,7 @@ hpgl_select_stick_font(hpgl_state_t * pgls)
     font->font_type = plft_Unicode;
     font->widths_cache = NULL;
     font->widths_cache_nitems = 0;
+    font->storage = 0;
 
     memcpy(font->character_complement, stick_character_complement, 8);
     /*
