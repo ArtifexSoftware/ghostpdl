@@ -715,9 +715,8 @@ pcl_vmi_default(pcl_state_t * pcs)
     if (!pjl_proc_compare(pcs->pjls,
                           pjl_proc_get_envvar(pcs->pjls,
                                               "FORMLINES_SET"), "ON")) {
-        vmi = (pcs->margins.length /
-               pjl_proc_vartoi(pcs->pjls,
-                               pjl_proc_get_envvar(pcs->pjls, "formlines")));
+        int value = pjl_proc_vartoi(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "formlines"));
+        vmi = (pcs->margins.length / (value < 5 ? 5 : (value > 128 ? 128 : value)));
     } else {
         vmi = inch2coord(8.0 / 48.0);
     }
