@@ -4208,8 +4208,8 @@ currentdict /.PDFDrawAnnotType? undef
       { 1 index exch write== } forall
       dup 3 index /MaxLen pget not { 0 } if write=
       dup 3 index /V pget not {
-        3 index /DV pget not { () } if write==
-      } if
+        3 index /DV pget not { () } if
+      } if write==
       dup 3 index /Ff pget not { 0 } if write=
       dup 3 index /Q pget not { 0 } if write=
       dup (Tform ET) write=
