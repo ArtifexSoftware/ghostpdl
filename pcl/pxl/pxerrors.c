@@ -66,8 +66,8 @@ px_error_setfont(px_state_t * pxs)
 
         while (*cdata && code >= 0) {
            cdatanext = cdata + 16 +
-                ((uint16at(cdata + 10, true) + 7) >> 3) *
-                uint16at(cdata + 12, true) + 1; /* add one to clear the char code */
+                ((uint16at(cdata + 11, true) + 7) >> 3) *
+                uint16at(cdata + 13, true) + 1; /* add one to clear the char code */
 
             code = pl_font_add_glyph(pxfont, *cdata, cdata + 1, (int)(cdatanext - cdata - 2));
             cdata = cdatanext;
