@@ -1301,7 +1301,7 @@ $(GLD)fapif0.dev : $(INT_MAK) $(ECHOGS_XE) $(LIB_MAK) $(MAKEDIRS)
 $(GLOBJ)gxfapi.$(OBJ) : $(GLSRC)gxfapi.c $(memory__h) $(gsmemory_h) $(gserrors_h) $(gxdevice_h) \
                  $(gxfont_h) $(gxfont1_h) $(gxpath_h) $(gxfcache_h) $(gxchrout_h) $(gximask_h) \
                  $(gscoord_h) $(gspaint_h) $(gspath_h) $(gzstate_h) $(gxfcid_h) $(gxchar_h) \
-                 $(gdebug_h) $(gsimage_h) $(gxfapi_h) $(gsbittab_h) $(LIB_MAK) $(MAKEDIRS)
+                 $(gdebug_h) $(gsimage_h) $(gxfapi_h) $(gsbittab_h) $(gzpath_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxfapi.$(OBJ) $(C_) $(GLSRC)gxfapi.c
 
 $(GLD)gxfapi.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gxfapi.$(OBJ) $(GLD)fapiu$(UFST_BRIDGE).dev \
