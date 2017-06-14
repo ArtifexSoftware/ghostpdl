@@ -1088,7 +1088,7 @@ chunk_free_object(gs_memory_t *mem, void *ptr, client_name_t cname)
     if_debug3m('A', cmem->target, "[a-]chunk_free_object(%s) 0x%lx(%u)\n",
                client_name_string(cname), (ulong) ptr, obj->size);
 
-    if (SINGLE_OBJECT_CHUNK(obj->size)) {
+    if (SINGLE_OBJECT_CHUNK(obj->size - obj->padding)) {
         gs_free_object(cmem->target, obj, "chunk_free_object(single object)");
 #ifdef DEBUG_CHUNK
         gs_memory_chunk_dump_memory(cmem);
