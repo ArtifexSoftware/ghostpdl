@@ -144,8 +144,8 @@ xps_select_best_font_encoding(xps_font_t *font)
             xps_identify_font_encoding(font, i, &pid, &eid);
             if (pid == xps_cmap_list[k].pid && eid == xps_cmap_list[k].eid)
             {
-                xps_select_font_encoding(font, i);
-                return;
+                if (xps_select_font_encoding(font, i))
+                    return;
             }
         }
     }
