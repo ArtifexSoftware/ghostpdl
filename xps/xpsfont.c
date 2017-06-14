@@ -163,7 +163,7 @@ xps_find_sfnt_table(xps_font_t *font, const char *name, int *lengthp)
  * Get the windows truetype font file name - position 4 in the name table.
  */
 void
-xps_load_sfnt_name(xps_font_t *font, char *namep)
+xps_load_sfnt_name(xps_font_t *font, char *namep, const int buflen)
 {
     byte *namedata;
     int offset, length;
@@ -218,6 +218,8 @@ xps_load_sfnt_name(xps_font_t *font, char *namep)
         int nameid = u16(record + 6);
         length = u16(record + 8);
         offset = u16(record + 10);
+
+        length = length > buflen - 1 ? buflen - 1: length;
 
         /* Full font name or postscript name */
         if (nameid == 4 || nameid == 6)

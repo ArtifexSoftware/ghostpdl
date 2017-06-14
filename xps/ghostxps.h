@@ -274,7 +274,7 @@ int xps_encode_font_char(xps_font_t *font, int key);
 void xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_glyph_metrics_t *mtx);
 
 int xps_find_sfnt_table(xps_font_t *font, const char *name, int *lengthp);
-void xps_load_sfnt_name(xps_font_t *font, char *namep);
+void xps_load_sfnt_name(xps_font_t *font, char *namep, const int buflen);
 int xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font);
 int xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font);
 

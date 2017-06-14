@@ -385,7 +385,7 @@ xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
         p42->procs.build_char = xps_true_callback_build_char;
 
         memset(p42->font_name.chars, 0, sizeof(p42->font_name.chars));
-        xps_load_sfnt_name(font, (char*)p42->font_name.chars);
+        xps_load_sfnt_name(font, (char*)p42->font_name.chars, sizeof(p42->font_name.chars));
         p42->font_name.size = strlen((char*)p42->font_name.chars);
 
         memset(p42->key_name.chars, 0, sizeof(p42->key_name.chars));
