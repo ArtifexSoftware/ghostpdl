@@ -3770,7 +3770,8 @@ static int nInstrCount=0;
 
     point = (Int)args[0];
 
-    if ( BOUNDS( args[0], CUR.zp1.n_points ) )
+    if ( BOUNDS( args[0], CUR.zp1.n_points ) ||
+         BOUNDS( CUR.GS.rp0, CUR.zp0.n_points) )
     {
         /* Current version of FreeType silently ignores this out of bounds error
          * and drops the instruction, see bug #691121
