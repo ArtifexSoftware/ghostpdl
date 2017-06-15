@@ -79,7 +79,8 @@ static void gx_ttfReader__Read(ttfReader *self, void *p, int n)
     if (!r->error) {
         if (r->extra_glyph_index != -1) {
             q = r->glyph_data.bits.data + r->pos;
-            r->error = (r->glyph_data.bits.size - r->pos < n ?
+            r->error = ((r->pos >= r->glyph_data.bits.size ||
+                        r->glyph_data.bits.size - r->pos < n) ?
                             gs_note_error(gs_error_invalidfont) : 0);
             if (r->error == 0)
                 memcpy(p, q, n);
