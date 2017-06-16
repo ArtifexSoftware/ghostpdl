@@ -1794,6 +1794,12 @@ static int nInstrCount=0;
 
   static void  Ins_JMPR( INS_ARG )
   {
+    if ( BOUNDS(CUR.IP + args[0], CUR.codeSize ) )
+    {
+      CUR.error = TT_Err_Invalid_Reference;
+      return;
+    }
+
     CUR.IP      += (Int)(args[0]);
     CUR.step_ins = FALSE;
 
