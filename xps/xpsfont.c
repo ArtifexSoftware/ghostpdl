@@ -397,7 +397,7 @@ xps_encode_font_char_imp(xps_font_t *font, int code)
                 if ( code > u16(endCount + i2) )
                     continue;
                 delta = s16(idDelta + i2);
-                roff = s16(idRangeOffset + i2);
+                roff = u16(idRangeOffset + i2);
                 if ( roff == 0 )
                 {
                     return ( code + delta ) & 0xffff; /* mod 65536 */
@@ -515,7 +515,7 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
 
                 for (i2 = 0; i2 < segCount2 - 3; i2 += 2)
                 {
-                    int delta = s16(idDelta + i2), roff = s16(idRangeOffset + i2);
+                    int delta = s16(idDelta + i2), roff = u16(idRangeOffset + i2);
                     int start = u16(startCount + i2);
                     int end = u16(endCount + i2);
                     int glyph, i;
