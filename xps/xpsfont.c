@@ -379,9 +379,14 @@ xps_encode_font_char_imp(xps_font_t *font, int code)
             byte *startCount = endCount + segCount2 + 2;
             byte *idDelta = startCount + segCount2;
             byte *idRangeOffset = idDelta + segCount2;
+            byte *giddata;
             int i2;
 
-            for (i2 = 0; i2 < segCount2 - 3; i2 += 2)
+            if (segCount2 < 3 || segCount2 > 65535 ||
+               idRangeOffset > font->data + font->length)
+               return gs_error_invalidfont;
+
+           for (i2 = 0; i2 < segCount2 - 3; i2 += 2)
             {
                 int delta, roff;
                 int start = u16(startCount + i2);
@@ -396,9 +401,12 @@ xps_encode_font_char_imp(xps_font_t *font, int code)
                 if ( roff == 0 )
                 {
                     return ( code + delta ) & 0xffff; /* mod 65536 */
-                    return 0;
                 }
-                glyph = u16(idRangeOffset + i2 + roff + ((code - start) << 1));
+                if ((giddata = (idRangeOffset + i2 + roff + ((code - start) << 1))) >
+                    font->data + font->length) {
+                    return code;
+                }
+                glyph = u16(giddata);
                 return (glyph == 0 ? 0 : glyph + delta);
             }
 
@@ -498,9 +506,11 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
                 byte *startCount = endCount + segCount2 + 2;
                 byte *idDelta = startCount + segCount2;
                 byte *idRangeOffset = idDelta + segCount2;
+                byte *giddata;
                 int i2;
 
-                if (segCount2 < 3 || segCount2 > 65535)
+                if (segCount2 < 3 || segCount2 > 65535 ||
+                    idRangeOffset > font->data + font->length)
                     return gs_error_invalidfont;
 
                 for (i2 = 0; i2 < segCount2 - 3; i2 += 2)
@@ -517,7 +527,11 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
                         if (roff == 0) {
                             glyph = (i + delta) & 0xffff;
                         } else {
-                            glyph = u16(idRangeOffset + i2 + roff + ((i - start) << 1));
+                            if ((giddata = (idRangeOffset + i2 + roff + ((i - start) << 1))) >
+                                 font->data + font->length) {
+                                return_error(gs_error_invalidfont);
+                            }
+                            glyph = u16(giddata);
                         }
                         if (glyph == code) {
                             return i;
