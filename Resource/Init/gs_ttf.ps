@@ -1421,7 +1421,7 @@ mark
           TTFDEBUG { (\n1 setting alias: ) print dup ==only
                 ( to be the same as  ) print 2 index //== exec } if
 
-          7 index 2 index 3 -1 roll exch //.growput superexec
+          7 index 2 index 3 -1 roll exch //.growput systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse
         } forall
         pop pop pop
       }
@@ -1439,7 +1439,7 @@ mark
           exch pop
           TTFDEBUG { (\n2 setting alias: ) print 1 index ==only
                      ( to use glyph index: ) print dup //== exec } if
-          5 index 3 1 roll //.growput superexec
+          5 index 3 1 roll //.growput systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse
           //false
         }
         {
@@ -1456,7 +1456,7 @@ mark
         {                            %  CharStrings(dict) isunicode(boolean) cmap(dict) RAGL(dict) gname(name) codep(integer) gindex(integer)
           TTFDEBUG { (\3 nsetting alias: ) print 1 index ==only
                 ( to be index: ) print dup //== exec } if
-          exch pop 5 index 3 1 roll //.growput superexec
+          exch pop 5 index 3 1 roll //.growput systemdict /superexec known {//superexec}{1183615869 internaldict /superexec get exec} ifelse
         }
         {
           pop pop
