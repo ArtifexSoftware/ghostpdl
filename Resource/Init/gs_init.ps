@@ -137,6 +137,7 @@ currentdict /PDFNOCIDFALLBACK known /PDFNOCIDFALLBACK exch def
 
 currentdict /BATCH known   /BATCH exch def
 currentdict /DELAYBIND known   /DELAYBIND exch def
+currentdict /REALLYDELAYBIND known {/REALLYDELAYBIND true def /DELAYBIND true def}{/REALLYDELAYBIND false def}ifelse
 currentdict /DISKFONTS known   /DISKFONTS exch def
 currentdict /DOINTERPOLATE .knownget { /INTERPOLATE exch def } if
 currentdict /ESTACKPRINT known   /ESTACKPRINT exch def
@@ -2360,6 +2361,19 @@ DELAYBIND not {
   systemdict /.forceput .undef		% ditto
   systemdict /.forceundef .undef	% ditto
 } if
+
+DELAYBIND REALLYDELAYBIND not and {
+(\n *** WARNING - the DELAYBIND command has been deprecated, and will be\n) print
+(               removed in the next version. For now you can restore\n) print
+(               the behaviour by using -dREALLYDEALYBIND but if you\n) print
+(               require continued use of this command you should contact\n) print
+(               the Ghostscript developers. Commercial customers of\n) print
+(               Artifex should email their support contact, free users\n) print
+(               are encouraged to talk to us on the #ghostscript IRC\n) print
+(               channel on irc.freenode.net.\n\n) print
+/DELAYBIND /undefined signalerror
+} if
+
 % Move superexec to internaldict if superexec is defined.
 systemdict /superexec .knownget {
   1183615869 internaldict /superexec 3 -1 roll put

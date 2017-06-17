@@ -708,48 +708,6 @@ that resides in the /Root directory.
 <h4><a name="Miscellaneous"></a>Miscellaneous operators</h4>
 
 <dl>
-<dt><code>&lt;array&gt; bind &lt;array&gt;</code>
-<dd>Depending on the command line parameters <code>bind</code> is redefined as:
-</dl>
-
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr valign=bottom>
-	<th valign=bottom align=left>Flag
-	<td>&nbsp;&nbsp;&nbsp;
-	<th valign=bottom align=left>Definition
-<tr>	<td colspan=3><hr>
-<tr valign=top>	<td>DELAYBIND
-	<td>&nbsp;
-	<td>returns the argument, stores the argument for later use by <code>.bindnow</code>
-</table></blockquote>
-
-
-<dl>
-<dt><code>&lt;array&gt; .bind &lt;array&gt;</code>
-<dd>Performs standard <code>bind</code> operation as defined in PLRM regardless of
-DELAYBIND flag.
-</dl>
-
-<a name="bindnow"></a>
-<dl>
-<dt><code>- .bindnow -</code>
-<dd>Applies <code>bind</code> operator to all saved procedures after binding has been
-deferred through -dDELAYBIND. Note that idiom recognition has no effect for the deferred
-binding because the value returned from <code>bind</code> is discarded.
-<p>
-Since v. 8.12 <code>.bindnow</code> undefines itself and restores standard definition of
-<code>bind</code> operator. In earlier versions after calling <code>.bindnow</code>,
-the postscript <code>bind</code> operator needs to be rebound to the internal implementation
-<code>.bind</code>, as in this fragment from the ps2ascii script:
-<blockquote><pre><tt>DELAYBIND {
-  .bindnow
-  /bind /.bind load def
-} if
-</tt></pre></blockquote>
-This is necessary for correct behavior with later code that uses the <code>bind</code> operator.
-</dl>
-
-<dl>
 <dt><code>&lt;string&gt; getenv &lt;string&gt; true</code>
 <dt><code>&lt;string&gt; getenv false</code>
 <dd>Looks up a name in the shell environment.  If the name is found,
