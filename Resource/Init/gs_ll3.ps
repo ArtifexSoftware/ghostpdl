@@ -58,7 +58,7 @@ languagelevel dup 2 .max .setlanguagelevel
 /.bind /.bind_ load odef	% note that .bind_ will get bound
 currentdict /.bindscratch .undef
 
-DELAYBIND NOBIND or not {
+DELAYBIND not {
 % We can't just do
 %   /bind /.bind load def
 % because then /bind load == prints --.bind-- .

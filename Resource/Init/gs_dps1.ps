@@ -55,8 +55,7 @@ level2dict begin
     { //SharedFontDirectory }
     { /LocalFontDirectory .systemvar }	% can't embed ref to local VM
    ifelse .forceput pop	% LocalFontDirectory is local, systemdict is global
- } .bind odef		% must bind .forceput and .setglobal
-                        % even if NOBIND in effect
+ } .bind odef
 % Don't just copy (load) the definition of .setglobal:
 % it gets redefined for LL3.
 /setshared { /.setglobal .systemvar exec } odef
@@ -102,7 +101,7 @@ level2dict begin
 % Furthermore, if FAKEFONTS is in effect, we want global real fonts to
 % override fake local ones.  We handle this by brute force.
 /restore		% <save> restore -
- { dup //restore	% bind even if NOBIND
+ { dup //restore
    /LocalFontDirectory .systemvar
    FAKEFONTS
     { mark

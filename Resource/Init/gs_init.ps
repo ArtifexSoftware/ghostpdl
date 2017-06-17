@@ -145,9 +145,7 @@ currentdict /FIXEDMEDIA known   /FIXEDMEDIA exch def
 currentdict /FIXEDRESOLUTION known   /FIXEDRESOLUTION exch def
 currentdict /LOCALFONTS known   /LOCALFONTS exch def
 currentdict /JOBSERVER known   /JOBSERVER exch def
-currentdict /NOBIND known   /NOBIND exch def
 /.bind /bind load def
-NOBIND { /bind { } def } if
 currentdict /NOCACHE known   /NOCACHE exch def
 currentdict /NOCCFONTS known   /NOCCFONTS exch def
 currentdict /NOCIE known   /NOCIE exch def
@@ -301,7 +299,7 @@ QUIET not { printgreeting flush } if
 } .bind odef
 
 % If we're delaying binding, remember everything that needs to be bound later.
-DELAYBIND NOBIND not and
+DELAYBIND
  { .currentglobal //false .setglobal
    systemdict /.delaybind 2000 array .forceput
    .setglobal
@@ -1753,13 +1751,13 @@ currentdict /.runlibfile .undef
     { dup type /operatortype eq
        { % This might be a real operator, so bind might cause a typecheck,
          % but we've made the error a no-op temporarily.
-         .bind		% do a real bind even if NOBIND is set
+         .bind
        }
       if pop pop
     } forall
    put
  } def
-NOBIND DELAYBIND or not { .bindoperators } if
+DELAYBIND not { .bindoperators } if
 
 % Establish a default environment.
 
