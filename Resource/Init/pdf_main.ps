@@ -3123,6 +3123,7 @@ currentdict /PDF2PS_matrix_key undef
 end			% pdfdict
 .setglobal
 
+DELAYBIND not {
 %% This list of operators are used internally by various parts of the Ghostscript PDF interpreter.
 %% Since each operator is a potential security vulnerability, and any operator listed here
 %% is not required once the initislisation is complete and functions are bound, we undefine
@@ -3153,3 +3154,4 @@ end			% pdfdict
 %/.currentstrokeoverprint /.currentfilloverprint /.currentfillconstantalpha /.currentstrokeconstantalpha
 ]
 {systemdict exch .undef} forall
+} if
