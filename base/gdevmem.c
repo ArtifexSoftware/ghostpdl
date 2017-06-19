@@ -710,6 +710,10 @@ mem_word_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
     }
     bit_x = x * dev->color_info.depth;
     bit_w = w * dev->color_info.depth;
+
+    if(mdev->line_ptrs == 0x00)
+        return_error(gs_error_rangecheck);
+
     src = scan_line_base(mdev, y);
     mem_swap_byte_rect(src, dev_raster, bit_x, bit_w, h, false);
     code = mem_get_bits_rectangle(dev, prect, params, unread);
