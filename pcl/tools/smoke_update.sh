@@ -4,7 +4,7 @@
 # define the parameters of the run
 #TESTS=$(find ../tests/ -type f)
 TESTS=../tests/pcl/pcl5cfts/fts.*
-#EXE=./main/obj/pcl6
+#EXE=./main/obj/gpcl6
 EXE=./language_switch/obj/pspcl6
 OPTS="-dNOPAUSE -sDEVICE=ppmraw -r100"
 BASELINE=tools/smoke_baseline.txt

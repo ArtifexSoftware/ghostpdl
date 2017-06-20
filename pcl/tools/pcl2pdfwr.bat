@@ -4,7 +4,7 @@ rem Convert PCL or PXL to PDF without specifying CompatibilityLevel.
 
 set PS2PDFPARAMS= -dNOPAUSE -dBATCH -sDEVICE#pdfwrite
 set PS2PDFOPT=
-set PS2PDFGS=pcl6
+set PS2PDFGS=gpcl6
 
 if "%OS%"=="Windows_NT" goto nt
 

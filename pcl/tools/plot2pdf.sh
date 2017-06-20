@@ -8,7 +8,7 @@
 for f in $*
 do
     # get the bounding box in points.
-    BBOX_PTS=( $(pcl6 -dNOPAUSE -lRTL -sDEVICE=bbox $f 2>&1 |\
+    BBOX_PTS=( $(gpcl6 -dNOPAUSE -lRTL -sDEVICE=bbox $f 2>&1 |\
        grep "%%BoundingBox" | awk '{print $2, $3, $4, $5}') )
 
     # convert to plotter units
@@ -21,7 +21,7 @@ do
     # now run pcl with our new coordinates.  Annoyingly those @PJL's
     # need to start in the first colummn, as no leading space is
     # allowed by the PJL parser.
-    pcl6 -lRTL \
+    gpcl6 -lRTL \
       -J"@PJL DEFAULT PLOTSIZEOVERRIDE=ON;\
 @PJL DEFAULT PLOTSIZE1=${BBOX_PLU[2]};\
 @PJL DEFAULT PLOTSIZE2=${BBOX_PLU[3]}"\

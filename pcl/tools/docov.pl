@@ -26,8 +26,8 @@ my %new_tests_plus_baseline_coverage=();
 my $base="baseline.txt";
 
 # commands to run on test files.
-my @args= ( ["./pcl6", "-n", "-sDEVICE=ppmraw", "-sOutputFile=/dev/null", "-r300", "-dNOPAUSE" ],
-            ["./pcl6", "-n", "-sDEVICE=pbmraw", "-sOutputFile=/dev/null", "-r300", "-dNOPAUSE" ], );
+my @args= ( ["./gpcl6", "-n", "-sDEVICE=ppmraw", "-sOutputFile=/dev/null", "-r300", "-dNOPAUSE" ],
+            ["./gpcl6", "-n", "-sDEVICE=pbmraw", "-sOutputFile=/dev/null", "-r300", "-dNOPAUSE" ], );
 
 
 # parse gcov output
