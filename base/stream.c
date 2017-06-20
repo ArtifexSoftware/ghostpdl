@@ -461,10 +461,11 @@ spgetcc(register stream * s, bool close_at_eod)
         )
         s_process_read_buf(s);
     if (left <= min_left &&
-        (left == 0 || (status != EOFC && status != ERRC))
+        (left <= 0 || (status != EOFC && status != ERRC))
         ) {
         /* Compact the stream so stell will return the right result. */
-        stream_compact(s, true);
+        if (left == 0)
+            stream_compact(s, true);
         if (status == EOFC && close_at_eod && s->close_at_eod) {
             status = sclose(s);
             if (status == 0)
