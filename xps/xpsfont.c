@@ -220,6 +220,11 @@ xps_load_sfnt_name(xps_font_t *font, char *namep, const int buflen)
         offset = u16(record + 10);
 
         length = length > buflen - 1 ? buflen - 1: length;
+        if (namedata + stringoffset + offset >= font->data + font->length)
+            continue;
+
+        if (namedata + stringoffset + offset + length >= font->data +  font->length)
+            length = (font->data +  font->length) - (namedata + stringoffset + offset);
 
         /* Full font name or postscript name */
         if (nameid == 4 || nameid == 6)
