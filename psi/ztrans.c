@@ -33,6 +33,7 @@
 #include "iname.h"
 #include "store.h"
 #include "gsdfilt.h"
+#include "gspaint.h"		/* gs_erasepage prototype */
 #include "gdevdevn.h"
 #include "gxblend.h"
 #include "gdevp14.h"
@@ -484,8 +485,33 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
 {
     int code;
     os_ptr op = osp;
+    gx_device *cdev = gs_currentdevice_inline(igs);
 
     check_type(*op, t_integer);
+    /* Bug 698087: In case some program uses our .pushpdf14devicefilter  make	*/
+    /*             sure that the device knows that we are using the pdf14	*/
+    /*             transparency. Note this will close and re-open the device	*/
+    /*             and erase the page. This should not occur with PDF files.	*/
+    if (cdev->page_uses_transparency == 0) {
+        gs_c_param_list list;
+        bool bool_true = 1;
+
+        gs_c_param_list_write(&list, imemory);
+        param_write_bool(&list, "PageUsesTransparency", &bool_true);
+        gs_c_param_list_read(&list);
+        code = gs_gstate_putdeviceparams(igs, cdev, (gs_param_list *)&list);
+        gs_c_param_list_release(&list);
+        if (code < 0)
+            return code;
+        if (cdev->is_open) {
+            if ((code = gs_closedevice((gx_device *)cdev)) < 0)
+                return code;
+        }
+        if ((code = gs_opendevice((gx_device *)cdev)) < 0)
+            return code;
+        if ((code = gs_erasepage(igs)) < 0)
+            return code;
+    }
     code = gs_push_pdf14trans_device(igs, false);
     if (code < 0)
         return code;
