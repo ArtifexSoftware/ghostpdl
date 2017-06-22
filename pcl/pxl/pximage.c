@@ -1032,11 +1032,12 @@ pxReadRastPattern(px_args_t * par, px_state_t * pxs)
             * pxenum->benum.data_per_row;
         byte *rdata = data;
 
+        if (data > plimit)
+            return_error(gs_error_rangecheck);
+
         code = read_bitmap(&pxenum->benum, &rdata, par);
         if (code != 1)
             break;
-        if (data >= plimit)
-            return_error(gs_error_rangecheck);
         if (rdata != data)
             memcpy(data, rdata, pxenum->benum.data_per_row);
     }
