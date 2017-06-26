@@ -144,21 +144,6 @@ add_line(gs_fapi_path *I, int64_t x, int64_t y)
         y = (int64_t) min_fixed;
     }
 
-    /* At the end of a contour, Freetype adds a
-     * "closing" segment which just just a lineto
-     * the first point in the outline (so NOT a closepath).
-     * If we have an empty contour, we end up with an
-     * erroneous zero length contour which causes problems
-     * with stroked outlines. So catch that here, and drop
-     * the pointless lineto
-     */
-    if (path_last_is_moveto(olh->path)) {
-        if (olh->path->position.x == x
-            && olh->path->position.y == y) {
-            return 0;
-        }
-    }
-
     olh->need_close = true;
     I->gs_error = gx_path_add_line_notes(olh->path, (fixed) x, (fixed) y, 0);
     return (I->gs_error);
