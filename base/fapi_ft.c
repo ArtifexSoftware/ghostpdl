@@ -1530,12 +1530,24 @@ typedef struct FF_path_info_s
     gs_fapi_path *path;
     int64_t x;
     int64_t y;
+    FT_Vector currentp;
 } FF_path_info;
+
+static inline int
+FF_points_equal(const FT_Vector *p1, const FT_Vector *p2)
+{
+    if (p1->x == p2->x && p1->y == p2->y)
+        return 1;
+    else
+        return 0;
+}
 
 static int
 move_to(const FT_Vector * aTo, void *aObject)
 {
     FF_path_info *p = (FF_path_info *) aObject;
+
+    p->currentp = *aTo;
 
     /* FAPI expects that co-ordinates will be as implied by frac_shift
      * in our case 16.16 fixed precision. True for 'low level' FT
@@ -1555,11 +1567,16 @@ line_to(const FT_Vector * aTo, void *aObject)
 {
     FF_path_info *p = (FF_path_info *) aObject;
 
-    /* See move_to() above */
-    p->x = ((int64_t) aTo->x) << 26;
-    p->y = ((int64_t) aTo->y) << 26;
+    if (!FF_points_equal(&p->currentp, aTo)) {
+        p->currentp = *aTo;
 
-    return p->path->lineto(p->path, p->x, p->y) ? -1 : 0;
+        /* See move_to() above */
+        p->x = ((int64_t) aTo->x) << 26;
+        p->y = ((int64_t) aTo->y) << 26;
+
+        return p->path->lineto(p->path, p->x, p->y) ? -1 : 0;
+    }
+    return 0;
 }
 
 static int
@@ -1570,40 +1587,47 @@ conic_to(const FT_Vector * aControl, const FT_Vector * aTo, void *aObject)
     int64_t Control1x, Control1y, Control2x, Control2y;
     double sx, sy;
 
-    /* More complicated than above, we need to do arithmetic on the
-     * co-ordinates, so we want them as floats and we will convert the
-     * result into 16.16 fixed precision for FAPI
-     *
-     * NB this code is funcitonally the same as the original, but I don't believe
-     * the comment (below) to be what the code is actually doing....
-     *
-     * NB2: the comment below was wrong, even though the code was correct(!!)
-     * The comment has now been amended.
-     *
-     * Convert a quadratic spline to a cubic. Do this by changing the three points
-     * A, B and C to A, 2/3(B,A), 2/3(B,C), C - that is, the two cubic control points are
-     * a third of the way from the single quadratic control point to the end points. This
-     * gives the same curve as the original quadratic.
-     */
+    if (!FF_points_equal(&p->currentp, aControl) ||
+        !FF_points_equal(&p->currentp, aTo) ||
+        !FF_points_equal(aControl, aTo)) {
+        p->currentp = *aTo;
 
-    sx = (double) (p->x >> 32);
-    sy = (double) (p->y >> 32);
+        /* More complicated than above, we need to do arithmetic on the
+         * co-ordinates, so we want them as floats and we will convert the
+         * result into 16.16 fixed precision for FAPI
+         *
+         * NB this code is funcitonally the same as the original, but I don't believe
+         * the comment (below) to be what the code is actually doing....
+         *
+         * NB2: the comment below was wrong, even though the code was correct(!!)
+         * The comment has now been amended.
+         *
+         * Convert a quadratic spline to a cubic. Do this by changing the three points
+         * A, B and C to A, 2/3(B,A), 2/3(B,C), C - that is, the two cubic control points are
+         * a third of the way from the single quadratic control point to the end points. This
+         * gives the same curve as the original quadratic.
+         */
 
-    x = aTo->x / 64.0;
-    p->x = ((int64_t) float2fixed(x)) << 24;
-    y = aTo->y / 64.0;
-    p->y = ((int64_t) float2fixed(y)) << 24;
-    Controlx = aControl->x / 64.0;
-    Controly = aControl->y / 64.0;
+        sx = (double) (p->x >> 32);
+        sy = (double) (p->y >> 32);
 
-    Control1x = ((int64_t) float2fixed((sx + Controlx * 2) / 3)) << 24;
-    Control1y = ((int64_t) float2fixed((sy + Controly * 2) / 3)) << 24;
-    Control2x = ((int64_t) float2fixed((x + Controlx * 2) / 3)) << 24;
-    Control2y = ((int64_t) float2fixed((y + Controly * 2) / 3)) << 24;
+        x = aTo->x / 64.0;
+        p->x = ((int64_t) float2fixed(x)) << 24;
+        y = aTo->y / 64.0;
+        p->y = ((int64_t) float2fixed(y)) << 24;
+        Controlx = aControl->x / 64.0;
+        Controly = aControl->y / 64.0;
 
-    return p->path->curveto(p->path, Control1x,
-                            Control1y,
-                            Control2x, Control2y, p->x, p->y) ? -1 : 0;
+        Control1x = ((int64_t) float2fixed((sx + Controlx * 2) / 3)) << 24;
+        Control1y = ((int64_t) float2fixed((sy + Controly * 2) / 3)) << 24;
+        Control2x = ((int64_t) float2fixed((x + Controlx * 2) / 3)) << 24;
+        Control2y = ((int64_t) float2fixed((y + Controly * 2) / 3)) << 24;
+
+        return p->path->curveto(p->path, Control1x,
+                                Control1y,
+                                Control2x, Control2y, p->x, p->y) ? -1 : 0;
+    }
+    return 0;
 }
 
 static int
@@ -1613,16 +1637,26 @@ cubic_to(const FT_Vector * aControl1, const FT_Vector * aControl2,
     FF_path_info *p = (FF_path_info *) aObject;
     int64_t Control1x, Control1y, Control2x, Control2y;
 
-    /* See move_to() above */
-    p->x = ((int64_t) aTo->x) << 26;
-    p->y = ((int64_t) aTo->y) << 26;
+    if (!FF_points_equal(&p->currentp, aControl1) ||
+        !FF_points_equal(&p->currentp, aControl2) ||
+        !FF_points_equal(&p->currentp, aTo) ||
+        !FF_points_equal(aControl1, aControl2) ||
+        !FF_points_equal(aControl1, aTo) ||
+        !FF_points_equal(aControl2, aTo)) {
+        p->currentp = *aTo;
 
-    Control1x = ((int64_t) aControl1->x) << 26;
-    Control1y = ((int64_t) aControl1->y) << 26;
-    Control2x = ((int64_t) aControl2->x) << 26;
-    Control2y = ((int64_t) aControl2->y) << 26;
-    return p->path->curveto(p->path, Control1x, Control1y, Control2x,
-                            Control2y, p->x, p->y) ? -1 : 0;
+        /* See move_to() above */
+        p->x = ((int64_t) aTo->x) << 26;
+        p->y = ((int64_t) aTo->y) << 26;
+
+        Control1x = ((int64_t) aControl1->x) << 26;
+        Control1y = ((int64_t) aControl1->y) << 26;
+        Control2x = ((int64_t) aControl2->x) << 26;
+        Control2y = ((int64_t) aControl2->y) << 26;
+        return p->path->curveto(p->path, Control1x, Control1y, Control2x,
+                                Control2y, p->x, p->y) ? -1 : 0;
+    }
+    return 0;
 }
 
 static const FT_Outline_Funcs TheFtOutlineFuncs = {
