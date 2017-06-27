@@ -916,6 +916,8 @@ pxSetHalftoneMethod(px_args_t * par, px_state_t * pxs)
             } else {            /* Read data. */
                 const byte *src = par->source.data;
                 byte *dest = pxs->download_string.data;
+                byte *pdata_min = dest;
+                byte *pdata_max = pdata_min + pxs->download_string.size;
                 uint i;
                 int skip;
 
@@ -947,6 +949,8 @@ pxSetHalftoneMethod(px_args_t * par, px_state_t * pxs)
                     default:
                         return -1;
                 }
+                if ((dest < pdata_min) || (pdata_max < dest + ((used - 1) * (int64_t)skip)))
+                    return_error(gs_error_rangecheck);
                 for (i = 0; i < used; ++i, ++src, dest += skip)
                     *dest = *src;
             }
