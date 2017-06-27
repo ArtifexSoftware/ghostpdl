@@ -355,8 +355,9 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
             /* Use the ICC equivalent color space */
             pacs = pacs->icc_equivalent;
         }
-        if (pacs->cmm_icc_profile_data->data_cs == gsCIELAB ||
-            pacs->cmm_icc_profile_data->islab) {
+        if (pacs->cmm_icc_profile_data &&
+            (pacs->cmm_icc_profile_data->data_cs == gsCIELAB ||
+            pacs->cmm_icc_profile_data->islab)) {
             /* Get the data in a form that is concrete for the CMM */
             cc.paint.values[0] /= 100.0;
             cc.paint.values[1] = (cc.paint.values[1]+128)/255.0;
