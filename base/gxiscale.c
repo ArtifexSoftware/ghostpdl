@@ -248,7 +248,9 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
             return 0;
         }
         num_des_comps = gsicc_get_device_profile_comps(dev_profile);
-        if (num_des_comps != penum->dev->color_info.num_components) {
+        if (num_des_comps != penum->dev->color_info.num_components ||
+            dev_profile->usefastcolor == true) {
+
             use_icc = false;
         }
         /* If the device has some unique color mapping procs due to its color space,
@@ -864,6 +866,7 @@ static int handle_colors(gx_image_enum *penum, const frac *psrc, int spp_decode,
     bool device_color;
     bool is_index_space;
     int code = 0;
+    cmm_dev_profile_t *dev_profile;
 
     if (pcs == NULL)
         return 0; /* Must be masked */
@@ -885,11 +888,15 @@ static int handle_colors(gx_image_enum *penum, const frac *psrc, int spp_decode,
     } else {
         pactual_cs = pcs;
     }
+    code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
+    /* ignore code since error from get_profile would have prevented interpolation */
     pconcs = cs_concrete_space(pactual_cs, pgs);
     if (pconcs && pconcs->cmm_icc_profile_data != NULL) {
-        device_color = false;
-    } else {
-        device_color = (pconcs == pactual_cs);
+        if (pconcs->cmm_icc_profile_data != NULL && dev_profile->usefastcolor == false) {
+            device_color = false;
+        } else {
+            device_color = (pconcs == pactual_cs);
+        }
     }
     if (device_color) {
         /* Use the underlying concrete space remap */
