@@ -336,7 +336,7 @@ static int dump_free_loc(gs_memory_t *mem, chunk_free_node_t *node, int depth, v
     }
     dmlprintf3(mem, "%p+%x->%p\n", node, node->size, ((byte *)node)+node->size);
 #endif
-    CHUNK_ASSERT(mem, *limit < node);
+    CHUNK_ASSERT(mem, *limit < (void *)node);
     *limit = ((byte *)node)+node->size;
     return 1 + count + dump_free_loc(mem, node->right_loc, depth + 2 + (depth&1), limit, total);
 }
@@ -363,7 +363,7 @@ static int dump_free_size(gs_memory_t *mem, chunk_free_node_t *node, int depth, 
     }
     dmlprintf3(mem, "%p+%x->%p\n", node, node->size, ((byte *)node)+node->size);
 #endif
-    CHUNK_ASSERT(mem, *size < node->size || (*size == node->size && *addr < node));
+    CHUNK_ASSERT(mem, *size < node->size || (*size == node->size && *addr < (void *)node));
     *size = node->size;
     *addr = node;
     return 1 + count + dump_free_size(mem, node->right_size, depth + 2 + (depth&1), size, addr);
@@ -403,7 +403,7 @@ gs_memory_chunk_dump_memory(const gs_memory_t *mem)
     }
     if (total != cmem->total_free) {
         void (*crash)(void) = NULL;
-        dmlprintf2(cmem->target, "Free size mismatch! %d vs %d\n", total, cmem->total_free);
+        dmlprintf2(cmem->target, "Free size mismatch! %u vs %lu\n", total, cmem->total_free);
         crash();
     }
 }
