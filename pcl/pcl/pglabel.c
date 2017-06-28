@@ -132,11 +132,14 @@ hpgl_select_font_pri_alt(hpgl_state_t * pgls, int index)
 /* forward decl */
 static int hpgl_recompute_font(hpgl_state_t * pgls);
 
-/* Ensure a font is available. */
+/* Ensure a font is available and selected. */
 static int
 hpgl_ensure_font(hpgl_state_t * pgls)
 {
-    if ((pgls->g.font == 0) || (pgls->g.font->pfont == 0))
+    pcl_font_selection_t *pfs =
+        &pgls->g.font_selection[pgls->g.font_selected];
+
+    if (pgls->g.font == 0 || pgls->g.font->pfont == 0 || pfs->font == 0)
         hpgl_call(hpgl_recompute_font(pgls));
     return 0;
 }
