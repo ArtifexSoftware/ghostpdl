@@ -75,8 +75,7 @@ plapi_exit(void *lib)
     if (lib == NULL)
         return gs_error_Fatal;
 
-    pl_to_exit(ctx->memory);
-    return 0;
+    return pl_to_exit(ctx->memory);
 }
 
 GSDLLEXPORT int GSDLLAPI
@@ -86,8 +85,7 @@ plapi_delete_instance(void *lib)
     if (lib == NULL)
         return gs_error_Fatal;
 
-    pl_main_delete_instance(pl_main_get_instance(ctx->memory));
-    return 0;
+    return pl_main_delete_instance(pl_main_get_instance(ctx->memory));
 }
 
 /* Set the display callback structure */
