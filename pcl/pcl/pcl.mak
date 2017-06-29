@@ -375,6 +375,7 @@ $(PCLOBJ)rtmisc.$(OBJ): $(PCLSRC)rtmisc.c   \
 $(PCLOBJ)rtraster.$(OBJ): $(PCLSRC)rtraster.c   \
 			  $(memory__h)          \
                           $(strimpl_h)          \
+                          $(scf_h)              \
                           $(scfx_h)             \
                           $(stream_h)           \
                           $(gx_h)               \

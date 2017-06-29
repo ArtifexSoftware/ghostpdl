@@ -19,6 +19,7 @@
 #include "memory_.h"
 #include "strimpl.h"
 #include "scfx.h"
+#include "scf.h"
 #include "stream.h"
 #include "gx.h"
 #include "gsmatrix.h"
@@ -942,6 +943,8 @@ process_ccitt_compress(gs_gstate * pgs,
     state.EndOfLine = false;
     state.EndOfBlock = false;
     state.Columns = pl_get_uint32(pin);
+    if (state.Columns == 0 || state.Columns > cfe_max_width)
+        return_error(e_Range);
     state.Rows = 0;             /* undetermined */
     if (comp == CCITT_GR3_1D_COMPRESS)
         state.K = 0;
