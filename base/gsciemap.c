@@ -848,6 +848,7 @@ gs_colorspace_set_icc_equivalent(gs_color_space *pcs, bool *islab,
 {
     gs_color_space_index color_space_index = gs_color_space_get_index(pcs);
     gs_color_space *picc_cs;
+    int code = 0;
 
     *islab = false;  /* For non CIEABC cases */
     if (pcs->icc_equivalent != NULL || !gs_color_space_is_PSCIE(pcs))
@@ -855,22 +856,22 @@ gs_colorspace_set_icc_equivalent(gs_color_space *pcs, bool *islab,
 
     switch( color_space_index ) {
        case gs_color_space_index_CIEDEFG:
-            gx_ciedefg_to_icc(&picc_cs, pcs, memory->stable_memory);
+            code = gx_ciedefg_to_icc(&picc_cs, pcs, memory->stable_memory);
             break;
         case gs_color_space_index_CIEDEF:
-            gx_ciedef_to_icc(&picc_cs, pcs, memory->stable_memory);
+            code = gx_ciedef_to_icc(&picc_cs, pcs, memory->stable_memory);
             break;
         case gs_color_space_index_CIEABC:
-            gx_cieabc_to_icc(&picc_cs, pcs, islab, memory->stable_memory);
+            code = gx_cieabc_to_icc(&picc_cs, pcs, islab, memory->stable_memory);
             break;
         case gs_color_space_index_CIEA:
-            gx_ciea_to_icc(&picc_cs, pcs, memory->stable_memory);
+            code = gx_ciea_to_icc(&picc_cs, pcs, memory->stable_memory);
             break;
         default:
              /* do nothing.  Sould never happen */
              break;
     }
-    return 0;
+    return code;
 }
 
 /* Call the remap_finish procedure in the joint_caches structure. */

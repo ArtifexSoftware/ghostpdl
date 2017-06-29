@@ -320,6 +320,7 @@ shade_init_fill_state(shading_fill_state_t * pfs, const gs_shading_t * psh,
     float max_error = min(pgs->smoothness, MAX_SMOOTHNESS);
     bool is_lab;
     bool cs_lin_test;
+    int code;
 
     /*
      * There's no point in trying to achieve smoothness beyond what
@@ -383,7 +384,9 @@ top:
     /* If the CS is PS based and we have not yet converted to the ICC form
        then go ahead and do that now */
     if (gs_color_space_is_PSCIE(pcs) && pcs->icc_equivalent == NULL) {
-        gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &(is_lab), pgs->memory);
+        code = gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &(is_lab), pgs->memory);
+        if (code < 0)
+            return code;
     }
     rendering_params.black_point_comp = pgs->blackptcomp;
     rendering_params.graphics_type_tag = GS_PATH_TAG;

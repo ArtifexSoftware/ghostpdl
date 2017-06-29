@@ -727,13 +727,17 @@ gx_default_remap_color(const gs_client_color * pcc, const gs_color_space * pcs,
     if (code < 0)
         return code;
     pconcs = cs_concrete_space(pcs, pgs);
-    code = (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pgs, dev, select);
+    if (pconcs) {
+        code = (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pgs, dev, select);
 
-    /* Save original color space and color info into dev color */
-    i = any_abs(i);
-    for (i--; i >= 0; i--)
-        pdc->ccolor.paint.values[i] = pcc->paint.values[i];
-    pdc->ccolor_valid = true;
+        /* Save original color space and color info into dev color */
+        i = any_abs(i);
+        for (i--; i >= 0; i--)
+            pdc->ccolor.paint.values[i] = pcc->paint.values[i];
+        pdc->ccolor_valid = true;
+    }
+    else
+        code = gs_note_error(gs_error_undefined);
     return code;
 }
 

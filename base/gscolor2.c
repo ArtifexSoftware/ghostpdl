@@ -484,7 +484,7 @@ gx_concrete_space_Indexed(const gs_color_space * pcs,
 
     if (gs_color_space_is_PSCIE(pcs->base_space)) {
         if (pcs->base_space->icc_equivalent == NULL) {
-            gs_colorspace_set_icc_equivalent(pcs->base_space,
+            (void)gs_colorspace_set_icc_equivalent(pcs->base_space,
                                                 &is_lab, pgs->memory);
         }
         return (pcs->base_space->icc_equivalent);
@@ -524,19 +524,21 @@ gs_color_select_t select)
         return code;
 
     pconcs = cs_concrete_space(pcs, pgs);
-    /* Now see if we can do the named color replacement */
-    mapped = gx_remap_named_color(&cc, pconcs, pdc, pgs, dev, select);
+    if (pconcs) {
+        /* Now see if we can do the named color replacement */
+        mapped = gx_remap_named_color(&cc, pconcs, pdc, pgs, dev, select);
 
-    if (!mapped) {
-        /* Named color remap failed perhaps due to colorant not found. Do the 
-           old approach of concretize of the base space and remap concrete color */
-        const gs_color_space *pbcs =
-            (const gs_color_space *)pcs->base_space;
+        if (!mapped) {
+            /* Named color remap failed perhaps due to colorant not found. Do the
+               old approach of concretize of the base space and remap concrete color */
+            const gs_color_space *pbcs =
+                (const gs_color_space *)pcs->base_space;
 
-        code = (*pbcs->type->concretize_color) (&cc, pbcs, conc, pgs, dev);
-        if (code < 0)
-            return code;
-        code = (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pgs, dev, select);
+            code = (*pbcs->type->concretize_color) (&cc, pbcs, conc, pgs, dev);
+            if (code < 0)
+                return code;
+            code = (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pgs, dev, select);
+        }
     }
 
     /* Save original color space and color info into dev color */

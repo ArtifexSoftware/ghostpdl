@@ -886,7 +886,7 @@ static int handle_colors(gx_image_enum *penum, const frac *psrc, int spp_decode,
         pactual_cs = pcs;
     }
     pconcs = cs_concrete_space(pactual_cs, pgs);
-    if (pconcs->cmm_icc_profile_data != NULL) {
+    if (pconcs && pconcs->cmm_icc_profile_data != NULL) {
         device_color = false;
     } else {
         device_color = (pconcs == pactual_cs);

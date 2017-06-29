@@ -636,8 +636,10 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
            is not yet set, go ahead and handle that now.  It may already
            be done due to the above init_colors which may go through remap. */
         if (gs_color_space_is_PSCIE(pcs) && pcs->icc_equivalent == NULL) {
-            gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &(penum->icc_setup.is_lab),
+            code = gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &(penum->icc_setup.is_lab),
                                                 pgs->memory);
+            if (code < 0)
+                return code;
             if (penum->icc_setup.is_lab) {
                 /* Free what ever profile was created and use the icc manager's
                    cielab profile */

@@ -248,6 +248,8 @@ gs_begin_transparency_group(gs_gstate *pgs,
         blend_color_space = gs_currentcolorspace_inline(pgs);
     } else {
         blend_color_space = cs_concrete_space(blend_color_space, pgs);
+        if (!blend_color_space)
+            return_error(gs_error_undefined);
     }
     /* Note that if the /CS parameter was NOT present in the push
        of the transparency group, then we must actually inherent
