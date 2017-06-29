@@ -481,13 +481,15 @@ xps_encode_font_char_imp(xps_font_t *font, int code)
 static int
 xps_decode_font_char_imp(xps_font_t *font, int code)
 {
-    byte *table;
+    byte *table, *t;
 
     /* no cmap selected: return identity */
     if (font->cmapsubtable <= 0)
         return code;
 
     table = font->data + font->cmapsubtable;
+    if (table >= font->data + font->length)
+        return code;
 
     switch (u16(table))
     {
@@ -554,7 +556,10 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
                     return gs_error_invalidfont;
 
                 for (i=0;i<length;i++) {
-                    ch = u16(&table[10 + (i * 2)]);
+                    t = &table[10 + (i * 2)];
+                    if (t + 2 > font->data + font->length)
+                        return gs_error_invalidfont;
+                    ch = u16(t);
                     if (ch == code)
                         return (firstCode + i);
                 }
@@ -565,7 +570,10 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
                 unsigned int ch, i, length = u32(&table[20]);
                 int firstCode = u32(&table[16]);
                 for (i=0;i<length;i++) {
-                    ch = u16(&table[10 + (i * 2)]);
+                    t = &table[10 + (i * 2)];
+                    if (t + 2 > font->data + font->length)
+                        return gs_error_invalidfont;
+                    ch = u16(t);
                     if (ch == code)
                         return (firstCode + i);
                 }
