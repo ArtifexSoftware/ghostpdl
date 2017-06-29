@@ -293,17 +293,19 @@ xps_load_sfnt_cmap(xps_font_t *font)
     }
 
     cmapdata = font->data + offset;
-
-    nsubtables = u16(cmapdata + 2);
-    if (nsubtables < 0 || length < 4 + nsubtables * 8)
+    if (cmapdata + 4 < font->data + font->length)
     {
-        gs_warn("cannot find cmap sub-tables");
-        return;
-    }
+        nsubtables = u16(cmapdata + 2);
+        if (nsubtables < 0 || length < 4 + nsubtables * 8)
+        {
+            gs_warn("cannot find cmap sub-tables");
+            return;
+        }
 
-    font->cmaptable = offset;
-    font->cmapsubcount = nsubtables;
-    font->cmapsubtable = 0;
+        font->cmaptable = offset;
+        font->cmapsubcount = nsubtables;
+        font->cmapsubtable = 0;
+    }
 }
 
 /*
