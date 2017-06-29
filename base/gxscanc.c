@@ -239,22 +239,23 @@ static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int he
     delta = clip_sy - sy;
     if (delta > 0)
     {
-        int dx = ex - sx;
-        int dy = ey - sy;
-        int advance = (int)(((int64_t)dx * delta + (dy>>1)) / dy);
+        int64_t dx = (int64_t)ex - (int64_t)sx;
+        int64_t dy = (int64_t)ey - (int64_t)sy;
+        int advance = (int)((dx * delta + (dy>>1)) / dy);
         sx += advance;
         sy += delta;
     }
-    ex -= sx;
-    ey -= sy;
-    clip_ey -= clip_sy;
     delta = ey - clip_ey;
     if (delta > 0)
     {
-        int advance = (int)(((int64_t)ex * delta + (ey>>1)) / ey);
+        int64_t dx = (int64_t)ex - (int64_t)sx;
+        int64_t dy = (int64_t)ey - (int64_t)sy;
+        int advance = (int)((dx * delta + (dy>>1)) / dy);
         ex -= advance;
         ey -= delta;
     }
+    ex -= sx;
+    ey -= sy;
     ih = fixed2int(ey);
     assert(ih >= 0);
     iy = fixed2int(sy) - base_y;
@@ -2151,22 +2152,23 @@ static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int
     delta = clip_sy - sy;
     if (delta > 0)
     {
-        int dx = ex - sx;
-        int dy = ey - sy;
-        int advance = (int)(((int64_t)dx * delta + (dy>>1)) / dy);
+        int64_t dx = (int64_t)ex - (int64_t)sx;
+        int64_t dy = (int64_t)ey - (int64_t)sy;
+        int advance = (int)((dx * delta + (dy>>1)) / dy);
         sx += advance;
         sy += delta;
     }
-    ex -= sx;
-    ey -= sy;
-    clip_ey -= clip_sy;
     delta = ey - clip_ey;
     if (delta > 0)
     {
-        int advance = (int)(((int64_t)ex * delta + (ey>>1)) / ey);
+        int64_t dx = (int64_t)ex - (int64_t)sx;
+        int64_t dy = (int64_t)ey - (int64_t)sy;
+        int advance = (int)((dx * delta + (dy>>1)) / dy);
         ex -= advance;
         ey -= delta;
     }
+    ex -= sx;
+    ey -= sy;
     ih = fixed2int(ey);
     assert(ih >= 0);
     iy = fixed2int(sy) - base_y;
