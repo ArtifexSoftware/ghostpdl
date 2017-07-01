@@ -276,6 +276,8 @@ FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *self, ttfReader *r,
     self->nFlags = ttfReader__UShort(r);
     r->Seek(r, self->t_head.nPos + offset_of(sfnt_FontHeader, unitsPerEm));
     self->nUnitsPerEm = ttfReader__UShort(r);
+    if (self->nUnitsPerEm <= 0)
+        self->nUnitsPerEm = 1024;
     r->Seek(r, self->t_head.nPos + offset_of(sfnt_FontHeader, indexToLocFormat));
     self->nIndexToLocFormat = ttfReader__UShort(r);
     r->Seek(r, self->t_maxp.nPos + offset_of(sfnt_maxProfileTable, numGlyphs));
