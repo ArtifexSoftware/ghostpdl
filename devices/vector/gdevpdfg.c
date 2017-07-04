@@ -779,6 +779,31 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
             return_error(gs_error_VMerror);
         }
 
+        switch(pdev->params.ColorConversionStrategy) {
+            case ccs_Gray:
+                cos_c_string_value(&v, (const char *)pdf_color_space_names.DeviceGray);
+                break;
+            case ccs_sRGB:
+            case ccs_RGB:
+                cos_c_string_value(&v, (const char *)pdf_color_space_names.DeviceRGB);
+                break;
+            case ccs_CMYK:
+                cos_c_string_value(&v, (const char *)pdf_color_space_names.DeviceCMYK);
+                break;
+            default:
+                break;
+        }
+        code = cos_array_add(pca, &v);
+        if (code >= 0) {
+            code = pdf_function_scaled(pdev, new_pfn, 0x00, &v);
+            if (code >= 0)
+                code = cos_array_add(pca, &v);
+            else {
+                COS_FREE(pca, "convert DeviceN");
+                return code;
+            }
+        }
+
         if (pcs->params.device_n.colorants != NULL) {
             cos_dict_t *colorants  = cos_dict_alloc(pdev, "pdf_color_space(DeviceN)");
             cos_value_t v_colorants, v_separation, v_colorant_name;
@@ -824,6 +849,11 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
                     return code;
                 }
             }
+            code = pdf_string_to_cos_name(pdev, (byte *)"DeviceN",
+                              7, &v);
+            code = cos_dict_put((cos_dict_t *)pres_attributes->object,
+                (const byte *)"/Subtype", 8, &v);
+
             code = pdf_substitute_resource(pdev, &pres_attributes, resourceOther, NULL, true);
             if (code < 0) {
                 COS_FREE(pca, "convert DeviceN");
@@ -839,30 +869,6 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
             }
         }
 
-        switch(pdev->params.ColorConversionStrategy) {
-            case ccs_Gray:
-                cos_c_string_value(&v, (const char *)pdf_color_space_names.DeviceGray);
-                break;
-            case ccs_sRGB:
-            case ccs_RGB:
-                cos_c_string_value(&v, (const char *)pdf_color_space_names.DeviceRGB);
-                break;
-            case ccs_CMYK:
-                cos_c_string_value(&v, (const char *)pdf_color_space_names.DeviceCMYK);
-                break;
-            default:
-                break;
-        }
-        code = cos_array_add(pca, &v);
-        if (code >= 0) {
-            code = pdf_function_scaled(pdev, new_pfn, 0x00, &v);
-            if (code >= 0)
-                code = cos_array_add(pca, &v);
-            else {
-                COS_FREE(pca, "convert DeviceN");
-                return code;
-            }
-        }
     }
     pdf_delete_sampled_base_space_function(pdev, new_pfn);
 
