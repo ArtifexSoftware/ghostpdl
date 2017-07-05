@@ -332,6 +332,8 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     fdev->log2_align_mod = tdev->log2_align_mod;
     fdev->pad = tdev->pad;
     fdev->is_planar = tdev->is_planar;
+    fdev->graphics_type_tag = tdev->graphics_type_tag;
+    fdev->interpolate_control = tdev->interpolate_control;
     gx_device_forward_fill_in_procs(fdev);
     return fdev;
 }

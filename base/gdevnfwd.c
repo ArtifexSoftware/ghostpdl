@@ -46,6 +46,7 @@ gx_device_set_target(gx_device_forward *fdev, gx_device *target)
     rc_assign(fdev->target, target, "gx_device_set_target");
     /* try to initialize to same as target, otherwise UNKNOWN */
     fdev->graphics_type_tag = target != NULL ? target->graphics_type_tag : GS_UNKNOWN_TAG;
+    fdev->interpolate_control = target != NULL ? target->interpolate_control : 1;	/* the default */
 }
 
 /* Fill in NULL procedures in a forwarding device procedure record. */

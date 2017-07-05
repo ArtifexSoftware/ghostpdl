@@ -1371,7 +1371,8 @@ clist_make_accum_device(gx_device *target, const char *dname, void *base, int sp
         set_dev_proc(cwdev, get_clipping_box, gx_default_get_clipping_box);
         set_dev_proc(cwdev, get_profile, gx_forward_get_profile);
         set_dev_proc(cwdev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
-        cwdev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
+        cwdev->graphics_type_tag = target->graphics_type_tag;		/* initialize to same as target */
+        cwdev->interpolate_control = target->interpolate_control;	/* initialize to same as target */
 
         /* to be set by caller: cwdev->finalize = finalize; */
 
