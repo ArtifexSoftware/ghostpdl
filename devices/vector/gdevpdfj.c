@@ -483,6 +483,25 @@ pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
     return code < 0 ? code : code1;
 }
 
+/* When writing out an image, we check to see if its a duplicate of an existing image, and if so we simply
+ * use the existing image. There is one potential problem here; if we have an image with a SMask, the SMask is
+ * itself animage, and the SMask image and the image which uses it are identical. Because we don't add the SMask
+ * entry to the image dictionary until we have closed the image, its possible that the image can detect the alredy
+ * stored SMask image as being identical and attempt to use the SMask image instead. This leads to an image with
+ * an SMask entry referencing itself.
+ * We detect this here simply by checking if the detected image resource ID is the same as any current SMask. Worst
+ * case is we fail to detect a duplicate, which is better than detecting an incorrect duplicate.
+ * This check function is only used in pdf_end_write_image() below as an argument to pdf_substitute_resource().
+ */
+static int
+smask_image_check(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
+{
+    /* image_mask_id is non-zero if we have a pending SMask image */
+    if (pdev->image_mask_id != 0 && (pres0->object->id == pdev->image_mask_id || pres1->object->id == pdev->image_mask_id))
+        return 0;
+    return 1;
+}
+
 /*
  * Finish writing an image.  If in-line, write the BI/dict/ID/data/EI and
  * return 1; if a resource, write the resource definition and return 0.
@@ -527,7 +546,7 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
                 pdf_x_object_t *pxo = (pdf_x_object_t *)piw->pres;
                 int height = pxo->height, width = pxo->width;
 
-                code = pdf_substitute_resource(pdev, &piw->pres, resourceXObject, NULL, false);
+                code = pdf_substitute_resource(pdev, &piw->pres, resourceXObject, smask_image_check, false);
                 if (code < 0)
                     return code;
 
