@@ -190,7 +190,7 @@
       pop
       /FITPAGE where {/FITPAGE get}{false} ifelse
       {
-          Width 72 mul SCALE mul Height 72 mul SCALE mul
+          Width SCALE mul Height SCALE mul
       }
       {
         % Map pixels SCALE-for-1.  Assume orthogonal transformation.
