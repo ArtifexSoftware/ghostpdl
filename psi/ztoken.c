@@ -107,6 +107,12 @@ token_continue(i_ctx_t *i_ctx_p, scanner_state * pstate, bool save)
     int code;
     ref token;
 
+    /* Since we might free pstate below, and we're dealing with
+     * gc memory referenced by the stack, we need to explicitly
+     * remove the reference to pstate from the stack, otherwise
+     * the garbager will fall over
+     */
+    make_null(osp);
     /* Note that gs_scan_token may change osp! */
     pop(1);                     /* remove the file or scanner state */
 again:
@@ -183,8 +189,14 @@ ztokenexec_continue(i_ctx_t *i_ctx_p)
 static int
 tokenexec_continue(i_ctx_t *i_ctx_p, scanner_state * pstate, bool save)
 {
-    os_ptr op;
+    os_ptr op = osp;
     int code;
+    /* Since we might free pstate below, and we're dealing with
+     * gc memory referenced by the stack, we need to explicitly
+     * remove the reference to pstate from the stack, otherwise
+     * the garbager will fall over
+     */
+    make_null(osp);
     /* Note that gs_scan_token may change osp! */
     pop(1);
 again:
