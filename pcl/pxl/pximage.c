@@ -125,6 +125,7 @@ typedef struct px_bitmap_enum_s
     uint rebuffered_width;
     uint rebuffered_height;
     int rebuffered_row_pos;
+    bool grayscale;
 } px_bitmap_enum_t;
 
 typedef struct px_begin_image_args_s {
@@ -242,12 +243,15 @@ begin_bitmap(px_bitmap_params_t * params, px_bitmap_enum_t * benum,
     px_gstate_t *pxgs = pxs->pxgs;
     
     benum->mem = pxs->memory;
+    benum->grayscale = false;
     if (is_jpeg) {
         int code = px_jpeg_init(benum, params, par);
         if (code < 0 || code == pxNeedData)
             return_error(code);
         depth = params->depth;
         num_components = (params->color_space == eGray ? 1 : 3);
+        if (num_components == 3 && pxgs->color_space == eGray)
+            benum->grayscale = true;
     } else {
         px_gstate_t *pxgs = pxs->pxgs;
         depth = "\001\004\010"[bar->depth];
@@ -879,13 +883,27 @@ pxReadImage(px_args_t * par, px_state_t * pxs)
     for (;;) {
         byte *data = pxenum->row;
         int code = read_rebuffered_bitmap(&pxenum->benum, &data, par);
-
         if (code != 1)
             return code;
+
+        if (pxenum->benum.grayscale) {
+            int i;
+            for (i = 2; i < pxenum->benum.rebuffered_data_per_row; i+=3) {
+                int r = data[i-2];
+                int g = data[i-1];
+                int b = data[i];
+                /* we think this simple conversion is commensurate
+                   with typical XL business graphics use cases. */
+                int gray = (r + g + b) / 3;
+                data[i-2] = data[i-1] = data[i] = gray;
+            }
+        }
+
         code = pl_image_data(pxs->pgs, pxenum->info, (const byte **)&data, 0,
                              pxenum->benum.rebuffered_data_per_row, 1);
         if (code < 0)
             return code;
+        
         pxs->have_page = true;
     }
 }
