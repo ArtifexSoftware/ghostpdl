@@ -135,6 +135,13 @@ pxPassthrough_init(px_state_t * pxs)
         dmprintf(pxs->memory, "passthrough: initializing global pcl state\n");
     global_pcs = pcl_get_gstate(pxs->pcls);
 
+    if (pxs->have_page) {
+        if (gs_debug_c('i'))
+            dmprintf(pxs->memory, "passthrough: snippet mode\n");
+        /* disable an end page in pcl, also used to flag in snippet mode */
+        global_pcs->end_page = pcl_end_page_noop;
+    }
+    
     /* default to pcl5c */
     global_pcs->personality = 0;
     /* for now we do not support intepolation in XL passthrough mode. */
