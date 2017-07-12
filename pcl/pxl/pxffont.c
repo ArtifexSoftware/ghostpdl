@@ -94,6 +94,8 @@ px_find_existing_font(px_value_t * pfnv, px_font_t ** ppxfont,
     int code;
     void *pxfont;
 
+    *ppxfont = NULL;
+    
     /* Normalize the font name to Unicode. */
     code = px_widen_font_name(pfnv, pxs);
     if (code < 0)
