@@ -332,12 +332,12 @@ PS_FONT_DEPS=\
 	$(PSRESDIR)$(D)Font$(D)NimbusRoman-Italic \
 	$(PSRESDIR)$(D)Font$(D)NimbusRoman-Regular \
 	$(PSRESDIR)$(D)Font$(D)NimbusSans-Bold \
-	$(PSRESDIR)$(D)Font$(D)NimbusSans-BoldOblique \
+	$(PSRESDIR)$(D)Font$(D)NimbusSans-BoldItalic \
 	$(PSRESDIR)$(D)Font$(D)NimbusSansNarrow-BdOblique \
 	$(PSRESDIR)$(D)Font$(D)NimbusSansNarrow-Bold \
 	$(PSRESDIR)$(D)Font$(D)NimbusSansNarrow-Oblique \
 	$(PSRESDIR)$(D)Font$(D)NimbusSansNarrow-Regular \
-	$(PSRESDIR)$(D)Font$(D)NimbusSans-Oblique \
+	$(PSRESDIR)$(D)Font$(D)NimbusSans-Italic \
 	$(PSRESDIR)$(D)Font$(D)NimbusSans-Regular \
 	$(PSRESDIR)$(D)Font$(D)P052-Bold \
 	$(PSRESDIR)$(D)Font$(D)P052-BoldItalic \

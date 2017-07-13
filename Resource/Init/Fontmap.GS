@@ -94,13 +94,13 @@
 /Courier			/NimbusMonoPS-Regular	;
 /Courier-Oblique		/NimbusMonoPS-Italic	;
 /Helvetica-Bold			/NimbusSans-Bold ;
-/Helvetica-BoldOblique		/NimbusSans-BoldOblique      ;
+/Helvetica-BoldOblique		/NimbusSans-BoldItalic      ;
 /Helvetica-Narrow-Bold		/NimbusSansNarrow-Bold    ;
 /Helvetica-Narrow-BoldOblique	/NimbusSansNarrow-BdOblique        ;
 /Helvetica-Narrow		/NimbusSansNarrow-Regular    ;
 /Helvetica-Narrow-Oblique	/NimbusSansNarrow-Oblique        ;
 /Helvetica			/NimbusSans-Regular ;
-/Helvetica-Oblique		/NimbusSans-Oblique      ;
+/Helvetica-Oblique		/NimbusSans-Italic      ;
 /NewCenturySchlbk-Bold		/C059-Bold	;
 /NewCenturySchlbk-BoldItalic	/C059-BdIta	;
 /NewCenturySchlbk-Italic	/C059-Italic	;
