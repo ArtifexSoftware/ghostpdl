@@ -752,49 +752,93 @@ typedef enum resource_type_enum
     font_resource
 } resource_type_t;
 
-/* look up a macro in the macro dictionary, if it is not found search
-   on disk and add the macro to the macro dictionary */
-static void *
+/* 
+ * Search the PJL file system for a macro or font resource and
+ * associate it's name with the current font or macro id 
+ */
+static int
 pcl_find_resource(pcl_state_t * pcs,
-                  const byte string_id[],
-                  int string_id_size, resource_type_t resource_type)
+                  const byte sid[],
+                  int sid_size, resource_type_t resource_type)
 {
-    pl_dict_t *dict = (resource_type == macro_resource ?
-                       &pcs->macros : &pcs->soft_fonts);
+    
     void *value = NULL;
+    char alphaname[512 + 1];
+    long int size;
+    int c;
+    int code = 0;
 
-  f:if (pl_dict_find(dict, string_id, string_id_size, &value))
-        return value;
-    {
-        /* max alpha name + NULL */
-        char alphaname[512 + 1];
-        long int size;
-        int c, code;
+    /* a null terminated string is needed for the PJL resource call */
+    for (c = 0; c < sid_size && c < 512; c++)
+        alphaname[c] = sid[c];
+    alphaname[c] = '\0';
 
-        for (c = 0; c < string_id_size; c++)
-            alphaname[c] = string_id[c];
-        alphaname[c] = '\0';
-        size = pjl_proc_get_named_resource_size(pcs->pjls, alphaname);
-        if (size == 0)
-            return NULL;
-        /* allocate enough space for the macro data and the header
-           which indicates the storage type */
-        value = gs_alloc_bytes(pcs->memory,
-                               size + sizeof(pcl_macro_t), "disk macro");
-        if (value == NULL)
-            return NULL;
-        ((pcl_macro_t *) value)->storage = pcds_permanent;
-        if (pjl_proc_get_named_resource(pcs->pjls, alphaname,
+    size = pjl_proc_get_named_resource_size(pcs->pjls, alphaname);
+    /* resource not found */
+    if (size == 0)
+        return 0;
+
+    /* for a macro we need enough room for the macro header plus the
+       macro itself, fonts are handled differently, see below */
+    value = gs_alloc_bytes(pcs->memory,
+                           size +
+                           (resource_type == macro_resource ?
+                            sizeof(pcl_macro_t) : 0),
+                           "resource");
+        
+    if (value == NULL)
+        return_error(gs_error_Fatal);
+    
+
+    if (pjl_proc_get_named_resource(pcs->pjls, alphaname,
                                         (byte *) value +
-                                        sizeof(pcl_macro_t)) < 0)
-            return NULL;
-        code = pl_dict_put(dict, string_id, string_id_size, value);
-        if (code < 0)
-            return NULL;
-        /* now find the entry just placed in the dictionary. should not fail */
-        goto f;
+                                        (resource_type == macro_resource ?
+                                         sizeof(pcl_macro_t) : 0)) < 0) {
+        gs_free_object(pcs->memory, value, "resource");
+        return_error(gs_error_Fatal);
     }
-    return value;
+
+    /* if this is a font we have to recursively invoke the PCL
+       interpreter to process the data and create the downloaded
+       font. */
+    if (resource_type == font_resource) {
+        stream_cursor_read r;
+        pcl_parser_state_t state;
+            
+        r.ptr = (byte *)value - 1;
+        r.limit = r.ptr + size;
+        state.definitions = pcs->pcl_commands;
+        pcl_process_init(&state);
+        code = pcl_process(&state, pcs, &r);
+        if (code < 0) {
+            gs_free_object(pcs->memory, value, "resource");
+            return_error(code);
+        }
+    }
+        
+    /* The font resource was added to the dictionary when the font was
+       downloaded in the recursive interpreter invocation above, so we
+       don't need to add (put) it in the dictionary. */
+    if (resource_type == macro_resource) {
+        code = pl_dict_put(&pcs->macros, current_macro_id, current_macro_id_size, value);
+        if (code == 0)
+            code = pl_dict_put_synonym(&pcs->macros, current_macro_id,
+                                       current_macro_id_size, sid, sid_size);
+        if (code < 0) {
+            gs_free_object(pcs->memory, value, "resource");
+            return_error(code);
+        }
+    } else {
+        code = pl_dict_put_synonym(&pcs->soft_fonts, current_font_id,
+                                   current_font_id_size, sid, sid_size);
+        /* font was constructed separately, don't need the
+           original PCL commands from which the font was
+           constructed. */
+        gs_free_object(pcs->memory, value, "resource");
+        if (code < 0)
+            return_error(code);
+    }
+    return code;
 }
 
 static int                      /* ESC & n <count> W [operation][string ID] */
@@ -844,17 +888,18 @@ pcl_alphanumeric_id_data(pcl_args_t * pargs, pcl_state_t * pcs)
         case 1:
             {
                 /* Associates the current font's font id to the font
-                   with the string id.  We simply create an alias entry
-                   for the current font id entry.  HAS - FIXME. ... */
+                   with the string id. */
                 void *value;
-
-                if (!pl_dict_find_no_stack(&pcs->soft_fonts,
-                                           alpha_data->string_id,
-                                           string_id_size, &value))
-                    return 0;
-                pl_dict_put_synonym(&pcs->soft_fonts, alpha_data->string_id,
-                                    string_id_size, current_font_id,
-                                    current_font_id_size);
+                /* simple case the font is in the dictionary */
+                if (pl_dict_find_no_stack(&pcs->soft_fonts, alpha_data->string_id, string_id_size, &value)) {
+                    return pl_dict_put_synonym(&pcs->soft_fonts, alpha_data->string_id,
+                                               string_id_size, current_font_id,
+                                               current_font_id_size);
+                } else {
+                    /* search the PJL file system for a font resource */
+                    return pcl_find_resource(pcs, alpha_data->string_id,
+                                             string_id_size, font_resource);
+                }
             }
             break;
         case 2:
@@ -913,18 +958,19 @@ pcl_alphanumeric_id_data(pcl_args_t * pargs, pcl_state_t * pcs)
             }
             break;
         case 5:
-            /* associates current macro id to the supplied string id */
             {
+                /* Associates the current macro's id with the string id. */
                 void *value;
-
-                value =
-                    pcl_find_resource(pcs, alpha_data->string_id,
-                                      string_id_size, macro_resource);
-                if (!value)
-                    return 0;
-                pl_dict_put_synonym(&pcs->macros, alpha_data->string_id,
-                                    string_id_size, current_macro_id,
-                                    current_macro_id_size);
+                /* simple case - the macro is in the dictionary */
+                if (pl_dict_find_no_stack(&pcs->macros, alpha_data->string_id, string_id_size, &value)) {
+                    return pl_dict_put_synonym(&pcs->macros, alpha_data->string_id,
+                                               string_id_size, current_macro_id,
+                                               current_macro_id_size);
+                } else {
+                    /* search the PJL file system for a macro resource */
+                    return pcl_find_resource(pcs, alpha_data->string_id,
+                                             string_id_size, macro_resource);
+                }
             }
             break;
         case 20:
