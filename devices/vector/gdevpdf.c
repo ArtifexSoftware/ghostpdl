@@ -2457,6 +2457,63 @@ static void pdf_free_pdf_font_cache(gx_device_pdf *pdev)
     }
 }
 
+static int discard_dict_refs(void *client_data, const byte *key_data, uint key_size, const cos_value_t *v);
+
+static int discard_array_refs(gx_device_pdf *pdev, cos_object_t *pco)
+{
+    int i;
+    long index;
+    cos_array_t *pca = (cos_array_t *)pco;
+    const cos_array_element_t *element = cos_array_element_first(pca);
+    cos_value_t *v;
+
+    while (element) {
+        element = cos_array_element_next(element, &index, (const cos_value_t **)&v);
+        if (v->value_type == COS_VALUE_OBJECT) {
+            for (i=0;i<NUM_RESOURCE_TYPES;i++) {
+                if (i == resourceOther)
+                    continue;
+                if (pdf_find_resource_by_resource_id(pdev, i, v->contents.object->id)){
+                    v->value_type = COS_VALUE_CONST;
+                    break;
+                }
+                if (cos_type(v->contents.object) == cos_type_array) {
+                    discard_array_refs(pdev, v->contents.object);
+                }
+                if (cos_type(v->contents.object) == cos_type_dict) {
+                    cos_dict_forall((const cos_dict_t *)v->contents.object, pdev, discard_dict_refs);
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+static int discard_dict_refs(void *client_data, const byte *key_data, uint key_size, const cos_value_t *v)
+{
+    int i;
+    gx_device_pdf *pdev = (gx_device_pdf *)client_data;
+    cos_value_t *v1 = (cos_value_t *)v;
+
+    if (v->value_type == COS_VALUE_OBJECT) {
+        for (i=0;i<NUM_RESOURCE_TYPES;i++) {
+            if (i == resourceOther)
+                continue;
+            if (pdf_find_resource_by_resource_id(pdev, i, v->contents.object->id)){
+                v1->value_type = COS_VALUE_CONST;
+                break;
+            }
+            if (cos_type(v->contents.object) == cos_type_array) {
+                discard_array_refs(pdev, v->contents.object);
+            }
+            if (cos_type(v->contents.object) == cos_type_dict) {
+                cos_dict_forall((const cos_dict_t *)v->contents.object, pdev, discard_dict_refs);
+            }
+        }
+    }
+    return 0;
+}
+
 /* Close the device. */
 static int
 do_pdf_close(gx_device * dev)
@@ -2599,10 +2656,6 @@ do_pdf_close(gx_device * dev)
         if (code >= 0)
             code = code1;
     }
-
-    code1 = pdf_free_resource_objects(pdev, resourceOther);
-    if (code >= 0)
-        code = code1;
 
     /* Create the Pages tree. */
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
@@ -2967,6 +3020,67 @@ do_pdf_close(gx_device * dev)
      * contain other memory allocations. All other resource types can be simply dicarded
      * as above.
      */
+
+    /* Memory management of resources in pdfwrite is bizarre and complex. Originally there was no means
+     * to free any resorucesw on completionj, pdfwrite simply relied on the garbage collector to clean up
+     * and all the resource objects are GC-visible. However, this doesn't work well when the interpreter
+     * does not use GC, ie PCL or XPS, and even when GC is available, the time taken to clean up the
+     * (sometimes enormous numbers) of objects can be surprisingly significant. So code was added above
+     * to handle the simple cases useing pdf_free_resource_object(), and below to handle the more complex
+     * situations.
+     * The way this works is that for each resrouce type we free the 'object', if the object is itself
+     * a 'cos' object (array, dictionary) then we free each of its members. However, if any of the objects
+     * have an ID which is not zero, then we don't free them (this is true only for contents, all the
+     * objects of a given type are freed regardless of whether their ID is 0). These are taken to be
+     * references to resource objects of a type which has not yet been freed, and will be freed when
+     * that resource type is freed. For the simple resources, which is most of them, this works well.
+     *
+     * However, there are complications; colour spaces and functions can contain cos objects
+     * whose members pointers to other objects of the same resoruce type (eg a type 3 stitching function
+     * can point to an array of type 0 functions). We can't afford to have these free the object, because
+     * the resource chain is still pointing at it, and will try to free it again. The same is also true if
+     * we should encounter the object which is referenced before we find the reference. So for these cases
+     * we first scan the members of each resource (if present) to see if they are references to another
+     * resource of the same type. If they are we simply 'corrupt' the reference by changing the object type.
+     * The resource has already been written, and the reference will free the memory, so this is safe to do.
+     *
+     * The final case is 'resourceOther' which can contain pretty much anything. In particular it can contain
+     * Colorant dictionaries for colour spaces, but technically it could contain cos objects pointing at any
+     * resource type. So far I have only found this to be possible with colorspace and function resources, but
+     * the routines 'discard_array_refs' and 'discard_dict_refs' actually check for *all* the resource types except
+     * resourceOther. We can't free the resourceOther types because they cvan contain resources that are being used
+     * by resources, eg the spot colour names for /Separation and DeviceN spaces.
+     *
+     * There is a 'gotcha' here; previously we used to free the 'resourceOther' resources *before* calling
+     * pdf_document_metadata(), now we call it after. The problem is that the metadata is stored as a resourceOther
+     * resource *and* referenced from the Catalog dictionary, which is a 'global named resource'. We free global
+     * named resoruces as the absolute last action. Previously because we had free resourceOther resoruces before
+     * creating the new reference to the Metadata, the fact that it was freed by the action of releasing the
+     * global named resources wasn't a problem, now it is. If we free the metadata as a 'resourceOther' then when
+     * we try to free it as a global named resource we will run into trouble again. So pdf_document_metadata() has been
+     * specifally altered to remove the reference to the metadata from the resourceOther resource chain immediately
+     * after it has been created. Ick.....
+     */
+    {
+        int j;
+
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+            pdf_resource_t *pres = pdev->resources[resourceOther].chains[j];
+
+            for (; pres != 0;) {
+                if (pres->object) {
+                    if (cos_type(pres->object) == cos_type_array) {
+                        discard_array_refs(pdev, pres->object);
+                    }
+                    if (cos_type(pres->object) == cos_type_dict) {
+                        cos_dict_forall((const cos_dict_t *)pres->object, pdev, discard_dict_refs);
+                    }
+                }
+                pres = pres->next;
+            }
+        }
+    }
+
     {
         /* PDF font records and all their associated contents need to be
          * freed by means other than the garbage collector, or the memory
@@ -3035,18 +3149,6 @@ do_pdf_close(gx_device * dev)
         int j;
 
         for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
-            pdf_resource_t *pres = pdev->resources[resourceColorSpace].chains[j];
-            for (; pres != 0;) {
-                free_color_space(pdev, pres);
-                pres = pres->next;
-            }
-        }
-    }
-
-    {
-        int j;
-
-        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
             pdf_resource_t *pres = pdev->resources[resourceExtGState].chains[j];
 
             for (; pres != 0;) {
@@ -3097,6 +3199,43 @@ do_pdf_close(gx_device * dev)
     {
         int j;
 
+        /* prescan the colour space arrays to see if any of them reference other colour
+         * spaces. If they do, then remove the reference by changing it from a COS_VALUE_OBJECT
+         * into a COS_VALUE_CONST, see comment at the start of this section as to why this is safe.
+         */
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+            pdf_resource_t *pres = pdev->resources[resourceColorSpace].chains[j];
+            for (; pres != 0;) {
+                if (cos_type(pres->object) == cos_type_array) {
+                    long index;
+                    cos_array_t *pca = (cos_array_t *)pres->object;
+                    const cos_array_element_t *element = cos_array_element_first(pca);
+                    cos_value_t *v;
+
+                    while (element) {
+                        element = cos_array_element_next(element, &index, (const cos_value_t **)&v);
+                        if (v->value_type == COS_VALUE_OBJECT) {
+                            if (pdf_find_resource_by_resource_id(pdev, resourceColorSpace, v->contents.object->id)){
+                                v->value_type = COS_VALUE_CONST;
+                            }
+                        }
+                    }
+                }
+                pres = pres->next;
+            }
+        }
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+            pdf_resource_t *pres = pdev->resources[resourceColorSpace].chains[j];
+            for (; pres != 0;) {
+                free_color_space(pdev, pres);
+                pres = pres->next;
+            }
+        }
+    }
+
+    {
+        int j;
+
         for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
             pdf_resource_t *pres = pdev->resources[resourceGroup].chains[j];
 
@@ -3114,6 +3253,21 @@ do_pdf_close(gx_device * dev)
     {
         int j;
 
+        /* prescan the function arrays and dictionariesto see if any of them reference other
+         * functions. If they do, then remove the reference by changing it from a COS_VALUE_OBJECT
+         * into a COS_VALUE_CONST, see comment at the start of this section as to why this is safe.
+         */
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+            pdf_resource_t *pnext = 0, *pres = pdev->resources[resourceFunction].chains[j];
+
+            for (; pres != 0;) {
+                if (pres->object) {
+                    free_function_refs(pdev, pres->object);
+                }
+                pnext = pres->next;
+                pres = pnext;
+            }
+        }
         for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
             pdf_resource_t *pnext = 0, *pres = pdev->resources[resourceFunction].chains[j];
 
@@ -3128,6 +3282,10 @@ do_pdf_close(gx_device * dev)
             }
         }
     }
+
+    code1 = pdf_free_resource_objects(pdev, resourceOther);
+    if (code >= 0)
+        code = code1;
 
     if (code >= 0) {
         int i, j;

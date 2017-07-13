@@ -840,6 +840,8 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 int
 pdf_document_metadata(gx_device_pdf *pdev)
 {
+    int j;
+
     if (pdev->CompatibilityLevel < 1.4)
         return 0;
     if (cos_dict_find_c_key(pdev->Catalog, "/Metadata"))
@@ -880,6 +882,34 @@ pdf_document_metadata(gx_device_pdf *pdev)
         code = cos_dict_put_c_key_object(pdev->Catalog, "/Metadata", pres->object);
         if (code < 0)
             return code;
+
+        /* By storing the Metadata in the Catalog dictionary we have referenced it from the
+         * 'global named objects', and the object will be freed when we free those objects.
+         * We *don't* want it referenced by any resource because if it is then we will free
+         * it before we free the global named resources. So remove the Metadata cos_stream
+         * object from the resourceOther resource type chains.
+         */
+        for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+            pdf_resource_t *pres1, *head = pdev->resources[resourceOther].chains[j];
+
+            pres1 = head;
+
+            if (pres1 == pres) {
+                pdev->resources[resourceOther].chains[j] = pres1->next;
+                break;
+            } else {
+                while (pres1->next) {
+                    if (pres1->next == pres) {
+                        pres1->next = pres->next;
+                        break;
+                    }
+                    if (pres1->next == pres->next)
+                        break;
+
+                    pres1 = pres1->next;
+                }
+            }
+        }
     }
     return 0;
 }

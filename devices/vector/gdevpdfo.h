@@ -140,6 +140,12 @@ extern const cos_object_procs_t cos_generic_procs;
 extern const cos_object_procs_t cos_reference_procs;
 #define cos_type_reference (&cos_reference_procs)
 
+extern const cos_object_procs_t cos_dict_procs;
+#define cos_type_dict (&cos_dict_procs)
+
+extern const cos_object_procs_t cos_array_procs;
+#define cos_type_array (&cos_array_procs)
+
 /*
  * Define the macro for casting any cos object to type cos_object_t.
  * Using cos_procs ensures that the argument is, in fact, a cos object.

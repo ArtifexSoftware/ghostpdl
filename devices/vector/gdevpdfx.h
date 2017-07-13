@@ -1320,6 +1320,11 @@ int pdf_function_scaled(gx_device_pdf *pdev, const gs_function_t *pfn,
 int pdf_write_function(gx_device_pdf *pdev, const gs_function_t *pfn,
                        long *pid);
 
+/* If a stitching function references an array of other functions, we need
+ * to 'unreference' those before freeing the function. otherwise we end up
+ * trying to free the referenced functions twice.
+ */
+int free_function_refs(gx_device_pdf *pdev, cos_object_t *pco);
 /* ------ Fonts ------ */
 
 /* Write a FontBBox dictionary element. */

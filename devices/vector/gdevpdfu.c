@@ -2678,6 +2678,42 @@ pdf_write_function(gx_device_pdf *pdev, const gs_function_t *pfn, long *pid)
     return 0;
 }
 
+int
+free_function_refs(gx_device_pdf *pdev, cos_object_t *pco)
+{
+    char key[] = "/Functions";
+    cos_value_t *v, v2;
+
+    if (cos_type(pco) == cos_type_dict) {
+        v = (cos_value_t *)cos_dict_find((const cos_dict_t *)pco, (const byte *)key, strlen(key));
+        if (v && v->value_type == COS_VALUE_OBJECT) {
+            if (cos_type(v->contents.object) == cos_type_array){
+                int code=0;
+                while (code == 0) {
+                    code = cos_array_unadd((cos_array_t *)v->contents.object, &v2);
+                }
+            }
+        }
+    }
+    if (cos_type(pco) == cos_type_array) {
+        long index;
+        cos_array_t *pca = (cos_array_t *)pco;
+        const cos_array_element_t *element = cos_array_element_first(pca);
+        cos_value_t *v;
+
+        while (element) {
+            element = cos_array_element_next(element, &index, (const cos_value_t **)&v);
+            if (v->value_type == COS_VALUE_OBJECT) {
+                if (pdf_find_resource_by_resource_id(pdev, resourceFunction, v->contents.object->id)){
+                    v->value_type = COS_VALUE_CONST;
+                    /* Need to remove the element from the array here */
+                }
+            }
+        }
+    }
+    return 0;
+}
+
 /* Write a FontBBox dictionary element. */
 int
 pdf_write_font_bbox(gx_device_pdf *pdev, const gs_int_rect *pbox)
