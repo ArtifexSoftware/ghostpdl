@@ -239,9 +239,11 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         *psize = op_size + 1;
         dp[op_size] = code;
         compress = cmd_compress_const;
-    } else
-        bytes_copy_rectangle(dp + op_size, short_raster, data, raster,
-                             short_raster, height);
+    } else {
+        uint copy_bytes = (width_bits + 7) >> 3;
+        bytes_copy_rectangle_zero_padding(dp + op_size, short_raster, data, raster,
+                             copy_bytes, height);
+    }
 out:
     *pdp = dp;
     return compress;
