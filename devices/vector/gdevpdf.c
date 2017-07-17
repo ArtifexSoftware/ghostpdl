@@ -2516,7 +2516,7 @@ static int discard_dict_refs(void *client_data, const byte *key_data, uint key_s
 
 /* Close the device. */
 static int
-do_pdf_close(gx_device * dev)
+pdf_close(gx_device * dev)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *) dev;
     gs_memory_t *mem = pdev->pdf_memory;
@@ -3426,19 +3426,5 @@ do_pdf_close(gx_device * dev)
         return code;
 
     pdf_free_pdf_font_cache(pdev);
-    return code;
-}
-
-static int
-pdf_close(gx_device * dev)
-{
-    int code;
-#ifdef GS_MEMORY_CAN_DEFER_FREES
-    gs_defer_frees(dev->memory, 1);
-#endif
-    code = do_pdf_close(dev);
-#ifdef GS_MEMORY_CAN_DEFER_FREES
-    gs_defer_frees(dev->memory, 0);
-#endif
     return code;
 }
