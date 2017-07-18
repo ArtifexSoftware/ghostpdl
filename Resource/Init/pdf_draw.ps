@@ -2569,30 +2569,72 @@ drawopdict begin
     } if
     setfillblend
     PDFfile fileposition exch                      % pos /Name
-    dup Page /XObject rget {
-      exch pop                                     % pos obj
-      OFFlevels length 0 eq {
-        dup /OC knownoget { ocg-is-visible } { //true } ifelse
-      } {
+
+    % Bug #698226, Acrobat signals an error for recursive XObjects in a PDF file
+    % but continues. This is true even if the XObject is not a simple self-reference
+    % (eg /Fm1 -> /Fm2 -> /Fm3 -> /Fm1).
+    % Normally when dealing with recursion we would put a dictionary on the stack, store the
+    % object numbers encoutnered in it, and check each new object number to see if we've
+    % already seen it. This doesn't work well for XObjects, because the operand stack can be
+    % in any state when we run a Do. So we make a new dictionary in pdfdict to hold the
+    % object numbers.
+    % We also don't usually know the object number of a Form, we just get given its name
+    % so we need a new routine to return the object number. This is because the parent XObject
+    % might reference teh object by one name, while the child references it by another, we
+    % can't permit clashes.
+    %
+    % Start by getting the object number for a Form XObject
+    dup Page /XObject obj_get dup 0 eq not {
+      % Now get the recording dictionary and see if that object number has been seen
+      pdfdict /Recursive_XObject_D get 1 index known {
+        (   **** Error: Recursive XObject detected, ignoring ") print 1 index 256 string cvs print (", object number ) print 256 string cvs print (\n) print
+        (               Output may be incorrect.\n) pdfformaterror
         //false
-      } ifelse {
-        dup /Subtype oget //xobjectprocs exch get   % pos obj {proc}
-        % Don't leave extra objects on the stack while executing
-        % the definition of the form.
-        3 -1 roll                                  % obj {proc} pos
-        2 .execn                                   % pos
-      } {
-        pop                                        % pos
-      } ifelse
-    } {
-        % This should cause an error, but Acrobat Reader can
-        % continue, so we do too.
-      (   **** Error: Undefined XObject resource: )
-      exch =string cvs concatstrings (\n) concatstrings
-      pdfformaterror
-      (               Output may be incorrect.\n) pdfformaterror
+      }{
+        % We haven't seen it yet, so record it.
+        pdfdict /Recursive_XObject_D get 1 index null put
+        3 1 roll
+        //true
+      }ifelse
+    }
+    {
+      % I don't think this should be possible, but just in case
+        (   **** Error: Unable to determine object number for ) print exch 256 string cvs print ( so ignoring it) print
+        (               Output may be incorrect.\n) pdfformaterror
+      //false
     } ifelse
-    PDFfile exch setfileposition
+
+    % If we could get the object number, and we haven't already seen it, then execute it.
+    {
+      dup Page /XObject rget {
+        exch pop                                     % pos obj
+        OFFlevels length 0 eq {
+          dup /OC knownoget { ocg-is-visible } { //true } ifelse
+        } {
+          //false
+        } ifelse {
+          dup /Subtype oget //xobjectprocs exch get   % pos obj {proc}
+          % Don't leave extra objects on the stack while executing
+          % the definition of the form.
+          3 -1 roll                                  % obj {proc} pos
+          2 .execn                                   % pos
+        } {
+          pop                                        % pos
+        } ifelse
+      } {
+          % This should cause an error, but Acrobat Reader can
+          % continue, so we do too.
+        (   **** Error: Undefined XObject resource: )
+        exch =string cvs concatstrings (\n) concatstrings
+        pdfformaterror
+        (               Output may be incorrect.\n) pdfformaterror
+      } ifelse
+      PDFfile exch setfileposition
+      pdfdict /Recursive_XObject_D get exch undef
+    }{
+      % Otherwise ignore it and tidy up the stacks
+      pop pop
+    } ifelse
   } bdef
 end
 

@@ -85,6 +85,9 @@ pdfdict begin
        pdfformaterror
        (               Output may be incorrect.\n) pdfformaterror
      } bind
+
+  /Recursive_XObject_D 1 dict def
+
 .dicttomark readonly def
 
 % ======================== Main program ======================== %
@@ -1599,6 +1602,30 @@ currentdict /xref-char-dict undef
     }
    ifelse
  } bind def
+
+/obj_get {
+  LocalResources 1 index knownoget {
+    dup 4 index known {
+      3 index get
+      0 get 4 1 roll pop pop pop
+    } if
+  } {
+    1 index /Resources pget {
+      1 index knownoget {
+        dup 4 index known {
+          3 index get
+          0 get 4 1 roll pop pop pop
+        }{
+          pop pop pop 0
+        }ifelse
+      }{
+        pop pop pop 0
+      } ifelse
+    } {
+      pop pop pop 0
+    }ifelse
+  }ifelse
+}bind def
 
 % Get the value of a resource on a given page.
 /rget {			% <resname> <pagedict> <restype> rget <value> -true-
