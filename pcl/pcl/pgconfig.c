@@ -110,7 +110,8 @@ hpgl_ZZ(hpgl_args_t * pargs, hpgl_state_t * pgls)
             pargs->source.ptr = p;
             return 0;
         } else {
-            gs_debug[(int)ch] = 1;
+            if (ch < 128)
+                gs_debug[(int)ch] = 1;
         }
     }
     pargs->source.ptr = p;
