@@ -135,10 +135,14 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
             dmputs(dev->memory, "\n");
         }
 #endif
+        /* Bump DDA's if it doesn't cause overflow */
         penum->cur.x = dda_current(penum->dda.row.x);
-        dda_next(penum->dda.row.x);
+        if (max_int - any_abs(penum->dda.row.x.step.dQ) > any_abs(penum->cur.x))
+            dda_next(penum->dda.row.x);
         penum->cur.y = dda_current(penum->dda.row.y);
-        dda_next(penum->dda.row.y);
+        if (max_int - any_abs(penum->dda.row.y.step.dQ) > any_abs(penum->cur.y))
+            dda_next(penum->dda.row.y);
+
         if (penum->interpolate == interp_off)
             switch (penum->posture) {
                 case image_portrait:
