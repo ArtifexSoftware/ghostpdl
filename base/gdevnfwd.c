@@ -1107,7 +1107,7 @@ static dev_proc_strip_tile_rect_devn(null_strip_tile_rect_devn);
         NULL, /* fill_line_tr */\
         NULL, /* fill_line_tri */\
         NULL, /* up_spot_eq_col */\
-        NULL, /* ret_devn_params */\
+        gx_default_ret_devn_params, /* ret_devn_params */\
         NULL, /* fillpage */\
         NULL, /* push_transparency_state */\
         NULL, /* pop_transparency_state */\
