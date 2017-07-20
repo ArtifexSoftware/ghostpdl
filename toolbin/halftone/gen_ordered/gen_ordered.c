@@ -43,6 +43,7 @@ typedef enum {
     LINE_Y,
     DIAMOND1,
     DIAMOND2,
+    ROUNDSPOT,
     CUSTOM  /* Must remain last one */
 } spottype_t;
 
@@ -177,6 +178,7 @@ int usage (void) {
     printf ("5  LINE_Y \n");
     printf ("6  DIAMOND1 \n");
     printf ("7  DIAMOND2 \n");
+    printf ("8  ROUNDSPOT \n");
     printf ("f [tos | ppm | ps | raw] is the output format\n");
     printf ("     If no output format is indicate a turn on sequence output will be created\n");
     printf ("   ppm is an Portable Pixmap image file\n");
@@ -238,37 +240,37 @@ main (int argc, char **argv)
       if (arg[0] == '-') {
           switch (arg[1]) {
             case 'a':
-	      if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
-		  goto usage_exit;
+              if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
+                  goto usage_exit;
               params.targ_scr_ang = atoi(arg_value);
               params.targ_scr_ang = params.targ_scr_ang % 90;
               params.scr_ang = params.targ_scr_ang;
               break;
             case 'f':
-	      if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
-		  goto usage_exit;
-	      switch (arg_value[0]) {
-		  case 'p':
+              if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
+                  goto usage_exit;
+              switch (arg_value[0]) {
+                  case 'p':
                     params.output_format = (arg_value[1] == 's') ?
-		    		OUTPUT_PS : OUTPUT_PPM;
-		    break;
-		  case 'r':
+                                            OUTPUT_PS : OUTPUT_PPM;
+                    break;
+                  case 'r':
                     j = sscanf(arg_value, "raw%d", &k);
-		    if (j == 0 || k == 8)
+                    if (j == 0 || k == 8)
                         params.output_format = OUTPUT_RAW;
-		    else
+                    else
                         params.output_format = OUTPUT_RAW16;
-		    break;
-		  case 't':
+                    break;
+                  case 't':
                     params.output_format = OUTPUT_TOS;
-		    break;
-		  default:
-		    goto usage_exit;
-	      }
+                    break;
+                  default:
+                    goto usage_exit;
+              }
               break;
             case 'd':
-	      if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
-		  goto usage_exit;
+              if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
+                  goto usage_exit;
               temp_int = atoi(arg_value);
               if (temp_int < 0 || temp_int > CUSTOM)  
                   params.spot_type = CIRCLE;
@@ -276,19 +278,19 @@ main (int argc, char **argv)
                   params.spot_type = temp_int;
               break;
             case 'l':
-	      if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
-		  goto usage_exit;
+              if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
+                  goto usage_exit;
               params.targ_lpi = atoi(arg_value);
               break;
             case 'q':
-	      if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
-		  goto usage_exit;
+              if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
+                  goto usage_exit;
               params.targ_quant = atoi(arg_value);
               params.targ_quant_spec = true;
               break;
             case 'r':
-	      if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
-		  goto usage_exit;
+              if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
+                  goto usage_exit;
               j = sscanf(arg_value, "%dx%d", &k, &m);
               if (j < 1)
                   goto usage_exit;
@@ -300,8 +302,8 @@ main (int argc, char **argv)
               }
               break;
             case 's':
-	      if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
-		  goto usage_exit;
+              if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
+                  goto usage_exit;
               params.targ_size = atoi(arg_value);
               params.targ_size_spec = true;
               break;
@@ -496,7 +498,7 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
         /* The minimal step is in y */
         printf("x\ty\tu\tv\tAngle\tLPI\tLevels\n");
         printf("-----------------------------------------------------------\n");
-        for (y = 1; y < 11; y++) {
+        for (y = 1, lpi = 99999999; lpi > params.targ_lpi; y++) {
             y_use = y;
             x = ROUND(y_use * ratio);
             /* compute the true angle */
@@ -554,7 +556,7 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
         if (scaled_x >= 1) {
             printf("x\ty\tu\tv\tAngle\tLPI\tLevels\n");
             printf("-----------------------------------------------------------\n");
-            for (y = 1; y < 11; y++) {
+            for (y = 1, lpi=9999999; lpi > params.targ_lpi; y++) {
                 y_use = y;
                 x = ROUND( y_use * ratio );
                 v = ROUND(-x / scaled_x);
@@ -1847,7 +1849,7 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
     output_format_type output_format = params.output_format;
     char *output_extension = (output_format == OUTPUT_PS) ? "ps" :
                         ((output_format == OUTPUT_PPM) ? "ppm" : 
-			((output_format == OUTPUT_RAW16 ? "16.raw" : "raw")));
+                        ((output_format == OUTPUT_RAW16 ? "16.raw" : "raw")));
 
     if (output_format == OUTPUT_TOS) {
         /* We need to figure out the turn-on sequence from the threshold 
@@ -1921,8 +1923,8 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
             } else {
                 /* Output PS HalftoneType 16 dictionary. Single array. */
                 fprintf(fid, "%%!PS\n"
-			"%% Create a 'filter' from local hex data\n"
-			"{ currentfile /ASCIIHexDecode filter /ReusableStreamDecode filter } exec\n");
+                        "%% Create a 'filter' from local hex data\n"
+                        "{ currentfile /ASCIIHexDecode filter /ReusableStreamDecode filter } exec\n");
         	/* hex data follows, 'file' object will be left on stack */
                 for (y = 0; y < height; y++) {
                     for ( x = 0; x < width; x++ ) {
@@ -1932,17 +1934,17 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                         if ((x & 0xf) == 0x1f && (x != (width - 1)))
                             fprintf(fid, "\n");
                     }
-		    fprintf(fid, "\n");	/* end of one row */
-		}
-		fprintf(fid, ">\n");	/* ASCIIHexDecode EOF */
+                    fprintf(fid, "\n");	/* end of one row */
+                }
+                fprintf(fid, ">\n");	/* ASCIIHexDecode EOF */
                 fprintf(fid, 
                         "<< /Thresholds 2 index    %% file object for the 16-bit data\n"
                         "   /HalftoneType 16\n"
                         "   /Width  %d\n"
                         "   /Height %d\n"
                         ">>\n"
-			"exch pop     %% discard ResuableStreamDecode file leaving the Halftone dict.\n",
-			width, height);
+                        "exch pop     %% discard ResuableStreamDecode file leaving the Halftone dict.\n",
+                        width, height);
             }
         }
         fclose(fid);
@@ -2025,6 +2027,17 @@ double htsc_spot_diamond2(double x, double y)
     }
 }
 
+double htsc_spot_roundspot(double x, double y)
+{
+    double xy = (double)fabs(x) + (double)fabs(y);
+
+    if (xy <= 1.0) {
+        return 1.0 - (x*x + y*y);
+    } else {
+        return ((fabs(x) - 1.0) * (fabs(x) - 1.0)) + ((fabs(y) - 1.0) * (fabs(y) - 1.0)) - 1.0;
+    }
+}
+
 double htsc_spot_value(spottype_t spot_type, double x, double y)
 {
     switch (spot_type) {
@@ -2044,6 +2057,8 @@ double htsc_spot_value(spottype_t spot_type, double x, double y)
             return htsc_spot_diamond(x,y);
         case DIAMOND2:
             return htsc_spot_diamond2(x,y);
+        case ROUNDSPOT:
+            return htsc_spot_roundspot(x,y);
         case CUSTOM:  /* A spot (pun intended) for users to define their own */
             return htsc_spot_circle(x,y);
         default:
