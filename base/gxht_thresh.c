@@ -711,6 +711,9 @@ gxht_thresh_image_init(gx_image_enum *penum)
            space */
         max_height = (int) ceil(fixed2float(any_abs(penum->dst_height)) /
                                             (float) penum->Height);
+        if ((max_height > 0) && (penum->ht_stride * spp_out > max_int / max_height))
+            return -1;         /* overflow */
+
         penum->ht_buffer =
                         gs_alloc_bytes(penum->memory,
                            penum->ht_stride * max_height * spp_out,
