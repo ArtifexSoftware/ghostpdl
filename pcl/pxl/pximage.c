@@ -144,7 +144,6 @@ struct px_image_enum_s
 {
     gs_image_t image;
     byte *row;                  /* buffer for one row of data */
-    uint raster;
     void *info;                 /* state structure for driver */
     px_bitmap_enum_t benum;
     px_bitmap_args_t bi_args;
@@ -275,7 +274,7 @@ begin_bitmap(px_bitmap_params_t * params, px_bitmap_enum_t * benum,
     params->dest_width = bar->dest_width;
     params->dest_height = bar->dest_height;
     benum->data_per_row =
-        round_up(params->width * params->depth * num_components, 8) >> 3;
+        ((params->width * params->depth * num_components) + 7) >> 3;
     return 0;
 }
 
@@ -804,8 +803,7 @@ px_begin_image(px_state_t * pxs, bool is_jpeg, px_args_t * par)
     if (code < 0 || code == pxNeedData)
         return_error(code);
     
-    pxenum->raster = round_up(pbenum->rebuffered_data_per_row, align_bitmap_mod);
-    pxenum->row = gs_alloc_byte_array(pxs->memory, 1, pxenum->raster,
+    pxenum->row = gs_alloc_byte_array(pxs->memory, 1, pbenum->rebuffered_data_per_row,
                                       "pxReadImage(row)");
     if (pxenum->row == 0)
         code = gs_note_error(errorInsufficientMemory);
