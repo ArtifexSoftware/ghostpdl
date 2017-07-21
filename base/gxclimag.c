@@ -1035,6 +1035,10 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 
         clist_update_trans_bbox(cdev, &bbox);
     }
+    /* Make sure clip_path for the cdev is not stale -- update from image_enum */
+    cdev->clip_path = NULL;
+    cmd_check_clip_path(cdev, pie->pcpath);
+
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         gs_int_rect ibox;
