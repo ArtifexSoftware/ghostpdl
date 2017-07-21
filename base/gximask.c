@@ -36,9 +36,10 @@
 
 int
 gx_image_fill_masked_start(gx_device *dev, const gx_device_color *pdevc, bool transpose,
-                           const gx_clip_path *pcpath, gs_memory_t *mem, gx_device **cdev)
+                           const gx_clip_path *pcpath, gs_memory_t *mem, gs_logical_operation_t lop,
+                           gx_device **cdev)
 {
-    if (gx_dc_is_pattern2_color(pdevc) || gx_dc_is_pattern1_color_clist_based(pdevc)) {
+    if ((lop == lop_default) && (gx_dc_is_pattern2_color(pdevc) || gx_dc_is_pattern1_color_clist_based(pdevc))) {
         if (!dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_can_accum, NULL, gs_no_id)) {
             extern_st(st_device_cpath_accum);
             gx_device_cpath_accum *pcdev;
@@ -107,7 +108,7 @@ gx_image_fill_masked(gx_device *dev,
     gx_device *cdev = dev;
     int code;
 
-    if ((code = gx_image_fill_masked_start(dev, pdc, false, pcpath, dev->memory, &cdev)) < 0)
+    if ((code = gx_image_fill_masked_start(dev, pdc, false, pcpath, dev->memory, lop, &cdev)) < 0)
         return code;
 
     if (cdev == dev)

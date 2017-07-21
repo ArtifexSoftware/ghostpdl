@@ -36,7 +36,8 @@ typedef struct gx_clip_path_s gx_clip_path;
 #endif
 
 int gx_image_fill_masked_start(gx_device *dev, const gx_device_color *pdevc, bool transpose,
-                           const gx_clip_path *pcpath, gs_memory_t *mem, gx_device **cdev);
+                             const gx_clip_path *pcpath, gs_memory_t *mem, gs_logical_operation_t lop,
+                             gx_device **cdev);
 
 int gx_image_fill_masked_end(gx_device *dev, gx_device *tdev, const gx_device_color *pdevc);
 

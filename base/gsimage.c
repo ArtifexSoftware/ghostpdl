@@ -240,7 +240,7 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_gstate * pgs,
             if ((any_abs(mat.xy) > any_abs(mat.xx)) && (any_abs(mat.yx) > any_abs(mat.yy)))
                 transpose = true;		/* pure landscape */
             code = gx_image_fill_masked_start(dev, gs_currentdevicecolor_inline(pgs), transpose,
-                                              pcpath, pgs->memory, &dev2);
+                                              pcpath, pgs->memory, pgs->log_op, &dev2);
             if (code < 0)
                 return code;
         }
