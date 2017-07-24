@@ -870,7 +870,9 @@ setglobal
         {
           0 1 2 index length 1 sub
           {
-            dup 2 index exch get dup 0 gt         % We ignore entries of zero in the widths array
+            dup 2 index exch get
+            dup type /packedarraytype eq {exec} if % Handle entries which are indirect references (seriously ? !!)
+            dup 0 gt                              % We ignore entries of zero in the widths array
             {
               exch 5 index add                    % add FirstChar to the idx to get a char code
               dup 64 gt 1 index 91 lt and         % we only want to consider A~Z and....
