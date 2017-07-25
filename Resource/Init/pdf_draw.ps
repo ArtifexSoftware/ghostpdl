@@ -1061,11 +1061,51 @@ currentdict end readonly def
   { countdictstack
     2 index le { exit } if
     currentdict /n known not or
-    Q
-  } loop {
-    (   **** Error: Pattern stream has unbalanced q/Q operators \(too many q's\)\n)
-    pdfformaterror
-    (               Output may be incorrect.\n) pdfformaterror
+    currentdict /n known currentdict /self known or{
+      Q
+    }{
+      (\n   **** Error: File has unbalanced q/Q operators \(too many Q's\)\n               Output may be incorrect.\n)
+      pdfdict /.Qqwarning_issued .knownget
+      {
+        {
+          pop
+        }
+        {
+          currentglobal pdfdict gcheck .setglobal
+          pdfdict /.Qqwarning_issued //true .forceput
+          .setglobal
+          pdfformaterror
+        } ifelse
+      }
+      {
+        currentglobal pdfdict gcheck .setglobal
+        pdfdict /.Qqwarning_issued //true .forceput
+        .setglobal
+        pdfformaterror
+      } ifelse
+      end
+    } ifelse
+  } loop
+  {
+    (\n   **** Error: File has unbalanced q/Q operators \(too many q's\)\n               Output may be incorrect.\n)
+    pdfdict /.Qqwarning_issued .knownget
+    {
+      {
+        pop
+      }
+      {
+        currentglobal pdfdict gcheck .setglobal
+        pdfdict /.Qqwarning_issued //true .forceput
+        .setglobal
+        pdfformaterror
+      } ifelse
+    }
+    {
+      currentglobal pdfdict gcheck .setglobal
+      pdfdict /.Qqwarning_issued //true .forceput
+      .setglobal
+      pdfformaterror
+    } ifelse
   } if
   pop
 
