@@ -131,7 +131,7 @@ checkRGBColor(const px_value_t * pv)
 static int
 checkSourceHeight(const px_value_t * pv)
 {
-    return ok_iff(pv->value.i >= 1);
+    return ok_iff(pv->value.i >= 1 && pv->value.i <= 65535);
 }
 #define checkSourceWidth checkSourceHeight
 static int
