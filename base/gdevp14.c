@@ -7441,11 +7441,11 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                  * do not need to create a chain of identical devices.
                  */
                 {
-                    gs_composite_t pctemp = *pct;
+                    gs_pdf14trans_t pctemp = *pdf14pct;
 
                     pctemp.type = &gs_composite_pdf14trans_no_clist_writer_type;
                     code = dev_proc(pdev->target, create_compositor)
-                                (pdev->target, pcdev, &pctemp, pgs, mem, cdev);
+                                (pdev->target, pcdev, (gs_composite_t *)&pctemp, pgs, mem, cdev);
                     *pcdev = dev;
                     return code;
                 }
