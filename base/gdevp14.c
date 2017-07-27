@@ -6933,7 +6933,7 @@ send_pdf14trans(gs_gstate	* pgs, gx_device * dev,
         pdf14_pop_transparency_state,\
         NULL,                           /* put_image */\
         pdf14_dev_spec_op,\
-        NULL,                           /* copy planes */\
+        pdf14_clist_copy_planes,        /* copy planes */\
         NULL,                           /* get_profile */\
         gx_forward_set_graphics_type_tag, /* set_graphics_type_tag */\
         NULL,                           /* strip_copy_rop2 */\
@@ -6948,6 +6948,7 @@ static	dev_proc_stroke_path(pdf14_clist_stroke_path);
 static	dev_proc_text_begin(pdf14_clist_text_begin);
 static	dev_proc_begin_image(pdf14_clist_begin_image);
 static	dev_proc_begin_typed_image(pdf14_clist_begin_typed_image);
+static  dev_proc_copy_planes(pdf14_clist_copy_planes);
 
 static	const gx_device_procs pdf14_clist_Gray_procs =
         pdf14_clist_procs(gx_default_DevGray_get_color_mapping_procs,
@@ -8096,6 +8097,18 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_gstate * pgs,
         pgs_noconst->trans_device = NULL;
         return code;
     }
+}
+
+static int
+pdf14_clist_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
+                  gx_bitmap_id id, int x, int y, int w, int h, int plane_height)
+{
+    pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
+    int code;
+
+    code = gx_forward_copy_planes(dev, data, data_x, raster, id,
+                                  x, y, w, h, plane_height);
+    return code;
 }
 
 static int
