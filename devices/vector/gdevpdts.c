@@ -29,63 +29,12 @@
 
 /* ================ Types and structures ================ */
 
-/*
- * We accumulate text, and possibly horizontal or vertical moves (depending
- * on the font's writing direction), until forced to emit them.  This
- * happens when changing text state parameters, when the buffer is full, or
- * when exiting text mode.
- *
- * Note that movement distances are measured in unscaled text space.
- */
-typedef struct pdf_text_move_s {
-    int index;			/* within buffer.chars */
-    float amount;
-} pdf_text_move_t;
-#define MAX_TEXT_BUFFER_CHARS 200 /* arbitrary, but overflow costs 5 chars */
-#define MAX_TEXT_BUFFER_MOVES 50 /* ibid. */
-typedef struct pdf_text_buffer_s {
-    /*
-     * Invariant:
-     *   count_moves <= MAX_TEXT_BUFFER_MOVES
-     *   count_chars <= MAX_TEXT_BUFFER_CHARS
-     *   0 < moves[0].index < moves[1].index < ... moves[count_moves-1].index
-     *	   <= count_chars
-     *   moves[*].amount != 0
-     */
-    pdf_text_move_t moves[MAX_TEXT_BUFFER_MOVES + 1];
-    byte chars[MAX_TEXT_BUFFER_CHARS];
-    int count_moves;
-    int count_chars;
-} pdf_text_buffer_t;
 #define TEXT_BUFFER_DEFAULT\
     { { 0, 0 } },		/* moves */\
     { 0 },			/* chars */\
     0,				/* count_moves */\
     0				/* count_chars */
 
-/*
- * We maintain two sets of text state values (as defined in gdevpdts.h): the
- * "in" set reflects the current state as seen by the client, while the
- * "out" set reflects the current state as seen by an interpreter processing
- * the content stream emitted so far.  We emit commands to make "out" the
- * same as "in" when necessary.
- */
-/*typedef struct pdf_text_state_s pdf_text_state_t;*/  /* gdevpdts.h */
-struct pdf_text_state_s {
-    /* State as seen by client */
-    pdf_text_state_values_t in; /* see above */
-    gs_point start;		/* in.txy as of start of buffer */
-    pdf_text_buffer_t buffer;
-    int wmode;			/* WMode of in.font */
-    /* State relative to content stream */
-    pdf_text_state_values_t out; /* see above */
-    double leading;		/* TL (not settable, only used internally) */
-    bool use_leading;		/* if true, use T* or ' */
-    bool continue_line;
-    gs_point line_start;
-    gs_point out_pos;		/* output position */
-    double PaintType0Width;
-};
 static const pdf_text_state_t ts_default = {
     /* State as seen by client */
     { TEXT_STATE_VALUES_DEFAULT },	/* in */
@@ -98,7 +47,9 @@ static const pdf_text_state_t ts_default = {
     0 /*false*/,		/* use_leading */
     0 /*false*/,		/* continue_line */
     { 0, 0 },			/* line_start */
-    { 0, 0 }			/* output position */
+    { 0, 0 },			/* output position */
+    0.0,                /* PaintType0Width */
+    1 /* false */       /* can_use_TJ */
 };
 /* GC descriptor */
 gs_private_st_ptrs2(st_pdf_text_state, pdf_text_state_t,  "pdf_text_state_t",
@@ -206,7 +157,18 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
             dw = dist.y, dnotw = dist.x;
         else
             dw = dist.x, dnotw = dist.y;
-        if (dnotw == 0 && pts->buffer.count_chars > 0 &&
+        tdw = dw * -1000.0 / pts->in.size;
+
+        /* can_use_TJ is normally true, it is false only when we get a
+         * x/y/xyshow, and the width != real_width. In this case we cannot
+         * be certain of exactly how we got there. If its a PDF file with
+         * a /Widths override, and the operation is an x/y/xyshow (which
+         * will happen if the FontMatrix is nither horizontal not vertical)
+         * then we don't want to use a TJ as that will apply the Width once
+         * for the xhow and once for the Width override. Otherwise, we do
+         * want to use TJ as it makes for smaller files.
+         */
+        if (pts->can_use_TJ && dnotw == 0 && pts->buffer.count_chars > 0 &&
             /*
              * Acrobat Reader limits the magnitude of user-space
              * coordinates.  Also, AR apparently doesn't handle large
@@ -237,8 +199,7 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
               * therefore use large kerning values. Instead we check the kerned value
               * multiplied by the point size of the font.
               */
-            (tdw = dw * -1000.0 / pts->in.size,
-             tdw >= -MAX_USER_COORD && (tdw * pts->in.size) < MAX_USER_COORD)
+            (tdw >= -MAX_USER_COORD && (tdw * pts->in.size) < MAX_USER_COORD)
             ) {
             /* Use TJ. */
             int code = append_text_move(pts, tdw);

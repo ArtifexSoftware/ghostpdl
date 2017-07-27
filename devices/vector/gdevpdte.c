@@ -1300,11 +1300,24 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
         if (pte->text.operation & TEXT_REPLACE_WIDTHS) {
             gs_point dpt;
 
+            /* We are applying a width override, from x/y/xyshow. This coudl be from
+             * a PostScript file, or it could be from a PDF file where we have a font
+             * with a FontMatrix which is neither horizontal nor vertical. If we use TJ
+             * for that, then we end up applying the displacement twice, once here where
+             * we add a TJ, and once when we actually draw the glyph (TJ is added *after*
+             * the glyph is drawn, unlike xshow). So in this case we don't want to try
+             * and use a TJ, we need to position the glyphs using text positioning
+             * operators.
+             */
+            if(cw.Width.xy.x != cw.real_width.xy.x || cw.Width.xy.y != cw.real_width.xy.y)
+                pdev->text->text_state->can_use_TJ = false;
+
             code = gs_text_replaced_width(&pte->text, pte->xy_index++, &dpt);
             if (code < 0)
                 return_error(gs_error_unregistered);
             gs_distance_transform(dpt.x, dpt.y, &ctm_only(pte->pgs), &wanted);
         } else {
+            pdev->text->text_state->can_use_TJ = true;
             gs_distance_transform(cw.real_width.xy.x * ppts->values.size,
                                   cw.real_width.xy.y * ppts->values.size,
                                   &ppts->values.matrix, &wanted);

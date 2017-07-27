@@ -60,6 +60,58 @@ typedef struct pdf_text_state_values_s {
     0,				/* render_mode */\
     0				/* word_spacing */
 
+/*
+ * We accumulate text, and possibly horizontal or vertical moves (depending
+ * on the font's writing direction), until forced to emit them.  This
+ * happens when changing text state parameters, when the buffer is full, or
+ * when exiting text mode.
+ *
+ * Note that movement distances are measured in unscaled text space.
+ */
+typedef struct pdf_text_move_s {
+    int index;			/* within buffer.chars */
+    float amount;
+} pdf_text_move_t;
+#define MAX_TEXT_BUFFER_CHARS 200 /* arbitrary, but overflow costs 5 chars */
+#define MAX_TEXT_BUFFER_MOVES 50 /* ibid. */
+typedef struct pdf_text_buffer_s {
+    /*
+     * Invariant:
+     *   count_moves <= MAX_TEXT_BUFFER_MOVES
+     *   count_chars <= MAX_TEXT_BUFFER_CHARS
+     *   0 < moves[0].index < moves[1].index < ... moves[count_moves-1].index
+     *	   <= count_chars
+     *   moves[*].amount != 0
+     */
+    pdf_text_move_t moves[MAX_TEXT_BUFFER_MOVES + 1];
+    byte chars[MAX_TEXT_BUFFER_CHARS];
+    int count_moves;
+    int count_chars;
+} pdf_text_buffer_t;
+/*
+ * We maintain two sets of text state values (as defined in gdevpdts.h): the
+ * "in" set reflects the current state as seen by the client, while the
+ * "out" set reflects the current state as seen by an interpreter processing
+ * the content stream emitted so far.  We emit commands to make "out" the
+ * same as "in" when necessary.
+ */
+/*typedef struct pdf_text_state_s pdf_text_state_t;*/  /* gdevpdts.h */
+struct pdf_text_state_s {
+    /* State as seen by client */
+    pdf_text_state_values_t in; /* see above */
+    gs_point start;		/* in.txy as of start of buffer */
+    pdf_text_buffer_t buffer;
+    int wmode;			/* WMode of in.font */
+    /* State relative to content stream */
+    pdf_text_state_values_t out; /* see above */
+    double leading;		/* TL (not settable, only used internally) */
+    bool use_leading;		/* if true, use T* or ' */
+    bool continue_line;
+    gs_point line_start;
+    gs_point out_pos;		/* output position */
+    double PaintType0Width;
+    bool can_use_TJ;
+};
 /* ================ Procedures ================ */
 
 /* ------ Exported for gdevpdfu.c ------ */
