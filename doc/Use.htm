@@ -732,14 +732,14 @@ by commas ','. A trailing minus '-' means process all remaining pages. For examp
 <p><blockquote><pre>
 -sPageList=1,3,5 indicates that pages 1, 3 and 5 should be processed.
 -sPageList=5-10 indicates that pages 5, 6, 7, 8, 9 and 10 should be processed.
--sPageList=1, 5-10, 12- indicates that pages 1, 5, 6, 7, 8, 9, 10 and 12 onwards should be processed.
+-sPageList=1,5-10,12- indicates that pages 1, 5, 6, 7, 8, 9, 10 and 12 onwards should be processed.
 </pre></blockquote>
 </p>
 </d1>
 
 <p>The PDF interpreter and the other language interpreters handle these in slightly different ways. Because
 PDF files enable random access to pages in the document the PDF inerpreter only interprets and renders
-the required pages. PCL andPostScript cannot be handled in ths way, and so all the pages must be interpreted.
+the required pages. PCL and PostScript cannot be handled in ths way, and so all the pages must be interpreted.
 However only the requested pages are rendered, which can still lead to savings in time. Be aware that
 using the '%d' syntax for OutputFile does not reflect the page number in the original document. If you
 chose (for example) to process even pages by using <code>-sPageList=even</code>, then the output of
