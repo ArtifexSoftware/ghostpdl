@@ -729,14 +729,11 @@ static int draw_quarter_annulus(patch_fill_state_t *pfs, gs_point *centre, doubl
         initial.x = centre->x - radius;
     initial.y = corner->y;
     patch_lineto(&pfs->pgs->ctm, corner, &initial, &p[0], t);
-    p0.x = initial.x;
 
-    if (initial.x > centre->x)
-        p0.y = centre->y;
-    else {
-        p0.y = centre->y;
-    }
+    p0.x = initial.x;
+    p0.y = centre->y;
     patch_lineto(&pfs->pgs->ctm, &initial, &p0, &p[1], t);
+
     p1.y = p0.y;
     p1.x = corner->x;
     patch_lineto(&pfs->pgs->ctm, &p0, &p1, &p[2], t);
