@@ -475,6 +475,9 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
   END
     fixed mx0 = 0, my0 = 0; /* See ce1_setcurrentpoint. */
 
+    /* Really this is to silence Coverity, but it makes sense and we do it a lot so no penatly */
+    memset(active_hints, 0, (max_total_stem_hints + 7) / 8);
+
     /* In case we do not get an sbw or hsbw op */
     cis.lsb.x = cis.lsb.y = cis.width.x = cis.width.y = fixed_0;
 
