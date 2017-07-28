@@ -1409,12 +1409,13 @@ int gx_device_unsubclass(gx_device *dev)
     void *psubclass_data;
     gx_device *parent, *child;
     gs_memory_struct_type_t *a_std = 0;
-    int dynamic, ref_count = dev->rc.ref_count;
+    int dynamic, ref_count;
 
     /* This should not happen... */
     if (!dev)
         return 0;
 
+    ref_count = dev->rc.ref_count;
     child = dev->child;
     psubclass_data = dev->subclass_data;
     parent = dev->parent;
