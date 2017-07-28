@@ -2326,6 +2326,8 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                          tmplate->CTM.yx, tmplate->CTM.yy, tmplate->CTM.tx, tmplate->CTM.ty);
                 pprintld1(pdev->strm, "/R%ld Do Q\n", tmplate->FormID);
                 pres = pdf_find_resource_by_resource_id(pdev, resourceXObject, tmplate->FormID);
+                if (pres == NULL)
+                    return_error(gs_error_undefined);
                 pres->where_used |= pdev->used_mask;
                 if (pdev->accumulating_substream_resource) {
                     code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pres);
