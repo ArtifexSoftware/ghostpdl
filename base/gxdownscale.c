@@ -697,7 +697,7 @@ static void down_core_mfs(gx_downscaler_t *ds,
         mfs_data += awidth;
         inp += awidth*factor-1;
         outp = inp;
-        *mfs_data-- = 0;
+        *mfs_data-- = mfs_clear;
         for (x = awidth; x > 0; x--)
         {
             value = e_forward + *errors;
@@ -931,9 +931,9 @@ static void down_core4_mfs(gx_downscaler_t *ds,
     int        awidth    = ds->awidth;
     int        factor    = ds->factor;
     int       *errors;
-    byte      *mfs_data;
     const int  threshold = factor*factor*128;
     const int  max_value = factor*factor*255;
+    byte      *mfs_data;
 
     pad_white = (awidth - width) * factor * 4;
     if (pad_white < 0)
@@ -949,18 +949,16 @@ static void down_core4_mfs(gx_downscaler_t *ds,
         }
     }
 
-    inp = in_buffer;
     if ((row & 1) == 0)
     {
         /* Left to Right pass (with min feature size = 2) */
         const int back = span * factor - 4;
-        byte *outp_base = inp;
         for (comp = 0; comp < 4; comp++)
         {
             byte mfs, force_forward = 0;
             errors = ds->errors + (awidth+3)*comp + 2;
-            inp = outp_base;
-            outp = outp_base++;
+            inp = in_buffer + comp;
+            outp = inp;
             mfs_data = ds->mfs_data + (awidth+1)*comp;
             *mfs_data++ = mfs_clear;
             for (x = awidth; x > 0; x--)
@@ -980,13 +978,15 @@ static void down_core4_mfs(gx_downscaler_t *ds,
                 if ((mfs & mfs_force_off) || force_forward)
                 {
                     /* We are being forced to be 0 */
-                    *outp = 0; outp += 4;
+                    *outp = 1; outp += 4;
+                    value -= max_value;
                     force_forward = 0;
                 }
-                else if (value < threshold)
+                else if (value >= threshold)
                 {
-                    /* We want to be 0 anyway */
-                    *outp = 0; outp += 4;
+                    /* We want to be 1 anyway */
+                    *outp = 1; outp += 4;
+                    value -= max_value;
                     if ((mfs & (mfs_above_is_0 | mfs_above_left_is_0))
                             != (mfs_above_is_0 | mfs_above_left_is_0))
                     {
@@ -999,15 +999,14 @@ static void down_core4_mfs(gx_downscaler_t *ds,
                     else
                     {
                         /* No forcing, but we need to tell other pixels that
-                         * we were 0. */
+                         * we were 1. */
                         mfs_data[-2] |= mfs_above_is_0;
                         mfs_data[-1] |= mfs_above_left_is_0;
                     }
                 }
                 else
                 {
-                    *outp = 1; outp += 4;
-                    value -= max_value;
+                    *outp = 0; outp += 4;
                 }
                 e_forward  = value * 7/16;
                 e_downleft = value * 3/16;
@@ -1018,21 +1017,20 @@ static void down_core4_mfs(gx_downscaler_t *ds,
                 *errors++   = value;
             }
         }
-        outp = outp_base-4;
+        outp = in_buffer;
     }
     else
     {
         /* Right to Left pass (with min feature size = 2) */
         const int back = span * factor + 4;
-        byte *outp_base = inp + awidth*factor - 4;
         for (comp = 0; comp < 4; comp++)
         {
             byte mfs, force_forward = 0;
             errors = ds->errors + (awidth+3)*comp + awidth;
+            inp = in_buffer + awidth*factor*4 - 4 + comp;
+            outp = inp;
             mfs_data = ds->mfs_data + (awidth+1)*comp + awidth;
-            inp = outp_base;
-            outp = outp_base++;
-            *mfs_data-- = 0;
+            *mfs_data-- = mfs_clear;
             for (x = awidth; x > 0; x--)
             {
                 value = e_forward + *errors;
@@ -1050,12 +1048,14 @@ static void down_core4_mfs(gx_downscaler_t *ds,
                 if ((mfs & mfs_force_off) || force_forward)
                 {
                     /* We are being forced to be 0 */
-                    *outp = 0; outp -= 4;
+                    *outp = 1; outp -= 4;
+                    value -= max_value;
                     force_forward = 0;
                 }
-                else if (value < threshold)
+                else if (value >= threshold)
                 {
-                    *outp = 0; outp -= 4;
+                    *outp = 1; outp -= 4;
+                    value -= max_value;
                     if ((mfs & (mfs_above_is_0 | mfs_above_left_is_0))
                             != (mfs_above_is_0 | mfs_above_left_is_0))
                     {
@@ -1068,15 +1068,14 @@ static void down_core4_mfs(gx_downscaler_t *ds,
                     else
                     {
                         /* No forcing, but we need to tell other pixels that
-                         * we were 0. */
+                         * we were 1. */
                         mfs_data[1] |= mfs_above_is_0;
                         mfs_data[2] |= mfs_above_left_is_0;
                     }
                 }
                 else
                 {
-                    *outp = 1; outp -= 4;
-                    value -= max_value;
+                    *outp = 0; outp -= 4;
                 }
                 e_forward  = value * 7/16;
                 e_downleft = value * 3/16;
@@ -1087,7 +1086,7 @@ static void down_core4_mfs(gx_downscaler_t *ds,
                 *errors--   = value;
             }
         }
-        outp = outp_base - awidth*factor;
+        outp = in_buffer + awidth*factor*4 - (awidth*4);
     }
     pack_8to1(out_buffer, outp, awidth*4);
 }
@@ -2142,6 +2141,7 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
     gx_downscale_core *core;
     int                upfactor;
     int                downfactor;
+    int                nc;
 
     size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
     post_size = bitmap_raster(dev->width * src_bpc * post_cm_num_comps);
@@ -2191,7 +2191,7 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
     core = NULL;
     while (1)
     {
-        int nc = ds->early_cm ? post_cm_num_comps : num_comps;
+        nc = ds->early_cm ? post_cm_num_comps : num_comps;
 
         if (factor > 8) {
             code = gs_note_error(gs_error_rangecheck);
@@ -2207,10 +2207,6 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
                 core = &down_core4_mfs;
             else if (ets)
             {
-                if (factor == 1)
-                    core = NULL;
-                else
-                    core = &down_core32;
                 code = init_ets(ds, 4, core);
                 if (code)
                     goto cleanup;
@@ -2225,16 +2221,6 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
                 core = &down_core_mfs;
             else if (ets)
             {
-                if (factor == 4)
-                    core = &down_core8_4;
-                else if (factor == 3)
-                    core = &down_core8_3;
-                else if (factor == 2)
-                    core = &down_core8_2;
-                else if (factor == 1)
-                    core = NULL;
-                else
-                    core = &down_core8;
                 code = init_ets(ds, 1, core);
                 if (code)
                     goto cleanup;
@@ -2306,13 +2292,13 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
     if (core != NULL) {
         if (mfs > 1) {
             ds->mfs_data = (byte *)gs_alloc_bytes(dev->memory,
-                                                  awidth+1,
+                                                  (awidth+1)*nc,
                                                   "gx_downscaler(mfs)");
             if (ds->mfs_data == NULL) {
                 code = gs_note_error(gs_error_VMerror);
                 goto cleanup;
             }
-            memset(ds->mfs_data, 0, awidth+1);
+            memset(ds->mfs_data, 0, (awidth+1)*nc);
         }
         if (dst_bpc == 1) {
             ds->errors = (int *)gs_alloc_bytes(dev->memory,
