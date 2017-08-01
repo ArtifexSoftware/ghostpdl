@@ -1095,7 +1095,7 @@ static void *psd_read(ImageReader *im,
                       int         *bpp,
                       int         *cmyk)
 {
-    int c, ir_start, ir_len, w, h, n, x, y, z, i, N;
+    int c, ir_len, w, h, n, x, y, z, N;
     unsigned char *bmp, *line, *ptr;
 
     if (feof(im->file))
@@ -1159,16 +1159,16 @@ static void *psd_read(ImageReader *im,
     while (ir_len > 0)
     {
         int data_len, pad;
-        c  = fgetc(im->file);     if (--ir_len == 0) break;
-        c |= fgetc(im->file)<<8;  if (--ir_len == 0) break;
+        c  = fgetc(im->file)<<24; if (--ir_len == 0) break;
         c |= fgetc(im->file)<<16; if (--ir_len == 0) break;
-        c |= fgetc(im->file)<<24; if (--ir_len == 0) break;
-        /* c == 8BIM */
-        c  = fgetc(im->file);     if (--ir_len == 0) break;
         c |= fgetc(im->file)<<8;  if (--ir_len == 0) break;
+        c |= fgetc(im->file);     if (--ir_len == 0) break;
+        /* c == 8BIM */
+        c  = fgetc(im->file)<<8; if (--ir_len == 0) break;
+        c |= fgetc(im->file);    if (--ir_len == 0) break;
         /* Skip the padded id (which will always be 00 00) */
-        pad  = fgetc(im->file);     if (--ir_len == 0) break;
-        pad |= fgetc(im->file)<<8;  if (--ir_len == 0) break;
+        pad  = fgetc(im->file);    if (--ir_len == 0) break;
+        pad |= fgetc(im->file)<<8; if (--ir_len == 0) break;
         /* Get the data len */
         data_len  = fgetc(im->file)<<24; if (--ir_len == 0) break;
         data_len |= fgetc(im->file)<<16; if (--ir_len == 0) break;
@@ -1186,13 +1186,13 @@ static void *psd_read(ImageReader *im,
                 }
                 /* c == 2 = COLORSPACE = CMYK */
                 /* 16 bits C, 16 bits M, 16 bits Y, 16 bits K */
-                spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
+                spots[spotfill++] = 0xff - fgetc(im->file);  if (--ir_len == 0) break;
                 c = fgetc(im->file);  if (--ir_len == 0) break;
-                spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
+                spots[spotfill++] = 0xff - fgetc(im->file);  if (--ir_len == 0) break;
                 c = fgetc(im->file);  if (--ir_len == 0) break;
-                spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
+                spots[spotfill++] = 0xff - fgetc(im->file);  if (--ir_len == 0) break;
                 c = fgetc(im->file);  if (--ir_len == 0) break;
-                spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
+                spots[spotfill++] = 0xff - fgetc(im->file);  if (--ir_len == 0) break;
                 c = fgetc(im->file);  if (--ir_len == 0) break;
                 /* 2 bytes opacity (always seems to be 0) */
                 c = fgetc(im->file);  if (--ir_len == 0) break;
@@ -1204,9 +1204,13 @@ static void *psd_read(ImageReader *im,
                 data_len -= 14;
             }
         }
-        while (data_len > 0)
+        if (ir_len > 0)
         {
-            c = fgetc(im->file); if (--ir_len == 0) break;
+            while (data_len > 0)
+            {
+                c = fgetc(im->file); if (--ir_len == 0) break;
+                data_len--;
+            }
         }
     }
 
@@ -1656,8 +1660,8 @@ static int fuzzy_fast(FuzzyParams   *fuzzy_params,
 
     for (i = fuzzy_params->wTabLen; i > 0; i--)
     {
-        int o = *wTab++;
-        int v;
+        ptrdiff_t o = *wTab++;
+        int       v;
 
         v = isrc[0]-isrc2[o];
         if (v < 0)
@@ -1697,9 +1701,9 @@ static int fuzzy_fast_exhaustive(FuzzyParams   *fuzzy_params,
 
     for (i = fuzzy_params->wTabLen; i > 0; i--)
     {
-        int o = *wTab++;
-        int v;
-        int exact = 1;
+        ptrdiff_t o = *wTab++;
+        int       v;
+        int       exact = 1;
 
         v = isrc[0]-isrc2[o];
         if (v < 0)
@@ -2074,7 +2078,7 @@ static int fuzzy_fast_n(FuzzyParams   *fuzzy_params,
 
     for (i = fuzzy_params->wTabLen; i > 0; i--)
     {
-        int o = *wTab++;
+        ptrdiff_t o = *wTab++;
         for (z = 0; z < n; z++)
         {
             int v;
@@ -2107,8 +2111,8 @@ static int fuzzy_fast_exhaustive_n(FuzzyParams   *fuzzy_params,
 
     for (i = fuzzy_params->wTabLen; i > 0; i--)
     {
-        int o = *wTab++;
-        int exact = 1;
+        ptrdiff_t o = *wTab++;
+        int       exact = 1;
         for (z = 0; z < n; z++)
         {
             int v;
