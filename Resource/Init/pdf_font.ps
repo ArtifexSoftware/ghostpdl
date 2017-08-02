@@ -2321,12 +2321,7 @@ currentdict /bndef undef
 % in multipage documents.
 /patch_font_XUID     % <font dict> <patch> patch_font_XUID <font dict'>
 {
-  %% Allow users to specify that we should not care about font object numbers
-  %% that is, don't patch the XUID with the object number and filename.
-  /PDFDontUseFontObjectNum where {/PDFDontUseFontObjectNum get}{//false}ifelse
-  %% Do not modify the XUID if we don't have an object number (see above)
-  1 index //null eq
-  or
+  dup //null eq
   {pop}
   {
     pdfdict /InputPDFFileName .knownget {.CRCHashFilenameAndObject} if
