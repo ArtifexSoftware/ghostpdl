@@ -539,7 +539,21 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
         ss->params.TopMargin = ss->params.LeftMarginIn = ss->params.LeftMarginOut = 0;
         ss->params.src_y_offset = 0;
         ss->params.early_cm = true;
-        ss->params.MaxValueIn = ss->params.MaxValueOut = (int)pow(2, pdip->Depth);;
+        ss->params.MaxValueIn = ss->params.MaxValueOut = (int)pow(2, pdip->Depth);
+
+        /* No idea what's a sensible value here, but we need to have something or we get a crash
+         * It looks like this is for scaling up, and we don't do that, so fix it to 1. Parameter
+         * Added by Ray in commit a936cf for Bug #693684, allows limiting interpolation to less#
+         * than device resolution.
+         */
+        ss->params.abs_interp_limit = 1;
+        /* Apparently ColorPolairtyAdditive is only used by the 'SpecialDownScale filter', don't
+         * know what that is and we don't use it, so just set it to 0 to avoid uninitialised
+         * variables
+         */
+        ss->params.ColorPolarityAdditive = 0;
+        /* Active = 1 to match gxiscale.c, around line 374 in gs_image_class_0_interpolate() */
+        ss->params.Active = 1;
 
         if (templat->init) {
             code = templat->init(st);
