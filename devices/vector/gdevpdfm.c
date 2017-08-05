@@ -1964,6 +1964,9 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     int code = 0, i;
     gs_memory_t *mem = pdev->pdf_memory;
 
+    if (pdev->CompatibilityLevel >= 2.0)
+        return 0;
+
     if (count & 1)
         return_error(gs_error_rangecheck);
     for (i = 0; code >= 0 && i < count; i += 2) {
@@ -2146,9 +2149,11 @@ pdfmark_EP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     if (pres == NULL)
         return_error(gs_error_undefined);
 
-    code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
-    if (code < 0)
-        return code;
+    if (pdev->CompatibilityLevel <= 1.7) {
+        code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
+        if (code < 0)
+            return code;
+    }
     code = pdf_exit_substream(pdev);
     if (code < 0)
         return code;

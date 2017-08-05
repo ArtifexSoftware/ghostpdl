@@ -705,7 +705,8 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
     if (cidset_id != 0)
         pprintld1(s, "/CIDSet %ld 0 R\n", cidset_id);
     else if (pdf_do_subset_font(pdev, pfd->base_font, pfd->common.rid) &&
-             (ftype == ft_encrypted || ftype == ft_encrypted2)
+             (ftype == ft_encrypted || ftype == ft_encrypted2) &&
+             pdev->CompatibilityLevel <= 1.7
              ) {
         stream_puts(s, "/CharSet");
         code = pdf_write_CharSet(pdev, pfd->base_font);

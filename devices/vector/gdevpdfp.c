@@ -412,8 +412,10 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                     cl = (float)1.5;
                 else if (cl < (float)1.65)
                     cl = (float)1.6;
-                else
+                else if (cl < (float)1.75)
                     cl = (float)1.7;
+                else
+                    cl = (float)2.0;
             }
         case 1:
             break;
@@ -781,19 +783,19 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
          * but we do the same -- we ignore %%CreationDate here.
          */
 
-        if (pdf_key_eq(pkey, "Creator")) {
+        if (pdf_key_eq(pkey, "Creator") && pdev->CompatibilityLevel <= 1.7) {
             key = "/Creator";
             newsize = unescape_octals(pdev, (char *)pvalue->data, pvalue->size);
             code = cos_dict_put_c_key_string(pdev->Info, key,
                                              pvalue->data, newsize);
             continue;
-        } else if (pdf_key_eq(pkey, "Title")) {
+        } else if (pdf_key_eq(pkey, "Title") && pdev->CompatibilityLevel <= 1.7) {
             key = "/Title";
             newsize = unescape_octals(pdev, (char *)pvalue->data, pvalue->size);
             code = cos_dict_put_c_key_string(pdev->Info, key,
                                              pvalue->data, newsize);
             continue;
-        } else if (pdf_key_eq(pkey, "For")) {
+        } else if (pdf_key_eq(pkey, "For") && pdev->CompatibilityLevel <= 1.7) {
             key = "/Author";
             newsize = unescape_octals(pdev, (char *)pvalue->data, pvalue->size);
             code = cos_dict_put_c_key_string(pdev->Info, key,

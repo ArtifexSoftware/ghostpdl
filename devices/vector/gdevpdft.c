@@ -56,7 +56,7 @@ pdf_make_soft_mask_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * ppa
         if (code < 0)
             return code;
     }
-    if (pparams->transfer_function != NULL) {
+    if (pdev->CompatibilityLevel <= 1.7 && pparams->transfer_function != NULL) {
         long id;
         char buf[20];
 

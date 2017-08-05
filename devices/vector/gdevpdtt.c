@@ -1434,7 +1434,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
     if (pdev->CompatibilityLevel < 1.3)
         if (embed != FONT_EMBED_NO && font->FontType == ft_CID_TrueType)
             return_error(gs_error_rangecheck);
-    if (embed == FONT_EMBED_STANDARD) {
+    if (embed == FONT_EMBED_STANDARD && pdev->CompatibilityLevel < 2.0) {
         pdf_standard_font_t *psf = &psfa[index];
 
         if (psf->pdfont == NULL ||

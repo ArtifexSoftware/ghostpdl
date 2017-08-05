@@ -378,7 +378,8 @@ pdf_initialize_ids(gx_device_pdf * pdev)
         char buf[PDF_MAX_PRODUCER];
 
         pdf_store_default_Producer(buf);
-        cos_dict_put_c_key_string(pdev->Info, "/Producer", (byte *)buf,
+        if (pdev->CompatibilityLevel <= 1.7)
+            cos_dict_put_c_key_string(pdev->Info, "/Producer", (byte *)buf,
                                   strlen(buf));
     }
     /*
@@ -1319,16 +1320,20 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     if (page->group_id > 0) {
         pprintld1(s, "/Group %ld 0 R\n", page->group_id);
     }
-    stream_puts(s, "/Resources<</ProcSet[/PDF");
-    if (page->procsets & ImageB)
-        stream_puts(s, " /ImageB");
-    if (page->procsets & ImageC)
-        stream_puts(s, " /ImageC");
-    if (page->procsets & ImageI)
-        stream_puts(s, " /ImageI");
-    if (page->procsets & Text)
-        stream_puts(s, " /Text");
-    stream_puts(s, "]\n");
+    if (pdev->CompatibilityLevel <= 1.7) {
+            stream_puts(s, "/Resources<</ProcSet[/PDF");
+        if (page->procsets & ImageB)
+            stream_puts(s, " /ImageB");
+        if (page->procsets & ImageC)
+            stream_puts(s, " /ImageC");
+        if (page->procsets & ImageI)
+            stream_puts(s, " /ImageI");
+        if (page->procsets & Text)
+            stream_puts(s, " /Text");
+        stream_puts(s, "]\n");
+    } else {
+        stream_puts(s, "/Resources<<");
+    }
     {
         int i;
 

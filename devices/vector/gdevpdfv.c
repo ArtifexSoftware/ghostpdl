@@ -176,10 +176,12 @@ pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
             )
             return code;
     }
-    if ((code = cos_dict_put_c_strings(pcd_Resources, "/ProcSet",
+    if (pdev->CompatibilityLevel <= 1.7) {
+        if ((code = cos_dict_put_c_strings(pcd_Resources, "/ProcSet",
                                        (mask ? "[/PDF/ImageB]" :
                                         "[/PDF/ImageC]"))) < 0)
-        return code;
+            return code;
+    }
     cos_become(pres->object, cos_type_stream);
     pcos = (cos_stream_t *)pres->object;
     pcd = cos_stream_dict(pcos);

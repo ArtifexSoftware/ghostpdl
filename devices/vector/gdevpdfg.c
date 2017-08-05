@@ -2130,15 +2130,18 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
                         const gx_ht_order *porder, long *pid)
 {
     char trs[17 + MAX_FN_CHARS + 1];
-    int code = pdf_write_transfer(pdev, porder->transfer, "/TransferFunction",
-                                  trs);
+    int code;
     long spot_id;
     stream *s;
     int i = countof(ht_functions);
     gs_memory_t *mem = pdev->pdf_memory;
 
-    if (code < 0)
-        return code;
+    if (pdev->CompatibilityLevel <= 1.7) {
+        code = pdf_write_transfer(pdev, porder->transfer, "/TransferFunction",
+                                  trs);
+        if (code < 0)
+            return code;
+    }
     /*
      * See if we can recognize the spot function, by comparing its sampled
      * values against those in the order.
@@ -2189,7 +2192,8 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
         pprints1(s, "/SpotFunction/%s", ht_functions[i].fname);
     else
         pprintld1(s, "/SpotFunction %ld 0 R", spot_id);
-    stream_puts(s, trs);
+    if (pdev->CompatibilityLevel <= 1.7)
+        stream_puts(s, trs);
     if (psht->accurate_screens)
         stream_puts(s, "/AccurateScreens true");
     stream_puts(s, ">>\n");
@@ -2248,11 +2252,15 @@ pdf_write_threshold_halftone(gx_device_pdf *pdev,
 {
     char trs[17 + MAX_FN_CHARS + 1];
     pdf_data_writer_t writer;
-    int code = pdf_write_transfer(pdev, porder->transfer, "",
+    int code;
+
+    if (pdev->CompatibilityLevel <= 1.7) {
+        code = pdf_write_transfer(pdev, porder->transfer, "",
                                   trs);
 
-    if (code < 0)
-        return code;
+        if (code < 0)
+            return code;
+    }
     CHECK(pdf_begin_data(pdev, &writer));
     *pid = writer.pres->object->id;
     CHECK(cos_dict_put_c_strings((cos_dict_t *)writer.pres->object,
@@ -2263,7 +2271,7 @@ pdf_write_threshold_halftone(gx_device_pdf *pdev,
         "/Width", ptht->width));
     CHECK(cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object,
         "/Height", ptht->height));
-    if (*trs != 0)
+    if (pdev->CompatibilityLevel <= 1.7 && *trs != 0)
         CHECK(cos_dict_put_c_strings((cos_dict_t *)writer.pres->object,
             "/TransferFunction", trs));
     stream_write(writer.binary.strm, ptht->thresholds.data, ptht->thresholds.size);
@@ -2277,11 +2285,15 @@ pdf_write_threshold2_halftone(gx_device_pdf *pdev,
     char trs[17 + MAX_FN_CHARS + 1];
     stream *s;
     pdf_data_writer_t writer;
-    int code = pdf_write_transfer(pdev, porder->transfer, "/TransferFunction",
+    int code;
+
+    if (pdev->CompatibilityLevel <= 1.7) {
+        code = pdf_write_transfer(pdev, porder->transfer, "/TransferFunction",
                                   trs);
 
-    if (code < 0)
-        return code;
+        if (code < 0)
+            return code;
+    }
     CHECK(pdf_begin_data(pdev, &writer));
     *pid = writer.pres->object->id;
     CHECK(cos_dict_put_c_strings((cos_dict_t *)writer.pres->object,
@@ -2298,7 +2310,7 @@ pdf_write_threshold2_halftone(gx_device_pdf *pdev,
         CHECK(cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object,
             "/Height2", ptht->height2));
     }
-    if (*trs != 0)
+    if (pdev->CompatibilityLevel <= 1.7 && *trs != 0)
         CHECK(cos_dict_put_c_strings((cos_dict_t *)writer.pres->object,
             "/TransferFunction", trs));
     s = writer.binary.strm;
@@ -2769,7 +2781,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs,
             if (code < 0)
                 return code;
         }
-        if (trs[0]) {
+        if (pdev->CompatibilityLevel <= 1.7 && trs[0]) {
             code = cos_dict_put_string_copy(resource_dict(*ppres), "/TR", trs);
             if (code < 0)
                 return code;

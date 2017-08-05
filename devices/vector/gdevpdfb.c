@@ -590,7 +590,9 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
                  (mask ? 2 : 1));
         if (image_id)
             pprintld2(s, "/XObject<</R%ld %ld 0 R>>", image_id, image_id);
-        pprints1(s, "/ProcSet[/PDF/Image%s]>>\n", (mask ? "B" : "C"));
+
+        if (pdev->CompatibilityLevel <= 1.7)
+            pprints1(s, "/ProcSet[/PDF/Image%s]>>\n", (mask ? "B" : "C"));
         /*
          * Because of bugs in Acrobat Reader's Print function, we can't use
          * the natural BBox and Step here: they have to be 1.

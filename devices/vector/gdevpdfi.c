@@ -2256,9 +2256,11 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
         case gxdso_form_end:
             /* This test must be the same as the one in gxdso_form_begin, above */
             if ((!pdev->ForOPDFRead || pdev->HighLevelForm == 1) && pdev->PatternDepth == 0) {
-                code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
-                if (code < 0)
-                    return code;
+                if (pdev->CompatibilityLevel <= 1.7) {
+                    code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
+                    if (code < 0)
+                        return code;
+                }
                 pres = pres1 = pdev->accumulating_substream_resource;
                 code = pdf_exit_substream(pdev);
                 if (code < 0)
@@ -2369,9 +2371,11 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             }
             return 1;
         case gxdso_pattern_finish_accum:
-            code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
-            if (code < 0)
-                return code;
+            if (pdev->CompatibilityLevel <= 1.7) {
+                code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
+                if (code < 0)
+                    return code;
+            }
             pres = pres1 = pdev->accumulating_substream_resource;
             code = pdf_exit_substream(pdev);
             if (code < 0)
