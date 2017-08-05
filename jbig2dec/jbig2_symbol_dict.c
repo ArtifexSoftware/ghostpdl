@@ -103,7 +103,7 @@ jbig2_sd_new(Jbig2Ctx *ctx, uint32_t n_symbols)
 
     if (new_dict->glyphs != NULL) {
         memset(new_dict->glyphs, 0, n_symbols * sizeof(Jbig2Image *));
-    } else {
+    } else if (new_dict->n_symbols > 0) {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "unable to allocate glyphs for new empty symbol dict");
         jbig2_free(ctx->allocator, new_dict);
         return NULL;
