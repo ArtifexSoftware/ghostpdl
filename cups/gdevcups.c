@@ -3218,7 +3218,6 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   arrayoption(ImagingBoundingBox, "ImagingBoundingBox", 4)
   booloption(InsertSheet, "InsertSheet")
   intoption(Jog, "Jog", cups_jog_t)
-  intoption(LeadingEdge, "LeadingEdge", cups_edge_t)
   arrayoption(Margins, "Margins", 2)
   booloption(ManualFeed, "ManualFeed")
   intoption(MediaPosition, "cupsMediaPosition", unsigned) /* Compatibility */
@@ -3239,6 +3238,27 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   intoption(cupsRowCount, "cupsRowCount", unsigned)
   intoption(cupsRowFeed, "cupsRowFeed", unsigned)
   intoption(cupsRowStep, "cupsRowStep", unsigned)
+
+  /* Special handling of LeadingEdge to allow null as a valid value type */
+  if ((code = param_read_int(plist, "LeadingEdge", &intval)) < 0)
+  {
+    if ((code = param_read_null(plist, "LeadingEdge")) < 0)
+    {
+      dmprintf(pdev->memory, "ERROR: Error setting LeadingEdge ...\n");
+      param_signal_error(plist, "LeadingEdge", code);
+      goto done;
+    }
+    if (code == 0)
+      cups->header.LeadingEdge = CUPS_EDGE_TOP;
+  }
+  else if (code == 0)
+  {
+    cups->header.LeadingEdge = (cups_edge_t)intval;
+  }
+
+ #ifdef GX_COLOR_INDEX_TYPE
+  /*
+   * Support cupsPreferredBitsPerColor - basically, allows you to
 
 #ifdef GX_COLOR_INDEX_TYPE
  /*

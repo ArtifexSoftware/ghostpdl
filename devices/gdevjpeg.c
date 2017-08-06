@@ -374,7 +374,7 @@ jpeg_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 
     /* NB this device has no paper margins */
 
-    switch(pdev->LeadingEdge) {
+    switch(pdev->LeadingEdge & LEADINGEDGE_MASK) {
     case 1:
         pmat->xx = 0;
         pmat->xy = -ss_res;

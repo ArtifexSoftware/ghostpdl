@@ -243,7 +243,8 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         if (dev->LeadingEdge & LEADINGEDGE_SET_MASK) {
             int leadingedge = dev->LeadingEdge & LEADINGEDGE_MASK;
             return param_write_int(plist, "LeadingEdge", &leadingedge);
-        }
+        } else
+            return param_write_null(plist, "LeadingEdge");
     }
 
     if (dev->color_info.num_components > 1) {
@@ -712,7 +713,8 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     if (dev->LeadingEdge & LEADINGEDGE_SET_MASK) {
         int leadingedge = dev->LeadingEdge & LEADINGEDGE_MASK;
         code = param_write_int(plist, "LeadingEdge", &leadingedge);
-    }
+    } else
+        code = param_write_null(plist, "LeadingEdge");
     if (code < 0)
         return code;
 
