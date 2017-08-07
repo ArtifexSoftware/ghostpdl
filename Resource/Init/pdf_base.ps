@@ -775,7 +775,7 @@ currentdict /no_debug_dict undef
 /resolveopdict mark
   valueopdict { } forall
   /xref { % Bug 697761
-     (   **** Error: Encountered 'xref' while expecting 'endjobj'.\n) pdfformaterror
+     (   **** Error: Encountered 'xref' while expecting 'endobj'.\n) pdfformaterror
      (               Treating this as a missing 'endobj', output may be incorrect.\n) pdfformaterror
      endobj exit
   } bind
@@ -794,7 +794,7 @@ currentdict /no_debug_dict undef
   /obj {
                 % OmniForm generates PDF file with endobj missing in some
                 % objects. AR ignores this. So we have to do it too.
-     (   **** Error: Encountered 'obj' while expecting 'endjobj'.\n) pdfformaterror
+     (   **** Error: Encountered 'obj' while expecting 'endobj'.\n) pdfformaterror
      (               Treating this as a missing 'endobj', output may be incorrect.\n) pdfformaterror
      pop pop endobj exit
   } bind
