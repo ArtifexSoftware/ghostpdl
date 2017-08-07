@@ -399,6 +399,11 @@ currentdict /gput_always_allow .undef
   /.settextknockout where { pop .settextknockout } { pop } ifelse
 } bdef
 
+/UseBlackPtComp {
+  %% Our implementation of black point compensation uses 0 or 1, not a boolean
+  /.setblackptcomp where {pop false eq {0}{1}ifelse .setblackptcomp }{ pop } ifelse
+} bdef
+
 % ---------------- Color installation ---------------- %
 
 % Establish a given color (and color space) as current.

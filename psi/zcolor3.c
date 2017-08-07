@@ -107,7 +107,7 @@ const op_def    zcolor3_l3_op_defs[] = {
     { "1.setuseciecolor", zsetuseciecolor },
     { "0.currentrenderintent", zcurrentrenderingintent },
     { "1.setrenderingintent", zsetrenderingintent },
-    { "2.currentblackptcomp", zcurrentblackptcomp },
-    { "3.setblackptcomp", zsetblackptcomp },
+    { "0.currentblackptcomp", zcurrentblackptcomp },
+    { "1.setblackptcomp", zsetblackptcomp },
     op_def_end(0)
 };
