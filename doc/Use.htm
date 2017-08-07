@@ -3286,6 +3286,24 @@ profiles should be used with the commands specified above (e.g. -sOutputICCProfi
 </dl>
 
 <dl>
+<dt><code>-sUseOutputIntent=</code><em>string</em>
+<dd>Like <code>UsePDFX3Profile</code> above, this option enables rendering with an output intent defined in the
+PDF source file.
+<p>
+This option behaves the same way as the <code>UsePDFX3Profile</code>, but the selection criteria are different.
+Because its possible (as of PDF 2.0) for each page to have a different array, its not sufficient just to supply
+an array index, as the same profile might potentially be at different indices in each array.
+<p>
+Instead this option takes a string, which is first compared against the <code>OutputConditionIdentifier</code>
+in each OutputIntent in the array. If the <code>OutputConditionIdentifier</code> is not a standard identifier
+then it should be Custom and the <code>UseOutputIntent</code> string will be matched against the value of the
+<code>Info</code> key instead. If the <code>OutputConditionIdentifier</code> or <code>Info</code> matches the
+value of <code>UseOuttpuIntent</code>, then that OutputIntent is selected <b>if</b> the OutputIntent contains
+a <code>DestOutputProfile</code> key.
+</dd>
+</d1>
+
+<dl>
 <dt><code>-sICCProfilesDir=</code><em>path</em>
 <dd>Set a directory in which to search for the above profiles.
 The directory path must end with a file system delimiter.

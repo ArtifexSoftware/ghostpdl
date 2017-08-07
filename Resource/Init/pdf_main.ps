@@ -1132,7 +1132,37 @@ currentdict /xref-char-dict undef
         (   **** ) stderrprint stderrprint
       } ifelse
     } ifelse
-  } if
+  } {
+    % If the user told us to use a named OutputIntent
+    systemdict /UseOutputIntent .knownget {
+      cvn
+      Trailer /Root oget /OutputIntents knownoget {
+        {
+          dup /OutputConditionIdentifier get cvn
+          dup /Custom eq {
+            pop
+            dup /Info get cvn
+          }if
+          2 index eq {
+            %% Found the required OutputIntent
+            /DestOutputProfile knownoget {
+              [ /ICCBased 3 -1 roll ] ICCBased-resolve
+              1 get .set_outputintent
+              ()
+            } if
+            pop
+            exit
+          }{
+            pop
+          } ifelse
+        }
+        forall
+        pop
+      }{
+        pop
+      }ifelse
+    } if
+  }ifelse
   Trailer /Root knownoget { /PageLabels knownoget {
     %% Currenlty only the pdfwrite device can handle PageLabels
     %% because we deal with these using putparams, not pdfmarks
@@ -2294,6 +2324,37 @@ currentdict /PDF2PS_matrix_key undef
   % the pages resources.  It may be high if a spot color is in a resource but
   % is not actually used on the page.
   currentpagedevice /PageSpotColors known { /PageSpotColors 2 index countspotcolors def } if
+
+  % If the user told us to use a named OutputIntent
+  systemdict /UseOutputIntent .knownget {
+    cvn
+    % Check to see if this page has such an OutputIntent
+    2 index /OutputIntents knownoget {
+      {
+        dup /OutputConditionIdentifier get cvn
+        dup /Custom eq {
+          pop
+          dup /Info get cvn
+        }if
+        2 index eq {
+          %% Found the required OutputIntent
+          /DestOutputProfile knownoget {
+            [ /ICCBased 3 -1 roll ] ICCBased-resolve
+            1 get .set_outputintent
+            ()
+          } if
+          pop
+          exit
+        }{
+          pop
+        } ifelse
+      }
+      forall
+      pop
+    }{
+      pop
+    }ifelse
+  } if
 
   % Let the device know if we will be using PDF 1.4 transparency.
   % The clist logic may need to adjust the size of bands.
