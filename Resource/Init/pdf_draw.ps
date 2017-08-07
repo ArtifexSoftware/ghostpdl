@@ -3031,11 +3031,15 @@ end
   dup (BT ) writestring
   1 index /DA fget not {
     1 index /V fget {
-      <FEFF> anchorsearch{
-        pop pop /FallBackFont /Identity-UTF16-H [/CIDFallBack] composefont 12 scalefont setfont
-      }{
+      <EFBBBF> anchorsearch {
         pop /Helvetica findfont 12 scalefont setfont
-      } ifelse
+      } {
+        <FEFF> anchorsearch {
+          pop pop /FallBackFont /Identity-UTF16-H [/CIDFallBack] composefont 12 scalefont setfont
+        } {
+          pop /Helvetica findfont 12 scalefont setfont
+        }ifelse
+      }ifelse
     } if
     ()
   }if
@@ -3441,6 +3445,12 @@ currentdict /set_bc_color undef
   /emptydict 0 dict readonly def
 
   /Highlight {
+% technically we should apply an appearance stream if we have one, but if we do
+% some test files don't match Acrobat. PDF 2.0 says appearance streams are mandatory,
+% and take precedence over generatig new ones, so we may need to revisit this.
+%    dup /AP oknown {
+%      //true
+%    }{
     0 setlinecap
     dup annotsetcolor {
       /QuadPoints knownoget {
@@ -3464,6 +3474,7 @@ currentdict /set_bc_color undef
       } if
     } if
     //false
+%    } ifelse
   } bdef
   currentdict /emptydict undef
   currentdict /highlight-arc undef
