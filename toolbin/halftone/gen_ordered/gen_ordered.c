@@ -114,7 +114,7 @@ typedef struct htsc_param_s {
     output_format_type output_format;
 } htsc_param_t;
 
-void htsc_determine_cell_shape(double *x, double *y, double *v, double *u, 
+void htsc_determine_cell_shape(double *x, double *y, double *v, double *u,
                                double *N, htsc_param_t params);
 double htsc_spot_value(spottype_t spot_type, double x, double y);
 int htsc_getpoint(htsc_dig_grid_t *dig_grid, int x, int y);
@@ -272,9 +272,9 @@ main (int argc, char **argv)
               if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
                   goto usage_exit;
               temp_int = atoi(arg_value);
-              if (temp_int < 0 || temp_int > CUSTOM)  
+              if (temp_int < 0 || temp_int > CUSTOM)
                   params.spot_type = CIRCLE;
-              else 
+              else
                   params.spot_type = temp_int;
               break;
             case 'l':
@@ -341,7 +341,7 @@ usage_exit:   return usage();
     center.y = vertices.upper_right.y / 2.0;
     /* Create the matrix that is used to get us correctly into the dot shape
        function */
-    trans_matrix.row[0].xy[0] = u; 
+    trans_matrix.row[0].xy[0] = u;
     trans_matrix.row[0].xy[1] = x;
     trans_matrix.row[1].xy[0] = v;
     trans_matrix.row[1].xy[1] = y;
@@ -363,7 +363,7 @@ usage_exit:   return usage();
     }
     /* Now actually determine the turn on sequence */
     htsc_create_dot_profile(&dot_grid, N, x, y, u, v, center, params.horiz_dpi,
-                            params.vert_dpi, vertices, &one_index, 
+                            params.vert_dpi, vertices, &one_index,
                             params.spot_type, trans_matrix_inv);
 #if RAW_SCREEN_DUMP
     htsc_dump_screen(&dot_grid, "dot_profile");
@@ -381,12 +381,12 @@ usage_exit:   return usage();
         /* Num_levels is effectively the number of small cells needed.  Note
            this is a rough and crude calculation.  But it is sufficiently good
            to give an approximation. */
-        min_size = 
-            (int) sqrt((double) (super_cell.width * super_cell.height) * 
+        min_size =
+            (int) sqrt((double) (super_cell.width * super_cell.height) *
                                  num_levels);
         printf("it is necessary to specify a screen size (-s) of at least %d.\n", min_size);
         printf("Note that an even larger size may be needed to reduce pattern artifacts.\n");
-        printf("Because no screen size was specified, the minimum possible\n"); 
+        printf("Because no screen size was specified, the minimum possible\n");
         printf("size that can approximate the requested angle and lpi will be created\n");
         printf("with %d quantization levels.\n", (int) N);
     }
@@ -404,7 +404,7 @@ usage_exit:   return usage();
             htsc_create_nondithered_mask(super_cell, H, L, gamma, &final_mask);
         } else {
             htsc_create_dither_mask(super_cell, &final_mask, num_levels, y, x,
-                                    params.vert_dpi, params.horiz_dpi, N, gamma, 
+                                    params.vert_dpi, params.horiz_dpi, N, gamma,
                                     dot_grid, one_index);
         }
     }
@@ -416,7 +416,7 @@ usage_exit:   return usage();
 }
 
 void
-htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out, 
+htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
                           double *u_out, double *N_out, htsc_param_t params)
 {
     double x, y, v, u, N;
@@ -466,13 +466,13 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
                 if (prev_lpi == max_lpi) {
                     printf("Notice lpi is at the maximimum level possible.\n");
                     printf("This may result in poor quantization. \n");
-                } 
+                }
                 /* Reset these to previous x */
                 x_use = x - 1;
                 y=ROUND((double) x_use / ratio);
-                true_angle = 
+                true_angle =
                     180.0 * atan(((double) x_use / params.horiz_dpi) / ( (double) y / params.vert_dpi) ) / pi;
-                lpi = 
+                lpi =
                     1.0/( sqrt( ((double) y / params.vert_dpi) * ( (double) y / params.vert_dpi) +
                                         ( (double) x_use / params.horiz_dpi) * ((double) x_use / params.horiz_dpi) ));
                 v = -x_use / scaled_x;
@@ -677,11 +677,12 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
     int done, dot_index, hole_index, count, index_x, index_y;
     htsc_dot_shape_search_t dot_search;
     int k, val_min;
-    htsc_point_t test_point;
     htsc_point_t differ;
     double dist;
     int j;
     htsc_vector_t vector_in, vector_out;
+    double x_offset = (x % 2 == 0 ? 0.5 : 0);
+    double y_offset = (y % 2 == 0 ? 0.5 : 0);
 
     done = 0;
     dot_index = 1;
@@ -690,7 +691,8 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
     val_min=MIN(0,v);
 
     while (!done) {
-        /* First perform a search for largest dot value for those remaining 
+
+        /* First perform a search for largest dot value for those remaining
            dots */
         index_x = 0;
         dot_search.index_x = 0;
@@ -699,20 +701,19 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
         for (k = 0; k < x + u; k++) {
             index_y = 0;
             for (j = val_min; j < y; j++) {
-                test_point.x = k + 0.5;
-                test_point.y = j + 0.5;
                 if ( htsc_getpoint(dig_grid, index_x, index_y) == -1 ) {
-                    /* For the spot function we want to make sure that 
-                       we are properly adjusted to be in the range from 
-                       -1 to +1.  j and k are moving in the transformed 
+
+                    /* For the spot function we want to make sure that
+                       we are properly adjusted to be in the range from
+                       -1 to +1.  j and k are moving in the transformed
                        (skewed/rotated) space. First untransform the value */
-                    vector_in.xy[0] = k + 0.5;
-                    vector_in.xy[1] = j + 0.5;
-                    htsc_matrix_vector_mult(trans_matrix, vector_in, 
+                    vector_in.xy[0] = k + x_offset;
+                    vector_in.xy[1] = j + y_offset;
+                    htsc_matrix_vector_mult(trans_matrix, vector_in,
                                             &vector_out);
                     vector_out.xy[0] = 2.0 * vector_out.xy[0] - 1.0;
                     vector_out.xy[1] = 2.0 * vector_out.xy[1] - 1.0;
-                    dist = htsc_spot_value(spot_type, vector_out.xy[0], 
+                    dist = htsc_spot_value(spot_type, vector_out.xy[0],
                                            vector_out.xy[1]);
                     if (dist > dot_search.norm) {
                         dot_search.norm = dist;
@@ -726,7 +727,7 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
             index_x++;
         }
         /* Assign the index for this position */
-        htsc_setpoint(dig_grid, dot_search.index_x, dot_search.index_y, 
+        htsc_setpoint(dig_grid, dot_search.index_x, dot_search.index_y,
                       dot_index);
         dot_index++;
         count++;
@@ -734,12 +735,14 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
             done = 1;
             break;
         }
-        /* The ones position for the dig_grid is located at the first dot_search 
+
+        /* The ones position for the dig_grid is located at the first dot_search
            entry.  We need this later so grab it now */
         if (count == 1) {
             one_index->x = dot_search.index_x;
             one_index->y = dot_search.index_y;
         }
+
         /* Now search for the closest one to a vertex (of those remaining).
            and assign the current largest index */
         index_x = 0;
@@ -749,20 +752,19 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
         for (k = 0; k < x + u; k++) {
             index_y = 0;
             for (j = val_min; j < y; j++) {
-                test_point.x = k + 0.5;
-                test_point.y = j + 0.5;
                 if ( htsc_getpoint(dig_grid, index_x, index_y) == -1 ) {
-                    /* For the spot function we want to make sure that 
-                       we are properly adjusted to be in the range from 
-                       -1 to +1.  j and k are moving in the transformed 
+
+                    /* For the spot function we want to make sure that
+                       we are properly adjusted to be in the range from
+                       -1 to +1.  j and k are moving in the transformed
                        (skewed/rotated) space. First untransform the value */
-                    vector_in.xy[0] = k + 0.5;
-                    vector_in.xy[1] = j + 0.5;
-                    htsc_matrix_vector_mult(trans_matrix, vector_in, 
+                    vector_in.xy[0] = k + x_offset;
+                    vector_in.xy[1] = j + y_offset;
+                    htsc_matrix_vector_mult(trans_matrix, vector_in,
                                             &vector_out);
                     vector_out.xy[0] = 2.0 * vector_out.xy[0] - 1.0;
                     vector_out.xy[1] = 2.0 * vector_out.xy[1] - 1.0;
-                    dist = htsc_spot_value(spot_type, vector_out.xy[0], 
+                    dist = htsc_spot_value(spot_type, vector_out.xy[0],
                                            vector_out.xy[1]);
                     if (dist < dot_search.norm) {
                         dot_search.norm = dist;
@@ -1289,7 +1291,7 @@ htsc_apply_filter(byte *screen_matrix, int num_cols_sc,
                     j_circ = j_circ % num_rows_sc;
                 }
                 /* In case modulo is of a negative number */
-                if (j_circ < 0) 
+                if (j_circ < 0)
                     j_circ = j_circ + num_rows_sc;
                 for (kk = -half_cols_filt; kk <= half_cols_filt; kk++) {
                     k_circ = k + kk;
@@ -1301,7 +1303,7 @@ htsc_apply_filter(byte *screen_matrix, int num_cols_sc,
                         k_circ = k_circ % num_cols_sc;
                     }
                     /* In case modulo is of a negative number */
-                    if (k_circ < 0) 
+                    if (k_circ < 0)
                         k_circ = k_circ + num_cols_sc;
                     sum += (double) screen_matrix[k_circ + j_circ * num_cols_sc] *
                             filter[ (jj + half_rows_filt) * num_cols_filt + (kk + half_cols_filt)];
@@ -1627,8 +1629,8 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
             (double) (thresholds[0]-thresholds[1]) / (double) (num_levels+1);
         if ( gamma != 1.0) {
             for (k = 0; k < N; k++) {
-                temp_dbl = 
-                    (double) pow((double) thresholds[k] / MAXVAL, 
+                temp_dbl =
+                    (double) pow((double) thresholds[k] / MAXVAL,
                                  (double) gamma);
                 thresholds[k] = ROUND(temp_dbl * MAXVAL);
             }
@@ -1730,7 +1732,7 @@ htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
              /* Possible linearization */
             temp = (double) pow((double) temp, (double) gamma);
          }
-         thresholds[number_points - k - 1] = 
+         thresholds[number_points - k - 1] =
                                     ROUND(temp * MAXVAL * white_scale + 1);
     }
     memset(final_mask->data, 0, H * L * sizeof(int));
@@ -1770,7 +1772,7 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
              /* Possible linearization */
             temp = (double) pow((double) temp, (double) gamma);
          }
-         thresholds[number_points - k - 1] = 
+         thresholds[number_points - k - 1] =
                                     ROUND(temp * MAXVAL * white_scale + 1);
     }
     memset(final_mask->data, 0, super_cell.height * super_cell.width *
@@ -1794,7 +1796,7 @@ int compare (const void * a, const void * b)
 }
 
 /* Save turn on order list */
-void 
+void
 htsc_save_tos(htsc_dig_grid_t final_mask)
 {
     int width = final_mask.width;
@@ -1809,7 +1811,7 @@ htsc_save_tos(htsc_dig_grid_t final_mask)
     fprintf(fid,"# W=%d H=%d\n",width, height);
     /* Do a sort on the values and then output the coordinates */
     /* First get a list made with the unsorted values and coordinates */
-    values = 
+    values =
         (htsc_threshpoint_t *) malloc(sizeof(htsc_threshpoint_t) * width * height);
     if (values == NULL) {
         printf("ERROR! malloc failure in htsc_save_tos!\n");
@@ -1828,8 +1830,8 @@ htsc_save_tos(htsc_dig_grid_t final_mask)
     qsort(values, height * width, sizeof(htsc_threshpoint_t), compare);
     /* Write out */
     for (k = 0; k < count; k++) {
-        fprintf(fid,"%d\t%d\n", values[count - 1 - k].x, values[count - 1 - k].y); 
-    } 
+        fprintf(fid,"%d\t%d\n", values[count - 1 - k].x, values[count - 1 - k].y);
+    }
     free(values);
     fclose(fid);
 }
@@ -1848,11 +1850,11 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
     unsigned short data_short;
     output_format_type output_format = params.output_format;
     char *output_extension = (output_format == OUTPUT_PS) ? "ps" :
-                        ((output_format == OUTPUT_PPM) ? "ppm" : 
+                        ((output_format == OUTPUT_PPM) ? "ppm" :
                         ((output_format == OUTPUT_RAW16 ? "16.raw" : "raw")));
 
     if (output_format == OUTPUT_TOS) {
-        /* We need to figure out the turn-on sequence from the threshold 
+        /* We need to figure out the turn-on sequence from the threshold
            array */
         htsc_save_tos(final_mask);
     } else {
@@ -1937,7 +1939,7 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                     fprintf(fid, "\n");	/* end of one row */
                 }
                 fprintf(fid, ">\n");	/* ASCIIHexDecode EOF */
-                fprintf(fid, 
+                fprintf(fid,
                         "<< /Thresholds 2 index    %% file object for the 16-bit data\n"
                         "   /HalftoneType 16\n"
                         "   /Width  %d\n"
@@ -2010,7 +2012,7 @@ double htsc_spot_diamond(double x, double y)
         if ((abs_y + abs_x) <= 1.23) {
             return 1.0 - (0.76  * abs_y + abs_x);
         } else {
-            return ((abs_x - 1.0) * (abs_x - 1.0) + 
+            return ((abs_x - 1.0) * (abs_x - 1.0) +
                     (abs_y - 1.0) * (abs_y - 1.0)) - 1.0;
         }
     }
