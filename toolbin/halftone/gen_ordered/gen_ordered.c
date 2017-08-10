@@ -56,6 +56,8 @@ typedef struct htsc_threshpoint {
     int x;
     int y;
     int value;
+    int index;
+    double dist_to_center;
 } htsc_threshpoint_t;
 
 typedef struct htsc_vertices_s {
@@ -121,6 +123,7 @@ int htsc_getpoint(htsc_dig_grid_t *dig_grid, int x, int y);
 void htsc_setpoint(htsc_dig_grid_t *dig_grid, int x, int y, int value);
 void  htsc_create_dot_mask(htsc_dig_grid_t *dig_grid, int x, int y, int u, int v,
                        double screen_angle, htsc_vertices_t vertices);
+void htsc_find_bin_center(htsc_dig_grid_t *dot_grid, htsc_vector_t *bin_center);
 void htsc_diffpoint(htsc_point_t point1, htsc_point_t point2,
                    htsc_point_t *diff_point);
 double htsc_vertex_dist(htsc_vertices_t vertices, htsc_point_t test_point,
@@ -128,7 +131,7 @@ double htsc_vertex_dist(htsc_vertices_t vertices, htsc_point_t test_point,
 double htsc_normpoint(htsc_point_t *diff_point, double horiz_dpi, double vert_dpi);
 int htsc_sumsum(htsc_dig_grid_t dig_grid);
 void htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y,
-                            int u, int v, htsc_point_t center, double horiz_dpi,
+                            int u, int v, double horiz_dpi,
                             double vert_dpi, htsc_vertices_t vertices,
                             htsc_point_t *one_index, spottype_t spot_type,
                             htsc_matrix_t trans_matrix);
@@ -147,7 +150,7 @@ void htsc_create_dither_mask(htsc_dig_grid_t super_cell,
 void htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
                           double gamma, htsc_dig_grid_t *final_mask);
 void htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
-                      htsc_param_t params);
+                      htsc_param_t params, htsc_vector_t center);
 void htsc_set_default_params(htsc_param_t *params);
 int htsc_gcd(int a, int b);
 int  htsc_lcm(int a, int b);
@@ -218,7 +221,8 @@ main (int argc, char **argv)
     double x,y,v,u,N;
     int rcode = 0;
     htsc_vertices_t vertices;
-    htsc_point_t center, one_index;
+    htsc_vector_t bin_center;
+    htsc_point_t one_index;
     htsc_dig_grid_t dot_grid;
     htsc_dig_grid_t super_cell;
     htsc_dig_grid_t final_mask;
@@ -328,6 +332,7 @@ usage_exit:   return usage();
         printf("No additional dithering , creating minimal sized periodic screen\n");
         params.targ_size = 1;
     }
+
     /* Lower left of the cell is at the origin.  Define the other vertices */
     vertices.lower_left.x = 0;
     vertices.lower_left.y = 0;
@@ -337,8 +342,7 @@ usage_exit:   return usage();
     vertices.upper_right.y = y + v;
     vertices.lower_right.x = u;
     vertices.lower_right.y = v;
-    center.x = vertices.upper_right.x / 2.0;
-    center.y = vertices.upper_right.y / 2.0;
+
     /* Create the matrix that is used to get us correctly into the dot shape
        function */
     trans_matrix.row[0].xy[0] = u;
@@ -350,6 +354,8 @@ usage_exit:   return usage();
         printf("ERROR! Singular Matrix Inversion!\n");
         return -1;
     }
+
+
     /* Create a binary mask that indicates where we need to define the dot turn
        on sequence or dot profile */
     htsc_create_dot_mask(&dot_grid, x, y, u, v, params.scr_ang, vertices);
@@ -361,8 +367,16 @@ usage_exit:   return usage();
         printf("ERROR! grid size problem!\n");
         return -1;
     }
+
+    /* From the binary mask, find the center point.  This is needed to remove
+       ambiguity during the TOS calculation from the dot profile.  We want to
+       turn on those dots that are closests to the center first when there
+       are ties */
+    htsc_find_bin_center(&dot_grid, &bin_center);
+
+
     /* Now actually determine the turn on sequence */
-    htsc_create_dot_profile(&dot_grid, N, x, y, u, v, center, params.horiz_dpi,
+    htsc_create_dot_profile(&dot_grid, N, x, y, u, v, params.horiz_dpi,
                             params.vert_dpi, vertices, &one_index,
                             params.spot_type, trans_matrix_inv);
 #if RAW_SCREEN_DUMP
@@ -408,7 +422,7 @@ usage_exit:   return usage();
                                     dot_grid, one_index);
         }
     }
-    htsc_save_screen(final_mask, params.holladay, S, params);
+    htsc_save_screen(final_mask, params.holladay, S, params, bin_center);
     if (dot_grid.data != NULL) free(dot_grid.data);
     if (super_cell.data != NULL) free(super_cell.data);
     if (final_mask.data != NULL) free(final_mask.data);
@@ -670,9 +684,8 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
 
 void
 htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, int v,
-                        htsc_point_t center, double horiz_dpi, double vert_dpi,
-                        htsc_vertices_t vertices, htsc_point_t *one_index,
-                        spottype_t spot_type, htsc_matrix_t trans_matrix)
+                        double horiz_dpi, double vert_dpi, htsc_vertices_t vertices,
+                        htsc_point_t *one_index, spottype_t spot_type, htsc_matrix_t trans_matrix)
 {
     int done, dot_index, hole_index, count, index_x, index_y;
     htsc_dot_shape_search_t dot_search;
@@ -711,6 +724,8 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
                     vector_in.xy[1] = j + y_offset;
                     htsc_matrix_vector_mult(trans_matrix, vector_in,
                                             &vector_out);
+
+                    /* And so now we are in the range 0, 1 get us to -.5, .5 */
                     vector_out.xy[0] = 2.0 * vector_out.xy[0] - 1.0;
                     vector_out.xy[1] = 2.0 * vector_out.xy[1] - 1.0;
                     dist = htsc_spot_value(spot_type, vector_out.xy[0],
@@ -762,10 +777,13 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
                     vector_in.xy[1] = j + y_offset;
                     htsc_matrix_vector_mult(trans_matrix, vector_in,
                                             &vector_out);
+
+                    /* And so now we are in the range 0, 1 get us to -.5, .5 */
                     vector_out.xy[0] = 2.0 * vector_out.xy[0] - 1.0;
                     vector_out.xy[1] = 2.0 * vector_out.xy[1] - 1.0;
                     dist = htsc_spot_value(spot_type, vector_out.xy[0],
                                            vector_out.xy[1]);
+
                     if (dist < dot_search.norm) {
                         dot_search.norm = dist;
                         dot_search.index_x = index_x;
@@ -786,104 +804,6 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
         }
     }
 }
-
-/* Older Euclidean distance approach */
-#if 0
-void
-htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, int v,
-                        htsc_point_t center, double horiz_dpi, double vert_dpi,
-                        htsc_vertices_t vertices, htsc_point_t *one_index,
-                        spottype_t spot_type, htsc_matrix_t trans_matrix)
-{
-    int done, dot_index, hole_index, count, index_x, index_y;
-    htsc_dot_shape_search_t dot_search;
-    int k, val_min;
-    htsc_point_t test_point;
-    htsc_point_t differ;
-    double dist;
-    int j;
-
-    done = 0;
-    dot_index = 1;
-    hole_index = N;
-    count = 0;
-    val_min=MIN(0,v);
-
-    while (!done) {
-        /* First perform a search for the closest one to the center
-           (of those remaining) and assign the current smallest index */
-        index_x = 0;
-        dot_search.index_x = 0;
-        dot_search.index_y = 0;
-        dot_search.norm = 10000000000;
-        for (k = 0; k < x + u; k++) {
-            index_y = 0;
-            for (j = val_min; j < y; j++) {
-                test_point.x = k + 0.5;
-                test_point.y = j + 0.5;
-                if ( htsc_getpoint(dig_grid, index_x, index_y) == -1 ) {
-                    htsc_diffpoint(test_point, center, &differ);
-                    dist = htsc_normpoint(&differ, horiz_dpi, vert_dpi);
-                    if (dist < dot_search.norm) {
-                        dot_search.norm = dist;
-                        dot_search.index_x = index_x;
-                        dot_search.index_y = index_y;
-                    }
-                }
-                index_y++;
-            }
-            index_x++;
-        }
-        /* Assign the index for this position */
-        htsc_setpoint(dig_grid, dot_search.index_x, dot_search.index_y, dot_index);
-        dot_index++;
-        count++;
-        if (count == N) {
-            done = 1;
-            break;
-        }
-        /* The ones position for the dig_grid is locatd at the first dot_search entry */
-        /* We need this later so grab it now */
-        if (count == 1) {
-            one_index->x = dot_search.index_x;
-            one_index->y = dot_search.index_y;
-        }
-        /* Now search for the closest one to a vertix (of those remaining).
-           and assign the current largest index */
-        index_x = 0;
-        dot_search.index_x = 0;
-        dot_search.index_y = 0;
-        dot_search.norm = 10000000000;
-        for (k = 0; k < x + u; k++) {
-            index_y = 0;
-            for (j = val_min; j < y; j++) {
-                test_point.x = k + 0.5;
-                test_point.y = j + 0.5;
-                if ( htsc_getpoint(dig_grid, index_x, index_y) == -1 ) {
-                    /* Find closest to a vertex */
-                    dist = htsc_vertex_dist(vertices, test_point, horiz_dpi,
-                                            vert_dpi);
-                    if (dist < dot_search.norm) {
-                        dot_search.norm = dist;
-                        dot_search.index_x = index_x;
-                        dot_search.index_y = index_y;
-                    }
-                }
-                index_y++;
-            }
-            index_x++;
-        }
-        /* Assign the index for this position */
-        htsc_setpoint(dig_grid, dot_search.index_x, dot_search.index_y, hole_index);
-        hole_index--;
-        count++;
-        if (count == N) {
-            done = 1;
-            break;
-        }
-    }
-}
-#endif
 
 /* This creates a mask for creating the dot shape */
 void
@@ -938,6 +858,36 @@ htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v,
     }
     return;
 }
+
+void htsc_find_bin_center(htsc_dig_grid_t *dot_grid, htsc_vector_t *bin_center)
+{
+    int h = dot_grid->height;
+    int w = dot_grid->width;
+    int min_y = h + 1;
+    int min_x = w + 1;
+    int max_y = -1;
+    int max_x = -1;
+    int x, y;
+
+    for (x = 0; x < w; x++) {
+        for (y = 0; y < h; y++) {
+            if (htsc_getpoint(dot_grid, x, y) == -1)
+            {
+                if (x < min_x)
+                    min_x = x;
+                if (x > max_x)
+                    max_x = x;
+                if (y < min_y)
+                    min_y = y;
+                if (y > max_y)
+                    max_y = y;
+            }
+        }
+    }
+    bin_center->xy[0] = (max_x - min_x) / 2.0;
+    bin_center->xy[1] = (max_y - min_y) / 2.0;
+}
+
 
 double
 htsc_vertex_dist(htsc_vertices_t vertices, htsc_point_t test_point,
@@ -1787,24 +1737,31 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
     free(thresholds);
 }
 
-int compare (const void * a, const void * b)
+int compare(const void * a, const void * b)
 {
     const htsc_threshpoint_t *val_a = a;
     const htsc_threshpoint_t *val_b = b;
+    double cost = val_a->value - val_b->value;
 
-  return val_a->value - val_b->value;
+    /* If same value, use distance to center for decision */
+    if (cost == 0) {
+        /* Don't think these should ever be the same due to tiling effect */
+        return val_a->dist_to_center - val_b->dist_to_center;
+    } else {
+        return cost;
+    }
 }
 
 /* Save turn on order list */
 void
-htsc_save_tos(htsc_dig_grid_t final_mask)
+htsc_save_tos(htsc_dig_grid_t final_mask, htsc_vector_t center)
 {
     int width = final_mask.width;
     int height = final_mask.height;
     int *buff_ptr = final_mask.data;
     FILE *fid;
     htsc_threshpoint_t *values;
-    int x, y, k =0;
+    int x, y, k=0;
     int count= height * width;
 
     fid = fopen("turn_on_seq.out","w");
@@ -1818,16 +1775,31 @@ htsc_save_tos(htsc_dig_grid_t final_mask)
         return;
     }
     for (y = 0; y < height; y++) {
-        for ( x = 0; x < width; x++ ) {
+        for (x = 0; x < width; x++) {
             values[k].value = *buff_ptr;
             values[k].x = x;
             values[k].y = y;
+            values[k].index = k;
+            values[k].dist_to_center = (x - center.xy[0]) * (x - center.xy[0]) +
+                (y - center.xy[1]) * (y - center.xy[1]);
             buff_ptr++;
             k = k + 1;
         }
     }
+#if RAW_SCREEN_DUMP
+    printf("Unsorted\n");
+    for (k = 0; k < count; k++) {
+        printf("Index %d : x = %d y = %d dist = %4.2lf value = %d \n", values[k].index, values[k].x, values[k].y, values[k].dist_to_center, values[k].value);
+    }
+#endif
     /* Sort */
     qsort(values, height * width, sizeof(htsc_threshpoint_t), compare);
+#if RAW_SCREEN_DUMP
+    printf("Sorted\n");
+    for (k = 0; k < count; k++) {
+        printf("Index %d : x = %d y = %d dist = %4.2lf value = %d \n", values[k].index, values[k].x, values[k].y, values[k].dist_to_center, values[k].value);
+    }
+#endif
     /* Write out */
     for (k = 0; k < count; k++) {
         fprintf(fid,"%d\t%d\n", values[count - 1 - k].x, values[count - 1 - k].y);
@@ -1838,7 +1810,7 @@ htsc_save_tos(htsc_dig_grid_t final_mask)
 
 void
 htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
-                htsc_param_t params)
+                htsc_param_t params, htsc_vector_t center)
 {
     char full_file_name[50];
     FILE *fid;
@@ -1856,7 +1828,7 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
     if (output_format == OUTPUT_TOS) {
         /* We need to figure out the turn-on sequence from the threshold
            array */
-        htsc_save_tos(final_mask);
+        htsc_save_tos(final_mask, center);
     } else {
         if (use_holladay_grid) {
             sprintf(full_file_name,"Screen_Holladay_Shift%d_%dx%d.%s", S, width,
