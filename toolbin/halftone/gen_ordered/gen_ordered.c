@@ -24,28 +24,40 @@
 #include <sys/stat.h>
 #include <math.h>
 
-typedef unsigned char byte;
-typedef int bool;
-#define false 0
-#define true 1
+#ifdef GS_LIB_BUILD
+#define LIB_BUILD
+
+#include "std.h"
+#include "gsmemory.h"
+
+#   define ALLOC(mem, size) (gs_alloc_bytes((gs_memory_t *)mem, size, "gen_ordered"))
+#   define FREE(mem, ptr)   gs_free_object((gs_memory_t *)mem, ptr, "gen_ordered")
+
+#   define PRINTF(mem, str) outprintf((gs_memory_t *)mem, str)
+#   define PRINTF7(mem, str, v1, v2, v3, v4, v5, v6, v7) outprintf((gs_memory_t *)mem, str, v1, v2, v3, v4, v5, v6, v7)
+#   define EPRINTF(mem, str) errprintf((gs_memory_t *)mem, str)
+#   define EPRINTF1(mem, str, v1) errprintf((gs_memory_t *)mem, str, v1)
+
+#endif /* defined GS_LIB_BUILD */
+
 #define RAW_SCREEN_DUMP 0	/* Noisy output for .raw files for detailed debugging */
 #define MAXVAL 65535.0
 #define MIN(x,y) ((x)>(y)?(y):(x))
 #define MAX(x,y) ((x)>(y)?(x):(y))
 #define ROUND( a )  ( ( (a) < 0 ) ? (int) ( (a) - 0.5 ) : \
                                                   (int) ( (a) + 0.5 ) )
-typedef enum {
-    CIRCLE = 0,
-    REDBOOK,
-    INVERTED,
-    RHOMBOID,
-    LINE_X,
-    LINE_Y,
-    DIAMOND1,
-    DIAMOND2,
-    ROUNDSPOT,
-    CUSTOM  /* Must remain last one */
-} spottype_t;
+#define FULL_FILE_NAME_LENGTH 50
+
+#ifndef stdpre_INCLUDED
+typedef unsigned char byte;
+#define false 0
+#define true 1
+#   ifndef __cplusplus
+      typedef int bool;
+#   endif	/* __cpluplus */
+#endif /* stdpre_INCLUDED */
+
+#include "gen_ordered.h"
 
 typedef struct htsc_point_s {
     double x;
@@ -67,21 +79,11 @@ typedef struct htsc_vertices_s {
     htsc_point_t lower_right;
 } htsc_vertices_t;
 
-typedef struct htsc_dig_grid_s {
-    int width;
-    int height;
-    int *data;
-} htsc_dig_grid_t;
-
 typedef struct htsc_dot_shape_search_s {
     double norm;
     int index_x;
     int index_y;
 } htsc_dot_shape_search_t;
-
-typedef struct htsc_vector_s {
-   double xy[2];
-} htsc_vector_t;
 
 typedef struct htsc_matrix_s {
    htsc_vector_t row[2];
@@ -93,79 +95,100 @@ typedef struct htsc_dither_pos_s {
     int *locations;
 } htsc_dither_pos_t;
 
-typedef enum {
-   OUTPUT_TOS = 0,
-   OUTPUT_PS = 1,
-   OUTPUT_PPM = 2,
-   OUTPUT_RAW = 3,
-   OUTPUT_RAW16 = 4
-} output_format_type;
-
-typedef struct htsc_param_s {
-    double scr_ang;
-    int targ_scr_ang;
-    int targ_lpi;
-    double vert_dpi;
-    double horiz_dpi;
-    bool targ_quant_spec;
-    int targ_quant;
-    int targ_size;
-    bool targ_size_spec;
-    spottype_t spot_type;
-    bool holladay;
-    output_format_type output_format;
-} htsc_param_t;
-
-void htsc_determine_cell_shape(double *x, double *y, double *v, double *u,
-                               double *N, htsc_param_t params);
-double htsc_spot_value(spottype_t spot_type, double x, double y);
-int htsc_getpoint(htsc_dig_grid_t *dig_grid, int x, int y);
-void htsc_setpoint(htsc_dig_grid_t *dig_grid, int x, int y, int value);
-void  htsc_create_dot_mask(htsc_dig_grid_t *dig_grid, int x, int y, int u, int v,
+static void htsc_determine_cell_shape(double *x, double *y, double *v, double *u,
+                               double *N, htsc_param_t params, void *mem);
+static double htsc_spot_value(spottype_t spot_type, double x, double y);
+static int htsc_getpoint(htsc_dig_grid_t *dig_grid, int x, int y);
+static void htsc_setpoint(htsc_dig_grid_t *dig_grid, int x, int y, int value);
+static void  htsc_create_dot_mask(htsc_dig_grid_t *dig_grid, int x, int y, int u, int v,
                        double screen_angle, htsc_vertices_t vertices);
-void htsc_find_bin_center(htsc_dig_grid_t *dot_grid, htsc_vector_t *bin_center);
-void htsc_diffpoint(htsc_point_t point1, htsc_point_t point2,
+static void htsc_diffpoint(htsc_point_t point1, htsc_point_t point2,
                    htsc_point_t *diff_point);
-double htsc_vertex_dist(htsc_vertices_t vertices, htsc_point_t test_point,
+static void htsc_find_bin_center(htsc_dig_grid_t *dot_grid, htsc_vector_t *bin_center);
+static double htsc_vertex_dist(htsc_vertices_t vertices, htsc_point_t test_point,
                  double horiz_dpi, double vert_dpi);
-double htsc_normpoint(htsc_point_t *diff_point, double horiz_dpi, double vert_dpi);
-int htsc_sumsum(htsc_dig_grid_t dig_grid);
-void htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y,
+static double htsc_normpoint(htsc_point_t *diff_point, double horiz_dpi, double vert_dpi);
+static int htsc_sumsum(htsc_dig_grid_t dig_grid);
+static void htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y,
                             int u, int v, double horiz_dpi,
                             double vert_dpi, htsc_vertices_t vertices,
                             htsc_point_t *one_index, spottype_t spot_type,
                             htsc_matrix_t trans_matrix);
-int htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
+static int htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
                            int v, int target_size, bool use_holladay_grid,
                            htsc_dig_grid_t dot_grid, int N, int *S, int *H, int *L);
-void htsc_tile_supercell(htsc_dig_grid_t *super_cell, htsc_dig_grid_t *dot_grid,
+static void htsc_tile_supercell(htsc_dig_grid_t *super_cell, htsc_dig_grid_t *dot_grid,
                  int x, int y, int u, int v, int N);
-void htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
+static void htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
                                double gamma, htsc_dig_grid_t *final_mask);
-void htsc_create_dither_mask(htsc_dig_grid_t super_cell,
+static void htsc_create_dither_mask(htsc_dig_grid_t super_cell,
                              htsc_dig_grid_t *final_mask,
                              int num_levels, int y, int x, double vert_dpi,
                              double horiz_dpi, int N, double gamma,
                              htsc_dig_grid_t dot_grid, htsc_point_t one_index);
-void htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
+static void htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
                           double gamma, htsc_dig_grid_t *final_mask);
-void htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
-                      htsc_param_t params, htsc_vector_t center);
-void htsc_set_default_params(htsc_param_t *params);
-int htsc_gcd(int a, int b);
-int  htsc_lcm(int a, int b);
-int htsc_matrix_inverse(htsc_matrix_t matrix_in, htsc_matrix_t *matrix_out);
-void htsc_matrix_vector_mult(htsc_matrix_t matrix_in, htsc_vector_t vector_in,
+static int htsc_gcd(int a, int b);
+static int  htsc_lcm(int a, int b);
+static int htsc_matrix_inverse(htsc_matrix_t matrix_in, htsc_matrix_t *matrix_out);
+static void htsc_matrix_vector_mult(htsc_matrix_t matrix_in, htsc_vector_t vector_in,
                    htsc_vector_t *vector_out);
+static int htsc_mask_to_tos(htsc_dig_grid_t *final_mask);
 #if RAW_SCREEN_DUMP
-void htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[]);
-void htsc_dump_float_image(float *image, int height, int width, float max_val,
+static void htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[]);
+static void htsc_dump_float_image(float *image, int height, int width, float max_val,
                       char filename[]);
-void htsc_dump_byte_image(byte *image, int height, int width, float max_val,
+static void htsc_dump_byte_image(byte *image, int height, int width, float max_val,
                       char filename[]);
 #endif
 
-int usage (void) {
+#ifndef LIB_BUILD
+
+/* Needed if standalone (main) */
+
+#   define ALLOC(mem, size) (malloc(size))
+#   define FREE(mem, ptr)   (free(ptr))
+
+#   define PRINTF(mem, str) printf(str)
+#   define PRINTF7(mem, str, v1, v2, v3, v4, v5, v6, v7) printf(str, v1, v2, v3, v4, v5, v6, v7)
+#   define EPRINTF(mem, str) fprintf(stderr, str)
+#   define EPRINTF1(mem, str, v1) fprintf(stderr, str, v1)
+
+static int htsc_save_tos(htsc_dig_grid_t *final_mask);
+static int htsc_save_screen(htsc_dig_grid_t *final_mask, bool use_holladay_grid, int S,
+                      htsc_param_t params);
+
+/* -------------------------  _snprintf -----------------------------*/
+
+#if defined(_MSC_VER)
+#  if _MSC_VER>=1900 /* VS 2014 and later have (finally) snprintf */
+#     define STDC99
+#  else /* _MSC_VER >= 1900 */
+      /* Microsoft Visual C++ 2005  doesn't properly define snprintf,
+         which is defined in the C standard ISO/IEC 9899:1999 (E) */
+
+      #include <stdarg.h>
+
+      int snprintf(char *buffer, size_t count, const char *format, ...)
+      {
+          if (count > 0) {
+              va_list args;
+              int n;
+
+              va_start(args, format);
+              n = _vsnprintf(buffer, count, format, args);
+              buffer[count - 1] = 0;
+              va_end(args);
+              return n;
+          } else
+              return 0;
+      }
+#  endif /* _MSC_VER >= 1900 */
+#endif /* defined _MSC_VER */
+
+static int
+usage (void)
+{
     printf ("Usage: gen_ordered [-a target_angle] [-l target_lpi] [-q target_quantization_levels] \n");
     printf ("                 [-r WxH] [-s size_of_supercell] [-d dot_shape_code] \n");
     printf ("                 [ -f [ps | ppm | raw | raw16 | tos] ]\n");
@@ -200,7 +223,9 @@ int usage (void) {
 /* Return the pointer to the value for an argument, either at 'arg' or the next argv */
 /* Allows for either -ovalue or -o value option syntax */
 /* Returns NULL if there is no value (at end of argc arguments) */
-static const char * get_arg (int argc, char **argv, int *pi, const char *arg) {
+static const char *
+get_arg (int argc, char **argv, int *pi, const char *arg)
+{
     if (arg[0] != 0) {
         return arg;
     } else {
@@ -216,24 +241,9 @@ static const char * get_arg (int argc, char **argv, int *pi, const char *arg) {
 int
 main (int argc, char **argv)
 {
-    double num_levels;
-    const double  pi = 3.14159265358979323846f;
-    double x,y,v,u,N;
-    int rcode = 0;
-    htsc_vertices_t vertices;
-    htsc_vector_t bin_center;
-    htsc_point_t one_index;
-    htsc_dig_grid_t dot_grid;
-    htsc_dig_grid_t super_cell;
-    htsc_dig_grid_t final_mask;
-    int code;
-    int S, H, L;
-    double gamma = 1;
-    int i, j, k, m;
-    int temp_int;
+    int code, i, j, k, m, S;
     htsc_param_t params;
-    htsc_matrix_t trans_matrix, trans_matrix_inv;
-    int min_size;
+    htsc_dig_grid_t final_mask;
 
     htsc_set_default_params(&params);
 
@@ -247,8 +257,6 @@ main (int argc, char **argv)
               if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
                   goto usage_exit;
               params.targ_scr_ang = atoi(arg_value);
-              params.targ_scr_ang = params.targ_scr_ang % 90;
-              params.scr_ang = params.targ_scr_ang;
               break;
             case 'f':
               if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
@@ -275,11 +283,11 @@ main (int argc, char **argv)
             case 'd':
               if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
                   goto usage_exit;
-              temp_int = atoi(arg_value);
-              if (temp_int < 0 || temp_int > CUSTOM)
+              j = atoi(arg_value);
+              if (j < 0 || j > CUSTOM)
                   params.spot_type = CIRCLE;
               else
-                  params.spot_type = temp_int;
+                  params.spot_type = j;
               break;
             case 'l':
               if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
@@ -316,12 +324,206 @@ usage_exit:   return usage();
             }
         }
     }
-    dot_grid.data = NULL;
-    super_cell.data = NULL;
-    final_mask.data = NULL;
+    final_mask.memory = NULL;				/* quiet compiler */
+    code = htsc_gen_ordered(params, &S, &final_mask);
 
+    if (code >= 0)
+        code = htsc_save_screen(&final_mask, params.holladay, S, params);
+
+    if (final_mask.data != NULL)
+        FREE(final_mask->memory, final_mask.data);
+
+    return code;
+}
+
+/* Save turn on order list, Assume that htsc_gen_ordered has already converted to TOS */
+static int
+htsc_save_tos(htsc_dig_grid_t *final_mask)
+{
+    int width = final_mask->width;
+    int height = final_mask->height;
+    int *buff_ptr;
+    FILE *fid;
+    int code, x, y, k = 0;
+    int count= height * width;
+
+    fid = fopen("turn_on_seq.out","w");
+    fprintf(fid,"# W=%d H=%d\n",width, height);
+
+    /* Write out */
+    buff_ptr = final_mask->data;
+    for (k = 0; k < count; k++) {
+        fprintf(fid,"%d\t%d\n", *buff_ptr++, *buff_ptr++);
+    }
+    fclose(fid);
+    return 0;
+}
+
+static int
+htsc_save_screen(htsc_dig_grid_t *final_mask, bool use_holladay_grid, int S,
+                htsc_param_t params)
+{
+    char full_file_name[FULL_FILE_NAME_LENGTH];
+    FILE *fid;
+    int x,y, code = 0;
+    int *buff_ptr = final_mask->data;
+    int width = final_mask->width;
+    int height = final_mask->height;
+    byte data;
+    unsigned short data_short;
+    output_format_type output_format = params.output_format;
+    char *output_extension = (output_format == OUTPUT_PS) ? "ps" :
+                        ((output_format == OUTPUT_PPM) ? "ppm" :
+                        ((output_format == OUTPUT_RAW16 ? "16.raw" : "raw")));
+
+    if (output_format == OUTPUT_TOS) {
+        /* We need to figure out the turn-on sequence from the threshold
+           array */
+        code = htsc_save_tos(final_mask);
+    } else {
+        if (use_holladay_grid) {
+            snprintf(full_file_name, FULL_FILE_NAME_LENGTH, "Screen_Holladay_Shift%d_%dx%d.%s", S, width,
+                    height, output_extension);
+        } else {
+            snprintf(full_file_name, FULL_FILE_NAME_LENGTH, "Screen_Dithered_%dx%d.%s",width,height,
+                    output_extension);
+        }
+        fid = fopen(full_file_name,"wb");
+
+        if (output_format == OUTPUT_PPM)
+            fprintf(fid, "P5\n"
+                    "# Halftone threshold array, %s, [%d, %d], S=%d\n"
+                    "%d %d\n"
+                    "255\n",
+                    use_holladay_grid ? "Holladay_Shift" : "Dithered", width, height,
+                    S, width, height);
+        if (output_format != OUTPUT_PS) {
+            /* Both BIN and PPM format write the same binary data */
+            if (output_format == OUTPUT_RAW || output_format == OUTPUT_PPM) {
+                for (y = 0; y < height; y++) {
+                    for ( x = 0; x < width; x++ ) {
+                        data_short = (unsigned short) (*buff_ptr & 0xffff);
+                        data_short = ROUND((double) data_short * 255.0 / MAXVAL);
+                        if (data_short > 255) data_short = 255;
+                        data = (byte) (data_short & 0xff);
+                        fwrite(&data, sizeof(byte), 1, fid);
+                        buff_ptr++;
+                    }
+                }
+            } else {	/* raw16 data */
+                for (y = 0; y < height; y++) {
+                    for ( x = 0; x < width; x++ ) {
+                        data_short = (unsigned short) (*buff_ptr & 0xffff);
+                        fwrite(&data_short, sizeof(short), 1, fid);
+                        buff_ptr++;
+                    }
+                }
+            }
+        } else {	/* ps output format */
+            if (params.targ_quant <= 256) {
+                /* Output PS HalftoneType 3 dictionary */
+                fprintf(fid, "%%!PS\n"
+                        "<< /HalftoneType 3\n"
+                        "   /Width  %d\n"
+                        "   /Height %d\n"
+                        "   /Thresholds <\n",
+                        width, height);
+
+                for (y = 0; y < height; y++) {
+                    for ( x = 0; x < width; x++ ) {
+                        data_short = (unsigned short) (*buff_ptr & 0xffff);
+                        data_short = ROUND((double) data_short * 255.0 / MAXVAL);
+                        if (data_short > 255) data_short = 255;
+                        data = (byte) (data_short & 0xff);
+                        fprintf(fid, "%02x", data);
+                        buff_ptr++;
+                        if ((x & 0x1f) == 0x1f && (x != (width - 1)))
+                            fprintf(fid, "\n");
+                    }
+                    fprintf(fid, "\n");
+                }
+                fprintf(fid, "   >\n"
+                        ">>\n"
+                        );
+            } else {
+                /* Output PS HalftoneType 16 dictionary. Single array. */
+                fprintf(fid, "%%!PS\n"
+                        "%% Create a 'filter' from local hex data\n"
+                        "{ currentfile /ASCIIHexDecode filter /ReusableStreamDecode filter } exec\n");
+                /* hex data follows, 'file' object will be left on stack */
+                for (y = 0; y < height; y++) {
+                    for ( x = 0; x < width; x++ ) {
+                        data_short = (unsigned short) (*buff_ptr & 0xffff);
+                        fprintf(fid, "%04x", data_short);
+                        buff_ptr++;
+                        if ((x & 0xf) == 0x1f && (x != (width - 1)))
+                            fprintf(fid, "\n");
+                    }
+                    fprintf(fid, "\n");	/* end of one row */
+                }
+                fprintf(fid, ">\n");	/* ASCIIHexDecode EOF */
+                fprintf(fid,
+                        "<< /Thresholds 2 index    %% file object for the 16-bit data\n"
+                        "   /HalftoneType 16\n"
+                        "   /Width  %d\n"
+                        "   /Height %d\n"
+                        ">>\n"
+                        "exch pop     %% discard ResuableStreamDecode file leaving the Halftone dict.\n",
+                        width, height);
+            }
+        }
+        fclose(fid);
+    }
+    return code;
+}
+#endif /* not defined LIB_BUILD */
+
+/* Initialize default values */
+void htsc_set_default_params(htsc_param_t *params)
+{
+    params->scr_ang = 0;
+    params->targ_scr_ang = 0;
+    params->targ_lpi = 75;
+    params->vert_dpi = 300;
+    params->horiz_dpi = 300;
+    params->targ_quant_spec = false;
+    params->targ_quant = 256;
+    params->targ_size = 1;
+    params->targ_size_spec = false;
+    params->spot_type = CIRCLE;
+    params->holladay = false;
+    params->gamma = 1.0;
+    params->output_format = OUTPUT_TOS;
+}
+
+int
+htsc_gen_ordered(htsc_param_t params, int *S, htsc_dig_grid_t *final_mask)
+{
+    double num_levels;
+    const double  pi = 3.14159265358979323846f;
+    double x,y,v,u,N;
+    int rcode = 0;
+    htsc_vertices_t vertices;
+    htsc_vector_t bin_center;
+    htsc_point_t one_index;
+    htsc_dig_grid_t dot_grid;
+    htsc_dig_grid_t super_cell;
+    int code;
+    int H, L;
+    double eamma = 1;
+    int i, j, k, m;
+    htsc_matrix_t trans_matrix, trans_matrix_inv;
+    int min_size;
+
+    dot_grid.data = NULL;
+    dot_grid.memory = final_mask->memory;
+    super_cell.data = NULL;
+    super_cell.memory = final_mask->memory;
+    final_mask->data = NULL;
+    params.targ_scr_ang = params.targ_scr_ang % 90;
+    params.scr_ang = params.targ_scr_ang;
     /* Get the vector values that define the small cell shape */
-    htsc_determine_cell_shape(&x, &y, &v, &u, &N, params);
+    htsc_determine_cell_shape(&x, &y, &v, &u, &N, params, final_mask->memory);
 
     /* Figure out how many levels to dither across. */
     if (params.targ_quant_spec) {
@@ -331,7 +533,7 @@ usage_exit:   return usage();
     }
     if (num_levels < 1) num_levels = 1;
     if (num_levels == 1) {
-        printf("No additional dithering , creating minimal sized periodic screen\n");
+        PRINTF(final_mask->memory, "No additional dithering , creating minimal sized periodic screen\n");
         params.targ_size = 1;
     }
 
@@ -345,18 +547,16 @@ usage_exit:   return usage();
     vertices.lower_right.x = u;
     vertices.lower_right.y = v;
 
-    /* Create the matrix that is used to get us correctly into the dot shape
-       function */
+    /* Create the matrix that is used to get us correctly into the dot shape function */
     trans_matrix.row[0].xy[0] = u;
     trans_matrix.row[0].xy[1] = x;
     trans_matrix.row[1].xy[0] = v;
     trans_matrix.row[1].xy[1] = y;
     code = htsc_matrix_inverse(trans_matrix, &trans_matrix_inv);
     if (code < 0) {
-        printf("ERROR! Singular Matrix Inversion!\n");
+        EPRINTF(final_mask->memory, "ERROR! Singular Matrix Inversion!\n");
         return -1;
     }
-
 
     /* Create a binary mask that indicates where we need to define the dot turn
        on sequence or dot profile */
@@ -366,7 +566,7 @@ usage_exit:   return usage();
 #endif
     /* A sanity check */
     if (htsc_sumsum(dot_grid) != -N) {
-        printf("ERROR! grid size problem!\n");
+        EPRINTF(final_mask->memory, "ERROR! grid size problem!\n");
         return -1;
     }
 
@@ -381,6 +581,7 @@ usage_exit:   return usage();
     htsc_create_dot_profile(&dot_grid, N, x, y, u, v, params.horiz_dpi,
                             params.vert_dpi, vertices, &one_index,
                             params.spot_type, trans_matrix_inv);
+
 #if RAW_SCREEN_DUMP
     htsc_dump_screen(&dot_grid, "dot_profile");
 #endif
@@ -388,19 +589,19 @@ usage_exit:   return usage();
     code = htsc_allocate_supercell(&super_cell, x, y, u, v, params.targ_size,
                             params.holladay, dot_grid, N, &S, &H, &L);
     if (code < 0) {
-        printf("ERROR! grid size problem!\n");
+        EPRINTF(final_mask->memory, "ERROR! grid size problem!\n");
         return -1;
     }
 
     /* Make a warning about large requested quantization levels with no -s set */
     if (params.targ_size == 1 && num_levels > 1) {
         min_size = (int)ceil((double)params.targ_quant / N);
-        printf("To achieve %d quantization levels with the desired lpi,\n", params.targ_quant);
-        printf("it is necessary to specify a screen size (-s) of at least %d.\n", min_size);
-        printf("Note that an even larger size may be needed to reduce pattern artifacts.\n");
-        printf("Because no screen size was specified, the minimum possible\n");
-        printf("size that can approximate the requested angle and lpi will be created\n");
-        printf("with %d quantization levels.\n", (int)super_cell.height * super_cell.width);
+        EPRINTF1(final_mask->memory, "To achieve %d quantization levels with the desired lpi,\n", params.targ_quant);
+        EPRINTF1(final_mask->memory, "it is necessary to specify a screen size (-s) of at least %d.\n", min_size);
+        EPRINTF(final_mask->memory, "Note that an even larger size may be needed to reduce pattern artifacts.\n");
+        EPRINTF(final_mask->memory, "Because no screen size was specified, the minimum possible\n");
+        EPRINTF(final_mask->memory, "size that can approximate the requested angle and lpi will be created\n");
+        EPRINTF1(final_mask->memory, "with %d quantization levels.\n", (int) N);
     }
 
     /* Go ahead and fill up the super cell grid with our growth dot values */
@@ -410,11 +611,11 @@ usage_exit:   return usage();
 #endif
     /* If we are using the Holladay grid (non dithered) then we are done. */
     if (params.holladay) {
-        htsc_create_holladay_mask(super_cell, H, L, gamma, &final_mask);
+        htsc_create_holladay_mask(super_cell, H, L, params.gamma, final_mask);
     } else {
         if ((super_cell.height == dot_grid.height &&
             super_cell.width == dot_grid.width) || num_levels == 1) {
-            htsc_create_nondithered_mask(super_cell, H, L, gamma, &final_mask);
+            htsc_create_nondithered_mask(super_cell, H, L, params.gamma, final_mask);
         } else {
             /* Dont allow nonsense settings */
             if (num_levels * N > super_cell.height * super_cell.width) {
@@ -423,21 +624,112 @@ usage_exit:   return usage();
                 printf("Reducing dithering quantization to %3.0lf\n", num_levels);
                 printf("For an effective quantization of %d\n", super_cell.height * super_cell.width);
             }
-            htsc_create_dither_mask(super_cell, &final_mask, num_levels, y, x,
-                                    params.vert_dpi, params.horiz_dpi, N, gamma,
+            htsc_create_dither_mask(super_cell, final_mask, num_levels, y, x,
+                                    params.vert_dpi, params.horiz_dpi, N, params.gamma,
                                     dot_grid, one_index);
         }
     }
-    htsc_save_screen(final_mask, params.holladay, S, params, bin_center);
-    if (dot_grid.data != NULL) free(dot_grid.data);
-    if (super_cell.data != NULL) free(super_cell.data);
-    if (final_mask.data != NULL) free(final_mask.data);
+    final_mask->bin_center = bin_center;
+
+    /* Now if the requested format is turn-on-sequence, convert the "data" */
+    if (params.output_format == OUTPUT_TOS) {
+        code = htsc_mask_to_tos(final_mask);
+    }
+    /* result in in final_mask, clean up working arrays allocated. */
+    if (dot_grid.data != NULL)
+        FREE(final_mask->memory, dot_grid.data);
+    if (super_cell.data != NULL)
+        FREE(final_mask->memory, super_cell.data);
     return rcode;
 }
 
-void
+/* comparison for use in qsort */
+static int
+compare(const void * a, const void * b)
+{
+    const htsc_threshpoint_t *val_a = a;
+    const htsc_threshpoint_t *val_b = b;
+    double cost = val_a->value - val_b->value;
+
+    /* If same value, use distance to center for decision */
+    if (cost == 0) {
+        /* Don't think these should ever be the same due to tiling effect */
+        return val_a->dist_to_center - val_b->dist_to_center;
+    } else {
+       return cost;
+    }
+}
+
+static int
+htsc_mask_to_tos(htsc_dig_grid_t *final_mask)
+{
+    int width = final_mask->width;
+    int height = final_mask->height;
+    htsc_vector_t center = final_mask->bin_center;
+    int *buff_ptr = final_mask->data;
+    int x, y, k = 0;
+    int count = height * width;
+    htsc_threshpoint_t *values;
+    int *tos;
+
+    values = (htsc_threshpoint_t *) ALLOC(final_mask->memory,
+                                          sizeof(htsc_threshpoint_t) * width * height);
+    if (values == NULL) {
+        printf("ERROR! malloc failure in htsc_mask_to_tos!\n");
+        return -1;
+    }
+    tos = (int *) ALLOC(final_mask->memory, sizeof(int) * 2 * height * width);
+    if (tos == NULL) {
+        FREE(final_mask->memory, values);
+        printf("ERROR! malloc failure in htsc_mask_to_tos!\n");
+        return -1;
+    }
+    /* Do a sort on the values and then output the coordinates */
+    /* First get a list made with the unsorted values and coordinates */
+    for (y = 0; y < height; y++) {
+        for ( x = 0; x < width; x++ ) {
+            values[k].value = *buff_ptr;
+            values[k].x = x;
+            values[k].y = y;
+            values[k].index = k;
+            values[k].dist_to_center = (x - center.xy[0]) * (x - center.xy[0]) +
+                                       (y - center.xy[1]) * (y - center.xy[1]);
+            buff_ptr++;
+            k = k + 1;
+        }
+    }
+#if RAW_SCREEN_DUMP
+    printf("Unsorted\n");
+    for (k = 0; k < count; k++) {
+        printf("Index %d : x = %d y = %d dist = %4.2lf value = %d \n",
+               values[k].index, values[k].x, values[k].y, values[k].dist_to_center, values[k].value);
+    }
+#endif
+        /* Sort */
+    qsort(values, height * width, sizeof(htsc_threshpoint_t), compare);
+#if RAW_SCREEN_DUMP
+    printf("Sorted\n");
+    for (k = 0; k < count; k++) {
+        printf("Index %d : x = %d y = %d dist = %4.2lf value = %d \n",
+                values[k].index, values[k].x, values[k].y, values[k].dist_to_center, values[k].value);
+    }
+#endif
+
+    FREE(final_mask->memory, final_mask->data);
+    final_mask->data = tos;
+    buff_ptr = tos;
+
+    for (k=0; k < count; k++) {
+        *buff_ptr++ = values[count - 1 - k].x;
+        *buff_ptr++ = values[count - 1 - k].y;
+    }
+    FREE(final_mask->memory, values);
+    return 0;
+}
+
+static void
 htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
-                          double *u_out, double *N_out, htsc_param_t params)
+                          double *u_out, double *N_out, htsc_param_t params, void *mem)
 {
     double x, y, v, u, N;
     double x_scale, frac, scaled_x, scaled_y;
@@ -461,8 +753,8 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
     /* The minimal step is in x */
     prev_lpi = 0;
     if (ratio < 1 && ratio != 0) {
-        printf("x\ty\tu\tv\tAngle\tLPI\tLevels\n");
-        printf("-----------------------------------------------------------\n");
+        PRINTF(mem, "x\ty\tu\tv\tAngle\tLPI\tLevels\n");
+        PRINTF(mem, "-----------------------------------------------------------\n");
         for (x = 1; x < 11; x++) {
             x_use = x;
             y=ROUND((double) x_use / ratio);
@@ -475,17 +767,17 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
             if (prev_lpi == 0) {
                 prev_lpi = lpi;
                 if (params.targ_lpi > lpi) {
-                    printf("Warning this lpi is not achievable!\n");
-                    printf("Resulting screen will be poorly quantized\n");
-                    printf("or completely stochastic!\n");
+                    EPRINTF(mem, "Warning this lpi is not achievable!\n");
+                    EPRINTF(mem, "Resulting screen will be poorly quantized\n");
+                    EPRINTF(mem, "or completely stochastic!\n");
                     use = true;
                 }
                 max_lpi = lpi;
             }
             if (prev_lpi >= params.targ_lpi && lpi < params.targ_lpi) {
                 if (prev_lpi == max_lpi) {
-                    printf("Notice lpi is at the maximimum level possible.\n");
-                    printf("This may result in poor quantization. \n");
+                    EPRINTF(mem, "Notice lpi is at the maximimum level possible.\n");
+                    EPRINTF(mem, "This may result in poor quantization. \n");
                 }
                 /* Reset these to previous x */
                 x_use = x - 1;
@@ -503,12 +795,12 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
             if (use == true) {
                 if (prev_lpi == max_lpi) {
                     /* Print out the final one that we will use */
-                    printf("%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
+                    PRINTF7(mem, "%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
                                     x_use,y,u,v,true_angle,lpi,N);
                 }
                 break;
             }
-            printf("%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
+            PRINTF7(mem, "%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
                             x_use,y,u,v,true_angle,lpi,N);
             prev_lpi = lpi;
         }
@@ -516,8 +808,8 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
     }
     if (ratio >= 1 && ratio!=0) {
         /* The minimal step is in y */
-        printf("x\ty\tu\tv\tAngle\tLPI\tLevels\n");
-        printf("-----------------------------------------------------------\n");
+        PRINTF(mem, "x\ty\tu\tv\tAngle\tLPI\tLevels\n");
+        PRINTF(mem, "-----------------------------------------------------------\n");
         for (y = 1, lpi = 99999999; lpi > params.targ_lpi; y++) {
             y_use = y;
             x = ROUND(y_use * ratio);
@@ -531,18 +823,18 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
             if (prev_lpi == 0) {
                 prev_lpi = lpi;
                 if (params.targ_lpi > lpi) {
-                    printf("Warning this lpi is not achievable!\n");
-                    printf("Resulting screen will be poorly quantized\n");
-                    printf("or completely stochastic!\n");
+                    EPRINTF(mem, "Warning this lpi is not achievable!\n");
+                    EPRINTF(mem, "Resulting screen will be poorly quantized\n");
+                    EPRINTF(mem, "or completely stochastic!\n");
                     use = true;
                 }
                 max_lpi = lpi;
             }
             if (prev_lpi >= params.targ_lpi && lpi < params.targ_lpi) {
                 if (prev_lpi == max_lpi) {
-                    printf("Warning lpi will be slightly lower than target.\n");
-                    printf("An increase will result in poor \n");
-                    printf("quantization or a completely stochastic screen!\n");
+                    EPRINTF(mem, "Warning lpi will be slightly lower than target.\n");
+                    EPRINTF(mem, "An increase will result in poor \n");
+                    EPRINTF(mem, "quantization or a completely stochastic screen!\n");
                 } else {
                     /* Reset these to previous x */
                     y_use = y - 1;
@@ -560,12 +852,12 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
             if (use == true) {
                 if (prev_lpi == max_lpi) {
                     /* Print out the final one that we will use */
-                    printf("%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
+                    PRINTF7(mem, "%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
                                     x,y_use,u,v,true_angle,lpi,N);
                 }
                 break;
             }
-            printf("%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
+            PRINTF7(mem, "%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
                             x,y_use,u,v,true_angle,lpi,N);
             prev_lpi = lpi;
         }
@@ -574,8 +866,8 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
     if (ratio == 0) {
         /* 0 degrees */
         if (scaled_x >= 1) {
-            printf("x\ty\tu\tv\tAngle\tLPI\tLevels\n");
-            printf("-----------------------------------------------------------\n");
+            PRINTF(mem, "x\ty\tu\tv\tAngle\tLPI\tLevels\n");
+            PRINTF(mem, "-----------------------------------------------------------\n");
             for (y = 1, lpi=9999999; lpi > params.targ_lpi; y++) {
                 y_use = y;
                 x = ROUND( y_use * ratio );
@@ -588,18 +880,18 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
                 if (prev_lpi == 0) {
                     prev_lpi = lpi;
                     if (params.targ_lpi > lpi) {
-                        printf("Warning this lpi is not achievable!\n");
-                        printf("Resulting screen will be poorly quantized\n");
-                        printf("or completely stochastic!\n");
+                        EPRINTF(mem, "Warning this lpi is not achievable!\n");
+                        EPRINTF(mem, "Resulting screen will be poorly quantized\n");
+                        EPRINTF(mem, "or completely stochastic!\n");
                         use = true;
                     }
                     max_lpi = lpi;
                 }
                 if (prev_lpi >= params.targ_lpi && lpi < params.targ_lpi) {
                     if (prev_lpi == max_lpi) {
-                        printf("Warning lpi will be slightly lower than target.\n");
-                        printf("An increase will result in poor \n");
-                        printf("quantization or a completely stochastic screen!\n");
+                        EPRINTF(mem, "Warning lpi will be slightly lower than target.\n");
+                        EPRINTF(mem, "An increase will result in poor \n");
+                        EPRINTF(mem, "quantization or a completely stochastic screen!\n");
                     } else {
                         /* Reset these to previous x */
                         y_use = y - 1;
@@ -616,19 +908,19 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
                 if (use == true) {
                     if (prev_lpi == max_lpi) {
                         /* Print out the final one that we will use */
-                        printf("%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
+                        PRINTF7(mem, "%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
                                         x,y_use,u,v,true_angle,lpi,N);
                     }
                     break;
                 }
-                printf("%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
+                PRINTF7(mem, "%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
                                 x,y_use,u,v,true_angle,lpi,N);
                 prev_lpi = lpi;
             }
             y = y_use;
         } else {
-            printf("x\ty\tu\tv\tAngle\tLPI\tLevels\n");
-            printf("-----------------------------------------------------------\n");
+            PRINTF(mem, "x\ty\tu\tv\tAngle\tLPI\tLevels\n");
+            PRINTF(mem, "-----------------------------------------------------------\n");
             for (x = 1; x < 11; x++) {
                 x_use = x;
                 y = ROUND(x_use * ratio);
@@ -641,18 +933,18 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
                 if (prev_lpi == 0) {
                     prev_lpi = lpi;
                     if (params.targ_lpi > lpi) {
-                        printf("Warning this lpi is not achievable!\n");
-                        printf("Resulting screen will be poorly quantized\n");
-                        printf("or completely stochastic!\n");
+                        EPRINTF(mem, "Warning this lpi is not achievable!\n");
+                        EPRINTF(mem, "Resulting screen will be poorly quantized\n");
+                        EPRINTF(mem, "or completely stochastic!\n");
                         use = true;
                     }
                     max_lpi = lpi;
                 }
                 if (prev_lpi > params.targ_lpi && lpi < params.targ_lpi) {
                     if (prev_lpi == max_lpi) {
-                        printf("Warning lpi will be slightly lower than target.\n");
-                        printf("An increase will result in poor \n");
-                        printf("quantization or a completely stochastic screen!\n");
+                        EPRINTF(mem, "Warning lpi will be slightly lower than target.\n");
+                        EPRINTF(mem, "An increase will result in poor \n");
+                        EPRINTF(mem, "quantization or a completely stochastic screen!\n");
                     } else {
                         /* Reset these to previous x */
                         x_use = x - 1;
@@ -669,12 +961,12 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
                 if (use == true) {
                     if (prev_lpi == max_lpi) {
                         /* Print out the final one that we will use */
-                        printf("%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
+                        PRINTF7(mem, "%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
                                         x_use,y,u,v,true_angle,lpi,N);
                     }
                     break;
                 }
-                printf("%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
+                PRINTF7(mem, "%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
                                 x_use,y,u,v,true_angle,lpi,N);
                 prev_lpi = lpi;
             }
@@ -688,7 +980,7 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
     *N_out = N;
 }
 
-void
+static void
 htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, int v,
                         double horiz_dpi, double vert_dpi, htsc_vertices_t vertices,
                         htsc_point_t *one_index, spottype_t spot_type, htsc_matrix_t trans_matrix)
@@ -812,7 +1104,7 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
 }
 
 /* This creates a mask for creating the dot shape */
-void
+static void
 htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v,
                  double screen_angle, htsc_vertices_t vertices)
 {
@@ -829,7 +1121,7 @@ htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v,
         dot_grid->height = abs(val_min) + y;
         dot_grid->width = x + u;
         dot_grid->data =
-            (int *) malloc(dot_grid->height * dot_grid->width * sizeof(int));
+            (int *) ALLOC(dot_grid->memory, dot_grid->height * dot_grid->width * sizeof(int));
         memset(dot_grid->data,0,dot_grid->height * dot_grid->width * sizeof(int));
         index_x = 0;
         for (k = 0; k < (x+u); k++) {
@@ -858,14 +1150,15 @@ htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v,
         /* All points are valid */
         dot_grid->height = y;
         dot_grid->width = u;
-        dot_grid->data = (int *) malloc(y * u * sizeof(int));
+        dot_grid->data = (int *) ALLOC(dot_grid->memory, y * u * sizeof(int));
         memset(dot_grid->data, -1, y * u * sizeof(int));
         val_min = 0;
     }
     return;
 }
 
-void htsc_find_bin_center(htsc_dig_grid_t *dot_grid, htsc_vector_t *bin_center)
+static void
+htsc_find_bin_center(htsc_dig_grid_t *dot_grid, htsc_vector_t *bin_center)
 {
     int h = dot_grid->height;
     int w = dot_grid->width;
@@ -895,7 +1188,7 @@ void htsc_find_bin_center(htsc_dig_grid_t *dot_grid, htsc_vector_t *bin_center)
 }
 
 
-double
+static double
 htsc_vertex_dist(htsc_vertices_t vertices, htsc_point_t test_point,
                  double horiz_dpi, double vert_dpi)
 {
@@ -920,7 +1213,7 @@ htsc_vertex_dist(htsc_vertices_t vertices, htsc_point_t test_point,
     return smallest;
 }
 
-double
+static double
 htsc_normpoint(htsc_point_t *diff_point, double horiz_dpi, double vert_dpi)
 {
     diff_point->x =  diff_point->x / horiz_dpi;
@@ -928,13 +1221,13 @@ htsc_normpoint(htsc_point_t *diff_point, double horiz_dpi, double vert_dpi)
     return  (diff_point->x * diff_point->x) + (diff_point->y * diff_point->y);
 }
 
-int
+static int
 htsc_getpoint(htsc_dig_grid_t *dig_grid, int x, int y)
 {
     return dig_grid->data[ y * dig_grid->width + x];
 }
 
-void
+static void
 htsc_setpoint(htsc_dig_grid_t *dig_grid, int x, int y, int value)
 {
     int kk;
@@ -944,7 +1237,7 @@ htsc_setpoint(htsc_dig_grid_t *dig_grid, int x, int y, int value)
     dig_grid->data[ y * dig_grid->width + x] = value;
 }
 
-void
+static void
 htsc_diffpoint(htsc_point_t point1, htsc_point_t point2,
               htsc_point_t *diff_point)
 {
@@ -953,7 +1246,7 @@ htsc_diffpoint(htsc_point_t point1, htsc_point_t point2,
     diff_point->y = point1.y - point2.y;
 }
 
-int
+static int
 htsc_sumsum(htsc_dig_grid_t dig_grid)
 {
 
@@ -968,7 +1261,7 @@ htsc_sumsum(htsc_dig_grid_t dig_grid)
     return value;
 }
 
-int
+static int
 htsc_gcd(int a, int b)
 {
     if ( b == 0 ) return a;
@@ -986,7 +1279,7 @@ htsc_gcd(int a, int b)
     }
 }
 
-int
+static int
 htsc_lcm(int a, int b)
 {
     int product = a * b;
@@ -997,7 +1290,7 @@ htsc_lcm(int a, int b)
     return lcm;
 }
 
-int
+static int
 htsc_matrix_inverse(htsc_matrix_t matrix_in, htsc_matrix_t *matrix_out)
 {
     double determinant;
@@ -1013,7 +1306,7 @@ htsc_matrix_inverse(htsc_matrix_t matrix_in, htsc_matrix_t *matrix_out)
     return 0;
 }
 
-void
+static void
 htsc_matrix_vector_mult(htsc_matrix_t matrix_in, htsc_vector_t vector_in,
                    htsc_vector_t *vector_out)
 {
@@ -1023,7 +1316,7 @@ htsc_matrix_vector_mult(htsc_matrix_t matrix_in, htsc_vector_t vector_in,
                         matrix_in.row[1].xy[1] * vector_in.xy[1];
 }
 
-int
+static int
 htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
                         int v, int target_size, bool use_holladay_grid,
                         htsc_dig_grid_t dot_grid, int N, int *S, int *H, int *L)
@@ -1052,7 +1345,7 @@ htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
 
     code = htsc_matrix_inverse(matrix, &matrix_inv);
     if (code < 0) {
-        printf("ERROR! matrix singular!\n");
+        EPRINTF(dot_grid.memory, "ERROR! matrix singular!\n");
         return -1;
     }
     vector_in.xy[1] = *H;
@@ -1070,7 +1363,7 @@ htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
         }
     }
     if (Dfinal == 0) {
-        printf("ERROR! computing Holladay Grid\n");
+        EPRINTF(dot_grid.memory, "ERROR! computing Holladay Grid\n");
         return -1;
     }
     *S = *L - Dfinal;
@@ -1108,7 +1401,7 @@ htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
     super_cell->height = super_size_y;
     super_cell->width = super_size_x;
     super_cell->data =
-        (int *) malloc(super_size_x * super_size_y * sizeof(int));
+        (int *) ALLOC(dot_grid.memory, super_size_x * super_size_y * sizeof(int));
     memset(super_cell->data, 0, super_size_x * super_size_y * sizeof(int));
     return 0;
 }
@@ -1125,7 +1418,7 @@ htsc_supercell_assign_point(int new_k, int new_j, int sc_xsize, int sc_ysize,
     }
 }
 
-void
+static void
 htsc_tile_supercell(htsc_dig_grid_t *super_cell, htsc_dig_grid_t *dot_grid,
                  int x, int y, int u, int v, int N)
 {
@@ -1218,7 +1511,7 @@ create_2d_gauss_filter(float *filter, int x_size, int y_size,
 }
 
 /* 2-D convolution (or correlation) with periodic boundary condition */
-void
+static void
 htsc_apply_filter(byte *screen_matrix, int num_cols_sc,
                   int num_rows_sc, float *filter, int num_cols_filt,
                   int num_rows_filt, float *screen_blur,
@@ -1284,13 +1577,13 @@ htsc_apply_filter(byte *screen_matrix, int num_cols_sc,
     *min_pos = fmin_pos;
 }
 
-int
+static int
 htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
-                       double horiz_dpi, double vert_dpi, double lpi_act,
-                       unsigned short *pos_x, unsigned short *pos_y,
-                       int *locate, int num_dots,
-                       htsc_dither_pos_t *dot_level_position, int level_num,
-                       int num_dots_add)
+              double horiz_dpi, double vert_dpi, double lpi_act,
+              unsigned short *pos_x, unsigned short *pos_y,
+              int *locate, int num_dots,
+              htsc_dither_pos_t *dot_level_position, int level_num,
+              int num_dots_add, void *mem)
 {
     double xscale = horiz_dpi / vert_dpi;
     double sigma_y = vert_dpi / lpi_act;
@@ -1314,7 +1607,7 @@ htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
     if ( ((float) sizefilty / 2.0) == (sizefilty >> 1)) {
         sizefilty += 1;
     }
-    filter = (float*) malloc(sizeof(float) * sizefilty * sizefiltx);
+    filter = (float*) ALLOC(mem, sizeof(float) * sizefilty * sizefiltx);
     create_2d_gauss_filter(filter, sizefiltx, sizefilty, sizefiltx, sizefilty);
     screen_blur = (float*) malloc(sizeof(float) * num_cols * num_rows);
 
@@ -1346,16 +1639,16 @@ htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
         curr_position.point[j].y = pos_y[white_pos];
         curr_position.locations[j] = locate[white_pos];
     }
-    free(filter);
-    free(screen_blur);
+    FREE(mem, filter);
+    FREE(mem, screen_blur);
     return 0;
 }
 
-int
+static int
 htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
                        double horiz_dpi, double vert_dpi, double lpi_act,
                        unsigned short *pos_x, unsigned short *pos_y, int num_dots,
-                       htsc_dither_pos_t *dot_level_position)
+                       htsc_dither_pos_t *dot_level_position, void *mem)
 {
     double xscale = horiz_dpi / vert_dpi;
     double sigma_y = vert_dpi / lpi_act;
@@ -1379,9 +1672,9 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
     if ( ((float) sizefilty / 2.0) == (sizefilty >> 1)) {
         sizefilty += 1;
     }
-    filter = (float*) malloc(sizeof(float) * sizefilty * sizefiltx);
+    filter = (float*) ALLOC(mem, sizeof(float) * sizefilty * sizefiltx);
     create_2d_gauss_filter(filter, sizefiltx, sizefilty, sizefiltx, sizefilty);
-    screen_blur = (float*) malloc(sizeof(float) * num_cols * num_rows);
+    screen_blur = (float*) ALLOC(mem, sizeof(float) * num_cols * num_rows);
     /* Start moving dots until the whitest and darkest dot are the same */
     while (!done) {
         /* Blur */
@@ -1427,8 +1720,8 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
         /* There could be a danger here of cycles longer than 2 */
         if (white_pos == black_pos) {
             done = true;
-            free(screen_blur);
-            free(filter);
+            FREE(mem, screen_blur);
+            FREE(mem, filter);
             return 0;
         } else {
             /* We need to update our dot position information */
@@ -1446,17 +1739,17 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
                 }
             }
             if (!found_it) {
-                printf("ERROR! bug in dot location accounting\n");
+                EPRINTF(mem, "ERROR! bug in dot location accounting\n");
                 return -1;
             }
         }
     }
-    free(filter);
-    free(screen_blur);
+    FREE(mem, filter);
+    FREE(mem, screen_blur);
     return 0;
 }
 
-void
+static void
 htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
                           int num_levels, int y, int x, double vert_dpi,
                           double horiz_dpi, int N, double gamma,
@@ -1493,8 +1786,8 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
                                   horiz_scale * horiz_scale));
     if (num_levels > 1) {
         curr_size = 2 * MAX(height_supercell, width_supercell);
-        locate = (int*) malloc(sizeof(int) * curr_size);
-        screen_matrix = (byte*) malloc(sizeof(byte) * number_points);
+        locate = (int*) ALLOC(dot_grid.memory, sizeof(int) * curr_size);
+        screen_matrix = (byte*) ALLOC(dot_grid.memory, sizeof(byte) * number_points);
         memset(screen_matrix, 0, sizeof(byte) * number_points);
 
         /* Determine the number of dots in the screen and their index */
@@ -1512,8 +1805,8 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
        /* Convert the 1-D locate positions to 2-D positions so that we can
           use a distance metric to the dot center locations. Also allocate
           the structure for our dot positioning information */
-        pos_x = (unsigned short*) malloc(sizeof(unsigned short) * num_dots);
-        pos_y = (unsigned short*) malloc(sizeof(unsigned short) * num_dots);
+        pos_x = (unsigned short*) ALLOC(dot_grid.memory, sizeof(unsigned short) * num_dots);
+        pos_y = (unsigned short*) ALLOC(dot_grid.memory, sizeof(unsigned short) * num_dots);
         for (k = 0; k < num_dots; k++) {
             pos_x[k] = locate[k] % width_supercell;
             pos_y[k] = (locate[k] - pos_x[k]) / width_supercell;
@@ -1522,8 +1815,8 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
         /* Note that number of quantization levels is not tied to number of dots
            in the macro screen.  */
         dot_level_pos =
-            (htsc_dither_pos_t*) malloc(sizeof(htsc_dither_pos_t) * num_levels);
-        dot_levels = (int*) malloc(sizeof(int) * num_levels);
+            (htsc_dither_pos_t*) ALLOC(dot_grid.memory, sizeof(htsc_dither_pos_t) * num_levels);
+        dot_levels = (int*) ALLOC(dot_grid.memory, sizeof(int) * num_levels);
         percent = 1.0 / ((float)num_levels + 1.0);
         prev_dot_level = 0;
         for (k = 0; k < num_levels; k++) {
@@ -1531,9 +1824,9 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
             dot_levels[k] = ROUND(num_dots * perc_val);
             curr_num_dots = dot_levels[k] -prev_dot_level;
             prev_dot_level = dot_levels[k];
-            dot_level_pos[k].locations = (int*) malloc(sizeof(int) * curr_num_dots);
+            dot_level_pos[k].locations = (int*) ALLOC(dot_grid.memory, sizeof(int) * curr_num_dots);
             dot_level_pos[k].point =
-                (htsc_point_t*) malloc(sizeof(htsc_point_t) * curr_num_dots);
+                (htsc_point_t*) ALLOC(dot_grid.memory, sizeof(htsc_point_t) * curr_num_dots);
             dot_level_pos[k].number_points = curr_num_dots;
         }
 
@@ -1566,7 +1859,7 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
         if (dot_levels[0] > 1)
             code = htsc_init_dot_position(screen_matrix, width_supercell,
                                height_supercell, horiz_dpi, vert_dpi, lpi_act,
-                               pos_x, pos_y, num_dots, dot_level_pos);
+                               pos_x, pos_y, num_dots, dot_level_pos, final_mask->memory);
 #if RAW_SCREEN_DUMP
         htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
                              1, "screen0_arrange");
@@ -1576,13 +1869,13 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
             code = htsc_add_dots(screen_matrix, width_supercell, height_supercell,
                           horiz_dpi, vert_dpi, lpi_act, pos_x, pos_y, locate,
                           num_dots, dot_level_pos, k,
-                          dot_level_pos[k].number_points);
+                          dot_level_pos[k].number_points, final_mask->memory);
 #if RAW_SCREEN_DUMP
             {
-                char str_name[30];
-                sprintf(str_name,"screen%d_arrange",k);
-                htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
-                                     1, str_name);
+            char str_name[30];
+            snprintf(str_name, 30, "screen%d_arrange",k);
+            htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
+                                 1, str_name);
             }
 #endif
         }
@@ -1597,7 +1890,7 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
 
         /* Create the threshold mask. */
         step_size = (MAXVAL + 1.0) / (double) N;
-        thresholds = (int*) malloc(sizeof(int) * N);
+        thresholds = (int*) ALLOC(dot_grid.memory, sizeof(int) * N);
         for (k = 0; k < N; k++) {
             thresholds[N-1-k] = (k + 1) * step_size - (step_size / 2);
         }
@@ -1619,13 +1912,13 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
         final_mask->height = height_supercell;
         final_mask->width = width_supercell;
         final_mask->data =
-            (int*) malloc(sizeof(int) * height_supercell * width_supercell);
+            (int*) ALLOC(dot_grid.memory, sizeof(int) * height_supercell * width_supercell);
 
         /* We need to associate the locate index with a particular level
            for the when the dot begins to turn on.  Go through the dot_level_pos
            array to get the values.  Probably should create this earlier and avoid
            this */
-        dot_level_sort = (int*) malloc(sizeof(int) * num_dots);
+        dot_level_sort = (int*) ALLOC(dot_grid.memory, sizeof(int) * num_dots);
         for (h = 0; h < num_dots; h++) {
             found = false;
             for (jj = 0; jj < num_levels; jj++) {
@@ -1674,21 +1967,21 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
             }
         }
         for (k = 0; k < num_levels; k++) {
-            free(dot_level_pos[k].locations);
-            free(dot_level_pos[k].point);
+            FREE(dot_grid.memory, dot_level_pos[k].locations);
+            FREE(dot_grid.memory, dot_level_pos[k].point);
         }
-        free(locate);
-        free(screen_matrix);
-        free(pos_x);
-        free(pos_y);
-        free(dot_level_pos);
-        free(dot_levels);
-        free(thresholds);
-        free(dot_level_sort);
+        FREE(dot_grid.memory, locate);
+        FREE(dot_grid.memory, screen_matrix);
+        FREE(dot_grid.memory, pos_x);
+        FREE(dot_grid.memory, pos_y);
+        FREE(dot_grid.memory, dot_level_pos);
+        FREE(dot_grid.memory, dot_levels);
+        FREE(dot_grid.memory, thresholds);
+        FREE(dot_grid.memory, dot_level_sort);
     }
 }
 
-void
+static void
 htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
                           double gamma, htsc_dig_grid_t *final_mask)
 {
@@ -1704,9 +1997,9 @@ htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
 
     final_mask->height = H;
     final_mask->width = L;
-    final_mask->data = (int *) malloc(H * L * sizeof(int));
+    final_mask->data = (int *) ALLOC(final_mask->memory, H * L * sizeof(int));
 
-    thresholds = (double *) malloc(H * L * sizeof(double));
+    thresholds = (double *) ALLOC(final_mask->memory, H * L * sizeof(double));
     for (k = 0; k < number_points; k++) {
          temp = ((k+1) * step_size - half_step) / MAXVAL;
          if ( gamma != 1.0) {
@@ -1725,10 +2018,10 @@ htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
             htsc_setpoint(final_mask,k,j,value);
         }
     }
-    free(thresholds);
+    FREE(final_mask->memory, thresholds);
 }
 
-void
+static void
 htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
                           double gamma, htsc_dig_grid_t *final_mask)
 {
@@ -1744,9 +2037,9 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
 
     final_mask->height = super_cell.height;
     final_mask->width = super_cell.width;
-    final_mask->data = (int *) malloc(super_cell.height * super_cell.width *
+    final_mask->data = (int *) ALLOC(final_mask->memory, super_cell.height * super_cell.width *
                                       sizeof(int));
-    thresholds = (double *) malloc(H * L * sizeof(double));
+    thresholds = (double *) ALLOC(final_mask->memory, H * L * sizeof(double));
     for (k = 0; k < number_points; k++) {
          temp = ((k+1) * step_size - half_step) / MAXVAL;
          if ( gamma != 1.0) {
@@ -1765,248 +2058,48 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
             htsc_setpoint(final_mask,k,j,value);
         }
     }
-    free(thresholds);
-}
-
-int
-compare(const void * a, const void * b)
-{
-    const htsc_threshpoint_t *val_a = a;
-    const htsc_threshpoint_t *val_b = b;
-    double cost = val_a->value - val_b->value;
-
-    /* If same value, use distance to center for decision */
-    if (cost == 0) {
-        /* Don't think these should ever be the same due to tiling effect */
-        return val_a->dist_to_center - val_b->dist_to_center;
-    } else {
-        return cost;
-    }
-}
-
-/* Save turn on order list */
-void
-htsc_save_tos(htsc_dig_grid_t final_mask, htsc_vector_t center)
-{
-    int width = final_mask.width;
-    int height = final_mask.height;
-    int *buff_ptr = final_mask.data;
-    FILE *fid;
-    htsc_threshpoint_t *values;
-    int x, y, k=0;
-    int count= height * width;
-
-    fid = fopen("turn_on_seq.out","w");
-    fprintf(fid,"# W=%d H=%d\n",width, height);
-
-    /* Do a sort on the values and then output the coordinates */
-    /* First get a list made with the unsorted values and coordinates */
-    values =
-        (htsc_threshpoint_t *) malloc(sizeof(htsc_threshpoint_t) * width * height);
-    if (values == NULL) {
-        printf("ERROR! malloc failure in htsc_save_tos!\n");
-        return;
-    }
-    for (y = 0; y < height; y++) {
-        for (x = 0; x < width; x++) {
-            values[k].value = *buff_ptr;
-            values[k].x = x;
-            values[k].y = y;
-            values[k].index = k;
-            values[k].dist_to_center = (x - center.xy[0]) * (x - center.xy[0]) +
-                (y - center.xy[1]) * (y - center.xy[1]);
-            buff_ptr++;
-            k = k + 1;
-        }
-    }
-#if RAW_SCREEN_DUMP
-    printf("Unsorted\n");
-    for (k = 0; k < count; k++) {
-        printf("Index %d : x = %d y = %d dist = %4.2lf value = %d \n", values[k].index, values[k].x, values[k].y, values[k].dist_to_center, values[k].value);
-    }
-#endif
-    /* Sort */
-    qsort(values, height * width, sizeof(htsc_threshpoint_t), compare);
-#if RAW_SCREEN_DUMP
-    printf("Sorted\n");
-    for (k = 0; k < count; k++) {
-        printf("Index %d : x = %d y = %d dist = %4.2lf value = %d \n", values[k].index, values[k].x, values[k].y, values[k].dist_to_center, values[k].value);
-    }
-#endif
-    /* Write out */
-    for (k = 0; k < count; k++) {
-        fprintf(fid,"%d\t%d\n", values[count - 1 - k].x, values[count - 1 - k].y);
-    }
-    free(values);
-    fclose(fid);
-}
-
-void
-htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
-                htsc_param_t params, htsc_vector_t center)
-{
-    char full_file_name[50];
-    FILE *fid;
-    int x,y;
-    int *buff_ptr = final_mask.data;
-    int width = final_mask.width;
-    int height = final_mask.height;
-    byte data;
-    unsigned short data_short;
-    output_format_type output_format = params.output_format;
-    char *output_extension = (output_format == OUTPUT_PS) ? "ps" :
-                        ((output_format == OUTPUT_PPM) ? "ppm" :
-                        ((output_format == OUTPUT_RAW16 ? "16.raw" : "raw")));
-
-    if (output_format == OUTPUT_TOS) {
-        /* We need to figure out the turn-on sequence from the threshold
-           array */
-        htsc_save_tos(final_mask, center);
-    } else {
-        if (use_holladay_grid) {
-            sprintf(full_file_name,"Screen_Holladay_Shift%d_%dx%d.%s", S, width,
-                    height, output_extension);
-        } else {
-            sprintf(full_file_name,"Screen_Dithered_%dx%d.%s",width,height,
-                    output_extension);
-        }
-        fid = fopen(full_file_name,"wb");
-
-        if (output_format == OUTPUT_PPM)
-            fprintf(fid, "P5\n"
-                    "# Halftone threshold array, %s, [%d, %d], S=%d\n"
-                    "%d %d\n"
-                    "255\n",
-                    use_holladay_grid ? "Holladay_Shift" : "Dithered", width, height,
-                    S, width, height);
-        if (output_format != OUTPUT_PS) {
-            /* Both BIN and PPM format write the same binary data */
-            if (output_format == OUTPUT_RAW || output_format == OUTPUT_PPM) {
-                for (y = 0; y < height; y++) {
-                    for ( x = 0; x < width; x++ ) {
-                        data_short = (unsigned short) (*buff_ptr & 0xffff);
-                        data_short = ROUND((double) data_short * 255.0 / MAXVAL);
-                        if (data_short > 255) data_short = 255;
-                        data = (byte) (data_short & 0xff);
-                        fwrite(&data, sizeof(byte), 1, fid);
-                        buff_ptr++;
-                    }
-                }
-            } else {	/* raw16 data */
-                for (y = 0; y < height; y++) {
-                    for ( x = 0; x < width; x++ ) {
-                        data_short = (unsigned short) (*buff_ptr & 0xffff);
-                        fwrite(&data_short, sizeof(short), 1, fid);
-                        buff_ptr++;
-                    }
-                }
-            }
-        } else {	/* ps output format */
-            if (params.targ_quant <= 256) {
-                /* Output PS HalftoneType 3 dictionary */
-                fprintf(fid, "%%!PS\n"
-                        "<< /HalftoneType 3\n"
-                        "   /Width  %d\n"
-                        "   /Height %d\n"
-                        "   /Thresholds <\n",
-                        width, height);
-
-                for (y = 0; y < height; y++) {
-                    for ( x = 0; x < width; x++ ) {
-                        data_short = (unsigned short) (*buff_ptr & 0xffff);
-                        data_short = ROUND((double) data_short * 255.0 / MAXVAL);
-                        if (data_short > 255) data_short = 255;
-                        data = (byte) (data_short & 0xff);
-                        fprintf(fid, "%02x", data);
-                        buff_ptr++;
-                        if ((x & 0x1f) == 0x1f && (x != (width - 1)))
-                            fprintf(fid, "\n");
-                    }
-                    fprintf(fid, "\n");
-                }
-                fprintf(fid, "   >\n"
-                        ">>\n"
-                        );
-            } else {
-                /* Output PS HalftoneType 16 dictionary. Single array. */
-                fprintf(fid, "%%!PS\n"
-                        "%% Create a 'filter' from local hex data\n"
-                        "{ currentfile /ASCIIHexDecode filter /ReusableStreamDecode filter } exec\n");
-            /* hex data follows, 'file' object will be left on stack */
-                for (y = 0; y < height; y++) {
-                    for ( x = 0; x < width; x++ ) {
-                        data_short = (unsigned short) (*buff_ptr & 0xffff);
-                        fprintf(fid, "%04x", data_short);
-                        buff_ptr++;
-                        if ((x & 0xf) == 0x1f && (x != (width - 1)))
-                            fprintf(fid, "\n");
-                    }
-                    fprintf(fid, "\n");	/* end of one row */
-                }
-                fprintf(fid, ">\n");	/* ASCIIHexDecode EOF */
-                fprintf(fid,
-                        "<< /Thresholds 2 index    %% file object for the 16-bit data\n"
-                        "   /HalftoneType 16\n"
-                        "   /Width  %d\n"
-                        "   /Height %d\n"
-                        ">>\n"
-                        "exch pop     %% discard ResuableStreamDecode file leaving the Halftone dict.\n",
-                        width, height);
-            }
-        }
-        fclose(fid);
-    }
-}
-
-/* Initialize default values */
-void htsc_set_default_params(htsc_param_t *params)
-{
-    params->scr_ang = 0;
-    params->targ_scr_ang = 0;
-    params->targ_lpi = 75;
-    params->vert_dpi = 300;
-    params->horiz_dpi = 300;
-    params->targ_quant_spec = false;
-    params->targ_quant = 256;
-    params->targ_size = 1;
-    params->targ_size_spec = false;
-    params->spot_type = CIRCLE;
-    params->holladay = false;
-    params->output_format = OUTPUT_TOS;
+    FREE(final_mask->memory, thresholds);
 }
 
 /* Various spot functions */
-double htsc_spot_circle(double x, double y)
+static double
+htsc_spot_circle(double x, double y)
 {
     return 1.0 - (x*x + y*y);
 }
 
-double htsc_spot_redbook(double x, double y)
+static double
+htsc_spot_redbook(double x, double y)
 {
     return (180.0 * (double) cos(x) + 180.0 * (double) cos(y)) / 2.0;
 }
 
-double htsc_spot_inverted_round(double x, double y)
+static double
+htsc_spot_inverted_round(double x, double y)
 {
     return (x*x + y*y) - 1.0;
 }
 
-double htsc_spot_rhomboid(double x, double y)
+static double
+htsc_spot_rhomboid(double x, double y)
 {
     return 1.0 - ((double) fabs(y) * 0.8 + (double) fabs(x)) / 2.0;
 }
 
-double htsc_spot_linex(double x, double y)
+static double
+htsc_spot_linex(double x, double y)
 {
     return 1.0 - (double) fabs(y);
 }
 
-double htsc_spot_liney(double x, double y)
+static double
+htsc_spot_liney(double x, double y)
 {
     return 1.0 - (double) fabs(x);
 }
 
-double htsc_spot_diamond(double x, double y)
+static double
+htsc_spot_diamond(double x, double y)
 {
     double abs_y = (double) fabs(y);
     double abs_x = (double) fabs(x);
@@ -2023,7 +2116,8 @@ double htsc_spot_diamond(double x, double y)
     }
 }
 
-double htsc_spot_diamond2(double x, double y)
+static double
+htsc_spot_diamond2(double x, double y)
 {
     double xy = (double) fabs(x) + (double) fabs(y);
 
@@ -2034,7 +2128,8 @@ double htsc_spot_diamond2(double x, double y)
     }
 }
 
-double htsc_spot_roundspot(double x, double y)
+static double
+htsc_spot_roundspot(double x, double y)
 {
     double xy = (double)fabs(x) + (double)fabs(y);
 
@@ -2045,7 +2140,8 @@ double htsc_spot_roundspot(double x, double y)
     }
 }
 
-double htsc_spot_value(spottype_t spot_type, double x, double y)
+static double
+htsc_spot_value(spottype_t spot_type, double x, double y)
 {
     switch (spot_type) {
         case CIRCLE:
@@ -2075,9 +2171,10 @@ double htsc_spot_value(spottype_t spot_type, double x, double y)
 
 #if RAW_SCREEN_DUMP
 void
+static
 htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[])
 {
-    char full_file_name[50];
+    char full_file_name[FULL_FILE_NAME_LENGTH];
     FILE *fid;
     int x,y;
     int *buff_ptr = dig_grid->data;
@@ -2085,7 +2182,7 @@ htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[])
     int height = dig_grid->height;
     byte data[3];
 
-    sprintf(full_file_name,"Screen_%s_%dx%dx3.raw",filename,width,height);
+    snprintf(full_file_name, FULL_FILE_NAME_LENGTH, "Screen_%s_%dx%dx3.raw",filename,width,height);
     fid = fopen(full_file_name,"wb");
 
     for (y = 0; y < height; y++) {
@@ -2110,17 +2207,17 @@ htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[])
     fclose(fid);
 }
 
-void
+static void
 htsc_dump_float_image(float *image, int height, int width, float max_val,
                       char filename[])
 {
-    char full_file_name[50];
+    char full_file_name[FULL_FILE_NAME_LENGTH];
     FILE *fid;
     int x,y;
     int data;
     byte data_byte;
 
-    sprintf(full_file_name,"Float_%s_%dx%d.raw",filename,width,height);
+    snprintf(full_file_name, FULL_FILE_NAME_LENGTH, "Float_%s_%dx%d.raw",filename,width,height);
     fid = fopen(full_file_name,"wb");
     for (y = 0; y < height; y++) {
         for ( x = 0; x < width; x++ ) {
@@ -2134,17 +2231,17 @@ htsc_dump_float_image(float *image, int height, int width, float max_val,
     fclose(fid);
 }
 
-void
+static void
 htsc_dump_byte_image(byte *image, int height, int width, float max_val,
                       char filename[])
 {
-    char full_file_name[50];
+    char full_file_name[FULL_FILE_NAME_LENGTH];
     FILE *fid;
     int x,y;
     int data;
     byte data_byte;
 
-    sprintf(full_file_name,"ByteScaled_%s_%dx%d.raw",filename,width,height);
+    snprintf(full_file_name, FULL_FILE_NAME_LENGTH, "ByteScaled_%s_%dx%d.raw",filename,width,height);
     fid = fopen(full_file_name,"wb");
     for (y = 0; y < height; y++) {
         for ( x = 0; x < width; x++ ) {
