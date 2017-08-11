@@ -391,21 +391,18 @@ usage_exit:   return usage();
         printf("ERROR! grid size problem!\n");
         return -1;
     }
+
     /* Make a warning about large requested quantization levels with no -s set */
     if (params.targ_size == 1 && num_levels > 1) {
+        min_size = (int)ceil((double)params.targ_quant / N);
         printf("To achieve %d quantization levels with the desired lpi,\n", params.targ_quant);
-        /* Num_levels is effectively the number of small cells needed.  Note
-           this is a rough and crude calculation.  But it is sufficiently good
-           to give an approximation. */
-        min_size =
-            (int) sqrt((double) (super_cell.width * super_cell.height) *
-                                 num_levels);
         printf("it is necessary to specify a screen size (-s) of at least %d.\n", min_size);
         printf("Note that an even larger size may be needed to reduce pattern artifacts.\n");
         printf("Because no screen size was specified, the minimum possible\n");
         printf("size that can approximate the requested angle and lpi will be created\n");
-        printf("with %d quantization levels.\n", (int) N);
+        printf("with %d quantization levels.\n", (int)super_cell.height * super_cell.width);
     }
+
     /* Go ahead and fill up the super cell grid with our growth dot values */
     htsc_tile_supercell(&super_cell, &dot_grid, x, y, u, v, N);
 #if RAW_SCREEN_DUMP
