@@ -128,7 +128,8 @@ gs_image_class_2_fracs(gx_image_enum * penum)
         if ( (gs_color_space_get_index(penum->pcs) == gs_color_space_index_DeviceN &&
             penum->pcs->cmm_icc_profile_data == NULL) || penum->use_mask_color ||
             penum->bps != 16 || !std_cmap_procs ||
-            gs_color_space_get_index(penum->pcs) == gs_color_space_index_DevicePixel) {
+            gs_color_space_get_index(penum->pcs) == gs_color_space_index_DevicePixel ||
+            gs_color_space_get_index(penum->pcs) == gs_color_space_index_Indexed) {
             /* DevicePixel color space used in mask from 3x type.  Basically
                a simple color space that just is scaled to the device bit
                depth when remapped. No CM needed */
