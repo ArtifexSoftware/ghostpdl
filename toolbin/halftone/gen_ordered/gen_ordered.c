@@ -319,8 +319,10 @@ usage_exit:   return usage();
     dot_grid.data = NULL;
     super_cell.data = NULL;
     final_mask.data = NULL;
+
     /* Get the vector values that define the small cell shape */
     htsc_determine_cell_shape(&x, &y, &v, &u, &N, params);
+
     /* Figure out how many levels to dither across. */
     if (params.targ_quant_spec) {
         num_levels = ROUND((double) params.targ_quant / N);
@@ -417,6 +419,13 @@ usage_exit:   return usage();
             super_cell.width == dot_grid.width) || num_levels == 1) {
             htsc_create_nondithered_mask(super_cell, H, L, gamma, &final_mask);
         } else {
+            /* Dont allow nonsense settings */
+            if (num_levels * N > super_cell.height * super_cell.width) {
+                printf("Notice, %3.0lf quantization levels not possible with super cell of %d by %d\n", num_levels, super_cell.height, super_cell.width);
+                num_levels = ROUND((super_cell.height * super_cell.width) / N);
+                printf("Reducing dithering quantization to %3.0lf\n", num_levels);
+                printf("For an effective quantization of %d\n", super_cell.height * super_cell.width);
+            }
             htsc_create_dither_mask(super_cell, &final_mask, num_levels, y, x,
                                     params.vert_dpi, params.horiz_dpi, N, gamma,
                                     dot_grid, one_index);
@@ -1313,14 +1322,15 @@ htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
     screen_blur = (float*) malloc(sizeof(float) * num_cols * num_rows);
 
     for (j = 0; j < num_dots_add; j++) {
+
         /* Perform the blur */
         htsc_apply_filter(screen_matrix, num_cols, num_rows, filter, sizefiltx,
                   sizefilty, screen_blur, &max_val, &max_pos, &min_val, &min_pos);
+
         /* Find the closest OFF dot to the min position.  */
         white_pos = 0;
-        dist = (pos_y[0] - min_pos.y) * (pos_y[0] - min_pos.y) +
-               (pos_x[0] - min_pos.x) * (pos_x[0] - min_pos.x);
-        for ( k = 1; k < num_dots; k++) {
+        dist = (num_cols) * (num_cols) + (num_rows) * (num_rows);
+        for (k = 0; k < num_dots; k++) {
             curr_dist = (pos_y[k] - min_pos.y) * (pos_y[k] - min_pos.y) +
                         (pos_x[k] - min_pos.x) * (pos_x[k] - min_pos.x);
             if (curr_dist < dist &&
@@ -1329,8 +1339,10 @@ htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
                 dist = curr_dist;
             }
         }
+
         /* Set this dot to white */
         screen_matrix[pos_x[white_pos] + num_cols * pos_y[white_pos]] = 1;
+
         /* Update position information */
         curr_position = dot_level_position[level_num];
         curr_position.point[j].x = pos_x[white_pos];
@@ -1487,6 +1499,7 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
         locate = (int*) malloc(sizeof(int) * curr_size);
         screen_matrix = (byte*) malloc(sizeof(byte) * number_points);
         memset(screen_matrix, 0, sizeof(byte) * number_points);
+
         /* Determine the number of dots in the screen and their index */
         for (j = 0; j < number_points; j++) {
             if (super_cell.data[j] == 1) {
@@ -1498,6 +1511,7 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
                 }
             }
         }
+
        /* Convert the 1-D locate positions to 2-D positions so that we can
           use a distance metric to the dot center locations. Also allocate
           the structure for our dot positioning information */
@@ -1505,14 +1519,17 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
         pos_y = (unsigned short*) malloc(sizeof(unsigned short) * num_dots);
         for (k = 0; k < num_dots; k++) {
             pos_x[k] = locate[k] % width_supercell;
-            pos_y[k] = (locate[k] - pos_x[k])/width_supercell;
+            pos_y[k] = (locate[k] - pos_x[k]) / width_supercell;
         }
+
+        /* Note that number of quantization levels is not tied to number of dots
+           in the macro screen.  */
         dot_level_pos =
             (htsc_dither_pos_t*) malloc(sizeof(htsc_dither_pos_t) * num_levels);
         dot_levels = (int*) malloc(sizeof(int) * num_levels);
-        percent = 1.0/((float)num_levels+1.0);
+        percent = 1.0 / ((float)num_levels + 1.0);
         prev_dot_level = 0;
-        for ( k = 0; k < num_levels; k++) {
+        for (k = 0; k < num_levels; k++) {
             perc_val = (k + 1) * percent;
             dot_levels[k] = ROUND(num_dots * perc_val);
             curr_num_dots = dot_levels[k] -prev_dot_level;
@@ -1522,13 +1539,14 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
                 (htsc_point_t*) malloc(sizeof(htsc_point_t) * curr_num_dots);
             dot_level_pos[k].number_points = curr_num_dots;
         }
+
         /* An initial random location for the first level  */
         dots_needed = dot_levels[0];
         count = 0;
         if (dots_needed > 0) {
             done = 0;
             while (!done) {
-                rand_pos = ROUND((num_dots-1)*(double) rand()/ (double) RAND_MAX);
+                rand_pos = ROUND((num_dots-1) * (double) rand() / (double) RAND_MAX);
                 if (screen_matrix[locate[rand_pos]] != 1) {
                     screen_matrix[locate[rand_pos]] = 1;
                     dot_level_pos->locations[count] = locate[rand_pos];
@@ -1542,12 +1560,14 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
                 }
             }
         }
-        /* Rearrange these dots into a pleasing pattern */
 #if RAW_SCREEN_DUMP
         htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
                              1, "screen0_init");
 #endif
-        code = htsc_init_dot_position(screen_matrix, width_supercell,
+        /* Rearrange these dots into a pleasing pattern, but only if there is
+        * more than 1.  Otherwise there are none to move */
+        if (dot_levels[0] > 1)
+            code = htsc_init_dot_position(screen_matrix, width_supercell,
                                height_supercell, horiz_dpi, vert_dpi, lpi_act,
                                pos_x, pos_y, num_dots, dot_level_pos);
 #if RAW_SCREEN_DUMP
@@ -1562,13 +1582,22 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
                           dot_level_pos[k].number_points);
 #if RAW_SCREEN_DUMP
             {
-            char str_name[30];
-            sprintf(str_name,"screen%d_arrange",k);
-            htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
-                                 1, str_name);
+                char str_name[30];
+                sprintf(str_name,"screen%d_arrange",k);
+                htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
+                                     1, str_name);
             }
 #endif
         }
+
+        printf("\n--Dot Positions--\n");
+        for (k = 0; k < num_levels; k++) {
+            printf("dot_level_pos %d: number_points = %d\n", k, dot_level_pos[k].number_points);
+            for (j = 0; j < dot_level_pos[k].number_points; j++) {
+                printf("\tpoint: %d: locations = %d x = %3.2lf y = %3.2lf\n", j, dot_level_pos[k].locations[j], dot_level_pos[k].point[j].x, dot_level_pos[k].point[j].y);
+            }
+        }
+
         /* Create the threshold mask. */
         step_size = (MAXVAL + 1.0) / (double) N;
         thresholds = (int*) malloc(sizeof(int) * N);
@@ -1585,6 +1614,7 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
                 thresholds[k] = ROUND(temp_dbl * MAXVAL);
             }
         }
+
         /* Now use the indices from the large screen to look up the mask and
            apply the offset to the threshold values to dither the rate at which
            the dots turn on */
@@ -1593,6 +1623,7 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
         final_mask->width = width_supercell;
         final_mask->data =
             (int*) malloc(sizeof(int) * height_supercell * width_supercell);
+
         /* We need to associate the locate index with a particular level
            for the when the dot begins to turn on.  Go through the dot_level_pos
            array to get the values.  Probably should create this earlier and avoid
@@ -1624,13 +1655,16 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
                 for (k = 0; k < dot_grid.width; k++) {
                     val = htsc_getpoint(&dot_grid, k, j);
                     if (val != 0) {
+
                         /* Assign a offset threshold values */
                         j_index =
                             (pos_y[h] + j - (int) dot_grid_one_index.y) % height_supercell;
+
                         /* In case we have modulo of a negative number */
                         if (j_index < 0) j_index = j_index + height_supercell;
                         k_index =
                             (pos_x[h] + k - (int) dot_grid_one_index.x) % width_supercell;
+
                         /* In case we have modulo of a negative number */
                         if (k_index < 0) k_index = k_index + width_supercell;
                         threshold_value = thresholds[val-1] +
@@ -1737,7 +1771,8 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
     free(thresholds);
 }
 
-int compare(const void * a, const void * b)
+int
+compare(const void * a, const void * b)
 {
     const htsc_threshpoint_t *val_a = a;
     const htsc_threshpoint_t *val_b = b;
@@ -1766,6 +1801,7 @@ htsc_save_tos(htsc_dig_grid_t final_mask, htsc_vector_t center)
 
     fid = fopen("turn_on_seq.out","w");
     fprintf(fid,"# W=%d H=%d\n",width, height);
+
     /* Do a sort on the values and then output the coordinates */
     /* First get a list made with the unsorted values and coordinates */
     values =
@@ -1899,7 +1935,7 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                 fprintf(fid, "%%!PS\n"
                         "%% Create a 'filter' from local hex data\n"
                         "{ currentfile /ASCIIHexDecode filter /ReusableStreamDecode filter } exec\n");
-        	/* hex data follows, 'file' object will be left on stack */
+            /* hex data follows, 'file' object will be left on stack */
                 for (y = 0; y < height; y++) {
                     for ( x = 0; x < width; x++ ) {
                         data_short = (unsigned short) (*buff_ptr & 0xffff);
