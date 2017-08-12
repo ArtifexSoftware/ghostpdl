@@ -18,6 +18,20 @@
 #       GLSRCDIR - the source directory
 #       GLGENDIR - the directory for source files generated during building
 #       GLOBJDIR - the object code directory
+#       DEVSRCDIR - source directory for the device drivers
+#       AUXDIR - the directory to build the "aux" (host executable) files
+#       JSRCDIR - JPEG library source directory
+#       JGENDIR - JPEG library object code directory
+#       ZSRCDIR - zlib source directory
+#       ZGENDIR - zlib object code directory
+#       LCMSGENDIR - Little CMS object code directory
+#       GENORDERED_SRCDIR - source for gen_ordered.[ch]
+# One of:
+#       LCMSSRCDIR - Little CMS source directory
+#       LCMS2SRCDIR - Little CMS verion 2 source directory
+#
+# For dependencies:
+#       MAKEDIRS
 
 GLSRC=$(GLSRCDIR)$(D)
 GLGEN=$(GLGENDIR)$(D)
@@ -1364,7 +1378,7 @@ LIB3s=$(GLOBJ)gscedata.$(OBJ) $(GLOBJ)gscencs.$(OBJ) $(GLOBJ)gschar.$(OBJ) $(GLO
 LIB4s=$(GLOBJ)gscoord.$(OBJ) $(GLOBJ)gscparam.$(OBJ) $(GLOBJ)gscspace.$(OBJ)  $(GLOBJ)gscicach.$(OBJ) $(GLOBJ)gsovrc.$(OBJ) $(GLOBJ)gxoprect.$(OBJ)
 LIB5s=$(GLOBJ)gsdevice.$(OBJ) $(GLOBJ)gsdevmem.$(OBJ) $(GLOBJ)gsdparam.$(OBJ) $(GLOBJ)gsdfilt.$(OBJ)
 LIB6s=$(GLOBJ)gsfname.$(OBJ) $(GLOBJ)gsfont.$(OBJ) $(GLOBJ)gsgdata.$(OBJ) $(GLOBJ)gsgcache.$(OBJ)
-LIB7s=$(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ)
+LIB7s=$(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ) $(GLOBJ)gen_ordered.$(OBJ)
 LIB8s=$(GLOBJ)gsimage.$(OBJ) $(GLOBJ)gsimpath.$(OBJ) $(GLOBJ)gsinit.$(OBJ)
 LIB9s=$(GLOBJ)gsiodev.$(OBJ) $(GLOBJ)gsgstate.$(OBJ) $(GLOBJ)gsline.$(OBJ)
 LIB10s=$(GLOBJ)gsmalloc.$(OBJ) $(GLOBJ)memento.$(OBJ) $(GLOBJ)bobbin.$(OBJ) $(GLOBJ)gsmatrix.$(OBJ)
@@ -3194,6 +3208,11 @@ $(GLD)shadelib.dev : $(LIB_MAK) $(ECHOGS_XE) $(shadelib_)\
 	$(SETMOD) $(GLD)shadelib $(shadelib_1)
 	$(ADDMOD) $(GLD)shadelib -obj $(shadelib_2)
 	$(ADDMOD) $(GLD)shadelib -include $(GLD)funclib $(GLD)patlib
+
+$(GLOBJ)gen_ordered.$(OBJ) : $(GENORDERED_SRCDIR)$(D)gen_ordered.c $(GENORDERED_SRCDIR)$(D)gen_ordered.h\
+ $(std_h) $(gsmemory_h)  $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gen_ordered.$(OBJ) $(C_) $(II)$(GENORDERED_SRCDIR) $(D_)GS_LIB_BUILD$(_D) \
+        $(GENORDERED_SRCDIR)$(D)gen_ordered.c
 
 # ---------------- Support for %rom% IODevice ----------------- #
 # This is used to access compressed, compiled-in support files

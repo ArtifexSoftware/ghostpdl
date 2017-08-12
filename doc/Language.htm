@@ -822,6 +822,32 @@ accumulating shared object data and to reduce the incidence of garbage
 collection as a performance improvement. Additional settings may be added in the future.
 </dl>
 
+<dl>
+<dt><a name=".genordered"></a>
+<code>&lt;dict&gt; .genordered &lt;dict&gt;</code></dt>
+<dd>This operator creates an ordered dither screening pattern with the parameters from the dictionary, returning a PostScript HalftoneType 3 (threshold array based) dictionary suitable for use with  <code>sethalftone</code> or as a component Halftone of a <code>HalftoneType 5</code> Halftone dictionary.
+<p>
+<code>&lt;dict&gt;</code> has the following keys (all are optional):
+<dl>
+<dt><code>/Frequency</code>
+<dd>Integer; default value = 75
+<dt><code>/Angle</code>
+<dd>Integer; default value = 0
+<dt><code>/HResolution</code>
+<dd>Real or Integer; default value is device X resolution.
+<dt><code>/VResolution</code>
+<dd>Real or Integer; default value is device Y resolution.
+<dt><code>/DotShape</code>
+<dd>Integer; default value = 0 (CIRCLE). Other shapes available are:
+<dd>    1=REDBOOK, 2=INVERTED, 3=RHOMBOID, 4=LINE_X, 5=LINE_Y, 6=DIAMOND1, 7=DIAMOND2, 8=ROUNDSPOT,
+<dt><code>/SuperCellSize</code>
+<dd>Integer; default value = 1 -- actual cell size determined by Frequency, Angle, H/V Resolution.
+<dd>A larger value will allow more levels to be attained.
+<dt><code>/Levels</code>
+<dd>Integer; default value = 1 -- actual number of gray levels is determined by Frequency and H/V Resolution.
+<dd>SuperCellSize may need to be specified large enough to achieve the requested number of gray levels.
+</dl>
+</dl>
 
 <h4><a name="Device"></a>Device operators</h4>
 

@@ -15,33 +15,6 @@
 
 /* Defines and exports for library (e.g., Ghostscript) use of gen_ordered.c */
 
-typedef int bool;
-
-#ifndef stdio__INCLUDED
-#  if defined(_MSC_VER) && _MSC_VER>=1900 /* VS 2014 and later have (finally) snprintf */
-#    define STDC99
-#  else
-#  include <stdarg.h>
-     /* Microsoft Visual C++ 2005  doesn't properly define snprintf,
-        which is defined in the C standard ISO/IEC 9899:1999 (E) */
-
-     int snprintf(char *buffer, size_t count, const char *format, ...)
-     {
-         if (count > 0) {
-             va_list args;
-             int n;
-
-             va_start(args, format);
-             n = _vsnprintf(buffer, count, format, args);
-             buffer[count - 1] = 0;
-             va_end(args);
-             return n;
-         } else
-             return 0;
-     }
-#  endif	/* _MSC_VER */
-#endif /* stdio__INCLUDED */
-
 typedef enum {
     CIRCLE = 0,
     REDBOOK,
@@ -77,6 +50,7 @@ typedef struct htsc_param_s {
     bool holladay;
     double gamma;
     output_format_type output_format;
+    int verbose;
 } htsc_param_t;
 
 typedef struct htsc_vector_s {

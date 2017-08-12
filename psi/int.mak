@@ -84,6 +84,7 @@ store_h=$(PSSRC)store.h $(ialloc_h) $(idosave_h)
 iplugin_h=$(PSSRC)iplugin.h
 ifapi_h=$(PSSRC)ifapi.h $(iplugin_h) $(gstypes_h) $(gsmatrix_h) $(gp_h) $(memory__h)
 zht2_h=$(PSSRC)zht2.h $(gscspace_h)
+gen_ordered_h=$(GENORDERED_SRCDIR)$(D)gen_ordered.h
 zchar42_h=$(PSSRC)zchar42.h
 zfunc_h=$(PSSRC)zfunc.h
 
@@ -1073,10 +1074,10 @@ $(PSOBJ)zcsindex.$(OBJ) : $(PSSRC)zcsindex.c $(OP) $(memory__h)\
 	$(PSCC) $(PSO_)zcsindex.$(OBJ) $(C_) $(PSSRC)zcsindex.c
 
 $(PSOBJ)zht2.$(OBJ) : $(PSSRC)zht2.c $(OP)\
- $(gsstruct_h) $(gxdevice_h) $(gzht_h)\
+ $(gsstruct_h) $(gxdevice_h) $(gzht_h) $(gen_ordered_h)\
  $(estack_h) $(ialloc_h) $(icolor_h) $(iddict_h) $(idparam_h) $(igstate_h)\
- $(iht_h) $(store_h) $(iname) $(zht2_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zht2.$(OBJ) $(C_) $(PSSRC)zht2.c
+ $(iht_h) $(store_h) $(iname_h) $(zht2_h) $(gxgstate_h) $(INT_MAK) $(MAKEDIRS)
+	$(PSCC) $(PSO_)zht2.$(OBJ) $(II)$(GENORDERED_SRCDIR) $(C_) $(PSSRC)zht2.c
 
 $(PSOBJ)zimage2.$(OBJ) : $(PSSRC)zimage2.c $(OP) $(math__h) $(memory__h)\
  $(gscolor_h) $(gscolor2_h) $(gscspace_h) $(gsimage_h) $(gsmatrix_h)\

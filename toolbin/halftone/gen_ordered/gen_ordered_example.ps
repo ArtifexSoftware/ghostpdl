@@ -1,0 +1,35 @@
+%!PS
+
+% Example for using .gen_ordered to make a Type 3 Halftone (threshold) array
+% Note the default HResolution and VResolution are the device resolution.
+
+% If the DITHERLPI is defined, it will determine the Lines-per-inch of the
+% screen (Frequency), and if DITHERANGLE is defined, it will be used as
+% the Angle for the screen. Otherwise, the LPI and ANGLE of the currentscreen
+% will be used as the default.
+
+% Refer to doc/Language.htm for description of the .genordered parameters
+% and the defaults.
+
+mark	% for .dicttomark
+   /Frequency /DITHERLPI where
+      { pop DITHERLPI }
+      { currentscreen pop pop }
+      ifelse
+   /Angle /DITHERANGLE where
+      { pop DITHERANGLE }
+      { currentscreen pop exch pop }
+      ifelse
+   /DotShape 8
+.dicttomark
+.genordered
+
+% Now set it as the default
+/Default exch /Halftone defineresource sethalftone
+
+% The following are used to make sure that 0.5 yeilds 50% black and that
+% a shaded (gradient) ramp has 255 steps (even if the halftone doesn't
+% have that many levels.
+mark /UseFastColor true currentdevice putdeviceprops
+{ } settransfer
+0.003 setsmoothness

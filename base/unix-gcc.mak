@@ -305,6 +305,8 @@ LCMS2_CFLAGS=-DSHARE_LCMS=$(SHARE_LCMS) -DCMS_USE_BIG_ENDIAN=0
 # Options are currently lcms or lcms2
 WHICH_CMS=lcms2
 
+# Define the directory where the gen_ordered source is stored.
+GENORDERED_SRCDIR=./toolbin/halftone/gen_ordered
 
 EXPATSRCDIR=./expat
 EXPAT_CFLAGS=-DHAVE_MEMMOVE

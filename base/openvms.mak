@@ -144,6 +144,9 @@ LCMS2SRCDIR=[.lcms2]
 
 WHICH_CMS=lcms2
 
+# Define the directory where the gen_ordered source is stored.
+GENORDERED_SRCDIR=.toolbin.halftone.gen_ordered
+
 # IJS has not been ported to OpenVMS. If you do the port,
 # you'll need to set these values. You'll also need to
 # include the ijs.mak makefile

@@ -30,6 +30,8 @@
 #include "store.h"
 #include "iname.h"
 #include "zht2.h"
+#include "gxgstate.h"
+#include "gen_ordered.h"
 
 /* Forward references */
 static int dict_spot_params(const ref *, gs_spot_halftone *, ref *, ref *,
@@ -367,6 +369,156 @@ zsethalftone5(i_ctx_t *i_ctx_p)
     return (ref_stack_count(&e_stack) > edepth ? o_push_estack : 0);
 }
 
+/* <dict> .genordered <string> */
+/*         array will have: width height turn_on_sequence.x turn_on_sequence.y ...	*/
+/*         total array length is 2 + (2 * width * height)				*/
+static int
+zgen_ordered(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code = 0;
+    gs_memory_t *mem;
+    int space_index;
+    htsc_param_t params;
+    int S;
+    htsc_dig_grid_t final_mask;
+    float tmp_float;
+    gs_gstate *pgs = igs;
+    gx_device *currdevice = pgs->device;
+
+    if (ref_stack_count(&o_stack) < 1)
+        return_error(gs_error_stackunderflow);
+    check_type(*op, t_dictionary);
+
+    space_index = r_space_index(op);		/* used to construct array that is returned */
+    mem = (gs_memory_t *) idmemory->spaces_indexed[space_index];
+
+    check_type(*op, t_dictionary);
+    check_dict_read(*op);
+
+    htsc_set_default_params(&params);
+    /* Modify the default HResolution and VResolution to be the device HWResolution */
+    params.horiz_dpi = currdevice->HWResolution[0];
+    params.vert_dpi = currdevice->HWResolution[1];
+    final_mask.memory = mem->non_gc_memory;
+    final_mask.data = NULL;
+
+    if ((code = dict_int_param(op, "Angle", 0, 360, 0, &params.targ_scr_ang)) < 0)
+        return gs_error_undefined;
+    if ((code = dict_int_param(op, "Frequency", 1, 0x7fff, 75, &params.targ_lpi)) < 0)
+        return gs_error_undefined;
+    if ((code = dict_float_param(op, "HResolution", 300., &tmp_float)) < 0)
+        return gs_error_undefined;
+    if (code == 0)
+        params.horiz_dpi = tmp_float;
+    if ((code = dict_float_param(op, "VResolution", 300., &tmp_float)) < 0)
+        return gs_error_undefined;
+    if (code == 0)
+        params.vert_dpi = tmp_float;
+    if ((code = dict_int_param(op, "Levels", 1, 0x7fff, 256, &params.targ_quant)) < 0)
+        return gs_error_undefined;
+    if (code == 0)
+        params.targ_quant_spec = true;
+    if ((code = dict_int_param(op, "SuperCellSize", 1, 0x7fff, 1, &params.targ_size)) < 0)
+        return gs_error_undefined;
+    if (code == 0)
+        params.targ_size_spec = true;
+    if ((code = dict_int_param(op, "DotShape", 0, CUSTOM - 1, 0, (int *)(&params.spot_type))) < 0)
+        return gs_error_undefined;
+    if ((code = dict_bool_param(op, "Holladay", false, &params.holladay)) < 0)
+        return gs_error_undefined;
+
+    params.output_format = OUTPUT_TOS;		/* we want this format */
+    code = htsc_gen_ordered(params, &S, &final_mask);
+
+    if (code < 0)
+        goto done;
+
+#ifdef RETURN_TOS_ARRAY
+    /* Now return the mask info in an array [ width height turn_on.x turn_on.y ... ] */
+    code = ialloc_ref_array((ref *)op, a_all, 2 + (2 * final_mask.width * final_mask.height), "gen_ordered");
+    if (code < 0)
+        goto done;
+    make_int(&(op->value.refs[0]), final_mask.width);
+    make_int(&(op->value.refs[1]), final_mask.height);
+    for (i=0; i < 2 * final_mask.width * final_mask.height; i++)
+        make_int(&(op->value.refs[i+2]), final_mask.data[i]);
+#else
+    /* Return a threshold array string first two bytes are width (high byte first),
+     * next two bytes are height, followed by the threshold array (one byte per cell)
+     * PostScript can easily form a Type 3 Halftone Thresholds string from this
+     * using "getinterval".
+     */
+    {
+        /* Make a threshold array from the turn_on_sequence */
+        int level;
+        int cur_pix = 0;
+        double end_value, cur_value = 0.0;
+        int width = final_mask.width;
+        int num_pix = width * final_mask.height;
+        double delta_value = 1.0 / (double)(num_pix);
+        byte *thresh = ialloc_string(4 + num_pix, "gen_ordered");
+        ref rval, thresh_ref;
+
+        if (thresh == 0) {
+            code = gs_error_VMerror;
+            goto done;
+        }
+
+        *thresh++ = width >> 8;
+        *thresh++ = width & 0xff;
+        *thresh++ = final_mask.height >> 8;
+        *thresh++ = final_mask.height & 0xff;
+
+        /* The following is adapted from thresh_remap with the default linear map */
+        for (level=0; level<256; level++) {
+            end_value = (float)(1+level) / 256.;
+            if (end_value > 256.0)
+                end_value = 256.0;		/* clamp in case of rounding errors */
+            while (end_value - cur_value > 0.00001) {
+                thresh[final_mask.data[2*cur_pix] + (width*final_mask.data[2*cur_pix+1])] = 255 - level;
+                cur_pix++;
+                if (cur_pix >= num_pix)
+                    break;
+                cur_value += delta_value;
+            }
+            if (cur_pix >= num_pix)
+                break;
+        }
+        /* now fill any remaining cells */
+        for (; cur_pix < num_pix; cur_pix++) {
+            thresh[final_mask.data[2 * cur_pix] + (width*final_mask.data[2 * cur_pix + 1])] = 0;
+        }
+        make_string(&thresh_ref, a_all | icurrent_space, 4 + num_pix, thresh);
+#   ifdef RETURN_THRESH_STRING
+        op = thresh_ref;
+#   else	/* The current default, and probably the most useful for PS users */
+        /* Return a HalftoneType 3 dictionary */
+        code = dict_create(4, op);
+        if (code < 0)
+            goto done;
+        if ((code = idict_put_string(op, "Thresholds", &thresh_ref)) < 0)
+            goto done;
+        make_int(&rval, final_mask.width);
+        if ((code = idict_put_string(op, "Width", &rval)) < 0)
+            goto done;
+        make_int(&rval, final_mask.height);
+        if ((code = idict_put_string(op, "Height", &rval)) < 0)
+            goto done;
+        make_int(&rval, 3);
+        if ((code = idict_put_string(op, "HalftoneType", &rval)) < 0)
+            goto done;
+#   endif /* RETURN_THRESH_STRING */
+    }
+#endif /* RETURN_TOS_ARRAY */
+
+done:
+    if (final_mask.data != NULL)
+        gs_free_object(mem->non_gc_memory, final_mask.data, ".genordered");
+
+    return (code < 0 ? gs_error_undefined : 0);
+}
+
 /* Install the halftone after sampling. */
 static int
 sethalftone_finish(i_ctx_t *i_ctx_p)
@@ -404,6 +556,7 @@ const op_def zht2_l2_op_defs[] =
 {
     op_def_begin_level2(),
     {"2.sethalftone5", zsethalftone5},
+    {"1.genordered", zgen_ordered},
                 /* Internal operators */
     {"0%sethalftone_finish", sethalftone_finish},
     op_def_end(0)

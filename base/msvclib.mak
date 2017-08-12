@@ -199,6 +199,11 @@ LCMSSRCDIR=lcms
 LCMS2SRCDIR=lcms2
 !endif
 
+# Define the directory where the gen_ordered source is stored.
+!ifndef GENORDERED_SRCDIR
+GENORDERED_SRCDIR=toolbin\halftone\gen_ordered
+!endif
+
 # Define any other compilation flags.
 
 !ifndef CFLAGS

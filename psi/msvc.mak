@@ -672,6 +672,11 @@ LCMSSRCDIR=lcms
 LCMS2SRCDIR=lcms2
 !endif
 
+# Define the directory where the gen_ordered source is stored.
+!ifndef GENORDERED_SRCDIR
+GENORDERED_SRCDIR=toolbin\halftone\gen_ordered
+!endif
+
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
@@ -789,6 +794,7 @@ WARNOPT=-W2
 # The following is a hack to get around the special treatment of \ at
 # the end of a line.
 NUL=
+D_=-D
 DD=$(GLGENDIR)\$(NUL)
 GLD=$(GLGENDIR)\$(NUL)
 PSD=$(PSGENDIR)\$(NUL)
