@@ -1268,21 +1268,6 @@ s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
     memcpy(ss->Decode, Decode, ss->depth * sizeof(Decode[0]) * 2);
 }
 
-void
-s_new_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
-                               const gs_color_space *pcs, const gs_gstate *pgs,
-                               float *Decode)
-{
-    ss->output_depth = pdev->color_info.num_components;
-    ss->output_component_index = ss->output_depth;
-    ss->output_bits_per_sample = pdev->color_info.comp_bits[0]; /* Same precision for all components. */
-    ss->convert_color = s_image_colors_convert_to_device_color;
-    ss->pdev = pdev;
-    ss->pcs = pcs;
-    ss->pgs = pgs;
-    memcpy(ss->Decode, Decode, ss->depth * sizeof(Decode[0]) * 2);
-}
-
 /* Process a buffer. */
 static int
 s_image_colors_process(stream_state * st, stream_cursor_read * pr,

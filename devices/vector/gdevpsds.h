@@ -238,10 +238,6 @@ void s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *p
                                const gs_color_space *pcs, const gs_gstate *pgs,
                                float *Decode);
 
-void s_new_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
-                               const gs_color_space *pcs, const gs_gstate *pgs,
-                               float *Decode);
-
 extern const stream_template s__image_colors_template;
 
 #endif /* gdevpsds_INCLUDED */
