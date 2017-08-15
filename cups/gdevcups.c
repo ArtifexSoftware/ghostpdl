@@ -3256,10 +3256,6 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     cups->header.LeadingEdge = (cups_edge_t)intval;
   }
 
- #ifdef GX_COLOR_INDEX_TYPE
-  /*
-   * Support cupsPreferredBitsPerColor - basically, allows you to
-
 #ifdef GX_COLOR_INDEX_TYPE
  /*
   * Support cupsPreferredBitsPerColor - basically, allows you to
