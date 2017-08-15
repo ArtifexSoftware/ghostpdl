@@ -676,7 +676,12 @@ read_deltarow_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
 static int
 read_bitmap(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par)
 {
-    benum->compress_type = par->pv[2]->value.i;
+    /* Changing compression within an image is unimplemented */
+    /* but for now we return an error. */
+    if ((benum->compress_type != par->pv[2]->value.i) && (par->pv[2]->value.i != eNoCompression))
+        return_error(errorIllegalAttributeValue);
+    else
+        benum->compress_type = par->pv[2]->value.i;
     switch (benum->compress_type) {
         case eRLECompression:
             return read_rle_bitmap_data(benum, pdata, par);
@@ -873,6 +878,7 @@ pxReadImage(px_args_t * par, px_state_t * pxs)
         return pxNeedData;
     if (!pxenum->enum_started) {
         bool is_jpeg = par->pv[2]->value.i == eJPEGCompression;
+        pxenum->benum.compress_type = par->pv[2]->value.i;
         code = px_begin_image(pxs, is_jpeg, par);
         if (code < 0 || code == pxNeedData)
             return code;
@@ -1038,6 +1044,9 @@ pxReadRastPattern(px_args_t * par, px_state_t * pxs)
     /* emulate hp bug */
     {
         pxeCompressMode_t c = par->pv[2]->value.i;
+
+        if (!pxenum->benum.initialized)
+            pxenum->benum.compress_type = c;
 
         if (c == eDeltaRowCompression || c == eJPEGCompression)
             input_per_row = pxenum->benum.data_per_row;
