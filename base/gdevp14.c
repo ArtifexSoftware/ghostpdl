@@ -8648,16 +8648,16 @@ pdf14_increment_smask_color(gs_gstate * pgs, gx_device * dev)
         result->profiles = gsicc_new_iccsmask(pdev->memory);
         if (result->profiles == NULL ) return(-1);
         pdev->smaskcolor = result;
-        /* Theoretically there should not be any reason to change ref counts
-            on the profiles for a well-formed PDF with clean soft mask groups.
-           The only issue could be if the graphic state is popped while we
-           are still within a softmask group. */
+
         result->profiles->smask_gray = pgs->icc_manager->default_gray;
         result->profiles->smask_rgb = pgs->icc_manager->default_rgb;
         result->profiles->smask_cmyk = pgs->icc_manager->default_cmyk;
         pgs->icc_manager->default_gray = smask_profiles->smask_gray;
+        rc_increment(pgs->icc_manager->default_gray);
         pgs->icc_manager->default_rgb = smask_profiles->smask_rgb;
+        rc_increment(pgs->icc_manager->default_rgb);
         pgs->icc_manager->default_cmyk = smask_profiles->smask_cmyk;
+        rc_increment(pgs->icc_manager->default_cmyk);
         pgs->icc_manager->smask_profiles->swapped = true;
         if_debug0m(gs_debug_flag_icc, pgs->memory,
                    "[icc] Initial creation of smask color. Ref count 1\n");
@@ -8760,8 +8760,11 @@ pdf14_decrement_smask_color(gs_gstate * pgs, gx_device * dev)
                 }
             }
 
+            rc_decrement(icc_manager->default_gray, "pdf14_decrement_smask_color");
             icc_manager->default_gray = smaskcolor->profiles->smask_gray;
+            rc_decrement(icc_manager->default_rgb, "pdf14_decrement_smask_color");
             icc_manager->default_rgb = smaskcolor->profiles->smask_rgb;
+            rc_decrement(icc_manager->default_cmyk, "pdf14_decrement_smask_color");
             icc_manager->default_cmyk = smaskcolor->profiles->smask_cmyk;
             icc_manager->smask_profiles->swapped = false;
             /* We didn't increment the reference count when we assigned these
@@ -8782,9 +8785,9 @@ pdf14_free_smask_color(pdf14_device * pdev)
 {
     if (pdev->smaskcolor != NULL) {
         if ( pdev->smaskcolor->profiles != NULL) {
-            /* Do not decrement the softmask enties.  They will remain
-               in the icc_manager softmask member.  They were not
-               incremented when moved here */
+            /* Do not decrement the profiles - the references were moved
+               here and moved back again, so the ref counts don't change
+             */
             gs_free_object(pdev->memory, pdev->smaskcolor->profiles,
                         "pdf14_free_smask_color");
         }
