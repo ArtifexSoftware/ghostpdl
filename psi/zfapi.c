@@ -1245,7 +1245,10 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
                     glyph_length = -1;
                 }
                 else if (pfont42->data.len_glyphs) {
-                    glyph_length = pfont42->data.len_glyphs[char_code];
+                    if (char_code <= pfont42->data.numGlyphs)
+                        glyph_length = pfont42->data.len_glyphs[char_code];
+                    else
+                        glyph_length = -1;
                 }
                 else {
                     ulong noffs;
