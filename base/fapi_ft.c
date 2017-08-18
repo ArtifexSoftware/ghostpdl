@@ -112,6 +112,15 @@ typedef struct FT_IncrementalRec_
     gs_fapi_metrics_type metrics_type;  /* determines whether metrics are replaced, added, etc. */
 } FT_IncrementalRec;
 
+
+static void
+delete_inc_int(gs_fapi_server * a_server,
+               FT_Incremental_InterfaceRec * a_inc_int);
+
+static void
+delete_inc_int_info(gs_fapi_server * a_server,
+                    FT_IncrementalRec * a_inc_int_info);
+
 FT_CALLBACK_DEF(void *)
 FF_alloc(FT_Memory memory, long size)
 {
@@ -293,6 +302,8 @@ delete_face(gs_fapi_server * a_server, ff_face * a_face)
             }
             a_info->glyph_data = NULL;
             a_info->glyph_data_length = 0;
+            delete_inc_int(a_server, a_face->ft_inc_int);
+            a_face->ft_inc_int = NULL;
         }
         FT_Done_Face(a_face->ft_face);
 
@@ -491,7 +502,7 @@ new_inc_int(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font)
 }
 
 static void
-delete_inc_int(gs_fapi_server * a_server,
+delete_inc_int(gs_fapi_server * a_server,
                FT_Incremental_InterfaceRec * a_inc_int)
 {
     ff_server *s = (ff_server *) a_server;

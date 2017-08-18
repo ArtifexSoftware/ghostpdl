@@ -469,6 +469,12 @@ gs_fapi_prepare_font(gs_font *pfont, gs_fapi_server *I, int subfont, const char 
                                                            BBox_temp, units_temp))) < 0) {
                 break;
             }
+            code = gs_notify_register(&pbfont1->notify_list, notify_remove_font, pbfont1);
+            if (code < 0) {
+                emprintf(mem,
+                         "Ignoring gs_notify_register() failure for FAPI font.....");
+                code = 0;
+            }
         }
         if (i == n) {
             code =
