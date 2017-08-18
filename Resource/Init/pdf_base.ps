@@ -858,12 +858,13 @@ currentdict /no_debug_dict undef
 
    dup type /dicttype eq  % For dictionaries only
    {
-     dup /Type .knownget  % make sure the dictionary has a type
+     dup /Type known  % make sure the dictionary has a type
      {
-       dup /Font eq exch /FontDescriptor eq or          % and ensure its a Font or FontDescriptor
-       {dup 3 -1 roll /.gs.pdfobj# exch put}
-       {exch pop}
-       ifelse
+       %% We must not add to *all* dictionaries, because some of them are handled by
+       %% executing all the key/value pairs, and adding a integer causes problems
+       %% Since we only use this number for font identification, or checking self-references,
+       %% we only need it for dictionaries with a Type, and these are always handled more carefully.
+       dup 3 -1 roll /.gs.pdfobj# exch put
      }
      {exch pop}
      ifelse

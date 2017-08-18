@@ -1617,10 +1617,32 @@ currentdict /xref-char-dict undef
  {
    2 copy knownoget
     { exch pop exch pop //true }
-    { exch /Parent knownoget
-      { exch pget }
+    {
+      %% Check to see if there's a Parent
+      1 index
+      3 1 roll
+      exch /Parent knownoget
+      {
+        %% If there is a Parent, check to see if this dictionary has a stored object number
+        3 -1 roll /.gs.pdfobj# .knownget {
+          %% if it does, check the Parent as wwell
+          1 index /.gs.pdfobj# .knownget {
+            %% Both have object numbers, are they the same (ie its self-referencing)
+            eq {
+              pop pop
+              //false
+            }{
+              exch pget
+            }ifelse
+          }{
+            pop exch pget
+          }ifelse
+        } {
+          exch pget
+        }ifelse
+      }
         % finally see if the key is (misplaced) in the Root Catalog dict
-      { dup Trailer /Root oget exch knownoget dup {
+      { exch pop dup Trailer /Root oget exch knownoget dup {
           3 -1 roll (   **** Error:  The /) pdfformaterror 50 string cvs pdfformaterror
           ( key is missing from the Page tree.\n) pdfformaterror
           (                Output may be incorrect.\n) pdfformaterror
@@ -2629,7 +2651,22 @@ currentdict /PDF2PS_matrix_key undef
   } {
     dup //false exch {
       4 dict 1 index resourceusestransparency { pop not exit } if
-      /Parent knownoget not { exit } if
+      %% Check the current dictionary and its Parent (if any) to see
+      %% if they both have stored object numbers. If they do then
+      %% check the numbers, don't allow self-references.
+      dup /Parent knownoget not { pop exit }
+      {
+        exch /.gs.pdfobj# .knownget
+        {
+          1 index /.gs.pdfobj# .knownget {
+            eq {
+              pop exit
+            }if
+          }{
+            pop
+          }ifelse
+        }if
+      } ifelse
     } loop
     % Also check for transparency in the annotation (if not in resources).
     { pop //true } { annotsusetransparency } ifelse
