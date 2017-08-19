@@ -1580,6 +1580,9 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     int num_fonts = pfont->cidata.FDArray_size;
     int code;
 
+    memset(&subrs_count, 0x00, 256 * sizeof(uint));
+    memset(&subrs_size, 0x00, 256 * sizeof(uint));
+
     /* Initialize the enumeration of the glyphs. */
     psf_enumerate_cids_begin(&genum, (gs_font *)pfont, subset_cids,
                              subset_size);
