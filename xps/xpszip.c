@@ -220,6 +220,9 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
     (void) getlong(ctx->file); /* size of central directory */
     offset = getlong(ctx->file); /* offset to central directory */
 
+    if (count < 0 || count > 16534)
+        return gs_rethrow(gs_error_rangecheck, "invalid entries in central directory disk");
+
     ctx->zip_count = count;
     ctx->zip_table = xps_alloc(ctx, sizeof(xps_entry_t) * count);
     if (!ctx->zip_table)
