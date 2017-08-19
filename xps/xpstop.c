@@ -70,20 +70,17 @@ xps_imp_characteristics(const pl_interp_implementation_t *pimpl)
     return &xps_characteristics;
 }
 
-#if 0
-/* This function 'appears to be' intended to disable font caching, but in fact
- * it does nothing, just retrieving the 'nocache' parameter from the *PCL*
- * main instance. I suspect this is garbage when running XPS. Removed the
- * function and its call, as its pointless.
- */
 static void
 xps_set_nocache(pl_interp_implementation_t *impl, gs_font_dir *font_dir)
 {
+    bool nocache;
     xps_interp_instance_t *xpsi  = impl->interp_client_data;
-    pl_main_get_nocache(xpsi->memory);
+    nocache = pl_main_get_nocache(xpsi->memory);
+    if (nocache)
+        gs_setcachelimit(font_dir, 0);
     return;
 }
-#endif
+
 
 static int
 xps_set_icc_user_params(pl_interp_implementation_t *impl, gs_gstate *pgs)
@@ -190,9 +187,7 @@ xps_imp_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
     gs_setaccuratecurves(ctx->pgs, true); /* NB not sure */
     gs_setfilladjust(ctx->pgs, 0, 0);
     (void)xps_set_icc_user_params(impl, ctx->pgs);
-    /* Removed as being pointless, see the function
     xps_set_nocache(impl, ctx->fontdir);
-     */
 
     gs_setscanconverter(ctx->pgs, pl_main_get_scanconverter(ctx->memory));    
 
