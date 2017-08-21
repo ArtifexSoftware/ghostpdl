@@ -126,6 +126,11 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
     namelength = getshort(ctx->file);
     extralength = getshort(ctx->file);
 
+    if (namelength < 0 || namelength > 65535)
+        return gs_throw1(gs_error_ioerror, "Illegal namelength (can't happen).\n", namelength + extralength);
+    if (extralength < 0 || extralength > 65535)
+        return gs_throw1(gs_error_ioerror, "Illegal extralength (can't happen).\n", namelength + extralength);
+
     if (xps_fseek(ctx->file, namelength + extralength, 1) != 0)
         return gs_throw1(gs_error_ioerror, "xps_fseek to %d failed.\n", namelength + extralength);
 
@@ -220,8 +225,8 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
     (void) getlong(ctx->file); /* size of central directory */
     offset = getlong(ctx->file); /* offset to central directory */
 
-    if (count < 0 || count > 16534)
-        return gs_rethrow(gs_error_rangecheck, "invalid entries in central directory disk");
+    if (count < 0 || count > 65535)
+        return gs_rethrow(gs_error_rangecheck, "invalid number of entries in central directory disk (can't happen)");
 
     ctx->zip_count = count;
     ctx->zip_table = xps_alloc(ctx, sizeof(xps_entry_t) * count);
@@ -249,6 +254,8 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
         ctx->zip_table[i].csize = getlong(ctx->file);
         ctx->zip_table[i].usize = getlong(ctx->file);
         namesize = getshort(ctx->file);
+        if (namesize < 0 || namesize > 65535)
+            return gs_rethrow(gs_error_rangecheck, "illegal namesize (can't happen)");
         metasize = getshort(ctx->file);
         commentsize = getshort(ctx->file);
         (void) getshort(ctx->file); /* disk number start */
