@@ -127,9 +127,9 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
     extralength = getshort(ctx->file);
 
     if (namelength < 0 || namelength > 65535)
-        return gs_throw1(gs_error_ioerror, "Illegal namelength (can't happen).\n", namelength + extralength);
+        return gs_rethrow(gs_error_ioerror, "Illegal namelength (can't happen).\n");
     if (extralength < 0 || extralength > 65535)
-        return gs_throw1(gs_error_ioerror, "Illegal extralength (can't happen).\n", namelength + extralength);
+        return gs_rethrow(gs_error_ioerror, "Illegal extralength (can't happen).\n");
 
     if (xps_fseek(ctx->file, namelength + extralength, 1) != 0)
         return gs_throw1(gs_error_ioerror, "xps_fseek to %d failed.\n", namelength + extralength);
