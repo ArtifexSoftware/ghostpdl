@@ -74,6 +74,8 @@ enum_param(const gs_memory_t *mem, const ref *pnref,
     const char *const *p;
     ref nsref;
 
+    check_type(*pnref, t_name);
+
     name_string_ref(mem, pnref, &nsref);
     for (p = names; *p; ++p)
         if (r_size(&nsref) == strlen(*p) &&
