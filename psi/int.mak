@@ -84,7 +84,7 @@ store_h=$(PSSRC)store.h $(ialloc_h) $(idosave_h)
 iplugin_h=$(PSSRC)iplugin.h
 ifapi_h=$(PSSRC)ifapi.h $(iplugin_h) $(gstypes_h) $(gsmatrix_h) $(gp_h) $(memory__h)
 zht2_h=$(PSSRC)zht2.h $(gscspace_h)
-gen_ordered_h=$(GENORDERED_SRCDIR)$(D)gen_ordered.h
+gen_ordered_h=$(GLSRC)gen_ordered.h
 zchar42_h=$(PSSRC)zchar42.h
 zfunc_h=$(PSSRC)zfunc.h
 

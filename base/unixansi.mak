@@ -190,9 +190,6 @@ LCMS2SRCDIR=lcms2
 
 WHICH_CMS=lcms2
 
-# Define the directory where the gen_ordered source is stored.
-GENORDERED_SRCDIR=toolbin/halftone/gen_ordered
-
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.

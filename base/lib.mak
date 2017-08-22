@@ -25,7 +25,6 @@
 #       ZSRCDIR - zlib source directory
 #       ZGENDIR - zlib object code directory
 #       LCMSGENDIR - Little CMS object code directory
-#       GENORDERED_SRCDIR - source for gen_ordered.[ch]
 # One of:
 #       LCMSSRCDIR - Little CMS source directory
 #       LCMS2SRCDIR - Little CMS verion 2 source directory
@@ -3209,10 +3208,10 @@ $(GLD)shadelib.dev : $(LIB_MAK) $(ECHOGS_XE) $(shadelib_)\
 	$(ADDMOD) $(GLD)shadelib -obj $(shadelib_2)
 	$(ADDMOD) $(GLD)shadelib -include $(GLD)funclib $(GLD)patlib
 
-$(GLOBJ)gen_ordered.$(OBJ) : $(GENORDERED_SRCDIR)$(D)gen_ordered.c $(GENORDERED_SRCDIR)$(D)gen_ordered.h\
+$(GLOBJ)gen_ordered.$(OBJ) : $(GLSRC)gen_ordered.c $(GLSRC)gen_ordered.h\
  $(std_h) $(gsmemory_h)  $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gen_ordered.$(OBJ) $(C_) $(II)$(GENORDERED_SRCDIR) $(D_)GS_LIB_BUILD$(_D) \
-        $(GENORDERED_SRCDIR)$(D)gen_ordered.c
+	$(GLCC) $(GLO_)gen_ordered.$(OBJ) $(C_)  $(D_)GS_LIB_BUILD$(_D) \
+        $(GLSRC)gen_ordered.c
 
 # ---------------- Support for %rom% IODevice ----------------- #
 # This is used to access compressed, compiled-in support files

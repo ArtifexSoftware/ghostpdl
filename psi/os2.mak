@@ -134,9 +134,6 @@ ZSRCDIR=zlib
 JBIG2_LIB=jbig2dec
 JBIG2SRCDIR=jbig2dec
 
-# Define the directory where the gen_ordered source is stored.
-GENORDERED_SRCDIR=toolbin/halftone/gen_ordered
-
 # IJS has not been ported to OS/2. If you do the port,
 # you'll need to set these values. You'll also need to
 # include the ijs.mak makefile

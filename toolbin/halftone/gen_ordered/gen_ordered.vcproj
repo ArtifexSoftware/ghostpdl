@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(SolutionDir)"
+				AdditionalIncludeDirectories="$(SolutionDir)\..\..\..\base"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -163,7 +163,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\gen_ordered.c"
+				RelativePath="..\..\..\base\gen_ordered.c"
+				>
+			</File>
+			<File
+				RelativePath=".\gen_ordered_main.c"
 				>
 			</File>
 		</Filter>

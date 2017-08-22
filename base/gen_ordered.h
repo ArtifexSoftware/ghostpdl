@@ -15,6 +15,12 @@
 
 /* Defines and exports for library (e.g., Ghostscript) use of gen_ordered.c */
 
+#define RAW_SCREEN_DUMP 0	/* Noisy output for .raw files for detailed debugging */
+#define MAXVAL 65535.0
+#define MIN(x,y) ((x)>(y)?(y):(x))
+#define MAX(x,y) ((x)>(y)?(x):(y))
+#define ROUND( a )  ( ( (a) < 0 ) ? (int) ( (a) - 0.5 ) : \
+                                                  (int) ( (a) + 0.5 ) )
 typedef enum {
     CIRCLE = 0,
     REDBOOK,

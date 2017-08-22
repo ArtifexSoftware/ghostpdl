@@ -22,7 +22,7 @@ where:
 target_angle: The desired screen angle in degrees. [default 0 degrees]
 
 dot_shape: The index number of the dot shape, CIRCLE, REDBOOK_CIRCLE, INVERTED,
-    RHOMBOID, LINE_X, LINE_Y, DIAMOND1, or DIAMOND2 values from 0 to 7,
+    RHOMBOID, LINE_X, LINE_Y, DIAMOND1, DIAMOND2 or ROUNDSPOT values from 0 to 8,
     respectively.
 
 target_lpi: The desired resolution of the screen in lines/inch. [default 300dpi]
