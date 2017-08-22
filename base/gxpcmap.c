@@ -1532,8 +1532,11 @@ gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
         return 0;
     }
     if (pinst->templat.PaintType == 2) {       /* uncolored */
-        code = (pcs->base_space->type->remap_color)
-            (pc, pcs->base_space, pdc, pgs, dev, select);
+        if (pcs->base_space)
+            code = (pcs->base_space->type->remap_color)
+                (pc, pcs->base_space, pdc, pgs, dev, select);
+        else
+            code = gs_note_error(gs_error_unregistered);
         if (code < 0)
             return code;
         if (pdc->type == gx_dc_type_pure)
