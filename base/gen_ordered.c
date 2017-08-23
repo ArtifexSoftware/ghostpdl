@@ -28,9 +28,12 @@
 #   define FREE(mem, ptr)   gs_free_object((gs_memory_t *)mem, ptr, "gen_ordered")
 
 #   define PRINTF(mem, str) outprintf((gs_memory_t *)mem, str)
+#   define PRINTF2(mem, str, v1, v2) outprintf((gs_memory_t *)mem, str, v1, v2)
+#   define PRINTF4(mem, str, v1, v2, v3, v4) outprintf((gs_memory_t *)mem, str, v1, v2, v3, v4)
 #   define PRINTF7(mem, str, v1, v2, v3, v4, v5, v6, v7) outprintf((gs_memory_t *)mem, str, v1, v2, v3, v4, v5, v6, v7)
 #   define EPRINTF(mem, str) errprintf((gs_memory_t *)mem, str)
 #   define EPRINTF1(mem, str, v1) errprintf((gs_memory_t *)mem, str, v1)
+#   define EPRINTF3(mem, str, v1, v2, v3) errprintf((gs_memory_t *)mem, str, v1, v2, v3)
 
 #endif /* defined GS_LIB_BUILD */
 
@@ -55,9 +58,12 @@ typedef unsigned char byte;
 #   define FREE(mem, ptr)   (free(ptr))
 
 #   define PRINTF(mem, str) printf(str)
+#   define PRINTF2(mem, str, v1, v2) printf(str, v1, v2)
+#   define PRINTF4(mem, str, v1, v2, v3, v4) printf(str, v1, v2, v3, v4)
 #   define PRINTF7(mem, str, v1, v2, v3, v4, v5, v6, v7) printf(str, v1, v2, v3, v4, v5, v6, v7)
 #   define EPRINTF(mem, str) fprintf(stderr, str)
 #   define EPRINTF1(mem, str, v1) fprintf(stderr, str, v1)
+#   define EPRINTF3(mem, str, v1, v2, v3) fprintf(stderr, str, v1, v2, v3)
 
 #endif /* ndef LIB_BUILD */
 
@@ -123,7 +129,7 @@ void create_2d_gauss_filter(float *filter, int x_size, int y_size,
 static int htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
                                double gamma, htsc_dig_grid_t *final_mask);
 static int htsc_create_dither_mask(htsc_dig_grid_t super_cell,
-                             htsc_dig_grid_t *final_mask,
+                             htsc_dig_grid_t *final_mask, int verbose,
                              int num_levels, int y, int x, double vert_dpi,
                              double horiz_dpi, int N, double gamma,
                              htsc_dig_grid_t dot_grid, htsc_point_t one_index);
@@ -285,14 +291,18 @@ htsc_gen_ordered(htsc_param_t params, int *S, htsc_dig_grid_t *final_mask)
         } else {
             /* Dont allow nonsense settings */
             if (num_levels * N > super_cell.height * super_cell.width) {
-                printf("Notice, %3.0lf quantization levels not possible with super cell of %d by %d\n", num_levels, super_cell.height, super_cell.width);
+                EPRINTF3(final_mask->memory,
+                         "Notice, %3.0lf quantization levels not possible with super cell of %d by %d\n",
+                         num_levels, super_cell.height, super_cell.width);
                 num_levels = ROUND((super_cell.height * super_cell.width) / N);
-                printf("Reducing dithering quantization to %3.0lf\n", num_levels);
-                printf("For an effective quantization of %d\n", super_cell.height * super_cell.width);
+                EPRINTF1(final_mask->memory, "Reducing dithering quantization to %3.0lf\n",
+                         num_levels);
+                EPRINTF1(final_mask->memory, "For an effective quantization of %d\n",
+                         super_cell.height * super_cell.width);
             }
-            code = htsc_create_dither_mask(super_cell, final_mask, num_levels, y, x,
-                                    params.vert_dpi, params.horiz_dpi, N, params.gamma,
-                                    dot_grid, one_index);
+            code = htsc_create_dither_mask(super_cell, final_mask, params.verbose, num_levels,
+                                           y, x, params.vert_dpi, params.horiz_dpi, N,
+                                           params.gamma, dot_grid, one_index);
         }
     }
     final_mask->bin_center = bin_center;
@@ -341,13 +351,13 @@ htsc_mask_to_tos(htsc_dig_grid_t *final_mask)
     values = (htsc_threshpoint_t *) ALLOC(final_mask->memory,
                                           sizeof(htsc_threshpoint_t) * width * height);
     if (values == NULL) {
-        printf("ERROR! malloc failure in htsc_mask_to_tos!\n");
+        EPRINTF(final_mask->memory, "ERROR! malloc failure in htsc_mask_to_tos!\n");
         return -1;
     }
     tos = (int *) ALLOC(final_mask->memory, sizeof(int) * 2 * height * width);
     if (tos == NULL) {
         FREE(final_mask->memory, values);
-        printf("ERROR! malloc failure in htsc_mask_to_tos!\n");
+        EPRINTF(final_mask->memory, "ERROR! malloc failure in htsc_mask_to_tos!\n");
         return -1;
     }
     /* Do a sort on the values and then output the coordinates */
@@ -365,18 +375,18 @@ htsc_mask_to_tos(htsc_dig_grid_t *final_mask)
         }
     }
 #if RAW_SCREEN_DUMP
-    printf("Unsorted\n");
+    EPRINTF(final_mask->memory, "Unsorted\n");
     for (k = 0; k < count; k++) {
-        printf("Index %d : x = %d y = %d dist = %4.2lf value = %d \n",
+        EPRINTF(final_mask->memory, "Index %d : x = %d y = %d dist = %4.2lf value = %d \n",
                values[k].index, values[k].x, values[k].y, values[k].dist_to_center, values[k].value);
     }
 #endif
         /* Sort */
     qsort(values, height * width, sizeof(htsc_threshpoint_t), compare);
 #if RAW_SCREEN_DUMP
-    printf("Sorted\n");
+    EPRINTF(final_mask->memory, "Sorted\n");
     for (k = 0; k < count; k++) {
-        printf("Index %d : x = %d y = %d dist = %4.2lf value = %d \n",
+        EPRINTF(final_mask->memory, "Index %d : x = %d y = %d dist = %4.2lf value = %d \n",
                 values[k].index, values[k].x, values[k].y, values[k].dist_to_center, values[k].value);
     }
 #endif
@@ -1403,7 +1413,7 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
 
 static int
 htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
-                          int num_levels, int y, int x, double vert_dpi,
+                          int verbose, int num_levels, int y, int x, double vert_dpi,
                           double horiz_dpi, int N, double gamma,
                           htsc_dig_grid_t dot_grid, htsc_point_t dot_grid_one_index)
 {
@@ -1455,8 +1465,16 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
                 locate[num_dots] = j;
                 num_dots++;
                 if (num_dots == (curr_size - 1)) {
+                    int *tmp = locate;
+
                     curr_size = curr_size * 2;
-                    locate = (int*) realloc(locate, sizeof(int) * curr_size);
+                    locate = (int*) ALLOC(dot_grid.memory, sizeof(int) * curr_size);
+                    if (locate == NULL) {
+                        code = -1;
+                        goto out;
+                    }
+                    memcpy(locate, tmp, sizeof(int) * (num_dots+1));
+                    FREE(dot_grid.memory, tmp);
                 }
             }
         }
@@ -1567,11 +1585,16 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
 #endif
         }
 
-        printf("\n--Dot Positions--\n");
+        if (verbose > 0)
+            PRINTF(final_mask->memory, "\n--Dot Positions--\n");
         for (k = 0; k < num_levels; k++) {
-            printf("dot_level_pos %d: number_points = %d\n", k, dot_level_pos[k].number_points);
+            if (verbose > 0)
+                PRINTF2(final_mask->memory, "dot_level_pos %d: number_points = %d\n",
+                        k, dot_level_pos[k].number_points);
             for (j = 0; j < dot_level_pos[k].number_points; j++) {
-                printf("\tpoint: %d: locations = %d x = %3.2lf y = %3.2lf\n", j, dot_level_pos[k].locations[j], dot_level_pos[k].point[j].x, dot_level_pos[k].point[j].y);
+                if (verbose > 0)
+                    PRINTF4(final_mask->memory, "\tpoint: %d: locations = %d x = %3.2lf y = %3.2lf\n",
+                           j, dot_level_pos[k].locations[j], dot_level_pos[k].point[j].x, dot_level_pos[k].point[j].y);
             }
         }
 

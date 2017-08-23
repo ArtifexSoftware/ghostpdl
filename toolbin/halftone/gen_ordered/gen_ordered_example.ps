@@ -20,12 +20,21 @@ mark	% for .dicttomark
       { pop DITHERANGLE }
       { currentscreen pop exch pop }
       ifelse
+   /SuperCellSize /DITHERSC where
+      { pop DITHERSC }
+      { pop }
+      ifelse
+   /Levels /DITHERLEVELS where
+      { pop DITHERLEVELS }
+      { pop }
+      ifelse
    /DotShape 8
 .dicttomark
 .genordered
 
 % Now set it as the default
-/Default exch /Halftone defineresource sethalftone
+/Default exch /Halftone defineresource
+sethalftone
 
 % The following are used to make sure that 0.5 yeilds 50% black and that
 % a shaded (gradient) ramp has 255 steps (even if the halftone doesn't

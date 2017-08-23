@@ -824,8 +824,10 @@ collection as a performance improvement. Additional settings may be added in the
 
 <dl>
 <dt><a name=".genordered"></a>
-<code>&lt;dict&gt; .genordered &lt;dict&gt;</code></dt>
-<dd>This operator creates an ordered dither screening pattern with the parameters from the dictionary, returning a PostScript HalftoneType 3 (threshold array based) dictionary suitable for use with  <code>sethalftone</code> or as a component Halftone of a <code>HalftoneType 5</code> Halftone dictionary.
+<code>&lt;dict&gt; .genordered &lt;dict&gt;</code> (default: /OutputType /Type3).</dt>
+<dt><code>&lt;dict&gt; .genordered &lt;string&gt;</code> (/OutputType /ThreshString).</dt>
+<dt><code>&lt;dict&gt; .genordered &lt;array&gt;</code> (/OutputType /TOSArray).</dt>
+<dd>This operator creates an ordered dither screening pattern with the parameters from the dictionary, returning (by default) a PostScript HalftoneType 3 (threshold array based) dictionary suitable for use with  <code>sethalftone</code> or as a component Halftone of a <code>HalftoneType 5</code> Halftone dictionary. The /OutputType parameter can also select other than Halftone Type 3 as the return paramter,
 <p>
 <code>&lt;dict&gt;</code> has the following keys (all are optional):
 <dl>
@@ -846,6 +848,13 @@ collection as a performance improvement. Additional settings may be added in the
 <dt><code>/Levels</code>
 <dd>Integer; default value = 1 -- actual number of gray levels is determined by Frequency and H/V Resolution.
 <dd>SuperCellSize may need to be specified large enough to achieve the requested number of gray levels.
+<dt><code>/OutputType</code>
+<dd>Name; default value = /Type3 (HalftoneType 3 dictionary). Other shapes available are:
+<dl>
+<dt>/ThreshString: first two bytes are width (high byte first), next two bytes are height, followed by the
+threshold array bytes (same as /Thresholds of the Type3 dictionary).
+<dt>/TOSArray: first element is the width, next is the height, followed by pairs X, then Y, of the turn-on-sequence of the threshold array. This information can be used to construct a threshold array with a transfer function "pickled into" the threshold array, which is useful if the turn-on-sequence has more than 256 pairs. Refer to toolbin/halftone/thresh_remap for more information.
+</dl>
 </dl>
 </dl>
 

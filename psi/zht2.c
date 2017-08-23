@@ -15,6 +15,7 @@
 
 
 /* Level 2 sethalftone operator */
+#include "memory_.h"
 #include "ghost.h"
 #include "oper.h"
 #include "gsstruct.h"
@@ -373,10 +374,10 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 /*         array will have: width height turn_on_sequence.x turn_on_sequence.y ...	*/
 /*         total array length is 2 + (2 * width * height)				*/
 static int
-zgen_ordered(i_ctx_t *i_ctx_p)
+zgenordered(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = 0;
+    int i, code = 0;
     gs_memory_t *mem;
     int space_index;
     htsc_param_t params;
@@ -385,6 +386,8 @@ zgen_ordered(i_ctx_t *i_ctx_p)
     float tmp_float;
     gs_gstate *pgs = igs;
     gx_device *currdevice = pgs->device;
+    output_format_type output_type = OUTPUT_PS;
+    ref *out_type_name;
 
     if (ref_stack_count(&o_stack) < 1)
         return_error(gs_error_stackunderflow);
@@ -403,6 +406,21 @@ zgen_ordered(i_ctx_t *i_ctx_p)
     final_mask.memory = mem->non_gc_memory;
     final_mask.data = NULL;
 
+    if ((code = dict_find_string(op, "OutputType", &out_type_name)) > 0) {
+        ref namestr;
+
+        if (!r_has_type(out_type_name, t_name))
+            return gs_error_typecheck;
+        name_string_ref(imemory, out_type_name, &namestr);
+        if (r_size(&namestr) == 8 && !memcmp(namestr.value.bytes, "TOSArray", 8))
+            output_type = OUTPUT_TOS;
+        else if (r_size(&namestr) == 5 && !memcmp(namestr.value.bytes, "Type3", 5))
+            output_type = OUTPUT_PS;
+        else if (r_size(&namestr) == 12 && !memcmp(namestr.value.bytes, "ThreshString", 12))
+            output_type = OUTPUT_RAW;
+        else
+            return gs_error_undefined;
+    }
     if ((code = dict_int_param(op, "Angle", 0, 360, 0, &params.targ_scr_ang)) < 0)
         return gs_error_undefined;
     if ((code = dict_int_param(op, "Frequency", 1, 0x7fff, 75, &params.targ_lpi)) < 0)
@@ -434,83 +452,92 @@ zgen_ordered(i_ctx_t *i_ctx_p)
     if (code < 0)
         goto done;
 
-#ifdef RETURN_TOS_ARRAY
-    /* Now return the mask info in an array [ width height turn_on.x turn_on.y ... ] */
-    code = ialloc_ref_array((ref *)op, a_all, 2 + (2 * final_mask.width * final_mask.height), "gen_ordered");
-    if (code < 0)
-        goto done;
-    make_int(&(op->value.refs[0]), final_mask.width);
-    make_int(&(op->value.refs[1]), final_mask.height);
-    for (i=0; i < 2 * final_mask.width * final_mask.height; i++)
-        make_int(&(op->value.refs[i+2]), final_mask.data[i]);
-#else
+    switch (output_type) {
+      case OUTPUT_TOS:
+        /* Now return the mask info in an array [ width height turn_on.x turn_on.y ... ] */
+        code = ialloc_ref_array((ref *)op, a_all, 2 + (2 * final_mask.width * final_mask.height), "gen_ordered");
+        if (code < 0)
+            goto done;
+        make_int(&(op->value.refs[0]), final_mask.width);
+        make_int(&(op->value.refs[1]), final_mask.height);
+        for (i=0; i < 2 * final_mask.width * final_mask.height; i++)
+            make_int(&(op->value.refs[i+2]), final_mask.data[i]);
+        break;
+      case OUTPUT_RAW:
+      case OUTPUT_PS:
     /* Return a threshold array string first two bytes are width (high byte first),
      * next two bytes are height, followed by the threshold array (one byte per cell)
      * PostScript can easily form a Type 3 Halftone Thresholds string from this
      * using "getinterval".
      */
-    {
-        /* Make a threshold array from the turn_on_sequence */
-        int level;
-        int cur_pix = 0;
-        double end_value, cur_value = 0.0;
-        int width = final_mask.width;
-        int num_pix = width * final_mask.height;
-        double delta_value = 1.0 / (double)(num_pix);
-        byte *thresh = ialloc_string(4 + num_pix, "gen_ordered");
-        ref rval, thresh_ref;
+        {
+            /* Make a threshold array from the turn_on_sequence */
+            int level;
+            int cur_pix = 0;
+            double end_value, cur_value = 0.0;
+            int width = final_mask.width;
+            int num_pix = width * final_mask.height;
+            double delta_value = 1.0 / (double)(num_pix);
+            byte *thresh;
+            ref rval, thresh_ref;
 
-        if (thresh == 0) {
-            code = gs_error_VMerror;
-            goto done;
-        }
-
-        *thresh++ = width >> 8;
-        *thresh++ = width & 0xff;
-        *thresh++ = final_mask.height >> 8;
-        *thresh++ = final_mask.height & 0xff;
-
-        /* The following is adapted from thresh_remap with the default linear map */
-        for (level=0; level<256; level++) {
-            end_value = (float)(1+level) / 256.;
-            if (end_value > 256.0)
-                end_value = 256.0;		/* clamp in case of rounding errors */
-            while (end_value - cur_value > 0.00001) {
-                thresh[final_mask.data[2*cur_pix] + (width*final_mask.data[2*cur_pix+1])] = 255 - level;
-                cur_pix++;
+            code = gs_error_VMerror;	/* in case allocation of thresh fails */
+            if (output_type == OUTPUT_RAW) {
+                if ((thresh = ialloc_string(4 + num_pix, "gen_ordered"))  == 0)
+                    goto done;
+                *thresh++ = width >> 8;
+                *thresh++ = width & 0xff;
+                *thresh++ = final_mask.height >> 8;
+                *thresh++ = final_mask.height & 0xff;
+            } else if ((thresh = ialloc_string(num_pix, "gen_ordered"))  == 0)
+                    goto done;
+            /* The following is adapted from thresh_remap with the default linear map */
+            for (level=0; level<256; level++) {
+                end_value = (float)(1+level) / 256.;
+                if (end_value > 256.0)
+                    end_value = 256.0;		/* clamp in case of rounding errors */
+                while (end_value - cur_value > 0.00001) {
+                    thresh[final_mask.data[2*cur_pix] + (width*final_mask.data[2*cur_pix+1])] = 255 - level;
+                    cur_pix++;
+                    if (cur_pix >= num_pix)
+                        break;
+                    cur_value += delta_value;
+                }
                 if (cur_pix >= num_pix)
                     break;
-                cur_value += delta_value;
             }
-            if (cur_pix >= num_pix)
-                break;
+            /* now fill any remaining cells */
+            for (; cur_pix < num_pix; cur_pix++) {
+                thresh[final_mask.data[2 * cur_pix] + (width*final_mask.data[2 * cur_pix + 1])] = 0;
+            }
+            if (output_type == OUTPUT_RAW) {
+                make_string(&thresh_ref, a_all | icurrent_space, 4 + num_pix, thresh-4);
+                *op = thresh_ref;
+                code = 0;
+            } else {
+                /* output_type == OUTPUT_PS */
+                /* Return a HalftoneType 3 dictionary */
+                code = dict_create(4, op);
+                if (code < 0)
+                    goto done;
+                make_string(&thresh_ref, a_all | icurrent_space, num_pix, thresh);
+                if ((code = idict_put_string(op, "Thresholds", &thresh_ref)) < 0)
+                    goto done;
+                make_int(&rval, final_mask.width);
+                if ((code = idict_put_string(op, "Width", &rval)) < 0)
+                    goto done;
+                make_int(&rval, final_mask.height);
+                if ((code = idict_put_string(op, "Height", &rval)) < 0)
+                    goto done;
+                make_int(&rval, 3);
+                if ((code = idict_put_string(op, "HalftoneType", &rval)) < 0)
+                    goto done;
+            }
         }
-        /* now fill any remaining cells */
-        for (; cur_pix < num_pix; cur_pix++) {
-            thresh[final_mask.data[2 * cur_pix] + (width*final_mask.data[2 * cur_pix + 1])] = 0;
-        }
-        make_string(&thresh_ref, a_all | icurrent_space, 4 + num_pix, thresh);
-#   ifdef RETURN_THRESH_STRING
-        op = thresh_ref;
-#   else	/* The current default, and probably the most useful for PS users */
-        /* Return a HalftoneType 3 dictionary */
-        code = dict_create(4, op);
-        if (code < 0)
-            goto done;
-        if ((code = idict_put_string(op, "Thresholds", &thresh_ref)) < 0)
-            goto done;
-        make_int(&rval, final_mask.width);
-        if ((code = idict_put_string(op, "Width", &rval)) < 0)
-            goto done;
-        make_int(&rval, final_mask.height);
-        if ((code = idict_put_string(op, "Height", &rval)) < 0)
-            goto done;
-        make_int(&rval, 3);
-        if ((code = idict_put_string(op, "HalftoneType", &rval)) < 0)
-            goto done;
-#   endif /* RETURN_THRESH_STRING */
+        break;
+      default:
+        return gs_error_undefined;
     }
-#endif /* RETURN_TOS_ARRAY */
 
 done:
     if (final_mask.data != NULL)
@@ -556,7 +583,7 @@ const op_def zht2_l2_op_defs[] =
 {
     op_def_begin_level2(),
     {"2.sethalftone5", zsethalftone5},
-    {"1.genordered", zgen_ordered},
+    {"1.genordered", zgenordered},
                 /* Internal operators */
     {"0%sethalftone_finish", sethalftone_finish},
     op_def_end(0)
