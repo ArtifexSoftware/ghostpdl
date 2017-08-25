@@ -4,7 +4,7 @@
  * party and contributor rights, including patent rights, and no such rights
  * are granted under this license.
  *
- * Copyright (c) 2016, Even Rouault
+ * Copyright (c) 2017, IntoPIX SA <support@intopix.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,10 +28,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef OPJ_COMMMON_H
+#define OPJ_COMMMON_H
 
-#ifndef OPJ_TLS_KEYS_H
-#define OPJ_TLS_KEYS_H
+/*
+ ==========================================================
+   Common constants shared among several modules
+ ==========================================================
+*/
+#define OPJ_COMMON_CBLK_DATA_EXTRA        2    /**< Margin for a fake FFFF marker */
 
-#define OPJ_TLS_KEY_T1  0
-
-#endif /* OPJ_TLS_KEY_H */
+#endif /* OPJ_COMMMON_H */

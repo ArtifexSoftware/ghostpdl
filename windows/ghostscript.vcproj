@@ -7760,14 +7760,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\openjpeg\src\lib\openjp2\raw.c"
-				>
-			</File>
-			<File
-				RelativePath="..\openjpeg\src\lib\openjp2\raw.h"
-				>
-			</File>
-			<File
 				RelativePath="..\openjpeg\src\lib\openjp2\t1.c"
 				>
 			</File>
