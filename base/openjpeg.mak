@@ -57,7 +57,6 @@ open_jpeg_OBJS = \
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)phix_manager.$(OBJ)			\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)pi.$(OBJ)			\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)ppix_manager.$(OBJ)			\
-	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)raw.$(OBJ)		\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)t1.$(OBJ)		\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)t2.$(OBJ)			\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tcd.$(OBJ)			\
@@ -90,7 +89,6 @@ open_jpeg_HDRS = \
 	$(OPEN_JPEG_SRC)opj_malloc.h			\
 	$(OPEN_JPEG_SRC)opj_stdint.h			\
 	$(OPEN_JPEG_SRC)pi.h		\
-	$(OPEN_JPEG_SRC)raw.h		\
 	$(OPEN_JPEG_SRC)t1.h		\
 	$(OPEN_JPEG_SRC)t1_luts.h	\
 	$(OPEN_JPEG_SRC)t2.h	\
@@ -115,7 +113,7 @@ $(OPEN_JPEG_GEN)openjpeg_0.dev : $(ECHOGS_XE) $(open_jpeg_OBJS) \
 	$(SETMOD) $(OPEN_JPEG_GEN)openjpeg_0 $(open_jpeg_OBJS)
 
 # define our specific compiler
-OPEN_JPEG_CC=$(CC) $(CFLAGS) $(D_)OPJ_STATIC$(_D) $(I_)$(OPEN_JPEG_GEN)$(_I) $(I_)$(JPX_OPENJPEG_I_)$(_I) $(I_)$(JPX_OPENJPEG_I_)$(D)..$(_I) $(JPXCF_)
+OPEN_JPEG_CC=$(CC) $(CFLAGS) $(D_)OPJ_STATIC$(_D) $(D_)STANDARD_SLOW_VERSION$(_D) $(I_)$(OPEN_JPEG_GEN)$(_I) $(I_)$(JPX_OPENJPEG_I_)$(_I) $(I_)$(JPX_OPENJPEG_I_)$(D)..$(_I) $(JPXCF_)
 OPEN_JPEG_O=$(O_)$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)
 
 OPEN_JPEG_DEP=$(AK) $(OPEN_JPEG_MAK) $(MAKEDIRS)
@@ -164,9 +162,6 @@ $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)opj_clock.$(OBJ) : $(OPEN_JPEG_SRC)opj_clock.
 
 $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)pi.$(OBJ) : $(OPEN_JPEG_SRC)pi.c $(open_jpeg_HDRS) $(OPEN_JPEG_DEP)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)pi.$(OBJ) $(C_) $(OPEN_JPEG_SRC)pi.c
-
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)raw.$(OBJ) : $(OPEN_JPEG_SRC)raw.c $(open_jpeg_HDRS) $(OPEN_JPEG_DEP)
-	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)raw.$(OBJ) $(C_) $(OPEN_JPEG_SRC)raw.c
 
 $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)t1.$(OBJ) : $(OPEN_JPEG_SRC)t1.c $(open_jpeg_HDRS) $(OPEN_JPEG_DEP)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)t1.$(OBJ) $(C_) $(OPEN_JPEG_SRC)t1.c

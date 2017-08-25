@@ -139,7 +139,7 @@ void opj_free(void *ptr)
     gs_free_object(opj_memory, ptr, "opj_malloc");
 }
 
-void * opj_aligned_malloc(size_t size)
+static inline void * opj_aligned_malloc_n(size_t size, size_t align)
 {
     uint8_t *ptr;
     int off;
@@ -147,13 +147,23 @@ void * opj_aligned_malloc(size_t size)
     if (size == 0)
         return NULL;
 
-    size += 16 + sizeof(uint8_t);
+    size += align + sizeof(uint8_t);
     ptr = opj_malloc(size);
     if (ptr == NULL)
         return NULL;
-    off = 16-(((int)(intptr_t)ptr) & 15);
+    off = align - (((int)(intptr_t)ptr) & (align - 1));
     ptr[off-1] = off;
     return ptr + off;
+}
+
+void * opj_aligned_malloc(size_t size)
+{
+    return opj_aligned_malloc_n(size, 16);
+}
+
+void *opj_aligned_32_malloc(size_t size)
+{
+    return opj_aligned_malloc_n(size, 32);
 }
 
 void opj_aligned_free(void* ptr_)
