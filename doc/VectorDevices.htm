@@ -397,9 +397,14 @@ filter, NOT the Mitchell filter.
 
 <p>
 <a name="note_4">(note 4)</a>
-Currently, the transfer function is always applied.  If the corresponding
-parameter is set to <code>/Preserve</code>, the function setting is also
-copied into the PDF file.
+The default for transfer functions is to preserve them, this is because transfer functions are
+a device-dependent feature, a set of transfer functions desgined for an RGB device will give
+incorrect output on a CMYK device for instance. The pdfwrite device does now support /Preserve,
+/Appy and /Remove (the previous documentation was incorrect, application of transfer functions
+was not supported). PDF 2.0 deprecates the use of transfer functions, and so when producing PDF 2.0
+compatible output if the TransferFunctionInfor is set to /Preserve it will be silently replaced with /Apply.
+You can instead specifically set TransferFunctionInfo to /Remove when producing PDF 2.0 in order to
+avoid the transfer function being applied.
 
 <p>
 <a name="note_6">(note 6)</a>

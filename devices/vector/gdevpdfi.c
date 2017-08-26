@@ -78,6 +78,7 @@ typedef struct pdf_image_enum_s {
     int rows_left;
     pdf_image_writer writer;
     gs_matrix mat;
+    gs_color_space_index initial_colorspace;
 } pdf_image_enum;
 gs_private_st_composite(st_pdf_image_enum, pdf_image_enum, "pdf_image_enum",
   pdf_image_enum_enum_ptrs, pdf_image_enum_reloc_ptrs);
@@ -659,7 +660,32 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                 break;
         }
     } else {
-        switch(pdev->params.ColorConversionStrategy) {
+        int strategy = pdev->params.ColorConversionStrategy;
+
+        if (pdev->params.TransferFunctionInfo == tfi_Apply && pdev->transfer_not_identity && csi2 == gs_color_space_index_Indexed) {
+            csi = gs_color_space_get_index(pcs->base_space);
+            if (csi == gs_color_space_index_ICC) {
+                csi = gsicc_get_default_type(pcs->base_space->cmm_icc_profile_data);
+            }
+            /* If its still not a base space, make it the ProcessCOlorModel of the device */
+            if (csi > gs_color_space_index_DeviceCMYK)
+                csi = pdev->pcm_color_info_index;
+            switch(csi) {
+                case gs_color_space_index_DeviceGray:
+                    strategy = ccs_Gray;
+                    break;
+                case gs_color_space_index_DeviceRGB:
+                    strategy = ccs_RGB;
+                    break;
+                case gs_color_space_index_DeviceCMYK:
+                    strategy = ccs_CMYK;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        switch(strategy) {
             case ccs_ByObjectType:
                 /* Object type not implemented yet */
             case ccs_UseDeviceDependentColor:
@@ -1242,6 +1268,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
 
         in_line &= (nbytes < pdev->MaxInlineImageSize);
     }
+    pie->initial_colorspace = pdev->pcm_color_info_index;
 
     if (pmat == 0)
         pmat = &ctm_only(pgs);
@@ -1390,6 +1417,60 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
 
     if (code < 0)
         goto fail_and_fallback;
+
+    if (!convert_to_process_colors)
+    {
+        gs_color_space_index csi;
+
+        if (pdev->params.TransferFunctionInfo == tfi_Apply && pdev->transfer_not_identity && !is_mask) {
+            csi = gs_color_space_get_index(image[0].pixel.ColorSpace);
+            if (csi == gs_color_space_index_Indexed) {
+                csi = gs_color_space_get_index(image[0].pixel.ColorSpace->base_space);
+                if (csi == gs_color_space_index_ICC) {
+                    csi = gsicc_get_default_type(image[0].pixel.ColorSpace->base_space->cmm_icc_profile_data);
+                }
+            } else {
+                if (csi == gs_color_space_index_ICC) {
+                    csi = gsicc_get_default_type(image[0].pixel.ColorSpace->cmm_icc_profile_data);
+                }
+            }
+            switch(csi) {
+                case gs_color_space_index_DevicePixel:
+                case gs_color_space_index_CIEA:
+                    convert_to_process_colors = 1;
+                    pdf_set_process_color_model(pdev, 0);
+                    break;
+                case gs_color_space_index_CIEDEF:
+                case gs_color_space_index_CIEABC:
+                case gs_color_space_index_DeviceGray:
+                    convert_to_process_colors = 1;
+                    pdf_set_process_color_model(pdev, 0);
+                    break;
+                case gs_color_space_index_DeviceRGB:
+                    convert_to_process_colors = 1;
+                    pdf_set_process_color_model(pdev, 1);
+                    break;
+                case gs_color_space_index_CIEDEFG:
+                case gs_color_space_index_DeviceCMYK:
+                    convert_to_process_colors = 1;
+                    pdf_set_process_color_model(pdev, 2);
+                    break;
+                default:
+                    break;
+            }
+            if (convert_to_process_colors == 1) {
+                pcs_orig = image->pixel.ColorSpace;
+                code = make_device_color_space(pdev, pdev->pcm_color_info_index, &pcs_device);
+                if (code < 0)
+                    goto fail_and_fallback;
+                image[0].pixel.ColorSpace = pcs_device;
+                code = pdf_color_space_named(pdev, pgs, &cs_value, &pranges, pcs_device, names,
+                                         in_line, NULL, 0, false);
+                if (code < 0)
+                    goto fail_and_fallback;
+            }
+        }
+    }
 
     if (convert_to_process_colors) {
         image[0].pixel.ColorSpace = pcs_orig;
@@ -1781,6 +1862,9 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
             code = pdf_end_and_do_image(pdev, &pie->writer, &pie->mat, info->id, do_image);
         pie->writer.alt_writer_count--; /* For GC. */
     }
+    if (pie->initial_colorspace != pdev->pcm_color_info_index)
+        pdf_set_process_color_model(pdev, pie->initial_colorspace);
+
     gx_image_free_enum(&info);
     return code;
 }

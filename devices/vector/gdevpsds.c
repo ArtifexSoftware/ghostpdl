@@ -26,6 +26,7 @@
 #include "gscspace.h"
 #include "gxdevcli.h"
 #include "gxgstate.h"
+#include "gsicc_manage.h"
 
 /* ---------------- Convert between 1/2/4/12 and 8 bits ---------------- */
 
@@ -1160,7 +1161,7 @@ s_compr_chooser__get_choice(stream_compr_chooser_state *ss, bool force)
     return 0;
 }
 
-/* ---------------- Am image color conversion filter ---------------- */
+/* ---------------- An image color conversion filter ---------------- */
 
 private_st_image_colors_state();
 
@@ -1231,7 +1232,7 @@ s_image_colors_convert_to_device_color(stream_image_colors_state * ss)
     return 0;
 }
 
-/* Set masc colors dimensions. */
+/* Set mask colors dimensions. */
 void
 s_image_colors_set_mask_colors(stream_image_colors_state * ss, uint *MaskColor)
 {
@@ -1358,5 +1359,230 @@ s_image_colors_process(stream_state * st, stream_cursor_read * pr,
 
 const stream_template s__image_colors_template = {
     &st_stream_image_colors_state, s_image_colors_init, s_image_colors_process, 1, 1,
+    NULL, NULL
+};
+
+/* ---------------- Apply transfer functions filter ---------------- */
+
+private_st_image_transfer_state();
+
+/* Initialize the state. */
+static int
+s_image_transfer_init(stream_state * st)
+{
+    stream_image_transfer_state *const ss = (stream_image_transfer_state *) st;
+
+    ss->width = ss->height = ss->depth = ss->bits_per_sample = 0;
+    ss->output_bits_buffer = 0;
+    ss->output_bits_buffered = 0;
+    ss->output_depth = 1;
+    ss->output_component_index = ss->output_depth;
+    ss->output_bits_per_sample = 1;
+    ss->output_component_bits_written = 0;
+    ss->raster = 0;
+    ss->row_bits = 0;
+    ss->row_bits_passed = 0;
+    ss->row_alignment_bytes = 0;
+    ss->row_alignment_bytes_left = 0;
+    ss->input_component_index = 0;
+    ss->input_bits_buffer = 0;
+    ss->input_bits_buffered = 0;
+    ss->convert_color = 0;
+    ss->pcs = 0;
+    ss->pdev = 0;
+    ss->pgs = 0;
+    return 0;
+}
+
+static int
+s_image_transfer_apply_transfer(stream_image_transfer_state * ss)
+{
+    gs_client_color cc;
+    gx_device_color dc;
+    int i, code;
+
+    gs_color_space_index csi, csi2;
+    unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
+
+    double v0 = (1 << ss->bits_per_sample) - 1;
+    double v1 = (1 << ss->output_bits_per_sample) - 1;
+
+    for (i = 0; i < ss->depth; i++)
+        cc.paint.values[i] = ss->input_color[i] *
+                (ss->Decode[i * 2 + 1] - ss->Decode[i * 2]) / v0 + ss->Decode[i * 2];
+
+    csi = csi2 = gs_color_space_get_index(ss->pcs);
+    if (csi == gs_color_space_index_ICC) {
+        csi2 = gsicc_get_default_type(ss->pcs->cmm_icc_profile_data);
+    }
+
+    switch (csi2) {
+        case gs_color_space_index_DeviceGray:
+            psrc[0] = (unsigned short) (cc.paint.values[0]*65535.0);;
+            conc[0] = ushort2frac(psrc[0]);
+            code = gx_remap_concrete_DGray((const frac *)&conc, ss->pcs, &dc, (const gs_gstate *)ss->pgs, (gx_device *)ss->pdev, gs_color_select_texture);
+            if (code < 0)
+                return code;
+            cc.paint.values[0] = (dc.colors.pure & 0xff) / 255.0;
+            break;
+        case gs_color_space_index_DeviceRGB:
+            for (i=0;i<3;i++) {
+                psrc[i] = (unsigned short) (cc.paint.values[i]*65535.0);;
+                conc[i] = ushort2frac(psrc[i]);
+            }
+            code = gx_remap_concrete_DRGB((const frac *)&conc, ss->pcs, &dc, (const gs_gstate *)ss->pgs, (gx_device *)ss->pdev, gs_color_select_texture);
+            if (code < 0)
+                return code;
+            cc.paint.values[0] = ((dc.colors.pure & 0xff0000) >> 16) / 255.0;
+            cc.paint.values[1] = ((dc.colors.pure & 0xff00) >> 8) / 255.0;
+            cc.paint.values[2] = (dc.colors.pure & 0xff) / 255.0;
+            break;
+        case gs_color_space_index_DeviceCMYK:
+            for (i=0;i<4;i++) {
+                psrc[i] = (unsigned short) (cc.paint.values[i]*65535.0);;
+                conc[i] = ushort2frac(psrc[i]);
+            }
+            code = gx_remap_concrete_DCMYK((const frac *)&conc, ss->pcs, &dc, (const gs_gstate *)ss->pgs, (gx_device *)ss->pdev, gs_color_select_texture);
+            if (code < 0)
+                return code;
+
+            cc.paint.values[0] = ((dc.colors.pure & 0xff000000) >> 24) / 255.0;
+            cc.paint.values[1] = ((dc.colors.pure & 0xff0000) >> 16) / 255.0;
+            cc.paint.values[2] = ((dc.colors.pure & 0xff00) >> 8) / 255.0;
+            cc.paint.values[3] = (dc.colors.pure & 0xff) / 255.0;
+            break;
+        default:
+            break;
+    }
+
+    for (i = 0; i < ss->output_depth; i++) {
+        uint m = (1 << ss->pdev->color_info.comp_bits[i]) - 1;
+        uint w = (dc.colors.pure >> ss->pdev->color_info.comp_shift[i]) & m;
+
+        ss->output_color[i] = (uint)(v1 * w / m + 0.5);
+    }
+    return 0;
+}
+
+/* Set image dimensions. */
+void
+s_image_transfer_set_dimensions(stream_image_transfer_state * ss,
+                               int width, int height, int depth, int bits_per_sample)
+{
+    ss->width = width;
+    ss->height = height;
+    ss->depth = depth;
+    ss->bits_per_sample = bits_per_sample;
+    ss->row_bits = bits_per_sample * depth * width;
+    ss->raster = bitmap_raster(ss->row_bits);
+    ss->row_alignment_bytes = 0; /* (ss->raster * 8 - ss->row_bits) / 8) doesn't work. */
+}
+
+void
+s_image_transfer_set_color_space(stream_image_transfer_state * ss, gx_device *pdev,
+                               const gs_color_space *pcs, const gs_gstate *pgs,
+                               float *Decode)
+{
+    ss->output_depth = ss->depth;
+    ss->output_component_index = ss->output_depth;
+    ss->output_bits_per_sample = ss->bits_per_sample; /* Same precision for all components. */
+    ss->convert_color = s_image_transfer_apply_transfer;
+    ss->pdev = pdev;
+    ss->pcs = pcs;
+    ss->pgs = pgs;
+    memcpy(ss->Decode, Decode, ss->depth * sizeof(Decode[0]) * 2);
+}
+
+/* Process a buffer. */
+static int
+s_image_transfer_process(stream_state * st, stream_cursor_read * pr,
+             stream_cursor_write * pw, bool last)
+{
+    stream_image_transfer_state *const ss = (stream_image_transfer_state *) st;
+
+    for (;;) {
+        if (pw->ptr >= pw->limit)
+            return 1;
+        if (ss->row_bits_passed >= ss->row_bits) {
+            ss->row_alignment_bytes_left = ss->row_alignment_bytes;
+            ss->input_bits_buffered = 0;
+            ss->input_bits_buffer = 0; /* Just to simplify the debugging. */
+            if (ss->output_bits_buffered) {
+                *(++pw->ptr) = ss->output_bits_buffer;
+                ss->output_bits_buffered = 0;
+                ss->output_bits_buffer = 0;
+            }
+            ss->row_bits_passed = 0;
+            continue;
+        }
+        if (ss->row_alignment_bytes_left) {
+            uint k = pr->limit - pr->ptr;
+
+            if (k > ss->row_alignment_bytes_left)
+                k = ss->row_alignment_bytes_left;
+            pr->ptr += k;
+            ss->row_alignment_bytes_left -= k;
+            if (pr->ptr >= pr->limit)
+                return 0;
+        }
+        if (ss->output_component_index < ss->output_depth) {
+            for (;ss->output_component_index < ss->output_depth;) {
+                uint fitting = (uint)(8 - ss->output_bits_buffered);
+                uint v, w, u, n, m;
+
+                if (pw->ptr >= pw->limit)
+                    return 1;
+                v = ss->output_color[ss->output_component_index];
+                n = ss->output_bits_per_sample - ss->output_component_bits_written; /* no. of bits left */
+                w = v - ((v >> n) << n); /* the current component without written bits. */
+                if (fitting > n)
+                    fitting = n; /* no. of bits to write. */
+                m = n - fitting; /* no. of bits will left. */
+                u = w >> m;  /* bits to write (near lsb). */
+                ss->output_bits_buffer |= u << (8 - ss->output_bits_buffered - fitting);
+                ss->output_bits_buffered += fitting;
+                if (ss->output_bits_buffered >= 8) {
+                    *(++pw->ptr) = ss->output_bits_buffer;
+                    ss->output_bits_buffered = 0;
+                    ss->output_bits_buffer = 0;
+                }
+                ss->output_component_bits_written += fitting;
+                if (ss->output_component_bits_written >= ss->output_bits_per_sample) {
+                    ss->output_component_index++;
+                    ss->output_component_bits_written = 0;
+                }
+            }
+            ss->row_bits_passed += ss->bits_per_sample * ss->depth;
+            continue;
+        }
+        if (ss->input_bits_buffered < ss->bits_per_sample) {
+            if (pr->ptr >= pr->limit)
+                return 0;
+            ss->input_bits_buffer = (ss->input_bits_buffer << 8) | *++pr->ptr;
+            ss->input_bits_buffered += 8;
+            /* fixme: delay shifting the input ptr until input_bits_buffer is cleaned. */
+        }
+        if (ss->input_bits_buffered >= ss->bits_per_sample) {
+            uint w;
+
+            ss->input_bits_buffered -= ss->bits_per_sample;
+            ss->input_color[ss->input_component_index] = w = ss->input_bits_buffer >> ss->input_bits_buffered;
+            ss->input_bits_buffer &= ~(w << ss->input_bits_buffered);
+            ss->input_component_index++;
+            if (ss->input_component_index >= ss->depth) {
+                int code = ss->convert_color(ss);
+
+                if (code < 0)
+                    return ERRC;
+                ss->output_component_index = 0;
+                ss->input_component_index = 0;
+            }
+        }
+    }
+}
+
+const stream_template s__image_transfer_template = {
+    &st_stream_image_transfer_state, s_image_transfer_init, s_image_transfer_process, 1, 1,
     NULL, NULL
 };

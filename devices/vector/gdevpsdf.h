@@ -460,6 +460,11 @@ int psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
         gx_device_psdf *pdev, gs_pixel_image_t * pim,
         const gs_gstate *pgs);
 
+/* Set up an image filter. to appply transfer functions */
+int psdf_setup_image_transfer_filter(psdf_binary_writer *pbw,
+        gx_device_psdf *pdev, gs_pixel_image_t * pim,
+        const gs_gstate *pgs);
+
 /* ---------------- Symbolic data printing ---------------- */
 
 /* Backward compatibility definitions. */

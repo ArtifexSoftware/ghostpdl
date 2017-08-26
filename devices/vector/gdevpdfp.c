@@ -414,8 +414,11 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                     cl = (float)1.6;
                 else if (cl < (float)1.75)
                     cl = (float)1.7;
-                else
+                else {
                     cl = (float)2.0;
+                    if (pdev->params.TransferFunctionInfo == tfi_Preserve)
+                        pdev->params.TransferFunctionInfo = tfi_Apply;
+                }
             }
         case 1:
             break;
@@ -555,6 +558,12 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     ecode = gdev_psdf_put_params(dev, plist);
     if (ecode < 0)
         goto fail;
+
+    if (pdev->CompatibilityLevel > 1.7 && pdev->params.TransferFunctionInfo == tfi_Preserve) {
+        pdev->params.TransferFunctionInfo = tfi_Apply;
+        emprintf(pdev->memory, "\nIt is not possible to preserve transfer functions in PDF 2.0\ntransfer functions will be applied instead\n");
+    }
+
     if (pdev->params.ConvertCMYKImagesToRGB) {
         if (pdev->params.ColorConversionStrategy == ccs_CMYK) {
             emprintf(pdev->memory, "ConvertCMYKImagesToRGB is not compatible with ColorConversionStrategy of CMYK\n");
@@ -573,13 +582,16 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         }
     }
     switch (pdev->params.ColorConversionStrategy) {
+        case ccs_ByObjectType:
         case ccs_LeaveColorUnchanged:
+            break;
         case ccs_UseDeviceDependentColor:
         case ccs_UseDeviceIndependentColor:
         case ccs_UseDeviceIndependentColorForImages:
-        case ccs_ByObjectType:
+            pdev->params.TransferFunctionInfo = tfi_Apply;
             break;
         case ccs_CMYK:
+            pdev->params.TransferFunctionInfo = tfi_Apply;
             if (pdev->icc_struct)
                 rc_decrement(pdev->icc_struct,
                              "reset default profile\n");
@@ -589,6 +601,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                 goto fail;
             break;
         case ccs_Gray:
+            pdev->params.TransferFunctionInfo = tfi_Apply;
             if (pdev->icc_struct)
                 rc_decrement(pdev->icc_struct,
                              "reset default profile\n");
@@ -599,6 +612,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
             break;
         case ccs_sRGB:
         case ccs_RGB:
+            pdev->params.TransferFunctionInfo = tfi_Apply;
             /* Only bother to do this if we didn't handle it above */
             if (!pdev->params.ConvertCMYKImagesToRGB) {
                 if (pdev->icc_struct)

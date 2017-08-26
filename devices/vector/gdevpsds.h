@@ -224,6 +224,33 @@ struct stream_image_colors_state_s {
     int (*convert_color)(stream_image_colors_state *);
 };
 
+typedef struct stream_image_transfer_state_s stream_image_transfer_state;
+
+struct stream_image_transfer_state_s {
+    stream_state_common;
+    uint width, height, depth, bits_per_sample;
+    byte output_bits_buffer;
+    uint output_bits_buffered;
+    uint output_component_bits_written;
+    uint output_component_index;
+    uint output_depth, output_bits_per_sample;
+    uint raster;
+    uint row_bits;
+    uint row_bits_passed;
+    uint row_alignment_bytes;
+    uint row_alignment_bytes_left;
+    uint input_component_index;
+    uint input_bits_buffer;
+    uint input_bits_buffered;
+    uint input_color[GS_IMAGE_MAX_COLOR_COMPONENTS];
+    uint output_color[GS_IMAGE_MAX_COLOR_COMPONENTS];
+    float Decode[GS_IMAGE_MAX_COLOR_COMPONENTS * 2];
+    const gs_color_space *pcs;
+    gx_device *pdev;
+    const gs_gstate *pgs;
+    int (*convert_color)(stream_image_transfer_state *);
+};
+
 #define private_st_image_colors_state()	/* in gdevpsds.c */\
   gs_private_st_ptrs3(st_stream_image_colors_state, stream_image_colors_state,\
     "stream_image_colors_state", stream_image_colors_enum_ptrs,\
@@ -239,5 +266,19 @@ void s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *p
                                float *Decode);
 
 extern const stream_template s__image_colors_template;
+
+#define private_st_image_transfer_state()	/* in gdevpsds.c */\
+  gs_private_st_ptrs3(st_stream_image_transfer_state, stream_image_transfer_state,\
+    "stream_image_transfer_state", stream_image_transfer_enum_ptrs,\
+    stream_image_transfer_reloc_ptrs, pcs, pdev, pgs)
+
+void s_image_transfer_set_dimensions(stream_image_transfer_state * st,
+                               int width, int height, int depth, int bits_per_sample);
+
+void s_image_transfer_set_color_space(stream_image_transfer_state * ss, gx_device *pdev,
+                               const gs_color_space *pcs, const gs_gstate *pgs,
+                               float *Decode);
+
+extern const stream_template s__image_transfer_template;
 
 #endif /* gdevpsds_INCLUDED */
