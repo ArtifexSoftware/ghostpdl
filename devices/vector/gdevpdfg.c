@@ -1095,8 +1095,17 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
             }
             code = pdf_string_to_cos_name(pdev, (byte *)"DeviceN",
                               7, &v);
+            if (code < 0) {
+                COS_FREE(pca, "convert DeviceN");
+                return code;
+            }
+
             code = cos_dict_put((cos_dict_t *)pres_attributes->object,
                 (const byte *)"/Subtype", 8, &v);
+            if (code < 0) {
+                COS_FREE(pca, "convert DeviceN");
+                return code;
+            }
 
             code = pdf_substitute_resource(pdev, &pres_attributes, resourceOther, NULL, true);
             if (code < 0) {
