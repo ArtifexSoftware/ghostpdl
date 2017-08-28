@@ -1316,6 +1316,8 @@ currentdict /xref-char-dict undef
         % Read any previous cross-reference tables.  When we are done,
         % verify that the entries in the xref tables are valid if NoVerifyXref
         % is not defined.
+     /PrevArray [] def                        % Empty array, we use this to detect circular /Prev entries in xref (see below)
+                                              % For some reqason, leaving this on the stack messes up seom files.
      Trailer
      { /Prev knownoget not {	% If no previous xref table then ...
          Classic-xref {
@@ -1323,10 +1325,43 @@ currentdict /xref-char-dict undef
          } if
          exit
        } if
+
+       %% This code is used to detect circular references in xref tables. Every time
+       %% we detect a /Prev in the xref, we check the given offset of the /Prev xref
+       %% against a list of all previously encountered /Prev offsets. If we find that
+       %% we have previously seen this one, we raise an error, stop processing the xref
+       %% but carry on with the PDF file (unless PDFSTOPONERROR is true).
+       //false exch PrevArray           %% Used to determine if the looop found a circular ref
+       {                                %% //false offset 'array entry'
+         1 index eq {
+           exch pop //true exch         %% We've seen this offset before, pop the false and replace with true
+           exit                         %% //true offset
+         } if
+       } forall
+
+       exch                             %% [...] offset bool
+       {
+         (\n   **** Error: Circular /Prev entry while reading xref.\n               Aborting xref read, output may be incorrect.\n)
+         pdfformaterror
+         PDFSTOPONERROR {
+           /readxref /syntaxerror cvx signalerror
+         } if
+         pop exit                       %% [...] and then exit this loop
+       } if
+
+       PrevArray dup                         %% offset [...] [...]
+       length 1 add array               %% offset [...] [    ]
+       dup 3 1 roll                     %% offset [    ] [...] [    ]
+       copy pop                         %% offset [... ]
+       dup dup length 1 sub             %% offset [... ] [... ] index
+       3 index                          %% offset [... ] [... ] index offset
+       put /PrevArray exch def
+
        { readxref }
        PDFSTOPONERROR not {
          .internalstopped {
            recover_xref_data	% Read failed.  Attempt to recover xref data.
+           /PrevArray where {/PrevArray undef} if     %% remove the array we were using to detect circular references
            exit			% Exit loop since recover gets all obj data.
          } if  			% If readxref stopped
        } {
@@ -1345,6 +1380,7 @@ currentdict /xref-char-dict undef
          } ifelse
        } forall
      } loop			% Loop to previous trailer
+     /PrevArray where {/PrevArray undef} if     %% remove the array we were using to detect circular references
    } if
 
    /NumObjects Objects length def  % To check that obj# < NumObjects
