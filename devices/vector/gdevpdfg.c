@@ -2608,7 +2608,7 @@ pdf_write_threshold_halftone(gx_device_pdf *pdev,
         "/Width", ptht->width));
     CHECK(cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object,
         "/Height", ptht->height));
-    if (pdev->CompatibilityLevel <= 1.7 && *trs != 0)
+    if (pdev->CompatibilityLevel <= 1.7)
         CHECK(cos_dict_put_c_strings((cos_dict_t *)writer.pres->object,
             "/TransferFunction", trs));
     stream_write(writer.binary.strm, ptht->thresholds.data, ptht->thresholds.size);
@@ -2647,7 +2647,7 @@ pdf_write_threshold2_halftone(gx_device_pdf *pdev,
         CHECK(cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object,
             "/Height2", ptht->height2));
     }
-    if (pdev->CompatibilityLevel <= 1.7 && *trs != 0)
+    if (pdev->CompatibilityLevel <= 1.7)
         CHECK(cos_dict_put_c_strings((cos_dict_t *)writer.pres->object,
             "/TransferFunction", trs));
     s = writer.binary.strm;
