@@ -128,6 +128,20 @@ pdfdict begin
   1 index /Default eq { exch pop } { pop resolveidfnproc } ifelse
 } bdef
 
+%% A BBox where width or height (or both) is 0 should still paint one pixel
+%% See the ISO 32000-2:2017 spec, section 8.7.4.3, p228 'BBox' and 8.7.3.1
+/FixPatternBBox
+{
+  dup aload pop
+  3 index 2 index sub 0 eq {
+    3 index 0.000001 add 3 -1 roll pop exch
+  } if
+  2 index 1 index sub 0 eq {
+    2 index 0.000001 add exch pop
+  }if
+  5 -1 roll astore
+}bind def
+
 % ---------------- Shadings ---------------- %
 
 /shrdict mark
@@ -149,6 +163,7 @@ pdfdict begin
   /BBox {
     dup dup dup aload pop normrect_elems
     5 -1 roll astore
+    FixPatternBBox
   } bind
   /ColorSpace {
     resolvecolorspace
@@ -1183,7 +1198,7 @@ currentdict end readonly def
     2 index /Resources knownoget { oforce } { 0 dict } ifelse
     /.pdfpaintproc cvx
   ] cvx put
-  dup /BBox 2 copy knownoget { normrect put } { pop pop } ifelse
+  dup /BBox 2 copy knownoget { normrect FixPatternBBox put } { pop pop } ifelse
   dup /.pattern_uses_transparency  1 index patternusestransparency put
   PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { //true } ifelse { (%Pattern: ) print dup === flush } if } if
 } bdef
