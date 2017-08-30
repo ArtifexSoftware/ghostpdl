@@ -34,7 +34,7 @@ typedef struct gs_font_type42_s gs_font_type42;
 struct gx_ttfReader_s {
     ttfReader super;
     int pos;
-    bool error;
+    int error;
     int extra_glyph_index;
     gs_font_type42 *pfont;
     gs_memory_t *memory;
