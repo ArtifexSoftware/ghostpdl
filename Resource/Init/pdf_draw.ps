@@ -3888,7 +3888,7 @@ currentdict /set_bc_color undef
           2 index 2 div add exch
           3 index 2 div add exch translate  % dx dy
 
-          50 div exch 190 div .min dup scale
+          50 div exch 190 div .min dup 0.0 eq {pop 1.0} if dup scale
 
           /Name knownoget not { /Draft } if
           //stamp_dict 1 index known not { exch pop /Draft exch } if
