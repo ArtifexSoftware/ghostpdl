@@ -1666,7 +1666,7 @@ gx_color_frac_map(frac cv, const frac * values)
     mdv = values[cmi + 1] - mv;
 #if ARCH_INTS_ARE_SHORT
     /* Only use long multiplication if necessary. */
-    if (mdv < -1 << (16 - cp_frac_bits) ||
+    if (mdv < -(1 << (16 - cp_frac_bits)) ||
         mdv > 1 << (16 - cp_frac_bits)
         )
         return mv + (uint) (((ulong) rem * mdv) >> cp_frac_bits);
