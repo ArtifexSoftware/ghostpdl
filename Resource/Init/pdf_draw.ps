@@ -3091,11 +3091,18 @@ end
   //false exch
   NeedAppearances {
     dup /FT fget {
-      /Tx eq {
-        dup /V oknown {
-          pop not 1
-        } if
-      } if
+     dup /Tx eq {
+       pop
+       dup /V oknown {
+         pop not 1
+       } if
+     } {
+       /Ch eq {
+         dup /V oknown {
+           pop not 1
+         } if
+       } if
+     } ifelse
     } if
   } if
   pop
@@ -3117,6 +3124,7 @@ end
 %      dup /AP undef
 %    } if
 %  } if
+
   dup /AP knownoget {
     dup /N known not {
       (   **** Error: Appearance dictionary (AP) lacks the mandatory normal (N) appearance.\n)
@@ -4336,7 +4344,51 @@ currentdict /.PDFDrawAnnotType? undef
 } bdef
 
 /Ch {
-  (Ch is not yet implemened) //== exec
+  dup /AP known 3 index /NeedAppearances knownoget not { //true } if not and {
+    dup 1 1 3 -1 roll drawwidget
+  } {
+    %% If we don't have a NeedApperances, treat as true, because Acrobat
+    %% always regenerates Appearances anyway.
+    2 index /NeedAppearances knownoget not { //true } if {
+      dup /AP << /N 10 dict dup cvx begin >> put
+      /Subtype /Form def
+      /BBox [ 0 0 4 index /Rect oget { oforce } forall  3 -1 roll sub abs 3 1 roll sub abs exch ] def
+      /Resources 3 index /DR pget not { 0 dict } if def
+      /File 1000 string dup 3 1 roll def
+      /Length 1000 def
+                            % <acroform> <field> <annot> (string)
+      /NullEncode filter    % <acroform> <field> <annot> file
+
+      dup (BT ) writestring
+      2 index /DA pget not { () } if
+      [ exch
+        { token {
+            dup /Tf eq {
+              2 index 0 eq {
+                /BBox load 3 get
+                0.75 mul   % empirical constant
+                4 -1 roll pop 3 1 roll
+              } if
+            } if
+            exch
+          } {
+            exit
+          } ifelse
+        } loop
+      ]
+      { 1 index exch write== } forall
+      dup 3 index /MaxLen pget not { 0 } if write=
+      dup 3 index /V pget not {
+        3 index /DV pget not { () } if
+      } if write==
+      dup 3 index /Ff pget not { 0 } if write=
+      dup 3 index /Q pget not { 0 } if write=
+      dup (Tform ET) write=
+      end
+      closefile             %  <acroform> <field> <annot>
+      dup 1 1 3 -1 roll drawwidget
+    } if
+  } ifelse
 } bdef
 
 /Sig {

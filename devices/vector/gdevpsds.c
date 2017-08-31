@@ -1419,7 +1419,7 @@ s_image_transfer_apply_transfer(stream_image_transfer_state * ss)
 
     switch (csi2) {
         case gs_color_space_index_DeviceGray:
-            psrc[0] = (unsigned short) (cc.paint.values[0] * 65535.0);;
+            psrc[0] = (unsigned short) (cc.paint.values[0] * 65535.0);
             conc[0] = ushort2frac(psrc[0]);
             code = gx_remap_concrete_DGray((const frac *)&conc, ss->pcs, &dc, (const gs_gstate *)ss->pgs, (gx_device *)ss->pdev, gs_color_select_texture);
             if (code < 0)
@@ -1428,7 +1428,7 @@ s_image_transfer_apply_transfer(stream_image_transfer_state * ss)
             break;
         case gs_color_space_index_DeviceRGB:
             for (i=0;i<3;i++) {
-                psrc[i] = (unsigned short) (cc.paint.values[i] * 65535.0);;
+                psrc[i] = (unsigned short) (cc.paint.values[i] * 65535.0);
                 conc[i] = ushort2frac(psrc[i]);
             }
             code = gx_remap_concrete_DRGB((const frac *)&conc, ss->pcs, &dc, (const gs_gstate *)ss->pgs, (gx_device *)ss->pdev, gs_color_select_texture);
@@ -1440,7 +1440,7 @@ s_image_transfer_apply_transfer(stream_image_transfer_state * ss)
             break;
         case gs_color_space_index_DeviceCMYK:
             for (i=0;i<4;i++) {
-                psrc[i] = (unsigned short) (cc.paint.values[i] * 65535.0);;
+                psrc[i] = (unsigned short) (cc.paint.values[i] * 65535.0);
                 conc[i] = ushort2frac(psrc[i]);
             }
             code = gx_remap_concrete_DCMYK((const frac *)&conc, ss->pcs, &dc, (const gs_gstate *)ss->pgs, (gx_device *)ss->pdev, gs_color_select_texture);
