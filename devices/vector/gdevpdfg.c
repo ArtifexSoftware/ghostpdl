@@ -621,21 +621,18 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_gstate * pgs, c
                         case gs_color_space_index_DeviceGray:
                             cc.paint.values[0] = pcc->paint.values[0];
                             code = apply_transfer_and_convert_gray_to_base(pdev, pgs, &cc, &cc, ppscc);
-                            pcc = &cc;
                             return code;
                             break;
                         case gs_color_space_index_DeviceRGB:
                             for (ix=0;ix<3;ix++)
                                 cc.paint.values[ix] = pcc->paint.values[ix];
                             code = apply_transfer_and_convert_rgb_to_base(pdev, pgs, &cc, &cc, ppscc);
-                            pcc = &cc;
                             return code;
                             break;
                         case gs_color_space_index_DeviceCMYK:
                             for (ix=0;ix<4;ix++)
                                 cc.paint.values[ix] = pcc->paint.values[ix];
                             code = apply_transfer_and_convert_cmyk_to_base(pdev, pgs, &cc, &cc, ppscc);
-                            pcc = &cc;
                             return code;
                             break;
                         default:
