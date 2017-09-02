@@ -187,9 +187,16 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
         goto done;
     }
     /* Init the min_feature_size expansion for entire image (not strip) */
-    if ((min_feature_size > 1) && (row_first == 0))
+    /* This is only called from gdev_fax_print_page() and row_first is *always* 0
+     * By removing this check, we can make it synonymous with the use of
+     * min_feature_data below, so we don't need to check min_feature_data there.
+     */
+    if ((min_feature_size > 1) /* && (row_first == 0) */) {
         code = min_feature_size_init(mem, min_feature_size,
                                      width, pdev->height, &min_feature_data);
+        if (code < 0)
+            goto done;
+    }
     if (min_feature_size > 1)
         row_in = max(0, row_first-min_feature_size);    /* need some data before this row */
 
@@ -257,7 +264,13 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
         fwrite(out, 1, w.ptr + 1 - out, prn_stream);
 
   done:
-    if ((min_feature_size > 1) && (lnum == pdev->height))
+    /* We only get one strip, we need to free min_feature_data without
+     * any further checks or we will leak memory as we will allocate a
+     * new one next time round. In truth it should only be possible to
+     * get here with lnum != pdev-.Height in the case of an error, in
+     * which case we still want to free the buffer!
+     */
+    if ((min_feature_size > 1) /* && (lnum == pdev->height) */)
         min_feature_size_dnit(min_feature_data);
     gs_free_object(mem, out, "gdev_stream_print_page(out)");
     gs_free_object(mem, in, "gdev_stream_print_page(in)");
