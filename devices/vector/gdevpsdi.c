@@ -876,32 +876,6 @@ psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
     return 0;
 }
 
-/* Set up a filter to apply transfer functions to image samples. */
-int
-psdf_setup_image_transfer_filter(psdf_binary_writer *pbw,
-                               gx_device_psdf *pdev, gs_pixel_image_t * pim,
-                               const gs_gstate *pgs)
-{   /* fixme: currently it's a stub convertion to mask. */
-    int code;
-    stream_state *ss = s_alloc_state(pdev->memory, s__image_transfer_template.stype,
-        "psdf_setup_image_transfer_filter");
-
-    if (ss == 0)
-        return_error(gs_error_VMerror);
-    pbw->memory = pdev->memory;
-    pbw->dev = pdev;
-    code = psdf_encode_binary(pbw, &s__image_transfer_template, ss);
-    if (code < 0)
-        return code;
-    s_image_transfer_set_dimensions((stream_image_transfer_state *)ss,
-                    pim->Width, pim->Height,
-                    gs_color_space_num_components(pim->ColorSpace),
-                    pim->BitsPerComponent);
-    s_image_transfer_set_color_space((stream_image_transfer_state *)ss,
-                    (gx_device *)pdev, pim->ColorSpace, pgs, pim->Decode);
-    return 0;
-}
-
 /* Set up compression and downsampling filters for an image. */
 /* Note that this may modify the image parameters. */
 int

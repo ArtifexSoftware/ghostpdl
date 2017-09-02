@@ -267,18 +267,4 @@ void s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *p
 
 extern const stream_template s__image_colors_template;
 
-#define private_st_image_transfer_state()	/* in gdevpsds.c */\
-  gs_private_st_ptrs3(st_stream_image_transfer_state, stream_image_transfer_state,\
-    "stream_image_transfer_state", stream_image_transfer_enum_ptrs,\
-    stream_image_transfer_reloc_ptrs, pcs, pdev, pgs)
-
-void s_image_transfer_set_dimensions(stream_image_transfer_state * st,
-                               int width, int height, int depth, int bits_per_sample);
-
-void s_image_transfer_set_color_space(stream_image_transfer_state * ss, gx_device *pdev,
-                               const gs_color_space *pcs, const gs_gstate *pgs,
-                               float *Decode);
-
-extern const stream_template s__image_transfer_template;
-
 #endif /* gdevpsds_INCLUDED */
