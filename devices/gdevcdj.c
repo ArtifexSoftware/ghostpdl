@@ -2869,18 +2869,18 @@ gdev_cmyk_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
 /* Mapping of CMYK colors. */
 
 static int
-gdev_cmyk_map_color_cmyk(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
+gdev_cmyk_map_color_cmyk(gx_device *pdev, gx_color_index color, gx_color_value pcmyk[])
 {
     switch (pdev->color_info.depth) {
         case 1:
-           prgb[0] = gx_max_color_value * (1 - color);
+           pcmyk[0] = gx_max_color_value * (1 - color);
            break;
 
         case 8:
            if (pdev->color_info.num_components == 1) {
                gx_color_value value = (gx_color_value) color ^ 0xff;
 
-               prgb[0] = (value << 8) + value;
+               pcmyk[0] = (value << 8) + value;
 
                break;
            }
@@ -2893,10 +2893,10 @@ gdev_cmyk_map_color_cmyk(gx_device *pdev, gx_color_index color, gx_color_value p
             COLDUP_SETUP(nbits);
             gx_value_cmyk_bits(color, bcyan, bmagenta, byellow, black, nbits);
 
-            prgb[0] = bcyan;
-            prgb[1] = bmagenta;
-            prgb[2] = byellow;
-            prgb[3] = black;
+            pcmyk[0] = bcyan;
+            pcmyk[1] = bmagenta;
+            pcmyk[2] = byellow;
+            pcmyk[3] = black;
         }
     }
 
