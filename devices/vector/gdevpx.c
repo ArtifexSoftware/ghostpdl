@@ -1693,7 +1693,7 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
     int code;
     stream *s;
     gx_color_index color0 = zero, color1 = one;
-    gx_color_index white = (1 << dev->color_info.depth) - 1;
+    gx_color_index white = ((gx_color_index)1 << dev->color_info.depth) - 1;
     gx_color_index black = 0;
     gs_logical_operation_t lop;
     byte palette[2 * 3];
@@ -1923,7 +1923,7 @@ pclxl_fill_mask(gx_device * dev,
     /* This is similiar to the copy_mono white-on-mask,
      * except we are drawing white on the black of a black/white mask,
      * so we invert source, compared to copy_mono */
-    if (foreground == (1 << dev->color_info.depth) - 1) {       /* white */
+    if (foreground == ((gx_color_index)1 << dev->color_info.depth) - 1) {       /* white */
         lop = rop3_not(rop3_S) | (rop3_D & rop3_S);
     } else if (foreground == 0) {       /* black */
         lop = (rop3_S & rop3_D);
