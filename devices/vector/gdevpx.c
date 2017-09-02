@@ -1466,7 +1466,7 @@ pclxl_lineto(gx_device_vector * vdev, double x0, double y0, double x,
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *) vdev;
 
-    if (xdev->points.type != POINTS_LINES || xdev->points.count >= NUM_POINTS) {
+    if (xdev->points.type != POINTS_LINES || xdev->points.count >= NUM_POINTS - 2) {
         if (xdev->points.type != POINTS_NONE) {
             int code = pclxl_flush_points(xdev);
 
@@ -1476,6 +1476,12 @@ pclxl_lineto(gx_device_vector * vdev, double x0, double y0, double x,
         xdev->points.current.x = (int)(x0 + 0.5);
         xdev->points.current.y = (int)(y0 + 0.5);
         xdev->points.type = POINTS_LINES;
+
+        /* This can only happen if we get two 'POINTS_NONE' in a row, in which case
+         * just overwrite the previous one below.
+         */
+        if (xdev->points.count >= NUM_POINTS - 1)
+            xdev->points.count--;
     }
     {
         gs_int_point *ppt = &xdev->points.data[xdev->points.count++];
@@ -1493,7 +1499,7 @@ pclxl_curveto(gx_device_vector * vdev, double x0, double y0,
     gx_device_pclxl *const xdev = (gx_device_pclxl *) vdev;
 
     if (xdev->points.type != POINTS_CURVES ||
-        xdev->points.count >= NUM_POINTS - 2) {
+        xdev->points.count >= NUM_POINTS - 4) {
         if (xdev->points.type != POINTS_NONE) {
             int code = pclxl_flush_points(xdev);
 
@@ -1503,6 +1509,12 @@ pclxl_curveto(gx_device_vector * vdev, double x0, double y0,
         xdev->points.current.x = (int)(x0 + 0.5);
         xdev->points.current.y = (int)(y0 + 0.5);
         xdev->points.type = POINTS_CURVES;
+
+        /* This can only happen if we get multiple 'POINTS_NONE' in a row, in which case
+         * just overwrite the previous one below.
+         */
+        if (xdev->points.count >= NUM_POINTS - 3)
+            xdev->points.count -= 3;
     }
     {
         gs_int_point *ppt = &xdev->points.data[xdev->points.count];
