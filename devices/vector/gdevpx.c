@@ -2227,7 +2227,7 @@ pclxl_begin_image(gx_device * dev,
             /* This is similiar to the copy_mono white-on-mask,
              * except we are drawing white on the black of a black/white mask,
              * so we invert source, compared to copy_mono */
-            if (foreground == (1 << dev->color_info.depth) - 1) {       /* white */
+            if (foreground == ((gx_color_index)1 << dev->color_info.depth) - 1) {       /* white */
                 lop = rop3_not(rop3_S) | (rop3_D & rop3_S);
             } else if (foreground == 0) {       /* black */
                 lop = (rop3_S & rop3_D);
