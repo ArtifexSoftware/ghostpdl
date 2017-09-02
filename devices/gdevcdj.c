@@ -840,28 +840,6 @@ hp_colour_open(gx_device *pdev, int ptype)
 
     break;
 
-    /*NOTREACHED*/
-
-    /*
-     * The margins must be set so that the resulting page length will be
-     * expressed exactly as a multiple of tenthes of inches.
-     *
-     */
-
-    /**/ {
-        float *bjcm = (float *) m;
-
-        byte pdimen = (byte)
-            (pdev->height / pdev->y_pixels_per_inch * 10.
-             - bjcm[3] * 10. - bjcm[1] * 10. + .5) + 1;
-        do {
-            --pdimen;
-            bjcm[1] = pdev->height / pdev->y_pixels_per_inch
-                - bjcm[3] - (float) pdimen / 10.;
-        } while (bjcm[1] < BJC_LOWER_LIMIT);
-    }
-
-    break;
   }
   if (m != 0)
     gx_device_set_margins(pdev, m, true);
