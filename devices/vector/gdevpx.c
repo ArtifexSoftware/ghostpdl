@@ -2609,8 +2609,8 @@ pclxl_get_params(gx_device * dev,       /* I - Device info */
 				&(xdev->MediaPosition))) < 0)
         return (code);
 
-    if ((code = param_string_from_string(s, xdev->MediaType)) < 0)
-        return (code);
+    param_string_from_string(s, xdev->MediaType);
+
     if ((code = param_write_string(plist, "MediaType", &s)) < 0)
         return (code);
 
