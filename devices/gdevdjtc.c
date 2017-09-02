@@ -109,12 +109,15 @@ djet500c_print_page(gx_device_printer *pdev, FILE *fprn)
        {    int lnum;
         int num_blank_lines = 0;
         int lineSize = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
-        if (lineSize>bitSize)
-        {
-            if (bitData) free(bitData);
-            bitSize=lineSize;
-            bitData=(byte*)malloc(bitSize+16);
-        }
+
+        if (lineSize <= 0)
+            return_error(gs_error_rangecheck);
+
+        bitSize=lineSize;
+        bitData=(byte*)malloc(bitSize+16);
+        if (bitData == 0)
+            return_error(gs_error_VMerror);
+
         for (lnum=0; lnum<pdev->height; lnum++)
         {
             byte *endData;
