@@ -863,7 +863,8 @@ hp_colour_open(gx_device *pdev, int ptype)
 
     break;
   }
-  gx_device_set_margins(pdev, m, true);
+  if (m != 0)
+    gx_device_set_margins(pdev, m, true);
   return gdev_prn_open(pdev);
 }
 
