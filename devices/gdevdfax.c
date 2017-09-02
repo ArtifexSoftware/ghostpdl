@@ -93,13 +93,18 @@ dfax_print_page(gx_device_printer *dev, FILE *prn_stream)
 
         /* Write the page */
         code = gdev_fax_print_page(dev, prn_stream, &state);
+        if (code < 0)
+            return code;
 
         /* Fixup page count */
-        fseek(prn_stream, 24L, SEEK_SET);
-        hdr[24] = dfdev->pageno; hdr[25] = dfdev->pageno >> 8;
-        fwrite(hdr+24, 2, 1, prn_stream);
+        if (fseek(prn_stream, 24L, SEEK_SET) != 0)
+            return_error(gs_error_ioerror);
 
-        return code;
+        hdr[24] = dfdev->pageno; hdr[25] = dfdev->pageno >> 8;
+        if (fwrite(hdr+24, 2, 1, prn_stream) != 1)
+            return_error(gs_error_ioerror);
+
+        return 0;
 }
 
 #undef dfdev
