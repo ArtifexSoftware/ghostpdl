@@ -1217,8 +1217,8 @@ mwe:   	    param_signal_error(plist, oname, code = ncode);
             /**/ {
                 int n;
 
-                for (n = 0; n < 8 * sizeof(n) / BJC_RESOLUTION_BASE; ++n) {
-                    float res = (float)(BJC_RESOLUTION_BASE * (1 << n));
+                for (n = 0; n < 8 * sizeof(n); ++n) {
+                    float res = (float)(BJC_RESOLUTION_BASE * n);
 
                     if (res == hwra.data[0]) break;
 
