@@ -536,7 +536,7 @@ static int dumpPage(gx_device_printer * pSource,
     short size = pCommandList->current - HL7X0_LENGTH;
     *(pSaveCommandStart++)  = '@';
     *(pSaveCommandStart++)  = 'G';
-    *(pSaveCommandStart++)  = (Byte) (size >> 16);
+    *(pSaveCommandStart++)  = 0;                    /* was: (Byte) (size >> 16) as per hte spec, but shorts cannot exceed 16 bits! */
     *(pSaveCommandStart++)  = (Byte) (size >> 8);
     *(pSaveCommandStart++)  = (Byte) (size);
   }
