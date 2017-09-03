@@ -227,7 +227,7 @@ gprf_prn_open(gx_device * pdev)
     gprf_device *pdev_gprf = (gprf_device *) pdev;
     int code;
     int k;
-    bool force_pdf, limit_icc, force_ps;
+    bool force_pdf, force_ps;
     cmm_dev_profile_t *profile_struct;
     gsicc_rendering_param_t rendering_params;
 
@@ -255,23 +255,21 @@ gprf_prn_open(gx_device * pdev)
        1                    0               force_pdf 0 force_ps 1  (colorants not known)
        1                    1               force_pdf 1 force_ps 0  (colorants known)
        */
-#if LIMIT_TO_ICC
-    limit_icc = true;
-#else
-    limit_icc = false;
-#endif
     code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
+    if (code < 0)
+        return code;
+
     if (profile_struct->spotnames == NULL) {
         force_pdf = false;
         force_ps = false;
     } else {
-        if (limit_icc) {
-            force_pdf = true;
-            force_ps = false;
-        } else {
-            force_pdf = false;
-            force_ps = true;
-        }
+#if LIMIT_TO_ICC
+        force_pdf = true;
+        force_ps = false;
+#else
+        force_pdf = false;
+        force_ps = true;
+#endif
     }
     pdev_gprf->warning_given = false;
     /* With planar the depth can be more than 64.  Update the color
@@ -559,7 +557,7 @@ typedef struct {
 
     gsicc_link_t *icclink;
 
-    int table_offset;
+    unsigned long table_offset;
     gx_device_printer *dev;
     int deflate_bound;
     byte *deflate_block;
@@ -649,8 +647,8 @@ gprf_write(gprf_write_ctx *xc, const byte *buf, int size) {
     int code;
 
     code = fwrite(buf, 1, size, xc->f);
-    if (code < 0)
-        return code;
+    if (code < size)
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -678,32 +676,68 @@ gprf_write_32(gprf_write_ctx *xc, bits32 v)
     return gprf_write(xc, (byte *)&buf, 4);
 }
 
-static void
+static int
 gprf_write_header(gprf_write_ctx *xc)
 {
-    int i;
+    int i, code;
     int index;
-    int offset = ftell(xc->f);
+    unsigned int offset = (unsigned int)ftell(xc->f);
     gx_devn_prn_device *dev = (gx_devn_prn_device *)xc->dev;
 
-    gprf_write(xc, (const byte *)"GSPF", 4); /* Signature */
-    gprf_write_16(xc, 1); /* Version - Always equal to 1*/
-    gprf_write_16(xc, 0); /* Compression method - 0 (deflated deltas) */
-    gprf_write_32(xc, xc->width);
-    gprf_write_32(xc, xc->height);
-    gprf_write_16(xc, 8); /* Bits per channel */
-    gprf_write_16(xc, xc->num_channels); /* Number of separations */
-    gprf_write_32(xc, 0); /* ICC offset */
-    gprf_write_32(xc, 0); /* ICC offset */
-    gprf_write_32(xc, 0); /* Table offset */
-    gprf_write_32(xc, 0); /* Table offset */
-    gprf_write_32(xc, 0); /* Reserved */
-    gprf_write_32(xc, 0); /* Reserved */
-    gprf_write_32(xc, 0); /* Reserved */
-    gprf_write_32(xc, 0); /* Reserved */
-    gprf_write_32(xc, 0); /* Reserved */
-    gprf_write_32(xc, 0); /* Reserved */
-    gprf_write_32(xc, 0); /* Reserved */
+    code = gprf_write(xc, (const byte *)"GSPF", 4); /* Signature */
+    if (code < 0)
+        return code;
+    code = gprf_write_16(xc, 1); /* Version - Always equal to 1*/
+    if (code < 0)
+        return code;
+    code = gprf_write_16(xc, 0); /* Compression method - 0 (deflated deltas) */
+    if (code < 0)
+        return code;
+    code = gprf_write_32(xc, xc->width);
+    if (code < 0)
+        return code;
+    code = gprf_write_32(xc, xc->height);
+    if (code < 0)
+        return code;
+    code = gprf_write_16(xc, 8); /* Bits per channel */
+    if (code < 0)
+        return code;
+    code = gprf_write_16(xc, xc->num_channels); /* Number of separations */
+    if (code < 0)
+        return code;
+    code = gprf_write_32(xc, 0); /* ICC offset */
+    if (code < 0)
+        return code;
+    code = gprf_write_32(xc, 0); /* ICC offset */
+    if (code < 0)
+        return code;
+    code = gprf_write_32(xc, 0); /* Table offset */
+    if (code < 0)
+        return code;
+    code = gprf_write_32(xc, 0); /* Table offset */
+    if (code < 0)
+        return code;
+    code = gprf_write_32(xc, 0); /* Reserved */
+    if (code < 0)
+        return code;
+    code = gprf_write_32(xc, 0); /* Reserved */
+    if (code < 0)
+        return code;
+    code = gprf_write_32(xc, 0); /* Reserved */
+    if (code < 0)
+        return code;
+    code = gprf_write_32(xc, 0); /* Reserved */
+    if (code < 0)
+        return code;
+    code = gprf_write_32(xc, 0); /* Reserved */
+    if (code < 0)
+        return code;
+    code = gprf_write_32(xc, 0); /* Reserved */
+    if (code < 0)
+        return code;
+    code = gprf_write_32(xc, 0); /* Reserved */
+    if (code < 0)
+        return code;
 
     /* Color Mode Data */
     for (i = 0; i < xc->num_channels; i++)
@@ -774,28 +808,54 @@ gprf_write_header(gprf_write_ctx *xc)
             }
         }
 
-        gprf_write_8(xc, rgba[0]);
-        gprf_write_8(xc, rgba[1]);
-        gprf_write_8(xc, rgba[2]);
-        gprf_write_8(xc, rgba[3]);
-        gprf_write_8(xc, cmyk[0]);
-        gprf_write_8(xc, cmyk[1]);
-        gprf_write_8(xc, cmyk[2]);
-        gprf_write_8(xc, cmyk[3]);
+        code = gprf_write_8(xc, rgba[0]);
+        if (code < 0)
+            return code;
+        code = gprf_write_8(xc, rgba[1]);
+        if (code < 0)
+            return code;
+        code = gprf_write_8(xc, rgba[2]);
+        if (code < 0)
+            return code;
+        code = gprf_write_8(xc, rgba[3]);
+        if (code < 0)
+            return code;
+        code = gprf_write_8(xc, cmyk[0]);
+        if (code < 0)
+            return code;
+        code = gprf_write_8(xc, cmyk[1]);
+        if (code < 0)
+            return code;
+        code = gprf_write_8(xc, cmyk[2]);
+        if (code < 0)
+            return code;
+        code = gprf_write_8(xc, cmyk[3]);
+        if (code < 0)
+            return code;
 
-        if (namelen > 0)
-            gprf_write(xc, (const byte *)name, namelen);
-        gprf_write_8(xc, 0);
+        if (namelen > 0) {
+            code = gprf_write(xc, (const byte *)name, namelen);
+            if (code < 0)
+                return code;
+        }
+        code = gprf_write_8(xc, 0);
+        if (code < 0)
+            return code;
     }
 
     /* FIXME: ICC Profile would go here */
     /* Since MuPDF can't really use the profile and it's optional, at this point
      * we will not spend time writing out the profile. */
     /* Update header pointer to table */
-    xc->table_offset = ftell(xc->f);
-    fseek(xc->f, offset+28, SEEK_SET);
-    gprf_write_32(xc, xc->table_offset);
-    fseek(xc->f, xc->table_offset, SEEK_SET);
+    xc->table_offset = (unsigned long)ftell(xc->f);
+    if (fseek(xc->f, offset+28, SEEK_SET) != 0)
+        return_error (gs_error_ioerror);
+    code = gprf_write_32(xc, xc->table_offset);
+    if (code < 0)
+        return code;
+    if (fseek(xc->f, xc->table_offset, SEEK_SET) != 0)
+        return_error(gs_error_ioerror);
+    return 0;
 }
 
 /*
@@ -826,34 +886,46 @@ static void my_zfree(void *opaque, void *addr)
     gs_free_object(mem, addr, "gprf_zalloc");
 }
 
-static void
+static int
 updateTable(gprf_write_ctx *xc)
 {
-    int offset;
+    int offset, code;
 
     /* Read the current position of the file */
     offset = ftell(xc->f);
 
     /* Put that value into the table */
-    fseek(xc->f, xc->table_offset, SEEK_SET);
-    gprf_write_32(xc, offset);
-    gprf_write_32(xc, 0);
+    if (fseek(xc->f, xc->table_offset, SEEK_SET) != 0)
+        return_error(gs_error_ioerror);
+
+    code = gprf_write_32(xc, offset);
+    if (code < 0)
+        return code;
+
+    code = gprf_write_32(xc, 0);
+    if (code < 0)
+        return code;
+
     xc->table_offset += 8;
 
     /* Seek back to where we were before */
-    fseek(xc->f, offset, SEEK_SET);
+    if (fseek(xc->f, offset, SEEK_SET) != 0)
+        return_error(gs_error_ioerror);
+    return 0;
 }
 
 static int
 compressAndWrite(gprf_write_ctx *xc, byte *data, int tile_w, int tile_h, int raster)
 {
-    int x, y;
+    int x, y, code;
     int delta = 0;
     byte *row_d;
     int orr = 0;
     z_stream zstm;
 
-    updateTable(xc);
+    code = updateTable(xc);
+    if (code < 0)
+        return code;
 
     /* Delta the data (and check for non-zero) */
     row_d = data;
@@ -893,7 +965,9 @@ compressAndWrite(gprf_write_ctx *xc, byte *data, int tile_w, int tile_h, int ras
     deflate(&zstm, Z_FINISH);
     deflateEnd(&zstm);
    
-    gprf_write(xc, xc->deflate_block, xc->deflate_bound - zstm.avail_out);
+    code = gprf_write(xc, xc->deflate_block, xc->deflate_bound - zstm.avail_out);
+    if (code < 0)
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -1098,8 +1172,12 @@ gprf_write_image_data(gprf_write_ctx *xc)
 
     /* Reserve space in the table for all the offsets */
     for (i = 8 * tiled_w * tiled_h * (3 + xc->num_channels); i >= 0; i -= 8) {
-        gprf_write_32(xc, 0);
-        gprf_write_32(xc, 0);
+        code = gprf_write_32(xc, 0);
+        if (code < 0)
+            return code;
+        code = gprf_write_32(xc, 0);
+        if (code < 0)
+            return code;
     }
 
     /* Print the output planes */
@@ -1205,6 +1283,8 @@ cleanup:
 static int
 gprf_print_page(gx_device_printer *pdev, FILE *file)
 {
+    int code;
+
     gprf_write_ctx xc;
     gprf_device *gprf_dev = (gprf_device *)pdev;
 
@@ -1212,7 +1292,11 @@ gprf_print_page(gx_device_printer *pdev, FILE *file)
               gx_downscaler_scale(pdev->width, gprf_dev->downscale.downscale_factor),
               gx_downscaler_scale(pdev->height, gprf_dev->downscale.downscale_factor),
               gprf_dev->icclink);
-    gprf_write_header(&xc);
-    gprf_write_image_data(&xc);
+    code = gprf_write_header(&xc);
+    if (code < 0)
+        return code;
+    code = gprf_write_image_data(&xc);
+    if (code < 0)
+        return code;
     return 0;
 }
