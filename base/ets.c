@@ -118,7 +118,7 @@ ets_line_template(unsigned char * restrict * restrict dest, const ETS_SrcPixel *
     const int aspect_y2 = aspect_y * aspect_y;
     int coupling;
     int rand_shift;
-    const signed char * restrict tmline = tmmat + (y % tmheight) * tmwidth;
+    const signed char * restrict tmline = (r_style == ETS_RSTYLE_THRESHOLD) ? (tmmat + (y % tmheight) * tmwidth) : 0;
 
     /* Read seeds (but only if we are using them) */
     seed1 = (r_style == 2 ? seeds[0] : 0);
