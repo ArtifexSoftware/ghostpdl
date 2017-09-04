@@ -967,7 +967,12 @@ rinkj_escp_flush (RinkjEscp *z)
           else
             status = rinkj_byte_stream_write (z->out, thisbuf, xsb_out);
         }
-      if (status < 0) return status;
+      if (status < 0) {
+          if (rle)
+            free (compress_buf);
+          free (thisbuf);
+          return status;
+      }
 #if 0
       status = rinkj_byte_stream_puts (z->out, "\r");
       if (status < 0) return status;
