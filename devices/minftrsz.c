@@ -144,7 +144,7 @@ min_feature_size_init(gs_memory_t *mem, int min_feature_size,
                     /* the center if the current size is 1, else darken a bit   */
                     /* to the right, with the constraints of staying within the */
                     /* byte (bits 7::0). (fd-1) is to the right.                */
-                    if ((fd < 7) && (fd > 0)) {
+                    if ((fd < 7) && (fd > 1)) {
                         /* within byte, left and right */
                         /* darkening is referenced from 'fw' since that is the  */
                         /* white bit to the right of the 1 or 2 pixel wide area */
@@ -203,7 +203,7 @@ min_feature_size_init(gs_memory_t *mem, int min_feature_size,
                 switch (min_feature_size) {
                   case 2:
                     /* current feature size is 1, darken bit to the right       */
-                    if (fd > 0) {
+                    if (fd > 0 && fw >= 0) {
                         d |= bm(fw);
                     } else /* fd == 0 */
                         d |= 0x0003;            /* two lsb's darkened   */
