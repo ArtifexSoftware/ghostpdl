@@ -421,12 +421,8 @@ static void dump_start(int w, int h, int num_comps, int log2bits,
     if (dump_nc == 3)
         fprintf(dump_file, "P6 %d %d 255\n", w, h);
     else if (dump_nc == 4) {
-        if (log2bits == 0)
-            fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\n"
-                    "MAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n", w, h);
-        else
-            fprintf(dump_file, "P8\nWIDTH %d\nHEIGHT %d 255\nDEPTH 4\n"
-                    "MAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n", w, h);
+        fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\n"
+                "MAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n", w, h);
     } else if (log2bits == 0)
         fprintf(dump_file, "P4 %d %d\n", w, h);
     else
