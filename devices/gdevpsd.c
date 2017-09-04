@@ -312,7 +312,7 @@ psd_prn_open(gx_device * pdev)
     psd_device *pdev_psd = (psd_device *) pdev;
     int code;
     int k;
-    bool force_pdf, limit_icc, force_ps;
+    bool force_pdf, force_ps;
     cmm_dev_profile_t *profile_struct;
 
 #ifdef TEST_PAD_AND_ALIGN
@@ -339,23 +339,18 @@ psd_prn_open(gx_device * pdev)
        1                    0               force_pdf 0 force_ps 1  (colorants not known)
        1                    1               force_pdf 1 force_ps 0  (colorants known)
        */
-#if LIMIT_TO_ICC
-    limit_icc = true;
-#else
-    limit_icc = false;
-#endif
     code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
     if (profile_struct->spotnames == NULL) {
         force_pdf = false;
         force_ps = false;
     } else {
-        if (limit_icc) {
-            force_pdf = true;
-            force_ps = false;
-        } else {
-            force_pdf = false;
-            force_ps = true;
-        }
+#if LIMIT_TO_ICC
+        force_pdf = true;
+        force_ps = false;
+#else
+        force_pdf = false;
+        force_ps = true;
+#endif
     }
     pdev_psd->warning_given = false;
 
