@@ -729,6 +729,8 @@ x_begin_typed_image(gx_device * dev,
     if (!pim->PixelCopy)
         goto punt;
     pgs = pim->DataSource;
+    if (pgs == 0)
+        goto punt;
     sdev = gs_currentdevice(pgs);
     if (dev->dname != sdev->dname ||
         memcmp(&dev->color_info, &sdev->color_info,
@@ -743,10 +745,7 @@ x_begin_typed_image(gx_device * dev,
      * should be the other way around.  Also see gximage2.c.
      */
     gs_matrix_multiply(&pim->ImageMatrix, &smat, &smat);
-    if (pgs == 0)
-        dmat = *pmat;
-    else
-        gs_currentmatrix(pgs, &dmat);
+    gs_currentmatrix(pgs, &dmat);
     if (!((is_xxyy(&dmat) || is_xyyx(&dmat)) &&
 #define eqe(e) smat.e == dmat.e
           eqe(xx) && eqe(xy) && eqe(yx) && eqe(yy))
