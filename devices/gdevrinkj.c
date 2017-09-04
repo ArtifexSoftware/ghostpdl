@@ -700,7 +700,7 @@ rinkj_put_params(gx_device * pdev, gs_param_list * plist)
         }
     }
     if (code < 0)
-        ecode = code;
+        return code;
 
     /*
      * Save the color_info in case gdev_prn_put_params fails, and for
@@ -880,6 +880,8 @@ rinkj_add_lut(rinkj_device *rdev, rinkj_lutset *lutset, char plane, FILE *f)
     if (fgets(linebuf, sizeof(linebuf), f) == NULL)
         return -1;
     if (sscanf(linebuf, "%d", &n_graph) != 1)
+        return -1;
+    if (n_graph < 0 || n_graph > 256)
         return -1;
     chain = (rinkj_lutchain *)gs_alloc_bytes(rdev->memory, sizeof(rinkj_lutchain), "rinkj_add_lut");
     chain->next = NULL;
