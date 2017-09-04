@@ -288,6 +288,8 @@ cmgrN_print_page(gx_device_printer *pdev, FILE *pstream)
         int code = mgr_begin_page(bdev, pstream, &cur);
         if ( code < 0 ) return code;
 
+        memset(backtable, 0x00, 256);
+
         mgr_wide = bdev->width;
         if (bdev->mgr_depth == 4 && mgr_wide & 1)
             mgr_wide++;
