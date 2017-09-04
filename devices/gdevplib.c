@@ -425,7 +425,7 @@ static void dump_start(int w, int h, int num_comps, int log2bits,
             fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\n"
                     "MAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n", w, h);
         else
-            fprintf(dump_file, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\n"
+            fprintf(dump_file, "P8\nWIDTH %d\nHEIGHT %d 255\nDEPTH 4\n"
                     "MAXVAL 255\nTUPLTYPE CMYK\nENDHDR\n", w, h);
     } else if (log2bits == 0)
         fprintf(dump_file, "P4 %d %d\n", w, h);
@@ -560,17 +560,18 @@ set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
     } else {
         num_planes = 1;
     }
-    if (line_ptrs)
+    if (line_ptrs) {
         mdev->line_ptrs = line_ptrs;
-    for (pi = 0; pi < num_planes; ++pi) {
-        byte **pend = line_ptrs + setup_height;
-        byte *scan_line = base;
+        for (pi = 0; pi < num_planes; ++pi) {
+            byte **pend = line_ptrs + setup_height;
+            byte *scan_line = base;
 
-        while (line_ptrs < pend) {
-            *line_ptrs++ = scan_line;
-            scan_line += raster * num_planes;
+            while (line_ptrs < pend) {
+                *line_ptrs++ = scan_line;
+                scan_line += raster * num_planes;
+            }
+            base += raster;
         }
-        base += raster;
     }
 
     return 0;
