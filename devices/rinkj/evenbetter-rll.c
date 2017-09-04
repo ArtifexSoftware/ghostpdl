@@ -739,6 +739,10 @@ even_better_line_hi (EvenBetterCtx *ebc, uchar **dest,
 
   xd = ebc->dest_width;
 
+  memset(rbl, 0x00, M * sizeof(int));
+  memset(iml, 0x00, M * sizeof(int));
+  memset(rs, 0x00, M * sizeof(int));
+
   for (plane_idx = 0; plane_idx < n_planes; plane_idx++)
     {
       a[plane_idx] = 1;
