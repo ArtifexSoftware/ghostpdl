@@ -1144,7 +1144,7 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
             }
             emprintf1(pdev->memory, "MaxSpots must be between 0 and %d\n",
                       GS_CLIENT_COLOR_MAX_COMPONENTS-4);
-            code = gs_error_rangecheck;
+            return_error(gs_error_rangecheck);
         case 1:
             break;
         default:
@@ -1599,7 +1599,7 @@ tiffsep_prn_open(gx_device * pdev)
     gx_device_printer *ppdev = (gx_device_printer *)pdev;
     tiffsep_device *pdev_sep = (tiffsep_device *) pdev;
     int code, k;
-    bool force_pdf, limit_icc, force_ps;
+    bool force_pdf, force_ps;
     cmm_dev_profile_t *profile_struct;
     gsicc_rendering_param_t rendering_params;
 
@@ -1625,23 +1625,18 @@ tiffsep_prn_open(gx_device * pdev)
        1                    0               force_pdf 0 force_ps 1  (colorants not known)
        1                    1               force_pdf 1 force_ps 0  (colorants known)
        */
-#if LIMIT_TO_ICC
-    limit_icc = true;
-#else
-    limit_icc = false;
-#endif
     code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
     if (profile_struct->spotnames == NULL) {
         force_pdf = false;
         force_ps = false;
     } else {
-        if (limit_icc) {
+#if LIMIT_TO_ICC
             force_pdf = true;
             force_ps = false;
-        } else {
+#else
             force_pdf = false;
             force_ps = true;
-        }
+#endif
     }
 
     /* For the planar device we need to set up the bit depth of each plane.
@@ -1843,7 +1838,7 @@ done:
  * Build a CMYK equivalent to a raster line from planar buffer
  */
 static void
-build_cmyk_raster_line_fromplanar(gs_get_bits_params_t params, byte * dest,
+build_cmyk_raster_line_fromplanar(gs_get_bits_params_t *params, byte * dest,
                                   int width, int num_comp,
                                   cmyk_composite_map * cmyk_map, int num_order,
                                   tiffsep_device * const tfdev)
@@ -1855,7 +1850,7 @@ build_cmyk_raster_line_fromplanar(gs_get_bits_params_t params, byte * dest,
 
     for (pixel = 0; pixel < width; pixel++) {
         cmyk_map_entry = cmyk_map;
-        temp = *(params.data[tfdev->devn_params.separation_order_map[0]] + pixel);
+        temp = *(params->data[tfdev->devn_params.separation_order_map[0]] + pixel);
         cyan = cmyk_map_entry->c * temp;
         magenta = cmyk_map_entry->m * temp;
         yellow = cmyk_map_entry->y * temp;
@@ -1863,7 +1858,7 @@ build_cmyk_raster_line_fromplanar(gs_get_bits_params_t params, byte * dest,
         cmyk_map_entry++;
         for (comp_num = 1; comp_num < num_comp; comp_num++) {
             temp =
-                *(params.data[tfdev->devn_params.separation_order_map[comp_num]] + pixel);
+                *(params->data[tfdev->devn_params.separation_order_map[comp_num]] + pixel);
             cyan += cmyk_map_entry->c * temp;
             magenta += cmyk_map_entry->m * temp;
             yellow += cmyk_map_entry->y * temp;
@@ -1900,7 +1895,7 @@ build_cmyk_raster_line_fromplanar(gs_get_bits_params_t params, byte * dest,
 }
 
 static void
-build_cmyk_raster_line_fromplanar_1bpc(gs_get_bits_params_t params, byte * dest,
+build_cmyk_raster_line_fromplanar_1bpc(gs_get_bits_params_t *params, byte * dest,
                                        int width, int num_comp,
                                        cmyk_composite_map * cmyk_map, int num_order,
                                        tiffsep_device * const tfdev)
@@ -1911,7 +1906,7 @@ build_cmyk_raster_line_fromplanar_1bpc(gs_get_bits_params_t params, byte * dest,
 
     for (pixel = 0; pixel < width; pixel++) {
         cmyk_map_entry = cmyk_map;
-        temp = *(params.data[tfdev->devn_params.separation_order_map[0]] + (pixel>>3));
+        temp = *(params->data[tfdev->devn_params.separation_order_map[0]] + (pixel>>3));
         temp = ((temp<<(pixel & 7))>>7) & 1;
         cyan = cmyk_map_entry->c * temp;
         magenta = cmyk_map_entry->m * temp;
@@ -1920,7 +1915,7 @@ build_cmyk_raster_line_fromplanar_1bpc(gs_get_bits_params_t params, byte * dest,
         cmyk_map_entry++;
         for (comp_num = 1; comp_num < num_comp; comp_num++) {
             temp =
-                *(params.data[tfdev->devn_params.separation_order_map[comp_num]] + (pixel>>3));
+                *(params->data[tfdev->devn_params.separation_order_map[comp_num]] + (pixel>>3));
             temp = ((temp<<(pixel & 7))>>7) & 1;
             cyan += cmyk_map_entry->c * temp;
             magenta += cmyk_map_entry->m * temp;
@@ -1947,7 +1942,7 @@ build_cmyk_raster_line_fromplanar_1bpc(gs_get_bits_params_t params, byte * dest,
     }
 }
 static void
-build_cmyk_raster_line_fromplanar_2bpc(gs_get_bits_params_t params, byte * dest,
+build_cmyk_raster_line_fromplanar_2bpc(gs_get_bits_params_t *params, byte * dest,
                                        int width, int num_comp,
                                        cmyk_composite_map * cmyk_map, int num_order,
                                        tiffsep_device * const tfdev)
@@ -1958,7 +1953,7 @@ build_cmyk_raster_line_fromplanar_2bpc(gs_get_bits_params_t params, byte * dest,
 
     for (pixel = 0; pixel < width; pixel++) {
         cmyk_map_entry = cmyk_map;
-        temp = *(params.data[tfdev->devn_params.separation_order_map[0]] + (pixel>>2));
+        temp = *(params->data[tfdev->devn_params.separation_order_map[0]] + (pixel>>2));
         temp = (((temp<<((pixel & 3)<<1))>>6) & 3) * 85;
         cyan = cmyk_map_entry->c * temp;
         magenta = cmyk_map_entry->m * temp;
@@ -1967,7 +1962,7 @@ build_cmyk_raster_line_fromplanar_2bpc(gs_get_bits_params_t params, byte * dest,
         cmyk_map_entry++;
         for (comp_num = 1; comp_num < num_comp; comp_num++) {
             temp =
-                *(params.data[tfdev->devn_params.separation_order_map[comp_num]] + (pixel>>2));
+                *(params->data[tfdev->devn_params.separation_order_map[comp_num]] + (pixel>>2));
             temp = (((temp<<((pixel & 3)<<1))>>6) & 3) * 85;
             cyan += cmyk_map_entry->c * temp;
             magenta += cmyk_map_entry->m * temp;
@@ -1992,7 +1987,7 @@ build_cmyk_raster_line_fromplanar_2bpc(gs_get_bits_params_t params, byte * dest,
 }
 
 static void
-build_cmyk_raster_line_fromplanar_4bpc(gs_get_bits_params_t params, byte * dest,
+build_cmyk_raster_line_fromplanar_4bpc(gs_get_bits_params_t *params, byte * dest,
                                        int width, int num_comp,
                                        cmyk_composite_map * cmyk_map, int num_order,
                                        tiffsep_device * const tfdev)
@@ -2003,7 +1998,7 @@ build_cmyk_raster_line_fromplanar_4bpc(gs_get_bits_params_t params, byte * dest,
 
     for (pixel = 0; pixel < width; pixel++) {
         cmyk_map_entry = cmyk_map;
-        temp = *(params.data[tfdev->devn_params.separation_order_map[0]] + (pixel>>1));
+        temp = *(params->data[tfdev->devn_params.separation_order_map[0]] + (pixel>>1));
         if (pixel & 1)
             temp >>= 4;
         temp &= 15;
@@ -2014,7 +2009,7 @@ build_cmyk_raster_line_fromplanar_4bpc(gs_get_bits_params_t params, byte * dest,
         cmyk_map_entry++;
         for (comp_num = 1; comp_num < num_comp; comp_num++) {
             temp =
-                *(params.data[tfdev->devn_params.separation_order_map[comp_num]] + (pixel>>1));
+                *(params->data[tfdev->devn_params.separation_order_map[comp_num]] + (pixel>>1));
             if (pixel & 1)
                 temp >>= 4;
             temp &= 15;
@@ -2102,7 +2097,6 @@ threshold_from_order( gx_ht_order *d_order, int *Width, int *Height, gs_memory_t
 {
    int i, j, l, prev_l;
    unsigned char *thresh;
-   gx_ht_bit *bits = (gx_ht_bit *)d_order->bit_data;
     int num_repeat, shift;
 
     /* We can have simple or complete orders.  Simple ones tile the threshold
@@ -2531,22 +2525,22 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
                 {
                 default:
                 case 8:
-                    build_cmyk_raster_line_fromplanar(params, sep_line, width,
+                    build_cmyk_raster_line_fromplanar(&params, sep_line, width,
                                                       num_comp, cmyk_map, num_order,
                                                       tfdev);
                     break;
                 case 4:
-                    build_cmyk_raster_line_fromplanar_4bpc(params, sep_line, width,
+                    build_cmyk_raster_line_fromplanar_4bpc(&params, sep_line, width,
                                                            num_comp, cmyk_map, num_order,
                                                            tfdev);
                     break;
                 case 2:
-                    build_cmyk_raster_line_fromplanar_2bpc(params, sep_line, width,
+                    build_cmyk_raster_line_fromplanar_2bpc(&params, sep_line, width,
                                                            num_comp, cmyk_map, num_order,
                                                            tfdev);
                     break;
                 case 1:
-                    build_cmyk_raster_line_fromplanar_1bpc(params, sep_line, width,
+                    build_cmyk_raster_line_fromplanar_1bpc(&params, sep_line, width,
                                                            num_comp, cmyk_map, num_order,
                                                            tfdev);
                     break;
