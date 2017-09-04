@@ -387,7 +387,7 @@ gx_old_default_rgb_map_rgb_color(gx_device * dev,
         int bpc = dev->color_info.depth / 3;
         int drop = sizeof(gx_color_value) * 8 - bpc;
 
-        return ((((r >> drop) << bpc) + (g >> drop)) << bpc) + (b >> drop);
+        return (((((gx_color_index)(r >> drop)) << bpc) + (g >> drop)) << bpc) + (b >> drop);
     }
 }
 
@@ -439,7 +439,7 @@ pkm_map_cmyk_color(gx_device * pdev, const gx_color_value cv[])
     uint yc = cv[2] * max_value / gx_max_color_value;
     uint kc = cv[3] * max_value / gx_max_color_value;
     gx_color_index color =
-        (((((cc << bpc) + mc) << bpc) + yc) << bpc) + kc;
+        ((((((gx_color_index)cc << bpc) + mc) << bpc) + yc) << bpc) + kc;
 
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
@@ -1330,7 +1330,7 @@ psm_print_page(gx_device_printer * pdev, FILE * pstream)
         gx_render_plane_init(&render_plane, (gx_device *)pdev, plane);
         plane_depth = render_plane.depth;
         plane_shift = render_plane.shift;
-        plane_mask = (1 << plane_depth) - 1;
+        plane_mask = ((gx_color_index)1 << plane_depth) - 1;
         raster = bitmap_raster(pdev->width * plane_depth);
         if (fprintf(pstream, "P%c\n", bdev->magic + (plane_depth > 1)) < 0) {
             code = gs_note_error(gs_error_ioerror);
