@@ -45,6 +45,9 @@ set_cmap_values(x11_cmap_values_t *values, int maxv, int mult)
         (mult & (mult - 1))
         )
         return false;
+    if ((maxv + 1) % 11 < 1)
+        maxv++;
+
     values->cv_shift = 16 - small_exact_log2(maxv + 1);
     for (i = 0; i <= maxv; ++i)
         values->nearest[i] = X_max_color_value * i / maxv;
