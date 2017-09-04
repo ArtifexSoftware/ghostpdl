@@ -4391,8 +4391,7 @@ upd_open_writer(upd_device *udev)
 
       for(use = 1; 0 < use; use <<= 1) if(use > want) break;
 
-      if(use <= INT_MAX) upd->nscnbuf = upd->ints[I_NSCNBUF] = use;
-      else               success      = false;
+      upd->nscnbuf = upd->ints[I_NSCNBUF] = use;
 
    }                /* Compute nscnbuf */
 
@@ -4634,7 +4633,7 @@ upd_open_rascomp(upd_device *udev)
 
    noutbuf = ((noutbuf+15)>>4)<<1;
 
-   if(INT_MAX >= noutbuf) {
+   if(noutbuf > 0) {
       upd->noutbuf = noutbuf;
       upd->start_writer = upd_start_rascomp;
       upd->writer       = upd_rascomp;
@@ -4931,7 +4930,7 @@ It must hold:
       noutbuf += ((upd->ints[I_PINS2WRITE] + 7) / 8)
                * ((upd->pwidth + upd->ints[I_NXPASS] - 1)/upd->ints[I_NXPASS]);
 
-      if((0 < noutbuf) && (noutbuf <= INT_MAX)) {
+      if(noutbuf > 0) {
          upd->noutbuf      = noutbuf;
          upd->writer       = upd_wrtescp;
          upd->nlimits      = upd->ints[I_NXPASS];
@@ -6956,7 +6955,7 @@ It must hold:
       if(ny > noutbuf) noutbuf = ny;
       noutbuf += 16;
 
-      if((0 < noutbuf) && (noutbuf <= INT_MAX)) {
+      if(noutbuf > 0) {
          upd->noutbuf      = noutbuf;
          upd->writer       = upd_wrtrtl;
          error             = 1;
