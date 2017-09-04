@@ -2258,7 +2258,7 @@ int		i;
 
                 ph0 = ph1 = 0;
 
-                for ( line = p->top, i=0 ; i < NOZZLES ; i++, line += HEAD_SPACING ) {
+                for ( i=0 ; i < NOZZLES ; i++) {
 
                         line = p->top + i * HEAD_SPACING;
                         ph0 += p->mark[ line % MAX_MARK ] & 1;
