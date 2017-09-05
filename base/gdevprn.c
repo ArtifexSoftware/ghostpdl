@@ -987,8 +987,7 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     gs_devn_params *pdevn_params;
-    int outcode = 0, closecode = 0, errcode = 0, endcode;
-    bool upgraded_copypage = false;
+    int outcode = 0, errcode = 0, endcode;
     int code;
 
     prn_finish_bg_print(ppdev);		/* finish any previous background printing */
@@ -1101,9 +1100,6 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                                                           num_copies);
                 fflush(ppdev->file);
                 errcode = (ferror(ppdev->file) ? gs_note_error(gs_error_ioerror) : 0);
-                /* NB: background printing does this differently in its thread */
-                if (!upgraded_copypage)
-                    closecode = gdev_prn_close_printer(pdev);
             }
         }
     }
@@ -1123,12 +1119,10 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
         return outcode;
     if (errcode < 0)
         return errcode;
-    if (closecode < 0)
-        return closecode;
     if (endcode < 0)
         return endcode;
     endcode = gx_finish_output_page(pdev, num_copies, flush);
-    return (endcode < 0 ? endcode : upgraded_copypage ? 1 : 0);
+    return (endcode < 0 ? endcode : 0);
 }
 
 int
