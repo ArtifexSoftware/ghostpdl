@@ -448,6 +448,8 @@ void gp_enumerate_fonts_free(void *enum_state)
     if (state != NULL) {
         if (state->font_list != NULL)
             FcFontSetDestroy(state->font_list);
+        if (state->fc)
+            FcConfigDestroy(state->fc);
         free(state);
     }
 #endif
