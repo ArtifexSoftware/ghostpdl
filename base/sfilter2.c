@@ -65,7 +65,8 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
                     status = 1;
                     break;
                 }
-                *++q = prev = '\n';
+                /* No need to update 'prev' in this case as its overwritten with 'z' below */
+                *++q = '\n';
                 qn = q + LINE_LIMIT;
                 if_debug1m('w', ss->memory, "[w85]EOL at %d bytes written\n",
                           (int)(q - pw->ptr));
