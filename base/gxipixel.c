@@ -427,9 +427,10 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     {
         gs_rect rect, rect_out;
         gs_matrix mi;
+        gs_matrix *m = pgs != NULL ? &ctm_only(pgs) : NULL;
         gs_fixed_rect obox;
         gs_int_rect irect;
-        if ((code = gs_matrix_invert(&ctm_only(pgs), &mi)) < 0 ||
+        if (m == NULL || (code = gs_matrix_invert(m, &mi)) < 0 ||
             (code = gs_matrix_multiply(&mi, &pic->ImageMatrix, &mi)) < 0) {
             /* Give up trying to shrink the render box, but continue processing */
             break;
