@@ -2119,7 +2119,7 @@ param_MediaSize(gs_param_list * plist, gs_param_name pname,
             ecode = gs_note_error(gs_error_rangecheck);
 #define max_coord (max_fixed / fixed_1)
 #if max_coord < max_int
-        else if (width_new > max_coord || height_new > max_coord)
+        else if (width_new > (long)max_coord || height_new > (long)max_coord)
             ecode = gs_note_error(gs_error_limitcheck);
 #endif
 #undef max_coord
