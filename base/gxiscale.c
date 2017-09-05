@@ -772,7 +772,7 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
             /* Even in this case we need to worry about an indexed color space.
                We need to get to the base color space for the interpolation and
                then if necessary do the remap to the device space */
-            if (pcs->type->index != gs_color_space_index_Indexed) {
+            if (pcs == NULL || pcs->type->index != gs_color_space_index_Indexed) {
                 int bps = penum->bps;
                 int dc = penum->spp;
                 const byte *pdata = bdata;
