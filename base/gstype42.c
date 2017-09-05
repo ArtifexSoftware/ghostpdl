@@ -788,7 +788,7 @@ gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_inde
     LookupListTable lookup_list_table;
     byte *lookup_list_ptr;
 
-    if (WMode == 0)
+    if (WMode == 0 || gsub_ptr == NULL)
         return glyph_index;
 
     /* GSUB header */

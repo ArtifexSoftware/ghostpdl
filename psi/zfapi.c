@@ -1966,9 +1966,10 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
             else {
                 ref *CIDSystemInfo;
                 ref *Ordering;
-                ref *fdict, *CMapDict, *CMapName, CMapNameStr;
+                ref *fdict, *CMapDict, *CMapName, *WMode, CMapNameStr;
                 char *cmapnm = NULL;
                 int cmapnmlen = 0;
+                int wmode = 0;
                 /* leave off the -H or -V */
                 const char * const utfcmap = "Identity-UTF16";
                 int utfcmaplen = strlen(utfcmap);
@@ -1976,6 +1977,10 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
                 fdict = pfont_dict(gs_rootfont(igs));
                 code = dict_find_string(fdict, "CMap", &CMapDict);
                 if (code >= 0 && r_has_type(CMapDict, t_dictionary)) {
+                    code = dict_find_string(CMapDict, "WMode", &WMode);
+                    if (code >= 0 && r_has_type(WMode, t_integer)) {
+                        wmode = WMode->value.intval;
+                    }
                     code = dict_find_string(CMapDict, "CMapName", &CMapName);
                     if (code >= 0 && r_has_type(CMapName, t_name)) {
                         name_string_ref(imemory, CMapName, &CMapNameStr);
@@ -2010,6 +2015,8 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
                         c = client_char_code;
                     }
                 }
+                if (pbfont->FontType == ft_CID_TrueType)
+                    c = ((gs_font_cid2 *)pbfont)->data.substitute_glyph_index_vertical((gs_font_type42 *)pbfont, c, wmode, ccode);
             }
             if (pbfont->FontType == ft_CID_TrueType && c == 0 && TT_cmap) {
                 ref cc32;
