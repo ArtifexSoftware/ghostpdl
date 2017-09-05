@@ -196,14 +196,16 @@ swrite_file(register stream * s, FILE * file, byte * buf, uint len)
     s->file_limit = S_FILE_LIMIT_MAX;
 }
 /* Initialize for appending to an OS file. */
-void
+int
 sappend_file(register stream * s, FILE * file, byte * buf, uint len)
 {
     swrite_file(s, file, buf, len);
     s->modes = s_mode_write + s_mode_append;	/* no seek */
     s->file_modes = s->modes;
-    gp_fseek_64(file, 0L, SEEK_END);
+    if (gp_fseek_64(file, 0L, SEEK_END) != 0)
+        return ERRC;
     s->position = gp_ftell_64(file);
+    return 0;
 }
 /* Procedures for writing on a file */
 static int
@@ -279,9 +281,11 @@ s_file_switch(stream * s, bool writing)
         pos = stell(s);
         if_debug2m('s', s->memory, "[s]switch 0x%"PRIx64" to write at %"PRId64"\n",
                    (uint64_t) s, (int64_t)pos);
-        gp_fseek_64(file, pos, SEEK_SET);
+        if (gp_fseek_64(file, pos, SEEK_SET) != 0)
+            return ERRC;
         if (modes & s_mode_append) {
-            sappend_file(s, file, s->cbuf, s->cbsize);	/* sets position */
+            if (sappend_file(s, file, s->cbuf, s->cbsize)!= 0)	/* sets position */
+                return ERRC;
         } else {
             swrite_file(s, file, s->cbuf, s->cbsize);
             s->position = pos;
@@ -295,7 +299,8 @@ s_file_switch(stream * s, bool writing)
                    (uint64_t) s, (int64_t)pos);
         if (sflush(s) < 0)
             return ERRC;
-        gp_fseek_64(file, 0L, SEEK_CUR);	/* pacify C library */
+        if (gp_fseek_64(file, 0L, SEEK_CUR) != 0)
+            return ERRC;
         sread_file(s, file, s->cbuf, s->cbsize);
         s->modes |= modes & s_mode_append;	/* don't lose append info */
         s->position = pos;

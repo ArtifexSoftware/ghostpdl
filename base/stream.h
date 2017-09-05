@@ -343,7 +343,7 @@ int file_prepare_stream(const char *, uint, const char *,
                  uint, stream **, char[4], gs_memory_t *);
 
 /* Set up a file stream on an OS file.  */
-void file_init_stream(stream *, FILE *, const char *, byte *, uint);
+int file_init_stream(stream *, FILE *, const char *, byte *, uint);
 
 /* Open a file stream, optionally on an OS file. */
 int file_open_stream(const char *, uint, const char *,
@@ -381,8 +381,8 @@ void sread_string(stream *, const byte *, uint),
     sread_string_reusable(stream *, const byte *, uint),
     swrite_string(stream *, byte *, uint);
 void sread_file(stream *, FILE *, byte *, uint),
-    swrite_file(stream *, FILE *, byte *, uint),
-    sappend_file(stream *, FILE *, byte *, uint);
+    swrite_file(stream *, FILE *, byte *, uint);
+int  sappend_file(stream *, FILE *, byte *, uint);
 
 /* Confine reading to a subfile.  This is primarily for reusable streams. */
 int sread_subfile(stream *s, gs_offset_t start, gs_offset_t length);

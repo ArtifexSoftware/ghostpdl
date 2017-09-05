@@ -93,7 +93,8 @@ file_open_stream(const char *fname, uint len, const char *file_access,
         *ps = NULL;
         return code;
     }
-    file_init_stream(*ps, file, fmode, (*ps)->cbuf, (*ps)->bsize);
+    if (file_init_stream(*ps, file, fmode, (*ps)->cbuf, (*ps)->bsize) != 0)
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -136,20 +137,22 @@ file_close_file(stream * s)
  * Set up a file stream on an OS file.  The caller has allocated the
  * stream and buffer.
  */
-void
+int
 file_init_stream(stream *s, FILE *file, const char *fmode, byte *buffer,
                  uint buffer_size)
 {
     switch (fmode[0]) {
     case 'a':
-        sappend_file(s, file, buffer, buffer_size);
+        if (sappend_file(s, file, buffer, buffer_size) != 0)
+            return ERRC;
         break;
     case 'r':
         /* Defeat buffering for terminals. */
         {
             struct stat rstat;
 
-            fstat(fileno(file), &rstat);
+            if (fstat(fileno(file), &rstat) != 0)
+                return ERRC;
             sread_file(s, file, buffer,
                        (S_ISCHR(rstat.st_mode) ? 1 : buffer_size));
         }
@@ -161,6 +164,7 @@ file_init_stream(stream *s, FILE *file, const char *fmode, byte *buffer,
         s->file_modes |= s_mode_read | s_mode_write;
     s->save_close = s->procs.close;
     s->procs.close = file_close_file;
+    return 0;
 }
 
 /* Prepare a stream with a file name. */
