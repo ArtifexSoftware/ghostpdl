@@ -331,8 +331,11 @@ tile_pattern_clist(const tile_fill_state_t * ptfs,
     crdev->page_info.io_procs->rewind(crdev->page_info.cfile, false, NULL);
     clist_render_init(cdev);
      /* Check for and get ICC profile table */
-    if (crdev->icc_table == NULL)
+    if (crdev->icc_table == NULL) {
         code = clist_read_icctable(crdev);
+        if (code < 0)
+            return code;
+    }
     /* Also allocate the icc cache for the clist reader */
     if ( crdev->icc_cache_cl == NULL )
         crdev->icc_cache_cl = gsicc_cache_new(crdev->memory->thread_safe_memory);
