@@ -524,7 +524,7 @@ gx_san_trap_store(gx_device_spot_analyzer *padev,
     while (padev->bot_current != NULL && padev->bot_current->xrtop < xlbot)
         padev->bot_current = (trap_is_last(padev->bot_band, padev->bot_current)
                                     ? NULL : padev->bot_current->next);
-    if (padev->bot_current != 0) {
+    if (padev->bot_current != 0 && padev->bot_band != NULL) {
         gx_san_trap *t = padev->bot_current;
         gx_san_trap *bot_last = band_list_last(padev->bot_band);
 
