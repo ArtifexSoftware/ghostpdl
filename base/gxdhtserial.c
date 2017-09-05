@@ -297,6 +297,7 @@ gx_ht_read_component(
     if (data >= data_lim)
         return_error(gs_error_rangecheck);
     new_order.procs = &ht_order_procs_table[*data++];
+    new_order.threshold_inverted = 0;
 
     /* calculate the space required for levels and bit data */
     levels_size = new_order.num_levels * sizeof(new_order.levels[0]);
