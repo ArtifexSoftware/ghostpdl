@@ -4557,7 +4557,7 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
     byte comp_shift[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int k;
     bool has_tags = device_encodes_tags(dev);
-    cmm_profile_t *icc_profile_dev;
+    cmm_profile_t *icc_profile_dev = NULL;
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
 
