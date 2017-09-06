@@ -21,8 +21,6 @@
 #include <sys/stat.h>
 #include <math.h>
 
-#define FULL_FILE_NAME_LENGTH 50
-
 typedef unsigned char byte;
 #define false 0
 #define true 1

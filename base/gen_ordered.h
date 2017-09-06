@@ -16,6 +16,10 @@
 /* Defines and exports for library (e.g., Ghostscript) use of gen_ordered.c */
 
 #define RAW_SCREEN_DUMP 0	/* Noisy output for .raw files for detailed debugging */
+#if RAW_SCREEN_DUMP
+#  define FULL_FILE_NAME_LENGTH 50
+#endif
+
 #define MAXVAL 65535.0
 #define MIN(x,y) ((x)>(y)?(y):(x))
 #define MAX(x,y) ((x)>(y)?(x):(y))
