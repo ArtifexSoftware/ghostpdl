@@ -312,10 +312,8 @@ htsc_gen_ordered(htsc_param_t params, int *S, htsc_dig_grid_t *final_mask)
         code = htsc_mask_to_tos(final_mask);
     }
     /* result in in final_mask, clean up working arrays allocated. */
-    if (dot_grid.data != NULL)
-        FREE(final_mask->memory, dot_grid.data);
-    if (super_cell.data != NULL)
-        FREE(final_mask->memory, super_cell.data);
+    FREE(final_mask->memory, dot_grid.data);
+    FREE(final_mask->memory, super_cell.data);
     return code;
 }
 
@@ -913,9 +911,9 @@ htsc_sumsum(htsc_dig_grid_t dig_grid)
 static int
 htsc_gcd(int a, int b)
 {
+    if ( a == 0 && b == 0 ) return 0;
     if ( b == 0 ) return a;
     if ( a == 0 ) return b;
-    if ( a == 0 && b == 0 ) return 0;
     while (1) {
         a = a % b;
         if (a == 0) {
@@ -1689,9 +1687,11 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
             }
         }
 out:
-        for (k = 0; k < num_levels; k++) {
-            FREE(dot_grid.memory, dot_level_pos[k].locations);
-            FREE(dot_grid.memory, dot_level_pos[k].point);
+        if (dot_level_pos) {
+            for (k = 0; k < num_levels; k++) {
+                FREE(dot_grid.memory, dot_level_pos[k].locations);
+                FREE(dot_grid.memory, dot_level_pos[k].point);
+            }
         }
         FREE(dot_grid.memory, locate);
         FREE(dot_grid.memory, screen_matrix);
