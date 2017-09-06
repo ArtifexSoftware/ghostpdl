@@ -3889,9 +3889,14 @@ pdf14_push_text_group(gx_device *dev, gs_gstate *pgs, gx_path *path,
     params.text_group = PDF14_TEXTGROUP_BT_PUSHED;
     gs_setopacityalpha(pgs, 1.0);
     gs_setblendmode(pgs, BLEND_MODE_Normal);
-    if (is_clist)
+    if (is_clist) {
         code = pdf14_clist_update_params(pdev, pgs, false, NULL);
+        if (code < 0)
+            return code;
+    }
     code = gs_begin_transparency_group(pgs, &params, &bbox);
+    if (code < 0)
+        return code;
     gs_setopacityalpha(pgs, opacity);
     gs_setblendmode(pgs, blend_mode);
     if (is_clist)
@@ -4691,7 +4696,12 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
      }
     if (update_color_info){
         if (pdev->sep_device && !is_mask) {
-            int num_spots = pdev->color_info.num_components - icc_profile_dev->num_comps;
+            int num_spots;
+
+            if (icc_profile_dev == NULL)
+                return_error(gs_error_undefined);
+
+            num_spots = pdev->color_info.num_components - icc_profile_dev->num_comps;
 
             if (num_spots > 0) {
                 new_num_comps += num_spots;
@@ -6421,7 +6431,9 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             break;
         case PDF14_END_TRANS_GROUP:
         case PDF14_END_TRANS_TEXT_GROUP:
+#ifdef DEBUG
             code += 0; /* A good place for a breakpoint. */
+#endif
             break;			/* No data */
         case PDF14_PUSH_TRANS_STATE:
             break;
@@ -8069,6 +8081,7 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_gstate * pgs,
                     tgp.icc_hashcode = 0;
                     tgp.group_color_numcomps = ptile->ttrans->n_chan-1;
                     tgp.ColorSpace = NULL;
+                    tgp.text_group = 0;
                     /* This will handle the compositor command */
                     gs_begin_transparency_group((gs_gstate *) pgs_noconst, &tgp,
                                                 &bbox_out);
