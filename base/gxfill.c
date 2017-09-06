@@ -1320,8 +1320,7 @@ insert_x_new(active_line * alp, line_list *ll)
     alp->prev = prev;
     if (next != 0)
         next->prev = alp;
-    if (prev)
-        prev->next = alp;
+    prev->next = alp;
 }
 
 /* Insert a newly active line in the h list. */
