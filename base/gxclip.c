@@ -987,7 +987,9 @@ clip_call_fill_path(clip_callback_data_t * pccd, int xc, int yc, int xec, int ye
         if (code < 0)
             return code;
         gx_path_init_local(&rect_path, pccd->ppath->memory);
-        gx_path_add_rectangle(&rect_path, int2fixed(xc), int2fixed(yc), int2fixed(xec), int2fixed(yec));
+        code = gx_path_add_rectangle(&rect_path, int2fixed(xc), int2fixed(yc), int2fixed(xec), int2fixed(yec));
+        if (code < 0)
+            return code;
         code = gx_cpath_intersect(&cpath_intersection, &rect_path,
                                   gx_rule_winding_number, (gs_gstate *)(pccd->pgs));
         gx_path_free(&rect_path, "clip_call_fill_path");
