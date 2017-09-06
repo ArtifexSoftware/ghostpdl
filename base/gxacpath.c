@@ -577,7 +577,6 @@ top:
             rsplit->ymax = ye;
             rsplit = rsplit->prev;
         }
-        ymax = ye;
     }
     /* Now ye = ymax.  If necessary, split off the part of the */
     /* existing band that is below the new band. */
