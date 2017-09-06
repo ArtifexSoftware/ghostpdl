@@ -144,7 +144,8 @@ gx_render_device_DeviceN(frac * pcolor,
         _color_set_c(pdevc, i, int_color[i], l_color[i]);
     gx_complete_halftone(pdevc, num_colors, pdht);
 
-    color_set_phase_mod(pdevc, ht_phase->x, ht_phase->y,
+    if (pdht)
+        color_set_phase_mod(pdevc, ht_phase->x, ht_phase->y,
                             pdht->lcm_width, pdht->lcm_height);
 
     /* Determine if we are using only one component */
