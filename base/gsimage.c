@@ -588,8 +588,12 @@ gs_image_next_planes(gs_image_enum * penum,
                 penum->image_planes[i].data = penum->planes[i].row.data;
             } else if (pos == 0 && size >= raster) {
                 /* We can transfer 1 or more planes from the source. */
-                h = min(h, size / raster);
-                penum->image_planes[i].data = penum->planes[i].source.data;
+                if (raster) {
+                    h = min(h, size / raster);
+                    penum->image_planes[i].data = penum->planes[i].source.data;
+                }
+                else
+                    h = 0;
             } else
                 h = 0;		/* not enough data in this plane */
         }
