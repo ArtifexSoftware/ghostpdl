@@ -611,6 +611,7 @@ gx_image3x_plane_data(gx_image_enum_common_t * info,
         int mh = mask_height[i] = penum->mask[i].height;
 
         mask_plane[i].data = 0;
+        mask_plane[i].raster = 0;
         mask_used[i] = 0;
         if (!penum->mask[i].depth)
             continue;
