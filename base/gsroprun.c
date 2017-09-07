@@ -1586,6 +1586,15 @@ void rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
     rop = 0xAA;
 #endif
 
+    /* This is a simple initialisation to quiet a Coverity warning. It complains that
+     * the 'if (swap)' at the end of the function uses 'run' uninitialised. While its
+     * true that some ROPs do not instantly set the run member, they go through code
+     * which, I believe, swaps the rop source and texture, then executes the switch
+     * statement once more and the second execution sets run. So in summary I don't
+     * think this is a real problem, and this fixes the Coverity warning.
+     */
+    op->run = 0;
+
     /* If the rop ignores either S or T, then we might as well set them to
      * be constants; will save us slaving through memory. Also, they can't
      * count towards transparency. */
