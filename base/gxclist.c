@@ -821,6 +821,11 @@ clist_end_page(gx_device_clist_writer * cldev)
     int ecode = 0;
 
     code = cmd_write_buffer(cldev, cmd_opv_end_page);
+    if (code >= 0)
+        ecode |= code;
+    else
+        ecode = code;
+
     /* If we have ICC profiles present in the cfile save the table now,
        along with the ICC profiles. Table is stored in band maxband + 1. */
     if ( cldev->icc_table != NULL ) {
@@ -830,25 +835,26 @@ clist_end_page(gx_device_clist_writer * cldev)
         clist_free_icc_table(cldev->icc_table, cldev->memory);
         cldev->icc_table = NULL;
     }
-    if (code >= 0)
-        code = clist_write_color_usage_array(cldev);
     if (code >= 0) {
-        /*
-         * Write the terminating entry in the block file.
-         * Note that because of copypage, there may be many such entries.
-         */
-        memset(&cb, 0, sizeof(cb)); /* Zero the block, including any padding */
-        cb.band_min = cb.band_max = cmd_band_end;
-        cb.pos = (cldev->page_cfile == 0 ? 0 : cldev->page_info.io_procs->ftell(cldev->page_cfile));
-        code = cldev->page_info.io_procs->fwrite_chars(&cb, sizeof(cb), cldev->page_bfile);
-        if (code > 0)
-            code = 0;
+        code = clist_write_color_usage_array(cldev);
+        if (code >= 0) {
+            ecode |= code;
+            /*
+             * Write the terminating entry in the block file.
+             * Note that because of copypage, there may be many such entries.
+             */
+            memset(&cb, 0, sizeof(cb)); /* Zero the block, including any padding */
+            cb.band_min = cb.band_max = cmd_band_end;
+            cb.pos = (cldev->page_cfile == 0 ? 0 : cldev->page_info.io_procs->ftell(cldev->page_cfile));
+            code = cldev->page_info.io_procs->fwrite_chars(&cb, sizeof(cb), cldev->page_bfile);
+            if (code > 0)
+                code = 0;
+        }
     }
     if (code >= 0) {
         ecode |= code;
         cldev->page_bfile_end_pos = cldev->page_info.io_procs->ftell(cldev->page_bfile);
-    }
-    if (code < 0)
+    } else
         ecode = code;
 
     /* Reset warning margin to 0 to release reserve memory if mem files */
@@ -881,7 +887,7 @@ clist_end_page(gx_device_clist_writer * cldev)
         dprintf2("%d bands skipped out of %d\n", skip_count, cldev->nbands);
     }
 
-    return 0;
+    return ecode;
 }
 
 gx_color_usage_bits
