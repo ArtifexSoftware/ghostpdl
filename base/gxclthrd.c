@@ -360,7 +360,7 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
 
     /* If we don't have one large enough already, create an icc cache list */
     if (crdev->num_render_threads > crdev->icc_cache_list_len) {
-        void *old = &(crdev->icc_cache_list[0]);
+        gsicc_link_cache_t **old = crdev->icc_cache_list;
         crdev->icc_cache_list = (gsicc_link_cache_t **)gs_alloc_byte_array(mem->thread_safe_memory,
                                     crdev->num_render_threads,
                                     sizeof(void*), "clist_render_setup_threads");
@@ -369,7 +369,7 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
             return_error(gs_error_VMerror);
         }
         if (crdev->icc_cache_list_len > 0)
-            memcpy(crdev->icc_cache_list, old, crdev->icc_cache_list_len * sizeof(void *));
+            memcpy(crdev->icc_cache_list, old, crdev->icc_cache_list_len * sizeof(gsicc_link_cache_t *));
         memset(&(crdev->icc_cache_list[crdev->icc_cache_list_len]), 0,
             (crdev->num_render_threads - crdev->icc_cache_list_len) * sizeof(void *));
         crdev->icc_cache_list_len = crdev->num_render_threads;
