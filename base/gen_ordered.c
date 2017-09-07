@@ -1400,6 +1400,8 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
             }
             if (!found_it) {
                 EPRINTF(mem, "ERROR! bug in dot location accounting\n");
+                FREE(mem, filter);
+                FREE(mem, screen_blur);
                 return -1;
             }
         }
