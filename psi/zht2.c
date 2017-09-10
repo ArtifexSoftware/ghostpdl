@@ -474,10 +474,10 @@ zgenordered(i_ctx_t *i_ctx_p)
             /* Make a threshold array from the turn_on_sequence */
             int level;
             int cur_pix = 0;
-            double end_value, cur_value = 0.0;
             int width = final_mask.width;
             int num_pix = width * final_mask.height;
             double delta_value = 1.0 / (double)(num_pix);
+            double end_value, cur_value = 0.0;
             byte *thresh;
             ref rval, thresh_ref;
 
@@ -493,10 +493,11 @@ zgenordered(i_ctx_t *i_ctx_p)
                     goto done;
             /* The following is adapted from thresh_remap with the default linear map */
             for (level=0; level<256; level++) {
-                end_value = (float)(1+level) / 256.;
-                if (end_value > 256.0)
-                    end_value = 256.0;		/* clamp in case of rounding errors */
-                while (end_value - cur_value > 0.00001) {
+                end_value = (float)(1+level) / 255.;
+                if (end_value > 255.0)
+                    end_value = 255.0;		/* clamp in case of rounding errors */
+                while (cur_value < (end_value - (delta_value * (1./256.))) ||
+                       (cur_pix + 1) == (num_pix / 2) ) {	/* force 50% gray level */
                     thresh[final_mask.data[2*cur_pix] + (width*final_mask.data[2*cur_pix+1])] = 255 - level;
                     cur_pix++;
                     if (cur_pix >= num_pix)
