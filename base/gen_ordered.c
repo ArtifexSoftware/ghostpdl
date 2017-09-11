@@ -933,6 +933,9 @@ htsc_lcm(int a, int b)
     int gcd = htsc_gcd(a,b);
     int lcm;
 
+    if (gcd == 0)
+        return -1;
+
     lcm = product/gcd;
     return lcm;
 }
@@ -983,6 +986,9 @@ htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
 
     /* Use Holladay Algorithm to create rectangular matrix for screening */
     *H = htsc_gcd((int) abs(y), (int) abs(v));
+    if (*H == 0)
+        return -1;
+
     *L = N / *H;
     /* Compute the shift factor */
     matrix.row[0].xy[0] = x;
@@ -1026,6 +1032,9 @@ htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
     /* Force a periodicity in the screen to avoid the shift factor */
     if (*S != 0) {
         lcm_value = htsc_lcm(*L,*S);
+        if (lcm_value < 0)
+            return -1;
+
         min_vert_number = *H * lcm_value / *S;
     } else {
         lcm_value = *L;
