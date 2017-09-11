@@ -4732,7 +4732,7 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
         memset(&(pdev->color_info.comp_shift),0,GX_DEVICE_COLOR_MAX_COMPONENTS);
         memcpy(&(pdev->color_info.comp_bits), comp_bits, new_num_comps);
         memcpy(&(pdev->color_info.comp_shift), comp_shift, new_num_comps);
-        pdev->color_info.comp_shift[new_num_comps] = 1 << (new_depth - 8);	/* in case we has_tags is set */
+        pdev->color_info.comp_shift[new_num_comps] = new_depth - 8;	/* in case we has_tags is set */
 
         /* If we have a compressed color codec, and we are doing a soft mask
            push operation then go ahead and update the color encode and
@@ -5728,12 +5728,13 @@ pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * 
     int i, ncomps = dev->color_info.num_components;
     int num_spots = pdf14_get_num_spots(dev);
     bool additive = dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE;
-    frac comp_value = all;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
 
     if (pgs->color_component_map.sep_type == SEP_ALL) {
+        frac comp_value = all;
+
         /*
          * Invert the photometric interpretation for additive
          * color spaces because separations are always subtractive.
@@ -5745,8 +5746,12 @@ pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * 
         for (; i >= 0; i--)
             cm_comps[i] = comp_value;
     } else {
+        frac comp_value[GX_DEVICE_COLOR_MAX_COMPONENTS];
+
         /* map to the color model */
-        map_components_to_colorants(&comp_value, &(pgs->color_component_map), cm_comps);
+        for (i = pgs->color_component_map.num_components - 1; i >= 0; i--)
+            comp_value[i] = all;
+        map_components_to_colorants(comp_value, &(pgs->color_component_map), cm_comps);
     }
     /* apply the transfer function(s); convert to color values */
     if (additive) {
