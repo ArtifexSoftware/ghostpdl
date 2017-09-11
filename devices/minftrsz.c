@@ -133,7 +133,7 @@ min_feature_size_init(gs_memory_t *mem, int min_feature_size,
                   case 2:
                     /* current feature size is 1, darken bit to the right       */
                     /* unless it is past the end of the byte in 'last'          */
-                    if (fd > 0) {
+                    if (fd > 0 && fw > 0) {
                         f |= bm(fw);
                         l |= bm(fw);
                     } else /* fd == 0 */
