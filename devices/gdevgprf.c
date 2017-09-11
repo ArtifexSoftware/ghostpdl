@@ -684,6 +684,9 @@ gprf_write_header(gprf_write_ctx *xc)
     unsigned int offset = (unsigned int)ftell(xc->f);
     gx_devn_prn_device *dev = (gx_devn_prn_device *)xc->dev;
 
+    if (offset < 0)
+        return_error(gs_error_ioerror);
+
     code = gprf_write(xc, (const byte *)"GSPF", 4); /* Signature */
     if (code < 0)
         return code;
@@ -848,6 +851,8 @@ gprf_write_header(gprf_write_ctx *xc)
      * we will not spend time writing out the profile. */
     /* Update header pointer to table */
     xc->table_offset = (unsigned long)ftell(xc->f);
+    if (xc->table_offset < 0)
+        return_error(gs_error_ioerror);
     if (fseek(xc->f, offset+28, SEEK_SET) != 0)
         return_error (gs_error_ioerror);
     code = gprf_write_32(xc, xc->table_offset);
@@ -893,6 +898,8 @@ updateTable(gprf_write_ctx *xc)
 
     /* Read the current position of the file */
     offset = ftell(xc->f);
+    if (offset < 0)
+        return_error(gs_error_ioerror);
 
     /* Put that value into the table */
     if (fseek(xc->f, xc->table_offset, SEEK_SET) != 0)
