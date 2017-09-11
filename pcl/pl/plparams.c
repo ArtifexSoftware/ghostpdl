@@ -217,7 +217,12 @@ static int process_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
             return -1;
         }
 
-        gp_fseek_64(f, 0, SEEK_END);
+        if (gp_fseek_64(f, 0, SEEK_END) != 0) {
+            gs_free_object(mem, copy, "working buffer for pdfmark processing");
+            gs_free_object(mem, parray, "temporary pdfmark array");
+            fclose(f);
+            return -1;
+        }
         bytes = gp_ftell_64(f);
         if (bytes < 0) {
             gs_free_object(mem, copy, "working buffer for pdfmark processing");
@@ -235,7 +240,13 @@ static int process_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
         }
         stream_data = (char *)(parray[tokens - 2].data);
 
-        gp_fseek_64(f, 0, SEEK_SET);
+        if (gp_fseek_64(f, 0, SEEK_SET) != 0) {
+            gs_free_object(mem, stream_data, "PJL pdfmark, stream");
+            gs_free_object(mem, copy, "working buffer for pdfmark processing");
+            gs_free_object(mem, parray, "temporary pdfmark array");
+            fclose(f);
+            return gs_note_error(gs_error_ioerror);
+        }
         code = fread(stream_data, 1, bytes, f);
         if (code != bytes) {
             gs_free_object(mem, stream_data, "PJL pdfmark, stream");
