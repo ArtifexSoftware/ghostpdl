@@ -8121,7 +8121,6 @@ static int
 pdf14_clist_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
                   gx_bitmap_id id, int x, int y, int w, int h, int plane_height)
 {
-    pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
     int code;
 
     code = gx_forward_copy_planes(dev, data, data_x, raster, id,
