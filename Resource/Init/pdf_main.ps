@@ -951,9 +951,17 @@ currentdict /xref-char-dict undef
         %% Bug #695883 the test file has an XRefStm which points beyond the end of the file.
         %% We check that here and simply fall back to thje classic xref if this error occurs.
         dup PDFfilelen lt{
-          readpdf15xref pop
+          PDFSTOPONERROR not {
+            mark exch {readpdf15xref pop} stopped
+            {
+              (   **** Error:  This hybrid file's XRefStm does not point to a valid stream.\n                Ignoring error, output may be incorrect.\n) pdfformaterror
+            } if
+            cleartomark
+          } {
+            readpdf15xref pop
+          } ifelse
         } {
-          (   **** Error:  This hybrid file's XRefStm points beyond the end of file.\n   Ignoring error, output may be incorrect.\n) pdfformaterror
+          (   **** Error:  This hybrid file's XRefStm points beyond the end of file.\n                Ignoring error, output may be incorrect.\n) pdfformaterror
           pop
         }ifelse
      } if
