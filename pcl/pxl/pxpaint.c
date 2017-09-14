@@ -829,15 +829,17 @@ const byte apxText[] = {
 };
 int
 pxText(px_args_t * par, px_state_t * pxs)
-{ {
-        int code = px_set_paint(&pxs->pxgs->brush, pxs);
+{
+  {
+      int code = px_set_paint(&pxs->pxgs->brush, pxs);
 
-        if (code < 0)
-            return code;
-}
-if (par->pv[0]->value.array.size != 0 && pxs->pxgs->brush.type != pxpNull)
+      if (code < 0)
+          return code;
+  }
+  if (par->pv[0]->value.array.size != 0 && pxs->pxgs->brush.type != pxpNull)
     pxs->have_page = true;
-    return px_text(par, pxs, false);
+
+  return px_text(par, pxs, false);
 }
 
 const byte apxTextPath[] = {

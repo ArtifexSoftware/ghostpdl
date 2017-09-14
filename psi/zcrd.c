@@ -214,22 +214,23 @@ zcrd1_params(os_ptr op, gs_cie_render * pcrd,
         return code;
     if ((code = zcrd1_proc_params(mem, op, pcprocs)) < 0)
         return code;
-	if ((code = dict_matrix3_param(mem, op, "MatrixLMN", &pcrd->MatrixLMN)) < 0)
-        return code;
-	if ((code = dict_range3_param(mem, op, "RangeLMN", &pcrd->RangeLMN)) < 0)
-        return code;
-	if ((code = dict_matrix3_param(mem, op, "MatrixABC", &pcrd->MatrixABC)) < 0)
-        return code;
-	if ((code = dict_range3_param(mem, op, "RangeABC", &pcrd->RangeABC)) < 0)
-        return code;
-	if ((code = cie_points_param(mem, op, &pcrd->points)) < 0)
-		return code;
-	if ((code = dict_matrix3_param(mem, op, "MatrixPQR", &pcrd->MatrixPQR)) < 0)
-		return code;
-	if ((code = dict_range3_param(mem,op, "RangePQR", &pcrd->RangePQR)) < 0)
-		return code;
 
-	if (dict_find_string(op, "RenderTable", &pRT) > 0) {
+    if ((code = dict_matrix3_param(mem, op, "MatrixLMN", &pcrd->MatrixLMN)) < 0)
+        return code;
+    if ((code = dict_range3_param(mem, op, "RangeLMN", &pcrd->RangeLMN)) < 0)
+        return code;
+    if ((code = dict_matrix3_param(mem, op, "MatrixABC", &pcrd->MatrixABC)) < 0)
+        return code;
+    if ((code = dict_range3_param(mem, op, "RangeABC", &pcrd->RangeABC)) < 0)
+        return code;
+    if ((code = cie_points_param(mem, op, &pcrd->points)) < 0)
+        return code;
+    if ((code = dict_matrix3_param(mem, op, "MatrixPQR", &pcrd->MatrixPQR)) < 0)
+        return code;
+    if ((code = dict_range3_param(mem,op, "RangePQR", &pcrd->RangePQR)) < 0)
+        return code;
+
+    if (dict_find_string(op, "RenderTable", &pRT) > 0) {
         const ref *prte = pRT->value.const_refs;
 
         /* Finish unpacking and checking the RenderTable parameter. */

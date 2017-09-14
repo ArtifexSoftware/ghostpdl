@@ -396,13 +396,14 @@ clist_find_pseudoband(gx_device_clist_reader *crdev, int band, cmd_block *cb)
         strcpy(fmode, "r");
         strncat(fmode, gp_fmode_binary_suffix, 1);
         if ((code=page_info->io_procs->fopen(page_info->cfname, fmode,
-                            &page_info->cfile,
-                            crdev->memory, crdev->memory, true)) < 0 ||
-             (code=page_info->io_procs->fopen(page_info->bfname, fmode,
-                            &page_info->bfile,
-                            crdev->memory, crdev->memory, false)) < 0)
+                      &page_info->cfile,
+                      crdev->memory, crdev->memory, true)) < 0 ||
+                      (code=page_info->io_procs->fopen(page_info->bfname, fmode,
+                      &page_info->bfile,
+                      crdev->memory, crdev->memory, false)) < 0) {
             return code;
-            bfile = page_info->bfile;
+        }
+        bfile = page_info->bfile;
     }
     /* Go to the start of the last command block */
     start_pos = page_info->bfile_end_pos - sizeof(cmd_block);

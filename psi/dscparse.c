@@ -1605,10 +1605,10 @@ dsc_parse_bounding_box(CDSC *dsc, CDSCBBOX** pbbox, int offset)
                     *pbbox = (CDSCBBOX *)dsc_memalloc(dsc, sizeof(CDSCBBOX));
                     if (*pbbox == NULL)
                         return CDSC_ERROR;	/* no memory */
-                        (*pbbox)->llx = (int)fllx;
-                        (*pbbox)->lly = (int)flly;
-                        (*pbbox)->urx = (int)(furx+0.999);
-                        (*pbbox)->ury = (int)(fury+0.999);
+                    (*pbbox)->llx = (int)fllx;
+                    (*pbbox)->lly = (int)flly;
+                    (*pbbox)->urx = (int)(furx+0.999);
+                    (*pbbox)->ury = (int)(fury+0.999);
                 }
                 return CDSC_OK;
             case CDSC_RESPONSE_CANCEL:
