@@ -2280,8 +2280,8 @@ gsicc_create_fromdef(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     if (has_def_procs) {
         icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,
                         3*CURVE_SIZE*sizeof(float),"gsicc_create_fromdef");
-    if (icc_luta2bparts.a_curves == NULL)
-        return gs_throw(gs_error_VMerror, "Allocation of ICC a curves failed");
+        if (icc_luta2bparts.a_curves == NULL)
+            return gs_throw(gs_error_VMerror, "Allocation of ICC a curves failed");
         curr_pos = icc_luta2bparts.a_curves;
         memcpy(curr_pos,&(pcie->caches_def.DecodeDEF->floats.values[0]),
                 CURVE_SIZE*sizeof(float));

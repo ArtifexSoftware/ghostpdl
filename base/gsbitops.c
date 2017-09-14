@@ -38,7 +38,7 @@ const bits16 mono_copy_masks[17] = {
 };
 const bits32 mono_fill_masks[33] = {
 #define mask(n)\
-  ((~0xff | (0xff >> (n & 7))) << (n & -8))
+  (((bits32)~0xff | (0xff >> (n & 7))) << (n & -8))
     mask( 0),mask( 1),mask( 2),mask( 3),mask( 4),mask( 5),mask( 6),mask( 7),
     mask( 8),mask( 9),mask(10),mask(11),mask(12),mask(13),mask(14),mask(15),
     mask(16),mask(17),mask(18),mask(19),mask(20),mask(21),mask(22),mask(23),
