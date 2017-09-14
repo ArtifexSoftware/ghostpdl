@@ -261,8 +261,8 @@
 
   -dWRITESYSTEMDICT
  Leaves systemdict writable.  This is necessary when running special
- utility programs such as font2c and pcharstr, which must bypass normal
- PostScript access protection.
+ utility programs, but is strongly discouraged as it bypasses normal Postscript
+ security measures.
 
   -sDEVICE=device
  Selects an alternate initial output device, as described above.
