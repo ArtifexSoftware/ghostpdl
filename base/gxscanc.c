@@ -3843,7 +3843,7 @@ gx_filter_edgebuffer_tr_app(gx_device       * restrict pdev,
                 assert(rowlen > 0);
                 do {
                     (void)row++; /* rl not needed here */
-                    rlid = *row++>>1;
+                    (void)row++;
                     rr   = *row++;
                     rrid = *row++;
                     rowlen--;
