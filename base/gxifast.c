@@ -318,6 +318,12 @@ image_simple_expand(byte * line, int line_x, uint raster,
     /* Pre-clear the row. */
     fill_row(line, line_x, raster, zero);
 
+
+    /* Extreme negative values of x_extent cause the xl0 calculation
+     * to explode. Workaround this here. */
+    if (x_extent < min_int + 0x100)
+      x_extent = min_int + 0x100;
+
     /* Set up the DDAs. */
     xl0 =
         (x_extent >= 0 ?
