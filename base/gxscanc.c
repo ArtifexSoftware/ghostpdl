@@ -3837,24 +3837,18 @@ gx_filter_edgebuffer_tr_app(gx_device       * restrict pdev,
                 lr   = *row++;
                 lrid = *row++;
                 rowlen--;
-                wind = 1;
 
                 /* We will fill solidly from ll to at least lr, possibly further */
                 assert(rowlen > 0);
-                do {
-                    (void)row++; /* rl not needed here */
-                    (void)row++;
-                    rr   = *row++;
-                    rrid = *row++;
-                    rowlen--;
-                    if (rr > lr) {
-                        lr   = rr;
-                        lrid = rrid;
-                    }
-                    wind ^= 1;
-                    if (wind == 0)
-                        break;
-                } while (rowlen > 0);
+                (void)row++; /* rl not needed here */
+                (void)row++;
+                rr   = *row++;
+                rrid = *row++;
+                rowlen--;
+                if (rr > lr) {
+                    lr   = rr;
+                    lrid = rrid;
+                }
             } else {
                 /* Non-Zero */
                 int w;
