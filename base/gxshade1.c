@@ -183,11 +183,24 @@ A_fill_region(A_fill_state_t * pfs, patch_fill_state_t *pfs1)
     double y1 = psh->params.Coords[1] + pfs->delta.y * pfs->v1;
     double h0 = pfs->u0, h1 = pfs->u1;
     patch_curve_t curve[4];
+    int code;
 
-    gs_point_transform2fixed(&pfs1->pgs->ctm, x0 + pfs->delta.y * h0, y0 - pfs->delta.x * h0, &curve[0].vertex.p);
-    gs_point_transform2fixed(&pfs1->pgs->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[1].vertex.p);
+    memset(&curve[0].vertex.p, 0, sizeof(curve[0].vertex.p));
+    memset(&curve[1].vertex.p, 0, sizeof(curve[0].vertex.p));
+    memset(&curve[2].vertex.p, 0, sizeof(curve[0].vertex.p));
+    memset(&curve[3].vertex.p, 0, sizeof(curve[0].vertex.p));
+    code = gs_point_transform2fixed(&pfs1->pgs->ctm, x0 + pfs->delta.y * h0, y0 - pfs->delta.x * h0, &curve[0].vertex.p);
+    if (code < 0)
+        return code;
+    code = gs_point_transform2fixed(&pfs1->pgs->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[1].vertex.p);
+    if (code < 0)
+        return code;
     gs_point_transform2fixed(&pfs1->pgs->ctm, x1 + pfs->delta.y * h1, y1 - pfs->delta.x * h1, &curve[2].vertex.p);
-    gs_point_transform2fixed(&pfs1->pgs->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[3].vertex.p);
+    if (code < 0)
+        return code;
+        gs_point_transform2fixed(&pfs1->pgs->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[3].vertex.p);
+    if (code < 0)
+        return code;
     curve[0].vertex.cc[0] = pfs->t0; /* The element cc[1] is set to a dummy value against */
     curve[1].vertex.cc[0] = pfs->t1; /* interrupts while an idle priocessing in gxshade.6.c .  */
     curve[2].vertex.cc[0] = pfs->t1;
