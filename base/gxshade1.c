@@ -185,10 +185,6 @@ A_fill_region(A_fill_state_t * pfs, patch_fill_state_t *pfs1)
     patch_curve_t curve[4];
     int code;
 
-    memset(&curve[0].vertex.p, 0, sizeof(curve[0].vertex.p));
-    memset(&curve[1].vertex.p, 0, sizeof(curve[0].vertex.p));
-    memset(&curve[2].vertex.p, 0, sizeof(curve[0].vertex.p));
-    memset(&curve[3].vertex.p, 0, sizeof(curve[0].vertex.p));
     code = gs_point_transform2fixed(&pfs1->pgs->ctm, x0 + pfs->delta.y * h0, y0 - pfs->delta.x * h0, &curve[0].vertex.p);
     if (code < 0)
         return code;
