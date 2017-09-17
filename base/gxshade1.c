@@ -191,10 +191,10 @@ A_fill_region(A_fill_state_t * pfs, patch_fill_state_t *pfs1)
     code = gs_point_transform2fixed(&pfs1->pgs->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[1].vertex.p);
     if (code < 0)
         return code;
-    gs_point_transform2fixed(&pfs1->pgs->ctm, x1 + pfs->delta.y * h1, y1 - pfs->delta.x * h1, &curve[2].vertex.p);
+    code = gs_point_transform2fixed(&pfs1->pgs->ctm, x1 + pfs->delta.y * h1, y1 - pfs->delta.x * h1, &curve[2].vertex.p);
     if (code < 0)
         return code;
-        gs_point_transform2fixed(&pfs1->pgs->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[3].vertex.p);
+    code = gs_point_transform2fixed(&pfs1->pgs->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[3].vertex.p);
     if (code < 0)
         return code;
     curve[0].vertex.cc[0] = pfs->t0; /* The element cc[1] is set to a dummy value against */
