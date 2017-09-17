@@ -670,6 +670,12 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
                             buf0[j++] = '1';
                             i++;
                             break;
+                        case '\\':
+                            buf0[j++] = '1';
+                            buf0[j++] = '3';
+                            buf0[j++] = '4';
+                            i++;
+                            break;
                         default:
                             break;
                     }
