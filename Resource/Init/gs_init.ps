@@ -1883,7 +1883,10 @@ ifelse
 % Trap this and produce a reasonable error message.
 { setdevice }		% does an erasepage
 INITDEBUG { exec //false } { .internalstopped } ifelse {
-  (**** Unable to open the initial device, quitting.) = flush 1 .quit
+  (%stderr) (w) file dup
+  (**** Unable to open the initial device, quitting.\n) writestring
+  flushfile
+  1 .quit
 } if
 
 % If the media size is fixed, update the current page device dictionary.
