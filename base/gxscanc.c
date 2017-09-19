@@ -37,6 +37,7 @@
 #include "gxdcolor.h"
 #include "assert_.h"
 #include <stdlib.h>             /* for qsort */
+#include <limits.h>             /* For INT_MAX */
 
 /* Overview of the scan conversion algorithm.
  *
@@ -1971,7 +1972,7 @@ gx_filter_edgebuffer_app(gx_device       * restrict pdev,
         int  ll, lr, rl, rr, wind, marked_to;
 
         /* Avoid double setting pixels, by keeping where we have marked to. */
-        marked_to = 0;
+        marked_to = INT_MIN;
         while (rowlen > 0) {
             if (rule == gx_rule_even_odd) {
                 /* Even Odd */
@@ -3828,7 +3829,7 @@ gx_filter_edgebuffer_tr_app(gx_device       * restrict pdev,
         int  ll, llid, lr, lrid, rlid, rr, rrid, wind, marked_to;
 
         /* Avoid double setting pixels, by keeping where we have marked to. */
-        marked_to = 0;
+        marked_to = INT_MIN;
         while (rowlen > 0) {
             if (rule == gx_rule_even_odd) {
                 /* Even Odd */
@@ -4050,8 +4051,6 @@ rowdifferent:{}
                 offset += 4;
                 rowlen--;
 
-                assert(le.start.x >= -fixed_half);
-                assert(le.end.x >= -fixed_half);
                 assert(re.start.x >= le.start.x);
                 assert(re.end.x >= le.end.x);
                 assert(le.start.y <= ybot + fixed_half);
