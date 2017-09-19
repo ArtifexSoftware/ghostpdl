@@ -429,11 +429,6 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     pix_alpha = mask_bg_alpha;
                     matte_alpha = 0xff;
                 } else {
-                    /* If we are isolated, do not double apply the alpha */
-                    if (tos_isolated)
-                        pix_alpha = 0xff;
-                    /* If we have a matte entry (pre-multiplied) then get
-                       the mask alpha so we can undo for proper blending */
                     if (has_matte)
                         matte_alpha = mask_tr_fn[*mask_curr_ptr];
                 }
