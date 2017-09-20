@@ -381,8 +381,6 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
             fo.adjust_above = fixed_half /* + fixed_epsilon */ ;        /* see above */
     else
         fo.adjust_below = fo.adjust_above = adjust.y;
-    /* Initialize the active line list. */
-    init_line_list(&lst, ppath->memory);
     sbox.p.x = ibox.p.x - adjust.x;
     sbox.p.y = ibox.p.y - adjust.y;
     sbox.q.x = ibox.q.x + adjust.x;
@@ -438,6 +436,18 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
     if (!fo.is_spotan && ((scanconverter = gs_getscanconverter(pdev->memory)) >= GS_SCANCONVERTER_EDGEBUFFER ||
                           (scanconverter == GS_SCANCONVERTER_DEFAULT && GS_SCANCONVERTER_DEFAULT_IS_EDGEBUFFER))) {
         gx_edgebuffer eb = { 0 };
+        /* If we have a request for accurate curves, make sure we exactly
+         * match what we'd get for stroking. */
+        if (!big_path && pgs->accurate_curves && gx_path_has_curves(ppath))
+        {
+            gx_path_init_local(&ffpath, ppath->memory);
+            code = gx_path_copy_reducing(ppath, &ffpath, fo.fixed_flat, NULL,
+                                         pco_small_curves | pco_accurate);
+            if (code < 0)
+                return code;
+            ppath = &ffpath;
+        }
+
         if (fill_by_trapezoids && !lop_is_idempotent(lop))
             fill_by_trapezoids = 0;
         if (!fill_by_trapezoids)
@@ -514,6 +524,8 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
                 }
             }
         }
+        if (ppath == &ffpath)
+            gx_path_free(ppath, "gx_general_fill_path");
         gx_edgebuffer_fin(dev,&eb);
         return code;
     }
@@ -538,6 +550,8 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
         }
     }
     fo.fill_by_trapezoids = fill_by_trapezoids;
+    /* Initialize the active line list. */
+    init_line_list(&lst, ppath->memory);
     if ((code = add_y_list(pfpath, &lst)) < 0)
         goto nope;
     {
