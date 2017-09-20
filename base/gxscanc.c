@@ -2023,7 +2023,7 @@ gx_filter_edgebuffer_app(gx_device       * restrict pdev,
                 }
             }
 
-            if (lr > ll) {
+            if (lr >= ll) {
                 *rowout++ = ll;
                 *rowout++ = lr;
                 marked_to = lr;
@@ -3884,7 +3884,7 @@ gx_filter_edgebuffer_tr_app(gx_device       * restrict pdev,
             if (lr < marked_to)
                 continue;
 
-            if (marked_to > ll) {
+            if (marked_to >= ll) {
                 if (rowout == rowstart) {
                     ll   = marked_to;
                     llid = --marked_id;
@@ -3895,7 +3895,7 @@ gx_filter_edgebuffer_tr_app(gx_device       * restrict pdev,
                 }
             }
 
-            if (lr > ll) {
+            if (lr >= ll) {
                 *rowout++ = ll;
                 *rowout++ = llid;
                 *rowout++ = lr;
