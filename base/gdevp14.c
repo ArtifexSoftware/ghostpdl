@@ -1085,7 +1085,6 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
         buf->backdrop = gs_alloc_bytes(ctx->memory, buf->planestride * buf->n_chan,
                                         "pdf14_push_transparency_group");
         if (buf->backdrop == NULL) {
-            gs_free_object(ctx->memory, buf->backdrop, "pdf14_push_transparency_group");
             return gs_throw(gs_error_VMerror, "Knockout backdrop allocation failed");
         }
         if (buf->isolated) {
