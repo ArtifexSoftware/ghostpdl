@@ -629,7 +629,7 @@ end def
    PDFusingtransparency {
       .currentSMask //null ne {
         mark /Subtype /Group /Isolated //true .dicttomark pathbbox .begintransparencygroup
-        exch .currentshapealpha exch .currentopacityalpha exch 4 -1 roll % avoid double application
+        .currentshapealpha .currentopacityalpha 3 -1 roll % avoid double application
 		1 .setopacityalpha 1 .setshapealpha		
       } if
       dup checkOPtrans exch 1 index {
@@ -645,7 +645,7 @@ end def
          .endtransparencygroup .setopacityalpha .setblendmode	% end the CompatibleOverprint group
       } if
       .currentSMask //null ne {
-       .endtransparencygroup .setshapealpha .setopacityalpha 
+       .endtransparencygroup .setopacityalpha .setshapealpha
       } if
    } {
       cvx exec
