@@ -483,7 +483,7 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
         buf1b = buf1;
         /* Skip the Byte Order Mark (0xfe 0xff) */
         buf0b = (short *)(buf0 + 2);
-        code = gs_ConvertUTF16((char *)buf0b, j - 2, (unsigned char **)&buf1b, data_length * 2 * sizeof(unsigned char));
+        code = gs_ConvertUTF16((unsigned char *)buf0b, j - 2, (unsigned char **)&buf1b, data_length * 2 * sizeof(unsigned char));
         if (code < 0)
             return code;
         write(s, (const byte *)buf1, buf1b - buf1);
