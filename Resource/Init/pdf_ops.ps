@@ -630,14 +630,14 @@ end def
       .currentSMask //null ne {
         mark /Subtype /Group /Isolated //true .dicttomark pathbbox .begintransparencygroup
         .currentshapealpha .currentopacityalpha 3 -1 roll % avoid double application
-		1 .setopacityalpha 1 .setshapealpha		
+        1 .setopacityalpha 1 .setshapealpha
       } if
       dup checkOPtrans exch 1 index {
          % We need to push a non-isolated, non-knockout transparency group and
          % perform the operation in CompatibleOverprint mode, then end the
          % transparency group. Do the begintransparencygroup step here.
          mark /Subtype /Group /Isolated //false .dicttomark pathbbox .begintransparencygroup
-         exch .currentblendmode exch .currentopacityalpha exch 4 -1 roll % save current values
+         .currentblendmode .currentopacityalpha 4 -2 roll % save current values
          /CompatibleOverprint .setblendmode 1 .setopacityalpha
       } if
       cvx exec
