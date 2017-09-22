@@ -137,8 +137,8 @@ currentuserparams /IdiomRecognition get
       /Decode[0 1]def}{/Decode[0 1 0 1 0 1 0 1]def}ifelse}ifelse/DataSource{PaintData}def end/ImageDict
       exch def/PaintProc{begin ImageDict image end}b currentdict mx makepattern setpattern end fEOFill{eofill}{fill}
       ifelse grestore
-      }
-    }
+      } ifelse
+    }bind
   ]
 
   /mask_pbf [
