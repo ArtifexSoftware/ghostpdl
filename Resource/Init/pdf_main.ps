@@ -2232,14 +2232,61 @@ end readonly def
     /MediaBox exch get_media_box pop
   } {
     oforce_elems              % <<pdict>> /SomeBox x0 y0 x1 y1
+    %% Complicated stuff. We need to use the 'Box' we identified (if any), but we
+    %% need to clamp the boundaries of the 'Box' to the MediaBox. This appears to
+    %% be what Acrobat does. The complication arises because the Box values don't
+    %% have to be sensibly positive, its permissible to have the MediaBox set up
+    %% so that it extends down and left instead of up and right. We take care of the
+    %% content when we st up the CTM, but we do need to make sure that we clamp
+    %% the BoundingBox, and that means we need to take direcitonality into account...
+
     6 -1 roll get_media_box { % /SomeBox x0 y0 x1 y1 [MediaBox]
       aload pop               % /SomeBox x0 y0 x1 y1 X0 Y0 X1 Y1
-      5 -1 roll .min exch     % /SomeBox x0 y0 x1 X0 Y0 mY1 X1
-      5 -1 roll .min exch     % /SomeBox x0 y0 X0 Y0 mX1 mY1
-      4 2 roll                % /SomeBox x0 y0 mX1 mY1 X0 Y0
-      5 -1 roll .max exch     % /SomeBox x0 mX1 mY1 mY0 X0
-      5 -1 roll .max exch     % /SomeBox mX1 mY1 mX0 mY0
-      4 2 roll                % /SomeBox mX0 mY0 mX1 mY1
+
+      %% Start with the width, get the X0 and X1 values of the MediaBox
+      3 index                 % /SomeBox x0 y0 x1 y1 X0 Y0 X1 Y1 X0
+      2 index                 % /SomeBox x0 y0 x1 y1 X0 Y0 X1 Y1 X0 X1
+      gt {
+        %% Media extends to left
+        4 -1 roll             % /SomeBox x0 y0 x1 y1 Y0 X1 Y1 X0
+        8 -1 roll             % /SomeBox y0 x1 y1 Y0 X1 Y1 X0 x0
+        .min                  % /SomeBox y0 x1 y1 Y0 X1 Y1 mX0
+        7 1 roll              % /SomeBox mX0 y0 x1 y1 Y0 X1 Y1
+        exch                  % /SomeBox mX0 y0 x1 y1 Y0 Y1 X1
+        5 -1 roll             % /SomeBox mX0 y0 y1 Y0 Y1 X1 x1
+        .max                  % /SomeBox mX0 y0 y1 Y0 Y1 mX1
+        5 1 roll              % /SomeBox mX0 mX1 y0 y1 Y0 Y1
+      }{
+        %% Media extends to right
+        4 -1 roll             % /SomeBox x0 y0 x1 y1 Y0 X1 Y1 X0
+        8 -1 roll             % /SomeBox y0 x1 y1 Y0 X1 Y1 X0 x0
+        .max                  % /SomeBox y0 x1 y1 Y0 X1 Y1 mX0
+        7 1 roll              % /SomeBox mX0 y0 x1 y1 Y0 X1 Y1
+        exch                  % /SomeBox mX0 y0 x1 y1 Y0 Y1 X1
+        5 -1 roll             % /SomeBox mX0 y0 y1 Y0 Y1 X1 x1
+        .min                  % /SomeBox mX0 y0 y1 Y0 Y1 mX1
+        5 1 roll              % /SomeBox mX0 mX1 y0 y1 Y0 Y1
+      } ifelse
+
+      %% Now deal with the height
+      2 copy                  % /SomeBox mX0 mX1 y0 y1 Y0 Y1 Y0 Y1
+      gt {
+        %% Media extends down
+        exch                  % /SomeBox mX0 mX1 y0 y1 Y1 Y0
+        4 -1 roll             % /SomeBox mX0 mX1 y1 Y1 Y0 y0
+        .min                  % /SomeBox mX0 mX1 y1 Y1 mY0
+        3 1 roll              % /SomeBox mX0 mX1 mY0 y1 Y1
+        .max                  % /SomeBox mX0 mX1 mY0 mY1
+      }{
+        %% Media extends up
+        exch                  % /SomeBox mX0 mX1 y0 y1 Y1 Y0
+        4 -1 roll             % /SomeBox mX0 mX1 y1 Y1 Y0 y0
+        .max                  % /SomeBox mX0 mX1 y1 Y1 mY0
+        3 1 roll              % /SomeBox mX0 mX1 mY0 y1 Y1
+        .min                  % /SomeBox mX0 mX1 mY0 mY1
+      } ifelse
+      exch                    % /SomeBox mX0 mX1 mY1 mY0
+      3 1 roll                % /SomeBox mX0 mY0 mX1 mY1
     } {
       pop
     } ifelse
