@@ -2964,6 +2964,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
     /* Now let us push a transparency group into which we are
      * going to tile the pattern.  */
     if (ppath != NULL && code >= 0) {
+        pdf14_device save_pdf14_dev;		/* save area for p14dev */
 
         gx_cpath_outer_box(&cpath_intersection, &outer_box);
         rect.p.x = fixed2int(outer_box.p.x);
@@ -2985,6 +2986,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
             n_chan_tile = ptile->cdev->common.color_info.num_components+1;
         }
         blend_mode = ptile->blending_mode;
+        memcpy(&save_pdf14_dev, p14dev, sizeof(pdf14_device));
         code = pdf14_push_transparency_group(p14dev->ctx, &rect, 1, 0, 255,255,
                                              blend_mode, 0, 0, n_chan_tile-1,
                                              false, NULL, NULL, pgs_noconst,
@@ -3086,6 +3088,8 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
                                             p14dev->color_info.num_components,
                                             p14dev->icc_struct->device_profile[0],
                                             pdev);
+        memcpy(p14dev, &save_pdf14_dev, sizeof(pdf14_device));
+        p14dev->pclist_device = NULL;
     }
     return code;
 }
