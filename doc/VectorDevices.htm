@@ -712,23 +712,6 @@ usually result in a slightly larger PDF file.</dd>
 <dd>This option is incompatible with producing an encrypted (password protected) PDF file.</dd>
 </dt>
 
-<dt><code>-dPDFDontUseFontObjectNum</code>
-<dd>Certain authoring tools produce PDF files containing subset fonts where the choice of
-the subset prefix is sub-optimal, either sequentail or otherwise not based on the font content.
-This is not a problem when dealing with a single PDF file, as the PDF object number of the font is
-guaranteed unique in the file, so the correct font will always be used. However, if we are
-supplied with two or more PDF files, we have seen cases where the font names are not unique
-(poor subset prefix selection), which can lead to Ghostscript deciding that two different
-fonts are in fact the same, and causing incorrect output with the pdfwrite family of devices.
-A recent change in the PDF interpreter (and the pdfwrite device) now creates a XUID for each font, based on the input
-filename and the PDF object number, whch makes it quite unlikely that ths situation can now arise.
-However, certain poorly written PDF files contain multiple copies of the same font, and now that
-we consider fonts with differing numbers to be different fonts, pdfwrite emits these fonts
-multple times, just as the input did. This can lead to a small increase in the size of the final
-PDF file (but no other problems). If this should happen, and is important to you, you can use this switch to disable the
-use of the object number (and filename) in determining the uniqueness of fonts.</dd>
-</dt>
-
 <dl>
 <dt><code>-dPreserveAnnots=</code><em>boolean</em>
 <dd>We now attempt to preserve most annotations from input PDF files as annotations in the output PDF file (note, not in output PostScript!)
