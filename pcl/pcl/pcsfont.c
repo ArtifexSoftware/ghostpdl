@@ -548,8 +548,9 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
             return e_Unimplemented;
         }
         /* check for buffer overrun */
-        if (pcs->soft_font_count + count - 2 > font_data_size)
+        if (pcs->soft_font_count + count - 2 > gs_object_size(pcs->memory, pcs->soft_font_char_data))
             return e_Range;
+
         /* append the new data to the new object */
         memcpy(pcs->soft_font_char_data + pcs->soft_font_count, data + 2,
                count - 2);
