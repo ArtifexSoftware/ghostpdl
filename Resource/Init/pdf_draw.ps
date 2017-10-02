@@ -1418,7 +1418,7 @@ end
   /CIEBasedABC { 1 get /RangeABC knownoget not { //01_3 } if } bind
   /CalGray { pop //01_1 } bind
   /CalRGB { pop //01_3 } bind
-  /Lab { 1 get /Range knownoget not { [-100 100 -100 100] } if } bind
+  /Lab { 1 get /Range knownoget not { [-100 100 -100 100] } {aload pop 0 100 6 2 roll 6 array astore}ifelse } bind
   /ICCBased {
      1 oget dup /Range knownoget {
        exch pop
