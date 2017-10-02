@@ -1098,7 +1098,7 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
 
         dst_alpha = dst[n_chan];
         if (src_alpha_g == 255 || dst_alpha == 0) {
-            memcpy(ca, src, n_chan + 3);
+            memcpy(ca, src, n_chan + 1);
         } else {
             /* Uncomposite the color. In other words, solve
                "src = (ca, src_alpha_g) over dst" for ca */
@@ -1165,7 +1165,7 @@ art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
         src_alpha = src[n_chan];
         if (src_alpha == 0)
             return;
-        memcpy(src_tmp, src, n_chan + 3);
+        memcpy(src_tmp, src, n_chan + 1);
         tmp = src_alpha * alpha + 0x80;
         src_tmp[n_chan] = (tmp + (tmp >> 8)) >> 8;
         art_pdf_knockout_composite_pixel_alpha_8(backdrop, tos_shape, dst,
@@ -1193,7 +1193,7 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
         src_alpha = src[n_chan];
         if (src_alpha == 0)
             return;
-        memcpy(src_tmp, src, n_chan + 3);
+        memcpy(src_tmp, src, n_chan + 1);
         tmp = src_alpha * alpha + 0x80;
         src_tmp[n_chan] = (tmp + (tmp >> 8)) >> 8;
         src = src_tmp;
@@ -1278,7 +1278,7 @@ art_pdf_composite_knockout_8(byte *dst,
         if (src_shape == 0)
             return;
         else if (src_shape == 255) {
-            memcpy (dst, src, n_chan + 3);
+            memcpy (dst, src, n_chan + 1);
             return;
         } else {
             /* Use src_shape to interpolate (in premultiplied alpha space)
