@@ -591,8 +591,8 @@ const byte art_blend_soft_light_8[256] = {
     7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1, 0, 0
 };
 
-void
-art_blend_pixel_8(byte *dst, const byte *backdrop,
+static inline void
+art_blend_pixel_8_inline(byte *dst, const byte *backdrop,
                   const byte *src, int n_chan, gs_blend_mode_t blend_mode,
                   const pdf14_nonseparable_blending_procs_t * pblend_procs,
                   pdf14_device *p14dev)
@@ -793,6 +793,16 @@ art_blend_pixel_8(byte *dst, const byte *backdrop,
     }
 }
 
+void
+art_blend_pixel_8(byte *dst, const byte *backdrop,
+                  const byte *src, int n_chan, gs_blend_mode_t blend_mode,
+                  const pdf14_nonseparable_blending_procs_t * pblend_procs,
+                  pdf14_device *p14dev)
+{
+    art_blend_pixel_8_inline(dst, backdrop, src, n_chan, blend_mode,
+        pblend_procs, p14dev);
+}
+
 byte
 art_pdf_union_8(byte alpha1, byte alpha2)
 {
@@ -800,22 +810,6 @@ art_pdf_union_8(byte alpha1, byte alpha2)
 
     tmp = (0xff - alpha1) * (0xff - alpha2) + 0x80;
     return 0xff - ((tmp + (tmp >> 8)) >> 8);
-}
-
-byte
-art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask)
-{
-    int tmp;
-
-    if (alpha_mask == 0xff) {
-        tmp = (0xff - alpha1) * (0xff - alpha2) + 0x80;
-        return 0xff - ((tmp + (tmp >> 8)) >> 8);
-    } else {
-        tmp = alpha2 * alpha_mask + 0x80;
-        tmp = (tmp + (tmp >> 8)) >> 8;
-        tmp = (0xff - alpha1) * (0xff - tmp) + 0x80;
-        return 0xff - ((tmp + (tmp >> 8)) >> 8);
-    }
 }
 
 static void

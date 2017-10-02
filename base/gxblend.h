@@ -160,7 +160,20 @@ byte art_pdf_union_8(byte alpha1, byte alpha2);
  *
  * Return value: Union (@alpha1, @alpha2 * @alpha_mask).
  **/
-byte art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask);
+/* byte art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask); */
+
+static inline byte
+art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask)
+{
+    int tmp;
+    if (alpha_mask != 0xff)
+    {
+        tmp = alpha2 * alpha_mask + 0x80;
+        alpha2 = (tmp + (tmp >> 8))>>8;
+    }
+    tmp = (0xff - alpha1) * (0xff - alpha2) + 0x80;
+    return 0xff - ((tmp + (tmp >> 8)) >> 8);
+}
 
 /**
  * art_pdf_composite_pixel_alpha_8: Composite two alpha pixels.
