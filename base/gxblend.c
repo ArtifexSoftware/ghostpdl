@@ -1201,27 +1201,21 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
     byte src_tmp[ART_MAX_CHAN + 1];
     int tmp;
 
-    if (alpha == 255) {
-        art_pdf_composite_pixel_alpha_8(dst, src, n_chan,
-            blend_mode, pblend_procs, p14dev);
-        if (dst_alpha_g != NULL) {
-            tmp = (255 - *dst_alpha_g) * (255 - src[n_chan]) + 0x80;
-            *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
-        }
-    } else {
+    if (alpha != 255) {
         src_alpha = src[n_chan];
         if (src_alpha == 0)
             return;
         memcpy(src_tmp, src, n_chan + 3);
         tmp = src_alpha * alpha + 0x80;
         src_tmp[n_chan] = (tmp + (tmp >> 8)) >> 8;
-        art_pdf_composite_pixel_alpha_8(dst, src_tmp, n_chan,
-                                        blend_mode, pblend_procs,
-                                        p14dev);
-        if (dst_alpha_g != NULL) {
-            tmp = (255 - *dst_alpha_g) * (255 - src_tmp[n_chan]) + 0x80;
-            *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
-        }
+        src = src_tmp;
+    }
+
+    art_pdf_composite_pixel_alpha_8(dst, src, n_chan,
+            blend_mode, pblend_procs, p14dev);
+    if (dst_alpha_g != NULL) {
+        tmp = (255 - *dst_alpha_g) * (255 - src[n_chan]) + 0x80;
+        *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
     }
 }
 
