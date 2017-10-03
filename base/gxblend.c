@@ -954,6 +954,76 @@ art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
     }
 }
 
+static inline byte *
+art_pdf_composite_pixel_alpha_8_inline(byte *dst, byte *src, int n_chan,
+        gs_blend_mode_t blend_mode, int first_spot,
+        const pdf14_nonseparable_blending_procs_t * pblend_procs, pdf14_device *p14dev)
+{
+    byte a_b, a_s;
+    unsigned int a_r;
+    int tmp;
+    int src_scale;
+    int c_b, c_s;
+    int i;
+
+    a_s = src[n_chan];
+    if (a_s == 0) {
+        /* source alpha is zero, avoid all computations and possible
+           divide by zero errors. */
+        return NULL; /* No change to destination at all! */
+    }
+
+    a_b = dst[n_chan];
+    if (a_b == 0) {
+        /* backdrop alpha is zero, just copy source pixels and avoid
+           computation. */
+        return src;
+    }
+
+    /* Result alpha is Union of backdrop and source alpha */
+    tmp = (0xff - a_b) * (0xff - a_s) + 0x80;
+    a_r = 0xff - (((tmp >> 8) + tmp) >> 8);
+    /* todo: verify that a_r is nonzero in all cases */
+
+    /* Compute a_s / a_r in 16.16 format */
+    src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
+
+    if (first_spot != 0) {
+        /* Do compositing with blending */
+        byte blend[ART_MAX_CHAN];
+
+        art_blend_pixel_8_inline(blend, dst, src, first_spot, blend_mode, pblend_procs, p14dev);
+        for (i = 0; i < first_spot; i++) {
+            int c_bl;		/* Result of blend function */
+            int c_mix;		/* Blend result mixed with source color */
+
+            c_s = src[i];
+            c_b = dst[i];
+            c_bl = blend[i];
+            tmp = a_b * (c_bl - ((int)c_s)) + 0x80;
+            c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
+            tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
+            dst[i] = tmp >> 16;
+        }
+    }
+    dst[n_chan] = a_r;
+
+    n_chan -= first_spot;
+    if (n_chan == 0)
+        return dst;
+    dst += first_spot;
+    src += first_spot;
+
+    /* Do simple compositing of source over backdrop */
+    for (i = 0; i < n_chan; i++) {
+        c_s = src[i];
+        c_b = dst[i];
+        tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
+        dst[i] = tmp >> 16;
+    }
+    return dst - first_spot;
+}
+
 void
 art_pdf_composite_pixel_alpha_8_fast(byte *dst, const byte *src, int n_chan,
                                      gs_blend_mode_t blend_mode,
@@ -1089,7 +1159,7 @@ art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
  * Returns 1 if we need to call art_pdf_composite_pixel_alpha_8.
  **/
 static inline int
-art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
+art_pdf_recomposite_group_8(byte **dstp, byte *dst_alpha_g,
         byte *src, byte src_alpha_g, int n_chan,
         byte alpha, gs_blend_mode_t blend_mode, int first_blend_spot,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
@@ -1099,6 +1169,7 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
     int i;
     int tmp;
     int scale;
+    byte *dst = *dstp;
 
     if (src_alpha_g == 0)
         return 0;
@@ -1113,7 +1184,7 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
             tmp = (255 - *dst_alpha_g) * (255 - src_alpha_g) + 0x80;
             *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
         }
-        memcpy(dst, src, n_chan + 1);
+        *dstp = src;
         return 0;
     } else {
         /* "interesting" blend mode */
@@ -1500,6 +1571,7 @@ template_compose_group(byte *tos_ptr, bool tos_isolated, int tos_planestride, in
     int first_spot = n_chan - num_spots;
     int first_blend_spot = n_chan;
     bool has_mask2 = has_mask;
+    byte *dst;
 
     if (!nos_knockout && num_spots > 0 && !blend_valid_for_spot(blend_mode)) {
         first_blend_spot = first_spot;
@@ -1597,6 +1669,7 @@ template_compose_group(byte *tos_ptr, bool tos_isolated, int tos_planestride, in
                 }
             }
 
+            dst = nos_pixel;
             if (nos_knockout) {
                 /* We need to be knocking out what ever is on the nos, but may
                    need to combine with it's backdrop */
@@ -1640,11 +1713,11 @@ template_compose_group(byte *tos_ptr, bool tos_isolated, int tos_planestride, in
                                                  tos_pixel, n_chan, pix_alpha,
                                                  blend_mode, first_blend_spot,
                                                  pblend_procs, pdev) :
-                       art_pdf_recomposite_group_8(nos_pixel, nos_alpha_g_ptr,
+                       art_pdf_recomposite_group_8(&dst, nos_alpha_g_ptr,
                                                    tos_pixel, tos_ptr[tos_alpha_g_offset], n_chan,
                                                    pix_alpha, blend_mode, first_blend_spot,
                                                    pblend_procs, pdev)) {
-                art_pdf_composite_pixel_alpha_8(nos_pixel, tos_pixel, n_chan,
+                dst = art_pdf_composite_pixel_alpha_8_inline(nos_pixel, tos_pixel, n_chan,
                                                 blend_mode, first_blend_spot,
                                                 pblend_procs, pdev);
             }
@@ -1654,44 +1727,47 @@ template_compose_group(byte *tos_ptr, bool tos_isolated, int tos_planestride, in
                                             tos_ptr[tos_shape_offset],
                                             shape);
             }
-            /* Complement the results for subtractive color spaces.  Again,
-             * if we are in an additive blending color space, we are not
-             * going to be fooling with overprint of spot colors */
-            if (additive) {
-                /* additive or hybrid */
-                for (i = 0; i < first_spot; ++i) {
-                    nos_ptr[i * nos_planestride] = nos_pixel[i];
-                }
-                for (; i < n_chan; i++) {
-                    nos_ptr[i * nos_planestride] = 255 - nos_pixel[i];
-                }
-            } else {
-                /* Pure subtractive */
-                /* If we were running in the compatible overprint blend mode
-                * and popping the group, we don't need to fool with the
-                * drawn components as that should have already have been
-                * handled during the blending within our special non-isolated
-                * group.  So in other words, if the blend mode is normal
-                * (or compatible) and we are doing overprint, the overprint
-                * has NOT been handled by compatible overprint mode and we
-                * need to take care of it now */
-                if (overprint) {
-                    for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
-                        if ((comps & 0x1) != 0) {
-                            nos_ptr[i * nos_planestride] = 255 - nos_pixel[i];
-                        }
+            if (dst)
+            {
+                /* Complement the results for subtractive color spaces.  Again,
+                 * if we are in an additive blending color space, we are not
+                 * going to be fooling with overprint of spot colors */
+                if (additive) {
+                    /* additive or hybrid */
+                    for (i = 0; i < first_spot; ++i) {
+                        nos_ptr[i * nos_planestride] = dst[i];
+                    }
+                    for (; i < n_chan; i++) {
+                        nos_ptr[i * nos_planestride] = 255 - dst[i];
                     }
                 } else {
-                    for (i = 0; i < n_chan; ++i)
-                        nos_ptr[i * nos_planestride] = 255 - nos_pixel[i];
+                    /* Pure subtractive */
+                    /* If we were running in the compatible overprint blend mode
+                    * and popping the group, we don't need to fool with the
+                    * drawn components as that should have already have been
+                    * handled during the blending within our special non-isolated
+                    * group.  So in other words, if the blend mode is normal
+                    * (or compatible) and we are doing overprint, the overprint
+                    * has NOT been handled by compatible overprint mode and we
+                    * need to take care of it now */
+                    if (overprint) {
+                        for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
+                            if ((comps & 0x1) != 0) {
+                                nos_ptr[i * nos_planestride] = 255 - dst[i];
+                            }
+                        }
+                    } else {
+                        for (i = 0; i < n_chan; ++i)
+                            nos_ptr[i * nos_planestride] = 255 - dst[i];
+                    }
                 }
+                /* alpha */
+                nos_ptr[n_chan * nos_planestride] = dst[n_chan];
             }
             /* tags */
             if (nos_tag_offset && tos_has_tag) {
                 nos_ptr[nos_tag_offset] |= tos_ptr[tos_tag_offset];
              }
-            /* alpha */
-            nos_ptr[n_chan * nos_planestride] = nos_pixel[n_chan];
 
             if (nos_alpha_g_ptr != NULL)
                 ++nos_alpha_g_ptr;
