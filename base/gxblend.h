@@ -304,10 +304,12 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
  * Note: this is only for knockout nonisolated groups.
  *
  * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
+ *
+ * @NOTE: This function may corrupt src.
  **/
 void
 art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
-        byte *dst_alpha_g, const byte *src, int n_chan, byte alpha,
+        byte *dst_alpha_g, byte *src, int n_chan, byte alpha,
         gs_blend_mode_t blend_mode,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
         pdf14_device *p14dev, bool has_mask);
