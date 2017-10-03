@@ -241,9 +241,9 @@ art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
  * @alpha: Alpha mask value.
  * @src_alpha_g: alpha_g value associated with @src.
  * @blend_mode: Blend mode for compositing.
+ * @first_blend_spot: The first component for which Normal blending should be used.
  * @pblend_procs: Procs for handling non separable blending modes.
  * @p14dev: pdf14 device
- * @num_spots:  Indicate number of spot colorants
  *
  * Note: this is only for non-isolated groups. This covers only the
  * single-alpha case. A separate function is needed for dual-alpha,
@@ -254,13 +254,15 @@ art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
  * @src_alpha_g corresponds to $\alpha g_n$ in the Adobe notation.
  *
  * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
+ *
+ * @NOTE: This function may corrupt src.
  **/
 void
 art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
-        const byte *src, byte src_alpha_g, int n_chan,
-        byte alpha, gs_blend_mode_t blend_mode,
+        byte *src, byte src_alpha_g, int n_chan,
+        byte alpha, gs_blend_mode_t blend_mode, int first_blend_spot,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        pdf14_device *p14dev, int num_spots);
+        pdf14_device *p14dev);
 
 /**
  * art_pdf_composite_group_8: Composite group pixel.

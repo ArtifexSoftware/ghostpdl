@@ -1064,10 +1064,10 @@ art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
 
 void
 art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
-        const byte *src, byte src_alpha_g, int n_chan,
-        byte alpha, gs_blend_mode_t blend_mode,
+        byte *src, byte src_alpha_g, int n_chan,
+        byte alpha, gs_blend_mode_t blend_mode, int first_blend_spot,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        pdf14_device *p14dev, int num_spots)
+        pdf14_device *p14dev)
 {
     byte dst_alpha;
     int i;
@@ -1083,25 +1083,18 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
            there is no constant mask and no soft mask, then this
            operation should be optimized away at a higher level. */
 
-        memcpy(dst, src, n_chan + 1);
         if (dst_alpha_g != NULL) {
             tmp = (255 - *dst_alpha_g) * (255 - src_alpha_g) + 0x80;
             *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
         }
+        memcpy(dst, src, n_chan + 1);
         return;
     } else {
         /* "interesting" blend mode */
-        byte ca[ART_MAX_CHAN + 1];	/* $C, \alpha$ */
-        int first_blend_spot = n_chan;
-        if (num_spots > 0 && !blend_valid_for_spot(blend_mode))
-            first_blend_spot = n_chan - num_spots;
-
         dst_alpha = dst[n_chan];
-        if (src_alpha_g == 255 || dst_alpha == 0) {
-            memcpy(ca, src, n_chan + 1);
-        } else {
+        if (src_alpha_g != 255 && dst_alpha != 0) {
             /* Uncomposite the color. In other words, solve
-               "src = (ca, src_alpha_g) over dst" for ca */
+               "src = (src, src_alpha_g) over dst" for src */
             scale = (dst_alpha * 255 * 2 + src_alpha_g) / (src_alpha_g << 1) -
                 dst_alpha;
             for (i = 0; i < n_chan; i++) {
@@ -1117,18 +1110,18 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
                     tmp = 0;
                 if (tmp > 255)
                     tmp = 255;
-                ca[i] = tmp;
+                src[i] = tmp;
             }
         }
 
         tmp = src_alpha_g * alpha + 0x80;
         tmp = (tmp + (tmp >> 8)) >> 8;
-        ca[n_chan] = tmp;
+        src[n_chan] = tmp;
         if (dst_alpha_g != NULL) {
             tmp = (255 - *dst_alpha_g) * (255 - tmp) + 0x80;
             *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
         }
-        art_pdf_composite_pixel_alpha_8(dst, ca, n_chan, blend_mode, first_blend_spot,
+        art_pdf_composite_pixel_alpha_8(dst, src, n_chan, blend_mode, first_blend_spot,
                 pblend_procs, p14dev);
     }
     /* todo: optimize BLEND_MODE_Normal buf alpha != 255 case */
@@ -1192,12 +1185,12 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
         src = src_tmp;
     }
 
-    art_pdf_composite_pixel_alpha_8(dst, src, n_chan,
-            blend_mode, first_spot, pblend_procs, p14dev);
     if (dst_alpha_g != NULL) {
         tmp = (255 - *dst_alpha_g) * (255 - src[n_chan]) + 0x80;
         *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
     }
+    art_pdf_composite_pixel_alpha_8(dst, src, n_chan,
+            blend_mode, first_spot, pblend_procs, p14dev);
 }
 
 /* A very simple case.  Knockout isolated group going to a parent that is not

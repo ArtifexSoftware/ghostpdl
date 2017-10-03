@@ -342,7 +342,7 @@ template_compose_group(byte *tos_ptr, bool tos_isolated, int tos_planestride, in
     int first_blend_spot = n_chan;
     bool has_mask2 = has_mask;
 
-    if (tos_isolated && num_spots > 0 && !blend_valid_for_spot(blend_mode)) {
+    if (!nos_knockout && num_spots > 0 && !blend_valid_for_spot(blend_mode)) {
         first_blend_spot = first_spot;
     }
     if (!nos_isolated && backdrop_ptr != NULL)
@@ -482,10 +482,11 @@ template_compose_group(byte *tos_ptr, bool tos_isolated, int tos_planestride, in
                         pblend_procs, pdev);
             } else {
                 byte tos_alpha_g = tos_ptr[tos_alpha_g_offset];
+                /* This call potentially corrupts tos_pixel[] */
                 art_pdf_recomposite_group_8(nos_pixel, nos_alpha_g_ptr,
                                         tos_pixel, tos_alpha_g, n_chan,
-                                        pix_alpha, blend_mode, pblend_procs, pdev,
-                                        num_spots);
+                                        pix_alpha, blend_mode, first_blend_spot,
+                                        pblend_procs, pdev);
             }
             if (nos_shape_offset) {
                 nos_ptr[nos_shape_offset] =
