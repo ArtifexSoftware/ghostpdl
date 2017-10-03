@@ -549,7 +549,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                         tos_pixel[n_chan - num_spots] = tos_pixel[n_chan];
 
                         /* Blend process with blend mode */
-                        art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr, tos_pixel,
+                        art_pdf_composite_group_8(nos_pixel, NULL, tos_pixel,
                             n_chan - num_spots, pix_alpha, blend_mode,
                             pblend_procs, pdev);
 
