@@ -307,118 +307,38 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff)
 #endif
 }
 
-void
-pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
-              int x0, int x1, int y0, int y1, int n_chan, bool additive,
-              const pdf14_nonseparable_blending_procs_t * pblend_procs,
-              bool overprint, gx_color_index drawn_comps, gs_memory_t *memory,
-              gx_device *dev)
+static void
+compose_group(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
+              int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
+              byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
+              int nos_shape_offset, int nos_tag_offset,
+              byte *mask_row_ptr, int has_mask, pdf14_buf *maskbuf, byte mask_bg_alpha, byte *mask_tr_fn,
+              byte *backdrop_ptr,
+              bool has_matte, int n_chan, bool additive, int num_spots, bool overprint, gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
+              const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev)
 {
-    int num_spots = tos->num_spots;
-    byte alpha = tos->alpha;
-    byte shape = tos->shape;
-    gs_blend_mode_t blend_mode = tos->blend_mode;
-    byte *tos_ptr = tos->data + x0 - tos->rect.p.x +
-        (y0 - tos->rect.p.y) * tos->rowstride;
-    byte *nos_ptr = nos->data + x0 - nos->rect.p.x +
-        (y0 - nos->rect.p.y) * nos->rowstride;
-    byte *mask_row_ptr = NULL;
     byte *mask_curr_ptr = NULL;
-    int tos_planestride = tos->planestride;
-    int nos_planestride = nos->planestride;
-    byte mask_bg_alpha = 0; /* Quiet compiler. */
     int width = x1 - x0;
     int x, y;
     int i;
     byte tos_pixel[PDF14_MAX_PLANES];
     byte nos_pixel[PDF14_MAX_PLANES];
     byte back_drop[PDF14_MAX_PLANES];
-    bool tos_isolated = tos->isolated;
-    bool nos_isolated = nos->isolated;
-    bool nos_knockout = nos->knockout;
-    byte *nos_alpha_g_ptr;
-    int tos_shape_offset = n_chan * tos_planestride;
-    int tos_alpha_g_offset = tos_shape_offset + (tos->has_shape ? tos_planestride : 0);
-    bool tos_has_tag = tos->has_tags;
-    int tos_tag_offset = tos_planestride * (tos->n_planes - 1);
-    int nos_shape_offset = n_chan * nos_planestride;
-    int nos_alpha_g_offset = nos_shape_offset + (nos->has_shape ? nos_planestride : 0);
-    int nos_tag_offset = nos_planestride * (nos->n_planes - 1);
-    byte *mask_tr_fn = NULL; /* Quiet compiler. */
     gx_color_index comps;
-    bool has_mask = false;
     bool in_mask_rect_y = false;
     bool in_mask_rect = false;
     byte pix_alpha;
-    byte *backdrop_ptr = NULL;
-    pdf14_device *pdev = (pdf14_device *)dev;
-    bool has_matte = false;
     byte matte_alpha = 0xff;
-#if RAW_DUMP
-    byte *composed_ptr = NULL;
-#endif
+    int first_spot = n_chan - num_spots;
+    int first_blend_spot = n_chan;
+    bool has_mask2 = has_mask;
 
-    if ((tos->n_chan == 0) || (nos->n_chan == 0))
-        return;
-    rect_merge(nos->dirty, tos->dirty);
-    if (nos->has_tags)
-        if_debug7m('v', memory,
-                   "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, tag = %d, bm = %d\n",
-                   y0, y1, width, alpha, shape, dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS, blend_mode);
-    else
-        if_debug6m('v', memory,
-                   "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, bm = %d\n",
-                   y0, y1, width, alpha, shape, blend_mode);
-    if (!nos->has_shape)
-        nos_shape_offset = 0;
-    if (!nos->has_tags)
-        nos_tag_offset = 0;
-    if (nos->has_alpha_g) {
-        nos_alpha_g_ptr = nos_ptr + nos_alpha_g_offset;
-    } else
-        nos_alpha_g_ptr = NULL;
-    if (nos->backdrop != NULL) {
-        backdrop_ptr = nos->backdrop + x0 - nos->rect.p.x +
-                       (y0 - nos->rect.p.y) * nos->rowstride;
+    if (tos_isolated && num_spots > 0 && !blend_valid_for_spot(blend_mode)) {
+        first_blend_spot = first_spot;
     }
+    if (!nos_isolated && backdrop_ptr != NULL)
+        has_mask2 = false;
 
-    if (maskbuf != NULL) {
-        int tmp;
-
-        mask_tr_fn = maskbuf->transfer_fn;
-        /* Make sure we are in the mask buffer */
-        if (maskbuf->data != NULL) {
-            mask_row_ptr = maskbuf->data + x0 - maskbuf->rect.p.x +
-                    (y0 - maskbuf->rect.p.y) * maskbuf->rowstride;
-            has_mask = true;
-        }
-        /* We may have a case, where we are outside the maskbuf rect. */
-        /* We would have avoided creating the maskbuf->data */
-        /* In that case, we should use the background alpha value */
-        /* See discussion on the BC entry in the PDF spec.   */
-        mask_bg_alpha = maskbuf->alpha;
-        /* Adjust alpha by the mask background alpha.   This is only used
-           if we are outside the soft mask rect during the filling operation */
-        mask_bg_alpha = mask_tr_fn[mask_bg_alpha];
-        tmp = alpha * mask_bg_alpha + 0x80;
-        mask_bg_alpha = (tmp + (tmp >> 8)) >> 8;
-        if (maskbuf->matte != NULL)
-            has_matte = true;
-    }
-    n_chan--; /* Now the true number of colorants (i.e. not including alpha)*/
-#if RAW_DUMP
-    composed_ptr = nos_ptr;
-    dump_raw_buffer(y1-y0, width, tos->n_planes, tos_planestride, tos->rowstride,
-                    "bImageTOS",tos_ptr);
-    dump_raw_buffer(y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
-                    "cImageNOS",nos_ptr);
-    if (maskbuf !=NULL && maskbuf->data != NULL) {
-        dump_raw_buffer(maskbuf->rect.q.y - maskbuf->rect.p.y,
-                        maskbuf->rect.q.x - maskbuf->rect.p.x, maskbuf->n_planes,
-                        maskbuf->planestride, maskbuf->rowstride, "dMask",
-                        maskbuf->data);
-    }
-#endif
     for (y = y1 - y0; y > 0; --y) {
         mask_curr_ptr = mask_row_ptr;
         if (has_mask && y1 - y >= maskbuf->rect.p.y && y1 - y < maskbuf->rect.q.y) {
@@ -469,7 +389,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                         nos_pixel[i] = 255 - nos_ptr[i * nos_planestride];
                     } else {
                         /* additive or hybrid */
-                        if (i >= n_chan - num_spots)
+                        if (i >= first_spot)
                             nos_pixel[i] = 255 - nos_ptr[i * nos_planestride];
                         else
                             nos_pixel[i] = nos_ptr[i * nos_planestride];
@@ -485,11 +405,11 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     }
                 } else {
                     /* Additive or hybrid */
-                    for (i = 0; i < (n_chan - num_spots); ++i) {
+                    for (i = 0; i < first_spot; ++i) {
                         tos_pixel[i] = tos_ptr[i * tos_planestride];
                         nos_pixel[i] = nos_ptr[i * nos_planestride];
                     }
-                    for (i = n_chan - num_spots; i < n_chan; i++) {
+                    for (; i < n_chan; i++) {
                         tos_pixel[i] = 255 - tos_ptr[i * tos_planestride];
                         nos_pixel[i] = 255 - nos_ptr[i * nos_planestride];
                     }
@@ -498,7 +418,6 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
             /* alpha */
             tos_pixel[n_chan] = tos_ptr[n_chan * tos_planestride];
             nos_pixel[n_chan] = nos_ptr[n_chan * nos_planestride];
-
 
             if (mask_curr_ptr != NULL) {
                 if (in_mask_rect) {
@@ -515,25 +434,23 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                    need to combine with it's backdrop */
                 byte tos_shape = 255;
 
-                if (tos->has_shape)
+                if (tos_has_shape)
                     tos_shape = tos_ptr[tos_shape_offset];
 
                 if (nos_isolated || backdrop_ptr == NULL) {
                     /* We do not need to compose with the backdrop */
                     back_drop[n_chan] = 0;
-                    art_pdf_composite_knockout_group_8(back_drop, tos_shape,
-                        nos_pixel, nos_alpha_g_ptr, tos_pixel, n_chan, pix_alpha,
-                        blend_mode, pblend_procs, pdev, has_mask);
+                    /* FIXME: The blend here can be simplified */
                 } else {
                     /* Per the PDF spec, since the tos is not isolated and we are
                        going onto a knock out group, we do the composition with
                        the nos initial backdrop. */
                     if (additive) {
                         /* additive or hybrid */
-                        for (i = 0; i < (n_chan - num_spots); ++i) {
+                        for (i = 0; i < first_spot; ++i) {
                             back_drop[i] = backdrop_ptr[i * nos_planestride];
                         }
-                        for (i = n_chan - num_spots; i < n_chan; i++) {
+                        for (; i < n_chan; i++) {
                             back_drop[i] = 255 - backdrop_ptr[i * nos_planestride];
                         }
                     } else {
@@ -544,50 +461,49 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     }
                     /* alpha */
                     back_drop[n_chan] = backdrop_ptr[n_chan * nos_planestride];
-                    art_pdf_composite_knockout_group_8(back_drop, tos_shape,
-                                                       nos_pixel, nos_alpha_g_ptr,
-                                                       tos_pixel, n_chan, pix_alpha,
-                                                       blend_mode, pblend_procs,
-                                                       pdev, false);
                 }
-            } else {
-                if (tos_isolated) {
-                    /* Again, if the blend mode is not white preserving handle
-                     * the spot colorants in a special manner */
-                    if (num_spots > 0 && !blend_valid_for_spot(blend_mode)) {
-                        /* Split and do the spots with normal blend mode.
-                           Blending functions assume alpha is last component so
-                           do some movements here */
-                        byte temp_nos_pixel = nos_pixel[n_chan - num_spots];
-                        byte temp_tos_pixel = tos_pixel[n_chan - num_spots];
-                        nos_pixel[n_chan - num_spots] = nos_pixel[n_chan];
-                        tos_pixel[n_chan - num_spots] = tos_pixel[n_chan];
+                art_pdf_composite_knockout_group_8(back_drop, tos_shape,
+                                                   nos_pixel, nos_alpha_g_ptr,
+                                                   tos_pixel, n_chan, pix_alpha,
+                                                   blend_mode, pblend_procs,
+                                                   pdev, has_mask2);
+            } else if (tos_isolated) {
+                /* Again, if the blend mode is not white preserving handle
+                 * the spot colorants in a special manner */
+                if (first_blend_spot != n_chan) {
+                    /* Split and do the spots with normal blend mode.
+                       Blending functions assume alpha is last component so
+                       do some movements here */
+                    byte temp_nos_pixel = nos_pixel[first_spot];
+                    byte temp_tos_pixel = tos_pixel[first_spot];
+                    nos_pixel[first_spot] = nos_pixel[n_chan];
+                    tos_pixel[first_spot] = tos_pixel[n_chan];
 
-                        /* Blend process with blend mode */
-                        art_pdf_composite_group_8(nos_pixel, NULL, tos_pixel,
-                            n_chan - num_spots, pix_alpha, blend_mode,
+                    /* Blend process with blend mode */
+                    art_pdf_composite_group_8(nos_pixel, NULL, tos_pixel,
+                            first_spot, pix_alpha, blend_mode,
                             pblend_procs, pdev);
 
-                        /* Restore colorants that were blown away by alpha and blend spots */
-                        nos_pixel[n_chan - num_spots] = temp_nos_pixel;
-                        tos_pixel[n_chan - num_spots] = temp_tos_pixel;
-
-                        art_pdf_composite_group_8(&(nos_pixel[n_chan - num_spots]),
-                            nos_alpha_g_ptr, &(tos_pixel[n_chan - num_spots]),
+                    /* Restore colorants that were blown away by alpha and blend spots */
+                    nos_pixel[first_spot] = temp_nos_pixel;
+                    tos_pixel[first_spot] = temp_tos_pixel;
+                    art_pdf_composite_group_8(&(nos_pixel[first_blend_spot]),
+                            nos_alpha_g_ptr, &(tos_pixel[first_blend_spot]),
                             num_spots, pix_alpha, BLEND_MODE_Normal,
                             pblend_procs, pdev);
-                    } else {
-                        art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
-                            tos_pixel, n_chan, pix_alpha, blend_mode,
-                            pblend_procs, pdev);
-                    }
-                } else {
-                    byte tos_alpha_g = tos_ptr[tos_alpha_g_offset];
-                    art_pdf_recomposite_group_8(nos_pixel, nos_alpha_g_ptr,
+                }
+                else
+                {
+                    art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
+                        tos_pixel, n_chan, pix_alpha, blend_mode,
+                        pblend_procs, pdev);
+                }
+            } else {
+                byte tos_alpha_g = tos_ptr[tos_alpha_g_offset];
+                art_pdf_recomposite_group_8(nos_pixel, nos_alpha_g_ptr,
                                         tos_pixel, tos_alpha_g, n_chan,
                                         pix_alpha, blend_mode, pblend_procs, pdev,
                                         num_spots);
-                }
             }
             if (nos_shape_offset) {
                 nos_ptr[nos_shape_offset] =
@@ -600,10 +516,10 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
              * going to be fooling with overprint of spot colors */
             if (additive) {
                 /* additive or hybrid */
-                for (i = 0; i < (n_chan - num_spots); ++i) {
+                for (i = 0; i < first_spot; ++i) {
                     nos_ptr[i * nos_planestride] = nos_pixel[i];
                 }
-                for (i = n_chan - num_spots; i < n_chan; i++) {
+                for (; i < n_chan; i++) {
                     nos_ptr[i * nos_planestride] = 255 - nos_pixel[i];
                 }
             } else {
@@ -616,8 +532,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                 * (or compatible) and we are doing overprint, the overprint
                 * has NOT been handled by compatible overprint mode and we
                 * need to take care of it now */
-                if (overprint && (blend_mode == BLEND_MODE_Compatible ||
-                    blend_mode == BLEND_MODE_Normal)) {
+                if (overprint) {
                     for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
                         if ((comps & 0x1) != 0) {
                             nos_ptr[i * nos_planestride] = 255 - nos_pixel[i];
@@ -642,15 +557,130 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
             ++tos_ptr;
             ++nos_ptr;
         }
-        tos_ptr += tos->rowstride - width;
-        nos_ptr += nos->rowstride - width;
+        tos_ptr += tos_rowstride - width;
+        nos_ptr += nos_rowstride - width;
         if (nos_alpha_g_ptr != NULL)
-            nos_alpha_g_ptr += nos->rowstride - width;
+            nos_alpha_g_ptr += nos_rowstride - width;
         if (mask_row_ptr != NULL)
             mask_row_ptr += maskbuf->rowstride;
         if (backdrop_ptr != NULL)
-            backdrop_ptr += nos->rowstride - width;
+            backdrop_ptr += nos_rowstride - width;
     }
+}
+
+void
+pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
+              int x0, int x1, int y0, int y1, int n_chan, bool additive,
+              const pdf14_nonseparable_blending_procs_t * pblend_procs,
+              bool overprint, gx_color_index drawn_comps, gs_memory_t *memory,
+              gx_device *dev)
+{
+    int num_spots = tos->num_spots;
+    byte alpha = tos->alpha;
+    byte shape = tos->shape;
+    gs_blend_mode_t blend_mode = tos->blend_mode;
+    byte *tos_ptr = tos->data + x0 - tos->rect.p.x +
+        (y0 - tos->rect.p.y) * tos->rowstride;
+    byte *nos_ptr = nos->data + x0 - nos->rect.p.x +
+        (y0 - nos->rect.p.y) * nos->rowstride;
+    byte *mask_row_ptr = NULL;
+    int tos_planestride = tos->planestride;
+    int nos_planestride = nos->planestride;
+    byte mask_bg_alpha = 0; /* Quiet compiler. */
+    bool tos_isolated = tos->isolated;
+    bool nos_isolated = nos->isolated;
+    bool nos_knockout = nos->knockout;
+    byte *nos_alpha_g_ptr;
+    int tos_shape_offset = n_chan * tos_planestride;
+    int tos_alpha_g_offset = tos_shape_offset + (tos->has_shape ? tos_planestride : 0);
+    bool tos_has_tag = tos->has_tags;
+    int tos_tag_offset = tos_planestride * (tos->n_planes - 1);
+    int nos_shape_offset = n_chan * nos_planestride;
+    int nos_alpha_g_offset = nos_shape_offset + (nos->has_shape ? nos_planestride : 0);
+    int nos_tag_offset = nos_planestride * (nos->n_planes - 1);
+    byte *mask_tr_fn = NULL; /* Quiet compiler. */
+    bool has_mask = false;
+    byte *backdrop_ptr = NULL;
+    pdf14_device *pdev = (pdf14_device *)dev;
+    bool has_matte = false;
+    int width = x1 - x0;(void)width;
+#if RAW_DUMP
+    byte *composed_ptr = NULL;
+#endif
+
+    if ((tos->n_chan == 0) || (nos->n_chan == 0))
+        return;
+    rect_merge(nos->dirty, tos->dirty);
+    if (nos->has_tags)
+        if_debug7m('v', memory,
+                   "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, tag = %d, bm = %d\n",
+                   y0, y1, width, alpha, shape, dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS, blend_mode);
+    else
+        if_debug6m('v', memory,
+                   "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, bm = %d\n",
+                   y0, y1, width, alpha, shape, blend_mode);
+    if (!nos->has_shape)
+        nos_shape_offset = 0;
+    if (!nos->has_tags)
+        nos_tag_offset = 0;
+    if (nos->has_alpha_g) {
+        nos_alpha_g_ptr = nos_ptr + nos_alpha_g_offset;
+    } else
+        nos_alpha_g_ptr = NULL;
+    if (nos->backdrop != NULL) {
+        backdrop_ptr = nos->backdrop + x0 - nos->rect.p.x +
+                       (y0 - nos->rect.p.y) * nos->rowstride;
+    }
+    if (blend_mode != BLEND_MODE_Compatible && blend_mode != BLEND_MODE_Normal)
+        overprint = false;
+
+    if (maskbuf != NULL) {
+        int tmp;
+
+        mask_tr_fn = maskbuf->transfer_fn;
+        /* Make sure we are in the mask buffer */
+        if (maskbuf->data != NULL) {
+            mask_row_ptr = maskbuf->data + x0 - maskbuf->rect.p.x +
+                    (y0 - maskbuf->rect.p.y) * maskbuf->rowstride;
+            has_mask = true;
+        }
+        /* We may have a case, where we are outside the maskbuf rect. */
+        /* We would have avoided creating the maskbuf->data */
+        /* In that case, we should use the background alpha value */
+        /* See discussion on the BC entry in the PDF spec.   */
+        mask_bg_alpha = maskbuf->alpha;
+        /* Adjust alpha by the mask background alpha.   This is only used
+           if we are outside the soft mask rect during the filling operation */
+        mask_bg_alpha = mask_tr_fn[mask_bg_alpha];
+        tmp = alpha * mask_bg_alpha + 0x80;
+        mask_bg_alpha = (tmp + (tmp >> 8)) >> 8;
+        if (maskbuf->matte != NULL)
+            has_matte = true;
+    }
+    n_chan--; /* Now the true number of colorants (i.e. not including alpha)*/
+#if RAW_DUMP
+    composed_ptr = nos_ptr;
+    dump_raw_buffer(y1-y0, width, tos->n_planes, tos_planestride, tos->rowstride,
+                    "bImageTOS",tos_ptr);
+    dump_raw_buffer(y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
+                    "cImageNOS",nos_ptr);
+    if (maskbuf !=NULL && maskbuf->data != NULL) {
+        dump_raw_buffer(maskbuf->rect.q.y - maskbuf->rect.p.y,
+                        maskbuf->rect.q.x - maskbuf->rect.p.x, maskbuf->n_planes,
+                        maskbuf->planestride, maskbuf->rowstride, "dMask",
+                        maskbuf->data);
+    }
+#endif
+
+    compose_group(tos_ptr, tos_isolated, tos_planestride, tos->rowstride, alpha, shape, blend_mode, tos->has_shape,
+                  tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, tos_has_tag,
+                  nos_ptr, nos_isolated, nos_planestride, nos->rowstride, nos_alpha_g_ptr, nos_knockout,
+                  nos_shape_offset, nos_tag_offset,
+                  mask_row_ptr, has_mask, maskbuf, mask_bg_alpha, mask_tr_fn,
+                  backdrop_ptr,
+                  has_matte, n_chan, additive, num_spots, overprint, drawn_comps, x0, y0, x1, y1,
+                  pblend_procs, pdev);
+
 #if RAW_DUMP
     dump_raw_buffer(y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
                     "eComposed", composed_ptr);
