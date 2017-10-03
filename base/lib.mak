@@ -3104,7 +3104,7 @@ $(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(AK) $(gx_h)\
 	$(GLCC) $(GLO_)gximag3x.$(OBJ) $(C_) $(GLSRC)gximag3x.c
 
 $(GLOBJ)gxblend.$(OBJ) : $(GLSRC)gxblend.c $(AK) $(gx_h) $(memory__h)\
- $(gstparam_h) $(gxblend_h) $(gxcolor2_h) $(gsicc_cache_h)\
+ $(gstparam_h) $(gxblend_h) $(gxcolor2_h) $(gsicc_cache_h) $(gsrect_h)\
  $(gsicc_manage_h) $(gdevp14_h) $(gp_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxblend.$(OBJ) $(C_) $(GLSRC)gxblend.c
 

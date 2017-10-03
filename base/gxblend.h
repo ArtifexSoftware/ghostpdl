@@ -234,85 +234,20 @@ art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
         int stride, pdf14_device *p14dev);
 
-/**
- * art_pdf_recomposite_group_8: Recomposite group pixel.
- * @dst: Where to store pixel, also initial backdrop of group.
- * @dst_alpha_g: Optional pointer to alpha g value associated with @dst.
- * @alpha: Alpha mask value.
- * @src_alpha_g: alpha_g value associated with @src.
- * @blend_mode: Blend mode for compositing.
- * @first_blend_spot: The first component for which Normal blending should be used.
- * @pblend_procs: Procs for handling non separable blending modes.
- * @p14dev: pdf14 device
- *
- * Note: this is only for non-isolated groups. This covers only the
- * single-alpha case. A separate function is needed for dual-alpha,
- * and that probably needs to treat knockout separately.
- * Also note the need to know if the spot colorants should be blended
- * normal.  This occurs when we have spot colorants and the blending is set
- * for non-separable or non-white preservering blend modes
- * @src_alpha_g corresponds to $\alpha g_n$ in the Adobe notation.
- *
- * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
- *
- * @NOTE: This function may corrupt src.
- **/
-int
-art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
-        byte *src, byte src_alpha_g, int n_chan,
-        byte alpha, gs_blend_mode_t blend_mode, int first_blend_spot,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        pdf14_device *p14dev);
+/*
+ * art_pdf_compose_group_fn: Function pointer type for functions
+ * to compose a group.
+ */
+typedef void (*art_pdf_compose_group_fn)(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride,
+                                         byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
+                                         int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
+                                         byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride,
+                                         byte *nos_alpha_g_ptr, bool nos_knockout, int nos_shape_offset, int nos_tag_offset,
+                                         byte *mask_row_ptr, int has_mask, pdf14_buf *maskbuf, byte mask_bg_alpha, byte *mask_tr_fn,
+                                         byte *backdrop_ptr, bool has_matte, int n_chan, bool additive, int num_spots, bool overprint,
+                                         gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
+                                         const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev);
 
-/**
- * art_pdf_composite_group_8: Composite group pixel.
- * @dst: Where to store pixel, also initial backdrop of group.
- * @dst_alpha_g: Optional pointer to alpha g value.
- * @alpha: Alpha mask value.
- * @blend_mode: Blend mode for compositing.
- * @pblend_procs: Procs for handling non separable blending modes.
- *
- * Note: this is only for isolated groups. This covers only the
- * single-alpha case. A separate function is needed for dual-alpha,
- * and that probably needs to treat knockout separately.
- *
- * Components 0 to first_spot are blended with blend_mode.
- * Components first_spot to n_chan are blended with BLEND_MODE_Normal.
- *
- * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
- *
- * @NOTE: This function may corrupt src.
- **/
-int
-art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
-        byte *src, int n_chan, byte alpha, gs_blend_mode_t blend_mode, int first_spot,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        pdf14_device *p14dev);
-
-/**
- * art_pdf_composite_knockout_group_8: Composite group pixel.
- * @backdrop: Backdrop of original parent group.
- * @tos_shape: So that we know to copy the backdrop or not even if a_s is zero
- * @dst: Where to store pixel.
- * @dst_alpha_g: Optional pointer to alpha g value.
- * @alpha: Alpha mask value.
- * @blend_mode: Blend mode for compositing.
- * @pblend_procs: Procs for handling non separable blending modes.
- * @p14dev: PDF14 device
- * @has_mask: needed for knowing to pass back the soft mask value if shape = 0
- *
- * Note: this is only for knockout nonisolated groups.
- *
- * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
- *
- * @NOTE: This function may corrupt src.
- **/
-void
-art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
-        byte *dst_alpha_g, byte *src, int n_chan, byte alpha,
-        gs_blend_mode_t blend_mode,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        pdf14_device *p14dev, bool has_mask);
 /**
  * art_pdf_composite_knockout_8: knockout compositing.
  * @dst: Destination pixel array -- has been initialized with background
