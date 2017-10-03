@@ -257,7 +257,7 @@ art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
  *
  * @NOTE: This function may corrupt src.
  **/
-void
+int
 art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
         byte *src, byte src_alpha_g, int n_chan,
         byte alpha, gs_blend_mode_t blend_mode, int first_blend_spot,
@@ -280,10 +280,12 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
  * Components first_spot to n_chan are blended with BLEND_MODE_Normal.
  *
  * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
+ *
+ * @NOTE: This function may corrupt src.
  **/
-void
+int
 art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
-        const byte *src, int n_chan, byte alpha, gs_blend_mode_t blend_mode, int first_spot,
+        byte *src, int n_chan, byte alpha, gs_blend_mode_t blend_mode, int first_spot,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
         pdf14_device *p14dev);
 
