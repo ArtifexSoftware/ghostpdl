@@ -883,7 +883,7 @@ art_pdf_knockout_composite_pixel_alpha_8(byte *backdrop, byte tos_shape, byte *d
 
 void
 art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
-        gs_blend_mode_t blend_mode,
+        gs_blend_mode_t blend_mode, int first_spot,
         const pdf14_nonseparable_blending_procs_t * pblend_procs, pdf14_device *p14dev)
 {
     byte a_b, a_s;
@@ -918,20 +918,12 @@ art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
     /* Compute a_s / a_r in 16.16 format */
     src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
 
-    if (blend_mode == BLEND_MODE_Normal) {
-        /* Do simple compositing of source over backdrop */
-        for (i = 0; i < n_chan; i++) {
-            c_s = src[i];
-            c_b = dst[i];
-            tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
-            dst[i] = tmp >> 16;
-        }
-    } else {
+    if (first_spot != 0) {
         /* Do compositing with blending */
         byte blend[ART_MAX_CHAN];
 
-        art_blend_pixel_8(blend, dst, src, n_chan, blend_mode, pblend_procs, p14dev);
-        for (i = 0; i < n_chan; i++) {
+        art_blend_pixel_8(blend, dst, src, first_spot, blend_mode, pblend_procs, p14dev);
+        for (i = 0; i < first_spot; i++) {
             int c_bl;		/* Result of blend function */
             int c_mix;		/* Blend result mixed with source color */
 
@@ -945,6 +937,20 @@ art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
         }
     }
     dst[n_chan] = a_r;
+
+    dst += first_spot;
+    src += first_spot;
+    n_chan -= first_spot;
+    if (n_chan == 0)
+        return;
+
+    /* Do simple compositing of source over backdrop */
+    for (i = 0; i < n_chan; i++) {
+        c_s = src[i];
+        c_b = dst[i];
+        tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
+        dst[i] = tmp >> 16;
+    }
 }
 
 void
@@ -1086,6 +1092,9 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
     } else {
         /* "interesting" blend mode */
         byte ca[ART_MAX_CHAN + 1];	/* $C, \alpha$ */
+        int first_blend_spot = n_chan;
+        if (num_spots > 0 && !blend_valid_for_spot(blend_mode))
+            first_blend_spot = n_chan - num_spots;
 
         dst_alpha = dst[n_chan];
         if (src_alpha_g == 255 || dst_alpha == 0) {
@@ -1119,29 +1128,8 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
             tmp = (255 - *dst_alpha_g) * (255 - tmp) + 0x80;
             *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
         }
-        if (num_spots > 0 && !blend_valid_for_spot(blend_mode)) {
-            /* Split and do the spots with normal blend mode.
-               Blending functions assume alpha is last component so do some
-               movements here */
-            byte temp_spot_src = ca[n_chan - num_spots];
-            byte temp_spot_dst = dst[n_chan - num_spots];
-            ca[n_chan - num_spots] = ca[n_chan];
-            dst[n_chan - num_spots] = dst[n_chan];
-
-            /* Blend process */
-            art_pdf_composite_pixel_alpha_8(dst, ca, n_chan - num_spots,
-                blend_mode, pblend_procs, p14dev);
-
-            /* Restore colorants that were blown away by alpha and blend spots */
-            dst[n_chan - num_spots] = temp_spot_dst;
-            ca[n_chan - num_spots] = temp_spot_src;
-            art_pdf_composite_pixel_alpha_8(&(dst[n_chan - num_spots]),
-                &(ca[n_chan - num_spots]), num_spots,
-                BLEND_MODE_Normal, pblend_procs, p14dev);
-        } else {
-            art_pdf_composite_pixel_alpha_8(dst, ca, n_chan, blend_mode,
+        art_pdf_composite_pixel_alpha_8(dst, ca, n_chan, blend_mode, first_blend_spot,
                 pblend_procs, p14dev);
-        }
     }
     /* todo: optimize BLEND_MODE_Normal buf alpha != 255 case */
 }
@@ -1193,7 +1181,7 @@ art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
 
 void
 art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
-        const byte *src, int n_chan, byte alpha, gs_blend_mode_t blend_mode,
+        const byte *src, int n_chan, byte alpha, gs_blend_mode_t blend_mode, int first_spot,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
         pdf14_device *p14dev)
 {
@@ -1212,7 +1200,7 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
     }
 
     art_pdf_composite_pixel_alpha_8(dst, src, n_chan,
-            blend_mode, pblend_procs, p14dev);
+            blend_mode, first_spot, pblend_procs, p14dev);
     if (dst_alpha_g != NULL) {
         tmp = (255 - *dst_alpha_g) * (255 - src[n_chan]) + 0x80;
         *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
@@ -1270,7 +1258,7 @@ art_pdf_knockoutisolated_group_aa_8(byte *dst, const byte *src, byte src_alpha,
         temp_src[i] = src[i];
     temp_src[n_chan] = aa_alpha;
     art_pdf_composite_pixel_alpha_8(dst, temp_src, n_chan, BLEND_MODE_Normal,
-        NULL, p14dev);
+        n_chan, NULL, p14dev);
     dst[n_chan] = src_alpha;
 }
 

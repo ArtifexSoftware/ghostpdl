@@ -2735,7 +2735,7 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                             blend_mode, pdev->blend_procs, pdev);
                     }
                 } else {
-                    art_pdf_composite_pixel_alpha_8(dst, src, num_comp, blend_mode,
+                    art_pdf_composite_pixel_alpha_8(dst, src, num_comp, blend_mode, num_comp,
                                                     pdev->blend_procs, pdev);
                 }
                 /* Complement the results for subtractive color spaces */
@@ -5072,6 +5072,10 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     const gx_color_index mask = ((gx_color_index)1 << 8) - 1;
     const int shift = 8;
     int num_spots = buf->num_spots;
+    int first_blend_spot = num_comp;
+
+    if (num_spots > 0 && !blend_valid_for_spot(blend_mode))
+        first_blend_spot = num_comp - num_spots;
 
     if (buf->data == NULL)
         return 0;
@@ -5223,33 +5227,8 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                             }
                         }
                         dst[num_comp] = dst_ptr[num_comp * planestride];
-                        /* If we have spots and a non_white preserving or a
-                           non-separable, blend mode then we need special handling */
-                        if (num_spots > 0 && !blend_valid_for_spot(blend_mode))
-                        {
-                            /* Split and do the spots with normal blend mode.
-                               Blending functions assume alpha is last
-                               component so do some movements here */
-                            byte temp_spot_src = src[num_comp - num_spots];
-                            byte temp_spot_dst = dst[num_comp - num_spots];
-                            src[num_comp - num_spots] = src[num_comp];
-                            dst[num_comp - num_spots] = dst[num_comp];
-
-                            /* Blend process */
-                            art_pdf_composite_pixel_alpha_8(dst, src,
-                                num_comp - num_spots, blend_mode,
+                        art_pdf_composite_pixel_alpha_8(dst, src, num_comp, blend_mode, first_blend_spot,
                                 pdev->blend_procs, pdev);
-
-                            /* Restore colorants that were blown away by alpha */
-                            dst[num_comp - num_spots] = temp_spot_dst;
-                            src[num_comp - num_spots] = temp_spot_src;
-                            art_pdf_composite_pixel_alpha_8(&(dst[num_comp - num_spots]),
-                                &(src[num_comp - num_spots]), num_spots,
-                                BLEND_MODE_Normal, pdev->blend_procs, pdev);
-                        } else {
-                            art_pdf_composite_pixel_alpha_8(dst, src, num_comp, blend_mode,
-                                pdev->blend_procs, pdev);
-                        }
                         /* Until I see otherwise in AR or the spec, do not fool
                            with spot overprinting while we are in an RGB or Gray
                            blend color space. */

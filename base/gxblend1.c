@@ -468,36 +468,9 @@ compose_group(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_row
                                                    blend_mode, pblend_procs,
                                                    pdev, has_mask2);
             } else if (tos_isolated) {
-                /* Again, if the blend mode is not white preserving handle
-                 * the spot colorants in a special manner */
-                if (first_blend_spot != n_chan) {
-                    /* Split and do the spots with normal blend mode.
-                       Blending functions assume alpha is last component so
-                       do some movements here */
-                    byte temp_nos_pixel = nos_pixel[first_spot];
-                    byte temp_tos_pixel = tos_pixel[first_spot];
-                    nos_pixel[first_spot] = nos_pixel[n_chan];
-                    tos_pixel[first_spot] = tos_pixel[n_chan];
-
-                    /* Blend process with blend mode */
-                    art_pdf_composite_group_8(nos_pixel, NULL, tos_pixel,
-                            first_spot, pix_alpha, blend_mode,
-                            pblend_procs, pdev);
-
-                    /* Restore colorants that were blown away by alpha and blend spots */
-                    nos_pixel[first_spot] = temp_nos_pixel;
-                    tos_pixel[first_spot] = temp_tos_pixel;
-                    art_pdf_composite_group_8(&(nos_pixel[first_blend_spot]),
-                            nos_alpha_g_ptr, &(tos_pixel[first_blend_spot]),
-                            num_spots, pix_alpha, BLEND_MODE_Normal,
-                            pblend_procs, pdev);
-                }
-                else
-                {
-                    art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
-                        tos_pixel, n_chan, pix_alpha, blend_mode,
+                art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
+                        tos_pixel, n_chan, pix_alpha, blend_mode, first_blend_spot,
                         pblend_procs, pdev);
-                }
             } else {
                 byte tos_alpha_g = tos_ptr[tos_alpha_g_offset];
                 art_pdf_recomposite_group_8(nos_pixel, nos_alpha_g_ptr,

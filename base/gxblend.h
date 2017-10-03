@@ -193,13 +193,16 @@ art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask)
  *
  * 3. Zero is black, one is white.
  *
+ * The first "first_spot" channels are blended with blend_mode. The
+ * remaining channels are blended with BLEND_MODE_Normal.
+ *
  * Also note that src and dst are expected to be allocated aligned to
  * 32 bit boundaries, ie bytes from [0] to [(n_chan + 3) & -4] may
  * be accessed.
  **/
 void
 art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
-        gs_blend_mode_t blend_mode,
+        gs_blend_mode_t blend_mode, int first_spot,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
         pdf14_device *p14dev);
 
@@ -271,11 +274,14 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
  * single-alpha case. A separate function is needed for dual-alpha,
  * and that probably needs to treat knockout separately.
  *
+ * Components 0 to first_spot are blended with blend_mode.
+ * Components first_spot to n_chan are blended with BLEND_MODE_Normal.
+ *
  * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
  **/
 void
 art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
-        const byte *src, int n_chan, byte alpha, gs_blend_mode_t blend_mode,
+        const byte *src, int n_chan, byte alpha, gs_blend_mode_t blend_mode, int first_spot,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
         pdf14_device *p14dev);
 

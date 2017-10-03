@@ -918,7 +918,7 @@ tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax,
 
             /* Blend */
             art_pdf_composite_pixel_alpha_8(dst, src, ptile->ttrans->n_chan-1,
-                                            ptile->blending_mode,
+                                            ptile->blending_mode, ptile->ttrans->n_chan-1,
                                             ptile->ttrans->blending_procs, p14dev);
 
             /* Store the color values */
