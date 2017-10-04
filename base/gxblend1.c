@@ -123,6 +123,11 @@ copy_plane_part(byte *des_ptr, int des_rowstride, byte *src_ptr, int src_rowstri
 {
     int y;
 
+    if (width == des_rowstride && width == src_rowstride) {
+        width *= height;
+        height = 1;
+    }
+
     for (y = 0; y < height; ++y) {
         memcpy(des_ptr, src_ptr, width);
         des_ptr += des_rowstride;
@@ -267,7 +272,15 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff)
            has a region outside the existing tos group.  Need to check if this
            is getting clipped in which case we need to fix the allocation of
            the buffer to be smaller */
-        memset(buf_plane, 0, n_planes * buf->planestride);
+        if (x0 > buf->rect.p.x || x1 < buf->rect.q.x ||
+            y0 > buf->rect.p.y || y1 < buf->rect.q.y) {
+            /* FIXME: There is potential for more optimisation here,
+             * but I don't know how often we hit this case. */
+            memset(buf_plane, 0, n_planes * buf->planestride);
+        } else if (n_planes > tos->n_chan) {
+            /* We *could* get away with not blanking any tag plane too... */
+            memset(buf->data + tos->n_chan * buf->planestride, 0, (n_planes - tos->n_chan) * buf->planestride);
+        }
         buf_plane += x0 - buf->rect.p.x +
                     (y0 - buf->rect.p.y) * buf->rowstride;
         tos_plane += x0 - tos->rect.p.x +
