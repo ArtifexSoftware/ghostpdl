@@ -109,6 +109,15 @@
 #  endif
 #endif
 
+/* Define ourselves a 'forceinline' we can use to more forcefully
+ * tell the compiler to inline something. On all but MSVC this can
+ * drop back to inline. */
+#ifdef _MSC_VER
+#define forceinline __forceinline
+#else
+#define forceinline inline
+#endif
+
 /*
  * Provide a way to include inline procedures in header files, regardless of
  * whether the compiler (A) doesn't support inline at all, (B) supports it

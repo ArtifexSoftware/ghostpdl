@@ -592,7 +592,7 @@ const byte art_blend_soft_light_8[256] = {
     7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1, 0, 0
 };
 
-static inline void
+static forceinline void
 art_blend_pixel_8_inline(byte *dst, const byte *backdrop,
                   const byte *src, int n_chan, gs_blend_mode_t blend_mode,
                   const pdf14_nonseparable_blending_procs_t * pblend_procs,
@@ -954,7 +954,7 @@ art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
     }
 }
 
-static inline byte *
+static forceinline byte *
 art_pdf_composite_pixel_alpha_8_inline(byte *dst, byte *src, int n_chan,
         gs_blend_mode_t blend_mode, int first_spot,
         const pdf14_nonseparable_blending_procs_t * pblend_procs, pdf14_device *p14dev)
@@ -1158,7 +1158,7 @@ art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
  *
  * Returns 1 if we need to call art_pdf_composite_pixel_alpha_8.
  **/
-static inline int
+static forceinline int
 art_pdf_recomposite_group_8(byte **dstp, byte *dst_alpha_g,
         byte *src, byte src_alpha_g, int n_chan,
         byte alpha, gs_blend_mode_t blend_mode, int first_blend_spot,
@@ -1241,7 +1241,7 @@ art_pdf_recomposite_group_8(byte **dstp, byte *dst_alpha_g,
  *
  * @NOTE: This function may corrupt src.
  **/
-static inline void
+static forceinline void
 art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
         byte *dst_alpha_g, byte *src, int n_chan, byte alpha,
         gs_blend_mode_t blend_mode,
@@ -1297,7 +1297,7 @@ art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
  *
  * Returns 1 if we need to call art_pdf_composite_pixel_alpha_8.
  **/
-static inline int
+static forceinline int
 art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
         byte *src, int n_chan, byte alpha, gs_blend_mode_t blend_mode, int first_spot,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
@@ -1546,7 +1546,7 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
 #endif
 
 
-static inline void
+static forceinline void
 template_compose_group(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
               int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
               byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
