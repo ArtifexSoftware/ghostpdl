@@ -989,31 +989,21 @@ art_pdf_composite_pixel_alpha_8_inline(byte *dst, byte *src, int n_chan,
     src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
 
     if (first_spot != 0) {
-        if (blend_mode == BLEND_MODE_Normal)
-        {
-            for (i = 0; i < first_spot; i++) {
-                c_s = src[i];
-                c_b = dst[i];
-                tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
-                dst[i] = tmp >> 16;
-            }
-        } else {
-            /* Do compositing with blending */
-            byte blend[ART_MAX_CHAN];
+        /* Do compositing with blending */
+        byte blend[ART_MAX_CHAN];
 
-            art_blend_pixel_8_inline(blend, dst, src, first_spot, blend_mode, pblend_procs, p14dev);
-            for (i = 0; i < first_spot; i++) {
-                int c_bl;		/* Result of blend function */
-                int c_mix;		/* Blend result mixed with source color */
+        art_blend_pixel_8_inline(blend, dst, src, first_spot, blend_mode, pblend_procs, p14dev);
+        for (i = 0; i < first_spot; i++) {
+            int c_bl;		/* Result of blend function */
+            int c_mix;		/* Blend result mixed with source color */
 
-                c_s = src[i];
-                c_b = dst[i];
-                c_bl = blend[i];
-                tmp = a_b * (c_bl - ((int)c_s)) + 0x80;
-                c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
-                tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
-                dst[i] = tmp >> 16;
-            }
+            c_s = src[i];
+            c_b = dst[i];
+            c_bl = blend[i];
+            tmp = a_b * (c_bl - ((int)c_s)) + 0x80;
+            c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
+            tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
+            dst[i] = tmp >> 16;
         }
     }
     dst[n_chan] = a_r;
@@ -1586,6 +1576,8 @@ template_compose_group(byte *tos_ptr, bool tos_isolated, int tos_planestride, in
     if (!nos_knockout && num_spots > 0 && !blend_valid_for_spot(blend_mode)) {
         first_blend_spot = first_spot;
     }
+    if (blend_mode == BLEND_MODE_Normal)
+        first_blend_spot = 0;
     if (!nos_isolated && backdrop_ptr != NULL)
         has_mask2 = false;
 
