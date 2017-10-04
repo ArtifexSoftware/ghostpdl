@@ -1153,10 +1153,8 @@ end readonly def
 } bdef
 
 /Tf {		% <font> <scale> Tf -
+  dup .setPDFfontsize
   dup 0 eq {
-    (\n   **** Error: Invalid 0.0 font scale given for Tf\n)
-    pdfformaterror
-    (          Output may be incorrect.\n) pdfformaterror
     pop 0.00000001	% handle invalid scale by using a really small value
   } if
   1 index type /dicttype ne {
@@ -1721,8 +1719,10 @@ end readonly def
 
 % NB: We don't need clippath when filling or stroking
 /tf {
+  .currentPDFfontsize 0 eq not {
       //true /TextFillStateNeeded gput
       settextfillstate //true TextTransSetup currentpoint fill TextTransTeardown moveto
+  } if
 } bdef
 /tn { currentpoint newpath moveto } bdef % Obsolete, never used.
 % For stroking characters, temporarily restore the graphics CTM so that
@@ -1735,9 +1735,11 @@ end readonly def
      settextfillstate //true TextTransSetup currentpoint fill TextTransTeardown moveto
    }
    {
-     setstrokestate //true TextTransSetup
-     currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix .swapcolors stroke TextTransTeardown .swapcolors
-     setmatrix moveto
+    .currentPDFfontsize 0 eq not {
+       setstrokestate //true TextTransSetup
+       currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix .swapcolors stroke TextTransTeardown .swapcolors
+       setmatrix moveto
+    } if
    } ifelse
    //true /TextFillStateNeeded gput
  } bdef

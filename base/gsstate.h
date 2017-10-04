@@ -115,6 +115,8 @@ int gs_settextlinematrix(gs_gstate *pgs, gs_matrix *m);
 int gs_gettextlinematrix(gs_gstate *pgs, gs_matrix *m);
 int gs_settextmatrix(gs_gstate *pgs, gs_matrix *m);
 int gs_gettextmatrix(gs_gstate *pgs, gs_matrix *m);
+int gs_setPDFfontsize(gs_gstate *pgs, double Tw);
+double gs_currentPDFfontsize(const gs_gstate *pgs);
 
 #include "gscpm.h"
 gs_in_cache_device_t gs_incachedevice(const gs_gstate *);

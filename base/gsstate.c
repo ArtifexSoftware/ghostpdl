@@ -981,6 +981,19 @@ gs_currenttexthscaling(const gs_gstate *pgs)
 }
 
 int
+gs_setPDFfontsize(gs_gstate *pgs, double Tf)
+{
+    pgs->PDFfontsize = (float)Tf;
+    return 0;
+}
+
+double
+gs_currentPDFfontsize(const gs_gstate *pgs)
+{
+    return pgs->PDFfontsize;
+}
+
+int
 gs_settextlinematrix(gs_gstate *pgs, gs_matrix *m)
 {
     pgs->textlinematrix.xx = m->xx;

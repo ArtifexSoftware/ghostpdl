@@ -371,6 +371,7 @@ struct gs_gstate_s {
     float textrise;
     float wordspacing;
     float texthscaling;
+    float PDFfontsize;
     gs_matrix textlinematrix;
     gs_matrix textmatrix;
     /* Current colors (non-stroking, and stroking) */ 

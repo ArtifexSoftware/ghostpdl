@@ -581,6 +581,18 @@ zcurrenttexthscaling(i_ctx_t *i_ctx_p)
     return zcurrent_real(i_ctx_p, gs_currenttexthscaling);
 }
 
+static int
+zsetPDFfontsize(i_ctx_t *i_ctx_p)
+{
+    return zset_real(i_ctx_p, gs_setPDFfontsize);
+}
+static int
+zcurrentPDFfontsize(i_ctx_t *i_ctx_p)
+{
+    return zcurrent_real(i_ctx_p, gs_currentPDFfontsize);
+}
+
+
 /* <bool> .sethpglpathmode - */
 static int
 zsethpglpathmode(i_ctx_t *i_ctx_p)
@@ -649,6 +661,11 @@ const op_def zgstate3_op_defs[] = {
     {"0.currenttexthscaling", zcurrenttexthscaling},
     {"0.sethpglpathmode", zsethpglpathmode},
     {"0.currenthpglpathmode", zcurrenthpglpathmode},
+    op_def_end(0)
+};
+const op_def zgstate4_op_defs[] = {
+    {"1.setPDFfontsize", zsetPDFfontsize},
+    {"0.currentPDFfontsize", zcurrentPDFfontsize},
     op_def_end(0)
 };
 
