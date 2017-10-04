@@ -252,25 +252,26 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff)
         int width = x1 - x0;
         int height = y1 - y0;
         byte *buf_plane, *tos_plane;
-        int i;
+        int i, n_planes;
 
         if (knockout_buff) {
-            buf_plane = buf->backdrop + x0 - buf->rect.p.x +
-                    (y0 - buf->rect.p.y) * buf->rowstride;
-            tos_plane = tos->backdrop + x0 - tos->rect.p.x +
-                    (y0 - tos->rect.p.y) * tos->rowstride;
-            memset(buf->backdrop, 0, buf->n_chan * buf->planestride);
+            buf_plane = buf->backdrop;
+            tos_plane = tos->backdrop;
+            n_planes = buf->n_chan;
         } else {
-            buf_plane = buf->data + x0 - buf->rect.p.x +
-                    (y0 - buf->rect.p.y) * buf->rowstride;
-            tos_plane = tos->data + x0 - tos->rect.p.x +
-                    (y0 - tos->rect.p.y) * tos->rowstride;
-            /* First clear out everything. There are cases where the incoming buf
-               has a region outside the existing tos group.  Need to check if this
-               is getting clipped in which case we need to fix the allocation of
-               the buffer to be smaller */
-            memset(buf->data, 0, buf->n_planes * buf->planestride);
+            buf_plane = buf->data;
+            tos_plane = tos->data;
+            n_planes = buf->n_planes;
         }
+        /* First clear out everything. There are cases where the incoming buf
+           has a region outside the existing tos group.  Need to check if this
+           is getting clipped in which case we need to fix the allocation of
+           the buffer to be smaller */
+        memset(buf_plane, 0, n_planes * buf->planestride);
+        buf_plane += x0 - buf->rect.p.x +
+                    (y0 - buf->rect.p.y) * buf->rowstride;
+        tos_plane += x0 - tos->rect.p.x +
+                    (y0 - tos->rect.p.y) * tos->rowstride;
         /* Color and alpha plane */
         for (i = 0; i < tos->n_chan; i++) {
             copy_plane_part(buf_plane, buf->rowstride, tos_plane, tos->rowstride,
@@ -283,7 +284,8 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff)
     }
 #if RAW_DUMP
     if (x0 < x1 && y0 < y1) {
-        byte *buf_plane = buf->data + x0 - buf->rect.p.x +
+        byte *buf_plane = (knockout_buf ? buf->backdrop : buf->data);
+        buf_plane +=  x0 - buf->rect.p.x +
             (y0 - buf->rect.p.y) * buf->rowstride;
         dump_raw_buffer(y1 - y0, x1 - x0, buf->n_planes, buf->planestride,
                         buf->rowstride, "BackDropInit", buf_plane);
