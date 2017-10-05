@@ -279,9 +279,30 @@ pdfdict begin
   mark exch {
     oforce
     1 index /SpotFunction eq {
-      dup type /nametype eq
-        { //spotfunctions exch get } { resolvefnproc }
-      ifelse
+      dup type /arraytype eq {
+        %% check all the names in the array in turn, stop when we find
+        %% the first one we recognise.
+        {
+          //spotfunctions exch .knownget {
+            exit
+          } if
+        } forall
+        dup type /nametype eq {
+          %% If we didn't find any that we recognise, then use
+          %% the default halftone's spot function
+          .setdefaulthalftone currenthalftone dup /SpotFunction .knownget {
+            exch pop
+          }{
+            /GraySpotFunction .knownget not {
+              //spotfunctions /Round get
+            } if
+          }ifelse
+        } if
+      }{
+        dup type /nametype eq
+          { //spotfunctions exch get } { resolvefnproc }
+        ifelse
+      } ifelse
     } {
       1 index /TransferFunction eq {
         resolveidfnproc
@@ -402,7 +423,7 @@ end
     dup /Default eq {
       pop .setdefaulthalftone
     } {
-      resolvehalftone sethalftone
+      (A) == flush resolvehalftone sethalftone (B) == flush
     } ifelse
   } bdef
   /sethalftonephases {
