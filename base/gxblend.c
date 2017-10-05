@@ -1989,87 +1989,108 @@ template_mark_fill_rect(int w, int h, byte *dst_ptr, byte *src, int num_comp, in
 
     for (j = h; j > 0; --j) {
         for (i = w; i > 0; --i) {
-            /* If source alpha is zero avoid all of this */
-            if (src[num_comp] != 0) {
-                if (dst_ptr[num_comp * planestride] == 0) {
-                    /* dest alpha is zero just use source. */
-                    if (additive) {
-                        /* Hybrid case */
-                        for (k = 0; k < (num_comp - num_spots); k++) {
-                            dst_ptr[k * planestride] = src[k];
-                        }
-                        for (k = 0; k < num_spots; k++) {
-                            dst_ptr[(k + num_comp - num_spots) * planestride] =
-                                    255 - src[k + num_comp - num_spots];
-                        }
-                    } else {
-                        /* Pure subtractive */
-                        for (k = 0; k < num_comp; k++) {
-                            dst_ptr[k * planestride] = 255 - src[k];
+            if (dst_ptr[num_comp * planestride] == 0) {
+                /* dest alpha is zero just use source. */
+                if (additive) {
+                    /* Hybrid case */
+                    for (k = 0; k < (num_comp - num_spots); k++) {
+                        dst_ptr[k * planestride] = src[k];
+                    }
+                    for (k = 0; k < num_spots; k++) {
+                        dst_ptr[(k + num_comp - num_spots) * planestride] =
+                                255 - src[k + num_comp - num_spots];
+                    }
+                } else {
+                    /* Pure subtractive */
+                    for (k = 0; k < num_comp; k++) {
+                        dst_ptr[k * planestride] = 255 - src[k];
+                    }
+                }
+                /* alpha */
+                dst_ptr[num_comp * planestride] = src[num_comp];
+            } else {
+                byte *pdst;
+                /* Complement subtractive planes */
+                if (!additive) {
+                    /* Pure subtractive */
+                    for (k = 0; k < num_comp; ++k)
+                        dst[k] = 255 - dst_ptr[k * planestride];
+                } else {
+                    /* Hybrid case, additive with subtractive spots */
+                    for (k = 0; k < (num_comp - num_spots); k++) {
+                        dst[k] = dst_ptr[k * planestride];
+                    }
+                    for (k = 0; k < num_spots; k++) {
+                        dst[k + num_comp - num_spots] =
+                            255 - dst_ptr[(k + num_comp - num_spots) * planestride];
+                    }
+                }
+                dst[num_comp] = dst_ptr[num_comp * planestride];
+                pdst = art_pdf_composite_pixel_alpha_8_inline(dst, src, num_comp, blend_mode, first_blend_spot,
+                            pdev->blend_procs, pdev);
+                /* Until I see otherwise in AR or the spec, do not fool
+                   with spot overprinting while we are in an RGB or Gray
+                   blend color space. */
+                if (!additive && overprint) {
+                    for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
+                        if ((comps & 0x1) != 0) {
+                            dst_ptr[k * planestride] = 255 - pdst[k];
                         }
                     }
-                    /* alpha */
-                    dst_ptr[num_comp * planestride] = src[num_comp];
                 } else {
-                    byte *pdst;
-                    /* Complement subtractive planes */
+                    /* Post blend complement for subtractive */
                     if (!additive) {
                         /* Pure subtractive */
                         for (k = 0; k < num_comp; ++k)
-                            dst[k] = 255 - dst_ptr[k * planestride];
+                            dst_ptr[k * planestride] = 255 - pdst[k];
+
                     } else {
                         /* Hybrid case, additive with subtractive spots */
                         for (k = 0; k < (num_comp - num_spots); k++) {
-                            dst[k] = dst_ptr[k * planestride];
+                            dst_ptr[k * planestride] = pdst[k];
                         }
                         for (k = 0; k < num_spots; k++) {
-                            dst[k + num_comp - num_spots] =
-                                255 - dst_ptr[(k + num_comp - num_spots) * planestride];
+                            dst_ptr[(k + num_comp - num_spots) * planestride] =
+                                    255 - pdst[k + num_comp - num_spots];
                         }
                     }
-                    dst[num_comp] = dst_ptr[num_comp * planestride];
-                    pdst = art_pdf_composite_pixel_alpha_8_inline(dst, src, num_comp, blend_mode, first_blend_spot,
-                                pdev->blend_procs, pdev);
-                    /* Until I see otherwise in AR or the spec, do not fool
-                       with spot overprinting while we are in an RGB or Gray
-                       blend color space. */
-                    if (!additive && overprint) {
-                        for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
-                            if ((comps & 0x1) != 0) {
-                                dst_ptr[k * planestride] = 255 - pdst[k];
-                            }
-                        }
-                    } else {
-                        /* Post blend complement for subtractive */
-                        if (!additive) {
-                            /* Pure subtractive */
-                            for (k = 0; k < num_comp; ++k)
-                                dst_ptr[k * planestride] = 255 - pdst[k];
-
-                        } else {
-                            /* Hybrid case, additive with subtractive spots */
-                            for (k = 0; k < (num_comp - num_spots); k++) {
-                                dst_ptr[k * planestride] = pdst[k];
-                            }
-                            for (k = 0; k < num_spots; k++) {
-                                dst_ptr[(k + num_comp - num_spots) * planestride] =
-                                        255 - pdst[k + num_comp - num_spots];
-                            }
-                        }
-                    }
-                    /* The alpha channel */
-                    dst_ptr[num_comp * planestride] = pdst[num_comp];
                 }
-                if (tag_off) {
-                    /* If src alpha is 100% then set to curr_tag, else or */
-                    /* other than Normal BM, we always OR */
-                    if (src[num_comp] == 255 && blend_mode == BLEND_MODE_Normal) {
-                        dst_ptr[tag_off] = curr_tag;
-                    } else {
-                        dst_ptr[tag_off] |= curr_tag;
-                    }
+                /* The alpha channel */
+                dst_ptr[num_comp * planestride] = pdst[num_comp];
+            }
+            if (tag_off) {
+                /* If src alpha is 100% then set to curr_tag, else or */
+                /* other than Normal BM, we always OR */
+                if (src[num_comp] == 255 && blend_mode == BLEND_MODE_Normal) {
+                    dst_ptr[tag_off] = curr_tag;
+                } else {
+                    dst_ptr[tag_off] |= curr_tag;
                 }
             }
+            if (alpha_g_off) {
+                int tmp = (255 - dst_ptr[alpha_g_off]) * src_alpha + 0x80;
+                dst_ptr[alpha_g_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
+            }
+            if (shape_off) {
+                int tmp = (255 - dst_ptr[shape_off]) * shape + 0x80;
+                dst_ptr[shape_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
+            }
+            ++dst_ptr;
+        }
+        dst_ptr += rowstride;
+    }
+}
+
+static void
+mark_fill_rect_alpha0(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+               byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
+               bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
+               int alpha_g_off, int shape_off, byte shape)
+{
+    int i, j;
+
+    for (j = h; j > 0; --j) {
+        for (i = w; i > 0; --i) {
             if (alpha_g_off) {
                 int tmp = (255 - dst_ptr[alpha_g_off]) * src_alpha + 0x80;
                 dst_ptr[alpha_g_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
@@ -2131,24 +2152,22 @@ mark_fill_rect_1comp_additive_no_spots(int w, int h, byte *dst_ptr, byte *src, i
 
     for (j = h; j > 0; --j) {
         for (i = w; i > 0; --i) {
-           if (src[1] != 0) {
-                /* background empty, nothing to change */
-                if (dst_ptr[planestride] == 0) {
-                    dst_ptr[0] = src[0];
-                    dst_ptr[planestride] = src[1];
-                } else {
-                    art_pdf_composite_pixel_alpha_8_fast_mono(dst_ptr, src,
+            /* background empty, nothing to change */
+            if (dst_ptr[planestride] == 0) {
+                dst_ptr[0] = src[0];
+                dst_ptr[planestride] = src[1];
+            } else {
+                art_pdf_composite_pixel_alpha_8_fast_mono(dst_ptr, src,
                                                 blend_mode, pdev->blend_procs,
                                                 planestride, pdev);
-                }
-                if (tag_off) {
-                    /* If src alpha is 100% then set to curr_tag, else or */
-                    /* other than Normal BM, we always OR */
-                    if (src[1] == 255 && blend_mode == BLEND_MODE_Normal) {
-                         dst_ptr[tag_off] = curr_tag;
-                    } else {
-                        dst_ptr[tag_off] |= curr_tag;
-                    }
+            }
+            if (tag_off) {
+                /* If src alpha is 100% then set to curr_tag, else or */
+                /* other than Normal BM, we always OR */
+                if (src[1] == 255 && blend_mode == BLEND_MODE_Normal) {
+                     dst_ptr[tag_off] = curr_tag;
+                } else {
+                    dst_ptr[tag_off] |= curr_tag;
                 }
             }
             if (alpha_g_off) {
@@ -2272,7 +2291,9 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     rowstride -= w;
     /* The num_comp == 1 && additive case is very common (mono output
      * devices no spot support), so we optimise that specifically here. */
-    if (additive && num_spots == 0) {
+    if (src[num_comp] == 0)
+        fn = mark_fill_rect_alpha0;
+    else if (additive && num_spots == 0) {
         if (num_comp == 1)
             fn = mark_fill_rect_1comp_additive_no_spots;
         else if (tag_off == 0 && shape_off == 0 && blend_mode == BLEND_MODE_Normal)
