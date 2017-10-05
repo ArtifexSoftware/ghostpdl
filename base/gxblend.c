@@ -1092,7 +1092,7 @@ art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
  * and that probably needs to treat knockout separately.
  * Also note the need to know if the spot colorants should be blended
  * normal.  This occurs when we have spot colorants and the blending is set
- * for non-separable or non-white preservering blend modes
+ * for non-separable or non-white preserving blend modes
  * @src_alpha_g corresponds to $\alpha g_n$ in the Adobe notation.
  *
  * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
