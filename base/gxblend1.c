@@ -278,8 +278,14 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff)
              * but I don't know how often we hit this case. */
             memset(buf_plane, 0, n_planes * buf->planestride);
         } else if (n_planes > tos->n_chan) {
-            /* We *could* get away with not blanking any tag plane too... */
-            memset(buf->data + tos->n_chan * buf->planestride, 0, (n_planes - tos->n_chan) * buf->planestride);
+            /* The next planes are alpha_g, shape, tags. We need to clear
+             * alpha_g and shape, but don't need to clear the tag plane
+             * if it would be copied below (and if it exists). */
+            int tag_plane_num = tos->n_chan + !!buf->has_shape + !!buf->has_alpha_g;
+            if (!knockout_buff && n_planes > tag_plane_num)
+                n_planes = tag_plane_num;
+            if (n_planes > tos->n_chan)
+                memset(buf->data + tos->n_chan * buf->planestride, 0, (n_planes - tos->n_chan) * buf->planestride);
         }
         buf_plane += x0 - buf->rect.p.x +
                     (y0 - buf->rect.p.y) * buf->rowstride;
