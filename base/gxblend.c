@@ -34,6 +34,16 @@ extern unsigned int global_index;
 extern unsigned int clist_band_count;
 #endif
 
+#undef TRACK_COMPOSE_GROUPS
+#ifdef TRACK_COMPOSE_GROUPS
+int compose_groups[1<<17];
+
+static int track_compose_groups = 0;
+
+static void dump_track_compose_groups(void);
+#endif
+
+
 /* For spot colors, blend modes must be white preserving and separable.  The
  * order of the blend modes should be reordered so this is a single compare */
 bool
@@ -1938,6 +1948,32 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     }
 #endif
 
+#ifdef TRACK_COMPOSE_GROUPS
+    {
+        int code = 0;
+
+        code += !!nos_knockout;
+        code += (!!nos_isolated)<<1;
+        code += (!!tos_isolated)<<2;
+        code += (!!tos->has_shape)<<3;
+        code += (!!tos_has_tag)<<4;
+        code += (!!additive)<<5;
+        code += (!!overprint)<<6;
+        code += (!!has_mask)<<7;
+        code += (!!has_matte)<<8;
+        code += (backdrop_ptr != NULL)<<9;
+        code += (num_spots != 0)<<10;
+        code += blend_mode<<11;
+
+        if (track_compose_groups == 0)
+        {
+            atexit(dump_track_compose_groups);
+            track_compose_groups = 1;
+        }
+        compose_groups[code]++;
+    }
+#endif
+
     if (nos_knockout)
         fn = &compose_group_knockout;
     else if (tos_isolated)
@@ -2322,3 +2358,21 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 #endif
     return 0;
 }
+
+/* Keep this at the end because of the #undef print */
+
+#ifdef TRACK_COMPOSE_GROUPS
+static void
+dump_track_compose_groups(void)
+{
+    int i;
+
+    for (i = 0; i < (1<<17); i++)
+    {
+        if (compose_groups[i] == 0)
+            continue;
+#undef printf
+        printf("COMPOSE_GROUPS: %04x:%d\n", i, compose_groups[i]);
+    }
+}
+#endif
