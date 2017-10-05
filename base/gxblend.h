@@ -208,19 +208,6 @@ art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
 
 
 /**
- * art_pdf_composite_pixel_alpha_8_fast: Tweaked version of art_pdf_composite_pixel_alpha_8.
- * Same args, with an extra one:
- * @stride: stride between dst pixel values.
- * Dst data is therefore in dst[i * stride] for 0 <= i <= num_chan.
- * Called with the guarantee that dst[stride * n_chan] != 0, src[n_chan] != 0
- */
-void
-art_pdf_composite_pixel_alpha_8_fast(byte *dst, const byte *src, int n_chan,
-        gs_blend_mode_t blend_mode,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        int stride, pdf14_device *p14dev);
-
-/**
  * art_pdf_composite_pixel_alpha_8_fast_mono: Tweaked version of art_pdf_composite_pixel_alpha_8_fast.
  * Same args, except n_chan, which is assumed to be 1:
  * @stride: stride between dst pixel values.
@@ -370,6 +357,13 @@ int gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
 int gx_put_blended_image_custom(gx_device *target, byte *buf_ptr,
                       int planestride, int rowstride,
                       int x0, int y0, int width, int height, int num_comp, byte bg);
+
+/* Function moved between compilation units to allow inlining. */
+int pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
+                                     gx_color_index color, const gx_device_color *pdc,
+                                     bool devn);
+
+
 
 #if RAW_DUMP
 
