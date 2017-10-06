@@ -2624,7 +2624,7 @@ pdf_write_threshold2_halftone(gx_device_pdf *pdev,
 
     memset(trs, 0x00, 17 + MAX_FN_CHARS + 1);
     if (pdev->CompatibilityLevel <= 1.7) {
-        code = pdf_write_transfer(pdev, porder->transfer, "/TransferFunction",
+        code = pdf_write_transfer(pdev, porder->transfer, "",
                                   trs);
 
         if (code < 0)

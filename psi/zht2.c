@@ -334,6 +334,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
                     break;
                 /* falls through */
             case ht_type_threshold:
+            case ht_type_threshold2:
                 if (!r_has_type(tprocs + j, t__invalid)) {
                     /* Schedule TransferFunction sampling. */
                     /****** check_xstack IS WRONG ******/
@@ -705,6 +706,8 @@ dict_threshold2_params(const ref * pdict, gs_threshold2_halftone * ptp,
     int bps;
     uint size;
     int cw2, ch2;
+
+    ptp->transfer = (code > 0 ? (gs_mapping_proc) 0 : gs_mapped_transfer);
 
     if (code < 0 ||
         (code = cw2 = dict_int_param(pdict, "Width2", 0, 0x7fff, 0,

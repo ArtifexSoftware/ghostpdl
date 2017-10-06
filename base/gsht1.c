@@ -525,7 +525,7 @@ process_threshold2(gx_ht_order * porder, gs_gstate * pgs,
         }
     }
     gx_ht_complete_threshold_order(porder);
-    return process_transfer(porder, pgs, NULL, &phtp->transfer_closure, mem);
+    return process_transfer(porder, pgs, phtp->transfer, &phtp->transfer_closure, mem);
 #undef LOG2_MAX_HT_LEVELS
 #undef MAX_HT_LEVELS
 }

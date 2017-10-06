@@ -89,7 +89,7 @@ typedef struct gs_threshold_halftone_common_s {
 typedef struct gs_threshold_halftone_s {
     GS_THRESHOLD_HALFTONE_COMMON; /* must be first */
     gs_const_string thresholds;
-    gs_mapping_proc transfer;	/* OBSOLETE */
+    gs_mapping_proc transfer;
 } gs_threshold_halftone;
 
 #define st_threshold_halftone_max_ptrs 2
@@ -101,6 +101,7 @@ typedef struct gs_threshold2_halftone_s {
     int height2;
     int bytes_per_sample;	/* 1 or 2 */
     gs_const_bytestring thresholds; /* nota bene */
+    gs_mapping_proc transfer;
 } gs_threshold2_halftone;
 
 /* Client-defined halftone that generates a halftone order. */
