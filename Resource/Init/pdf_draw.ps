@@ -2992,7 +2992,7 @@ end
         //true
       } ifelse                % <annot> [border] <bad?>
     } ifelse {
-      (   **** Error: Invalids annotation border object, border has not been drawn.\n)
+      (   **** Error: Invalid annotation border object, border has not been drawn.\n)
       pdfformaterror
       (               Output may be incorrect.\n) pdfformaterror
       pop { 0 0 0 }
@@ -3408,6 +3408,108 @@ currentdict /set_bc_color undef
         pop
       } ifelse
     }ifelse
+  } bdef
+
+%% Width Height drawellipse -
+/drawellipse {
+  %% Don Lancaster's code for drawing an ellipse
+  0.55228475 0.00045 sub % improved magic value
+  3 1 roll               % magic width height
+  2 div exch 2 div       % magic y-radius x-radius
+  dup 3 index mul        % magic y-radius x-radius x-magic
+  2 index                % magic y-radius x-radius x-magic y-radius
+  5 -1 roll mul          % magic y-radius x-radius x-magic y-magic
+
+  2 index neg 0 moveto                                          % xrad neg 0 moveto
+  2 index neg 1 index 3 index neg 6 index 0 8 index curveto     % xrad neg ymag xmag neg yrad 0 yrad curveto
+  1 index 4 index 4 index 3 index 1 index 0 curveto             % xmag yrad xrad ymag xrad 0 curveto
+  2 index 1 index neg 3 index 6 index neg 0 1 index curveto     % xrad ymag neg xmag yrad neg 0 yrad neg curveto
+                                                                % Stack: yrad xrad xmag ymag
+  exch neg 4 1 roll 3 -1 roll neg 3 1 roll exch neg exch
+  neg 1 index 0 curveto                                         % xmag neg yrad neg xrad neg ymag neg 0 curveto
+}bdef
+
+  /Circle {
+    dup /AP oknown {
+      //true
+    }{
+      gsave
+      dup annotrect 4 2 roll exch 3 index 2 div add exch 2 index 2 div add
+      translate //drawellipse exec
+      dup
+      /IC knownoget {
+        dup length 4 eq {
+          aload pop setcmykcolor true
+        }{
+          dup length 3 eq {
+            aload pop setrgbcolor true
+          }{
+            dup length 1 eq {
+              aload pop setgray true
+            } {
+              dup length 0 eq {
+                pop
+                false
+              }{
+                (   **** Error: invalid color specified for annotation /IC entry)
+                pdfformaterror false
+                (               Output may be incorrect.\n) pdfformaterror
+              } ifelse
+            } ifelse
+          } ifelse
+        } ifelse
+      }{
+        0 setgray true
+      } ifelse
+      {
+        gsave
+        fill
+        grestore
+      } if
+
+      dup /BS known 1 index /Border known or {
+        dup /BS knownoget {
+          dup type /dicttype ne   % <annot> <border> <bad?>
+        } {
+          dup /Border oget
+          dup type /arraytype eq {
+            dup length 3 lt
+          } {
+            //true
+          } ifelse                % <annot> [border] <bad?>
+        } ifelse {
+          (   **** Error: Invalid annotation border object, border has not been drawn.\n)
+          pdfformaterror
+          (               Output may be incorrect.\n) pdfformaterror
+          pop { 0 0 0 }
+        } if
+        dup type /dicttype eq {
+          dup /W knownoget not { 1 } if
+          % Per PDF1.6 Reference table 8.13, /W in the border style dictionary is
+          % expressed in points (an absolute unit), so compensate here for any
+          % scaling of the PostScript user space done due to /UserUnit.
+          % Scaling due to -dPDFFitPage is not undone, to keep the correct border width
+          % compared to the size of the surrounding marks.
+          //systemdict /NoUserUnit .knownget not { //false } if not
+          //systemdict /PDFFitPage known not and {	% UserUnit is ignored if -dPDFFitPage
+            Page /UserUnit knownoget { div } if
+          } if
+          {} 2 index /S knownoget {
+            /D eq { 2 index /D knownoget not { {3} } if exch pop } if
+          } if 3 -1 roll pop
+          2 index annotsetcolor {0 setdash setlinewidth stroke} if
+        } {
+          dup 2 get
+          exch dup length 3 gt { 3 get } { pop {} } ifelse
+          2 index annotsetcolor {0 setdash setlinewidth stroke} if
+        } ifelse
+      } {
+        annotsetcolor {{} 0 setdash 1 setlinewidth stroke} if
+      } ifelse
+
+      grestore
+      //false
+    } ifelse
   } bdef
 
   /Link { % <annot> -> <false>
@@ -4074,6 +4176,7 @@ currentdict /set_bc_color undef
   } bdef
 
 currentdict /quadpoints2basis undef
+currentdict /drawellipse undef
 currentdict end readonly def
 
 /.PDFDrawAnnotType?
