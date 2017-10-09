@@ -1789,7 +1789,7 @@ compose_group_nonknockout_nonblend_add_isolated_mask_common(byte *tos_ptr, bool 
     template_compose_group(tos_ptr, /*tos_isolated*/1, tos_planestride, tos_rowstride, alpha, shape, BLEND_MODE_Normal, /*tos_has_shape*/0,
         tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, /*tos_has_tag*/0,
         nos_ptr, /*nos_isolated*/0, nos_planestride, nos_rowstride, /*nos_alpha_g_ptr*/0, /* nos_knockout = */0,
-        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, /*has_mask*/1, maskbuf, mask_bg_alpha, mask_tr_fn,
+        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, has_mask, maskbuf, mask_bg_alpha, mask_tr_fn,
         backdrop_ptr, /*has_matte*/0, n_chan, /*additive*/1, /*num_spots*/0, /*overprint*/0, /*drawn_comps*/0, x0, y0, x1, y1, pblend_procs, pdev);
 }
 
@@ -1823,7 +1823,7 @@ compose_group_nonknockout_nonblend_add_nonisolated_mask_common(byte *tos_ptr, bo
     template_compose_group(tos_ptr, /*tos_isolated*/0, tos_planestride, tos_rowstride, alpha, shape, BLEND_MODE_Normal, /*tos_has_shape*/0,
         tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, /*tos_has_tag*/0,
         nos_ptr, /*nos_isolated*/0, nos_planestride, nos_rowstride, /*nos_alpha_g_ptr*/0, /* nos_knockout = */0,
-        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, /*has_mask*/1, maskbuf, mask_bg_alpha, mask_tr_fn,
+        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, has_mask, maskbuf, mask_bg_alpha, mask_tr_fn,
         backdrop_ptr, /*has_matte*/0, n_chan, /*additive*/1, /*num_spots*/0, /*overprint*/0, /*drawn_comps*/0, x0, y0, x1, y1, pblend_procs, pdev);
 }
 
@@ -1857,7 +1857,7 @@ compose_group_nonknockout_nonblend_sub_isolated_mask_common(byte *tos_ptr, bool 
     template_compose_group(tos_ptr, /*tos_isolated*/1, tos_planestride, tos_rowstride, alpha, shape, BLEND_MODE_Normal, /*tos_has_shape*/0,
         tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, /*tos_has_tag*/0,
         nos_ptr, /*nos_isolated*/0, nos_planestride, nos_rowstride, /*nos_alpha_g_ptr*/0, /* nos_knockout = */0,
-        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, /*has_mask*/1, maskbuf, mask_bg_alpha, mask_tr_fn,
+        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, has_mask, maskbuf, mask_bg_alpha, mask_tr_fn,
         backdrop_ptr, /*has_matte*/0, n_chan, /*additive*/0, /*num_spots*/0, /*overprint*/0, /*drawn_comps*/0, x0, y0, x1, y1, pblend_procs, pdev);
 }
 
@@ -1891,7 +1891,7 @@ compose_group_nonknockout_nonblend_sub_nonisolated_mask_common(byte *tos_ptr, bo
     template_compose_group(tos_ptr, /*tos_isolated*/0, tos_planestride, tos_rowstride, alpha, shape, BLEND_MODE_Normal, /*tos_has_shape*/0,
         tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, /*tos_has_tag*/0,
         nos_ptr, /*nos_isolated*/0, nos_planestride, nos_rowstride, /*nos_alpha_g_ptr*/0, /* nos_knockout = */0,
-        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, /*has_mask*/1, maskbuf, mask_bg_alpha, mask_tr_fn,
+        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, has_mask, maskbuf, mask_bg_alpha, mask_tr_fn,
         backdrop_ptr, /*has_matte*/0, n_chan, /*additive*/0, /*num_spots*/0, /*overprint*/0, /*drawn_comps*/0, x0, y0, x1, y1, pblend_procs, pdev);
 }
 
@@ -2033,6 +2033,10 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     }
 #endif
 
+    /* You might hope that has_mask iff maskbuf != NULL, but this is
+     * not the case. Certainly we can see cases where maskbuf != NULL
+     * and has_mask = 0. What's more, treating such cases as being
+     * has_mask = 0 causes diffs. */
 #ifdef TRACK_COMPOSE_GROUPS
     {
         int code = 0;
@@ -2044,7 +2048,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
         code += (!!tos_has_tag)<<4;
         code += (!!additive)<<5;
         code += (!!overprint)<<6;
-        code += (!!has_mask)<<7;
+        code += (!!has_mask || maskbuf != NULL)<<7;
         code += (!!has_matte)<<8;
         code += (backdrop_ptr != NULL)<<9;
         code += (num_spots != 0)<<10;
@@ -2070,24 +2074,24 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
              overprint == 0) {
         if (additive) {
             if (tos_isolated) {
-                if (has_mask) /* 7% */
+                if (has_mask || maskbuf) /* 7% */
                     fn = &compose_group_nonknockout_nonblend_add_isolated_mask_common;
                 else /* 14% */
                     fn = &compose_group_nonknockout_nonblend_add_isolated_nomask_common;
             } else {
-                if (has_mask) /* 4% */
+                if (has_mask || maskbuf) /* 4% */
                     fn = &compose_group_nonknockout_nonblend_add_nonisolated_mask_common;
                 else /* 15% */
                     fn = &compose_group_nonknockout_nonblend_add_nonisolated_nomask_common;
             }
         } else {
             if (tos_isolated) {
-                if (has_mask) /* 3% */
+                if (has_mask || maskbuf) /* 3% */
                     fn = &compose_group_nonknockout_nonblend_sub_isolated_mask_common;
                 else /* 11% */
                     fn = &compose_group_nonknockout_nonblend_sub_isolated_nomask_common;
             } else {
-                if (has_mask) /* 2% */
+                if (has_mask || maskbuf) /* 2% */
                     fn = &compose_group_nonknockout_nonblend_sub_nonisolated_mask_common;
                 else /* 8% */
                     fn = &compose_group_nonknockout_nonblend_sub_nonisolated_nomask_common;
