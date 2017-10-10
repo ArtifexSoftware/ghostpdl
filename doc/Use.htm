@@ -3448,10 +3448,8 @@ command line option.
 <p>
 When running -dNOSAFER it is possible to perform a <code>save</code>,
 followed by <code>.setsafe</code>, execute a file or procedure in SAFER mode,
-then use <code>restore</code> to return to NOSAFER mode. In order to prevent
-the save object from being restored by the foreign file or procedure, the
-<a href="Language.htm#Runandhide"><b>.runandhide</b></a> operator should
-be used to hide the save object from the restricted procedure.
+then use <code>restore</code> to return to NOSAFER mode. It is possible that the
+a crafted foreign file could restore back to a point when NOSAFER was in operation.
 </dl>
 
 <dl>

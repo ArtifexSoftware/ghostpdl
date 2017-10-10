@@ -760,10 +760,10 @@ mode (see <a href="Use.htm#Safer"><b>-dSAFER</b></a>)
 <p>
 Since <b>SAFER</b> mode is implemented with userparameters and device parameters,
 it is possible to use <code>save</code> and <code>restore</code> before
-and after <code>.setsafe</code> to return to <b>NOSAFER</b> mode, but care
-should be taken to ensure that the <i><tt>save</tt></i> object is not
-accessible to any procedures or file run in <b>SAFER</b> mode (see
-<a href="#Runandhide"><b>.runandhide</b></a> above).
+and after <code>.setsafe</code> to return to <b>NOSAFER</b> mode, but note
+that such a save object is accessible to any procedures or file run in <b>SAFER</b> mode.
+A malicious file with an unbalanced restore could potentially restore back to a point where
+SAFER was not in operation.
 <p>
 <b>Note: This uses setpagedevice to change .LockSafetyParams, so the page
 will be erased as a side effect of this operator</b>
