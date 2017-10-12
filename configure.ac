@@ -1525,14 +1525,14 @@ if test x$with_luratech != xno; then
 
     if test x"$cross_compiling" = x"yes"; then
         if test x"$JBIG2_CFLAGS" != x""; then
-          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 $JBIG2_CFLAGS"
+          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char $JBIG2_CFLAGS"
         else
-          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DLINUX=1 -DFORTE"
+          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX=1 -DFORTE"
         fi
     else
       case `uname` in
         Darwin*)
-          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DMAC -DMAC_OS_X_BUILD"
+          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DMAC -DMAC_OS_X_BUILD -fsigned-char"
         ;;
         AIX)
           if test $ac_cv_prog_gcc = yes; then
@@ -1542,7 +1542,7 @@ if test x$with_luratech != xno; then
           fi
         ;;
         *)
-          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DLINUX=1 -DFORTE"
+          JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -fsigned-char -DLINUX=1 -DFORTE"
         ;;
       esac
     fi
