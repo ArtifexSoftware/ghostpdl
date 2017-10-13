@@ -2957,6 +2957,35 @@ end
   { 0 setgray true} ifelse
 } bdef
 
+% Set an annotation color.
+% If the /C array is empty we don't want to draw the annotation
+%
+/annotsetinteriorcolor {	% <annot> annotsetcolor bool
+  /IC knownoget {
+    dup length 4 eq {
+      aload pop setcmykcolor true
+    }{
+      dup length 3 eq {
+        aload pop setrgbcolor true
+      }{
+        dup length 1 eq {
+          aload pop setgray true
+        } {
+          dup length 0 eq {
+            pop
+            false
+          }{
+            (   **** Error: invalid color specified for annotation /C entry)
+            pdfformaterror false
+            (               Output may be incorrect.\n) pdfformaterror
+          } ifelse
+        } ifelse
+      } ifelse
+    } ifelse
+  }
+  { 0 setgray true} ifelse
+} bdef
+
 % Draw the border.  Currently, we ignore requests for beveling, and we
 % don't round the corners of rectangles.
 /strokeborder {		% <annot> <width> <dash> strokeborder -
@@ -3021,6 +3050,63 @@ end
   } ifelse
   grestore
 } bdef
+
+% stroke the path of an annotation border.
+/strokeborderpath {		% <annot> strokeborderpath -
+  gsave
+  dup /BS known 1 index /Border known or {
+    dup /BS knownoget {
+      dup type /dicttype ne   % <annot> <border> <bad?>
+    } {
+      dup /Border oget
+      dup type /arraytype eq {
+        dup length 3 lt
+      } {
+        //true
+      } ifelse                % <annot> [border] <bad?>
+    } ifelse {
+      (   **** Error: Invalid annotation border object, border has not been drawn.\n)
+      pdfformaterror
+      (               Output may be incorrect.\n) pdfformaterror
+      pop { 0 0 0 }
+    } if
+    dup type /dicttype eq {
+      dup /W knownoget not { 1 } if
+      % Per PDF1.6 Reference table 8.13, /W in the border style dictionary is
+      % expressed in points (an absolute unit), so compensate here for any
+      % scaling of the PostScript user space done due to /UserUnit.
+      % Scaling due to -dPDFFitPage is not undone, to keep the correct border width
+      % compared to the size of the surrounding marks.
+      //systemdict /NoUserUnit .knownget not { //false } if not
+      //systemdict /PDFFitPage known not and {	% UserUnit is ignored if -dPDFFitPage
+        Page /UserUnit knownoget { div } if
+      } if
+      {} 2 index /S knownoget {
+        /D eq { 2 index /D knownoget not { {3} } if exch pop } if
+      } if
+      3 index /CA knownoget {.setopacityalpha} if
+      3 -1 roll pop 2 index annotsetcolor {0 setdash setlinewidth stroke} if
+    } {
+      dup 2 get
+      exch dup length 3 gt { 3 get } { pop {} } ifelse
+      3 index /CA knownoget {.setopacityalpha} if
+      2 index annotsetcolor {0 setdash setlinewidth stroke} if
+    } ifelse
+  } {
+    3 index /CA knownoget {.setopacityalpha} if
+    1 {} 2 index annotsetcolor {0 setdash setlinewidth stroke} if
+  } ifelse
+  pop
+  grestore
+} bdef
+
+/fillborderpath {		% <annot> fillborderpath -
+  gsave
+  dup /ca knownoget {.setopacityalpha} if
+  annotsetinteriorcolor
+  {fill} if
+  grestore
+}bdef
 
 %
 %   The PDF annotation F (flags) integer is bit encoded.
@@ -3328,6 +3414,33 @@ currentdict /set_bc_color undef
 % Draw an annotation.
 /drawannottypes 20 dict begin
 
+  /startannottransparency {
+    PDFusingtransparency {
+      dup /BM known {
+        dup /BM get
+        << exch /BM exch >>
+      } {
+        << >>
+      }ifelse
+      %% We should be able to use the Rect to create the group, but it seems
+      %% Acrobat ignores this, or at least doesn't clip the annotation to it :-(
+%      1 index /Rect known {
+%        1 index annotrect exch % llx lly h w
+%        3 index add exch   % x y urx h
+%        2 index add
+%      }{
+        clippath pathbbox newpath
+%      } ifelse
+      .begintransparencygroup
+    } if
+  }bdef
+
+  /endannottransparency {
+    PDFusingtransparency {
+      .endtransparencygroup
+    } if
+  }bdef
+
   % x0 y0 x1 y1 x2 y2 x3 y3 -> x0 y0 x1-x0 y1-y0 x2-x0 y2-y0
   /quadpoints2basis {
     8 { oforce 8 1 roll } repeat
@@ -3375,38 +3488,23 @@ currentdict /set_bc_color undef
     dup /AP oknown {
       //true
     }{
+      gsave
+      //startannottransparency exec
       dup
-      /IC knownoget {
-        dup length 4 eq {
-          aload pop setcmykcolor true
-        }{
-          dup length 3 eq {
-            aload pop setrgbcolor true
-          }{
-            dup length 1 eq {
-              aload pop setgray true
-            } {
-              dup length 0 eq {
-                pop
-                false
-              }{
-                (   **** Error: invalid color specified for annotation /IC entry)
-                pdfformaterror false
-                (               Output may be incorrect.\n) pdfformaterror
-              } ifelse
-            } ifelse
-          } ifelse
-        } ifelse
-      }{
-        0 setgray true
-      } ifelse
+      annotsetinteriorcolor
       {
+        gsave
+        dup /ca knownoget {.setopacityalpha} if
         dup annotrect rectfill
+        grestore
+        dup /CA knownoget {.setopacityalpha} if
         drawborder
         //false
       }{
         pop
       } ifelse
+      //endannottransparency exec
+      grestore
     }ifelse
   } bdef
 
@@ -3434,85 +3532,373 @@ currentdict /set_bc_color undef
       //true
     }{
       gsave
+      //startannottransparency exec
       dup annotrect 4 2 roll exch 3 index 2 div add exch 2 index 2 div add
       translate //drawellipse exec
       dup
-      /IC knownoget {
-        dup length 4 eq {
-          aload pop setcmykcolor true
-        }{
-          dup length 3 eq {
-            aload pop setrgbcolor true
-          }{
-            dup length 1 eq {
-              aload pop setgray true
-            } {
-              dup length 0 eq {
-                pop
-                false
-              }{
-                (   **** Error: invalid color specified for annotation /IC entry)
-                pdfformaterror false
-                (               Output may be incorrect.\n) pdfformaterror
-              } ifelse
-            } ifelse
-          } ifelse
-        } ifelse
-      }{
-        0 setgray true
-      } ifelse
-      {
-        gsave
-        fill
-        grestore
-      } if
-
-      dup /BS known 1 index /Border known or {
-        dup /BS knownoget {
-          dup type /dicttype ne   % <annot> <border> <bad?>
-        } {
-          dup /Border oget
-          dup type /arraytype eq {
-            dup length 3 lt
-          } {
-            //true
-          } ifelse                % <annot> [border] <bad?>
-        } ifelse {
-          (   **** Error: Invalid annotation border object, border has not been drawn.\n)
-          pdfformaterror
-          (               Output may be incorrect.\n) pdfformaterror
-          pop { 0 0 0 }
-        } if
-        dup type /dicttype eq {
-          dup /W knownoget not { 1 } if
-          % Per PDF1.6 Reference table 8.13, /W in the border style dictionary is
-          % expressed in points (an absolute unit), so compensate here for any
-          % scaling of the PostScript user space done due to /UserUnit.
-          % Scaling due to -dPDFFitPage is not undone, to keep the correct border width
-          % compared to the size of the surrounding marks.
-          //systemdict /NoUserUnit .knownget not { //false } if not
-          //systemdict /PDFFitPage known not and {	% UserUnit is ignored if -dPDFFitPage
-            Page /UserUnit knownoget { div } if
-          } if
-          {} 2 index /S knownoget {
-            /D eq { 2 index /D knownoget not { {3} } if exch pop } if
-          } if 3 -1 roll pop
-          2 index annotsetcolor {0 setdash setlinewidth stroke} if
-        } {
-          dup 2 get
-          exch dup length 3 gt { 3 get } { pop {} } ifelse
-          2 index annotsetcolor {0 setdash setlinewidth stroke} if
-        } ifelse
-      } {
-        annotsetcolor {{} 0 setdash 1 setlinewidth stroke} if
-      } ifelse
-
+      fillborderpath
+      strokeborderpath
+      //endannottransparency exec
       grestore
       //false
     } ifelse
   } bdef
 
+  /Polygon {
+    dup /AP oknown {
+      //true
+    }{
+      gsave
+      //startannottransparency exec
+      dup /Vertices knownoget {
+        dup length 2 div 1 sub cvi 0 1 3 -1 roll
+        {
+          2 mul dup
+          2 index exch 2 getinterval aload pop
+          3 -1 roll 0 eq {
+            moveto
+          }{
+            lineto
+          } ifelse
+        }
+        for
+        pop
+        closepath
+        //true
+      } {
+          (   **** Error: Invalid Vertices for Polygon, annotation has not been drawn.\n)
+          pdfformaterror
+          (               Output may be incorrect.\n) pdfformaterror
+        //false
+      } ifelse
+
+      1 index annotsetinteriorcolor {
+        //true
+      }{
+        //false
+      }ifelse
+      and
+
+      {
+        gsave
+        dup /ca knownoget {.setopacityalpha} if
+        fill
+        grestore
+        dup /CA knownoget {.setopacityalpha} if
+        strokeborderpath
+      } if
+      //endannottransparency exec
+      //false
+      grestore
+    } ifelse
+  } bdef
+
+  /LineEnd_dict 10 dict begin
+    %% Stack contains <annot>
+    %% CTM rotated so line segment is vertical, translated so line endpoint at 0,0
+
+    /Square {
+      dup
+      /BS knownoget {
+        /W knownoget {
+        }{
+          1
+        }ifelse
+      }{
+        1
+      }ifelse
+      dup 2.5 mul
+      gsave
+      dup neg 1 index neg exch moveto
+      dup neg 1 index lineto
+      dup 1 index exch lineto
+      dup neg lineto
+      closepath
+      1 index /CA knownoget {.setopacityalpha} if
+      1 index fillborderpath
+      grestore
+      3 mul
+      dup neg 1 index neg exch moveto
+      dup neg 1 index lineto
+      dup 1 index exch lineto
+      dup neg lineto
+      closepath
+      strokeborderpath
+    } bdef
+    /Circle {
+      dup
+      /BS knownoget {
+        /W knownoget {
+        }{
+          1
+        }ifelse
+      }{
+        1
+      }ifelse
+      dup
+      gsave
+      2.5 mul dup
+      0 moveto
+      0 0 3 -1 roll 0 360 arc
+      1 index /CA knownoget {.setopacityalpha} if
+      1 index fillborderpath
+      grestore
+      3 mul dup
+      0 moveto
+      0 0 3 -1 roll 0 360 arc
+      strokeborderpath
+    } bdef
+    /Diamond {
+      dup
+      /BS knownoget {
+        /W knownoget {
+        }{
+          1
+        }ifelse
+      }{
+        1
+      }ifelse
+      dup 2.5 mul
+      gsave
+      dup neg 0 exch moveto
+      dup neg 0 lineto
+      dup 0 exch lineto
+      0 lineto
+      closepath
+      1 index /CA knownoget {.setopacityalpha} if
+      1 index fillborderpath
+      grestore
+      3 mul
+      dup neg 0 exch moveto
+      dup neg 0 lineto
+      dup 0 exch lineto
+      0 lineto
+      closepath
+      strokeborderpath
+    } bdef
+    /OpenArrow {
+      dup
+      gsave
+      /BS knownoget {
+        /W knownoget {
+        }{
+          1
+        }ifelse
+      }{
+        1
+      }ifelse
+      0 setlinejoin
+      dup 6 mul neg 1 index 4 mul neg moveto dup 1.2 div neg 0 lineto
+      dup 6 mul neg exch 4 mul lineto
+      strokeborderpath
+      grestore
+    } bdef
+    /ClosedArrow {
+      dup
+      gsave
+      /BS knownoget {
+        /W knownoget {
+        }{
+          1
+        }ifelse
+      }{
+        1
+      }ifelse
+      dup
+      gsave
+      0 setlinejoin
+      dup 6 mul neg 1 index 4 mul neg moveto dup 1.2 div neg 0 lineto
+      dup 6 mul neg exch 4 mul lineto closepath
+      1 index strokeborderpath
+      grestore
+      dup 1.3 mul neg 0 translate
+      dup 2 div sub
+      dup 8.4 mul neg 1 index 5.9 mul neg moveto dup 1.2 div neg 0 lineto
+      dup 8.4 mul neg exch 5.9 mul lineto closepath
+      dup /CA knownoget {.setopacityalpha} if
+      fillborderpath
+      grestore
+    } bdef
+    /None {} bdef
+    /Butt {
+      dup
+      /BS knownoget {
+        /W knownoget {
+        }{
+          1
+        }ifelse
+      }{
+        1
+      }ifelse
+      3 mul dup neg 0 exch moveto 0 exch lineto
+      strokeborderpath
+    } bdef
+    /ROpenArrow {
+      gsave
+      dup
+      /BS knownoget {
+        /W knownoget {
+        }{
+          1
+        }ifelse
+      }{
+        1
+      }ifelse
+      180 rotate
+      0 setlinejoin
+      dup 6 mul neg 1 index 4 mul neg moveto dup 1.2 div neg 0 lineto
+      dup 6 mul neg exch 4 mul lineto
+      strokeborderpath
+      grestore
+    } bdef
+    /RClosedArrow {
+      gsave
+      dup
+      /BS knownoget {
+        /W knownoget {
+        }{
+          1
+        }ifelse
+      }{
+        1
+      }ifelse
+      180 rotate
+      dup
+      gsave
+      0 setlinejoin
+      dup 6 mul neg 1 index 4 mul neg moveto dup 1.2 div neg 0 lineto
+      dup 6 mul neg exch 4 mul lineto closepath
+      1 index strokeborderpath
+      grestore
+      dup 1.3 mul neg 0 translate
+      dup 2 div sub
+      dup 8.4 mul neg 1 index 5.9 mul neg moveto dup 1.2 div neg 0 lineto
+      dup 8.4 mul neg exch 5.9 mul lineto closepath
+      dup /CA knownoget {.setopacityalpha} if
+      fillborderpath
+      grestore
+    } bdef
+    /Slash {
+      gsave
+      dup
+      /BS knownoget {
+        /W knownoget {
+        }{
+          1
+        }ifelse
+      }{
+        1
+      }ifelse
+      330 rotate
+      3 mul dup neg 0 exch moveto 0 exch lineto
+      strokeborderpath
+      grestore
+    } bdef
+
+  currentdict end readonly def
+
+  /Line  {
+    dup /AP oknown {
+      //true
+    } {
+      gsave
+      //startannottransparency exec
+      dup /L knownoget {
+        1 index /LE knownoget {
+          gsave
+          1 index aload pop  % x1 y1 x2 y2
+          3 -1 roll sub      % x1 x2 dy
+          3 1 roll exch sub  % dy dx
+          2 copy translate
+          atan
+          rotate
+          dup 0 get dup //LineEnd_dict exch known not {pop /None} if //LineEnd_dict exch get 3 index exch exec
+          grestore
+          gsave
+          1 index aload pop  % x1 y1 x2 y2
+          3 -1 roll sub      % x1 x2 dy
+          3 1 roll exch sub  % dy dx
+          2 copy translate
+          atan 180 add
+          rotate
+          1 get dup //LineEnd_dict exch known not {pop /None} if //LineEnd_dict exch get 3 index exch exec
+          grestore
+        }if
+        aload pop 4 2 roll
+        moveto lineto
+        strokeborderpath
+      }{
+        (   **** Error: Invalid L array for Line, annotation has not been drawn.\n)
+        pdfformaterror
+        (               Output may be incorrect.\n) pdfformaterror
+        pop
+      } ifelse
+      //endannottransparency exec
+      //false
+      grestore
+    } ifelse
+  } bdef
+
+  /PolyLine {
+    dup /AP oknown {
+      //true
+    }{
+      gsave
+      //startannottransparency exec
+      dup /Vertices knownoget {
+        1 index /LE knownoget {
+          gsave
+          1 index 0 4 getinterval aload pop
+          4 2 roll
+          2 copy translate 4 2 roll
+          3 -1 roll sub      % x1 x2 dy
+          3 1 roll exch sub  % dy dx
+          atan
+          rotate
+          dup 0 get dup //LineEnd_dict exch known not {pop /None} if //LineEnd_dict exch get 3 index exch exec
+          grestore
+
+          gsave
+          1 index dup length 4 sub 4 getinterval aload pop
+          2 copy translate
+          3 -1 roll sub      % x1 x2 dy
+          3 1 roll exch sub  % dy dx
+          atan
+          rotate
+          1 get dup //LineEnd_dict exch known not {pop /None} if //LineEnd_dict exch get 3 index exch exec
+          grestore
+        } if
+        dup length 2 div 1 sub cvi 0 1 3 -1 roll
+        {
+          2 mul dup
+          2 index exch 2 getinterval aload pop
+          3 -1 roll 0 eq {
+            moveto
+          }{
+            lineto
+          } ifelse
+        }
+        for
+        pop
+        //true
+      } {
+          (   **** Error: Invalid Vertices for Polygon, annotation has not been drawn.\n)
+          pdfformaterror
+          (               Output may be incorrect.\n) pdfformaterror
+        //false
+      } ifelse
+
+      {
+        strokeborderpath
+      } if
+      //endannottransparency exec
+      //false
+      grestore
+    } ifelse
+  } bdef
+
   /Link { % <annot> -> <false>
+    //startannottransparency exec
     dup drawborder dup calc_annot_scale
     2 copy mul 0 ne
     {3 -1 roll drawwidget //false}
@@ -3521,6 +3907,7 @@ currentdict /set_bc_color undef
       (   **** Error: ignoring annotation with scale factor of 0\n) pdfformaterror
       (               Output may be incorrect.\n) pdfformaterror
     }ifelse
+    //endannottransparency exec
   } bdef
 
   /Ink { % <annot> -> <annot> <true>
@@ -3528,6 +3915,7 @@ currentdict /set_bc_color undef
     dup /AP oknown {
       //true
     } {
+      //startannottransparency exec
       1 setlinewidth
       1 setlinecap
       1 setlinejoin
@@ -3535,15 +3923,32 @@ currentdict /set_bc_color undef
         dup calc_annot_scale
         2 copy mul 0 ne
         {
-            3 index annotrect pop pop translate
             scale
-            /InkList knownoget {
+            dup /InkList knownoget {
               { oforce
                 mark exch { oforce } forall
                 .pdfinkpath
                 stroke
               } forall
-            } if
+              pop
+            } {
+              /Path knownoget {
+                oforce
+                dup length 1 sub 0 1 3 -1 roll {
+                  dup 0 eq {
+                    1 index exch get aload pop moveto
+                  } {
+                    1 index exch get dup length 2 eq {
+                      aload pop lineto
+                    }{
+                      aload pop curveto
+                    } ifelse
+                  }ifelse
+                } for
+                pop dup
+                strokeborderpath
+              } if
+            }ifelse
         }
         {
           pop pop
@@ -3552,6 +3957,7 @@ currentdict /set_bc_color undef
         }
         ifelse
       } if
+      //endannottransparency exec
       //false
     } ifelse
   } bdef
@@ -3695,6 +4101,7 @@ currentdict /set_bc_color undef
     dup /AP oknown {
       //true
     } {
+      //startannottransparency exec
       dup annotsetcolor {
         dup calc_annot_scale
         2 copy mul 0 ne
@@ -3743,6 +4150,7 @@ currentdict /set_bc_color undef
         }
         ifelse
       } if
+      //endannottransparency exec
       //false
     } ifelse
   } bdef
@@ -3751,6 +4159,7 @@ currentdict /set_bc_color undef
     dup /AP oknown {
       //true
     } {
+      //startannottransparency exec
       dup calc_annot_scale
       2 copy mul 0 ne
       {
@@ -3783,6 +4192,7 @@ currentdict /set_bc_color undef
         (               Output may be incorrect.\n) pdfformaterror
       }
       ifelse
+      //endannottransparency exec
       //false
     } ifelse
   } bdef
@@ -3802,6 +4212,7 @@ currentdict /set_bc_color undef
     {
       gsave
 
+      //startannottransparency exec
       dup annotrect rectclip
 
       dup /CA knownoget {
@@ -3958,6 +4369,7 @@ currentdict /set_bc_color undef
         }ifelse
       } if
       pop pop
+      //endannottransparency exec
       //false
       grestore
     }
@@ -4074,6 +4486,7 @@ currentdict /set_bc_color undef
     dup /AP oknown {
       //true
     } {
+      //startannottransparency exec
       dup calc_annot_scale
       2 copy mul 0 ne
       {
@@ -4096,6 +4509,7 @@ currentdict /set_bc_color undef
         (               Output may be incorrect.\n) pdfformaterror
       }
       ifelse
+      //endannottransparency exec
       //false
     } ifelse
   } bdef
@@ -4107,6 +4521,7 @@ currentdict /set_bc_color undef
           //true
         }{
           gsave
+          //startannottransparency exec
           newpath
           0.05 setlinewidth
           dup /Parent .knownget {
@@ -4165,6 +4580,7 @@ currentdict /set_bc_color undef
             grestore
           } if
           grestore
+          //endannottransparency exec
           //false
         } ifelse
       } {
@@ -4175,6 +4591,20 @@ currentdict /set_bc_color undef
     }ifelse
   } bdef
 
+  /Redact {
+    %% Redact annotations are part of a process, a Redact annotation is only present
+    %% until the content is removed, before that the content should be present and
+    %% I beleive we should print it. So take no action for Redact annotations if they
+    %% have no appearance.
+    dup /AP oknown {
+      //true
+    } {
+      //false
+    } ifelse
+  } bdef
+
+currentdict /startannottransparency undef
+currentdict /endannottransparency undef
 currentdict /quadpoints2basis undef
 currentdict /drawellipse undef
 currentdict end readonly def

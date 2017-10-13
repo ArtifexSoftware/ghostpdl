@@ -2881,6 +2881,9 @@ currentdict /PDF2PS_matrix_key undef
              4 dict exch resourceusestransparency { pop pop //true exit } if
            } if
          } if  			% If AP dict known
+         dup /BM knownoget {
+           //true exit
+         } if
          dup /CA knownoget {
            1 le {
              pop pop //true exit
