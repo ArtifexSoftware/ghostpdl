@@ -822,6 +822,14 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
 {
     int code = SkipPage(dev);
 
+    /* The returned pointer 'pcdev' is a signal to the caller, if its not the same as the current
+     * device in the graphics state, then it gets set as the current device (basically if its not the
+     * same its a signal that we want to push a new compositor device to the head). So here we start
+     * by making sure that its set to the one in the graphics state. If the child device wants a
+     * compositor it will overwrite this value.
+     */
+    *pcdev = pgs->device;
+
     if (code < 0)
         return code;
     if (!code)
