@@ -922,7 +922,7 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gx_device *dev)
 {
     pdf14_ctx *result;
     pdf14_buf *buf;
-    gs_memory_t	*memory = dev->memory;
+    gs_memory_t	*memory = dev->memory->stable_memory;
     bool has_tags = device_encodes_tags(dev);
     pdf14_device *pdev = (pdf14_device *)dev;
 
