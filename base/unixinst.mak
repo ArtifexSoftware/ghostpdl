@@ -201,7 +201,7 @@ install-man: $(PSMANDIR)/gs.1
 install-examples:
 	-mkdir -p $(DESTDIR)$(exdir)
 	for f in \
-        alphabet.ps chess.ps colorcir.ps escher.ps grayalph.ps snowflak.ps \
+        alphabet.ps colorcir.ps escher.ps grayalph.ps snowflak.ps \
         text_graph_image_cmyk_rgb.pdf transparency_example.ps waterfal.ps \
         annots.pdf doretree.ps golfer.eps ridt91.eps text_graphic_image.pdf \
         tiger.eps vasarely.ps;\
