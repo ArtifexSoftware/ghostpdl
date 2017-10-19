@@ -2506,6 +2506,7 @@ gx_fill_edgebuffer_tr(gx_device       * restrict pdev,
                       int                        log_op)
 {
     int i, j, code;
+    int mfb = pdev->max_fill_band;
 
 #ifdef DEBUG_SCAN_CONVERTER
     if (debugging_scan_converter) {
@@ -2520,9 +2521,18 @@ gx_fill_edgebuffer_tr(gx_device       * restrict pdev,
         int *row2;
         int *rowptr;
         int *row2ptr;
+        int y_band_max;
+
+        if (mfb) {
+            y_band_max = (i & ~(mfb-1)) + mfb;
+            if (y_band_max > edgebuffer->height)
+                y_band_max = edgebuffer->height;
+        } else {
+            y_band_max = edgebuffer->height;
+        }
 
         /* See how many scanlines match i */
-        for (j = i+1; j < edgebuffer->height; j++) {
+        for (j = i+1; j < y_band_max; j++) {
             int row2len;
 
             row2    = &edgebuffer->table[edgebuffer->index[j]];
@@ -3916,6 +3926,7 @@ gx_fill_edgebuffer_tr_app(gx_device       * restrict pdev,
                           int                        log_op)
 {
     int i, j, code;
+    int mfb = pdev->max_fill_band;
 
 #ifdef DEBUG_SCAN_CONVERTER
     if (debugging_scan_converter) {
@@ -3930,9 +3941,18 @@ gx_fill_edgebuffer_tr_app(gx_device       * restrict pdev,
         int *row2;
         int *rowptr;
         int *row2ptr;
+        int y_band_max;
+
+        if (mfb) {
+            y_band_max = (i & ~(mfb-1)) + mfb;
+            if (y_band_max > edgebuffer->height)
+                y_band_max = edgebuffer->height;
+        } else {
+            y_band_max = edgebuffer->height;
+        }
 
         /* See how many scanlines match i */
-        for (j = i+1; j < edgebuffer->height; j++) {
+        for (j = i+1; j < y_band_max; j++) {
             int row2len;
 
             row2    = &edgebuffer->table[edgebuffer->index[j]];
