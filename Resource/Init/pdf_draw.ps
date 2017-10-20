@@ -4321,6 +4321,9 @@ currentdict /set_bc_color undef
       %% Get the Contents string, if we don't have one, we're done
       %%
       2 index /Contents knownoget {
+        PDFusingtransparency {
+          .begintransparencytextgroup
+        } if
         %% Check for UTF16-BE, we probably don't work properly with this yet.
         %%
         dup 0 get 254 eq 1 index 1 get 255 eq and
@@ -4367,6 +4370,9 @@ currentdict /set_bc_color undef
           } for
           pop
         }ifelse
+        PDFusingtransparency {
+          .endtransparencygroup
+        } if
       } if
       pop pop
       //endannottransparency exec
@@ -4404,6 +4410,9 @@ currentdict /set_bc_color undef
 
   % (text) y h -> -
   /text {
+    PDFusingtransparency {
+      .begintransparencytextgroup
+    } if
     /Times-Bold findfont exch scalefont setfont  % (text) y
     gsave
     0 0 moveto
@@ -4413,6 +4422,9 @@ currentdict /set_bc_color undef
     95 add exch moveto
     gsave 1 -1 rmoveto  0.75 setgray dup show grestore
     show
+    PDFusingtransparency {
+      .endtransparencytextgroup
+    } if
   } bdef
 
   /red   <ef4023> readonly def
@@ -4558,10 +4570,16 @@ currentdict /set_bc_color undef
           dup
           /Contents .knownget {
             gsave
+            PDFusingtransparency {
+              .begintransparencytextgroup
+            } if
             0 setgray
             /Helvetica findfont 9 scalefont setfont
             2 index aload pop 3 1 roll pop pop 30 sub exch 5 add exch
             moveto show
+            PDFusingtransparency {
+              .endtransparencygroup
+            } if
             grestore
           } if
           exch
@@ -4571,12 +4589,18 @@ currentdict /set_bc_color undef
           exch
           /T .knownget {
             gsave
+            PDFusingtransparency {
+              .begintransparencytextgroup
+            } if
             0 setgray
             /Helvetica findfont 9 scalefont setfont
             dup stringwidth pop
             2 index aload pop pop exch pop exch sub
             exch sub 2 div 2 index aload pop 3 1 roll pop pop 11 sub 3 1 roll add exch moveto
             show
+            PDFusingtransparency {
+              .endtransparencygroup
+            } if
             grestore
           } if
           grestore
