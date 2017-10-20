@@ -410,7 +410,7 @@ file_continue(i_ctx_t *i_ctx_p)
         } else if (code > len)      /* overran string */
             return_error(gs_error_rangecheck);
         else if (iodev != iodev_default(imemory)
-              || (check_file_permissions_reduced(i_ctx_p, (char *)pscratch->value.bytes, code + devlen, iodev, "PermitFileReading")) == 0) {
+              || (check_file_permissions(i_ctx_p, (char *)pscratch->value.bytes, code + devlen, iodev, "PermitFileReading")) == 0) {
             push(1);
             ref_assign(op, pscratch);
             r_set_size(op, code + devlen);
