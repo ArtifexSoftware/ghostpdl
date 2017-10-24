@@ -2575,6 +2575,22 @@ AC_ARG_WITH(memory-alignment,
             [GS_MEMPTR_ALIGNMENT=$with_memory_alignment],[GS_MEMPTR_ALIGNMENT=check])
 
 if test x"$GS_MEMPTR_ALIGNMENT" = xcheck ; then
+  if test x"$cross_compiling" = x"no"; then
+    case `uname` in
+      HP-UX)
+       GS_MEMPTR_ALIGNMENT=8
+      ;;
+      SunOS)
+       GS_MEMPTR_ALIGNMENT=8
+      ;;
+      AIX)
+       GS_MEMPTR_ALIGNMENT=8
+      ;;
+    esac
+  fi
+fi
+
+if test x"$GS_MEMPTR_ALIGNMENT" = xcheck ; then
    AC_MSG_CHECKING([minimum memory pointer alignment])
    AC_RUN_IFELSE(
     [AC_LANG_PROGRAM([$ALIGN_TEXT_PROG_INCS], [
