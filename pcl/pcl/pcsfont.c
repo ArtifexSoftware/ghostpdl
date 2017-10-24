@@ -1056,8 +1056,8 @@ pcsfont_do_copy(pcl_state_t * psaved, const pcl_state_t * pcs,
                 pcl_copy_operation_t operation)
 {
     if (operation & pcl_copy_after) {   /* Don't restore the soft font set. */
-            /**** MUST HANDLE POSSIBILITY THAT CURRENT FONT WAS DELETED. ****/
         psaved->soft_fonts = pcs->soft_fonts;
+        psaved->built_in_fonts = pcs->built_in_fonts;
     }
     return 0;
 }
