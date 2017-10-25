@@ -647,8 +647,10 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
          * the string character-by-character.  process_text_return_width
          * will tell us what we need to know.
          */
-        if (!(text->operation & (TEXT_DO_DRAW | TEXT_RETURN_WIDTH)))
+        if (!(text->operation & (TEXT_DO_DRAW | TEXT_RETURN_WIDTH))) {
+            code = 0;
             goto done;
+        }
         code = process_text_return_width(penum, font, ppts,
                                          (gs_const_string *)pstr, gdata,
                                          &width_pt, &accepted, &glyphs_bbox);
@@ -770,8 +772,10 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
                                  bx2, by2, &devc, lop_default);
         pdev->AccumulatingBBox--;
     }
-    if (!(operation & TEXT_RETURN_WIDTH))
+    if (!(operation & TEXT_RETURN_WIDTH)) {
+        code = 0;
         goto done;
+    }
     if (operation & TEXT_DO_NONE) {
         /* stringwidth needs to transform to user space. */
         gs_point p;
