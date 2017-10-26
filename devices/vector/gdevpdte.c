@@ -727,6 +727,9 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
             gs_point p0, p1, p2, p3;
 
             code = gx_path_current_point(penum->path, &origin);
+            if (code < 0)
+                return code;
+
             m = ctm_only(penum->pgs);
             m.tx = fixed2float(origin.x);
             m.ty = fixed2float(origin.y);
