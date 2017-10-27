@@ -538,7 +538,6 @@ gs_setgstate(gs_gstate * pgs, const gs_gstate * pfrom)
     int level = pgs->level;
     gx_clip_path *view_clip = pgs->view_clip;
     int code;
-    int prior_op = pfrom->overprint;
 
     pgs->view_clip = 0;         /* prevent refcount decrementing */
     code = gstate_copy(pgs, pfrom, copy_for_setgstate, "gs_setgstate");
@@ -549,11 +548,11 @@ gs_setgstate(gs_gstate * pgs, const gs_gstate * pfrom)
     pgs->show_gstate =
         (pgs->show_gstate == pfrom ? pgs : saved_show);
 
-    /* update the overprint compositor but only if it is different */
-    if (pgs->overprint != prior_op )
-        return(gs_do_set_overprint(pgs));
-
-    return(0);
+    /* update the overprint compositor, unconditionally. Unlike grestore, this */
+    /* may skip over states where overprint was set, so the prior state can    */
+    /* not be relied on to avoid this call. setgstate is not as commonly used  */
+    /* as grestore, so the overhead of the compositor call is acceptable.      */
+    return(gs_do_set_overprint(pgs));
 }
 
 /* Get the allocator pointer of a graphics state. */

@@ -2661,7 +2661,7 @@ currentdict /PDF2PS_matrix_key undef
 /showpagecontents {	% <pagedict> showpagecontents -
   dup		% Save the pagedict for the Annotations
   count 1 sub  /pdfemptycount exch store
-  gsave		% preserve gstate for Annotations later
+  /pdfemptycount where pop /annot_gstate gstate currentgstate put	% preserve gstate for Annots later
   /Contents knownoget not { 0 array } if
   dup type /arraytype ne { 1 array astore } if {
     oforce dup type /dicttype eq {
@@ -2681,7 +2681,7 @@ currentdict /PDF2PS_matrix_key undef
   } {
     pop
   } ifelse
-  grestore
+  annot_gstate setgstate	% restore the gstate for Annots
   % Draw the annotations
   //systemdict /ShowAnnots .knownget not { //true } if {
     /Annots knownoget {
@@ -2700,9 +2700,15 @@ currentdict /PDF2PS_matrix_key undef
         not
         and
         //systemdict /PreserveAnnots .knownget not {//true} if and {
-            mark exch {preserveannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse cleartomark
+            mark exch {preserveannot} PDFSTOPONERROR {exec}{stopped {
+              annot_gstate setgstate	% restore gstate for next annotation
+              (Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror
+            } if} ifelse cleartomark
           }{
-            mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse cleartomark
+            mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {
+              annot_gstate setgstate	% restore gstate for next annotation
+              (Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror
+            } if} ifelse cleartomark
           } ifelse
         } {
           pop
@@ -2710,9 +2716,11 @@ currentdict /PDF2PS_matrix_key undef
       } forall
     } if
   } if
+  annot_gstate setgstate	% restore gstate for AcroForm
   //systemdict /ShowAcroForm .knownget { //true eq } { //false } ifelse {
     Trailer /Root oget /AcroForm knownoget { draw_acro_form } if
   } if
+  annot_gstate setgstate	% restore gstate before exiting
 } bind def
 
 /processcolorspace {	% - processcolorspace <colorspace>

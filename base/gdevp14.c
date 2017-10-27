@@ -8240,16 +8240,20 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
     pdf14_device *pdev = (pdf14_device *)dev;
     gx_device *tdev = pdev->target;
     gs_devn_params *pdevn_params = &pdev->devn_params;
-    gs_separations *pseparations = &pdevn_params->separations;
+    gs_separations *pseparations;
     int comp_index;
     dev_proc_get_color_comp_index(*target_get_color_comp_index);
     int offset = 4 - num_process_colors;
 
-
     while (tdev->child) {
         tdev = tdev->child;
     }
-
+    /* If something has gone wrong and this is no longer the pdf14 compositor, */
+    /* get the devn_params from the target to avoid accessing using the wrong  */
+    /* pointer. Bug 696372.                                                    */
+    if (tdev == pdev)
+        pdevn_params = dev_proc(pdev, ret_devn_params)(dev);
+    pseparations = &pdevn_params->separations;
     /* If num_process_colors is 3 or 1 (RGB or Gray) then we are in a situation
      * where we are in a blend color space that is RGB or Gray based and we
      * have a spot colorant.  If the spot colorant name is Cyan, Magenta
@@ -8312,7 +8316,7 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
         pseparations->names[sep_num].size = name_size;
         pseparations->names[sep_num].data = sep_name;
         color_component_number = sep_num + num_process_colors;
-        if (color_component_number >= dev->color_info.num_components)
+        if (color_component_number >= dev->color_info.max_components)
             color_component_number = GX_DEVICE_COLOR_MAX_COMPONENTS;
         else
             pdevn_params->separation_order_map[color_component_number] =
