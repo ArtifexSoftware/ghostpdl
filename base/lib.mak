@@ -2270,7 +2270,7 @@ $(GLOBJ)siinterp.$(OBJ) : $(GLSRC)siinterp.c $(AK)\
 	$(GLCC) $(GLO_)siinterp.$(OBJ) $(C_) $(GLSRC)siinterp.c
 
 $(GLOBJ)siscale.$(OBJ) : $(GLSRC)siscale.c $(AK)\
- $(math__h) $(memory__h) $(stdio__h) $(stdint__h) $(gdebug_h)\
+ $(math__h) $(memory__h) $(stdio__h) $(stdint__h) $(gdebug_h) $(gxfrac_h)\
  $(siscale_h) $(strimpl_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)siscale.$(OBJ) $(C_) $(GLSRC)siscale.c
 
