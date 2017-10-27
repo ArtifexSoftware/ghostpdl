@@ -35,9 +35,13 @@
 
 /* ---------------- ImageScaleEncode/Decode ---------------- */
 
+#define CONTRIB_SHIFT 12
+#define CONTRIB_SCALE (1<<CONTRIB_SHIFT)
+#define CONTRIB_ROUND (1<<(CONTRIB_SHIFT-1))
+
 /* Auxiliary structures. */
 typedef struct {
-    double weight;               /* float or scaled fraction */
+    int weight;               /* float or scaled fraction */
 } CONTRIB;
 
 typedef struct {
@@ -270,7 +274,7 @@ calculate_contrib(
                 int k = n - first_pixel;
 
                 p[k].weight +=
-                    (float) (weight * rescale_factor);
+                    (int)((weight * rescale_factor) * CONTRIB_SCALE + 0.5);
                 if_debug2('w', " %d %f", k, (float)p[k].weight);
             }
 
@@ -284,7 +288,7 @@ calculate_contrib(
                 int k = n - first_pixel;
 
                 p[k].weight +=
-                    (float) (weight * rescale_factor);
+                    (int)((weight * rescale_factor) * CONTRIB_SCALE + 0.5);
                 if_debug2('w', " %d %f", k, (float)p[k].weight);
             }
         }
@@ -312,14 +316,14 @@ template_zoom_x1(byte * restrict tmp, const void /*PixelIn */ * restrict src,
         if_debug1('W', "[W]zoom_x color %d:", c);
 
         for ( i = 0; i < tmp_width; tp += Colors, ++clp, ++i ) {
-            double weight = 0;
+            int weight = 0;
             int pixel, j = clp->n;
             const byte *pp = raster + clp->first_pixel;
             const CONTRIB *cp = items + clp->index;
 
             for ( ; j > 0; pp += Colors, ++cp, --j )
                  weight += *pp * cp->weight;
-            pixel = (int)(weight + 0.5);
+            pixel = (weight + CONTRIB_ROUND)>>CONTRIB_SHIFT;
             if_debug1('W', " %g", weight);
             *tp = (byte)CLAMP(pixel, 0, 255);
         }
@@ -368,7 +372,7 @@ zoom_x2(byte * restrict tmp, const void /*PixelIn */ * restrict src,
 
         if_debug1('W', "[W]zoom_x color %d:", c);
         for ( i = 0; i < tmp_width; tp += Colors, ++clp, ++i ) {
-            double weight = 0;
+            int weight = 0;
             int pixel, j = clp->n;
             const bits16 *pp = raster + clp->first_pixel;
             const CONTRIB *cp = items + clp->index;
@@ -386,7 +390,7 @@ zoom_x2(byte * restrict tmp, const void /*PixelIn */ * restrict src,
                     for ( ; j > 0; pp += Colors, ++cp, --j )
                         weight += *pp * cp->weight;
             }
-            pixel = (int)(weight + 0.5);
+            pixel = (weight + CONTRIB_ROUND)>>CONTRIB_SHIFT;
             if_debug1('W', " %g", weight);
             *tp = (byte)CLAMP(pixel, 0, 255);
         }
@@ -416,7 +420,7 @@ zoom_y1_4(void /*PixelOut */ * restrict dst,
     tmp += first_pixel + skip;
     d = ((byte *)dst)+skip;
     for (; width > 0; width--) {
-        double weight;
+        int weight;
         int pixel;
 
         weight  = tmp[   0] * cbp[0].weight;
@@ -425,7 +429,7 @@ zoom_y1_4(void /*PixelOut */ * restrict dst,
         weight += tmp[3*kn] * cbp[3].weight;
         tmp++;
 
-        pixel = (int)(weight + 0.5);
+        pixel = (weight + CONTRIB_ROUND)>>CONTRIB_SHIFT;
         if_debug1('W', " %x", pixel);
         *d++ = (byte)CLAMP(pixel, 0, 0xff);
     }
@@ -448,7 +452,7 @@ zoom_y1_5(void /*PixelOut */ * restrict dst,
     tmp += first_pixel + skip;
     d = ((byte *)dst)+skip;
     for (; width > 0; width--) {
-        double weight;
+        int weight;
         int pixel;
 
         weight  = tmp[   0] * cbp[0].weight;
@@ -458,7 +462,7 @@ zoom_y1_5(void /*PixelOut */ * restrict dst,
         weight += tmp[4*kn] * cbp[4].weight;
         tmp++;
 
-        pixel = (int)(weight + 0.5);
+        pixel = (weight + CONTRIB_ROUND)>>CONTRIB_SHIFT;
         if_debug1('W', " %x", pixel);
         *d++ = (byte)CLAMP(pixel, 0, 0xff);
     }
@@ -482,14 +486,14 @@ template_zoom_y1(void /*PixelOut */ * restrict dst,
     tmp += first_pixel + skip;
     d = ((byte *)dst)+skip;
     for (; width > 0; width--) {
-        double weight = 0;
+        int weight = 0;
         const byte *pp = tmp++;
         int pixel, j;
         const CONTRIB *cp = cbp;
 
         for (j = cn; j > 0; pp += kn, ++cp, --j)
             weight += *pp * cp->weight;
-        pixel = (int)(weight + 0.5);
+        pixel = (weight + CONTRIB_ROUND)>>CONTRIB_SHIFT;
         if_debug1('W', " %x", pixel);
         *d++ = (byte)CLAMP(pixel, 0, 0xff);
     }
@@ -523,10 +527,10 @@ zoom_y2_4(void /*PixelOut */ * restrict dst,
     int first_pixel = contrib->first_pixel;
     const CONTRIB *cbp = items + contrib->index;
     bits16 *d;
-    double w0 = cbp[0].weight;
-    double w1 = cbp[1].weight;
-    double w2 = cbp[2].weight;
-    double w3 = cbp[3].weight;
+    int w0 = cbp[0].weight;
+    int w1 = cbp[1].weight;
+    int w2 = cbp[2].weight;
+    int w3 = cbp[3].weight;
 
     if_debug0('W', "[W]zoom_y: ");
 
@@ -534,7 +538,7 @@ zoom_y2_4(void /*PixelOut */ * restrict dst,
     tmp += first_pixel + skip;
     d = ((bits16 *)dst) + skip;
     for (; width > 0; width--) {
-        double weight;
+        int weight;
         int pixel;
 
         weight  = tmp[   0] * w0;
@@ -542,7 +546,7 @@ zoom_y2_4(void /*PixelOut */ * restrict dst,
         weight += tmp[2*kn] * w2;
         weight += tmp[3*kn] * w3;
         tmp++;
-        pixel = (int)(weight + 0.5);
+        pixel = (weight + CONTRIB_ROUND)>>CONTRIB_SHIFT;
         if_debug1('W', " %x", pixel);
         *d++ = (bits16)CLAMP(pixel, 0, 0xffff);
     }
@@ -558,11 +562,11 @@ zoom_y2_5(void /*PixelOut */ * restrict dst,
     int first_pixel = contrib->first_pixel;
     const CONTRIB *cbp = items + contrib->index;
     bits16 *d;
-    double w0 = cbp[0].weight;
-    double w1 = cbp[1].weight;
-    double w2 = cbp[2].weight;
-    double w3 = cbp[3].weight;
-    double w4 = cbp[4].weight;
+    int w0 = cbp[0].weight;
+    int w1 = cbp[1].weight;
+    int w2 = cbp[2].weight;
+    int w3 = cbp[3].weight;
+    int w4 = cbp[4].weight;
 
     if_debug0('W', "[W]zoom_y: ");
 
@@ -570,7 +574,7 @@ zoom_y2_5(void /*PixelOut */ * restrict dst,
     tmp += first_pixel + skip;
     d = ((bits16 *)dst) + skip;
     for (; width > 0; width--) {
-        double weight;
+        int weight;
         int pixel;
 
         weight  = tmp[   0] * w0;
@@ -579,7 +583,7 @@ zoom_y2_5(void /*PixelOut */ * restrict dst,
         weight += tmp[3*kn] * w3;
         weight += tmp[4*kn] * w4;
         tmp++;
-        pixel = (int)(weight + 0.5);
+        pixel = (weight + CONTRIB_ROUND)>>CONTRIB_SHIFT;
         if_debug1('W', " %x", pixel);
         *d++ = (bits16)CLAMP(pixel, 0, 0xffff);
     }
@@ -603,14 +607,14 @@ zoom_y2_n(void /*PixelOut */ * restrict dst,
     tmp += first_pixel + skip;
     d = ((bits16 *)dst) + skip;
     for (; width > 0; width--) {
-        double weight = 0;
+        int weight = 0;
         const byte *pp = tmp++;
         int pixel, j;
         const CONTRIB *cp = cbp;
 
         for (j = cn; j > 0; pp += kn, ++cp, --j)
             weight += *pp * cp->weight;
-        pixel = (int)(weight + 0.5);
+        pixel = (weight + CONTRIB_ROUND)>>CONTRIB_SHIFT;
         if_debug1('W', " %x", pixel);
         *d++ = (bits16)CLAMP(pixel, 0, 0xffff);
     }
@@ -644,10 +648,10 @@ zoom_y2_frac_4(void /*PixelOut */ * restrict dst,
     int first_pixel = contrib->first_pixel;
     const CONTRIB *cbp = items + contrib->index;
     bits16 *d;
-    double w0 = cbp[0].weight;
-    double w1 = cbp[1].weight;
-    double w2 = cbp[2].weight;
-    double w3 = cbp[3].weight;
+    int w0 = cbp[0].weight;
+    int w1 = cbp[1].weight;
+    int w2 = cbp[2].weight;
+    int w3 = cbp[3].weight;
 
     if_debug0('W', "[W]zoom_y: ");
 
@@ -655,7 +659,7 @@ zoom_y2_frac_4(void /*PixelOut */ * restrict dst,
     tmp += first_pixel + skip;
     d = ((bits16 *)dst) + skip;
     for (; width > 0; width--) {
-        double weight;
+        int weight;
         int pixel;
 
         weight  = tmp[   0]  * w0;
@@ -663,7 +667,7 @@ zoom_y2_frac_4(void /*PixelOut */ * restrict dst,
         weight += tmp[2*kn]  * w2;
         weight += tmp[3*kn]  * w3;
         tmp++;
-        pixel = (int)(weight + 0.5);
+        pixel = (weight + CONTRIB_ROUND)>>CONTRIB_SHIFT;
         if_debug1('W', " %x", pixel);
         *d++ = (bits16)CLAMP(pixel, 0, frac_1);
     }
@@ -679,11 +683,11 @@ zoom_y2_frac_5(void /*PixelOut */ * restrict dst,
     int first_pixel = contrib->first_pixel;
     const CONTRIB *cbp = items + contrib->index;
     bits16 *d;
-    double w0 = cbp[0].weight;
-    double w1 = cbp[1].weight;
-    double w2 = cbp[2].weight;
-    double w3 = cbp[3].weight;
-    double w4 = cbp[4].weight;
+    int w0 = cbp[0].weight;
+    int w1 = cbp[1].weight;
+    int w2 = cbp[2].weight;
+    int w3 = cbp[3].weight;
+    int w4 = cbp[4].weight;
 
     if_debug0('W', "[W]zoom_y: ");
 
@@ -691,7 +695,7 @@ zoom_y2_frac_5(void /*PixelOut */ * restrict dst,
     tmp += first_pixel + skip;
     d = ((bits16 *)dst) + skip;
     for (; width > 0; width--) {
-        double weight;
+        int weight;
         int pixel;
 
         weight  = tmp[   0]  * w0;
@@ -700,7 +704,7 @@ zoom_y2_frac_5(void /*PixelOut */ * restrict dst,
         weight += tmp[3*kn]  * w3;
         weight += tmp[4*kn]  * w4;
         tmp++;
-        pixel = (int)(weight + 0.5);
+        pixel = (weight + CONTRIB_ROUND)>>CONTRIB_SHIFT;
         if_debug1('W', " %x", pixel);
         *d++ = (bits16)CLAMP(pixel, 0, frac_1);
     }
@@ -724,14 +728,14 @@ zoom_y2_frac_n(void /*PixelOut */ * restrict dst,
     tmp += first_pixel + skip;
     d = ((bits16 *)dst) + skip;
     for (; width > 0; width--) {
-        double weight = 0;
+        int weight = 0;
         const byte *pp = tmp++;
         int pixel, j;
         const CONTRIB *cp = cbp;
 
         for (j = cn; j > 0; pp += kn, ++cp, --j)
             weight += *pp * cp->weight;
-        pixel = (int)(weight + 0.5);
+        pixel = (weight + CONTRIB_ROUND)>>CONTRIB_SHIFT;
         if_debug1('W', " %x", pixel);
         *d++ = (bits16)CLAMP(pixel, 0, frac_1);
     }
