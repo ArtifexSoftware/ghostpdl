@@ -107,6 +107,7 @@ typedef struct gx_transfer_s {
                 /* dictionaries.  (In Level 1 systems, set_transfer and */\
                 /* effective_transfer are always the same.) */\
         gx_transfer set_transfer;		/* members are (RC) */\
+        int effective_transfer_non_identity_count;\
         gx_transfer_map *effective_transfer[GX_DEVICE_COLOR_MAX_COMPONENTS]; /* see below */\
 \
                 /* Color caches: */\

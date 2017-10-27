@@ -1228,51 +1228,73 @@ gx_gstate_set_effective_xfer(gs_gstate * pgs)
     gx_device_halftone *pdht = pgs->dev_ht;
     gx_transfer_map *pmap;
     gx_ht_order *porder;
-    int i, component_num;
+    int i, component_num, non_id_count;
 
+    non_id_count = (pgs->set_transfer.gray->proc == &gs_identity_transfer) ? 0 : GX_DEVICE_COLOR_MAX_COMPONENTS;
     for (i = 0; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
         pgs->effective_transfer[i] = pgs->set_transfer.gray;    /* default */
 
     /* Check if we have a transfer functions from setcolortransfer */
     if (pgs->set_transfer.red) {
         component_num = pgs->set_transfer.red_component_num;
-        if (component_num >= 0)
-            pgs->effective_transfer[component_num] = pgs->set_transfer.red;;
+        if (component_num >= 0) {
+            if (pgs->effective_transfer[component_num]->proc != &gs_identity_transfer)
+               non_id_count--;
+            pgs->effective_transfer[component_num] = pgs->set_transfer.red;
+            if (pgs->effective_transfer[component_num]->proc != &gs_identity_transfer)
+               non_id_count++;
+        }
     }
     if (pgs->set_transfer.green) {
         component_num = pgs->set_transfer.green_component_num;
-        if (component_num >= 0)
+        if (component_num >= 0) {
+            if (pgs->effective_transfer[component_num]->proc != &gs_identity_transfer)
+               non_id_count--;
             pgs->effective_transfer[component_num] = pgs->set_transfer.green;
+            if (pgs->effective_transfer[component_num]->proc != &gs_identity_transfer)
+               non_id_count++;
+        }
     }
     if (pgs->set_transfer.blue) {
         component_num = pgs->set_transfer.blue_component_num;
-        if (component_num >= 0)
+        if (component_num >= 0) {
+            if (pgs->effective_transfer[component_num]->proc != &gs_identity_transfer)
+               non_id_count--;
             pgs->effective_transfer[component_num] = pgs->set_transfer.blue;
+            if (pgs->effective_transfer[component_num]->proc != &gs_identity_transfer)
+               non_id_count++;
+        }
     }
 
-    if (pdht == NULL)
-        return;                 /* not initialized yet */
+    if (pdht) { /* might not be initialized yet */
 
-    /* Since the transfer function is pickled into the threshold array (if any)*/
-    /*  we need to free it so it can be reconstructed with the current transfer */
-    porder = &(pdht->order);
-    if (porder->threshold != NULL) {
-        gs_free_object(porder->data_memory->non_gc_memory, porder->threshold,
-                       "set_effective_transfer(threshold)");
-        porder->threshold = 0;
-    }
-    for (i = 0; i < pdht->num_comp; i++) {
-        pmap = pdht->components[i].corder.transfer;
-        if (pmap != NULL)
-            pgs->effective_transfer[i] = pmap;
-        porder = &(pdht->components[i].corder);
+        /* Since the transfer function is pickled into the threshold array (if any)*/
+        /*  we need to free it so it can be reconstructed with the current transfer */
+        porder = &(pdht->order);
         if (porder->threshold != NULL) {
             gs_free_object(porder->data_memory->non_gc_memory, porder->threshold,
                            "set_effective_transfer(threshold)");
             porder->threshold = 0;
         }
+        for (i = 0; i < pdht->num_comp; i++) {
+            pmap = pdht->components[i].corder.transfer;
+            if (pmap != NULL) {
+                if (pgs->effective_transfer[i]->proc != &gs_identity_transfer)
+                    non_id_count--;
+                pgs->effective_transfer[i] = pmap;
+                if (pgs->effective_transfer[i]->proc != &gs_identity_transfer)
+                   non_id_count++;
+            }
+            porder = &(pdht->components[i].corder);
+            if (porder->threshold != NULL) {
+                gs_free_object(porder->data_memory->non_gc_memory, porder->threshold,
+                               "set_effective_transfer(threshold)");
+                porder->threshold = 0;
+            }
+        }
     }
 
+    pgs->effective_transfer_non_identity_count = non_id_count;
 }
 
 void

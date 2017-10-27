@@ -910,7 +910,10 @@ cmap_gray_halftoned(frac gray, gx_device_color * pdc,
     map_gray_subclass(pprocs, dev, gray, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+    if (pgs->effective_transfer_non_identity_count == 0) {
+        if (dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE && dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
+            check_cmyk_color_model_comps(dev);
+    } else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
         for (i = 0; i < ncomps; i++)
             cm_comps[i] = gx_map_color_frac(pgs,
                                 cm_comps[i], effective_transfer[i]);
@@ -918,16 +921,13 @@ cmap_gray_halftoned(frac gray, gx_device_color * pdc,
         if (dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
             check_cmyk_color_model_comps(dev);
         if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
-            uint k = dev->color_info.black_component;
-
-            for (i = 0; i < ncomps; i++) {
-                if (i == k) /* Else ignore transfer, see PLRM3 p. 494 */
-                    cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
+            i = dev->color_info.black_component;
+            if (i < ncomps)
+                cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
-            }
         } else {
             for (i = 0; i < ncomps; i++)
-                cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
+                    cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                             (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
         }
     }
@@ -953,37 +953,46 @@ cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
     map_gray_subclass(pprocs, dev, gray, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+    if (pgs->effective_transfer_non_identity_count == 0) {
+        if (dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE && dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
+                check_cmyk_color_model_comps(dev);
         for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(gx_map_color_frac(pgs,
-                                cm_comps[i], effective_transfer[i]));
+            cv[i] = frac2cv(cm_comps[i]);
+    } else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+        for (i = 0; i < ncomps; i++) {
+            cm_comps[i] = gx_map_color_frac(pgs,
+                                cm_comps[i], effective_transfer[i]);
+            cv[i] = frac2cv(cm_comps[i]);
+        }
     else {
         if (dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
             check_cmyk_color_model_comps(dev);
         if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
-            uint k = dev->color_info.black_component;
-
-            for (i = 0; i < ncomps; i++) {
-                if (i == k)
-                    cv[i] = frac2cv(frac_1 - gx_map_color_frac(pgs,
-                        (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
-                else
-                    cv[i] = frac2cv(cm_comps[i]); /* Ignore transfer, see PLRM3 p. 494 */
-            }
-        } else {
+            i = dev->color_info.black_component;
+            if (i < ncomps)
+                cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
+                        (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
             for (i = 0; i < ncomps; i++)
-                cv[i] = frac2cv(frac_1 - gx_map_color_frac(pgs,
-                            (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
+                cv[i] = frac2cv(cm_comps[i]);
+        } else {
+            for (i = 0; i < ncomps; i++) {
+                cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
+                            (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
+                cv[i] = frac2cv(cm_comps[i]);
+            }
         }
     }
     /* encode as a color index */
     color = dev_proc(dev, encode_color)(dev, cv);
 
     /* check if the encoding was successful; we presume failure is rare */
-    if (color != gx_no_color_index)
+    if (color != gx_no_color_index) {
         color_set_pure(pdc, color);
-    else
-        cmap_gray_halftoned(gray, pdc, pgs, dev, select);
+        return;
+    }
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+                                        &pgs->screen_phase[select]) == 1)
+        gx_color_load_select(pdc, pgs, dev, select);
 }
 
 /* ------ Render RGB color. ------ */
@@ -1003,14 +1012,16 @@ cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
     map_rgb_subclass(pprocs, dev, pgs, r, g, b, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
-        for (i = 0; i < ncomps; i++)
-            cm_comps[i] = gx_map_color_frac(pgs,
+    if (pgs->effective_transfer_non_identity_count != 0) {
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+            for (i = 0; i < ncomps; i++)
+                cm_comps[i] = gx_map_color_frac(pgs,
                                 cm_comps[i], effective_transfer[i]);
-    else
-        for (i = 0; i < ncomps; i++)
-            cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
+        else
+            for (i = 0; i < ncomps; i++)
+                cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
+    }
 
     if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
                                         &pgs->screen_phase[select]) == 1)
@@ -1034,23 +1045,33 @@ cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
     map_rgb_subclass(pprocs, dev, pgs, r, g, b, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+    if (pgs->effective_transfer_non_identity_count == 0) {
         for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(gx_map_color_frac(pgs,
-                                cm_comps[i], effective_transfer[i]));
+            cv[i] = frac2cv(cm_comps[i]);
+    } else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+        for (i = 0; i < ncomps; i++) {
+            cm_comps[i] = gx_map_color_frac(pgs,
+                                cm_comps[i], effective_transfer[i]);
+            cv[i] = frac2cv(cm_comps[i]);
+        }
     else
-        for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(frac_1 - gx_map_color_frac(pgs,
-                        (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
+        for (i = 0; i < ncomps; i++) {
+            cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
+                        (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
+            cv[i] = frac2cv(cm_comps[i]);
+        }
 
     /* encode as a color index */
     color = dev_proc(dev, encode_color)(dev, cv);
 
     /* check if the encoding was successful; we presume failure is rare */
-    if (color != gx_no_color_index)
+    if (color != gx_no_color_index) {
         color_set_pure(pdc, color);
-    else
-        cmap_rgb_halftoned(r, g, b, pdc, pgs, dev, select);
+        return;
+    }
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+                                        &pgs->screen_phase[select]) == 1)
+        gx_color_load_select(pdc, pgs, dev, select);
 }
 
 /* ------ Render CMYK color. ------ */
@@ -1077,11 +1098,12 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     map_cmyk_subclass(pprocs, dev, c, m, y, k, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
-        for (i = 0; i < ncomps; i++)
-            cm_comps[i] = gx_map_color_frac(pgs,
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+        if (pgs->effective_transfer_non_identity_count != 0)
+            for (i = 0; i < ncomps; i++)
+                cm_comps[i] = gx_map_color_frac(pgs,
                                 cm_comps[i], effective_transfer[i]);
-    else {
+    } else {
         /* Check if source space is gray.  In this case we are to use only the
            transfer function on the K channel.  Do this only if gray to K is
            also set */
@@ -1099,11 +1121,10 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
             cm_comps[black_index] = frac_1 - gx_map_color_frac(pgs,
                                     (frac)(frac_1 - cm_comps[black_index]),
                                     effective_transfer[black_index]);
-        } else {
+        } else if (pgs->effective_transfer_non_identity_count != 0)
             for (i = 0; i < ncomps; i++)
                 cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                             (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
-        }
     }
     /* We make a test for direct vs. halftoned, rather than */
     /* duplicating most of the code of this procedure. */
@@ -1164,14 +1185,16 @@ cmap_rgb_alpha_halftoned(frac r, frac g, frac b, frac alpha,
     }
 
     /* apply the transfer function(s); convert to color values */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
-        for (i = 0; i < ncomps; i++)
-            cm_comps[i] = gx_map_color_frac(pgs,
+    if (pgs->effective_transfer_non_identity_count != 0) {
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+            for (i = 0; i < ncomps; i++)
+                cm_comps[i] = gx_map_color_frac(pgs,
                                 cm_comps[i], effective_transfer[i]);
-    else
-        for (i = 0; i < ncomps; i++)
-            cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
+        else
+            for (i = 0; i < ncomps; i++)
+                cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
+    }
 
     if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
                                         &pgs->screen_phase[select]) == 1)
@@ -1207,7 +1230,10 @@ cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
     }
 
     /* apply the transfer function(s); convert to color values */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+    if (pgs->effective_transfer_non_identity_count == 0)
+        for (i = 0; i < ncomps; i++)
+            cv[i] = frac2cv(cm_comps[i]);
+    else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
         for (i = 0; i < ncomps; i++)
             cv[i] = frac2cv(gx_map_color_frac(pgs,
                                 cm_comps[i], effective_transfer[i]));
@@ -1224,10 +1250,13 @@ cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
         color = dev_proc(dev, encode_color)(dev, cv);
 
     /* check if the encoding was successful; we presume failure is rare */
-    if (color != gx_no_color_index)
+    if (color != gx_no_color_index) {
         color_set_pure(pdc, color);
-    else
-        cmap_rgb_alpha_halftoned(r, g, b, alpha, pdc, pgs, dev, select);
+        return;
+    }
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+                                        &pgs->screen_phase[select]) == 1)
+        gx_color_load_select(pdc, pgs, dev, select);
 }
 
 /* ------ Render Separation All color. ------ */
@@ -1294,14 +1323,16 @@ cmap_separation_halftoned(frac all, gx_device_color * pdc,
     }
 
     /* apply the transfer function(s); convert to color values */
-    if (additive)
-        for (i = 0; i < ncomps; i++)
-            cm_comps[i] = gx_map_color_frac(pgs,
+    if (pgs->effective_transfer_non_identity_count != 0) {
+        if (additive)
+            for (i = 0; i < ncomps; i++)
+                cm_comps[i] = gx_map_color_frac(pgs,
                                 cm_comps[i], effective_transfer[i]);
-    else
-        for (i = 0; i < ncomps; i++)
-            cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
+        else
+            for (i = 0; i < ncomps; i++)
+                cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
+    }
 
     if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
                                         &pgs->screen_phase[select]) == 1)
@@ -1355,14 +1386,21 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
     }
 
     /* apply the transfer function(s); convert to color values */
-    if (additive)
+    if (pgs->effective_transfer_non_identity_count == 0)
         for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(gx_map_color_frac(pgs,
-                                cm_comps[i], effective_transfer[i]));
+            cv[i] = frac2cv(cm_comps[i]);
+    else if (additive)
+        for (i = 0; i < ncomps; i++) {
+            cm_comps[i] = gx_map_color_frac(pgs,
+                                cm_comps[i], effective_transfer[i]);
+            cv[i] = frac2cv(cm_comps[i]);
+        }
     else
-        for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(frac_1 - gx_map_color_frac(pgs,
-                        (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
+        for (i = 0; i < ncomps; i++) {
+            cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
+                        (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
+            cv[i] = frac2cv(cm_comps[i]);
+        }
 
     if (use_rgb2dev_icc && pgs->icc_manager->default_rgb != NULL) {
         /* After the transfer function go ahead and do the mapping from RGB to
@@ -1397,17 +1435,21 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
         for (i = 0; i < ncomps; i++)
             pdc->colors.devn.values[i] = cv[i];
         pdc->type = gx_dc_type_devn;
-    } else {
-        /* encode as a color index */
-        color = dev_proc(dev, encode_color)(dev, cv);
-
-        /* check if the encoding was successful; we presume failure is rare */
-        if (color != gx_no_color_index)
-            color_set_pure(pdc, color);
-        else
-            cmap_separation_halftoned(all, pdc, pgs, dev, select);
+        return;
     }
-    return;
+
+    /* encode as a color index */
+    color = dev_proc(dev, encode_color)(dev, cv);
+
+    /* check if the encoding was successful; we presume failure is rare */
+    if (color != gx_no_color_index) {
+        color_set_pure(pdc, color);
+        return;
+    }
+
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+                                        &pgs->screen_phase[select]) == 1)
+        gx_color_load_select(pdc, pgs, dev, select);
 }
 
 /* Routines for handling CM of CMYK components of a DeviceN color space */
@@ -1508,14 +1550,16 @@ cmap_devicen_halftoned(const frac * pcc,
         devicen_icc_cmyk(cm_comps, pgs, dev);
     }
     /* apply the transfer function(s); convert to color values */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
-        for (i = 0; i < ncomps; i++)
-            cm_comps[i] = gx_map_color_frac(pgs,
+    if (pgs->effective_transfer_non_identity_count != 0) {
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+            for (i = 0; i < ncomps; i++)
+                cm_comps[i] = gx_map_color_frac(pgs,
                                 cm_comps[i], effective_transfer[i]);
-    else
-        for (i = 0; i < ncomps; i++)
-            cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
+        else
+            for (i = 0; i < ncomps; i++)
+                cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
+    }
 
     /* We need to finish halftoning */
     if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
@@ -1576,7 +1620,10 @@ cmap_devicen_direct(const frac * pcc,
     /* apply the transfer function(s); convert to color values.
        assign directly if output device supports devn */
     if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
-        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+        if (pgs->effective_transfer_non_identity_count == 0)
+            for (i = 0; i < ncomps; i++)
+                pdc->colors.devn.values[i] = frac2cv(cm_comps[i]);
+        else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
             for (i = 0; i < ncomps; i++)
                 pdc->colors.devn.values[i] = frac2cv(gx_map_color_frac(pgs,
                                     cm_comps[i], effective_transfer[i]));
@@ -1585,23 +1632,34 @@ cmap_devicen_direct(const frac * pcc,
                 pdc->colors.devn.values[i] = frac2cv(frac_1 - gx_map_color_frac(pgs,
                             (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
         pdc->type = gx_dc_type_devn;
-    } else {
-        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
-            for (i = 0; i < ncomps; i++)
-                cv[i] = frac2cv(gx_map_color_frac(pgs,
-                                    cm_comps[i], effective_transfer[i]));
-        else
-            for (i = 0; i < ncomps; i++)
-                cv[i] = frac2cv(frac_1 - gx_map_color_frac(pgs,
-                            (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
-        /* encode as a color index */
-        color = dev_proc(dev, encode_color)(dev, cv);
-        /* check if the encoding was successful; we presume failure is rare */
-        if (color != gx_no_color_index)
-            color_set_pure(pdc, color);
-        else
-            cmap_devicen_halftoned(pcc, pdc, pgs, dev, select);
+        return;
     }
+
+    if (pgs->effective_transfer_non_identity_count == 0)
+        for (i = 0; i < ncomps; i++)
+            cv[i] = frac2cv(cm_comps[i]);
+    else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+        for (i = 0; i < ncomps; i++) {
+            cm_comps[i] = gx_map_color_frac(pgs,
+                                    cm_comps[i], effective_transfer[i]);
+            cv[i] = frac2cv(cm_comps[i]);
+        }
+    else
+        for (i = 0; i < ncomps; i++) {
+            cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
+                            (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
+            cv[i] = frac2cv(cm_comps[i]);
+        }
+    /* encode as a color index */
+    color = dev_proc(dev, encode_color)(dev, cv);
+    /* check if the encoding was successful; we presume failure is rare */
+    if (color != gx_no_color_index) {
+        color_set_pure(pdc, color);
+        return;
+    }
+    if (gx_render_device_DeviceN(cm_comps, pdc, dev, pgs->dev_ht,
+                                        &pgs->screen_phase[select]) == 1)
+        gx_color_load_select(pdc, pgs, dev, select);
 }
 
 /* ------ Halftoning check ----- */
@@ -1974,7 +2032,12 @@ cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
 
     /* apply the transfer function(s) */
     if (has_transfer) {
-        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+        if (pgs->effective_transfer_non_identity_count == 0) {
+            if (dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE && dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
+                check_cmyk_color_model_comps(dev);
+            for (i = 0; i < ncomps; i++)
+                cv_frac[i] = cv2frac(pconc[i]);
+        } else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
             for (i = 0; i < ncomps; i++) {
                 frac_value = cv2frac(pconc[i]);
                 cv_frac[i] = gx_map_color_frac(pgs,
@@ -2026,7 +2089,6 @@ cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
         /* check if the encoding was successful; we presume failure is rare */
         if (color != gx_no_color_index)
             color_set_pure(pdc, color);
-
     }
 }
 
@@ -2036,41 +2098,29 @@ void
 cmap_transfer(gx_color_value *pconc, const gs_gstate * pgs, gx_device * dev)
 {
     uchar ncomps = dev->color_info.num_components;
-    frac frac_value;
     uchar i;
-    frac cv_frac[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
     /* apply the transfer function(s) */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
-        for (i = 0; i < ncomps; i++) {
-            frac_value = cv2frac(pconc[i]);
-            cv_frac[i] = gx_map_color_frac(pgs,
-                            frac_value, effective_transfer[i]);
-            pconc[i] = frac2cv(cv_frac[i]);
-        }
-    } else {
+    if (pgs->effective_transfer_non_identity_count == 0) {
+        if (dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE && dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
+            check_cmyk_color_model_comps(dev);
+    } else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+        for (i = 0; i < ncomps; i++)
+            pconc[i] = frac2cv(gx_map_color_frac(pgs,
+                               cv2frac(pconc[i]), effective_transfer[i]));
+    else {
         if (dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN) {
             check_cmyk_color_model_comps(dev);
         }
         if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
-            uint k = dev->color_info.black_component;
-            for (i = 0; i < ncomps; i++) {
-                frac_value = cv2frac(pconc[i]);
-                if (i == k) {
-                    cv_frac[i] = frac_1 - gx_map_color_frac(pgs,
-                    (frac)(frac_1 - frac_value), effective_transfer[i]);
-                } else {
-                    cv_frac[i] = cv2frac(pconc[i]);  /* Ignore transfer, see PLRM3 p. 494 */
-                }
-                pconc[i] = frac2cv(cv_frac[i]);
-            }
+            i = dev->color_info.black_component;
+            if (i < ncomps)
+                pconc[i] = frac2cv(frac_1 - gx_map_color_frac(pgs,
+                                   (frac)(frac_1 - cv2frac(pconc[i])), effective_transfer[i]));
         } else {
-            for (i = 0; i < ncomps; i++) {
-                frac_value = cv2frac(pconc[i]);
-                cv_frac[i] = frac_1 - gx_map_color_frac(pgs,
-                        (frac)(frac_1 - frac_value), effective_transfer[i]);
-                pconc[i] = frac2cv(cv_frac[i]);
-            }
+            for (i = 0; i < ncomps; i++)
+                pconc[i] = frac2cv(frac_1 - gx_map_color_frac(pgs,
+                        (frac)(frac_1 - cv2frac(pconc[i])), effective_transfer[i]));
         }
     }
 }
@@ -2094,14 +2144,12 @@ cmap_transfer_plane(gx_color_value *pconc, const gs_gstate *pgs,
         }
         if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
             uint k = dev->color_info.black_component;
-            frac_value = cv2frac(pconc[0]);
             if (plane == k) {
+                frac_value = cv2frac(pconc[0]);
                 cv_frac = frac_1 - gx_map_color_frac(pgs,
                 (frac)(frac_1 - frac_value), effective_transfer[plane]);
-            } else {
-                cv_frac = cv2frac(pconc[0]);  /* Ignore transfer, see PLRM3 p. 494 */
+                pconc[0] = frac2cv(cv_frac);
             }
-            pconc[0] = frac2cv(cv_frac);
         } else {
             frac_value = cv2frac(pconc[0]);
             cv_frac = frac_1 - gx_map_color_frac(pgs,
