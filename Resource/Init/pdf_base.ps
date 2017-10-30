@@ -447,23 +447,48 @@ currentdict /token_nofail_dict .undef
   { oforce } forall
 } bind def
 
-/oforce_recursive { % <any> oforce_recursive <any>
+%% Safe recursion maintain a dicitonary in which we record all the object numbers
+%% of objects which we resolve. Whenever it resolves a new one, it checks all the
+%% existing ones to see if its already present, in which case we assume recursion
+%% has taken place. Whenever this procedure calls itself it copies the existing
+%% dictionary, and throws it away afterwards. This means that we won't falsely
+%% detect recursion if two elements at the same level indirect to the same
+%% object.
+/safe_recursive { % <<recursion dict>> <any> oforce_recursive <recursion dict> <any>
   dup type dup /arraytype eq exch /packedarraytype eq or {
     dup rcheck {              % protect tint transform functions, etc.
+      dup length 3 eq {
+        dup 2 get /resolveR eq {
+          dup 0 get             % <recursion dict> {x y resolveR} x
+          dup                   % <recursion dict> {x y resolveR} x x
+          3 index exch known {
+            (   **** Error: detected circular reference in object number ) pdfformaterror pdfstring cvs pdfformaterror
+            (\n) pdfformaterror
+            pop //null
+          } {
+            dup 3 index          % <recursion dict> {x y resolveR} x x <recursion dict>
+            3 1 roll put         % <recursion dict> {x y resolveR}
+          } ifelse
+        } if
+      } if
       oforce                  % but dereference {1 0 R}
       dup type dup /arraytype eq exch /packedarraytype eq or {
-        [ exch { oforce_recursive } forall ]
+        [ exch 2 index <<>> copy  exch { safe_recursive exch } forall pop]
       } {
         dup type /dicttype eq {
-          << exch { oforce_recursive exch oforce exch } forall >>
+          << exch 2 index <<>> copy  exch { 3 -1 roll exch safe_recursive 3 -1 roll oforce 3 1 roll exch } forall pop>>
         } if
       } ifelse
     } if
   } {
     dup type /dicttype eq {
-      << exch { oforce_recursive exch oforce exch } forall >>
+      << exch 2 index <<>> copy  exch { 3 -1 roll exch safe_recursive 3 -1 roll oforce 3 1 roll exch } forall pop>>
     } if
   } ifelse
+} bind def
+
+/oforce_recursive {
+  << >> exch safe_recursive exch pop
 } bind def
 
 % A null value in a dictionary is equivalent to an omitted key;
