@@ -1035,11 +1035,64 @@ art_pdf_composite_pixel_alpha_8_inline(byte *dst, byte *src, int n_chan,
     return dst - first_spot;
 }
 
-void
+/**
+ * art_pdf_composite_pixel_alpha_8_fast_mono: Tweaked version of art_pdf_composite_pixel_alpha_8_fast.
+ * Same args, except n_chan, which is assumed to be 1:
+ * @stride: stride between dst pixel values.
+ * @p14dev: pdf14 device
+ * Dst data is therefore in dst[i * stride] for 0 <= i <= 1.
+ * Called with the guarantee that dst[stride] != 0, src[1] != 0, and that blend_mode != Normal
+ */
+static inline void
 art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
                                           gs_blend_mode_t blend_mode,
                                           const pdf14_nonseparable_blending_procs_t * pblend_procs,
                                           int stride, pdf14_device *p14dev)
+{
+    byte a_b, a_s;
+    unsigned int a_r;
+    int tmp;
+    int src_scale;
+    int c_b, c_s;
+    byte blend[ART_MAX_CHAN];
+
+    a_s = src[1];
+
+    a_b = dst[stride];
+
+    /* Result alpha is Union of backdrop and source alpha */
+    tmp = (0xff - a_b) * (0xff - a_s) + 0x80;
+    a_r = 0xff - (((tmp >> 8) + tmp) >> 8);
+    /* todo: verify that a_r is nonzero in all cases */
+
+    /* Compute a_s / a_r in 16.16 format */
+    src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
+
+    /* Do compositing with blending */
+    art_blend_pixel_8(blend, dst, src, 1, blend_mode, pblend_procs, p14dev);
+    {
+        int c_bl;		/* Result of blend function */
+        int c_mix;		/* Blend result mixed with source color */
+
+        c_s = src[0];
+        c_b = dst[0];
+        c_bl = blend[0];
+        tmp = a_b * (c_bl - ((int)c_s)) + 0x80;
+        c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
+        tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
+        dst[0] = tmp >> 16;
+    }
+    dst[stride] = a_r;
+}
+
+/**
+ * art_pdf_composite_pixel_alpha_8_fast_mono_normal: Tweaked version of art_pdf_composite_pixel_alpha_8_fast_mono.
+ * Same args, except blend_mode which is assumed to be Normal.
+ */
+static inline void
+art_pdf_composite_pixel_alpha_8_fast_mono_normal(byte *dst, const byte *src,
+                                                 const pdf14_nonseparable_blending_procs_t * pblend_procs,
+                                                 int stride, pdf14_device *p14dev)
 {
     byte a_b, a_s;
     unsigned int a_r;
@@ -1059,30 +1112,11 @@ art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
     /* Compute a_s / a_r in 16.16 format */
     src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
 
-    if (blend_mode == BLEND_MODE_Normal) {
-        /* Do simple compositing of source over backdrop */
-        c_s = src[0];
-        c_b = dst[0];
-        tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
-        dst[0] = tmp >> 16;
-    } else {
-        /* Do compositing with blending */
-        byte blend[ART_MAX_CHAN];
-
-        art_blend_pixel_8(blend, dst, src, 1, blend_mode, pblend_procs, p14dev);
-        {
-            int c_bl;		/* Result of blend function */
-            int c_mix;		/* Blend result mixed with source color */
-
-            c_s = src[0];
-            c_b = dst[0];
-            c_bl = blend[0];
-            tmp = a_b * (c_bl - ((int)c_s)) + 0x80;
-            c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
-            tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
-            dst[0] = tmp >> 16;
-        }
-    }
+    /* Do simple compositing of source over backdrop */
+    c_s = src[0];
+    c_b = dst[0];
+    tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
+    dst[0] = tmp >> 16;
     dst[stride] = a_r;
 }
 
@@ -2328,6 +2362,48 @@ mark_fill_rect_1comp_additive_no_spots(int w, int h, byte *dst_ptr, byte *src, i
     }
 }
 
+static void
+mark_fill_rect_1comp_additive_no_spots_normal(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+               byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
+               bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
+               int alpha_g_off, int shape_off, byte shape)
+{
+    int i, j;
+
+    for (j = h; j > 0; --j) {
+        for (i = w; i > 0; --i) {
+            /* background empty, nothing to change */
+            if (dst_ptr[planestride] == 0) {
+                dst_ptr[0] = src[0];
+                dst_ptr[planestride] = src[1];
+            } else {
+                art_pdf_composite_pixel_alpha_8_fast_mono_normal(dst_ptr, src,
+                                                pdev->blend_procs,
+                                                planestride, pdev);
+            }
+            if (tag_off) {
+                /* If src alpha is 100% then set to curr_tag, else or */
+                /* other than Normal BM, we always OR */
+                if (src[1] == 255) {
+                     dst_ptr[tag_off] = curr_tag;
+                } else {
+                    dst_ptr[tag_off] |= curr_tag;
+                }
+            }
+            if (alpha_g_off) {
+                int tmp = (255 - dst_ptr[alpha_g_off]) * src_alpha + 0x80;
+                dst_ptr[alpha_g_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
+            }
+            if (shape_off) {
+                int tmp = (255 - dst_ptr[shape_off]) * shape + 0x80;
+                dst_ptr[shape_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
+            }
+            ++dst_ptr;
+        }
+        dst_ptr += rowstride;
+    }
+}
+
 int
 pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                           gx_color_index color, const gx_device_color *pdc,
@@ -2438,9 +2514,12 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     if (src[num_comp] == 0)
         fn = mark_fill_rect_alpha0;
     else if (additive && num_spots == 0) {
-        if (num_comp == 1)
-            fn = mark_fill_rect_1comp_additive_no_spots;
-        else if (tag_off == 0 && shape_off == 0 && blend_mode == BLEND_MODE_Normal)
+        if (num_comp == 1) {
+            if (blend_mode == BLEND_MODE_Normal)
+                fn = mark_fill_rect_1comp_additive_no_spots_normal;
+            else
+                fn = mark_fill_rect_1comp_additive_no_spots;
+        } else if (tag_off == 0 && shape_off == 0 && blend_mode == BLEND_MODE_Normal)
             fn = mark_fill_rect_additive_nospots_common;
         else
             fn = mark_fill_rect_additive_nospots;

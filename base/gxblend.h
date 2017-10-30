@@ -207,20 +207,6 @@ art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
         pdf14_device *p14dev);
 
 
-/**
- * art_pdf_composite_pixel_alpha_8_fast_mono: Tweaked version of art_pdf_composite_pixel_alpha_8_fast.
- * Same args, except n_chan, which is assumed to be 1:
- * @stride: stride between dst pixel values.
- * @p14dev: pdf14 device
- * Dst data is therefore in dst[i * stride] for 0 <= i <= 1.
- * Called with the guarantee that dst[stride] != 0, src[1] != 0
- */
-void
-art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
-        gs_blend_mode_t blend_mode,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        int stride, pdf14_device *p14dev);
-
 /*
  * art_pdf_compose_group_fn: Function pointer type for functions
  * to compose a group.
