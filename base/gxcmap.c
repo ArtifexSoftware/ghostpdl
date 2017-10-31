@@ -909,8 +909,6 @@ cmap_gray_halftoned(frac gray, gx_device_color * pdc,
     subclass_color_mappings scm;
 
     /* map to the color model */
-    for (i=0; i < ncomps; i++)
-        cm_comps[i] = 0;
     scm = get_color_mapping_procs_subclass(dev);
     map_gray_subclass(scm, gray, cm_comps);
 
@@ -952,8 +950,6 @@ cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
     subclass_color_mappings scm;
 
     /* map to the color model */
-    for (i=0; i < ncomps; i++)
-        cm_comps[i] = 0;
     scm = get_color_mapping_procs_subclass(dev);
     map_gray_subclass(scm, gray, cm_comps);
 
@@ -1011,8 +1007,6 @@ cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
     subclass_color_mappings scm;
 
     /* map to the color model */
-    for (i = 0; i < ncomps; i++)
-        cm_comps[i] = 0;
     scm = get_color_mapping_procs_subclass(dev);
     map_rgb_subclass(scm, pgs, r, g, b, cm_comps);
 
@@ -1044,8 +1038,6 @@ cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
     subclass_color_mappings scm;
 
     /* map to the color model */
-    for (i=0; i < ncomps; i++)
-        cm_comps[i] = 0;
     scm = get_color_mapping_procs_subclass(dev);
     map_rgb_subclass(scm, pgs, r, g, b, cm_comps);
 
@@ -1097,8 +1089,6 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     subclass_color_mappings scm;
 
     /* map to the color model */
-    for (i=0; i < ncomps; i++)
-        cm_comps[i] = 0;
     scm = get_color_mapping_procs_subclass(dev);
     map_cmyk_subclass(scm, c, m, y, k, cm_comps);
 
@@ -1172,8 +1162,6 @@ cmap_rgb_alpha_halftoned(frac r, frac g, frac b, frac alpha,
     subclass_color_mappings scm;
 
     /* map to the color model */
-    for (i=0; i < ncomps; i++)
-        cm_comps[i] = 0;
     scm = get_color_mapping_procs_subclass(dev);
     map_rgb_subclass(scm, pgs, r, g, b, cm_comps);
 
@@ -1217,8 +1205,6 @@ cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
     subclass_color_mappings scm;
 
     /* map to the color model */
-    for (i=0; i < ncomps; i++)
-        cm_comps[i] = 0;
     scm = get_color_mapping_procs_subclass(dev);
     map_rgb_subclass(scm, pgs, r, g, b, cm_comps);
 
@@ -1308,8 +1294,6 @@ cmap_separation_halftoned(frac all, gx_device_color * pdc,
     frac comp_value = all;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
-    for (i=0; i < ncomps; i++)
-        cm_comps[i] = 0;
     if (pgs->color_component_map.sep_type == SEP_ALL) {
         /*
          * Invert the photometric interpretation for additive
@@ -1362,8 +1346,6 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
     dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(dev->graphics_type_tag,
                           dev_profile, &des_profile, &render_cond);
-    for (i=0; i < ncomps; i++)
-        cm_comps[i] = 0;
     if (pgs->color_component_map.sep_type == SEP_ALL) {
         /*
          * Invert the photometric interpretation for additive
@@ -1546,8 +1528,6 @@ cmap_devicen_halftoned(const frac * pcc,
     gsicc_extract_profile(dev->graphics_type_tag,
                           dev_profile, &des_profile, &render_cond);
     /* map to the color model */
-    for (i=0; i < ncomps; i++)
-        cm_comps[i] = 0;
     map_components_to_colorants(pcc, &(pgs->color_component_map), cm_comps);
     /* See comments in cmap_devicen_direct for details on below operations */
     if (devicen_has_cmyk(dev) &&
@@ -1594,8 +1574,6 @@ cmap_devicen_direct(const frac * pcc,
                           dev_profile, &des_profile, &render_cond);
     /*   See the comment below */
     /* map to the color model */
-    for (i = 0; i < ncomps; i++)
-        cm_comps[i] = 0;
     if (dev_profile->spotnames != NULL && dev_profile->spotnames->equiv_cmyk_set) {
         map_components_to_colorants(pcc, dev_profile->spotnames->color_map,
                                     cm_comps);

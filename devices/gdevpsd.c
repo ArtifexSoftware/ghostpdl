@@ -508,6 +508,9 @@ cmyk_cs_to_psdcmyk_cm(gx_device * dev,
     
     if (devn->num_separation_order_names > 0) {
         /* This is to set only those that we are using */
+        int ncomps = dev->color_info.num_components;
+        for (j = 0; j < ncomps; j++)
+            out[j] = 0;
         for (j = 0; j < devn->num_separation_order_names; j++) {
             switch (map[j]) {
                 case 0 : 
