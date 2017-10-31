@@ -855,8 +855,9 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
     }
 }
 
-static int handle_colors(gx_image_enum *penum, const frac *psrc, int spp_decode,
-    gx_device_color *devc, bool islab, gx_device *dev)
+static int handle_color(gx_image_enum *penum, const frac *psrc, int spp_decode,
+                        gx_device_color *devc, bool islab, gx_device *dev,
+                        const cmm_dev_profile_t *dev_profile)
 {
     const gs_color_space *pactual_cs;
     const gs_color_space *pconcs;
@@ -865,7 +866,6 @@ static int handle_colors(gx_image_enum *penum, const frac *psrc, int spp_decode,
     bool device_color = false;
     bool is_index_space;
     int code = 0;
-    cmm_dev_profile_t *dev_profile;
 
     if (pcs == NULL)
         return 0; /* Must be masked */
@@ -887,8 +887,6 @@ static int handle_colors(gx_image_enum *penum, const frac *psrc, int spp_decode,
     } else {
         pactual_cs = pcs;
     }
-    code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
-    /* ignore code since error from get_profile would have prevented interpolation */
     pconcs = cs_concrete_space(pactual_cs, pgs);
     if (pconcs && pconcs->cmm_icc_profile_data != NULL) {
         if (pconcs->cmm_icc_profile_data != NULL && dev_profile->usefastcolor == false) {
@@ -999,6 +997,11 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
     bool islab = false;
     int abs_interp_limit = pss->params.abs_interp_limit;
     int limited_PatchWidthOut = (pss->params.PatchWidthOut + abs_interp_limit - 1) / abs_interp_limit;
+    cmm_dev_profile_t *dev_profile;
+    int code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
+
+    if (code < 0)
+        return code;
 
     if (!penum->masked && pcs->cmm_icc_profile_data != NULL) {
         islab = pcs->cmm_icc_profile_data->islab;
@@ -1028,7 +1031,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
             int x;
             const frac *psrc;
             gx_device_color devc;
-            int status, code;
+            int status;
             byte *l_dptr = out;
             int l_dbit = 0;
             byte l_dbyte = 0;
@@ -1060,7 +1063,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                            penum->line_xy);
                 psrc += ((pss->params.LeftMarginOut + abs_interp_limit - 1) / abs_interp_limit) * spp_decode;
                 for (x = xo; x < xe;) {
-                    code = handle_colors(penum, psrc, spp_decode, &devc, islab, dev);
+                    code = handle_color(penum, psrc, spp_decode, &devc, islab, dev, dev_profile);
                     if (code < 0)
                         return code;
                     if (color_is_pure(&devc)) {
@@ -1842,6 +1845,11 @@ image_render_interpolate_landscape(gx_image_enum * penum,
     byte *out = penum->line;
     bool islab = false;
     int abs_interp_limit = pss->params.abs_interp_limit;
+    cmm_dev_profile_t *dev_profile;
+    int code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
+
+    if (code < 0)
+        return code;
 
     if (pcs->cmm_icc_profile_data != NULL) {
         islab = pcs->cmm_icc_profile_data->islab;
@@ -1868,7 +1876,7 @@ image_render_interpolate_landscape(gx_image_enum * penum,
             int x;
             const frac *psrc;
             gx_device_color devc;
-            int status, code;
+            int status;
             int scaled_w = 0;
             gx_dda_fixed save_x_dda;
 
@@ -1898,7 +1906,7 @@ image_render_interpolate_landscape(gx_image_enum * penum,
                            penum->line_xy);
                 psrc += (pss->params.LeftMarginOut / abs_interp_limit) * spp_decode;
                 for (x = xo; x < xe;) {
-                    code = handle_colors(penum, psrc, spp_decode, &devc, islab, dev);
+                    code = handle_color(penum, psrc, spp_decode, &devc, islab, dev, dev_profile);
                     if (code < 0)
                         return code;
                     /* We scan for vertical runs of pixels, even if they end up
