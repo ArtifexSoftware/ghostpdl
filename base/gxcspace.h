@@ -128,8 +128,9 @@ struct gs_color_space_type_s {
     /* (Only defined for concrete color spaces.) */
 
 #define cs_proc_remap_concrete_color(proc)\
-  int proc(const frac *, const gs_color_space * pcs, gx_device_color *,\
-        const gs_gstate *, gx_device *, gs_color_select_t)
+  int proc(const gs_color_space * pcs, const frac *, gx_device_color *,\
+        const gs_gstate *, gx_device *, gs_color_select_t,\
+        const cmm_dev_profile_t *dev_profile)
         cs_proc_remap_concrete_color((*remap_concrete_color));
 
     /* Map a color directly to a device color. */

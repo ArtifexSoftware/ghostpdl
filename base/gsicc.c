@@ -299,16 +299,15 @@ gx_restrict_ICC(gs_client_color * pcc, const gs_color_space * pcs)
 }
 
 static int
-gx_remap_concrete_icc_devicen(const frac * pconc, const gs_color_space * pcs,
-        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-                          gs_color_select_t select)
+gx_remap_concrete_icc_devicen(const gs_color_space * pcs, const frac * pconc,
+                              gx_device_color * pdc, const gs_gstate * pgs,
+                              gx_device * dev, gs_color_select_t select,
+                              const cmm_dev_profile_t *dev_profile)
 {
     /* Check if this is a device with a DeviceN ICC profile.  In this case,
        we need to do some special stuff */
-    cmm_dev_profile_t *dev_profile;
-    int code;
+    int code = 0;
 
-    code = dev_proc(dev, get_profile)(dev, &dev_profile);
     if (dev_profile->spotnames != NULL  &&
         !dev_profile->spotnames->equiv_cmyk_set) {
         /* This means that someone has specified a DeviceN (Ncolor)
@@ -329,35 +328,25 @@ gx_remap_concrete_icc_devicen(const frac * pconc, const gs_color_space * pcs,
    do any halftoning.  The remap is based upon the ICC profile defined
    in the device profile entry of the profile manager. */
 int
-gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
-        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-                          gs_color_select_t select)
+gx_remap_concrete_ICC(const gs_color_space * pcs, const frac * pconc,
+                      gx_device_color * pdc, const gs_gstate * pgs,
+                      gx_device * dev, gs_color_select_t select,
+                      const cmm_dev_profile_t *dev_profile)
 {
-    int num_colorants;
-    int code;
-    cmm_dev_profile_t *dev_profile;
-
-    code = dev_proc(dev, get_profile)(dev, &dev_profile);
-    num_colorants = gsicc_get_device_profile_comps(dev_profile);
-    switch( num_colorants ) {
+    switch (gsicc_get_device_profile_comps(dev_profile)) {
         case 1:
-            code = gx_remap_concrete_DGray(pconc, pcs, pdc, pgs, dev, select);
-            break;
+            return gx_remap_concrete_DGray(pcs, pconc, pdc, pgs, dev, select, dev_profile);
         case 3:
-            code = gx_remap_concrete_DRGB(pconc, pcs, pdc, pgs, dev, select);
-            break;
+            return gx_remap_concrete_DRGB(pcs, pconc, pdc, pgs, dev, select, dev_profile);
         case 4:
-            code = gx_remap_concrete_DCMYK(pconc, pcs, pdc, pgs, dev, select);
-            break;
+            return gx_remap_concrete_DCMYK(pcs, pconc, pdc, pgs, dev, select, dev_profile);
         default:
             /* This is a special case where we have a source color and our
                output profile must be DeviceN.   We will need to map our
                colorants to the proper planes */
-            code = gx_remap_concrete_icc_devicen(pconc, pcs, pdc, pgs, dev, select);
-            break;
-        }
-    return code;
+            return gx_remap_concrete_icc_devicen(pcs, pconc, pdc, pgs, dev, select, dev_profile);
     }
+}
 
 /*
  * To device space
@@ -453,7 +442,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     for ( k = 0; k < num_des_comps; k++){
         conc[k] = ushort2frac(psrc_temp[k]);
     }
-    gx_remap_concrete_ICC(conc, pcs, pdc, pgs, dev, select);
+    gx_remap_concrete_ICC(pcs, conc, pdc, pgs, dev, select, dev_profile);
 
     /* Save original color space and color info into dev color */
     i = pcs->cmm_icc_profile_data->num_comps;
@@ -525,7 +514,7 @@ gx_remap_ICC_imagelab(const gs_client_color * pcc, const gs_color_space * pcs,
     for ( k = 0; k < num_des_comps; k++){
         conc[k] = ushort2frac(psrc_temp[k]);
     }
-    gx_remap_concrete_ICC(conc, pcs, pdc, pgs, dev, select);
+    gx_remap_concrete_ICC(pcs, conc, pdc, pgs, dev, select, dev_profile);
 
     /* Save original color space and color info into dev color */
     i = pcs->cmm_icc_profile_data->num_comps;

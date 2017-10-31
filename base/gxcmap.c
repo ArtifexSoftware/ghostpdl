@@ -723,21 +723,23 @@ gx_default_remap_color(const gs_client_color * pcc, const gs_color_space * pcs,
     const gs_color_space *pconcs;
     int i = pcs->type->num_components(pcs);
     int code = (*pcs->type->concretize_color)(pcc, pcs, conc, pgs, dev);
+    cmm_dev_profile_t *dev_profile;
 
     if (code < 0)
         return code;
     pconcs = cs_concrete_space(pcs, pgs);
-    if (pconcs) {
-        code = (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pgs, dev, select);
+    if (!pconcs)
+        return gs_note_error(gs_error_undefined);
+    code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    if (code < 0)
+        return code;
+    code = (*pconcs->type->remap_concrete_color)(pconcs, conc, pdc, pgs, dev, select, dev_profile);
 
-        /* Save original color space and color info into dev color */
-        i = any_abs(i);
-        for (i--; i >= 0; i--)
-            pdc->ccolor.paint.values[i] = pcc->paint.values[i];
-        pdc->ccolor_valid = true;
-    }
-    else
-        code = gs_note_error(gs_error_undefined);
+    /* Save original color space and color info into dev color */
+    i = any_abs(i);
+    for (i--; i >= 0; i--)
+        pdc->ccolor.paint.values[i] = pcc->paint.values[i];
+    pdc->ccolor_valid = true;
     return code;
 }
 
@@ -754,9 +756,10 @@ gx_concretize_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
     return 0;
 }
 int
-gx_remap_concrete_DGray(const frac * pconc, const gs_color_space * pcs,
-        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-                        gs_color_select_t select)
+gx_remap_concrete_DGray(const gs_color_space * pcs, const frac * pconc,
+                        gx_device_color * pdc, const gs_gstate * pgs,
+                        gx_device * dev, gs_color_select_t select,
+                        const cmm_dev_profile_t *dev_profile)
 {
     if (pgs->alpha == gx_max_color_value)
         (*pgs->cmap_procs->map_gray)
@@ -769,8 +772,8 @@ gx_remap_concrete_DGray(const frac * pconc, const gs_color_space * pcs,
 }
 int
 gx_remap_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
-        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-                    gs_color_select_t select)
+                    gx_device_color * pdc, const gs_gstate * pgs,
+                    gx_device * dev, gs_color_select_t select)
 {
     frac fgray = gx_unit_frac(pc->paint.values[0]);
     int code;
@@ -794,7 +797,7 @@ gx_remap_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
         return code;
     }
 
-    /* Save orgxiginal color space and color info into dev color */
+    /* Save original color space and color info into dev color */
     pdc->ccolor.paint.values[0] = pc->paint.values[0];
     pdc->ccolor_valid = true;
     if (pgs->alpha == gx_max_color_value)
@@ -817,9 +820,10 @@ gx_concretize_DeviceRGB(const gs_client_color * pc, const gs_color_space * pcs,
     return 0;
 }
 int
-gx_remap_concrete_DRGB(const frac * pconc, const gs_color_space * pcs,
-        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-                       gs_color_select_t select)
+gx_remap_concrete_DRGB(const gs_color_space * pcs, const frac * pconc,
+                       gx_device_color * pdc, const gs_gstate * pgs,
+                       gx_device * dev, gs_color_select_t select,
+                       const cmm_dev_profile_t *dev_profile)
 {
     if (pgs->alpha == gx_max_color_value)
         gx_remap_concrete_rgb(pconc[0], pconc[1], pconc[2],
@@ -864,9 +868,10 @@ gx_concretize_DeviceCMYK(const gs_client_color * pc, const gs_color_space * pcs,
     return 0;
 }
 int
-gx_remap_concrete_DCMYK(const frac * pconc, const gs_color_space * pcs,
-        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-                        gs_color_select_t select)
+gx_remap_concrete_DCMYK(const gs_color_space * pcs, const frac * pconc,
+                        gx_device_color * pdc, const gs_gstate * pgs,
+                        gx_device * dev, gs_color_select_t select,
+                        const cmm_dev_profile_t *dev_profile)
 {
 /****** IGNORE alpha ******/
     gx_remap_concrete_cmyk(pconc[0], pconc[1], pconc[2], pconc[3], pdc,

@@ -97,9 +97,10 @@ gx_concretize_DevicePixel(const gs_client_color * pc, const gs_color_space * pcs
 }
 
 static int
-gx_remap_concrete_DevicePixel(const frac * pconc, const gs_color_space * pcs,
-        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-                              gs_color_select_t select)
+gx_remap_concrete_DevicePixel(const gs_color_space * pcs, const frac * pconc,
+                              gx_device_color * pdc, const gs_gstate * pgs,
+                              gx_device * dev, gs_color_select_t select,
+                              const cmm_dev_profile_t *dev_profile)
 {
     color_set_pure(pdc, pconc[0] & ((1 << dev->color_info.depth) - 1));
     return 0;

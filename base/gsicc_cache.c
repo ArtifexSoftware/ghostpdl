@@ -1677,7 +1677,7 @@ gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, unsig
    This is in here since it is usually called when creating and using a link
    from the link cache. */
 int
-gsicc_get_device_profile_comps(cmm_dev_profile_t *dev_profile)
+gsicc_get_device_profile_comps(const cmm_dev_profile_t *dev_profile)
 {
     if (dev_profile->link_profile == NULL) {
        return dev_profile->device_profile[0]->num_comps;

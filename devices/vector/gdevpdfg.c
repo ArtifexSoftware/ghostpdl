@@ -363,7 +363,7 @@ static int apply_transfer_and_convert_gray_to_base(gx_device_pdf * pdev, const g
     psrc[0] = (unsigned short) (pcc->paint.values[0]*65535.0);;
     conc[0] = ushort2frac(psrc[0]);
 
-    code = gx_remap_concrete_DGray((const frac *)&conc, pcs, &dc, pgs, (gx_device *)pdev, gs_color_select_texture);
+    code = gx_remap_concrete_DGray(pcs, (const frac *)&conc, &dc, pgs, (gx_device *)pdev, gs_color_select_texture, NULL);
     if (code < 0)
         return code;
 
@@ -389,7 +389,7 @@ static int apply_transfer_and_convert_rgb_to_base(gx_device_pdf * pdev, const gs
         psrc[i] = (unsigned short) (pcc->paint.values[i]*65535.0);;
         conc[i] = ushort2frac(psrc[i]);
     }
-    code = gx_remap_concrete_DRGB((const frac *)&conc, pcs, &dc, pgs, (gx_device *)pdev, gs_color_select_texture);
+    code = gx_remap_concrete_DRGB(pcs, (const frac *)&conc, &dc, pgs, (gx_device *)pdev, gs_color_select_texture, NULL);
     if (code < 0)
         return code;
 
@@ -417,7 +417,7 @@ static int apply_transfer_and_convert_cmyk_to_base(gx_device_pdf * pdev, const g
         psrc[i] = (unsigned short) (pcc->paint.values[i]*65535.0);;
         conc[i] = ushort2frac(psrc[i]);
     }
-    code = gx_remap_concrete_DCMYK((const frac *)&conc, pcs, &dc, pgs, (gx_device *)pdev, gs_color_select_texture);
+    code = gx_remap_concrete_DCMYK(pcs, (const frac *)&conc, &dc, pgs, (gx_device *)pdev, gs_color_select_texture, NULL);
     if (code < 0)
         return code;
 
@@ -447,7 +447,7 @@ static int apply_transfer_gray(gx_device_pdf * pdev, const gs_gstate * pgs, gs_c
     psrc[0] = (unsigned short) (pcc->paint.values[0]*65535.0);;
     conc[0] = ushort2frac(psrc[0]);
 
-    code = gx_remap_concrete_DGray((const frac *)&conc, pcs, &dc, pgs, (gx_device *)pdev, gs_color_select_texture);
+    code = gx_remap_concrete_DGray(pcs, (const frac *)&conc, &dc, pgs, (gx_device *)pdev, gs_color_select_texture, NULL);
     if (code < 0)
         return code;
 
@@ -470,7 +470,7 @@ static int apply_transfer_rgb(gx_device_pdf * pdev, const gs_gstate * pgs, gs_cl
         psrc[i] = (unsigned short) (pcc->paint.values[i]*65535.0);;
         conc[i] = ushort2frac(psrc[i]);
     }
-    code = gx_remap_concrete_DRGB((const frac *)&conc, pcs, &dc, pgs, (gx_device *)pdev, gs_color_select_texture);
+    code = gx_remap_concrete_DRGB(pcs, (const frac *)&conc, &dc, pgs, (gx_device *)pdev, gs_color_select_texture, NULL);
     if (code < 0)
         return code;
 
@@ -495,7 +495,7 @@ static int apply_transfer_cmyk(gx_device_pdf * pdev, const gs_gstate * pgs, gs_c
         psrc[i] = (unsigned short) (pcc->paint.values[i]*65535.0);;
         conc[i] = ushort2frac(psrc[i]);
     }
-    code = gx_remap_concrete_DCMYK((const frac *)&conc, pcs, &dc, pgs, (gx_device *)pdev, gs_color_select_texture);
+    code = gx_remap_concrete_DCMYK(pcs, (const frac *)&conc, &dc, pgs, (gx_device *)pdev, gs_color_select_texture, NULL);
     if (code < 0)
         return code;
 

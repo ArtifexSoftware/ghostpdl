@@ -900,7 +900,7 @@ static int handle_colors(gx_image_enum *penum, const frac *psrc, int spp_decode,
     if (device_color) {
         /* Use the underlying concrete space remap */
         code = (*pconcs->type->remap_concrete_color)
-            (psrc, pconcs, devc, pgs, dev, gs_color_select_source);
+            (pconcs, psrc, devc, pgs, dev, gs_color_select_source, dev_profile);
     } else {
         /* If we are device dependent we need to get back to float prior to remap.*/
         gs_client_color cc;

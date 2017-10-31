@@ -5798,9 +5798,10 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         }
         /* Do the initial fillpage into the pdf14-accum device we just created */
         dev_proc(new_target, set_graphics_type_tag)(new_target, GS_UNTOUCHED_TAG);
-        if ((code = gx_remap_concrete_DGray(&pconc_white,
-                                            gs_currentcolorspace_inline((gs_gstate *)pgs),
-                                            &pdcolor, pgs, new_target, gs_color_select_all)) < 0)
+        if ((code = gx_remap_concrete_DGray(gs_currentcolorspace_inline((gs_gstate *)pgs),
+                                            &pconc_white,
+                                            &pdcolor, pgs, new_target, gs_color_select_all,
+                                            dev_profile)) < 0)
             goto no_clist_accum;
 
         (*dev_proc(new_target, fillpage))(new_target, pgs, &pdcolor);

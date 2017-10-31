@@ -401,11 +401,15 @@ gx_remap_DeviceN(const gs_client_color * pcc, const gs_color_space * pcs,
             mapped = gx_remap_named_color(pcc, pcs, pdc, pgs, dev, select);
         }
         if (!mapped) {
+            cmm_dev_profile_t *dev_profile;
+            code = dev_proc(dev, get_profile)(dev, &dev_profile);
+            if (code < 0)
+                return code;
             code = (*pcs->type->concretize_color)(pcc, pcs, conc, pgs, dev);
             if (code < 0)
                 return code;
             pconcs = cs_concrete_space(pcs, pgs);
-            code = (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pgs, dev, select);
+            code = (*pconcs->type->remap_concrete_color)(pconcs, conc, pdc, pgs, dev, select, dev_profile);
         }
         /* Save original color space and color info into dev color */
         i = any_abs(i);
@@ -497,9 +501,10 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
 }
 
 static int
-gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
-        gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-                          gs_color_select_t select)
+gx_remap_concrete_DeviceN(const gs_color_space * pcs, const frac * pconc,
+                          gx_device_color * pdc, const gs_gstate * pgs,
+                          gx_device * dev, gs_color_select_t select,
+                          const cmm_dev_profile_t *dev_profile)
 {
     int code = 0;
 
@@ -512,19 +517,16 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
 #endif
     if (pgs->color_component_map.use_alt_cspace) {
         const gs_color_space *pacs = pcs->base_space;
-
         return (*pacs->type->remap_concrete_color)
-                                (pconc, pacs, pdc, pgs, dev, select);
+                                (pacs, pconc, pdc, pgs, dev, select, dev_profile);
     } else {
     /* If we are going DeviceN out to real sep device that understands these,
        and if the destination profile is DeviceN, we print the colors directly.
        Make sure to disable the DeviceN profile color map so that is does not
        get used in gx_remap_concrete_devicen.  We probably should pass something
        through here but it is a pain due to the change in the proc. */
-        cmm_dev_profile_t *dev_profile;
         bool temp_val;
 
-        code = dev_proc(dev, get_profile)(dev, &dev_profile);
         if (dev_profile->spotnames != NULL && code >= 0) {
             temp_val = dev_profile->spotnames->equiv_cmyk_set;
             dev_profile->spotnames->equiv_cmyk_set = false;

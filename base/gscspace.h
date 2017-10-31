@@ -158,6 +158,8 @@ typedef struct cmm_profile_s cmm_profile_t;
 typedef struct gs_color_space_s gs_color_space;
 #endif
 
+typedef struct cmm_dev_profile_s cmm_dev_profile_t;
+
 /*
  * Define color space type indices.  NOTE: PostScript code (gs_res.ps,
  * gs_ll3.ps) and the color space substitution code (gscssub.[hc] and its

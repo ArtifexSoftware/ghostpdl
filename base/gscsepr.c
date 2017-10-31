@@ -373,9 +373,9 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 }
 
 static int
-gx_remap_concrete_Separation(const frac * pconc,  const gs_color_space * pcs,
+gx_remap_concrete_Separation(const gs_color_space * pcs, const frac * pconc,
         gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
-                             gs_color_select_t select)
+                             gs_color_select_t select, const cmm_dev_profile_t *dev_profile)
 {
 #ifdef DEBUG
     /*
@@ -389,7 +389,7 @@ gx_remap_concrete_Separation(const frac * pconc,  const gs_color_space * pcs,
         const gs_color_space *pacs = pcs->base_space;
 
         return (*pacs->type->remap_concrete_color)
-                                (pconc, pacs, pdc, pgs, dev, select);
+                                (pacs, pconc, pdc, pgs, dev, select, dev_profile);
     } else {
         /* We need to determine if we did a direct color replacement */
         gx_remap_concrete_separation(pconc[0], pdc, pgs, dev, select);

@@ -533,11 +533,15 @@ gs_color_select_t select)
                old approach of concretize of the base space and remap concrete color */
             const gs_color_space *pbcs =
                 (const gs_color_space *)pcs->base_space;
+            cmm_dev_profile_t *dev_profile;
+            code = dev_proc(dev, get_profile)(dev, &dev_profile);
+            if (code < 0)
+                return code;
 
             code = (*pbcs->type->concretize_color) (&cc, pbcs, conc, pgs, dev);
             if (code < 0)
                 return code;
-            code = (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pgs, dev, select);
+            code = (*pconcs->type->remap_concrete_color)(pconcs, conc, pdc, pgs, dev, select, dev_profile);
         }
     }
 

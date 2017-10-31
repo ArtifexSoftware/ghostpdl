@@ -270,7 +270,7 @@ struct gsicc_namelist_s {
 };
 
 /* Destination profiles for different objects */
-typedef struct cmm_dev_profile_s {
+struct cmm_dev_profile_s {
         cmm_profile_t  *device_profile[NUM_DEVICE_PROFILES];
         cmm_profile_t  *proof_profile;
         cmm_profile_t  *link_profile;
@@ -288,7 +288,7 @@ typedef struct cmm_dev_profile_s {
         bool prebandthreshold;     /* Used to indicate use of HT pre-clist */
         gs_memory_t *memory;
         rc_header rc;
-} cmm_dev_profile_t;
+};
 
 /*  Used so that we can specify if we want to link with Device input color spaces
     during the link creation process. For the DeviceN case, the DeviceN profile
