@@ -855,104 +855,240 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
     }
 }
 
-static int handle_color(gx_image_enum *penum, const frac *psrc, int spp_decode,
-                        gx_device_color *devc, bool islab, gx_device *dev,
-                        const cmm_dev_profile_t *dev_profile)
+static int
+handle_device_color(gx_image_enum *penum, const frac *psrc,
+                    gx_device_color *devc, gx_device *dev,
+                    const cmm_dev_profile_t *dev_profile,
+                    const gs_color_space *pcs)
 {
-    const gs_color_space *pactual_cs;
+    const gs_gstate *pgs = penum->pgs;
+
+    return (*pcs->type->remap_concrete_color)
+            (pcs, psrc, devc, pgs, dev, gs_color_select_source, dev_profile);
+}
+
+/* LAB colors are normally decoded with a decode array
+ * of [0 100  -128 127   -128 127 ]. The color management
+ * however, expects this decode array NOT to have been
+ * applied.
+ *
+ * It would be possible for an LAB image to be given a
+ * non-standard decode array, in which case, we should
+ * take account of that. The easiest way is to apply the
+ * decode array as given, and then 'undo' the standard
+ * one.
+ */
+static int
+handle_labicc_color8(gx_image_enum *penum, const frac *psrc,
+                     gx_device_color *devc, gx_device *dev,
+                     const cmm_dev_profile_t *dev_profile,
+                     const gs_color_space *pcs)
+{
+    const gs_gstate *pgs = penum->pgs;
+    gs_client_color cc;
+
+    decode_sample_frac_to_float(penum, psrc[0], &cc, 0);
+    decode_sample_frac_to_float(penum, psrc[1], &cc, 1);
+    decode_sample_frac_to_float(penum, psrc[2], &cc, 2);
+    cc.paint.values[0] /= 100.0;
+    cc.paint.values[1] = (cc.paint.values[1] + 128) / 255.0;
+    cc.paint.values[2] = (cc.paint.values[2] + 128) / 255.0;
+    return gx_remap_ICC_imagelab(&cc, pcs, devc, pgs, dev, gs_color_select_source);
+}
+
+static int
+handle_labicc_color16(gx_image_enum *penum, const frac *psrc,
+                      gx_device_color *devc, gx_device *dev,
+                      const cmm_dev_profile_t *dev_profile,
+                      const gs_color_space *pcs)
+{
+    const gs_gstate *pgs = penum->pgs;
+    gs_client_color cc;
+
+    decode_sample_frac_to_float(penum, psrc[0], &cc, 0);
+    decode_sample_frac_to_float(penum, psrc[1], &cc, 1);
+    decode_sample_frac_to_float(penum, psrc[2], &cc, 2);
+    cc.paint.values[0] *= 0x7ff8 / 25500.0f;
+    cc.paint.values[1] = (cc.paint.values[1] + 128) * 0x7ff8 / 65025.0;
+    cc.paint.values[2] = (cc.paint.values[2] + 128) * 0x7ff8 / 65025.0;
+    return gx_remap_ICC_imagelab(&cc, pcs, devc, pgs, dev, gs_color_select_source);
+}
+
+static int
+handle_lab_color8(gx_image_enum *penum, const frac *psrc,
+                  gx_device_color *devc, gx_device *dev,
+                  const cmm_dev_profile_t *dev_profile,
+                  const gs_color_space *pcs)
+{
+    const gs_gstate *pgs = penum->pgs;
+    gs_client_color cc;
+
+    decode_sample_frac_to_float(penum, psrc[0], &cc, 0);
+    decode_sample_frac_to_float(penum, psrc[1], &cc, 1);
+    decode_sample_frac_to_float(penum, psrc[2], &cc, 2);
+    cc.paint.values[0] /= 100.0;
+    cc.paint.values[1] = (cc.paint.values[1] + 128) / 255.0;
+    cc.paint.values[2] = (cc.paint.values[2] + 128) / 255.0;
+    return (pcs->type->remap_color)
+                (&cc, pcs, devc, pgs, dev, gs_color_select_source);
+}
+
+static int
+handle_lab_color16(gx_image_enum *penum, const frac *psrc,
+                   gx_device_color *devc, gx_device *dev,
+                   const cmm_dev_profile_t *dev_profile,
+                   const gs_color_space *pcs)
+{
+    const gs_gstate *pgs = penum->pgs;
+    gs_client_color cc;
+
+    decode_sample_frac_to_float(penum, psrc[0], &cc, 0);
+    decode_sample_frac_to_float(penum, psrc[1], &cc, 1);
+    decode_sample_frac_to_float(penum, psrc[2], &cc, 2);
+    cc.paint.values[0] *= 0x7ff8 / 25500.0f;
+    cc.paint.values[1] = (cc.paint.values[1] + 128) * 0x7ff8 / 65025.0;
+    cc.paint.values[2] = (cc.paint.values[2] + 128) * 0x7ff8 / 65025.0;
+    return (pcs->type->remap_color)
+                (&cc, pcs, devc, pgs, dev, gs_color_select_source);
+}
+
+static int
+handle_labicc_color2_idx(gx_image_enum *penum, const frac *psrc,
+                         gx_device_color *devc, gx_device *dev,
+                         const cmm_dev_profile_t *dev_profile,
+                         const gs_color_space *pcs)
+{
+    const gs_gstate *pgs = penum->pgs;
+    gs_client_color cc;
+    int j;
+    int num_components = gs_color_space_num_components(pcs);
+
+    /* If we were indexed, dont use the decode procedure for the index
+       values just get to float directly */
+    for (j = 0; j < num_components; ++j)
+        cc.paint.values[j] = frac2float(psrc[j]);
+    /* If the source colors are LAB then use the mapping that does not
+       rescale the source colors */
+    return gx_remap_ICC_imagelab(&cc, pcs, devc, pgs, dev,
+                                 gs_color_select_source);
+}
+
+static int
+handle_remap_color_idx(gx_image_enum *penum, const frac *psrc,
+                       gx_device_color *devc, gx_device *dev,
+                       const cmm_dev_profile_t *dev_profile,
+                       const gs_color_space *pcs)
+{
+    const gs_gstate *pgs = penum->pgs;
+    gs_client_color cc;
+    int j;
+    int num_components = gs_color_space_num_components(pcs);
+
+    for (j = 0; j < num_components; ++j)
+        cc.paint.values[j] = frac2float(psrc[j]);
+
+    return (pcs->type->remap_color)
+                (&cc, pcs, devc, pgs, dev, gs_color_select_source);
+}
+
+static int
+handle_labicc_color2(gx_image_enum *penum, const frac *psrc,
+                     gx_device_color *devc, gx_device *dev,
+                     const cmm_dev_profile_t *dev_profile,
+                     const gs_color_space *pcs)
+{
+    const gs_gstate *pgs = penum->pgs;
+    gs_client_color cc;
+    int j;
+    int num_components = gs_color_space_num_components(pcs);
+
+    for (j = 0; j < num_components; ++j)
+        decode_sample_frac_to_float(penum, psrc[j], &cc, j);
+    /* If the source colors are LAB then use the mapping that does not
+       rescale the source colors */
+    return gx_remap_ICC_imagelab(&cc, pcs, devc, pgs, dev,
+                                 gs_color_select_source);
+}
+
+static int
+handle_remap_color(gx_image_enum *penum, const frac *psrc,
+                   gx_device_color *devc, gx_device *dev,
+                   const cmm_dev_profile_t *dev_profile,
+                   const gs_color_space *pcs)
+{
+    const gs_gstate *pgs = penum->pgs;
+    gs_client_color cc;
+    int j;
+    int num_components = gs_color_space_num_components(pcs);
+
+    for (j = 0; j < num_components; ++j)
+        decode_sample_frac_to_float(penum, psrc[j], &cc, j);
+
+    return (pcs->type->remap_color)
+                (&cc, pcs, devc, pgs, dev, gs_color_select_source);
+}
+
+typedef int (color_handler_fn)(gx_image_enum *penum, const frac *psrc,
+                               gx_device_color *devc, gx_device *dev,
+                               const cmm_dev_profile_t *dev_profile,
+                               const gs_color_space *pcs);
+
+static color_handler_fn *
+get_color_handler(gx_image_enum *penum, int spp_decode,
+                  bool islab, const cmm_dev_profile_t *dev_profile,
+                  const gs_color_space **pconc)
+{
     const gs_color_space *pconcs;
     const gs_gstate *pgs = penum->pgs;
     const gs_color_space *pcs = penum->pcs;
     bool device_color = false;
     bool is_index_space;
-    int code = 0;
 
     if (pcs == NULL)
-        return 0; /* Must be masked */
+        return NULL; /* Must be masked */
 
     is_index_space = (pcs->type->index == gs_color_space_index_Indexed);
-#ifdef DEBUG
-    if (gs_debug_c('B')) {
-        int ci;
-
-        for (ci = 0; ci < spp_decode; ++ci)
-            dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
-            psrc[ci]);
-    }
-#endif
     /* If we are in a non device space then work from the pcs not from the
     concrete space also handle index case, where base case was device type */
-    if (pcs->type->index == gs_color_space_index_Indexed) {
-        pactual_cs = pcs->base_space;
-    } else {
-        pactual_cs = pcs;
-    }
-    pconcs = cs_concrete_space(pactual_cs, pgs);
+    if (pcs->type->index == gs_color_space_index_Indexed)
+        pcs = pcs->base_space;
+    pconcs = cs_concrete_space(pcs, pgs);
     if (pconcs && pconcs->cmm_icc_profile_data != NULL) {
         if (pconcs->cmm_icc_profile_data != NULL && dev_profile->usefastcolor == false) {
             device_color = false;
         } else {
-            device_color = (pconcs == pactual_cs);
+            device_color = (pconcs == pcs);
         }
     }
     if (device_color) {
-        /* Use the underlying concrete space remap */
-        code = (*pconcs->type->remap_concrete_color)
-            (pconcs, psrc, devc, pgs, dev, gs_color_select_source, dev_profile);
-    } else {
-        /* If we are device dependent we need to get back to float prior to remap.*/
-        gs_client_color cc;
-        int j;
-        int num_components = gs_color_space_num_components(pactual_cs);
-
-        if (islab) {
-            /* LAB colors are normally decoded with a decode array
-             * of [0 100  -128 127   -128 127 ]. The color management
-             * however, expects this decode array NOT to have been
-             * applied.
-             *
-             * It would be possible for an LAB image to be given a
-             * non-standard decode array, in which case, we should
-             * take account of that. The easiest way is to apply the
-             * decode array as given, and then 'undo' the standard
-             * one.
-             */
-            decode_sample_frac_to_float(penum, psrc[0], &cc, 0);
-            decode_sample_frac_to_float(penum, psrc[1], &cc, 1);
-            decode_sample_frac_to_float(penum, psrc[2], &cc, 2);
-            if (penum->bps <= 8) {
-                cc.paint.values[0] /= 100.0;
-                cc.paint.values[1] = (cc.paint.values[1] + 128) / 255.0;
-                cc.paint.values[2] = (cc.paint.values[2] + 128) / 255.0;
-            } else {
-                cc.paint.values[0] *= 0x7ff8 / 25500.0f;
-                cc.paint.values[1] = (cc.paint.values[1] + 128) * 0x7ff8 / 65025.0;
-                cc.paint.values[2] = (cc.paint.values[2] + 128) * 0x7ff8 / 65025.0;
-            }
-        } else {
-            for (j = 0; j < num_components; ++j) {
-                /* If we were indexed, dont use the decode procedure for the index
-                   values just get to float directly */
-                if (is_index_space) {
-                    cc.paint.values[j] = frac2float(psrc[j]);
-                } else {
-                    decode_sample_frac_to_float(penum, psrc[j], &cc, j);
-                }
-            }
-        }
-        /* If the source colors are LAB then use the mapping that does not
-        rescale the source colors */
-        if (gs_color_space_is_ICC(pactual_cs) &&
-            pactual_cs->cmm_icc_profile_data != NULL &&
-            pactual_cs->cmm_icc_profile_data->islab) {
-            code = gx_remap_ICC_imagelab(&cc, pactual_cs, devc, pgs, dev,
-                gs_color_select_source);
-        } else {
-            code = (pactual_cs->type->remap_color)
-                (&cc, pactual_cs, devc, pgs, dev, gs_color_select_source);
-        }
+        *pconc = pconcs;
+        return handle_device_color;
     }
-    return code;
+
+    *pconc = pcs;
+    /* If we are device dependent we need to get back to float prior to remap.*/
+    if (islab) {
+        if (gs_color_space_is_ICC(pcs) &&
+            pcs->cmm_icc_profile_data != NULL &&
+            pcs->cmm_icc_profile_data->islab)
+            return penum->bps <= 8 ? handle_labicc_color8 : handle_labicc_color16;
+        else
+            return penum->bps <= 8 ? handle_lab_color8 : handle_lab_color16;
+    } else if (is_index_space) {
+        if (gs_color_space_is_ICC(pcs) &&
+            pcs->cmm_icc_profile_data != NULL &&
+            pcs->cmm_icc_profile_data->islab)
+            return handle_labicc_color2_idx;
+        else
+            return handle_remap_color_idx;
+    } else {
+        if (gs_color_space_is_ICC(pcs) &&
+            pcs->cmm_icc_profile_data != NULL &&
+            pcs->cmm_icc_profile_data->islab)
+            return handle_labicc_color2;
+        else
+            return handle_remap_color;
+    }
 }
 
 /* returns the expanded width using the dda.x */
@@ -997,6 +1133,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
     bool islab = false;
     int abs_interp_limit = pss->params.abs_interp_limit;
     int limited_PatchWidthOut = (pss->params.PatchWidthOut + abs_interp_limit - 1) / abs_interp_limit;
+    const gs_color_space *pconc;
     cmm_dev_profile_t *dev_profile;
     int code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
 
@@ -1021,6 +1158,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
         int dy;
         int bpp = dev->color_info.depth;
         uint raster = bitmap_raster(width * bpp);
+        color_handler_fn *color_handler = NULL;
 
         if (penum->matrix.yy > 0)
             dy = 1;
@@ -1062,10 +1200,24 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                 if_debug1m('B', penum->memory, "[B]Interpolated row %d:\n[B]",
                            penum->line_xy);
                 psrc += ((pss->params.LeftMarginOut + abs_interp_limit - 1) / abs_interp_limit) * spp_decode;
+
+                if (color_handler == NULL)
+                    color_handler = get_color_handler(penum, spp_decode, islab, dev_profile, &pconc);
                 for (x = xo; x < xe;) {
-                    code = handle_color(penum, psrc, spp_decode, &devc, islab, dev, dev_profile);
-                    if (code < 0)
-                        return code;
+                    if (color_handler != NULL) {
+#ifdef DEBUG
+                        if (gs_debug_c('B')) {
+                            int ci;
+
+                            for (ci = 0; ci < spp_decode; ++ci)
+                                dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
+                                          psrc[ci]);
+                        }
+#endif
+                        code = color_handler(penum, psrc, &devc, dev, dev_profile, pconc);
+                        if (code < 0)
+                            return code;
+                    }
                     if (color_is_pure(&devc)) {
                         gx_color_index color = devc.colors.pure;
                         int expand = 1;
@@ -1845,6 +1997,7 @@ image_render_interpolate_landscape(gx_image_enum * penum,
     byte *out = penum->line;
     bool islab = false;
     int abs_interp_limit = pss->params.abs_interp_limit;
+    const gs_color_space *pconc;
     cmm_dev_profile_t *dev_profile;
     int code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
 
@@ -1866,6 +2019,7 @@ image_render_interpolate_landscape(gx_image_enum * penum,
         int width = (pss->params.WidthOut + abs_interp_limit - 1) / abs_interp_limit;
         int sizeofPixelOut = pss->params.BitsPerComponentOut / 8;
         int dy;
+        color_handler_fn *color_handler = NULL;
 
         if (penum->matrix.yx > 0)
             dy = 1;
@@ -1905,10 +2059,23 @@ image_render_interpolate_landscape(gx_image_enum * penum,
                 if_debug1m('B', penum->memory, "[B]Interpolated (rotated) row %d:\n[B]",
                            penum->line_xy);
                 psrc += (pss->params.LeftMarginOut / abs_interp_limit) * spp_decode;
+                if (color_handler == NULL)
+                    color_handler = get_color_handler(penum, spp_decode, islab, dev_profile, &pconc);
                 for (x = xo; x < xe;) {
-                    code = handle_color(penum, psrc, spp_decode, &devc, islab, dev, dev_profile);
-                    if (code < 0)
-                        return code;
+                    if (color_handler != NULL) {
+#ifdef DEBUG
+                        if (gs_debug_c('B')) {
+                            int ci;
+
+                            for (ci = 0; ci < spp_decode; ++ci)
+                                dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
+                                          psrc[ci]);
+                        }
+#endif
+                        code = color_handler(penum, psrc, &devc, dev, dev_profile, pconc);
+                        if (code < 0)
+                            return code;
+                    }
                     /* We scan for vertical runs of pixels, even if they end up
                      * being split up in most cases within copy_color_unaligned anyway. */
                     {
