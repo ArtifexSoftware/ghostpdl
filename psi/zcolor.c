@@ -4675,7 +4675,7 @@ static int indexedvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_
     fraction = *values - integer;
 
     if (fraction >= 0.5)
-        *values = integer + 1;
+        *values = (float)(integer + 1);
     else
         *values = (float)integer;
 

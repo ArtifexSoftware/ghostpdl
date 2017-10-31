@@ -499,7 +499,7 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
         bool bool_true = 1;
 
         gs_c_param_list_write(&list, imemory);
-        param_write_bool(&list, "PageUsesTransparency", &bool_true);
+        param_write_bool((gs_param_list *)&list, "PageUsesTransparency", &bool_true);
         gs_c_param_list_read(&list);
         code = gs_gstate_putdeviceparams(igs, cdev, (gs_param_list *)&list);
         gs_c_param_list_release(&list);
