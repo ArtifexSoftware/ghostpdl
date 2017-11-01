@@ -748,35 +748,35 @@ update_overprint_params(
         opdev->drawn_comps = pparams->drawn_comps;
     } else {
         gx_device *                     dev = (gx_device *)opdev;
-        const gx_cm_color_map_procs *   pprocs;
+        subclass_color_mappings         scm;
         frac                            cvals[GX_DEVICE_COLOR_MAX_COMPONENTS];
         gx_color_index                  drawn_comps = 0;
         static const frac               frac_13 = float2frac(1.0 / 3.0);
 
-        pprocs = get_color_mapping_procs_subclass(dev);
-        if (pprocs == 0 ||
-            pprocs->map_gray == 0                                         ||
-            pprocs->map_rgb == 0                                          ||
-            pprocs->map_cmyk == 0                                           )
+        scm = get_color_mapping_procs_subclass(dev);
+        if (scm.procs == NULL ||
+            scm.procs->map_gray == NULL ||
+            scm.procs->map_rgb == NULL ||
+            scm.procs->map_cmyk == NULL)
             return_error(gs_error_unknownerror);
 
-        map_gray_subclass(pprocs, dev, frac_13, cvals);
+        map_gray_subclass(scm, frac_13, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
 
-        map_rgb_subclass(pprocs, dev, 0, frac_13, frac_0, frac_0, cvals);
+        map_rgb_subclass(scm, 0, frac_13, frac_0, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        map_rgb_subclass(pprocs, dev, 0, frac_0, frac_13, frac_0, cvals);
+        map_rgb_subclass(scm, 0, frac_0, frac_13, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        map_rgb_subclass(pprocs, dev, 0, frac_0, frac_0, frac_13, cvals);
+        map_rgb_subclass(scm, 0, frac_0, frac_0, frac_13, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
 
-        map_cmyk_subclass(pprocs, dev, frac_13, frac_0, frac_0, frac_0, cvals);
+        map_cmyk_subclass(scm, frac_13, frac_0, frac_0, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        map_cmyk_subclass(pprocs, dev, frac_0, frac_13, frac_0, frac_0, cvals);
+        map_cmyk_subclass(scm, frac_0, frac_13, frac_0, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        map_cmyk_subclass(pprocs, dev, frac_0, frac_0, frac_13, frac_0, cvals);
+        map_cmyk_subclass(scm, frac_0, frac_0, frac_13, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        map_cmyk_subclass(pprocs, dev, frac_0, frac_0, frac_0, frac_13, cvals);
+        map_cmyk_subclass(scm, frac_0, frac_0, frac_0, frac_13, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
 
         opdev->drawn_comps = drawn_comps;

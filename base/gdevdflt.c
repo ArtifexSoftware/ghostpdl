@@ -127,7 +127,7 @@ static gx_color_index
 static bool
 is_like_DeviceRGB(gx_device * dev)
 {
-    const gx_cm_color_map_procs *   cm_procs;
+    subclass_color_mappings         scm;
     frac                            cm_comp_fracs[3];
     int                             i;
 
@@ -135,12 +135,12 @@ is_like_DeviceRGB(gx_device * dev)
          dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE  )
         return false;
 
-    cm_procs = get_color_mapping_procs_subclass(dev);
-    if (cm_procs == 0 || cm_procs->map_rgb == 0)
+    scm = get_color_mapping_procs_subclass(dev);
+    if (scm.procs == NULL || scm.procs->map_rgb == 0)
         return false;
 
     /* check the values 1/4, 1/3, and 3/4 */
-    map_rgb_subclass(cm_procs, dev, 0, frac_1 / 4, frac_1 / 3, 3 * frac_1 / 4,cm_comp_fracs);
+    map_rgb_subclass(scm, 0, frac_1 / 4, frac_1 / 3, 3 * frac_1 / 4,cm_comp_fracs);
 
     /* verify results to .01 */
     cm_comp_fracs[0] -= frac_1 / 4;
@@ -161,20 +161,20 @@ is_like_DeviceRGB(gx_device * dev)
 static bool
 is_like_DeviceCMYK(gx_device * dev)
 {
-    const gx_cm_color_map_procs *   cm_procs;
+    subclass_color_mappings         scm;
     frac                            cm_comp_fracs[4];
     int                             i;
 
     if ( dev->color_info.num_components != 4                      ||
          dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE  )
         return false;
-    cm_procs = get_color_mapping_procs_subclass(dev);
-    if (cm_procs == 0 || cm_procs->map_cmyk == 0)
+    scm = get_color_mapping_procs_subclass(dev);
+    if (scm.procs == NULL || scm.procs->map_cmyk == 0)
         return false;
 
     /* check the values 1/4, 1/3, 3/4, and 1/8 */
 
-    map_cmyk_subclass( cm_procs, dev,
+    map_cmyk_subclass( scm,
                         frac_1 / 4,
                         frac_1 / 3,
                         3 * frac_1 / 4,

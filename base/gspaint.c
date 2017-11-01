@@ -76,11 +76,11 @@ gs_fillpage(gs_gstate * pgs)
 {
     gx_device *dev = gs_currentdevice(pgs);
     int code;
-    gx_cm_color_map_procs *   pprocs;
+    subclass_color_mappings scm;
 
-    pprocs = get_color_mapping_procs_subclass(dev);
+    scm = get_color_mapping_procs_subclass(dev);
     /* If we get here without a valid get_color_mapping_procs, fail */
-    if (pprocs == NULL ||
+    if (scm.procs == NULL ||
         /* Deliberately use the terminal device here */
         dev_proc(dev, get_color_mapping_procs) ==  gx_error_get_color_mapping_procs) {
         emprintf1(dev->memory,

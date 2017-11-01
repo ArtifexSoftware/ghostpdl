@@ -234,6 +234,7 @@ gsicc_rcm_transform_general(gx_device *dev, gsicc_link_t *icclink,
     frac frac_in[4];
     frac frac_out[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int k;
+    gx_device *parentmost_dev = subclass_parentmost_device(dev);
 
     /* Make the negative for the demo.... */
     if (num_bytes_in == 2) {
@@ -250,14 +251,14 @@ gsicc_rcm_transform_general(gx_device *dev, gsicc_link_t *icclink,
     /* Use the device procedure */
     switch (num_in) {
         case 1:
-            (link->cm_procs.map_gray)(dev, frac_in[0], frac_out);
+            (link->cm_procs.map_gray)(parentmost_dev, frac_in[0], frac_out);
             break;
         case 3:
-            (link->cm_procs.map_rgb)(dev, NULL, frac_in[0], frac_in[1],
+            (link->cm_procs.map_rgb)(parentmost_dev, NULL, frac_in[0], frac_in[1],
                                  frac_in[2], frac_out);
             break;
         case 4:
-            (link->cm_procs.map_cmyk)(dev, frac_in[0], frac_in[1], frac_in[2],
+            (link->cm_procs.map_cmyk)(parentmost_dev, frac_in[0], frac_in[1], frac_in[2],
                                  frac_in[3], frac_out);
             break;
         default:
@@ -311,6 +312,7 @@ gsicc_rcm_get_link(const gs_gstate *pgs, gx_device *dev,
     bool pageneutralcolor = false;
     cmm_dev_profile_t *dev_profile;
     int code;
+    subclass_color_mappings scm;
 
     if (dev == NULL)
         return NULL;
@@ -324,12 +326,14 @@ gsicc_rcm_get_link(const gs_gstate *pgs, gx_device *dev,
         pageneutralcolor = dev_profile->pageneutralcolor;
     }
 
+    /* FIXME: What if we have a subclassed forwarding device? */
     /* If the cm_procs are forwarding due to the overprint device or other
        odd thing, drill down now and get the proper ones */
     if (fwd_uses_fwd_cmap_procs(dev)) {
         cm_procs = fwd_get_target_cmap_procs(dev);
     } else {
-        cm_procs = get_color_mapping_procs_subclass(dev);
+        scm = get_color_mapping_procs_subclass(dev);
+        cm_procs = scm.procs;
     }
 
     hash.rend_hash = gsCMM_REPLACE;

@@ -440,9 +440,9 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
             gx_color_value va = alpha_default;
             gx_color_index pixel;
             bool do_alpha = false;
-            const gx_cm_color_map_procs * map_procs;
+            subclass_color_mappings scm;
 
-            map_procs = get_color_mapping_procs_subclass(dev);
+            scm = get_color_mapping_procs_subclass(dev);
 
             /* Fetch the source data. */
             if (stored->options & GB_ALPHA_FIRST) {
@@ -477,13 +477,13 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
 
                 switch (ncolors) {
                 case 1:
-                    map_gray_subclass(map_procs, dev, sc[0], dc);
+                    map_gray_subclass(scm, sc[0], dc);
                     break;
                 case 3:
-                    map_rgb_subclass(map_procs, dev, 0, sc[0], sc[1], sc[2], dc);
+                    map_rgb_subclass(scm, 0, sc[0], sc[1], sc[2], dc);
                     break;
                 case 4:
-                    map_cmyk_subclass(map_procs, dev, sc[0], sc[1], sc[2], sc[3], dc);
+                    map_cmyk_subclass(scm, sc[0], sc[1], sc[2], sc[3], dc);
                     break;
                 default:
                     return_error(gs_error_rangecheck);

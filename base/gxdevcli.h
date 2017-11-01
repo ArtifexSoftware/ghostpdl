@@ -1797,52 +1797,45 @@ extern_st(st_device_forward);
  * (see pcpalet.c, pcl_update_mono). This macro walks back up the pipeline
  * and retrieves the uppermost device color_mapping procs.
  */
-static inline
-gx_cm_color_map_procs *get_color_mapping_procs_subclass(const gx_device *dev)
+typedef struct {
+    gx_cm_color_map_procs *procs;
+    gx_device *dev;
+} subclass_color_mappings;
+
+static inline gx_device *
+subclass_parentmost_device(gx_device *dev)
 {
-    if (dev == NULL)
-        return NULL;
-    while(dev->parent)
-    {
+    while (dev->parent)
         dev = dev->parent;
-    }
-    return (gx_cm_color_map_procs *)dev_proc(dev, get_color_mapping_procs)(dev);
+    return dev;
 }
 
 static inline
-void map_rgb_subclass(const gx_cm_color_map_procs *procs, gx_device *dev, const gs_gstate *pgs, frac r, frac g, frac b, frac out[])
+subclass_color_mappings get_color_mapping_procs_subclass(gx_device *dev)
 {
-    if (dev == NULL)
-        return;
-    while(dev->parent)
-    {
-        dev = dev->parent;
-    }
-    procs->map_rgb(dev, pgs, r, g, b, out);
+    subclass_color_mappings sc;
+    sc.dev = subclass_parentmost_device(dev);
+    sc.procs = (gx_cm_color_map_procs *)(dev_proc(sc.dev, get_color_mapping_procs) == NULL ?
+                                         NULL : dev_proc(sc.dev, get_color_mapping_procs)(sc.dev));
+    return sc;
 }
 
 static inline
-void map_gray_subclass(const gx_cm_color_map_procs *procs, gx_device *dev, frac gray, frac out[])
+void map_rgb_subclass(const subclass_color_mappings scm, const gs_gstate *pgs, frac r, frac g, frac b, frac out[])
 {
-    if (dev == NULL)
-        return;
-    while(dev->parent)
-    {
-        dev = dev->parent;
-    }
-    procs->map_gray(dev, gray, out);
+    scm.procs->map_rgb(scm.dev, pgs, r, g, b, out);
 }
 
 static inline
-void map_cmyk_subclass(const gx_cm_color_map_procs *procs, gx_device *dev, frac c, frac m, frac y, frac k, frac out[])
+void map_gray_subclass(const subclass_color_mappings scm, frac gray, frac out[])
 {
-    if (dev == NULL)
-        return;
-    while(dev->parent)
-    {
-        dev = dev->parent;
-    }
-    procs->map_cmyk(dev, c, m, y, k, out);
+    scm.procs->map_gray(scm.dev, gray, out);
+}
+
+static inline
+void map_cmyk_subclass(const subclass_color_mappings scm, frac c, frac m, frac y, frac k, frac out[])
+{
+    scm.procs->map_cmyk(scm.dev, c, m, y, k, out);
 }
 
 /* Test to see if the device wants to use tags */

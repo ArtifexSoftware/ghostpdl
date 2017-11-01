@@ -107,14 +107,14 @@ gx_color_index
 gx_device_black(gx_device *dev)
 {
     if (dev->cached_colors.black == gx_no_color_index) {
-        const gx_cm_color_map_procs * cm_procs;
+        subclass_color_mappings scm;
         uchar i, ncomps = dev->color_info.num_components;
         frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
-        cm_procs = get_color_mapping_procs_subclass(dev);
+        scm = get_color_mapping_procs_subclass(dev);
         /* Get color components for black (gray = 0) */
-        map_gray_subclass(cm_procs, dev, frac_0, cm_comps);
+        map_gray_subclass(scm, frac_0, cm_comps);
 
         for (i = 0; i < ncomps; i++)
             cv[i] = frac2cv(cm_comps[i]);
@@ -127,14 +127,14 @@ gx_color_index
 gx_device_white(gx_device *dev)
 {
     if (dev->cached_colors.white == gx_no_color_index) {
-        const gx_cm_color_map_procs * cm_procs;
+        subclass_color_mappings scm;
         uchar i, ncomps = dev->color_info.num_components;
         frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
-        cm_procs = get_color_mapping_procs_subclass(dev);
+        scm = get_color_mapping_procs_subclass(dev);
         /* Get color components for white (gray = 1) */
-        map_gray_subclass(cm_procs, dev, frac_1, cm_comps);
+        map_gray_subclass(scm, frac_1, cm_comps);
 
         for (i = 0; i < ncomps; i++)
             cv[i] = frac2cv(cm_comps[i]);

@@ -463,8 +463,7 @@ check_cmyk_color_model_comps(gx_device * dev)
     gx_device_color_info *          pcinfo = &dev->color_info;
     uchar                           ncomps = pcinfo->num_components;
     int                             cyan_c, magenta_c, yellow_c, black_c;
-    const gx_cm_color_map_procs *   pprocs;
-    cm_map_proc_cmyk((*map_cmyk));
+    subclass_color_mappings         scm;
     frac                            frac_14 = frac_1 / 4;
     frac                            out[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index                  process_comps;
@@ -498,22 +497,21 @@ check_cmyk_color_model_comps(gx_device * dev)
         return 0;
 
     /* check the mapping */
-    pprocs = get_color_mapping_procs_subclass(dev);
+    scm = get_color_mapping_procs_subclass(dev);
 
-    if ( pprocs == 0 ||
-         (map_cmyk = pprocs->map_cmyk) == 0                            )
+    if (scm.procs == NULL || scm.procs->map_cmyk == NULL)
         return 0;
 
-    map_cmyk_subclass(pprocs, dev, frac_14, frac_0, frac_0, frac_0, out);
+    map_cmyk_subclass(scm, frac_14, frac_0, frac_0, frac_0, out);
     if (!check_single_comp(cyan_c, frac_14, ncomps, out))
         return 0;
-    map_cmyk_subclass(pprocs, dev, frac_0, frac_14, frac_0, frac_0, out);
+    map_cmyk_subclass(scm, frac_0, frac_14, frac_0, frac_0, out);
     if (!check_single_comp(magenta_c, frac_14, ncomps, out))
         return 0;
-    map_cmyk_subclass(pprocs, dev, frac_0, frac_0, frac_14, frac_0, out);
+    map_cmyk_subclass(scm, frac_0, frac_0, frac_14, frac_0, out);
     if (!check_single_comp(yellow_c, frac_14, ncomps, out))
         return false;
-    map_cmyk_subclass(pprocs, dev, frac_0, frac_0, frac_0, frac_14, out);
+    map_cmyk_subclass(scm, frac_0, frac_0, frac_0, frac_14, out);
     if (!check_single_comp(black_c, frac_14, ncomps, out))
         return 0;
 
