@@ -619,6 +619,34 @@ void CMSEXPORT _cmsGetTransformFormattersFloat(struct _cmstransform_struct *CMMc
 }
 
 
+void
+_cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number OutputFormat, cmsUInt32Number dwFlags)
+{
+    if (dwFlags & cmsFLAGS_NULLTRANSFORM)
+        p ->xform = NullXFORM;
+    else if (dwFlags & cmsFLAGS_NOCACHE) {
+        if (dwFlags & cmsFLAGS_GAMUTCHECK)
+            p ->xform = PrecalculatedXFORMGamutCheck;  // Gamut check, no caché
+        else
+            p ->xform = PrecalculatedXFORM;  // No caché, no gamut check
+    } else if (dwFlags & cmsFLAGS_GAMUTCHECK)
+        p ->xform = CachedXFORMGamutCheck;    // Gamut check, caché
+    else if (T_EXTRA(InputFormat) != 0)
+        p ->xform = CachedXFORM;  // No gamut check, cach<E9>
+    else if ((InputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(3)|BYTES_SH(1)) &&
+             (OutputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(1)|BYTES_SH(1)))
+        p ->xform = CachedXFORM3to1;
+    else {
+        int inwords = T_CHANNELS(InputFormat);
+        if (inwords <= 2)
+            p ->xform = CachedXFORM4;
+        else if (inwords <= 4)
+            p ->xform = CachedXFORM8;
+        else
+            p ->xform = CachedXFORM;  // No gamut check, cach<E9>
+    }
+}
+
 // Allocate transform struct and set it to defaults. Ask the optimization plug-in about if those formats are proper
 // for separated transforms. If this is the case,
 static
@@ -728,38 +756,7 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
 
         }
 
-        if (*dwFlags & cmsFLAGS_NULLTRANSFORM) {
-
-            p ->xform = NullXFORM;
-        }
-        else {
-            if (*dwFlags & cmsFLAGS_NOCACHE) {
-
-                if (*dwFlags & cmsFLAGS_GAMUTCHECK)
-                    p ->xform = PrecalculatedXFORMGamutCheck;  // Gamut check, no caché
-                else
-                    p ->xform = PrecalculatedXFORM;  // No caché, no gamut check
-            }
-            else {
-
-                if (*dwFlags & cmsFLAGS_GAMUTCHECK)
-                    p ->xform = CachedXFORMGamutCheck;    // Gamut check, caché
-                else if ((*InputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(3)|BYTES_SH(1)) &&
-                         (*OutputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(1)|BYTES_SH(1)))
-                    p ->xform = CachedXFORM3to1;
-                else if (T_EXTRA(*InputFormat) != 0)
-                    p ->xform = CachedXFORM;  // No gamut check, cach<E9>
-                else {
-                    int inwords = T_CHANNELS(*InputFormat);
-                    if (inwords <= 2)
-                        p ->xform = CachedXFORM4;
-                    else if (inwords <= 4)
-                        p ->xform = CachedXFORM8;
-                    else
-                        p ->xform = CachedXFORM;  // No gamut check, cach<E9>
-                }
-            }
-        }
+        _cmsFindFormatter(p, *InputFormat, *OutputFormat, *dwFlags);
     }
 
     p ->InputFormat     = *InputFormat;
@@ -1204,5 +1201,6 @@ cmsBool CMSEXPORT cmsChangeBuffersFormat(cmsHTRANSFORM hTransform,
     xform ->OutputFormat = OutputFormat;
     xform ->FromInput    = FromInput;
     xform ->ToOutput     = ToOutput;
+    _cmsFindFormatter(xform, InputFormat, OutputFormat, xform->dwOriginalFlags);
     return TRUE;
 }
