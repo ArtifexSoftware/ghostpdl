@@ -408,12 +408,10 @@ void TransformOnePixelWithGamutCheck(_cmsTRANSFORM* p,
 #define GAMUTCHECK
 #include "extra_xform.h"
 
-
 // No gamut check, Caché, 16 bits,
 #define FUNCTION_NAME CachedXFORM
 #define CACHED
 #include "extra_xform.h"
-
 
 // All those nice features together
 #define FUNCTION_NAME CachedXFORMGamutCheck
@@ -421,21 +419,21 @@ void TransformOnePixelWithGamutCheck(_cmsTRANSFORM* p,
 #define GAMUTCHECK
 #include "extra_xform.h"
 
-// No gamut check, Cache, 16 bits, 4 bytes
+// No gamut check, Cache, 16 bits, <= 4 bytes
 #define FUNCTION_NAME CachedXFORM4
 #define CACHED
 #define INBYTES 4
 #define EXTRABYTES 0
 #include "extra_xform.h"
 
-// No gamut check, Cache, 16 bits, 8 bytes
+// No gamut check, Cache, 16 bits, <= 8 bytes total
 #define FUNCTION_NAME CachedXFORM8
 #define CACHED
 #define INBYTES 8
 #define EXTRABYTES 0
 #include "extra_xform.h"
 
-// Special one for common case.
+// Special ones for common cases.
 #define FUNCTION_NAME CachedXFORM3to1
 #define CACHED
 #define INBYTES 6
@@ -449,6 +447,22 @@ do {                                                      \
 #define PACK(T,S,D,Z)            \
 do {                             \
     *(D)++ = FROM_16_TO_8(*(S)); \
+} while (0);
+#include "extra_xform.h"
+
+#define FUNCTION_NAME CachedXFORM3x2to1x2
+#define CACHED
+#define INBYTES 6
+#define EXTRABYTES 0
+#define UNPACK(T,D,S,Z)                                     \
+do {                                                        \
+       (D)[0] = *(cmsUInt16Number *)(S); (S) += 2; /* R */  \
+       (D)[1] = *(cmsUInt16Number *)(S); (S) += 2; /* G */  \
+       (D)[2] = *(cmsUInt16Number *)(S); (S) += 2; /* B */  \
+} while (0)
+#define PACK(T,S,D,Z)                            \
+do {                                             \
+    *(cmsUInt16Number *)(D) = *(S); (D) += 2;    \
 } while (0);
 #include "extra_xform.h"
 
@@ -636,6 +650,9 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
     else if ((InputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(3)|BYTES_SH(1)) &&
              (OutputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(1)|BYTES_SH(1)))
         p ->xform = CachedXFORM3to1;
+    else if ((InputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(3)|BYTES_SH(2)) &&
+             (OutputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(1)|BYTES_SH(2)))
+        p ->xform = CachedXFORM3x2to1x2;
     else {
         int inwords = T_CHANNELS(InputFormat);
         if (inwords <= 2)
