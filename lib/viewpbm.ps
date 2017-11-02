@@ -98,17 +98,20 @@
 % P7
 % WIDTH 612	%% used to set rsize and w
 % HEIGHT 792	%% used to set h
-% DEPTH 4	%% if present and not 4, then bail
+% DEPTH 4	%% if present and not 1 or 4, then bail
 % MAXVAL 255	%% used to set maxv
-% TUPLTYPE CMYK | RGB_TAG	%% if present and not CMYK or RGB_TAG, then bail
+% TUPLTYPE CMYK | RGB_TAG | RGB_ALPHA | GRAYSCALE %% if present and not one of these, then bail
 % ENDHDR	%% skip everything else up to this
   /P7KEYS <<
     /WIDTH { /w pf token pop def }
     /HEIGHT { /h pf token pop def }
-    /DEPTH { /d pf token pop def d 4 ne { (*** Only CMYK PAM files supported at this time. ***) = quit } if }
+    /DEPTH { /d pf token pop def d 4 eq d 1 eq or not {
+             (*** Only DEPTH 1 or 4 PAM files supported at this time. ***) = quit
+             } if
+           }
     /MAXVAL { /maxv pf token pop def }
-    /TUPLTYPE { pf token pop dup /CMYK eq 1 index /RGB_TAG eq or not {
-                  (*** Only CMYK and RGB_TAG PAM files supported at this time. ***) = quit
+    /TUPLTYPE { pf token pop dup /CMYK eq 1 index /RGB_TAG eq or 1 index /RGB_ALPHA eq or 1 index /GRAYSCALE eq or not {
+                  (*** Only CMYK, RGB_TAG, RGB_ALPHA and GRAYSCALE files supported at this time. ***) = quit
                 } if
                 /T exch def
               }
@@ -121,7 +124,16 @@
   /T load /CMYK eq {
     /ncomp 4 def /invert false def /DeviceCMYK setcolorspace
     w h { readstring pop }
-  } {
+  } if
+  /T load /RGB_ALPHA eq {
+    /ncomp 4 def /invert false def /DeviceCMYK setcolorspace
+    w h { readstring pop }
+  } if
+  /T load /GRAYSCALE eq {
+    /ncomp 1 def /invert false def /DeviceGray setcolorspace
+    w h { readstring pop }
+  } if
+  /T load /RGB_TAG eq {
     % not CMYK, must be RGB_TAG since was checked above
     /TAG where {
       pop
@@ -165,7 +177,7 @@
         exch pop
       }
     } ifelse
-  } ifelse
+  } if
 } bind
 
 .dicttomark readonly def
@@ -200,10 +212,6 @@
     } {
       /FITPAGE where {/FITPAGE get}{false} ifelse
       {
-        0 0 translate
-        612 765
-      }
-      {
           % Scale the image (uniformly) to fit the page.
         clippath pathbbox pop pop translate	% offset to the printable origin
         pathbbox 3 -1 roll sub exch 3 -1 roll sub exch
@@ -225,7 +233,12 @@
             Height mul Width div
           } ifelse
         } ifelse
-      } ifelse
+      }
+      {
+        0 0 translate
+        612 792
+      }
+      ifelse
     }
     ifelse
     scale
@@ -246,10 +259,10 @@
           /SCALE where
           {
             pop
-            <</PageSize [ 1 1 dtransform h SCALE mul exch abs div exch w SCALE mul exch abs div exch ] >>
+            << /PageSize [ 1 1 dtransform h SCALE mul exch abs div exch w SCALE mul exch abs div exch ] >>
           }
           {
-            <</PageSize [ 1 1 dtransform h exch abs div exch w exch abs div exch ] >>
+            << /PageSize [ 1 1 dtransform h exch abs div exch w exch abs div exch ] >>
           } ifelse
           setpagedevice
         } if
