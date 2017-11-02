@@ -36,6 +36,7 @@
 <li><a href="#High-level">High level formats</a>
 <ul>
 <li><a href="#PDF">PDF file output</a>
+<li><a href="#PDFimage">Bitmap PDF output, PCLm output</a></li>
 <li><a href="#PS">PostScript file output</a>
 <li><a href="#EPS">EPS file output</a>
 <li><a href="#PXL">PCL-XL file output</a>
@@ -215,7 +216,7 @@ a 200dpi output png from a 600dpi internal rendering:
 <blockquote>
 <pre>
  <kbd>gs -sDEVICE=png16m -r600 -dDownScaleFactor=3 -o tiger.png\
-      examples/tiger.png</kbd>
+      examples/tiger.eps</kbd>
 </pre>
 </blockquote>
 
@@ -863,13 +864,62 @@ format for the &quotOutputFile&quot (or &quot-o&quot) file name parameter (see
 <a href="Use.htm#One_page_per_file">One_page_per_file</a> for details). An attempt
 to output multiple pages to a single PSD file (i.e. without the &quot%d&quot format) will
 result in an <code>ioerror</code> Postscript error.
-<h2><a name="High-level"></a>High-level devices</h2>
+
+<h3><a name="PDFimage"></a>PDF image output</h3>
+
+<p>
+These devices render input to a bitmap (or in the case of PCLm multiple bitmaps) then wraps
+the bitmap(s) up as the content of a PDF file. For PCLm there are some additional rules regarding
+headers, extra content and the order in which the content is written in the PDF file.
+</p>
+<p>
+The aim is to support the PCLm mobile printing standard, and
+to permit production of PDF files from input where the graphics
+model differs significantly from PDF (eg PCL and RasterOPs).
+</p>
+<p>
+There are four devices named pdfimage8, pdfimage24, pdfimage32 and PCLm. These produce valid
+PDF files with a colour depth of 8 (Gray), 24 (RGB) or 32 (CMYK), the PCLm device only supports 24-bit RGB.
+These are all implemented as 'downscale' devices, which means they can implement page level
+anti-aliasing using the <code>-dDownScaleFactor</code> switch.
+</p>
+<blockquote>
+<dl>
+<dt><code>-dDownScaleFactor=</code><b><em>integer</em></b>
+<dd>This causes the internal rendering to be scaled down by the given (integer <= 8) factor before being output. For example, the following will produce
+a PDF containing a 200dpi output from a 600dpi internal rendering:
+<blockquote>
+<pre>
+ <kbd>gs -sDEVICE=pdfimage8 -r600 -dDownScaleFactor=3 -o tiger.pdf\
+      examples/tiger.eps</kbd>
+</pre>
+</blockquote>
+</blockquote>
+
+<p>
+The type of compression used for the image data can also be selected using the <code>-sCompression</code> switch.
+Valid compression types are <code>None</code>, <code>LZW</code>, <code>Flate</code>, <code>JPEG</code>
+and <code>RLE</code>.Note that LZW is not supported on PCLm (not valid) and None is only supported
+on PCLm for debugging purposes.
+</p>
+<p>
+Finally, the PCLm device supports the <code>-dStripHeight</code> switch to set the vertical height
+of the strips of image content, as required by the specification.
+</p>
+
+<p>
+For JPEG compression the devices support both the JPEGQ and QFactor switches as documented for the <a href="#JFIF">JPEG</a> file format device.
+</p>
+
+<hr>
 
 <p>
 In addition to raster image files, Ghostscript supports output in a number
 of 'high-level' formats. These allow Ghostscript to preserve (as much as
 possible) the drawing elements of the input file maintaining flexibility,
 resolution independence, and editability.</p>
+
+<h2><a name="High-level"></a>High-level devices</h2>
 
 <h3><a name="PDF"></a>PDF writer</h3>
 

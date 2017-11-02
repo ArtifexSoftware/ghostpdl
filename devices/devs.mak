@@ -1894,3 +1894,27 @@ $(DEVOBJ)gdevcmykog.$(OBJ) : $(DEVSRC)gdevcmykog.c $(GDEV) \
  $(GDEVH) $(gdevdevn_h) $(gsequivc_h) $(gdevdevnprn_h) $(gdevpsd_h) \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevcmykog.$(OBJ) $(C_) $(DEVSRC)gdevcmykog.c
+
+### -------- PDF as an image downscaled device --------------------- ###
+$(DD)pdfimage8.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)pdfimage8 $(DEVOBJ)gdevpdfimg.$(OBJ)
+	$(ADDMOD) $(DD)pdfimage8 -include $(GLD)page
+
+$(DD)pdfimage24.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)pdfimage24 $(DEVOBJ)gdevpdfimg.$(OBJ)
+	$(ADDMOD) $(DD)pdfimage24 -include $(GLD)page
+
+$(DD)pdfimage32.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)pdfimage32 $(DEVOBJ)gdevpdfimg.$(OBJ)
+	$(ADDMOD) $(DD)pdfimage32 -include $(GLD)page
+
+$(DD)PCLm.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)PCLm $(DEVOBJ)gdevpdfimg.$(OBJ)
+	$(ADDMOD) $(DD)PCLm -include $(GLD)page
+
+$(DEVOBJ)gdevpdfimg.$(OBJ) : $(DEVSRC)gdevpdfimg.c $(AK) \
+  $(DEVS_MAK) $(MAKEDIRS) $(arch_h) $(stdint__h) $(gdevprn_h) $(gxdownscale_h) \
+  $(stream_h) $(spprint_h) $(time__h) $(smd5_h) $(sstring_h) $(strimpl_h) \
+  $(slzwx_h) $(szlibx_h) $(jpeglib__h) $(sdct_h) $(srlx_h)
+	$(DEVCC) $(DEVO_)gdevpdfimg.$(OBJ) $(C_) $(DEVSRC)gdevpdfimg.c
+
