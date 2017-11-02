@@ -415,7 +415,7 @@ static int make_bbox(gx_path       * path,
 static inline int
 make_table_template(gx_device     * pdev,
                     gx_path       * path,
-              const gs_fixed_rect * ibox,
+                    gs_fixed_rect * ibox,
                     int             intersection_size,
                     int             adjust,
                     int           * scanlinesp,
@@ -429,11 +429,15 @@ make_table_template(gx_device     * pdev,
     int             i;
     int64_t         offset;
     int             delta;
-    fixed           base_y = ibox->p.y;
+    fixed           base_y;
 
     *scanlinesp = 0;
     *indexp     = NULL;
     *tablep     = NULL;
+
+    if (pdev->max_fill_band != 0)
+        ibox->p.y &= ~(pdev->max_fill_band-1);
+    base_y = ibox->p.y;
 
     /* Previously we took adjust as a fixed distance to add to miny/maxy
      * to allow for the expansion due to 'any part of a pixel'. This causes
@@ -679,7 +683,7 @@ make_table_template(gx_device     * pdev,
 
 static int make_table(gx_device     * pdev,
                       gx_path       * path,
-                const gs_fixed_rect * ibox,
+                      gs_fixed_rect * ibox,
                       int           * scanlines,
                       int          ** index,
                       int          ** table)
@@ -1803,7 +1807,7 @@ static void mark_curve_top_app(cursor *cr, fixed sx, fixed sy, fixed c1x, fixed 
 
 static int make_table_app(gx_device     * pdev,
                           gx_path       * path,
-                    const gs_fixed_rect * ibox,
+                          gs_fixed_rect * ibox,
                           int           * scanlines,
                           int          ** index,
                           int          ** table)
@@ -2306,7 +2310,7 @@ static void mark_curve_top_tr(fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2
 
 static int make_table_tr(gx_device     * pdev,
                          gx_path       * path,
-                   const gs_fixed_rect * ibox,
+                         gs_fixed_rect * ibox,
                          int           * scanlines,
                          int          ** index,
                          int          ** table)
@@ -3655,7 +3659,7 @@ static void mark_curve_top_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, f
 
 static int make_table_tr_app(gx_device     * pdev,
                              gx_path       * path,
-                       const gs_fixed_rect * ibox,
+                             gs_fixed_rect * ibox,
                              int           * scanlines,
                              int          ** index,
                              int          ** table)
