@@ -2000,6 +2000,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     bool has_matte = false;
 #if RAW_DUMP
     byte *composed_ptr = NULL;
+    int width = x1 - x0;
 #endif
     art_pdf_compose_group_fn fn;
 

@@ -303,7 +303,7 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff)
     }
 #if RAW_DUMP
     if (x0 < x1 && y0 < y1) {
-        byte *buf_plane = (knockout_buf ? buf->backdrop : buf->data);
+        byte *buf_plane = (knockout_buff ? buf->backdrop : buf->data);
         buf_plane +=  x0 - buf->rect.p.x +
             (y0 - buf->rect.p.y) * buf->rowstride;
         dump_raw_buffer(y1 - y0, x1 - x0, buf->n_planes, buf->planestride,

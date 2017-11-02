@@ -2700,15 +2700,9 @@ currentdict /PDF2PS_matrix_key undef
         not
         and
         //systemdict /PreserveAnnots .knownget not {//true} if and {
-            mark exch {preserveannot} PDFSTOPONERROR {exec}{stopped {
-              annot_gstate setgstate	% restore gstate for next annotation
-              (Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror
-            } if} ifelse cleartomark
+            mark exch {preserveannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse cleartomark
           }{
-            mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {
-              annot_gstate setgstate	% restore gstate for next annotation
-              (Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror
-            } if} ifelse cleartomark
+            mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse cleartomark
           } ifelse
         } {
           pop
@@ -2716,11 +2710,9 @@ currentdict /PDF2PS_matrix_key undef
       } forall
     } if
   } if
-  annot_gstate setgstate	% restore gstate for AcroForm
   //systemdict /ShowAcroForm .knownget { //true eq } { //false } ifelse {
     Trailer /Root oget /AcroForm knownoget { draw_acro_form } if
   } if
-  annot_gstate setgstate	% restore gstate before exiting
 } bind def
 
 /processcolorspace {	% - processcolorspace <colorspace>

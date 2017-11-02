@@ -27,6 +27,7 @@
 #define RAW_DUMP_AS_PAM 0
 /* Useful bash fragment to batch convert pams to pngs:
  * for f in *.pam; do g=${f%.*}; echo $g; convert $g.pam $g.png ; done
+ * NB: "convert" is imagemagick convert, so may need to be installed.
  */
 
 /* #define DUMP_TO_PNG */
