@@ -306,7 +306,7 @@ display_sync_output(gx_device * dev)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
     if (ddev->callback == NULL)
-        return 0;
+        return 0;	/* ignore the call */
     display_set_separations(ddev);
 
     (*(ddev->callback->display_sync))(ddev->pHandle, dev);
@@ -321,7 +321,7 @@ display_output_page(gx_device * dev, int copies, int flush)
     gx_device_display *ddev = (gx_device_display *) dev;
     int code;
     if (ddev->callback == NULL)
-        return 0;
+        return gs_error_Fatal;
     display_set_separations(ddev);
 
     code = (*(ddev->callback->display_page))
@@ -338,7 +338,7 @@ display_close(gx_device * dev)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
     if (ddev->callback == NULL)
-        return 0;
+        return 0;	/* ignore the call since we were never properly opened */
 
     /* Tell caller that device is about to be closed. */
     (*(ddev->callback->display_preclose))(ddev->pHandle, dev);
@@ -709,7 +709,7 @@ display_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 {
     gx_device_display *ddev = (gx_device_display *) dev;
     if (ddev->callback == NULL)
-        return 0;
+        return 0;		/* ignore -- needed for fillpage when device wasn't really opened */
     dev_proc(ddev->mdev, fill_rectangle)((gx_device *)ddev->mdev,
         x, y, w, h, color);
     if (ddev->callback->display_update)
@@ -726,7 +726,7 @@ display_copy_mono(gx_device * dev,
 {
     gx_device_display *ddev = (gx_device_display *) dev;
     if (ddev->callback == NULL)
-        return 0;
+        return gs_error_Fatal;
     dev_proc(ddev->mdev, copy_mono)((gx_device *)ddev->mdev,
         base, sourcex, raster, id, x, y, w, h, zero, one);
     if (ddev->callback->display_update)
@@ -742,7 +742,7 @@ display_copy_color(gx_device * dev,
 {
     gx_device_display *ddev = (gx_device_display *) dev;
     if (ddev->callback == NULL)
-        return 0;
+        return gs_error_Fatal;
     dev_proc(ddev->mdev, copy_color)((gx_device *)ddev->mdev,
         base, sourcex, raster, id, x, y, w, h);
     if (ddev->callback->display_update)
@@ -755,7 +755,7 @@ display_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
 {
     gx_device_display *ddev = (gx_device_display *) dev;
     if (ddev->callback == NULL)
-        return 0;
+        return gs_error_Fatal;
     return dev_proc(ddev->mdev, get_bits)((gx_device *)ddev->mdev,
         y, str, actual_data);
 }
@@ -1329,7 +1329,7 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     int ccode;
     const gx_device_memory *mdproto;
     if (ddev->callback == NULL)
-        return 0;
+        return gs_error_Fatal;
 
     /* free old bitmap (if any) */
     display_free_bitmap(ddev);
