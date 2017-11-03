@@ -1765,6 +1765,9 @@ pdf14_get_buffer_information(const gx_device * dev,
             transbuff->rowstride = rowstride;
             transbuff->transbytes = gs_alloc_bytes(mem, planestride*(buf->n_chan + buf->has_tags ? 1 : 0),
                                                    "pdf14_get_buffer_information");
+            if (transbuff->transbytes == NULL)
+                return gs_error_VMerror;
+
             transbuff->mem = mem;
             for (j = 0; j < transbuff->n_chan; j++) {
                 buff_ptr_src = buf->data + j * buf->planestride +
