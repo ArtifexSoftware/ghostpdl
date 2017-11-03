@@ -8253,7 +8253,7 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
     /* If something has gone wrong and this is no longer the pdf14 compositor, */
     /* get the devn_params from the target to avoid accessing using the wrong  */
     /* pointer. Bug 696372.                                                    */
-    if (tdev == pdev)
+    if (tdev == (gx_device *)pdev)
         pdevn_params = dev_proc(pdev, ret_devn_params)(dev);
     pseparations = &pdevn_params->separations;
     /* If num_process_colors is 3 or 1 (RGB or Gray) then we are in a situation
