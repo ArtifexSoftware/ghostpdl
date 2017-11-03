@@ -322,7 +322,7 @@ image_simple_expand(byte * line, int line_x, uint raster,
     /* Extreme negative values of x_extent cause the xl0 calculation
      * to explode. Workaround this here. */
     if (x_extent < min_int + 0x100)
-      x_extent = min_int + 0x100;
+      x_extent += 0x100;
 
     /* Set up the DDAs. */
     xl0 =
@@ -330,6 +330,9 @@ image_simple_expand(byte * line, int line_x, uint raster,
          fixed_fraction(fixed_pre_pixround(xcur)) :
          fixed_fraction(fixed_pre_pixround(xcur + x_extent)) - x_extent);
     xl0 += int2fixed(line_x);
+    /* We should never get a negative x10 here. If we do, all bets are off. */
+    if (xl0 < 0)
+        xl0 = 0, x_extent = 0;
     dda_init(xl, xl0, x_extent, w);
     dxx4 = xl.step;
     dda_step_add(dxx4, xl.step);
