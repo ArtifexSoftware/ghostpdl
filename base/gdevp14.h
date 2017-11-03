@@ -162,6 +162,7 @@ struct pdf14_buf_s {
     pdf14_parent_color_t *parent_color_info_procs;
 
     gs_transparency_color_t color_space;  /* Different groups can have different spaces for blending */
+    gs_memory_t *memory;
 };
 
 typedef struct pdf14_smaskcolor_s {

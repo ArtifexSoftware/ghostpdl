@@ -798,6 +798,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
     if (result == NULL)
         return result;
 
+    result->memory = memory;
     result->backdrop = NULL;
     result->saved = NULL;
     result->isolated = false;
@@ -865,9 +866,10 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
 }
 
 static	void
-pdf14_buf_free(pdf14_buf *buf, gs_memory_t *memory)
+pdf14_buf_free(pdf14_buf *buf)
 {
     pdf14_parent_color_t *old_parent_color_info = buf->parent_color_info_procs;
+    gs_memory_t *memory = buf->memory;
 
     if (buf->mask_stack && buf->mask_stack->rc_mask)
         rc_decrement(buf->mask_stack->rc_mask, "pdf14_buf_free");
@@ -897,7 +899,7 @@ rc_pdf14_maskbuf_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     pdf14_rcmask_t *rcmask = (pdf14_rcmask_t * ) ptr_in;
     /* free the pdf14 buffer. */
     if ( rcmask->mask_buf != NULL ){
-        pdf14_buf_free(rcmask->mask_buf, mem);
+        pdf14_buf_free(rcmask->mask_buf);
     }
     gs_free_object(mem, rcmask, "rc_pdf14_maskbuf_free");
 }
@@ -971,7 +973,7 @@ pdf14_ctx_free(pdf14_ctx *ctx)
     }
     for (buf = ctx->stack; buf != NULL; buf = next) {
         next = buf->saved;
-        pdf14_buf_free(buf, ctx->memory);
+        pdf14_buf_free(buf);
     }
     gs_free_object (ctx->memory, ctx, "pdf14_ctx_free");
 }
@@ -1277,7 +1279,7 @@ exit:
         ctx->smask_blend = true;
     }
     if_debug1m('v', ctx->memory, "[v]pop buf, idle=%d\n", tos->idle);
-    pdf14_buf_free(tos, ctx->memory);
+    pdf14_buf_free(tos);
     return 0;
 }
 
@@ -1449,7 +1451,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
            to begin with.  For now we need to delete the structure
            that was created.  Only delete if the alpha value is 255 */
         if (tos->alpha == 255) {
-            pdf14_buf_free(tos, ctx->memory);
+            pdf14_buf_free(tos);
             if (ctx->mask_stack != NULL) {
                 pdf14_free_mask_stack(ctx, ctx->memory);
             }
@@ -1782,7 +1784,7 @@ pdf14_get_buffer_information(const gx_device * dev,
             transbuff->planestride = buf->planestride;
             transbuff->rowstride = buf->rowstride;
             transbuff->transbytes = buf->data;
-            transbuff->mem = dev->memory;
+            transbuff->mem = buf->memory;
             buf->data = NULL;  /* So that the buffer is not freed */
         }
         /* Go ahead and free up the pdf14 device */
@@ -1801,7 +1803,7 @@ pdf14_get_buffer_information(const gx_device * dev,
         transbuff->planestride = buf->planestride;
         transbuff->rowstride = buf->rowstride;
         transbuff->transbytes = buf->data;
-        transbuff->mem = dev->memory;
+        transbuff->mem = buf->memory;
         transbuff->rect = rect;
 #if RAW_DUMP
     /* Dump the buffer that should be going into the pattern */;
@@ -4918,7 +4920,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
         /* free up any maskbuf on the current tos */
         if (ctx->mask_stack) {
             if (ctx->mask_stack->rc_mask->mask_buf != NULL ) {
-                pdf14_buf_free(ctx->mask_stack->rc_mask->mask_buf, ctx->mask_stack->memory);
+                pdf14_buf_free(ctx->mask_stack->rc_mask->mask_buf);
                 ctx->mask_stack->rc_mask->mask_buf = NULL;
             }
         }
