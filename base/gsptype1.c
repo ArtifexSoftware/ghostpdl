@@ -1821,7 +1821,7 @@ gx_dc_pattern_write(
         /* A special case for writing a known pattern :
            Just write the tile id. */
         gs_id id = ptile->id; /* Ensure sizeof(gs_id). */
-        if_debug2m('?', dev->memory,
+        if_debug2m('v', dev->memory,
                    "[v*] Writing trans tile ID into clist, uid = %ld id = %ld \n",
                    ptile->uid.id, ptile->id);
         memcpy(dp, &ptile->id, sizeof(id));
@@ -1833,7 +1833,7 @@ gx_dc_pattern_write(
        If so then that is what we will stuff in
        the clist */
         if (ptile->ttrans != NULL) {
-            if_debug2m('?', dev->memory,
+            if_debug2m('v', dev->memory,
                        "[v*] Writing trans tile into clist, uid = %ld id = %ld \n",
                        ptile->uid.id, ptile->id);
             return gx_dc_pattern_trans_write_raster(ptile, offset, data, psize);
@@ -2119,7 +2119,7 @@ gx_dc_pattern_read(
                 ptile->ttrans->rowstride = trans_info.rowstride;
                 ptile->ttrans->width = trans_info.width;
                 pdevc->type = &gx_dc_pattern_trans;
-                if_debug2m('?', pgs->memory,
+                if_debug2m('v', pgs->memory,
                            "[v*] Reading trans tile from clist into cache, uid = %ld id = %ld \n",
                            ptile->uid.id, ptile->id);
 

@@ -925,7 +925,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
         }
 
         if (ctile->ttrans != NULL) {
-            if_debug2m('?', mem,
+            if_debug2m('v', mem,
                        "[v*] Freeing trans pattern from cache, uid = %ld id = %ld \n",
                        ctile->uid.id, ctile->id);
             if ( ctile->ttrans->pdev14 == NULL) {
@@ -1106,7 +1106,7 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
         } else
             ctile->tmask.data = 0;
         if (trans != 0) {
-            if_debug2m('?', pgs->memory,
+            if_debug2m('v', pgs->memory,
                        "[v*] Adding trans pattern to cache, uid = %ld id = %ld \n",
                        ctile->uid.id, ctile->id);
             ctile->ttrans = trans;
