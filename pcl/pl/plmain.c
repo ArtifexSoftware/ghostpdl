@@ -53,6 +53,15 @@
 #include "gdevdsp.h"
 #include "gdevdsp2.h"
 
+#define OMIT_SAVED_PAGES
+#define OMIT_SAVED_PAGES_TEST
+
+/* if we are not doing saved_pages, omit saved-pages-test mode as well */
+#ifdef OMIT_SAVED_PAGES
+#   ifndef OMIT_SAVED_PAGES_TEST
+#       define OMIT_SAVED_PAGES_TEST
+#   endif
+#endif
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
 
@@ -544,7 +553,9 @@ pl_main_alloc_instance(gs_memory_t * mem)
     minst->page_set_on_command_line = false;
     minst->res_set_on_command_line = false;
     minst->high_level_device = false;
+#ifndef OMIT_SAVED_PAGES_TEST
     minst->saved_pages_test_mode = false;
+#endif
     minst->scanconverter = GS_SCANCONVERTER_DEFAULT;
     minst->piccdir = NULL;
     minst->pdefault_gray_icc = NULL;
@@ -729,6 +740,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 } else if (strncmp(arg, "debug=", 6) == 0) {
                     gs_debug_flags_parse(pmi->memory, arg + 6);
                     break;
+#ifndef OMIT_SAVED_PAGES	/* TBI */
                 } else if (strncmp(arg, "saved-pages=", 12) == 0) {
                     gx_device *pdev = pmi->device;
                     gx_device_printer *ppdev = (gx_device_printer *)pdev;
@@ -737,7 +749,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     if (pdev->is_open == 0 && (code = gs_opendevice(pdev)) < 0) {
                         return code;
                     }
-                    if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) == 0) {
+                    if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) <= 0) {
                         errprintf(pmi->memory, "   --saved-pages not supported by the '%s' device.\n",
                                   pdev->dname);
                         return -1;
@@ -758,14 +770,17 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     if (code < 0)
                         return code;
                     break;
+#endif /* not defined OMIT_SAVED_PAGES */
                 /* The following code is only to allow regression testing of saved-pages */
+                /* if OMIT_SAVED_PAGES_TEST is defined, ignore it so testing can proceed */
                 } else if (strncmp(arg, "saved-pages-test", 16) == 0) {
+#ifndef OMIT_SAVED_PAGES_TEST
                     gx_device *pdev = pmi->device;
 
                     if ((code = gs_opendevice(pdev)) < 0)
                         return code;
 
-                    if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) == 0) {
+                    if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) <= 0) {
                         errprintf(pmi->memory, "   --saved-pages-test not supported by the '%s' device.\n",
                                   pdev->dname);
                         break;			/* just ignore it */
@@ -786,6 +801,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     if (code < 0)
                         return code;
                     pmi->saved_pages_test_mode = true;
+#endif /* OMIT_SAVED_PAGES_TEST */
                     break;
                 }
                 /* FALLTHROUGH */

@@ -240,9 +240,18 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
                     return code;
                 if (minst->saved_pages_test_mode) {
                     gx_device *pdev;
+                    int ret;
+                    gxdso_device_child_request child_dev_data;
 
-                    /* get the current device */
+                    /* get the real target (printer) device */
                     pdev = gs_currentdevice(minst->i_ctx_p->pgs);
+                    do {
+                        child_dev_data.target = pdev;
+                        ret = dev_proc(pdev, dev_spec_op)(pdev, gxdso_device_child, &child_dev_data,
+                                                          sizeof(child_dev_data));
+                        if (ret > 0)
+                            pdev = child_dev_data.target;
+                    } while ((ret > 0) && (child_dev_data.n != 0));
                     if ((code = gx_saved_pages_param_process((gx_device_printer *)pdev,
                                (byte *)"print normal flush", 18)) < 0)
                         return code;
@@ -331,11 +340,21 @@ run_stdin:
             code = run_string(minst, ".runstdin", runFlush);
             if (code < 0)
                 return code;
+            /* If in saved_pages_test_mode, print and flush previous job before the next file */
             if (minst->saved_pages_test_mode) {
                 gx_device *pdev;
+                int ret;
+                gxdso_device_child_request child_dev_data;
 
-                /* get the current device */
+                /* get the real target (printer) device */
                 pdev = gs_currentdevice(minst->i_ctx_p->pgs);
+                do {
+                    child_dev_data.target = pdev;
+                    ret = dev_proc(pdev, dev_spec_op)(pdev, gxdso_device_child, &child_dev_data,
+                                                      sizeof(child_dev_data));
+                    if (ret > 0)
+                        pdev = child_dev_data.target;
+                } while ((ret > 0) && (child_dev_data.n != 0));
                 if ((code = gx_saved_pages_param_process((gx_device_printer *)pdev,
                            (byte *)"print normal flush", 18)) < 0)
                     return code;
@@ -352,7 +371,6 @@ run_stdin:
                 break;
             } else if (strncmp(arg, "saved-pages=", 12) == 0) {
                 gx_device *pdev;
-                gx_device_printer *ppdev;
 
                 /* If init2 not yet done, just save the argument for processing then */
                 if (minst->init_done < 2) {
@@ -366,17 +384,29 @@ run_stdin:
                         return gs_error_Fatal;
                     }
                 } else {
+                    int ret;
+                    gxdso_device_child_request child_dev_data;
+
                     /* get the current device */
                     pdev = gs_currentdevice(minst->i_ctx_p->pgs);
-                    if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) == 0) {
+                    if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) <= 0) {
                         outprintf(minst->heap,
                                   "   --saved-pages not supported by the '%s' device.\n",
                                   pdev->dname);
                         arg_finit(pal);
                         return gs_error_Fatal;
                     }
-                    ppdev = (gx_device_printer *)pdev;
-                    code = gx_saved_pages_param_process(ppdev, (byte *)arg+12, strlen(arg+12));
+                    /* get the real target (printer) device */
+                    do {
+                        child_dev_data.target = pdev;
+                        ret = dev_proc(pdev, dev_spec_op)(pdev, gxdso_device_child, &child_dev_data,
+                                                          sizeof(child_dev_data));
+                        if (ret > 0)
+                            pdev = child_dev_data.target;
+                    } while ((ret > 0) && (child_dev_data.n != 0));
+                    if ((code = gx_saved_pages_param_process((gx_device_printer *)pdev,
+                                                              (byte *)arg+12, strlen(arg+12))) < 0)
+                        return code;
                     if (code > 0)
                         if ((code = gs_erasepage(minst->i_ctx_p->pgs)) < 0)
                             return code;
@@ -501,11 +531,21 @@ run_stdin:
                 code = argproc(minst, arg);
                 if (code < 0)
                     return code;
+                /* If in saved_pages_test_mode, print and flush previous job before the next file */
                 if (minst->saved_pages_test_mode) {
                     gx_device *pdev;
+                    int ret;
+                    gxdso_device_child_request child_dev_data;
 
-                    /* get the current device */
+                    /* get the real target (printer) device */
                     pdev = gs_currentdevice(minst->i_ctx_p->pgs);
+                    do {
+                        child_dev_data.target = pdev;
+                        ret = dev_proc(pdev, dev_spec_op)(pdev, gxdso_device_child, &child_dev_data,
+                                                          sizeof(child_dev_data));
+                        if (ret > 0)
+                            pdev = child_dev_data.target;
+                    } while ((ret > 0) && (child_dev_data.n != 0));
                     if ((code = gx_saved_pages_param_process((gx_device_printer *)pdev,
                                (byte *)"print normal flush", 18)) < 0)
                         return code;
@@ -527,11 +567,21 @@ run_stdin:
                 minst->run_buffer_size = bsize;
                 if (code < 0)
                     return code;
+                /* If in saved_pages_test_mode, print and flush previous job before the next file */
                 if (minst->saved_pages_test_mode) {
                     gx_device *pdev;
+                    int ret;
+                    gxdso_device_child_request child_dev_data;
 
-                    /* get the current device */
+                    /* get the real target (printer) device */
                     pdev = gs_currentdevice(minst->i_ctx_p->pgs);
+                    do {
+                        child_dev_data.target = pdev;
+                        ret = dev_proc(pdev, dev_spec_op)(pdev, gxdso_device_child, &child_dev_data,
+                                                          sizeof(child_dev_data));
+                        if (ret > 0)
+                            pdev = child_dev_data.target;
+                    } while ((ret > 0) && (child_dev_data.n != 0));
                     if ((code = gx_saved_pages_param_process((gx_device_printer *)pdev,
                                (byte *)"print normal flush", 18)) < 0)
                         return code;

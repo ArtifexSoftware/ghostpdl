@@ -323,7 +323,7 @@ gs_main_init2(gs_main_instance * minst)
        gx_device_printer *ppdev = (gx_device_printer *)pdev;
 
         if (minst->saved_pages_test_mode) {
-            if ((dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) == 0)) {
+            if ((dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) <= 0)) {
                 /* no warning or error if saved-pages-test mode is used, just disable it */
                 minst->saved_pages_test_mode = false;  /* device doesn't support it */
             } else {
@@ -334,7 +334,7 @@ gs_main_init2(gs_main_instance * minst)
                         return code;
             }
         } else if (minst->saved_pages_initial_arg != NULL) {
-            if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) == 0) {
+            if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) <= 0) {
                 outprintf(minst->heap,
                           "   --saved-pages not supported by the '%s' device.\n",
                           pdev->dname);

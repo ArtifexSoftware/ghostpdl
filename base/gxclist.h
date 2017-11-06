@@ -72,6 +72,7 @@
 typedef struct gx_saved_page_s {
     char dname[32];		/* device name for checking */
     gx_device_color_info color_info;	/* also for checking */
+    gs_graphics_type_tag_t	tag;
     /* Elements from gx_band_page_info that we need */
     char cfname[gp_file_name_sizeof];	/* command file name */
     char bfname[gp_file_name_sizeof];	/* block file name */
@@ -85,6 +86,10 @@ typedef struct gx_saved_page_s {
     /* as well as color_info (if it is able to change as the 'bit' devices can).            */
     int paramlist_len;
     byte *paramlist;		/* serialized device param list */
+    /* for DeviceN devices, we need the spot colors collected during parsing */
+    int num_separations;
+    int separation_name_sizes[GS_SOFT_MAX_SPOTS];
+    byte *separation_names[GS_SOFT_MAX_SPOTS];	/* AKA Spot Color names */
 } gx_saved_page;
 
 /*

@@ -198,6 +198,7 @@ dev_proc_put_params(gdev_prn_put_params);
 dev_proc_dev_spec_op(gdev_prn_forwarding_dev_spec_op);
 dev_proc_dev_spec_op(gdev_prn_dev_spec_op);
 
+void gdev_prn_finalize(gx_device *dev);		/* cleanup when device is freed */
 int gdev_prn_get_param(gx_device *dev, char *Param, void *list);
 
 /* Default printer-specific procedures */

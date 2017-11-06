@@ -177,10 +177,6 @@ gdev_prn_close(gx_device * pdev)
         code = gx_device_close_output_file(pdev, ppdev->fname, ppdev->file);
         ppdev->file = NULL;
     }
-    if (ppdev->saved_pages_list != NULL) {
-        gx_saved_pages_list_free(ppdev->saved_pages_list);
-        ppdev->saved_pages_list = NULL;
-    }
     return code;
 }
 
@@ -188,8 +184,15 @@ int
 gdev_prn_forwarding_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
 {
     gx_device_printer *ppdev = (gx_device_printer *)pdev;
+    int code;
 
-    return ppdev->orig_procs.dev_spec_op(pdev, dev_spec_op, data, size);
+    /* if the device is a printer device, we will get here, but allow for a printer device */
+    /* that has a non-default dev_spec_op that may want to not support saved_pages, if so  */
+    /* that device can return an error from the supports_saved_pages spec_op.              */
+    code = ppdev->orig_procs.dev_spec_op(pdev, dev_spec_op, data, size);
+    if (dev_spec_op == gxdso_supports_saved_pages)	/* printer devices support saved pages */
+        return code == 0 ? 1: code;	/*default returns 0, but we still want saved-page support */
+    return code;
 }
 
 int
@@ -605,6 +608,19 @@ gdev_prn_free_memory(gx_device *pdev)
     gs_free_object(buffer_memory, the_memory, "gdev_prn_free_memory");
     return 0;
 }
+
+/* for saved pages, we need to make sure and free up the saved_pages_list */
+void
+gdev_prn_finalize(gx_device *pdev)
+{
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+
+    if (ppdev->saved_pages_list != NULL) {
+        gx_saved_pages_list_free(ppdev->saved_pages_list);
+        ppdev->saved_pages_list = NULL;
+    }
+}
+
 
 /* ------ Get/put parameters ------ */
 

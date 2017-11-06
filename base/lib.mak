@@ -2122,7 +2122,7 @@ $(GLOBJ)gxclbits.$(OBJ) : $(GLSRC)gxclbits.c $(AK) $(gx_h)\
 	$(GLCC) $(GLO_)gxclbits.$(OBJ) $(C_) $(GLSRC)gxclbits.c
 
 $(GLOBJ)gxclpage.$(OBJ) : $(GLSRC)gxclpage.c $(AK)\
- $(gdevprn_h) $(gxcldev_h) $(gxclpage_h) $(gsicc_cache_h) $(string__h)\
+ $(gdevprn_h) $(gdevdevn_h) $(gxcldev_h) $(gxclpage_h) $(gsicc_cache_h) $(string__h)\
  $(gsparams_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxclpage.$(OBJ) $(C_) $(GLSRC)gxclpage.c
 

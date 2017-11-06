@@ -5656,7 +5656,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     /* and so we may need to make a clist device in order to prevent very large  */
     /* or high resolution pages from having allocation problems.                 */
     /* We use MaxBitmap to decide when a clist is needed.*/
-    if (dev_proc(target, dev_spec_op)(target, gxdso_supports_saved_pages, NULL, 0) == 0 &&
+    if (dev_proc(target, dev_spec_op)(target, gxdso_supports_saved_pages, NULL, 0) <= 0 &&
         gx_device_is_pattern_clist(target) == 0 &&
         gx_device_is_pattern_accum(target) == 0 &&
         gs_device_is_memory(target) == 0) {
