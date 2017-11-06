@@ -4045,6 +4045,8 @@ pdf14_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
     uchar pi;
     gx_drawing_color dcolor;
     int code = 0;
+    int xo = x;
+    int yo = y;
 
     fit_fill_xywh(dev, x, y, w, h);
     if (w <= 0 || h <= 0)
@@ -4055,6 +4057,7 @@ pdf14_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
        this planar sep device work, I am going to make this a series of
        rect fills.  ToDo: optimize this for more efficient planar operation.
        It would be interesting to use the put_image procedure. */
+    data += data_x + (x - xo) + (y - yo) * raster;
     for (yinc = 0; yinc < h; yinc++) {
         for (xinc = 0; xinc < w; xinc++) {
             for (pi = 0; pi < num_planes; pi++) {
@@ -4073,7 +4076,8 @@ pdf14_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
                 return code;
             dptr++;
         }
-        dptr = (byte *)data + raster * yinc + data_x;
+        data += raster;
+        dptr = (byte *)data;
     }
     return code;
 }
