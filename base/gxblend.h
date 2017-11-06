@@ -314,6 +314,10 @@ void pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
               bool overprint, gx_color_index drawn_comps, gs_memory_t *memory,
               gx_device *dev);
 
+void pdf14_compose_alphaless_group(pdf14_buf *tos, pdf14_buf *nos,
+                                   int x0, int x1, int y0, int y1,
+                                   gs_memory_t *memory, gx_device *dev);
+
 gx_color_index pdf14_encode_color(gx_device *dev, const gx_color_value colors[]);
 gx_color_index pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[]);
 
