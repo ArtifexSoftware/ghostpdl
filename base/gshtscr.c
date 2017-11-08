@@ -366,6 +366,10 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
 
                 p.M1 = (int)floor(p.M / T + 0.5);
                 p.N1 = (int)floor(p.N * T + 0.5);
+
+                if (p.M1 == 0 && p.N1 == 0)
+                    return_error(gs_error_rangecheck);
+
                 gx_compute_cell_values(&p);
                 if_debug3('h', "[h]trying m=%d, n=%d, r=%d\n", p.M, p.N, rt);
                 wt = p.W;
