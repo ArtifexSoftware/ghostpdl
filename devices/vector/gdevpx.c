@@ -1619,7 +1619,7 @@ pclxl_open_device(gx_device * dev)
     gx_device_pclxl *xdev = (gx_device_pclxl *) dev;
     int code;
 
-    vdev->v_memory = dev->memory;       /****** WRONG ******/
+    vdev->v_memory = dev->memory->stable_memory;
     vdev->vec_procs = &pclxl_vector_procs;
     code = gdev_vector_open_file_options(vdev, 512,
                                          VECTOR_OPEN_FILE_SEQUENTIAL);
