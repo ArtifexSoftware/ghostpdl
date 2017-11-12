@@ -244,7 +244,7 @@ void
 gdev_vector_init(gx_device_vector * vdev)
 {
     gdev_vector_reset(vdev);
-    if (vdev->procs.dev_spec_op == NULL || vdev->procs.dev_spec_op == gx_default_dev_spec_op)
+    if (vdev->procs.dev_spec_op == gx_default_dev_spec_op)
         vdev->procs.dev_spec_op = gdev_vector_dev_spec_op;
 
     vdev->scale.x = vdev->scale.y = 1.0;

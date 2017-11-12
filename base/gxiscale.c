@@ -152,7 +152,7 @@ static int mask_suitable_for_interpolation(gx_image_enum *penum)
         dev_proc(penum->dev, copy_alpha) != gx_no_copy_alpha) {
         /* We have a 'pure' color, and a valid copy_alpha. We can work with that. */
         high_level_color = 0;
-    } else if (dev_proc(penum->dev, copy_alpha_hl_color) == NULL) {
+    } else if (dev_proc(penum->dev, copy_alpha_hl_color) == gx_default_no_copy_alpha_hl_color) {
         /* No copy_alpha_hl_color. We're out of luck. */
         return -1;
     } else if ((code = gx_color_load(pdc1, penum->pgs, penum->dev)) < 0) {

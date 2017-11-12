@@ -377,11 +377,8 @@ gx_begin_transparency_group(gs_gstate * pgs, gx_device * pdev,
             dmprintf(pdev->memory, "     Have ICC Profile for blending\n");
     }
 #endif
-    if (dev_proc(pdev, begin_transparency_group) != 0)
-        return (*dev_proc(pdev, begin_transparency_group)) (pdev, &tgp, &bbox, pgs,
+    return (*dev_proc(pdev, begin_transparency_group)) (pdev, &tgp, &bbox, pgs,
                                                             NULL);
-    else
-        return 0;
 }
 
 int
@@ -430,10 +427,7 @@ int
 gx_end_transparency_group(gs_gstate * pgs, gx_device * pdev)
 {
     if_debug0m('v', pgs->memory, "[v]gx_end_transparency_group\n");
-    if (dev_proc(pdev, end_transparency_group) != 0)
-        return (*dev_proc(pdev, end_transparency_group)) (pdev, pgs);
-    else
-        return 0;
+    return (*dev_proc(pdev, end_transparency_group)) (pdev, pgs);
 }
 
 /* Commands for handling q softmask Q in graphic states */
@@ -507,20 +501,14 @@ int
 gx_pop_transparency_state(gs_gstate * pgs, gx_device * pdev)
 {
     if_debug0m('v', pgs->memory, "[v]gx_pop_transparency_state\n");
-    if (dev_proc(pdev, pop_transparency_state) != 0)
-        return (*dev_proc(pdev, pop_transparency_state)) (pdev, pgs);
-    else
-        return 0;
+    return (*dev_proc(pdev, pop_transparency_state)) (pdev, pgs);
 }
 
 int
 gx_push_transparency_state(gs_gstate * pgs, gx_device * pdev)
 {
     if_debug0m('v', pgs->memory, "[v]gx_push_transparency_state\n");
-    if (dev_proc(pdev, push_transparency_state) != 0)
-        return (*dev_proc(pdev, push_transparency_state)) (pdev, pgs);
-    else
-        return 0;
+    return (*dev_proc(pdev, push_transparency_state)) (pdev, pgs);
 }
 
 /*
@@ -687,11 +675,8 @@ gx_begin_transparency_mask(gs_gstate * pgs, gx_device * pdev,
               tmp.group_color_numcomps,
               (tmp.function_is_identity ? "no TR" :
                "has TR"));
-    if (dev_proc(pdev, begin_transparency_mask) != 0)
-        return (*dev_proc(pdev, begin_transparency_mask))
+    return (*dev_proc(pdev, begin_transparency_mask))
                         (pdev, &tmp, &(pparams->bbox), pgs, NULL);
-    else
-        return 0;
 }
 
 int
@@ -739,10 +724,7 @@ gx_end_transparency_mask(gs_gstate * pgs, gx_device * pdev,
     if_debug2m('v', pgs->memory,
                "[v](0x%lx)gx_end_transparency_mask(%d)\n", (ulong)pgs,
                (int)pparams->csel);
-    if (dev_proc(pdev, end_transparency_mask) != 0)
-        return (*dev_proc(pdev, end_transparency_mask)) (pdev, pgs);
-    else
-        return 0;
+    return (*dev_proc(pdev, end_transparency_mask)) (pdev, pgs);
 }
 
 /*
@@ -840,10 +822,7 @@ int
 gx_abort_trans_device(gs_gstate * pgs, gx_device * pdev)
 {
     if_debug1m('v', pgs->memory, "[v](0x%lx)gx_abort_trans_device\n", (ulong)pgs);
-    if (dev_proc(pdev, discard_transparency_layer) != 0)
     return (*dev_proc(pdev, discard_transparency_layer)) (pdev, pgs);
-    else
-    return 0;
 }
 
 int gs_setstrokeconstantalpha(gs_gstate *pgs, float alpha)

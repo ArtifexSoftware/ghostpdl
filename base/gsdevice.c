@@ -511,6 +511,10 @@ gs_setdevice_no_erase(gs_gstate * pgs, gx_device * dev)
         }
         /* Also, if the device profile is not yet set then take care of that
            before we start filling pages, if we can */
+        /* Although device methods should not be NULL, they are not completely filled in until
+         * gx_device_fill_in_procs is called, and its possible for us to get here before this
+         * happens, so we *must* make sure the method is not NULL before we use it.
+         */
         if (dev->procs.get_profile != NULL) {
             code = dev_proc(dev, get_profile)(dev, &dev_profile);
             if (code < 0) {
@@ -540,6 +544,10 @@ gs_setdevice_no_erase(gs_gstate * pgs, gx_device * dev)
          */
         if (libctx->io_device_table != NULL) {
             cmm_dev_profile_t *dev_profile;
+            /* Although device methods should not be NULL, they are not completely filled in until
+             * gx_device_fill_in_procs is called, and its possible for us to get here before this
+             * happens, so we *must* make sure the method is not NULL before we use it.
+             */
             if (dev->procs.get_profile != NULL) {
                 code = dev_proc(dev, get_profile)(dev, &dev_profile);
                 if (code < 0) {
@@ -652,6 +660,17 @@ gs_make_null_device(gx_device_null *dev_null, gx_device *dev,
         set_dev_proc(dn, decode_color, gx_forward_decode_color);
         set_dev_proc(dn, get_profile, gx_forward_get_profile);
         set_dev_proc(dn, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
+        set_dev_proc(dn, begin_transparency_group, gx_default_begin_transparency_group);
+        set_dev_proc(dn, end_transparency_group, gx_default_end_transparency_group);
+        set_dev_proc(dn, begin_transparency_mask, gx_default_begin_transparency_mask);
+        set_dev_proc(dn, end_transparency_mask, gx_default_end_transparency_mask);
+        set_dev_proc(dn, discard_transparency_layer, gx_default_discard_transparency_layer);
+        set_dev_proc(dn, pattern_manage, gx_default_pattern_manage);
+        set_dev_proc(dn, push_transparency_state, gx_default_push_transparency_state);
+        set_dev_proc(dn, pop_transparency_state, gx_default_pop_transparency_state);
+#if 0
+        set_dev_proc(dn, put_image, gx_default_put_image);
+#endif
         dn->graphics_type_tag = dev->graphics_type_tag;	/* initialize to same as target */
         gx_device_copy_color_params(dn, dev);
     }

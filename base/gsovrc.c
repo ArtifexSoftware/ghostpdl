@@ -754,11 +754,6 @@ update_overprint_params(
         static const frac               frac_13 = float2frac(1.0 / 3.0);
 
         scm = get_color_mapping_procs_subclass(dev);
-        if (scm.procs == NULL ||
-            scm.procs->map_gray == NULL ||
-            scm.procs->map_rgb == NULL ||
-            scm.procs->map_cmyk == NULL)
-            return_error(gs_error_unknownerror);
 
         map_gray_subclass(scm, frac_13, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);

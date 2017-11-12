@@ -643,9 +643,6 @@ clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
-#define dev_proc_pattern_manage(proc)\
-  dev_t_proc_pattern_manage(proc, gx_device)
-
 /* Based heavily off of clist_strip_tile_rectangle */
 int
 clist_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tile,

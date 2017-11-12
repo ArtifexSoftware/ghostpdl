@@ -174,16 +174,16 @@ const gx_device_procs gs_clist_device_procs = {
     gx_forward_get_hardware_params,
     gx_default_text_begin,
     gx_default_finish_copydevice,
-    NULL,                       /* begin_transparency_group */
-    NULL,                       /* end_transparency_group */
-    NULL,                       /* begin_transparency_mask */
-    NULL,                       /* end_transparency_mask */
-    NULL,                       /* discard_transparency_layer */
+    gx_default_begin_transparency_group,                       /* begin_transparency_group */
+    gx_default_end_transparency_group,                       /* end_transparency_group */
+    gx_default_begin_transparency_mask,                       /* begin_transparency_mask */
+    gx_default_end_transparency_mask,                       /* end_transparency_mask */
+    gx_default_discard_transparency_layer,                       /* discard_transparency_layer */
     gx_forward_get_color_mapping_procs,
     gx_forward_get_color_comp_index,
     gx_forward_encode_color,
     gx_forward_decode_color,
-    NULL,                       /* pattern_manage */
+    gx_default_pattern_manage,                       /* pattern_manage */
     clist_fill_rectangle_hl_color,
     gx_default_include_color_space,
     gx_default_fill_linear_color_scanline,
@@ -192,9 +192,9 @@ const gx_device_procs gs_clist_device_procs = {
     gx_forward_update_spot_equivalent_colors,
     gx_forward_ret_devn_params,
     clist_fillpage,
-    NULL,                      /* push_transparency_state */
-    NULL,                      /* pop_transparency_state */
-    NULL,                      /* put_image */
+    gx_default_push_transparency_state,                      /* push_transparency_state */
+    gx_default_pop_transparency_state,                      /* pop_transparency_state */
+    gx_default_put_image,                      /* put_image */
     clist_dev_spec_op,
     clist_copy_planes,         /* copy planes */
     gx_default_get_profile,

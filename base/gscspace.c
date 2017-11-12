@@ -499,9 +499,6 @@ check_cmyk_color_model_comps(gx_device * dev)
     /* check the mapping */
     scm = get_color_mapping_procs_subclass(dev);
 
-    if (scm.procs == NULL || scm.procs->map_cmyk == NULL)
-        return 0;
-
     map_cmyk_subclass(scm, frac_14, frac_0, frac_0, frac_0, out);
     if (!check_single_comp(cyan_c, frac_14, ncomps, out))
         return 0;

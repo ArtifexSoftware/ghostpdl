@@ -180,9 +180,7 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
         dev->cached_colors = target->cached_colors;
         dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
         /* Do a copy of put_image since it needs the source buffer */
-#define COPY_PROC(p) set_dev_proc(dev, p, target->procs.p)
-        COPY_PROC(put_image);
-#undef COPY_PROC
+        set_dev_proc(dev, put_image, target->procs.put_image);
     }
     if (dev->color_info.depth == 1) {
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];

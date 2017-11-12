@@ -136,8 +136,6 @@ is_like_DeviceRGB(gx_device * dev)
         return false;
 
     scm = get_color_mapping_procs_subclass(dev);
-    if (scm.procs == NULL || scm.procs->map_rgb == 0)
-        return false;
 
     /* check the values 1/4, 1/3, and 3/4 */
     map_rgb_subclass(scm, 0, frac_1 / 4, frac_1 / 3, 3 * frac_1 / 4,cm_comp_fracs);
@@ -169,8 +167,6 @@ is_like_DeviceCMYK(gx_device * dev)
          dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE  )
         return false;
     scm = get_color_mapping_procs_subclass(dev);
-    if (scm.procs == NULL || scm.procs->map_cmyk == 0)
-        return false;
 
     /* check the values 1/4, 1/3, 3/4, and 1/8 */
 
@@ -582,6 +578,8 @@ bad:
     pinfo->separable_and_linear = GX_CINFO_SEP_LIN_NON_STANDARD;
 }
 
+int gx_default_no_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x, int raster, gx_bitmap_id id, int x, int y, int width, int height, const gx_drawing_color *pdcolor, int depth);
+
 /* Fill in NULL procedures in a device procedure record. */
 void
 gx_device_fill_in_procs(register gx_device * dev)
@@ -683,36 +681,32 @@ gx_device_fill_in_procs(register gx_device * dev)
      */
     switch (dev->color_info.num_components) {
     case 1:     /* DeviceGray or DeviceInvertGray */
-        if (dev_proc(dev, get_color_mapping_procs) == NULL) {
-            /*
-             * If not gray then the device must provide the color
-             * mapping procs.
-             */
-            if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
-                fill_dev_proc( dev,
-                           get_color_mapping_procs,
-                           gx_default_DevGray_get_color_mapping_procs );
-            } else
-                fill_dev_proc(dev, get_color_mapping_procs, gx_error_get_color_mapping_procs);
-        }
+        /*
+         * If not gray then the device must provide the color
+         * mapping procs.
+         */
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+            fill_dev_proc( dev,
+                       get_color_mapping_procs,
+                       gx_default_DevGray_get_color_mapping_procs );
+        } else
+            fill_dev_proc(dev, get_color_mapping_procs, gx_error_get_color_mapping_procs);
         fill_dev_proc( dev,
                        get_color_comp_index,
                        gx_default_DevGray_get_color_comp_index );
         break;
 
     case 3:
-        if (dev_proc(dev, get_color_mapping_procs) == NULL) {
-            if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
-                fill_dev_proc( dev,
-                           get_color_mapping_procs,
-                           gx_default_DevRGB_get_color_mapping_procs );
-                fill_dev_proc( dev,
-                           get_color_comp_index,
-                           gx_default_DevRGB_get_color_comp_index );
-            } else {
-                fill_dev_proc(dev, get_color_mapping_procs, gx_error_get_color_mapping_procs);
-                fill_dev_proc(dev, get_color_comp_index, gx_error_get_color_comp_index);
-            }
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+            fill_dev_proc( dev,
+                       get_color_mapping_procs,
+                       gx_default_DevRGB_get_color_mapping_procs );
+            fill_dev_proc( dev,
+                       get_color_comp_index,
+                       gx_default_DevRGB_get_color_comp_index );
+        } else {
+            fill_dev_proc(dev, get_color_mapping_procs, gx_error_get_color_mapping_procs);
+            fill_dev_proc(dev, get_color_comp_index, gx_error_get_color_comp_index);
         }
         break;
 
@@ -728,7 +722,8 @@ gx_device_fill_in_procs(register gx_device * dev)
     }
 
     set_dev_proc(dev, decode_color, get_decode_color(dev));
-    fill_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
+/* This is set at the start of the routine already! */
+/*    fill_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);*/
     fill_dev_proc(dev, get_profile, gx_default_get_profile);
     fill_dev_proc(dev, set_graphics_type_tag, gx_default_set_graphics_type_tag);
 
@@ -753,18 +748,26 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, update_spot_equivalent_colors, gx_default_update_spot_equivalent_colors);
     fill_dev_proc(dev, ret_devn_params, gx_default_ret_devn_params);
     fill_dev_proc(dev, fillpage, gx_default_fillpage);
-    if ((dev_proc(dev, copy_planes) != NULL) &&
-        (dev_proc(dev, get_bits_rectangle) != NULL)) {
-        fill_dev_proc(dev, copy_alpha_hl_color, gx_default_copy_alpha_hl_color);
-    }
+    fill_dev_proc(dev, copy_alpha_hl_color, gx_default_no_copy_alpha_hl_color);
 
-    /* NOT push_transparency_state */
-    /* NOT pop_transparency_state */
-    /* NOT put_image */
+    fill_dev_proc(dev, begin_transparency_group, gx_default_begin_transparency_group);
+    fill_dev_proc(dev, end_transparency_group, gx_default_end_transparency_group);
+
+    fill_dev_proc(dev, begin_transparency_mask, gx_default_begin_transparency_mask);
+    fill_dev_proc(dev, end_transparency_mask, gx_default_end_transparency_mask);
+    fill_dev_proc(dev, discard_transparency_layer, gx_default_discard_transparency_layer);
+
+    fill_dev_proc(dev, pattern_manage, gx_default_pattern_manage);
+    fill_dev_proc(dev, push_transparency_state, gx_default_push_transparency_state);
+    fill_dev_proc(dev, pop_transparency_state, gx_default_pop_transparency_state);
+
+    fill_dev_proc(dev, put_image, gx_default_put_image);
+
     fill_dev_proc(dev, dev_spec_op, gx_default_dev_spec_op);
-    /* NOT copy_planes */
+    fill_dev_proc(dev, copy_planes, gx_default_copy_planes);
     fill_dev_proc(dev, process_page, gx_default_process_page);
 }
+
 
 int
 gx_default_open_device(gx_device * dev)
@@ -1115,6 +1118,72 @@ gx_default_process_page(gx_device *dev, gx_process_page_options_t *options)
     return code;
 }
 
+int
+gx_default_begin_transparency_group(gx_device *dev, const gs_transparency_group_params_t *ptgp, const gs_rect *pbbox, gs_gstate *pgs, gs_memory_t *mem)
+{
+    return 0;
+}
+
+int
+gx_default_end_transparency_group(gx_device *dev, gs_gstate *pgs)
+{
+    return 0;
+}
+
+int
+gx_default_begin_transparency_mask(gx_device *dev, const gx_transparency_mask_params_t *ptgp, const gs_rect *pbbox, gs_gstate *pgs, gs_memory_t *mem)
+{
+    return 0;
+}
+
+int
+gx_default_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
+{
+    return 0;
+}
+
+int
+gx_default_discard_transparency_layer(gx_device *dev, gs_gstate *pgs)
+{
+    return 0;
+}
+
+int
+gx_default_pattern_manage(gx_device *pdev, gx_bitmap_id id, gs_pattern1_instance_t *pinst, pattern_manage_t function)
+{
+    return_error(gs_error_undefined);
+}
+
+int
+gx_default_push_transparency_state(gx_device *dev, gs_gstate *pgs)
+{
+    return 0;
+}
+
+int
+gx_default_pop_transparency_state(gx_device *dev, gs_gstate *pgs)
+{
+    return 0;
+}
+
+int
+gx_default_put_image(gx_device *dev, const byte **buffers, int num_chan, int x, int y, int width, int height, int row_stride, int alpha_plane_index, int tag_plane_index)
+{
+    return_error(gs_error_undefined);
+}
+
+int
+gx_default_no_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x, int raster, gx_bitmap_id id, int x, int y, int width, int height, const gx_drawing_color *pdcolor, int depth)
+{
+    return_error(gs_error_undefined);
+}
+
+int
+gx_default_copy_planes(gx_device *dev, const byte *data, int data_x, int raster, gx_bitmap_id id, int x, int y, int width, int height, int plane_height)
+{
+    return_error(gs_error_undefined);
+}
+
 /* ---------------- Default per-instance procedures ---------------- */
 
 int
@@ -1155,150 +1224,108 @@ gx_default_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t graphics
  * over NULL methods present in the original source device then the code path could be inappropriate for
  * that underlying (now subclassed) device.
  */
+/* November 10th 2017 Restored the original behaviour of the device methods, they should now never be NULL.
+ * Howwever, there are still places in the code which take different code paths if the device method is (now)
+ * the default device method, rather than a device-specific method.
+ * So instead of checking for NULL, we now need to check against the default implementation, and *NOT* copy the
+ * prototype (subclass device) method if the original device had the default implementation.
+ * I suspect a combination of forwarding and subclassing devices will not work properly for this reason.
+ */
 int gx_copy_device_procs(gx_device_procs *dest_procs, gx_device_procs *src_procs, gx_device_procs *prototype_procs)
 {
-    if (src_procs->open_device != NULL)
-        dest_procs->open_device = prototype_procs->open_device;
-    if (src_procs->get_initial_matrix != NULL)
-        dest_procs->get_initial_matrix = prototype_procs->get_initial_matrix;
-    if (src_procs->sync_output != NULL)
-        dest_procs->sync_output = prototype_procs->sync_output;
-    if (src_procs->output_page != NULL)
-        dest_procs->output_page = prototype_procs->output_page;
-    if (src_procs->close_device != NULL)
-        dest_procs->close_device = prototype_procs->close_device;
-    if (src_procs->map_rgb_color != NULL)
-        dest_procs->map_rgb_color = prototype_procs->map_rgb_color;
-    if (src_procs->map_color_rgb != NULL)
-        dest_procs->map_color_rgb = prototype_procs->map_color_rgb;
-    if (src_procs->fill_rectangle != NULL)
-        dest_procs->fill_rectangle = prototype_procs->fill_rectangle;
-    if (src_procs->tile_rectangle != NULL)
-        dest_procs->tile_rectangle = prototype_procs->tile_rectangle;
-    if (src_procs->copy_mono != NULL)
-        dest_procs->copy_mono = prototype_procs->copy_mono;
-    if (src_procs->copy_color != NULL)
-        dest_procs->copy_color = prototype_procs->copy_color;
-    if (src_procs->obsolete_draw_line != NULL)
-        dest_procs->obsolete_draw_line = prototype_procs->obsolete_draw_line;
-    if (src_procs->get_bits != NULL)
-        dest_procs->get_bits = prototype_procs->get_bits;
-    if (src_procs->get_params != NULL)
-        dest_procs->get_params = prototype_procs->get_params;
-    if (src_procs->put_params != NULL)
-        dest_procs->put_params = prototype_procs->put_params;
-    if (src_procs->map_cmyk_color != NULL)
-        dest_procs->map_cmyk_color = prototype_procs->map_cmyk_color;
-    if (src_procs->get_xfont_procs != NULL)
-        dest_procs->get_xfont_procs = prototype_procs->get_xfont_procs;
-    if (src_procs->get_xfont_device != NULL)
-        dest_procs->get_xfont_device = prototype_procs->get_xfont_device;
-    if (src_procs->map_rgb_alpha_color != NULL)
-        dest_procs->map_rgb_alpha_color = prototype_procs->map_rgb_alpha_color;
-    if (src_procs->get_page_device != NULL)
-        dest_procs->get_page_device = prototype_procs->get_page_device;
-    if (src_procs->get_alpha_bits != NULL)
-        dest_procs->get_alpha_bits = prototype_procs->get_alpha_bits;
-    if (src_procs->copy_alpha != NULL)
-        dest_procs->copy_alpha = prototype_procs->copy_alpha;
-    if (src_procs->get_band != NULL)
-        dest_procs->get_band = prototype_procs->get_band;
-    if (src_procs->copy_rop != NULL)
-        dest_procs->copy_rop = prototype_procs->copy_rop;
-    if (src_procs->fill_path != NULL)
-        dest_procs->fill_path = prototype_procs->fill_path;
-    if (src_procs->stroke_path != NULL)
-        dest_procs->stroke_path = prototype_procs->stroke_path;
-    if (src_procs->fill_mask != NULL)
+    dest_procs->open_device = prototype_procs->open_device;
+    dest_procs->get_initial_matrix = prototype_procs->get_initial_matrix;
+    dest_procs->sync_output = prototype_procs->sync_output;
+    dest_procs->output_page = prototype_procs->output_page;
+    dest_procs->close_device = prototype_procs->close_device;
+    dest_procs->map_rgb_color = prototype_procs->map_rgb_color;
+    dest_procs->map_color_rgb = prototype_procs->map_color_rgb;
+    dest_procs->fill_rectangle = prototype_procs->fill_rectangle;
+    dest_procs->tile_rectangle = prototype_procs->tile_rectangle;
+    dest_procs->copy_mono = prototype_procs->copy_mono;
+    dest_procs->copy_color = prototype_procs->copy_color;
+    dest_procs->obsolete_draw_line = prototype_procs->obsolete_draw_line;
+    dest_procs->get_bits = prototype_procs->get_bits;
+    dest_procs->get_params = prototype_procs->get_params;
+    dest_procs->put_params = prototype_procs->put_params;
+    dest_procs->map_cmyk_color = prototype_procs->map_cmyk_color;
+    dest_procs->get_xfont_procs = prototype_procs->get_xfont_procs;
+    dest_procs->get_xfont_device = prototype_procs->get_xfont_device;
+    dest_procs->map_rgb_alpha_color = prototype_procs->map_rgb_alpha_color;
+    dest_procs->get_page_device = prototype_procs->get_page_device;
+    dest_procs->get_alpha_bits = prototype_procs->get_alpha_bits;
+    dest_procs->copy_alpha = prototype_procs->copy_alpha;
+    dest_procs->get_band = prototype_procs->get_band;
+    dest_procs->copy_rop = prototype_procs->copy_rop;
+    dest_procs->fill_path = prototype_procs->fill_path;
+    dest_procs->stroke_path = prototype_procs->stroke_path;
+
+    dest_procs->fill_trapezoid = prototype_procs->fill_trapezoid;
+    dest_procs->fill_parallelogram = prototype_procs->fill_parallelogram;
+    dest_procs->fill_triangle = prototype_procs->fill_triangle;
+    dest_procs->draw_thin_line = prototype_procs->draw_thin_line;
+    dest_procs->begin_image = prototype_procs->begin_image;
+    dest_procs->image_data = prototype_procs->image_data;
+    dest_procs->end_image = prototype_procs->end_image;
+    dest_procs->strip_tile_rectangle = prototype_procs->strip_tile_rectangle;
+    dest_procs->strip_copy_rop = prototype_procs->strip_copy_rop;
+    dest_procs->get_clipping_box = prototype_procs->get_clipping_box;
+    dest_procs->begin_typed_image = prototype_procs->begin_typed_image;
+    dest_procs->get_bits_rectangle = prototype_procs->get_bits_rectangle;
+    dest_procs->map_color_rgb_alpha = prototype_procs->map_color_rgb_alpha;
+    dest_procs->create_compositor = prototype_procs->create_compositor;
+    dest_procs->get_hardware_params = prototype_procs->get_hardware_params;
+    dest_procs->text_begin = prototype_procs->text_begin;
+    dest_procs->finish_copydevice = prototype_procs->finish_copydevice;
+    dest_procs->discard_transparency_layer = prototype_procs->discard_transparency_layer;
+    dest_procs->get_color_mapping_procs = prototype_procs->get_color_mapping_procs;
+    dest_procs->get_color_comp_index = prototype_procs->get_color_comp_index;
+    dest_procs->encode_color = prototype_procs->encode_color;
+    dest_procs->decode_color = prototype_procs->decode_color;
+    dest_procs->pattern_manage = prototype_procs->pattern_manage;
+    dest_procs->fill_rectangle_hl_color = prototype_procs->fill_rectangle_hl_color;
+    dest_procs->include_color_space = prototype_procs->include_color_space;
+    dest_procs->fill_linear_color_scanline = prototype_procs->fill_linear_color_scanline;
+    dest_procs->fill_linear_color_trapezoid = prototype_procs->fill_linear_color_trapezoid;
+    dest_procs->fill_linear_color_triangle = prototype_procs->fill_linear_color_triangle;
+    dest_procs->update_spot_equivalent_colors = prototype_procs->update_spot_equivalent_colors;
+    dest_procs->ret_devn_params = prototype_procs->ret_devn_params;
+    dest_procs->fillpage = prototype_procs->fillpage;
+    dest_procs->push_transparency_state = prototype_procs->push_transparency_state;
+    dest_procs->pop_transparency_state = prototype_procs->pop_transparency_state;
+    dest_procs->dev_spec_op = prototype_procs->dev_spec_op;
+    dest_procs->get_profile = prototype_procs->get_profile;
+    dest_procs->strip_copy_rop2 = prototype_procs->strip_copy_rop2;
+    dest_procs->strip_tile_rect_devn = prototype_procs->strip_tile_rect_devn;
+    dest_procs->process_page = prototype_procs->process_page;
+
+    /*
+     * We absolutely must set the 'set_graphics_type_tag' to the default subclass one
+     * even if the subclassed device is using the default. This is because the
+     * default implementation sets a flag in the device structure, and if we
+     * copy the default method, we'lll end up setting the flag in the subclassing device
+     * instead of the subclassed device!
+     */
+    dest_procs->set_graphics_type_tag = prototype_procs->set_graphics_type_tag;
+
+    /* These are the routines whose existence is checked against the default at
+     * some point in the code. The code path differs when the device implements a
+     * method other than the default, so the subclassing device needs to ensure that
+     * if the subclassed device has one of these methods set to the default, we
+     * do not overwrite the default method.
+     */
+    if (src_procs->fill_mask != gx_default_fill_mask)
         dest_procs->fill_mask = prototype_procs->fill_mask;
-    if (src_procs->fill_trapezoid != NULL)
-        dest_procs->fill_trapezoid = prototype_procs->fill_trapezoid;
-    if (src_procs->fill_parallelogram != NULL)
-        dest_procs->fill_parallelogram = prototype_procs->fill_parallelogram;
-    if (src_procs->fill_triangle != NULL)
-        dest_procs->fill_triangle = prototype_procs->fill_triangle;
-    if (src_procs->draw_thin_line != NULL)
-        dest_procs->draw_thin_line = prototype_procs->draw_thin_line;
-    if (src_procs->begin_image != NULL)
-        dest_procs->begin_image = prototype_procs->begin_image;
-    if (src_procs->image_data != NULL)
-        dest_procs->image_data = prototype_procs->image_data;
-    if (src_procs->end_image != NULL)
-        dest_procs->end_image = prototype_procs->end_image;
-    if (src_procs->strip_tile_rectangle != NULL)
-        dest_procs->strip_tile_rectangle = prototype_procs->strip_tile_rectangle;
-    if (src_procs->strip_copy_rop != NULL)
-        dest_procs->strip_copy_rop = prototype_procs->strip_copy_rop;
-    if (src_procs->get_clipping_box != NULL)
-        dest_procs->get_clipping_box = prototype_procs->get_clipping_box;
-    if (src_procs->begin_typed_image != NULL)
-        dest_procs->begin_typed_image = prototype_procs->begin_typed_image;
-    if (src_procs->get_bits_rectangle != NULL)
-        dest_procs->get_bits_rectangle = prototype_procs->get_bits_rectangle;
-    if (src_procs->map_color_rgb_alpha != NULL)
-        dest_procs->map_color_rgb_alpha = prototype_procs->map_color_rgb_alpha;
-    if (src_procs->create_compositor != NULL)
-        dest_procs->create_compositor = prototype_procs->create_compositor;
-    if (src_procs->get_hardware_params != NULL)
-        dest_procs->get_hardware_params = prototype_procs->get_hardware_params;
-    if (src_procs->text_begin != NULL)
-        dest_procs->text_begin = prototype_procs->text_begin;
-    if (src_procs->finish_copydevice != NULL)
-        dest_procs->finish_copydevice = prototype_procs->finish_copydevice;
-    if (src_procs->begin_transparency_group != NULL)
+    if (src_procs->begin_transparency_group != gx_default_begin_transparency_group)
         dest_procs->begin_transparency_group = prototype_procs->begin_transparency_group;
-    if (src_procs->end_transparency_group != NULL)
+    if (src_procs->end_transparency_group != gx_default_end_transparency_group)
         dest_procs->end_transparency_group = prototype_procs->end_transparency_group;
-    if (src_procs->discard_transparency_layer != NULL)
-        dest_procs->discard_transparency_layer = prototype_procs->discard_transparency_layer;
-    if (src_procs->get_color_mapping_procs != NULL)
-        dest_procs->get_color_mapping_procs = prototype_procs->get_color_mapping_procs;
-    if (src_procs->get_color_comp_index != NULL)
-        dest_procs->get_color_comp_index = prototype_procs->get_color_comp_index;
-    if (src_procs->encode_color != NULL)
-        dest_procs->encode_color = prototype_procs->encode_color;
-    if (src_procs->decode_color != NULL)
-        dest_procs->decode_color = prototype_procs->decode_color;
-    if (src_procs->pattern_manage != NULL)
-        dest_procs->pattern_manage = prototype_procs->pattern_manage;
-    if (src_procs->fill_rectangle_hl_color != NULL)
-        dest_procs->fill_rectangle_hl_color = prototype_procs->fill_rectangle_hl_color;
-    if (src_procs->include_color_space != NULL)
-        dest_procs->include_color_space = prototype_procs->include_color_space;
-    if (src_procs->fill_linear_color_scanline != NULL)
-        dest_procs->fill_linear_color_scanline = prototype_procs->fill_linear_color_scanline;
-    if (src_procs->fill_linear_color_trapezoid != NULL)
-        dest_procs->fill_linear_color_trapezoid = prototype_procs->fill_linear_color_trapezoid;
-    if (src_procs->fill_linear_color_triangle != NULL)
-        dest_procs->fill_linear_color_triangle = prototype_procs->fill_linear_color_triangle;
-    if (src_procs->update_spot_equivalent_colors != NULL)
-        dest_procs->update_spot_equivalent_colors = prototype_procs->update_spot_equivalent_colors;
-    if (src_procs->ret_devn_params != NULL)
-        dest_procs->ret_devn_params = prototype_procs->ret_devn_params;
-    if (src_procs->fillpage != NULL)
-        dest_procs->fillpage = prototype_procs->fillpage;
-    if (src_procs->push_transparency_state != NULL)
-        dest_procs->push_transparency_state = prototype_procs->push_transparency_state;
-    if (src_procs->pop_transparency_state != NULL)
-        dest_procs->pop_transparency_state = prototype_procs->pop_transparency_state;
-    if (src_procs->put_image != NULL)
+    if (src_procs->put_image != gx_default_put_image)
         dest_procs->put_image = prototype_procs->put_image;
-    if (src_procs->dev_spec_op != NULL)
-        dest_procs->dev_spec_op = prototype_procs->dev_spec_op;
-    if (src_procs->copy_planes != NULL)
+    if (src_procs->copy_planes != gx_default_copy_planes)
         dest_procs->copy_planes = prototype_procs->copy_planes;
-    if (src_procs->get_profile != NULL)
-        dest_procs->get_profile = prototype_procs->get_profile;
-    if (src_procs->set_graphics_type_tag != NULL)
-        dest_procs->set_graphics_type_tag = prototype_procs->set_graphics_type_tag;
-    if (src_procs->strip_copy_rop2 != NULL)
-        dest_procs->strip_copy_rop2 = prototype_procs->strip_copy_rop2;
-    if (src_procs->strip_tile_rect_devn != NULL)
-        dest_procs->strip_tile_rect_devn = prototype_procs->strip_tile_rect_devn;
-    if (src_procs->copy_alpha_hl_color != NULL)
+    if (src_procs->copy_alpha_hl_color != gx_default_no_copy_alpha_hl_color)
         dest_procs->copy_alpha_hl_color = prototype_procs->copy_alpha_hl_color;
-    if (src_procs->process_page != NULL)
-        dest_procs->process_page = prototype_procs->process_page;
     return 0;
 }
 

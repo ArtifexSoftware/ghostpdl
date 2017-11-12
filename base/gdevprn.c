@@ -189,9 +189,7 @@ gdev_prn_forwarding_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, in
 {
     gx_device_printer *ppdev = (gx_device_printer *)pdev;
 
-    if (ppdev->orig_procs.dev_spec_op)
-        return ppdev->orig_procs.dev_spec_op(pdev, dev_spec_op, data, size);
-    return gdev_prn_dev_spec_op(pdev, dev_spec_op, data, size);
+    return ppdev->orig_procs.dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
 int
@@ -561,7 +559,8 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
         COPY_PROC(update_spot_equivalent_colors);
         COPY_PROC(ret_devn_params);
         /* This can be set from the memory device (planar) or target */
-        fill_dev_proc(ppdev, put_image, ppdev->orig_procs.put_image);
+        if ( dev_proc(ppdev, put_image) == gx_default_put_image )
+            set_dev_proc(ppdev, put_image, ppdev->orig_procs.put_image);
 #undef COPY_PROC
         /* If using a command list, already opened the device. */
         if (is_command_list)

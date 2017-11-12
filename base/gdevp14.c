@@ -1887,7 +1887,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
        can handle the image data directly. If it cannot, then we will need to
        use the begin_typed_image interface, which cannot pass along tag nor
        alpha data to the target device. */
-    if (target->procs.put_image != NULL) {
+    if (target->procs.put_image != gx_default_put_image) {
         pdf14_buf *cm_result = NULL;
         int alpha_offset, tag_offset;
         const byte *buf_ptrs[GS_CLIENT_COLOR_MAX_COMPONENTS];
@@ -6666,7 +6666,7 @@ send_pdf14trans(gs_gstate	* pgs, gx_device * dev,
         pdf14_end_transparency_group,\
         pdf14_begin_transparency_mask,\
         pdf14_end_transparency_mask,\
-        NULL,				/* discard_transparency_layer */\
+        gx_default_discard_transparency_layer,				/* discard_transparency_layer */\
         get_color_mapping_procs,	/* get_color_mapping_procs */\
         get_color_comp_index,		/* get_color_comp_index */\
         encode_color,			/* encode_color */\

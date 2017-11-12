@@ -719,14 +719,12 @@ fwd_map_gray_cs(gx_device * dev, frac gray, frac out[])
     gx_device * tdev = fdev->target;
     subclass_color_mappings scm;
 
-    if (tdev)
+    if (tdev) {
         scm = get_color_mapping_procs_subclass(tdev);
-    /* Verify that all of the pointers and procs are set */
-    /* If not then use a default routine.  This case should be an error */
-    if (tdev == NULL || scm.procs == NULL || scm.procs->map_gray == NULL)
-        gray_cs_to_gray_cm(tdev, gray, out);   /* if all else fails */
-    else
         map_gray_subclass(scm, gray, out);
+    }
+    else
+        gray_cs_to_gray_cm(tdev, gray, out);   /* if all else fails */
 }
 
 /*
@@ -740,14 +738,12 @@ fwd_map_rgb_cs(gx_device * dev, const gs_gstate *pgs,
     gx_device * tdev = fdev->target;
     subclass_color_mappings scm;
 
-    if (tdev)
+    if (tdev) {
         scm = get_color_mapping_procs_subclass(tdev);
-    /* Verify that all of the pointers and procs are set */
-    /* If not then use a default routine.  This case should be an error */
-    if (tdev == NULL || scm.procs == NULL || scm.procs->map_rgb == NULL)
-        rgb_cs_to_rgb_cm(tdev, pgs, r, g, b, out);   /* if all else fails */
-    else
         map_rgb_subclass(scm, pgs, r, g, b, out);
+    }
+    else
+        rgb_cs_to_rgb_cm(tdev, pgs, r, g, b, out);   /* if all else fails */
 }
 
 /*
@@ -760,14 +756,12 @@ fwd_map_cmyk_cs(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
     gx_device * tdev = fdev->target;
     subclass_color_mappings scm;
 
-    if (tdev)
+    if (tdev) {
         scm = get_color_mapping_procs_subclass(tdev);
-    /* Verify that all of the pointers and procs are set */
-    /* If not then use a default routine.  This case should be an error */
-    if (tdev == NULL || scm.procs == NULL || scm.procs->map_cmyk == 0)
-        cmyk_cs_to_cmyk_cm(tdev, c, m, y, k, out);   /* if all else fails */
-    else
         map_cmyk_subclass(scm, c, m, y, k, out);
+    }
+    else
+        cmyk_cs_to_cmyk_cm(tdev, c, m, y, k, out);   /* if all else fails */
 }
 
 static const gx_cm_color_map_procs FwdDevice_cm_map_procs = {
@@ -786,8 +780,7 @@ gx_forward_get_color_mapping_procs(const gx_device * dev)
     const gx_device_forward * fdev = (const gx_device_forward *)dev;
     gx_device * tdev = fdev->target;
 
-    return (tdev == 0 || dev_proc(tdev, get_color_mapping_procs) == 0
-        ? gx_default_DevGray_get_color_mapping_procs(dev)
+    return (tdev == 0 ? gx_default_DevGray_get_color_mapping_procs(dev)
         : &FwdDevice_cm_map_procs);
 }
 

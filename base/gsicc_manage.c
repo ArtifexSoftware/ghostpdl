@@ -1346,6 +1346,10 @@ gsicc_set_device_blackpreserve(gx_device *dev, gsicc_blackpreserve_t blackpreser
     int code;
     cmm_dev_profile_t *profile_struct;
 
+    /* Although device methods should not be NULL, they are not completely filled in until
+     * gx_device_fill_in_procs is called, and its possible for us to get here before this
+     * happens, so we *must* make sure the method is not NULL before we use it.
+     */
     if (dev->procs.get_profile == NULL) {
         profile_struct = dev->icc_struct;
     } else {
@@ -1366,6 +1370,10 @@ gsicc_set_device_profile_intent(gx_device *dev, gsicc_rendering_intents_t intent
     int code;
     cmm_dev_profile_t *profile_struct;
 
+    /* Although device methods should not be NULL, they are not completely filled in until
+     * gx_device_fill_in_procs is called, and its possible for us to get here before this
+     * happens, so we *must* make sure the method is not NULL before we use it.
+     */
     if (dev->procs.get_profile == NULL) {
         profile_struct = dev->icc_struct;
     } else {
@@ -1386,6 +1394,10 @@ gsicc_set_device_blackptcomp(gx_device *dev, gsicc_blackptcomp_t blackptcomp,
     int code = 0;
     cmm_dev_profile_t *profile_struct;
 
+    /* Although device methods should not be NULL, they are not completely filled in until
+     * gx_device_fill_in_procs is called, and its possible for us to get here before this
+     * happens, so we *must* make sure the method is not NULL before we use it.
+     */
     if (dev->procs.get_profile == NULL) {
         profile_struct = dev->icc_struct;
     } else {

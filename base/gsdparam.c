@@ -280,6 +280,10 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     /* Check if the device profile is null.  If it is, then we need to
        go ahead and get it set up at this time.  If the proc is not
        set up yet then we are not going to do anything yet */
+    /* Although device methods should not be NULL, they are not completely filled in until
+     * gx_device_fill_in_procs is called, and its possible for us to get here before this
+     * happens, so we *must* make sure the method is not NULL before we use it.
+     */
     if (dev->procs.get_profile != NULL) {
         int code;
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
@@ -546,6 +550,10 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     /* Check if the device profile is null.  If it is, then we need to
        go ahead and get it set up at this time.  If the proc is not
        set up yet then we are not going to do anything yet */
+    /* Although device methods should not be NULL, they are not completely filled in until
+     * gx_device_fill_in_procs is called, and its possible for us to get here before this
+     * happens, so we *must* make sure the method is not NULL before we use it.
+     */
     if (dev->procs.get_profile != NULL) {
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
         if (dev_profile == NULL) {
@@ -994,6 +1002,10 @@ gx_default_put_graydetection(bool graydetection, gx_device * dev)
     int code = 0;
     cmm_dev_profile_t *profile_struct;
 
+    /* Although device methods should not be NULL, they are not completely filled in until
+     * gx_device_fill_in_procs is called, and its possible for us to get here before this
+     * happens, so we *must* make sure the method is not NULL before we use it.
+     */
     if (dev->procs.get_profile == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
@@ -1026,6 +1038,10 @@ gx_default_put_graytok(bool graytok, gx_device * dev)
     int code = 0;
     cmm_dev_profile_t *profile_struct;
 
+    /* Although device methods should not be NULL, they are not completely filled in until
+     * gx_device_fill_in_procs is called, and its possible for us to get here before this
+     * happens, so we *must* make sure the method is not NULL before we use it.
+     */
     if (dev->procs.get_profile == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
@@ -1060,6 +1076,10 @@ gx_default_put_prebandthreshold(bool prebandthreshold, gx_device * dev)
     int code = 0;
     cmm_dev_profile_t *profile_struct;
 
+    /* Although device methods should not be NULL, they are not completely filled in until
+     * gx_device_fill_in_procs is called, and its possible for us to get here before this
+     * happens, so we *must* make sure the method is not NULL before we use it.
+     */
     if (dev->procs.get_profile == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
@@ -1094,6 +1114,10 @@ gx_default_put_usefastcolor(bool fastcolor, gx_device * dev)
     int code = 0;
     cmm_dev_profile_t *profile_struct;
 
+    /* Although device methods should not be NULL, they are not completely filled in until
+     * gx_device_fill_in_procs is called, and its possible for us to get here before this
+     * happens, so we *must* make sure the method is not NULL before we use it.
+     */
     if (dev->procs.get_profile == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
@@ -1128,6 +1152,10 @@ gx_default_put_simulateoverprint(bool sim_overprint, gx_device * dev)
     int code = 0;
     cmm_dev_profile_t *profile_struct;
 
+    /* Although device methods should not be NULL, they are not completely filled in until
+     * gx_device_fill_in_procs is called, and its possible for us to get here before this
+     * happens, so we *must* make sure the method is not NULL before we use it.
+     */
     if (dev->procs.get_profile == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
@@ -1163,6 +1191,10 @@ gx_default_put_intent(gsicc_rendering_intents_t icc_intent, gx_device * dev,
     int code;
     cmm_dev_profile_t *profile_struct;
 
+    /* Although device methods should not be NULL, they are not completely filled in until
+     * gx_device_fill_in_procs is called, and its possible for us to get here before this
+     * happens, so we *must* make sure the method is not NULL before we use it.
+     */
     if (dev->procs.get_profile == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
@@ -1195,6 +1227,10 @@ gx_default_put_blackpreserve(gsicc_blackpreserve_t blackpreserve, gx_device * de
     int code;
     cmm_dev_profile_t *profile_struct;
 
+    /* Although device methods should not be NULL, they are not completely filled in until
+     * gx_device_fill_in_procs is called, and its possible for us to get here before this
+     * happens, so we *must* make sure the method is not NULL before we use it.
+     */
     if (dev->procs.get_profile == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
@@ -1232,6 +1268,10 @@ gx_default_put_blackptcomp(gsicc_blackptcomp_t blackptcomp, gx_device * dev,
     int code;
     cmm_dev_profile_t *profile_struct;
 
+    /* Although device methods should not be NULL, they are not completely filled in until
+     * gx_device_fill_in_procs is called, and its possible for us to get here before this
+     * happens, so we *must* make sure the method is not NULL before we use it.
+     */
     if (dev->procs.get_profile == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that

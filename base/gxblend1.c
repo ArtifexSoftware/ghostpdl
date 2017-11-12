@@ -720,7 +720,7 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride,
     }
     /* See if the target device has a put_image command.  If
        yes then see if it can handle the image data directly. */
-    if (target->procs.put_image != NULL) {
+    if (target->procs.put_image != gx_default_put_image) {
         /* See if the target device can handle the data in its current
            form with the alpha component */
         int alpha_offset = num_comp;

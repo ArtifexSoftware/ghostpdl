@@ -262,8 +262,8 @@ using_transparency_pattern(gs_gstate *pgs)
     gx_device *dev = gs_currentdevice_inline(pgs);
 
     return ((!gs_color_writes_pure(pgs))
-            && dev->procs.begin_transparency_group != NULL
-            && dev->procs.end_transparency_group != NULL);
+            && dev->procs.begin_transparency_group != gx_default_begin_transparency_group
+            && dev->procs.end_transparency_group != gx_default_end_transparency_group);
 }
 
 static bool
