@@ -365,7 +365,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
         gs_memory_t *mem = dev->memory;
         int bpp = dev->color_info.depth;
         uchar ncomps = dev->color_info.num_components;
-        uint in_size = gx_device_raster(dev, false);
+        uint in_size = gx_device_raster_chunky(dev, false);
         byte *lin;
         uint out_size;
         byte *lout;
