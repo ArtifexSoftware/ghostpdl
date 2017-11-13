@@ -862,14 +862,20 @@ pdf_document_metadata(gx_device_pdf *pdev)
         if (code < 0)
             return code;
         code = cos_dict_put_c_key_string((cos_dict_t *)pres->object, "/Type", (const byte *)"/Metadata", 9);
-        if (code < 0)
+        if (code < 0) {
+            pdf_close_aside(pdev);
             return code;
+        }
         code = cos_dict_put_c_key_string((cos_dict_t *)pres->object, "/Subtype", (const byte *)"/XML", 4);
-        if (code < 0)
+        if (code < 0) {
+            pdf_close_aside(pdev);
             return code;
+        }
         code = pdf_write_document_metadata(pdev, digest);
-        if (code < 0)
+        if (code < 0) {
+            pdf_close_aside(pdev);
             return code;
+        }
         code = pdf_close_aside(pdev);
         if (code < 0)
             return code;
