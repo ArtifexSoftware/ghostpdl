@@ -166,6 +166,7 @@ DEVGEN=$(DEVGENDIR)$(D)
 #	plang		PLANar device (8 bit Gray)
 #	planc		PLANar device (32 bit CMYK)
 #	plank		PLANar device (4 bit CMYK)
+#	planr		PLANar device (3 bit RGB)
 #	plib		PLanar Interleaved Band buffer device (24 bit RGB)
 #	plibm		PLanar Interleaved Band buffer device (1 bit Mono)
 #	plibg		PLanar Interleaved Band buffer device (8 bit Gray)
@@ -1797,6 +1798,10 @@ $(DD)planc.dev : $(plan_) $(GLD)page.dev $(GDEV) \
 $(DD)plank.dev : $(plan_) $(GLD)page.dev $(GDEV) \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)plank $(plan_)
+
+$(DD)planr.dev : $(plan_) $(GLD)page.dev $(GDEV) \
+ $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)planr $(plan_)
 
 #
 # PLanar Interlaced Buffer device
