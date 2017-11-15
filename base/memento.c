@@ -1725,6 +1725,11 @@ static int Memento_event(void)
     return 0;
 }
 
+int Memento_sequence(void)
+{
+    return memento.sequence;
+}
+
 int Memento_breakAt(int event)
 {
     memento.breakAt = event;
