@@ -26,6 +26,8 @@
  * called from the FunctionType 4 interpreter (zfunc4.c).
  */
 
+static int mul_64_64_overflowcheck(int64_t abc, int64_t def, int64_t *res);
+
 /* <num1> <num2> add <sum> */
 /* We make this into a separate procedure because */
 /* the interpreter will almost always call it directly. */
@@ -204,7 +206,7 @@ Then:
 
 */
 
-int mul_64_64_overflowcheck(int64_t abc, int64_t def, int64_t *res)
+static int mul_64_64_overflowcheck(int64_t abc, int64_t def, int64_t *res)
 {
   uint32_t b = (abc>>32);
   uint32_t c = (uint32_t)abc;
