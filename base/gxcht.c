@@ -618,6 +618,13 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
     int i;
     int origx, origy;
 
+    /* This routine cannot build 3bit chunky halftones, as 3 bit
+     * things don't pack nicely into bytes or words. Accordingly
+     * treat 3 bit things as 4 bit things. This is appropriate when
+     * generating halftones for planar. */
+    if (depth == 3)
+        depth = 4;
+
     if (w <= 0 || h <= 0)
         return 0;
     origx = x;

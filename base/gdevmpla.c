@@ -850,6 +850,14 @@ mem_planar_copy_color(gx_device * dev, const byte * base, int sourcex,
     mem_save_params_t save;
     uchar pi;
 
+    /* This routine cannot copy from 3bit chunky data, as 3 bit
+     * things don't pack nicely into bytes or words. Accordingly
+     * treat 3 bit things as 4 bit things. This is appropriate as
+     * 3 bit data will generally have been passed to us as 4bit
+     * data - such as halftones. */
+    if (source_depth == 3)
+        source_depth = 4;
+
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     MEM_SAVE_PARAMS(mdev, save);
     for (pi = 0; pi < mdev->color_info.num_components; ++pi) {
