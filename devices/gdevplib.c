@@ -655,8 +655,8 @@ plib_create_buf_device(gx_device **pbdev, gx_device *target, int y,
                                           mem, color_usage);
     if (code < 0)
         return code;
-    if ((*pbdev)->procs.get_bits_rectangle == mem_get_bits_rectangle)
-        (*pbdev)->procs.get_bits_rectangle = plib_get_bits_rectangle_mem;
+    if (dev_proc((*pbdev), get_bits_rectangle) == mem_get_bits_rectangle)
+        set_dev_proc((*pbdev), get_bits_rectangle, plib_get_bits_rectangle_mem);
     return 0;
 }
 

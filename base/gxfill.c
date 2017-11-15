@@ -199,7 +199,7 @@ is_spotan_device(gx_device * dev)
      * is allocaded on the stack i.e. has no block header with a descriptor
      * but has dev->memory set like a heap-allocated device.
      */
-    return dev->procs.open_device == san_open;
+    return dev_proc(dev, open_device) == san_open;
 }
 
 /* Forward declarations */

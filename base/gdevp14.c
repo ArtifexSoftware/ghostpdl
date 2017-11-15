@@ -1887,7 +1887,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
        can handle the image data directly. If it cannot, then we will need to
        use the begin_typed_image interface, which cannot pass along tag nor
        alpha data to the target device. */
-    if (target->procs.put_image != gx_default_put_image) {
+    if (dev_proc(target, put_image) != gx_default_put_image) {
         pdf14_buf *cm_result = NULL;
         int alpha_offset, tag_offset;
         const byte *buf_ptrs[GS_CLIENT_COLOR_MAX_COMPONENTS];
@@ -3278,7 +3278,7 @@ pdf14_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
                    renderer which will end up installed for this case.
                    Detect setting of begin_image to gx_no_begin_image.
                    (final recursive call) */
-                if (dev->procs.begin_image != gx_default_begin_image) {
+                if (dev_proc(dev, begin_image) != gx_default_begin_image) {
                     code = pdf14_patt_trans_image_fill(dev, pgs, pmat, pic,
                                                 prect, pdcolor, pcpath, mem,
                                                 pinfo);
@@ -3692,7 +3692,7 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
     pdev->is_planar = target->is_planar;
     pdev->procs = dev_proto->procs;
     if (has_tags) {
-        pdev->procs.encode_color = pdf14_encode_color_tag;
+        set_dev_proc(pdev, encode_color, pdf14_encode_color_tag);
         pdev->color_info.comp_shift[pdev->color_info.num_components] = pdev->color_info.depth;
         pdev->color_info.depth += 8;
     }
@@ -4277,10 +4277,8 @@ pdf14_end_transparency_group(gx_device *dev,
                 parent_color->parent_color_comp_index == NULL)) {
             pgs->get_cmap_procs = parent_color->get_cmap_procs;
             gx_set_cmap_procs(pgs, dev);
-            pdev->procs.get_color_mapping_procs =
-                parent_color->parent_color_mapping_procs;
-            pdev->procs.get_color_comp_index =
-                parent_color->parent_color_comp_index;
+            set_dev_proc(pdev, get_color_mapping_procs, parent_color->parent_color_mapping_procs);
+            set_dev_proc(pdev, get_color_comp_index, parent_color->parent_color_comp_index);
             pdev->color_info.polarity = parent_color->polarity;
             pdev->color_info.num_components = parent_color->num_components;
             pdev->blend_procs = parent_color->parent_blending_procs;
@@ -4477,9 +4475,9 @@ pdf14_update_device_color_procs(gx_device *dev,
     /* Save the old information */
     parent_color_info->get_cmap_procs = pgs->get_cmap_procs;
     parent_color_info->parent_color_mapping_procs =
-        pdev->procs.get_color_mapping_procs;
+        dev_proc(pdev, get_color_mapping_procs);
     parent_color_info->parent_color_comp_index =
-        pdev->procs.get_color_comp_index;
+        dev_proc(pdev, get_color_comp_index);
     parent_color_info->parent_blending_procs = pdev->blend_procs;
     parent_color_info->polarity =              pdev->color_info.polarity;
     parent_color_info->num_components =        pdev->color_info.num_components;
@@ -4488,8 +4486,8 @@ pdf14_update_device_color_procs(gx_device *dev,
     parent_color_info->depth =                 pdev->color_info.depth;
     parent_color_info->max_color =             pdev->color_info.max_color;
     parent_color_info->max_gray =              pdev->color_info.max_gray;
-    parent_color_info->encode =                pdev->procs.encode_color;
-    parent_color_info->decode =                pdev->procs.decode_color;
+    parent_color_info->encode =                dev_proc(pdev, encode_color);
+    parent_color_info->decode =                dev_proc(pdev, decode_color);
     memcpy(&(parent_color_info->comp_bits), &(pdev->color_info.comp_bits),
         GX_DEVICE_COLOR_MAX_COMPONENTS);
     memcpy(&(parent_color_info->comp_shift), &(pdev->color_info.comp_shift),
@@ -4518,10 +4516,8 @@ pdf14_update_device_color_procs(gx_device *dev,
         }
     }
 
-    pdev->procs.get_color_mapping_procs =
-        pdevproto->static_procs->get_color_mapping_procs;
-    pdev->procs.get_color_comp_index =
-        pdevproto->static_procs->get_color_comp_index;
+    set_dev_proc(pdev, get_color_mapping_procs, pdevproto->static_procs->get_color_mapping_procs);
+    set_dev_proc(pdev, get_color_comp_index, pdevproto->static_procs->get_color_comp_index);
     pdev->blend_procs = pdevproto->blend_procs;
     pdev->color_info.polarity = new_polarity;
     pdev->color_info.num_components = new_num_comps;
@@ -4732,8 +4728,8 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                    "[v]pdf14_update_device_color_procs_push_c,num_components_old = %d num_components_new = %d\n",
                    pdev->color_info.num_components,new_num_comps);
         /* Set new information in the device */
-        pdev->procs.get_color_mapping_procs = pdevproto->static_procs->get_color_mapping_procs;
-        pdev->procs.get_color_comp_index = pdevproto->static_procs->get_color_comp_index;
+        set_dev_proc(pdev, get_color_mapping_procs, pdevproto->static_procs->get_color_mapping_procs);
+        set_dev_proc(pdev, get_color_comp_index, pdevproto->static_procs->get_color_comp_index);
         pdev->blend_procs = pdevproto->blend_procs;
         pdev->color_info.polarity = new_polarity;
         pdev->color_info.num_components = new_num_comps;
@@ -4796,8 +4792,8 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_gstate *pgs)
                    pdev->color_info.num_components,parent_color->num_components);
         pgs->get_cmap_procs = parent_color->get_cmap_procs;
         gx_set_cmap_procs(pgs, dev);
-        pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
-        pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
+        set_dev_proc(pdev, get_color_mapping_procs, parent_color->parent_color_mapping_procs);
+        set_dev_proc(pdev, get_color_comp_index, parent_color->parent_color_comp_index);
         pdev->color_info.polarity = parent_color->polarity;
         pdev->color_info.depth = parent_color->depth;
         pdev->color_info.num_components = parent_color->num_components;
@@ -4805,8 +4801,8 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_gstate *pgs)
         pdev->pdf14_procs = parent_color->unpack_procs;
         pdev->color_info.max_color = parent_color->max_color;
         pdev->color_info.max_gray = parent_color->max_gray;
-        pdev->procs.encode_color = parent_color->encode;
-        pdev->procs.decode_color = parent_color->decode;
+        set_dev_proc(pdev, encode_color, parent_color->encode);
+        set_dev_proc(pdev, decode_color, parent_color->decode);
         memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),
                             GX_DEVICE_COLOR_MAX_COMPONENTS);
         memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),
@@ -4866,9 +4862,9 @@ pdf14_push_parent_color(gx_device *dev, const gs_gstate *pgs)
     /* Initialize with values */
     new_parent_color->get_cmap_procs = pgs->get_cmap_procs;
     new_parent_color->parent_color_mapping_procs =
-        pdev->procs.get_color_mapping_procs;
+        dev_proc(pdev, get_color_mapping_procs);
     new_parent_color->parent_color_comp_index =
-        pdev->procs.get_color_comp_index;
+        dev_proc(pdev, get_color_comp_index);
     new_parent_color->parent_blending_procs = pdev->blend_procs;
     new_parent_color->polarity = pdev->color_info.polarity;
     new_parent_color->num_components = pdev->color_info.num_components;
@@ -4876,8 +4872,8 @@ pdf14_push_parent_color(gx_device *dev, const gs_gstate *pgs)
     new_parent_color->depth = pdev->color_info.depth;
     new_parent_color->max_color = pdev->color_info.max_color;
     new_parent_color->max_gray = pdev->color_info.max_gray;
-    new_parent_color->decode = pdev->procs.decode_color;
-    new_parent_color->encode = pdev->procs.encode_color;
+    new_parent_color->decode = dev_proc(pdev, decode_color);
+    new_parent_color->encode = dev_proc(pdev, encode_color);
     memcpy(&(new_parent_color->comp_bits),&(pdev->color_info.comp_bits),
                         GX_DEVICE_COLOR_MAX_COMPONENTS);
     memcpy(&(new_parent_color->comp_shift),&(pdev->color_info.comp_shift),
@@ -5020,8 +5016,8 @@ pdf14_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
             parent_color->parent_color_comp_index == NULL)) {
             pgs->get_cmap_procs = parent_color->get_cmap_procs;
             gx_set_cmap_procs(pgs, dev);
-            pdev->procs.get_color_mapping_procs = parent_color->parent_color_mapping_procs;
-            pdev->procs.get_color_comp_index = parent_color->parent_color_comp_index;
+            set_dev_proc(pdev, get_color_mapping_procs, parent_color->parent_color_mapping_procs);
+            set_dev_proc(pdev, get_color_comp_index, parent_color->parent_color_comp_index);
             pdev->color_info.polarity = parent_color->polarity;
             pdev->color_info.num_components = parent_color->num_components;
             pdev->color_info.depth = parent_color->depth;
@@ -5033,8 +5029,8 @@ pdf14_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
             parent_color->get_cmap_procs = NULL;
             parent_color->parent_color_comp_index = NULL;
             parent_color->parent_color_mapping_procs = NULL;
-            pdev->procs.encode_color = parent_color->encode;
-            pdev->procs.decode_color = parent_color->decode;
+            set_dev_proc(pdev, encode_color, parent_color->encode);
+            set_dev_proc(pdev, decode_color, parent_color->decode);
             memcpy(&(pdev->color_info.comp_bits),&(parent_color->comp_bits),
                                 GX_DEVICE_COLOR_MAX_COMPONENTS);
             memcpy(&(pdev->color_info.comp_shift),&(parent_color->comp_shift),
@@ -5723,7 +5719,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
        of colorants became large.  If we need to do compressed color with
        tags that will be a special project at that time */
     if (has_tags) {
-        p14dev->procs.encode_color = pdf14_encode_color_tag;
+        set_dev_proc(p14dev, encode_color, pdf14_encode_color_tag);
         p14dev->color_info.comp_shift[p14dev->color_info.num_components] = p14dev->color_info.depth;
         p14dev->color_info.depth += 8;
     }
@@ -6966,7 +6962,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
        into other issues if the number of colorants became large.  If we need to
        do compressed color with tags that will be a special project at that time */
     if (has_tags) {
-        pdev->procs.encode_color = pdf14_encode_color_tag;
+        set_dev_proc(pdev, encode_color, pdf14_encode_color_tag);
         pdev->color_info.comp_shift[pdev->color_info.num_components] = pdev->color_info.depth;
         pdev->color_info.depth += 8;
     }
@@ -6990,10 +6986,10 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
         rc_assign(pdev->icc_struct->device_profile[0],
                   pgs->icc_manager->default_rgb, "pdf14_create_clist_device");
     }
-    pdev->my_encode_color = pdev->procs.encode_color;
-    pdev->my_decode_color = pdev->procs.decode_color;
-    pdev->my_get_color_mapping_procs = pdev->procs.get_color_mapping_procs;
-    pdev->my_get_color_comp_index = pdev->procs.get_color_comp_index;
+    pdev->my_encode_color = dev_proc(pdev, encode_color);
+    pdev->my_decode_color = dev_proc(pdev, decode_color);
+    pdev->my_get_color_mapping_procs = dev_proc(pdev, get_color_mapping_procs);
+    pdev->my_get_color_comp_index = dev_proc(pdev, get_color_comp_index);
     pdev->color_info.separable_and_linear =
         target->color_info.separable_and_linear;
     *ppdev = (gx_device *) pdev;
@@ -7163,22 +7159,20 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 /* Re-activate the PDF 1.4 compositor */
                 pdev->saved_target_color_info = pdev->target->color_info;
                 pdev->target->color_info = pdev->color_info;
-                pdev->saved_target_encode_color = pdev->target->procs.encode_color;
-                pdev->saved_target_decode_color = pdev->target->procs.decode_color;
-                pdev->target->procs.encode_color = pdev->procs.encode_color =
-                                                   pdev->my_encode_color;
-                pdev->target->procs.decode_color = pdev->procs.decode_color =
-                                                   pdev->my_decode_color;
+                pdev->saved_target_encode_color = dev_proc(pdev->target, encode_color);
+                pdev->saved_target_decode_color = dev_proc(pdev->target, decode_color);
+                set_dev_proc(pdev->target, encode_color, pdev->my_encode_color);
+                set_dev_proc(pdev, encode_color, pdev->my_encode_color);
+                set_dev_proc(pdev->target, decode_color, pdev->my_decode_color);
+                set_dev_proc(pdev, decode_color, pdev->my_decode_color);
                 pdev->saved_target_get_color_mapping_procs =
-                                    pdev->target->procs.get_color_mapping_procs;
+                                        dev_proc(pdev->target, get_color_mapping_procs);
                 pdev->saved_target_get_color_comp_index =
-                                        pdev->target->procs.get_color_comp_index;
-                pdev->target->procs.get_color_mapping_procs =
-                        pdev->procs.get_color_mapping_procs =
-                        pdev->my_get_color_mapping_procs;
-                pdev->target->procs.get_color_comp_index =
-                        pdev->procs.get_color_comp_index =
-                        pdev->my_get_color_comp_index;
+                                        dev_proc(pdev->target, get_color_comp_index);
+                set_dev_proc(pdev->target, get_color_mapping_procs, pdev->my_get_color_mapping_procs);
+                set_dev_proc(pdev, get_color_mapping_procs, pdev->my_get_color_mapping_procs);
+                set_dev_proc(pdev->target, get_color_comp_index, pdev->my_get_color_comp_index);
+                set_dev_proc(pdev, get_color_comp_index, pdev->my_get_color_comp_index);
                 pdev->save_get_cmap_procs = pgs->get_cmap_procs;
                 pgs->get_cmap_procs = pdf14_get_cmap_procs;
                 gx_set_cmap_procs(pgs, dev);
@@ -7209,14 +7203,10 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 pdf14_decrement_smask_color(pgs, dev);
                 /* Restore the color_info for the clist device */
                 pdev->target->color_info = pdev->saved_target_color_info;
-                pdev->target->procs.encode_color =
-                                        pdev->saved_target_encode_color;
-                pdev->target->procs.decode_color =
-                                        pdev->saved_target_decode_color;
-                pdev->target->procs.get_color_mapping_procs =
-                                    pdev->saved_target_get_color_mapping_procs;
-                pdev->target->procs.get_color_comp_index =
-                                    pdev->saved_target_get_color_comp_index;
+                set_dev_proc(pdev->target, encode_color, pdev->saved_target_encode_color);
+                set_dev_proc(pdev->target, decode_color, pdev->saved_target_decode_color);
+                set_dev_proc(pdev->target, get_color_mapping_procs, pdev->saved_target_get_color_mapping_procs);
+                set_dev_proc(pdev->target, get_color_comp_index, pdev->saved_target_get_color_comp_index);
                 pgs->get_cmap_procs = pdev->save_get_cmap_procs;
                 gx_set_cmap_procs(pgs, pdev->target);
                 gx_device_decache_colors(pdev->target);
@@ -7775,7 +7765,7 @@ pdf14_clist_begin_typed_image(gx_device	* dev, const gs_gstate * pgs,
     if (pim->ImageMask) {
         if (pdcolor != NULL && gx_dc_is_pattern1_color(pdcolor)) {
             if( gx_pattern1_get_transptr(pdcolor) != NULL){
-                 if (dev->procs.begin_image != pdf14_clist_begin_image) {
+                 if (dev_proc(dev, begin_image) != pdf14_clist_begin_image) {
                     ptile = pdcolor->colors.pattern.p_tile;
                     /* Set up things in the ptile so that we get the proper
                        blending etc */
@@ -7894,22 +7884,20 @@ gs_pdf14_clist_device_push(gs_memory_t *mem, gs_gstate *pgs, gx_device **pcdev,
     cdev->clist_color_info.max_color = p14dev->color_info.max_color;
     cdev->clist_color_info.max_gray = p14dev->color_info.max_gray;
 
-    p14dev->saved_target_encode_color = dev->procs.encode_color;
-    p14dev->saved_target_decode_color = dev->procs.decode_color;
-    dev->procs.encode_color = p14dev->procs.encode_color =
-                              p14dev->my_encode_color;
-    dev->procs.decode_color = p14dev->procs.decode_color =
-                              p14dev->my_decode_color;
+    p14dev->saved_target_encode_color = dev_proc(dev, encode_color);
+    p14dev->saved_target_decode_color = dev_proc(dev, decode_color);
+    set_dev_proc(dev, encode_color, p14dev->my_encode_color);
+    set_dev_proc(p14dev, encode_color, p14dev->my_encode_color);
+    set_dev_proc(dev, decode_color, p14dev->my_decode_color);
+    set_dev_proc(p14dev, decode_color, p14dev->my_decode_color);
     p14dev->saved_target_get_color_mapping_procs =
-                              dev->procs.get_color_mapping_procs;
+                              dev_proc(dev, get_color_mapping_procs);
     p14dev->saved_target_get_color_comp_index =
-                              dev->procs.get_color_comp_index;
-    dev->procs.get_color_mapping_procs =
-        p14dev->procs.get_color_mapping_procs =
-        p14dev->my_get_color_mapping_procs;
-    dev->procs.get_color_comp_index =
-        p14dev->procs.get_color_comp_index =
-        p14dev->my_get_color_comp_index;
+                              dev_proc(dev, get_color_comp_index);
+    set_dev_proc(dev, get_color_mapping_procs, p14dev->my_get_color_mapping_procs);
+    set_dev_proc(p14dev, get_color_mapping_procs, p14dev->my_get_color_mapping_procs);
+    set_dev_proc(dev, get_color_comp_index, p14dev->my_get_color_comp_index);
+    set_dev_proc(p14dev, get_color_comp_index, p14dev->my_get_color_comp_index);
     p14dev->save_get_cmap_procs = pgs->get_cmap_procs;
     pgs->get_cmap_procs = pdf14_get_cmap_procs;
     gx_set_cmap_procs(pgs, dev);

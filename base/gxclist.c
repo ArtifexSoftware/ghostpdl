@@ -322,7 +322,7 @@ clist_init_bands(gx_device * dev, gx_device_memory *bdev, uint data_size,
     int nbands;
     ulong space;
 
-    if (dev->procs.open_device == pattern_clist_open_device) {
+    if (dev_proc(dev, open_device) == pattern_clist_open_device) {
         /* We don't need bands really. */
         cdev->page_band_height = dev->height;
         cdev->nbands = 1;
@@ -416,7 +416,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     /* copy_alpha in the commmand list device as well. */
     if (dev_proc(pbdev, copy_alpha) == gx_no_copy_alpha)
         cdev->disable_mask |= clist_disable_copy_alpha;
-    if (cdev->procs.open_device == pattern_clist_open_device) {
+    if (dev_proc(cdev, open_device) == pattern_clist_open_device) {
         bits_size = data_size / 2;
         cdev->page_line_ptrs_offset = 0;
     } else {
@@ -745,7 +745,7 @@ clist_close(gx_device *dev)
 
     if (cdev->do_not_open_or_close_bandfiles)
         return 0;
-    if (cdev->procs.open_device == pattern_clist_open_device) {
+    if (dev_proc(cdev, open_device) == pattern_clist_open_device) {
         gs_free_object(cdev->bandlist_memory, cdev->data, "clist_close");
         cdev->data = NULL;
     }

@@ -360,7 +360,7 @@ gx_device_make_struct_type(gs_memory_struct_type_t *st,
         procs = &dev->procs;
     if (dev->stype)
         *st = *dev->stype;
-    else if (procs->get_xfont_procs == gx_forward_get_xfont_procs)
+    else if (dev_proc(dev, get_xfont_procs) == gx_forward_get_xfont_procs)
         *st = st_device_forward;
     else
         *st = st_device;
@@ -668,9 +668,9 @@ gs_make_null_device(gx_device_null *dev_null, gx_device *dev,
         set_dev_proc(dn, pattern_manage, gx_default_pattern_manage);
         set_dev_proc(dn, push_transparency_state, gx_default_push_transparency_state);
         set_dev_proc(dn, pop_transparency_state, gx_default_pop_transparency_state);
-#if 0
         set_dev_proc(dn, put_image, gx_default_put_image);
-#endif
+        set_dev_proc(dn, copy_planes, gx_default_copy_planes);
+        set_dev_proc(dn, copy_alpha_hl_color, gx_default_no_copy_alpha_hl_color);
         dn->graphics_type_tag = dev->graphics_type_tag;	/* initialize to same as target */
         gx_device_copy_color_params(dn, dev);
     }

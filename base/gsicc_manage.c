@@ -1350,7 +1350,7 @@ gsicc_set_device_blackpreserve(gx_device *dev, gsicc_blackpreserve_t blackpreser
      * gx_device_fill_in_procs is called, and its possible for us to get here before this
      * happens, so we *must* make sure the method is not NULL before we use it.
      */
-    if (dev->procs.get_profile == NULL) {
+    if (dev_proc(dev, get_profile) == NULL) {
         profile_struct = dev->icc_struct;
     } else {
         code = dev_proc(dev, get_profile)(dev,  &profile_struct);
@@ -1374,7 +1374,7 @@ gsicc_set_device_profile_intent(gx_device *dev, gsicc_rendering_intents_t intent
      * gx_device_fill_in_procs is called, and its possible for us to get here before this
      * happens, so we *must* make sure the method is not NULL before we use it.
      */
-    if (dev->procs.get_profile == NULL) {
+    if (dev_proc(dev, get_profile) == NULL) {
         profile_struct = dev->icc_struct;
     } else {
         code = dev_proc(dev, get_profile)(dev,  &profile_struct);
@@ -1398,7 +1398,7 @@ gsicc_set_device_blackptcomp(gx_device *dev, gsicc_blackptcomp_t blackptcomp,
      * gx_device_fill_in_procs is called, and its possible for us to get here before this
      * happens, so we *must* make sure the method is not NULL before we use it.
      */
-    if (dev->procs.get_profile == NULL) {
+    if (dev_proc(dev, get_profile) == NULL) {
         profile_struct = dev->icc_struct;
     } else {
         code = dev_proc(dev, get_profile)(dev,  &profile_struct);

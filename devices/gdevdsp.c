@@ -1401,7 +1401,7 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
                 ? gx_max_color_value : 0;
         dev_proc(ddev, fill_rectangle)((gx_device *)ddev,
                  0, 0, ddev->width, ddev->height,
-                 ddev->procs.encode_color((gx_device *)ddev, cv));
+                 dev_proc(ddev, encode_color)((gx_device *)ddev, cv));
     }
 
     return ccode;

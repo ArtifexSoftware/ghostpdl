@@ -831,11 +831,11 @@ gx_forward_dev_spec_op(gx_device * dev, int dev_spec_op, void *data, int size)
        so this function is unapplicable to clist. */
     if (tdev == 0) {
         if (dev_spec_op == gxdso_pattern_shfill_doesnt_need_path) {
-            return (dev->procs.fill_path == gx_default_fill_path);
+            return (dev_proc(dev, fill_path) == gx_default_fill_path);
         }
         return_error(gs_error_undefined);
     } else if (dev_spec_op == gxdso_pattern_handles_clip_path) {
-        if (dev->procs.fill_path == gx_default_fill_path)
+        if (dev_proc(dev, fill_path) == gx_default_fill_path)
             return 0;
     } else if (dev_spec_op == gxdso_device_child) {
         gxdso_device_child_request *d = (gxdso_device_child_request *)data;

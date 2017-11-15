@@ -51,7 +51,7 @@ mem_planar_dev_spec_op(gx_device *pdev, int dev_spec_op,
     if (dev_spec_op == gxdso_supports_devn) {
         dev_proc(pdev, get_profile)(pdev, &dev_profile);
         if (dev_profile != NULL && dev_profile->supports_devn &&
-            pdev->procs.fill_rectangle_hl_color == mem_planar_fill_rectangle_hl_color)
+            dev_proc(pdev, fill_rectangle_hl_color) == mem_planar_fill_rectangle_hl_color)
             return 1;
     }
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);

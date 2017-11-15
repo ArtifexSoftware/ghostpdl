@@ -243,12 +243,12 @@ static void gx_pattern_accum_finalize_cw(gx_device * dev)
 
 bool gx_device_is_pattern_accum(gx_device *dev)
 {
-    return dev->procs.open_device == pattern_accum_open;
+    return dev_proc(dev, open_device) == pattern_accum_open;
 }
 
 bool gx_device_is_pattern_clist(gx_device *dev)
 {
-    return dev->procs.open_device == pattern_clist_open_device;
+    return dev_proc(dev, open_device) == pattern_clist_open_device;
 }
 
 /* Allocate a pattern accumulator, with an initial refct of 0. */
@@ -326,7 +326,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         }
         cwdev = (gx_device_clist_writer *)cdev;
         cwdev->finalize = gx_pattern_accum_finalize_cw;
-        cwdev->procs.open_device = pattern_clist_open_device;
+        set_dev_proc(cwdev, open_device, pattern_clist_open_device);
         fdev = (gx_device_forward *)cdev;
     }
     fdev->log2_align_mod = tdev->log2_align_mod;
@@ -1019,7 +1019,7 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
         return code;
     pcache = pgs->pattern_cache;
 
-    if (fdev->procs.open_device != pattern_clist_open_device) {
+    if (dev_proc(fdev, open_device) != pattern_clist_open_device) {
         gx_device_pattern_accum *padev = (gx_device_pattern_accum *)fdev;
 
         mbits = padev->bits;
@@ -1094,7 +1094,7 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
         ctile->blending_mode = ((pdf14_device *)(pgs->device))->blend_mode;
     else
         ctile->blending_mode = 0;
-    if (fdev->procs.open_device != pattern_clist_open_device) {
+    if (dev_proc(fdev, open_device) != pattern_clist_open_device) {
         if (mbits != 0) {
             make_bitmap(&ctile->tbits, mbits, gs_next_ids(pgs->memory, 1));
             mbits->bitmap_memory = 0;   /* don't free the bits */
@@ -1482,7 +1482,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
         }
     }
 #ifdef DEBUG
-    if (gs_debug_c('B') && adev->procs.open_device == pattern_accum_open) {
+    if (gs_debug_c('B') && dev_proc(adev, open_device) == pattern_accum_open) {
         gx_device_pattern_accum *pdev = (gx_device_pattern_accum *)adev;
 
         if (pdev->mask)
@@ -1503,7 +1503,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
     gs_gstate_free_chain(saved);
     return code;
 fail:
-    if (adev->procs.open_device == pattern_clist_open_device) {
+    if (dev_proc(adev, open_device) == pattern_clist_open_device) {
         gx_device_clist *cdev = (gx_device_clist *)adev;
 
         gs_free_object(cdev->writer.bandlist_memory, cdev->common.data, "gx_pattern_load");

@@ -57,11 +57,11 @@ tiff_open(gx_device *pdev)
         return code;
     if (update_procs) {
         if (pdev->ObjectHandlerPushed) {
-            gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_obj_filter_device.procs);
+            gx_copy_device_procs(pdev->parent, pdev, &gs_obj_filter_device);
             pdev = pdev->parent;
         }
         if (pdev->PageHandlerPushed)
-            gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_flp_device.procs);
+            gx_copy_device_procs(pdev->parent, pdev, &gs_flp_device);
     }
     if (ppdev->OpenOutputFile)
         code = gdev_prn_open_printer_seekable(pdev, 1, true);

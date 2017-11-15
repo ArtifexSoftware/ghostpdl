@@ -284,7 +284,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
      * gx_device_fill_in_procs is called, and its possible for us to get here before this
      * happens, so we *must* make sure the method is not NULL before we use it.
      */
-    if (dev->procs.get_profile != NULL) {
+    if (dev_proc(dev, get_profile) != NULL) {
         int code;
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
         if (code < 0)
@@ -554,7 +554,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
      * gx_device_fill_in_procs is called, and its possible for us to get here before this
      * happens, so we *must* make sure the method is not NULL before we use it.
      */
-    if (dev->procs.get_profile != NULL) {
+    if (dev_proc(dev, get_profile) != NULL) {
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
         if (dev_profile == NULL) {
             code = gsicc_init_device_profile_struct(dev, NULL, 0);
@@ -1006,7 +1006,7 @@ gx_default_put_graydetection(bool graydetection, gx_device * dev)
      * gx_device_fill_in_procs is called, and its possible for us to get here before this
      * happens, so we *must* make sure the method is not NULL before we use it.
      */
-    if (dev->procs.get_profile == NULL) {
+    if (dev_proc(dev, get_profile) == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
            we catch this so we assume here that we are dealing with
@@ -1042,7 +1042,7 @@ gx_default_put_graytok(bool graytok, gx_device * dev)
      * gx_device_fill_in_procs is called, and its possible for us to get here before this
      * happens, so we *must* make sure the method is not NULL before we use it.
      */
-    if (dev->procs.get_profile == NULL) {
+    if (dev_proc(dev, get_profile) == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
            we catch this so we assume here that we are dealing with
@@ -1080,7 +1080,7 @@ gx_default_put_prebandthreshold(bool prebandthreshold, gx_device * dev)
      * gx_device_fill_in_procs is called, and its possible for us to get here before this
      * happens, so we *must* make sure the method is not NULL before we use it.
      */
-    if (dev->procs.get_profile == NULL) {
+    if (dev_proc(dev, get_profile) == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
            we catch this so we assume here that we are dealing with
@@ -1118,7 +1118,7 @@ gx_default_put_usefastcolor(bool fastcolor, gx_device * dev)
      * gx_device_fill_in_procs is called, and its possible for us to get here before this
      * happens, so we *must* make sure the method is not NULL before we use it.
      */
-    if (dev->procs.get_profile == NULL) {
+    if (dev_proc(dev, get_profile) == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
            we catch this so we assume here that we are dealing with
@@ -1156,7 +1156,7 @@ gx_default_put_simulateoverprint(bool sim_overprint, gx_device * dev)
      * gx_device_fill_in_procs is called, and its possible for us to get here before this
      * happens, so we *must* make sure the method is not NULL before we use it.
      */
-    if (dev->procs.get_profile == NULL) {
+    if (dev_proc(dev, get_profile) == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
            we catch this so we assume here that we are dealing with
@@ -1195,7 +1195,7 @@ gx_default_put_intent(gsicc_rendering_intents_t icc_intent, gx_device * dev,
      * gx_device_fill_in_procs is called, and its possible for us to get here before this
      * happens, so we *must* make sure the method is not NULL before we use it.
      */
-    if (dev->procs.get_profile == NULL) {
+    if (dev_proc(dev, get_profile) == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
            we catch this so we assume here that we are dealing with
@@ -1231,7 +1231,7 @@ gx_default_put_blackpreserve(gsicc_blackpreserve_t blackpreserve, gx_device * de
      * gx_device_fill_in_procs is called, and its possible for us to get here before this
      * happens, so we *must* make sure the method is not NULL before we use it.
      */
-    if (dev->procs.get_profile == NULL) {
+    if (dev_proc(dev, get_profile) == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
            we catch this so we assume here that we are dealing with
@@ -1272,7 +1272,7 @@ gx_default_put_blackptcomp(gsicc_blackptcomp_t blackptcomp, gx_device * dev,
      * gx_device_fill_in_procs is called, and its possible for us to get here before this
      * happens, so we *must* make sure the method is not NULL before we use it.
      */
-    if (dev->procs.get_profile == NULL) {
+    if (dev_proc(dev, get_profile) == NULL) {
         /* This is an odd case where the device has not yet fully been
            set up with its procedures yet.  We want to make sure that
            we catch this so we assume here that we are dealing with

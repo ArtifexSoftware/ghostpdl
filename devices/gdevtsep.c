@@ -1173,9 +1173,9 @@ tiffsep1_put_params(gx_device * pdev, gs_param_list * plist)
         return code;
 
     /* put_params may have changed the fill_path proc -- we need it set to ours */
-    if (pdev->procs.fill_path != sep1_fill_path) {
-        tfdev->fill_path = pdev->procs.fill_path;
-        pdev->procs.fill_path = sep1_fill_path;
+    if (dev_proc(pdev, fill_path) != sep1_fill_path) {
+        set_dev_proc(tfdev, fill_path, dev_proc(pdev, fill_path));
+        set_dev_proc(pdev, fill_path, sep1_fill_path);
     }
     return code;
 
@@ -1240,9 +1240,9 @@ tiffsep1_prn_open(gx_device * pdev)
     pdev->icc_struct->supports_devn = true;
 
     /* gdev_prn_open_planae may have changed the fill_path proc -- we need it set to ours */
-    if (pdev->procs.fill_path != sep1_fill_path) {
-        pdev_sep->fill_path = pdev->procs.fill_path;
-        pdev->procs.fill_path = sep1_fill_path;
+    if (dev_proc(pdev, fill_path) != sep1_fill_path) {
+        set_dev_proc(pdev_sep, fill_path, pdev->procs.fill_path);
+        set_dev_proc(pdev, fill_path, sep1_fill_path);
     }
     return code;
 }

@@ -256,7 +256,7 @@ tile_colored_fill(const tile_fill_state_t * ptfs,
     bool full_transfer = (w == ptfs->w0 && h == ptfs->h0);
     int code = 0;
 
-    if (source == NULL && lop_no_S_is_T(lop) && dev->procs.copy_planes != gx_default_copy_planes &&
+    if (source == NULL && lop_no_S_is_T(lop) && dev_proc(dev, copy_planes) != gx_default_copy_planes &&
         ptfs->num_planes > 0) {
             code = (*dev_proc(ptfs->pcdev, copy_planes))
                     (ptfs->pcdev, data + bits->raster * yoff, xoff,

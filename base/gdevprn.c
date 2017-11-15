@@ -102,11 +102,11 @@ gdev_prn_open(gx_device * pdev)
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
     if (update_procs) {
         if (pdev->ObjectHandlerPushed) {
-            gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_obj_filter_device.procs);
+            gx_copy_device_procs(pdev->parent, pdev, &gs_obj_filter_device);
             pdev = pdev->parent;
         }
         if (pdev->PageHandlerPushed)
-            gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_flp_device.procs);
+            gx_copy_device_procs(pdev->parent, pdev, &gs_flp_device);
     }
     if (code < 0)
         return code;
@@ -1124,7 +1124,8 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
     if (endcode < 0)
         return endcode;
     endcode = gx_finish_output_page(pdev, num_copies, flush);
-    return (endcode < 0 ? endcode : 0);
+    code = (endcode < 0 ? endcode : closecode < 0 ? closecode : 0);
+    return code;
 }
 
 int

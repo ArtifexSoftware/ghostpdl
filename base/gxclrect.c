@@ -638,7 +638,7 @@ clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
     /* forward to the appropriate super class */
     if (cdev->is_printer)
         return gdev_prn_forwarding_dev_spec_op(pdev, dev_spec_op, data, size);
-    if (cdev->procs.open_device == pattern_clist_open_device)
+    if (dev_proc(cdev, open_device) == pattern_clist_open_device)
         return pattern_accum_dev_spec_op(pdev, dev_spec_op, data, size);
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
