@@ -220,7 +220,7 @@ extern_st(st_device_vector);
     "gx_device_vector", device_vector_enum_ptrs,\
     device_vector_reloc_ptrs, gx_device_finalize, st_device, strm, strmbuf,\
     dash_pattern, bbox_device)
-#define st_device_vector_max_ptrs (st_device_max_ptrs + 3)
+#define st_device_vector_max_ptrs (st_device_max_ptrs + 4)
 
 /* ================ Utility procedures ================ */
 
