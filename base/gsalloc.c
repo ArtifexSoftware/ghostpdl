@@ -771,7 +771,7 @@ ialloc_alloc_state(gs_memory_t * parent, uint clump_size)
     iimem->non_gc_memory = parent;
     iimem->thread_safe_memory = parent->thread_safe_memory;
     iimem->clump_size = clump_size;
-#ifdef MEMENTO
+#if defined(MEMENTO) || defined(SINGLE_OBJECT_MEMORY_BLOCKS_ONLY)
     iimem->large_size = 1;
 #else
     iimem->large_size = ((clump_size / 4) & -obj_align_mod) + 1;

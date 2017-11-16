@@ -747,7 +747,7 @@ static void remove_free(gs_memory_chunk_t *cmem, chunk_free_node_t *node)
     remove_free_size(cmem, node);
 }
 
-#ifdef MEMENTO
+#if defined(MEMENTO) || defined(SINGLE_OBJECT_MEMORY_BLOCKS_ONLY)
 #define SINGLE_OBJECT_CHUNK(size) (1)
 #else
 #define SINGLE_OBJECT_CHUNK(size) ((size) > (CHUNK_SIZE>>1))
