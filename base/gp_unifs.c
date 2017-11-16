@@ -406,9 +406,9 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     /* Remove directory specifications beyond the first wild card. */
     /* Some systems don't have strpbrk, so we code it open. */
     p = pfen->work;
-    while (!(*p == '*' || *p == '?' || *p == 0))
+    while (*p != '*' && *p != '?' && *p != 0)
         p++;
-    while (!(*p == '/' || *p == 0))
+    while (*p != '/' && *p != 0)
         p++;
     if (*p == '/')
         *p = 0;
@@ -555,13 +555,17 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
             char *p;
             dirstack *d;
 
-            for (p = pattern + pathead + 1;; p++) {
-                if (*p == 0) {  /* No more subdirectories to match */
-                    pathead = pfen->patlen;
-                    break;
-                } else if (*p == '/') {
-                    pathead = p - pattern;
-                    break;
+	    if (pattern[pathead] == 0) {
+                pathead = pfen->patlen;
+	    } else {
+                for (p = pattern + pathead + 1;; p++) {
+                    if (*p == 0) {  /* No more subdirectories to match */
+                        pathead = pfen->patlen;
+                        break;
+                    } else if (*p == '/') {
+                        pathead = p - pattern;
+                        break;
+                    }
                 }
             }
 
