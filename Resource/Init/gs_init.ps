@@ -137,7 +137,6 @@ currentdict /PDFNOCIDFALLBACK known /PDFNOCIDFALLBACK exch def
 
 currentdict /BATCH known   /BATCH exch def
 currentdict /DELAYBIND known   /DELAYBIND exch def
-currentdict /REALLYDELAYBIND known {/REALLYDELAYBIND true def /DELAYBIND true def}{/REALLYDELAYBIND false def}ifelse
 currentdict /DISKFONTS known   /DISKFONTS exch def
 currentdict /DOINTERPOLATE .knownget { { -1 } { 0 } ifelse /InterpolateControl exch def } if
 currentdict /ESTACKPRINT known   /ESTACKPRINT exch def
@@ -302,7 +301,16 @@ QUIET not { printgreeting flush } if
 
 % If we're delaying binding, remember everything that needs to be bound later.
 DELAYBIND
- { .currentglobal //false .setglobal
+{
+   SAFER {
+       (\n *** WARNING - you have selected SAFER, indicating you want Ghostscript\n) print
+       (               to execute in a safer environment, but at the same time\n) print
+       (               have selected DELAYBIND. Unless you use this option with\n) print
+       (               care \(and specifically, remember to call .bindnow\) it is\n) print
+       (               possible that malicious code may be able to evade the\n) print
+       (               limited security offered by the SAFER option.\n) print
+   } if
+   .currentglobal //false .setglobal
    systemdict /.delaybind 2000 array .forceput
    .setglobal
    userdict /.delaycount 0 put
@@ -317,7 +325,7 @@ DELAYBIND
        }
       ifelse
     } .bind def
- } if
+} if
 
 %**************** BACKWARD COMPATIBILITY ****************
 /hwsizedict mark /HWSize //null .dicttomark readonly def
@@ -2366,18 +2374,6 @@ DELAYBIND not {
   systemdict /.forceundef .undef	% ditto
 } if
 
-DELAYBIND REALLYDELAYBIND not and {
-(\n *** WARNING - the DELAYBIND command has been deprecated, and will be\n) print
-(               removed in the next version. For now you can restore\n) print
-(               the behaviour by using -dREALLYDEALYBIND but if you\n) print
-(               require continued use of this command you should contact\n) print
-(               the Ghostscript developers. Commercial customers of\n) print
-(               Artifex should email their support contact, free users\n) print
-(               are encouraged to talk to us on the #ghostscript IRC\n) print
-(               channel on irc.freenode.net.\n\n) print
-/DELAYBIND /undefined signalerror
-} if
-
 % Move superexec to internaldict if superexec is defined.
 systemdict /superexec .knownget {
   1183615869 internaldict /superexec 3 -1 roll put
@@ -2386,8 +2382,21 @@ systemdict /superexec .knownget {
 
 %% Can't remove this one until the last minute :-)
 systemdict /.undef .undef
+WRITESYSTEMDICT {
+   SAFER {
+       (\n *** WARNING - you have selected SAFER, indicating you want Ghostscript\n) print
+       (               to execute in a safer environment, but at the same time\n) print
+       (               have selected WRITESYSTEMDICT. Unless you use this option with\n) print
+       (               care and specifically, remember to execute code like:\n) print
+       (                      "systemdict readonly pop"\n) print
+       (               it is possible that malicious code may be able to evade the\n) print
+       (               limited security offered by the SAFER option.\n) print
+   }if
+}
+{
+     systemdict readonly pop
+} ifelse
 
-WRITESYSTEMDICT not { systemdict readonly pop } if
 (END GC) VMDEBUG
 
 % The Adobe AGM_Core used by Illustrator 9 has some code that breaks
