@@ -2181,7 +2181,8 @@ pdf_put_composite(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_i
                         if (p == start && width != 0) {
                             stream_write(pdev->strm, start, save - start);
                             stream_putc(pdev->strm, (byte)'\n');
-                            start = save;
+                            p = start = save;
+                            width = 0;
                         }
                     } else {
                         width++;
