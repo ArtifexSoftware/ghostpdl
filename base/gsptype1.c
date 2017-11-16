@@ -151,6 +151,20 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     if (mem == 0)
         mem = gs_gstate_memory(pgs);
     pinst = (gs_pattern1_instance_t *)pcc->pattern;
+#ifdef PACIFY_VALGRIND
+    /* The following memset is required to avoid a valgrind warning
+     * in:
+     *   gs -I./gs/lib -sOutputFile=out.pgm -dMaxBitmap=10000
+     *      -sDEVICE=pgmraw -r300 -Z: -sDEFAULTPAPERSIZE=letter
+     *      -dNOPAUSE -dBATCH -K2000000 -dClusterJob -dJOBSERVER
+     *      tests_private/ps/ps3cet/11-14.PS
+     * Setting the individual elements of the structure directly is
+     * not enough, which leads me to believe that we are writing the
+     * entire struct out, padding and all.
+     */
+    memset(((char *)&inst) + sizeof(gs_pattern_instance_t), 0,
+           sizeof(inst) - sizeof(gs_pattern_instance_t));
+#endif
     *(gs_pattern_instance_t *)&inst = *(gs_pattern_instance_t *)pinst;
     saved = inst.saved;
     switch (pcp->PaintType) {

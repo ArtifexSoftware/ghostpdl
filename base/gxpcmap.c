@@ -834,8 +834,23 @@ gx_pattern_alloc_cache(gs_memory_t * mem, uint num_tiles, ulong max_bits)
         /* Clear the pointers to pacify the GC. */
         uid_set_invalid(&tiles->uid);
         tiles->bits_used = 0;
+#ifdef PACIFY_VALGRIND
+        /* The following memsets are required to avoid a valgrind warning
+         * in:
+         *   gs -I./gs/lib -sOutputFile=out.pgm -dMaxBitmap=10000
+         *      -sDEVICE=pgmraw -r300 -Z: -sDEFAULTPAPERSIZE=letter
+         *      -dNOPAUSE -dBATCH -K2000000 -dClusterJob -dJOBSERVER
+         *      tests_private/ps/ps3cet/11-14.PS
+         * Setting the individual elements of the structures directly is
+         * not enough, which leads me to believe that we are writing the
+         * entire structs out, padding and all.
+         */
+        memset(&tiles->tbits, 0, sizeof(tiles->tbits));
+        memset(&tiles->tmask, 0, sizeof(tiles->tmask));
+#else
         tiles->tbits.data = 0;
         tiles->tmask.data = 0;
+#endif
         tiles->index = i;
         tiles->cdev = NULL;
         tiles->ttrans = NULL;

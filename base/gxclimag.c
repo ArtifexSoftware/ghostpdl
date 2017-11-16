@@ -500,6 +500,19 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
                                     "clist_begin_typed_image");
     if (pie == 0)
         return_error(gs_error_VMerror);
+#ifdef PACIFY_VALGRIND
+    /* The following memset is required to avoid a valgrind warning
+     * in:
+     *   gs -I./gs/lib -sOutputFile=out.pgm -dMaxBitmap=10000
+     *      -sDEVICE=pgmraw -r300 -Z: -sDEFAULTPAPERSIZE=letter
+     *      -dNOPAUSE -dBATCH -K2000000 -dClusterJob -dJOBSERVER
+     *      tests_private/ps/ps3cet/11-14.PS
+     * Setting the individual elements of the structure directly is
+     * not enough, which leads me to believe that we are writing the
+     * entire struct out, padding and all.
+     */
+    memset(&pie->color_space.icc_info, 0, sizeof(pie->color_space.icc_info));
+#endif
     pie->memory = mem;
     pie->buffer = NULL;
     *pinfo = (gx_image_enum_common_t *) pie;
