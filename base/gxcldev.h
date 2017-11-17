@@ -29,6 +29,10 @@
 #include "srlx.h"		/* ditto */
 #include "gsdcolor.h"
 
+#ifdef HAVE_VALGRIND
+#include "valgrind/memcheck.h"
+#endif
+
 /* ---------------- Commands ---------------- */
 
 /* Define the compression modes for bitmaps. */
@@ -705,5 +709,17 @@ typedef enum {
     CURRBANDS,
     SAMEAS_PUSHCROP_BUTNOPUSH
 } cl_crop_action;
+
+/* Valgrind helper macro */
+#ifdef HAVE_VALGRIND
+#define CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev) \
+do {\
+    gx_device_clist_writer *CLDEV = (gx_device_clist_writer *)(cldev);\
+    if (CLDEV->ccl != NULL)\
+        VALGRIND_CHECK_MEM_IS_DEFINED(&CLDEV->ccl->tail[1], CLDEV->ccl->tail->size);\
+} while (0 == 1)
+#else
+#define CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev) do { } while (0)
+#endif
 
 #endif /* gxcldev_INCLUDED */

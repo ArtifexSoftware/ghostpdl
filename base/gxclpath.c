@@ -170,6 +170,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     }
     left = dc_size;
 
+    CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
     /* see if phase informaiton must be inserted in the command list */
     if ( pdcolor->type->get_phase(pdcolor, &color_phase) &&
          (color_phase.x != pcls->tile_phase.x ||
@@ -180,6 +181,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                                      color_phase.y, all_bands)) < 0  )
         return code;
 
+    CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
     if (is_pattern) {
         pattern_id = gs_dc_get_pattern_id(pdcolor);
 
@@ -196,6 +198,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     do {
         prefix_size = 2 + 1 + (offset > 0 ? enc_u_sizew(offset) : 0);
         req_size = left + prefix_size + enc_u_sizew(left);
+        CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
         code = cmd_get_buffer_space(cldev, pcls, req_size);
         if (code < 0)
             return code;
@@ -204,6 +207,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         req_size_final = portion_size + prefix_size + enc_u_sizew(portion_size);
         if (req_size_final > buffer_space)
             return_error(gs_error_unregistered); /* Must not happen. */
+        CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
         if (all_bands)
             code = set_cmd_put_all_op(&dp, cldev, cmd_opv_extend, req_size_final);
         else
@@ -235,6 +239,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                                      offset,
                                      dp,
                                      &portion_size);
+        CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
         if (code < 0) {
             if (offset == 0)
                 cldev->cnext = dp0;
@@ -880,6 +885,7 @@ clist_stroke_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
     bool slow_rop = cmd_slow_rop(dev, lop_know_S_0(lop), pdcolor);
     cmd_rects_enum_t re;
 
+    CMD_CHECK_LAST_OP_BLOCK_DEFINED(cdev);
     if ((cdev->disable_mask & clist_disable_stroke_path) ||
         gs_debug_c(',')
         ) {
@@ -993,11 +999,13 @@ clist_stroke_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
         int code;
 
         RECT_STEP_INIT(re);
+        CMD_CHECK_LAST_OP_BLOCK_DEFINED(cdev);
         if ((code = cmd_do_write_unknown(cdev, re.pcls, stroke_all_known)) < 0 ||
             (code = cmd_do_enable_clip(cdev, re.pcls, pcpath != NULL)) < 0 ||
             (code = cmd_update_lop(cdev, re.pcls, lop)) < 0
             )
             return code;
+        CMD_CHECK_LAST_OP_BLOCK_DEFINED(cdev);
         code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, devn_not_tile);
             if (code == gs_error_unregistered)
                 return code;
@@ -1007,6 +1015,7 @@ clist_stroke_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                                           pcpath);
         }
         re.pcls->color_usage.slow_rop |= slow_rop;
+        CMD_CHECK_LAST_OP_BLOCK_DEFINED(cdev);
         {
             fixed ymin, ymax;
 

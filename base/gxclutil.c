@@ -28,6 +28,10 @@
 #include "gxclpath.h"
 #include "gsparams.h"
 
+#ifdef HAVE_VALGRIND
+#include "valgrind/memcheck.h"
+#endif
+
 /* ---------------- Statistics ---------------- */
 
 #ifdef DEBUG
@@ -300,6 +304,8 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 {
     byte *dp = cldev->cnext;
 
+    CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
+
     if (size + cmd_headroom > cldev->cend - dp) {
         if ((cldev->error_code =
              cmd_write_buffer(cldev, cmd_opv_end_run)) != 0 ||
@@ -357,6 +363,8 @@ cmd_put_list_op(gx_device_clist_writer * cldev, cmd_list * pcl, uint size)
 int
 cmd_get_buffer_space(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint size)
 {
+    CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
+
     if (size + cmd_headroom > cldev->cend - cldev->cnext) {
         cldev->error_code = cmd_write_buffer(cldev, cmd_opv_end_run);
         if (cldev->error_code < 0) {
@@ -382,6 +390,8 @@ byte *
 cmd_put_range_op(gx_device_clist_writer * cldev, int band_min, int band_max,
                  uint size)
 {
+    CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
+
     if_debug4m('L', cldev->memory, "[L]band range(%d,%d): size=%u, left=%u",
                band_min, band_max, size, 0);
     if (cldev->ccl != 0 &&
