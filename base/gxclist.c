@@ -1151,6 +1151,11 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
                                                        "clist_icc_addentry");
         if (entry == NULL)
             return gs_rethrow(-1, "insufficient memory to allocate entry in icc table");
+#ifdef PACIFY_VALGRIND
+        /* Avoid uninitialised padding upsetting valgrind when it's written
+         * into the clist. */
+        memset(entry, 0, sizeof(*entry));
+#endif
         entry->next = NULL;
         entry->serial_data.hashcode = hashcode;
         entry->serial_data.size = -1;
