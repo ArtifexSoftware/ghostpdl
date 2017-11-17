@@ -3353,6 +3353,16 @@ therefore not be rendered.</dd>
 </d1>
 
 <dl>
+<dt><code>-dDELAYBIND</code>
+<dd>Causes <code>bind</code> to remember all its invocations, but not
+actually execute them until the <code>.bindnow</code> procedure is
+called.  Useful only for certain specialized packages like
+<code>pstotext</code> that redefine operators. See the documentation
+for <a href="Language.htm#bindnow"><tt>.bindnow</tt></a> for more information
+on using this feature.
+</dl>
+
+<dl>
 <dt><code>-dDOPDFMARKS</code>
 <dd>Causes <code>pdfmark</code> to be called for bookmarks,
 annotations, links and cropbox when processing PDF files.
