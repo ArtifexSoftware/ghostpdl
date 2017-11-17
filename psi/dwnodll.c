@@ -42,6 +42,8 @@ int load_dll(GSDLL *gsdll, char *last_error, int len)
     gsdll->exit = &gsapi_exit;
     gsdll->set_default_device_list = &gsapi_set_default_device_list;
     gsdll->get_default_device_list = &gsapi_get_default_device_list;
+    gsdll->get_device_memory = &gsapi_get_device_memory;
+    gsdll->set_device = &gsapi_set_device;
     return 0;
 }
 

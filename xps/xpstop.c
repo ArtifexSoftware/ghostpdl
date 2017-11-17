@@ -59,8 +59,10 @@ static int
 xps_detect_language(const char *s, int len)
 {
     if (len < 2)
-        return 1;
-    return memcmp(s, "PK", 2);
+        return 0;
+    if (memcmp(s, "PK", 2) == 0)
+        return 100;
+    return 0;
 }
 
 static const pl_interp_characteristics_t *
@@ -165,13 +167,32 @@ xps_imp_allocate_interp_instance(pl_interp_implementation_t *impl,
     return 0;
 }
 
+/* Prepare interp instance for the next "job" */
 static int
-xps_imp_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
+xps_imp_init_job(pl_interp_implementation_t *impl,
+                 gx_device                  *pdevice)
 {
     xps_interp_instance_t *instance = impl->interp_client_data;
     xps_context_t *ctx = instance->ctx;
     gs_c_param_list list;
     int code;
+
+    if (gs_debug_c('|'))
+        xps_zip_trace = 1;
+    if (gs_debug_c('|'))
+        xps_doc_trace = 1;
+
+    ctx->font_table = xps_hash_new(ctx);
+    ctx->colorspace_table = xps_hash_new(ctx);
+
+    ctx->start_part = NULL;
+
+    ctx->use_transparency = 1;
+    if (getenv("XPS_DISABLE_TRANSPARENCY"))
+        ctx->use_transparency = 0;
+
+    ctx->opacity_only = 0;
+    ctx->fill_rule = 0;
 
     code = gs_setdevice_no_erase(ctx->pgs, pdevice);
     if (code < 0)
@@ -241,6 +262,13 @@ xps_imp_process_file(pl_interp_implementation_t *impl, char *filename)
     return code;
 }
 
+/* Do any setup for parser per-cursor */
+static int                      /* ret 0 or +ve if ok, else -ve error code */
+xps_impl_process_begin(pl_interp_implementation_t * impl)
+{
+    return 0;
+}
+
 /* Parse a cursor-full of data */
 static int
 xps_imp_process(pl_interp_implementation_t *impl, stream_cursor_read *cursor)
@@ -270,6 +298,12 @@ xps_imp_process(pl_interp_implementation_t *impl, stream_cursor_read *cursor)
     }
     cursor->ptr = cursor->limit;
 
+    return 0;
+}
+
+static int                      /* ret 0 or +ve if ok, else -ve error code */
+xps_impl_process_end(pl_interp_implementation_t * impl)
+{
     return 0;
 }
 
@@ -320,33 +354,6 @@ xps_imp_report_errors(pl_interp_implementation_t *impl,
     return 0;
 }
 
-/* Prepare interp instance for the next "job" */
-static int
-xps_imp_init_job(pl_interp_implementation_t *impl)
-{
-    xps_interp_instance_t *instance = impl->interp_client_data;
-    xps_context_t *ctx = instance->ctx;
-
-    if (gs_debug_c('|'))
-        xps_zip_trace = 1;
-    if (gs_debug_c('|'))
-        xps_doc_trace = 1;
-
-    ctx->font_table = xps_hash_new(ctx);
-    ctx->colorspace_table = xps_hash_new(ctx);
-
-    ctx->start_part = NULL;
-
-    ctx->use_transparency = 1;
-    if (getenv("XPS_DISABLE_TRANSPARENCY"))
-        ctx->use_transparency = 0;
-
-    ctx->opacity_only = 0;
-    ctx->fill_rule = 0;
-
-    return 0;
-}
-
 static void xps_free_key_func(xps_context_t *ctx, void *ptr)
 {
     xps_free(ctx, ptr);
@@ -363,7 +370,10 @@ xps_imp_dnit_job(pl_interp_implementation_t *impl)
 {
     xps_interp_instance_t *instance = impl->interp_client_data;
     xps_context_t *ctx = instance->ctx;
-    int i;
+    int i, code;
+
+    /* return to original gstate */
+    code = gs_grestore_only(ctx->pgs); /* destroys gs_save stack */
 
     if (gs_debug_c('|'))
         xps_debug_fixdocseq(ctx);
@@ -379,18 +389,7 @@ xps_imp_dnit_job(pl_interp_implementation_t *impl)
     xps_free_fixed_pages(ctx);
     xps_free_fixed_documents(ctx);
 
-    return 0;
-}
-
-/* Remove a device from an interperter instance */
-static int
-xps_imp_remove_device(pl_interp_implementation_t *impl)
-{
-    xps_interp_instance_t *instance = impl->interp_client_data;
-    xps_context_t *ctx = instance->ctx;
-
-    /* return to original gstate */
-    return gs_grestore_only(ctx->pgs); /* destroys gs_save stack */
+    return code;
 }
 
 /* Deallocate a interpreter instance */
@@ -402,8 +401,15 @@ xps_imp_deallocate_interp_instance(pl_interp_implementation_t *impl)
     gs_memory_t *mem = ctx->memory;
 
     /* language clients don't free the font cache machinery */
+    rc_decrement_cs(ctx->gray_lin, "xps_imp_deallocate_interp_instance");
+    rc_decrement_cs(ctx->gray, "xps_imp_deallocate_interp_instance");
+    rc_decrement_cs(ctx->cmyk, "xps_imp_deallocate_interp_instance");
+    rc_decrement_cs(ctx->srgb, "xps_imp_deallocate_interp_instance");
+    rc_decrement_cs(ctx->scrgb, "xps_imp_deallocate_interp_instance");
 
-    // free gstate?
+    gs_gstate_free(ctx->pgs);
+
+    gs_free_object(mem, ctx->fontdir, "xps_imp_deallocate_interp_instance");
     gs_free_object(mem, ctx, "xps_imp_deallocate_interp_instance");
     gs_free_object(mem, instance, "xps_imp_deallocate_interp_instance");
 
@@ -415,15 +421,18 @@ pl_interp_implementation_t xps_implementation =
 {
     xps_imp_characteristics,
     xps_imp_allocate_interp_instance,
-    xps_imp_set_device,
+    NULL,
+    NULL,
+    NULL,
     xps_imp_init_job,
     xps_imp_process_file,
+    xps_impl_process_begin,
     xps_imp_process,
+    xps_impl_process_end,
     xps_imp_flush_to_eoj,
     xps_imp_process_eof,
     xps_imp_report_errors,
     xps_imp_dnit_job,
-    xps_imp_remove_device,
     xps_imp_deallocate_interp_instance,
     NULL,
 };

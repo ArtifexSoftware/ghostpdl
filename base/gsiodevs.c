@@ -71,7 +71,7 @@ stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
            gs_memory_t * mem)
 {
     return stdio_open(iodev, access, ps, mem, 'r',
-                      mem->gs_lib_ctx->fstdin, sread_file);
+                      mem->gs_lib_ctx->core->fstdin, sread_file);
 }
 const gx_io_device gs_iodev_stdin = iodev_stdio("%stdin%", stdin_open);
 
@@ -80,7 +80,7 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
             gs_memory_t * mem)
 {
     return stdio_open(iodev, access, ps, mem, 'w',
-                      mem->gs_lib_ctx->fstdout, swrite_file);
+                      mem->gs_lib_ctx->core->fstdout, swrite_file);
 }
 const gx_io_device gs_iodev_stdout = iodev_stdio("%stdout%", stdout_open);
 
@@ -89,6 +89,6 @@ stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
             gs_memory_t * mem)
 {
     return stdio_open(iodev, access, ps, mem, 'w',
-                      mem->gs_lib_ctx->fstderr, swrite_file);
+                      mem->gs_lib_ctx->core->fstderr, swrite_file);
 }
 const gx_io_device gs_iodev_stderr = iodev_stdio("%stderr%", stderr_open);

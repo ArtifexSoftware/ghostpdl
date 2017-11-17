@@ -55,9 +55,9 @@ int pl_main_set_display_callback(pl_main_instance_t *inst, void *callback);
 int pl_main_run_file(pl_main_instance_t *minst, const char *filename);
 int pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[]);
 int pl_main_delete_instance(pl_main_instance_t *minst);
-int pl_main_run_string_begin(void *instance);
-int pl_main_run_string_continue(void *instance, const char *str, unsigned int length);
-int pl_main_run_string_end(void *instance);
+int pl_main_run_string_begin(pl_main_instance_t *minst);
+int pl_main_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned int length);
+int pl_main_run_string_end(pl_main_instance_t *minst);
 int pl_to_exit(gs_memory_t *mem);
 
 /* instance accessors */
@@ -66,8 +66,13 @@ bool pl_main_get_nocache(const gs_memory_t *mem);
 bool pl_main_get_page_set_on_command_line(const gs_memory_t *mem);
 bool pl_main_get_res_set_on_command_line(const gs_memory_t *mem);
 bool pl_main_get_high_level_device(const gs_memory_t *mem);
+void pl_main_get_forced_geometry(const gs_memory_t *mem, const float **resolutions, const long **dimensions);
 int pl_main_get_scanconverter(const gs_memory_t *mem);
 pl_main_instance_t *pl_main_get_instance(const gs_memory_t *mem);
+
+typedef int pl_main_get_codepoint_t(FILE *, const char **);
+void pl_main_set_arg_decode(pl_main_instance_t *minst,
+                            pl_main_get_codepoint_t *get_codepoint);
 
 /* retrieve the PJL instance so languages can query PJL. */
 bool pl_main_get_pjl_from_args(const gs_memory_t *mem); /* pjl was passed on the command line */

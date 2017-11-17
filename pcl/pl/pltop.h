@@ -41,7 +41,7 @@ typedef struct pl_interp_characteristics_s
 {
     const char *language;       /* generic language should correspond with
                                    HP documented PJL name */
-    int (*auto_sense)(const char *string, int length);      /* routine used to detect language - 0 is detected, non-zero not detected */
+    int (*auto_sense)(const char *string, int length);      /* routine used to detect language - returns a score: 0 is definitely not, 100 is definitely yes. */
     const char *manufacturer;   /* manuf str */
     const char *version;        /* version str */
     const char *build_date;     /* build date str */
@@ -63,26 +63,58 @@ int pl_allocate_interp_instance(pl_interp_implementation_t *, gs_memory_t *);
 typedef int (*pl_interp_proc_allocate_interp_instance_t) (pl_interp_implementation_t *,
                                                           gs_memory_t *);
 
-/*
- * Set a device, possibly shared, into the graphics state of the language.
- */
 
-int pl_set_device(pl_interp_implementation_t *, gx_device *);
-typedef int (*pl_interp_proc_set_device_t) (pl_interp_implementation_t *,
-                                            gx_device *);
+/*
+ * Get the allocator with which to allocate a device
+ * NOTE: only one interpreter is permitted to return a
+ * allocator.
+ */
+gs_memory_t *
+pl_get_device_memory(pl_interp_implementation_t *);
+typedef gs_memory_t * (*pl_interp_proc_get_device_memory_t) (pl_interp_implementation_t *);
+
+/*
+ * Pass a parameter/value to a language.
+ */
+typedef enum {
+    pl_spt_invalid = -1,
+    pl_spt_null    = 0,   /* void * is NULL */
+    pl_spt_bool    = 1,   /* void * is NULL (false) or non-NULL (true) */
+    pl_spt_int     = 2,   /* void * is a pointer to an int */
+    pl_spt_float   = 3,   /* void * is a float * */
+    pl_spt_name    = 4,   /* void * is a char * */
+    pl_spt_string  = 5    /* void * is a char * */
+} pl_set_param_type;
+int pl_set_param(pl_interp_implementation_t *, pl_set_param_type type, const char *param, const void *value);
+typedef int (*pl_interp_proc_set_param_t) (pl_interp_implementation_t *,
+                                           pl_set_param_type,
+                                           const char *,
+                                           const void *);
+
+/*
+ * Do any language specific init required after the args have been sent.
+ */
+int pl_post_args_init(pl_interp_implementation_t *);
+typedef int (*pl_interp_proc_post_args_init_t) (pl_interp_implementation_t *);
 
 /*
  * Work to be done when a job begins.
  */
-int pl_init_job(pl_interp_implementation_t *);
-typedef int (*pl_interp_proc_init_job_t) (pl_interp_implementation_t *);
+int pl_init_job(pl_interp_implementation_t *, gx_device *);
+typedef int (*pl_interp_proc_init_job_t) (pl_interp_implementation_t *, gx_device *);
 
 /*
  * Process a stream of PDL data.
  */
+int pl_process_begin(pl_interp_implementation_t *);
+typedef int (*pl_interp_proc_process_begin_t) (pl_interp_implementation_t *);
+
 int pl_process(pl_interp_implementation_t *, stream_cursor_read *);
 typedef int (*pl_interp_proc_process_t) (pl_interp_implementation_t *,
                                          stream_cursor_read *);
+
+int pl_process_end(pl_interp_implementation_t *);
+typedef int (*pl_interp_proc_process_end_t) (pl_interp_implementation_t *);
 
 /*
  * The process_file function is an optional optimized path for
@@ -121,12 +153,6 @@ int pl_dnit_job(pl_interp_implementation_t *);
 typedef int (*pl_interp_proc_dnit_job_t) (pl_interp_implementation_t *);
 
 /*
- * Remove the device from the graphics state and reset.
- */
-int pl_remove_device(pl_interp_implementation_t *);
-typedef int (*pl_interp_proc_remove_device_t) (pl_interp_implementation_t *);
-
-/*
  * Free everything.
  */
 int pl_deallocate_interp_instance(pl_interp_implementation_t *);
@@ -140,15 +166,18 @@ struct pl_interp_implementation_s
     /* Procedure vector */
     pl_interp_proc_characteristics_t proc_characteristics;
     pl_interp_proc_allocate_interp_instance_t proc_allocate_interp_instance;
-    pl_interp_proc_set_device_t proc_set_device;
+    pl_interp_proc_get_device_memory_t proc_get_device_memory;
+    pl_interp_proc_set_param_t proc_set_param;
+    pl_interp_proc_post_args_init_t proc_post_args_init;
     pl_interp_proc_init_job_t proc_init_job;
     pl_interp_proc_process_file_t proc_process_file;
+    pl_interp_proc_process_begin_t proc_process_begin;
     pl_interp_proc_process_t proc_process;
+    pl_interp_proc_process_end_t proc_process_end;
     pl_interp_proc_flush_to_eoj_t proc_flush_to_eoj;
     pl_interp_proc_process_eof_t proc_process_eof;
     pl_interp_proc_report_errors_t proc_report_errors;
     pl_interp_proc_dnit_job_t proc_dnit_job;
-    pl_interp_proc_remove_device_t proc_remove_device;
     pl_interp_proc_deallocate_interp_instance_t
         proc_deallocate_interp_instance;
     void *interp_client_data;

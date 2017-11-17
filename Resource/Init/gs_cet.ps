@@ -73,6 +73,53 @@ dup 7 -1 put
 % and GS_CHAR_FILL are now dynamic. Force CPSI compatibility.
 //true .setCPSImode
 
+% Some QL jobs (/23-12B.PS for example) do:
+% '(%stdin) (r) file'
+% expecting that they are being read from stdin.
+% if that is not the case, they block waiting for input
+% from stdin.
+% This hooks the 'file' operator', so if a job tries to
+% open %stdin, and we're *not* reading the job from stdin
+% it'll return currentfile instead.
+/ofile /file load def
+/file
+{
+   1 index (%stdin) eq 2 index (%stdin%) eq or
+   {
+     ofile dup currentfile eq not
+     {
+       pop currentfile
+     }if
+   }
+   {
+     ofile
+   } ifelse
+} bind odef
+currentdict /ofile undef
+
+% One QL job (23-12B.PS) effectively does:
+% (%stdin) (r) file 0 setfileposition
+% expecting it to throw an ioerror (stdin not being a positionable
+% stream.
+% With the above 'file' hook, when running from a file
+% rather than stdin, setfileposition will succeed, and we hit
+% an infinite loop - '0 setfileposition' meaning we restart intepreting
+% from the beginning of the file.
+% Hook setfileposition to throw an error attempting to reposition
+% the current file.
+/osetfileposition /setfileposition load def
+/setfileposition
+{
+    1 index currentfile eq
+    {
+        /setfileposition cvx /ioerror signalerror
+    }
+    {
+      osetfileposition
+    } ifelse
+} bind odef
+currentdict /osetfileposition undef
+
 setglobal
 
 % Remove all but the default page size (the 0 entry in the InputAttributes

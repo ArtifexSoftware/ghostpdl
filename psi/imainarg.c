@@ -95,8 +95,8 @@ static int argproc(gs_main_instance *, const char *);
 static int run_buffered(gs_main_instance *, const char *);
 static int esc_strlen(const char *);
 static void esc_strcat(char *, const char *);
-static int runarg(gs_main_instance *, const char *, const char *, const char *, int);
-static int run_string(gs_main_instance *, const char *, int);
+static int runarg(gs_main_instance *, const char *, const char *, const char *, int, int, int *, ref *);
+static int run_string(gs_main_instance *, const char *, int, int, int *, ref *);
 static int run_finish(gs_main_instance *, int, int, ref *);
 static int try_stdout_redirect(gs_main_instance * minst,
                                 const char *command, const char *filename);
@@ -131,7 +131,7 @@ set_debug_flags(const char *arg, char *flags)
 }
 
 int
-gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
+gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
 {
     const char *arg;
     arg_list args;
@@ -256,24 +256,43 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
                 }
         }
     }
-    if (code < 0)
-        return code;
+
+    if (gs_debug[':']) {
+        int i;
+
+        dmprintf1(minst->heap, "%% Init (Part 1/2) done, instance 0x%p, with args: ", minst);
+        for (i=1; i<argc; i++)
+            dmprintf1(minst->heap, "%s ", argv[i]);
+        dmprintf(minst->heap, "\n");
+    }
+    return code;
+}
+
+int
+gs_main_init_with_args2(gs_main_instance * minst)
+{
+    int code;
 
     code = gs_main_init2(minst);
     if (code < 0)
         return code;
 
-    if (gs_debug[':']) {
-        int i;
+    if (gs_debug[':'])
+        dmprintf1(minst->heap, "%% Init (Part 2/2) done, instance 0x%p.", minst);
 
-        dmprintf1(minst->heap, "%% Init done, instance 0x%p, with args: ", minst);
-        for (i=1; i<argc; i++)
-            dmprintf1(minst->heap, "%s ", argv[i]);
-        dmprintf(minst->heap, "\n");
-    }
     if (!minst->run_start)
         return gs_error_Quit;
-    return code ;
+    return code;
+}
+
+int
+gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
+{
+    int code = gs_main_init_with_args01(minst, argc, argv);
+
+    if (code < 0)
+        return code;
+    return gs_main_init_with_args2(minst);
 }
 
 /*
@@ -296,7 +315,7 @@ gs_arg_get_codepoint *gs_main_inst_get_arg_decode(gs_main_instance * minst)
 int
 gs_main_run_start(gs_main_instance * minst)
 {
-    return run_string(minst, "systemdict /start get exec", runFlush);
+    return run_string(minst, "systemdict /start get exec", runFlush, minst->user_errors, NULL, NULL);
 }
 
 /* Process switches.  Return 0 if processed, 1 for unknown switch, */
@@ -315,10 +334,10 @@ swproc(gs_main_instance * minst, const char *arg, arg_list * pal)
             return 1;
         case 0:         /* read stdin as a file char-by-char */
             /* This is a ******HACK****** for Ghostview. */
-            minst->heap->gs_lib_ctx->stdin_is_interactive = true;
+            minst->heap->gs_lib_ctx->core->stdin_is_interactive = true;
             goto run_stdin;
         case '_':       /* read stdin with normal buffering */
-            minst->heap->gs_lib_ctx->stdin_is_interactive = false;
+            minst->heap->gs_lib_ctx->core->stdin_is_interactive = false;
 run_stdin:
             minst->run_start = false;   /* don't run 'start' */
             /* Set NOPAUSE so showpage won't try to read from stdin. */
@@ -329,7 +348,7 @@ run_stdin:
             if (code < 0)
                 return code;
 
-            code = run_string(minst, ".runstdin", runFlush);
+            code = run_string(minst, ".runstdin", runFlush, minst->user_errors, NULL, NULL);
             if (code < 0)
                 return code;
             /* If in saved_pages_test_mode, print and flush previous job before the next file */
@@ -432,19 +451,19 @@ run_stdin:
                 else
                     code = gs_main_init2(minst);
                 if (code >= 0)
-                    code = run_string(minst, "userdict/ARGUMENTS[", 0);
+                    code = run_string(minst, "userdict/ARGUMENTS[", 0, minst->user_errors, NULL, NULL);
                 if (code >= 0)
                     while ((code = arg_next(pal, (const char **)&arg, minst->heap)) > 0) {
-                        code = runarg(minst, "", arg, "", runInit);
+                        code = runarg(minst, "", arg, "", runInit, minst->user_errors, NULL, NULL);
                         if (code < 0)
                             break;
                     }
                 if (code >= 0)
-                    code = runarg(minst, "]put", psarg, ".runfile", runInit | runFlush);
+                    code = runarg(minst, "]put", psarg, ".runfile", runInit | runFlush, minst->user_errors, NULL, NULL);
                 arg_free((char *)psarg, minst->heap);
                 if (code >= 0)
                     code = gs_error_Quit;
-                
+
                 return code;
             }
         case 'A':               /* trace allocator */
@@ -490,7 +509,7 @@ run_stdin:
                         (arg[0] == '-' && !isdigit((unsigned char)arg[1]))
                         )
                         break;
-                    code = runarg(minst, "", arg, ".runstring", 0);
+                    code = runarg(minst, "", arg, ".runstring", 0, minst->user_errors, NULL, NULL);
                     if (code < 0)
                         return code;
                 }
@@ -585,20 +604,15 @@ run_stdin:
             break;
         case 'g':               /* define device geometry */
             {
-                long width, height;
-                ref value;
+                long dimensions[2];
 
                 if ((code = gs_main_init1(minst)) < 0)
                     return code;
-                if (sscanf((const char *)arg, "%ldx%ld", &width, &height) != 2) {
+                if (sscanf((const char *)arg, "%ldx%ld", &dimensions[0], &dimensions[1]) != 2) {
                     puts(minst->heap, "-g must be followed by <width>x<height>");
                     return gs_error_Fatal;
                 }
-                make_int(&value, width);
-                i_initial_enter_name(minst->i_ctx_p, "DEVICEWIDTH", &value);
-                make_int(&value, height);
-                i_initial_enter_name(minst->i_ctx_p, "DEVICEHEIGHT", &value);
-                i_initial_enter_name(minst->i_ctx_p, "FIXEDMEDIA", &vtrue);
+                gs_main_force_dimensions(minst, dimensions);
                 break;
             }
         case 'h':               /* print help */
@@ -719,24 +733,19 @@ run_stdin:
             break;
         case 'r':               /* define device resolution */
             {
-                float xres, yres;
-                ref value;
+                float res[2];
 
                 if ((code = gs_main_init1(minst)) < 0)
                     return code;
-                switch (sscanf((const char *)arg, "%fx%f", &xres, &yres)) {
+                switch (sscanf((const char *)arg, "%fx%f", &res[0], &res[0])) {
                     default:
                         puts(minst->heap, "-r must be followed by <res> or <xres>x<yres>");
                         return gs_error_Fatal;
                     case 1:     /* -r<res> */
-                        yres = xres;
+                        res[1] = res[0];
                         /* fall through */
                     case 2:     /* -r<xres>x<yres> */
-                        make_real(&value, xres);
-                        i_initial_enter_name(minst->i_ctx_p, "DEVICEXRESOLUTION", &value);
-                        make_real(&value, yres);
-                        i_initial_enter_name(minst->i_ctx_p, "DEVICEYRESOLUTION", &value);
-                        i_initial_enter_name(minst->i_ctx_p, "FIXEDRESOLUTION", &vtrue);
+                        gs_main_force_resolutions(minst, res);
                 }
                 break;
             }
@@ -954,7 +963,7 @@ argproc(gs_main_instance * minst, const char *arg)
         return run_buffered(minst, arg);
     } else {
         /* Run file directly in the normal way. */
-        return runarg(minst, "", arg, ".runfile", runInit | runFlush);
+        return runarg(minst, "", arg, ".runfile", runInit | runFlush, minst->user_errors, NULL, NULL);
     }
 }
 static int
@@ -999,8 +1008,14 @@ run_buffered(gs_main_instance * minst, const char *arg)
     return run_finish(minst, code, exit_code, &error_object);
 }
 static int
-runarg(gs_main_instance * minst, const char *pre, const char *arg,
-       const char *post, int options)
+runarg(gs_main_instance *minst,
+       const char       *pre,
+       const char       *arg,
+       const char       *post,
+       int               options,
+       int               user_errors,
+       int              *pexit_code,
+       ref              *perror_object)
 {
     int len = strlen(pre) + esc_strlen(arg) + strlen(post) + 1;
     int code;
@@ -1021,24 +1036,45 @@ runarg(gs_main_instance * minst, const char *pre, const char *arg,
     esc_strcat(line, arg);
     strcat(line, post);
     minst->i_ctx_p->starting_arg_file = true;
-    code = run_string(minst, line, options);
+    code = run_string(minst, line, options, user_errors, pexit_code, perror_object);
     minst->i_ctx_p->starting_arg_file = false;
     gs_free_object(minst->heap, line, "runarg");
     return code;
 }
+int
+gs_main_run_file2(gs_main_instance *minst,
+                  const char       *filename,
+                  int               user_errors,
+                  int              *pexit_code,
+                  ref              *perror_object)
+{
+    return runarg(minst, "", filename, ".runfile", runFlush, user_errors, pexit_code, perror_object);
+}
 static int
-run_string(gs_main_instance * minst, const char *str, int options)
+run_string(gs_main_instance *minst,
+           const char       *str,
+           int               options,
+           int               user_errors,
+           int              *pexit_code,
+           ref              *perror_object)
 {
     int exit_code;
     ref error_object;
-    int code = gs_main_run_string(minst, str, minst->user_errors,
-                                  &exit_code, &error_object);
+    int code;
+
+    if (pexit_code == NULL)
+        pexit_code = &exit_code;
+    if (perror_object == NULL)
+        perror_object = &error_object;
+
+    code = gs_main_run_string(minst, str, user_errors,
+                              pexit_code, perror_object);
 
     if ((options & runFlush) || code != 0) {
         zflush(minst->i_ctx_p);         /* flush stdout */
         zflushpage(minst->i_ctx_p);     /* force display update */
     }
-    return run_finish(minst, code, exit_code, &error_object);
+    return run_finish(minst, code, *pexit_code, perror_object);
 }
 static int
 run_finish(gs_main_instance *minst, int code, int exit_code,
@@ -1049,9 +1085,12 @@ run_finish(gs_main_instance *minst, int code, int exit_code,
         case 0:
             break;
         case gs_error_Fatal:
-            emprintf1(minst->heap,
-                      "Unrecoverable error, exit code %d\n",
-                      exit_code);
+            if (exit_code == gs_error_InterpreterExit)
+                code = exit_code;
+            else
+                emprintf1(minst->heap,
+                          "Unrecoverable error, exit code %d\n",
+                          exit_code);
             break;
         default:
             gs_main_dump_stack(minst, code, perror_object);
@@ -1072,28 +1111,29 @@ static int
 try_stdout_redirect(gs_main_instance * minst,
     const char *command, const char *filename)
 {
+    gs_lib_ctx_core_t *core = minst->heap->gs_lib_ctx->core;
     if (strcmp(command, "stdout") == 0) {
-        minst->heap->gs_lib_ctx->stdout_to_stderr = 0;
-        minst->heap->gs_lib_ctx->stdout_is_redirected = 0;
+        core->stdout_to_stderr = 0;
+        core->stdout_is_redirected = 0;
         /* If stdout already being redirected and it is not stdout
          * or stderr, close it
          */
-        if (minst->heap->gs_lib_ctx->fstdout2
-            && (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstdout)
-            && (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstderr)) {
-            fclose(minst->heap->gs_lib_ctx->fstdout2);
-            minst->heap->gs_lib_ctx->fstdout2 = (FILE *)NULL;
+        if (core->fstdout2
+            && (core->fstdout2 != core->fstdout)
+            && (core->fstdout2 != core->fstderr)) {
+            fclose(core->fstdout2);
+            core->fstdout2 = (FILE *)NULL;
         }
         /* If stdout is being redirected, set minst->fstdout2 */
         if ( (filename != 0) && strlen(filename) &&
             strcmp(filename, "-") && strcmp(filename, "%stdout") ) {
             if (strcmp(filename, "%stderr") == 0) {
-                minst->heap->gs_lib_ctx->stdout_to_stderr = 1;
+                core->stdout_to_stderr = 1;
             }
-            else if ((minst->heap->gs_lib_ctx->fstdout2 =
+            else if ((core->fstdout2 =
                       gp_fopen(filename, "w")) == (FILE *)NULL)
                 return_error(gs_error_invalidfileaccess);
-            minst->heap->gs_lib_ctx->stdout_is_redirected = 1;
+            core->stdout_is_redirected = 1;
         }
         return 0;
     }

@@ -19,3 +19,5 @@ EXPORTS
    gsapi_set_arg_encoding
    gsapi_set_default_device_list
    gsapi_get_default_device_list
+   gsapi_get_device_memory
+   gsapi_set_device

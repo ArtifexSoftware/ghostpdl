@@ -35,6 +35,13 @@ typedef struct gs_main_instance_s gs_main_instance;
 int gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[]);
 
 /*
+ * Split init functions; gs_main_init_with_args01 and 2 together do
+ * the same as gs_main_init_with_args, but allow for additional
+ * options to be processed in between. */
+int gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[]);
+int gs_main_init_with_args2(gs_main_instance * minst);
+
+/*
  * Run the 'start' procedure (after processing the command line).
  */
 int gs_main_run_start(gs_main_instance * minst);

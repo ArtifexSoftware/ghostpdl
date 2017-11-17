@@ -42,7 +42,14 @@ gs_malloc_memory_t *gs_malloc_memory_init(void);
   gs_memory_free_all((gs_memory_t *)mem, FREE_ALL_EVERYTHING,\
                      "gs_malloc_memory_release")
 
+/* Get a basic malloc based allocator, built on a new
+ * gs_lib_ctx instance. */
 gs_memory_t * gs_malloc_init(void);
+/* Get a basic malloc based allocator, built on a
+ * gs_lib_ctx instance, cloned from this supplied one.
+ * If ctx == NULL, this behaves as gs_malloc_init.
+ */
+gs_memory_t * gs_malloc_init_with_context(gs_lib_ctx_t *ctx);
 void gs_malloc_release(gs_memory_t *mem);
 
 #define gs_malloc(mem, nelts, esize, cname)\

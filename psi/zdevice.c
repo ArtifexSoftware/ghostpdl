@@ -86,7 +86,7 @@ zcurrentdevice(i_ctx_t *i_ctx_p)
    the *device* object, rather than the dictionary describing
    the device and device state.
  */
-static int
+int
 zcurrentoutputdevice(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
@@ -503,6 +503,26 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+int
+zsetdevice_no_safer(i_ctx_t *i_ctx_p, gx_device *new_dev)
+{
+    gx_device *dev = gs_currentdevice(igs);
+    int code;
+
+    dev->ShowpageCount = 0;
+
+    if (new_dev == NULL)
+        return gs_note_error(gs_error_undefined);
+
+    code = gs_setdevice_no_erase(igs, new_dev);
+    if (code < 0)
+        return code;
+
+    invalidate_stack_devices(i_ctx_p);
+    clear_pagedevice(istate);
+    return code;
+}
+
 /* <device> .setdevice <eraseflag> */
 /* Note that .setdevice clears the current pagedevice. */
 int
@@ -538,15 +558,8 @@ zsetdevice(i_ctx_t *i_ctx_p)
         if(ndev != odev) 	  /* don't allow a different device    */
             return_error(gs_error_invalidaccess);
     }
-    dev->ShowpageCount = 0;
-
-    code = gs_setdevice_no_erase(igs, op->value.pdevice);
-    if (code < 0)
-        return code;
-
+    code = zsetdevice_no_safer(i_ctx_p, op->value.pdevice);
     make_bool(op, code != 0);	/* erase page if 1 */
-    invalidate_stack_devices(i_ctx_p);
-    clear_pagedevice(istate);
     return code;
 }
 

@@ -77,14 +77,14 @@ const gx_io_device gs_iodev_stderr =
 static int
 stdin_init(gx_io_device * iodev, gs_memory_t * mem)
 {
-    mem->gs_lib_ctx->stdin_is_interactive = true;
+    mem->gs_lib_ctx->core->stdin_is_interactive = true;
     return 0;
 }
 
 static void
 stdin_finit(gx_io_device * iodev, gs_memory_t * mem)
 {
-    mem->gs_lib_ctx->stdin_is_interactive = false;
+    mem->gs_lib_ctx->core->stdin_is_interactive = false;
     return;
 }
 
@@ -97,19 +97,20 @@ s_stdin_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     int wcount = (int)(pw->limit - pw->ptr);
     int count;
     gs_memory_t *mem = st->memory;
+    gs_lib_ctx_core_t *core = mem->gs_lib_ctx->core;
 
     if (wcount <= 0)
         return 0;
 
     /* do the callout */
-    if (mem->gs_lib_ctx->stdin_fn)
-        count = (*mem->gs_lib_ctx->stdin_fn)
-            (mem->gs_lib_ctx->caller_handle, (char *)pw->ptr + 1,
-             mem->gs_lib_ctx->stdin_is_interactive ? 1 : wcount);
+    if (core->stdin_fn)
+        count = (*core->stdin_fn)
+            (core->caller_handle, (char *)pw->ptr + 1,
+             core->stdin_is_interactive ? 1 : wcount);
     else
         count = gp_stdin_read((char *)pw->ptr + 1, wcount,
-                      mem->gs_lib_ctx->stdin_is_interactive,
-                      mem->gs_lib_ctx->fstdin);
+                      core->stdin_is_interactive,
+                      core->fstdin);
 
     pw->ptr += (count < 0) ? 0 : count;
     return ((count < 0) ? ERRC : (count == 0) ? EOFC : count);

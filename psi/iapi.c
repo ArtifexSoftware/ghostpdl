@@ -23,6 +23,7 @@
 #include "gstypes.h"
 #include "gdebug.h"
 #include "iapi.h"	/* Public API */
+#include "psapi.h"
 #include "iref.h"
 #include "iminst.h"
 #include "imain.h"
@@ -33,14 +34,9 @@
 #include "gp.h"
 #include "gsargs.h"
 
-#ifndef GS_THREADSAFE
-/* Number of threads to allow per process. Unless GS_THREADSAFE is defined
- * more than 1 is guaranteed to fail.
- */
-static int gsapi_instance_counter = 0;
-static const int gsapi_instance_max = 1;
-#endif
-
+typedef struct { int a[GS_ARG_ENCODING_LOCAL   == PS_ARG_ENCODING_LOCAL   ? 1 : -1]; } compile_time_assert_0;
+typedef struct { int a[GS_ARG_ENCODING_UTF8    == PS_ARG_ENCODING_UTF8    ? 1 : -1]; } compile_time_assert_1;
+typedef struct { int a[GS_ARG_ENCODING_UTF16LE == PS_ARG_ENCODING_UTF16LE ? 1 : -1]; } compile_time_assert_2;
 
 /* Return revision numbers and strings of Ghostscript. */
 /* Used for determining if wrong GSDLL loaded. */
@@ -57,26 +53,6 @@ gsapi_revision(gsapi_revision_t *pr, int rvsize)
     return 0;
 }
 
-#ifdef METRO
-static int GSDLLCALL metro_stdin(void *v, char *buf, int len)
-{
-	return 0;
-}
-
-static int GSDLLCALL metro_stdout(void *v, const char *str, int len)
-{
-#ifdef DEBUG
-	OutputDebugStringWRT(str, len);
-#endif
-	return len;
-}
-
-static int GSDLLCALL metro_stderr(void *v, const char *str, int len)
-{
-	return metro_stdout(v, str, len);
-}
-#endif
-
 /* Create a new instance of Ghostscript.
  * First instance per process call with *pinstance == NULL
  * next instance in a proces call with *pinstance == copy of valid_instance pointer
@@ -85,52 +61,7 @@ static int GSDLLCALL metro_stderr(void *v, const char *str, int len)
 GSDLLEXPORT int GSDLLAPI
 gsapi_new_instance(void **pinstance, void *caller_handle)
 {
-    gs_memory_t *mem = NULL;
-    gs_main_instance *minst = NULL;
-
-    if (pinstance == NULL)
-        return gs_error_Fatal;
-
-#ifndef GS_THREADSAFE
-    /* limited to 1 instance, till it works :) */
-    if ( gsapi_instance_counter >= gsapi_instance_max )
-        return gs_error_Fatal;
-    ++gsapi_instance_counter;
-#endif
-
-    if (*pinstance == NULL)
-        /* first instance in this process */
-        mem = gs_malloc_init();
-    else {
-        /* nothing different for second thread initialization
-         * seperate memory, ids, only stdio is process shared.
-         */
-        mem = gs_malloc_init();
-
-    }
-    if (mem == NULL)
-        return gs_error_Fatal;
-    minst = gs_main_alloc_instance(mem);
-    if (minst == NULL) {
-        gs_malloc_release(mem);
-        return gs_error_Fatal;
-    }
-    mem->gs_lib_ctx->top_of_system = (void*) minst;
-    mem->gs_lib_ctx->caller_handle = caller_handle;
-    mem->gs_lib_ctx->custom_color_callback = NULL;
-#ifdef METRO
-    mem->gs_lib_ctx->stdin_fn = metro_stdin;
-    mem->gs_lib_ctx->stdout_fn = metro_stdout;
-    mem->gs_lib_ctx->stderr_fn = metro_stderr;
-#else
-    mem->gs_lib_ctx->stdin_fn = NULL;
-    mem->gs_lib_ctx->stdout_fn = NULL;
-    mem->gs_lib_ctx->stderr_fn = NULL;
-#endif
-    mem->gs_lib_ctx->poll_fn = NULL;
-
-    *pinstance = (void*)(mem->gs_lib_ctx);
-    return gsapi_set_arg_encoding(*pinstance, GS_ARG_ENCODING_LOCAL);
+    return psapi_new_instance((gs_lib_ctx_t **)pinstance, caller_handle);
 }
 
 /* Destroy an instance of Ghostscript */
@@ -140,27 +71,7 @@ gsapi_new_instance(void **pinstance, void *caller_handle)
 GSDLLEXPORT void GSDLLAPI
 gsapi_delete_instance(void *instance)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
-    if ((ctx != NULL)) {
-        gs_memory_t *mem = (gs_memory_t *)(ctx->memory);
-        gs_main_instance *minst = get_minst_from_memory(ctx->memory);
-
-        ctx->caller_handle = NULL;
-        ctx->stdin_fn = NULL;
-        ctx->stdout_fn = NULL;
-        ctx->stderr_fn = NULL;
-        ctx->poll_fn = NULL;
-        minst->display = NULL;
-
-        gs_free_object(mem, minst, "init_main_instance");
-
-        /* Release the memory (frees up everything) */
-        gs_malloc_release(mem);
-
-#ifndef GS_THREADSAFE
-        --gsapi_instance_counter;
-#endif
-    }
+    psapi_delete_instance(instance);
 }
 
 /* Set the callback functions for stdio */
@@ -173,9 +84,9 @@ gsapi_set_stdio(void *instance,
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
         return gs_error_Fatal;
-    ctx->stdin_fn = stdin_fn;
-    ctx->stdout_fn = stdout_fn;
-    ctx->stderr_fn = stderr_fn;
+    ctx->core->stdin_fn = stdin_fn;
+    ctx->core->stdout_fn = stdout_fn;
+    ctx->core->stderr_fn = stderr_fn;
     return 0;
 }
 
@@ -187,7 +98,7 @@ gsapi_set_poll(void *instance,
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
         return gs_error_Fatal;
-    ctx->poll_fn = poll_fn;
+    ctx->core->poll_fn = poll_fn;
     return 0;
 }
 
@@ -222,122 +133,19 @@ gsapi_get_default_device_list(void *instance, char **list, int *listlen)
     return gs_lib_ctx_get_default_device_list(ctx->memory, list, listlen);
 }
 
-static int utf16le_get_codepoint(FILE *file, const char **astr)
-{
-    int c;
-    int rune;
-    int trail;
-
-    /* This code spots the BOM for 16bit LE and ignores it. Strictly speaking
-     * this may be wrong, as we are only supposed to ignore it at the beginning
-     * of the string, but if anyone is stupid enough to use ZWNBSP (zero width
-     * non breaking space) in the middle of their strings, then they deserve
-     * what they get. */
-    /* We spot the BOM for 16bit BE and treat that as EOF. We'd rather give
-     * up on dealing with a broken file than try to run something we know to
-     * be wrong. */
-
-    do {
-        if (file) {
-            rune = fgetc(file);
-            if (rune == EOF)
-                return EOF;
-            c = fgetc(file);
-            if (c == EOF)
-                return EOF;
-            rune += c<<8;
-        } else {
-            rune = (*astr)[0] | ((*astr)[1]<<8);
-            if (rune != 0)
-                (*astr) += 2;
-            else
-                return EOF;
-        }
-        if (rune == 0xFEFF) /* BOM - ignore it */
-            continue;
-        if (rune == 0xFFFE) /* BOM for BE - hopelessly broken */
-            return EOF;
-        if (rune < 0xD800 || rune >= 0xE000)
-            return rune;
-        if (rune >= 0xDC00) /* Found a trailing surrogate pair. Skip it */
-            continue;
-lead: /* We've just read a leading surrogate */
-        rune -= 0xD800;
-        rune <<= 10;
-        if (file) {
-            trail = fgetc(file);
-            if (trail == EOF)
-                return EOF;
-            c = fgetc(file);
-            if (c == EOF)
-                return EOF;
-            trail += c<<8;
-        } else {
-            trail = (*astr)[0] | ((*astr)[1]<<8);
-            if (trail != 0)
-                (*astr) += 2;
-            else
-                return EOF;
-        }
-        if (trail < 0xd800 || trail >= 0xE000) {
-            if (rune == 0xFEFF) /* BOM - ignore it. */
-                continue;
-            if (rune == 0xFFFE) /* BOM for BE - hopelessly broken. */
-                return EOF;
-            /* No trail surrogate was found, so skip the lead surrogate and
-             * return the rune we landed on. */
-            return trail;
-        }
-        if (trail < 0xdc00) {
-            /* We found another leading surrogate. */
-            rune = trail;
-            goto lead;
-        }
-        break;
-    } while (1);
-
-    return rune + (trail-0xDC00) + 0x10000;
-}
-
 /* Initialise the interpreter */
 GSDLLEXPORT int GSDLLAPI
 gsapi_set_arg_encoding(void *instance, int encoding)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
-    if (instance == NULL)
-        return gs_error_Fatal;
-
-    if (encoding == GS_ARG_ENCODING_LOCAL) {
-#if defined(__WIN32__) && !defined(METRO)
-        /* For windows, we need to set it up so that we convert from 'local'
-         * format (in this case whatever codepage is set) to utf8 format. At
-         * the moment, all the other OS we care about provide utf8 anyway.
-         */
-        gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), gp_local_arg_encoding_get_codepoint);
-#else
-        gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), NULL);
-#endif /* WIN32 */
-        return 0;
-    }
-    if (encoding == GS_ARG_ENCODING_UTF8) {
-        gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), NULL);
-        return 0;
-    }
-    if (encoding == GS_ARG_ENCODING_UTF16LE) {
-        gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), utf16le_get_codepoint);
-        return 0;
-    }
-    return gs_error_Fatal;
+    return psapi_set_arg_encoding(ctx, encoding);
 }
 
 GSDLLEXPORT int GSDLLAPI
 gsapi_init_with_args(void *instance, int argc, char **argv)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
-    if (instance == NULL)
-        return gs_error_Fatal;
-
-    return gs_main_init_with_args(get_minst_from_memory(ctx->memory), argc, argv);
+    return psapi_init_with_args(ctx, argc, argv);
 }
 
 /* The gsapi_run_* functions are like gs_main_run_* except
@@ -347,106 +155,74 @@ gsapi_init_with_args(void *instance, int argc, char **argv)
 
 /* Setup up a suspendable run_string */
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_string_begin(void *instance, int user_errors,
-        int *pexit_code)
+gsapi_run_string_begin(void *instance,
+                       int   user_errors,
+                       int  *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
-    if (instance == NULL)
-        return gs_error_Fatal;
-
-    return gs_main_run_string_begin(get_minst_from_memory(ctx->memory),
-                                    user_errors, pexit_code,
-                                    &(get_minst_from_memory(ctx->memory)->error_object));
+    return psapi_run_string_begin(ctx, user_errors, pexit_code);
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_string_continue(void *instance,
-        const char *str, uint length, int user_errors, int *pexit_code)
+gsapi_run_string_continue(void         *instance,
+                          const char   *str,
+                          unsigned int  length,
+                          int           user_errors,
+                          int          *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
-    if (instance == NULL)
-        return gs_error_Fatal;
-
-    return gs_main_run_string_continue(get_minst_from_memory(ctx->memory),
-                                       str, length, user_errors, pexit_code,
-                                       &(get_minst_from_memory(ctx->memory)->error_object));
+    return psapi_run_string_continue(ctx, str, length, user_errors, pexit_code);
 }
 
 GSDLLEXPORT int GSDLLAPI
 gsapi_run_string_end(void *instance,
-        int user_errors, int *pexit_code)
+                     int   user_errors,
+                     int  *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
-    if (instance == NULL)
-        return gs_error_Fatal;
-
-    return gs_main_run_string_end(get_minst_from_memory(ctx->memory),
-                                  user_errors, pexit_code,
-                                  &(get_minst_from_memory(ctx->memory)->error_object));
+    return psapi_run_string_end(ctx, user_errors, pexit_code);
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_string_with_length(void *instance,
-        const char *str, uint length, int user_errors, int *pexit_code)
+gsapi_run_string_with_length(void         *instance,
+                             const char   *str,
+                             unsigned int  length,
+                             int           user_errors,
+                             int          *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
-    if (instance == NULL)
-        return gs_error_Fatal;
-
-    return gs_main_run_string_with_length(get_minst_from_memory(ctx->memory),
-                                          str, length, user_errors, pexit_code,
-                                          &(get_minst_from_memory(ctx->memory)->error_object));
+    return psapi_run_string_with_length(ctx, str, length, user_errors, pexit_code);
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_string(void *instance,
-        const char *str, int user_errors, int *pexit_code)
+gsapi_run_string(void       *instance,
+                 const char *str,
+                 int         user_errors,
+                 int        *pexit_code)
 {
-    return gsapi_run_string_with_length(instance,
-        str, (uint)strlen(str), user_errors, pexit_code);
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    return psapi_run_string_with_length(ctx,
+                                        str,
+                                        (unsigned int)strlen(str),
+                                        user_errors,
+                                        pexit_code);
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_file(void *instance, const char *file_name,
-        int user_errors, int *pexit_code)
+gsapi_run_file(void       *instance,
+               const char *file_name,
+               int         user_errors,
+               int        *pexit_code)
 {
-    char *d, *temp;
-    const char *c = file_name;
-    char dummy[6];
-    int rune, code, len;
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
-    gs_main_instance *minst;
-    if (instance == NULL)
-        return gs_error_Fatal;
-    minst = get_minst_from_memory(ctx->memory);
-
-    /* Convert the file_name to utf8 */
-    if (minst->get_codepoint) {
-        len = 1;
-        while ((rune = minst->get_codepoint(NULL, &c)) >= 0)
-            len += codepoint_to_utf8(dummy, rune);
-        temp = (char *)gs_alloc_bytes_immovable(ctx->memory, len, "gsapi_run_file");
-        if (temp == NULL)
-            return 0;
-        c = file_name;
-        d = temp;
-        while ((rune = minst->get_codepoint(NULL, &c)) >= 0)
-           d += codepoint_to_utf8(d, rune);
-        *d = 0;
-    }
-    else {
-      temp = (char *)file_name;
-    }
-    code =  gs_main_run_file(minst, temp, user_errors, pexit_code,
-                             &(minst->error_object));
-    if (temp != file_name)
-        gs_free_object(ctx->memory, temp, "gsapi_run_file");
-    return code;
+    return psapi_run_file(ctx, file_name, user_errors, pexit_code);
 }
 
 #ifdef __WIN32__
 GSDLLEXPORT int GSDLLAPI
-gsapi_init_with_argsW(void *instance, int argc, wchar_t **argv)
+gsapi_init_with_argsW(void     *instance,
+                      int       argc,
+                      wchar_t **argv)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     int code;
@@ -455,16 +231,18 @@ gsapi_init_with_argsW(void *instance, int argc, wchar_t **argv)
         return gs_error_Fatal;
 
     old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
-    code = gsapi_set_arg_encoding(instance, GS_ARG_ENCODING_UTF16LE);
+    code = psapi_set_arg_encoding(ctx, PS_ARG_ENCODING_UTF16LE);
     if (code != 0)
         return code;
-    code = gsapi_init_with_args(instance, 2*argc, (char **)argv);
+    code = psapi_init_with_args(ctx, 2*argc, (char **)argv);
     gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), old);
     return code;
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_init_with_argsA(void *instance, int argc, char **argv)
+gsapi_init_with_argsA(void  *instance,
+                      int    argc,
+                      char **argv)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     int code;
@@ -473,17 +251,19 @@ gsapi_init_with_argsA(void *instance, int argc, char **argv)
         return gs_error_Fatal;
 
     old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
-    code = gsapi_set_arg_encoding(instance, GS_ARG_ENCODING_LOCAL);
+    code = psapi_set_arg_encoding(ctx, PS_ARG_ENCODING_LOCAL);
     if (code != 0)
         return code;
-    code = gsapi_init_with_args(instance, 2*argc, (char **)argv);
+    code = psapi_init_with_args(ctx, 2*argc, (char **)argv);
     gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), old);
     return code;
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_fileW(void *instance, const wchar_t *file_name,
-        int user_errors, int *pexit_code)
+gsapi_run_fileW(void          *instance,
+                const wchar_t *file_name,
+                int            user_errors,
+                int           *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     int code;
@@ -492,17 +272,19 @@ gsapi_run_fileW(void *instance, const wchar_t *file_name,
         return gs_error_Fatal;
 
     old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
-    code = gsapi_set_arg_encoding(instance, GS_ARG_ENCODING_UTF16LE);
+    code = psapi_set_arg_encoding(ctx, PS_ARG_ENCODING_UTF16LE);
     if (code != 0)
         return code;
-    code = gsapi_run_file(instance, (const char *)file_name, user_errors, pexit_code);
+    code = psapi_run_file(ctx, (const char *)file_name, user_errors, pexit_code);
     gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), old);
     return code;
 }
 
 GSDLLEXPORT int GSDLLAPI
-gsapi_run_fileA(void *instance, const char *file_name,
-        int user_errors, int *pexit_code)
+gsapi_run_fileA(void       *instance,
+                const char *file_name,
+                int         user_errors,
+                int        *pexit_code)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     int code;
@@ -511,25 +293,37 @@ gsapi_run_fileA(void *instance, const char *file_name,
         return gs_error_Fatal;
 
     old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
-    code = gsapi_set_arg_encoding(instance, GS_ARG_ENCODING_LOCAL);
+    code = psapi_set_arg_encoding(ctx, PS_ARG_ENCODING_LOCAL);
     if (code != 0)
         return code;
-    code = gsapi_run_file(instance, (const char *)file_name, user_errors, pexit_code);
+    code = psapi_run_file(ctx, (const char *)file_name, user_errors, pexit_code);
     gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), old);
     return code;
 }
 #endif
+
+/* Retrieve the memory allocator for the interpreter instance */
+GSDLLEXPORT gs_memory_t * GSDLLAPI
+gsapi_get_device_memory(void *instance)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    return psapi_get_device_memory(ctx);
+}
+
+/* Retrieve the memory allocator for the interpreter instance */
+GSDLLEXPORT int GSDLLAPI
+gsapi_set_device(void *instance, gx_device *pdev)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    return psapi_set_device(ctx, pdev);
+}
 
 /* Exit the interpreter */
 GSDLLEXPORT int GSDLLAPI
 gsapi_exit(void *instance)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
-    if (instance == NULL)
-        return gs_error_Fatal;
-
-    gs_to_exit(ctx->memory, 0);
-    return 0;
+    return psapi_exit(ctx);
 }
 
 /* end of iapi.c */
