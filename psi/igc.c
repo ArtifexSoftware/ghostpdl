@@ -238,11 +238,13 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     /* Register the allocators themselves as roots, */
     /* so we mark and relocate the change and save lists properly. */
 
-    for_spaces(ispace, max_trace)
+    for_spaces(ispace, max_trace) {
+        rp = &space_roots[ispace];
         gs_register_struct_root((gs_memory_t *)space_memories[ispace],
-                                &space_roots[ispace],
+                                &rp,
                                 (void **)&space_memories[ispace],
                                 "gc_top_level");
+    }
 
     end_phase(state.heap,"register space roots");
 

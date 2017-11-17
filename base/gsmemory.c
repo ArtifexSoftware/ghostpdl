@@ -212,7 +212,7 @@ gs_struct_type_name(gs_memory_type_ptr_t pstype)
 
 /* Register a structure root. */
 int
-gs_register_struct_root(gs_memory_t *mem, gs_gc_root_t *root,
+gs_register_struct_root(gs_memory_t *mem, gs_gc_root_t **root,
                         void **pp, client_name_t cname)
 {
     return gs_register_root(mem, root, ptr_struct_type, pp, cname);

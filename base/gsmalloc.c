@@ -424,7 +424,7 @@ gs_heap_free_string(gs_memory_t * mem, byte * data, uint nbytes,
     gs_heap_free_object(mem, data, cname);
 }
 static int
-gs_heap_register_root(gs_memory_t * mem, gs_gc_root_t * rp,
+gs_heap_register_root(gs_memory_t * mem, gs_gc_root_t ** rp,
                       gs_ptr_type_t ptype, void **up, client_name_t cname)
 {
     return 0;

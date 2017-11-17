@@ -128,6 +128,7 @@ struct pl_main_instance_s
 /* ---------------- Static data for memory management ------------------ */
 
 static gs_gc_root_t device_root;
+static gs_gc_root_t *device_root_ptr = &device_root;
 
 
 /* ---------------- Forward decls ------------------ */
@@ -617,7 +618,7 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
         if (pti->device == NULL)
             return gs_error_VMerror;
 
-        gs_register_struct_root(pti->memory, &device_root,
+        gs_register_struct_root(pti->memory, &device_root_ptr,
                                 (void **)&pti->device,
                                 "pl_top_create_device");
 

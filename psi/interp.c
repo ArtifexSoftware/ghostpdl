@@ -433,7 +433,7 @@ int
 interp_reclaim(i_ctx_t **pi_ctx_p, int space)
 {
     i_ctx_t *i_ctx_p = *pi_ctx_p;
-    gs_gc_root_t ctx_root;
+    gs_gc_root_t ctx_root, *r = &ctx_root;
     int code;
 
 #ifdef DEBUG
@@ -441,11 +441,11 @@ interp_reclaim(i_ctx_t **pi_ctx_p, int space)
         return 0;
 #endif
 
-    gs_register_struct_root(imemory_system, &ctx_root,
+    gs_register_struct_root(imemory_system, &r,
                             (void **)pi_ctx_p, "interp_reclaim(pi_ctx_p)");
     code = (*idmemory->reclaim)(idmemory, space);
     i_ctx_p = *pi_ctx_p;        /* may have moved */
-    gs_unregister_root(imemory_system, &ctx_root, "interp_reclaim(pi_ctx_p)");
+    gs_unregister_root(imemory_system, r, "interp_reclaim(pi_ctx_p)");
     return code;
 }
 
@@ -465,10 +465,10 @@ gs_interpret(i_ctx_t **pi_ctx_p, ref * pref, int user_errors, int *pexit_code,
              ref * perror_object)
 {
     i_ctx_t *i_ctx_p = *pi_ctx_p;
-    gs_gc_root_t error_root;
+    gs_gc_root_t error_root, *r = &error_root;
     int code;
 
-    gs_register_ref_root(imemory_system, &error_root,
+    gs_register_ref_root(imemory_system, &r,
                          (void **)&perror_object, "gs_interpret");
     code = gs_call_interp(pi_ctx_p, pref, user_errors, pexit_code,
                           perror_object);
@@ -499,12 +499,12 @@ again:
     make_null(perror_object);
     o_stack.requested = e_stack.requested = d_stack.requested = 0;
     while (*gc_signal) { /* Some routine below triggered a GC. */
-        gs_gc_root_t epref_root;
+        gs_gc_root_t epref_root, *r = &epref_root;
 
         *gc_signal = 0;
         /* Make sure that doref will get relocated properly if */
         /* a garbage collection happens with epref == &doref. */
-        gs_register_ref_root(imemory_system, &epref_root,
+        gs_register_ref_root(imemory_system, &r,
                              (void **)&epref, "gs_call_interp(epref)");
         code = interp_reclaim(pi_ctx_p, -1);
         i_ctx_p = *pi_ctx_p;

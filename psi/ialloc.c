@@ -168,7 +168,7 @@ ialloc_trace_space(const gs_ref_memory_t *imem)
 
 /* Register a ref root. */
 int
-gs_register_ref_root(gs_memory_t *mem, gs_gc_root_t *root,
+gs_register_ref_root(gs_memory_t *mem, gs_gc_root_t **root,
                      void **pp, client_name_t cname)
 {
     return gs_register_root(mem, root, ptr_ref_type, pp, cname);
