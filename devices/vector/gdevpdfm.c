@@ -1136,7 +1136,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                     }
 
                     if (rect.p.x > pagebox[2] || rect.q.x < pagebox[0] ||
-                        rect.p.y > pagebox[3] || rect.q.y < pagebox[2])
+                        rect.p.y > pagebox[3] || rect.q.y < pagebox[1])
                         break;
                     switch (pdev->PDFACompatibilityPolicy) {
                         /* Default behaviour matches Adobe Acrobat, warn and continue,
