@@ -270,13 +270,10 @@ gx_flattened_iterator__init(gx_flattened_iterator *self,
 static inline bool
 check_diff_overflow(fixed v0, fixed v1)
 {
-    if (v0 < v1) {
-        if (v1 - v0 < 0)
-            return true;
-    } else {
-        if (v0 - v1 < 0)
-            return true;
-    }
+    if (v1 > 0)
+        return (v0 < min_fixed + v1);
+    else if (v1 < 0)
+        return (v0 > max_fixed + v1);
     return false;
 }
 
