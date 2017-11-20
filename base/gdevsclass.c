@@ -143,8 +143,7 @@ int default_subclass_close_device(gx_device *dev)
         dev->is_open = dev->child->is_open = false;
         return code;
     }
-    if (dev)
-        dev->is_open = false;
+    dev->is_open = false;
     return 0;
 }
 
