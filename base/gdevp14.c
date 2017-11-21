@@ -4047,7 +4047,7 @@ pdf14_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
     if (w <= 0 || h <= 0)
         return 0;
 
-    fake_tos.alpha = (0xff * pdev->alpha + 0.5);
+    fake_tos.alpha = (byte)(0xff * pdev->alpha + 0.5);
     fake_tos.backdrop = NULL;
     fake_tos.blend_mode = pdev->blend_mode;
     fake_tos.color_space = buf->color_space;
