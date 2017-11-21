@@ -758,7 +758,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     penum->memory = mem;
     penum->buffer = buffer;
     penum->buffer_size = bsize;
-    penum->line = 0;
+    penum->line = NULL;
     penum->icc_link = NULL;
     penum->color_cache = NULL;
     penum->ht_buffer = NULL;

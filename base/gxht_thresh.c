@@ -711,7 +711,9 @@ gxht_thresh_image_init(gx_image_enum *penum)
            space */
         max_height = (int) ceil(fixed2float(any_abs(penum->dst_height)) /
                                             (float) penum->Height);
-        if ((max_height > 0) && (penum->ht_stride * spp_out > max_int / max_height))
+        if (max_height <= 0)
+            return -1;		/* shouldn't happen, but check so we don't div by zero */
+        if (penum->ht_stride * spp_out > max_int / max_height)
             return -1;         /* overflow */
 
         penum->ht_buffer =
@@ -734,6 +736,11 @@ gxht_thresh_image_init(gx_image_enum *penum)
            Also allow a 15 sample over run during the execution.  */
         temp = (int) ceil((float) ((dev_width + 15.0) + 15.0)/16.0);
         penum->line_size = bitmap_raster(temp * 16 * 8);  /* The stride */
+        if (penum->line_size > max_int / max_height) {
+            gs_free_object(penum->memory, penum->ht_buffer, "gxht_thresh");
+            penum->ht_buffer = NULL;
+            return -1;         /* thresh_buffer size overflow */
+        }
         penum->line = gs_alloc_bytes(penum->memory, penum->line_size * spp_out,
                                      "gxht_thresh");
         penum->thresh_buffer = gs_alloc_bytes(penum->memory,
@@ -754,7 +761,7 @@ gxht_thresh_image_init(gx_image_enum *penum)
 }
 
 static void
-fill_threshhold_buffer(byte *dest_strip, byte *src_strip, int src_width,
+fill_threshold_buffer(byte *dest_strip, byte *src_strip, int src_width,
                        int left_offset, int left_width, int num_tiles,
                        int right_width)
 {
@@ -908,7 +915,7 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                        to update with stride */
                     position = contone_stride * k;
                     /* Tile into the 128 bit aligned threshold strip */
-                    fill_threshhold_buffer(&(thresh_align[position]),
+                    fill_threshold_buffer(&(thresh_align[position]),
                                            thresh_tile, thresh_width, dx, left_width,
                                            num_full_tiles, right_tile_width);
                 }
