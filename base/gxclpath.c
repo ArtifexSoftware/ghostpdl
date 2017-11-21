@@ -205,9 +205,9 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         if (req_size_final > buffer_space)
             return_error(gs_error_unregistered); /* Must not happen. */
         if (all_bands)
-            code = set_cmd_put_all_op(dp, cldev, cmd_opv_extend, req_size_final);
+            code = set_cmd_put_all_op(&dp, cldev, cmd_opv_extend, req_size_final);
         else
-            code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_extend, req_size_final);
+            code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_extend, req_size_final);
         if (code < 0)
             return code;
         dp0 = dp;
@@ -526,7 +526,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                    sizeof(cldev->gs_gstate.alpha));
             bp += sizeof(cldev->gs_gstate.alpha);
         }
-        code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc2,
+        code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_set_misc2,
                               1 + cmd_sizew(misc2_unknown) + (bp - buf));
         if (code < 0)
             return 0;
@@ -534,7 +534,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         pcls->known |= misc2_unknown;
     }
     if (unknown & fill_adjust_known) {
-        code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_fill_adjust,
+        code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_set_fill_adjust,
                               1 + sizeof(fixed) * 2);
         if (code < 0)
             return code;
@@ -545,7 +545,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     if (unknown & ctm_known) {
         int len = cmd_write_ctm_return_length(cldev, &ctm_only(&cldev->gs_gstate));
 
-        code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_ctm, len + 1);
+        code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_set_ctm, len + 1);
         if (code < 0)
             return code;
         code = cmd_write_ctm(&ctm_only(&cldev->gs_gstate), dp, len);
@@ -556,7 +556,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     if (unknown & dash_known) {
         int n = cldev->gs_gstate.line_params.dash.pattern_size;
 
-        code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_dash,
+        code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_set_dash,
                               2 + (n + 2) * sizeof(float));
         if (code < 0)
             return code;
@@ -585,7 +585,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         bool punt_to_outer_box = false;
         int code;
 
-        code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_begin_clip, 1);
+        code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_begin_clip, 1);
         if (code < 0)
             return code;
         if (pcpath->path_valid) {
@@ -646,7 +646,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         }
         {
             int end_code =
-                set_cmd_put_op(dp, cldev, pcls, cmd_opv_end_clip, 1);
+                set_cmd_put_op(&dp, cldev, pcls, cmd_opv_end_clip, 1);
 
             if (code >= 0)
                 code = end_code;	/* take the first failure seen */
@@ -658,7 +658,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                  */
                 ++cldev->ignore_lo_mem_warnings;
                 end_code =
-                    set_cmd_put_op(dp, cldev, pcls, cmd_opv_end_clip, 1);
+                    set_cmd_put_op(&dp, cldev, pcls, cmd_opv_end_clip, 1);
                 --cldev->ignore_lo_mem_warnings;
             }
         }
@@ -687,7 +687,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                 map_data = pcs->params.indexed.lookup.table.data;
                 map_size = num_values;
             }
-            code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_color_space,
+            code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_set_color_space,
                                   2 + cmd_sizew(hival) + map_size +
                                   sizeof(clist_icc_color_t));
             if (code < 0)
@@ -698,7 +698,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             memcpy(cmd_put_w(hival, dp + 2 +
                    sizeof(clist_icc_color_t)), map_data, map_size);
         } else {
-            code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_color_space,
+            code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_set_color_space,
                 2 + sizeof(clist_icc_color_t));
             memcpy(dp + 2, &(cldev->color_space.icc_info),
                    sizeof(clist_icc_color_t));
@@ -1275,7 +1275,7 @@ cmd_put_segment(cmd_segment_writer * psw, byte op,
     if (notes != psw->notes) {
         byte *dp;
         int code =
-            set_cmd_put_op(dp, psw->cldev, psw->pcls, cmd_opv_set_misc2, 3);
+            set_cmd_put_op(&dp, psw->cldev, psw->pcls, cmd_opv_set_misc2, 3);
 
         if (code < 0)
             return code;
@@ -1285,7 +1285,7 @@ cmd_put_segment(cmd_segment_writer * psw, byte op,
     } {
         int len = q + 2 - psw->cmd;
         byte *dp;
-        int code = set_cmd_put_op(dp, psw->cldev, psw->pcls, op, len);
+        int code = set_cmd_put_op(&dp, psw->cldev, psw->pcls, op, len);
 
         if (code < 0)
             return code;
@@ -1414,7 +1414,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                 pcls->rect.y = fixed2int_var(py);
                 if_debug2m('p', cldev->memory, "[p]final (%d,%d)\n",
                            pcls->rect.x, pcls->rect.y);
-                return set_cmd_put_op(dp, cldev, pcls, path_op, 1);
+                return set_cmd_put_op(&dp, cldev, pcls, path_op, 1);
             case gs_pe_moveto:
                 /* If the path is open and needs an implicit close, */
                 /* do a closepath and then redo the moveto. */

@@ -209,7 +209,7 @@ clist_fill_mask(gx_device * dev,
         if (depth > 1 && !re.pcls->color_is_alpha) {
             byte *dp;
 
-            code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_set_copy_alpha, 1);
+            code = set_cmd_put_op(&dp, cdev, re.pcls, cmd_opv_set_copy_alpha, 1);
             if (code < 0 && SET_BAND_CODE(code))
                 return re.band_code;
             re.pcls->color_is_alpha = 1;
@@ -263,7 +263,7 @@ clist_fill_mask(gx_device * dev,
             if (code >= 0) {
                 byte *dp;
 
-                code = set_cmd_put_op(dp, cdev, re.pcls, op, rsize);
+                code = set_cmd_put_op(&dp, cdev, re.pcls, op, rsize);
                 /*
                  * The following conditional is unnecessary: the two
                  * statements inside it should go outside the
@@ -275,9 +275,9 @@ clist_fill_mask(gx_device * dev,
                 if (code >= 0) {
                     dp++;
                     if (depth == 1) {
-                        cmd_putw(0, dp);
+                        cmd_putw(0, &dp);
                     }
-                    cmd_putxy(rect, dp);
+                    cmd_putxy(rect, &dp);
                 }
             }
             if (code < 0 && SET_BAND_CODE(code))
@@ -1128,13 +1128,13 @@ clist_image_plane_data(gx_image_enum_common_t * info,
                 entire_box.q.y != pie->image.Height
                 ) {
                 image_op = cmd_opv_begin_image_rect;
-                cmd_put2w(entire_box.p.x, entire_box.p.y, bp);
+                cmd_put2w(entire_box.p.x, entire_box.p.y, &bp);
                 cmd_put2w(pie->image.Width - entire_box.q.x,
-                          pie->image.Height - entire_box.q.y, bp);
+                          pie->image.Height - entire_box.q.y, &bp);
                 }
             len = bp - pie->begin_image_command;
             code =
-                set_cmd_put_op(dp, cdev, re.pcls, image_op, 1 + len);
+                set_cmd_put_op(&dp, cdev, re.pcls, image_op, 1 + len);
             if (code < 0 && SET_BAND_CODE(code))
                 return re.band_code;
             memcpy(dp + 1, pie->begin_image_command, len);
@@ -1327,7 +1327,7 @@ clist_create_compositor(gx_device * dev,
     if (cropping_op == ALLBANDS) {
         /* overprint applies to all bands */
         size_dummy = size;
-        code = set_cmd_put_all_op( dp,
+        code = set_cmd_put_all_op(& dp,
                                    (gx_device_clist_writer *)dev,
                                    cmd_opv_extend,
                                    size );
@@ -1365,7 +1365,7 @@ clist_create_compositor(gx_device * dev,
         RECT_ENUM_INIT(re, temp_cropping_min, temp_cropping_max - temp_cropping_min);
         do {
             RECT_STEP_INIT(re);
-            code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_extend, size);
+            code = set_cmd_put_op(&dp, cdev, re.pcls, cmd_opv_extend, size);
             if (code >= 0) {
                 size_dummy = size;
                 dp[1] = cmd_opv_ext_create_compositor;
@@ -1398,14 +1398,14 @@ cmd_put_set_data_x(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     if (data_x > 0x1f) {
         int dx_msb = data_x >> 5;
 
-        code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc,
+        code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_set_misc,
                               2 + cmd_size_w(dx_msb));
         if (code >= 0) {
             dp[1] = cmd_set_misc_data_x + 0x20 + (data_x & 0x1f);
             cmd_put_w(dx_msb, dp + 2);
         }
     } else {
-        code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc, 2);
+        code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_set_misc, 2);
         if (code >= 0)
             dp[1] = cmd_set_misc_data_x + data_x;
     }
@@ -1451,7 +1451,7 @@ cmd_put_halftone(gx_device_clist_writer * cldev, const gx_device_halftone * pdht
     req_size = 2 + enc_u_sizew(ht_size);
 
     /* output the "put halftone" command */
-    if ((code = set_cmd_put_all_op(dp, cldev, cmd_opv_extend, req_size)) < 0)
+    if ((code = set_cmd_put_all_op(&dp, cldev, cmd_opv_extend, req_size)) < 0)
         return code;
     dp[1] = cmd_opv_ext_put_halftone;
     dp += 2;
@@ -1467,7 +1467,7 @@ cmd_put_halftone(gx_device_clist_writer * cldev, const gx_device_halftone * pdht
     } else {
         /* send the only segment command */
         req_size += ht_size;
-        code = set_cmd_put_all_op(dp, cldev, cmd_opv_extend, req_size);
+        code = set_cmd_put_all_op(&dp, cldev, cmd_opv_extend, req_size);
         if (code < 0)
             return code;
         dp0 = dp;
@@ -1508,7 +1508,7 @@ cmd_put_halftone(gx_device_clist_writer * cldev, const gx_device_halftone * pdht
             seg_size = ( ht_size > cbuf_ht_seg_max_size ? cbuf_ht_seg_max_size
                                                         : ht_size );
             tmp_size = 2 + enc_u_sizew(seg_size) + seg_size;
-            code = set_cmd_put_all_op(dp, cldev, cmd_opv_extend, tmp_size);
+            code = set_cmd_put_all_op(&dp, cldev, cmd_opv_extend, tmp_size);
             if (code >= 0) {
                 dp[1] = cmd_opv_ext_put_ht_seg;
                 dp += 2;
@@ -1927,11 +1927,11 @@ cmd_image_plane_data(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             return code;
         offset = ((data_x & ~7) * cldev->clist_color_info.depth) >> 3;
     }
-    code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_image_data, len);
+    code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_image_data, len);
     if (code < 0)
         return code;
     dp++;
-    cmd_put2w(h, bytes_per_plane, dp);
+    cmd_put2w(h, bytes_per_plane, &dp);
     for (plane = 0; plane < pie->num_planes; ++plane)
         for (i = 0; i < h; ++i) {
             memcpy(dp,
@@ -1972,12 +1972,12 @@ cmd_image_plane_data_mon(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             return code;
         offset = ((data_x & ~7) * cldev->clist_color_info.depth) >> 3;
     }
-    code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_image_data, len);
+    code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_image_data, len);
     if (code < 0)
         return code;
     dp++;
 
-    cmd_put2w(h, bytes_per_plane, dp);
+    cmd_put2w(h, bytes_per_plane, &dp);
 
     for (i = 0; i < h; ++i) {
         if (!(*found_color)) {
@@ -2037,7 +2037,7 @@ write_image_end_all(gx_device *dev, const clist_image_enum *pie)
         RECT_STEP_INIT(re);
         if (re.pcls->known & begin_image_known) {
             if_debug1m('L', dev->memory, "[L]image_end for band %d\n", re.band);
-            code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_image_data, 2);
+            code = set_cmd_put_op(&dp, cdev, re.pcls, cmd_opv_image_data, 2);
             if (code < 0 && SET_BAND_CODE(code))
                 return re.band_code;
             dp[1] = 0;      /* EOD */

@@ -551,7 +551,7 @@ cmd_put_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
     /* If this is a tile color then send tile color type */
     if (select->tile_color) {
-        code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_tile_color, 1);
+        code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_set_tile_color, 1);
         if (code < 0)
             return code;
     }
@@ -562,7 +562,7 @@ cmd_put_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
          * We must handle this specially, because it may take more
          * bytes than the color depth.
          */
-        code = set_cmd_put_op(dp, cldev, pcls, op + cmd_no_color_index, 1);
+        code = set_cmd_put_op(&dp, cldev, pcls, op + cmd_no_color_index, 1);
         if (code < 0)
             return code;
     } else {
@@ -595,7 +595,7 @@ cmd_put_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         }
         /* Now send one of the two command forms */
         if (use_delta && delta_bytes < (num_bytes - bytes_dropped)) {
-            code = set_cmd_put_op(dp, cldev, pcls,
+            code = set_cmd_put_op(&dp, cldev, pcls,
                                         op_delta, delta_bytes + 1);
             if (code < 0)
                 return code;
@@ -615,7 +615,7 @@ cmd_put_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         }
         else {
             num_bytes -= bytes_dropped;
-            code = set_cmd_put_op(dp, cldev, pcls,
+            code = set_cmd_put_op(&dp, cldev, pcls,
                                 (byte)(op + bytes_dropped), num_bytes + 1);
             if (code < 0)
                 return code;
@@ -661,15 +661,15 @@ cmd_set_tile_phase_generic(gx_device_clist_writer * cldev, gx_clist_state * pcls
 
     pcsize = 1 + cmd_size2w(px, py);
     if (all_bands)
-        code = set_cmd_put_all_op(dp, cldev, (byte)cmd_opv_set_tile_phase, pcsize);
+        code = set_cmd_put_all_op(&dp, cldev, (byte)cmd_opv_set_tile_phase, pcsize);
     else
-        code = set_cmd_put_op(dp, cldev, pcls, (byte)cmd_opv_set_tile_phase, pcsize);
+        code = set_cmd_put_op(&dp, cldev, pcls, (byte)cmd_opv_set_tile_phase, pcsize);
     if (code < 0)
         return code;
     ++dp;
     pcls->tile_phase.x = px;
     pcls->tile_phase.y = py;
-    cmd_putxy(pcls->tile_phase, dp);
+    cmd_putxy(pcls->tile_phase, &dp);
     return 0;
 }
 
@@ -686,7 +686,7 @@ cmd_put_enable_lop(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                    int enable)
 {
     byte *dp;
-    int code = set_cmd_put_op(dp, cldev, pcls,
+    int code = set_cmd_put_op(&dp, cldev, pcls,
                               (byte)(enable ? cmd_opv_enable_lop :
                                      cmd_opv_disable_lop),
                               1);
@@ -704,7 +704,7 @@ cmd_put_enable_clip(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                     int enable)
 {
     byte *dp;
-    int code = set_cmd_put_op(dp, cldev, pcls,
+    int code = set_cmd_put_op(&dp, cldev, pcls,
                               (byte)(enable ? cmd_opv_enable_clip :
                                      cmd_opv_disable_clip),
                               1);
@@ -722,7 +722,7 @@ cmd_set_lop(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 {
     byte *dp;
     uint lop_msb = lop >> 6;
-    int code = set_cmd_put_op(dp, cldev, pcls,
+    int code = set_cmd_put_op(&dp, cldev, pcls,
                               cmd_opv_set_misc, 2 + cmd_size_w(lop_msb));
 
     if (code < 0)
@@ -764,7 +764,7 @@ cmd_put_params(gx_device_clist_writer *cldev,
         gs_param_list_serialize(param_list, local_buf, sizeof(local_buf));
     if (param_length > 0) {
         /* Get cmd buffer space for serialized */
-        code = set_cmd_put_all_op(dp, cldev, cmd_opv_extend,
+        code = set_cmd_put_all_op(&dp, cldev, cmd_opv_extend,
                                   2 + sizeof(unsigned) + param_length);
         if (code < 0)
             return code;

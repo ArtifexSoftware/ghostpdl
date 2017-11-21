@@ -40,13 +40,13 @@ cmd_size_rect(register const gx_cmd_rect * prect)
         cmd_sizew(prect->x) + cmd_sizew(prect->y) +
         cmd_sizew(prect->width) + cmd_sizew(prect->height);
 }
-static byte *
-cmd_put_rect(register const gx_cmd_rect * prect, register byte * dp)
+static inline byte *
+cmd_put_rect(const gx_cmd_rect * prect, byte * dp)
 {
-    cmd_putw(prect->x, dp);
-    cmd_putw(prect->y, dp);
-    cmd_putw(prect->width, dp);
-    cmd_putw(prect->height, dp);
+    cmd_putw(prect->x, &dp);
+    cmd_putw(prect->y, &dp);
+    cmd_putw(prect->width, &dp);
+    cmd_putw(prect->height, &dp);
     return dp;
 }
 
@@ -62,12 +62,12 @@ cmd_write_rect_hl_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     cmd_set_rect(pcls->rect);
     if (extended_command) {
         rcsize = 2 + cmd_size_rect(&pcls->rect);
-        code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_extend, rcsize);
+        code = set_cmd_put_op(&dp, cldev, pcls, cmd_opv_extend, rcsize);
         dp[1] = op;
         dp += 2;
     } else {
         rcsize = 1 + cmd_size_rect(&pcls->rect);
-        code = set_cmd_put_op(dp, cldev, pcls, op, rcsize);
+        code = set_cmd_put_op(&dp, cldev, pcls, op, rcsize);
         dp += 1;
     }
     if (code < 0)
@@ -105,11 +105,11 @@ cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         byte op_tiny = op + 0x20 + dwidth - cmd_min_dw_tiny;
 
         if (dx == width - dwidth && dy == 0) {
-            code = set_cmd_put_op(dp, cldev, pcls, op_tiny + 8, 1);
+            code = set_cmd_put_op(&dp, cldev, pcls, op_tiny + 8, 1);
             if (code < 0)
                 return code;
         } else {
-            code = set_cmd_put_op(dp, cldev, pcls, op_tiny, 2);
+            code = set_cmd_put_op(&dp, cldev, pcls, op_tiny, 2);
             if (code < 0)
                 return code;
             dp[1] = (dx << 4) + dy - (cmd_min_dxy_tiny * 0x11);
@@ -124,13 +124,13 @@ cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             dh != 0 && dy == 0
             ) {
             op += dh;
-            code = set_cmd_put_op(dp, cldev, pcls, op + 0x10, 3);
+            code = set_cmd_put_op(&dp, cldev, pcls, op + 0x10, 3);
             if (code < 0)
                 return code;
             if_debug3m('L', cldev->memory, "    rs2:%d,%d,0,%d\n",
                        dx, dwidth, dheight);
         } else {
-            code = set_cmd_put_op(dp, cldev, pcls, op + 0x10, 5);
+            code = set_cmd_put_op(&dp, cldev, pcls, op + 0x10, 5);
             if (code < 0)
                 return code;
             if_debug4m('L', cldev->memory, "    rs4:%d,%d,%d,%d\n",
@@ -148,16 +148,16 @@ cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         ) {
         int rcsize = 1 + cmd_sizew(x) + cmd_sizew(width);
 
-        code = set_cmd_put_op(dp, cldev, pcls,
+        code = set_cmd_put_op(&dp, cldev, pcls,
                               op + ((dy + 2) << 2) + dheight + 2, rcsize);
         if (code < 0)
             return code;
         ++dp;
-        cmd_put2w(x, width, dp);
+        cmd_put2w(x, width, &dp);
     } else {
         int rcsize = 1 + cmd_size_rect(&pcls->rect);
 
-        code = set_cmd_put_op(dp, cldev, pcls, op, rcsize);
+        code = set_cmd_put_op(&dp, cldev, pcls, op, rcsize);
         if (code < 0)
             return code;
         if_debug5m('L', cldev->memory, "    r%d:%d,%d,%d,%d\n",
@@ -182,16 +182,16 @@ cmd_write_page_rect_cmd(gx_device_clist_writer * cldev, int op)
     int code;
 
     if_debug0m('L', cldev->memory, "[L]fillpage beg\n");
-    code = set_cmd_put_all_op(dp, cldev, op, rcsize);
+    code = set_cmd_put_all_op(&dp, cldev, op, rcsize);
     if (code < 0)
         return code;
     for (pcls1 = cldev->states; pcls1 < cldev->states + cldev->nbands; pcls1++)
         cmd_set_rect(pcls1->rect);
     ++dp;
-    cmd_putw(0, dp);
-    cmd_putw(0, dp);
-    cmd_putw(0, dp);
-    cmd_putw(0, dp);
+    cmd_putw(0, &dp);
+    cmd_putw(0, &dp);
+    cmd_putw(0, &dp);
+    cmd_putw(0, &dp);
     if_debug0m('L', cldev->memory, "[L]fillpage end\n");
     return 0;
 }
@@ -261,22 +261,22 @@ cmd_write_trapezoid_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         }
         rcsize += cmd_sizew(colors_mask);
     }
-    code = set_cmd_put_op(dp, cldev, pcls, op, rcsize);
+    code = set_cmd_put_op(&dp, cldev, pcls, op, rcsize);
     if (code < 0)
         return code;
     dp++;
-    cmd_putw(left->start.x, dp);
-    cmd_putw(left->start.y, dp);
-    cmd_putw(left->end.x, dp);
-    cmd_putw(left->end.y, dp);
-    cmd_putw(right->start.x, dp);
-    cmd_putw(right->start.y, dp);
-    cmd_putw(right->end.x, dp);
-    cmd_putw(right->end.y, dp);
-    cmd_putw(options, dp);
+    cmd_putw(left->start.x, &dp);
+    cmd_putw(left->start.y, &dp);
+    cmd_putw(left->end.x, &dp);
+    cmd_putw(left->end.y, &dp);
+    cmd_putw(right->start.x, &dp);
+    cmd_putw(right->start.y, &dp);
+    cmd_putw(right->end.x, &dp);
+    cmd_putw(right->end.y, &dp);
+    cmd_putw(options, &dp);
     if (!(options & 4)) {
-        cmd_putw(ybot, dp);
-        cmd_putw(ytop, dp);
+        cmd_putw(ybot, &dp);
+        cmd_putw(ytop, &dp);
     }
     if_debug6m('L', cldev->memory, "    t%d:%ld,%ld,%ld,%ld   %ld\n",
                rcsize - 1, (long int)left->start.x, (long int)left->start.y,
@@ -286,11 +286,11 @@ cmd_write_trapezoid_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                (long int)right->end.x, (long int)right->end.y, (long int)ytop,
                options);
     if (options & 2) {
-        cmd_putw(fa->clip->p.x, dp);
-        cmd_putw(fa->clip->p.y, dp);
-        cmd_putw(fa->clip->q.x, dp);
-        cmd_putw(fa->clip->q.y, dp);
-        cmd_putw(colors_mask, dp);
+        cmd_putw(fa->clip->p.x, &dp);
+        cmd_putw(fa->clip->p.y, &dp);
+        cmd_putw(fa->clip->q.x, &dp);
+        cmd_putw(fa->clip->q.y, &dp);
+        cmd_putw(colors_mask, &dp);
         if (c0 != NULL)
             dp = cmd_put_frac31_color(cldev, c0, dp);
         if (c1 != NULL)
@@ -903,9 +903,9 @@ copy:{
         }
         *dp++ = cmd_count_op(op, csize, dev->memory);
         /* Store the plane_height */
-        cmd_putw(0, dp);
-        cmd_put2w(rx, re.y, dp);
-        cmd_put2w(w1, re.height, dp);
+        cmd_putw(0, &dp);
+        cmd_put2w(rx, re.y, &dp);
+        cmd_put2w(w1, re.height, &dp);
         re.pcls->rect = rect;
         }
     } while ((re.y += re.height) < re.yend);
@@ -1022,9 +1022,9 @@ clist_copy_planes(gx_device * dev,
             *dp2++ = cmd_set_misc_data_x + dx;
         }
         *dp2++ = cmd_count_op(op + code, csize, cdev->memory);
-        cmd_putw(plane_height, dp2);
-        cmd_put2w(rx, re.y, dp2);
-        cmd_put2w(w1, re.height, dp2);
+        cmd_putw(plane_height, &dp2);
+        cmd_put2w(rx, re.y, &dp2);
+        cmd_put2w(w1, re.height, &dp2);
         for (plane = 1; plane < cdev->color_info.num_components && (code >= 0); plane++)
         {
             byte *dummy_dp;
@@ -1102,7 +1102,7 @@ clist_copy_color(gx_device * dev,
             byte *dp;
 
             code =
-                set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_set_copy_color, 1);
+                set_cmd_put_op(&dp, cdev, re.pcls, cmd_opv_set_copy_color, 1);
             if (code < 0 && SET_BAND_CODE(code))
                 return re.band_code;
             re.pcls->color_is_alpha = 0;
@@ -1154,8 +1154,8 @@ copy:{
                 *dp++ = cmd_set_misc_data_x + dx;
             }
             *dp++ = cmd_count_op(op, csize, dev->memory);
-            cmd_put2w(rx, re.y, dp);
-            cmd_put2w(w1, re.height, dp);
+            cmd_put2w(rx, re.y, &dp);
+            cmd_put2w(w1, re.height, &dp);
             re.pcls->rect = rect;
         }
     } while ((re.y += re.height) < re.yend);
@@ -1218,7 +1218,7 @@ clist_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
         if (!re.pcls->color_is_alpha) {
             byte *dp;
 
-            code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_set_copy_alpha, 1);
+            code = set_cmd_put_op(&dp, cdev, re.pcls, cmd_opv_set_copy_alpha, 1);
             if (code < 0 && SET_BAND_CODE(code))
                 return re.band_code;
             re.pcls->color_is_alpha = 1;
@@ -1227,7 +1227,7 @@ clist_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
         if (!re.pcls->color_is_devn) {
             byte *dp;
 
-            code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_extend, 2);
+            code = set_cmd_put_op(&dp, cdev, re.pcls, cmd_opv_extend, 2);
             dp[1] = cmd_opv_ext_set_color_is_devn;
             dp += 2;
             if (code < 0 && SET_BAND_CODE(code))
@@ -1285,8 +1285,8 @@ copy:{
             }
             *dp++ = cmd_count_op(op, csize, dev->memory);
             *dp++ = depth;
-            cmd_put2w(rx, re.y, dp);
-            cmd_put2w(w1, re.height, dp);
+            cmd_put2w(rx, re.y, &dp);
+            cmd_put2w(w1, re.height, &dp);
             re.pcls->rect = rect;
         }
     } while ((re.y += re.height) < re.yend);
@@ -1347,7 +1347,7 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
         if (!re.pcls->color_is_alpha) {
             byte *dp;
 
-            code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_set_copy_alpha, 1);
+            code = set_cmd_put_op(&dp, cdev, re.pcls, cmd_opv_set_copy_alpha, 1);
             if (code < 0 && SET_BAND_CODE(code))
                 return re.band_code;
             re.pcls->color_is_alpha = 1;
@@ -1355,9 +1355,9 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
         if (re.pcls->color_is_devn) {
             byte *dp;
 
-            code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_extend, 1);
+            code = set_cmd_put_op(&dp, cdev, re.pcls, cmd_opv_extend, 1);
             if (code >= 0)
-                code = set_cmd_put_op(dp, cdev, re.pcls,
+                code = set_cmd_put_op(&dp, cdev, re.pcls,
                                       cmd_opv_ext_unset_color_is_devn, 1);
             if (code < 0 && SET_BAND_CODE(code))
                 return re.band_code;
@@ -1417,8 +1417,8 @@ copy:{
             }
             *dp++ = cmd_count_op(op, csize, dev->memory);
             *dp++ = depth;
-            cmd_put2w(rx, re.y, dp);
-            cmd_put2w(w1, re.height, dp);
+            cmd_put2w(rx, re.y, &dp);
+            cmd_put2w(w1, re.height, &dp);
             re.pcls->rect = rect;
         }
     } while ((re.y += re.height) < re.yend);

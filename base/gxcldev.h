@@ -380,9 +380,9 @@ byte *cmd_put_op(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint siz
 #endif
 /* Call cmd_put_op and update stats if no error occurs. */
 #define set_cmd_put_op(dp, cldev, pcls, op, csize)\
-  ( (dp = cmd_put_op(cldev, pcls, csize)) == 0 ?\
+  ( (*dp = cmd_put_op(cldev, pcls, csize)) == NULL ?\
       (cldev)->error_code :\
-    (*dp = cmd_count_op(op, csize, cldev->memory), 0) )
+    (**dp = cmd_count_op(op, csize, cldev->memory), 0) )
 
 /* Add a command for all bands or a range of bands. */
 byte *cmd_put_range_op(gx_device_clist_writer * cldev, int band_min,
@@ -392,9 +392,9 @@ byte *cmd_put_range_op(gx_device_clist_writer * cldev, int band_min,
   cmd_put_range_op(cldev, 0, (cldev)->nbands - 1, size)
 /* Call cmd_put_all/range_op and update stats if no error occurs. */
 #define set_cmd_put_range_op(dp, cldev, op, bmin, bmax, csize)\
-  ( (dp = cmd_put_range_op(cldev, bmin, bmax, csize)) == 0 ?\
+  ( (*dp = cmd_put_range_op(cldev, bmin, bmax, csize)) == NULL ?\
       (cldev)->error_code :\
-    (*dp = cmd_count_op(op, csize, (cldev)->memory), 0) )
+    (**dp = cmd_count_op(op, csize, (cldev)->memory), 0) )
 #define set_cmd_put_all_op(dp, cldev, op, csize)\
   set_cmd_put_range_op(dp, cldev, op, 0, (cldev)->nbands - 1, csize)
 
@@ -432,12 +432,12 @@ int cmd_size_w(uint);
 byte *cmd_put_w(uint, byte *);
 
 #define cmd_putw(w,dp)\
-  (w1byte(w) ? (*dp = w, ++dp) :\
-   w2byte(w) ? (*dp = (w) | 0x80, dp[1] = (w) >> 7, dp += 2) :\
-   (dp = cmd_put_w((uint)(w), dp)))
+  (w1byte(w) ? (**dp = w, ++(*dp)) :\
+   w2byte(w) ? (**dp = (w) | 0x80, (*dp)[1] = (w) >> 7, (*dp) += 2) :\
+   (*dp = cmd_put_w((uint)(w), *dp)))
 #define cmd_put2w(wx,wy,dp)\
-  (w1byte((wx) | (wy)) ? (dp[0] = (wx), dp[1] = (wy), dp += 2) :\
-   (dp = cmd_put_w((uint)(wy), cmd_put_w((uint)(wx), dp))))
+  (w1byte((wx) | (wy)) ? ((*dp)[0] = (wx), (*dp)[1] = (wy), (*dp) += 2) :\
+   (*dp = cmd_put_w((uint)(wy), cmd_put_w((uint)(wx), *dp))))
 #define cmd_putxy(xy,dp) cmd_put2w((xy).x, (xy).y, dp)
 
 int cmd_size_frac31(register frac31 w);
