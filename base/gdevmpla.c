@@ -115,6 +115,12 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
     mdev->plane_depth = same_depth;
     /* Change the drawing procedures. */
     set_dev_proc(mdev, open_device, mem_planar_open);
+    /* Regardless of how many planes we are using, always let the
+     * device know how to handle hl_color. Even if we spot that we
+     * can get away with a normal device, our callers may want to
+     * feed us single component devn data. */
+    set_dev_proc(mdev, fill_rectangle_hl_color,
+                 mem_planar_fill_rectangle_hl_color);
     if (num_planes == 1) {
         /* For 1 plane, just use a normal device */
         set_dev_proc(mdev, fill_rectangle, dev_proc(mdproto, fill_rectangle));
@@ -131,8 +137,6 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
            make use of the put_image operation to go from the pdf14 device
            directly to the planar buffer. */
         if (num_planes >= 4) {
-            set_dev_proc(mdev, fill_rectangle_hl_color,
-                         mem_planar_fill_rectangle_hl_color);
             set_dev_proc(mdev, put_image, mem_planar_put_image);
         }
         set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
