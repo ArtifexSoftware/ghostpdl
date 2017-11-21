@@ -2162,7 +2162,7 @@ SAFER { .setsafeglobal } if
 /.type1execchar /.type2execchar /.type42execchar /.setweightvector /.getuseciecolor /processcolors /.includecolorspace
 /.execn /.instopped /.stop /.stopped /.setcolorrendering /.setdevicecolorrendering /.buildcolorrendering1 /.builddevicecolorrendering1
 /.TransformPQR_scale_WB0 /.TransformPQR_scale_WB1 /.TransformPQR_scale_WB2 /.currentoverprintmode /.copydevice2
-/.devicename /.doneshowpage /flushpage /.getbitsrect /.getdevice /.getdefaultdevice /.getdeviceparams /.gethardwareparams
+/.devicename /.doneshowpage /.getbitsrect /.getdevice /.getdefaultdevice /.getdeviceparams /.gethardwareparams
 /makewordimagedevice /.outputpage /.putdeviceparams /.setdevice /.currentshowpagecount
 /.setpagedevice /.currentpagedevice /.knownundef /.setmaxlength /.rectappend /.initialize_dsc_parser /.parse_dsc_comments
 /.fillCIDMap /.fillIdentityCIDMap /.buildcmap /.filenamelistseparator /.libfile /.getfilename
@@ -2179,6 +2179,15 @@ SAFER { .setsafeglobal } if
 /.localvmarray /.localvmdict /.localvmpackedarray /.localvmstring /.systemvmarray /.systemvmdict /.systemvmpackedarray /.systemvmstring /.systemvmfile /.systemvmlibfile
 /.systemvmSFD /.settrapparams /.currentsystemparams /.currentuserparams /.getsystemparam /.getuserparam /.setsystemparams /.setuserparams
 /.checkpassword /.locale_to_utf8 /.currentglobal /.gcheck /.imagepath
+
+% Used by a free user in the Library of Congress. Apparently this is used to
+% draw a partial page, which is then filled in by the results of a barcode
+% scanner and SQL database lookup. Its not clear to us exactly why this needs to be
+% done as a partial page, but its easiest to restore the operator, and it seems like
+% its a reasonably safe operator to restore, for the *very* few devices on which
+% it will have any effect. Currently this uses the 'sync_outptu' device method
+% to transfer the partial page, in future we may use a spec_op instead.
+%/flushpage
 
 % Used by our own test suite files
 %/.fileposition %image-qa.ps
