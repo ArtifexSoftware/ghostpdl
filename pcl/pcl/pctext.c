@@ -674,10 +674,12 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
             code = gs_text_process(penum);
         if (code >= 0) {
             /* append the characters bounding box and use eofill */
-            gs_pathbbox(pgs, &bbox);
-            gs_rectappend(pgs, &bbox, 1);
-            gs_eofill(pgs);
-            gs_text_release(penum, "show_char_background");
+            if ((code = gs_pathbbox(pgs, &bbox)) >= 0 &&
+                (code = gs_rectappend(pgs, &bbox, 1)) >= 0 &&
+                (code = gs_eofill(pgs)) >= 0)
+            {
+                gs_text_release(penum, "show_char_background");
+            }
         }
     }
 
