@@ -811,7 +811,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     int position, k, j;
     int offset_bits = penum->ht_offset_bits;
     int contone_stride = 0;  /* Not used in landscape case */
-    fixed scale_factor, offset;
+    fixed offset;
     int src_size;
     bool flush_buff = false;
     int offset_contone[GX_DEVICE_COLOR_MAX_COMPONENTS];    /* to ensure 128 bit boundary */
@@ -860,7 +860,6 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             }
             data_length = dest_width;
             dest_height = fixed2int_var_rounded(any_abs(penum->y_extent.y));
-            scale_factor = float2fixed_rounded((float) src_size / (float) dest_width);
 #ifdef DEBUG
             /* Help in spotting problems */
             memset(penum->ht_buffer, 0x00, penum->ht_stride * vdi * spp_out);
@@ -879,7 +878,6 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             xrun = dda_current(dda_ht);            /* really yrun, but just used here for landscape */
             dest_height = gxht_dda_length(&dda_ht, src_size);
             data_length = dest_height;
-            scale_factor = float2fixed_rounded((float) src_size / (float) dest_height);
             offset_threshold = (-(long)(penum->thresh_buffer)) & 15;
             for (k = 0; k < spp_out; k ++) {
                 offset_contone[k] = (- ((long)(penum->line) +
@@ -1005,9 +1003,9 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                             devc_contone_gray[position] = psrc[k];
                             position += LAND_BITS;
                         }
-                    } else if (scale_factor == fixed_half) {
+                    } else if (src_size*2 == dest_height) {
                         for (k = 0; k < data_length; k+=2) {
-                            offset = fixed2int_rounded(scale_factor * k);
+                            offset = fixed2int_rounded(fixed_half * k);
                             devc_contone_gray[position] =
                                 devc_contone_gray[position + LAND_BITS] = psrc[offset];
                             position += LAND_BITS*2;
