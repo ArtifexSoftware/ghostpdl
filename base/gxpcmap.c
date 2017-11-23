@@ -544,10 +544,14 @@ pattern_accum_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
                                       const gx_clip_path *pcpath)
 {
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
+    int code;
 
-    if (padev->bits)
-        (*dev_proc(padev->target, fill_rectangle_hl_color))
+    if (padev->bits) {
+        code = (*dev_proc(padev->target, fill_rectangle_hl_color))
             (padev->target, rect, pgs, pdcolor, pcpath);
+        if (code < 0)
+            return code;
+    }
     if (padev->mask) {
         int x, y, w, h;
 
@@ -559,8 +563,7 @@ pattern_accum_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         return (*dev_proc(padev->mask, fill_rectangle))
             ((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);
     }
-     else
-        return 0;
+    return 0;
 }
 
 /* Fill a rectangle */
@@ -1364,8 +1367,10 @@ gx_erase_colored_pattern(gs_gstate *pgs)
         rect.q.y = (double)pdev->height;
 
         code = gs_setmatrix(pgs, &identity);
-        if (code < 0)
+        if (code < 0) {
+            gs_grestore_only(pgs);
             return code;
+        }
         /* we don't want the fill rectangle device call to use the
            mask */
         mask = pdev->mask;
@@ -1373,8 +1378,10 @@ gx_erase_colored_pattern(gs_gstate *pgs)
         code = gs_rectfill(pgs, &rect, 1);
         /* restore the mask */
         pdev->mask = mask;
-        if (code < 0)
+        if (code < 0) {
+            gs_grestore_only(pgs);
             return code;
+        }
     }
     /* we don't need wraparound here */
     return gs_grestore_only(pgs);
@@ -1436,7 +1443,8 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
            make a similar change in zpcolor.c where much of this
            pattern code is duplicated to support high level stream
            patterns. */
-        if (pinst->templat.PaintType == 1 && !(pinst->is_clist))
+        if (pinst->templat.PaintType == 1 && !(pinst->is_clist)
+            && dev_proc(pinst->saved->device, dev_spec_op)(pinst->saved->device, gxdso_pattern_can_accum, NULL, 0) == 0)
             if ((code = gx_erase_colored_pattern(saved)) < 0)
                 return code;
     }

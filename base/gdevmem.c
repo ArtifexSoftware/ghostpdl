@@ -181,6 +181,7 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
         dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
         /* Do a copy of put_image since it needs the source buffer */
         set_dev_proc(dev, put_image, target->procs.put_image);
+        set_dev_proc(dev, dev_spec_op, gx_default_dev_spec_op);
     }
     if (dev->color_info.depth == 1) {
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -307,6 +308,7 @@ gs_make_mem_mono_device(gx_device_memory * dev, gs_memory_t * mem,
     /* Should this be forwarding, monochrome profile, or not set? MJV */
     set_dev_proc(dev, get_profile, gx_forward_get_profile);
     set_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
+    set_dev_proc(dev, dev_spec_op, gx_default_dev_spec_op);
     /* initialize to same tag as target */
     dev->graphics_type_tag = target ? target->graphics_type_tag : GS_UNKNOWN_TAG;
 }

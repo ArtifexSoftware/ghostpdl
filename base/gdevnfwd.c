@@ -1035,6 +1035,7 @@ static dev_proc_decode_color(null_decode_color);
 static dev_proc_strip_copy_rop(null_strip_copy_rop);
 static dev_proc_strip_copy_rop2(null_strip_copy_rop2);
 static dev_proc_strip_tile_rect_devn(null_strip_tile_rect_devn);
+static dev_proc_fill_rectangle_hl_color(null_fill_rectangle_hl_color);
 
 #define null_procs(get_initial_matrix, get_page_device) {\
         gx_default_open_device,\
@@ -1091,7 +1092,7 @@ static dev_proc_strip_tile_rect_devn(null_strip_tile_rect_devn);
         gx_default_gray_fast_encode,            /* encode_color */\
         null_decode_color,              /* decode_color */\
         NULL, /* pattern_manage */\
-        gx_default_fill_rectangle_hl_color,\
+        null_fill_rectangle_hl_color,\
         gx_default_include_color_space,\
         NULL, /* fill_line_sl */\
         NULL, /* fill_line_tr */\
@@ -1277,6 +1278,22 @@ static int
 null_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
    int x, int y, int w, int h, const gx_drawing_color * pdcolor0, 
    const gx_drawing_color * pdcolor1, int px, int py)
+{
+    return 0;
+}
+
+/* We use this to erase a pattern background, if pdfwrite has pushed
+ * the NULL device to dispense with text (because its a strinwidth)
+ * we don't want to throw an error when erasing the pattern which
+ * fills the text, because pdfwrite manages the pattern itself and
+ * we don't need to erase hte background. More generally, since the
+ * null device is a bit bucket, it shouldn't really throw errors
+ * when asked to render anything at all.
+ */
+static int null_fill_rectangle_hl_color(gx_device *pdev,
+    const gs_fixed_rect *rect,
+    const gs_gstate *pgs, const gx_drawing_color *pdcolor,
+    const gx_clip_path *pcpath)
 {
     return 0;
 }
