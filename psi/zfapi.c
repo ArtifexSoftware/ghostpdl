@@ -1199,6 +1199,8 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
             }
             if (r_has_type(glyph, t_array) || r_has_type(glyph, t_mixedarray))
                 return -1;
+            if (!r_has_type(glyph, t_string))
+                return 0;
             glyph_length = get_type1_data(ff, glyph, buf, buf_length);
         }
     }
