@@ -210,6 +210,8 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
             pfont->data.glyf = offset;
             glyph_size = (uint)u32(tab + 12);
         } else if (!memcmp(tab, "GSUB", 4)) {
+            if (pfont->data.gsub_size != 0)
+                return_error(gs_error_invalidfont);
             pfont->data.gsub_size = u32(tab + 12);
             pfont->data.gsub = gs_alloc_byte_array(pfont->memory, pfont->data.gsub_size, 1,
                                                         "gs_type42_font_init(GSUB)");
