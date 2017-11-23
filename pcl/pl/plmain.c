@@ -403,19 +403,29 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
 int
 pl_main_delete_instance(pl_main_instance_t *minst)
 {
-    gs_memory_t *mem = minst->memory;
     /* Dnit PDLs */
-    int index;
-    pl_interp_implementation_t **impl = minst->implementations;
+    gs_memory_t *mem;
+    pl_interp_implementation_t **impl;
 
-    /* dnit interps */
-    for (index = 0; impl[index] != 0; ++index) {
-        if (pl_deallocate_interp_instance(impl[index]) < 0) {
-            return -1;
-        }
+    if (minst != NULL)
+    {
+        mem = minst->memory;
+        impl = minst->implementations;
     }
+    else
+        return 0;
 
-    gs_free_object(mem, impl, "pl_main_languages_delete_instance()");
+    if (impl != NULL) {
+        /* dnit interps */
+        int index;
+        for (index = 0; impl[index] != 0; ++index) {
+            if (pl_deallocate_interp_instance(impl[index]) < 0) {
+                return -1;
+            }
+        }
+
+        gs_free_object(mem, impl, "pl_main_languages_delete_instance()");
+    }
 
     /* close and deallocate the device */
     if (minst->device) {
