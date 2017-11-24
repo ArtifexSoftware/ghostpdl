@@ -394,6 +394,12 @@ pdf_initialize_ids(gx_device_pdf * pdev)
         int timeoffset;
         char timesign;
 
+#ifdef CLUSTER
+        memset(&t, 0, sizeof(t));
+        memset(&tms, 0, sizeof(tms));
+        timesign = 'Z';
+        timeoffset = 0;
+#else
         time(&t);
         tms = *gmtime(&t);
         tms.tm_isdst = -1;
@@ -401,6 +407,7 @@ pdf_initialize_ids(gx_device_pdf * pdev)
         timesign = (timeoffset == 0 ? 'Z' : timeoffset < 0 ? '-' : '+');
         timeoffset = any_abs(timeoffset) / 60;
         tms = *localtime(&t);
+#endif
 
         gs_sprintf(buf, "(D:%04d%02d%02d%02d%02d%02d%c%02d\'%02d\')",
             tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
@@ -737,7 +744,11 @@ pdf_open(gx_device * dev)
         pdev->strm = s;
     }
     gdev_vector_init((gx_device_vector *) pdev);
+#ifdef CLUSTER
+    memset(&pdev->uuid_time, 0, sizeof(pdev->uuid_time));
+#else
     gp_get_realtime(pdev->uuid_time);
+#endif
     pdev->vec_procs = &pdf_vector_procs;
     pdev->fill_options = pdev->stroke_options = gx_path_type_optimize;
     /* Set in_page so the vector routines won't try to call */

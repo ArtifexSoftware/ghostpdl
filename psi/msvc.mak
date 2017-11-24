@@ -747,6 +747,10 @@ CFLAGS=
 CFLAGS=$(CFLAGS) /FC
 !endif
 
+!ifdef CLUSTER
+CFLAGS=$(CFLAGS) -DCLUSTER
+!endif
+
 !if "$(MEMENTO)"=="1"
 CFLAGS=$(CFLAGS) -DMEMENTO
 !endif

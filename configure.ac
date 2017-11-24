@@ -2744,6 +2744,19 @@ fi
 
 AC_SUBST(EXEEXT)
 
+# --------------------------------------------------
+# Modify build for internal cluster testing.
+# DO NOT USE THIS OPTION OUTSIDE OF ARTIFEX!
+# --------------------------------------------------
+AC_ARG_ENABLE([cluster])
+
+if test "x"$enable_cluster != "x"; then
+  CLUSTER_CFLAGS="-DCLUSTER"
+else
+  CLUSTER_CFLAGS=""
+fi
+
+AC_SUBST(CLUSTER_CFLAGS)
 
 if test x"$CCAUX" != x"$CC"; then
 
