@@ -407,14 +407,11 @@ pl_main_delete_instance(pl_main_instance_t *minst)
     gs_memory_t *mem;
     pl_interp_implementation_t **impl;
 
-    if (minst != NULL)
-    {
-        mem = minst->memory;
-        impl = minst->implementations;
-    }
-    else
+    if (minst == NULL)
         return 0;
 
+    mem = minst->memory;
+    impl = minst->implementations;
     if (impl != NULL) {
         /* dnit interps */
         int index;
