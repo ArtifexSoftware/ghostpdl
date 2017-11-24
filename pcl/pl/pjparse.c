@@ -1595,6 +1595,9 @@ int free_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env)
     int i=0;
     pjl_envir_var_t *pjl_env = *env;
 
+    if (pjl_env == NULL)
+        return 0;
+
     while (pjl_env[i].var) {
         gs_free_object(mem, pjl_env[i].var, "free pjl_environment key");
         gs_free_object(mem, pjl_env[i].value, "free pjl_environment value");
@@ -1609,6 +1612,9 @@ int free_pjl_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontenv)
 {
     int i=0;
     pjl_fontsource_t *pjl_fontenv = *fontenv;
+
+    if (pjl_fontenv == NULL)
+        return 0;
 
     while (pjl_fontenv[i].pathname) {
         gs_free_object(mem, pjl_fontenv[i].pathname, "pjl_font_envir pathname");
