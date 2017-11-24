@@ -40,10 +40,8 @@ typedef struct gs_gstate_s gs_gstate;
 #endif
 int pl_main_make_gstate(pl_main_instance_t * pmi, gs_gstate ** ppgs);
 
-#ifdef DEBUG
 /* Print memory and time usage. */
 void pl_print_usage(const pl_main_instance_t * pmi, const char *msg);
-#endif
 
 /* Finish a page, possibly printing usage statistics and/or pausing. */
 int pl_finish_page(pl_main_instance_t * pmi, gs_gstate * pgs,
