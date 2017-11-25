@@ -473,9 +473,14 @@ uint
 gs_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 {
     gs_file_enum *pgs_file_enum = (gs_file_enum *)pfen;
-    int iodev_name_len = pgs_file_enum->prepend_iodev_name ?
-                        strlen(pgs_file_enum->piodev->dname) : 0;
+    int iodev_name_len;
     uint return_len;
+
+    if (pgs_file_enum == NULL)
+        return ~0;
+
+    iodev_name_len = pgs_file_enum->prepend_iodev_name ?
+                        strlen(pgs_file_enum->piodev->dname) : 0;
 
     if (iodev_name_len > maxlen)
         return maxlen + 1;	/* signal overflow error */
