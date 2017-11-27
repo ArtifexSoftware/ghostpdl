@@ -96,7 +96,7 @@
 /Helvetica-Bold			/NimbusSans-Bold ;
 /Helvetica-BoldOblique		/NimbusSans-BoldItalic      ;
 /Helvetica-Narrow-Bold		/NimbusSansNarrow-Bold    ;
-/Helvetica-Narrow-BoldOblique	/NimbusSansNarrow-BdOblique        ;
+/Helvetica-Narrow-BoldOblique	/NimbusSansNarrow-BoldOblique        ;
 /Helvetica-Narrow		/NimbusSansNarrow-Regular    ;
 /Helvetica-Narrow-Oblique	/NimbusSansNarrow-Oblique        ;
 /Helvetica			/NimbusSans-Regular ;
