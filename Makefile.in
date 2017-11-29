@@ -95,8 +95,8 @@ datadir = @datadir@
 # The following must be substituted using @datadir@ and @libdir@
 # to avoid adding RPM generation paths (CUPS STR #1112)
 gsdir = @datadir@/ghostscript
-gsdatadir = $(gsdir)/$(GS_DOT_VERSION)
-gssharedir = @libdir@/ghostscript/$(GS_DOT_VERSION)
+gsdatadir = $(gsdir)@VERSIONED_PATH@
+gssharedir = @libdir@/ghostscript@VERSIONED_PATH@
 gsincludedir = @includedir@/ghostscript/
 
 docdir=$(gsdatadir)/doc

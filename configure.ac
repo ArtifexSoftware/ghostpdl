@@ -2745,6 +2745,27 @@ fi
 AC_SUBST(EXEEXT)
 
 # --------------------------------------------------
+# Check for disabling of versioned path option.
+# By default the versioned path must be enabled!
+# Using this option is user's own risk & responsibility.
+# --------------------------------------------------
+AC_ARG_WITH([versioned-path],
+[  --without-versioned-path
+                          Do not use file paths containing the version of GS.
+
+                 WARNING: This option is dangerous & unsupported, and
+                          you take full responsibility for using it!],
+versioned_path=no)
+
+if test "x$versioned_path" != "xno"; then
+  VERSIONED_PATH='/$(GS_DOT_VERSION)'
+else
+  VERSIONED_PATH=''
+fi
+
+AC_SUBST(VERSIONED_PATH)
+
+# --------------------------------------------------
 # Modify build for internal cluster testing.
 # DO NOT USE THIS OPTION OUTSIDE OF ARTIFEX!
 # --------------------------------------------------
