@@ -105,8 +105,8 @@ typedef struct htsc_dither_pos_s {
     int *locations;
 } htsc_dither_pos_t;
 
-static void htsc_determine_cell_shape(double *x, double *y, double *v, double *u,
-                               double *N, htsc_param_t params, void *mem);
+static void htsc_determine_cell_shape(int *x, int *y, int *v, int *u,
+                               int *N, htsc_param_t params, void *mem);
 static double htsc_spot_value(spottype_t spot_type, double x, double y);
 static int htsc_getpoint(htsc_dig_grid_t *dig_grid, int x, int y);
 static void htsc_setpoint(htsc_dig_grid_t *dig_grid, int x, int y, int value);
@@ -171,8 +171,8 @@ void htsc_set_default_params(htsc_param_t *params)
 int
 htsc_gen_ordered(htsc_param_t params, int *S, htsc_dig_grid_t *final_mask)
 {
-    double num_levels;
-    double x=0.0, y=0.0, v=0.0, u=0.0, N=0.0;
+    int num_levels;
+    int x=0, y=0, v=0, u=0, N=0;
     htsc_vertices_t vertices;
     htsc_vector_t bin_center;
     htsc_point_t one_index = { 0., 0. };
@@ -195,7 +195,7 @@ htsc_gen_ordered(htsc_param_t params, int *S, htsc_dig_grid_t *final_mask)
 
     /* Figure out how many levels to dither across. */
     if (params.targ_quant_spec) {
-        num_levels = ROUND((double) params.targ_quant / N);
+        num_levels = ROUND((double) params.targ_quant / (double)N);
     } else {
         num_levels = 1;
     }
@@ -267,13 +267,13 @@ htsc_gen_ordered(htsc_param_t params, int *S, htsc_dig_grid_t *final_mask)
 
     /* Make a warning about large requested quantization levels with no -s set */
     if (params.targ_size == 1 && num_levels > 1) {
-        min_size = (int)ceil((double)params.targ_quant / N);
+        min_size = (int)ceil((double)params.targ_quant / (double)N);
         EPRINTF1(final_mask->memory, "To achieve %d quantization levels with the desired lpi,\n", params.targ_quant);
         EPRINTF1(final_mask->memory, "it is necessary to specify a SuperCellSize (-s) of at least %d.\n", min_size);
         EPRINTF(final_mask->memory, "Note that an even larger size may be needed to reduce pattern artifacts.\n");
         EPRINTF(final_mask->memory, "Because no SuperCellSize was specified, the minimum possible size\n");
         EPRINTF(final_mask->memory, "that can approximate the requested angle and lpi will be created\n");
-        EPRINTF1(final_mask->memory, "with %d quantization levels.\n", (int) N);
+        EPRINTF1(final_mask->memory, "with %d quantization levels.\n", N);
     }
 
     /* Go ahead and fill up the super cell grid with our growth dot values */
@@ -292,10 +292,10 @@ htsc_gen_ordered(htsc_param_t params, int *S, htsc_dig_grid_t *final_mask)
             /* Dont allow nonsense settings */
             if (num_levels * N > super_cell.height * super_cell.width) {
                 EPRINTF3(final_mask->memory,
-                         "Notice, %3.0lf quantization levels not possible with super cell of %d by %d\n",
+                         "Notice, %d quantization levels not possible with super cell of %d by %d\n",
                          num_levels, super_cell.height, super_cell.width);
-                num_levels = ROUND((super_cell.height * super_cell.width) / N);
-                EPRINTF1(final_mask->memory, "Reducing dithering quantization to %3.0lf\n",
+                num_levels = ROUND((super_cell.height * super_cell.width) / (double)N);
+                EPRINTF1(final_mask->memory, "Reducing dithering quantization to %d\n",
                          num_levels);
                 EPRINTF1(final_mask->memory, "For an effective quantization of %d\n",
                          super_cell.height * super_cell.width);
@@ -326,12 +326,13 @@ compare(const void * a, const void * b)
     double cost = val_a->value - val_b->value;
 
     /* If same value, use distance to center for decision */
-    if (cost == 0) {
-        /* Don't think these should ever be the same due to tiling effect */
-        return val_a->dist_to_center - val_b->dist_to_center;
-    } else {
-       return cost;
-    }
+    if (cost == 0)
+        cost = val_a->dist_to_center - val_b->dist_to_center;
+    if (cost == 0)
+        return 0;
+    if (cost < 0)
+        return -1;
+    return 1;
 }
 
 static int
@@ -402,8 +403,8 @@ htsc_mask_to_tos(htsc_dig_grid_t *final_mask)
 }
 
 static void
-htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
-                          double *u_out, double *N_out, htsc_param_t params, void *mem)
+htsc_determine_cell_shape(int *x_out, int *y_out, int *v_out,
+                          int *u_out, int *N_out, htsc_param_t params, void *mem)
 {
     double x = 0., y = 0., v = 0., u = 0., N = 0.;
     double frac, scaled_x;
@@ -660,11 +661,11 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
             x = x_use;
         }
     }
-    *x_out = x;
-    *y_out = y;
-    *v_out = v;
-    *u_out = u;
-    *N_out = N;
+    *x_out = (int)x;
+    *y_out = (int)y;
+    *v_out = (int)v;
+    *u_out = (int)u;
+    *N_out = (int)N;
 }
 
 static void
@@ -1041,8 +1042,8 @@ htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
         min_vert_number = *H;
     }
 
-    a = ceil((float) target_size / (float) lcm_value);
-    b = ceil((float) target_size / (float) min_vert_number);
+    a = (int)ceil((float) target_size / (float) lcm_value);
+    b = (int)ceil((float) target_size / (float) min_vert_number);
 
     /* super_cell Size is  b*min_vert_number by a*lcm_value
        create the large cell */
@@ -1267,7 +1268,7 @@ htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
     filter = (float*) ALLOC(mem, sizeof(float) * sizefilty * sizefiltx);
     if (filter == NULL)
         return -1;
-    create_2d_gauss_filter(filter, sizefiltx, sizefilty, sizefiltx, sizefilty);
+    create_2d_gauss_filter(filter, sizefiltx, sizefilty, (float)sizefiltx, (float)sizefilty);
     screen_blur = (float*)ALLOC(mem, sizeof(float) * num_cols * num_rows);
     if (screen_blur == NULL) {
         FREE(mem, filter);
@@ -1284,8 +1285,8 @@ htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
         white_pos = 0;
         dist = (num_cols) * (num_cols) + (num_rows) * (num_rows);
         for (k = 0; k < num_dots; k++) {
-            curr_dist = (pos_y[k] - min_pos.y) * (pos_y[k] - min_pos.y) +
-                        (pos_x[k] - min_pos.x) * (pos_x[k] - min_pos.x);
+            curr_dist = (pos_y[k] - (int)min_pos.y) * (pos_y[k] - (int)min_pos.y) +
+                        (pos_x[k] - (int)min_pos.x) * (pos_x[k] - (int)min_pos.x);
             if (curr_dist < dist &&
                 screen_matrix[pos_x[k] + num_cols * pos_y[k]] == 0) {
                 white_pos = k;
@@ -1338,7 +1339,7 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
     filter = (float*) ALLOC(mem, sizeof(float) * sizefilty * sizefiltx);
     if (filter == NULL)
         return -1;
-    create_2d_gauss_filter(filter, sizefiltx, sizefilty, sizefiltx, sizefilty);
+    create_2d_gauss_filter(filter, sizefiltx, sizefilty, (float)sizefiltx, (float)sizefilty);
     screen_blur = (float*) ALLOC(mem, sizeof(float) * num_cols * num_rows);
     if (screen_blur == NULL) {
         FREE(mem, filter);
@@ -1354,11 +1355,11 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
 #endif
     /* Find the closest on dot to the max position */
         black_pos = 0;
-        dist = (pos_y[0] - max_pos.y) * (pos_y[0] - max_pos.y) +
-               (pos_x[0] - max_pos.x) * (pos_x[0] - max_pos.x);
+        dist = (pos_y[0] - (int)max_pos.y) * (pos_y[0] - (int)max_pos.y) +
+               (pos_x[0] - (int)max_pos.x) * (pos_x[0] - (int)max_pos.x);
         for ( k = 1; k < num_dots; k++) {
-            curr_dist = (pos_y[k] - max_pos.y) * (pos_y[k] - max_pos.y) +
-                        (pos_x[k] - max_pos.x) * (pos_x[k] - max_pos.x);
+            curr_dist = (pos_y[k] - (int)max_pos.y) * (pos_y[k] - (int)max_pos.y) +
+                        (pos_x[k] - (int)max_pos.x) * (pos_x[k] - (int)max_pos.x);
             if (curr_dist < dist &&
                 screen_matrix[pos_x[k] + num_cols * pos_y[k]] == 1) {
                 black_pos = k;
@@ -1372,11 +1373,11 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
                   sizefilty, screen_blur, &max_val, &max_pos, &min_val, &min_pos);
         /* Find the closest OFF dot to the min position. */
         white_pos = 0;
-        dist = (pos_y[0] - min_pos.y) * (pos_y[0] - min_pos.y) +
-               (pos_x[0] - min_pos.x) * (pos_x[0] - min_pos.x);
+        dist = (pos_y[0] - (int)min_pos.y) * (pos_y[0] - (int)min_pos.y) +
+               (pos_x[0] - (int)min_pos.x) * (pos_x[0] - (int)min_pos.x);
         for ( k = 1; k < num_dots; k++) {
-            curr_dist = (pos_y[k] - min_pos.y) * (pos_y[k] - min_pos.y) +
-                        (pos_x[k] - min_pos.x) * (pos_x[k] - min_pos.x);
+            curr_dist = (pos_y[k] - (int)min_pos.y) * (pos_y[k] - (int)min_pos.y) +
+                        (pos_x[k] - (int)min_pos.x) * (pos_x[k] - (int)min_pos.x);
             if (curr_dist < dist &&
                 screen_matrix[pos_x[k] + num_cols * pos_y[k]] == 0) {
                 white_pos = k;
@@ -1615,7 +1616,7 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
             goto out;
         }
         for (k = 0; k < N; k++) {
-            thresholds[N-1-k] = (k + 1) * step_size - (step_size / 2);
+            thresholds[N-1-k] = (int)((k + 1) * step_size - (step_size / 2));
         }
         mag_offset =
             (double) (thresholds[0]-thresholds[1]) / (double) (num_levels+1);
@@ -1688,9 +1689,9 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
 
                         /* In case we have modulo of a negative number */
                         if (k_index < 0) k_index = k_index + width_supercell;
-                        threshold_value = thresholds[val-1] +
-                                          mag_offset * dot_level_sort[h];
-                        if (threshold_value > MAXVAL) threshold_value = MAXVAL;
+                        threshold_value = (int)(thresholds[val-1] +
+                                                mag_offset * dot_level_sort[h]);
+                        if (threshold_value > MAXVAL) threshold_value = (int)MAXVAL;
                         if (threshold_value < 0) threshold_value = 0;
                         htsc_setpoint(final_mask,k_index,j_index,threshold_value);
                     }
