@@ -1568,8 +1568,9 @@ void Memento_info(void *addr)
 /* stashed_map[j] = i means that file descriptor i-1 was duplicated to j */
 int stashed_map[OPEN_MAX];
 
-static void Memento_signal(void)
+static void Memento_signal(int sig)
 {
+    (void)sig;
     fprintf(stderr, "SEGV at:\n");
     memento.segv = 1;
     Memento_bt_internal(0);
@@ -1663,8 +1664,9 @@ static int squeeze(void)
 #else
 #include <signal.h>
 
-static void Memento_signal(void)
+static void Memento_signal(int sig)
 {
+    (void)sig;
     memento.segv = 1;
     /* If we just return from this function the SEGV will be unhandled, and
      * we'll launch into whatever JIT debugging system the OS provides. At
