@@ -215,14 +215,14 @@ rtmisc_do_registration(pcl_parser_state_t * pcl_parser_state,
  * the host system, and it is not clear an "HP LaserJet 4" device will
  * generate color output (this may vary from host to host).
  */
-static void
+static int
 rtmisc_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     static const uint mask = (pcl_reset_initial
                               | pcl_reset_cold | pcl_reset_printer);
 
     if (pcs->configure_appletalk == 0)
-        return;
+        return 0;
 
     if ((type & mask) != 0)
         pcs->configure_appletalk((const byte *)"JOB", 3, (const byte *)"", 0);
@@ -235,6 +235,7 @@ rtmisc_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         pcs->configure_appletalk((const byte *)"TYPE", 4, dev_type,
                                  sizeof(dev_type) - 1);
     }
+    return 0;
 }
 
 const pcl_init_t rtmisc_init = { rtmisc_do_registration, rtmisc_do_reset, 0 };

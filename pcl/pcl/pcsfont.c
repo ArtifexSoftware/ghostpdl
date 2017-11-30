@@ -1030,7 +1030,7 @@ pcsfont_do_registration(pcl_parser_state_t * pcl_parser_state,
                                   pcl_alphanumeric_id_data, pca_bytes)
         return 0;
 }
-static void
+static int
 pcsfont_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     if (type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay)) {
@@ -1050,6 +1050,7 @@ pcsfont_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         }
         pcs->alpha_font_id.id = 0;
     }
+    return 0;
 }
 static int
 pcsfont_do_copy(pcl_state_t * psaved, const pcl_state_t * pcs,

@@ -527,7 +527,7 @@ upattern_do_registration(pcl_parser_state_t * pcl_parser_state,
     }, END_CLASS return 0;
 }
 
-static void
+static int
 upattern_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     if ((type & pcl_reset_initial) != 0) {
@@ -548,6 +548,8 @@ upattern_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         pcl_pattern_clear_bi_patterns(pcs);
         /* GL's IN command takes care of the GL patterns */
     }
+
+    return 0;
 }
 
 const pcl_init_t pcl_upattern_init =

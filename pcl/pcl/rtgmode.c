@@ -737,7 +737,7 @@ gmode_do_registration(pcl_parser_state_t * pcl_parser_state, gs_memory_t * pmem 
     }, END_CLASS return 0;
 }
 
-static void
+static int
 gmode_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     static const uint mask = (pcl_reset_initial
@@ -774,6 +774,7 @@ gmode_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         prstate->compression_mode = NO_COMPRESS;
         prstate->y_advance = 1;
     }
+    return 0;
 }
 
 const pcl_init_t rtgmode_init = { gmode_do_registration, gmode_do_reset, 0 };

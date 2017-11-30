@@ -682,16 +682,21 @@ purge_all(const gs_memory_t * mem, cached_char * cc, void *dummy)
     return true;
 }
 
-static void
+static int
 pcfont_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
+    int code;
+
     if ((type & pcl_reset_initial) != 0) {
         pcs->font_dir = gs_font_dir_alloc(pcs->memory);
         if (pcs->nocache)
             gs_setcachelimit(pcs->font_dir, 0);
         /* disable hinting at high res */
-        if (gs_currentdevice(pcs->pgs)->HWResolution[0] >= 300)
-            gs_setgridfittt(pcs->font_dir, 0);
+        if (gs_currentdevice(pcs->pgs)->HWResolution[0] >= 300) {
+            code = gs_setgridfittt(pcs->font_dir, 0);
+            if (code < 0)
+                return code;
+        }
         pcs->font = 0;
         pcs->font_selection[0].font = pcs->font_selection[1].font = 0;
         pcs->font_selected = primary;
@@ -710,7 +715,7 @@ pcfont_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
             code = pcl_set_current_font_environment(pcs);
         /* corrupt configuration */
         if (code != 0)
-            exit(1);
+            return code;
     }
     if (type & pcl_reset_permanent) {
         pcl_unload_resident_fonts(pcs);
@@ -749,6 +754,7 @@ pcfont_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
             }
         }
     }
+    return 0;
 }
 
 const pcl_init_t pcfont_init = {

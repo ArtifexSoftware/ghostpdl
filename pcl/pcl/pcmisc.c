@@ -60,13 +60,14 @@ pcmisc_do_registration(pcl_parser_state_t * pcl_parser_state,
                            pcl_disable_display_functions, pca_in_macro)
         return 0;
 }
-static void
+static int
 pcmisc_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     if (type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay)) {
         pcs->end_of_line_wrap = false;
         pcs->display_functions = false;
     }
+    return 0;
 }
 const pcl_init_t pcmisc_init = {
     pcmisc_do_registration, pcmisc_do_reset

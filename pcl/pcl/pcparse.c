@@ -731,11 +731,13 @@ pcl_parser_shutdown(pcl_parser_state_t * pcl_parser_state, gs_memory_t * mem)
 }
 /* ---------------- Initialization ---------------- */
 
-void
+int
 pcparse_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     if (type & (pcl_reset_initial | pcl_reset_printer))
         pcs->parse_other = 0;
+
+    return 0;
 }
 
 const pcl_init_t pcparse_init = {

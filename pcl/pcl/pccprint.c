@@ -88,7 +88,7 @@ pccprint_do_registration(pcl_parser_state_t * pcl_parser_state,
     }, END_CLASS return 0;
 }
 
-static void
+static int
 pccprint_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     static const uint mask = (pcl_reset_initial
@@ -98,6 +98,8 @@ pccprint_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         pcs->logical_op = 252;
         pcs->pp_mode = 0;
     }
+
+    return 0;
 }
 
 const pcl_init_t pccprint_init =

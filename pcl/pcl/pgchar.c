@@ -710,7 +710,7 @@ pgchar_do_registration(pcl_parser_state_t * pcl_parser_state,
     return 0;
 }
 
-static void
+static int
 pgchar_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     if (type & pcl_reset_initial)
@@ -718,7 +718,7 @@ pgchar_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
                      hpgl_dl_dict_free_value);
     if (type & pcl_reset_permanent)
         pl_dict_release(&pcs->g.dl_531_fontdict);
-    return;
+    return 0;
 }
 
 const pcl_init_t pgchar_init = {

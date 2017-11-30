@@ -140,7 +140,7 @@ color_do_registration(pcl_parser_state_t * pcl_parser_state,
 /*
  * Handle the various forms of reset.
  */
-static void
+static int
 color_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     static const uint mask = (pcl_reset_initial
@@ -151,6 +151,8 @@ color_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         pcs->color_comps[1] = 0.0;
         pcs->color_comps[2] = 0.0;
     }
+
+    return 0;
 }
 
 /*

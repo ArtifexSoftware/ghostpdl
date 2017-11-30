@@ -918,16 +918,17 @@ palette_do_registration(pcl_parser_state_t * pcl_parser_state,
 /*
  * Reset routine for palettes.
  */
-static void
+static int
 palette_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
+    int code;
     static const uint mask = (pcl_reset_initial
                               | pcl_reset_cold
                               | pcl_reset_printer
                               | pcl_reset_overlay | pcl_reset_permanent);
 
     if ((type & mask) == 0)
-        return;
+        return 0;
 
     /* for initial reset, set up the palette store */
     if ((type & pcl_reset_initial) != 0) {
@@ -965,9 +966,14 @@ palette_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
     pcs->ctrl_palette_id = 0;
 
     if (!(type & pcl_reset_permanent)) {
-        (void)build_default_palette(pcs);
-        (void)pcl_frgrnd_set_default_foreground(pcs);
+        code = build_default_palette(pcs);
+        if (code < 0)
+            return code;
+        code = pcl_frgrnd_set_default_foreground(pcs);
+        if (code < 0)
+            return code;
     }
+    return 0;
 }
 
 /*

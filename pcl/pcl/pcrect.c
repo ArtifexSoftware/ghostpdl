@@ -238,7 +238,7 @@ pcrect_do_registration(pcl_parser_state_t * pcl_parser_state,
     }, END_CLASS return 0;
 }
 
-static void
+static int
 pcrect_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     static const uint mask = (pcl_reset_initial
@@ -247,6 +247,8 @@ pcrect_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         pcs->rectangle.x = 0;
         pcs->rectangle.y = 0;
     }
+
+    return 0;
 }
 
 const pcl_init_t pcrect_init = { pcrect_do_registration, pcrect_do_reset, 0 };

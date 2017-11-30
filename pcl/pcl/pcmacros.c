@@ -268,7 +268,7 @@ pcmacros_do_registration(pcl_parser_state_t * pcl_parser_state,
                             pca_neg_error | pca_big_error)},
         END_CLASS return 0;
 }
-static void
+static int
 pcmacros_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     if (type & (pcl_reset_initial | pcl_reset_printer)) {
@@ -301,6 +301,8 @@ pcmacros_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
     }
     if (type & pcl_reset_permanent)
         pl_dict_release(&pcs->macros);
+
+    return 0;
 }
 static int
 pcmacros_do_copy(pcl_state_t * psaved, const pcl_state_t * pcs,

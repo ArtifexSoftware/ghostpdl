@@ -194,7 +194,7 @@ frgrnd_do_registration(pcl_parser_state_t * pcl_parser_state,
     }, END_CLASS return 0;
 }
 
-static void
+static int
 frgrnd_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     if (type & (pcl_reset_permanent)) {
@@ -202,6 +202,7 @@ frgrnd_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         rc_decrement(pcs->pdflt_frgrnd, "foreground reset pdflt_frgrnd");
         rc_decrement(pcs->pwhite_cs, "foreground reset p_white_cs");
     }
+    return 0;
 }
 
 static int

@@ -270,7 +270,7 @@ typedef struct pcl_init_s
     int (*do_registration) (pcl_parser_state_t * pcl_parser_state,
                             gs_memory_t * mem);
     /* Initialize state at startup, printer reset, and other times. */
-    void (*do_reset) (pcl_state_t * pcs, pcl_reset_type_t type);
+    int (*do_reset) (pcl_state_t * pcs, pcl_reset_type_t type);
     /* Partially copy the state for macro call, overlay, and exit. */
     int (*do_copy) (pcl_state_t * psaved, const pcl_state_t * pcs,
                     pcl_copy_operation_t operation);

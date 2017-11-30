@@ -112,7 +112,7 @@ int pcl_execute_macro(const pcl_macro_t * pmac, pcl_state_t * pcs,
                       pcl_copy_operation_t before, pcl_reset_type_t reset,
                       pcl_copy_operation_t after);
 
-void pcparse_do_reset(pcl_state_t * pcs, pcl_reset_type_t type);
+int pcparse_do_reset(pcl_state_t * pcs, pcl_reset_type_t type);
 
 int pcl_init_command_index(pcl_parser_state_t * pcl_parser_state,
                            pcl_state_t * pcs);

@@ -1490,11 +1490,12 @@ raster_do_registration(pcl_parser_state_t * pcl_parser_state, gs_memory_t * pmem
     }, END_CLASS return 0;
 }
 
-static void
+static int
 raster_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     if ((type & pcl_reset_initial) != 0)
         pcs->raster_state.pcur_raster = 0;
+    return 0;
 }
 
 const pcl_init_t rtraster_init =

@@ -1299,7 +1299,7 @@ pattern_do_registration(pcl_parser_state_t * pcl_parser_state,
 
 }
 
-static void
+static int
 pattern_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     static const uint mask = (pcl_reset_initial
@@ -1333,6 +1333,7 @@ pattern_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
             }
         }
     }
+    return 0;
 }
 
 const pcl_init_t pcl_pattern_init =

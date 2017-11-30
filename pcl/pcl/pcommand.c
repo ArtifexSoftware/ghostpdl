@@ -179,7 +179,7 @@ pcl_do_resets(pcl_state_t * pcs, pcl_reset_type_t type)
 
     for (; *init && code >= 0; ++init) {
         if ((*init)->do_reset)
-            (*(*init)->do_reset) (pcs, type);
+            code = (*(*init)->do_reset) (pcs, type);
     }
     return code;
 }

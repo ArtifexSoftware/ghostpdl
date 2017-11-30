@@ -787,14 +787,14 @@ pcursor_do_registration(pcl_parser_state_t * pcl_parser_state,
         return 0;
 }
 
-static void
+static int
 pcursor_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     static const uint mask = (pcl_reset_initial
                               | pcl_reset_printer | pcl_reset_overlay);
 
     if ((type & mask) == 0)
-        return;
+        return 0;
 
     pcs->line_termination = 0;
     pcs->hmi_cp = HMI_DEFAULT;
@@ -815,6 +815,7 @@ pcursor_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         }
     }
     pcl_home_cursor(pcs);
+    return 0;
 }
 
 const pcl_init_t pcursor_init =

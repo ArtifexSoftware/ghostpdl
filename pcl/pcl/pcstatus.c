@@ -724,7 +724,7 @@ pcstatus_do_registration(pcl_parser_state_t * pcl_parser_state,
                                   pcl_echo, pca_neg_ok | pca_big_error)
         return 0;
 }
-static void
+static int
 pcstatus_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     if (type & (pcl_reset_initial | pcl_reset_printer)) {
@@ -736,6 +736,8 @@ pcstatus_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         pcs->location_type = 0;
         pcs->location_unit = 0;
     }
+
+    return 0;
 }
 
 const pcl_init_t pcstatus_init = {

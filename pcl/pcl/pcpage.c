@@ -1271,10 +1271,9 @@ pcl_get_default_paper(pcl_state_t * pcs)
     return &(PAPER_SIZES[1].psize);
 }
 
-static void
+static int
 pcpage_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
-
     /* NB hack for snippet mode */
     if (pcs->end_page != pcl_end_page_top) {
         pcs->xfm_state.print_dir = 0;
@@ -1289,7 +1288,7 @@ pcpage_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
             reset_margins(pcs, false);
         else
             reset_margins(pcs, true);
-        return;
+        return 0;
     }
 
     if ((type & (pcl_reset_initial | pcl_reset_printer)) != 0) {
@@ -1316,6 +1315,7 @@ pcpage_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
             pcs->ppaper_type_table = 0;
         }
     }
+    return 0;
 }
 
 const pcl_init_t pcpage_init = { pcpage_do_registration, pcpage_do_reset, 0 };

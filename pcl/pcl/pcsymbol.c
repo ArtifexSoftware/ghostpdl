@@ -357,9 +357,11 @@ pcsymbol_do_registration(pcl_parser_state_t * pcl_parser_state,
         return 0;
 }
 
-static void
+static int
 pcsymbol_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
+    int code;
+
     if (type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay)) {
         id_set_value(pcs->symbol_set_id, 0);
         if (type & pcl_reset_initial) {
@@ -379,13 +381,16 @@ pcsymbol_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
             pcl_args_t args;
 
             arg_set_uint(&args, 1);     /* delete temporary symbol sets */
-            pcl_symbol_set_control(&args, pcs);
+            code = pcl_symbol_set_control(&args, pcs);
+            if (code < 0)
+                return code;
         }
     }
     if (type & pcl_reset_permanent) {
         pl_dict_release(&pcs->soft_symbol_sets);
         pl_dict_release(&pcs->built_in_symbol_sets);
     }
+    return 0;
 }
 
 static int

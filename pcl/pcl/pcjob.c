@@ -299,9 +299,11 @@ pcjob_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
     return 0;
 }
 
-static void
+static int
 pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
+    int code;
+
     if (type & (pcl_reset_initial | pcl_reset_printer)) {
         /* check for a resolution setting from PJL and set it right
            away, there is no pcl command to set the resolution so a
@@ -323,8 +325,12 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
              */
 
             if (res[0] != 0 && res[0] != device_res.x) {
-                put_param1_float_array(pcs, "HWResolution", res);
-                gs_erasepage(pcs->pgs);
+                code = put_param1_float_array(pcs, "HWResolution", res);
+                if (code < 0)
+                    return code;
+                code = gs_erasepage(pcs->pgs);
+                if (code < 0)
+                    return code;
             }
         }
 
@@ -341,10 +347,15 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
                               "longedge") ? false : true;
         pcs->back_side = false;
         pcs->output_bin = 1;
-        put_param1_bool(pcs, "Duplex", pcs->duplex);
-        put_param1_bool(pcs, "FirstSide", !pcs->back_side);
-        put_param1_bool(pcs, "BindShortEdge", pcs->bind_short_edge);
-
+        code = put_param1_bool(pcs, "Duplex", pcs->duplex);
+        if (code < 0)
+            return code;
+        code = put_param1_bool(pcs, "FirstSide", !pcs->back_side);
+        if (code < 0)
+            return code;
+        code = put_param1_bool(pcs, "BindShortEdge", pcs->bind_short_edge);
+        if (code < 0)
+            return code;
     }
 
     if (type & (pcl_reset_initial ^ pcl_reset_cold))
@@ -352,12 +363,18 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         pjl_envvar_t *pres;
 
         pres = pjl_proc_get_envvar(pcs->pjls, "pdfmark");
-        if (strlen(pres) > 0)
-            pcl_pjl_pdfmark(pcs->memory, pcs->pgs->device, pres);
+        if (strlen(pres) > 0) {
+            code = pcl_pjl_pdfmark(pcs->memory, pcs->pgs->device, pres);
+            if (code < 0)
+                return code;
+        }
 
         pres = pjl_proc_get_envvar(pcs->pjls, "setdistillerparams");
-        if (strlen(pres) > 0)
-            pcl_pjl_setdistillerparams(pcs->memory, pcs->pgs->device, pres);
+        if (strlen(pres) > 0) {
+            code = pcl_pjl_setdistillerparams(pcs->memory, pcs->pgs->device, pres);
+            if (code < 0)
+                return code;
+        }
     }
 
     if (type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay)) {
@@ -380,8 +397,11 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
                              HWResolution[0]);
         } else
             arg_set_uint(&args, 300);
-        pcl_set_unit_of_measure(&args, pcs);
+        code = pcl_set_unit_of_measure(&args, pcs);
+        if (code < 0)
+            return code;
     }
+    return 0;
 }
 const pcl_init_t pcjob_init = {
     pcjob_do_registration, pcjob_do_reset, pcjob_do_copy

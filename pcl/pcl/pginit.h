@@ -31,6 +31,6 @@ void hpgl_default_font_params(pcl_font_selection_t * pfs);
 void hpgl_default_all_fill_patterns(hpgl_state_t * pgls);
 
 /* Reset (parts of) the HP-GL/2 state. */
-void hpgl_do_reset(pcl_state_t * pcs, pcl_reset_type_t type);
+int hpgl_do_reset(pcl_state_t * pcs, pcl_reset_type_t type);
 
 #endif /* pginit_INCLUDED */

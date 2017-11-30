@@ -1286,7 +1286,7 @@ pctext_do_registration(pcl_parser_state_t * pcl_parser_state,
     return 0;
 }
 
-static void
+static int
 pctext_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     static const uint mask = (pcl_reset_initial
@@ -1299,6 +1299,7 @@ pctext_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         pcs->text_parsing_method = tpm_0_SBCS;
         pcs->text_path = 0;
     }
+    return 0;
 }
 
 const pcl_init_t pctext_init = { pctext_do_registration, pctext_do_reset, 0 };
