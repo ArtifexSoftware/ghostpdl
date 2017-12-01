@@ -754,10 +754,10 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                             dda_next(dda_ht);
                             xn = fixed2int_var_rounded(dda_current(dda_ht));
                             while (xr > xn) {
-                                *(devc_contone[0])++ = (psrc_plane[0])[j];
-                                *(devc_contone[1])++ = (psrc_plane[1])[j];
-                                *(devc_contone[2])++ = (psrc_plane[2])[j];
-                                *(devc_contone[3])++ = (psrc_plane[3])[j];
+                                *(devc_contone[0])-- = (psrc_plane[0])[j];
+                                *(devc_contone[1])-- = (psrc_plane[1])[j];
+                                *(devc_contone[2])-- = (psrc_plane[2])[j];
+                                *(devc_contone[3])-- = (psrc_plane[3])[j];
                                 xr--;
                             }           /* at loop exit xn will be <= xr */
                             j++;
