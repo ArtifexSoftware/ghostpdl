@@ -1673,21 +1673,22 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                               B == prev.F && D == prev.D && F == prev.B))
                             )
                             op = cmd_opv_scurveto;
-                        else if (B == 0 && E == 0) {
-                            B = A, E = F, optr++, op = cmd_opv_hvcurveto;
-                            if ((B ^ D) >= 0) {
-                                if (C == D && E == B)
-                                    op = cmd_opv_hqcurveto;
-                            } else if (C == -D && E == -B)
-                                C = D, op = cmd_opv_hqcurveto;
-                        } else if (A == 0 && F == 0) {
+                        else if (A == 0 && F == 0) {
                             optr++, op = cmd_opv_vhcurveto;
                             if ((B ^ C) >= 0) {
                                 if (D == C && E == B)
                                     op = cmd_opv_vqcurveto;
                             } else if (D == -C && E == -B)
                                 op = cmd_opv_vqcurveto;
-                        } else if (A == 0 && B == 0)
+                        } else if (B == 0 && E == 0) {
+                            B = A, E = F, optr++, op = cmd_opv_hvcurveto;
+                            if ((B ^ D) >= 0) {
+                                if (C == D && E == B)
+                                    op = cmd_opv_hqcurveto;
+                            } else if (C == -D && E == -B)
+                                C = D, op = cmd_opv_hqcurveto;
+                        }
+                        else if (A == 0 && B == 0)
                             optr += 2, op = cmd_opv_nrcurveto;
                         else if (E == 0 && F == 0)
                             op = cmd_opv_rncurveto;
