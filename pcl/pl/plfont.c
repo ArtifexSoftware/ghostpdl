@@ -1082,20 +1082,19 @@ int
 pl_load_tt_font(stream * in, gs_font_dir * pdir, gs_memory_t * mem,
                 long unique_id, pl_font_t ** pplfont, char *font_name)
 {
-    byte *tt_font_datap;
+    byte *tt_font_datap = NULL;
     ulong size;
     int code;
-    gs_font_type42 *pfont;
-    pl_font_t *plfont;
+    gs_font_type42 *pfont = NULL;
+    pl_font_t *plfont = NULL;
     byte *file_name = NULL;
     gs_const_string pfname;
 
     if (sfilename(in, &pfname) == 0) {
         file_name =
             gs_alloc_bytes(mem, pfname.size + 1, "pl_load_tt_font file_name");
-        if (!file_name) {
-            return (gs_error_VMerror);
-        }
+        if (!file_name)
+            return_error(gs_error_VMerror);
         /* the stream code guarantees the string is null terminated */
         memcpy(file_name, pfname.data, pfname.size + 1);
     }
@@ -1103,49 +1102,56 @@ pl_load_tt_font(stream * in, gs_font_dir * pdir, gs_memory_t * mem,
     /* get the data from the file */
     code = pl_alloc_tt_fontfile_buffer(in, mem, &tt_font_datap, &size);
     if (code < 0)
-        return_error(gs_error_VMerror);
+        goto error;
     /* Make a Type 42 font out of the TrueType data. */
     pfont = gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42,
                             "pl_tt_load_font(gs_font_type42)");
+    if (pfont == NULL) {
+        code = gs_error_VMerror;
+        goto error;
+    }
+    memset(pfont, 0, sizeof(*pfont));
     plfont = pl_alloc_font(mem, "pl_tt_load_font(pl_font_t)");
-
-    if (pfont == 0 || plfont == 0)
-        code = gs_note_error(gs_error_VMerror);
-    else {                      /* Initialize general font boilerplate. */
-        code =
-            pl_fill_in_font((gs_font *) pfont, plfont, pdir, mem, font_name);
-        if (code >= 0) {        /* Initialize TrueType font boilerplate. */
-            plfont->header = tt_font_datap;
-            plfont->header_size = size;
-            plfont->scaling_technology = plfst_TrueType;
-            plfont->font_type = plft_Unicode;
-            plfont->large_sizes = true;
-            plfont->offsets.GT = 0;
-            plfont->is_xl_format = false;
-            pl_fill_in_tt_font(pfont, tt_font_datap, unique_id);
-            code = gs_definefont(pdir, (gs_font *) pfont);
-        }
+    if (plfont == NULL) {
+        code = gs_error_VMerror;
+        goto error;
     }
 
-    if (code < 0) {
-        gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
-        gs_free_object(mem, pfont, "pl_tt_load_font(gs_font_type42)");
-        pl_free_tt_fontfile_buffer(mem, tt_font_datap);
-        return code;
-    }
+    /* Initialize general font boilerplate. */
+    code = pl_fill_in_font((gs_font *) pfont, plfont, pdir, mem, font_name);
+    if (code < 0)
+        goto error;
+
+    /* Initialize TrueType font boilerplate. */
+    plfont->header = tt_font_datap;
+    plfont->header_size = size;
+    plfont->scaling_technology = plfst_TrueType;
+    plfont->font_type = plft_Unicode;
+    plfont->large_sizes = true;
+    plfont->offsets.GT = 0;
+    plfont->is_xl_format = false;
+    pl_fill_in_tt_font(pfont, tt_font_datap, unique_id);
+    code = gs_definefont(pdir, (gs_font *) pfont);
+    if (code < 0)
+        goto error;
 
     code =
         pl_fapi_passfont(plfont, 0, NULL, NULL, plfont->header + 6,
                          plfont->header_size - 6);
-    if (file_name) {
+    if (code < 0)
+        return_error(code);
+    if (file_name)
         gs_free_object(mem, file_name, "pl_load_tt_font file_name");
-    }
-    if (code < 0) {
-        return (code);
-    }
 
     *pplfont = plfont;
     return 0;
+
+error:
+    gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
+    gs_free_object(mem, pfont, "pl_tt_load_font(gs_font_type42)");
+    pl_free_tt_fontfile_buffer(mem, tt_font_datap);
+    gs_free_object(mem, file_name, "pl_load_tt_font file_name");
+    return_error(code);
 }
 
 /* load resident font data to ram */
