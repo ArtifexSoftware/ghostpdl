@@ -893,34 +893,30 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
  */
 static gs_fapi_retcode
 gs_fapi_ft_ensure_open(gs_fapi_server * a_server, const char * server_param,
-            int server_param_size)
+                       int server_param_size)
 {
     ff_server *s = (ff_server *) a_server;
+    FT_UInt tt_ins_version = TT_INTERPRETER_VERSION_35;
+    FT_Error ft_error;
 
-    if (!s->freetype_library) {
-        FT_Error ft_error;
+    if (s->freetype_library)
+        return 0;
 
-        /* As we want FT to use our memory management, we cannot use the convenience of
-         * FT_Init_FreeType(), we have to do each stage "manually"
-         */
-        s->ftmemory->user = s->mem;
-        s->ftmemory->alloc = FF_alloc;
-        s->ftmemory->free = FF_free;
-        s->ftmemory->realloc = FF_realloc;
+    /* As we want FT to use our memory management, we cannot use the convenience of
+     * FT_Init_FreeType(), we have to do each stage "manually"
+     */
+    s->ftmemory->user = s->mem;
+    s->ftmemory->alloc = FF_alloc;
+    s->ftmemory->free = FF_free;
+    s->ftmemory->realloc = FF_realloc;
 
-        ft_error = FT_New_Library(s->ftmemory, &s->freetype_library);
-        if (ft_error) {
-            gs_free(s->mem, s->ftmemory, 0, 0, "gs_fapi_ft_ensure_open");
-        }
-        else {
-            FT_UInt tt_ins_version = TT_INTERPRETER_VERSION_35;
-            FT_Add_Default_Modules(s->freetype_library);
-            FT_Property_Set( s->freetype_library, "truetype", "interpreter-version", &tt_ins_version);
-        }
+    ft_error = FT_New_Library(s->ftmemory, &s->freetype_library);
+    if (ft_error)
+        return ft_to_gs_error(ft_error);
 
-        if (ft_error)
-            return ft_to_gs_error(ft_error);
-    }
+    FT_Add_Default_Modules(s->freetype_library);
+    FT_Property_Set( s->freetype_library, "truetype", "interpreter-version", &tt_ins_version);
+
     return 0;
 }
 
