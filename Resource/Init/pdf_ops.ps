@@ -291,8 +291,75 @@ currentdict /gput_always_allow .undef
 /RG {/DeviceRGB .setstrokecolorspace .setstrokecolor} bdef
 /k  {/DeviceCMYK .setfillcolorspace .setfillcolor} bdef
 /K  {/DeviceCMYK .setstrokecolorspace .setstrokecolor} bdef
-/cs {dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch .setfillcolorspace exec .setfillcolor} bdef
-/CS {dup dup type /nametype ne { 0 get } if //CSdict exch get exec exch .setstrokecolorspace exec .setstrokecolor} bdef
+/cs {dup dup type /nametype ne { 0 get } if
+  dup /ICCBased eq {
+    1 index 1 get /OrigN .knownget not {1 index 1 get /N get} if mark
+    4 2 roll
+    //CSdict exch get exec exch .setfillcolorspace exec {.setfillcolor} stopped
+    {
+    (error) == flush
+      cleartomark
+      [//null /DeviceGray //null /DeviceRGB /DeviceCMYK] exch
+      {get} stopped
+      {
+        (   **** Error: Unable to set an ICCBased colour space, and cannot set an alternate from the number of components.\n) print
+        /setcolorspace cvx /undefined signalerror
+      }
+      {
+        dup //null eq {
+          (   **** Error: Unable to set an ICCBased colour space, and cannot set an alternate from the number of components.\n) print
+          /setcolorspace cvx /undefined signalerror
+        }{
+          ICCProfileNError flush not {
+            (   **** Warning : Error setting an ICCBased colour space, using /N to set an alternate device space.\n) print
+            (                  Output may be incorrect.\n) print
+          } if
+          setcolorspace
+          /ICCProfileNError where {/ICCProfileNError true put} if
+        } ifelse
+      }ifelse
+    }{
+      cleartomark pop
+    }
+    ifelse
+  } {
+    //CSdict exch get exec exch .setfillcolorspace exec .setfillcolor
+  } ifelse
+} bdef
+/CS {dup dup type /nametype ne { 0 get } if
+  dup /ICCBased eq {
+    1 index 1 get /OrigN .knownget not {1 index 1 get /N get} if mark
+    4 2 roll
+    //CSdict exch get exec exch .setstrokecolorspace exec {.setstrokecolor} stopped
+    {
+      cleartomark
+      [//null /DeviceGray //null /DeviceRGB /DeviceCMYK] exch
+      {get} stopped
+      {
+        (   **** Error: Unable to set an ICCBased colour space, and cannot set an alternate from the number of components.\n) print
+        /setcolorspace cvx /undefined signalerror
+      }
+      {
+        dup //null eq {
+          (   **** Error: Unable to set an ICCBased colour space, and cannot set an alternate from the number of components.\n) print
+          /setcolorspace cvx /undefined signalerror
+        }{
+          ICCProfileNError flush not {
+            (   **** Warning : Error setting an ICCBased colour space, using /N to set an alternate device space.\n) print
+            (                  Output may be incorrect.\n) print
+          } if
+          setcolorspace
+          /ICCProfileNError where {/ICCProfileNError true put} if
+        } ifelse
+      }ifelse
+    }{
+      cleartomark pop
+    }
+    ifelse
+  } {
+    //CSdict exch get exec exch .setstrokecolorspace exec .setstrokecolor
+  } ifelse
+} bdef
 /sc {.setfillcolor} bdef
 /SC {.setstrokecolor} bdef
 /sc* {.setfillcolor} bdef
