@@ -352,87 +352,6 @@ is_pattern2_allowed_in_strategy(gx_device_pdf * pdev, const gx_drawing_color *pd
     return is_cspace_allowed_in_strategy(pdev, csi);
 }
 
-static int apply_transfer_and_convert_gray_to_base(gx_device_pdf * pdev, const gs_gstate * pgs, gs_client_color *pcc, gs_client_color *cc, const psdf_set_color_commands_t *write_color)
-{
-    unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    gx_device_color dc;
-    const gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
-    int code;
-
-    psrc[0] = (unsigned short) (pcc->paint.values[0]*65535.0);;
-    conc[0] = ushort2frac(psrc[0]);
-
-    code = gx_remap_concrete_DGray(pcs, (const frac *)&conc, &dc, pgs, (gx_device *)pdev, gs_color_select_texture, NULL);
-    if (code < 0)
-        return code;
-
-    if (write_color) {
-        code = psdf_set_color((gx_device_vector *)pdev, &dc, write_color);
-        if (code < 0)
-            return code;
-    } else {
-        cc->paint.values[0] = (dc.colors.pure & 0xff) / 255.0;
-    }
-    return 0;
-}
-
-static int apply_transfer_and_convert_rgb_to_base(gx_device_pdf * pdev, const gs_gstate * pgs, gs_client_color *pcc, gs_client_color *cc, const psdf_set_color_commands_t *write_color)
-{
-    unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    gx_device_color dc;
-    const gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
-    int code, i;
-
-    for (i=0;i<3;i++) {
-        psrc[i] = (unsigned short) (pcc->paint.values[i]*65535.0);;
-        conc[i] = ushort2frac(psrc[i]);
-    }
-    code = gx_remap_concrete_DRGB(pcs, (const frac *)&conc, &dc, pgs, (gx_device *)pdev, gs_color_select_texture, NULL);
-    if (code < 0)
-        return code;
-
-    if (write_color) {
-        code = psdf_set_color((gx_device_vector *)pdev, &dc, write_color);
-        if (code < 0)
-            return code;
-    } else {
-        cc->paint.values[0] = ((dc.colors.pure & 0xff0000) >> 16) / 255.0;
-        cc->paint.values[1] = ((dc.colors.pure & 0xff00) >> 8) / 255.0;
-        cc->paint.values[2] = (dc.colors.pure & 0xff) / 255.0;
-    }
-    return 0;
-}
-
-static int apply_transfer_and_convert_cmyk_to_base(gx_device_pdf * pdev, const gs_gstate * pgs, gs_client_color *pcc, gs_client_color *cc, const psdf_set_color_commands_t *write_color)
-{
-    unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    gx_device_color dc;
-    const gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
-    int code, i;
-
-    for (i=0;i<4;i++) {
-        psrc[i] = (unsigned short) (pcc->paint.values[i]*65535.0);;
-        conc[i] = ushort2frac(psrc[i]);
-    }
-    code = gx_remap_concrete_DCMYK(pcs, (const frac *)&conc, &dc, pgs, (gx_device *)pdev, gs_color_select_texture, NULL);
-    if (code < 0)
-        return code;
-
-    if (write_color) {
-        code = psdf_set_color((gx_device_vector *)pdev, &dc, write_color);
-        if (code < 0)
-            return code;
-    } else {
-        cc->paint.values[0] = ((dc.colors.pure & 0xff000000) >> 24) / 255.0;
-        cc->paint.values[1] = ((dc.colors.pure & 0xff0000) >> 16) / 255.0;
-        cc->paint.values[2] = ((dc.colors.pure & 0xff00) >> 8) / 255.0;
-        cc->paint.values[3] = (dc.colors.pure & 0xff) / 255.0;
-    }
-    return 0;
-}
 
 static int apply_transfer_gray(gx_device_pdf * pdev, const gs_gstate * pgs, gs_client_color *pcc, gs_client_color *cc)
 {
@@ -612,27 +531,14 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_gstate * pgs, c
                 cc.paint.values[2] = (pcc->paint.values[2]+128)/255.0;
                 pcs->type->concretize_color((const gs_client_color *)&cc, pcs, conc, pgs, (gx_device *)pdev);
             } else {
-                gs_client_color cc;
-                int ix;
-
                 if (pdev->params.TransferFunctionInfo == tfi_Apply) {
                     /* Apply transfer functions */
                     switch(csi) {
                         case gs_color_space_index_DeviceGray:
-                            cc.paint.values[0] = pcc->paint.values[0];
-                            code = apply_transfer_and_convert_gray_to_base(pdev, pgs, &cc, &cc, ppscc);
-                            return code;
-                            break;
                         case gs_color_space_index_DeviceRGB:
-                            for (ix=0;ix<3;ix++)
-                                cc.paint.values[ix] = pcc->paint.values[ix];
-                            code = apply_transfer_and_convert_rgb_to_base(pdev, pgs, &cc, &cc, ppscc);
-                            return code;
-                            break;
                         case gs_color_space_index_DeviceCMYK:
-                            for (ix=0;ix<4;ix++)
-                                cc.paint.values[ix] = pcc->paint.values[ix];
-                            code = apply_transfer_and_convert_cmyk_to_base(pdev, pgs, &cc, &cc, ppscc);
+                            (*pcs->type->remap_color)((const gs_client_color *)pcc, pcs, (gx_drawing_color *)pdc, pgs, (gx_device *)pdev, 0);
+                            code = psdf_set_color((gx_device_vector *)pdev, pdc, ppscc);
                             return code;
                             break;
                         default:
