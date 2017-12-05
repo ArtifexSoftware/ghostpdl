@@ -684,7 +684,7 @@ pdf_set_process_color_model(gx_device_pdf * pdev, int index)
             set_dev_proc(pdev, get_color_comp_index,
                         gx_default_DevCMYK_get_color_comp_index);
             set_dev_proc(pdev, encode_color, cmyk_8bit_map_cmyk_color);
-            set_dev_proc(pdev, decode_color, cmyk_8bit_map_color_rgb);
+            set_dev_proc(pdev, decode_color, cmyk_8bit_map_color_cmyk);
             break;
         default:	/* can't happen - see the call from gdev_pdf_put_params. */
             DO_NOTHING;
