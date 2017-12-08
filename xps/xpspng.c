@@ -125,8 +125,13 @@ xps_png_has_alpha(xps_context_t *ctx, byte *rbuf, int rlen)
     /*
      * Read PNG header
      */
-
     png_read_info(png, info);
+    if (png_get_valid(png, info, PNG_INFO_tRNS))
+    {
+        /* this will also expand the depth to 8-bits */
+        png_set_tRNS_to_alpha(png);
+    }
+    png_read_update_info(png, info);
 
     switch (png_get_color_type(png, info))
     {
