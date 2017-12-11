@@ -2722,6 +2722,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\spwgd.c"
+				>
+			</File>
+			<File
 				RelativePath="..\base\srld.c"
 				>
 			</File>
@@ -4579,6 +4583,10 @@
 			</File>
 			<File
 				RelativePath="..\base\spsdf.h"
+				>
+			</File>
+			<File
+				RelativePath="..\base\spwgx.h"
 				>
 			</File>
 			<File

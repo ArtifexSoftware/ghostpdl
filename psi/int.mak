@@ -1135,7 +1135,7 @@ $(PSOBJ)zdevcal.$(OBJ) : $(PSSRC)zdevcal.c $(GH) $(time__h)\
 fdecode_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)scfparam.$(OBJ) $(GLOBJ)sfilter2.$(OBJ) $(PSOBJ)zfdecode.$(OBJ)
 $(PSD)fdecode.dev : $(ECHOGS_XE) $(fdecode_)\
  $(GLD)cfd.dev $(GLD)lzwd.dev $(GLD)pdiff.dev $(GLD)pngp.dev $(GLD)rld.dev\
- $(INT_MAK) $(MAKEDIRS)
+ $(GLD)pwgd.dev $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)fdecode $(fdecode_)
 	$(ADDMOD) $(PSD)fdecode -include $(GLD)cfd $(GLD)lzwd $(GLD)pdiff $(GLD)pngp $(GLD)rld
 	$(ADDMOD) $(PSD)fdecode -oper zfdecode

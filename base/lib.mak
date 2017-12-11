@@ -612,6 +612,7 @@ spngpx_h=$(GLSRC)spngpx.h
 spprint_h=$(GLSRC)spprint.h
 spsdf_h=$(GLSRC)spsdf.h $(gsparam_h)
 srlx_h=$(GLSRC)srlx.h
+spwgx_h=$(GLSRC)spwgx.h
 sstring_h=$(GLSRC)sstring.h
 strimpl_h=$(GLSRC)strimpl.h $(scommon_h) $(gstypes_h) $(gsstruct_h)
 szlibx_h=$(GLSRC)szlibx.h
@@ -1910,6 +1911,16 @@ $(GLD)rld.dev : $(LIB_MAK) $(ECHOGS_XE) $(rld_) $(LIB_MAK) $(MAKEDIRS)
 $(GLOBJ)srld.$(OBJ) : $(GLSRC)srld.c $(AK) $(stdio__h) $(memory__h)\
  $(srlx_h) $(strimpl_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)srld.$(OBJ) $(C_) $(GLSRC)srld.c
+
+# ---------------- PWG RunLength decode filter ---------------- #
+
+pwgd_=$(GLOBJ)spwgd.$(OBJ)
+$(GLD)pwgd.dev : $(LIB_MAK) $(ECHOGS_XE) $(pwgd_) $(LIB_MAK) $(MAKEDIRS)
+	$(SETMOD) $(GLD)pwgd $(pwgd_)
+
+$(GLOBJ)spwgd.$(OBJ) : $(GLSRC)spwgd.c $(AK) $(stdio__h) $(memory__h)\
+ $(spwgx_h) $(strimpl_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)spwgd.$(OBJ) $(C_) $(GLSRC)spwgd.c
 
 # ---------------- String encoding/decoding filters ---------------- #
 # These are used by the PostScript and PDF writers, and also by the

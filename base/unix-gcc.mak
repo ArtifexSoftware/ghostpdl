@@ -517,7 +517,8 @@ FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev 
              $(GLD)ttflib.dev  $(GLD)cielib.dev $(GLD)pipe.dev $(GLD)htxlib.dev $(GLD)sdct.dev $(GLD)libpng.dev\
 	     $(GLD)seprlib.dev $(GLD)translib.dev $(GLD)cidlib.dev $(GLD)psf0lib.dev $(GLD)psf1lib.dev\
              $(GLD)psf2lib.dev $(GLD)lzwd.dev $(GLD)sicclib.dev \
-             $(GLD)sjbig2.dev $(GLD)sjpx.dev $(GLD)ramfs.dev
+             $(GLD)sjbig2.dev $(GLD)sjpx.dev $(GLD)ramfs.dev \
+             $(GLD)pwgd.dev
 
 
 
