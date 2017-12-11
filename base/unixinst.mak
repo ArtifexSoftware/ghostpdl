@@ -78,7 +78,7 @@ PSDOCDIR=$(PSLIBDIR)/../doc
 PSEXDIR=$(PSLIBDIR)/../examples
 PSMANDIR=$(PSLIBDIR)/../man
 
-install-data: install-libdata install-resdata$(COMPILE_INITS) install-iccdata$(COMPILE_INITS) install-doc install-man install-examples
+install-data: install-libdata install-resdata$(COMPILE_INITS) install-iccdata$(COMPILE_INITS) install-doc install-man
 
 # There's no point in providing a complete dependency list: we include
 # one file from each subdirectory just as a sanity check.
