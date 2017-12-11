@@ -23,6 +23,7 @@
 # source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
+PACKAGE=ghostscript
 BINDIR=./$(BUILDDIRPREFIX)bin
 GLSRCDIR=@srcdir@/base
 DEVSRCDIR=@srcdir@/devices
@@ -91,6 +92,7 @@ mandir = @mandir@
 man1ext = 1
 man1dir = $(mandir)/man$(man1ext)
 datadir = @datadir@
+docdir = @docdir@@VERSIONED_PATH@
 
 # The following must be substituted using @datadir@ and @libdir@
 # to avoid adding RPM generation paths (CUPS STR #1112)
@@ -99,7 +101,6 @@ gsdatadir = $(gsdir)@VERSIONED_PATH@
 gssharedir = @libdir@/ghostscript@VERSIONED_PATH@
 gsincludedir = @includedir@/ghostscript/
 
-docdir=$(gsdatadir)/doc
 exdir=$(gsdatadir)/examples
 GS_DOCDIR=$(docdir)
 

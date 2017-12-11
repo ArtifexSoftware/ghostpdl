@@ -163,6 +163,7 @@ install-doc: $(PSDOCDIR)/News.htm
 	$(SH) -c 'for f in $(DOC_PAGES) ;\
 	do if ( test -f $(PSDOCDIR)/$$f ); then $(INSTALL_DATA) $(PSDOCDIR)/$$f $(DESTDIR)$(docdir); fi;\
 	done'
+	ln -s $(DESTDIR)$(docdir) $(gsdatadir)/doc
 
 # install the man pages for each locale
 MAN_LCDIRS=. de
