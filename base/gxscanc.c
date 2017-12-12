@@ -1385,7 +1385,7 @@ static void mark_line_app(cursor * restrict cr, fixed sx, fixed sy, fixed ex, fi
          */
         int phase1_y_steps = (-sy) & (fixed_1 - 1);
         int phase3_y_steps = ey & (fixed_1 - 1);
-        ufixed y_steps = (ufixed)ey - (ufixed)ey;
+        ufixed y_steps = (ufixed)ey - (ufixed)sy;
 
         cursor_up(cr, sx);
 
