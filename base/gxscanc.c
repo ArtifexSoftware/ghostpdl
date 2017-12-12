@@ -1239,7 +1239,6 @@ cursor_flush(cursor * restrict cr, fixed x)
 static void mark_line_app(cursor * restrict cr, fixed sx, fixed sy, fixed ex, fixed ey)
 {
     int isy, iey;
-    fixed y_steps;
     fixed saved_sy = sy;
     fixed saved_ex = ex;
     fixed saved_ey = ey;
@@ -1371,7 +1370,7 @@ static void mark_line_app(cursor * restrict cr, fixed sx, fixed sy, fixed ex, fi
         cr->y = ey;
         if (sy > saved_ey)
             goto endFalling;
-    } else if ((y_steps = ey - sy) > 0) {
+    } else if (iey > isy) {
         /* We want to change from sy to ey, which are guaranteed to be on
          * different scanlines. We do this in 3 phases.
          * Phase 1 gets us from sy to the next scanline boundary.
@@ -1386,6 +1385,7 @@ static void mark_line_app(cursor * restrict cr, fixed sx, fixed sy, fixed ex, fi
          */
         int phase1_y_steps = (-sy) & (fixed_1 - 1);
         int phase3_y_steps = ey & (fixed_1 - 1);
+        ufixed y_steps = (ufixed)ey - (ufixed)ey;
 
         cursor_up(cr, sx);
 
@@ -1556,10 +1556,10 @@ static void mark_line_app(cursor * restrict cr, fixed sx, fixed sy, fixed ex, fi
          */
         int phase1_y_steps = sy & (fixed_1 - 1);
         int phase3_y_steps = (-ey) & (fixed_1 - 1);
+        ufixed y_steps = (ufixed)sy - (ufixed)ey;
 
-        y_steps = -y_steps;
         /* Cope with the awkward 0x80000000 case. */
-        if (y_steps < 0)
+        if ((fixed)y_steps < 0)
         {
             int mx, my;
             mx = sx + ((ex-sx)>>1);
@@ -3085,7 +3085,6 @@ cursor_flush_tr(cursor_tr * restrict cr, fixed x, int id)
 static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed ex, fixed ey, int id)
 {
     int isy, iey;
-    fixed y_steps;
     fixed saved_sy = sy;
     fixed saved_ex = ex;
     fixed saved_ey = ey;
@@ -3222,7 +3221,7 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
         cr->y = ey;
         if (sy > saved_ey)
             goto endFalling;
-    } else if ((y_steps = ey - sy) > 0) {
+    } else if (iey > isy) {
         /* So lines increasing in y. */
         /* We want to change from sy to ey, which are guaranteed to be on
          * different scanlines. We do this in 3 phases.
@@ -3232,6 +3231,7 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
          */
         int phase1_y_steps = (-sy) & (fixed_1 - 1);
         int phase3_y_steps = ey & (fixed_1 - 1);
+        ufixed y_steps = (ufixed)ey - (ufixed)sy;
 
         cursor_up_tr(cr, sx, id);
 
@@ -3356,7 +3356,7 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
             assert((y_steps & (fixed_1 - 1)) == 0);
 
             /* Phase 2: */
-            y_steps = fixed2int(y_steps);
+            y_steps = fixed2int((unsigned int)y_steps);
             assert(y_steps >= 0);
             if (y_steps) {
                 /* We want to change sx by x_steps in y_steps steps.
@@ -3402,10 +3402,10 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
          */
         int phase1_y_steps = sy & (fixed_1 - 1);
         int phase3_y_steps = (-ey) & (fixed_1 - 1);
+        ufixed y_steps = (ufixed)sy - (ufixed)ey;
 
-        y_steps = -y_steps;
         /* Cope with the awkward 0x80000000 case. */
-        if (y_steps < 0)
+        if ((fixed)y_steps < 0)
         {
             int mx, my;
             mx = sx + ((ex-sx)>>1);
