@@ -1360,7 +1360,7 @@ CUPS_DIR=""
 SHARELCUPS=1
 SHARELCUPSI=1
 
-if ( test -d $srcdir/cups ); then
+if ( test -f $srcdir/cups/gdevcups.c ); then
     CUPS_DIR="$srcdir/cups"
     if test x$enable_cups != xno; then
         if test x$with_local_cups != xyes; then
