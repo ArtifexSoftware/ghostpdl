@@ -1558,17 +1558,6 @@ static void mark_line_app(cursor * restrict cr, fixed sx, fixed sy, fixed ex, fi
         int phase3_y_steps = (-ey) & (fixed_1 - 1);
         ufixed y_steps = (ufixed)sy - (ufixed)ey;
 
-        /* Cope with the awkward 0x80000000 case. */
-        if ((fixed)y_steps < 0)
-        {
-            int mx, my;
-            mx = sx + ((ex-sx)>>1);
-            my = sy + ((ey-sy)>>1);
-            mark_line_app(cr, sx, sy, mx, my);
-            mark_line_app(cr, mx, my, ex, ey);
-            return;
-        }
-
         cursor_down(cr, sx);
 
         if (sx == ex) {
@@ -3403,17 +3392,6 @@ static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed 
         int phase1_y_steps = sy & (fixed_1 - 1);
         int phase3_y_steps = (-ey) & (fixed_1 - 1);
         ufixed y_steps = (ufixed)sy - (ufixed)ey;
-
-        /* Cope with the awkward 0x80000000 case. */
-        if ((fixed)y_steps < 0)
-        {
-            int mx, my;
-            mx = sx + ((ex-sx)>>1);
-            my = sy + ((ey-sy)>>1);
-            mark_line_tr_app(cr, sx, sy, mx, my, id);
-            mark_line_tr_app(cr, mx, my, ex, ey, id);
-            return;
-        }
 
         cursor_down_tr(cr, sx, id);
 
