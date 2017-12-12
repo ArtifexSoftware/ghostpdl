@@ -1232,6 +1232,18 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
         gs_c_param_list_release(params);
         return -1;
     }
+    /* PCL does not support spot colors and XPS files with spot colors are very
+       rare (as in never found in the wild). Handling XPS spots for a separation
+       device will require a little work. To avoid issues at the current time,
+       we will do the following
+    */
+    {
+        int num_spots = 0;
+        code = param_write_int((gs_param_list *)params, "PageSpotColors", &(num_spots));
+        if (code < 0)
+            return code;
+    }
+
     gs_c_param_list_read(params);
     code = pl_top_create_device(pmi, -1, true); /* create default device if needed */
     if (code < 0)
