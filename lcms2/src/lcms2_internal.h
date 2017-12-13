@@ -959,6 +959,7 @@ cmsBool          _cmsOptimizePipeline(cmsContext ContextID,
                                       cmsUInt32Number* OutputFormat,
                                       cmsUInt32Number* dwFlags );
 
+cmsBool _cmsLutIsIdentity(cmsPipeline *PtrLut);
 
 // Hi level LUT building ----------------------------------------------------------------------------------------------
 

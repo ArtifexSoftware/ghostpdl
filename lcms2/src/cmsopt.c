@@ -1934,5 +1934,7 @@ cmsBool _cmsOptimizePipeline(cmsContext ContextID,
     return AnySuccess;
 }
 
-
-
+cmsBool _cmsLutIsIdentity(cmsPipeline *PtrLut)
+{
+    return !PtrLut || PtrLut->Eval16Fn == FastIdentity16;
+}

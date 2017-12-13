@@ -379,6 +379,39 @@ void NullXFORM(_cmsTRANSFORM* p,
 #define FUNCTION_NAME PrecalculatedXFORM
 #include "extra_xform.h"
 
+// No gamut check, no cache, Identity transform, including pack/unpack
+static
+void PrecalculatedXFORMIdentity(_cmsTRANSFORM* p,
+                                const void* in,
+                                void* out,
+                                cmsUInt32Number PixelsPerLine,
+                                cmsUInt32Number LineCount,
+                                const cmsStride* Stride)
+{
+    cmsUInt32Number bppi = Stride->BytesPerPlaneIn;
+    cmsUInt32Number bppo = Stride->BytesPerPlaneOut;
+    int bpp;
+
+    /* Silence some warnings */
+    (void)bppi;
+    (void)bppo;
+
+    if (PixelsPerLine == 0)
+        return;
+
+    bpp = T_BYTES(p->InputFormat);
+    if (bpp == 0)
+        bpp = sizeof(double);
+    bpp *= T_CHANNELS(p->InputFormat);
+    PixelsPerLine *= bpp; /* Convert to BytesPerLine */
+    while (LineCount-- > 0)
+    {
+        memcpy(out, in, PixelsPerLine);
+        in = (void *)((cmsUInt8Number *)in + bppi);
+        out = (void *)((cmsUInt8Number *)out + bppo);
+    }
+}
+
 
 // Auxiliary: Handle precalculated gamut check. The retrieval of context may be alittle bit slow, but this function is not critical.
 static
@@ -641,10 +674,16 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
     else if (dwFlags & cmsFLAGS_NOCACHE) {
         if (dwFlags & cmsFLAGS_GAMUTCHECK)
             p ->xform = PrecalculatedXFORMGamutCheck;  // Gamut check, no caché
+        else if ((InputFormat & ~COLORSPACE_SH(31)) == (OutputFormat & ~COLORSPACE_SH(31)) &&
+                 _cmsLutIsIdentity(p->Lut))
+            p ->xform = PrecalculatedXFORMIdentity;
         else
             p ->xform = PrecalculatedXFORM;  // No caché, no gamut check
     } else if (dwFlags & cmsFLAGS_GAMUTCHECK)
         p ->xform = CachedXFORMGamutCheck;    // Gamut check, caché
+    else if ((InputFormat & ~COLORSPACE_SH(31)) == (OutputFormat & ~COLORSPACE_SH(31)) &&
+             _cmsLutIsIdentity(p->Lut))
+        p ->xform = PrecalculatedXFORMIdentity; /* No point in a cache here! */
     else if (T_EXTRA(InputFormat) != 0)
         p ->xform = CachedXFORM;  // No gamut check, cach<E9>
     else if ((InputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(3)|BYTES_SH(1)) &&
