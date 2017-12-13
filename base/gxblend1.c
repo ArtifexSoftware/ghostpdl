@@ -604,33 +604,37 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
 #endif
 
 void
-gx_build_blended_image_row(byte *buf_ptr, int y, int planestride,
-                           int width, int num_comp, byte bg, byte *linebuf)
+gx_build_blended_image_row(const byte *restrict buf_ptr, int planestride,
+                           int width, int num_comp, byte bg, byte *restrict linebuf)
 {
-    int x;
-    for (x = 0; x < width; x++) {
-        byte comp, a;
-        int tmp, comp_num;
+    int inc = planestride * num_comp;
 
+    buf_ptr += inc - 1;
+    for (; width > 0; width--) {
         /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
-        a = buf_ptr[x + planestride * num_comp];
+        byte a = *++buf_ptr;
+        int i = num_comp;
 
-        if ((a + 1) & 0xfe) {
-            a ^= 0xff;
-            for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                comp  = buf_ptr[x + planestride * comp_num];
-                tmp = ((bg - comp) * a) + 0x80;
-                comp += (tmp + (tmp >> 8)) >> 8;
-                linebuf[x * num_comp + comp_num] = comp;
-            }
-        } else if (a == 0) {
-            for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                linebuf[x * num_comp + comp_num] = bg;
-            }
+        if (a == 0) {
+            do {
+                *linebuf++ = bg;
+            } while (--i);
         } else {
-            for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                comp = buf_ptr[x + planestride * comp_num];
-                linebuf[x * num_comp + comp_num] = comp;
+            buf_ptr -= inc;
+            if (a == 0xff) {
+                do {
+                    *linebuf++ = *buf_ptr;
+                    buf_ptr += planestride;
+                } while (--i);
+            } else {
+                a ^= 0xff;
+                do {
+                    byte comp = *buf_ptr;
+                    int tmp = ((bg - comp) * a) + 0x80;
+                    buf_ptr += planestride;
+                    comp += (tmp + (tmp >> 8)) >> 8;
+                    *linebuf++ = comp;
+                } while (--i);
             }
         }
     }

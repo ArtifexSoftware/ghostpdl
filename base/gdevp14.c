@@ -2064,7 +2064,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                 }
             }
         } else {
-            gx_build_blended_image_row(buf_ptr, y, buf->planestride, width,
+            gx_build_blended_image_row(buf_ptr, buf->planestride, width,
                                        num_comp, bg, linebuf);
         }
         planes.data = linebuf;
