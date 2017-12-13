@@ -1602,6 +1602,387 @@ gx_device_color *devc, gx_color_index *color, gx_device * dev)
     }
 }
 
+typedef int (*irii_core_fn)(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned short *p_cm_interp, gx_device *dev, int abs_interp_limit, int bpp, int raster, int yo, int dy, gs_logical_operation_t lop);
+
+static inline int
+irii_inner_template(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned short *p_cm_interp, gx_device *dev, int abs_interp_limit, int bpp, int raster, int yo, int dy, gs_logical_operation_t lop)
+{
+    int x;
+    gx_device_color devc;
+    gx_color_index color;
+    stream_image_scale_state *pss = penum->scaler;
+    int scaled_w = 0;		/* accumulate scaled up width */
+    byte *out = penum->line;
+    byte *l_dptr = out;
+    int l_dbit = 0;
+    byte l_dbyte = 0;
+    int l_xprev = (xo);
+    int scaled_x_prev = 0;
+    int code;
+    int ry = yo + penum->line_xy * dy;
+    gx_dda_fixed save_x_dda = pss->params.scale_dda.x;
+
+    for (x = xo; x < xe;) {
+#ifdef DEBUG
+        if (gs_debug_c('B')) {
+            int ci;
+
+            for (ci = 0; ci < spp_cm; ++ci)
+                dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
+                          p_cm_interp[ci]);
+        }
+#endif
+        /* Get the device color */
+        get_device_color(penum, p_cm_interp, &devc, &color, dev);
+        if (color_is_pure(&devc)) {
+            gx_color_index color = devc.colors.pure;
+            int expand = 1;
+
+            if (abs_interp_limit > 1) {
+                expand = interpolate_scaled_expanded_width(1, pss);
+            }
+            /* Just pack colors into a scan line. */
+            /* Skip runs quickly for the common cases. */
+            switch (spp_cm) {
+                case 1:
+                    do {
+                        scaled_w += expand;
+                        while (expand-- > 0) {
+                            if (sizeof(color) > 4) {
+                                if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                    return_error(gs_error_rangecheck);
+                            } else {
+                                if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                    return_error(gs_error_rangecheck);
+                            }
+                        }
+                        x++, p_cm_interp += 1;
+                        if (abs_interp_limit > 1) {
+                            dda_next(pss->params.scale_dda.x);
+                            expand = interpolate_scaled_expanded_width(1, pss);
+                        } else
+                            expand = 1;
+                    } while (x < xe && p_cm_interp[-1] == p_cm_interp[0]);
+                    break;
+                case 3:
+                    do {
+                        scaled_w += expand;
+                        while (expand-- > 0) {
+                            if (sizeof(color) > 4) {
+                                if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                    return_error(gs_error_rangecheck);
+                            } else {
+                                if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                    return_error(gs_error_rangecheck);
+                            }
+                        }
+                        x++, p_cm_interp += 3;
+                        if (abs_interp_limit > 1) {
+                            dda_next(pss->params.scale_dda.x);
+                            expand = interpolate_scaled_expanded_width(1, pss);
+                        } else
+                            expand = 1;
+                    } while (x < xe && p_cm_interp[-3] == p_cm_interp[0] &&
+                                       p_cm_interp[-2] == p_cm_interp[1] &&
+                                       p_cm_interp[-1] == p_cm_interp[2]);
+                    break;
+                case 4:
+                    do {
+                        scaled_w += expand;
+                        while (expand-- > 0) {
+                            if (sizeof(color) > 4) {
+                                if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                    return_error(gs_error_rangecheck);
+                            } else {
+                                if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                    return_error(gs_error_rangecheck);
+                            }
+                        }
+                        x++, p_cm_interp += 4;
+                        if (abs_interp_limit > 1) {
+                            dda_next(pss->params.scale_dda.x);
+                            expand = interpolate_scaled_expanded_width(1, pss);
+                        } else
+                            expand = 1;
+                    } while (x < xe && p_cm_interp[-4] == p_cm_interp[0] &&
+                                       p_cm_interp[-3] == p_cm_interp[1] &&
+                                       p_cm_interp[-2] == p_cm_interp[2] &&
+                                       p_cm_interp[-1] == p_cm_interp[3]);
+                    break;
+                default:
+                    scaled_w += expand;
+                    while (expand-- > 0) {
+                        if (sizeof(color) > 4) {
+                            if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                return_error(gs_error_rangecheck);
+                        } else {
+                            if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                return_error(gs_error_rangecheck);
+                        }
+                    };
+                    x++, p_cm_interp += spp_cm;
+                    if (abs_interp_limit > 1) {
+                        dda_next(pss->params.scale_dda.x);
+                        expand = interpolate_scaled_expanded_width(1, pss);
+                    } else
+                        expand = 1;
+            }
+        } else {
+            int rcode, rep = 0;
+
+            /* do _COPY in case any pure colors were accumulated above*/
+            if ( x > l_xprev ) {
+                sample_store_flush(l_dptr, l_dbit, l_dbyte);
+                if (abs_interp_limit <= 1) {
+                    code = (*dev_proc(dev, copy_color))
+                                   (dev, out, l_xprev - xo, raster,
+                                    gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+                    if (code < 0)
+                        return code;
+                } else {
+                    /* scale up in X and Y */
+                    int scaled_x = xo + scaled_x_prev;
+                    int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
+                    int scaled_h = interpolate_scaled_expanded_height(1, pss);
+
+                    for (; scaled_h > 0; --scaled_h) {
+                         code = (*dev_proc(dev, copy_color))
+                                      (dev, out, scaled_x_prev, raster,
+                                       gx_no_bitmap_id, scaled_x, scaled_y, scaled_w, 1);
+                         if (code < 0)
+                             return code;
+                         scaled_y += dy;
+                    }
+                    scaled_x_prev = dda_current(pss->params.scale_dda.x);
+                }
+            }
+            /* as above, see if we can accumulate any runs */
+            switch (spp_cm) {
+                case 1:
+                    do {
+                        rep++, p_cm_interp += 1;
+                    } while ((rep + x) < xe && p_cm_interp[-1] == p_cm_interp[0]);
+                    break;
+                case 3:
+                    do {
+                        rep++, p_cm_interp += 3;
+                    } while ((rep + x) < xe && p_cm_interp[-3] == p_cm_interp[0] &&
+                                               p_cm_interp[-2] == p_cm_interp[1] &&
+                                               p_cm_interp[-1] == p_cm_interp[2]);
+                    break;
+                case 4:
+                    do {
+                        rep++, p_cm_interp += 4;
+                    } while ((rep + x) < xe && p_cm_interp[-4] == p_cm_interp[0] &&
+                                               p_cm_interp[-3] == p_cm_interp[1] &&
+                                               p_cm_interp[-2] == p_cm_interp[2] &&
+                                               p_cm_interp[-1] == p_cm_interp[3]);
+                    break;
+                default:
+                    rep = 1, p_cm_interp += spp_cm;
+                    break;
+            }
+            if (abs_interp_limit <= 1) {
+                scaled_w = rep;
+                rcode = gx_fill_rectangle_device_rop(x, ry, rep, 1, &devc, dev, lop);
+                if (rcode < 0)
+                    return rcode;
+            } else {
+                int scaled_x = xo + scaled_x_prev;
+                int scaled_y = yo + (dy *dda_current(pss->params.scale_dda.y));
+                int scaled_h = interpolate_scaled_expanded_height(1, pss);
+
+                scaled_w = interpolate_scaled_expanded_width(rep, pss);
+                rcode = gx_fill_rectangle_device_rop(scaled_x, scaled_y, scaled_w, scaled_h,
+                                                     &devc, dev, lop);
+                if (rcode < 0)
+                    return rcode;
+                dda_advance(pss->params.scale_dda.x, rep);
+                scaled_x_prev = dda_current(pss->params.scale_dda.x);
+            }
+            while (scaled_w-- > 0)
+                sample_store_skip_next(&l_dptr, &l_dbit, bpp, &l_dbyte);
+            scaled_w = 0;
+            x += rep;
+            l_xprev = x;
+        }
+    }  /* End on x loop */
+    if ( x > l_xprev ) {
+        sample_store_flush(l_dptr, l_dbit, l_dbyte);
+        if (abs_interp_limit <= 1) {
+            code = (*dev_proc(dev, copy_color))
+                          (dev, out, l_xprev - xo, raster,
+                           gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+            if (code < 0)
+                return code;
+        } else {
+            /* scale up in X and Y */
+            int scaled_x = xo + scaled_x_prev;
+            int scaled_y = yo + (dy *dda_current(pss->params.scale_dda.y));
+            int scaled_h = interpolate_scaled_expanded_height(1, pss);
+
+            for (; scaled_h > 0; --scaled_h) {
+                code = (*dev_proc(dev, copy_color))
+                              (dev, out, scaled_x_prev, raster,
+                               gx_no_bitmap_id, scaled_x, scaled_y, scaled_w, 1);
+                if (code < 0)
+                    return code;
+                scaled_y += dy;
+            }
+        }
+    }
+    if (abs_interp_limit > 1) {
+        pss->params.scale_dda.x = save_x_dda;	/* reset X to start of line */
+    }
+    /*if_debug1m('w', penum->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
+    return 0;
+}
+
+static int irii_inner_24bpp_3spp_1abs(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned short *p_cm_interp, gx_device *dev, int abs_interp_limit, int bpp, int raster, int yo, int dy, gs_logical_operation_t lop)
+{
+    int x;
+    gx_device_color devc;
+    gx_color_index color;
+    byte *out = penum->line;
+    byte *l_dptr = out;
+    int l_xprev = (xo);
+    int code;
+    int ry = yo + penum->line_xy * dy;
+
+    for (x = xo; x < xe;) {
+#ifdef DEBUG
+        if (gs_debug_c('B')) {
+            int ci;
+
+            for (ci = 0; ci < 3; ++ci)
+                dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
+                    p_cm_interp[ci]);
+        }
+#endif
+        /* Get the device color */
+        get_device_color(penum, p_cm_interp, &devc, &color, dev);
+        if (color_is_pure(&devc)) {
+            gx_color_index color = devc.colors.pure;
+
+            /* Just pack colors into a scan line. */
+            /* Skip runs quickly for the common cases. */
+            do {
+                *l_dptr++ = (byte)(color >> 16);
+                *l_dptr++ = (byte)(color >> 8);
+                *l_dptr++ = (byte)(color);
+                x++, p_cm_interp += 3;
+            } while (x < xe && p_cm_interp[-3] == p_cm_interp[0] &&
+                               p_cm_interp[-2] == p_cm_interp[1] &&
+                               p_cm_interp[-1] == p_cm_interp[2]);
+        }
+        else {
+            int rep = 0;
+
+            /* do _COPY in case any pure colors were accumulated above*/
+            if (x > l_xprev) {
+                code = (*dev_proc(dev, copy_color))
+                    (dev, out, l_xprev - xo, raster,
+                        gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+                if (code < 0)
+                    return code;
+            }
+            /* as above, see if we can accumulate any runs */
+            do {
+                rep++, p_cm_interp += 3;
+            } while ((rep + x) < xe && p_cm_interp[-3] == p_cm_interp[0] &&
+                p_cm_interp[-2] == p_cm_interp[1] &&
+                p_cm_interp[-1] == p_cm_interp[2]);
+            code = gx_fill_rectangle_device_rop(x, ry, rep, 1, &devc, dev, lop);
+            if (code < 0)
+                return code;
+            x += rep;
+            l_xprev = x;
+            l_dptr += 3 * rep;
+        }
+    }  /* End on x loop */
+    if (x > l_xprev) {
+        code = (*dev_proc(dev, copy_color))
+            (dev, out, l_xprev - xo, raster,
+                gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+        if (code < 0)
+            return code;
+    }
+    /*if_debug1m('w', penum->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
+    return 0;
+}
+
+static int irii_inner_8bpp_1spp_1abs(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned short *p_cm_interp, gx_device *dev, int abs_interp_limit, int bpp, int raster, int yo, int dy, gs_logical_operation_t lop)
+{
+    int x;
+    gx_device_color devc;
+    gx_color_index color;
+    byte *out = penum->line;
+    byte *l_dptr = out;
+    int l_xprev = (xo);
+    int code;
+    int ry = yo + penum->line_xy * dy;
+
+    for (x = xo; x < xe;) {
+#ifdef DEBUG
+        if (gs_debug_c('B')) {
+            int ci;
+
+            for (ci = 0; ci < 3; ++ci)
+                dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
+                    p_cm_interp[ci]);
+        }
+#endif
+        /* Get the device color */
+        get_device_color(penum, p_cm_interp, &devc, &color, dev);
+        if (color_is_pure(&devc)) {
+            gx_color_index color = devc.colors.pure;
+
+            /* Just pack colors into a scan line. */
+            /* Skip runs quickly for the common cases. */
+            do {
+                *l_dptr++ = (byte)(color);
+                x++, p_cm_interp++;
+            } while (x < xe && p_cm_interp[-1] == p_cm_interp[0]);
+        }
+        else {
+            int rep = 0;
+
+            /* do _COPY in case any pure colors were accumulated above*/
+            if (x > l_xprev) {
+                code = (*dev_proc(dev, copy_color))
+                    (dev, out, l_xprev - xo, raster,
+                        gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+                if (code < 0)
+                    return code;
+            }
+            /* as above, see if we can accumulate any runs */
+            do {
+                rep++, p_cm_interp++;
+            } while ((rep + x) < xe && p_cm_interp[-1] == p_cm_interp[0]);
+            code = gx_fill_rectangle_device_rop(x, ry, rep, 1, &devc, dev, lop);
+            if (code < 0)
+                return code;
+            x += rep;
+            l_xprev = x;
+            l_dptr += rep;
+        }
+    }  /* End on x loop */
+    if (x > l_xprev) {
+        code = (*dev_proc(dev, copy_color))
+            (dev, out, l_xprev - xo, raster,
+                gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+        if (code < 0)
+            return code;
+    }
+    /*if_debug1m('w', penum->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
+    return 0;
+}
+
+static int irii_inner_generic(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned short *p_cm_interp, gx_device *dev, int abs_interp_limit, int bpp, int raster, int yo, int dy, gs_logical_operation_t lop)
+{
+    return irii_inner_template(penum, xo, xe, spp_cm, p_cm_interp, dev, abs_interp_limit, bpp, raster, yo, dy, lop);
+}
+
 /* Interpolation with ICC based source spaces. This is done seperately to
    enable optimization and avoid the multiple tranformations that occur in
    the above code */
@@ -1644,10 +2025,10 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
         int spp_cm;
         gsicc_bufferdesc_t input_buff_desc;
         gsicc_bufferdesc_t output_buff_desc;
-        gx_color_index color;
         int code;
         cmm_dev_profile_t *dev_profile;
         int num_bytes_decode = pss->params.BitsPerComponentIn / 8;
+        irii_core_fn irii_core;
 
         code = dev_proc(dev, get_profile)(dev, &dev_profile);
         if (code)
@@ -1657,6 +2038,13 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
             dy = 1;
         else
             dy = -1, yo--;
+        if (spp_cm == 3 && abs_interp_limit == 1 && bpp == 24)
+            irii_core = &irii_inner_24bpp_3spp_1abs;
+        else if (spp_cm == 1 && abs_interp_limit == 1 && bpp == 8)
+            irii_core = &irii_inner_8bpp_1spp_1abs;
+        else
+            irii_core = &irii_inner_generic;
+
         /* If it makes sense (if enlarging), do early CM */
         if (pss->params.early_cm && !penum->icc_link->is_identity
             && stream_r.ptr != stream_r.limit) {
@@ -1697,17 +2085,8 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
             }
         }
         for (;;) {
-            int ry = yo + penum->line_xy * dy;
-            int x;
             const unsigned short *pinterp;
-            gx_device_color devc;
             int status;
-            byte *l_dptr = out;
-            int l_dbit = 0;
-            byte l_dbyte = 0;
-            int l_xprev = (xo);
-            int scaled_x_prev = 0;
-            gx_dda_fixed save_x_dda = pss->params.scale_dda.x;
 
             stream_w.limit = out + pss->params.WidthOut *
                 max(spp_decode * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
@@ -1724,7 +2103,6 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                 return_error(gs_error_ioerror);
             if (stream_w.ptr == stream_w.limit) {
                 int xe = xo + limited_PatchWidthOut;
-                int scaled_w = 0;		/* accumulate scaled up width */
 
                 /* Are we active? (i.e. in the render rectangle) */
                 if (!pss->params.Active)
@@ -1748,225 +2126,13 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                                                         (void*) pinterp,
                                                         (void*) p_cm_interp);
                 }
-                for (x = xo; x < xe;) {
-#ifdef DEBUG
-                    if (gs_debug_c('B')) {
-                        int ci;
-
-                        for (ci = 0; ci < spp_cm; ++ci)
-                            dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
-                                     p_cm_interp[ci]);
-                    }
-#endif
-                    /* Get the device color */
-                    get_device_color(penum, p_cm_interp, &devc, &color, dev);
-                    if (color_is_pure(&devc)) {
-                        gx_color_index color = devc.colors.pure;
-                        int expand = 1;
-
-                        if (abs_interp_limit > 1) {
-                            expand = interpolate_scaled_expanded_width(1, pss);
-                        }
-                        /* Just pack colors into a scan line. */
-                        /* Skip runs quickly for the common cases. */
-                        switch (spp_cm) {
-                            case 1:
-                                do {
-                                    scaled_w += expand;
-                                    while (expand-- > 0) {
-                                        if (sizeof(color) > 4) {
-                                            if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                                return_error(gs_error_rangecheck);
-                                        }
-                                        else {
-                                            if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                                return_error(gs_error_rangecheck);
-                                        }
-                                    };
-                                    x++, p_cm_interp += 1;
-                                    if (abs_interp_limit > 1) {
-                                        dda_next(pss->params.scale_dda.x);
-                                        expand = interpolate_scaled_expanded_width(1, pss);
-                                    } else
-                                        expand = 1;
-                                } while (x < xe && p_cm_interp[-1] == p_cm_interp[0]);
-                                break;
-                            case 3:
-                                do {
-                                    scaled_w += expand;
-                                    while (expand-- > 0) {
-                                        if (sizeof(color) > 4) {
-                                            if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                                return_error(gs_error_rangecheck);
-                                        }
-                                        else {
-                                            if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                                return_error(gs_error_rangecheck);
-                                        }
-                                    };
-                                    x++, p_cm_interp += 3;
-                                    if (abs_interp_limit > 1) {
-                                        dda_next(pss->params.scale_dda.x);
-                                        expand = interpolate_scaled_expanded_width(1, pss);
-                                    } else
-                                        expand = 1;
-                                } while (x < xe && p_cm_interp[-3] == p_cm_interp[0] &&
-                                     p_cm_interp[-2] == p_cm_interp[1] &&
-                                     p_cm_interp[-1] == p_cm_interp[2]);
-                                break;
-                            case 4:
-                                do {
-                                    scaled_w += expand;
-                                    while (expand-- > 0) {
-                                        if (sizeof(color) > 4) {
-                                            if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                                return_error(gs_error_rangecheck);
-                                        }
-                                        else {
-                                            if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                                return_error(gs_error_rangecheck);
-                                        }
-                                    };
-                                    x++, p_cm_interp += 4;
-                                    if (abs_interp_limit > 1) {
-                                        dda_next(pss->params.scale_dda.x);
-                                        expand = interpolate_scaled_expanded_width(1, pss);
-                                    } else
-                                        expand = 1;
-                                } while (x < xe && p_cm_interp[-4] == p_cm_interp[0] &&
-                                     p_cm_interp[-3] == p_cm_interp[1] &&
-                                     p_cm_interp[-2] == p_cm_interp[2] &&
-                                     p_cm_interp[-1] == p_cm_interp[3]);
-                                break;
-                            default:
-                                scaled_w += expand;
-                                while (expand-- > 0) {
-                                    if (sizeof(color) > 4) {
-                                        if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                            return_error(gs_error_rangecheck);
-                                    }
-                                    else {
-                                        if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                            return_error(gs_error_rangecheck);
-                                    }
-                                };
-                                x++, p_cm_interp += spp_cm;
-                                if (abs_interp_limit > 1) {
-                                    dda_next(pss->params.scale_dda.x);
-                                    expand = interpolate_scaled_expanded_width(1, pss);
-                                } else
-                                    expand = 1;
-                        }
-                    } else {
-                        int rcode, rep = 0;
-
-                        /* do _COPY in case any pure colors were accumulated above*/
-                        if ( x > l_xprev ) {
-                            sample_store_flush(l_dptr, l_dbit, l_dbyte);
-                            if (abs_interp_limit <= 1) {
-                                code = (*dev_proc(dev, copy_color))
-                                  (dev, out, l_xprev - xo, raster,
-                                   gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
-                                if (code < 0)
-                                    return code;
-                            } else {
-                                /* scale up in X and Y */
-                                int scaled_x = xo + scaled_x_prev;
-                                int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
-                                int scaled_h = interpolate_scaled_expanded_height(1, pss);
-
-                                for (; scaled_h > 0; --scaled_h) {
-                                    code = (*dev_proc(dev, copy_color))
-                                      (dev, out, scaled_x_prev, raster,
-                                       gx_no_bitmap_id, scaled_x, scaled_y, scaled_w, 1);
-                                    if (code < 0)
-                                        return code;
-                                    scaled_y += dy;
-                                }
-                                scaled_x_prev = dda_current(pss->params.scale_dda.x);
-                            }
-                        }
-                        /* as above, see if we can accumulate any runs */
-                        switch (spp_cm) {
-                            case 1:
-                                do {
-                                    rep++, p_cm_interp += 1;
-                                } while ((rep + x) < xe && p_cm_interp[-1] == p_cm_interp[0]);
-                                break;
-                            case 3:
-                                do {
-                                    rep++, p_cm_interp += 3;
-                                } while ((rep + x) < xe && p_cm_interp[-3] == p_cm_interp[0] &&
-                                     p_cm_interp[-2] == p_cm_interp[1] &&
-                                     p_cm_interp[-1] == p_cm_interp[2]);
-                                break;
-                            case 4:
-                                do {
-                                    rep++, p_cm_interp += 4;
-                                } while ((rep + x) < xe && p_cm_interp[-4] == p_cm_interp[0] &&
-                                     p_cm_interp[-3] == p_cm_interp[1] &&
-                                     p_cm_interp[-2] == p_cm_interp[2] &&
-                                     p_cm_interp[-1] == p_cm_interp[3]);
-                                break;
-                            default:
-                                rep = 1, p_cm_interp += spp_cm;
-                                break;
-                        }
-                        if (abs_interp_limit <= 1) {
-                            scaled_w = rep;
-                            rcode = gx_fill_rectangle_device_rop(x, ry, rep, 1, &devc, dev, lop);
-                            if (rcode < 0)
-                                return rcode;
-                        } else {
-                            int scaled_x = xo + scaled_x_prev;
-                            int scaled_y = yo + (dy *dda_current(pss->params.scale_dda.y));
-                            int scaled_h = interpolate_scaled_expanded_height(1, pss);
-
-                            scaled_w = interpolate_scaled_expanded_width(rep, pss);
-                            rcode = gx_fill_rectangle_device_rop(scaled_x, scaled_y, scaled_w, scaled_h,
-                                                                 &devc, dev, lop);
-                            if (rcode < 0)
-                                return rcode;
-                            dda_advance(pss->params.scale_dda.x, rep);
-                            scaled_x_prev = dda_current(pss->params.scale_dda.x);
-                        }
-                        while (scaled_w-- > 0)
-                            sample_store_skip_next(&l_dptr, &l_dbit, bpp, &l_dbyte);
-                        scaled_w = 0;
-                        l_xprev = x + rep;
-                        x += rep;
-                    }
-                }  /* End on x loop */
-                if ( x > l_xprev ) {
-                    sample_store_flush(l_dptr, l_dbit, l_dbyte);
-                    if (abs_interp_limit <= 1) {
-                        code = (*dev_proc(dev, copy_color))
-                          (dev, out, l_xprev - xo, raster,
-                           gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
-                        if (code < 0)
-                            return code;
-                    } else {
-                        /* scale up in X and Y */
-                        int scaled_x = xo + scaled_x_prev;
-                        int scaled_y = yo + (dy *dda_current(pss->params.scale_dda.y));
-                        int scaled_h = interpolate_scaled_expanded_height(1, pss);
-
-                        for (; scaled_h > 0; --scaled_h) {
-                            code = (*dev_proc(dev, copy_color))
-                              (dev, out, scaled_x_prev, raster,
-                               gx_no_bitmap_id, scaled_x, scaled_y, scaled_w, 1);
-                            if (code < 0)
-                                return code;
-                            scaled_y += dy;
-                        }
-                    }
-                }
-                /*if_debug1m('w', penum->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
+                code = irii_core(penum, xo, xe, spp_cm, p_cm_interp, dev, abs_interp_limit, bpp, raster, yo, dy, lop);
+                if (code < 0)
+                    return code;
 inactive:
                 penum->line_xy++;
                 if (abs_interp_limit > 1) {
                     dda_next(pss->params.scale_dda.y);
-                    pss->params.scale_dda.x = save_x_dda;	/* reset X to start of line */
                 }
                 if_debug0m('B', penum->memory, "\n");
             }
