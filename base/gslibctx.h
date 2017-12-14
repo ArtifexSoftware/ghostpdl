@@ -75,6 +75,8 @@ typedef struct gs_lib_ctx_s
        and setcolorscreen. */
     bool screen_accurate_screens;
     uint screen_min_screen_levels;
+    /* Accuracy vs. performance for ICC color */
+    uint icc_color_accuracy;
     /* real time clock 'bias' value. Not strictly required, but some FTS
      * tests work better if realtime starts from 0 at boot time. */
     long real_time_0[2];
@@ -86,7 +88,7 @@ typedef struct gs_lib_ctx_s
      * state, but this can't be done due to problems detecting changes in it
      * for the clist based devices. */
     bool CPSI_mode;
-    /* Keep the path for the ICCProfiles here so devices and the icc_manager 
+    /* Keep the path for the ICCProfiles here so devices and the icc_manager
      * can get to it. Prevents needing two copies, one in the icc_manager
      * and one in the device */
     char *profiledir;               /* Directory used in searching for ICC profiles */

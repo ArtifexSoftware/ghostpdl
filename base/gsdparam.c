@@ -78,6 +78,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     gsicc_rendering_intents_t profile_intents[NUM_DEVICE_PROFILES];
     gsicc_blackptcomp_t blackptcomps[NUM_DEVICE_PROFILES];
     gsicc_blackpreserve_t blackpreserve[NUM_DEVICE_PROFILES];
+    int color_accuracy = MAX_COLOR_ACCURACY;
     int depth = dev->color_info.depth;
     cmm_dev_profile_t *dev_profile;
     char null_str[1]={'\0'};
@@ -412,6 +413,9 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "TextICCProfile") == 0) {
         return param_write_string(plist,"TextICCProfile", &(profile_array[3]));
     }
+    if (strcmp(Param, "ColorAccuracy") == 0) {
+        return param_write_int(plist, "ColorAccuracy", (const int *)(&(color_accuracy)));
+    }
     if (strcmp(Param, "RenderIntent") == 0) {
         return param_write_int(plist,"RenderIntent", (const int *) (&(profile_intents[0])));
     }
@@ -505,6 +509,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     bool sim_overprint = false;  /* By default do not simulate overprinting */
     bool prebandthreshold = true, temp_bool;
     int k;
+    int color_accuracy = MAX_COLOR_ACCURACY;
     gs_param_float_array msa, ibba, hwra, ma;
     gs_param_string_array scna;
     char null_str[1]={'\0'};
@@ -678,7 +683,8 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_string(plist, "BlendColorProfile", &(blend_profile))) < 0 ||
         (code = param_write_string(plist,"DeviceLinkProfile", &(link_profile))) < 0 ||
         (code = param_write_string(plist,"ICCOutputColors", &(icc_colorants))) < 0 ||
-        (code = param_write_int(plist,"RenderIntent", (const int *) (&(profile_intents[0])))) < 0 ||
+        (code = param_write_int(plist, "RenderIntent", (const int *)(&(profile_intents[0])))) < 0 ||
+        (code = param_write_int(plist, "ColorAccuracy", (const int *)(&(color_accuracy)))) < 0 ||
         (code = param_write_int(plist,"GraphicIntent", (const int *) &(profile_intents[1]))) < 0 ||
         (code = param_write_int(plist,"ImageIntent", (const int *) &(profile_intents[2]))) < 0 ||
         (code = param_write_int(plist,"TextIntent", (const int *) &(profile_intents[3]))) < 0 ||
@@ -1402,6 +1408,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     gs_param_string cms, pagelist;
     int leadingedge = dev->LeadingEdge;
     int k;
+    int color_accuracy;
     bool devicegraytok = true;
     bool graydetection = false;
     bool usefastcolor = false;
@@ -1414,6 +1421,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
                                                gsIMAGEPROFILE,
                                                gsTEXTPROFILE};
 
+    color_accuracy = gsicc_currentcoloraccuracy(dev->memory);
     if (dev->icc_struct != NULL) {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             rend_intent[k] = dev->icc_struct->rendercond[k].rendering_intent;
@@ -1711,6 +1719,11 @@ nce:
     }
     if ((code = param_read_int(plist, (param_name = "TextKPreserve"),
                                                     &(blackpreserve[3]))) < 0) {
+        ecode = code;
+        param_signal_error(plist, param_name, ecode);
+    }
+    if ((code = param_read_int(plist, (param_name = "ColorAccuracy"),
+                                                        &color_accuracy)) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
     }
@@ -2085,6 +2098,7 @@ label:\
                 return code;
         }
     }
+    gsicc_setcoloraccuracy(dev->memory, color_accuracy);
     code = gx_default_put_graytok(devicegraytok, dev);
     if (code < 0)
         return code;

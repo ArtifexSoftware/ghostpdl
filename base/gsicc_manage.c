@@ -115,14 +115,32 @@ static default_profile_def_t default_profile_params[] =
     {LAB_ICC, LAB_TYPE}
 };
 
+void
+gsicc_setcoloraccuracy(gs_memory_t *mem, uint level)
+{
+    gs_lib_ctx_t *ctx = gs_lib_ctx_get_interp_instance(mem);
+
+    ctx->icc_color_accuracy = level;
+}
+
+uint
+gsicc_currentcoloraccuracy(gs_memory_t *mem)
+{
+    gs_lib_ctx_t *ctx = gs_lib_ctx_get_interp_instance(mem);
+
+    return ctx->icc_color_accuracy;
+}
+
 /* Get the size of the ICC profile that is in the buffer */
-unsigned int gsicc_getprofilesize(unsigned char *buffer)
+unsigned int
+gsicc_getprofilesize(unsigned char *buffer)
 {
     return ( (buffer[0] << 24) + (buffer[1] << 16) +
              (buffer[2] << 8)  +  buffer[3] );
 }
 
-void gsicc_set_icc_range(cmm_profile_t **icc_profile)
+void
+gsicc_set_icc_range(cmm_profile_t **icc_profile)
 {
     int num_comp = (*icc_profile)->num_comps;
     int k;

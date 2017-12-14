@@ -178,6 +178,7 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     /* Initialize our default ICCProfilesDir */
     pio->profiledir = NULL;
     pio->profiledir_len = 0;
+    pio->icc_color_accuracy = MAX_COLOR_ACCURACY;
     if (gs_lib_ctx_set_icc_directory(mem, DEFAULT_DIR_ICC, strlen(DEFAULT_DIR_ICC)) < 0)
       goto Failure;
 

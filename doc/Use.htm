@@ -3079,6 +3079,14 @@ should really not be used.
 </dl>
 
 <dl>
+<dt><code>-dColorAccuracy=</code><em>0/1/2</em>
+<dd>Set the level of accuracy that should be used.  A setting of 0 will result in less accurate
+color rendering compared to a setting of 2.  However, the creation of a transformation 
+will be faster at a setting of 0 compared to a setting of 2.
+Default setting is 2.
+</dl>
+
+<dl>
 <dt><code>-dRenderIntent=</code><em>0/1/2/3</em>
 <dd>Set the rendering intent that should be used with the
 profile specified above by -sOutputICCProfile.  The

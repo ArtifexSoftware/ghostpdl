@@ -32,6 +32,11 @@
     typedef void* gcmmhlink_t;
 #endif
 
+/* Made to match lcms settings */
+#define GSICC_HIGHACCURACY cmsFLAGS_HIGHRESPRECALC
+#define GSICC_MEDACCURACY 0
+#define GSICC_LOWACCURACY cmsFLAGS_LOWRESPRECALC
+
 /* Prototypes */
 bool gsicc_mcm_monitor_rgb(void *inputcolor, int num_bytes);
 bool gsicc_mcm_monitor_cmyk(void *inputcolor, int num_bytes);
@@ -39,9 +44,9 @@ bool gsicc_mcm_monitor_lab(void *inputcolor, int num_bytes);
 void gsicc_mcm_set_link(gsicc_link_t* link);
 int gsicc_mcm_end_monitor(gsicc_link_cache_t *cache, gx_device *dev);
 int gsicc_mcm_begin_monitor(gsicc_link_cache_t *cache, gx_device *dev);
-gsicc_link_t* gsicc_rcm_get_link(const gs_gstate *pgs, gx_device *dev, 
+gsicc_link_t* gsicc_rcm_get_link(const gs_gstate *pgs, gx_device *dev,
                                  gsicc_colorbuffer_t data_cs);
-gsicc_link_t* gsicc_nocm_get_link(const gs_gstate *pgs, gx_device *dev, 
+gsicc_link_t* gsicc_nocm_get_link(const gs_gstate *pgs, gx_device *dev,
                                   gs_color_space_index src_index);
 gcmmhprofile_t gscms_get_profile_handle_mem(gs_memory_t *mem,
                                             unsigned char *buffer,
@@ -70,7 +75,7 @@ gcmmhlink_t gscms_get_link(gcmmhprofile_t lcms_srchandle,
                            gs_memory_t *memory);
 gcmmhlink_t gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
                                          gcmmhprofile_t lcms_proofhandle,
-                                         gcmmhprofile_t lcms_deshandle, 
+                                         gcmmhprofile_t lcms_deshandle,
                                          gcmmhprofile_t lcms_devlinkhandle,
                                          gsicc_rendering_param_t *rendering_params,
                                          bool src_dev_link, int cmm_flags,

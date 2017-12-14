@@ -170,6 +170,22 @@ static cmsPluginMutex gs_cms_mutexhandler =
 
 #endif
 
+static int
+gscms_get_accuracy(gs_memory_t *mem)
+{
+    gs_lib_ctx_t *ctx = gs_lib_ctx_get_interp_instance(mem);
+
+    switch (ctx->icc_color_accuracy) {
+    case 0:
+        return cmsFLAGS_LOWRESPRECALC;
+    case 1:
+        return 0;
+    case 2:
+    default:
+        return cmsFLAGS_HIGHRESPRECALC;
+    }
+}
+
 /* Get the number of channels for the profile.
   Input count */
 int
@@ -275,7 +291,7 @@ gscms_get_profile_data_space(gcmmhprofile_t profile)
 
 /* Get ICC Profile handle from buffer */
 gcmmhprofile_t
-gscms_get_profile_handle_mem(gs_memory_t *mem, unsigned char *buffer, 
+gscms_get_profile_handle_mem(gs_memory_t *mem, unsigned char *buffer,
                              unsigned int input_size)
 {
     cmsContext ctx = gs_lib_ctx_get_cms_context(mem);
@@ -369,33 +385,33 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     inputpos = (byte *) inputbuffer;
     outputpos = (byte *) outputbuffer;
     if(input_buff_desc->is_planar){
-        /* Determine if we can do this in one operation or if we have to break 
+        /* Determine if we can do this in one operation or if we have to break
            it up.  Essentially if the width * height = plane_stride then yes.  If
            we are doing some subsection of a plane then no. */
         if (input_buff_desc->num_rows * input_buff_desc->pixels_per_row ==
-            input_buff_desc->plane_stride  && 
+            input_buff_desc->plane_stride  &&
             output_buff_desc->num_rows * output_buff_desc->pixels_per_row ==
             output_buff_desc->plane_stride) {
             /* Do entire buffer.*/
-            cmsDoTransform(hTransform, inputpos, outputpos, 
+            cmsDoTransform(hTransform, inputpos, outputpos,
                            input_buff_desc->plane_stride);
         } else {
             /* We have to do this row by row, with memory transfers */
             byte *temp_des, *temp_src;
-            int source_size = input_buff_desc->bytes_per_chan * 
+            int source_size = input_buff_desc->bytes_per_chan *
                               input_buff_desc->pixels_per_row;
 
-            int des_size = output_buff_desc->bytes_per_chan * 
+            int des_size = output_buff_desc->bytes_per_chan *
                            output_buff_desc->pixels_per_row;
             int y, i;
 
             temp_src = (byte*)gs_alloc_bytes(dev->memory->non_gc_memory,
-                                              source_size * input_buff_desc->num_chan, 
+                                              source_size * input_buff_desc->num_chan,
                                               "gscms_transform_color_buffer");
             if (temp_src == NULL)
                 return_error(gs_error_VMerror);
             temp_des = (byte*) gs_alloc_bytes(dev->memory->non_gc_memory,
-                                              des_size * output_buff_desc->num_chan, 
+                                              des_size * output_buff_desc->num_chan,
                                               "gscms_transform_color_buffer");
             if (temp_des == NULL)
                 return_error(gs_error_VMerror);
@@ -412,7 +428,7 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                     src_buff += input_buff_desc->plane_stride;
                 }
                 /* Transform */
-                cmsDoTransform(hTransform, temp_src, temp_des, 
+                cmsDoTransform(hTransform, temp_src, temp_des,
                                input_buff_desc->pixels_per_row);
                 /* Get out of temp planar buffer */
                 for (i = 0; i < output_buff_desc->num_chan; i ++) {
@@ -431,7 +447,7 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     } else {
         /* Do row by row. */
         for(k = 0; k < input_buff_desc->num_rows ; k++){
-            cmsDoTransform(hTransform, inputpos, outputpos, 
+            cmsDoTransform(hTransform, inputpos, outputpos,
                            input_buff_desc->pixels_per_row);
             inputpos += input_buff_desc->row_stride;
             outputpos += output_buff_desc->row_stride;
@@ -537,7 +553,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     des_data_type = des_data_type | ENDIAN16_SH(1);
 #endif
     /* Set up the flags */
-    flag = cmsFLAGS_HIGHRESPRECALC;
+    flag = gscms_get_accuracy(memory);
     if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON
         || rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
         flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
@@ -580,15 +596,15 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     /* cmsFLAGS_HIGHRESPRECALC)  cmsFLAGS_NOTPRECALC  cmsFLAGS_LOWRESPRECALC*/
 }
 
-/* Get the link from the CMS, but include proofing and/or a device link  
+/* Get the link from the CMS, but include proofing and/or a device link
    profile.  Note also, that the source may be a device link profile, in
    which case we will not have a destination profile but could still have
    a proof profile or an additional device link profile */
 gcmmhlink_t
 gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
                              gcmmhprofile_t lcms_proofhandle,
-                             gcmmhprofile_t lcms_deshandle, 
-                             gcmmhprofile_t lcms_devlinkhandle, 
+                             gcmmhprofile_t lcms_deshandle,
+                             gcmmhprofile_t lcms_devlinkhandle,
                              gsicc_rendering_param_t *rendering_params,
                              bool src_dev_link, int cmm_flags,
                              gs_memory_t *memory)
@@ -597,18 +613,18 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
     cmsColorSpaceSignature src_color_space,des_color_space;
     int src_nChannels,des_nChannels;
     int lcms_src_color_space, lcms_des_color_space;
-    cmsHPROFILE hProfiles[5]; 
+    cmsHPROFILE hProfiles[5];
     int nProfiles = 0;
     unsigned int flag;
     cmsContext ctx = gs_lib_ctx_get_cms_context(memory);
 
     /* Check if the rendering intent is something other than relative colorimetric
-       and  if we have a proofing profile.  In this case we need to create the 
+       and  if we have a proofing profile.  In this case we need to create the
        combined profile a bit different.  LCMS does not allow us to use different
        intents in the cmsCreateMultiprofileTransform transform.  Also, don't even
        think about doing this if someone has snuck in a source based device link
        profile into the mix */
-    if (lcms_proofhandle != NULL && 
+    if (lcms_proofhandle != NULL &&
         rendering_params->rendering_intent != gsRELATIVECOLORIMETRIC &&
         !src_dev_link) {
         /* First handle the source to proof profile with its particular intent as
@@ -616,15 +632,15 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
         cmsHPROFILE src_to_proof;
         cmsHTRANSFORM temptransform;
 
-        temptransform = gscms_get_link(lcms_srchandle, lcms_proofhandle, 
+        temptransform = gscms_get_link(lcms_srchandle, lcms_proofhandle,
                                       rendering_params, cmm_flags, memory);
         /* Now mash that to a device link profile */
-        flag = cmsFLAGS_HIGHRESPRECALC;
-        if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON || 
+        flag = gscms_get_accuracy(memory);
+        if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON ||
             rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
             flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
         }
-        src_to_proof = cmsTransform2DeviceLink(temptransform, 3.4, flag); 
+        src_to_proof = cmsTransform2DeviceLink(temptransform, 3.4, flag);
         /* Free up the link handle */
         cmsDeleteTransform(temptransform);
         src_color_space  = cmsGetColorSpace(src_to_proof);
@@ -635,7 +651,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
         /* For now, just do single byte data, interleaved.  We can change this
           when we use the transformation. */
         src_data_type = (COLORSPACE_SH(lcms_src_color_space)|
-                            CHANNELS_SH(src_nChannels)|BYTES_SH(2)); 
+                            CHANNELS_SH(src_nChannels)|BYTES_SH(2));
         if (lcms_devlinkhandle == NULL) {
             des_color_space = cmsGetColorSpace(lcms_deshandle);
         } else {
@@ -650,14 +666,14 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
            destination and then to the device link profile if there was one. */
         hProfiles[nProfiles++] = src_to_proof;  /* Src to proof with special intent */
         hProfiles[nProfiles++] = lcms_proofhandle; /* Proof to CIELAB */
-        if (lcms_deshandle != NULL) {   
+        if (lcms_deshandle != NULL) {
             hProfiles[nProfiles++] = lcms_deshandle;  /* Our destination */
         }
         /* The output device link profile */
         if (lcms_devlinkhandle != NULL) {
             hProfiles[nProfiles++] = lcms_devlinkhandle;
         }
-        flag = cmsFLAGS_HIGHRESPRECALC;
+        flag = gscms_get_accuracy(memory);
         if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON
             || rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
             flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
@@ -678,7 +694,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
         /* For now, just do single byte data, interleaved.  We can change this
           when we use the transformation. */
         src_data_type = (COLORSPACE_SH(lcms_src_color_space)|
-                            CHANNELS_SH(src_nChannels)|BYTES_SH(2)); 
+                            CHANNELS_SH(src_nChannels)|BYTES_SH(2));
         if (lcms_devlinkhandle == NULL) {
             if (src_dev_link) {
                 des_color_space = cmsGetPCS(lcms_srchandle);
@@ -693,8 +709,8 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
         des_nChannels = cmsChannelsOf(des_color_space);
         des_data_type = (COLORSPACE_SH(lcms_des_color_space)|
                             CHANNELS_SH(des_nChannels)|BYTES_SH(2));
-        /* lcms proofing transform has a clunky API and can't include the device 
-           link profile if we have both. So use cmsCreateMultiprofileTransform 
+        /* lcms proofing transform has a clunky API and can't include the device
+           link profile if we have both. So use cmsCreateMultiprofileTransform
            instead and round trip the proofing profile. */
         hProfiles[nProfiles++] = lcms_srchandle;
         /* Note if source is device link, we cannot do any proofing */
@@ -711,7 +727,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
         if (lcms_devlinkhandle != NULL) {
             hProfiles[nProfiles++] = lcms_devlinkhandle;
         }
-        flag = cmsFLAGS_HIGHRESPRECALC;
+        flag = gscms_get_accuracy(memory);
         if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON
             || rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
             flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);

@@ -31,6 +31,8 @@
 #define DEFAULT_DIR_ICC   "%rom%iccprofiles/"
 #define MAX_DEFAULT_ICC_LENGTH 17
 
+#define MAX_COLOR_ACCURACY 2
+
 /* Key names for special common canned profiles. These are found in some image
    file formats as a magic number. */
 
@@ -152,6 +154,8 @@ int gs_setdefaultcmykicc(const gs_gstate * pgs, gs_param_string * pval);
 void gs_currentlabicc(const gs_gstate * pgs, gs_param_string * pval);
 int gs_setlabicc(const gs_gstate * pgs, gs_param_string * pval);
 int gsicc_get_device_class(cmm_profile_t *icc_profile);
+uint gsicc_currentcoloraccuracy(gs_memory_t *mem);
+void gsicc_setcoloraccuracy(gs_memory_t *mem, uint level);
 
 #if ICC_DUMP
 static void dump_icc_buffer(int buffersize, char filename[],byte *Buffer);
