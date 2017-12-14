@@ -885,8 +885,6 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     fixed xrun;			/* x ditto */
     fixed yrun;			/* y ditto */
     int irun;			/* int x/rrun */
-    color_samples run;		/* run value */
-    color_samples next;		/* next sample value */
     byte *bufend = NULL;
     int code = 0;
     byte *psrc_cm = NULL, *psrc_cm_start = NULL;
@@ -896,6 +894,8 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     gx_color_index color;
     bool must_halftone = penum->icc_setup.must_halftone;
     bool has_transfer = penum->icc_setup.has_transfer;
+    byte initial_run[GX_DEVICE_COLOR_MAX_COMPONENTS] = { 0 };
+    byte *run = &initial_run[0]; /* run value */
 
     pdevc = &devc1;
     pdevc_next = &devc2;
@@ -928,25 +928,17 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     }
     if_debug5m('b', penum->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
                penum->y, data_x, w, fixed2float(xprev), fixed2float(yprev));
-    memset(&run, 0, sizeof(run));
-    memset(&next, 0, sizeof(next));
-    run.v[0] = ~psrc_cm[0];	/* Force intial setting */
+    run[0] = ~psrc_cm[0];	/* Force intial setting */
     while (psrc_cm < bufend) {
         dda_next(pnext.x);
         dda_next(pnext.y);
-        if ( penum->alpha ) {
-            /* If the pixels are different, then take care of the alpha now */
-            /* will need to adjust spp below.... */
-        } else {
-            memcpy(&(next.v[0]),psrc_cm, spp_cm);
-            psrc_cm += spp_cm;
+
+        if (posture != image_skewed && (memcmp(run, psrc_cm, spp_cm) == 0)) {
+            goto inc;
         }
-        /* Compare to previous.  If same then move on */
-        if (posture != image_skewed && next.all[0] == run.all[0])
-                goto inc;
         /* This needs to be sped up */
-        for ( k = 0; k < spp_cm; k++ ) {
-            conc[k] = gx_color_value_from_byte(next.v[k]);
+        for (k = 0; k < spp_cm; k++) {
+            conc[k] = gx_color_value_from_byte(psrc_cm[k]);
         }
         /* Now we can do an encoding directly or we have to apply transfer
            and or halftoning */
@@ -1011,8 +1003,10 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
         ptemp = pdevc;
         pdevc = pdevc_next;
         pdevc_next = ptemp;
-        run = next;
-inc:	xprev = dda_current(pnext.x);
+        run = psrc_cm;
+inc:
+        psrc_cm += spp_cm;
+        xprev = dda_current(pnext.x);
         yprev = dda_current(pnext.y);	/* harmless if no skew */
     }
     /* Fill the last run. */
