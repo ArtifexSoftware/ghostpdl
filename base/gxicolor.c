@@ -58,7 +58,9 @@ typedef union {
 iclass_proc(gs_image_class_4_color);
 
 static irender_proc(image_render_color_DeviceN);
-static irender_proc(image_render_color_icc);
+static irender_proc(image_render_color_icc_portrait);
+static irender_proc(image_render_color_icc_landscape);
+static irender_proc(image_render_color_icc_skew);
 static irender_proc(image_render_color_thresh);
 
 irender_proc_t
@@ -192,7 +194,11 @@ gs_image_class_4_color(gx_image_enum * penum)
                 }
             }
         }
-        return &image_render_color_icc;
+        if (penum->posture == image_portrait)
+            return &image_render_color_icc_portrait;
+        if (penum->posture == image_landscape)
+            return &image_render_color_icc_landscape;
+        return &image_render_color_icc_skew;
     }
 }
 
@@ -862,17 +868,285 @@ flush:
 
 /* Render a color image with 8 or fewer bits per sample using ICC profile. */
 static int
-image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x,
+image_render_color_icc_portrait(gx_image_enum *penum_orig, const byte *buffer, int data_x,
+                                uint w, int h, gx_device * dev)
+{
+    const gx_image_enum *const penum = penum_orig; /* const within proc */
+    const gs_gstate *pgs = penum->pgs;
+    gs_logical_operation_t lop = penum->log_op;
+    gx_dda_fixed_point pnext;
+    fixed xprev;
+    int vci, vdi;
+    gx_device_color devc1;
+    gx_device_color devc2;
+    gx_device_color *pdevc;
+    gx_device_color *pdevc_next;
+    gx_device_color *ptemp;
+    int spp = penum->spp;
+    const byte *psrc_initial = buffer + data_x * spp;
+    const byte *psrc = psrc_initial;
+    const byte *rsrc = psrc + spp; /* psrc + spp at start of run */
+    int irun;			/* int x/rrun */
+    byte *bufend = NULL;
+    int code = 0;
+    byte *psrc_cm = NULL, *psrc_cm_start = NULL;
+    int k;
+    gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    int spp_cm = 0;
+    gx_color_index color;
+    bool must_halftone = penum->icc_setup.must_halftone;
+    bool has_transfer = penum->icc_setup.has_transfer;
+    byte initial_run[GX_DEVICE_COLOR_MAX_COMPONENTS] = { 0 };
+    byte *run = &initial_run[0]; /* run value */
+
+    pdevc = &devc1;
+    pdevc_next = &devc2;
+    /* These used to be set by init clues */
+    pdevc->type = gx_dc_type_none;
+    pdevc_next->type = gx_dc_type_none;
+    if (h == 0)
+        return 0;
+    code = image_color_icc_prep(penum_orig, psrc, w, dev, &spp_cm, &psrc_cm,
+                                &psrc_cm_start, &bufend, false);
+    if (code < 0) return code;
+    /* Needed for device N */
+    memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
+    pnext = penum->dda.pixel0;
+    xprev = dda_current(pnext.x);
+    dda_translate(pnext.x,  (-fixed_epsilon));
+    vci = penum->yci, vdi = penum->hci;
+    irun = fixed2int_var_rounded(xprev);
+    if_debug5m('b', penum->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
+               penum->y, data_x, w, fixed2float(xprev), fixed2float(dda_current(pnext.y)));
+    run[0] = ~psrc_cm[0];	/* Force intial setting */
+    while (psrc_cm < bufend) {
+        dda_next(pnext.x);
+
+        if (memcmp(run, psrc_cm, spp_cm) == 0)
+            goto inc;
+        /* This needs to be sped up */
+        for (k = 0; k < spp_cm; k++) {
+            conc[k] = gx_color_value_from_byte(psrc_cm[k]);
+        }
+        /* Now we can do an encoding directly or we have to apply transfer
+           and or halftoning */
+        if (must_halftone || has_transfer) {
+            /* We need to do the tranfer function and/or the halftoning */
+            cmap_transfer_halftone(&(conc[0]), pdevc_next, pgs, dev,
+                has_transfer, must_halftone, gs_color_select_source);
+        } else {
+            /* encode as a color index. avoid all the cv to frac to cv
+               conversions */
+            color = dev_proc(dev, encode_color)(dev, &(conc[0]));
+            /* check if the encoding was successful; we presume failure is rare */
+            if (color != gx_no_color_index)
+                color_set_pure(pdevc_next, color);
+        }
+        /* Fill the region between */
+        /* irun and xprev */
+        /*
+         * Note;  This section is nearly a copy of a simlar section below
+         * for processing the last image pixel in the loop.  This would have been
+         * made into a subroutine except for complications about the number of
+         * variables that would have been needed to be passed to the routine.
+         */
+        {		/* Rectangle */
+            int xi = irun;
+            int wi = (irun = fixed2int_var_rounded(xprev)) - xi;
+
+            if (wi < 0)
+                xi += wi, wi = -wi;
+            if (wi > 0)
+                code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
+                                                    pdevc, dev, lop);
+        }
+        if (code < 0)
+            goto err;
+        rsrc = psrc;
+        /* Swap around the colors due to a change */
+        ptemp = pdevc;
+        pdevc = pdevc_next;
+        pdevc_next = ptemp;
+        run = psrc_cm;
+inc:
+        psrc_cm += spp_cm;
+        xprev = dda_current(pnext.x);
+    }
+    /* Fill the last run. */
+    /*
+     * Note;  This section is nearly a copy of a simlar section above
+     * for processing an image pixel in the loop.  This would have been
+     * made into a subroutine except for complications about the number
+     * variables that would have been needed to be passed to the routine.
+     */
+    {		/* Rectangle */
+        int xi = irun;
+        int wi = (irun = fixed2int_var_rounded(xprev)) - xi;
+
+        if (wi < 0)
+            xi += wi, wi = -wi;
+        if (wi > 0)
+            code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
+                                                pdevc, dev, lop);
+    }
+    /* Free cm buffer, if it was used */
+    if (psrc_cm_start != NULL) {
+        gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_color_icc");
+    }
+    return (code < 0 ? code : 1);
+    /* Save position if error, in case we resume. */
+err:
+    gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_color_icc");
+    penum_orig->used.x = (rsrc - spp - psrc_initial) / spp;
+    penum_orig->used.y = 0;
+    return code;
+}
+
+static int
+image_render_color_icc_landscape(gx_image_enum *penum_orig, const byte *buffer, int data_x,
+                                 uint w, int h, gx_device * dev)
+{
+    const gx_image_enum *const penum = penum_orig; /* const within proc */
+    const gs_gstate *pgs = penum->pgs;
+    gs_logical_operation_t lop = penum->log_op;
+    gx_dda_fixed_point pnext;
+    fixed yprev;
+    int vci, vdi;
+    gx_device_color devc1;
+    gx_device_color devc2;
+    gx_device_color *pdevc;
+    gx_device_color *pdevc_next;
+    gx_device_color *ptemp;
+    int spp = penum->spp;
+    const byte *psrc_initial = buffer + data_x * spp;
+    const byte *psrc = psrc_initial;
+    const byte *rsrc = psrc + spp; /* psrc + spp at start of run */
+    int irun;			/* int x/rrun */
+    byte *bufend = NULL;
+    int code = 0;
+    byte *psrc_cm = NULL, *psrc_cm_start = NULL;
+    int k;
+    gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    int spp_cm = 0;
+    gx_color_index color;
+    bool must_halftone = penum->icc_setup.must_halftone;
+    bool has_transfer = penum->icc_setup.has_transfer;
+    byte initial_run[GX_DEVICE_COLOR_MAX_COMPONENTS] = { 0 };
+    byte *run = &initial_run[0]; /* run value */
+
+    pdevc = &devc1;
+    pdevc_next = &devc2;
+    /* These used to be set by init clues */
+    pdevc->type = gx_dc_type_none;
+    pdevc_next->type = gx_dc_type_none;
+    if (h == 0)
+        return 0;
+    code = image_color_icc_prep(penum_orig, psrc, w, dev, &spp_cm, &psrc_cm,
+                                &psrc_cm_start, &bufend, false);
+    if (code < 0) return code;
+    /* Needed for device N */
+    memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
+    pnext = penum->dda.pixel0;
+    dda_translate(pnext.x,  (-fixed_epsilon));
+    yprev = dda_current(pnext.y);
+    vci = penum->xci, vdi = penum->wci;
+    irun = fixed2int_var_rounded(yprev);
+    if_debug5m('b', penum->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
+               penum->y, data_x, w, fixed2float(dda_current(pnext.x)), fixed2float(yprev));
+    run[0] = ~psrc_cm[0];	/* Force intial setting */
+    while (psrc_cm < bufend) {
+        dda_next(pnext.y);
+
+        if (memcmp(run, psrc_cm, spp_cm) == 0)
+            goto inc;
+        /* This needs to be sped up */
+        for (k = 0; k < spp_cm; k++) {
+            conc[k] = gx_color_value_from_byte(psrc_cm[k]);
+        }
+        /* Now we can do an encoding directly or we have to apply transfer
+           and or halftoning */
+        if (must_halftone || has_transfer) {
+            /* We need to do the tranfer function and/or the halftoning */
+            cmap_transfer_halftone(&(conc[0]), pdevc_next, pgs, dev,
+                has_transfer, must_halftone, gs_color_select_source);
+        } else {
+            /* encode as a color index. avoid all the cv to frac to cv
+               conversions */
+            color = dev_proc(dev, encode_color)(dev, &(conc[0]));
+            /* check if the encoding was successful; we presume failure is rare */
+            if (color != gx_no_color_index)
+                color_set_pure(pdevc_next, color);
+        }
+        /* Fill the region between */
+        /* irun and yprev */
+        /*
+         * Note;  This section is nearly a copy of a simlar section below
+         * for processing the last image pixel in the loop.  This would have been
+         * made into a subroutine except for complications about the number of
+         * variables that would have been needed to be passed to the routine.
+         */
+        {		/* 90 degree rotated rectangle */
+            int yi = irun;
+            int hi = (irun = fixed2int_var_rounded(yprev)) - yi;
+
+            if (hi < 0)
+                yi += hi, hi = -hi;
+            if (hi > 0)
+                code = gx_fill_rectangle_device_rop(vci, yi, vdi, hi,
+                                                    pdevc, dev, lop);
+        }
+        if (code < 0)
+            goto err;
+        rsrc = psrc;
+        /* Swap around the colors due to a change */
+        ptemp = pdevc;
+        pdevc = pdevc_next;
+        pdevc_next = ptemp;
+        run = psrc_cm;
+inc:
+        psrc_cm += spp_cm;
+        yprev = dda_current(pnext.y);	/* harmless if no skew */
+    }
+    /* Fill the last run. */
+    /*
+     * Note;  This section is nearly a copy of a simlar section above
+     * for processing an image pixel in the loop.  This would have been
+     * made into a subroutine except for complications about the number
+     * variables that would have been needed to be passed to the routine.
+     */
+    {		/* 90 degree rotated rectangle */
+        int yi = irun;
+        int hi = (irun = fixed2int_var_rounded(yprev)) - yi;
+
+        if (hi < 0)
+            yi += hi, hi = -hi;
+        if (hi > 0)
+            code = gx_fill_rectangle_device_rop(vci, yi, vdi, hi,
+                                                pdevc, dev, lop);
+    }
+    /* Free cm buffer, if it was used */
+    if (psrc_cm_start != NULL) {
+        gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_color_icc");
+    }
+    return (code < 0 ? code : 1);
+    /* Save position if error, in case we resume. */
+err:
+    gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_color_icc");
+    penum_orig->used.x = (rsrc - spp - psrc_initial) / spp;
+    penum_orig->used.y = 0;
+    return code;
+}
+
+static int
+image_render_color_icc_skew(gx_image_enum *penum_orig, const byte *buffer, int data_x,
                    uint w, int h, gx_device * dev)
 {
     const gx_image_enum *const penum = penum_orig; /* const within proc */
     const gs_gstate *pgs = penum->pgs;
     gs_logical_operation_t lop = penum->log_op;
     gx_dda_fixed_point pnext;
-    image_posture posture = penum->posture;
     fixed xprev, yprev;
     fixed pdyx, pdyy;		/* edge of parallelogram */
-    int vci, vdi;
     gx_device_color devc1;
     gx_device_color devc2;
     gx_device_color *pdevc;
@@ -884,7 +1158,6 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     const byte *rsrc = psrc + spp; /* psrc + spp at start of run */
     fixed xrun;			/* x ditto */
     fixed yrun;			/* y ditto */
-    int irun;			/* int x/rrun */
     byte *bufend = NULL;
     int code = 0;
     byte *psrc_cm = NULL, *psrc_cm_start = NULL;
@@ -915,17 +1188,6 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     yrun = yprev = dda_current(pnext.y);
     pdyx = dda_current(penum->dda.row.x) - penum->cur.x;
     pdyy = dda_current(penum->dda.row.y) - penum->cur.y;
-    switch (posture) {
-        case image_portrait:
-            vci = penum->yci, vdi = penum->hci;
-            irun = fixed2int_var_rounded(xrun);
-            break;
-        case image_landscape:
-        default:    /* we don't handle skew -- treat as landscape */
-            vci = penum->xci, vdi = penum->wci;
-            irun = fixed2int_var_rounded(yrun);
-            break;
-    }
     if_debug5m('b', penum->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
                penum->y, data_x, w, fixed2float(xprev), fixed2float(yprev));
     run[0] = ~psrc_cm[0];	/* Force intial setting */
@@ -933,9 +1195,6 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
         dda_next(pnext.x);
         dda_next(pnext.y);
 
-        if (posture != image_skewed && (memcmp(run, psrc_cm, spp_cm) == 0)) {
-            goto inc;
-        }
         /* This needs to be sped up */
         for (k = 0; k < spp_cm; k++) {
             conc[k] = gx_color_value_from_byte(psrc_cm[k]);
@@ -955,47 +1214,19 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
                 color_set_pure(pdevc_next, color);
         }
         /* Fill the region between */
-        /* xrun/irun and xprev */
-                /*
+        /* xrun/yrun and xprev/yprev */
+        /*
          * Note;  This section is nearly a copy of a simlar section below
          * for processing the last image pixel in the loop.  This would have been
          * made into a subroutine except for complications about the number of
          * variables that would have been needed to be passed to the routine.
-                 */
-        switch (posture) {
-        case image_portrait:
-            {		/* Rectangle */
-                int xi = irun;
-                int wi = (irun = fixed2int_var_rounded(xprev)) - xi;
-
-                if (wi < 0)
-                    xi += wi, wi = -wi;
-                if (wi > 0)
-                    code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
-                                                        pdevc, dev, lop);
-                }
-            break;
-        case image_landscape:
-            {		/* 90 degree rotated rectangle */
-                int yi = irun;
-                int hi = (irun = fixed2int_var_rounded(yprev)) - yi;
-
-                if (hi < 0)
-                    yi += hi, hi = -hi;
-                if (hi > 0)
-                    code = gx_fill_rectangle_device_rop(vci, yi, vdi, hi,
-                                                        pdevc, dev, lop);
-            }
-            break;
-        default:
-            {		/* Parallelogram */
-                code = (*dev_proc(dev, fill_parallelogram))
+         */
+        /* Parallelogram */
+        code = (*dev_proc(dev, fill_parallelogram))
                     (dev, xrun, yrun, xprev - xrun, yprev - yrun, pdyx, pdyy,
                      pdevc, lop);
-                xrun = xprev;
-                yrun = yprev;
-            }
-                }
+        xrun = xprev;
+        yrun = yprev;
         if (code < 0)
             goto err;
         rsrc = psrc;
@@ -1004,50 +1235,21 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
         pdevc = pdevc_next;
         pdevc_next = ptemp;
         run = psrc_cm;
-inc:
         psrc_cm += spp_cm;
         xprev = dda_current(pnext.x);
         yprev = dda_current(pnext.y);	/* harmless if no skew */
     }
     /* Fill the last run. */
-                /*
+    /*
      * Note;  This section is nearly a copy of a simlar section above
      * for processing an image pixel in the loop.  This would have been
      * made into a subroutine except for complications about the number
      * variables that would have been needed to be passed to the routine.
-                 */
-    switch (posture) {
-        case image_portrait:
-            {		/* Rectangle */
-                int xi = irun;
-                int wi = (irun = fixed2int_var_rounded(xprev)) - xi;
-
-                if (wi < 0)
-                    xi += wi, wi = -wi;
-                if (wi > 0)
-                    code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
-                                                        pdevc, dev, lop);
-                        }
-            break;
-        case image_landscape:
-            {		/* 90 degree rotated rectangle */
-                int yi = irun;
-                int hi = (irun = fixed2int_var_rounded(yprev)) - yi;
-
-                if (hi < 0)
-                    yi += hi, hi = -hi;
-                if (hi > 0)
-                    code = gx_fill_rectangle_device_rop(vci, yi, vdi, hi,
-                                                        pdevc, dev, lop);
-                }
-            break;
-        default:
-            {		/* Parallelogram */
-                code = (*dev_proc(dev, fill_parallelogram))
+     */
+    /* Parallelogram */
+    code = (*dev_proc(dev, fill_parallelogram))
                     (dev, xrun, yrun, xprev - xrun, yprev - yrun, pdyx, pdyy,
                      pdevc, lop);
-                }
-            }
     /* Free cm buffer, if it was used */
     if (psrc_cm_start != NULL) {
         gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_color_icc");
