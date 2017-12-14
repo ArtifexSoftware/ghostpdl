@@ -13,6 +13,8 @@
 #include "jpeglib.h"
 #include "sdct.h"
 #include "srlx.h"
+#include "gsicc_cache.h"
+#include "sjpeg.h"
 
 #define	    COMPRESSION_NONE	1	/* dump mode */
 #define	    COMPRESSION_LZW		2       /* Lempel-Ziv  & Welch */
@@ -87,23 +89,7 @@ typedef struct gx_device_pdf_image_s {
     int NextObject;
 } gx_device_pdf_image;
 
-static char PDFDocEncodingLookup [92] = {
-    0x20, 0x22, 0x20, 0x20, 0x20, 0x21, 0x20, 0x26,
-    0x20, 0x14, 0x20, 0x13, 0x01, 0x92, 0x20, 0x44,
-    0x20, 0x39, 0x20, 0x3A, 0x22, 0x12, 0x20, 0x30,
-    0x20, 0x1E, 0x20, 0x1C, 0x20, 0x1D, 0x20, 0x18,
-    0x20, 0x19, 0x20, 0x1A, 0x21, 0x22, 0xFB, 0x01,
-    0xFB, 0x02, 0x01, 0x41, 0x01, 0x52, 0x01, 0x60,
-    0x01, 0x78, 0x01, 0x7D, 0x01, 0x31, 0x01, 0x42,
-    0x01, 0x53, 0x01, 0x61, 0x01, 0x7E, 0x00, 0x00,
-    0x20, 0xAC, 0x00, 0xA1, 0x00, 0xA2, 0x00, 0xA3,
-    0x00, 0xA4, 0x00, 0xA5, 0x00, 0xA6, 0x00, 0xA7,
-    0x00, 0xA8, 0x00, 0xA9, 0x00, 0xAA, 0x00, 0xAB,
-    0x00, 0xAC, 0x00, 0x00
-};
-
 static dev_proc_print_page(pdf_image_print_page);
-static int pdf_image_set_icc_color_fields(gx_device_printer *pdev);
 
 /* ------ The pdfimage8 device ------ */
 
@@ -190,7 +176,7 @@ const gx_device_pdf_image gs_pdfimage32_device = {
     0    /* JPEGQ */
 };
 
-int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
+static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
                          FILE *file)
 {
     gx_device_printer *const pdev = (gx_device_printer *)pdf_dev;
@@ -398,7 +384,7 @@ encode(gx_device *pdev, stream **s, const stream_template *t, gs_memory_t *mem)
     return 0;
 }
 
-int
+static int
 pdf_image_downscale_and_print_page(gx_device_printer *dev, int factor,
                               int mfs, int bpc, int num_comps,
                               int trap_w, int trap_h, const int *trap_order,
@@ -624,7 +610,7 @@ pdf_image_open(gx_device *pdev)
     return code;
 }
 
-void write_xref_entry (stream *s, gs_offset_t Offset)
+static void write_xref_entry (stream *s, gs_offset_t Offset)
 {
     char O[11];
     int i;
@@ -709,7 +695,7 @@ pdf_make_document_uuid(const byte digest[6], char *buf, int buf_length)
 }
 static int write_xml(gx_device_pdf_image *pdev, stream *s, char *Title, char *Producer, char *Creator, struct tm *tms, char timesign, int timeoffset, byte digest[6])
 {
-    char instance_uuid[45], document_uuid[45], cre_date_time[40], mod_date_time[40], date_time_buf[40];
+    char instance_uuid[45], document_uuid[45];
     int code;
 
     code = pdf_make_instance_uuid(digest, instance_uuid, sizeof(instance_uuid));
@@ -768,9 +754,7 @@ pdf_compute_fileID(gx_device_pdf_image * pdev, byte fileID[16], char *CreationDa
        ID doesn't depend on the document size.
     */
     gs_memory_t *mem = pdev->memory->non_gc_memory;
-    stream *strm = pdev->strm;
     uint ignore;
-    int code;
     stream *s = s_MD5E_make_stream(mem, fileID, 16);
     long secs_ns[2];
 
@@ -796,7 +780,7 @@ pdf_compute_fileID(gx_device_pdf_image * pdev, byte fileID[16], char *CreationDa
     return 0;
 }
 
-void write_fileID(stream *s, const byte *str, int size)
+static void write_fileID(stream *s, const byte *str, int size)
 {
     const stream_template *templat;
     stream_AXE_state state;
@@ -843,11 +827,10 @@ pdf_image_close(gx_device * pdev)
     time_t t;
     int timeoffset;
     char timesign;
-    char CreationDate[26], Title[] = "Untitled", Producer[256], Creator[] = "Ghostscript pdfimage";
-    gs_offset_t streamsize;
+    char CreationDate[26], Title[] = "Untitled", Producer[256];
 
     if (pdf_dev->strm != NULL) {
-        byte digest[6], fileID[16];
+        byte fileID[16];
 
         pdf_store_default_Producer(Producer);
 
@@ -926,7 +909,7 @@ pdf_image_close(gx_device * pdev)
     return gdev_prn_close(pdev);
 }
 
-int
+static int
 pdf_image_compression_param_string(gs_param_string *param, unsigned char id)
 {
     struct compression_string *c;
@@ -938,7 +921,7 @@ pdf_image_compression_param_string(gs_param_string *param, unsigned char id)
     return_error(gs_error_undefined);
 }
 
-int
+static int
 pdf_image_compression_id(unsigned char *id, gs_param_string *param)
 {
     struct compression_string *c;
@@ -983,7 +966,7 @@ pdf_image_get_some_params(gx_device * dev, gs_param_list * plist, int which)
     return ecode;
 }
 
-int
+static int
 pdf_image_get_params(gx_device * dev, gs_param_list * plist)
 {
     return pdf_image_get_some_params(dev, plist, 0);
@@ -1073,7 +1056,7 @@ pdf_image_put_some_params(gx_device * dev, gs_param_list * plist, int which)
     return code;
 }
 
-int
+static int
 pdf_image_put_params(gx_device * dev, gs_param_list * plist)
 {
     return pdf_image_put_some_params(dev, plist, 0);
@@ -1125,7 +1108,7 @@ const gx_device_pdf_image gs_PCLm_device = {
     GX_DOWNSCALER_PARAMS_DEFAULTS,
     16, /* StripHeight */
     0.0, /* QFactor */
-    0.0  /* JPEGQ */
+    0  /* JPEGQ */
 };
 
 /* Open a temporary file, with or without a stream. */
@@ -1258,7 +1241,7 @@ PCLm_open(gx_device *pdev)
     return code;
 }
 
-int gdev_PCLm_begin_page(gx_device_pdf_image *pdf_dev,
+static int gdev_PCLm_begin_page(gx_device_pdf_image *pdf_dev,
                          FILE *file)
 {
     gx_device_printer *const pdev = (gx_device_printer *)pdf_dev;
@@ -1337,7 +1320,7 @@ int gdev_PCLm_begin_page(gx_device_pdf_image *pdf_dev,
     return 0;
 }
 
-int
+static int
 PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
                               int mfs, int bpc, int num_comps,
                               int trap_w, int trap_h, const int *trap_order,
@@ -1357,8 +1340,6 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
     gs_offset_t stream_pos = 0;
     pdfimage_page *page = pdf_dev->Pages;
     char Buffer[1024];
-    stream *s = pdf_dev->strm;
-    FILE *file;
 
     if (page == NULL)
         return_error(gs_error_undefined);
@@ -1687,11 +1668,11 @@ PCLm_close(gx_device * pdev)
     time_t t;
     int timeoffset;
     char timesign;
-    char Buffer[1024], CreationDate[26], Title[] = "Untitled", Producer[256], Creator[] = "Ghostscript pdfimage";
+    char Buffer[1024], CreationDate[26], Title[] = "Untitled", Producer[256];
     gs_offset_t streamsize, R = 0;
 
     if (pdf_dev->strm != NULL) {
-        byte digest[6], fileID[16];
+        byte fileID[16];
 
         pdf_store_default_Producer(Producer);
 

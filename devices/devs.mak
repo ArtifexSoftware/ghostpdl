@@ -1915,6 +1915,5 @@ $(DD)PCLm.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(
 $(DEVOBJ)gdevpdfimg.$(OBJ) : $(DEVSRC)gdevpdfimg.c $(AK) \
   $(DEVS_MAK) $(MAKEDIRS) $(arch_h) $(stdint__h) $(gdevprn_h) $(gxdownscale_h) \
   $(stream_h) $(spprint_h) $(time__h) $(smd5_h) $(sstring_h) $(strimpl_h) \
-  $(slzwx_h) $(szlibx_h) $(jpeglib__h) $(sdct_h) $(srlx_h)
+  $(slzwx_h) $(szlibx_h) $(jpeglib__h) $(sdct_h) $(srlx_h) $(gsicc_cache_h) $(sjpeg_h)
 	$(DEVCC) $(DEVO_)gdevpdfimg.$(OBJ) $(C_) $(DEVSRC)gdevpdfimg.c
-
