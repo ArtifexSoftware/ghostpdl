@@ -69,7 +69,7 @@ blend_valid_for_spot(gs_blend_mode_t blend_mode)
 
 void
 smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stride,
-                         int plane_stride, byte *src, const byte *dst, bool isadditive,
+                         int plane_stride, byte *restrict src, const byte *restrict dst, bool isadditive,
                          gs_transparency_mask_subtype_t SMask_SubType)
 {
     int x,y;
@@ -184,8 +184,8 @@ smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stride,
    mask.  This situation is detected in the code so that we only do this
    blending in those rare situations */
 void
-smask_blend(byte *src, int width, int height, int rowstride,
-                      int planestride)
+smask_blend(byte *restrict src, int width, int height, int rowstride,
+            int planestride)
 {
     int x, y;
     int position;
@@ -212,7 +212,7 @@ smask_blend(byte *src, int width, int height, int rowstride,
 }
 
 void smask_copy(int num_rows, int num_cols, int row_stride,
-                        byte *src, const byte *dst)
+                byte *restrict src, const byte *restrict dst)
 {
     int y;
     byte *dstptr,*srcptr;
@@ -227,7 +227,7 @@ void smask_copy(int num_rows, int num_cols, int row_stride,
 }
 
 void smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan,
-               int row_stride, int plane_stride, byte *src, const byte *dst,
+               int row_stride, int plane_stride, byte *restrict src, const byte *restrict dst,
                gsicc_link_t *icclink)
 {
     gsicc_bufferdesc_t input_buff_desc;
@@ -256,8 +256,8 @@ void smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan,
 }
 
 void
-art_blend_luminosity_rgb_8(int n_chan, byte *dst, const byte *backdrop,
-                           const byte *src)
+art_blend_luminosity_rgb_8(int n_chan, byte *restrict dst, const byte *restrict backdrop,
+                           const byte *restrict src)
 {
     int rb = backdrop[0], gb = backdrop[1], bb = backdrop[2];
     int rs = src[0], gs = src[1], bs = src[2];
@@ -300,8 +300,8 @@ art_blend_luminosity_rgb_8(int n_chan, byte *dst, const byte *backdrop,
 }
 
 void
-art_blend_luminosity_custom_8(int n_chan, byte *dst, const byte *backdrop,
-                                const byte *src)
+art_blend_luminosity_custom_8(int n_chan, byte *restrict dst, const byte *restrict backdrop,
+                              const byte *restrict src)
 {
     int delta_y = 0, test = 0;
     int r[ART_MAX_CHAN];
@@ -372,8 +372,8 @@ art_blend_luminosity_custom_8(int n_chan, byte *dst, const byte *backdrop,
  * Our component values have already been complemented, i.e. (1 - X).
  */
 void
-art_blend_luminosity_cmyk_8(int n_chan, byte *dst, const byte *backdrop,
-                           const byte *src)
+art_blend_luminosity_cmyk_8(int n_chan, byte *restrict dst, const byte *restrict backdrop,
+                           const byte *restrict src)
 {
     int i;
 
@@ -384,8 +384,8 @@ art_blend_luminosity_cmyk_8(int n_chan, byte *dst, const byte *backdrop,
 }
 
 void
-art_blend_saturation_rgb_8(int n_chan, byte *dst, const byte *backdrop,
-                           const byte *src)
+art_blend_saturation_rgb_8(int n_chan, byte *restrict dst, const byte *restrict backdrop,
+                           const byte *restrict src)
 {
     int rb = backdrop[0], gb = backdrop[1], bb = backdrop[2];
     int rs = src[0], gs = src[1], bs = src[2];
@@ -449,8 +449,8 @@ art_blend_saturation_rgb_8(int n_chan, byte *dst, const byte *backdrop,
 }
 
 void
-art_blend_saturation_custom_8(int n_chan, byte *dst, const byte *backdrop,
-                           const byte *src)
+art_blend_saturation_custom_8(int n_chan, byte *restrict dst, const byte *restrict backdrop,
+                              const byte *restrict src)
 {
     int minb, maxb;
     int mins, maxs;
@@ -604,8 +604,8 @@ const byte art_blend_soft_light_8[256] = {
 };
 
 static forceinline void
-art_blend_pixel_8_inline(byte *dst, const byte *backdrop,
-                  const byte *src, int n_chan, gs_blend_mode_t blend_mode,
+art_blend_pixel_8_inline(byte *restrict dst, const byte *restrict backdrop,
+                  const byte *restrict src, int n_chan, gs_blend_mode_t blend_mode,
                   const pdf14_nonseparable_blending_procs_t * pblend_procs,
                   pdf14_device *p14dev)
 {
@@ -806,15 +806,16 @@ art_blend_pixel_8_inline(byte *dst, const byte *backdrop,
 }
 
 void
-art_blend_pixel_8(byte *dst, const byte *backdrop,
-                  const byte *src, int n_chan, gs_blend_mode_t blend_mode,
+art_blend_pixel_8(byte *restrict dst, const byte *restrict backdrop,
+                  const byte *restrict src, int n_chan, gs_blend_mode_t blend_mode,
                   const pdf14_nonseparable_blending_procs_t * pblend_procs,
                   pdf14_device *p14dev)
 {
     art_blend_pixel_8_inline(dst, backdrop, src, n_chan, blend_mode,
-        pblend_procs, p14dev);
+                             pblend_procs, p14dev);
 }
 
+#ifdef UNUSED
 byte
 art_pdf_union_8(byte alpha1, byte alpha2)
 {
@@ -823,10 +824,11 @@ art_pdf_union_8(byte alpha1, byte alpha2)
     tmp = (0xff - alpha1) * (0xff - alpha2) + 0x80;
     return 0xff - ((tmp + (tmp >> 8)) >> 8);
 }
+#endif
 
 static void
-art_pdf_knockout_composite_pixel_alpha_8(byte *backdrop, byte tos_shape, byte *dst,
-                        const byte *src, int n_chan, gs_blend_mode_t blend_mode,
+art_pdf_knockout_composite_pixel_alpha_8(byte *restrict backdrop, byte tos_shape, byte *restrict dst,
+                        const byte *restrict src, int n_chan, gs_blend_mode_t blend_mode,
                         const pdf14_nonseparable_blending_procs_t * pblend_procs,
                         pdf14_device *p14dev)
 {
@@ -894,7 +896,7 @@ art_pdf_knockout_composite_pixel_alpha_8(byte *backdrop, byte tos_shape, byte *d
 }
 
 void
-art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
+art_pdf_composite_pixel_alpha_8(byte *restrict dst, const byte *restrict src, int n_chan,
         gs_blend_mode_t blend_mode, int first_spot,
         const pdf14_nonseparable_blending_procs_t * pblend_procs, pdf14_device *p14dev)
 {
@@ -966,7 +968,7 @@ art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
 }
 
 static forceinline byte *
-art_pdf_composite_pixel_alpha_8_inline(byte *dst, byte *src, int n_chan,
+art_pdf_composite_pixel_alpha_8_inline(byte *restrict dst, byte *restrict src, int n_chan,
         gs_blend_mode_t blend_mode, int first_spot,
         const pdf14_nonseparable_blending_procs_t * pblend_procs, pdf14_device *p14dev)
 {
@@ -1044,7 +1046,7 @@ art_pdf_composite_pixel_alpha_8_inline(byte *dst, byte *src, int n_chan,
  * Called with the guarantee that dst[stride] != 0, src[1] != 0, and that blend_mode != Normal
  */
 static inline void
-art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
+art_pdf_composite_pixel_alpha_8_fast_mono(byte *restrict dst, const byte *restrict src,
                                           gs_blend_mode_t blend_mode,
                                           const pdf14_nonseparable_blending_procs_t * pblend_procs,
                                           int stride, pdf14_device *p14dev)
@@ -1090,7 +1092,7 @@ art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
  * Same args, except blend_mode which is assumed to be Normal.
  */
 static inline void
-art_pdf_composite_pixel_alpha_8_fast_mono_normal(byte *dst, const byte *src,
+art_pdf_composite_pixel_alpha_8_fast_mono_normal(byte *restrict dst, const byte *restrict src,
                                                  const pdf14_nonseparable_blending_procs_t * pblend_procs,
                                                  int stride, pdf14_device *p14dev)
 {
@@ -1146,8 +1148,8 @@ art_pdf_composite_pixel_alpha_8_fast_mono_normal(byte *dst, const byte *src,
  * Returns 1 if we need to call art_pdf_composite_pixel_alpha_8.
  **/
 static forceinline int
-art_pdf_recomposite_group_8(byte **dstp, byte *dst_alpha_g,
-        byte *src, byte src_alpha_g, int n_chan,
+art_pdf_recomposite_group_8(byte *restrict *dstp, byte *restrict dst_alpha_g,
+        byte *restrict src, byte src_alpha_g, int n_chan,
         byte alpha, gs_blend_mode_t blend_mode, int first_blend_spot,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
         pdf14_device *p14dev)
@@ -1156,7 +1158,7 @@ art_pdf_recomposite_group_8(byte **dstp, byte *dst_alpha_g,
     int i;
     int tmp;
     int scale;
-    byte *dst = *dstp;
+    byte *restrict dst = *dstp;
 
     if (src_alpha_g == 0)
         return 0;
@@ -1229,8 +1231,8 @@ art_pdf_recomposite_group_8(byte **dstp, byte *dst_alpha_g,
  * @NOTE: This function may corrupt src.
  **/
 static forceinline void
-art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
-        byte *dst_alpha_g, byte *src, int n_chan, byte alpha,
+art_pdf_composite_knockout_group_8(byte *restrict backdrop, byte tos_shape, byte *restrict dst,
+        byte *restrict dst_alpha_g, byte *restrict src, int n_chan, byte alpha,
         gs_blend_mode_t blend_mode,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
         pdf14_device *p14dev, bool has_mask)
@@ -1285,8 +1287,8 @@ art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
  * Returns 1 if we need to call art_pdf_composite_pixel_alpha_8.
  **/
 static forceinline int
-art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
-        byte *src, int n_chan, byte alpha, gs_blend_mode_t blend_mode, int first_spot,
+art_pdf_composite_group_8(byte *restrict dst, byte *restrict dst_alpha_g,
+        byte *restrict src, int n_chan, byte alpha, gs_blend_mode_t blend_mode, int first_spot,
         const pdf14_nonseparable_blending_procs_t * pblend_procs,
         pdf14_device *p14dev)
 {
@@ -1312,7 +1314,7 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
 /* A very simple case.  Knockout isolated group going to a parent that is not
    a knockout.  Simply copy over everwhere where we have a non-zero alpha value */
 void
-art_pdf_knockoutisolated_group_8(byte *dst, const byte *src, int n_chan)
+art_pdf_knockoutisolated_group_8(byte *restrict dst, const byte *restrict src, int n_chan)
 {
     byte src_alpha;
 
@@ -1336,7 +1338,7 @@ art_pdf_knockoutisolated_group_8(byte *dst, const byte *src, int n_chan)
    backdrop (unless the source alpha is not opaque) while the outside of the
    stroke path ends up with the alpha for both the AA effect and source alpha */
 void
-art_pdf_knockoutisolated_group_aa_8(byte *dst, const byte *src, byte src_alpha,
+art_pdf_knockoutisolated_group_aa_8(byte *restrict dst, const byte *restrict src, byte src_alpha,
                         byte aa_alpha, int n_chan, pdf14_device *p14dev)
 {
     int dst_alpha = dst[n_chan];
@@ -1365,12 +1367,12 @@ art_pdf_knockoutisolated_group_aa_8(byte *dst, const byte *src, byte src_alpha,
 }
 
 void
-art_pdf_composite_knockout_8(byte *dst,
-                                    const byte *src,
-                                    int n_chan,
-                                    gs_blend_mode_t blend_mode,
-                                    const pdf14_nonseparable_blending_procs_t * pblend_procs,
-                                    pdf14_device *p14dev)
+art_pdf_composite_knockout_8(byte *restrict dst,
+                             const byte *restrict src,
+                             int n_chan,
+                             gs_blend_mode_t blend_mode,
+                             const pdf14_nonseparable_blending_procs_t * pblend_procs,
+                             pdf14_device *p14dev)
 {
     byte src_shape = src[n_chan];
     int i, tmp;
@@ -1532,18 +1534,27 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
 }
 #endif
 
-
 static forceinline void
-template_compose_group(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
-              int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
-              byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
-              int nos_shape_offset, int nos_tag_offset,
-              byte *mask_row_ptr, int has_mask, pdf14_buf *maskbuf, byte mask_bg_alpha, byte *mask_tr_fn,
-              byte *backdrop_ptr,
-              bool has_matte, int n_chan, bool additive, int num_spots, bool overprint, gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
-              const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev, int has_alpha)
+template_compose_group(byte *restrict tos_ptr, bool tos_isolated,
+                       int tos_planestride, int tos_rowstride,
+                       byte alpha, byte shape, gs_blend_mode_t blend_mode,
+                       bool tos_has_shape, int tos_shape_offset,
+                       int tos_alpha_g_offset, int tos_tag_offset,
+                       bool tos_has_tag, byte *restrict nos_ptr,
+                       bool nos_isolated, int nos_planestride,
+                       int nos_rowstride, byte *restrict nos_alpha_g_ptr,
+                       bool nos_knockout, int nos_shape_offset,
+                       int nos_tag_offset, byte *restrict mask_row_ptr,
+                       int has_mask, pdf14_buf *restrict maskbuf,
+                       byte mask_bg_alpha, byte *restrict mask_tr_fn,
+                       byte *restrict backdrop_ptr, bool has_matte,
+                       int n_chan, bool additive, int num_spots,
+                       bool overprint, gx_color_index drawn_comps,
+                       int x0, int y0, int x1, int y1,
+                       const pdf14_nonseparable_blending_procs_t *pblend_procs,
+                       pdf14_device *pdev, int has_alpha)
 {
-    byte *mask_curr_ptr = NULL;
+    byte *restrict mask_curr_ptr = NULL;
     int width = x1 - x0;
     int x, y;
     int i;
@@ -1558,7 +1569,7 @@ template_compose_group(byte *tos_ptr, bool tos_isolated, int tos_planestride, in
     int first_spot = n_chan - num_spots;
     int first_blend_spot = n_chan;
     bool has_mask2 = has_mask;
-    byte *dst;
+    byte *restrict dst;
     byte global_shape = (byte)(255 * pdev->shape + 0.5);
 
     if (!nos_knockout && num_spots > 0 && !blend_valid_for_spot(blend_mode)) {
@@ -2368,7 +2379,7 @@ typedef void (*pdf14_mark_fill_rect_fn)(int w, int h, byte *dst_ptr, byte *src, 
                int alpha_g_off, int shape_off, byte shape);
 
 static forceinline void
-template_mark_fill_rect(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+template_mark_fill_rect(int w, int h, byte *restrict dst_ptr, byte *restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
                int alpha_g_off, int shape_off, byte shape)
@@ -2472,7 +2483,7 @@ template_mark_fill_rect(int w, int h, byte *dst_ptr, byte *src, int num_comp, in
 }
 
 static void
-mark_fill_rect_alpha0(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+mark_fill_rect_alpha0(int w, int h, byte *restrict dst_ptr, byte *restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
                int alpha_g_off, int shape_off, byte shape)
@@ -2533,7 +2544,7 @@ mark_fill_rect_additive_nospots_common(int w, int h, byte *dst_ptr, byte *src, i
 
 
 static void
-mark_fill_rect_1comp_additive_no_spots(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+mark_fill_rect_1comp_additive_no_spots(int w, int h, byte *restrict dst_ptr, byte *restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
                int alpha_g_off, int shape_off, byte shape)
@@ -2575,7 +2586,7 @@ mark_fill_rect_1comp_additive_no_spots(int w, int h, byte *dst_ptr, byte *src, i
 }
 
 static void
-mark_fill_rect_1comp_additive_no_spots_normal(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+mark_fill_rect_1comp_additive_no_spots_normal(int w, int h, byte *restrict dst_ptr, byte *restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
                int alpha_g_off, int shape_off, byte shape)

@@ -144,6 +144,7 @@ art_blend_pixel_8(byte *dst, const byte *backdrop,
                 const pdf14_nonseparable_blending_procs_t * pblend_procs,
                 pdf14_device *p14dev);
 
+#ifdef UNUSED
 /**
  * art_pdf_union_8: Union together two alpha values.
  * @alpha1: One alpha value.
@@ -152,6 +153,7 @@ art_blend_pixel_8(byte *dst, const byte *backdrop,
  * Return value: Union (@alpha1, @alpha2).
  **/
 byte art_pdf_union_8(byte alpha1, byte alpha2);
+#endif
 
 /**
  * art_pdf_union_mul_8: Union together two alpha values, with mask.

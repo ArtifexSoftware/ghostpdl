@@ -93,6 +93,16 @@
 #  define volatile		/* */
 #endif
 
+/* restrict is standard in C99, but not in all C++ compilers. */
+#if __STDC_VERSION__ == 199901L /* C99 */
+#elif _MSC_VER >= 1500 /* MSVC 9 or newer */
+#define restrict __restrict
+#elif __GNUC__ >= 3 /* GCC 3 or newer */
+#define restrict __restrict
+#else /* Unknown or ancient */
+#define restrict
+#endif
+
 /* Disable 'inline' if the compiler can't handle it. */
 #ifdef __DECC
 #  undef inline
