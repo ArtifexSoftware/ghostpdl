@@ -623,16 +623,6 @@ static void write_xref_entry (stream *s, gs_offset_t Offset)
     stream_puts(s, " 00000 n \n");
 }
 
-static void writehex(char **p, ulong v, int l)
-{
-    int i = l * 2;
-    static const char digit[] = "0123456789abcdef";
-
-    for (; i--;)
-        *((*p)++) = digit[v >> (i * 4) & 15];
-}
-
-
 static int
 pdf_compute_fileID(gx_device_pdf_image * pdev, byte fileID[16], char *CreationDate, char *Title, char *Producer)
 {
@@ -976,7 +966,7 @@ prn_color_params_procs(PCLm_open,
 const gx_device_pdf_image gs_PCLm_device = {
     prn_device_body(gx_device_pdf_image,
                     PCLm_procs,
-                    "PCLm",
+                    "pclm",
                     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                     600, 600,   /* 600 dpi by default */
                     0, 0, 0, 0, /* Margins */
@@ -1619,11 +1609,15 @@ PCLm_close(gx_device * pdev)
         pdf_dev->icclink = NULL;
     }
     if (pdf_dev->strm) {
-        sclose(pdf_dev->strm);
+        sflush(pdf_dev->strm);
         gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm, "pdfimage_close(strm)");
         pdf_dev->strm = 0;
         gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm_buf, "pdfimage_close(strmbuf)");
         pdf_dev->strm_buf = 0;
+        /* Freeing the stream will close the underlying FILE *, we need to set the pointer to
+         * NULL to avoid having gdev_prn_close() close it again, which leads to errors on Linux.
+         */
+        pdf_dev->file = NULL;
     }
     if (pdf_dev->Pages) {
         pdfimage_page *p = pdf_dev->Pages, *n;
