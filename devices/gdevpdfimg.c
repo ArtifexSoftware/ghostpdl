@@ -75,7 +75,6 @@ typedef struct gx_device_pdf_image_s {
     gsicc_link_t *icclink;
     stream *strm;
     byte *strm_buf;
-    long uuid_time[2];
     int NumPages;
     gs_offset_t RootOffset;
     gs_offset_t PagesOffset;
@@ -593,7 +592,6 @@ pdf_image_open(gx_device *pdev)
     ppdev->InfoOffset = 0;
     ppdev->xrefOffset = 0;
     ppdev->StripHeight = 0;
-    gp_get_realtime(ppdev->uuid_time);
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
     if (code < 0)
         return code;
@@ -625,20 +623,6 @@ static void write_xref_entry (stream *s, gs_offset_t Offset)
     stream_puts(s, " 00000 n \n");
 }
 
-static uint64_t
-pdf_uuid_time(void)
-{
-    long dt[2];
-    uint64_t t;
-
-    gp_get_realtime((long *)&dt);
-    /* UUIDs use time in 100ns ticks since Oct 15, 1582. */
-    t = (uint64_t)10000000 * dt[0] + dt[0] / 100; /* since Jan. 1, 1980 */
-    t += (uint64_t) (1000*1000*10)         /* seconds */
-       * (uint64_t) (60 * 60 * 24)         /* days */
-       * (uint64_t) (17+30+31+365*397+99); /* # of days */
-    return t;
-}
 static void writehex(char **p, ulong v, int l)
 {
     int i = l * 2;
@@ -648,51 +632,6 @@ static void writehex(char **p, ulong v, int l)
         *((*p)++) = digit[v >> (i * 4) & 15];
 }
 
-static void
-pdf_make_uuid(const byte node[6], uint64_t uuid_time, ulong time_seq, char *buf, int buf_length)
-{
-    char b[45], *p = b;
-    ulong  uuid_time_lo = (ulong)(uuid_time & 0xFFFFFFFF);       /* MSVC 7.1.3088           */
-    ushort uuid_time_md = (ushort)((uuid_time >> 32) & 0xFFFF);  /* cannot compile this     */
-    ushort uuid_time_hi = (ushort)((uuid_time >> 48) & 0x0FFF);  /* as function arguments.  */
-
-    writehex(&p, uuid_time_lo, 4); /* time_low */
-    *(p++) = '-';
-    writehex(&p, uuid_time_md, 2); /* time_mid */
-    *(p++) = '-';
-    writehex(&p, uuid_time_hi | (ushort)(1 << 12), 2); /* time_hi_and_version */
-    *(p++) = '-';
-    writehex(&p, (time_seq & 0x3F00) >> 8, 1); /* clock_seq_hi_and_reserved */
-    writehex(&p, time_seq & 0xFF, 1); /* clock_seq & 0xFF */
-    *(p++) = '-';
-    writehex(&p, node[0], 1);
-    writehex(&p, node[1], 1);
-    writehex(&p, node[2], 1);
-    writehex(&p, node[3], 1);
-    writehex(&p, node[4], 1);
-    writehex(&p, node[5], 1);
-    *p = 0;
-    strncpy(buf, b, buf_length);
-}
-static int
-pdf_make_instance_uuid(const byte digest[6], char *buf, int buf_length)
-{
-    char URI_prefix[5] = "uuid:";
-
-    memcpy(buf, URI_prefix, 5);
-    pdf_make_uuid(digest, pdf_uuid_time(), 0, buf + 5, buf_length - 5);
-    return 0;
-}
-
-static int
-pdf_make_document_uuid(const byte digest[6], char *buf, int buf_length)
-{
-    char URI_prefix[5] = "uuid:";
-
-    memcpy(buf, URI_prefix, 5);
-    pdf_make_uuid(digest, pdf_uuid_time(), 0, buf+5, buf_length - 5);
-    return 0;
-}
 
 static int
 pdf_compute_fileID(gx_device_pdf_image * pdev, byte fileID[16], char *CreationDate, char *Title, char *Producer)
@@ -1154,7 +1093,6 @@ PCLm_open(gx_device *pdev)
     ppdev->InfoOffset = 0;
     ppdev->xrefOffset = 0;
     ppdev->NextObject = 0;
-    gp_get_realtime(ppdev->uuid_time);
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
     if (code < 0)
         return code;
