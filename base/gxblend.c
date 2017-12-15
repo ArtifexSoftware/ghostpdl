@@ -2518,6 +2518,30 @@ mark_fill_rect(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spo
 }
 
 static void
+mark_fill_rect_sub4_fast(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+               byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
+               bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
+               int alpha_g_off, int shape_off, byte shape)
+{
+    template_mark_fill_rect(w, h, dst_ptr, src, /*num_comp*/4, /*num_spots*/0, /*first_blend_spot*/0,
+               src_alpha, rowstride, planestride, /*additive*/0, pdev, /*blend_mode*/BLEND_MODE_Normal,
+               /*overprint*/0, drawn_comps, /*tag_off*/0, curr_tag,
+               /*alpha_g_off*/0, /*shape_off*/0, /*shape*/0);
+}
+
+static void
+mark_fill_rect_sub4_fast_solid(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+               byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
+               bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
+               int alpha_g_off, int shape_off, byte shape)
+{
+    template_mark_fill_rect(w, h, dst_ptr, src, /*num_comp*/4, /*num_spots*/0, /*first_blend_spot*/0,
+               /*src_alpha*/0, rowstride, planestride, /*additive*/0, pdev, /*blend_mode*/BLEND_MODE_Normal,
+               /*overprint*/0, drawn_comps, /*tag_off*/0, curr_tag,
+               /*alpha_g_off*/0, /*shape_off*/0, /*shape*/0);
+}
+
+static void
 mark_fill_rect_additive_nospots(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
@@ -2834,7 +2858,14 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                 fn = mark_fill_rect_additive_nospots_common;
         } else
             fn = mark_fill_rect_additive_nospots;
-    } else
+    } else if (!additive && num_spots == 0 && num_comp == 4 && num_spots == 0 &&
+        first_blend_spot == 0 && blend_mode == BLEND_MODE_Normal &&
+        !overprint && tag_off == 0 && alpha_g_off == 0 && shape_off == 0)
+        if (src_alpha == 0)
+            fn = mark_fill_rect_sub4_fast_solid;
+        else
+            fn = mark_fill_rect_sub4_fast;
+    else
         fn = mark_fill_rect;
 
     fn(w, h, dst_ptr, src, num_comp, num_spots, first_blend_spot, src_alpha,
