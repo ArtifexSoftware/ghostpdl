@@ -693,57 +693,6 @@ pdf_make_document_uuid(const byte digest[6], char *buf, int buf_length)
     pdf_make_uuid(digest, pdf_uuid_time(), 0, buf+5, buf_length - 5);
     return 0;
 }
-static int write_xml(gx_device_pdf_image *pdev, stream *s, char *Title, char *Producer, char *Creator, struct tm *tms, char timesign, int timeoffset, byte digest[6])
-{
-    char instance_uuid[45], document_uuid[45];
-    int code;
-
-    code = pdf_make_instance_uuid(digest, instance_uuid, sizeof(instance_uuid));
-    if (code < 0)
-        return code;
-    code = pdf_make_document_uuid(digest, document_uuid, sizeof(document_uuid));
-    if (code < 0)
-        return code;
-
-    stream_puts(s, "<?xpacket begin='﻿' id='W5M0MpCehiHzreSzNTczkc9d'?>\n");
-    stream_puts(s, "<?adobe-xap-filters esc=\"CRLF\"?>\n");
-    stream_puts(s, "<x:xmpmeta xmlns:x='adobe:ns:meta/' x:xmptk='XMP toolkit 2.9.1-13, framework 1.6'>\n");
-    stream_puts(s, "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#' xmlns:iX='http://ns.adobe.com/iX/1.0/'>\n");
-    stream_puts(s, "<rdf:Description rdf:about='");
-    stream_puts(s, instance_uuid);
-    stream_puts(s, "' xmlns:pdf='http://ns.adobe.com/pdf/1.3/' pdf:Producer='");
-    stream_puts(s, Producer);
-    stream_puts(s, "'/>\n");
-    stream_puts(s, "<rdf:Description rdf:about='");
-    stream_puts(s, instance_uuid);
-    stream_puts(s, "' xmlns:xmp='http://ns.adobe.com/xap/1.0/'><xmp:ModifyDate>");
-    pprintd3(s, "%d-%d-%dT", tms->tm_year + 1900, tms->tm_mon + 1, tms->tm_mday);
-    pprintd3(s, "%d:%d:%dZ", tms->tm_hour, tms->tm_min, tms->tm_sec);
-    stream_puts(s, "</xmp:ModifyDate>\n");
-    stream_puts(s, "<xmp:CreateDate>");
-    pprintd3(s, "%d-%d-%dT", tms->tm_year + 1900, tms->tm_mon + 1, tms->tm_mday);
-    pprintd3(s, "%d:%d:%dZ", tms->tm_hour, tms->tm_min, tms->tm_sec);
-    stream_puts(s, "</xmp:CreateDate>\n");
-    stream_puts(s, "<xmp:CreatorTool>");
-    stream_puts(s, Creator);
-    stream_puts(s, "</xmp:CreatorTool></rdf:Description>\n");
-    stream_puts(s, "<rdf:Description rdf:about='");
-    stream_puts(s, instance_uuid);
-    stream_puts(s, "' xmlns:xapMM='http://ns.adobe.com/xap/1.0/mm/' xapMM:DocumentID='");
-    stream_puts(s, document_uuid);
-    stream_puts(s, "'/>\n");
-    stream_puts(s, "<rdf:Description rdf:about='");
-    stream_puts(s, instance_uuid);
-    stream_puts(s, "' xmlns:dc='http://purl.org/dc/elements/1.1/' dc:format='application/pdf'><dc:title><rdf:Alt><rdf:li xml:lang='x-default'>");
-    stream_puts(s, Title);
-    stream_puts(s, "</rdf:li></rdf:Alt></dc:title></rdf:Description>\n");
-    stream_puts(s, "</rdf:RDF>\n");
-    stream_puts(s, "</x:xmpmeta>\n");
-    stream_puts(s, "                                                                        \n");
-    stream_puts(s, "                                                                        \n");
-    stream_puts(s, "<?xpacket end='w'?>\n");
-    return 0;
-}
 
 static int
 pdf_compute_fileID(gx_device_pdf_image * pdev, byte fileID[16], char *CreationDate, char *Title, char *Producer)
@@ -891,11 +840,15 @@ pdf_image_close(gx_device * pdev)
         pdf_dev->icclink = NULL;
     }
     if (pdf_dev->strm) {
-        sclose(pdf_dev->strm);
+        sflush(pdf_dev->strm);
         gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm, "pdfimage_close(strm)");
         pdf_dev->strm = 0;
         gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm_buf, "pdfimage_close(strmbuf)");
         pdf_dev->strm_buf = 0;
+        /* Freeing the stream will close the underlying FILE *, we need to set the pointer to
+         * NULL to avoid having gdev_prn_close() close it again, which leads to errors on Linux.
+         */
+        pdf_dev->file = NULL;
     }
     if (pdf_dev->Pages) {
         pdfimage_page *p = pdf_dev->Pages, *n;
@@ -964,12 +917,6 @@ pdf_image_get_some_params(gx_device * dev, gs_param_list * plist, int which)
             ecode = code;
     }
     return ecode;
-}
-
-static int
-pdf_image_get_params(gx_device * dev, gs_param_list * plist)
-{
-    return pdf_image_get_some_params(dev, plist, 0);
 }
 
 int
@@ -1054,12 +1001,6 @@ pdf_image_put_some_params(gx_device * dev, gs_param_list * plist, int which)
         return code;
 
     return code;
-}
-
-static int
-pdf_image_put_params(gx_device * dev, gs_param_list * plist)
-{
-    return pdf_image_put_some_params(dev, plist, 0);
 }
 
 int
