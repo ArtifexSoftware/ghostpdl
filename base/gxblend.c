@@ -2536,12 +2536,23 @@ mark_fill_rect_additive_nospots_common(int w, int h, byte *dst_ptr, byte *src, i
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
                int alpha_g_off, int shape_off, byte shape)
 {
-    template_mark_fill_rect(w, h, dst_ptr, src, num_comp, /*num_spots*/0, first_blend_spot,
+    template_mark_fill_rect(w, h, dst_ptr, src, num_comp, /*num_spots*/0, /*first_blend_spot*/0,
                src_alpha, rowstride, planestride, /*additive*/1, pdev, /*blend_mode*/BLEND_MODE_Normal,
                /*overprint*/0, /*drawn_comps*/0, /*tag_off*/0, curr_tag,
                alpha_g_off, /*shape_off*/0, shape);
 }
 
+static void
+mark_fill_rect_additive_nospots_common_no_alpha_g(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+               byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
+               bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
+               int alpha_g_off, int shape_off, byte shape)
+{
+    template_mark_fill_rect(w, h, dst_ptr, src, num_comp, /*num_spots*/0, /*first_blend_spot*/0,
+               src_alpha, rowstride, planestride, /*additive*/1, pdev, /*blend_mode*/BLEND_MODE_Normal,
+               /*overprint*/0, /*drawn_comps*/0, /*tag_off*/0, curr_tag,
+               /*alpha_g_off*/0, /*shape_off*/0, shape);
+}
 
 static void
 mark_fill_rect_1comp_additive_no_spots(int w, int h, byte *restrict dst_ptr, byte *restrict src, int num_comp, int num_spots, int first_blend_spot,
@@ -2742,9 +2753,12 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                 fn = mark_fill_rect_1comp_additive_no_spots_normal;
             else
                 fn = mark_fill_rect_1comp_additive_no_spots;
-        } else if (tag_off == 0 && shape_off == 0 && blend_mode == BLEND_MODE_Normal)
-            fn = mark_fill_rect_additive_nospots_common;
-        else
+        } else if (tag_off == 0 && shape_off == 0 && blend_mode == BLEND_MODE_Normal) {
+            if (alpha_g_off == 0)
+                fn = mark_fill_rect_additive_nospots_common_no_alpha_g;
+            else
+                fn = mark_fill_rect_additive_nospots_common;
+        } else
             fn = mark_fill_rect_additive_nospots;
     } else
         fn = mark_fill_rect;
