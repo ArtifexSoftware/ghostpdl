@@ -1093,8 +1093,7 @@ art_pdf_composite_pixel_alpha_8_fast_mono(byte *restrict dst, const byte *restri
  */
 static inline void
 art_pdf_composite_pixel_alpha_8_fast_mono_normal(byte *restrict dst, const byte *restrict src,
-                                                 const pdf14_nonseparable_blending_procs_t * pblend_procs,
-                                                 int stride, pdf14_device *p14dev)
+                                                 int stride)
 {
     byte a_b, a_s;
     unsigned int a_r;
@@ -2390,8 +2389,8 @@ template_mark_fill_rect(int w, int h, byte *restrict dst_ptr, byte *restrict src
 
     for (j = h; j > 0; --j) {
         for (i = w; i > 0; --i) {
-            if (dst_ptr[num_comp * planestride] == 0) {
-                /* dest alpha is zero just use source. */
+            if ((blend_mode == BLEND_MODE_Normal && src[num_comp] == 0xff && !overprint) || dst_ptr[num_comp * planestride] == 0) {
+                /* dest alpha is zero (or normal, and solid src) just use source. */
                 if (additive) {
                     /* Hybrid case */
                     for (k = 0; k < (num_comp - num_spots); k++) {
@@ -2409,7 +2408,7 @@ template_mark_fill_rect(int w, int h, byte *restrict dst_ptr, byte *restrict src
                 }
                 /* alpha */
                 dst_ptr[num_comp * planestride] = src[num_comp];
-            } else {
+            } else if (src[num_comp] != 0) {
                 byte *pdst;
                 /* Complement subtractive planes */
                 if (!additive) {
@@ -2555,7 +2554,7 @@ mark_fill_rect_additive_nospots_common_no_alpha_g(int w, int h, byte *dst_ptr, b
 }
 
 static void
-mark_fill_rect_1comp_additive_no_spots(int w, int h, byte *restrict dst_ptr, byte *restrict src, int num_comp, int num_spots, int first_blend_spot,
+mark_fill_rect_add3_common(int w, int h, byte *restrict dst_ptr, byte *restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
                int alpha_g_off, int shape_off, byte shape)
@@ -2564,8 +2563,54 @@ mark_fill_rect_1comp_additive_no_spots(int w, int h, byte *restrict dst_ptr, byt
 
     for (j = h; j > 0; --j) {
         for (i = w; i > 0; --i) {
-            /* background empty, nothing to change */
-            if (dst_ptr[planestride] == 0) {
+            if (src[3] == 0xff || dst_ptr[3 * planestride] == 0) {
+                /* dest alpha is zero (or solid source) just use source. */
+                dst_ptr[0 * planestride] = src[0];
+                dst_ptr[1 * planestride] = src[1];
+                dst_ptr[2 * planestride] = src[2];
+                /* alpha */
+                dst_ptr[3 * planestride] = src[3];
+            } else if (src[3] != 0) {
+                int i;
+                byte a_s = src[3];
+                byte a_b = dst_ptr[3 * planestride];
+
+                /* Result alpha is Union of backdrop and source alpha */
+                int tmp = (0xff - a_b) * (0xff - a_s) + 0x80;
+                unsigned int a_r = 0xff - (((tmp >> 8) + tmp) >> 8);
+                /* todo: verify that a_r is nonzero in all cases */
+
+                /* Compute a_s / a_r in 16.16 format */
+                int src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
+
+                dst_ptr[3 * planestride] = a_r;
+
+                /* Do simple compositing of source over backdrop */
+                for (i = 0; i < 3; i++) {
+                    int c_s = src[i];
+                    int c_b = dst_ptr[i * planestride];
+                    tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
+                    dst_ptr[i * planestride] = tmp >> 16;
+                }
+            }
+            ++dst_ptr;
+        }
+        dst_ptr += rowstride;
+    }
+}
+
+static void
+mark_fill_rect_1comp_additive_no_spots(int w, int h, byte *restrict dst_ptr, byte *restrict src, int num_comp, int num_spots, int first_blend_spot,
+               byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
+               bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
+               int alpha_g_off, int shape_off, byte shape)
+{
+    int i;
+
+    for (; h > 0; --h) {
+        for (i = w; i > 0; --i) {
+            /* background empty, nothing to change, or solid source */
+            if ((blend_mode == BLEND_MODE_Normal && src[1] == 0xff) || dst_ptr[planestride] == 0) {
                 dst_ptr[0] = src[0];
                 dst_ptr[planestride] = src[1];
             } else {
@@ -2602,18 +2647,17 @@ mark_fill_rect_1comp_additive_no_spots_normal(int w, int h, byte *restrict dst_p
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
                int alpha_g_off, int shape_off, byte shape)
 {
-    int i, j;
+    int i;
 
-    for (j = h; j > 0; --j) {
+    for (; h > 0; --h) {
         for (i = w; i > 0; --i) {
-            /* background empty, nothing to change */
-            if (dst_ptr[planestride] == 0) {
+            /* background empty, nothing to change, or solid source */
+            if (dst_ptr[planestride] == 0 || src[1] == 0xff) {
                 dst_ptr[0] = src[0];
                 dst_ptr[planestride] = src[1];
             } else {
                 art_pdf_composite_pixel_alpha_8_fast_mono_normal(dst_ptr, src,
-                                                pdev->blend_procs,
-                                                planestride, pdev);
+                                                                 planestride);
             }
             if (tag_off) {
                 /* If src alpha is 100% then set to curr_tag, else or */
@@ -2631,6 +2675,30 @@ mark_fill_rect_1comp_additive_no_spots_normal(int w, int h, byte *restrict dst_p
             if (shape_off) {
                 int tmp = (255 - dst_ptr[shape_off]) * shape + 0x80;
                 dst_ptr[shape_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
+            }
+            ++dst_ptr;
+        }
+        dst_ptr += rowstride;
+    }
+}
+
+static void
+mark_fill_rect_1comp_additive_no_spots_fast(int w, int h, byte *restrict dst_ptr, byte *restrict src, int num_comp, int num_spots, int first_blend_spot,
+               byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
+               bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
+               int alpha_g_off, int shape_off, byte shape)
+{
+    int i;
+
+    for (; h > 0; --h) {
+        for (i = w; i > 0; --i) {
+            /* background empty, nothing to change, or solid source */
+            if (dst_ptr[planestride] == 0 || src[1] == 0xff) {
+                dst_ptr[0] = src[0];
+                dst_ptr[planestride] = src[1];
+            } else if (src[1] != 0) {
+                art_pdf_composite_pixel_alpha_8_fast_mono_normal(dst_ptr, src,
+                                                                 planestride);
             }
             ++dst_ptr;
         }
@@ -2749,14 +2817,20 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
         fn = mark_fill_rect_alpha0;
     else if (additive && num_spots == 0) {
         if (num_comp == 1) {
-            if (blend_mode == BLEND_MODE_Normal)
-                fn = mark_fill_rect_1comp_additive_no_spots_normal;
-            else
+            if (blend_mode == BLEND_MODE_Normal) {
+                if (tag_off == 0 && shape_off == 0 && blend_mode == BLEND_MODE_Normal && alpha_g_off == 0)
+                    fn = mark_fill_rect_1comp_additive_no_spots_fast;
+                else
+                    fn = mark_fill_rect_1comp_additive_no_spots_normal;
+            } else
                 fn = mark_fill_rect_1comp_additive_no_spots;
         } else if (tag_off == 0 && shape_off == 0 && blend_mode == BLEND_MODE_Normal) {
-            if (alpha_g_off == 0)
-                fn = mark_fill_rect_additive_nospots_common_no_alpha_g;
-            else
+            if (alpha_g_off == 0) {
+                if (num_comp == 3)
+                    fn = mark_fill_rect_add3_common;
+                else
+                    fn = mark_fill_rect_additive_nospots_common_no_alpha_g;
+            } else
                 fn = mark_fill_rect_additive_nospots_common;
         } else
             fn = mark_fill_rect_additive_nospots;
