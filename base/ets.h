@@ -3,10 +3,8 @@ extern "C" {
 #endif
 
 #include <stdio.h> /* For FILE */
+#include "stdpre.h" /* for gs_restrict */
 
-#ifndef restrict
-#define restrict __restrict
-#endif
 #ifndef inline
 #define inline __inline
 #endif
@@ -99,7 +97,7 @@ ETS_Ctx *
 ets_create(void *malloc_arg, const ETS_Params *params);
 
 void
-ets_line(ETS_Ctx *ctx, unsigned char **dest, const ETS_SrcPixel * const * restrict src);
+ets_line(ETS_Ctx *ctx, unsigned char **dest, const ETS_SrcPixel * const * gs_restrict src);
 
 void
 ets_destroy(void *malloc_arg, ETS_Ctx *ctx);

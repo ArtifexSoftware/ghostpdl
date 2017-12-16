@@ -20,9 +20,6 @@
 #include "stdpre.h"
 #include "gsmemory.h"
 
-#ifndef restrict
-#define restrict __restrict
-#endif /* restrict */
 #ifndef inline
 #define inline __inline
 #endif /* inline */
@@ -44,10 +41,10 @@ ClapTrap *ClapTrap_Init(gs_memory_t     *mem,
 void ClapTrap_Fin(gs_memory_t *mem,
                   ClapTrap *trapper);
 
-int ClapTrap_GetLine(ClapTrap      * restrict trapper,
-                     unsigned char * restrict buffer);
+int ClapTrap_GetLine(ClapTrap      * gs_restrict trapper,
+                     unsigned char * gs_restrict buffer);
 
-int ClapTrap_GetLinePlanar(ClapTrap       * restrict trapper,
-                           unsigned char ** restrict buffer);
+int ClapTrap_GetLinePlanar(ClapTrap       * gs_restrict trapper,
+                           unsigned char ** gs_restrict buffer);
 
 #endif /* CLAPTRAP_H */

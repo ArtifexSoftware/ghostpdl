@@ -604,8 +604,8 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
 #endif
 
 void
-gx_build_blended_image_row(const byte *restrict buf_ptr, int planestride,
-                           int width, int num_comp, byte bg, byte *restrict linebuf)
+gx_build_blended_image_row(const byte *gs_restrict buf_ptr, int planestride,
+                           int width, int num_comp, byte bg, byte *gs_restrict linebuf)
 {
     int inc = planestride * num_comp;
 

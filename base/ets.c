@@ -101,11 +101,11 @@ typedef struct {
  * on an input line. Called to generate optimised versions.
  */
 static inline void
-ets_line_template(unsigned char * restrict * restrict dest, const ETS_SrcPixel * const restrict * restrict src, int n_planes, int levels, int aspect_x, int aspect_y, int elo, int ehi, int ets_bias, int r_style, int old_quant, int fancy_coupling, int * restrict c_line,
-                  const signed char * restrict tmmat, unsigned int tmwidth, unsigned int tmheight, unsigned int y, int xd, ETS_PlaneCtx * restrict * restrict planes, uint32 *seeds, int in_plane_step, int out_plane_step)
+ets_line_template(unsigned char * gs_restrict * gs_restrict dest, const ETS_SrcPixel * const gs_restrict * gs_restrict src, int n_planes, int levels, int aspect_x, int aspect_y, int elo, int ehi, int ets_bias, int r_style, int old_quant, int fancy_coupling, int * gs_restrict c_line,
+                  const signed char * gs_restrict tmmat, unsigned int tmwidth, unsigned int tmheight, unsigned int y, int xd, ETS_PlaneCtx * gs_restrict * gs_restrict planes, uint32 *seeds, int in_plane_step, int out_plane_step)
 {
     ETS_PixelInternals pi[M];
-    ETS_PixelInternals * restrict pii;
+    ETS_PixelInternals * gs_restrict pii;
     int i;
     int im;
     int rg;
@@ -118,7 +118,7 @@ ets_line_template(unsigned char * restrict * restrict dest, const ETS_SrcPixel *
     const int aspect_y2 = aspect_y * aspect_y;
     int coupling;
     int rand_shift;
-    const signed char * restrict tmline = (r_style == ETS_RSTYLE_THRESHOLD) ? (tmmat + (y % tmheight) * tmwidth) : 0;
+    const signed char * gs_restrict tmline = (r_style == ETS_RSTYLE_THRESHOLD) ? (tmmat + (y % tmheight) * tmwidth) : 0;
 
     /* Read seeds (but only if we are using them) */
     seed1 = (r_style == 2 ? seeds[0] : 0);
@@ -187,7 +187,7 @@ ets_line_template(unsigned char * restrict * restrict dest, const ETS_SrcPixel *
             int err;
             int imo;
             int expected_r;
-            ETS_PixelData * restrict pd = &ctx->line[i];
+            ETS_PixelData * gs_restrict pd = &ctx->line[i];
 
             im         = ctx->lut[src_pixel];      /* image pixel (ink level) */
             expected_r = ctx->dist_lut[src_pixel]; /* expected distance */
@@ -396,7 +396,7 @@ ets_line_template(unsigned char * restrict * restrict dest, const ETS_SrcPixel *
         int rv = 0;
         int c1 = ctx->c1;
         int rlimit = 1 << (30 - ETS_SHIFT + c1);
-        ETS_PixelData * restrict pd = &ctx->line[xd];
+        ETS_PixelData * gs_restrict pd = &ctx->line[xd];
 
         for (i = xd; i > 0; i--)
         {
@@ -481,7 +481,7 @@ ets_line_default(ETS_Ctx *etc, unsigned char **dest, const ETS_SrcPixel * const 
 #endif
 
 void
-ets_line(ETS_Ctx *etc, unsigned char **dest, const ETS_SrcPixel * const * restrict src)
+ets_line(ETS_Ctx *etc, unsigned char **dest, const ETS_SrcPixel * const * gs_restrict src)
 {
     etc->line_fn(etc, dest, src);
     etc->y++;

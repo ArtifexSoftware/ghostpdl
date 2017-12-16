@@ -23,8 +23,8 @@
 /* This is the actual guts of the per-pixel processing.
  * We use a static inline, so the compiler can optimise
  * out as many of the tests as possible. */
-inline static void process_at_pixel(ClapTrap      * restrict ct,
-                                    unsigned char * restrict buffer,
+inline static void process_at_pixel(ClapTrap      * gs_restrict ct,
+                                    unsigned char * gs_restrict buffer,
                                     int            x,
                                     int            clips_on_x,
                                     int            clips_on_y,
@@ -139,8 +139,8 @@ inline static void process_at_pixel(ClapTrap      * restrict ct,
     buffer[oc] = v;
 }
 
-int ClapTrap_GetLine(ClapTrap      * restrict ct,
-                     unsigned char * restrict buffer)
+int ClapTrap_GetLine(ClapTrap      * gs_restrict ct,
+                     unsigned char * gs_restrict buffer)
 {
     int max_y;
     int l_margin;

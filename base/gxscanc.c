@@ -423,9 +423,9 @@ make_table_template(gx_device     * pdev,
                     int          ** tablep)
 {
     int             scanlines;
-    const subpath * restrict psub;
-    int           * restrict index;
-    int           * restrict table;
+    const subpath * gs_restrict psub;
+    int           * gs_restrict index;
+    int           * gs_restrict table;
     int             i;
     int64_t         offset;
     int             delta;
@@ -460,7 +460,7 @@ make_table_template(gx_device     * pdev,
 
     /* Step 1 continued: Run through the path, filling in the index */
     for (psub = path->first_subpath; psub != 0;) {
-        const segment * restrict pseg = (const segment *)psub;
+        const segment * gs_restrict pseg = (const segment *)psub;
         fixed          ey = pseg->pt.y;
         fixed          iy = ey;
         int            iey = fixed2int(iy) - base_y;
@@ -489,7 +489,7 @@ make_table_template(gx_device     * pdev,
                     assert("This should never happen" == NULL);
                     break;
                 case s_curve: {
-                    const curve_segment *const restrict pcur = (const curve_segment *)pseg;
+                    const curve_segment *const gs_restrict pcur = (const curve_segment *)pseg;
                     fixed c1y = pcur->p1.y;
                     fixed c2y = pcur->p2.y;
                     fixed maxy = sy, miny = sy;
@@ -691,10 +691,10 @@ static int make_table(gx_device     * pdev,
     return make_table_template(pdev, path, ibox, 1, 1, scanlines, index, table);
 }
 
-int gx_scan_convert(gx_device     * restrict pdev,
-                    gx_path       * restrict path,
-              const gs_fixed_rect * restrict clip,
-                    gx_edgebuffer * restrict edgebuffer,
+int gx_scan_convert(gx_device     * gs_restrict pdev,
+                    gx_path       * gs_restrict path,
+              const gs_fixed_rect * gs_restrict clip,
+                    gx_edgebuffer * gs_restrict edgebuffer,
                     fixed                    fixed_flat)
 {
     gs_fixed_rect  ibox;
@@ -810,8 +810,8 @@ int gx_scan_convert(gx_device     * restrict pdev,
 
 /* Step 5: Filter the intersections according to the rules */
 int
-gx_filter_edgebuffer(gx_device       * restrict pdev,
-                     gx_edgebuffer   * restrict edgebuffer,
+gx_filter_edgebuffer(gx_device       * gs_restrict pdev,
+                     gx_edgebuffer   * gs_restrict edgebuffer,
                      int                        rule)
 {
     int i;
@@ -866,9 +866,9 @@ gx_filter_edgebuffer(gx_device       * restrict pdev,
 
 /* Step 6: Fill the edgebuffer */
 int
-gx_fill_edgebuffer(gx_device       * restrict pdev,
-             const gx_device_color * restrict pdevc,
-                   gx_edgebuffer   * restrict edgebuffer,
+gx_fill_edgebuffer(gx_device       * gs_restrict pdev,
+             const gx_device_color * gs_restrict pdevc,
+                   gx_edgebuffer   * gs_restrict edgebuffer,
                    int                        log_op)
 {
     int i, code;
@@ -979,7 +979,7 @@ typedef struct
 } cursor;
 
 static inline void
-cursor_output(cursor * restrict cr, int iy)
+cursor_output(cursor * gs_restrict cr, int iy)
 {
     int *row;
     int count;
@@ -1006,7 +1006,7 @@ cursor_output(cursor * restrict cr, int iy)
 }
 
 static inline void
-cursor_output_inrange(cursor * restrict cr, int iy)
+cursor_output_inrange(cursor * gs_restrict cr, int iy)
 {
     int *row;
     int count;
@@ -1033,7 +1033,7 @@ cursor_output_inrange(cursor * restrict cr, int iy)
 
 /* Step the cursor in y, allowing for maybe crossing a scanline */
 static inline void
-cursor_step(cursor * restrict cr, fixed dy, fixed x)
+cursor_step(cursor * gs_restrict cr, fixed dy, fixed x)
 {
     int new_iy;
     int iy = fixed2int(cr->y) - cr->base;
@@ -1054,7 +1054,7 @@ cursor_step(cursor * restrict cr, fixed dy, fixed x)
 
 /* Step the cursor in y, never by enough to cross a scanline. */
 static inline void
-cursor_never_step_vertical(cursor * restrict cr, fixed dy, fixed x)
+cursor_never_step_vertical(cursor * gs_restrict cr, fixed dy, fixed x)
 {
     assert(fixed2int(cr->y+dy) == fixed2int(cr->y));
 
@@ -1065,7 +1065,7 @@ cursor_never_step_vertical(cursor * restrict cr, fixed dy, fixed x)
  * knowing that we are moving left, and that the right edge
  * has already been accounted for. */
 static inline void
-cursor_never_step_left(cursor * restrict cr, fixed dy, fixed x)
+cursor_never_step_left(cursor * gs_restrict cr, fixed dy, fixed x)
 {
     assert(fixed2int(cr->y+dy) == fixed2int(cr->y));
 
@@ -1078,7 +1078,7 @@ cursor_never_step_left(cursor * restrict cr, fixed dy, fixed x)
  * knowing that we are moving right, and that the left edge
  * has already been accounted for. */
 static inline void
-cursor_never_step_right(cursor * restrict cr, fixed dy, fixed x)
+cursor_never_step_right(cursor * gs_restrict cr, fixed dy, fixed x)
 {
     assert(fixed2int(cr->y+dy) == fixed2int(cr->y));
 
@@ -1089,7 +1089,7 @@ cursor_never_step_right(cursor * restrict cr, fixed dy, fixed x)
 
 /* Step the cursor in y, always by enough to cross a scanline. */
 static inline void
-cursor_always_step(cursor * restrict cr, fixed dy, fixed x)
+cursor_always_step(cursor * gs_restrict cr, fixed dy, fixed x)
 {
     int iy = fixed2int(cr->y) - cr->base;
 
@@ -1103,7 +1103,7 @@ cursor_always_step(cursor * restrict cr, fixed dy, fixed x)
  * part of a vertical line, knowing that we are moving from a
  * position guaranteed to be in the valid y range. */
 static inline void
-cursor_always_step_inrange_vertical(cursor * restrict cr, fixed dy, fixed x)
+cursor_always_step_inrange_vertical(cursor * gs_restrict cr, fixed dy, fixed x)
 {
     int iy = fixed2int(cr->y) - cr->base;
 
@@ -1115,7 +1115,7 @@ cursor_always_step_inrange_vertical(cursor * restrict cr, fixed dy, fixed x)
  * part of a left moving line, knowing that we are moving from a
  * position guaranteed to be in the valid y range. */
 static inline void
-cursor_always_inrange_step_left(cursor * restrict cr, fixed dy, fixed x)
+cursor_always_inrange_step_left(cursor * gs_restrict cr, fixed dy, fixed x)
 {
     int iy = fixed2int(cr->y) - cr->base;
 
@@ -1128,7 +1128,7 @@ cursor_always_inrange_step_left(cursor * restrict cr, fixed dy, fixed x)
  * part of a right moving line, knowing that we are moving from a
  * position guaranteed to be in the valid y range. */
 static inline void
-cursor_always_inrange_step_right(cursor * restrict cr, fixed dy, fixed x)
+cursor_always_inrange_step_right(cursor * gs_restrict cr, fixed dy, fixed x)
 {
     int iy = fixed2int(cr->y) - cr->base;
 
@@ -1137,7 +1137,7 @@ cursor_always_inrange_step_right(cursor * restrict cr, fixed dy, fixed x)
     cr->left = x;
 }
 
-static inline void cursor_init(cursor * restrict cr, fixed y, fixed x)
+static inline void cursor_init(cursor * gs_restrict cr, fixed y, fixed x)
 {
     assert(y >= int2fixed(cr->base) && y <= int2fixed(cr->base + cr->scanlines));
 
@@ -1147,29 +1147,29 @@ static inline void cursor_init(cursor * restrict cr, fixed y, fixed x)
     cr->d = DIRN_UNSET;
 }
 
-static inline void cursor_left_merge(cursor * restrict cr, fixed x)
+static inline void cursor_left_merge(cursor * gs_restrict cr, fixed x)
 {
     if (x < cr->left)
         cr->left = x;
 }
 
-static inline void cursor_left(cursor * restrict cr, fixed x)
+static inline void cursor_left(cursor * gs_restrict cr, fixed x)
 {
     cr->left = x;
 }
 
-static inline void cursor_right_merge(cursor * restrict cr, fixed x)
+static inline void cursor_right_merge(cursor * gs_restrict cr, fixed x)
 {
     if (x > cr->right)
         cr->right = x;
 }
 
-static inline void cursor_right(cursor * restrict cr, fixed x)
+static inline void cursor_right(cursor * gs_restrict cr, fixed x)
 {
     cr->right = x;
 }
 
-static inline void cursor_down(cursor * restrict cr, fixed x)
+static inline void cursor_down(cursor * gs_restrict cr, fixed x)
 {
     if (cr->d == DIRN_UP)
     {
@@ -1180,7 +1180,7 @@ static inline void cursor_down(cursor * restrict cr, fixed x)
     cr->d = DIRN_DOWN;
 }
 
-static inline void cursor_up(cursor * restrict cr, fixed x)
+static inline void cursor_up(cursor * gs_restrict cr, fixed x)
 {
     if (cr->d == DIRN_DOWN)
     {
@@ -1192,7 +1192,7 @@ static inline void cursor_up(cursor * restrict cr, fixed x)
 }
 
 static inline void
-cursor_flush(cursor * restrict cr, fixed x)
+cursor_flush(cursor * gs_restrict cr, fixed x)
 {
     int iy;
 
@@ -1236,7 +1236,7 @@ cursor_flush(cursor * restrict cr, fixed x)
     }
 }
 
-static void mark_line_app(cursor * restrict cr, fixed sx, fixed sy, fixed ex, fixed ey)
+static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex, fixed ey)
 {
     int isy, iey;
     fixed saved_sy = sy;
@@ -1804,10 +1804,10 @@ static int make_table_app(gx_device     * pdev,
     return make_table_template(pdev, path, ibox, 2, 0, scanlines, index, table);
 }
 
-int gx_scan_convert_app(gx_device     * restrict pdev,
-                        gx_path       * restrict path,
-                  const gs_fixed_rect * restrict clip,
-                        gx_edgebuffer * restrict edgebuffer,
+int gx_scan_convert_app(gx_device     * gs_restrict pdev,
+                        gx_path       * gs_restrict path,
+                  const gs_fixed_rect * gs_restrict clip,
+                        gx_edgebuffer * gs_restrict edgebuffer,
                         fixed                    fixed_flat)
 {
     gs_fixed_rect  ibox;
@@ -1918,9 +1918,9 @@ int gx_scan_convert_app(gx_device     * restrict pdev,
         if (rowlen <= 6) {
             int j, k;
             for (j = 0; j < rowlen-1; j++) {
-                int * restrict t = &row[j<<1];
+                int * gs_restrict t = &row[j<<1];
                 for (k = j+1; k < rowlen; k++) {
-                    int * restrict s = &row[k<<1];
+                    int * gs_restrict s = &row[k<<1];
                     int tmp;
                     if (t[0] < s[0])
                         continue;
@@ -1944,8 +1944,8 @@ swap01:
 
 /* Step 5: Filter the intersections according to the rules */
 int
-gx_filter_edgebuffer_app(gx_device       * restrict pdev,
-                         gx_edgebuffer   * restrict edgebuffer,
+gx_filter_edgebuffer_app(gx_device       * gs_restrict pdev,
+                         gx_edgebuffer   * gs_restrict edgebuffer,
                          int                        rule)
 {
     int i;
@@ -2029,9 +2029,9 @@ gx_filter_edgebuffer_app(gx_device       * restrict pdev,
 
 /* Step 6: Fill */
 int
-gx_fill_edgebuffer_app(gx_device       * restrict pdev,
-                 const gx_device_color * restrict pdevc,
-                       gx_edgebuffer   * restrict edgebuffer,
+gx_fill_edgebuffer_app(gx_device       * gs_restrict pdev,
+                 const gx_device_color * gs_restrict pdevc,
+                       gx_edgebuffer   * gs_restrict edgebuffer,
                        int                        log_op)
 {
     int i, code;
@@ -2307,10 +2307,10 @@ static int make_table_tr(gx_device     * pdev,
     return make_table_template(pdev, path, ibox, 2, 1, scanlines, index, table);
 }
 
-int gx_scan_convert_tr(gx_device     * restrict pdev,
-                       gx_path       * restrict path,
-                 const gs_fixed_rect * restrict clip,
-                       gx_edgebuffer * restrict edgebuffer,
+int gx_scan_convert_tr(gx_device     * gs_restrict pdev,
+                       gx_path       * gs_restrict path,
+                 const gs_fixed_rect * gs_restrict clip,
+                       gx_edgebuffer * gs_restrict edgebuffer,
                        fixed                    fixed_flat)
 {
     gs_fixed_rect  ibox;
@@ -2411,9 +2411,9 @@ int gx_scan_convert_tr(gx_device     * restrict pdev,
         if (rowlen <= 6) {
             int j, k;
             for (j = 0; j < rowlen-1; j++) {
-                int * restrict t = &row[j<<1];
+                int * gs_restrict t = &row[j<<1];
                 for (k = j+1; k < rowlen; k++) {
-                    int * restrict s = &row[k<<1];
+                    int * gs_restrict s = &row[k<<1];
                     int tmp;
                     if (t[0] < s[0])
                         continue;
@@ -2434,8 +2434,8 @@ int gx_scan_convert_tr(gx_device     * restrict pdev,
 
 /* Step 5: Filter the intersections according to the rules */
 int
-gx_filter_edgebuffer_tr(gx_device       * restrict pdev,
-                        gx_edgebuffer   * restrict edgebuffer,
+gx_filter_edgebuffer_tr(gx_device       * gs_restrict pdev,
+                        gx_edgebuffer   * gs_restrict edgebuffer,
                         int                        rule)
 {
     int i;
@@ -2493,9 +2493,9 @@ gx_filter_edgebuffer_tr(gx_device       * restrict pdev,
 
 /* Step 6: Fill the edgebuffer */
 int
-gx_fill_edgebuffer_tr(gx_device       * restrict pdev,
-                const gx_device_color * restrict pdevc,
-                      gx_edgebuffer   * restrict edgebuffer,
+gx_fill_edgebuffer_tr(gx_device       * gs_restrict pdev,
+                const gx_device_color * gs_restrict pdevc,
+                      gx_edgebuffer   * gs_restrict edgebuffer,
                       int                        log_op)
 {
     int i, j, code;
@@ -2766,7 +2766,7 @@ typedef struct
 } cursor_tr;
 
 static inline void
-cursor_output_tr(cursor_tr * restrict cr, int iy)
+cursor_output_tr(cursor_tr * gs_restrict cr, int iy)
 {
     int *row;
     int count;
@@ -2797,7 +2797,7 @@ cursor_output_tr(cursor_tr * restrict cr, int iy)
 }
 
 static inline void
-cursor_output_inrange_tr(cursor_tr * restrict cr, int iy)
+cursor_output_inrange_tr(cursor_tr * gs_restrict cr, int iy)
 {
     int *row;
     int count;
@@ -2828,7 +2828,7 @@ cursor_output_inrange_tr(cursor_tr * restrict cr, int iy)
 
 /* Step the cursor in y, allowing for maybe crossing a scanline */
 static inline void
-cursor_step_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+cursor_step_tr(cursor_tr * gs_restrict cr, fixed dy, fixed x, int id)
 {
     int new_iy;
     int iy = fixed2int(cr->y) - cr->base;
@@ -2857,7 +2857,7 @@ cursor_step_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
 
 /* Step the cursor in y, never by enough to cross a scanline. */
 static inline void
-cursor_never_step_vertical_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+cursor_never_step_vertical_tr(cursor_tr * gs_restrict cr, fixed dy, fixed x, int id)
 {
     assert(fixed2int(cr->y+dy) == fixed2int(cr->y));
 
@@ -2868,7 +2868,7 @@ cursor_never_step_vertical_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id
  * knowing that we are moving left, and that the right edge
  * has already been accounted for. */
 static inline void
-cursor_never_step_left_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+cursor_never_step_left_tr(cursor_tr * gs_restrict cr, fixed dy, fixed x, int id)
 {
     assert(fixed2int(cr->y+dy) == fixed2int(cr->y));
 
@@ -2884,7 +2884,7 @@ cursor_never_step_left_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
  * knowing that we are moving right, and that the left edge
  * has already been accounted for. */
 static inline void
-cursor_never_step_right_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+cursor_never_step_right_tr(cursor_tr * gs_restrict cr, fixed dy, fixed x, int id)
 {
     assert(fixed2int(cr->y+dy) == fixed2int(cr->y));
 
@@ -2898,7 +2898,7 @@ cursor_never_step_right_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
 
 /* Step the cursor in y, always by enough to cross a scanline. */
 static inline void
-cursor_always_step_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+cursor_always_step_tr(cursor_tr * gs_restrict cr, fixed dy, fixed x, int id)
 {
     int iy = fixed2int(cr->y) - cr->base;
 
@@ -2914,7 +2914,7 @@ cursor_always_step_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
  * part of a vertical line, knowing that we are moving from a
  * position guaranteed to be in the valid y range. */
 static inline void
-cursor_always_step_inrange_vertical_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+cursor_always_step_inrange_vertical_tr(cursor_tr * gs_restrict cr, fixed dy, fixed x, int id)
 {
     int iy = fixed2int(cr->y) - cr->base;
 
@@ -2926,7 +2926,7 @@ cursor_always_step_inrange_vertical_tr(cursor_tr * restrict cr, fixed dy, fixed 
  * part of a left moving line, knowing that we are moving from a
  * position guaranteed to be in the valid y range. */
 static inline void
-cursor_always_inrange_step_left_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+cursor_always_inrange_step_left_tr(cursor_tr * gs_restrict cr, fixed dy, fixed x, int id)
 {
     int iy = fixed2int(cr->y) - cr->base;
 
@@ -2940,7 +2940,7 @@ cursor_always_inrange_step_left_tr(cursor_tr * restrict cr, fixed dy, fixed x, i
  * part of a right moving line, knowing that we are moving from a
  * position guaranteed to be in the valid y range. */
 static inline void
-cursor_always_inrange_step_right_tr(cursor_tr * restrict cr, fixed dy, fixed x, int id)
+cursor_always_inrange_step_right_tr(cursor_tr * gs_restrict cr, fixed dy, fixed x, int id)
 {
     int iy = fixed2int(cr->y) - cr->base;
 
@@ -2950,7 +2950,7 @@ cursor_always_inrange_step_right_tr(cursor_tr * restrict cr, fixed dy, fixed x, 
     cr->lid = id;
 }
 
-static inline void cursor_init_tr(cursor_tr * restrict cr, fixed y, fixed x, int id)
+static inline void cursor_init_tr(cursor_tr * gs_restrict cr, fixed y, fixed x, int id)
 {
     assert(y >= int2fixed(cr->base) && y <= int2fixed(cr->base + cr->scanlines));
 
@@ -2962,7 +2962,7 @@ static inline void cursor_init_tr(cursor_tr * restrict cr, fixed y, fixed x, int
     cr->d = DIRN_UNSET;
 }
 
-static inline void cursor_left_merge_tr(cursor_tr * restrict cr, fixed x, int id)
+static inline void cursor_left_merge_tr(cursor_tr * gs_restrict cr, fixed x, int id)
 {
     if (x < cr->left) {
         cr->left = x;
@@ -2970,13 +2970,13 @@ static inline void cursor_left_merge_tr(cursor_tr * restrict cr, fixed x, int id
     }
 }
 
-static inline void cursor_left_tr(cursor_tr * restrict cr, fixed x, int id)
+static inline void cursor_left_tr(cursor_tr * gs_restrict cr, fixed x, int id)
 {
     cr->left = x;
     cr->lid  = id;
 }
 
-static inline void cursor_right_merge_tr(cursor_tr * restrict cr, fixed x, int id)
+static inline void cursor_right_merge_tr(cursor_tr * gs_restrict cr, fixed x, int id)
 {
     if (x > cr->right) {
         cr->right = x;
@@ -2984,13 +2984,13 @@ static inline void cursor_right_merge_tr(cursor_tr * restrict cr, fixed x, int i
     }
 }
 
-static inline void cursor_right_tr(cursor_tr * restrict cr, fixed x, int id)
+static inline void cursor_right_tr(cursor_tr * gs_restrict cr, fixed x, int id)
 {
     cr->right = x;
     cr->rid   = id;
 }
 
-static inline void cursor_down_tr(cursor_tr * restrict cr, fixed x, int id)
+static inline void cursor_down_tr(cursor_tr * gs_restrict cr, fixed x, int id)
 {
     if (cr->d == DIRN_UP)
     {
@@ -3003,7 +3003,7 @@ static inline void cursor_down_tr(cursor_tr * restrict cr, fixed x, int id)
     cr->d = DIRN_DOWN;
 }
 
-static inline void cursor_up_tr(cursor_tr * restrict cr, fixed x, int id)
+static inline void cursor_up_tr(cursor_tr * gs_restrict cr, fixed x, int id)
 {
     if (cr->d == DIRN_DOWN)
     {
@@ -3017,7 +3017,7 @@ static inline void cursor_up_tr(cursor_tr * restrict cr, fixed x, int id)
 }
 
 static inline void
-cursor_flush_tr(cursor_tr * restrict cr, fixed x, int id)
+cursor_flush_tr(cursor_tr * gs_restrict cr, fixed x, int id)
 {
     int iy;
 
@@ -3071,7 +3071,7 @@ cursor_flush_tr(cursor_tr * restrict cr, fixed x, int id)
     }
 }
 
-static void mark_line_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed ex, fixed ey, int id)
+static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fixed ex, fixed ey, int id)
 {
     int isy, iey;
     fixed saved_sy = sy;
@@ -3573,7 +3573,7 @@ end:
     }
 }
 
-static void mark_curve_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, int depth, int * restrict id)
+static void mark_curve_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, int depth, int * gs_restrict id)
 {
         int ax = (sx + c1x)>>1;
         int ay = (sy + c1y)>>1;
@@ -3599,7 +3599,7 @@ static void mark_curve_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed
         }
 }
 
-static void mark_curve_big_tr_app(cursor_tr * restrict cr, fixed64 sx, fixed64 sy, fixed64 c1x, fixed64 c1y, fixed64 c2x, fixed64 c2y, fixed64 ex, fixed64 ey, int depth, int * restrict id)
+static void mark_curve_big_tr_app(cursor_tr * gs_restrict cr, fixed64 sx, fixed64 sy, fixed64 c1x, fixed64 c1y, fixed64 c2x, fixed64 c2y, fixed64 ex, fixed64 ey, int depth, int * gs_restrict id)
 {
     fixed64 ax = (sx + c1x)>>1;
     fixed64 ay = (sy + c1y)>>1;
@@ -3625,7 +3625,7 @@ static void mark_curve_big_tr_app(cursor_tr * restrict cr, fixed64 sx, fixed64 s
     }
 }
 
-static void mark_curve_top_tr_app(cursor_tr * restrict cr, fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, int depth, int * restrict id)
+static void mark_curve_top_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, fixed c2y, fixed ex, fixed ey, int depth, int * gs_restrict id)
 {
     fixed test = (sx^(sx<<1))|(sy^(sy<<1))|(c1x^(c1x<<1))|(c1y^(c1y<<1))|(c2x^(c2x<<1))|(c2y^(c2y<<1))|(ex^(ex<<1))|(ey^(ey<<1));
 
@@ -3645,10 +3645,10 @@ static int make_table_tr_app(gx_device     * pdev,
     return make_table_template(pdev, path, ibox, 4, 0, scanlines, index, table);
 }
 
-int gx_scan_convert_tr_app(gx_device     * restrict pdev,
-                           gx_path       * restrict path,
-                     const gs_fixed_rect * restrict clip,
-                           gx_edgebuffer * restrict edgebuffer,
+int gx_scan_convert_tr_app(gx_device     * gs_restrict pdev,
+                           gx_path       * gs_restrict path,
+                     const gs_fixed_rect * gs_restrict clip,
+                           gx_edgebuffer * gs_restrict edgebuffer,
                            fixed                    fixed_flat)
 {
     gs_fixed_rect  ibox;
@@ -3761,9 +3761,9 @@ int gx_scan_convert_tr_app(gx_device     * restrict pdev,
         if (rowlen <= 6) {
             int j, k;
             for (j = 0; j < rowlen-1; j++) {
-                int * restrict t = &row[j<<2];
+                int * gs_restrict t = &row[j<<2];
                 for (k = j+1; k < rowlen; k++) {
-                    int * restrict s = &row[k<<2];
+                    int * gs_restrict s = &row[k<<2];
                     int tmp;
                     if (t[0] < s[0])
                         continue;
@@ -3799,8 +3799,8 @@ swap13:
 
 /* Step 5: Filter the intersections according to the rules */
 int
-gx_filter_edgebuffer_tr_app(gx_device       * restrict pdev,
-                            gx_edgebuffer   * restrict edgebuffer,
+gx_filter_edgebuffer_tr_app(gx_device       * gs_restrict pdev,
+                            gx_edgebuffer   * gs_restrict edgebuffer,
                             int                        rule)
 {
     int i;
@@ -3902,9 +3902,9 @@ gx_filter_edgebuffer_tr_app(gx_device       * restrict pdev,
 
 /* Step 6: Fill */
 int
-gx_fill_edgebuffer_tr_app(gx_device       * restrict pdev,
-                    const gx_device_color * restrict pdevc,
-                          gx_edgebuffer   * restrict edgebuffer,
+gx_fill_edgebuffer_tr_app(gx_device       * gs_restrict pdev,
+                    const gx_device_color * gs_restrict pdevc,
+                          gx_edgebuffer   * gs_restrict edgebuffer,
                           int                        log_op)
 {
     int i, j, code;

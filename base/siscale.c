@@ -24,10 +24,6 @@
 #include "siscale.h"
 #include "gxfrac.h"
 
-#ifndef restrict
-#define restrict __restrict
-#endif /* restrict */
-
 /*
  *    Image scaling code is based on public domain code from
  *      Graphics Gems III (pp. 414-424), Academic Press, 1992.
@@ -53,11 +49,11 @@ typedef struct {
 } CLIST;
 
 typedef void (zoom_y_fn)(void *dst,
-       const byte * restrict tmp, int skip, int WidthOut, int Stride,
-       int Colors, const CLIST * restrict contrib, const CONTRIB * restrict items);
-typedef void (zoom_x_fn)(byte * restrict tmp, const void /*PixelIn */ * restrict src,
-       int skip, int tmp_width, int Colors, const CLIST * restrict contrib,
-       const CONTRIB * restrict items);
+       const byte * gs_restrict tmp, int skip, int WidthOut, int Stride,
+       int Colors, const CLIST * gs_restrict contrib, const CONTRIB * gs_restrict items);
+typedef void (zoom_x_fn)(byte * gs_restrict tmp, const void /*PixelIn */ * gs_restrict src,
+       int skip, int tmp_width, int Colors, const CLIST * gs_restrict contrib,
+       const CONTRIB * gs_restrict items);
 
 /* ImageScaleEncode / ImageScaleDecode */
 typedef struct stream_IScale_state_s {
@@ -299,9 +295,9 @@ calculate_contrib(
 
 /* Apply filter to zoom horizontally from src to tmp. */
 static void
-zoom_x1(byte * restrict tmp, const void /*PixelIn */ * restrict src,
-                 int skip, int tmp_width, int Colors, const CLIST * restrict contrib,
-                 const CONTRIB * restrict items)
+zoom_x1(byte * gs_restrict tmp, const void /*PixelIn */ * gs_restrict src,
+                 int skip, int tmp_width, int Colors, const CLIST * gs_restrict contrib,
+                 const CONTRIB * gs_restrict items)
 {
     int c, i;
 
@@ -309,17 +305,17 @@ zoom_x1(byte * restrict tmp, const void /*PixelIn */ * restrict src,
     tmp += Colors * skip;
 
     for (c = 0; c < Colors; ++c) {
-        byte *restrict tp = tmp + c;
-        const CLIST *restrict clp = contrib;
-        const byte *restrict raster = (const byte *)src + c;
+        byte *gs_restrict tp = tmp + c;
+        const CLIST *gs_restrict clp = contrib;
+        const byte *gs_restrict raster = (const byte *)src + c;
 
         if_debug1('W', "[W]zoom_x color %d:", c);
 
         for ( i = 0; i < tmp_width; tp += Colors, ++clp, ++i ) {
             int weight = 0;
             int j = clp->n;
-            const byte *restrict pp = raster + clp->first_pixel;
-            const CONTRIB *restrict cp = items + clp->index;
+            const byte *gs_restrict pp = raster + clp->first_pixel;
+            const CONTRIB *gs_restrict cp = items + clp->index;
 
             for ( ; j > 0; pp += Colors, ++cp, --j )
                  weight += *pp * cp->weight;
@@ -332,9 +328,9 @@ zoom_x1(byte * restrict tmp, const void /*PixelIn */ * restrict src,
 }
 
 static void
-zoom_x1_1(byte * restrict tmp, const void /*PixelIn */ * restrict src,
-          int skip, int tmp_width, int Colors, const CLIST * restrict contrib,
-          const CONTRIB * restrict items)
+zoom_x1_1(byte * gs_restrict tmp, const void /*PixelIn */ * gs_restrict src,
+          int skip, int tmp_width, int Colors, const CLIST * gs_restrict contrib,
+          const CONTRIB * gs_restrict items)
 {
     contrib += skip;
     tmp += Colors * skip;
@@ -343,8 +339,8 @@ zoom_x1_1(byte * restrict tmp, const void /*PixelIn */ * restrict src,
 
     for ( ; tmp_width != 0; --tmp_width ) {
         int j = contrib->n;
-        const byte *restrict pp = ((const byte *)src) + contrib->first_pixel;
-        const CONTRIB *restrict cp = items + (contrib++)->index;
+        const byte *gs_restrict pp = ((const byte *)src) + contrib->first_pixel;
+        const CONTRIB *gs_restrict cp = items + (contrib++)->index;
         int weight0 = 0;
 
         for ( ; j > 0; --j ) {
@@ -358,9 +354,9 @@ zoom_x1_1(byte * restrict tmp, const void /*PixelIn */ * restrict src,
 }
 
 static void
-zoom_x1_3(byte * restrict tmp, const void /*PixelIn */ * restrict src,
-          int skip, int tmp_width, int Colors, const CLIST * restrict contrib,
-          const CONTRIB * restrict items)
+zoom_x1_3(byte * gs_restrict tmp, const void /*PixelIn */ * gs_restrict src,
+          int skip, int tmp_width, int Colors, const CLIST * gs_restrict contrib,
+          const CONTRIB * gs_restrict items)
 {
     contrib += skip;
     tmp += Colors * skip;
@@ -369,8 +365,8 @@ zoom_x1_3(byte * restrict tmp, const void /*PixelIn */ * restrict src,
 
     for ( ; tmp_width != 0; --tmp_width ) {
         int j = contrib->n;
-        const byte *restrict pp = ((const byte *)src) + contrib->first_pixel;
-        const CONTRIB *restrict cp = items + (contrib++)->index;
+        const byte *gs_restrict pp = ((const byte *)src) + contrib->first_pixel;
+        const CONTRIB *gs_restrict cp = items + (contrib++)->index;
         int weight0 = 0;
         int weight1 = 0;
         int weight2 = 0;
@@ -393,9 +389,9 @@ zoom_x1_3(byte * restrict tmp, const void /*PixelIn */ * restrict src,
 }
 
 static void
-zoom_x1_4(byte * restrict tmp, const void /*PixelIn */ * restrict src,
-          int skip, int tmp_width, int Colors, const CLIST * restrict contrib,
-          const CONTRIB * restrict items)
+zoom_x1_4(byte * gs_restrict tmp, const void /*PixelIn */ * gs_restrict src,
+          int skip, int tmp_width, int Colors, const CLIST * gs_restrict contrib,
+          const CONTRIB * gs_restrict items)
 {
     contrib += skip;
     tmp += Colors * skip;
@@ -404,8 +400,8 @@ zoom_x1_4(byte * restrict tmp, const void /*PixelIn */ * restrict src,
 
     for ( ; tmp_width != 0; --tmp_width ) {
         int j = contrib->n;
-        const byte *restrict pp = ((const byte *)src) + contrib->first_pixel;
-        const CONTRIB *restrict cp = items + (contrib++)->index;
+        const byte *gs_restrict pp = ((const byte *)src) + contrib->first_pixel;
+        const CONTRIB *gs_restrict cp = items + (contrib++)->index;
         int weight0 = 0;
         int weight1 = 0;
         int weight2 = 0;
@@ -432,9 +428,9 @@ zoom_x1_4(byte * restrict tmp, const void /*PixelIn */ * restrict src,
 }
 
 static void
-zoom_x2(byte * restrict tmp, const void /*PixelIn */ * restrict src,
-        int skip, int tmp_width, int Colors, const CLIST * restrict contrib,
-        const CONTRIB * restrict items)
+zoom_x2(byte * gs_restrict tmp, const void /*PixelIn */ * gs_restrict src,
+        int skip, int tmp_width, int Colors, const CLIST * gs_restrict contrib,
+        const CONTRIB * gs_restrict items)
 {
     int c, i;
 
@@ -442,16 +438,16 @@ zoom_x2(byte * restrict tmp, const void /*PixelIn */ * restrict src,
     tmp += Colors * skip;
 
     for (c = 0; c < Colors; ++c) {
-        byte *restrict tp = tmp + c;
-        const CLIST *restrict clp = contrib;
-        const bits16 *restrict raster = (const bits16 *)src + c;
+        byte *gs_restrict tp = tmp + c;
+        const CLIST *gs_restrict clp = contrib;
+        const bits16 *gs_restrict raster = (const bits16 *)src + c;
 
         if_debug1('W', "[W]zoom_x color %d:", c);
         for ( i = 0; i < tmp_width; tp += Colors, ++clp, ++i ) {
             int weight = 0;
             int j = clp->n;
-            const bits16 *restrict pp = raster + clp->first_pixel;
-            const CONTRIB *restrict cp = items + clp->index;
+            const bits16 *gs_restrict pp = raster + clp->first_pixel;
+            const CONTRIB *gs_restrict cp = items + clp->index;
 
             switch ( Colors ) {
                 case 1:
@@ -480,19 +476,19 @@ zoom_x2(byte * restrict tmp, const void /*PixelIn */ * restrict src,
  * without regard to the number of samples per pixel.
  */
 static inline void
-zoom_y1_4(void /*PixelOut */ * restrict dst,
-          const byte * restrict tmp, int skip, int WidthOut, int Stride,
-          int Colors, const CLIST * restrict contrib, const CONTRIB * restrict items)
+zoom_y1_4(void /*PixelOut */ * gs_restrict dst,
+          const byte * gs_restrict tmp, int skip, int WidthOut, int Stride,
+          int Colors, const CLIST * gs_restrict contrib, const CONTRIB * gs_restrict items)
 {
     int kn = Stride * Colors;
     int width = WidthOut * Colors;
     int first_pixel = contrib->first_pixel;
-    const CONTRIB *restrict cbp = items + contrib->index;
+    const CONTRIB *gs_restrict cbp = items + contrib->index;
     int w0 = cbp[0].weight;
     int w1 = cbp[1].weight;
     int w2 = cbp[2].weight;
     int w3 = cbp[3].weight;
-    byte *restrict d;
+    byte *gs_restrict d;
 
     if_debug0('W', "[W]zoom_y: ");
 
@@ -515,20 +511,20 @@ zoom_y1_4(void /*PixelOut */ * restrict dst,
     if_debug0('W', "\n");
 }
 static inline void
-zoom_y1_5(void /*PixelOut */ * restrict dst,
-          const byte * restrict tmp, int skip, int WidthOut, int Stride,
-          int Colors, const CLIST * restrict contrib, const CONTRIB * restrict items)
+zoom_y1_5(void /*PixelOut */ * gs_restrict dst,
+          const byte * gs_restrict tmp, int skip, int WidthOut, int Stride,
+          int Colors, const CLIST * gs_restrict contrib, const CONTRIB * gs_restrict items)
 {
     int kn = Stride * Colors;
     int width = WidthOut * Colors;
     int first_pixel = contrib->first_pixel;
-    const CONTRIB *restrict cbp = items + contrib->index;
+    const CONTRIB *gs_restrict cbp = items + contrib->index;
     int w0 = cbp[0].weight;
     int w1 = cbp[1].weight;
     int w2 = cbp[2].weight;
     int w3 = cbp[3].weight;
     int w4 = cbp[4].weight;
-    byte *restrict d;
+    byte *gs_restrict d;
 
     if_debug0('W', "[W]zoom_y: ");
 
@@ -552,16 +548,16 @@ zoom_y1_5(void /*PixelOut */ * restrict dst,
     if_debug0('W', "\n");
 }
 static inline void
-template_zoom_y1(void /*PixelOut */ * restrict dst,
-                 const byte * restrict tmp, int skip, int WidthOut, int Stride,
-                 int Colors, const CLIST * restrict contrib, const CONTRIB * restrict items, int n)
+template_zoom_y1(void /*PixelOut */ * gs_restrict dst,
+                 const byte * gs_restrict tmp, int skip, int WidthOut, int Stride,
+                 int Colors, const CLIST * gs_restrict contrib, const CONTRIB * gs_restrict items, int n)
 {
     int kn = Stride * Colors;
     int width = WidthOut * Colors;
     int cn = contrib->n;
     int first_pixel = contrib->first_pixel;
-    const CONTRIB *restrict cbp = items + contrib->index;
-    byte *restrict d;
+    const CONTRIB *gs_restrict cbp = items + contrib->index;
+    byte *gs_restrict d;
 
     if_debug0('W', "[W]zoom_y: ");
 
@@ -570,7 +566,7 @@ template_zoom_y1(void /*PixelOut */ * restrict dst,
     d = ((byte *)dst)+skip;
     for (; width > 0; width--) {
         int weight = 0;
-        const byte *restrict pp = tmp++;
+        const byte *gs_restrict pp = tmp++;
         int pixel, j;
         const CONTRIB *cp = cbp;
 
@@ -583,9 +579,9 @@ template_zoom_y1(void /*PixelOut */ * restrict dst,
     if_debug0('W', "\n");
 }
 
-static void zoom_y1(void /*PixelOut */ * restrict dst,
-                 const byte * restrict tmp, int skip, int WidthOut, int Stride,
-                 int Colors, const CLIST * restrict contrib, const CONTRIB * restrict items)
+static void zoom_y1(void /*PixelOut */ * gs_restrict dst,
+                 const byte * gs_restrict tmp, int skip, int WidthOut, int Stride,
+                 int Colors, const CLIST * gs_restrict contrib, const CONTRIB * gs_restrict items)
 {
     switch(contrib->n) {
         case 4:
@@ -601,15 +597,15 @@ static void zoom_y1(void /*PixelOut */ * restrict dst,
 }
 
 static inline void
-zoom_y2_4(void /*PixelOut */ * restrict dst,
-          const byte * restrict tmp, int skip, int WidthOut, int Stride,
-          int Colors, const CLIST * restrict contrib, const CONTRIB * restrict items)
+zoom_y2_4(void /*PixelOut */ * gs_restrict dst,
+          const byte * gs_restrict tmp, int skip, int WidthOut, int Stride,
+          int Colors, const CLIST * gs_restrict contrib, const CONTRIB * gs_restrict items)
 {
     int kn = Stride * Colors;
     int width = WidthOut * Colors;
     int first_pixel = contrib->first_pixel;
-    const CONTRIB *restrict cbp = items + contrib->index;
-    bits16 *restrict d;
+    const CONTRIB *gs_restrict cbp = items + contrib->index;
+    bits16 *gs_restrict d;
     int w0 = cbp[0].weight;
     int w1 = cbp[1].weight;
     int w2 = cbp[2].weight;
@@ -636,15 +632,15 @@ zoom_y2_4(void /*PixelOut */ * restrict dst,
     if_debug0('W', "\n");
 }
 static inline void
-zoom_y2_5(void /*PixelOut */ * restrict dst,
-          const byte * restrict tmp, int skip, int WidthOut, int Stride,
-          int Colors, const CLIST * restrict contrib, const CONTRIB * restrict items)
+zoom_y2_5(void /*PixelOut */ * gs_restrict dst,
+          const byte * gs_restrict tmp, int skip, int WidthOut, int Stride,
+          int Colors, const CLIST * gs_restrict contrib, const CONTRIB * gs_restrict items)
 {
     int kn = Stride * Colors;
     int width = WidthOut * Colors;
     int first_pixel = contrib->first_pixel;
-    const CONTRIB *restrict cbp = items + contrib->index;
-    bits16 *restrict d;
+    const CONTRIB *gs_restrict cbp = items + contrib->index;
+    bits16 *gs_restrict d;
     int w0 = cbp[0].weight;
     int w1 = cbp[1].weight;
     int w2 = cbp[2].weight;
@@ -673,16 +669,16 @@ zoom_y2_5(void /*PixelOut */ * restrict dst,
     if_debug0('W', "\n");
 }
 static inline void
-zoom_y2_n(void /*PixelOut */ * restrict dst,
-          const byte * restrict tmp, int skip, int WidthOut, int Stride,
-          int Colors, const CLIST * restrict contrib, const CONTRIB * restrict items)
+zoom_y2_n(void /*PixelOut */ * gs_restrict dst,
+          const byte * gs_restrict tmp, int skip, int WidthOut, int Stride,
+          int Colors, const CLIST * gs_restrict contrib, const CONTRIB * gs_restrict items)
 {
     int kn = Stride * Colors;
     int width = WidthOut * Colors;
     int cn = contrib->n;
     int first_pixel = contrib->first_pixel;
-    const CONTRIB *restrict cbp = items + contrib->index;
-    bits16 *restrict d;
+    const CONTRIB *gs_restrict cbp = items + contrib->index;
+    bits16 *gs_restrict d;
 
     if_debug0('W', "[W]zoom_y: ");
 
@@ -691,9 +687,9 @@ zoom_y2_n(void /*PixelOut */ * restrict dst,
     d = ((bits16 *)dst) + skip;
     for (; width > 0; width--) {
         int weight = 0;
-        const byte *restrict pp = tmp++;
+        const byte *gs_restrict pp = tmp++;
         int pixel, j;
-        const CONTRIB *restrict cp = cbp;
+        const CONTRIB *gs_restrict cp = cbp;
 
         for (j = cn; j > 0; pp += kn, ++cp, --j)
             weight += *pp * cp->weight;
@@ -704,9 +700,9 @@ zoom_y2_n(void /*PixelOut */ * restrict dst,
     if_debug0('W', "\n");
 }
 static void
-zoom_y2(void /*PixelOut */ * restrict dst,
-       const byte * restrict tmp, int skip, int WidthOut, int Stride,
-       int Colors, const CLIST * restrict contrib, const CONTRIB * restrict items)
+zoom_y2(void /*PixelOut */ * gs_restrict dst,
+       const byte * gs_restrict tmp, int skip, int WidthOut, int Stride,
+       int Colors, const CLIST * gs_restrict contrib, const CONTRIB * gs_restrict items)
 {
     switch (contrib->n) {
         case 4:
@@ -722,15 +718,15 @@ zoom_y2(void /*PixelOut */ * restrict dst,
 }
 
 static inline void
-zoom_y2_frac_4(void /*PixelOut */ * restrict dst,
-               const byte * restrict tmp, int skip, int WidthOut, int Stride,
-               int Colors, const CLIST * restrict contrib, const CONTRIB * restrict items)
+zoom_y2_frac_4(void /*PixelOut */ * gs_restrict dst,
+               const byte * gs_restrict tmp, int skip, int WidthOut, int Stride,
+               int Colors, const CLIST * gs_restrict contrib, const CONTRIB * gs_restrict items)
 {
     int kn = Stride * Colors;
     int width = WidthOut * Colors;
     int first_pixel = contrib->first_pixel;
-    const CONTRIB *restrict cbp = items + contrib->index;
-    bits16 *restrict d;
+    const CONTRIB *gs_restrict cbp = items + contrib->index;
+    bits16 *gs_restrict d;
     int w0 = cbp[0].weight;
     int w1 = cbp[1].weight;
     int w2 = cbp[2].weight;
@@ -757,15 +753,15 @@ zoom_y2_frac_4(void /*PixelOut */ * restrict dst,
     if_debug0('W', "\n");
 }
 static inline void
-zoom_y2_frac_5(void /*PixelOut */ * restrict dst,
-               const byte * restrict tmp, int skip, int WidthOut, int Stride,
-               int Colors, const CLIST * restrict contrib, const CONTRIB * restrict items)
+zoom_y2_frac_5(void /*PixelOut */ * gs_restrict dst,
+               const byte * gs_restrict tmp, int skip, int WidthOut, int Stride,
+               int Colors, const CLIST * gs_restrict contrib, const CONTRIB * gs_restrict items)
 {
     int kn = Stride * Colors;
     int width = WidthOut * Colors;
     int first_pixel = contrib->first_pixel;
-    const CONTRIB *restrict cbp = items + contrib->index;
-    bits16 *restrict d;
+    const CONTRIB *gs_restrict cbp = items + contrib->index;
+    bits16 *gs_restrict d;
     int w0 = cbp[0].weight;
     int w1 = cbp[1].weight;
     int w2 = cbp[2].weight;
@@ -794,16 +790,16 @@ zoom_y2_frac_5(void /*PixelOut */ * restrict dst,
     if_debug0('W', "\n");
 }
 static inline void
-zoom_y2_frac_n(void /*PixelOut */ * restrict dst,
-               const byte * restrict tmp, int skip, int WidthOut, int Stride,
-               int Colors, const CLIST * restrict contrib, const CONTRIB * restrict items)
+zoom_y2_frac_n(void /*PixelOut */ * gs_restrict dst,
+               const byte * gs_restrict tmp, int skip, int WidthOut, int Stride,
+               int Colors, const CLIST * gs_restrict contrib, const CONTRIB * gs_restrict items)
 {
     int kn = Stride * Colors;
     int width = WidthOut * Colors;
     int cn = contrib->n;
     int first_pixel = contrib->first_pixel;
-    const CONTRIB *restrict cbp = items + contrib->index;
-    bits16 *restrict d;
+    const CONTRIB *gs_restrict cbp = items + contrib->index;
+    bits16 *gs_restrict d;
 
     if_debug0('W', "[W]zoom_y: ");
 
@@ -812,9 +808,9 @@ zoom_y2_frac_n(void /*PixelOut */ * restrict dst,
     d = ((bits16 *)dst) + skip;
     for (; width > 0; width--) {
         int weight = 0;
-        const byte *restrict pp = tmp++;
+        const byte *gs_restrict pp = tmp++;
         int pixel, j;
-        const CONTRIB *restrict cp = cbp;
+        const CONTRIB *gs_restrict cp = cbp;
 
         for (j = cn; j > 0; pp += kn, ++cp, --j)
             weight += *pp * cp->weight;
@@ -826,9 +822,9 @@ zoom_y2_frac_n(void /*PixelOut */ * restrict dst,
 }
 
 static void
-zoom_y2_frac(void /*PixelOut */ * restrict dst,
-             const byte * restrict tmp, int skip, int WidthOut, int Stride,
-            int Colors, const CLIST * restrict contrib, const CONTRIB * restrict items)
+zoom_y2_frac(void /*PixelOut */ * gs_restrict dst,
+             const byte * gs_restrict tmp, int skip, int WidthOut, int Stride,
+            int Colors, const CLIST * gs_restrict contrib, const CONTRIB * gs_restrict items)
 {
     switch (contrib->n) {
         case 4:
