@@ -202,7 +202,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
         (gs_pattern1_instance_t *)gs_currentcolor(pgs)->pattern;
     ref *pdict = &((int_pattern *) pinst->templat.client_data)->dict;
     gx_device_forward *pdev = NULL;
-    gx_device *cdev = gs_currentdevice_inline(igs);
+    gx_device *cdev = gs_currentdevice_inline(igs), *new_dev = NULL;
     int code;
     ref *ppp;
     bool internal_accum = true;
@@ -283,6 +283,20 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
             code = (*dev_proc(pgs->device, dev_spec_op))((gx_device *)pgs->device,
                 gxdso_pattern_start_accum, &param, sizeof(pattern_accum_param_s));
         }
+        /* Previously the code here and in pattern_pain_cleanup() assumed that if the current
+         * device could handle patterns it would do so itself, thus if we get to the cleanup
+         * and the device stored on the exec stack (pdev) was NULL, we assumed that we could
+         * simly tell the current device to finish the pattern. However, if the device handles
+         * patterns by installing a new device, then that won't work. So here, after the
+         * device has processed the pattern, we find the 'current' device. If the device
+         * handles patterns itself then there is effectively no change, that device will be
+         * informed by pattern_pain_cleanup() that the pattern has finished. However, if
+         * the device has changed, then we assume here that the new current device is the
+         * one that handles the pattern, and threfore the onw to inform when the pattern
+         * terminates. We store the pattern o the exec stack, exactly like the pattern
+         * instance etc.
+         */
+        new_dev = gs_currentdevice_inline(igs);
 
         if (code < 0) {
             gs_grestore(pgs);
@@ -290,6 +304,8 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
         }
     }
     push_mark_estack(es_other, pattern_paint_cleanup);
+    ++esp;
+    make_istruct(esp, 0, new_dev); /* see comment in pattern_paint_cleanup() */
     ++esp;
     make_istruct(esp, 0, pinst); /* see comment in pattern_paint_cleanup() */
     ++esp;
@@ -366,7 +382,7 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
 #endif
         pop(o_stack_adjust);
     }
-    esp -= 4;
+    esp -= 5;
     pattern_paint_cleanup(i_ctx_p);
     return o_pop_estack;
 }
@@ -376,9 +392,9 @@ static int
 pattern_paint_cleanup(i_ctx_t *i_ctx_p)
 {
     gx_device_pattern_accum *const pdev =
-        r_ptr(esp + 3, gx_device_pattern_accum);
+        r_ptr(esp + 4, gx_device_pattern_accum);
         gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)gs_currentcolor(igs->saved)->pattern;
-    gs_pattern1_instance_t *pinst2 = r_ptr(esp + 2, gs_pattern1_instance_t);
+    gs_pattern1_instance_t *pinst2 = r_ptr(esp + 3, gs_pattern1_instance_t);
     int code, i;
     /* If the PaintProc does one or more gsaves, then encounters an error, we can get
      * here with the graphics state stack not how we expect.
@@ -402,7 +418,7 @@ pattern_paint_cleanup(i_ctx_t *i_ctx_p)
         (*dev_proc(pdev, close_device)) ((gx_device *) pdev);
     }
     if (pdev == NULL) {
-        gx_device *cdev = gs_currentdevice_inline(igs);
+        gx_device *cdev = r_ptr(esp + 2, gx_device);
         pattern_accum_param_s param;
 
         param.pinst = (void *)pinst;
