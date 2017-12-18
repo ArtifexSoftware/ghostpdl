@@ -230,6 +230,7 @@ static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
         pdf_dev->strm_buf = gs_alloc_bytes(pdf_dev->memory->non_gc_memory, pdf_dev->width * (pdf_dev->color_info.depth / 8),
                                        "pdfimage_open_temp_stream(strm_buf)");
         if (pdf_dev->strm_buf == 0) {
+            pdf_dev->strm->file = NULL; /* Don't close underlying file when we free the stream */
             gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm,
                            "pdfimage_open_temp_stream(strm)");
             pdf_dev->strm = 0;
@@ -770,14 +771,11 @@ pdf_image_close(gx_device * pdev)
     }
     if (pdf_dev->strm) {
         sflush(pdf_dev->strm);
+        pdf_dev->strm->file = NULL; /* Don't close underlying file when we free the stream */
         gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm, "pdfimage_close(strm)");
         pdf_dev->strm = 0;
         gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm_buf, "pdfimage_close(strmbuf)");
         pdf_dev->strm_buf = 0;
-        /* Freeing the stream will close the underlying FILE *, we need to set the pointer to
-         * NULL to avoid having gdev_prn_close() close it again, which leads to errors on Linux.
-         */
-        pdf_dev->file = NULL;
     }
     if (pdf_dev->Pages) {
         pdfimage_page *p = pdf_dev->Pages, *n;
@@ -1165,6 +1163,7 @@ static int gdev_PCLm_begin_page(gx_device_pdf_image *pdf_dev,
         pdf_dev->strm_buf = gs_alloc_bytes(pdf_dev->memory->non_gc_memory, 512,
                                        "pdfimage_open_temp_stream(strm_buf)");
         if (pdf_dev->strm_buf == 0) {
+            pdf_dev->strm->file = NULL; /* Don't close underlying file when we free the stream */
             gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm,
                            "pdfimage_open_temp_stream(strm)");
             pdf_dev->strm = 0;
@@ -1610,14 +1609,11 @@ PCLm_close(gx_device * pdev)
     }
     if (pdf_dev->strm) {
         sflush(pdf_dev->strm);
+        pdf_dev->strm->file = NULL; /* Don't close underlying file when we free the stream */
         gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm, "pdfimage_close(strm)");
         pdf_dev->strm = 0;
         gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm_buf, "pdfimage_close(strmbuf)");
         pdf_dev->strm_buf = 0;
-        /* Freeing the stream will close the underlying FILE *, we need to set the pointer to
-         * NULL to avoid having gdev_prn_close() close it again, which leads to errors on Linux.
-         */
-        pdf_dev->file = NULL;
     }
     if (pdf_dev->Pages) {
         pdfimage_page *p = pdf_dev->Pages, *n;
