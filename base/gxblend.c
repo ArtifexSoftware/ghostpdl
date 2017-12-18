@@ -1287,23 +1287,20 @@ art_pdf_composite_knockout_group_8(byte *gs_restrict backdrop, byte tos_shape, b
  **/
 static forceinline int
 art_pdf_composite_group_8(byte *gs_restrict dst, byte *gs_restrict dst_alpha_g,
-        byte *gs_restrict src, int n_chan, byte alpha, gs_blend_mode_t blend_mode, int first_spot,
-        const pdf14_nonseparable_blending_procs_t * pblend_procs,
-        pdf14_device *p14dev)
+        byte *gs_restrict src, int n_chan, byte alpha)
 {
-    byte src_alpha;		/* $\alpha g_n$ */
-    int tmp;
+    byte src_alpha = src[n_chan];		/* $\alpha g_n$ */
+
+    if (src_alpha == 0)
+        return 0;
 
     if (alpha != 255) {
-        src_alpha = src[n_chan];
-        if (src_alpha == 0)
-            return 0;
-        tmp = src_alpha * alpha + 0x80;
+        int tmp = src_alpha * alpha + 0x80;
         src[n_chan] = (tmp + (tmp >> 8)) >> 8;
     }
 
     if (dst_alpha_g != NULL) {
-        tmp = (255 - *dst_alpha_g) * (255 - src[n_chan]) + 0x80;
+        int tmp = (255 - *dst_alpha_g) * (255 - src[n_chan]) + 0x80;
         *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
     }
 
@@ -1710,9 +1707,7 @@ template_compose_group(byte *gs_restrict tos_ptr, bool tos_isolated,
                                                    pdev, has_mask2);
             } else if (tos_isolated ?
                        art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
-                                                 tos_pixel, n_chan, pix_alpha,
-                                                 blend_mode, first_blend_spot,
-                                                 pblend_procs, pdev) :
+                                                 tos_pixel, n_chan, pix_alpha) :
                        art_pdf_recomposite_group_8(&dst, nos_alpha_g_ptr,
                            tos_pixel, has_alpha ? tos_ptr[tos_alpha_g_offset] : 255, n_chan,
                                                    pix_alpha, blend_mode, first_blend_spot,
@@ -1848,11 +1843,97 @@ compose_group_nonknockout_nonblend_add_isolated_mask_common_solid(byte *tos_ptr,
               bool has_matte, int n_chan, bool additive, int num_spots, bool overprint, gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
               const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev)
 {
-    template_compose_group(tos_ptr, /*tos_isolated*/1, tos_planestride, tos_rowstride, 255, 255, BLEND_MODE_Normal, /*tos_has_shape*/0,
-        tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, /*tos_has_tag*/0,
-        nos_ptr, /*nos_isolated*/0, nos_planestride, nos_rowstride, /*nos_alpha_g_ptr*/0, /* nos_knockout = */0,
-        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, has_mask, maskbuf, mask_bg_alpha, mask_tr_fn,
-        backdrop_ptr, /*has_matte*/0, n_chan, /*additive*/1, /*num_spots*/0, /*overprint*/0, /*drawn_comps*/0, x0, y0, x1, y1, pblend_procs, pdev, 1);
+    byte *gs_restrict mask_curr_ptr = NULL;
+    int width = x1 - x0;
+    int x, y;
+    int i;
+    bool in_mask_rect_y = false;
+    bool in_mask_rect = false;
+    byte pix_alpha, src_alpha;
+
+    for (y = y1 - y0; y > 0; --y) {
+        mask_curr_ptr = mask_row_ptr;
+        if (has_mask && y1 - y >= maskbuf->rect.p.y && y1 - y < maskbuf->rect.q.y) {
+            in_mask_rect_y = true;
+        } else {
+            in_mask_rect_y = false;
+        }
+        for (x = 0; x < width; x++) {
+            if (in_mask_rect_y && has_mask && x0 + x >= maskbuf->rect.p.x &&
+                x0 + x < maskbuf->rect.q.x) {
+                in_mask_rect = true;
+            } else {
+                in_mask_rect = false;
+            }
+            pix_alpha = 255;
+            /* If we have a soft mask, then we have some special handling of the
+               group alpha value */
+            if (maskbuf != NULL) {
+                if (!in_mask_rect) {
+                    /* Special case where we have a soft mask but are outside
+                       the range of the soft mask and must use the background
+                       alpha value */
+                    pix_alpha = mask_bg_alpha;
+                }
+            }
+
+            if (mask_curr_ptr != NULL) {
+                if (in_mask_rect) {
+                    byte mask = mask_tr_fn[*mask_curr_ptr++];
+                    int tmp = pix_alpha * mask + 0x80;
+                    pix_alpha = (tmp + (tmp >> 8)) >> 8;
+                } else {
+                    mask_curr_ptr++;
+                }
+            }
+
+            src_alpha = tos_ptr[n_chan * tos_planestride];
+            if (src_alpha != 0) {
+                byte a_b;
+
+                if (pix_alpha != 255) {
+                    int tmp = src_alpha * pix_alpha + 0x80;
+                    src_alpha = (tmp + (tmp >> 8)) >> 8;
+                }
+
+                a_b = nos_ptr[n_chan * nos_planestride];
+                if (a_b == 0) {
+                    /* Simple copy of colors plus alpha. */
+                    for (i = 0; i < n_chan; i++) {
+                        nos_ptr[i * nos_planestride] = tos_ptr[i * tos_planestride];
+                    }
+                    nos_ptr[i * nos_planestride] = src_alpha;
+                } else {
+                    /* Result alpha is Union of backdrop and source alpha */
+                    int tmp = (0xff - a_b) * (0xff - src_alpha) + 0x80;
+                    unsigned int a_r = 0xff - (((tmp >> 8) + tmp) >> 8);
+
+                    /* Compute src_alpha / a_r in 16.16 format */
+                    int src_scale = ((src_alpha << 16) + (a_r >> 1)) / a_r;
+
+                    nos_ptr[n_chan * nos_planestride] = a_r;
+
+                    /* Do simple compositing of source over backdrop */
+                    for (i = 0; i < n_chan; i++) {
+                        int c_s = tos_ptr[i * tos_planestride];
+                        int c_b = nos_ptr[i * nos_planestride];
+                        tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
+                        nos_ptr[i * nos_planestride] = tmp >> 16;
+                    }
+                }
+            }
+            if (backdrop_ptr != NULL)
+                ++backdrop_ptr;
+            ++tos_ptr;
+            ++nos_ptr;
+        }
+        tos_ptr += tos_rowstride - width;
+        nos_ptr += nos_rowstride - width;
+        if (mask_row_ptr != NULL)
+            mask_row_ptr += maskbuf->rowstride;
+        if (backdrop_ptr != NULL)
+            backdrop_ptr += nos_rowstride - width;
+    }
 }
 
 static void
