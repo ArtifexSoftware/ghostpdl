@@ -95,7 +95,7 @@
 
 /* restrict is standard in C99, but not in all C++ compilers. */
 #if __STDC_VERSION__ == 199901L /* C99 */
-#elif _MSC_VER >= 1500 /* MSVC 9 or newer */
+#elif defined(_MSC_VER) && _MSC_VER >= 1500 /* MSVC 9 or newer */
 #define gs_restrict __restrict
 #elif __GNUC__ >= 3 /* GCC 3 or newer */
 #define gs_restrict __restrict
