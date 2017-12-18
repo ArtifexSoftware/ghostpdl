@@ -1838,6 +1838,82 @@ irii_inner_template(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned 
     return 0;
 }
 
+static int irii_inner_32bpp_4spp_1abs(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned short *p_cm_interp, gx_device *dev, int abs_interp_limit, int bpp, int raster, int yo, int dy, gs_logical_operation_t lop)
+{
+    int x;
+    gx_device_color devc;
+    gx_color_index color;
+    byte *out = penum->line;
+    byte *l_dptr = out;
+    int l_xprev = (xo);
+    int code;
+    int ry = yo + penum->line_xy * dy;
+
+    for (x = xo; x < xe;) {
+#ifdef DEBUG
+        if (gs_debug_c('B')) {
+            int ci;
+
+            for (ci = 0; ci < 3; ++ci)
+                dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
+                    p_cm_interp[ci]);
+        }
+#endif
+        /* Get the device color */
+        get_device_color(penum, p_cm_interp, &devc, &color, dev);
+        if (color_is_pure(&devc)) {
+            gx_color_index color = devc.colors.pure;
+
+            /* Just pack colors into a scan line. */
+            /* Skip runs quickly for the common cases. */
+            do {
+                *l_dptr++ = (byte)(color >> 24);
+                *l_dptr++ = (byte)(color >> 16);
+                *l_dptr++ = (byte)(color >> 8);
+                *l_dptr++ = (byte)(color);
+                x++, p_cm_interp += 4;
+            } while (x < xe && p_cm_interp[-4] == p_cm_interp[0] &&
+                               p_cm_interp[-3] == p_cm_interp[1] &&
+                               p_cm_interp[-2] == p_cm_interp[2] &&
+                               p_cm_interp[-1] == p_cm_interp[3]);
+        }
+        else {
+            int rep = 0;
+
+            /* do _COPY in case any pure colors were accumulated above*/
+            if (x > l_xprev) {
+                code = (*dev_proc(dev, copy_color))
+                    (dev, out, l_xprev - xo, raster,
+                        gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+                if (code < 0)
+                    return code;
+            }
+            /* as above, see if we can accumulate any runs */
+            do {
+                rep++, p_cm_interp += 4;
+            } while ((rep + x) < xe && p_cm_interp[-4] == p_cm_interp[0] &&
+                                       p_cm_interp[-3] == p_cm_interp[1] &&
+                                       p_cm_interp[-2] == p_cm_interp[2] &&
+                                       p_cm_interp[-1] == p_cm_interp[3]);
+            code = gx_fill_rectangle_device_rop(x, ry, rep, 1, &devc, dev, lop);
+            if (code < 0)
+                return code;
+            x += rep;
+            l_xprev = x;
+            l_dptr += 4 * rep;
+        }
+    }  /* End on x loop */
+    if (x > l_xprev) {
+        code = (*dev_proc(dev, copy_color))
+            (dev, out, l_xprev - xo, raster,
+                gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+        if (code < 0)
+            return code;
+    }
+    /*if_debug1m('w', penum->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
+    return 0;
+}
+
 static int irii_inner_24bpp_3spp_1abs(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned short *p_cm_interp, gx_device *dev, int abs_interp_limit, int bpp, int raster, int yo, int dy, gs_logical_operation_t lop)
 {
     int x;
@@ -2038,7 +2114,9 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
             dy = 1;
         else
             dy = -1, yo--;
-        if (spp_cm == 3 && abs_interp_limit == 1 && bpp == 24)
+        if (spp_cm == 4 && abs_interp_limit == 1 && bpp == 32)
+            irii_core = &irii_inner_32bpp_4spp_1abs;
+        else if (spp_cm == 3 && abs_interp_limit == 1 && bpp == 24)
             irii_core = &irii_inner_24bpp_3spp_1abs;
         else if (spp_cm == 1 && abs_interp_limit == 1 && bpp == 8)
             irii_core = &irii_inner_8bpp_1spp_1abs;
