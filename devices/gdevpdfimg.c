@@ -547,10 +547,240 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev, int factor,
     return code;
 }
 
+static void write_fileID(stream *s, const byte *str, int size)
+{
+    const stream_template *templat;
+    stream_AXE_state state;
+    stream_state *st = NULL;
+
+    templat = &s_AXE_template;
+    st = (stream_state *) & state;
+    s_AXE_init_inline(&state);
+    stream_putc(s, '<');
+    {
+        byte buf[100];		/* size is arbitrary */
+        stream_cursor_read r;
+        stream_cursor_write w;
+        int status;
+
+        r.ptr = str - 1;
+        r.limit = r.ptr + size;
+        w.limit = buf + sizeof(buf) - 1;
+        do {
+            /* One picky compiler complains if we initialize to buf - 1. */
+            w.ptr = buf;  w.ptr--;
+            status = (*templat->process) (st, &r, &w, true);
+            stream_write(s, buf, (uint) (w.ptr + 1 - buf));
+        }
+        while (status == 1);
+    }
+}
+
+static int
+pdf_compute_fileID(gx_device_pdf_image * pdev, byte fileID[16], char *CreationDate, char *Title, char *Producer)
+{
+    /* We compute a file identifier when beginning a document
+       to allow its usage with PDF encryption. Due to that,
+       in contradiction to the Adobe recommendation, our
+       ID doesn't depend on the document size.
+    */
+    gs_memory_t *mem = pdev->memory->non_gc_memory;
+    uint ignore;
+    stream *s = s_MD5E_make_stream(mem, fileID, 16);
+    long secs_ns[2];
+
+    if (s == NULL)
+        return_error(gs_error_VMerror);
+
+    gp_get_usertime(secs_ns);
+    sputs(s, (byte *)secs_ns, sizeof(secs_ns), &ignore);
+    sputs(s, (const byte *)pdev->fname, strlen(pdev->fname), &ignore);
+
+    stream_puts(s, "/ModDate ");
+    stream_puts(s, CreationDate);
+    stream_puts(s, "\n/CreationDate ");
+    stream_puts(s, CreationDate);
+    stream_puts(s, "\n/Title (");
+    stream_puts(s, Title);
+    stream_puts(s, ")\n/Producer (");
+    stream_puts(s, Producer);
+    stream_puts(s, ")\n");
+
+    sclose(s);
+    gs_free_object(mem, s, "pdf_compute_fileID");
+    return 0;
+}
+
+static void write_xref_entry (stream *s, gs_offset_t Offset)
+{
+    char O[11];
+    int i;
+
+    if (Offset > 9999999999){
+        Offset = 0;
+    }
+    gs_sprintf(O, "%d", Offset);
+    for (i=0; i< (10 - strlen(O)); i++)
+        stream_puts(s, "0");
+    stream_puts(s, O);
+    stream_puts(s, " 00000 n \n");
+}
+
+static void
+pdf_store_default_Producer(char *buf)
+{
+    if ((gs_revision % 100) == 0)
+        gs_sprintf(buf, "(%s %1.1f)", gs_product, gs_revision / 100.0);
+    else
+        gs_sprintf(buf, "(%s %1.2f)", gs_product, gs_revision / 100.0);
+}
+
+static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
+{
+    pdfimage_page *page = pdf_dev->Pages;
+    struct tm tms;
+    time_t t;
+    int timeoffset;
+    char timesign;
+    char CreationDate[26], Title[] = "Untitled", Producer[256];
+
+    if (pdf_dev->strm != NULL) {
+        byte fileID[16];
+
+        pdf_store_default_Producer(Producer);
+
+        if (PCLm) {
+            pdf_dev->RootOffset = stell(pdf_dev->strm);
+            stream_puts(pdf_dev->strm, "1 0 obj\n<<\n/Pages 2 0 R\n/Type /Catalog\n>>\nendobj\n");
+        } else {
+            pdf_dev->RootOffset = stell(pdf_dev->strm);
+            stream_puts(pdf_dev->strm, "1 0 obj\n<<\n/Pages 2 0 R\n/Metadata 3 0 R\n/Type /Catalog\n>>\nendobj\n");
+        }
+
+        pdf_dev->PagesOffset = stell(pdf_dev->strm);
+        pprintd1(pdf_dev->strm, "2 0 obj\n<<\n/Count %d\n", pdf_dev->NumPages);
+        stream_puts(pdf_dev->strm, "/Kids [");
+
+        while(page){
+            pprintd1(pdf_dev->strm, "%d 0 R ", page->PageDictObjectNumber);
+            page = page->next;
+        }
+
+        stream_puts(pdf_dev->strm, "]\n/Type /Pages\n>>\nendobj\n");
+
+        time(&t);
+        tms = *gmtime(&t);
+        tms.tm_isdst = -1;
+        timeoffset = (int)difftime(t, mktime(&tms)); /* tz+dst in seconds */
+        timesign = (timeoffset == 0 ? 'Z' : timeoffset < 0 ? '-' : '+');
+        timeoffset = any_abs(timeoffset) / 60;
+        tms = *localtime(&t);
+
+        gs_sprintf(CreationDate, "(D:%04d%02d%02d%02d%02d%02d%c%02d\'%02d\')",
+            tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
+            tms.tm_hour, tms.tm_min, tms.tm_sec,
+            timesign, timeoffset / 60, timeoffset % 60);
+
+        pdf_dev->xrefOffset = stell(pdf_dev->strm);
+        if (PCLm)
+            pprintd1(pdf_dev->strm, "xref\n0 %d\n0000000000 65536 f \n", pdf_dev->NextObject);
+        else
+            pprintd1(pdf_dev->strm, "xref\n0 %d\n0000000000 65536 f \n", (pdf_dev->NumPages * 4) + 6);
+        write_xref_entry(pdf_dev->strm, pdf_dev->RootOffset);
+        write_xref_entry(pdf_dev->strm, pdf_dev->PagesOffset);
+
+        if (!PCLm) {
+            write_xref_entry(pdf_dev->strm, pdf_dev->MetadataOffset);
+            write_xref_entry(pdf_dev->strm, pdf_dev->MetadataLengthOffset);
+            write_xref_entry(pdf_dev->strm, pdf_dev->InfoOffset);
+
+            page = pdf_dev->Pages;
+            while(page){
+                write_xref_entry(pdf_dev->strm, page->ImageOffset);
+                write_xref_entry(pdf_dev->strm, page->LengthOffset);
+                write_xref_entry(pdf_dev->strm, page->PageStreamOffset);
+                write_xref_entry(pdf_dev->strm, page->PageDictOffset);
+                page = page->next;
+            }
+            pprintd1(pdf_dev->strm, "trailer\n<<\n/Size %d\n/Info 5 0 R\n/Root 1 0 R\n/ID [", (pdf_dev->NumPages * 4) + 6);
+            pdf_compute_fileID(pdf_dev, fileID, CreationDate, Title, Producer);
+            write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
+            write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
+            pprintd1(pdf_dev->strm, "]\n>>\nstartxref\n%d\n%%%%EOF\n", pdf_dev->xrefOffset);
+        } else {
+            gs_offset_t streamsize, R = 0;
+            char Buffer[1024];
+
+            sflush(pdf_dev->xref_stream.strm);
+            streamsize = gp_ftell_64(pdf_dev->xref_stream.file);
+            if (gp_fseek_64(pdf_dev->xref_stream.file, 0, SEEK_SET) != 0)
+                return_error(gs_error_ioerror);
+
+            while(streamsize > 0) {
+                if (streamsize > 1024) {
+                    streamsize -= gp_fpread(Buffer, 1024, R, pdf_dev->xref_stream.file);
+                    R += 1024;
+                    stream_write(pdf_dev->strm, Buffer, 1024);
+                }
+                else {
+                    gp_fpread(Buffer, streamsize, R, pdf_dev->xref_stream.file);
+                    stream_write(pdf_dev->strm, Buffer, streamsize);
+                    streamsize = 0;
+                }
+            }
+            if (gp_fseek_64(pdf_dev->xref_stream.file, 0, SEEK_SET) != 0)
+                return_error(gs_error_ioerror);
+
+            pprintd1(pdf_dev->strm, "trailer\n<<\n/Size %d\n/Root 1 0 R\n/ID [", pdf_dev->NextObject);
+            pdf_compute_fileID(pdf_dev, fileID, CreationDate, Title, Producer);
+            write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
+            write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
+            pprintd1(pdf_dev->strm, "]\n>>\nstartxref\n%d\n%%%%EOF\n", pdf_dev->xrefOffset);
+        }
+
+        sflush(pdf_dev->strm);
+        pdf_dev->strm->file = NULL; /* Don't close underlying file when we free the stream */
+        gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm, "pdfimage_close(strm)");
+        pdf_dev->strm = 0;
+        gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm_buf, "pdfimage_close(strmbuf)");
+        pdf_dev->strm_buf = 0;
+    }
+    if (pdf_dev->Pages) {
+        pdfimage_page *p = pdf_dev->Pages, *n;
+        do {
+            n = p->next;
+            gs_free_object(pdf_dev->memory->non_gc_memory, p,
+                           "pdfimage free a page");
+            p = n;
+        }while (p);
+        pdf_dev->Pages = NULL;
+        pdf_dev->NumPages = 0;
+    }
+    if (pdf_dev->icclink != NULL)
+    {
+        pdf_dev->icclink->procs.free_link(pdf_dev->icclink);
+        gsicc_free_link_dev(pdf_dev->memory, pdf_dev->icclink);
+        pdf_dev->icclink = NULL;
+    }
+    pdf_dev->RootOffset = 0;
+    pdf_dev->PagesOffset = 0;
+    pdf_dev->MetadataOffset = 0;
+    pdf_dev->MetadataLengthOffset = 0;
+    pdf_dev->InfoOffset = 0;
+    pdf_dev->xrefOffset = 0;
+    if (!PCLm)
+        pdf_dev->StripHeight = 0;
+    else
+        pdf_dev->NextObject = 0;
+    return 0;
+}
+
 static int
 pdf_image_print_page(gx_device_printer * pdev, FILE * file)
 {
     gx_device_pdf_image *const pdf_dev = (gx_device_pdf_image *)pdev;
+    const char *fmt;
+    gs_parsed_file_name_t parsed;
     int code;
 
     code = gdev_pdf_image_begin_page(pdf_dev, file);
@@ -566,7 +796,13 @@ pdf_image_print_page(gx_device_printer * pdev, FILE * file)
     if (code < 0)
         return code;
 
-    return 0;
+    code = gx_parse_output_file_name(&parsed, &fmt, pdev->fname,
+                                         strlen(pdev->fname), pdev->memory);
+
+    if (code >= 0 && fmt) {
+        code = pdf_image_finish_file(pdf_dev, 0);
+    }
+    return code;
 }
 
 int
@@ -609,183 +845,16 @@ pdf_image_open(gx_device *pdev)
     return code;
 }
 
-static void write_xref_entry (stream *s, gs_offset_t Offset)
-{
-    char O[11];
-    int i;
-
-    if (Offset > 9999999999){
-        Offset = 0;
-    }
-    gs_sprintf(O, "%d", Offset);
-    for (i=0; i< (10 - strlen(O)); i++)
-        stream_puts(s, "0");
-    stream_puts(s, O);
-    stream_puts(s, " 00000 n \n");
-}
-
-static int
-pdf_compute_fileID(gx_device_pdf_image * pdev, byte fileID[16], char *CreationDate, char *Title, char *Producer)
-{
-    /* We compute a file identifier when beginning a document
-       to allow its usage with PDF encryption. Due to that,
-       in contradiction to the Adobe recommendation, our
-       ID doesn't depend on the document size.
-    */
-    gs_memory_t *mem = pdev->memory->non_gc_memory;
-    uint ignore;
-    stream *s = s_MD5E_make_stream(mem, fileID, 16);
-    long secs_ns[2];
-
-    if (s == NULL)
-        return_error(gs_error_VMerror);
-
-    gp_get_usertime(secs_ns);
-    sputs(s, (byte *)secs_ns, sizeof(secs_ns), &ignore);
-    sputs(s, (const byte *)pdev->fname, strlen(pdev->fname), &ignore);
-
-    stream_puts(s, "/ModDate ");
-    stream_puts(s, CreationDate);
-    stream_puts(s, "\n/CreationDate ");
-    stream_puts(s, CreationDate);
-    stream_puts(s, "\n/Title (");
-    stream_puts(s, Title);
-    stream_puts(s, ")\n/Producer (");
-    stream_puts(s, Producer);
-    stream_puts(s, ")\n");
-
-    sclose(s);
-    gs_free_object(mem, s, "pdf_compute_fileID");
-    return 0;
-}
-
-static void write_fileID(stream *s, const byte *str, int size)
-{
-    const stream_template *templat;
-    stream_AXE_state state;
-    stream_state *st = NULL;
-
-    templat = &s_AXE_template;
-    st = (stream_state *) & state;
-    s_AXE_init_inline(&state);
-    stream_putc(s, '<');
-    {
-        byte buf[100];		/* size is arbitrary */
-        stream_cursor_read r;
-        stream_cursor_write w;
-        int status;
-
-        r.ptr = str - 1;
-        r.limit = r.ptr + size;
-        w.limit = buf + sizeof(buf) - 1;
-        do {
-            /* One picky compiler complains if we initialize to buf - 1. */
-            w.ptr = buf;  w.ptr--;
-            status = (*templat->process) (st, &r, &w, true);
-            stream_write(s, buf, (uint) (w.ptr + 1 - buf));
-        }
-        while (status == 1);
-    }
-}
-static void
-pdf_store_default_Producer(char *buf)
-{
-    if ((gs_revision % 100) == 0)
-        gs_sprintf(buf, "(%s %1.1f)", gs_product, gs_revision / 100.0);
-    else
-        gs_sprintf(buf, "(%s %1.2f)", gs_product, gs_revision / 100.0);
-}
-
-
 int
 pdf_image_close(gx_device * pdev)
 {
     gx_device_pdf_image *const pdf_dev = (gx_device_pdf_image *)pdev;
-    pdfimage_page *page = pdf_dev->Pages;
-    struct tm tms;
-    time_t t;
-    int timeoffset;
-    char timesign;
-    char CreationDate[26], Title[] = "Untitled", Producer[256];
+    int code;
 
-    if (pdf_dev->strm != NULL) {
-        byte fileID[16];
+    code = pdf_image_finish_file(pdf_dev, 0);
+    if (code < 0)
+        return code;
 
-        pdf_store_default_Producer(Producer);
-
-        pdf_dev->RootOffset = stell(pdf_dev->strm);
-        stream_puts(pdf_dev->strm, "1 0 obj\n<<\n/Pages 2 0 R\n/Metadata 3 0 R\n/Type /Catalog\n>>\nendobj\n");
-
-        pdf_dev->PagesOffset = stell(pdf_dev->strm);
-        pprintd1(pdf_dev->strm, "2 0 obj\n<<\n/Count %d\n", pdf_dev->NumPages);
-        stream_puts(pdf_dev->strm, "/Kids [");
-
-        while(page){
-            pprintd1(pdf_dev->strm, "%d 0 R ", page->PageDictObjectNumber);
-            page = page->next;
-        }
-
-        stream_puts(pdf_dev->strm, "]\n/Type /Pages\n>>\nendobj\n");
-
-        time(&t);
-        tms = *gmtime(&t);
-        tms.tm_isdst = -1;
-        timeoffset = (int)difftime(t, mktime(&tms)); /* tz+dst in seconds */
-        timesign = (timeoffset == 0 ? 'Z' : timeoffset < 0 ? '-' : '+');
-        timeoffset = any_abs(timeoffset) / 60;
-        tms = *localtime(&t);
-
-        gs_sprintf(CreationDate, "(D:%04d%02d%02d%02d%02d%02d%c%02d\'%02d\')",
-            tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
-            tms.tm_hour, tms.tm_min, tms.tm_sec,
-            timesign, timeoffset / 60, timeoffset % 60);
-
-        pdf_dev->xrefOffset = stell(pdf_dev->strm);
-        pprintd1(pdf_dev->strm, "xref\n0 %d\n0000000000 65536 f \n", (pdf_dev->NumPages * 4) + 6);
-        write_xref_entry(pdf_dev->strm, pdf_dev->RootOffset);
-        write_xref_entry(pdf_dev->strm, pdf_dev->PagesOffset);
-        write_xref_entry(pdf_dev->strm, pdf_dev->MetadataOffset);
-        write_xref_entry(pdf_dev->strm, pdf_dev->MetadataLengthOffset);
-        write_xref_entry(pdf_dev->strm, pdf_dev->InfoOffset);
-
-        page = pdf_dev->Pages;
-        while(page){
-            write_xref_entry(pdf_dev->strm, page->ImageOffset);
-            write_xref_entry(pdf_dev->strm, page->LengthOffset);
-            write_xref_entry(pdf_dev->strm, page->PageStreamOffset);
-            write_xref_entry(pdf_dev->strm, page->PageDictOffset);
-            page = page->next;
-        }
-        pprintd1(pdf_dev->strm, "trailer\n<<\n/Size %d\n/Info 5 0 R\n/Root 1 0 R\n/ID [", (pdf_dev->NumPages * 4) + 6);
-        pdf_compute_fileID(pdf_dev, fileID, CreationDate, Title, Producer);
-        write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
-        write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
-        pprintd1(pdf_dev->strm, "]\n>>\nstartxref\n%d\n%%%%EOF\n", pdf_dev->xrefOffset);
-    }
-
-    if (pdf_dev->icclink != NULL)
-    {
-        pdf_dev->icclink->procs.free_link(pdf_dev->icclink);
-        gsicc_free_link_dev(pdev->memory, pdf_dev->icclink);
-        pdf_dev->icclink = NULL;
-    }
-    if (pdf_dev->strm) {
-        sflush(pdf_dev->strm);
-        pdf_dev->strm->file = NULL; /* Don't close underlying file when we free the stream */
-        gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm, "pdfimage_close(strm)");
-        pdf_dev->strm = 0;
-        gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm_buf, "pdfimage_close(strmbuf)");
-        pdf_dev->strm_buf = 0;
-    }
-    if (pdf_dev->Pages) {
-        pdfimage_page *p = pdf_dev->Pages, *n;
-        do {
-            n = p->next;
-            gs_free_object(pdf_dev->memory->non_gc_memory, p,
-                           "pdfimage free a page");
-            p = n;
-        }while (p);
-    }
     return gdev_prn_close(pdev);
 }
 
@@ -1428,7 +1497,7 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
     }
 
     if (Read) {
-        uint R = 0;
+        uint R = 0, saved = pdf_dev->StripHeight;
 
         pdf_dev->StripHeight = Read;
         if (pdf_dev->temp_stream.save != pdf_dev->temp_stream.strm)
@@ -1494,6 +1563,7 @@ PCLm_downscale_and_print_page(gx_device_printer *dev, int factor,
         write_xref_entry(pdf_dev->xref_stream.strm, page->ImageOffset);
         pprintd1(pdf_dev->strm, "%d 0 obj\n", page->ImageObjectNumber++);
         stream_puts(pdf_dev->strm, "<</Length 14>>\nstream\nq /image Do Q\nendstream\nendobj\n");
+        pdf_dev->StripHeight = saved;
     }
     pdf_dev->NextObject = page->ImageObjectNumber;
 
@@ -1508,6 +1578,8 @@ static int
 PCLm_print_page(gx_device_printer * pdev, FILE * file)
 {
     gx_device_pdf_image *const pdf_dev = (gx_device_pdf_image *)pdev;
+    const char *fmt;
+    gs_parsed_file_name_t parsed;
     int code;
 
     code = gdev_PCLm_begin_page(pdf_dev, file);
@@ -1523,6 +1595,12 @@ PCLm_print_page(gx_device_printer * pdev, FILE * file)
     if (code < 0)
         return code;
 
+    code = gx_parse_output_file_name(&parsed, &fmt, pdev->fname,
+                                         strlen(pdev->fname), pdev->memory);
+
+    if (code >= 0 && fmt) {
+        code = pdf_image_finish_file(pdf_dev, 1);
+    }
     return 0;
 }
 
@@ -1530,100 +1608,12 @@ int
 PCLm_close(gx_device * pdev)
 {
     gx_device_pdf_image *const pdf_dev = (gx_device_pdf_image *)pdev;
-    pdfimage_page *page = pdf_dev->Pages;
     int code, code1;
-    struct tm tms;
-    time_t t;
-    int timeoffset;
-    char timesign;
-    char Buffer[1024], CreationDate[26], Title[] = "Untitled", Producer[256];
-    gs_offset_t streamsize, R = 0;
 
-    if (pdf_dev->strm != NULL) {
-        byte fileID[16];
+    code = pdf_image_finish_file(pdf_dev, 1);
+    if (code < 0)
+        return code;
 
-        pdf_store_default_Producer(Producer);
-
-        pdf_dev->RootOffset = stell(pdf_dev->strm);
-        stream_puts(pdf_dev->strm, "1 0 obj\n<<\n/Pages 2 0 R\n/Type /Catalog\n>>\nendobj\n");
-
-        pdf_dev->PagesOffset = stell(pdf_dev->strm);
-        pprintd1(pdf_dev->strm, "2 0 obj\n<<\n/Count %d\n", pdf_dev->NumPages);
-        stream_puts(pdf_dev->strm, "/Kids [");
-
-        while(page){
-            pprintd1(pdf_dev->strm, "%d 0 R ", page->PageDictObjectNumber);
-            page = page->next;
-        }
-
-        stream_puts(pdf_dev->strm, "]\n/Type /Pages\n>>\nendobj\n");
-
-        time(&t);
-        tms = *gmtime(&t);
-        tms.tm_isdst = -1;
-        timeoffset = (int)difftime(t, mktime(&tms)); /* tz+dst in seconds */
-        timesign = (timeoffset == 0 ? 'Z' : timeoffset < 0 ? '-' : '+');
-        timeoffset = any_abs(timeoffset) / 60;
-        tms = *localtime(&t);
-
-        gs_sprintf(CreationDate, "(D:%04d%02d%02d%02d%02d%02d%c%02d\'%02d\')",
-            tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
-            tms.tm_hour, tms.tm_min, tms.tm_sec,
-            timesign, timeoffset / 60, timeoffset % 60);
-
-        pdf_dev->xrefOffset = stell(pdf_dev->strm);
-        pprintd1(pdf_dev->strm, "xref\n0 %d\n0000000000 65536 f \n", pdf_dev->NextObject);
-        write_xref_entry(pdf_dev->strm, pdf_dev->RootOffset);
-        write_xref_entry(pdf_dev->strm, pdf_dev->PagesOffset);
-
-        sflush(pdf_dev->xref_stream.strm);
-        streamsize = gp_ftell_64(pdf_dev->xref_stream.file);
-        if (gp_fseek_64(pdf_dev->xref_stream.file, 0, SEEK_SET) != 0)
-            return_error(gs_error_ioerror);
-
-        while(streamsize > 0) {
-            if (streamsize > 1024) {
-                streamsize -= gp_fpread(Buffer, 1024, R, pdf_dev->xref_stream.file);
-                R += 1024;
-                stream_write(pdf_dev->strm, Buffer, 1024);
-            }
-            else {
-                gp_fpread(Buffer, streamsize, R, pdf_dev->xref_stream.file);
-                stream_write(pdf_dev->strm, Buffer, streamsize);
-                streamsize = 0;
-            }
-        }
-
-        pprintd1(pdf_dev->strm, "trailer\n<<\n/Size %d\n/Root 1 0 R\n/ID [", pdf_dev->NextObject);
-        pdf_compute_fileID(pdf_dev, fileID, CreationDate, Title, Producer);
-        write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
-        write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
-        pprintd1(pdf_dev->strm, "]\n>>\nstartxref\n%d\n%%%%EOF\n", pdf_dev->xrefOffset);
-    }
-
-    if (pdf_dev->icclink != NULL)
-    {
-        pdf_dev->icclink->procs.free_link(pdf_dev->icclink);
-        gsicc_free_link_dev(pdev->memory, pdf_dev->icclink);
-        pdf_dev->icclink = NULL;
-    }
-    if (pdf_dev->strm) {
-        sflush(pdf_dev->strm);
-        pdf_dev->strm->file = NULL; /* Don't close underlying file when we free the stream */
-        gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm, "pdfimage_close(strm)");
-        pdf_dev->strm = 0;
-        gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm_buf, "pdfimage_close(strmbuf)");
-        pdf_dev->strm_buf = 0;
-    }
-    if (pdf_dev->Pages) {
-        pdfimage_page *p = pdf_dev->Pages, *n;
-        do {
-            n = p->next;
-            gs_free_object(pdf_dev->memory->non_gc_memory, p,
-                           "pdfimage free a page");
-            p = n;
-        }while (p);
-    }
     code = PCLm_close_temp_file(pdf_dev, &pdf_dev->xref_stream, 0);
     code1 = PCLm_close_temp_file(pdf_dev, &pdf_dev->temp_stream, 0);
     if (code == 0)

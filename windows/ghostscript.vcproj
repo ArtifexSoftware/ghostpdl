@@ -5869,11 +5869,15 @@
 				RelativePath="..\devices\gdevpcx.c"
 				>
 			</File>
-			<File
-				RelativePath="..\devices\gdevpe.c"
+          <File
+              RelativePath="..\devices\gdevpdfimg.c"
 				>
-			</File>
-			<File
+          </File>
+          <File
+              RelativePath="..\devices\gdevpe.c"
+				>
+          </File>
+          <File
 				RelativePath="..\devices\gdevperm.c"
 				>
 			</File>
