@@ -2076,15 +2076,50 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_gstate *pgs,
      * the Matte entry to the mask dictionary.
      */
     if (pixm->has_Matte) {
-        int num_components =
+        gx_device_pdf *pdev = (gx_device_pdf *)dev;
+        int DoMatte = 0, num_components =
             gs_color_space_num_components(pim->ColorSpace);
 
-        code = cos_dict_put_c_key_floats((gx_device_pdf *)dev,
-                                (cos_dict_t *)pmie->writer.pres->object,
-                                "/Matte", pixm->Matte,
-                                num_components);
-        if (code < 0)
-            return code;
+        switch (pdev->params.ColorConversionStrategy) {
+            case ccs_LeaveColorUnchanged:
+                DoMatte = 1;
+                break;
+            case ccs_RGB:
+            case ccs_sRGB:
+                if (num_components == 3)
+                    DoMatte = 1;
+                else
+                    DoMatte = 0;
+                break;
+            case ccs_CMYK:
+                if (num_components == 4)
+                    DoMatte = 1;
+                else
+                    DoMatte = 0;
+                break;
+            case ccs_Gray:
+                if (num_components == 1)
+                    DoMatte = 1;
+                else
+                    DoMatte = 0;
+                break;
+            case ccs_UseDeviceDependentColor:
+            case ccs_UseDeviceIndependentColor:
+            case ccs_UseDeviceIndependentColorForImages:
+            case ccs_ByObjectType:
+            default:
+                DoMatte = 0;
+                break;
+        }
+
+        if (DoMatte) {
+            code = cos_dict_put_c_key_floats((gx_device_pdf *)dev,
+                                    (cos_dict_t *)pmie->writer.pres->object,
+                                    "/Matte", pixm->Matte,
+                                    num_components);
+            if (code < 0)
+                return code;
+        }
     }
 /* Don't put SMask here because pmie->writer.pres->object may be substituted
  * after the image stream is accummulated. pdf_end_and_do_image will set
