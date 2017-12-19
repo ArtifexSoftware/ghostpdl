@@ -1817,24 +1817,7 @@ compose_group_nonknockout_blend(byte *tos_ptr, bool tos_isolated, int tos_planes
 }
 
 static void
-compose_group_nonknockout_nonblend_add_isolated_mask_common(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
-              int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
-              byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
-              int nos_shape_offset, int nos_tag_offset,
-              byte *mask_row_ptr, int has_mask, pdf14_buf *maskbuf, byte mask_bg_alpha, byte *mask_tr_fn,
-              byte *backdrop_ptr,
-              bool has_matte, int n_chan, bool additive, int num_spots, bool overprint, gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
-              const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev)
-{
-    template_compose_group(tos_ptr, /*tos_isolated*/1, tos_planestride, tos_rowstride, alpha, shape, BLEND_MODE_Normal, /*tos_has_shape*/0,
-        tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, /*tos_has_tag*/0,
-        nos_ptr, /*nos_isolated*/0, nos_planestride, nos_rowstride, /*nos_alpha_g_ptr*/0, /* nos_knockout = */0,
-        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, has_mask, maskbuf, mask_bg_alpha, mask_tr_fn,
-        backdrop_ptr, /*has_matte*/0, n_chan, /*additive*/1, /*num_spots*/0, /*overprint*/0, /*drawn_comps*/0, x0, y0, x1, y1, pblend_procs, pdev, 1);
-}
-
-static void
-compose_group_nonknockout_nonblend_add_isolated_mask_common_solid(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
+compose_group_nonknockout_nonblend_isolated_mask_common(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
               int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
               byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
               int nos_shape_offset, int nos_tag_offset,
@@ -1865,7 +1848,7 @@ compose_group_nonknockout_nonblend_add_isolated_mask_common_solid(byte *tos_ptr,
             } else {
                 in_mask_rect = false;
             }
-            pix_alpha = 255;
+            pix_alpha = alpha;
             /* If we have a soft mask, then we have some special handling of the
                group alpha value */
             if (maskbuf != NULL) {
@@ -1937,24 +1920,7 @@ compose_group_nonknockout_nonblend_add_isolated_mask_common_solid(byte *tos_ptr,
 }
 
 static void
-compose_group_nonknockout_nonblend_add_isolated_mask_common_shape(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
-              int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
-              byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
-              int nos_shape_offset, int nos_tag_offset,
-              byte *mask_row_ptr, int has_mask, pdf14_buf *maskbuf, byte mask_bg_alpha, byte *mask_tr_fn,
-              byte *backdrop_ptr,
-              bool has_matte, int n_chan, bool additive, int num_spots, bool overprint, gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
-              const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev)
-{
-    template_compose_group(tos_ptr, /*tos_isolated*/1, tos_planestride, tos_rowstride, alpha, 255, BLEND_MODE_Normal, /*tos_has_shape*/0,
-        tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, /*tos_has_tag*/0,
-        nos_ptr, /*nos_isolated*/0, nos_planestride, nos_rowstride, /*nos_alpha_g_ptr*/0, /* nos_knockout = */0,
-        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, has_mask, maskbuf, mask_bg_alpha, mask_tr_fn,
-        backdrop_ptr, /*has_matte*/0, n_chan, /*additive*/1, /*num_spots*/0, /*overprint*/0, /*drawn_comps*/0, x0, y0, x1, y1, pblend_procs, pdev, 1);
-}
-
-static void
-compose_group_nonknockout_nonblend_add_isolated_nomask_common(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
+compose_group_nonknockout_nonblend_isolated_nomask_common(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
               int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
               byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
               int nos_shape_offset, int nos_tag_offset,
@@ -1971,7 +1937,7 @@ compose_group_nonknockout_nonblend_add_isolated_nomask_common(byte *tos_ptr, boo
 }
 
 static void
-compose_group_nonknockout_nonblend_add_nonisolated_mask_common(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
+compose_group_nonknockout_nonblend_nonisolated_mask_common(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
               int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
               byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
               int nos_shape_offset, int nos_tag_offset,
@@ -1988,7 +1954,7 @@ compose_group_nonknockout_nonblend_add_nonisolated_mask_common(byte *tos_ptr, bo
 }
 
 static void
-compose_group_nonknockout_nonblend_add_nonisolated_nomask_common(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
+compose_group_nonknockout_nonblend_nonisolated_nomask_common(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
               int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
               byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
               int nos_shape_offset, int nos_tag_offset,
@@ -2002,74 +1968,6 @@ compose_group_nonknockout_nonblend_add_nonisolated_nomask_common(byte *tos_ptr, 
         nos_ptr, /*nos_isolated*/0, nos_planestride, nos_rowstride, /*nos_alpha_g_ptr*/0, /* nos_knockout = */0,
         /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, /*has_mask*/0, /*maskbuf*/NULL, mask_bg_alpha, mask_tr_fn,
         backdrop_ptr, /*has_matte*/0, n_chan, /*additive*/1, /*num_spots*/0, /*overprint*/0, /*drawn_comps*/0, x0, y0, x1, y1, pblend_procs, pdev, 1);
-}
-
-static void
-compose_group_nonknockout_nonblend_sub_isolated_mask_common(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
-              int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
-              byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
-              int nos_shape_offset, int nos_tag_offset,
-              byte *mask_row_ptr, int has_mask, pdf14_buf *maskbuf, byte mask_bg_alpha, byte *mask_tr_fn,
-              byte *backdrop_ptr,
-              bool has_matte, int n_chan, bool additive, int num_spots, bool overprint, gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
-              const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev)
-{
-    template_compose_group(tos_ptr, /*tos_isolated*/1, tos_planestride, tos_rowstride, alpha, shape, BLEND_MODE_Normal, /*tos_has_shape*/0,
-        tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, /*tos_has_tag*/0,
-        nos_ptr, /*nos_isolated*/0, nos_planestride, nos_rowstride, /*nos_alpha_g_ptr*/0, /* nos_knockout = */0,
-        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, has_mask, maskbuf, mask_bg_alpha, mask_tr_fn,
-        backdrop_ptr, /*has_matte*/0, n_chan, /*additive*/0, /*num_spots*/0, /*overprint*/0, /*drawn_comps*/0, x0, y0, x1, y1, pblend_procs, pdev, 1);
-}
-
-static void
-compose_group_nonknockout_nonblend_sub_isolated_nomask_common(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
-              int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
-              byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
-              int nos_shape_offset, int nos_tag_offset,
-              byte *mask_row_ptr, int has_mask, pdf14_buf *maskbuf, byte mask_bg_alpha, byte *mask_tr_fn,
-              byte *backdrop_ptr,
-              bool has_matte, int n_chan, bool additive, int num_spots, bool overprint, gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
-              const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev)
-{
-    template_compose_group(tos_ptr, /*tos_isolated*/1, tos_planestride, tos_rowstride, alpha, shape, BLEND_MODE_Normal, /*tos_has_shape*/0,
-        tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, /*tos_has_tag*/0,
-        nos_ptr, /*nos_isolated*/0, nos_planestride, nos_rowstride, /*nos_alpha_g_ptr*/0, /* nos_knockout = */0,
-        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, /*has_mask*/0, /*maskbuf*/NULL, mask_bg_alpha, mask_tr_fn,
-        backdrop_ptr, /*has_matte*/0, n_chan, /*additive*/0, /*num_spots*/0, /*overprint*/0, /*drawn_comps*/0, x0, y0, x1, y1, pblend_procs, pdev, 1);
-}
-
-static void
-compose_group_nonknockout_nonblend_sub_nonisolated_mask_common(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
-              int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
-              byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
-              int nos_shape_offset, int nos_tag_offset,
-              byte *mask_row_ptr, int has_mask, pdf14_buf *maskbuf, byte mask_bg_alpha, byte *mask_tr_fn,
-              byte *backdrop_ptr,
-              bool has_matte, int n_chan, bool additive, int num_spots, bool overprint, gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
-              const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev)
-{
-    template_compose_group(tos_ptr, /*tos_isolated*/0, tos_planestride, tos_rowstride, alpha, shape, BLEND_MODE_Normal, /*tos_has_shape*/0,
-        tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, /*tos_has_tag*/0,
-        nos_ptr, /*nos_isolated*/0, nos_planestride, nos_rowstride, /*nos_alpha_g_ptr*/0, /* nos_knockout = */0,
-        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, has_mask, maskbuf, mask_bg_alpha, mask_tr_fn,
-        backdrop_ptr, /*has_matte*/0, n_chan, /*additive*/0, /*num_spots*/0, /*overprint*/0, /*drawn_comps*/0, x0, y0, x1, y1, pblend_procs, pdev, 1);
-}
-
-static void
-compose_group_nonknockout_nonblend_sub_nonisolated_nomask_common(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
-              int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
-              byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
-              int nos_shape_offset, int nos_tag_offset,
-              byte *mask_row_ptr, int has_mask, pdf14_buf *maskbuf, byte mask_bg_alpha, byte *mask_tr_fn,
-              byte *backdrop_ptr,
-              bool has_matte, int n_chan, bool additive, int num_spots, bool overprint, gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
-              const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev)
-{
-    template_compose_group(tos_ptr, /*tos_isolated*/0, tos_planestride, tos_rowstride, alpha, shape, BLEND_MODE_Normal, /*tos_has_shape*/0,
-        tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, /*tos_has_tag*/0,
-        nos_ptr, /*nos_isolated*/0, nos_planestride, nos_rowstride, /*nos_alpha_g_ptr*/0, /* nos_knockout = */0,
-        /*nos_shape_offset*/0, /*nos_tag_offset*/0, mask_row_ptr, /*has_mask*/0, /*maskbuf*/NULL, mask_bg_alpha, mask_tr_fn,
-        backdrop_ptr, /*has_matte*/0, n_chan, /*additive*/0, /*num_spots*/0, /*overprint*/0, /*drawn_comps*/0, x0, y0, x1, y1, pblend_procs, pdev, 1);
 }
 
 static void
@@ -2267,37 +2165,18 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     else if (tos->has_shape == 0 && tos_has_tag == 0 && nos_isolated == 0 && nos_alpha_g_ptr == NULL &&
              nos_shape_offset == 0 && nos_tag_offset == 0 && backdrop_ptr == NULL && has_matte == 0 && num_spots == 0 &&
              overprint == 0) {
-        if (additive) {
-            if (tos_isolated) {
-                if (has_mask || maskbuf) {/* 7% */
-                    if (shape == 255) {
-                        /* Airprint test case hits these two */
-                        if (alpha == 255)
-                            fn = &compose_group_nonknockout_nonblend_add_isolated_mask_common_solid;
-                        else
-                            fn = &compose_group_nonknockout_nonblend_add_isolated_mask_common_shape;
-                    } else
-                         fn = &compose_group_nonknockout_nonblend_add_isolated_mask_common;
-                } else /* 14% */
-                    fn = &compose_group_nonknockout_nonblend_add_isolated_nomask_common;
-            } else {
-                if (has_mask || maskbuf) /* 4% */
-                    fn = &compose_group_nonknockout_nonblend_add_nonisolated_mask_common;
-                else /* 15% */
-                    fn = &compose_group_nonknockout_nonblend_add_nonisolated_nomask_common;
-            }
+             /* Additive vs Subtractive makes no difference in normal blend mode with no spots */
+        if (tos_isolated) {
+            if (has_mask || maskbuf) {/* 7% */
+                /* AirPrint test case hits this */
+                fn = &compose_group_nonknockout_nonblend_isolated_mask_common;
+            } else /* 14% */
+                fn = &compose_group_nonknockout_nonblend_isolated_nomask_common;
         } else {
-            if (tos_isolated) {
-                if (has_mask || maskbuf) /* 3% */
-                    fn = &compose_group_nonknockout_nonblend_sub_isolated_mask_common;
-                else /* 11% */
-                    fn = &compose_group_nonknockout_nonblend_sub_isolated_nomask_common;
-            } else {
-                if (has_mask || maskbuf) /* 2% */
-                    fn = &compose_group_nonknockout_nonblend_sub_nonisolated_mask_common;
-                else /* 8% */
-                    fn = &compose_group_nonknockout_nonblend_sub_nonisolated_nomask_common;
-            }
+            if (has_mask || maskbuf) /* 4% */
+                fn = &compose_group_nonknockout_nonblend_nonisolated_mask_common;
+            else /* 15% */
+                fn = &compose_group_nonknockout_nonblend_nonisolated_nomask_common;
         }
     } else
         fn = compose_group_nonknockout_noblend_general;
