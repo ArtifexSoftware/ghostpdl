@@ -1601,7 +1601,7 @@ PCLm_print_page(gx_device_printer * pdev, FILE * file)
     if (code >= 0 && fmt) {
         code = pdf_image_finish_file(pdf_dev, 1);
     }
-    return 0;
+    return code;
 }
 
 int
