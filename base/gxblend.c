@@ -2543,7 +2543,7 @@ mark_fill_rect_add3_common(int w, int h, byte *gs_restrict dst_ptr, byte *gs_res
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
                int alpha_g_off, int shape_off, byte shape)
 {
-    int i, j;
+    int i, j, k;
 
     for (j = h; j > 0; --j) {
         for (i = w; i > 0; --i) {
@@ -2555,7 +2555,6 @@ mark_fill_rect_add3_common(int w, int h, byte *gs_restrict dst_ptr, byte *gs_res
                 /* alpha */
                 dst_ptr[3 * planestride] = src[3];
             } else if (src[3] != 0) {
-                int i;
                 byte a_s = src[3];
                 byte a_b = dst_ptr[3 * planestride];
 
@@ -2570,11 +2569,11 @@ mark_fill_rect_add3_common(int w, int h, byte *gs_restrict dst_ptr, byte *gs_res
                 dst_ptr[3 * planestride] = a_r;
 
                 /* Do simple compositing of source over backdrop */
-                for (i = 0; i < 3; i++) {
-                    int c_s = src[i];
-                    int c_b = dst_ptr[i * planestride];
+                for (k = 0; k < 3; k++) {
+                    int c_s = src[k];
+                    int c_b = dst_ptr[k * planestride];
                     tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
-                    dst_ptr[i * planestride] = tmp >> 16;
+                    dst_ptr[k * planestride] = tmp >> 16;
                 }
             }
             ++dst_ptr;
