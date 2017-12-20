@@ -530,8 +530,8 @@ art_blend_saturation_custom_8(int n_chan, byte *gs_restrict dst, const byte *gs_
 
 /* Our component values have already been complemented, i.e. (1 - X). */
 void
-art_blend_saturation_cmyk_8(int n_chan, byte *dst, const byte *backdrop,
-                           const byte *src)
+art_blend_saturation_cmyk_8(int n_chan, byte *gs_restrict dst, const byte *gs_restrict backdrop,
+                           const byte *gs_restrict src)
 {
     int i;
 
@@ -2298,7 +2298,7 @@ pdf14_compose_alphaless_group(pdf14_buf *tos, pdf14_buf *nos,
 #endif
 }
 
-typedef void (*pdf14_mark_fill_rect_fn)(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+typedef void (*pdf14_mark_fill_rect_fn)(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
                int alpha_g_off, int shape_off, byte shape);
@@ -2432,7 +2432,7 @@ mark_fill_rect_alpha0(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict
 }
 
 static void
-mark_fill_rect(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
                int alpha_g_off, int shape_off, byte shape)
@@ -2444,7 +2444,7 @@ mark_fill_rect(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spo
 }
 
 static void
-mark_fill_rect_sub4_fast(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+mark_fill_rect_sub4_fast(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
                int alpha_g_off, int shape_off, byte shape)
@@ -2488,7 +2488,7 @@ mark_fill_rect_sub4_fast(int w, int h, byte *dst_ptr, byte *src, int num_comp, i
 }
 
 static void
-mark_fill_rect_add_nospots(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+mark_fill_rect_add_nospots(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
                int alpha_g_off, int shape_off, byte shape)
@@ -2500,7 +2500,7 @@ mark_fill_rect_add_nospots(int w, int h, byte *dst_ptr, byte *src, int num_comp,
 }
 
 static void
-mark_fill_rect_add_nospots_common(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+mark_fill_rect_add_nospots_common(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
                int alpha_g_off, int shape_off, byte shape)
@@ -2512,7 +2512,7 @@ mark_fill_rect_add_nospots_common(int w, int h, byte *dst_ptr, byte *src, int nu
 }
 
 static void
-mark_fill_rect_add_nospots_common_no_alpha_g(int w, int h, byte *dst_ptr, byte *src, int num_comp, int num_spots, int first_blend_spot,
+mark_fill_rect_add_nospots_common_no_alpha_g(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restrict src, int num_comp, int num_spots, int first_blend_spot,
                byte src_alpha, int rowstride, int planestride, bool additive, pdf14_device *pdev, gs_blend_mode_t blend_mode,
                bool overprint, gx_color_index drawn_comps, int tag_off, gs_graphics_type_tag_t curr_tag,
                int alpha_g_off, int shape_off, byte shape)
