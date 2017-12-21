@@ -433,6 +433,9 @@ pl_main_delete_instance(pl_main_instance_t *minst)
         minst->device = NULL;
     }
 
+    gs_free_object(mem, minst, "pl_main_instance");
+    mem->gs_lib_ctx->top_of_system = NULL;
+
 #ifdef PL_LEAK_CHECK
     gs_memory_chunk_dump_memory(mem);
 #endif
