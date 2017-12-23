@@ -433,6 +433,7 @@ pl_main_delete_instance(pl_main_instance_t *minst)
         minst->device = NULL;
     }
 
+    gs_lib_finit(0, 0, mem);
     gs_free_object(mem, minst, "pl_main_instance");
     mem->gs_lib_ctx->top_of_system = NULL;
 
@@ -456,7 +457,6 @@ pl_to_exit(gs_memory_t *mem)
 
     gs_c_param_list_release(&minst->params);
     arg_finit(&minst->args);
-    gp_exit(0, 0);
     return 0;
 }
 
