@@ -1193,6 +1193,8 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
             if (stream_w.ptr == stream_w.limit) {
                 int xe = xo + limited_PatchWidthOut;
                 int scaled_w = 0;		/* accumulate scaled up width */
+                int scaled_h = interpolate_scaled_expanded_height(1, pss);
+                int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
 
                 /* Are we active? (i.e. in the render rectangle) */
                 if (!pss->params.Active)
@@ -1332,16 +1334,16 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                             } else {
                                 /* scale up in X and Y */
                                 int scaled_x = xo + scaled_x_prev;
-                                int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
-                                int scaled_h = interpolate_scaled_expanded_height(1, pss);
+                                int i = scaled_h;
+                                int iy = scaled_y;
 
-                                for (; scaled_h > 0; --scaled_h) {
+                                for (; i > 0; --i) {
                                     code = (*dev_proc(dev, copy_color))
                                       (dev, out, scaled_x_prev, raster,
-                                       gx_no_bitmap_id, scaled_x, scaled_y, scaled_w, 1);
+                                       gx_no_bitmap_id, scaled_x, iy, scaled_w, 1);
                                     if (code < 0)
                                         return code;
-                                    scaled_y += dy;
+                                    iy += dy;
                                 }
                                 scaled_x_prev = dda_current(pss->params.scale_dda.x);
                             }
@@ -1383,8 +1385,6 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                                 return rcode;
                         } else {
                             int scaled_x = xo + scaled_x_prev;
-                            int scaled_y = yo + (dy *dda_current(pss->params.scale_dda.y));
-                            int scaled_h = interpolate_scaled_expanded_height(1, pss);
 
                             scaled_w = interpolate_scaled_expanded_width(rep, pss);
                             rcode = gx_fill_rectangle_device_rop(scaled_x, scaled_y, scaled_w, scaled_h,
@@ -1412,8 +1412,6 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                     } else {
                         /* scale up in X and Y */
                         int scaled_x = xo + scaled_x_prev;
-                        int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
-                        int scaled_h = interpolate_scaled_expanded_height(1, pss);
 
                         for (; scaled_h > 0; --scaled_h) {
                             code = (*dev_proc(dev, copy_color))
@@ -1621,8 +1619,11 @@ irii_inner_template(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned 
     int code;
     int ry = yo + penum->line_xy * dy;
     gx_dda_fixed save_x_dda = pss->params.scale_dda.x;
+    int scaled_h = interpolate_scaled_expanded_height(1, pss);
+    int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
 
     for (x = xo; x < xe;) {
+
 #ifdef DEBUG
         if (gs_debug_c('B')) {
             int ci;
@@ -1742,16 +1743,16 @@ irii_inner_template(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned 
                 } else {
                     /* scale up in X and Y */
                     int scaled_x = xo + scaled_x_prev;
-                    int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
-                    int scaled_h = interpolate_scaled_expanded_height(1, pss);
+                    int i = scaled_h;
+                    int iy = scaled_y;
 
-                    for (; scaled_h > 0; --scaled_h) {
+                    for (; i > 0; --i) {
                          code = (*dev_proc(dev, copy_color))
                                       (dev, out, scaled_x_prev, raster,
-                                       gx_no_bitmap_id, scaled_x, scaled_y, scaled_w, 1);
+                                       gx_no_bitmap_id, scaled_x, iy, scaled_w, 1);
                          if (code < 0)
                              return code;
-                         scaled_y += dy;
+                         iy += dy;
                     }
                     scaled_x_prev = dda_current(pss->params.scale_dda.x);
                 }
@@ -1789,8 +1790,6 @@ irii_inner_template(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned 
                     return rcode;
             } else {
                 int scaled_x = xo + scaled_x_prev;
-                int scaled_y = yo + (dy *dda_current(pss->params.scale_dda.y));
-                int scaled_h = interpolate_scaled_expanded_height(1, pss);
 
                 scaled_w = interpolate_scaled_expanded_width(rep, pss);
                 rcode = gx_fill_rectangle_device_rop(scaled_x, scaled_y, scaled_w, scaled_h,
@@ -1818,8 +1817,6 @@ irii_inner_template(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned 
         } else {
             /* scale up in X and Y */
             int scaled_x = xo + scaled_x_prev;
-            int scaled_y = yo + (dy *dda_current(pss->params.scale_dda.y));
-            int scaled_h = interpolate_scaled_expanded_height(1, pss);
 
             for (; scaled_h > 0; --scaled_h) {
                 code = (*dev_proc(dev, copy_color))
@@ -1850,6 +1847,7 @@ static int irii_inner_32bpp_4spp_1abs(gx_image_enum * penum, int xo, int xe, int
     int ry = yo + penum->line_xy * dy;
 
     for (x = xo; x < xe;) {
+
 #ifdef DEBUG
         if (gs_debug_c('B')) {
             int ci;
@@ -2197,7 +2195,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                     /* Transform */
                     pinterp += (pss->params.LeftMarginOut / abs_interp_limit) * spp_decode;
                     p_cm_interp = (unsigned short *) p_cm_buff;
-                    p_cm_interp += ((pss->params.LeftMarginOut + abs_interp_limit - 1) / abs_interp_limit) * spp_cm;
+                    p_cm_interp += (pss->params.LeftMarginOut / abs_interp_limit) * spp_cm;
                     (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
                                                         &input_buff_desc,
                                                         &output_buff_desc,
@@ -2296,6 +2294,9 @@ image_render_interpolate_landscape(gx_image_enum * penum,
                 return_error(gs_error_ioerror);
             if (stream_w.ptr == stream_w.limit) {
                 int xe = xo + (pss->params.PatchWidthOut + abs_interp_limit - 1) / abs_interp_limit;
+                int scaled_h = interpolate_scaled_expanded_height(1, pss);
+                int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y)) -
+                               ((dy < 0) ? (scaled_h - 1) : 0);
 
                 /* Are we active? (i.e. in the render rectangle) */
                 if (!pss->params.Active)
@@ -2362,8 +2363,6 @@ image_render_interpolate_landscape(gx_image_enum * penum,
                                 return rcode;
                         } else {
                             int scaled_x = xo + dda_current(pss->params.scale_dda.x);
-                            int scaled_y = yo + (dy *dda_current(pss->params.scale_dda.y));
-                            int scaled_h = interpolate_scaled_expanded_height(1, pss);
 
                             scaled_w = interpolate_scaled_expanded_width(rep, pss);
                             rcode = gx_fill_rectangle_device_rop(scaled_y, scaled_x, scaled_h, scaled_w,
@@ -2668,6 +2667,9 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                 return_error(gs_error_ioerror);
             if (stream_w.ptr == stream_w.limit) {
                 int xe = xo + (pss->params.PatchWidthOut + abs_interp_limit - 1) / abs_interp_limit;
+                int scaled_h = interpolate_scaled_expanded_height(1, pss);
+                int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y)) -
+                               ((dy < 0) ? (scaled_h - 1) : 0);
 
                 /* Are we active? (i.e. in the render rectangle) */
                 if (!pss->params.Active)
@@ -2739,8 +2741,6 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                                 return rcode;
                         } else {
                             int scaled_x = xo + dda_current(pss->params.scale_dda.x);
-                            int scaled_y = yo + (dy *dda_current(pss->params.scale_dda.y));
-                            int scaled_h = interpolate_scaled_expanded_height(1, pss);
 
                             scaled_w = interpolate_scaled_expanded_width(rep, pss);
                             rcode = gx_fill_rectangle_device_rop(scaled_y, scaled_x, scaled_h, scaled_w,
