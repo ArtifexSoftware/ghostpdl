@@ -203,6 +203,7 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
                 /* Problem with profile. Just ignore it */
                 gs_warn("ignoring icc profile embedded in an image with wrong number of components");
                 gsicc_profile_reference(profile, -1);
+                image->profile = NULL;
             }
         }
     }
