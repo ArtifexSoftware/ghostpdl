@@ -508,6 +508,8 @@ pl_main_languages_init(gs_memory_t * mem,        /* deallocator for devices */
             errprintf(mem, "Unable to create %s interpreter.\n",
                         pl_characteristics(impls[index])->
                         language);
+            gs_free_object(mem, impls[index], "pl_main_languages_init interp");
+            impls[index] = NULL;
             goto pmui_err;
         }
 
