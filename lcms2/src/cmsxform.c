@@ -402,7 +402,7 @@ void PrecalculatedXFORMIdentity(_cmsTRANSFORM* p,
     bpp = T_BYTES(p->InputFormat);
     if (bpp == 0)
         bpp = sizeof(double);
-    bpp *= T_CHANNELS(p->InputFormat);
+    bpp *= T_CHANNELS(p->InputFormat) + T_EXTRA(p->InputFormat);
     PixelsPerLine *= bpp; /* Convert to BytesPerLine */
     while (LineCount-- > 0)
     {
