@@ -1689,26 +1689,16 @@ pjl_process_init(gs_memory_t * mem)
     /* initialize the default and initial pjl environment.  We assume
        that these are the same layout as the factory defaults. */
     if (set_pjl_defaults_to_factory(mem, &pjl_def) < 0) {
-        gs_free_object(mem, pjlstate, "pjl_state");
-        return NULL;
+        goto fail1;
     }
     if (set_pjl_environment_to_factory(mem, &pjl_env) < 0) {
-        free_pjl_defaults(mem, &pjl_def);
-        gs_free_object(mem, pjlstate, "pjl_state");
-        return NULL;
+        goto fail2;
     }
     if (set_pjl_fontsource_to_factory(mem, &pjl_fontenv) < 0) {
-        free_pjl_defaults(mem, &pjl_def);
-        free_pjl_environment(mem, &pjl_env);
-        gs_free_object(mem, pjlstate, "pjl_state");
-        return NULL;
+        goto fail3;
     }
     if (set_pjl_default_fontsource_to_factory(mem, &pjl_fontdef) < 0) {
-        free_pjl_defaults(mem, &pjl_def);
-        free_pjl_environment(mem, &pjl_env);
-        free_pjl_fontsource(mem, &pjl_fontenv);
-        gs_free_object(mem, pjlstate, "pjl_state");
-        return NULL;
+        goto fail4;
     }
 
     /* initialize the font repository data as well */
@@ -1733,6 +1723,17 @@ pjl_process_init(gs_memory_t * mem)
             pjl_permanent_soft_fonts[i] = 0;
     }
     return (pjl_parser_state *) pjlstate;
+
+fail4:
+    free_pjl_fontsource(mem, &pjl_fontenv);
+fail3:
+    free_pjl_environment(mem, &pjl_env);
+fail2:
+    free_pjl_defaults(mem, &pjl_def);
+fail1:
+    gs_free_object(mem, pjlstate->line, "pjl_state line buffer");
+    gs_free_object(mem, pjlstate, "pjl_state");
+    return NULL;
 }
 
 /* case insensitive comparison of two null terminated strings. */
@@ -1749,7 +1750,12 @@ pjl_compare(const pjl_envvar_t * s1, const char *s2)
 void
 pjl_process_destroy(pjl_parser_state * pst)
 {
-    gs_memory_t *mem = pst->mem;
+    gs_memory_t *mem;
+
+    if (pst == NULL)
+        return;
+
+    mem = pst->mem;
     
     free_pjl_defaults(mem, &pst->defaults);
     free_pjl_environment(mem, &pst->envir);
@@ -1758,6 +1764,7 @@ pjl_process_destroy(pjl_parser_state * pst)
 
     if (pst->environment_font_path)
         gs_free_object(mem, pst->environment_font_path, "pjl_state");
+    gs_free_object(mem, pst->line, "pjl_state line buffer");
     gs_free_object(mem, pst, "pjl_state");
 }
 
