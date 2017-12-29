@@ -196,18 +196,21 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
     char *cstr;
     int c;
     int i;
-    bool in_quote, eol;
+    bool in_quote, eol, end_on_whitespace;
 
     *argstr = NULL;
 
-  top:pas = &pal->sources[pal->depth - 1];
+top:pas = &pal->sources[pal->depth - 1];
+    end_on_whitespace = 1;
     if (pal->depth == 0) {
         if (pal->argn <= 0) { /* all done */
             return 0;
         }
         pal->argn--;
-        *argstr = *(pal->argp++);
-        goto at;
+        astr = *(pal->argp++);
+        f = NULL;
+        end_on_whitespace = 0;
+        goto decode;
     }
     if (pas->is_file)
         f = pas->u.file;
@@ -229,6 +232,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
         }
     else
         astr = pas->u.s.str, f = NULL;
+  decode:
     *argstr = cstr = pal->cstr;
 #define is_eol(c) (c == '\r' || c == '\n')
     i = 0;
@@ -261,7 +265,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
                 c = get_codepoint(f, &astr, pal, pas);
                 continue;
             }
-            if (!in_quote)
+            if (!in_quote && end_on_whitespace)
                 break;
         }
         /* c isn't leading or terminating whitespace. */
