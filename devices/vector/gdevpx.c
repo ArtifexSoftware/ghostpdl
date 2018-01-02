@@ -2537,7 +2537,7 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
                                                   planes[0].raster * i +
                                                   (data_bit >> 3)) /*src */ ,
                                          pie->rows.data + out_raster_stride * flipped_strip_offset      /*des */
-                );
+                                         );
         }
     }
     *rows_used = height;

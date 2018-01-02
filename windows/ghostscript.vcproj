@@ -3132,7 +3132,7 @@
 						>
 					</File>
 					<File
-						RelativePath="..\base\gsicc_lcms.c"
+						RelativePath="..\base\gsicc_lcms2art.c"
 						>
 					</File>
 					<File

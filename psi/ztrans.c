@@ -242,7 +242,8 @@ zbegintransparencygroup(i_ctx_t *i_ctx_p)
         else if (gs_color_space_is_ICC(params.ColorSpace) &&
             params.ColorSpace->cmm_icc_profile_data != NULL &&
             params.ColorSpace->cmm_icc_profile_data->profile_handle != NULL) {
-            if (gscms_is_input(params.ColorSpace->cmm_icc_profile_data->profile_handle))
+            if (gscms_is_input(params.ColorSpace->cmm_icc_profile_data->profile_handle,
+                params.ColorSpace->cmm_icc_profile_data->memory))
                 params.ColorSpace = NULL;
         }
     }
@@ -332,7 +333,8 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
                 else if (gs_color_space_is_ICC(params.ColorSpace) &&
                     params.ColorSpace->cmm_icc_profile_data != NULL &&
                     params.ColorSpace->cmm_icc_profile_data->profile_handle != NULL) {
-                    if (gscms_is_input(params.ColorSpace->cmm_icc_profile_data->profile_handle))
+                    if (gscms_is_input(params.ColorSpace->cmm_icc_profile_data->profile_handle,
+                        params.ColorSpace->cmm_icc_profile_data->memory))
                         params.ColorSpace = NULL;
                 }
     } else {

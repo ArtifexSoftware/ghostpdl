@@ -290,7 +290,8 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
     result->is_identity = false;
     result->valid = false;		/* not yet complete */
     result->num_waiting = 0;
-    return(result);
+    result->memory = memory->stable_memory;
+    return result;
 }
 
 static void
@@ -303,7 +304,8 @@ gsicc_set_link_data(gsicc_link_t *icc_link, void *link_handle,
     gx_monitor_enter(lock);		/* lock the cache while changing data */
 #endif
     icc_link->link_handle = link_handle;
-    gscms_get_link_dim(link_handle, &(icc_link->num_input), &(icc_link->num_output));
+    gscms_get_link_dim(link_handle, &(icc_link->num_input), &(icc_link->num_output),
+        icc_link->memory);
     icc_link->hashcode.link_hashcode = hashcode.link_hashcode;
     icc_link->hashcode.des_hash = hashcode.des_hash;
     icc_link->hashcode.src_hash = hashcode.src_hash;
@@ -1047,7 +1049,7 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
         then we need to make sure that the CMM does not do something like
         force a white point mapping like lcms does */
     if (gsicc_profile_from_ps(gs_input_profile)) {
-        cms_flags = cms_flags | gscms_avoid_white_fix_flag();
+        cms_flags = cms_flags | gscms_avoid_white_fix_flag(memory);
     }
     if (cms_input_profile == NULL) {
         if (gs_input_profile->buffer != NULL) {
@@ -1210,6 +1212,7 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
     if (link_handle != NULL) {
         if (gs_input_profile->data_cs == gsGRAY)
             pageneutralcolor = false;
+
         gsicc_set_link_data(link, link_handle, hash, icc_link_cache->lock,
                             include_softproof, include_devicelink, pageneutralcolor,
                             gs_input_profile->data_cs);
@@ -1314,7 +1317,7 @@ get_to_next_line(char **buffptr, int *buffer_count)
 
 /* Release the structures we allocated in gsicc_transform_named_color */
 static void
-gsicc_named_profile_release(void *ptr)
+gsicc_named_profile_release(void *ptr, gs_memory_t *memory)
 {
     gsicc_namedcolortable_t *namedcolor_table = (gsicc_namedcolortable_t*) ptr;
     unsigned int num_entries;

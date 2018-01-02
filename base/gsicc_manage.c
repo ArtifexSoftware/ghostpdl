@@ -183,11 +183,11 @@ gsicc_set_iccsmaskprofile(const char *pname,
                             icc_profile->buffer_size);
     icc_profile->hash_is_valid = true;
     icc_profile->num_comps =
-            gscms_get_input_channel_count(icc_profile->profile_handle);
+            gscms_get_input_channel_count(icc_profile->profile_handle, icc_profile->memory);
     icc_profile->num_comps_out =
-            gscms_get_output_channel_count(icc_profile->profile_handle);
+            gscms_get_output_channel_count(icc_profile->profile_handle, icc_profile->memory);
     icc_profile->data_cs =
-            gscms_get_profile_data_space(icc_profile->profile_handle);
+            gscms_get_profile_data_space(icc_profile->profile_handle, icc_profile->memory);
     gsicc_set_icc_range(&icc_profile);
     return icc_profile;
 }
@@ -370,7 +370,7 @@ gsicc_get_spotnames(gcmmhprofile_t profile, gs_memory_t *memory)
     int num_colors;
     char *clr_name;
 
-    num_colors = gscms_get_numberclrtnames(profile);
+    num_colors = gscms_get_numberclrtnames(profile, memory);
     if (num_colors == 0)
         return(NULL);
     /* Allocate structure for managing this */
@@ -536,11 +536,11 @@ gsicc_fill_srcgtag_item(gsicc_rendering_param_t *r_params, char **pstrlast, bool
 }
 
 static int
-gsicc_check_device_link(cmm_profile_t *icc_profile)
+gsicc_check_device_link(cmm_profile_t *icc_profile, gs_memory_t *memory)
 {
     bool value;
 
-    value = gscms_is_device_link(icc_profile->profile_handle);
+    value = gscms_is_device_link(icc_profile->profile_handle, memory);
     icc_profile->isdevlink = value;
 
     return value;
@@ -549,7 +549,7 @@ gsicc_check_device_link(cmm_profile_t *icc_profile)
 int
 gsicc_get_device_class(cmm_profile_t *icc_profile)
 {
-    return gscms_get_device_class(icc_profile->profile_handle);
+    return gscms_get_device_class(icc_profile->profile_handle, icc_profile->memory);
 }
 
 /* This inititializes the srcgtag structure in the ICC manager */
@@ -673,7 +673,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                             /* Check if this object is a devicelink profile.
                                If it is then the intent, blackpoint etc. are not
                                read nor used when dealing with these profiles */
-                            gsicc_check_device_link(icc_profile);
+                            gsicc_check_device_link(icc_profile, icc_profile->memory);
                             break;
                         } else {
                             /* Failed to open profile file. End this now. */
@@ -1000,12 +1000,15 @@ gsicc_initialize_default_profile(cmm_profile_t *icc_profile)
     }
     num_comps = icc_profile->num_comps;
     icc_profile->num_comps =
-        gscms_get_input_channel_count(icc_profile->profile_handle);
+        gscms_get_input_channel_count(icc_profile->profile_handle,
+            icc_profile->memory);
     num_comps_out = icc_profile->num_comps_out;
     icc_profile->num_comps_out =
-        gscms_get_output_channel_count(icc_profile->profile_handle);
+        gscms_get_output_channel_count(icc_profile->profile_handle,
+            icc_profile->memory);
     icc_profile->data_cs =
-        gscms_get_profile_data_space(icc_profile->profile_handle);
+        gscms_get_profile_data_space(icc_profile->profile_handle,
+            icc_profile->memory);
     if_debug0m(gs_debug_flag_icc,mem,"[icc] Setting ICC profile in Manager\n");
     switch(defaulttype) {
         case DEFAULT_GRAY:
@@ -1096,9 +1099,12 @@ gsicc_init_profile_info(cmm_profile_t *profile)
                             profile->buffer_size);
     profile->hash_is_valid = true;
     profile->default_match = DEFAULT_NONE;
-    profile->num_comps = gscms_get_input_channel_count(profile->profile_handle);
-    profile->num_comps_out = gscms_get_output_channel_count(profile->profile_handle);
-    profile->data_cs = gscms_get_profile_data_space(profile->profile_handle);
+    profile->num_comps = gscms_get_input_channel_count(profile->profile_handle,
+        profile->memory);
+    profile->num_comps_out = gscms_get_output_channel_count(profile->profile_handle,
+        profile->memory);
+    profile->data_cs = gscms_get_profile_data_space(profile->profile_handle,
+        profile->memory);
 
     /* Initialize the range to default values */
     for ( k = 0; k < profile->num_comps; k++) {
@@ -1786,13 +1792,16 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
             icc_profile->hash_is_valid = true;
             /* Get the number of channels in the output profile */
             icc_profile->num_comps =
-                gscms_get_input_channel_count(icc_profile->profile_handle);
+                gscms_get_input_channel_count(icc_profile->profile_handle,
+                    icc_profile->memory);
             if_debug1m(gs_debug_flag_icc, mem, "[icc] Profile has %d components\n",
                        icc_profile->num_comps);
             icc_profile->num_comps_out =
-                gscms_get_output_channel_count(icc_profile->profile_handle);
+                gscms_get_output_channel_count(icc_profile->profile_handle,
+                    icc_profile->memory);
             icc_profile->data_cs =
-                gscms_get_profile_data_space(icc_profile->profile_handle);
+                gscms_get_profile_data_space(icc_profile->profile_handle,
+                    icc_profile->memory);
             /* We need to know if this is one of the "default" profiles or
                if someone has externally set it.  The reason is that if there
                is an output intent in the file, and someone wants to use the
@@ -1968,7 +1977,7 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
         if_debug0m(gs_debug_flag_icc, mem, "[icc] profile freed\n");
         /* Release this handle if it has been set */
         if (profile->profile_handle != NULL) {
-            profile->release(profile->profile_handle);
+            profile->release(profile->profile_handle, profile->memory);
             profile->profile_handle = NULL;
         }
         /* Release the name if it has been set */
@@ -2329,7 +2338,7 @@ gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory)
             return 0;
         clist_read_chunk(pcrdev, position + GSICC_SERIALIZED_SIZE,
             profile_size, (unsigned char *) buffer_ptr);
-        profile_handle = gscms_get_profile_handle_mem(memory->non_gc_memory, buffer_ptr, profile_size);
+        profile_handle = gscms_get_profile_handle_mem(buffer_ptr, profile_size, memory->non_gc_memory);
         /* We also need to get some of the serialized information */
         clist_read_chunk(pcrdev, position, GSICC_SERIALIZED_SIZE,
                         (unsigned char *) (&profile_header));
@@ -2366,7 +2375,7 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer, int profile_size, gs_memo
          if (profile_size < ICC_HEADER_SIZE) {
              return 0;
          }
-         profile_handle = gscms_get_profile_handle_mem(memory->non_gc_memory, buffer, profile_size);
+         profile_handle = gscms_get_profile_handle_mem(buffer, profile_size, memory->non_gc_memory);
          return profile_handle;
      }
      return 0;
@@ -2557,7 +2566,8 @@ gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data,
 int
 gsicc_getsrc_channel_count(cmm_profile_t *icc_profile)
 {
-    return gscms_get_input_channel_count(icc_profile->profile_handle);
+    return gscms_get_input_channel_count(icc_profile->profile_handle,
+        icc_profile->memory);
 }
 
 /*

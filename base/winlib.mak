@@ -117,7 +117,7 @@ FT_BRIDGE = 0
 
 # Which CMS are we using?
 !ifndef WHICH_CMS
-WHICH_CMS=lcms2
+WHICH_CMS=lcms2art
 !endif
 
 # Define the files to be removed by `make clean'.

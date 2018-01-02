@@ -749,7 +749,7 @@
     <ClCompile Include="..\base\gsicc.c" />
     <ClCompile Include="..\base\gsicc_cache.c" />
     <ClCompile Include="..\base\gsicc_create.c" />
-    <ClCompile Include="..\base\gsicc_lcms.c" />
+    <ClCompile Include="..\base\gsicc_lcms2art.c" />
     <ClCompile Include="..\base\gsicc_lcms2.c" />
     <ClCompile Include="..\base\gsicc_manage.c" />
     <ClCompile Include="..\base\gsicc_nocm.c" />

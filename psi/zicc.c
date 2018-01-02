@@ -116,8 +116,10 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     }
     picc_profile->num_comps = ncomps;
 
-    picc_profile->data_cs = gscms_get_profile_data_space(picc_profile->profile_handle);
-    switch( picc_profile->data_cs ) {
+    picc_profile->data_cs =
+        gscms_get_profile_data_space(picc_profile->profile_handle,
+            picc_profile->memory);
+    switch (picc_profile->data_cs) {
         case gsCIEXYZ:
         case gsCIELAB:
         case gsRGB:
@@ -274,7 +276,9 @@ zset_outputintent(i_ctx_t * i_ctx_p)
         rc_decrement(picc_profile,"zset_outputintent");
         return -1;
     }
-    picc_profile->data_cs = gscms_get_profile_data_space(picc_profile->profile_handle);
+    picc_profile->data_cs =
+        gscms_get_profile_data_space(picc_profile->profile_handle,
+            picc_profile->memory);
     switch (picc_profile->data_cs) {
         case gsCIEXYZ:
         case gsCIELAB:
@@ -503,7 +507,9 @@ znumicc_components(i_ctx_t * i_ctx_p)
         make_int(op, expected);
         return 0;
     }
-    picc_profile->data_cs = gscms_get_profile_data_space(picc_profile->profile_handle);
+    picc_profile->data_cs =
+        gscms_get_profile_data_space(picc_profile->profile_handle,
+            picc_profile->memory);
 
     switch (picc_profile->data_cs) {
         case gsCIEXYZ:

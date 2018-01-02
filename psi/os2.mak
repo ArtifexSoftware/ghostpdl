@@ -111,17 +111,17 @@ JSRCDIR=jpeg
 
 PNGSRCDIR=libpng
 
-# Define the directory where the lcms source is stored.
-# See lcms.mak for more information
-LCMSSRCDIR=lcms
+# Define the directory where the lcms2art source is stored.
+# See lcms2art.mak for more information
+LCMSARTSRCDIR=lcms2art
 
 # Define the directory where the lcms2 source is stored.
 # See lcms2.mak for more information
 LCMS2SRCDIR=lcms2
 
 # Which CMS are we using?
-# Options are currently lcms or lcms2
-WHICH_CMS=lcms2
+# Options are currently lcms2art or lcms2
+WHICH_CMS=lcms2art
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.

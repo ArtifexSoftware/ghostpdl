@@ -119,7 +119,7 @@ typedef struct gscms_procs_s {
 } gscms_procs_t;
 
 /* Allow different methods for releasing the opaque profile contents */
-typedef void(*gscms_free_profile_proc_t) (void *profile_handle);
+typedef void(*gscms_free_profile_proc_t) (void *profile_handle, gs_memory_t *memory);
 
 /* Enumerate the ICC rendering intents and other parameters.  A note on
    these.  0-3 are for different values.   4-7 are for Override cases
@@ -442,6 +442,7 @@ typedef struct gsicc_hashlink_s {
 
 struct gsicc_link_s {
     void *link_handle;
+    gs_memory_t *memory;
     gscms_procs_t procs;
     gsicc_hashlink_t hashcode;
     struct gsicc_link_cache_s *icc_link_cache;

@@ -1132,27 +1132,40 @@ WHICHLCMS=
 
 AC_MSG_CHECKING([for local lcms2 library source])
 LCMS2DIR=src
+LCMS2ARTDIR=src
 
-LCMS2SRC=$srcdir/lcms2
-if test -f $LCMS2SRC/include/lcms2.h; then
+# First check for Artifex version
+LCMS2ARTSRC=$srcdir/lcms2art
+if test -f $LCMS2ARTSRC/include/lcms2art.h; then
+      AC_MSG_RESULT([yes])
+      SHARELCMS=0
+      WHICHLCMS=lcms2art
+      LCMS2ARTDIR=$LCMS2ARTSRC
+else
+  # Now check for local lcms2 (non-Artifex)
+  LCMS2SRC=$srcdir/lcms2
+  if test -f $LCMS2SRC/include/lcms2.h; then
       AC_MSG_RESULT([yes])
       SHARELCMS=0
       WHICHLCMS=lcms2
       LCMS2DIR=$LCMS2SRC
-else
-  AC_MSG_RESULT([no])
-  AC_MSG_CHECKING([for system lcms2 library])
-  AC_CHECK_LIB(lcms2, _cmsCreateMutex, [
+  else
+      # See if we have system library of lcms2
+      AC_MSG_RESULT([no])
+      AC_MSG_CHECKING([for system lcms2 library])
+      AC_CHECK_LIB(lcms2, _cmsCreateMutex, [
          AC_CHECK_HEADERS([lcms2.h], [SHARELCMS=1;WHICHLCMS=lcms2])
        ])
-  if test x$WHICHLCMS = x; then
-    AC_MSG_ERROR([lcms2 not found, or too old])
-  fi
+      if test x$WHICHLCMS = x; then
+         AC_MSG_ERROR([lcms2 not found, or too old])
+      fi
+   fi
 fi
 
 AC_SUBST(SHARELCMS)
 AC_SUBST(WHICHLCMS)
 AC_SUBST(LCMS2DIR)
+AC_SUBST(LCMS2ARTDIR)
 
 dnl look for libtiff, it also requires lib
 dnl png for the png output device; it also requires zlib

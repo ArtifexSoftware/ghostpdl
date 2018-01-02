@@ -170,26 +170,10 @@ static cmsPluginMutex gs_cms_mutexhandler =
 
 #endif
 
-static int
-gscms_get_accuracy(gs_memory_t *mem)
-{
-    gs_lib_ctx_t *ctx = gs_lib_ctx_get_interp_instance(mem);
-
-    switch (ctx->icc_color_accuracy) {
-    case 0:
-        return cmsFLAGS_LOWRESPRECALC;
-    case 1:
-        return 0;
-    case 2:
-    default:
-        return cmsFLAGS_HIGHRESPRECALC;
-    }
-}
-
 /* Get the number of channels for the profile.
   Input count */
 int
-gscms_get_input_channel_count(gcmmhprofile_t profile)
+gscms_get_input_channel_count(gcmmhprofile_t profile, gs_memory_t *memory)
 {
     cmsColorSpaceSignature colorspace;
 
@@ -199,7 +183,7 @@ gscms_get_input_channel_count(gcmmhprofile_t profile)
 
 /* Get the number of output channels for the profile */
 int
-gscms_get_output_channel_count(gcmmhprofile_t profile)
+gscms_get_output_channel_count(gcmmhprofile_t profile, gs_memory_t *memory)
 {
     cmsColorSpaceSignature colorspace;
 
@@ -209,7 +193,7 @@ gscms_get_output_channel_count(gcmmhprofile_t profile)
 
 /* Get the number of colorant names in the clrt tag */
 int
-gscms_get_numberclrtnames(gcmmhprofile_t profile)
+gscms_get_numberclrtnames(gcmmhprofile_t profile, gs_memory_t *memory)
 {
     cmsNAMEDCOLORLIST *lcms_names;
 
@@ -247,28 +231,28 @@ gscms_get_clrtname(gcmmhprofile_t profile, int colorcount, gs_memory_t *memory)
 
 /* Check if the profile is a device link type */
 bool
-gscms_is_device_link(gcmmhprofile_t profile)
+gscms_is_device_link(gcmmhprofile_t profile, gs_memory_t *memory)
 {
     return cmsGetDeviceClass(profile) == cmsSigLinkClass;
 }
 
 /* Needed for v2 profile creation */
 int
-gscms_get_device_class(gcmmhprofile_t profile)
+gscms_get_device_class(gcmmhprofile_t profile, gs_memory_t *memory)
 {
     return cmsGetDeviceClass(profile);
 }
 
 /* Check if the profile is a input type */
 bool
-gscms_is_input(gcmmhprofile_t profile)
+gscms_is_input(gcmmhprofile_t profile, gs_memory_t *memory)
 {
     return (cmsGetDeviceClass(profile) == cmsSigInputClass);
 }
 
 /* Get the device space associated with this profile */
 gsicc_colorbuffer_t
-gscms_get_profile_data_space(gcmmhprofile_t profile)
+gscms_get_profile_data_space(gcmmhprofile_t profile, gs_memory_t *memory)
 {
     cmsColorSpaceSignature colorspace;
 
@@ -291,8 +275,8 @@ gscms_get_profile_data_space(gcmmhprofile_t profile)
 
 /* Get ICC Profile handle from buffer */
 gcmmhprofile_t
-gscms_get_profile_handle_mem(gs_memory_t *mem, unsigned char *buffer,
-                             unsigned int input_size)
+gscms_get_profile_handle_mem(unsigned char *buffer,
+                             unsigned int input_size, gs_memory_t *mem)
 {
     cmsContext ctx = gs_lib_ctx_get_cms_context(mem);
 
@@ -302,7 +286,7 @@ gscms_get_profile_handle_mem(gs_memory_t *mem, unsigned char *buffer,
 
 /* Get ICC Profile handle from file ptr */
 gcmmhprofile_t
-gscms_get_profile_handle_file(gs_memory_t *mem, const char *filename)
+gscms_get_profile_handle_file(const char *filename, gs_memory_t *mem)
 {
     cmsContext ctx = gs_lib_ctx_get_cms_context(mem);
 
@@ -495,13 +479,14 @@ gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
 /* Get the flag to avoid having to the cmm do any white fix up, it such a flag
    exists for the cmm */
 int
-gscms_avoid_white_fix_flag()
+gscms_avoid_white_fix_flag(gs_memory_t *memory)
 {
     return cmsFLAGS_NOWHITEONWHITEFIXUP;
 }
 
 void
-gscms_get_link_dim(gcmmhlink_t link, int *num_inputs, int *num_outputs)
+gscms_get_link_dim(gcmmhlink_t link, int *num_inputs, int *num_outputs,
+    gs_memory_t *memory)
 {
     *num_inputs = T_CHANNELS(cmsGetTransformInputFormat(link));
     *num_outputs = T_CHANNELS(cmsGetTransformOutputFormat(link));
@@ -553,7 +538,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     des_data_type = des_data_type | ENDIAN16_SH(1);
 #endif
     /* Set up the flags */
-    flag = gscms_get_accuracy(memory);
+    flag = cmsFLAGS_HIGHRESPRECALC;
     if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON
         || rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
         flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
@@ -635,7 +620,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
         temptransform = gscms_get_link(lcms_srchandle, lcms_proofhandle,
                                       rendering_params, cmm_flags, memory);
         /* Now mash that to a device link profile */
-        flag = gscms_get_accuracy(memory);
+        flag = cmsFLAGS_HIGHRESPRECALC;
         if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON ||
             rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
             flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
@@ -673,7 +658,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
         if (lcms_devlinkhandle != NULL) {
             hProfiles[nProfiles++] = lcms_devlinkhandle;
         }
-        flag = gscms_get_accuracy(memory);
+        flag = cmsFLAGS_HIGHRESPRECALC;
         if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON
             || rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
             flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
@@ -727,7 +712,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
         if (lcms_devlinkhandle != NULL) {
             hProfiles[nProfiles++] = lcms_devlinkhandle;
         }
-        flag = gscms_get_accuracy(memory);
+        flag = cmsFLAGS_HIGHRESPRECALC;
         if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON
             || rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
             flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
@@ -782,7 +767,7 @@ gscms_release_link(gsicc_link_t *icclink)
 
 /* Have the CMS release the profile handle */
 void
-gscms_release_profile(void *profile)
+gscms_release_profile(void *profile, gs_memory_t *memory)
 {
     cmsHPROFILE profile_handle;
 
@@ -839,14 +824,13 @@ gscms_get_name2device_link(gsicc_link_t *icclink,
                            gcmmhprofile_t  lcms_srchandle,
                            gcmmhprofile_t lcms_deshandle,
                            gcmmhprofile_t lcms_proofhandle,
-                           gsicc_rendering_param_t *rendering_params,
-                           gs_memory_t *memory)
+                           gsicc_rendering_param_t *rendering_params)
 {
     cmsHTRANSFORM hTransform;
     cmsUInt32Number dwOutputFormat;
     cmsUInt32Number lcms_proof_flag;
     int number_colors;
-    cmsContext ctx = gs_lib_ctx_get_cms_context(memory);
+    cmsContext ctx = gs_lib_ctx_get_cms_context(icclink->memory);
 
     /* NOTE:  We need to add a test here to check that we even HAVE
     device values in here and NOT just CIELAB values */

@@ -320,16 +320,16 @@ psd_prn_open(gx_device * pdev)
     pdev->log2_align_mod = 6;
 #endif
 
-    /* There are 2 approaches to the use of a DeviceN ICC output profile.  
+    /* There are 2 approaches to the use of a DeviceN ICC output profile.
        One is to simply limit our device to only output the colorants
-       defined in the output ICC profile.   The other is to use the 
+       defined in the output ICC profile.   The other is to use the
        DeviceN ICC profile to color manage those N colorants and
-       to let any other separations pass through unmolested.   The define 
+       to let any other separations pass through unmolested.   The define
        LIMIT_TO_ICC sets the option to limit our device to only the ICC
        colorants defined by -sICCOutputColors (or to the ones that are used
-       as default names if ICCOutputColors is not used).  The pass through option 
-       (LIMIT_TO_ICC set to 0) makes life a bit more difficult since we don't 
-       know if the page_spot_colors overlap with any spot colorants that exist 
+       as default names if ICCOutputColors is not used).  The pass through option
+       (LIMIT_TO_ICC set to 0) makes life a bit more difficult since we don't
+       know if the page_spot_colors overlap with any spot colorants that exist
        in the DeviceN ICC output profile. Hence we don't know how many planes
        to use for our device.  This is similar to the issue when processing
        a PostScript file.  So that I remember, the cases are
@@ -363,7 +363,7 @@ psd_prn_open(gx_device * pdev)
 
     /* With planar the depth can be more than 64.  Update the color
        info to reflect the proper depth and number of planes.  Also note
-       that the number of spot colors can change from page to page.  
+       that the number of spot colors can change from page to page.
        Update things so that we only output separations for the
        inks on that page. */
     if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
@@ -411,7 +411,7 @@ psd_prn_open(gx_device * pdev)
         for (k = 0; k < GS_CLIENT_COLOR_MAX_COMPONENTS; k++) {
             pdev_psd->devn_params.separation_order_map[k] = k;
         }
-    pdev->color_info.depth = pdev->color_info.num_components * 
+    pdev->color_info.depth = pdev->color_info.num_components *
                              pdev_psd->devn_params.bitspercomponent;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     pdev->icc_struct->supports_devn = true;
@@ -505,7 +505,7 @@ cmyk_cs_to_psdcmyk_cm(gx_device * dev,
     const gs_devn_params *devn = gx_devn_prn_ret_devn_params(dev);
     const int *map = devn->separation_order_map;
     int j;
-    
+
     if (devn->num_separation_order_names > 0) {
         /* This is to set only those that we are using */
         int ncomps = dev->color_info.num_components;
@@ -513,7 +513,7 @@ cmyk_cs_to_psdcmyk_cm(gx_device * dev,
             out[j] = 0;
         for (j = 0; j < devn->num_separation_order_names; j++) {
             switch (map[j]) {
-                case 0 : 
+                case 0 :
                     out[0] = c;
                     break;
                 case 1:
@@ -858,14 +858,14 @@ psd_get_color_comp_index(gx_device * dev, const char * pname,
     if (strncmp(pname, "None", name_size) == 0) return -1;
     index = gx_devn_prn_get_color_comp_index(dev, pname, name_size,
                                              component_type);
-    /* This is a one shot deal.  That is it will simply post a notice once that 
+    /* This is a one shot deal.  That is it will simply post a notice once that
        some colorants will be converted due to a limit being reached.  It will
-       not list names of colorants since then I would need to keep track of 
+       not list names of colorants since then I would need to keep track of
        which ones I have already mentioned.  Also, if someone is fooling with
        num_order, then this warning is not given since they should know what
        is going on already */
-    if (index < 0 && component_type == SEPARATION_NAME && 
-        pdev->warning_given == false && 
+    if (index < 0 && component_type == SEPARATION_NAME &&
+        pdev->warning_given == false &&
         pdev->devn_params.num_separation_order_names == 0) {
         dmlprintf(dev->memory, "**** Max spot colorants reached.\n");
         dmlprintf(dev->memory, "**** Some colorants will be converted to equivalent CMYK values.\n");
@@ -926,7 +926,7 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, FILE *file, int w, int h)
      * which planes are actually imaged.  For the process color model channels
      * we image the channels which are requested.  Non requested process color
      * model channels are simply filled with white.  For spot colors we only
-     * image the requested channels. 
+     * image the requested channels.
      */
     for (i = 0; i < xc->num_channels + xc->n_extra_channels; i++) {
         xc->chnl_to_position[i] = i;
@@ -1200,7 +1200,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
     sep_line = gs_alloc_bytes(pdev->memory, xc->width, "psd_write_sep_line");
 
     for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
-        planes[chan_idx] = gs_alloc_bytes(pdev->memory, raster_plane, 
+        planes[chan_idx] = gs_alloc_bytes(pdev->memory, raster_plane,
                                         "psd_write_sep_line");
         params.data[chan_idx] = planes[chan_idx];
         if (params.data[chan_idx] == NULL)
@@ -1259,7 +1259,7 @@ cleanup:
     gx_downscaler_fin(&ds);
     gs_free_object(pdev->memory, sep_line, "psd_write_sep_line");
     for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
-        gs_free_object(pdev->memory, planes[chan_idx], 
+        gs_free_object(pdev->memory, planes[chan_idx],
                                         "psd_write_image_data");
     }
     return code;

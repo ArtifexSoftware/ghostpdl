@@ -26,7 +26,7 @@
 #       ZGENDIR - zlib object code directory
 #       LCMSGENDIR - Little CMS object code directory
 # One of:
-#       LCMSSRCDIR - Little CMS source directory
+#       LCMS2ARTSRCDIR - Artifex (Thread Safe) Little CMS 2 source directory
 #       LCMS2SRCDIR - Little CMS verion 2 source directory
 #
 # For dependencies:
@@ -52,13 +52,14 @@ GLLDFJB2CC=$(CC_) $(I_)$(LDF_JB2I_) $(II)$(GLI_)$(_I) $(JB2CF_) $(GLF_)
 GLLWFJPXCC=$(CC_) $(I_)$(LWF_JPXI_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_)
 GLJPXOPJCC=$(CC_) $(I_)$(JPX_OPENJPEG_I_)$(D).. $(I_)$(JPX_OPENJPEG_I_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_)
 GLCCSHARED=$(CC_SHARED) $(GLCCFLAGS)
-# We can't use $(CC_) for GLLCMSCC becuase that includes /Za on
+# We can't use $(CC_) for GLLCMSARTCC because that includes /Za on
 # msvc builds, and lcms configures itself to depend on msvc extensions
 # (inline asm, including windows.h) when compiled under msvc.
-GLLCMSCC=$(CC) $(LCMS_CFLAGS) $(CFLAGS) $(I_)$(GLI_) $(II)$(LCMSSRCDIR)$(D)include$(_I) $(GLF_)
-lcms_h=$(LCMSSRCDIR)$(D)include$(D)lcms.h
+GLLCMSARTCC=$(CC) $(LCMS2ART_CFLAGS) $(CFLAGS) $(I_)$(GLI_) $(II)$(LCMS2ARTSRCDIR)$(D)include$(_I) $(GLF_)
+lcms2art_h=$(LCMS2ARTSRCDIR)$(D)include$(D)lcms2art.h
+lcms2art_plugin_h=$(LCMS2ARTSRCDIR)$(D)include$(D)lcms2art_plugin.h
 icc34_h=$(GLSRC)icc34.h
-# We can't use $(CC_) for GLLCMS2CC becuase that includes /Za on
+# We can't use $(CC_) for GLLCMS2CC because that includes /Za on
 # msvc builds, and lcms configures itself to depend on msvc extensions
 # (inline asm, including windows.h) when compiled under msvc.
 GLLCMS2CC=$(CC) $(LCMS2_CFLAGS) $(CFLAGS) $(I_)$(GLI_) $(II)$(LCMS2SRCDIR)$(D)include$(_I) $(GLF_)
@@ -2896,19 +2897,16 @@ $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(AK)\
  $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsicc_profilecache.$(OBJ) $(C_) $(GLSRC)gsicc_profilecache.c
 
-$(GLOBJ)gsicc_lcms_1.$(OBJ) : $(GLSRC)gsicc_lcms.c\
- $(gsicc_cms_h) $(gslibctx_h) $(gserrors_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLLCMSCC) $(GLO_)gsicc_lcms_1.$(OBJ) $(C_) $(GLSRC)gsicc_lcms.c
-
-$(GLOBJ)gsicc_lcms_0.$(OBJ) : $(GLSRC)gsicc_lcms.c\
- $(gsicc_cms_h) $(lcms_h) $(gslibctx_h) $(gserrors_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLLCMSCC) $(GLO_)gsicc_lcms_0.$(OBJ) $(C_) $(GLSRC)gsicc_lcms.c
-
-$(GLOBJ)gsicc_lcms.$(OBJ) : $(GLOBJ)gsicc_lcms_$(SHARE_LCMS).$(OBJ) $(gp_h) \
- $(LIB_MAK) $(MAKEDIRS)
-	$(CP_) $(GLOBJ)gsicc_lcms_$(SHARE_LCMS).$(OBJ) $(GLOBJ)gsicc_lcms.$(OBJ)
-
-
+$(GLOBJ)gsicc_lcms2art_1.$(OBJ) : $(GLSRC)gsicc_lcms2art.c\
+ $(memory__h) $(gsicc_cms_h) $(gslibctx_h) $(gserrors_h) $(gxdevice_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLLCMSARTCC) $(GLO_)gsicc_lcms2art_1.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2art.c
+$(GLOBJ)gsicc_lcms2art_0.$(OBJ) : $(GLSRC)gsicc_lcms2art.c\
+ $(memory__h) $(gsicc_cms_h) $(lcms2art_h) $(gslibctx_h) $(lcms2art_plugin_h) $(gserrors_h) \
+ $(gxdevice_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLLCMSARTCC) $(GLO_)gsicc_lcms2art_0.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2art.c
+$(GLOBJ)gsicc_lcms2art.$(OBJ) : $(GLOBJ)gsicc_lcms2art_$(SHARE_LCMS).$(OBJ) $(gp_h) \
+ $(gxsync_h) $(LIB_MAK) $(MAKEDIRS)
+	$(CP_) $(GLOBJ)gsicc_lcms2art_$(SHARE_LCMS).$(OBJ) $(GLOBJ)gsicc_lcms2art.$(OBJ)
 $(GLOBJ)gsicc_lcms2_1.$(OBJ) : $(GLSRC)gsicc_lcms2.c\
  $(memory__h) $(gsicc_cms_h) $(gslibctx_h) $(gserrors_h) $(gxdevice_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLLCMS2CC) $(GLO_)gsicc_lcms2_1.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2.c
@@ -2931,13 +2929,13 @@ $(GLOBJ)gsicc_create_1.$(OBJ) : $(GLSRC)gsicc_create.c $(AK) $(string__h)\
  $(gsmemory_h) $(gx_h) $(gxgstate_h) $(gstypes_h) $(gscspace_h)\
  $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsicc_manage_h) $(gsicc_cache_h)\
  $(math__h) $(gscolor2_h) $(gxcie_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLLCMSCC) $(GLO_)gsicc_create_1.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
+	$(GLLCMSARTCC) $(GLO_)gsicc_create_1.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
 
 $(GLOBJ)gsicc_create_0.$(OBJ) : $(GLSRC)gsicc_create.c $(AK) $(string__h)\
  $(gsmemory_h) $(gx_h) $(gxgstate_h) $(gstypes_h) $(gscspace_h)\
  $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsicc_manage_h) $(gsicc_cache_h)\
  $(math__h) $(gscolor2_h) $(gxcie_h) $(icc34_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLLCMSCC) $(GLO_)gsicc_create_0.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
+	$(GLLCMSARTCC) $(GLO_)gsicc_create_0.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
 
 $(GLOBJ)gsicc_create.$(OBJ) : $(GLOBJ)gsicc_create_$(SHARE_LCMS).$(OBJ) $(LIB_MAK) $(MAKEDIRS)
 	$(CP_) $(GLOBJ)gsicc_create_$(SHARE_LCMS).$(OBJ) $(GLOBJ)gsicc_create.$(OBJ)

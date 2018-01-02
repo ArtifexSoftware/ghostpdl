@@ -185,11 +185,11 @@ JBIG2_LIB=jbig2dec
 JBIG2SRCDIR=jbig2dec
 !endif
 
-# Define the directory where the lcms source is stored.
-# See lcms.mak for more information
+# Define the directory where the lcms2art source is stored.
+# See lcms2art.mak for more information
 
-!ifndef LCMSSRCDIR
-LCMSSRCDIR=lcms
+!ifndef LCMS2ARTSRCDIR
+LCMS2ARTSRCDIR=lcms2art
 !endif
 
 # Define the directory where the lcms2 source is stored.
