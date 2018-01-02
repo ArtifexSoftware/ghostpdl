@@ -1437,25 +1437,26 @@ static int set_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env, pjl_env
     pjl_envir_var_t *pjl_env;
     char *key, *value, *newkey, *newvalue;
     int i = 0;
+    int limit = 0;
 
-    while (from[i].var && from[i].var[0] != 0x00)
-        i++;
+    while (from[limit].var && from[limit].var[0] != 0x00)
+        limit++;
 
     pjl_env = (pjl_envir_var_t *) gs_alloc_bytes(mem,
                                                   sizeof
-                                                  (pjl_envir_var_t) * (i + 1),
+                                                  (pjl_envir_var_t) * (limit + 1),
                                                   "pjl_envir");
     if (!pjl_env)
         return -1;
 
-    memset(pjl_env, 0x00, sizeof(pjl_envir_var_t) * (i + 1));
-    i--;
-    while (i >= 0) {
+    memset(pjl_env, 0x00, sizeof(pjl_envir_var_t) * (limit + 1));
+    while (i < limit) {
         key = from[i].var;
         value = from[i].value;
         newkey = (char *)gs_alloc_bytes(mem, strlen(key) + 1, "pjl_envir, key");
         newvalue = (char *)gs_alloc_bytes(mem, strlen(value) + 1, "pjl_envir, value");
         if (!newkey || !newvalue) {
+            gs_free_object(mem, newkey, "pjl_envir, key");
             free_pjl_environment(mem, &pjl_env);
             return -1;
         }
@@ -1464,7 +1465,7 @@ static int set_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env, pjl_env
         pjl_env[i].var = newkey;
         pjl_env[i].value = newvalue;
 
-        i--;
+        i++;
     }
     *env = pjl_env;
     return 0;
