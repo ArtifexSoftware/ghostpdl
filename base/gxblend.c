@@ -1783,22 +1783,20 @@ compose_group_nonknockout_nonblend_isolated_allmask_common(byte *tos_ptr, bool t
               bool has_matte, int n_chan, bool additive, int num_spots, bool overprint, gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
               const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev)
 {
-    byte *gs_restrict mask_curr_ptr = NULL;
     int width = x1 - x0;
     int x, y;
     int i;
-    byte pix_alpha, src_alpha;
 
     for (y = y1 - y0; y > 0; --y) {
-        mask_curr_ptr = mask_row_ptr;
+        byte *gs_restrict mask_curr_ptr = mask_row_ptr;
         for (x = 0; x < width; x++) {
             byte mask = mask_tr_fn[*mask_curr_ptr++];
-            int tmp = alpha * mask + 0x80;
-            pix_alpha = (tmp + (tmp >> 8)) >> 8;
-
-            src_alpha = tos_ptr[n_chan * tos_planestride];
+            byte src_alpha = tos_ptr[n_chan * tos_planestride];
             if (src_alpha != 0) {
                 byte a_b;
+
+                int tmp = alpha * mask + 0x80;
+                byte pix_alpha = (tmp + (tmp >> 8)) >> 8;
 
                 if (pix_alpha != 255) {
                     int tmp = src_alpha * pix_alpha + 0x80;
@@ -1831,17 +1829,12 @@ compose_group_nonknockout_nonblend_isolated_allmask_common(byte *tos_ptr, bool t
                     }
                 }
             }
-            if (backdrop_ptr != NULL)
-                ++backdrop_ptr;
             ++tos_ptr;
             ++nos_ptr;
         }
         tos_ptr += tos_rowstride - width;
         nos_ptr += nos_rowstride - width;
-        if (mask_row_ptr != NULL)
-            mask_row_ptr += maskbuf->rowstride;
-        if (backdrop_ptr != NULL)
-            backdrop_ptr += nos_rowstride - width;
+        mask_row_ptr += maskbuf->rowstride;
     }
 }
 
@@ -1925,8 +1918,6 @@ compose_group_nonknockout_nonblend_isolated_mask_common(byte *tos_ptr, bool tos_
                     }
                 }
             }
-            if (backdrop_ptr != NULL)
-                ++backdrop_ptr;
             ++tos_ptr;
             ++nos_ptr;
         }
@@ -1934,8 +1925,6 @@ compose_group_nonknockout_nonblend_isolated_mask_common(byte *tos_ptr, bool tos_
         nos_ptr += nos_rowstride - width;
         if (mask_row_ptr != NULL)
             mask_row_ptr += maskbuf->rowstride;
-        if (backdrop_ptr != NULL)
-            backdrop_ptr += nos_rowstride - width;
     }
 }
 
