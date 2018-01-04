@@ -1524,8 +1524,8 @@ template_compose_group(byte *gs_restrict tos_ptr, bool tos_isolated,
     byte nos_pixel[PDF14_MAX_PLANES];
     byte back_drop[PDF14_MAX_PLANES];
     gx_color_index comps;
-    bool in_mask_rect_y = false;
-    bool in_mask_rect = false;
+    bool in_mask_rect_y;
+    bool in_mask_rect;
     byte pix_alpha;
     byte matte_alpha = 0xff;
     int first_spot = n_chan - num_spots;
@@ -1544,18 +1544,9 @@ template_compose_group(byte *gs_restrict tos_ptr, bool tos_isolated,
 
     for (y = y1 - y0; y > 0; --y) {
         mask_curr_ptr = mask_row_ptr;
-        if (has_mask && y1 - y >= maskbuf->rect.p.y && y1 - y < maskbuf->rect.q.y) {
-            in_mask_rect_y = true;
-        } else {
-            in_mask_rect_y = false;
-        }
+        in_mask_rect_y = (has_mask && y1 - y >= maskbuf->rect.p.y && y1 - y < maskbuf->rect.q.y);
         for (x = 0; x < width; x++) {
-            if (in_mask_rect_y && has_mask && x0 + x >= maskbuf->rect.p.x &&
-                x0 + x < maskbuf->rect.q.x) {
-                in_mask_rect = true;
-            } else {
-                in_mask_rect = false;
-            }
+            in_mask_rect = (in_mask_rect_y && x0 + x >= maskbuf->rect.p.x && x0 + x < maskbuf->rect.q.x);
             pix_alpha = alpha;
             /* If we have a soft mask, then we have some special handling of the
                group alpha value */
@@ -1783,6 +1774,78 @@ compose_group_nonknockout_blend(byte *tos_ptr, bool tos_isolated, int tos_planes
 }
 
 static void
+compose_group_nonknockout_nonblend_isolated_allmask_common(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
+              int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
+              byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
+              int nos_shape_offset, int nos_tag_offset,
+              byte *mask_row_ptr, int has_mask, pdf14_buf *maskbuf, byte mask_bg_alpha, byte *mask_tr_fn,
+              byte *backdrop_ptr,
+              bool has_matte, int n_chan, bool additive, int num_spots, bool overprint, gx_color_index drawn_comps, int x0, int y0, int x1, int y1,
+              const pdf14_nonseparable_blending_procs_t *pblend_procs, pdf14_device *pdev)
+{
+    byte *gs_restrict mask_curr_ptr = NULL;
+    int width = x1 - x0;
+    int x, y;
+    int i;
+    byte pix_alpha, src_alpha;
+
+    for (y = y1 - y0; y > 0; --y) {
+        mask_curr_ptr = mask_row_ptr;
+        for (x = 0; x < width; x++) {
+            byte mask = mask_tr_fn[*mask_curr_ptr++];
+            int tmp = alpha * mask + 0x80;
+            pix_alpha = (tmp + (tmp >> 8)) >> 8;
+
+            src_alpha = tos_ptr[n_chan * tos_planestride];
+            if (src_alpha != 0) {
+                byte a_b;
+
+                if (pix_alpha != 255) {
+                    int tmp = src_alpha * pix_alpha + 0x80;
+                    src_alpha = (tmp + (tmp >> 8)) >> 8;
+                }
+
+                a_b = nos_ptr[n_chan * nos_planestride];
+                if (a_b == 0) {
+                    /* Simple copy of colors plus alpha. */
+                    for (i = 0; i < n_chan; i++) {
+                        nos_ptr[i * nos_planestride] = tos_ptr[i * tos_planestride];
+                    }
+                    nos_ptr[i * nos_planestride] = src_alpha;
+                } else {
+                    /* Result alpha is Union of backdrop and source alpha */
+                    int tmp = (0xff - a_b) * (0xff - src_alpha) + 0x80;
+                    unsigned int a_r = 0xff - (((tmp >> 8) + tmp) >> 8);
+
+                    /* Compute src_alpha / a_r in 16.16 format */
+                    int src_scale = ((src_alpha << 16) + (a_r >> 1)) / a_r;
+
+                    nos_ptr[n_chan * nos_planestride] = a_r;
+
+                    /* Do simple compositing of source over backdrop */
+                    for (i = 0; i < n_chan; i++) {
+                        int c_s = tos_ptr[i * tos_planestride];
+                        int c_b = nos_ptr[i * nos_planestride];
+                        tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
+                        nos_ptr[i * nos_planestride] = tmp >> 16;
+                    }
+                }
+            }
+            if (backdrop_ptr != NULL)
+                ++backdrop_ptr;
+            ++tos_ptr;
+            ++nos_ptr;
+        }
+        tos_ptr += tos_rowstride - width;
+        nos_ptr += nos_rowstride - width;
+        if (mask_row_ptr != NULL)
+            mask_row_ptr += maskbuf->rowstride;
+        if (backdrop_ptr != NULL)
+            backdrop_ptr += nos_rowstride - width;
+    }
+}
+
+static void
 compose_group_nonknockout_nonblend_isolated_mask_common(byte *tos_ptr, bool tos_isolated, int tos_planestride, int tos_rowstride, byte alpha, byte shape, gs_blend_mode_t blend_mode, bool tos_has_shape,
               int tos_shape_offset, int tos_alpha_g_offset, int tos_tag_offset, bool tos_has_tag,
               byte *nos_ptr, bool nos_isolated, int nos_planestride, int nos_rowstride, byte *nos_alpha_g_ptr, bool nos_knockout,
@@ -1796,24 +1859,15 @@ compose_group_nonknockout_nonblend_isolated_mask_common(byte *tos_ptr, bool tos_
     int width = x1 - x0;
     int x, y;
     int i;
-    bool in_mask_rect_y = false;
-    bool in_mask_rect = false;
+    bool in_mask_rect_y;
+    bool in_mask_rect;
     byte pix_alpha, src_alpha;
 
     for (y = y1 - y0; y > 0; --y) {
         mask_curr_ptr = mask_row_ptr;
-        if (has_mask && y1 - y >= maskbuf->rect.p.y && y1 - y < maskbuf->rect.q.y) {
-            in_mask_rect_y = true;
-        } else {
-            in_mask_rect_y = false;
-        }
+        in_mask_rect_y = (has_mask && y1 - y >= maskbuf->rect.p.y && y1 - y < maskbuf->rect.q.y);
         for (x = 0; x < width; x++) {
-            if (in_mask_rect_y && has_mask && x0 + x >= maskbuf->rect.p.x &&
-                x0 + x < maskbuf->rect.q.x) {
-                in_mask_rect = true;
-            } else {
-                in_mask_rect = false;
-            }
+            in_mask_rect = (in_mask_rect_y && has_mask && x0 + x >= maskbuf->rect.p.x && x0 + x < maskbuf->rect.q.x);
             pix_alpha = alpha;
             /* If we have a soft mask, then we have some special handling of the
                group alpha value */
@@ -2135,7 +2189,11 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
         if (tos_isolated) {
             if (has_mask || maskbuf) {/* 7% */
                 /* AirPrint test case hits this */
-                fn = &compose_group_nonknockout_nonblend_isolated_mask_common;
+                if (maskbuf && maskbuf->rect.p.x <= x0 && maskbuf->rect.p.y <= y0 &&
+                    maskbuf->rect.q.x >= x1 && maskbuf->rect.q.y >= y1)
+                    fn = compose_group_nonknockout_nonblend_isolated_allmask_common;
+                else
+                    fn = &compose_group_nonknockout_nonblend_isolated_mask_common;
             } else /* 14% */
                 fn = &compose_group_nonknockout_nonblend_isolated_nomask_common;
         } else {
