@@ -522,45 +522,131 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 
             }
 
-        } else if (penum->posture == image_portrait ||
-                   penum->posture == image_landscape
-            ) {
-
+        } else if (penum->posture == image_portrait) {
             /**************************************
-             * Slow case, not masked, orthogonal. *
+             * Slow case, not masked, portrait. *
              **************************************/
+            dev_proc_fill_rectangle((*fill_proc)) =
+                dev_proc(dev, fill_rectangle);
+            int iy = fixed2int_pixround(yrun);
+            int ih = fixed2int_pixround(yrun + pdyy) - iy;
+            if (ih < 0)
+                iy += ih, ih = -ih;
 
             /* In this case, we can fill runs quickly. */
             /****** DOESN'T DO ADJUSTMENT ******/
             if (stop <= psrc)
                 goto last;
             for (;;) {
-                if (*psrc != run) {
-                    if (run != htrun) {
-                        htrun = run;
+                byte c = *psrc++;
+                if (c != run) {
+                    int ix = fixed2int_pixround(xrun);
+                    int iw = fixed2int_pixround(xl) - ix;
+                    if (iw < 0)
+                        ix += iw, iw = -iw;
+                    switch (run)
+                    {
+                    case 0:
+                        if (!color_is_pure(penum->icolor0))
+                            goto ht_port;
+                        code = (*fill_proc) (dev, ix, iy, iw, ih,
+                                             penum->icolor0->colors.pure);
+                        break;
+                    case 0xff:
+                        if (!color_is_pure(penum->icolor1))
+                            goto ht_port;
+                        code = (*fill_proc) (dev, ix, iy, iw, ih,
+                                             penum->icolor1->colors.pure);
+                        break;
+                    default:
+                        ht_port:
+                        if (run != htrun) {
+                            htrun = run;
 #if USE_SET_GRAY_FUNCTION
-                        code = image_set_gray(run,masked,mask_base,mask_limit,&pdevc,
-                            &cc,pcs,pgs,dev,gs_color_select_source,penum);
-                        if (code < 0)
-                            goto err;
+                            code = image_set_gray(run,masked,mask_base,mask_limit,&pdevc,
+                                    &cc,pcs,pgs,dev,gs_color_select_source,penum);
+                            if (code < 0)
+                                goto err;
 #else
-                        IMAGE_SET_GRAY(run);
+                            IMAGE_SET_GRAY(run);
 #endif
+                        }
+                        code = gx_fill_rectangle_device_rop(ix, iy, iw, ih,
+                                                            pdevc, dev, lop);
                     }
-                    code = (*fill_pgram)(dev, xrun, yrun, xl - xrun,
-                                         ytf - yrun, pdyx, pdyy,
-                                         pdevc, lop);
+                    if (code < 0)
+                        goto err;
+                    xrun = xl;
+                    rsrc = psrc;
+                    if (psrc > stop)
+                        break;
+                    run = c;
+                }
+                dda_next(next.x);
+                if (psrc >= endp)
+                    break;
+            }
+        } else if (penum->posture == image_landscape) {
+
+            /**************************************
+             * Slow case, not masked, landscape. *
+             **************************************/
+            dev_proc_fill_rectangle((*fill_proc)) =
+                dev_proc(dev, fill_rectangle);
+            int ix = fixed2int_pixround(xrun);
+            int iw = fixed2int_pixround(xrun + pdyx) - ix;
+            if (iw < 0)
+                ix += iw, iw = -iw;
+
+            /* In this case, we can fill runs quickly. */
+            /****** DOESN'T DO ADJUSTMENT ******/
+            if (stop <= psrc)
+                goto last;
+            for (;;) {
+                byte c = *psrc++;
+                if (c != run) {
+                    int iy = fixed2int_pixround(yrun);
+                    int ih = fixed2int_pixround(ytf) - iy;
+                    if (ih < 0)
+                        iy += ih, ih = -ih;
+                    switch (run)
+                    {
+                    case 0:
+                        if (!color_is_pure(penum->icolor0))
+                            goto ht_land;
+                        code = (*fill_proc) (dev, ix, iy, iw, ih,
+                                             penum->icolor0->colors.pure);
+                        break;
+                    case 0xff:
+                        if (!color_is_pure(penum->icolor1))
+                            goto ht_land;
+                        code = (*fill_proc) (dev, ix, iy, iw, ih,
+                                             penum->icolor1->colors.pure);
+                        break;
+                    default:
+                        ht_land:
+                        if (run != htrun) {
+                            htrun = run;
+#if USE_SET_GRAY_FUNCTION
+                            code = image_set_gray(run,masked,mask_base,mask_limit,&pdevc,
+                                    &cc,pcs,pgs,dev,gs_color_select_source,penum);
+                            if (code < 0)
+                                goto err;
+#else
+                            IMAGE_SET_GRAY(run);
+#endif
+                        }
+                        code = gx_fill_rectangle_device_rop(ix, iy, iw, ih,
+                                                            pdevc, dev, lop);
+                    }
                     if (code < 0)
                         goto err;
                     yrun = ytf;
-                    xrun = xl;
                     rsrc = psrc;
-                    if (psrc >= stop)
+                    if (psrc > stop)
                         break;
-                    run = *psrc;
+                    run = c;
                 }
-                psrc++;
-                dda_next(next.x);
                 dda_next(next.y);
                 if (psrc >= endp)
                     break;
