@@ -145,30 +145,30 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #endif
 
 #ifdef S_1BIT
-#if S_1BIT
+#if S_1BIT == MAYBE
     if (op->flags & rop_s_1bit) {
-#endif /* S_1BIT */
+#endif /* S_1BIT == MAYBE */
         s = op->s.b.ptr + (op->s.b.pos>>3);
         sroll = 8-(op->s.b.pos & 7);
         sc[0] = ((const gx_color_index *)op->scolors)[0];
         sc[1] = ((const gx_color_index *)op->scolors)[1];
-#if S_1BIT
+#if S_1BIT == MAYBE
     } else
         sroll = 0;
-#endif /* S_1BIT */
+#endif /* S_1BIT == MAYBE */
 #endif /* defined(S_1BIT) */
 #ifdef T_1BIT
-#if T_1BIT
+#if T_1BIT == MAYBE
     if (op->flags & rop_t_1bit) {
-#endif /* T_1BIT */
+#endif /* T_1BIT == MAYBE */
         t = op->t.b.ptr + (op->t.b.pos>>3);
         troll = 8-(op->t.b.pos & 7);
         tc[0] = ((const gx_color_index *)op->tcolors)[0];
         tc[1] = ((const gx_color_index *)op->tcolors)[1];
-#if T_1BIT
+#if T_1BIT == MAYBE
     } else
         troll = 0;
-#endif /* T_1BIT */
+#endif /* T_1BIT == MAYBE */
 #endif /* defined(T_1BIT) */
     do {
 #if defined(S_USED) && !defined(S_CONST)
@@ -177,15 +177,15 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #if defined(T_USED) && !defined(T_CONST)
         rop_operand T;
 #endif /* defined(T_USED) && !defined(T_CONST) */
-#if defined(S_1BIT) && !S_1BIT
+#if defined(S_1BIT) && S_1BIT == MAYBE
         if (sroll == 0) {
-#endif /* defined(S_1BIT) && !S_1BIT */
-#if !defined(S_1BIT) || !S_1BIT
+#endif /* defined(S_1BIT) && S_1BIT == MAYBE */
+#if !defined(S_1BIT) || S_1BIT == MAYBE
             FETCH_S;
-#endif /* !defined(S_1BIT) || !S_1BIT */
-#if defined(S_1BIT) && !S_1BIT
+#endif /* !defined(S_1BIT) || S_1BIT == MAYBE */
+#if defined(S_1BIT) && S_1BIT == MAYBE
         } else
-#endif /* defined(S_1BIT) && !S_1BIT */
+#endif /* defined(S_1BIT) && S_1BIT == MAYBE */
         {
 #ifdef S_1BIT
             --sroll;
@@ -196,15 +196,15 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
             }
 #endif /* S_1BIT */
         }
-#if defined(T_1BIT) && !T_1BIT
+#if defined(T_1BIT) && T_1BIT == MAYBE
         if (troll == 0) {
-#endif /* defined(T_1BIT) && !T_1BIT */
-#if !defined(T_1BIT) || !T_1BIT
+#endif /* defined(T_1BIT) && T_1BIT == MAYBE */
+#if !defined(T_1BIT) || T_1BIT == MAYBE
             FETCH_T;
-#endif /* defined(T_1BIT) && !T_1BIT */
-#if defined(T_1BIT) && !T_1BIT
+#endif /* defined(T_1BIT) && T_1BIT == MAYBE */
+#if defined(T_1BIT) && T_1BIT == MAYBE
         } else
-#endif /* defined(T_1BIT) && !T_1BIT */
+#endif /* defined(T_1BIT) && T_1BIT == MAYBE */
         {
 #ifdef T_1BIT
             --troll;

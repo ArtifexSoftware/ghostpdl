@@ -658,13 +658,13 @@ static void sett_rop_run1_const_s(rop_run_op *op, byte *d, int len)
 
 /* rop = 0xCC = s dep=1 t_constant */
 #ifdef USE_TEMPLATES
-#define TEMPLATE_NAME          sets_rop_run1_const_t
+#define TEMPLATE_NAME          sets_rop_run1
 #define SPECIFIC_ROP           0xCC
 #define SPECIFIC_CODE(O,D,S,T) do { O = S; } while (0)
 #define T_CONST
 #include "gsroprun1.h"
 #else
-static void sets_rop_run1_const_s(rop_run_op *op, byte *d, int len)
+static void sets_rop_run1(rop_run_op *op, byte *d, int len)
 {
     rop_proc    proc = rop_proc_table[op->rop];
     byte        lmask, rmask;
@@ -728,6 +728,45 @@ static void sets_rop_run1_const_s(rop_run_op *op, byte *d, int len)
         D = proc(*d, 0, S);
         *d = (D & ~rmask) | (*d & rmask);
     }
+}
+#endif
+
+/* rop = 0xCC = s dep=8 s_constant | t_constant */
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          sets_rop_run8
+#define SPECIFIC_ROP           0xCC
+#define SPECIFIC_CODE(O,D,S,T) do { O = S; } while (0)
+#define S_CONST
+#define T_CONST
+#include "gsroprun8.h"
+#else
+static void sets_rop_run8(rop_run_op *op, byte *d, int len)
+{
+    const byte S = op->s.c;
+    do {
+        *d++ = S;
+    }
+    while (--len);
+}
+#endif
+
+/* rop = 0xCC = s dep=24 s_constant | t_constant */
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          sets_rop_run24
+#define SPECIFIC_ROP           0xCC
+#define SPECIFIC_CODE(O,D,S,T) do { O = S; } while (0)
+#define S_CONST
+#define T_CONST
+#include "gsroprun24.h"
+#else
+static void copys_rop_run24(rop_run_op *op, byte *d, int len)
+{
+    rop_operand S = op->s.c;
+    {
+        put24(d, S);
+        d += 3;
+    }
+    while (--len);
 }
 #endif
 
@@ -1225,7 +1264,7 @@ static void generic_rop_run8_const_s_trans(rop_run_op *op, byte *d, int len)
 #define S_CONST
 #define S_TRANS MAYBE
 #define T_TRANS MAYBE
-#define T_1BIT MAYBE
+#define T_1BIT YES
 #include "gsroprun8.h"
 #else
 static void generic_rop_run8_const_s_1bit(rop_run_op *op, byte *d, int len)
@@ -1239,22 +1278,15 @@ static void generic_rop_run8_const_s_1bit(rop_run_op *op, byte *d, int len)
     const byte  *tcolors = op->tcolors;
     if (S == strans)
         return;
-    if (op->flags & rop_t_1bit) {
-        t = op->t.b.ptr + (op->t.b.pos>>3);
-        troll = 8-(op->t.b.pos & 7);
-    } else
-        troll = 0;
+    t = op->t.b.ptr + (op->t.b.pos>>3);
+    troll = 8-(op->t.b.pos & 7);
     do {
         rop_operand T;
-        if (troll == 0)
-            T = *t++;
-        else {
-            --troll;
-            T = tcolors[(*t >> troll) & 1];
-            if (troll == 0) {
-                troll = 8;
-                t++;
-            }
+        --troll;
+        T = tcolors[(*t >> troll) & 1];
+        if (troll == 0) {
+            troll = 8;
+            t++;
         }
         if ((T != ttrans))
             *d = proc(*d, S, T);
@@ -1321,7 +1353,7 @@ static void generic_rop_run24_const_s_trans(rop_run_op *op, byte *d, int len)
 #define S_CONST
 #define S_TRANS MAYBE
 #define T_TRANS MAYBE
-#define T_1BIT MAYBE
+#define T_1BIT YES
 #include "gsroprun24.h"
 #else
 static void generic_rop_run24_const_s_1bit(rop_run_op *op, byte *d, int len)
@@ -1336,24 +1368,17 @@ static void generic_rop_run24_const_s_1bit(rop_run_op *op, byte *d, int len)
     rop_operand  tc[2];
     if (S == strans)
         return;
-    if (op->flags & rop_t_1bit) {
-        t = op->t.b.ptr + (op->t.b.pos>>3);
-        troll = 8-(op->t.b.pos & 7);
-        tc[0] = ((const gx_color_index *)op->tcolors)[0];
-        tc[1] = ((const gx_color_index *)op->tcolors)[3];
-    } else
-        troll = 0;
+    t = op->t.b.ptr + (op->t.b.pos>>3);
+    troll = 8-(op->t.b.pos & 7);
+    tc[0] = ((const gx_color_index *)op->tcolors)[0];
+    tc[1] = ((const gx_color_index *)op->tcolors)[3];
     do {
         rop_operand T;
-        if (troll == 0)
-            T = *t++;
-        else {
-            --troll;
-            T = tc[(*t >> troll) & 1];
-            if (troll == 0) {
-                troll = 8;
-                t++;
-            }
+        --troll;
+        T = tc[(*t >> troll) & 1];
+        if (troll == 0) {
+            troll = 8;
+            t++;
         }
         if ((T != ttrans)) {
             rop_operand D = proc(get24(d), S, T);
@@ -1572,7 +1597,7 @@ static void rop_run_swapped(rop_run_op *op, byte *d, int len)
     op->runswap(&local, d, len);
 }
 
-void rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
+int rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
 {
     int key;
     int swap = 0;
@@ -1605,6 +1630,30 @@ void rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
         rop &= ~lop_T_transparent;
     }
 
+    /* Cull transparency if we can */
+    if (rop & lop_S_transparent) {
+        gx_color_index v = (depth == 1 ? 0xff : 0xffffff);
+        if (flags & rop_s_constant) {
+            if (op->s.c != v)
+                rop &= ~lop_S_transparent;
+        } else if ((flags & rop_s_1bit) &&
+                   ((const gx_color_index *)op->scolors)[0] != v &&
+                   ((const gx_color_index *)op->scolors)[1] != v) {
+            rop &= ~lop_S_transparent;
+        }
+    }
+    if (rop & lop_T_transparent) {
+        gx_color_index v = (depth == 1 ? 0xff : 0xffffff);
+        if (flags & rop_t_constant) {
+            if (op->t.c != v)
+                rop &= ~lop_T_transparent;
+        } else if ((flags & rop_t_1bit) &&
+                   ((const gx_color_index *)op->tcolors)[0] != v &&
+                   ((const gx_color_index *)op->tcolors)[1] != v) {
+            rop &= ~lop_T_transparent;
+        }
+    }
+
     /* Cut down the number of cases by mapping 'S bitmap,T constant' onto
      * 'S constant,Tbitmap'. */
     could_swap = ((flags & (rop_s_constant | rop_t_constant)) == rop_t_constant);
@@ -1626,8 +1675,58 @@ force_swap:
 
     op->flags   = (flags & (rop_s_constant | rop_t_constant | rop_s_1bit | rop_t_1bit));
     op->depth   = (byte)depth;
-    op->rop     = rop & (0xFF | lop_S_transparent | lop_T_transparent);
     op->release = NULL;
+
+    /* If no transparency, and S and T are constant, and the rop uses both of them, we can combine them.
+     * Currently this only works for cases where D is unused.
+     */
+    if (!(rop & (lop_T_transparent | lop_S_transparent)) &&
+        op->flags == (rop_s_constant | rop_t_constant) &&
+        rop_usage_table[rop] == rop_usage_ST) {
+        switch (rop & (rop3_D>>rop3_D_shift)) /* Ignore the D bits */
+        {
+        /* Skip 0000 as doesn't use S or T */
+        case ((0<<6) | (0<<4) | (0<<2) | 1):
+            op->s.c = ~(op->s.c | op->t.c);
+            break;
+        case ((0<<6) | (0<<4) | (1<<2) | 0):
+            op->s.c = op->s.c & ~op->t.c;
+            break;
+        /* Skip 0011 as doesn't use S */
+        case ((0<<6) | (1<<4) | (0<<2) | 0):
+            op->s.c = ~op->s.c & op->t.c;
+            break;
+        /* Skip 0101 as doesn't use T */
+        case ((0<<6) | (1<<4) | (1<<2) | 0):
+            op->s.c = op->s.c ^ op->t.c;
+            break;
+        case ((0<<6) | (1<<4) | (1<<2) | 1):
+            op->s.c = ~(op->s.c & op->t.c);
+            break;
+        case ((1<<6) | (0<<4) | (0<<2) | 0):
+            op->s.c = op->s.c & op->t.c;
+            break;
+        case ((1<<6) | (0<<4) | (0<<2) | 1):
+            op->s.c = ~(op->s.c ^ op->t.c);
+            break;
+        /* Skip 1010 as doesn't use T */
+        case ((1<<6) | (0<<4) | (1<<2) | 1):
+            op->s.c = op->s.c | ~op->t.c;
+            break;
+        /* Skip 1100 as doesn't use S */
+        case ((1<<6) | (1<<4) | (0<<2) | 1):
+            op->s.c = ~op->s.c | op->t.c;
+            break;
+        case ((1<<6) | (1<<4) | (1<<2) | 0):
+            op->s.c = op->s.c | op->t.c;
+            break;
+        /* Skip 1111 as doesn't use S or T */
+        default:
+            abort(); /* Never happens */
+        }
+        rop = (rop & ~0xff) | rop3_S;
+    }
+    op->rop     = rop & (0xFF | lop_S_transparent | lop_T_transparent);
 
 #define ROP_SPECIFIC_KEY(rop, depth, flags) (((rop)<<7)+(1<<6)+((depth>>3)<<4)+(flags))
 #define KEY_IS_ROP_SPECIFIC(key)            (key & (1<<6))
@@ -1664,34 +1763,37 @@ retry:
     case ROP_SPECIFIC_KEY(0x5a, 1, rop_s_constant):
         op->run     = xor_rop_run1_const_s;
         break;
-    case ROP_SPECIFIC_KEY(0x5a, 8, rop_s_constant | rop_t_constant):
+    case ROP_SPECIFIC_KEY(0x5a, 8, rop_s_constant | rop_t_constant): /* S_UNUSED */
         goto force_swap;
-    case ROP_SPECIFIC_KEY(0x66, 8, rop_s_constant | rop_t_constant):
+    case ROP_SPECIFIC_KEY(0x66, 8, rop_s_constant | rop_t_constant): /* T_UNUSED */
         op->run     = xor_rop_run8_const_st;
         break;
-    case ROP_SPECIFIC_KEY(0x5a, 24, rop_s_constant | rop_t_constant):
+    case ROP_SPECIFIC_KEY(0x5a, 24, rop_s_constant | rop_t_constant): /* S_UNUSED */
         goto force_swap;
-    case ROP_SPECIFIC_KEY(0x66, 24, rop_s_constant | rop_t_constant):
+    case ROP_SPECIFIC_KEY(0x66, 24, rop_s_constant | rop_t_constant): /* T_UNUSED */
         op->run     = xor_rop_run24_const_st;
         break;
-    case ROP_SPECIFIC_KEY(0xFC, 24, rop_s_constant | rop_t_constant):
-        op->run     = sort_rop_run24_const_st;
-        break;
-    case ROP_SPECIFIC_KEY(0xAA, 1, rop_s_constant | rop_t_constant):
-    case ROP_SPECIFIC_KEY(0xAA, 8, rop_s_constant | rop_t_constant):
-    case ROP_SPECIFIC_KEY(0xAA, 24, rop_s_constant | rop_t_constant):
+    case ROP_SPECIFIC_KEY(0xAA, 1, rop_s_constant | rop_t_constant): /* S & T UNUSED */
+    case ROP_SPECIFIC_KEY(0xAA, 8, rop_s_constant | rop_t_constant): /* S & T UNUSED */
+    case ROP_SPECIFIC_KEY(0xAA, 24, rop_s_constant | rop_t_constant):/* S & T UNUSED */
         op->run     = nop_rop_const_st;
-        break;
+        return 0;
     /* 0xCC = S */
-    case ROP_SPECIFIC_KEY(0xCC, 1, rop_t_constant):
-        op->run     = sets_rop_run1_const_t;
+    case ROP_SPECIFIC_KEY(0xCC, 1, rop_t_constant): /* T_UNUSED */
+        op->run     = sets_rop_run1;
+        break;
+    case ROP_SPECIFIC_KEY(0xCC, 8, rop_s_constant | rop_t_constant): /* T_UNUSED */
+        op->run     = sets_rop_run8;
+        break;
+    case ROP_SPECIFIC_KEY(0xCC, 24, rop_s_constant | rop_t_constant): /* T_UNUSED */
+        op->run     = sets_rop_run24;
         break;
     /* 0xEE = D or S */
     case ROP_SPECIFIC_KEY(0xEE, 1, rop_t_constant):
         op->run     = dors_rop_run1_const_t;
         break;
     /* 0xF0 = T */
-    case ROP_SPECIFIC_KEY(0xF0, 1, rop_s_constant):
+    case ROP_SPECIFIC_KEY(0xF0, 1, rop_s_constant): /* S_UNUSED */
         op->run     = sett_rop_run1_const_s;
         break;
     /* 0xFA = D or T */
@@ -1745,9 +1847,7 @@ retry:
         else
             op->run   = generic_rop_run8_const_s;
         break;
-    case KEY(8, rop_s_constant | rop_s_1bit):
     case KEY(8, rop_s_constant | rop_t_1bit):
-    case KEY(8, rop_s_constant | rop_s_1bit | rop_t_1bit ):
         op->run = generic_rop_run8_const_s_1bit;
         break;
     case KEY(24, rop_s_constant):
@@ -1756,9 +1856,7 @@ retry:
         else
             op->run   = generic_rop_run24_const_s;
         break;
-    case KEY(24, rop_s_constant | rop_s_1bit):
     case KEY(24, rop_s_constant | rop_t_1bit):
-    case KEY(24, rop_s_constant | rop_s_1bit | rop_t_1bit ):
         op->run = generic_rop_run24_const_s_1bit;
         break;
     case KEY(1, rop_s_constant | rop_t_constant):
@@ -1773,29 +1871,11 @@ retry:
         else
             op->run   = generic_rop_run8_const_st;
         break;
-    case KEY(8, rop_s_constant | rop_t_constant | rop_s_1bit):
-    case KEY(8, rop_s_constant | rop_t_constant | rop_t_1bit):
-    case KEY(8, rop_s_constant | rop_t_constant | rop_s_1bit | rop_t_1bit ):
-        /* Nothing in the code calls constant and 1 bit together. Which
-         * means that we can only get here if we spotted that the rop ignores
-         * S and/or T earlier. We know we aren't using transparency, so
-         * the 1 bit becomes moot. */
-        op->run   = generic_rop_run8_const_st;
-        break;
     case KEY(24, rop_s_constant | rop_t_constant):
         if (rop & (lop_S_transparent | lop_T_transparent))
             op->run   = generic_rop_run24_const_st_trans;
         else
             op->run   = generic_rop_run24_const_st;
-        break;
-    case KEY(24, rop_s_constant | rop_t_constant | rop_s_1bit):
-    case KEY(24, rop_s_constant | rop_t_constant | rop_t_1bit):
-    case KEY(24, rop_s_constant | rop_t_constant | rop_s_1bit | rop_t_1bit ):
-        /* Nothing in the code calls constant and 1 bit together. Which
-         * means that we can only get here if we spotted that the rop ignores
-         * S and/or T earlier. We know we aren't using transparency, so
-         * the 1 bit becomes moot. */
-        op->run = generic_rop_run24_const_st;
         break;
     default:
         /* If we failed to find a specific one, and swapping is an option,
@@ -1825,6 +1905,7 @@ retry:
         op->run = record_run;
     }
 #endif
+    return 1;
 }
 
 void (rop_set_s_constant)(rop_run_op *op, int s)

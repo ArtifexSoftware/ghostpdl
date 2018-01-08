@@ -331,21 +331,29 @@ enum {
     rop_t_1bit     = 8
 };
 
-/* To use a rop_run_op, allocate it on the stack, then call
- * rop_get_run_op with a pointer to it to fill it in with details of an
- * implementer. If you're lucky (doing a popular rop) you'll get an optimised
- * implementation. If you're not, you'll get a general purpose slow rop. You
- * will always get an implementation of some kind though.
+/* To use a rop_run_op, allocate it on the stack, then (if T or S are constant)
+ * call one of:
+ */
+void rop_set_s_constant(rop_run_op *op, int s);
+void rop_set_t_constant(rop_run_op *op, int t);
+
+/* Then call rop_get_run_op with a pointer to it to fill it in with details
+ * of an implementer. If you're lucky (doing a popular rop) you'll get an
+ * optimised implementation. If you're not, you'll get a general purpose
+ * slow rop. You will always get an implementation of some kind though.
  *
  * You should logical or together the flags - this tells the routine whether
  * s and t are constant, or will be varying across the run.
+ *
+ * If this function returns non zero, the ROP has been optimised out.
  */
-void rop_get_run_op(rop_run_op *op, int rop, int depth, int flags);
+int rop_get_run_op(rop_run_op *op, int rop, int depth, int flags);
 
-/* Next, you should set the values of S and T. Each of these can either be
- * a constant value, or a pointer to a run of bytes. It is the callers
- * responsibility to set these in the correct way (corresponding to the flags
- * passed into the call to rop_get_run_op.
+/* Next, (for non-constant S or T) you should set the values of S and T.
+ * (Constant values were handled earlier, remember?) Each of these can
+ * either be a constant value, or a pointer to a run of bytes. It is the
+ * callers responsibility to set these in the correct way (corresponding
+ * to the flags passed into the call to rop_get_run_op.
  *
  * For cases where depth < 8, and a bitmap is used, we have to specify the
  * start bit position within the byte. (All data in rop bitmaps is considered
@@ -354,7 +362,6 @@ void rop_set_s_constant(rop_run_op *op, int s);
 void rop_set_s_bitmap(rop_run_op *op, const byte *s);
 void rop_set_s_bitmap_subbyte(rop_run_op *op, const byte *s, int startbitpos);
 void rop_set_s_colors(rop_run_op *op, const byte *scolors);
-void rop_set_t_constant(rop_run_op *op, int t);
 void rop_set_t_bitmap(rop_run_op *op, const byte *t);
 void rop_set_t_bitmap_subbyte(rop_run_op *op, const byte *s, int startbitpos);
 void rop_set_t_colors(rop_run_op *op, const byte *scolors);

@@ -270,42 +270,44 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
             }
         } else {
             /* Use Rop run */
-            rop_get_run_op(&ropper, rop, 1, 0);
-            /* Loop over scan lines. */
-            for (; line_count-- > 0; drow += draster, srow += sraster) {
-                rop_set_s_bitmap_subbyte(&ropper, srow, sbit);
-                rop_run_subbyte(&ropper, drow, dbit, width);
+            if (rop_get_run_op(&ropper, rop, 1, 0)) {
+                /* Loop over scan lines. */
+                for (; line_count-- > 0; drow += draster, srow += sraster) {
+                    rop_set_s_bitmap_subbyte(&ropper, srow, sbit);
+                    rop_run_subbyte(&ropper, drow, dbit, width);
+                }
+                rop_release_run_op(&ropper);
             }
-            rop_release_run_op(&ropper);
         }
     } else if (textures->rep_width > 32) {
         /* Use Rop run */
-        rop_get_run_op(&ropper, rop, 1, 0);
-        /* Loop over scan lines. */
-        for (; line_count-- > 0; drow += draster, srow += sraster, ++ty) {
-            int sx = sourcex;
-            int dx = x;
-            int w = width;
-            const byte *trow = textures->data + (ty % textures->rep_height) * traster;
-            int xoff = x_offset(phase_x, ty, textures);
-            int nw;
-            int tx = (dx + xoff) % textures->rep_width;
+        if (rop_get_run_op(&ropper, rop, 1, 0)) {
+            /* Loop over scan lines. */
+            for (; line_count-- > 0; drow += draster, srow += sraster, ++ty) {
+                int sx = sourcex;
+                int dx = x;
+                int w = width;
+                const byte *trow = textures->data + (ty % textures->rep_height) * traster;
+                int xoff = x_offset(phase_x, ty, textures);
+                int nw;
+                int tx = (dx + xoff) % textures->rep_width;
 
-            /* Loop over (horizontal) copies of the tile. */
-            for (; w > 0; sx += nw, dx += nw, w -= nw, tx = 0) {
-                int dbit = dx & 7;
-                int sbit = sx & 7;
-                int tbit = tx & 7;
-                byte *dptr = drow + (dx >> 3);
-                const byte *sptr = srow + (sx >> 3);
-                const byte *tptr = trow + (tx >> 3);
-                nw = min(w, textures->size.x - tx);
-                rop_set_s_bitmap_subbyte(&ropper, sptr, sbit);
-                rop_set_t_bitmap_subbyte(&ropper, tptr, tbit);
-                rop_run_subbyte(&ropper, dptr, dbit, nw);
+                /* Loop over (horizontal) copies of the tile. */
+                for (; w > 0; sx += nw, dx += nw, w -= nw, tx = 0) {
+                    int dbit = dx & 7;
+                    int sbit = sx & 7;
+                    int tbit = tx & 7;
+                    byte *dptr = drow + (dx >> 3);
+                    const byte *sptr = srow + (sx >> 3);
+                    const byte *tptr = trow + (tx >> 3);
+                    nw = min(w, textures->size.x - tx);
+                    rop_set_s_bitmap_subbyte(&ropper, sptr, sbit);
+                    rop_set_t_bitmap_subbyte(&ropper, tptr, tbit);
+                    rop_run_subbyte(&ropper, dptr, dbit, nw);
+                }
             }
+            rop_release_run_op(&ropper);
         }
-        rop_release_run_op(&ropper);
     } else if (srow == NULL) {
         /* Do it the old, 'slow' way. rop runs of less than 1 word are
          * not likely to be a win with rop_run. */
