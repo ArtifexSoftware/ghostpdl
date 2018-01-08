@@ -2367,7 +2367,8 @@ gsroprun1_h=$(GLSRC)gsroprun1.h
 gsroprun8_h=$(GLSRC)gsroprun8.h
 gsroprun24_h=$(GLSRC)gsroprun24.h
 $(GLOBJ)gsroprun.$(OBJ) : $(GLSRC)gsroprun.c $(std_h) $(stdpre_h) $(gsropt_h)\
- $(gsroprun1_h) $(gsroprun8_h) $(gsroprun24_h) $(gp_h) $(arch_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gsroprun1_h) $(gsroprun8_h) $(gsroprun24_h) $(gp_h) $(arch_h) \
+ $(gscindex_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsroprun.$(OBJ) $(C_) $(GLSRC)gsroprun.c
 
 # ---------------- TrueType and PostScript Type 42 fonts ---------------- #

@@ -300,6 +300,14 @@ typedef union rop_source_s {
     rop_operand c;
 } rop_source;
 
+/*
+scolors and tcolors in the following structure should really be
+gx_color_index *, but to do that would require gxcindex.h being
+included everywhere this header is, and it's not. Including it
+at the top of this header runs other things into problems, so
+living with void *'s until we can get the header inclusion
+sorted.
+*/
 struct rop_run_op_s {
     void (*run)(rop_run_op *, byte *dest, int len);
     void (*runswap)(rop_run_op *, byte *dest, int len);
@@ -309,8 +317,8 @@ struct rop_run_op_s {
     byte depth;
     byte flags;
     byte dpos;
-    const byte *scolors;
-    const byte *tcolors;
+    const void *scolors;
+    const void *tcolors;
     void (*release)(rop_run_op *);
     void *opaque;
 };

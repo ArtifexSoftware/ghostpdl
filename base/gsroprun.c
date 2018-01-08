@@ -19,6 +19,7 @@
 #include "stdpre.h"
 #include "gsropt.h"
 #include "gp.h"
+#include "gxcindex.h"
 
 /* Enable the following define to use 'template'd code (code formed by
  * repeated #inclusion of a header file to generate differen versions).
@@ -557,7 +558,7 @@ static void xor_rop_run24_const_st(rop_run_op *op, byte *d, int len)
 #ifdef USE_TEMPLATES
 /* FIXME: Not optimal; introduce 'PRE' code to combine S and T. */
 #define TEMPLATE_NAME          sort_rop_run24_const_st
-#define SPECIFIC_ROP           0x66
+#define SPECIFIC_ROP           0xFC
 #define SPECIFIC_CODE(O,D,S,T) do { O = S|T; } while (0)
 #define S_CONST
 #define T_CONST
@@ -936,8 +937,8 @@ static void generic_rop_run8_1bit(rop_run_op *op, byte *d, int len)
     rop_operand  strans = (op->rop & lop_S_transparent ? 255 : -1);
     rop_operand  ttrans = (op->rop & lop_T_transparent ? 255 : -1);
     int          sroll, troll;
-    const byte  *scolors = op->scolors;
-    const byte  *tcolors = op->tcolors;
+    const gx_color_index *scolors = op->scolors;
+    const gx_color_index *tcolors = op->tcolors;
     if (op->flags & rop_s_1bit) {
         s = op->s.b.ptr + (op->s.b.pos>>3);
         sroll = 8-(op->s.b.pos & 7);
@@ -1044,21 +1045,16 @@ static void generic_rop_run24_1bit(rop_run_op *op, byte *d, int len)
     rop_operand  strans = (op->rop & lop_S_transparent ? 0xFFFFFF : -1);
     rop_operand  ttrans = (op->rop & lop_T_transparent ? 0xFFFFFF : -1);
     int          sroll, troll;
-    const byte  *scolors = op->scolors;
-    const byte  *tcolors = op->tcolors;
-    rop_operand  sc[2], tc[2];
+    const gx_color_index *scolors = op->scolors;
+    const gx_color_index *tcolors = op->tcolors;
     if (op->flags & rop_s_1bit) {
         s = op->s.b.ptr + (op->s.b.pos>>3);
         sroll = 8-(op->s.b.pos & 7);
-        sc[0] = get24(&op->scolors[0]);
-        sc[1] = get24(&op->scolors[3]);
     } else
         sroll = 0;
     if (op->flags & rop_t_1bit) {
         t = op->t.b.ptr + (op->t.b.pos>>3);
         troll = 8-(op->t.b.pos & 7);
-        tc[0] = get24(&op->tcolors[0]);
-        tc[1] = get24(&op->tcolors[3]);
     } else
         troll = 0;
     do {
@@ -1068,7 +1064,7 @@ static void generic_rop_run24_1bit(rop_run_op *op, byte *d, int len)
             s += 3;
         } else {
             --sroll;
-            S = sc[(*s >> sroll) & 1];
+            S = scolors[(*s >> sroll) & 1];
             if (sroll == 0) {
                 sroll = 8;
                 s++;
@@ -1079,7 +1075,7 @@ static void generic_rop_run24_1bit(rop_run_op *op, byte *d, int len)
             t += 3;
         } else {
             --troll;
-            T = tc[(*t >> troll) & 1];
+            T = tcolors[(*t >> troll) & 1];
             if (troll == 0) {
                 troll = 8;
                 t++;
@@ -1343,8 +1339,8 @@ static void generic_rop_run24_const_s_1bit(rop_run_op *op, byte *d, int len)
     if (op->flags & rop_t_1bit) {
         t = op->t.b.ptr + (op->t.b.pos>>3);
         troll = 8-(op->t.b.pos & 7);
-        tc[0] = get24(&op->tcolors[0]);
-        tc[1] = get24(&op->tcolors[3]);
+        tc[0] = ((const gx_color_index *)op->tcolors)[0];
+        tc[1] = ((const gx_color_index *)op->tcolors)[3];
     } else
         troll = 0;
     do {

@@ -27,11 +27,8 @@
 #include "gdevmem.h"
 #include "gdevmrop.h"
 
-/* Enable the following to use RUN_ROPs. Benefits of this are not proven yet
- * so disabled, even though cluster testing shows that the results are the
- * same.
- */
-#undef USE_RUN_ROP
+/* Use the RUN_ROP code. */
+#define USE_RUN_ROP
 #undef COMPARE_AND_CONTRAST
 
 /*
@@ -67,10 +64,12 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
     int depth = dev->color_info.depth;
     int bpp = depth >> 3;       /* bytes per pixel, 1 or 3 */
     gx_color_index all_ones = ((gx_color_index) 1 << depth) - 1;
+#if !defined(USE_RUN_ROP) || defined(COMPARE_AND_CONTRAST)
     gx_color_index strans =
         (lop & lop_S_transparent ? all_ones : gx_no_color_index);
     gx_color_index ttrans =
         (lop & lop_T_transparent ? all_ones : gx_no_color_index);
+#endif
 #ifdef USE_RUN_ROP
     rop_run_op ropper;
 #ifdef COMPARE_AND_CONTRAST
@@ -175,12 +174,14 @@ df:         return mem_default_strip_copy_rop(dev,
 /* 8-bit */
 #define cbit8(base, i, colors)\
   (dbit(base, i) ? (byte)colors[1] : (byte)colors[0])
+#ifdef COMPARE_AND_CONTRAST
 #define rop_body_8(s_pixel, t_pixel)\
   if ( (s_pixel) == strans ||   /* So = 0, s_tr = 1 */\
        (t_pixel) == ttrans      /* Po = 0, p_tr = 1 */\
      )\
     continue;\
   *dptr = (*rop_proc_table[rop])(*dptr, s_pixel, t_pixel)
+#endif
 /* 24-bit */
 #define get24(ptr)\
   (((gx_color_index)(ptr)[0] << 16) | ((gx_color_index)(ptr)[1] << 8) | (ptr)[2])
@@ -190,6 +191,7 @@ df:         return mem_default_strip_copy_rop(dev,
   (ptr)[2] = (byte)(pixel)
 #define cbit24(base, i, colors)\
   (dbit(base, i) ? colors[1] : colors[0])
+#ifdef COMPARE_AND_CONTRAST
 #define rop_body_24(s_pixel, t_pixel)\
   if ( (s_pixel) == strans ||   /* So = 0, s_tr = 1 */\
        (t_pixel) == ttrans      /* Po = 0, p_tr = 1 */\
@@ -199,6 +201,7 @@ df:         return mem_default_strip_copy_rop(dev,
     d_pixel = (*rop_proc_table[rop])(d_pixel, s_pixel, t_pixel);\
     put24(dptr, d_pixel);\
   }
+#endif
     if (const_texture != gx_no_color_index) {
 /**** Constant texture ****/
         if (const_source != gx_no_color_index) {
@@ -346,7 +349,9 @@ df:         return mem_default_strip_copy_rop(dev,
                 for (; w > 0; dx += nw, w -= nw) {
                     int tx = (dx + xoff) % textures->rep_width;
                     int left = nw = min(w, textures->size.x - tx);
+#ifdef COMPARE_AND_CONTRAST
                     const byte *tptr = trow;
+#endif
 
                     rop_set_t_bitmap_subbyte(&ropper, trow, tx);
 #ifdef COMPARE_AND_CONTRAST
@@ -430,7 +435,7 @@ df:         return mem_default_strip_copy_rop(dev,
         }
     } else {
 /**** Data source & texture ****/
-        if (scolors != NULL | tcolors != NULL) {
+        if (scolors != NULL || tcolors != NULL) {
             uint traster = textures->raster;
             int ty = y + phase_y;
             const byte *srow = sdata;

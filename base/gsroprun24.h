@@ -150,8 +150,8 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #endif /* S_1BIT */
         s = op->s.b.ptr + (op->s.b.pos>>3);
         sroll = 8-(op->s.b.pos & 7);
-        sc[0] = GET24(&op->scolors[0]);
-        sc[1] = GET24(&op->scolors[3]);
+        sc[0] = ((const gx_color_index *)op->scolors)[0];
+        sc[1] = ((const gx_color_index *)op->scolors)[1];
 #if S_1BIT
     } else
         sroll = 0;
@@ -163,8 +163,8 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #endif /* T_1BIT */
         t = op->t.b.ptr + (op->t.b.pos>>3);
         troll = 8-(op->t.b.pos & 7);
-        tc[0] = GET24(&op->tcolors[0]);
-        tc[1] = GET24(&op->tcolors[3]);
+        tc[0] = ((const gx_color_index *)op->tcolors)[0];
+        tc[1] = ((const gx_color_index *)op->tcolors)[1];
 #if T_1BIT
     } else
         troll = 0;
