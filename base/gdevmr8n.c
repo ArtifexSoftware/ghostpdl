@@ -64,6 +64,9 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
     int depth = dev->color_info.depth;
     int bpp = depth >> 3;       /* bytes per pixel, 1 or 3 */
     gx_color_index all_ones = ((gx_color_index) 1 << depth) - 1;
+    rop_operand local_scolors[2];
+    rop_operand local_tcolors[2];
+
 #if !defined(USE_RUN_ROP) || defined(COMPARE_AND_CONTRAST)
     gx_color_index strans =
         (lop & lop_S_transparent ? all_ones : gx_no_color_index);
@@ -158,6 +161,25 @@ df:         return mem_default_strip_copy_rop(dev,
     line_count = height;
     base = scan_line_base(mdev, y);
     drow = base + x * bpp;
+
+    /* Allow for colors being passed in with tags in the top bits.
+     * This confuses transparency code.
+     */
+    {
+        rop_operand color_mask = (bpp == 1 ? 0xff : 0xffffff);
+        if (scolors)
+        {
+            local_scolors[0] = scolors[0] & color_mask;
+            local_scolors[1] = scolors[1] & color_mask;
+            scolors = local_scolors;
+        }
+        if (tcolors)
+        {
+            local_tcolors[0] = tcolors[0] & color_mask;
+            local_tcolors[1] = tcolors[1] & color_mask;
+            tcolors = local_tcolors;
+        }
+    }
 
     /*
      * There are 18 cases depending on whether each of the source and
