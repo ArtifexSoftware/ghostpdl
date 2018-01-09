@@ -2522,8 +2522,10 @@ alloc_close_clump(gs_ref_memory_t * mem)
 {
 #ifdef DEBUG
     if (gs_debug_c('A')) {
-        dmlprintf1((const gs_memory_t *)mem, "[a%d]", alloc_trace_space(mem));
-        dmprintf_clump((const gs_memory_t *)mem, "closing clump", mem->cc);
+        if (mem->cc != NULL) {
+            dmlprintf1((const gs_memory_t *)mem, "[a%d]", alloc_trace_space(mem));
+            dmprintf_clump((const gs_memory_t *)mem, "closing clump", mem->cc);
+        }
     }
 #endif
 }
@@ -2534,8 +2536,10 @@ alloc_open_clump(gs_ref_memory_t * mem)
 {
 #ifdef DEBUG
     if (gs_debug_c('A')) {
-        dmlprintf1((const gs_memory_t *)mem, "[a%d]", alloc_trace_space(mem));
-        dmprintf_clump((const gs_memory_t *)mem, "opening clump", mem->cc);
+        if (mem->cc != NULL) {
+            dmlprintf1((const gs_memory_t *)mem, "[a%d]", alloc_trace_space(mem));
+            dmprintf_clump((const gs_memory_t *)mem, "opening clump", mem->cc);
+        }
     }
 #endif
 }
