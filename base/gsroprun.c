@@ -1634,7 +1634,10 @@ int rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
     if (rop & lop_S_transparent) {
         gx_color_index v = (depth == 1 ? 0xff : 0xffffff);
         if (flags & rop_s_constant) {
-            if (op->s.c != v)
+            if (op->s.c == v) {
+                op->run = nop_rop_const_st;
+                return 0;
+            } else
                 rop &= ~lop_S_transparent;
         } else if ((flags & rop_s_1bit) &&
                    ((const gx_color_index *)op->scolors)[0] != v &&
@@ -1645,7 +1648,10 @@ int rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
     if (rop & lop_T_transparent) {
         gx_color_index v = (depth == 1 ? 0xff : 0xffffff);
         if (flags & rop_t_constant) {
-            if (op->t.c != v)
+            if (op->t.c == v) {
+                op->run = nop_rop_const_st;
+                return 0;
+            } else
                 rop &= ~lop_T_transparent;
         } else if ((flags & rop_t_1bit) &&
                    ((const gx_color_index *)op->tcolors)[0] != v &&
