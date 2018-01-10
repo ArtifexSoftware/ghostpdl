@@ -1534,20 +1534,20 @@ static int set_pjl_default_fontsource(gs_memory_t * mem, pjl_fontsource_t **font
     pjl_fontsource_t *pjl_fontdef;
     char *key, *value, *newkey, *newvalue;
     int i = 0;
+    int limit = 0;
 
-    while (from[i].pathname && from[i].pathname[0] != 0x00)
-        i++;
+    while (from[limit].pathname && from[limit].pathname[0] != 0x00)
+        limit++;
 
     pjl_fontdef = (pjl_fontsource_t *) gs_alloc_bytes(mem,
                                                       sizeof
-                                                      (pjl_fontsource_t) * (i + 1),
+                                                      (pjl_fontsource_t) * (limit + 1),
                                                       "new_font_defaults");
     if (!pjl_fontdef)
         return -1;
 
-    memset(pjl_fontdef, 0x00, sizeof(pjl_fontsource_t) * (i + 1));
-    i--;
-    while (i >= 0) {
+    memset(pjl_fontdef, 0x00, sizeof(pjl_fontsource_t) * (limit + 1));
+    while (i < limit) {
         key = from[i].pathname;
         value = from[i].fontnumber;
 
@@ -1571,7 +1571,7 @@ static int set_pjl_default_fontsource(gs_memory_t * mem, pjl_fontsource_t **font
         }
         memcpy(pjl_fontdef[i].designator, pjl_fontsource_table[i].designator, 2);
 
-        i--;
+        i++;
     }
     *fontdef = pjl_fontdef;
     return 0;
