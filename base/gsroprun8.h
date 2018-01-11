@@ -163,6 +163,8 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
         return;
 #endif
 
+    len *= op->mul;
+
 #ifdef S_1BIT
 #if S_1BIT == MAYBE
     if (op->flags & rop_s_1bit) {

@@ -350,6 +350,7 @@ struct rop_run_op_s {
     int rop;
     byte depth;
     byte flags;
+    byte mul;
     byte dpos;
     const void *scolors;
     const void *tcolors;

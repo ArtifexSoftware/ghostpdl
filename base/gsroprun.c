@@ -167,30 +167,6 @@ static void invert_rop_run8(rop_run_op *op, byte *d, int len)
 }
 #endif
 
-/* Rop 0x55 = Invert   dep=24  (all cases) */
-#ifdef USE_TEMPLATES
-#define TEMPLATE_NAME          invert_rop_run24
-#define SPECIFIC_ROP           0x55
-#define SPECIFIC_CODE(O,D,S,T) do { O = ~D; } while (0)
-#define S_CONST
-#define T_CONST
-#include "gsroprun24.h"
-#else
-static void invert_rop_run24(rop_run_op *op, byte *d, int len)
-{
-    do
-    {
-        *d = ~*d;
-        d++;
-        *d = ~*d;
-        d++;
-        *d = ~*d;
-        d++;
-    }
-    while (--len);
-}
-#endif
-
 /* Rop 0x33 = ~s */
 
 /* 0x33 = ~s  dep=1 t_constant */
@@ -1389,6 +1365,7 @@ static void record_run(rop_run_op *op, byte *d, int len)
     local.dpos    = op->dpos;
     local.release = op->release;
     local.opaque  = op->opaque;
+    local.mul     = op->mul;
 
     op->runswap(&local, d, len);
 }
@@ -1414,6 +1391,7 @@ static void rop_run_swapped(rop_run_op *op, byte *d, int len)
     local.dpos    = op->dpos;
     local.release = op->release;
     local.opaque  = op->opaque;
+    local.mul     = op->mul;
 
     op->runswap(&local, d, len);
 }
@@ -1509,6 +1487,47 @@ int rop_get_run_op(rop_run_op *op, int lop, int depth, int flags)
      * that S >= T.
      */
 
+    /* Can we fold down from 24bit to 8bit? */
+    op->mul = 1;
+    if (depth == 24 && (lop & (lop_S_transparent | lop_T_transparent)) == 0) {
+        switch (flags & (rop_s_constant | rop_s_1bit))
+        {
+        case 0: /* s is a bitmap. No good. */
+        case rop_s_1bit: /* s is 1 bit data. No good. */
+            goto no_fold_24_to_8;
+        case rop_s_constant: /* constant or unused */
+        {
+            rop_operand s = swap ? op->t.c : op->s.c;
+            if ((rop_usage_table[lop & 0xff] & rop_usage_S) &&
+                ((s & 0xff) != ((s>>8) & 0xff) ||
+                 (s & 0xff) != ((s>>16) & 0xff)))
+                /* USED, and a colour that doesn't work out the same in 8bits */
+                goto no_fold_24_to_8;
+            break;
+        }
+        }
+        switch (flags & (rop_t_constant | rop_t_1bit))
+        {
+        case 0: /* t is a bitmap. No good. */
+        case rop_t_1bit: /* t is 1 bit data. No good. */
+            goto no_fold_24_to_8;
+        case rop_t_constant: /* constant or unused */
+        {
+            rop_operand t = swap ? op->s.c : op->t.c;
+            if ((rop_usage_table[lop & 0xff] & rop_usage_T) &&
+                ((t & 0xff) != ((t>>8) & 0xff) ||
+                 (t & 0xff) != ((t>>16) & 0xff)))
+                /* USED, and a colour that doesn't work out the same in 8bits */
+                goto no_fold_24_to_8;
+            break;
+        }
+        }
+        /* We can safely fold down from 24 to 8 */
+        op->mul = 3;
+        depth = 8;
+    no_fold_24_to_8:{}
+    }
+
     op->flags   = (flags & (rop_s_constant | rop_t_constant | rop_s_1bit | rop_t_1bit));
     op->depth   = (byte)depth;
     op->release = NULL;
@@ -1590,11 +1609,8 @@ retry:
         op->t.b.pos = 0;
         op->dpos    = 0;
         break;
-    case ROP_SPECIFIC_KEY(0x55, 8, rop_s_constant | rop_t_constant):
+    case ROP_SPECIFIC_KEY(0x55, 8, rop_s_constant | rop_t_constant): /* S & T UNUSED */
         op->run     = invert_rop_run8;
-        break;
-    case ROP_SPECIFIC_KEY(0x55, 24, rop_s_constant | rop_t_constant):
-        op->run     = invert_rop_run24;
         break;
     /* 0x66 = D xor S */
     case ROP_SPECIFIC_KEY(0x66, 1, rop_t_constant):
