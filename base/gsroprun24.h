@@ -148,7 +148,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #if S_1BIT == MAYBE
     if (op->flags & rop_s_1bit) {
 #endif /* S_1BIT == MAYBE */
-        s = op->s.b.ptr + (op->s.b.pos>>3);
+        s += op->s.b.pos>>3;
         sroll = 8-(op->s.b.pos & 7);
         sc[0] = ((const gx_color_index *)op->scolors)[0];
         sc[1] = ((const gx_color_index *)op->scolors)[1];
@@ -161,7 +161,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #if T_1BIT == MAYBE
     if (op->flags & rop_t_1bit) {
 #endif /* T_1BIT == MAYBE */
-        t = op->t.b.ptr + (op->t.b.pos>>3);
+        t += op->t.b.pos>>3;
         troll = 8-(op->t.b.pos & 7);
         tc[0] = ((const gx_color_index *)op->tcolors)[0];
         tc[1] = ((const gx_color_index *)op->tcolors)[1];

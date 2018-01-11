@@ -141,7 +141,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #if S_1BIT == MAYBE
     if (op->flags & rop_s_1bit) {
 #endif /* S_1BIT == MAYBE */
-        s = op->s.b.ptr + (op->s.b.pos>>3);
+        s += op->s.b.pos>>3;
         sroll = 8-(op->s.b.pos & 7);
 #if S_1BIT == MAYBE
     } else
@@ -152,7 +152,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #if T_1BIT == MAYBE
     if (op->flags & rop_t_1bit) {
 #endif /* T_1BIT == MAYBE */
-        t = op->t.b.ptr + (op->t.b.pos>>3);
+        t += op->t.b.pos>>3;
         troll = 8-(op->t.b.pos & 7);
 #if T_1BIT == MAYBE
     } else
