@@ -467,6 +467,10 @@ df:         return mem_default_strip_copy_rop(dev,
             int ty = y + phase_y;
             const byte *srow = sdata;
 
+            if (scolors)
+                rop_set_s_colors(&ropper, scolors);
+            if (tcolors)
+                rop_set_s_colors(&ropper, tcolors);
             if (rop_get_run_op(&ropper, lop, depth,
                                ((scolors == NULL ? 0 : rop_s_1bit) |
                                 (tcolors == NULL ? 0 : rop_t_1bit)))) {
