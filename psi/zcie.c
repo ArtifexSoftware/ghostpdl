@@ -177,7 +177,7 @@ cie_points_param(const gs_memory_t *mem,
 /* The caller has set pclt->n and pclt->m. */
 /* ptref is known to be a readable array of size at least n+1. */
 static int cie_3d_table_param(const ref * ptable, uint count, uint nbytes,
-                               gs_const_string * strings);
+                               gs_const_string * strings, gs_memory_t *mem);
 int
 cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
                 const gs_memory_t * mem)
@@ -202,7 +202,7 @@ cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
                                   &st_const_string_element, "cie_table_param");
         if (table == 0)
             return_error(gs_error_VMerror);
-        code = cie_3d_table_param(pta + 3, pclt->dims[0], nbytes, table);
+        code = cie_3d_table_param(pta + 3, pclt->dims[0], nbytes, table, mem);
     } else {			/* n == 4 */
         int d0 = pclt->dims[0], d1 = pclt->dims[1];
         uint ntables = d0 * d1;
@@ -222,7 +222,7 @@ cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
          * we initialize code to 0 here solely to pacify stupid compilers.
          */
         for (code = 0, i = 0; i < d0; ++i) {
-            code = cie_3d_table_param(psuba + i, d1, nbytes, table + d1 * i);
+            code = cie_3d_table_param(psuba + i, d1, nbytes, table + d1 * i, mem);
             if (code < 0)
                 break;
         }
@@ -236,7 +236,7 @@ cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
 }
 static int
 cie_3d_table_param(const ref * ptable, uint count, uint nbytes,
-                   gs_const_string * strings)
+                   gs_const_string * strings, gs_memory_t *mem)
 {
     const ref *rstrings;
     uint i;
@@ -247,11 +247,21 @@ cie_3d_table_param(const ref * ptable, uint count, uint nbytes,
     rstrings = ptable->value.const_refs;
     for (i = 0; i < count; ++i) {
         const ref *const prt2 = rstrings + i;
+        byte *tmpstr;
 
         check_read_type(*prt2, t_string);
         if (r_size(prt2) != nbytes)
             return_error(gs_error_rangecheck);
-        strings[i].data = prt2->value.const_bytes;
+        /* Here we need to get a string in stable_memory (like the rest of the CIEDEF(G)
+        * structure). It _may_ already be in global or stable memory, but we don't know
+        * that, so just allocate and copy it so we don't end up with stale pointers after
+        * a "restore" that frees localVM. Rely on GC to collect the strings.
+        */
+        tmpstr = gs_alloc_string(mem->stable_memory, nbytes, "cie_3d_table_param");
+        if (tmpstr == NULL)
+            return_error(gs_error_VMerror);
+        memcpy(tmpstr, prt2->value.const_bytes, nbytes);
+        strings[i].data = tmpstr;
         strings[i].size = nbytes;
     }
     return 0;
