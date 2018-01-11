@@ -99,7 +99,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #endif /* defined(S_TRANS) */
 #ifdef S_1BIT
     int          sroll;
-    const byte  *scolors = op->scolors;
+    const gx_color_index *scolors = op->scolors;
 #endif /* S_1BIT */
 #else /* !defined(S_USED) */
 #define S 0
@@ -120,7 +120,7 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d, int len)
 #endif /* defined(T_TRANS) */
 #ifdef T_1BIT
     int          troll;
-    const byte  *tcolors = op->tcolors;
+    const gx_color_index *tcolors = op->tcolors;
 #endif /* T_TRANS */
 #else /* !defined(T_USED) */
 #define T 0
