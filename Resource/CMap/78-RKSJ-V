@@ -5,9 +5,9 @@
 %%IncludeResource: CMap (78-RKSJ-H)
 %%BeginResource: CMap (78-RKSJ-V)
 %%Title: (78-RKSJ-V Adobe Japan1 0)
-%%Version: 10.003
+%%Version: 10.005
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-2009 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-2015 Adobe Systems Incorporated.
 %%Copyright: All rights reserved.
 %%Copyright:
 %%Copyright: Redistribution and use in source and binary forms, with or
@@ -59,7 +59,7 @@ begincmap
 end def
 
 /CMapName /78-RKSJ-V def
-/CMapVersion 10.003 def
+/CMapVersion 10.005 def
 /CMapType 1 def
 
 /XUID [1 10 25354] def

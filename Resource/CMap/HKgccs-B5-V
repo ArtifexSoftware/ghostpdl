@@ -5,9 +5,9 @@
 %%IncludeResource: CMap (HKgccs-B5-H)
 %%BeginResource: CMap (HKgccs-B5-V)
 %%Title: (HKgccs-B5-V Adobe CNS1 1)
-%%Version: 12.002
+%%Version: 12.004
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-2009 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-2015 Adobe Systems Incorporated.
 %%Copyright: All rights reserved.
 %%Copyright:
 %%Copyright: Redistribution and use in source and binary forms, with or
@@ -59,7 +59,7 @@ begincmap
 end def
 
 /CMapName /HKgccs-B5-V def
-/CMapVersion 12.002 def
+/CMapVersion 12.004 def
 /CMapType 1 def
 
 /XUID [1 10 25520] def
