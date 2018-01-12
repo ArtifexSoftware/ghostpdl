@@ -422,7 +422,12 @@ static const gx_device_procs no_overprint_procs = {
     0,                                  /* pop_transparency_state */
     0,                                  /* put_image */
     0,                                  /* dev_spec_op */
-    gx_forward_copy_planes
+    gx_forward_copy_planes,
+    0,                                  /* get profile */
+    0,                                  /* set graphics type tag */
+    0,                                  /* strip_copy_rop2 */
+    0,                                  /* strip_tile_rect_devn */
+    gx_forward_copy_alpha_hl_color       /* copy_alpha_hl_color */
 };
 
 /*
@@ -526,7 +531,12 @@ static const gx_device_procs generic_overprint_procs = {
     0,                                  /* pop_transparency_state */
     0,                                  /* put_image */
     0,                                  /* dev_spec_op */
-    gx_forward_copy_planes
+    gx_forward_copy_planes,
+    0,                                  /* get profile */
+    0,                                  /* set graphics type tag */
+    0,                                  /* strip_copy_rop2 */
+    0,                                  /* strip_tile_rect_devn */
+    gx_forward_copy_alpha_hl_color       /* copy_alpha_hl_color */
 };
 
 static const gx_device_procs sep_overprint_procs = {
@@ -1289,6 +1299,8 @@ c_overprint_create_default_compositor(
     opdev->pad = tdev->pad;
     opdev->log2_align_mod = tdev->log2_align_mod;
     opdev->is_planar = tdev->is_planar;
+    if (opdev->is_planar)
+        opdev->generic_overprint_procs.copy_alpha_hl_color = overprint_copy_alpha_hl_color;
 
     params = ovrpct->params;
     params.idle = ovrpct->idle;
