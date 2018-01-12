@@ -35,24 +35,58 @@ languagelevel dup 2 .max .setlanguagelevel
 % where IdiomRecognition may not be defined.
 /.bind_ {		% <proc> .bind <proc'>
   //.bind currentuserparams /IdiomRecognition
-  .knownget not { //false } if {
-    (*) {
-      /IdiomSet findresource
-      //false exch {
-                % Stack: proc //false dummykey [template substitute]
-        exch pop dup 1 get exch 0 get
-                % Stack: proc //false substitute template
+  .knownget not { //false } if
+  {
+    //false
+    /IdiomSet .findcategory .Instances
+    {
+      exch pop                                    % pop the IdiomSet identifying key. Stack /proc /false [-dict- status size]
+      0 get                                       % get resource instance, a dictionary. Stack : /proc false -dict-
+      {
+        exch pop                                  % pop the instance identifying key
+                                                  % Stack: proc //false [template substitute]
+        dup 1 get exch 0 get                      % Stack: proc //false substitute template
         3 index .eqproc {
-          2 index gcheck 1 index gcheck not and {
-            pop
-          } {
-            3 -1 roll pop exch not exit
-          } ifelse
+                                                  % Stack: proc //false substitute
+            3 -1 roll pop exch not                % Stack: substitute true
         } {
-          pop
+          pop                                     % Stack: proc //false
         } ifelse
-      } forall { exit } if
-    } //.bindscratch /IdiomSet resourceforall
+      } forall
+      dup {exit} if                               % Stack proc <bool>
+    } forall
+
+    not                                           % Not matched in global resources
+    currentglobal not and                         % must not match local resources if currentglobal is true
+    {
+      //false
+      .LocalInstances
+      {
+        exch pop                                  % pop IdiomSet identifying key. Stack /proc /false [-dict- status size]
+        0 get                                     % get resource instance, a dictionary Stack : /proc false -dict-
+        {
+          exch pop                                % pop instance identifier key
+                                                  % Stack: proc //false [template substitute]
+          dup 1 get exch 0 get                    % Stack: proc //false substitute template
+          3 index .eqproc {
+                                                  % Stack: proc //false substitute
+            2 index gcheck                        % Stack: proc //false substitute _global?_
+            1 index gcheck not and                % Stack: proc //false substitute _global?_ _global?_
+            {                                     % must not match if candidate in global VM and substitute in local
+              pop                                 % Stack: proc //false
+            } {
+                                                  % Stack: proc //false substitute
+              3 -1 roll pop exch not              % Stack: substitute true
+            }ifelse
+          } {
+            pop                                   % Stack: proc //false
+          } ifelse
+        } forall
+        dup {exit} if
+      } forall
+      pop                                         % Stack: proc/substitute
+    } if
+    end                                           % .findcategory makes the category dictionary the current dict, so we must pop it from dict stack
   } if
 } def
 /.bind /.bind_ load odef	% note that .bind_ will get bound
@@ -488,6 +522,13 @@ end
     /InstanceType /dicttype def
   currentdict end /Category defineresource pop
 } forall
+
+(*) {
+  dup type /nametype eq not {
+    cvn
+  } if
+  /IdiomSet findresource pop
+} 256 string /IdiomSet resourceforall
 
 /languagelevel 3 def
 % When running in LanguageLevel 3 mode, this interpreter is supposed to be
