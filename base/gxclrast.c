@@ -2246,7 +2246,8 @@ idata:                  data_size = 0;
             case cmd_op_copy_color_alpha >> 4:
                 if (state.color_is_alpha) {
 /****** CAN'T DO ROP WITH ALPHA ******/
-                    if (state.color_is_devn) {
+                    if (state.color_is_devn &&
+                        dev_proc(tdev, copy_alpha_hl_color) != gx_default_no_copy_alpha_hl_color) { /* FIXME */
                         code = (*dev_proc(tdev, copy_alpha_hl_color))
                             (tdev, source, data_x, raster, gx_no_bitmap_id,
                              state.rect.x - x0, state.rect.y - y0,
