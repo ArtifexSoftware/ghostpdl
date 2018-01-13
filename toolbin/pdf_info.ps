@@ -68,6 +68,29 @@ cleartomark		% discard the dict from --where--
 % ---- No more executable code on the top level after this line -----
 % ---- except 2 lines at the very end                           -----
 
+%% When checking Resources for Font objects, we must ensure that we don't end
+%% up following a circular reference. Circular references in Resources should
+%% not, of course, be present but we've seen a number of cases. If we do detect
+%% a circular reference, then stop checking that chain.
+
+/oforce_no_circular {
+  dup type /packedarraytype eq {
+    dup 0 get
+    currentdict /ProcessedResources known {
+      dup ProcessedResources exch known {
+        pop pop //null
+      } {
+        dup ProcessedResources 3 1 roll put
+        oforce
+      } ifelse
+    } {
+      oforce
+    } ifelse
+  } {
+    oforce
+  } ifelse
+} bind def
+
 /printXML {	% <string> printXML -
   % print non-blank lines without trailing spaces
   dup dup length 1 sub -1 0 {
@@ -163,10 +186,10 @@ cleartomark		% discard the dict from --where--
 /res-type-dict 10 dict begin
   /Font {
     { 
-      exch pop oforce 
+      exch pop oforce_no_circular
       dup //null ne {
         dup /DescendantFonts knownoget {
-           exch pop 0 get oforce
+           exch pop 0 get oforce_no_circular
         } if
         dup /FontDescriptor knownoget {
           dup /FontFile known 1 index /FontFile2 known or exch /FontFile3 known or
@@ -190,7 +213,7 @@ cleartomark		% discard the dict from --where--
 
   /XObject {
     { 
-      exch pop oforce
+      exch pop oforce_no_circular
       dup //null ne {
         dup /Subtype knownoget {
           /Form eq {
@@ -211,7 +234,7 @@ cleartomark		% discard the dict from --where--
   
   /Pattern {
     { 
-      exch pop oforce
+      exch pop oforce_no_circular
       dup //null ne {
         /Resources knownoget {
           get-fonts-from-res
@@ -225,10 +248,10 @@ currentdict end readonly def
 
 % <dict for fonts> <<res-dict>> get-fonts-from-res -
 /get-fonts-from-res {
-  oforce 
+  oforce_no_circular
   dup //null ne {
     { 
-      oforce
+      oforce_no_circular
       dup //null ne {
         //res-type-dict 3 -1 roll 
         .knownget {
@@ -248,17 +271,18 @@ currentdict end readonly def
 currentdict /res-type-dict undef
 
 /getPDFfonts {	%	<dict for fonts> <page dict> getPDFfonts -
+  /ProcessedResources 10 dict def
   dup /Resources pget { get-fonts-from-res } if
   /Annots knownoget {
-    { oforce
+    { oforce_no_circular
       dup //null ne {
         /AP knownoget {
-          { exch pop oforce
+          { exch pop oforce_no_circular
             dup //null ne {
               dup /Resources knownoget {
                 get-fonts-from-res
               } if
-              { exch pop oforce
+              { exch pop oforce_no_circular
                 dup type /dicttype eq {
                   /Resources knownoget {
                     get-fonts-from-res
@@ -278,6 +302,7 @@ currentdict /res-type-dict undef
     } forall
   } if
   pop
+  currentdict /ProcessedResources undef
 } bind def
 
 /dump-fonts-used { % <dict for fonts> dump-fonts-used -
