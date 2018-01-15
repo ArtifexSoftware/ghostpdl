@@ -44,8 +44,9 @@
  * for both the function name and the structure name.
  */
 #ifdef _MSC_VER
-#  define stat _stat
-#define struct_stat struct _stat
+#  define stat __stat64
+#  define struct_stat struct __stat64
+#  define fstat _fstat64
 #else
 #define struct_stat struct stat
 #endif
