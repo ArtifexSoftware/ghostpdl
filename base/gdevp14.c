@@ -8087,10 +8087,16 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                 if (num_comp < p14dev->devn_params.page_spot_colors + 4 ) {
                     p14dev->color_info.num_components = num_comp;
                 } else {
-                    p14dev->color_info.num_components =
-                        p14dev->devn_params.num_std_colorant_names +
-                        p14dev->devn_params.page_spot_colors;
+                    /* if page_spot_colors < 0, this will be wrong, so don't update num_components */
+                    if (p14dev->devn_params.page_spot_colors >= 0) {
+                        p14dev->color_info.num_components =
+                            p14dev->devn_params.num_std_colorant_names +
+                            p14dev->devn_params.page_spot_colors;
+                    }
                 }
+                /* limit the num_components to the max. */
+                if (p14dev->color_info.num_components > p14dev->color_info.max_components)
+                    p14dev->color_info.num_components = p14dev->color_info.max_components;
                 /* Transfer the data for the spot color names
                    But we have to free what may be there before we do this */
                 devn_free_params((gx_device*) p14dev);
