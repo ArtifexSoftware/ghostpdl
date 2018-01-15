@@ -21,6 +21,7 @@
 #  define gxiodev_INCLUDED
 
 #include "stat_.h"
+#include "gsstype.h"
 
 /*
  * Note that IODevices are not the same as Ghostscript output devices.
@@ -89,6 +90,10 @@ struct gx_io_device_procs_s {
   int proc(gx_io_device *iodev, gs_memory_t *mem)
     iodev_proc_init((*init));	/* one-time initialization */
 
+#define iodev_proc_finit(proc)\
+  void proc(gx_io_device *iodev, gs_memory_t *mem)
+    iodev_proc_finit((*finit));	/* finalization */
+
 #define iodev_proc_open_device(proc)\
   int proc(gx_io_device *iodev, const char *access, stream **ps,\
            gs_memory_t *mem)
@@ -154,6 +159,7 @@ typedef iodev_proc_fopen((*iodev_proc_fopen_t));
 
 /* Default implementations of procedures */
 iodev_proc_init(iodev_no_init);
+iodev_proc_finit(iodev_no_finit);
 iodev_proc_open_device(iodev_no_open_device);
 iodev_proc_open_file(iodev_no_open_file);
 iodev_proc_fopen(iodev_no_fopen);
@@ -204,8 +210,17 @@ struct gx_io_device_s {
     void *state;		/* (if the IODevice has state) */
 };
 
+struct_proc_finalize(io_device_finalize);
+
 #define private_st_io_device()	/* in gsiodev.c */\
-  gs_private_st_ptrs1(st_io_device, gx_io_device, "gx_io_device",\
-    io_device_enum_ptrs, io_device_reloc_ptrs, state)
+  gs_public_st_ptrs1_final(st_io_device, gx_io_device, "gx_io_device",\
+    io_device_enum_ptrs, io_device_reloc_ptrs, io_device_finalize, state)
+
+
+int
+gs_iodev_init(gs_memory_t * mem);
+
+void
+gs_iodev_finit(gs_memory_t * mem);
 
 #endif /* gxiodev_INCLUDED */

@@ -30,9 +30,9 @@
 
 /* Define the special devices. */
 const char iodev_dtype_stdio[] = "Special";
-#define iodev_special(dname, init, open) {\
+#define iodev_special(dname, init, finit, open) {\
     dname, iodev_dtype_stdio,\
-        { init, open, iodev_no_open_file, iodev_no_fopen, iodev_no_fclose,\
+        { init, finit, open, iodev_no_open_file, iodev_no_fopen, iodev_no_fclose,\
           iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,\
           iodev_no_enumerate_files, NULL, NULL,\
           iodev_no_get_params, iodev_no_put_params\
@@ -49,19 +49,20 @@ const char iodev_dtype_stdio[] = "Special";
 
 #define STDIN_BUF_SIZE 1024
 static iodev_proc_init(stdin_init);
+static iodev_proc_finit(stdin_finit);
 static iodev_proc_open_device(stdin_open);
 const gx_io_device gs_iodev_stdin =
-    iodev_special("%stdin%", stdin_init, stdin_open);
+    iodev_special("%stdin%", stdin_init, stdin_finit, stdin_open);
 
 #define STDOUT_BUF_SIZE 128
 static iodev_proc_open_device(stdout_open);
 const gx_io_device gs_iodev_stdout =
-    iodev_special("%stdout%", iodev_no_init, stdout_open);
+    iodev_special("%stdout%", iodev_no_init, iodev_no_finit, stdout_open);
 
 #define STDERR_BUF_SIZE 128
 static iodev_proc_open_device(stderr_open);
 const gx_io_device gs_iodev_stderr =
-    iodev_special("%stderr%", iodev_no_init, stderr_open);
+    iodev_special("%stderr%", iodev_no_init, iodev_no_finit, stderr_open);
 
 /* ------- %stdin, %stdout, and %stderr ------ */
 
@@ -82,6 +83,13 @@ stdin_init(gx_io_device * iodev, gs_memory_t * mem)
 {
     mem->gs_lib_ctx->stdin_is_interactive = true;
     return 0;
+}
+
+static void
+stdin_finit(gx_io_device * iodev, gs_memory_t * mem)
+{
+    mem->gs_lib_ctx->stdin_is_interactive = false;
+    return;
 }
 
 /* Read from stdin into the buffer. */

@@ -47,6 +47,7 @@
 #include "gxht.h"		/* for gs_halftone */
 #include "gdevbbox.h"
 #include "gshtx.h"
+#include "gxiodev.h"
 
 /* Define whether we are processing captured data. */
 /*#define CAPTURE */
@@ -76,7 +77,6 @@ static int (*tests[]) (gs_gstate *, gs_memory_t *) =
 };
 
 /* Include the extern for the device stuff. */
-extern init_proc(gs_iodev_init);
 extern_gs_lib_device_list();
 
 /* Forward references */

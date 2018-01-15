@@ -359,7 +359,7 @@ $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(string__h)\
  $(gsalloc_h) $(gsargs_h) $(gp_h) $(gsdevice_h) $(gslib_h) $(gslibctx_h)\
  $(gxdevice_h) $(gsparam_h) $(pjtop_h) $(plapi_h) $(plparse_h)\
  $(plmain_h) $(pltop_h) $(plcursor_h) $(gsargs_h) $(dwtrace_h) $(vdtrace_h)\
- $(gxclpage_h) $(gdevprn_h) $(PL_MAK) $(MAKEDIRS)
+ $(gxclpage_h) $(gdevprn_h) $(gxiodev_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plmain.c $(PLO_)plmain.$(OBJ)
 
 # Real top level; provides main that just calls pl_main

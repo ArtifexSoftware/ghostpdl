@@ -287,7 +287,8 @@ $(PSOBJ)iinit.$(OBJ) : $(PSSRC)iinit.c $(GH) $(string__h)\
  $(gscdefs_h) $(gsexit_h) $(gsstruct_h)\
  $(dstack_h) $(ierrors_h) $(ialloc_h) $(iddict_h)\
  $(iinit_h) $(ilevel_h) $(iname_h) $(interp_h) $(opdef_h)\
- $(ipacked_h) $(iparray_h) $(iutil_h) $(ivmspace_h) $(store_h)\
+ $(ipacked_h) $(iparray_h) $(iutil_h) $(ivmspace_h) \
+ $(gxiodev_h) $(store_h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)iinit.$(OBJ) $(C_) $(PSSRC)iinit.c
 

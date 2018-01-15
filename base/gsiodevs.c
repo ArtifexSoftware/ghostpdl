@@ -24,7 +24,7 @@
 const char iodev_dtype_stdio[] = "Special";
 #define iodev_stdio(dname, open) {\
     dname, iodev_dtype_stdio,\
-        { iodev_no_init, open, iodev_no_open_file,\
+        { iodev_no_init, iodev_no_finit, open, iodev_no_open_file,\
           iodev_no_fopen, iodev_no_fclose,\
           iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,\
           iodev_no_enumerate_files, NULL, NULL,\

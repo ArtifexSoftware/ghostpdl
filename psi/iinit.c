@@ -35,6 +35,7 @@
 #include "opdef.h"
 #include "store.h"
 #include "iconf.h"
+#include "gxiodev.h"
 
 /* Implementation parameters. */
 /*
@@ -531,7 +532,6 @@ i_iodev_init(i_ctx_t *i_ctx_p)
 {
     int i;
     int code;
-    extern init_proc(gs_iodev_init);
 
     code = gs_iodev_init(imemory);
 
@@ -540,4 +540,10 @@ i_iodev_init(i_ctx_t *i_ctx_p)
     }
 
     return code;
+}
+
+void
+i_iodev_finit(i_ctx_t *i_ctx_p)
+{
+    gs_iodev_finit(imemory);
 }

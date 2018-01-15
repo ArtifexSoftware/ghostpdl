@@ -43,7 +43,7 @@ static iodev_proc_fopen(mswin_handle_fopen);
 static iodev_proc_fclose(mswin_handle_fclose);
 const gx_io_device gs_iodev_handle = {
     "%handle%", "FileSystem",
-    {iodev_no_init, iodev_no_open_device,
+    {iodev_no_init, iodev_no_finit, iodev_no_open_device,
      NULL /*iodev_os_open_file */ , mswin_handle_fopen, mswin_handle_fclose,
      iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
      iodev_no_enumerate_files, NULL, NULL,

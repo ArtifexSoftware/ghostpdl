@@ -41,6 +41,7 @@
 
 /* device method prototypes */
 static iodev_proc_init(romfs_init);
+static iodev_proc_finit(romfs_finit);
 static iodev_proc_open_file(romfs_open_file);
 static iodev_proc_file_status(romfs_file_status);
 static iodev_proc_enumerate_files(romfs_enumerate_files_init);
@@ -52,7 +53,7 @@ static iodev_proc_enumerate_close(romfs_enumerate_close);
 const gx_io_device gs_iodev_rom =
 {
     "%rom%", "FileSystem",
-    {romfs_init, iodev_no_open_device,
+    {romfs_init, romfs_finit, iodev_no_open_device,
      romfs_open_file,
      iodev_no_fopen, iodev_no_fclose,
      iodev_no_delete_file, iodev_no_rename_file,
@@ -253,6 +254,14 @@ romfs_init(gx_io_device *iodev, gs_memory_t *mem)
         return_error(gs_error_VMerror);
     iodev->state = state;
     return 0;
+}
+
+static void
+romfs_finit(gx_io_device *iodev, gs_memory_t *mem)
+{
+    gs_free_object(mem, iodev->state, "romfs_finit");
+    iodev->state = NULL;
+    return;
 }
 
 static int

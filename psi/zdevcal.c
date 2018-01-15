@@ -26,7 +26,7 @@
 static iodev_proc_get_params(calendar_get_params);
 const gx_io_device gs_iodev_calendar = {
     "%Calendar%", "Special",
-    { iodev_no_init, iodev_no_open_device, iodev_no_open_file,
+    { iodev_no_init, iodev_no_finit, iodev_no_open_device, iodev_no_open_file,
       iodev_no_fopen, iodev_no_fclose,
       iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
       iodev_no_enumerate_files, NULL, NULL,

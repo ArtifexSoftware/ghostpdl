@@ -29,7 +29,7 @@ static iodev_proc_fopen(pipe_fopen);
 static iodev_proc_fclose(pipe_fclose);
 const gx_io_device gs_iodev_pipe = {
     "%pipe%", "Special",
-    {iodev_no_init, iodev_no_open_device,
+    {iodev_no_init, iodev_no_finit, iodev_no_open_device,
      NULL /*iodev_os_open_file */ , pipe_fopen, pipe_fclose,
      iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
      iodev_no_enumerate_files, NULL, NULL,

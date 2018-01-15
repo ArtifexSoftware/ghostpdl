@@ -46,6 +46,7 @@
 #include "plapi.h"
 #include "gslibctx.h"
 #include "gsicc_manage.h"
+#include "gxiodev.h"
 
 /* includes for the display device */
 #include "gdevdevn.h"
@@ -198,7 +199,6 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
          * some hacks specific to MS Windows for patching the
          * stdxxx IODevices.
          */
-        extern int gs_iodev_init(gs_memory_t *);
 
         if (gs_iodev_init(mem) < 0)
             return gs_error_Fatal;
@@ -433,6 +433,7 @@ pl_main_delete_instance(pl_main_instance_t *minst)
         minst->device = NULL;
     }
 
+    gs_iodev_finit(mem);
     gs_lib_finit(0, 0, mem);
     gs_free_object(mem, minst, "pl_main_instance");
     mem->gs_lib_ctx->top_of_system = NULL;

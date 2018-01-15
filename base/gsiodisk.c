@@ -110,6 +110,7 @@
 
 /* Function prototypes */
 static iodev_proc_init(iodev_diskn_init);
+static iodev_proc_finit(iodev_diskn_finit);
 static iodev_proc_fopen(iodev_diskn_fopen);
 static iodev_proc_delete_file(diskn_delete);
 static iodev_proc_rename_file(diskn_rename);
@@ -126,7 +127,7 @@ iodev_proc_put_params(diskn_os_put_params);
 const gx_io_device varname = \
 { \
     diskname, "FileSystem", \
-    {iodev_diskn_init, iodev_no_open_device, \
+    {iodev_diskn_init, iodev_diskn_finit, iodev_no_open_device, \
      NULL /* no longer used */ , iodev_diskn_fopen, iodev_os_fclose, \
      diskn_delete, diskn_rename, diskn_status, \
      iodev_no_enumerate_files, /* Only until we have a root location */ \
@@ -194,6 +195,14 @@ iodev_diskn_init(gx_io_device * iodev, gs_memory_t * mem)
     pstate->memory = mem;
     iodev->state = pstate;
     return 0;
+}
+
+static void
+iodev_diskn_finit(gx_io_device * iodev, gs_memory_t * mem)
+{
+    gs_object_free(mem, iodev->state, "iodev_diskn_finit");
+    iodev->state = NULL;
+    return;
 }
 
 static int

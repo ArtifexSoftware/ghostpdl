@@ -48,6 +48,7 @@
 
 /* Function prototypes */
 static iodev_proc_init(iodev_ram_init);
+static iodev_proc_finit(iodev_ram_finit);
 static iodev_proc_open_file(ram_open_file);
 static iodev_proc_delete_file(ram_delete);
 static iodev_proc_rename_file(ram_rename);
@@ -60,7 +61,7 @@ static void ram_finalize(const gs_memory_t *memory, void * vptr);
 
 const gx_io_device gs_iodev_ram = {
     "%ram%", "FileSystem", {
-        iodev_ram_init, iodev_no_open_device,
+        iodev_ram_init, iodev_ram_finit, iodev_no_open_device,
         ram_open_file, iodev_no_fopen, iodev_no_fclose,
         ram_delete, ram_rename, ram_status,
         ram_enumerate_init, ram_enumerate_next, ram_enumerate_close,
@@ -424,10 +425,20 @@ iodev_ram_init(gx_io_device * iodev, gs_memory_t * mem)
 }
 
 static void
+iodev_ram_finit(gx_io_device * iodev, gs_memory_t * mem)
+{
+    ramfs_state *state = (ramfs_state *)iodev->state;
+    iodev->state = NULL;
+    gs_free_object(state->memory, state, "iodev_ram_finit");
+    return;
+}
+
+static void
 ram_finalize(const gs_memory_t *memory, void * vptr)
 {
     ramfs* fs = GETRAMFS((ramfs_state*)vptr);
     ramfs_destroy((gs_memory_t *)memory, fs);
+    GETRAMFS((ramfs_state*)vptr) = NULL;
 }
 
 static int

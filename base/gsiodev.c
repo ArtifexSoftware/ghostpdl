@@ -48,7 +48,7 @@ static iodev_proc_get_params(os_get_params);
 const gx_io_device gs_iodev_os =
 {
     "%os%", "FileSystem",
-    {iodev_no_init, iodev_no_open_device,
+    {iodev_no_init, iodev_no_finit, iodev_no_open_device,
      NULL /*iodev_os_open_file */ , iodev_os_gp_fopen, iodev_os_fclose,
      os_delete, os_rename, os_status,
      os_enumerate, gp_enumerate_files_next, gp_enumerate_files_close,
@@ -58,7 +58,6 @@ const gx_io_device gs_iodev_os =
 
 /* ------ Initialization ------ */
 
-init_proc(gs_iodev_init);	/* check prototype */
 int
 gs_iodev_init(gs_memory_t * mem)
 {				/* Make writable copies of all IODevices. */
@@ -113,6 +112,17 @@ gs_iodev_init(gs_memory_t * mem)
     return (code < 0 ? code : gs_note_error(gs_error_VMerror));
 }
 
+void
+gs_iodev_finit(gs_memory_t * mem)
+{
+    gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
+    if (libctx && libctx->io_device_table) {
+        gs_free_object(mem, libctx->io_device_table, "gs_iodev_finit");
+        libctx->io_device_table = NULL;
+    }
+    return;
+}
+
 /*
  * Register io devices *after* lib initialisation
 */
@@ -158,13 +168,38 @@ gs_iodev_register_dev(gs_memory_t * mem, const gx_io_device *newiodev)
 static void
 gs_iodev_finalize(const gs_memory_t *cmem, void *vptr)
 {
-    if (cmem->gs_lib_ctx->io_device_table == vptr) {
-        cmem->gs_lib_ctx->io_device_table = NULL;
-        cmem->gs_lib_ctx->io_device_table_size =
-            cmem->gs_lib_ctx->io_device_table_count = 0;
+    /* discard const for gs_free_object */
+    gs_memory_t *mem = (gs_memory_t *)cmem;
+    if (mem->gs_lib_ctx->io_device_table == vptr) {
+        gx_io_device **table = mem->gs_lib_ctx->io_device_table;
+        while (mem->gs_lib_ctx->io_device_table_count-- > 0) {
+            gs_free_object(mem,
+              table[mem->gs_lib_ctx->io_device_table_count],
+              "gs_iodev_finalize");
+            table[mem->gs_lib_ctx->io_device_table_count] = NULL;
+        }
+        mem->gs_lib_ctx->io_device_table = NULL;
+        mem->gs_lib_ctx->io_device_table_size =
+            mem->gs_lib_ctx->io_device_table_count = 0;
     }
 }
 
+void
+io_device_finalize(const gs_memory_t *cmem, void *vptr)
+{
+    /* discard const for gs_free_object */
+    gs_memory_t *mem = (gs_memory_t *)cmem;
+    if (mem->gs_lib_ctx->io_device_table_count > 0) {
+        int i;
+        for (i = 0; i < mem->gs_lib_ctx->io_device_table_count
+           && mem->gs_lib_ctx->io_device_table[i] != vptr; i++)
+        ;
+
+        (mem->gs_lib_ctx->io_device_table[i]->procs.finit)(mem->gs_lib_ctx->io_device_table[i], mem);
+        mem->gs_lib_ctx->io_device_table[i] = NULL;
+    }
+    return;
+}
 
 /* ------ Default (unimplemented) IODevice procedures ------ */
 
@@ -172,6 +207,12 @@ int
 iodev_no_init(gx_io_device * iodev, gs_memory_t * mem)
 {
     return 0;
+}
+
+void
+iodev_no_finit(gx_io_device * iodev, gs_memory_t * mem)
+{
+    return;
 }
 
 int

@@ -38,9 +38,9 @@
 extern const char iodev_dtype_stdio[];
 
 /* Define the special devices. */
-#define iodev_special(dname, init, open) {\
+#define iodev_special(dname, init, finit, open) {\
     dname, iodev_dtype_stdio,\
-        { init, open, iodev_no_open_file, iodev_no_fopen, iodev_no_fclose,\
+        { init, finit, open, iodev_no_open_file, iodev_no_fopen, iodev_no_fclose,\
           iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,\
           iodev_no_enumerate_files, NULL, NULL,\
           iodev_no_get_params, iodev_no_put_params\
@@ -58,12 +58,14 @@ extern const char iodev_dtype_stdio[];
 #define LINEEDIT_BUF_SIZE 20    /* initial size, not fixed size */
 /*static iodev_proc_open_device(lineedit_open);*/ /* no longer used */
 const gx_io_device gs_iodev_lineedit =
-    iodev_special("%lineedit%", iodev_no_init, iodev_no_open_device);
+    iodev_special("%lineedit%", iodev_no_init, iodev_no_finit, \
+                                         iodev_no_open_device);
 
 #define STATEMENTEDIT_BUF_SIZE 50       /* initial size, not fixed size */
 /*static iodev_proc_open_device(statementedit_open);*/ /* no longer used */
 const gx_io_device gs_iodev_statementedit =
-    iodev_special("%statementedit%", iodev_no_init, iodev_no_open_device);
+    iodev_special("%statementedit%", iodev_no_init, iodev_no_finit, \
+                                             iodev_no_open_device);
 
 /* ------ Operators ------ */
 

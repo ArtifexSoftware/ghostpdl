@@ -985,6 +985,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         gs_memory_t *mem_raw = i_ctx_p->memory.current->non_gc_memory;
         i_plugin_holder *h = i_ctx_p->plugin_list;
         dmem = *idmemory;
+        i_iodev_finit(i_ctx_p);
         code = alloc_restore_all(i_ctx_p);
         if (code < 0)
             emprintf1(mem_raw,
@@ -1012,7 +1013,6 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         }
         free(tempnames);
     }
-
     gs_lib_finit(exit_status, code, minst->heap);
 
     gs_free_object(minst->heap, minst->lib_path.container.value.refs, "lib_path array");
