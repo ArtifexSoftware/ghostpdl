@@ -589,6 +589,10 @@ gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
                 }
             }
         } while(font_code != 2 && font_code >= 0);
+        if (!user_defined) {
+            if (penum->fstack.items[penum->fstack.depth].font->FontType == 3)
+                user_defined = 1;
+        }
         gs_text_release((gs_text_enum_t *)penum, "pdf_text_process");
     }
 
@@ -3455,8 +3459,7 @@ pdf_text_process(gs_text_enum_t *pte)
              * capture the charproc - if we want to have a chance of capturing the charproc, we
              * need it to execute, and not use a cache entry.
              */
-            if (penum->current_font->FontType == ft_user_defined ||
-                gx_hld_get_color_space_and_ccolor(pgs, (const gx_drawing_color *)pgs->color[0].dev_color, &pcs, &pcc) == pattern_color_space)
+            if (gx_hld_get_color_space_and_ccolor(pgs, (const gx_drawing_color *)pgs->color[0].dev_color, &pcs, &pcc) == pattern_color_space)
                 penum->can_cache = -1;
             pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
             code = gs_text_process(pte_default);
