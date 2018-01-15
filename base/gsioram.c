@@ -428,8 +428,11 @@ static void
 iodev_ram_finit(gx_io_device * iodev, gs_memory_t * mem)
 {
     ramfs_state *state = (ramfs_state *)iodev->state;
-    iodev->state = NULL;
-    gs_free_object(state->memory, state, "iodev_ram_finit");
+    if (state != NULL)
+    {
+        iodev->state = NULL;
+        gs_free_object(state->memory, state, "iodev_ram_finit");
+    }
     return;
 }
 

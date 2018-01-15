@@ -74,6 +74,7 @@ gs_iodev_init(gs_memory_t * mem)
 
     libctx->io_device_table_size = gx_io_device_table_count + NUM_RUNTIME_IODEVS;
     libctx->io_device_table_count = 0;
+    libctx->io_device_table = table;
 
     for (i = 0; i < gx_io_device_table_count; ++i) {
         gx_io_device *iodev =
@@ -90,7 +91,6 @@ gs_iodev_init(gs_memory_t * mem)
         table[i] = NULL;
     }
 
-    libctx->io_device_table = table;
     code = gs_register_struct_root(mem, mem->gs_lib_ctx->io_device_table_root,
                                    (void **)&libctx->io_device_table,
                                    "io_device_table");
@@ -105,10 +105,6 @@ gs_iodev_init(gs_memory_t * mem)
     /****** CAN'T FIND THE ROOT ******/
     /*gs_unregister_root(mem, root, "io_device_table");*/
  fail:
-    for (; i > 0; --i)
-        gs_free_object(mem, table[i - 1], "gs_iodev_init(iodev)");
-    gs_free_object(mem, table, "gs_iodev_init(table)");
-    libctx->io_device_table = NULL;
     return (code < 0 ? code : gs_note_error(gs_error_VMerror));
 }
 
