@@ -2028,7 +2028,7 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
                     c = gid->value.intval;
             }
             cr->char_codes[0] = c;
-            cr->is_glyph_index = is_glyph_index;
+            is_glyph_index = is_glyph_index;
             /* fixme : process the narrow/wide/proportional mapping type,
                using src_type, dst_type. Should adjust the 'matrix' above.
                Call get_font_proportional_feature for proper choice.
@@ -2152,7 +2152,7 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
             return (gs_error_invalidfont);
 #endif
         }
-        cr->is_glyph_index = true;
+        is_glyph_index = true;
     }
     else if (is_embedded_type1) {
         /*  Since the client passes charstring by callback using I->ff.char_data,
