@@ -2028,7 +2028,6 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
                     c = gid->value.intval;
             }
             cr->char_codes[0] = c;
-            is_glyph_index = is_glyph_index;
             /* fixme : process the narrow/wide/proportional mapping type,
                using src_type, dst_type. Should adjust the 'matrix' above.
                Call get_font_proportional_feature for proper choice.
