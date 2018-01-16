@@ -599,16 +599,23 @@ do_validate_object(const obj_header_t * ptr, const clump_t * cp,
     }
     if ((cp != 0 && !object_size_valid(pre, size, cp)) ||
         otype->ssize == 0 ||
-        size % otype->ssize != 0 ||
         (oname = struct_type_name_string(otype),
          *oname < 33 || *oname > 126)
         ) {
-        mlprintf2(gcst->heap, "Bad object 0x%lx(%lu),\n",
+        mlprintf2(gcst->heap, "\n Bad object 0x%lx(%lu),\n",
                   (ulong) ptr, (ulong) size);
         dmprintf2(gcst->heap, " ssize = %u, in clump 0x%lx!\n",
                   otype->ssize, (ulong) cp);
         return 1;
     }
+    if (size % otype->ssize != 0) {
+        mlprintf3(gcst->heap, "\n Potentially bad object 0x%lx(%lu), in clump 0x%lx!\n",
+                  (ulong) ptr, (ulong) size, (ulong) cp);
+        dmprintf3(gcst->heap, " structure name = %s, size = %u, ssize = %u\n",
+                  oname, size, otype->ssize);
+        dmprintf(gcst->heap, " This can happen (and is benign) if a device has been subclassed\n");
+    }
+
     return 0;
 }
 
