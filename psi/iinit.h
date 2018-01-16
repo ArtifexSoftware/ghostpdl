@@ -35,10 +35,10 @@ const char *op_get_name_string(op_proc_t opproc);
 #endif
 
 int
-i_iodev_init(i_ctx_t *i_ctx_p);
+i_iodev_init(gs_dual_memory_t *);
 
 void
-i_iodev_finit(i_ctx_t *i_ctx_p);
+i_iodev_finit(gs_dual_memory_t *);
 
 /*
  * Test whether there are any Level 2 operators in the executable.

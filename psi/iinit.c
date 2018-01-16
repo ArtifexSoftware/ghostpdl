@@ -528,22 +528,23 @@ op_get_name_string(op_proc_t opproc)
 #endif
 
 int
-i_iodev_init(i_ctx_t *i_ctx_p)
+i_iodev_init(gs_dual_memory_t *dmem)
 {
     int i;
     int code;
+    gs_memory_t *mem = (gs_memory_t *)dmem->current;
 
-    code = gs_iodev_init(imemory);
+    code = gs_iodev_init(mem);
 
     for (i = 0; i < i_io_device_table_count && code >= 0; i++) {
-        code = gs_iodev_register_dev(imemory, i_io_device_table[i]);
+        code = gs_iodev_register_dev(mem, i_io_device_table[i]);
     }
 
     return code;
 }
 
 void
-i_iodev_finit(i_ctx_t *i_ctx_p)
+i_iodev_finit(gs_dual_memory_t *dmem)
 {
-    gs_iodev_finit(imemory);
+    gs_iodev_finit((gs_memory_t *)dmem->current);
 }

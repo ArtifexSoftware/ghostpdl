@@ -206,7 +206,7 @@ gs_main_init1(gs_main_instance * minst)
         code = i_plugin_init(minst->i_ctx_p);
         if (code < 0)
             goto fail;
-        code = i_iodev_init(minst->i_ctx_p);
+        code = i_iodev_init(&idmem);
         if (code < 0)
             goto fail;
     }
@@ -984,13 +984,14 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     if (minst->init_done >= 1) {
         gs_memory_t *mem_raw = i_ctx_p->memory.current->non_gc_memory;
         i_plugin_holder *h = i_ctx_p->plugin_list;
+
         dmem = *idmemory;
-        i_iodev_finit(i_ctx_p);
         code = alloc_restore_all(i_ctx_p);
         if (code < 0)
             emprintf1(mem_raw,
                       "ERROR %d while the final restore. See gs/psi/ierrors.h for code explanation.\n",
                       code);
+        i_iodev_finit(&dmem);
         i_plugin_finit(mem_raw, h);
     }
 
