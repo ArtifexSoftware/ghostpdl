@@ -546,7 +546,8 @@ static
 void* defMtxCreate(cmsContext id)
 {
     _cmsMutex* ptr_mutex = (_cmsMutex*) _cmsMalloc(id, sizeof(_cmsMutex));
-    _cmsInitMutexPrimitive(ptr_mutex);
+    if (ptr_mutex != NULL)
+        _cmsInitMutexPrimitive(ptr_mutex);
     return (void*) ptr_mutex;   
 }
 
@@ -637,7 +638,7 @@ void CMSEXPORT _cmsDestroyMutex(cmsContext ContextID, void* mtx)
 {
     _cmsMutexPluginChunkType* ptr = (_cmsMutexPluginChunkType*) _cmsContextGetClientChunk(ContextID, MutexPlugin);
 
-    if (ptr ->DestroyMutexPtr != NULL) {
+    if (ptr ->DestroyMutexPtr != NULL && mtx != NULL) {
 
         ptr ->DestroyMutexPtr(ContextID, mtx);
     }
