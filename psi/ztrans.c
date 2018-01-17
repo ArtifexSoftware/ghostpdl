@@ -35,6 +35,7 @@
 #include "gsdfilt.h"
 #include "gspaint.h"		/* gs_erasepage prototype */
 #include "gdevdevn.h"
+#include "gxdevsop.h"
 #include "gxblend.h"
 #include "gdevp14.h"
 #include "gsicc_cms.h"
@@ -510,6 +511,8 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
         if (cdev->is_open) {
             if ((code = gs_closedevice((gx_device *)cdev)) < 0)
                 return code;
+            if (dev_proc(cdev, dev_spec_op)(cdev, gxdso_is_pdf14_device, NULL, 0) > 0)
+                pdf14_disable_device(cdev);	/* should already be disabled  (bug 698306) */
         }
         if ((code = gs_opendevice((gx_device *)cdev)) < 0)
             return code;

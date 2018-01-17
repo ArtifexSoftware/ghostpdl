@@ -7050,6 +7050,7 @@ pdf14_recreate_clist_device(gs_memory_t	*mem, gs_gstate *	pgs,
         return code;
     pdev->color_info = dev_proto->color_info;
     pdev->procs = dev_proto->procs;
+    pdev->static_procs = dev_proto->static_procs;
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
     pdev->is_planar = target->is_planar;
