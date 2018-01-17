@@ -419,6 +419,7 @@ pl_main_delete_instance(pl_main_instance_t *minst)
             if (pl_deallocate_interp_instance(impl[index]) < 0) {
                 return -1;
             }
+            gs_free_object(mem, impl[index], "pl_main_languages_init interp");
         }
 
         gs_free_object(mem, impl, "pl_main_languages_delete_instance()");
