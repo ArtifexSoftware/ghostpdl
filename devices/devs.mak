@@ -1203,7 +1203,7 @@ $(DD)psdcmyk.dev : $(psd_) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 
 $(DEVOBJ)gdevpsd.$(OBJ) : $(DEVSRC)gdevpsd.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
- $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h)\
+ $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gxdevsop_h) $(gsequivc_h)\
  $(gscms_h) $(gsicc_cache_h) $(gsicc_manage_h) $(gxgetbit_h)\
  $(gdevppla_h) $(gxiodev_h) $(gdevpsd_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevpsd.$(OBJ) $(C_) $(DEVSRC)gdevpsd.c
@@ -1509,7 +1509,7 @@ $(DD)pngalpha.dev : $(libpng_dev) $(png_) $(GLD)page.dev $(GDEV) \
 fpng_=$(DEVOBJ)gdevfpng.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ)
 
 $(DEVOBJ)gdevfpng_0.$(OBJ) : $(DEVSRC)gdevfpng.c\
- $(gdevprn_h) $(gdevpccm_h) $(gscdefs_h) $(zlib_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(gdevprn_h) $(gxdevsop_h) $(gdevpccm_h) $(gscdefs_h) $(zlib_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(CC_) $(I_)$(DEVI_) $(II)$(ZI_)$(_I) $(PCF_) $(GLF_) $(DEVO_)gdevfpng_0.$(OBJ) $(C_) $(DEVSRC)gdevfpng.c
 
 $(DEVOBJ)gdevfpng_1.$(OBJ) : $(DEVSRC)gdevfpng.c\
@@ -1667,7 +1667,7 @@ $(DD)tiffgray.dev : $(libtiff_dev) $(tiffgray_) $(DD)tiffs.dev\
 	$(ADDMOD) $(DD)tiffgray -include $(DD)tiffs $(tiff_i_)
 
 $(DEVOBJ)gdevtsep.$(OBJ) : $(DEVSRC)gdevtsep.c $(PDEVH) $(stdint__h)\
- $(gdevtifs_h) $(gdevdevn_h) $(gsequivc_h) $(stdio__h) $(ctype__h)\
+ $(gdevtifs_h) $(gdevdevn_h) $(gxdevsop_h) $(gsequivc_h) $(stdio__h) $(ctype__h)\
  $(gxgetbit_h) $(gdevppla_h) $(gp_h) $(gstiffio_h)\
  $(gscms_h) $(gsicc_cache_h) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(I_)$(TI_)$(_I) $(DEVO_)gdevtsep.$(OBJ) $(C_) $(DEVSRC)gdevtsep.c
@@ -1887,11 +1887,11 @@ $(DD)tracedev.dev : $(GDEV) $(DEVOBJ)gdevtrac.$(OBJ) \
 psdcmykog_=$(DEVOBJ)gdevcmykog.$(OBJ)
 
 $(DD)psdcmykog.dev : $(GDEV) $(psdcmykog_) $(DD)page.dev $(DD)psdcmyk.dev \
-  $(GLOBJ)gdevdevn.$(OBJ) $(DEVS_MAK) $(MAKEDIRS)
+  $(GLOBJ)gdevdevn.$(OBJ) $(gxdevsop_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)psdcmykog $(psdcmykog_)
 
 $(DEVOBJ)gdevcmykog.$(OBJ) : $(DEVSRC)gdevcmykog.c $(GDEV) \
- $(GDEVH) $(gdevdevn_h) $(gsequivc_h) $(gdevdevnprn_h) $(gdevpsd_h) \
+ $(GDEVH) $(gdevdevn_h) $(gsequivc_h) $(gxdevsop_h) $(gdevdevnprn_h) $(gdevpsd_h) \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevcmykog.$(OBJ) $(C_) $(DEVSRC)gdevcmykog.c
 
