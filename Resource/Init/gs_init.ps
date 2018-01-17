@@ -113,6 +113,7 @@ PDFSTEP { /PDFDEBUG //true def } if
 currentdict /PDFSTOPONERROR known /PDFSTOPONERROR exch def
 currentdict /PDFSTOPONWARNING known {/PDFSTOPONWARNING true def /PDFSTOPONERROR true def}{/PDFSTOPONWARNING false def} ifelse
 currentdict /PDFNOCIDFALLBACK known /PDFNOCIDFALLBACK exch def
+/.bind /bind load def
 
   /VMDEBUG
     INITDEBUG {{print mark
@@ -133,7 +134,7 @@ currentdict /PDFNOCIDFALLBACK known /PDFNOCIDFALLBACK exch def
           {{pop
           }}
          ifelse
-  def
+  .bind def
 
 currentdict /BATCH known   /BATCH exch def
 currentdict /DELAYBIND known   /DELAYBIND exch def
@@ -145,7 +146,6 @@ currentdict /FIXEDMEDIA known   /FIXEDMEDIA exch def
 currentdict /FIXEDRESOLUTION known   /FIXEDRESOLUTION exch def
 currentdict /LOCALFONTS known   /LOCALFONTS exch def
 currentdict /JOBSERVER known   /JOBSERVER exch def
-/.bind /bind load def
 currentdict /NOCACHE known   /NOCACHE exch def
 currentdict /NOCCFONTS known   /NOCCFONTS exch def
 currentdict /NOCIE known   /NOCIE exch def
