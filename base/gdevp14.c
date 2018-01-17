@@ -2244,7 +2244,7 @@ pdf14_discard_trans_layer(gx_device *dev, gs_gstate * pgs)
     if (group_procs != NULL) {
         while (group_procs->previous != NULL)
             pdf14_pop_parent_color(dev, pgs);
-        gs_free_object(dev->memory, group_procs, "pdf14_discard_trans_layer");
+        gs_free_object(dev->memory->stable_memory, group_procs, "pdf14_discard_trans_layer");
         pdev->trans_group_parent_cmap_procs = NULL;
     }
 
@@ -4853,7 +4853,7 @@ pdf14_push_parent_color(gx_device *dev, const gs_gstate *pgs)
                           &render_cond);
     if_debug0m('v', dev->memory, "[v]pdf14_push_parent_color\n");
     /* Allocate a new one */
-    new_parent_color = gs_alloc_struct(dev->memory, pdf14_parent_color_t,
+    new_parent_color = gs_alloc_struct(dev->memory->stable_memory, pdf14_parent_color_t,
                                         &st_pdf14_clr,"pdf14_clr_new");
     /* Link to old one */
     new_parent_color->previous = pdev->trans_group_parent_cmap_procs;
@@ -4904,7 +4904,7 @@ pdf14_pop_parent_color(gx_device *dev, const gs_gstate *pgs)
     /* Update the link */
     pdev->trans_group_parent_cmap_procs = old_parent_color_info->previous;
     /* Free the old one */
-    gs_free_object(dev->memory, old_parent_color_info, "pdf14_clr_free");
+    gs_free_object(dev->memory->stable_memory, old_parent_color_info, "pdf14_clr_free");
 }
 
 static	int
