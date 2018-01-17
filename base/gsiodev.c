@@ -498,7 +498,10 @@ gs_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     pgs_file_enum = gs_alloc_struct(mem, gs_file_enum, &st_gs_file_enum,
                            "gs_enumerate_files_init");
     if (pgs_file_enum == 0)
+    {
+        iodev->procs.enumerate_close(pfen);
         return NULL;
+    }
     pgs_file_enum->memory = mem;
     pgs_file_enum->piodev = iodev;
     pgs_file_enum->pfile_enum = pfen;
