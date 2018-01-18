@@ -733,12 +733,6 @@ $(PSOBJ)zfbcp.$(OBJ) : $(PSSRC)zfbcp.c $(OP) $(memory__h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zfbcp.$(OBJ) $(C_) $(PSSRC)zfbcp.c
 
-# ---------------- Incremental font loading ---------------- #
-# (This only works for Type 1 fonts without eexec encryption.)
-
-$(PSD)diskfont.dev : $(ECHOGS_XE) $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)diskfont -ps gs_diskf
-
 # ---------------- Double-precision floats ---------------- #
 
 double_=$(PSOBJ)zdouble.$(OBJ)

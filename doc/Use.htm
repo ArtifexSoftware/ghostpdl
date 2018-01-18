@@ -2680,16 +2680,6 @@ the <code>-dFitPage</code> options.
 <h4><a name="Font_related_parameters"></a>Font-related parameters</h4>
 
 <dl>
-<dt><a name="DISKFONTS"></a><code>-dDISKFONTS</code>
-<dd>Causes individual character outlines to be loaded from the disk the
-first time they are encountered.  (Normally Ghostscript loads all the
-character outlines when it loads a font.)  This may allow loading more
-fonts into memory at the expense of slower rendering.
-<code>DISKFONTS</code> is effective only if the diskfont feature was
-built into the executable; otherwise it is ignored.
-</dl>
-
-<dl>
 <dt><code>-dLOCALFONTS</code>
 <dd>Causes Type 1 fonts to be loaded into the current VM -- normally local
 VM -- instead of always being loaded into global VM.  Useful only for

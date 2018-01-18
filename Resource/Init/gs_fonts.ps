@@ -47,12 +47,6 @@ end def
 { /FontDirectory .systemvar
 } .bind odef
 
-% If DISKFONTS is true, we load individual CharStrings as they are needed.
-% (This is intended primarily for machines with very small memories.)
-% In this case, we define another dictionary, parallel to FontDirectory,
-% that retains an open file for every font loaded.
-/FontFileDirectory 10 dict def
-
 % Define a temporary string for local use, since using =string
 % interferes with some PostScript programs.
 /.fonttempstring 8192 string def
@@ -497,12 +491,6 @@ buildfontdict 3 /.buildfont3 cvx put
       exec
 
   {
-
-      DISKFONTS {
-        FontFileDirectory 2 index known {
-          dup /FontFile FontFileDirectory 4 index get .growput
-          } if
-      } if
       systemdict /ProvideUnicode .knownget not { //false } if {
         /FontEmulationProcs /ProcSet findresource
         /ProvideUnicodeDecoding get exec
@@ -1071,13 +1059,6 @@ $error /SubstituteFont { } put
            if pop //false exit
         } if
                          % Stack: fontname fontfilename fontfile
-        DISKFONTS
-         { .currentglobal //true .setglobal
-           2 index (r) file
-           FontFileDirectory exch 5 index exch .growput
-           .setglobal
-         }
-        if
         QUIET not
          { (Loading ) print 2 index =only
            ( font from ) print 1 index print (... ) print flush

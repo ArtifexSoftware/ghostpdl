@@ -157,7 +157,7 @@
 ifelse
 /.loadfontfile		% <file> .loadfontfile -
  { mark exch
-   DISKFONTS { .loadfontdict begin } if
+
         % In order to load fonts reliably, we should push systemdict
         % here.  However, Ed Taft says that Adobe implementations
         % push userdict and nothing else!
@@ -171,9 +171,9 @@ ifelse
    currentpacking
     { //false setpacking .loadfont1 //true setpacking }
     { .loadfont1 }
-   ifelse end
+   ifelse
+    end
     { stop } if
-   DISKFONTS { end } if
    cleartomark
  } bind def
  % container for CloseSource flag (default //true to prevent buildup of file handles)
