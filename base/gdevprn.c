@@ -276,7 +276,7 @@ open_c:
              space >= space_params->BufferSpace &&
              !bufferSpace_is_exact
              ) {
-            space <<= 1;
+            space += space / 8;
             if (reallocate) {
                 base = gs_resize_object(buffer_memory,
                                         *the_memory, space,
