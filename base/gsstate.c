@@ -196,11 +196,8 @@ gs_gstate_alloc(gs_memory_t * mem)
     GS_STATE_INIT_VALUES(pgs, 1.0);
     /* Need to set up at least enough to make gs_gstate_free happy */
     pgs->saved = 0;
-    pgs->path = NULL;
-    pgs->clip_path = NULL;
     pgs->clip_stack = NULL;
     pgs->view_clip = NULL;
-    pgs->effective_clip_path = NULL;
     pgs->font = NULL;
     pgs->root_font = NULL;
     pgs->show_gstate = NULL;
@@ -224,8 +221,6 @@ gs_gstate_alloc(gs_memory_t * mem)
 
     /* Initialize other things not covered by initgraphics */
 
-    pgs->path = gx_path_alloc(path_mem, "gs_gstate_alloc(path)");
-    pgs->clip_path = gx_cpath_alloc(path_mem, "gs_gstate_alloc(clip_path)");
     pgs->clip_stack = 0;
     pgs->view_clip = gx_cpath_alloc(path_mem, "gs_gstate_alloc(view_clip)");
     if (pgs->view_clip == NULL)
@@ -233,8 +228,6 @@ gs_gstate_alloc(gs_memory_t * mem)
     pgs->view_clip->rule = 0;   /* no clipping */
     pgs->effective_clip_id = pgs->clip_path->id;
     pgs->effective_view_clip_id = gs_no_id;
-    pgs->effective_clip_path = pgs->clip_path;
-    pgs->effective_clip_shared = true;
     /* Initialize things so that gx_remap_color won't crash. */
     pgs->color[0].color_space = gs_cspace_new_DeviceGray(pgs->memory);
     if (pgs->color[0].color_space == NULL)
