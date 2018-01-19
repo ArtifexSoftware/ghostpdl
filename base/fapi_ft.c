@@ -366,7 +366,8 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data * a_data)
         unsigned char *buffer = NULL;
 
         length = ff->get_glyph(ff, a_index, NULL, 0);
-        if (length == 65535)
+        if (length == gs_fapi_glyph_invalid_format
+            || length == gs_fapi_glyph_invalid_index)
             return FT_Err_Invalid_Glyph_Index;
 
         buffer = gs_malloc(mem, length, 1, "get_fapi_glyph_data");
@@ -374,7 +375,7 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data * a_data)
             return FT_Err_Out_Of_Memory;
 
         length = ff->get_glyph(ff, a_index, buffer, length);
-        if (length == 65535) {
+        if (length == gs_fapi_glyph_invalid_format) {
             gs_free((gs_memory_t *) mem, buffer, 0, 0,
                     "get_fapi_glyph_data");
             return FT_Err_Invalid_Glyph_Index;
@@ -392,9 +393,14 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data * a_data)
         length =
             ff->get_glyph(ff, a_index, a_info->glyph_data,
                           (ushort) a_info->glyph_data_length);
-        if (length == -1) {
+        if (length == gs_fapi_glyph_invalid_format) {
             ff->char_data = saved_char_data;
             return FT_Err_Unknown_File_Format;
+        }
+
+        if (length == gs_fapi_glyph_invalid_index) {
+            ff->char_data = saved_char_data;
+            return FT_Err_Invalid_Glyph_Index;
         }
 
         /* If the buffer was too small enlarge it and try again. */
@@ -414,8 +420,10 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data * a_data)
             a_info->glyph_data_length = length;
             ff->char_data = saved_char_data;
             length = ff->get_glyph(ff, a_index, a_info->glyph_data, length);
-            if (length == -1)
+            if (length == gs_fapi_glyph_invalid_format)
                 return FT_Err_Unknown_File_Format;
+            if (length == gs_fapi_glyph_invalid_index)
+                return FT_Err_Invalid_Glyph_Index;
         }
 
         /* Set the returned pointer and length. */

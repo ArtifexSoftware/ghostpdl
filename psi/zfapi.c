@@ -1138,7 +1138,7 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
      */
     ref *pdr = pfont_dict(((gs_font_base *) ff->client_font_data2));
 
-    ushort glyph_length;
+    int glyph_length;
     i_ctx_t *i_ctx_p = (i_ctx_t *) ff->client_ctx_p;
 
     if (ff->is_type1) {
@@ -1162,7 +1162,7 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
                  */
                 if (name_ref(ff->memory, ff->char_data,
                              ff->char_data_len, &char_name, -1) < 0)
-                    return -1;
+                    return gs_fapi_glyph_invalid_format;
                 if (buf != NULL) {
                     /*
                      * Trigger the next call to the 'seac' case below.
@@ -1182,23 +1182,23 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
                     if (name_ref
                         (ff->memory, (const byte *)".notdef", 7, &char_name,
                          -1) < 0)
-                        return -1;
+                        return gs_fapi_glyph_invalid_format;
             }
             if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
-                return -1;
+                return gs_fapi_glyph_invalid_format;
 
             if (dict_find(CharStrings, &char_name, &glyph) <= 0) {
                 if (name_ref
                     (ff->memory, (const byte *)".notdef", 7, &char_name,
                      -1) < 0) {
-                    return -1;
+                    return gs_fapi_glyph_invalid_format;
                 }
                 if (dict_find(CharStrings, &char_name, &glyph) <= 0) {
-                    return -1;
+                    return gs_fapi_glyph_invalid_format;
                 }
             }
             if (r_has_type(glyph, t_array) || r_has_type(glyph, t_mixedarray))
-                return -1;
+                return gs_fapi_glyph_invalid_format;
             if (!r_has_type(glyph, t_string))
                 return 0;
             glyph_length = get_type1_data(ff, glyph, buf, buf_length);
@@ -1244,13 +1244,13 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
                 bool error = sfnt_get_glyph_offset(pdr, pfont42, char_code, &offset0);
 
                 if (error != 0) {
-                    glyph_length = -1;
+                    glyph_length = gs_fapi_glyph_invalid_index;
                 }
                 else if (pfont42->data.len_glyphs) {
                     if (char_code <= pfont42->data.numGlyphs)
                         glyph_length = pfont42->data.len_glyphs[char_code];
                     else
-                        glyph_length = -1;
+                        glyph_length = gs_fapi_glyph_invalid_index;
                 }
                 else {
                     ulong noffs;
@@ -1267,7 +1267,7 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
                          */
                         int code = sfnt_get_sfnt_length(pdr, &noffs);
                         if (code < 0) {
-                            glyph_length = -1;
+                            glyph_length = gs_fapi_glyph_invalid_index;
                         }
                         else {
                             glyph_length = noffs - offset0;
@@ -1286,7 +1286,7 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
                                   min(glyph_length,
                                       buf_length) /* safety */ );
                     if (r.error == 1) {
-                        glyph_length = -1;
+                        glyph_length = gs_fapi_glyph_invalid_index;
                     }
                     /* r.error == 2 means a rangecheck, and probably means that the
                      * font is broken, and the final glyph length is longer than the data available for it.

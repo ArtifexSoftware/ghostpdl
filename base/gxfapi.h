@@ -104,6 +104,12 @@ typedef enum
 
 typedef enum
 {
+    gs_fapi_glyph_invalid_format = -1,
+    gs_fapi_glyph_invalid_index = -2
+} gs_fapi_glyph_error;
+
+typedef enum
+{
     gs_fapi_metrics_notdef,
     gs_fapi_metrics_add,        /* Add to native glyph width. */
     gs_fapi_metrics_replace_width,      /* Replace the native glyph width. */
