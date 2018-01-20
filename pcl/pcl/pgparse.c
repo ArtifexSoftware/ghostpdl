@@ -433,8 +433,10 @@ hpgl_init_command_index(hpgl_parser_state_t ** pgl_parser_state,
                                                "hpgl_init_command_index");
 
     /* fatal */
-    if (pgst == 0)
+    if (pgst == 0) {
+        *pgl_parser_state = NULL;
         return -1;
+    }
 
     pgst->exit_to_parser = NULL;
     pgst->hpgl_command_next_index = 0;
