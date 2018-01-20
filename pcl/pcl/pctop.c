@@ -234,8 +234,13 @@ pcl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
     {
         int code = pcl_do_registrations(&pcli->pcs, &pcli->pst);
 
-        if (code < 0)
+        if (code < 0) {
+            if (pcli->pcs.pids != NULL);
+                gs_free_object(mem, pcli->pcs.pids, "PCL gsave");
+            gs_gstate_free(pgs);
+            gs_free_object(mem, pcli, "pcl_allocate_interp_instance(pcl_interp_instance_t)");
             return (code);
+        }
     }
 
     pcli->pcs.pjls = pl_main_get_pjl_instance(mem);
