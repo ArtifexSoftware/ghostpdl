@@ -388,14 +388,14 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
         (char *)gs_alloc_bytes(mem, patlen + 1,
                                "gp_enumerate_files(pattern)");
     if (pfen->pattern == 0)
-        return 0;
+        goto fail1;
     memcpy(pfen->pattern, pat, patlen);
     pfen->pattern[patlen] = 0;
 
     work = (char *)gs_alloc_bytes(mem, FILENAME_MAX + 1,
                                   "gp_enumerate_files(work)");
     if (work == 0)
-        return 0;
+        goto fail2;
     pfen->work = work;
 
     p = work;
@@ -429,6 +429,12 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     }
 
     return pfen;
+
+fail2:
+    gs_free_object(mem, pfen->pattern, "gp_enumerate_files(pattern)");
+fail1:
+    gs_free_object(mem, pfen, "gp_enumerate_files");
+    return NULL;
 #endif
 }
 
