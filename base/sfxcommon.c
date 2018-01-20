@@ -192,8 +192,10 @@ file_prepare_stream(const char *fname, uint len, const char *file_access,
         return_error(gs_error_VMerror);
     /* Allocate the buffer. */
     buffer = gs_alloc_bytes(mem, buffer_size, "file_prepare_stream(buffer)");
-    if (buffer == 0)
+    if (buffer == 0) {
+        gs_free_object(mem, s, "file_prepare_stream");
         return_error(gs_error_VMerror);
+    }
     if (fname != 0) {
         memcpy(buffer, fname, len);
         buffer[len] = 0;	/* terminate string */
