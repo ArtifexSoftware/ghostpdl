@@ -699,9 +699,11 @@ gx_device_retain(gx_device *dev, bool retained)
 int
 gs_nulldevice(gs_gstate * pgs)
 {
+    int code = 0;
+
     if (pgs->device == 0 || !gx_device_is_null(pgs->device)) {
         gx_device *ndev;
-        int code = gs_copydevice(&ndev, (const gx_device *)&gs_null_device,
+        code = gs_copydevice(&ndev, (const gx_device *)&gs_null_device,
                                  pgs->memory);
 
         if (code < 0)
@@ -723,9 +725,10 @@ gs_nulldevice(gs_gstate * pgs)
             set_dev_proc(ndev, get_profile, gx_default_get_profile);
         }
 
-        return gs_setdevice_no_erase(pgs, ndev);
+        if ((code = gs_setdevice_no_erase(pgs, ndev)) < 0)
+            gs_free_object(pgs->memory, ndev, "gs_copydevice(device)");
     }
-    return 0;
+    return code;
 }
 
 /* Close a device.  The client is responsible for ensuring that */
