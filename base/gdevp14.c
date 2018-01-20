@@ -3943,6 +3943,7 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
        BT ET pair, we should pop the group.  I need to create a test file for
        this case.  */
     if (gs_currenttextknockout(pgs) && (blend_issue || opacity != 1.0) &&
+        gs_currenttextrenderingmode(pgs) != 3 && /* don't bother with invisible text */
         pdev->text_group == PDF14_TEXTGROUP_BT_NOT_PUSHED)
         if (draw) {
             code = pdf14_push_text_group(dev, pgs, path, pcpath, blend_mode, opacity,
@@ -7686,6 +7687,7 @@ pdf14_clist_text_begin(gx_device * dev,	gs_gstate	* pgs,
     4) And we are actually drawing text
     */
     if (gs_currenttextknockout(pgs) && (blend_issue || opacity != 1.0) &&
+        gs_currenttextrenderingmode(pgs) != 3 && /* don't bother with invisible text */
         pdev->text_group == PDF14_TEXTGROUP_BT_NOT_PUSHED) {
         if (draw) {
             code = pdf14_push_text_group(dev, pgs, path, pcpath, blend_mode, opacity, true);
