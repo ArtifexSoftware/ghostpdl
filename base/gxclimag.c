@@ -1265,8 +1265,8 @@ clist_create_compositor(gx_device * dev,
                     &((gx_device_clist *)dev)->writer;
     int ry, rheight, cropping_op;
     int band_height = cdev->page_info.band_params.BandHeight;
-    int last_band = (cdev->height + band_height - 1) / band_height;
-    int first_band = 0, no_of_bands = last_band + 1;
+    int last_band = cdev->nbands - 1;
+    int first_band = 0, no_of_bands = cdev->nbands;
     int code = pcte->type->procs.write(pcte, 0, &size, cdev);
     int temp_cropping_min, temp_cropping_max;
 
@@ -1291,10 +1291,10 @@ clist_create_compositor(gx_device * dev,
 
     if (cropping_op == PUSHCROP || cropping_op == SAMEAS_PUSHCROP_BUTNOPUSH) {
         first_band = ry / band_height;
-        last_band = (ry + rheight + band_height - 1) / band_height;
+        last_band = (ry + rheight - 1) / band_height;
     } else if (cropping_op == POPCROP || cropping_op == CURRBANDS) {
         first_band = cdev->cropping_min / band_height;
-        last_band = (cdev->cropping_max + band_height - 1) / band_height;
+        last_band = (cdev->cropping_max - 1) / band_height;
     }
 
     if (last_band - first_band > no_of_bands * 2 / 3) {
