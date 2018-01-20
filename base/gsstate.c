@@ -1258,6 +1258,10 @@ gstate_free_contents(gs_gstate * pgs)
     pgs->clip_stack = 0;
     rc_decrement(pgs->dfilter_stack, cname);
     pgs->dfilter_stack = 0;
+    if (pgs->view_clip != NULL && pgs->level == 0) {
+        gx_cpath_free(pgs->view_clip, cname);
+        pgs->view_clip = NULL;
+    }
     gs_swapcolors_quick(pgs);
     cs_adjust_counts_icc(pgs, -1);
     gs_swapcolors_quick(pgs);
