@@ -37,11 +37,9 @@ px_state_alloc(gs_memory_t * memory)
                                                     "px_state_alloc");
     px_gstate_t *pxgs = px_gstate_alloc(memory);
 
-    if (pxs == 0 || pxgs == 0) {
-        gs_free_object(memory, pxgs, "px_gstate_alloc");
-        gs_free_object(memory, pxs, "px_state_alloc");
-        return 0;
-    }
+    if (pxs == 0 || pxgs == 0)
+        goto fail;
+
     pxs->memory = memory;
     pxs->pxgs = pxgs;
     pxgs->pxs = pxs;
@@ -50,10 +48,14 @@ px_state_alloc(gs_memory_t * memory)
     /* allocate the font directory */
     pxs->font_dir = gs_font_dir_alloc(pxs->memory);
     if (pxs->font_dir == 0)
-        return 0;
+        goto fail;
 
     return pxs;
 
+fail:
+    gs_free_object(memory, pxgs, "px_gstate_alloc");
+    gs_free_object(memory, pxs, "px_state_alloc");
+    return 0;
 }
 
 /* Release a px_state_t */
