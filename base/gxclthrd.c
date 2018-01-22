@@ -221,7 +221,7 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
 #if CMM_THREAD_SAFE
     /* safe to share the link cache */
     ncdev->icc_cache_cl = cdev->icc_cache_cl;
-    rc_increment(cdev->icc_cache_cl, "setup_render_thread");
+    rc_increment(cdev->icc_cache_cl);
 #else
     /* each thread needs its own link cache */
     if (cachep != NULL) {
