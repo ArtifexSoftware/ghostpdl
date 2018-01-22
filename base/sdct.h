@@ -82,6 +82,9 @@ extern_st(st_jpeg_compress_data);
   gs_public_st_ptrs1(st_jpeg_compress_data, jpeg_compress_data,\
     "JPEG compress data", jpeg_compress_data_enum_ptrs, jpeg_compress_data_reloc_ptrs, dummy)
 
+#define DCTD_PassThrough(proc)\
+  int proc(void *d, byte *Buffer, int Size)
+
 typedef struct jpeg_decompress_data_s {
     jpeg_stream_data_common;
     /* dinfo must immediately follow the common fields, */
@@ -93,6 +96,13 @@ typedef struct jpeg_decompress_data_s {
     bool faked_eoi;		/* true when fill_input_buffer inserted EOI */
     byte *scanline_buffer;	/* buffer for oversize scanline, or NULL */
     uint bytes_in_scanline;	/* # of bytes remaining to output from same */
+    int PassThrough;                    /* 0 or 1 */
+    bool StartedPassThrough;            /* Don't signal multiple starts for the same decode */
+    DCTD_PassThrough((*PassThroughfn)); /* We don't want the stream code or
+                                         * JPEG code to have to handle devices
+                                         * so we use a function at the interpreter level
+                                         */
+    void *device;                       /* The device we need to send PassThrough data to */
 } jpeg_decompress_data;
 
 #define private_st_jpeg_decompress_data()	/* in zfdctd.c */\

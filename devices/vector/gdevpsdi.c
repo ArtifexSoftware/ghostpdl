@@ -276,7 +276,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
         templat = lossless_template;
     if (dict != NULL) /* Some interpreters don't supply filter parameters. */
         gs_c_param_list_read(dict);	/* ensure param list is in read mode */
-    if (templat == 0)	/* no compression */
+    if (templat == 0 || pdev->JPEG_PassThrough)	/* no compression */
         return 0;
     if (pim->Width < 200 && pim->Height < 200) /* Prevent a fixed overflow. */
         if (pim->Width * pim->Height * Colors * pim->BitsPerComponent <= 160)
@@ -962,6 +962,10 @@ new_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
         if (resolutiony < resolution)
             resolution = resolutiony;
     }
+
+    if (bpc != bpc_out)
+        pdev->JPEG_PassThrough = 0;
+
     if (ncomp == 1 && pim->ColorSpace && pim->ColorSpace->type->index != gs_color_space_index_Indexed) {
         /* Monochrome, gray, or mask */
         /* Check for downsampling. */
@@ -978,6 +982,7 @@ new_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
                 params.Dict = pdev->params.GrayImage.Dict;
                 adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict, pim, in_line);
             }
+            pdev->JPEG_PassThrough = 0;
             code = setup_downsampling(pbw, &params, pim, pgs, resolution, lossless);
         } else {
             adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict, pim, in_line);
@@ -992,6 +997,7 @@ new_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
             params.Depth = (colour_conversion ? 8 : bpc_out);
         if (do_downsample(&params, pim, resolution)) {
             adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict, pim, in_line);
+            pdev->JPEG_PassThrough = 0;
             code = setup_downsampling(pbw, &params, pim, pgs, resolution, lossless);
         } else {
             adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict, pim, in_line);

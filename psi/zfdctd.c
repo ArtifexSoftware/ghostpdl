@@ -28,6 +28,10 @@
 #include "ifilter.h"
 #include "iparam.h"
 
+#include "igstate.h"  /* For igs macro */
+#include "gxdevcli.h" /* for dev_spec_op */
+#include "gxdevsop.h" /* For spec_op enumerated types */
+
 private_st_jpeg_decompress_data();
 
 /* Import the parameter processing procedure from sddparam.c */
@@ -48,6 +52,21 @@ find_stream_memory(i_ctx_t *i_ctx_p, int npop, uint *space)
     return idmemory->spaces_indexed[*space >> r_space_shift];
 }
 
+static int PS_DCTD_PassThrough(void *d, byte *Buffer, int Size)
+{
+    gx_device *dev = (gx_device *)d;
+
+    if (Buffer == NULL) {
+        if (Size == 0)
+            dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_end, NULL, 0);
+        else
+            dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_begin, NULL, 0);
+    } else {
+        dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_data, Buffer, Size);
+    }
+    return 0;
+}
+
 /* <source> <dict> DCTDecode/filter <file> */
 /* <source> DCTDecode/filter <file> */
 static int
@@ -61,6 +80,7 @@ zDCTD(i_ctx_t *i_ctx_p)
     int code;
     const ref *dop;
     uint dspace;
+    gx_device *dev = gs_currentdevice(igs);
 
     if (r_has_type(op, t_dictionary))
         dop = op, dspace = r_space(op);
@@ -86,6 +106,18 @@ zDCTD(i_ctx_t *i_ctx_p)
         goto fail;
     if ((code = s_DCTD_put_params((gs_param_list *) & list, &state)) < 0)
         goto rel;
+
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_query, NULL, 0) > 0) {
+        jddp->StartedPassThrough = 0;
+        jddp->PassThrough = 1;
+        jddp->PassThroughfn = (PS_DCTD_PassThrough);
+        jddp->device = (void *)dev;
+    }
+    else {
+        jddp->PassThrough = 0;
+        jddp->device = (void *)NULL;
+    }
+
     /* Create the filter. */
     jddp->templat = s_DCTD_template;
     code = filter_read(i_ctx_p, 0, &jddp->templat,

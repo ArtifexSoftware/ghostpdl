@@ -55,6 +55,9 @@ xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     jddp.templat = s_DCTD_template;
     jddp.memory = ctx->memory;
     jddp.scanline_buffer = NULL;
+    jddp.PassThrough = 0;
+    jddp.device = (void *)NULL;
+    jddp.PassThroughfn = 0;
 
     if ((code = gs_jpeg_create_decompress(&state)) < 0)
         return gs_throw(-1, "cannot gs_jpeg_create_decompress");

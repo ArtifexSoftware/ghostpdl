@@ -889,6 +889,10 @@ struct gx_device_pdf_s {
                                      * after the form is processed. The name will be used to create a
                                      * local named object which pdfmark can reference.
                                      */
+    stream *PassThroughWriter;      /* A copy of the stream that the image enumerator points to, if we are
+                                     * doing JPEG pass through we write the JPEG data here, and don't write
+                                     * anything in the image processing routines.
+                                     */
 };
 
 #define is_in_page(pdev)\

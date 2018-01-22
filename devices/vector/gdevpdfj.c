@@ -409,6 +409,9 @@ pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
             COS_FREE(piw->data, "pdf_begin_image_data");
         piw->data = 0;
     }
+    if (pdev->JPEG_PassThrough) {
+        CHECK(cos_dict_put_c_strings(pcd, "/Filter", "/DCTDecode"));
+    }
     return code;
 }
 

@@ -319,6 +319,12 @@ enum {
     /* Restrict the supplied bbox to that actually used by the underlying device.
      * Used to restrict alphabits drawing to the area defined by compositors etc.*/
     gxdso_restrict_bbox,
+    /* JPEG passthrough requests/control. Currently used for the pdfwrite family only.
+     */
+    gxdso_JPEG_passthrough_query,
+    gxdso_JPEG_passthrough_begin,
+    gxdso_JPEG_passthrough_data,
+    gxdso_JPEG_passthrough_end,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

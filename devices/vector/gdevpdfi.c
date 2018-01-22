@@ -79,6 +79,7 @@ typedef struct pdf_image_enum_s {
     pdf_image_writer writer;
     gs_matrix mat;
     gs_color_space_index initial_colorspace;
+    int JPEG_PassThrough;
 } pdf_image_enum;
 gs_private_st_composite(st_pdf_image_enum, pdf_image_enum, "pdf_image_enum",
   pdf_image_enum_enum_ptrs, pdf_image_enum_reloc_ptrs);
@@ -1018,6 +1019,21 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         break;
 
     case 3:
+        /* Currently we can't handle images with masks, because we have two
+         * image enumerators, and the JPEG passthrough is stored at the device
+         * level, not the enumerator level. This means that when we skip the
+         * image data (because its handled as JPEG) we also skip the mask data,
+         * which is no use at all. FIXME: not sure how but if possible I
+         * should fix this. Probably need to store the PassThrough in the
+         * enumerator, and then store a pointer to the enumerator in the
+         * device in place of the flag, so that when we get JPEG data supplied
+         * we know where to send it. Of course, that won't work if we ever end
+         * up in the situation where we have two JPEG sources at the same time.....
+         * That can probably be handled with some judicious work in the DCTDecode
+         * structure, to hold some reference to the particular stream that
+         * should get the data. But lets get the simple code working first.
+         */
+        pdev->JPEG_PassThrough = 0;
         pdev->image_mask_is_SMask = false;
         if (pdev->CompatibilityLevel < 1.2 ||
             (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
@@ -1034,6 +1050,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         break;
 
     case IMAGE3X_IMAGETYPE:
+        pdev->JPEG_PassThrough = 0;
         gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                               "pdf_begin_typed_image(image)");
         if (pdev->CompatibilityLevel < 1.4 ||
@@ -1051,6 +1068,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         break;
 
     case 4:
+        pdev->JPEG_PassThrough = 0;
         code = convert_type4_image(pdev, pgs, pmat, pic, prect, pdcolor,
                       pcpath, mem, pinfo, context, image, pnamed);
         if (code < 0) {
@@ -1186,6 +1204,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     }
 
     if (use_fallback) {
+        pdev->JPEG_PassThrough = 0;
         gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                               "pdf_begin_typed_image(image)");
         return gx_default_begin_typed_image
@@ -1204,6 +1223,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     else
         code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0) {
+        pdev->JPEG_PassThrough = 0;
         gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                               "pdf_begin_typed_image(image)");
         return gx_default_begin_typed_image
@@ -1226,6 +1246,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     else
         code = pdf_prepare_image(pdev, pgs);
     if (code < 0) {
+        pdev->JPEG_PassThrough = 0;
         gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                               "pdf_begin_typed_image(image)");
         return gx_default_begin_typed_image
@@ -1328,6 +1349,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     if (!is_mask) {
         if (image[0].pixel.ColorSpace != NULL && !(context == PDF_IMAGE_TYPE3_MASK))
             convert_to_process_colors = setup_image_colorspace(pdev, &image[0], pcs, &pcs_orig, names, &cs_value);
+
         if (pim->BitsPerComponent > 8 && convert_to_process_colors)
             goto fail_and_fallback;
         if (convert_to_process_colors == 4) {
@@ -1375,6 +1397,12 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     if (code < 0)
         goto fail_and_fallback;
 
+    if (pdev->params.TransferFunctionInfo == tfi_Apply && pdev->transfer_not_identity && !is_mask)
+        pdev->JPEG_PassThrough = 0;
+
+/*    if (pdev->JPEG_PassThrough)
+        uncompressed = pie->writer.binary[0].strm;*/
+
     /* Code below here deals with setting up the multiple data stream writing.
      * We can have up to 4 stream writers, which we keep in an array. We must
      * always have at least one which writes the uncompressed stream. If we
@@ -1387,6 +1415,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
      * the streams which does the conversion.
      */
     if (in_line) {
+        pdev->JPEG_PassThrough = 0;
         code = new_setup_lossless_filters((gx_device_psdf *) pdev,
                                              &pie->writer.binary[0],
                                              &image[0].pixel, in_line, convert_to_process_colors, (gs_matrix *)pmat, (gs_gstate *)pgs);
@@ -1423,6 +1452,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         gs_color_space_index csi;
 
         if (pdev->params.TransferFunctionInfo == tfi_Apply && pdev->transfer_not_identity && !is_mask) {
+            pdev->JPEG_PassThrough = 0;
             csi = gs_color_space_get_index(image[0].pixel.ColorSpace);
             if (csi == gs_color_space_index_Indexed) {
                 csi = gs_color_space_get_index(image[0].pixel.ColorSpace->base_space);
@@ -1471,6 +1501,10 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             }
         }
     }
+    /* If we are not preserving the colour space unchanged, thenwe can't pass through JPEG */
+    else
+        pdev->JPEG_PassThrough = 0;
+
 
     if (convert_to_process_colors) {
         image[0].pixel.ColorSpace = pcs_orig;
@@ -1480,6 +1514,17 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             goto fail_and_fallback;
         image[0].pixel.ColorSpace = pcs_device;
     }
+
+    if (pdev->JPEG_PassThrough) {
+/*        if (pie->writer.alt_writer_count > 1) {
+            s_close_filters(&pie->writer.binary[0].strm, uncompressed);
+            memset(pie->writer.binary + 1, 0, sizeof(pie->writer.binary[1]));
+            memset(pie->writer.binary + 2, 0, sizeof(pie->writer.binary[1]));
+        }*/
+        pdev->PassThroughWriter = pie->writer.binary[0].strm;
+        pie->writer.alt_writer_count = 1;
+    }
+    pie->JPEG_PassThrough = pdev->JPEG_PassThrough;
 
     if (pie->writer.alt_writer_count > 1) {
         code = pdf_make_alt_stream(pdev, &pie->writer.binary[1]);
@@ -1563,6 +1608,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     return 0;
 
 fail_and_fallback:
+    pdev->JPEG_PassThrough = 0;
     gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                       "pdf_begin_typed_image(image)");
     gs_free_object(mem, pie, "pdf_begin_image");
@@ -1672,6 +1718,12 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
 {
     pdf_image_enum *pie = (pdf_image_enum *) info;
     int i;
+
+    if (pie->JPEG_PassThrough) {
+        pie->rows_left -= height;
+        *rows_used = height;
+        return 0;
+    }
 
     for (i = 0; i < pie->writer.alt_writer_count; i++) {
         int code = pdf_image_plane_data_alt(info, planes, height, rows_used, i);
@@ -2557,6 +2609,29 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
              * palette entries after the colour space has been set.
              */
             return 1;
+        case gxdso_JPEG_passthrough_query:
+            pdev->JPEG_PassThrough = pdev->params.PassThroughJPEGImages;
+            return 1;
+            break;
+        case gxdso_JPEG_passthrough_begin:
+            return 0;
+            break;
+        case gxdso_JPEG_passthrough_data:
+            if (pdev->JPEG_PassThrough && pdev->PassThroughWriter)
+            {
+                uint ignore;
+                if (sputs(pdev->PassThroughWriter,
+                           data, size,
+                           &ignore) < 0)
+                           return_error(gs_error_ioerror);
+            }
+            return 0;
+            break;
+        case gxdso_JPEG_passthrough_end:
+            pdev->JPEG_PassThrough = 0;
+            pdev->PassThroughWriter = 0;
+            return 0;
+            break;
         case gxdso_get_dev_param:
             {
                 int code;
@@ -2565,6 +2640,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 if (code != gs_error_undefined)
                     return code;
             }
+            /* Fall through */
     }
     return gx_default_dev_spec_op(pdev1, dev_spec_op, data, size);
 }

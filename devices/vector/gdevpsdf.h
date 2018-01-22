@@ -174,6 +174,7 @@ typedef struct psdf_distiller_params_s {
     bool EmbedAllFonts;
     int MaxSubsetPct;
     bool SubsetFonts;
+    bool PassThroughJPEGImages;
     gs_param_string PSDocOptions;
     gs_param_string_array PSPageOptions;
 } psdf_distiller_params;
@@ -263,7 +264,10 @@ extern const stream_template s_zlibE_template;
     cefp_Warning,   /* CannotEmbedFontPolicy */ \
     1,		    /* EmbedAllFonts (true) */ \
     100,	    /* Max Subset Percent */ \
-    1		    /* Subset Fonts (true) */\
+    1		    /* Subset Fonts (true) */
+
+#define psdf_JPEGPassThrough_param_defaults\
+    1           /* PassThroughJPEGImages */
 
 #define psdf_PSOption_param_defaults\
     {0},        /* PSDocOptions */\
@@ -288,6 +292,7 @@ typedef enum {
         bool HaveTrueTypes;\
         bool HaveCIDSystem;\
         double ParamCompatibilityLevel;\
+        bool JPEG_PassThrough;\
         psdf_distiller_params params
 
 typedef struct gx_device_psdf_s {
@@ -302,11 +307,13 @@ typedef struct gx_device_psdf_s {
         true,\
         false,\
         1.3,\
+        0,\
          { psdf_general_param_defaults(ascii),\
            psdf_color_image_param_defaults,\
            psdf_gray_image_param_defaults,\
            psdf_mono_image_param_defaults,\
            psdf_font_param_defaults,\
+           psdf_JPEGPassThrough_param_defaults,\
            psdf_PSOption_param_defaults\
          }
 /* st_device_psdf is never instantiated per se, but we still need to */

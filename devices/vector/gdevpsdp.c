@@ -254,6 +254,7 @@ static const gs_param_item_t psdf_param_items[] = {
     pi("EmbedAllFonts", gs_param_type_bool, EmbedAllFonts),
     pi("MaxSubsetPct", gs_param_type_int, MaxSubsetPct),
     pi("SubsetFonts", gs_param_type_bool, SubsetFonts),
+    pi("PassThroughJPEGImages", gs_param_type_bool, PassThroughJPEGImages),
 
 #undef pi
     gs_param_item_end

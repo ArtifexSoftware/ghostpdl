@@ -199,7 +199,7 @@ xps_high_level_pattern(xps_context_t *ctx)
 static int
 xps_remap_pattern(const gs_client_color *pcc, gs_gstate *pgs)
 {
-    const gs_client_pattern *ppat = gs_getpattern(pcc);
+    gs_client_pattern *ppat = (gs_client_pattern *)gs_getpattern(pcc);
     struct tile_closure_s *c = ppat->client_data;
     xps_context_t *ctx = c->ctx;
     int code;

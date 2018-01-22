@@ -182,6 +182,9 @@ px_jpeg_init(px_bitmap_enum_t * benum, px_bitmap_params_t * params, px_args_t * 
         jddp->templat = s_DCTD_template;
         jddp->memory = benum->mem;
         jddp->scanline_buffer = NULL;
+        jddp->PassThrough = 0;
+        jddp->PassThroughfn = 0;
+        jddp->device = (void *)0;
 
         if (gs_jpeg_create_decompress(ss) < 0)
             return_error(errorInsufficientMemory);
@@ -342,6 +345,9 @@ read_jpeg_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
         jddp->memory = ss->jpeg_memory = benum->mem;
         /* set this early for safe error exit */
         jddp->scanline_buffer = NULL;
+        jddp->PassThrough = 0;
+        jddp->PassThroughfn = 0;
+        jddp->device = (void *)0;
         if (gs_jpeg_create_decompress(ss) < 0)
             return_error(errorInsufficientMemory);
         (*s_DCTD_template.init) ((stream_state *) ss);

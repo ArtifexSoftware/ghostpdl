@@ -284,5 +284,6 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  false,                 /* FlattenFonts, writes text as outlines instead of fonts */
  -1,                    /* Last Form ID, start with -1 which means 'none' */
  0,                     /* ExtensionMetadata */
- 0                      /* PDFFormName */
+ 0,                     /* PDFFormName */
+ 0                      /* PassThroughWriter */
 };

@@ -1597,7 +1597,8 @@ $(PSD)dctd.dev : $(ECHOGS_XE) $(GLD)sdctd.dev $(GLD)sddparam.dev\
 $(PSOBJ)zfdctd.$(OBJ) : $(PSSRC)zfdctd.c $(OP)\
  $(memory__h) $(stdio__h) $(jpeglib__h) $(gsmemory_h)\
  $(ialloc_h) $(ifilter_h) $(iparam_h) $(sdct_h) $(sjpeg_h)\
- $(strimpl_h) $(INT_MAK) $(MAKEDIRS)
+ $(strimpl_h) $(igstate_h) $(gxdevcli_h) $(gxdevsop_h)\
+ $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zfdctd.$(OBJ) $(C_) $(PSSRC)zfdctd.c
 
 # ================ Display PostScript ================ #

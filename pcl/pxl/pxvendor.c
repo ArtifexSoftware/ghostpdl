@@ -510,6 +510,9 @@ read_headless_jpeg_bitmap_data(byte ** pdata,
 	jddp->memory = ss->jpeg_memory = pxs->memory;
 	/* set this early for safe error exit */
 	jddp->scanline_buffer = NULL;
+    jddp->PassThrough = 0;
+    jddp->PassThroughfn = 0;
+    jddp->device = (void *)0;
 	if (gs_jpeg_create_decompress(ss) < 0)
 	    return_error(errorInsufficientMemory);
 	(*s_DCTD_template.init) ((stream_state *) ss);
