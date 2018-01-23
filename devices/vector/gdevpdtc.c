@@ -684,10 +684,17 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
                         w0[cid] = widths.Width.w;
                     }
                     if (pdsubf->u.cidfont.CIDToGIDMap != 0) {
+                        uint gid = 0;
                         gs_font_cid2 *subfont2 = (gs_font_cid2 *)subfont;
 
-                        pdsubf->u.cidfont.CIDToGIDMap[cid] =
-                        subfont2->cidata.CIDMap_proc(subfont2, glyph);
+                        gid = subfont2->cidata.CIDMap_proc(subfont2, glyph);
+
+                        /* If this is a TrueType CIDFont, check the GSUB table to see if there's
+                         * a suitable substitute glyph.
+                         */
+                        if (subfont2->FontType == ft_CID_TrueType)
+                            gid = subfont2->data.substitute_glyph_index_vertical((gs_font_type42 *)subfont, gid, subfont2->WMode, glyph);
+                        pdsubf->u.cidfont.CIDToGIDMap[cid] = gid;
                     }
                 }
                 if (wmode)

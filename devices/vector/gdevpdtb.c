@@ -425,11 +425,22 @@ int
 pdf_base_font_copy_glyph(pdf_base_font_t *pbfont, gs_glyph glyph,
                          gs_font_base *font)
 {
-    int code =
-        gs_copy_glyph_options((gs_font *)font, glyph,
+    int code;
+
+    /* If we're a TrueType CIDFont, check teh GSUB table for replacement glyphs.
+     * Bug #691574
+     */
+    if (font->FontType == ft_CID_TrueType) {
+        code =
+            gs_copy_glyph_options((gs_font *)font, glyph,
+                              (gs_font *)pbfont->copied,
+                              (pbfont->is_standard ? COPY_GLYPH_NO_NEW : COPY_GLYPH_USE_GSUB));
+    } else {
+        code =
+            gs_copy_glyph_options((gs_font *)font, glyph,
                               (gs_font *)pbfont->copied,
                               (pbfont->is_standard ? COPY_GLYPH_NO_NEW : 0));
-
+    }
     if (code < 0)
         return code;
     if (pbfont->CIDSet != 0 &&

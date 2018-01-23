@@ -121,11 +121,15 @@ int gs_copy_glyph(gs_font *font, gs_glyph glyph, gs_font *copied);
  * COPY_GLYPH_NO_NEW, then if the top-level glyph has *not* already been
  * copied, return an undefined error rather than 0.
  *
+ * COPY_GLYPH_USE_GSUB directs the code to try using a TrueType GSUB table
+ * to find a replacement for a glyph. Bug #691574
+ *
  * Returns an error if a glyph is added after calling copied_order_font.
  */
 #define COPY_GLYPH_NO_OLD 1
 #define COPY_GLYPH_NO_NEW 2
 #define COPY_GLYPH_BY_INDEX 4
+#define COPY_GLYPH_USE_GSUB 8
 int gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
                           int options);
 

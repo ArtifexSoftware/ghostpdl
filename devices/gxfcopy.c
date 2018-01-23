@@ -1369,6 +1369,16 @@ copy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
     double factor = font42->data.unitsPerEm;
     int i;
 
+    /* If we've been told to, use the TrueType GSUB table to find a possible replacement
+     * glyph for the one which was supplied by the CMAP subtable. This is slightly useful
+     * when using a TrueType as a replacement for a missing CIDFont, the CMap defines
+     * vertical writing and there is a suitable vertical glyph available to use as a
+     * replacement for a horizontal glyph (punctuation, basically). Not a common
+     * situation, of rather limited value, but....
+     */
+    if (!(options & COPY_GLYPH_BY_INDEX) && (options & COPY_GLYPH_USE_GSUB) && font->FontType == ft_CID_TrueType)
+        gid = fontCID2->data.substitute_glyph_index_vertical((gs_font_type42 *)font, gid, font->WMode, glyph);
+
     gdata.memory = font42->memory;
     code = font42->data.get_outline(font42, gid, &gdata);
     /* If the glyph is a /.notdef, and the GID is not 0, and we failed to find
@@ -1881,6 +1891,15 @@ copy_glyph_cid2(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
             return code;
         CIDCount = copied2->cidata.common.CIDCount;
         gid = fcid2->cidata.CIDMap_proc(fcid2, glyph);
+        /* If we've been told to, use the TrueType GSUB table to find a possible replacement
+         * glyph for the one which was supplied by the CMAP subtable. This is slightly useful
+         * when using a TrueType as a replacement for a missing CIDFont, the CMap defines
+         * vertical writing and there is a suitable vertical glyph available to use as a
+         * replacement for a horizontal glyph (punctuation, basically). Not a common
+         * situation, of rather limited value, but....
+         */
+        if (options & COPY_GLYPH_USE_GSUB)
+            gid = ((gs_font_cid2 *)font)->data.substitute_glyph_index_vertical((gs_font_type42 *)font, gid, font->WMode, glyph);
         if (gid < 0 || gid >= cfdata->glyphs_size)
             return_error(gs_error_rangecheck);
         if (cid > CIDCount)
