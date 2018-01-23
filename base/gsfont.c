@@ -255,6 +255,8 @@ gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     code = gx_char_cache_alloc(struct_mem, bits_mem, pdir,
                                bmax, mmax, cmax, upper);
     if (code < 0) {
+        gs_free_object(struct_mem, pdir->ccache.table, "font_dir_alloc(chars)");
+        gs_free_object(struct_mem, pdir->fmcache.mdata, "font_dir_alloc(mdata)");
         gs_free_object(struct_mem, pdir, "font_dir_alloc(dir)");
         return 0;
     }
