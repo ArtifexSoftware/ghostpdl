@@ -409,8 +409,10 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
      */
     new_dev = gs_alloc_struct_immovable(mem, gx_device, new_std,
                                         "gs_copydevice(device)");
-    if (new_dev == 0)
+    if (new_dev == 0) {
+        gs_free_object(mem->non_gc_memory, a_std, "gs_copydevice(stype)");
         return_error(gs_error_VMerror);
+    }
     gx_device_init(new_dev, dev, mem, false);
     gx_device_set_procs(new_dev);
     new_dev->stype = new_std;
