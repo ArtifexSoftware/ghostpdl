@@ -46,6 +46,7 @@ typedef enum
     score_location,
     score_orientation,
     score_fontnumber,
+    score_pjl_fontnumber,
     score_limit
 } score_index_t;
 
@@ -63,7 +64,8 @@ static const char *const score_name[] = {
     "typeface",
     "location",
     "orientation",
-    "fontnumber"
+    "fontnumber",
+    "pjlnumber"
 };
 
 static void
@@ -424,12 +426,22 @@ score_match(const pcl_state_t * pcs, const pcl_font_selection_t * pfs,
     else
         score[score_fontnumber] = 0x200000 - fp->params.typeface_family;
 
+    /*
+     * Earlier defined fonts have higher priority than later
+     * (undocumented).  Negate the font number so that smaller numbers
+     * have a higher score.
+     */
+    
+    score[score_pjl_fontnumber] = -fp->params.pjl_font_number;
+
 #ifdef DEBUG
     if (gs_debug_c('='))
         dmprintf_font_scoring(pcs->memory, "candidate", fp, *mapp, score);
 #endif
 
+
 }
+
 
 /* Recompute the current font from the descriptive parameters. */
 /* This is used by both PCL and HP-GL/2. */

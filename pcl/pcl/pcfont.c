@@ -700,6 +700,7 @@ pcfont_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         pcs->font = 0;
         pcs->font_selection[0].font = pcs->font_selection[1].font = 0;
         pcs->font_selected = primary;
+        pcs->pjl_dlfont_number = 1;
         pl_dict_init(&pcs->built_in_fonts, pcs->memory, pl_free_font);
         pl_dict_init(&pcs->soft_fonts, pcs->memory, pl_free_font);
         pl_dict_init(&pcs->cartridge_fonts, pcs->memory, pl_free_font);

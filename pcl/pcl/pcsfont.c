@@ -485,6 +485,8 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
         (int)(pfh->StrokeWeight ^ 0x80) - 0x80;
     plfont->params.typeface_family =
         (pfh->TypefaceMSB << 8) + pfh->TypefaceLSB;
+    plfont->params.pjl_font_number = pcs->pjl_dlfont_number++;
+    
     pl_dict_put(&pcs->soft_fonts, current_font_id,
                 current_font_id_size, plfont);
     plfont->pfont->procs.define_font = gs_no_define_font;
