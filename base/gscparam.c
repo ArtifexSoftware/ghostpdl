@@ -306,6 +306,10 @@ c_param_write(gs_c_param_list * plist, gs_param_name pkey, void *pvalue,
                                      top_level_sizeof + second_level_sizeof,
                                              "c_param_write data");
                     if (top_level_memory == 0) {
+                        if (pparam->key.persistent == false) {
+                            gs_free_string(plist->memory, (byte *)(pparam->key.data),
+                                strlen((const char *)(pparam->key.data)), "c_param_add key");
+                        }
                         gs_free_object(plist->memory, pparam, "c_param_write entry");
                         return_error(gs_error_VMerror);
                     }
