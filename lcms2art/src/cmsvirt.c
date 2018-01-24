@@ -484,7 +484,7 @@ cmsHPROFILE CMSEXPORT cmsCreateLab2ProfileTHR(cmsContext ContextID, const cmsCIE
     cmsSetColorSpace(ContextID, hProfile,  cmsSigLabData);
     cmsSetPCS(ContextID, hProfile,         cmsSigLabData);
 
-    if (!SetTextTags(ContextID, hProfile, L"Lab identity built-in")) return NULL;
+    if (!SetTextTags(ContextID, hProfile, L"Lab identity built-in")) goto Error;
 
     // An identity LUT is all we need
     LUT = cmsPipelineAlloc(ContextID, 3, 3);
