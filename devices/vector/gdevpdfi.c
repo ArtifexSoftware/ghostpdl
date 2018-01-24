@@ -2543,6 +2543,11 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             return 1;
         case gxdso_pattern_finish_accum:
             if (pdev->CompatibilityLevel <= 1.7) {
+                if (pdev->substream_Resources == NULL) {
+                    pdev->substream_Resources = cos_dict_alloc(pdev, "pdf_pattern(Resources)");
+                    if (pdev->substream_Resources == NULL)
+                        return_error(gs_error_VMerror);
+                }
                 code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
                 if (code < 0)
                     return code;
