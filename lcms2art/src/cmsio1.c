@@ -480,6 +480,7 @@ cmsPipeline* BuildRGBOutputMatrixShaper(cmsContext ContextID, cmsHPROFILE hProfi
     InvShapes[2] = cmsReverseToneCurve(ContextID, Shapes[2]);
 
     if (!InvShapes[0] || !InvShapes[1] || !InvShapes[2]) {
+        cmsFreeToneCurveTriple(ContextID, InvShapes);
         return NULL;
     }
 
