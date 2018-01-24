@@ -112,13 +112,17 @@ type2_vstem(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack)
 }
 
 /* ------ Main interpreter ------ */
-
 /*
  * Continue interpreting a Type 2 charstring.  If str != 0, it is taken as
  * the byte string to interpret.  Return 0 on successful completion, <0 on
  * error, or >0 when client intervention is required (or allowed).  The int*
  * argument is only for compatibility with the Type 1 charstring interpreter.
  */
+
+#define CHECK_CSTACK_BOUNDS(csaddr, cs) \
+      (csaddr >= &(cs[0]) && \
+        csaddr < &(cs[ostack_size]))
+
 int
 gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                    int *ignore_pindex)
@@ -368,18 +372,22 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
             case cx_rmoveto:
                 /* See vmoveto above re closing the subpath. */
                 check_first_operator(!((csp - cstack) & 1));
-                if (csp > cstack + 1) {
-                  /* Some Type 2 charstrings omit the vstemhm operator before rmoveto,
-                     even though this is only allowed before hintmask and cntrmask.
-                     Thanks to Felix Pahl.
-                   */
-                  type2_vstem(pcis, csp - 2, cstack);
-                  cstack [0] = csp [-1];
-                  cstack [1] = csp [ 0];
-                  csp = cstack + 1;
+                if (CHECK_CSTACK_BOUNDS(&csp[-1], cstack)) {
+                    if (csp > cstack + 1) {
+                      /* Some Type 2 charstrings omit the vstemhm operator before rmoveto,
+                         even though this is only allowed before hintmask and cntrmask.
+                         Thanks to Felix Pahl.
+                       */
+                      type2_vstem(pcis, csp - 2, cstack);
+                      cstack [0] = csp [-1];
+                      cstack [1] = csp [ 0];
+                      csp = cstack + 1;
+                    }
+                    code = t1_hinter__rmoveto(h, csp[-1], *csp);
+                    goto move;
                 }
-                code = t1_hinter__rmoveto(h, csp[-1], *csp);
-                goto move;
+                else
+                    return_error(gs_error_invalidfont);
             case cx_hmoveto:
                 /* See vmoveto above re closing the subpath. */
                 check_first_operator(csp > cstack);
@@ -800,9 +808,10 @@ flex:			{
 
                 /* Fill up the dispatch up to 32. */
 
-              case_c2_undefs:
+            case_c2_undefs:
             default:		/* pacify compiler */
                 return_error(gs_error_invalidfont);
         }
     }
 }
+#undef CHECK_CSTACK_BOUNDS
