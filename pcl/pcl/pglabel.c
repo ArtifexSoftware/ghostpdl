@@ -944,7 +944,7 @@ hpgl_print_char(hpgl_state_t * pgls, uint ch)
                 /* we just check the current position for
                    "insidedness" - this seems to address the dirty
                    page issue in practice. */
-                pcl_mark_page_for_current_pos(pgls);
+                code = pcl_mark_page_for_current_pos(pgls);
                 gs_text_release(penum, "hpgl_print_char");
             }
             if (code < 0)

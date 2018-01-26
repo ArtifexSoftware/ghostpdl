@@ -839,8 +839,11 @@ hpgl_polyfill(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
 static int
 hpgl_fill_polyfill_background(hpgl_state_t * pgls)
 {
+    int code = 0;
+
     /* conditionally mark page as dirty */
-    pcl_mark_page_for_path(pgls);
+    code = pcl_mark_page_for_path(pgls);
+    if (code < 0) return code;
     /* if we are drawing on a transparent background */
     if (pgls->g.source_transparent)
         return 0;
@@ -1560,7 +1563,8 @@ hpgl_draw_current_path(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
                                        min(scale.x,
                                            scale.y) * 0.0375 * 0.2835));
                         }
-                        pcl_mark_page_for_path(pgls);
+                        if ((code = pcl_mark_page_for_path(pgls)) < 0)
+                            return code;
                         hpgl_call(gs_stroke(pgls->pgs));
                         break;
 
@@ -1619,7 +1623,8 @@ hpgl_draw_current_path(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
             break;
         case hpgl_rm_polygon:
             hpgl_set_special_pixel_placement(pgls, hpgl_rm_polygon);
-            pcl_mark_page_for_path(pgls);
+            if ((code = pcl_mark_page_for_path(pgls)) < 0)
+                return code;
             if (pgls->g.fill_type == hpgl_even_odd_rule)
                 hpgl_call(gs_eofill(pgs));
             else                /* hpgl_winding_number_rule */
@@ -1635,7 +1640,8 @@ hpgl_draw_current_path(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
              * the lines that comprise the vector fill
              */
             if (hpgl_get_selected_pen(pgls) == 0) {
-                pcl_mark_page_for_path(pgls);
+                if ((code = pcl_mark_page_for_path(pgls)) < 0)
+                    return code;
                 hpgl_call(gs_fill(pgls->pgs));
             }
             hpgl_call(hpgl_clear_current_path(pgls));
@@ -1662,7 +1668,8 @@ hpgl_draw_current_path(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
                 if (!pgls->g.line.current.is_solid
                     && (pgls->g.line.current.type == 0))
                     hpgl_call(gs_reversepath(pgls->pgs));
-                pcl_mark_page_for_path(pgls);
+                if ((code = pcl_mark_page_for_path(pgls)) < 0)
+                    return code;
                 hpgl_call(gs_stroke(pgls->pgs));
                 gs_setmatrix(pgs, &save_ctm);
                 break;

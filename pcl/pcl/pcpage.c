@@ -502,29 +502,30 @@ pcl_new_logical_page_for_passthrough(pcl_state_t * pcs, int orient,
 /* page marking routines */
 
 
-void
+int
 pcl_mark_page_for_current_pos(pcl_state_t * pcs)
 {
+	int code = 0;
+
     /* nothing to do */
     if (pcs->page_marked)
-        return;
+        return code;
 
     /* convert current point to device space and check if it is inside
        device rectangle for the page */
     {
         gs_fixed_rect page_box;
         gs_fixed_point pt;
-        int code;
 
         code = gx_default_clip_box(pcs->pgs, &page_box);
         if (code < 0)
             /* shouldn't happen. */
-            return;
+            return code;
         
         code = gx_path_current_point(gx_current_path(pcs->pgs), &pt);
         if (code < 0)
             /* shouldn't happen */
-            return;
+            return code;
         
 
         /* half-open lower - not sure this is correct */
@@ -532,6 +533,7 @@ pcl_mark_page_for_current_pos(pcl_state_t * pcs)
             pt.x < page_box.q.x && pt.y < page_box.q.y)
             pcs->page_marked = true;
     }
+    return code;
 }
 
 
@@ -572,12 +574,10 @@ pcl_mark_page_for_character(pcl_state_t * pcs, gs_fixed_point *org)
  *  could be improved by using the bounding box of the path object but
  *  for page marking that case does not seem to come up in practice.
  */
-void
+int
 pcl_mark_page_for_path(pcl_state_t * pcs)
 {
-
-    pcl_mark_page_for_current_pos(pcs);
-    return;
+    return pcl_mark_page_for_current_pos(pcs);
 }
 
 /* returns the bounding box coordinates for the current device and a

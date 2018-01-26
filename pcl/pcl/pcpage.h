@@ -48,9 +48,9 @@ bool pcl_page_marked(pcl_state_t * pcs);
 
 bool pcl_cursor_moved(pcl_state_t * pcs);
 
-void pcl_mark_page_for_path(pcl_state_t * pcs);
+int pcl_mark_page_for_path(pcl_state_t * pcs);
 
-void pcl_mark_page_for_current_pos(pcl_state_t * pcs);
+int pcl_mark_page_for_current_pos(pcl_state_t * pcs);
 
 void pcl_mark_page_for_character(pcl_state_t * pcs, gs_fixed_point *org);
 
