@@ -537,12 +537,12 @@ pcl_mark_page_for_current_pos(pcl_state_t * pcs)
 }
 
 
-void
+int
 pcl_mark_page_for_character(pcl_state_t * pcs, gs_fixed_point *org)
 {
     /* nothing to do */
     if (pcs->page_marked)
-        return;
+        return 0;
 
     /* convert current point to device space and check if it is inside
        device rectangle for the page */
@@ -554,12 +554,12 @@ pcl_mark_page_for_character(pcl_state_t * pcs, gs_fixed_point *org)
         code = gx_default_clip_box(pcs->pgs, &page_box);
         if (code < 0)
             /* shouldn't happen. */
-            return;
+            return code;
 
         code = gx_path_current_point(gx_current_path(pcs->pgs), &pt);
         if (code < 0)
             /* shouldn't happen */
-            return;
+            return code;
 
 
         /* half-open lower - not sure this is correct */
@@ -567,6 +567,7 @@ pcl_mark_page_for_character(pcl_state_t * pcs, gs_fixed_point *org)
             org->x < page_box.q.x && org->y < page_box.q.y)
             pcs->page_marked = true;
     }
+    return 0;
 }
 
 /* 

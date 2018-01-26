@@ -52,7 +52,7 @@ int pcl_mark_page_for_path(pcl_state_t * pcs);
 
 int pcl_mark_page_for_current_pos(pcl_state_t * pcs);
 
-void pcl_mark_page_for_character(pcl_state_t * pcs, gs_fixed_point *org);
+int pcl_mark_page_for_character(pcl_state_t * pcs, gs_fixed_point *org);
 
 int new_logical_page_for_passthrough_snippet(pcl_state_t * pcs, int orient,
                                              int tag);

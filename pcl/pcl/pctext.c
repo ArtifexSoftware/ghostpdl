@@ -903,7 +903,8 @@ pcl_show_chars_slow(pcl_state_t * pcs,
             if (code < 0)
                 break;
 
-            pcl_mark_page_for_character(pcs, &pt);
+            if ((code = pcl_mark_page_for_character(pcs, &pt)) < 0)
+                return code;
         }
 
         /*
