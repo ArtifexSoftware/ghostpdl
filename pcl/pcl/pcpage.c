@@ -71,8 +71,7 @@ preserve_cap_and_margins(const pcl_state_t * pcs,
     ptext_rect->p.y = (double)pcs->margins.top;
     ptext_rect->q.x = (double)pcs->margins.right;
     ptext_rect->q.y = (double)(pcs->margins.top + pcs->margins.length);
-    pcl_transform_rect(pcs->memory, ptext_rect, ptext_rect,
-                       &(pcs->xfm_state.pd2lp_mtx));
+    pcl_transform_rect(ptext_rect, ptext_rect, &(pcs->xfm_state.pd2lp_mtx));
 }
 
 /*
@@ -91,7 +90,7 @@ restore_cap_and_margins(pcl_state_t * pcs,
     gs_point_transform(pcur_pt->x, pcur_pt->y, &lp2pd, &tmp_pt);
     pcs->cap.x = (coord) tmp_pt.x;
     pcs->cap.y = (coord) tmp_pt.y;
-    pcl_transform_rect(pcs->memory, ptext_rect, &tmp_rect, &lp2pd);
+    pcl_transform_rect(ptext_rect, &tmp_rect, &lp2pd);
     pcs->margins.left = (coord) tmp_rect.p.x;
     pcs->margins.top = (coord) tmp_rect.p.y;
     pcs->margins.right = (coord) tmp_rect.q.x;
@@ -264,11 +263,10 @@ update_xfm_state(pcl_state_t * pcs, bool reset_initial)
                 psize->height - max(PRINTABLE_MARGIN_CP,
                                     inch2coord(pdev->HWMargins[3] / 72.0));
         }
-        pcl_transform_rect(pcs->memory, &print_rect, &dev_rect, &pg2dev);
+        pcl_transform_rect(&print_rect, &dev_rect, &pg2dev);
     }
     pcl_invert_mtx(&(pxfmst->lp2pg_mtx), &pg2lp);
-    pcl_transform_rect(pcs->memory, &print_rect, &(pxfmst->lp_print_rect),
-                       &pg2lp);
+    pcl_transform_rect(&print_rect, &(pxfmst->lp_print_rect), &pg2lp);
 
     /* restablish the current point and text region */
     if (!reset_initial)

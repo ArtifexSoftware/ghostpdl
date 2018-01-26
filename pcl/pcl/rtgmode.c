@@ -78,7 +78,7 @@ get_raster_print_rect(const gs_memory_t * mem,
     gs_matrix lp2rst;
 
     pcl_invert_mtx(prst2lp, &lp2rst);
-    pcl_transform_rect(mem, plp_print_rect, prst_print_rect, &lp2rst);
+    pcl_transform_rect(plp_print_rect, prst_print_rect, &lp2rst);
     intersect_with_positive_quadrant(prst_print_rect);
 }
 

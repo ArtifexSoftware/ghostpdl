@@ -82,8 +82,7 @@ pcl_invert_mtx(const gs_matrix * pmtx1, gs_matrix * pmtx2)
  * prect1 and prect2 may point to the same rectangle.
  */
 void
-pcl_transform_rect(const gs_memory_t * mem,
-                   const gs_rect * prect1,
+pcl_transform_rect(const gs_rect * prect1,
                    gs_rect * prect2, const gs_matrix * pmtx)
 {
     gs_point_transform(prect1->p.x, prect1->p.y, pmtx, &(prect2->p));

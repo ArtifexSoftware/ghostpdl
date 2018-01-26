@@ -30,8 +30,7 @@
 void pcl_invert_mtx(const gs_matrix * pmtx1, gs_matrix * pmtx2);
 
 /* transform a rectangel via a diagonal matrix */
-void pcl_transform_rect(const gs_memory_t * mem,
-                        const gs_rect * prect1,
+void pcl_transform_rect(const gs_rect * prect1,
                         gs_rect * prect2, const gs_matrix * pmtx);
 
 /*
