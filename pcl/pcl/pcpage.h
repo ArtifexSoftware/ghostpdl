@@ -37,7 +37,7 @@ typedef enum
 
 int pcl_end_page(pcl_state_t * pcs, pcl_print_condition_t condition);
 
-void new_logical_page(pcl_state_t * pcs,
+int new_logical_page(pcl_state_t * pcs,
                       int lp_orient,
                       const pcl_paper_size_t * psize,
                       bool reset_initial, bool for_passthrough);

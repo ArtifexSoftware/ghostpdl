@@ -343,7 +343,7 @@ reset_margins(pcl_state_t * pcs, bool for_passthrough)
  * an initial reset. In that case, done't call HPGL's reset - the reset
  * will do that later.
  */
-static void
+static int
 new_page_size(pcl_state_t * pcs,
               const pcl_paper_size_t * psize,
               bool reset_initial, bool for_passthrough)
@@ -355,6 +355,7 @@ new_page_size(pcl_state_t * pcs,
     gs_gstate *pgs = pcs->pgs;
     gs_matrix mat;
     bool changed_page_size;
+    int code = 0;
 
     page_size[0] = width_pts;
     page_size[1] = height_pts;
@@ -362,7 +363,8 @@ new_page_size(pcl_state_t * pcs,
     old_page_size[0] = gs_currentdevice(pcs->pgs)->MediaSize[0];
     old_page_size[1] = gs_currentdevice(pcs->pgs)->MediaSize[1];
 
-    put_param1_float_array(pcs, "PageSize", page_size);
+    code = put_param1_float_array(pcs, "PageSize", page_size);
+    if (code < 0) return code;
 
     /*
      * Reset the default transformation.
@@ -408,14 +410,17 @@ new_page_size(pcl_state_t * pcs,
     pcl_xfm_reset_pcl_pat_ref_pt(pcs);
 
     if (!reset_initial)
-        hpgl_do_reset(pcs, pcl_reset_page_params);
+        code = hpgl_do_reset(pcs, pcl_reset_page_params);
+    if (code < 0) return code;
 
     if (pcs->end_page == pcl_end_page_top) {    /* don't erase in snippet mode */
         if (pcs->page_marked || changed_page_size) {
-            gs_erasepage(pcs->pgs);
+            code = gs_erasepage(pcs->pgs);
             pcs->page_marked = false;
         }
     }
+
+    return code;
 }
 
 /*
@@ -454,7 +459,7 @@ const int pcl_paper_type_count = countof(paper_types_proto);
  * The last operand indicates if this routine is being called as part of
  * an initial resete.
  */
-void
+int
 new_logical_page(pcl_state_t * pcs,
                  int lp_orient,
                  const pcl_paper_size_t * psize,
@@ -464,7 +469,7 @@ new_logical_page(pcl_state_t * pcs,
 
     pxfmst->lp_orient = lp_orient;
     pxfmst->print_dir = 0;
-    new_page_size(pcs, psize, reset_initial, for_passthrough);
+    return new_page_size(pcs, psize, reset_initial, for_passthrough);
 }
 
 
@@ -491,8 +496,7 @@ pcl_new_logical_page_for_passthrough(pcl_state_t * pcs, int orient,
 
     if (!found)
         return -1;
-    new_logical_page(pcs, orient, psize, false, true);
-    return 0;
+    return new_logical_page(pcs, orient, psize, false, true);
 }
 
 /* page marking routines */
@@ -695,7 +699,7 @@ set_page_size(pcl_args_t * pargs, pcl_state_t * pcs)
     }
     if ((psize != 0) && ((code = pcl_end_page_if_marked(pcs)) >= 0)) {
         pcs->xfm_state.print_dir = 0;
-        new_page_size(pcs, psize, false, false);
+        code = new_page_size(pcs, psize, false, false);
     }
     return code;
 }
@@ -789,7 +793,7 @@ set_logical_page_orientation(pcl_args_t * pargs, pcl_state_t * pcs)
        set the flag disabling the orientation command for this page. */
     code = pcl_end_page_if_marked(pcs);
     if (code >= 0) {
-        new_logical_page(pcs, i, pcs->xfm_state.paper_size, false, false);
+        code = new_logical_page(pcs, i, pcs->xfm_state.paper_size, false, false);
         pcs->hmi_cp = HMI_DEFAULT;
         pcs->vmi_cp = VMI_DEFAULT;
     }
@@ -987,6 +991,7 @@ static int
 set_logical_page(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint count = uint_arg(pargs);
+    int code = 0;
 
     const pcl_logical_page_t *plogpage =
         (pcl_logical_page_t *) arg_data(pargs);
@@ -1016,10 +1021,12 @@ set_logical_page(pcl_args_t * pargs, pcl_state_t * pcs)
     pcur_paper->offset_portrait = pl_get_int16(plogpage->LeftOffset) * 10;
     pcur_paper->offset_landscape = pl_get_int16(plogpage->TopOffset) * 10;
 
-    new_page_size(pcs, pcur_paper, false, false);
-    gs_erasepage(pcs->pgs);
+    code = new_page_size(pcs, pcur_paper, false, false);
+    if (code < 0) return code;
+
+    code = gs_erasepage(pcs->pgs);
     pcs->page_marked = false;
-    return 0;
+    return code;
 }
 
 /* 
@@ -1075,9 +1082,7 @@ pcl_set_custom_paper_size(pcl_state_t *pcs, pcl_paper_size_t *p)
            always in the table */
         return -1;
     
-    new_logical_page(pcs, 0, psize, false, false);
-
-    return 0;
+    return new_logical_page(pcs, 0, psize, false, false);
 }
 /*
  * ESC & f <decipoints> J
@@ -1272,6 +1277,8 @@ pcl_get_default_paper(pcl_state_t * pcs)
 static int
 pcpage_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
+	int code = 0;
+
     /* NB hack for snippet mode */
     if (pcs->end_page != pcl_end_page_top) {
         pcs->xfm_state.print_dir = 0;
@@ -1294,26 +1301,30 @@ pcpage_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         pcs->xfm_state.left_offset_cp = 0.0;
         pcs->xfm_state.top_offset_cp = 0.0;
         pcs->perforation_skip = 1;
-        new_logical_page(pcs,
+        code = new_logical_page(pcs,
                          !pjl_proc_compare(pcs->pjls,
                                            pjl_proc_get_envvar(pcs->pjls,
                                                                "orientation"),
                                            "portrait") ? 0 : 1,
                          pcl_get_default_paper(pcs),
                          (type & pcl_reset_initial) != 0, false);
+        if (code < 0) goto cleanup;
     } else if ((type & pcl_reset_overlay) != 0) {
         pcs->perforation_skip = 1;
         update_xfm_state(pcs, 0);
         reset_margins(pcs, false);
         pcl_xfm_reset_pcl_pat_ref_pt(pcs);
     } else if ((type & pcl_reset_permanent) != 0) {
-        if (pcs->ppaper_type_table) {
-            gs_free_object(pcs->memory, pcs->ppaper_type_table,
-                           "Paper Table");
-            pcs->ppaper_type_table = 0;
-        }
+        goto cleanup;
     }
     return 0;
+
+cleanup:
+    if (pcs->ppaper_type_table) {
+        gs_free_object(pcs->memory, pcs->ppaper_type_table, "Paper Table");
+        pcs->ppaper_type_table = 0;
+    }
+    return code;
 }
 
 const pcl_init_t pcpage_init = { pcpage_do_registration, pcpage_do_reset, 0 };
