@@ -616,7 +616,9 @@ pcl_end_page(pcl_state_t * pcs, pcl_print_condition_t condition)
     /* finish up graphics mode in case we finished the page in the
        middle of a raster stream */
     if (pcs->raster_state.graphics_mode)
-        pcl_end_graphics_mode(pcs);
+        code = pcl_end_graphics_mode(pcs);
+    if (code < 0)
+        return code;
 
     /* If there's an overlay macro, execute it now. */
     if (pcs->overlay_enabled) {
@@ -643,6 +645,8 @@ pcl_end_page(pcl_state_t * pcs, pcl_print_condition_t condition)
 
     if (pcs->end_page == pcl_end_page_top)
         code = gs_erasepage(pcs->pgs);
+    if (code < 0)
+        return code;
 
     pcs->page_marked = false;
 
@@ -658,7 +662,7 @@ pcl_end_page(pcl_state_t * pcs, pcl_print_condition_t condition)
     } else {
         pcs->back_side = false;
     }
-    put_param1_bool(pcs,"FirstSide", !pcs->back_side);
+    code = put_param1_bool(pcs,"FirstSide", !pcs->back_side);
     update_xfm_state(pcs, 0);
 
     pcl_continue_underline(pcs);
@@ -724,7 +728,9 @@ set_paper_source(pcl_args_t * pargs, pcl_state_t * pcs)
     /* Do not change the page side if the wanted paper source is the same as the actual one */
     if (pcs->paper_source != i) {
         pcs->back_side = false;
-        put_param1_bool(pcs, "FirstSide", !pcs->back_side);
+        code = put_param1_bool(pcs, "FirstSide", !pcs->back_side);
+        if (code < 0)
+            return code;
     }
     pcs->paper_source = i;
     /* Note: not all printers support all possible values. */

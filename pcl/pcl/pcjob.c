@@ -51,7 +51,9 @@ pcl_do_printer_reset(pcl_state_t * pcs)
             return code;
         /* if duplex start on the front side of the paper */
         if (pcs->duplex)
-            put_param1_bool(pcs, "FirstSide", true);
+            code = put_param1_bool(pcs, "FirstSide", true);
+        if (code < 0)
+            return code;
     }
     /* unload fonts */
 
@@ -161,7 +163,7 @@ static int                      /* ESC & a <side_enum> G */
 pcl_duplex_page_side_select(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint i = uint_arg(pargs);
-    int code;
+    int code = 0;
     /* save : because pcl_end_page() messes with it,
        or not if it was an unmarked page, so do it yourself */
     bool back_side = pcs->back_side;
@@ -194,9 +196,9 @@ pcl_duplex_page_side_select(pcl_args_t * pargs, pcl_state_t * pcs)
                 pcs->back_side = false; /* default front */
                 break;
         }
-        put_param1_bool(pcs, "FirstSide", !pcs->back_side);
+        code = put_param1_bool(pcs, "FirstSide", !pcs->back_side);
     }
-    return 0;
+    return code;
 }
 
 static int                      /* ESC & l 1 T */
