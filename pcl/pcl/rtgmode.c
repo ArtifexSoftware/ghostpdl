@@ -227,7 +227,8 @@ pcl_enter_graphics_mode(pcl_state_t * pcs, pcl_gmode_entry_t mode)
     /* translate the origin of the forward transformation */
     if (((int)mode & 0x1) != 0)
         gmargin_cp = cur_pt.x;
-    gs_matrix_translate(&rst2lp, gmargin_cp, cur_pt.y, &rst2lp);
+    code = gs_matrix_translate(&rst2lp, gmargin_cp, cur_pt.y, &rst2lp);
+    if (code < 0) return code;
     prstate->gmargin_cp = (coord) gmargin_cp;
 
     /* isotropic scaling with missing parameter is based on clipped raster dimensions */
@@ -324,11 +325,15 @@ pcl_enter_graphics_mode(pcl_state_t * pcs, pcl_gmode_entry_t mode)
      * state, perform a gsave, then place what may be a patterned color space
      * in the new graphic state.
      */
-    pcl_set_graphics_state(pcs);
-    pcl_set_drawing_color(pcs, pcl_pattern_raster_cspace, 0, true);
-    pcl_gsave(pcs);
-    pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->current_pattern_id,
+    code = pcl_set_graphics_state(pcs);
+    if (code < 0) return code;
+    code = pcl_set_drawing_color(pcs, pcl_pattern_raster_cspace, 0, true);
+    if (code < 0) return code;
+    code = pcl_gsave(pcs);
+    if (code < 0) return code;
+    code = pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->current_pattern_id,
                           true);
+    if (code < 0) return code;
     gs_setmatrix(pcs->pgs, &rst2dev);
 
     /* translate the origin of the forward transformation */
@@ -354,7 +359,7 @@ pcl_enter_graphics_mode(pcl_state_t * pcs, pcl_gmode_entry_t mode)
     if ((code = pcl_start_raster(src_wid, src_hgt, pcs)) >= 0)
         prstate->graphics_mode = true;
     else
-        pcl_grestore(pcs);
+        code = pcl_grestore(pcs);
     return code;
 }
 
@@ -626,6 +631,7 @@ start_graphics_mode(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     pcl_gmode_entry_t mode = (pcl_gmode_entry_t) uint_arg(pargs);
     pcl_raster_state_t *prstate = &(pcs->raster_state);
+    int code = 0;
 
     if (mode > SCALE_CUR_PTR)
         mode = NO_SCALE_LEFT_MARG;
@@ -636,10 +642,10 @@ start_graphics_mode(pcl_args_t * pargs, pcl_state_t * pcs)
         prstate->gmargin_cp = 0;
         if (prstate->pres_mode_3 && (r90 != 0))
             prstate->gmargin_cp += inch2coord(1.0 / 6.0);
-        pcl_enter_graphics_mode(pcs, mode);
+        code = pcl_enter_graphics_mode(pcs, mode);
         prstate->entry_mode = mode;
     }
-    return 0;
+    return code;
 }
 
 /*
