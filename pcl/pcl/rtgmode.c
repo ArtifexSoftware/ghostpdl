@@ -365,6 +365,7 @@ pcl_enter_graphics_mode(pcl_state_t * pcs, pcl_gmode_entry_t mode)
 int
 pcl_end_graphics_mode(pcl_state_t * pcs)
 {
+    int code = 0;
     gs_point cur_pt;
     gs_matrix dev2pd;
     /* close the raster; exit graphics mode */
@@ -373,7 +374,8 @@ pcl_end_graphics_mode(pcl_state_t * pcs)
 
     /* get the new current point; then restore the graphic state */
     gs_transform(pcs->pgs, 0.0, 0.0, &cur_pt);
-    pcl_grestore(pcs);
+    code = pcl_grestore(pcs);
+    if (code < 0) return code;
 
     /* transform the new point back to "pseudo print direction" space */
     pcl_invert_mtx(&(pcs->xfm_state.pd2dev_mtx), &dev2pd);
@@ -534,6 +536,7 @@ static int
 set_compression_method(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint mode = uint_arg(pargs);
+    int code = 0;
 
     if (mode < count_of(pcl_decomp_proc)) {
         pcs->raster_state.compression_mode = mode;
@@ -545,15 +548,16 @@ set_compression_method(pcl_args_t * pargs, pcl_state_t * pcs)
                 coord x = pcs->cap.x;
                 coord y = pcs->cap.y;
 
-                pcl_end_graphics_mode(pcs);
+                if ((code = pcl_end_graphics_mode(pcs)) < 0)
+                    return code;
                 pcs->cap.x = x;
                 pcs->cap.y = y;
-                pcl_enter_graphics_mode(pcs, pcs->raster_state.entry_mode);
+                code = pcl_enter_graphics_mode(pcs, pcs->raster_state.entry_mode);
             }
         }
     } else
         return gs_throw1(e_Range, "unsupported mode %d\n", mode);
-    return 0;
+    return code;
 }
 
 /*
@@ -647,7 +651,7 @@ static int
 end_graphics_mode_B(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     if (pcs->raster_state.graphics_mode)
-        pcl_end_graphics_mode(pcs);
+        return pcl_end_graphics_mode(pcs);
     return 0;
 }
 
@@ -655,16 +659,20 @@ end_graphics_mode_B(pcl_args_t * pargs, pcl_state_t * pcs)
  * ESC * r # C
  *
  * End raster graphics mode - new style. This resets the compression mode and
- * the left grahics margin, in addition to ending graphics mode.
+ * the left graphics margin, in addition to ending graphics mode.
  */
 static int
 end_graphics_mode_C(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    if (pcs->raster_state.graphics_mode)
-        pcl_end_graphics_mode(pcs);
+	int code = 0;
+
+    if (pcs->raster_state.graphics_mode) {
+        if ((code = pcl_end_graphics_mode(pcs)) < 0)
+            return code;
+    }
     pcs->raster_state.gmargin_cp = 0L;
     pcs->raster_state.compression_mode = 0;
-    return 0;
+    return code;
 }
 
 /*

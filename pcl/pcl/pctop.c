@@ -472,7 +472,7 @@ pcl_impl_dnit_job(pl_interp_implementation_t * impl       /* interp instance to 
     pcl_state_t *pcs = &pcli->pcs;
 
     if (pcs->raster_state.graphics_mode)
-        pcl_end_graphics_mode(pcs);
+        return pcl_end_graphics_mode(pcs);
     return 0;
 }
 
