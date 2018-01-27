@@ -194,9 +194,11 @@ pxPassthrough_init(px_state_t * pxs)
     return 0;
 }
 
-static void
+static int
 pxPassthrough_setpagestate(px_state_t * pxs)
 {
+	int code = 0;
+
     /* by definition we are in "snippet mode" if pxl has dirtied
        the page */
     if (pxs->have_page) {
@@ -207,7 +209,7 @@ pxPassthrough_setpagestate(px_state_t * pxs)
         /* set the page size and orientation.  Really just sets
            the page tranformation does not feed a page (see noop
            above) */
-        pcl_new_logical_page_for_passthrough(global_pcs,
+        code = pcl_new_logical_page_for_passthrough(global_pcs,
                                              (int)pxs->orientation,
                                              &pxs->media_dims);
 
@@ -223,12 +225,13 @@ pxPassthrough_setpagestate(px_state_t * pxs)
         /* clean the pcl page if it was marked by a previous snippet
            and set to full page mode. */
         global_pcs->page_marked = 0;
-        pcl_new_logical_page_for_passthrough(global_pcs,
+        code = pcl_new_logical_page_for_passthrough(global_pcs,
                                              (int)pxs->orientation,
                                              &pxs->media_dims);
         if (gs_debug_c('i'))
             dmprintf(pxs->memory, "passthrough: full page mode\n");
     }
+    return code;
 }
 
 const byte apxPassthrough[] = { 0, 0 };
@@ -263,7 +266,9 @@ pxPassthrough(px_args_t * par, px_state_t * pxs)
 
             /* this is the first passthrough on this page */
             if (global_pass_first) {
-                pxPassthrough_setpagestate(pxs);
+                code = pxPassthrough_setpagestate(pxs);
+                if (code < 0)
+                    return code;
                 pxPassthrough_pcl_state_nonpage_exceptions(pxs);
                 global_pass_first = false;
             } else {
@@ -386,7 +391,9 @@ pxpcl_selectfont(px_args_t * par, px_state_t * pxs)
 
     /* this is the first passthrough on this page */
     if (global_pass_first) {
-        pxPassthrough_setpagestate(pxs);
+        code = pxPassthrough_setpagestate(pxs);
+        if (code < 0)
+            return code;
         pxPassthrough_pcl_state_nonpage_exceptions(pxs);
         global_pass_first = false;
     } else {
