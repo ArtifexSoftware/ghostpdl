@@ -119,14 +119,16 @@ put_param1_float_array(pcl_state_t * pcs, gs_param_name pkey, float pf[2]
 {
     gs_c_param_list list;
     gs_param_float_array pf_array;
+    int code = 0;
 
     pf_array.data = pf;
     pf_array.size = 2;
     pf_array.persistent = false;
 
     gs_c_param_list_write(&list, pcs->memory);
-    /* code = */ param_write_float_array((gs_param_list *) & list, pkey,
+    code = param_write_float_array((gs_param_list *) & list, pkey,
                                          &pf_array);
+    if (code < 0) return code;
     return end_param1(&list, pcs);
 }
 

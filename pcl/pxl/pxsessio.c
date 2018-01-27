@@ -471,7 +471,8 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
         fv[0] = pxs->media_dims.x;
         fv[1] = pxs->media_dims.y;
         fa.size = 2;
-        param_write_float_array(plist, ".MediaSize", &fa);
+        code = param_write_float_array(plist, ".MediaSize", &fa);
+        if (code < 0) return code;
         ecode = px_put1(dev, &list, ecode);
         gs_c_param_list_write(&list, mem);
 
