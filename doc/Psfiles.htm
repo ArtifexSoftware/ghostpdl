@@ -49,68 +49,110 @@ overview</a>.
 
 <h2><a name="General"></a>Generally used system files</h2>
 
-<p>
-These files are found in the <code>lib</code> subdirectory of
-the Ghostscript source distribution.
-
 <dl>
 <dt><tt>gs_*_e.ps</tt>
 <dd><p>
 These files define the Encodings known to Ghostscript.  All of
 them except <code>gs_std_e.ps</code> and <code>gs_il1_e.ps</code>
-are loaded only if referred to.
+are loaded only if referred to. However some are additionally built into gscencs.c.
 
 <dl>
 
 <dt>
 PostScript Encodings:
+<p>
 <dd>
-<a href="../lib/gs_ce_e.ps"><tt>gs_ce_e.ps</tt></a>,
+These files are found in the <code>lib</code> subdirectory of
+the Ghostscript source distribution.
+
+<dd>
+<a href="../lib/gs_ce_e.ps"><tt>gs_ce_e.ps</tt></a>
+</dd></p>
+
+<p>
+<dd>These files are found in the <code>Resource/Init</code> subdirectory of
+the Ghostscript source distribution.
+
+<dd>
 <a href="../Resource/Init/gs_il1_e.ps"><tt>gs_il1_e.ps</tt></a>,
 <a href="../Resource/Init/gs_std_e.ps"><tt>gs_std_e.ps</tt></a>,
 <a href="../Resource/Init/gs_sym_e.ps"><tt>gs_sym_e.ps</tt></a>.
+</dd></p>
 
+<p>
+<p>
 <dt>
-PDF Encodings:
+<dd></dd>PDF Encodings:
+<p>
+<dd>
+These files are found in the <code>Resource/Init</code> subdirectory of
+the Ghostscript source distribution.
+
 <dd>
 <a href="../Resource/Init/gs_mex_e.ps"><tt>gs_mex_e.ps</tt></a>,
 <a href="../Resource/Init/gs_mro_e.ps"><tt>gs_mro_e.ps</tt></a>,
 <a href="../Resource/Init/gs_pdf_e.ps"><tt>gs_pdf_e.ps</tt></a>,
 <a href="../Resource/Init/gs_wan_e.ps"><tt>gs_wan_e.ps</tt></a>.
+</dd></p>
 
+<p>
 <dt>
 Non-standard Encodings:
+<p>
+<dd>
+These files are found in the <code>Resource/Init</code> subdirectory of
+the Ghostscript source distribution.
+
 <dd>
 <a href="../Resource/Init/gs_dbt_e.ps"><tt>gs_dbt_e.ps</tt></a>,
+</dd></p>
+
+<p>
+<dd>
+These files are found in the <code>lib</code> subdirectory of
+the Ghostscript source distribution.
+
+<dd>
 <a href="../lib/gs_il2_e.ps"><tt>gs_il2_e.ps</tt></a>,
 <a href="../lib/gs_ksb_e.ps"><tt>gs_ksb_e.ps</tt></a>,
+<a href="../lib/gs_lgo_e.ps"><tt>gs_lgo_e.ps</tt></a>,
+<a href="../lib/gs_lgx_e.ps"><tt>gs_lgx_e.ps</tt></a>,
 <a href="../lib/gs_wl1_e.ps"><tt>gs_wl1_e.ps</tt></a>,
 <a href="../lib/gs_wl2_e.ps"><tt>gs_wl2_e.ps</tt></a>,
 <a href="../lib/gs_wl5_e.ps"><tt>gs_wl5_e.ps</tt></a>.
+</dd></p>
 
 <dt>
 Pseudo-encodings:
 <dd>
-<a href="../Resource/Init/gs_css_e.ps"><tt>gs_css_e.ps</tt></a>,
+<p>
+<dd>
+These files are found in the <code>Resource/Init</code> subdirectory of
+the Ghostscript source distribution.
+<dd>
+<a href="../Resource/Init/gs_mgl_e.ps"><tt>gs_mgl_e.ps</tt></a>.
+</dd>
+
+<p>
+<dd>
+These files are found in the <code>lib</code> subdirectory of
+the Ghostscript source distribution.
+<dd>
 <a href="../lib/gs_lgo_e.ps"><tt>gs_lgo_e.ps</tt></a>,
 <a href="../lib/gs_lgx_e.ps"><tt>gs_lgx_e.ps</tt></a>,
-<a href="../Resource/Init/gs_mgl_e.ps"><tt>gs_mgl_e.ps</tt></a>.
+</dd>
 
 </dl>
 </dl>
+
+These files are found in the <code>Resource/Init</code> subdirectory of
+the Ghostscript source distribution.
 
 <dl>
 <dt><a href="../Resource/Init/gs_btokn.ps"><tt>gs_btokn.ps</tt></a>
 <dd><code>gs_init.ps</code> reads this in if the <code>btoken</code>
 feature is included in the configuration.  It provides support for binary
 tokens.
-</dl>
-
-<dl>
-<dt><a href="../lib/gs_ccfnt.ps"><tt>gs_ccfnt.ps</tt></a>
-<dd><code>gs_init.ps</code> reads this in if the <code>ccfonts</code>
-feature is included in the configuration.  It provides support for compiled
-fonts.
 </dl>
 
 <dl>
@@ -225,18 +267,6 @@ procedures and miscellaneous initialization for the Level 2 functions.
 </dl>
 
 <dl>
-<dt><a href="../lib/gs_resst.ps"><tt>gs_resst.ps</tt></a>
-<dd>A procset which allow to put resource files into static data segment
-of Ghostscript executable.
-</dl>
-
-<dl>
-<dt><a href="../lib/gs_stres.ps"><tt>gs_stres.ps</tt></a>
-<dd>A map for generating the static data segment with including
-resource files, and for retrieving resources from there.          
-</dl>
-
-<dl>
 <dt><a href="../Resource/Init/gs_res.ps"><tt>gs_res.ps</tt></a>
 <dd><code>gs_init.ps</code> reads this in if the Level 2 resource
 machinery is included.  Currently, this is the case for all Level 2
@@ -288,7 +318,7 @@ includes Type 1 font capability (which it normally does).
 <h2><a name="Config"></a>Configuration files</h2>
 
 <p>
-These files are found in the <code>lib</code> subdirectory of
+These files are found in the <code>Resource/Init</code> subdirectory of
 the Ghostscript source distribution. Users are allowed to modify them
 to configure Ghostscript.
 
@@ -323,13 +353,13 @@ a TrueType font for a CID font.
 <h2><a name="Obscure"></a>More obscure system files</h2>
 
 <p>
-These files are found in the <code>lib</code> subdirectory of
+Unless otherwise stated, these files are found in the <code>Resource/Init</code> subdirectory of
 the Ghostscript source distribution.
 
 <dl>
 <dt><a href="../Resource/Init/gs_agl.ps"><tt>gs_agl.ps</tt></a>
 <dd>Contains the mapping from Adobe glyph names to Unicode values, used to
-support TrueType fonts.
+support TrueType fonts and disk-based Type 1 fonts.
 </dl>
 
 <dl>
@@ -342,7 +372,7 @@ test suite.
 <dl>
 <dt><a href="../lib/gs_cmdl.ps"><tt>gs_cmdl.ps</tt></a>
 <dd>This file is not used yet.  Eventually it will replace C code that
-parses the Ghostscript command line.
+parses the Ghostscript command line. This file is stored in the <code>lib</code> subdirectory.
 </dl>
 
 <dl>
@@ -359,14 +389,9 @@ experimentally determined.
 </dl>
 
 <dl>
-<dt><a href="../lib/gs_fform.ps"><tt>gs_fform.ps</tt></a>
-<dd>A usable but imperfect PostScript implementation of Form caching.
-</dl>
-
-<dl>
 <dt><a href="../lib/gs_kanji.ps"><tt>gs_kanji.ps</tt></a>
 <dd>This file provides support for the Wadalab free Kanji font.  It is not
-included automatically in any configuration.
+included automatically in any configuration. This file is stored in the <code>lib</code> subdirectory.
 </dl>
 
 <dl>
@@ -377,18 +402,13 @@ included automatically in any configuration.
 </dl>
 
 <dl>
-<dt><a href="../lib/gs_rdlin.ps"><tt>gs_rdlin.ps</tt></a>
-<dd>A tiny patch for systems with built-in readline support.
-</dl>
-
-<dl>
 <dt><a href="../lib/ht_ccsto.ps"><tt>ht_ccsto.ps</tt></a>
-<dd>A default stochastic CMYK halftone.  This file is in the public domain.
+<dd>A default stochastic CMYK halftone.  This file is in the public domain.  This file is stored in the <code>lib</code> subdirectory.
 </dl>
 
 <dl>
 <dt><a href="../lib/stcolor.ps"><tt>stcolor.ps</tt></a>
-<dd>Configure the (Epson) <code>stcolor</code> driver
+<dd>Configure the (Epson) <code>stcolor</code> driver. This file is stored in the <code>lib</code> subdirectory.
 </dl>
 
 <hr>
@@ -396,7 +416,7 @@ included automatically in any configuration.
 <h2><a name="PDF_specific"></a>PDF-specific system files</h2>
 
 <p>
-These files are found in the <code>lib</code> subdirectory of
+These files are found in the <code>Resource/Init</code> subdirectory of
 the Ghostscript source distribution.
 
 <dl>
@@ -441,30 +461,16 @@ the Ghostscript source distribution.
 </dl>
 
 <dl>
-<dt><a href="../Resource/Init/pdf_cslayer.ps"><tt>pdf_cslayer.ps</tt></a>
-<dd>Layer data extraction utilities of Illustrator files.
-</dl>
-
-<dl>
 <dt><a href="../Resource/Init/gs_icc.ps"><tt>gs_icc.ps</tt></a> <dd>Support for
 ICC color profiles. These are not a standard PostScript feature, but
 are used in the PDF interpreter, as ICC profiles may be embedded in
 PDF files.
 </dl>
 
-<dl>
-<dt><a href="../lib/opdfread.ps"><tt>opdfread.ps</tt></a>
-<dd>Postscript procset for reading an ordered PDF file. This
-is used by the <code>ps2ps</code>, <code>ps2ps2</code> scripts.
 <p>
-It is now deprecated, and the contents are included in a ps2write
-header file.
-</dl>
-
-<dl>
-<dt><a href="../lib/EndOfTask.ps"><tt>EndOfTask.ps</tt></a>
-<dd>An auxiliary file used by the <code>ps2write</code> script.
-</dl>
+These files are found in the <code>lib</code> subdirectory of
+the Ghostscript source distribution. These files are templates and should not be used
+without modification.
 
 <dl>
 <dt><a href="../lib/PDFX_def.ps"><tt>PDFX_def.ps</tt></a>
@@ -483,7 +489,7 @@ with the <code>pdfwrite</code> device.
 <h2><a name="DPS_specific"></a>Display PostScript-specific system files</h2>
 
 <p>
-These files are found in the <code>lib</code> subdirectory of
+These files are found in the <code>Resource/Init</code> subdirectory of
 the Ghostscript source distribution.
 
 <dl>
@@ -516,16 +522,6 @@ the Ghostscript source distribution.
 <dl>
 <dt><a href="../examples/annots.pdf"><tt>annots.pdf</tt></a>
 <dd>A sample file with a wide variety of PDF "annotations".
-</dl>
-
-<dl>
-<dt><a href="../examples/cheq.ps"><tt>cheq.ps</tt></a>
-<dd>A chessboard "font" used by chess.ps (obtained from Adobe).
-</dl>
-
-<dl>
-<dt><a href="../examples/chess.ps"><tt>chess.ps</tt></a>
-<dd>A black-and-white chessboard.
 </dl>
 
 <dl>
@@ -570,6 +566,16 @@ slowly.)
 </dl>
 
 <dl>
+<dt><a href="../examples/text_graph_image_cmyk_rgb.pdf"><tt>text_graph_image_cmyk_rgb.pdf</tt></a>
+<dd>A simple PDF containing text and graphics in both RGB and CMYK spaces.
+</dl>
+
+<dl>
+<dt><a href="../examples/text_graphic_image.pdf"><tt>text_graphic_image.pdf</tt></a>
+<dd>A simple PDF containing text and graphics in RGB space.
+</dl>
+
+<dl>
 <dt><a href="../examples/tiger.eps"><tt>tiger.eps</tt></a>
 <dd>A dramatic colored picture of a tiger's head.
 </dl>
@@ -597,7 +603,7 @@ quality of text rendering.
 
 <p>
 For more information on these utility programs, see the comments at the
-beginnings of the files.  The ones marked (*) have batch files or shell
+start of each file .  The ones marked (*) have batch files or shell
 scripts of the same name (like <code>bdftops</code> and
 <code>bdftops.bat</code>) to invoke them conveniently.
 
@@ -609,17 +615,6 @@ the Ghostscript source distribution.
 <dt><a href="../lib/align.ps"><tt>align.ps</tt></a>
 <dd>A test page for determining the proper margin and offset parameters for
 your printer.
-</dl>
-
-<dl>
-<dt><a href="../lib/bdftops.ps"><tt>bdftops.ps</tt></a> *
-<dd>A utility for converting BDF fonts to outline form: see the <a
-href="Fonts.htm">documentation on fonts</a>.
-</dl>
-
-<dl>
-<dt><a href="../lib/bench.ps"><tt>bench.ps</tt></a>
-<dd>A file useful for running benchmarks.
 </dl>
 
 <dl>
@@ -643,13 +638,6 @@ substituting a TrueType font for an Adobe font.
 <dl>
 <dt><a href="../lib/docie.ps"><tt>docie.ps</tt></a>
 <dd>An emulation of the CIE color mapping algorithms.
-</dl>
-
-<dl>
-<dt><a href="../lib/errpage.ps"><tt>errpage.ps</tt></a>
-<dd>A file that you can put in front of your own files to make Ghostscript
-(or a PostScript printer) produce an informative error page if something
-goes wrong during the processing of your file(s).
 </dl>
 
 <dl>
@@ -724,13 +712,6 @@ original <code>FontMatrix</code> involves skewing or rotation.
 </dl>
 
 <dl>
-<dt><a href="../lib/ps2ascii.ps"><tt>ps2ascii.ps</tt></a> *
-<dd>A utility for extracting the ASCII text from PostScript source files.
-It redefines many operators.  For more information, see the comments in the
-file.
-</dl>
-
-<dl>
 <dt><a href="../lib/ps2epsi.ps"><tt>ps2epsi.ps</tt></a> *
 <dd>A utility for converting an arbitrary PostScript file into EPSI form.
 </dl>
@@ -740,13 +721,6 @@ file.
 <dd>A utility for converting files produced by Macromedia's
 <code>Rollup</code> program to a Type 0 form directly usable by
 Ghostscript.
-</dl>
-
-<dl>
-<dt><a href="../lib/showpage.ps"><tt>showpage.ps</tt></a>
-<dd>A file containing just the word "<code>showpage</code>".  (The
-<code>-c</code> switch now makes this unnecessary; this file exists for
-backward compatibility.)
 </dl>
 
 <dl>
@@ -796,11 +770,6 @@ information.
 <dd>An extended utility for displaying files created by -sDEVICE=bitrgb.
 </dl>
 
-<dl>
-<dt><a href="../lib/waterfal.ps"><tt>waterfal.ps</tt></a>
-<dd>A utility to print a "waterfall" of fonts at different sizes.
-</dl>
-
 <hr>
 
 <h2><a name="Development_tools"></a>Development tools</h2>
@@ -813,11 +782,6 @@ the Ghostscript source distribution.
 <dt><a href="../lib/acctest.ps"><tt>acctest.ps</tt></a>
 <dd>A utility that checks whether the interpreter enforces access
 restrictions.
-</dl>
-
-<dl>
-<dt><a href="../lib/image-qa.ps"><tt>image-qa.ps</tt></a>
-<dd>A comprehensive test of the image display operators.
 </dl>
 
 <dl>
@@ -848,12 +812,6 @@ restrictions.
 <dl>
 <dt><a href="../lib/viewps2a.ps"><tt>viewps2a.ps</tt></a>
 <dd>A utility for displaying the output of <code>ps2ascii.ps</code>.
-</dl>
-
-<dl>
-<dt><a href="../lib/wftopfa.ps"><tt>wftopfa.ps</tt></a>
-<dd>Convert a Wadalab (Japanese) base font to <code>.PFA</code> (or
-<code>.PFB</code>) format.
 </dl>
 
 <dl>
@@ -897,7 +855,7 @@ when passing files with -dJOBSERVER.
 <hr>
 
 <p>
-<small>Copyright &copy; 2000-2006 Artifex Software, Inc.  All rights reserved.</small>
+<small>Copyright &copy; 2000-2018 Artifex Software, Inc.  All rights reserved.</small>
 
 <p>
 This software is provided AS-IS with no warranty, either express or
