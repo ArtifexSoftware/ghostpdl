@@ -539,7 +539,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle, gcmmhprofile_t lcms_deshandle,
     /* Check for case of request for a transfrom from a device link profile
        in that case, the destination profile is NULL */
 
-   /* First handle all the source stuff */
+    /* First handle all the source stuff */
     src_color_space  = cmsGetColorSpace(ctx, lcms_srchandle);
     lcms_src_color_space = _cmsLCMScolorSpace(ctx, src_color_space);
 
