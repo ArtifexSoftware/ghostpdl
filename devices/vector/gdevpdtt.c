@@ -50,12 +50,6 @@
 /* GC descriptor */
 private_st_pdf_text_enum();
 
-/* A static data for pdf_reserve_char_code_in_pdfont.
-   No, this isn't a reenterability error,
-   because all threads will set same value,
-   which actually depends on static data only. */
-static gs_glyph standard_glyph_code_for_notdef = GS_NO_GLYPH;
-
 /* Define the auxiliary procedures for text processing. */
 static int
 pdf_text_resync(gs_text_enum_t *pte, const gs_text_enum_t *pfrom)
@@ -1741,13 +1735,10 @@ pdf_reserve_char_code_in_pdfont(pdf_font_resource_t *pdfont, pdf_char_glyph_pair
     if (pdfont->u.simple.preferred_encoding_index != -1) {
         const ushort *enc = gs_c_known_encodings[pdfont->u.simple.preferred_encoding_index];
 
-        if (standard_glyph_code_for_notdef == GS_NO_GLYPH)
-            standard_glyph_code_for_notdef =
-                    gs_c_name_glyph((const byte *)".notdef", 7) - gs_c_min_std_encoding_glyph;
         for (ch = *last_reserved_char + 1; ch < 256; ch++) {
             pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
 
-            if (pet->glyph == GS_NO_GLYPH && enc[ch] == standard_glyph_code_for_notdef) {
+            if (pet->glyph == GS_NO_GLYPH && enc[ch] == pdfont->u.simple.standard_glyph_code_for_notdef) {
                 *last_reserved_char = ch;
                 break;
             }

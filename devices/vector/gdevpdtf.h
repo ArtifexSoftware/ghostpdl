@@ -271,6 +271,7 @@ struct pdf_font_resource_s {
             int last_reserved_char; /* Except for synthesised Type 3,
                                            which stores such data in LastChar */
 
+            gs_glyph standard_glyph_code_for_notdef;
             union {
 
                 struct /*type1*/ {

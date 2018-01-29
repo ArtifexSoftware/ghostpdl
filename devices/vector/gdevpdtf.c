@@ -34,6 +34,8 @@
 #include "gdevpdti.h"
 #include "whitelst.h"		/* Checks whether protected fonta cna be embedded */
 
+#include "gscencs.h"
+
 /* GC descriptors */
 public_st_pdf_font_resource();
 private_st_pdf_encoding1();
@@ -409,6 +411,7 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     pfres->cmap_ToUnicode = NULL;
     pfres->mark_glyph = 0;
     pfres->mark_glyph_data = 0;
+    pfres->u.simple.standard_glyph_code_for_notdef = gs_c_name_glyph((const byte *)".notdef", 7) - gs_c_min_std_encoding_glyph;
     *ppfres = pfres;
     return 0;
  fail:
