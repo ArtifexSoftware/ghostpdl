@@ -539,7 +539,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
         ss->params.BitsPerComponentIn = ss->params.BitsPerComponentOut = 8;
 
         ss->params.spp_interp = ss->params.spp_decode = Colors;
-        ss->params.TopMargin = ss->params.LeftMarginIn = ss->params.LeftMarginOut = 0;
+        ss->params.TopMarginIn = ss->params.TopMarginOut = ss->params.LeftMarginIn = ss->params.LeftMarginOut = 0;
         ss->params.src_y_offset = 0;
         ss->params.early_cm = true;
         ss->params.MaxValueIn = ss->params.MaxValueOut = (int)pow(2, pdip->Depth);

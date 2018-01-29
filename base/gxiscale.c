@@ -314,7 +314,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     iss.PatchWidthIn = penum->rrect.w;
     iss.PatchHeightIn = penum->rrect.h;
     iss.LeftMarginIn = penum->rrect.x - penum->rect.x;
-    iss.TopMargin = penum->rrect.y - penum->rect.y;
+    iss.TopMarginIn = penum->rrect.y - penum->rect.y;
     /* 'rrect' has been calculated to be the smallest rectangle of source pixels that we actually
      * need. This includes the extra 'support' pixels required for scaling. Accordingly, we need
      * to calculate the destination patch so that it's as large as it can be without requiring
@@ -360,9 +360,14 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         iss.EntireHeightOut = fixed2int_pixround(dh);
         iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_x0 - penum->rect.x) *
                                                                dw / penum->Width));
+        iss.TopMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_y0 - penum->rect.y) *
+                                                              dh / penum->Height));
         iss.PatchWidthOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_x1 - penum->rect.x) *
                                                                dw / penum->Width))
                           - iss.LeftMarginOut;
+        iss.PatchHeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_y1 - penum->rrect.y) *
+                                                                dh / penum->Height))
+                           - iss.TopMarginOut;
     } else {
         fixed dw = any_abs(penum->dst_width);
         fixed dh = any_abs(penum->dst_height);
@@ -378,9 +383,14 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         iss.EntireHeightOut = fixed2int_pixround(dw);
         iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_x0 - penum->rect.x)*
                                                                dh / penum->Width));
+        iss.TopMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_y0 - penum->rect.y) *
+                                                              dw / penum->Height));
         iss.PatchWidthOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_x1 - penum->rect.x) *
                                                                dh / penum->Width))
                           - iss.LeftMarginOut;
+        iss.PatchHeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_y1 - penum->rrect.y) *
+                                                                dw / penum->Height))
+                           - iss.TopMarginOut;
     }
     iss.PatchWidthOut = any_abs(iss.PatchWidthOut);
     if (iss.LeftMarginOut + iss.PatchWidthOut >= iss.WidthOut) {

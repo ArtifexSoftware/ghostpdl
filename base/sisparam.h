@@ -142,11 +142,12 @@ typedef struct stream_image_scale_params_s {
     int EntireHeightOut;	/* Height of entire output image. */
     int WidthIn, HeightIn;	/* The sizes for which we get data > 0 */
     int WidthOut, HeightOut;	/* > 0 */
-    int PatchWidthIn, PatchHeightIn;	/* The sizes we need to render > 0 */
-    int PatchWidthOut;		/* The width we need to render > 0 */
+    int PatchWidthIn, PatchHeightIn;	/* The sizes we need to render > 0 (source) */
+    int PatchWidthOut, PatchHeightOut;	/* The sizes we need to render > 0 (destination) */
     int LeftMarginIn;
     int LeftMarginOut;
-    int TopMargin;
+    int TopMarginIn;
+    int TopMarginOut;
     int Active;
     gx_dda_fixed_point scale_dda;	/* used to scale limited interpolation up to actual size */
 } stream_image_scale_params_t;

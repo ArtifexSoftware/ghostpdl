@@ -1072,8 +1072,8 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
     /* Check whether we need to deliver any output. */
 
   top:
-    ss->params.Active = (ss->src_y >= ss->params.TopMargin &&
-                         ss->src_y <= ss->params.TopMargin + ss->params.PatchHeightIn);
+    ss->params.Active = (ss->src_y >= ss->params.TopMarginIn &&
+                         ss->src_y <= ss->params.TopMarginIn + ss->params.PatchHeightIn);
 
     while (ss->src_y > ss->dst_last_index) {  /* We have enough horizontally scaled temporary rows */
         /* to generate a vertically scaled output row. */

@@ -285,8 +285,8 @@ s_ISpecialDownScale_process(stream_state * st, stream_cursor_read * pr,
     /* Check whether we need to deliver any output. */
 
 top:
-    ss->params.Active = (ss->src_y >= ss->params.TopMargin &&
-                         ss->src_y <= ss->params.TopMargin + ss->params.PatchHeightIn);
+    ss->params.Active = (ss->src_y >= ss->params.TopMarginIn &&
+                         ss->src_y <= ss->params.TopMarginIn + ss->params.PatchHeightIn);
 
     if (cur_y > ss->dst_y) {
         /* Deliver some or all of the current scaled row. */
