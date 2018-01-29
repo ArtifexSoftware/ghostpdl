@@ -1736,7 +1736,7 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
     /* Check if device has a profile for this slot. Note that we already
        decremented for any profile that we might be replacing
        in gsicc_init_device_profile_struct */
-    if (file_name != '\0') {
+    if (file_name != NULL) {
         /* Silent on failure if this is an output intent profile that
          * could not be found.  Bug 695042.  Multi-threaded rendering
          * set up will try to find the file for the profile during the set
