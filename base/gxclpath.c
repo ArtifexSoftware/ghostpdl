@@ -1377,7 +1377,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     /* Information about the last emitted operation: */
     int open = 0;		/* -1 if last was moveto, 1 if line/curveto, */
                                 /* 0 if newpath/closepath */
-    struct { fixed vs[6]; } prev;
+    struct { fixed vs[6]; } prev = { { 0 } };
 
     first.x = first.y = out.x = out.y = start.x = start.y = 0; /* Quiet gcc warning. */
     if_debug4m('p', cldev->memory, "[p]initial (%g,%g), clip [%g..%g)\n",

@@ -584,27 +584,6 @@ clist_init(gx_device * dev)
     return code;
 }
 
-/* (Re)init open band files for output (set block size, etc). */
-static int      /* ret 0 ok, -ve error code */
-clist_reinit_output_file(gx_device *dev)
-{    gx_device_clist_writer * const cdev =
-        &((gx_device_clist *)dev)->writer;
-    int code = 0;
-
-    /* bfile needs to guarantee cmd_blocks for: 1 band range, nbands */
-    /*  & terminating entry */
-    int b_block = sizeof(cmd_block) * (cdev->nbands + 2);
-
-    /* cfile needs to guarantee one writer buffer */
-    /*  + one end_clip cmd (if during image's clip path setup) */
-    /*  + an end_image cmd for each band (if during image) */
-    /*  + end_cmds for each band and one band range */
-    int c_block =
-        cdev->cend - cdev->cbuf + 2 + cdev->nbands * 2 + (cdev->nbands + 1);
-
-    return code;
-}
-
 /* Write out the current parameters that must be at the head of each page */
 /* if async rendering is in effect */
 static int
@@ -654,8 +633,7 @@ clist_open_output_file(gx_device *dev)
                             true)) < 0 ||
         (code = cdev->page_info.io_procs->fopen(cdev->page_bfname, fmode, &cdev->page_bfile,
                             cdev->bandlist_memory, cdev->bandlist_memory,
-                            false)) < 0 ||
-        (code = clist_reinit_output_file(dev)) < 0
+                            false)) < 0
         ) {
         clist_close_output_file(dev);
         cdev->permanent_error = code;
@@ -802,8 +780,6 @@ clist_finish_page(gx_device *dev, bool flush)
             cdev->page_info.io_procs->fseek(cdev->page_bfile, 0L, SEEK_END, cdev->page_bfname);
     }
     code = clist_init(dev);             /* reinitialize */
-    if (code >= 0)
-        code = clist_reinit_output_file(dev);
     if (code >= 0)
         code = clist_emit_page_header(dev);
 

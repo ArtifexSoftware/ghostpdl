@@ -432,7 +432,7 @@ read_set_misc_map(byte cb, command_buf_t *pcb, gs_gstate *pgs, gs_memory_t *mem)
     const byte *cbp = pcb->ptr;
     frac *mdata;
     int *pcomp_num;
-    uint count;
+    uint count = 0;		/* quiet compiler */
     cmd_map_contents cont =
         (cmd_map_contents)(cb & 0x30) >> 4;
     int code;
