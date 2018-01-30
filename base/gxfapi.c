@@ -231,7 +231,7 @@ gs_fapi_get_metrics_count(gs_fapi_font *ff)
  * we know the character is well-behaved, i.e., is not defined by an
  * arbitrary PostScript procedure.
  */
-static bool
+static inline bool
 fapi_gs_char_show_width_only(const gs_text_enum_t *penum)
 {
     if (!gs_text_is_width_only(penum))
@@ -256,7 +256,7 @@ fapi_gs_char_show_width_only(const gs_text_enum_t *penum)
  * transparency is involved - if so, we have to produce
  * a path outline, and not a bitmap.
  */
-static bool
+static inline bool
 using_transparency_pattern(gs_gstate *pgs)
 {
     gx_device *dev = gs_currentdevice_inline(pgs);
@@ -264,6 +264,35 @@ using_transparency_pattern(gs_gstate *pgs)
     return ((!gs_color_writes_pure(pgs))
             && dev_proc(dev, begin_transparency_group) != gx_default_begin_transparency_group
             && dev_proc(dev, end_transparency_group) != gx_default_end_transparency_group);
+}
+
+static inline bool
+recreate_multiple_master(gs_font_base *pbfont)
+{
+    bool r = false;
+    gs_fapi_server *I = pbfont->FAPI;
+    bool changed = false;
+
+    if (I && I->face.font_id != gs_no_id &&
+        (pbfont->FontType == ft_encrypted
+        || pbfont->FontType == ft_encrypted2)) {
+        gs_font_type1 *pfont1 = (gs_font_type1 *) pbfont;
+        if (I->face.WeightVector.count != pfont1->data.WeightVector.count) {
+            changed = true;
+        }
+        else {
+            changed = (memcmp(I->face.WeightVector.values, pfont1->data.WeightVector.values,
+                             pfont1->data.WeightVector.count * sizeof(pfont1->data.WeightVector.values[0])) != 0);
+        }
+        
+        if (changed) {
+            r = (I->set_mm_weight_vector(I, &I->ff, pfont1->data.WeightVector.values, pfont1->data.WeightVector.count) == gs_error_invalidaccess);
+            I->face.WeightVector.count = pfont1->data.WeightVector.count;
+            memcpy(I->face.WeightVector.values, pfont1->data.WeightVector.values,
+                   pfont1->data.WeightVector.count * sizeof(pfont1->data.WeightVector.values[0]));
+        }
+    }
+    return r;
 }
 
 static bool
@@ -1278,7 +1307,29 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
     I->ff.is_vertical = bVertical;
     I->ff.client_ctx_p = I->client_ctx_p;
 
-    scale = 1 << I->frac_shift;
+#if 0
+    if (recreate_multiple_master(pbfont)) {
+        gs_font_base *bf = (gs_font_base *)pbfont->base;
+        void *ffd = pbfont->FAPI_font_data;
+
+        gs_fapi_release_typeface(I, &pbfont->FAPI_font_data);
+        if (ffd == bf->FAPI_font_data) {
+            bf->FAPI_font_data = NULL;
+            ((gs_fapi_server *)bf->FAPI)->face.font_id = gs_no_id;
+        }
+    }
+#endif
+    if (recreate_multiple_master(pbfont)) {
+        if ((void *)pbfont->base == (void *)pbfont) {
+           gs_fapi_release_typeface(I, &pbfont->FAPI_font_data);
+        }
+        else {
+            pbfont->FAPI_font_data = NULL;
+            pbfont->FAPI->face.font_id = gs_no_id;
+        }
+    }
+
+   scale = 1 << I->frac_shift;
   retry_oversampling:
     if (I->face.font_id != pbfont->id ||
         !MTX_EQ((&I->face.ctm), ctm) ||
@@ -1370,6 +1421,7 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
                                                          gs_fapi_toplevel_prepared))) < 0) {
             return code;
         }
+        pbfont->FAPI_font_data = I->ff.server_font_data;    /* Save it back to GS font. */
     }
 
     cr.char_codes_count = 1;

@@ -89,6 +89,36 @@ typedef enum
     gs_fapi_font_feature_BlendAxisTypes,
     gs_fapi_font_feature_BlendPrivate_count,
     gs_fapi_font_feature_BlendFontInfo_count,
+    gs_fapi_font_feature_BlendFontBBox_length,
+    gs_fapi_font_feature_BlendFontBBox,
+
+    gs_fapi_font_feature_BlendBlueValues_length,
+    gs_fapi_font_feature_BlendBlueValues_count,
+    gs_fapi_font_feature_BlendBlueValues,
+    gs_fapi_font_feature_BlendOtherBlues_length,
+    gs_fapi_font_feature_BlendOtherBlues_count,
+    gs_fapi_font_feature_BlendOtherBlues,
+    gs_fapi_font_feature_BlendBlueScale_count,
+    gs_fapi_font_feature_BlendBlueScale,
+    gs_fapi_font_feature_BlendBlueShift_count,
+    gs_fapi_font_feature_BlendBlueShift,
+    gs_fapi_font_feature_BlendBlueFuzz_count,
+    gs_fapi_font_feature_BlendBlueFuzz,
+    gs_fapi_font_feature_BlendForceBold_count,
+    gs_fapi_font_feature_BlendForceBold,
+    gs_fapi_font_feature_BlendStdHW_length,
+    gs_fapi_font_feature_BlendStdHW_count,
+    gs_fapi_font_feature_BlendStdHW,
+    gs_fapi_font_feature_BlendStdVW_length,
+    gs_fapi_font_feature_BlendStdVW_count,
+    gs_fapi_font_feature_BlendStdVW,
+    gs_fapi_font_feature_BlendStemSnapH_length,
+    gs_fapi_font_feature_BlendStemSnapH_count,
+    gs_fapi_font_feature_BlendStemSnapH,
+    gs_fapi_font_feature_BlendStemSnapV_length,
+    gs_fapi_font_feature_BlendStemSnapV_count,
+    gs_fapi_font_feature_BlendStemSnapV,
+
     gs_fapi_font_feature_WeightVector_count,
     gs_fapi_font_feature_WeightVector,
     gs_fapi_font_feature_BlendDesignPositionsArrays_count,
@@ -205,6 +235,8 @@ struct gs_fapi_font_s
                            bool *imagenow);
 };
 
+#define GS_FAPI_WEIGHTVECTOR_MAX 16
+
 typedef struct gs_fapi_face_s gs_fapi_face;
 struct gs_fapi_face_s
 {
@@ -213,6 +245,10 @@ struct gs_fapi_face_s
     gs_log2_scale_point log2_scale;
     bool align_to_pixels;
     float HWResolution[2];
+    struct {
+        int count;
+        float values[GS_FAPI_WEIGHTVECTOR_MAX];
+    } WeightVector;
 };
 
 typedef struct gs_fapi_path_s gs_fapi_path;
@@ -338,6 +374,7 @@ struct gs_fapi_server_s
     gs_fapi_retcode(*release_typeface) (gs_fapi_server *server, void *server_font_data);
     gs_fapi_retcode(*check_cmap_for_GID) (gs_fapi_server *server, uint *index);
     gs_fapi_retcode(*get_font_info) (gs_fapi_server *server, gs_fapi_font *ff, gs_fapi_font_info item, int index, void *data, int *datalen);
+    gs_fapi_retcode(*set_mm_weight_vector) (gs_fapi_server *server, gs_fapi_font *ff, float *wvector, int length);
 
     /*  Some people get confused with terms "font cache" and "character cache".
        "font cache" means a cache for scaled font objects, which mainly

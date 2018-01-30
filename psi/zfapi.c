@@ -543,11 +543,7 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
             }
         case gs_fapi_font_feature_WeightVector_count:
             {
-                ref *Array;
-
-                if (dict_find_string(pdr, "WeightVector", &Array) <= 0)
-                    return 0;
-                return (r_size(Array));
+                return pfont->data.WeightVector.count;
             }
         case gs_fapi_font_feature_BlendDesignPositionsArrays_count:
             {
@@ -620,6 +616,414 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
                 }
                 return length;
             }
+        case gs_fapi_font_feature_BlendFontBBox_length:
+            {
+                ref *Blend, *bfbbox;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+
+                if (dict_find_string(Blend, "FontBBox", &bfbbox) <= 0)
+                    return 0;
+                return ((ushort)r_size(bfbbox));
+            }
+        case gs_fapi_font_feature_BlendFontBBox:
+            {
+                ref *Blend, *bfbbox, subbfbbox, val;
+                int aind, ind;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "FontBBox", &bfbbox) <= 0)
+                    return 0;
+                ind = index % 4;
+                aind = (index - ind) /4;
+                if (array_get(ff->memory, bfbbox, aind, &subbfbbox) < 0)
+                    return 0;
+                if (array_get(ff->memory, &subbfbbox, ind, &val) < 0)
+                    return 0;
+
+                return (ushort)val.value.intval;
+            }
+        case gs_fapi_font_feature_BlendBlueValues_length:
+            {
+                ref *Priv, *Blend, *bbv;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "BlueValues", &bbv) <= 0)
+                    return 0;
+                return ((ushort)r_size(bbv));
+            }
+        case gs_fapi_font_feature_BlendBlueValues_count:
+            {
+                ref *Priv, *Blend, *bbv, sub;
+
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "BlueValues", &bbv) <= 0)
+                    return 0;
+                if (array_get(ff->memory, bbv, index, &sub) < 0)
+                    return 0;
+                return ((ushort)r_size(&sub));
+            }
+        case gs_fapi_font_feature_BlendBlueValues:
+            {
+                ref *Priv, *Blend, *bbv, sub, r;
+                int aind = 0;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "BlueValues", &bbv) <= 0)
+                    return 0;
+
+                while (1) {
+                    if (array_get(ff->memory, bbv, aind++, &sub) < 0)
+                        return 0;
+                    if (index - (int)r_size(&sub) < 0) {
+                        break;
+                    }
+                    index -= r_size(&sub);
+                }
+                if (array_get(ff->memory, &sub, index, &r) < 0)
+                    return 0;
+
+                return ((ushort)r.value.intval);
+            }
+        case gs_fapi_font_feature_BlendOtherBlues_length:
+            {
+                ref *Priv, *Blend, *bob;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "OtherBlues", &bob) <= 0)
+                    return 0;
+                return ((ushort)r_size(bob));
+            }
+        case gs_fapi_font_feature_BlendOtherBlues_count:
+            {
+                ref *Priv, *Blend, *bob, sub;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "OtherBlues", &bob) <= 0)
+                    return 0;
+
+                 if (array_get(ff->memory, bob, index, &sub) < 0)
+                    return 0;
+               return ((ushort)r_size(&sub));
+            }
+        case gs_fapi_font_feature_BlendOtherBlues:
+            {
+                ref *Priv, *Blend, *bob, sub, r;
+                int aind = 0;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "OtherBlues", &bob) <= 0)
+                    return 0;
+
+                while (1) {
+                    if (array_get(ff->memory, bob, aind++, &sub) < 0)
+                        return 0;
+                    if (index - (int)r_size(&sub) < 0) {
+                        break;
+                    }
+                    index -= r_size(&sub);
+                }
+                if (array_get(ff->memory, &sub, index, &r) < 0)
+                    return 0;
+
+                return ((ushort)r.value.intval);
+            }
+        case gs_fapi_font_feature_BlendBlueScale_count:
+            {
+                ref *Priv, *Blend, *bbs;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "BlueScale", &bbs) <= 0)
+                    return 0;
+               return ((ushort)r_size(bbs));
+            }
+        case gs_fapi_font_feature_BlendBlueShift_count:
+            {
+                ref *Priv, *Blend, *bbs;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "BlueShift", &bbs) <= 0)
+                    return 0;
+               return ((ushort)r_size(bbs));
+            }
+        case gs_fapi_font_feature_BlendBlueShift:
+            {
+                ref *Priv, *Blend, *bbs, r;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "BlueShift", &bbs) <= 0)
+                    return 0;
+                if (array_get(ff->memory, bbs, index, &r) < 0)
+                    return 0;
+
+               return ((ushort)r.value.intval);
+            }
+        case gs_fapi_font_feature_BlendBlueFuzz_count:
+            {
+                ref *Priv, *Blend, *bbf;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "BlueFuzz", &bbf) <= 0)
+                    return 0;
+               return ((ushort)r_size(bbf));
+            }
+        case gs_fapi_font_feature_BlendBlueFuzz:
+            {
+                ref *Priv, *Blend, *bbf, r;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "BlueFuzz", &bbf) <= 0)
+                    return 0;
+                if (array_get(ff->memory, bbf, index, &r) < 0)
+                    return 0;
+
+               return ((ushort)r.value.intval);
+            }
+        case gs_fapi_font_feature_BlendForceBold_count:
+            {
+                ref *Priv, *Blend, *bfb;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "ForceBold", &bfb) <= 0)
+                    return 0;
+               return ((ushort)r_size(bfb));
+            }
+        case gs_fapi_font_feature_BlendForceBold:
+            {
+                ref *Priv, *Blend, *bfb, r;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "BlueFuzz", &bfb) <= 0)
+                    return 0;
+                if (array_get(ff->memory, bfb, index, &r) < 0)
+                    return 0;
+
+               return ((ushort)r.value.boolval);
+            }
+        case gs_fapi_font_feature_BlendStdHW_length:
+            {
+                ref *Priv, *Blend, *stdhw;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "StdHW", &stdhw) <= 0)
+                    return 0;
+                return ((ushort)r_size(stdhw));
+            }
+        case gs_fapi_font_feature_BlendStdHW_count:
+            {
+                ref *Priv, *Blend, *stdhw, sub;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "StdHW", &stdhw) <= 0)
+                    return 0;
+
+                if (array_get(ff->memory, stdhw, index, &sub) < 0)
+                    return 0;
+                return ((ushort)r_size(&sub));
+            }
+        case gs_fapi_font_feature_BlendStdHW:
+            {
+                ref *Priv, *Blend, *stdhw, sub, r;
+                int aind = 0;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "StdHW", &stdhw) <= 0)
+                    return 0;
+
+                while (1) {
+                    if (array_get(ff->memory, stdhw, aind++, &sub) < 0)
+                        return 0;
+                    if (index - (int)r_size(&sub) < 0) {
+                        break;
+                    }
+                    index -= r_size(&sub);
+                }
+                if (array_get(ff->memory, &sub, index, &r) < 0)
+                    return 0;
+
+                return ((ushort)r.value.intval);
+            }
+        case gs_fapi_font_feature_BlendStdVW_length:
+            {
+                ref *Priv, *Blend, *stdvw;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "StdVW", &stdvw) <= 0)
+                    return 0;
+                return ((ushort)r_size(stdvw));
+            }
+        case gs_fapi_font_feature_BlendStdVW_count:
+            {
+                ref *Priv, *Blend, *stdvw, sub;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "StdVW", &stdvw) <= 0)
+                    return 0;
+
+                if (array_get(ff->memory, stdvw, index, &sub) < 0)
+                    return 0;
+                return ((ushort)r_size(&sub));
+            }
+        case gs_fapi_font_feature_BlendStdVW:
+            {
+                ref *Priv, *Blend, *stdvw, sub, r;
+                int aind = 0;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "StdVW", &stdvw) <= 0)
+                    return 0;
+
+                while (1) {
+                    if (array_get(ff->memory, stdvw, aind++, &sub) < 0)
+                        return 0;
+                    if (index - (int)r_size(&sub) < 0) {
+                        break;
+                    }
+                    index -= r_size(&sub);
+                }
+                if (array_get(ff->memory, &sub, index, &r) < 0)
+                    return 0;
+
+                return ((ushort)r.value.intval);
+            }
+        case gs_fapi_font_feature_BlendStemSnapH_length:
+            {
+                ref *Priv, *Blend, *ssh;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "StemSnapH", &ssh) <= 0)
+                    return 0;
+                return ((ushort)r_size(ssh));
+            }
+        case gs_fapi_font_feature_BlendStemSnapH_count:
+            {
+                ref *Priv, *Blend, *bssh, sub;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "StemSnapH", &bssh) <= 0)
+                    return 0;
+
+                if (array_get(ff->memory, bssh, index, &sub) < 0)
+                    return 0;
+                return ((ushort)r_size(&sub));
+            }
+        case gs_fapi_font_feature_BlendStemSnapH:
+            {
+                ref *Priv, *Blend, *bssh, sub, r;
+                int aind = 0;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "StemSnapH", &bssh) <= 0)
+                    return 0;
+
+                while (1) {
+                    if (array_get(ff->memory, bssh, aind++, &sub) < 0)
+                        return 0;
+                    if (index - (int)r_size(&sub) < 0) {
+                        break;
+                    }
+                    index -= r_size(&sub);
+                }
+                if (array_get(ff->memory, &sub, index, &r) < 0)
+                    return 0;
+
+                return ((ushort)r.value.intval);
+            }
+        case gs_fapi_font_feature_BlendStemSnapV_length:
+            {
+                ref *Priv, *Blend, *ssv;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "StdHW", &ssv) <= 0)
+                    return 0;
+                return ((ushort)r_size(ssv));
+            }
+        case gs_fapi_font_feature_BlendStemSnapV_count:
+            {
+                ref *Priv, *Blend, *bssv, sub;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "StemSnapV", &bssv) <= 0)
+                    return 0;
+
+                if (array_get(ff->memory, bssv, index, &sub) < 0)
+                    return 0;
+                return ((ushort)r_size(&sub));
+            }
+        case gs_fapi_font_feature_BlendStemSnapV:
+            {
+                ref *Priv, *Blend, *bssv, sub, r;
+                int aind = 0;
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "StemSnapV", &bssv) <= 0)
+                    return 0;
+
+                while (1) {
+                    if (array_get(ff->memory, bssv, aind++, &sub) < 0)
+                        return 0;
+                    if (index - (int)r_size(&sub) < 0) {
+                        break;
+                    }
+                    index -= r_size(&sub);
+                }
+                if (array_get(ff->memory, &sub, index, &r) < 0)
+                    return 0;
+
+                return ((ushort)r.value.intval);
+            }
+
             /* End MM specifics */
     }
     return 0;
@@ -666,6 +1070,7 @@ FAPI_FF_get_long(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
 static float
 FAPI_FF_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
 {
+    gs_font_type1 *pfont1 = (gs_font_type1 *) ff->client_font_data;
     gs_font_base *pbfont = (gs_font_base *) ff->client_font_data2;
     ref *pdr = pfont_dict(pbfont);
 
@@ -707,21 +1112,12 @@ FAPI_FF_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
 
         case gs_fapi_font_feature_WeightVector:
             {
-                ref *Array, value;
-
-                if (dict_find_string(pdr, "WeightVector", &Array) <= 0)
-                    return 0;
-                if (array_get(ff->memory, Array, index, &value) < 0)
-                    return 0;
-                if (!r_has_type(&value, t_integer)) {
-                    if (r_has_type(&value, t_real)) {
-                        return (value.value.realval);
-                    }
-                    else
-                        return 0;
+                if (index < pfont1->data.WeightVector.count) {
+                    return pfont1->data.WeightVector.values[index];
                 }
-                else
-                    return ((float)value.value.intval);
+                else {
+                    return 0;
+                }
             }
         case gs_fapi_font_feature_BlendDesignPositionsArrayValue:
             {
@@ -773,6 +1169,25 @@ FAPI_FF_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
                 }
                 else
                     return ((float)value.value.intval);
+            }
+        case gs_fapi_font_feature_BlendBlueScale:
+            {
+                ref *Priv, *Blend, *bbs, r;
+                float val = 0;
+
+                if (dict_find_string(pdr, "Blend", &Blend) <= 0)
+                    return 0;
+                if (dict_find_string(Blend, "Private", &Priv) <= 0)
+                    return 0;
+                if (dict_find_string(Priv, "BlueScale", &bbs) <= 0)
+                    return 0;
+                if (array_get(ff->memory, bbs, index, &r) < 0)
+                    return 0;
+               if (r_has_type(&r, t_real))
+                   val = r.value.realval;
+               else if (r_has_type(&r, t_integer))
+                   val = (float)r.value.intval;
+               return (val);
             }
     }
     return 0;

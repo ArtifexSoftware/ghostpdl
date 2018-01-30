@@ -32,6 +32,8 @@
 #include "gdebug.h"
 #include "gxbitmap.h"
 #include "gsmchunk.h"
+#include "gxfont.h"
+#include "gxfont1.h"
 
 #include "stream.h"
 #include "gxiodev.h"            /* must come after stream.h */
@@ -54,6 +56,8 @@
 #include FT_IMAGE_H
 #include FT_BITMAP_H
 #include FT_TRUETYPE_DRIVER_H
+#include FT_MULTIPLE_MASTERS_H
+#include FT_TYPE1_TABLES_H
 
 /* Note: structure definitions here start with FF_, which stands for 'FAPI FreeType". */
 
@@ -573,6 +577,29 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
         FF_free(s->ftmemory, s->outline_glyph);
         s->outline_glyph = NULL;
     }
+
+#if 0
+    if (a_fapi_font->is_type1) {
+        FT_Fixed coords[16] = {0};
+        int i;
+        gs_font_type1 *pfont1 = (gs_font_type1 *) a_fapi_font->client_font_data;
+        FT_Multi_Master amaster;
+        T1_Face *face = (T1_Face *)ft_face;
+
+        ft_error = FT_Get_Multi_Master(ft_face, &amaster);
+
+        if (pfont1->data.WeightVector.count > 0) {
+            for (i = 0; i < pfont1->data.WeightVector.count; i++) {
+                coords[i] = (FT_Fixed)(pfont1->data.WeightVector.values[i] * 65536);
+            }
+            coords[0] = coords[1];
+            coords[1] = coords[2];
+            ft_error = FT_Set_MM_Blend_Coordinates (ft_face, pfont1->data.WeightVector.count / 2, coords);
+        }
+        else
+            ft_error = FT_Set_MM_Blend_Coordinates (ft_face, 0, coords);
+    }
+#endif
 
     if (!a_char_ref->is_glyph_index) {
         if (ft_face->num_charmaps)
@@ -1752,6 +1779,17 @@ gs_fapi_ft_check_cmap_for_GID(gs_fapi_server * server, uint * index)
     return 0;
 }
 
+static gs_fapi_retcode
+gs_fapi_ft_set_mm_weight_vector(gs_fapi_server *server, gs_fapi_font *ff, float *wvector, int length)
+{
+    (void)server;
+    (void)ff;
+    (void)wvector;
+    (void)length;
+    
+    return gs_error_invalidaccess;
+}
+
 static void gs_fapi_freetype_destroy(gs_fapi_server ** serv);
 
 static const gs_fapi_server_descriptor freetypedescriptor = {
@@ -1787,7 +1825,8 @@ static const gs_fapi_server freetypeserver = {
     gs_fapi_ft_release_char_data,
     gs_fapi_ft_release_typeface,
     gs_fapi_ft_check_cmap_for_GID,
-    NULL                        /* get_font_info */
+    NULL,                        /* get_font_info */
+    gs_fapi_ft_set_mm_weight_vector,
 };
 
 int gs_fapi_ft_init(gs_memory_t * mem, gs_fapi_server ** server);

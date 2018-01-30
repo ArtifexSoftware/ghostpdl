@@ -21,7 +21,7 @@
 #include "stdio_.h"
 #include "memory_.h"
 #include "math_.h"
-#include "ierrors.h"
+#include "gserrors.h"
 #include "iplugin.h"
 #include "ifapi.h"
 #include "strmio.h"
@@ -318,6 +318,17 @@ check_cmap_for_GID(FAPI_server * server, uint index)
     return 0;
 }
 
+static FAPI_retcode
+gs_fapi_bstm_set_mm_weight_vector(gs_fapi_server *server, gs_fapi_font *ff, float *wvector, int length)
+{
+    (void)server;
+    (void)ff;
+    (void)wvector;
+    (void)length;
+    
+    return gs_error_invalidaccess;
+}
+
 static void gs_fapibstm_finit(i_plugin_instance * instance,
                               i_plugin_client_memory * mem);
 
@@ -352,7 +363,9 @@ static const FAPI_server If0 = {
     get_char_outline,
     release_char_data,
     release_typeface,
-    check_cmap_for_GID NULL     /* get_font_info */
+    check_cmap_for_GID,
+    NULL,     /* get_font_info */
+    gs_fapi_bstm_set_mm_weight_vector
 };
 
 plugin_instantiation_proc(gs_fapibstm_instantiate);     /* check prototype */

@@ -2094,6 +2094,17 @@ gs_fapi_ufst_check_cmap_for_GID(gs_fapi_server * server, uint * index)
     return 0;
 }
 
+static gs_fapi_retcode
+gs_fapi_ufst_set_mm_weight_vector(gs_fapi_server *server, gs_fapi_font *ff, float *wvector, int length)
+{
+    (void)server;
+    (void)ff;
+    (void)wvector;
+    (void)length;
+    
+    return gs_error_invalidaccess;
+}
+
 /* --------------------- The plugin definition : ------------------------- */
 
 static void gs_fapi_ufst_destroy(gs_fapi_server ** server);
@@ -2131,7 +2142,8 @@ static const gs_fapi_server ufstserver = {
     gs_fapi_ufst_release_char_data,
     gs_fapi_ufst_release_typeface,
     gs_fapi_ufst_check_cmap_for_GID,
-    gs_fapi_ufst_get_font_info
+    gs_fapi_ufst_get_font_info,
+    gs_fapi_ufst_set_mm_weight_vector
 };
 
 int gs_fapi_ufst_init(gs_memory_t * mem, gs_fapi_server ** server);
