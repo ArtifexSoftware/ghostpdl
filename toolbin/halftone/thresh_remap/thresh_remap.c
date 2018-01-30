@@ -1,4 +1,4 @@
-/* Copyright (C) 2009 Artifex Software Inc. All rights reserved.
+/* Copyright (C) 2009-2018 Artifex Software Inc. All rights reserved.
 
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -10,8 +10,8 @@
   For more information about licensing, please refer to
   http://www.ghostscript.com/licensing/. For information on
   commercial licensing, go to http://www.artifex.com/licensing/ or
-  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
-  San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+  contact Artifex Software, Inc., 1305 Grant Avenue - Suite 200,
+  Novato, CA 94945, U.S.A., +1(415)492-9861.
 */
 
 /* $Id: $ */
