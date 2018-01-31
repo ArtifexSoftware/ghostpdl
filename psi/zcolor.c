@@ -268,7 +268,7 @@ static int
 zsetcolor(i_ctx_t * i_ctx_p)
 {
     os_ptr                  op = osp;
-    es_ptr ep = esp;
+    es_ptr ep;
     const gs_color_space *  pcs = gs_currentcolorspace(igs);
     gs_client_color         cc;
     int                     n_comps, n_numeric_comps, num_offset = 0, code, depth;
@@ -326,7 +326,6 @@ zsetcolor(i_ctx_t * i_ctx_p)
 
         if (n_comps > n_numeric_comps) {
             istate->pattern[0] = *op;      /* save pattern dict or null */
-            n_comps = n_numeric_comps + 1;
         }
     }
 
@@ -472,7 +471,7 @@ static int
 zsetcolorspace(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;
-    es_ptr ep = esp;
+    es_ptr ep;
     int code, depth;
     bool is_CIE;
 
@@ -538,7 +537,7 @@ static int
 setcolorspace_nosubst(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;
-    es_ptr ep = esp;
+    es_ptr ep;
     int code, depth;
 
     /* Make sure we have an operand... */
@@ -1789,6 +1788,8 @@ static int comparearrays(i_ctx_t * i_ctx_p, ref *m1, ref *m2)
             return 0;
 
         code = r_type(&ref1);
+        if (code < 0)
+            return code;
         switch(r_type(&ref1)) {
             case t_null:
                 break;
@@ -1884,6 +1885,8 @@ static int hasharray(i_ctx_t * i_ctx_p, ref *m1, gs_md5_state_t *md5)
             return 0;
 
         code = r_type(&ref1);
+        if (code < 0)
+            return code;
         switch(r_type(&ref1)) {
             case t_null:
                 break;
@@ -4432,7 +4435,6 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
         pcs->params.indexed.lookup.table.size = num_values;
         pcs->params.indexed.use_proc = 0;
         make_null(pproc);
-        code = 0;
     } else {
         gs_indexed_map *map;
 
@@ -5030,14 +5032,20 @@ static int setlabspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont,
 /* Get all the parts */
     code = dict_floats_param( imemory, &labdict, "Range", 4, range_buff,
                               dflt_range );
+    if (code < 0)
+        return code;
     for (i = 0; i < 4 && range_buff[i + 1] >= range_buff[i]; i += 2);
     if (i != 4)
         return_error(gs_error_rangecheck);
     code = dict_floats_param( imemory, &labdict, "BlackPoint", 3, black,
                               dflt_black );
-     code = dict_floats_param( imemory, &labdict, "WhitePoint", 3, white,
+    if (code < 0)
+        return code;
+    code = dict_floats_param( imemory, &labdict, "WhitePoint", 3, white,
                               dflt_white );
-     if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
+    if (code < 0)
+        return code;
+    if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
         return_error(gs_error_rangecheck);
     code = seticc_lab(i_ctx_p, white, black, range_buff);
     if ( code < 0)
@@ -5260,20 +5268,27 @@ static int setcalgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
 /* Get all the parts */
     code = dict_float_param(&graydict, "Gamma",
                  dflt_gamma, &gamma);
-    if (gamma <= 0 ) return_error(gs_error_rangecheck);
-     code = dict_floats_param( imemory,
+    if (code < 0)
+        return code;
+    if (gamma <= 0 )
+        return_error(gs_error_rangecheck);
+    code = dict_floats_param( imemory,
                               &graydict,
                               "BlackPoint",
                               3,
                               black,
                               dflt_black );
-     code = dict_floats_param( imemory,
+    if (code < 0)
+        return code;
+    code = dict_floats_param( imemory,
                               &graydict,
                               "WhitePoint",
                               3,
                               white,
                               dflt_white );
-     if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
+    if (code < 0)
+        return code;
+    if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
         return_error(gs_error_rangecheck);
     code = seticc_cal(i_ctx_p, white, black, &gamma, NULL, 1,
                         graydict.value.saveid);
@@ -5341,28 +5356,36 @@ static int setcalrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
                               3,
                               gamma,
                               dflt_gamma );
-     if (gamma[0] <= 0 || gamma[1] <= 0 || gamma[2] <= 0)
+    if (code < 0)
+        return code;
+    if (gamma[0] <= 0 || gamma[1] <= 0 || gamma[2] <= 0)
         return_error(gs_error_rangecheck);
-     code = dict_floats_param( imemory,
+    code = dict_floats_param( imemory,
                               &rgbdict,
                               "BlackPoint",
                               3,
                               black,
                               dflt_black );
-     code = dict_floats_param( imemory,
+    if (code < 0)
+        return code;
+    code = dict_floats_param( imemory,
                               &rgbdict,
                               "WhitePoint",
                               3,
                               white,
                               dflt_white );
-     if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
+    if (code < 0)
+        return code;
+    if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
         return_error(gs_error_rangecheck);
-     code = dict_floats_param( imemory,
+    code = dict_floats_param( imemory,
                               &rgbdict,
                               "Matrix",
                               9,
                               matrix,
                               dflt_matrix );
+    if (code < 0)
+        return code;
     code = seticc_cal(i_ctx_p, white, black, gamma, matrix, 3, rgbdict.value.saveid);
     if ( code < 0)
         return gs_rethrow(code, "setting CalRGB  color space");
@@ -5663,6 +5686,8 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
             default:
                 return_error(gs_error_rangecheck);
         }
+        if (code < 0)
+            return code;
         /* In case this space is the /ALternate for a previous ICCBased space
          * insert the named space into the ICC dictionary. If we simply returned
          * the named space, as before, then we are replacing the second ICCBased

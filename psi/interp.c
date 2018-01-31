@@ -1772,7 +1772,7 @@ res:
         /* but it might be something else someday if we check */
         /* for interrupts in the interpreter loop itself. */
         if (iesp >= estop)
-            code = gs_error_execstackoverflow;
+            ierror.code = gs_error_execstackoverflow;
         else {
             iesp++;
             ref_assign_inline(iesp, IREF);

@@ -311,7 +311,7 @@ gs_main_init2(gs_main_instance * minst)
 
     if (code < 0)
         return code;
-    i_ctx_p = minst->i_ctx_p;
+
     code = gs_main_init2aux(minst);
     if (code < 0)
        return code;

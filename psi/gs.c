@@ -72,7 +72,6 @@ main(int argc, char *argv[])
 #ifdef NEED_COMMIT_STACK   /* hack for bug in gcc 2.96 */
     commit_stack_pages();
 #endif
-    exit_status = 0;
 
     /*
      * Call setlocale(LC_CTYPE), so that we can convert PDF passwords

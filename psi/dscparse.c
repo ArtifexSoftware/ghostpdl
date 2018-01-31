@@ -4365,7 +4365,7 @@ dsc_parse_cmyk_custom_colour(CDSC *dsc)
         if (blank_line)
             break;
         else {
-            cyan = magenta = yellow = black = 0.0;
+            magenta = yellow = black = 0.0;
             cyan = dsc_get_real(dsc->line+n, dsc->line_length-n, &i);
             n += i;
             if (i)
@@ -4441,7 +4441,7 @@ dsc_parse_rgb_custom_colour(CDSC *dsc)
         if (blank_line)
             break;
         else {
-            red = green = blue = 0.0;
+            green = blue = 0.0;
             red = dsc_get_real(dsc->line+n, dsc->line_length-n, &i);
             n += i;
             if (i)
