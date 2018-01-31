@@ -1576,13 +1576,14 @@ int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_co
                     gx_device *subclass_device;
 
                     p14dev->target->color_info = p14dev->saved_target_color_info;
-                    if (p14dev->target->child)
+                    if (p14dev->target->child) {
                         p14dev->target->child->color_info = p14dev->saved_target_color_info;
 
-                    set_dev_proc(p14dev->target->child, encode_color, p14dev->saved_target_encode_color);
-                    set_dev_proc(p14dev->target->child, decode_color, p14dev->saved_target_decode_color);
-                    set_dev_proc(p14dev->target->child, get_color_mapping_procs, p14dev->saved_target_get_color_mapping_procs);
-                    set_dev_proc(p14dev->target->child, get_color_comp_index, p14dev->saved_target_get_color_comp_index);
+                        set_dev_proc(p14dev->target->child, encode_color, p14dev->saved_target_encode_color);
+                        set_dev_proc(p14dev->target->child, decode_color, p14dev->saved_target_decode_color);
+                        set_dev_proc(p14dev->target->child, get_color_mapping_procs, p14dev->saved_target_get_color_mapping_procs);
+                        set_dev_proc(p14dev->target->child, get_color_comp_index, p14dev->saved_target_get_color_comp_index);
+                    }
 
                     pgs->get_cmap_procs = p14dev->save_get_cmap_procs;
                     gx_set_cmap_procs(pgs, p14dev->target);
