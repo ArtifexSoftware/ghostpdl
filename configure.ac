@@ -1067,11 +1067,16 @@ dnl zlib is needed for language level 3, and libpng
 # this seems a harmless default
 ZLIBDIR=src
 AUX_SHARED_ZLIB=
+ZLIBCFLAGS=""
 
 if test -d $srcdir/zlib; then
         AC_MSG_RESULT([yes])
         SHARE_ZLIB=0
         ZLIBDIR=$srcdir/zlib
+
+        if test x"$ac_cv_prog_gcc" = x"yes"; then
+          ZLIBCFLAGS="-Wno-write-strings"
+        fi
 else
         AC_MSG_RESULT([no])
         AC_CHECK_LIB(z, deflate, [
@@ -1099,6 +1104,7 @@ fi
 
 AC_SUBST(SHARE_ZLIB)
 AC_SUBST(AUX_SHARED_ZLIB)
+AC_SUBST(ZLIBCFLAGS)
 AC_SUBST(ZLIBDIR)
 AC_SUBST(FT_SYS_ZLIB)
 

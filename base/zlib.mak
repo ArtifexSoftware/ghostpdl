@@ -52,9 +52,9 @@ ZAO_=$(O_)$(ZAUX)
 # We need D_, _D_, and _D because the OpenVMS compiler uses different
 # syntax from other compilers.
 # ZI_ and ZF_ are defined in gs.mak.
-ZCCFLAGS=$(I_)$(ZI_)$(_I) $(ZF_) $(D_)verbose$(_D_)-1$(_D)
+ZCCFLAGS=$(ZLIB_CFLAGS) $(I_)$(ZI_)$(_I) $(ZF_) $(D_)verbose$(_D_)-1$(_D)
 ZCC=$(CC_) $(ZCCFLAGS)
-ZCCAUXFLAGS=$(I_)$(ZI_)$(_I) $(ZF_) $(D_)verbose$(_D_)-1$(_D)
+ZCCAUXFLAGS=$(ZLIB_CFLAGS) $(I_)$(ZI_)$(_I) $(ZF_) $(D_)verbose$(_D_)-1$(_D)
 ZCCAUX=$(CCAUX_) $(ZCCAUXFLAGS)
 
 # Define the name of this makefile.

@@ -271,6 +271,7 @@ SHARE_ZLIB=@SHARE_ZLIB@
 ZSRCDIR=@ZLIBDIR@
 #ZLIB_NAME=gz
 ZLIB_NAME=z
+ZLIB_CFLAGS=@ZLIBCFLAGS@
 
 # Choose shared or compiled in libjbig2dec and source location
 # JBIG2_LIB=jbig2dec
