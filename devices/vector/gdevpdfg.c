@@ -505,7 +505,6 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_gstate * pgs, c
             default:    /* can't happen, simply silences compiler warnings */
                 break;
         }
-        pcs = pcs2;
     } else {
         if (csi >= gs_color_space_index_CIEDEFG &&
             csi <= gs_color_space_index_CIEA) {
@@ -626,7 +625,6 @@ static int write_color_unchanged(gx_device_pdf * pdev, const gs_gstate * pgs,
             pprints1(pdev->strm, " %s\n", command);
             break;
         default:
-            csi = gs_color_space_get_index(pcs);
             if (!gx_hld_saved_color_same_cspace(current, psc) || (csi2 >= gs_color_space_index_CIEDEFG && csi2 <= gs_color_space_index_CIEA)) {
                 cos_value_t cs_value;
 
@@ -1052,7 +1050,6 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
         COS_FREE(pres->object, "pdf_color_space");
         pres->object = (cos_object_t *)pca;
         cos_write_object(COS_OBJECT(pca), pdev, resourceColorSpace);
-        csi = gs_color_space_get_index(pcs);
         if (pcs_save == NULL && ppscc != NULL)
             pprints1(pdev->strm, "/%s", ppcs->rname);
     }

@@ -925,6 +925,8 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
     const gs_param_item_t *items =
         (pnames->items[0].key == 0 ? pnames->items + 1 : pnames->items);
     int code = gs_param_read_items(plist, params, items);
+    if (code < 0)
+        ecode = code;
 
     if ((pname = pnames->ACSDict) != 0) {
         code = psdf_put_image_dict_param(plist, pname, &params->ACSDict,

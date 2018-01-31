@@ -892,6 +892,9 @@ pdf_image_get_some_params(gx_device * dev, gs_param_list * plist, int which)
     int ecode = code;
     gs_param_string comprstr;
 
+    if (ecode < 0)
+        return ecode;
+
     ecode = param_write_int(plist, "StripHeight", &pdf_dev->StripHeight);
     if (ecode < 0)
         return ecode;

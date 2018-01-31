@@ -1517,6 +1517,9 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
     fwrite(Scratch, strlen(Scratch), 1, linear_params->Lin_File.file);
 
     code = fread(&c, 1, 1, linear_params->sfile);
+    if (code != 1)
+        return_error(gs_error_ioerror);
+
     read++;
     if (c == '<' || c == '[') {
         int index = 0;
@@ -2315,11 +2318,17 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
      * in the missing values.
      */
     code = gp_fseek_64(linear_params->sfile, linear_params->FirsttrailerOffset, SEEK_SET);
+    if (code != 0)
+        return_error(gs_error_ioerror);
+
     gs_sprintf(LDict, "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %"PRId64">>\nstartxref\r\n0\n%%%%EOF\n",
         linear_params->LastResource + 3, pdev->ResourceUsage[linear_params->Info_id].NewObjectNumber, pdev->ResourceUsage[linear_params->Catalog_id].NewObjectNumber, fileID, fileID, mainxref);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
     code = gp_fseek_64(linear_params->sfile, pdev->ResourceUsage[HintStreamObj].LinearisedOffset, SEEK_SET);
+    if (code != 0)
+        return_error(gs_error_ioerror);
+
     gs_sprintf(LDict, "%d 0 obj\n<</Length %10"PRId64"", HintStreamObj, HintLength);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
     gs_sprintf(LDict, "\n/S %10"PRId64">>\nstream\n", SharedHintOffset);

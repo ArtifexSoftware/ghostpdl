@@ -182,6 +182,8 @@ pdf_begin_transparency_group(gs_gstate * pgs, gx_device_pdf * pdev,
     if (code < 0)
         return code;
     code = pdf_check_soft_mask(pdev, pgs);
+    if (code < 0)
+        return code;
     if (pdf_must_put_clip_path(pdev, pgs->clip_path)) {
         code = pdf_put_clip_path(pdev, pgs->clip_path);
         if (code < 0)

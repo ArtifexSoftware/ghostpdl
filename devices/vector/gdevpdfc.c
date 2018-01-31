@@ -790,9 +790,17 @@ pdf_indexed_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, cos_value_t 
         return code;
     } else {
         code = cos_array_add(pca, cos_c_string_value(&v, pdf_color_space_names.Indexed));
+        if (code < 0)
+            return code;
         code = cos_array_add(pca, cos_base);
+        if (code < 0)
+            return code;
         code = cos_array_add_int(pca, pip->hival);
+        if (code < 0)
+            return code;
         code = cos_array_add_no_copy(pca, cos_string_value(&v, table, string_used));
+        if (code < 0)
+            return code;
     }
     return 0;
 }
