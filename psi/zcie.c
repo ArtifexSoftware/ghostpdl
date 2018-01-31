@@ -177,7 +177,7 @@ cie_points_param(const gs_memory_t *mem,
 /* The caller has set pclt->n and pclt->m. */
 /* ptref is known to be a readable array of size at least n+1. */
 static int cie_3d_table_param(const ref * ptable, uint count, uint nbytes,
-                               gs_const_string * strings, gs_memory_t *mem);
+                               gs_const_string * strings, const gs_memory_t *mem);
 int
 cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
                 const gs_memory_t * mem)
@@ -236,7 +236,7 @@ cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
 }
 static int
 cie_3d_table_param(const ref * ptable, uint count, uint nbytes,
-                   gs_const_string * strings, gs_memory_t *mem)
+                   gs_const_string * strings, const gs_memory_t *mem)
 {
     const ref *rstrings;
     uint i;

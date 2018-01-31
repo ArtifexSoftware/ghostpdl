@@ -564,7 +564,6 @@ bittag_create_buf_device(gx_device **pbdev, gx_device *target, int y,
    const gx_render_plane_t *render_plane, gs_memory_t *mem,
    gx_color_usage_t *color_usage)
 {
-    gx_device_printer *ptarget = (gx_device_printer *)target;
     int code = gx_default_create_buf_device(pbdev, target, y,
         render_plane, mem, color_usage);
     set_dev_proc(*pbdev, fillpage, bittag_fillpage);

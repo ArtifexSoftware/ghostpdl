@@ -400,76 +400,6 @@ ycc_to_rgb_16(unsigned char *row, unsigned long row_size)
     while (row_size);
 }
 
-/* convert state->image from YCrCb to RGB */
-static int
-s_jpxd_ycc_to_rgb(stream_jpxd_state *state)
-{
-    unsigned int max_value = ~(-1 << state->image->comps[0].prec); /* maximum of channel value */
-    int flip_value = 1 << (state->image->comps[0].prec-1);
-    int p[3], q[3], i;
-    int sgnd[2];  /* Cr, Cb */
-    unsigned long x, y, idx;
-    int *row_bufs[3];
-
-    if (state->out_numcomps != 3)
-    return -1;
-
-    for (i=0; i<2; i++)
-        sgnd[i] = state->image->comps[i+1].sgnd;
-
-    for (i=0; i<3; i++)
-    	row_bufs[i] = (int *)gs_alloc_byte_array(state->memory->non_gc_memory, sizeof(int)*state->width, 1, "s_jpxd_ycc_to_rgb");
-
-    if (!row_bufs[0] || !row_bufs[1] || !row_bufs[2])
-        return_error(gs_error_VMerror);
-
-    idx=0;
-    for (y=0; y<state->height; y++)
-    {
-        /* backup one row. the real buffer might be overriden when there is scale */
-        for (i=0; i<3; i++)
-        {
-            if ((y % state->image->comps[i].dy) == 0) /* get the buffer once every dy rows */
-                memcpy(row_bufs[i], &(state->image->comps[i].data[get_scaled_idx(state, i, idx, 0, y)]), sizeof(int)*state->width/state->image->comps[i].dx);
-        }
-        for (x=0; x<state->width; x++, idx++)
-        {
-            for (i = 0; i < 3; i++)
-                p[i] = row_bufs[i][x/state->image->comps[i].dx];
-
-            if (!sgnd[0])
-                p[1] -= flip_value;
-            if (!sgnd[1])
-                p[2] -= flip_value;
-
-            /* rotate to RGB */
-#ifdef JPX_USE_IRT
-            q[1] = p[0] - ((p[1] + p[2])>>2);
-            q[0] = p[1] + q[1];
-            q[2] = p[2] + q[1];
-#else
-            q[0] = (int)((double)p[0] + 1.402 * p[2]);
-            q[1] = (int)((double)p[0] - 0.34413 * p[1] - 0.71414 * p[2]);
-            q[2] = (int)((double)p[0] + 1.772 * p[1]);
-#endif
-            /* clamp */
-            for (i = 0; i < 3; i++){
-                if (q[i] < 0) q[i] = 0;
-                else if (q[i] > max_value) q[i] = max_value;
-            }
-
-            /* write out the pixel */
-            for (i = 0; i < 3; i++)
-                state->image->comps[i].data[get_scaled_idx(state, i, idx, x, y)] = q[i];
-        }
-    }
-
-    for (i=0; i<3; i++)
-    	gs_free_object(state->memory->non_gc_memory, row_bufs[i],"s_jpxd_ycc_to_rgb");
-
-    return 0;
-}
-
 static int decode_image(stream_jpxd_state * const state)
 {
     int numprimcomp = 0, alpha_comp = -1, compno, rowbytes;
@@ -593,12 +523,10 @@ static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_writ
     int compno;
     unsigned long i;
     int b;
-    byte *pend = pw->ptr+write_size+1; /* end of write data */
     byte *row;
     unsigned int x_offset;
     unsigned int y_offset;
     unsigned int row_size = (state->width * state->out_numcomps * state->bpp + 7)>>3;
-    unsigned long image_total = state->width * state->height;
 
     /* If nothing to write, nothing to do */
     if (write_size == 0)
@@ -658,7 +586,6 @@ static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_writ
                     /* shift_bit = 0, bpp < 8 */
                     int bt=0;
                     int bit_pos = 0;
-                    int rowbytes = (state->width*state->bpp*state->out_numcomps+7)/8; /*row bytes */
                     for (i = state->width; i > 0; i--)
                     {
                         for (compno=0; compno<img_numcomps; compno++)
@@ -712,7 +639,6 @@ static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_writ
             }
             else
             {
-                unsigned long image_total = state->width*state->height;
                 int compno = state->alpha ? state->alpha_comp : 0;
                 int bt=0;
                 int ppbyte1 = 8/state->bpp;

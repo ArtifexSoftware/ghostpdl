@@ -403,12 +403,14 @@ zip_new_info_node(gx_device_xps *xps_dev, const char *filename)
         gx_device_xps_f2i_t *f2i = xps_dev->f2i;
 #ifdef DEBUG
         int node = 1;
-#endif
         gx_device_xps_f2i_t *prev_f2i;
+#endif
         
         while (f2i != NULL) {
             if_debug2m('_', dev->memory, "node:%d %s\n", node++, f2i->filename);
+#ifdef DEBUG
             prev_f2i = f2i;
+#endif
             f2i=f2i->next;
         }
         if_debug1m('_', dev->memory, "tail okay=%s\n", prev_f2i == xps_dev->f2i_tail ? "yes" : "no");

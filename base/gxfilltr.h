@@ -53,7 +53,7 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
     ll->x_head.x_current = min_fixed;	/* stop backward scan */
     while (1) {
         fixed y1;
-        active_line *alp, *plp = NULL;
+        active_line *alp;
         bool covering_pixel_centers;
 
         INCR(iter);

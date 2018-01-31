@@ -544,7 +544,6 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
     /* Copy the data to the output. */
     for (lnum = 0; lnum < jcdp->cinfo.image_height; ++lnum) {
-        byte *data;
         uint ignore_used;
 
         if (jstrm.end_status) {
