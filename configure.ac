@@ -1187,6 +1187,7 @@ XPSWRITEDEVICE=''
 
 LIBTIFFDIR='src'
 LIBTIFFCONFDIR=''
+TIFFCFLAGS=''
 
 TIFFDEVS_ALL='tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflzw tiffpack tiffgray tiffsep tiffsep1 tiffscaled tiffscaled4 tiffscaled8 tiffscaled24 tiffscaled32'
 FAX_DEVS_ALL='cfax dfaxlow dfaxhigh fax faxg3 faxg32d faxg4 tiffg3 tiffg32d tiffg4 tfax'
@@ -1283,6 +1284,11 @@ if test x"$SHARE_LIBTIFF" = x"0" ; then
         AC_MSG_ERROR([libtiff configure script failed], $status)
       fi
       cd "$olddir"
+
+      if test x"$ac_cv_prog_gcc" = x"yes"; then
+          TIFFCFLAGS="-Wno-write-strings"
+      fi
+
       echo
       echo "Continuing with Ghostscript configuration..."
 fi
@@ -1290,6 +1296,7 @@ fi
 AC_SUBST(SHARE_LIBTIFF)
 AC_SUBST(LIBTIFFDIR)
 AC_SUBST(LIBTIFFCONFDIR)
+AC_SUBST(TIFFCFLAGS)
 
 SHARE_EXPAT=0
 EXPATDIR=src

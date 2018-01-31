@@ -262,6 +262,7 @@ TIFFCONFDIR=@LIBTIFFCONFDIR@
 TIFFPLATFORM=unix
 TIFFCONFIG_SUFFIX=
 LIBTIFF_NAME=tiff
+TIFF_CFLAGS=@TIFFCFLAGS@
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
