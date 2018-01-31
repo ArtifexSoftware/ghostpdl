@@ -47,7 +47,7 @@
 #endif
 
 // BorlandC 5.5, VC2003 are broken on that
-#if defined(__BORLANDC__) || (_MSC_VER < 1400) // 1400 == VC++ 8.0
+#if defined(__BORLANDC__) || defined(_MSC_VER) && (_MSC_VER < 1400) // 1400 == VC++ 8.0
 #define sinf(x) (float)sin((float)x)
 #define sqrtf(x) (float)sqrt((float)x)
 #endif
@@ -99,7 +99,7 @@
 
 /// Properly define some macros to accommodate
 /// older MSVC versions.
-# if _MSC_VER <= 1700
+# if defined(_MSC_VER) && _MSC_VER <= 1700
         #include <float.h>
         #define isnan _isnan
         #define isinf(x) (!_finite((x)))
