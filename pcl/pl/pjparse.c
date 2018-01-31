@@ -37,18 +37,41 @@
 #define MAXPATHLEN 1024
 
 /* definitions for fontsource and font number table entries */
+#define pjl_fontsource_body\
+    char designator[2]; \
+    PJCONST char *pathname; \
+    PJCONST char *fontnumber;
+
+#define PJCONST
 typedef struct pjl_fontsource
 {
-    char designator[2];
-    char *pathname;
-    char *fontnumber;
+  pjl_fontsource_body;
 } pjl_fontsource_t;
+#undef PJCONST
+
+#define PJCONST const
+typedef struct pjl_fontsource_default
+{
+  pjl_fontsource_body;
+} pjl_fontsource_default_t;
+#undef PJCONST
 
 /* definitions for variable names and values */
+#define pjl_envir_var_body\
+  PJCONST char *var; \
+  PJCONST char *value;
+
+#define PJCONST
 typedef struct pjl_envir_var_s {
-  char *var;
-  char *value;
+  pjl_envir_var_body;
 } pjl_envir_var_t;
+#undef PJCONST
+
+#define PJCONST const
+typedef struct pjl_envir_var_default_s {
+  pjl_envir_var_body;
+} pjl_envir_var_default_t;
+#undef PJCONST
 
 /* the pjl current environment and the default user environment.  Note
    the default environment should be stored in NVRAM on embedded print
@@ -75,7 +98,7 @@ typedef struct pjl_parser_state_s
 /* provide factory defaults for pjl commands.  Note these are not pjl
    defaults but initial values set in the printer when shipped.  In an
    embedded system these would be defined in ROM */
-static pjl_envir_var_t pjl_factory_defaults[] = {
+static pjl_envir_var_default_t pjl_factory_defaults[] = {
     {"formlines", "60"},
     {"formlines_set", "off"},
     {"widea4", "no"},
@@ -122,7 +145,7 @@ static pjl_envir_var_t pjl_factory_defaults[] = {
    host based systems.  Entries are seperated with a semi-colon.  Note
    there is some unnecessary overlap in the factory default and font
    source table. */
-static pjl_fontsource_t pjl_fontsource_table[] = {
+static pjl_fontsource_default_t pjl_fontsource_table[] = {
     {"I",
      "%rom%ttfonts/;urwfonts/;pcl/urwfonts/;ghostpdl/pcl/urwfonts/;/windows/fonts/;", ""},
     {"C", "CART0/", ""},
