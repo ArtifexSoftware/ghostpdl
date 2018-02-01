@@ -1350,10 +1350,10 @@ mark
   glyphencoding length 0 eq {
     /have_post //false def
     cmapsub 0 4 getinterval <00030001> eq {
-    PDFDEBUG { (No post but have cmap 3.1, so use ISOLatin1Encoding) = } if
+    TTFDEBUG { (No post but have cmap 3.1, so use ISOLatin1Encoding) = } if
       /glyphencoding ISOLatin1Encoding dup length array copy def
     } {
-      PDFDEBUG { (No encoding info, use .GS_extended_SymbolEncoding) = } if
+      TTFDEBUG { (No encoding info, use .GS_extended_SymbolEncoding) = } if
       /glyphencoding /.GS_extended_SymbolEncoding findencoding dup length array copy def
     } ifelse
   } {
