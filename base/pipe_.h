@@ -33,13 +33,16 @@ extern FILE *mswin_popen(const char *cmd, const char *mode);
 #  define pclose(file) _pclose(file)
 #else  /* !__WIN32__ */
 /*
- * popen isn't POSIX-standard, so we declare it here.
- * Because of inconsistent (and sometimes incorrect) header files,
- * we must omit the argument list.  Unfortunately, this sometimes causes
- * more trouble than it cures.
+ * popen wasn't POSIX-standard from the beginning, and that resulted in
+ * inconsistent and incorrect prototypes and other issues. Hence we include
+ * a declaration here.
+ * But as it is now included in POSIX, we make this optional.
  */
+#if !defined(HAVE_POPEN_PROTO) || HAVE_POPEN_PROTO!=1
 extern FILE *popen( /* const char *, const char * */ );
 extern int pclose(FILE *);
+#endif /* HAVE_POPEN_PROTO */
+
 #endif /* !__WIN32__ */
 
 #endif /* pipe__INCLUDED */
