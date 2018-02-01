@@ -317,16 +317,6 @@ s_opjd_set_codec_format(stream_state * ss, OPJ_CODEC_FORMAT format)
     return 0;
 }
 
-/* calculate the real component data idx after scaling */
-static inline unsigned long
-get_scaled_idx(stream_jpxd_state *state, int compno, unsigned long idx, unsigned long x, unsigned long y)
-{
-    if (state->samescale)
-	return idx;
-	
-    return (y/state->image->comps[compno].dy*state->width + x)/state->image->comps[compno].dx;
-}
-
 static void
 ycc_to_rgb_8(unsigned char *row, unsigned long row_size)
 {
