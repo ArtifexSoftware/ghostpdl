@@ -1400,7 +1400,6 @@
     <ClCompile Include="..\devices\gdevcif.c" />
     <ClCompile Include="..\devices\gdevclj.c" />
     <ClCompile Include="..\devices\gdevcljc.c" />
-    <ClCompile Include="..\devices\gdevcp50.c" />
     <ClCompile Include="..\devices\gdevcslw.c" />
     <ClCompile Include="..\devices\gdevdfax.c" />
     <ClCompile Include="..\devices\gdevdjet.c" />

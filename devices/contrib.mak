@@ -51,7 +51,6 @@ CONTRIB_MAK=$(DEVSRC)contrib.mak $(TOP_MAKEFILES)
 #	cljet5c  H-P Color LaserJet 5/5M (see below for some notes)
 #	coslw2p  CoStar LabelWriter II II/Plus
 #	coslwxl  CoStar LabelWriter XL
-#	cp50	Mitsubishi CP50 color printer
 #	declj250  alternate DEC LJ250 driver
 #	djet500c  H-P DeskJet 500C alternate driver
 #		(does not work on 550C or 560C)
@@ -318,17 +317,6 @@ $(DD)coslwxl.dev : $(coslw_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
 
 $(DEVOBJ)gdevcslw.$(OBJ) : $(DEVSRC)gdevcslw.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevcslw.$(OBJ) $(C_) $(DEVSRC)gdevcslw.c
-
-### -------------------- The Mitsubishi CP50 printer -------------------- ###
-### Note: this driver was contributed by a user: please contact           ###
-###       Michael Hu (michael@ximage.com) if you have questions.          ###
-
-cp50_=$(DEVOBJ)gdevcp50.$(OBJ)
-$(DD)cp50.dev : $(cp50_) $(DD)page.dev $(CONTRIB_MAK) $(MAKEDIRS)
-	$(SETPDEV) $(DD)cp50 $(cp50_)
-
-$(DEVOBJ)gdevcp50.$(OBJ) : $(DEVSRC)gdevcp50.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevcp50.$(OBJ) $(C_) $(DEVSRC)gdevcp50.c
 
 ### ----------------- The generic Epson printer device ----------------- ###
 ### Note: most of this code was contributed by users.  Please contact    ###

@@ -5710,10 +5710,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\devices\gdevcp50.c"
-				>
-			</File>
-			<File
 				RelativePath="..\devices\gdevcslw.c"
 				>
 			</File>
