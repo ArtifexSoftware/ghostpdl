@@ -29,7 +29,6 @@
 #include "gstparam.h"
 #include "gxblend.h"
 #include "gxtext.h"
-#include "gsdfilt.h"
 #include "gsimage.h"
 #include "gsrect.h"
 #include "gscoord.h"

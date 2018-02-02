@@ -421,7 +421,6 @@ gscoord_h=$(GLSRC)gscoord.h
 gscpm_h=$(GLSRC)gscpm.h
 gscsepnm_h=$(GLSRC)gscsepnm.h
 gsdevice_h=$(GLSRC)gsdevice.h
-gsdfilt_h=$(GLSRC)gsdfilt.h
 gsfcmap_h=$(GLSRC)gsfcmap.h $(gsccode_h)
 gsfname_h=$(GLSRC)gsfname.h
 gsfont_h=$(GLSRC)gsfont.h
@@ -954,13 +953,6 @@ $(GLOBJ)gsdevice.$(OBJ) : $(GLSRC)gsdevice.c $(AK) $(gx_h)\
  $(gsicc_manage_h) $(gscms_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsdevice.$(OBJ) $(C_) $(GLSRC)gsdevice.c
 
-$(GLOBJ)gsdfilt.$(OBJ) : $(GLSRC)gsdfilt.c $(AK) $(gx_h) $(gserrors_h)\
- $(ctype__h) $(memory__h) $(string__h) $(gp_h)\
- $(gscdefs_h) $(gscoord_h) $(gsdfilt_h) $(gsfname_h) $(gsmatrix_h)\
- $(gspaint_h) $(gspath_h) $(gsstruct_h)\
- $(gxcmap_h) $(gxdevice_h) $(gxdevmem_h) $(gxiodev_h) $(gzstate_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gsdfilt.$(OBJ) $(C_) $(GLSRC)gsdfilt.c
-
 $(GLOBJ)gsdevmem.$(OBJ) : $(GLSRC)gsdevmem.c $(AK) $(gx_h)\
  $(gserrors_h) $(math__h) $(memory__h) $(gsdevice_h) $(gxarith_h)\
  $(gxdevice_h) $(gxdevmem_h) $(LIB_MAK) $(MAKEDIRS)
@@ -1377,7 +1369,7 @@ LIB2s=$(GLOBJ)gdevmplt.$(OBJ) $(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(
 # we include it only for backward compatibility for library clients.
 LIB3s=$(GLOBJ)gscedata.$(OBJ) $(GLOBJ)gscencs.$(OBJ) $(GLOBJ)gschar.$(OBJ) $(GLOBJ)gscolor.$(OBJ)
 LIB4s=$(GLOBJ)gscoord.$(OBJ) $(GLOBJ)gscparam.$(OBJ) $(GLOBJ)gscspace.$(OBJ)  $(GLOBJ)gscicach.$(OBJ) $(GLOBJ)gsovrc.$(OBJ) $(GLOBJ)gxoprect.$(OBJ)
-LIB5s=$(GLOBJ)gsdevice.$(OBJ) $(GLOBJ)gsdevmem.$(OBJ) $(GLOBJ)gsdparam.$(OBJ) $(GLOBJ)gsdfilt.$(OBJ)
+LIB5s=$(GLOBJ)gsdevice.$(OBJ) $(GLOBJ)gsdevmem.$(OBJ) $(GLOBJ)gsdparam.$(OBJ)
 LIB6s=$(GLOBJ)gsfname.$(OBJ) $(GLOBJ)gsfont.$(OBJ) $(GLOBJ)gsgdata.$(OBJ) $(GLOBJ)gsgcache.$(OBJ)
 LIB7s=$(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ) $(GLOBJ)gen_ordered.$(OBJ)
 LIB8s=$(GLOBJ)gsimage.$(OBJ) $(GLOBJ)gsimpath.$(OBJ) $(GLOBJ)gsinit.$(OBJ)
@@ -3127,7 +3119,7 @@ $(GLOBJ)gxblend1.$(OBJ) : $(GLSRC)gxblend1.c $(AK) $(gx_h) $(memory__h)\
 $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(AK) $(gx_h) $(gserrors_h)\
  $(math__h) $(memory__h) $(gscdefs_h) $(gxdevice_h) $(gsdevice_h)\
  $(gsstruct_h) $(gscoord_h) $(gxgstate_h) $(gxdcolor_h) $(gxiparam_h)\
- $(gstparam_h) $(gxblend_h) $(gxtext_h) $(gsdfilt_h) $(gsimage_h)\
+ $(gstparam_h) $(gxblend_h) $(gxtext_h) $(gsimage_h)\
  $(gsrect_h) $(gzstate_h) $(gdevdevn_h) $(gdevp14_h) $(gdevprn_h) $(gsovrc_h) $(gxcmap_h)\
  $(gscolor1_h) $(gstrans_h) $(gsutil_h) $(gxcldev_h) $(gxclpath_h)\
  $(gxdcconv_h) $(gsptype2_h) $(gxpcolor_h)\

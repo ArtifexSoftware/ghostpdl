@@ -494,7 +494,6 @@
     <ClCompile Include="..\base\gscssub.c" />
     <ClCompile Include="..\base\gsdevice.c" />
     <ClCompile Include="..\base\gsdevmem.c" />
-    <ClCompile Include="..\base\gsdfilt.c" />
     <ClCompile Include="..\base\gsdparam.c" />
     <ClCompile Include="..\base\gsdps.c" />
     <ClCompile Include="..\base\gsdps1.c" />
@@ -1171,7 +1170,6 @@
     <ClCompile Include="..\psi\zdevcal.c" />
     <ClCompile Include="..\psi\zdevice.c" />
     <ClCompile Include="..\psi\zdevice2.c" />
-    <ClCompile Include="..\psi\zdfilter.c" />
     <ClCompile Include="..\psi\zdict.c" />
     <ClCompile Include="..\psi\zdouble.c" />
     <ClCompile Include="..\psi\zdpnext.c" />

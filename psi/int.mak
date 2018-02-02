@@ -493,12 +493,6 @@ $(PSOBJ)zdevice.$(OBJ) : $(PSSRC)zdevice.c $(OP) $(string__h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zdevice.$(OBJ) $(C_) $(PSSRC)zdevice.c
 
-$(PSOBJ)zdfilter.$(OBJ) : $(PSSRC)zdfilter.c $(OP) $(string__h) $(ghost_h) $(oper_h)\
- $(ialloc_h) $(idict_h) $(igstate_h) $(iname_h) $(interp_h) $(iparam_h) $(ivmspace_h)\
- $(gsdfilt_h) $(gsmatrix_h) $(gsstate_h) $(gxdevice_h) $(store_h)\
- $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zdfilter.$(OBJ) $(C_) $(PSSRC)zdfilter.c
-
 $(PSOBJ)zfont.$(OBJ) : $(PSSRC)zfont.c $(OP)\
  $(gsstruct_h) $(gxdevice_h) $(gxfont_h) $(gxfcache_h)\
  $(gzstate_h)\
@@ -563,7 +557,7 @@ Z6=$(PSOBJ)zstack.$(OBJ) $(PSOBJ)zstring.$(OBJ) $(PSOBJ)zsysvm.$(OBJ)
 Z7=$(PSOBJ)ztoken.$(OBJ) $(PSOBJ)ztype.$(OBJ) $(PSOBJ)zvmem.$(OBJ)
 Z8=$(PSOBJ)zbfont.$(OBJ) $(PSOBJ)zchar.$(OBJ) $(PSOBJ)zcolor.$(OBJ)
 Z9=$(PSOBJ)zdevice.$(OBJ) $(PSOBJ)zfont.$(OBJ) $(PSOBJ)zfontenum.$(OBJ) $(PSOBJ)zgstate.$(OBJ)
-Z10=$(PSOBJ)zdfilter.$(OBJ) $(PSOBJ)zht.$(OBJ) $(PSOBJ)zimage.$(OBJ) $(PSOBJ)zmatrix.$(OBJ)
+Z10=$(PSOBJ)zht.$(OBJ) $(PSOBJ)zimage.$(OBJ) $(PSOBJ)zmatrix.$(OBJ)
 Z11=$(PSOBJ)zpaint.$(OBJ) $(PSOBJ)zpath.$(OBJ)
 Z12=$(PSOBJ)zncdummy.$(OBJ)
 Z1OPS=zarith zarray zcontrol1 zcontrol2 zcontrol3
@@ -572,7 +566,7 @@ Z3_4OPS=zfilter zfproc zgeneric ziodev zmath zalg
 Z5_6OPS=zmisc_a zmisc_b zpacked zrelbit zstack zstring zsysvm
 Z7_8OPS=ztoken ztype zvmem zbfont zchar_a zchar_b zcolor zcolor_ext
 Z9OPS=zdevice zdevice_ext zfont zfontenum zgstate1 zgstate2 zgstate3 zgstate4
-Z10OPS=zdfilter zht zimage zmatrix zmatrix2
+Z10OPS=zht zimage zmatrix zmatrix2
 Z11OPS=zpaint zpath pantone zcolor_pdf
 # We have to be a little underhanded with *config.$(OBJ) so as to avoid
 # circular definitions.
@@ -1765,7 +1759,7 @@ $(PSOBJ)ztrans.$(OBJ) : $(PSSRC)ztrans.c $(OP) $(memory__h) $(string__h)\
  $(ghost_h) $(oper_h) $(gscspace_h) $(gscolor2_h) $(gsipar3x_h) $(gstrans_h)\
  $(gxiparam_h) $(gxcspace_h)\
  $(idict_h) $(idparam_h) $(ifunc_h) $(igstate_h) $(iimage_h) $(iname_h)\
- $(store_h) $(gsdflt_h)  $(gdevdevn_h)  $(gxdevsop_h) $(gxblend_h) $(gdevp14_h)\
+ $(store_h) $(gdevdevn_h)  $(gxdevsop_h) $(gxblend_h) $(gdevp14_h)\
  $(gsicc_cms_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)ztrans.$(OBJ) $(C_) $(PSSRC)ztrans.c
 

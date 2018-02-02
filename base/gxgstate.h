@@ -257,25 +257,6 @@ typedef struct gs_font_s gs_font;
 typedef struct gs_device_filter_stack_s gs_device_filter_stack_t;
 #endif
 
-/* Device filter stack structure is defined here so that gstate
-   lifecycle operations can access reference count; implementation is
-   in gsdfilt.c.
- */
-
-#ifndef gs_device_filter_DEFINED
-#  define gs_device_filter_DEFINED
-typedef struct gs_device_filter_s gs_device_filter_t;
-#endif
-
-/* This is the base structure from which device filters are derived. */
-struct gs_device_filter_stack_s {
-    gs_device_filter_stack_t *next;
-    gs_device_filter_t *df;
-    gx_device *next_device;
-    rc_header rc;
-};
-
-
 /* Define the graphics state structure itself. */
 /*
  * Note that the ctm member is a gs_matrix_fixed.  As such, it cannot be
@@ -390,7 +371,6 @@ struct gs_gstate_s {
     /* Other stuff: */ 
     int level;			/* incremented by 1 per gsave */ 
     gx_device *device; 
-    gs_device_filter_stack_t *dfilter_stack; 
     gs_gstate_client_procs client_procs;
 };
 
@@ -456,7 +436,7 @@ struct_proc_finalize(gs_gstate_finalize);
 
 /*
  * Enumerate the pointers in a graphics state
- * except device and dfilter_stack which must
+ * except device which must
  * be handled specially.
  */
 #define gs_gstate_do_ptrs(m)\
@@ -483,11 +463,11 @@ struct_proc_finalize(gs_gstate_finalize);
 
 #define gs_gstate_num_ptrs 20
 
-/* The '+2' in the following is because gs_gstate.device
- * and gs_gstate.dfilter_stack are handled specially
+/* The '+1' in the following is because gs_gstate.device
+ * is handled specially
  */
 #define st_gs_gstate_num_ptrs\
-  (st_line_params_num_ptrs + st_cr_state_num_ptrs + gs_gstate_num_ptrs + 2)
+  (st_line_params_num_ptrs + st_cr_state_num_ptrs + gs_gstate_num_ptrs + 1)
 
 /* Initialize an graphics state, other than the parts covered by */
 /* gs_gstate_initial. */

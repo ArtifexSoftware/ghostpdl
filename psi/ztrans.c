@@ -32,7 +32,6 @@
 #include "iimage.h"
 #include "iname.h"
 #include "store.h"
-#include "gsdfilt.h"
 #include "gspaint.h"		/* gs_erasepage prototype */
 #include "gdevdevn.h"
 #include "gxdevsop.h"

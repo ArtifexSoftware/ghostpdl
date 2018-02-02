@@ -202,7 +202,6 @@ gs_gstate_alloc(gs_memory_t * mem)
     pgs->root_font = NULL;
     pgs->show_gstate = NULL;
     pgs->device = NULL;
-    pgs->dfilter_stack = NULL;
 
     /*
      * Just enough of the state is initialized at this point
@@ -260,7 +259,6 @@ gs_gstate_alloc(gs_memory_t * mem)
     pgs->in_charpath = (gs_char_path_mode) 0;
     pgs->show_gstate = 0;
     pgs->level = 0;
-    pgs->dfilter_stack = 0;
     if (gs_initgraphics(pgs) >= 0)
         return pgs;
     /* Something went very wrong. */
@@ -326,10 +324,9 @@ gs_gsave(gs_gstate * pgs)
      *
      * Ordinarily, reference count rules would indicate an rc_decrement()
      * on pgs->clip_stack, but gstate_clone() has an exception for
-     * the clip_stack and dfilter_stack fields.
+     * the clip_stack field.
      */
     pgs->clip_stack = 0;
-    rc_increment(pnew->dfilter_stack);
     pgs->saved = pnew;
     if (pgs->show_gstate == pgs)
         pgs->show_gstate = pnew->show_gstate = pnew;
@@ -485,7 +482,6 @@ gs_gstate_copy(gs_gstate * pgs, gs_memory_t * mem)
     if (pnew == 0)
         return 0;
     clip_stack_rc_adjust(pnew->clip_stack, 1, "gs_gstate_copy");
-    rc_increment(pnew->dfilter_stack);
     pgs->view_clip = view_clip;
     pnew->saved = 0;
     /*
@@ -1256,8 +1252,6 @@ gstate_free_contents(gs_gstate * pgs)
     pgs->device = 0;
     clip_stack_rc_adjust(pgs->clip_stack, -1, cname);
     pgs->clip_stack = 0;
-    rc_decrement(pgs->dfilter_stack, cname);
-    pgs->dfilter_stack = 0;
     if (pgs->view_clip != NULL && pgs->level == 0) {
         gx_cpath_free(pgs->view_clip, cname);
         pgs->view_clip = NULL;
@@ -1325,7 +1319,6 @@ gstate_copy(gs_gstate * pto, const gs_gstate * pfrom,
     *parts.color[1].dev_color = *pfrom->color[1].dev_color;
     /* Handle references from gstate object. */
     rc_pre_assign(pto->device, pfrom->device, cname);
-    rc_pre_assign(pto->dfilter_stack, pfrom->dfilter_stack, cname);
     if (pto->clip_stack != pfrom->clip_stack) {
         clip_stack_rc_adjust(pfrom->clip_stack, 1, cname);
         clip_stack_rc_adjust(pto->clip_stack, -1, cname);

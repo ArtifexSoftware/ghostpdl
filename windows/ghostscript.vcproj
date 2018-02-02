@@ -2078,10 +2078,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\base\gsdfilt.c"
-				>
-			</File>
-			<File
 				RelativePath="..\base\gsdparam.c"
 				>
 			</File>
@@ -8161,10 +8157,6 @@
 			</File>
 			<File
 				RelativePath="..\psi\zdevice2.c"
-				>
-			</File>
-			<File
-				RelativePath="..\psi\zdfilter.c"
 				>
 			</File>
 			<File

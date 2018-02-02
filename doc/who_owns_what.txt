@@ -141,7 +141,7 @@ libcore.dev:
     gsimage, gxidata, gxifast, gximage, gximage1, gximono, gxipixel,
     gximask, gxsample: robin
 
-    gscparam, gsdparam, gsdfilt, gpmisc, gscoord, gsdevice, gsfname,
+    gscparam, gsdparam, gpmisc, gscoord, gsdevice, gsfname,
     gsdevmem, gsinit, gsmatrix, gsparam, gslibctx, gsnotify, gsutil,
     gsserial, gsmisc, gsstate, gxbcache: ?
 

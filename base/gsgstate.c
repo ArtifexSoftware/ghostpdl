@@ -74,8 +74,6 @@ ENUM_PTRS_WITH(gs_gstate_enum_ptrs, gs_gstate *gisvptr)
 #undef E1
     case (gs_gstate_num_ptrs + st_cr_state_num_ptrs): /* handle device specially */
         ENUM_RETURN(gx_device_enum_ptr(gisvptr->device));
-    case (gs_gstate_num_ptrs + st_cr_state_num_ptrs + 1):     /* handle device filter stack specially */
-         ENUM_RETURN(gisvptr->dfilter_stack);
 ENUM_PTRS_END
 
 static RELOC_PTRS_WITH(gs_gstate_reloc_ptrs, gs_gstate *gisvptr)
@@ -89,7 +87,6 @@ static RELOC_PTRS_WITH(gs_gstate_reloc_ptrs, gs_gstate *gisvptr)
 #undef R1
 
     gisvptr->device = gx_device_reloc_ptr(gisvptr->device, gcst);
-    RELOC_PTR(gs_gstate, dfilter_stack);
     {
         int i = GX_DEVICE_COLOR_MAX_COMPONENTS - 1;
 

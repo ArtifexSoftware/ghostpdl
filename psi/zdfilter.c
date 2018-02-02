@@ -30,7 +30,6 @@
 #include "gsstate.h"
 #include "gxdevice.h"
 #include "store.h"
-#include "gsdfilt.h"
 
 /* pushpdf14devicefilter is defined in ztrans.c */
 
