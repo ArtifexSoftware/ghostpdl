@@ -349,15 +349,6 @@ gx_device_make_struct_type(gs_memory_struct_type_t *st,
 {
     const gx_device_procs *procs = dev->static_procs;
 
-    /*
-     * Try to figure out whether this is a forwarding device.  For printer
-     * devices, we rely on the prototype referencing the correct structure
-     * descriptor; for other devices, we look for a likely forwarding
-     * procedure in the vector.  The algorithm isn't foolproof, but it's the
-     * best we can come up with.
-     */
-    if (procs == 0)
-        procs = &dev->procs;
     if (dev->stype)
         *st = *dev->stype;
     else if (dev_proc(dev, get_xfont_procs) == gx_forward_get_xfont_procs)
@@ -776,8 +767,6 @@ gx_device_raster(const gx_device * dev, bool pad)
     raster = (uint)((bits + 7) >> 3);
     if (!pad)
         return raster;
-    if (dev->pad > 0)
-        raster += dev->pad;
     l2align = dev->log2_align_mod;
     if (l2align < log2_align_bitmap_mod)
         l2align = log2_align_bitmap_mod;
@@ -794,8 +783,6 @@ gx_device_raster_chunky(const gx_device * dev, bool pad)
     raster = (uint)((bits + 7) >> 3);
     if (!pad)
         return raster;
-    if (dev->pad > 0)
-        raster += dev->pad;
     l2align = dev->log2_align_mod;
     if (l2align < log2_align_bitmap_mod)
         l2align = log2_align_bitmap_mod;
@@ -807,12 +794,8 @@ gx_device_raster_plane(const gx_device * dev, const gx_render_plane_t *render_pl
     ulong bpc = (render_plane && render_plane->index >= 0 ?
         render_plane->depth : dev->color_info.depth/(dev->is_planar ? dev->color_info.num_components : 1));
     ulong bits = (ulong) dev->width * bpc;
-    ulong raster;
     int l2align;
 
-    raster = (uint)((bits + 7) >> 3);
-    if (dev->pad > 0)
-        raster += dev->pad;
     l2align = dev->log2_align_mod;
     if (l2align < log2_align_bitmap_mod)
         l2align = log2_align_bitmap_mod;
