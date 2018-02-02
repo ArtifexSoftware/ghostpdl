@@ -29,8 +29,15 @@ typedef struct {
 
 #define gsfix_jmp_buf_align ((size_t)&((gsfix_jmp_buf_test*)0)->j)
 
+/* We previously used sizeof(jmp_buf) + gsfix_jmp_buf_align for the
+   content of gsfix_jmp_buf, but the compiler (gcc/clang) considered
+   gsfix_jmp_buf_align to be a variable which meant a variable sized
+   array, and that's not allowed.
+   Using 2 * sizeof(jmp_buf) solves that. It is slightly wasteful but
+   this is not an object that many instances will exist at a given time.
+ */
 typedef struct {
-    unsigned char stuff[sizeof(jmp_buf) + gsfix_jmp_buf_align];
+    unsigned char stuff[sizeof(jmp_buf) * 2];
 } gsfix_jmp_buf;
 
 /* This could be moved into a function, but it's fairly harmless as a macro. */
