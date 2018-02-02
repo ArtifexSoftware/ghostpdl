@@ -269,29 +269,34 @@ const gx_device_bit gs_bitrgbtags_device =
             ((gx_color_index)(~0)),
             ((gx_color_index)(~0))
         },
-        (int)((float)(85) * (X_DPI) / 10 + 0.5),
-        (int)((float)(110) * (Y_DPI) / 10 + 0.5),
+        (int)((float)(85) * (X_DPI) / 10 + 0.5), /* width */
+        (int)((float)(110) * (Y_DPI) / 10 + 0.5),/* height */
         0, /* Pad */
-        0, /* Align */
-        0, /* Num planes */
-        0,
+        0, /* log2_align_mod */
+        0, /* is_planar */
+        0, /* LeadingEdge */
         {
             (float)(((((int)((float)(85) * (X_DPI) / 10 + 0.5)) * 72.0 + 0.5) - 0.5) / (X_DPI)),
-            (float)(((((int)((float)(110) * (Y_DPI) / 10 + 0.5)) * 72.0 + 0.5) - 0.5) / (Y_DPI)) },
+            (float)(((((int)((float)(110) * (Y_DPI) / 10 + 0.5)) * 72.0 + 0.5) - 0.5) / (Y_DPI))
+        }, /* MediaSize */
         {
             0,
             0,
             0,
             0
-        },
-        0,
-        { X_DPI, Y_DPI },
-        {(float)(-(0) * (X_DPI)),
-         (float)(-(0) * (Y_DPI))},
-        {(float)((0) * 72.0),
-         (float)((0) * 72.0),
-         (float)((0) * 72.0),
-         (float)((0) * 72.0)},
+        }, /* ImagingBBox */
+        0, /* ImagingBBox_set */
+        { X_DPI, Y_DPI }, /* HWResolution*/
+        {
+          (float)(-(0) * (X_DPI)),
+          (float)(-(0) * (Y_DPI))
+        }, /* Margins */
+        {
+          (float)((0) * 72.0),
+          (float)((0) * 72.0),
+          (float)((0) * 72.0),
+          (float)((0) * 72.0)
+        }, /* HWMargins */
         0,  /*FirstPage*/
         0,  /*LastPage*/
         0,  /*PageHandlerPushed*/
@@ -306,12 +311,13 @@ const gx_device_bit gs_bitrgbtags_device =
         0,  /*UseCIEColor*/
         0,  /*LockSafetyParams*/
         0,  /*band_offset_x*/
-        0,  /*band_offset_*/
+        0,  /*band_offset_y*/
         false, /*BLS_force_memory*/
         {false}, /*sgr*/
         0, /*MaxPatternBitmap*/
         0, /*page_uses_transparency*/
-        { MAX_BITMAP, BUFFER_SPACE,
+        {
+          MAX_BITMAP, BUFFER_SPACE,
           { BAND_PARAMS_INITIAL_VALUES },
           0/*false*/, /* params_are_read_only */
           BandingAuto /* banding_type */
@@ -323,33 +329,36 @@ const gx_device_bit gs_bitrgbtags_device =
             gx_default_install,
             gx_default_begin_page,
             gx_default_end_page
-        },
-        { 0 },
-        { 0 },
-        { bittags_print_page,
+        }, /* page_procs */
+        { 0 }, /* procs */
+        { 0 }, /* skip */
+        {
+          bittags_print_page,
           gx_default_print_page_copies,
           { bittag_create_buf_device,
             gx_default_size_buf_device,
             gx_default_setup_buf_device,
             gx_default_destroy_buf_device },
-          gx_default_get_space_params },
-        { 0 },
-        0,
-        0,
-        0,
-        -1,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
+          gx_default_get_space_params
+        }, /* printer_procs */
+        { 0 }, /* fname */
+        false, /* OpenOutputFile */
+        false, /* ReopenPerPage */
+        false, /* Duplex */
+        -1,    /* Duplex_set */
+        false, /* file_is_new */
+        NULL,  /* file */
+        0,     /* buffer_space */
+        NULL,  /* buf */
+        NULL,  /* buffer_memory */
+        NULL,  /* bandlist_memory */
+        0,     /* clist_disable_mask */
+        false, /* bg_print_requested */
+        {0},   /* bg_print */
+        0,     /* num_render_threads_requested */
+        NULL,  /* saved_pages_list */
+        {0},   /* save_procs_while_delaying_erasepage */
+        {0}    /* orig_procs */
     };
 
 static void
