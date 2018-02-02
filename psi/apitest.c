@@ -83,6 +83,7 @@ static void *gs_main(void *arg)
     if (code < 0)
     {
         fprintf(stdio.stderr, "gsapi_new_instance failure in thread %d\n", threadnum);
+        free(gsargv);
         return (void *)-1;
     }
 
@@ -94,6 +95,8 @@ static void *gs_main(void *arg)
         code = code1;
 
     gsapi_delete_instance(minst);
+
+    free(gsargv);
 
     if ((code == 0) || (code == gs_error_Quit))
         return (void *)0;
