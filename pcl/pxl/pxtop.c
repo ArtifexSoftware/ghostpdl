@@ -416,7 +416,7 @@ pxl_impl_report_errors(pl_interp_implementation_t * impl,
     const char *subsystem = (code <= px_error_next ? "KERNEL" : "GRAPHICS");
     char message[px_max_error_line + 1];
     int N = 0;
-    int y;
+    int y = 0;
 
     if (code >= 0)
         return code;            /* not really an error */

@@ -491,14 +491,10 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
                 }
 
                 for (j = 0; strlen(resident_table[j].full_font_name); j++) {
-                    uint pitch_cp;
-
                     if (strcmp
                         ((char *)resident_table[j].full_font_name,
                          (char *)pname) != 0)
                         continue;
-
-                    pitch_cp = (uint)((spaceBand * 100.0) / scaleFactor + 0.5);
 
 #ifdef DEBUG
                     if (gs_debug_c('='))
@@ -510,16 +506,7 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
 
                     if (scaleFactor == 8782) {
                         plfont->pts_per_inch = 72.307f;
-                        pitch_cp = (uint)((spaceBand * 100 * 72.0) /
-                                          (scaleFactor * 72.307) + 0.5);
                     }
-#ifdef DEBUG
-                    if (gs_debug_c('='))
-                        dmprintf3(mem,
-                                  "scale factor=%d, pitch (cp)=%d per_inch_x100=%d\n",
-                                  scaleFactor, pitch_cp,
-                                  (uint) (720000.0 / pitch_cp));
-#endif
 
                     plfont->font_type = resident_table[j].font_type;
                     plfont->storage = storage;

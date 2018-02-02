@@ -294,7 +294,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
 #endif
 
     while (p < rlimit) {
-        byte chr;
+        byte chr = 0x00; /* silence a compiler warning */
         const pcl_command_definition_t *cdefn = NULL;
         switch (pst->scan_type) {
             case scanning_data:

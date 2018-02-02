@@ -408,7 +408,7 @@ int
 pcl_palette_set_lookup_tbl(pcl_state_t * pcs, pcl_lookup_tbl_t * plktbl)
 {
     int code = unshare_palette(pcs);
-    pcl_cspace_type_t lktype;
+    pcl_cspace_type_t lktype = pcl_cspace_White;
 
     if ((code == 0) && (pcs->ppalet->pindexed == 0))
         code = pcl_cs_indexed_build_default_cspace(pcs,

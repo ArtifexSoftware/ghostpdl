@@ -1054,7 +1054,7 @@ hpgl_get_character_origin_offset(hpgl_state_t * pgls, int origin,
                                  gs_point * offset)
 {
     double pos_x = 0.0, pos_y = 0.0;
-    double off_x, off_y;
+    double off_x = 0.0, off_y = 0.0;
     hpgl_real_t adjusted_height = height;
 
 #ifdef CHECK_UNIMPLEMENTED
