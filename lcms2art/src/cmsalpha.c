@@ -113,11 +113,13 @@ void copy16(void* dst, const void* src)
        memmove(dst, src, 2);
 }
 
+static
 void from16toFLT(void* dst, const void* src)
 {
        *(cmsFloat32Number*)dst = (*(cmsUInt16Number*)src) / 65535.0f;
 }
 
+static
 void from16toDBL(void* dst, const void* src)
 {
        *(cmsFloat64Number*)dst = (*(cmsUInt16Number*)src) / 65535.0f;

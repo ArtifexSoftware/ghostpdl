@@ -59,7 +59,7 @@ cmsHTRANSFORM CreateRoundtripXForm(cmsContext ContextID, cmsHPROFILE hProfile, c
 
 // Use darker colorants to obtain black point. This works in the relative colorimetric intent and
 // assumes more ink results in darker colors. No ink limit is assumed.
-
+static
 cmsBool  BlackPointAsDarkerColorant(cmsContext ContextID,
                                     cmsHPROFILE hInput,
                                     cmsUInt32Number Intent,
