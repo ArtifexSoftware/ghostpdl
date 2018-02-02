@@ -40,7 +40,7 @@
 #define pjl_fontsource_body\
     char designator[2]; \
     PJCONST char *pathname; \
-    PJCONST char *fontnumber;
+    PJCONST char *fontnumber
 
 #define PJCONST
 typedef struct pjl_fontsource
@@ -59,7 +59,7 @@ typedef struct pjl_fontsource_default
 /* definitions for variable names and values */
 #define pjl_envir_var_body\
   PJCONST char *var; \
-  PJCONST char *value;
+  PJCONST char *value
 
 #define PJCONST
 typedef struct pjl_envir_var_s {
