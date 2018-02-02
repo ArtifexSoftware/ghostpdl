@@ -769,7 +769,7 @@ int display_size(void *handle, void *device, int width, int height,
 #ifdef DISPLAY_DEBUG
     if (debug)
         fputc('z', stdout);
-    fprintf(stdout, "display_size(0x%x 0x%x, %d, %d, %d, %d, %d, 0x%x)\n",
+    fprintf(stdout, "display_size(0x%x 0x%x, %d, %d, %d, %ld, 0x%x)\n",
         handle, device, width, height, raster, format, pimage);
 #endif
     img = image_find(handle, device);

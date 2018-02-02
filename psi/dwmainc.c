@@ -408,7 +408,7 @@ int display_presize(void *handle, void *device, int width, int height,
 {
     IMAGE *img;
 #ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_presize(0x%x 0x%x, %d, %d, %d, %d, %ld)\n",
+    fprintf(stdout, "display_presize(0x%x 0x%x, %d, %d, %d, %ld)\n",
         handle, device, width, height, raster, format);
 #endif
     img = image_find(handle, device);
@@ -424,7 +424,7 @@ int display_size(void *handle, void *device, int width, int height,
 {
     IMAGE *img;
 #ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_size(0x%x 0x%x, %d, %d, %d, %d, %ld, 0x%x)\n",
+    fprintf(stdout, "display_size(0x%x 0x%x, %d, %d, %d, %ld, 0x%x)\n",
         handle, device, width, height, raster, format, pimage);
 #endif
     img = image_find(handle, device);
