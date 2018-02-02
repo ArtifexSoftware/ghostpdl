@@ -1383,7 +1383,6 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
 
     /* search upwards to find the correct value for the last threshold value */
     /* Use this to initialize the threshold array (transition to all white) */
-    shade = 0;
     t_level = 0;
     do {
         t_level++;

@@ -477,17 +477,12 @@ fn_Sd_evaluate_cubic_cached_1d(const gs_function_Sd_t *pfn, const float *in, flo
 {
     float d0 = pfn->params.Domain[2 * 0];
     float d1 = pfn->params.Domain[2 * 0 + 1];
-    float x0 = in[0];
     const int pole_step_minor = pfn->params.n;
     const int pole_step = 3 * pole_step_minor;
     int i0; /* A cell index. */
     int ib, ie, i, k;
     double *p, t0, t1, tt;
 
-    if (x0 < d0)
-        x0 = d0;
-    if (x0 > d1)
-        x0 = d1;
     tt = (in[0] - d0) * (pfn->params.Size[0] - 1) / (d1 - d0);
     i0 = (int)floor(tt);
     ib = max(i0 - 1, 0);
@@ -740,6 +735,8 @@ make_interpolation_nodes(const gs_function_Sd_t *pfn, double *T0, double *T1,
         }
         if (pfn->params.Order == 3) {
             code = make_interpolation_tensor(pfn, I, T, 0, 0, pfn->params.m - 1);
+            if (code < 0)
+                return code;
         }
     } else {
         int i;

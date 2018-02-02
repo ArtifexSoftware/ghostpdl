@@ -561,9 +561,16 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
      */
     if (dev_proc(dev, get_profile) != NULL) {
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+        if (code < 0)
+            return code;
+
         if (dev_profile == NULL) {
             code = gsicc_init_device_profile_struct(dev, NULL, 0);
+            if (code < 0)
+                return code;
             code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+            if (code < 0)
+                return code;
         }
         /* It is possible that the current device profile name is NULL if we
            have a pdf14 device in line with a transparency group that is in a
@@ -1215,6 +1222,8 @@ gx_default_put_intent(gsicc_rendering_intents_t icc_intent, gx_device * dev,
         code = gsicc_set_device_profile_intent(dev, icc_intent, index);
     } else {
         code = dev_proc(dev, get_profile)(dev,  &profile_struct);
+        if (code < 0)
+            return code;
         if (profile_struct == NULL) {
             /* Create now  */
             dev->icc_struct = gsicc_new_device_profile_array(dev->memory);

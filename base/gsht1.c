@@ -250,7 +250,7 @@ gs_sethalftone_prepare(gs_gstate * pgs, gs_halftone * pht,
                     return_error(gs_error_VMerror);
                 poc_next = pocs + 1;
                 for (i = 0; i < count; i++, phc++) {
-                    gx_ht_order_component *poc = poc_next;
+                    gx_ht_order_component *poc;
 
                     if (phc->comp_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
                         if (have_Default) {
