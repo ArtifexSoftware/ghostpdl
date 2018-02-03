@@ -347,8 +347,6 @@ static void
 gx_device_make_struct_type(gs_memory_struct_type_t *st,
                            const gx_device *dev)
 {
-    const gx_device_procs *procs = dev->static_procs;
-
     if (dev->stype)
         *st = *dev->stype;
     else if (dev_proc(dev, get_xfont_procs) == gx_forward_get_xfont_procs)
