@@ -37,8 +37,7 @@ int install_internal_subclass_devices(gx_device **ppdev, int *devices_loaded)
         if (code < 0)
             return code;
 
-        saved = dev;
-        dev = dev->child;
+        saved = dev = dev->child;
 
         /* Open all devices *after* the new current device */
         while(dev) {
@@ -71,8 +70,7 @@ int install_internal_subclass_devices(gx_device **ppdev, int *devices_loaded)
         if (code < 0)
             return code;
 
-        saved = dev;
-        dev = dev->child;
+        saved = dev = dev->child;
 
         /* Open all devices *after* the new current device */
         while(dev) {
