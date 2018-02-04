@@ -218,6 +218,8 @@ pcl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
         return gs_error_VMerror;
     }
 
+    memset(&pcli->pcs, 0, sizeof(pcl_state_t));
+
     gsicc_init_iccmanager(pgs);
 
     pcli->memory = mem;

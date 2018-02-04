@@ -312,8 +312,10 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                 code = pl_remove_device(curr_implementation);
                 if (code >= 0)
                     code = pl_set_device(desired_implementation, minst->device);
-                if (code < 0)
+                if (code < 0) {
+                    curr_implementation = desired_implementation;
                     return gs_error_Fatal;
+                }
             }
             
             curr_implementation = desired_implementation;
