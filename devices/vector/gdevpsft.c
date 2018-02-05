@@ -1095,7 +1095,6 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
          */
         subtable_positions.head = offset;
         offset = put_table(tab, "head", head_checksum, offset, 54);
-        tab += 16;
     }
     numTables = numTables_out;
 
