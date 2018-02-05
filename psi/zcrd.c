@@ -291,7 +291,10 @@ cie_cache_joint(i_ctx_t *i_ctx_p, const ref_cie_render_procs * pcrprocs,
         return code;
     /* When we're done, deallocate the procs and complete the caches. */
     check_estack(3);
-    cie_cache_push_finish(i_ctx_p, cie_tpqr_finish, imem, pgs);
+    code = cie_cache_push_finish(i_ctx_p, cie_tpqr_finish, imem, pgs);
+    if (code < 0)
+        return code;
+
     *++esp = pqr_procs;
     space = r_space(&pqr_procs);
     for (i = 0; i < 3; i++) {
