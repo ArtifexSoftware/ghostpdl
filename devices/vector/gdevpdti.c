@@ -585,9 +585,9 @@ pdf_start_charproc_accum(gx_device_pdf *pdev)
     int code = pdf_enter_substream(pdev, resourceCharProc, id,
                                    &pres, false, pdev->CompressFonts);
 
-    pres->rid = id;
     if (code < 0)
        return code;
+    pres->rid = id;
     pcp = (pdf_char_proc_t *)pres;
     pcp->owner_fonts = NULL;
     return 0;
