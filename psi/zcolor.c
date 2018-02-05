@@ -5988,11 +5988,12 @@ setcolor_cont(i_ctx_t *i_ctx_p)
 {
     ref arr, *parr = &arr;
     es_ptr ep = esp;
-    int i=0, code = 0,depth, usealternate, stage, stack_depth, CIESubst = 0, IsICC = 0;
+    int i=0, code = 0, usealternate, stage, stack_depth, CIESubst = 0, IsICC = 0;
+    unsigned int depth;
     PS_colour_space_t *obj;
 
     stack_depth = (int)ep[-3].value.intval;
-    depth = (int)ep[-2].value.intval;
+    depth = (unsigned int)ep[-2].value.intval;
     stage = (int)ep[-1].value.intval;
     /* If we get a continuation from a sub-procedure, we will want to come back
      * here afterward, to do any remaining spaces. We need to set up for that now.
@@ -6073,7 +6074,8 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
     ref arr, *parr = &arr;
     os_ptr op = osp;
     es_ptr ep = esp, pdepth, pstage, pCIESubst;
-    int i, code = 0,depth, stage, cont, CIESubst = 0;
+    int i, code = 0, stage, cont, CIESubst = 0;
+    unsigned int depth;
     PS_colour_space_t *obj;
 
     pCIESubst = &ep[-3];
@@ -6081,7 +6083,7 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
     pstage = &ep[-1];
 
     CIESubst = (int)pCIESubst->value.intval;
-    depth = (int)pdepth->value.intval;
+    depth = (unsigned int)pdepth->value.intval;
     stage = (int)pstage->value.intval;
     /* If we get a continuation from a sub-procedure, we will want to come back
      * here afterward, to do any remaining stages. We need to set up for that now.
@@ -6380,12 +6382,13 @@ currentbasecolor_cont(i_ctx_t *i_ctx_p)
 {
     ref arr, *parr = &arr;
     es_ptr ep = esp;
-    int i, code = 0,depth, stage, base, cont=1, stack_depth = 0, CIESubst=0;
+    int i, code = 0, stage, base, cont=1, stack_depth = 0, CIESubst=0;
+    unsigned int depth;
     PS_colour_space_t *obj;
 
     stack_depth = (int)ep[-4].value.intval;
     base = (int)ep[-3].value.intval;
-    depth = (int)ep[-2].value.intval;
+    depth = (unsigned int)ep[-2].value.intval;
     stage = (int)ep[-1].value.intval;
     /* If we get a continuation from a sub-procedure, we will want to come back
      * here afterward, to do any remaining stages. We need to set up for that now.
