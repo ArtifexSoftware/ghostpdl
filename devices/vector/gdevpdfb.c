@@ -575,12 +575,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
              */
             goto use_default;
         } else {
-            /* Write the image as an XObject resource now. */
-            code = copy_data(pdev, tiles->data, 0, tiles->raster,
-                             tile_id, 0, 0, tw, th, &image, &writer, 1);
-            if (code < 0)
-                goto use_default;
-            image_id = pdf_resource_id(writer.pres);
+            goto use_default;
         }
         code = pdf_begin_resource(pdev, resourcePattern, tiles->id, &pres);
         if (code < 0)
