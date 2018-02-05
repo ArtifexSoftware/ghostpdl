@@ -138,7 +138,10 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
     set_linear_color_bits_mask_shift((gx_device *)&mdev);
     mdev.color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     /* Set mem device icc profile */
-    gsicc_init_device_profile_struct((gx_device *) &mdev, NULL, 0);
+    code = gsicc_init_device_profile_struct((gx_device *) &mdev, NULL, 0);
+    if (code < 0)
+        return code;
+
     if (pgs) {
         /* Check for an RGB-like color space.
            To recognize that we make a matrix as it were a linear operator,
