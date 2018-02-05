@@ -1268,16 +1268,13 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     if (!arg)
         return 0;
 
-    code = arg_push_string(pal, arg, true /* parsed */);
-    if (code < 0)
-        return code;
-    
-    while (arg_next(pal, (const char **)&arg, pmi->memory) > 0) {
+    do {
         code = pl_main_run_file(pmi, arg);
         if (code < 0)
             return code;
-    }
-    return 0;
+    } while ((code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0);
+
+    return code;
 }
 
 #define PJL_UEL "\033%-12345X"
