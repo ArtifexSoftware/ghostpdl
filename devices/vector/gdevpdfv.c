@@ -517,6 +517,8 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
         if (code < 0)
             return code;
     } else {
+        if (!p_tile)
+            return_error(gs_error_unknownerror);
         *ppres = pdf_find_resource_by_gs_id(pdev, resourcePattern, p_tile->id);
         *ppres = pdf_substitute_pattern(*ppres);
         (*ppres)->where_used |= pdev->used_mask;
