@@ -2060,7 +2060,7 @@ cos_stream_from_pipeline(stream *s)
 {
     cos_write_stream_state_t *ss;
 
-    while(s && s->procs.process != cos_s_procs.process) {
+    while(s->procs.process != cos_s_procs.process) {
         s = s->strm;
         if (s == 0L)
             return 0L;
@@ -2068,13 +2068,4 @@ cos_stream_from_pipeline(stream *s)
 
     ss = (cos_write_stream_state_t *)s->state;
     return ss->pcs;
-}
-
-/* Get cos write stream from pipeline. */
-stream *
-cos_write_stream_from_pipeline(stream *s)
-{
-    while(s->procs.process != cos_s_procs.process)
-        s = s->strm;
-    return s;
 }
