@@ -1850,7 +1850,11 @@ txtwrite_process_cmap_text(gs_text_enum_t *pte)
                     pte->index = scan.index;
                 }
                 code = gs_matrix_multiply(&subfont->FontMatrix, &pte->orig_font->FontMatrix, &m3);
+                if (code < 0)
+                    return code;
                 code = txt_update_text_state(penum->text_state, (textw_text_enum_t *)pte, pte->orig_font, &m3);
+                if (code < 0)
+                    return code;
                 txt_char_widths_to_uts(pte->orig_font, &widths); /* convert design->text space */
                 gs_distance_transform(widths.real_width.xy.x * penum->text_state->size,
                           widths.real_width.xy.y * penum->text_state->size,
