@@ -348,13 +348,15 @@ gx_dc_pattern2_clip_with_bbox(const gx_device_color * pdevc, gx_device * pdev,
 
         gx_path_init_local(&box_path, mem);
         code = gx_dc_shading_path_add_box(&box_path, pdevc);
-        if (code == gs_error_limitcheck) {
-            /* Ignore huge BBox - bug 689027. */
-            code = 0;
-        } else {
+        if (code != gs_error_limitcheck) {
+            /* Ignore huge BBox causing limitcheck - bug 689027. */
             if (code >= 0) {
                 gx_cpath_init_local_shared(cpath_local, *ppcpath1, mem);
                 code = gx_cpath_intersect(cpath_local, &box_path, gx_rule_winding_number, (gs_gstate *)pinst->saved);
+                if (code < 0) {
+                    gx_path_free(&box_path, "gx_default_fill_path(path_bbox)");
+                    return code;
+                }
                 *ppcpath1 = cpath_local;
             }
         }

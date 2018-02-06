@@ -1799,9 +1799,6 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, int64_t offset, byte *dat
         /* copy that amount */
         ptr = ptile->ttrans->transbytes;
         memcpy(dp, ptr + (offset1 - size_h), u);
-        left -= u;
-        dp += u;
-        offset1 += u;
     }
     return 0;
 }
@@ -1979,8 +1976,6 @@ gx_dc_pattern_read_raster(gx_color_tile *ptile, const gx_dc_serialized_tile_t *b
         memcpy(ptile->tmask.data +
                 (offset1 - sizeof(gx_dc_serialized_tile_t) - size_b - sizeof(gx_strip_bitmap)), dp, l);
         left -= l;
-        offset1 += l;
-        dp += l;
     }
     return size - left;
 }
@@ -2017,8 +2012,6 @@ gx_dc_pattern_read_trans_buff(gx_color_tile *ptile, int64_t offset,
                                     sizeof(tile_trans_clist_info_t), dp, u);
         trans_pat->transbytes = save;
         left -= u;
-        offset1 += u;
-        dp += u;
     }
      return size - left;
 }
@@ -2188,7 +2181,6 @@ gx_dc_pattern_read(
             return gx_dc_pattern_read_raster(ptile, NULL, offset1, dp, left, mem);
 
         size_b = ptile->tbits.size.x;
-        size_c = ptile->tbits.size.y;
     }
     if (offset1 <= sizeof(buf) + size_b) {
         l = min(left, size_b - (offset1 - sizeof(buf)));
@@ -2208,7 +2200,6 @@ gx_dc_pattern_read(
             return code;
         l = code;
         left -= l;
-        offset1 += l;
     }
     return size - left;
 }

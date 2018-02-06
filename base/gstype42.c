@@ -861,7 +861,6 @@ gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_inde
                                         return new_glyph;
                                     }
                                 } else if (k0 >= k1 - 1) {
-                                    k += 0; /* A place for breakpoint. */
                                     break; /* Not found. */
                                 } else if (glyph_index < glyph)
                                     k1 = k;
@@ -900,7 +899,6 @@ gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_inde
                                         return new_glyph;
                                     }
                                 } else if (k0 >= k1 - 1) {
-                                    k += 0; /* A place for breakpoint. */
                                     break; /* Not found. */
                                 } else if (glyph_index < rr.Start)
                                     k1 = k;

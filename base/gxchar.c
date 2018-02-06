@@ -608,6 +608,9 @@ set_cache_device(gs_show_enum * penum, gs_gstate * pgs, double llx, double lly,
                                  log2_scale.x + log2_scale.y > alpha_bits ?
                                  penum->dev_cache2 : NULL),
                                 iwidth, iheight, &log2_scale, depth, &cc);
+        if (code < 0)
+            return code;
+
         if (cc == 0) {
             /* too big for cache or no cache */
             gx_path box_path;
@@ -633,6 +636,8 @@ set_cache_device(gs_show_enum * penum, gs_gstate * pgs, double llx, double lly,
             if (code < 0)
                 return code;
             code = gx_cpath_clip(pgs, pgs->clip_path, &box_path, gx_rule_winding_number);
+            if (code < 0)
+                return code;
             gx_path_free(&box_path, "set_cache_device");
             pgs->in_cachedevice = CACHE_DEVICE_NONE_AND_CLIP;
             return 0;

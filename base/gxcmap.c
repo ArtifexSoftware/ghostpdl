@@ -676,6 +676,9 @@ gs_color_select_t select)
                proper color management for the CMYK portions IF you are using
                an NCLR output profile. */
             code = dev_proc(dev, get_profile)(dev, &dev_profile);
+            if (code < 0)
+                return false;
+
             /* Check if the profile is DeviceN (NCLR) */
             if (dev_profile->device_profile[0]->data_cs == gsNCHANNEL) {
                 if (dev_profile->spotnames == NULL)
@@ -684,6 +687,8 @@ gs_color_select_t select)
                     /* Note that if the improper NCLR profile is used, then the
                        composite preview will be wrong. */
                     code = gsicc_set_devicen_equiv_colors(dev, pgs, dev_profile->device_profile[0]);
+                    if (code < 0)
+                        return false;
                     dev_profile->spotnames->equiv_cmyk_set = true;
                 }
                 gx_remap_concrete_devicen(conc, pdc, pgs, dev, select);

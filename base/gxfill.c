@@ -1892,7 +1892,6 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
                             nx = nx0;
                     }
                     endp->x_next = alp->x_next = nx;  /* Ensure same X. */
-                    draw = 0;
                     /* Can't guarantee same x for triple intersections here.
                        Will take care below */
                 }

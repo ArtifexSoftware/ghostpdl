@@ -778,7 +778,6 @@ flex:			{
                             }
                             if (code < 0)
                                 return code;
-                            csp -= 13;
                         }
                         cnext;
                     case ce2_hflex1:

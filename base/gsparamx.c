@@ -57,7 +57,7 @@ param_put_enum(gs_param_list * plist, gs_param_name param_name,
             ecode = code;
             param_signal_error(plist, param_name, code);
     }
-    return code;
+    return ecode;
 }
 
 /* Put a Boolean value. */
