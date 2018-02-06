@@ -8055,12 +8055,12 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
             /* If the CMM is not threadsafe, then the pdf14 device actually
                needs to inherit the ICC profile from the clist thread device
                not the target device. */
-#if !CMM_THREAD_SAFE
-            gx_monitor_enter(p14_icc_profile->lock);
-            rc_assign(p14dev->icc_struct->device_profile[0], cl_icc_profile,
-                      "c_pdf14trans_clist_read_update");
-            gx_monitor_leave(p14_icc_profile->lock);
-#endif
+            if (!gscms_is_threadsafe()) {
+                gx_monitor_enter(p14_icc_profile->lock);		/* FIXME: wrong lock */
+                rc_assign(p14dev->icc_struct->device_profile[0] /*to*/, cl_icc_profile/*from*/,
+                          "c_pdf14trans_clist_read_update");
+                gx_monitor_leave(p14_icc_profile->lock);
+            }
             /*
              * If we are blending using spot colors (i.e. the output device
              * supports spot colors) then we need to transfer

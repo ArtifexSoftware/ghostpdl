@@ -922,3 +922,9 @@ gscms_get_name2device_link(gsicc_link_t *icclink,
         cmsCloseProfile(ctx, lcms_proofhandle);
     return;
 }
+
+bool
+gscms_is_threadsafe()
+{
+    return false;		/* FIXME: return true once threads work correctly */
+}

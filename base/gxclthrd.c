@@ -102,10 +102,11 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     ndev->pad = dev->pad;
     ndev->log2_align_mod = dev->log2_align_mod;
     ndev->is_planar = dev->is_planar;
-#if CMM_THREAD_SAFE
+    if (gscms_is_threadsafe()) {
+        /* safe to share the icc_struct among threads */
         ndev->icc_struct = dev->icc_struct;  /* Set before put params */
         rc_increment(ndev->icc_struct);
-#endif
+    }
     /* get the current device parameters to put into the cloned device */
     gs_c_param_list_write(&paramlist, thread_mem);
     if ((code = gs_getdeviceparams(dev, (gs_param_list *)&paramlist)) < 0) {
@@ -218,23 +219,23 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     /* The threads are maintained until clist_finish_page.  At which
        point, the threads are torn down, the master clist reader device
        is changed to writer, and the icc_table and the icc_cache_cl freed */
-#if CMM_THREAD_SAFE
+    if (gscms_is_threadsafe()) {
     /* safe to share the link cache */
-    ncdev->icc_cache_cl = cdev->icc_cache_cl;
-    rc_increment(cdev->icc_cache_cl);
-#else
-    /* each thread needs its own link cache */
-    if (cachep != NULL) {
-        if (*cachep == NULL) {
-            /* We don't have one cached that we can reuse, so make one. */
-            if ((*cachep = gsicc_cache_new(thread_mem->thread_safe_memory)) == NULL)
-                goto out_cleanup;
-        }
-        rc_increment(*cachep);
-        ncdev->icc_cache_cl = *cachep;
-    } else if ((ncdev->icc_cache_cl = gsicc_cache_new(thread_mem)) == NULL)
-        goto out_cleanup;
-#endif
+        ncdev->icc_cache_cl = cdev->icc_cache_cl;
+        rc_increment(cdev->icc_cache_cl);		/* FIXME: needs to be incdemented safely */
+    } else {
+        /* each thread needs its own link cache */
+        if (cachep != NULL) {
+            if (*cachep == NULL) {
+                /* We don't have one cached that we can reuse, so make one. */
+                if ((*cachep = gsicc_cache_new(thread_mem->thread_safe_memory)) == NULL)
+                    goto out_cleanup;
+            }
+            rc_increment(*cachep);
+                ncdev->icc_cache_cl = *cachep;
+        } else if ((ncdev->icc_cache_cl = gsicc_cache_new(thread_mem)) == NULL)
+            goto out_cleanup;
+    }
     if (bg_print) {
         gx_device_clist_reader *ncrdev = (gx_device_clist_reader *)ncdev;
 
