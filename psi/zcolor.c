@@ -6390,6 +6390,13 @@ currentbasecolor_cont(i_ctx_t *i_ctx_p)
     base = (int)ep[-3].value.intval;
     depth = (unsigned int)ep[-2].value.intval;
     stage = (int)ep[-1].value.intval;
+
+    /* This shouldn't be possible, all the procedures which call this should
+     * set the depth to at *least* 1.
+     */
+    if (depth < 1)
+        return_error(gs_error_unknownerror);
+
     /* If we get a continuation from a sub-procedure, we will want to come back
      * here afterward, to do any remaining stages. We need to set up for that now.
      * so that our continuation is ahead of the sub-proc's continuation.

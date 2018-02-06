@@ -406,6 +406,8 @@ gx_serialize_cie_cache(const cie_cache_floats *c, stream * s)
     int code;
 
     code = sputs(s, (const byte *)&c->params.is_identity, sizeof(c->params.is_identity), &n);
+    if (code < 0)
+        return_error(gs_error_ioerror);
     if (c->params.is_identity)
         return 0;
     code = sputs(s, (const byte *)&cache_size, sizeof(cache_size), &n);

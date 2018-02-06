@@ -1572,7 +1572,7 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
     unsigned long psc_len;
     pscompstate psc = { 0 };
     unsigned long numfiles = 0;
-    char **foundfiles = NULL;
+    char **foundfiles = NULL, *temp;
 
     prefixed_path = malloc(PATH_STR_LEN);
     found_path = malloc(PATH_STR_LEN);
@@ -1611,7 +1611,18 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
             continue;
 
         numfiles++;
-        foundfiles = realloc(foundfiles, sizeof(char *) * numfiles);
+        temp = realloc(foundfiles, sizeof(char *) * numfiles);
+        if (temp == NULL) {
+            free(cbuf);
+            free(ubuf);
+            free(found_path);
+            free(foundfiles);
+            free(prefixed_path);
+            free(rom_filename);
+            printf("realloc failed in process_path.\n");
+            exit(1);
+        }
+        foundfiles = (char **)temp;
         foundfiles[numfiles - 1] = strdup(found_path);
     }
 

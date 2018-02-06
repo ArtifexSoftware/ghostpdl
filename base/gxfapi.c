@@ -473,7 +473,6 @@ gs_fapi_prepare_font(gs_font *pfont, gs_fapi_server *I, int subfont, const char 
             if (code < 0) {
                 emprintf(mem,
                          "Ignoring gs_notify_register() failure for FAPI font.....");
-                code = 0;
             }
         }
         if (i == n) {

@@ -243,6 +243,9 @@ zset_outputintent(i_ctx_t * i_ctx_p)
 
     /* Get the device structure */
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    if (code < 0)
+        return code;
+
     if (dev_profile == NULL) {
         code = gsicc_init_device_profile_struct(dev, NULL, 0);
         if (code < 0)

@@ -536,8 +536,11 @@ pm_spool(const gs_memory_t *mem, char *filename, const char *queue)
             if (!rc)
                 emprintf(mem, "SplQmClose failed.\n");
         }
-    } else
+    } else {
+        free(buffer);
+        fclose(f);
         rc = 0;			/* no memory */
+    }
     return !rc;
 }
 

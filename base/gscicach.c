@@ -221,7 +221,6 @@ get_color_index_cache_elem(gs_color_index_cache_t *self,
                 return 1;
             }
         }
-        tries+=0;
     }
     if (self->used < COLOR_INDEX_CACHE_SIZE) {
         /* Use a new one */

@@ -395,7 +395,7 @@ pattern_paint_cleanup(i_ctx_t *i_ctx_p)
         r_ptr(esp + 4, gx_device_pattern_accum);
         gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)gs_currentcolor(igs->saved)->pattern;
     gs_pattern1_instance_t *pinst2 = r_ptr(esp + 3, gs_pattern1_instance_t);
-    int code, i;
+    int code, i, ecode=0;
     /* If the PaintProc does one or more gsaves, then encounters an error, we can get
      * here with the graphics state stack not how we expect.
      * Hence we stored a reference to the pattern instance on the exec stack, and that
@@ -425,10 +425,13 @@ pattern_paint_cleanup(i_ctx_t *i_ctx_p)
         param.graphics_state = (void *)igs;
         param.pinst_id = pinst->id;
 
-        code = dev_proc(cdev, dev_spec_op)(cdev,
+        ecode = dev_proc(cdev, dev_spec_op)(cdev,
                         gxdso_pattern_finish_accum, &param, sizeof(pattern_accum_param_s));
     }
     code = gs_grestore(igs);
     gx_unset_dev_color(igs);	/* dev_color may need updating if GC ran */
+
+    if (ecode < 0)
+        return ecode;
     return code;
 }

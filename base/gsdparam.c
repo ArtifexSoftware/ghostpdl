@@ -1538,7 +1538,6 @@ e:	param_signal_error(plist, param_name, ecode);\
             if (param_read_null(plist, "LeadingEdge") == 0) {
                 /* if param is null, clear explicitly-set flag */
                 leadingedge &= ~LEADINGEDGE_SET_MASK;
-                code = 0;
             } else {
                 ecode = code;
             }
