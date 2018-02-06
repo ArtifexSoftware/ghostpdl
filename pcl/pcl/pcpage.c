@@ -1304,6 +1304,9 @@ pcpage_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
     }
 
     if ((type & (pcl_reset_initial | pcl_reset_printer)) != 0) {
+        pcl_paper_size_t *psize = pcl_get_default_paper(pcs);
+        if (psize == NULL) return_error(gs_error_VMerror);
+
         pcs->paper_source = 0;  /* ??? */
         pcs->xfm_state.left_offset_cp = 0.0;
         pcs->xfm_state.top_offset_cp = 0.0;
@@ -1313,7 +1316,7 @@ pcpage_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
                                            pjl_proc_get_envvar(pcs->pjls,
                                                                "orientation"),
                                            "portrait") ? 0 : 1,
-                         pcl_get_default_paper(pcs),
+                         psize,
                          (type & pcl_reset_initial) != 0, false);
         if (code < 0) goto cleanup;
     } else if ((type & pcl_reset_overlay) != 0) {
