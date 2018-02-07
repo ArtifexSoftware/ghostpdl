@@ -938,8 +938,6 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
                 break;
         if (i == gx_image_class_table_count) {
             /* No available class can handle this image. */
-            gx_default_end_image(dev, (gx_image_enum_common_t *) penum,
-                                 false);
             return_error(gs_error_rangecheck);
         }
     }

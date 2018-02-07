@@ -418,8 +418,7 @@ static int px_remap_pattern(const gs_client_color *pcc, gs_gstate *pgs)
          */
         return_error(gs_error_Remap_Color);
     } else {
-        px_paint_pattern(pcc, pgs);
-        return 0;
+        return px_paint_pattern(pcc, pgs);
     }
 }
 
