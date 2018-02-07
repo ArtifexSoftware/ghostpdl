@@ -659,6 +659,17 @@ gs_main_run_string_end(gs_main_instance * minst, int user_errors,
                         perror_object);
 }
 
+gs_memory_t *
+gs_main_get_device_memory(gs_main_instance * minst)
+{
+  gs_memory_t *dev_mem = NULL;
+  if (minst && minst->init_done >= 1) {
+      i_ctx_t * i_ctx_p = minst->i_ctx_p;
+      dev_mem = imemory_global->stable_memory;
+  }
+  return dev_mem;
+}
+
 /* ------ Operand stack access ------ */
 
 /* These are built for comfort, not for speed. */

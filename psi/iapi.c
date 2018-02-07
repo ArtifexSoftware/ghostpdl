@@ -520,6 +520,15 @@ gsapi_run_fileA(void *instance, const char *file_name,
 }
 #endif
 
+/* Retrieve the memory allocator for the interpreter instance */
+GSDLLEXPORT gs_memory_t * GSDLLAPI
+gsapi_get_device_memory(void *instance)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    return gs_main_get_device_memory(get_minst_from_memory(ctx->memory));
+}
+
+
 /* Exit the interpreter */
 GSDLLEXPORT int GSDLLAPI
 gsapi_exit(void *instance)

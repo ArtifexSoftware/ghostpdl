@@ -40,6 +40,7 @@ typedef struct GSDLL_S {
         PFN_gsapi_set_arg_encoding set_arg_encoding;
         PFN_gsapi_set_default_device_list set_default_device_list;
         PFN_gsapi_get_default_device_list get_default_device_list;
+        PFN_gsapi_get_device_memory get_device_memory;
 } GSDLL;
 
 /* Load the Ghostscript DLL.
