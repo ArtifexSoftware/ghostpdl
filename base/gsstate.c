@@ -227,22 +227,7 @@ gs_gstate_alloc(gs_memory_t * mem)
     pgs->view_clip->rule = 0;   /* no clipping */
     pgs->effective_clip_id = pgs->clip_path->id;
     pgs->effective_view_clip_id = gs_no_id;
-    /* Initialize things so that gx_remap_color won't crash. */
-    pgs->color[0].color_space = gs_cspace_new_DeviceGray(pgs->memory);
-    if (pgs->color[0].color_space == NULL)
-        goto fail;
-    pgs->color[1].color_space = gs_cspace_new_DeviceGray(pgs->memory);
-    if (pgs->color[1].color_space == NULL)
-        goto fail;
     pgs->in_cachedevice = 0;
-    gs_swapcolors_quick(pgs); /* To color 1 */
-    code = gx_set_device_color_1(pgs); /* sets colorspace and client color */
-    if (code < 0)
-        goto fail;
-    gs_swapcolors_quick(pgs); /* To color 0 */
-    code = gx_set_device_color_1(pgs); /* sets colorspace and client color */
-    if (code < 0)
-        goto fail;
     pgs->device = 0;            /* setting device adjusts refcts */
     code = gs_nulldevice(pgs);
     if (code < 0)
