@@ -1094,7 +1094,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
          * it occupies 56 bytes on the file.
          */
         subtable_positions.head = offset;
-        offset = put_table(tab, "head", head_checksum, offset, 54);
+        (void)put_table(tab, "head", head_checksum, offset, 54);
     }
     numTables = numTables_out;
 

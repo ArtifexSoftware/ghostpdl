@@ -124,6 +124,9 @@ gs_image_class_4_color(gx_image_enum * penum)
         cmm_dev_profile_t *dev_profile;
 
         code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
+        if (code < 0)
+            return NULL;    /* This function does not return errors, best we can do is say 'we can't handle this' */
+
         des_num_comp = gsicc_get_device_profile_comps(dev_profile);
         bpc = penum->dev->color_info.depth / des_num_comp;	/* bits per component */
         penum->icc_setup.need_decode = false;
@@ -1234,7 +1237,6 @@ image_render_color_icc_skew(gx_image_enum *penum_orig, const byte *buffer, int d
         ptemp = pdevc;
         pdevc = pdevc_next;
         pdevc_next = ptemp;
-        run = psrc_cm;
         psrc_cm += spp_cm;
         xprev = dda_current(pnext.x);
         yprev = dda_current(pnext.y);	/* harmless if no skew */

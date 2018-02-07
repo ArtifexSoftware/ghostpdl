@@ -2303,7 +2303,6 @@ static void t1_hinter__unfix_opposite_to_common(t1_hinter * self)
                                     agm = (!k ? self->hint[m].ag0 : self->hint[m].ag1);
                                 } if (md < d) {
                                     md = d;
-                                    m = j;
                                 }
                             }
                         }
@@ -2448,7 +2447,6 @@ static int t1_hinter__align_stem_poles(t1_hinter * self)
                     if (gt0 != gt1) {
                         d = any_abs(t1 - t0);
                         if (md > d) {
-                            d = md;
                             mj = j;
                         }
                     }

@@ -1353,11 +1353,8 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                                     }
                                 };
                                 x++, psrc += spp_decode;
-                                if (abs_interp_limit > 1) {
+                                if (abs_interp_limit > 1)
                                     dda_next(pss->params.scale_dda.x);
-                                    expand = interpolate_scaled_expanded_width(1, pss);
-                                } else
-                                    expand = 1;
                         }
                     } else {
                         int rcode, rep = 0;
@@ -1762,11 +1759,8 @@ irii_inner_template(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned 
                         }
                     };
                     x++, p_cm_interp += spp_cm;
-                    if (abs_interp_limit > 1) {
+                    if (abs_interp_limit > 1)
                         dda_next(pss->params.scale_dda.x);
-                        expand = interpolate_scaled_expanded_width(1, pss);
-                    } else
-                        expand = 1;
             }
         } else {
             int rcode, rep = 0;

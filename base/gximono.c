@@ -111,6 +111,9 @@ gs_image_class_3_mono(gx_image_enum * penum)
                 }
             }
             code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
+            if (code < 0)
+                return NULL;    /* This function does not return errors, best we can do is say 'we can't handle this' */
+
             /* Define the rendering intents */
             rendering_params.black_point_comp = penum->pgs->blackptcomp;
             rendering_params.graphics_type_tag = GS_IMAGE_TAG;
