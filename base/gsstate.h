@@ -66,6 +66,7 @@ int gs_currentblackptcomp(const gs_gstate *);
 int gs_setblackptcomp(gs_gstate *, int);
 
 int gs_initgraphics(gs_gstate *);
+int gs_initgraphics_no_cspace(gs_gstate *);
 
 bool gs_currentcpsimode(const gs_memory_t *);
 void gs_setcpsimode(gs_memory_t *, bool);
