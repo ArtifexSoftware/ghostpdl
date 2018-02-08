@@ -311,7 +311,7 @@ begin_rebuffered_bitmap(px_bitmap_params_t * params, px_bitmap_enum_t * benum,
 
 static int
 read_jpeg_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
-                      px_args_t * par)
+                      px_args_t * par, bool last)
 {
     uint data_per_row = benum->data_per_row;    /* jpeg doesn't pad */
     uint avail = par->source.available;
@@ -331,6 +331,9 @@ read_jpeg_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
             gs_jpeg_destroy((&benum->dct_stream_state));
         return 0;
     }
+
+    if (last)
+        return_error(errorIllegalDataLength);
 
     if (!benum->initialized) {
         jpeg_decompress_data *jddp = &(benum->jdd);
@@ -390,7 +393,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
 
 static int
 read_uncompressed_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
-                              px_args_t * par)
+                              px_args_t * par, bool last)
 {
     int code;
     uint avail = par->source.available;
@@ -410,6 +413,9 @@ read_uncompressed_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
     if (par->source.position >= data_per_row_padded * par->pv[1]->value.i)
         return 0;
 
+    if (last)
+        return_error(errorIllegalDataLength);
+    
     if (avail >= data_per_row_padded && pos_in_row == 0) {
         /* Use the data directly from the input buffer. */
         *pdata = (byte *) data;
@@ -429,7 +435,7 @@ read_uncompressed_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
 }
 
 static int
-read_rle_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par)
+read_rle_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par, bool last)
 {
     stream_RLD_state *ss = (&benum->rld_stream_state);
     uint avail = par->source.available;
@@ -450,6 +456,9 @@ read_rle_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par)
     if (par->source.position >= data_per_row_padded * par->pv[1]->value.i)
         return 0;
 
+    if (last)
+        return_error(errorIllegalDataLength);
+    
     if (!benum->initialized) {
         ss->EndOfData = false;
         ss->templat = &s_RLD_template;
@@ -540,7 +549,7 @@ read_rle_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par)
  */
 static int
 read_deltarow_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
-                          px_args_t * par)
+                          px_args_t * par, bool last)
 {
     deltarow_state_t *deltarow = &benum->deltarow_state;
     uint avail = par->source.available;
@@ -553,6 +562,9 @@ read_deltarow_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
         deltarow->rowwritten = 0;
         return 0;
     }
+
+    if (last)
+        return_error(errorIllegalDataLength);
 
     /* initialize at begin of image */
     if (!benum->initialized) {
@@ -680,7 +692,7 @@ read_deltarow_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
  * Attributes: pxaStartLine (ignored), pxaBlockHeight, pxaCompressMode.
  */
 static int
-read_bitmap(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par)
+read_bitmap(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par, bool last)
 {
     /* Changing compression within an image is unimplemented */
     /* but for now we return an error. */
@@ -690,13 +702,13 @@ read_bitmap(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par)
         benum->compress_type = par->pv[2]->value.i;
     switch (benum->compress_type) {
         case eRLECompression:
-            return read_rle_bitmap_data(benum, pdata, par);
+            return read_rle_bitmap_data(benum, pdata, par, last);
         case eJPEGCompression:
-            return read_jpeg_bitmap_data(benum, pdata, par);
+            return read_jpeg_bitmap_data(benum, pdata, par, last);
         case eDeltaRowCompression:
-            return read_deltarow_bitmap_data(benum, pdata, par);
+            return read_deltarow_bitmap_data(benum, pdata, par, last);
         case eNoCompression:
-            return read_uncompressed_bitmap_data(benum, pdata, par);
+            return read_uncompressed_bitmap_data(benum, pdata, par, last);
         default:
             break;
     }
@@ -708,7 +720,7 @@ static int read_rebuffered_bitmap(px_bitmap_enum_t * benum, byte ** pdata, px_ar
     int code;
 
     if (!benum->rebuffered)
-        return read_bitmap(benum, pdata, par);
+        return read_bitmap(benum, pdata, par, /* last */ false);
 
     {
         int w = benum->rebuffered_width;
@@ -716,7 +728,7 @@ static int read_rebuffered_bitmap(px_bitmap_enum_t * benum, byte ** pdata, px_ar
         byte *data2 = rowptr + benum->rebuffered_row_pos * benum->data_per_row;
         for (; benum->rebuffered_row_pos < w; benum->rebuffered_row_pos++) {
             byte *data3 = data2;
-            code = read_bitmap(benum, &data3, par);
+            code = read_bitmap(benum, &data3, par, /* last */ false);
             if (code == 0) {
                 return 0;
             } else if (code == 1) {
@@ -1065,7 +1077,7 @@ pxReadRastPattern(px_args_t * par, px_state_t * pxs)
         if (data > plimit)
             return_error(gs_error_rangecheck);
 
-        code = read_bitmap(&pxenum->benum, &rdata, par);
+        code = read_bitmap(&pxenum->benum, &rdata, par, /* last */ data == plimit);
         if (code != 1)
             break;
 
