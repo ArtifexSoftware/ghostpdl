@@ -951,6 +951,7 @@ struct px_pattern_enum_s
     int32_t pattern_id;
     pxePatternPersistence_t persistence;
     px_pattern_t *pattern;
+    int lines_rendered;
 };
 
 gs_private_st_simple(st_px_pattern_enum, px_pattern_enum_t,
@@ -1017,6 +1018,7 @@ pxBeginRastPattern(px_args_t * par, px_state_t * pxs)
     pxenum->benum.initialized = false;
     pxenum->pattern_id = par->pv[5]->value.i;
     pxenum->persistence = par->pv[6]->value.i;
+    pxenum->lines_rendered = 0;
     pattern->params = params;
     pattern->palette.data = pdata;
     pattern->palette.size = psize;
@@ -1037,30 +1039,27 @@ pxReadRastPattern(px_args_t * par, px_state_t * pxs)
 {
     px_pattern_enum_t *pxenum = pxs->pattern_enum;
     int code;
-    uint input_per_row = round_up(pxenum->benum.data_per_row, 4);
     byte *plimit = pxenum->pattern->data +
         (pxenum->benum.data_per_row * pxenum->pattern->params.height);
 
-    if (par->pv[3])
-        input_per_row =
-            round_up(pxenum->benum.data_per_row, par->pv[3]->value.i);
-    /* Make a quick check for the first call, when no data is available. */
-    if (par->source.available == 0 && par->pv[1]->value.i != 0)
-        return pxNeedData;
-    /* emulate hp bug */
+    if (par->pv[1]->value.i == 0)
+        return 0;               /* no data */
+
+    /* first call */
+    if (par->source.available == 0)
+        pxenum->lines_rendered = 0;
+
     {
         pxeCompressMode_t c = par->pv[2]->value.i;
 
         if (!pxenum->benum.initialized)
             pxenum->benum.compress_type = c;
 
-        if (c == eDeltaRowCompression || c == eJPEGCompression)
-            input_per_row = pxenum->benum.data_per_row;
     }
+    
     for (;;) {
         byte *data = pxenum->pattern->data +
-            (par->pv[0]->value.i + par->source.position / input_per_row)
-            * pxenum->benum.data_per_row;
+            (par->pv[0]->value.i + pxenum->lines_rendered) * pxenum->benum.data_per_row;
         byte *rdata = data;
 
         if (data > plimit)
@@ -1069,9 +1068,13 @@ pxReadRastPattern(px_args_t * par, px_state_t * pxs)
         code = read_bitmap(&pxenum->benum, &rdata, par);
         if (code != 1)
             break;
+
+        pxenum->lines_rendered++;
+
         if (rdata != data)
             memcpy(data, rdata, pxenum->benum.data_per_row);
     }
+
     return code;
 }
 
