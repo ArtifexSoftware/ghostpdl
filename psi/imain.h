@@ -201,6 +201,8 @@ int gs_main_run_string_end(gs_main_instance * minst, int user_errors,
 gs_memory_t *
 gs_main_get_device_memory(gs_main_instance * minst);
 
+int
+gs_main_set_device(gs_main_instance * minst, gx_device *pdev);
 /* ---------------- Operand stack access ---------------- */
 
 /*

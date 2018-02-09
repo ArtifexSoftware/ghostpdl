@@ -63,6 +63,16 @@ int pl_allocate_interp_instance(pl_interp_implementation_t *, gs_memory_t *);
 typedef int (*pl_interp_proc_allocate_interp_instance_t) (pl_interp_implementation_t *,
                                                           gs_memory_t *);
 
+
+/*
+ * Get the allocator with which to allocate a device
+ * NOTE: only one interpreter is permitted to return a
+ * allocator.
+ */
+gs_memory_t *
+pl_get_device_memory(pl_interp_implementation_t *);
+typedef gs_memory_t * (*pl_interp_proc_get_device_memory_t) (pl_interp_implementation_t *);
+
 /*
  * Set a device, possibly shared, into the graphics state of the language.
  */
@@ -140,6 +150,7 @@ struct pl_interp_implementation_s
     /* Procedure vector */
     pl_interp_proc_characteristics_t proc_characteristics;
     pl_interp_proc_allocate_interp_instance_t proc_allocate_interp_instance;
+    pl_interp_proc_get_device_memory_t proc_get_device_memory;
     pl_interp_proc_set_device_t proc_set_device;
     pl_interp_proc_init_job_t proc_init_job;
     pl_interp_proc_process_file_t proc_process_file;

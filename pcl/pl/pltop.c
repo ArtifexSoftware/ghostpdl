@@ -41,6 +41,18 @@ pl_allocate_interp_instance(pl_interp_implementation_t * impl,
     return impl->proc_allocate_interp_instance(impl, mem);
 }
 
+/*
+ * Get the allocator with which to allocate a device
+ */
+gs_memory_t *
+pl_get_device_memory(pl_interp_implementation_t *impl)
+{
+    if (impl->proc_get_device_memory)
+        return impl->proc_get_device_memory(impl);
+    else
+        return NULL;
+}
+
 /* Get and interpreter prefered device memory allocator if any */
 int                             /* ret 0 ok, else -ve error code */
 pl_set_device(pl_interp_implementation_t * impl,  /* interp instance to use */

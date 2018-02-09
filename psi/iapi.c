@@ -528,6 +528,13 @@ gsapi_get_device_memory(void *instance)
     return gs_main_get_device_memory(get_minst_from_memory(ctx->memory));
 }
 
+/* Retrieve the memory allocator for the interpreter instance */
+GSDLLEXPORT int GSDLLAPI
+gsapi_set_device(void *instance, gx_device *pdev)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    return gs_main_set_device(get_minst_from_memory(ctx->memory), pdev);
+}
 
 /* Exit the interpreter */
 GSDLLEXPORT int GSDLLAPI

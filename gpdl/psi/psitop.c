@@ -130,6 +130,8 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
                                                   "ps_impl_allocate_interp_instance");
 
     int code;
+#define GS_NUM_ARGS 3
+    const char *gsargs[GS_NUM_ARGS] = {"gpdl","-dNODISPLAY", "-dJOBSERVER"};
     
     if (!psi)
         return gs_error_VMerror;
@@ -137,15 +139,29 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
     code = gsapi_new_instance(&impl->interp_client_data, NULL);
     if (code < 0)
         gs_free_object(mem, psi, "ps_impl_allocate_interp_instance");
+
+    code = gsapi_init_with_args(impl->interp_client_data, GS_NUM_ARGS, (char **)gsargs);
+    if (code < 0) {
+        gsapi_delete_instance(impl->interp_client_data);
+        gs_free_object(mem, psi, "ps_impl_allocate_interp_instance");
+    }
     return code;
+}
+
+/*
+ * Get the allocator with which to allocate a device
+ */
+static gs_memory_t *
+ps_impl_get_device_memory(pl_interp_implementation_t *impl)
+{
+    return gsapi_get_device_memory(impl->interp_client_data);
 }
 
 /* Set a device into an interpreter instance */
 static int
 ps_impl_set_device(pl_interp_implementation_t *impl, gx_device *device)
 {
-    /* Nothing to PS/PDF manages it's own device */
-    return 0;
+    return gsapi_set_device(impl->interp_client_data, device);
 }
 
 
@@ -153,7 +169,7 @@ ps_impl_set_device(pl_interp_implementation_t *impl, gx_device *device)
 static int
 ps_impl_init_job(pl_interp_implementation_t *impl)
 {
-    return gsapi_init_with_args(impl->interp_client_data, 0, NULL);
+    return 0;
 }
 
 /* Not complete. */
@@ -218,6 +234,7 @@ ps_impl_deallocate_interp_instance(pl_interp_implementation_t *impl)
 const pl_interp_implementation_t ps_implementation = {
   ps_impl_characteristics,
   ps_impl_allocate_interp_instance,
+  ps_impl_get_device_memory,
   ps_impl_set_device,
   ps_impl_init_job,
   ps_impl_process_file,

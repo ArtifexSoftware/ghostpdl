@@ -18,6 +18,7 @@
 /* Main program command-line interpreter for PCL interpreters */
 #include "string_.h"
 #include <stdlib.h> /* atof */
+#include "assert_.h"
 #include "gdebug.h"
 #include "gscdefs.h"
 #include "gsio.h"
@@ -87,12 +88,14 @@ struct pl_main_instance_s
 {
     /* The following are set at initialization time. */
     gs_memory_t *memory;
+    gs_memory_t *device_memory;
     long base_time[2];          /* starting time */
     int error_report;           /* -E# */
     bool pause;                 /* -dNOPAUSE => false */
     int first_page;             /* -dFirstPage= */
     int last_page;              /* -dLastPage= */
     gx_device *device;
+    gs_gc_root_t *device_root;
 
     pl_interp_implementation_t *implementation; /*-L<Language>*/
 
@@ -123,12 +126,6 @@ struct pl_main_instance_s
     byte buf[8192]; /* languages read buffer */
     void *disp; /* display device pointer NB wrong - remove */
 };
-
-
-/* ---------------- Static data for memory management ------------------ */
-
-static gs_gc_root_t device_root;
-static gs_gc_root_t *device_root_ptr = &device_root;
 
 
 /* ---------------- Forward decls ------------------ */
@@ -431,8 +428,9 @@ pl_main_delete_instance(pl_main_instance_t *minst)
     /* close and deallocate the device */
     if (minst->device) {
         gs_closedevice(minst->device);
-        gs_unregister_root(minst->device->memory, &device_root,
+        gs_unregister_root(minst->device->memory, minst->device_root,
                            "pl_main_languages_delete_instance");
+        minst->device_root = NULL;
         gx_device_retain(minst->device, false);
         minst->device = NULL;
     }
@@ -556,7 +554,7 @@ pl_main_alloc_instance(gs_memory_t * mem)
 
     memset(minst, 0, sizeof(*minst));
 
-    minst->memory = mem;
+    minst->memory = minst->device_memory = mem;
 
     minst->pjl_from_args = false;
     minst->error_report = -1;
@@ -594,6 +592,8 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
 
     if (!is_default || !pti->device) {
         const gx_device *dev;
+        pl_interp_implementation_t **impl;
+        gs_memory_t *mem = pti->device_memory;
         /* We assume that nobody else changes pti->device,
            and this function is called from this module only.
            Due to that device_root is always consistent with pti->device,
@@ -610,7 +610,20 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
             gs_lib_device_list((const gx_device * const **)&list, NULL);
             dev = list[index];
         }
-        code = gs_copydevice(&pti->device, dev, pti->memory);
+        for (impl = pti->implementations; *impl != 0; ++impl) {
+           mem = pl_get_device_memory(*impl);
+           if (mem)
+               break;
+        }
+        if (mem)
+            pti->device_memory = mem;
+#ifdef DEBUG
+        for (; *impl != 0; ++impl) {
+            mem = pl_get_device_memory(*impl);
+            assert(mem == NULL || mem == pti->device_memory);
+        }
+#endif
+        code = gs_copydevice(&pti->device, dev, pti->device_memory);
 
         if (code < 0)
             return code;
@@ -618,7 +631,8 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
         if (pti->device == NULL)
             return gs_error_VMerror;
 
-        gs_register_struct_root(pti->memory, &device_root_ptr,
+        pti->device_root = NULL;
+        gs_register_struct_root(pti->device_memory, &pti->device_root,
                                 (void **)&pti->device,
                                 "pl_top_create_device");
 

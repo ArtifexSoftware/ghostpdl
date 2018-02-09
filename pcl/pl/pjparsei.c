@@ -171,6 +171,7 @@ pjl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* imp
 pl_interp_implementation_t pjl_implementation = {
     pjl_impl_characteristics,
     pjl_impl_allocate_interp_instance,
+    NULL,
     pjl_impl_set_device,
     pjl_impl_init_job,
     NULL,                      /* process_file */
