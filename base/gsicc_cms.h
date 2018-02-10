@@ -96,5 +96,5 @@ int gscms_get_input_channel_count(gcmmhprofile_t profile, gs_memory_t *memory);
 int gscms_get_output_channel_count(gcmmhprofile_t profile, gs_memory_t *memory);
 void gscms_get_link_dim(gcmmhlink_t link, int *num_inputs, int *num_outputs, gs_memory_t *memory);
 int gscms_avoid_white_fix_flag(gs_memory_t *memory);
-bool gscms_is_threadsafe();
+bool gscms_is_threadsafe(void);
 #endif

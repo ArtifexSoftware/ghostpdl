@@ -924,7 +924,7 @@ gscms_get_name2device_link(gsicc_link_t *icclink,
 }
 
 bool
-gscms_is_threadsafe()
+gscms_is_threadsafe(void)
 {
     return false;		/* FIXME: return true once threads work correctly */
 }
