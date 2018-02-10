@@ -619,12 +619,22 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
                                 (void **)&pti->device,
                                 "pl_top_create_device");
         
-        /* NB this needs a better solution */
-        if (!strcmp(gs_devicename(pti->device), "pdfwrite") ||
-            !strcmp(gs_devicename(pti->device), "ps2write"))
-            pti->high_level_device = true;
+        {
+            gs_c_param_list list;
 
-            /* If the display device is selected (default), set up the callback.  NB Move me. */
+            /* Check if the device is a high level device (pdfwrite etc) */
+            gs_c_param_list_write(&list, pti->device->memory);
+            code = gs_getdeviceparams(pti->device, (gs_param_list *)&list);
+            if (code < 0)
+                return code;
+            gs_c_param_list_read(&list);
+            code = param_read_bool((gs_param_list *)&list, "HighLevelDevice", &pti->high_level_device);
+            if (code < 0)
+                return code;
+            gs_c_param_list_release(&list);
+        }
+
+        /* If the display device is selected (default), set up the callback.  NB Move me. */
         if (strcmp(gs_devicename(pti->device), "display") == 0) {
             gx_device_display *ddev;
         
