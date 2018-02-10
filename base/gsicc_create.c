@@ -1118,7 +1118,7 @@ add_lutAtoBtype(unsigned char *input_ptr, gsicc_lutatob *lutatobparts)
 /* We need to figure out all the offsets to the various objects based upon
     which ones are actually present */
     unsigned char *curr_ptr;
-    long mlut_size;
+    long mlut_size = 0;			/* silence compiler warning */
     int data_offset;
     int k;
     int numout = lutatobparts->num_out;
