@@ -627,13 +627,13 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
             /* Check if the device is a high level device (pdfwrite etc) */
             gs_c_param_list_write(&list, pti->device->memory);
             code = gs_getdeviceparams(pti->device, (gs_param_list *)&list);
-            if (code < 0)
-                return code;
-            gs_c_param_list_read(&list);
-            code = param_read_bool((gs_param_list *)&list, "HighLevelDevice", &pti->high_level_device);
-            if (code < 0)
-                return code;
+            if (code >= 0) {
+                gs_c_param_list_read(&list);
+                code = param_read_bool((gs_param_list *)&list, "HighLevelDevice", &pti->high_level_device);
+            }
             gs_c_param_list_release(&list);
+            if (code < 0)
+                return code;
         }
 
         /* If the display device is selected (default), set up the callback.  NB Move me. */
