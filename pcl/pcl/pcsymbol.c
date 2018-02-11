@@ -272,10 +272,14 @@ pcl_load_built_in_symbol_sets(pcl_state_t * pcs)
             for (gx = plgv_MSL; gx < plgv_next; gx++)
                 symsetp->maps[gx] = NULL;
             symsetp->storage = pcds_internal;
+
+            if (pl_dict_put(&pcs->built_in_symbol_sets, mapp->id, 2, symsetp) < 0) {
+                gs_free_object(pcs->memory, symsetp, "symset init dict value");
+                return_error(gs_error_VMerror);
+            }
         }
         gv = (mapp->character_requirements[7] & 07) == 1 ?
             plgv_Unicode : plgv_MSL;
-        pl_dict_put(&pcs->built_in_symbol_sets, mapp->id, 2, symsetp);
         symsetp->maps[gv] = (pl_symbol_map_t *) mapp;
     }
     return 0;
