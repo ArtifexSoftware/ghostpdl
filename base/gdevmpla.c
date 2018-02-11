@@ -1104,7 +1104,7 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
     int line_count;
     byte *cdrow, *mdrow, *ydrow, *kdrow;
     byte lmask, rmask;
-    rop_proc cproc, mproc, yproc;
+    rop_proc cproc = NULL, mproc = NULL, yproc = NULL;
     int dbit;
     int cscolor = 0, mscolor = 0, yscolor = 0, kscolor = 0;
     int ctcolor = 0, mtcolor = 0, ytcolor = 0, ktcolor = 0;
