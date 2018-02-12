@@ -4358,56 +4358,62 @@ static int nInstrCount=0;
 
     contour = 0;
     point   = 0;
-
-    do
+    if (contour > CUR.n_contours - 1)
     {
-      end_point   = CUR.pts.contours[contour];
-      first_point = point;
-
-      while ( point <= end_point && (CUR.pts.touch[point] & mask) == 0 )
-        point++;
-
-      if ( point <= end_point )
+      CUR.error = TT_Err_Invalid_Reference;
+    }
+    else
+    {
+      do
       {
-        first_touched = point;
-        cur_touched   = point;
+        end_point   = CUR.pts.contours[contour];
+        first_point = point;
 
-        point++;
+        while ( point <= end_point && (CUR.pts.touch[point] & mask) == 0 )
+          point++;
 
-        while ( point <= end_point )
+        if ( point <= end_point )
         {
-          if ( (CUR.pts.touch[point] & mask) != 0 )
-          {
-            Interp( (Int)(cur_touched + 1),
-                    (Int)(point - 1),
-                    (Int)cur_touched,
-                    (Int)point,
-                    &V );
-            cur_touched = point;
-          }
+          first_touched = point;
+          cur_touched   = point;
 
           point++;
-        }
 
-        if ( cur_touched == first_touched )
-          Shift( (Int)first_point, (Int)end_point, (Int)cur_touched, &V );
-        else
-        {
-          Interp((Int)(cur_touched + 1),
-                 (Int)(end_point),
-                 (Int)(cur_touched),
-                 (Int)(first_touched),
-                 &V );
+          while ( point <= end_point )
+          {
+            if ( (CUR.pts.touch[point] & mask) != 0 )
+            {
+              Interp( (Int)(cur_touched + 1),
+                      (Int)(point - 1),
+                      (Int)cur_touched,
+                      (Int)point,
+                      &V );
+              cur_touched = point;
+            }
 
-          Interp((Int)(first_point),
-                 (Int)(first_touched - 1),
-                 (Int)(cur_touched),
-                 (Int)(first_touched),
-                 &V );
+            point++;
+          }
+
+          if ( cur_touched == first_touched )
+            Shift( (Int)first_point, (Int)end_point, (Int)cur_touched, &V );
+          else
+          {
+            Interp((Int)(cur_touched + 1),
+                   (Int)(end_point),
+                   (Int)(cur_touched),
+                   (Int)(first_touched),
+                   &V );
+
+            Interp((Int)(first_point),
+                   (Int)(first_touched - 1),
+                   (Int)(cur_touched),
+                   (Int)(first_touched),
+                   &V );
+          }
         }
-      }
-      contour++;
-    } while ( contour < CUR.pts.n_contours );
+        contour++;
+      } while ( contour < CUR.pts.n_contours );
+    }
   }
 
 /**********************************************/
