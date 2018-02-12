@@ -169,6 +169,9 @@ gs_cspace_new_ICC(gs_memory_t *pmem, gs_gstate * pgs, int components)
     int code = 0;
     gs_color_space *pcspace = gs_cspace_alloc(pmem, &gs_color_space_type_ICC);
 
+    if (pcspace == NULL)
+        return pcspace;
+
     switch (components) {
         case -1: /* alpha case */
             if (icc_manage->smask_profiles == NULL) {
