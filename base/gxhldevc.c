@@ -198,7 +198,7 @@ bool
 gx_hld_is_hl_color_available(const gs_gstate * pgs,
                 const gx_device_color * pdevc)
 {
-    if (pgs != NULL && pdevc != NULL && pdevc->ccolor_valid)
+    if (pgs != NULL && pdevc != NULL && pdevc->type != gx_dc_type_null && pdevc->ccolor_valid)
         return true;
     return false;
 }

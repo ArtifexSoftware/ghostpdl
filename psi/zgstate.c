@@ -192,7 +192,7 @@ zinitgraphics(i_ctx_t *i_ctx_p)
      * this is now handled in the PostScript code.
      */
      make_empty_array(&istate->dash_pattern_array, a_all);
-     return gs_initgraphics_no_cspace(igs);
+     return gs_initgraphics(igs);
 }
 
 /* ------ Operations on graphics state elements ------ */

@@ -828,57 +828,64 @@ gs_initgraphics(gs_gstate * pgs)
         return code;
     gs_init_rop(pgs);
     /* Initialize things so that gx_remap_color won't crash. */
-    pgs->color[0].color_space = gs_cspace_new_DeviceGray(pgs->memory);
-    if (pgs->color[0].color_space == NULL)
-        return_error(gs_error_unknownerror);
-    pgs->color[1].color_space = gs_cspace_new_DeviceGray(pgs->memory);
-    if (pgs->color[1].color_space == NULL)
-        return_error(gs_error_unknownerror);
+    if (pgs->icc_manager->default_gray == 0x00) {
+        gs_color_space  *pcs1, *pcs2;
+
+        pcs1 = gs_cspace_new_DeviceGray(pgs->memory);
+        if (pcs1 == NULL)
+            return_error(gs_error_unknownerror);
+
+        if (pgs->color[0].color_space != NULL)
+            gs_setcolorspace(pgs, pcs1);
+        else {
+            pgs->color[0].color_space = pcs1;
+            gs_setcolorspace(pgs, pcs1);
+        }
+
+        gs_swapcolors_quick(pgs); /* To color 1 */
+
+        pcs2 = gs_cspace_new_DeviceGray(pgs->memory);
+        if (pcs2 == NULL)
+            return_error(gs_error_unknownerror);
+
+        if (pgs->color[0].color_space != NULL)
+            gs_setcolorspace(pgs, pcs2);
+        else {
+            pgs->color[0].color_space = pcs2;
+            gs_setcolorspace(pgs, pcs2);
+        }
+
+        gs_swapcolors_quick(pgs); /* To color 0 */
+    } else {
+        gs_color_space  *pcs1, *pcs2;
+
+        pcs1 = gs_cspace_new_ICC(pgs->memory, pgs, 1);;
+        if (pcs1 == NULL)
+            return_error(gs_error_unknownerror);
+
+        if (pgs->color[0].color_space != NULL)
+            gs_setcolorspace(pgs, pcs1);
+        else {
+            pgs->color[0].color_space = pcs1;
+            gs_setcolorspace(pgs, pcs1);
+        }
+
+        gs_swapcolors_quick(pgs); /* To color 1 */
+        pcs2 = gs_cspace_new_ICC(pgs->memory, pgs, 1);;
+        if (pcs2 == NULL)
+            return_error(gs_error_unknownerror);
+
+        if (pgs->color[0].color_space != NULL)
+            gs_setcolorspace(pgs, pcs2);
+        else {
+            pgs->color[0].color_space = pcs2;
+            gs_setcolorspace(pgs, pcs2);
+        }
+
+        gs_swapcolors_quick(pgs); /* To color 0 */
+    }
     pgs->in_cachedevice = 0;
-    gs_swapcolors_quick(pgs); /* To color 1 */
-    code = gx_set_device_color_1(pgs); /* sets colorspace and client color */
-    if (code < 0)
-        return code;
-    gs_swapcolors_quick(pgs); /* To color 0 */
-    code = gx_set_device_color_1(pgs); /* sets colorspace and client color */
-    if (code < 0)
-        return code;
-    return 0;
-}
 
-/*
- * Reset most of the graphics state.
- *
- * NB: This routine no longer resets the current color or current color
- *     space. It cannot do this for PostScript, due to color substitution.
- *     Clients should perform the appropriate color/colorspace
- *     initializaion themselves.
- */
-int
-gs_initgraphics_no_cspace(gs_gstate * pgs)
-{
-    int code;
-    const gs_gstate gstate_initial = {
-            gs_gstate_initial(1.0)
-        };
-
-    gs_initmatrix(pgs);
-    if ((code = gs_newpath(pgs)) < 0 ||
-        (code = gs_initclip(pgs)) < 0 ||
-        (code = gs_setlinewidth(pgs, 1.0)) < 0 ||
-        (code = gs_setlinestartcap(pgs, gstate_initial.line_params.start_cap)) < 0 ||
-        (code = gs_setlineendcap(pgs, gstate_initial.line_params.end_cap)) < 0 ||
-        (code = gs_setlinedashcap(pgs, gstate_initial.line_params.dash_cap)) < 0 ||
-        (code = gs_setlinejoin(pgs, gstate_initial.line_params.join)) < 0 ||
-        (code = gs_setcurvejoin(pgs, gstate_initial.line_params.curve_join)) < 0 ||
-        (code = gs_setdash(pgs, (float *)0, 0, 0.0)) < 0 ||
-        (gs_setdashadapt(pgs, false),
-         (code = gs_setdotlength(pgs, 0.0, false))) < 0 ||
-        (code = gs_setdotorientation(pgs)) < 0 ||
-        (code = gs_setmiterlimit(pgs, gstate_initial.line_params.miter_limit)) < 0
-        )
-        return code;
-    gs_init_rop(pgs);
     return 0;
 }
 
