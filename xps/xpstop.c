@@ -176,13 +176,13 @@ xps_imp_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
     /* Check if the device wants PreserveTrMode (pdfwrite) */
     gs_c_param_list_write(&list, pdevice->memory);
     code = gs_getdeviceparams(pdevice, (gs_param_list *)&list);
-    if (code < 0)
-        return code;
-    gs_c_param_list_read(&list);
-    code = param_read_bool((gs_param_list *)&list, "PreserveTrMode", &ctx->preserve_tr_mode);
-    if (code < 0)
-        return code;
+    if (code >= 0) {
+        gs_c_param_list_read(&list);
+        code = param_read_bool((gs_param_list *)&list, "PreserveTrMode", &ctx->preserve_tr_mode);
+    }
     gs_c_param_list_release(&list);
+    if (code < 0)
+        return code;
 
     gs_setaccuratecurves(ctx->pgs, true); /* NB not sure */
     gs_setfilladjust(ctx->pgs, 0, 0);
