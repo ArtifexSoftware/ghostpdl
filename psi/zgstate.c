@@ -188,8 +188,10 @@ static int
 zinitgraphics(i_ctx_t *i_ctx_p)
 {
     /*
-     * gs_initigraphics does not reset the colorspace;
-     * this is now handled in the PostScript code.
+     * Although gs_initgraphics resets the color space to DeviceGray, it does
+     * not modify the 'interpreter' gstate, which stores a copy of the PostScript
+     * object used to set the colour space. We could do this here, with effort,
+     * but instead we choose t do it in gs_cspace.ps and handle it all in PostScript.
      */
      make_empty_array(&istate->dash_pattern_array, a_all);
      return gs_initgraphics(igs);

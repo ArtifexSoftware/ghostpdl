@@ -64,8 +64,10 @@ end % colorspacedict
 %
 %   -   initgraphics   -
 %
-% The internal routine gs_initgraphics doesn't (re)set the color space,
-% so we must redefine the operation to do it here.
+% Although the internal routine gs_initgraphics resets the color space,
+% it does not reset the color space we store in the 'interpreter'
+% graphics state (so that we can hand it back in currentcolorspace).
+% So we need to do that in the PostScript world.
 %
 %
 /initgraphics
