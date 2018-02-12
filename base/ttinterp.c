@@ -3428,18 +3428,25 @@ static int nInstrCount=0;
                                TT_F26Dot6  dy,
                                Bool        touch )
   {
-    if ( CUR.GS.freeVector.x != 0 )
+    if (point >= CUR.n_points)
     {
-      CUR.zp2.cur_x[point] += dx;
-      if ( touch )
-        CUR.zp2.touch[point] |= TT_Flag_Touched_X;
+      CUR.error = TT_Err_Invalid_Reference;
     }
-
-    if ( CUR.GS.freeVector.y != 0 )
+    else
     {
-      CUR.zp2.cur_y[point] += dy;
-      if ( touch )
-        CUR.zp2.touch[point] |= TT_Flag_Touched_Y;
+      if ( CUR.GS.freeVector.x != 0 )
+      {
+        CUR.zp2.cur_x[point] += dx;
+        if ( touch )
+          CUR.zp2.touch[point] |= TT_Flag_Touched_X;
+      }
+
+      if ( CUR.GS.freeVector.y != 0 )
+      {
+        CUR.zp2.cur_y[point] += dy;
+        if ( touch )
+          CUR.zp2.touch[point] |= TT_Flag_Touched_Y;
+      }
     }
   }
 
