@@ -282,13 +282,18 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
             case cx_vstem:
                 goto vstem;
             case cx_vmoveto:
-                check_first_operator(csp > cstack);
-                code = t1_hinter__rmoveto(h, 0, *csp);
+                if (CS_CHECK_CSTACK_BOUNDS(csp, cstack)) {
+                    check_first_operator(csp > cstack);
+                    code = t1_hinter__rmoveto(h, 0, *csp);
               move:
               cc:
-                if (code < 0)
-                    return code;
-                goto pp;
+                    if (code < 0)
+                        return code;
+                    goto pp;
+                }
+                else {
+                    return_error(gs_error_invalidfont);
+                }
             case cx_rlineto:
                 for (ap = cstack; ap + 1 <= csp; ap += 2) {
                     code = t1_hinter__rlineto(h, ap[0], ap[1]);
