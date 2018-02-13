@@ -197,7 +197,7 @@ static void coord(const char *str, fixed x, fixed y)
 
 static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int height, int *table, int *index)
 {
-    int delta;
+    int64_t delta;
     int iy, ih;
     fixed clip_sy, clip_ey;
     int dirn = DIRN_UP;
@@ -237,7 +237,7 @@ static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int he
         clip_ey = int2fixed(base_y + height - 1) + fixed_half;
     if (sy > clip_ey)
         return;
-    delta = clip_sy - sy;
+    delta = (int64_t)clip_sy - (int64_t)sy;
     if (delta > 0)
     {
         int64_t dx = (int64_t)ex - (int64_t)sx;
@@ -246,7 +246,7 @@ static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int he
         sx += advance;
         sy += delta;
     }
-    delta = ey - clip_ey;
+    delta = (int64_t)ey - (int64_t)clip_ey;
     if (delta > 0)
     {
         int64_t dx = (int64_t)ex - (int64_t)sx;
@@ -1274,9 +1274,9 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
         }
         if (isy < 0) {
             /* Move sy up */
-            int y = ey - sy;
-            int new_sy = int2fixed(cr->base);
-            int dy = new_sy - sy;
+            int64_t y = (int64_t)ey - (int64_t)sy;
+            fixed new_sy = int2fixed(cr->base);
+            int64_t dy = (int64_t)new_sy - (int64_t)sy;
             sx += (int)((((int64_t)(ex-sx))*dy + y/2)/y);
             sy = new_sy;
             cursor_init(cr, sy, sx);
@@ -1285,9 +1285,9 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
         truncated = iey > cr->scanlines;
         if (truncated) {
             /* Move ey down */
-            int y = ey - sy;
-            int new_ey = int2fixed(cr->base + cr->scanlines);
-            int dy = ey - new_ey;
+            int64_t y = ey - sy;
+            fixed new_ey = int2fixed(cr->base + cr->scanlines);
+            int64_t dy = (int64_t)ey - (int64_t)new_ey;
             saved_ex = ex;
             saved_ey = ey;
             ex -= (int)((((int64_t)(ex-sx))*dy + y/2)/y);
@@ -1307,18 +1307,18 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
         truncated = iey < 0;
         if (truncated) {
             /* Move ey up */
-            int y = ey - sy;
-            int new_ey = int2fixed(cr->base);
-            int dy = ey - new_ey;
+            int64_t y = (int64_t)ey - (int64_t)sy;
+            fixed new_ey = int2fixed(cr->base);
+            int64_t dy = (int64_t)ey - (int64_t)new_ey;
             ex -= (int)((((int64_t)(ex-sx))*dy + y/2)/y);
             ey = new_ey;
             iey = 0;
         }
         if (isy >= cr->scanlines) {
             /* Move sy down */
-            int y = ey - sy;
-            int new_sy = int2fixed(cr->base + cr->scanlines);
-            int dy = new_sy - sy;
+            int64_t y = (int64_t)ey - (int64_t)sy;
+            fixed new_sy = int2fixed(cr->base + cr->scanlines);
+            int64_t dy = (int64_t)new_sy - (int64_t)sy;
             sx += (int)((((int64_t)(ex-sx))*dy + y/2)/y);
             sy = new_sy;
             cursor_init(cr, sy, sx);
@@ -2103,7 +2103,7 @@ gx_edgebuffer_print_tr(gx_edgebuffer * edgebuffer)
 
 static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int height, int *table, int *index, int id)
 {
-    int delta;
+    int64_t delta;
     int iy, ih;
     fixed clip_sy, clip_ey;
     int dirn = DIRN_UP;
@@ -2143,7 +2143,7 @@ static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int
         clip_ey = int2fixed(base_y + height - 1) + fixed_half;
     if (sy > clip_ey)
         return;
-    delta = clip_sy - sy;
+    delta = (int64_t)clip_sy - (int64_t)sy;
     if (delta > 0)
     {
         int64_t dx = (int64_t)ex - (int64_t)sx;
@@ -2152,7 +2152,7 @@ static void mark_line_tr(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int
         sx += advance;
         sy += delta;
     }
-    delta = ey - clip_ey;
+    delta = (int64_t)ey - (int64_t)clip_ey;
     if (delta > 0)
     {
         int64_t dx = (int64_t)ex - (int64_t)sx;
@@ -3112,9 +3112,9 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
         }
         if (isy < 0) {
             /* Move sy up */
-            int y = ey - sy;
-            int new_sy = int2fixed(cr->base);
-            int dy = new_sy - sy;
+            int64_t y = (int64_t)ey - (int64_t)sy;
+            fixed new_sy = int2fixed(cr->base);
+            int64_t dy = (int64_t)new_sy - (int64_t)sy;
             sx += (int)((((int64_t)(ex-sx))*dy + y/2)/y);
             sy = new_sy;
             cursor_init_tr(cr, sy, sx, id);
@@ -3123,9 +3123,9 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
         truncated = iey > cr->scanlines;
         if (truncated) {
             /* Move ey down */
-            int y = ey - sy;
-            int new_ey = int2fixed(cr->base + cr->scanlines);
-            int dy = ey - new_ey;
+            int64_t y = (int64_t)ey - (int64_t)sy;
+            fixed new_ey = int2fixed(cr->base + cr->scanlines);
+            int64_t dy = (int64_t)ey - (int64_t)new_ey;
             saved_ex = ex;
             saved_ey = ey;
             ex -= (int)((((int64_t)(ex-sx))*dy + y/2)/y);
@@ -3147,18 +3147,18 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
         truncated = iey < 0;
         if (truncated) {
             /* Move ey up */
-            int y = ey - sy;
-            int new_ey = int2fixed(cr->base);
-            int dy = ey - new_ey;
+            int64_t y = (int64_t)ey - (int64_t)sy;
+            fixed new_ey = int2fixed(cr->base);
+            int64_t dy = (int64_t)ey - (int64_t)new_ey;
             ex -= (int)((((int64_t)(ex-sx))*dy + y/2)/y);
             ey = new_ey;
             iey = 0;
         }
         if (isy >= cr->scanlines) {
             /* Move sy down */
-            int y = ey - sy;
-            int new_sy = int2fixed(cr->base + cr->scanlines);
-            int dy = new_sy - sy;
+            int64_t y = (int64_t)ey - (int64_t)sy;
+            fixed new_sy = int2fixed(cr->base + cr->scanlines);
+            int64_t dy = (int64_t)new_sy - (int64_t)sy;
             sx += (int)((((int64_t)(ex-sx))*dy + y/2)/y);
             sy = new_sy;
             cursor_init_tr(cr, sy, sx, id);
