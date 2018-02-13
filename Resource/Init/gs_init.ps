@@ -136,6 +136,14 @@ currentdict /PDFNOCIDFALLBACK known /PDFNOCIDFALLBACK exch def
          ifelse
   .bind def
 
+%% This was a debugging switch removed in 9.22, no other software
+%% should have had any regard for it, and even if testing its value
+%% should have checked its existence first. However pstotext, an
+%% ancient and no longer maintained piece of softare, did check
+%% its value unconditionally. So we retain this key in the dictionary
+%% purely for backward compatibility.
+currentdict /NOBIND false def
+
 currentdict /BATCH known   /BATCH exch def
 currentdict /DELAYBIND known   /DELAYBIND exch def
 currentdict /DOINTERPOLATE .knownget { { -1 } { 0 } ifelse /InterpolateControl exch def } if
@@ -2260,6 +2268,7 @@ SAFER { .setsafeglobal } if
   //systemdict /.forcedef .forceundef		% ditto
   //systemdict /.forceput .forceundef		% ditto
   //systemdict /.forceundef .forceundef		% ditto
+  //systemdict /.undef .forceundef		    % ditto
   currentuserparams /IdiomRecognition known {
     1 dict dup /IdiomRecognition 4 -1 roll put setuserparams
   } if
@@ -2389,7 +2398,9 @@ systemdict /superexec .knownget {
 } if
 
 %% Can't remove this one until the last minute :-)
+DELAYBIND not {
 systemdict /.undef .undef
+} if
 WRITESYSTEMDICT {
    SAFER {
        (\n *** WARNING - you have selected SAFER, indicating you want Ghostscript\n) print
