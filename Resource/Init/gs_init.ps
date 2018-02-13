@@ -142,7 +142,7 @@ currentdict /PDFNOCIDFALLBACK known /PDFNOCIDFALLBACK exch def
 %% ancient and no longer maintained piece of softare, did check
 %% its value unconditionally. So we retain this key in the dictionary
 %% purely for backward compatibility.
-currentdict /NOBIND false def
+/NOBIND false def
 
 currentdict /BATCH known   /BATCH exch def
 currentdict /DELAYBIND known   /DELAYBIND exch def
@@ -2267,8 +2267,8 @@ SAFER { .setsafeglobal } if
   //systemdict /.forcecopynew .forceundef	% remove temptation
   //systemdict /.forcedef .forceundef		% ditto
   //systemdict /.forceput .forceundef		% ditto
-  //systemdict /.forceundef .forceundef		% ditto
   //systemdict /.undef .forceundef		    % ditto
+  //systemdict /.forceundef .forceundef		% ditto
   currentuserparams /IdiomRecognition known {
     1 dict dup /IdiomRecognition 4 -1 roll put setuserparams
   } if
