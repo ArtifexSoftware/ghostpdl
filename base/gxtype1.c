@@ -515,9 +515,14 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
                 goto out;	/* not seac */
         do_seac:
             /* This is the payoff for all this code! */
-            chars[0] = fixed2int(csp[-1]);
-            chars[1] = fixed2int(csp[0]);
-            return 1;
+            if (CS_CHECK_CSTACK_BOUNDS(&csp[-1], cstack)) {
+                chars[0] = fixed2int(csp[-1]);
+                chars[1] = fixed2int(csp[0]);
+                return 1;
+            }
+            else {
+                return_error(gs_error_invalidfont);
+            }
         case cx_escape:
             charstring_next(*cip, state, c, encrypted);
             ++cip;

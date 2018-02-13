@@ -175,6 +175,9 @@ typedef fixed *cs_ptr;
       csp = &cstack[pcis->os_count - 1];\
     }\
   END
+#define CS_CHECK_CSTACK_BOUNDS(csaddr, cs) \
+      (csaddr >= &(cs[0]) && \
+        csaddr < &(cs[ostack_size]))
 
 #define CS_CHECK_PUSH(csp, cstack)\
   BEGIN\

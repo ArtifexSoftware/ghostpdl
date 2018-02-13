@@ -118,11 +118,6 @@ type2_vstem(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack)
  * error, or >0 when client intervention is required (or allowed).  The int*
  * argument is only for compatibility with the Type 1 charstring interpreter.
  */
-
-#define CHECK_CSTACK_BOUNDS(csaddr, cs) \
-      (csaddr >= &(cs[0]) && \
-        csaddr < &(cs[ostack_size]))
-
 int
 gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                    int *ignore_pindex)
@@ -242,7 +237,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
             case c_undef17:
                 return_error(gs_error_invalidfont);
             case c_callsubr:
-                if (CHECK_CSTACK_BOUNDS(csp, cstack)) {
+                if (CS_CHECK_CSTACK_BOUNDS(csp, cstack)) {
                     c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
                     code = pdata->procs.subr_data
                         (pfont, c, false, &ipsp[1].cs_data);
@@ -382,7 +377,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
             case cx_rmoveto:
                 /* See vmoveto above re closing the subpath. */
                 check_first_operator(!((csp - cstack) & 1));
-                if (CHECK_CSTACK_BOUNDS(&csp[-1], cstack)) {
+                if (CS_CHECK_CSTACK_BOUNDS(&csp[-1], cstack)) {
                     if (csp > cstack + 1) {
                       /* Some Type 2 charstrings omit the vstemhm operator before rmoveto,
                          even though this is only allowed before hintmask and cntrmask.
@@ -823,4 +818,3 @@ flex:			{
         }
     }
 }
-#undef CHECK_CSTACK_BOUNDS
