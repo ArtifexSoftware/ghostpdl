@@ -454,10 +454,13 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                     case ce1_callothersubr:
                         {
                             int num_results;
+
                             /* We must remember to pop both the othersubr # */
                             /* and the argument count off the stack. */
                             switch (*pindex = fixed2int_var(*csp)) {
                                 case 0:
+                                    if (!CS_CHECK_CSTACK_BOUNDS(&csp[-4], cstack))
+                                        return_error(gs_error_invalidfont);
                                     {
                                         fixed fheight = csp[-4];
                                         /* Assume the next two opcodes */
@@ -476,6 +479,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                                     pcis->flex_count = flex_max;	/* not inside flex */
                                     inext;
                                 case 1:
+                                    CS_CHECK_POP(csp, cstack);
                                     code = t1_hinter__flex_beg(h);
                                     if (code < 0)
                                         return code;
@@ -483,6 +487,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                                     csp -= 2;
                                     inext;
                                 case 2:
+                                    CS_CHECK_POP(csp, cstack);
                                     if (pcis->flex_count >= flex_max)
                                         return_error(gs_error_invalidfont);
                                     code = t1_hinter__flex_point(h);
@@ -491,6 +496,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                                     csp -= 2;
                                     inext;
                                 case 3:
+                                    CS_CHECK_POP(csp, cstack);
                                     /* Assume the next opcode is a `pop'. */
                                     /* See above as to why we don't just */
                                     /* look ahead in the opcode stream. */
@@ -511,6 +517,8 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                                                           num_results);
                                     if (code < 0)
                                         return code;
+                                    if (!CS_CHECK_CSTACK_BOUNDS(&csp[1 - code], cstack))
+                                        return_error(gs_error_invalidfont);
                                     csp -= code;
                                     inext;
                                 case 15:
@@ -533,6 +541,8 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                             int scount = csp - cstack;
                             int n;
 
+                            if (!CS_CHECK_CSTACK_BOUNDS(&csp[-1], cstack))
+                                return_error(gs_error_invalidfont);
                             /* Copy the arguments to the caller's stack. */
                             if (scount < 1 || csp[-1] < 0 ||
                                 csp[-1] > int2fixed(scount - 1)

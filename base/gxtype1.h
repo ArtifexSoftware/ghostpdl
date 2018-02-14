@@ -185,6 +185,12 @@ typedef fixed *cs_ptr;
       return_error(gs_error_invalidfont);\
   END
 
+#define CS_CHECK_PUSHN(csp, cstack, n)\
+  BEGIN\
+    if (csp >= &cstack[countof(cstack) - n])\
+      return_error(gs_error_invalidfont);\
+  END
+
 #define CS_CHECK_POP(csp, cstack)\
   BEGIN\
     if (csp < &cstack[0])\
