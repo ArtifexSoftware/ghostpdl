@@ -517,8 +517,8 @@ gs_fapi_prepare_font(gs_font *pfont, gs_fapi_server *I, int subfont, const char 
     code =
         gs_notify_register(&pbfont->notify_list, notify_remove_font, pbfont);
     if (code < 0) {
-        emprintf(mem,
-                 "Ignoring gs_notify_register() failure for FAPI font.....");
+        gs_fapi_release_typeface(I, &pbfont->FAPI_font_data);
+        return code;
     }
 
     return bbox_set;
@@ -1788,8 +1788,11 @@ gs_fapi_passfont(gs_font *pfont, int subfont, char *font_file_path,
         if ((code =
              gs_fapi_renderer_retcode(mem, I,
                                       I->ensure_open(I, server_param,
-                                                     server_param_size))) < 0)
+                                                     server_param_size))) < 0) {
+            gs_free_object(mem->non_gc_memory, server_param,
+                           "gs_fapi_passfont server params");
             return code;
+        }
 
         if (free_params) {
             gs_free_object(mem->non_gc_memory, server_param,

@@ -709,10 +709,15 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                 }
                 /* reopen the file */
                 in = sfopen(tmp_path_copy, "r", mem);
-                if (in == NULL)
+                if (in == NULL) {
+                    gs_free_object(mem, plfont->pfont, "pl_tt_load_font(gs_font_type42)");
+                    pl_free_tt_fontfile_buffer(mem, plfont->header);
+                    gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
+                    gs_enumerate_files_close(fe);
                     return gs_throw1(0,
                                      "An unrecoverable failure occurred while reading the resident font %s\n",
                                      tmp_path_copy);
+                }
 
                 plfont->storage = storage;
                 plfont->data_are_permanent = false;
@@ -731,7 +736,13 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                 else {
                     key[2] = (byte) (residentp - resident_table);
                     key[0] = key[1] = 0;
-                    pl_dict_put(pfontdict, key, sizeof(key), plfont);
+                    code = pl_dict_put(pfontdict, key, sizeof(key), plfont);
+                    if (code < 0) {
+                        gs_free_object(mem, plfont->pfont, "pl_tt_load_font(gs_font_type42)");
+                        pl_free_tt_fontfile_buffer(mem, plfont->header);
+                        gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
+                        continue;
+                    }
                     /* leave data stored in the file.  NB this should be a fatal error also. */
                     if (pl_store_resident_font_data_in_file
                         (tmp_path_copy, mem, plfont) < 0) {

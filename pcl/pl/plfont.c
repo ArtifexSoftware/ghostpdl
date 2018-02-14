@@ -1143,7 +1143,7 @@ pl_load_tt_font(stream * in, gs_font_dir * pdir, gs_memory_t * mem,
         pl_fapi_passfont(plfont, 0, NULL, NULL, plfont->header + 6,
                          plfont->header_size - 6);
     if (code < 0)
-        return_error(code);
+        goto error;
     if (file_name)
         gs_free_object(mem, file_name, "pl_load_tt_font file_name");
 
