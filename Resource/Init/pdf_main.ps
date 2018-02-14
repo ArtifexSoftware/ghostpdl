@@ -1007,14 +1007,47 @@ currentdict /xref-char-dict undef
      /Outlines knownoget {
        /NO_PDFMARK_OUTLINES where {pop NO_PDFMARK_OUTLINES not}{true}ifelse
        {
-        /First knownoget {
+          dup /First known {
+            100 dict exch                               %% dictionary for detecting circular references
+            /First get dup type /packedarraytype eq {   %% << >> {} or << >>
+              dup 0 get dup                             %% << >> {} object_num object_num
+              3 index 3 1 roll                          %% << >> {} << >> object_num object_num
+              put
+              oforce
+            } if
+
             dup type /dicttype eq {
-              { dup writeoutline /Next knownoget not { exit } if
-                dup type /dicttype eq not {exit} if
+              {
+                dup
+                /Next known {
+                  dup /Next get                         %% << >> <</Next...>> {} or << >>
+                  dup type /packedarraytype eq {
+                    dup 0 get                           %% << >> <</Next....>> {} object_num
+                    dup pstack 4 index exch known {
+                      (\n   **** ERROR:  Circular reference detected in Outlines,\n) pdfformaterror
+                      (                terminating Outline processing.\n) pdfformaterror
+                      (                Output may be incorrect.\n) pdfformaterror
+                                                        %% << >> <</Next....>> {} object_num
+                      pop pop dup /Next undef           %% << >> <<.....>>
+                      writeoutline exit
+                    } if
+                                                        %% << >> <</Next....>> {} object_num
+                    dup 3 index 3 1 roll put            %% << >> <</Next....>> {}
+                    oforce
+                  } if
+                  exch writeoutline                     %% << >> </Next object>
+                  dup type /dicttype eq not
+                  {pop exit} if
+                } {
+                  writeoutline exit
+                }ifelse
               } loop
+              pop
             }
-            {pop} ifelse
-          }if
+            {pop pop} ifelse
+          }{
+            pop
+          }ifelse
         } {
           pop
         }ifelse
