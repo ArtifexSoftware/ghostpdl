@@ -679,6 +679,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
             if (code < 0) {
                 dmprintf1(mem, "input output failure on TrueType File %s\n",
                           tmp_path_copy);
+                sfclose(in);
                 continue;
             }
 
@@ -686,6 +687,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                 dmprintf1(mem,
                           "could not extract font file name from file %s\n",
                           tmp_path_copy);
+                sfclose(in);
                 continue;
             }
 
@@ -700,6 +702,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                                     gs_next_ids(mem, 1), &plfont,
                                     buffer) < 0) {
                     /* vm error */
+                    gs_enumerate_files_close(fe);
                     return gs_throw1(0,
                                      "An unrecoverable failure occurred while reading the resident font %s\n",
                                      tmp_path_copy);

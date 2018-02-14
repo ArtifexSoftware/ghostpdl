@@ -1093,8 +1093,10 @@ pl_load_tt_font(stream * in, gs_font_dir * pdir, gs_memory_t * mem,
     if (sfilename(in, &pfname) == 0) {
         file_name =
             gs_alloc_bytes(mem, pfname.size + 1, "pl_load_tt_font file_name");
-        if (!file_name)
+        if (!file_name) {
+            sfclose(in);
             return_error(gs_error_VMerror);
+        }
         /* the stream code guarantees the string is null terminated */
         memcpy(file_name, pfname.data, pfname.size + 1);
     }
@@ -1130,7 +1132,9 @@ pl_load_tt_font(stream * in, gs_font_dir * pdir, gs_memory_t * mem,
     plfont->large_sizes = true;
     plfont->offsets.GT = 0;
     plfont->is_xl_format = false;
-    pl_fill_in_tt_font(pfont, tt_font_datap, unique_id);
+    code = pl_fill_in_tt_font(pfont, tt_font_datap, unique_id);
+    if (code < 0)
+        goto error;
     code = gs_definefont(pdir, (gs_font *) pfont);
     if (code < 0)
         goto error;
