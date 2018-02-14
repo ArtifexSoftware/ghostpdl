@@ -8332,10 +8332,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\psi\zhsb.c"
-				>
-			</File>
-			<File
 				RelativePath="..\psi\zht.c"
 				>
 			</File>

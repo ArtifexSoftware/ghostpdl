@@ -1213,7 +1213,6 @@
     <ClCompile Include="..\psi\zfzlib.c" />
     <ClCompile Include="..\psi\zgeneric.c" />
     <ClCompile Include="..\psi\zgstate.c" />
-    <ClCompile Include="..\psi\zhsb.c" />
     <ClCompile Include="..\psi\zht.c" />
     <ClCompile Include="..\psi\zht1.c" />
     <ClCompile Include="..\psi\zht2.c" />
