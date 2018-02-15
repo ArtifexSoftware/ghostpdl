@@ -66,7 +66,6 @@ pxoper_h=$(PXLSRC)pxoper.h $(gserrors_h) $(pxattr_h) $(pxerrors_h) $(pxvalue_h)
 pxparse_h=$(PXLSRC)pxparse.h $(pxoper_h)
 pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h) $(pltop_h)
 pxpthr_h=$(PXLSRC)pxpthr.h
-pxvendor_h=$(PXLSRC)pxvendor.h
 
 $(PXLOBJ)pxbfont.$(OBJ): $(PXLSRC)pxbfont.c $(AK) $(stdpre_h)\
  $(pxbfont_h) $(PXL_MAK) $(MAKEDIRS)
@@ -198,7 +197,7 @@ $(PXLOBJ)pxsessio.$(OBJ): $(PXLSRC)pxsessio.c $(AK) $(math__h) $(stdio__h)\
  $(pjparse_h) $(gschar_h) $(gscoord_h) $(gserrors_h) $(gspaint_h) $(gsparam_h)\
  $(gsstate_h) $(gxfixed_h) $(gxpath_h) $(gxpcolor_h) $(gxfcache_h)\
  $(gxdevice_h) $(gxstate_h) $(gxdcolor_h) $(pjtop_h) $(pllfont_h) $(pxptable_h)\
- $(pxpthr_h) $(pxvendor_h) $(PXL_MAK) $(MAKEDIRS)
+ $(pxpthr_h) $(PXL_MAK) $(MAKEDIRS)
 	$(PXLCCC) $(PXLSRC)pxsessio.c $(PXLO_)pxsessio.$(OBJ)
 
 $(PXLOBJ)pxstream.$(OBJ): $(PXLSRC)pxstream.c $(AK) $(memory__h)\
@@ -206,17 +205,11 @@ $(PXLOBJ)pxstream.$(OBJ): $(PXLSRC)pxstream.c $(AK) $(memory__h)\
  $(pxoper_h) $(pxparse_h) $(pxptable_h) $(pxstate_h) $(PXL_MAK) $(MAKEDIRS)
 	$(PXLCCC) $(PXLSRC)pxstream.c $(PXLO_)pxstream.$(OBJ)
 
-$(PXLOBJ)pxvendor.$(OBJ): $(PXLSRC)pxvendor.c $(pxvendor_h)\
- $(string__h) $(gdebug_h) $(gsmemory_h) $(strimpl_h) $(pxoper_h) $(pxstate_h)\
- $(gspath_h) $(pldraw_h) $(jpeglib__h) $(sdct_h) $(sjpeg_h) $(PXL_MAK) $(MAKEDIRS)
-	$(PXLCCC) $(PXLSRC)pxvendor.c $(PXLO_)pxvendor.$(OBJ)
-
 # We have to break up pxl_ops because of the MS-DOS command line
 # limit of 120 characters.
 pxl_ops_obj1=$(PXLOBJ)pxffont.$(OBJ) $(PXLOBJ)pxfont.$(OBJ) $(PXLOBJ)pxgstate.$(OBJ) $(PXLOBJ)pximage.$(OBJ)
 pxl_ops_obj2=$(PXLOBJ)pxink.$(OBJ) $(PXLOBJ)pxpaint.$(OBJ) $(PXLOBJ)pxsessio.$(OBJ) $(PXLOBJ)pxstream.$(OBJ)
-pxl_ops_obj3=$(PXLOBJ)pxvendor.$(OBJ)
-pxl_ops_obj=$(pxl_ops_obj1) $(pxl_ops_obj2) $(pxl_ops_obj3)
+pxl_ops_obj=$(pxl_ops_obj1) $(pxl_ops_obj2)
 
 # Top-level API
 $(PXL_TOP_OBJ): $(PXLSRC)pxtop.c $(AK) $(stdio__h)\
@@ -235,5 +228,4 @@ $(PXLOBJ)pxl.dev: $(PXL_MAK) $(ECHOGS_XE) $(pxl_other_obj) $(pxl_ops_obj)\
 	$(ADDMOD) $(PXLOBJ)pxl $(pxl_other_obj2)
 	$(ADDMOD) $(PXLOBJ)pxl $(pxl_ops_obj1)
 	$(ADDMOD) $(PXLOBJ)pxl $(pxl_ops_obj2)
-	$(ADDMOD) $(PXLOBJ)pxl $(pxl_ops_obj3)
 	$(ADDMOD) $(PXLOBJ)pxl -include $(PLOBJ)pl $(PLOBJ)pjl $(PLOBJ)$(PXL_FONT_SCALER)

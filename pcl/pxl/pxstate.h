@@ -49,12 +49,6 @@ typedef struct px_image_enum_s px_image_enum_t;
 typedef struct px_pattern_enum_s px_pattern_enum_t;
 #endif
 
-/* Define an abstract type for vendor state */
-#ifndef px_vendor_state_DEFINED
-#  define px_vendor_state_DEFINED
-typedef struct px_vendor_state_s px_vendor_state_t;
-#endif
-
 /* Define the type of the PCL XL state. */
 #ifndef px_state_DEFINED
 #  define px_state_DEFINED
@@ -148,7 +142,6 @@ struct px_state_s
     /* Image/pattern reading state */
     px_image_enum_t *image_enum;
     px_pattern_enum_t *pattern_enum;
-    px_vendor_state_t *vendor_state;
 
     /* Miscellaneous */
     bool interpolate;           /* image interpolation */

@@ -260,7 +260,7 @@ const px_attr_value_type_t px_attr_value_types[] = {
     /* 113 */ none,
     /* 114 */ none,
     /* 115 */ sc(us), /* NumberOfScanLines  */
-    /* 116 */ xy(us), /* PrintableArea */
+    /* 116 */ none,
     /* 117 */ none,
     /* 118 */ none,
     /* 119 */ none,

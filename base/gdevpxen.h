@@ -62,7 +62,6 @@ typedef enum {
     eGray,
     eRGB,
     eSRGB = 6,		/* 2.0, Note: HP's value is 6 not the expected 3 */
-    eGraySub = 7,	/* 3.0+ */
     pxeColorSpace_next
 } pxeColorSpace_t;
 

@@ -41,7 +41,6 @@
 #include "pjtop.h"
 #include "pllfont.h"
 #include "pxptable.h"
-#include "pxvendor.h"
 #include "gzstate.h"
 
 /* Imported operators */
@@ -302,7 +301,7 @@ const byte apxBeginPage[] = {
     0, pxaOrientation,
     pxaMediaSource, pxaMediaSize, pxaCustomMediaSize, pxaCustomMediaSizeUnits,
     pxaSimplexPageMode, pxaDuplexPageMode, pxaDuplexPageSide,
-    pxaMediaDestination, pxaMediaType, pxaPrintableArea, 0
+    pxaMediaDestination, pxaMediaType, 0
 };
 int
 pxBeginPage(px_args_t * par, px_state_t * pxs)
@@ -728,42 +727,10 @@ pxVendorUnique(px_args_t * par, px_state_t * pxs)
 {
     int code = 0;
 
-    switch (par->pv[0]->value.i) {
-	case 0x68704000:
-	    /* hpijs's usage is non-conformant to spec */
-	    if (!pxs->data_source_open) {
-		pxs->data_source_open = true;
-		pxs->data_source_big_endian = false;
-	    }
-	    return pxJR3BeginImage(par, pxs);
-	    break;
-	case 0x68704001:
-	    return pxJR3ReadImage(par, pxs);
-	    break;
-	case 0x68704002:
-	    return pxJR3EndImage(par, pxs);
-	    break;
-	case 0x68704003:	/* JR3ExecStream/VUDownloadDeviceTable */
-	case 0x04107068:	/* HP_ColorSmartRGB */
-	case 0x68702005:	/* HP_SelectTrayBinByString */
-	case 0x68702006:	/* EnterFRMode */
-	case 0x68702011:	/* FRExtension */
-	    /* 1001 - 1004: PAINT_SETCOLORTREATMENT, PAINT_SETHALFTONEMETHOD, PAINT_DOWNLOADCOLORTABLE, ColorSmartRGB
-	       2001, 2002, 2004: MEDIA_SELECTMEDIASOURCE, MEDIA_SELECTMEDIAFINISH, , SetInternalLUT
-	       2101:             JR_OPENDATASOURCE
-	       3000 - 301E:      hp_MET
-	     */
-	default:
-	    break;
-    }
     if (par->pv[1]) {
         ulong len = par->pv[1]->value.i;
         ulong copy = min(len - par->source.position,
                          par->source.available);
-	dprintf2("Unprocessed VendorUnique Extension %08X (%d)\n",
-		 par->pv[0]->value.i,
-		 (par->pv[4] ? par->pv[4]->
-		  value.i : -1 /* as good as any */ ));
         par->source.data += copy;
         par->source.available -= copy;
         par->source.position += copy;

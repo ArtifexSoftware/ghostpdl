@@ -106,7 +106,6 @@ typedef enum {
     pxaBlockByteLength,         /* 2.0 */
 
     pxaNumberOfScanLines = 115,
-    pxaPrintableArea = 116,     /* 3.0+ */
 
     pxaColorTreatment = 120,
 
