@@ -1023,7 +1023,7 @@ currentdict /xref-char-dict undef
                   dup /Next get                         %% << >> <</Next...>> {} or << >>
                   dup type /packedarraytype eq {
                     dup 0 get                           %% << >> <</Next....>> {} object_num
-                    dup pstack 4 index exch known {
+                    dup 4 index exch known {
                       (\n   **** ERROR:  Circular reference detected in Outlines,\n) pdfformaterror
                       (                terminating Outline processing.\n) pdfformaterror
                       (                Output may be incorrect.\n) pdfformaterror
