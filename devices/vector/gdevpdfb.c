@@ -555,7 +555,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     if (!pres) {
         /* Create the Pattern resource. */
         int code;
-        long image_id, length_id;
+        long length_id;
         gs_offset_t start, end;
         stream *s;
         gs_image_t image;
@@ -566,25 +566,15 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
             (tw == tiles->size.x && th == tiles->size.y ? tiles->id :
              gx_no_bitmap_id);
 
-        if (in_line)
-            image_id = 0;
-        else if (image_bytes > 65500) {
-            /*
-             * Acrobat Reader can't handle image Patterns with more than
-             * 64K of data.  :-(
-             */
+        if (!in_line)
             goto use_default;
-        } else {
-            goto use_default;
-        }
+
         code = pdf_begin_resource(pdev, resourcePattern, tiles->id, &pres);
         if (code < 0)
             goto use_default;
         s = pdev->strm;
         pprintd1(s, "/PatternType 1/PaintType %d/TilingType 1/Resources<<\n",
                  (mask ? 2 : 1));
-        if (image_id)
-            pprintld2(s, "/XObject<</R%ld %ld 0 R>>", image_id, image_id);
 
         if (pdev->CompatibilityLevel <= 1.7)
             pprints1(s, "/ProcSet[/PDF/Image%s]>>\n", (mask ? "B" : "C"));
@@ -594,37 +584,25 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
          */
         pprintg2(s, "/Matrix[%g 0 0 %g 0 0]", tw / xscale, th / yscale);
         stream_puts(s, "/BBox[0 0 1 1]/XStep 1/YStep 1/Length ");
-        if (image_id) {
-            char buf[MAX_REF_CHARS + 6 + 1]; /* +6 for /R# Do\n */
-
-            gs_sprintf(buf, "/R%ld Do\n", image_id);
-            pprintd1(s, "%d>>stream\n", strlen(buf));
-            if (pdev->PDFA != 0)
-                pprints1(s, "%s\nendstream\n", buf);
-            else
-                pprints1(s, "%sendstream\n", buf);
-            pdf_end_resource(pdev, resourcePattern);
-        } else {
-            length_id = pdf_obj_ref(pdev);
-            pprintld1(s, "%ld 0 R>>stream\n", length_id);
-            start = pdf_stell(pdev);
-            code = copy_data(pdev, tiles->data, 0, tiles->raster,
-                             tile_id, 0, 0, tw, th, &image, &writer, -1);
-            switch (code) {
-            default:
-                return code;        /* error */
-            case 1:
-                break;
-            case 0:                        /* not possible */
-                return_error(gs_error_Fatal);
-            }
-            end = pdf_stell(pdev);
-            stream_puts(s, "\nendstream\n");
-            pdf_end_resource(pdev, resourcePattern);
-            pdf_open_separate(pdev, length_id, resourceNone);
-            pprintld1(pdev->strm, "%ld\n", end - start);
-            pdf_end_separate(pdev, resourceNone);
+        length_id = pdf_obj_ref(pdev);
+        pprintld1(s, "%ld 0 R>>stream\n", length_id);
+        start = pdf_stell(pdev);
+        code = copy_data(pdev, tiles->data, 0, tiles->raster,
+                         tile_id, 0, 0, tw, th, &image, &writer, -1);
+        switch (code) {
+        default:
+            return code;        /* error */
+        case 1:
+            break;
+        case 0:                        /* not possible */
+            return_error(gs_error_Fatal);
         }
+        end = pdf_stell(pdev);
+        stream_puts(s, "\nendstream\n");
+        pdf_end_resource(pdev, resourcePattern);
+        pdf_open_separate(pdev, length_id, resourceNone);
+        pprintld1(pdev->strm, "%ld\n", end - start);
+        pdf_end_separate(pdev, resourceNone);
         pres->object->written = true; /* don't write at end of page */
     }
     /* Fill the rectangle with the Pattern. */
