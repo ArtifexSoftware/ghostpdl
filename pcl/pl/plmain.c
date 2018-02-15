@@ -410,6 +410,15 @@ pl_main_delete_instance(pl_main_instance_t *minst)
     if (minst == NULL)
         return 0;
 
+    /* close and deallocate the device */
+    if (minst->device) {
+        gs_closedevice(minst->device);
+        gs_unregister_root(minst->device->memory, minst->device_root,
+                           "pl_main_languages_delete_instance");
+        minst->device_root = NULL;
+        gx_device_retain(minst->device, false);
+        minst->device = NULL;
+    }
     mem = minst->memory;
     impl = minst->implementations;
     if (impl != NULL) {
@@ -425,15 +434,6 @@ pl_main_delete_instance(pl_main_instance_t *minst)
         gs_free_object(mem, impl, "pl_main_languages_delete_instance()");
     }
 
-    /* close and deallocate the device */
-    if (minst->device) {
-        gs_closedevice(minst->device);
-        gs_unregister_root(minst->device->memory, minst->device_root,
-                           "pl_main_languages_delete_instance");
-        minst->device_root = NULL;
-        gx_device_retain(minst->device, false);
-        minst->device = NULL;
-    }
 
     gs_iodev_finit(mem);
     gs_lib_finit(0, 0, mem);
