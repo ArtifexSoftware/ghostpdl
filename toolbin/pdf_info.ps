@@ -190,6 +190,10 @@ cleartomark		% discard the dict from --where--
       dup //null ne {
         dup /DescendantFonts knownoget {
            exch pop 0 get oforce_no_circular
+           %% Check to see if a potentail circular reference was detected. This could be a
+           %% false positive caused by other fonts using the same DescendantFont(s), but if
+           %% so then we've already cehcked them anyway.
+           dup //null eq { pop << >>} if
         } if
         dup /FontDescriptor knownoget {
           dup /FontFile known 1 index /FontFile2 known or exch /FontFile3 known or
