@@ -125,6 +125,7 @@ alloc_indexed_cspace(pcl_cs_indexed_t ** ppindexed,
     if (code < 0) {
         free_indexed_cspace(pmem, pindexed,
                             "allocate pcl indexed color space");
+        gs_free_object(pmem, bp, "allocate pcl indexed color space");
         return code;
     }
 
