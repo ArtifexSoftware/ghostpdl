@@ -1639,14 +1639,16 @@ cmsHTRANSFORM cmsCloneTransformChangingFormats(cmsContext ContextID,
     return xform;
 }
 
-// For backwards compatibility - To be deleted
+// Used internally by CreateNamedColorDevicelink
+// NOTE: Changing the formatters of a cmsHTRANSFORM is *NOT* threadsafe,
+//       use cmsCloneTransformChangingFormats instead to avoid changing
+//       while another thread may be using it.
 cmsBool CMSEXPORT cmsChangeBuffersFormat(cmsContext ContextID, cmsHTRANSFORM hTransform,
                                          cmsUInt32Number InputFormat,
                                          cmsUInt32Number OutputFormat)
 {
     _cmsTRANSFORM* xform = (_cmsTRANSFORM*) hTransform;
     cmsFormatter16 FromInput, ToOutput;
-
 
     // We only can afford to change formatters if previous transform is at least 16 bits
     if (!(xform->core->dwOriginalFlags & cmsFLAGS_CAN_CHANGE_FORMATTER)) {

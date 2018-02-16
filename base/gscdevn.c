@@ -633,9 +633,9 @@ gx_install_DeviceN(gs_color_space * pcs, gs_gstate * pgs)
         /* An nclr profile is in the manager.  Grab one that matches. */
         cmm_profile_t *profdata = gsicc_finddevicen(pcs, pgs->icc_manager);
         if (profdata != NULL)
-            rc_increment(profdata);
+            gsicc_adjust_profile_rc(profdata, 1, "gx_install_DeviceN");
         if (pcs->cmm_icc_profile_data != NULL)
-            rc_decrement(pcs->cmm_icc_profile_data, "gx_install_DeviceN");
+            gsicc_adjust_profile_rc(pcs->cmm_icc_profile_data, -1, "gx_install_DeviceN");
         pcs->cmm_icc_profile_data = profdata;
     }
     /* {csrc} was pgs->color_space->params.device_n.use_alt_cspace */
@@ -650,9 +650,9 @@ gx_install_DeviceN(gs_color_space * pcs, gs_gstate * pgs)
         /* Need to install the nclr cspace */
         code = gs_cspace_build_ICC(&nclr_pcs, NULL, pgs->memory);
         nclr_pcs->cmm_icc_profile_data = pcs->cmm_icc_profile_data;
-        rc_increment(pcs->cmm_icc_profile_data);
-        rc_increment_cs(nclr_pcs); /* Suspicious - RJW */
-        rc_decrement_cs(pcs->base_space, "gx_install_DeviceN");
+        gsicc_adjust_profile_rc(pcs->cmm_icc_profile_data, 1, "gx_install_DeviceN");
+        rc_increment(nclr_pcs);				/* FIXME: Suspicious - RJW */
+        rc_decrement(pcs->base_space, "gx_install_DeviceN");
         pcs->base_space = nclr_pcs;
     }
     /*

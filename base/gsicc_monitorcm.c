@@ -415,8 +415,6 @@ gsicc_mcm_end_monitor(gsicc_link_cache_t *cache, gx_device *dev)
     int code;
     cmm_dev_profile_t *dev_profile;
 
-    /* Lock the cache as we remove monitoring from the links */
-    gx_monitor_enter(lock);
 
     /* Get the device profile */
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
@@ -430,6 +428,8 @@ gsicc_mcm_end_monitor(gsicc_link_cache_t *cache, gx_device *dev)
         gs_pdf14_device_color_mon_set(dev, false);
     }
 
+    /* Lock the cache as we remove monitoring from the links */
+    gx_monitor_enter(lock);
     curr = cache->head;
     while (curr != NULL ) {
         if (curr->is_monitored) {
@@ -439,10 +439,7 @@ gsicc_mcm_end_monitor(gsicc_link_cache_t *cache, gx_device *dev)
             curr->is_monitored = false;
         }
         /* Now release any tasks/threads waiting for these contents */
-        while (curr->num_waiting > 0) {
-            gx_semaphore_signal(curr->wait);
-            curr->num_waiting--;
-        }
+        gx_monitor_leave(curr->lock);
         curr = curr->next;
     }
     gx_monitor_leave(lock);	/* done with updating, let everyone run */
@@ -460,9 +457,6 @@ gsicc_mcm_begin_monitor(gsicc_link_cache_t *cache, gx_device *dev)
     int code;
     cmm_dev_profile_t *dev_profile;
 
-    /* Lock the cache as we remove monitoring from the links */
-    gx_monitor_enter(lock);
-
     /* Get the device profile */
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     if (code < 0)
@@ -475,14 +469,15 @@ gsicc_mcm_begin_monitor(gsicc_link_cache_t *cache, gx_device *dev)
         gs_pdf14_device_color_mon_set(dev, true);
     }
 
+    /* Lock the cache as we remove monitoring from the links */
+    gx_monitor_enter(lock);
+
     curr = cache->head;
     while (curr != NULL ) {
-        if (curr->data_cs != gsGRAY)
+        if (curr->data_cs != gsGRAY) {
             gsicc_mcm_set_link(curr);
-        /* Now release any tasks/threads waiting for these contents */
-        while (curr->num_waiting > 0) {
-            gx_semaphore_signal(curr->wait);
-            curr->num_waiting--;
+            /* Now release any tasks/threads waiting for these contents */
+            gx_monitor_leave(curr->lock);
         }
         curr = curr->next;
     }

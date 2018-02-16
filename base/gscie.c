@@ -1471,7 +1471,7 @@ gx_cie_to_xyz_free(gs_gstate *pgs)
 
     rc_decrement(pgs->cie_joint_caches,"gx_cie_to_xyz_free");
 
-    /* Free up the ICC objects if created */
+    /* Free up the ICC objects if created */		/* FIXME: does this need to be thread safe */
     if (pgs->icc_link_cache != NULL) {
         rc_decrement(pgs->icc_link_cache,"gx_cie_to_xyz_free");
     }

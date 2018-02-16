@@ -41,6 +41,7 @@
 #include "gscindex.h"
 #include "gsicc_cache.h"
 #include "gsicc_cms.h"
+#include "gsicc_manage.h"
 #include "gxdevsop.h"
 
 /* Structure descriptors */
@@ -691,9 +692,9 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
                    cielab profile */
                 gs_color_space *curr_pcs = (gs_color_space *)pcs;
                 rc_decrement(curr_pcs->icc_equivalent,"gx_image_enum_begin");
-                rc_decrement(curr_pcs->cmm_icc_profile_data,"gx_image_enum_begin");
+                gsicc_adjust_profile_rc(curr_pcs->cmm_icc_profile_data, -1,"gx_image_enum_begin");
                 curr_pcs->cmm_icc_profile_data = pgs->icc_manager->lab_profile;
-                rc_increment(curr_pcs->cmm_icc_profile_data);
+                gsicc_adjust_profile_rc(curr_pcs->cmm_icc_profile_data, 1,"gx_image_enum_begin");
             }
         }
         /* Try to transform non-default RasterOps to something */

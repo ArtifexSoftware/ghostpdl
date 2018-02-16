@@ -592,7 +592,7 @@ gs_begin_transparency_mask(gs_gstate * pgs,
         if (blend_color_space == NULL)
             return_error(gs_error_VMerror);
         blend_color_space->cmm_icc_profile_data = pgs->icc_manager->default_gray;
-        rc_increment(blend_color_space->cmm_icc_profile_data);
+        gsicc_adjust_profile_rc(blend_color_space->cmm_icc_profile_data, 1, "gs_begin_transparency_mask");
         if_debug9m('v', pgs->memory, "[v](0x%lx)gs_begin_transparency_mask [%g %g %g %g]\n\
           subtype = %d  Background_components = %d, Matte_components = %d, %s\n",
                   (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,
@@ -628,7 +628,7 @@ gs_begin_transparency_mask(gs_gstate * pgs,
         /* Explicitly decrement the profile data since blend_color_space may not
          * be an ICC color space object.
          */
-        rc_decrement(blend_color_space->cmm_icc_profile_data, "gs_begin_transparency_mask");
+        gsicc_adjust_profile_rc(blend_color_space->cmm_icc_profile_data, -1, "gs_begin_transparency_mask");
         rc_decrement_only_cs(blend_color_space, "gs_begin_transparency_mask");
     }
     return gs_gstate_update_pdf14trans(pgs, &params);

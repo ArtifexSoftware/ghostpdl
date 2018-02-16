@@ -209,7 +209,7 @@ xps_read_icc_colorspace(xps_context_t *ctx, char *base_uri, char *profilename)
         /* Problem with profile.  Don't fail, just use the default */
         if (code < 0)
         {
-            gsicc_profile_reference(profile, -1);
+            gsicc_adjust_profile_rc(profile, -1, "xps_read_icc_colorspace");
             gs_warn1("there was a problem with the profile: %s", partname);
             return NULL;
         }

@@ -389,8 +389,7 @@ gsicc_nocm_get_link(const gs_gstate *pgs, gx_device *dev,
         return NULL;
 
     /* Now compute the link contents */
-    /* Lock the cache as we alter the procs */
-    gx_monitor_enter(pgs->icc_link_cache->lock);
+    /* We (this thread) owns the lock on the new link just created. */
 
     result->procs.map_buffer = gsicc_nocm_transform_color_buffer;
     result->procs.map_color = gsicc_nocm_transform_color;
@@ -437,7 +436,6 @@ gsicc_nocm_get_link(const gs_gstate *pgs, gx_device *dev,
     } else {
         result->is_identity = false;
     }
-    result->valid = true;
     if (nocm_link->num_in == 4)
         data_cs = gsCMYK;
     else if (nocm_link->num_in == 1)
@@ -448,13 +446,9 @@ gsicc_nocm_get_link(const gs_gstate *pgs, gx_device *dev,
     if (pageneutralcolor && nocm_link->num_in != 1) {
         gsicc_mcm_set_link(result);
     }
-
-    /* Now release any tasks/threads waiting for these contents */
-    while (result->num_waiting > 0) {
-        gx_semaphore_signal(result->wait);
-        result->num_waiting--;
-    }
-    gx_monitor_leave(pgs->icc_link_cache->lock);	/* done with updating, let everyone run */
+    result->valid = true;
+    /* Now release any tasks/threads waiting for these contents by unlocking */
+    gx_monitor_leave(result->lock);	/* done with updating, let everyone run */
 
     return result;
 }

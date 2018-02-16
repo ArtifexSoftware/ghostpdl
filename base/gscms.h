@@ -23,7 +23,7 @@
 #include "gstypes.h"
 #include "gscspace.h"      /* for gs_color_space */
 #include "gsdevice.h"     /* Need to carry pointer to clist reader */
-#include "gxsync.h"       /* for semaphore and monitors */
+#include "gxsync.h"       /* for monitors */
 #include "stdint_.h"
 
 #define ICC_MAX_CHANNELS 15
@@ -441,15 +441,14 @@ typedef struct gsicc_hashlink_s {
 } gsicc_hashlink_t;
 
 struct gsicc_link_s {
-    void *link_handle;
+    void *link_handle;		/* the CMS decides what this is */
     gs_memory_t *memory;
     gscms_procs_t procs;
     gsicc_hashlink_t hashcode;
     struct gsicc_link_cache_s *icc_link_cache;
     int ref_count;
     gsicc_link_t *next;
-    gx_semaphore_t *wait;		/* semaphore used by waiting threads */
-    int num_waiting;
+    gx_monitor_t *lock;		/* lock used while changing contents */
     bool includes_softproof;
     bool includes_devlink;
     bool is_identity;  /* Used for noting that this is an identity profile */
@@ -472,8 +471,6 @@ typedef struct gsicc_link_cache_s {
     rc_header rc;
     gs_memory_t *memory;
     gx_monitor_t *lock;		/* handle for the monitor */
-    gx_semaphore_t *wait;	/* somebody needs a link cache slot */
-    int num_waiting;		/* number of threads waiting */
 } gsicc_link_cache_t;
 
 /* A linked list structure to keep DeviceN ICC profiles

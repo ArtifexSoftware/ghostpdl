@@ -35,9 +35,20 @@
 
 #define DUMP_CMS_BUFFER 0
 #define DEBUG_LCMS_MEM 0
-#define LCMS_BYTES_MASK 0x7
+#define LCMS_BYTES_MASK T_BYTES(-1)	/* leaves only mask for the BYTES (currently 7) */
+#define LCMS_ENDIAN16_MASK T_ENDIAN16(-1) /* similarly, for ENDIAN16 bit */
 
-typedef struct gsicc_lcms2_link_s gsicc_lcms2_link_t;
+#define gsicc_link_flags(hasalpha, planarIN, planarOUT, bigendianIN, bigendianOUT, bytesIN, bytesOUT) \
+    ((hasalpha != 0) << 2 | \
+     (planarIN != 0) << 5 | (planarOUT != 0) << 4 | \
+     (bigendianIN != 0) << 3 | (bigendianOUT != 0) << 2 | \
+     (bytesIN == 1) << 1 | (bytesOUT == 1))
+
+typedef struct gsicc_lcms2art_link_list_s {
+    int flags;
+    cmsHTRANSFORM *hTransform;
+    struct gsicc_lcms2art_link_list_s *next;
+} gsicc_lcms2art_link_list_t;
 
 /* Only provide warning about issues in lcms if debug build */
 static void
@@ -322,9 +333,11 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                              gsicc_bufferdesc_t *output_buff_desc,
                              void *inputbuffer, void *outputbuffer)
 {
-    cmsHTRANSFORM hTransform = (cmsHTRANSFORM)icclink->link_handle;
+    gsicc_lcms2art_link_list_t *link_handle = (gsicc_lcms2art_link_list_t *)(icclink->link_handle);
+    cmsHTRANSFORM hTransform = (cmsHTRANSFORM)link_handle->hTransform;
     cmsUInt32Number dwInputFormat, dwOutputFormat, num_src_lcms, num_des_lcms;
-    int planar,numbytes, big_endian, hasalpha, k;
+    int  hasalpha, planarIN, planarOUT, numbytesIN, numbytesOUT, big_endianIN, big_endianOUT;
+    int k, needed_flags = 0;
     unsigned char *inputpos, *outputpos;
     cmsContext ctx = gs_lib_ctx_get_cms_context(icclink->memory);
 
@@ -332,60 +345,105 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     FILE *fid_in, *fid_out;
 #endif
     /* Although little CMS does  make assumptions about data types in its
-       transformations you can change it after the fact.  */
+       transformations we can change it after the fact by cloning from any
+       other transform. We always create [0] which is no_alpha, chunky IN/OUT,
+       little_endian IN/OUT, 2-bytes_per_component IN/OUT. */
     /* Set us to the proper output type */
     /* Note, we could speed this up by passing back the encoded data type
         to the caller so that we could avoid having to go through this
         computation each time if they are doing multiple calls to this
-        operation */
-    /* Color space MUST be the same */
-    dwInputFormat = COLORSPACE_SH(T_COLORSPACE(cmsGetTransformInputFormat(ctx, hTransform)));
-    dwOutputFormat = COLORSPACE_SH(T_COLORSPACE(cmsGetTransformOutputFormat(ctx, hTransform)));
+        operation, but this is working on a buffer at a time. */
 
     /* Now set if we have planar, num bytes, endian case, and alpha data to skip */
     /* Planar -- pdf14 case for example */
-    planar = input_buff_desc->is_planar;
-    dwInputFormat = dwInputFormat | PLANAR_SH(planar);
-    planar = output_buff_desc->is_planar;
-    dwOutputFormat = dwOutputFormat | PLANAR_SH(planar);
+    planarIN = input_buff_desc->is_planar;
+    planarOUT = output_buff_desc->is_planar;
 
     /* 8 or 16 byte input and output */
-    numbytes = input_buff_desc->bytes_per_chan;
-    if (numbytes>2)
-        numbytes = 0;  /* littleCMS encodes float with 0 ToDO. */
-    dwInputFormat = dwInputFormat | BYTES_SH(numbytes);
-    numbytes = output_buff_desc->bytes_per_chan;
-    if (numbytes>2)
-        numbytes = 0;
-    dwOutputFormat = dwOutputFormat | BYTES_SH(numbytes);
+    numbytesIN = input_buff_desc->bytes_per_chan;
+    numbytesOUT = output_buff_desc->bytes_per_chan;
+    if (numbytesIN > 2 || numbytesOUT > 2)
+        return_error(gs_error_rangecheck);	/* TODO: we don't support float */
 
     /* endian */
-    big_endian = !input_buff_desc->little_endian;
-    dwInputFormat = dwInputFormat | ENDIAN16_SH(big_endian);
-    big_endian = !output_buff_desc->little_endian;
-    dwOutputFormat = dwOutputFormat | ENDIAN16_SH(big_endian);
-
-    /* number of channels.  This should not really be changing! */
-    num_src_lcms = T_CHANNELS(cmsGetTransformInputFormat(ctx, hTransform));
-    num_des_lcms = T_CHANNELS(cmsGetTransformOutputFormat(ctx, hTransform));
-    if (num_src_lcms != input_buff_desc->num_chan ||
-        num_des_lcms != output_buff_desc->num_chan) {
-        /* We can't transform this. Someone is doing something odd */
-        return_error(gs_error_unknownerror);
-    }
-    dwInputFormat = dwInputFormat | CHANNELS_SH(num_src_lcms);
-    dwOutputFormat = dwOutputFormat | CHANNELS_SH(num_des_lcms);
+    big_endianIN = !input_buff_desc->little_endian;
+    big_endianOUT = !output_buff_desc->little_endian;
 
     /* alpha, which is passed through unmolested */
-    /* ToDo:  Right now we always must have alpha last */
-    /* This is really only going to be an issue when we have
-       interleaved alpha data */
+    /* TODO:  Right now we always must have alpha last */
+    /* This is really only going to be an issue when we have interleaved alpha data */
     hasalpha = input_buff_desc->has_alpha;
-    dwInputFormat = dwInputFormat | EXTRA_SH(hasalpha);
-    dwOutputFormat = dwOutputFormat | EXTRA_SH(hasalpha);
 
-    /* Change the formatters */
-    cmsChangeBuffersFormat(ctx, hTransform,dwInputFormat,dwOutputFormat);
+    needed_flags = gsicc_link_flags(hasalpha, planarIN, planarOUT,
+                                    big_endianIN, big_endianOUT,
+                                    numbytesIN, numbytesOUT);
+    while (link_handle->flags != needed_flags) {
+        if (link_handle->next == NULL) {
+            hTransform = NULL;
+            break;
+        } else {
+            link_handle = link_handle->next;
+            hTransform = link_handle->hTransform;
+        }
+    }
+    if (hTransform == NULL) {
+        /* the variant we want wasn't present, clone it from the last on the list */
+        gsicc_lcms2art_link_list_t *new_link_handle =
+            (gsicc_lcms2art_link_list_t *)gs_alloc_bytes(icclink->memory->non_gc_memory,
+                                                         sizeof(gsicc_lcms2art_link_list_t),
+                                                         "gscms_transform_color_buffer");
+        if (new_link_handle == NULL) {
+            return_error(gs_error_VMerror);
+        }
+        new_link_handle->next = NULL;		/* new end of list */
+        new_link_handle->flags = needed_flags;
+        hTransform = link_handle->hTransform;	/* doesn't really matter which we start with */
+        /* Color space MUST be the same */
+        dwInputFormat = COLORSPACE_SH(T_COLORSPACE(cmsGetTransformInputFormat(ctx, hTransform)));
+        dwOutputFormat = COLORSPACE_SH(T_COLORSPACE(cmsGetTransformOutputFormat(ctx, hTransform)));
+        /* number of channels.  This should not really be changing! */
+        num_src_lcms = T_CHANNELS(cmsGetTransformInputFormat(ctx, hTransform));
+        num_des_lcms = T_CHANNELS(cmsGetTransformOutputFormat(ctx, hTransform));
+        if (num_src_lcms != input_buff_desc->num_chan ||
+            num_des_lcms != output_buff_desc->num_chan) {
+            /* We can't transform this. Someone is doing something odd */
+            return_error(gs_error_unknownerror);
+        }
+        dwInputFormat = dwInputFormat | CHANNELS_SH(num_src_lcms);
+        dwOutputFormat = dwOutputFormat | CHANNELS_SH(num_des_lcms);
+        /* set the remaining parameters, alpha, planar, num_bytes */
+        dwInputFormat = dwInputFormat | EXTRA_SH(hasalpha);
+        dwOutputFormat = dwOutputFormat | EXTRA_SH(hasalpha);
+        dwInputFormat = dwInputFormat | PLANAR_SH(planarIN);
+        dwOutputFormat = dwOutputFormat | PLANAR_SH(planarOUT);
+        dwInputFormat = dwInputFormat | ENDIAN16_SH(big_endianIN);
+        dwOutputFormat = dwOutputFormat | ENDIAN16_SH(big_endianOUT);
+        dwInputFormat = dwInputFormat | BYTES_SH(numbytesIN);
+        dwOutputFormat = dwOutputFormat | BYTES_SH(numbytesOUT);
+
+        hTransform = cmsCloneTransformChangingFormats(ctx, hTransform, dwInputFormat, dwOutputFormat);
+        if (hTransform == NULL)
+            return_error(gs_error_unknownerror);
+        /* Now we have a new hTransform to add to the list, BUT some other thread */
+        /* may have been working in the same one. Lock, check again and add to    */
+        /* the (potentially new) end of the list */
+        gx_monitor_enter(icclink->lock);
+        while (link_handle->next != NULL) {
+            if (link_handle->flags == needed_flags) {
+                /* OOPS. Someone else did it while we were building it */
+                cmsDeleteTransform(ctx, hTransform);
+                hTransform = link_handle->hTransform;
+                new_link_handle = NULL;
+                break;
+            }
+            link_handle = link_handle->next;
+        }
+        gx_monitor_leave(icclink->lock);
+        if (new_link_handle != NULL) {
+            new_link_handle->hTransform = hTransform;
+            link_handle->next = new_link_handle;		/* link to end of list */
+        }
+    }
 
     /* littleCMS knows nothing about word boundarys.  As such, we need to do
        this row by row adjusting for our stride.  Output buffer must already
@@ -414,12 +472,12 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                            output_buff_desc->pixels_per_row;
             int y, i;
 
-            temp_src = (byte*)gs_alloc_bytes(dev->memory->non_gc_memory,
+            temp_src = (byte*)gs_alloc_bytes(icclink->memory->non_gc_memory,
                                               source_size * input_buff_desc->num_chan,
                                               "gscms_transform_color_buffer");
             if (temp_src == NULL)
                 return_error(gs_error_VMerror);
-            temp_des = (byte*) gs_alloc_bytes(dev->memory->non_gc_memory,
+            temp_des = (byte*) gs_alloc_bytes(icclink->memory->non_gc_memory,
                                               des_size * output_buff_desc->num_chan,
                                               "gscms_transform_color_buffer");
             if (temp_des == NULL)
@@ -448,9 +506,9 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                 inputpos += input_buff_desc->row_stride;
                 outputpos += output_buff_desc->row_stride;
             }
-            gs_free_object(dev->memory->non_gc_memory, temp_src,
+            gs_free_object(icclink->memory->non_gc_memory, temp_src,
                            "gscms_transform_color_buffer");
-            gs_free_object(dev->memory->non_gc_memory, temp_des,
+            gs_free_object(icclink->memory->non_gc_memory, temp_des,
                            "gscms_transform_color_buffer");
         }
     } else {
@@ -482,22 +540,73 @@ int
 gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
                              void *outputcolor, int num_bytes)
 {
-    cmsHTRANSFORM hTransform = (cmsHTRANSFORM)icclink->link_handle;
+    gsicc_lcms2art_link_list_t *link_handle = (gsicc_lcms2art_link_list_t *)(icclink->link_handle);
+    cmsHTRANSFORM hTransform = (cmsHTRANSFORM)link_handle->hTransform;
     cmsUInt32Number dwInputFormat,dwOutputFormat;
     cmsContext ctx = gs_lib_ctx_get_cms_context(icclink->memory);
+    int big_endianIN, big_endianOUT, needed_flags;
 
     /* For a single color, we are going to use the link as it is
        with the exception of taking care of the word size. */
-    /* numbytes = sizeof(gx_color_value); */
-    if (num_bytes>2)
-        num_bytes = 0;  /* littleCMS encodes float with 0 ToDO. */
-    dwInputFormat = cmsGetTransformInputFormat(ctx, hTransform);
-    dwOutputFormat = cmsGetTransformOutputFormat(ctx, hTransform);
-    dwInputFormat = (dwInputFormat & (~LCMS_BYTES_MASK))  | BYTES_SH(num_bytes);
-    dwOutputFormat = (dwOutputFormat & (~LCMS_BYTES_MASK)) | BYTES_SH(num_bytes);
+    if (num_bytes > 2)
+        return_error(gs_error_rangecheck);	/* TODO: we don't support float */
 
-    /* Change the formatters */
-    cmsChangeBuffersFormat(ctx, hTransform, dwInputFormat, dwOutputFormat);
+    dwInputFormat = cmsGetTransformInputFormat(ctx, hTransform);
+    big_endianIN = T_ENDIAN16(dwInputFormat);
+    dwOutputFormat = cmsGetTransformOutputFormat(ctx, hTransform);
+    big_endianOUT = T_ENDIAN16(dwOutputFormat);
+
+    needed_flags = gsicc_link_flags(0, 0, 0,	/* alpha and planar not used for single color */
+                                    big_endianIN, big_endianOUT,
+                                    num_bytes, num_bytes);
+    while (link_handle->flags != needed_flags) {
+        if (link_handle->next == NULL) {
+            hTransform = NULL;
+            break;
+        } else {
+            link_handle = link_handle->next;
+            hTransform = link_handle->hTransform;
+        }
+    }
+    if (hTransform == NULL) {
+        gsicc_lcms2art_link_list_t *new_link_handle =
+            (gsicc_lcms2art_link_list_t *)gs_alloc_bytes(icclink->memory->non_gc_memory,
+                                                         sizeof(gsicc_lcms2art_link_list_t),
+                                                         "gscms_transform_color_buffer");
+        if (new_link_handle == NULL) {
+            return_error(gs_error_VMerror);
+        }
+        new_link_handle->next = NULL;		/* new end of list */
+        new_link_handle->flags = needed_flags;
+        /* the variant we want wasn't present, clone it from the HEAD (no alpha, not planar) */
+        dwInputFormat = (dwInputFormat & (~LCMS_BYTES_MASK))  | BYTES_SH(num_bytes);
+        dwOutputFormat = (dwOutputFormat & (~LCMS_BYTES_MASK)) | BYTES_SH(num_bytes);
+        dwInputFormat = (dwInputFormat & (~LCMS_ENDIAN16_MASK))  | ENDIAN16_SH(big_endianIN);
+        dwOutputFormat = (dwOutputFormat & (~LCMS_ENDIAN16_MASK)) | ENDIAN16_SH(big_endianOUT);
+        /* Get the transform with the settings we need */
+        hTransform = cmsCloneTransformChangingFormats(ctx, hTransform, dwInputFormat, dwOutputFormat);
+        if (hTransform == NULL)
+            return_error(gs_error_unknownerror);
+        /* Now we have a new hTransform to add to the list, BUT some other thread */
+        /* may have been working in the same one. Lock, check again and add to    */
+        /* the (potentially new) end of the list */
+        gx_monitor_enter(icclink->lock);
+        while (link_handle->next != NULL) {
+            if (link_handle->flags == needed_flags) {
+                /* OOPS. Someone else did it while we were building it */
+                cmsDeleteTransform(ctx, hTransform);
+                hTransform = link_handle->hTransform;
+                new_link_handle = NULL;
+                break;
+            }
+            link_handle = link_handle->next;
+        }
+        gx_monitor_leave(icclink->lock);
+        if (new_link_handle != NULL) {
+            new_link_handle->hTransform = hTransform;
+            link_handle->next = new_link_handle;		/* link to end of list */
+        }
+    }
 
     /* Do conversion */
     cmsDoTransform(ctx, hTransform, inputcolor, outputcolor, 1);
@@ -518,9 +627,11 @@ gscms_get_link_dim(gcmmhlink_t link, int *num_inputs, int *num_outputs,
     gs_memory_t *memory)
 {
     cmsContext ctx = gs_lib_ctx_get_cms_context(memory);
+    gsicc_lcms2art_link_list_t *link_handle = (gsicc_lcms2art_link_list_t *)(link);
+    cmsHTRANSFORM hTransform = (cmsHTRANSFORM)link_handle->hTransform;
 
-    *num_inputs = T_CHANNELS(cmsGetTransformInputFormat(ctx, link));
-    *num_outputs = T_CHANNELS(cmsGetTransformOutputFormat(ctx, link));
+    *num_inputs = T_CHANNELS(cmsGetTransformInputFormat(ctx, hTransform));
+    *num_outputs = T_CHANNELS(cmsGetTransformOutputFormat(ctx, hTransform));
 }
 
 /* Get the link from the CMS. TODO:  Add error checking */
@@ -535,6 +646,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle, gcmmhprofile_t lcms_deshandle,
     int lcms_src_color_space, lcms_des_color_space;
     unsigned int flag;
     cmsContext ctx = gs_lib_ctx_get_cms_context(memory);
+    gsicc_lcms2art_link_list_t *link_handle;
 
     /* Check for case of request for a transfrom from a device link profile
        in that case, the destination profile is NULL */
@@ -609,9 +721,23 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle, gcmmhprofile_t lcms_deshandle,
     }
 
     /* Create the link */
-    return cmsCreateTransformTHR(ctx, lcms_srchandle, src_data_type,
-               lcms_deshandle, des_data_type, rendering_params->rendering_intent,
-               flag | cmm_flags);
+    link_handle = (gsicc_lcms2art_link_list_t *)gs_alloc_bytes(memory->non_gc_memory,
+                                                         sizeof(gsicc_lcms2art_link_list_t),
+                                                         "gscms_transform_color_buffer");
+    if (link_handle == NULL)
+        return NULL;
+    link_handle->hTransform = cmsCreateTransformTHR(ctx, lcms_srchandle, src_data_type,
+                                                    lcms_deshandle, des_data_type,
+                                                    rendering_params->rendering_intent,
+                                                    flag | cmm_flags);
+    if (link_handle->hTransform == NULL) {
+        gs_free_object(memory, link_handle, "gscms_get_link");
+            return NULL;
+    }
+    link_handle->next = NULL;
+    link_handle->flags = gsicc_link_flags(0, 0, 0, 0, 0,    /* no alpha, not planar, little-endian */
+                                          sizeof(gx_color_value), sizeof(gx_color_value));
+    return link_handle;
     /* cmsFLAGS_HIGHRESPRECALC)  cmsFLAGS_NOTPRECALC  cmsFLAGS_LOWRESPRECALC*/
 }
 
@@ -636,7 +762,16 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
     int nProfiles = 0;
     unsigned int flag;
     cmsContext ctx = gs_lib_ctx_get_cms_context(memory);
+    gsicc_lcms2art_link_list_t *link_handle;
 
+    link_handle = (gsicc_lcms2art_link_list_t *)gs_alloc_bytes(memory->non_gc_memory,
+                                                         sizeof(gsicc_lcms2art_link_list_t),
+                                                         "gscms_transform_color_buffer");
+    if (link_handle == NULL)
+         return NULL;
+    link_handle->next = NULL;
+    link_handle->flags = gsicc_link_flags(0, 0, 0, 0, 0,    /* no alpha, not planar, little-endian */
+                                          sizeof(gx_color_value), sizeof(gx_color_value));
     /* Check if the rendering intent is something other than relative colorimetric
        and  if we have a proofing profile.  In this case we need to create the
        combined profile a bit different.  LCMS does not allow us to use different
@@ -649,21 +784,16 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
         /* First handle the source to proof profile with its particular intent as
            a device link profile */
         cmsHPROFILE src_to_proof;
-        cmsHTRANSFORM temptransform;
-
-        temptransform = gscms_get_link(lcms_srchandle, lcms_proofhandle,
-                                      rendering_params, cmm_flags, memory);
-
         /* Now mash that to a device link profile */
         flag = gscms_get_accuracy(memory);
         if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON ||
             rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
             flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
         }
-        src_to_proof = cmsTransform2DeviceLink(ctx, temptransform, 3.4, flag);
+        src_to_proof = cmsTransform2DeviceLink(ctx, link_handle->hTransform, 3.4, flag);
 
         /* Free up the link handle */
-        cmsDeleteTransform(ctx, temptransform);
+        cmsDeleteTransform(ctx, link_handle->hTransform);
         src_color_space  = cmsGetColorSpace(ctx, src_to_proof);
         lcms_src_color_space = _cmsLCMScolorSpace(ctx, src_color_space);
 
@@ -706,11 +836,10 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
         }
 
         /* Use relative colorimetric here */
-        temptransform = cmsCreateMultiprofileTransformTHR(ctx,
+        link_handle->hTransform = cmsCreateMultiprofileTransformTHR(ctx,
                     hProfiles, nProfiles, src_data_type, des_data_type,
                     gsRELATIVECOLORIMETRIC, flag);
         cmsCloseProfile(ctx, src_to_proof);
-        return temptransform;
     } else {
        /* First handle all the source stuff */
         src_color_space  = cmsGetColorSpace(ctx, lcms_srchandle);
@@ -766,10 +895,15 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
             || rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
             flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
         }
-        return cmsCreateMultiprofileTransformTHR(ctx,
-                    hProfiles, nProfiles, src_data_type,
-                    des_data_type, rendering_params->rendering_intent, flag);
+        link_handle->hTransform =  cmsCreateMultiprofileTransformTHR(ctx,
+                                       hProfiles, nProfiles, src_data_type,
+                                       des_data_type, rendering_params->rendering_intent, flag);
     }
+    if (link_handle->hTransform == NULL) {
+        gs_free_object(memory, link_handle, "gscms_get_link_proof_devlink");
+        return NULL;
+    }
+    return link_handle;
 }
 
 /* Do any initialization if needed to the CMS */
@@ -808,9 +942,15 @@ gscms_destroy(gs_memory_t *memory)
 void
 gscms_release_link(gsicc_link_t *icclink)
 {
-    if (icclink->link_handle != NULL) {
-        cmsContext ctx = gs_lib_ctx_get_cms_context(icclink->memory);
-        cmsDeleteTransform(ctx, icclink->link_handle);
+    cmsContext ctx = gs_lib_ctx_get_cms_context(icclink->memory);
+    gsicc_lcms2art_link_list_t *link_handle = (gsicc_lcms2art_link_list_t *)(icclink->link_handle);
+
+    while (link_handle != NULL) {
+        gsicc_lcms2art_link_list_t *next_handle;
+        cmsDeleteTransform(ctx, link_handle->hTransform);
+        next_handle = link_handle->next;
+        gs_free_object(icclink->memory->non_gc_memory, link_handle, "gscms_release_link");
+        link_handle = next_handle;
     }
     icclink->link_handle = NULL;
 }
@@ -852,7 +992,8 @@ int
 gscms_transform_named_color(gsicc_link_t *icclink,  float tint_value,
                             const char* ColorName, gx_color_value device_values[])
 {
-    cmsHPROFILE hTransform = icclink->link_handle;
+    gsicc_lcms2art_link_list_t *link_handle = (gsicc_lcms2art_link_list_t *)(icclink->link_handle);
+    cmsHTRANSFORM hTransform = (cmsHTRANSFORM)link_handle->hTransform;
     unsigned short *deviceptr = device_values;
     int index;
     cmsContext ctx = gs_lib_ctx_get_cms_context(icclink->memory);
@@ -863,6 +1004,8 @@ gscms_transform_named_color(gsicc_link_t *icclink,  float tint_value,
         return -1;
 
     /* Get the device value. */
+/* FIXME: This looks WRONG. Doesn't it need to use tint_value??? */
+/*        Also, the hTransform from link_handle is 2-byte IN, *NOT* float */
    cmsDoTransform(ctx, hTransform,&index,deviceptr,1);
    return 0;
 }
@@ -880,12 +1023,14 @@ gscms_get_name2device_link(gsicc_link_t *icclink,
                            gcmmhprofile_t lcms_proofhandle,
                            gsicc_rendering_param_t *rendering_params)
 {
-    cmsHTRANSFORM hTransform;
+    cmsHTRANSFORM hTransform, hTransformNew;
     cmsUInt32Number dwOutputFormat;
     cmsUInt32Number lcms_proof_flag;
     int number_colors;
     cmsContext ctx = gs_lib_ctx_get_cms_context(icclink->memory);
+    gsicc_lcms2art_link_list_t *link_handle;
 
+    icclink->link_handle = NULL;		/* in case of failure */
     /* NOTE:  We need to add a test here to check that we even HAVE
     device values in here and NOT just CIELAB values */
     if ( lcms_proofhandle != NULL ){
@@ -902,6 +1047,8 @@ gscms_get_name2device_link(gsicc_link_t *icclink,
                                             lcms_proofhandle,INTENT_PERCEPTUAL,
                                             INTENT_ABSOLUTE_COLORIMETRIC,
                                             lcms_proof_flag);
+    if (hTransform == NULL)
+        return;					/* bail */
 
     /* In littleCMS there is no easy way to find out the size of the device
         space returned by the named color profile until after the transform is made.
@@ -913,8 +1060,23 @@ gscms_get_name2device_link(gsicc_link_t *icclink,
     dwOutputFormat =  (CHANNELS_SH(number_colors)|BYTES_SH(sizeof(gx_color_value)));
 
     /* Change the formatters */
-    cmsChangeBuffersFormat(ctx, hTransform,TYPE_NAMED_COLOR_INDEX,dwOutputFormat);
-    icclink->link_handle = hTransform;
+    hTransformNew  = cmsCloneTransformChangingFormats(ctx, hTransform,TYPE_NAMED_COLOR_INDEX,dwOutputFormat);
+    cmsDeleteTransform(ctx, hTransform);	/* release the original after cloning */
+    if (hTransformNew == NULL)
+        return;					/* bail */
+    link_handle = (gsicc_lcms2art_link_list_t *)gs_alloc_bytes(icclink->memory->non_gc_memory,
+                                                         sizeof(gsicc_lcms2art_link_list_t),
+                                                         "gscms_transform_color_buffer");
+    if (link_handle == NULL) {
+        cmsDeleteTransform(ctx, hTransformNew);
+        return;					/* bail */
+    }
+    link_handle->flags = gsicc_link_flags(0, 0, 0, 0, 0,    /* no alpha, not planar, little-endian */
+                                          sizeof(gx_color_value), sizeof(gx_color_value));
+    link_handle->hTransform = hTransformNew;
+    link_handle->next = NULL;
+    icclink->link_handle = link_handle;
+
     cmsCloseProfile(ctx, lcms_srchandle);
     if(lcms_deshandle)
         cmsCloseProfile(ctx, lcms_deshandle);
@@ -926,5 +1088,5 @@ gscms_get_name2device_link(gsicc_link_t *icclink,
 bool
 gscms_is_threadsafe(void)
 {
-    return false;		/* FIXME: return true once threads work correctly */
+    return true;              /* threads work correctly */
 }

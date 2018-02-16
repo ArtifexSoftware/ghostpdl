@@ -185,7 +185,7 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
         {
             /* Problem with profile. Just ignore it */
             gs_warn("ignoring problem with icc profile embedded in an image");
-            gsicc_profile_reference(profile, -1);
+            gsicc_adjust_profile_rc(profile, -1, "xps_decode_image");
         }
         else
         {
@@ -202,7 +202,7 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
             {
                 /* Problem with profile. Just ignore it */
                 gs_warn("ignoring icc profile embedded in an image with wrong number of components");
-                gsicc_profile_reference(profile, -1);
+                gsicc_adjust_profile_rc(profile, -1, "xps_decode_image");
                 image->profile = NULL;
             }
         }

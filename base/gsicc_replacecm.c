@@ -355,9 +355,7 @@ gsicc_rcm_get_link(const gs_gstate *pgs, gx_device *dev,
         return result;
 
     /* Now compute the link contents */
-    /* Lock the cache as we alter the procs */
-    gx_monitor_enter(pgs->icc_link_cache->lock);
-
+    /* We (this thread) owns this link, so we can update it */
     result->procs.map_buffer = gsicc_rcm_transform_color_buffer;
     result->procs.map_color = gsicc_rcm_transform_color;
     result->procs.free_link = gsicc_rcm_freelink;
@@ -408,18 +406,14 @@ gsicc_rcm_get_link(const gs_gstate *pgs, gx_device *dev,
     } else {
         result->is_identity = false;
     }
-    result->valid = true;
 
     /* Set up for monitoring non gray color spaces */
     if (pageneutralcolor && data_cs != gsGRAY)
         gsicc_mcm_set_link(result);
 
-    /* Now release any tasks/threads waiting for these contents */
-    while (result->num_waiting > 0) {
-        gx_semaphore_signal(result->wait);
-        result->num_waiting--;
-    }
-    gx_monitor_leave(pgs->icc_link_cache->lock);	/* done with updating, let everyone run */
+    result->valid = true;
+    /* Now release any tasks/threads waiting for these contents by unlocking it */
+    gx_monitor_leave(result->lock);	/* done with updating, let everyone run */
 
     return result;
 }

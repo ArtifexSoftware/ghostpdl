@@ -2752,7 +2752,7 @@ read_set_color_space(command_buf_t *pcb, gs_gstate *pgs,
         /* Assign it to the colorspace */
         code = gsicc_set_gscs_profile(pcs, picc_profile, mem);
         /* And we no longer need our reference to the profile */
-        rc_decrement(picc_profile, "read_set_color_space");
+        gsicc_adjust_profile_rc(picc_profile, -1, "read_set_color_space");
         break;
     default:
         code = gs_note_error(gs_error_rangecheck);      /* others are NYI */

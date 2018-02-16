@@ -22,6 +22,7 @@
 #include "gsmatrix.h"		/* for gscolor2.h */
 #include "gxcspace.h"
 #include "gscolor2.h"		/* for gs_set/currentcolorrendering */
+#include "gsicc_manage.h"	/* for gsicc_adjust_profile_rc */
 #include "gxcie.h"
 #include "gxarith.h"
 #include "gxdevice.h"		/* for gxcmap.h */
@@ -155,7 +156,7 @@ gx_final_CIEDEFG(const gs_color_space * pcs)
         rc_decrement(pcs_noconst->icc_equivalent, "gx_final_CIEDEFG");
     }
     if (pcs->cmm_icc_profile_data != NULL) {
-        rc_decrement(pcs_noconst->cmm_icc_profile_data, "gx_final_CIEDEFG");
+        gsicc_adjust_profile_rc(pcs_noconst->cmm_icc_profile_data, -1, "gx_final_CIEDEFG");
     }
     rc_decrement(pcs_noconst->params.defg, "gx_final_CIEDEFG");
 }
@@ -169,7 +170,7 @@ gx_final_CIEDEF(const gs_color_space * pcs)
         rc_decrement(pcs_noconst->icc_equivalent,"gx_final_CIEDEF");
     }
     if (pcs->cmm_icc_profile_data != NULL) {
-        rc_decrement(pcs_noconst->cmm_icc_profile_data, "gx_final_CIEDEF");
+        gsicc_adjust_profile_rc(pcs_noconst->cmm_icc_profile_data, -1, "gx_final_CIEDEF");
     }
     rc_decrement(pcs_noconst->params.def, "gx_final_CIEDEF");
 }
@@ -183,7 +184,7 @@ gx_final_CIEABC(const gs_color_space * pcs)
         rc_decrement(pcs_noconst->icc_equivalent,"gx_final_CIEABC");
     }
     if (pcs->cmm_icc_profile_data != NULL) {
-        rc_decrement(pcs_noconst->cmm_icc_profile_data, "gx_final_CIEABC");
+        gsicc_adjust_profile_rc(pcs_noconst->cmm_icc_profile_data, -1, "gx_final_CIEABC");
     }
     rc_decrement(pcs_noconst->params.abc, "gx_final_CIEABC");
 }
@@ -197,7 +198,7 @@ gx_final_CIEA(const gs_color_space * pcs)
         rc_decrement(pcs_noconst->icc_equivalent,"gx_final_CIEA");
     }
     if (pcs->cmm_icc_profile_data != NULL) {
-        rc_decrement(pcs_noconst->cmm_icc_profile_data, "gx_final_CIEA");
+        gsicc_adjust_profile_rc(pcs_noconst->cmm_icc_profile_data, -1, "gx_final_CIEA");
     }
     rc_decrement(pcs_noconst->params.a, "gx_adjust_cspace_CIEA");
 }

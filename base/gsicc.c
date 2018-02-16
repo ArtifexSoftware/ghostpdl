@@ -594,7 +594,7 @@ static void
 gx_final_ICC(const gs_color_space * pcs)
 {
     if (pcs->cmm_icc_profile_data != NULL) {
-        rc_decrement_only(pcs->cmm_icc_profile_data, "gx_final_ICC");
+        gsicc_adjust_profile_rc(pcs->cmm_icc_profile_data, -1, "gx_final_ICC");
     }
 }
 

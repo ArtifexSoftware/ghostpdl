@@ -200,7 +200,7 @@ gs_cspace_new_ICC(gs_memory_t *pmem, gs_gstate * pgs, int components)
         case 4: pcspace->cmm_icc_profile_data = icc_manage->default_cmyk; break;
         default: rc_decrement(pcspace,"gs_cspace_new_ICC"); return NULL;
     }
-    rc_increment(pcspace->cmm_icc_profile_data);
+    gsicc_adjust_profile_rc(pcspace->cmm_icc_profile_data, 1, "gs_cspace_new_ICC");
     return pcspace;
 }
 
@@ -278,7 +278,7 @@ gx_install_DeviceGray(gs_color_space * pcs, gs_gstate * pgs)
 
     /* pcs takes a reference to the default_gray profile data */
     pcs->cmm_icc_profile_data = pgs->icc_manager->default_gray;
-    rc_increment(pgs->icc_manager->default_gray);
+    gsicc_adjust_profile_rc(pgs->icc_manager->default_gray, 1, "gx_install_DeviceGray");
     pcs->type = &gs_color_space_type_ICC;
     return 0;
 }
@@ -382,7 +382,7 @@ gx_install_DeviceRGB(gs_color_space * pcs, gs_gstate * pgs)
 
     /* pcs takes a reference to default_rgb */
     pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
-    rc_increment(pcs->cmm_icc_profile_data);
+    gsicc_adjust_profile_rc(pcs->cmm_icc_profile_data, 1, "gx_install_DeviceRGB");
     pcs->type = &gs_color_space_type_ICC;
     return 0;
 }
@@ -401,7 +401,7 @@ gx_install_DeviceCMYK(gs_color_space * pcs, gs_gstate * pgs)
 
     /* pcs takes a reference to default_cmyk */
     pcs->cmm_icc_profile_data = pgs->icc_manager->default_cmyk;
-    rc_increment(pcs->cmm_icc_profile_data);
+    gsicc_adjust_profile_rc(pcs->cmm_icc_profile_data, 1, "gx_install_DeviceCMYK");
     pcs->type = &gs_color_space_type_ICC;
     return 0;
 }

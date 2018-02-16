@@ -959,7 +959,7 @@ clist_free_icc_table_contents(clist_icctable_t *icc_table)
     curr_entry = icc_table->head;
     for (k = 0; k < number_entries; k++) {
         next_entry = curr_entry->next;
-        rc_decrement(curr_entry->icc_profile, "clist_free_icc_table");
+        gsicc_adjust_profile_rc(curr_entry->icc_profile, -1, "clist_free_icc_table");
         gs_free_object(icc_table->memory, curr_entry, "clist_free_icc_table");
         curr_entry = next_entry;
     }
@@ -1006,7 +1006,7 @@ clist_icc_writetable(gx_device_clist_writer *cldev)
         curr_entry->serial_data.file_position = clist_icc_addprofile(cldev, curr_entry->icc_profile, &size_data);
         curr_entry->icc_profile->rend_is_valid = rend_is_valid;
         curr_entry->serial_data.size = size_data;
-        rc_decrement(curr_entry->icc_profile, "clist_icc_writetable");
+        gsicc_adjust_profile_rc(curr_entry->icc_profile, -1, "clist_icc_writetable");
         curr_entry->icc_profile = NULL;
         curr_entry = curr_entry->next;
     }
@@ -1098,7 +1098,7 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
         entry->serial_data.file_position = -1;
         entry->icc_profile = icc_profile;
         entry->render_is_valid = icc_profile->rend_is_valid;
-        rc_increment(icc_profile);
+        gsicc_adjust_profile_rc(icc_profile, 1, "clist_icc_addentry");
         icc_table = gs_alloc_struct(stable_mem, clist_icctable_t,
                                     &st_clist_icctable, "clist_icc_addentry");
         if (icc_table == NULL)
@@ -1138,7 +1138,7 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
         entry->serial_data.file_position = -1;
         entry->icc_profile = icc_profile;
         entry->render_is_valid = icc_profile->rend_is_valid;
-        rc_increment(icc_profile);
+        gsicc_adjust_profile_rc(icc_profile, 1, "clist_icc_addentry");
         icc_table->final->next = entry;
         icc_table->final = entry;
         icc_table->tablesize++;

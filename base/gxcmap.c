@@ -791,7 +791,7 @@ gx_remap_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
     if (pgs->icc_manager->default_gray != NULL) {
         gs_color_space *pcs_notconst = (gs_color_space*) pcs;
         pcs_notconst->cmm_icc_profile_data = pgs->icc_manager->default_gray;
-        rc_increment(pgs->icc_manager->default_gray);
+        gsicc_adjust_profile_rc(pgs->icc_manager->default_gray, 1, "gx_remap_DeviceGray");
         pcs_notconst->type = &gs_color_space_type_ICC;
         code =
             (*pcs_notconst->type->remap_color)(gs_currentcolor_inline(pgs),

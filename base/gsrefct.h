@@ -69,7 +69,7 @@ void rc_trace_init_free(const void *vp, const rc_header *prc);
 void rc_trace_free_struct(const void *vp, const rc_header *prc,
                           client_name_t cname);
 void rc_trace_increment(const void *vp, const rc_header *prc);
-void rc_trace_adjust(const void *vp, const rc_header *prc, int delta);
+void rc_trace_adjust(const void *vp, const rc_header *prc, int delta, char *cname);
 #define IF_RC_DEBUG(call) BEGIN if (gs_debug_c('^')) { dlputs(""); call; } END
 #else
 #define IF_RC_DEBUG(call) DO_NOTHING
@@ -136,9 +136,9 @@ rc_free_proc(rc_free_struct_only);
   END
 
 /* Guarantee that a structure is allocated and is not shared. */
-#define RC_DO_ADJUST(vp, delta)\
+#define RC_DO_ADJUST(vp, delta, cname)\
   BEGIN\
-    IF_RC_DEBUG(rc_trace_adjust(vp, &(vp)->rc, delta));\
+    IF_RC_DEBUG(rc_trace_adjust(vp, &(vp)->rc, delta, cname));\
     (vp)->rc.ref_count += (delta);\
   END
 #define rc_unshare_struct(vp, typ, pstype, mem, errstat, cname)\
@@ -146,7 +146,7 @@ rc_free_proc(rc_free_struct_only);
     if ( (vp) == 0 || (vp)->rc.ref_count > 1 || (vp)->rc.memory != (mem) ) {\
       typ *new;\
       rc_alloc_struct_1(new, typ, pstype, mem, errstat, cname);\
-      if ( vp ) RC_DO_ADJUST(vp, -1);\
+      if ( vp ) RC_DO_ADJUST(vp, -1, cname);\
       (vp) = new;\
     }\
   END
@@ -165,7 +165,7 @@ rc_free_proc(rc_free_struct_only);
 #define rc_adjust_(vp, delta, cname, body)\
   BEGIN\
     if (vp) {\
-      RC_DO_ADJUST(vp, delta);\
+      RC_DO_ADJUST(vp, delta, cname);\
       if (!(vp)->rc.ref_count) {\
         rc_free_struct(vp, cname);\
         body;\

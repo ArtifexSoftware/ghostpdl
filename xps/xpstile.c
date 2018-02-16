@@ -378,7 +378,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
         cs = ctx->srgb;
         gs_setcolorspace(ctx->pgs, cs);
-        gsicc_profile_reference(cs->cmm_icc_profile_data, 1);
+        gsicc_adjust_profile_rc(cs->cmm_icc_profile_data, 1, "xps_parse_tiling_brush");
 
         sa = gs_currentstrokeadjust(ctx->pgs);
         gs_setstrokeadjust(ctx->pgs, false);
@@ -386,7 +386,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         gs_setpattern(ctx->pgs, &gscolor);
         xps_fill(ctx);
         gs_setstrokeadjust(ctx->pgs, sa);
-        gsicc_profile_reference(cs->cmm_icc_profile_data, -1);
+        gsicc_adjust_profile_rc(cs->cmm_icc_profile_data, -1, "xps_parse_tiling_brush");
 
         /* gs_makepattern increments the pattern count stored in the color
          * structure. We will discard the color struct (its on the stack)

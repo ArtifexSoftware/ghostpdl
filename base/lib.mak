@@ -2234,7 +2234,7 @@ $(GLOBJ)gxclthrd.$(OBJ) :  $(GLSRC)gxclthrd.c $(gxsync_h) $(AK)\
  $(gxclthrd_h) $(gdevplnx_h) $(gdevprn_h) $(gp_h)\
  $(gpcheck_h) $(gsdevice_h) $(gserrors_h) $(gsmchunk_h)\
  $(gsmemory_h) $(gx_h) $(gxcldev_h) $(gdevdevn_h) $(gsicc_cache_h)\
- $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h) $(memory__h) $(gsicc_manage_h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h) $(memory__h) $(gscms_h) $(gsicc_manage_h)\
  $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxclthrd.$(OBJ) $(C_) $(GLSRC)gxclthrd.c
 
@@ -2814,7 +2814,7 @@ $(GLOBJ)gscrdp.$(OBJ) : $(GLSRC)gscrdp.c $(AK) $(gx_h) $(gserrors_h)\
 	$(GLCC) $(GLO_)gscrdp.$(OBJ) $(C_) $(GLSRC)gscrdp.c
 
 $(GLOBJ)gscscie.$(OBJ) : $(GLSRC)gscscie.c $(AK) $(gx_h) $(gserrors_h)\
- $(math__h) $(gscolor2_h) $(gsmatrix_h) $(gsstruct_h)\
+ $(math__h) $(gscolor2_h) $(gsmatrix_h) $(gsstruct_h) $(gsicc_manage_h)\
  $(gxarith_h) $(gxcie_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gzstate_h)\
  $(stream_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gscscie.$(OBJ) $(C_) $(GLSRC)gscscie.c
@@ -3125,7 +3125,7 @@ $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(AK) $(gx_h) $(gserrors_h)\
  $(gxdcconv_h) $(gsptype2_h) $(gxpcolor_h)\
  $(gsptype1_h) $(gzcpath_h) $(gxpaint_h) $(gsicc_manage_h) $(gxclist_h)\
  $(gxiclass_h) $(gximage_h) $(gsmatrix_h) $(gsicc_cache_h) $(gxdevsop_h)\
- $(gsicc_h) $(gdevmem_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gsicc_h) $(gscms_h) $(gdevmem_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevp14.$(OBJ) $(C_) $(GLSRC)gdevp14.c
 
 translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\
