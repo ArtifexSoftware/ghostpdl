@@ -951,7 +951,7 @@ palette_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
     }
     if (type & pcl_reset_permanent) {
         pl_dict_release(&pcs->palette_store);
-        if (pcs->ppalet != pcs->pdflt_palette) {
+        if ((pcs->ppalet != NULL) && (pcs->ppalet != pcs->pdflt_palette)) {
             /* stefan foo: free or decrement reference counts? */
             gs_free_object(pcs->memory, pcs->ppalet->pindexed,
                            "palette cs indexed released permanent reset");
