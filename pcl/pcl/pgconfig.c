@@ -163,9 +163,9 @@ hpgl_reset_overlay(hpgl_state_t * pgls)
     }
     pgls->g.fill_type = hpgl_even_odd_rule;
     hpgl_args_set_int(&args, 0);
-    hpgl_PM(&args, pgls);
+    hpgl_call(hpgl_PM(&args, pgls));
     hpgl_args_set_int(&args, 2);
-    hpgl_PM(&args, pgls);
+    hpgl_call(hpgl_PM(&args, pgls));
     pgls->g.bitmap_fonts_allowed = 0;
     hpgl_args_setup(&args);
     hpgl_SI(&args, pgls);
@@ -242,7 +242,7 @@ hpgl_IN_implicit(hpgl_state_t * pgls)
     /* cancel rotation */
     pgls->g.rotation = 0;
     /* restore defaults */
-    hpgl_DF(&args, pgls);
+    hpgl_call(hpgl_DF(&args, pgls));
 
     /* if in RTL mode provided initial values for PS */
     if (pgls->personality == rtl) {

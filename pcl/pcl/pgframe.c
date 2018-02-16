@@ -80,7 +80,7 @@ pcl_horiz_pic_frame_size_decipoints(pcl_args_t * pargs, pcl_state_t * pcs)
         size = pcs->xfm_state.lp_size.x;
     if (size != pcs->g.picture_frame_width) {
         pcs->g.picture_frame_width = size;
-        pcl_set_picture_frame_side_effects(pcs);
+        return pcl_set_picture_frame_side_effects(pcs);
     }
     return 0;
 }
@@ -98,7 +98,7 @@ pcl_vert_pic_frame_size_decipoints(pcl_args_t * pargs, pcl_state_t * pcs)
     }
     if (size != pcs->g.picture_frame_height) {
         pcs->g.picture_frame_height = size;
-        pcl_set_picture_frame_side_effects(pcs);
+        return pcl_set_picture_frame_side_effects(pcs);
     }
     return 0;
 }
@@ -123,7 +123,7 @@ pcl_set_pic_frame_anchor_point(pcl_args_t * pargs, pcl_state_t * pcs)
         (tmp_pt.y != pcs->g.picture_frame.anchor_point.y)) {
         pcs->g.picture_frame.anchor_point.x = (coord) tmp_pt.x;
         pcs->g.picture_frame.anchor_point.y = (coord) tmp_pt.y;
-        pcl_set_picture_frame_side_effects(pcs);
+        return pcl_set_picture_frame_side_effects(pcs);
     }
     return 0;
 }
@@ -141,8 +141,7 @@ pcl_hpgl_plot_horiz_size(pcl_args_t * pargs, pcl_state_t * pcs)
         pcs->g.plot_size_horizontal_specified = true;
 
     pcs->g.plot_width = (coord) size;
-    pcl_set_picture_frame_side_effects(pcs);
-    return 0;
+    return pcl_set_picture_frame_side_effects(pcs);
 }
 
 int                             /* ESC * c <h_in> L */
@@ -157,8 +156,7 @@ pcl_hpgl_plot_vert_size(pcl_args_t * pargs, pcl_state_t * pcs)
     } else
         pcs->g.plot_size_vertical_specified = true;
     pcs->g.plot_height = (coord) size;
-    pcl_set_picture_frame_side_effects(pcs);
-    return 0;
+    return pcl_set_picture_frame_side_effects(pcs);
 }
 
 /* We redefine this command so we can draw the current GL path */
