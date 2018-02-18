@@ -555,7 +555,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     if (!(desc.Flags & FONT_IS_SYMBOLIC)) {
         desc.Flags |= FONT_IS_ADOBE_ROMAN; /* required if not symbolic */
         desc.XHeight = (int)x_height;
-        if (!small_present && (!pdev->PDFA != 0 || bfont->FontType != ft_TrueType))
+        if (!small_present && (pdev->PDFA == 0 || bfont->FontType != ft_TrueType))
             desc.Flags |= FONT_IS_ALL_CAPS;
         desc.CapHeight = cap_height;
         /*
@@ -606,10 +606,10 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     desc.Descent = desc.FontBBox.p.y;
     if (!(desc.Flags & (FONT_IS_SYMBOLIC | FONT_IS_ALL_CAPS)) &&
         (small_descent > desc.Descent / 3 || desc.XHeight > small_height * 0.9) &&
-        (!pdev->PDFA != 0 || bfont->FontType != ft_TrueType)
+        (pdev->PDFA == 0 || bfont->FontType != ft_TrueType)
         )
         desc.Flags |= FONT_IS_SMALL_CAPS;
-    if (fixed_width > 0 && (!pdev->PDFA != 0 || bfont->FontType != ft_TrueType)) {
+    if (fixed_width > 0 && (pdev->PDFA == 0 || bfont->FontType != ft_TrueType)) {
         desc.Flags |= FONT_IS_FIXED_WIDTH;
         desc.AvgWidth = desc.MaxWidth = desc.MissingWidth = fixed_width;
     }

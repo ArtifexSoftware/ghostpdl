@@ -2629,6 +2629,8 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
             int index;
             gs_glyph notdef_glyph;
 
+            v.x = v.y = 0;
+
             for (index = 0;
                 (ofont->procs.enumerate_glyph((gs_font *)ofont, &index,
                 (GLYPH_SPACE_NAME), &notdef_glyph)) >= 0 &&
