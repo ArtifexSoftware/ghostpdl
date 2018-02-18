@@ -442,9 +442,9 @@ gx_path_new(gx_path * ppath)
         int code = path_alloc_segments(&ppath->segments, ppath->memory,
                                        "gx_path_new");
 
+        rc_decrement(psegs, "gx_path_new");
         if (code < 0)
             return code;
-        rc_decrement(psegs, "gx_path_new");
     } else {
         rc_free_path_segments_local(psegs->rc.memory, psegs, "gx_path_new");
     }
