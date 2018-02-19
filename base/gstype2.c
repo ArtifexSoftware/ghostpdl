@@ -626,6 +626,9 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                             float *to;
                             const fixed *from = pcis->transient_array + fixed2int_var(csp[-1]);
 
+                            if (!CS_CHECK_TRANSIENT_BOUNDS(from, pcis->transient_array))
+                                return_error(gs_error_invalidfont);
+
                             if (ind < countof(Registry)) {
                                 to = Registry[ind].values + offs;
                                 for (i = 0; i < n; ++i)
@@ -669,6 +672,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                             const float *from;
                             fixed *to = pcis->transient_array + fixed2int_var(csp[-1]);
 
+                            if (!CS_CHECK_TRANSIENT_BOUNDS(to, pcis->transient_array))
+                                return_error(gs_error_invalidfont);
                             if (ind < countof(Registry)) {
                                 from = Registry[ind].values;
                                 for (i = 0; i < n; ++i)
@@ -694,11 +699,26 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     case ce2_put:
                         if (!CS_CHECK_CSTACK_BOUNDS(&csp[-1], cstack))
                             return_error(gs_error_invalidfont);
-                        pcis->transient_array[fixed2int_var(*csp)] = csp[-1];
-                        csp -= 2;
+                        {
+                            fixed *to = pcis->transient_array + fixed2int_var(*csp);
+
+                            if (!CS_CHECK_TRANSIENT_BOUNDS(to, pcis->transient_array))
+                                return_error(gs_error_invalidfont);
+
+                            *to = csp[-1];
+                            csp -= 2;
+                        }
                         break;
                     case ce2_get:
-                        *csp = pcis->transient_array[fixed2int_var(*csp)];
+                        if (!CS_CHECK_CSTACK_BOUNDS(csp, cstack))
+                            return_error(gs_error_invalidfont);
+                        {
+                            fixed *from = pcis->transient_array + fixed2int_var(*csp);
+                            if (!CS_CHECK_TRANSIENT_BOUNDS(from, pcis->transient_array))
+                                return_error(gs_error_invalidfont);
+
+                            *csp = *from;
+                        }
                         break;
                     case ce2_ifelse:
                         if (!CS_CHECK_CSTACK_BOUNDS(&csp[-3], cstack))

@@ -179,6 +179,10 @@ typedef fixed *cs_ptr;
       (csaddr >= &(cs[0]) && \
         csaddr < &(cs[ostack_size]))
 
+#define CS_CHECK_TRANSIENT_BOUNDS(csaddr, cs) \
+      (csaddr >= &(cs[0]) && \
+        csaddr < &(cs[32]))         /* size defined in gs_type1_state_s above */
+
 #define CS_CHECK_PUSH(csp, cstack)\
   BEGIN\
     if (csp >= &cstack[countof(cstack)-1])\
