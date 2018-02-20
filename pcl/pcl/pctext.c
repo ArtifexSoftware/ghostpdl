@@ -211,6 +211,7 @@ get_next_char(pcl_state_t * pcs,
     int len = *plen;
     pl_font_t *plfont = pcs->font;
     bool substituting = false;
+    int code = 0;
     gs_char chr;
     gs_char mapped_chr;         /* NB wrong type */
     bool db;
@@ -291,7 +292,9 @@ get_next_char(pcl_state_t * pcs,
      */
     if (!substituting && substituting_allowed(pcs, db ? mapped_chr : chr)) {
         pcl_decache_font(pcs, -1, true);
-        pcl_recompute_font(pcs, true);
+        code = pcl_recompute_font(pcs, true);
+        if (code < 0)
+            return code;
         substituting = true;
         *unstyled_substitution = true;
         plfont = pcs->font;
@@ -303,7 +306,9 @@ get_next_char(pcl_state_t * pcs,
        Restore the old font */
     if (substituting) {
         pcl_decache_font(pcs, -1, true);
-        pcl_recompute_font(pcs, false);
+        code = pcl_recompute_font(pcs, false);
+        if (code < 0)
+            return code;
         set_gs_font(pcs);
     }
 
@@ -609,11 +614,18 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
     int code = 0;
 
     /* save the graphic state and set the background raster operation */
-    pcl_gsave(pcs);
-    if (pcs->pattern_transparent)
-        pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
-    gs_setrasterop(pgs, (gs_rop3_t) rop3_know_S_1((int)rop));
-    gs_currentpoint(pgs, &pt);
+    code = pcl_gsave(pcs);
+    if (code < 0)
+        return code;
+    if (pcs->pattern_transparent) {
+        code = pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
+        if (code < 0)
+            return code;
+    }
+    if (((code = gs_setrasterop(pgs, (gs_rop3_t) rop3_know_S_1((int)rop))) < 0) ||
+        ((code = gs_currentpoint(pgs, &pt)) < 0)) {
+        return code;
+    }
 
     if (plfont->scaling_technology == plfst_bitmap) {
         gs_char chr = pbuff[0];
@@ -626,8 +638,7 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
 
         /* empty characters have no background */
         if (cdata == 0) {
-            pcl_grestore(pcs);
-            return 0;
+            return pcl_grestore(pcs);
         }
 
         /* allocate the image enumerator */
@@ -663,8 +674,10 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
         gs_text_enum_t *penum;
 
         /* clear the path; start the new one from the current point */
-        gs_newpath(pgs);
-        gs_moveto(pgs, pt.x, pt.y);
+        if (((code = gs_newpath(pgs)) < 0) ||
+            ((code = gs_moveto(pgs, pt.x, pt.y)) < 0)) {
+            return code;
+        }
         text.data.chars = pbuff;
         text.size = 1;
         text.operation =
@@ -680,11 +693,12 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
             {
                 gs_text_release(penum, "show_char_background");
             }
+            else
+                return code;
         }
     }
 
-    pcl_grestore(pcs);
-    return code;
+    return pcl_grestore(pcs);
 }
 
 /*
@@ -883,7 +897,9 @@ pcl_show_chars_slow(pcl_state_t * pcs,
             else
                 tmp_x += (pcs->last_width - width) / 2;
         }
-        gs_moveto(pgs, tmp_x / pscale->x, cpt.y / pscale->y);
+        code = gs_moveto(pgs, tmp_x / pscale->x, cpt.y / pscale->y);
+        if (code < 0)
+            return code;
 
         if (chr != 0xffff || print_undefined) {
             /* if source is opaque, show and opaque background */
@@ -929,7 +945,9 @@ pcl_show_chars_slow(pcl_state_t * pcs,
         }
         if (unstyled_substitution) {
             pcl_decache_font(pcs, -1, true);
-            pcl_recompute_font(pcs, false);
+            code = pcl_recompute_font(pcs, false);
+            if (code < 0)
+                return code;
             set_gs_font(pcs);
         }
     }
@@ -1026,9 +1044,7 @@ pcl_text(const byte * str, uint size, pcl_state_t * pcs, bool literal)
     set_gs_font(pcs);
 
     gs_currentmatrix(pgs, &user_ctm);
-
-    (void)pcl_font_scale(pcs, &scale);
-
+    pcl_font_scale(pcs, &scale);
     gs_scale(pgs, scale.x, scale.y);
 
     /*
@@ -1082,7 +1098,9 @@ pcl_do_underline(pcl_state_t * pcs)
         int code;
 
         /* save the grapics state */
-        pcl_gsave(pcs);
+        code = pcl_gsave(pcs);
+        if (code < 0)
+            return;
 
         code = pcl_set_drawing_color(pcs,
                                      pcs->pattern_type,
@@ -1098,9 +1116,11 @@ pcl_do_underline(pcl_state_t * pcs)
          * at 300 dpi only)
          */
         gs_setlinewidth(pgs, dots(3));
-        gs_moveto(pgs, pcs->underline_start.x, y);
-        gs_lineto(pgs, pcs->cap.x, y);
-        gs_stroke(pgs);
+        if ((gs_moveto(pgs, pcs->underline_start.x, y) < 0) ||
+            (gs_lineto(pgs, pcs->cap.x, y) < 0) ||
+            (gs_stroke(pgs) < 0)) {
+            return;
+        }
 
         pcl_grestore(pcs);
     }

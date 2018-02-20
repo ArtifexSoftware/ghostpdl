@@ -372,7 +372,7 @@ pcl_impl_set_device(pl_interp_implementation_t * impl,    /* interp instance to 
 
         case Sgsave1:          /* 1st gsave failed */
             /* undo setdevice */
-            gs_nulldevice(pcli->pcs.pgs);
+            code = gs_nulldevice(pcli->pcs.pgs);
             /* fall thru to next */
 
         case Ssetdevice:       /* gs_setdevice failed */
@@ -436,15 +436,11 @@ static int                      /* ret 0 or +ve if ok, else -ve error code */
 pcl_impl_process_eof(pl_interp_implementation_t * impl    /* interp instance to process data job in */
     )
 {
-    int code;
     pcl_interp_instance_t *pcli = impl->interp_client_data;
 
     pcl_process_init(&pcli->pst);
-    code = pcl_end_page_if_marked(&pcli->pcs);
-    if (code < 0)
-        return code;
     /* force restore & cleanup if unexpected data end was encountered */
-    return 0;
+    return pcl_end_page_if_marked(&pcli->pcs);
 }
 
 /* Report any errors after running a job */

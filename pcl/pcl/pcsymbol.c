@@ -150,6 +150,7 @@ pcl_define_symbol_set(pcl_args_t * pargs, pcl_state_t * pcs)
         if (symsetp->maps[gv] != NULL)
             gs_free_object(mem, symsetp->maps[gv], "symset map");
     } else {
+        int code = 0;
         pl_glyph_vocabulary_t gx;
 
         symsetp = (pcl_symbol_set_t *) gs_alloc_bytes(mem,
@@ -161,8 +162,10 @@ pcl_define_symbol_set(pcl_args_t * pargs, pcl_state_t * pcs)
         for (gx = plgv_MSL; gx < plgv_next; gx++)
             symsetp->maps[gx] = NULL;
         symsetp->storage = pcds_temporary;
-        pl_dict_put(&pcs->soft_symbol_sets, id_key(pcs->symbol_set_id),
+        code = pl_dict_put(&pcs->soft_symbol_sets, id_key(pcs->symbol_set_id),
                     2, symsetp);
+        if (code < 0)
+            return code;
     }
     symsetp->maps[gv] = header;
 
