@@ -281,10 +281,13 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
     stream *s;
     int code = 0;
     bool is_stdin = filename[0] == '-' && filename[1] == 0;
+    bool use_process_file;
 
     s = sfopen(filename, "r", mem);
     if (s == NULL)
         return gs_error_Fatal;
+
+    use_process_file = (minst->curr_implementation->proc_process_file != NULL) && !is_stdin;
 
     for (;;) {
         if_debug1m('I', mem, "[i][file pos=%ld]\n",
@@ -331,14 +334,17 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
             if_debug1m('I', mem, "selected and initializing (%s)\n",
                        pl_characteristics(minst->curr_implementation)->language);
             new_job = false;
+            if (!use_process_file) {
+                if (pl_process_begin(minst->curr_implementation) < 0)
+                    return gs_error_Fatal;
+            }
         }
 
         if (minst->curr_implementation) {
             /* Special case when the job resides in a seekable file and
                the implementation has a function to process a file at a
                time. */
-            if (minst->curr_implementation->proc_process_file
-                && !is_stdin) {
+            if (use_process_file) {
                 if_debug1m('I', mem, "processing job from file (%s)\n",
                            filename);
 
@@ -366,7 +372,12 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                     if (pl_init_job(pjli) < 0)
                         return gs_error_Fatal;
 
-            } else if (code < 0) {  /* error and not exit language */
+            }
+            else if (code == gs_error_NeedInput) {
+                code = 0;
+                continue;
+            }
+            else if (code < 0) {  /* error and not exit language */
                 dmprintf1(mem,
                           "Warning interpreter exited with error code %d\n",
                           code);

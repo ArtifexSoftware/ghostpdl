@@ -316,6 +316,13 @@ pxl_impl_init_job(pl_interp_implementation_t * impl)
     return code;
 }
 
+/* Do any setup for parser per-cursor */
+static int
+pxl_impl_process_begin(pl_interp_implementation_t * impl)
+{
+    return 0;
+}
+
 /* Parse a cursor-full of data */
 /* ret 0 or +ve if ok, else -ve error code */
 static int
@@ -515,6 +522,7 @@ pl_interp_implementation_t pxl_implementation = {
     pxl_impl_set_device,
     pxl_impl_init_job,
     NULL,                       /* process_file */
+    pxl_impl_process_begin,
     pxl_impl_process,
     pxl_impl_flush_to_eoj,
     pxl_impl_process_eof,

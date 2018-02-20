@@ -400,6 +400,13 @@ pcl_impl_init_job(pl_interp_implementation_t * impl       /* interp instance to 
     return code;
 }
 
+/* Do any setup for parser per-cursor */
+static int                      /* ret 0 or +ve if ok, else -ve error code */
+pcl_impl_process_begin(pl_interp_implementation_t * impl)
+{
+    return 0;
+}
+
 /* Parse a cursor-full of data */
 static int                      /* ret 0 or +ve if ok, else -ve error code */
 pcl_impl_process(pl_interp_implementation_t * impl,       /* interp instance to process data job in */
@@ -549,6 +556,7 @@ pl_interp_implementation_t pcl_implementation = {
     pcl_impl_set_device,
     pcl_impl_init_job,
     NULL,                       /* process_file */
+    pcl_impl_process_begin,
     pcl_impl_process,
     pcl_impl_flush_to_eoj,
     pcl_impl_process_eof,

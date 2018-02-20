@@ -81,6 +81,13 @@ pl_process_file(pl_interp_implementation_t * impl, char *filename)
     return impl->proc_process_file(impl, filename);
 }
 
+/* Do setup to for parsing cursor-fulls of data */
+int
+pl_process_begin(pl_interp_implementation_t * impl     /* interp instance to process data job in */)
+{
+    return impl->proc_process_begin(impl);
+}
+
 /* Parse a cursor-full of data */
 /* The parser reads data from the input
  * buffer and returns either:

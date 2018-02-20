@@ -93,6 +93,12 @@ pjl_impl_init_job(pl_interp_implementation_t *impl       /* interp instance to s
     return 0;
 }
 
+static int
+pjl_impl_process_begin(pl_interp_implementation_t *impl       /* interp instance to process data job in */)
+{
+    return 0;
+}
+
 /* Parse a cursor-full of data */
 
 /* The parser reads data from the input
@@ -175,6 +181,7 @@ pl_interp_implementation_t pjl_implementation = {
     pjl_impl_set_device,
     pjl_impl_init_job,
     NULL,                      /* process_file */
+    pjl_impl_process_begin,
     pjl_impl_process,
     pjl_impl_flush_to_eoj,
     pjl_impl_process_eof,

@@ -90,6 +90,9 @@ typedef int (*pl_interp_proc_init_job_t) (pl_interp_implementation_t *);
 /*
  * Process a stream of PDL data.
  */
+int pl_process_begin(pl_interp_implementation_t *);
+typedef int (*pl_interp_proc_process_begin_t) (pl_interp_implementation_t *);
+
 int pl_process(pl_interp_implementation_t *, stream_cursor_read *);
 typedef int (*pl_interp_proc_process_t) (pl_interp_implementation_t *,
                                          stream_cursor_read *);
@@ -154,6 +157,7 @@ struct pl_interp_implementation_s
     pl_interp_proc_set_device_t proc_set_device;
     pl_interp_proc_init_job_t proc_init_job;
     pl_interp_proc_process_file_t proc_process_file;
+    pl_interp_proc_process_begin_t proc_process_begin;
     pl_interp_proc_process_t proc_process;
     pl_interp_proc_flush_to_eoj_t proc_flush_to_eoj;
     pl_interp_proc_process_eof_t proc_process_eof;

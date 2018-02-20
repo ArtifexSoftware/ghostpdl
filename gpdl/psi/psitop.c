@@ -169,7 +169,14 @@ ps_impl_set_device(pl_interp_implementation_t *impl, gx_device *device)
 static int
 ps_impl_init_job(pl_interp_implementation_t *impl)
 {
-    return 0;
+    int exit_code, code, code1;
+    /* Possibly should be done in ps_impl_set_device */
+    code = gsapi_run_string_begin(impl->interp_client_data, 0, &exit_code);
+    if (code > 0)
+        code = gsapi_run_string_continue(impl->interp_client_data, "erasepage", 10, 0, &exit_code);
+
+    code1 = gsapi_run_string_end(impl->interp_client_data, 0, &exit_code);
+    return code < 0 ? code : code1;
 }
 
 /* Not complete. */
@@ -181,10 +188,30 @@ ps_impl_process_file(pl_interp_implementation_t *impl, char *filename)
     return gsapi_run_file(impl->interp_client_data, filename, 0, &exit_code);
 }
 
+/* Do any setup for parser per-cursor */
+static int                      /* ret 0 or +ve if ok, else -ve error code */
+ps_impl_process_begin(pl_interp_implementation_t * impl)
+{
+    int exit_code;
+    return gsapi_run_string_begin(impl->interp_client_data, 0, &exit_code);
+}
+
+static int
+ps_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
+{
+    const unsigned int l = pr->limit - pr->ptr;
+    int code, exit_code = 0;
+
+    code = gsapi_run_string_continue(impl->interp_client_data, (const char *)pr->ptr + 1, l, 0, &exit_code);
+    pr->ptr = pr->limit;
+    return code;
+}
+
 /* Not implemented */
 static int
 ps_impl_flush_to_eoj(pl_interp_implementation_t *impl, stream_cursor_read *cursor)
 {
+    cursor->ptr = cursor->limit;
     return 0;
 }
 
@@ -192,7 +219,8 @@ ps_impl_flush_to_eoj(pl_interp_implementation_t *impl, stream_cursor_read *curso
 static int
 ps_impl_process_eof(pl_interp_implementation_t *impl)
 {
-    return 0;
+    int exit_code;
+    return gsapi_run_string_end(impl->interp_client_data, 0, &exit_code);
 }
 
 /* Report any errors after running a job */
@@ -238,7 +266,8 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_set_device,
   ps_impl_init_job,
   ps_impl_process_file,
-  NULL, /* process */
+  ps_impl_process_begin,
+  ps_impl_process, /* process */
   ps_impl_flush_to_eoj,
   ps_impl_process_eof,
   ps_impl_report_errors,

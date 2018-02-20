@@ -241,6 +241,13 @@ xps_imp_process_file(pl_interp_implementation_t *impl, char *filename)
     return code;
 }
 
+/* Do any setup for parser per-cursor */
+static int                      /* ret 0 or +ve if ok, else -ve error code */
+xps_impl_process_begin(pl_interp_implementation_t * impl)
+{
+    return 0;
+}
+
 /* Parse a cursor-full of data */
 static int
 xps_imp_process(pl_interp_implementation_t *impl, stream_cursor_read *cursor)
@@ -419,6 +426,7 @@ pl_interp_implementation_t xps_implementation =
     xps_imp_set_device,
     xps_imp_init_job,
     xps_imp_process_file,
+    xps_impl_process_begin,
     xps_imp_process,
     xps_imp_flush_to_eoj,
     xps_imp_process_eof,
