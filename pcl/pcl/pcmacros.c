@@ -71,11 +71,16 @@ pcl_execute_macro(const pcl_macro_t * pmac, pcl_state_t * pcs,
 
     if (before) {
         memcpy(&saved, pcs, sizeof(*pcs));
-        do_copies(&saved, pcs, before);
+        code = do_copies(&saved, pcs, before);
+        if (code < 0)
+            return code;
         pcs->saved = &saved;
     }
-    if (reset)
-        pcl_do_resets(pcs, reset);
+    if (reset) {
+        code = pcl_do_resets(pcs, reset);
+        if (code < 0)
+            return code;
+    }
     state.definitions = pcs->pcl_commands;
     state.hpgl_parser_state = &gstate;
     pcl_process_init(&state);
@@ -83,9 +88,13 @@ pcl_execute_macro(const pcl_macro_t * pmac, pcl_state_t * pcs,
     r.limit = (const byte *)pmac + (gs_object_size(pcs->memory, pmac) - 1);
     pcs->macro_level++;
     code = pcl_process(&state, pcs, &r);
+    if (code < 0)
+        return code;
     pcs->macro_level--;
     if (after) {
-        do_copies(&saved, pcs, after);
+        code = do_copies(&saved, pcs, after);
+        if (code < 0)
+            return code;
         memcpy(pcs, &saved, sizeof(*pcs));
     }
 #ifdef DEBUG
@@ -272,6 +281,8 @@ static int
 pcmacros_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     if (type & (pcl_reset_initial | pcl_reset_printer)) {
+        int code = 0;
+
         pcs->overlay_enabled = false;
         pcs->macro_level = 0;
         pcs->defining_macro = false;
@@ -284,10 +295,12 @@ pcmacros_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
             pcl_args_t args;
 
             arg_set_uint(&args, macro_delete_temporary);
-            pcl_macro_control(&args, pcs);
+            code = pcl_macro_control(&args, pcs);
             if (pcs->alpha_macro_id.id != 0)
                 gs_free_object(pcs->memory,
                                pcs->alpha_macro_id.id, "pcmacros_do_reset");
+            if (code < 0)
+                return code;
         }
     }
 

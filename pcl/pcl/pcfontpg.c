@@ -111,7 +111,7 @@ pcl_print_font_page(pcl_args_t * pargs, pcl_state_t * pcs)
     /* reset the printer for a clean page */
     code = pcl_do_printer_reset(pcs);
     if (code < 0)
-        return gs_rethrow(code, "printer reset failied");
+        return gs_rethrow(code, "printer reset failed");
 
     /* font page header */
     {
@@ -123,11 +123,17 @@ pcl_print_font_page(pcl_args_t * pargs, pcl_state_t * pcs)
         uint pos = pcs->margins.right / 2 - 7200 / 2;
 
         pcl_set_cap_x(pcs, pos, false, false);
-        pcl_text((byte *) header_str, hlen, pcs, false);
+        code = pcl_text((byte *) header_str, hlen, pcs, false);
+        if (code < 0)
+            return gs_rethrow(code, "printing PCL Font List failed\n");
         print_blank_lines(pcs, 2);
-        pcl_text((byte *) sample_str, strlen(sample_str), pcs, false);
+        code = pcl_text((byte *) sample_str, strlen(sample_str), pcs, false);
+        if (code < 0)
+            return gs_rethrow(code, "printing Sample failed\n");
         pcl_set_cap_x(pcs, pcs->margins.right / 2, false, false);
-        pcl_text((byte *) select_str, strlen(select_str), pcs, false);
+        code = pcl_text((byte *) select_str, strlen(select_str), pcs, false);
+        if (code < 0)
+            return gs_rethrow(code, "printing Font Selection Command failed\n");
         print_blank_lines(pcs, 2);
     }
 
@@ -156,7 +162,7 @@ pcl_print_font_page(pcl_args_t * pargs, pcl_state_t * pcs)
     }
     code = pcl_do_printer_reset(pcs);
     if (code < 0)
-        return gs_rethrow(code, "printer reset failied");
+        return gs_rethrow(code, "printer reset failed");
     return 0;
 }
 

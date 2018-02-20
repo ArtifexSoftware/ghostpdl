@@ -37,15 +37,18 @@
 int
 pcl_do_printer_reset(pcl_state_t * pcs)
 {
+	int code = 0;
     if (pcs->macro_level)
         return e_Range;         /* not allowed inside macro */
 
     /* reset the other parser in case we have gotten the
        pcl_printer_reset while in gl/2 mode. */
-    pcl_implicit_gl2_finish(pcs);
+    code = pcl_implicit_gl2_finish(pcs);
+    if (code < 0)
+        return code;
     /* Print any partial page if not pclxl snippet mode. */
     if (pcs->end_page == pcl_end_page_top) {
-        int code = pcl_end_page_if_marked(pcs);
+        code = pcl_end_page_if_marked(pcs);
 
         if (code < 0)
             return code;

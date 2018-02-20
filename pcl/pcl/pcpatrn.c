@@ -136,13 +136,17 @@ unshare_ccolor(pcl_state_t * pcs,
         pnew->ccolor = pold->ccolor;
         gs_pattern_reference(&(pnew->ccolor), 1);
     } else {
+        int code = 0;
+
         pnew->type = pcl_ccolor_unpatterned;
         pnew->ppat_data = 0;
         pnew->pindexed = 0;
 
         /* set the color space to pure white */
         pnew->pbase = 0;
-        (void)pcl_cs_base_build_white_cspace(pcs, &(pnew->pbase), pmem);
+        code = pcl_cs_base_build_white_cspace(pcs, &(pnew->pbase), pmem);
+        if (code < 0)
+            return code;
         pnew->ccolor.paint = white_paint;
         pnew->ccolor.pattern = 0;
     }
@@ -232,6 +236,9 @@ set_patterned_color(pcl_state_t * pcs, pcl_ccolor_t * pnew)
         if ((pnew->pindexed != 0) &&
             ((pcur == 0) || (pcur->pindexed != pnew->pindexed)))
             code = pcl_cs_indexed_install(&(pnew->pindexed), pcs);
+
+        if (code < 0)
+            return code;
 
         if ((pnew->pbase != 0) &&
             ((pcur == 0) || (pcur->pbase != pnew->pbase)))
@@ -813,8 +820,8 @@ pattern_set_pen(pcl_state_t * pcs, int pen, int for_pcl_raster)
                         return code;
                     return pattern_set_shade_gl(pcs, 1, pen);
                 }
-                return code;
             }
+            return code;
         }
     }
 
@@ -886,11 +893,8 @@ pattern_set_shade_pcl(pcl_state_t * pcs, int inten,     /* intensity value */
         return (inten > 0 ? pattern_set_frgrnd(pcs, 0, for_image)
                 : pattern_set_white(pcs, 0, 0));
     else {
-        int code = 0;
-
         pcl_xfm_pcl_set_pat_ref_pt(pcs);
-        code = set_frgrnd_pattern(pcs, pptrn, for_image);
-        return code;
+        return set_frgrnd_pattern(pcs, pptrn, for_image);
     }
 }
 
@@ -931,11 +935,8 @@ pattern_set_hatch_pcl(pcl_state_t * pcs, int indx,      /* cross-hatch pattern i
     if (pptrn == 0)
         return pattern_set_frgrnd(pcs, 0, for_image);
     else {
-        int code = 0;
-
         pcl_xfm_pcl_set_pat_ref_pt(pcs);
-        code = set_frgrnd_pattern(pcs, pptrn, for_image);
-        return code;
+        return set_frgrnd_pattern(pcs, pptrn, for_image);
     }
 }
 
@@ -971,11 +972,9 @@ pattern_set_user_pcl(pcl_state_t * pcs, int id, /* pattern id. */
         return pattern_set_frgrnd(pcs, 0, for_image);
     else {
         pcl_xfm_pcl_set_pat_ref_pt(pcs);
-        if (pptrn->ppat_data->type == pcl_pattern_uncolored) {
-            int code = set_frgrnd_pattern(pcs, pptrn, for_image);
-
-            return code;
-        } else
+        if (pptrn->ppat_data->type == pcl_pattern_uncolored)
+            return set_frgrnd_pattern(pcs, pptrn, for_image);
+        else
             return set_colored_pattern(pcs, pptrn);
     }
 }

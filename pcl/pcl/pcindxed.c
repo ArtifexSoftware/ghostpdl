@@ -987,13 +987,17 @@ pcl_cs_indexed_build_cspace(pcl_state_t * pcs,
             }
         }
     }
-    pcl_cs_indexed_set_norm_and_Decode(ppindexed,
+    code = pcl_cs_indexed_set_norm_and_Decode(ppindexed,
                                        wht_ref[0], wht_ref[1], wht_ref[2],
                                        blk_ref[0], blk_ref[1], blk_ref[2]
         );
+    if (code < 0)
+        return code;
 
     /* set the palette size and the default palette entries */
-    pcl_cs_indexed_set_num_entries(ppindexed, 1L << bits, gl2);
+    code = pcl_cs_indexed_set_num_entries(ppindexed, 1L << bits, gl2);
+    if (code < 0)
+        return code;
 
     /* now can indicate if the palette is fixed */
     pindexed->pfixed = pfixed;
@@ -1061,10 +1065,13 @@ pcl_cs_indexed_build_special(pcl_cs_indexed_t ** ppindexed,
     pindexed->cid = cid;
     pindexed->num_entries = 2;
     /* set up the normalization information - not strictly necessary */
-    pcl_cs_indexed_set_norm_and_Decode(ppindexed,
+    code = pcl_cs_indexed_set_norm_and_Decode(ppindexed,
                                        wht_ref[0], wht_ref[1], wht_ref[2],
                                        blk_ref[0], blk_ref[1], blk_ref[2]
         );
+    if (code < 0)
+        return code;
+
     pindexed->Decode[1] = 1;
 
     for (i = 0; i < 3; i++) {

@@ -495,7 +495,9 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
 
                         pcl_args_t args;
                         arg_set_uint(&args, 0);
-                        rtl_enter_hpgl_mode(&args, pcs);
+                        code = rtl_enter_hpgl_mode(&args, pcs);
+                        if (code < 0)
+                            goto x;
                     }
                 }
 
@@ -668,7 +670,9 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     /* start definition of macro with esc&f preloaded */
                     static const byte macro_prefix[4] = " \033&f";
 
-                    append_macro(&macro_prefix[0], &macro_prefix[3], pcs);
+                    code = append_macro(&macro_prefix[0], &macro_prefix[3], pcs);
+                    if (code < 0)
+                        goto x;
                 }
                 macro_p = p;
             }

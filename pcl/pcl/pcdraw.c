@@ -74,14 +74,18 @@ pcl_set_drawing_color(pcl_state_t * pcs,
     /* use PCL's pattern transparency */
     pcs->pattern_transparent = pcs->pcl_pattern_transparent;
 
-    pcl_ht_set_halftone(pcs);
+    code = pcl_ht_set_halftone(pcs);
+    if (code < 0)
+        return code;
 
     if (type == pcl_pattern_raster_cspace)
         code = (pcl_pattern_get_proc_PCL(type)) (pcs, 0, true);
     else
         code = (pcl_pattern_get_proc_PCL(type)) (pcs, id, (int)for_image);
     if (code >= 0) {
-        gs_setrasterop(pcs->pgs, (gs_rop3_t) pcs->logical_op);
+        code = gs_setrasterop(pcs->pgs, (gs_rop3_t) pcs->logical_op);
+        if (code < 0)
+            return code;
         gs_setfilladjust(pcs->pgs, 0.0, 0.0);
         code = gx_set_dev_color(pcs->pgs);
         if (code == gs_error_Remap_Color)

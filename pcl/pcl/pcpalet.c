@@ -452,6 +452,8 @@ pcl_palette_set_color(pcl_state_t * pcs, int indx, const float comps[3]
     if (code == 0)
         code = pcl_cs_indexed_set_palette_entry(&(pcs->ppalet->pindexed),
                                                 indx, comps);
+    if (code < 0)
+        return code;
 
     /* Check if the device requires that the palette must not change */
     if (dev_proc(pcs->pgs->device, dev_spec_op)(pcs->pgs->device,
@@ -712,7 +714,7 @@ set_ctrl_palette_id(pcl_args_t * pargs, pcl_state_t * pcs)
  * bother removing it. This is helpful when working with memory leak detection
  * tools.
  */
-static void
+static int
 clear_palette_store(pcl_state_t * pcs)
 {
     pl_dict_enum_t denum;
@@ -725,11 +727,15 @@ clear_palette_store(pcl_state_t * pcs)
         int id = (((int)plkey.data[0]) << 8) + plkey.data[1];
 
         if (id == sel_id) {
-            if (pvalue != pcs->pdflt_palette)
-                build_default_palette(pcs);     /* will redefine sel_id */
+            if (pvalue != pcs->pdflt_palette) {
+                int code = build_default_palette(pcs);     /* will redefine sel_id */
+                if (code < 0)
+                    return code;
+            }
         } else
             pl_dict_undef(&pcs->palette_store, plkey.data, plkey.size);
     }
+    return 0;
 }
 
 /*
@@ -741,6 +747,7 @@ static int
 palette_control(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint action = uint_arg(pargs);
+    int code = 0;
 
     if (pcs->personality == pcl5e || pcs->raster_state.graphics_mode)
         return 0;
@@ -748,7 +755,7 @@ palette_control(pcl_args_t * pargs, pcl_state_t * pcs)
     switch (action) {
 
         case 0:
-            clear_palette_store(pcs);
+            code = clear_palette_store(pcs);
             break;
 
         case 1:
@@ -758,7 +765,7 @@ palette_control(pcl_args_t * pargs, pcl_state_t * pcs)
         case 2:
             if (pcs->ctrl_palette_id == pcs->sel_palette_id) {
                 if ((pcs->ppalet == 0) || (pcs->ppalet != pcs->pdflt_palette))
-                    build_default_palette(pcs);
+                    code = build_default_palette(pcs);
             } else {
                 pcl_id_t key;
 
@@ -770,9 +777,8 @@ palette_control(pcl_args_t * pargs, pcl_state_t * pcs)
         case 6:
             if (pcs->ctrl_palette_id != pcs->sel_palette_id) {
                 pcl_id_t key;
-                int code = 0;
 
-                /* NB: definitions don't incremente refernece counts */
+                /* NB: definitions don't increment reference counts */
                 id_set_value(key, pcs->ctrl_palette_id);
                 code =
                     pl_dict_put(&pcs->palette_store, id_key(key), 2,
@@ -788,7 +794,7 @@ palette_control(pcl_args_t * pargs, pcl_state_t * pcs)
             return e_Range;
     }
 
-    return 0;
+    return code;
 }
 
 /*
@@ -944,10 +950,14 @@ palette_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
              (pcl_reset_cold | pcl_reset_printer | pcl_reset_permanent)) !=
             0) {
         pcs->monochrome_mode = 0;
-        pcl_update_mono(pcs);
+        code = pcl_update_mono(pcs);
+        if (code < 0)
+            return code;
         /* clear the palette stack and store */
         clear_palette_stack(pcs, pcs->memory);
-        clear_palette_store(pcs);
+        code = clear_palette_store(pcs);
+        if (code < 0)
+            return code;
     }
     if (type & pcl_reset_permanent) {
         pl_dict_release(&pcs->palette_store);
@@ -1005,13 +1015,16 @@ palette_do_copy(pcl_state_t * psaved,
     if ((operation & (pcl_copy_before_call | pcl_copy_before_overlay)) != 0)
         pcl_palette_init_from(psaved->ppalet, pcs->ppalet);
     else if ((operation & pcl_copy_after) != 0) {
+        int code = 0;
         pcl_id_t key;
 
         /* fix the compiler warning resulting from overuse of const */
         pcl_state_t *pcs2 = (pcl_state_t *) pcs;
 
         id_set_value(key, psaved->sel_palette_id);
-        pl_dict_put(&pcs2->palette_store, id_key(key), 2, psaved->ppalet);
+        code = pl_dict_put(&pcs2->palette_store, id_key(key), 2, psaved->ppalet);
+        if (code < 0)
+            return code;
         psaved->palette_stack = pcs2->palette_stack;
         psaved->palette_store = pcs2->palette_store;
     }

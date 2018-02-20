@@ -88,18 +88,19 @@ set_color_comp_3(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 assign_color_index(pcl_args_t * pargs, pcl_state_t * pcs)
 {
+    int code = 0;
     int indx = int_arg(pargs);
 
     if (pcs->personality == pcl5e)
         return 0;
     if (!pcs->raster_state.graphics_mode) {
         if ((indx >= 0) && (indx < pcl_palette_get_num_entries(pcs->ppalet)))
-            pcl_palette_set_color(pcs, indx, pcs->color_comps);
+            code = pcl_palette_set_color(pcs, indx, pcs->color_comps);
         pcs->color_comps[0] = 0.0;
         pcs->color_comps[1] = 0.0;
         pcs->color_comps[2] = 0.0;
     }
-    return 0;
+    return code;
 }
 
 /*
