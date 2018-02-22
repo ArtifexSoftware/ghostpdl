@@ -213,7 +213,7 @@ hpgl_select_font_by_id(hpgl_args_t * pargs, hpgl_state_t * pgls, int index)
 
         hpgl_args_setup(&args);
         hpgl_args_add_int(&args, 1);
-        hpgl_SB(&args, pgls);
+        hpgl_call(hpgl_SB(&args, pgls));
     }
     /* note pcltrm 23-54 - only select if the table (primary or
        secondary) matches the currently selected table. */
@@ -651,8 +651,10 @@ hpgl_DL(hpgl_args_t * pargs, hpgl_state_t * pgls)
         cdata->index = -1;
         cdata->data = NULL;
         id_set_value(pgls->g.current_dl_char_id, (ushort) cc);
-        pl_dict_put(&pgls->g.dl_531_fontdict,
+        code = pl_dict_put(&pgls->g.dl_531_fontdict,
                     id_key(pgls->g.current_dl_char_id), 2, cdata);
+        if (code < 0)
+            return code;
         hpgl_args_init(pargs);
         pargs->phase = 1;
     }

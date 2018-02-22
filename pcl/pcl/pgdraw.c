@@ -1055,14 +1055,19 @@ hpgl_set_drawing_color(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
     }
 
     if (code >= 0) {
-        gs_setrasterop(pgls->pgs, hpgl_rop(pgls, render_mode));
+        code = gs_setrasterop(pgls->pgs, hpgl_rop(pgls, render_mode));
+        if (code < 0)
+            return code;
         code = gx_set_dev_color(pgls->pgs);
         if (code == gs_error_Remap_Color)
             code = pixmap_high_level_pattern(pgls->pgs);
     }
+
+    if (code < 0)
+        return code;
+
     /* make sure the halftone is set */
-    pcl_ht_set_halftone(pgls);
-    return code;
+    return pcl_ht_set_halftone(pgls);
 }
 
 static int
@@ -1494,7 +1499,7 @@ hpgl_draw_current_path(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
 
     /* check if we have a current path - we don't need the current
        point */
-    if (!ppath->current_subpath) {
+    if ((ppath->segments != NULL) && (!ppath->current_subpath)) {
         /* NB this clear shouldn't be necessary. */
         hpgl_call(hpgl_clear_current_path(pgls));
         return 0;

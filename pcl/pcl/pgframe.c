@@ -54,18 +54,18 @@ pcl_set_picture_frame_side_effects(pcl_state_t * pcs)
 
     /* default P1 and P2 */
     hpgl_args_setup(&args);
-    hpgl_IP(&args, pcs);
+    hpgl_call_mem(pcs->memory, hpgl_IP(&args, pcs));
 
     /* default the clipping window */
     hpgl_args_setup(&args);
-    hpgl_IW(&args, pcs);
+    hpgl_call_mem(pcs->memory, hpgl_IW(&args, pcs));
 
     /* clear the polygon buffer */
     hpgl_args_set_int(&args, 0);
-    hpgl_PM(&args, pcs);
+    hpgl_call_mem(pcs->memory, hpgl_PM(&args, pcs));
 
     hpgl_args_set_int(&args, 2);
-    hpgl_PM(&args, pcs);
+    hpgl_call_mem(pcs->memory, hpgl_PM(&args, pcs));
 
     /* NB according to spec should move pen to P1. */
     return 0;
