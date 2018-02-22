@@ -280,6 +280,12 @@ xps_imp_process(pl_interp_implementation_t *impl, stream_cursor_read *cursor)
     return 0;
 }
 
+static int                      /* ret 0 or +ve if ok, else -ve error code */
+xps_impl_process_end(pl_interp_implementation_t * impl)
+{
+    return 0;
+}
+
 /* Skip to end of job.
  * Return 1 if done, 0 ok but EOJ not found, else negative error code.
  */
@@ -428,6 +434,7 @@ pl_interp_implementation_t xps_implementation =
     xps_imp_process_file,
     xps_impl_process_begin,
     xps_imp_process,
+    xps_impl_process_end,
     xps_imp_flush_to_eoj,
     xps_imp_process_eof,
     xps_imp_report_errors,

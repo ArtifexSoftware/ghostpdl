@@ -207,6 +207,13 @@ ps_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
     return code;
 }
 
+static int                      /* ret 0 or +ve if ok, else -ve error code */
+ps_impl_process_end(pl_interp_implementation_t * impl)
+{
+    int exit_code;
+    return gsapi_run_string_end(impl->interp_client_data, 0, &exit_code);
+}
+
 /* Not implemented */
 static int
 ps_impl_flush_to_eoj(pl_interp_implementation_t *impl, stream_cursor_read *cursor)
@@ -219,8 +226,7 @@ ps_impl_flush_to_eoj(pl_interp_implementation_t *impl, stream_cursor_read *curso
 static int
 ps_impl_process_eof(pl_interp_implementation_t *impl)
 {
-    int exit_code;
-    return gsapi_run_string_end(impl->interp_client_data, 0, &exit_code);
+    return 0;
 }
 
 /* Report any errors after running a job */
@@ -267,7 +273,8 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_init_job,
   ps_impl_process_file,
   ps_impl_process_begin,
-  ps_impl_process, /* process */
+  ps_impl_process,
+  ps_impl_process_end,
   ps_impl_flush_to_eoj,
   ps_impl_process_eof,
   ps_impl_report_errors,

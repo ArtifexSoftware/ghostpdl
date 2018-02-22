@@ -119,6 +119,12 @@ pjl_impl_process(pl_interp_implementation_t *impl,       /* interp instance to p
     return code == 1 ? e_ExitLanguage : code;
 }
 
+static int
+pjl_impl_process_end(pl_interp_implementation_t *impl       /* interp instance to process data job in */)
+{
+    return 0;
+}
+
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
 static int
 pjl_impl_flush_to_eoj(pl_interp_implementation_t * impl,  /* interp impl to flush for */
@@ -183,6 +189,7 @@ pl_interp_implementation_t pjl_implementation = {
     NULL,                      /* process_file */
     pjl_impl_process_begin,
     pjl_impl_process,
+    pjl_impl_process_end,
     pjl_impl_flush_to_eoj,
     pjl_impl_process_eof,
     pjl_impl_report_errors,

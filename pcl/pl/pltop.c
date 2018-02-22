@@ -104,6 +104,12 @@ pl_process(pl_interp_implementation_t * impl,     /* interp instance to process 
     return impl->proc_process(impl, cursor);
 }
 
+int
+pl_process_end(pl_interp_implementation_t * impl     /* interp instance to process data job in */)
+{
+    return impl->proc_process_end(impl);
+}
+
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
 int
 pl_flush_to_eoj(pl_interp_implementation_t * impl,        /* interp instance to flush for */

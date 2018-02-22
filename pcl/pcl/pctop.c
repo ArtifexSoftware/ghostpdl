@@ -419,6 +419,12 @@ pcl_impl_process(pl_interp_implementation_t * impl,       /* interp instance to 
     return code;
 }
 
+static int                      /* ret 0 or +ve if ok, else -ve error code */
+pcl_impl_process_end(pl_interp_implementation_t * impl)
+{
+    return 0;
+}
+
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
 static int
 pcl_impl_flush_to_eoj(pl_interp_implementation_t * impl,  /* interp instance to flush for */
@@ -558,6 +564,7 @@ pl_interp_implementation_t pcl_implementation = {
     NULL,                       /* process_file */
     pcl_impl_process_begin,
     pcl_impl_process,
+    pcl_impl_process_end,
     pcl_impl_flush_to_eoj,
     pcl_impl_process_eof,
     pcl_impl_report_errors,

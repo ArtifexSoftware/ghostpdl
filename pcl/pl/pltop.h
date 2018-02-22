@@ -97,6 +97,9 @@ int pl_process(pl_interp_implementation_t *, stream_cursor_read *);
 typedef int (*pl_interp_proc_process_t) (pl_interp_implementation_t *,
                                          stream_cursor_read *);
 
+int pl_process_end(pl_interp_implementation_t *);
+typedef int (*pl_interp_proc_process_end_t) (pl_interp_implementation_t *);
+
 /*
  * The process_file function is an optional optimized path for
  * languages that want to use a random access file. If this function
@@ -159,6 +162,7 @@ struct pl_interp_implementation_s
     pl_interp_proc_process_file_t proc_process_file;
     pl_interp_proc_process_begin_t proc_process_begin;
     pl_interp_proc_process_t proc_process;
+    pl_interp_proc_process_end_t proc_process_end;
     pl_interp_proc_flush_to_eoj_t proc_flush_to_eoj;
     pl_interp_proc_process_eof_t proc_process_eof;
     pl_interp_proc_report_errors_t proc_report_errors;

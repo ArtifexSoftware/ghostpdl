@@ -295,6 +295,8 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
 
         if (s->cursor.r.ptr == s->cursor.r.limit && sfeof(s)) {
             if_debug0m('I', mem, "End of of data\n");
+            if (pl_process_end(minst->curr_implementation) < 0)
+                 return gs_error_Fatal;
             pl_process_eof(minst->curr_implementation);
             if (pl_dnit_job(minst->curr_implementation) < 0)
                 return gs_error_Fatal;
@@ -363,6 +365,9 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
             if_debug1m('I', mem, "processing (%s) job\n",
                        pl_characteristics(minst->curr_implementation)->language);
             if (code == e_ExitLanguage) {
+                if (pl_process_end(minst->curr_implementation) < 0)
+                    return gs_error_Fatal;
+
                 if (pl_dnit_job(minst->curr_implementation) < 0)
                     return gs_error_Fatal;
 
@@ -397,6 +402,9 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                 pl_report_errors(minst->curr_implementation, code,
                                  sftell(s),
                                  minst->error_report > 0);
+
+                if (pl_process_end(minst->curr_implementation) < 0)
+                    return gs_error_Fatal;
                 if (pl_dnit_job(minst->curr_implementation) < 0)
                     return gs_error_Fatal;
                 if (pl_init_job(pjli) < 0)

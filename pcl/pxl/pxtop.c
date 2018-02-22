@@ -379,6 +379,13 @@ pxl_impl_process(pl_interp_implementation_t * impl,
     return code;
 }
 
+static int
+pxl_impl_process_end(pl_interp_implementation_t * impl)
+{
+    return 0;
+}
+
+
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
 static int
 pxl_impl_flush_to_eoj(pl_interp_implementation_t * impl,
@@ -524,6 +531,7 @@ pl_interp_implementation_t pxl_implementation = {
     NULL,                       /* process_file */
     pxl_impl_process_begin,
     pxl_impl_process,
+    pxl_impl_process_end,
     pxl_impl_flush_to_eoj,
     pxl_impl_process_eof,
     pxl_impl_report_errors,
