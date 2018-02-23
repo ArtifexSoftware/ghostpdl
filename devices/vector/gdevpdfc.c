@@ -475,49 +475,6 @@ int pdf_make_base_space_function(gx_device_pdf *pdev, gs_function_t **pfn,
     return code;
 }
 
-static void pdf_SepRGB_ConvertToCMYK (float *in, float *out)
-{
-    float CMYK[4];
-    int i;
-
-    if (in[0] <= in[1] && in[0] <= in[2]) {
-        CMYK[3] = 1.0 - in[0];
-    } else {
-        if (in[1]<= in[0] && in[1] <= in[2]) {
-            CMYK[3] = 1.0 - in[1];
-        } else {
-            CMYK[3] = 1.0 - in[2];
-        }
-    }
-    CMYK[0] = 1.0 - in[0] - CMYK[3];
-    CMYK[1] = 1.0 - in[1] - CMYK[3];
-    CMYK[2] = 1.0 - in[2] - CMYK[3];
-    for (i=0;i<4;i++)
-        out[i] = CMYK[i];
-}
-
-static void pdf_SepCMYK_ConvertToRGB (float *in, float *out)
-{
-    float RGB[3];
-
-    RGB[0] = in[0] + in[3];
-    RGB[1] = in[1] + in[3];
-    RGB[2] = in[2] + in[3];
-
-    if (RGB[0] > 1)
-        out[0] = 0.0f;
-    else
-        out[0] = 1 - RGB[0];
-    if (RGB[1] > 1)
-        out[1] = 0.0f;
-    else
-        out[1] = 1 - RGB[1];
-    if (RGB[2] > 1)
-        out[2] = 0.0f;
-    else
-        out[2] = 1 - RGB[2];
-}
-
 /* Create a Separation or DeviceN color space (internal). */
 static int
 pdf_separation_color_space(gx_device_pdf *pdev, const gs_gstate * pgs,
@@ -552,95 +509,21 @@ pdf_separation_color_space(gx_device_pdf *pdev, const gs_gstate * pgs,
     if (csi == gs_color_space_index_DeviceRGB && (pdev->PDFX ||
         (pdev->PDFA != 0 && (pdev->pcm_color_info_index == gs_color_space_index_DeviceCMYK)))) {
 
-        /* We have a DeviceRGB alternate, but are producing either PDF/X or
-         * PDF/A with a DeviceCMYK process color model. So we need to convert
-         * the alternate space into CMYK. We do this by evaluating the function
-         * at each end of the Separation space (0 and 1), convert the resulting
-         * RGB colours into CMYK and create a new function which linearly
-         * interpolates between these points.
+        /*
+         * We shouldn't get here. If someoone is using PDF/X or PDF/A then they should *also*
+         * set ColorConversionStrategy, and any Separation or DeviceN space should have been
+         * converted earlier. If we somehow do get here (eg user set PDFA but *ddin't* set
+         * ColorConversionStrategy) then return a rangecheck error. Earlier code will then
+         * fall back to writing a device space.
          */
-        gs_function_t *new_pfn = 0;
-        float in[1] = {0.0f};
-        float out_low[4];
-        float out_high[4];
-
-        code = gs_function_evaluate(pfn, in, out_low);
-        if (code < 0)
-            return code;
-        pdf_SepRGB_ConvertToCMYK((float *)&out_low, (float *)&out_low);
-
-        in[0] = 1.0f;
-        code = gs_function_evaluate(pfn, in, out_high);
-        if (code < 0)
-            return code;
-        pdf_SepRGB_ConvertToCMYK((float *)&out_high, (float *)&out_high);
-
-        code = pdf_make_base_space_function(pdev, &new_pfn, 4, out_low, out_high);
-        if (code < 0)
-            return code;
-
-        code = cos_array_add(pca, cos_c_string_value(&v, csname));
-        if (code >= 0) {
-            code = cos_array_add_no_copy(pca, snames);
-            if (code >= 0) {
-                cos_c_string_value(&v, (const char *)pcsn->DeviceCMYK);
-                code = cos_array_add(pca, &v);
-                if (code >= 0) {
-                    code = pdf_function_scaled(pdev, new_pfn, 0x00, &v);
-                    if (code >= 0) {
-                        code = cos_array_add(pca, &v);
-                        if (code >= 0 && v_attributes != NULL)
-                            code = cos_array_add(pca, v_attributes);
-                    }
-                }
-            }
-        }
-        pdf_delete_base_space_function(pdev, new_pfn);
-        return code;
+        dmprintf(pdev->pdf_memory, "Attempting to write a DeviceN space with an inappropriate alternate,\nhave you set ColorConversionStrategy ?\n");
+        return gs_error_rangecheck;
     }
     if (csi == gs_color_space_index_DeviceCMYK &&
         (pdev->PDFA != 0 && (pdev->pcm_color_info_index == gs_color_space_index_DeviceRGB))) {
-        /* We have a DeviceCMYK alternate, but are producingPDF/A with a
-         * DeviceRGB process color model. See comment above re DviceRGB.
-         */
-        gs_function_t *new_pfn = 0;
-        float in[1] = {0.0f};
-        float out_low[4];
-        float out_high[4];
 
-        code = gs_function_evaluate(pfn, in, out_low);
-        if (code < 0)
-            return code;
-        pdf_SepCMYK_ConvertToRGB((float *)&out_low, (float *)&out_low);
-
-        in[0] = 1.0f;
-        code = gs_function_evaluate(pfn, in, out_high);
-        if (code < 0)
-            return code;
-        pdf_SepCMYK_ConvertToRGB((float *)&out_high, (float *)&out_high);
-
-        code = pdf_make_base_space_function(pdev, &new_pfn, 3, out_low, out_high);
-        if (code < 0)
-            return code;
-
-        code = cos_array_add(pca, cos_c_string_value(&v, csname));
-        if (code >= 0) {
-            code = cos_array_add_no_copy(pca, snames);
-            if (code >= 0) {
-                cos_c_string_value(&v, pcsn->DeviceRGB);
-                code = cos_array_add(pca, &v);
-                if (code >= 0) {
-                    code = pdf_function_scaled(pdev, new_pfn, 0x00, &v);
-                    if (code >= 0) {
-                        code = cos_array_add(pca, &v);
-                        if (code >= 0 && v_attributes != NULL)
-                            code = cos_array_add(pca, v_attributes);
-                    }
-                }
-            }
-        }
-        pdf_delete_base_space_function(pdev, new_pfn);
-        return code;
+        dmprintf(pdev->pdf_memory, "Attempting to write a DeviceN space with an inappropriate alternate,\nhave you set ColorConversionStrategy ?\n");
+        return gs_error_rangecheck;
     }
 
     if ((code = cos_array_add(pca, cos_c_string_value(&v, csname))) < 0 ||
