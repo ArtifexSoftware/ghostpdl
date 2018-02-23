@@ -542,15 +542,13 @@ hpgl_RF(hpgl_args_t * pargs, hpgl_state_t * pgls)
     if (pargs->phase == 0) {
 
         if (!hpgl_arg_c_int(pgls->memory, pargs, (int *)&index)) {
-            hpgl_default_all_fill_patterns(pgls);
-            return 0;
+            return hpgl_default_all_fill_patterns(pgls);
         }
         if ((index < 1) || (index > 8))
             return e_Range;
 
         if (!hpgl_arg_c_int(pgls->memory, pargs, (int *)&width)) {
-            pcl_pattern_RF(index, NULL, pgls);
-            return 0;
+            return pcl_pattern_RF(index, NULL, pgls);
         }
         if ((width < 1) ||
             (width > 255) ||
@@ -880,7 +878,7 @@ hpgl_WU(hpgl_args_t * pargs, hpgl_state_t * pgls)
     }
     pgls->g.pen.width_relative = mode;
     hpgl_args_setup(pargs);
-    hpgl_PW(pargs, pgls);
+    hpgl_call(hpgl_PW(pargs, pgls));
     return 0;
 }
 

@@ -46,7 +46,7 @@ hpgl_set_lost_mode(hpgl_state_t * pgls, hpgl_lost_mode_t lost_mode)
            args of pen down.  The following appends a moveto the
            current point in the gs path */
         hpgl_args_setup(&args);
-        hpgl_PU(&args, pgls);
+        hpgl_call(hpgl_PU(&args, pgls));
 #endif
 #ifdef DEBUG
         dmprintf(pgls->memory, "entering lost mode\n");

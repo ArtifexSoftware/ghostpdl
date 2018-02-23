@@ -425,6 +425,8 @@ void hpgl_set_line_pattern_defaults(hpgl_state_t * pgls);
 /* reset LA parameters */
 void hpgl_set_line_attribute_defaults(hpgl_state_t * pgls);
 
+void hpgl_destroy_label_buffer(hpgl_state_t * pgls);
+
 void hpgl_free_stick_fonts(hpgl_state_t * pgls);
 
 void hpgl_free_531_fonts(hpgl_state_t * pgls);

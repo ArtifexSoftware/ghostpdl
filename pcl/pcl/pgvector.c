@@ -504,9 +504,9 @@ hpgl_PE(hpgl_args_t * pargs, hpgl_state_t * pgls)
                                       (pgls, hpgl_rm_vector));
                             point_count = 0;
                         }
-                        hpgl_PU(&args, pgls);
+                        hpgl_call(hpgl_PU(&args, pgls));
                     } else
-                        hpgl_PD(&args, pgls);
+                        hpgl_call(hpgl_PD(&args, pgls));
                     point_count++;
                 }
                 pargs->phase &= ~(pe_pen_up | pe_absolute);

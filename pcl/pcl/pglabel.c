@@ -599,7 +599,7 @@ hpgl_init_label_buffer(hpgl_state_t * pgls)
 }
 
 /* release the character buffer */
-static int
+void
 hpgl_destroy_label_buffer(hpgl_state_t * pgls)
 {
     gs_free_object(pgls->memory, pgls->g.label.buffer,
@@ -607,7 +607,6 @@ hpgl_destroy_label_buffer(hpgl_state_t * pgls)
     pgls->g.label.char_count = 0;
     pgls->g.label.buffer_size = 0;
     pgls->g.label.buffer = 0;
-    return 0;
 }
 
 /* add a single character to the line buffer */
@@ -1373,8 +1372,8 @@ hpgl_process_buffer(hpgl_state_t * pgls, gs_point * offset)
                                 if (pgls->g.bitmap_fonts_allowed)       /* no mirroring */
                                     label_advance = fabs(label_advance);
                             }
-                            hpgl_move_cursor_by_characters(pgls, 0, -1,
-                                                           &label_advance);
+                            hpgl_call(hpgl_move_cursor_by_characters(pgls, 0, -1,
+                                                           &label_advance));
                             continue;
                         }
                         spaces = 0, lines = -1;
@@ -1399,8 +1398,8 @@ hpgl_process_buffer(hpgl_state_t * pgls, gs_point * offset)
                     default:
                         goto print;
                 }
-                hpgl_move_cursor_by_characters(pgls, spaces, lines,
-                                               (const hpgl_real_t *)0);
+                hpgl_call(hpgl_move_cursor_by_characters(pgls, spaces, lines,
+                                               (const hpgl_real_t *)0));
                 continue;
             }
           print:{
@@ -1482,7 +1481,7 @@ hpgl_LB(hpgl_args_t * pargs, hpgl_state_t * pgls)
                 gs_point lo_offsets;
 
                 hpgl_call(hpgl_process_buffer(pgls, &lo_offsets));
-                hpgl_call(hpgl_destroy_label_buffer(pgls));
+                hpgl_destroy_label_buffer(pgls);
                 pargs->source.ptr = p;
                 /*
                  * Depending on the DV/LO combination, conditionally
@@ -1530,7 +1529,7 @@ hpgl_LB(hpgl_args_t * pargs, hpgl_state_t * pgls)
             gs_point lo_offsets;
 
             hpgl_call(hpgl_process_buffer(pgls, &lo_offsets));
-            hpgl_call(hpgl_destroy_label_buffer(pgls));
+            hpgl_destroy_label_buffer(pgls);
             hpgl_call(hpgl_init_label_buffer(pgls));
         }
     }
@@ -1585,7 +1584,7 @@ hpgl_print_symbol_mode_char(hpgl_state_t * pgls)
     hpgl_call(hpgl_init_label_buffer(pgls));
     hpgl_call(hpgl_buffer_char(pgls, pgls->g.symbol_mode));
     hpgl_call(hpgl_process_buffer(pgls, &lo_offsets));
-    hpgl_call(hpgl_destroy_label_buffer(pgls));
+    hpgl_destroy_label_buffer(pgls);
     hpgl_call(hpgl_grestore(pgls));
     /* restore the origin */
     pgls->g.label.origin = saved_origin;

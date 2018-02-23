@@ -102,15 +102,20 @@ hpgl_default_coordinate_system(hpgl_state_t * pcs)
 /*
  * Reset all the fill patterns to solid fill.
  */
-void
+int
 hpgl_default_all_fill_patterns(hpgl_state_t * pgls)
 {
+    int code = 0;
     int i;
 
     for (i = 1; i <= 8; ++i) {
-        (void)pcl_pattern_RF(i, NULL, pgls);
-        (void)pcl_pattern_RF(-i, NULL, pgls);
+        if (((code = pcl_pattern_RF(i, NULL, pgls)) < 0) ||
+            ((code = pcl_pattern_RF(-i, NULL, pgls)) < 0))
+        {
+            return code;
+        }
     }
+    return code;
 }
 
 int
@@ -217,6 +222,7 @@ hpgl_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
                      "hpgl_do_reset polygon buffer");
         /* if we have allocated memory for a stick font free the memory */
         hpgl_free_stick_fonts(pcs);
+        hpgl_destroy_label_buffer(pcs);
     }
     return 0;
 }

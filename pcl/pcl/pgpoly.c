@@ -253,6 +253,7 @@ hpgl_close_subpolygon(hpgl_state_t * pgls)
 int
 hpgl_PM(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
+    int code = 0;
     int op;
 
     if (hpgl_arg_c_int(pgls->memory, pargs, &op) == 0)
@@ -263,7 +264,9 @@ hpgl_PM(hpgl_args_t * pargs, hpgl_state_t * pgls)
             /* draw the current path if there is one */
             hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
             /* clear the polygon buffer as well */
-            gx_path_new(&pgls->g.polygon.buffer.path);
+            code = gx_path_new(&pgls->g.polygon.buffer.path);
+            if (code < 0)
+                return code;
             /* global flag to indicate that we are in polygon mode */
             pgls->g.polygon_mode = true;
             /* save the pen state, to be restored by PM2 */
