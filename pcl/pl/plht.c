@@ -41,7 +41,9 @@ pl_set_pcl_halftone(gs_gstate * pgs, gs_mapping_proc transfer_proc,
     /* nothing to do for a contone device */
     if (!gx_device_must_halftone(gs_currentdevice(pgs)))
         return 0;
-    gs_settransfer(pgs, transfer_proc);
+    code = gs_settransfer(pgs, transfer_proc);
+    if (code < 0)
+        return code;
     ht.type = ht_type_threshold;
     ht.params.threshold.width = width;
     ht.params.threshold.height = height;

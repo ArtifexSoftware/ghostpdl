@@ -366,7 +366,9 @@ create_mask_enumerator(pcl_raster_t * prast)
     if (pen == 0)
         return e_Memory;
 
-    pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, true);
+    code = pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, true);
+    if (code < 0)
+        return code;
 
     /* generate the special two entry indexed color space required */
     if (prast->indexed)
@@ -417,7 +419,9 @@ create_mask_enumerator(pcl_raster_t * prast)
     else
         prast->mask_pen = pen;
 
-    pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->pattern_id, true);
+    if (code >= 0)
+        code = pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->pattern_id, true);
+
     return code;
 }
 
@@ -633,11 +637,17 @@ process_zero_mask_rows(pcl_raster_t * prast, int nrows)
 
         pen = prast->mask_pen;
         memset(prast->mask_buff, 0xff, nbytes);
-        pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, true);
-        gs_setrasterop(pcs->pgs, (gs_rop3_t) rop3_know_S_1((int)0xff));
+        code = pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, true);
+        if (code < 0)
+            return code;
+        code = gs_setrasterop(pcs->pgs, (gs_rop3_t) rop3_know_S_1((int)0xff));
+        if (code < 0)
+            return code;
         while ((nrows-- > 0) && (code >= 0))
             code = gs_image_next(pen, prast->mask_buff, nbytes, &dummy);
-        pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->pattern_id, true);
+
+        if (code < 0)
+            code = pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->pattern_id, true);
     }
     return code;
 }
@@ -720,18 +730,28 @@ process_zero_rows(gs_gstate * pgs, pcl_raster_t * prast, int nrows)
             tmp_rect.q.x = (double)npixels;
             tmp_rect.q.y = (double)nrows;
             if (invert) {
-                gs_setrasterop(pgs,
+                code = gs_setrasterop(pgs,
                                (gs_rop3_t)
                                rop3_invert_S(gs_currentrasterop(pgs))
                     );
-                gs_rectfill(pgs, &tmp_rect, 1);
+                if (code < 0)
+                    return code;
 
-                gs_setrasterop(pgs,
+                code = gs_rectfill(pgs, &tmp_rect, 1);
+                if (code < 0)
+                    return code;
+
+                code = gs_setrasterop(pgs,
                                (gs_rop3_t)
                                rop3_invert_S(gs_currentrasterop(pgs))
                     );
-            } else
-                gs_rectfill(pgs, &tmp_rect, 1);
+                if (code < 0)
+                    return code;
+            } else {
+                code = gs_rectfill(pgs, &tmp_rect, 1);
+                if (code < 0)
+                    return code;
+            }
 
         }
 

@@ -985,9 +985,11 @@ pl_tt_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     float bold_fraction =
         gs_show_in_charpath(penum) != cpm_show ? 0.0 : plfont->bold_fraction;
     uint bold_added;
-    double scale;
+    double scale = 1.0;
     float sbw[4], w2[6];
-    int ipx, ipy, iqx, iqy;
+    int ipx = 0;
+    int ipy = 0;
+    int iqx, iqy;
     gx_device_memory *pmdev;
     bool ctm_modified = false;
     bool bold_device_created = false;
@@ -1048,7 +1050,7 @@ pl_tt_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
             /* save the ctm */
             gs_currentmatrix(pgs, &save_ctm);
             ctm_modified = true;
-            /* magic numbers - we don't completelely understand
+            /* magic numbers - we don't completely understand
                the translation magic used by HP.  This provides a
                good approximation */
             gs_translate(pgs, 1.0 / 1.15, -(1.0 - 1.0 / 1.15));
@@ -1083,7 +1085,9 @@ pl_tt_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
         ipx = (int)sbox.p.x, ipy = (int)sbox.p.y;
         iqx = (int)ceil(sbox.q.x), iqy = (int)ceil(sbox.q.y);
         /* Set up the memory device for the bitmap.  NB should check code. */
-        gs_make_mem_mono_device_with_copydevice(&pmdev, pgs->memory, pgs->device);
+        code = gs_make_mem_mono_device_with_copydevice(&pmdev, pgs->memory, pgs->device);
+        if (code < 0)
+            return code;
 
         bold_device_created = true;
         /* due to rounding, bold added (integer) can be zero while
@@ -1116,11 +1120,15 @@ pl_tt_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
             cbox.p.x = cbox.p.y = fixed_0;
             cbox.q.x = int2fixed(pmdev->width);
             cbox.q.y = int2fixed(pmdev->height);
-            gx_clip_to_rectangle(pgs, &cbox);
+            code = gx_clip_to_rectangle(pgs, &cbox);
+            if (code < 0)
+                return code;
         }
         /* Make sure we clear the entire bitmap. */
         memset(pmdev->base, 0, bitmap_raster(pmdev->width) * pmdev->height);
-        gx_set_device_color_1(pgs);     /* write 1's */
+        code = gx_set_device_color_1(pgs);     /* write 1's */
+        if (code < 0)
+            return code;
         smat.tx = (float)(-ipx);
         smat.ty = (float)(-ipy);
         gs_setmatrix(pgs, &smat);
@@ -1142,8 +1150,8 @@ pl_tt_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     }
     if (ctm_modified)
         gs_setmatrix(pgs, &save_ctm);
-    if (bold_added)
-        gs_grestore(pgs);
+    if (bold_added && (code >= 0))
+        code = gs_grestore(pgs);
 
     if (code < 0 || !bold_added)
         return (code < 0 ? code : 0);

@@ -306,7 +306,7 @@ pl_load_ufst_lineprinter(gs_memory_t * mem, pl_dict_t * pfontdict,
                    resident_table[i].character_complement, 8);
 
             if (use_unicode_names_for_keys)
-                pl_dict_put(pfontdict,
+                code = pl_dict_put(pfontdict,
                             (const byte *)resident_table[i].unicode_fontname,
                             32, pplfont);
             else {
@@ -314,8 +314,10 @@ pl_load_ufst_lineprinter(gs_memory_t * mem, pl_dict_t * pfontdict,
 
                 key[2] = (byte) i;
                 key[0] = key[1] = 0;
-                pl_dict_put(pfontdict, key, sizeof(key), pplfont);
+                code = pl_dict_put(pfontdict, key, sizeof(key), pplfont);
             }
+            if (code < 0)
+                return code;
             pplfont->storage = storage; /* should be an internal font */
             pplfont->data_are_permanent = true;
             pplfont->header = (byte *) header;
@@ -462,6 +464,7 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
                 uint spaceBand;
                 uint scaleFactor;
                 bool used = false;
+                int code = 0;
 
                 /* For Microtype fonts, once we get here, these
                  * pl_fapi_get*() calls cannot fail, so we can
@@ -536,14 +539,16 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
                         continue;
                     }
                     if (use_unicode_names_for_keys)
-                        pl_dict_put(pfontdict,
+                        code = pl_dict_put(pfontdict,
                                     (const byte *)resident_table[j].
                                     unicode_fontname, 32, plfont);
                     else {
                         key[2] = (byte) j;
                         key[0] = key[1] = 0;
-                        pl_dict_put(pfontdict, key, sizeof(key), plfont);
+                        code = pl_dict_put(pfontdict, key, sizeof(key), plfont);
                     }
+                    if (code < 0)
+                        return code;
                     used = true;
                 }
                 /* If we've stored the font, null the local reference */
@@ -730,26 +735,26 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                 memcpy(plfont->character_complement,
                        residentp->character_complement, 8);
                 if (use_unicode_names_for_keys)
-                    pl_dict_put(pfontdict,
+                    code = pl_dict_put(pfontdict,
                                 (const byte *)residentp->unicode_fontname, 32,
                                 plfont);
                 else {
                     key[2] = (byte) (residentp - resident_table);
                     key[0] = key[1] = 0;
                     code = pl_dict_put(pfontdict, key, sizeof(key), plfont);
-                    if (code < 0) {
-                        gs_free_object(mem, plfont->pfont, "pl_tt_load_font(gs_font_type42)");
-                        pl_free_tt_fontfile_buffer(mem, plfont->header);
-                        gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
-                        continue;
-                    }
                     /* leave data stored in the file.  NB this should be a fatal error also. */
-                    if (pl_store_resident_font_data_in_file
+                    if ((code >= 0) && pl_store_resident_font_data_in_file
                         (tmp_path_copy, mem, plfont) < 0) {
                         dmprintf1(mem, "%s could not store data",
                                   tmp_path_copy);
                         continue;
                     }
+                }
+                if (code < 0) {
+                    gs_free_object(mem, plfont->pfont, "pl_tt_load_font(gs_font_type42)");
+                    pl_free_tt_fontfile_buffer(mem, plfont->header);
+                    gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
+                    continue;
                 }
                 found = true;
                 found_any = true;
@@ -768,6 +773,8 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                         get_name_from_tt_file(in, mem, buffer, WINDOWSNAME);
                     sfclose(in);
                     dmprintf1(mem, "Windows name %s\n", buffer);
+                    if (code < 0)
+                        return code;
                 }
 #endif
             }
