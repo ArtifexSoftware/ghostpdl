@@ -343,7 +343,7 @@ static int pjl_dist_process_dict(gs_memory_t *mem, gs_c_param_list *plist, gs_pa
     if (*p1 == 0x00)
         return -1;
 
-    /* NULL out the dictioanry end marks */
+    /* NULL out the dictionary end marks */
     *p1++ = 0x00;
     if (*p1 == 0x00)
         return -1;
@@ -415,9 +415,7 @@ static int pjl_dist_process_dict_or_hexstring(gs_memory_t *mem, gs_c_param_list 
     ps.data = (const byte *)p1;
     ps.size = strlen(p1);
     ps.persistent = false;
-    param_write_string((gs_param_list *)plist, key, &ps);
-
-    return 0;
+    return param_write_string((gs_param_list *)plist, key, &ps);
 }
 
 static int pjl_dist_process_name(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name *key, char **p)
@@ -462,9 +460,7 @@ static int pjl_dist_process_string(gs_memory_t *mem, gs_c_param_list *plist, gs_
     ps.data = (const byte *)start;
     ps.size = strlen(start);
     ps.persistent = false;
-    param_write_string((gs_param_list *)plist, key, &ps);
-
-    return 0;
+    return param_write_string((gs_param_list *)plist, key, &ps);
 }
 
 /* We need to know how many items are in an array or dictionary */
@@ -1021,6 +1017,8 @@ int pcl_pjl_setdistillerparams(gs_memory_t *mem, gx_device *device, char *distil
     gs_c_param_list *plist;
 
     plist = gs_c_param_list_alloc(mem, "temp C param list for PJL distillerparams");
+    if (plist == NULL)
+        return -1;
     gs_c_param_list_write(plist, mem);
     gs_param_list_set_persistent_keys((gs_param_list *) plist, false);
     gs_c_param_list_write_more(plist);

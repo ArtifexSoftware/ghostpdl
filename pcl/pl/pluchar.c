@@ -326,8 +326,8 @@ pl_ufst_make_char(gs_show_enum * penum,
             }
         }
         if (status != 0) {
-            gs_setcharwidth(penum, pgs, 0.0, 0.0);
-            return 0;           /* returning status causes the job to be aborted */
+            /* returning status causes the job to be aborted */
+            return gs_setcharwidth(penum, pgs, 0.0, 0.0);
         }
     }
 
@@ -566,7 +566,7 @@ pl_mt_char_width(const pl_font_t * plfont,
         pl_glyph_width_cache_node_search(plfont->pfont->id, char_code,
                                          pwidth);
     if (code < 0) {             /* not found */
-        /* FIXME inconsitant error code return values follow */
+        /* FIXME inconsistent error code return values follow */
         if (pl_set_mt_font(NULL /* graphics state */ , plfont, false, &fc) !=
             0)
             return 0;
