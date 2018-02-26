@@ -329,7 +329,7 @@ AC_SUBST(SET_DT_SONAME)
 if test $ac_cv_prog_gcc = yes; then
     cflags_to_try="-Wall -Wstrict-prototypes -Wundef \
 -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
--Wno-strict-aliasing -Werror=declaration-after-statement \
+-fno-strict-aliasing -Werror=declaration-after-statement \
 -fno-builtin -fno-common -Werror=return-type"
     optflags_to_try="$CC_OPT_FLAGS_TO_TRY"
     dbgflags_to_try="$CC_DBG_FLAGS_TO_TRY"
@@ -372,6 +372,8 @@ AC_SUBST(ARCH_CONF_HEADER)
 #    CFLAGS="-DDEBUG $CFLAGS"
 #fi
 
+# NOTE: To correctly disable GCC's strict aliasing with '-fno-strict-aliasing'
+#       option, the 'cflags_to_try' have to checked after 'optflags_to_try'.
 AC_MSG_CHECKING([supported compiler flags])
 old_cflags=$CFLAGS
 
@@ -2793,6 +2795,24 @@ else
 fi
 
 AC_SUBST(VERSIONED_PATH)
+
+# --------------------------------------------------
+# Check if we are using GCC, and disable strict
+# aliasing optimization if GCC supports it...
+#
+# NOTE: Strict aliasing can cause some parts
+#       of Ghostscript to malfunction.
+# --------------------------------------------------
+if test $ac_cv_prog_gcc = yes; then
+  AC_MSG_CHECKING([whether to explicitly disable strict aliasing])
+  CFLAGS_backup="$CFLAGS"
+  CFLAGS="$CFLAGS -fno-strict-aliasing"
+  AC_TRY_COMPILE(, [return 0;], [
+    AC_MSG_RESULT([yes])
+    CFLAGS_backup="$CFLAGS"
+  ])
+  CFLAGS="$CFLAGS_backup"
+fi
 
 # --------------------------------------------------
 # Modify build for internal cluster testing.
