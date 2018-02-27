@@ -1231,9 +1231,8 @@ show_proceed(gs_show_enum * penum)
             cpt.x = float2fixed(fpx);
             cpt.y = float2fixed(fpy);
         }
-        gs_newpath(pgs);
-        code = show_origin_setup(pgs, cpt.x, cpt.y, penum);
-        if (code < 0)
+        if (((code = gs_newpath(pgs)) < 0) ||
+            ((code = show_origin_setup(pgs, cpt.x, cpt.y, penum)) < 0))
             goto rret;
     }
     penum->width_status = sws_none;
