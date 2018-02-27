@@ -548,9 +548,9 @@ cpath_set_rectangle(gx_clip_path * pcpath, gs_fixed_rect * pbox)
         int code = cpath_alloc_list(&pcpath->rect_list, pcpath->path.memory,
                                     "gx_cpath_from_rectangle");
 
+        rc_decrement(rlist, "gx_cpath_from_rectangle");
         if (code < 0)
             return code;
-        rc_decrement(rlist, "gx_cpath_from_rectangle");
         rlist = pcpath->rect_list;
     }
     cpath_init_rectangle(pcpath, pbox);

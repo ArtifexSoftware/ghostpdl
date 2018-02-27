@@ -792,7 +792,7 @@ hpgl_print_char(hpgl_state_t * pgls, uint ch)
         bool use_show = hpgl_use_show(pgls, font);
         gs_matrix pre_rmat, advance_mat;
         int angle = 0;
-        gs_text_enum_t *penum;
+        gs_text_enum_t *penum = NULL;
         int code;
         gs_point start_pt, end_pt;
         hpgl_real_t space_width;
@@ -944,10 +944,12 @@ hpgl_print_char(hpgl_state_t * pgls, uint ch)
                    "insidedness" - this seems to address the dirty
                    page issue in practice. */
                 code = pcl_mark_page_for_current_pos(pgls);
-                gs_text_release(penum, "hpgl_print_char");
             }
-            if (code < 0)
+            gs_text_release(penum, "hpgl_print_char");
+            if (code < 0) {
+                hpgl_free_stick_fonts(pgls);
                 return code;
+            }
             gs_setmatrix(pgs, &advance_mat);
             if (angle >= 0) {
                 /* Compensate for bitmap font non-rotation. */
