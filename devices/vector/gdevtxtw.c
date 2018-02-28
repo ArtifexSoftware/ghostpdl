@@ -596,7 +596,7 @@ static int simple_text_output(gx_device_txtwrite_t *tdev)
         x_entry = y_list->x_ordered_list;
         while (x_entry) {
             width = (x_entry->end.x - x_entry->start.x) / x_entry->Unicode_Text_Size;
-            if (width < min_width_size && width >= (float)min_size * 0.75)
+            if (width < min_width_size && width >= (float)min_size * 0.5)
                 min_width_size = width;
             x_entry = x_entry->next;
         }
