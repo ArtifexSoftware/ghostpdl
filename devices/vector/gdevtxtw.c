@@ -601,7 +601,7 @@ static int simple_text_output(gx_device_txtwrite_t *tdev)
                  * the end of the text going past the beginning of the following text. If it does then we must
                  * use the new minimum, regardless of how small it is!
                  */
-                if (x_entry->start.x + ((x_entry->Unicode_Text_Size + 1) * min_width_size) > x_entry->next->start.x)
+                if (x_entry->start.x + ((x_entry->Unicode_Text_Size + 1) * min_width_size) > x_entry->next->start.x && width > 0)
                     min_width_size = width;
             } else {
                 if (width < min_width_size && width >= (float)min_size * 0.75)
