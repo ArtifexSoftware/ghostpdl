@@ -802,6 +802,8 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     int table_index = 0;
     const Jbig2HuffmanParams *huffman_params;
 
+    params.SDHUFF = 0;
+
     if (segment->data_length < 10)
         goto too_short;
 
@@ -1024,5 +1026,11 @@ cleanup:
     return (segment->result != NULL) ? 0 : -1;
 
 too_short:
+    if (params.SDHUFF) {
+        jbig2_release_huffman_table(ctx, params.SDHUFFDH);
+        jbig2_release_huffman_table(ctx, params.SDHUFFDW);
+        jbig2_release_huffman_table(ctx, params.SDHUFFBMSIZE);
+        jbig2_release_huffman_table(ctx, params.SDHUFFAGGINST);
+    }
     return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
 }
