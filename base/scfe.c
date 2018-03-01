@@ -133,11 +133,13 @@ s_CFE_init(register stream_state * st)
     /*
      * The worst case for encoding is alternating white and black pixels.
      * For 1-D encoding, the worst case is 9 bits per 2 pixels; for 2-D
-     * (horizontal), 12 bits per 2 pixels.  To fill out a scan line,
+     * (horizontal), 12 bits per 2 pixels. However, for 2D vertical encoding
+     * an offset 3 vertically encoded requires 7 bits of encoding. So we need
+     * to allow 14 bits for this, not 12 (see bug 696413). To fill out a scan line,
      * we may add up to 6 12-bit EOL codes.
      */
     int code_bytes =
-    ((columns * (ss->K == 0 ? 9 : 12)) >> 4) + 20;	/* add slop */
+    ((columns * (ss->K == 0 ? 9 : 14)) >> 4) + 20;	/* add slop */
     int raster = ss->raster =
         ROUND_UP((columns + 7) >> 3, ss->DecodedByteAlign);
 
