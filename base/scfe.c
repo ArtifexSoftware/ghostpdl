@@ -139,7 +139,7 @@ s_CFE_init(register stream_state * st)
      * we may add up to 6 12-bit EOL codes.
      */
     int code_bytes =
-    ((columns * (ss->K == 0 ? 9 : 14)) >> 4) + 20;	/* add slop */
+    (((columns * (ss->K == 0 ? 9 : 14)) + 15) >> 4) + 20;	/* add slop */
     int raster = ss->raster =
         ROUND_UP((columns + 7) >> 3, ss->DecodedByteAlign);
 
