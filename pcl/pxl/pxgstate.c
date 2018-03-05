@@ -254,9 +254,11 @@ int
 px_initgraphics(px_state_t * pxs)
 {
     gs_gstate *pgs = pxs->pgs;
+    int code;
 
     px_gstate_reset(pxs->pxgs);
-    gs_initgraphics(pgs);
+    code = gs_initgraphics(pgs);
+    if (code < 0) return code;
 
     gs_setfilladjust(pgs, 0.5, 0.5);
 
@@ -273,7 +275,8 @@ px_initgraphics(px_state_t * pxs)
 
         /* We need the H-P interpretation of zero-length lines */
         /* and of using bevel joins for the segments of flattened curves. */
-        (void)gs_setdotlength(pgs, 72.0 / 300, true);
+        code = gs_setdotlength(pgs, 72.0 / 300, true);
+        if (code < 0) return code;
     }
     /* we always clamp coordinates hp does not seem to report
        limit checks in paths */

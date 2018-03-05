@@ -467,20 +467,22 @@ pcl_get_pattern_resolution(pcl_state_t * pcs, gs_point * pattern_res)
 }
 #undef DEVICE_RES_PATTERNS
 /*
- * Return the pointer to a built-in pattern, building it if inecessary.
+ * Return the pointer to a built-in pattern, building it if necessary.
  */
 static pcl_pattern_t *
 get_bi_pattern(pcl_state_t * pcs, int indx)
 {
     if (pcs->bi_pattern_array[indx] == 0) {
         gs_point pattern_res;
+        int code;
 
         pcl_get_pattern_resolution(pcs, &pattern_res);
-        (void)pcl_pattern_build_pattern(&(pcs->bi_pattern_array[indx]),
+        code = pcl_pattern_build_pattern(&(pcs->bi_pattern_array[indx]),
                                         &(bi_pixmap_array[indx]),
                                         pcl_pattern_uncolored,
                                         (int)pattern_res.x,
                                         (int)pattern_res.y, pcs->memory);
+        if (code < 0) return NULL;
         pcs->bi_pattern_array[indx]->ppat_data->storage = pcds_internal;
     }
     return pcs->bi_pattern_array[indx];
@@ -537,13 +539,15 @@ pcl_pattern_get_solid_pattern(pcl_state_t * pcs)
 {
     if (pcs->psolid_pattern == 0) {
         gs_point pattern_res;
+        int code;
 
         pcl_get_pattern_resolution(pcs, &pattern_res);
-        (void)pcl_pattern_build_pattern(&(pcs->psolid_pattern),
+        code = pcl_pattern_build_pattern(&(pcs->psolid_pattern),
                                         &solid_pattern_pixmap,
                                         pcl_pattern_uncolored,
                                         (int)pattern_res.x,
                                         (int)pattern_res.y, pcs->memory);
+        if (code < 0) return NULL;
         pcs->psolid_pattern->ppat_data->storage = pcds_internal;
     }
     return pcs->psolid_pattern;
@@ -557,13 +561,15 @@ pcl_pattern_get_unsolid_pattern(pcl_state_t * pcs)
 {
     if (pcs->punsolid_pattern == 0) {
         gs_point pattern_res;
+        int code;
 
         pcl_get_pattern_resolution(pcs, &pattern_res);
-        (void)pcl_pattern_build_pattern(&(pcs->punsolid_pattern),
+        code = pcl_pattern_build_pattern(&(pcs->punsolid_pattern),
                                         &unsolid_pattern_pixmap,
                                         pcl_pattern_uncolored,
                                         (int)pattern_res.x,
                                         (int)pattern_res.y, pcs->memory);
+        if (code < 0) return NULL;
         pcs->punsolid_pattern->ppat_data->storage = pcds_internal;
     }
     return pcs->punsolid_pattern;

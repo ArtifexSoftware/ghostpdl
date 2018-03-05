@@ -899,6 +899,7 @@ static int pjl_dist_process_number(gs_memory_t *mem, gs_c_param_list *plist, gs_
 {
     char *start = *p;
     bool integer = true;
+    int code = 0;
 
     while (**p != ' ' && **p != 0x00) {
         if (**p == '.')
@@ -914,13 +915,13 @@ static int pjl_dist_process_number(gs_memory_t *mem, gs_c_param_list *plist, gs_
 
     if (!integer) {
         float f = (float)atof(start);
-        param_write_float((gs_param_list *)plist, key, (float *)&f);
+        code = param_write_float((gs_param_list *)plist, key, (float *)&f);
     } else {
         long i = atol(start);
-        param_write_long((gs_param_list *)plist, key, &i);
+        code = param_write_long((gs_param_list *)plist, key, &i);
     }
 
-    return 0;
+    return code;
 }
 
 /* Given a string to parse, parse it and add what we find to the supplied
@@ -940,7 +941,7 @@ static int pjl_dist_add_tokens_to_list(gs_param_list *plist, char **p)
             case 'f':
                 if (strncmp(p1, "false", 5) == 0) {
                     bool t = false;
-                    param_write_bool((gs_param_list *)plist, key, &t);
+                    code = param_write_bool((gs_param_list *)plist, key, &t);
                     p1 += 5;
                     key = NULL;
                 } else {
@@ -950,7 +951,7 @@ static int pjl_dist_add_tokens_to_list(gs_param_list *plist, char **p)
             case 't':
                 if (strncmp(p1, "true", 4) == 0) {
                     bool t = true;
-                    param_write_bool((gs_param_list *)plist, key, &t);
+                    code = param_write_bool((gs_param_list *)plist, key, &t);
                     p1 += 4;
                     key = NULL;
                 } else {

@@ -612,12 +612,14 @@ process_mask_row(pcl_raster_t * prast)
         pcl_state_t *pcs = prast->pcs;
 
         pen = prast->mask_pen;
-        pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, true);
+        code = pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, true);
+        if (code < 0) return code;
         prast->gen_mask_row(prast);
         code = gs_image_next(pen,
                              prast->mask_buff,
                              (prast->src_width + 7) / 8, &dummy);
-        pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->pattern_id, true);
+        if (code < 0) return code;
+        code = pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->pattern_id, true);
     }
     return code;
 }

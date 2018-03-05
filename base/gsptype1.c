@@ -1139,7 +1139,7 @@ gs_makepixmappattern(
          * color, clear these so that there isn't an extra retained
          * reference to the Pattern object.
          */
-        gs_setgray(pinst->saved, 0.0);
+        code = gs_setgray(pinst->saved, 0.0);
 
     }
     gs_setmatrix(pgs, &smat);

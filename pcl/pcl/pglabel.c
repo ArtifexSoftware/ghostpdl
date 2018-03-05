@@ -1453,13 +1453,18 @@ hpgl_LB(hpgl_args_t * pargs, hpgl_state_t * pgls)
     const byte *p = pargs->source.ptr;
     const byte *rlimit = pargs->source.limit;
     bool print_terminator = pgls->g.label.print_terminator;
+    int code = 0;
 
     if (pargs->phase == 0) {
         /* initialize the character buffer and CTM first time only */
         hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
         hpgl_call(hpgl_init_label_buffer(pgls));
         hpgl_call(hpgl_set_ctm(pgls));
-        hpgl_call(hpgl_set_clipping_region(pgls, hpgl_rm_vector));
+        code = hpgl_set_clipping_region(pgls, hpgl_rm_vector);
+        if (code < 0) {
+            hpgl_destroy_label_buffer(pgls);
+            return code;
+        }
         pgls->g.label.initial_pos = pgls->g.pos;
         hpgl_call(hpgl_add_point_to_path
                   (pgls, pgls->g.pos.x, pgls->g.pos.y,
@@ -1482,8 +1487,12 @@ hpgl_LB(hpgl_args_t * pargs, hpgl_state_t * pgls)
             if (!print_terminator) {
                 gs_point lo_offsets;
 
-                hpgl_call(hpgl_process_buffer(pgls, &lo_offsets));
+                code = hpgl_process_buffer(pgls, &lo_offsets);
                 hpgl_destroy_label_buffer(pgls);
+                if (code < 0) {
+                    hpgl_free_stick_fonts(pgls);
+                    return code;
+                }
                 pargs->source.ptr = p;
                 /*
                  * Depending on the DV/LO combination, conditionally

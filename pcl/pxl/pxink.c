@@ -743,8 +743,7 @@ px_set_paint(const px_paint_t * ppt, px_state_t * pxs)
     type = ppt->type;
     switch (type) {
         case pxpNull:
-            gs_setnullcolor(pgs);
-            return 0;
+            return gs_setnullcolor(pgs);
         case pxpRGB:
             return gs_setrgbcolor(pgs, ppt->value.rgb[0], ppt->value.rgb[1],
                                   ppt->value.rgb[2]);

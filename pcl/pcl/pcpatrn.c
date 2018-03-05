@@ -145,8 +145,10 @@ unshare_ccolor(pcl_state_t * pcs,
         /* set the color space to pure white */
         pnew->pbase = 0;
         code = pcl_cs_base_build_white_cspace(pcs, &(pnew->pbase), pmem);
-        if (code < 0)
+        if (code < 0) {
+            gs_free_object(pmem, pnew, "allocate PCL client color");
             return code;
+        }
         pnew->ccolor.paint = white_paint;
         pnew->ccolor.pattern = 0;
     }
@@ -914,7 +916,8 @@ pattern_set_shade_gl(pcl_state_t * pcs, int inten,      /* intensity value */
     if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen) ||
         (pcs->pattern_transparent && inten == 0))
         pptrn = pcl_pattern_get_unsolid_pattern(pcs);
-    else if (pptrn == 0)
+
+    if (pptrn == NULL)
         return (inten > 0 ? pattern_set_pen(pcs, pen, false)
                 : pattern_set_white(pcs, 0, 0));
 
@@ -952,7 +955,8 @@ pattern_set_hatch_gl(pcl_state_t * pcs, int indx,       /* cross-hatch pattern i
     /* check if the current pen is white; if so, use the "unsolid" pattern */
     if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
         pptrn = pcl_pattern_get_unsolid_pattern(pcs);
-    else if (pptrn == 0)
+
+    if (pptrn == NULL)
         return pattern_set_pen(pcs, pen, false);
 
     pcl_xfm_gl_set_pat_ref_pt(pcs);
@@ -997,8 +1001,10 @@ pattern_set_user_gl(pcl_state_t * pcs, int id,  /* pattern id. */
         if (pptrn->ppat_data->type == pcl_pattern_uncolored) {
 
             /* check if the current pen is white */
-            if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
+            if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen)) {
                 pptrn = pcl_pattern_get_unsolid_pattern(pcs);
+                if (pptrn == NULL) return e_Memory;
+            }
             return set_uncolored_palette_pattern(pcs, pptrn, pen);
 
         } else
@@ -1030,8 +1036,10 @@ pattern_set_gl_RF(pcl_state_t * pcs, int indx,  /* GL/2 RF pattern index */
         if (pptrn->ppat_data->type == pcl_pattern_uncolored) {
 
             /* check if the current pen is white */
-            if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
+            if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen)) {
                 pptrn = pcl_pattern_get_unsolid_pattern(pcs);
+                if (pptrn == NULL) return e_Memory;
+            }
             return set_uncolored_palette_pattern(pcs, pptrn, pen);
 
         } else

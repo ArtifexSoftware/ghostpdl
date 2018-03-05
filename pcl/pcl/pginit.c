@@ -222,7 +222,6 @@ hpgl_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
                      "hpgl_do_reset polygon buffer");
         /* if we have allocated memory for a stick font free the memory */
         hpgl_free_stick_fonts(pcs);
-        hpgl_destroy_label_buffer(pcs);
     }
     return 0;
 }

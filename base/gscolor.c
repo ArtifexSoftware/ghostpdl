@@ -151,11 +151,13 @@ gs_setrgbcolor(gs_gstate * pgs, double r, double g, double b)
 int
 gs_setnullcolor(gs_gstate * pgs)
 {
+    int code = 0;
+
     if (pgs->in_cachedevice)
         return_error(gs_error_undefined);
-    gs_setgray(pgs, 0.0);	/* set color space to something harmless */
+    code = gs_setgray(pgs, 0.0);	/* set color space to something harmless */
     color_set_null(gs_currentdevicecolor_inline(pgs));
-    return 0;
+    return code;
 }
 
 /* settransfer */

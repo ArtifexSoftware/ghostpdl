@@ -219,7 +219,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         return param_write_int(plist, "MaxPatternBitmap", &dev->MaxPatternBitmap);
     }
     if (strcmp(Param, "PageUsesTransparency") == 0) {
-        param_write_bool(plist, "PageUsesTransparency", &dev->page_uses_transparency);
+        return param_write_bool(plist, "PageUsesTransparency", &dev->page_uses_transparency);
     }
     if (strcmp(Param, "MaxBitmap") == 0) {
         return param_write_long(plist, "MaxBitmap", &(dev->space_params.MaxBitmap));
