@@ -311,6 +311,7 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
     gs_point page_size_pixels;
     gs_matrix points2device;
     bool no_pv_2 = false;
+    int code;
 
     /* check for 2.1 no parameter special cases */
     {
@@ -456,57 +457,70 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
         int iv;
         bool bv;
         int ecode = 0;
-        int code;
 
         fa.data = fv;
         fa.persistent = false;
 
         gs_c_param_list_write(&list, mem);
         iv = pxs->orientation;  /* might not be an int */
-        param_write_int(plist, "Orientation", &iv);
+        ecode = param_write_int(plist, "Orientation", &iv);
         ecode = px_put1(dev, &list, ecode);
+        if (ecode < 0)
+            return ecode;
 
         gs_c_param_list_write(&list, mem);
         fv[0] = pxs->media_dims.x;
         fv[1] = pxs->media_dims.y;
         fa.size = 2;
-        code = param_write_float_array(plist, ".MediaSize", &fa);
-        if (code < 0) return code;
+        ecode = param_write_float_array(plist, ".MediaSize", &fa);
         ecode = px_put1(dev, &list, ecode);
-        gs_c_param_list_write(&list, mem);
+        if (ecode < 0)
+            return ecode;
 
         iv = pxs->media_source; /* might not be an int */
         if (iv < 0 || iv >= pxeMediaSource_next)
             px_record_warning("IllegalMediaSource", false, pxs);
         else {
             gs_c_param_list_write(&list, mem);
-            param_write_int(plist, ".MediaSource", &iv);
+            ecode = param_write_int(plist, ".MediaSource", &iv);
             ecode = px_put1(dev, &list, ecode);
+            if (ecode < 0)
+                return ecode;
         }
 
         gs_c_param_list_write(&list, mem);
-        param_write_bool(plist, "Duplex", &pxs->duplex);
+        ecode = param_write_bool(plist, "Duplex", &pxs->duplex);
         ecode = px_put1(dev, &list, ecode);
+        if (ecode < 0)
+            return ecode;
 
         gs_c_param_list_write(&list, mem);
         bv = pxs->duplex_page_mode == eDuplexHorizontalBinding;
-        param_write_bool(plist, "Tumble", &bv);
+        ecode = param_write_bool(plist, "Tumble", &bv);
         ecode = px_put1(dev, &list, ecode);
+        if (ecode < 0)
+            return ecode;
 
         gs_c_param_list_write(&list, mem);
         bv = !pxs->duplex_back_side;
-        param_write_bool(plist, "FirstSide", &bv);
+        ecode = param_write_bool(plist, "FirstSide", &bv);
         ecode = px_put1(dev, &list, ecode);
+        if (ecode < 0)
+            return ecode;
 
         gs_c_param_list_write(&list, mem);
         iv = pxs->media_destination;    /* might not be an int */
-        param_write_int(plist, ".MediaDestination", &iv);
+        ecode = param_write_int(plist, ".MediaDestination", &iv);
         ecode = px_put1(dev, &list, ecode);
+        if (ecode < 0)
+            return ecode;
 
         gs_c_param_list_write(&list, mem);
         iv = pxs->media_type;   /* might not be an int */
-        param_write_int(plist, ".MediaType", &iv);
+        ecode = param_write_int(plist, ".MediaType", &iv);
         ecode = px_put1(dev, &list, ecode);
+        if (ecode < 0)
+            return ecode;
 
         /*
          * We aren't sure what to do if the device rejects the parameter
@@ -525,9 +539,8 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
 #undef plist
     }
     {
-        int code;
-
-        px_initgraphics(pxs);
+        code = px_initgraphics(pxs);
+        if (code < 0) return code;
         gs_currentmatrix(pgs, &points2device);
         gs_dtransform(pgs, pxs->media_dims.x, pxs->media_dims.y,
                       &page_size_pixels);
@@ -593,15 +606,17 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
         args.pv[1] = &device_matrix;    /* DeviceMatrix */
         device_matrix.type = pxd_scalar | pxd_ubyte;
         device_matrix.value.i = eDeviceBest;
-        pxSetHalftoneMethod(&args, pxs);
+        code = pxSetHalftoneMethod(&args, pxs);
+        if (code < 0) return code;
     }
     /* Initialize other parts of the PCL XL state. */
     px_dict_init(&pxs->page_pattern_dict, pxs->memory, px_free_pattern);
-    gs_erasepage(pgs);
+    code = gs_erasepage(pgs);
+    if (code < 0) return code;
     pxs->have_page = false;
     /* Make sure there is a legitimate halftone installed. */
     {
-        int code = px_set_halftone(pxs);
+        code = px_set_halftone(pxs);
 
         if (code < 0)
             return code;
@@ -612,7 +627,7 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
      * this state from the stack.
      */
     {
-        int code = pxPushGS(NULL, pxs);
+        code = pxPushGS(NULL, pxs);
 
         if (code < 0)
             return code;
@@ -629,7 +644,8 @@ pxBeginPageFromPassthrough(px_state_t * pxs)
     gs_point page_size_pixels;
     gs_matrix points2device;
 
-    px_initgraphics(pxs);
+    code = px_initgraphics(pxs);
+    if (code < 0) return code;
     gs_currentmatrix(pgs, &points2device);
     gs_dtransform(pgs, pxs->media_dims.x, pxs->media_dims.y,
                   &page_size_pixels);
