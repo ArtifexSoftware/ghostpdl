@@ -58,15 +58,12 @@ float_value(const pcl_value_t * pv)
  * "put" parameters to the device.
  */
 static int
-end_param1(gs_c_param_list * alist, pcl_state_t * pcs)
+transfer_param1(gs_c_param_list * alist, pcl_state_t * pcs)
 {
-    int code;
-
     gs_c_param_list_read(alist);
-    code = gs_gstate_putdeviceparams(pcs->pgs, gs_currentdevice(pcs->pgs),
+
+    return gs_gstate_putdeviceparams(pcs->pgs, gs_currentdevice(pcs->pgs),
                                       (gs_param_list *) alist);
-    gs_c_param_list_release(alist);
-    return code;
 }
 
 /*
@@ -76,10 +73,15 @@ int
 put_param1_bool(pcl_state_t * pcs, gs_param_name pkey, bool value)
 {
     gs_c_param_list list;
+    int code;
 
     gs_c_param_list_write(&list, pcs->memory);
-    /*code = */ param_write_bool((gs_param_list *) & list, pkey, &value);
-    return end_param1(&list, pcs);
+    code = param_write_bool((gs_param_list *) & list, pkey, &value);
+    if (code >= 0)
+        code = transfer_param1(&list, pcs);
+
+    gs_c_param_list_release(&list);
+    return code;
 }
 
 /*
@@ -90,10 +92,15 @@ put_param1_float(pcl_state_t * pcs, gs_param_name pkey, double value)
 {
     gs_c_param_list list;
     float fval = value;
+    int code;
 
     gs_c_param_list_write(&list, pcs->memory);
-    /*code = */ param_write_float((gs_param_list *) & list, pkey, &fval);
-    return end_param1(&list, pcs);
+    code = param_write_float((gs_param_list *) & list, pkey, &fval);
+    if (code >= 0)
+        code = transfer_param1(&list, pcs);
+
+    gs_c_param_list_release(&list);
+    return code;
 }
 
 /*
@@ -103,10 +110,15 @@ int
 put_param1_int(pcl_state_t * pcs, gs_param_name pkey, int value)
 {
     gs_c_param_list list;
+    int code;
 
     gs_c_param_list_write(&list, pcs->memory);
-    /*code = */ param_write_int((gs_param_list *) & list, pkey, &value);
-    return end_param1(&list, pcs);
+    code = param_write_int((gs_param_list *) & list, pkey, &value);
+    if (code >= 0)
+        code = transfer_param1(&list, pcs);
+
+    gs_c_param_list_release(&list);
+    return code;
 }
 
 /*
@@ -126,10 +138,12 @@ put_param1_float_array(pcl_state_t * pcs, gs_param_name pkey, float pf[2]
     pf_array.persistent = false;
 
     gs_c_param_list_write(&list, pcs->memory);
-    code = param_write_float_array((gs_param_list *) & list, pkey,
-                                         &pf_array);
-    if (code < 0) return code;
-    return end_param1(&list, pcs);
+    code = param_write_float_array((gs_param_list *) & list, pkey, &pf_array);
+    if (code >= 0)
+        code = transfer_param1(&list, pcs);
+
+    gs_c_param_list_release(&list);
+    return code;
 }
 
 int
@@ -137,12 +151,16 @@ put_param1_string(pcl_state_t * pcs, gs_param_name pkey, const char *str)
 {
     gs_c_param_list list;
     gs_param_string paramstr;
+    int code;
 
     gs_c_param_list_write(&list, pcs->memory);
     param_string_from_string(paramstr, str);
-    /* code = */ param_write_string((gs_param_list *) & list, pkey,
-                                    &paramstr);
-    return end_param1(&list, pcs);
+    code = param_write_string((gs_param_list *) & list, pkey, &paramstr);
+    if (code >= 0)
+        code = transfer_param1(&list, pcs);
+
+    gs_c_param_list_release(&list);
+    return code;
 }
 
 /* initilialize the parser states */
