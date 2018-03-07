@@ -100,6 +100,7 @@ gs_make_pattern_common(gs_client_color *pcc,
 {
     gs_pattern_instance_t *pinst;
     gs_gstate *saved;
+    int code = 0;
 
     if (mem == 0)
         mem = gs_gstate_memory(pgs);
@@ -114,11 +115,11 @@ gs_make_pattern_common(gs_client_color *pcc,
         return_error(gs_error_VMerror);
     }
     gs_concat(saved, pmat);
-    gs_newpath(saved);
+    code = gs_newpath(saved);
     pinst->saved = saved;
     pcc->pattern = pinst;
     pcc->pattern->pattern_id = gs_next_ids(mem, 1);
-    return 0;
+    return code;
 }
 
 /* Free the saved gstate when freeing a Pattern instance. */
