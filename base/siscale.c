@@ -262,29 +262,37 @@ calculate_contrib(
             p[j].weight = 0;
         if (squeeze) {
             double sum = 0;
+            double e = 0;
             for (j = left; j <= right; ++j)
                 sum += fproc((center - j) / fscale) / fscale;
             for (j = left; j <= right; ++j) {
                 double weight = fproc((center - j) / fscale) / fscale / sum;
                 int n = clamp_pixel(j);
                 int k = n - first_pixel;
+                int ie;
 
-                p[k].weight +=
-                    (int)((weight * rescale_factor) * CONTRIB_SCALE + 0.5);
+                e += (weight * rescale_factor) * CONTRIB_SCALE;
+                ie = (int)(e + 0.5);
+                p[k].weight += ie;
+                e -= ie;
                 if_debug2('w', " %d %f", k, (float)p[k].weight);
             }
 
         } else {
             double sum = 0;
+            double e = 0;
             for (j = left; j <= right; ++j)
                 sum += fproc(center - j);
             for (j = left; j <= right; ++j) {
                 double weight = fproc(center - j) / sum;
                 int n = clamp_pixel(j);
                 int k = n - first_pixel;
+                int ie;
 
-                p[k].weight +=
-                    (int)((weight * rescale_factor) * CONTRIB_SCALE + 0.5);
+                e += (weight * rescale_factor) * CONTRIB_SCALE;
+                ie = (int)(e + 0.5);
+                p[k].weight += ie;
+                e -= ie;
                 if_debug2('w', " %d %f", k, (float)p[k].weight);
             }
         }
