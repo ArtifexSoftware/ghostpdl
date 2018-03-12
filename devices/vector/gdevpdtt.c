@@ -2794,7 +2794,12 @@ pdf_choose_output_char_code(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_char
 static int
 pdf_choose_output_glyph_hame(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_const_string *gnstr, gs_glyph glyph)
 {
-    if (penum->orig_font->FontType == ft_composite || penum->orig_font->procs.glyph_name(penum->orig_font, glyph, gnstr) < 0) {
+    if (penum->orig_font->FontType == ft_composite || penum->orig_font->procs.glyph_name(penum->orig_font, glyph, gnstr) < 0
+        || (penum->orig_font->FontType > 42 && gnstr->size == 7 && strcmp(gnstr->data, ".notdef")== 0)) {
+        /* If we're capturing a PCL bitmap, and the glyph comes back with a name of '/.notdef' then
+         * generate a name instead. There's nothing wrong technically with using /.notdef, but Acrobat does
+         * 'special stuff' with that name, and messes up the display. See bug #699102.
+         */
         /* couldn't find a glyph name, so make one up! This can happen if we are handling PCL and the glyph
          * (character code) is less than 29, the PCL glyph names start with /.notdef at 29. We also need to
          * do this for composite fonts.
