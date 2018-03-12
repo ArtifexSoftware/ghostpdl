@@ -147,28 +147,41 @@ void _cmsAllocAlarmCodesChunk(struct _cmsContext_struct* ctx,
 void CMSEXPORT cmsDeleteTransform(cmsContext ContextID, cmsHTRANSFORM hTransform)
 {
     _cmsTRANSFORM* p = (_cmsTRANSFORM*) hTransform;
+    _cmsTRANSFORMCORE *core;
+    cmsUInt32Number refs;
 
-    _cmsAssert(p != NULL);
+    if (p == NULL)
+        return;
 
-    if (p -> GamutCheck)
-        cmsPipelineFree(ContextID, p -> GamutCheck);
+    core = p->core;
 
-    if (p -> Lut)
-        cmsPipelineFree(ContextID, p -> Lut);
+    _cmsAssert(core != NULL);
 
-    if (p ->InputColorant)
-        cmsFreeNamedColorList(ContextID, p ->InputColorant);
-
-    if (p -> OutputColorant)
-        cmsFreeNamedColorList(ContextID, p ->OutputColorant);
-
-    if (p ->Sequence)
-        cmsFreeProfileSequenceDescription(ContextID, p ->Sequence);
-
-    if (p ->UserData)
-        p ->FreeUserData(ContextID, p ->UserData);
-
+    refs = _cmsAdjustReferenceCount(&core->refs, -1);
     _cmsFree(ContextID, (void *) p);
+
+    if (refs != 0)
+        return;
+
+    if (core->GamutCheck)
+        cmsPipelineFree(ContextID, core->GamutCheck);
+
+    if (core->Lut)
+        cmsPipelineFree(ContextID, core->Lut);
+
+    if (core->InputColorant)
+        cmsFreeNamedColorList(ContextID, core->InputColorant);
+
+    if (core->OutputColorant)
+        cmsFreeNamedColorList(ContextID, core->OutputColorant);
+
+    if (core->Sequence)
+        cmsFreeProfileSequenceDescription(ContextID, core->Sequence);
+
+    if (core->UserData)
+        core->FreeUserData(ContextID, core->UserData);
+
+    _cmsFree(ContextID, (void *)core);
 }
 
 // Apply transform.
@@ -250,6 +263,7 @@ void FloatXFORM(cmsContext ContextID, _cmsTRANSFORM* p,
     cmsFloat32Number fIn[cmsMAXCHANNELS], fOut[cmsMAXCHANNELS];
     cmsFloat32Number OutOfGamut;
     cmsUInt32Number i, j, c, strideIn, strideOut;
+    _cmsTRANSFORMCORE *core = p->core;
 
     _cmsHandleExtraChannels(ContextID, p, in, out, PixelsPerLine, LineCount, Stride);
 
@@ -268,10 +282,10 @@ void FloatXFORM(cmsContext ContextID, _cmsTRANSFORM* p,
             accum = p->FromInputFloat(ContextID, p, fIn, accum, Stride->BytesPerPlaneIn);
 
             // Any gamut chack to do?
-            if (p->GamutCheck != NULL) {
+            if (core->GamutCheck != NULL) {
 
                 // Evaluate gamut marker.
-                cmsPipelineEvalFloat(ContextID, fIn, &OutOfGamut, p->GamutCheck);
+                cmsPipelineEvalFloat(ContextID, fIn, &OutOfGamut, core->GamutCheck);
 
                 // Is current color out of gamut?
                 if (OutOfGamut > 0.0) {
@@ -283,13 +297,13 @@ void FloatXFORM(cmsContext ContextID, _cmsTRANSFORM* p,
                 }
                 else {
                     // No, proceed normally
-                    cmsPipelineEvalFloat(ContextID, fIn, fOut, p->Lut);
+                    cmsPipelineEvalFloat(ContextID, fIn, fOut, core->Lut);
                 }
             }
             else {
 
                 // No gamut check at all
-                cmsPipelineEvalFloat(ContextID, fIn, fOut, p->Lut);
+                cmsPipelineEvalFloat(ContextID, fIn, fOut, core->Lut);
             }
 
 
@@ -425,20 +439,22 @@ void TransformOnePixelWithGamutCheck(cmsContext ContextID, _cmsTRANSFORM* p,
                                      cmsUInt16Number wOut[])
 {
     cmsUInt16Number wOutOfGamut;
+    _cmsTRANSFORMCORE *core = p->core;
 
-    p ->GamutCheck ->Eval16Fn(ContextID, wIn, &wOutOfGamut, p ->GamutCheck ->Data);
+    core->GamutCheck->Eval16Fn(ContextID, wIn, &wOutOfGamut, core->GamutCheck->Data);
     if (wOutOfGamut >= 1) {
 
-        cmsUInt16Number i;
+        cmsUInt32Number i;
+        cmsUInt32Number n = core->Lut->OutputChannels;
         _cmsAlarmCodesChunkType* ContextAlarmCodes = (_cmsAlarmCodesChunkType*) _cmsContextGetClientChunk(ContextID, AlarmCodesContext);
 
-        for (i=0; i < p ->Lut->OutputChannels; i++) {
+        for (i=0; i < n; i++) {
 
             wOut[i] = ContextAlarmCodes ->AlarmCodes[i];
         }
     }
     else
-        p ->Lut ->Eval16Fn(ContextID, wIn, wOut, p -> Lut->Data);
+        core->Lut->Eval16Fn(ContextID, wIn, wOut, core->Lut->Data);
 }
 
 // Gamut check, No caché, 16 bits.
@@ -923,16 +939,16 @@ cmsBool  _cmsRegisterTransformPlugin(cmsContext ContextID, cmsPluginBase* Data)
 
 void CMSEXPORT _cmsSetTransformUserData(struct _cmstransform_struct *CMMcargo, void* ptr, _cmsFreeUserDataFn FreePrivateDataFn)
 {
-    _cmsAssert(CMMcargo != NULL);
-    CMMcargo ->UserData = ptr;
-    CMMcargo ->FreeUserData = FreePrivateDataFn;
+    _cmsAssert(CMMcargo != NULL && CMMcargo->core != NULL);
+    CMMcargo->core->UserData = ptr;
+    CMMcargo->core->FreeUserData = FreePrivateDataFn;
 }
 
 // returns the pointer defined by the plug-in to store private data
 void * CMSEXPORT _cmsGetTransformUserData(struct _cmstransform_struct *CMMcargo)
 {
-    _cmsAssert(CMMcargo != NULL);
-    return CMMcargo ->UserData;
+    _cmsAssert(CMMcargo != NULL && CMMcargo->core != NULL);
+    return CMMcargo->core->UserData;
 }
 
 // returns the current formatters
@@ -962,7 +978,7 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
         if (dwFlags & cmsFLAGS_GAMUTCHECK)
             p ->xform = PrecalculatedXFORMGamutCheck;  // Gamut check, no cach<E9>
         else if ((InputFormat & ~COLORSPACE_SH(31)) == (OutputFormat & ~COLORSPACE_SH(31)) &&
-                 _cmsLutIsIdentity(p->Lut))
+                 _cmsLutIsIdentity(p->core->Lut))
             p ->xform = PrecalculatedXFORMIdentity;
         else
             p ->xform = PrecalculatedXFORM;  // No cach<E9>, no gamut check
@@ -973,7 +989,7 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
 	return;
     }
     if ((InputFormat & ~COLORSPACE_SH(31)) == (OutputFormat & ~COLORSPACE_SH(31)) &&
-        _cmsLutIsIdentity(p->Lut)) {
+        _cmsLutIsIdentity(p->core->Lut)) {
         p ->xform = PrecalculatedXFORMIdentity; /* No point in a cache here! */
         return;
     }
@@ -1058,27 +1074,37 @@ static
 _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
                                                cmsUInt32Number Intent, cmsUInt32Number* InputFormat, cmsUInt32Number* OutputFormat, cmsUInt32Number* dwFlags)
 {
-     _cmsTransformPluginChunkType* ctx = ( _cmsTransformPluginChunkType*) _cmsContextGetClientChunk(ContextID, TransformPlugin);
-     _cmsTransformCollection* Plugin;
+    _cmsTransformPluginChunkType* ctx = ( _cmsTransformPluginChunkType*) _cmsContextGetClientChunk(ContextID, TransformPlugin);
+    _cmsTransformCollection* Plugin;
+    _cmsTRANSFORMCORE *core;
 
-       // Allocate needed memory
-       _cmsTRANSFORM* p = (_cmsTRANSFORM*)_cmsMallocZero(ContextID, sizeof(_cmsTRANSFORM));
-       if (!p) {
-              cmsPipelineFree(ContextID, lut);
-              return NULL;
-       }
+    // Allocate needed memory
+    _cmsTRANSFORM* p = (_cmsTRANSFORM*)_cmsMallocZero(ContextID, sizeof(_cmsTRANSFORM));
+    if (!p) {
+        cmsPipelineFree(ContextID, lut);
+        return NULL;
+    }
 
-       // Store the proposed pipeline
-       p->Lut = lut;
+    core = (_cmsTRANSFORMCORE*)_cmsMallocZero(ContextID, sizeof(*core));
+    if (!core) {
+        _cmsFree(ContextID, p);
+        cmsPipelineFree(ContextID, lut);
+        return NULL;
+    }
+
+    p->core = core;
+    core->refs = 1;
+    // Store the proposed pipeline
+    p->core->Lut = lut;
 
        // Let's see if any plug-in want to do the transform by itself
-       if (p->Lut != NULL) {
+       if (core->Lut != NULL) {
 
               for (Plugin = ctx->TransformCollection;
                      Plugin != NULL;
                      Plugin = Plugin->Next) {
 
-                     if (Plugin->Factory(ContextID, &p->xform, &p->UserData, &p->FreeUserData, &p->Lut, InputFormat, OutputFormat, dwFlags)) {
+                     if (Plugin->Factory(ContextID, &p->xform, &core->UserData, &core->FreeUserData, &core->Lut, InputFormat, OutputFormat, dwFlags)) {
 
                             // Last plugin in the declaration order takes control. We just keep
                             // the original parameters as a logging.
@@ -1088,7 +1114,7 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
 
                             p->InputFormat = *InputFormat;
                             p->OutputFormat = *OutputFormat;
-                            p->dwOriginalFlags = *dwFlags;
+                            core->dwOriginalFlags = *dwFlags;
 
                             // Fill the formatters just in case the optimized routine is interested.
                             // No error is thrown if the formatter doesn't exist. It is up to the optimization
@@ -1107,8 +1133,8 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
                      }
               }
 
-              // Not suitable for the transform plug-in, let's check  the pipeline plug-in
-              _cmsOptimizePipeline(ContextID, &p->Lut, Intent, InputFormat, OutputFormat, dwFlags);
+              // Not suitable for the transform plug-in, let's check the pipeline plug-in
+              _cmsOptimizePipeline(ContextID, &core->Lut, Intent, InputFormat, OutputFormat, dwFlags);
        }
 
     // Check whatever this is a true floating point transform
@@ -1167,8 +1193,8 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
 
     p ->InputFormat     = *InputFormat;
     p ->OutputFormat    = *OutputFormat;
-    p ->dwOriginalFlags = *dwFlags;
-    p ->UserData        = NULL;
+    core->dwOriginalFlags = *dwFlags;
+    core->UserData        = NULL;
     return p;
 }
 
@@ -1350,18 +1376,18 @@ cmsHTRANSFORM CMSEXPORT cmsCreateExtendedTransform(cmsContext ContextID,
     }
 
     // Keep values
-    xform ->EntryColorSpace = EntryColorSpace;
-    xform ->ExitColorSpace  = ExitColorSpace;
-    xform ->RenderingIntent = Intents[nProfiles-1];
+    xform->core->EntryColorSpace = EntryColorSpace;
+    xform->core->ExitColorSpace  = ExitColorSpace;
+    xform->core->RenderingIntent = Intents[nProfiles-1];
 
     // Take white points
-    SetWhitePoint(ContextID, &xform->EntryWhitePoint, (cmsCIEXYZ*) cmsReadTag(ContextID, hProfiles[0], cmsSigMediaWhitePointTag));
-    SetWhitePoint(ContextID, &xform->ExitWhitePoint,  (cmsCIEXYZ*) cmsReadTag(ContextID, hProfiles[nProfiles-1], cmsSigMediaWhitePointTag));
+    SetWhitePoint(ContextID, &xform->core->EntryWhitePoint, (cmsCIEXYZ*) cmsReadTag(ContextID, hProfiles[0], cmsSigMediaWhitePointTag));
+    SetWhitePoint(ContextID, &xform->core->ExitWhitePoint,  (cmsCIEXYZ*) cmsReadTag(ContextID, hProfiles[nProfiles-1], cmsSigMediaWhitePointTag));
 
 
     // Create a gamut check LUT if requested
     if (hGamutProfile != NULL && (dwFlags & cmsFLAGS_GAMUTCHECK))
-        xform ->GamutCheck  = _cmsCreateGamutCheckPipeline(ContextID, hProfiles,
+        xform->core->GamutCheck  = _cmsCreateGamutCheckPipeline(ContextID, hProfiles,
                                                         BPC, Intents,
                                                         AdaptationStates,
                                                         nGamutPCSposition,
@@ -1372,7 +1398,7 @@ cmsHTRANSFORM CMSEXPORT cmsCreateExtendedTransform(cmsContext ContextID,
     if (cmsIsTag(ContextID, hProfiles[0], cmsSigColorantTableTag)) {
 
         // Input table can only come in this way.
-        xform ->InputColorant = cmsDupNamedColorList(ContextID, (cmsNAMEDCOLORLIST*) cmsReadTag(ContextID, hProfiles[0], cmsSigColorantTableTag));
+        xform->core->InputColorant = cmsDupNamedColorList(ContextID, (cmsNAMEDCOLORLIST*) cmsReadTag(ContextID, hProfiles[0], cmsSigColorantTableTag));
     }
 
     // Output is a little bit more complex.
@@ -1382,35 +1408,35 @@ cmsHTRANSFORM CMSEXPORT cmsCreateExtendedTransform(cmsContext ContextID,
         if (cmsIsTag(ContextID, hProfiles[nProfiles-1], cmsSigColorantTableOutTag)) {
 
             // It may be NULL if error
-            xform ->OutputColorant = cmsDupNamedColorList(ContextID, (cmsNAMEDCOLORLIST*) cmsReadTag(ContextID, hProfiles[nProfiles-1], cmsSigColorantTableOutTag));
+            xform->core->OutputColorant = cmsDupNamedColorList(ContextID, (cmsNAMEDCOLORLIST*) cmsReadTag(ContextID, hProfiles[nProfiles-1], cmsSigColorantTableOutTag));
         }
 
     } else {
 
         if (cmsIsTag(ContextID, hProfiles[nProfiles-1], cmsSigColorantTableTag)) {
 
-            xform -> OutputColorant = cmsDupNamedColorList(ContextID, (cmsNAMEDCOLORLIST*) cmsReadTag(ContextID, hProfiles[nProfiles-1], cmsSigColorantTableTag));
+            xform->core->OutputColorant = cmsDupNamedColorList(ContextID, (cmsNAMEDCOLORLIST*) cmsReadTag(ContextID, hProfiles[nProfiles-1], cmsSigColorantTableTag));
         }
     }
 
     // Store the sequence of profiles
     if (dwFlags & cmsFLAGS_KEEP_SEQUENCE) {
-        xform ->Sequence = _cmsCompileProfileSequence(ContextID, nProfiles, hProfiles);
+        xform->core->Sequence = _cmsCompileProfileSequence(ContextID, nProfiles, hProfiles);
     }
     else
-        xform ->Sequence = NULL;
+        xform->core->Sequence = NULL;
 
     // If this is a cached transform, init first value, which is zero (16 bits only)
     if (!(dwFlags & cmsFLAGS_NOCACHE)) {
 
         memset(&xform ->Cache.CacheIn, 0, sizeof(xform ->Cache.CacheIn));
 
-        if (xform ->GamutCheck != NULL) {
-            TransformOnePixelWithGamutCheck(ContextID, xform, xform ->Cache.CacheIn, xform->Cache.CacheOut);
+        if (xform->core->GamutCheck != NULL) {
+            TransformOnePixelWithGamutCheck(ContextID, xform, xform->Cache.CacheIn, xform->Cache.CacheOut);
         }
         else {
 
-            xform ->Lut ->Eval16Fn(ContextID, xform ->Cache.CacheIn, xform->Cache.CacheOut, xform -> Lut->Data);
+            xform->core->Lut->Eval16Fn(ContextID, xform ->Cache.CacheIn, xform->Cache.CacheOut, xform->core->Lut->Data);
         }
 
     }
@@ -1570,7 +1596,50 @@ cmsUInt32Number CMSEXPORT cmsGetTransformOutputFormat(cmsContext ContextID, cmsH
     return xform->OutputFormat;
 }
 
-// For backwards compatibility
+cmsHTRANSFORM cmsCloneTransformChangingFormats(cmsContext ContextID,
+                                               const cmsHTRANSFORM hTransform,
+                                               cmsUInt32Number InputFormat,
+                                               cmsUInt32Number OutputFormat)
+{
+    const _cmsTRANSFORM *oldXform = (const _cmsTRANSFORM *)hTransform;
+    _cmsTRANSFORM *xform;
+    cmsFormatter16 FromInput, ToOutput;
+
+    _cmsAssert(oldXform != NULL && oldXform->core != NULL);
+
+    // We only can afford to change formatters if previous transform is at least 16 bits
+    if (!(oldXform->core->dwOriginalFlags & cmsFLAGS_CAN_CHANGE_FORMATTER)) {
+        cmsSignalError(ContextID, cmsERROR_NOT_SUITABLE, "cmsCloneTransformChangingFormats works only on transforms created originally with at least 16 bits of precision");
+        return NULL;
+    }
+
+    xform = _cmsMalloc(ContextID, sizeof(*xform));
+    if (xform == NULL)
+        return NULL;
+
+    memcpy(xform, oldXform, sizeof(*xform));
+
+    FromInput = _cmsGetFormatter(ContextID, InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_16BITS).Fmt16;
+    ToOutput  = _cmsGetFormatter(ContextID, OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_16BITS).Fmt16;
+
+    if (FromInput == NULL || ToOutput == NULL) {
+
+        cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unsupported raster format");
+        return NULL;
+    }
+
+    xform ->InputFormat  = InputFormat;
+    xform ->OutputFormat = OutputFormat;
+    xform ->FromInput    = FromInput;
+    xform ->ToOutput     = ToOutput;
+    _cmsFindFormatter(xform, InputFormat, OutputFormat, xform->core->dwOriginalFlags);
+
+    (void)_cmsAdjustReferenceCount(&xform->core->refs, 1);
+
+    return xform;
+}
+
+// For backwards compatibility - To be deleted
 cmsBool CMSEXPORT cmsChangeBuffersFormat(cmsContext ContextID, cmsHTRANSFORM hTransform,
                                          cmsUInt32Number InputFormat,
                                          cmsUInt32Number OutputFormat)
@@ -1580,7 +1649,7 @@ cmsBool CMSEXPORT cmsChangeBuffersFormat(cmsContext ContextID, cmsHTRANSFORM hTr
 
 
     // We only can afford to change formatters if previous transform is at least 16 bits
-    if (!(xform ->dwOriginalFlags & cmsFLAGS_CAN_CHANGE_FORMATTER)) {
+    if (!(xform->core->dwOriginalFlags & cmsFLAGS_CAN_CHANGE_FORMATTER)) {
 
         cmsSignalError(ContextID, cmsERROR_NOT_SUITABLE, "cmsChangeBuffersFormat works only on transforms created originally with at least 16 bits of precision");
         return FALSE;
@@ -1599,6 +1668,6 @@ cmsBool CMSEXPORT cmsChangeBuffersFormat(cmsContext ContextID, cmsHTRANSFORM hTr
     xform ->OutputFormat = OutputFormat;
     xform ->FromInput    = FromInput;
     xform ->ToOutput     = ToOutput;
-    _cmsFindFormatter(xform, InputFormat, OutputFormat, xform->dwOriginalFlags);
+    _cmsFindFormatter(xform, InputFormat, OutputFormat, xform->core->dwOriginalFlags);
     return TRUE;
 }

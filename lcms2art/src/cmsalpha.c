@@ -466,7 +466,7 @@ void _cmsHandleExtraChannels(cmsContext ContextID, _cmsTRANSFORM* p, const void*
     cmsFormatterAlphaFn copyValueFn;
 
     // Make sure we need some copy
-    if (!(p->dwOriginalFlags & cmsFLAGS_COPY_ALPHA))
+    if (!(p->core->dwOriginalFlags & cmsFLAGS_COPY_ALPHA))
         return;
 
     // Exit early if in-place color-management is occurring - no need to copy extra channels to themselves.

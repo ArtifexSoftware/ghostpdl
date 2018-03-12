@@ -1004,22 +1004,9 @@ typedef struct {
 
 
 // Transformation
-typedef struct _cmstransform_struct {
+typedef struct _cmstransform_core {
 
-    cmsUInt32Number InputFormat, OutputFormat; // Keep formats for further reference
-
-    // Points to transform code
-    _cmsTransform2Fn xform;
-
-    // Formatters, cannot be embedded into LUT because cache
-    cmsFormatter16 FromInput;
-    cmsFormatter16 ToOutput;
-
-    cmsFormatterFloat FromInputFloat;
-    cmsFormatterFloat ToOutputFloat;
-
-    // 1-pixel cache seed for zero as input (16 bits, read only)
-    _cmsCACHE Cache;
+    cmsUInt32Number refs;
 
     // A Pipeline holding the full (optimized) transform
     cmsPipeline* Lut;
@@ -1052,9 +1039,29 @@ typedef struct _cmstransform_struct {
     void* UserData;
     _cmsFreeUserDataFn FreeUserData;
 
+} _cmsTRANSFORMCORE;
+
+typedef struct _cmstransform_struct {
+
+    cmsUInt32Number InputFormat, OutputFormat; // Keep formats for further reference
+
+    // Points to transform code
+    _cmsTransform2Fn xform;
+
+    // Formatters, cannot be embedded into LUT because cache
+    cmsFormatter16 FromInput;
+    cmsFormatter16 ToOutput;
+
+    cmsFormatterFloat FromInputFloat;
+    cmsFormatterFloat ToOutputFloat;
+
+    // 1-pixel cache seed for zero as input (16 bits, read only)
+    _cmsCACHE Cache;
+
     // A way to provide backwards compatibility with full xform plugins
     _cmsTransformFn OldXform;
 
+    _cmsTRANSFORMCORE *core;
 } _cmsTRANSFORM;
 
 // Copies extra channels from input to output if the original flags in the transform structure
@@ -1092,6 +1099,8 @@ cmsBool   _cmsAdaptationMatrix(cmsContext ContextID, cmsMAT3* r, const cmsMAT3* 
 cmsBool   _cmsBuildRGB2XYZtransferMatrix(cmsContext ContextID, cmsMAT3* r, const cmsCIExyY* WhitePoint, const cmsCIExyYTRIPLE* Primaries);
 
 void _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number OutputFormat, cmsUInt32Number flags);
+
+cmsUInt32Number _cmsAdjustReferenceCount(cmsUInt32Number *rc, int delta);
 
 #define _lcms_internal_H
 #endif

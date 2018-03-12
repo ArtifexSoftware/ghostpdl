@@ -746,7 +746,7 @@ cmsStage* _cmsStageAllocNamedColor(cmsContext ContextID, cmsNAMEDCOLORLIST* Name
 cmsNAMEDCOLORLIST* CMSEXPORT cmsGetNamedColorList(cmsHTRANSFORM xform)
 {
     _cmsTRANSFORM* v = (_cmsTRANSFORM*) xform;
-    cmsStage* mpe  = v ->Lut->Elements;
+    cmsStage* mpe  = v ->core->Lut->Elements;
 
     if (mpe ->Type != cmsSigNamedColorElemType) return NULL;
     return (cmsNAMEDCOLORLIST*) mpe ->Data;

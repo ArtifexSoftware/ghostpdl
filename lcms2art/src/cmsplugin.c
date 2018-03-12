@@ -1001,3 +1001,17 @@ void* CMSEXPORT cmsGetContextUserData(cmsContext ContextID)
 {
     return _cmsContextGetClientChunk(ContextID, UserPtr);
 }
+
+cmsUInt32Number _cmsAdjustReferenceCount(cmsUInt32Number *rc, int delta)
+{
+    cmsUInt32Number refs;
+
+    _cmsAssert(rc != NULL && *rc > 0);
+
+    _cmsEnterCriticalSectionPrimitive(&_cmsContextPoolHeadMutex);
+    *rc += delta;
+    refs = *rc;
+    _cmsLeaveCriticalSectionPrimitive(&_cmsContextPoolHeadMutex);
+
+    return refs;
+}

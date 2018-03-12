@@ -1791,6 +1791,10 @@ CMSAPI cmsBool          CMSEXPORT cmsChangeBuffersFormat(cmsContext ContextID,
                                                          cmsUInt32Number InputFormat,
                                                          cmsUInt32Number OutputFormat);
 
+cmsHTRANSFORM cmsCloneTransformChangingFormats(cmsContext ContextID,
+                                               const cmsHTRANSFORM hTransform,
+                                               cmsUInt32Number InputFormat,
+                                               cmsUInt32Number OutputFormat);
 
 
 // PostScript ColorRenderingDictionary and ColorSpaceArray ----------------------------------------------------

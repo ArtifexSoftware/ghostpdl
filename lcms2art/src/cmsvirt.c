@@ -954,7 +954,7 @@ cmsHPROFILE CreateNamedColorDevicelink(cmsContext ContextID, cmsHTRANSFORM xform
 
     // Critical information
     cmsSetDeviceClass(ContextID, hICC, cmsSigNamedColorClass);
-    cmsSetColorSpace(ContextID, hICC, v ->ExitColorSpace);
+    cmsSetColorSpace(ContextID, hICC, v ->core->ExitColorSpace);
     cmsSetPCS(ContextID, hICC, cmsSigLabData);
 
     // Tag profile with information
@@ -968,12 +968,12 @@ cmsHPROFILE CreateNamedColorDevicelink(cmsContext ContextID, cmsHTRANSFORM xform
     if (nc2 == NULL) goto Error;
 
     // Colorant count now depends on the output space
-    nc2 ->ColorantCount = cmsPipelineOutputChannels(ContextID, v ->Lut);
+    nc2 ->ColorantCount = cmsPipelineOutputChannels(ContextID, v ->core->Lut);
 
     // Make sure we have proper formatters
     cmsChangeBuffersFormat(ContextID, xform, TYPE_NAMED_COLOR_INDEX,
-        FLOAT_SH(0) | COLORSPACE_SH(_cmsLCMScolorSpace(ContextID, v ->ExitColorSpace))
-        | BYTES_SH(2) | CHANNELS_SH(cmsChannelsOf(ContextID, v ->ExitColorSpace)));
+        FLOAT_SH(0) | COLORSPACE_SH(_cmsLCMScolorSpace(ContextID, v ->core->ExitColorSpace))
+        | BYTES_SH(2) | CHANNELS_SH(cmsChannelsOf(ContextID, v ->core->ExitColorSpace)));
 
     // Apply the transfor to colorants.
     for (i=0; i < nColors; i++) {
@@ -1073,7 +1073,7 @@ cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsContext ContextID, cmsHTRANSFOR
     _cmsAssert(hTransform != NULL);
 
     // Get the first mpe to check for named color
-    mpe = cmsPipelineGetPtrToFirstStage(ContextID, xform ->Lut);
+    mpe = cmsPipelineGetPtrToFirstStage(ContextID, xform ->core->Lut);
 
     // Check if is a named color transform
     if (mpe != NULL) {
@@ -1084,18 +1084,18 @@ cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsContext ContextID, cmsHTRANSFOR
     }
 
     // First thing to do is to get a copy of the transformation
-    LUT = cmsPipelineDup(ContextID, xform ->Lut);
+    LUT = cmsPipelineDup(ContextID, xform ->core->Lut);
     if (LUT == NULL) return NULL;
 
     // Time to fix the Lab2/Lab4 issue.
-    if ((xform ->EntryColorSpace == cmsSigLabData) && (Version < 4.0)) {
+    if ((xform ->core->EntryColorSpace == cmsSigLabData) && (Version < 4.0)) {
 
         if (!cmsPipelineInsertStage(ContextID, LUT, cmsAT_BEGIN, _cmsStageAllocLabV2ToV4curves(ContextID)))
             goto Error;
     }
 
     // On the output side too
-    if ((xform ->ExitColorSpace) == cmsSigLabData && (Version < 4.0)) {
+    if ((xform ->core->ExitColorSpace) == cmsSigLabData && (Version < 4.0)) {
 
         if (!cmsPipelineInsertStage(ContextID, LUT, cmsAT_END, _cmsStageAllocLabV4ToV2(ContextID)))
             goto Error;
@@ -1107,15 +1107,15 @@ cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsContext ContextID, cmsHTRANSFOR
 
     cmsSetProfileVersion(ContextID, hProfile, Version);
 
-    FixColorSpaces(ContextID, hProfile, xform -> EntryColorSpace, xform -> ExitColorSpace, dwFlags);
+    FixColorSpaces(ContextID, hProfile, xform->core->EntryColorSpace, xform->core->ExitColorSpace, dwFlags);
 
     // Optimize the LUT and precalculate a devicelink
 
-    ChansIn  = cmsChannelsOf(ContextID, xform -> EntryColorSpace);
-    ChansOut = cmsChannelsOf(ContextID, xform -> ExitColorSpace);
+    ChansIn  = cmsChannelsOf(ContextID, xform->core->EntryColorSpace);
+    ChansOut = cmsChannelsOf(ContextID, xform->core->ExitColorSpace);
 
-    ColorSpaceBitsIn  = _cmsLCMScolorSpace(ContextID, xform -> EntryColorSpace);
-    ColorSpaceBitsOut = _cmsLCMScolorSpace(ContextID, xform -> ExitColorSpace);
+    ColorSpaceBitsIn  = _cmsLCMScolorSpace(ContextID, xform->core->EntryColorSpace);
+    ColorSpaceBitsOut = _cmsLCMScolorSpace(ContextID, xform->core->ExitColorSpace);
 
     FrmIn  = COLORSPACE_SH(ColorSpaceBitsIn) | CHANNELS_SH(ChansIn)|BYTES_SH(2);
     FrmOut = COLORSPACE_SH(ColorSpaceBitsOut) | CHANNELS_SH(ChansOut)|BYTES_SH(2);
@@ -1136,7 +1136,7 @@ cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsContext ContextID, cmsHTRANSFOR
     if (AllowedLUT == NULL) {
 
         // Try to optimize
-        _cmsOptimizePipeline(ContextID, &LUT, xform ->RenderingIntent, &FrmIn, &FrmOut, &dwFlags);
+        _cmsOptimizePipeline(ContextID, &LUT, xform->core->RenderingIntent, &FrmIn, &FrmOut, &dwFlags);
         AllowedLUT = FindCombination(ContextID, LUT, Version >= 4.0, DestinationTag);
 
     }
@@ -1148,7 +1148,7 @@ cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsContext ContextID, cmsHTRANSFOR
         cmsStage* LastStage;
 
         dwFlags |= cmsFLAGS_FORCE_CLUT;
-        _cmsOptimizePipeline(ContextID, &LUT, xform ->RenderingIntent, &FrmIn, &FrmOut, &dwFlags);
+        _cmsOptimizePipeline(ContextID, &LUT, xform->core->RenderingIntent, &FrmIn, &FrmOut, &dwFlags);
 
         // Put identity curves if needed
         FirstStage = cmsPipelineGetPtrToFirstStage(ContextID, LUT);
@@ -1180,29 +1180,29 @@ cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsContext ContextID, cmsHTRANSFOR
     if (!cmsWriteTag(ContextID, hProfile, DestinationTag, LUT)) goto Error;
 
 
-    if (xform -> InputColorant != NULL) {
-           if (!cmsWriteTag(ContextID, hProfile, cmsSigColorantTableTag, xform->InputColorant)) goto Error;
+    if (xform->core->InputColorant != NULL) {
+           if (!cmsWriteTag(ContextID, hProfile, cmsSigColorantTableTag, xform->core->InputColorant)) goto Error;
     }
 
-    if (xform -> OutputColorant != NULL) {
-           if (!cmsWriteTag(ContextID, hProfile, cmsSigColorantTableOutTag, xform->OutputColorant)) goto Error;
+    if (xform->core->OutputColorant != NULL) {
+           if (!cmsWriteTag(ContextID, hProfile, cmsSigColorantTableOutTag, xform->core->OutputColorant)) goto Error;
     }
 
-    if ((deviceClass == cmsSigLinkClass) && (xform ->Sequence != NULL)) {
-        if (!_cmsWriteProfileSequence(ContextID, hProfile, xform ->Sequence)) goto Error;
+    if ((deviceClass == cmsSigLinkClass) && (xform->core->Sequence != NULL)) {
+        if (!_cmsWriteProfileSequence(ContextID, hProfile, xform->core->Sequence)) goto Error;
     }
 
     // Set the white point
     if (deviceClass == cmsSigInputClass) {
-        if (!cmsWriteTag(ContextID, hProfile, cmsSigMediaWhitePointTag, &xform ->EntryWhitePoint)) goto Error;
+        if (!cmsWriteTag(ContextID, hProfile, cmsSigMediaWhitePointTag, &xform->core->EntryWhitePoint)) goto Error;
     }
     else {
-         if (!cmsWriteTag(ContextID, hProfile, cmsSigMediaWhitePointTag, &xform ->ExitWhitePoint)) goto Error;
+         if (!cmsWriteTag(ContextID, hProfile, cmsSigMediaWhitePointTag, &xform->core->ExitWhitePoint)) goto Error;
     }
 
 
     // Per 7.2.15 in spec 4.3
-    cmsSetHeaderRenderingIntent(ContextID, hProfile, xform ->RenderingIntent);
+    cmsSetHeaderRenderingIntent(ContextID, hProfile, xform->core->RenderingIntent);
 
     cmsPipelineFree(ContextID, LUT);
     return hProfile;

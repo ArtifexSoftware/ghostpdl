@@ -168,6 +168,7 @@ void FUNCTION_NAME(cmsContext ContextID,
                    cmsUInt32Number LineCount,
                    const cmsStride* Stride)
 {
+    _cmsTRANSFORMCORE *core = p->core;
 #ifndef NO_UNPACK
  #ifdef XFORM_FLOAT
     cmsFloat32Number wIn[cmsMAXCHANNELS*2];
@@ -188,14 +189,14 @@ void FUNCTION_NAME(cmsContext ContextID,
     XFORM_TYPE wOut[cmsMAXCHANNELS];
 #endif
 #ifdef GAMUTCHECK
-    _cmsOPTeval16Fn evalGamut = p ->GamutCheck ->Eval16Fn;
+    _cmsOPTeval16Fn evalGamut = core->GamutCheck->Eval16Fn;
 #endif /* GAMUTCHECK */
 #ifdef XFORM_FLOAT
-    _cmsPipelineEvalFloatFn eval = p -> Lut -> EvalFloatFn;
-    const cmsPipeline *data = p->Lut;
+    _cmsPipelineEvalFloatFn eval = core->Lut->EvalFloatFn;
+    const cmsPipeline *data = core->Lut;
 #else
-    _cmsOPTeval16Fn eval = p ->Lut -> Eval16Fn;
-    void *data = p -> Lut -> Data;
+    _cmsOPTeval16Fn eval = core->Lut->Eval16Fn;
+    void *data = core->Lut->Data;
 #endif
     cmsUInt32Number bppi = Stride->BytesPerPlaneIn;
     cmsUInt32Number bppo = Stride->BytesPerPlaneOut;
@@ -205,7 +206,7 @@ void FUNCTION_NAME(cmsContext ContextID,
     (void)bppo;
 
 #ifdef BULK_COPY_EXTRAS
-    if (p->dwOriginalFlags & cmsFLAGS_COPY_ALPHA)
+    if (core->dwOriginalFlags & cmsFLAGS_COPY_ALPHA)
         _cmsHandleExtraChannels(ContextID, p, in, out, PixelsPerLine, LineCount, Stride);
 #endif
 
@@ -249,7 +250,7 @@ void FUNCTION_NAME(cmsContext ContextID,
                 cmsFloat32Number OutOfGamut;
 
                 // Evaluate gamut marker.
-                cmsPipelineEvalFloat( currIn, &OutOfGamut, p ->GamutCheck);
+                cmsPipelineEvalFloat(currIn, &OutOfGamut, core->GamutCheck);
 
                 // Is current color out of gamut?
                 if (OutOfGamut > 0.0)
@@ -260,7 +261,7 @@ void FUNCTION_NAME(cmsContext ContextID,
  #else
                 cmsUInt16Number wOutOfGamut;
 
-                evalGamut(ContextID, currIn, &wOutOfGamut, p->GamutCheck->Data);
+                evalGamut(ContextID, currIn, &wOutOfGamut, core->GamutCheck->Data);
                 if (wOutOfGamut >= 1)
                     /* RJW: Could be faster? copy once to a local buffer? */
                     cmsGetAlarmCodes(wOut);
@@ -295,7 +296,7 @@ void FUNCTION_NAME(cmsContext ContextID,
 #if 0
 #ifdef CACHED
 #ifdef NO_UNPACK
-    memcpy(p->Cache.CacheOut,prevIn,INBYTES);
+    memcpy(p->Cache.CacheIn,prevIn,INBYTES);
 #else
     memcpy(p->Cache.CacheIn, prevIn, sizeof(XFORM_TYPE) * cmsMAXCHANNELS);
 #endif

@@ -911,7 +911,7 @@ int WriteInputLUT(cmsContext ContextID, cmsIOHANDLER* m, cmsHPROFILE hProfile, c
             cmsPipeline* DeviceLink;
             _cmsTRANSFORM* v = (_cmsTRANSFORM*) xform;
 
-            DeviceLink = cmsPipelineDup(ContextID, v ->Lut);
+            DeviceLink = cmsPipelineDup(ContextID, v ->core->Lut);
             if (DeviceLink == NULL) return 0;
 
             dwFlags |= cmsFLAGS_FORCE_CLUT;
@@ -1326,7 +1326,7 @@ int WriteOutputLUT(cmsContext ContextID, cmsIOHANDLER* m, cmsHPROFILE hProfile, 
 
     // Get a copy of the internal devicelink
     v = (_cmsTRANSFORM*) xform;
-    DeviceLink = cmsPipelineDup(ContextID, v ->Lut);
+    DeviceLink = cmsPipelineDup(ContextID, v ->core->Lut);
     if (DeviceLink == NULL) return 0;
 
 
