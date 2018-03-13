@@ -2792,7 +2792,7 @@ pdf_choose_output_char_code(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_char
 }
 
 static int
-pdf_choose_output_glyph_hame(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_const_string *gnstr, gs_glyph glyph)
+pdf_choose_output_glyph_name(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_const_string *gnstr, gs_glyph glyph)
 {
     if (penum->orig_font->FontType == ft_composite || penum->orig_font->procs.glyph_name(penum->orig_font, glyph, gnstr) < 0
         || (penum->orig_font->FontType > 42 && gnstr->size == 7 && strcmp((const char *)gnstr->data, ".notdef")== 0)) {
@@ -2993,7 +2993,7 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
 
     if (pte_default->returned.current_glyph == GS_NO_GLYPH)
       return_error(gs_error_undefined);
-    code = pdf_choose_output_glyph_hame(pdev, penum, &gnstr, pte_default->returned.current_glyph);
+    code = pdf_choose_output_glyph_name(pdev, penum, &gnstr, pte_default->returned.current_glyph);
     if (code < 0) {
         return code;
     }
