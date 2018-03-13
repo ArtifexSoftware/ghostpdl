@@ -195,7 +195,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
                     return code;
                 pres = (pdf_resource_t *) pcp;
                 goto wr;
-            } else if (pdev->pte) {
+            } else if (pdev->pte != NULL) {
                 /* We're under pdf_text_process. It set a high level color. */
             } else
                 set_image_color(pdev, one);
@@ -206,12 +206,14 @@ pdf_copy_mono(gx_device_pdf *pdev,
             pdf_make_bitmap_image(&image, x, y, w, h);
             goto rx;
         }
-        set_image_color(pdev, one);
+        if (pdev->pte == NULL)
+            set_image_color(pdev, one);
         gs_image_t_init_mask(&image, false);
         invert = 0xff;
     } else if (one == gx_no_color_index) {
         gs_image_t_init_mask(&image, false);
-        set_image_color(pdev, zero);
+        if (pdev->pte == NULL)
+            set_image_color(pdev, zero);
     } else if (zero == pdev->black && one == pdev->white) {
         pcs = gs_cspace_new_DeviceGray(pdev->memory);
         if (pcs == NULL)
