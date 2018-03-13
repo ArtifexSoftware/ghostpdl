@@ -777,12 +777,42 @@ int
 pdf_iccbased_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, cos_value_t *pvalue,
                          const gs_color_space *pcs, cos_array_t *pca)
 {
+    cos_stream_t * pcstrm;
+    int code = 0;
+
     /*
      * This would arise only in a pdf ==> pdf translation, but we
      * should allow for it anyway.
      */
-    cos_stream_t * pcstrm;
-    int code =
+    /* Not all ICC profile types are valid for embedding in a PDF file.
+     * The code here duplicates a check in zicc.c, .numicc_components()
+     * where we check to see if an embedded profile is valid. Because
+     * we could be getting input from other sources, we need to do the same
+     * check here. If the profile can't be embedded in PDF, then we
+     * return gs_error_rangecheck which will cause pdfwrtie to fall back
+     * to the device space. At least the PDF file will be valid and have
+     * 'correct' colours.
+     */
+    switch (pcs->cmm_icc_profile_data->data_cs) {
+        case gsCIEXYZ:
+        case gsCIELAB:
+        case gsRGB:
+        case gsGRAY:
+        case gsCMYK:
+            /* FIXME - we shouldn't permit GS_UNDEFINED spaces either, but our existing ICC
+             * code creates an ICC profile where the data_cs is set to this when we convert
+             * CIEBasedDEF and CIEBasedDEFG (possibly other CIE spaces).
+             */
+        case gsUNDEFINED:
+            break;
+        case gsNCHANNEL:
+        case gsNAMED:
+            emprintf(pdev->memory, "\n An ICC profile which is not suitable for use in PDF has been identified.\n All colours using this profile will be converted into device space\n instead and the profile will not be used.\n");
+            return gs_error_rangecheck;
+            break;
+    }
+
+    code =
         pdf_make_iccbased(pdev, pgs, pca, pcs->cmm_icc_profile_data->num_comps,
                           pcs->cmm_icc_profile_data->Range.ranges,
                           pcs->base_space,
