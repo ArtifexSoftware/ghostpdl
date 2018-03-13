@@ -2795,7 +2795,7 @@ static int
 pdf_choose_output_glyph_hame(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_const_string *gnstr, gs_glyph glyph)
 {
     if (penum->orig_font->FontType == ft_composite || penum->orig_font->procs.glyph_name(penum->orig_font, glyph, gnstr) < 0
-        || (penum->orig_font->FontType > 42 && gnstr->size == 7 && strcmp(gnstr->data, ".notdef")== 0)) {
+        || (penum->orig_font->FontType > 42 && gnstr->size == 7 && strcmp((const char *)gnstr->data, ".notdef")== 0)) {
         /* If we're capturing a PCL bitmap, and the glyph comes back with a name of '/.notdef' then
          * generate a name instead. There's nothing wrong technically with using /.notdef, but Acrobat does
          * 'special stuff' with that name, and messes up the display. See bug #699102.
