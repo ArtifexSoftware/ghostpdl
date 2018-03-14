@@ -915,7 +915,7 @@ do { MEMENTO_DO_UNLOCK(); } while (0)
 /* Do this as a macro to prevent another level in the callstack,
  * which is annoying while stepping. */
 #define Memento_breakpointLocked() \
-do { MEMENTO_UNLOCK(); Memento_breakpoint; MEMENTO_LOCK(); } while (0)
+do { MEMENTO_UNLOCK(); Memento_breakpoint(); MEMENTO_LOCK(); } while (0)
 
 static void Memento_addBlockHead(Memento_Blocks    *blks,
                                  Memento_BlkHeader *b,
