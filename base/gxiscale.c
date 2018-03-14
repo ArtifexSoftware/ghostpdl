@@ -191,8 +191,6 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     int interpolate_control = penum->dev->interpolate_control;
     int abs_interp_limit = max(1, any_abs(interpolate_control));
     int limited_WidthOut, limited_HeightOut;
-    int rect_x0, rect_y0, rect_x1, rect_y1;
-    int rrect_x0, rrect_y0, rrect_x1, rrect_y1;
 
     if (interpolate_control < 0)
         penum->interpolate = interp_on;		/* not the same as "interp_force" -- threshold still used */
@@ -315,36 +313,6 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     iss.PatchHeightIn = penum->rrect.h;
     iss.LeftMarginIn = penum->rrect.x - penum->rect.x;
     iss.TopMarginIn = penum->rrect.y - penum->rect.y;
-    /* 'rrect' has been calculated to be the smallest rectangle of source pixels that we actually
-     * need. This includes the extra 'support' pixels required for scaling. Accordingly, we need
-     * to calculate the destination patch so that it's as large as it can be without requiring
-     * pixels outside this region. Accordingly, we need to reduce 'rect' and 'rrect' by the
-     * amount they have already been expanded by. Care needs to be taken not to reduce them on
-     * the 'full' edges, as they won't have been expanded there. */
-    rect_x0 = penum->rect.x;
-    if (rect_x0 != 0)
-        rect_x0 += MAX_ISCALE_SUPPORT;
-    rrect_x0 = penum->rrect.x;
-    if (rrect_x0 < rect_x0)
-        rrect_x0 = rect_x0;
-    rect_y0 = penum->rect.y;
-    if (rect_y0 != 0)
-        rect_y0 += MAX_ISCALE_SUPPORT;
-    rrect_y0 = penum->rrect.y;
-    if (rrect_y0 < rect_y0)
-        rrect_y0 = rect_y0;
-    rect_x1 = penum->rect.x + penum->rect.w;
-    if (rect_x1 != penum->Width)
-        rect_x1 -= MAX_ISCALE_SUPPORT;
-    rrect_x1 = penum->rrect.x + penum->rrect.w;
-    if (rrect_x1 > rect_x1)
-        rrect_x1 = rect_x1;
-    rect_y1 = penum->rect.y + penum->rect.h;
-    if (rect_y1 != penum->Height)
-        rect_y1 -= MAX_ISCALE_SUPPORT;
-    rrect_y1 = penum->rrect.y + penum->rrect.h;
-    if (rrect_y1 > rect_y1)
-        rrect_y1 = rect_y1;
     if (penum->posture == image_portrait) {
         fixed dw = any_abs(penum->dst_width);
         fixed dh = any_abs(penum->dst_height);
@@ -358,16 +326,17 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
                                                            dh / penum->Height));
         iss.EntireWidthOut = fixed2int_pixround(dw);
         iss.EntireHeightOut = fixed2int_pixround(dh);
-        iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_x0 - penum->rect.x) *
-                                                               dw / penum->Width));
-        iss.TopMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_y0 - penum->rect.y) *
+        iss.TopMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.y - penum->rect.y) *
                                                               dh / penum->Height));
-        iss.PatchWidthOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_x1 - penum->rect.x) *
-                                                               dw / penum->Width))
-                          - iss.LeftMarginOut;
-        iss.PatchHeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_y1 - penum->rrect.y) *
+        iss.PatchHeightOut = fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.h *
                                                                 dh / penum->Height))
                            - iss.TopMarginOut;
+        iss.PatchWidthOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.x + penum->rrect.w) *
+                                                               dw / penum->Width))
+                          - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.x *
+                                                               dw / penum->Width));
+        iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)iss.LeftMarginIn *
+                                                               dw / penum->Width));
     } else {
         fixed dw = any_abs(penum->dst_width);
         fixed dh = any_abs(penum->dst_height);
@@ -381,16 +350,17 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
                                                            dw / penum->Height));
         iss.EntireWidthOut = fixed2int_pixround(dh);
         iss.EntireHeightOut = fixed2int_pixround(dw);
-        iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_x0 - penum->rect.x)*
-                                                               dh / penum->Width));
-        iss.TopMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_y0 - penum->rect.y) *
+        iss.TopMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.y - penum->rect.y) *
                                                               dw / penum->Height));
-        iss.PatchWidthOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_x1 - penum->rect.x) *
-                                                               dh / penum->Width))
-                          - iss.LeftMarginOut;
-        iss.PatchHeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(rrect_y1 - penum->rrect.y) *
+        iss.PatchHeightOut = fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.h *
                                                                 dw / penum->Height))
                            - iss.TopMarginOut;
+        iss.PatchWidthOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.x + penum->rrect.w) *
+                                                               dh / penum->Width))
+                          - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.x *
+                                                               dh / penum->Width));
+        iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)iss.LeftMarginIn *
+                                                               dh / penum->Width));
     }
     iss.PatchWidthOut = any_abs(iss.PatchWidthOut);
     if (iss.LeftMarginOut + iss.PatchWidthOut >= iss.WidthOut) {
