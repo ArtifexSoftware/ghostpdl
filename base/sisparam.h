@@ -59,6 +59,78 @@
  * due to restriction by a clip path etc (say 16x16) - this size is
  * PatchWidthIn by PatchHeightIn, and would scale to be PatchWidthOut by
  * PatchHeightOut. We don't really need PatchHeightOut.
+ *
+ * There is one additional complication: Due to the 'support' requirements
+ * of the scalers, we need to decode a slightly larger area than we
+ * might think. Accordingly, we are fed 2 different rectangles. drect
+ * tell us the area that must be decoded - we use this to calculate
+ * the 'In' values. rrect tells us the area that must be rendered - we
+ * use this to calculate the 'Out' values.
+ *
+ * Scale from:
+ *
+ * <-------------------EntireWidthIn--------------------->
+ * +-----------------------------------------------------+  ^
+ * | Conceptual Source Image                    ^        |  |
+ * |                                            |        |  |
+ * |                                       src_y_offset  |  |
+ * |                                            |        |  |
+ * |<-SX-><--------------WidthIn--------------> v        |  |
+ * |      +-penum->rect-----------------------+ ^        |  |
+ * |      |                   ^               | |        | EntireHeightIn
+ * |      |                   |               | |        |  |
+ * |      |              TopMarginIn          | |        |  |
+ * |      |                   |               | |        |  |
+ * |      |                   v               | |        |  |
+ * |      |                +-penum->drect--+  | |        |  |
+ * |      |                |    ^          |  | HeightIn |  |
+ * |      |                |    |          |  | |        |  |
+ * |      |<-LeftMarginIn->| PatchHeightIn |  | |        |  |
+ * |      |                |    |          |  | |        |  |
+ * |      |                |    v          |  | |        |  |
+ * |      |                +---------------+  | |        |  |
+ * |      |                <-PatchWidthIn-->  | |        |  |
+ * |      +-----------------------------------+ v        |  |
+ * |                                                     |  |
+ * +-----------------------------------------------------+  v
+ *
+ * To:
+ *
+ * <--------------------EntireWidthOut---------------------->
+ * +--------------------------------------------------------+  ^
+ * | Conceptual Destination Image                 ^         |  |
+ * |                                              |         |  |
+ * |                                             DY         |  |
+ * |                                              |         |  |
+ * |<-DX-><---------------WidthOut--------------> v         |  |
+ * |      +-------------------------------------+ ^         |  |
+ * |      |                    ^                | |         | EntireHeightOut
+ * |      |                    |                | |         |  |
+ * |      |               TopMarginOut          | |         |  |
+ * |      |                    |                | |         |  |
+ * |      |                    v                | |         |  |
+ * |      |                 +-penum->rrect*--+  | |         |  |
+ * |      |                 |    ^           |  | HeightOut |  |
+ * |      |                 |    |           |  | |         |  |
+ * |      |<-LeftMarginOut->| PatchHeightOut |  | |         |  |
+ * |      |                 |    |           |  | |         |  |
+ * |      |                 |    v           |  | |         |  |
+ * |      |                 +----------------+  | |         |  |
+ * |      |                 <-PatchWidthOut-->  | |         |  |
+ * |      +-------------------------------------+ v         |  |
+ * |                                                        |  |
+ * +--------------------------------------------------------+  v
+ *
+ *   * Note that this rectangle is derived from penum->rrect,
+ *     with appropriate scale factors!
+ *
+ * Certain values in this diagram are not currently used within
+ * gs. DX and SX are always 0, due to banding cutting only on
+ * Y. If there are cases where the clist code is truncating
+ * the width of images, then we will be getting incorrect (read
+ * "marginally sub optimal") results. DY is not supplied, which
+ * I suspect leads to each band being potentially off by a subpixel
+ * amount in the Y direction.
  */
 typedef struct stream_image_scale_params_s {
     int spp_decode;		/* >= 1 */

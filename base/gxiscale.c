@@ -309,10 +309,10 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         iss.BitsPerComponentOut = sizeof(frac) * 8;
         iss.MaxValueOut = frac_1;
     }
-    iss.PatchWidthIn = penum->rrect.w;
-    iss.PatchHeightIn = penum->rrect.h;
-    iss.LeftMarginIn = penum->rrect.x - penum->rect.x;
-    iss.TopMarginIn = penum->rrect.y - penum->rect.y;
+    iss.PatchWidthIn = penum->drect.w;
+    iss.PatchHeightIn = penum->drect.h;
+    iss.LeftMarginIn = penum->drect.x - penum->rect.x;
+    iss.TopMarginIn = penum->drect.y - penum->rect.y;
     if (penum->posture == image_portrait) {
         fixed dw = any_abs(penum->dst_width);
         fixed dh = any_abs(penum->dst_height);
@@ -335,7 +335,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
                                                                dw / penum->Width))
                           - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.x *
                                                                dw / penum->Width));
-        iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)iss.LeftMarginIn *
+        iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.x - penum->rect.x) *
                                                                dw / penum->Width));
     } else {
         fixed dw = any_abs(penum->dst_width);
@@ -359,7 +359,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
                                                                dh / penum->Width))
                           - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.x *
                                                                dh / penum->Width));
-        iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)iss.LeftMarginIn *
+        iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.x - penum->rect.x) *
                                                                dh / penum->Width));
     }
     iss.PatchWidthOut = any_abs(iss.PatchWidthOut);

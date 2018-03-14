@@ -205,9 +205,13 @@ struct gx_image_enum_s {
     byte masked;                /* 0 = [color]image, 1 = imagemask */
     image_interp interpolate;	/* interpolation: off, on, forced */
     gs_matrix matrix;           /* image space -> device space */
+    /* We send 3 rectangles, rect >= drect >= rrect */
     struct r_ {
         int x, y, w, h;         /* subrectangle for which data is supplied */
     } rect;
+    struct {
+        int x, y, w, h;         /* subrectangle that actually needs to be decoded */
+    } drect;
     struct {
         int x, y, w, h;         /* subrectangle that actually needs to be rendered */
     } rrect;

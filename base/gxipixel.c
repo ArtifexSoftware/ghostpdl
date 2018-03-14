@@ -193,6 +193,10 @@ gx_image_enum_alloc(const gs_image_common_t * pic,
     penum->rrect.y = penum->rect.y;
     penum->rrect.w = penum->rect.w;
     penum->rrect.h = penum->rect.h;
+    penum->drect.x = penum->rect.x;
+    penum->drect.y = penum->rect.y;
+    penum->drect.w = penum->rect.w;
+    penum->drect.h = penum->rect.h;
 #ifdef DEBUG
     if (gs_debug_c('b')) {
         dmlprintf2(mem, "[b]Image: w=%d h=%d", width, height);
@@ -442,37 +446,14 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
         rect.q.y = fixed2float(obox.q.y);
         code = gs_bbox_transform(&rect, &mi, &rect_out);
         if (code < 0) {
-            /* Give up trying to shrink the render box, but continue processing */
+            /* Give up trying to shrink the render/decode boxes, but continue processing */
             break;
         }
         irect.p.x = (int)(rect_out.p.x-1.0);
         irect.p.y = (int)(rect_out.p.y-1.0);
         irect.q.x = (int)(rect_out.q.x+1.0);
         irect.q.y = (int)(rect_out.q.y+1.0);
-        /* Need to expand the region to allow for the fact that the mitchell
-         * scaler reads multiple pixels in. This calculation can probably be
-         * improved. */
-        /* If mi.{xx,yy} > 1 then we are downscaling. During downscaling,
-         * the support increases to ensure that we don't lose pixels contributions
-         * entirely. */
-        /* I do not understand the need for the +/- 1 fudge factors,
-         * but they seem to be required. Increasing the render rectangle can
-         * never be bad at least... RJW */
-        {
-            float support = any_abs(mi.xx);
-            int isupport;
-            if (any_abs(mi.yy) > support)
-                support = any_abs(mi.yy);
-            if (any_abs(mi.xy) > support)
-                support = any_abs(mi.xy);
-            if (any_abs(mi.yx) > support)
-                support = any_abs(mi.yx);
-            isupport = (int)(MAX_ISCALE_SUPPORT * (support+1)) + 1;
-            irect.p.x -= isupport;
-            irect.p.y -= isupport;
-            irect.q.x += isupport;
-            irect.q.y += isupport;
-        }
+        /* We therefore only need to render within irect. Restrict rrect to this. */
         if (penum->rrect.x < irect.p.x) {
             penum->rrect.w -= irect.p.x - penum->rrect.x;
             if (penum->rrect.w < 0)
@@ -495,18 +476,75 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
             if (penum->rrect.h < 0)
                 penum->rrect.h = 0;
         }
+        /* Need to expand the region to allow for the fact that the mitchell
+         * scaler reads multiple pixels in. */
+        /* If mi.{xx,yy} > 1 then we are downscaling. During downscaling,
+         * the support increases to ensure that we don't lose pixels contributions
+         * entirely. */
+        /* I do not understand the need for the +/- 1 fudge factors,
+         * but they seem to be required. Increasing the decode rectangle can
+         * never be bad at least... RJW */
+        {
+            float support = any_abs(mi.xx);
+            int isupport;
+            if (any_abs(mi.yy) > support)
+                support = any_abs(mi.yy);
+            if (any_abs(mi.xy) > support)
+                support = any_abs(mi.xy);
+            if (any_abs(mi.yx) > support)
+                support = any_abs(mi.yx);
+            isupport = (int)(MAX_ISCALE_SUPPORT * (support+1)) + 1;
+            irect.p.x -= isupport;
+            irect.p.y -= isupport;
+            irect.q.x += isupport;
+            irect.q.y += isupport;
+        }
+        if (penum->drect.x < irect.p.x) {
+            penum->drect.w -= irect.p.x - penum->drect.x;
+            if (penum->drect.w < 0)
+               penum->drect.w = 0;
+            penum->drect.x = irect.p.x;
+        }
+        if (penum->drect.x + penum->drect.w > irect.q.x) {
+            penum->drect.w = irect.q.x - penum->drect.x;
+            if (penum->drect.w < 0)
+                penum->drect.w = 0;
+        }
+        if (penum->drect.y < irect.p.y) {
+            penum->drect.h -= irect.p.y - penum->drect.y;
+            if (penum->drect.h < 0)
+                penum->drect.h = 0;
+            penum->drect.y = irect.p.y;
+        }
+        if (penum->drect.y + penum->drect.h > irect.q.y) {
+            penum->drect.h = irect.q.y - penum->drect.y;
+            if (penum->drect.h < 0)
+                penum->drect.h = 0;
+        }
         break; /* Out of the while */
     }
     /* Check for the intersection being null */
-    if (penum->rrect.x + penum->rrect.w <= penum->rect.x  ||
-        penum->rect.x  + penum->rect.w  <= penum->rrect.x ||
-        penum->rrect.y + penum->rrect.h <= penum->rect.y  ||
-        penum->rect.y  + penum->rect.h  <= penum->rrect.y)
+    if (penum->drect.x + penum->drect.w <= penum->rect.x  ||
+        penum->rect.x  + penum->rect.w  <= penum->drect.x ||
+        penum->drect.y + penum->drect.h <= penum->rect.y  ||
+        penum->rect.y  + penum->rect.h  <= penum->drect.y)
     {
           /* Something may have gone wrong with the floating point above.
            * set the region to something sane. */
-        penum->rrect.x = penum->rect.x;
-        penum->rrect.y = penum->rect.y;
+        penum->drect.x = penum->rect.x;
+        penum->drect.y = penum->rect.y;
+        penum->drect.w = 0;
+        penum->drect.h = 0;
+    }
+    if (penum->rrect.x + penum->rrect.w <= penum->drect.x  ||
+        penum->drect.x + penum->drect.w  <= penum->rrect.x ||
+        penum->rrect.y + penum->rrect.h <= penum->drect.y  ||
+        penum->drect.y + penum->drect.h  <= penum->rrect.y)
+    {
+          /* Something may have gone wrong with the floating point above.
+           * set the region to something sane. */
+        penum->rrect.x = penum->drect.x;
+        penum->rrect.y = penum->drect.y;
         penum->rrect.w = 0;
         penum->rrect.h = 0;
     }
