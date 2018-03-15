@@ -78,9 +78,6 @@ typedef struct gx_device_pdf_image_s {
     int NumPages;
     gs_offset_t RootOffset;
     gs_offset_t PagesOffset;
-    gs_offset_t MetadataOffset;
-    gs_offset_t MetadataLengthOffset;
-    gs_offset_t InfoOffset;
     gs_offset_t xrefOffset;
     pdfimage_page *Pages;
     PCLm_temp_file_t xref_stream;
@@ -247,7 +244,7 @@ static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
             current = current->next;
         current->next = page;
     }
-    page->ImageObjectNumber = (pdf_dev->NumPages * 4) + 6;
+    page->ImageObjectNumber = (pdf_dev->NumPages * 4) + 3;
     page->LengthObjectNumber = page->ImageObjectNumber + 1;
     page->PageStreamObjectNumber = page->LengthObjectNumber + 1;
     page->PageDictObjectNumber = page->PageStreamObjectNumber + 1;
@@ -503,8 +500,6 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev, int factor,
         return code;;
     }
 
-    stream_pos = stell(pdf_dev->strm) - stream_pos;
-
     switch(pdf_dev->Compression) {
         case COMPRESSION_LZW:
         case COMPRESSION_FLATE:
@@ -521,7 +516,7 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev, int factor,
     page->LengthOffset = stell(pdf_dev->strm);
 
     pprintd1(pdf_dev->strm, "%d 0 obj\n", page->LengthObjectNumber);
-    pprintd1(pdf_dev->strm, "%d\n", stream_pos);
+    pprintd1(pdf_dev->strm, "%d\n", page->LengthOffset - stream_pos - 18); /* 18 is the length of \nendstream\nendobj\n we need to take that off for the stream length */
     stream_puts(pdf_dev->strm, "endobj\n");
 
     page->PageStreamOffset = stell(pdf_dev->strm);
@@ -654,7 +649,7 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
             stream_puts(pdf_dev->strm, "1 0 obj\n<<\n/Pages 2 0 R\n/Type /Catalog\n>>\nendobj\n");
         } else {
             pdf_dev->RootOffset = stell(pdf_dev->strm);
-            stream_puts(pdf_dev->strm, "1 0 obj\n<<\n/Pages 2 0 R\n/Metadata 3 0 R\n/Type /Catalog\n>>\nendobj\n");
+            stream_puts(pdf_dev->strm, "1 0 obj\n<<\n/Pages 2 0 R\n/Type /Catalog\n>>\nendobj\n");
         }
 
         pdf_dev->PagesOffset = stell(pdf_dev->strm);
@@ -685,15 +680,11 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
         if (PCLm)
             pprintd1(pdf_dev->strm, "xref\n0 %d\n0000000000 65536 f \n", pdf_dev->NextObject);
         else
-            pprintd1(pdf_dev->strm, "xref\n0 %d\n0000000000 65536 f \n", (pdf_dev->NumPages * 4) + 6);
+            pprintd1(pdf_dev->strm, "xref\n0 %d\n0000000000 65536 f \n", (pdf_dev->NumPages * 4) + 3);
         write_xref_entry(pdf_dev->strm, pdf_dev->RootOffset);
         write_xref_entry(pdf_dev->strm, pdf_dev->PagesOffset);
 
         if (!PCLm) {
-            write_xref_entry(pdf_dev->strm, pdf_dev->MetadataOffset);
-            write_xref_entry(pdf_dev->strm, pdf_dev->MetadataLengthOffset);
-            write_xref_entry(pdf_dev->strm, pdf_dev->InfoOffset);
-
             page = pdf_dev->Pages;
             while(page){
                 write_xref_entry(pdf_dev->strm, page->ImageOffset);
@@ -702,7 +693,7 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
                 write_xref_entry(pdf_dev->strm, page->PageDictOffset);
                 page = page->next;
             }
-            pprintd1(pdf_dev->strm, "trailer\n<<\n/Size %d\n/Info 5 0 R\n/Root 1 0 R\n/ID [", (pdf_dev->NumPages * 4) + 6);
+            pprintd1(pdf_dev->strm, "trailer\n<<\n/Size %d\n/Root 1 0 R\n/ID [", (pdf_dev->NumPages * 4) + 3);
             pdf_compute_fileID(pdf_dev, fileID, CreationDate, Title, Producer);
             write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
             write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
@@ -764,9 +755,6 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
     }
     pdf_dev->RootOffset = 0;
     pdf_dev->PagesOffset = 0;
-    pdf_dev->MetadataOffset = 0;
-    pdf_dev->MetadataLengthOffset = 0;
-    pdf_dev->InfoOffset = 0;
     pdf_dev->xrefOffset = 0;
     if (!PCLm)
         pdf_dev->StripHeight = 0;
@@ -824,9 +812,6 @@ pdf_image_open(gx_device *pdev)
     ppdev->NumPages = 0;
     ppdev->RootOffset = 0;
     ppdev->PagesOffset = 0;
-    ppdev->MetadataOffset = 0;
-    ppdev->MetadataLengthOffset = 0;
-    ppdev->InfoOffset = 0;
     ppdev->xrefOffset = 0;
     ppdev->StripHeight = 0;
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
@@ -1148,9 +1133,6 @@ PCLm_open(gx_device *pdev)
     ppdev->NumPages = 0;
     ppdev->RootOffset = 0;
     ppdev->PagesOffset = 0;
-    ppdev->MetadataOffset = 0;
-    ppdev->MetadataLengthOffset = 0;
-    ppdev->InfoOffset = 0;
     ppdev->xrefOffset = 0;
     ppdev->NextObject = 0;
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
