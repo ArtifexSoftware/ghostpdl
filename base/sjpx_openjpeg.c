@@ -29,7 +29,9 @@
 #endif
 /* Some locking to get around the criminal lack of context
  * in the openjpeg library. */
+#if !defined(SHARE_JPX) || (SHARE_JPX == 0)
 static gs_memory_t *opj_memory;
+#endif
 
 int sjpxd_create(gs_memory_t *mem)
 {

@@ -54,7 +54,9 @@ static
 void *gs_lcms2_malloc(cmsContext id, unsigned int size)
 {
     void *ptr;
+#if !(defined(SHARE_LCMS) && SHARE_LCMS==1)
     gs_memory_t *mem = (gs_memory_t *)cmsGetContextUserData(id);
+#endif
 
 #if defined(SHARE_LCMS) && SHARE_LCMS==1
     ptr = malloc(size);
@@ -71,7 +73,10 @@ void *gs_lcms2_malloc(cmsContext id, unsigned int size)
 static
 void gs_lcms2_free(cmsContext id, void *ptr)
 {
+#if !(defined(SHARE_LCMS) && SHARE_LCMS==1)
     gs_memory_t *mem = (gs_memory_t *)cmsGetContextUserData(id);
+#endif
+
     if (ptr != NULL) {
 #if DEBUG_LCMS_MEM
         gs_warn1("lcms free at 0x%x",ptr);
@@ -88,7 +93,9 @@ void gs_lcms2_free(cmsContext id, void *ptr)
 static
 void *gs_lcms2_realloc(cmsContext id, void *ptr, unsigned int size)
 {
+#if !(defined(SHARE_LCMS) && SHARE_LCMS==1)
     gs_memory_t *mem = (gs_memory_t *)cmsGetContextUserData(id);
+#endif
     void *ptr2;
 
     if (ptr == 0)
