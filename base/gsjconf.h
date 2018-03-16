@@ -202,8 +202,12 @@
 #undef CHAR_IS_UNSIGNED
 
 #ifdef __STDC__			/* is this right? */
+# ifndef HAVE_STDDEF_H
 #  define HAVE_STDDEF_H
+# endif
+# ifndef HAVE_STDLIB_H
 #  define HAVE_STDLIB_H
+# endif
 #endif
 
 #undef NEED_BSD_STRINGS		/* WRONG */

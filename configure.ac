@@ -1283,6 +1283,12 @@ case "x$with_system_libtiff" in
         ;;
 esac
 
+CGLAGS_STORE=$CFLAGS
+CFLAGS=-Wno-misleading-indentation
+AC_TRY_COMPILE([], [return 0;],
+    [CFLAGS_NMI="-Wno-misleading-indentation"],[CFLAGS_NMI=""])
+CFLAGS=$CGLAGS_STORE
+
 if test x"$SHARE_LIBTIFF" = x"0" ; then
       echo "Running libtiff configure script..."
       olddir=`pwd`
@@ -1297,7 +1303,7 @@ if test x"$SHARE_LIBTIFF" = x"0" ; then
       cd "$olddir"
 
       if test x"$ac_cv_prog_gcc" = x"yes"; then
-          TIFFCFLAGS="-Wno-write-strings"
+        TIFFCFLAGS="-Wno-write-strings $CFLAGS_NMI -DJPEG_LIB_MK1_OR_12BIT=0"
       fi
 
       echo
