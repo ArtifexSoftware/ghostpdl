@@ -96,7 +96,6 @@ typedef struct pcl_raster_s
 
 } pcl_raster_t;
 
-gs_private_st_simple(st_seed_row_t, pcl_seed_row_t, "PCL raster seed row");
 gs_private_st_simple(st_seed_row_t_element, pcl_seed_row_t,
                      "PCL seed row array");
 gs_private_st_simple(st_raster_t, pcl_raster_t, "PCL raster object");
