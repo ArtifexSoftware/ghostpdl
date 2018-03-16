@@ -6404,7 +6404,7 @@ OPJ_BOOL opj_j2k_set_threads(opj_j2k_t *j2k, OPJ_UINT32 num_threads)
     return OPJ_FALSE;
 }
 
-static int opj_j2k_get_default_thread_count()
+static int opj_j2k_get_default_thread_count(void)
 {
 #if defined(MUTEX_win32) || defined(MUTEX_pthread)
     const char* num_threads = getenv("OPJ_NUM_THREADS");
