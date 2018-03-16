@@ -883,7 +883,7 @@ calculate_dst_contrib(stream_IScale_state * ss, int y)
                  i >= first_index_mod ?
                  ss->dst_items[i - first_index_mod].weight :
                  0);
-            if_debug1m('W', ss->memory, " %f", shuffle[i].weight);
+            if_debug1m('W', ss->memory, " %d", shuffle[i].weight);
         }
         memcpy(ss->dst_items, shuffle, ss->max_support * sizeof(CONTRIB));
         ss->dst_next_list.n = ss->max_support;
