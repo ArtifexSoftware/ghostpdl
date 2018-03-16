@@ -26,6 +26,9 @@
 #include "gsdevice.h"		/* for gs_copydevice */
 #include "gdevx.h"
 
+void
+gs_shared_init(void);
+
 extern const gx_device_X gs_x11_device;
 extern const gx_device_X gs_x11alpha_device;
 
@@ -869,14 +872,14 @@ extern void gs_lib_register_device(const gx_device *dev);
 void
 gs_shared_init(void)
 {
-  gs_lib_register_device(&gs_x11_device);
-  gs_lib_register_device(&gs_x11alpha_device);
-  gs_lib_register_device(&gs_x11cmyk_device);
-  gs_lib_register_device(&gs_x11cmyk2_device);
-  gs_lib_register_device(&gs_x11cmyk4_device);
-  gs_lib_register_device(&gs_x11cmyk8_device);
-  gs_lib_register_device(&gs_x11gray2_device);
-  gs_lib_register_device(&gs_x11gray4_device);
-  gs_lib_register_device(&gs_x11mono_device);
+  gs_lib_register_device((const gx_device *)&gs_x11_device);
+  gs_lib_register_device((const gx_device *)&gs_x11alpha_device);
+  gs_lib_register_device((const gx_device *)&gs_x11cmyk_device);
+  gs_lib_register_device((const gx_device *)&gs_x11cmyk2_device);
+  gs_lib_register_device((const gx_device *)&gs_x11cmyk4_device);
+  gs_lib_register_device((const gx_device *)&gs_x11cmyk8_device);
+  gs_lib_register_device((const gx_device *)&gs_x11gray2_device);
+  gs_lib_register_device((const gx_device *)&gs_x11gray4_device);
+  gs_lib_register_device((const gx_device *)&gs_x11mono_device);
 }
 #endif
