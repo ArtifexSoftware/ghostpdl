@@ -5231,6 +5231,7 @@ static	const gx_color_map_procs pdf14_cmap_many = {
      pdf14_cmap_is_halftoned
     };
 
+#if 0 /* NOT USED */
 static	const gx_color_map_procs pdf14_cmap_many_group = {
      pdf14_cmap_gray_direct,
      pdf14_cmap_rgb_direct,
@@ -5240,6 +5241,7 @@ static	const gx_color_map_procs pdf14_cmap_many_group = {
      pdf14_cmap_devicen_direct,
      pdf14_cmap_is_halftoned
     };
+#endif  /* NOT USED */
 
 /**
  * Note: copied from gxcmap.c because it's inlined.
@@ -6720,6 +6722,7 @@ static	const gx_device_procs pdf14_clist_CMYKspot_procs =
                         pdf14_encode_color,
                         pdf14_decode_color);
 
+#if 0 /* NOT USED */
 static	const gx_device_procs pdf14_clist_RGBspot_procs =
         pdf14_clist_procs(pdf14_rgbspot_get_color_mapping_procs,
                         pdf14_rgbspot_get_color_comp_index,
@@ -6731,7 +6734,7 @@ static	const gx_device_procs pdf14_clist_Grayspot_procs =
                         pdf14_grayspot_get_color_comp_index,
                         pdf14_encode_color,
                         pdf14_decode_color);
-
+#endif  /* NOT USED */
 
 const pdf14_clist_device pdf14_clist_Gray_device = {
     std_device_color_stype_body(pdf14_clist_device, &pdf14_clist_Gray_procs,
