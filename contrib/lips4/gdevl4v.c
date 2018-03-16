@@ -487,7 +487,7 @@ lips4v_copy_text_char(gx_device * dev, const byte * data,
     uint width_bytes = (w + 7) >> 3;
     uint size = width_bytes * h;
     int i, j;
-    uint ccode;
+    uint ccode = 0;
     char cset_sub[9], cset[64], cset_number[8], text_color[15];
     int cell_length = (POINT * (int)dev->x_pixels_per_inch) / 72;
     bool download = TRUE;
@@ -1093,8 +1093,8 @@ lips4v_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
         stream *s = gdev_vector_stream(vdev);
         gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
         gx_color_index color = gx_dc_pure_color(pdc);
-        int drawing_color;
-        float r, g, b;
+        int drawing_color = 0;
+        float r = 0.0F, g = 0.0F, b = 0.0F;
 
         if (vdev->color_info.depth == 8) {
             drawing_color = vdev->color_info.max_gray - color;
@@ -1160,7 +1160,7 @@ lips4v_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
         stream *s = gdev_vector_stream(vdev);
         gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
         gx_color_index color = gx_dc_pure_color(pdc);
-        float r, g, b;
+        float r = 0.0F, g = 0.0F, b = 0.0F;
 
         if (vdev->color_info.depth == 24) {
             r = (color >> 16) * 1000 / 255.0;
@@ -2215,7 +2215,7 @@ lips4v_begin_image(gx_device * dev,
         gs_alloc_struct(mem, gdev_vector_image_enum_t,
                         &st_vector_image_enum, "lips4v_begin_image");
     const gs_color_space *pcs = pim->ColorSpace;
-    gs_color_space_index index;
+    gs_color_space_index index = 0;
     int num_components = 1;
     bool can_do = prect == 0 &&
         (pim->format == gs_image_format_chunky ||
