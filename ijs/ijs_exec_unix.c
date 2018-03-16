@@ -75,7 +75,7 @@ ijs_exec_server(const char *server_cmd, int *pfd_to, int *pfd_from,
 
       argv[i++] = (char *)server_cmd;
       argv[i++] = NULL;
-      status = execvp (argv[0], argv);
+      status = execvp (argv[0], (char * const *)argv);
       if (status < 0)
         exit (1);
     }
