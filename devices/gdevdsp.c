@@ -1128,7 +1128,6 @@ static gx_color_index
 display_separation_encode_color(gx_device *dev, const gx_color_value colors[])
 {
     int bpc = ((gx_device_display *)dev)->devn_params.bitspercomponent;
-    int drop = sizeof(gx_color_value) * 8 - bpc;
     gx_color_index color = 0;
     int i = 0;
     int ncomp = dev->color_info.num_components;
@@ -1152,7 +1151,6 @@ display_separation_decode_color(gx_device * dev, gx_color_index color,
     gx_color_value * out)
 {
     int bpc = ((gx_device_display *)dev)->devn_params.bitspercomponent;
-    int drop = sizeof(gx_color_value) * 8 - bpc;
     int mask = (1 << bpc) - 1;
     int i = 0;
     int ncomp = dev->color_info.num_components;
