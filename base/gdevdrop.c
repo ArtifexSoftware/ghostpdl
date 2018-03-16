@@ -651,7 +651,7 @@ mem_default_strip_copy_rop(gx_device * dev,
     byte *row = 0;
     union { long l; void *p; } dest_buffer[16];
     byte *source_row = 0;
-    uint source_row_raster;
+    uint source_row_raster = 0; /* init to quiet compiler warning */
     union { long l; void *p; } source_buffer[16];
     byte *texture_row = 0;
     uint texture_row_raster;

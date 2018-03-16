@@ -2622,7 +2622,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
         int sid;
         ref name, cstr, charstrings_dict, encoding, notdef;
         unsigned char gid2char[256];
-        unsigned supp_enc_offset;
+        unsigned supp_enc_offset = 0;
 
         if ((code = name_ref(imemory, (unsigned char *)".notdef", 7, &notdef, 0)) < 0)
             return code;
