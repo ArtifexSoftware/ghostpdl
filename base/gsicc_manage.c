@@ -139,6 +139,20 @@ gsicc_getprofilesize(unsigned char *buffer)
              (buffer[2] << 8)  +  buffer[3] );
 }
 
+/* Get major and minor ICC version number */
+int
+gsicc_getprofilevers(cmm_profile_t *icc_profile, unsigned char *major,
+    unsigned char *minor)
+{
+    if (icc_profile == NULL || icc_profile->buffer == NULL)
+        return -1;
+
+    *major = icc_profile->buffer[8];
+    *minor = icc_profile->buffer[9];
+
+    return 0;
+}
+
 void
 gsicc_set_icc_range(cmm_profile_t **icc_profile)
 {

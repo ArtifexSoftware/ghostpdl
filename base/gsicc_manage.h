@@ -102,6 +102,8 @@ void gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data,
 void gsicc_profile_reference(cmm_profile_t *icc_profile, int delta);
 int gsicc_getsrc_channel_count(cmm_profile_t *icc_profile);
 unsigned int gsicc_getprofilesize(unsigned char *buffer);
+int gsicc_getprofilevers(cmm_profile_t *icc_profile, unsigned char *major,
+    unsigned char *minor);
 cmm_profile_t* gsicc_read_serial_icc(gx_device * dev, int64_t icc_hashcode);
 int gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile,
     gs_memory_t * mem);

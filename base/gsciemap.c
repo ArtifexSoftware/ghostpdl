@@ -148,7 +148,7 @@ get_cie_range(const gs_color_space * pcs)
 }
 
 static void
-rescale_input_color(gs_range *ranges, int num_colorants, 
+rescale_input_color(gs_range *ranges, int num_colorants,
                     const gs_client_color *src, gs_client_color *des)
 {
     int k;
@@ -238,7 +238,7 @@ gx_ciedefg_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *m
     gx_cie_scalar_cache *defg_caches = &(pcs->params.defg->caches_defg.DecodeDEFG[0]);
 
     if_debug0m(gs_debug_flag_icc, memory,
-               "[icc] Creating ICC profile from defg object");  
+               "[icc] Creating ICC profile from defg object");
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory->stable_memory);
     if (code < 0)
@@ -521,7 +521,7 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *me
     gx_cie_scalar_cache    *lmn_caches = &(pcs->params.abc->common.caches.DecodeLMN[0]);
     gx_cie_scalar_cache *def_caches = &(pcs->params.def->caches_def.DecodeDEF[0]);
 
-    if_debug0(gs_debug_flag_icc,"[icc] Creating ICC profile from def object");  
+    if_debug0(gs_debug_flag_icc,"[icc] Creating ICC profile from def object");
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory->stable_memory);
     if (code < 0)
@@ -543,7 +543,9 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *me
     (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_DEF;
     /* Assign to the icc_equivalent member variable */
     pcs->icc_equivalent = *ppcs_icc;
-    pcs->icc_equivalent->cmm_icc_profile_data->data_cs = gsUNDEFINED;
+
+    /* Bug 699104.  The ICC profile is built to be RGB based. Reflect that here */
+    pcs->icc_equivalent->cmm_icc_profile_data->data_cs = gsRGB;
     return 0;
     }
 
@@ -631,7 +633,7 @@ gx_cieabc_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, bool *islab,
     gx_cie_vector_cache *abc_caches = &(pcs->params.abc->caches.DecodeABC.caches[0]);
     gx_cie_scalar_cache *lmn_caches = &(pcs->params.abc->common.caches.DecodeLMN[0]);
 
-    if_debug0m(gs_debug_flag_icc, memory, "[icc] Creating ICC profile from abc object");  
+    if_debug0m(gs_debug_flag_icc, memory, "[icc] Creating ICC profile from abc object");
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory);
     if (code < 0)
@@ -745,7 +747,7 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *memo
     gx_cie_scalar_cache    *lmn_caches = &(pcs->params.a->common.caches.DecodeLMN[0]);
 
     if_debug0m(gs_debug_flag_icc, memory,
-               "[icc] Creating ICC profile from CIEA object");  
+               "[icc] Creating ICC profile from CIEA object");
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory);
     if (code < 0)
