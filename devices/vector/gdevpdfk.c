@@ -799,12 +799,8 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, cos_value_t
         case gsRGB:
         case gsGRAY:
         case gsCMYK:
-            /* FIXME - we shouldn't permit GS_UNDEFINED spaces either, but our existing ICC
-             * code creates an ICC profile where the data_cs is set to this when we convert
-             * CIEBasedDEF and CIEBasedDEFG (possibly other CIE spaces).
-             */
-        case gsUNDEFINED:
             break;
+        case gsUNDEFINED:
         case gsNCHANNEL:
         case gsNAMED:
             emprintf(pdev->memory, "\n An ICC profile which is not suitable for use in PDF has been identified.\n All colours using this profile will be converted into device space\n instead and the profile will not be used.\n");
