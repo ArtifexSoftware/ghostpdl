@@ -390,7 +390,7 @@ main(int argc, char **argv)
     uint8_t buf[4096];
     jbig2dec_params_t params;
     int filearg;
-    int result = 0;
+    int result = 1;
 
     /* set defaults */
     params.mode = render;
@@ -518,7 +518,7 @@ main(int argc, char **argv)
     }                           /* end params.mode switch */
 
     /* fin */
-    result = 1;
+    result = 0;
 
 cleanup:
     if (params.output_file)
