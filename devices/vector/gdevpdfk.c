@@ -779,6 +779,8 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, cos_value_t
 {
     cos_stream_t * pcstrm;
     int code = 0;
+    unsigned char major = 0, minor = 0;
+    bool downgrade_icc = false;
 
     /*
      * This would arise only in a pdf ==> pdf translation, but we
@@ -819,10 +821,35 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, cos_value_t
 
     /* Transfer the buffer data  */
 
-    /* PDF/A-1 only supports version 2 ICC profiles, and the PDF spec
-     * only supports Version 4 profiles in PDF 1.5 and above
+    (void)gsicc_getprofilevers(pcs->cmm_icc_profile_data, &major, &minor);
+    minor = minor >> 4;
+
+    /* Determine whether we need to get the CMS to give us an earlier ICC version
+     * of the profile.
      */
-    if (pdev->CompatibilityLevel < 1.5 || pdev->PDFA == 1) {
+    if (pdev->CompatibilityLevel < 1.3) {
+        return_error(gs_error_rangecheck);
+    } else {
+        if (pdev->CompatibilityLevel < 1.5) {
+            if (major > 2)
+                downgrade_icc = true;
+        } else {
+            if (pdev->CompatibilityLevel == 1.5) {
+                if (major > 4 || minor > 0)
+                    downgrade_icc = true;
+            } else {
+                if (pdev->CompatibilityLevel == 1.6) {
+                    if (major > 4 || minor > 1)
+                        downgrade_icc = true;
+                } else {
+                    if (major > 4 || minor > 2)
+                        downgrade_icc = true;
+                }
+            }
+        }
+    }
+
+    if (downgrade_icc) {
         byte *v2_buffer;
         int size;
 

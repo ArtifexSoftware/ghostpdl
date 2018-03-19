@@ -39,9 +39,9 @@
 #include "gdevpdts.h"       /* for sync_text_state */
 
 /* Define the default language level and PDF compatibility level. */
-/* Acrobat 6 (PDF 1.5) is the default. (1.5 for ICC V4 profile support) */
+/* Acrobat 8 (PDF 1.7) is the default. (1.7 for ICC V4.2.0 profile support) */
 #define PSDF_VERSION_INITIAL psdf_version_ll3
-#define PDF_COMPATIBILITY_LEVEL_INITIAL 1.5
+#define PDF_COMPATIBILITY_LEVEL_INITIAL 1.7
 
 /* Define the size of internal stream buffers. */
 /* (This is not a limitation, it only affects performance.) */
