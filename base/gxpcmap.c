@@ -1384,7 +1384,8 @@ gx_erase_colored_pattern(gs_gstate *pgs)
         }
     }
     /* we don't need wraparound here */
-    return gs_grestore_only(pgs);
+    gs_grestore_only(pgs);
+    return code;
 }
 
 /* Reload a (non-null) Pattern color into the cache. */
@@ -1420,8 +1421,10 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
         return_error(gs_error_VMerror);
     gx_device_set_target((gx_device_forward *)adev, dev);
     code = dev_proc(adev, open_device)((gx_device *)adev);
-    if (code < 0)
-        goto fail;
+    if (code < 0) {
+        gs_free_object(mem, adev, "gx_pattern_load");
+        return code;
+    }
     saved = gs_gstate_copy(pinst->saved, pinst->saved->memory);
     if (saved == 0) {
         code = gs_note_error(gs_error_VMerror);
@@ -1429,7 +1432,9 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
     }
     if (saved->pattern_cache == 0)
         saved->pattern_cache = pgs->pattern_cache;
-    gs_setdevice_no_init(saved, (gx_device *)adev);
+    code = gs_setdevice_no_init(saved, (gx_device *)adev);
+    if (code < 0)
+        goto fail;
     if (pinst->templat.uses_transparency) {
         if_debug0m('v', mem, "gx_pattern_load: pushing the pdf14 compositor device into this graphics state\n");
         if ((code = gs_push_pdf14trans_device(saved, true)) < 0)
@@ -1446,7 +1451,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
         if (pinst->templat.PaintType == 1 && !(pinst->is_clist)
             && dev_proc(pinst->saved->device, dev_spec_op)(pinst->saved->device, gxdso_pattern_can_accum, NULL, 0) == 0)
             if ((code = gx_erase_colored_pattern(saved)) < 0)
-                return code;
+                goto fail;
     }
 
     code = (*pinst->templat.PaintProc)(&pdc->ccolor, saved);
@@ -1470,7 +1475,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
         }
         dev_proc(saved->device, close_device)((gx_device *)saved->device);
         /* Freeing the state should now free the device which may be the pdf14 compositor. */
-        gs_gstate_free(saved);
+        gs_gstate_free_chain(saved);
         return code;
     }
     if (pinst->templat.uses_transparency) {
@@ -1525,6 +1530,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
     /* Free the chain of gstates. Freeing the state will free the device. */
     gs_gstate_free_chain(saved);
     return code;
+
 fail:
     if (dev_proc(adev, open_device) == pattern_clist_open_device) {
         gx_device_clist *cdev = (gx_device_clist *)adev;
@@ -1532,7 +1538,8 @@ fail:
         gs_free_object(cdev->writer.bandlist_memory, cdev->common.data, "gx_pattern_load");
         cdev->common.data = 0;
     }
-    gs_free_object(mem, adev, "gx_pattern_load");
+    dev_proc(adev, close_device)((gx_device *)adev);
+    gs_gstate_free_chain(saved);
     return code;
 }
 

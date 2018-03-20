@@ -844,7 +844,7 @@ image_PaintProc(const gs_client_color * pcolor, gs_gstate * pgs)
         pcspace = ppmap->pcspace;
     code = gs_gsave(pgs);
     if (code < 0)
-        return code;
+        goto fail;
     code = gs_setcolorspace(pgs, pcspace);
     if (code < 0)
         return code;
@@ -875,9 +875,13 @@ image_PaintProc(const gs_client_color * pcolor, gs_gstate * pgs)
          (code = gs_image_enum_init( pen,
                                      pie,
                                      (gs_data_image_t *)&image,
-                                     pgs )) >= 0      )
-        code = bitmap_paint(pen, (gs_data_image_t *) & image, pbitmap, pgs);
-    gs_grestore(pgs);
+                                     pgs )) >= 0 &&
+        (code = bitmap_paint(pen, (gs_data_image_t *) & image, pbitmap, pgs)) >= 0) {
+        return gs_grestore(pgs);
+    }
+
+fail:
+    gs_free_object(gs_gstate_memory(pgs), pen, "image_PaintProc");
     return code;
 }
 /* Finish painting any kind of bitmap pattern. */
@@ -1036,8 +1040,7 @@ static int pixmap_remap_image_pattern(const gs_client_color *pcc, gs_gstate *pgs
          */
         return_error(gs_error_Remap_Color);
     } else {
-        image_PaintProc(pcc, pgs);
-        return 0;
+        return image_PaintProc(pcc, pgs);
     }
 }
 

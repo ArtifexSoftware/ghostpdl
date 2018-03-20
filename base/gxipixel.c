@@ -615,8 +615,10 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
            eliminate the 256 bytes for the >8bpp image enumerator */
         penum->clues = (gx_image_clue*) gs_alloc_bytes(mem, sizeof(gx_image_clue)*256,
                              "gx_image_enum_begin");
-        if (penum->clues == NULL)
-            return_error(gs_error_VMerror);
+        if (penum->clues == NULL) {
+            code = gs_error_VMerror;
+            goto fail;
+        }
         penum->icolor0 = &(penum->clues[0].dev_color);
         penum->icolor1 = &(penum->clues[255].dev_color);
     } else {
@@ -625,7 +627,8 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     }
     if (masked) {       /* This is imagemask. */
         if (bps != 1 || pcs != NULL || penum->alpha || decode[0] == decode[1]) {
-            return_error(gs_error_rangecheck);
+            code = gs_error_rangecheck;
+            goto fail;
         }
         /* Initialize color entries 0 and 255. */
         set_nonclient_dev_color(penum->icolor0, gx_no_color_index);
@@ -644,7 +647,8 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
 
         spp = cs_num_components(pcs);
         if (spp < 0) {          /* Pattern not allowed */
-            return_error(gs_error_rangecheck);
+            code = gs_error_rangecheck;
+            goto fail;
         }
         if (penum->alpha)
             ++spp;
@@ -669,8 +673,11 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
 
         code = image_init_colors(penum, bps, spp, format, decode, pgs, dev,
                           pcs, &device_color);
-        if (code < 0) 
+        if (code < 0) {
+            gs_free_object(mem, penum->clues, "gx_image_enum_begin");
+            gs_free_object(mem, penum, "gx_default_begin_image");
             return gs_throw(code, "Image colors initialization failed");
+        }
         /* If we have a CIE based color space and the icc equivalent profile
            is not yet set, go ahead and handle that now.  It may already
            be done due to the above init_colors which may go through remap. */
@@ -678,7 +685,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
             code = gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &(penum->icc_setup.is_lab),
                                                 pgs->memory);
             if (code < 0)
-                return code;
+                goto fail;
             if (penum->icc_setup.is_lab) {
                 /* Free what ever profile was created and use the icc manager's
                    cielab profile */
@@ -753,7 +760,8 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     bsize = ((bps > 8 ? width * 2 : width) + 15) * spp;
     buffer = gs_alloc_bytes(mem, bsize, "image buffer");
     if (buffer == 0) {
-        return_error(gs_error_VMerror);
+        code = gs_error_VMerror;
+        goto fail;
     }
     penum->bps = bps;
     penum->unpack_bps = bps;
@@ -1015,6 +1023,11 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
         penum->rop_dev = rtdev;
     }
     return 0;
+
+fail:
+    gs_free_object(mem, penum->clues, "gx_image_enum_begin");
+    gs_free_object(mem, penum, "gx_begin_image1");
+    return code;
 }
 
 /* If a drawing color is black or white, return 0 or 1 respectively, */
