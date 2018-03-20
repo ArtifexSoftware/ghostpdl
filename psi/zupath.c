@@ -200,8 +200,11 @@ in_path(os_ptr oppath, i_ctx_t *i_ctx_p, gx_device * phdev)
         gs_grestore(igs);
         return code;
     }
+    code = gx_set_device_color_1(igs);
+    if (code < 0)
+        return code;
+
     /* Install the hit detection device. */
-    gx_set_device_color_1(igs);
     gx_device_init_on_stack((gx_device *) phdev, (const gx_device *)&gs_hit_device,
                             imemory);
     phdev->width = phdev->height = max_int;
