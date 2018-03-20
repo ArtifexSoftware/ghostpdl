@@ -644,13 +644,8 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
 
         pdf_store_default_Producer(Producer);
 
-        if (PCLm) {
-            pdf_dev->RootOffset = stell(pdf_dev->strm);
-            stream_puts(pdf_dev->strm, "1 0 obj\n<<\n/Pages 2 0 R\n/Type /Catalog\n>>\nendobj\n");
-        } else {
-            pdf_dev->RootOffset = stell(pdf_dev->strm);
-            stream_puts(pdf_dev->strm, "1 0 obj\n<<\n/Pages 2 0 R\n/Type /Catalog\n>>\nendobj\n");
-        }
+        pdf_dev->RootOffset = stell(pdf_dev->strm);
+        stream_puts(pdf_dev->strm, "1 0 obj\n<<\n/Pages 2 0 R\n/Type /Catalog\n>>\nendobj\n");
 
         pdf_dev->PagesOffset = stell(pdf_dev->strm);
         pprintd1(pdf_dev->strm, "2 0 obj\n<<\n/Count %d\n", pdf_dev->NumPages);
