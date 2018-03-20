@@ -145,10 +145,8 @@ class KnownFileHash(SelfTest):
                         known_amb_DECODED),
                    ('../ubc/amb_2.jb2',
 			"9af6616a89eb03f8934de72626e301a716366c3c",
-                        known_amb_DECODED),
-                   ('../str-p39',
-			"1a303e33d3ea57eb7e19a676a1b2f28baa29b045",
-                        "ff373f070f5f405b732c53ffffff087eff22ff5b") )
+                        known_amb_DECODED)
+                 )
 
   def __init__(self, file, file_hash, decode_hash):
     SelfTest.__init__(self)
