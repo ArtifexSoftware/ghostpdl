@@ -4739,6 +4739,7 @@ currentdict /drawannottypes undef
           dup {oforce} stopped not {exch pop} if
           2 index 3 1 roll put
         } forall
+        Removepdfobj#
       } if
       dup type /arraytype eq {
         0 1 2 index length 1 sub{
@@ -4861,6 +4862,11 @@ currentdict /drawannottypes undef
 currentdict end readonly def
 
 /preserveannot {		% <annot> preserveannot -
+
+  dup /.gs.pdfobj# known {
+    dup /.gs.pdfobj# undef
+  } if
+
   dup annotvisible {
     gsave
     dup dup /Subtype knownoget {
