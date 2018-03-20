@@ -58,8 +58,7 @@ class KnownFileHash(SelfTest):
 
   # hashes of known test inputs
   known_042_DECODED = "ebfdf6e2fc5ff3ee2271c2fa19de0e52712046e8"
-  # we do not have correct hashes for these
-  known_amb_DECODED = "ff32ffff0776ff66ff254129ff28ffffffff6bff"
+  known_amb_DECODED = "3d4b7992d506894662b53415bd3d0d2a2f8b7953"
 
   # these are known test files in the form
   # (filename, sha-1(file), sha-1(decoded document)
