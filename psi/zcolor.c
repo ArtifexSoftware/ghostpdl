@@ -3708,7 +3708,8 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
     ref_assign(&dict, ep);
 
     do {
-        if (index >= dict_length(pdict)) {
+        index = dict_next(pdict, index, (ref *)&space);
+        if (index == -1) {
             esp -= 4;
             return o_pop_estack;
         }
@@ -3718,22 +3719,10 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
             if (code < 0)
                 return code;
 
-            code = dict_index_entry(pdict, index, (ref *)&space);
-            if (code < 0) {
-                make_int(pindex, ++index);
-                code = gs_grestore(igs);
-                if (code < 0)
-                    return code;
-                continue;
-            }
-
             code = validate_spaces(i_ctx_p, &space[1], &depth);
             if (code < 0) {
-                make_int(pindex, ++index);
-                code = gs_grestore(igs);
-                if (code < 0)
-                    return code;
-                return o_push_estack;
+                (void)gs_grestore(igs);
+                return code;
             }
 
             /* If we get a continuation from a sub-procedure, we will want to come back
@@ -3748,29 +3737,36 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
             make_int(pstage, 1);
             *op = space[1];
             code = zsetcolorspace(i_ctx_p);
-            if (code != 0)
+            if (code < 0) {
+                (void)gs_grestore(igs);
+                return code;
+            } else
                 return code;
         } else {
             stage = 0;
-            code = dict_index_entry(pdict, index, (ref *)&space);
-            if (code == 0) {
-                switch (r_type(&space[0])) {
-                    case t_string:
-                        code = name_from_string(imemory, &space[0], &sname);
-                        if (code == 0)
-                            sep_name = name_index(imemory, &sname);
-                        break;
-                    case t_name:
-                        sep_name = name_index(imemory, &space[0]);
-                        break;
-                    default:
-                        code = gs_error_typecheck;
-                }
+
+            switch (r_type(&space[0])) {
+                case t_string:
+                    code = name_from_string(imemory, &space[0], &sname);
+                    if (code < 0){
+                        (void)gs_grestore(igs);
+                        return code;
+                    }
+                    sep_name = name_index(imemory, &sname);
+                    break;
+                case t_name:
+                    sep_name = name_index(imemory, &space[0]);
+                    break;
+                default:
+                    (void)gs_grestore(igs);
+                    return_error(gs_error_typecheck);
+                    break;
             }
-            make_int(pindex, ++index);
+
+            make_int(pindex, index);
             make_int(pstage, stage);
-            if (code == 0)
-                gs_attachattributecolorspace(sep_name, igs);
+            gs_attachattributecolorspace(sep_name, igs);
+
             code = gs_grestore(igs);
             if (code < 0)
                 return code;
@@ -3827,7 +3823,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
             push_mark_estack(es_other, colour_cleanup);
             esp++;
             /* variable to hold index of the space we are dealing with */
-            make_int(esp, 0);
+            make_int(esp, dict_first(colorants));
             esp++;
             /* variable to hold processing step */
             make_int(esp, 0);
