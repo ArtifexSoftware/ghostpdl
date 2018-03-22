@@ -500,7 +500,7 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
 
                 if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
                     return 0;
-                return (dict_length(CharStrings));
+                return (dict_maxlength(CharStrings));
             }
             /* Multiple Master specific */
         case gs_fapi_font_feature_DollarBlend:
@@ -957,6 +957,20 @@ FAPI_FF_get_raw_subr(gs_fapi_font *ff, int index, byte *buf,
     return (r_size(&subr));
 }
 
+/* FAPI_FF_get_charstring_name() and FAPI_FF_get_charstring()
+ *
+ * Generally we'd want to use the dictionary content
+ * enumeration API rather than dict_index_entry(), but
+ * the FAPI interface doesn't enforce sequential accessing
+ * of the indices.
+ * Setting up enumeration and enumerating through the entries
+ * until we reach the requested valid index is a performance
+ * hit we don't want to pay.
+ *
+ * Luckily, the checks we need for invalid CharString contents
+ * also handle empty "slots" in the dictionary.
+ */
+
 static ushort
 FAPI_FF_get_charstring_name(gs_fapi_font *ff, int index, byte *buf,
                             ushort buf_length)
@@ -967,6 +981,8 @@ FAPI_FF_get_charstring_name(gs_fapi_font *ff, int index, byte *buf,
     if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
         return 0;
     if (dict_index_entry(CharStrings, index, eltp) < 0)
+        return 0;
+    if (r_type(&eltp[0]) != t_name)
         return 0;
     name_string_ref(ff->memory, &eltp[0], &string);
     if (r_size(&string) > buf_length)
@@ -986,6 +1002,8 @@ FAPI_FF_get_charstring(gs_fapi_font *ff, int index, byte *buf,
     if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
         return 0;
     if (dict_index_entry(CharStrings, index, eltp) < 0)
+        return 0;
+    if (r_type(&eltp[1]) != t_string)
         return 0;
     if (buf && buf_length && buf_length >= r_size(&eltp[1])) {
         memcpy(buf, eltp[1].value.const_bytes, r_size(&eltp[1]));
