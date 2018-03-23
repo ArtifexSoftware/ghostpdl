@@ -130,8 +130,8 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
                                                   "ps_impl_allocate_interp_instance");
 
     int code;
-#define GS_NUM_ARGS 3
-    const char *gsargs[GS_NUM_ARGS] = {"gpdl","-dNODISPLAY", "-dJOBSERVER"};
+#define GS_NUM_ARGS 5
+    const char *gsargs[GS_NUM_ARGS] = {"gpdl","-I../Resource/Init", "-dNODISPLAY", "-dJOBSERVER", "-dPS_INTERP_ACT_ON_UEL"};
     
     if (!psi)
         return gs_error_VMerror;
@@ -201,25 +201,70 @@ ps_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
 {
     const unsigned int l = pr->limit - pr->ptr;
     int code, exit_code = 0;
+    const char eot[1] = {4};
 
     code = gsapi_run_string_continue(impl->interp_client_data, (const char *)pr->ptr + 1, l, 0, &exit_code);
-    pr->ptr = pr->limit;
+    if (exit_code == gs_error_InterpreterExit) {
+        const byte *p = pr->ptr;
+        const byte *rlimit = pr->limit;
+
+        /* Skip to, but leave UEL in buffer for PJL to find later */
+        for (; p < rlimit; ++p) {
+            if (p[1] == '\033') {
+                uint avail = rlimit - p;
+
+                if (memcmp(p + 1, "\033%-12345X", min(avail, 9)))
+                    continue;
+                if (avail < 9)
+                    break;
+
+                code = gsapi_run_string_continue(impl->interp_client_data, eot, 1, 0, &exit_code);
+
+                pr->ptr = p;
+                return gs_error_InterpreterExit;
+            }
+        }
+        pr->ptr = p;
+    }
+    else {
+        pr->ptr = pr->limit;
+    }
     return code;
 }
 
 static int                      /* ret 0 or +ve if ok, else -ve error code */
 ps_impl_process_end(pl_interp_implementation_t * impl)
 {
-    int exit_code;
-    return gsapi_run_string_end(impl->interp_client_data, 0, &exit_code);
+    int exit_code, code;
+    code = gsapi_run_string_end(impl->interp_client_data, 0, &exit_code);
+
+    if (exit_code == gs_error_InterpreterExit || code == gs_error_NeedInput)
+        code = 0;
+
+    return code;
 }
 
 /* Not implemented */
 static int
 ps_impl_flush_to_eoj(pl_interp_implementation_t *impl, stream_cursor_read *cursor)
 {
-    cursor->ptr = cursor->limit;
-    return 0;
+    const byte *p = cursor->ptr;
+    const byte *rlimit = cursor->limit;
+
+    /* Skip to, but leave UEL in buffer for PJL to find later */
+    for (; p < rlimit; ++p)
+        if (p[1] == '\033') {
+            uint avail = rlimit - p;
+
+            if (memcmp(p + 1, "\033%-12345X", min(avail, 9)))
+                continue;
+            if (avail < 9)
+                break;
+            cursor->ptr = p;
+            return 1;           /* found eoj */
+        }
+    cursor->ptr = p;
+    return 0;                   /* need more */
 }
 
 /* Parser action for end-of-file */
@@ -251,7 +296,7 @@ ps_impl_dnit_job(pl_interp_implementation_t *impl)
 static int
 ps_impl_remove_device(pl_interp_implementation_t *impl)
 {
-    return 0;
+    return gsapi_set_device(impl->interp_client_data, NULL);
 }
 
 /* Deallocate a interpreter instance */

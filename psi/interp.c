@@ -136,6 +136,7 @@ struct stats_interp_s {
 static int estack_underflow(i_ctx_t *);
 static int interp(i_ctx_t **, const ref *, ref *);
 static int interp_exit(i_ctx_t *);
+static int zforceinterp_exit(i_ctx_t *i_ctx_p);
 static void set_gc_signal(i_ctx_t *, int);
 static int copy_stack(i_ctx_t *, const ref_stack_t *, int skip, ref *);
 static int oparray_pop(i_ctx_t *);
@@ -279,6 +280,7 @@ const op_def interp2_op_defs[] = {
     {"2.errorexec", zerrorexec},
     {"0.finderrorobject", zfinderrorobject},
     {"0%interp_exit", interp_exit},
+    {"0.forceinterp_exit", zforceinterp_exit},
     {"0%oparray_pop", oparray_pop},
     {"0%errorexec_pop", errorexec_pop},
     op_def_end(0)
@@ -725,6 +727,31 @@ static int
 interp_exit(i_ctx_t *i_ctx_p)
 {
     return gs_error_InterpreterExit;
+}
+
+/* Only used (currently) with language switching:
+ * allows the PS interpreter to co-exist with the
+ * PJL interpreter.
+ */
+static int
+zforceinterp_exit(i_ctx_t *i_ctx_p)
+{
+    os_ptr op;
+    ref *pvalue;
+    int code = 0;
+
+    code = dict_find_string(systemdict, "PS_INTERP_ACT_ON_UEL", &pvalue);
+
+    if (code >= 0 && r_has_type(pvalue, t_boolean)
+        && pvalue->value.boolval == true) {
+
+        gs_interp_reset(i_ctx_p);
+        op = osp;
+        push(1);
+        make_int(op, gs_error_InterpreterExit);
+        code = gs_note_error(gs_error_Quit);
+    }
+    return code;
 }
 
 /* Set the GC signal for all VMs. */

@@ -675,14 +675,17 @@ gs_main_set_device(gs_main_instance * minst, gx_device *pdev)
 {
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
     ref error_object, devref;
-    int code = ref_stack_push(&o_stack, 1);
+    int code;
 
+    if (pdev == NULL)
+        return 0;
+
+    code = ref_stack_push(&o_stack, 1);
     if (code < 0)
         return code;
-
     make_tav(&devref, t_device, icurrent_space | a_all, pdevice, pdev);
     *ref_stack_index(&o_stack, 0L) = devref;
-    gs_main_run_string(minst, "setdevice currentpagedevice pop", 0, &code, &error_object);
+    gs_main_run_string(minst, "setdevice currentpagedevice pop save erasepage", 0, &code, &error_object);
 
     return code;
 }
