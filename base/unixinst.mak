@@ -157,7 +157,7 @@ DOC_PAGES=API.htm C-style.htm Develop.htm GS9_Color_Management.pdf Helpers.htm \
           COPYING Details.htm Fonts.htm gs-vms.hlp History3.htm History8.htm\
           Language.htm Ps2epsi.htm Ps-style.htm Unix-lpr.htm \
           sample_downscale_device.htm SavedPages.htm subclass.htm\
-          VectorDevices.htm
+          VectorDevices.htm gdevds32.c
 
 
 install-doc: $(PSDOCDIR)/News.htm
