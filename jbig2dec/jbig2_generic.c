@@ -112,7 +112,7 @@ jbig2_generic_stats_size(Jbig2Ctx *ctx, int template)
 }
 
 #define pixel_outside_field(x, y) \
-    ((y) < -128 || (y) > 0 || (x) < -128 || ((y) < 0 && (x) > 127) || ((y) == 0 && (x) > 0))
+    ((y) < -128 || (y) > 0 || (x) < -128 || ((y) < 0 && (x) > 127) || ((y) == 0 && (x) >= 0))
 
 static int
 jbig2_decode_generic_template0_unopt(Jbig2Ctx *ctx,
