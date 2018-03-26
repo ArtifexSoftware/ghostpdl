@@ -17,7 +17,7 @@
 # Makefile.am, the source file for Makefile.in (and hence Makefile), is
 #
 # Copyright (c) 2004-2016 Glenn Randers-Pehrson
-# Last changed in libpng 1.6.25beta03 [August 29, 2016]
+# Last changed in libpng 1.6.25 [September 1, 2016]
 #
 # This code is released under the libpng license.
 # For conditions of distribution and use, see the disclaimer
@@ -111,13 +111,19 @@ bin_PROGRAMS = pngfix$(EXEEXT) png-fix-itxt$(EXEEXT)
 @PNG_MIPS_MSA_TRUE@am__append_3 = mips/mips_init.c\
 @PNG_MIPS_MSA_TRUE@	mips/filter_msa_intrinsics.c
 
+@PNG_INTEL_SSE_TRUE@am__append_4 = intel/intel_init.c\
+@PNG_INTEL_SSE_TRUE@	intel/filter_sse2_intrinsics.c
+
+@PNG_POWERPC_VSX_TRUE@am__append_5 = powerpc/powerpc_init.c\
+@PNG_POWERPC_VSX_TRUE@        powerpc/filter_vsx_intrinsics.c
+
 
 #   Versioned symbols and restricted exports
-@HAVE_LD_VERSION_SCRIPT_TRUE@@HAVE_SOLARIS_LD_TRUE@am__append_4 = -Wl,-M -Wl,libpng.vers
-@HAVE_LD_VERSION_SCRIPT_TRUE@@HAVE_SOLARIS_LD_FALSE@am__append_5 = -Wl,--version-script=libpng.vers
+@HAVE_LD_VERSION_SCRIPT_TRUE@@HAVE_SOLARIS_LD_TRUE@am__append_6 = -Wl,-M -Wl,libpng.vers
+@HAVE_LD_VERSION_SCRIPT_TRUE@@HAVE_SOLARIS_LD_FALSE@am__append_7 = -Wl,--version-script=libpng.vers
 #   Only restricted exports when possible
-@HAVE_LD_VERSION_SCRIPT_FALSE@am__append_6 = -export-symbols libpng.sym
-@DO_PNG_PREFIX_TRUE@am__append_7 = -DPNG_PREFIX='@PNG_PREFIX@'
+@HAVE_LD_VERSION_SCRIPT_FALSE@am__append_8 = -export-symbols libpng.sym
+@DO_PNG_PREFIX_TRUE@am__append_9 = -DPNG_PREFIX='@PNG_PREFIX@'
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/scripts/libtool.m4 \
@@ -175,17 +181,23 @@ am__libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_SOURCES_DIST = png.c \
 	pngwtran.c pngwutil.c png.h pngconf.h pngdebug.h pnginfo.h \
 	pngpriv.h pngstruct.h pngusr.dfa arm/arm_init.c \
 	arm/filter_neon.S arm/filter_neon_intrinsics.c \
-	mips/mips_init.c mips/filter_msa_intrinsics.c
+	mips/mips_init.c mips/filter_msa_intrinsics.c \
+	intel/intel_init.c intel/filter_sse2_intrinsics.c \
+	powerpc/powerpc_init.c powerpc/filter_vsx_intrinsics.c
 am__dirstamp = $(am__leading_dot)dirstamp
 @PNG_ARM_NEON_TRUE@am__objects_1 = arm/arm_init.lo arm/filter_neon.lo \
 @PNG_ARM_NEON_TRUE@	arm/filter_neon_intrinsics.lo
 @PNG_MIPS_MSA_TRUE@am__objects_2 = mips/mips_init.lo \
 @PNG_MIPS_MSA_TRUE@	mips/filter_msa_intrinsics.lo
+@PNG_INTEL_SSE_TRUE@am__objects_3 = intel/intel_init.lo \
+@PNG_INTEL_SSE_TRUE@	intel/filter_sse2_intrinsics.lo
+@PNG_POWERPC_VSX_TRUE@am__objects_4 = powerpc/powerpc_init.lo \
+@PNG_POWERPC_VSX_TRUE@	powerpc/filter_vsx_intrinsics.lo
 am_libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_OBJECTS = png.lo pngerror.lo \
 	pngget.lo pngmem.lo pngpread.lo pngread.lo pngrio.lo \
 	pngrtran.lo pngrutil.lo pngset.lo pngtrans.lo pngwio.lo \
 	pngwrite.lo pngwtran.lo pngwutil.lo $(am__objects_1) \
-	$(am__objects_2)
+	$(am__objects_2) $(am__objects_3) $(am__objects_4)
 nodist_libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_OBJECTS =
 libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_OBJECTS =  \
 	$(am_libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_OBJECTS) \
@@ -697,6 +709,7 @@ pngcp_LDADD = libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@.la
 # set of parameters:
 TESTS = \
    tests/pngtest\
+   tests/pngtest-badpngs\
    tests/pngvalid-gamma-16-to-8 tests/pngvalid-gamma-alpha-mode\
    tests/pngvalid-gamma-background tests/pngvalid-gamma-expand16-alpha-mode\
    tests/pngvalid-gamma-expand16-background\
@@ -726,12 +739,13 @@ libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_SOURCES = png.c pngerror.c \
 	pngget.c pngmem.c pngpread.c pngread.c pngrio.c pngrtran.c \
 	pngrutil.c pngset.c pngtrans.c pngwio.c pngwrite.c pngwtran.c \
 	pngwutil.c png.h pngconf.h pngdebug.h pnginfo.h pngpriv.h \
-	pngstruct.h pngusr.dfa $(am__append_2) $(am__append_3)
+	pngstruct.h pngusr.dfa $(am__append_2) $(am__append_3) \
+	$(am__append_4) $(am__append_5)
 nodist_libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_SOURCES = pnglibconf.h
 libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_LDFLAGS = -no-undefined \
 	-export-dynamic -version-number \
 	@PNGLIB_MAJOR@@PNGLIB_MINOR@:@PNGLIB_RELEASE@:0 \
-	$(am__append_4) $(am__append_5) $(am__append_6)
+	$(am__append_6) $(am__append_7) $(am__append_8)
 @HAVE_LD_VERSION_SCRIPT_FALSE@libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_DEPENDENCIES = libpng.sym
 @HAVE_LD_VERSION_SCRIPT_TRUE@libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_DEPENDENCIES = libpng.vers
 pkginclude_HEADERS = png.h pngconf.h
@@ -767,7 +781,7 @@ SUFFIXES = .chk .out
 SYMBOL_CFLAGS = -DPNGLIB_LIBNAME='PNG@PNGLIB_MAJOR@@PNGLIB_MINOR@_0' \
 	-DPNGLIB_VERSION='@PNGLIB_VERSION@' \
 	-DSYMBOL_PREFIX='$(SYMBOL_PREFIX)' -DPNG_NO_USE_READ_MACROS \
-	-DPNG_BUILDING_SYMBOL_TABLE $(am__append_7)
+	-DPNG_BUILDING_SYMBOL_TABLE $(am__append_9)
 
 # EXT_LIST is a list of the possibly library directory extensions, this exists
 # because we can't find a good way of discovering the file extensions that are
@@ -885,6 +899,26 @@ mips/$(DEPDIR)/$(am__dirstamp):
 mips/mips_init.lo: mips/$(am__dirstamp) mips/$(DEPDIR)/$(am__dirstamp)
 mips/filter_msa_intrinsics.lo: mips/$(am__dirstamp) \
 	mips/$(DEPDIR)/$(am__dirstamp)
+intel/$(am__dirstamp):
+	@$(MKDIR_P) intel
+	@: > intel/$(am__dirstamp)
+intel/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) intel/$(DEPDIR)
+	@: > intel/$(DEPDIR)/$(am__dirstamp)
+intel/intel_init.lo: intel/$(am__dirstamp) \
+	intel/$(DEPDIR)/$(am__dirstamp)
+intel/filter_sse2_intrinsics.lo: intel/$(am__dirstamp) \
+	intel/$(DEPDIR)/$(am__dirstamp)
+powerpc/$(am__dirstamp):
+	@$(MKDIR_P) powerpc
+	@: > powerpc/$(am__dirstamp)
+powerpc/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) powerpc/$(DEPDIR)
+	@: > powerpc/$(DEPDIR)/$(am__dirstamp)
+powerpc/powerpc_init.lo: powerpc/$(am__dirstamp) \
+	powerpc/$(DEPDIR)/$(am__dirstamp)
+powerpc/filter_vsx_intrinsics.lo: powerpc/$(am__dirstamp) \
+	powerpc/$(DEPDIR)/$(am__dirstamp)
 
 libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@.la: $(libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_OBJECTS) $(libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_DEPENDENCIES) $(EXTRA_libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_LINK) -rpath $(libdir) $(libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_OBJECTS) $(libpng@PNGLIB_MAJOR@@PNGLIB_MINOR@_la_LIBADD) $(LIBS)
@@ -1053,8 +1087,12 @@ mostlyclean-compile:
 	-rm -f arm/*.lo
 	-rm -f contrib/libtests/*.$(OBJEXT)
 	-rm -f contrib/tools/*.$(OBJEXT)
+	-rm -f intel/*.$(OBJEXT)
+	-rm -f intel/*.lo
 	-rm -f mips/*.$(OBJEXT)
 	-rm -f mips/*.lo
+	-rm -f powerpc/*.$(OBJEXT)
+	-rm -f powerpc/*.lo
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -1086,8 +1124,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/tools/$(DEPDIR)/png-fix-itxt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/tools/$(DEPDIR)/pngcp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@contrib/tools/$(DEPDIR)/pngfix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@intel/$(DEPDIR)/filter_sse2_intrinsics.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@intel/$(DEPDIR)/intel_init.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mips/$(DEPDIR)/filter_msa_intrinsics.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mips/$(DEPDIR)/mips_init.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@powerpc/$(DEPDIR)/filter_vsx_intrinsics.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@powerpc/$(DEPDIR)/powerpc_init.Plo@am__quote@
 
 .S.o:
 @am__fastdepCCAS_TRUE@	$(AM_V_CPPAS)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -1143,7 +1185,9 @@ mostlyclean-libtool:
 clean-libtool:
 	-rm -rf .libs _libs
 	-rm -rf arm/.libs arm/_libs
+	-rm -rf intel/.libs intel/_libs
 	-rm -rf mips/.libs mips/_libs
+	-rm -rf powerpc/.libs powerpc/_libs
 
 distclean-libtool:
 	-rm -f libtool config.lt
@@ -1500,6 +1544,13 @@ recheck: all $(check_PROGRAMS)
 tests/pngtest.log: tests/pngtest
 	@p='tests/pngtest'; \
 	b='tests/pngtest'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/pngtest-badpngs.log: tests/pngtest-badpngs
+	@p='tests/pngtest-badpngs'; \
+	b='tests/pngtest-badpngs'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1951,8 +2002,12 @@ distclean-generic:
 	-rm -f contrib/libtests/$(am__dirstamp)
 	-rm -f contrib/tools/$(DEPDIR)/$(am__dirstamp)
 	-rm -f contrib/tools/$(am__dirstamp)
+	-rm -f intel/$(DEPDIR)/$(am__dirstamp)
+	-rm -f intel/$(am__dirstamp)
 	-rm -f mips/$(DEPDIR)/$(am__dirstamp)
 	-rm -f mips/$(am__dirstamp)
+	-rm -f powerpc/$(DEPDIR)/$(am__dirstamp)
+	-rm -f powerpc/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -1969,7 +2024,7 @@ clean-am: clean-binPROGRAMS clean-checkPROGRAMS clean-generic \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf ./$(DEPDIR) arm/$(DEPDIR) contrib/libtests/$(DEPDIR) contrib/tools/$(DEPDIR) mips/$(DEPDIR)
+	-rm -rf ./$(DEPDIR) arm/$(DEPDIR) contrib/libtests/$(DEPDIR) contrib/tools/$(DEPDIR) intel/$(DEPDIR) mips/$(DEPDIR) powerpc/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -2021,7 +2076,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf ./$(DEPDIR) arm/$(DEPDIR) contrib/libtests/$(DEPDIR) contrib/tools/$(DEPDIR) mips/$(DEPDIR)
+	-rm -rf ./$(DEPDIR) arm/$(DEPDIR) contrib/libtests/$(DEPDIR) contrib/tools/$(DEPDIR) intel/$(DEPDIR) mips/$(DEPDIR) powerpc/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
