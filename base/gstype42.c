@@ -1793,7 +1793,7 @@ gs_woff2sfnt(gs_memory_t *mem, stream *s, byte *outbuf, int *outbuflen)
         goto done;
     }
 
-    if ((code = sfread(woffhdr, WOFFHDR_LEN, 1, s) < 0))
+    if ((code = sfread(woffhdr, WOFFHDR_LEN, 1, s)) < 0)
         goto done;
 
     if (memcmp(woffhdr, "wOFF", 4) != 0
