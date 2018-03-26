@@ -95,17 +95,24 @@
 
 /* restrict is standard in C99, but not in all C++ compilers. */
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ == 199901L /* C99 */
+# if defined(HAVE_RESTRICT) && HAVE_RESTRICT==1
+#  define gs_restrict restrict
+# else /* defined(HAVE_RESTRICT) && HAVE_RESTRICT==1 */
+#  define gs_restrict
+# endif /* defined(HAVE_RESTRICT) && HAVE_RESTRICT==1 */
 #elif defined(_MSC_VER) && _MSC_VER >= 1500 /* MSVC 9 or newer */
-#define gs_restrict __restrict
+# define gs_restrict __restrict
 #elif __GNUC__ >= 3 /* GCC 3 or newer */
-#if defined(HAVE_RESTRICT) && HAVE_RESTRICT==1
-#define gs_restrict __restrict
-#else /* defined(HAVE_RESTRICT) && HAVE_RESTRICT==1 */
-#define gs_restrict
-#endif /* defined(HAVE_RESTRICT) && HAVE_RESTRICT==1 */
+# if defined(HAVE_RESTRICT) && HAVE_RESTRICT==1
+#  define gs_restrict __restrict
+# else /* defined(HAVE_RESTRICT) && HAVE_RESTRICT==1 */
+#  define gs_restrict
+# endif /* defined(HAVE_RESTRICT) && HAVE_RESTRICT==1 */
 #else /* Unknown or ancient */
-#define gs_restrict
+# define gs_restrict
 #endif
+
+
 
 /* Disable 'inline' if the compiler can't handle it. */
 #ifdef __DECC
