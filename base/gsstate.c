@@ -841,7 +841,9 @@ gs_initgraphics(gs_gstate * pgs)
             pgs->color[0].color_space = pcs1;
             gs_setcolorspace(pgs, pcs1);
         }
-        gx_set_dev_color(pgs);
+        code = gx_set_dev_color(pgs);
+        if (code < 0)
+            return code;
 
         gs_swapcolors_quick(pgs); /* To color 1 */
 
@@ -855,9 +857,13 @@ gs_initgraphics(gs_gstate * pgs)
             pgs->color[0].color_space = pcs2;
             gs_setcolorspace(pgs, pcs2);
         }
-        gx_set_dev_color(pgs);
+        code = gx_set_dev_color(pgs);
 
         gs_swapcolors_quick(pgs); /* To color 0 */
+
+        if (code < 0)
+            return code;
+
     } else {
         gs_color_space  *pcs1, *pcs2;
 
@@ -871,7 +877,9 @@ gs_initgraphics(gs_gstate * pgs)
             pgs->color[0].color_space = pcs1;
             gs_setcolorspace(pgs, pcs1);
         }
-        gx_set_dev_color(pgs);
+        code = gx_set_dev_color(pgs);
+        if (code < 0)
+            return code;
 
         gs_swapcolors_quick(pgs); /* To color 1 */
         pcs2 = gs_cspace_new_ICC(pgs->memory, pgs, 1);;
@@ -884,9 +892,12 @@ gs_initgraphics(gs_gstate * pgs)
             pgs->color[0].color_space = pcs2;
             gs_setcolorspace(pgs, pcs2);
         }
-        gx_set_dev_color(pgs);
+        code = gx_set_dev_color(pgs);
 
         gs_swapcolors_quick(pgs); /* To color 0 */
+
+        if (code < 0)
+            return code;
     }
     pgs->in_cachedevice = 0;
 
