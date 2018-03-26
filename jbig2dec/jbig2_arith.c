@@ -255,7 +255,7 @@ jbig2_arith_renormd(Jbig2ArithState *as)
     /* Figure E.18 */
     do {
         if (as->CT == 0)
-	    jbig2_arith_bytein(as);
+            jbig2_arith_bytein(as);
         as->A <<= 1;
         as->C <<= 1;
         as->CT--;
@@ -342,7 +342,7 @@ test_get_word(Jbig2WordStream *self, int offset, uint32_t *word)
         *word = 0;
     else
         *word = (stream[offset] << 24) | (stream[offset + 1] << 16) |
-	    (stream[offset + 2] << 8) | stream[offset + 3];
+                (stream[offset + 2] << 8) | stream[offset + 3];
     return 0;
 }
 

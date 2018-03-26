@@ -158,9 +158,9 @@ jbig2_ctx_new(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCtx *g
 }
 
 #define get_uint16(bptr)\
-  (((bptr)[0] << 8) | (bptr)[1])
+    (((bptr)[0] << 8) | (bptr)[1])
 #define get_int16(bptr)\
-  (((int)get_uint16(bptr) ^ 0x8000) - 0x8000)
+    (((int)get_uint16(bptr) ^ 0x8000) - 0x8000)
 
 int16_t
 jbig2_get_int16(const byte *bptr)
@@ -273,7 +273,6 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
                 else
                     jbig2_error(ctx, JBIG2_SEVERITY_INFO, -1, "file header indicates a %d page document", ctx->n_pages);
             } else {            /* number of pages not known */
-
                 ctx->n_pages = 0;
                 ctx->buf_rd_ix += 9;
             }
@@ -316,7 +315,6 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
                 if (ctx->segment_index == ctx->n_segments)
                     ctx->state = JBIG2_FILE_EOF;
             } else {            /* JBIG2_FILE_SEQUENCIAL_BODY */
-
                 ctx->state = JBIG2_FILE_SEQUENTIAL_HEADER;
             }
             if (code < 0) {

@@ -46,13 +46,14 @@ jbig2_generic_stats_size(Jbig2Ctx *ctx, int template)
 {
     int stats_size = template == 0 ? 1 << 16 : template == 1 ? 1 << 1 << 13 : 1 << 10;
 
-                                        return stats_size;
+    return stats_size;
 }
 
-                                    static int
-                                    jbig2_decode_generic_template0(Jbig2Ctx *ctx,
-                                            Jbig2Segment *segment,
-                                            const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
+static int
+jbig2_decode_generic_template0(Jbig2Ctx *ctx,
+                               Jbig2Segment *segment,
+                               const Jbig2GenericRegionParams *params, Jbig2ArithState *as,
+                               Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
     const int GBW = image->width;
     const int GBH = image->height;
@@ -68,7 +69,7 @@ jbig2_generic_stats_size(Jbig2Ctx *ctx, int template)
 #endif
 
     if (GBW <= 0)
-                return 0;
+        return 0;
 
     for (y = 0; y < GBH; y++) {
         uint32_t CONTEXT;
@@ -78,9 +79,9 @@ jbig2_generic_stats_size(Jbig2Ctx *ctx, int template)
 
         line_m1 = (y >= 1) ? gbreg_line[-rowstride] : 0;
         line_m2 = (y >= 2) ? gbreg_line[-(rowstride << 1)] << 6 : 0;
-                                        CONTEXT = (line_m1 & 0x7f0) | (line_m2 & 0xf800);
+        CONTEXT = (line_m1 & 0x7f0) | (line_m2 & 0xf800);
 
-                                        /* 6.2.5.7 3d */
+        /* 6.2.5.7 3d */
         for (x = 0; x < padded_width; x += 8) {
             byte result = 0;
             int x_minor;
@@ -92,7 +93,7 @@ jbig2_generic_stats_size(Jbig2Ctx *ctx, int template)
             if (y >= 2)
                 line_m2 = (line_m2 << 8) | (x + 8 < GBW ? gbreg_line[-(rowstride << 1) + (x >> 3) + 1] << 6 : 0);
 
-                       /* This is the speed-critical inner loop. */
+            /* This is the speed-critical inner loop. */
             for (x_minor = 0; x_minor < minor_width; x_minor++) {
                 bool bit;
 
@@ -179,7 +180,7 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
 #endif
 
     if (GBW <= 0)
-                return 0;
+        return 0;
 
     for (y = 0; y < GBH; y++) {
         uint32_t CONTEXT;
@@ -189,7 +190,7 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
 
         line_m1 = (y >= 1) ? gbreg_line[-rowstride] : 0;
         line_m2 = (y >= 2) ? gbreg_line[-(rowstride << 1)] << 5 : 0;
-                                        CONTEXT = ((line_m1 >> 1) & 0x1f8) | ((line_m2 >> 1) & 0x1e00);
+        CONTEXT = ((line_m1 >> 1) & 0x1f8) | ((line_m2 >> 1) & 0x1e00);
 
         /* 6.2.5.7 3d */
         for (x = 0; x < padded_width; x += 8) {
@@ -203,7 +204,7 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
             if (y >= 2)
                 line_m2 = (line_m2 << 8) | (x + 8 < GBW ? gbreg_line[-(rowstride << 1) + (x >> 3) + 1] << 5 : 0);
 
-                       /* This is the speed-critical inner loop. */
+            /* This is the speed-critical inner loop. */
             for (x_minor = 0; x_minor < minor_width; x_minor++) {
                 bool bit;
 
@@ -241,7 +242,7 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
 #endif
 
     if (GBW <= 0)
-                return 0;
+        return 0;
 
     for (y = 0; y < GBH; y++) {
         uint32_t CONTEXT;
@@ -251,7 +252,7 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
 
         line_m1 = (y >= 1) ? gbreg_line[-rowstride] : 0;
         line_m2 = (y >= 2) ? gbreg_line[-(rowstride << 1)] << 4 : 0;
-                                        CONTEXT = ((line_m1 >> 3) & 0x7c) | ((line_m2 >> 3) & 0x380);
+        CONTEXT = ((line_m1 >> 3) & 0x7c) | ((line_m2 >> 3) & 0x380);
 
         /* 6.2.5.7 3d */
         for (x = 0; x < padded_width; x += 8) {
@@ -265,7 +266,7 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
             if (y >= 2)
                 line_m2 = (line_m2 << 8) | (x + 8 < GBW ? gbreg_line[-(rowstride << 1) + (x >> 3) + 1] << 4 : 0);
 
-                       /* This is the speed-critical inner loop. */
+            /* This is the speed-critical inner loop. */
             for (x_minor = 0; x_minor < minor_width; x_minor++) {
                 bool bit;
 
@@ -302,7 +303,7 @@ jbig2_decode_generic_template2a(Jbig2Ctx *ctx,
 #endif
 
     if (GBW <= 0)
-                return 0;
+        return 0;
 
     for (y = 0; y < GBH; y++) {
         uint32_t CONTEXT;
@@ -312,7 +313,7 @@ jbig2_decode_generic_template2a(Jbig2Ctx *ctx,
 
         line_m1 = (y >= 1) ? gbreg_line[-rowstride] : 0;
         line_m2 = (y >= 2) ? gbreg_line[-(rowstride << 1)] << 4 : 0;
-                                        CONTEXT = ((line_m1 >> 3) & 0x78) | ((line_m1 >> 2) & 0x4) | ((line_m2 >> 3) & 0x380);
+        CONTEXT = ((line_m1 >> 3) & 0x78) | ((line_m1 >> 2) & 0x4) | ((line_m2 >> 3) & 0x380);
 
         /* 6.2.5.7 3d */
         for (x = 0; x < padded_width; x += 8) {
@@ -326,14 +327,14 @@ jbig2_decode_generic_template2a(Jbig2Ctx *ctx,
             if (y >= 2)
                 line_m2 = (line_m2 << 8) | (x + 8 < GBW ? gbreg_line[-(rowstride << 1) + (x >> 3) + 1] << 4 : 0);
 
-                       /* This is the speed-critical inner loop. */
+            /* This is the speed-critical inner loop. */
             for (x_minor = 0; x_minor < minor_width; x_minor++) {
                 bool bit;
 
                 bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
                 result |= bit << (7 - x_minor);
                 CONTEXT = ((CONTEXT & 0x1b9) << 1) | bit |
-                           ((line_m1 >> (10 - x_minor)) & 0x8) | ((line_m1 >> (9 - x_minor)) & 0x4) | ((line_m2 >> (10 - x_minor)) & 0x80);
+                          ((line_m1 >> (10 - x_minor)) & 0x8) | ((line_m1 >> (9 - x_minor)) & 0x4) | ((line_m2 >> (10 - x_minor)) & 0x80);
             }
             gbreg_line[x >> 3] = result;
         }
@@ -365,7 +366,7 @@ jbig2_decode_generic_template3(Jbig2Ctx *ctx,
 #endif
 
     if (GBW <= 0)
-                return 0;
+        return 0;
 
     for (y = 0; y < GBH; y++) {
         uint32_t CONTEXT;
@@ -704,7 +705,7 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
         int i;
 
         for (i = 0; i < 8; i++)
-                    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "gbat[%d] = %d", i, params->gbat[i]);
+            jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "gbat[%d] = %d", i, params->gbat[i]);
     }
     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "decode_generic_region: MMR=%d, GBTEMPLATE=%d NYI", params->MMR, params->GBTEMPLATE);
     return -1;
@@ -730,7 +731,7 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte 
 
     /* 7.4.6 */
     if (segment->data_length < 18)
-                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
 
     jbig2_get_region_segment_info(&rsi, segment_data);
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "generic region: %d x %d @ (%d, %d), flags = %02x", rsi.width, rsi.height, rsi.x, rsi.y, rsi.flags);

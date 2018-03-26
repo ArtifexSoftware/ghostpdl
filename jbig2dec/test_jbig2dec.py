@@ -45,11 +45,11 @@ class SelfTestSuite:
       self.stream.write("%s\n" % test.result)
     stoptime = time.time()
     self.stream.write('-'*72 + '\n')
-    self.stream.write('ran %d tests in %.3f seconds\n\n' % 
-	(len(self.tests), stoptime - starttime))
+    self.stream.write('ran %d tests in %.3f seconds\n\n' %
+        (len(self.tests), stoptime - starttime))
     if len(self.fails):
-      self.stream.write('FAILED %d of %d tests\n' % 
-	(len(self.fails),len(self.tests)))
+      self.stream.write('FAILED %d of %d tests\n' %
+        (len(self.fails),len(self.tests)))
       return False
     else:
       self.stream.write('PASSED all %d tests\n' % len(self.tests))

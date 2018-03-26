@@ -856,7 +856,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         params.IARDX = jbig2_arith_int_ctx_new(ctx);
         params.IARDY = jbig2_arith_int_ctx_new(ctx);
         if ((params.IAID == NULL) || (params.IARI == NULL) ||
-                (params.IARDW == NULL) || (params.IARDH == NULL) || (params.IARDX == NULL) || (params.IARDY == NULL)) {
+            (params.IARDW == NULL) || (params.IARDH == NULL) || (params.IARDX == NULL) || (params.IARDY == NULL)) {
             code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "couldn't allocate text region image data");
             goto cleanup4;
         }
