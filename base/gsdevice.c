@@ -195,8 +195,8 @@ gs_output_page(gs_gstate * pgs, int num_copies, int flush)
         return code;
     if (((code = gs_newpath(pgs)) < 0) ||
         ((code = gs_moveto(pgs, 0.0, 0.0)) < 0) ||
-	((code = gs_setgray(pgs, 0.0) < 0)) ||
-	((code = gs_fill(pgs)) < 0))
+    ((code = gs_setgray(pgs, 0.0)) < 0) ||
+    ((code = gs_fill(pgs)) < 0))
     {
         gs_grestore(pgs);
 	return code;
