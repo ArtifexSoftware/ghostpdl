@@ -339,6 +339,18 @@ else
     dbgflags_to_try="$CC_DBG_FLAGS_TO_TRY"
 fi
 
+AC_MSG_CHECKING([if compiler supports restrict])
+AC_TRY_COMPILE([void test (char * __restrict p){}],[
+                 char * __restrict t;
+                 test(t);
+                 return 1;
+               ],[
+               CFLAGS="$CFLAGS -DHAVE_RESTRICT=1"
+               AC_MSG_RESULT([yes])],[
+               CFLAGS="$CFLAGS -DHAVE_RESTRICT=0"
+               AC_MSG_RESULT([no])])
+
+
 
 AC_ARG_WITH([arch_h], AC_HELP_STRING([--with-arch_h=<arch.h to use>],
             [Use a custom arch.h (must be an absolute path)]),[], [with_arch_h=])
