@@ -2087,7 +2087,7 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
                     Map = &CIDMap->value.bytes[c_code * gdb];
                 }
                 cr->char_codes[0] = 0;
-
+                is_glyph_index = true;
                 if (code >= 0) {
                     for (i = 0; i < gdb; i++) {
                         cr->char_codes[0] = (cr->char_codes[0] << 8) + Map[i];
