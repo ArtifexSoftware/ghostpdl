@@ -2,6 +2,7 @@
  * wrgif.c
  *
  * Copyright (C) 1991-1997, Thomas G. Lane.
+ * Modified 2015-2017 by Guido Vollbeding.
  * This file is part of the Independent JPEG Group's software.
  * For conditions of distribution and use, see the accompanying README file.
  *
@@ -218,7 +219,7 @@ put_3bytes (gif_dest_ptr dinfo, int val)
 LOCAL(void)
 emit_header (gif_dest_ptr dinfo, int num_colors, JSAMPARRAY colormap)
 /* Output the GIF file header, including color map */
-/* If colormap==NULL, synthesize a gray-scale colormap */
+/* If colormap==NULL, synthesize a grayscale colormap */
 {
   int BitsPerPixel, ColorMapSize, InitCodeSize, FlagByte;
   int cshift = dinfo->cinfo->data_precision - 8;
@@ -270,7 +271,7 @@ emit_header (gif_dest_ptr dinfo, int num_colors, JSAMPARRAY colormap)
 	  put_3bytes(dinfo, GETJSAMPLE(colormap[0][i]) >> cshift);
 	}
       } else {
-	/* Create a gray-scale map of num_colors values, range 0..255 */
+	/* Create a grayscale map of num_colors values, range 0..255 */
 	put_3bytes(dinfo, (i * 255 + (num_colors-1)/2) / (num_colors-1));
       }
     } else {
@@ -346,8 +347,8 @@ finish_output_gif (j_decompress_ptr cinfo, djpeg_dest_ptr dinfo)
   /* Write the GIF terminator mark */
   putc(';', dest->pub.output_file);
   /* Make sure we wrote the output file OK */
-  fflush(dest->pub.output_file);
-  if (ferror(dest->pub.output_file))
+  JFFLUSH(dest->pub.output_file);
+  if (JFERROR(dest->pub.output_file))
     ERREXIT(cinfo, JERR_FILE_WRITE);
 }
 
@@ -393,7 +394,7 @@ jinit_write_gif (j_decompress_ptr cinfo)
     ((j_common_ptr) cinfo, JPOOL_IMAGE, cinfo->output_width, (JDIMENSION) 1);
   dest->pub.buffer_height = 1;
 
-  return (djpeg_dest_ptr) dest;
+  return &dest->pub;
 }
 
 #endif /* GIF_SUPPORTED */

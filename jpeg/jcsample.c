@@ -541,7 +541,5 @@ jinit_downsampler (j_compress_ptr cinfo)
 #ifdef INPUT_SMOOTHING_SUPPORTED
   if (cinfo->smoothing_factor && !smoothok)
     TRACEMS(cinfo, 0, JTRC_SMOOTH_NOTIMPL);
-#else
-  (void)smoothok; /* Stop unused var warnings */
 #endif
 }
