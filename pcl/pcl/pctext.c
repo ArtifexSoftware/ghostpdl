@@ -503,11 +503,10 @@ show_char_foreground(const pcl_state_t * pcs, const gs_char * pbuff)
     text.data.chars = pbuff;
     text.size = 1;
     code = gs_text_begin(pcs->pgs, &text, pcs->memory, &penum);
-    if (code >= 0)
+    if (code >= 0) {
         code = gs_text_process(penum);
-
-    if (code >= 0)
         gs_text_release(penum, "show_char_foreground");
+    }
     return code;
 }
 

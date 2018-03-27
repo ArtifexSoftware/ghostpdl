@@ -109,7 +109,6 @@ gx_begin_image4(gx_device * dev,
     if (code >= 0)
         *pinfo = (gx_image_enum_common_t *)penum;
     else {
-        gs_free_object(mem, penum, "gx_begin_image4");
         *pinfo = NULL;
     }
     return code;

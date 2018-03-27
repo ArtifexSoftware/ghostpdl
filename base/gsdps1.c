@@ -300,10 +300,11 @@ gs_rectfill(gs_gstate * pgs, const gs_rect * pr, uint count)
         if (do_save) {
             if ((code = gs_gsave(pgs)) < 0)
                 return code;
-            gs_newpath(pgs);
+            code = gs_newpath(pgs);
         }
-        if ((code = gs_rectappend(pgs, rlist, rcount)) < 0 ||
-            (code = gs_fill(pgs)) < 0
+        if ((code >= 0) &&
+            (((code = gs_rectappend(pgs, rlist, rcount)) < 0) ||
+            ((code = gs_fill(pgs)) < 0))
             )
             DO_NOTHING;
         if (do_save)

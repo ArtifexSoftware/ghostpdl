@@ -1554,6 +1554,12 @@ show_cache_setup(gs_show_enum * penum)
                         "show_cache_setup(dev_cache2)");
 
     if (dev == 0 || dev2 == 0) {
+        /*
+         * The structure is full of garbage so must not call the
+         * finalize method but still need to free the structure
+         */
+        gs_set_object_type(mem, dev2, NULL);
+        gs_set_object_type(mem, dev, NULL);
         gs_free_object(mem, dev2, "show_cache_setup(dev_cache2)");
         gs_free_object(mem, dev, "show_cache_setup(dev_cache)");
         return_error(gs_error_VMerror);
