@@ -340,8 +340,18 @@ else
 fi
 
 AC_MSG_CHECKING([if compiler supports restrict])
-AC_TRY_COMPILE([void test (char * __restrict p){}],[
+AC_TRY_COMPILE([
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ == 199901L
+void test (char * restrict p){}
+#else
+void test (char * __restrict p){}
+#endif
+],[
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ == 199901L
+                 char *restrict t;
+#else
                  char * __restrict t;
+#endif
                  test(t);
                  return 1;
                ],[
