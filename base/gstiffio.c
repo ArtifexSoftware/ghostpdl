@@ -244,6 +244,17 @@ _TIFFmalloc(tmsize_t s)
     return (malloc((size_t) s));
 }
 
+void* _TIFFcalloc(tmsize_t nmemb, tmsize_t siz)
+{
+    void *m = NULL;
+    if( nmemb != 0 && siz != 0 ) {
+        m = malloc((size_t)(nmemb * siz));
+    }
+    if (m)
+        memset(m, 0x00, (size_t)(nmemb * siz));
+    return m;
+}
+
 void
 _TIFFfree(void* p)
 {

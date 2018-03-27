@@ -1309,6 +1309,11 @@ CGLAGS_STORE=$CFLAGS
 CFLAGS=-Wno-misleading-indentation
 AC_TRY_COMPILE([], [return 0;],
     [CFLAGS_NMI="-Wno-misleading-indentation"],[CFLAGS_NMI=""])
+
+CFLAGS=-Wno-undef
+AC_TRY_COMPILE([], [return 0;],
+    [CFLAGS_NUD="-Wno-undef"],[CFLAGS_NUD=""])
+
 CFLAGS=$CGLAGS_STORE
 
 if test x"$SHARE_LIBTIFF" = x"0" ; then
@@ -1325,7 +1330,7 @@ if test x"$SHARE_LIBTIFF" = x"0" ; then
       cd "$olddir"
 
       if test x"$ac_cv_prog_gcc" = x"yes"; then
-        TIFFCFLAGS="-Wno-write-strings $CFLAGS_NMI -DJPEG_LIB_MK1_OR_12BIT=0"
+        TIFFCFLAGS="-Wno-write-strings $CFLAGS_NMI $CFLAGS_NUD -DJPEG_LIB_MK1_OR_12BIT=0"
       fi
 
       echo

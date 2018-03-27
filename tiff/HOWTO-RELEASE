@@ -28,7 +28,7 @@ Notes on releasing.
    Take ChangeLog entries and html-ify in there. 
    Easist thing to do is take html/vX.(X-1).html and use it as a template.
 
-3. Add vX.X.html file to the list of EXTRA_DIST files in the html/Makefile.am.
+3. Add vX.X.html file to the list of 'docfiles' files in the html/Makefile.am.
 
 4. Update html/index.html to refer to this new page as the current release.
 

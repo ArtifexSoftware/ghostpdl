@@ -53,7 +53,8 @@ CLEANFILES = test_packbits.tif o-*
 
 if HAVE_JPEG
 JPEG_DEPENDENT_CHECK_PROG=raw_decode
-JPEG_DEPENDENT_TESTSCRIPTS=tiff2rgba-quad-tile.jpg.sh
+JPEG_DEPENDENT_TESTSCRIPTS=\
+	tiff2rgba-quad-tile.jpg.sh
 else
 JPEG_DEPENDENT_CHECK_PROG=
 JPEG_DEPENDENT_TESTSCRIPTS=
@@ -77,6 +78,7 @@ TESTSCRIPTS = \
 	tiffcp-g4.sh \
 	tiffcp-logluv.sh \
 	tiffcp-thumbnail.sh \
+	tiffcp-lzw-compat.sh \
 	tiffdump.sh \
 	tiffinfo.sh \
 	tiffcp-split.sh \
@@ -126,6 +128,9 @@ TESTSCRIPTS = \
 	tiffcrop-R90-palette-1c-8b.sh \
 	tiffcrop-R90-rgb-3c-16b.sh \
 	tiffcrop-R90-rgb-3c-8b.sh \
+	tiff2bw-palette-1c-8b.sh \
+	tiff2bw-quad-lzw-compat.sh \
+	tiff2bw-rgb-3c-8b.sh \
 	tiff2rgba-logluv-3c-16b.sh \
 	tiff2rgba-minisblack-1c-16b.sh \
 	tiff2rgba-minisblack-1c-8b.sh \
@@ -152,7 +157,8 @@ TIFFIMAGES = \
 	images/palette-1c-8b.tiff \
 	images/rgb-3c-16b.tiff \
 	images/rgb-3c-8b.tiff \
-	images/quad-tile.jpg.tiff
+	images/quad-tile.jpg.tiff \
+	images/quad-lzw-compat.tiff
 
 PNMIMAGES = \
 	images/minisblack-1c-8b.pgm \
@@ -206,6 +212,26 @@ memcheck:
 # ptrcheck: valgrind's experimental pointer checking tool.
 ptrcheck:
 	$(MAKE) MEMCHECK='valgrind --tool=exp-ptrcheck --quiet $(VALGRIND_EXTRA_OPTS)' check
+
+# tiff2bw is pretty lame so currently only the generated scripts
+# tiff2bw-palette-1c-8b.sh, tiff2bw-quad-lzw-compat.sh, and
+# tiff2bw-rgb-3c-8b.sh pass tests.
+generate-tiff2bw-tests:
+	for file in $(TIFFIMAGES) ; \
+	do \
+	base=`basename $$file .tiff` ; \
+	testscript=$(srcdir)/tiff2bw-$$base.sh ; \
+	( \
+	  echo "#!/bin/sh" ; \
+	  echo "# Generated file, master is Makefile.am" ; \
+	  echo ". \$${srcdir:-.}/common.sh" ; \
+	  echo "infile=\"\$$srcdir/$$file\"" ; \
+	  echo "outfile=\"o-tiff2bw-$$base.tiff\"" ; \
+	  echo "f_test_convert \"\$$TIFF2BW\" \$$infile \$$outfile" ; \
+	  echo "f_tiffinfo_validate \$$outfile" ; \
+	) > $$testscript ; \
+	chmod +x $$testscript ; \
+	done
 
 generate-tiff2rgba-tests:
 	for file in $(TIFFIMAGES) ; \
@@ -303,5 +329,6 @@ generate-tiffcrop-tests: \
 	generate-tiffcrop-extractz14-tests
 
 generate-tests: \
+	generate-tiff2bw-tests \
 	generate-tiff2rgba-tests \
 	generate-tiffcrop-tests

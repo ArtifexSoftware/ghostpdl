@@ -1,4 +1,4 @@
-/* $Id: raw2tiff.c,v 1.28 2015-08-19 02:31:04 bfriesen Exp $
+/* $Id: raw2tiff.c,v 1.29 2017-01-14 13:12:33 erouault Exp $
  *
  * Project:  libtiff tools
  * Purpose:  Convert raw byte sequences in TIFF images
@@ -408,8 +408,14 @@ guessSize(int fd, TIFFDataType dtype, _TIFF_off_t hdr_size, uint32 nbands,
 	} else if (*width == 0 && *length == 0) {
                 unsigned int fail = 0;
 		fprintf(stderr,	"Image width and height are not specified.\n");
+                w = (uint32) sqrt(imagesize / longt);
+                if( w == 0 )
+                {
+                    fprintf(stderr, "Too small image size.\n");
+                    return -1;
+                }
 
-		for (w = (uint32) sqrt(imagesize / longt);
+		for (;
 		     w < sqrt(imagesize * longt);
 		     w++) {
 			if (imagesize % w == 0) {

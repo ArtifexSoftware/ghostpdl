@@ -1,4 +1,4 @@
-/* $Id: tiffinfo.c,v 1.25 2016-11-12 20:06:05 bfriesen Exp $ */
+/* $Id: tiffinfo.c,v 1.26 2016-12-03 14:18:49 erouault Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -417,7 +417,7 @@ TIFFReadRawData(TIFF* tif, int bitrev)
 	uint64* stripbc=NULL;
 
 	TIFFGetField(tif, TIFFTAG_STRIPBYTECOUNTS, &stripbc);
-	if (nstrips > 0) {
+	if (stripbc != NULL && nstrips > 0) {
 		uint32 bufsize = (uint32) stripbc[0];
 		tdata_t buf = _TIFFmalloc(bufsize);
 		tstrip_t s;

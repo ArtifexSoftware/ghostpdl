@@ -1,4 +1,4 @@
-/* $Id: tiffcrop.c,v 1.46 2016-11-18 14:58:46 erouault Exp $ */
+/* $Id: tiffcrop.c,v 1.50 2017-01-11 12:51:59 erouault Exp $ */
 
 /* tiffcrop.c -- a port of tiffcp.c extended to include manipulations of
  * the image data through additional options listed below
@@ -1164,7 +1164,7 @@ writeBufferToSeparateStrips (TIFF* out, uint8* buf,
   tdata_t  obuf;
 
   (void) TIFFGetFieldDefaulted(out, TIFFTAG_ROWSPERSTRIP, &rowsperstrip);
-  (void) TIFFGetField(out, TIFFTAG_BITSPERSAMPLE, &bps);
+  (void) TIFFGetFieldDefaulted(out, TIFFTAG_BITSPERSAMPLE, &bps);
   bytes_per_sample = (bps + 7) / 8;
   if( width == 0 ||
       (uint32)bps * (uint32)spp > TIFF_UINT32_MAX / width ||
@@ -3698,7 +3698,7 @@ static int readContigStripsIntoBuffer (TIFF* in, uint8* buf)
                                   (unsigned long) strip, (unsigned long)rows);
                         return 0;
                 }
-                bufp += bytes_read;
+                bufp += stripsize;
         }
 
         return 1;
@@ -4760,7 +4760,7 @@ static int readSeparateStripsIntoBuffer (TIFF *in, uint8 *obuf, uint32 length,
   int i, bytes_per_sample, bytes_per_pixel, shift_width, result = 1;
   uint32 j;
   int32  bytes_read = 0;
-  uint16 bps, planar;
+  uint16 bps = 0, planar;
   uint32 nstrips;
   uint32 strips_per_sample;
   uint32 src_rowsize, dst_rowsize, rows_processed, rps;
@@ -4780,7 +4780,7 @@ static int readSeparateStripsIntoBuffer (TIFF *in, uint8 *obuf, uint32 length,
     }
 
   memset (srcbuffs, '\0', sizeof(srcbuffs));
-  TIFFGetField(in, TIFFTAG_BITSPERSAMPLE, &bps);
+  TIFFGetFieldDefaulted(in, TIFFTAG_BITSPERSAMPLE, &bps);
   TIFFGetFieldDefaulted(in, TIFFTAG_PLANARCONFIG, &planar);
   TIFFGetFieldDefaulted(in, TIFFTAG_ROWSPERSTRIP, &rps);
   if (rps > length)
@@ -4815,10 +4815,17 @@ static int readSeparateStripsIntoBuffer (TIFF *in, uint8 *obuf, uint32 length,
   nstrips = TIFFNumberOfStrips(in);
   strips_per_sample = nstrips /spp;
 
+  /* Add 3 padding bytes for combineSeparateSamples32bits */
+  if( (size_t) stripsize > 0xFFFFFFFFU - 3U )
+  {
+      TIFFError("readSeparateStripsIntoBuffer", "Integer overflow when calculating buffer size.");
+      exit(-1);
+  }
+
   for (s = 0; (s < spp) && (s < MAX_SAMPLES); s++)
     {
     srcbuffs[s] = NULL;
-    buff = _TIFFmalloc(stripsize);
+    buff = _TIFFmalloc(stripsize + 3);
     if (!buff)
       {
       TIFFError ("readSeparateStripsIntoBuffer", 
@@ -4827,6 +4834,9 @@ static int readSeparateStripsIntoBuffer (TIFF *in, uint8 *obuf, uint32 length,
         _TIFFfree (srcbuffs[i]);
       return 0;
       }
+    buff[stripsize] = 0;
+    buff[stripsize+1] = 0;
+    buff[stripsize+2] = 0;
     srcbuffs[s] = buff;
     }
 
@@ -7986,7 +7996,6 @@ writeCroppedImage(TIFF *in, TIFF *out, struct image_data *image,
   if (!TIFFWriteDirectory(out))
     {
     TIFFError("","Failed to write IFD for page number %d", pagenum);
-    TIFFClose(out);
     return (-1);
     }
 
