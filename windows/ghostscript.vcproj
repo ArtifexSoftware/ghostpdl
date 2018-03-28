@@ -3128,7 +3128,7 @@
 						>
 					</File>
 					<File
-						RelativePath="..\base\gsicc_lcms2art.c"
+						RelativePath="..\base\gsicc_lcms2mt.c"
 						>
 					</File>
 					<File
@@ -7369,126 +7369,126 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="lcms2art"
+			Name="lcms2mt"
 			>
 			<File
-				RelativePath="..\lcms2art\src\cmsalpha.c"
+				RelativePath="..\lcms2mt\src\cmsalpha.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmscam02.c"
+				RelativePath="..\lcms2mt\src\cmscam02.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmscgats.c"
+				RelativePath="..\lcms2mt\src\cmscgats.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmscnvrt.c"
+				RelativePath="..\lcms2mt\src\cmscnvrt.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmserr.c"
+				RelativePath="..\lcms2mt\src\cmserr.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmsgamma.c"
+				RelativePath="..\lcms2mt\src\cmsgamma.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmsgmt.c"
+				RelativePath="..\lcms2mt\src\cmsgmt.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmshalf.c"
+				RelativePath="..\lcms2mt\src\cmshalf.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmsintrp.c"
+				RelativePath="..\lcms2mt\src\cmsintrp.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmsio0.c"
+				RelativePath="..\lcms2mt\src\cmsio0.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmsio1.c"
+				RelativePath="..\lcms2mt\src\cmsio1.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmslut.c"
+				RelativePath="..\lcms2mt\src\cmslut.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmsmd5.c"
+				RelativePath="..\lcms2mt\src\cmsmd5.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmsmtrx.c"
+				RelativePath="..\lcms2mt\src\cmsmtrx.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmsnamed.c"
+				RelativePath="..\lcms2mt\src\cmsnamed.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmsopt.c"
+				RelativePath="..\lcms2mt\src\cmsopt.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmspack.c"
+				RelativePath="..\lcms2mt\src\cmspack.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmspcs.c"
+				RelativePath="..\lcms2mt\src\cmspcs.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmsplugin.c"
+				RelativePath="..\lcms2mt\src\cmsplugin.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmsps2.c"
+				RelativePath="..\lcms2mt\src\cmsps2.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmssamp.c"
+				RelativePath="..\lcms2mt\src\cmssamp.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmssm.c"
+				RelativePath="..\lcms2mt\src\cmssm.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmstypes.c"
+				RelativePath="..\lcms2mt\src\cmstypes.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmsvirt.c"
+				RelativePath="..\lcms2mt\src\cmsvirt.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmswtpnt.c"
+				RelativePath="..\lcms2mt\src\cmswtpnt.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\cmsxform.c"
+				RelativePath="..\lcms2mt\src\cmsxform.c"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\extra_xform.h"
+				RelativePath="..\lcms2mt\src\extra_xform.h"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\include\lcms2art.h"
+				RelativePath="..\lcms2mt\include\lcms2mt.h"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\src\lcms2_internal.h"
+				RelativePath="..\lcms2mt\src\lcms2_internal.h"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2art\include\lcms2art_plugin.h"
+				RelativePath="..\lcms2mt\include\lcms2mt_plugin.h"
 				>
 			</File>
 		</Filter>

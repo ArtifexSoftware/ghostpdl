@@ -62,11 +62,11 @@ SHARE_JBIG2=0
 JBIG2_LIB=jbig2dec
 JBIG2SRCDIR=jbig2dec
 
-# Define the directory where the lcms2art source is stored.
-# See lcms2art.mak for more information
+# Define the directory where the lcms2mt source is stored.
+# See lcms2mt.mak for more information
 
 SHARE_LCMS=0
-LCMS2ARTSRCDIR=lcms2art
+LCMS2MTSRCDIR=lcms2mt
 
 # Define the directory where the lcms2 source is stored.
 # See lcms2.mak for more information

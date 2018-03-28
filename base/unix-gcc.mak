@@ -298,12 +298,15 @@ JPX_CFLAGS=  -DUSE_JPIP -DUSE_OPENJPEG_JP2 -DOPJ_HAVE_STDINT_H=1 -DOPJ_HAVE_INTT
 
 # options for lcms color management library
 SHARE_LCMS=0
-LCMS2SRCDIR=./lcms2art
+LCMS2SRCDIR=./lcms2mt
+LCMS2_CFLAGS=-DSHARE_LCMS=$(SHARE_LCMS) -DCMS_USE_BIG_ENDIAN=0   
+
+LCMS2MTSRCDIR=./lcms2mt
 LCMS2_CFLAGS=-DSHARE_LCMS=$(SHARE_LCMS) -DCMS_USE_BIG_ENDIAN=0   
 
 # Which CMS are we using?
-# Options are currently lcms2art or lcms2
-WHICH_CMS=lcms2art
+# Options are currently lcms2mt or lcms2
+WHICH_CMS=lcms2mt
 
 EXPATSRCDIR=./expat
 EXPAT_CFLAGS=-DHAVE_MEMMOVE

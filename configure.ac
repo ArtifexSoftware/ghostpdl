@@ -1155,15 +1155,15 @@ WHICHLCMS=
 
 AC_MSG_CHECKING([for local lcms2 library source])
 LCMS2DIR=src
-LCMS2ARTDIR=src
+LCMS2MTDIR=src
 
 # First check for Artifex version
-LCMS2ARTSRC=$srcdir/lcms2art
-if test -f $LCMS2ARTSRC/include/lcms2art.h; then
+LCMS2MTSRC=$srcdir/lcms2mt
+if test -f $LCMS2MTSRC/include/lcms2mt.h; then
       AC_MSG_RESULT([yes])
       SHARELCMS=0
-      WHICHLCMS=lcms2art
-      LCMS2ARTDIR=$LCMS2ARTSRC
+      WHICHLCMS=lcms2mt
+      LCMS2MTDIR=$LCMS2MTSRC
 else
   # Now check for local lcms2 (non-Artifex)
   LCMS2SRC=$srcdir/lcms2
@@ -1188,7 +1188,7 @@ fi
 AC_SUBST(SHARELCMS)
 AC_SUBST(WHICHLCMS)
 AC_SUBST(LCMS2DIR)
-AC_SUBST(LCMS2ARTDIR)
+AC_SUBST(LCMS2MTDIR)
 
 dnl look for libtiff, it also requires lib
 dnl png for the png output device; it also requires zlib

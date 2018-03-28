@@ -128,10 +128,10 @@ JBIG2SRCDIR=[.jbig2dec]
 
 # Define the jpeg2k library and source location.
 
-# Define the directory where the lcms2art source is stored.
-# See lcms2art.mak for more information
+# Define the directory where the lcms2mt source is stored.
+# See lcms2mt.mak for more information
 
-LCMS2ARTSRCDIR=[.lcms2art]
+LCMS2MTSRCDIR=[.lcms2mt]
 
 
 # Define the directory where the lcms2 source is stored.
@@ -140,9 +140,9 @@ LCMS2ARTSRCDIR=[.lcms2art]
 LCMS2SRCDIR=[.lcms2]
 
 # Which CMS are we using?
-# Options are currently lcms2art or lcms2
+# Options are currently lcms2mt or lcms2
 
-WHICH_CMS=lcms2art
+WHICH_CMS=lcms2mt
 
 # IJS has not been ported to OpenVMS. If you do the port,
 # you'll need to set these values. You'll also need to
