@@ -208,8 +208,10 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
     gs_c_param_list_write(&inst->params, mem);
     gs_param_list_set_persistent_keys((gs_param_list *)&inst->params, false);
 
-#if defined(__WIN32__) && !defined(GS_NO_UTF8)
+#if defined(__WIN32__) && defined(GS_NO_UTF8)
     arg_get_codepoint = gp_local_arg_encoding_get_codepoint;
+#else
+    arg_get_codepoint = NULL;
 #endif
     arg_init(&inst->args, (const char **)argv, argc, pl_main_arg_fopen, NULL,
              arg_get_codepoint, mem);

@@ -325,6 +325,10 @@ int new_main(int argc, char *argv[])
 #if defined(_MSC_VER) || defined(__BORLANDC__)
     __try {
 #endif
+#ifndef GS_NO_UTF8
+    code = gsdll.set_arg_encoding(instance, GS_ARG_ENCODING_UTF8);
+    if (code == 0)
+#endif
     code = gsdll.init_with_args(instance, nargc, nargv);
     if (code == 0)
         code = gsdll.run_string(instance, start_string, 0, &exit_code);
