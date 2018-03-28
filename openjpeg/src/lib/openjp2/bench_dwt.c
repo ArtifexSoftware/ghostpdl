@@ -62,13 +62,14 @@ void init_tilec(opj_tcd_tilecomp_t * l_tilec,
     l_tilec->y1 = y1;
     nValues = (size_t)(l_tilec->x1 - l_tilec->x0) *
               (size_t)(l_tilec->y1 - l_tilec->y0);
-    l_tilec->data = opj_malloc(sizeof(OPJ_INT32) * nValues);
+    l_tilec->data = (OPJ_INT32*) opj_malloc(sizeof(OPJ_INT32) * nValues);
     for (i = 0; i < nValues; i++) {
-        l_tilec->data[i] = getValue(i);
+        l_tilec->data[i] = getValue((OPJ_UINT32)i);
     }
     l_tilec->numresolutions = numresolutions;
-    l_tilec->resolutions = opj_calloc(l_tilec->numresolutions,
-                                      sizeof(opj_tcd_resolution_t));
+    l_tilec->resolutions = (opj_tcd_resolution_t*) opj_calloc(
+                               l_tilec->numresolutions,
+                               sizeof(opj_tcd_resolution_t));
 
     l_level_no = l_tilec->numresolutions;
     l_res = l_tilec->resolutions;
@@ -133,15 +134,20 @@ OPJ_FLOAT64 opj_clock(void)
 int main(int argc, char** argv)
 {
     int num_threads = 0;
+    opj_tcd_t tcd;
+    opj_tcd_image_t tcd_image;
+    opj_tcd_tile_t tcd_tile;
     opj_tcd_tilecomp_t tilec;
+    opj_image_t image;
+    opj_image_comp_t image_comp;
     opj_thread_pool_t* tp;
     OPJ_INT32 i, j, k;
     OPJ_BOOL display = OPJ_FALSE;
     OPJ_BOOL check = OPJ_FALSE;
     OPJ_INT32 size = 16384 - 1;
     OPJ_FLOAT64 start, stop;
-    OPJ_UINT32 offset_x = (size + 1) / 2 - 1;
-    OPJ_UINT32 offset_y = (size + 1) / 2 - 1;
+    OPJ_UINT32 offset_x = ((OPJ_UINT32)size + 1) / 2 - 1;
+    OPJ_UINT32 offset_y = ((OPJ_UINT32)size + 1) / 2 - 1;
     OPJ_UINT32 num_resolutions = 6;
 
     for (i = 1; i < argc; i++) {
@@ -157,7 +163,7 @@ int main(int argc, char** argv)
             num_threads = atoi(argv[i + 1]);
             i ++;
         } else if (strcmp(argv[i], "-num_resolutions") == 0 && i + 1 < argc) {
-            num_resolutions = atoi(argv[i + 1]);
+            num_resolutions = (OPJ_UINT32)atoi(argv[i + 1]);
             if (num_resolutions == 0 || num_resolutions > 32) {
                 fprintf(stderr,
                         "Invalid value for num_resolutions. Should be >= 1 and <= 32\n");
@@ -165,8 +171,8 @@ int main(int argc, char** argv)
             }
             i ++;
         } else if (strcmp(argv[i], "-offset") == 0 && i + 2 < argc) {
-            offset_x = atoi(argv[i + 1]);
-            offset_y = atoi(argv[i + 2]);
+            offset_x = (OPJ_UINT32)atoi(argv[i + 1]);
+            offset_y = (OPJ_UINT32)atoi(argv[i + 2]);
             i += 2;
         } else {
             usage();
@@ -175,7 +181,8 @@ int main(int argc, char** argv)
 
     tp = opj_thread_pool_create(num_threads);
 
-    init_tilec(&tilec, offset_x, offset_y, offset_x + size, offset_y + size,
+    init_tilec(&tilec, (OPJ_INT32)offset_x, (OPJ_INT32)offset_y,
+               (OPJ_INT32)offset_x + size, (OPJ_INT32)offset_y + size,
                num_resolutions);
 
     if (display) {
@@ -190,8 +197,33 @@ int main(int argc, char** argv)
         }
     }
 
+    memset(&tcd, 0, sizeof(tcd));
+    tcd.thread_pool = tp;
+    tcd.whole_tile_decoding = OPJ_TRUE;
+    tcd.win_x0 = (OPJ_UINT32)tilec.x0;
+    tcd.win_y0 = (OPJ_UINT32)tilec.y0;
+    tcd.win_x1 = (OPJ_UINT32)tilec.x1;
+    tcd.win_y1 = (OPJ_UINT32)tilec.y1;
+    tcd.tcd_image = &tcd_image;
+    memset(&tcd_image, 0, sizeof(tcd_image));
+    tcd_image.tiles = &tcd_tile;
+    memset(&tcd_tile, 0, sizeof(tcd_tile));
+    tcd_tile.x0 = tilec.x0;
+    tcd_tile.y0 = tilec.y0;
+    tcd_tile.x1 = tilec.x1;
+    tcd_tile.y1 = tilec.y1;
+    tcd_tile.numcomps = 1;
+    tcd_tile.comps = &tilec;
+    tcd.image = &image;
+    memset(&image, 0, sizeof(image));
+    image.numcomps = 1;
+    image.comps = &image_comp;
+    memset(&image_comp, 0, sizeof(image_comp));
+    image_comp.dx = 1;
+    image_comp.dy = 1;
+
     start = opj_clock();
-    opj_dwt_decode(tp, &tilec, tilec.numresolutions);
+    opj_dwt_decode(&tcd, &tilec, tilec.numresolutions);
     stop = opj_clock();
     printf("time for dwt_decode: %.03f s\n", stop - start);
 
@@ -225,8 +257,8 @@ int main(int argc, char** argv)
             size_t idx;
             size_t nValues = (size_t)(tilec.x1 - tilec.x0) *
                              (size_t)(tilec.y1 - tilec.y0);
-            for (idx = 0; i < nValues; i++) {
-                if (tilec.data[idx] != getValue(idx)) {
+            for (idx = 0; i < (OPJ_INT32)nValues; i++) {
+                if (tilec.data[idx] != getValue((OPJ_UINT32)idx)) {
                     printf("Difference found at idx = %u\n", (OPJ_UINT32)idx);
                     exit(1);
                 }

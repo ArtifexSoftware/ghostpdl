@@ -1,4 +1,6 @@
 /* create opj_config_private.h for CMake */
+/*** SET BY GS CONFIGURE SCRIPT ****/
+/* #define OPJ_HAVE_INTTYPES_H 	1 */
 
 /*** SET BY GS CONFIGURE SCRIPT ****/
 /* #define OPJ_HAVE_INTTYPES_H 	1 */

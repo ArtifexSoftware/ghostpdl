@@ -63,7 +63,8 @@ open_jpeg_OBJS = \
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tgt.$(OBJ)			\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)thix_manager.$(OBJ)			\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tpix_manager.$(OBJ)			\
-	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)thread.$(OBJ)			\
+	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)thread.$(OBJ)                \
+        $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)sparse_array.$(OBJ) 
 
 open_jpeg_HDRS = \
 	$(OPEN_JPEG_SRC)bio.h		\
@@ -96,6 +97,7 @@ open_jpeg_HDRS = \
 	$(OPEN_JPEG_SRC)tgt.h	\
 	$(OPEN_JPEG_SRC)thread.h	\
 	$(OPEN_JPEG_SRC)tls_keys.h	\
+        $(OPEN_JPEG_SRC)sparse_array.h
 
 # switch in the selected library .dev
 $(OPEN_JPEG_GEN)openjpeg.dev : $(OPEN_JPEG_GEN)openjpeg_$(SHARE_JPX).dev \
@@ -192,5 +194,8 @@ $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)phix_manager.$(OBJ) : $(OPEN_JPEG_SRC)phix_ma
 
 $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)thread.$(OBJ) : $(OPEN_JPEG_SRC)thread.c $(open_jpeg_HDRS) $(OPEN_JPEG_DEP)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)thread.$(OBJ) $(C_) $(OPEN_JPEG_SRC)thread.c
+
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)sparse_array.$(OBJ) : $(OPEN_JPEG_SRC)sparse_array.c $(open_jpeg_HDRS) $(OPEN_JPEG_DEP)
+	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)sparse_array.$(OBJ) $(C_) $(OPEN_JPEG_SRC)sparse_array.c
 
 # end of file
