@@ -188,9 +188,10 @@ XEAUX=@EXEEXT@
 
 PCL_TARGET=@PCL_TARGET@
 XPS_TARGET=@XPS_TARGET@
+PDF_TARGET=@PDF_TARGET@
 GPDL_TARGET=@GPDL_TARGET@
 
-PCL_XPS_TARGETS=$(PCL_TARGET) $(XPS_TARGET) $(GPDL_TARGET)
+PCL_XPS_TARGETS=$(PCL_TARGET) $(XPS_TARGET) $(PDF_TARGET) $(GPDL_TARGET)
 
 # Define the directories for debugging and profiling binaries, relative to
 # the standard binaries.
@@ -709,6 +710,8 @@ include @PCL_TOP_MAK@ # pcl_top.mak
 include @PXL_MAK@ # pxl.mak
 
 include @XPS_MAK@ # xps.mak
+
+include @PDF_MAK@ # pdf.mak
 
 include @GPDL_MAK@ # gpdl.mak
 

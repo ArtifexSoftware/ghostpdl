@@ -254,6 +254,7 @@ GS_MAK=$(GLSRCDIR)$(D)gs.mak $(TOP_MAKEFILES)
 GS_XE=$(BINDIR)$(D)$(GS)$(XE)
 GPCL_XE=$(BINDIR)$(D)$(PCL)$(XE)
 GXPS_XE=$(BINDIR)$(D)$(XPS)$(XE)
+GPDF_XE=$(BINDIR)$(D)$(PDF)$(XE)
 GPDL_XE=$(BINDIR)$(D)$(GPDL)$(XE)
 
 AUX=$(AUXDIR)$(D)
@@ -413,6 +414,11 @@ XPS_DEVS_ALL=$(GSPLAT_DEVS_ALL) \
  $(FEATURE_DEVS_EXTRA) \
  $(DEVICE_DEVS_ALL)
 
+PDF_DEVS_ALL=$(GSPLAT_DEVS_ALL) \
+ $(FEATURE_DEVS) \
+ $(FEATURE_DEVS_EXTRA) \
+ $(DEVICE_DEVS_ALL)
+
 DEVS_ALL=$(GLGENDIR)$(D)$(GSPLATFORM).dev\
  $(FEATURE_DEVS_EXTRA) \
  $(DEVICE_DEVS) $(DEVICE_DEVS1) \
@@ -507,6 +513,16 @@ $(xps_tr): $(GS_MAK) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_
 	$(EXP)$(ECHOGS_XE) -a $(xps_tr) -R $(ixps_tr)
 	$(EXP)$(GENCONF_XE) $(xps_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) $(CONFLDTR) $(xpsld_tr)
 
+pdf_tr=$(GLGENDIR)$(D)pdf.tr
+ipdf_tr=$(GLGENDIR)$(D)ipdf.tr
+pdfld_tr=$(GLGENDIR)$(D)pdfld.tr
+$(pdf_tr): $(GS_MAK) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_tr) $(devs_tr) $(PDF_DEVS_ALL) \
+                                             $(devs_tr) $(PDF_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev $(MAKEDIRS)
+	$(EXP)$(ECHOGS_XE) -w $(ipdf_tr) - -include $(PDF_FEATURE_DEVS)
+	$(EXP)$(ECHOGS_XE) -w $(pdf_tr) -R $(devs_tr)
+	$(EXP)$(ECHOGS_XE) -a $(pdf_tr) -R $(ipdf_tr)
+	$(EXP)$(GENCONF_XE) $(pfd_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) $(CONFLDTR) $(pdfld_tr)
+
 gpdl_tr=$(GLGENDIR)$(D)gpdl.tr
 igpdl_tr=$(GLGENDIR)$(D)igpdl.tr
 gpdlld_tr=$(GLGENDIR)$(D)gpdlld.tr
@@ -553,6 +569,10 @@ $(pclobj_tr) : $(pcl_tr)
 xpsobj_tr=$(GLGENDIR)$(D)xpsobj.tr
 $(xpsobj_tr) : $(xps_tr)
 	$(EXP)$(GENCONF_XE) $(xps_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) -o $(xpsobj_tr)
+
+pdfobj_tr=$(GLGENDIR)$(D)pdfobj.tr
+$(pdfobj_tr) : $(pdf_tr)
+	$(EXP)$(GENCONF_XE) $(pdf_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) -o $(pdfobj_tr)
 
 
 pdlobj_tr=$(GLGENDIR)$(D)pdlobj.tr

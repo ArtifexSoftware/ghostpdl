@@ -3312,6 +3312,33 @@ $(GLGEN)xpsromfs0_1.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
 $(GLGEN)xpsromfs0.c : $(GLGEN)xpsromfs0_$(UFST_BRIDGE).c $(LIB_MAK) $(MAKEDIRS)
 	$(CP_) $(GLGEN)xpsromfs0_$(UFST_BRIDGE).c $(GLGEN)xpsromfs0.c
 
+# pdf
+$(GLGEN)pdfromfs1_.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdfromfs1_.c \
+	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(PDF_ROMFS_ARGS) $(PDF_FONT_ROMFS_ARGS) $(GL_ROMFS_ARGS)
+
+$(GLGEN)pdfromfs1_1.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdfromfs1_1.c \
+	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(PDF_ROMFS_ARGS) $(GL_ROMFS_ARGS)
+
+$(GLGEN)pdfromfs1.c : $(GLGEN)pdfromfs1_$(UFST_BRIDGE).c $(LIB_MAK) $(MAKEDIRS)
+	$(CP_) $(GLGEN)pdfromfs1_$(UFST_BRIDGE).c $(GLGEN)pdfromfs1.c
+
+$(GLGEN)pdfromfs0_.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdfromfs0_.c \
+	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(GL_ROMFS_ARGS)
+
+$(GLGEN)pdfromfs0_1.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdfromfs0_1.c \
+	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(GL_ROMFS_ARGS)
+
+$(GLGEN)pdfromfs0.c : $(GLGEN)pdfromfs0_$(UFST_BRIDGE).c $(LIB_MAK) $(MAKEDIRS)
+	$(CP_) $(GLGEN)pdfromfs0_$(UFST_BRIDGE).c $(GLGEN)pdfromfs0.c
+
 # pdl
 $(GLGEN)pdlromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(LIB_MAK) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs1_.c \
@@ -3379,6 +3406,13 @@ $(GLOBJ)xpsromfs0.$(OBJ) : $(GLGEN)xpsromfs0.c $(stdint__h) $(LIB_MAK) $(MAKEDIR
 
 $(GLOBJ)xpsromfs1.$(OBJ) : $(GLOBJ)xpsromfs1.c $(time__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)xpsromfs1.$(OBJ) $(C_) $(GLOBJ)xpsromfs1.c
+
+# A pdfromfs module with only ICC profiles  for COMPILE_INITS=0
+$(GLOBJ)pdfromfs0.$(OBJ) : $(GLGEN)pdfromfs0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)pdfromfs0.$(OBJ) $(C_) $(GLGEN)pdfromfs0.c
+
+$(GLOBJ)pdfromfs1.$(OBJ) : $(GLOBJ)pdfromfs1.c $(time__h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)pdfromfs1.$(OBJ) $(C_) $(GLOBJ)pdfromfs1.c
 
 # A pdlromfs module with only ICC profiles for COMPILE_INITS=0
 $(GLOBJ)pdlromfs0.$(OBJ) : $(GLGEN)pdlromfs0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)

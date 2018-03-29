@@ -53,6 +53,10 @@ XPSSRCDIR=./xps
 XPSGENDIR=./$(BUILDDIRPREFIX)obj
 XPSOBJDIR=./$(BUILDDIRPREFIX)obj
 
+PDFSRCDIR=./pdf
+PDFGENDIR=./$(BUILDDIRPREFIX)obj
+PDFOBJDIR=./$(BUILDDIRPREFIX)obj
+
 GPDLSRCDIR=./gpdl
 GPDLGENDIR=./$(BUILDDIRPREFIX)obj
 GPDLOBJDIR=./$(BUILDDIRPREFIX)obj
@@ -173,6 +177,7 @@ GS_SO_BASE=gs
 
 PCL=gpcl6
 XPS=gxps
+PDF=gpdf
 GPDL=gpdl
 
 XE=
@@ -423,10 +428,12 @@ LDFLAGS= $(AC_LDFLAGS) $(XLDFLAGS)
 GS_LDFLAGS=$(LDFLAGS)
 PCL_LDFLAGS=$(LDFLAGS)
 XPS_LDFLAGS=$(LDFLAGS)
+PDF_LDFLAGS=$(LDFLAGS)
 
 GS_LDFLAGS_SO=-shared -Wl,$(LD_SET_DT_SONAME)$(LDFLAGS_SO_PREFIX)$(GS_SONAME_MAJOR)
 PCL_LDFLAGS_SO=-shared -Wl,$(LD_SET_DT_SONAME)$(LDFLAGS_SO_PREFIX)$(PCL_SONAME_MAJOR)
 XPS_LDFLAGS_SO=-shared -Wl,$(LD_SET_DT_SONAME)$(LDFLAGS_SO_PREFIX)$(XPS_SONAME_MAJOR)
+PDF_LDFLAGS_SO=-shared -Wl,$(LD_SET_DT_SONAME)$(LDFLAGS_SO_PREFIX)$(PDF_SONAME_MAJOR)
 
 # Define any extra libraries to link into the executable.
 # ISC Unix 2.2 wants -linet.
@@ -514,6 +521,8 @@ PCL_FEATURE_DEVS=$(PLOBJDIR)/pl.dev $(PLOBJDIR)/pjl.dev $(PXLOBJDIR)/pxl.dev $(P
              $(PCL5OBJDIR)/hpgl2c.dev
 
 XPS_FEATURE_DEVS=$(XPSOBJDIR)/pl.dev $(XPSOBJDIR)/xps.dev
+
+PDF_FEATURE_DEVS=$(PDFOBJDIR)/pl.dev $(PDFOBJDIR)/gpdf.dev
 
 FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev $(GLD)psl2lib.dev \
              $(GLD)dps2lib.dev $(GLD)path1lib.dev $(GLD)patlib.dev $(GLD)psl2cs.dev $(GLD)rld.dev $(GLD)gxfapiu$(UFST_BRIDGE).dev\
@@ -644,6 +653,7 @@ include $(GLSRCDIR)/gs.mak
 # are available
 # include $(PLSRCDIR)$(D)plromfs.mak   # plromfs.mak
 # include $(XPSSRCDIR)$(D)xpsromfs.mak # xpsromfs.mak
+# include $(PDFSRCDIR)$(D)pdfromfs.mak # pdfromfs.mak
 
 include $(PSSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
@@ -657,6 +667,8 @@ include $(PSSRCDIR)/int.mak
 # include $(PXLSRCDIR)$(D)pxl.mak # pxl.mak
 
 # include $(XPSSRCDIR)$(D)xps.mak # xps.mak
+
+# include $(PDFSRCDIR)$(D)pdf.mak # pdf.mak
 
 # include $(GPDLSRCDIR)$(D)gpdl.mak # gpdl.mak
 

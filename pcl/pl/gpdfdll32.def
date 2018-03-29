@@ -1,0 +1,5 @@
+;	'GhostPDF Interpreter DLL'
+LIBRARY		GPDFDLL32
+EXPORTS	
+;		DllEntryPoint
+;		DllMain
