@@ -486,12 +486,12 @@ set_cache_device(gs_show_enum * penum, gs_gstate * pgs, double llx, double lly,
                  double urx, double ury)
 {
     gs_glyph glyph;
+    int code = 0;
 
     /* See if we want to cache this character. */
     if (pgs->in_cachedevice)    /* no recursion! */
         return 0;
     if (SHOW_IS_ALL_OF(penum, TEXT_DO_NONE | TEXT_INTERVENE)) { /* cshow */
-        int code;
         if_debug0m('k', penum->memory, "[k]no cache: cshow");
         code = gs_nulldevice(pgs);
         if (code < 0)
@@ -525,7 +525,6 @@ set_cache_device(gs_show_enum * penum, gs_gstate * pgs, double llx, double lly,
         ushort iwidth, iheight;
         cached_char *cc;
         gs_fixed_rect clip_box;
-        int code;
         gs_fixed_point cll, clr, cul, cur, cdim;
 
         /* Reject setcachedevice arguments that are too big and, probably, invalid */
@@ -686,19 +685,23 @@ set_cache_device(gs_show_enum * penum, gs_gstate * pgs, double llx, double lly,
         clip_box.q.x = int2fixed(iwidth);
         clip_box.q.y = int2fixed(iheight);
         if ((code = gx_clip_to_rectangle(pgs, &clip_box)) < 0)
-            return code;
+            goto fail;
         code = gx_set_device_color_1(pgs);     /* write 1's */
         if (code < 0)
-            return code;
+            goto fail;
         gs_swapcolors_quick(pgs);
         code = gx_set_device_color_1(pgs);     /* write 1's */
         if (code < 0)
-            return code;
+            goto fail;
         gs_swapcolors_quick(pgs);
         pgs->in_cachedevice = CACHE_DEVICE_CACHING;
     }
     penum->width_status = sws_cache;
     return 1;
+
+fail:
+    gs_grestore(pgs);
+    return code;
 }
 
 /* Return the cache device status. */
