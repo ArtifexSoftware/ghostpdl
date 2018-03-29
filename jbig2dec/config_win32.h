@@ -23,29 +23,37 @@
 #define PACKAGE "jbig2dec"
 #define VERSION "0.14"
 
-#if defined(_MSC_VER) || (defined(__BORLANDC__) && defined(__WIN32__))
-/* Microsoft Visual C++ or Borland C++ */
+#ifdef _MSC_VER
+
+/* VS 2012 and later have stdint.h */
+# if _MSC_VER >= 1700
+#  include <stdint.h>
+# else
 typedef signed char int8_t;
 typedef short int int16_t;
 typedef int int32_t;
 typedef __int64 int64_t;
-
 typedef unsigned char uint8_t;
 typedef unsigned short int uint16_t;
 typedef unsigned int uint32_t;
+typedef unsigned __int64 uint64_t;
+# endif
 
-/* no uint64_t */
+/* VS 2008 and later have vsnprintf */
+# if _MSC_VER < 1500
+#  define vsnprintf _vsnprintf
+# endif
 
-#  if defined(_MSC_VER)
-#   if _MSC_VER < 1500          /* VS 2008 has vsnprintf */
-#    define vsnprintf _vsnprintf
-#   endif
-#  endif
+/* VS 2014 and later have (finally) snprintf */
+# if _MSC_VER >= 1900
+#  define STDC99
+# else
+#  define snprintf _snprintf
+# endif
 
-#  if defined(_MSC_VER) && _MSC_VER>=1900       /* VS 2014 and later have (finally) snprintf */
-#    define STDC99
-#  else
-#    define snprintf _snprintf
-#  endif
+#else /* _MSC_VER */
+
+/* Not VS -- it had best behave */
+# include <stdint.h>
 
 #endif /* _MSC_VER */
