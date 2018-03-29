@@ -365,7 +365,9 @@ clist_close_writer_and_init_reader(gx_device_clist *cldev)
             return_error(gs_error_VMerror);
         }
 
-        code = (crdev->icc_cache_cl = gsicc_cache_new(base_mem)) == NULL ? gs_error_VMerror : code;
+        if (crdev->icc_cache_cl == NULL) {
+            code = (crdev->icc_cache_cl = gsicc_cache_new(base_mem)) == NULL ? gs_error_VMerror : code;
+        }
     }
 
     check_device_compatible_encoding((gx_device *)cldev);
@@ -563,7 +565,6 @@ clist_render_init(gx_device_clist *dev)
     crdev->offset_map = NULL;
     crdev->icc_table = NULL;
     crdev->color_usage_array = NULL;
-    crdev->icc_cache_cl = NULL;
     crdev->render_threads = NULL;
 
     return 0;

@@ -563,7 +563,6 @@ clist_reset(gx_device * dev)
     cdev->cropping_level = 0;
     cdev->mask_id_count = cdev->mask_id = cdev->temp_mask_id = 0;
     cdev->icc_table = NULL;
-    cdev->icc_cache_cl = NULL;
     return 0;
 }
 /*
@@ -763,8 +762,6 @@ clist_finish_page(gx_device *dev, bool flush)
            be any issues. */
         clist_free_icc_table(crdev->icc_table, crdev->memory);
         crdev->icc_table = NULL;
-        rc_decrement(crdev->icc_cache_cl,"clist_finish_page");
-        crdev->icc_cache_cl = NULL;
     }
     if (flush) {
         if (cdev->page_cfile != 0)
