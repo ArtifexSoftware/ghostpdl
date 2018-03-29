@@ -346,7 +346,7 @@ typedef pthread_mutex_t Memento_mutex;
 
 static void Memento_initMutex(Memento_mutex *m)
 {
-    pthread_mutex_init(m);
+    pthread_mutex_init(m, NULL);
 }
 
 #define MEMENTO_DO_LOCK() \
