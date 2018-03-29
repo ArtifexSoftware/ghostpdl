@@ -4,7 +4,7 @@ default: all
 
 prefix ?= /usr/local
 
-CFLAGS := -Wall -g -O2 -DHAVE_STDINT_H
+CFLAGS := -Wall -Wextra -Wno-unused-parameter -g -O2
 
 LIB_SRCS := \
 	jbig2_arith.c jbig2_arith_int.c jbig2_arith_iaid.c \

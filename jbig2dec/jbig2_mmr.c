@@ -944,7 +944,7 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
             /* printf ("VR(3)\n"); */
             jbig2_decode_mmr_consume(mmr, 7);
             b1 = jbig2_find_changing_element_of_color(ref, a0, mmr->width, !c);
-            if (b1 + 3 > (int)mmr->width)
+            if (b1 + 3 > mmr->width)
                 break;
             if (c) {
                 if (a0 == MINUS1 || b1 + 3 < a0)

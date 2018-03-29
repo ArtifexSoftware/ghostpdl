@@ -98,7 +98,7 @@ jbig2_image_write_png_file(Jbig2Image *image, char *filename)
 int
 jbig2_image_write_png(Jbig2Image *image, FILE *out)
 {
-    int i;
+    uint32_t i;
     png_structp png;
     png_infop info;
     png_bytep rowpointer;

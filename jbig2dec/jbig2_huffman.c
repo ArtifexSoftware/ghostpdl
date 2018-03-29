@@ -351,7 +351,7 @@ jbig2_build_huffman_table(Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
     const Jbig2HuffmanLine *lines = params->lines;
     int n_lines = params->n_lines;
     int i, j;
-    int max_j;
+    uint32_t max_j;
     int log_table_size = 0;
     Jbig2HuffmanTable *result;
     Jbig2HuffmanEntry *entries;
@@ -423,6 +423,7 @@ jbig2_build_huffman_table(Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
                 int RANGELEN = lines[CURTEMP].RANGELEN;
                 uint32_t start_j = CURCODE << shift;
                 uint32_t end_j = (CURCODE + 1) << shift;
+                uint32_t cur_j;
                 byte eflags = 0;
 
                 if (end_j > max_j) {
@@ -438,23 +439,23 @@ jbig2_build_huffman_table(Jbig2Ctx *ctx, const Jbig2HuffmanParams *params)
                 if (CURTEMP == n_lines - (params->HTOOB ? 3 : 2))
                     eflags |= JBIG2_HUFFMAN_FLAGS_ISLOW;
                 if (PREFLEN + RANGELEN > LOG_TABLE_SIZE_MAX) {
-                    for (j = start_j; j < end_j; j++) {
-                        entries[j].u.RANGELOW = lines[CURTEMP].RANGELOW;
-                        entries[j].PREFLEN = PREFLEN;
-                        entries[j].RANGELEN = RANGELEN;
-                        entries[j].flags = eflags;
+                    for (cur_j = start_j; cur_j < end_j; cur_j++) {
+                        entries[cur_j].u.RANGELOW = lines[CURTEMP].RANGELOW;
+                        entries[cur_j].PREFLEN = PREFLEN;
+                        entries[cur_j].RANGELEN = RANGELEN;
+                        entries[cur_j].flags = eflags;
                     }
                 } else {
-                    for (j = start_j; j < end_j; j++) {
-                        int32_t HTOFFSET = (j >> (shift - RANGELEN)) & ((1 << RANGELEN) - 1);
+                    for (cur_j = start_j; cur_j < end_j; cur_j++) {
+                        int32_t HTOFFSET = (cur_j >> (shift - RANGELEN)) & ((1 << RANGELEN) - 1);
 
                         if (eflags & JBIG2_HUFFMAN_FLAGS_ISLOW)
-                            entries[j].u.RANGELOW = lines[CURTEMP].RANGELOW - HTOFFSET;
+                            entries[cur_j].u.RANGELOW = lines[CURTEMP].RANGELOW - HTOFFSET;
                         else
-                            entries[j].u.RANGELOW = lines[CURTEMP].RANGELOW + HTOFFSET;
-                        entries[j].PREFLEN = PREFLEN + RANGELEN;
-                        entries[j].RANGELEN = 0;
-                        entries[j].flags = eflags;
+                            entries[cur_j].u.RANGELOW = lines[CURTEMP].RANGELOW + HTOFFSET;
+                        entries[cur_j].PREFLEN = PREFLEN + RANGELEN;
+                        entries[cur_j].RANGELEN = 0;
+                        entries[cur_j].flags = eflags;
                     }
                 }
                 CURCODE++;
