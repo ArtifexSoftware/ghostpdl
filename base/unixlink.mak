@@ -223,7 +223,7 @@ $(GPDL_XE): $(ld_tr) $(gpdl_tr) $(INT_ARCHIVE_ALL) $(REALMAIN_OBJ) $(MAIN_OBJ) \
              $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) \
              $(XOBJS) $(GLOBJDIR)/pdlromfs$(COMPILE_INITS).$(OBJ) \
              $(PSINT_ARCHIVE_ALL) $(UNIXLINK_MAK)
-	$(ECHOGS_XE) -w $(gpdlldt_tr) -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(GPDL_XE)
+	$(ECHOGS_XE) -w $(gpdlldt_tr) -n - $(CCLD) $(PDL_LDFLAGS) $(XLIBDIRS) -o $(GPDL_XE)
 	$(ECHOGS_XE) -a $(gpdlldt_tr) -n -s $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(XOBJS) -s
 	cat $(gpdlld_tr) >> $(gpdlldt_tr)
 	$(ECHOGS_XE) -a $(gpdlldt_tr) -s - $(GLOBJDIR)/pdlromfs$(COMPILE_INITS).$(OBJ) $(REALMAIN_OBJ) $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)

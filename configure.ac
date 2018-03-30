@@ -1842,7 +1842,7 @@ if test "x$enable_gtk" != "xno"; then
     if test "x$PKGCONFIG" != x; then
         AC_MSG_CHECKING(for GTK+ 3.x)
         if $PKGCONFIG --exists gtk+-3.0; then
-            SOC_LOADER="dxmain.c"
+            SOC_LOADER="dxmain"
             SOC_CFLAGS="`$PKGCONFIG gtk+-3.0 --cflags`"
             SOC_LIBS="`$PKGCONFIG gtk+-3.0 --libs`"
             AC_MSG_RESULT([yes])
@@ -1854,7 +1854,7 @@ if test "x$enable_gtk" != "xno"; then
         if test "x$SOC_LOADER" = "x"; then
             AC_MSG_CHECKING(for GTK+ 2.x)
             if $PKGCONFIG --exists gtk+-2.0; then
-                SOC_LOADER="dxmain.c"
+                SOC_LOADER="dxmain"
                 SOC_CFLAGS="`$PKGCONFIG gtk+-2.0 --cflags`"
                 SOC_LIBS="`$PKGCONFIG gtk+-2.0 --libs`"
                 AC_MSG_RESULT([yes])
@@ -1866,7 +1866,7 @@ if test "x$enable_gtk" != "xno"; then
 fi
 
 if test "x$SOC_LOADER" = "x"; then
-  SOC_LOADER="dxmainc.c"
+  SOC_LOADER="dxmainc"
 fi
 
 AC_SUBST(SOC_CFLAGS)
@@ -2345,6 +2345,7 @@ DYNAMIC_FLAGS=""
 GS_DYNAMIC_LDFLAGS=""
 PCL_DYNAMIC_LDFLAGS=""
 XPS_DYNAMIC_LDFLAGS=""
+PDL_DYNAMIC_LDFLAGS=""
 DYNAMIC_LIBS=""
 INSTALL_SHARED=""
 SO_LIB_EXT=".so"
@@ -2356,6 +2357,7 @@ if test x"$cross_compiling" = x"yes"; then
   GS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
   PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
   XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
+  PDL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR)"
   if test $ac_cv_prog_gcc = yes; then
     # GCC high level flag
     DYNAMIC_LIBS="-rdynamic"
@@ -2370,6 +2372,7 @@ else
       GS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
       PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
       XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
+      PDL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR)"
       if test $ac_cv_prog_gcc = yes; then
         # GCC high level flag
         DYNAMIC_LIBS="-rdynamic"
@@ -2383,6 +2386,7 @@ else
       GS_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(GS_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
       PCL_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(PCL_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
       XPS_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(XPS_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
+      PDL_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(PDL_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
       SO_LIB_EXT=""
       DLL_EXT=".dll"
       SO_LIB_VERSION_SEPARATOR="-"
@@ -2399,6 +2403,7 @@ else
       GS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GS_SONAME_MAJOR_MINOR)"
       PCL_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(PCL_SONAME_MAJOR_MINOR)"
       XPS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(XPS_SONAME_MAJOR_MINOR)"
+      PDL_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GPDL_SONAME_MAJOR_MINOR)"
       DYNAMIC_LIBS=""
       SO_LIB_EXT=".dylib"
     ;;
@@ -2411,6 +2416,7 @@ else
       GS_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
       PCL_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
       XPS_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
+      PDL_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR)"
       DYNAMIC_LIBS=""
       SO_LIB_EXT=".so"
       ;;
@@ -2420,6 +2426,7 @@ else
       GS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
       PCL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
       XPS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+      PDL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
       SO_LIB_EXT=".so"
       ;;
   esac
@@ -2475,6 +2482,7 @@ AC_SUBST(DYNAMIC_FLAGS)
 AC_SUBST(GS_DYNAMIC_LDFLAGS)
 AC_SUBST(PCL_DYNAMIC_LDFLAGS)
 AC_SUBST(XPS_DYNAMIC_LDFLAGS)
+AC_SUBST(PDL_DYNAMIC_LDFLAGS)
 AC_SUBST(DYNAMIC_LIBS)
 AC_SUBST(INSTALL_SHARED)
 AC_SUBST(X11_DEVS)

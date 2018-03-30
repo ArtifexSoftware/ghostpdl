@@ -165,26 +165,26 @@ gpdl-so-links-subtarget: $(GPDL_SO) $(UNIX_DLL_MAK) $(MAKEDIRS)
 	$(NO_OP)
 
 # dummy for when only GS source is available
--so-links-subtarget: $(GPDL_SO) $(UNIX_DLL_MAK) $(MAKEDIRS)
+-so-links-subtarget: $(UNIX_DLL_MAK) $(MAKEDIRS)
 	$(NO_OP)
 
 # Build the small Ghostscript loaders, with Gtk+ and without
-$(GSSOC_XE): gs-so-links-subtarget $(PSSRC)$(SOC_LOADER) $(UNIX_DLL_MAK) $(MAKEDIRS)
-	$(GLCC) -g -o $(GSSOC_XE) $(PSSRC)dxmainc.c \
-	-L$(BINDIR) -l$(GS_SO_BASE)
+$(GSSOC_XE): gs-so-links-subtarget $(PSSRC)dxmainc.c $(UNIX_DLL_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)dxmainc.$(OBJ) $(C_) $(PSSRC)dxmainc.c
+	$(GLCC) -L$(BINDIR) $(LDFLAGS) $(O_) $(GSSOC_XE) $(GLOBJ)dxmainc.$(OBJ) -l$(GS_SO_BASE)
 
-$(GSSOX_XE): gs-so-links-subtarget $(PSSRC)$(SOC_LOADER) $(UNIX_DLL_MAK) $(MAKEDIRS)
-	$(GLCC) -g $(SOC_CFLAGS) -o $(GSSOX_XE) $(PSSRC)$(SOC_LOADER) \
-	-L$(BINDIR) -l$(GS_SO_BASE) $(SOC_LIBS)
+$(GSSOX_XE): gs-so-links-subtarget $(PSSRC)$(SOC_LOADER).c $(UNIX_DLL_MAK) $(MAKEDIRS)
+	$(GLCC) $(SOC_CFLAGS) $(GLO_)$(SOC_LOADER).$(OBJ) $(C_) $(PSSRC)$(SOC_LOADER).c
+	$(GLCC) -L$(BINDIR) $(LDFLAGS) $(O_) $(GSSOX_XE) $(GLOBJ)$(SOC_LOADER).$(OBJ) -l$(GS_SO_BASE) $(SOC_LIBS)
 
-$(PCLSOC_XE): gpcl6-so-links-subtarget $(PLSRC)$(REALMAIN_SRC).c $(UNIX_DLL_MAK) $(MAKEDIRS)
-	$(GLCC) -g -o $(PCLSOC_XE) $(PLSRC)$(REALMAIN_SRC).c -L$(BINDIR) -l$(PCL_SO_BASE)
+$(PCLSOC_XE): gpcl6-so-links-subtarget $(UNIX_DLL_MAK) $(PLOBJ)$(REALMAIN_SRC).$(OBJ) $(MAKEDIRS)
+	$(GLCC) -L$(BINDIR) $(LDFLAGS) $(O_) $(PCLSOC_XE) $(PLOBJ)$(REALMAIN_SRC).$(OBJ) -l$(PCL_SO_BASE)
 
-$(XPSSOC_XE): gxps-so-links-subtarget $(PLSRC)$(REALMAIN_SRC).c $(UNIX_DLL_MAK) $(MAKEDIRS)
-	$(GLCC) -g -o $(XPSSOC_XE) $(PLSRC)$(REALMAIN_SRC).c -L$(BINDIR) -l$(XPS_SO_BASE)
+$(XPSSOC_XE): gxps-so-links-subtarget $(UNIX_DLL_MAK) $(PLOBJ)$(REALMAIN_SRC).$(OBJ) $(MAKEDIRS)
+	$(GLCC) -L$(BINDIR) $(LDFLAGS) $(O_) $(XPSSOC_XE) $(PLOBJ)$(REALMAIN_SRC).$(OBJ) -l$(XPS_SO_BASE)
 
-$(GPDLSOC_XE): gpdl-so-links-subtarget $(PLSRC)$(REALMAIN_SRC).c $(UNIX_DLL_MAK) $(MAKEDIRS)
-	$(GLCC) -g -o $(GPDLSOC_XE) $(PLSRC)$(REALMAIN_SRC).c -L$(BINDIR) -l$(GPDL_SO_BASE)
+$(GPDLSOC_XE): gpdl-so-links-subtarget $(UNIX_DLL_MAK) $(PLOBJ)$(REALMAIN_SRC).$(OBJ) $(MAKEDIRS)
+	$(GLCC) -L$(BINDIR) $(LDFLAGS) $(O_) $(GPDLSOC_XE) $(PLOBJ)$(REALMAIN_SRC).$(OBJ) -l$(GPDL_SO_BASE)
 
 gpcl6-so-loader: $(PCLSOC_XE)
 	$(NO_OP)
@@ -275,7 +275,7 @@ sodebug:
 	@if test -z "$(MAKE) $(SUB_MAKE_OPTION)" -o -z "`$(MAKE) $(SUB_MAKE_OPTION) --version 2>&1 | grep GNU`";\
 	  then echo "Warning: this target requires gmake";\
 	fi
-	$(MAKE) $(SUB_MAKE_OPTION) so-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
+	$(MAKE) $(SUB_MAKE_OPTION) CFLAGS_STANDARD="$(CFLAGS_DEBUG)" so-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
 
 so-only-subtarget:
 	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
@@ -286,8 +286,8 @@ so-only-subtarget:
 	 $(AUXDIR)/echogs$(XEAUX) $(AUXDIR)/genarch$(XEAUX)
 	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) GENOPT='$(GENOPT)' GS_LDFLAGS='$(LDFLAGS) $(GS_LDFLAGS_SO)'\
          PCL_LDFLAGS='$(LDFLAGS) $(PCL_LDFLAGS_SO)' XPS_LDFLAGS='$(LDFLAGS) $(XPS_LDFLAGS_SO)' \
-	 CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)'\
-	 prefix=$(prefix)
+         PDL_LDFLAGS='$(LDFLAGS) $(PDL_LDFLAGS_SO)' CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) \
+         $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)
 
 so-only-stripped-subtarget: so-only-subtarget
 	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) gs-so-strip $(PCL_TARGET)-so-strip $(XPS_TARGET)-so-strip $(GPDL_TARGET)-so-strip
