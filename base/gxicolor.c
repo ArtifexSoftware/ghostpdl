@@ -347,7 +347,7 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
         /* Fastest case.  No decode or CM needed */
         *psrc_cm = (unsigned char *) psrc;
         spp_cm = spp;
-        *bufend = *psrc_cm +  w;
+        *bufend = *psrc_cm + w;
         *psrc_cm_start = NULL;
     } else {
         spp_cm = num_des_comps;
