@@ -106,7 +106,6 @@ gsicc_cache_new(gs_memory_t *memory)
         return(NULL);
 #ifdef MEMENTO_SQUEEZE_BUILD
     result->lock = NULL;
-    result->wait = NULL;
 #else
     result->lock = gx_monitor_label(gx_monitor_alloc(memory->stable_memory),
                                     "gsicc_cache_new");
@@ -262,9 +261,7 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
                              "gsicc_alloc_link");
     if (result == NULL)
         return NULL;
-#ifdef MEMENTO_SQUEEZE_BUILD
-    result->wait = NULL;
-#else
+#ifndef MEMENTO_SQUEEZE_BUILD
     result->lock = gx_monitor_label(gx_monitor_alloc(memory->stable_memory),
                                     "gsicc_link_new");
     if (result->lock == NULL) {
@@ -1260,7 +1257,9 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
         /* This could result in an infinite loop if other threads are waiting	*/
         /* for it to be made valid. (see gsicc_findcachelink).			*/
         link->ref_count--;	/* this thread no longer using this link entry	*/
+#ifndef MEMENTO_SQUEEZE_BUILD
         gx_monitor_leave(link->lock);
+#endif
         gsicc_remove_link(link, cache_mem);
         return NULL;
     }

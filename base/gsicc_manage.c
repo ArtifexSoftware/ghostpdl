@@ -523,14 +523,20 @@ void
 gsicc_adjust_profile_rc(cmm_profile_t *profile_data, int delta, const char *name_str)
 {
     if (profile_data != NULL) {
+#ifndef MEMENTO_SQUEEZE_BUILD
         gx_monitor_enter(profile_data->lock);
+#endif
         if (profile_data->rc.ref_count == 1 && delta < 0) {
             profile_data->rc.ref_count = 0;		/* while locked */
+#ifndef MEMENTO_SQUEEZE_BUILD
             gx_monitor_leave(profile_data->lock);
+#endif
             rc_free_struct(profile_data, name_str);
         } else {
             rc_adjust(profile_data, delta, name_str);
+#ifndef MEMENTO_SQUEEZE_BUILD
             gx_monitor_leave(profile_data->lock);
+#endif
         }
     }
 }
