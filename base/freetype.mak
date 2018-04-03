@@ -85,7 +85,9 @@ ft_base=\
 	$(FTOBJ)ftwinfnt.$(OBJ) \
 	$(FTOBJ)ftpatent.$(OBJ) \
 	$(FTOBJ)ftmd5.$(OBJ) \
-	$(FTOBJ)fthash.$(OBJ)
+	$(FTOBJ)fthash.$(OBJ) \
+        $(FTOBJ)ftpsprop.$(OBJ) \
+        $(FTOBJ)ftfntfmt.$(OBJ)
 
 
 ft_bdf=\
@@ -103,21 +105,13 @@ ft_cache=\
 	$(FTOBJ)ftcsbits.$(OBJ)
 
 ft_cff=\
-	$(FTOBJ)cffobjs.$(OBJ) \
-	$(FTOBJ)cffload.$(OBJ) \
-	$(FTOBJ)cffgload.$(OBJ) \
-	$(FTOBJ)cffparse.$(OBJ) \
-	$(FTOBJ)cffcmap.$(OBJ) \
 	$(FTOBJ)cffdrivr.$(OBJ) \
-	$(FTOBJ)cf2arrst.$(OBJ) \
-	$(FTOBJ)cf2blues.$(OBJ) \
-	$(FTOBJ)cf2error.$(OBJ) \
-	$(FTOBJ)cf2font.$(OBJ) \
-	$(FTOBJ)cf2ft.$(OBJ) \
-	$(FTOBJ)cf2hints.$(OBJ) \
-	$(FTOBJ)cf2intrp.$(OBJ) \
-	$(FTOBJ)cf2read.$(OBJ) \
-	$(FTOBJ)cf2stack.$(OBJ)
+	$(FTOBJ)cffcmap.$(OBJ) \
+	$(FTOBJ)cffgload.$(OBJ) \
+	$(FTOBJ)cffload.$(OBJ) \
+	$(FTOBJ)cffobjs.$(OBJ) \
+	$(FTOBJ)cffparse.$(OBJ) \
+	$(FTOBJ)cffpic.$(OBJ)
 
 ft_cid=\
 	$(FTOBJ)cidparse.$(OBJ) \
@@ -149,7 +143,17 @@ ft_psaux=\
 	$(FTOBJ)t1cmap.$(OBJ) \
 	$(FTOBJ)afmparse.$(OBJ) \
 	$(FTOBJ)psconv.$(OBJ) \
-	$(FTOBJ)psauxmod.$(OBJ)
+	$(FTOBJ)psauxmod.$(OBJ) \
+        $(FTOBJ)psft.$(OBJ) \
+        $(FTOBJ)cffdecode.$(OBJ) \
+        $(FTOBJ)psfont.$(OBJ) \
+        $(FTOBJ)psblues.$(OBJ) \
+        $(FTOBJ)psintrp.$(OBJ) \
+        $(FTOBJ)pserror.$(OBJ) \
+        $(FTOBJ)psstack.$(OBJ) \
+        $(FTOBJ)pshints.$(OBJ) \
+        $(FTOBJ)psarrst.$(OBJ) \
+        $(FTOBJ)psread.$(OBJ)
 
 ft_pshinter=\
 	$(FTOBJ)pshrec.$(OBJ) \
@@ -380,6 +384,12 @@ $(FTOBJ)ftmd5.$(OBJ) : $(FTSRC)base$(D)md5.c $(FT_MAK) $(MAKEDIRS)
 $(FTOBJ)fthash.$(OBJ) : $(FTSRC)base$(D)fthash.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)fthash.$(OBJ) $(C_) $(FTSRC)base$(D)fthash.c
 
+$(FTOBJ)ftpsprop.$(OBJ) : $(FTSRC)base$(D)ftpsprop.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)ftpsprop.$(OBJ) $(C_) $(FTSRC)base$(D)ftpsprop.c
+
+$(FTOBJ)ftfntfmt.$(OBJ) : $(FTSRC)base$(D)ftfntfmt.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)ftfntfmt.$(OBJ) $(C_) $(FTSRC)base$(D)ftfntfmt.c
+
 $(FTOBJ)bdflib.$(OBJ) : $(FTSRC)bdf$(D)bdflib.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)bdflib.$(OBJ) $(C_) $(FTSRC)bdf$(D)bdflib.c
 
@@ -410,17 +420,8 @@ $(FTOBJ)ftcmru.$(OBJ) : $(FTSRC)cache$(D)ftcmru.c $(FT_MAK) $(MAKEDIRS)
 $(FTOBJ)ftcsbits.$(OBJ) : $(FTSRC)cache$(D)ftcsbits.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftcsbits.$(OBJ) $(C_) $(FTSRC)cache$(D)ftcsbits.c
 
-$(FTOBJ)cffobjs.$(OBJ) : $(FTSRC)cff$(D)cffobjs.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)cffobjs.$(OBJ) $(C_) $(FTSRC)cff$(D)cffobjs.c
-
-$(FTOBJ)cffload.$(OBJ) : $(FTSRC)cff$(D)cffload.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)cffload.$(OBJ) $(C_) $(FTSRC)cff$(D)cffload.c
-
-$(FTOBJ)cffgload.$(OBJ) : $(FTSRC)cff$(D)cffgload.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)cffgload.$(OBJ) $(C_) $(FTSRC)cff$(D)cffgload.c
-
-$(FTOBJ)cffparse.$(OBJ) : $(FTSRC)cff$(D)cffparse.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)cffparse.$(OBJ) $(C_) $(FTSRC)cff$(D)cffparse.c
+$(FTOBJ)cff.$(OBJ) : $(FTSRC)cff$(D)cff.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)cff.$(OBJ) $(C_) $(FTSRC)cff$(D)cff.c
 
 $(FTOBJ)cffcmap.$(OBJ) : $(FTSRC)cff$(D)cffcmap.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cffcmap.$(OBJ) $(C_) $(FTSRC)cff$(D)cffcmap.c
@@ -428,32 +429,20 @@ $(FTOBJ)cffcmap.$(OBJ) : $(FTSRC)cff$(D)cffcmap.c $(FT_MAK) $(MAKEDIRS)
 $(FTOBJ)cffdrivr.$(OBJ) : $(FTSRC)cff$(D)cffdrivr.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cffdrivr.$(OBJ) $(C_) $(FTSRC)cff$(D)cffdrivr.c
 
-$(FTOBJ)cf2arrst.$(OBJ) : $(FTSRC)cff$(D)cf2arrst.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)cf2arrst.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2arrst.c
+$(FTOBJ)cffgload.$(OBJ) : $(FTSRC)cff$(D)cffgload.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)cffgload.$(OBJ) $(C_) $(FTSRC)cff$(D)cffgload.c
 
-$(FTOBJ)cf2blues.$(OBJ) : $(FTSRC)cff$(D)cf2blues.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)cf2blues.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2blues.c
+$(FTOBJ)cffload.$(OBJ) : $(FTSRC)cff$(D)cffload.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)cffload.$(OBJ) $(C_) $(FTSRC)cff$(D)cffload.c
 
-$(FTOBJ)cf2error.$(OBJ) : $(FTSRC)cff$(D)cf2error.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)cf2error.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2error.c
+$(FTOBJ)cffobjs.$(OBJ) : $(FTSRC)cff$(D)cffobjs.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)cffobjs.$(OBJ) $(C_) $(FTSRC)cff$(D)cffobjs.c
 
-$(FTOBJ)cf2font.$(OBJ) : $(FTSRC)cff$(D)cf2font.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)cf2font.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2font.c
+$(FTOBJ)cffparse.$(OBJ) : $(FTSRC)cff$(D)cffparse.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)cffparse.$(OBJ) $(C_) $(FTSRC)cff$(D)cffparse.c
 
-$(FTOBJ)cf2ft.$(OBJ) : $(FTSRC)cff$(D)cf2ft.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)cf2ft.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2ft.c
-
-$(FTOBJ)cf2hints.$(OBJ) : $(FTSRC)cff$(D)cf2hints.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)cf2hints.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2hints.c
-
-$(FTOBJ)cf2intrp.$(OBJ) : $(FTSRC)cff$(D)cf2intrp.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)cf2intrp.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2intrp.c
-
-$(FTOBJ)cf2read.$(OBJ) : $(FTSRC)cff$(D)cf2read.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)cf2read.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2read.c
-
-$(FTOBJ)cf2stack.$(OBJ) : $(FTSRC)cff$(D)cf2stack.c $(FT_MAK) $(MAKEDIRS)
-	$(FTCC) $(FTO_)cf2stack.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2stack.c
+$(FTOBJ)cffpic.$(OBJ) : $(FTSRC)cff$(D)cffpic.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)cffpic.$(OBJ) $(C_) $(FTSRC)cff$(D)cffpic.c
 
 $(FTOBJ)cidparse.$(OBJ) : $(FTSRC)cid$(D)cidparse.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cidparse.$(OBJ) $(C_) $(FTSRC)cid$(D)cidparse.c
@@ -520,6 +509,36 @@ $(FTOBJ)psconv.$(OBJ) : $(FTSRC)psaux$(D)psconv.c $(FT_MAK) $(MAKEDIRS)
 
 $(FTOBJ)psauxmod.$(OBJ) : $(FTSRC)psaux$(D)psauxmod.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)psauxmod.$(OBJ) $(C_) $(FTSRC)psaux$(D)psauxmod.c
+
+$(FTOBJ)psft.$(OBJ) : $(FTSRC)psaux$(D)psft.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)psft.$(OBJ) $(C_) $(FTSRC)psaux$(D)psft.c
+
+$(FTOBJ)cffdecode.$(OBJ) : $(FTSRC)psaux$(D)cffdecode.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)cffdecode.$(OBJ) $(C_) $(FTSRC)psaux$(D)cffdecode.c
+
+$(FTOBJ)psfont.$(OBJ) : $(FTSRC)psaux$(D)psfont.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)psfont.$(OBJ) $(C_) $(FTSRC)psaux$(D)psfont.c
+
+$(FTOBJ)psblues.$(OBJ) : $(FTSRC)psaux$(D)psblues.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)psblues.$(OBJ) $(C_) $(FTSRC)psaux$(D)psblues.c
+
+$(FTOBJ)psintrp.$(OBJ) : $(FTSRC)psaux$(D)psintrp.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)psintrp.$(OBJ) $(C_) $(FTSRC)psaux$(D)psintrp.c
+
+$(FTOBJ)pserror.$(OBJ) : $(FTSRC)psaux$(D)pserror.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)pserror.$(OBJ) $(C_) $(FTSRC)psaux$(D)pserror.c
+
+$(FTOBJ)psstack.$(OBJ) : $(FTSRC)psaux$(D)psstack.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)psstack.$(OBJ) $(C_) $(FTSRC)psaux$(D)psstack.c
+
+$(FTOBJ)pshints.$(OBJ) : $(FTSRC)psaux$(D)pshints.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)pshints.$(OBJ) $(C_) $(FTSRC)psaux$(D)pshints.c
+
+$(FTOBJ)psarrst.$(OBJ) : $(FTSRC)psaux$(D)psarrst.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)psarrst.$(OBJ) $(C_) $(FTSRC)psaux$(D)psarrst.c
+
+$(FTOBJ)psread.$(OBJ) : $(FTSRC)psaux$(D)psread.c $(FT_MAK) $(MAKEDIRS)
+	$(FTCC) $(FTO_)psread.$(OBJ) $(C_) $(FTSRC)psaux$(D)psread.c
 
 $(FTOBJ)pshrec.$(OBJ) : $(FTSRC)pshinter$(D)pshrec.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pshrec.$(OBJ) $(C_) $(FTSRC)pshinter$(D)pshrec.c

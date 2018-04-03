@@ -829,6 +829,12 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
     }
 
     if (!a_fapi_font->metrics_only) {
+        /* The following works around the fact that at the scales we deal with
+         * these values may not fit in a 16.16 fixed point value, and thus cause
+         * freetype to error due to overflow - but we don't use these values
+         * and neither does freetype, we can set them to zero and avoid the error
+         */
+        ft_face->glyph->advance.x = ft_face->glyph->advance.y = 0;
         if ((!ft_error || !ft_error_fb) && a_glyph) {
             ft_error = FT_Get_Glyph(ft_face->glyph, a_glyph);
         }
