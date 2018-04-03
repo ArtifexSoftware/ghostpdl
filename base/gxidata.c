@@ -84,57 +84,8 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
         const byte *buffer;
         int sourcex;
         int x_used = penum->used.x;
+        irender_proc_t render;
 
-        if (bit_planar) {
-            /* Repack the bit planes into byte-wide samples. */
-
-            buffer = penum->buffer;
-            sourcex = 0;
-            for (px = 0; px < num_planes; px += penum->bps)
-                repack_bit_planes(planes, offsets, penum->bps, penum->buffer,
-                                  penum->rect.w, &penum->map[px].table,
-                                  penum->spread);
-            for (px = 0; px < num_planes; ++px)
-                offsets[px] += planes[px].raster;
-        } else {
-            /*
-             * Normally, we unpack the data into the buffer, but if
-             * there is only one plane and we don't need to expand the
-             * input samples, we may use the data directly.
-             */
-            sourcex = planes[0].data_x;
-            buffer =
-                (*penum->unpack)(penum->buffer, &sourcex,
-                                 planes[0].data + offsets[0],
-                                 planes[0].data_x, BCOUNT(planes[0]),
-                                 &penum->map[0], penum->spread, num_components_per_plane);
-
-            offsets[0] += planes[0].raster;
-            for (px = 1; px < num_planes; ++px) {
-                (*penum->unpack)(penum->buffer + (px << penum->log2_xbytes),
-                                 &ignore_data_x,
-                                 planes[px].data + offsets[px],
-                                 planes[px].data_x, BCOUNT(planes[px]),
-                                 &penum->map[px], penum->spread, 1);
-                offsets[px] += planes[px].raster;
-            }
-        }
-#ifdef DEBUG
-        if (gs_debug_c('b'))
-            dmprintf1(dev->memory, "[b]image1 y=%d\n", y);
-        if (gs_debug_c('B')) {
-            int i, n = width_spp;
-
-            if (penum->bps > 8)
-                n *= 2;
-            else if (penum->bps == 1 && penum->unpack_bps == 8)
-                n = (n + 7) / 8;
-            dmlputs(dev->memory, "[B]row:");
-            for (i = 0; i < n; i++)
-                dmprintf1(dev->memory, " %02x", buffer[i]);
-            dmputs(dev->memory, "\n");
-        }
-#endif
         /* Bump DDA's if it doesn't cause overflow */
         penum->cur.x = dda_current(penum->dda.row.x);
         if (max_int - any_abs(penum->dda.row.x.step.dQ) > any_abs(penum->cur.x))
@@ -143,7 +94,9 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
         if (max_int - any_abs(penum->dda.row.y.step.dQ) > any_abs(penum->cur.y))
             dda_next(penum->dda.row.y);
 
+        render = penum->render;
         if (penum->interpolate == interp_off)
+        {
             switch (penum->posture) {
                 case image_portrait:
                     {		/* Precompute integer y and height, */
@@ -199,36 +152,99 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
                 case image_skewed:
                     ;
             }
-        update_strip(penum);
-        if (x_used) {
+        }
+        if (0)
+        {
+        mt:
+            render = penum->skip_render;
+        }
+        if (bit_planar) {
+            /* Repack the bit planes into byte-wide samples. */
+
+            buffer = penum->buffer;
+            sourcex = 0;
+            if (render)
+                for (px = 0; px < num_planes; px += penum->bps)
+                    repack_bit_planes(planes, offsets, penum->bps, penum->buffer,
+                                      penum->rect.w, &penum->map[px].table,
+                                      penum->spread);
+            for (px = 0; px < num_planes; ++px)
+                offsets[px] += planes[px].raster;
+        } else {
             /*
-             * Processing was interrupted by an error.  Skip over pixels
-             * already processed.
+             * Normally, we unpack the data into the buffer, but if
+             * there is only one plane and we don't need to expand the
+             * input samples, we may use the data directly.
              */
-            dda_advance(penum->dda.pixel0.x, x_used);
-            dda_advance(penum->dda.pixel0.y, x_used);
-            penum->used.x = 0;
-        }
-        if_debug2m('b', penum->memory, "[b]pixel0 x=%g, y=%g\n",
-                   fixed2float(dda_current(penum->dda.pixel0.x)),
-                   fixed2float(dda_current(penum->dda.pixel0.y)));
-        code = (*penum->render)(penum, buffer, sourcex + x_used,
-                                width_spp - x_used * penum->spp, 1, dev);
-        if (code < 0) {
-            /* Error or interrupt, restore original state. */
-            penum->used.x += x_used;
-            if (!penum->used.y) {
-                dda_previous(penum->dda.row.x);
-                dda_previous(penum->dda.row.y);
-                dda_translate(penum->dda.strip.x,
-                              penum->prev.x - penum->cur.x);
-                dda_translate(penum->dda.strip.y,
-                              penum->prev.y - penum->cur.y);
+            sourcex = planes[0].data_x;
+            if (render)
+                buffer =
+                    (*penum->unpack)(penum->buffer, &sourcex,
+                                     planes[0].data + offsets[0],
+                                     planes[0].data_x, BCOUNT(planes[0]),
+                                     &penum->map[0], penum->spread, num_components_per_plane);
+            else
+                buffer = NULL;
+
+            offsets[0] += planes[0].raster;
+            for (px = 1; px < num_planes; ++px) {
+                if (render)
+                    (*penum->unpack)(penum->buffer + (px << penum->log2_xbytes),
+                                     &ignore_data_x,
+                                     planes[px].data + offsets[px],
+                                     planes[px].data_x, BCOUNT(planes[px]),
+                                     &penum->map[px], penum->spread, 1);
+                offsets[px] += planes[px].raster;
             }
-            goto out;
         }
-        penum->prev = penum->cur;
-      mt:;
+#ifdef DEBUG
+        if (gs_debug_c('b'))
+            dmprintf1(dev->memory, "[b]image1 y=%d\n", y);
+        if (gs_debug_c('B')) {
+            int i, n = width_spp;
+
+            if (penum->bps > 8)
+                n *= 2;
+            else if (penum->bps == 1 && penum->unpack_bps == 8)
+                n = (n + 7) / 8;
+            dmlputs(dev->memory, "[B]row:");
+            for (i = 0; i < n; i++)
+                dmprintf1(dev->memory, " %02x", buffer[i]);
+            dmputs(dev->memory, "\n");
+        }
+#endif
+        if (render != NULL)
+        {
+            update_strip(penum);
+            if (x_used) {
+                /*
+                 * Processing was interrupted by an error.  Skip over pixels
+                 * already processed.
+                 */
+                dda_advance(penum->dda.pixel0.x, x_used);
+                dda_advance(penum->dda.pixel0.y, x_used);
+                penum->used.x = 0;
+            }
+            if_debug2m('b', penum->memory, "[b]pixel0 x=%g, y=%g\n",
+                       fixed2float(dda_current(penum->dda.pixel0.x)),
+                       fixed2float(dda_current(penum->dda.pixel0.y)));
+            code = (*render)(penum, buffer, sourcex + x_used,
+                             width_spp - x_used * penum->spp, 1, dev);
+            if (code < 0) {
+                /* Error or interrupt, restore original state. */
+                penum->used.x += x_used;
+                if (!penum->used.y) {
+                    dda_previous(penum->dda.row.x);
+                    dda_previous(penum->dda.row.y);
+                    dda_translate(penum->dda.strip.x,
+                                  penum->prev.x - penum->cur.x);
+                    dda_translate(penum->dda.strip.y,
+                                  penum->prev.y - penum->cur.y);
+                }
+                goto out;
+            }
+            penum->prev = penum->cur;
+        }
     }
     if (penum->y < penum->rect.h) {
         code = 0;
