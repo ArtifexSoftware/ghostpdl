@@ -1275,7 +1275,10 @@ show_proceed(gs_show_enum * penum)
     return TEXT_PROCESS_RENDER;
     /* If we get an error while setting up for BuildChar, */
     /* we must undo the partial setup. */
-  rret:gs_grestore(pgs);
+rret:
+    while (pgs->level > penum->level) {
+        gs_grestore(pgs);
+    }
     return code;
 #undef get_next_char_glyph
 }
