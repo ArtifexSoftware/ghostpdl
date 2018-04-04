@@ -1291,6 +1291,7 @@ pcl_start_raster(uint src_width, uint src_height, pcl_state_t * pcs)
 
     /* check for memory exhaustion */
     if (pseed_rows == 0) {
+        pcl_cs_indexed_release(prast->pindexed);
         gs_free_object(prast->pmem, prast, "start PCL raster");
         return e_Memory;
     }
