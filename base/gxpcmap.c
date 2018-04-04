@@ -1456,6 +1456,13 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
 
     code = (*pinst->templat.PaintProc)(&pdc->ccolor, saved);
     if (code < 0) {
+        if (dev_proc(adev, open_device) == pattern_accum_open) {
+            // free pattern cache data that never got added to the dictionary
+            gx_device_pattern_accum *padev = (gx_device_pattern_accum *) adev;
+            if ((padev->bits != NULL) && (padev->bits->base != NULL)) {
+                gs_free_object(padev->bits->memory, padev->bits->base, "mem_open");
+            }
+        }
         /* RJW: At this point, in the non transparency case,
          * saved->device == adev. So unretain it, close it, and the
          * gs_gstate_free(saved) will remove it. In the transparency case,
@@ -1532,6 +1539,13 @@ gx_pattern_load(gx_device_color * pdc, const gs_gstate * pgs,
     return code;
 
 fail:
+    if (dev_proc(adev, open_device) == pattern_accum_open) {
+        // free pattern cache data that never got added to the dictionary
+        gx_device_pattern_accum *padev = (gx_device_pattern_accum *) adev;
+        if ((padev->bits != NULL) && (padev->bits->base != NULL)) {
+            gs_free_object(padev->bits->memory, padev->bits->base, "mem_open");
+        }
+    }
     if (dev_proc(adev, open_device) == pattern_clist_open_device) {
         gx_device_clist *cdev = (gx_device_clist *)adev;
 
