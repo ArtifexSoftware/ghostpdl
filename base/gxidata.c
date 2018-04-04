@@ -85,6 +85,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
         int sourcex;
         int x_used = penum->used.x;
         irender_proc_t render;
+        int skip = 0;
 
         /* Bump DDA's if it doesn't cause overflow */
         penum->cur.x = dda_current(penum->dda.row.x);
@@ -156,6 +157,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
         if (0)
         {
         mt:
+            skip = 1;
             render = penum->skip_render;
         }
         if (bit_planar) {
@@ -163,7 +165,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 
             buffer = penum->buffer;
             sourcex = 0;
-            if (render)
+            if (!skip)
                 for (px = 0; px < num_planes; px += penum->bps)
                     repack_bit_planes(planes, offsets, penum->bps, penum->buffer,
                                       penum->rect.w, &penum->map[px].table,
@@ -177,7 +179,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
              * input samples, we may use the data directly.
              */
             sourcex = planes[0].data_x;
-            if (render)
+            if (!skip)
                 buffer =
                     (*penum->unpack)(penum->buffer, &sourcex,
                                      planes[0].data + offsets[0],
@@ -188,7 +190,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 
             offsets[0] += planes[0].raster;
             for (px = 1; px < num_planes; ++px) {
-                if (render)
+                if (!skip)
                     (*penum->unpack)(penum->buffer + (px << penum->log2_xbytes),
                                      &ignore_data_x,
                                      planes[px].data + offsets[px],
