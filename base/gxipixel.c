@@ -980,7 +980,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
         if_debug1m('b', mem, "[b]unpack=%d\n", bps);
         /* Set up pixel0 for image class procedures. */
         penum->dda.pixel0 = penum->dda.strip;
-        penum->skip_render = NULL;
+        penum->skip_next_line = NULL;
         for (i = 0; i < gx_image_class_table_count; ++i)
             if ((penum->render = gx_image_class_table[i](penum)) != 0)
                 break;

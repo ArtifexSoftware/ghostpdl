@@ -84,7 +84,6 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
         const byte *buffer;
         int sourcex;
         int x_used = penum->used.x;
-        irender_proc_t render;
         int skip = 0;
 
         /* Bump DDA's if it doesn't cause overflow */
@@ -95,70 +94,72 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
         if (max_int - any_abs(penum->dda.row.y.step.dQ) > any_abs(penum->cur.y))
             dda_next(penum->dda.row.y);
 
-        render = penum->render;
-        if (penum->interpolate == interp_off)
-        {
-            switch (penum->posture) {
-                case image_portrait:
-                    {		/* Precompute integer y and height, */
-                        /* and check for clipping. */
-                        fixed yc = penum->cur.y,
-                            yn = dda_current(penum->dda.row.y);
+        if (penum->interpolate == interp_off) {
+            if (penum->skip_next_line) {
+                if (penum->skip_next_line(penum))
+                    goto mt;
+            } else {
+                switch (penum->posture) {
+                    case image_portrait:
+                        {		/* Precompute integer y and height, */
+                            /* and check for clipping. */
+                            fixed yc = penum->cur.y,
+                                yn = dda_current(penum->dda.row.y);
 
-                        if (yn < yc) {
-                            fixed temp = yn;
+                            if (yn < yc) {
+                                fixed temp = yn;
 
-                            yn = yc;
-                            yc = temp;
+                                yn = yc;
+                                yc = temp;
+                            }
+                            yc -= adjust;
+                            if (yc >= penum->clip_outer.q.y)
+                                goto mt;
+                            yn += adjust;
+                            if (yn <= penum->clip_outer.p.y)
+                                goto mt;
+                            penum->yci = fixed2int_pixround_perfect(yc);
+                            penum->hci = fixed2int_pixround_perfect(yn) - penum->yci;
+                            if (penum->hci == 0)
+                                goto mt;
+                            if_debug2m('b', penum->memory, "[b]yci=%d, hci=%d\n",
+                                       penum->yci, penum->hci);
                         }
-                        yc -= adjust;
-                        if (yc >= penum->clip_outer.q.y)
-                            goto mt;
-                        yn += adjust;
-                        if (yn <= penum->clip_outer.p.y)
-                            goto mt;
-                        penum->yci = fixed2int_pixround_perfect(yc);
-                        penum->hci = fixed2int_pixround_perfect(yn) - penum->yci;
-                        if (penum->hci == 0)
-                            goto mt;
-                        if_debug2m('b', penum->memory, "[b]yci=%d, hci=%d\n",
-                                   penum->yci, penum->hci);
-                    }
-                    break;
-                case image_landscape:
-                    {		/* Check for no pixel centers in x. */
-                        fixed xc = penum->cur.x,
-                            xn = dda_current(penum->dda.row.x);
+                        break;
+                    case image_landscape:
+                        {		/* Check for no pixel centers in x. */
+                            fixed xc = penum->cur.x,
+                                xn = dda_current(penum->dda.row.x);
 
-                        if (xn < xc) {
-                            fixed temp = xn;
+                            if (xn < xc) {
+                                fixed temp = xn;
 
-                            xn = xc;
-                            xc = temp;
+                                xn = xc;
+                                xc = temp;
+                            }
+                            xc -= adjust;
+                            if (xc >= penum->clip_outer.q.x)
+                                goto mt;
+                            xn += adjust;
+                            if (xn <= penum->clip_outer.p.x)
+                                goto mt;
+                            penum->xci = fixed2int_pixround_perfect(xc);
+                            penum->wci = fixed2int_pixround_perfect(xn) - penum->xci;
+                            if (penum->wci == 0)
+                                goto mt;
+                            if_debug2m('b', penum->memory, "[b]xci=%d, wci=%d\n",
+                                       penum->xci, penum->wci);
                         }
-                        xc -= adjust;
-                        if (xc >= penum->clip_outer.q.x)
-                            goto mt;
-                        xn += adjust;
-                        if (xn <= penum->clip_outer.p.x)
-                            goto mt;
-                        penum->xci = fixed2int_pixround_perfect(xc);
-                        penum->wci = fixed2int_pixround_perfect(xn) - penum->xci;
-                        if (penum->wci == 0)
-                            goto mt;
-                        if_debug2m('b', penum->memory, "[b]xci=%d, wci=%d\n",
-                                   penum->xci, penum->wci);
-                    }
-                    break;
-                case image_skewed:
-                    ;
+                        break;
+                    case image_skewed:
+                        ;
+                }
             }
         }
         if (0)
         {
         mt:
             skip = 1;
-            render = penum->skip_render;
         }
         if (bit_planar) {
             /* Repack the bit planes into byte-wide samples. */
@@ -215,7 +216,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
             dmputs(dev->memory, "\n");
         }
 #endif
-        if (render != NULL)
+        if (!skip)
         {
             update_strip(penum);
             if (x_used) {
@@ -230,8 +231,8 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
             if_debug2m('b', penum->memory, "[b]pixel0 x=%g, y=%g\n",
                        fixed2float(dda_current(penum->dda.pixel0.x)),
                        fixed2float(dda_current(penum->dda.pixel0.y)));
-            code = (*render)(penum, buffer, sourcex + x_used,
-                             width_spp - x_used * penum->spp, 1, dev);
+            code = (*penum->render)(penum, buffer, sourcex + x_used,
+                                    width_spp - x_used * penum->spp, 1, dev);
             if (code < 0) {
                 /* Error or interrupt, restore original state. */
                 penum->used.x += x_used;
