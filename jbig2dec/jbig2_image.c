@@ -359,7 +359,7 @@ jbig2_image_get_pixel(Jbig2Image *image, int x, int y)
 }
 
 /* set an individual pixel value in an image */
-int
+void
 jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value)
 {
     const int w = image->width;
@@ -368,9 +368,9 @@ jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value)
     int bit, byte;
 
     if ((x < 0) || (x >= w))
-        return 0;
+        return;
     if ((y < 0) || (y >= h))
-        return 0;
+        return;
 
     byte = (x >> 3) + y * image->stride;
     bit = 7 - (x & 7);
@@ -378,6 +378,4 @@ jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value)
 
     scratch = image->data[byte] & mask;
     image->data[byte] = scratch | (value << bit);
-
-    return 1;
 }

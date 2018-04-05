@@ -21,7 +21,7 @@
 #define _JBIG2_IMAGE_H
 
 int jbig2_image_get_pixel(Jbig2Image *image, int x, int y);
-int jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value);
+void jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value);
 
 /* routines for dumping the image data in various formats */
 /* FIXME: should these be in the client instead? */
