@@ -933,7 +933,7 @@ the order in which they occur in the rendering pipeline.
 
 <li>Clients of the graphics library normally specify colors using the
 <em>client color</em> structure (<code>gs_client_color</code>, defined in
-<a href="../psi/gs.color.h">psi/gs.color.h</a>), consisting of one or more
+<a href="../psi/gsccolor.h">psi/gsccolor.h</a>), consisting of one or more
 numeric values and/or a pointer to a Pattern instance.  This corresponds
 directly to the values that would be passed to the PostScript
 <code>setcolor</code> operator: one or more (floating-point) numeric
@@ -979,7 +979,7 @@ generation and undercolor removal.  The non-trivial cases are implemented in
 
 The result is called (inappropriately) a <em>device color</em>
 (<code>gx_device_color</code>, defined in <a
-href="../psi/gs.color.h">psi/gs.color.h</a> and <a
+href="../psi/gsdcolor.h">psi/gsdcolor.h</a> and <a
 href="../base/gxdcolor.h">base/gxdcolor.h</a>).  For ordinary non-Pattern
 colors, a device color is either a pure color, or a halftone.  The device
 and color model associated with a device color are implicit.  The procedure
@@ -1202,8 +1202,8 @@ operator.
 <dt>
 Patterns:
 <dd>
-<a href="../base/gspcolor.c">base/gs.color.c</a>,
-<a href="../base/gspcolor.h">base/gs.color.h</a>,
+<a href="../base/gspcolor.c">base/gspcolor.c</a>,
+<a href="../base/gspcolor.h">base/gspcolor.h</a>,
 <a href="../base/gsptype1.c">base/gsptype1.c</a>,
 <a href="../base/gsptype1.h">base/gsptype1.h</a>,
 <a href="../base/gxp1fill.c">base/gxp1fill.c</a>,
