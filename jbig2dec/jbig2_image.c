@@ -132,7 +132,7 @@ jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image, uint32_t width, uint32_t he
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "jbig2_image_resize called with a different width (NYI)");
     }
 
-    return NULL;
+    return image;
 }
 
 /* composite one jbig2_image onto another

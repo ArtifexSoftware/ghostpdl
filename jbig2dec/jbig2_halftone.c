@@ -44,7 +44,9 @@ jbig2_hd_new(Jbig2Ctx *ctx, const Jbig2PatternDictParams *params, Jbig2Image *im
     const int N = params->GRAYMAX + 1;
     const int HPW = params->HDPW;
     const int HPH = params->HDPH;
+    int code;
     int i;
+    int j;
 
     /* allocate a new struct */
     new = jbig2_new(ctx, Jbig2PatternDict, 1);
@@ -63,7 +65,6 @@ jbig2_hd_new(Jbig2Ctx *ctx, const Jbig2PatternDictParams *params, Jbig2Image *im
         for (i = 0; i < N; i++) {
             new->patterns[i] = jbig2_image_new(ctx, HPW, HPH);
             if (new->patterns[i] == NULL) {
-                int j;
 
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to allocate pattern element image");
                 for (j = 0; j < i; j++)
@@ -74,7 +75,14 @@ jbig2_hd_new(Jbig2Ctx *ctx, const Jbig2PatternDictParams *params, Jbig2Image *im
             /* compose with the REPLACE operator; the source
                will be clipped to the destination, selecting the
                proper sub image */
-            jbig2_image_compose(ctx, new->patterns[i], image, -i * HPW, 0, JBIG2_COMPOSE_REPLACE);
+            code = jbig2_image_compose(ctx, new->patterns[i], image, -i * HPW, 0, JBIG2_COMPOSE_REPLACE);
+            if (code < 0) {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to compose image into collective bitmap dictionary");
+                for (j = 0; j < i; j++)
+                    jbig2_free(ctx->allocator, new->patterns[j]);
+                jbig2_free(ctx->allocator, new);
+                return NULL;
+            }
         }
     } else {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate collective bitmap dictionary");
@@ -169,6 +177,8 @@ jbig2_decode_pattern_dict(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
     if (code == 0)
         hd = jbig2_hd_new(ctx, params, image);
+    else
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error while decoding immediate_generic_region");
     jbig2_image_release(ctx, image);
 
     return hd;
@@ -452,6 +462,7 @@ jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     uint32_t mg, ng;
     int32_t x, y;
     uint8_t gray_val;
+    int code;
 
     /* 6.6.5 point 1. Fill bitmap with HDEFPIXEL */
     memset(image->data, params->HDEFPIXEL, image->stride * image->height);
@@ -498,7 +509,11 @@ jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                 /* use highest available pattern */
                 gray_val = HNUMPATS - 1;
             }
-            jbig2_image_compose(ctx, image, HPATS->patterns[gray_val], x, y, params->op);
+            code = jbig2_image_compose(ctx, image, HPATS->patterns[gray_val], x, y, params->op);
+            if (code < 0) {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to compose pattern with gray-scale image");
+                return -1;
+            }
         }
     }
 
@@ -592,13 +607,23 @@ jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
     }
 
     code = jbig2_decode_halftone_region(ctx, segment, &params, segment_data + offset, segment->data_length - offset, image, GB_stats);
+    if (code < 0) {
+        jbig2_image_release(ctx, image);
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to decode halftone region");
+    }
 
     /* todo: retain GB_stats? */
     if (!params.HMMR) {
         jbig2_free(ctx->allocator, GB_stats);
     }
 
-    jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], image, region_info.x, region_info.y, region_info.op);
+    code = jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], image, region_info.x, region_info.y, region_info.op);
+    if (code < 0)
+    {
+        jbig2_image_release(ctx, image);
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable add halftone region to page");
+    }
+
     jbig2_image_release(ctx, image);
 
     return code;

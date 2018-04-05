@@ -59,7 +59,7 @@ dump_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, Jbig2Page *page)
 int
 jbig2_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
 {
-    Jbig2Page *page;
+    Jbig2Page *page, *pages;
 
     /* a new page info segment implies the previous page is finished */
     page = &(ctx->pages[ctx->current_page]);
@@ -77,7 +77,11 @@ jbig2_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_dat
             index++;
             if (index >= ctx->max_page_index) {
                 /* grow the list */
-                ctx->pages = jbig2_renew(ctx, ctx->pages, Jbig2Page, (ctx->max_page_index <<= 2));
+                pages = jbig2_renew(ctx, ctx->pages, Jbig2Page, (ctx->max_page_index <<= 2));
+                if (pages == NULL) {
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to reallocate space for more pages");
+                }
+                ctx->pages = pages;
                 for (j = index; j < ctx->max_page_index; j++) {
                     ctx->pages[j].state = JBIG2_PAGE_FREE;
                     ctx->pages[j].number = 0;
@@ -200,7 +204,7 @@ jbig2_complete_page(Jbig2Ctx *ctx)
     }
 
     /* ensure image exists before marking page as complete */
-    if (ctx->pages[ctx->current_page].image != NULL) {
+    if (!code && ctx->pages[ctx->current_page].image != NULL) {
         ctx->pages[ctx->current_page].state = JBIG2_PAGE_COMPLETE;
     }
 
@@ -214,6 +218,7 @@ int
 jbig2_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
 {
     uint32_t page_number = ctx->pages[ctx->current_page].number;
+    int code;
 
     if (segment->page_association != page_number) {
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
@@ -222,10 +227,17 @@ jbig2_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_d
 
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "end of page %d", page_number);
 
-    jbig2_complete_page(ctx);
+    code = jbig2_complete_page(ctx);
+    if (code < 0) {
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to complete page");
+        return -1;
+    }
 
 #ifdef OUTPUT_PBM
-    jbig2_image_write_pbm(ctx->pages[ctx->current_page].image, stdout);
+    code = jbig2_image_write_pbm(ctx->pages[ctx->current_page].image, stdout);
+    if (code < 0) {
+        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "failed to write page image");
+    }
 #endif
 
     return 0;
@@ -240,6 +252,8 @@ jbig2_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_d
 int
 jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, int x, int y, Jbig2ComposeOp op)
 {
+    int code;
+
     /* ensure image exists first */
     if (page->image == NULL) {
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "page info possibly missing, no image defined");
@@ -251,12 +265,21 @@ jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, int x, 
         uint32_t new_height = y + image->height + page->end_row;
 
         if (page->image->height < new_height) {
+            Jbig2Image *resized_image = NULL;
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "growing page buffer to %d rows " "to accomodate new stripe", new_height);
-            jbig2_image_resize(ctx, page->image, page->image->width, new_height);
+            resized_image = jbig2_image_resize(ctx, page->image, page->image->width, new_height);
+            if (resized_image == NULL) {
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "unable to resize image to accomodate new stripe");
+            }
+            page->image = resized_image;
         }
     }
 
-    jbig2_image_compose(ctx, page->image, image, x, y + page->end_row, op);
+    code = jbig2_image_compose(ctx, page->image, image, x, y + page->end_row, op);
+    if (code < 0) {
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to compose image with page");
+        return -1;
+    }
 
     return 0;
 }

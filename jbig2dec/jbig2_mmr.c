@@ -831,7 +831,7 @@ jbig2_decode_get_run(Jbig2MmrCtx *mmr, const mmr_table_node *table, int initial_
 }
 
 static int
-jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
+jbig2_decode_mmr_line(Jbig2Ctx *ctx, Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
 {
     uint32_t a0 = MINUS1;
     uint32_t a1, a2, b1, b2;
@@ -863,7 +863,7 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
                 if (a2 > mmr->width)
                     a2 = mmr->width;
                 if (a1 == MINUS1 || a2 < a1)
-                    return -1;
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "negative black run");
                 jbig2_set_bits(dst, a1, a2);
                 a0 = a2;
                 /* printf ("H %d %d\n", white_run, black_run); */
@@ -877,7 +877,7 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
                 if (a2 > mmr->width)
                     a2 = mmr->width;
                 if (a0 == MINUS1 || a1 < a0)
-                    return -1;
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "negative white run");
                 jbig2_set_bits(dst, a0, a1);
                 a0 = a2;
                 /* printf ("H %d %d\n", black_run, white_run); */
@@ -891,7 +891,7 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
             b2 = jbig2_find_changing_element(ref, b1, mmr->width);
             if (c) {
                 if (a0 == MINUS1 || b2 < a0)
-                    return -1;
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "negative white run");
                 jbig2_set_bits(dst, a0, b2);
             }
             a0 = b2;
@@ -903,7 +903,7 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
             b1 = jbig2_find_changing_element_of_color(ref, a0, mmr->width, !c);
             if (c) {
                 if (a0 == MINUS1 || b1 < a0)
-                    return -1;
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "negative white run");
                 jbig2_set_bits(dst, a0, b1);
             }
             a0 = b1;
@@ -918,7 +918,7 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
                 break;
             if (c) {
                 if (a0 == MINUS1 || b1 + 1 < a0)
-                    return -1;
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "negative white run");
                 jbig2_set_bits(dst, a0, b1 + 1);
             }
             a0 = b1 + 1;
@@ -933,7 +933,7 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
                 break;
             if (c) {
                 if (a0 == MINUS1 || b1 + 2 < a0)
-                    return -1;
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "negative white run");
                 jbig2_set_bits(dst, a0, b1 + 2);
             }
             a0 = b1 + 2;
@@ -948,7 +948,7 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
                 break;
             if (c) {
                 if (a0 == MINUS1 || b1 + 3 < a0)
-                    return -1;
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "negative white run");
                 jbig2_set_bits(dst, a0, b1 + 3);
             }
             a0 = b1 + 3;
@@ -963,7 +963,7 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
                 break;
             if (c) {
                 if (a0 == MINUS1 || b1 - 1 < a0)
-                    return -1;
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "negative white run");
                 jbig2_set_bits(dst, a0, b1 - 1);
             }
             a0 = b1 - 1;
@@ -978,7 +978,7 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
                 break;
             if (c) {
                 if (a0 == MINUS1 || b1 - 2 < a0)
-                    return -1;
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "negative white run");
                 jbig2_set_bits(dst, a0, b1 - 2);
             }
             a0 = b1 - 2;
@@ -993,7 +993,7 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
                 break;
             if (c) {
                 if (a0 == MINUS1 || b1 - 3 < a0)
-                    return -1;
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "negative white run");
                 jbig2_set_bits(dst, a0, b1 - 3);
             }
             a0 = b1 - 3;
@@ -1021,9 +1021,12 @@ jbig2_decode_generic_mmr(Jbig2Ctx *ctx, Jbig2Segment *segment, const Jbig2Generi
 
     for (y = 0; y < image->height; y++) {
         memset(dst, 0, rowstride);
-        code = jbig2_decode_mmr_line(&mmr, ref, dst);
+        code = jbig2_decode_mmr_line(ctx, &mmr, ref, dst);
         if (code < 0)
+        {
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode mmr line");
             return code;
+        }
         ref = dst;
         dst += rowstride;
     }
@@ -1060,9 +1063,12 @@ jbig2_decode_halftone_mmr(Jbig2Ctx *ctx, const Jbig2GenericRegionParams *params,
 
     for (y = 0; y < image->height; y++) {
         memset(dst, 0, rowstride);
-        code = jbig2_decode_mmr_line(&mmr, ref, dst);
+        code = jbig2_decode_mmr_line(ctx, &mmr, ref, dst);
         if (code < 0)
+        {
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode halftone mmr line");
             return code;
+        }
         ref = dst;
         dst += rowstride;
     }

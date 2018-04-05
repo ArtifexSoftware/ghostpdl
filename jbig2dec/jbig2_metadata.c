@@ -107,6 +107,11 @@ jbig2_metadata_add(Jbig2Ctx *ctx, Jbig2Metadata *md, const char *key, const int 
     /* copy the passed key,value pair */
     md->keys[md->entries] = jbig2_strndup(ctx, key, key_length);
     md->values[md->entries] = jbig2_strndup(ctx, value, value_length);
+    if (md->keys[md->entries] == NULL || md->values[md->entries] == NULL)
+    {
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to accomodate more metadata");
+        return -1;
+    }
     md->entries++;
 
     return 0;
@@ -120,6 +125,7 @@ jbig2_comment_ascii(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment
     char *end = (char *)(segment_data + segment->data_length);
     Jbig2Metadata *comment;
     char *key, *value;
+    int code;
 
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "ASCII comment data");
 
@@ -139,7 +145,11 @@ jbig2_comment_ascii(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment
         if (!s)
             goto too_short;
         s++;
-        jbig2_metadata_add(ctx, comment, key, value - key, value, s - value);
+        code = jbig2_metadata_add(ctx, comment, key, value - key, value, s - value);
+        if (code < 0) {
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to add ascii comment data");
+            return -1;
+        }
         jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "'%s'\t'%s'", key, value);
     }
 

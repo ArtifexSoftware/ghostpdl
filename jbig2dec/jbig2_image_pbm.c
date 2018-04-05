@@ -35,17 +35,17 @@ int
 jbig2_image_write_pbm_file(Jbig2Image *image, char *filename)
 {
     FILE *out;
-    int error;
+    int code;
 
     if ((out = fopen(filename, "wb")) == NULL) {
         fprintf(stderr, "unable to open '%s' for writing", filename);
         return 1;
     }
 
-    error = jbig2_image_write_pbm(image, out);
+    code = jbig2_image_write_pbm(image, out);
 
     fclose(out);
-    return (error);
+    return (code);
 }
 
 /* write out an image struct as a pbm stream to an open file pointer */

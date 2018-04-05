@@ -39,7 +39,7 @@ main(int argc, char *argv[])
 {
     Jbig2Ctx *ctx;
     Jbig2Image *image;
-    int error;
+    int code;
 
     /* we need a context for the allocators */
     ctx = jbig2_ctx_new(NULL, 0, NULL, NULL, NULL);
@@ -57,10 +57,10 @@ main(int argc, char *argv[])
         fprintf(stderr, "converting %dx%d image to png format\n", image->width, image->height);
     }
 
-    error = jbig2_image_write_png_file(image, argv[2]);
-    if (error) {
-        fprintf(stderr, "error writing png file '%s' error %d\n", argv[2], error);
+    code = jbig2_image_write_png_file(image, argv[2]);
+    if (code) {
+        fprintf(stderr, "error writing png file '%s' error %d\n", argv[2], code);
     }
 
-    return (error);
+    return (code);
 }

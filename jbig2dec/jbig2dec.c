@@ -333,12 +333,10 @@ write_page_image(jbig2dec_params_t *params, Jbig2Image *image)
         switch (params->output_format) {
 #ifdef HAVE_LIBPNG
         case jbig2dec_format_png:
-            jbig2_image_write_png(image, stdout);
-            break;
+            return jbig2_image_write_png(image, stdout);
 #endif
         case jbig2dec_format_pbm:
-            jbig2_image_write_pbm(image, stdout);
-            break;
+            return jbig2_image_write_pbm(image, stdout);
         default:
             fprintf(stderr, "unsupported output format.\n");
             return 1;
@@ -349,12 +347,10 @@ write_page_image(jbig2dec_params_t *params, Jbig2Image *image)
         switch (params->output_format) {
 #ifdef HAVE_LIBPNG
         case jbig2dec_format_png:
-            jbig2_image_write_png_file(image, params->output_file);
-            break;
+            return jbig2_image_write_png_file(image, params->output_file);
 #endif
         case jbig2dec_format_pbm:
-            jbig2_image_write_pbm_file(image, params->output_file);
-            break;
+            return jbig2_image_write_pbm_file(image, params->output_file);
         default:
             fprintf(stderr, "unsupported output format.\n");
             return 1;
@@ -391,6 +387,7 @@ main(int argc, char **argv)
     jbig2dec_params_t params;
     int filearg;
     int result = 1;
+    int code;
 
     /* set defaults */
     params.mode = render;
@@ -449,6 +446,12 @@ main(int argc, char **argv)
         }
 
         ctx = jbig2_ctx_new(NULL, (Jbig2Options)(f_page != NULL ? JBIG2_OPTIONS_EMBEDDED : 0), NULL, error_callback, &params);
+        if (ctx == NULL) {
+            fclose(f);
+            if (f_page)
+                fclose(f_page);
+            goto cleanup;
+        }
 
         /* pull the whole file/global stream into memory */
         for (;;) {
@@ -466,13 +469,15 @@ main(int argc, char **argv)
             Jbig2GlobalCtx *global_ctx = jbig2_make_global_ctx(ctx);
 
             ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, global_ctx, error_callback, &params);
-            for (;;) {
-                int n_bytes = fread(buf, 1, sizeof(buf), f_page);
+            if (ctx != NULL) {
+                for (;;) {
+                    int n_bytes = fread(buf, 1, sizeof(buf), f_page);
 
-                if (n_bytes <= 0)
-                    break;
-                if (jbig2_data_in(ctx, buf, n_bytes))
-                    break;
+                    if (n_bytes <= 0)
+                        break;
+                    if (jbig2_data_in(ctx, buf, n_bytes))
+                        break;
+                }
             }
             fclose(f_page);
             jbig2_global_ctx_free(global_ctx);
@@ -484,7 +489,11 @@ main(int argc, char **argv)
 
             /* work around broken CVision embedded streams */
             if (f_page != NULL)
-                jbig2_complete_page(ctx);
+            {
+                code = jbig2_complete_page(ctx);
+                if (code < 0)
+                    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to complete page");
+            }
 
             if (params.output_file == NULL) {
 #ifdef HAVE_LIBPNG

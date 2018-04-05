@@ -70,6 +70,7 @@ jbig2_dump_symbol_dict(Jbig2Ctx *ctx, Jbig2Segment *segment)
     Jbig2SymbolDict *dict = (Jbig2SymbolDict *) segment->result;
     int index;
     char filename[24];
+    int code;
 
     if (dict == NULL)
         return;
@@ -78,10 +79,12 @@ jbig2_dump_symbol_dict(Jbig2Ctx *ctx, Jbig2Segment *segment)
         snprintf(filename, sizeof(filename), "symbol_%02d-%04d.png", segment->number, index);
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "dumping symbol %d/%d as '%s'", index, dict->n_symbols, filename);
 #ifdef HAVE_LIBPNG
-        jbig2_image_write_png_file(dict->glyphs[index], filename);
+        code = jbig2_image_write_png_file(dict->glyphs[index], filename);
 #else
-        jbig2_image_write_pbm_file(dict->glyphs[index], filename);
+        code = jbig2_image_write_pbm_file(dict->glyphs[index], filename);
 #endif
+        if (code < 0)
+            jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "failed to dump symbol %d/%d as '%s'", index, dict->n_symbols, filename);
     }
 }
 #endif /* DUMP_SYMDICT */
@@ -318,7 +321,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         if (params->SDHUFF) {
             HCDH = jbig2_huffman_get(hs, params->SDHUFFDH, &code);
         } else {
-            code = jbig2_arith_int_decode(IADH, as, &HCDH);
+            code = jbig2_arith_int_decode(ctx, IADH, as, &HCDH);
         }
 
         if (code != 0) {
@@ -350,7 +353,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             if (params->SDHUFF) {
                 DW = jbig2_huffman_get(hs, params->SDHUFFDW, &code);
             } else {
-                code = jbig2_arith_int_decode(IADW, as, &DW);
+                code = jbig2_arith_int_decode(ctx, IADW, as, &DW);
             }
             if (code < 0)
                 goto cleanup4;
@@ -415,7 +418,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                     if (params->SDHUFF) {
                         REFAGGNINST = jbig2_huffman_get(hs, params->SDHUFFAGGINST, &code);
                     } else {
-                        code = jbig2_arith_int_decode(IAAI, as, (int32_t *) & REFAGGNINST);
+                        code = jbig2_arith_int_decode(ctx, IAAI, as, (int32_t *) & REFAGGNINST);
                     }
                     if (code || (int32_t) REFAGGNINST <= 0) {
                         code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "invalid number of symbols or OOB in aggregate glyph");
@@ -465,6 +468,14 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                                 tparams->IARDH = jbig2_arith_int_ctx_new(ctx);
                                 tparams->IARDX = jbig2_arith_int_ctx_new(ctx);
                                 tparams->IARDY = jbig2_arith_int_ctx_new(ctx);
+                                if ((tparams->IAID == NULL) || (tparams->IAFS == NULL) ||
+                                    (tparams->IADS == NULL) || (tparams->IAIT == NULL) ||
+                                    (tparams->IAID == NULL) || (tparams->IARDW == NULL) ||
+                                    (tparams->IARDH == NULL) || (tparams->IARDX == NULL) ||
+                                    (tparams->IARDY == NULL)) {
+                                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "out of memory creating text region arith decoder entries");
+                                    goto cleanup4;
+                                }
                             } else {
                                 tparams->SBHUFFFS = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_F);    /* Table B.6 */
                                 tparams->SBHUFFDS = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_H);    /* Table B.8 */
@@ -473,6 +484,13 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                                 tparams->SBHUFFRDH = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);   /* Table B.15 */
                                 tparams->SBHUFFRDX = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);   /* Table B.15 */
                                 tparams->SBHUFFRDY = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);   /* Table B.15 */
+                                if ((tparams->SBHUFFFS == NULL) || (tparams->SBHUFFDS == NULL) ||
+                                    (tparams->SBHUFFDT == NULL) || (tparams->SBHUFFRDW == NULL) ||
+                                    (tparams->SBHUFFRDH == NULL) || (tparams->SBHUFFRDX == NULL) ||
+                                    (tparams->SBHUFFRDY == NULL)) {
+                                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "out of memory creating text region huffman decoder entries");
+                                    goto cleanup4;
+                                }
                             }
                             tparams->SBHUFF = params->SDHUFF;
                             tparams->SBREFINE = 1;
@@ -522,9 +540,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                             BMSIZE = jbig2_huffman_get(hs, SBHUFFRSIZE, &code3);
                             jbig2_huffman_skip(hs);
                         } else {
-                            code1 = jbig2_arith_iaid_decode(IAID, as, (int32_t *) & ID);
-                            code2 = jbig2_arith_int_decode(IARDX, as, &RDX);
-                            code3 = jbig2_arith_int_decode(IARDY, as, &RDY);
+                            code1 = jbig2_arith_iaid_decode(ctx, IAID, as, (int32_t *) & ID);
+                            code2 = jbig2_arith_int_decode(ctx, IARDX, as, &RDX);
+                            code3 = jbig2_arith_int_decode(ctx, IARDY, as, &RDY);
                         }
 
                         if ((code1 < 0) || (code2 < 0) || (code3 < 0) || (code4 < 0)) {
@@ -578,11 +596,15 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 {
                     char name[64];
                     FILE *out;
+                    int code;
 
                     snprintf(name, 64, "sd.%04d.%04d.pbm", segment->number, NSYMSDECODED);
                     out = fopen(name, "wb");
-                    jbig2_image_write_pbm(SDNEWSYMS->glyphs[NSYMSDECODED], out);
-                    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "writing out glyph as '%s' ...", name);
+                    code = jbig2_image_write_pbm(SDNEWSYMS->glyphs[NSYMSDECODED], out);
+                    if (code < 0)
+                        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "failed to write glyph");
+                    else
+                        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "writing out glyph as '%s' ...", name);
                     fclose(out);
                 }
 #endif
@@ -682,7 +704,13 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                     jbig2_image_release(ctx, image);
                     goto cleanup4;
                 }
-                jbig2_image_compose(ctx, glyph, image, -x, 0, JBIG2_COMPOSE_REPLACE);
+                code = jbig2_image_compose(ctx, glyph, image, -x, 0, JBIG2_COMPOSE_REPLACE);
+                if (code) {
+                    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to compose image into glyph");
+                    jbig2_image_release(ctx, glyph);
+                    jbig2_image_release(ctx, image);
+                    goto cleanup4;
+                }
                 x += SDNEWSYMWIDTHS[j];
                 SDNEWSYMS->glyphs[j] = glyph;
             }
@@ -709,7 +737,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             if (params->SDHUFF)
                 exrunlength = jbig2_huffman_get(hs, SBHUFFRSIZE, &code);
             else
-                code = jbig2_arith_int_decode(IAEX, as, (int32_t *)&exrunlength);
+                code = jbig2_arith_int_decode(ctx, IAEX, as, (int32_t *)&exrunlength);
             /* prevent infinite loop */
             zerolength = exrunlength > 0 ? 0 : zerolength + 1;
             if (code || (exrunlength > limit - i) || (zerolength > 4) || (exflag && (exrunlength + j > params->SDNUMEXSYMS))) {

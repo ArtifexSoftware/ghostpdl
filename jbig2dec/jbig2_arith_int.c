@@ -53,34 +53,47 @@ jbig2_arith_int_ctx_new(Jbig2Ctx *ctx)
 /* A.2 */
 /* Return value: -1 on error, 0 on normal value, 1 on OOB return. */
 int
-jbig2_arith_int_decode(Jbig2ArithIntCtx *ctx, Jbig2ArithState *as, int32_t *p_result)
+jbig2_arith_int_decode(Jbig2Ctx *ctx, Jbig2ArithIntCtx *actx, Jbig2ArithState *as, int32_t *p_result)
 {
-    Jbig2ArithCx *IAx = ctx->IAx;
+    Jbig2ArithCx *IAx = actx->IAx;
     int PREV = 1;
     int S, V;
     int bit;
     int n_tail, offset;
     int i;
+    int code = 0;
 
-    S = jbig2_arith_decode(as, &IAx[PREV]);
+    S = jbig2_arith_decode(as, &IAx[PREV], &code);
+    if (code)
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode IAx S");
     PREV = (PREV << 1) | S;
 
-    bit = jbig2_arith_decode(as, &IAx[PREV]);
+    bit = jbig2_arith_decode(as, &IAx[PREV], &code);
+    if (code)
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode IAx bit 0");
     PREV = (PREV << 1) | bit;
     if (bit) {
-        bit = jbig2_arith_decode(as, &IAx[PREV]);
+        bit = jbig2_arith_decode(as, &IAx[PREV], &code);
+        if (code)
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode IAx bit 1");
         PREV = (PREV << 1) | bit;
 
         if (bit) {
-            bit = jbig2_arith_decode(as, &IAx[PREV]);
+            bit = jbig2_arith_decode(as, &IAx[PREV], &code);
+            if (code)
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode IAx bit 2");
             PREV = (PREV << 1) | bit;
 
             if (bit) {
-                bit = jbig2_arith_decode(as, &IAx[PREV]);
+                bit = jbig2_arith_decode(as, &IAx[PREV], &code);
+                if (code)
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode IAx bit 3");
                 PREV = (PREV << 1) | bit;
 
                 if (bit) {
-                    bit = jbig2_arith_decode(as, &IAx[PREV]);
+                    bit = jbig2_arith_decode(as, &IAx[PREV], &code);
+                    if (code)
+                        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode IAx bit 4");
                     PREV = (PREV << 1) | bit;
 
                     if (bit) {
@@ -109,7 +122,9 @@ jbig2_arith_int_decode(Jbig2ArithIntCtx *ctx, Jbig2ArithState *as, int32_t *p_re
 
     V = 0;
     for (i = 0; i < n_tail; i++) {
-        bit = jbig2_arith_decode(as, &IAx[PREV]);
+        bit = jbig2_arith_decode(as, &IAx[PREV], &code);
+        if (code)
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode IAx code 7");
         PREV = ((PREV << 1) & 511) | (PREV & 256) | bit;
         V = (V << 1) | bit;
     }

@@ -207,10 +207,12 @@ cleanup1:
     if (params->SBHUFF) {
         STRIPT = jbig2_huffman_get(hs, params->SBHUFFDT, &code);
     } else {
-        code = jbig2_arith_int_decode(params->IADT, as, &STRIPT);
+        code = jbig2_arith_int_decode(ctx, params->IADT, as, &STRIPT);
     }
-    if (code < 0)
+    if (code < 0) {
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to obtain strip T");
         goto cleanup2;
+    }
 
     /* 6.4.5 (2) */
     STRIPT *= -(params->SBSTRIPS);
@@ -223,10 +225,12 @@ cleanup1:
         if (params->SBHUFF) {
             DT = jbig2_huffman_get(hs, params->SBHUFFDT, &code);
         } else {
-            code = jbig2_arith_int_decode(params->IADT, as, &DT);
+            code = jbig2_arith_int_decode(ctx, params->IADT, as, &DT);
         }
-        if (code < 0)
+        if (code < 0) {
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to obtain delta T");
             goto cleanup2;
+        }
         DT *= params->SBSTRIPS;
         STRIPT += DT;
 
@@ -239,10 +243,12 @@ cleanup1:
                 if (params->SBHUFF) {
                     DFS = jbig2_huffman_get(hs, params->SBHUFFFS, &code);
                 } else {
-                    code = jbig2_arith_int_decode(params->IAFS, as, &DFS);
+                    code = jbig2_arith_int_decode(ctx, params->IAFS, as, &DFS);
                 }
-                if (code < 0)
+                if (code < 0) {
+                    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to obtain strip symbol S-difference");
                     goto cleanup2;
+                }
                 FIRSTS += DFS;
                 CURS = FIRSTS;
                 first_symbol = FALSE;
@@ -255,7 +261,7 @@ cleanup1:
                 if (params->SBHUFF) {
                     IDS = jbig2_huffman_get(hs, params->SBHUFFDS, &code);
                 } else {
-                    code = jbig2_arith_int_decode(params->IADS, as, &IDS);
+                    code = jbig2_arith_int_decode(ctx, params->IADS, as, &IDS);
                 }
                 if (code) {
                     /* decoded an OOB, reached end of strip */
@@ -270,20 +276,24 @@ cleanup1:
             } else if (params->SBHUFF) {
                 CURT = jbig2_huffman_get_bits(hs, params->LOGSBSTRIPS, &code);
             } else {
-                code = jbig2_arith_int_decode(params->IAIT, as, &CURT);
+                code = jbig2_arith_int_decode(ctx, params->IAIT, as, &CURT);
             }
-            if (code < 0)
+            if (code < 0) {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to obtain symbol instance T coordinate");
                 goto cleanup2;
+            }
             T = STRIPT + CURT;
 
             /* (3b.iv) / 6.4.10 - decode the symbol id */
             if (params->SBHUFF) {
                 ID = jbig2_huffman_get(hs, SBSYMCODES, &code);
             } else {
-                code = jbig2_arith_iaid_decode(params->IAID, as, (int *)&ID);
+                code = jbig2_arith_iaid_decode(ctx, params->IAID, as, (int *)&ID);
             }
-            if (code < 0)
+            if (code < 0) {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to obtain symbol instance symbol ID");
                 goto cleanup2;
+            }
             if (ID >= SBNUMSYMS) {
                 code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "symbol id out of range! (%d/%d)", ID, SBNUMSYMS);
                 goto cleanup2;
@@ -307,10 +317,12 @@ cleanup1:
                 if (params->SBHUFF) {
                     RI = jbig2_huffman_get_bits(hs, 1, &code);
                 } else {
-                    code = jbig2_arith_int_decode(params->IARI, as, &RI);
+                    code = jbig2_arith_int_decode(ctx, params->IARI, as, &RI);
                 }
-                if (code < 0)
+                if (code < 0) {
+                    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to obtain symbol bitmap refinement indicator");
                     goto cleanup2;
+                }
             } else {
                 RI = 0;
             }
@@ -328,10 +340,10 @@ cleanup1:
 
                 /* 6.4.11 (1, 2, 3, 4) */
                 if (!params->SBHUFF) {
-                    code1 = jbig2_arith_int_decode(params->IARDW, as, &RDW);
-                    code2 = jbig2_arith_int_decode(params->IARDH, as, &RDH);
-                    code3 = jbig2_arith_int_decode(params->IARDX, as, &RDX);
-                    code4 = jbig2_arith_int_decode(params->IARDY, as, &RDY);
+                    code1 = jbig2_arith_int_decode(ctx, params->IARDW, as, &RDW);
+                    code2 = jbig2_arith_int_decode(ctx, params->IARDH, as, &RDH);
+                    code3 = jbig2_arith_int_decode(ctx, params->IARDX, as, &RDX);
+                    code4 = jbig2_arith_int_decode(ctx, params->IARDY, as, &RDY);
                 } else {
                     RDW = jbig2_huffman_get(hs, params->SBHUFFRDW, &code1);
                     RDH = jbig2_huffman_get(hs, params->SBHUFFRDH, &code2);
@@ -373,6 +385,7 @@ cleanup1:
                 memcpy(rparams.grat, params->sbrat, 4);
                 code = jbig2_decode_refinement_region(ctx, segment, &rparams, as, refimage, GR_stats);
                 if (code < 0) {
+                    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode refinement region");
                     jbig2_image_release(ctx, refimage);
                     jbig2_image_release(ctx, IBO);
                     goto cleanup2;
@@ -448,6 +461,7 @@ cleanup1:
 #endif
             code = jbig2_image_compose(ctx, image, IB, x, y, params->SBCOMBOP);
             if (code < 0) {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to compose symbol instance symbol bitmap into picture");
                 jbig2_image_release(ctx, IB);
                 goto cleanup2;
             }
@@ -877,7 +891,9 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         /* otherwise composite onto the page */
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
                     "composing %dx%d decoded text region onto page at (%d, %d)", region_info.width, region_info.height, region_info.x, region_info.y);
-        jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], image, region_info.x, region_info.y, region_info.op);
+        code = jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], image, region_info.x, region_info.y, region_info.op);
+        if (code < 0)
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to add text region to page");
     }
 
 cleanup4:

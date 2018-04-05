@@ -263,7 +263,7 @@ jbig2_arith_renormd(Jbig2ArithState *as)
 }
 
 bool
-jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx)
+jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx, int *code)
 {
     Jbig2ArithCx cx = *pcx;
     const Jbig2ArithQe *pqe;
@@ -271,7 +271,8 @@ jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx)
     bool D;
 
     if (index >= MAX_QE_ARRAY_SIZE) {
-        return -1;
+        *code = -1;
+        return 0;
     } else {
         pqe = &jbig2_arith_Qe[index];
     }
@@ -354,6 +355,7 @@ main(int argc, char **argv)
     Jbig2ArithState *as;
     int i;
     Jbig2ArithCx cx = 0;
+    int code;
 
     ctx = jbig2_ctx_new(NULL, 0, NULL, NULL, NULL);
 
@@ -369,7 +371,7 @@ main(int argc, char **argv)
 #else
         (void)
 #endif
-            jbig2_arith_decode(as, &cx);
+            jbig2_arith_decode(as, &cx, &code);
 
 #ifdef JBIG2_DEBUG_ARITH
         fprintf(stderr, "%3d: D = %d, ", i, D);

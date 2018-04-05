@@ -60,6 +60,7 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
     uint32_t CONTEXT;
     int x, y;
     bool bit;
+    int code = 0;
 
     for (y = 0; y < GRH; y++) {
         for (x = 0; x < GRW; x++) {
@@ -77,7 +78,9 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
             CONTEXT |= jbig2_image_get_pixel(ref, x - dx + 1, y - dy - 1) << 10;
             CONTEXT |= jbig2_image_get_pixel(ref, x - dx + 0, y - dy - 1) << 11;
             CONTEXT |= jbig2_image_get_pixel(ref, x - dx + params->grat[2], y - dy + params->grat[3]) << 12;
-            bit = jbig2_arith_decode(as, &GR_stats[CONTEXT]);
+            bit = jbig2_arith_decode(as, &GR_stats[CONTEXT], &code);
+            if (code)
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode arithmetic code when handling refinement template0");
             jbig2_image_set_pixel(image, x, y, bit);
         }
     }
@@ -85,11 +88,16 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
     {
         static count = 0;
         char name[32];
+        int code;
 
         snprintf(name, 32, "refin-%d.pbm", count);
-        jbig2_image_write_pbm_file(ref, name);
+        code = jbig2_image_write_pbm_file(ref, name);
+        if (code < 0)
+            return jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "failed write refinement input");
         snprintf(name, 32, "refout-%d.pbm", count);
-        jbig2_image_write_pbm_file(image, name);
+        code = jbig2_image_write_pbm_file(image, name);
+        if (code < 0)
+            return jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "failed write refinement output");
         count++;
     }
 #endif
@@ -110,6 +118,7 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
     uint32_t CONTEXT;
     int x, y;
     bool bit;
+    int code = 0;
 
     for (y = 0; y < GRH; y++) {
         for (x = 0; x < GRW; x++) {
@@ -124,7 +133,9 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
             CONTEXT |= jbig2_image_get_pixel(ref, x - dx + 0, y - dy + 0) << 7;
             CONTEXT |= jbig2_image_get_pixel(ref, x - dx - 1, y - dy + 0) << 8;
             CONTEXT |= jbig2_image_get_pixel(ref, x - dx + 0, y - dy - 1) << 9;
-            bit = jbig2_arith_decode(as, &GR_stats[CONTEXT]);
+            bit = jbig2_arith_decode(as, &GR_stats[CONTEXT], &code);
+            if (code)
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode arithmetic code when handling refinement template0");
             jbig2_image_set_pixel(image, x, y, bit);
         }
     }
@@ -135,9 +146,13 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
         char name[32];
 
         snprintf(name, 32, "refin-%d.pbm", count);
-        jbig2_image_write_pbm_file(ref, name);
+        code = jbig2_image_write_pbm_file(ref, name);
+        if (code < 0)
+            jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "failed to write refinement input");
         snprintf(name, 32, "refout-%d.pbm", count);
-        jbig2_image_write_pbm_file(image, name);
+        code = jbig2_image_write_pbm_file(image, name);
+        if (code < 0)
+            jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "failed to write refinement output");
         count++;
     }
 #endif
@@ -159,6 +174,7 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
     byte *grreg_line = (byte *) image->data;
     byte *grref_line = (byte *) params->reference->data;
     int x, y;
+    int code = 0;
 
     for (y = 0; y < GRH; y++) {
         const int padded_width = (GRW + 7) & -8;
@@ -195,7 +211,9 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
             for (x_minor = 0; x_minor < minor_width; x_minor++) {
                 bool bit;
 
-                bit = jbig2_arith_decode(as, &GR_stats[CONTEXT]);
+                bit = jbig2_arith_decode(as, &GR_stats[CONTEXT], &code);
+                if (code)
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode arithmetic code when handling refinement template1");
                 result |= bit << (7 - x_minor);
                 CONTEXT = ((CONTEXT & 0x0d6) << 1) | bit |
                           ((line_m1 >> (9 - x_minor)) & 0x002) |
@@ -281,26 +299,33 @@ mkctx1(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int x, int 
 }
 
 static int
-jbig2_decode_refinement_TPGRON(const Jbig2RefinementRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GR_stats)
+jbig2_decode_refinement_TPGRON(Jbig2Ctx *ctx, const Jbig2RefinementRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GR_stats)
 {
     const int GRW = image->width;
     const int GRH = image->height;
     int x, y, iv, bit, LTP = 0;
     uint32_t start_context = (params->GRTEMPLATE ? 0x40 : 0x100);
     ContextBuilder mkctx = (params->GRTEMPLATE ? mkctx1 : mkctx0);
+    int code = 0;
 
     for (y = 0; y < GRH; y++) {
-        LTP ^= jbig2_arith_decode(as, &GR_stats[start_context]);
+        LTP ^= jbig2_arith_decode(as, &GR_stats[start_context], &code);
+        if (code)
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode arithmetic code when handling refinement TPGRON1");
         if (!LTP) {
             for (x = 0; x < GRW; x++) {
-                bit = jbig2_arith_decode(as, &GR_stats[mkctx(params, image, x, y)]);
+                bit = jbig2_arith_decode(as, &GR_stats[mkctx(params, image, x, y)], &code);
+                if (code)
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode arithmetic code when handling refinement TPGRON1");
                 jbig2_image_set_pixel(image, x, y, bit);
             }
         } else {
             for (x = 0; x < GRW; x++) {
                 iv = implicit_value(params, image, x, y);
                 if (iv < 0) {
-                    bit = jbig2_arith_decode(as, &GR_stats[mkctx(params, image, x, y)]);
+                    bit = jbig2_arith_decode(as, &GR_stats[mkctx(params, image, x, y)], &code);
+                    if (code)
+                        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode arithmetic code when handling refinement TPGRON1");
                     jbig2_image_set_pixel(image, x, y, bit);
                 } else
                     jbig2_image_set_pixel(image, x, y, iv);
@@ -340,7 +365,7 @@ jbig2_decode_refinement_region(Jbig2Ctx *ctx,
     }
 
     if (params->TPGRON)
-        return jbig2_decode_refinement_TPGRON(params, as, image, GR_stats);
+        return jbig2_decode_refinement_TPGRON(ctx, params, as, image, GR_stats);
 
     if (params->GRTEMPLATE)
         return jbig2_decode_refinement_template1_unopt(ctx, segment, params, as, image, GR_stats);
@@ -485,6 +510,10 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         }
 
         code = jbig2_decode_refinement_region(ctx, segment, &params, as, image, GR_stats);
+        if (code < 0) {
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to decode refinement region");
+            goto cleanup;
+        }
 
         if ((segment->flags & 63) == 40) {
             /* intermediate region. save the result for later */
@@ -493,7 +522,11 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
             /* immediate region. composite onto the page */
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
                         "composing %dx%d decoded refinement region onto page at (%d, %d)", rsi.width, rsi.height, rsi.x, rsi.y);
-            jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], image, rsi.x, rsi.y, rsi.op);
+            code = jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], image, rsi.x, rsi.y, rsi.op);
+            if (code < 0) {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to add refinement region to page");
+                goto cleanup;
+            }
         }
 
 cleanup:
