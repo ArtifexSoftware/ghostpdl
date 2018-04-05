@@ -18,6 +18,7 @@
 
 /* GS includes : */
 #include "stdio_.h"
+#include "string_.h"
 #include "stream.h"             /* for files.h */
 #include "strmio.h"
 
@@ -926,22 +927,10 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
 #endif
     }
     else {
-        int sind = strlen(font_file_path) - 1;
+        int sind = strlen(font_file_path);
 
-        if ((font_file_path[sind] != 'o' || font_file_path[sind] != 'O') &&
-            (font_file_path[sind - 1] != 'c'
-             || font_file_path[sind - 1] != 'C')
-            && (font_file_path[sind - 2] != 'f'
-                || font_file_path[sind - 2] != 'F')
-            && font_file_path[sind - 3] != '.') {
-#if UFST_VERSION_MAJOR < 6
+        if (strncasecmp(font_file_path + sind - 4, ".fco", 4) != 0) {
             return (gs_error_invalidaccess);
-#else
-            /* If we have the Freetype server available, always use it for non-FCO fonts */
-            if (gs_fapi_available(r->mem, (char *)"FreeType")) {
-                return (gs_error_invalidaccess);
-            }
-#endif
         }
         area_length += strlen(font_file_path) + 1;
     }
