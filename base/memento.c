@@ -892,6 +892,8 @@ static void Memento_bt_internal(int skip2)
 #endif
 }
 
+static int Memento_checkAllMemoryLocked(void);
+
 void Memento_breakpoint(void)
 {
     /* A handy externally visible function for breakpointing */
@@ -1774,7 +1776,7 @@ static int Memento_event(void)
         memento.countdown = 1;
     }
     if (--memento.countdown == 0) {
-        Memento_checkAllMemory();
+        Memento_checkAllMemoryLocked();
         if (memento.paranoia > 0)
             memento.countdown = memento.paranoia;
         else
@@ -2349,22 +2351,34 @@ static int Memento_Internal_checkAllFreed(Memento_BlkHeader *memblk, void *arg)
 }
 #endif /* MEMENTO_LEAKONLY */
 
-int Memento_checkAllMemory(void)
+static int Memento_checkAllMemoryLocked(void)
 {
 #ifndef MEMENTO_LEAKONLY
     BlkCheckData data;
 
-    MEMENTO_LOCK();
     memset(&data, 0, sizeof(data));
     Memento_appBlocks(&memento.used, Memento_Internal_checkAllAlloced, &data);
     Memento_appBlocks(&memento.free, Memento_Internal_checkAllFreed, &data);
+    return data.found;
+#else
+    return 0;
+#endif
+}
+
+int Memento_checkAllMemory(void)
+{
+#ifndef MEMENTO_LEAKONLY
+    int ret;
+
+    MEMENTO_LOCK();
+    ret = Memento_checkAllMemoryLocked();
     MEMENTO_UNLOCK();
-    if (data.found & 6) {
+    if (ret & 6) {
         Memento_breakpoint();
         return 1;
     }
-#endif
     return 0;
+#endif
 }
 
 int Memento_setParanoia(int i)
