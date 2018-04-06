@@ -248,23 +248,23 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
         if (params->verbose < 3)
             return 0;
         type = "DEBUG";
-        break;;
+        break;
     case JBIG2_SEVERITY_INFO:
         if (params->verbose < 2)
             return 0;
         type = "info";
-        break;;
+        break;
     case JBIG2_SEVERITY_WARNING:
         if (params->verbose < 1)
             return 0;
         type = "WARNING";
-        break;;
+        break;
     case JBIG2_SEVERITY_FATAL:
         type = "FATAL ERROR";
-        break;;
+        break;
     default:
         type = "unknown message";
-        break;;
+        break;
     }
     if (seg_idx == -1)
         segment[0] = '\0';

@@ -72,7 +72,7 @@ jbig2_hd_new(Jbig2Ctx *ctx, const Jbig2PatternDictParams *params, Jbig2Image *im
                 return NULL;
             }
             /* compose with the REPLACE operator; the source
-               will be clipped to the destintion, selecting the
+               will be clipped to the destination, selecting the
                proper sub image */
             jbig2_image_compose(ctx, new->patterns[i], image, -i * HPW, 0, JBIG2_COMPOSE_REPLACE);
         }
@@ -108,9 +108,9 @@ jbig2_hd_release(Jbig2Ctx *ctx, Jbig2PatternDict *dict)
  * @params: parameters from the pattern dictionary header
  * @data: pointer to text region data to be decoded
  * @size: length of text region data
- * @GB_stats: artimetic coding context to use
+ * @GB_stats: arithmetic coding context to use
  *
- * Implements the patten dictionary decoding proceedure
+ * Implements the pattern dictionary decoding procedure
  * described in section 6.7 of the JBIG2 spec.
  *
  * returns: a pointer to the resulting dictionary on success
@@ -241,7 +241,7 @@ jbig2_pattern_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segme
  * @GSBPP: number of bitplanes/Jbig2Images to use
  * @GSKIP: mask indicating which values should be skipped
  * @GSTEMPLATE: template used to code the gray-scale bitplanes
- * @GB_stats: artimetic coding context to use
+ * @GB_stats: arithmetic coding context to use
  *
  * Implements the decoding a gray-scale image described in
  * annex C.5. This is part of the halftone region decoding.
@@ -431,9 +431,9 @@ jbig2_decode_ht_region_get_hpats(Jbig2Ctx *ctx, Jbig2Segment *segment)
  * @params: parameters
  * @data: pointer to halftone region data to be decoded
  * @size: length of halftone region data
- * @GB_stats: artimetic coding context to use
+ * @GB_stats: arithmetic coding context to use
  *
- * Implements the halftone region decoding proceedure
+ * Implements the halftone region decoding procedure
  * described in section 6.6.5 of the JBIG2 spec.
  *
  * returns: 0 on success
@@ -495,7 +495,7 @@ jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
             gray_val = GI[ng][mg];
             if (gray_val >= HNUMPATS) {
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "gray-scale image uses value %d which larger than pattern dictionary", gray_val);
-                /* use highest aviable pattern */
+                /* use highest available pattern */
                 gray_val = HNUMPATS - 1;
             }
             jbig2_image_compose(ctx, image, HPATS->patterns[gray_val], x, y, params->op);

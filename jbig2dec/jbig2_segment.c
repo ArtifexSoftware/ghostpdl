@@ -206,7 +206,7 @@ jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_
     bool necessary = type & 0x80000000;
 
     if (necessary && !reserved) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "extension segment is marked 'necessary' but " "not 'reservered' contrary to spec");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "extension segment is marked 'necessary' but " "not 'reserved' contrary to spec");
     }
 
     switch (type) {

@@ -117,7 +117,7 @@ jbig2_image_write_png(Jbig2Image *image, FILE *out)
     png_set_IHDR(png, info, image->width, image->height, 1, PNG_COLOR_TYPE_GRAY, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
     png_write_info(png, info);
 
-    /* png natively treates 0 as black. This will convert for us */
+    /* png natively treats 0 as black. This will convert for us */
     png_set_invert_mono(png);
 
     /* write out each row in turn */

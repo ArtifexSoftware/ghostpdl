@@ -58,7 +58,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                          const Jbig2SymbolDict *const *dicts, const uint32_t n_dicts,
                          Jbig2Image *image, const byte *data, const size_t size, Jbig2ArithCx *GR_stats, Jbig2ArithState *as, Jbig2WordStream *ws)
 {
-    /* relevent bits of 6.4.4 */
+    /* relevant bits of 6.4.4 */
     uint32_t NINSTANCES;
     uint32_t ID;
     int32_t STRIPT;
@@ -122,7 +122,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
             goto cleanup1;
         }
 
-        /* decode the symbol id codelengths using the runlength table */
+        /* decode the symbol id code lengths using the runlength table */
         symcodelengths = jbig2_new(ctx, Jbig2HuffmanLine, SBNUMSYMS);
         if (symcodelengths == NULL) {
             jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "memory allocation failure reading symbol ID huffman table!");
@@ -783,7 +783,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         goto cleanup1;
     }
     if (dicts == NULL) {
-        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unable to retrive symbol dictionaries! previous parsing error?");
+        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unable to retrieve symbol dictionaries! previous parsing error?");
         goto cleanup1;
     } else {
         uint32_t index;

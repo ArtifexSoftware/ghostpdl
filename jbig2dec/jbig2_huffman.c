@@ -132,7 +132,7 @@ jbig2_dump_huffman_table(const Jbig2HuffmanTable *table)
     int i;
     int table_size = (1 << table->log_table_size);
 
-    fprintf(stderr, "huffman table %p (log_table_size=%d, %d entries, entryies=%p):\n", table, table->log_table_size, table_size, table->entries);
+    fprintf(stderr, "huffman table %p (log_table_size=%d, %d entries, entries=%p):\n", table, table->log_table_size, table_size, table->entries);
     for (i = 0; i < table_size; i++) {
         fprintf(stderr, "%6d: PREFLEN=%d, RANGELEN=%d, ", i, table->entries[i].PREFLEN, table->entries[i].RANGELEN);
         if (table->entries[i].flags & JBIG2_HUFFMAN_FLAGS_ISEXT) {
@@ -532,11 +532,11 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
         /* B.2 2) (B.2.2) The lower bound of the first table line in the encoded table */
         const int32_t HTLOW = jbig2_get_int32(segment_data + 1);
 
-        /* B.2 3) (B.2.3) One larger than the upeer bound of
+        /* B.2 3) (B.2.3) One larger than the upper bound of
            the last normal table line in the encoded table */
         const int32_t HTHIGH = jbig2_get_int32(segment_data + 5);
 
-        /* estimated number of lines int this table, used for alloacting memory for lines */
+        /* estimated number of lines int this table, used for allocating memory for lines */
         const size_t lines_max = (segment->data_length * 8 - HTPS * (HTOOB ? 3 : 2)) / (HTPS + HTRS) + (HTOOB ? 3 : 2);
 
         /* points to a first table line data */
@@ -718,7 +718,7 @@ main(int argc, char **argv)
     ws.get_next_word = test_get_word;
     hs = jbig2_huffman_new(ctx, &ws);
 
-    printf("testing jbig2 huffmann decoding...");
+    printf("testing jbig2 huffman decoding...");
     printf("\t(should be 8 5 (oob) 8)\n");
 
     {

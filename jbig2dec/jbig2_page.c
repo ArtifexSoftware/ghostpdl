@@ -118,7 +118,7 @@ jbig2_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_dat
         }
     }
     if (page->height == 0xFFFFFFFF && page->striped == FALSE) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "height is unspecified but page is not markes as striped");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "height is unspecified but page is not marks as striped");
         page->striped = TRUE;
     }
     page->end_row = 0;
@@ -129,7 +129,7 @@ jbig2_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_dat
 
     dump_page_info(ctx, segment, page);
 
-    /* allocate an approprate page image buffer */
+    /* allocate an appropriate page image buffer */
     /* 7.4.8.2 */
     if (page->height == 0xFFFFFFFF) {
         page->image = jbig2_image_new(ctx, page->width, page->stripe_size);
@@ -246,7 +246,7 @@ jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, int x, 
         return 0;
     }
 
-    /* grow the page to accomodate a new stripe if necessary */
+    /* grow the page to accommodate a new stripe if necessary */
     if (page->striped && page->height == 0xFFFFFFFF) {
         uint32_t new_height = y + image->height + page->end_row;
 

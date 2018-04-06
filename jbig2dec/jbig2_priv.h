@@ -114,7 +114,7 @@ int jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, int32_t seg_idx, const ch
 
 /* the page structure handles decoded page
    results. it's allocated by a 'page info'
-   segement and marked complete by an 'end of page'
+   segment and marked complete by an 'end of page'
    segment.
 */
 typedef enum {

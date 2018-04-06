@@ -153,7 +153,7 @@ too_short:
     return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unexpected end of comment segment");
 }
 
-/* decode a UCS-16 comment segement 7.4.15.2 */
+/* decode a UCS-16 comment segment 7.4.15.2 */
 int
 jbig2_comment_unicode(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
 {

@@ -71,7 +71,7 @@ void jbig2_image_clear(Jbig2Ctx *ctx, Jbig2Image *image, int value);
 Jbig2Image *jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image, uint32_t width, uint32_t height);
 
 /* errors are returned from the library via a callback. If no callback
-   is provided (a NULL argument is passed ot jbig2_ctx_new) a default
+   is provided (a NULL argument is passed to jbig2_ctx_new) a default
    handler is used which prints fatal errors to the stderr stream. */
 
 /* error callback */
@@ -79,7 +79,7 @@ typedef int (*Jbig2ErrorCallback)(void *data, const char *msg, Jbig2Severity sev
 
 /* memory allocation is likewise done via a set of callbacks so that
    clients can better control memory usage. If a NULL is passed for
-   this argumennt of jbig2_ctx_new, a default allocator based on malloc()
+   this argument of jbig2_ctx_new, a default allocator based on malloc()
    is used. */
 
 /* dynamic memory callbacks */
