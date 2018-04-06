@@ -60,7 +60,7 @@ typedef enum {
 
 typedef struct {
     jbig2dec_mode mode;
-    int verbose, hash;
+    int verbose, hash, embedded;
     SHA1_CTX *hash_ctx;
     char *output_file;
     jbig2dec_format output_format;
@@ -141,13 +141,14 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
         {"hash", 0, NULL, 'm'},
         {"output", 1, NULL, 'o'},
         {"format", 1, NULL, 't'},
+        {"embedded", 0, NULL, 'e'},
         {NULL, 0, NULL, 0}
     };
     int option_idx = 1;
     int option;
 
     while (1) {
-        option = getopt_long(argc, argv, "Vh?qv:do:t:", long_options, &option_idx);
+        option = getopt_long(argc, argv, "Vh?qv:do:t:e", long_options, &option_idx);
         if (option == -1)
             break;
 
@@ -187,6 +188,9 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
         case 't':
             set_output_format(params, optarg);
             break;
+        case 'e':
+            params->embedded = 1;
+            break;
         default:
             if (!params->verbose)
                 fprintf(stdout, "unrecognized option: -%c\n", option);
@@ -224,6 +228,7 @@ print_usage(void)
             "                   rather than explicitly decoding\n"
             "       --version   program name and version information\n"
             "       --hash      print a hash of the decoded document\n"
+            "    -e --embedded  expect embedded bit stream without file header\n"
             "    -o <file>      send decoded output to <file>\n"
             "                   Defaults to the the input with a different\n"
             "                   extension. Pass '-' for stdout.\n"
@@ -397,6 +402,7 @@ main(int argc, char **argv)
     params.hash = 0;
     params.output_file = NULL;
     params.output_format = jbig2dec_format_none;
+    params.embedded = 0;
 
     filearg = parse_options(argc, argv, &params);
 
@@ -445,7 +451,7 @@ main(int argc, char **argv)
             goto cleanup;
         }
 
-        ctx = jbig2_ctx_new(NULL, (Jbig2Options)(f_page != NULL ? JBIG2_OPTIONS_EMBEDDED : 0), NULL, error_callback, &params);
+        ctx = jbig2_ctx_new(NULL, (Jbig2Options)(f_page != NULL || params.embedded ? JBIG2_OPTIONS_EMBEDDED : 0), NULL, error_callback, &params);
         if (ctx == NULL) {
             fclose(f);
             if (f_page)
@@ -487,8 +493,8 @@ main(int argc, char **argv)
         {
             Jbig2Image *image;
 
-            /* work around broken CVision embedded streams */
-            if (f_page != NULL) {
+            /* handle embedded streams and work around broken CVision embedded streams */
+            if (params.embedded || f_page != NULL) {
                 code = jbig2_complete_page(ctx);
                 if (code < 0)
                     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to complete page");
