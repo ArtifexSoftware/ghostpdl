@@ -199,11 +199,17 @@ jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info, const uint8_t *segme
 static int
 jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
 {
-    uint32_t type = jbig2_get_uint32(segment_data);
-    bool reserved = type & 0x20000000;
+    uint32_t type;
+    bool reserved;
+    bool necessary;
 
-    /* bool dependent = type & 0x40000000; (NYI) */
-    bool necessary = type & 0x80000000;
+    if (segment->data_length < 4)
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
+
+    type = jbig2_get_uint32(segment_data);
+    reserved = type & 0x20000000;
+    /* dependent = type & 0x40000000; (NYI) */
+    necessary = type & 0x80000000;
 
     if (necessary && !reserved) {
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "extension segment is marked 'necessary' but " "not 'reserved' contrary to spec");

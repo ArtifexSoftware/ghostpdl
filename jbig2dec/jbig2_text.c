@@ -519,6 +519,8 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     offset += 17;
 
     /* 7.4.3.1.1 */
+    if (segment->data_length - offset < 2)
+        goto too_short;
     flags = jbig2_get_uint16(segment_data + offset);
     offset += 2;
 
@@ -547,6 +549,8 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
 
     if (params.SBHUFF) {        /* Huffman coding */
         /* 7.4.3.1.2 */
+        if (segment->data_length - offset < 2)
+            goto too_short;
         huffman_flags = jbig2_get_uint16(segment_data + offset);
         offset += 2;
 
@@ -555,6 +559,8 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     } else {                    /* arithmetic coding */
 
         /* 7.4.3.1.3 */
+        if (segment->data_length - offset < 4)
+            goto too_short;
         if ((params.SBREFINE) && !(params.SBRTEMPLATE)) {
             params.sbrat[0] = segment_data[offset];
             params.sbrat[1] = segment_data[offset + 1];
@@ -565,6 +571,8 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     }
 
     /* 7.4.3.1.4 */
+    if (segment->data_length - offset < 4)
+        goto too_short;
     params.SBNUMINSTANCES = jbig2_get_uint32(segment_data + offset);
     offset += 4;
 
@@ -831,6 +839,8 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         goto cleanup2;
     }
 
+    if (offset >= segment->data_length)
+        goto too_short;
     ws = jbig2_word_stream_buf_new(ctx, segment_data + offset, segment->data_length - offset);
     if (ws == NULL) {
         code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "couldn't allocate ws in text region image");
