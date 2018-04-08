@@ -609,6 +609,7 @@ jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
     code = jbig2_decode_halftone_region(ctx, segment, &params, segment_data + offset, segment->data_length - offset, image, GB_stats);
     if (code < 0) {
         jbig2_image_release(ctx, image);
+        jbig2_free(ctx->allocator, GB_stats);
         return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to decode halftone region");
     }
 
