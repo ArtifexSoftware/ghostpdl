@@ -656,7 +656,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
                 /* SumatraPDF: prevent read access violation */
                 if ((size - jbig2_huffman_offset(hs) < image->height * stride) || (size < jbig2_huffman_offset(hs))) {
-                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "not enough data for decoding (%d/%d)", image->height * stride,
+                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "not enough data for decoding uncompressed (%d/%d)", image->height * stride,
                                 size - jbig2_huffman_offset(hs));
                     jbig2_image_release(ctx, image);
                     goto cleanup4;
