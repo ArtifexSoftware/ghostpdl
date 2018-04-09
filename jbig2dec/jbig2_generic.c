@@ -325,7 +325,7 @@ jbig2_decode_generic_template2a(Jbig2Ctx *ctx,
 
         line_m1 = (y >= 1) ? gbreg_line[-rowstride] : 0;
         line_m2 = (y >= 2) ? gbreg_line[-(rowstride << 1)] << 4 : 0;
-        CONTEXT = ((line_m1 >> 3) & 0x78) | ((line_m1 >> 2) & 0x4) | ((line_m2 >> 3) & 0x380);
+        CONTEXT = ((line_m1 >> 3) & 0x7c) | ((line_m2 >> 3) & 0x380);
 
         /* 6.2.5.7 3d */
         for (x = 0; x < padded_width; x += 8) {
@@ -347,8 +347,7 @@ jbig2_decode_generic_template2a(Jbig2Ctx *ctx,
                 if (code)
                     return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode arithmetic code when handling generic template2a");
                 result |= bit << (7 - x_minor);
-                CONTEXT = ((CONTEXT & 0x1b9) << 1) | bit |
-                          ((line_m1 >> (10 - x_minor)) & 0x8) | ((line_m1 >> (9 - x_minor)) & 0x4) | ((line_m2 >> (10 - x_minor)) & 0x80);
+                CONTEXT = ((CONTEXT & 0x1bd) << 1) | bit | ((line_m1 >> (10 - x_minor)) & 0x4) | ((line_m2 >> (10 - x_minor)) & 0x80);
             }
             gbreg_line[x >> 3] = result;
         }
@@ -729,7 +728,7 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
     } else if (!params->MMR && params->GBTEMPLATE == 1)
         return jbig2_decode_generic_template1(ctx, segment, params, as, image, GB_stats);
     else if (!params->MMR && params->GBTEMPLATE == 2) {
-        if (gbat[0] == 3 && gbat[1] == -1)
+        if (gbat[0] == 2 && gbat[1] == -1)
             return jbig2_decode_generic_template2a(ctx, segment, params, as, image, GB_stats);
         else
             return jbig2_decode_generic_template2(ctx, segment, params, as, image, GB_stats);
