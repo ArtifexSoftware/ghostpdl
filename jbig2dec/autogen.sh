@@ -143,7 +143,9 @@ cat >config_types.h.in <<EOF
    ifdef
 */
 
-#ifndef HAVE_STDINT_H
+#ifdef HAVE_STDINT_H
+#  include <stdint.h>
+#else
 #  ifdef JBIG2_REPLACE_STDINT_H
 #   include <@JBIG2_STDINT_H@>
 #  else
