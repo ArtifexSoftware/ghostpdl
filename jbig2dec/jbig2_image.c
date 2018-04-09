@@ -256,7 +256,7 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
     w = ((uint32_t)x + w < dst->width) ? w : ((dst->width >= (uint32_t)x) ? dst->width - (uint32_t)x : 0);
     h = ((uint32_t)y + h < dst->height) ? h : ((dst->height >= (uint32_t)y) ? dst->height - (uint32_t)y : 0);
 #ifdef JBIG2_DEBUG
-    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "compositing %dx%d at (%d, %d) after clipping\n", w, h, x, y);
+    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "compositing %dx%d at (%d, %d) after clipping", w, h, x, y);
 #endif
 
     /* check for zero clipping region */

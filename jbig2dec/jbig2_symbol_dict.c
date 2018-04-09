@@ -73,7 +73,7 @@ jbig2_dump_symbol_dict(Jbig2Ctx *ctx, Jbig2Segment *segment)
 
     if (dict == NULL)
         return;
-    jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "dumping symbol dict as %d individual png files\n", dict->n_symbols);
+    jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "dumping symbol dict as %d individual png files", dict->n_symbols);
     for (index = 0; index < dict->n_symbols; index++) {
         snprintf(filename, sizeof(filename), "symbol_%02d-%04d.png", segment->number, index);
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "dumping symbol %d/%d as '%s'", index, dict->n_symbols, filename);
@@ -181,7 +181,7 @@ jbig2_sd_list_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
 
     if (dindex != n_dicts) {
         /* should never happen */
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "counted %d symbol dictionaries but built a list with %d.\n", n_dicts, dindex);
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "counted %d symbol dictionaries but built a list with %d.", n_dicts, dindex);
     }
 
     return (dicts);
@@ -322,7 +322,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         }
 
         if (code != 0) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "error or OOB decoding height class delta (%d)\n", code);
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "error or OOB decoding height class delta (%d)", code);
         }
 
         if (!params->SDHUFF && jbig2_arith_has_reached_marker(as)) {
@@ -716,10 +716,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 if (code)
                     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode exrunlength for exported symbols");
                 else if (exrunlength <= 0)
-                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength too small in export symbol table (%d <= 0)\n", exrunlength);
+                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength too small in export symbol table (%d <= 0)", exrunlength);
                 else
                     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-                                "runlength too large in export symbol table (%d > %d - %d)\n", exrunlength, params->SDNUMEXSYMS, j);
+                                "runlength too large in export symbol table (%d > %d - %d)", exrunlength, params->SDNUMEXSYMS, j);
                 /* skip to the cleanup code and return SDEXSYMS = NULL */
                 jbig2_sd_release(ctx, SDEXSYMS);
                 SDEXSYMS = NULL;
