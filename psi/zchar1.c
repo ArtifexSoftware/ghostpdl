@@ -27,6 +27,7 @@
 #include "gxtype1.h"
 #include "gxfcid.h"
 #include "gxchar.h"
+#include "gxfcache.h"           /* for gs_purge_font_from_char_caches_completely */
 #include "gzstate.h"		/* for path for gs_type1_init */
                                 /* (should only be gsstate.h) */
 #include "gscencs.h"
@@ -949,6 +950,7 @@ zsetweightvector(i_ctx_t *i_ctx_p)
     int code = font_param(op - 1, &pfont);
     gs_font_type1 *pfont1;
     int size;
+    float wv[max_WeightVector];
 
     if (code < 0) {
         /* The font was not defined yet. Just ignore. See lib/gs_type1.ps . */
@@ -961,9 +963,14 @@ zsetweightvector(i_ctx_t *i_ctx_p)
     size = r_size(op);
     if (size != pfont1->data.WeightVector.count)
         return_error(gs_error_invalidfont);
-    code = process_float_array(imemory, op, size, pfont1->data.WeightVector.values);
+    code = process_float_array(imemory, op, size, wv);
     if (code < 0)
         return code;
+    if (memcmp(wv, pfont1->data.WeightVector.values,
+        sizeof(pfont1->data.WeightVector.values[0]) * size) != 0) {
+        memcpy(pfont1->data.WeightVector.values, wv, size);
+        gs_purge_font_from_char_caches_completely(pfont);
+    }
     pop(2);
     return 0;
 }

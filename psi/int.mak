@@ -773,6 +773,7 @@ $(PSOBJ)zchar1.$(OBJ) : $(PSSRC)zchar1.c $(OP) $(memory__h)\
  $(gxfont_h) $(gxfont1_h) $(gxtype1_h) $(gxfcid_h) $(gxchar_h) $(gzstate_h)\
  $(estack_h) $(ialloc_h) $(ichar_h) $(ichar1_h) $(icharout_h)\
  $(idict_h) $(ifont_h) $(igstate_h) $(iname_h) $(iutil_h) $(store_h)\
+ $(gxfcache_h) \
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zchar1.$(OBJ) $(C_) $(PSSRC)zchar1.c
 
