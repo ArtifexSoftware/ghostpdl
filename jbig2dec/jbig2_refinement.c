@@ -40,6 +40,11 @@
 #include "jbig2_refinement.h"
 #include "jbig2_segment.h"
 
+#define pixel_outside_field(x, y) \
+    ((y) < -128 || (y) > 0 || (x) < -128 || ((y) < 0 && (x) > 127) || ((y) == 0 && (x) >= 0))
+#define refpixel_outside_field(x, y) \
+    ((y) < -128 || (y) > 127 || (x) < -128 || (x) > 127)
+
 static int
 jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
                                         Jbig2Segment *segment,
@@ -54,6 +59,11 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
     int x, y;
     bool bit;
     int code = 0;
+
+    if (pixel_outside_field(params->grat[0], params->grat[1]) ||
+        refpixel_outside_field(params->grat[2], params->grat[3]))
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+                           "adaptive template pixel is out of field");
 
     for (y = 0; y < GRH; y++) {
         for (x = 0; x < GRW; x++) {
@@ -242,7 +252,9 @@ implicit_value(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int
             (jbig2_image_get_pixel(ref, i + 1, j - 1) == m) &&
             (jbig2_image_get_pixel(ref, i - 1, j) == m) &&
             (jbig2_image_get_pixel(ref, i + 1, j) == m) &&
-            (jbig2_image_get_pixel(ref, i - 1, j + 1) == m) && (jbig2_image_get_pixel(ref, i, j + 1) == m) && (jbig2_image_get_pixel(ref, i + 1, j + 1) == m)
+            (jbig2_image_get_pixel(ref, i - 1, j + 1) == m) &&
+            (jbig2_image_get_pixel(ref, i, j + 1) == m) &&
+            (jbig2_image_get_pixel(ref, i + 1, j + 1) == m)
            )? m : -1;
 }
 
@@ -300,6 +312,12 @@ jbig2_decode_refinement_TPGRON(Jbig2Ctx *ctx, const Jbig2RefinementRegionParams 
     uint32_t start_context = (params->GRTEMPLATE ? 0x40 : 0x100);
     ContextBuilder mkctx = (params->GRTEMPLATE ? mkctx1 : mkctx0);
     int code = 0;
+
+    if (params->GRTEMPLATE == 0 &&
+        (pixel_outside_field(params->grat[0], params->grat[1]) ||
+        refpixel_outside_field(params->grat[2], params->grat[3])))
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
+                           "adaptive template pixel is out of field");
 
     for (y = 0; y < GRH; y++) {
         LTP ^= jbig2_arith_decode(as, &GR_stats[start_context], &code);
