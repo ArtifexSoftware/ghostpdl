@@ -603,8 +603,6 @@ write_main_dictionary(gs_fapi_font * a_fapi_font, WRF_output * a_output,
     write_private_dictionary(a_fapi_font, a_output, Write_CharStrings);
 }
 
-extern FILE *stdout;
-
 /**
 Write a Type 1 font in textual format and return its length in bytes.
 If a_buffer_size is less than the total length, only a_buffer_size bytes are written, but the total
@@ -627,8 +625,11 @@ gs_fapi_serialize_type1_font(gs_fapi_font * a_fapi_font,
 
     write_main_dictionary(a_fapi_font, &output, 0);
 #if 0
-    if (is_MM_font(a_fapi_font) && a_buffer && a_buffer_size >= output.m_count) {
-      fwrite(a_buffer, 1, output.m_count, stdout);
+    {
+        extern FILE *stdout;
+        if (is_MM_font(a_fapi_font) && a_buffer && a_buffer_size >= output.m_count) {
+            fwrite(a_buffer, 1, output.m_count, stdout);
+        }
     }
 #endif
     return output.m_count;
