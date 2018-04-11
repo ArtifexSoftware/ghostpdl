@@ -907,7 +907,8 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                                 offset_contone[j];
                 for (k = 0; k < vdi; k++) {
                     /* Get a pointer to our tile row */
-                    dy = (penum->yci + k + penum->dev->band_offset_y) % thresh_height;
+                    dy = (penum->yci + k -
+                          penum->pgs->screen_phase[0].y) % thresh_height;
                     if (dy < 0)
                         dy += thresh_height;
                     thresh_tile = threshold + thresh_width * dy;
@@ -1013,8 +1014,8 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                         dx = penum->ht_landscape.xstart;
                     }
                     dx = (dx + penum->pgs->screen_phase[0].x) % thresh_width;
-                    dy = (penum->ht_landscape.y_pos +
-                              penum->dev->band_offset_y) % thresh_height;
+                    dy = (penum->ht_landscape.y_pos -
+                              penum->pgs->screen_phase[0].y) % thresh_height;
                     if (dy < 0)
                         dy += thresh_height;
                     /* Left remainder part */
