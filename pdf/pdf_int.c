@@ -86,8 +86,8 @@ static void pdf_free_namestring(pdf_obj *o)
     pdf_name *n = (pdf_name *)o;
 
     if (n->data != NULL)
-        gs_free_object(n->object.memory->non_gc_memory, n->data, "pdf interpreter free name or string data");
-    gs_free_object(n->object.memory->non_gc_memory, n, "pdf interpreter free name or string");
+        gs_free_object(n->object.memory, n->data, "pdf interpreter free name or string data");
+    gs_free_object(n->object.memory, n, "pdf interpreter free name or string");
 }
 
 static void pdf_free_keyword(pdf_obj *o)
@@ -96,8 +96,8 @@ static void pdf_free_keyword(pdf_obj *o)
     pdf_keyword *k = (pdf_keyword *)o;
 
     if (k->data != NULL)
-        gs_free_object(k->object.memory->non_gc_memory, k->data, "pdf interpreter free keyword data");
-    gs_free_object(k->object.memory->non_gc_memory, k, "pdf interpreter free keyword");
+        gs_free_object(k->object.memory, k->data, "pdf interpreter free keyword data");
+    gs_free_object(k->object.memory, k, "pdf interpreter free keyword");
 }
 
 static void pdf_free_array(pdf_obj *o)
@@ -109,8 +109,8 @@ static void pdf_free_array(pdf_obj *o)
         if (a->values[i] != NULL)
             pdf_countdown(a->values[i]);
     }
-    gs_free_object(a->object.memory->non_gc_memory, a->values, "pdf interpreter free array contents");
-    gs_free_object(a->object.memory->non_gc_memory, a, "pdf interpreter free array");
+    gs_free_object(a->object.memory, a->values, "pdf interpreter free array contents");
+    gs_free_object(a->object.memory, a, "pdf interpreter free array");
 }
 
 static void pdf_free_dict(pdf_obj *o)
@@ -124,9 +124,9 @@ static void pdf_free_dict(pdf_obj *o)
         if (d->values[i] != NULL)
             pdf_countdown((pdf_obj *)d->values[i]);
     }
-    gs_free_object(d->object.memory->non_gc_memory, d->keys, "pdf interpreter free dictionary keys");
-    gs_free_object(d->object.memory->non_gc_memory, d->values, "pdf interpreter free dictioanry values");
-    gs_free_object(d->object.memory->non_gc_memory, d, "pdf interpreter free dictionary");
+    gs_free_object(d->object.memory, d->keys, "pdf interpreter free dictionary keys");
+    gs_free_object(d->object.memory, d->values, "pdf interpreter free dictioanry values");
+    gs_free_object(d->object.memory, d, "pdf interpreter free dictionary");
 }
 
 static void pdf_free_object(pdf_obj *o)
@@ -138,7 +138,7 @@ static void pdf_free_object(pdf_obj *o)
         case PDF_INT:
         case PDF_REAL:
         case PDF_INDIRECT:
-            gs_free_object(o->memory->non_gc_memory, o, "pdf interpreter object refcount to 0");
+            gs_free_object(o->memory, o, "pdf interpreter object refcount to 0");
             break;
         case PDF_STRING:
         case PDF_NAME:
@@ -205,12 +205,12 @@ static int pdf_push(pdf_context_t *ctx, pdf_obj *o)
         if (ctx->stack_size >= MAX_STACK_SIZE)
             return_error(gs_error_stackoverflow);
 
-        new_stack = (pdf_obj **)gs_alloc_bytes(ctx->memory->non_gc_memory, (ctx->stack_size + INITIAL_STACK_SIZE) * sizeof (pdf_obj *), "pdf_push_increase_interp_stack");
+        new_stack = (pdf_obj **)gs_alloc_bytes(ctx->memory, (ctx->stack_size + INITIAL_STACK_SIZE) * sizeof (pdf_obj *), "pdf_push_increase_interp_stack");
         if (new_stack == NULL)
             return_error(gs_error_VMerror);
 
         memcpy(new_stack, ctx->stack_bot, ctx->stack_size * sizeof(pdf_obj *));
-        gs_free_object(ctx->memory->non_gc_memory, ctx->stack_bot, "pdf_push_increase_interp_stack");
+        gs_free_object(ctx->memory, ctx->stack_bot, "pdf_push_increase_interp_stack");
 
         entries = (ctx->stack_top - ctx->stack_bot) / sizeof(pdf_obj *);
 
@@ -287,23 +287,23 @@ static int pdf_read_num(pdf_context_t *ctx, stream *s)
             return_error(gs_error_syntaxerror);
     } while(1);
 
-    num = (pdf_num *)gs_alloc_bytes(ctx->memory->non_gc_memory, sizeof(pdf_num), "pdf_read_num");
+    num = (pdf_num *)gs_alloc_bytes(ctx->memory, sizeof(pdf_num), "pdf_read_num");
     if (num == NULL)
         return_error(gs_error_VMerror);
 
     memset(num, 0x00, sizeof(pdf_num));
-    num->object.memory = ctx->memory->non_gc_memory;
+    num->object.memory = ctx->memory;
 
     if (real) {
         num->object.type = PDF_REAL;
         if (sscanf((const char *)Buffer, "%f", &num->u.d) == 0) {
-            gs_free_object(num->object.memory->non_gc_memory, num, "pdf_read_num error");
+            gs_free_object(num->object.memory, num, "pdf_read_num error");
             return_error(gs_error_syntaxerror);
         }
     } else {
         num->object.type = PDF_INT;
         if (sscanf((const char *)Buffer, "%d", &num->u.i) == 0) {
-            gs_free_object(num->object.memory->non_gc_memory, num, "pdf_read_num error");
+            gs_free_object(num->object.memory, num, "pdf_read_num error");
             return_error(gs_error_syntaxerror);
         }
     }
@@ -324,7 +324,7 @@ static int pdf_read_name(pdf_context_t *ctx, stream *s)
     pdf_name *name = NULL;
     int code;
 
-    Buffer = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, size, "pdf_read_name");
+    Buffer = (char *)gs_alloc_bytes(ctx->memory, size, "pdf_read_name");
     if (Buffer == NULL)
         return_error(gs_error_VMerror);
 
@@ -353,12 +353,12 @@ static int pdf_read_name(pdf_context_t *ctx, stream *s)
 
             bytes = pdf_read_bytes(ctx, (byte *)&NumBuf, 1, 2, s);
             if (bytes < 2) {
-                gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_name error");
+                gs_free_object(ctx->memory, Buffer, "pdf_read_name error");
                 return_error(gs_error_ioerror);
             }
 
             if (NumBuf[0] < 0x30 || NumBuf[1] < 0x30 || NumBuf[0] > 0x39 || NumBuf[1] > 0x39) {
-                gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_name error");
+                gs_free_object(ctx->memory, Buffer, "pdf_read_name error");
                 return_error(gs_error_ioerror);
             }
 
@@ -367,35 +367,35 @@ static int pdf_read_name(pdf_context_t *ctx, stream *s)
 
         /* If we ran out of memory, increase the buffer size */
         if (index++ >= size) {
-            NewBuf = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, size + 256, "pdf_read_name");
+            NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdf_read_name");
             if (NewBuf == NULL) {
-                gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_name error");
+                gs_free_object(ctx->memory, Buffer, "pdf_read_name error");
                 return_error(gs_error_VMerror);
             }
             memcpy(NewBuf, Buffer, size);
-            gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_name");
+            gs_free_object(ctx->memory, Buffer, "pdf_read_name");
             Buffer = NewBuf;
             size += 256;
         }
     } while(1);
 
-    name = (pdf_name *)gs_alloc_bytes(ctx->memory->non_gc_memory, sizeof(pdf_name), "pdf_read_name");
+    name = (pdf_name *)gs_alloc_bytes(ctx->memory, sizeof(pdf_name), "pdf_read_name");
     if (name == NULL) {
-        gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_name error");
+        gs_free_object(ctx->memory, Buffer, "pdf_read_name error");
         return_error(gs_error_VMerror);
     }
 
     memset(name, 0x00, sizeof(pdf_name));
-    name->object.memory = ctx->memory->non_gc_memory;
+    name->object.memory = ctx->memory;
     name->object.type = PDF_NAME;
 
-    NewBuf = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, index, "pdf_read_name");
+    NewBuf = (char *)gs_alloc_bytes(ctx->memory, index, "pdf_read_name");
     if (NewBuf == NULL) {
-        gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_name error");
+        gs_free_object(ctx->memory, Buffer, "pdf_read_name error");
         return_error(gs_error_VMerror);
     }
     memcpy(NewBuf, Buffer, index);
-    gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_name");
+    gs_free_object(ctx->memory, Buffer, "pdf_read_name");
 
     name->data = (unsigned char *)NewBuf;
     name->length = index;
@@ -416,7 +416,7 @@ static int pdf_read_hexstring(pdf_context_t *ctx, stream *s)
     pdf_string *string = NULL;
     int code;
 
-    Buffer = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, size, "pdf_read_hexstring");
+    Buffer = (char *)gs_alloc_bytes(ctx->memory, size, "pdf_read_hexstring");
     if (Buffer == NULL)
         return_error(gs_error_VMerror);
 
@@ -438,35 +438,35 @@ static int pdf_read_hexstring(pdf_context_t *ctx, stream *s)
         Buffer[index] = (fromhex(HexBuf[0]) << 8) + fromhex(HexBuf[1]);
 
         if (index++ >= size) {
-            NewBuf = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, size + 256, "pdf_read_string");
+            NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdf_read_string");
             if (NewBuf == NULL) {
-                gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_string error");
+                gs_free_object(ctx->memory, Buffer, "pdf_read_string error");
                 return_error(gs_error_VMerror);
             }
             memcpy(NewBuf, Buffer, size);
-            gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_string");
+            gs_free_object(ctx->memory, Buffer, "pdf_read_string");
             Buffer = NewBuf;
             size += 256;
         }
     } while(1);
 
-    string = (pdf_string *)gs_alloc_bytes(ctx->memory->non_gc_memory, sizeof(pdf_string), "pdf_read_string");
+    string = (pdf_string *)gs_alloc_bytes(ctx->memory, sizeof(pdf_string), "pdf_read_string");
     if (string == NULL) {
-        gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_string");
+        gs_free_object(ctx->memory, Buffer, "pdf_read_string");
         return_error(gs_error_VMerror);
     }
 
     memset(string, 0x00, sizeof(pdf_string));
-    string->object.memory = ctx->memory->non_gc_memory;
+    string->object.memory = ctx->memory;
     string->object.type = PDF_STRING;
 
-    NewBuf = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, index, "pdf_read_string");
+    NewBuf = (char *)gs_alloc_bytes(ctx->memory, index, "pdf_read_string");
     if (NewBuf == NULL) {
-        gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_string error");
+        gs_free_object(ctx->memory, Buffer, "pdf_read_string error");
         return_error(gs_error_VMerror);
     }
     memcpy(NewBuf, Buffer, index);
-    gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_string");
+    gs_free_object(ctx->memory, Buffer, "pdf_read_string");
 
     string->data = (unsigned char *)NewBuf;
     string->length = index;
@@ -486,7 +486,7 @@ static int pdf_read_string(pdf_context_t *ctx, stream *s)
     pdf_string *string = NULL;
     int code;
 
-    Buffer = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, size, "pdf_read_string");
+    Buffer = (char *)gs_alloc_bytes(ctx->memory, size, "pdf_read_string");
     if (Buffer == NULL)
         return_error(gs_error_VMerror);
 
@@ -504,35 +504,35 @@ static int pdf_read_string(pdf_context_t *ctx, stream *s)
         }
 
         if (index++ >= size) {
-            NewBuf = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, size + 256, "pdf_read_string");
+            NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdf_read_string");
             if (NewBuf == NULL) {
-                gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_string error");
+                gs_free_object(ctx->memory, Buffer, "pdf_read_string error");
                 return_error(gs_error_VMerror);
             }
             memcpy(NewBuf, Buffer, size);
-            gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_string");
+            gs_free_object(ctx->memory, Buffer, "pdf_read_string");
             Buffer = NewBuf;
             size += 256;
         }
     } while(1);
 
-    string = (pdf_string *)gs_alloc_bytes(ctx->memory->non_gc_memory, sizeof(pdf_string), "pdf_read_string");
+    string = (pdf_string *)gs_alloc_bytes(ctx->memory, sizeof(pdf_string), "pdf_read_string");
     if (string == NULL) {
-        gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_string");
+        gs_free_object(ctx->memory, Buffer, "pdf_read_string");
         return_error(gs_error_VMerror);
     }
 
     memset(string, 0x00, sizeof(pdf_string));
-    string->object.memory = ctx->memory->non_gc_memory;
+    string->object.memory = ctx->memory;
     string->object.type = PDF_STRING;
 
-    NewBuf = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, index, "pdf_read_string");
+    NewBuf = (char *)gs_alloc_bytes(ctx->memory, index, "pdf_read_string");
     if (NewBuf == NULL) {
-        gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_string error");
+        gs_free_object(ctx->memory, Buffer, "pdf_read_string error");
         return_error(gs_error_VMerror);
     }
     memcpy(NewBuf, Buffer, index);
-    gs_free_object(ctx->memory->non_gc_memory, Buffer, "pdf_read_string");
+    gs_free_object(ctx->memory, Buffer, "pdf_read_string");
 
     string->data = (unsigned char *)NewBuf;
     string->length = index;
@@ -572,19 +572,19 @@ static int pdf_read_array(pdf_context_t *ctx, stream *s)
         }
     } while (1);
 
-    a = (pdf_array *)gs_alloc_bytes(ctx->memory->non_gc_memory, sizeof(pdf_array), "pdf_read_array");
+    a = (pdf_array *)gs_alloc_bytes(ctx->memory, sizeof(pdf_array), "pdf_read_array");
     if (a == NULL)
         return_error(gs_error_VMerror);
 
     memset(a, 0x00, sizeof(pdf_array));
-    a->object.memory = ctx->memory->non_gc_memory;
+    a->object.memory = ctx->memory;
     a->object.type = PDF_ARRAY;
 
     a->size = a->entries = index;
 
-    a->values = (pdf_obj **)gs_alloc_bytes(ctx->memory->non_gc_memory, index * sizeof(pdf_obj *), "pdf_read_array");
+    a->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, index * sizeof(pdf_obj *), "pdf_read_array");
     if (a->values == NULL) {
-        gs_free_object(a->object.memory->non_gc_memory, a, "pdf_read_array error");
+        gs_free_object(a->object.memory, a, "pdf_read_array error");
         return_error(gs_error_VMerror);
     }
 
@@ -643,26 +643,26 @@ static int pdf_read_dict(pdf_context_t *ctx, stream *s)
     if (index & 1)
         return_error(gs_error_rangecheck);
 
-    d = (pdf_dict *)gs_alloc_bytes(ctx->memory->non_gc_memory, sizeof(pdf_dict), "pdf_read_dict");
+    d = (pdf_dict *)gs_alloc_bytes(ctx->memory, sizeof(pdf_dict), "pdf_read_dict");
     if (d == NULL)
         return_error(gs_error_VMerror);
 
     memset(d, 0x00, sizeof(pdf_dict));
-    d->object.memory = ctx->memory->non_gc_memory;
+    d->object.memory = ctx->memory;
     d->object.type = PDF_DICT;
 
     d->size = d->entries = index >> 1;
 
-    d->keys = (pdf_obj **)gs_alloc_bytes(ctx->memory->non_gc_memory, d->size * sizeof(pdf_obj *), "pdf_read_dict");
+    d->keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, d->size * sizeof(pdf_obj *), "pdf_read_dict");
     if (d->keys == NULL) {
-        gs_free_object(d->object.memory->non_gc_memory, d, "pdf_read_dict error");
+        gs_free_object(d->object.memory, d, "pdf_read_dict error");
         return_error(gs_error_VMerror);
     }
 
-    d->values = (pdf_obj **)gs_alloc_bytes(ctx->memory->non_gc_memory, d->size * sizeof(pdf_obj *), "pdf_read_dict");
+    d->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, d->size * sizeof(pdf_obj *), "pdf_read_dict");
     if (d->values == NULL) {
-        gs_free_object(d->object.memory->non_gc_memory, d->keys, "pdf_read_dict error");
-        gs_free_object(d->object.memory->non_gc_memory, d, "pdf_read_dict error");
+        gs_free_object(d->object.memory, d->keys, "pdf_read_dict error");
+        gs_free_object(d->object.memory, d, "pdf_read_dict error");
         return_error(gs_error_VMerror);
     }
     
@@ -783,12 +783,12 @@ static int pdf_read_bool(pdf_context_t *ctx, stream *s)
         }
     }
 
-    o = (pdf_obj *)gs_alloc_bytes(ctx->memory->non_gc_memory, sizeof(pdf_obj), "pdf_read_bool");
+    o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_bool");
     if (o == NULL)
         return_error(gs_error_VMerror);
 
     memset(0, 0x00, sizeof(pdf_obj));
-    o->memory = ctx->memory->non_gc_memory;
+    o->memory = ctx->memory;
 
     if (result)
         o->type = PDF_TRUE;
@@ -829,12 +829,12 @@ static int pdf_read_null(pdf_context_t *ctx, stream *s)
         }
     }
 
-    o = (pdf_obj *)gs_alloc_bytes(ctx->memory->non_gc_memory, sizeof(pdf_obj), "pdf_read_bool");
+    o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_bool");
     if (o == NULL)
         return_error(gs_error_VMerror);
 
     memset(0, 0x00, sizeof(pdf_obj));
-    o->memory = ctx->memory->non_gc_memory;
+    o->memory = ctx->memory;
     o->type = PDF_NULL;
 
     code = pdf_push(ctx, o);
@@ -891,18 +891,18 @@ static int pdf_read_keyword(pdf_context_t *ctx, stream *s)
     /* NB The code below uses 'Buffer', not the data stored in keyword->data to compare strings */
     Buffer[index] = 0x00;
 
-    keyword = (pdf_keyword *)gs_alloc_bytes(ctx->memory->non_gc_memory, sizeof(pdf_keyword), "pdf_read_keyword");
+    keyword = (pdf_keyword *)gs_alloc_bytes(ctx->memory, sizeof(pdf_keyword), "pdf_read_keyword");
     if (keyword == NULL)
         return_error(gs_error_VMerror);
 
-    keyword->data = (unsigned char *)gs_alloc_bytes(ctx->memory->non_gc_memory, index, "pdf_read_keyword");
+    keyword->data = (unsigned char *)gs_alloc_bytes(ctx->memory, index, "pdf_read_keyword");
     if (keyword->data == NULL) {
-        gs_free_object(ctx->memory->non_gc_memory, keyword, "pdf_read_keyword error");
+        gs_free_object(ctx->memory, keyword, "pdf_read_keyword error");
         return_error(gs_error_VMerror);
     }
 
     memset(keyword, 0x00, sizeof(pdf_obj));
-    keyword->object.memory = ctx->memory->non_gc_memory;
+    keyword->object.memory = ctx->memory;
     keyword->object.type = PDF_KEYWORD;
 
     memcpy(keyword->data, Buffer, index);
@@ -929,12 +929,12 @@ static int pdf_read_keyword(pdf_context_t *ctx, stream *s)
                 obj_num = ((pdf_num *)ctx->stack_top[-1])->u.i;
                 pdf_pop(ctx, 1);
 
-                o = (pdf_indirect_ref *)gs_alloc_bytes(ctx->memory->non_gc_memory, sizeof(pdf_indirect_ref), "pdf_read_keyword");
+                o = (pdf_indirect_ref *)gs_alloc_bytes(ctx->memory, sizeof(pdf_indirect_ref), "pdf_read_keyword");
                 if (o == NULL)
                     return_error(gs_error_VMerror);
 
                 memset(o, 0x00, sizeof(pdf_indirect_ref));
-                o->object.memory = ctx->memory->non_gc_memory;
+                o->object.memory = ctx->memory;
                 o->object.type = PDF_INDIRECT;
                 o->generation_num = gen_num;
                 o->object_num = obj_num;
@@ -971,12 +971,12 @@ static int pdf_read_keyword(pdf_context_t *ctx, stream *s)
 
                 pdf_free_keyword((pdf_obj *)keyword);
 
-                o = (pdf_obj *)gs_alloc_bytes(ctx->memory->non_gc_memory, sizeof(pdf_obj), "pdf_read_keyword");
+                o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
                 if (o == NULL)
                     return_error(gs_error_VMerror);
 
                 memset(o, 0x00, sizeof(pdf_obj));
-                o->memory = ctx->memory->non_gc_memory;
+                o->memory = ctx->memory;
                 o->type = PDF_TRUE;
 
                 code = pdf_push(ctx, o);
@@ -996,12 +996,12 @@ static int pdf_read_keyword(pdf_context_t *ctx, stream *s)
 
                 pdf_free_keyword((pdf_obj *)keyword);
 
-                o = (pdf_obj *)gs_alloc_bytes(ctx->memory->non_gc_memory, sizeof(pdf_obj), "pdf_read_keyword");
+                o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
                 if (o == NULL)
                     return_error(gs_error_VMerror);
 
                 memset(o, 0x00, sizeof(pdf_obj));
-                o->memory = ctx->memory->non_gc_memory;
+                o->memory = ctx->memory;
                 o->type = PDF_FALSE;
 
                 code = pdf_push(ctx, o);
@@ -1016,12 +1016,12 @@ static int pdf_read_keyword(pdf_context_t *ctx, stream *s)
 
                 pdf_free_keyword((pdf_obj *)keyword);
 
-                o = (pdf_obj *)gs_alloc_bytes(ctx->memory->non_gc_memory, sizeof(pdf_obj), "pdf_read_keyword");
+                o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
                 if (o == NULL)
                     return_error(gs_error_VMerror);
 
                 memset(o, 0x00, sizeof(pdf_obj));
-                o->memory = ctx->memory->non_gc_memory;
+                o->memory = ctx->memory;
                 o->type = PDF_NULL;
 
                 code = pdf_push(ctx, o);
@@ -1162,7 +1162,7 @@ pdf_context_t *pdf_create_context(gs_memory_t *pmem)
         return NULL;
     }
 
-    ctx->memory = pmem;
+    ctx->memory = pmem->non_gc_memory;
     ctx->pgs = pgs;
     /* Declare PDL client support for high level patterns, for the benefit
      * of pdfwrite and other high-level devices
@@ -1187,7 +1187,7 @@ int pdf_free_context(gs_memory_t *pmem, pdf_context_t *ctx)
 {
     if (ctx->stack_bot) {
         pdf_clearstack(ctx);
-        gs_free_object(pmem->non_gc_memory, ctx->stack_bot, "pdf_imp_deallocate_interp_instance");
+        gs_free_object(ctx->memory, ctx->stack_bot, "pdf_imp_deallocate_interp_instance");
     }
 
     if (ctx->main_stream != NULL) {
@@ -1199,7 +1199,7 @@ int pdf_free_context(gs_memory_t *pmem, pdf_context_t *ctx)
         ctx->pgs = NULL;
     }
 
-    gs_free_object(pmem->non_gc_memory, ctx, "pdf_imp_deallocate_interp_instance");
+    gs_free_object(ctx->memory, ctx, "pdf_imp_deallocate_interp_instance");
     return 0;
 }
 
@@ -1207,7 +1207,7 @@ int pdf_free_context(gs_memory_t *pmem, pdf_context_t *ctx)
 static void cleanup_pdf_open_file(pdf_context_t *ctx, byte *Buffer)
 {
     if (Buffer != NULL)
-        gs_free_object(ctx->memory->non_gc_memory, Buffer, "PDF interpreter - allocate working buffer for file validation");
+        gs_free_object(ctx->memory, Buffer, "PDF interpreter - allocate working buffer for file validation");
 
     if (ctx->main_stream != NULL) {
         sfclose(ctx->main_stream);
@@ -1249,11 +1249,11 @@ int open_pdf_file(pdf_context_t *ctx, char *filename)
     gs_offset_t Offset = 0, bytes = 0;
     int code = 0;
 
-    ctx->main_stream = sfopen(filename, "r", ctx->memory->non_gc_memory);
+    ctx->main_stream = sfopen(filename, "r", ctx->memory);
     if (ctx->main_stream == NULL)
         return_error(gs_error_ioerror);
 
-    Buffer = gs_alloc_bytes(ctx->memory->non_gc_memory, BUF_SIZE, "PDF interpreter - allocate working buffer for file validation");
+    Buffer = gs_alloc_bytes(ctx->memory, BUF_SIZE, "PDF interpreter - allocate working buffer for file validation");
     if (Buffer == NULL) {
         cleanup_pdf_open_file(ctx, Buffer);
         return_error(gs_error_VMerror);
@@ -1268,11 +1268,11 @@ int open_pdf_file(pdf_context_t *ctx, char *filename)
     /* First check for existence of header */
     s = strstr((char *)Buffer, "%PDF");
     if (s == NULL) {
-        emprintf1(ctx->memory->non_gc_memory, "File %s does not appear to be a PDF file (no %PDF in first 2Kb of file)\n", filename);
+        emprintf1(ctx->memory, "File %s does not appear to be a PDF file (no %PDF in first 2Kb of file)\n", filename);
     } else {
         /* Now extract header version (may be overridden later) */
         if (sscanf(s + 5, "%f", &version) != 1) {
-            emprintf(ctx->memory->non_gc_memory, "Unable to read PDF version from header\n");
+            emprintf(ctx->memory, "Unable to read PDF version from header\n");
             ctx->HeaderVersion = 0;
         }
         else {
@@ -1317,7 +1317,7 @@ int open_pdf_file(pdf_context_t *ctx, char *filename)
             byte *b = Buffer + read;
 
             if(sscanf((char *)b, " %ld", &ctx->startxref) != 1) {
-                emprintf(ctx->memory->non_gc_memory, "Unable to find token 'startxref' in PDF file\n");
+                emprintf(ctx->memory, "Unable to find token 'startxref' in PDF file\n");
             }
             break;
         } else {
@@ -1439,7 +1439,7 @@ int open_pdf_file(pdf_context_t *ctx, char *filename)
         return(repair_pdf_file(ctx));
     }
 
-    gs_free_object(ctx->memory->non_gc_memory, Buffer, "PDF interpreter - allocate working buffer for file validation");
+    gs_free_object(ctx->memory, Buffer, "PDF interpreter - allocate working buffer for file validation");
     return 0;
 }
 
