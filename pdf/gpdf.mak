@@ -42,9 +42,6 @@ PDF_TOP_OBJS= $(PDF_TOP_OBJ) $(PDFOBJDIR)$(D)PDFimpl.$(OBJ)
 
 PDFINCLUDES=$(PDFSRC)*.h $(PDFOBJ)arch.h
 
-$(PDFOBJ)pdf_int.$(OBJ): $(PDFSRC)pdf_int.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdf_int.c $(XPSO_)pdf_int.$(OBJ)
-
 $(PDFGEN)PDFimpl.c: $(PLSRC)plimpl.c $(PDF_MAK) $(MAKEDIRS)
 	$(CP_) $(PLSRC)plimpl.c $(PDFGEN)PDFimpl.c
 
@@ -62,8 +59,7 @@ $(PDF_TOP_OBJ): $(PDFSRC)PDFtop.c $(plmain_h) $(pltop_h) $(PDFINCLUDES) $(GLOBJ)
                 $(pconfig_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)PDFtop.c $(PDFO_)PDFtop.$(OBJ)
 
-PDF_OBJS=\
-    $(PDFOBJ)pdf_int.$(OBJ)
+PDF_OBJS=
 
 
 

@@ -521,7 +521,7 @@ $(pdf_tr): $(GS_MAK) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_
 	$(EXP)$(ECHOGS_XE) -w $(ipdf_tr) - -include $(PDF_FEATURE_DEVS)
 	$(EXP)$(ECHOGS_XE) -w $(pdf_tr) -R $(devs_tr)
 	$(EXP)$(ECHOGS_XE) -a $(pdf_tr) -R $(ipdf_tr)
-	$(EXP)$(GENCONF_XE) $(pfd_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) $(CONFLDTR) $(pdfld_tr)
+	$(EXP)$(GENCONF_XE) $(pdf_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) $(CONFLDTR) $(pdfld_tr)
 
 gpdl_tr=$(GLGENDIR)$(D)gpdl.tr
 igpdl_tr=$(GLGENDIR)$(D)igpdl.tr

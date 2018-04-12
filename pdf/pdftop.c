@@ -90,50 +90,24 @@ pdf_imp_allocate_interp_instance(pl_interp_implementation_t *impl,
 {
     pdf_interp_instance_t *instance;
     pdf_context_t *ctx;
-    gs_gstate *pgs;
 
     instance = (pdf_interp_instance_t *) gs_alloc_bytes(pmem,
             sizeof(pdf_interp_instance_t), "pdf_imp_allocate_interp_instance");
 
-    ctx = (pdf_context_t *) gs_alloc_bytes(pmem,
-            sizeof(pdf_context_t), "pdf_imp_allocate_interp_instance");
+    if (!instance)
+        return gs_error_VMerror;
 
-    pgs = gs_gstate_alloc(pmem);
+    ctx = pdf_create_context(pmem);
 
-    if (!instance || !ctx || !pgs)
-    {
-        if (instance)
-            gs_free_object(pmem, instance, "pdf_imp_allocate_interp_instance");
-        if (ctx)
-            gs_free_object(pmem, ctx, "pdf_imp_allocate_interp_instance");
-        if (pgs)
-            gs_gstate_free(pgs);
+    if (ctx == NULL) {
+        gs_free_object(pmem, instance, "pdf_imp_allocate_interp_instance");
         return gs_error_VMerror;
     }
 
-    gsicc_init_iccmanager(pgs);
-    memset(ctx, 0, sizeof(pdf_context_t));
-
     ctx->instance = instance;
-    ctx->memory = pmem;
-    ctx->pgs = pgs;
-    /* Declare PDL client support for high level patterns, for the benefit
-     * of pdfwrite and other high-level devices
-     */
-    ctx->pgs->have_pattern_streams = true;
-    ctx->fontdir = NULL;
-    ctx->preserve_tr_mode = 0;
-
-    ctx->file = NULL;
-
-    /* Gray, RGB and CMYK profiles set when color spaces installed in graphics lib */
-    ctx->gray_lin = gs_cspace_new_ICC(ctx->memory, ctx->pgs, -1);
-    ctx->gray = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 1);
-    ctx->cmyk = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 4);
-    ctx->srgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
-    ctx->scrgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
-
     instance->ctx = ctx;
+    instance->scratch_file = NULL;
+    instance->scratch_name[0] = 0;
     instance->memory = pmem;
     
     impl->interp_client_data = instance;
@@ -306,8 +280,6 @@ pdf_imp_init_job(pl_interp_implementation_t *impl)
     if (getenv("PDF_DISABLE_TRANSPARENCY"))
         ctx->use_transparency = 0;
 
-    ctx->opacity_only = 0;
-
     return 0;
 }
 
@@ -340,14 +312,13 @@ pdf_imp_deallocate_interp_instance(pl_interp_implementation_t *impl)
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context_t *ctx = instance->ctx;
     gs_memory_t *mem = ctx->memory;
+    int code = 0;
 
-    /* language clients don't free the font cache machinery */
+    code = pdf_free_context(mem, ctx);
 
-    // free gstate?
-    gs_free_object(mem, ctx, "pdf_imp_deallocate_interp_instance");
     gs_free_object(mem, instance, "pdf_imp_deallocate_interp_instance");
 
-    return 0;
+    return code;
 }
 
 /* Parser implementation descriptor */
@@ -368,7 +339,3 @@ pl_interp_implementation_t pdf_implementation =
     NULL,
 };
 
-static int pdf_process_file(ctx, filename)
-{
-    return 0;
-}

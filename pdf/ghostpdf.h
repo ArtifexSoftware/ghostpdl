@@ -77,16 +77,34 @@
 
 #include "gxdevsop.h"       /* For special ops */
 
+#include "pdf_types.h"
+
 /*
  * The interpreter context.
  */
 
 typedef struct pdf_context_s pdf_context_t;
 
+typedef enum pdf_error_flag_e {
+    E_PDF_NOERROR = 0,
+    E_PDF_NOHEADER = 1,
+    E_PDF_NOHEADER_VERSION = 2,
+    E_PDF_NOSTARTXREF = 3,
+    E_PDF_BAD_XREF = 4,
+} pdf_error_flag_t;
+
+#define pdf_error_flag_t pdf_error_flag;
+#define UNREAD_BUFFER_SIZE 256
+#define INITIAL_STACK_SIZE 32
+#define MAX_STACK_SIZE 32767
+
 struct pdf_context_s
 {
     void *instance;
     gs_memory_t *memory;
+
+    float HeaderVersion, FinalVersion;
+
     gs_gstate *pgs;
     gs_font_dir *fontdir;
     int preserve_tr_mode; /* for avoiding charpath with pdfwrite */
@@ -98,17 +116,28 @@ struct pdf_context_s
     gs_color_space *cmyk;
 
     char *directory;
-    FILE *file;
+    stream *main_stream;
+    gs_offset_t main_stream_length;
+    uint32_t unread_size;
+    char unget_buffer[UNREAD_BUFFER_SIZE];
+
+    gs_offset_t startxref;
 
     /* Global toggle for transparency */
     bool use_transparency;
     bool has_transparency;
 
-    /* Hack to workaround ghostscript's lack of understanding
-     * the pdf 1.4 specification of Alpha only transparency groups.
-     * We have to force all colors to be grayscale whenever we are computing
-     * opacity masks.
-     */
-    int opacity_only;
+    xref_entry *xref;
 
+    uint32_t stack_size;
+    pdf_obj **stack_bot;
+    pdf_obj **stack_top;
+    pdf_obj **stack_limit;
 };
+
+pdf_context_t *pdf_create_context(gs_memory_t *pmem);
+int pdf_free_context(gs_memory_t *pmem, pdf_context_t *ctx);
+
+int open_pdf_file(pdf_context_t *ctx, char *filename);
+int pdf_process_file(pdf_context_t *ctx, char *filename);
+int close_pdf_file(pdf_context_t *ctx);
