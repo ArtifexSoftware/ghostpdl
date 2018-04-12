@@ -79,6 +79,8 @@
 
 #include "pdf_types.h"
 
+#ifndef PDF_INTERPRETER
+#define PDF_INTERPRETER
 /*
  * The interpreter context.
  */
@@ -141,3 +143,4 @@ int pdf_free_context(gs_memory_t *pmem, pdf_context_t *ctx);
 int open_pdf_file(pdf_context_t *ctx, char *filename);
 int pdf_process_file(pdf_context_t *ctx, char *filename);
 int close_pdf_file(pdf_context_t *ctx);
+#endif
