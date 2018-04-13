@@ -865,7 +865,7 @@ static void pdf_skip_comment(pdf_context_t *ctx, stream *s)
  */
 static int pdf_read_keyword(pdf_context_t *ctx, stream *s)
 {
-    byte Buffer[256];
+    byte Buffer[256], b;
     unsigned short index = 0, bytes = 0;
     int code;
     pdf_keyword *keyword;
@@ -958,8 +958,15 @@ static int pdf_read_keyword(pdf_context_t *ctx, stream *s)
                 keyword->key = PDF_OBJ;
             break;
         case 's':
-            if (keyword->length == 6 && strcmp((const char *)Buffer, "stream") == 0)
+            if (keyword->length == 6 && strcmp((const char *)Buffer, "stream") == 0){
                 keyword->key = PDF_STREAM;
+                do{
+                    bytes = pdf_read_bytes(ctx, &b, 1, 1, s);
+                    if (!iswhite(b))
+                        break;
+                }while (1);
+                pdf_seek(ctx, ctx->main_stream, -1, SEEK_CUR);
+            }
             else {
                 if (keyword->length == 9 && strcmp((const char *)Buffer, "startxref") == 0)
                     keyword->key = PDF_STARTXREF;
@@ -1233,11 +1240,13 @@ static int read_xref(pdf_context_t *ctx, stream *s)
 static int read_xref_stream(pdf_context_t *ctx, pdf_dict *d, stream *s)
 {
     stream *XRefStrm;
+    char Buffer[33];
 
     int code = pdf_filter(ctx, d, s, &XRefStrm);
     if (code < 0)
         return code;
 
+    pdf_read_bytes(ctx, Buffer, 1, 32, XRefStrm);
     return 0;
 }
 

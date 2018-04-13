@@ -184,6 +184,8 @@ static int pdf_Flate_filter(pdf_context_t *ctx, pdf_dict *d, stream *source, str
         case 2:
         default:
             pdf_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_zlibD_template, (const stream_state *)&zls, ctx->memory->non_gc_memory, new_stream);
+            (*new_stream)->strm = source;
+            source = *new_stream;
             pdf_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_PNGPD_template, (const stream_state *)&pps, ctx->memory->non_gc_memory, new_stream);
             break;
     }
