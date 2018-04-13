@@ -123,9 +123,11 @@ typedef struct pdf_indirect_ref_s {
 typedef pdf_indirect_ref_t pdf_indirect_ref;
 
 typedef struct xref_entry_s {
-    uint64_t object_num;            /* Object number */
-    uint32_t generation_num;        /* Generation number */
-    gs_offset_t offset;             /* File offset */
+    bool compressed;                /* true if object is in a compressed object stream */
+    bool free;                      /* true if this is a free entry */
+    uint64_t object_num;            /* Object number or compressed stream object number if compressed */
+    uint32_t generation_num;        /* Generation number. Objects in compressed streams have generation of 0 */
+    gs_offset_t offset;             /* File offset. Index of object in compressed stream */
     pdf_obj *object;                /* Pointer to object if cached, or NULL if not */
 } xref_entry_t;
 

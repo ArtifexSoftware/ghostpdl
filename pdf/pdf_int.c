@@ -702,7 +702,9 @@ int pdf_dict_get(pdf_dict *d, char *Key, pdf_obj **o)
         t = d->keys[i];
 
         if (t && t->type == PDF_NAME) {
-            if (((pdf_name *)t)->length == strlen((const char *)Key) && memcmp((const char *)((pdf_name *)t)->data, (const char *)Key, 6) == 0) {
+            pdf_name *n = (pdf_name *)t;
+
+            if (((pdf_name *)t)->length == strlen((const char *)Key) && memcmp((const char *)((pdf_name *)t)->data, (const char *)Key, ((pdf_name *)t)->length) == 0) {
                 *o = d->values[i];
                 return 0;
             }
@@ -1192,9 +1194,21 @@ pdf_context_t *pdf_create_context(gs_memory_t *pmem)
 
 int pdf_free_context(gs_memory_t *pmem, pdf_context_t *ctx)
 {
+    if (ctx->Trailer)
+        pdf_countdown((pdf_obj *)ctx->Trailer);
+
+    if(ctx->Root)
+        pdf_countdown((pdf_obj *)ctx->Root);
+
+    if (ctx->Info)
+        pdf_countdown((pdf_obj *)ctx->Info);
+
+    if (ctx->xref)
+        gs_free_object(ctx->memory, ctx->xref, "pdf_free_context");
+
     if (ctx->stack_bot) {
         pdf_clearstack(ctx);
-        gs_free_object(ctx->memory, ctx->stack_bot, "pdf_imp_deallocate_interp_instance");
+        gs_free_object(ctx->memory, ctx->stack_bot, "pdf_free_context");
     }
 
     if (ctx->main_stream != NULL) {
@@ -1206,7 +1220,7 @@ int pdf_free_context(gs_memory_t *pmem, pdf_context_t *ctx)
         ctx->pgs = NULL;
     }
 
-    gs_free_object(ctx->memory, ctx, "pdf_imp_deallocate_interp_instance");
+    gs_free_object(ctx->memory, ctx, "pdf_free_context");
     return 0;
 }
 
@@ -1237,16 +1251,207 @@ static int read_xref(pdf_context_t *ctx, stream *s)
     return 0;
 }
 
+static int read_xref_stream_entries(pdf_context_t *ctx, stream *s, uint64_t first, uint64_t last, unsigned char *W)
+{
+    uint i, j = 0;
+    uint32_t type = 0;
+    uint64_t objnum = 0, gen = 0;
+    byte *Buffer;
+    int code;
+    xref_entry *entry;
+
+    if (W[0] > W[1]) {
+        if (W[0] > W[2]) {
+            j = W[2];
+        } else {
+            j = W[2];
+        }
+    } else {
+        if (W[1] > W[2]) {
+            j = W[1];
+        } else {
+            j = W[2];
+        }
+    }
+
+    Buffer = gs_alloc_bytes(ctx->memory, j, "read_xref_stream_entry working buffer");
+    for (i=first;i<=last; i++){
+        type = objnum = gen = 0;
+
+        code = pdf_read_bytes(ctx, Buffer, 1, W[0], s);
+        if (code < 0){
+            gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry, free working buffer (error)");
+            return code;
+        }
+        for (j=0;j<W[0];j++)
+            type = (type << 8) + Buffer[j];
+        code = pdf_read_bytes(ctx, Buffer, 1, W[1], s);
+        if (code < 0){
+            gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry free working buffer (error)");
+            return code;
+        }
+        for (j=0;j<W[1];j++)
+            objnum = (objnum << 8) + Buffer[j];
+        code = pdf_read_bytes(ctx, Buffer, 1, W[2], s);
+        if (code < 0){
+            gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry, free working buffer (error)");
+            return code;
+        }
+        for (j=0;j<W[2];j++)
+            gen = (gen << 8) + Buffer[j];
+
+        entry = &ctx->xref[i];
+        switch(j) {
+            case 0:
+                entry->compressed = false;
+                entry->free = true;
+                entry->offset = objnum;         /* For free objects we use the offset to store the object number of the next free object */
+                entry->generation_num = gen;    /* And the generation number is the numebr to use if this object is used again */
+                entry->object_num = i;
+                entry->object = NULL;
+                break;
+            case 1:
+                entry->compressed = false;
+                entry->free = false;
+                entry->offset = objnum;
+                entry->generation_num = gen;
+                entry->object_num = i;
+                entry->object = NULL;
+                break;
+            case 2:
+                entry->compressed = true;
+                entry->free = false;
+                entry->offset = objnum;         /* In this case we use the offset to store the object number of the compressed stream */
+                entry->generation_num = gen;    /* And the generation number is the index of the object within the stream */
+                entry->object_num = i;
+                entry->object = NULL;
+                break;
+            default:
+                gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry, free working buffer");
+                return_error(gs_error_rangecheck);
+                break;
+        }
+    }
+    gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry, free working buffer");
+    return 0;
+}
+
 static int read_xref_stream(pdf_context_t *ctx, pdf_dict *d, stream *s)
 {
     stream *XRefStrm;
     char Buffer[33];
+    int code, i;
+    pdf_obj *o;
+    uint64_t size;
+    unsigned char W[3];
 
-    int code = pdf_filter(ctx, d, s, &XRefStrm);
+    code = pdf_dict_get(d, "Type", &o);
     if (code < 0)
         return code;
 
-    pdf_read_bytes(ctx, Buffer, 1, 32, XRefStrm);
+    if (o->type != PDF_NAME)
+        return_error(gs_error_typecheck);
+    else {
+        pdf_name *n = (pdf_name *)o;
+
+        if (n->length != 4 || memcmp(n->data, "XRef", 4) != 0)
+            return_error(gs_error_syntaxerror);
+    }
+
+    code = pdf_dict_get(d, "Size", &o);
+    if (code < 0)
+        return code;
+
+    if (o->type != PDF_INT)
+        return_error(gs_error_typecheck);
+
+    /* If this is the first xref stream then allocate the xref tbale and store the trailer */
+    if (ctx->xref == NULL) {
+        ctx->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, ((pdf_num *)o)->u.i * sizeof(xref_entry), "read_xref_stream allocate xref table");
+        if (ctx->xref == NULL)
+            return_error(gs_error_VMerror);
+
+        memset(ctx->xref, 0x00, ((pdf_num *)o)->u.i * sizeof(xref_entry));
+
+        ctx->Trailer = d;
+        d->object.refcnt++;
+    }
+
+    code = pdf_filter(ctx, d, s, &XRefStrm);
+    if (code < 0) {
+        gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+        ctx->xref = NULL;
+        return code;
+    }
+
+    code = pdf_dict_get(d, "W", &o);
+    if (code < 0) {
+        gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+        ctx->xref = NULL;
+        return code;
+    }
+
+    if (o->type != PDF_ARRAY)
+        return_error(gs_error_typecheck);
+    else {
+        pdf_array *a = (pdf_array *)o;
+
+        if (a->entries != 3)
+            return_error(gs_error_rangecheck);
+        for (i=0;i<3;i++) {
+            code = pdf_array_get(a, (uint64_t)i, &o);
+            if (code < 0)
+                return code;
+
+            if (o->type != PDF_INT) {
+                gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+                ctx->xref = NULL;
+                return_error(gs_error_typecheck);
+            }
+            W[i] = ((pdf_num *)o)->u.i;
+        }
+    }
+
+    code = pdf_dict_get(d, "Index", &o);
+    if (code == gs_error_undefined) {
+        code = read_xref_stream_entries(ctx, XRefStrm, 0, size, W);
+        if (code < 0)
+            return code;
+    } else {
+        if (code < 0) {
+            gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+            ctx->xref = NULL;
+            return code;
+        }
+
+        if (o->type != PDF_ARRAY)
+            return_error(gs_error_typecheck);
+        else {
+            pdf_array *a = (pdf_array *)o;
+            pdf_num *start, *end;
+
+            if (a->entries & 1)
+                return_error(gs_error_rangecheck);
+
+            for (i=0;i < a->entries;i+=2){
+                code = pdf_array_get(a, (uint64_t)i, (pdf_obj **)&start);
+                if (code < 0)
+                    return code;
+                if (start->object.type != PDF_INT)
+                    return_error(gs_error_typecheck);
+
+                code = pdf_array_get(a, (uint64_t)i+1, (pdf_obj **)&end);
+                if (code < 0)
+                    return code;
+                if (end->object.type != PDF_INT)
+                    return_error(gs_error_typecheck);
+
+                code = read_xref_stream_entries(ctx, XRefStrm, start->u.i, start->u.i + end->u.i, W);
+                if (code < 0)
+                    return code;
+            }
+        }
+    }
     return 0;
 }
 

@@ -130,6 +130,9 @@ struct pdf_context_s
     bool has_transparency;
 
     xref_entry *xref;
+    pdf_dict *Trailer;
+    pdf_dict *Root;
+    pdf_dict *Info;
 
     uint32_t stack_size;
     pdf_obj **stack_bot;
