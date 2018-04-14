@@ -15,8 +15,8 @@
 
 /* File and decompression filter code */
 
-int pdf_filter(pdf_context_t *ctx, pdf_dict *d, stream *source, stream **new_stream);
+int pdf_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream);
 
-int pdf_read_bytes(pdf_context_t *ctx, byte *Buffer, uint32_t size, uint32_t count, stream *s);
-int pdf_unread(pdf_context_t *ctx, byte *Buffer, uint32_t size);
-int pdf_seek(pdf_context_t *ctx, stream *s, gs_offset_t offset, uint32_t origin);
+int pdf_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count, stream *s);
+int pdf_unread(pdf_context *ctx, byte *Buffer, uint32_t size);
+int pdf_seek(pdf_context *ctx, stream *s, gs_offset_t offset, uint32_t origin);

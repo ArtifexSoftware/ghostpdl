@@ -79,13 +79,11 @@
 
 #include "pdf_types.h"
 
-#ifndef PDF_INTERPRETER
-#define PDF_INTERPRETER
+#ifndef PDF_CONTEXT
+#define PDF_CONTEXT
 /*
  * The interpreter context.
  */
-
-typedef struct pdf_context_s pdf_context_t;
 
 typedef enum pdf_error_flag_e {
     E_PDF_NOERROR = 0,
@@ -100,7 +98,7 @@ typedef enum pdf_error_flag_e {
 #define INITIAL_STACK_SIZE 32
 #define MAX_STACK_SIZE 32767
 
-struct pdf_context_s
+typedef struct pdf_context_s
 {
     void *instance;
     gs_memory_t *memory;
@@ -138,12 +136,12 @@ struct pdf_context_s
     pdf_obj **stack_bot;
     pdf_obj **stack_top;
     pdf_obj **stack_limit;
-};
+}pdf_context;
 
-pdf_context_t *pdf_create_context(gs_memory_t *pmem);
-int pdf_free_context(gs_memory_t *pmem, pdf_context_t *ctx);
+pdf_context *pdf_create_context(gs_memory_t *pmem);
+int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx);
 
-int open_pdf_file(pdf_context_t *ctx, char *filename);
-int pdf_process_file(pdf_context_t *ctx, char *filename);
-int close_pdf_file(pdf_context_t *ctx);
+int open_pdf_file(pdf_context *ctx, char *filename);
+int pdf_process_file(pdf_context *ctx, char *filename);
+int close_pdf_file(pdf_context *ctx);
 #endif

@@ -41,9 +41,7 @@ typedef struct pdf_obj_s {
     gs_memory_t *memory;                /* memory allocator to use */
     uint64_t object_num;
     uint32_t generation_num;
-} pdf_obj_t;
-
-typedef pdf_obj_t pdf_obj;
+} pdf_obj;
 
 typedef struct pdf_num_s {
     pdf_obj object;
@@ -51,26 +49,20 @@ typedef struct pdf_num_s {
         /* Acrobat (up to PDF version 1.7) limits ints to 32-bits, we choose to use 64 */
         int64_t i;
         double d;
-    }u;
-} pdf_num_t;
-
-typedef pdf_num_t pdf_num;
+    }value;
+} pdf_num;
 
 typedef struct pdf_string_s {
     pdf_obj object;
     uint32_t length;
     unsigned char *data;
-} pdf_string_t;
-
-typedef pdf_string_t pdf_string;
+} pdf_string;
 
 typedef struct pdf_name_s {
     pdf_obj object;
     uint32_t length;
     unsigned char *data;
-} pdf_name_t;
-
-typedef pdf_name_t pdf_name;
+} pdf_name;
 
 typedef enum pdf_key_e {
     PDF_NOT_A_KEYWORD,
@@ -81,27 +73,21 @@ typedef enum pdf_key_e {
     PDF_XREF,
     PDF_STARTXREF,
     PDF_TRAILER,
-}pdf_key_t;
-
-typedef pdf_key_t pdf_key;
+}pdf_key;
 
 typedef struct pdf_keyword_s {
     pdf_obj object;
     uint32_t length;
     unsigned char *data;
     pdf_key key;
-} pdf_keyword_t;
-
-typedef pdf_keyword_t pdf_keyword;
+} pdf_keyword;
 
 typedef struct pdf_array_s {
     pdf_obj object;
     uint64_t size;
     uint64_t entries;
     pdf_obj **values;
-} pdf_array_t;
-
-typedef pdf_array_t pdf_array;
+} pdf_array;
 
 typedef struct pdf_dict_s {
     pdf_obj object;
@@ -110,17 +96,13 @@ typedef struct pdf_dict_s {
     pdf_obj **keys;
     pdf_obj **values;
     gs_offset_t stream;
-} pdf_dict_t;
-
-typedef pdf_dict_t pdf_dict;
+} pdf_dict;
 
 typedef struct pdf_indirect_ref_s {
     pdf_obj object;
     uint64_t object_num;
     uint32_t generation_num;
-} pdf_indirect_ref_t;
-
-typedef pdf_indirect_ref_t pdf_indirect_ref;
+} pdf_indirect_ref;
 
 typedef struct xref_entry_s {
     bool compressed;                /* true if object is in a compressed object stream */
@@ -129,8 +111,6 @@ typedef struct xref_entry_s {
     uint32_t generation_num;        /* Generation number. Objects in compressed streams have generation of 0 */
     gs_offset_t offset;             /* File offset. Index of object in compressed stream */
     pdf_obj *object;                /* Pointer to object if cached, or NULL if not */
-} xref_entry_t;
-
-typedef xref_entry_t xref_entry;
+} xref_entry;
 
 #endif

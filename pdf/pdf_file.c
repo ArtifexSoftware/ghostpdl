@@ -43,12 +43,12 @@ pdf_filter_open(uint buffer_size,
 {
     stream *s;
     uint ssize = gs_struct_type_size(templat->stype);
-    stream_state *sst = 0;
+    stream_state *sst = NULL;
     int code;
 
     if (templat->stype != &st_stream_state) {
         sst = s_alloc_state(mem, templat->stype, "pdf_filter_open(stream_state)");
-        if (sst == 0)
+        if (sst == NULL)
             return_error(gs_error_VMerror);
     }
     code = file_open_stream((char *)0, 0, "r", buffer_size, &s,
@@ -61,17 +61,17 @@ pdf_filter_open(uint buffer_size,
     s->procs.process = templat->process;
     s->save_close = s->procs.close;
     s->procs.close = file_close_file;
-    if (sst == 0) {
+    if (sst == NULL) {
         /* This stream doesn't have any state of its own. */
         /* Hack: use the stream itself as the state. */
         sst = (stream_state *) s;
-    } else if (st != 0)         /* might not have client parameters */
+    } else if (st != NULL)         /* might not have client parameters */
         memcpy(sst, st, ssize);
     s->state = sst;
     s_init_state(sst, templat, mem);
     sst->report_error = pdf_filter_report_error;
 
-    if (templat->init != 0) {
+    if (templat->init != NULL) {
         code = (*templat->init)(sst);
         if (code < 0) {
             gs_free_object(mem, sst, "filter_open(stream_state)");
@@ -83,7 +83,7 @@ pdf_filter_open(uint buffer_size,
     return 0;
 }
 
-static int pdf_Flate_filter(pdf_context_t *ctx, pdf_dict *d, stream *source, stream **new_stream)
+static int pdf_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
 {
     stream_zlib_state zls;
     pdf_dict *DP;
@@ -111,7 +111,7 @@ static int pdf_Flate_filter(pdf_context_t *ctx, pdf_dict *d, stream *source, str
             if (o->type != PDF_INT)
                 return_error(gs_error_typecheck);
 
-            Predictor = (uint32_t)((pdf_num *)o)->u.i;
+            Predictor = (uint32_t)((pdf_num *)o)->value.i;
         }
         switch(Predictor) {
             case 0:
@@ -138,7 +138,7 @@ static int pdf_Flate_filter(pdf_context_t *ctx, pdf_dict *d, stream *source, str
                     if (o->type != PDF_INT)
                         return_error(gs_error_typecheck);
 
-                    pps.Colors = ((pdf_num *)o)->u.i;
+                    pps.Colors = ((pdf_num *)o)->value.i;
                 }
                 if (pps.Colors < 1 || pps.Colors > s_PNG_max_Colors)
                     return_error(gs_error_rangecheck);
@@ -152,7 +152,7 @@ static int pdf_Flate_filter(pdf_context_t *ctx, pdf_dict *d, stream *source, str
                     if (o->type != PDF_INT)
                         return_error(gs_error_typecheck);
 
-                    pps.BitsPerComponent = ((pdf_num *)o)->u.i;
+                    pps.BitsPerComponent = ((pdf_num *)o)->value.i;
                 }
                 if (pps.BitsPerComponent < 1 || pps.BitsPerComponent > 16 || (pps.BitsPerComponent & (pps.BitsPerComponent - 1)) != 0)
                     return_error(gs_error_rangecheck);
@@ -166,7 +166,7 @@ static int pdf_Flate_filter(pdf_context_t *ctx, pdf_dict *d, stream *source, str
                     if (o->type != PDF_INT)
                         return_error(gs_error_typecheck);
 
-                    pps.Columns = ((pdf_num *)o)->u.i;
+                    pps.Columns = ((pdf_num *)o)->value.i;
                 }
                 if (pps.Columns < 1)
                     return_error(gs_error_rangecheck);
@@ -193,7 +193,7 @@ static int pdf_Flate_filter(pdf_context_t *ctx, pdf_dict *d, stream *source, str
     return 0;
 }
 
-int pdf_filter(pdf_context_t *ctx, pdf_dict *d, stream *source, stream **new_stream)
+int pdf_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
 {
     pdf_obj *o;
     pdf_name *n;
@@ -235,14 +235,14 @@ int pdf_filter(pdf_context_t *ctx, pdf_dict *d, stream *source, stream **new_str
 /***********************************************************************************/
 /* Basic 'file' operations. Because of the need to 'unread' bytes we need our own  */
 
-int pdf_seek(pdf_context_t *ctx, stream *s, gs_offset_t offset, uint32_t origin)
+int pdf_seek(pdf_context *ctx, stream *s, gs_offset_t offset, uint32_t origin)
 {
     ctx->unread_size = 0;;
 
     return (sfseek(s, offset, origin));
 }
 
-int pdf_unread(pdf_context_t *ctx, byte *Buffer, uint32_t size)
+int pdf_unread(pdf_context *ctx, byte *Buffer, uint32_t size)
 {
     if (size + ctx->unread_size > UNREAD_BUFFER_SIZE)
         return_error(gs_error_ioerror);
@@ -261,7 +261,7 @@ int pdf_unread(pdf_context_t *ctx, byte *Buffer, uint32_t size)
     return 0;
 }
 
-int pdf_read_bytes(pdf_context_t *ctx, byte *Buffer, uint32_t size, uint32_t count, stream *s)
+int pdf_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count, stream *s)
 {
     uint32_t i = 0, bytes = 0, total = size * count;
 

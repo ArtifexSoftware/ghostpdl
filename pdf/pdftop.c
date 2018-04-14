@@ -34,16 +34,14 @@
  * The PDF interpreter instance is derived from pl_interp_implementation_t.
  */
 
-typedef struct pdf_interp_instance_s pdf_interp_instance_t;
-
-struct pdf_interp_instance_s
+typedef struct pdf_interp_instance_s
 {
     gs_memory_t *memory;                /* memory allocator to use */
 
-    pdf_context_t *ctx;
+    pdf_context *ctx;
     FILE *scratch_file;
     char scratch_name[gp_file_name_sizeof];
-};
+}pdf_interp_instance_t;
 
 /* version and build date are not currently used */
 #define PDF_VERSION NULL
@@ -89,7 +87,7 @@ pdf_imp_allocate_interp_instance(pl_interp_implementation_t *impl,
                                  gs_memory_t *pmem)
 {
     pdf_interp_instance_t *instance;
-    pdf_context_t *ctx;
+    pdf_context *ctx;
 
     instance = (pdf_interp_instance_t *) gs_alloc_bytes(pmem,
             sizeof(pdf_interp_instance_t), "pdf_imp_allocate_interp_instance");
@@ -119,7 +117,7 @@ static int
 pdf_imp_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
-    pdf_context_t *ctx = instance->ctx;
+    pdf_context *ctx = instance->ctx;
     gs_c_param_list list;
     int code;
 
@@ -180,7 +178,7 @@ static int
 pdf_imp_process_file(pl_interp_implementation_t *impl, char *filename)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
-    pdf_context_t *ctx = instance->ctx;
+    pdf_context *ctx = instance->ctx;
     int code;
 
     code = pdf_process_file(ctx, filename);
@@ -195,7 +193,7 @@ static int
 pdf_imp_process(pl_interp_implementation_t *impl, stream_cursor_read *cursor)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
-    pdf_context_t *ctx = instance->ctx;
+    pdf_context *ctx = instance->ctx;
     int avail, n;
 
     if (!instance->scratch_file)
@@ -238,7 +236,7 @@ static int
 pdf_imp_process_eof(pl_interp_implementation_t *impl)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
-    pdf_context_t *ctx = instance->ctx;
+    pdf_context *ctx = instance->ctx;
     int code;
 
     if (instance->scratch_file)
@@ -274,7 +272,7 @@ static int
 pdf_imp_init_job(pl_interp_implementation_t *impl)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
-    pdf_context_t *ctx = instance->ctx;
+    pdf_context *ctx = instance->ctx;
 
     ctx->use_transparency = 1;
     if (getenv("PDF_DISABLE_TRANSPARENCY"))
@@ -288,7 +286,7 @@ static int
 pdf_imp_dnit_job(pl_interp_implementation_t *impl)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
-    pdf_context_t *ctx = instance->ctx;
+    pdf_context *ctx = instance->ctx;
     int i;
 
     return 0;
@@ -299,7 +297,7 @@ static int
 pdf_imp_remove_device(pl_interp_implementation_t *impl)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
-    pdf_context_t *ctx = instance->ctx;
+    pdf_context *ctx = instance->ctx;
 
     /* return to original gstate */
     return gs_grestore_only(ctx->pgs); /* destroys gs_save stack */
@@ -310,7 +308,7 @@ static int
 pdf_imp_deallocate_interp_instance(pl_interp_implementation_t *impl)
 {
     pdf_interp_instance_t *instance = impl->interp_client_data;
-    pdf_context_t *ctx = instance->ctx;
+    pdf_context *ctx = instance->ctx;
     gs_memory_t *mem = ctx->memory;
     int code = 0;
 
