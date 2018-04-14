@@ -1323,7 +1323,10 @@ static int read_xref_stream_entries(pdf_context *ctx, stream *s, uint64_t first,
     return 0;
 }
 
-static int read_xref_stream(pdf_context *ctx, pdf_dict *d, stream *s)
+/* These two routines are recursive.... */
+static int pdf_read_xref_stream_dict(pdf_context *ctx, stream *s);
+
+static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, stream *s)
 {
     stream *XRefStrm;
     char Buffer[33];
@@ -1403,7 +1406,7 @@ static int read_xref_stream(pdf_context *ctx, pdf_dict *d, stream *s)
 
     code = pdf_dict_get(d, "Index", &o);
     if (code == gs_error_undefined) {
-        code = read_xref_stream_entries(ctx, XRefStrm, 0, size, W);
+        code = read_xref_stream_entries(ctx, XRefStrm, 0, size - 1, W);
         if (code < 0)
             return code;
     } else {
@@ -1435,7 +1438,7 @@ static int read_xref_stream(pdf_context *ctx, pdf_dict *d, stream *s)
                 if (end->object.type != PDF_INT)
                     return_error(gs_error_typecheck);
 
-                code = read_xref_stream_entries(ctx, XRefStrm, start->value.i, start->value.i + end->value.i, W);
+                code = read_xref_stream_entries(ctx, XRefStrm, start->value.i, start->value.i + end->value.i - 1, W);
                 if (code < 0)
                     return code;
             }
@@ -1443,6 +1446,9 @@ static int read_xref_stream(pdf_context *ctx, pdf_dict *d, stream *s)
     }
 
     code = pdf_dict_get(d, "Prev", &o);
+    if (code == gs_error_undefined)
+        return 0;
+
     if (code < 0)
         return code;
 
@@ -1450,17 +1456,105 @@ static int read_xref_stream(pdf_context *ctx, pdf_dict *d, stream *s)
         return_error(gs_error_typecheck);
 
     pdf_seek(ctx, s, ((pdf_num *)o)->value.i, SEEK_SET);
+
     code = pdf_read_token(ctx, ctx->main_stream);
-    if (code < 0) {
-        pdf_pop(ctx, 1);
+    if (code < 0)
         return code;
-    }
 
-    if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_OBJ) {
-        pdf_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
+    code = pdf_read_xref_stream_dict(ctx, s);
 
+    return code;
+}
+
+static int pdf_read_xref_stream_dict(pdf_context *ctx, stream *s)
+{
+    int code;
+
+    if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_INT) {
+        /* Its an integer, lets try for index gen obj as a XRef stream */
+        code = pdf_read_token(ctx, ctx->main_stream);
+
+        if (code < 0)
+            return(repair_pdf_file(ctx));
+
+        if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
+            /* Second element is not an integer, not a valid xref */
+            pdf_pop(ctx, 1);
+            return(repair_pdf_file(ctx));
+        }
+
+        code = pdf_read_token(ctx, ctx->main_stream);
+        if (code < 0) {
+            pdf_pop(ctx, 1);
+            return code;
+        }
+
+        if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
+            /* Second element is not an integer, not a valid xref */
+            pdf_pop(ctx, 2);
+            return(repair_pdf_file(ctx));
+        } else {
+            int obj_num, gen_num;
+
+            pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1];
+
+            if (keyword->key != PDF_OBJ) {
+                pdf_pop(ctx, 3);
+                return(repair_pdf_file(ctx));
+            }
+            /* pop the 'obj', generation and object numbers */
+            pdf_pop(ctx, 1);
+            gen_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
+            pdf_pop(ctx, 1);
+            obj_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
+            pdf_pop(ctx, 1);
+
+            do {
+                code = pdf_read_token(ctx, ctx->main_stream);
+                if (code < 0)
+                    return repair_pdf_file(ctx);
+
+                if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD) {
+                    keyword = (pdf_keyword *)ctx->stack_top[-1];
+                    if (keyword->key == PDF_STREAM) {
+                        pdf_dict *d;
+                        pdf_obj *o;
+
+                        /* Remove the 'stream' token from the stack, should leave a dictionary object on the stack */
+                        pdf_pop(ctx, 1);
+                        if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_DICT) {
+                            pdf_pop(ctx, 1);
+                            return repair_pdf_file(ctx);
+                        }
+                        d = (pdf_dict *)ctx->stack_top[-1];
+                        d->stream = (gs_offset_t)stell(ctx->main_stream);
+
+                        d->object.object_num = obj_num;
+                        d->object.generation_num = gen_num;
+                        d->object.refcnt++;
+                        pdf_pop(ctx, 1);
+
+                        code = pdf_process_xref_stream(ctx, d, ctx->main_stream);
+                        if (code < 0) {
+                            d->object.refcnt--;
+                            return (repair_pdf_file(ctx));
+                        }
+                        d->object.refcnt--;
+                        break;
+                    }
+                    if (keyword->key == PDF_ENDOBJ) {
+                        break;
+                    }
+                }
+            } while(1);
+
+            /* We should now have pdf_object, endobj on the stack, pop the endobj */
+            pdf_pop(ctx, 1);
+        }
+    } else {
+        /* Not an 'xref' and not an integer, so not a valid xref */
+        return(repair_pdf_file(ctx));
+    }
     return 0;
 }
 
@@ -1571,91 +1665,9 @@ int open_pdf_file(pdf_context *ctx, char *filename)
             if (code < 0)
                 return(repair_pdf_file(ctx));
         } else {
-            if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_INT) {
-                /* Its an integer, lets try for index gen obj as a XRef stream */
-                code = pdf_read_token(ctx, ctx->main_stream);
-
-                if (code < 0)
-                    return(repair_pdf_file(ctx));
-
-                if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
-                    /* Second element is not an integer, not a valid xref */
-                    pdf_pop(ctx, 1);
-                    return(repair_pdf_file(ctx));
-                }
-
-                code = pdf_read_token(ctx, ctx->main_stream);
-                if (code < 0) {
-                    pdf_pop(ctx, 1);
-                    return code;
-                }
-
-                if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-                    /* Second element is not an integer, not a valid xref */
-                    pdf_pop(ctx, 2);
-                    return(repair_pdf_file(ctx));
-                } else {
-                    int obj_num, gen_num;
-
-                    pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1];
-
-                    if (keyword->key != PDF_OBJ) {
-                        pdf_pop(ctx, 3);
-                        return(repair_pdf_file(ctx));
-                    }
-                    /* pop the 'obj', generation and object numbers */
-                    pdf_pop(ctx, 1);
-                    gen_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
-                    pdf_pop(ctx, 1);
-                    obj_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
-                    pdf_pop(ctx, 1);
-
-                    do {
-                        code = pdf_read_token(ctx, ctx->main_stream);
-                        if (code < 0)
-                            return repair_pdf_file(ctx);
-
-                        if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD) {
-                            keyword = (pdf_keyword *)ctx->stack_top[-1]; 
-                            if (keyword->key == PDF_STREAM) {
-                                pdf_dict *d;
-                                pdf_obj *o;
-
-                                /* Remove the 'stream' token from the stack, should leave a dictionary object on the stack */
-                                pdf_pop(ctx, 1);
-                                if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_DICT) {
-                                    pdf_pop(ctx, 1);
-                                    return repair_pdf_file(ctx);
-                                }
-                                d = (pdf_dict *)ctx->stack_top[-1];
-                                d->stream = (gs_offset_t)stell(ctx->main_stream);
-
-                                d->object.object_num = obj_num;
-                                d->object.generation_num = gen_num;
-                                d->object.refcnt++;
-                                pdf_pop(ctx, 1);
-
-                                code = read_xref_stream(ctx, d, ctx->main_stream);
-                                if (code < 0) {
-                                    d->object.refcnt--;
-                                    return (repair_pdf_file(ctx));
-                                }
-                                d->object.refcnt--;
-                                break;
-                            }
-                            if (keyword->key == PDF_ENDOBJ) {
-                                break;
-                            }
-                        }
-                    } while(1);
-
-                    /* We should now have pdf_object, endobj on the stack, pop the endobj */
-                    pdf_pop(ctx, 1);
-                }
-            } else {
-                /* Not an 'xref' and not an integer, so not a valid xref */
+            code = pdf_read_xref_stream_dict(ctx, ctx->main_stream);
+            if (code < 0)
                 return(repair_pdf_file(ctx));
-            }
         }
     } else {
         /* Attempt to repair PDF file */
