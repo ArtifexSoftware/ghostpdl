@@ -935,19 +935,19 @@ static int pdf_read_keyword(pdf_context *ctx, stream *s)
             }
             break;
         case 'e':
-            if (keyword->length == 9 && strcmp((const char *)Buffer, "endstream") == 0)
+            if (keyword->length == 9 && memcmp((const char *)Buffer, "endstream", 9) == 0)
                 keyword->key = PDF_ENDSTREAM;
             else {
-                if (keyword->length == 6 && strcmp((const char *)Buffer, "endobj") == 0)
+                if (keyword->length == 6 && memcmp((const char *)Buffer, "endobj", 6) == 0)
                     keyword->key = PDF_ENDOBJ;
             }
             break;
         case 'o':
-            if (keyword->length == 3 && strcmp((const char *)Buffer, "obj") == 0)
+            if (keyword->length == 3 && memcmp((const char *)Buffer, "obj", 3) == 0)
                 keyword->key = PDF_OBJ;
             break;
         case 's':
-            if (keyword->length == 6 && strcmp((const char *)Buffer, "stream") == 0){
+            if (keyword->length == 6 && memcmp((const char *)Buffer, "stream", 6) == 0){
                 keyword->key = PDF_STREAM;
                 do{
                     bytes = pdf_read_bytes(ctx, &b, 1, 1, s);
@@ -957,12 +957,12 @@ static int pdf_read_keyword(pdf_context *ctx, stream *s)
                 pdf_seek(ctx, ctx->main_stream, -1, SEEK_CUR);
             }
             else {
-                if (keyword->length == 9 && strcmp((const char *)Buffer, "startxref") == 0)
+                if (keyword->length == 9 && memcmp((const char *)Buffer, "startxref", 9) == 0)
                     keyword->key = PDF_STARTXREF;
             }
             break;
         case 't':
-            if (keyword->length == 4 && strcmp((const char *)Buffer, "true") == 0) {
+            if (keyword->length == 4 && memcmp((const char *)Buffer, "true", 4) == 0) {
                 pdf_obj *o;
 
                 pdf_free_keyword((pdf_obj *)keyword);
@@ -981,12 +981,12 @@ static int pdf_read_keyword(pdf_context *ctx, stream *s)
                 return code;
             }
             else {
-                if (keyword->length == 7 && strcmp((const char *)Buffer, "trailer") == 0)
+                if (keyword->length == 7 && memcmp((const char *)Buffer, "trailer", 7) == 0)
                     keyword->key = PDF_TRAILER;
             }
             break;
         case 'f':
-            if (keyword->length == 5 && strcmp((const char *)Buffer, "false") == 0)
+            if (keyword->length == 5 && memcmp((const char *)Buffer, "false", 5) == 0)
             {
                 pdf_obj *o;
 
@@ -1007,7 +1007,7 @@ static int pdf_read_keyword(pdf_context *ctx, stream *s)
             }
             break;
         case 'n':
-            if (keyword->length == 4 && strcmp((const char *)Buffer, "null") == 0){
+            if (keyword->length == 4 && memcmp((const char *)Buffer, "null", 4) == 0){
                 pdf_obj *o;
 
                 pdf_free_keyword((pdf_obj *)keyword);
@@ -1027,7 +1027,7 @@ static int pdf_read_keyword(pdf_context *ctx, stream *s)
             }
             break;
         case 'x':
-            if (keyword->length == 4 && strcmp((const char *)Buffer, "xref") == 0)
+            if (keyword->length == 4 && memcmp((const char *)Buffer, "xref", 4) == 0)
                 keyword->key = PDF_XREF;
             break;
     }
@@ -1235,7 +1235,131 @@ int repair_pdf_file(pdf_context *ctx)
 
 static int read_xref(pdf_context *ctx, stream *s)
 {
-    return 0;
+    int code = 0, i, j;
+    pdf_obj *o;
+    pdf_dict *d;
+    uint64_t start, size, bytes;
+    char Buffer[21];
+
+    code = pdf_read_token(ctx, ctx->main_stream);
+
+    if (code < 0)
+        return code;
+
+    o = ctx->stack_top[-1];
+    if (o->type != PDF_INT) {
+        /* element is not an integer, not a valid xref */
+        pdf_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+    start = ((pdf_num *)o)->value.i;
+
+    code = pdf_read_token(ctx, ctx->main_stream);
+    if (code < 0) {
+        pdf_pop(ctx, 1);
+        return code;
+    }
+
+    o = ctx->stack_top[-1];
+    if (o->type != PDF_INT) {
+        /* element is not an integer, not a valid xref */
+        pdf_pop(ctx, 2);
+        return_error(gs_error_typecheck);
+    }
+    size = ((pdf_num *)o)->value.i;
+    pdf_pop(ctx, 2);
+
+    /* If this is the first xref then allocate the xref table and store the trailer */
+    if (ctx->xref == NULL) {
+        ctx->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, ((pdf_num *)o)->value.i * sizeof(xref_entry), "read_xref_stream allocate xref table");
+        if (ctx->xref == NULL)
+            return_error(gs_error_VMerror);
+
+        memset(ctx->xref, 0x00, ((pdf_num *)o)->value.i * sizeof(xref_entry));
+    }
+
+    for (i=0;i< size;i++){
+        xref_entry *entry = &ctx->xref[i + start];
+        unsigned char free;
+
+        bytes = pdf_read_bytes(ctx, (byte *)Buffer, 1, 20, s);
+        if (bytes < 20)
+            return_error(gs_error_ioerror);
+        j = 19;
+        while (Buffer[j] != 0x0D && Buffer[j] != 0x0A) {
+            pdf_unread(ctx, (byte *)&Buffer[j], 1);
+            j--;
+        }
+        Buffer[j] = 0x00;
+        sscanf(Buffer, "%ld %d %c", &entry->offset, &entry->generation_num, &free);
+        entry->compressed = false;
+        entry->object_num = i + start;
+        if (free == 'f')
+            entry->free = true;
+        if(free == 'n')
+            entry->free = false;
+    }
+
+    /* read trailer dict */
+    code = pdf_read_token(ctx, ctx->main_stream);
+    if (code < 0)
+        return code;
+
+    o = ctx->stack_top[-1];
+    if (o->type != PDF_KEYWORD || ((pdf_keyword *)o)->key != PDF_TRAILER) {
+        pdf_pop(ctx, 1);
+        return_error(gs_error_syntaxerror);
+    }
+    pdf_pop(ctx, 1);
+
+    code = pdf_read_token(ctx, ctx->main_stream);
+    if (code < 0)
+        return code;
+
+    o = ctx->stack_top[-1];
+    if (o->type != PDF_DICT) {
+        pdf_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+
+    if (ctx->Trailer == NULL) {
+        ctx->Trailer = d;
+        d->object.refcnt++;
+    }
+
+    code = pdf_dict_get(d, "Prev", &o);
+    if (code < 0) {
+        pdf_pop(ctx, 2);
+        if (code == gs_error_undefined)
+            return 0;
+        else
+            return code;
+    }
+    pdf_pop(ctx, 1);
+
+    if (o->type != PDF_INT) {
+        pdf_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+
+    code = pdf_seek(ctx, s, ((pdf_num *)o)->value.i , SEEK_SET);
+    if (code < 0) {
+        pdf_pop(ctx, 1);
+        return code;
+    }
+    pdf_pop(ctx, 1);
+
+    code = pdf_read_token(ctx, ctx->main_stream);
+    if (code < 0)
+        return(code);
+
+    if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD && ((pdf_keyword *)ctx->stack_top[-1])->key == PDF_XREF) {
+        /* Read old-style xref table */
+        pdf_pop(ctx, 1);
+        return(read_xref(ctx, ctx->main_stream));
+    } else {
+        return_error(gs_error_typecheck);
+    }
 }
 
 static int read_xref_stream_entries(pdf_context *ctx, stream *s, uint64_t first, uint64_t last, unsigned char *W)
@@ -1245,6 +1369,7 @@ static int read_xref_stream_entries(pdf_context *ctx, stream *s, uint64_t first,
     uint64_t objnum = 0, gen = 0;
     byte *Buffer;
     int code;
+    uint64_t bytes = 0;
     xref_entry *entry;
 
     if (W[0] > W[1]) {
@@ -1265,24 +1390,24 @@ static int read_xref_stream_entries(pdf_context *ctx, stream *s, uint64_t first,
     for (i=first;i<=last; i++){
         type = objnum = gen = 0;
 
-        code = pdf_read_bytes(ctx, Buffer, 1, W[0], s);
-        if (code < 0){
+        bytes = pdf_read_bytes(ctx, Buffer, 1, W[0], s);
+        if (bytes < W[0]){
             gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry, free working buffer (error)");
-            return code;
+            return_error(gs_error_ioerror);
         }
         for (j=0;j<W[0];j++)
             type = (type << 8) + Buffer[j];
-        code = pdf_read_bytes(ctx, Buffer, 1, W[1], s);
-        if (code < 0){
+        bytes = pdf_read_bytes(ctx, Buffer, 1, W[1], s);
+        if (bytes < W[1]){
             gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry free working buffer (error)");
-            return code;
+            return_error(gs_error_ioerror);
         }
         for (j=0;j<W[1];j++)
             objnum = (objnum << 8) + Buffer[j];
-        code = pdf_read_bytes(ctx, Buffer, 1, W[2], s);
-        if (code < 0){
+        bytes = pdf_read_bytes(ctx, Buffer, 1, W[2], s);
+        if (bytes < W[2]){
             gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry, free working buffer (error)");
-            return code;
+            return_error(gs_error_ioerror);
         }
         for (j=0;j<W[2];j++)
             gen = (gen << 8) + Buffer[j];
@@ -1658,7 +1783,7 @@ int open_pdf_file(pdf_context *ctx, char *filename)
         if (code < 0)
             return(repair_pdf_file(ctx));
 
-        if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_XREF) {
+        if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD && ((pdf_keyword *)ctx->stack_top[-1])->key == PDF_XREF) {
             /* Read old-style xref table */
             pdf_pop(ctx, 1);
             code = read_xref(ctx, ctx->main_stream);

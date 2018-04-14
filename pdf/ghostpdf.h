@@ -89,11 +89,11 @@ typedef enum pdf_error_flag_e {
     E_PDF_NOERROR = 0,
     E_PDF_NOHEADER = 1,
     E_PDF_NOHEADER_VERSION = 2,
-    E_PDF_NOSTARTXREF = 3,
-    E_PDF_BAD_XREF = 4,
-} pdf_error_flag_t;
+    E_PDF_NOSTARTXREF = 4,
+    E_PDF_BAD_XREF = 8,
+    E_PDF_SHORT_XREF = 16,
+} pdf_error_flag;
 
-#define pdf_error_flag_t pdf_error_flag;
 #define UNREAD_BUFFER_SIZE 256
 #define INITIAL_STACK_SIZE 32
 #define MAX_STACK_SIZE 32767
