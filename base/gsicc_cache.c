@@ -204,6 +204,9 @@ gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
     result->is_identity = false;
     result->valid = true;
 
+    if_debug2m('^', result->memory, "[^]%s 0x%lx init = 1\n",
+               "icclink", result);
+
     if (src_profile->profile_handle == NULL) {
         src_profile->profile_handle = gsicc_get_profile_handle_buffer(src_profile->buffer,
             src_profile->buffer_size, nongc_mem);
@@ -290,6 +293,9 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
     result->is_identity = false;
     result->valid = false;		/* not yet complete */
     result->memory = memory->stable_memory;
+
+    if_debug2m('^', result->memory, "[^]%s 0x%lx init = 1\n",
+               "icclink", result);
     return result;
 }
 
@@ -512,6 +518,8 @@ gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache,
             }
             /* bump the ref_count since we will be using this one */
             curr->ref_count++;
+            if_debug3m('^', curr->memory, "[^]%s 0x%lx ++ => %ld\n",
+                       "icclink", curr, curr->ref_count);
             while (curr->valid == false) {
 #ifndef MEMENTO_SQUEEZE_BUILD
                 gx_monitor_leave(icc_link_cache->lock); /* exit to let other threads run briefly */
@@ -561,6 +569,8 @@ gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_link_cache)
     while (curr != NULL ) {
         if (curr->ref_count == 0) {
             curr->ref_count++;		/* we will use this one */
+            if_debug3m('^', curr->memory, "[^]%s 0x%lx ++ => %ld\n",
+                       "icclink", curr, curr->ref_count);
             break;
         }
         curr = curr->next;
@@ -1257,6 +1267,9 @@ gsicc_get_link_profile(const gs_gstate *pgs, gx_device *dev,
         /* This could result in an infinite loop if other threads are waiting	*/
         /* for it to be made valid. (see gsicc_findcachelink).			*/
         link->ref_count--;	/* this thread no longer using this link entry	*/
+        if_debug3m('^', link->memory, "[^]%s 0x%lx -- => %ld\n",
+                   "icclink", link, link->ref_count);
+
 #ifndef MEMENTO_SQUEEZE_BUILD
         gx_monitor_leave(link->lock);
 #endif
@@ -1638,6 +1651,8 @@ gsicc_release_link(gsicc_link_t *icclink)
 #ifndef MEMENTO_SQUEEZE_BUILD
     gx_monitor_enter(icc_link_cache->lock);
 #endif
+    if_debug3m('^', icclink->memory, "[^]%s 0x%lx -- => %ld\n",
+               "icclink", icclink, icclink->ref_count - 1);
     /* Decrement the reference count */
     if (--(icclink->ref_count) == 0) {
 
