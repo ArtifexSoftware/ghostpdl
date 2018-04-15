@@ -47,8 +47,8 @@ static bool ishex(char c)
             if (c < 'a')
                 return false;
             if (c > 'f')
-                return true;
-            return false;
+                return false;
+            return true;
         } else {
             if (c < 'A')
                 return false;
@@ -63,12 +63,12 @@ static int fromhex(char c)
 {
     if (c > 0x39) {
         if (c > 'F') {
-            return c - 'a';
+            return c - 0x57;
         } else {
-            return c - 'A';
+            return c - 0x37;
         }
     } else
-        return c - 0x39;
+        return c - 0x30;
 }
 
 /***********************************************************************************/
@@ -422,7 +422,7 @@ static int pdf_read_hexstring(pdf_context *ctx, stream *s)
         if (!ishex(HexBuf[0]) || !ishex(HexBuf[1]))
             return_error(gs_error_syntaxerror);
 
-        Buffer[index] = (fromhex(HexBuf[0]) << 8) + fromhex(HexBuf[1]);
+        Buffer[index] = (fromhex(HexBuf[0]) << 4) + fromhex(HexBuf[1]);
 
         if (index++ >= size) {
             NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdf_read_string");
@@ -1236,9 +1236,9 @@ int repair_pdf_file(pdf_context *ctx)
 static int read_xref(pdf_context *ctx, stream *s)
 {
     int code = 0, i, j;
-    pdf_obj *o;
-    pdf_dict *d;
-    uint64_t start, size, bytes;
+    pdf_obj *o = NULL;
+    pdf_dict *d = NULL;
+    uint64_t start = 0, size = 0, bytes = 0;
     char Buffer[21];
 
     code = pdf_read_token(ctx, ctx->main_stream);
@@ -1271,13 +1271,14 @@ static int read_xref(pdf_context *ctx, stream *s)
 
     /* If this is the first xref then allocate the xref table and store the trailer */
     if (ctx->xref == NULL) {
-        ctx->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, ((pdf_num *)o)->value.i * sizeof(xref_entry), "read_xref_stream allocate xref table");
+        ctx->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, (start + size) * sizeof(xref_entry), "read_xref_stream allocate xref table");
         if (ctx->xref == NULL)
             return_error(gs_error_VMerror);
 
         memset(ctx->xref, 0x00, ((pdf_num *)o)->value.i * sizeof(xref_entry));
     }
 
+    skip_white(ctx, s);
     for (i=0;i< size;i++){
         xref_entry *entry = &ctx->xref[i + start];
         unsigned char free;
@@ -1316,8 +1317,8 @@ static int read_xref(pdf_context *ctx, stream *s)
     if (code < 0)
         return code;
 
-    o = ctx->stack_top[-1];
-    if (o->type != PDF_DICT) {
+    d = (pdf_dict *)ctx->stack_top[-1];
+    if (d->object.type != PDF_DICT) {
         pdf_pop(ctx, 1);
         return_error(gs_error_typecheck);
     }
@@ -1337,17 +1338,12 @@ static int read_xref(pdf_context *ctx, stream *s)
     }
     pdf_pop(ctx, 1);
 
-    if (o->type != PDF_INT) {
-        pdf_pop(ctx, 1);
+    if (o->type != PDF_INT)
         return_error(gs_error_typecheck);
-    }
 
     code = pdf_seek(ctx, s, ((pdf_num *)o)->value.i , SEEK_SET);
-    if (code < 0) {
-        pdf_pop(ctx, 1);
+    if (code < 0)
         return code;
-    }
-    pdf_pop(ctx, 1);
 
     code = pdf_read_token(ctx, ctx->main_stream);
     if (code < 0)
