@@ -2580,6 +2580,8 @@ pclxl_image_end_image(gx_image_enum_common_t * info, bool draw_last)
                 break;
         }
     }
+    if (pie->icclink)
+        gsicc_release_link(pie->icclink);
     gs_free_object(pie->memory, pie->rows.data, "pclxl_end_image(rows)");
     gx_image_free_enum(&info);
     return code;
