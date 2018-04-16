@@ -181,7 +181,7 @@ pdf_imp_process_file(pl_interp_implementation_t *impl, char *filename)
     pdf_context *ctx = instance->ctx;
     int code;
 
-    code = pdf_process_file(ctx, filename);
+    code = pdf_process_pdf_file(ctx, filename);
     if (code)
         return code;
 
@@ -244,7 +244,7 @@ pdf_imp_process_eof(pl_interp_implementation_t *impl)
         if_debug0m('|', ctx->memory, "pdf: executing scratch file\n");
         fclose(instance->scratch_file);
         instance->scratch_file = NULL;
-        code = pdf_process_file(ctx, instance->scratch_name);
+        code = pdf_process_pdf_file(ctx, instance->scratch_name);
         unlink(instance->scratch_name);
         if (code < 0)
         {

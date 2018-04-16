@@ -113,4 +113,11 @@ typedef struct xref_entry_s {
     pdf_obj *object;                /* Pointer to object if cached, or NULL if not */
 } xref_entry;
 
+#define UNREAD_BUFFER_SIZE 256
+
+typedef struct pdf_stream_s {
+    stream *s;
+    uint32_t unread_size;
+    char unget_buffer[UNREAD_BUFFER_SIZE];
+} pdf_stream;
 #endif

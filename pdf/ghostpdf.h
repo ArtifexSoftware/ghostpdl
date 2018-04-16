@@ -94,7 +94,6 @@ typedef enum pdf_error_flag_e {
     E_PDF_SHORT_XREF = 16,
 } pdf_error_flag;
 
-#define UNREAD_BUFFER_SIZE 256
 #define INITIAL_STACK_SIZE 32
 #define MAX_STACK_SIZE 32767
 
@@ -116,10 +115,8 @@ typedef struct pdf_context_s
     gs_color_space *cmyk;
 
     char *directory;
-    stream *main_stream;
+    pdf_stream *main_stream;
     gs_offset_t main_stream_length;
-    uint32_t unread_size;
-    char unget_buffer[UNREAD_BUFFER_SIZE];
 
     gs_offset_t startxref;
 
@@ -141,7 +138,7 @@ typedef struct pdf_context_s
 pdf_context *pdf_create_context(gs_memory_t *pmem);
 int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx);
 
-int open_pdf_file(pdf_context *ctx, char *filename);
-int pdf_process_file(pdf_context *ctx, char *filename);
-int close_pdf_file(pdf_context *ctx);
+int pdf_open_pdf_file(pdf_context *ctx, char *filename);
+int pdf_process_pdf_file(pdf_context *ctx, char *filename);
+int pdf_close_pdf_file(pdf_context *ctx);
 #endif

@@ -220,7 +220,7 @@ static int pdf_push(pdf_context *ctx, pdf_obj *o)
 /* arrays, the  null object and indirect references. The keywords are obj/endobj   */
 /* stream/endstream, xref, startxref and trailer.                                  */
 
-static void skip_white(pdf_context *ctx, stream *s)
+static void skip_white(pdf_context *ctx,pdf_stream *s)
 {
     uint32_t bytes = 0, read = 0;
     byte c;
@@ -231,10 +231,10 @@ static void skip_white(pdf_context *ctx, stream *s)
     } while (bytes != 0 && iswhite(c));
 
     if (read > 0)
-        pdf_unread(ctx, &c, 1);
+        pdf_unread(ctx, s, &c, 1);
 }
 
-static int pdf_read_num(pdf_context *ctx, stream *s)
+static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
 {
     byte Buffer[256];
     unsigned short index = 0, bytes = 0;
@@ -254,7 +254,7 @@ static int pdf_read_num(pdf_context *ctx, stream *s)
             break;
         } else {
             if (isdelimiter((char)Buffer[index])) {
-                pdf_unread(ctx, (byte *)&Buffer[index], 1);
+                pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
                 Buffer[index] = 0x00;
                 break;
             }
@@ -303,7 +303,7 @@ static int pdf_read_num(pdf_context *ctx, stream *s)
     return code;
 }
 
-static int pdf_read_name(pdf_context *ctx, stream *s)
+static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
 {
     char *Buffer, *NewBuf = NULL;
     unsigned short index = 0, bytes = 0;
@@ -328,7 +328,7 @@ static int pdf_read_name(pdf_context *ctx, stream *s)
             break;
         } else {
             if (isdelimiter((char)Buffer[index])) {
-                pdf_unread(ctx, (byte *)&Buffer[index], 1);
+                pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
                 Buffer[index] = 0x00;
                 break;
             }
@@ -395,7 +395,7 @@ static int pdf_read_name(pdf_context *ctx, stream *s)
     return code;
 }
 
-static int pdf_read_hexstring(pdf_context *ctx, stream *s)
+static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
 {
     char *Buffer, *NewBuf = NULL, HexBuf[2];
     unsigned short index = 0, bytes = 0;
@@ -465,7 +465,7 @@ static int pdf_read_hexstring(pdf_context *ctx, stream *s)
     return code;
 }
 
-static int pdf_read_string(pdf_context *ctx, stream *s)
+static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
 {
     char *Buffer, *NewBuf = NULL;
     unsigned short index = 0, bytes = 0;
@@ -531,7 +531,7 @@ static int pdf_read_string(pdf_context *ctx, stream *s)
     return code;
 }
 
-static int pdf_read_array(pdf_context *ctx, stream *s)
+static int pdf_read_array(pdf_context *ctx, pdf_stream *s)
 {
     unsigned short index = 0, bytes = 0;
     byte Buffer;
@@ -551,7 +551,7 @@ static int pdf_read_array(pdf_context *ctx, stream *s)
         if (Buffer == ']') {
             break;
         } else {
-            pdf_unread(ctx, &Buffer, 1);
+            pdf_unread(ctx, s, &Buffer, 1);
             code = pdf_read_token(ctx, s);
             if (code < 0)
                 return code;
@@ -589,7 +589,7 @@ static int pdf_read_array(pdf_context *ctx, stream *s)
     return code;
 }
 
-static int pdf_read_dict(pdf_context *ctx, stream *s)
+static int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
 {
     unsigned short index = 0, bytes = 0;
     byte Buffer[2];
@@ -616,10 +616,10 @@ static int pdf_read_dict(pdf_context *ctx, stream *s)
             if (Buffer[1] == '>')
                 break;
 
-            pdf_unread(ctx, &Buffer[1], 1);
+            pdf_unread(ctx, s, &Buffer[1], 1);
         } 
 
-        pdf_unread(ctx, &Buffer[0], 1);
+        pdf_unread(ctx, s, &Buffer[0], 1);
         code = pdf_read_token(ctx, s);
         if (code < 0)
             return code;
@@ -714,7 +714,7 @@ int pdf_array_get(pdf_array *a, uint64_t index, pdf_obj **o)
     return 0;
 }
 
-static int pdf_read_bool(pdf_context *ctx, stream *s)
+static int pdf_read_bool(pdf_context *ctx, pdf_stream *s)
 {
     unsigned short index = 0, bytes = 0;
     byte Buffer[6];
@@ -735,7 +735,7 @@ static int pdf_read_bool(pdf_context *ctx, stream *s)
             if (iswhite(Buffer[4])) {
                 Buffer[4] = 0x00;
             } else {
-                pdf_unread(ctx, (byte *)&Buffer[4], 1);
+                pdf_unread(ctx, s, (byte *)&Buffer[4], 1);
                 if (isdelimiter(Buffer[4])) {
                     Buffer[4] = 0x00;
                 } else {
@@ -757,7 +757,7 @@ static int pdf_read_bool(pdf_context *ctx, stream *s)
                 if (iswhite(Buffer[5])) {
                     Buffer[5] = 0x00;
                 } else {
-                    pdf_unread(ctx, (byte *)&Buffer[5], 1);
+                    pdf_unread(ctx, s, (byte *)&Buffer[5], 1);
                     if (isdelimiter(Buffer[5])) {
                         Buffer[5] = 0x00;
                     } else {
@@ -791,7 +791,7 @@ static int pdf_read_bool(pdf_context *ctx, stream *s)
     return code;
 }
 
-static int pdf_read_null(pdf_context *ctx, stream *s)
+static int pdf_read_null(pdf_context *ctx, pdf_stream *s)
 {
     unsigned short index = 0, bytes = 0;
     byte Buffer[6];
@@ -809,7 +809,7 @@ static int pdf_read_null(pdf_context *ctx, stream *s)
         if (iswhite(Buffer[4])) {
             Buffer[4] = 0x00;
         } else {
-            pdf_unread(ctx, (byte *)&Buffer[4], 1);
+            pdf_unread(ctx, s, (byte *)&Buffer[4], 1);
             if (isdelimiter(Buffer[4])) {
                 Buffer[4] = 0x00;
             } else {
@@ -833,7 +833,7 @@ static int pdf_read_null(pdf_context *ctx, stream *s)
     return code;
 }
 
-static void pdf_skip_comment(pdf_context *ctx, stream *s)
+static void pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
 {
     byte Buffer;
     unsigned short index = 0, bytes = 0;
@@ -852,7 +852,7 @@ static void pdf_skip_comment(pdf_context *ctx, stream *s)
  * of that type (PDF_NULL, PDF_TRUE, PDF_FALSE or PDF_INDIRECT_REF)
  * and return it instead.
  */
-static int pdf_read_keyword(pdf_context *ctx, stream *s)
+static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
 {
     byte Buffer[256], b;
     unsigned short index = 0, bytes = 0;
@@ -867,7 +867,7 @@ static int pdf_read_keyword(pdf_context *ctx, stream *s)
             break;
         } else {
             if (isdelimiter(Buffer[index])) {
-                pdf_unread(ctx, (byte *)&Buffer[index], 1);
+                pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
                 break;
             }
         }
@@ -1042,7 +1042,7 @@ static int pdf_read_keyword(pdf_context *ctx, stream *s)
 /* This function reads form the given stream, at the current offset in the stream,
  * a single PDF 'token' and returns it on the stack.
  */
-int pdf_read_token(pdf_context *ctx, stream *s)
+int pdf_read_token(pdf_context *ctx, pdf_stream *s)
 {
     int32_t bytes = 0;
     char Buffer[256];
@@ -1068,7 +1068,7 @@ int pdf_read_token(pdf_context *ctx, stream *s)
         case '+':
         case '-':
         case '.':
-            pdf_unread(ctx, (byte *)&Buffer[0], 1);
+            pdf_unread(ctx, s, (byte *)&Buffer[0], 1);
             code = pdf_read_num(ctx, s);
             if (code < 0)
                 return code;
@@ -1084,7 +1084,7 @@ int pdf_read_token(pdf_context *ctx, stream *s)
                 return pdf_read_dict(ctx, s);
             } else {
                 if (ishex(Buffer[1])) {
-                    pdf_unread(ctx, (byte *)&Buffer[1], 1);
+                    pdf_unread(ctx, s, (byte *)&Buffer[1], 1);
                     return pdf_read_hexstring(ctx, s);
                 }
                 else
@@ -1101,7 +1101,7 @@ int pdf_read_token(pdf_context *ctx, stream *s)
             pdf_skip_comment(ctx, s);
             break;
         default:
-            pdf_unread(ctx, (byte *)&Buffer[0], 1);
+            pdf_unread(ctx, s, (byte *)&Buffer[0], 1);
             return pdf_read_keyword(ctx, s);
             break;
     }
@@ -1199,7 +1199,7 @@ int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx)
     }
 
     if (ctx->main_stream != NULL) {
-        sfclose(ctx->main_stream);
+        pdf_close_file(ctx, ctx->main_stream);
         ctx->main_stream = NULL;
     }
     if(ctx->pgs != NULL) {
@@ -1215,10 +1215,10 @@ int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx)
 static void cleanup_pdf_open_file(pdf_context *ctx, byte *Buffer)
 {
     if (Buffer != NULL)
-        gs_free_object(ctx->memory, Buffer, "PDF interpreter - allocate working buffer for file validation");
+        gs_free_object(ctx->memory, Buffer, "PDF interpreter - cleanup working buffer for file validation");
 
     if (ctx->main_stream != NULL) {
-        sfclose(ctx->main_stream);
+        pdf_close_file(ctx, ctx->main_stream);
         ctx->main_stream = NULL;
     }
     ctx->main_stream_length = 0;
@@ -1233,7 +1233,7 @@ int repair_pdf_file(pdf_context *ctx)
     return 0;
 }
 
-static int read_xref_stream_entries(pdf_context *ctx, stream *s, uint64_t first, uint64_t last, unsigned char *W)
+static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t first, uint64_t last, unsigned char *W)
 {
     uint i, j = 0;
     uint32_t type = 0;
@@ -1323,11 +1323,11 @@ static int read_xref_stream_entries(pdf_context *ctx, stream *s, uint64_t first,
 }
 
 /* These two routines are recursive.... */
-static int pdf_read_xref_stream_dict(pdf_context *ctx, stream *s);
+static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s);
 
-static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, stream *s)
+static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
 {
-    stream *XRefStrm;
+    pdf_stream *XRefStrm;
     char Buffer[33];
     int code, i;
     pdf_obj *o;
@@ -1377,24 +1377,37 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, stream *s)
 
     code = pdf_dict_get(d, "W", &o);
     if (code < 0) {
+        pdf_close_file(ctx, XRefStrm);
         gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
         ctx->xref = NULL;
         return code;
     }
 
-    if (o->type != PDF_ARRAY)
+    if (o->type != PDF_ARRAY) {
+        pdf_close_file(ctx, XRefStrm);
+        gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+        ctx->xref = NULL;
         return_error(gs_error_typecheck);
+    }
     else {
         pdf_array *a = (pdf_array *)o;
 
-        if (a->entries != 3)
+        if (a->entries != 3) {
+            pdf_close_file(ctx, XRefStrm);
+            gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+            ctx->xref = NULL;
             return_error(gs_error_rangecheck);
+        }
         for (i=0;i<3;i++) {
             code = pdf_array_get(a, (uint64_t)i, &o);
-            if (code < 0)
+            if (code < 0) {
+                pdf_close_file(ctx, XRefStrm);
+                gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+                ctx->xref = NULL;
                 return code;
-
+            }
             if (o->type != PDF_INT) {
+                pdf_close_file(ctx, XRefStrm);
                 gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
                 ctx->xref = NULL;
                 return_error(gs_error_typecheck);
@@ -1406,43 +1419,78 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, stream *s)
     code = pdf_dict_get(d, "Index", &o);
     if (code == gs_error_undefined) {
         code = read_xref_stream_entries(ctx, XRefStrm, 0, size - 1, W);
-        if (code < 0)
+        if (code < 0) {
+            pdf_close_file(ctx, XRefStrm);
+            gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+            ctx->xref = NULL;
             return code;
+        }
     } else {
         if (code < 0) {
+            pdf_close_file(ctx, XRefStrm);
             gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
             ctx->xref = NULL;
             return code;
         }
 
-        if (o->type != PDF_ARRAY)
+        if (o->type != PDF_ARRAY) {
+            pdf_close_file(ctx, XRefStrm);
+            gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+            ctx->xref = NULL;
             return_error(gs_error_typecheck);
+        }
         else {
             pdf_array *a = (pdf_array *)o;
             pdf_num *start, *end;
 
-            if (a->entries & 1)
+            if (a->entries & 1) {
+                pdf_close_file(ctx, XRefStrm);
+                gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+                ctx->xref = NULL;
                 return_error(gs_error_rangecheck);
+            }
 
             for (i=0;i < a->entries;i+=2){
                 code = pdf_array_get(a, (uint64_t)i, (pdf_obj **)&start);
-                if (code < 0)
+                if (code < 0) {
+                    pdf_close_file(ctx, XRefStrm);
+                    gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+                    ctx->xref = NULL;
                     return code;
-                if (start->object.type != PDF_INT)
+                }
+                if (start->object.type != PDF_INT) {
+                    pdf_close_file(ctx, XRefStrm);
+                    gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+                    ctx->xref = NULL;
                     return_error(gs_error_typecheck);
+                }
 
                 code = pdf_array_get(a, (uint64_t)i+1, (pdf_obj **)&end);
-                if (code < 0)
+                if (code < 0) {
+                    pdf_close_file(ctx, XRefStrm);
+                    gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+                    ctx->xref = NULL;
                     return code;
-                if (end->object.type != PDF_INT)
+                }
+                if (end->object.type != PDF_INT) {
+                    pdf_close_file(ctx, XRefStrm);
+                    gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+                    ctx->xref = NULL;
                     return_error(gs_error_typecheck);
+                }
 
                 code = read_xref_stream_entries(ctx, XRefStrm, start->value.i, start->value.i + end->value.i - 1, W);
-                if (code < 0)
+                if (code < 0) {
+                    pdf_close_file(ctx, XRefStrm);
+                    gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
+                    ctx->xref = NULL;
                     return code;
+                }
             }
         }
     }
+
+    pdf_close_file(ctx, XRefStrm);
 
     code = pdf_dict_get(d, "Prev", &o);
     if (code == gs_error_undefined)
@@ -1465,7 +1513,7 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, stream *s)
     return code;
 }
 
-static int pdf_read_xref_stream_dict(pdf_context *ctx, stream *s)
+static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
 {
     int code;
 
@@ -1557,7 +1605,7 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, stream *s)
     return 0;
 }
 
-static int read_xref(pdf_context *ctx, stream *s)
+static int read_xref(pdf_context *ctx, pdf_stream *s)
 {
     int code = 0, i, j;
     pdf_obj *o = NULL;
@@ -1615,7 +1663,7 @@ static int read_xref(pdf_context *ctx, stream *s)
             return_error(gs_error_ioerror);
         j = 19;
         while (Buffer[j] != 0x0D && Buffer[j] != 0x0A) {
-            pdf_unread(ctx, (byte *)&Buffer[j], 1);
+            pdf_unread(ctx, s, (byte *)&Buffer[j], 1);
             j--;
         }
         Buffer[j] = 0x00;
@@ -1740,7 +1788,7 @@ static int read_xref(pdf_context *ctx, stream *s)
     }
 }
 
-int open_pdf_file(pdf_context *ctx, char *filename)
+int pdf_open_pdf_file(pdf_context *ctx, char *filename)
 {
     byte *Buffer = NULL;
     char *s = NULL;
@@ -1748,9 +1796,14 @@ int open_pdf_file(pdf_context *ctx, char *filename)
     gs_offset_t Offset = 0, bytes = 0;
     int code = 0;
 
-    ctx->main_stream = sfopen(filename, "r", ctx->memory);
+    ctx->main_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "PDF interpreter allocate main PDF stream");
     if (ctx->main_stream == NULL)
+        return_error(gs_error_VMerror);
+
+    ctx->main_stream->s = sfopen(filename, "r", ctx->memory);
+    if (ctx->main_stream == NULL) {
         return_error(gs_error_ioerror);
+    }
 
     Buffer = gs_alloc_bytes(ctx->memory, BUF_SIZE, "PDF interpreter - allocate working buffer for file validation");
     if (Buffer == NULL) {
@@ -1782,7 +1835,7 @@ int open_pdf_file(pdf_context *ctx, char *filename)
     /* Jump to EOF and scan backwards looking for startxref */
     pdf_seek(ctx, ctx->main_stream, 0, SEEK_SET);
     pdf_seek(ctx, ctx->main_stream, 0, SEEK_END);
-    ctx->main_stream_length = stell(ctx->main_stream);
+    ctx->main_stream_length = stell(ctx->main_stream->s);
     Offset = BUF_SIZE;
     bytes = BUF_SIZE;
 
@@ -1864,22 +1917,27 @@ int open_pdf_file(pdf_context *ctx, char *filename)
 /* need to have custom PostScript operators to process the file or at      */
 /* (least pages from it).                                                  */
 
-int close_pdf_file(pdf_context *ctx)
+int pdf_close_pdf_file(pdf_context *ctx)
 {
-    sfclose(ctx->main_stream);
-    ctx->main_stream = NULL;
+    if (ctx->main_stream) {
+        if (ctx->main_stream->s) {
+            pdf_close_file(ctx, ctx->main_stream);
+            ctx->main_stream = NULL;
+        }
+        gs_free_object(ctx->memory, ctx->main_stream, "Closing main PDF file");
+    }
     return 0;
 }
 
-int pdf_process_file(pdf_context *ctx, char *filename)
+int pdf_process_pdf_file(pdf_context *ctx, char *filename)
 {
     int code = 0;
 
-    code = open_pdf_file(ctx, filename);
+    code = pdf_open_pdf_file(ctx, filename);
     if (code < 0)
         return code;
 
-    code = close_pdf_file(ctx);
+    code = pdf_close_pdf_file(ctx);
     return code;
 }
 

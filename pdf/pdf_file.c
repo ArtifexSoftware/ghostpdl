@@ -193,11 +193,12 @@ static int pdf_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, strea
     return 0;
 }
 
-int pdf_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
+int pdf_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **new_stream)
 {
     pdf_obj *o;
     pdf_name *n;
     int code;
+    stream *temp_stream;
 
     code = pdf_dict_get(d, "Filter", &o);
     if (code < 0)
@@ -217,7 +218,15 @@ int pdf_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_strea
     if (n->length == 13 && memcmp((const char *)n->data, "ASCII85Decode", 13) == 0) {
     }
     if (n->length == 11 && memcmp((const char *)n->data, "FlateDecode", 11) == 0) {
-        return pdf_Flate_filter(ctx, d, source, new_stream);
+        code = pdf_Flate_filter(ctx, d, source->s, &temp_stream);
+        if (code < 0)
+            return code;
+        *new_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdf_filter, new pdf_stream");
+        if (*new_stream == NULL)
+            return_error(gs_error_VMerror);
+        memset(*new_stream, 0x00, sizeof(pdf_stream));
+        ((pdf_stream *)(*new_stream))->s = temp_stream;
+        return 0;
     }
     if (n->length == 11 && memcmp((const char *)n->data, "JBIG2Decode", 11) == 0) {
     }
@@ -235,54 +244,63 @@ int pdf_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_strea
 /***********************************************************************************/
 /* Basic 'file' operations. Because of the need to 'unread' bytes we need our own  */
 
-int pdf_seek(pdf_context *ctx, stream *s, gs_offset_t offset, uint32_t origin)
+void pdf_close_file(pdf_context *ctx, pdf_stream *s)
 {
-    ctx->unread_size = 0;;
-
-    return (sfseek(s, offset, origin));
+    if (s->s) {
+        sfclose(s->s);
+        s->s = NULL;
+    }
+    gs_free_object(ctx->memory, s, "closing pdf_file");
 }
 
-int pdf_unread(pdf_context *ctx, byte *Buffer, uint32_t size)
+int pdf_seek(pdf_context *ctx, pdf_stream *s, gs_offset_t offset, uint32_t origin)
 {
-    if (size + ctx->unread_size > UNREAD_BUFFER_SIZE)
+    s->unread_size = 0;;
+
+    return (sfseek(s->s, offset, origin));
+}
+
+int pdf_unread(pdf_context *ctx, pdf_stream *s, byte *Buffer, uint32_t size)
+{
+    if (size + s->unread_size > UNREAD_BUFFER_SIZE)
         return_error(gs_error_ioerror);
 
-    if (ctx->unread_size) {
-        uint32_t index = ctx->unread_size - 1;
+    if (s->unread_size) {
+        uint32_t index = s->unread_size - 1;
 
         do {
-            ctx->unget_buffer[size + index] = ctx->unget_buffer[index];
+            s->unget_buffer[size + index] = s->unget_buffer[index];
         } while(index--);
     }
 
-    memcpy(ctx->unget_buffer, Buffer, size);
-    ctx->unread_size += size;
+    memcpy(s->unget_buffer, Buffer, size);
+    s->unread_size += size;
 
     return 0;
 }
 
-int pdf_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count, stream *s)
+int pdf_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count, pdf_stream *s)
 {
     uint32_t i = 0, bytes = 0, total = size * count;
 
-    if (ctx->unread_size) {
-        if (ctx->unread_size >= total) {
-            memcpy(Buffer, ctx->unget_buffer, total);
-            for(i=0;i < ctx->unread_size - total;i++) {
-                ctx->unget_buffer[i] = ctx->unget_buffer[i + total];
+    if (s->unread_size) {
+        if (s->unread_size >= total) {
+            memcpy(Buffer, s->unget_buffer, total);
+            for(i=0;i < s->unread_size - total;i++) {
+                s->unget_buffer[i] = s->unget_buffer[i + total];
             }
-            ctx->unread_size -= total;
+            s->unread_size -= total;
             return size;
         } else {
-            memcpy(Buffer, ctx->unget_buffer, ctx->unread_size);
-            total -= ctx->unread_size;
-            Buffer += ctx->unread_size;
-            i = ctx->unread_size;
-            ctx->unread_size = 0;
+            memcpy(Buffer, s->unget_buffer, s->unread_size);
+            total -= s->unread_size;
+            Buffer += s->unread_size;
+            i = s->unread_size;
+            s->unread_size = 0;
         }
     }
     if (total) {
-        bytes = sfread(Buffer, 1, total, s);
+        bytes = sfread(Buffer, 1, total, s->s);
     }
     return i + bytes;
 }
