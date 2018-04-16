@@ -43,6 +43,12 @@ gxps: .xpssubtarget $(UNIX_END_MAK)
 gxpsclean: cleansub
 	$(NO_OP)
 
+gpdf: .pdfsubtarget $(UNIX_END_MAK)
+	$(NO_OP)
+
+gpdfclean: cleansub
+	$(NO_OP)
+
 gpdl: .gpdlsubtarget $(UNIX_END_MAK)
 	$(NO_OP)
 

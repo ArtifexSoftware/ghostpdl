@@ -218,6 +218,27 @@ $(GXPS_XE): $(ld_tr) $(xps_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(XPS_TOP_OBJS) \
 .xpssubtarget: $(GXPS_XE)
 	$(NO_OP)
 
+pdfldt_tr=$(PSOBJ)pdfldt.tr
+$(GPDF_XE): $(ld_tr) $(pdf_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(PDF_TOP_OBJS) \
+             $(XOBJS) $(GLOBJDIR)/pdfromfs$(COMPILE_INITS).$(OBJ) \
+             $(INT_ARCHIVE_SOME) $(UNIXLINK_MAK)
+	$(ECHOGS_XE) -w $(pdfldt_tr) -n - $(CCLD) $(PDF_LDFLAGS) $(XLIBDIRS) -o $(GPDF_XE)
+	$(ECHOGS_XE) -a $(pdfldt_tr) -n -s $(PDF_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) -s
+	cat $(pdfld_tr) >> $(pdfldt_tr)
+	$(ECHOGS_XE) -a $(pdfldt_tr) -s - $(GLOBJDIR)/pdfromfs$(COMPILE_INITS).$(OBJ) $(REALMAIN_OBJ) $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
+	if [ x$(XLIBDIR) != x ]; then LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; fi; \
+	XCFLAGS= XINCLUDE= XLDFLAGS= XLIBDIRS= XLIBS= \
+	PCL_FEATURE_DEVS= DEVICE_DEVS= DEVICE_DEVS1= DEVICE_DEVS2= DEVICE_DEVS3= \
+	DEVICE_DEVS4= DEVICE_DEVS5= DEVICE_DEVS6= DEVICE_DEVS7= DEVICE_DEVS8= \
+	DEVICE_DEVS9= DEVICE_DEVS10= DEVICE_DEVS11= DEVICE_DEVS12= \
+	DEVICE_DEVS13= DEVICE_DEVS14= DEVICE_DEVS15= DEVICE_DEVS16= \
+	DEVICE_DEVS17= DEVICE_DEVS18= DEVICE_DEVS19= DEVICE_DEVS20= \
+	DEVICE_DEVS_EXTRA= \
+	sh <$(pdfldt_tr)
+
+.pdfsubtarget: $(GPDF_XE)
+	$(NO_OP)
+
 gpdlldt_tr=$(PSOBJ)gpdlldt.tr
 $(GPDL_XE): $(ld_tr) $(gpdl_tr) $(INT_ARCHIVE_ALL) $(REALMAIN_OBJ) $(MAIN_OBJ) \
              $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) \

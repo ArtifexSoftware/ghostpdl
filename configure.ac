@@ -1995,6 +1995,23 @@ AC_SUBST(XPS_TARGET)
 AC_SUBST(XPS_MAK)
 AC_SUBST(XPSROMFS_MAK)
 
+if test x"$with_pdf" != x"no" ; then
+  if test -f $srcdir/pdf/pdf.mak; then
+    AC_ARG_WITH([pdf], AC_HELP_STRING([--with-pdf=NAME],
+        [name of the Ghostpdf executible (if the source is available, ignored otherwise) [[gpdf]]]),
+        [PDF="$with_pdf"],[PDF='gpdf'])
+
+    PDF_TARGET=gpdf
+
+    PDF_MAK="\$(PDFSRCDIR)\$(D)pdf.mak"
+  fi
+fi
+AC_SUBST(PDF)
+AC_SUBST(PDF_TARGET)
+
+AC_SUBST(PDF_MAK)
+
+
 GPDL=no_gpdl
 GPDL_TARGET=
 

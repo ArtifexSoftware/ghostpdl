@@ -38,7 +38,7 @@ PDF.config-clean: clean_gs
 	$(RM_) $(PDFOBJ)devs.tr5
 
 PDF_TOP_OBJ=$(PDFOBJDIR)$(D)pdftop.$(OBJ)
-PDF_TOP_OBJS= $(PDF_TOP_OBJ) $(PDFOBJDIR)$(D)PDFimpl.$(OBJ)
+PDF_TOP_OBJS= $(PDF_TOP_OBJ) $(PDFOBJDIR)$(D)pdfimpl.$(OBJ)
 
 PDFINCLUDES=$(PDFSRC)*.h $(PDFOBJ)arch.h
 
@@ -48,10 +48,10 @@ $(PDFOBJ)pdf_int.$(OBJ): $(PDFSRC)pdf_int.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS
 $(PDFOBJ)pdf_file.$(OBJ): $(PDFSRC)pdf_file.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_file.c $(XPSO_)pdf_file.$(OBJ)
 
-$(PDFGEN)PDFimpl.c: $(PLSRC)plimpl.c $(PDF_MAK) $(MAKEDIRS)
-	$(CP_) $(PLSRC)plimpl.c $(PDFGEN)PDFimpl.c
+$(PDFGEN)pdfimpl.c: $(PLSRC)plimpl.c $(PDF_MAK) $(MAKEDIRS)
+	$(CP_) $(PLSRC)plimpl.c $(PDFGEN)pdfimpl.c
 
-$(PLOBJ)PDFimpl.$(OBJ): $(PDFGEN)PDFimpl.c          \
+$(PLOBJ)pdfimpl.$(OBJ): $(PDFGEN)pdfimpl.c          \
                         $(AK)                       \
                         $(memory__h)                \
                         $(scommon_h)                \
@@ -59,11 +59,11 @@ $(PLOBJ)PDFimpl.$(OBJ): $(PDFGEN)PDFimpl.c          \
                         $(pltop_h)                  \
                         $(PDF_MAK)                  \
                         $(MAKEDIRS)
-	$(PDFCCC) $(PDFGEN)PDFimpl.c $(PDFO_)PDFimpl.$(OBJ)
+	$(PDFCCC) $(PDFGEN)pdfimpl.c $(PDFO_)pdfimpl.$(OBJ)
 
-$(PDF_TOP_OBJ): $(PDFSRC)PDFtop.c $(plmain_h) $(pltop_h) $(PDFINCLUDES) $(GLOBJ)gconfig.$(OBJ) \
+$(PDF_TOP_OBJ): $(PDFSRC)pdftop.c $(plmain_h) $(pltop_h) $(PDFINCLUDES) $(GLOBJ)gconfig.$(OBJ) \
                 $(pconfig_h) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)PDFtop.c $(PDFO_)PDFtop.$(OBJ)
+	$(PDFCCC) $(PDFSRC)pdftop.c $(PDFO_)pdftop.$(OBJ)
 
 PDF_OBJS=\
     $(PDFOBJ)pdf_int.$(OBJ)\
