@@ -29,14 +29,12 @@
 #include "gsstruct.h"
 #include "gxalloc.h"
 #include "gsalloc.h"
-#include "gsargs.h"
 #include "gp.h"
 #include "gsdevice.h"
 #include "gxdevice.h"
 #include "gxdevsop.h"       /* for gxdso_* */
 #include "gxclpage.h"
 #include "gdevprn.h"
-#include "gsparam.h"
 #include "gslib.h"
 #include "pjtop.h"
 #include "plparse.h"
@@ -78,50 +76,6 @@ Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -l<PCL5C|PCL5E|RTL> -Z...\n\
          -H<l>x<b>x<r>x<t> -dNOCACHE\n\
          -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
          -J<PJL commands>\n";
-
-/*
- * Main instance for all interpreters.
- */
-struct pl_main_instance_s
-{
-    /* The following are set at initialization time. */
-    gs_memory_t *memory;
-    long base_time[2];          /* starting time */
-    int error_report;           /* -E# */
-    bool pause;                 /* -dNOPAUSE => false */
-    int first_page;             /* -dFirstPage= */
-    int last_page;              /* -dLastPage= */
-    gx_device *device;
-
-    pl_interp_implementation_t *implementation; /*-L<Language>*/
-
-    char pcl_personality[6];    /* a character string to set pcl's
-                                   personality - rtl, pcl5c, pcl5e, and
-                                   pcl == default.  NB doesn't belong here. */
-    bool interpolate;
-    bool nocache;
-    bool page_set_on_command_line;
-    bool res_set_on_command_line;
-    bool high_level_device;
-#ifndef OMIT_SAVED_PAGES_TEST
-    bool saved_pages_test_mode;
-#endif
-    bool pjl_from_args; /* pjl was passed on the command line */
-    int scanconverter;
-    /* we have to store these in the main instance until the languages
-       state is sufficiently initialized to set the parameters. */
-    char *piccdir;
-    char *pdefault_gray_icc;
-    char *pdefault_rgb_icc;
-    char *pdefault_cmyk_icc;
-    gs_c_param_list params;
-    arg_list args;
-    pl_interp_implementation_t **implementations;
-    pl_interp_implementation_t *curr_implementation;
-    pl_interp_implementation_t *desired_implementation;
-    byte buf[8192]; /* languages read buffer */
-    void *disp; /* display device pointer NB wrong - remove */
-};
 
 
 /* ---------------- Static data for memory management ------------------ */
@@ -712,6 +666,83 @@ static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int 
         pmi->scanconverter = b;
         return 0;
     }
+    if (!strncmp(arg, "FirstPage", 9)) {
+        pmi->first_page = b;
+        return 0;
+    }
+    if (!strncmp(arg, "LastPage", 8)) {
+        pmi->last_page = b;
+        return 0;
+    }
+    /* PDF interpreter flags */
+    if (!strncmp(arg, "PDFDEBUG", 8)) {
+        pmi->pdfdebug = b;
+        return 0;
+    }
+    if (!strncmp(arg, "PDFSTOPONERROR", 14)) {
+        pmi->pdfstoponerror = b;
+        return 0;
+    }
+    if (!strncmp(arg, "PDFSTOPONWARNING", 16)) {
+        pmi->pdfstoponwarning = b;
+        return 0;
+    }
+    if (!strncmp(arg, "NOTRANSPARENCY", 14)) {
+        pmi->notransparency = b;
+        return 0;
+    }
+    if (!strncmp(arg, "NOCIDFALLBACK", 13)) {
+        pmi->nocidfallback = b;
+        return 0;
+    }
+    if (!strncmp(arg, "NO_PDFMARK_OUTLINES", 19)) {
+        pmi->no_pdfmark_outlines = b;
+        return 0;
+    }
+    if (!strncmp(arg, "NO_PDFMARK_DESTS", 16)) {
+        pmi->no_pdfmark_dests = b;
+        return 0;
+    }
+    if (!strncmp(arg, "PDFFitPage", 10)) {
+        pmi->pdffitpage = b;
+        return 0;
+    }
+    if (!strncmp(arg, "UseCropBox", 10)) {
+        pmi->usecropbox = b;
+        return 0;
+    }
+    if (!strncmp(arg, "UseArtBox", 9)) {
+        pmi->useartbox = b;
+        return 0;
+    }
+    if (!strncmp(arg, "UseBleedBox", 11)) {
+        pmi->usebleedbox = b;
+        return 0;
+    }
+    if (!strncmp(arg, "UseTrimBox", 10)) {
+        pmi->usetrimbox = b;
+        return 0;
+    }
+    if (!strncmp(arg, "Printed", 7)) {
+        pmi->printed = b;
+        return 0;
+    }
+    if (!strncmp(arg, "ShowAcroForm", 12)) {
+        pmi->showacroform = b;
+        return 0;
+    }
+    if (!strncmp(arg, "ShowAnnots", 10)) {
+        pmi->showannots = b;
+        return 0;
+    }
+    if (!strncmp(arg, "NoUserUnit", 10)) {
+        pmi->nouserunit = b;
+        return 0;
+    }
+    if (!strncmp(arg, "RENDERTTNOTDEF", 13)) {
+        pmi->renderttnotdef = b;
+        return 0;
+    }
     return 1;
 }
 
@@ -1203,6 +1234,11 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                                  "Usage for -s is -s<option>=<string>\n");
                         return -1;
                     }
+                    /* There's a 'check_for_special_str' function, but that is actually a compelte misnomer.
+                     * That function only actually processes *names* (ie strings beginning '/') in a -d switch
+                     * We don't really handle strings specially at all, we just write them to the device.
+                     * This whole function is inadequate in my opinion.
+                     */
                     value = eqp + 1;
                     if (!strncmp(arg, "DEVICE", 6)) {
                         code = pl_top_create_device(pmi,
@@ -1231,6 +1267,14 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         if (!strncmp
                             (arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
                         pmi->piccdir = arg_copy(value, pmi->memory);
+                    } else
+                        if (!strncmp
+                            (arg, "PDFpassword", 11)) {
+                        pmi->PDFPassword = arg_copy(value, pmi->memory);
+                    } else
+                        if (!strncmp
+                            (arg, "PageList", 8)) {
+                        pmi->PageList = arg_copy(value, pmi->memory);
                     } else {
                         char buffer[128];
 

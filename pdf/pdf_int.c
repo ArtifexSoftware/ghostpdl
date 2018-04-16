@@ -1181,6 +1181,12 @@ pdf_context *pdf_create_context(gs_memory_t *pmem)
 
 int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx)
 {
+    if (ctx->PDFPassword)
+        gs_free_object(ctx->memory, ctx->PDFPassword, "pdf_free_context");
+
+    if (ctx->PageList)
+        gs_free_object(ctx->memory, ctx->PageList, "pdf_free_context");
+
     if (ctx->Trailer)
         pdf_countdown((pdf_obj *)ctx->Trailer);
 
@@ -1799,6 +1805,7 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
     ctx->main_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "PDF interpreter allocate main PDF stream");
     if (ctx->main_stream == NULL)
         return_error(gs_error_VMerror);
+    memset(ctx->main_stream, 0x00, sizeof(pdf_stream));
 
     ctx->main_stream->s = sfopen(filename, "r", ctx->memory);
     if (ctx->main_stream == NULL) {

@@ -102,6 +102,28 @@ typedef struct pdf_context_s
     void *instance;
     gs_memory_t *memory;
 
+    int first_page;             /* -dFirstPage= */
+    int last_page;              /* -dLastPage= */
+    bool pdfdebug;
+    bool pdfstoponerror;
+    bool pdfstoponwarning;
+    bool notransparency;
+    bool nocidfallback;
+    bool no_pdfmark_outlines;
+    bool no_pdfmark_dests;
+    bool pdffitpage;
+    bool usecropbox;
+    bool useartbox;
+    bool usebleedbox;
+    bool usetrimbox;
+    bool printed;
+    bool showacroform;
+    bool showannots;
+    bool nouserunit;
+    bool renderttnotdef;
+    char *PDFPassword;
+    char *PageList;
+
     float HeaderVersion, FinalVersion;
 
     gs_gstate *pgs;

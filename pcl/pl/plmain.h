@@ -23,6 +23,72 @@
 #include "stdpre.h"
 #include "gsmemory.h"
 #include "pltop.h"
+#include "gsparam.h"
+#include "gsargs.h"
+
+/*
+ * Main instance for all interpreters.
+ */
+struct pl_main_instance_s
+{
+    /* The following are set at initialization time. */
+    gs_memory_t *memory;
+    long base_time[2];          /* starting time */
+    int error_report;           /* -E# */
+    bool pause;                 /* -dNOPAUSE => false */
+    int first_page;             /* -dFirstPage= */
+    int last_page;              /* -dLastPage= */
+    bool pdfdebug;
+    bool pdfstoponerror;
+    bool pdfstoponwarning;
+    bool notransparency;
+    bool nocidfallback;
+    bool no_pdfmark_outlines;
+    bool no_pdfmark_dests;
+    bool pdffitpage;
+    bool usecropbox;
+    bool useartbox;
+    bool usebleedbox;
+    bool usetrimbox;
+    bool printed;
+    bool showacroform;
+    bool showannots;
+    bool nouserunit;
+    bool renderttnotdef;
+
+    gx_device *device;
+
+    pl_interp_implementation_t *implementation; /*-L<Language>*/
+
+    char pcl_personality[6];    /* a character string to set pcl's
+                                   personality - rtl, pcl5c, pcl5e, and
+                                   pcl == default.  NB doesn't belong here. */
+    bool interpolate;
+    bool nocache;
+    bool page_set_on_command_line;
+    bool res_set_on_command_line;
+    bool high_level_device;
+#ifndef OMIT_SAVED_PAGES_TEST
+    bool saved_pages_test_mode;
+#endif
+    bool pjl_from_args; /* pjl was passed on the command line */
+    int scanconverter;
+    /* we have to store these in the main instance until the languages
+       state is sufficiently initialized to set the parameters. */
+    char *piccdir;
+    char *pdefault_gray_icc;
+    char *pdefault_rgb_icc;
+    char *pdefault_cmyk_icc;
+    char *PDFPassword;
+    char *PageList;
+    gs_c_param_list params;
+    arg_list args;
+    pl_interp_implementation_t **implementations;
+    pl_interp_implementation_t *curr_implementation;
+    pl_interp_implementation_t *desired_implementation;
+    byte buf[8192]; /* languages read buffer */
+    void *disp; /* display device pointer NB wrong - remove */
+};
 
 typedef struct pl_main_instance_s pl_main_instance_t;
 
