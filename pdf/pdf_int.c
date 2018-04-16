@@ -1233,131 +1233,6 @@ int repair_pdf_file(pdf_context *ctx)
     return 0;
 }
 
-static int read_xref(pdf_context *ctx, stream *s)
-{
-    int code = 0, i, j;
-    pdf_obj *o = NULL;
-    pdf_dict *d = NULL;
-    uint64_t start = 0, size = 0, bytes = 0;
-    char Buffer[21];
-
-    code = pdf_read_token(ctx, ctx->main_stream);
-
-    if (code < 0)
-        return code;
-
-    o = ctx->stack_top[-1];
-    if (o->type != PDF_INT) {
-        /* element is not an integer, not a valid xref */
-        pdf_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
-    start = ((pdf_num *)o)->value.i;
-
-    code = pdf_read_token(ctx, ctx->main_stream);
-    if (code < 0) {
-        pdf_pop(ctx, 1);
-        return code;
-    }
-
-    o = ctx->stack_top[-1];
-    if (o->type != PDF_INT) {
-        /* element is not an integer, not a valid xref */
-        pdf_pop(ctx, 2);
-        return_error(gs_error_typecheck);
-    }
-    size = ((pdf_num *)o)->value.i;
-    pdf_pop(ctx, 2);
-
-    /* If this is the first xref then allocate the xref table and store the trailer */
-    if (ctx->xref == NULL) {
-        ctx->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, (start + size) * sizeof(xref_entry), "read_xref_stream allocate xref table");
-        if (ctx->xref == NULL)
-            return_error(gs_error_VMerror);
-
-        memset(ctx->xref, 0x00, ((pdf_num *)o)->value.i * sizeof(xref_entry));
-    }
-
-    skip_white(ctx, s);
-    for (i=0;i< size;i++){
-        xref_entry *entry = &ctx->xref[i + start];
-        unsigned char free;
-
-        bytes = pdf_read_bytes(ctx, (byte *)Buffer, 1, 20, s);
-        if (bytes < 20)
-            return_error(gs_error_ioerror);
-        j = 19;
-        while (Buffer[j] != 0x0D && Buffer[j] != 0x0A) {
-            pdf_unread(ctx, (byte *)&Buffer[j], 1);
-            j--;
-        }
-        Buffer[j] = 0x00;
-        sscanf(Buffer, "%ld %d %c", &entry->offset, &entry->generation_num, &free);
-        entry->compressed = false;
-        entry->object_num = i + start;
-        if (free == 'f')
-            entry->free = true;
-        if(free == 'n')
-            entry->free = false;
-    }
-
-    /* read trailer dict */
-    code = pdf_read_token(ctx, ctx->main_stream);
-    if (code < 0)
-        return code;
-
-    o = ctx->stack_top[-1];
-    if (o->type != PDF_KEYWORD || ((pdf_keyword *)o)->key != PDF_TRAILER) {
-        pdf_pop(ctx, 1);
-        return_error(gs_error_syntaxerror);
-    }
-    pdf_pop(ctx, 1);
-
-    code = pdf_read_token(ctx, ctx->main_stream);
-    if (code < 0)
-        return code;
-
-    d = (pdf_dict *)ctx->stack_top[-1];
-    if (d->object.type != PDF_DICT) {
-        pdf_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
-
-    if (ctx->Trailer == NULL) {
-        ctx->Trailer = d;
-        d->object.refcnt++;
-    }
-
-    code = pdf_dict_get(d, "Prev", &o);
-    if (code < 0) {
-        pdf_pop(ctx, 2);
-        if (code == gs_error_undefined)
-            return 0;
-        else
-            return code;
-    }
-    pdf_pop(ctx, 1);
-
-    if (o->type != PDF_INT)
-        return_error(gs_error_typecheck);
-
-    code = pdf_seek(ctx, s, ((pdf_num *)o)->value.i , SEEK_SET);
-    if (code < 0)
-        return code;
-
-    code = pdf_read_token(ctx, ctx->main_stream);
-    if (code < 0)
-        return(code);
-
-    if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD && ((pdf_keyword *)ctx->stack_top[-1])->key == PDF_XREF) {
-        /* Read old-style xref table */
-        pdf_pop(ctx, 1);
-        return(read_xref(ctx, ctx->main_stream));
-    } else {
-        return_error(gs_error_typecheck);
-    }
-}
-
 static int read_xref_stream_entries(pdf_context *ctx, stream *s, uint64_t first, uint64_t last, unsigned char *W)
 {
     uint i, j = 0;
@@ -1409,6 +1284,9 @@ static int read_xref_stream_entries(pdf_context *ctx, stream *s, uint64_t first,
             gen = (gen << 8) + Buffer[j];
 
         entry = &ctx->xref[i];
+        if (entry->object_num != 0)
+            continue;
+
         switch(j) {
             case 0:
                 entry->compressed = false;
@@ -1677,6 +1555,189 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, stream *s)
         return(repair_pdf_file(ctx));
     }
     return 0;
+}
+
+static int read_xref(pdf_context *ctx, stream *s)
+{
+    int code = 0, i, j;
+    pdf_obj *o = NULL;
+    pdf_dict *d = NULL;
+    uint64_t start = 0, size = 0, bytes = 0;
+    char Buffer[21];
+
+    code = pdf_read_token(ctx, ctx->main_stream);
+
+    if (code < 0)
+        return code;
+
+    o = ctx->stack_top[-1];
+    if (o->type != PDF_INT) {
+        /* element is not an integer, not a valid xref */
+        pdf_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+    start = ((pdf_num *)o)->value.i;
+
+    code = pdf_read_token(ctx, ctx->main_stream);
+    if (code < 0) {
+        pdf_pop(ctx, 1);
+        return code;
+    }
+
+    o = ctx->stack_top[-1];
+    if (o->type != PDF_INT) {
+        /* element is not an integer, not a valid xref */
+        pdf_pop(ctx, 2);
+        return_error(gs_error_typecheck);
+    }
+    size = ((pdf_num *)o)->value.i;
+    pdf_pop(ctx, 2);
+
+    /* If this is the first xref then allocate the xref table and store the trailer */
+    if (ctx->xref == NULL && size != 0) {
+        ctx->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, (start + size) * sizeof(xref_entry), "read_xref_stream allocate xref table");
+        if (ctx->xref == NULL)
+            return_error(gs_error_VMerror);
+
+        memset(ctx->xref, 0x00, ((pdf_num *)o)->value.i * sizeof(xref_entry));
+    }
+
+    skip_white(ctx, s);
+    for (i=0;i< size;i++){
+        xref_entry *entry = &ctx->xref[i + start];
+        unsigned char free;
+
+        if (entry->object_num != 0)
+            continue;
+
+        bytes = pdf_read_bytes(ctx, (byte *)Buffer, 1, 20, s);
+        if (bytes < 20)
+            return_error(gs_error_ioerror);
+        j = 19;
+        while (Buffer[j] != 0x0D && Buffer[j] != 0x0A) {
+            pdf_unread(ctx, (byte *)&Buffer[j], 1);
+            j--;
+        }
+        Buffer[j] = 0x00;
+        sscanf(Buffer, "%ld %d %c", &entry->offset, &entry->generation_num, &free);
+        entry->compressed = false;
+        entry->object_num = i + start;
+        if (free == 'f')
+            entry->free = true;
+        if(free == 'n')
+            entry->free = false;
+    }
+
+    /* read trailer dict */
+    code = pdf_read_token(ctx, ctx->main_stream);
+    if (code < 0)
+        return code;
+
+    o = ctx->stack_top[-1];
+    if (o->type != PDF_KEYWORD || ((pdf_keyword *)o)->key != PDF_TRAILER) {
+        pdf_pop(ctx, 1);
+        return_error(gs_error_syntaxerror);
+    }
+    pdf_pop(ctx, 1);
+
+    code = pdf_read_token(ctx, ctx->main_stream);
+    if (code < 0)
+        return code;
+
+    d = (pdf_dict *)ctx->stack_top[-1];
+    if (d->object.type != PDF_DICT) {
+        pdf_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+
+    if (ctx->Trailer == NULL) {
+        ctx->Trailer = d;
+        d->object.refcnt++;
+    }
+
+    /* We have the Trailer dictionary. First up check for hybrid files. These have the initial
+     * xref starting at 0 and size of 0. In this case the /Size entry in the trailer dictionary
+     * must tell us how large the xref is, and we need to allocate our xref table anyway.
+     */
+    if (ctx->xref == NULL && size == 0) {
+        code = pdf_dict_get(d, "Size", &o);
+        if (code < 0) {
+            pdf_pop(ctx, 2);
+            return code;
+        }
+        if (o->type != PDF_INT) {
+            pdf_pop(ctx, 2);
+            return_error(gs_error_typecheck);
+        }
+        ctx->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, ((pdf_num *)o)->value.i * sizeof(xref_entry), "read_xref_stream allocate xref table");
+        if (ctx->xref == NULL) {
+            pdf_pop(ctx, 2);
+            return_error(gs_error_VMerror);
+        }
+
+        memset(ctx->xref, 0x00, ((pdf_num *)o)->value.i * sizeof(xref_entry));
+    }
+
+    /* Now check if this is a hybrid file. */
+    code = pdf_dict_get(d, "XRefStm", &o);
+    if (code < 0 && code != gs_error_undefined) {
+        pdf_pop(ctx, 2);
+        return code;
+    }
+    if (code == 0) {
+        pdf_pop(ctx, 2);
+        /* Because of the way the code works when we read a file which is a pure
+         * xref stream file, we need to read the first integer of 'x y obj'
+         * because the xref stream decoding code expects that to be on the stack.
+         */
+        if (o->type != PDF_INT)
+            return_error(gs_error_typecheck);
+
+        pdf_seek(ctx, s, ((pdf_num *)o)->value.i, SEEK_SET);
+        code = pdf_read_token(ctx, ctx->main_stream);
+        if (code < 0)
+            return code;
+
+        if (o->type != PDF_INT) {
+            pdf_pop(ctx, 1);
+            return_error(gs_error_typecheck);
+        }
+
+        code = pdf_read_xref_stream_dict(ctx, ctx->main_stream);
+        return code;
+    }
+
+    /* Not a hybrid file, so now check if this is a modified file and has
+     * previous xref entries.
+     */
+    code = pdf_dict_get(d, "Prev", &o);
+    if (code < 0) {
+        pdf_pop(ctx, 2);
+        if (code == gs_error_undefined)
+            return 0;
+        else
+            return code;
+    }
+    pdf_pop(ctx, 1);
+
+    if (o->type != PDF_INT)
+        return_error(gs_error_typecheck);
+
+    code = pdf_seek(ctx, s, ((pdf_num *)o)->value.i , SEEK_SET);
+    if (code < 0)
+        return code;
+
+    code = pdf_read_token(ctx, ctx->main_stream);
+    if (code < 0)
+        return(code);
+
+    if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD && ((pdf_keyword *)ctx->stack_top[-1])->key == PDF_XREF) {
+        /* Read old-style xref table */
+        pdf_pop(ctx, 1);
+        return(read_xref(ctx, ctx->main_stream));
+    } else {
+        return_error(gs_error_typecheck);
+    }
 }
 
 int open_pdf_file(pdf_context *ctx, char *filename)
