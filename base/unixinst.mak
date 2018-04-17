@@ -152,7 +152,7 @@ DOC_PAGES=API.htm C-style.htm Develop.htm GS9_Color_Management.pdf Helpers.htm \
           Hershey.htm History5.htm index.html Make.htm Ps2ps2.htm Release.htm \
           WhatIsGS.htm Changes.htm Details8.htm DLL.htm gs.css History1.htm \
           History6.htm Install.htm News.htm pscet_status.txt Source.htm \
-          Xfonts.htm Commprod.htm Details9.htm Drivers.htm gsdoc.el  History2.htm \
+          Commprod.htm Details9.htm Drivers.htm gsdoc.el  History2.htm \
           History7.htm Issues.htm Projects.htm Psfiles.htm thirdparty.htm \
           COPYING Details.htm Fonts.htm gs-vms.hlp History3.htm History8.htm\
           Language.htm Ps2epsi.htm Ps-style.htm Unix-lpr.htm \

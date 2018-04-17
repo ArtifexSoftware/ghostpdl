@@ -72,7 +72,6 @@
 <ul>
     <li><a href="#Default_CRD_parameters">Default color rendering dictionary (CRD) parameters</a>
 </ul>
-  <li><a href="#External_fonts">External fonts</a>
   <li><a href="#Page_devices">Page devices</a>
   <li><a href="#Miscellaneous">Miscellaneous</a>
 </ul>
@@ -3280,32 +3279,6 @@ defined as true then ToUnicode CMaps and GlyphName2Unicode tables will be
 processed and stored.
 </dd>
 </dl></blockquote>
-
-<h3><a name="External_fonts"></a>External fonts</h3>
-
-<p>
-Drivers may include the ability to display text.  More precisely, they may
-supply a set of procedures that in turn implement some font and text
-handling capabilities, described in <a href="Xfonts.htm">a separate
-document</a>.  The link between the two is the driver procedure that
-supplies the font and text procedures:
-
-<dl>
-<dt><code>xfont_procs&nbsp;*(*get_xfont_procs)(gx_device&nbsp;*dev)</code> <b><em>[OPTIONAL]</em></b>
-<dd>Return a structure of procedures for handling external fonts and text
-display.  A <code>NULL</code> value means that this driver doesn't
-provide this capability.
-</dl>
-
-<p>
-For technical reasons, a second procedure is also needed:
-
-<dl>
-<dt><code>gx_device&nbsp;*(*get_xfont_device)(gx_device&nbsp;*dev)</code> <b><em>[OPTIONAL]</em></b>
-<dd>Return the device that implements <code>get_xfont_procs</code> in a
-non-default way for this device, if any.  Except for certain special
-internal devices, this is always the device argument.
-</dl>
 
 <h3><a name="Page_devices"></a>Page devices</h3>
 
