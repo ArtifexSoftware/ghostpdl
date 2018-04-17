@@ -146,6 +146,7 @@ typedef struct pdf_context_s
     bool use_transparency;
     bool has_transparency;
 
+    uint64_t xref_size;
     xref_entry *xref;
     pdf_dict *Trailer;
     pdf_dict *Root;
