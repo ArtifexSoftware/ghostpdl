@@ -20,6 +20,7 @@
 #define PDF_INTERPRETER
 
 int pdf_read_token(pdf_context *ctx, pdf_stream *s);
+int pdf_read_object(pdf_context *ctx, pdf_stream *s, pdf_obj **o);
 void pdf_free_object(pdf_obj *o);
 
 static inline pdf_countup(pdf_obj *o)

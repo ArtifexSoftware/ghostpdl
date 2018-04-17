@@ -20,6 +20,97 @@
 #include "strmio.h"
 
 /***********************************************************************************/
+/* Functions to dereference object references and manage the object cache          */
+
+static int pdf_add_to_cache(pdf_context *ctx, pdf_obj *o)
+{
+    pdf_obj_cache_entry *entry;
+
+    if (o->object_num > ctx->xref_size)
+        return_error(gs_error_rangecheck);
+
+    if (ctx->cache_entries == MAX_OBJECT_CACHE_SIZE)
+    {
+        if (ctx->cache_LRU) {
+            entry = ctx->cache_LRU;
+            ctx->cache_LRU = entry->next;
+            if (entry->next)
+                ((pdf_obj_cache_entry *)entry->next)->previous = NULL;
+            ctx->xref[entry->o->object_num].cache = NULL;
+            pdf_countdown(entry->o);
+            ctx->cache_entries--;
+            gs_free_object(ctx->memory, entry, "pdf_add_to_cache, free LRU");
+        } else
+            return_error(gs_error_unknownerror);
+    }
+    entry = (pdf_obj_cache_entry *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj_cache_entry), "pdf_add_to_cache");
+    if (entry == NULL)
+        return_error(gs_error_VMerror);
+
+    memset(entry, 0x00, sizeof(pdf_obj_cache_entry));
+
+    entry->o = o;
+    pdf_countup(o);
+    if (ctx->cache_MRU) {
+        entry->previous = ctx->cache_MRU;
+        ctx->cache_MRU->next = entry;
+    }
+    ctx->cache_MRU = entry;
+    if (ctx->cache_LRU == NULL)
+        ctx->cache_LRU = entry;
+
+    ctx->cache_entries++;
+    ctx->xref[o->object_num].cache = entry;
+    return 0;
+}
+
+int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object)
+{
+    xref_entry *entry;
+    pdf_obj *o;
+    int code;
+
+    if (obj > ctx->xref_size)
+        return_error(gs_error_rangecheck);
+
+    entry = &ctx->xref[obj];
+
+    if (entry->cache != NULL){
+        pdf_obj_cache_entry *cache_entry = entry->cache;
+
+        *object = cache_entry->o;
+        if (ctx->cache_MRU) {
+            ((pdf_obj_cache_entry *)cache_entry->next)->previous = cache_entry->previous;
+            ((pdf_obj_cache_entry *)cache_entry->previous)->next = cache_entry->next;
+            cache_entry->next = NULL;
+            cache_entry->previous = ctx->cache_MRU;
+            ctx->cache_MRU->next = cache_entry;
+            ctx->cache_MRU = cache_entry;
+        } else
+            return_error(gs_error_unknownerror);
+    } else {
+        if (entry->compressed) {
+        } else {
+            code = pdf_seek(ctx, ctx->main_stream, entry->offset, SEEK_SET);
+            if (code < 0)
+                return code;
+
+            code = pdf_read_object(ctx, ctx->main_stream, &o);
+            if (code < 0)
+                return code;
+
+            code = pdf_add_to_cache(ctx, o);
+            if (code < 0)
+                return code;
+
+            *object = o;
+        }
+    }
+
+    return 0;
+}
+
+/***********************************************************************************/
 /* Some simple functions to find white space, delimiters and hex bytes             */
 static bool iswhite(char c)
 {
@@ -1044,6 +1135,11 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
     return 0;
 }
 
+int pdf_read_object(pdf_context *ctx, pdf_stream *s, pdf_obj **o)
+{
+    *o = NULL;
+    return 0;
+}
 
 /***********************************************************************************/
 /* Highest level functions. The context we create here is returned to the 'PL'     */
@@ -1117,6 +1213,20 @@ pdf_context *pdf_create_context(gs_memory_t *pmem)
 
 int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx)
 {
+    if (ctx->cache_entries != 0) {
+        pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;
+
+        while(entry) {
+            next = entry->next;
+            pdf_countdown(entry->o);
+            ctx->cache_entries--;
+            gs_free_object(ctx->memory, entry, "pdf_add_to_cache, free LRU");
+            entry = next;
+        }
+        ctx->cache_LRU = ctx->cache_MRU = NULL;
+        ctx->cache_entries = 0;
+    }
+
     if (ctx->PDFPassword)
         gs_free_object(ctx->memory, ctx->PDFPassword, "pdf_free_context");
 
@@ -1239,7 +1349,7 @@ static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t fi
                 entry->offset = objnum;         /* For free objects we use the offset to store the object number of the next free object */
                 entry->generation_num = gen;    /* And the generation number is the numebr to use if this object is used again */
                 entry->object_num = i;
-                entry->object = NULL;
+                entry->cache = NULL;
                 break;
             case 1:
                 entry->compressed = false;
@@ -1247,7 +1357,7 @@ static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t fi
                 entry->offset = objnum;
                 entry->generation_num = gen;
                 entry->object_num = i;
-                entry->object = NULL;
+                entry->cache = NULL;
                 break;
             case 2:
                 entry->compressed = true;
@@ -1255,7 +1365,7 @@ static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t fi
                 entry->offset = objnum;         /* In this case we use the offset to store the object number of the compressed stream */
                 entry->generation_num = gen;    /* And the generation number is the index of the object within the stream */
                 entry->object_num = i;
-                entry->object = NULL;
+                entry->cache = NULL;
                 break;
             default:
                 gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry, free working buffer");

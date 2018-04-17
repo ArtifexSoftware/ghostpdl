@@ -96,6 +96,7 @@ typedef enum pdf_error_flag_e {
 
 #define INITIAL_STACK_SIZE 32
 #define MAX_STACK_SIZE 32767
+#define MAX_OBJECT_CACHE_SIZE 200
 
 typedef struct pdf_context_s
 {
@@ -156,6 +157,10 @@ typedef struct pdf_context_s
     pdf_obj **stack_bot;
     pdf_obj **stack_top;
     pdf_obj **stack_limit;
+
+    uint32_t cache_entries;
+    pdf_obj_cache_entry *cache_LRU;
+    pdf_obj_cache_entry *cache_MRU;
 }pdf_context;
 
 pdf_context *pdf_create_context(gs_memory_t *pmem);
