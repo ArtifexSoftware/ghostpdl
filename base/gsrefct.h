@@ -145,8 +145,8 @@ rc_free_proc(rc_free_struct_only);
   BEGIN\
     if ( (vp) == 0 || (vp)->rc.ref_count > 1 || (vp)->rc.memory != (mem) ) {\
       typ *new;\
-      rc_alloc_struct_1(new, typ, pstype, mem, errstat, cname);\
       if ( vp ) RC_DO_ADJUST(vp, -1, cname);\
+      rc_alloc_struct_1(new, typ, pstype, mem, errstat, cname);\
       (vp) = new;\
     }\
   END
