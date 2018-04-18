@@ -334,6 +334,7 @@ px_text_setup(gs_gstate * pgs, const gs_char * str, uint size,
         text.operation |= TEXT_DO_TRUE_CHARPATH;
     else
         text.operation |= TEXT_DO_DRAW;
+    text.operation |= can_cache ? 0 : TEXT_NO_CACHE;
     text.data.chars = str;
     text.size = size;
     text.x_widths = x_widths;
@@ -343,12 +344,6 @@ px_text_setup(gs_gstate * pgs, const gs_char * str, uint size,
     if (code < 0)
         return code;
 
-    if (!can_cache) {
-        /* NB breaks API, needs a better solution. */
-        gs_show_enum *penum = (gs_show_enum *) * ppte;
-
-        penum->can_cache = -1;
-    }
     return code;
 }
 

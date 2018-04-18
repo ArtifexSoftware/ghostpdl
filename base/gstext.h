@@ -90,6 +90,8 @@
 #define TEXT_RETURN_WIDTH         0x20000
         /* PDF mode "3 Tr" */
 #define TEXT_RENDER_MODE_3        0x40000
+/* Do not pull a glyph from the glyph cache */
+#define TEXT_NO_CACHE             0x80000
 
 /*
  * Define the structure of parameters passed in for text display.

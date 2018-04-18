@@ -1063,7 +1063,7 @@ show_proceed(gs_show_enum * penum)
                                 return code;
                         }
                         penum->pair = pair;
-                        if (glyph == GS_NO_GLYPH) {
+                        if (glyph == GS_NO_GLYPH || SHOW_IS_ALL_OF(penum, TEXT_NO_CACHE)) {
                             cc = 0;
                             goto no_cache;
                         }
