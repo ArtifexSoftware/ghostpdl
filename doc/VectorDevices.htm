@@ -786,6 +786,16 @@ MaxFontItem can be used to increase the maximum size of a cache entry which will
 of the text which can be stored in a font.
 With <code>CompatibilityLevel &ge; 1.3</code> this option is ignored. Default value is <code>true</code>.
 
+<dt><code>-dNO_PDFMARK_OUTLINES=<em>boolean</em></code>
+<dd>When used with the PDF interpreter, this disables the capturing of the Outlines tree (often referred to as 'Bookmarks'.
+If you plan to use pdfmark to supply your own Outlines, then this will enable you to replace the existing one (or simply drop the existing one).
+</dd>
+</dt>
+
+<dt><code>-dNO_PDFMARK_DESTS=<em>boolean</em></code>
+<dd>When used with the PDF interpreter, this disables the capturing of Link annotations, preventing their output to the final PDF file.
+</dd>
+</dt>
 </dl>
 
 <p>
