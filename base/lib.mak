@@ -491,7 +491,7 @@ gxsample_h=$(GLSRC)gxsample.h
 gxsamplp_h=$(GLSRC)gxsamplp.h
 gxscanc_h=$(GLSRC)gxscanc.h
 gxstate_h=$(GLSRC)gxstate.h $(gscspace_h)
-gxtext_h=$(GLSRC)gxtext.h $(gsrefct_h) $(gstext_h)
+gxtext_h=$(GLSRC)gxtext.h $(gsrefct_h) $(gstext_h) $(gxfixed_h)
 gxtmap_h=$(GLSRC)gxtmap.h
 gxxfont_h=$(GLSRC)gxxfont.h $(gsccode_h) $(gsmatrix_h) $(gsuid_h) $(gsxfont_h)
 # The following are out of order because they include other files.

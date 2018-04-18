@@ -105,7 +105,6 @@ struct pdf_char_glyph_pairs_s {
 typedef struct pdf_text_enum_s {
     gs_text_enum_common;
     gs_text_enum_t *pte_default;
-    gs_fixed_point origin;
     bool charproc_accum;
     bool cdevproc_callout;
     double cdevproc_result[10];

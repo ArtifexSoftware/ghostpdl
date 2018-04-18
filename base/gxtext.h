@@ -21,6 +21,7 @@
 
 #include "gstext.h"
 #include "gsrefct.h"
+#include "gxfixed.h"
 
 /* Define the abstract type for the object procedures. */
 typedef struct gs_text_enum_procs_s gs_text_enum_procs_t;
@@ -64,6 +65,54 @@ typedef struct gx_font_stack_s {
     int depth;
     gx_font_stack_item_t items[1 + MAX_FONT_STACK];
 } gx_font_stack_t;
+
+/* An enumeration object for string display. */
+typedef enum {
+    sws_none,
+    sws_cache,			/* setcachedevice[2] */
+    sws_no_cache,		/* setcharwidth */
+    sws_cache_width_only,	/* setcharwidth for xfont char */
+    sws_retry			/* retry setcachedevice[2] */
+} show_width_status;
+
+/* The type of cached characters is opaque. */
+#ifndef cached_char_DEFINED
+#  define cached_char_DEFINED
+typedef struct cached_char_s cached_char;
+#endif
+
+/* The type of cached font/matrix pairs is opaque. */
+#ifndef cached_fm_pair_DEFINED
+#  define cached_fm_pair_DEFINED
+typedef struct cached_fm_pair_s cached_fm_pair;
+#endif
+
+/* The type of font objects is opaque. */
+#ifndef gs_font_DEFINED
+#  define gs_font_DEFINED
+typedef struct gs_font_s gs_font;
+#endif
+
+/* The type of text enum objects is opaque. */
+#ifndef gs_text_enum_DEFINED
+#  define gs_text_enum_DEFINED
+typedef struct gs_text_enum_s gs_text_enum_t;
+#endif
+
+#ifndef gs_show_enum_DEFINED
+#  define gs_show_enum_DEFINED
+typedef struct gs_show_enum_s gs_show_enum;
+#endif
+
+/* The types of memory and null devices may be opaque. */
+#ifndef gx_device_memory_DEFINED
+#  define gx_device_memory_DEFINED
+typedef struct gx_device_memory_s gx_device_memory;
+#endif
+#ifndef gx_device_null_DEFINED
+#  define gx_device_null_DEFINED
+typedef struct gx_device_null_s gx_device_null;
+#endif
 
 /*
  * Define the common part of the structure that tracks the state of text
@@ -122,7 +171,43 @@ rc_free_proc(rc_free_text_enum);
     gs_log2_scale_point fapi_log2_scale; /* scaling factors for oversampling with FAPI, -1 = not valid */\
     gs_point fapi_glyph_shift;          /* glyph shift for FAPI-handled font */\
     /* The following are used to return information to the client. */\
-    gs_text_returned_t returned
+    gs_text_returned_t returned; \
+    /* Following are set at creation time */ \
+    bool auto_release;		/* true if old API, false if new */ \
+    gs_gstate *pgs2; \
+    int level;			/* save the level of pgs */ \
+    gs_char_path_mode charpath_flag; \
+    gs_gstate *show_gstate;	/* for setting pgs->show_gstate */ \
+                                /* at returns/callouts */ \
+    int can_cache;		/* -1 if can't use cache at all, */ \
+                                /* 0 if can read but not load, */ \
+                                /* 1 if can read and load */ \
+    gs_int_rect ibox;		/* int version of quick-check */ \
+                                /* (inner) clipping box */ \
+    gs_int_rect obox;		/* int version of (outer) clip box */ \
+    int ftx, fty;		/* transformed font translation */ \
+    /* Following are updated dynamically */ \
+    gs_glyph (*encode_char)(gs_font *, gs_char, gs_glyph_space_t);  /* copied from font */ \
+    gx_device_memory *dev_cache;	/* cache device */ \
+    gx_device_memory *dev_cache2;	/* underlying alpha memory device, */ \
+                                /* if dev_cache is an alpha buffer */ \
+    gx_device_null *dev_null;	/* null device for stringwidth */ \
+    /*uint index; */		/* index within string */ \
+    /*uint xy_index;*/		/* index within X/Y widths */ \
+    /*gs_char returned.current_char;*/	/* current char for render or move */ \
+    /*gs_glyph returned.current_glyph;*/	/* current glyph ditto */ \
+    gs_fixed_point wxy;		/* width of current char in device coords */ \
+    gs_point wxy_float;		/* same for huge characters */ \
+    bool use_wxy_float; \
+    gs_fixed_point origin;	/* unrounded origin of current char */ \
+                                /* in device coords, needed for */ \
+                                /* charpath and WMode=1 */ \
+    cached_char *cc;		/* being accumulated */ \
+    /*gs_point returned.total_width;*/		/* total width of string, set at end */ \
+    show_width_status width_status; \
+    /*gs_log2_scale_point log2_scale;*/ \
+    int (*continue_proc) (gs_show_enum *)	/* continuation procedure */
+    
 /* The typedef is in gstext.h. */
 struct gs_text_enum_s {
     gs_text_enum_common;

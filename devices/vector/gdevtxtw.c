@@ -140,7 +140,6 @@ static dev_proc_dev_spec_op(txtwrite_dev_spec_op);
 /* Define the text enumerator. */
 typedef struct textw_text_enum_s {
     gs_text_enum_common;
-    gs_fixed_point origin;
     bool charproc_accum;
     bool cdevproc_callout;
     double cdevproc_result[10];
