@@ -99,10 +99,6 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             if (code < 0)
                 return code;
 
-            code = pdf_add_to_cache(ctx, o);
-            if (code < 0)
-                return code;
-
             *object = o;
         }
     }
@@ -300,7 +296,7 @@ static int pdf_push(pdf_context *ctx, pdf_obj *o)
 
     *ctx->stack_top = o;
     ctx->stack_top++;
-    o->refcnt++;
+    pdf_countup(o);
 
     return 0;
 }
@@ -499,6 +495,33 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
         pdf_free_namestring((pdf_obj *)name);
 
     return code;
+}
+
+int pdf_make_name(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
+{
+    char *NewBuf = NULL;
+    pdf_name *name = NULL;
+
+    name = (pdf_name *)gs_alloc_bytes(ctx->memory, sizeof(pdf_name), "pdf_read_name");
+    if (name == NULL)
+        return_error(gs_error_VMerror);
+
+    memset(name, 0x00, sizeof(pdf_name));
+    name->object.memory = ctx->memory;
+    name->object.type = PDF_NAME;
+
+    NewBuf = (char *)gs_alloc_bytes(ctx->memory, size, "pdf_read_name");
+    if (NewBuf == NULL)
+        return_error(gs_error_VMerror);
+
+    memcpy(NewBuf, n, size);
+
+    name->data = (unsigned char *)NewBuf;
+    name->length = size;
+
+    *o = (pdf_obj *)name;
+
+    return 0;
 }
 
 static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
@@ -707,7 +730,7 @@ static int pdf_read_array(pdf_context *ctx, pdf_stream *s)
     while (index) {
         o = ctx->stack_top[-1];
         a->values[--index] = o;
-        o->refcnt++;
+        pdf_countup(o);
         pdf_pop(ctx, 1);
     }
 
@@ -793,9 +816,9 @@ static int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
         /* In PDF keys are *required* to be names, so we ought to check that here */
         if (((pdf_obj *)ctx->stack_top[-2])->type == PDF_NAME) {
             d->keys[i] = ctx->stack_top[-2];
-            d->keys[i]->refcnt++;
+            pdf_countup(d->keys[i]);
             d->values[i] = ctx->stack_top[-1];
-            d->values[i]->refcnt++;
+            pdf_countup(d->values[i]);
         } else {
             pdf_free_dict((pdf_obj *)d);
             return_error(gs_error_typecheck);
@@ -837,8 +860,64 @@ int pdf_dict_get(pdf_dict *d, char *Key, pdf_obj **o)
     return_error(gs_error_undefined);
 }
 
-int pdf_dict_put(pdf_dict *d, pdf_obj *key, pdf_obj *value)
+int pdf_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
 {
+    uint64_t i;
+    pdf_obj *t;
+    pdf_obj **new_keys, **new_values;
+
+    /* First, do we have a Key/value pair already ? */
+    for (i=0;i< d->entries;i++) {
+        t = d->keys[i];
+        if (t && t->type == PDF_NAME) {
+            pdf_name *n = (pdf_name *)t;
+
+            if (((pdf_name *)t)->length == ((pdf_name *)Key)->length && memcmp((const char *)((pdf_name *)t)->data, ((pdf_name *)Key)->data, ((pdf_name *)t)->length) == 0) {
+                if (d->values[i] == value)
+                    /* We already have this value stored with this key.... */
+                    return 0;
+                pdf_countdown(d->values[i]);
+                d->values[i] = value;
+                pdf_countup(value);
+                return 0;
+            }
+        }
+    }
+
+    /* Nope, its a new Key */
+    if (d->size > d->entries) {
+        /* We have a hole, find and use it */
+        for (i=0;i< d->entries;i++) {
+            if (d->keys[i] == NULL) {
+                d->keys[i] = Key;
+                pdf_countup(Key);
+                d->values[i] = value;
+                pdf_countup(value);
+                return 0;
+            }
+        }
+    }
+
+    new_keys = (pdf_obj **)gs_alloc_bytes(d->object.memory, (d->size + 1) * sizeof(pdf_obj *), "pdf_dict_put reallocate dictionary keys");
+    new_values = (pdf_obj **)gs_alloc_bytes(d->object.memory, (d->size + 1) * sizeof(pdf_obj *), "pdf_dict_put reallocate dictionary values");
+    if (new_keys == NULL || new_values == NULL){
+        gs_free_object(d->object.memory, new_keys, "pdf_dict_put memory allocation failure");
+        gs_free_object(d->object.memory, new_values, "pdf_dict_put memory allocation failure");
+        return_error(gs_error_VMerror);
+    }
+    memcpy(new_keys, d->keys, d->size * sizeof(pdf_obj *));
+    memcpy(new_keys, d->values, d->size * sizeof(pdf_obj *));
+
+    gs_free_object(d->object.memory, d->keys, "pdf_dict_put key reallocation");
+    gs_free_object(d->object.memory, d->values, "pdf_dict_put value reallocation");
+
+    d->keys[d->size] = Key;
+    d->values[d->size] = value;
+    d->size++;
+    d->entries++;
+    pdf_countup(Key);
+    pdf_countup(value);
+
     return 0;
 }
 
@@ -1137,7 +1216,67 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
 
 int pdf_read_object(pdf_context *ctx, pdf_stream *s, pdf_obj **o)
 {
+    int code = 0;
+    uint64_t objnum = 0, gen = 0;
+    pdf_keyword *keyword = NULL;
+
     *o = NULL;
+
+    /* An object consists of 'num gen obj' followed by a token, follwed by an endobj
+     * A stream dictionary might have a 'stream' instead of an 'endobj', in which case we
+     * want to deal with it specially by getting the Length, jumping to the end and checking
+     * for an endobj. Or not, possibly, because it would be slow.
+     */
+    code = pdf_read_token(ctx, s);
+    if (code < 0)
+        return code;
+    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
+        pdf_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+    objnum = ((pdf_num *)ctx->stack_top[-1])->value.i;
+    pdf_pop(ctx, 1);
+
+    code = pdf_read_token(ctx, s);
+    if (code < 0)
+        return code;
+    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
+        pdf_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+    gen = ((pdf_num *)ctx->stack_top[-1])->value.i;
+    pdf_pop(ctx, 1);
+
+    code = pdf_read_token(ctx, s);
+    if (code < 0)
+        return code;
+    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
+        pdf_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+    pdf_pop(ctx, 1);
+
+    code = pdf_read_token(ctx, s);
+    if (code < 0)
+        return code;
+
+    code = pdf_read_token(ctx, s);
+    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
+        pdf_pop(ctx, 1);
+        return_error(gs_error_typecheck);
+    }
+    keyword = ((pdf_keyword *)ctx->stack_top[-1]);
+    if (keyword->key == PDF_ENDOBJ) {
+        pdf_obj *o1 = ctx->stack_top[-2];
+
+        pdf_pop(ctx, 1);
+
+        o1->object_num = objnum;
+        o1->generation_num = gen;
+        *o = o1;
+        pdf_add_to_cache(ctx, o1);
+        pdf_pop(ctx, 1);
+    }
     return 0;
 }
 
@@ -1420,7 +1559,7 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
         memset(ctx->xref, 0x00, ((pdf_num *)o)->value.i * sizeof(xref_entry));
         ctx->xref_size = ((pdf_num *)o)->value.i;
         ctx->Trailer = d;
-        d->object.refcnt++;
+        pdf_countup((pdf_obj *)d);
     }
 
     code = pdf_filter(ctx, d, s, &XRefStrm);
@@ -1636,15 +1775,15 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
 
                         d->object.object_num = obj_num;
                         d->object.generation_num = gen_num;
-                        d->object.refcnt++;
+                        pdf_countup((pdf_obj *)d);
                         pdf_pop(ctx, 1);
 
                         code = pdf_process_xref_stream(ctx, d, ctx->main_stream);
                         if (code < 0) {
-                            d->object.refcnt--;
+                            pdf_countdown((pdf_obj *)d);
                             return (repair_pdf_file(ctx));
                         }
-                        d->object.refcnt--;
+                        pdf_countdown((pdf_obj *)d);
                         break;
                     }
                     if (keyword->key == PDF_ENDOBJ) {
@@ -1762,7 +1901,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
 
     if (ctx->Trailer == NULL) {
         ctx->Trailer = d;
-        d->object.refcnt++;
+        pdf_countup((pdf_obj *)d);
     }
 
     /* We have the Trailer dictionary. First up check for hybrid files. These have the initial
@@ -2030,6 +2169,40 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
     return 0;
 }
 
+static int pdf_read_Root(pdf_context *ctx)
+{
+    pdf_obj *o, *name;
+    int code;
+
+    code = pdf_dict_get(ctx->Trailer, "Root", &o);
+    if (code < 0)
+        return code;
+
+    if (o->type == PDF_INDIRECT) {
+        code = pdf_dereference(ctx, ((pdf_indirect_ref *)o)->object_num,  ((pdf_indirect_ref *)o)->generation_num, &o);
+        if (code < 0)
+            return code;
+
+        pdf_countup(o);
+
+        if (o->type != PDF_DICT) {
+            pdf_countdown(o);
+            return_error(gs_error_typecheck);
+        }
+
+        code = pdf_make_name(ctx, "Root", 4, &name);
+        pdf_countup(name);
+        code = pdf_dict_put(ctx->Trailer, name, o);
+        pdf_countdown(name);
+        pdf_countdown(o);
+    }
+
+    if (o->type != PDF_DICT)
+        return_error(gs_error_typecheck);
+
+    return 0;
+}
+
 /* These functions are used by the 'PL' implementation, eventually we will */
 /* need to have custom PostScript operators to process the file or at      */
 /* (least pages from it).                                                  */
@@ -2051,6 +2224,10 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
     int code = 0;
 
     code = pdf_open_pdf_file(ctx, filename);
+    if (code < 0)
+        return code;
+
+    code = pdf_read_Root(ctx);
     if (code < 0)
         return code;
 

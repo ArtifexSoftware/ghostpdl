@@ -23,6 +23,12 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s);
 int pdf_read_object(pdf_context *ctx, pdf_stream *s, pdf_obj **o);
 void pdf_free_object(pdf_obj *o);
 
+int pdf_make_name(pdf_context *ctx, byte *key, uint32_t size, pdf_obj **o);
+int pdf_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value);
+int pdf_dict_get(pdf_dict *d, char *Key, pdf_obj **o);
+int pdf_array_get(pdf_array *a, uint64_t index, pdf_obj **o);
+int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object);
+
 static inline pdf_countup(pdf_obj *o)
 {
     o->refcnt++;
