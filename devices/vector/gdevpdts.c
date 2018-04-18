@@ -103,8 +103,13 @@ append_text_move(pdf_text_state_t *pts, double dw)
 static int
 set_text_distance(gs_point *pdist, double dx, double dy, const gs_matrix *pmat)
 {
-    int code = gs_distance_transform_inverse(dx, dy, pmat, pdist);
+    int code;
     double rounded;
+
+    if (dx > 1e38 || dy > 1e38)
+        code = gs_error_undefinedresult;
+    else
+        code = gs_distance_transform_inverse(dx, dy, pmat, pdist);
 
     if (code == gs_error_undefinedresult) {
         /* The CTM is degenerate.
