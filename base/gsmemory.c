@@ -269,7 +269,7 @@ rc_trace_increment(const void *vp, const rc_header *prc)
               (ulong)vp, (long)prc->ref_count);
 }
 void
-rc_trace_adjust(const void *vp, const rc_header *prc, int delta, char *cname)
+rc_trace_adjust(const void *vp, const rc_header *prc, int delta, const char *cname)
 {
     dmprintf5(prc->memory, "[^]%s 0x%lx %+d => %ld (%s)\n",
               rc_object_type_name(vp, prc),

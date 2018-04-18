@@ -69,7 +69,7 @@ void rc_trace_init_free(const void *vp, const rc_header *prc);
 void rc_trace_free_struct(const void *vp, const rc_header *prc,
                           client_name_t cname);
 void rc_trace_increment(const void *vp, const rc_header *prc);
-void rc_trace_adjust(const void *vp, const rc_header *prc, int delta, char *cname);
+void rc_trace_adjust(const void *vp, const rc_header *prc, int delta, const char *cname);
 #define IF_RC_DEBUG(call) BEGIN if (gs_debug_c('^')) { dlputs(""); call; } END
 #else
 #define IF_RC_DEBUG(call) DO_NOTHING
