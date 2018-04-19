@@ -235,10 +235,12 @@ c_param_add(gs_c_param_list * plist, gs_param_name pkey)
     gs_c_param *pparam =
         gs_alloc_struct(plist->memory, gs_c_param, &st_c_param,
                         "c_param_add entry");
-    uint len = strlen(pkey);
+    uint len;
 
-    if (pparam == 0)
-        return 0;
+    if ((pparam == NULL) || (pkey == NULL))
+        return NULL;
+
+    len = strlen(pkey);
     pparam->next = plist->head;
     if (!plist->persistent_keys) {
         /* We must copy the key. */
