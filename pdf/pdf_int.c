@@ -288,6 +288,33 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             return_error(gs_error_unknownerror);
     } else {
         if (entry->compressed) {
+            /* This is an object in a compressed object stream ;-(
+             * In this case the object number of the compressed object stream is stored in 'offset'
+             * and the index of the object within that stream is stored in 'generation_num'. The generation
+             * number of objects in compressed streams is always 0.
+             */
+            compressed_xref_entry *c_entry = (compressed_xref_entry *)entry;
+            xref_entry *compressed_entry = &ctx->xref[c_entry->compressed_stream_num];
+            pdf_obj *compressed_object;
+
+            if (compressed_entry->cache == NULL) {
+                code = pdf_seek(ctx, ctx->main_stream, compressed_entry->offset, SEEK_SET);
+                if (code < 0)
+                    return code;
+
+                code = pdf_read_object(ctx, ctx->main_stream);
+                if (code < 0)
+                    return code;
+
+                compressed_object = ctx->stack_top[-1];
+                pdf_countup(compressed_object);
+                pdf_pop(ctx, 1);
+            } else {
+                compressed_object = compressed_entry->cache->o;
+                pdf_countup(compressed_object);
+            }
+            pdf_countdown(compressed_object);
+            return 0;
         } else {
             code = pdf_seek(ctx, ctx->main_stream, entry->offset, SEEK_SET);
             if (code < 0)
@@ -1459,6 +1486,7 @@ static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t fi
     int code;
     uint64_t bytes = 0;
     xref_entry *entry;
+    compressed_xref_entry *compressed_entry;
 
     if (W[0] > W[1]) {
         if (W[0] > W[2]) {
@@ -1522,12 +1550,13 @@ static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t fi
                 entry->cache = NULL;
                 break;
             case 2:
-                entry->compressed = true;
-                entry->free = false;
-                entry->offset = objnum;         /* In this case we use the offset to store the object number of the compressed stream */
-                entry->generation_num = gen;    /* And the generation number is the index of the object within the stream */
-                entry->object_num = i;
-                entry->cache = NULL;
+                compressed_entry = (compressed_xref_entry *)entry;
+                compressed_entry->compressed = true;
+                compressed_entry->free = false;
+                compressed_entry->compressed_stream_num = objnum;   /* The object number of the compressed stream */
+                compressed_entry->object_index = gen;               /* And the index of the object within the stream */
+                compressed_entry->object_num = i;                   /* number of this object (redundant) */
+                compressed_entry->cache = NULL;
                 break;
             default:
                 gs_free_object(ctx->memory, Buffer, "read_xref_stream_entry, free working buffer");
@@ -2257,6 +2286,57 @@ static int pdf_read_Root(pdf_context *ctx)
     return 0;
 }
 
+static int pdf_read_Info(pdf_context *ctx)
+{
+    pdf_obj *o, *o1;
+    int code;
+
+    code = pdf_dict_get(ctx->Trailer, "Info", &o1);
+    if (code < 0)
+        return code;
+
+    if (o1->type == PDF_INDIRECT) {
+        pdf_obj *name;
+
+        code = pdf_dereference(ctx, ((pdf_indirect_ref *)o1)->object_num,  ((pdf_indirect_ref *)o1)->generation_num, &o);
+        pdf_countdown(o1);
+        if (code < 0)
+            return code;
+
+        if (o->type != PDF_DICT) {
+            pdf_countdown(o);
+            return_error(gs_error_typecheck);
+        }
+
+        code = pdf_make_name(ctx, (byte *)"Info", 4, &name);
+        if (code < 0) {
+            pdf_countdown(o);
+            return code;
+        }
+        code = pdf_dict_put(ctx->Trailer, name, o);
+        /* pdf_make_name created a name with a reference count of 1, the local object
+         * is going out of scope, so decrement the reference coutn.
+         */
+        pdf_countdown(name);
+        if (code < 0) {
+            pdf_countdown(o);
+            return code;
+        }
+        o1 = o;
+    } else {
+        if (o1->type != PDF_DICT) {
+            pdf_countdown(o1);
+            return_error(gs_error_typecheck);
+        }
+    }
+
+    /* We don't pdf_countdown(o1) now, because we've transferred our
+     * reference to the pointer in the pdf_context structure.
+     */
+    ctx->Info = (pdf_dict *)o1;
+    return 0;
+}
+
 /* These functions are used by the 'PL' implementation, eventually we will */
 /* need to have custom PostScript operators to process the file or at      */
 /* (least pages from it).                                                  */
@@ -2282,6 +2362,10 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
         return code;
 
     code = pdf_read_Root(ctx);
+    if (code < 0)
+        return code;
+
+    code = pdf_read_Info(ctx);
     if (code < 0)
         return code;
 

@@ -110,14 +110,27 @@ typedef struct pdf_obj_cache_entry_s {
     pdf_obj *o;
 }pdf_obj_cache_entry;
 
+/* The compressed and uncompressed xref entries are identical, they only differ
+ * in the names used for the variables. Its simply less confusing not to overload
+ * the names.
+ */
 typedef struct xref_entry_s {
     bool compressed;                /* true if object is in a compressed object stream */
     bool free;                      /* true if this is a free entry */
-    uint64_t object_num;            /* Object number or compressed stream object number if compressed */
-    uint32_t generation_num;        /* Generation number. Objects in compressed streams have generation of 0 */
-    gs_offset_t offset;             /* File offset. Index of object in compressed stream */
-    pdf_obj_cache_entry *cache;    /* Pointer to cache entry if cached, or NULL if not */
+    uint64_t object_num;            /* Object number */
+    uint32_t generation_num;        /* Generation number. */
+    gs_offset_t offset;             /* File offset. */
+    pdf_obj_cache_entry *cache;     /* Pointer to cache entry if cached, or NULL if not */
 } xref_entry;
+
+typedef struct compressed_xref_entry_s {
+    bool compressed;                /* true if object is in a compressed object stream */
+    bool free;                      /* true if this is a free entry */
+    uint64_t compressed_stream_num; /* compressed stream object number if compressed */
+    uint32_t object_index;          /* Index of object in compressed stream */
+    gs_offset_t object_num;         /* always 0 */
+    pdf_obj_cache_entry *cache;     /* Pointer to cache entry if cached, or NULL if not */
+} compressed_xref_entry;
 
 #define UNREAD_BUFFER_SIZE 256
 
