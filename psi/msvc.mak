@@ -547,6 +547,22 @@ WITH_CUPS=0
 WITH_CUPS=0
 !endif
 
+# Should we build using CAL....
+CALSRCDIR=cal
+!ifdef WITH_CAL
+!if "$(WITH_CAL)"!="0"
+WITH_CAL=1
+!else
+WITH_CAL=0
+!endif
+!else
+!if exist ("$(CALSRCDIR)")
+WITH_CAL=1
+!else
+WITH_CAL=0
+!endif
+!endif
+
 # We can't build cups libraries in a Metro friendly way,
 # so if building for Metro, disable cups regardless of the
 # request
@@ -1402,7 +1418,7 @@ FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev 
 	     $(GLD)seprlib.dev $(GLD)translib.dev $(GLD)cidlib.dev $(GLD)psf0lib.dev $(GLD)psf1lib.dev\
              $(GLD)psf2lib.dev $(GLD)lzwd.dev $(GLD)sicclib.dev $(GLD)mshandle.dev $(GLD)mspoll.dev \
              $(GLD)ramfs.dev $(GLD)sjpx.dev $(GLD)sjbig2.dev \
-             $(GLD)pwgd.dev
+             $(GLD)pwgd.dev $(GLD)siscale.dev
 
 
 !ifndef METRO

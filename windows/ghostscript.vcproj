@@ -2658,6 +2658,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\siscale_cal.c"
+				>
+			</File>
+			<File
 				RelativePath="..\base\sjbig2.c"
 				>
 			</File>
