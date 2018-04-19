@@ -1316,18 +1316,6 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
     I->ff.is_vertical = bVertical;
     I->ff.client_ctx_p = I->client_ctx_p;
 
-#if 0
-    if (recreate_multiple_master(pbfont)) {
-        gs_font_base *bf = (gs_font_base *)pbfont->base;
-        void *ffd = pbfont->FAPI_font_data;
-
-        gs_fapi_release_typeface(I, &pbfont->FAPI_font_data);
-        if (ffd == bf->FAPI_font_data) {
-            bf->FAPI_font_data = NULL;
-            ((gs_fapi_server *)bf->FAPI)->face.font_id = gs_no_id;
-        }
-    }
-#endif
     if (recreate_multiple_master(pbfont)) {
         if ((void *)pbfont->base == (void *)pbfont) {
            gs_fapi_release_typeface(I, &pbfont->FAPI_font_data);
