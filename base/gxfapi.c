@@ -854,6 +854,15 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
             dx += penum->fapi_glyph_shift.x;
             dy += penum->fapi_glyph_shift.y;
         }
+        /* Processing an image object operation, but this may be for a text object */
+        ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
+        code = gx_set_dev_color(pgs);
+        if (code != 0)
+            return code;
+        code = gs_gstate_color_load(pgs);
+        if (code < 0)
+            return code;
+        
         code = gx_image_fill_masked(dev, r, 0, dstr, gx_no_bitmap_id,
                                     (int)dx, (int)dy,
                                     rast->width, rast->height,
@@ -908,7 +917,7 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
         image.Width = w + bold;
         image.Height = h + bold;
         image.adjust = false;
-        code = gs_image_init(pie, &image, false, false, penum_pgs);
+        code = gs_image_init(pie, &image, false, true, penum_pgs);
         nbytes = (rast->width + 7) >> 3;
 
         switch (code) {
