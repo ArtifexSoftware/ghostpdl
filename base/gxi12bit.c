@@ -602,8 +602,8 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     bool has_transfer = penum->icc_setup.has_transfer;
     int num_des_comps;
     cmm_dev_profile_t *dev_profile;
-    gx_cmapper_data data;
-    gx_cmapper_fn *mapper = gx_get_cmapper(&data, pgs, dev, has_transfer, must_halftone, gs_color_select_source);
+    gx_cmapper_t data;
+    gx_cmapper_fn *mapper;
     gx_color_value *conc = &data.conc[0];
 
     if (h == 0)
@@ -612,6 +612,8 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     if (penum->icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during image render icc16");
     }
+    gx_get_cmapper(&data, pgs, dev, has_transfer, must_halftone, gs_color_select_source);
+    mapper = data.set_color;
     /* Needed for device N */
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);

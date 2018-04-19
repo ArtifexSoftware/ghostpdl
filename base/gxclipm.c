@@ -111,7 +111,9 @@ const gx_device_mask_clip gs_mask_clip_device =
   gx_forward_set_graphics_type_tag,
   mask_clip_strip_copy_rop2,
   mask_clip_strip_tile_rect_devn,
-  mask_clip_copy_alpha_hl_color
+  mask_clip_copy_alpha_hl_color,
+  NULL,
+  gx_default_transform_pixel_region
  }
 };
 

@@ -1998,7 +1998,7 @@ gx_unit_frac(float fvalue)
 }
 
 static void
-cmapper_transfer_halftone_add(gx_cmapper_data *data)
+cmapper_transfer_halftone_add(gx_cmapper_t *data)
 {
     gx_color_value *pconc = &data->conc[0];
     const gs_gstate * pgs = data->pgs;
@@ -2021,7 +2021,7 @@ cmapper_transfer_halftone_add(gx_cmapper_data *data)
 }
 
 static void
-cmapper_transfer_halftone_op(gx_cmapper_data *data)
+cmapper_transfer_halftone_op(gx_cmapper_t *data)
 {
     gx_color_value *pconc = &data->conc[0];
     const gs_gstate * pgs = data->pgs;
@@ -2050,7 +2050,7 @@ cmapper_transfer_halftone_op(gx_cmapper_data *data)
 }
 
 static void
-cmapper_transfer_halftone_sub(gx_cmapper_data *data)
+cmapper_transfer_halftone_sub(gx_cmapper_t *data)
 {
     gx_color_value *pconc = &data->conc[0];
     const gs_gstate * pgs = data->pgs;
@@ -2074,7 +2074,7 @@ cmapper_transfer_halftone_sub(gx_cmapper_data *data)
 }
 
 static void
-cmapper_transfer_add(gx_cmapper_data *data)
+cmapper_transfer_add(gx_cmapper_t *data)
 {
     gx_color_value *pconc = &data->conc[0];
     const gs_gstate * pgs = data->pgs;
@@ -2099,7 +2099,7 @@ cmapper_transfer_add(gx_cmapper_data *data)
 }
 
 static void
-cmapper_transfer_op(gx_cmapper_data *data)
+cmapper_transfer_op(gx_cmapper_t *data)
 {
     gx_color_value *pconc = &data->conc[0];
     const gs_gstate * pgs = data->pgs;
@@ -2121,7 +2121,7 @@ cmapper_transfer_op(gx_cmapper_data *data)
 }
 
 static void
-cmapper_transfer_sub(gx_cmapper_data *data)
+cmapper_transfer_sub(gx_cmapper_t *data)
 {
     gx_color_value *pconc = &data->conc[0];
     const gs_gstate * pgs = data->pgs;
@@ -2150,7 +2150,7 @@ cmapper_transfer_sub(gx_cmapper_data *data)
    during an ICC color flow.  In this case, the color is already in the
    device color space but in 16bpp color values. */
 static void
-cmapper_halftone(gx_cmapper_data *data)
+cmapper_halftone(gx_cmapper_t *data)
 {
     gx_color_value *pconc = &data->conc[0];
     const gs_gstate * pgs = data->pgs;
@@ -2174,7 +2174,7 @@ cmapper_halftone(gx_cmapper_data *data)
    during an ICC color flow.  In this case, the color is already in the
    device color space but in 16bpp color values. */
 static void
-cmapper_vanilla(gx_cmapper_data *data)
+cmapper_vanilla(gx_cmapper_t *data)
 {
     gx_color_value *pconc = &data->conc[0];
     gx_device * dev = data->dev;
@@ -2186,8 +2186,8 @@ cmapper_vanilla(gx_cmapper_data *data)
         color_set_pure(&data->devc, color);
 }
 
-gx_cmapper_fn *
-gx_get_cmapper(gx_cmapper_data *data, const gs_gstate *pgs,
+void
+gx_get_cmapper(gx_cmapper_t *data, const gs_gstate *pgs,
                gx_device *dev, bool has_transfer, bool has_halftone,
                gs_color_select_t select)
 {
@@ -2223,7 +2223,6 @@ gx_get_cmapper(gx_cmapper_data *data, const gs_gstate *pgs,
         else
             data->set_color = cmapper_vanilla;
     }
-    return data->set_color;
 }
 
 /* This is used by image color render to handle the cases where we need to

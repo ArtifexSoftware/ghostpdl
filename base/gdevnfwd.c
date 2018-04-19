@@ -117,6 +117,7 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
     fill_dev_proc(dev, strip_copy_rop2, gx_forward_strip_copy_rop2);
     fill_dev_proc(dev, strip_tile_rect_devn, gx_forward_strip_tile_rect_devn); 
+    fill_dev_proc(dev, transform_pixel_region, gx_forward_transform_pixel_region); 
     gx_device_fill_in_procs((gx_device *) dev);
 }
 
@@ -1026,6 +1027,18 @@ gx_forward_put_image(gx_device *pdev, gx_device *mdev, const byte **buffers, int
         return dev_proc(tdev, put_image)(tdev, mdev, buffers, num_chan, xstart, ystart, width, height, row_stride, alpha_plane_index, tag_plane_index);
     else
         return gx_default_put_image(tdev, mdev, buffers, num_chan, xstart, ystart, width, height, row_stride, alpha_plane_index, tag_plane_index);
+}
+
+int
+gx_forward_transform_pixel_region(gx_device *pdev, transform_pixel_region_reason reason, transform_pixel_region_data *data)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)pdev;
+    gx_device *tdev = fdev->target;
+
+    if (tdev != 0)
+        return dev_proc(tdev, transform_pixel_region)(tdev, reason, data);
+    else
+        return gx_default_transform_pixel_region(tdev, reason, data);
 }
 
 /* ---------------- The null device(s) ---------_plane_index------- */

@@ -313,6 +313,7 @@ dev_proc_strip_copy_rop2(gx_default_strip_copy_rop2);
 dev_proc_strip_tile_rect_devn(gx_default_strip_tile_rect_devn);
 dev_proc_copy_alpha_hl_color(gx_default_copy_alpha_hl_color);
 dev_proc_process_page(gx_default_process_page);
+dev_proc_transform_pixel_region(gx_default_transform_pixel_region);
 dev_proc_begin_transparency_group(gx_default_begin_transparency_group);
 dev_proc_end_transparency_group(gx_default_end_transparency_group);
 dev_proc_begin_transparency_mask(gx_default_begin_transparency_mask);
@@ -416,6 +417,7 @@ dev_proc_set_graphics_type_tag(gx_forward_set_graphics_type_tag);
 dev_proc_strip_copy_rop2(gx_forward_strip_copy_rop2);
 dev_proc_strip_tile_rect_devn(gx_forward_strip_tile_rect_devn);
 dev_proc_copy_alpha_hl_color(gx_forward_copy_alpha_hl_color);
+dev_proc_transform_pixel_region(gx_forward_transform_pixel_region);
 
 /* ---------------- Implementation utilities ---------------- */
 int gx_default_get_param(gx_device *dev, char *Param, void *list);

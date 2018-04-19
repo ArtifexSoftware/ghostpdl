@@ -305,6 +305,7 @@ struct gx_image_enum_s {
     ht_landscape_info_t ht_landscape;
     gx_image_icc_setup_t icc_setup;
     bool use_cie_range;   /* Needed potentially if CS was PS CIE based */
+    void *tpr_state;
 };
 
 /* Enumerate the pointers in an image enumerator. */

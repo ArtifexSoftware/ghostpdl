@@ -40,6 +40,7 @@
 #include "gp.h"
 #include "gscms.h"
 #include "gxrplane.h"
+#include "gxdda.h"
 
 /* See Drivers.htm for documentation of the driver interface. */
 
@@ -1589,6 +1590,40 @@ struct gx_process_page_options_s
 #define dev_proc_process_page(proc)\
   dev_t_proc_process_page(proc, gx_device)
 
+typedef enum  {
+    transform_pixel_region_begin = 0,
+    transform_pixel_region_data_needed = 1,
+    transform_pixel_region_process_data = 2,
+    transform_pixel_region_end = 3
+} transform_pixel_region_reason;
+
+typedef struct {
+    void *state;
+    union {
+        struct {
+            const gs_int_rect *clip;
+            int w; /* source width */
+            int h; /* source height */
+            int spp;
+            const gx_dda_fixed_point *pixels; /* DDA to enumerate the destination positions of pixels across a row */
+            const gx_dda_fixed_point *rows; /* DDA to enumerate the starting position of each row */
+            gs_logical_operation_t lop;
+        } init;
+        struct {
+            const unsigned char *buffer[GX_DEVICE_COLOR_MAX_COMPONENTS];
+            int data_x;
+            gx_cmapper_t *cmapper;
+            const gs_gstate *pgs;
+        } process_data;
+    } u;
+} transform_pixel_region_data;
+
+#define dev_t_proc_transform_pixel_region(proc, dev_t)\
+  int proc(dev_t *dev, transform_pixel_region_reason reason, transform_pixel_region_data *data)
+#define dev_proc_transform_pixel_region(proc)\
+  dev_t_proc_transform_pixel_region(proc, gx_device)
+
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -1665,6 +1700,7 @@ struct gx_process_page_options_s
         dev_t_proc_strip_tile_rect_devn((*strip_tile_rect_devn), dev_t);\
         dev_t_proc_copy_alpha_hl_color((*copy_alpha_hl_color), dev_t);\
         dev_t_proc_process_page((*process_page), dev_t);\
+        dev_t_proc_transform_pixel_region((*transform_pixel_region), dev_t);\
 }
 
 /*

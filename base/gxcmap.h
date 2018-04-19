@@ -281,11 +281,11 @@ void cmap_transfer(gx_color_value *pconc, const gs_gstate * pgs,
 void cmap_transfer_plane(gx_color_value *pconc, const gs_gstate *pgs,
                     gx_device *dev, int plane);
 
-typedef struct gx_cmapper_data_s gx_cmapper_data;
+typedef struct gx_cmapper_s gx_cmapper_t;
 
-typedef void (gx_cmapper_fn)(gx_cmapper_data *data);
+typedef void (gx_cmapper_fn)(gx_cmapper_t *cmapper);
 
-struct gx_cmapper_data_s {
+struct gx_cmapper_s {
     gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
     const gs_gstate *pgs;
     gx_device *dev;
@@ -294,8 +294,8 @@ struct gx_cmapper_data_s {
     gx_cmapper_fn *set_color;
 };
 
-gx_cmapper_fn *gx_get_cmapper(gx_cmapper_data *data, const gs_gstate *pgs,
-                              gx_device *dev, bool has_transfer, bool has_halftone,
-                              gs_color_select_t select);
+void gx_get_cmapper(gx_cmapper_t *cmapper, const gs_gstate *pgs,
+                    gx_device *dev, bool has_transfer, bool has_halftone,
+                    gs_color_select_t select);
 
 #endif /* gxcmap_INCLUDED */

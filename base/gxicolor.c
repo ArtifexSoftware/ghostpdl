@@ -58,10 +58,10 @@ typedef union {
 iclass_proc(gs_image_class_4_color);
 
 static irender_proc(image_render_color_DeviceN);
-static irender_proc(image_render_color_icc_portrait);
-static irender_proc(image_render_color_icc_landscape);
-static irender_proc(image_render_color_icc_skew);
+static irender_proc(image_render_color_icc_tpr);
 static irender_proc(image_render_color_thresh);
+
+static int image_skip_color_icc_tpr(gx_image_enum *penum, gx_device *dev);
 
 irender_proc_t
 gs_image_class_4_color(gx_image_enum * penum)
@@ -73,6 +73,12 @@ gs_image_class_4_color(gx_image_enum * penum)
 #else
     bool use_fast_thresh = false;
 #endif
+    const gs_color_space *pcs;
+    gsicc_rendering_param_t rendering_params;
+    int k;
+    int src_num_comp = cs_num_components(penum->pcs);
+    int des_num_comp, bpc;
+    cmm_dev_profile_t *dev_profile;
 
     if (penum->use_mask_color) {
         /*
@@ -114,95 +120,110 @@ gs_image_class_4_color(gx_image_enum * penum)
         penum->pcs->cmm_icc_profile_data == NULL) || penum->use_mask_color ||
         !std_cmap_procs) {
         return &image_render_color_DeviceN;
+    }
+
+    /* Set up the link now */
+    code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
+    if (code < 0)
+        return NULL;    /* This function does not return errors, best we can do is say 'we can't handle this' */
+
+    des_num_comp = gsicc_get_device_profile_comps(dev_profile);
+    bpc = penum->dev->color_info.depth / des_num_comp;	/* bits per component */
+    penum->icc_setup.need_decode = false;
+    /* Check if we need to do any decoding.  If yes, then that will slow us down */
+    for (k = 0; k < src_num_comp; k++) {
+        if ( penum->map[k].decoding != sd_none ) {
+            penum->icc_setup.need_decode = true;
+            break;
+        }
+    }
+    /* Define the rendering intents */
+    rendering_params.black_point_comp = penum->pgs->blackptcomp;
+    rendering_params.graphics_type_tag = GS_IMAGE_TAG;
+    rendering_params.override_icc = false;
+    rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
+    rendering_params.rendering_intent = penum->pgs->renderingintent;
+    rendering_params.cmm = gsCMM_DEFAULT;
+    if (gs_color_space_is_PSCIE(penum->pcs) && penum->pcs->icc_equivalent != NULL) {
+        pcs = penum->pcs->icc_equivalent;
     } else {
-        /* Set up the link now */
-        const gs_color_space *pcs;
-        gsicc_rendering_param_t rendering_params;
-        int k;
-        int src_num_comp = cs_num_components(penum->pcs);
-        int des_num_comp, bpc;
-        cmm_dev_profile_t *dev_profile;
-
-        code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
-        if (code < 0)
-            return NULL;    /* This function does not return errors, best we can do is say 'we can't handle this' */
-
-        des_num_comp = gsicc_get_device_profile_comps(dev_profile);
-        bpc = penum->dev->color_info.depth / des_num_comp;	/* bits per component */
+        pcs = penum->pcs;
+    }
+    penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
+    penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
+    penum->icc_setup.has_transfer = gx_has_transfer(penum->pgs, des_num_comp);
+    if (penum->icc_setup.is_lab)
         penum->icc_setup.need_decode = false;
-        /* Check if we need to do any decoding.  If yes, then that will slow us down */
-        for (k = 0; k < src_num_comp; k++) {
-            if ( penum->map[k].decoding != sd_none ) {
-                penum->icc_setup.need_decode = true;
+    if (penum->icc_link == NULL) {
+        penum->icc_link = gsicc_get_link(penum->pgs, penum->dev, pcs, NULL,
+            &rendering_params, penum->memory);
+    }
+    /* PS CIE color spaces may have addition decoding that needs to
+       be performed to ensure that the range of 0 to 1 is provided
+       to the CMM since ICC profiles are restricted to that range
+       but the PS color spaces are not. */
+    penum->use_cie_range = false;
+    if (gs_color_space_is_PSCIE(penum->pcs) &&
+        penum->pcs->icc_equivalent != NULL) {
+        /* We have a PS CIE space.  Check the range */
+        if ( !check_cie_range(penum->pcs) ) {
+            /* It is not 0 to 1.  We will be doing decode
+               plus an additional linear adjustment */
+            penum->use_cie_range = (get_cie_range(penum->pcs) != NULL);
+        }
+    }
+    if (gx_device_must_halftone(penum->dev) && use_fast_thresh &&
+        (penum->posture == image_portrait || penum->posture == image_landscape)
+        && penum->image_parent_type == gs_image_type1) {
+        bool transfer_is_monotonic = true;
+
+        for (k=0; k<des_num_comp; k++) {
+            if (!gx_transfer_is_monotonic(penum->pgs, k)) {
+                transfer_is_monotonic = false;
                 break;
             }
         }
-        /* Define the rendering intents */
-        rendering_params.black_point_comp = penum->pgs->blackptcomp;
-        rendering_params.graphics_type_tag = GS_IMAGE_TAG;
-        rendering_params.override_icc = false;
-        rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
-        rendering_params.rendering_intent = penum->pgs->renderingintent;
-        rendering_params.cmm = gsCMM_DEFAULT;
-        if (gs_color_space_is_PSCIE(penum->pcs) && penum->pcs->icc_equivalent != NULL) {
-            pcs = penum->pcs->icc_equivalent;
-        } else {
-            pcs = penum->pcs;
-        }
-        penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
-        penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
-        penum->icc_setup.has_transfer = gx_has_transfer(penum->pgs, des_num_comp);
-        if (penum->icc_setup.is_lab)
-            penum->icc_setup.need_decode = false;
-        if (penum->icc_link == NULL) {
-            penum->icc_link = gsicc_get_link(penum->pgs, penum->dev, pcs, NULL,
-                &rendering_params, penum->memory);
-        }
-        /* PS CIE color spaces may have addition decoding that needs to
-           be performed to ensure that the range of 0 to 1 is provided
-           to the CMM since ICC profiles are restricted to that range
-           but the PS color spaces are not. */
-        penum->use_cie_range = false;
-        if (gs_color_space_is_PSCIE(penum->pcs) &&
-            penum->pcs->icc_equivalent != NULL) {
-            /* We have a PS CIE space.  Check the range */
-            if ( !check_cie_range(penum->pcs) ) {
-                /* It is not 0 to 1.  We will be doing decode
-                   plus an additional linear adjustment */
-                penum->use_cie_range = (get_cie_range(penum->pcs) != NULL);
+        /* If num components is 1 or if we are going to CMYK planar device
+           then we will may use the thresholding if it is a halftone
+           device IFF we have one bit per component */
+        if ((bpc == 1) && transfer_is_monotonic &&
+            (penum->dev->color_info.num_components == 1 || penum->dev->is_planar) &&
+            penum->bps == 8) {
+            code = gxht_thresh_image_init(penum);
+            if (code == 0) {
+                 /* NB: transfer function is pickled into the threshold arrray */
+                 penum->icc_setup.has_transfer = false;
+                 return &image_render_color_thresh;
             }
         }
-        if (gx_device_must_halftone(penum->dev) && use_fast_thresh &&
-            (penum->posture == image_portrait || penum->posture == image_landscape)
-            && penum->image_parent_type == gs_image_type1) {
-            bool transfer_is_monotonic = true;
-
-            for (k=0; k<des_num_comp; k++) {
-                if (!gx_transfer_is_monotonic(penum->pgs, k)) {
-                    transfer_is_monotonic = false;
-                    break;
-                }
-            }
-            /* If num components is 1 or if we are going to CMYK planar device
-               then we will may use the thresholding if it is a halftone
-               device IFF we have one bit per component */
-            if ((bpc == 1) && transfer_is_monotonic &&
-                (penum->dev->color_info.num_components == 1 || penum->dev->is_planar) &&
-                penum->bps == 8) {
-                code = gxht_thresh_image_init(penum);
-                if (code == 0) {
-                     /* NB: transfer function is pickled into the threshold arrray */
-                     penum->icc_setup.has_transfer = false;
-                     return &image_render_color_thresh;
-                }
-            }
-        }
-        if (penum->posture == image_portrait)
-            return &image_render_color_icc_portrait;
-        if (penum->posture == image_landscape)
-            return &image_render_color_icc_landscape;
-        return &image_render_color_icc_skew;
     }
+    {
+        gs_int_rect rect;
+        transform_pixel_region_data data;
+        data.u.init.clip = &rect;
+        data.u.init.w = penum->rect.w;
+        data.u.init.h = penum->rect.h;
+        data.u.init.pixels = &penum->dda.pixel0;
+        data.u.init.rows = &penum->dda.row;
+        data.u.init.lop = penum->log_op;
+        rect.p.x = fixed2int(penum->clip_outer.p.x);
+        rect.p.y = fixed2int(penum->clip_outer.p.y);
+        rect.q.x = fixed2int_ceiling(penum->clip_outer.q.x);
+        rect.q.y = fixed2int_ceiling(penum->clip_outer.q.y);
+
+        if (penum->icc_link == NULL || (penum->icc_link->is_identity && !penum->icc_setup.need_decode))
+            data.u.init.spp = penum->spp;
+        else
+            data.u.init.spp = des_num_comp;
+
+        code = dev_proc(penum->dev, transform_pixel_region)(penum->dev, transform_pixel_region_begin, &data);
+        if (code >= 0) {
+            penum->tpr_state = data.state;
+            penum->skip_next_line = image_skip_color_icc_tpr;
+            return &image_render_color_icc_tpr;
+        }
+    }
+    return NULL;
 }
 
 /* ------ Rendering procedures ------ */
@@ -870,249 +891,31 @@ flush:
 }
 
 /* Render a color image with 8 or fewer bits per sample using ICC profile. */
-static int
-image_render_color_icc_portrait(gx_image_enum *penum_orig, const byte *buffer, int data_x,
-                                uint w, int h, gx_device * dev)
+static int 
+image_skip_color_icc_tpr(gx_image_enum *penum, gx_device *dev)
 {
-    const gx_image_enum *const penum = penum_orig; /* const within proc */
-    const gs_gstate *pgs = penum->pgs;
-    gs_logical_operation_t lop = penum->log_op;
-    gx_dda_fixed_point pnext;
-    int vci, vdi;
-    int spp = penum->spp;
-    const byte *psrc = buffer + data_x * spp;
-    int irun;			/* int x/rrun */
-    byte *bufend = NULL;
-    int code = 0;
-    byte *psrc_cm = NULL, *psrc_cm_start = NULL;
-    byte *psrc_cm_initial;
-    byte *run;
-    int k;
-    int spp_cm = 0;
-    bool must_halftone = penum->icc_setup.must_halftone;
-    bool has_transfer = penum->icc_setup.has_transfer;
-    gx_cmapper_data data;
-    gx_cmapper_fn *mapper = gx_get_cmapper(&data, pgs, dev, has_transfer, must_halftone, gs_color_select_source);
-    gx_color_value *conc = &data.conc[0];
-    int to_rects;
-
-    if (h == 0)
-        return 0;
-
-    code = image_color_icc_prep(penum_orig, psrc, w, dev, &spp_cm, &psrc_cm,
-                                &psrc_cm_start, &bufend, false);
-    if (code < 0) return code;
-    psrc_cm_initial = psrc_cm;
-    /* Needed for device N */
-    pnext = penum->dda.pixel0;
-    dda_translate(pnext.x,  (-fixed_epsilon));
-    irun = fixed2int_var_rounded(dda_current(pnext.x));
-    vci = penum->yci, vdi = penum->hci;
-    if_debug5m('b', penum->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
-               penum->y, data_x, w, fixed2float(dda_current(pnext.x)), fixed2float(dda_current(pnext.y)));
-    to_rects = (dev->color_info.depth != spp_cm*8);
-    if (to_rects == 0) {
-        if (dev_proc(dev, dev_spec_op)(dev, gxdso_copy_color_is_fast, NULL, 0) <= 0)
-            to_rects = 1;
-    }
-
-    if (to_rects) {
-        while (psrc_cm < bufend) {
-            /* Find the length of the next run. It will either end when we hit
-             * the end of the source data, or when the pixel data differs. */
-            run = psrc_cm + spp_cm;
-            while (1) {
-                dda_next(pnext.x);
-                if (run >= bufend)
-                    break;
-                if (memcmp(run, psrc_cm, spp_cm))
-                    break;
-                run += spp_cm;
-            }
-            /* So we have a run of pixels from psrc_cm to run that are all the same. */
-            /* This needs to be sped up */
-            for (k = 0; k < spp_cm; k++) {
-                conc[k] = gx_color_value_from_byte(psrc_cm[k]);
-            }
-            mapper(&data);
-            /* Fill the region between irun and fixed2int_var_rounded(pnext.x) */
-            {
-                int xi = irun;
-                int wi = (irun = fixed2int_var_rounded(dda_current(pnext.x))) - xi;
-
-                if (wi < 0)
-                    xi += wi, wi = -wi;
-                if (wi > 0)
-                    code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
-                                                        &data.devc, dev, lop);
-            }
-            if (code < 0)
-                goto err;
-            psrc_cm = run;
-        }
-    } else {
-        int pending_left = irun;
-        int pending_right;
-        byte *out;
-        int depth = spp_cm;
-        if (penum_orig->line == NULL) {
-            penum_orig->line = gs_alloc_bytes(dev->memory, dev->width * depth,
-                                               "image line");
-            if (penum_orig->line == NULL)
-                return gs_error_VMerror;
-        }
-        out = penum_orig->line;
-
-        if (pending_left < 0)
-            pending_left = 0;
-        else if (pending_left > dev->width)
-            pending_left = dev->width;
-        pending_right = pending_left;
-
-        while (psrc_cm < bufend) {
-            /* Find the length of the next run. It will either end when we hit
-             * the end of the source data, or when the pixel data differs. */
-            run = psrc_cm + spp_cm;
-            while (1)
-            {
-                dda_next(pnext.x);
-                if (run >= bufend)
-                    break;
-                if (memcmp(run, psrc_cm, spp_cm))
-                    break;
-                run += spp_cm;
-            }
-            /* So we have a run of pixels from psrc_cm to run that are all the same. */
-            /* This needs to be sped up */
-            for (k = 0; k < spp_cm; k++) {
-                conc[k] = gx_color_value_from_byte(psrc_cm[k]);
-            }
-            mapper(&data);
-            /* Fill the region between irun and fixed2int_var_rounded(pnext.x) */
-            {
-                int xi = irun;
-                int wi = (irun = fixed2int_var_rounded(dda_current(pnext.x))) - xi;
-
-                if (wi > 0) {
-                    if (xi < 0)
-                        wi = xi+wi, xi = 0;
-                    if (xi+wi > dev->width)
-                        wi = dev->width - xi;
-                    if (wi < 0)
-                        wi = 0;
-                } else if (wi < 0) {
-                    if (xi+wi < 0)
-                        wi = -xi;
-                    if (xi > dev->width)
-                        wi += xi - dev->width, xi = dev->width;
-                    if (wi > 0)
-                        wi = 0;
-                }
-                if (wi != 0) {
-                    if (color_is_pure(&data.devc)) {
-                        gx_color_index color = data.devc.colors.pure;
-                        int xii = xi * spp_cm;
-
-                        if (wi > 0) {
-                            pending_right += wi;
-                            do {
-                                /* Excuse the double shifts below, that's to stop the
-                                 * C compiler complaining if the color index type is
-                                 * 32 bits. */
-                                switch(depth)
-                                {
-                                case 8: out[xii++] = ((color>>28)>>28) & 0xff;
-                                case 7: out[xii++] = ((color>>24)>>24) & 0xff;
-                                case 6: out[xii++] = ((color>>24)>>16) & 0xff;
-                                case 5: out[xii++] = ((color>>24)>>8) & 0xff;
-                                case 4: out[xii++] = (color>>24) & 0xff;
-                                case 3: out[xii++] = (color>>16) & 0xff;
-                                case 2: out[xii++] = (color>>8) & 0xff;
-                                case 1: out[xii++] = color & 0xff;
-                                }
-                            } while (--wi != 0);
-                        } else {
-                            pending_left += wi;
-                            do {
-                                /* Excuse the double shifts below, that's to stop the
-                                 * C compiler complaining if the color index type is
-                                 * 32 bits. */
-                                switch(depth)
-                                {
-                                case 8: out[xii-8] = ((color>>28)>>28) & 0xff;
-                                case 7: out[xii-7] = ((color>>24)>>24) & 0xff;
-                                case 6: out[xii-6] = ((color>>24)>>16) & 0xff;
-                                case 5: out[xii-5] = ((color>>24)>>8) & 0xff;
-                                case 4: out[xii-4] = (color>>24) & 0xff;
-                                case 3: out[xii-3] = (color>>16) & 0xff;
-                                case 2: out[xii-2] = (color>>8) & 0xff;
-                                case 1: out[xii-1] = color & 0xff;
-                                }
-                                xii -= depth;
-                            } while (++wi != 0);
-                        }
-                    } else {
-                        if (pending_left != pending_right) {
-                            code = dev_proc(dev, copy_color)(dev, out, pending_left, 0, 0, pending_left, vci, pending_right - pending_left, vdi);
-                            if (code < 0)
-                                goto err;
-                        }
-                        if (wi < 0)
-                            xi += wi, wi = -wi, pending_right = pending_left;
-                        else
-                            pending_left = pending_right;
-                        code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
-                                                            &data.devc, dev, lop);
-                    }
-                }
-                if (code < 0)
-                    goto err;
-            }
-            psrc_cm = run;
-        }
-        if (pending_left != pending_right) {
-            code = dev_proc(dev, copy_color)(dev, out, pending_left, 0, 0, pending_left, vci, pending_right - pending_left, vdi);
-            if (code < 0)
-                goto err;
-        }
-    }
-    /* Free cm buffer, if it was used */
-    if (psrc_cm_start != NULL) {
-        gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_color_icc");
-    }
-    return (code < 0 ? code : 1);
-    /* Save position if error, in case we resume. */
-err:
-    gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_color_icc");
-    penum_orig->used.x = (run - psrc_cm_initial) / spp_cm;
-    penum_orig->used.y = 0;
-    return code;
+    transform_pixel_region_data data;
+    data.state = penum->tpr_state;
+    return dev_proc(dev, transform_pixel_region)(dev, transform_pixel_region_data_needed, &data) == 0;
 }
 
 static int
-image_render_color_icc_landscape(gx_image_enum *penum_orig, const byte *buffer, int data_x,
-                                 uint w, int h, gx_device * dev)
+image_render_color_icc_tpr(gx_image_enum *penum_orig, const byte *buffer, int data_x,
+                          uint w, int h, gx_device * dev)
 {
     const gx_image_enum *const penum = penum_orig; /* const within proc */
     const gs_gstate *pgs = penum->pgs;
-    gs_logical_operation_t lop = penum->log_op;
-    gx_dda_fixed_point pnext;
-    int vci, vdi;
     int spp = penum->spp;
     const byte *psrc = buffer + data_x * spp;
-    int irun;			/* int x/rrun */
-    byte *bufend = NULL;
-    int code = 0;
+    int code;
     byte *psrc_cm = NULL, *psrc_cm_start = NULL;
     byte *psrc_cm_initial;
-    byte *run;
-    int k;
+    byte *bufend = NULL;
     int spp_cm = 0;
     bool must_halftone = penum->icc_setup.must_halftone;
     bool has_transfer = penum->icc_setup.has_transfer;
-    gx_cmapper_data data;
-    gx_cmapper_fn *mapper = gx_get_cmapper(&data, pgs, dev, has_transfer, must_halftone, gs_color_select_source);
-    gx_color_value *conc = &data.conc[0];
+    gx_cmapper_t cmapper;
+    transform_pixel_region_data data;
 
     if (h == 0)
         return 0;
@@ -1120,141 +923,20 @@ image_render_color_icc_landscape(gx_image_enum *penum_orig, const byte *buffer, 
                                 &psrc_cm_start, &bufend, false);
     if (code < 0) return code;
     psrc_cm_initial = psrc_cm;
-    /* Needed for device N */
-    pnext = penum->dda.pixel0;
-    dda_translate(pnext.x,  (-fixed_epsilon));
-    irun = fixed2int_var_rounded(dda_current(pnext.y));
-    vci = penum->xci, vdi = penum->wci;
-    if_debug5m('b', penum->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
-               penum->y, data_x, w, fixed2float(dda_current(pnext.x)), fixed2float(dda_current(pnext.y)));
-    while (psrc_cm < bufend) {
-        /* Find the length of the next run. It will either end when we hit
-         * the end of the source data, or when the pixel data differs. */
-        run = psrc_cm + spp_cm;
-        while (1)
-        {
-            dda_next(pnext.y);
-            if (run >= bufend)
-                break;
-            if (memcmp(run, psrc_cm, spp_cm))
-                break;
-            run += spp_cm;
-        }
-        /* So we have a run of pixels from psrc_cm to run that are all the same. */
-        /* This needs to be sped up */
-        for (k = 0; k < spp_cm; k++) {
-            conc[k] = gx_color_value_from_byte(psrc_cm[k]);
-        }
-        mapper(&data);
-        /* Fill the region between irun and fixed2int_var_rounded(pnext.y) */
-        {		/* 90 degree rotated rectangle */
-            int yi = irun;
-            int hi = (irun = fixed2int_var_rounded(dda_current(pnext.y))) - yi;
+    gx_get_cmapper(&cmapper, pgs, dev, has_transfer, must_halftone, gs_color_select_source);
 
-            if (hi < 0)
-                yi += hi, hi = -hi;
-            if (hi > 0)
-                code = gx_fill_rectangle_device_rop(vci, yi, vdi, hi,
-                                                    &data.devc, dev, lop);
-        }
-        if (code < 0)
-            goto err;
-        psrc_cm = run;
-    }
-    /* Free cm buffer, if it was used */
-    if (psrc_cm_start != NULL) {
-        gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_color_icc");
-    }
-    return (code < 0 ? code : 1);
-    /* Save position if error, in case we resume. */
-err:
+    data.state = penum->tpr_state;
+    data.u.process_data.buffer[0] = psrc_cm;
+    data.u.process_data.data_x = 0;
+    data.u.process_data.cmapper = &cmapper;
+    code = dev_proc(dev, transform_pixel_region)(dev, transform_pixel_region_process_data, &data);
     gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_color_icc");
-    penum_orig->used.x = (run - psrc_cm_initial) / spp_cm;
-    penum_orig->used.y = 0;
-    return code;
-}
 
-static int
-image_render_color_icc_skew(gx_image_enum *penum_orig, const byte *buffer, int data_x,
-                   uint w, int h, gx_device * dev)
-{
-    const gx_image_enum *const penum = penum_orig; /* const within proc */
-    const gs_gstate *pgs = penum->pgs;
-    gs_logical_operation_t lop = penum->log_op;
-    gx_dda_fixed_point pnext;
-    fixed xprev, yprev;
-    fixed pdyx, pdyy;		/* edge of parallelogram */
-    int spp = penum->spp;
-    const byte *psrc = buffer + data_x * spp;
-    fixed xpos;			/* x ditto */
-    fixed ypos;			/* y ditto */
-    byte *bufend = NULL;
-    int code = 0;
-    byte *psrc_cm = NULL, *psrc_cm_start = NULL;
-    byte *psrc_cm_initial;
-    int k;
-    int spp_cm = 0;
-    bool must_halftone = penum->icc_setup.must_halftone;
-    bool has_transfer = penum->icc_setup.has_transfer;
-    byte initial_run[GX_DEVICE_COLOR_MAX_COMPONENTS] = { 0 };
-    byte *prev_cm = &initial_run[0];
-    gx_cmapper_data data;
-    gx_cmapper_fn *mapper = gx_get_cmapper(&data, pgs, dev, has_transfer, must_halftone, gs_color_select_source);
-    gx_color_value *conc = &data.conc[0];
-
-    if (h == 0)
-        return 0;
-    code = image_color_icc_prep(penum_orig, psrc, w, dev, &spp_cm, &psrc_cm,
-                                &psrc_cm_start, &bufend, false);
-    if (code < 0) return code;
-    psrc_cm_initial = psrc_cm;
-    /* Needed for device N */
-    pnext = penum->dda.pixel0;
-    dda_translate(pnext.x,  (-fixed_epsilon));
-    xprev = dda_current(pnext.x);
-    yprev = dda_current(pnext.y);
-    pdyx = dda_current(penum->dda.row.x) - penum->cur.x;
-    pdyy = dda_current(penum->dda.row.y) - penum->cur.y;
-    if_debug5m('b', penum->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
-               penum->y, data_x, w, fixed2float(xprev), fixed2float(yprev));
-    prev_cm[0] = ~psrc_cm[0];	/* Force intial setting */
-    while (psrc_cm < bufend) {
-        dda_next(pnext.x);
-        dda_next(pnext.y);
-        xpos = dda_current(pnext.x);
-        ypos = dda_current(pnext.y);
-
-        if (memcmp(prev_cm, psrc_cm, spp_cm) != 0)
-        {
-            /* This needs to be sped up */
-            for (k = 0; k < spp_cm; k++) {
-                conc[k] = gx_color_value_from_byte(psrc_cm[k]);
-            }
-            mapper(&data);
-        }
-        /* Fill the region between */
-        /* xprev/yprev and xpos/ypos */
-        /* Parallelogram */
-        code = (*dev_proc(dev, fill_parallelogram))
-                    (dev, xprev, yprev, xpos - xprev, ypos - yprev, pdyx, pdyy,
-                     &data.devc, lop);
-        xprev = xpos;
-        yprev = ypos;
-        if (code < 0)
-            goto err;
-        prev_cm = psrc_cm;
-        psrc_cm += spp_cm;
+    if (code < 0) {
+        /* Save position if error, in case we resume. */
+        penum_orig->used.x = (data.u.process_data.buffer[0] - psrc_cm_initial) / spp_cm;
+        penum_orig->used.y = 0;
     }
-    /* Free cm buffer, if it was used */
-    if (psrc_cm_start != NULL) {
-        gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_color_icc");
-    }
-    return (code < 0 ? code : 1);
-    /* Save position if error, in case we resume. */
-err:
-    gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_color_icc");
-    penum_orig->used.x = (psrc_cm - psrc_cm_initial) / spp_cm;
-    penum_orig->used.y = 0;
     return code;
 }
 

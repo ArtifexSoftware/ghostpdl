@@ -764,6 +764,7 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, dev_spec_op, gx_default_dev_spec_op);
     fill_dev_proc(dev, copy_planes, gx_default_copy_planes);
     fill_dev_proc(dev, process_page, gx_default_process_page);
+    fill_dev_proc(dev, transform_pixel_region, gx_default_transform_pixel_region);
 }
 
 
@@ -1303,6 +1304,7 @@ int gx_copy_device_procs(gx_device *dest, gx_device *src, gx_device *prototype)
     set_dev_proc(dest, strip_copy_rop2, dev_proc(prototype, strip_copy_rop2));
     set_dev_proc(dest, strip_tile_rect_devn, dev_proc(prototype, strip_tile_rect_devn));
     set_dev_proc(dest, process_page, dev_proc(prototype, process_page));
+    set_dev_proc(dest, transform_pixel_region, dev_proc(prototype, transform_pixel_region));
 
     /*
      * We absolutely must set the 'set_graphics_type_tag' to the default subclass one
@@ -1679,4 +1681,550 @@ int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_co
     }
     set_dev_proc(dev, create_compositor, gx_subclass_create_compositor);
     return code;
+}
+
+typedef enum
+{
+    transform_pixel_region_portrait,
+    transform_pixel_region_landscape,
+    transform_pixel_region_skew
+} transform_pixel_region_posture;
+
+typedef struct gx_default_transform_pixel_region_state_s gx_default_transform_pixel_region_state_t;
+
+typedef int (gx_default_transform_pixel_region_render_fn)(gx_device *dev, gx_default_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs);
+
+struct gx_default_transform_pixel_region_state_s
+{
+    gs_memory_t *mem;
+    gx_dda_fixed_point pixels;
+    gx_dda_fixed_point rows;
+    gs_int_rect clip;
+    int w;
+    int h;
+    int spp;
+    transform_pixel_region_posture posture;
+    gs_logical_operation_t lop;
+    byte *line;
+    gx_default_transform_pixel_region_render_fn *render;
+};
+
+static void
+get_portrait_y_extent(gx_default_transform_pixel_region_state_t *state, int *iy, int *ih)
+{
+    fixed y0, y1;
+    gx_dda_fixed row = state->rows.y;
+
+    y0 = dda_current(row);
+    dda_next(row);
+    y1 = dda_current(row);
+
+    if (y1 < y0) {
+        fixed t = y1; y1 = y0; y0 = t;
+    }
+
+    *iy = fixed2int_pixround_perfect(y0);
+    *ih = fixed2int_pixround_perfect(y1) - *iy;
+}
+
+static void
+get_landscape_x_extent(gx_default_transform_pixel_region_state_t *state, int *ix, int *iw)
+{
+    fixed x0, x1;
+    gx_dda_fixed row = state->rows.x;
+
+    x0 = dda_current(row);
+    dda_next(row);
+    x1 = dda_current(row);
+
+    if (x1 < x0) {
+        fixed t = x1; x1 = x0; x0 = t;
+    }
+
+    *ix = fixed2int_pixround_perfect(x0);
+    *iw = fixed2int_pixround_perfect(x1) - *ix;
+}
+
+static void
+get_skew_extents(gx_default_transform_pixel_region_state_t *state, fixed *w, fixed *h)
+{
+    fixed x0, x1, y0, y1;
+    gx_dda_fixed_point row = state->rows;
+
+    x0 = dda_current(row.x);
+    y0 = dda_current(row.y);
+    dda_next(row.x);
+    dda_next(row.y);
+    x1 = dda_current(row.x);
+    y1 = dda_current(row.y);
+
+    *w = x1-x0;
+    *h = y1-y0;
+}
+
+static int
+transform_pixel_region_render_portrait(gx_device *dev, gx_default_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+{
+    gs_logical_operation_t lop = state->lop;
+    gx_dda_fixed_point pnext;
+    int vci, vdi;
+    int irun;			/* int x/rrun */
+    int w = state->w;
+    int h = state->h;
+    int spp = state->spp;
+    const byte *data = buffer[0] + data_x * spp;
+    const byte *bufend = NULL;
+    int code = 0;
+    const byte *run;
+    int k;
+    gx_color_value *conc = &cmapper->conc[0];
+    int to_rects;
+    gx_cmapper_fn *mapper = cmapper->set_color;
+    int minx, maxx;
+
+    if (h == 0)
+        return 0;
+
+    /* Clip on Y */
+    get_portrait_y_extent(state, &vci, &vdi);
+    if (vci < state->clip.p.y)
+        vdi += vci - state->clip.p.y, vci = state->clip.p.y;
+    if (vci+vdi > state->clip.q.y)
+        vdi = state->clip.q.y - vci;
+    if (vdi <= 0)
+        return 0;
+
+    pnext = state->pixels;
+    dda_translate(pnext.x,  (-fixed_epsilon));
+    irun = fixed2int_var_rounded(dda_current(pnext.x));
+    if_debug5m('b', dev->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
+               vci, data_x, w, fixed2float(dda_current(pnext.x)), fixed2float(dda_current(pnext.y)));
+    to_rects = (dev->color_info.depth != spp*8);
+    if (to_rects == 0) {
+        if (dev_proc(dev, dev_spec_op)(dev, gxdso_copy_color_is_fast, NULL, 0) <= 0)
+            to_rects = 1;
+    }
+
+    minx = state->clip.p.x;
+    maxx = state->clip.q.x;
+    bufend = data + w * spp;
+    if (to_rects) {
+        while (data < bufend) {
+            /* Find the length of the next run. It will either end when we hit
+             * the end of the source data, or when the pixel data differs. */
+            run = data + spp;
+            while (1) {
+                dda_next(pnext.x);
+                if (run >= bufend)
+                    break;
+                if (memcmp(run, data, spp))
+                    break;
+                run += spp;
+            }
+            /* So we have a run of pixels from data to run that are all the same. */
+            /* This needs to be sped up */
+            for (k = 0; k < spp; k++) {
+                conc[k] = gx_color_value_from_byte(data[k]);
+            }
+            mapper(cmapper);
+            /* Fill the region between irun and fixed2int_var_rounded(pnext.x) */
+            {
+                int xi = irun;
+                int wi = (irun = fixed2int_var_rounded(dda_current(pnext.x))) - xi;
+
+                if (wi < 0)
+                    xi += wi, wi = -wi;
+                if (xi < minx)
+                    wi += xi - minx, xi = minx;
+                if (xi + wi > maxx)
+                    wi = maxx - xi;
+                if (wi > 0)
+                    code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
+                                                        &cmapper->devc, dev, lop);
+            }
+            if (code < 0)
+                goto err;
+            data = run;
+        }
+    } else {
+        int pending_left = irun;
+        int pending_right;
+        byte *out;
+        int depth = spp;
+        if (state->line == NULL) {
+            state->line = gs_alloc_bytes(state->mem, dev->width * depth,
+                                         "image line");
+            if (state->line == NULL)
+                return gs_error_VMerror;
+        }
+        out = state->line;
+
+        if (pending_left < minx)
+            pending_left = minx;
+        else if (pending_left > maxx)
+            pending_left = maxx;
+        pending_right = pending_left;
+
+        while (data < bufend) {
+            /* Find the length of the next run. It will either end when we hit
+             * the end of the source data, or when the pixel data differs. */
+            run = data + spp;
+            while (1) {
+                dda_next(pnext.x);
+                if (run >= bufend)
+                    break;
+                if (memcmp(run, data, spp))
+                    break;
+                run += spp;
+            }
+            /* So we have a run of pixels from data to run that are all the same. */
+            /* This needs to be sped up */
+            for (k = 0; k < spp; k++) {
+                conc[k] = gx_color_value_from_byte(data[k]);
+            }
+            mapper(cmapper);
+            /* Fill the region between irun and fixed2int_var_rounded(pnext.x) */
+            {
+                int xi = irun;
+                int wi = (irun = fixed2int_var_rounded(dda_current(pnext.x))) - xi;
+
+                if (wi < 0)
+                    xi += wi, wi = -wi;
+
+                if (xi < minx)
+                    wi += xi - minx, xi = minx;
+                if (xi + wi > maxx)
+                    wi = maxx - xi;
+
+                if (wi > 0) {
+                    if (color_is_pure(&cmapper->devc)) {
+                        gx_color_index color = cmapper->devc.colors.pure;
+                        int xii = xi * spp;
+
+                        if (pending_left > xi)
+                            pending_left = xi;
+                        else
+                            pending_right = xi + wi;
+                        do {
+                            /* Excuse the double shifts below, that's to stop the
+                             * C compiler complaining if the color index type is
+                             * 32 bits. */
+                            switch(depth)
+                            {
+                            case 8: out[xii++] = ((color>>28)>>28) & 0xff;
+                            case 7: out[xii++] = ((color>>24)>>24) & 0xff;
+                            case 6: out[xii++] = ((color>>24)>>16) & 0xff;
+                            case 5: out[xii++] = ((color>>24)>>8) & 0xff;
+                            case 4: out[xii++] = (color>>24) & 0xff;
+                            case 3: out[xii++] = (color>>16) & 0xff;
+                            case 2: out[xii++] = (color>>8) & 0xff;
+                            case 1: out[xii++] = color & 0xff;
+                            }
+                        } while (--wi != 0);
+                    } else {
+                        if (pending_left != pending_right) {
+                            code = dev_proc(dev, copy_color)(dev, out, pending_left, 0, 0, pending_left, vci, pending_right - pending_left, vdi);
+                            if (code < 0)
+                                goto err;
+                        }
+                        pending_left = pending_right = xi + (pending_left > xi ? 0 : wi);
+                        code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
+                                                            &cmapper->devc, dev, lop);
+                    }
+                }
+                if (code < 0)
+                    goto err;
+            }
+            data = run;
+        }
+        if (pending_left != pending_right) {
+            code = dev_proc(dev, copy_color)(dev, out, pending_left, 0, 0, pending_left, vci, pending_right - pending_left, vdi);
+            if (code < 0)
+                goto err;
+        }
+    }
+    return (code < 0 ? code : 1);
+    /* Save position if error, in case we resume. */
+err:
+    buffer[0] = run;
+    return code;
+}
+
+static int
+transform_pixel_region_render_landscape(gx_device *dev, gx_default_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+{
+    gs_logical_operation_t lop = state->lop;
+    gx_dda_fixed_point pnext;
+    int vci, vdi;
+    int irun;			/* int x/rrun */
+    int w = state->w;
+    int h = state->h;
+    int spp = state->spp;
+    const byte *data = buffer[0] + data_x * spp;
+    const byte *bufend = NULL;
+    int code = 0;
+    const byte *run;
+    int k;
+    gx_color_value *conc = &cmapper->conc[0];
+    int to_rects;
+    gx_cmapper_fn *mapper = cmapper->set_color;
+    int miny, maxy;
+
+    if (h == 0)
+        return 0;
+
+    /* Clip on X */
+    get_landscape_x_extent(state, &vci, &vdi);
+    if (vci < state->clip.p.x)
+        vdi += vci - state->clip.p.x, vci = state->clip.p.x;
+    if (vci+vdi > state->clip.q.x)
+        vdi = state->clip.q.x - vci;
+    if (vdi <= 0)
+        return 0;
+
+    pnext = state->pixels;
+    dda_translate(pnext.x,  (-fixed_epsilon));
+    irun = fixed2int_var_rounded(dda_current(pnext.y));
+    if_debug5m('b', dev->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
+               vci, data_x, w, fixed2float(dda_current(pnext.x)), fixed2float(dda_current(pnext.y)));
+    to_rects = (dev->color_info.depth != spp*8);
+    if (to_rects == 0) {
+        if (dev_proc(dev, dev_spec_op)(dev, gxdso_copy_color_is_fast, NULL, 0) <= 0)
+            to_rects = 1;
+    }
+
+    miny = state->clip.p.y;
+    maxy = state->clip.q.y;
+    bufend = data + w * spp;
+    while (data < bufend) {
+        /* Find the length of the next run. It will either end when we hit
+         * the end of the source data, or when the pixel data differs. */
+        run = data + spp;
+        while (1) {
+            dda_next(pnext.y);
+            if (run >= bufend)
+                break;
+            if (memcmp(run, data, spp))
+                break;
+            run += spp;
+        }
+        /* So we have a run of pixels from data to run that are all the same. */
+        /* This needs to be sped up */
+        for (k = 0; k < spp; k++) {
+            conc[k] = gx_color_value_from_byte(data[k]);
+        }
+        mapper(cmapper);
+        /* Fill the region between irun and fixed2int_var_rounded(pnext.y) */
+        {              /* 90 degree rotated rectangle */
+            int yi = irun;
+            int hi = (irun = fixed2int_var_rounded(dda_current(pnext.y))) - yi;
+
+            if (hi < 0)
+                yi += hi, hi = -hi;
+            if (yi < miny)
+                hi += yi - miny, yi = miny;
+            if (yi + hi > maxy)
+                hi = maxy - yi;
+            if (hi > 0)
+                code = gx_fill_rectangle_device_rop(vci, yi, vdi, hi,
+                                                    &cmapper->devc, dev, lop);
+        }
+        if (code < 0)
+            goto err;
+        data = run;
+    }
+    return (code < 0 ? code : 1);
+    /* Save position if error, in case we resume. */
+err:
+    buffer[0] = run;
+    return code;
+}
+
+static int
+transform_pixel_region_render_skew(gx_device *dev, gx_default_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+{
+    gs_logical_operation_t lop = state->lop;
+    gx_dda_fixed_point pnext;
+    fixed xprev, yprev;
+    fixed pdyx, pdyy;		/* edge of parallelogram */
+    int w = state->w;
+    int h = state->h;
+    int spp = state->spp;
+    const byte *data = buffer[0] + data_x * spp;
+    fixed xpos;			/* x ditto */
+    fixed ypos;			/* y ditto */
+    const byte *bufend = data + w * spp;
+    int code = 0;
+    int k;
+    byte initial_run[GX_DEVICE_COLOR_MAX_COMPONENTS] = { 0 };
+    const byte *prev = &initial_run[0];
+    gx_cmapper_fn *mapper = cmapper->set_color;
+    gx_color_value *conc = &cmapper->conc[0];
+
+    if (h == 0)
+        return 0;
+    pnext = state->pixels;
+    get_skew_extents(state, &pdyx, &pdyy);
+    dda_translate(pnext.x,  (-fixed_epsilon));
+    xprev = dda_current(pnext.x);
+    yprev = dda_current(pnext.y);
+    if_debug4m('b', dev->memory, "[b]y=? data_x=%d w=%d xt=%f yt=%f\n",
+               data_x, w, fixed2float(xprev), fixed2float(yprev));
+    initial_run[0] = ~data[0];	/* Force intial setting */
+    while (data < bufend) {
+        dda_next(pnext.x);
+        dda_next(pnext.y);
+        xpos = dda_current(pnext.x);
+        ypos = dda_current(pnext.y);
+
+        if (memcmp(prev, data, spp) != 0)
+        {
+            /* This needs to be sped up */
+            for (k = 0; k < spp; k++) {
+                conc[k] = gx_color_value_from_byte(data[k]);
+            }
+            mapper(cmapper);
+        }
+        /* Fill the region between */
+        /* xprev/yprev and xpos/ypos */
+        /* Parallelogram */
+        code = (*dev_proc(dev, fill_parallelogram))
+                    (dev, xprev, yprev, xpos - xprev, ypos - yprev, pdyx, pdyy,
+                     &cmapper->devc, lop);
+        xprev = xpos;
+        yprev = ypos;
+        if (code < 0)
+            goto err;
+        prev = data;
+        data += spp;
+    }
+    return (code < 0 ? code : 1);
+    /* Save position if error, in case we resume. */
+err:
+    buffer[0] = prev;
+    return code;
+}
+
+static int
+gx_default_transform_pixel_region_begin(gx_device *dev, int w, int h, int spp,
+                             const gx_dda_fixed_point *pixels, const gx_dda_fixed_point *rows,
+                             const gs_int_rect *clip, gs_logical_operation_t lop,
+                             gx_default_transform_pixel_region_state_t **statep)
+{
+    gx_default_transform_pixel_region_state_t *state;
+    gs_memory_t *mem = dev->memory->non_gc_memory;
+
+    *statep = state = (gx_default_transform_pixel_region_state_t *)gs_alloc_bytes(mem, sizeof(gx_default_transform_pixel_region_state_t), "gx_default_transform_pixel_region_state_t");
+    if (state == NULL)
+        return gs_error_VMerror;
+    state->mem = mem;
+    state->rows = *rows;
+    state->pixels = *pixels;
+    state->clip = *clip;
+    state->w = w;
+    state->h = h;
+    state->spp = spp;
+    state->lop = lop;
+    state->line = NULL;
+
+    /* FIXME: Consider sheers here too. Probably happens rarely enough not to be worth it. */
+    if (rows->x.step.dQ == 0 && rows->x.step.dR == 0 && pixels->y.step.dQ == 0 && pixels->y.step.dR == 0)
+        state->posture = transform_pixel_region_portrait;
+    else if (rows->y.step.dQ == 0 && rows->y.step.dR == 0 && pixels->x.step.dQ == 0 && pixels->x.step.dR == 0)
+        state->posture = transform_pixel_region_landscape;
+    else
+        state->posture = transform_pixel_region_skew;
+
+    if (state->posture == transform_pixel_region_portrait)
+        state->render = transform_pixel_region_render_portrait;
+    else if (state->posture == transform_pixel_region_landscape)
+        state->render = transform_pixel_region_render_landscape;
+    else
+        state->render = transform_pixel_region_render_skew;
+
+    return 0;
+}
+
+static void
+step_to_next_line(gx_default_transform_pixel_region_state_t *state)
+{
+    fixed x = dda_current(state->rows.x);
+    fixed y = dda_current(state->rows.y);
+
+    dda_next(state->rows.x);
+    dda_next(state->rows.y);
+    x = dda_current(state->rows.x) - x;
+    y = dda_current(state->rows.y) - y;
+    dda_translate(state->pixels.x, x);
+    dda_translate(state->pixels.y, y);
+}
+
+static int
+gx_default_transform_pixel_region_data_needed(gx_device *dev, gx_default_transform_pixel_region_state_t *state)
+{
+    if (state->posture == transform_pixel_region_portrait) {
+        int iy, ih;
+
+        get_portrait_y_extent(state, &iy, &ih);
+
+        if (iy + ih < state->clip.p.y || iy >= state->clip.q.y) {
+            /* Skip this line. */
+            step_to_next_line(state);
+            return 0;
+        }
+    } else if (state->posture == transform_pixel_region_landscape) {
+        int ix, iw;
+
+        get_landscape_x_extent(state, &ix, &iw);
+
+        if (ix + iw < state->clip.p.x || ix >= state->clip.q.x) {
+            /* Skip this line. */
+            step_to_next_line(state);
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int
+gx_default_transform_pixel_region_process_data(gx_device *dev, gx_default_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+{
+    int ret = state->render(dev, state, buffer, data_x, cmapper, pgs);
+
+    step_to_next_line(state);
+    return ret;
+}
+
+static int
+gx_default_transform_pixel_region_end(gx_device *dev, gx_default_transform_pixel_region_state_t *state)
+{
+    if (state) {
+        gs_free_object(state->mem, state->line, "image line");
+        gs_free_object(state->mem, state, "gx_default_transform_pixel_region_state_t");
+    }
+    return 0;
+}
+
+int
+gx_default_transform_pixel_region(gx_device *dev,
+                       transform_pixel_region_reason reason,
+                       transform_pixel_region_data *data)
+{
+    gx_default_transform_pixel_region_state_t *state = (gx_default_transform_pixel_region_state_t *)data->state;
+
+    switch (reason)
+    {
+    case transform_pixel_region_begin:
+        return gx_default_transform_pixel_region_begin(dev, data->u.init.w, data->u.init.h, data->u.init.spp, data->u.init.pixels, data->u.init.rows, data->u.init.clip, data->u.init.lop, (gx_default_transform_pixel_region_state_t **)&data->state);
+    case transform_pixel_region_data_needed:
+        return gx_default_transform_pixel_region_data_needed(dev, state);
+    case transform_pixel_region_process_data:
+        return gx_default_transform_pixel_region_process_data(dev, state, data->u.process_data.buffer, data->u.process_data.data_x, data->u.process_data.cmapper, data->u.process_data.pgs);
+    case transform_pixel_region_end:
+        data->state = NULL;
+        return gx_default_transform_pixel_region_end(dev, state);
+    default:
+        return gs_error_unknownerror;
+    }
 }

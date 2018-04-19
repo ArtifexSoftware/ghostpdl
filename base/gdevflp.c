@@ -105,6 +105,7 @@ static dev_proc_strip_copy_rop2(flp_strip_copy_rop2);
 static dev_proc_strip_tile_rect_devn(flp_strip_tile_rect_devn);
 static dev_proc_copy_alpha_hl_color(flp_copy_alpha_hl_color);
 static dev_proc_process_page(flp_process_page);
+static dev_proc_transform_pixel_region(flp_transform_pixel_region);
 
 /* The device prototype */
 #define MAX_COORD (max_int_in_fixed - 1000)
@@ -1208,6 +1209,18 @@ int flp_process_page(gx_device *dev, gx_process_page_options_t *options)
         return code;
     if (!code)
         return default_subclass_process_page(dev, options);
+
+    return 0;
+}
+
+int flp_transform_pixel_region(gx_device *dev, transform_pixel_region_reason reason, transform_pixel_region_data *data)
+{
+    int code = SkipPage(dev);
+
+    if (code < 0)
+        return code;
+    if (!code)
+        return default_subclass_transform_pixel_region(dev, reason, data);
 
     return 0;
 }
