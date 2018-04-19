@@ -20,93 +20,6 @@
 #include "strmio.h"
 
 /***********************************************************************************/
-/* Functions to dereference object references and manage the object cache          */
-
-static int pdf_add_to_cache(pdf_context *ctx, pdf_obj *o)
-{
-    pdf_obj_cache_entry *entry;
-
-    if (o->object_num > ctx->xref_size)
-        return_error(gs_error_rangecheck);
-
-    if (ctx->cache_entries == MAX_OBJECT_CACHE_SIZE)
-    {
-        if (ctx->cache_LRU) {
-            entry = ctx->cache_LRU;
-            ctx->cache_LRU = entry->next;
-            if (entry->next)
-                ((pdf_obj_cache_entry *)entry->next)->previous = NULL;
-            ctx->xref[entry->o->object_num].cache = NULL;
-            pdf_countdown(entry->o);
-            ctx->cache_entries--;
-            gs_free_object(ctx->memory, entry, "pdf_add_to_cache, free LRU");
-        } else
-            return_error(gs_error_unknownerror);
-    }
-    entry = (pdf_obj_cache_entry *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj_cache_entry), "pdf_add_to_cache");
-    if (entry == NULL)
-        return_error(gs_error_VMerror);
-
-    memset(entry, 0x00, sizeof(pdf_obj_cache_entry));
-
-    entry->o = o;
-    pdf_countup(o);
-    if (ctx->cache_MRU) {
-        entry->previous = ctx->cache_MRU;
-        ctx->cache_MRU->next = entry;
-    }
-    ctx->cache_MRU = entry;
-    if (ctx->cache_LRU == NULL)
-        ctx->cache_LRU = entry;
-
-    ctx->cache_entries++;
-    ctx->xref[o->object_num].cache = entry;
-    return 0;
-}
-
-int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object)
-{
-    xref_entry *entry;
-    pdf_obj *o;
-    int code;
-
-    if (obj > ctx->xref_size)
-        return_error(gs_error_rangecheck);
-
-    entry = &ctx->xref[obj];
-
-    if (entry->cache != NULL){
-        pdf_obj_cache_entry *cache_entry = entry->cache;
-
-        *object = cache_entry->o;
-        if (ctx->cache_MRU) {
-            ((pdf_obj_cache_entry *)cache_entry->next)->previous = cache_entry->previous;
-            ((pdf_obj_cache_entry *)cache_entry->previous)->next = cache_entry->next;
-            cache_entry->next = NULL;
-            cache_entry->previous = ctx->cache_MRU;
-            ctx->cache_MRU->next = cache_entry;
-            ctx->cache_MRU = cache_entry;
-        } else
-            return_error(gs_error_unknownerror);
-    } else {
-        if (entry->compressed) {
-        } else {
-            code = pdf_seek(ctx, ctx->main_stream, entry->offset, SEEK_SET);
-            if (code < 0)
-                return code;
-
-            code = pdf_read_object(ctx, ctx->main_stream, &o);
-            if (code < 0)
-                return code;
-
-            *object = o;
-        }
-    }
-
-    return 0;
-}
-
-/***********************************************************************************/
 /* Some simple functions to find white space, delimiters and hex bytes             */
 static bool iswhite(char c)
 {
@@ -302,11 +215,108 @@ static int pdf_push(pdf_context *ctx, pdf_obj *o)
 }
 
 /***********************************************************************************/
+/* Functions to dereference object references and manage the object cache          */
+
+static int pdf_add_to_cache(pdf_context *ctx, pdf_obj *o)
+{
+    pdf_obj_cache_entry *entry;
+
+    if (o->object_num > ctx->xref_size)
+        return_error(gs_error_rangecheck);
+
+    if (ctx->cache_entries == MAX_OBJECT_CACHE_SIZE)
+    {
+        if (ctx->cache_LRU) {
+            entry = ctx->cache_LRU;
+            ctx->cache_LRU = entry->next;
+            if (entry->next)
+                ((pdf_obj_cache_entry *)entry->next)->previous = NULL;
+            ctx->xref[entry->o->object_num].cache = NULL;
+            pdf_countdown(entry->o);
+            ctx->cache_entries--;
+            gs_free_object(ctx->memory, entry, "pdf_add_to_cache, free LRU");
+        } else
+            return_error(gs_error_unknownerror);
+    }
+    entry = (pdf_obj_cache_entry *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj_cache_entry), "pdf_add_to_cache");
+    if (entry == NULL)
+        return_error(gs_error_VMerror);
+
+    memset(entry, 0x00, sizeof(pdf_obj_cache_entry));
+
+    entry->o = o;
+    pdf_countup(o);
+    if (ctx->cache_MRU) {
+        entry->previous = ctx->cache_MRU;
+        ctx->cache_MRU->next = entry;
+    }
+    ctx->cache_MRU = entry;
+    if (ctx->cache_LRU == NULL)
+        ctx->cache_LRU = entry;
+
+    ctx->cache_entries++;
+    ctx->xref[o->object_num].cache = entry;
+    return 0;
+}
+
+/* pdf_dereference returns an object with a reference count of at least 1, this represents the
+ * reference being held by the caller (in **object) when we return from this function.
+ */
+int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object)
+{
+    xref_entry *entry;
+    pdf_obj *o;
+    int code;
+
+    if (obj > ctx->xref_size)
+        return_error(gs_error_rangecheck);
+
+    entry = &ctx->xref[obj];
+
+    if (entry->cache != NULL){
+        pdf_obj_cache_entry *cache_entry = entry->cache;
+
+        *object = cache_entry->o;
+        if (ctx->cache_MRU) {
+            ((pdf_obj_cache_entry *)cache_entry->next)->previous = cache_entry->previous;
+            ((pdf_obj_cache_entry *)cache_entry->previous)->next = cache_entry->next;
+            cache_entry->next = NULL;
+            cache_entry->previous = ctx->cache_MRU;
+            ctx->cache_MRU->next = cache_entry;
+            ctx->cache_MRU = cache_entry;
+        } else
+            return_error(gs_error_unknownerror);
+    } else {
+        if (entry->compressed) {
+        } else {
+            code = pdf_seek(ctx, ctx->main_stream, entry->offset, SEEK_SET);
+            if (code < 0)
+                return code;
+
+            code = pdf_read_object(ctx, ctx->main_stream);
+            if (code < 0)
+                return code;
+
+            *object = ctx->stack_top[-1];
+            pdf_countup(*object);
+            pdf_pop(ctx, 1);
+        }
+    }
+
+    return 0;
+}
+
+/***********************************************************************************/
 /* 'token' reading functions. Tokens in this sense are PDF logical objects and the */
 /* related keywords. So that's numbers, booleans, names, strings, dictionaries,    */
 /* arrays, the  null object and indirect references. The keywords are obj/endobj   */
 /* stream/endstream, xref, startxref and trailer.                                  */
 
+/* The 'read' functions all return the newly created object on the context's stack
+ * which means these objects are created with a reference count of 0, and only when
+ * pushed onto the stack does the reference count become 1, indicating the stack is
+ * the only reference.
+ */
 static void skip_white(pdf_context *ctx,pdf_stream *s)
 {
     uint32_t bytes = 0, read = 0;
@@ -495,33 +505,6 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
         pdf_free_namestring((pdf_obj *)name);
 
     return code;
-}
-
-int pdf_make_name(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
-{
-    char *NewBuf = NULL;
-    pdf_name *name = NULL;
-
-    name = (pdf_name *)gs_alloc_bytes(ctx->memory, sizeof(pdf_name), "pdf_read_name");
-    if (name == NULL)
-        return_error(gs_error_VMerror);
-
-    memset(name, 0x00, sizeof(pdf_name));
-    name->object.memory = ctx->memory;
-    name->object.type = PDF_NAME;
-
-    NewBuf = (char *)gs_alloc_bytes(ctx->memory, size, "pdf_read_name");
-    if (NewBuf == NULL)
-        return_error(gs_error_VMerror);
-
-    memcpy(NewBuf, n, size);
-
-    name->data = (unsigned char *)NewBuf;
-    name->length = size;
-
-    *o = (pdf_obj *)name;
-
-    return 0;
 }
 
 static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
@@ -838,6 +821,9 @@ static int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
     return code;
 }
 
+/* The object returned by pdf_dict_get has its reference count incremented by 1 to
+ * indicate the reference now held by the caller, in **o.
+ */
 int pdf_dict_get(pdf_dict *d, char *Key, pdf_obj **o)
 {
     int i=0;
@@ -853,6 +839,7 @@ int pdf_dict_get(pdf_dict *d, char *Key, pdf_obj **o)
 
             if (((pdf_name *)t)->length == strlen((const char *)Key) && memcmp((const char *)((pdf_name *)t)->data, (const char *)Key, ((pdf_name *)t)->length) == 0) {
                 *o = d->values[i];
+                pdf_countup(*o);
                 return 0;
             }
         }
@@ -921,12 +908,16 @@ int pdf_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
     return 0;
 }
 
+/* The object returned by pdf_array_get has its reference count incremented by 1 to
+ * indicate the reference now held by the caller, in **o.
+ */
 int pdf_array_get(pdf_array *a, uint64_t index, pdf_obj **o)
 {
     if (index > a->size)
         return_error(gs_error_rangecheck);
 
     *o = a->values[index];
+    pdf_countup(*o);
     return 0;
 }
 
@@ -1214,13 +1205,11 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
     return 0;
 }
 
-int pdf_read_object(pdf_context *ctx, pdf_stream *s, pdf_obj **o)
+int pdf_read_object(pdf_context *ctx, pdf_stream *s)
 {
     int code = 0;
     uint64_t objnum = 0, gen = 0;
     pdf_keyword *keyword = NULL;
-
-    *o = NULL;
 
     /* An object consists of 'num gen obj' followed by a token, follwed by an endobj
      * A stream dictionary might have a 'stream' instead of an 'endobj', in which case we
@@ -1267,16 +1256,50 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s, pdf_obj **o)
     }
     keyword = ((pdf_keyword *)ctx->stack_top[-1]);
     if (keyword->key == PDF_ENDOBJ) {
-        pdf_obj *o1 = ctx->stack_top[-2];
+        pdf_obj *o = ctx->stack_top[-2];
 
         pdf_pop(ctx, 1);
 
-        o1->object_num = objnum;
-        o1->generation_num = gen;
-        *o = o1;
-        pdf_add_to_cache(ctx, o1);
-        pdf_pop(ctx, 1);
+        o->object_num = objnum;
+        o->generation_num = gen;
+        pdf_add_to_cache(ctx, o);
+        return 0;
     }
+    /* need to handle 'stream'. In the meantime, remove the keyword and object */
+    pdf_pop(ctx, 2);
+    return 0;
+}
+
+/* In contrast to the 'read' functions, the 'make' functions create an object with a
+ * reference count of 1. This indicates that the caller holds the reference. Thus the
+ * caller need not increment the reference count to the object, but must decrement
+ * it (pdf_countdown) before exiting.
+ */
+int pdf_make_name(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
+{
+    char *NewBuf = NULL;
+    pdf_name *name = NULL;
+
+    name = (pdf_name *)gs_alloc_bytes(ctx->memory, sizeof(pdf_name), "pdf_read_name");
+    if (name == NULL)
+        return_error(gs_error_VMerror);
+
+    memset(name, 0x00, sizeof(pdf_name));
+    name->object.memory = ctx->memory;
+    name->object.type = PDF_NAME;
+    name->object.refcnt = 1;
+
+    NewBuf = (char *)gs_alloc_bytes(ctx->memory, size, "pdf_read_name");
+    if (NewBuf == NULL)
+        return_error(gs_error_VMerror);
+
+    memcpy(NewBuf, n, size);
+
+    name->data = (unsigned char *)NewBuf;
+    name->length = size;
+
+    *o = (pdf_obj *)name;
+
     return 0;
 }
 
@@ -2171,35 +2194,66 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
 
 static int pdf_read_Root(pdf_context *ctx)
 {
-    pdf_obj *o, *name;
+    pdf_obj *o, *o1;
     int code;
 
-    code = pdf_dict_get(ctx->Trailer, "Root", &o);
+    code = pdf_dict_get(ctx->Trailer, "Root", &o1);
     if (code < 0)
         return code;
 
-    if (o->type == PDF_INDIRECT) {
-        code = pdf_dereference(ctx, ((pdf_indirect_ref *)o)->object_num,  ((pdf_indirect_ref *)o)->generation_num, &o);
+    if (o1->type == PDF_INDIRECT) {
+        pdf_obj *name;
+
+        code = pdf_dereference(ctx, ((pdf_indirect_ref *)o1)->object_num,  ((pdf_indirect_ref *)o1)->generation_num, &o);
+        pdf_countdown(o1);
         if (code < 0)
             return code;
-
-        pdf_countup(o);
 
         if (o->type != PDF_DICT) {
             pdf_countdown(o);
             return_error(gs_error_typecheck);
         }
 
-        code = pdf_make_name(ctx, "Root", 4, &name);
-        pdf_countup(name);
+        code = pdf_make_name(ctx, (byte *)"Root", 4, &name);
+        if (code < 0) {
+            pdf_countdown(o);
+            return code;
+        }
         code = pdf_dict_put(ctx->Trailer, name, o);
+        /* pdf_make_name created a name with a reference count of 1, the local object
+         * is going out of scope, so decrement the reference coutn.
+         */
         pdf_countdown(name);
-        pdf_countdown(o);
+        if (code < 0) {
+            pdf_countdown(o);
+            return code;
+        }
+        o1 = o;
+    } else {
+        if (o1->type != PDF_DICT) {
+            pdf_countdown(o1);
+            return_error(gs_error_typecheck);
+        }
     }
 
-    if (o->type != PDF_DICT)
+    code = pdf_dict_get((pdf_dict *)o1, "Type", &o);
+    if (code < 0) {
+        pdf_countdown(o1);
+        return code;
+    }
+    if (o->type != PDF_NAME) {
+        pdf_countdown(o1);
         return_error(gs_error_typecheck);
+    }
+    if (((pdf_name *)o)->length != 7 || memcmp(((pdf_name *)o)->data, "Catalog", 7) != 0){
+        pdf_countdown(o1);
+        return_error(gs_error_syntaxerror);
+    }
 
+    /* We don't pdf_countdown(o1) now, because we've transferred our
+     * reference to the pointer in the pdf_context structure.
+     */
+    ctx->Root = (pdf_dict *)o1;
     return 0;
 }
 
