@@ -256,6 +256,12 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
                 return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "not a JBIG2 file header");
             /* D.4.2 */
             ctx->file_header_flags = ctx->buf[ctx->buf_rd_ix + 8];
+            /* Check for T.88 amendment 2 */
+            if (ctx->file_header_flags & 0x04)
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "file header indicates use of 12 adaptive template pixels (NYI)");
+            /* Check for T.88 amendment 3 */
+            if (ctx->file_header_flags & 0x08)
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "file header indicates use of colored region segments (NYI)");
             if (ctx->file_header_flags & 0xFC) {
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "reserved bits (2-7) of file header flags are not zero (0x%02x)", ctx->file_header_flags);
             }

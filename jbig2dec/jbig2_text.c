@@ -579,6 +579,9 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         goto too_short;
     jbig2_get_region_segment_info(&region_info, segment_data);
     offset += 17;
+    /* Check for T.88 amendment 3 */
+    if (region_info.flags & 8)
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "region segment flags indicate use of colored bitmap (NYI)");
 
     /* 7.4.3.1.1 */
     if (segment->data_length - offset < 2)

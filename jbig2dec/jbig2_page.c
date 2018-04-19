@@ -109,6 +109,9 @@ jbig2_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_dat
     page->x_resolution = jbig2_get_uint32(segment_data + 8);
     page->y_resolution = jbig2_get_uint32(segment_data + 12);
     page->flags = segment_data[16];
+    /* Check for T.88 amendment 3 */
+    if (page->flags & 0x80)
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "page segment indicates use of color segments (NYI)");
 
     /* 7.4.8.6 */
     {

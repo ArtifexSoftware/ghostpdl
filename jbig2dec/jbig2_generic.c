@@ -806,6 +806,10 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte 
 
     offset = 18 + gbat_bytes;
 
+    /* Check for T.88 amendment 2 */
+    if ((seg_flags >> 5) & 1)
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment uses 12 adaptive template pixels (NYI)");
+
     /* Table 34 */
     params.MMR = seg_flags & 1;
     params.GBTEMPLATE = (seg_flags & 6) >> 1;

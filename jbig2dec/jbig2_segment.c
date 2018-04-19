@@ -282,6 +282,8 @@ jbig2_parse_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment
         return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unhandled segment type 'profile'");
     case 53:                   /* user-supplied huffman table */
         return jbig2_table(ctx, segment, segment_data);
+    case 54:
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unhandled segment type 'color palette'");
     case 62:
         return jbig2_parse_extension_segment(ctx, segment, segment_data);
     default:
