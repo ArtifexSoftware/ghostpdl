@@ -585,25 +585,18 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     fixed xprev, yprev;
     fixed pdyx, pdyy;		/* edge of parallelogram */
     int vci, vdi;
-    gx_device_color devc1;
-    gx_device_color devc2;
-    gx_device_color *pdevc;
-    gx_device_color *pdevc_next;
-    gx_device_color *ptemp;
+    gx_device_color devc;
     int spp = penum->spp;
-    const unsigned short *psrc_initial = (const unsigned short *)buffer + data_x * spp;
-    const unsigned short *psrc = psrc_initial;
-    const unsigned short *rsrc = psrc + spp; /* psrc + spp at start of run */
+    const unsigned short *psrc = (const unsigned short *)buffer + data_x * spp;
     fixed xrun;			/* x at start of run */
     int irun;			/* int xrun */
     fixed yrun;			/* y ditto */
-    color_fracs run;		/* run value */
-    color_fracs next;		/* next sample value */
     const unsigned short *bufend = psrc + w;
+    const unsigned short *run;
     int code = 0;
     gsicc_bufferdesc_t input_buff_desc;
     gsicc_bufferdesc_t output_buff_desc;
-    unsigned short *psrc_cm, *psrc_cm_start, *psrc_decode;
+    unsigned short *psrc_cm, *psrc_cm_start, *psrc_decode, *psrc_cm_initial;
     int k;
     gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int spp_cm, num_pixels;
@@ -622,11 +615,8 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     }
     /* Needed for device N */
     memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
-    pdevc = &devc1;
-    pdevc_next = &devc2;
     /* These used to be set by init clues */
-    pdevc->type = gx_dc_type_none;
-    pdevc_next->type = gx_dc_type_none;
+    devc.type = gx_dc_type_none;
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     /* If the link is the identity, then we don't need to do any color
@@ -691,10 +681,11 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
             }
         }
     }
+    psrc_cm_initial = psrc_cm;
 
     pnext = penum->dda.pixel0;
-    xrun = xprev = dda_current(pnext.x);
-    yrun = yprev = dda_current(pnext.y);
+    xrun = dda_current(pnext.x);
+    yrun = dda_current(pnext.y);
     pdyx = dda_current(penum->dda.row.x) - penum->cur.x;
     pdyy = dda_current(penum->dda.row.y) - penum->cur.y;
     switch (posture) {
@@ -709,32 +700,34 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
             break;
     }
     if_debug5m('b', penum->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
-               penum->y, data_x, w, fixed2float(xprev), fixed2float(yprev));
-    memset(&run, 0, sizeof(run));
-    memset(&next, 0, sizeof(next));
-    run.v[0] = ~psrc_cm[0];	/* Force intial setting */
+               penum->y, data_x, w, fixed2float(xrun), fixed2float(yrun));
     while (psrc_cm < bufend) {
-        dda_next(pnext.x);
-        dda_next(pnext.y);
-        if ( penum->alpha ) {
-            /* If the pixels are different, then take care of the alpha now */
-            /* will need to adjust spp below.... */
-        } else {
-            memcpy(&(next.v[0]),psrc_cm, spp_cm * 2);
-            psrc_cm += spp_cm;
+        /* Find the length of the next run. It will either end when we hit
+         * the end of the source data, or when the pixel data differs. */
+        run = psrc_cm + spp_cm;
+        while (1)
+        {
+            dda_next(pnext.x);
+            dda_next(pnext.y);
+            if (run >= bufend)
+                break;
+            if (memcmp(run, psrc_cm, spp_cm * 2))
+                break;
+            if (posture == image_skewed)
+                /* The color doesn't need remapping, but we can't handle a run */
+                goto skewed_but_same;
+            run += spp_cm;
         }
-        /* Compare to previous.  If same then move on */
-        if (posture != image_skewed && !memcmp(next.all, run.all, spp_cm * 2))
-                goto inc;
+        /* So we have a run of pixels from psrc_cm to run that are all the same. */
         /* This needs to be sped up */
         for ( k = 0; k < spp_cm; k++ ) {
-            conc[k] = next.v[k];
+            conc[k] = psrc_cm[k];
         }
         /* Now we can do an encoding directly or we have to apply transfer
            and or halftoning */
         if (must_halftone || has_transfer) {
             /* We need to do the tranfer function and/or the halftoning */
-            cmap_transfer_halftone(&(conc[0]), pdevc_next, pgs, dev,
+            cmap_transfer_halftone(&(conc[0]), &devc, pgs, dev,
                 has_transfer, must_halftone, gs_color_select_source);
         } else {
             /* encode as a color index. avoid all the cv to frac to cv
@@ -742,51 +735,51 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
             color = dev_proc(dev, encode_color)(dev, &(conc[0]));
             /* check if the encoding was successful; we presume failure is rare */
             if (color != gx_no_color_index)
-                color_set_pure(pdevc_next, color);
+                color_set_pure(&devc, color);
         }
         /* Fill the region between */
-        /* xrun/irun and xprev */
-        if (posture != image_portrait) {	/* Parallelogram */
+        /* xrun/irun and pnext.x/pnext.y */
+        switch(posture)
+        {
+        default: /* skew */
+skewed_but_same:
+        {
+            fixed xprev = dda_current(pnext.x);
+            fixed yprev = dda_current(pnext.y);
             code = (*dev_proc(dev, fill_parallelogram))
                 (dev, xrun, yrun, xprev - xrun, yprev - yrun, pdyx, pdyy,
-                 pdevc, lop);
+                 &devc, lop);
             xrun = xprev;
             yrun = yprev;
-        } else {		/* Rectangle */
+            break;
+        }
+        case image_portrait:
+        {
             int xi = irun;
-            int wi = (irun = fixed2int_var_rounded(xprev)) - xi;
+            int wi = (irun = fixed2int_var_rounded(dda_current(pnext.x))) - xi;
 
             if (wi < 0)
                 xi += wi, wi = -wi;
             if (wi > 0)
                 code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
-                                                    pdevc, dev, lop);
+                                                    &devc, dev, lop);
+            break;
+        }
+        case image_landscape:
+        {
+            int yi = irun;
+            int hi = (irun = fixed2int_var_rounded(dda_current(pnext.y))) - yi;
+
+            if (hi < 0)
+                yi += hi, hi = -hi;
+            if (hi > 0)
+                code = gx_fill_rectangle_device_rop(vci, yi, vdi, hi,
+                                                    &devc, dev, lop);
+        }
         }
         if (code < 0)
             goto err;
-        rsrc = psrc;
-        /* Swap around the colors due to a change */
-        ptemp = pdevc;
-        pdevc = pdevc_next;
-        pdevc_next = ptemp;
-        run = next;
-inc:	xprev = dda_current(pnext.x);
-        yprev = dda_current(pnext.y);	/* harmless if no skew */
-    }
-    /* Fill the final run. */
-    if (posture != image_portrait) {
-        code = (*dev_proc(dev, fill_parallelogram))
-            (dev, xrun, yrun, xprev - xrun, yprev - yrun, pdyx, pdyy,
-             pdevc, lop);
-    } else {
-        int xi = irun;
-        int wi = (irun = fixed2int_var_rounded(xprev)) - xi;
-
-        if (wi < 0)
-            xi += wi, wi = -wi;
-        if (wi > 0)
-            code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
-                                                pdevc, dev, lop);
+        psrc_cm = run;
     }
     /* Free cm buffer, if it was used */
     if (psrc_cm_start != NULL) {
@@ -797,7 +790,7 @@ inc:	xprev = dda_current(pnext.x);
     /* Save position if error, in case we resume. */
 err:
     gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_icc16");
-    penum->used.x = (rsrc - spp - psrc_initial) / spp;
+    penum->used.x = (psrc_cm - psrc_cm_initial) / spp_cm;
     penum->used.y = 0;
     return code;
 }
