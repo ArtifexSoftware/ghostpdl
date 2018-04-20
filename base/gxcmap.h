@@ -23,6 +23,7 @@
 #include "gscsel.h"
 #include "gxfmap.h"
 #include "gscspace.h"
+#include "gsdcolor.h"
 
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED
@@ -279,4 +280,22 @@ void cmap_transfer(gx_color_value *pconc, const gs_gstate * pgs,
                    gx_device * dev);
 void cmap_transfer_plane(gx_color_value *pconc, const gs_gstate *pgs,
                     gx_device *dev, int plane);
+
+typedef struct gx_cmapper_data_s gx_cmapper_data;
+
+typedef void (gx_cmapper_fn)(gx_cmapper_data *data);
+
+struct gx_cmapper_data_s {
+    gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    const gs_gstate *pgs;
+    gx_device *dev;
+    gs_color_select_t select;
+    gx_device_color devc;
+    gx_cmapper_fn *set_color;
+};
+
+gx_cmapper_fn *gx_get_cmapper(gx_cmapper_data *data, const gs_gstate *pgs,
+                              gx_device *dev, bool has_transfer, bool has_halftone,
+                              gs_color_select_t select);
+
 #endif /* gxcmap_INCLUDED */

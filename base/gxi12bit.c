@@ -582,10 +582,8 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     gs_logical_operation_t lop = penum->log_op;
     gx_dda_fixed_point pnext;
     image_posture posture = penum->posture;
-    fixed xprev, yprev;
     fixed pdyx, pdyy;		/* edge of parallelogram */
     int vci, vdi;
-    gx_device_color devc;
     int spp = penum->spp;
     const unsigned short *psrc = (const unsigned short *)buffer + data_x * spp;
     fixed xrun;			/* x at start of run */
@@ -598,14 +596,15 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     gsicc_bufferdesc_t output_buff_desc;
     unsigned short *psrc_cm, *psrc_cm_start, *psrc_decode, *psrc_cm_initial;
     int k;
-    gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int spp_cm, num_pixels;
-    gx_color_index color;
     bool need_decode = penum->icc_setup.need_decode;
     bool must_halftone = penum->icc_setup.must_halftone;
     bool has_transfer = penum->icc_setup.has_transfer;
     int num_des_comps;
     cmm_dev_profile_t *dev_profile;
+    gx_cmapper_data data;
+    gx_cmapper_fn *mapper = gx_get_cmapper(&data, pgs, dev, has_transfer, must_halftone, gs_color_select_source);
+    gx_color_value *conc = &data.conc[0];
 
     if (h == 0)
         return 0;
@@ -614,9 +613,6 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
         return gs_rethrow(-1, "ICC Link not created during image render icc16");
     }
     /* Needed for device N */
-    memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
-    /* These used to be set by init clues */
-    devc.type = gx_dc_type_none;
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     /* If the link is the identity, then we don't need to do any color
@@ -723,20 +719,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
         for ( k = 0; k < spp_cm; k++ ) {
             conc[k] = psrc_cm[k];
         }
-        /* Now we can do an encoding directly or we have to apply transfer
-           and or halftoning */
-        if (must_halftone || has_transfer) {
-            /* We need to do the tranfer function and/or the halftoning */
-            cmap_transfer_halftone(&(conc[0]), &devc, pgs, dev,
-                has_transfer, must_halftone, gs_color_select_source);
-        } else {
-            /* encode as a color index. avoid all the cv to frac to cv
-               conversions */
-            color = dev_proc(dev, encode_color)(dev, &(conc[0]));
-            /* check if the encoding was successful; we presume failure is rare */
-            if (color != gx_no_color_index)
-                color_set_pure(&devc, color);
-        }
+        mapper(&data);
         /* Fill the region between */
         /* xrun/irun and pnext.x/pnext.y */
         switch(posture)
@@ -748,7 +731,7 @@ skewed_but_same:
             fixed yprev = dda_current(pnext.y);
             code = (*dev_proc(dev, fill_parallelogram))
                 (dev, xrun, yrun, xprev - xrun, yprev - yrun, pdyx, pdyy,
-                 &devc, lop);
+                 &data.devc, lop);
             xrun = xprev;
             yrun = yprev;
             break;
@@ -762,7 +745,7 @@ skewed_but_same:
                 xi += wi, wi = -wi;
             if (wi > 0)
                 code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
-                                                    &devc, dev, lop);
+                                                    &data.devc, dev, lop);
             break;
         }
         case image_landscape:
@@ -774,7 +757,7 @@ skewed_but_same:
                 yi += hi, hi = -hi;
             if (hi > 0)
                 code = gx_fill_rectangle_device_rop(vci, yi, vdi, hi,
-                                                    &devc, dev, lop);
+                                                    &data.devc, dev, lop);
         }
         }
         if (code < 0)

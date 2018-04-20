@@ -1997,6 +1997,235 @@ gx_unit_frac(float fvalue)
     return f;
 }
 
+static void
+cmapper_transfer_halftone_add(gx_cmapper_data *data)
+{
+    gx_color_value *pconc = &data->conc[0];
+    const gs_gstate * pgs = data->pgs;
+    gx_device * dev = data->dev;
+    gs_color_select_t select = data->select;
+    uchar ncomps = dev->color_info.num_components;
+    frac frac_value;
+    uchar i;
+    frac cv_frac[GX_DEVICE_COLOR_MAX_COMPONENTS];
+
+    /* apply the transfer function(s) */
+    for (i = 0; i < ncomps; i++) {
+        frac_value = cv2frac(pconc[i]);
+        cv_frac[i] = gx_map_color_frac(pgs, frac_value, effective_transfer[i]);
+    }
+    /* Halftoning */
+    if (gx_render_device_DeviceN(&(cv_frac[0]), &data->devc, dev,
+                    pgs->dev_ht, &pgs->screen_phase[select]) == 1)
+        gx_color_load_select(&data->devc, pgs, dev, select);
+}
+
+static void
+cmapper_transfer_halftone_op(gx_cmapper_data *data)
+{
+    gx_color_value *pconc = &data->conc[0];
+    const gs_gstate * pgs = data->pgs;
+    gx_device * dev = data->dev;
+    gs_color_select_t select = data->select;
+    uchar ncomps = dev->color_info.num_components;
+    frac frac_value;
+    uchar i;
+    frac cv_frac[GX_DEVICE_COLOR_MAX_COMPONENTS];
+
+    /* apply the transfer function(s) */
+    uint k = dev->color_info.black_component;
+    for (i = 0; i < ncomps; i++) {
+        frac_value = cv2frac(pconc[i]);
+        if (i == k) {
+            cv_frac[i] = frac_1 - gx_map_color_frac(pgs,
+                (frac)(frac_1 - frac_value), effective_transfer[i]);
+        } else {
+            cv_frac[i] = frac_value;  /* Ignore transfer, see PLRM3 p. 494 */
+        }
+    }
+    /* Halftoning */
+    if (gx_render_device_DeviceN(&(cv_frac[0]), &data->devc, dev,
+                    pgs->dev_ht, &pgs->screen_phase[select]) == 1)
+        gx_color_load_select(&data->devc, pgs, dev, select);
+}
+
+static void
+cmapper_transfer_halftone_sub(gx_cmapper_data *data)
+{
+    gx_color_value *pconc = &data->conc[0];
+    const gs_gstate * pgs = data->pgs;
+    gx_device * dev = data->dev;
+    gs_color_select_t select = data->select;
+    uchar ncomps = dev->color_info.num_components;
+    frac frac_value;
+    uchar i;
+    frac cv_frac[GX_DEVICE_COLOR_MAX_COMPONENTS];
+
+    /* apply the transfer function(s) */
+    for (i = 0; i < ncomps; i++) {
+        frac_value = cv2frac(pconc[i]);
+        cv_frac[i] = frac_1 - gx_map_color_frac(pgs,
+                    (frac)(frac_1 - frac_value), effective_transfer[i]);
+    }
+    /* Halftoning */
+    if (gx_render_device_DeviceN(&(cv_frac[0]), &data->devc, dev,
+                    pgs->dev_ht, &pgs->screen_phase[select]) == 1)
+        gx_color_load_select(&data->devc, pgs, dev, select);
+}
+
+static void
+cmapper_transfer_add(gx_cmapper_data *data)
+{
+    gx_color_value *pconc = &data->conc[0];
+    const gs_gstate * pgs = data->pgs;
+    gx_device * dev = data->dev;
+    uchar ncomps = dev->color_info.num_components;
+    frac frac_value;
+    uchar i;
+    gx_color_index color;
+
+    /* apply the transfer function(s) */
+    for (i = 0; i < ncomps; i++) {
+        frac_value = cv2frac(pconc[i]);
+        frac_value = gx_map_color_frac(pgs,
+                                frac_value, effective_transfer[i]);
+        pconc[i] = frac2cv(frac_value);
+    }
+    /* Halftoning */
+    color = dev_proc(dev, encode_color)(dev, &(pconc[0]));
+    /* check if the encoding was successful; we presume failure is rare */
+    if (color != gx_no_color_index)
+        color_set_pure(&data->devc, color);
+}
+
+static void
+cmapper_transfer_op(gx_cmapper_data *data)
+{
+    gx_color_value *pconc = &data->conc[0];
+    const gs_gstate * pgs = data->pgs;
+    gx_device * dev = data->dev;
+    frac frac_value;
+    gx_color_index color;
+
+    uint k = dev->color_info.black_component;
+    /* Ignore transfer for non blacks, see PLRM3 p. 494 */
+    frac_value = cv2frac(pconc[k]);
+    frac_value = frac_1 - gx_map_color_frac(pgs,
+                (frac)(frac_1 - frac_value), effective_transfer[k]);
+    pconc[k] = frac2cv(frac_value);
+    /* Halftoning */
+    color = dev_proc(dev, encode_color)(dev, &(pconc[0]));
+    /* check if the encoding was successful; we presume failure is rare */
+    if (color != gx_no_color_index)
+        color_set_pure(&data->devc, color);
+}
+
+static void
+cmapper_transfer_sub(gx_cmapper_data *data)
+{
+    gx_color_value *pconc = &data->conc[0];
+    const gs_gstate * pgs = data->pgs;
+    gx_device * dev = data->dev;
+    uchar ncomps = dev->color_info.num_components;
+    frac frac_value;
+    uchar i;
+    gx_color_index color;
+
+    /* apply the transfer function(s) */
+    for (i = 0; i < ncomps; i++) {
+        frac_value = cv2frac(pconc[i]);
+        frac_value = frac_1 - gx_map_color_frac(pgs,
+                    (frac)(frac_1 - frac_value), effective_transfer[i]);
+        pconc[i] = frac2cv(frac_value);
+    }
+    /* Halftoning */
+    color = dev_proc(dev, encode_color)(dev, &(pconc[0]));
+    /* check if the encoding was successful; we presume failure is rare */
+    if (color != gx_no_color_index)
+        color_set_pure(&data->devc, color);
+}
+
+/* This is used by image color render to handle the cases where we need to
+   perform either a transfer function or halftoning on the color values
+   during an ICC color flow.  In this case, the color is already in the
+   device color space but in 16bpp color values. */
+static void
+cmapper_halftone(gx_cmapper_data *data)
+{
+    gx_color_value *pconc = &data->conc[0];
+    const gs_gstate * pgs = data->pgs;
+    gx_device * dev = data->dev;
+    gs_color_select_t select = data->select;
+    uchar ncomps = dev->color_info.num_components;
+    uchar i;
+    frac cv_frac[GX_DEVICE_COLOR_MAX_COMPONENTS];
+
+    /* We need this to be in frac form */
+    for (i = 0; i < ncomps; i++) {
+        cv_frac[i] = cv2frac(pconc[i]);
+    }
+    if (gx_render_device_DeviceN(&(cv_frac[0]), &data->devc, dev,
+                pgs->dev_ht, &pgs->screen_phase[select]) == 1)
+        gx_color_load_select(&data->devc, pgs, dev, select);
+}
+
+/* This is used by image color render to handle the cases where we need to
+   perform either a transfer function or halftoning on the color values
+   during an ICC color flow.  In this case, the color is already in the
+   device color space but in 16bpp color values. */
+static void
+cmapper_vanilla(gx_cmapper_data *data)
+{
+    gx_color_value *pconc = &data->conc[0];
+    gx_device * dev = data->dev;
+    gx_color_index color;
+
+    color = dev_proc(dev, encode_color)(dev, &(pconc[0]));
+    /* check if the encoding was successful; we presume failure is rare */
+    if (color != gx_no_color_index)
+        color_set_pure(&data->devc, color);
+}
+
+gx_cmapper_fn *
+gx_get_cmapper(gx_cmapper_data *data, const gs_gstate *pgs,
+               gx_device *dev, bool has_transfer, bool has_halftone,
+               gs_color_select_t select)
+{
+    memset(&(data->conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
+    data->pgs = pgs;
+    data->dev = dev;
+    data->select = select;
+    data->devc.type = gx_dc_type_none;
+    if (has_transfer && dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
+        check_cmyk_color_model_comps(dev);
+    if (pgs->effective_transfer_non_identity_count == 0)
+        has_transfer = 0;
+    if (has_transfer) {
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+            if (has_halftone)
+                data->set_color = cmapper_transfer_halftone_add;
+            else
+                data->set_color = cmapper_transfer_add;
+        } else if (dev->color_info.opmode == GX_CINFO_OPMODE) {
+            if (has_halftone)
+                data->set_color = cmapper_transfer_halftone_op;
+            else
+                data->set_color = cmapper_transfer_op;
+        } else {
+            if (has_halftone)
+                data->set_color = cmapper_transfer_halftone_sub;
+            else
+                data->set_color = cmapper_transfer_sub;
+        }
+    } else {
+        if (has_halftone)
+            data->set_color = cmapper_halftone;
+        else
+            data->set_color = cmapper_vanilla;
+    }
+    return data->set_color;
+}
+
 /* This is used by image color render to handle the cases where we need to
    perform either a transfer function or halftoning on the color values
    during an ICC color flow.  In this case, the color is already in the

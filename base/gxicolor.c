@@ -879,7 +879,6 @@ image_render_color_icc_portrait(gx_image_enum *penum_orig, const byte *buffer, i
     gs_logical_operation_t lop = penum->log_op;
     gx_dda_fixed_point pnext;
     int vci, vdi;
-    gx_device_color devc;
     int spp = penum->spp;
     const byte *psrc = buffer + data_x * spp;
     int irun;			/* int x/rrun */
@@ -889,22 +888,20 @@ image_render_color_icc_portrait(gx_image_enum *penum_orig, const byte *buffer, i
     byte *psrc_cm_initial;
     byte *run;
     int k;
-    gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int spp_cm = 0;
-    gx_color_index color;
     bool must_halftone = penum->icc_setup.must_halftone;
     bool has_transfer = penum->icc_setup.has_transfer;
+    gx_cmapper_data data;
+    gx_cmapper_fn *mapper = gx_get_cmapper(&data, pgs, dev, has_transfer, must_halftone, gs_color_select_source);
+    gx_color_value *conc = &data.conc[0];
 
     if (h == 0)
         return 0;
-    /* This used to be set by init clues */
-    devc.type = gx_dc_type_none;
     code = image_color_icc_prep(penum_orig, psrc, w, dev, &spp_cm, &psrc_cm,
                                 &psrc_cm_start, &bufend, false);
     if (code < 0) return code;
     psrc_cm_initial = psrc_cm;
     /* Needed for device N */
-    memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
     pnext = penum->dda.pixel0;
     irun = fixed2int_var_rounded(dda_current(pnext.x));
     dda_translate(pnext.x,  (-fixed_epsilon));
@@ -929,20 +926,7 @@ image_render_color_icc_portrait(gx_image_enum *penum_orig, const byte *buffer, i
         for (k = 0; k < spp_cm; k++) {
             conc[k] = gx_color_value_from_byte(psrc_cm[k]);
         }
-        /* Now we can do an encoding directly or we have to apply transfer
-           and or halftoning */
-        if (must_halftone || has_transfer) {
-            /* We need to do the tranfer function and/or the halftoning */
-            cmap_transfer_halftone(&(conc[0]), &devc, pgs, dev,
-                has_transfer, must_halftone, gs_color_select_source);
-        } else {
-            /* encode as a color index. avoid all the cv to frac to cv
-               conversions */
-            color = dev_proc(dev, encode_color)(dev, &(conc[0]));
-            /* check if the encoding was successful; we presume failure is rare */
-            if (color != gx_no_color_index)
-                color_set_pure(&devc, color);
-        }
+        mapper(&data);
         /* Fill the region between irun and fixed2int_var_rounded(pnext.x) */
         {
             int xi = irun;
@@ -952,7 +936,7 @@ image_render_color_icc_portrait(gx_image_enum *penum_orig, const byte *buffer, i
                 xi += wi, wi = -wi;
             if (wi > 0)
                 code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
-                                                    &devc, dev, lop);
+                                                    &data.devc, dev, lop);
         }
         if (code < 0)
             goto err;
@@ -980,7 +964,6 @@ image_render_color_icc_landscape(gx_image_enum *penum_orig, const byte *buffer, 
     gs_logical_operation_t lop = penum->log_op;
     gx_dda_fixed_point pnext;
     int vci, vdi;
-    gx_device_color devc;
     int spp = penum->spp;
     const byte *psrc = buffer + data_x * spp;
     int irun;			/* int x/rrun */
@@ -990,22 +973,20 @@ image_render_color_icc_landscape(gx_image_enum *penum_orig, const byte *buffer, 
     byte *psrc_cm_initial;
     byte *run;
     int k;
-    gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int spp_cm = 0;
-    gx_color_index color;
     bool must_halftone = penum->icc_setup.must_halftone;
     bool has_transfer = penum->icc_setup.has_transfer;
+    gx_cmapper_data data;
+    gx_cmapper_fn *mapper = gx_get_cmapper(&data, pgs, dev, has_transfer, must_halftone, gs_color_select_source);
+    gx_color_value *conc = &data.conc[0];
 
     if (h == 0)
         return 0;
-    /* This used to be set by init clues */
-    devc.type = gx_dc_type_none;
     code = image_color_icc_prep(penum_orig, psrc, w, dev, &spp_cm, &psrc_cm,
                                 &psrc_cm_start, &bufend, false);
     if (code < 0) return code;
     psrc_cm_initial = psrc_cm;
     /* Needed for device N */
-    memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
     pnext = penum->dda.pixel0;
     irun = fixed2int_var_rounded(dda_current(pnext.y));
     dda_translate(pnext.x,  (-fixed_epsilon));
@@ -1030,20 +1011,7 @@ image_render_color_icc_landscape(gx_image_enum *penum_orig, const byte *buffer, 
         for (k = 0; k < spp_cm; k++) {
             conc[k] = gx_color_value_from_byte(psrc_cm[k]);
         }
-        /* Now we can do an encoding directly or we have to apply transfer
-           and or halftoning */
-        if (must_halftone || has_transfer) {
-            /* We need to do the tranfer function and/or the halftoning */
-            cmap_transfer_halftone(&(conc[0]), &devc, pgs, dev,
-                has_transfer, must_halftone, gs_color_select_source);
-        } else {
-            /* encode as a color index. avoid all the cv to frac to cv
-               conversions */
-            color = dev_proc(dev, encode_color)(dev, &(conc[0]));
-            /* check if the encoding was successful; we presume failure is rare */
-            if (color != gx_no_color_index)
-                color_set_pure(&devc, color);
-        }
+        mapper(&data);
         /* Fill the region between irun and fixed2int_var_rounded(pnext.y) */
         /*
          * Note;  This section is nearly a copy of a simlar section below
@@ -1059,7 +1027,7 @@ image_render_color_icc_landscape(gx_image_enum *penum_orig, const byte *buffer, 
                 yi += hi, hi = -hi;
             if (hi > 0)
                 code = gx_fill_rectangle_device_rop(vci, yi, vdi, hi,
-                                                    &devc, dev, lop);
+                                                    &data.devc, dev, lop);
         }
         if (code < 0)
             goto err;
@@ -1088,7 +1056,6 @@ image_render_color_icc_skew(gx_image_enum *penum_orig, const byte *buffer, int d
     gx_dda_fixed_point pnext;
     fixed xprev, yprev;
     fixed pdyx, pdyy;		/* edge of parallelogram */
-    gx_device_color devc;
     int spp = penum->spp;
     const byte *psrc = buffer + data_x * spp;
     fixed xpos;			/* x ditto */
@@ -1098,24 +1065,22 @@ image_render_color_icc_skew(gx_image_enum *penum_orig, const byte *buffer, int d
     byte *psrc_cm = NULL, *psrc_cm_start = NULL;
     byte *psrc_cm_initial;
     int k;
-    gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int spp_cm = 0;
-    gx_color_index color;
     bool must_halftone = penum->icc_setup.must_halftone;
     bool has_transfer = penum->icc_setup.has_transfer;
     byte initial_run[GX_DEVICE_COLOR_MAX_COMPONENTS] = { 0 };
     byte *prev_cm = &initial_run[0];
+    gx_cmapper_data data;
+    gx_cmapper_fn *mapper = gx_get_cmapper(&data, pgs, dev, has_transfer, must_halftone, gs_color_select_source);
+    gx_color_value *conc = &data.conc[0];
 
     if (h == 0)
         return 0;
-    /* These used to be set by init clues */
-    devc.type = gx_dc_type_none;
     code = image_color_icc_prep(penum_orig, psrc, w, dev, &spp_cm, &psrc_cm,
                                 &psrc_cm_start, &bufend, false);
     if (code < 0) return code;
     psrc_cm_initial = psrc_cm;
     /* Needed for device N */
-    memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
     pnext = penum->dda.pixel0;
     xprev = dda_current(pnext.x);
     dda_translate(pnext.x,  (-fixed_epsilon));
@@ -1137,27 +1102,14 @@ image_render_color_icc_skew(gx_image_enum *penum_orig, const byte *buffer, int d
             for (k = 0; k < spp_cm; k++) {
                 conc[k] = gx_color_value_from_byte(psrc_cm[k]);
             }
-            /* Now we can do an encoding directly or we have to apply transfer
-               and or halftoning */
-            if (must_halftone || has_transfer) {
-                /* We need to do the tranfer function and/or the halftoning */
-                cmap_transfer_halftone(&(conc[0]), &devc, pgs, dev,
-                    has_transfer, must_halftone, gs_color_select_source);
-            } else {
-                /* encode as a color index. avoid all the cv to frac to cv
-                   conversions */
-                color = dev_proc(dev, encode_color)(dev, &(conc[0]));
-                /* check if the encoding was successful; we presume failure is rare */
-                if (color != gx_no_color_index)
-                    color_set_pure(&devc, color);
-            }
+            mapper(&data);
         }
         /* Fill the region between */
         /* xprev/yprev and xpos/ypos */
         /* Parallelogram */
         code = (*dev_proc(dev, fill_parallelogram))
                     (dev, xprev, yprev, xpos - xprev, ypos - yprev, pdyx, pdyy,
-                     &devc, lop);
+                     &data.devc, lop);
         xprev = xpos;
         yprev = ypos;
         if (code < 0)
