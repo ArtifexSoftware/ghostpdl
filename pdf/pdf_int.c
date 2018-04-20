@@ -127,6 +127,14 @@ static void pdf_free_dict(pdf_obj *o)
     gs_free_object(d->memory, d, "pdf interpreter free dictionary");
 }
 
+static void pdf_free_xref_table(pdf_obj *o)
+{
+    xref_table *xref = (xref_table *)o;
+
+    gs_free_object(xref->memory, xref->xref, "pdf_free_xref_table");
+    gs_free_object(xref->memory, xref, "pdf_free_xref_table");
+}
+
 void pdf_free_object(pdf_obj *o)
 {
     switch(o->type) {
@@ -150,6 +158,9 @@ void pdf_free_object(pdf_obj *o)
             break;
         case PDF_KEYWORD:
             pdf_free_keyword(o);
+            break;
+        case PDF_XREF_TABLE:
+            pdf_free_xref_table(o);
             break;
         default:
 #ifdef DEBUG
@@ -221,7 +232,7 @@ static int pdf_add_to_cache(pdf_context *ctx, pdf_obj *o)
 {
     pdf_obj_cache_entry *entry;
 
-    if (o->object_num > ctx->xref_size)
+    if (o->object_num > ctx->xref_table->xref_size)
         return_error(gs_error_rangecheck);
 
     if (ctx->cache_entries == MAX_OBJECT_CACHE_SIZE)
@@ -231,7 +242,7 @@ static int pdf_add_to_cache(pdf_context *ctx, pdf_obj *o)
             ctx->cache_LRU = entry->next;
             if (entry->next)
                 ((pdf_obj_cache_entry *)entry->next)->previous = NULL;
-            ctx->xref[entry->o->object_num].cache = NULL;
+            ctx->xref_table->xref[entry->o->object_num].cache = NULL;
             pdf_countdown(entry->o);
             ctx->cache_entries--;
             gs_free_object(ctx->memory, entry, "pdf_add_to_cache, free LRU");
@@ -255,7 +266,7 @@ static int pdf_add_to_cache(pdf_context *ctx, pdf_obj *o)
         ctx->cache_LRU = entry;
 
     ctx->cache_entries++;
-    ctx->xref[o->object_num].cache = entry;
+    ctx->xref_table->xref[o->object_num].cache = entry;
     return 0;
 }
 
@@ -268,10 +279,10 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
     pdf_obj *o;
     int code;
 
-    if (obj > ctx->xref_size)
+    if (obj > ctx->xref_table->xref_size)
         return_error(gs_error_rangecheck);
 
-    entry = &ctx->xref[obj];
+    entry = &ctx->xref_table->xref[obj];
 
     if (entry->cache != NULL){
         pdf_obj_cache_entry *cache_entry = entry->cache;
@@ -290,7 +301,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
         if (entry->compressed) {
             /* This is an object in a compressed object stream */
 
-            xref_entry *compressed_entry = &ctx->xref[entry->u.compressed.compressed_stream_num];
+            xref_entry *compressed_entry = &ctx->xref_table->xref[entry->u.compressed.compressed_stream_num];
             pdf_dict *compressed_object;
             pdf_stream *compressed_stream;
             char Buffer[256];
@@ -1588,8 +1599,10 @@ int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx)
     if (ctx->Info)
         pdf_countdown((pdf_obj *)ctx->Info);
 
-    if (ctx->xref)
-        gs_free_object(ctx->memory, ctx->xref, "pdf_free_context");
+    if (ctx->xref_table) {
+        pdf_countdown((pdf_obj *)ctx->xref_table);
+        ctx->xref_table = NULL;
+    }
 
     if (ctx->stack_bot) {
         pdf_clearstack(ctx);
@@ -1684,7 +1697,7 @@ static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t fi
         for (j=0;j<W[2];j++)
             gen = (gen << 8) + Buffer[j];
 
-        entry = &ctx->xref[i];
+        entry = &ctx->xref_table->xref[i];
         if (entry->object_num != 0)
             continue;
 
@@ -1758,36 +1771,47 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
     size = ((pdf_num *)o)->value.i;
 
     /* If this is the first xref stream then allocate the xref table and store the trailer */
-    if (ctx->xref == NULL) {
-        ctx->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, ((pdf_num *)o)->value.i * sizeof(xref_entry), "read_xref_stream allocate xref table");
-        if (ctx->xref == NULL)
+    if (ctx->xref_table == NULL) {
+        ctx->xref_table = (xref_table *)gs_alloc_bytes(ctx->memory, sizeof(xref_table), "read_xref_stream allocate xref table");
+        if (ctx->xref_table->xref == NULL) {
             return_error(gs_error_VMerror);
+        }
+        memset(ctx->xref_table, 0x00, sizeof(xref_table));
+        ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, ((pdf_num *)o)->value.i * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
+        if (ctx->xref_table->xref == NULL){
+            gs_free_object(ctx->memory, ctx->xref_table, "failed to allocate xref table entries");
+            ctx->xref_table = NULL;
+            return_error(gs_error_VMerror);
+        }
+        memset(ctx->xref_table->xref, 0x00, ((pdf_num *)o)->value.i * sizeof(xref_entry));
+        ctx->xref_table->memory = ctx->memory;
+        ctx->xref_table->type = PDF_XREF_TABLE;
+        ctx->xref_table->xref_size = ((pdf_num *)o)->value.i;
+        pdf_countup((pdf_obj *)ctx->xref_table);
 
-        memset(ctx->xref, 0x00, ((pdf_num *)o)->value.i * sizeof(xref_entry));
-        ctx->xref_size = ((pdf_num *)o)->value.i;
         ctx->Trailer = d;
         pdf_countup((pdf_obj *)d);
     }
 
     code = pdf_filter(ctx, d, s, &XRefStrm);
     if (code < 0) {
-        gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-        ctx->xref = NULL;
+        pdf_countdown((pdf_obj *)ctx->xref_table);
+        ctx->xref_table = NULL;
         return code;
     }
 
     code = pdf_dict_get(d, "W", &o);
     if (code < 0) {
         pdf_close_file(ctx, XRefStrm);
-        gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-        ctx->xref = NULL;
+        pdf_countdown((pdf_obj *)ctx->xref_table);
+        ctx->xref_table = NULL;
         return code;
     }
 
     if (o->type != PDF_ARRAY) {
         pdf_close_file(ctx, XRefStrm);
-        gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-        ctx->xref = NULL;
+        pdf_countdown((pdf_obj *)ctx->xref_table);
+        ctx->xref_table = NULL;
         return_error(gs_error_typecheck);
     }
     else {
@@ -1795,22 +1819,22 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
 
         if (a->entries != 3) {
             pdf_close_file(ctx, XRefStrm);
-            gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-            ctx->xref = NULL;
+            pdf_countdown((pdf_obj *)ctx->xref_table);
+            ctx->xref_table = NULL;
             return_error(gs_error_rangecheck);
         }
         for (i=0;i<3;i++) {
             code = pdf_array_get(a, (uint64_t)i, &o);
             if (code < 0) {
                 pdf_close_file(ctx, XRefStrm);
-                gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-                ctx->xref = NULL;
+                pdf_countdown((pdf_obj *)ctx->xref_table);
+                ctx->xref_table = NULL;
                 return code;
             }
             if (o->type != PDF_INT) {
                 pdf_close_file(ctx, XRefStrm);
-                gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-                ctx->xref = NULL;
+                pdf_countdown((pdf_obj *)ctx->xref_table);
+                ctx->xref_table = NULL;
                 return_error(gs_error_typecheck);
             }
             W[i] = ((pdf_num *)o)->value.i;
@@ -1822,22 +1846,22 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
         code = read_xref_stream_entries(ctx, XRefStrm, 0, size - 1, W);
         if (code < 0) {
             pdf_close_file(ctx, XRefStrm);
-            gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-            ctx->xref = NULL;
+            pdf_countdown((pdf_obj *)ctx->xref_table);
+            ctx->xref_table = NULL;
             return code;
         }
     } else {
         if (code < 0) {
             pdf_close_file(ctx, XRefStrm);
-            gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-            ctx->xref = NULL;
+            pdf_countdown((pdf_obj *)ctx->xref_table);
+            ctx->xref_table = NULL;
             return code;
         }
 
         if (o->type != PDF_ARRAY) {
             pdf_close_file(ctx, XRefStrm);
-            gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-            ctx->xref = NULL;
+            pdf_countdown((pdf_obj *)ctx->xref_table);
+            ctx->xref_table = NULL;
             return_error(gs_error_typecheck);
         }
         else {
@@ -1846,8 +1870,8 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
 
             if (a->entries & 1) {
                 pdf_close_file(ctx, XRefStrm);
-                gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-                ctx->xref = NULL;
+                pdf_countdown((pdf_obj *)ctx->xref_table);
+                ctx->xref_table = NULL;
                 return_error(gs_error_rangecheck);
             }
 
@@ -1855,36 +1879,36 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
                 code = pdf_array_get(a, (uint64_t)i, (pdf_obj **)&start);
                 if (code < 0) {
                     pdf_close_file(ctx, XRefStrm);
-                    gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-                    ctx->xref = NULL;
+                    pdf_countdown((pdf_obj *)ctx->xref_table);
+                    ctx->xref_table = NULL;
                     return code;
                 }
                 if (start->type != PDF_INT) {
                     pdf_close_file(ctx, XRefStrm);
-                    gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-                    ctx->xref = NULL;
+                    pdf_countdown((pdf_obj *)ctx->xref_table);
+                    ctx->xref_table = NULL;
                     return_error(gs_error_typecheck);
                 }
 
                 code = pdf_array_get(a, (uint64_t)i+1, (pdf_obj **)&end);
                 if (code < 0) {
                     pdf_close_file(ctx, XRefStrm);
-                    gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-                    ctx->xref = NULL;
+                    pdf_countdown((pdf_obj *)ctx->xref_table);
+                    ctx->xref_table = NULL;
                     return code;
                 }
                 if (end->type != PDF_INT) {
                     pdf_close_file(ctx, XRefStrm);
-                    gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-                    ctx->xref = NULL;
+                    pdf_countdown((pdf_obj *)ctx->xref_table);
+                    ctx->xref_table = NULL;
                     return_error(gs_error_typecheck);
                 }
 
                 code = read_xref_stream_entries(ctx, XRefStrm, start->value.i, start->value.i + end->value.i - 1, W);
                 if (code < 0) {
                     pdf_close_file(ctx, XRefStrm);
-                    gs_free_object(ctx->memory, ctx->xref, "read_xref_stream error");
-                    ctx->xref = NULL;
+                    pdf_countdown((pdf_obj *)ctx->xref_table);
+                    ctx->xref_table = NULL;
                     return code;
                 }
             }
@@ -2052,18 +2076,29 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
     pdf_pop(ctx, 2);
 
     /* If this is the first xref then allocate the xref table and store the trailer */
-    if (ctx->xref == NULL && size != 0) {
-        ctx->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, (start + size) * sizeof(xref_entry), "read_xref_stream allocate xref table");
-        if (ctx->xref == NULL)
+    if (ctx->xref_table == NULL && size != 0) {
+        ctx->xref_table = (xref_table *)gs_alloc_bytes(ctx->memory, sizeof(xref_table), "read_xref_stream allocate xref table");
+        if (ctx->xref_table == NULL)
             return_error(gs_error_VMerror);
+        memset(ctx->xref_table, 0x00, sizeof(xref_table));
 
-        memset(ctx->xref, 0x00, ((pdf_num *)o)->value.i * sizeof(xref_entry));
-        ctx->xref_size = start + size;
+        ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, (start + size) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
+        if (ctx->xref_table->xref == NULL){
+            pdf_countdown((pdf_obj *)ctx->xref_table);
+            ctx->xref_table = NULL;
+            return_error(gs_error_VMerror);
+        }
+
+        memset(ctx->xref_table->xref, 0x00, ((pdf_num *)o)->value.i * sizeof(xref_entry));
+        ctx->xref_table->memory = ctx->memory;
+        ctx->xref_table->type = PDF_XREF_TABLE;
+        ctx->xref_table->xref_size = start + size;
+        pdf_countup((pdf_obj *)ctx->xref_table);
     }
 
     skip_white(ctx, s);
     for (i=0;i< size;i++){
-        xref_entry *entry = &ctx->xref[i + start];
+        xref_entry *entry = &ctx->xref_table->xref[i + start];
         unsigned char free;
 
         if (entry->object_num != 0)
@@ -2118,7 +2153,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
      * xref starting at 0 and size of 0. In this case the /Size entry in the trailer dictionary
      * must tell us how large the xref is, and we need to allocate our xref table anyway.
      */
-    if (ctx->xref == NULL && size == 0) {
+    if (ctx->xref_table == NULL && size == 0) {
         code = pdf_dict_get(d, "Size", &o);
         if (code < 0) {
             pdf_pop(ctx, 2);
@@ -2128,14 +2163,27 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
             pdf_pop(ctx, 2);
             return_error(gs_error_typecheck);
         }
-        ctx->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, ((pdf_num *)o)->value.i * sizeof(xref_entry), "read_xref_stream allocate xref table");
-        if (ctx->xref == NULL) {
+
+        ctx->xref_table = (xref_table *)gs_alloc_bytes(ctx->memory, sizeof(xref_table), "read_xref_stream allocate xref table");
+        if (ctx->xref_table == NULL) {
             pdf_pop(ctx, 2);
             return_error(gs_error_VMerror);
         }
+        memset(ctx->xref_table, 0x00, sizeof(xref_table));
 
-        memset(ctx->xref, 0x00, ((pdf_num *)o)->value.i * sizeof(xref_entry));
-        ctx->xref_size = ((pdf_num *)o)->value.i;
+        ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, ((pdf_num *)o)->value.i * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
+        if (ctx->xref_table->xref == NULL){
+            pdf_pop(ctx, 2);
+            pdf_countdown((pdf_obj *)ctx->xref_table);
+            ctx->xref_table = NULL;
+            return_error(gs_error_VMerror);
+        }
+
+        memset(ctx->xref_table->xref, 0x00, ((pdf_num *)o)->value.i * sizeof(xref_entry));
+        ctx->xref_table->memory = ctx->memory;
+        ctx->xref_table->type = PDF_XREF_TABLE;
+        ctx->xref_table->xref_size = ((pdf_num *)o)->value.i;
+        pdf_countup((pdf_obj *)ctx->xref_table);
     }
 
     /* Now check if this is a hybrid file. */
@@ -2354,8 +2402,8 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
         char Buffer[32];
 
         dmprintf(ctx->memory, "\n%% Dumping xref table\n");
-        for (i=0;i < ctx->xref_size;i++) {
-            entry = &ctx->xref[i];
+        for (i=0;i < ctx->xref_table->xref_size;i++) {
+            entry = &ctx->xref_table->xref[i];
             if(entry->compressed) {
                 dmprintf(ctx->memory, "*");
                 gs_sprintf(Buffer, "%ld", entry->object_num);

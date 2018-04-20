@@ -139,7 +139,7 @@ typedef struct xref_s {
     pdf_obj_common;
     uint64_t xref_size;
     xref_entry *xref;
-} xref;
+} xref_table;
 
 #define UNREAD_BUFFER_SIZE 256
 
