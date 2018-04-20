@@ -590,7 +590,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     int irun;			/* int xrun */
     fixed yrun;			/* y ditto */
     const unsigned short *bufend = psrc + w;
-    const unsigned short *run;
+    unsigned short *run;
     int code = 0;
     gsicc_bufferdesc_t input_buff_desc;
     gsicc_bufferdesc_t output_buff_desc;
