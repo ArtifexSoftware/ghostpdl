@@ -30,21 +30,24 @@ typedef enum pdf_obj_type_e {
     PDF_TRUE = '1',
     PDF_FALSE = '0',
     PDF_KEYWORD = 'K',
-} pdf_obj_type_t;
+    PDF_XREF_TABLE = 'X',
+    PDF_STREAM_OBJECT = 'S',
+} pdf_obj_type;
 
-typedef pdf_obj_type_t pdf_obj_type;
+#define pdf_obj_common \
+    pdf_obj_type type;\
+    char flags;\
+    unsigned int refcnt;\
+    gs_memory_t *memory;                /* memory allocator to use */\
+    uint64_t object_num;\
+    uint32_t generation_num
 
 typedef struct pdf_obj_s {
-    char type;
-    char flags;
-    unsigned int refcnt;
-    gs_memory_t *memory;                /* memory allocator to use */
-    uint64_t object_num;
-    uint32_t generation_num;
+    pdf_obj_common;
 } pdf_obj;
 
 typedef struct pdf_num_s {
-    pdf_obj object;
+    pdf_obj_common;
     union {
         /* Acrobat (up to PDF version 1.7) limits ints to 32-bits, we choose to use 64 */
         int64_t i;
@@ -53,13 +56,13 @@ typedef struct pdf_num_s {
 } pdf_num;
 
 typedef struct pdf_string_s {
-    pdf_obj object;
+    pdf_obj_common;
     uint32_t length;
     unsigned char *data;
 } pdf_string;
 
 typedef struct pdf_name_s {
-    pdf_obj object;
+    pdf_obj_common;
     uint32_t length;
     unsigned char *data;
 } pdf_name;
@@ -76,21 +79,21 @@ typedef enum pdf_key_e {
 }pdf_key;
 
 typedef struct pdf_keyword_s {
-    pdf_obj object;
+    pdf_obj_common;
     uint32_t length;
     unsigned char *data;
     pdf_key key;
 } pdf_keyword;
 
 typedef struct pdf_array_s {
-    pdf_obj object;
+    pdf_obj_common;
     uint64_t size;
     uint64_t entries;
     pdf_obj **values;
 } pdf_array;
 
 typedef struct pdf_dict_s {
-    pdf_obj object;
+    pdf_obj_common;
     uint64_t size;
     uint64_t entries;
     pdf_obj **keys;
@@ -99,9 +102,9 @@ typedef struct pdf_dict_s {
 } pdf_dict;
 
 typedef struct pdf_indirect_ref_s {
-    pdf_obj object;
-    uint64_t object_num;
-    uint32_t generation_num;
+    pdf_obj_common;
+    uint64_t ref_object_num;
+    uint32_t ref_generation_num;
 } pdf_indirect_ref;
 
 typedef struct pdf_obj_cache_entry_s {
@@ -118,23 +121,30 @@ typedef struct xref_entry_s {
     bool compressed;                /* true if object is in a compressed object stream */
     bool free;                      /* true if this is a free entry */
     uint64_t object_num;            /* Object number */
-    uint32_t generation_num;        /* Generation number. */
-    gs_offset_t offset;             /* File offset. */
+
+    union u_s {
+        struct uncompressed_s {
+            uint32_t generation_num;        /* Generation number. */
+            gs_offset_t offset;             /* File offset. */
+        }uncompressed;
+        struct compressed_s {
+            uint64_t compressed_stream_num; /* compressed stream object number if compressed */
+            uint32_t object_index;          /* Index of object in compressed stream */
+        }compressed;
+    }u;
     pdf_obj_cache_entry *cache;     /* Pointer to cache entry if cached, or NULL if not */
 } xref_entry;
 
-typedef struct compressed_xref_entry_s {
-    bool compressed;                /* true if object is in a compressed object stream */
-    bool free;                      /* true if this is a free entry */
-    uint64_t compressed_stream_num; /* compressed stream object number if compressed */
-    uint32_t object_index;          /* Index of object in compressed stream */
-    gs_offset_t object_num;         /* always 0 */
-    pdf_obj_cache_entry *cache;     /* Pointer to cache entry if cached, or NULL if not */
-} compressed_xref_entry;
+typedef struct xref_s {
+    pdf_obj_common;
+    uint64_t xref_size;
+    xref_entry *xref;
+} xref;
 
 #define UNREAD_BUFFER_SIZE 256
 
 typedef struct pdf_stream_s {
+    pdf_obj_common;
     stream *s;
     uint32_t unread_size;
     char unget_buffer[UNREAD_BUFFER_SIZE];

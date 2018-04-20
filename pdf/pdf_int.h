@@ -20,7 +20,7 @@
 #define PDF_INTERPRETER
 
 int pdf_read_token(pdf_context *ctx, pdf_stream *s);
-int pdf_read_object(pdf_context *ctx, pdf_stream *s);
+int pdf_read_object(pdf_context *ctx, pdf_stream *s, bool compressed_object);
 void pdf_free_object(pdf_obj *o);
 
 int pdf_make_name(pdf_context *ctx, byte *key, uint32_t size, pdf_obj **o);

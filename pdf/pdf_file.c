@@ -90,7 +90,7 @@ static int pdf_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, strea
     pdf_obj *o;
     stream_PDiff_state pds;
     stream_PNGP_state pps;
-    uint min_size;
+    uint min_size = 2;
     int code;
     uint32_t Predictor = 1;
 
@@ -117,6 +117,7 @@ static int pdf_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, strea
             case 0:
                 break;
             case 1:
+                min_size = 2;
                 break;
             case 2:
                 /* zpd_setup, componentwise horizontal differencing */
