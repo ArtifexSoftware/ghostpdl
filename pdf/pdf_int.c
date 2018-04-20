@@ -295,7 +295,9 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
              */
             compressed_xref_entry *c_entry = (compressed_xref_entry *)entry;
             xref_entry *compressed_entry = &ctx->xref[c_entry->compressed_stream_num];
-            pdf_obj *compressed_object;
+            pdf_dict *compressed_object;
+            pdf_stream *compressed_stream;
+            char Buffer[256];
 
             if (compressed_entry->cache == NULL) {
                 code = pdf_seek(ctx, ctx->main_stream, compressed_entry->offset, SEEK_SET);
@@ -306,13 +308,25 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 if (code < 0)
                     return code;
 
-                compressed_object = ctx->stack_top[-1];
+                compressed_object = (pdf_dict *)ctx->stack_top[-1];
                 pdf_countup(compressed_object);
                 pdf_pop(ctx, 1);
             } else {
-                compressed_object = compressed_entry->cache->o;
+                compressed_object = (pdf_dict *)compressed_entry->cache->o;
                 pdf_countup(compressed_object);
             }
+            code = pdf_seek(ctx, ctx->main_stream, compressed_object->stream, SEEK_SET);
+            if (code < 0) {
+                pdf_countdown(compressed_object);
+                return code;
+            }
+
+            code = pdf_filter(ctx, compressed_object, ctx->main_stream, &compressed_stream);
+            if (code < 0) {
+                pdf_countdown(compressed_object);
+                return code;
+            }
+            code = pdf_read_bytes(ctx, Buffer, 1, 256, compressed_stream);
             pdf_countdown(compressed_object);
             return 0;
         } else {
@@ -1270,6 +1284,11 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
         pdf_pop(ctx, 1);
         return_error(gs_error_typecheck);
     }
+    keyword = ((pdf_keyword *)ctx->stack_top[-1]);
+    if (keyword->key != PDF_OBJ) {
+        pdf_pop(ctx, 1);
+        return_error(gs_error_syntaxerror);
+    }
     pdf_pop(ctx, 1);
 
     code = pdf_read_token(ctx, s);
@@ -1292,9 +1311,78 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
         pdf_add_to_cache(ctx, o);
         return 0;
     }
+    if (keyword->key == PDF_STREAM) {
+        pdf_obj *o = NULL;
+        pdf_stream *ostream = NULL;
+        pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
+        gs_offset_t offset;
+
+        skip_white(ctx, ctx->main_stream);
+
+        offset = (gs_offset_t)stell(ctx->main_stream->s) - 1;
+
+        pdf_pop(ctx, 1);
+        d = ctx->stack_top[-1];
+
+        if (d->object.type != PDF_DICT) {
+            pdf_pop(ctx, 1);
+            return_error(gs_error_syntaxerror);
+        }
+        d->object.object_num = objnum;
+        d->object.generation_num = gen;
+        d->stream = offset;
+        code = pdf_add_to_cache(ctx, (pdf_obj *)d);
+
+        /* This code may be a performance overhead, it simply skips over the stream contents
+         * and checks that the stream ends with a 'endstream endobj' pair. We could add a
+         * 'go faster' flag for users who are certain their PDF files are well-formed. This
+         * could also allow us to skip all kinds of other checking.....
+         */
+
+        code = pdf_dict_get(d, "Length", &o);
+        if (code < 0) {
+            pdf_pop(ctx, 1);
+            return code;
+        }
+        if (o->type != PDF_INT) {
+            pdf_pop(ctx, 1);
+            return_error(gs_error_typecheck);
+        }
+
+        code = pdf_seek(ctx, ctx->main_stream, ((pdf_num *)o)->value.i, SEEK_CUR);
+        if (code < 0) {
+            pdf_pop(ctx, 1);
+            return code;
+        }
+
+        code = pdf_read_token(ctx, s);
+        if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
+            pdf_pop(ctx, 2);
+            return_error(gs_error_typecheck);
+        }
+        keyword = ((pdf_keyword *)ctx->stack_top[-1]);
+        if (keyword->key != PDF_ENDSTREAM) {
+            pdf_pop(ctx, 2);
+            return_error(gs_error_typecheck);
+        }
+        pdf_pop(ctx, 1);
+
+        code = pdf_read_token(ctx, s);
+        if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
+            pdf_pop(ctx, 2);
+            return_error(gs_error_typecheck);
+        }
+        keyword = ((pdf_keyword *)ctx->stack_top[-1]);
+        if (keyword->key != PDF_ENDOBJ) {
+            pdf_pop(ctx, 2);
+            return_error(gs_error_typecheck);
+        }
+        pdf_pop(ctx, 1);
+        return 0;
+    }
     /* need to handle 'stream'. In the meantime, remove the keyword and object */
     pdf_pop(ctx, 2);
-    return 0;
+    return_error(gs_error_syntaxerror);
 }
 
 /* In contrast to the 'read' functions, the 'make' functions create an object with a
@@ -1823,7 +1911,7 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
                             return repair_pdf_file(ctx);
                         }
                         d = (pdf_dict *)ctx->stack_top[-1];
-                        d->stream = (gs_offset_t)stell(ctx->main_stream);
+                        d->stream = (gs_offset_t)stell(ctx->main_stream->s);
 
                         d->object.object_num = obj_num;
                         d->object.generation_num = gen_num;
@@ -2195,22 +2283,54 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
         dmprintf(ctx->memory, "\nDumping xref table\n");
         for (i=0;i < ctx->xref_size;i++) {
             entry = &ctx->xref[i];
-            if(entry->compressed)
+            if(entry->compressed) {
+                compressed_xref_entry *c_entry = (compressed_xref_entry *) entry;
                 dmprintf(ctx->memory, "*");
-            else
-                dmprintf(ctx->memory, " ");
-            gs_sprintf(Buffer, "%ld", entry->offset);
-            j = 10 - strlen(Buffer);
-            while(j--) {
-                dmprintf(ctx->memory, " ");
+                gs_sprintf(Buffer, "%ld", c_entry->object_num);
+                j = 10 - strlen(Buffer);
+                while(j--) {
+                    dmprintf(ctx->memory, " ");
+                }
+                dmprintf1(ctx->memory, "%s ", Buffer);
+
+                gs_sprintf(Buffer, "%ld", c_entry->compressed_stream_num);
+                j = 10 - strlen(Buffer);
+                while(j--) {
+                    dmprintf(ctx->memory, " ");
+                }
+                dmprintf1(ctx->memory, "%s ", Buffer);
+
+                gs_sprintf(Buffer, "%ld", c_entry->object_index);
+                j = 10 - strlen(Buffer);
+                while(j--) {
+                    dmprintf(ctx->memory, " ");
+                }
+                dmprintf1(ctx->memory, "%s ", Buffer);
             }
-            dmprintf1(ctx->memory, "%s ", Buffer);
-            gs_sprintf(Buffer, "%ld", entry->generation_num);
-            j = 10 - strlen(Buffer);
-            while(j--) {
+            else {
                 dmprintf(ctx->memory, " ");
+
+                gs_sprintf(Buffer, "%ld", entry->object_num);
+                j = 10 - strlen(Buffer);
+                while(j--) {
+                    dmprintf(ctx->memory, " ");
+                }
+                dmprintf1(ctx->memory, "%s ", Buffer);
+
+                gs_sprintf(Buffer, "%ld", entry->offset);
+                j = 10 - strlen(Buffer);
+                while(j--) {
+                    dmprintf(ctx->memory, " ");
+                }
+                dmprintf1(ctx->memory, "%s ", Buffer);
+
+                gs_sprintf(Buffer, "%ld", entry->generation_num);
+                j = 10 - strlen(Buffer);
+                while(j--) {
+                    dmprintf(ctx->memory, " ");
+                }
+                dmprintf1(ctx->memory, "%s ", Buffer);
             }
-            dmprintf1(ctx->memory, "%s ", Buffer);
             if (entry->free)
                 dmprintf(ctx->memory, "f\n");
             else
