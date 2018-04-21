@@ -739,7 +739,7 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
     uint32_t size = 256;
     pdf_string *string = NULL;
     int code, octal_index = 0;
-    bool escape = false, skip_eol = false;
+    bool escape = false, skip_eol = false, exit_loop = false;
 
     Buffer = (char *)gs_alloc_bytes(ctx->memory, size, "pdf_read_string");
     if (Buffer == NULL)
@@ -761,79 +761,119 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
 
         if (escape) {
             escape = false;
-            switch (Buffer[index]) {
-                case 0x0a:
-                case 0x0d:
-                    skip_eol = true;
-                    continue;
-                case 'n':
-                    Buffer[index] = 0x0a;
-                    break;
-                case 'r':
-                    Buffer[index] = 0x0a;
-                    break;
-                case 't':
-                    Buffer[index] = 0x09;
-                    break;
-                case 'b':
-                    Buffer[index] = 0x07;
-                    break;
-                case 'f':
-                    Buffer[index] = 0x0c;
-                    break;
-                case '(':
-                case ')':
-                case '\\':
-                    break;
-                default:
-                    if (Buffer[index] >= 0x30 && Buffer[index] <= 0x70) {
-                        octal[octal_index] = Buffer[index];
-                        octal_index++;
-                        continue;
-                    }
+            if (Buffer[index] == 0x0a || Buffer[index] == 0x0d) {
+                skip_eol = true;
+                continue;
+            }
+            if (octal_index) {
+                byte dummy[2];
+                dummy[0] = '\\';
+                dummy[1] = Buffer[index];
+                code = pdf_unread(ctx, s, dummy, 2);
+                if (code < 0) {
                     gs_free_object(ctx->memory, Buffer, "pdf_read_string");
-                    return_error(gs_error_syntaxerror);
-                    break;
+                    return code;
+                }
+                Buffer[index] = octal[0];
+                if (octal_index == 2)
+                    Buffer[index] = (Buffer[index] * 8) + octal[1];
+                octal_index = 0;
+            } else {
+                switch (Buffer[index]) {
+                    case 'n':
+                        Buffer[index] = 0x0a;
+                        break;
+                    case 'r':
+                        Buffer[index] = 0x0a;
+                        break;
+                    case 't':
+                        Buffer[index] = 0x09;
+                        break;
+                    case 'b':
+                        Buffer[index] = 0x07;
+                        break;
+                    case 'f':
+                        Buffer[index] = 0x0c;
+                        break;
+                    case '(':
+                    case ')':
+                    case '\\':
+                        break;
+                    default:
+                        if (Buffer[index] >= 0x30 && Buffer[index] <= 0x37) {
+                            octal[octal_index] = Buffer[index] - 0x30;
+                            octal_index++;
+                            continue;
+                        }
+                        gs_free_object(ctx->memory, Buffer, "pdf_read_string");
+                        return_error(gs_error_syntaxerror);
+                        break;
+                }
             }
         } else {
             switch(Buffer[index]) {
                 case 0x0a:
                 case 0x0d:
-                    Buffer[index] = 0x0a;
-                    skip_eol = true;
+                    if (octal_index != 0) {
+                        code = pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
+                        if (code < 0) {
+                            gs_free_object(ctx->memory, Buffer, "pdf_read_string");
+                            return code;
+                        }
+                        Buffer[index] = octal[0];
+                        if (octal_index == 2)
+                            Buffer[index] = (Buffer[index] * 8) + octal[1];
+                        octal_index = 0;
+                    } else {
+                        Buffer[index] = 0x0a;
+                        skip_eol = true;
+                    }
+                    break;
+                case ')':
+                    if (octal_index != 0) {
+                        code = pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
+                        if (code < 0) {
+                            gs_free_object(ctx->memory, Buffer, "pdf_read_string");
+                            return code;
+                        }
+                        Buffer[index] = octal[0];
+                        if (octal_index == 2)
+                            Buffer[index] = (Buffer[index] * 8) + octal[1];
+                        octal_index = 0;
+                    } else {
+                        Buffer[index] = 0x00;
+                        exit_loop = true;
+                    }
                     break;
                 case '\\':
-                    if (octal_index != 0) {
-                        gs_free_object(ctx->memory, Buffer, "pdf_read_string");
-                        return_error(gs_error_syntaxerror);
-                    }
                     escape = true;
                     continue;
                 default:
+                    if (octal_index) {
+                        if (Buffer[index] >= 0x30 && Buffer[index] <= 0x37) {
+                            octal[octal_index] = Buffer[index] - 0x30;
+                            if (++octal_index < 3)
+                                continue;
+                            Buffer[index] = (octal[0] * 64) + (octal[1] * 8) + octal[2];
+                            octal_index = 0;
+                        } else {
+                            code = pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
+                            if (code < 0) {
+                                gs_free_object(ctx->memory, Buffer, "pdf_read_string");
+                                return code;
+                            }
+                            Buffer[index] = octal[0];
+                            if (octal_index == 2)
+                                Buffer[index] = (Buffer[index] * 8) + octal[1];
+                            octal_index = 0;
+                        }
+                    }
                     break;
-            }
-            if (Buffer[index] == ')') {
-                if (octal_index != 0) {
-                    gs_free_object(ctx->memory, Buffer, "pdf_read_string");
-                    return_error(gs_error_syntaxerror);
-                }
-                Buffer[index] = 0x00;
-                break;
             }
         }
 
-        if (octal_index) {
-            if (Buffer[index] >= 0x30 && Buffer[index] <= 0x70) {
-                octal[octal_index] = Buffer[index] - 0x30;
-                if (++octal_index < 3)
-                    continue;
-                Buffer[index] = (octal[0] * 64) + (octal[1] * 8) + octal[2];
-                octal_index = 0;
-            } else {
-                gs_free_object(ctx->memory, Buffer, "pdf_read_string");
-                return_error(gs_error_syntaxerror);
-            }
-        }
+        if (exit_loop)
+            break;
 
         if (index++ >= size) {
             NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdf_read_string");
