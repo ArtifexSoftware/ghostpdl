@@ -151,6 +151,7 @@ typedef struct pdf_context_s
     pdf_dict *Trailer;
     pdf_dict *Root;
     pdf_dict *Info;
+    pdf_dict *Pages;
 
     uint32_t stack_size;
     pdf_obj **stack_bot;
