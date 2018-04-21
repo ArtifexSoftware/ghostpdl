@@ -31,7 +31,6 @@ typedef enum pdf_obj_type_e {
     PDF_FALSE = '0',
     PDF_KEYWORD = 'K',
     PDF_XREF_TABLE = 'X',
-    PDF_STREAM_OBJECT = 'S',
 } pdf_obj_type;
 
 #define pdf_obj_common \
@@ -144,7 +143,6 @@ typedef struct xref_s {
 #define UNREAD_BUFFER_SIZE 256
 
 typedef struct pdf_stream_s {
-    pdf_obj_common;
     stream *s;
     uint32_t unread_size;
     char unget_buffer[UNREAD_BUFFER_SIZE];
