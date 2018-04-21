@@ -97,7 +97,7 @@ typedef struct pdf_dict_s {
     uint64_t entries;
     pdf_obj **keys;
     pdf_obj **values;
-    gs_offset_t stream;
+    gs_offset_t stream_offset;
 } pdf_dict;
 
 typedef struct pdf_indirect_ref_s {

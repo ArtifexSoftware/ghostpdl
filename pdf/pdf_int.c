@@ -366,7 +366,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             }
             pdf_countdown(o);
 
-            code = pdf_seek(ctx, ctx->main_stream, compressed_object->stream, SEEK_SET);
+            code = pdf_seek(ctx, ctx->main_stream, compressed_object->stream_offset, SEEK_SET);
             if (code < 0) {
                 pdf_countdown((pdf_obj *)compressed_object);
                 return code;
@@ -1545,7 +1545,7 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
         }
         d->object_num = objnum;
         d->generation_num = gen;
-        d->stream = offset;
+        d->stream_offset = offset;
         code = pdf_add_to_cache(ctx, (pdf_obj *)d);
 
         /* This code may be a performance overhead, it simply skips over the stream contents
@@ -2171,7 +2171,7 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
                             return repair_pdf_file(ctx);
                         }
                         d = (pdf_dict *)ctx->stack_top[-1];
-                        d->stream = (gs_offset_t)stell(ctx->main_stream->s);
+                        d->stream_offset = (gs_offset_t)stell(ctx->main_stream->s);
 
                         d->object_num = obj_num;
                         d->generation_num = gen_num;
