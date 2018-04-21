@@ -40,7 +40,7 @@ PDF.config-clean: clean_gs
 PDF_TOP_OBJ=$(PDFOBJDIR)$(D)pdftop.$(OBJ)
 PDF_TOP_OBJS= $(PDF_TOP_OBJ) $(PDFOBJDIR)$(D)pdfimpl.$(OBJ)
 
-PDFINCLUDES=$(PDFSRC)*.h $(PDFOBJ)arch.h
+PDFINCLUDES=$(PDFSRC)*.h $(PDFOBJ)arch.h $(strmio_h) $(stream_h)
 
 $(PDFOBJ)pdf_int.$(OBJ): $(PDFSRC)pdf_int.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_int.c $(XPSO_)pdf_int.$(OBJ)

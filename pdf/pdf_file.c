@@ -14,6 +14,7 @@
 */
 
 #include "ghostpdf.h"
+#include "pdf_file.h"
 #include "pdf_int.h"
 #include "stream.h"
 #include "strimpl.h"
@@ -25,7 +26,7 @@
 /***********************************************************************************/
 /* Decompression filters.                                                          */
 
-int
+static int
 pdf_filter_report_error(stream_state * st, const char *str)
 {
     if_debug1m('s', st->memory, "[s]stream error: %s\n", str);
@@ -88,7 +89,6 @@ static int pdf_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, strea
     stream_zlib_state zls;
     pdf_dict *DP;
     pdf_obj *o;
-    stream_PDiff_state pds;
     stream_PNGP_state pps;
     uint min_size = 2;
     int code;

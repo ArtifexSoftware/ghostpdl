@@ -25,16 +25,17 @@ void pdf_free_object(pdf_obj *o);
 
 int pdf_make_name(pdf_context *ctx, byte *key, uint32_t size, pdf_obj **o);
 int pdf_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value);
-int pdf_dict_get(pdf_dict *d, char *Key, pdf_obj **o);
+int pdf_dict_get(pdf_dict *d, const char *Key, pdf_obj **o);
 int pdf_array_get(pdf_array *a, uint64_t index, pdf_obj **o);
 int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object);
+int repair_pdf_file(pdf_context *ctx);
 
-static inline pdf_countup(pdf_obj *o)
+static inline void pdf_countup(pdf_obj *o)
 {
     o->refcnt++;
 }
 
-static inline pdf_countdown(pdf_obj *o)
+static inline void pdf_countdown(pdf_obj *o)
 {
 #ifdef DEBUG
     if (o->refcnt == 0)

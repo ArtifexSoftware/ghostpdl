@@ -159,7 +159,6 @@ pdf_imp_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
 
     return 0;
 
-cleanup_halftone:
 cleanup_erase:
     /* undo gsave */
     gs_grestore_only(ctx->pgs);     /* destroys gs_save stack */
@@ -180,42 +179,42 @@ pdf_imp_process_file(pl_interp_implementation_t *impl, char *filename)
     pdf_interp_instance_t *instance = impl->interp_client_data;
     pdf_context *ctx = instance->ctx;
     int code;
-    pl_main_instance_t *main;
+    pl_main_instance_t *imain;
 
-    main = pl_main_get_instance(ctx->memory);
+    imain = pl_main_get_instance(ctx->memory);
 
-    ctx->first_page = main->first_page;             /* -dFirstPage= */
-    ctx->last_page = main->last_page;              /* -dLastPage= */
-    ctx->pdfdebug = main->pdfdebug;
-    ctx->pdfstoponerror = main->pdfstoponerror;
-    ctx->pdfstoponwarning = main->pdfstoponwarning;
-    ctx->notransparency = main->notransparency;
-    ctx->nocidfallback = main->nocidfallback;
-    ctx->no_pdfmark_outlines = main->no_pdfmark_outlines;
-    ctx->no_pdfmark_dests = main->no_pdfmark_dests;
-    ctx->pdffitpage = main->pdffitpage;
-    ctx->usecropbox = main->usecropbox;
-    ctx->useartbox = main->useartbox;
-    ctx->usebleedbox = main->usebleedbox;
-    ctx->usetrimbox = main->usetrimbox;
-    ctx->printed = main->printed;
-    ctx->showacroform = main->showacroform;
-    ctx->showannots = main->showannots;
-    ctx->nouserunit = main->nouserunit;
-    ctx->renderttnotdef = main->renderttnotdef;
+    ctx->first_page = imain->first_page;             /* -dFirstPage= */
+    ctx->last_page = imain->last_page;              /* -dLastPage= */
+    ctx->pdfdebug = imain->pdfdebug;
+    ctx->pdfstoponerror = imain->pdfstoponerror;
+    ctx->pdfstoponwarning = imain->pdfstoponwarning;
+    ctx->notransparency = imain->notransparency;
+    ctx->nocidfallback = imain->nocidfallback;
+    ctx->no_pdfmark_outlines = imain->no_pdfmark_outlines;
+    ctx->no_pdfmark_dests = imain->no_pdfmark_dests;
+    ctx->pdffitpage = imain->pdffitpage;
+    ctx->usecropbox = imain->usecropbox;
+    ctx->useartbox = imain->useartbox;
+    ctx->usebleedbox = imain->usebleedbox;
+    ctx->usetrimbox = imain->usetrimbox;
+    ctx->printed = imain->printed;
+    ctx->showacroform = imain->showacroform;
+    ctx->showannots = imain->showannots;
+    ctx->nouserunit = imain->nouserunit;
+    ctx->renderttnotdef = imain->renderttnotdef;
 
-    if (main->PDFPassword) {
-        ctx->PDFPassword = (char *)gs_alloc_bytes(ctx->memory, strlen(main->PDFPassword) + 1, "allocate PDFpassword parameter");
+    if (imain->PDFPassword) {
+        ctx->PDFPassword = (char *)gs_alloc_bytes(ctx->memory, strlen(imain->PDFPassword) + 1, "allocate PDFpassword parameter");
         if (ctx->PDFPassword == NULL) {
             gs_free_object(ctx->memory, ctx, "pdf_imp_allocate_interp_instance");
             gs_free_object(ctx->memory, instance, "pdf_imp_allocate_interp_instance");
             return gs_error_VMerror;
         }
-        memset(ctx->PDFPassword, 0x00, strlen(main->PDFPassword) + 1);
-        strcpy(ctx->PDFPassword, main->PDFPassword);
+        memset(ctx->PDFPassword, 0x00, strlen(imain->PDFPassword) + 1);
+        strcpy(ctx->PDFPassword, imain->PDFPassword);
     }
-    if(main->PageList) {
-        ctx->PageList = (char *)gs_alloc_bytes(ctx->memory, strlen(main->PageList) + 1, "allocate PDFpassword parameter");
+    if(imain->PageList) {
+        ctx->PageList = (char *)gs_alloc_bytes(ctx->memory, strlen(imain->PageList) + 1, "allocate PDFpassword parameter");
         if (ctx->PageList == NULL) {
             if (ctx->PDFPassword != NULL) {
                 gs_free_object(ctx->memory, ctx->PDFPassword, "pdf_imp_allocate_interp_instance");
@@ -225,8 +224,8 @@ pdf_imp_process_file(pl_interp_implementation_t *impl, char *filename)
             gs_free_object(ctx->memory, instance, "pdf_imp_allocate_interp_instance");
             return gs_error_VMerror;
         }
-        memset(ctx->PageList, 0x00, strlen(main->PageList) + 1);
-        strcpy(ctx->PageList, main->PageList);
+        memset(ctx->PageList, 0x00, strlen(imain->PageList) + 1);
+        strcpy(ctx->PageList, imain->PageList);
     }
 
     code = pdf_process_pdf_file(ctx, filename);

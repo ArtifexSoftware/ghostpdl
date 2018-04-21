@@ -18,6 +18,7 @@
 #include "pdf_int.h"
 #include "pdf_file.h"
 #include "strmio.h"
+#include "stream.h"
 
 /***********************************************************************************/
 /* Some simple functions to find white space, delimiters and hex bytes             */
@@ -172,8 +173,6 @@ void pdf_free_object(pdf_obj *o)
 
 static int pdf_pop(pdf_context *ctx, int num)
 {
-    pdf_obj *o;
-
     while(num) {
         if (ctx->stack_top > ctx->stack_bot) {
             pdf_countdown(ctx->stack_top[-1]);
@@ -310,8 +309,8 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             gs_offset_t offset;
 
             if (ctx->pdfdebug) {
-                dmprintf1(ctx->memory, "%% Reading compressed object %d", obj);
-                dmprintf1(ctx->memory, " from ObjStm with object number %d\n", compressed_entry->object_num);
+                dmprintf1(ctx->memory, "%% Reading compressed object %"PRIi64, obj);
+                dmprintf1(ctx->memory, " from ObjStm with object number %"PRIi64"\n", compressed_entry->object_num);
             }
 
             if (compressed_entry->cache == NULL) {
@@ -478,10 +477,8 @@ static void skip_white(pdf_context *ctx,pdf_stream *s)
 static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
 {
     byte Buffer[256];
-    unsigned short index = 0, bytes = 0;
+    unsigned short index = 0, bytes;
     bool real = false;
-    int64_t i = 0;
-    double d = 0;
     pdf_num *num;
     int code = 0;
 
@@ -489,6 +486,8 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
 
     do {
         bytes = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
+        if (bytes < 0)
+            return_error(gs_error_ioerror);
 
         if (iswhite((char)Buffer[index])) {
             Buffer[index] = 0x00;
@@ -542,9 +541,9 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
 
     if (ctx->pdfdebug) {
         if (real)
-            dmprintf1(ctx->memory, " %f", num->value.i);
+            dmprintf1(ctx->memory, " %f", num->value.d);
         else
-            dmprintf1(ctx->memory, " %d", num->value.d);
+            dmprintf1(ctx->memory, " %"PRIi64, num->value.i);
     }
 
     code = pdf_push(ctx, (pdf_obj *)num);
@@ -890,7 +889,6 @@ static int pdf_read_array(pdf_context *ctx, pdf_stream *s)
     unsigned short index = 0, bytes = 0;
     byte Buffer;
     pdf_array *a = NULL;
-    uint64_t i = 0;
     pdf_obj *o;
     pdf_obj **stack_mark = ctx->stack_top;
     int code;
@@ -957,7 +955,6 @@ static int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
     byte Buffer[2];
     pdf_dict *d = NULL;
     uint64_t i = 0;
-    pdf_obj *o;
     int code;
     pdf_obj **stack_mark = ctx->stack_top;
 
@@ -1048,7 +1045,7 @@ static int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
 /* The object returned by pdf_dict_get has its reference count incremented by 1 to
  * indicate the reference now held by the caller, in **o.
  */
-int pdf_dict_get(pdf_dict *d, char *Key, pdf_obj **o)
+int pdf_dict_get(pdf_dict *d, const char *Key, pdf_obj **o)
 {
     int i=0;
     pdf_obj *t;
@@ -1059,8 +1056,6 @@ int pdf_dict_get(pdf_dict *d, char *Key, pdf_obj **o)
         t = d->keys[i];
 
         if (t && t->type == PDF_NAME) {
-            pdf_name *n = (pdf_name *)t;
-
             if (((pdf_name *)t)->length == strlen((const char *)Key) && memcmp((const char *)((pdf_name *)t)->data, (const char *)Key, ((pdf_name *)t)->length) == 0) {
                 *o = d->values[i];
                 pdf_countup(*o);
@@ -1081,8 +1076,6 @@ int pdf_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
     for (i=0;i< d->entries;i++) {
         t = d->keys[i];
         if (t && t->type == PDF_NAME) {
-            pdf_name *n = (pdf_name *)t;
-
             if (((pdf_name *)t)->length == ((pdf_name *)Key)->length && memcmp((const char *)((pdf_name *)t)->data, ((pdf_name *)Key)->data, ((pdf_name *)t)->length) == 0) {
                 if (d->values[i] == value)
                     /* We already have this value stored with this key.... */
@@ -1148,7 +1141,7 @@ int pdf_array_get(pdf_array *a, uint64_t index, pdf_obj **o)
 static void pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
 {
     byte Buffer;
-    unsigned short index = 0, bytes = 0;
+    unsigned short bytes = 0;
 
     if (ctx->pdfdebug)
         dmprintf (ctx->memory, " %%");
@@ -1158,7 +1151,7 @@ static void pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
         if (ctx->pdfdebug)
             dmprintf1 (ctx->memory, " %c", Buffer);
 
-        if (Buffer = 0x0A || Buffer == 0x0D) {
+        if ((Buffer = 0x0A) || (Buffer == 0x0D)) {
             break;
         }
     } while (bytes);
@@ -1496,7 +1489,6 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
     }
     if (keyword->key == PDF_STREAM) {
         pdf_obj *o = NULL;
-        pdf_stream *ostream = NULL;
         pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
         gs_offset_t offset;
 
@@ -1758,7 +1750,6 @@ static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t fi
     uint32_t type = 0;
     uint64_t objnum = 0, gen = 0;
     byte *Buffer;
-    int code;
     uint64_t bytes = 0;
     xref_entry *entry;
 
@@ -1847,12 +1838,10 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s);
 static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
 {
     pdf_stream *XRefStrm;
-    char Buffer[33];
     int code, i;
     pdf_obj *o;
     uint64_t size;
     unsigned char W[3];
-    uint64_t prev_obj = 0, prev_gen = 0;
 
     code = pdf_dict_get(d, "Type", &o);
     if (code < 0)
@@ -2101,7 +2090,6 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
                     keyword = (pdf_keyword *)ctx->stack_top[-1];
                     if (keyword->key == PDF_STREAM) {
                         pdf_dict *d;
-                        pdf_obj *o;
 
                         /* Remove the 'stream' token from the stack, should leave a dictionary object on the stack */
                         pdf_pop(ctx, 1);
@@ -2398,7 +2386,7 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
     s = strstr((char *)Buffer, "%PDF");
     if (s == NULL) {
         if (ctx->pdfdebug)
-            dmprintf1(ctx->memory, "%% File %s does not appear to be a PDF file (no %PDF in first 2Kb of file)\n", filename);
+            dmprintf1(ctx->memory, "%% File %s does not appear to be a PDF file (no %%PDF in first 2Kb of file)\n", filename);
     } else {
         /* Now extract header version (may be overridden later) */
         if (sscanf(s + 5, "%f", &version) != 1) {
@@ -2428,14 +2416,14 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
         uint32_t read;
 
         if (pdf_seek(ctx, ctx->main_stream, ctx->main_stream_length - Offset, SEEK_SET) != 0) {
-            emprintf1(ctx->memory, "File is smaller than %d bytes\n", Offset);
+            emprintf1(ctx->memory, "File is smaller than %"PRIi64" bytes\n", (int64_t)Offset);
             cleanup_pdf_open_file(ctx, Buffer);
             return_error(gs_error_ioerror);
         }
         read = pdf_read_bytes(ctx, Buffer, 1, bytes, ctx->main_stream);
 
         if (read == 0) {
-            emprintf1(ctx->memory, "Failed to read %d bytes from file\n", bytes);
+            emprintf1(ctx->memory, "Failed to read %"PRIi64" bytes from file\n", (int64_t)bytes);
             cleanup_pdf_open_file(ctx, Buffer);
             return_error(gs_error_ioerror);
         }
@@ -2471,8 +2459,6 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
 
 
     if (ctx->startxref != 0) {
-        uint32_t index = 0;
-
         if (ctx->pdfdebug)
             dmprintf(ctx->memory, "%% Trying to read 'xref' token for xref table, or 'int int obj' for an xref stream\n");
 
