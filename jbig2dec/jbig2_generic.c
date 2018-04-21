@@ -374,7 +374,6 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
     return 0;
 }
 
-#ifdef UNUSED
 static int
 jbig2_decode_generic_template3(Jbig2Ctx *ctx,
                                Jbig2Segment *segment,
@@ -385,8 +384,7 @@ jbig2_decode_generic_template3(Jbig2Ctx *ctx,
     const int rowstride = image->stride;
     byte *gbreg_line = (byte *) image->data;
     int x, y;
-
-    /* this routine only handles the nominal AT location */
+    int code;
 
 #ifdef OUTPUT_PBM
     printf("P4\n%d %d\n", GBW, GBH);
@@ -420,7 +418,7 @@ jbig2_decode_generic_template3(Jbig2Ctx *ctx,
                 if (code)
                     return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode arithmetic code when handling generic template3");
                 result |= bit << (7 - x_minor);
-                CONTEXT = ((CONTEXT & 0x1f7) << 1) | bit | ((line_m1 >> (10 - x_minor)) & 0x010);
+                CONTEXT = ((CONTEXT & 0x1f7) << 1) | bit | ((line_m1 >> (8 - x_minor)) & 0x10);
             }
             gbreg_line[x >> 3] = result;
         }
@@ -432,7 +430,6 @@ jbig2_decode_generic_template3(Jbig2Ctx *ctx,
 
     return 0;
 }
-#endif
 
 static int
 jbig2_decode_generic_template3_unopt(Jbig2Ctx *ctx,
@@ -752,7 +749,7 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
             return jbig2_decode_generic_template2_unopt(ctx, segment, params, as, image, GB_stats);
     } else if (!params->MMR && params->GBTEMPLATE == 3) {
         if (gbat[0] == 2 && gbat[1] == -1)
-            return jbig2_decode_generic_template3_unopt(ctx, segment, params, as, image, GB_stats);
+            return jbig2_decode_generic_template3(ctx, segment, params, as, image, GB_stats);
         else
             return jbig2_decode_generic_template3_unopt(ctx, segment, params, as, image, GB_stats);
     }
