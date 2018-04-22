@@ -37,16 +37,6 @@
 #include "jbig2_generic.h"
 #include "jbig2_image.h"
 
-#if 0                           /* currently not used */
-static int
-jbig2_decode_refinement_template0(Jbig2Ctx *ctx,
-                                  Jbig2Segment *segment,
-                                  const Jbig2RefinementRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GR_stats)
-{
-    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "refinement region template 0 NYI");
-}
-#endif
-
 static int
 jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
                                         Jbig2Segment *segment,

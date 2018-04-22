@@ -65,7 +65,6 @@ jbig2_hd_new(Jbig2Ctx *ctx, const Jbig2PatternDictParams *params, Jbig2Image *im
         for (i = 0; i < N; i++) {
             new->patterns[i] = jbig2_image_new(ctx, HPW, HPH);
             if (new->patterns[i] == NULL) {
-
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to allocate pattern element image");
                 for (j = 0; j < i; j++)
                     jbig2_free(ctx->allocator, new->patterns[j]);
@@ -324,7 +323,6 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
         }
 
         code = jbig2_decode_generic_region(ctx, segment, &rparams, as, GSPLANES[GSBPP - 1], GB_stats);
-
     }
     if (code != 0) {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error decoding GSPLANES for halftone image");

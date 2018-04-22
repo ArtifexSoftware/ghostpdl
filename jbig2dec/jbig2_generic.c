@@ -61,9 +61,6 @@ jbig2_decode_generic_template0(Jbig2Ctx *ctx,
     int x, y;
     byte *gbreg_line = (byte *) image->data;
 
-    /* todo: currently we only handle the nominal gbat location */
-    /* when resolved make sure to call jbig2_check_adaptive_pixel_in_field() */
-
 #ifdef OUTPUT_PBM
     printf("P4\n%d %d\n", GBW, GBH);
 #endif

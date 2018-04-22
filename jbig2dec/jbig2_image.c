@@ -266,15 +266,6 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
 #endif
         return 0;
     }
-#if 0
-    /* special case complete/strip replacement */
-    /* disabled because it's only safe to do when the destination
-       buffer is all-blank. */
-    if ((x == 0) && (w == src->width)) {
-        memcpy(dst->data + y * dst->stride, src->data, h * src->stride);
-        return 0;
-    }
-#endif
 
     leftbyte = (uint32_t) x >> 3;
     rightbyte = ((uint32_t) x + w - 1) >> 3;

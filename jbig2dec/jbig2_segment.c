@@ -87,7 +87,7 @@ jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t 
 
         referred_to_segments = jbig2_new(ctx, uint32_t, referred_to_segment_count * referred_to_segment_size);
         if (referred_to_segments == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "could not allocate referred_to_segments " "in jbig2_parse_segment_header");
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "could not allocate referred_to_segments in jbig2_parse_segment_header");
             return NULL;
         }
 
@@ -212,7 +212,7 @@ jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_
     necessary = type & 0x80000000;
 
     if (necessary && !reserved) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "extension segment is marked 'necessary' but " "not 'reserved' contrary to spec");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "extension segment is marked 'necessary' but not 'reserved' contrary to spec");
     }
 
     switch (type) {

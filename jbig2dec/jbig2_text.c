@@ -398,7 +398,6 @@ cleanup1:
                 if (params->SBHUFF) {
                     jbig2_huffman_advance(hs, BMSIZE);
                 }
-
             }
 
             /* (3c.vi) */

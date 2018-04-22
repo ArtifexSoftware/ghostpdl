@@ -283,7 +283,6 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
             } else {
                 ctx->state = JBIG2_FILE_RANDOM_HEADERS;
                 jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "file header indicates random-access organization");
-
             }
             break;
         case JBIG2_FILE_SEQUENTIAL_HEADER:

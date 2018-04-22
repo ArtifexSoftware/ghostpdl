@@ -225,7 +225,8 @@ print_usage(void)
             "       --hash      print a hash of the decoded document\n"
             "    -o <file>      send decoded output to <file>\n"
             "                   Defaults to the the input with a different\n"
-            "                   extension. Pass '-' for stdout.\n" "    -t <type>      force a particular output file format\n"
+            "                   extension. Pass '-' for stdout.\n"
+            "    -t <type>      force a particular output file format\n"
 #ifdef HAVE_LIBPNG
             "                   supported options are 'png' and 'pbm'\n"
 #else

@@ -418,7 +418,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                     if (params->SDHUFF) {
                         REFAGGNINST = jbig2_huffman_get(hs, params->SDHUFFAGGINST, &code);
                     } else {
-                        code = jbig2_arith_int_decode(ctx, IAAI, as, (int32_t *) & REFAGGNINST);
+                        code = jbig2_arith_int_decode(ctx, IAAI, as, (int32_t *) &REFAGGNINST);
                     }
                     if (code || (int32_t) REFAGGNINST <= 0) {
                         code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "invalid number of symbols or OOB in aggregate glyph");
@@ -558,7 +558,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                         }
 
                         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-                                    "symbol is a refinement of id %d with the " "refinement applied at (%d,%d)", ID, RDX, RDY);
+                                    "symbol is a refinement of id %d with the refinement applied at (%d,%d)", ID, RDX, RDY);
 
                         image = jbig2_image_new(ctx, SYMWIDTH, HCHEIGHT);
                         if (image == NULL) {
@@ -663,7 +663,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
                 BMSIZE = image->height * stride;
                 jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-                            "reading %dx%d uncompressed bitmap" " for %d symbols (%d bytes)", image->width, image->height, NSYMSDECODED - HCFIRSTSYM, BMSIZE);
+                            "reading %dx%d uncompressed bitmap for %d symbols (%d bytes)", image->width, image->height, NSYMSDECODED - HCFIRSTSYM, BMSIZE);
 
                 for (j = 0; j < image->height; j++) {
                     memcpy(dst, src, stride);
