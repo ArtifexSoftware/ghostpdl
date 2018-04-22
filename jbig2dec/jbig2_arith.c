@@ -332,21 +332,42 @@ jbig2_arith_has_reached_marker(Jbig2ArithState *as)
 
 #ifdef TEST
 
-static uint32_t
-test_get_word(Jbig2WordStream *self, int offset, uint32_t *word)
+const byte test_stream[] = {
+    0x84, 0xC7, 0x3B, 0xFC, 0xE1, 0xA1, 0x43, 0x04, 0x02, 0x20, 0x00, 0x00,
+    0x41, 0x0D, 0xBB, 0x86, 0xF4, 0x31, 0x7F, 0xFF, 0x88, 0xFF, 0x37, 0x47,
+    0x1A, 0xDB, 0x6A, 0xDF, 0xFF, 0xAC,
+    0x00, 0x00
+};
+
+static int
+test_get_word(Jbig2WordStream *self, size_t offset, uint32_t *word)
 {
-    byte stream[] = {
-        0x84, 0xC7, 0x3B, 0xFC, 0xE1, 0xA1, 0x43, 0x04, 0x02, 0x20, 0x00, 0x00,
-        0x41, 0x0D, 0xBB, 0x86, 0xF4, 0x31, 0x7F, 0xFF, 0x88, 0xFF, 0x37, 0x47,
-        0x1A, 0xDB, 0x6A, 0xDF, 0xFF, 0xAC,
-        0x00, 0x00
-    };
-    if (offset >= sizeof(stream))
-        *word = 0;
-    else
-        *word = (stream[offset] << 24) | (stream[offset + 1] << 16) |
-                (stream[offset + 2] << 8) | stream[offset + 3];
-    return 0;
+    uint32_t val = 0;
+    int ret = 0;
+
+    if (self == NULL || word == NULL)
+        return -1;
+    if (offset >= sizeof (test_stream))
+        return -1;
+
+    if (offset < sizeof(test_stream)) {
+        val |= test_stream[offset] << 24;
+        ret++;
+    }
+    if (offset + 1 < sizeof(test_stream)) {
+        val |= test_stream[offset + 1] << 16;
+        ret++;
+    }
+    if (offset + 2 < sizeof(test_stream)) {
+        val |= test_stream[offset + 2] << 8;
+        ret++;
+    }
+    if (offset + 3 < sizeof(test_stream)) {
+        val |= test_stream[offset + 3];
+        ret++;
+    }
+    *word = val;
+    return ret;
 }
 
 int

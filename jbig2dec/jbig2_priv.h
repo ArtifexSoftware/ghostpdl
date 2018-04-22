@@ -126,7 +126,7 @@ int jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, int32_t seg_idx, const ch
 typedef struct _Jbig2WordStream Jbig2WordStream;
 
 struct _Jbig2WordStream {
-    void (*get_next_word)(Jbig2WordStream *self, size_t offset, uint32_t *word);
+    int (*get_next_word)(Jbig2WordStream *self, size_t offset, uint32_t *word);
 };
 
 Jbig2WordStream *jbig2_word_stream_buf_new(Jbig2Ctx *ctx, const byte *data, size_t size);

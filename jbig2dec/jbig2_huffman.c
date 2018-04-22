@@ -684,13 +684,34 @@ const byte test_stream[] = { 0xe9, 0xcb, 0xf4, 0x00 };
 const byte test_tabindex[] = { 4, 2, 2, 1 };
 
 static int
-test_get_word(Jbig2WordStream *self, int offset, uint32_t *word)
+test_get_word(Jbig2WordStream *self, size_t offset, uint32_t *word)
 {
-    /* assume test_stream[] is at least 4 bytes */
-    if (offset + 3 > sizeof(test_stream))
+    uint32_t val = 0;
+    int ret = 0;
+
+    if (self == NULL || word == NULL)
         return -1;
-    *word = ((test_stream[offset] << 24) | (test_stream[offset + 1] << 16) | (test_stream[offset + 2] << 8) | (test_stream[offset + 3]));
-    return 0;
+    if (offset >= sizeof (test_stream))
+        return 0;
+
+    if (offset < sizeof(test_stream)) {
+        val |= test_stream[offset] << 24;
+        ret++;
+    }
+    if (offset + 1 < sizeof(test_stream)) {
+        val |= test_stream[offset + 1] << 16;
+        ret++;
+    }
+    if (offset + 2 < sizeof(test_stream)) {
+        val |= test_stream[offset + 2] << 8;
+        ret++;
+    }
+    if (offset + 3 < sizeof(test_stream)) {
+        val |= test_stream[offset + 3];
+        ret++;
+    }
+    *word = val;
+    return ret;
 }
 
 int
@@ -1957,31 +1978,35 @@ typedef struct test_stream {
 } test_stream_t;
 
 static int
-test_get_word(Jbig2WordStream *self, int offset, uint32_t *word)
+test_get_word(Jbig2WordStream *self, size_t offset, uint32_t *word)
 {
-    uint32_t val = 0;
     test_stream_t *st = (test_stream_t *) self;
+    uint32_t val = 0;
+    int ret = 0;
 
-    if (st != NULL) {
-        if (st->h != NULL) {
-            if (offset >= st->h->input_len)
-                return -1;
-            if (offset < st->h->input_len) {
-                val |= (st->h->input[offset] << 24);
-            }
-            if (offset + 1 < st->h->input_len) {
-                val |= (st->h->input[offset + 1] << 16);
-            }
-            if (offset + 2 < st->h->input_len) {
-                val |= (st->h->input[offset + 2] << 8);
-            }
-            if (offset + 3 < st->h->input_len) {
-                val |= st->h->input[offset + 3];
-            }
-        }
+    if (st == NULL || st->h == NULL || word == NULL)
+        return -1;
+    if (offset >= st->h->input_len)
+        return 0;
+
+    if (offset < st->h->input_len) {
+        val |= (st->h->input[offset] << 24);
+        ret++;
+    }
+    if (offset + 1 < st->h->input_len) {
+        val |= (st->h->input[offset + 1] << 16);
+        ret++;
+    }
+    if (offset + 2 < st->h->input_len) {
+        val |= (st->h->input[offset + 2] << 8);
+        ret++;
+    }
+    if (offset + 3 < st->h->input_len) {
+        val |= st->h->input[offset + 3];
+        ret++;
     }
     *word = val;
-    return 0;
+    return ret;
 }
 
 int
