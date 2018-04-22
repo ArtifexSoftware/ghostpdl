@@ -167,6 +167,49 @@ jbig2_decode_generic_template0_unopt(Jbig2Ctx *ctx,
 }
 
 static int
+jbig2_decode_generic_template1_unopt(Jbig2Ctx *ctx,
+                                     Jbig2Segment *segment,
+                                     const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
+{
+    const int GBW = image->width;
+    const int GBH = image->height;
+    uint32_t CONTEXT;
+    int x, y;
+    bool bit;
+    int code = 0;
+
+    if (pixel_outside_field(params->gbat[0], params->gbat[1]))
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+                           "adaptive template pixel is out of field");
+
+    /* this version is generic and easy to understand, but very slow */
+
+    for (y = 0; y < GBH; y++) {
+        for (x = 0; x < GBW; x++) {
+            CONTEXT = 0;
+            CONTEXT |= jbig2_image_get_pixel(image, x - 1, y) << 0;
+            CONTEXT |= jbig2_image_get_pixel(image, x - 2, y) << 1;
+            CONTEXT |= jbig2_image_get_pixel(image, x - 3, y) << 2;
+            CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[0], y + params->gbat[1]) << 3;
+            CONTEXT |= jbig2_image_get_pixel(image, x + 2, y - 1) << 4;
+            CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 5;
+            CONTEXT |= jbig2_image_get_pixel(image, x + 0, y - 1) << 6;
+            CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 1) << 7;
+            CONTEXT |= jbig2_image_get_pixel(image, x - 2, y - 1) << 8;
+            CONTEXT |= jbig2_image_get_pixel(image, x + 2, y - 2) << 9;
+            CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 2) << 10;
+            CONTEXT |= jbig2_image_get_pixel(image, x + 0, y - 2) << 11;
+            CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 2) << 12;
+            bit = jbig2_arith_decode(as, &GB_stats[CONTEXT], &code);
+            if (code)
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to decode arithmetic code when handling generic template0");
+            jbig2_image_set_pixel(image, x, y, bit);
+        }
+    }
+    return 0;
+}
+
+static int
 jbig2_decode_generic_template1(Jbig2Ctx *ctx,
                                Jbig2Segment *segment,
                                const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
@@ -177,9 +220,6 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
     int x, y;
     byte *gbreg_line = (byte *) image->data;
     int code = 0;
-
-    /* todo: currently we only handle the nominal gbat location */
-    /* when resolved make sure to call jbig2_check_adaptive_pixel_in_field() */
 
 #ifdef OUTPUT_PBM
     printf("P4\n%d %d\n", GBW, GBH);
@@ -725,8 +765,12 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
             return jbig2_decode_generic_template0(ctx, segment, params, as, image, GB_stats);
         else
             return jbig2_decode_generic_template0_unopt(ctx, segment, params, as, image, GB_stats);
-    } else if (!params->MMR && params->GBTEMPLATE == 1)
-        return jbig2_decode_generic_template1(ctx, segment, params, as, image, GB_stats);
+    } else if (!params->MMR && params->GBTEMPLATE == 1) {
+        if (gbat[0] == +3 && gbat[1] == -1)
+            return jbig2_decode_generic_template1(ctx, segment, params, as, image, GB_stats);
+        else
+            return jbig2_decode_generic_template1_unopt(ctx, segment, params, as, image, GB_stats);
+    }
     else if (!params->MMR && params->GBTEMPLATE == 2) {
         if (gbat[0] == 2 && gbat[1] == -1)
             return jbig2_decode_generic_template2a(ctx, segment, params, as, image, GB_stats);
