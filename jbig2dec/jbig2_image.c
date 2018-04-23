@@ -130,8 +130,34 @@ jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image, uint32_t width, uint32_t he
         image->height = height;
 
     } else {
-        /* we must allocate a new image buffer and copy */
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "jbig2_image_resize called with a different width (NYI)");
+        Jbig2Image *newimage;
+        int code;
+
+        /* Unoptimized implementation, but it works. */
+
+        newimage = jbig2_image_new(ctx, width, height);
+        if (newimage == NULL) {
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to allocate resized image");
+            return NULL;
+        }
+        jbig2_image_clear(ctx, newimage, value);
+
+        code = jbig2_image_compose(ctx, newimage, image, 0, 0, JBIG2_COMPOSE_REPLACE);
+        if (code < 0) {
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to compose image buffers when resizing");
+            jbig2_image_release(ctx, newimage);
+            return NULL;
+        }
+
+        /* if refcount > 1 the original image, its pointer must
+        be kept, so simply replaces its innards, and throw away
+        the empty new image shell. */
+        jbig2_free(ctx->allocator, image->data);
+        image->width = newimage->width;
+        image->height = newimage->height;
+        image->stride = newimage->stride;
+        image->data = newimage->data;
+        jbig2_free(ctx->allocator, newimage);
     }
 
     return image;
