@@ -107,7 +107,7 @@ jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image)
 
 /* resize a Jbig2Image */
 Jbig2Image *
-jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image, uint32_t width, uint32_t height)
+jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image, uint32_t width, uint32_t height, int value)
 {
     if (width == image->width) {
         /* check for integer multiplication overflow */
@@ -124,7 +124,8 @@ jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image, uint32_t width, uint32_t he
             return NULL;
         }
         if (height > image->height) {
-            memset(image->data + image->height * image->stride, 0, (height - image->height) * image->stride);
+            const uint8_t fill = value ? 0xFF : 0x00;
+            memset(image->data + image->height * image->stride, fill, (height - image->height) * image->stride);
         }
         image->height = height;
 
