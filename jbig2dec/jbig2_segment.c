@@ -217,7 +217,10 @@ jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_
 
     type = jbig2_get_uint32(segment_data);
     reserved = type & 0x20000000;
-    /* dependent = type & 0x40000000; (NYI) */
+    /* Not implemented since this bit
+    is only needed by encoders.
+    dependent = type & 0x40000000;
+    */
     necessary = type & 0x80000000;
 
     if (necessary && !reserved) {
