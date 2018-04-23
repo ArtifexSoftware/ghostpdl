@@ -894,9 +894,11 @@ image_render_color_icc_portrait(gx_image_enum *penum_orig, const byte *buffer, i
     gx_cmapper_data data;
     gx_cmapper_fn *mapper = gx_get_cmapper(&data, pgs, dev, has_transfer, must_halftone, gs_color_select_source);
     gx_color_value *conc = &data.conc[0];
+    int to_rects;
 
     if (h == 0)
         return 0;
+
     code = image_color_icc_prep(penum_orig, psrc, w, dev, &spp_cm, &psrc_cm,
                                 &psrc_cm_start, &bufend, false);
     if (code < 0) return code;
@@ -908,39 +910,171 @@ image_render_color_icc_portrait(gx_image_enum *penum_orig, const byte *buffer, i
     vci = penum->yci, vdi = penum->hci;
     if_debug5m('b', penum->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
                penum->y, data_x, w, fixed2float(dda_current(pnext.x)), fixed2float(dda_current(pnext.y)));
-    while (psrc_cm < bufend) {
-        /* Find the length of the next run. It will either end when we hit
-         * the end of the source data, or when the pixel data differs. */
-        run = psrc_cm + spp_cm;
-        while (1)
-        {
-            dda_next(pnext.x);
-            if (run >= bufend)
-                break;
-            if (memcmp(run, psrc_cm, spp_cm))
-                break;
-            run += spp_cm;
-        }
-        /* So we have a run of pixels from psrc_cm to run that are all the same. */
-        /* This needs to be sped up */
-        for (k = 0; k < spp_cm; k++) {
-            conc[k] = gx_color_value_from_byte(psrc_cm[k]);
-        }
-        mapper(&data);
-        /* Fill the region between irun and fixed2int_var_rounded(pnext.x) */
-        {
-            int xi = irun;
-            int wi = (irun = fixed2int_var_rounded(dda_current(pnext.x))) - xi;
+    to_rects = (dev->color_info.depth != spp_cm*8);
+    if (to_rects == 0) {
+        if (dev_proc(dev, dev_spec_op)(dev, gxdso_copy_color_is_fast, NULL, 0) <= 0)
+            to_rects = 1;
+    }
 
-            if (wi < 0)
-                xi += wi, wi = -wi;
-            if (wi > 0)
-                code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
-                                                    &data.devc, dev, lop);
+    if (to_rects) {
+        while (psrc_cm < bufend) {
+            /* Find the length of the next run. It will either end when we hit
+             * the end of the source data, or when the pixel data differs. */
+            run = psrc_cm + spp_cm;
+            while (1) {
+                dda_next(pnext.x);
+                if (run >= bufend)
+                    break;
+                if (memcmp(run, psrc_cm, spp_cm))
+                    break;
+                run += spp_cm;
+            }
+            /* So we have a run of pixels from psrc_cm to run that are all the same. */
+            /* This needs to be sped up */
+            for (k = 0; k < spp_cm; k++) {
+                conc[k] = gx_color_value_from_byte(psrc_cm[k]);
+            }
+            mapper(&data);
+            /* Fill the region between irun and fixed2int_var_rounded(pnext.x) */
+            {
+                int xi = irun;
+                int wi = (irun = fixed2int_var_rounded(dda_current(pnext.x))) - xi;
+
+                if (wi < 0)
+                    xi += wi, wi = -wi;
+                if (wi > 0)
+                    code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
+                                                        &data.devc, dev, lop);
+            }
+            if (code < 0)
+                goto err;
+            psrc_cm = run;
         }
-        if (code < 0)
-            goto err;
-        psrc_cm = run;
+    } else {
+        int pending_left = irun;
+        int pending_right;
+        byte *out;
+        int depth = spp_cm;
+        if (penum_orig->line == NULL) {
+            penum_orig->line = gs_alloc_bytes(dev->memory, dev->width * depth,
+                                               "image line");
+            if (penum_orig->line == NULL)
+                return gs_error_VMerror;
+        }
+        out = penum_orig->line;
+
+        if (pending_left < 0)
+            pending_left = 0;
+        else if (pending_left > dev->width)
+            pending_left = dev->width;
+        pending_right = pending_left;
+
+        while (psrc_cm < bufend) {
+            /* Find the length of the next run. It will either end when we hit
+             * the end of the source data, or when the pixel data differs. */
+            run = psrc_cm + spp_cm;
+            while (1)
+            {
+                dda_next(pnext.x);
+                if (run >= bufend)
+                    break;
+                if (memcmp(run, psrc_cm, spp_cm))
+                    break;
+                run += spp_cm;
+            }
+            /* So we have a run of pixels from psrc_cm to run that are all the same. */
+            /* This needs to be sped up */
+            for (k = 0; k < spp_cm; k++) {
+                conc[k] = gx_color_value_from_byte(psrc_cm[k]);
+            }
+            mapper(&data);
+            /* Fill the region between irun and fixed2int_var_rounded(pnext.x) */
+            {
+                int xi = irun;
+                int wi = (irun = fixed2int_var_rounded(dda_current(pnext.x))) - xi;
+
+                if (wi > 0) {
+                    if (xi < 0)
+                        wi = xi+wi, xi = 0;
+                    if (xi+wi > dev->width)
+                        wi = dev->width - xi;
+                    if (wi < 0)
+                        wi = 0;
+                } else if (wi < 0) {
+                    if (xi+wi < 0)
+                        wi = -xi;
+                    if (xi > dev->width)
+                        wi += xi - dev->width, xi = dev->width;
+                    if (wi > 0)
+                        wi = 0;
+                }
+                if (wi != 0) {
+                    if (color_is_pure(&data.devc)) {
+                        gx_color_index color = data.devc.colors.pure;
+                        int xii = xi * spp_cm;
+
+                        if (wi > 0) {
+                            pending_right += wi;
+                            do {
+                                /* Excuse the double shifts below, that's to stop the
+                                 * C compiler complaining if the color index type is
+                                 * 32 bits. */
+                                switch(depth)
+                                {
+                                case 8: out[xii++] = ((color>>28)>>28) & 0xff;
+                                case 7: out[xii++] = ((color>>24)>>24) & 0xff;
+                                case 6: out[xii++] = ((color>>24)>>16) & 0xff;
+                                case 5: out[xii++] = ((color>>24)>>8) & 0xff;
+                                case 4: out[xii++] = (color>>24) & 0xff;
+                                case 3: out[xii++] = (color>>16) & 0xff;
+                                case 2: out[xii++] = (color>>8) & 0xff;
+                                case 1: out[xii++] = color & 0xff;
+                                }
+                            } while (--wi != 0);
+                        } else {
+                            pending_left += wi;
+                            do {
+                                /* Excuse the double shifts below, that's to stop the
+                                 * C compiler complaining if the color index type is
+                                 * 32 bits. */
+                                switch(depth)
+                                {
+                                case 8: out[xii-8] = ((color>>28)>>28) & 0xff;
+                                case 7: out[xii-7] = ((color>>24)>>24) & 0xff;
+                                case 6: out[xii-6] = ((color>>24)>>16) & 0xff;
+                                case 5: out[xii-5] = ((color>>24)>>8) & 0xff;
+                                case 4: out[xii-4] = (color>>24) & 0xff;
+                                case 3: out[xii-3] = (color>>16) & 0xff;
+                                case 2: out[xii-2] = (color>>8) & 0xff;
+                                case 1: out[xii-1] = color & 0xff;
+                                }
+                                xii -= depth;
+                            } while (++wi != 0);
+                        }
+                    } else {
+                        if (pending_left != pending_right) {
+                            code = dev_proc(dev, copy_color)(dev, out, pending_left, 0, 0, pending_left, vci, pending_right - pending_left, vdi);
+                            if (code < 0)
+                                goto err;
+                        }
+                        if (wi < 0)
+                            xi += wi, wi = -wi, pending_right = pending_left;
+                        else
+                            pending_left = pending_right;
+                        code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
+                                                            &data.devc, dev, lop);
+                    }
+                }
+                if (code < 0)
+                    goto err;
+            }
+            psrc_cm = run;
+        }
+        if (pending_left != pending_right) {
+            code = dev_proc(dev, copy_color)(dev, out, pending_left, 0, 0, pending_left, vci, pending_right - pending_left, vdi);
+            if (code < 0)
+                goto err;
+        }
     }
     /* Free cm buffer, if it was used */
     if (psrc_cm_start != NULL) {
