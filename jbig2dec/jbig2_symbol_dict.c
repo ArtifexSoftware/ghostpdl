@@ -950,11 +950,6 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         }
     }
 
-    if (flags & 0x0080) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "bitmap coding context is used (NYI) symbol data likely to be garbage!");
-        goto cleanup;
-    }
-
     /* 7.4.2.1.2 */
     sdat_bytes = params.SDHUFF ? 0 : params.SDTEMPLATE == 0 ? 8 : 2;
     memcpy(params.sdat, segment_data + 2, sdat_bytes);
