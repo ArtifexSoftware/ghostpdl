@@ -713,11 +713,11 @@ jbig2_find_table(Jbig2Ctx *ctx, Jbig2Segment *segment, int index)
    to use in decoding it. 1 = table B.1 (A), 2 = table B.2 (B), and so on */
 /* this test stream should decode to { 8, 5, oob, 8 } */
 
-const byte test_stream[] = { 0xe9, 0xcb, 0xf4, 0x00 };
-const byte test_tabindex[] = { 4, 2, 2, 1 };
+static const byte test_stream[] = { 0xe9, 0xcb, 0xf4, 0x00 };
+static const byte test_tabindex[] = { 4, 2, 2, 1 };
 
 static int
-test_get_word(Jbig2WordStream *self, size_t offset, uint32_t *word)
+test_get_word1(Jbig2WordStream *self, size_t offset, uint32_t *word)
 {
     uint32_t val = 0;
     int ret = 0;
@@ -747,8 +747,7 @@ test_get_word(Jbig2WordStream *self, size_t offset, uint32_t *word)
     return ret;
 }
 
-int
-main(int argc, char **argv)
+static int test1()
 {
     Jbig2Ctx *ctx;
     Jbig2HuffmanTable *tables[5];
@@ -756,16 +755,32 @@ main(int argc, char **argv)
     Jbig2WordStream ws;
     bool oob;
     int32_t code;
+    int i;
+    int success = 0;
 
     ctx = jbig2_ctx_new(NULL, 0, NULL, NULL, NULL);
+    if (ctx == NULL) {
+        fprintf(stderr, "Failed to allocate jbig2 context\n");
+        goto cleanup;
+    }
 
     tables[0] = NULL;
     tables[1] = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_A);
     tables[2] = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_B);
     tables[3] = NULL;
     tables[4] = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_D);
-    ws.get_next_word = test_get_word;
+    if (tables[1] == NULL || tables[2] == NULL || tables[4] == NULL)
+    {
+        fprintf(stderr, "Failed to build huffman tables");
+        goto cleanup;
+    }
+
+    ws.get_next_word = test_get_word1;
     hs = jbig2_huffman_new(ctx, &ws);
+    if (hs == NULL) {
+        fprintf(stderr, "Failed to allocate huffman state");
+        goto cleanup;
+    }
 
     printf("testing jbig2 huffman decoding...");
     printf("\t(should be 8 5 (oob) 8)\n");
@@ -785,16 +800,17 @@ main(int argc, char **argv)
 
     printf("\n");
 
+    success = 1;
+
+cleanup:
+    for (i = 0; i < 5; i++)
+        jbig2_release_huffman_table(ctx, tables[i]);
     jbig2_ctx_free(ctx);
 
-    return 0;
+    return success;
 }
-#endif
 
-#ifdef TEST2
 #include <stdio.h>
-
-/* cc -g -o jbig2_huffman.test2 -DTEST2 jbig2_huffman.c .libs/libjbig2dec.a */
 
 /* a decoding test of each line from each standard table */
 
@@ -2011,7 +2027,7 @@ typedef struct test_stream {
 } test_stream_t;
 
 static int
-test_get_word(Jbig2WordStream *self, size_t offset, uint32_t *word)
+test_get_word2(Jbig2WordStream *self, size_t offset, uint32_t *word)
 {
     test_stream_t *st = (test_stream_t *) self;
     uint32_t val = 0;
@@ -2042,11 +2058,17 @@ test_get_word(Jbig2WordStream *self, size_t offset, uint32_t *word)
     return ret;
 }
 
-int
-main(int argc, char **argv)
+static int test2()
 {
-    Jbig2Ctx *ctx = jbig2_ctx_new(NULL, 0, NULL, NULL, NULL);
+    Jbig2Ctx *ctx;
+    int success = 0;
     int i;
+
+    ctx = jbig2_ctx_new(NULL, 0, NULL, NULL, NULL);
+    if (ctx == NULL) {
+        fprintf(stderr, "Failed to allocate jbig2 context\n");
+        return 0;
+    }
 
     for (i = 0; i < countof(tests); i++) {
         Jbig2HuffmanTable *table;
@@ -2056,55 +2078,69 @@ main(int argc, char **argv)
         bool oob;
         int j;
 
-        st.ws.get_next_word = test_get_word;
+        st.ws.get_next_word = test_get_word2;
         st.h = &tests[i];
         printf("testing Standard Huffman table %s: ", st.h->name);
         table = jbig2_build_huffman_table(ctx, st.h->params);
         if (table == NULL) {
-            printf("jbig2_build_huffman_table() returned NULL!\n");
-        } else {
-            /* jbig2_dump_huffman_table(table); */
-            hs = jbig2_huffman_new(ctx, &st.ws);
-            if (hs == NULL) {
-                printf("jbig2_huffman_new() returned NULL!\n");
-            } else {
-                for (j = 0; j < st.h->output_len; j++) {
-                    printf("%d...", st.h->output[j]);
-                    code = jbig2_huffman_get(hs, table, &oob);
-                    if (code == st.h->output[j] && !oob) {
-                        printf("ok, ");
-                    } else {
-                        int need_comma = 0;
-
-                        printf("NG(");
-                        if (code != st.h->output[j]) {
-                            printf("%d", code);
-                            need_comma = 1;
-                        }
-                        if (oob) {
-                            if (need_comma)
-                                printf(",");
-                            printf("OOB");
-                        }
-                        printf("), ");
-                    }
-                }
-                if (st.h->params->HTOOB) {
-                    printf("OOB...");
-                    code = jbig2_huffman_get(hs, table, &oob);
-                    if (oob) {
-                        printf("ok");
-                    } else {
-                        printf("NG(%d)", code);
-                    }
-                }
-                printf("\n");
-                jbig2_huffman_free(ctx, hs);
-            }
-            jbig2_release_huffman_table(ctx, table);
+            fprintf(stderr, "jbig2_build_huffman_table() returned NULL!\n");
+            jbig2_ctx_free(ctx);
+            return 0;
         }
+        /* jbig2_dump_huffman_table(table); */
+        hs = jbig2_huffman_new(ctx, &st.ws);
+        if (hs == NULL) {
+            fprintf(stderr, "jbig2_huffman_new() returned NULL!\n");
+            jbig2_release_huffman_table(ctx, table);
+            jbig2_ctx_free(ctx);
+            return 0;
+        }
+        for (j = 0; j < st.h->output_len; j++) {
+            printf("%d...", st.h->output[j]);
+            code = jbig2_huffman_get(hs, table, &oob);
+            if (code == st.h->output[j] && !oob) {
+                printf("ok, ");
+            } else {
+                int need_comma = 0;
+
+                printf("NG(");
+                if (code != st.h->output[j]) {
+                    printf("%d", code);
+                    need_comma = 1;
+                }
+                if (oob) {
+                    if (need_comma)
+                        printf(",");
+                    printf("OOB");
+                }
+                printf("), ");
+            }
+        }
+        if (st.h->params->HTOOB) {
+            printf("OOB...");
+            code = jbig2_huffman_get(hs, table, &oob);
+            if (oob) {
+                printf("ok");
+            } else {
+                printf("NG(%d)", code);
+            }
+        }
+        printf("\n");
+        jbig2_huffman_free(ctx, hs);
+        jbig2_release_huffman_table(ctx, table);
     }
+
     jbig2_ctx_free(ctx);
-    return 0;
+
+    if (i == countof(tests))
+        success = 1;
+
+    return success;
+}
+
+int
+main(int argc, char **argv)
+{
+    return test1() && test2() ? 0 : 1;
 }
 #endif
