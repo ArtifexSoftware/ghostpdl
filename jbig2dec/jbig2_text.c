@@ -202,7 +202,12 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         symcodeparams.n_lines = SBNUMSYMS;
 
         /* skip to byte boundary */
-        jbig2_huffman_skip(hs);
+        err = jbig2_huffman_skip(hs);
+        if (err < 0)
+        {
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to skip to next byte when building huffman table");
+            goto cleanup1;
+        }
 
         /* finally, construct the symbol id huffman table itself */
         SBSYMCODES = jbig2_build_huffman_table(ctx, &symcodeparams);
@@ -383,6 +388,7 @@ cleanup1:
                 int code3 = 0;
                 int code4 = 0;
                 int code5 = 0;
+                int code6 = 0;
 
                 /* 6.4.11 (1, 2, 3, 4) */
                 if (!params->SBHUFF) {
@@ -396,15 +402,15 @@ cleanup1:
                     RDX = jbig2_huffman_get(hs, params->SBHUFFRDX, &code3);
                     RDY = jbig2_huffman_get(hs, params->SBHUFFRDY, &code4);
                     BMSIZE = jbig2_huffman_get(hs, params->SBHUFFRSIZE, &code5);
-                    jbig2_huffman_skip(hs);
+                    code6 = jbig2_huffman_skip(hs);
                 }
 
-                if (code1 < 0 || code2 < 0 || code3 < 0 || code4 < 0 || code5 < 0) {
+                if (code1 < 0 || code2 < 0 || code3 < 0 || code4 < 0 || code5 < 0 || code6 < 0) {
                     jbig2_image_release(ctx, IB);
                     code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode data");
                     goto cleanup2;
                 }
-                if (code1 > 0 || code2 > 0 || code3 > 0 || code4 > 0 || code5 > 0) {
+                if (code1 > 0 || code2 > 0 || code3 > 0 || code4 > 0 || code5 > 0 || code6 > 0) {
                     jbig2_image_release(ctx, IB);
                     code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB obtained when decoding symbol instance refinement data");
                     goto cleanup2;
@@ -447,7 +453,13 @@ cleanup1:
 
                 /* 6.4.11 (7) */
                 if (params->SBHUFF) {
-                    jbig2_huffman_advance(hs, BMSIZE);
+                    code = jbig2_huffman_advance(hs, BMSIZE);
+                    if (code < 0) {
+                        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to advance after huffman decoding refinement region");
+                        jbig2_image_release(ctx, refimage);
+                        jbig2_image_release(ctx, IBO);
+                        goto cleanup2;
+                    }
                 }
             }
 

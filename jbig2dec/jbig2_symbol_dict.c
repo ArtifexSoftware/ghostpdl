@@ -553,25 +553,26 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                         int code2 = 0;
                         int code3 = 0;
                         int code4 = 0;
+                        int code5 = 0;
 
                         /* 6.5.8.2.2 (2, 3, 4, 5) */
                         if (params->SDHUFF) {
-                            ID = jbig2_huffman_get_bits(hs, SBSYMCODELEN, &code4);
-                            RDX = jbig2_huffman_get(hs, SDHUFFRDX, &code1);
-                            RDY = jbig2_huffman_get(hs, SDHUFFRDX, &code2);
-                            BMSIZE = jbig2_huffman_get(hs, SBHUFFRSIZE, &code3);
-                            jbig2_huffman_skip(hs);
+                            ID = jbig2_huffman_get_bits(hs, SBSYMCODELEN, &code1);
+                            RDX = jbig2_huffman_get(hs, SDHUFFRDX, &code2);
+                            RDY = jbig2_huffman_get(hs, SDHUFFRDX, &code3);
+                            BMSIZE = jbig2_huffman_get(hs, SBHUFFRSIZE, &code4);
+                            code5 = jbig2_huffman_skip(hs);
                         } else {
                             code1 = jbig2_arith_iaid_decode(ctx, IAID, as, (int32_t *) & ID);
                             code2 = jbig2_arith_int_decode(ctx, IARDX, as, &RDX);
                             code3 = jbig2_arith_int_decode(ctx, IARDY, as, &RDY);
                         }
 
-                        if (code1 < 0 || code2 < 0 || code3 < 0 || code4 < 0) {
+                        if (code1 < 0 || code2 < 0 || code3 < 0 || code4 < 0 || code5 < 0) {
                             code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode data");
                             goto cleanup4;
                         }
-                        if (code1 > 0 || code2 > 0 || code3 > 0 || code4 > 0) {
+                        if (code1 > 0 || code2 > 0 || code3 > 0 || code4 > 0 || code5 > 0) {
                             code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB in single refinement/aggregate coded symbol data");
                             goto cleanup4;
                         }
@@ -615,7 +616,11 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                         if (params->SDHUFF) {
                             if (BMSIZE == 0)
                                 BMSIZE = image->height * image->stride;
-                            jbig2_huffman_advance(hs, BMSIZE);
+                            code = jbig2_huffman_advance(hs, BMSIZE);
+                            if (code < 0) {
+                                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to advance after huffman decoding in refinement region");
+                                goto cleanup4;
+                            }
                         }
                     }
                 }
@@ -671,7 +676,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             }
 
             /* skip any bits before the next byte boundary */
-            jbig2_huffman_skip(hs);
+            code = jbig2_huffman_skip(hs);
+            if (code < 0) {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to skip to next byte when decoding collective bitmap");
+            }
 
             image = jbig2_image_new(ctx, TOTWIDTH, HCHEIGHT);
             if (image == NULL) {
@@ -725,7 +733,12 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             }
 
             /* advance past the data we've just read */
-            jbig2_huffman_advance(hs, BMSIZE);
+            code = jbig2_huffman_advance(hs, BMSIZE);
+            if (code < 0) {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to advance after huffman decoding MMR bitmap image");
+                jbig2_image_release(ctx, image);
+                goto cleanup4;
+            }
 
             /* copy the collective bitmap into the symbol dictionary */
             x = 0;

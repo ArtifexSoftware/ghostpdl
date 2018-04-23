@@ -60,9 +60,9 @@ Jbig2HuffmanState *jbig2_huffman_new(Jbig2Ctx *ctx, Jbig2WordStream *ws);
 
 void jbig2_huffman_free(Jbig2Ctx *ctx, Jbig2HuffmanState *hs);
 
-void jbig2_huffman_skip(Jbig2HuffmanState *hs);
+int jbig2_huffman_skip(Jbig2HuffmanState *hs);
 
-void jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset);
+int jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset);
 
 uint32_t jbig2_huffman_offset(Jbig2HuffmanState *hs);
 

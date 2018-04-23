@@ -57,14 +57,14 @@ struct _Jbig2HuffmanState {
     Jbig2Ctx *ctx;
 };
 
-static uint32_t
-huff_get_next_word(Jbig2HuffmanState *hs, uint32_t offset)
+static int
+huff_get_next_word(Jbig2HuffmanState *hs, uint32_t offset, uint32_t *word)
 {
-    uint32_t word = 0;
     Jbig2WordStream *ws = hs->ws;
 
-    ws->get_next_word(ws, offset, &word);
-    return word;
+    if (word == NULL)
+        return -1;
+    return ws->get_next_word(ws, offset, word);
 }
 
 /** Allocate and initialize a new huffman coding state
@@ -75,6 +75,7 @@ Jbig2HuffmanState *
 jbig2_huffman_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
 {
     Jbig2HuffmanState *result = NULL;
+    int code;
 
     result = jbig2_new(ctx, Jbig2HuffmanState, 1);
 
@@ -84,8 +85,18 @@ jbig2_huffman_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
         result->offset_limit = 0;
         result->ws = ws;
         result->ctx = ctx;
-        result->this_word = huff_get_next_word(result, 0);
-        result->next_word = huff_get_next_word(result, 4);
+        code = huff_get_next_word(result, 0, &result->this_word);
+        if (code < 0) {
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed read first huffman word");
+            jbig2_huffman_free(ctx, result);
+            return NULL;
+        }
+        code = huff_get_next_word(result, 4, &result->next_word);
+        if (code < 0) {
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed read second huffman word");
+            jbig2_huffman_free(ctx, result);
+            return NULL;
+        }
     } else {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate new huffman coding state");
     }
@@ -170,10 +181,11 @@ jbig2_dump_huffman_table(const Jbig2HuffmanTable *table)
 
 /** Skip bits up to the next byte boundary
  */
-void
+int
 jbig2_huffman_skip(Jbig2HuffmanState *hs)
 {
     int bits = hs->offset_bits & 7;
+    int code;
 
     if (bits) {
         bits = 8 - bits;
@@ -184,29 +196,41 @@ jbig2_huffman_skip(Jbig2HuffmanState *hs)
     if (hs->offset_bits >= 32) {
         hs->this_word = hs->next_word;
         hs->offset += 4;
-        hs->next_word = huff_get_next_word(hs, hs->offset + 4);
+        code = huff_get_next_word(hs, hs->offset + 4, &hs->next_word);
+        if (code < 0) {
+            return jbig2_error(hs->ctx, JBIG2_SEVERITY_WARNING, -1, "failed to read next huffman word when skipping");
+        }
         hs->offset_bits -= 32;
         if (hs->offset_bits) {
             hs->this_word = (hs->this_word << hs->offset_bits) | (hs->next_word >> (32 - hs->offset_bits));
         }
     }
+    return 0;
 }
 
 /* skip ahead a specified number of bytes in the word stream
  */
-void
+int
 jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset)
 {
+    int code;
     hs->offset += offset & ~3;
     hs->offset_bits += (offset & 3) << 3;
     if (hs->offset_bits >= 32) {
         hs->offset += 4;
         hs->offset_bits -= 32;
     }
-    hs->this_word = huff_get_next_word(hs, hs->offset);
-    hs->next_word = huff_get_next_word(hs, hs->offset + 4);
+    code = huff_get_next_word(hs, hs->offset, &hs->this_word);
+    if (code < 0) {
+        return jbig2_error(hs->ctx, JBIG2_SEVERITY_WARNING, -1, "failed to get first huffman word after advancing");
+    }
+    code = huff_get_next_word(hs, hs->offset + 4, &hs->next_word);
+    if (code < 0) {
+        return jbig2_error(hs->ctx, JBIG2_SEVERITY_WARNING, -1, "failed to get second huffman word after advancing");
+    }
     if (hs->offset_bits > 0)
         hs->this_word = (hs->this_word << hs->offset_bits) | (hs->next_word >> (32 - hs->offset_bits));
+    return 0;
 }
 
 /* return the offset of the huffman decode pointer (in bytes)
@@ -226,6 +250,7 @@ jbig2_huffman_get_bits(Jbig2HuffmanState *hs, const int bits, int *err)
 {
     uint32_t this_word = hs->this_word;
     int32_t result;
+    int code;
 
     if (hs->offset_limit && hs->offset >= hs->offset_limit) {
         *err = -1;
@@ -238,7 +263,10 @@ jbig2_huffman_get_bits(Jbig2HuffmanState *hs, const int bits, int *err)
         hs->offset += 4;
         hs->offset_bits -= 32;
         hs->this_word = hs->next_word;
-        hs->next_word = huff_get_next_word(hs, hs->offset + 4);
+        code = huff_get_next_word(hs, hs->offset + 4, &hs->next_word);
+        if (code < 0) {
+            return jbig2_error(hs->ctx, JBIG2_SEVERITY_WARNING, -1, "failed to get next huffman word");
+        }
         if (hs->offset_bits) {
             hs->this_word = (hs->this_word << hs->offset_bits) | (hs->next_word >> (32 - hs->offset_bits));
         } else {
@@ -271,6 +299,7 @@ jbig2_huffman_get(Jbig2HuffmanState *hs, const Jbig2HuffmanTable *table, bool *o
     for (;;) {
         int log_table_size = table->log_table_size;
         int PREFLEN;
+        int code;
 
         /* SumatraPDF: shifting by the size of the operand is undefined */
         entry = &table->entries[log_table_size > 0 ? this_word >> (32 - log_table_size) : 0];
@@ -287,7 +316,10 @@ jbig2_huffman_get(Jbig2HuffmanState *hs, const Jbig2HuffmanTable *table, bool *o
         if (offset_bits >= 32) {
             this_word = next_word;
             hs->offset += 4;
-            next_word = huff_get_next_word(hs, hs->offset + 4);
+            code = huff_get_next_word(hs, hs->offset + 4, &next_word);
+            if (code < 0) {
+                return jbig2_error(hs->ctx, JBIG2_SEVERITY_WARNING, -1, "failed to get next huffman word");
+            }
             offset_bits -= 32;
             hs->next_word = next_word;
             PREFLEN = offset_bits;
@@ -303,6 +335,7 @@ jbig2_huffman_get(Jbig2HuffmanState *hs, const Jbig2HuffmanTable *table, bool *o
     RANGELEN = entry->RANGELEN;
     if (RANGELEN > 0) {
         int32_t HTOFFSET;
+        int code;
 
         HTOFFSET = this_word >> (32 - RANGELEN);
         if (flags & JBIG2_HUFFMAN_FLAGS_ISLOW)
@@ -314,7 +347,10 @@ jbig2_huffman_get(Jbig2HuffmanState *hs, const Jbig2HuffmanTable *table, bool *o
         if (offset_bits >= 32) {
             this_word = next_word;
             hs->offset += 4;
-            next_word = huff_get_next_word(hs, hs->offset + 4);
+            code = huff_get_next_word(hs, hs->offset + 4, &next_word);
+            if (code < 0) {
+                return jbig2_error(hs->ctx, JBIG2_SEVERITY_WARNING, -1, "failed to get next huffman word");
+            }
             offset_bits -= 32;
             hs->next_word = next_word;
             RANGELEN = offset_bits;

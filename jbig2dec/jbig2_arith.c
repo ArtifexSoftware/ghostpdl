@@ -61,6 +61,7 @@ struct _Jbig2ArithState {
 static void
 jbig2_arith_bytein(Jbig2ArithState *as)
 {
+    int new_bytes;
     byte B;
 
     /* invariant: as->next_word_bytes > 0 */
@@ -73,8 +74,10 @@ jbig2_arith_bytein(Jbig2ArithState *as)
         if (as->next_word_bytes == 1) {
             Jbig2WordStream *ws = as->ws;
 
-            ws->get_next_word(ws, as->offset, &as->next_word);
-            as->offset += 4;
+            new_bytes = ws->get_next_word(ws, as->offset, &as->next_word);
+            as->next_word_bytes = new_bytes;
+            as->offset += new_bytes;
+
             B1 = (byte)((as->next_word >> 24) & 0xFF);
             if (B1 > 0x8F) {
 #ifdef JBIG2_DEBUG_ARITH
@@ -84,8 +87,9 @@ jbig2_arith_bytein(Jbig2ArithState *as)
                 as->C += 0xFF00;
 #endif
                 as->CT = 8;
-                as->next_word = (0xFF00 | B1) << 16;
-                as->next_word_bytes = 2;
+                as->next_word = 0xFF000000 | (as->next_word >> 8);
+                as->next_word_bytes = 4;
+                as->offset--;
             } else {
 #ifdef JBIG2_DEBUG_ARITH
                 fprintf(stderr, "read %02x (a)\n", B);
@@ -96,7 +100,6 @@ jbig2_arith_bytein(Jbig2ArithState *as)
                 as->C += B1 << 9;
 #endif
                 as->CT = 7;
-                as->next_word_bytes = 4;
             }
         } else {
             B1 = (byte)((as->next_word >> 16) & 0xFF);
@@ -133,9 +136,9 @@ jbig2_arith_bytein(Jbig2ArithState *as)
         if (as->next_word_bytes == 0) {
             Jbig2WordStream *ws = as->ws;
 
-            ws->get_next_word(ws, as->offset, &as->next_word);
-            as->offset += 4;
-            as->next_word_bytes = 4;
+            new_bytes = ws->get_next_word(ws, as->offset, &as->next_word);
+            as->offset += new_bytes;
+            as->next_word_bytes = new_bytes;
         }
         B = (byte)((as->next_word >> 24) & 0xFF);
 #ifdef SOFTWARE_CONVENTION
@@ -162,6 +165,7 @@ Jbig2ArithState *
 jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
 {
     Jbig2ArithState *result;
+    int new_bytes;
 
     result = jbig2_new(ctx, Jbig2ArithState, 1);
     if (result == NULL) {
@@ -171,9 +175,9 @@ jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
 
     result->ws = ws;
 
-    ws->get_next_word(ws, 0, &result->next_word);
-    result->next_word_bytes = 4;
-    result->offset = 4;
+    new_bytes = ws->get_next_word(ws, 0, &result->next_word);
+    result->next_word_bytes = new_bytes;
+    result->offset = new_bytes;
 
     /* Figure E.20 */
 #ifdef SOFTWARE_CONVENTION
@@ -348,7 +352,7 @@ test_get_word(Jbig2WordStream *self, size_t offset, uint32_t *word)
     if (self == NULL || word == NULL)
         return -1;
     if (offset >= sizeof (test_stream))
-        return -1;
+        return 0;
 
     if (offset < sizeof(test_stream)) {
         val |= test_stream[offset] << 24;
