@@ -300,6 +300,7 @@ jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx, int *code)
                 *pcx ^= pqe->mps_xor;
             }
             jbig2_arith_renormd(as);
+            *code = 0;
             return D;
         } else
             return cx >> 7;
@@ -318,6 +319,7 @@ jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx, int *code)
             *pcx ^= pqe->lps_xor;
         }
         jbig2_arith_renormd(as);
+        *code = 0;
         return D;
     }
 }
