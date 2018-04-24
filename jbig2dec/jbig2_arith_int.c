@@ -57,7 +57,8 @@ jbig2_arith_int_decode(Jbig2Ctx *ctx, Jbig2ArithIntCtx *actx, Jbig2ArithState *a
 {
     Jbig2ArithCx *IAx = actx->IAx;
     int PREV = 1;
-    int S, V;
+    int S;
+    int32_t V;
     int bit;
     int n_tail, offset;
     int i;
@@ -129,7 +130,9 @@ jbig2_arith_int_decode(Jbig2Ctx *ctx, Jbig2ArithIntCtx *actx, Jbig2ArithState *a
         V = (V << 1) | bit;
     }
 
-    V += offset;
+    /* make sure not to underflow/overflow 32 bit value */
+    if (V < INT32_MAX - 4436 || V > INT32_MIN + 4436)
+        V += offset;
     V = S ? -V : V;
     *p_result = V;
     return S && V == 0 ? 1 : 0;
