@@ -483,11 +483,11 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                                 tparams->IARDH = jbig2_arith_int_ctx_new(ctx);
                                 tparams->IARDX = jbig2_arith_int_ctx_new(ctx);
                                 tparams->IARDY = jbig2_arith_int_ctx_new(ctx);
-                                if ((tparams->IAID == NULL) || (tparams->IAFS == NULL) ||
+                                if ((tparams->IADT == NULL) || (tparams->IAFS == NULL) ||
                                     (tparams->IADS == NULL) || (tparams->IAIT == NULL) ||
-                                    (tparams->IAID == NULL) || (tparams->IARDW == NULL) ||
-                                    (tparams->IARDH == NULL) || (tparams->IARDX == NULL) ||
-                                    (tparams->IARDY == NULL)) {
+                                    (tparams->IAID == NULL) || (tparams->IARI == NULL) ||
+                                    (tparams->IARDW == NULL) || (tparams->IARDH == NULL) ||
+                                    (tparams->IARDX == NULL) || (tparams->IARDY == NULL)) {
                                     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "out of memory creating text region arith decoder entries");
                                     goto cleanup4;
                                 }
