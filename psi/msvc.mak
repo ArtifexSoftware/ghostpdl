@@ -1656,7 +1656,7 @@ $(GS_XE): $(GSDLL_DLL)
 $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)gp_wutf8.$(OBJ) $(TOP_MAKEFILES)
 	echo /SUBSYSTEM:WINDOWS > $(PSGEN)gswin.rsp
 !if "$(PROFILE)"=="1"
-	echo /PROFILE >> $(PSGEN)gswin.rsp 
+	echo /Profile >> $(PSGEN)gswin.rsp 
 !endif
 !ifdef WIN64
 	echo /DEF:$(PSSRCDIR)\dwmain64.def /OUT:$(GS_XE) >> $(PSGEN)gswin.rsp
@@ -1671,7 +1671,7 @@ $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)gp_wutf8.$(OBJ) $(TOP_M
 $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.def $(GLOBJ)gp_wutf8.$(OBJ) $(TOP_MAKEFILES)
 	echo /SUBSYSTEM:CONSOLE > $(PSGEN)gswin.rsp
 !if "$(PROFILE)"=="1"
-	echo /PROFILE >> $(PSGEN)gswin.rsp
+	echo /Profile >> $(PSGEN)gswin.rsp
 !endif
 !ifdef WIN64
 	echo  /DEF:$(PSSRCDIR)\dw64c.def /OUT:$(GSCONSOLE_XE) >> $(PSGEN)gswin.rsp
@@ -1686,7 +1686,7 @@ $(GSDLL_DLL): $(ECHOGS_XE) $(gs_tr) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_
 	echo Linking $(GSDLL)  $(GSDLL_DLL) $(METRO)
 	echo /DLL /DEF:$(PSSRCDIR)\$(GSDLL).def /OUT:$(GSDLL_DLL) > $(PSGEN)gswin.rsp
 !if "$(PROFILE)"=="1"
-	echo /PROFILE >> $(PSGEN)gswin.rsp
+	echo /Profile >> $(PSGEN)gswin.rsp
 !endif
 	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(GSDLL_OBJS) @$(gsld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) @$(PSGEN)lib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(PSGEN)gswin.rsp
@@ -1700,7 +1700,7 @@ $(GPCL6DLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PCL_DEVS_A
 	echo $(PCLOBJ)pclromfs$(COMPILE_INITS).$(OBJ) >> $(PCLGEN)gpclwin.tr
 	echo /DLL /DEF:$(PLSRCDIR)\$(GPCL6DLL).def /OUT:$(GPCL6DLL_DLL) > $(PCLGEN)gpclwin.rsp
 !if "$(PROFILE)"=="1"
-	echo /PROFILE >> $(PSGEN)gpclwin.rsp
+	echo /Profile >> $(PSGEN)gpclwin.rsp
 !endif
 	$(LINK) $(LCT) @$(PCLGEN)gpclwin.rsp $(GPCL6DLL_OBJS) @$(PCLGEN)gpclwin.tr @$(PSGEN)pcllib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(PCLGEN)gpclwin.rsp
@@ -1708,7 +1708,7 @@ $(GPCL6DLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PCL_DEVS_A
 $(GPCL_XE): $(GPCL6DLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
 	echo /SUBSYSTEM:CONSOLE > $(PCLGEN)gpclwin.rsp
 !if "$(PROFILE)"=="1"
-	echo /PROFILE >> $(PCLGEN)gpclwin.rsp
+	echo /Profile >> $(PCLGEN)gpclwin.rsp
 !endif
 !ifdef WIN64
 	echo  /OUT:$(GPCL_XE) >> $(PCLGEN)gpclwin.rsp
@@ -1728,7 +1728,7 @@ $(GXPSDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(XPS_DEVS_AL
 	echo $(PCLOBJ)xpsromfs$(COMPILE_INITS).$(OBJ) >> $(XPSGEN)gxpswin.tr
 	echo /DLL /DEF:$(PLSRCDIR)\$(GXPSDLL).def /OUT:$(GXPSDLL_DLL) > $(XPSGEN)gxpswin.rsp
 !if "$(PROFILE)"=="1"
-	echo /PROFILE >> $(XPSGEN)gxpswin.rsp
+	echo /Profile >> $(XPSGEN)gxpswin.rsp
 !endif
 	$(LINK) $(LCT) @$(XPSGEN)gxpswin.rsp $(GXPSDLL_OBJS) @$(XPSGEN)gxpswin.tr @$(XPSGEN)xpslib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(PCLGEN)gxpswin.rsp
@@ -1736,7 +1736,7 @@ $(GXPSDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(XPS_DEVS_AL
 $(GXPS_XE): $(GXPSDLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
 	echo /SUBSYSTEM:CONSOLE > $(XPSGEN)gxpswin.rsp
 !if "$(PROFILE)"=="1"
-	echo /PROFILE >> $(XPSGEN)gxpswin.rsp
+	echo /Profile >> $(XPSGEN)gxpswin.rsp
 !endif
 !ifdef WIN64
 	echo  /OUT:$(GXPS_XE) >> $(XPSGEN)gxpswin.rsp
@@ -1758,7 +1758,7 @@ $(GPDLDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PCL_DEVS_AL
 	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) >> $(GPDLGEN)gpdlwin.tr
 	echo /DLL /DEF:$(PLSRCDIR)\$(GPDLDLL).def /OUT:$(GPDLDLL_DLL) > $(GPDLGEN)gpdlwin.rsp
 !if "$(PROFILE)"=="1"
-	echo /PROFILE >> $(GPDLGEN)gpdlwin.rsp
+	echo /Profile >> $(GPDLGEN)gpdlwin.rsp
 !endif
 	$(LINK) $(LCT) @$(GPDLGEN)gpdlwin.rsp $(GPDLDLL_OBJS) @$(GPDLGEN)gpdlwin.tr @$(GPDLGEN)gpdllib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(GPDLGEN)gpdlwin.rsp
@@ -1766,7 +1766,7 @@ $(GPDLDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PCL_DEVS_AL
 $(GPDL_XE): $(GPDLDLL_DLL) $(DWMAINOBJS) $(GS_OBJ).res $(TOP_MAKEFILES)
 	echo /SUBSYSTEM:CONSOLE > $(GPDLGEN)gpdlwin.rsp
 !if "$(PROFILE)"=="1"
-	echo /PROFILE >> $(XPSGEN)gpdlwin.rsp
+	echo /Profile >> $(XPSGEN)gpdlwin.rsp
 !endif
 !ifdef WIN64
 	echo  /OUT:$(GPDL_XE) >> $(GPDLGEN)gpdlwin.rsp
@@ -1795,7 +1795,7 @@ $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL
 	echo /DEF:$(PSSRCDIR)\dwmain32.def /OUT:$(GS_XE) > $(PSGEN)gswin.rsp
 !endif
 !if "$(PROFILE)"=="1"
-	echo /PROFILE >> $(PSGEN)gswin.rsp
+	echo /Profile >> $(PSGEN)gswin.rsp
 !endif
 	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(GLOBJ)gsdll @$(PSGEN)gswin.tr $(LINKLIBPATH) @$(LIBCTR) @$(PSGEN)lib.rsp $(GSDLL_OBJ).res $(DWTRACE)
 	del $(PSGEN)gswin.tr
