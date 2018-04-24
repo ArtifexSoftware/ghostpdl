@@ -277,6 +277,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
     xref_entry *entry;
     pdf_obj *o;
     int code;
+    gs_offset_t saved_stream_offset;
 
     if (obj > ctx->xref_table->xref_size)
         return_error(gs_error_rangecheck);
@@ -287,9 +288,12 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
         pdf_obj_cache_entry *cache_entry = entry->cache;
 
         *object = cache_entry->o;
+        pdf_countup(*object);
         if (ctx->cache_MRU) {
-            ((pdf_obj_cache_entry *)cache_entry->next)->previous = cache_entry->previous;
-            ((pdf_obj_cache_entry *)cache_entry->previous)->next = cache_entry->next;
+            if ((pdf_obj_cache_entry *)cache_entry->next != NULL)
+                ((pdf_obj_cache_entry *)cache_entry->next)->previous = cache_entry->previous;
+            if ((pdf_obj_cache_entry *)cache_entry->previous != NULL)
+                ((pdf_obj_cache_entry *)cache_entry->previous)->next = cache_entry->next;
             cache_entry->next = NULL;
             cache_entry->previous = ctx->cache_MRU;
             ctx->cache_MRU->next = cache_entry;
@@ -297,6 +301,8 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
         } else
             return_error(gs_error_unknownerror);
     } else {
+        saved_stream_offset = (gs_offset_t)pdf_tell(ctx);
+
         if (entry->compressed) {
             /* This is an object in a compressed object stream */
 
@@ -315,12 +321,16 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
 
             if (compressed_entry->cache == NULL) {
                 code = pdf_seek(ctx, ctx->main_stream, compressed_entry->u.uncompressed.offset, SEEK_SET);
-                if (code < 0)
+                if (code < 0) {
+                    (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return code;
+                }
 
                 code = pdf_read_object(ctx, ctx->main_stream);
-                if (code < 0)
+                if (code < 0){
+                    (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return code;
+                }
 
                 compressed_object = (pdf_dict *)ctx->stack_top[-1];
                 pdf_countup((pdf_obj *)compressed_object);
@@ -333,16 +343,19 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             code = pdf_dict_get(compressed_object, "Type", &o);
             if (code < 0) {
                 pdf_countdown((pdf_obj *)compressed_object);
+                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
             if (o->type != PDF_NAME) {
                 pdf_countdown(o);
                 pdf_countdown((pdf_obj *)compressed_object);
+                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return_error(gs_error_typecheck);
             }
             if (((pdf_name *)o)->length != 6 || memcmp(((pdf_name *)o)->data, "ObjStm", 6) != 0){
                 pdf_countdown(o);
                 pdf_countdown((pdf_obj *)compressed_object);
+                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return_error(gs_error_syntaxerror);
             }
             pdf_countdown(o);
@@ -351,17 +364,20 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             code = pdf_dict_get(compressed_object, "N", &o);
             if (code < 0) {
                 pdf_countdown((pdf_obj *)compressed_object);
+                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
             if (o->type != PDF_INT) {
                 pdf_countdown(o);
                 pdf_countdown((pdf_obj *)compressed_object);
+                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return_error(gs_error_typecheck);
             }
             num_entries = ((pdf_num *)o)->value.i;
             if (num_entries <= entry->u.compressed.object_index){
                 pdf_countdown(o);
                 pdf_countdown((pdf_obj *)compressed_object);
+                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return_error(gs_error_rangecheck);
             }
             pdf_countdown(o);
@@ -369,12 +385,14 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             code = pdf_seek(ctx, ctx->main_stream, compressed_object->stream_offset, SEEK_SET);
             if (code < 0) {
                 pdf_countdown((pdf_obj *)compressed_object);
+                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
 
             code = pdf_filter(ctx, compressed_object, ctx->main_stream, &compressed_stream);
             if (code < 0) {
                 pdf_countdown((pdf_obj *)compressed_object);
+                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
 
@@ -384,6 +402,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 if (code < 0) {
                     sclose(compressed_stream->s);
                     pdf_countdown((pdf_obj *)compressed_object);
+                    (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return code;
                 }
                 o = ctx->stack_top[-1];
@@ -391,6 +410,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                     pdf_pop(ctx, 1);
                     sclose(compressed_stream->s);
                     pdf_countdown((pdf_obj *)compressed_object);
+                    (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return_error(gs_error_typecheck);
                 }
                 pdf_pop(ctx, 1);
@@ -398,6 +418,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 if (code < 0) {
                     sclose(compressed_stream->s);
                     pdf_countdown((pdf_obj *)compressed_object);
+                    (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return code;
                 }
                 o = ctx->stack_top[-1];
@@ -405,6 +426,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                     pdf_pop(ctx, 1);
                     sclose(compressed_stream->s);
                     pdf_countdown((pdf_obj *)compressed_object);
+                    (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return_error(gs_error_typecheck);
                 }
                 if (i == entry->u.compressed.object_index)
@@ -421,6 +443,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             if (code < 0) {
                 sclose(compressed_stream->s);
                 pdf_countdown((pdf_obj *)compressed_object);
+                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
 
@@ -433,17 +456,22 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             pdf_countdown((pdf_obj *)compressed_object);
         } else {
             code = pdf_seek(ctx, ctx->main_stream, entry->u.uncompressed.offset, SEEK_SET);
-            if (code < 0)
+            if (code < 0) {
+                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
+            }
 
             code = pdf_read_object(ctx, ctx->main_stream);
-            if (code < 0)
+            if (code < 0) {
+                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
+            }
 
             *object = ctx->stack_top[-1];
             pdf_countup(*object);
             pdf_pop(ctx, 1);
         }
+        (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
     }
 
     return 0;
@@ -1178,6 +1206,17 @@ int pdf_array_get(pdf_array *a, uint64_t index, pdf_obj **o)
     return 0;
 }
 
+int pdf_array_put(pdf_array *a, uint64_t index, pdf_obj *o)
+{
+    if (index > a->size)
+        return_error(gs_error_rangecheck);
+
+    pdf_countdown(a->values[index]);
+    a->values[index] = o;
+    pdf_countup(o);
+    return 0;
+}
+
 static void pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
 {
     byte Buffer;
@@ -1279,8 +1318,8 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 memset(o, 0x00, sizeof(pdf_indirect_ref));
                 o->memory = ctx->memory;
                 o->type = PDF_INDIRECT;
-                o->generation_num = gen_num;
-                o->object_num = obj_num;
+                o->ref_generation_num = gen_num;
+                o->ref_object_num = obj_num;
 
                 code = pdf_push(ctx, (pdf_obj *)o);
                 if (code < 0)
@@ -2642,7 +2681,7 @@ static int pdf_read_Root(pdf_context *ctx)
     if (o1->type == PDF_INDIRECT) {
         pdf_obj *name;
 
-        code = pdf_dereference(ctx, ((pdf_indirect_ref *)o1)->object_num,  ((pdf_indirect_ref *)o1)->generation_num, &o);
+        code = pdf_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
         pdf_countdown(o1);
         if (code < 0)
             return code;
@@ -2712,7 +2751,7 @@ static int pdf_read_Info(pdf_context *ctx)
     if (o1->type == PDF_INDIRECT) {
         pdf_obj *name;
 
-        code = pdf_dereference(ctx, ((pdf_indirect_ref *)o1)->object_num,  ((pdf_indirect_ref *)o1)->generation_num, &o);
+        code = pdf_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
         pdf_countdown(o1);
         if (code < 0)
             return code;
@@ -2768,7 +2807,7 @@ static int pdf_read_Pages(pdf_context *ctx)
     if (o1->type == PDF_INDIRECT) {
         pdf_obj *name;
 
-        code = pdf_dereference(ctx, ((pdf_indirect_ref *)o1)->object_num,  ((pdf_indirect_ref *)o1)->generation_num, &o);
+        code = pdf_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
         pdf_countdown(o1);
         if (code < 0)
             return code;
@@ -2802,10 +2841,205 @@ static int pdf_read_Pages(pdf_context *ctx)
 
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "\n");
+
+    code = pdf_dict_get((pdf_dict *)o1, "Count", &o);
+    if (code < 0) {
+        pdf_countdown(o1);
+        return code;
+    }
+    if (o->type != PDF_INT) {
+        pdf_countdown(o1);
+        return_error(gs_error_typecheck);
+    }
+
+    ctx->num_pages = ((pdf_num *)o)->value.i;
+
     /* We don't pdf_countdown(o1) now, because we've transferred our
      * reference to the pointer in the pdf_context structure.
      */
     ctx->Pages = (pdf_dict *)o1;
+    return 0;
+}
+
+static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t *page_offset, pdf_dict **target)
+{
+    int i, code = 0;
+    pdf_num *Count;
+    pdf_array *Kids;
+    pdf_indirect_ref *node;
+    pdf_dict *child;
+    pdf_name *Type;
+
+    code = pdf_dict_get(d, "Count", (pdf_obj **)&Count);
+    if (code < 0) {
+        pdf_countdown((pdf_obj *)Count);
+        return code;
+    }
+    if (Count->type != PDF_INT) {
+        pdf_countdown((pdf_obj *)Count);
+        return_error(gs_error_typecheck);
+    }
+    if (Count->value.i + *page_offset < page_num) {
+        pdf_countdown((pdf_obj *)Count);
+        *page_offset += Count->value.i;
+        return 1;
+    }
+    /* The requested page is a descendant of this node */
+    pdf_countdown((pdf_obj *)Count);
+
+
+    code = pdf_dict_get(d, "Kids", (pdf_obj **)&Kids);
+    if (code < 0) {
+        pdf_countdown((pdf_obj *)Kids);
+        return code;
+    }
+    if (Kids->type != PDF_ARRAY) {
+        pdf_countdown((pdf_obj *)Kids);
+        return_error(gs_error_typecheck);
+    }
+
+    for (i = 0;i < Kids->entries;i++) {
+        code = pdf_array_get(Kids, i, (pdf_obj **)&node);
+        if (code < 0) {
+            pdf_countdown((pdf_obj *)Kids);
+            return code;
+        }
+        if (node->type != PDF_INDIRECT && node->type != PDF_DICT) {
+            pdf_countdown((pdf_obj *)Kids);
+            pdf_countdown((pdf_obj *)node);
+            return_error(gs_error_typecheck);
+        }
+        if (node->type == PDF_INDIRECT) {
+            code = pdf_dereference(ctx, node->ref_object_num, node->ref_generation_num, (pdf_obj **)&child);
+            if (code < 0) {
+                pdf_countdown((pdf_obj *)Kids);
+                pdf_countdown((pdf_obj *)node);
+                return code;
+            }
+            if (child->type != PDF_DICT) {
+                pdf_countdown((pdf_obj *)Kids);
+                pdf_countdown((pdf_obj *)node);
+                return_error(gs_error_typecheck);
+            }
+            /* If its an intermediate node, store it in the page_table, if its a leaf node
+             * then don't, just leave the reference in place. This should make descending
+             * the intermediate nodes faster over time, without storing the (potentailly
+             * large) page dictionaries.
+             */
+            code = pdf_dict_get(child, "Type", (pdf_obj **)&Type);
+            if (code < 0) {
+                pdf_countdown((pdf_obj *)Kids);
+                pdf_countdown((pdf_obj *)child);
+                pdf_countdown((pdf_obj *)node);
+                return code;
+            }
+            if (Type->type != PDF_NAME) {
+                pdf_countdown((pdf_obj *)Kids);
+                pdf_countdown((pdf_obj *)child);
+                pdf_countdown((pdf_obj *)Type);
+                pdf_countdown((pdf_obj *)node);
+                return_error(gs_error_typecheck);
+            }
+            if (Type->length == 5 && memcmp(Type->data, "Pages", 5) == 0) {
+                code = pdf_array_put(Kids, i, (pdf_obj *)child);
+                if (code < 0) {
+                    pdf_countdown((pdf_obj *)Kids);
+                    pdf_countdown((pdf_obj *)child);
+                    pdf_countdown((pdf_obj *)Type);
+                    pdf_countdown((pdf_obj *)node);
+                    return code;
+                }
+            }
+            pdf_countdown((pdf_obj *)Type);
+            pdf_countdown((pdf_obj *)node);
+        } else {
+            child = (pdf_dict *)node;
+        }
+        /* Check the type, if its a Pages entry, then recurse. If its a Page entry, is it the one we want */
+        code = pdf_dict_get(child, "Type", (pdf_obj **)&Type);
+        if (code < 0) {
+            pdf_countdown((pdf_obj *)Kids);
+            pdf_countdown((pdf_obj *)child);
+            return code;
+        }
+        if (Type->type != PDF_NAME) {
+            pdf_countdown((pdf_obj *)Kids);
+            pdf_countdown((pdf_obj *)child);
+            pdf_countdown((pdf_obj *)Type);
+            return_error(gs_error_typecheck);
+        }
+        if (Type->length == 5 && memcmp(Type->data, "Pages", 5) == 0) {
+            int x;
+            code = pdf_dict_get(child, "Count", (pdf_obj **)&Count);
+            if (code < 0) {
+                pdf_countdown((pdf_obj *)Kids);
+                pdf_countdown((pdf_obj *)child);
+                pdf_countdown((pdf_obj *)Type);
+                pdf_countdown((pdf_obj *)Count);
+                return code;
+            }
+            if (Count->type != PDF_INT) {
+                pdf_countdown((pdf_obj *)Kids);
+                pdf_countdown((pdf_obj *)child);
+                pdf_countdown((pdf_obj *)Type);
+                pdf_countdown((pdf_obj *)Count);
+                return_error(gs_error_typecheck);
+            }
+            if (Count->value.i + *page_offset <= page_num) {
+                pdf_countdown((pdf_obj *)child);
+                pdf_countdown((pdf_obj *)Type);
+                *page_offset += Count->value.i;
+                pdf_countdown((pdf_obj *)Count);
+            } else {
+                /* The requested page is a descendant of this node */
+                pdf_countdown((pdf_obj *)Count);
+                pdf_countdown((pdf_obj *)Type);
+                code = pdf_get_page_dict(ctx, child, page_num, page_offset, target);
+                pdf_countdown((pdf_obj *)child);
+                pdf_countdown((pdf_obj *)Kids);
+                return code;
+            }
+        } else {
+            if (Type->length == 4 && memcmp(Type->data, "Page", 4) == 0) {
+                pdf_countdown((pdf_obj *)Type);
+                if ((i + *page_offset) == page_num) {
+                    pdf_countdown((pdf_obj *)Kids);
+                    *target = child;
+                    pdf_countup((pdf_obj *)*target);
+                    pdf_countdown((pdf_obj *)child);
+                    return 0;
+                } else {
+                    pdf_countdown((pdf_obj *)child);
+                }
+            } else {
+                pdf_countdown((pdf_obj *)Kids);
+                pdf_countdown((pdf_obj *)child);
+                pdf_countdown((pdf_obj *)Type);
+                return_error(gs_error_typecheck);
+            }
+        }
+    }
+    /* Positive return value indicates we did not find the target below this node, try the next one */
+    return 1;
+}
+
+static int pdf_render_page(pdf_context *ctx, uint64_t page_num)
+{
+    int code;
+    uint64_t page_offset = 0;
+    pdf_dict *page_dict = NULL;
+
+    if (page_num > ctx->num_pages)
+        return_error(gs_error_rangecheck);
+
+    code = pdf_get_page_dict(ctx, ctx->Pages, page_num, &page_offset, &page_dict);
+    if (code < 0)
+        return code;
+
+    if (code > 0)
+        return_error(gs_error_unknownerror);
+
+    pdf_countdown((pdf_obj *)page_dict);
     return 0;
 }
 
@@ -2827,7 +3061,7 @@ int pdf_close_pdf_file(pdf_context *ctx)
 
 int pdf_process_pdf_file(pdf_context *ctx, char *filename)
 {
-    int code = 0;
+    int code = 0, i;
 
     code = pdf_open_pdf_file(ctx, filename);
     if (code < 0)
@@ -2844,6 +3078,12 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
     code = pdf_read_Pages(ctx);
     if (code < 0)
         return code;
+
+    for (i=0;i < ctx->num_pages;i++) {
+        code = pdf_render_page(ctx, i);
+        if (code < 0)
+            return code;
+    }
 
     code = pdf_close_pdf_file(ctx);
     return code;

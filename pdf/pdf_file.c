@@ -261,6 +261,21 @@ int pdf_seek(pdf_context *ctx, pdf_stream *s, gs_offset_t offset, uint32_t origi
     return (sfseek(s->s, offset, origin));
 }
 
+/* We use 'stell' sometimes to save the position of the underlying file
+ * when reading a compressed stream, so that we can return to the same
+ * point in the underlying file after performing some other operation. This
+ * allows us (for instance) to load a font while interpreting a content stream.
+ * However, if we've 'unread' any bytes we need to take that into account.
+ * NOTE! this is only going to be valid when performed on the main stream
+ * the original PDF file, not any compressed stream!
+ */
+gs_offset_t pdf_tell(pdf_context *ctx)
+{
+    gs_offset_t off = stell(ctx->main_stream->s);
+
+    return (off - ctx->main_stream->unread_size);
+}
+
 int pdf_unread(pdf_context *ctx, pdf_stream *s, byte *Buffer, uint32_t size)
 {
     if (size + s->unread_size > UNREAD_BUFFER_SIZE)

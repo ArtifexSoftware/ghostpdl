@@ -147,4 +147,5 @@ typedef struct pdf_stream_s {
     uint32_t unread_size;
     char unget_buffer[UNREAD_BUFFER_SIZE];
 } pdf_stream;
+
 #endif
