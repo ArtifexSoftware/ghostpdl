@@ -52,17 +52,19 @@ typedef enum {
 } jbig2dec_mode;
 
 typedef enum {
+    jbig2dec_format_none,
     jbig2dec_format_jbig2,
     jbig2dec_format_pbm,
+#ifdef HAVE_LIBPNG
     jbig2dec_format_png,
-    jbig2dec_format_none
+#endif
 } jbig2dec_format;
 
 typedef struct {
     jbig2dec_mode mode;
     int verbose, hash, embedded;
     SHA1_CTX *hash_ctx;
-    char *output_file;
+    char *output_filename;
     jbig2dec_format output_format;
 } jbig2dec_params_t;
 
@@ -183,7 +185,7 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
             params->hash = 1;
             break;
         case 'o':
-            params->output_file = strdup(optarg);
+            params->output_filename = strdup(optarg);
             break;
         case 't':
             set_output_format(params, optarg);
@@ -332,34 +334,18 @@ make_output_filename(const char *input_filename, const char *extension)
 }
 
 static int
-write_page_image(jbig2dec_params_t *params, Jbig2Image *image)
+write_page_image(jbig2dec_params_t *params, FILE *out, Jbig2Image *image)
 {
-    if (!strncmp(params->output_file, "-", 2)) {
-        switch (params->output_format) {
+    switch (params->output_format) {
 #ifdef HAVE_LIBPNG
-        case jbig2dec_format_png:
-            return jbig2_image_write_png(image, stdout);
+    case jbig2dec_format_png:
+        return jbig2_image_write_png(image, out);
 #endif
-        case jbig2dec_format_pbm:
-            return jbig2_image_write_pbm(image, stdout);
-        default:
-            fprintf(stderr, "unsupported output format.\n");
-            return 1;
-        }
-    } else {
-        if (params->verbose > 1)
-            fprintf(stderr, "saving decoded page as '%s'\n", params->output_file);
-        switch (params->output_format) {
-#ifdef HAVE_LIBPNG
-        case jbig2dec_format_png:
-            return jbig2_image_write_png_file(image, params->output_file);
-#endif
-        case jbig2dec_format_pbm:
-            return jbig2_image_write_pbm_file(image, params->output_file);
-        default:
-            fprintf(stderr, "unsupported output format.\n");
-            return 1;
-        }
+    case jbig2dec_format_pbm:
+        return jbig2_image_write_pbm(image, out);
+    default:
+        fprintf(stderr, "unsupported output format.\n");
+        return 1;
     }
 
     return 0;
@@ -370,7 +356,7 @@ write_document_hash(jbig2dec_params_t *params)
 {
     FILE *out;
 
-    if (!strncmp(params->output_file, "-", 2)) {
+    if (!strncmp(params->output_filename, "-", 2)) {
         out = stderr;
     } else {
         out = stdout;
@@ -398,7 +384,7 @@ main(int argc, char **argv)
     params.mode = render;
     params.verbose = 1;
     params.hash = 0;
-    params.output_file = NULL;
+    params.output_filename = NULL;
     params.output_format = jbig2dec_format_none;
     params.embedded = 0;
 
@@ -490,6 +476,7 @@ main(int argc, char **argv)
         /* retrieve and output the returned pages */
         {
             Jbig2Image *image;
+            FILE *out;
 
             /* handle embedded streams and work around broken CVision embedded streams */
             if (params.embedded || f_page != NULL) {
@@ -500,29 +487,49 @@ main(int argc, char **argv)
                 }
             }
 
-            if (params.output_file == NULL) {
+            if (params.output_filename == NULL) {
+                switch (params.output_format) {
 #ifdef HAVE_LIBPNG
-                params.output_file = make_output_filename(argv[filearg], ".png");
-                params.output_format = jbig2dec_format_png;
-#else
-                params.output_file = make_output_filename(argv[filearg], ".pbm");
-                params.output_format = jbig2dec_format_pbm;
+                case jbig2dec_format_png:
+                    params.output_filename = make_output_filename(argv[filearg], ".png");
+                    break;
 #endif
+                case jbig2dec_format_pbm:
+                    params.output_filename = make_output_filename(argv[filearg], ".pbm");
+                    break;
+                default:
+                    fprintf(stderr, "unsupported output format: %d\n", params.output_format);
+                    goto cleanup;
+                }
             } else {
-                int len = strlen(params.output_file);
+                int len = strlen(params.output_filename);
 
                 if ((len >= 3) && (params.output_format == jbig2dec_format_none))
                     /* try to set the output type by the given extension */
-                    set_output_format(&params, params.output_file + len - 3);
+                    set_output_format(&params, params.output_filename + len - 3);
+            }
+
+            if (!strncmp(params.output_filename, "-", 2)) {
+                out = stdout;
+            } else {
+                if (params.verbose > 1)
+                    fprintf(stderr, "saving decoded page as '%s'\n", params.output_filename);
+                if ((out = fopen(params.output_filename, "wb")) == NULL) {
+                    fprintf(stderr, "unable to open '%s' for writing\n", params.output_filename);
+                    goto cleanup;
+                }
             }
 
             /* retrieve and write out all the completed pages */
             while ((image = jbig2_page_out(ctx)) != NULL) {
-                write_page_image(&params, image);
+                write_page_image(&params, out, image);
                 if (params.hash)
                     hash_image(&params, image);
                 jbig2_release_page(ctx, image);
             }
+
+            if (out != stdout)
+                fclose(out);
             if (params.hash)
                 write_document_hash(&params);
         }
@@ -535,8 +542,8 @@ main(int argc, char **argv)
     result = 0;
 
 cleanup:
-    if (params.output_file)
-        free(params.output_file);
+    if (params.output_filename)
+        free(params.output_filename);
     if (params.hash)
         hash_free(&params);
 
