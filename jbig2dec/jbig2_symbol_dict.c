@@ -593,15 +593,15 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
                         /* Table 18 */
                         rparams.GRTEMPLATE = params->SDRTEMPLATE;
-                        rparams.reference = (ID < ninsyms) ? params->SDINSYMS->glyphs[ID] : SDNEWSYMS->glyphs[ID - ninsyms];
+                        rparams.GRREFERENCE = (ID < ninsyms) ? params->SDINSYMS->glyphs[ID] : SDNEWSYMS->glyphs[ID - ninsyms];
                         /* SumatraPDF: fail on missing glyphs */
-                        if (rparams.reference == NULL) {
+                        if (rparams.GRREFERENCE == NULL) {
                             code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "missing glyph %d/%d", ID, ninsyms);
                             jbig2_image_release(ctx, image);
                             goto cleanup4;
                         }
-                        rparams.DX = RDX;
-                        rparams.DY = RDY;
+                        rparams.GRREFERENCEDX = RDX;
+                        rparams.GRREFERENCEDY = RDY;
                         rparams.TPGRON = 0;
                         memcpy(rparams.grat, params->sdrat, 4);
                         code = jbig2_decode_refinement_region(ctx, segment, &rparams, as, image, GR_stats);
@@ -777,16 +777,16 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         uint32_t k;
         int exflag = 0;
         uint32_t limit = params->SDNUMINSYMS + params->SDNUMNEWSYMS;
-        uint32_t exrunlength;
+        uint32_t EXRUNLENGTH;
         int zerolength = 0;
 
         while (i < limit) {
             if (params->SDHUFF)
-                exrunlength = jbig2_huffman_get(hs, SBHUFFRSIZE, &code);
+                EXRUNLENGTH = jbig2_huffman_get(hs, SBHUFFRSIZE, &code);
             else
-                code = jbig2_arith_int_decode(ctx, IAEX, as, (int32_t *) &exrunlength);
+                code = jbig2_arith_int_decode(ctx, IAEX, as, (int32_t *) &EXRUNLENGTH);
             if (code < 0) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode exrunlength for exported symbols");
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode runlength for exported symbols");
                 /* skip to the cleanup code and return SDEXSYMS = NULL */
                 jbig2_sd_release(ctx, SDEXSYMS);
                 SDEXSYMS = NULL;
@@ -801,19 +801,19 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             }
 
             /* prevent infinite loop */
-            zerolength = exrunlength > 0 ? 0 : zerolength + 1;
-            if (exrunlength > limit - i || zerolength > 4 || (exflag && (exrunlength + j > params->SDNUMEXSYMS))) {
-                if (exrunlength <= 0)
-                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength too small in export symbol table (%d <= 0)", exrunlength);
+            zerolength = EXRUNLENGTH > 0 ? 0 : zerolength + 1;
+            if (EXRUNLENGTH > limit - i || zerolength > 4 || (exflag && (EXRUNLENGTH + j > params->SDNUMEXSYMS))) {
+                if (EXRUNLENGTH <= 0)
+                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength too small in export symbol table (%d <= 0)", EXRUNLENGTH);
                 else
                     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-                                "runlength too large in export symbol table (%d > %d - %d)", exrunlength, params->SDNUMEXSYMS, j);
+                                "runlength too large in export symbol table (%d > %d - %d)", EXRUNLENGTH, params->SDNUMEXSYMS, j);
                 /* skip to the cleanup code and return SDEXSYMS = NULL */
                 jbig2_sd_release(ctx, SDEXSYMS);
                 SDEXSYMS = NULL;
                 break;
             }
-            for (k = 0; k < exrunlength; k++) {
+            for (k = 0; k < EXRUNLENGTH; k++) {
                 if (exflag) {
                     SDEXSYMS->glyphs[j++] = (i < params->SDNUMINSYMS) ?
                                             jbig2_image_reference(ctx, params->SDINSYMS->glyphs[i]) : jbig2_image_reference(ctx, SDNEWSYMS->glyphs[i - params->SDNUMINSYMS]);

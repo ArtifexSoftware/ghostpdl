@@ -435,9 +435,9 @@ cleanup1:
 
                 /* Table 12 */
                 rparams.GRTEMPLATE = params->SBRTEMPLATE;
-                rparams.reference = IBO;
-                rparams.DX = (RDW >> 1) + RDX;
-                rparams.DY = (RDH >> 1) + RDY;
+                rparams.GRREFERENCE = IBO;
+                rparams.GRREFERENCEDX = (RDW >> 1) + RDX;
+                rparams.GRREFERENCEDY = (RDH >> 1) + RDY;
                 rparams.TPGRON = 0;
                 memcpy(rparams.grat, params->sbrat, 4);
                 code = jbig2_decode_refinement_region(ctx, segment, &rparams, as, refimage, GR_stats);

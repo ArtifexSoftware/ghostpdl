@@ -52,9 +52,9 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
 {
     const int GRW = image->width;
     const int GRH = image->height;
-    const int dx = params->DX;
-    const int dy = params->DY;
-    Jbig2Image *ref = params->reference;
+    Jbig2Image *ref = params->GRREFERENCE;
+    const int dx = params->GRREFERENCEDX;
+    const int dy = params->GRREFERENCEDY;
     uint32_t CONTEXT;
     int x, y;
     bool bit;
@@ -115,9 +115,9 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
 {
     const int GRW = image->width;
     const int GRH = image->height;
-    const int dx = params->DX;
-    const int dy = params->DY;
-    Jbig2Image *ref = params->reference;
+    Jbig2Image *ref = params->GRREFERENCE;
+    const int dx = params->GRREFERENCEDX;
+    const int dy = params->GRREFERENCEDY;
     uint32_t CONTEXT;
     int x, y;
     bool bit;
@@ -242,9 +242,9 @@ typedef uint32_t(*ContextBuilder)(const Jbig2RefinementRegionParams *, Jbig2Imag
 static int
 implicit_value(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int x, int y)
 {
-    Jbig2Image *ref = params->reference;
-    int i = x - params->DX;
-    int j = y - params->DY;
+    Jbig2Image *ref = params->GRREFERENCE;
+    int i = x - params->GRREFERENCEDX;
+    int j = y - params->GRREFERENCEDY;
     int m = jbig2_image_get_pixel(ref, i, j);
 
     return ((jbig2_image_get_pixel(ref, i - 1, j - 1) == m) &&
@@ -261,9 +261,9 @@ implicit_value(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int
 static uint32_t
 mkctx0(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int x, int y)
 {
-    const int dx = params->DX;
-    const int dy = params->DY;
-    Jbig2Image *ref = params->reference;
+    Jbig2Image *ref = params->GRREFERENCE;
+    const int dx = params->GRREFERENCEDX;
+    const int dy = params->GRREFERENCEDY;
     uint32_t CONTEXT;
 
     CONTEXT = jbig2_image_get_pixel(image, x - 1, y + 0);
@@ -285,9 +285,9 @@ mkctx0(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int x, int 
 static uint32_t
 mkctx1(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int x, int y)
 {
-    const int dx = params->DX;
-    const int dy = params->DY;
-    Jbig2Image *ref = params->reference;
+    Jbig2Image *ref = params->GRREFERENCE;
+    const int dx = params->GRREFERENCEDX;
+    const int dy = params->GRREFERENCEDY;
     uint32_t CONTEXT;
 
     CONTEXT = jbig2_image_get_pixel(image, x - 1, y + 0);
@@ -370,8 +370,8 @@ jbig2_decode_refinement_region(Jbig2Ctx *ctx,
                                const Jbig2RefinementRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GR_stats)
 {
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-            "decoding generic refinement region with offset %d,%x, GRTEMPLATE=%d, TPGRON=%d",
-            params->DX, params->DY, params->GRTEMPLATE, params->TPGRON);
+                "decoding generic refinement region with offset %d,%x, GRTEMPLATE=%d, TPGRON=%d",
+                params->GRREFERENCEDX, params->GRREFERENCEDY, params->GRTEMPLATE, params->TPGRON);
 
     if (params->TPGRON)
         return jbig2_decode_refinement_TPGRON(ctx, params, as, image, GR_stats);
@@ -471,7 +471,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
            rules say to use the first one available, and not to
            reuse any intermediate result, so we simply take another
            reference to it and free the original to keep track of this. */
-        params.reference = jbig2_image_reference(ctx, (Jbig2Image *) ref->result);
+        params.GRREFERENCE = jbig2_image_reference(ctx, (Jbig2Image *) ref->result);
         jbig2_image_release(ctx, (Jbig2Image *) ref->result);
         ref->result = NULL;
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "found reference bitmap in segment %d", ref->number);
@@ -479,13 +479,13 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         /* the reference is just (a subset of) the page buffer */
         if (ctx->pages[ctx->current_page].image == NULL)
             return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "reference page bitmap has no decoded image");
-        params.reference = jbig2_image_reference(ctx, ctx->pages[ctx->current_page].image);
+        params.GRREFERENCE = jbig2_image_reference(ctx, ctx->pages[ctx->current_page].image);
         /* TODO: subset the image if appropriate */
     }
 
     /* 7.4.7.5 */
-    params.DX = 0;
-    params.DY = 0;
+    params.GRREFERENCEDX = 0;
+    params.GRREFERENCEDY = 0;
     {
         Jbig2WordStream *ws = NULL;
         Jbig2ArithState *as = NULL;
@@ -542,7 +542,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
 cleanup:
         jbig2_image_release(ctx, image);
-        jbig2_image_release(ctx, params.reference);
+        jbig2_image_release(ctx, params.GRREFERENCE);
         jbig2_free(ctx->allocator, as);
         jbig2_word_stream_buf_free(ctx, ws);
         jbig2_free(ctx->allocator, GR_stats);

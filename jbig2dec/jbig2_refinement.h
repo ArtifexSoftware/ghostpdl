@@ -25,8 +25,8 @@ typedef struct {
     /* GRW */
     /* GRH */
     bool GRTEMPLATE;
-    Jbig2Image *reference;
-    int32_t DX, DY;
+    Jbig2Image *GRREFERENCE;
+    int32_t GRREFERENCEDX, GRREFERENCEDY;
     bool TPGRON;
     int8_t grat[4];
 } Jbig2RefinementRegionParams;
