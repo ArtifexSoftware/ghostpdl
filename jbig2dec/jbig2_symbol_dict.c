@@ -504,10 +504,11 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                                 tparams->SBHUFFRDH = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);   /* Table B.15 */
                                 tparams->SBHUFFRDX = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);   /* Table B.15 */
                                 tparams->SBHUFFRDY = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);   /* Table B.15 */
+                                tparams->SBHUFFRSIZE = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_A); /* Table B.1 */
                                 if ((tparams->SBHUFFFS == NULL) || (tparams->SBHUFFDS == NULL) ||
                                     (tparams->SBHUFFDT == NULL) || (tparams->SBHUFFRDW == NULL) ||
                                     (tparams->SBHUFFRDH == NULL) || (tparams->SBHUFFRDX == NULL) ||
-                                    (tparams->SBHUFFRDY == NULL)) {
+                                    (tparams->SBHUFFRDY == NULL) || (tparams->SBHUFFRSIZE == NULL)) {
                                     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "out of memory creating text region huffman decoder entries");
                                     goto cleanup4;
                                 }
@@ -845,6 +846,7 @@ cleanup4:
             jbig2_release_huffman_table(ctx, tparams->SBHUFFRDY);
             jbig2_release_huffman_table(ctx, tparams->SBHUFFRDW);
             jbig2_release_huffman_table(ctx, tparams->SBHUFFRDH);
+            jbig2_release_huffman_table(ctx, tparams->SBHUFFRSIZE);
         }
         jbig2_free(ctx->allocator, tparams);
     }
