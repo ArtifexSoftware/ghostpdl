@@ -240,6 +240,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
     Jbig2WordStream *ws = NULL;
     Jbig2HuffmanState *hs = NULL;
     Jbig2HuffmanTable *SDHUFFRDX = NULL;
+    Jbig2HuffmanTable *SDHUFFRDY = NULL;
     Jbig2HuffmanTable *SBHUFFRSIZE = NULL;
     Jbig2ArithState *as = NULL;
     Jbig2ArithIntCtx *IADH = NULL;
@@ -296,8 +297,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "huffman coded symbol dictionary");
         hs = jbig2_huffman_new(ctx, ws);
         SDHUFFRDX = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);
+        SDHUFFRDY = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);
         SBHUFFRSIZE = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_A);
-        if (hs == NULL || SDHUFFRDX == NULL || SBHUFFRSIZE == NULL) {
+        if (hs == NULL || SDHUFFRDX == NULL || SDHUFFRDY == NULL || SBHUFFRSIZE == NULL) {
             jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for symbol bitmap");
             goto cleanup2;
         }
@@ -557,7 +559,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                         if (params->SDHUFF) {
                             ID = jbig2_huffman_get_bits(hs, SBSYMCODELEN, &code1);
                             RDX = jbig2_huffman_get(hs, SDHUFFRDX, &code2);
-                            RDY = jbig2_huffman_get(hs, SDHUFFRDX, &code3);
+                            RDY = jbig2_huffman_get(hs, SDHUFFRDY, &code3);
                             BMSIZE = jbig2_huffman_get(hs, SBHUFFRSIZE, &code4);
                             code5 = jbig2_huffman_skip(hs);
                         } else {
@@ -858,6 +860,7 @@ cleanup2:
     if (params->SDHUFF && !params->SDREFAGG) {
         jbig2_free(ctx->allocator, SDNEWSYMWIDTHS);
     }
+    jbig2_release_huffman_table(ctx, SDHUFFRDY);
     jbig2_release_huffman_table(ctx, SDHUFFRDX);
     jbig2_release_huffman_table(ctx, SBHUFFRSIZE);
     jbig2_huffman_free(ctx, hs);
