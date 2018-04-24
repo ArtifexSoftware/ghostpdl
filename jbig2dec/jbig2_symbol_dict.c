@@ -251,8 +251,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
     Jbig2ArithIntCtx *IARDY = NULL;
     int code = 0;
     Jbig2SymbolDict **refagg_dicts = NULL;
-    int n_refagg_dicts = 1;
-
+    uint32_t i;
     Jbig2TextRegionParams *tparams = NULL;
 
     /* 6.5.5 (3) */
@@ -316,6 +315,21 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "could not allocate storage for (%u) new symbols", params->SDNUMNEWSYMS);
         goto cleanup2;
     }
+
+    refagg_dicts = jbig2_new(ctx, Jbig2SymbolDict *, 2);
+    if (refagg_dicts == NULL) {
+        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Out of memory allocating dictionary array");
+        goto cleanup4;
+    }
+    refagg_dicts[0] = jbig2_sd_new(ctx, params->SDNUMINSYMS);
+    if (refagg_dicts[0] == NULL) {
+        code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "out of memory allocating symbol dictionary");
+        goto cleanup4;
+    }
+    for (i = 0; i < params->SDNUMINSYMS; i++) {
+        refagg_dicts[0]->glyphs[i] = jbig2_image_reference(ctx, params->SDINSYMS->glyphs[i]);
+    }
+    refagg_dicts[1] = SDNEWSYMS;
 
     /* 6.5.5 (4a) */
     while (NSYMSDECODED < params->SDNUMNEWSYMS) {
@@ -448,26 +462,11 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
                     if (REFAGGNINST > 1) {
                         Jbig2Image *image;
-                        uint32_t i;
 
                         if (tparams == NULL) {
                             /* First time through, we need to initialise the */
                             /* various tables for Huffman or adaptive encoding */
                             /* as well as the text region parameters structure */
-                            refagg_dicts = jbig2_new(ctx, Jbig2SymbolDict *, n_refagg_dicts);
-                            if (refagg_dicts == NULL) {
-                                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "out of memory allocating dictionary array");
-                                goto cleanup4;
-                            }
-                            refagg_dicts[0] = jbig2_sd_new(ctx, params->SDNUMINSYMS + params->SDNUMNEWSYMS);
-                            if (refagg_dicts[0] == NULL) {
-                                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "out of memory allocating symbol dictionary");
-                                goto cleanup4;
-                            }
-                            for (i = 0; i < params->SDNUMINSYMS; i++) {
-                                refagg_dicts[0]->glyphs[i] = jbig2_image_reference(ctx, params->SDINSYMS->glyphs[i]);
-                            }
-
                             tparams = jbig2_new(ctx, Jbig2TextRegionParams, 1);
                             if (tparams == NULL) {
                                 code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "out of memory creating text region params");
@@ -531,7 +530,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
                         /* multiple symbols are handled as a text region */
                         code = jbig2_decode_text_region(ctx, segment, tparams, (const Jbig2SymbolDict * const *)refagg_dicts,
-                                                        n_refagg_dicts, image, data, size, GR_stats, as, ws);
+                                                        2, image, data, size, GR_stats, as, ws);
                         if (code < 0) {
                             jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode text region");
                             jbig2_image_release(ctx, image);
@@ -539,7 +538,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                         }
 
                         SDNEWSYMS->glyphs[NSYMSDECODED] = image;
-                        refagg_dicts[0]->glyphs[params->SDNUMINSYMS + NSYMSDECODED] = jbig2_image_reference(ctx, SDNEWSYMS->glyphs[NSYMSDECODED]);
                     } else {
                         /* 6.5.8.2.2 */
                         /* bool SBHUFF = params->SDHUFF; */
@@ -851,6 +849,7 @@ cleanup4:
     if (refagg_dicts != NULL) {
         if (refagg_dicts[0] != NULL)
             jbig2_sd_release(ctx, refagg_dicts[0]);
+        /* skip releasing refagg_dicts[1] as that is the same as SDNEWSYMS */
         jbig2_free(ctx->allocator, refagg_dicts);
     }
 
