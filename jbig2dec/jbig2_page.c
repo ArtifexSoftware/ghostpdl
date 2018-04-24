@@ -63,7 +63,7 @@ jbig2_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_dat
 
     /* a new page info segment implies the previous page is finished */
     page = &(ctx->pages[ctx->current_page]);
-    if ((page->number != 0) && ((page->state == JBIG2_PAGE_NEW) || (page->state == JBIG2_PAGE_FREE))) {
+    if (page->number != 0 && (page->state == JBIG2_PAGE_NEW || page->state == JBIG2_PAGE_FREE)) {
         page->state = JBIG2_PAGE_COMPLETE;
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unexpected page info segment, marking previous page finished");
     }

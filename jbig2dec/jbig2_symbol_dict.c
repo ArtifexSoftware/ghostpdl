@@ -273,7 +273,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         IADW = jbig2_arith_int_ctx_new(ctx);
         IAEX = jbig2_arith_int_ctx_new(ctx);
         IAAI = jbig2_arith_int_ctx_new(ctx);
-        if ((IADH == NULL) || (IADW == NULL) || (IAEX == NULL) || (IAAI == NULL)) {
+        if (IADH == NULL || IADW == NULL || IAEX == NULL || IAAI == NULL) {
             jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for symbol bitmap");
             goto cleanup1;
         }
@@ -284,7 +284,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
             IARDX = jbig2_arith_int_ctx_new(ctx);
             IARDY = jbig2_arith_int_ctx_new(ctx);
-            if ((IAID == NULL) || (IARDX == NULL) || (IARDY == NULL)) {
+            if (IAID == NULL || IARDX == NULL || IARDY == NULL) {
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for symbol bitmap");
                 goto cleanup2;
             }
@@ -294,7 +294,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         hs = jbig2_huffman_new(ctx, ws);
         SDHUFFRDX = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);
         SBHUFFRSIZE = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_A);
-        if ((hs == NULL) || (SDHUFFRDX == NULL) || (SBHUFFRSIZE == NULL)) {
+        if (hs == NULL || SDHUFFRDX == NULL || SBHUFFRSIZE == NULL) {
             jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for symbol bitmap");
             goto cleanup2;
         }
@@ -547,7 +547,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                             code3 = jbig2_arith_int_decode(ctx, IARDY, as, &RDY);
                         }
 
-                        if ((code1 < 0) || (code2 < 0) || (code3 < 0) || (code4 < 0)) {
+                        if (code1 < 0 || code2 < 0 || code3 < 0 || code4 < 0) {
                             code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode data");
                             goto cleanup4;
                         }
@@ -742,7 +742,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 code = jbig2_arith_int_decode(ctx, IAEX, as, (int32_t *) &exrunlength);
             /* prevent infinite loop */
             zerolength = exrunlength > 0 ? 0 : zerolength + 1;
-            if (code || (exrunlength > limit - i) || (zerolength > 4) || (exflag && (exrunlength + j > params->SDNUMEXSYMS))) {
+            if (code || exrunlength > limit - i || zerolength > 4 || (exflag && (exrunlength + j > params->SDNUMEXSYMS))) {
                 if (code)
                     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode exrunlength for exported symbols");
                 else if (exrunlength <= 0)

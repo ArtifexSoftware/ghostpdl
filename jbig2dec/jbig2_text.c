@@ -353,7 +353,7 @@ cleanup1:
                     jbig2_huffman_skip(hs);
                 }
 
-                if ((code1 < 0) || (code2 < 0) || (code3 < 0) || (code4 < 0) || (code5 < 0)) {
+                if (code1 < 0 || code2 < 0 || code3 < 0 || code4 < 0 || code5 < 0) {
                     jbig2_image_release(ctx, IB);
                     code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode data");
                     goto cleanup2;
@@ -864,7 +864,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         params.IAFS = jbig2_arith_int_ctx_new(ctx);
         params.IADS = jbig2_arith_int_ctx_new(ctx);
         params.IAIT = jbig2_arith_int_ctx_new(ctx);
-        if ((params.IADT == NULL) || (params.IAFS == NULL) || (params.IADS == NULL) || (params.IAIT == NULL)) {
+        if (params.IADT == NULL || params.IAFS == NULL || params.IADS == NULL || params.IAIT == NULL) {
             code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "couldn't allocate text region image data");
             goto cleanup3;
         }
@@ -878,8 +878,8 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         params.IARDH = jbig2_arith_int_ctx_new(ctx);
         params.IARDX = jbig2_arith_int_ctx_new(ctx);
         params.IARDY = jbig2_arith_int_ctx_new(ctx);
-        if ((params.IAID == NULL) || (params.IARI == NULL) ||
-            (params.IARDW == NULL) || (params.IARDH == NULL) || (params.IARDX == NULL) || (params.IARDY == NULL)) {
+        if (params.IAID == NULL || params.IARI == NULL ||
+            params.IARDW == NULL || params.IARDH == NULL || params.IARDX == NULL || params.IARDY == NULL) {
             code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "couldn't allocate text region image data");
             goto cleanup4;
         }
