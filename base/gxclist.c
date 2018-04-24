@@ -396,6 +396,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     gx_device_memory bdev;
     gx_device *pbdev = (gx_device *)&bdev;
     int code;
+    int align = 1 << (target->log2_align_mod > log2_align_bitmap_mod ? target->log2_align_mod : log2_align_bitmap_mod);
 
     /* the clist writer has its own color info that depends upon the
        transparency group color space (if transparency exists).  The data that is
@@ -444,6 +445,13 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
             } else {
                 bits_size = cdev->space_params.band.tile_cache_size;
             }
+            /* The top of the tile_cache is the bottom of the imagable band buffer,
+             * which needs to be appropriately aligned. Because the band height is
+             * fixed, we must round *down* the size of the cache to a appropriate
+             * value. See clist_render_thread() and clist_rasterize_lines()
+             * for where the value is used.
+             */
+            bits_size = ROUND_DOWN(bits_size, align);
         } else {
             int adjusted;
             /*
@@ -452,6 +460,13 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
              */
             bits_size = clist_tile_cache_size(target, band_space);
             bits_size = min(bits_size, data_size >> 1);
+            /* The top of the tile_cache is the bottom of the imagable band buffer,
+             * which needs to be appropriately aligned. Because the band height is
+             * fixed, here we round up the size of the cache, since the band height
+             * is variable, and it should only be a few bytes. See clist_render_thread()
+             * and clist_rasterize_lines() for where the value is used.
+             */
+            bits_size = ROUND_UP(bits_size, align);
             band_height = gdev_mem_max_height(&bdev, band_width,
                               band_space - bits_size, page_uses_transparency);
             if (band_height == 0) {
