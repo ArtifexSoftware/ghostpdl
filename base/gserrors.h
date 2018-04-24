@@ -113,7 +113,10 @@ enum gs_error_type {
  * subclasses should not perform any further action. Currently this is limited
  * to compositor creation.
  */
-    gs_error_handled = -111
+    gs_error_handled = -111,
+
+/* Internal error for the C-based PDF interpreter, to indicate a circular PDF reference */
+  gs_error_circular_reference = -112
 };
 
 /* We do provide a typedef type for external API use */
