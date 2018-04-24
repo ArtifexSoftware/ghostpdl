@@ -25,6 +25,8 @@
 /* Include zlib early to avoid offsetof redef problems on windows */
 #include "zlib.h"
 
+#include "stdint_.h"
+
 #include "gp.h"
 
 #include "gsgc.h"
@@ -97,6 +99,7 @@ typedef enum pdf_error_flag_e {
 #define INITIAL_STACK_SIZE 32
 #define MAX_STACK_SIZE 32767
 #define MAX_OBJECT_CACHE_SIZE 200
+#define INITIAL_LOOP_TRACKER_SIZE 32
 
 typedef struct pdf_context_s
 {
@@ -162,6 +165,10 @@ typedef struct pdf_context_s
     uint32_t cache_entries;
     pdf_obj_cache_entry *cache_LRU;
     pdf_obj_cache_entry *cache_MRU;
+
+    uint32_t loop_detection_size;
+    uint32_t loop_detection_entries;
+    uint64_t *loop_detection;
 }pdf_context;
 
 pdf_context *pdf_create_context(gs_memory_t *pmem);

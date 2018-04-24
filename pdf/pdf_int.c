@@ -284,6 +284,10 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
 
     entry = &ctx->xref_table->xref[obj];
 
+    if (ctx->loop_detection) {
+        if (pdf_loop_detector_check_object(ctx, obj) == true)
+            return_error(gs_error_circular_reference);
+    }
     if (entry->cache != NULL){
         pdf_obj_cache_entry *cache_entry = entry->cache;
 
@@ -474,6 +478,11 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
         (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
     }
 
+    if (ctx->loop_detection) {
+        code = pdf_loop_detector_add_object(ctx, object);
+        if (code < 0)
+            return code;
+    }
     return 0;
 }
 
@@ -1822,7 +1831,7 @@ int repair_pdf_file(pdf_context *ctx)
     if(ctx->pdfdebug)
         dmprintf(ctx->memory, "%% Error encoutnered in opening PDF file, attempting repair\n");
 
-    return 0;
+    return_error(gs_error_ioerror);
 }
 
 static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t first, uint64_t last, unsigned char *W)
@@ -2870,6 +2879,9 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
     pdf_dict *child;
     pdf_name *Type;
 
+    if (ctx->pdfdebug)
+        dmprintf1(ctx->memory, "%% Finding page dictionary for page %"PRIi64"\n", page_num + 1);
+
     code = pdf_dict_get(d, "Count", (pdf_obj **)&Count);
     if (code < 0) {
         pdf_countdown((pdf_obj *)Count);
@@ -2910,6 +2922,12 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
             return_error(gs_error_typecheck);
         }
         if (node->type == PDF_INDIRECT) {
+            /* Check for the Kids reference pointing to this dictionary */
+            if (d->object_num == node->ref_object_num) {
+                pdf_countdown((pdf_obj *)Kids);
+                pdf_countdown((pdf_obj *)node);
+                return_error(gs_error_circular_reference);
+            }
             code = pdf_dereference(ctx, node->ref_object_num, node->ref_generation_num, (pdf_obj **)&child);
             if (code < 0) {
                 pdf_countdown((pdf_obj *)Kids);
@@ -2921,6 +2939,7 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
                 pdf_countdown((pdf_obj *)node);
                 return_error(gs_error_typecheck);
             }
+#if DONT_STORE_DEREFFED_PAGES
             /* If its an intermediate node, store it in the page_table, if its a leaf node
              * then don't, just leave the reference in place. This should make descending
              * the intermediate nodes faster over time, without storing the (potentailly
@@ -2951,6 +2970,9 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
                 }
             }
             pdf_countdown((pdf_obj *)Type);
+#else
+            code = pdf_array_put(Kids, i, (pdf_obj *)child);
+#endif
             pdf_countdown((pdf_obj *)node);
         } else {
             child = (pdf_dict *)node;
@@ -3032,7 +3054,15 @@ static int pdf_render_page(pdf_context *ctx, uint64_t page_num)
     if (page_num > ctx->num_pages)
         return_error(gs_error_rangecheck);
 
+    if (ctx->pdfdebug)
+        dmprintf1(ctx->memory, "%% Processing Page %"PRIi64" content stream\n", page_num + 1);
+
+    code = pdf_init_loop_detector(ctx);
+    if (code < 0)
+        return code;
+
     code = pdf_get_page_dict(ctx, ctx->Pages, page_num, &page_offset, &page_dict);
+    pdf_free_loop_detector(ctx);
     if (code < 0)
         return code;
 
