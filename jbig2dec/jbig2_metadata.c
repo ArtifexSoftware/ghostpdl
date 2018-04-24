@@ -60,6 +60,9 @@ jbig2_metadata_free(Jbig2Ctx *ctx, Jbig2Metadata *md)
 {
     int i;
 
+    if (md == NULL)
+        return;
+
     if (md->keys) {
         /* assume we own the pointers */
         for (i = 0; i < md->entries; i++)

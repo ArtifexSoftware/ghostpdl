@@ -338,9 +338,13 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 void
 jbig2_ctx_free(Jbig2Ctx *ctx)
 {
-    Jbig2Allocator *ca = ctx->allocator;
+    Jbig2Allocator *ca;
     int i;
 
+    if (ctx == NULL)
+        return;
+
+    ca = ctx->allocator;
     jbig2_free(ca, ctx->buf);
     if (ctx->segments != NULL) {
         for (i = 0; i < ctx->n_segments; i++)

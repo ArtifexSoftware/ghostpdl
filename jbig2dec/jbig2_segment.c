@@ -134,8 +134,10 @@ jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t 
 void
 jbig2_free_segment(Jbig2Ctx *ctx, Jbig2Segment *segment)
 {
-    jbig2_free(ctx->allocator, segment->referred_to_segments);
+    if (segment == NULL)
+        return;
 
+    jbig2_free(ctx->allocator, segment->referred_to_segments);
     /* todo: we need either some separate fields or
        a more complex result object rather than this
        brittle special casing */

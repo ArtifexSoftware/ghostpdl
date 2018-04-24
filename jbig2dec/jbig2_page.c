@@ -331,6 +331,9 @@ jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image)
 {
     int index;
 
+    if (image == NULL)
+        return;
+
     /* find the matching page struct and mark it released */
     for (index = 0; index < ctx->max_page_index; index++) {
         if (ctx->pages[index].image == image) {

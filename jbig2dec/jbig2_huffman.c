@@ -474,7 +474,6 @@ jbig2_release_huffman_table(Jbig2Ctx *ctx, Jbig2HuffmanTable *table)
         jbig2_free(ctx->allocator, table->entries);
         jbig2_free(ctx->allocator, table);
     }
-    return;
 }
 
 /* Routines to handle "code table segment (53)" */

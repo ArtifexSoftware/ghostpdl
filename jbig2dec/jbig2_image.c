@@ -91,7 +91,7 @@ jbig2_image_release(Jbig2Ctx *ctx, Jbig2Image *image)
     if (image == NULL)
         return;
     image->refcount--;
-    if (!image->refcount)
+    if (image->refcount == 0)
         jbig2_image_free(ctx, image);
 }
 
@@ -99,9 +99,10 @@ jbig2_image_release(Jbig2Ctx *ctx, Jbig2Image *image)
 void
 jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image)
 {
-    if (image)
+    if (image != NULL) {
         jbig2_free(ctx->allocator, image->data);
-    jbig2_free(ctx->allocator, image);
+        jbig2_free(ctx->allocator, image);
+    }
 }
 
 /* resize a Jbig2Image */
