@@ -330,9 +330,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode height class delta");
             goto cleanup2;
         }
-
-        if (code != 0) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "error or OOB decoding height class delta (%d)", code);
+        if (code > 0) {
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "OOB decoding height class delta");
+            goto cleanup2;
         }
 
         if (!params->SDHUFF && jbig2_arith_has_reached_marker(as)) {
@@ -367,10 +367,9 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode DW");
                 goto cleanup4;
             }
-
             /* 6.5.5 (4c.i) */
-            if (code == 1) {
-                jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, " OOB signals end of height class %d", HCHEIGHT);
+            if (code > 0) {
+                jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "OOB when decoding DW signals end of height class %d", HCHEIGHT);
                 break;
             }
 
@@ -435,8 +434,12 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                         code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode number of symbols in aggregate glyph");
                         goto cleanup4;
                     }
-                    if (code || (int32_t) REFAGGNINST <= 0) {
-                        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "invalid number of symbols or OOB in aggregate glyph");
+                    if (code > 0) {
+                        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB in number of symbols in aggregate glyph");
+                        goto cleanup4;
+                    }
+                    if ((int32_t) REFAGGNINST <= 0) {
+                        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "invalid number of symbols in aggregate glyph");
                         goto cleanup4;
                     }
 
@@ -567,6 +570,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                             code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode data");
                             goto cleanup4;
                         }
+                        if (code1 > 0 || code2 > 0 || code3 > 0 || code4 > 0) {
+                            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB in single refinement/aggregate coded symbol data");
+                            goto cleanup4;
+                        }
 
                         if (ID >= ninsyms + NSYMSDECODED) {
                             code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "refinement references unknown symbol %d", ID);
@@ -654,6 +661,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
             if (code) {
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "error decoding size of collective bitmap");
+                goto cleanup4;
+            }
+            if (code > 0) {
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB obtained when decoding size of collective bitmap");
                 goto cleanup4;
             }
 
@@ -766,12 +777,18 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 SDEXSYMS = NULL;
                 break;
             }
+            if (code > 0) {
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB when decoding runlength for exported symbols");
+                /* skip to the cleanup code and return SDEXSYMS = NULL */
+                jbig2_sd_release(ctx, SDEXSYMS);
+                SDEXSYMS = NULL;
+                break;
+            }
+
             /* prevent infinite loop */
             zerolength = exrunlength > 0 ? 0 : zerolength + 1;
-            if (code || exrunlength > limit - i || zerolength > 4 || (exflag && (exrunlength + j > params->SDNUMEXSYMS))) {
-                if (code)
-                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode exrunlength for exported symbols");
-                else if (exrunlength <= 0)
+            if (exrunlength > limit - i || zerolength > 4 || (exflag && (exrunlength + j > params->SDNUMEXSYMS))) {
+                if (exrunlength <= 0)
                     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength too small in export symbol table (%d <= 0)", exrunlength);
                 else
                     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,

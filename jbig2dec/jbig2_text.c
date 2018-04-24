@@ -112,6 +112,10 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to read huffman runcode lengths");
                 goto cleanup1;
             }
+            if (code > 0) {
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB decoding huffman runcode lengths");
+                goto cleanup1;
+            }
             runcodelengths[index].RANGELEN = 0;
             runcodelengths[index].RANGELOW = index;
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "  read runcode%d length %d", index, runcodelengths[index].PREFLEN);
@@ -136,6 +140,10 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
             code = jbig2_huffman_get(hs, runcodes, &err);
             if (err < 0) {
                 code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "error reading symbol ID huffman table");
+                goto cleanup1;
+            }
+            if (err > 0) {
+                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB decoding symbol ID huffman table");
                 goto cleanup1;
             }
             if (code < 0 || code >= 35) {
@@ -165,6 +173,10 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                     range = jbig2_huffman_get_bits(hs, 7, &err) + 11;
                 if (err < 0) {
                     code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to read huffman code");
+                    goto cleanup1;
+                }
+                if (err > 0) {
+                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB decoding huffman code");
                     goto cleanup1;
                 }
             }
@@ -219,6 +231,10 @@ cleanup1:
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode strip T");
         goto cleanup2;
     }
+    if (code > 0) {
+        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB obtained when decoding strip T");
+        goto cleanup2;
+    }
 
     /* 6.4.5 (2) */
     STRIPT *= -(params->SBSTRIPS);
@@ -235,6 +251,10 @@ cleanup1:
         }
         if (code < 0) {
             jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode delta T");
+            goto cleanup2;
+        }
+        if (code > 0) {
+            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB obtained when decoding delta T");
             goto cleanup2;
         }
         DT *= params->SBSTRIPS;
@@ -255,6 +275,10 @@ cleanup1:
                     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode strip symbol S-difference");
                     goto cleanup2;
                 }
+                if (code > 0) {
+                    code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB obtained when decoding strip symbol S-difference");
+                    goto cleanup2;
+                }
                 FIRSTS += DFS;
                 CURS = FIRSTS;
                 first_symbol = FALSE;
@@ -273,8 +297,8 @@ cleanup1:
                     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode symbol instance S coordinate");
                     goto cleanup2;
                 }
-                if (code) {
-                    /* decoded an OOB, reached end of strip */
+                if (code > 0) {
+                    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "OOB obtained when decoding symbol instance S coordinate signals end of strip with T value %d", DT);
                     break;
                 }
                 CURS += IDS + params->SBDSOFFSET;
@@ -292,6 +316,10 @@ cleanup1:
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode symbol instance T coordinate");
                 goto cleanup2;
             }
+            if (code > 0) {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "OOB obtained when decoding symbol instance T coordinate");
+                goto cleanup2;
+            }
             T = STRIPT + CURT;
 
             /* (3b.iv) / 6.4.10 - decode the symbol id */
@@ -302,6 +330,10 @@ cleanup1:
             }
             if (code < 0) {
                 code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to obtain symbol instance symbol ID");
+                goto cleanup2;
+            }
+            if (code > 0) {
+                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB obtained when decoding symbol instance symbol ID");
                 goto cleanup2;
             }
             if (ID >= SBNUMSYMS) {
@@ -331,6 +363,10 @@ cleanup1:
                 }
                 if (code < 0) {
                     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode symbol bitmap refinement indicator");
+                    goto cleanup2;
+                }
+                if (code > 0) {
+                    code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB obtained when decoding symbol bitmap refinement indicator");
                     goto cleanup2;
                 }
             } else {
@@ -366,6 +402,11 @@ cleanup1:
                 if (code1 < 0 || code2 < 0 || code3 < 0 || code4 < 0 || code5 < 0) {
                     jbig2_image_release(ctx, IB);
                     code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode data");
+                    goto cleanup2;
+                }
+                if (code1 > 0 || code2 > 0 || code3 > 0 || code4 > 0 || code5 > 0) {
+                    jbig2_image_release(ctx, IB);
+                    code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB obtained when decoding symbol instance refinement data");
                     goto cleanup2;
                 }
 
