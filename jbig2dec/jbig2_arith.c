@@ -149,14 +149,6 @@ jbig2_arith_bytein(Jbig2ArithState *as)
     }
 }
 
-#if defined(JBIG2_DEBUG) || defined(JBIG2_DEBUG_ARITH)
-static void
-jbig2_arith_trace(Jbig2ArithState *as, Jbig2ArithCx cx)
-{
-    fprintf(stderr, "I = %2d, MPS = %d, A = %04x, CT = %2d, C = %08x\n", cx & 0x7f, cx >> 7, as->A, as->CT, as->C);
-}
-#endif
-
 /** Allocate and initialize a new arithmetic coding state
  *  the returned pointer can simply be freed; this does
  *  not affect the associated Jbig2WordStream.
@@ -336,12 +328,20 @@ jbig2_arith_has_reached_marker(Jbig2ArithState *as)
 
 #ifdef TEST
 
-const byte test_stream[] = {
+static const byte test_stream[] = {
     0x84, 0xC7, 0x3B, 0xFC, 0xE1, 0xA1, 0x43, 0x04, 0x02, 0x20, 0x00, 0x00,
     0x41, 0x0D, 0xBB, 0x86, 0xF4, 0x31, 0x7F, 0xFF, 0x88, 0xFF, 0x37, 0x47,
     0x1A, 0xDB, 0x6A, 0xDF, 0xFF, 0xAC,
     0x00, 0x00
 };
+
+#if defined(JBIG2_DEBUG) || defined(JBIG2_DEBUG_ARITH)
+static void
+jbig2_arith_trace(Jbig2ArithState *as, Jbig2ArithCx cx)
+{
+    fprintf(stderr, "I = %2d, MPS = %d, A = %04x, CT = %2d, C = %08x\n", cx & 0x7f, cx >> 7, as->A, as->CT, as->C);
+}
+#endif
 
 static int
 test_get_word(Jbig2WordStream *self, size_t offset, uint32_t *word)
