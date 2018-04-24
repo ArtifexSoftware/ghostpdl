@@ -276,7 +276,24 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         return NULL;
     }
 
-    if (!params->SDHUFF) {
+    if (params->SDHUFF) {
+        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "huffman coded symbol dictionary");
+        hs = jbig2_huffman_new(ctx, ws);
+        SDHUFFRDX = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);
+        SDHUFFRDY = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);
+        SBHUFFRSIZE = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_A);
+        if (hs == NULL || SDHUFFRDX == NULL || SDHUFFRDY == NULL || SBHUFFRSIZE == NULL) {
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for symbol bitmap");
+            goto cleanup;
+        }
+        if (!params->SDREFAGG) {
+            SDNEWSYMWIDTHS = jbig2_new(ctx, uint32_t, params->SDNUMNEWSYMS);
+            if (SDNEWSYMWIDTHS == NULL) {
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not allocate storage for (%u) symbol widths", params->SDNUMNEWSYMS);
+                goto cleanup;
+            }
+        }
+    } else {
         IADH = jbig2_arith_int_ctx_new(ctx);
         IADW = jbig2_arith_int_ctx_new(ctx);
         IAEX = jbig2_arith_int_ctx_new(ctx);
@@ -294,23 +311,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             IARDY = jbig2_arith_int_ctx_new(ctx);
             if (IAID == NULL || IARDX == NULL || IARDY == NULL) {
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for symbol bitmap");
-                goto cleanup;
-            }
-        }
-    } else {
-        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "huffman coded symbol dictionary");
-        hs = jbig2_huffman_new(ctx, ws);
-        SDHUFFRDX = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);
-        SDHUFFRDY = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);
-        SBHUFFRSIZE = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_A);
-        if (hs == NULL || SDHUFFRDX == NULL || SDHUFFRDY == NULL || SBHUFFRSIZE == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for symbol bitmap");
-            goto cleanup;
-        }
-        if (!params->SDREFAGG) {
-            SDNEWSYMWIDTHS = jbig2_new(ctx, uint32_t, params->SDNUMNEWSYMS);
-            if (SDNEWSYMWIDTHS == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not allocate storage for (%u) symbol widths", params->SDNUMNEWSYMS);
                 goto cleanup;
             }
         }
