@@ -37,6 +37,9 @@ typedef unsigned char uint8_t;
 typedef unsigned short int uint16_t;
 typedef unsigned int uint32_t;
 typedef unsigned __int64 uint64_t;
+#ifndef SIZE_MAX
+#define SIZE_MAX (~((size_t) 0))
+#endif
 # endif
 
 /* VS 2008 and later have vsnprintf */
