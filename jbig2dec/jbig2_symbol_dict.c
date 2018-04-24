@@ -239,17 +239,11 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
     int SBSYMCODELEN = 0;
     Jbig2WordStream *ws = NULL;
     Jbig2HuffmanState *hs = NULL;
-    Jbig2HuffmanTable *SDHUFFRDX = NULL;
-    Jbig2HuffmanTable *SDHUFFRDY = NULL;
-    Jbig2HuffmanTable *SBHUFFRSIZE = NULL;
     Jbig2ArithState *as = NULL;
     Jbig2ArithIntCtx *IADH = NULL;
     Jbig2ArithIntCtx *IADW = NULL;
     Jbig2ArithIntCtx *IAEX = NULL;
     Jbig2ArithIntCtx *IAAI = NULL;
-    Jbig2ArithIaidCtx *IAID = NULL;
-    Jbig2ArithIntCtx *IARDX = NULL;
-    Jbig2ArithIntCtx *IARDY = NULL;
     int code = 0;
     Jbig2SymbolDict **refagg_dicts = NULL;
     uint32_t i;
@@ -279,10 +273,11 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
     if (params->SDHUFF) {
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "huffman coded symbol dictionary");
         hs = jbig2_huffman_new(ctx, ws);
-        SDHUFFRDX = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);
-        SDHUFFRDY = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);
-        SBHUFFRSIZE = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_A);
-        if (hs == NULL || SDHUFFRDX == NULL || SDHUFFRDY == NULL || SBHUFFRSIZE == NULL) {
+        tparams.SBHUFFRDX = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);   /* Table B.15 */
+        tparams.SBHUFFRDY = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);   /* Table B.15 */
+        tparams.SBHUFFRSIZE = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_A); /* Table B.1 */
+        if (hs == NULL || tparams.SBHUFFRDX == NULL ||
+                tparams.SBHUFFRDY == NULL || tparams.SBHUFFRSIZE == NULL) {
             jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for symbol bitmap");
             goto cleanup;
         }
@@ -290,6 +285,18 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             SDNEWSYMWIDTHS = jbig2_new(ctx, uint32_t, params->SDNUMNEWSYMS);
             if (SDNEWSYMWIDTHS == NULL) {
                 jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not allocate storage for (%u) symbol widths", params->SDNUMNEWSYMS);
+                goto cleanup;
+            }
+        } else {
+            tparams.SBHUFFFS = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_F);    /* Table B.6 */
+            tparams.SBHUFFDS = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_H);    /* Table B.8 */
+            tparams.SBHUFFDT = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_K);    /* Table B.11 */
+            tparams.SBHUFFRDW = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);   /* Table B.15 */
+            tparams.SBHUFFRDH = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);   /* Table B.15 */
+            if (tparams.SBHUFFFS == NULL || tparams.SBHUFFDS == NULL ||
+                    tparams.SBHUFFDT == NULL || tparams.SBHUFFRDW == NULL ||
+                    tparams.SBHUFFRDH == NULL) {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "out of memory creating text region huffman decoder entries");
                 goto cleanup;
             }
         }
@@ -302,60 +309,32 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for symbol bitmap");
             goto cleanup;
         }
-        if (params->SDREFAGG) {
-            int64_t tmp = params->SDNUMINSYMS + params->SDNUMNEWSYMS;
-
-            for (SBSYMCODELEN = 0; ((int64_t) 1 << SBSYMCODELEN) < tmp; SBSYMCODELEN++);
-            IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
-            IARDX = jbig2_arith_int_ctx_new(ctx);
-            IARDY = jbig2_arith_int_ctx_new(ctx);
-            if (IAID == NULL || IARDX == NULL || IARDY == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for symbol bitmap");
-                goto cleanup;
-            }
-        }
-    }
-
-    /* First time through, we need to initialise the */
-    /* various tables for Huffman or adaptive encoding */
-    /* as well as the text region parameters structure */
-    if (params->SDHUFF) {
-        tparams.SBHUFFFS = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_F);    /* Table B.6 */
-        tparams.SBHUFFDS = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_H);    /* Table B.8 */
-        tparams.SBHUFFDT = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_K);    /* Table B.11 */
-        tparams.SBHUFFRDW = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);   /* Table B.15 */
-        tparams.SBHUFFRDH = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);   /* Table B.15 */
-        tparams.SBHUFFRDX = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);   /* Table B.15 */
-        tparams.SBHUFFRDY = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_O);   /* Table B.15 */
-        tparams.SBHUFFRSIZE = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_A); /* Table B.1 */
-        if (tparams.SBHUFFFS == NULL || tparams.SBHUFFDS == NULL ||
-                tparams.SBHUFFDT == NULL || tparams.SBHUFFRDW == NULL ||
-                tparams.SBHUFFRDH == NULL || tparams.SBHUFFRDX == NULL ||
-                tparams.SBHUFFRDY == NULL || tparams.SBHUFFRSIZE == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "out of memory creating text region huffman decoder entries");
-            goto cleanup;
-        }
-    } else {
-        /* Values from Table 17, section 6.5.8.2 (2) */
-        tparams.IADT = jbig2_arith_int_ctx_new(ctx);
-        tparams.IAFS = jbig2_arith_int_ctx_new(ctx);
-        tparams.IADS = jbig2_arith_int_ctx_new(ctx);
-        tparams.IAIT = jbig2_arith_int_ctx_new(ctx);
-        /* Table 31 */
         for (SBSYMCODELEN = 0; ((uint64_t) 1 << SBSYMCODELEN) < ((uint64_t) params->SDNUMINSYMS + params->SDNUMNEWSYMS); SBSYMCODELEN++);
         tparams.IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
-        tparams.IARI = jbig2_arith_int_ctx_new(ctx);
-        tparams.IARDW = jbig2_arith_int_ctx_new(ctx);
-        tparams.IARDH = jbig2_arith_int_ctx_new(ctx);
         tparams.IARDX = jbig2_arith_int_ctx_new(ctx);
         tparams.IARDY = jbig2_arith_int_ctx_new(ctx);
-        if (tparams.IADT == NULL || tparams.IAFS == NULL ||
-                tparams.IADS == NULL || tparams.IAIT == NULL ||
-                tparams.IAID == NULL || tparams.IARI == NULL ||
-                tparams.IARDW == NULL || tparams.IARDH == NULL ||
-                tparams.IARDX == NULL || tparams.IARDY == NULL) {
+        if (tparams.IAID == NULL || tparams.IARDX == NULL ||
+                tparams.IARDY == NULL) {
             jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "out of memory creating text region arith decoder entries");
             goto cleanup;
+        }
+        if (params->SDREFAGG) {
+            /* Values from Table 17, section 6.5.8.2 (2) */
+            tparams.IADT = jbig2_arith_int_ctx_new(ctx);
+            tparams.IAFS = jbig2_arith_int_ctx_new(ctx);
+            tparams.IADS = jbig2_arith_int_ctx_new(ctx);
+            tparams.IAIT = jbig2_arith_int_ctx_new(ctx);
+            /* Table 31 */
+            tparams.IARI = jbig2_arith_int_ctx_new(ctx);
+            tparams.IARDW = jbig2_arith_int_ctx_new(ctx);
+            tparams.IARDH = jbig2_arith_int_ctx_new(ctx);
+            if (tparams.IADT == NULL || tparams.IAFS == NULL ||
+                    tparams.IADS == NULL || tparams.IAIT == NULL ||
+                    tparams.IARI == NULL || tparams.IARDW == NULL ||
+                    tparams.IARDH == NULL) {
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "out of memory creating text region arith decoder entries");
+                goto cleanup;
+            }
         }
     }
     tparams.SBHUFF = params->SDHUFF;
@@ -367,7 +346,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
     tparams.REFCORNER = JBIG2_CORNER_TOPLEFT;
     tparams.SBDSOFFSET = 0;
     tparams.SBRTEMPLATE = params->SDRTEMPLATE;
-
 
     SDNEWSYMS = jbig2_sd_new(ctx, params->SDNUMNEWSYMS);
     if (SDNEWSYMS == NULL) {
@@ -554,14 +532,14 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                         /* 6.5.8.2.2 (2, 3, 4, 5) */
                         if (params->SDHUFF) {
                             ID = jbig2_huffman_get_bits(hs, SBSYMCODELEN, &code1);
-                            RDX = jbig2_huffman_get(hs, SDHUFFRDX, &code2);
-                            RDY = jbig2_huffman_get(hs, SDHUFFRDY, &code3);
-                            BMSIZE = jbig2_huffman_get(hs, SBHUFFRSIZE, &code4);
+                            RDX = jbig2_huffman_get(hs, tparams.SBHUFFRDX, &code2);
+                            RDY = jbig2_huffman_get(hs, tparams.SBHUFFRDY, &code3);
+                            BMSIZE = jbig2_huffman_get(hs, tparams.SBHUFFRSIZE, &code4);
                             code5 = jbig2_huffman_skip(hs);
                         } else {
-                            code1 = jbig2_arith_iaid_decode(ctx, IAID, as, (int32_t *) & ID);
-                            code2 = jbig2_arith_int_decode(ctx, IARDX, as, &RDX);
-                            code3 = jbig2_arith_int_decode(ctx, IARDY, as, &RDY);
+                            code1 = jbig2_arith_iaid_decode(ctx, tparams.IAID, as, (int32_t *) & ID);
+                            code2 = jbig2_arith_int_decode(ctx, tparams.IARDX, as, &RDX);
+                            code3 = jbig2_arith_int_decode(ctx, tparams.IARDY, as, &RDY);
                         }
 
                         if (code1 < 0 || code2 < 0 || code3 < 0 || code4 < 0 || code5 < 0) {
@@ -771,7 +749,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
         while (i < limit) {
             if (params->SDHUFF)
-                EXRUNLENGTH = jbig2_huffman_get(hs, SBHUFFRSIZE, &code);
+                EXRUNLENGTH = jbig2_huffman_get(hs, tparams.SBHUFFRSIZE, &code);
             else
                 code = jbig2_arith_int_decode(ctx, IAEX, as, (int32_t *) &EXRUNLENGTH);
             if (code < 0) {
@@ -816,6 +794,13 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 cleanup:
     jbig2_image_release(ctx, glyph);
     jbig2_image_release(ctx, image);
+    if (refagg_dicts != NULL) {
+        if (refagg_dicts[0] != NULL)
+            jbig2_sd_release(ctx, refagg_dicts[0]);
+        /* skip releasing refagg_dicts[1] as that is the same as SDNEWSYMS */
+        jbig2_free(ctx->allocator, refagg_dicts);
+    }
+    jbig2_sd_release(ctx, SDNEWSYMS);
     if (params->SDHUFF) {
         jbig2_release_huffman_table(ctx, tparams.SBHUFFRSIZE);
         jbig2_release_huffman_table(ctx, tparams.SBHUFFRDY);
@@ -825,6 +810,10 @@ cleanup:
         jbig2_release_huffman_table(ctx, tparams.SBHUFFDT);
         jbig2_release_huffman_table(ctx, tparams.SBHUFFDS);
         jbig2_release_huffman_table(ctx, tparams.SBHUFFFS);
+        if (!params->SDREFAGG) {
+            jbig2_free(ctx->allocator, SDNEWSYMWIDTHS);
+        }
+        jbig2_huffman_free(ctx, hs);
     } else {
         jbig2_arith_int_ctx_free(ctx, tparams.IARDY);
         jbig2_arith_int_ctx_free(ctx, tparams.IARDX);
@@ -836,28 +825,6 @@ cleanup:
         jbig2_arith_int_ctx_free(ctx, tparams.IADS);
         jbig2_arith_int_ctx_free(ctx, tparams.IAFS);
         jbig2_arith_int_ctx_free(ctx, tparams.IADT);
-    }
-    if (refagg_dicts != NULL) {
-        if (refagg_dicts[0] != NULL)
-            jbig2_sd_release(ctx, refagg_dicts[0]);
-        /* skip releasing refagg_dicts[1] as that is the same as SDNEWSYMS */
-        jbig2_free(ctx->allocator, refagg_dicts);
-    }
-    jbig2_sd_release(ctx, SDNEWSYMS);
-    if (params->SDHUFF) {
-        if (!params->SDREFAGG) {
-            jbig2_free(ctx->allocator, SDNEWSYMWIDTHS);
-        }
-        jbig2_release_huffman_table(ctx, SBHUFFRSIZE);
-        jbig2_release_huffman_table(ctx, SDHUFFRDY);
-        jbig2_release_huffman_table(ctx, SDHUFFRDX);
-        jbig2_huffman_free(ctx, hs);
-    } else {
-        if (params->SDREFAGG) {
-            jbig2_arith_iaid_ctx_free(ctx, IAID);
-            jbig2_arith_int_ctx_free(ctx, IARDX);
-            jbig2_arith_int_ctx_free(ctx, IARDY);
-        }
         jbig2_arith_int_ctx_free(ctx, IAAI);
         jbig2_arith_int_ctx_free(ctx, IAEX);
         jbig2_arith_int_ctx_free(ctx, IADW);
