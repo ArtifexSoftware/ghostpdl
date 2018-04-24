@@ -540,6 +540,7 @@ df:         return mem_default_strip_copy_rop(dev,
                         }
 #else
                         rop_run(&ropper, dptr, left);
+                        dptr += left * bpp;
 #endif
                     }
                 }
@@ -593,6 +594,7 @@ df:         return mem_default_strip_copy_rop(dev,
 /**** 8-bit destination ****/
 /**** 24-bit destination ****/
                         rop_run(&ropper, dptr, left);
+                        dptr += left * bpp;
 #endif
                     }
                 }
