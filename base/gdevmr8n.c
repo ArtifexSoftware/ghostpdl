@@ -551,7 +551,7 @@ df:         return mem_default_strip_copy_rop(dev,
             const byte *srow = sdata;
 
             /* Loop over scan lines. */
-            if (rop_get_run_op(&ropper, rop, depth, 0)) {
+            if (rop_get_run_op(&ropper, lop, depth, 0)) {
                 for (; line_count-- > 0; drow += draster, srow += sraster, ++ty) {  /* Loop over copies of the tile. */
                     int sx = sourcex;
                     int dx = x;
@@ -562,7 +562,7 @@ df:         return mem_default_strip_copy_rop(dev,
                     textures->data + (ty % textures->size.y) * traster;
                     int xoff = x_offset(phase_x, ty, textures);
 
-                    for (; w > 0; dx += nw, w -= nw) {      /* Loop over individual pixels. */
+                    for (; w > 0; sx += nw, dx += nw, w -= nw) {      /* Loop over individual pixels. */
                         int tx = (dx + xoff) % textures->rep_width;
                         int left = nw = min(w, textures->size.x - tx);
                         const byte *tptr = trow + tx * bpp;
