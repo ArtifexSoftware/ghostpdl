@@ -180,7 +180,7 @@ if ($msys) {
 }
 
 my $cmd="rsync -avxcz ".
-" --max-size=10000000".
+" --max-size=30000000".
 " --delete --delete-excluded".
 " --exclude .svn --exclude .git".
 " --exclude _darcs --exclude .bzr --exclude .hg".
