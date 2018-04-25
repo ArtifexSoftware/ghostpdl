@@ -985,6 +985,8 @@ in:                             /* Initialize for a new page. */
                     depth = state_slot->cb_depth;
                     state.rect.width = state_slot->width;
                     state.rect.height = state_slot->height;
+                    if (state.rect.y + state.rect.height > cdev->height)
+                        state.rect.height = cdev->height - state.rect.y;	/* clamp as writer did */
                     raster = state_slot->cb_raster;
                     source = (byte *) (state_slot + 1);
                 } else {        /* Read width, height, bits. */
