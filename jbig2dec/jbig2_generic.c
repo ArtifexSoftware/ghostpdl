@@ -46,6 +46,306 @@
 #define UINT32_MAX 0xffffffff
 #endif
 
+/*
+This is an explanation of the unoptimized and optimized generic
+region decoder implementations below, wherein we try to explain
+all the magic numbers.
+
+The generic region decoders decode the output pixels one row at a
+time, top to bottom. Within each row the pixels are decoded left
+to right. The input for the arithmetic integer decoder used to
+decode each pixel is a context consisting of up to 16 previously
+decoded pixels. These pixels are chosen according to a predefined
+template placed relative to the location of the pixel to be
+decoded (6.2.5.3 figures 3, 4, 5 and 6). There are four different
+template that may be used (6.2.5.3). The template to use is
+determined by GBTEMPLATE. GBTEMPLATE is set in the symbol
+dictionary (6.5.8.1), generic region (7.4.6.4), or when decoding
+a halftone region's gray-scale image (annex C.5).
+
+Most of the pixels in each template have fixed locations relative
+to the pixel to be decoded. However, all templates have at least
+one adaptive pixel. The adaptive pixels have nominal locations,
+but these locations may be changed by GBAT. GBAT is set in the
+symbol dictionary (7.4.2.1.2), generic region (7.4.6.1), or hard
+coded as for halftone patterns (6.7.5).
+
+Adaptive pixels are restricted to fall within a field of
+previously decoded pixels relative to the pixel to be decoded
+(figure 7). The relative Y-coordinate for these adaptive pixels
+may vary between -128 and 0. The relative X-coordinate may vary
+between -128 and +127 (however, if the Y-coordinate is 0 the
+range of the X-coordinate is further restricted to -128 to -1
+since the pixels at locations 0 to +127 have not yet been
+decoded). If a template refers to a pixel location that reside
+outside of the image boundaries its value is assumed to be 0.
+
+UNOPTIMIZED DECODER
+
+The unoptimized decoders first check the contents of GBAT. If
+GBAT specifies that any of the adaptive pixels reside outside the
+allowed field the decoding is aborted. Next, each row is
+processed top to bottom, left to right, one pixel at a time. For
+each pixel a context is created containing the bit values of the
+pixels that fall inside the template.
+
+The order these bits are stored in the context is implementation
+dependent (6.2.5.3). We store the bit values in the CONTEXT
+variable from LSB to MSB, starting with the value of the pixel to
+the left of the current pixel, continuing right to left, bottom
+to top following the template. Using the CONTEXT created from
+these pixel values, the arithmetic integer decoder retrieves the
+pixel value, which is then written into the output image.
+
+Example when GBTEMPLATE is 2:
+
+The figure below represents a pixel grid of the output image.
+Each pixel is a single bit in the image. The pixel "OO" in the
+figure below is about to be decoded. The pixels "??" have not
+been decoded yet. The CONTEXT variable is constructed by
+combining the bit values from the pixels referred to by the
+template, shifted to their corresponding bit position.
+
+     .    .    .    .    .    .    .    .
+     .    .    .    .    .    .    .    .
+  ...+----+----+----+----+----+----+----+...
+     |    |    | X9 | X8 | X7 |    |    |
+  ...+----+----+----+----+----+----+----+...
+     |    | X6 | X5 | X4 | X3 | A1 |    |
+  ...+----+----+----+----+----+----+----+...
+     |    | X2 | X1 | OO | ?? | ?? | ?? |
+  ...+----+----+----+----+----+----+----+...
+     .    .    .    .    .    .    .    .
+     .    .    .    .    .    .    .    .
+
+In the table below pixel OO is assumed to be at coordinate (x, y).
+
+Bit 9: Pixel at location (x-1, y-2) (This is fixed pixel X9)
+Bit 8: Pixel at location (x  , y-2) (This is fixed pixel X8)
+Bit 7: Pixel at location (x+1, y-2) (This is fixed pixel X7)
+Bit 6: Pixel at location (x-2, y-1) (This is fixed pixel X6)
+Bit 5: Pixel at location (x-1, y-1) (This is fixed pixel X5)
+Bit 4: Pixel at location (x  , y-1) (This is fixed pixel X4)
+Bit 3: Pixel at location (x+1, y-1) (This is fixed pixel X3)
+Bit 2: Pixel at location (x+2, y-1) (This is adaptive pixel A1)
+Bit 1: Pixel at location (x-2, y  ) (This is fixed pixel X2)
+Bit 0: Pixel at location (x-1, y  ) (This is fixed pixel X1)
+
+The location of adaptive pixel A1 may not always be at the
+nominal location (x+2, y-1). It could be at any pixel location to
+the left or above OO as specified by GBAT, e.g. at the location
+(x-128, y+127).
+
+OPTIMIZED DECODER
+
+The optimized decoders work differently. They strive to avoid
+recreating the arithmetic integer decoder context from scratch
+for every pixel decoded. Instead they reuse part of the CONTEXT
+used to compute the previous pixel (the pixel to left of the one
+now being decoded). They also keep two sliding windows of pixel
+bit values from the two rows of pixels immediately above the
+pixel to be decoded. These are stored in the 32-bit variables
+line_m1 (row above the pixel to be decoded) and line_m2 (row
+above that of line_m1). These optimized decoders ONLY work for
+the nominal adaptive pixel locations since these locations are
+hard-coded into the implementation.
+
+The bit ordering in the CONTEXT variable is identical to the
+unoptimized case described above.
+
+The optimized decoders decode the output pixels one row at a
+time, top to bottom. Within each row the pixels are decoded in
+batches of up to eight pixels at a time (except possibly the
+right most batch which may be less than eight pixels). The
+batches in a row are decoded in sequence from left to right.
+Within each such batch the pixels are decoded in sequence from
+left to right.
+
+Before decoding the pixels in a row the two sliding windows of
+pixel values are reset. The first eight pixels of the row above
+the pixel to be decoded is stored in line_m1, while line_m2
+stores the first eight pixels of the row above that of line_m1.
+
+The figure below illustrates the situation where the template has
+been placed so that the decoded pixel OO is the very first pixel
+of a row. It also gives labels to various pixels that we will
+refer to below.
+
+             .    .    .    .    .    .    .    .    .    .    .
+             |    .    .    .    .    .    .    .    .    .    .
+   +    +    +----+----+----+----+----+----+----+----+----+----+...
+          X9 | X8 | X7 | m1 | m2 | m3 | m4 | m5 | m6 | m7 |    |
+   +    +    +----+----+----+----+----+----+----+----+----+----+...
+     X6   X5 | X4 | X3 | A1 | n1 | n2 | n3 | n4 | n5 | n6 | n7 |
+   +    +    +----+----+----+----+----+----+----+----+----+----+...
+     X2   X1 | OO |    |    |    |    |    |    |    |    |    |
+   +    +    +----+----+----+----+----+----+----+----+----+----+...
+             |    .    .    .    .    .    .    .    .    .    .
+             .    .    .    .    .    .    .    .    .    .    .
+
+The pixels X1, X2, X5, X6 and X9 all reside outside the left edge
+of the image. These pixels (like all others outside the image)
+can according to 6.2.5.2 be assumed to be 0. line_m1 stores n5
+through n1 as well as A1, and X3 through X6. line_m2 stores m6
+through m1 as well as X7 through X9. The bits in line_m2 are also
+shifted left four bits as seen below.
+
+15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0 | bit position
+------------------------------------------------+------------------
+ 0  0  0  0  0  0 X6 X5 X4 X3 A1 n1 n2 n3 n4 n5 | line_m1
+ 0  0  0 X9 X8 X7 m1 m2 m3 m4 m5 m6  0  0  0  0 | line_m2
+
+The way line_m1 and line_m2 are stored means we can simply shift
+them by the same amount to move the sliding window.
+
+The bit order in line_m1 and line_m2 matches the ordering in the
+CONTEXT variable. Each bit for the 'A' and 'X' pixels in line_m1
+and line_m2 correspond to the equivalent bits in CONTEXT, only
+shifted right by 3 bits. Thus X3 is bit 3 in CONTEXT and bit 6 in
+line_m1, etc.
+
+The initial arithmetic integer decoder context is created and
+stored in the CONTEXT variable by masking, shifting, and bitwise
+ORing the contents of line_m1 and line_m2. The "CONTEXT contents"
+row is only shown for clarity, it is not present in the code.
+
+15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0 | bit position
+------------------------------------------------+---------------------------
+ 0  0  0  0  0  0  0  0  0 X6 X5 X4 X3 A1 n1 n2 | line_m1 >> 3
+ 0  0  0  0  0  0  0  0  0  1  1  1  1  1  0  0 | mask for line_m1 (0x7c)
+ 0  0  0  0  0  0  0  0  0 X6 X5 X4 X3 A1  0  0 | line_m1 AND mask
+------------------------------------------------+---------------------------
+ 0  0  0  0  0  0 X9 X8 X7 m1 m2 m3 m4 m5 m6  0 | line_m2 >> 3
+ 0  0  0  0  0  0  1  1  1  0  0  0  0  0  0  0 | mask for line_m2 (0x380)
+ 0  0  0  0  0  0 X9 X8 X7  0  0  0  0  0  0  0 | line_m2 AND mask
+------------------------------------------------+---------------------------
+ 0  0  0  0  0  0 X9 X8 X7 X6 X5 X4 X3 A1  0  0 | CONTEXT = line_m1 OR line_m2
+------------------------------------------------+---------------------------
+ 0  0  0  0  0  0 X9 X8 X7 X6 X5 X4 X3 A1 X2 X1 | CONTEXT contents
+
+Each batch is normally 8 bits, but at the right edge of the image
+we may have fewer pixels to decode. The minor_width is how many
+pixels the current batch should decode, with a counter variable
+x_minor to keep track of the current pixel being decoded.
+
+In order to process a new batch of pixels, unless we're at the
+rightmost batch of pixels, we need to refill the sliding window
+variables with eight new bits. Looking at the diagram above we
+can see that in order to decode eight pixels starting with O0
+we'll need to have bits up to pixel 'n7' for line_m1 and 'm7' for
+line_m2 available (A1 and X7 moved right 7 times). To do this
+simply and quickly, we shift line_m1 left by 8 bits, and OR in
+the next byte from corresponding row. Likewise for line_m2, but
+the next byte from the image is also shifted left by 4 bits to
+compensate for line_m2 having the four least significant bits
+unused.
+
+These new eight bits contain the bit values of the eight pixels
+to the right of those already present in line_m1 and line_m2. We
+call these new bits m7 through mE, and n6 through nD, as
+illustrated below.
+
+23 22 21 20 19 18 17 16 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0 | bit position
+------------------------------------------------------------------------+-------------
+ 0  0  0  0  0  0  0  0  0  0  0  0  0  0 X6 X5 X4 X3 A1 n1 n2 n3 n4 n5 | original line_m1
+ 0  0  0  0  0  0 X6 X5 X4 X3 A1 n1 n2 n3 n4 n5  0  0  0  0  0  0  0  0 | line_m1 shifted left by 8
+ 0  0  0  0  0  0 X6 X5 X4 X3 A1 n1 n2 n3 n4 n5 n6 n7 n8 n9 nA nB nC nD | line_m1 with new bits ORed in
+------------------------------------------------------------------------+-------------
+ 0  0  0  0  0  0  0  0  0  0  0 X9 X8 X7 m1 m2 m3 m4 m5 m6  0  0  0  0 | original line_m2
+ 0  0  0 X9 X8 X7 m1 m2 m3 m4 m5 m6  0  0  0  0  0  0  0  0  0  0  0  0 | line_m2 shifted left by 8
+ 0  0  0 X9 X8 X7 m1 m2 m3 m4 m5 m6 m7 m8 m9 mA mB mC mD mE  0  0  0  0 | line_m2 with new bits ORed in
+
+             .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
+             |    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
+   +    +    +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+...
+          X9 | X8 | X7 | m1 | m2 | m3 | m4 | m5 | m6 | m7 | m8 | m9 | mA | mB | mC | mD | mE |    |    |    |
+   +    +    +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+...
+     X6   X5 | X4 | X3 | A1 | n1 | n2 | n3 | n4 | n5 | n6 | n7 | n8 | n9 | nA | nB | nC | nD |    |    |    |
+   +    +    +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+...
+     X2   X1 | OO |    |    |    |    |    |    |    |    |    |    |    |    |    |    |    |    |    |    |
+   +    +    +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+...
+             |    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
+             .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
+
+CONTEXT, line_m1 and line_m2 now contain all necessary bits to
+decode a full batch of eight pixels.
+
+The first pixel in the batch is decoded using this CONTEXT. After
+that, for each following pixel we need to update the CONTEXT
+using both the last decoded pixel value and new bits from line_m1
+and line_m2.
+
+             .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
+             |    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
+   +    +    +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+...
+         (X9)|_X8_|_X7_|>m1<| m2 | m3 | m4 | m5 | m6 | m7 | m8 | m9 | mA | mB | mC | mD | mE |    |    |    |
+   +    +    +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+...
+    (X6) _X5_|_X4_|_X3_|_A1_|>n1<| n2 | n3 | n4 | n5 | n6 | n7 | n8 | n9 | nA | nB | nC | nD |    |    |    |
+   +    +    +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+...
+    (X2) _X1_|>OO<| oo |    |    |    |    |    |    |    |    |    |    |    |    |    |    |    |    |    |
+   +    +    +----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+...
+             |    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
+             .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .    .
+
+This figure illustrates what happens when the same template is
+overlaid on itself shifted one pixel to the right in order to
+decode the next pixel. Pixels marked with _  _ are pixels that
+are present in both templates' CONTEXTs and can be reused. Pixels
+marked with (  ) are pixels from the first template that are no
+longer necessary and can be removed from CONTEXT. Pixels marked
+with >  < are new pixels that were not part of the original
+CONTEXT, and so need to be moved into the CONTEXT at the
+appropriate locations. In general the leftmost pixels of each
+template row can be forgotten, while new pixels are needed at the
+right most location of each row.
+
+The CONTEXT corresponding to the current pixel OO and how it is
+masked is shown below. Note how the left most pixel of each row
+of the template is NOT propagated to the CONTEXT, these pixels
+are X2, X6 and X9. This is done by having the mask being 0 at the
+corresponding locations.
+
+ 9  8  7  6  5  4  3  2  1  0 | bit position
+------------------------------+-------------
+X9 X8 X7 X6 X5 X4 X3 A1 X2 X1 | pixel values from CONTEXT
+ 0  1  1  0  1  1  1  1  0  1 | reused pixel bit value mask (0x1bd)
+ 0 X8 X7  0 X5 X4 X3 A1  0 X1 | reused pixel values from CONTEXT
+
+Next the CONTEXT is shifted left by one bit to make it reference
+the next pixel to be decoded. The pixel bit value we just decoded
+is then written into the bit corresponding to X1. The sliding
+windows in line_m1 and line_m2 are both shifted (10 - x_minor)
+bits to the right to make the needed pixels' bit values appear at
+the correct positions to be ORed into CONTEXT. Note that this
+shift amount depends on which bit in the batch is currently being
+computed, as is given by the x_minor counter. In the example
+below we assume that x_minor is 0.
+
+ 9  8  7  6  5  4  3  2  1  0 | bit position
+------------------------------+--------------
+ 0 X8 X7  0 X5 X4 X3 A1  0  0 | reused pixels from CONTEXT
+X8 X7  0 X5 X4 X3 A1  0  0  0 | reused pixels shifted left 1 bit
+------------------------------+--------------
+X8 X7  0 X5 X4 X3 A1  0 X1 OO | new CONTEXT with current pixel at LSB
+------------------------------+--------------
+ 0  0 X6 X5 X4 X3 A1 n1 n2 n3 | line_m1 shifted (10 - x_minor) bits to the right
+ 0  0  0  0  0  0  0  1  0  0 | mask for new adaptive pixel one row above (0x4)
+X8 X7  0 X5 X4 X3 A1 n1 X1 OO | new CONTEXT with new adaptive pixel
+------------------------------+--------------
+X8 X7 m1 m2 m3 m4 m5 m6 m7 m8 | line_m2 with new bits ORed in
+ 0  0  1  0  0  0  0  0  0  0 | mask for new pixel two rows above (0x80)
+X8 X7 m1 X5 X4 X3 A1 n1 X1 OO | new CONTEXT with new pixel
+
+This makes the computation of the new CONTEXT be:
+
+NEWCONTEXT = (CONTEXT & 0x1bd) << 1
+NEWCONTEXT |= newbit;
+NEWCONTEXT |= (line_m1 >> (10-x_minor)) & 0x4;
+NEWCONTEXT |= (line_m2 >> (10-x_minor)) & 0x80;
+
+The optimized decoding functions for GBTEMPLATE 0, 1 and 3 all
+work similarly. */
+
 /* return the appropriate context size for the given template */
 int
 jbig2_generic_stats_size(Jbig2Ctx *ctx, int template)
