@@ -52,10 +52,11 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
                                const gx_color_index * scolors,
            const gx_strip_bitmap * textures, const gx_color_index * tcolors,
                                int x, int y, int width, int height,
-                       int phase_x, int phase_y, gs_logical_operation_t lop)
+                       int phase_x, int phase_y, gs_logical_operation_t dirty_lop)
 {
     gx_device_memory *mdev = (gx_device_memory *) dev;
-    gs_rop3_t rop = lop_rop(lop);
+    gs_logical_operation_t lop = lop_sanitize(dirty_lop);
+    gs_rop3_t rop;
     gx_color_index const_source = gx_no_color_index;
     gx_color_index const_texture = gx_no_color_index;
     uint draster = mdev->raster;
@@ -83,28 +84,36 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 #endif
 
     /* Check for constant source. */
-    if (!rop3_uses_S(rop))
+    if (!rop3_uses_S(lop) && (lop & lop_S_transparent) == 0) {
         const_source = 0;       /* arbitrary */
-    else if (scolors != 0 && scolors[0] == scolors[1]) {
+    } else if (scolors != 0 && scolors[0] == scolors[1]) {
         /* Constant source */
         const_source = scolors[0];
         if (const_source == gx_device_black(dev))
-            rop = rop3_know_S_0(rop);
-        else if (const_source == gx_device_white(dev))
-            rop = rop3_know_S_1(rop);
+            lop = lop_know_S_0(lop);
+        else if (const_source == gx_device_white(dev)) {
+            if (lop & lop_S_transparent)
+                return 0;
+            lop = lop_know_S_1(lop);
+        }
     }
 
     /* Check for constant texture. */
-    if (!rop3_uses_T(rop))
+    if (!rop3_uses_T(lop) && (lop & lop_T_transparent) == 0)
         const_texture = 0;      /* arbitrary */
     else if (tcolors != 0 && tcolors[0] == tcolors[1]) {
         /* Constant texture */
         const_texture = tcolors[0];
         if (const_texture == gx_device_black(dev))
-            rop = rop3_know_T_0(rop);
-        else if (const_texture == gx_device_white(dev))
-            rop = rop3_know_T_1(rop);
+            lop = lop_know_T_0(lop);
+        else if (const_texture == gx_device_white(dev)) {
+            if (lop & lop_T_transparent)
+                return 0;
+            lop = lop_know_T_1(lop);
+        }
     }
+
+    rop = lop_rop(lop);
 
     if (bpp == 1 &&
         (gx_device_has_color(dev) ||
@@ -147,6 +156,8 @@ df:         return mem_default_strip_copy_rop(dev,
                                               x, y, width, height,
                                               phase_x, phase_y, lop);
         }
+        /* Put the updated rop back into the lop */
+        lop = rop | (lop & (lop_S_transparent | lop_T_transparent));
     }
 
     /* Adjust coordinates to be in bounds. */

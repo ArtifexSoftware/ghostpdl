@@ -221,6 +221,35 @@ typedef enum {
 #define lop_T_transparent 0x200
 #define lop_pdf14 0x400
 
+/* RJW: A comment from 1998 in gdevrop.c indicates that
+ * if we are given a LOP that says "S is transparent", and
+ * S isn't used, then we should ignore that flag. (Similarly
+ * for T). Tests seem to indicate that this is indeed true
+ * (See page 12 of C425.bin for an example).
+ *
+ * Unfortunately, when we start 'folding' LOPs down onto simpler
+ * ones, we can start with a LOP where S (or T) matters, and
+ * end up with one where it looks like it doesn't. As such we
+ * introduce another flag so we can avoid trying to remove
+ * the S/T transparency flags after we have started to fold the
+ * rop down.
+ */
+#define lop_transparency_checked 0x800
+
+static inline int
+lop_sanitize(int lop)
+{
+    if (lop & lop_transparency_checked)
+        return lop;
+    lop |= lop_transparency_checked;
+    if (!rop3_uses_S(lop))
+        lop &= ~lop_S_transparent;
+    if (!rop3_uses_T(lop))
+        lop &= ~lop_T_transparent;
+
+    return lop;
+}
+
 typedef uint gs_logical_operation_t;
 
 #define lop_default\

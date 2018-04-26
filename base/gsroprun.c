@@ -1414,66 +1414,65 @@ static void rop_run_swapped(rop_run_op *op, byte *d, int len)
     op->runswap(&local, d, len);
 }
 
-int rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
+int rop_get_run_op(rop_run_op *op, int lop, int depth, int flags)
 {
     int key;
     int swap = 0;
 
 #ifdef DISABLE_ROPS
-    rop = 0xAA;
+    lop = 0xAA;
 #endif
+
+    lop = lop_sanitize(lop);
 
     /* This is a simple initialisation to quiet a Coverity warning. It complains that
      * the 'if (swap)' at the end of the function uses 'run' uninitialised. While its
      * true that some ROPs do not instantly set the run member, they go through code
-     * which, I believe, swaps the rop source and texture, then executes the switch
+     * which, I believe, swaps the lop source and texture, then executes the switch
      * statement once more and the second execution sets run. So in summary I don't
      * think this is a real problem, and this fixes the Coverity warning.
      */
     op->run = 0;
 
-    /* If the rop ignores either S or T, then we might as well set them to
-     * be constants; will save us slaving through memory. Also, they can't
-     * count towards transparency. */
-    if (!rop3_uses_S(rop)) {
+    /* If the lop ignores either S or T, then we might as well set them to
+     * be constants; will save us slaving through memory. */
+    if (!rop3_uses_S(lop) && (lop & lop_S_transparent) == 0) {
         flags |= rop_s_constant;
         flags &= ~rop_s_1bit;
-        rop &= ~lop_S_transparent;
     }
-    if (!rop3_uses_T(rop)) {
+    if (!rop3_uses_T(lop) && (lop & lop_T_transparent) == 0) {
         flags |= rop_t_constant;
         flags &= ~rop_t_1bit;
-        rop &= ~lop_T_transparent;
     }
 
     /* Cull transparency if we can */
     if (depth != 1) {
-        if (rop & lop_S_transparent) {
+        if (lop & lop_S_transparent) {
             gx_color_index v = (depth == 8 ? 0xff : 0xffffff);
             if (flags & rop_s_constant) {
                 if (op->s.c == v) {
                     op->run = nop_rop_const_st;
                     return 0;
                 } else
-                    rop &= ~lop_S_transparent;
+                    lop &= ~lop_S_transparent;
             } else if ((flags & rop_s_1bit) &&
                        ((const gx_color_index *)op->scolors)[0] != v &&
                        ((const gx_color_index *)op->scolors)[1] != v) {
-                rop &= ~lop_S_transparent;
+                lop &= ~lop_S_transparent;
             }
         }
-        if (rop & lop_T_transparent) {
+        if (lop & lop_T_transparent) {
             gx_color_index v = (depth == 8 ? 0xff : 0xffffff);
             if (flags & rop_t_constant) {
                 if (op->t.c == v) {
                     op->run = nop_rop_const_st;
                     return 0;
                 } else
-                    rop &= ~lop_T_transparent;
+                    lop &= ~lop_T_transparent;
             } else if ((flags & rop_t_1bit) &&
                        ((const gx_color_index *)op->tcolors)[0] != v &&
                        ((const gx_color_index *)op->tcolors)[1] != v) {
-                rop &= ~lop_T_transparent;
+                lop &= ~lop_T_transparent;
             }
         }
     }
@@ -1491,7 +1490,7 @@ int rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
         swap = 1;
         break;
     case rop_s_constant | rop_t_constant: /* Map 'S unused, T used' -> 'S used, T unused' */
-        swap = ((rop_usage_table[rop & 0xff] & (rop_usage_S | rop_usage_T)) == rop_usage_T);
+        swap = ((rop_usage_table[lop & 0xff] & (rop_usage_S | rop_usage_T)) == rop_usage_T);
         break;
     }
     if (swap) {
@@ -1499,7 +1498,7 @@ int rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
                  (flags & rop_s_constant ? rop_t_constant : 0) |
                  (flags & rop_t_1bit     ? rop_s_1bit     : 0) |
                  (flags & rop_s_1bit     ? rop_t_1bit     : 0));
-        rop = lop_swap_S_T(rop);
+        lop = lop_swap_S_T(lop);
     }
     /* At this point, we know that in the ordering:
      *   'unused' < 'constant' < 'bitmap' < '1-bitmap',
@@ -1510,13 +1509,13 @@ int rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
     op->depth   = (byte)depth;
     op->release = NULL;
 
-    /* If no transparency, and S and T are constant, and the rop uses both of them, we can combine them.
+    /* If no transparency, and S and T are constant, and the lop uses both of them, we can combine them.
      * Currently this only works for cases where D is unused.
      */
-    if (!(rop & (lop_T_transparent | lop_S_transparent)) &&
+    if (!(lop & (lop_T_transparent | lop_S_transparent)) &&
         op->flags == (rop_s_constant | rop_t_constant) &&
-        rop_usage_table[rop] == rop_usage_ST) {
-        switch (rop & (rop3_D>>rop3_D_shift)) /* Ignore the D bits */
+        rop_usage_table[lop] == rop_usage_ST) {
+        switch (lop & (rop3_D>>rop3_D_shift)) /* Ignore the D bits */
         {
         /* Skip 0000 as doesn't use S or T */
         case ((0<<6) | (0<<4) | (0<<2) | 1):
@@ -1558,16 +1557,16 @@ int rop_get_run_op(rop_run_op *op, int rop, int depth, int flags)
             /* Never happens */
             break;
         }
-        rop = (rop & ~0xff) | rop3_S;
+        lop = (lop & ~0xff) | rop3_S;
     }
-    op->rop     = rop & (0xFF | lop_S_transparent | lop_T_transparent);
+    op->rop     = lop & (0xFF | lop_S_transparent | lop_T_transparent);
 
-#define ROP_SPECIFIC_KEY(rop, depth, flags) (((rop)<<7)+(1<<6)+((depth>>3)<<4)+(flags))
+#define ROP_SPECIFIC_KEY(lop, depth, flags) (((lop)<<7)+(1<<6)+((depth>>3)<<4)+(flags))
 #define KEY_IS_ROP_SPECIFIC(key)            (key & (1<<6))
 #define STRIP_ROP_SPECIFICITY(key)          (key &= ((1<<6)-1))
 #define KEY(depth, flags)                   (((depth>>3)<<4)+(flags))
 
-    key = ROP_SPECIFIC_KEY(rop, depth, flags);
+    key = ROP_SPECIFIC_KEY(lop, depth, flags);
 #ifdef RECORD_ROP_USAGE
     op->opaque = (void*)(key & (MAX-1));
     record((int)op->opaque);
@@ -1630,13 +1629,13 @@ retry:
         op->dpos    = 0;
         break;
     case KEY(8, 0):
-        if (rop & lop_S_transparent)
-            if (rop & lop_T_transparent)
+        if (lop & lop_S_transparent)
+            if (lop & lop_T_transparent)
                 op->run = generic_rop_run8_trans_ST;
             else
                 op->run = generic_rop_run8_trans_S;
         else
-            if (rop & lop_T_transparent)
+            if (lop & lop_T_transparent)
                 op->run = generic_rop_run8_trans_T;
             else
                 op->run = generic_rop_run8;
@@ -1646,7 +1645,7 @@ retry:
         op->run = generic_rop_run8_1bit;
         break;
     case KEY(24, 0):
-        if (rop & (lop_S_transparent | lop_T_transparent))
+        if (lop & (lop_S_transparent | lop_T_transparent))
             op->run   = generic_rop_run24_trans;
         else
             op->run   = generic_rop_run24;
@@ -1662,7 +1661,7 @@ retry:
         op->dpos    = 0;
         break;
     case KEY(8, rop_t_constant):
-        if (rop & (lop_S_transparent | lop_T_transparent))
+        if (lop & (lop_S_transparent | lop_T_transparent))
             op->run   = generic_rop_run8_const_t_trans;
         else
             op->run   = generic_rop_run8_const_t;
@@ -1671,7 +1670,7 @@ retry:
         op->run = generic_rop_run8_1bit_const_t;
         break;
     case KEY(24, rop_t_constant):
-        if (rop & (lop_S_transparent | lop_T_transparent))
+        if (lop & (lop_S_transparent | lop_T_transparent))
             op->run   = generic_rop_run24_const_t_trans;
         else
             op->run   = generic_rop_run24_const_t;
@@ -1686,13 +1685,13 @@ retry:
         op->dpos    = 0;
         break;
     case KEY(8, rop_s_constant | rop_t_constant):
-        if (rop & (lop_S_transparent | lop_T_transparent))
+        if (lop & (lop_S_transparent | lop_T_transparent))
             op->run   = generic_rop_run8_const_st_trans;
         else
             op->run   = generic_rop_run8_const_st;
         break;
     case KEY(24, rop_s_constant | rop_t_constant):
-        if (rop & (lop_S_transparent | lop_T_transparent))
+        if (lop & (lop_S_transparent | lop_T_transparent))
             op->run   = generic_rop_run24_const_st_trans;
         else
             op->run   = generic_rop_run24_const_st;
