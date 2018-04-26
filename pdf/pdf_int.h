@@ -40,7 +40,17 @@ int repair_pdf_file(pdf_context *ctx);
 
 static inline void pdf_countup(pdf_obj *o)
 {
-    o->refcnt++;
+    if (o != NULL) {
+        o->refcnt++;
+#if REFCNT_DEBUG
+    dmprintf3(o->memory, "Incrementing reference count of object %"PRIi64", UID %"PRIi64", to %d\n", o->object_num, o->UID, o->refcnt);
+#endif
+    }
+#if REFCNT_DEBUG
+    else {
+        dprintf("Incrementing reference count of NULL pointer\n");
+    }
+#endif
 }
 
 static inline void pdf_countdown(pdf_obj *o)
@@ -51,9 +61,21 @@ static inline void pdf_countdown(pdf_obj *o)
             emprintf(o->memory, "Decrementing objct with recount at 0!\n");
 #endif
         o->refcnt--;
-        if (o->refcnt == 0)
-            pdf_free_object(o);
+#if REFCNT_DEBUG
+        dmprintf3(o->memory, "Decrementing reference count of object %"PRIi64", UID %"PRIi64", to %d\n", o->object_num, o->UID, o->refcnt);
+#endif
+        if (o->refcnt == 0) {
+#if REFCNT_DEBUG
+            dmprintf2(o->memory, "Freeing object %"PRIi64", UID %"PRIi64"\n", o->object_num, o->UID);
+#endif
+                pdf_free_object(o);
+        }
     }
+#if REFCNT_DEBUG
+    else {
+        dprintf("Decrementing reference count of NULL pointer\n");
+    }
+#endif
 }
 
 

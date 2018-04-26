@@ -16,8 +16,11 @@
 #include "stdint_.h"    /* Various data types */
 #include "scommon.h"    /* for gs_offset_t */
 
+#define REFCNT_DEBUG 1
+
 #ifndef PDF_OBJ_TYPES
 #define PDF_OBJ_TYPES
+
 typedef enum pdf_obj_type_e {
     PDF_NULL = 'n',
     PDF_INT = 'i',
@@ -33,6 +36,16 @@ typedef enum pdf_obj_type_e {
     PDF_XREF_TABLE = 'X',
 } pdf_obj_type;
 
+#if REFCNT_DEBUG
+#define pdf_obj_common \
+    pdf_obj_type type;\
+    char flags;\
+    unsigned int refcnt;\
+    gs_memory_t *memory;                /* memory allocator to use */\
+    uint64_t object_num;\
+    uint32_t generation_num;\
+    uint64_t UID
+#else
 #define pdf_obj_common \
     pdf_obj_type type;\
     char flags;\
@@ -40,6 +53,7 @@ typedef enum pdf_obj_type_e {
     gs_memory_t *memory;                /* memory allocator to use */\
     uint64_t object_num;\
     uint32_t generation_num
+#endif
 
 typedef struct pdf_obj_s {
     pdf_obj_common;

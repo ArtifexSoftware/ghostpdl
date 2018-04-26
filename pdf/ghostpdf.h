@@ -83,6 +83,7 @@
 
 #ifndef PDF_CONTEXT
 #define PDF_CONTEXT
+
 /*
  * The interpreter context.
  */
@@ -169,6 +170,9 @@ typedef struct pdf_context_s
     uint32_t loop_detection_size;
     uint32_t loop_detection_entries;
     uint64_t *loop_detection;
+#if REFCNT_DEBUG
+    uint64_t UID;
+#endif
 }pdf_context;
 
 pdf_context *pdf_create_context(gs_memory_t *pmem);

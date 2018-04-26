@@ -480,7 +480,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
     }
 
     if (ctx->loop_detection) {
-        code = pdf_loop_detector_add_object(ctx, object);
+        code = pdf_loop_detector_add_object(ctx, (*object)->object_num);
         if (code < 0)
             return code;
     }
@@ -584,6 +584,10 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
             dmprintf1(ctx->memory, " %"PRIi64, num->value.i);
     }
 
+#if REFCNT_DEBUG
+    num->UID = ctx->UID++;
+    dmprintf1(ctx->memory, "Allocating number object with UID %"PRIi64"\n", num->UID);
+#endif
     code = pdf_push(ctx, (pdf_obj *)num);
 
     if (code < 0)
@@ -680,6 +684,10 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
     name->data = (unsigned char *)NewBuf;
     name->length = index;
 
+#if REFCNT_DEBUG
+    name->UID = ctx->UID++;
+    dmprintf1(ctx->memory, "Allocated name object with UID %"PRIi64"\n", name->UID);
+#endif
     code = pdf_push(ctx, (pdf_obj *)name);
 
     if (code < 0)
@@ -763,6 +771,10 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
     string->data = (unsigned char *)NewBuf;
     string->length = index;
 
+#if REFCNT_DEBUG
+    string->UID = ctx->UID++;
+    dmprintf1(ctx->memory, "Allocated hexstring object with UID %"PRIi64"\n", string->UID);
+#endif
     code = pdf_push(ctx, (pdf_obj *)string);
     if (code < 0)
         pdf_free_namestring((pdf_obj *)string);
@@ -955,6 +967,10 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
         dmprintf(ctx->memory, ")");
     }
 
+#if REFCNT_DEBUG
+    string->UID = ctx->UID++;
+    dmprintf1(ctx->memory, "Allocated string object with UID %"PRIi64"\n", string->UID);
+#endif
     code = pdf_push(ctx, (pdf_obj *)string);
     if (code < 0)
         pdf_free_namestring((pdf_obj *)string);
@@ -1020,6 +1036,10 @@ static int pdf_read_array(pdf_context *ctx, pdf_stream *s)
     if (ctx->pdfdebug)
         dmprintf (ctx->memory, " ]\n");
 
+#if REFCNT_DEBUG
+    a->UID = ctx->UID++;
+    dmprintf1(ctx->memory, "Allocated array object with UID %"PRIi64"\n", a->UID);
+#endif
     code = pdf_push(ctx, (pdf_obj *)a);
     if (code < 0)
         pdf_free_array((pdf_obj *)a);
@@ -1113,6 +1133,10 @@ static int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
     if (ctx->pdfdebug)
         dmprintf (ctx->memory, "\n >>\n");
 
+#if REFCNT_DEBUG
+    d->UID = ctx->UID++;
+    dmprintf1(ctx->memory, "Allocated dictionary object with UID %"PRIi64"\n", d->UID);
+#endif
     code = pdf_push(ctx, (pdf_obj *)d);
     if (code < 0)
         pdf_free_dict((pdf_obj *)d);
@@ -1372,6 +1396,11 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
     keyword->length = index;
     keyword->key = PDF_NOT_A_KEYWORD;
 
+#if REFCNT_DEBUG
+    keyword->UID = ctx->UID++;
+    dmprintf1(ctx->memory, "Allocated keyword object with UID %"PRIi64"\n", keyword->UID);
+#endif
+
     if (ctx->pdfdebug)
         dmprintf1(ctx->memory, " %s\n", Buffer);
 
@@ -1405,6 +1434,10 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 o->ref_generation_num = gen_num;
                 o->ref_object_num = obj_num;
 
+#if REFCNT_DEBUG
+                o->UID = ctx->UID++;
+                dmprintf1(ctx->memory, "Allocated indirect reference object with UID %"PRIi64"\n", o->UID);
+#endif
                 code = pdf_push(ctx, (pdf_obj *)o);
                 if (code < 0)
                     pdf_free_object((pdf_obj *)o);
@@ -1452,6 +1485,10 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 o->memory = ctx->memory;
                 o->type = PDF_TRUE;
 
+#if REFCNT_DEBUG
+                o->UID = ctx->UID++;
+                dmprintf1(ctx->memory, "Allocated boolean object with UID %"PRIi64"\n", o->UID);
+#endif
                 code = pdf_push(ctx, o);
                 if (code < 0)
                     pdf_free_object((pdf_obj *)o);
@@ -1477,6 +1514,10 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 o->memory = ctx->memory;
                 o->type = PDF_FALSE;
 
+#if REFCNT_DEBUG
+                o->UID = ctx->UID++;
+                dmprintf1(ctx->memory, "Allocated boolean object with UID %"PRIi64"\n", o->UID);
+#endif
                 code = pdf_push(ctx, o);
                 if (code < 0)
                     pdf_free_object((pdf_obj *)o);
@@ -1497,6 +1538,10 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 o->memory = ctx->memory;
                 o->type = PDF_NULL;
 
+#if REFCNT_DEBUG
+                o->UID = ctx->UID++;
+                dmprintf1(ctx->memory, "Allocated null object with UID %"PRIi64"\n", o->UID);
+#endif
                 code = pdf_push(ctx, o);
                 if (code < 0)
                     pdf_free_object((pdf_obj *)o);
@@ -1718,6 +1763,10 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
             return_error(gs_error_typecheck);
         }
         pdf_pop(ctx, 1);
+#if REFCNT_DEBUG
+        ctx->stack_top[-1]->UID = ctx->UID++;
+        dmprintf1(ctx->memory, "Allocated object with UID %"PRIi64"\n", ctx->stack_top[-1]->UID);
+#endif
         return 0;
     }
     pdf_pop(ctx, 2);
@@ -1754,6 +1803,10 @@ int pdf_make_name(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
 
     *o = (pdf_obj *)name;
 
+#if REFCNT_DEBUG
+    (*o)->UID = ctx->UID++;
+    dmprintf1(ctx->memory, "Allocated name object with UID %"PRIi64"\n", (*o)->UID);
+#endif
     return 0;
 }
 
@@ -1783,6 +1836,10 @@ int pdf_make_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned)
     }
     returned_dict->size = size;
     *returned = returned_dict;
+#if REFCNT_DEBUG
+    returned_dict->UID = ctx->UID++;
+    dmprintf1(ctx->memory, "Allocated dictobject with UID %"PRIi64"\n", returned_dict->UID);
+#endif
     return 0;
 }
 
@@ -1853,6 +1910,9 @@ pdf_context *pdf_create_context(gs_memory_t *pmem)
     ctx->srgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
     ctx->scrgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
 
+#if REFCNT_DEBUG
+    ctx->UID = 1;
+#endif
     return ctx;
 }
 
@@ -2082,6 +2142,10 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
         ctx->xref_table->memory = ctx->memory;
         ctx->xref_table->type = PDF_XREF_TABLE;
         ctx->xref_table->xref_size = size;
+#if REFCNT_DEBUG
+        ctx->xref_table->UID = ctx->UID++;
+        dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
+#endif
         pdf_countup((pdf_obj *)ctx->xref_table);
 
         ctx->Trailer = d;
@@ -2406,6 +2470,10 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
             ctx->xref_table = NULL;
             return_error(gs_error_VMerror);
         }
+#if REFCNT_DEBUG
+        ctx->xref_table->UID = ctx->UID++;
+        dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
+#endif
 
         memset(ctx->xref_table->xref, 0x00, ((pdf_num *)o)->value.i * sizeof(xref_entry));
         ctx->xref_table->memory = ctx->memory;
@@ -2488,6 +2556,10 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
             return_error(gs_error_VMerror);
         }
         memset(ctx->xref_table, 0x00, sizeof(xref_table));
+#if REFCNT_DEBUG
+        ctx->xref_table->UID = ctx->UID++;
+        dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
+#endif
 
         ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, ((pdf_num *)o)->value.i * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
         if (ctx->xref_table->xref == NULL){
