@@ -918,6 +918,7 @@ lcvd_dev_spec_op(gx_device *pdev1, int dev_spec_op,
         case gxdso_pattern_is_cpath_accum:
         case gxdso_pattern_shfill_doesnt_need_path:
         case gxdso_pattern_handles_clip_path:
+        case gxdso_copy_color_is_fast:
             return 0;
     }
     return gx_default_dev_spec_op(pdev1, dev_spec_op, data, size);

@@ -331,6 +331,8 @@ enum {
        (either forwarding or subclass devices).
      */
     gxdso_current_output_device,
+    /* Should we call copy_color rather than resolving images to fill_rectangles? */
+    gxdso_copy_color_is_fast,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

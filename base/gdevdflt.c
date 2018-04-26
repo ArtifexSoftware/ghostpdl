@@ -1049,6 +1049,8 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
                 *(gx_device **)data = pdev;
                 return 0;
             }
+        case gxdso_copy_color_is_fast:
+            return (dev_proc(pdev, copy_color) != gx_default_copy_color);
     }
     return_error(gs_error_undefined);
 }
