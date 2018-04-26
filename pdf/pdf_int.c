@@ -17,6 +17,7 @@
 
 #include "pdf_int.h"
 #include "pdf_file.h"
+#include "pdf_loop_detect.h"
 #include "strmio.h"
 #include "stream.h"
 
@@ -3175,13 +3176,6 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
             return_error(gs_error_typecheck);
         }
         if (node->type == PDF_INDIRECT) {
-            /* Check for the Kids reference pointing to this dictionary */
-            if (d->object_num == node->ref_object_num) {
-                pdf_countdown((pdf_obj *)inheritable);
-                pdf_countdown((pdf_obj *)Kids);
-                pdf_countdown((pdf_obj *)node);
-                return_error(gs_error_circular_reference);
-            }
             code = pdf_dereference(ctx, node->ref_object_num, node->ref_generation_num, (pdf_obj **)&child);
             if (code < 0) {
                 pdf_countdown((pdf_obj *)inheritable);
@@ -3344,6 +3338,12 @@ int pdf_render_page(pdf_context *ctx, uint64_t page_num)
     code = pdf_init_loop_detector(ctx);
     if (code < 0)
         return code;
+
+    code = pdf_loop_detector_add_object(ctx, ctx->Pages->object_num);
+    if (code < 0) {
+        pdf_free_loop_detector(ctx);
+        return code;
+    }
 
     code = pdf_get_page_dict(ctx, ctx->Pages, page_num, &page_offset, &page_dict, NULL);
     pdf_free_loop_detector(ctx);
