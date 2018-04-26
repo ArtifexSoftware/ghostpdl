@@ -1621,6 +1621,7 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
             break;
         case '%':
             pdf_skip_comment(ctx, s);
+            return pdf_read_token(ctx, s);
             break;
         default:
             pdf_unread(ctx, s, (byte *)&Buffer[0], 1);
@@ -2587,22 +2588,21 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
             dmprintf(ctx->memory, "%% File is a hybrid, containing xref table and xref stream. Using the stream.\n");
 
         pdf_pop(ctx, 2);
+        if (o->type != PDF_INT) {
+            pdf_countdown(o);
+            return_error(gs_error_typecheck);
+        }
+
         /* Because of the way the code works when we read a file which is a pure
          * xref stream file, we need to read the first integer of 'x y obj'
          * because the xref stream decoding code expects that to be on the stack.
          */
-        if (o->type != PDF_INT)
-            return_error(gs_error_typecheck);
-
         pdf_seek(ctx, s, ((pdf_num *)o)->value.i, SEEK_SET);
+        pdf_countdown(o);
+
         code = pdf_read_token(ctx, ctx->main_stream);
         if (code < 0)
             return code;
-
-        if (o->type != PDF_INT) {
-            pdf_pop(ctx, 1);
-            return_error(gs_error_typecheck);
-        }
 
         code = pdf_read_xref_stream_dict(ctx, ctx->main_stream);
         return code;
@@ -2621,10 +2621,13 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
     }
     pdf_pop(ctx, 1);
 
-    if (o->type != PDF_INT)
+    if (o->type != PDF_INT) {
+        pdf_countdown(o);
         return_error(gs_error_typecheck);
+    }
 
     code = pdf_seek(ctx, s, ((pdf_num *)o)->value.i , SEEK_SET);
+    pdf_countdown(o);
     if (code < 0)
         return code;
 
@@ -2637,6 +2640,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
         pdf_pop(ctx, 1);
         return(read_xref(ctx, ctx->main_stream));
     } else {
+        pdf_pop(ctx, 1);
         return_error(gs_error_typecheck);
     }
 }
@@ -3264,6 +3268,7 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
                 pdf_countdown((pdf_obj *)inheritable);
                 pdf_countdown((pdf_obj *)Kids);
                 pdf_countdown((pdf_obj *)node);
+                pdf_countdown(child);
                 return_error(gs_error_typecheck);
             }
 #if DONT_STORE_DEREFFED_PAGES
