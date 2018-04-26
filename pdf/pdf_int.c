@@ -586,7 +586,7 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
 
 #if REFCNT_DEBUG
     num->UID = ctx->UID++;
-    dmprintf1(ctx->memory, "Allocating number object with UID %"PRIi64"\n", num->UID);
+    dmprintf1(ctx->memory, "Allocated number object with UID %"PRIi64"\n", num->UID);
 #endif
     code = pdf_push(ctx, (pdf_obj *)num);
 
@@ -1391,6 +1391,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
     memset(keyword, 0x00, sizeof(pdf_obj));
     keyword->memory = ctx->memory;
     keyword->type = PDF_KEYWORD;
+    keyword->refcnt = 1;
 
     memcpy(keyword->data, Buffer, index);
     keyword->length = index;
@@ -1411,7 +1412,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 uint64_t obj_num;
                 uint32_t gen_num;
 
-                pdf_free_keyword((pdf_obj *)keyword);
+                pdf_countdown(keyword);
 
                 if(ctx->stack_top - ctx->stack_bot < 2)
                     return_error(gs_error_stackunderflow);
@@ -1475,7 +1476,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
             if (keyword->length == 4 && memcmp((const char *)Buffer, "true", 4) == 0) {
                 pdf_obj *o;
 
-                pdf_free_keyword((pdf_obj *)keyword);
+                pdf_countdown(keyword);
 
                 o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
                 if (o == NULL)
@@ -1504,7 +1505,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
             {
                 pdf_obj *o;
 
-                pdf_free_keyword((pdf_obj *)keyword);
+                pdf_countdown(keyword);
 
                 o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
                 if (o == NULL)
@@ -1528,7 +1529,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
             if (keyword->length == 4 && memcmp((const char *)Buffer, "null", 4) == 0){
                 pdf_obj *o;
 
-                pdf_free_keyword((pdf_obj *)keyword);
+                pdf_countdown(keyword);
 
                 o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
                 if (o == NULL)
@@ -1555,8 +1556,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
     }
 
     code = pdf_push(ctx, (pdf_obj *)keyword);
-    if (code < 0)
-        pdf_free_object((pdf_obj *)keyword);
+    pdf_countdown((pdf_obj *)keyword);
 
     return code;
 }
@@ -2910,13 +2910,16 @@ static int pdf_read_Root(pdf_context *ctx)
         return code;
     }
     if (o->type != PDF_NAME) {
+        pdf_countdown(o);
         pdf_countdown(o1);
         return_error(gs_error_typecheck);
     }
     if (((pdf_name *)o)->length != 7 || memcmp(((pdf_name *)o)->data, "Catalog", 7) != 0){
+        pdf_countdown(o);
         pdf_countdown(o1);
         return_error(gs_error_syntaxerror);
     }
+    pdf_countdown(o);
 
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "\n");
@@ -3039,11 +3042,13 @@ static int pdf_read_Pages(pdf_context *ctx)
         return code;
     }
     if (o->type != PDF_INT) {
+        pdf_countdown(o);
         pdf_countdown(o1);
         return_error(gs_error_typecheck);
     }
 
     ctx->num_pages = ((pdf_num *)o)->value.i;
+    pdf_countdown(o);
 
     /* We don't pdf_countdown(o1) now, because we've transferred our
      * reference to the pointer in the pdf_context structure.
