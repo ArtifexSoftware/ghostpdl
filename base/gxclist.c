@@ -710,8 +710,12 @@ clist_open(gx_device *dev)
     code = clist_open_output_file(dev);
     if ( code >= 0)
         code = clist_emit_page_header(dev);
-    if (code >= 0)
+    if (code >= 0) {
        dev->is_open = save_is_open;
+    } else {
+        gs_free_object(cdev->memory->non_gc_memory, cdev->cache_chunk, "free tile cache for clist");
+        cdev->cache_chunk = NULL;
+    }
 
     return code;
 }
