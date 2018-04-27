@@ -285,6 +285,9 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
 
     entry = &ctx->xref_table->xref[obj];
 
+    if(entry->object_num == 0)
+        return_error(gs_error_undefined);
+
     if (ctx->loop_detection) {
         if (pdf_loop_detector_check_object(ctx, obj) == true)
             return_error(gs_error_circular_reference);
@@ -1412,7 +1415,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 uint64_t obj_num;
                 uint32_t gen_num;
 
-                pdf_countdown(keyword);
+                pdf_countdown((pdf_obj *)keyword);
 
                 if(ctx->stack_top - ctx->stack_bot < 2)
                     return_error(gs_error_stackunderflow);
@@ -1476,7 +1479,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
             if (keyword->length == 4 && memcmp((const char *)Buffer, "true", 4) == 0) {
                 pdf_obj *o;
 
-                pdf_countdown(keyword);
+                pdf_countdown((pdf_obj *)keyword);
 
                 o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
                 if (o == NULL)
@@ -1505,7 +1508,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
             {
                 pdf_obj *o;
 
-                pdf_countdown(keyword);
+                pdf_countdown((pdf_obj *)keyword);
 
                 o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
                 if (o == NULL)
@@ -1529,7 +1532,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
             if (keyword->length == 4 && memcmp((const char *)Buffer, "null", 4) == 0){
                 pdf_obj *o;
 
-                pdf_countdown(keyword);
+                pdf_countdown((pdf_obj *)keyword);
 
                 o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
                 if (o == NULL)
@@ -1910,6 +1913,9 @@ pdf_context *pdf_create_context(gs_memory_t *pmem)
     ctx->cmyk = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 4);
     ctx->srgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
     ctx->scrgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
+
+    /* Initially, prefer the XrefStm in a hybrid file */
+    ctx->prefer_xrefstm = true;
 
 #if REFCNT_DEBUG
     ctx->UID = 1;
@@ -2583,7 +2589,10 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
         pdf_pop(ctx, 2);
         return code;
     }
-    if (code == 0) {
+    if (code == 0)
+        ctx->is_hybrid = true;
+
+    if (ctx->is_hybrid && ctx->prefer_xrefstm) {
         if (ctx->pdfdebug)
             dmprintf(ctx->memory, "%% File is a hybrid, containing xref table and xref stream. Using the stream.\n");
 
@@ -2764,6 +2773,20 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
         Offset += bytes;
     } while(Offset < ctx->main_stream_length);
 
+    gs_free_object(ctx->memory, Buffer, "PDF interpreter - allocate working buffer for file validation");
+    return 0;
+}
+
+int pdf_read_xref(pdf_context *ctx)
+{
+    byte *Buffer = NULL;
+    int code = 0;
+
+    Buffer = gs_alloc_bytes(ctx->memory, BUF_SIZE, "PDF interpreter - allocate working buffer for file validation");
+    if (Buffer == NULL) {
+        cleanup_pdf_open_file(ctx, Buffer);
+        return_error(gs_error_VMerror);
+    }
 
     if (ctx->startxref != 0) {
         if (ctx->pdfdebug)
@@ -3268,7 +3291,7 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
                 pdf_countdown((pdf_obj *)inheritable);
                 pdf_countdown((pdf_obj *)Kids);
                 pdf_countdown((pdf_obj *)node);
-                pdf_countdown(child);
+                pdf_countdown((pdf_obj *)child);
                 return_error(gs_error_typecheck);
             }
 #if DONT_STORE_DEREFFED_PAGES
@@ -3469,9 +3492,28 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
     if (code < 0)
         return code;
 
-    code = pdf_read_Root(ctx);
+    code = pdf_read_xref(ctx);
     if (code < 0)
         return code;
+
+    code = pdf_read_Root(ctx);
+    if (code < 0) {
+        /* If we couldn#'t find the Root object, and we were using the XrefStm
+         * from a hybrid file, then try again, but this time use the xref table
+         */
+        if (code == gs_error_undefined && ctx->is_hybrid && ctx->prefer_xrefstm) {
+            pdf_countdown((pdf_obj *)ctx->xref_table);
+            ctx->xref_table = NULL;
+            ctx->prefer_xrefstm = false;
+            code = pdf_read_xref(ctx);
+            if (code < 0)
+                return code;
+            code = pdf_read_Root(ctx);
+            if (code < 0)
+                return code;
+        } else
+            return code;
+    }
 
     code = pdf_read_Info(ctx);
     if (code < 0 && code != gs_error_undefined)

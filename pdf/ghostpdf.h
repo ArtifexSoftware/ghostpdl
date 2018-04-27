@@ -147,6 +147,13 @@ typedef struct pdf_context_s
 
     gs_offset_t startxref;
 
+    /* Track whether file is a hybrid. Initially prefer XRefStm but
+     * if we fail to read the structure using an XRefStm, try again
+     * using the xref
+     */
+    bool prefer_xrefstm;
+    bool is_hybrid;
+
     /* Global toggle for transparency */
     bool use_transparency;
     bool has_transparency;
