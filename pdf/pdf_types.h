@@ -33,7 +33,12 @@ typedef enum pdf_obj_type_e {
     PDF_TRUE = '1',
     PDF_FALSE = '0',
     PDF_KEYWORD = 'K',
+    /* The following aren't PDF object types, but are objects we either want to
+     * reference count, or store on the stack.
+     */
     PDF_XREF_TABLE = 'X',
+    PDF_ARRAY_MARK = '[',
+    PDF_DICT_MARK = '>',
 } pdf_obj_type;
 
 #if REFCNT_DEBUG
