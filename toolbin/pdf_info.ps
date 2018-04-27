@@ -108,6 +108,13 @@ cleartomark		% discard the dict from --where--
   () = (        ) print print ( has ) print 
   PDFPageCount dup =print 10 mod 1 eq { ( page.\n) } { ( pages\n) } ifelse = flush
 
+  Trailer /Root oget /AcroForm knownoget {
+    /XFA knownoget {
+      (File uses XFA forms.\n\n) print
+      pop
+    } if
+  } if
+
   /DumpXML where {
     pop
     Trailer /Root oget /Metadata knownoget {
@@ -132,6 +139,7 @@ cleartomark		% discard the dict from --where--
      dup /Trapped knownoget { (Trapped: ) print = flush } if
      pop
   } if
+
 } bind def
 
 % <page index> <page dict> dump-media-sizes -
