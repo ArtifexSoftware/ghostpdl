@@ -1886,11 +1886,11 @@ int pdf_make_name(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
     return 0;
 }
 
-int pdf_make_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned)
+int pdf_alloc_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned)
 {
     pdf_dict *returned_dict;
 
-    returned_dict = (pdf_dict *)gs_alloc_bytes(ctx->memory, sizeof(pdf_dict), "pdf_make_dict");
+    returned_dict = (pdf_dict *)gs_alloc_bytes(ctx->memory, sizeof(pdf_dict), "pdf_alloc_dict");
     if (returned_dict == NULL)
         return_error(gs_error_VMerror);
 
@@ -1899,15 +1899,15 @@ int pdf_make_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned)
     returned_dict->type = PDF_DICT;
     returned_dict->refcnt = 1;
 
-    returned_dict->keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdf_make_dict");
+    returned_dict->keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdf_alloc_dict");
     if (returned_dict->keys == NULL) {
-        gs_free_object(ctx->memory, returned_dict, "pdf_make_dict");
+        gs_free_object(ctx->memory, returned_dict, "pdf_alloc_dict");
         return_error(gs_error_VMerror);
     }
-    returned_dict->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdf_make_name");
+    returned_dict->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdf_alloc_dict");
     if (returned_dict->keys == NULL) {
-        gs_free_object(ctx->memory, returned_dict->keys, "pdf_make_dict");
-        gs_free_object(ctx->memory, returned_dict, "pdf_make_dict");
+        gs_free_object(ctx->memory, returned_dict->keys, "pdf_alloc_dict");
+        gs_free_object(ctx->memory, returned_dict, "pdf_alloc_dict");
         return_error(gs_error_VMerror);
     }
     returned_dict->size = size;
@@ -3174,7 +3174,7 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
 
     /* if we are being passed any inherited values from our parent, copy them now */
     if (inherited != NULL) {
-        code = pdf_make_dict(ctx, inherited->size, &inheritable);
+        code = pdf_alloc_dict(ctx, inherited->size, &inheritable);
         if (code < 0)
             return code;
         code = pdf_dict_copy(inheritable, inherited);
@@ -3215,7 +3215,7 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
         pdf_obj *object;
 
         if (inheritable == NULL) {
-            code = pdf_make_dict(ctx, 0, &inheritable);
+            code = pdf_alloc_dict(ctx, 0, &inheritable);
             if (code < 0)
                 return code;
         }
@@ -3245,7 +3245,7 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
         pdf_obj *object;
 
         if (inheritable == NULL) {
-            code = pdf_make_dict(ctx, 0, &inheritable);
+            code = pdf_alloc_dict(ctx, 0, &inheritable);
             if (code < 0)
                 return code;
         }
@@ -3275,7 +3275,7 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
         pdf_obj *object;
 
         if (inheritable == NULL) {
-            code = pdf_make_dict(ctx, 0, &inheritable);
+            code = pdf_alloc_dict(ctx, 0, &inheritable);
             if (code < 0)
                 return code;
         }
@@ -3305,7 +3305,7 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
         pdf_obj *object;
 
         if (inheritable == NULL) {
-            code = pdf_make_dict(ctx, 0, &inheritable);
+            code = pdf_alloc_dict(ctx, 0, &inheritable);
             if (code < 0)
                 return code;
         }
