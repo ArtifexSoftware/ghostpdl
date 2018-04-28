@@ -614,13 +614,15 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
     num->memory = ctx->memory;
 
     if (real) {
+        float temp;
         num->type = PDF_REAL;
-        if (sscanf((const char *)Buffer, "%f", &num->value.d) == 0) {
+        if (sscanf((const char *)Buffer, "%f", &temp) == 0) {
             if (ctx->pdfdebug)
                 dmprintf1(ctx->memory, "failed to read real number : %s\n", Buffer);
             gs_free_object(num->memory, num, "pdf_read_num error");
             return_error(gs_error_syntaxerror);
         }
+        num->value.d = temp;
     } else {
         num->type = PDF_INT;
         if (sscanf((const char *)Buffer, "%d", &num->value.i) == 0) {
@@ -1860,6 +1862,8 @@ int pdf_make_name(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
     char *NewBuf = NULL;
     pdf_name *name = NULL;
 
+    *o = NULL;
+
     name = (pdf_name *)gs_alloc_bytes(ctx->memory, sizeof(pdf_name), "pdf_make_name");
     if (name == NULL)
         return_error(gs_error_VMerror);
@@ -1890,6 +1894,8 @@ int pdf_make_name(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
 int pdf_alloc_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned)
 {
     pdf_dict *returned_dict;
+
+    *returned = NULL;
 
     returned_dict = (pdf_dict *)gs_alloc_bytes(ctx->memory, sizeof(pdf_dict), "pdf_alloc_dict");
     if (returned_dict == NULL)
@@ -1996,6 +2002,7 @@ pdf_context *pdf_create_context(gs_memory_t *pmem)
 
 #if REFCNT_DEBUG
     ctx->UID = 1;
+    ctx->freed_objects = 0;
 #endif
     return ctx;
 }
