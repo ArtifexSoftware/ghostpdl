@@ -1271,12 +1271,13 @@ int pdf_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
     /* Nope, its a new Key */
     if (d->size > d->entries) {
         /* We have a hole, find and use it */
-        for (i=0;i< d->entries;i++) {
+        for (i=0;i< d->size;i++) {
             if (d->keys[i] == NULL) {
                 d->keys[i] = Key;
                 pdf_countup(Key);
                 d->values[i] = value;
                 pdf_countup(value);
+                d->entries++;
                 return 0;
             }
         }
@@ -1910,6 +1911,8 @@ int pdf_alloc_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned)
         gs_free_object(ctx->memory, returned_dict, "pdf_alloc_dict");
         return_error(gs_error_VMerror);
     }
+    memset(returned_dict->keys, 0x00, size * sizeof(pdf_obj *));
+    memset(returned_dict->values, 0x00, size * sizeof(pdf_obj *));
     returned_dict->size = size;
     *returned = returned_dict;
 #if REFCNT_DEBUG
@@ -3368,11 +3371,17 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
                 pdf_countdown((pdf_obj *)child);
                 return_error(gs_error_typecheck);
             }
-#if DONT_STORE_DEREFFED_PAGES
             /* If its an intermediate node, store it in the page_table, if its a leaf node
-             * then don't, just leave the reference in place. This should make descending
-             * the intermediate nodes faster over time, without storing the (potentailly
-             * large) page dictionaries.
+             * then don't store it. Instead we create a special dictionary of our own which
+             * has a /Type of /PageRef and a /PageRef key which is the indirect reference
+             * to the page. However in this case we pass on the actual page dictionary to
+             * the Kids processing below. If we didn't then we'd fall foul of the loop
+             * detection by dereferencing the same object twice.
+             * This is tedious, but it means we don't store all the page dictionaries in
+             * the Pages tree, because page dictionaries can be large and we generally
+             * only use them once. If processed in order we only dereference each page
+             * dictionary once, any other order will dereference each page twice. (or more
+             * if we render the same page multiple times).
              */
             code = pdf_dict_get(child, "Type", (pdf_obj **)&Type);
             if (code < 0) {
@@ -3401,10 +3410,45 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
                     return code;
                 }
             }
+            if (Type->length == 4 && memcmp(Type->data, "Page", 4) == 0) {
+                /* Make a 'PageRef' entry (just stores an indirect reference to the actual page)
+                 * and store that in the Kids array for future reference. But pass on the
+                 * dereferenced Page dictionary, in case this is the target page.
+                 */
+                pdf_dict *leaf_dict = NULL;
+                pdf_name *Key = NULL, *Key1 = NULL;
+
+                code = pdf_alloc_dict(ctx, 0, &leaf_dict);
+                if (code == 0) {
+                    code = pdf_make_name(ctx, (byte *)"PageRef", 7, (pdf_obj **)&Key);
+                    if (code == 0) {
+                        code = pdf_dict_put(leaf_dict, (pdf_obj *)Key, (pdf_obj *)node);
+                        if (code == 0){
+                            code = pdf_make_name(ctx, (byte *)"Type", 4, (pdf_obj **)&Key);
+                            if (code == 0){
+                                code = pdf_make_name(ctx, (byte *)"PageRef", 7, (pdf_obj **)&Key1);
+                                if (code == 0) {
+                                    code = pdf_dict_put(leaf_dict, (pdf_obj *)Key, (pdf_obj *)Key1);
+                                    if (code == 0)
+                                        code = pdf_array_put(Kids, i, (pdf_obj *)leaf_dict);
+                                }
+                            }
+                        }
+                    }
+                }
+                pdf_countdown((pdf_obj *)Key);
+                pdf_countdown((pdf_obj *)Key1);
+                pdf_countdown((pdf_obj *)leaf_dict);
+                if (code < 0) {
+                    pdf_countdown((pdf_obj *)inheritable);
+                    pdf_countdown((pdf_obj *)Kids);
+                    pdf_countdown((pdf_obj *)child);
+                    pdf_countdown((pdf_obj *)Type);
+                    pdf_countdown((pdf_obj *)node);
+                    return code;
+                }
+            }
             pdf_countdown((pdf_obj *)Type);
-#else
-            code = pdf_array_put(Kids, i, (pdf_obj *)child);
-#endif
             pdf_countdown((pdf_obj *)node);
         } else {
             child = (pdf_dict *)node;
@@ -3444,7 +3488,6 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
                 return_error(gs_error_typecheck);
             }
             if (Count->value.i + *page_offset <= page_num) {
-                pdf_countdown((pdf_obj *)inheritable);
                 pdf_countdown((pdf_obj *)child);
                 pdf_countdown((pdf_obj *)Type);
                 *page_offset += Count->value.i;
@@ -3460,33 +3503,63 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
                 return code;
             }
         } else {
-            if (Type->length == 4 && memcmp(Type->data, "Page", 4) == 0) {
+            if (Type->length == 7 && memcmp(Type->data, "PageRef", 7) == 0) {
                 pdf_countdown((pdf_obj *)Type);
                 if ((i + *page_offset) == page_num) {
-                    if (inheritable != NULL) {
-                        code = pdf_merge_dicts(child, inheritable);
-                        if (code < 0) {
-                            pdf_countdown((pdf_obj *)inheritable);
-                            pdf_countdown((pdf_obj *)Kids);
-                            pdf_countdown((pdf_obj *)child);
-                            return code;
+                    pdf_indirect_ref *o;
+                    pdf_dict *d;
+                    code = pdf_dict_get(child, "PageRef", (pdf_obj **)&o);
+                    if (code == 0) {
+                        code = pdf_dereference(ctx, o->ref_object_num, o->ref_generation_num, (pdf_obj **)&d);
+                        if (code == 0) {
+                            if (inheritable != NULL) {
+                                code = pdf_merge_dicts(d, inheritable);
+                                pdf_countdown((pdf_obj *)inheritable);
+                                inheritable = NULL;
+                           }
                         }
+                    }
+                    if (code < 0) {
                         pdf_countdown((pdf_obj *)inheritable);
+                        pdf_countdown((pdf_obj *)Kids);
+                        pdf_countdown((pdf_obj *)d);
                     }
                     pdf_countdown((pdf_obj *)Kids);
-                    *target = child;
+                    *target = d;
                     pdf_countup((pdf_obj *)*target);
-                    pdf_countdown((pdf_obj *)child);
+                    pdf_countdown((pdf_obj *)d);
                     return 0;
-                } else {
+                } else
                     pdf_countdown((pdf_obj *)child);
-                }
             } else {
-                pdf_countdown((pdf_obj *)inheritable);
-                pdf_countdown((pdf_obj *)Kids);
-                pdf_countdown((pdf_obj *)child);
-                pdf_countdown((pdf_obj *)Type);
-                return_error(gs_error_typecheck);
+                if (Type->length == 4 && memcmp(Type->data, "Page", 4) == 0) {
+                    pdf_countdown((pdf_obj *)Type);
+                    if ((i + *page_offset) == page_num) {
+                        if (inheritable != NULL) {
+                            code = pdf_merge_dicts(child, inheritable);
+                            if (code < 0) {
+                                pdf_countdown((pdf_obj *)inheritable);
+                                pdf_countdown((pdf_obj *)Kids);
+                                pdf_countdown((pdf_obj *)child);
+                                return code;
+                            }
+                            pdf_countdown((pdf_obj *)inheritable);
+                        }
+                        pdf_countdown((pdf_obj *)Kids);
+                        *target = child;
+                        pdf_countup((pdf_obj *)*target);
+                        pdf_countdown((pdf_obj *)child);
+                        return 0;
+                    } else {
+                        pdf_countdown((pdf_obj *)child);
+                    }
+                } else {
+                    pdf_countdown((pdf_obj *)inheritable);
+                    pdf_countdown((pdf_obj *)Kids);
+                    pdf_countdown((pdf_obj *)child);
+                    pdf_countdown((pdf_obj *)Type);
+                    return_error(gs_error_typecheck);
+                }
             }
         }
     }

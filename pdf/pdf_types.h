@@ -16,7 +16,7 @@
 #include "stdint_.h"    /* Various data types */
 #include "scommon.h"    /* for gs_offset_t */
 
-#define REFCNT_DEBUG 1
+#define REFCNT_DEBUG 0
 
 #ifndef PDF_OBJ_TYPES
 #define PDF_OBJ_TYPES
