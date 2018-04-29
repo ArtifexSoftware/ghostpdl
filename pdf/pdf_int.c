@@ -120,9 +120,9 @@ static void pdf_free_dict(pdf_obj *o)
 
     for (i=0;i < d->entries;i++) {
         if (d->keys[i] != NULL)
-            pdf_countdown((pdf_obj *)d->keys[i]);
+            pdf_countdown(d->keys[i]);
         if (d->values[i] != NULL)
-            pdf_countdown((pdf_obj *)d->values[i]);
+            pdf_countdown(d->values[i]);
     }
     gs_free_object(d->memory, d->keys, "pdf interpreter free dictionary keys");
     gs_free_object(d->memory, d->values, "pdf interpreter free dictioanry values");
@@ -392,28 +392,28 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 }
 
                 compressed_object = (pdf_dict *)ctx->stack_top[-1];
-                pdf_countup((pdf_obj *)compressed_object);
+                pdf_countup(compressed_object);
                 pdf_pop(ctx, 1);
             } else {
                 compressed_object = (pdf_dict *)compressed_entry->cache->o;
-                pdf_countup((pdf_obj *)compressed_object);
+                pdf_countup(compressed_object);
             }
             /* Check its an ObjStm ! */
             code = pdf_dict_get(compressed_object, "Type", &o);
             if (code < 0) {
-                pdf_countdown((pdf_obj *)compressed_object);
+                pdf_countdown(compressed_object);
                 (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
             if (o->type != PDF_NAME) {
                 pdf_countdown(o);
-                pdf_countdown((pdf_obj *)compressed_object);
+                pdf_countdown(compressed_object);
                 (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return_error(gs_error_typecheck);
             }
             if (((pdf_name *)o)->length != 6 || memcmp(((pdf_name *)o)->data, "ObjStm", 6) != 0){
                 pdf_countdown(o);
-                pdf_countdown((pdf_obj *)compressed_object);
+                pdf_countdown(compressed_object);
                 (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return_error(gs_error_syntaxerror);
             }
@@ -422,20 +422,20 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             /* Need to check the /N entry to see if the object is actually in this stream! */
             code = pdf_dict_get(compressed_object, "N", &o);
             if (code < 0) {
-                pdf_countdown((pdf_obj *)compressed_object);
+                pdf_countdown(compressed_object);
                 (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
             if (o->type != PDF_INT) {
                 pdf_countdown(o);
-                pdf_countdown((pdf_obj *)compressed_object);
+                pdf_countdown(compressed_object);
                 (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return_error(gs_error_typecheck);
             }
             num_entries = ((pdf_num *)o)->value.i;
             if (num_entries <= entry->u.compressed.object_index){
                 pdf_countdown(o);
-                pdf_countdown((pdf_obj *)compressed_object);
+                pdf_countdown(compressed_object);
                 (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return_error(gs_error_rangecheck);
             }
@@ -443,14 +443,14 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
 
             code = pdf_seek(ctx, ctx->main_stream, compressed_object->stream_offset, SEEK_SET);
             if (code < 0) {
-                pdf_countdown((pdf_obj *)compressed_object);
+                pdf_countdown(compressed_object);
                 (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
 
             code = pdf_filter(ctx, compressed_object, ctx->main_stream, &compressed_stream);
             if (code < 0) {
-                pdf_countdown((pdf_obj *)compressed_object);
+                pdf_countdown(compressed_object);
                 (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
@@ -460,7 +460,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 code = pdf_read_token(ctx, compressed_stream);
                 if (code < 0) {
                     sclose(compressed_stream->s);
-                    pdf_countdown((pdf_obj *)compressed_object);
+                    pdf_countdown(compressed_object);
                     (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return code;
                 }
@@ -468,7 +468,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 if (((pdf_obj *)o)->type != PDF_INT) {
                     pdf_pop(ctx, 1);
                     sclose(compressed_stream->s);
-                    pdf_countdown((pdf_obj *)compressed_object);
+                    pdf_countdown(compressed_object);
                     (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return_error(gs_error_typecheck);
                 }
@@ -476,7 +476,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 code = pdf_read_token(ctx, compressed_stream);
                 if (code < 0) {
                     sclose(compressed_stream->s);
-                    pdf_countdown((pdf_obj *)compressed_object);
+                    pdf_countdown(compressed_object);
                     (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return code;
                 }
@@ -484,7 +484,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 if (((pdf_obj *)o)->type != PDF_INT) {
                     pdf_pop(ctx, 1);
                     sclose(compressed_stream->s);
-                    pdf_countdown((pdf_obj *)compressed_object);
+                    pdf_countdown(compressed_object);
                     (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return_error(gs_error_typecheck);
                 }
@@ -501,7 +501,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             code = pdf_read_token(ctx, compressed_stream);
             if (code < 0) {
                 sclose(compressed_stream->s);
-                pdf_countdown((pdf_obj *)compressed_object);
+                pdf_countdown(compressed_object);
                 (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
@@ -512,7 +512,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             pdf_countup(*object);
             pdf_pop(ctx, 1);
 
-            pdf_countdown((pdf_obj *)compressed_object);
+            pdf_countdown(compressed_object);
         } else {
             code = pdf_seek(ctx, ctx->main_stream, entry->u.uncompressed.offset, SEEK_SET);
             if (code < 0) {
@@ -1490,7 +1490,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 uint64_t obj_num;
                 uint32_t gen_num;
 
-                pdf_countdown((pdf_obj *)keyword);
+                pdf_countdown(keyword);
 
                 if(ctx->stack_top - ctx->stack_bot < 2)
                     return_error(gs_error_stackunderflow);
@@ -1554,7 +1554,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
             if (keyword->length == 4 && memcmp((const char *)Buffer, "true", 4) == 0) {
                 pdf_obj *o;
 
-                pdf_countdown((pdf_obj *)keyword);
+                pdf_countdown(keyword);
 
                 o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
                 if (o == NULL)
@@ -1583,7 +1583,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
             {
                 pdf_obj *o;
 
-                pdf_countdown((pdf_obj *)keyword);
+                pdf_countdown(keyword);
 
                 o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
                 if (o == NULL)
@@ -1607,7 +1607,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
             if (keyword->length == 4 && memcmp((const char *)Buffer, "null", 4) == 0){
                 pdf_obj *o;
 
-                pdf_countdown((pdf_obj *)keyword);
+                pdf_countdown(keyword);
 
                 o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
                 if (o == NULL)
@@ -1634,7 +1634,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
     }
 
     code = pdf_push(ctx, (pdf_obj *)keyword);
-    pdf_countdown((pdf_obj *)keyword);
+    pdf_countdown(keyword);
 
     return code;
 }
@@ -2030,19 +2030,19 @@ int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx)
         gs_free_object(ctx->memory, ctx->PageList, "pdf_free_context");
 
     if (ctx->Trailer)
-        pdf_countdown((pdf_obj *)ctx->Trailer);
+        pdf_countdown(ctx->Trailer);
 
     if(ctx->Root)
-        pdf_countdown((pdf_obj *)ctx->Root);
+        pdf_countdown(ctx->Root);
 
     if (ctx->Info)
-        pdf_countdown((pdf_obj *)ctx->Info);
+        pdf_countdown(ctx->Info);
 
     if (ctx->Pages)
-        pdf_countdown((pdf_obj *)ctx->Pages);
+        pdf_countdown(ctx->Pages);
 
     if (ctx->xref_table) {
-        pdf_countdown((pdf_obj *)ctx->xref_table);
+        pdf_countdown(ctx->xref_table);
         ctx->xref_table = NULL;
     }
 
@@ -2237,15 +2237,15 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
         ctx->xref_table->UID = ctx->UID++;
         dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
 #endif
-        pdf_countup((pdf_obj *)ctx->xref_table);
+        pdf_countup(ctx->xref_table);
 
         ctx->Trailer = d;
-        pdf_countup((pdf_obj *)d);
+        pdf_countup(d);
     }
 
     code = pdf_filter(ctx, d, s, &XRefStrm);
     if (code < 0) {
-        pdf_countdown((pdf_obj *)ctx->xref_table);
+        pdf_countdown(ctx->xref_table);
         ctx->xref_table = NULL;
         return code;
     }
@@ -2253,7 +2253,7 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
     code = pdf_dict_get(d, "W", &o);
     if (code < 0) {
         pdf_close_file(ctx, XRefStrm);
-        pdf_countdown((pdf_obj *)ctx->xref_table);
+        pdf_countdown(ctx->xref_table);
         ctx->xref_table = NULL;
         return code;
     }
@@ -2261,7 +2261,7 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
     if (o->type != PDF_ARRAY) {
         pdf_countdown(o);
         pdf_close_file(ctx, XRefStrm);
-        pdf_countdown((pdf_obj *)ctx->xref_table);
+        pdf_countdown(ctx->xref_table);
         ctx->xref_table = NULL;
         return_error(gs_error_typecheck);
     }
@@ -2271,7 +2271,7 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
         if (a->entries != 3) {
             pdf_countdown(o);
             pdf_close_file(ctx, XRefStrm);
-            pdf_countdown((pdf_obj *)ctx->xref_table);
+            pdf_countdown(ctx->xref_table);
             ctx->xref_table = NULL;
             return_error(gs_error_rangecheck);
         }
@@ -2280,21 +2280,21 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
             if (code < 0) {
                 pdf_countdown(o);
                 pdf_close_file(ctx, XRefStrm);
-                pdf_countdown((pdf_obj *)ctx->xref_table);
+                pdf_countdown(ctx->xref_table);
                 ctx->xref_table = NULL;
                 return code;
             }
             if (o->type != PDF_INT) {
                 pdf_countdown(o);
                 pdf_close_file(ctx, XRefStrm);
-                pdf_countdown((pdf_obj *)ctx->xref_table);
+                pdf_countdown(ctx->xref_table);
                 ctx->xref_table = NULL;
                 return_error(gs_error_typecheck);
             }
             W[i] = ((pdf_num *)o)->value.i;
             pdf_countdown(o);
         }
-        pdf_countdown((pdf_obj *)a);
+        pdf_countdown(a);
     }
 
     code = pdf_dict_get(d, "Index", &o);
@@ -2302,14 +2302,14 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
         code = read_xref_stream_entries(ctx, XRefStrm, 0, size - 1, W);
         if (code < 0) {
             pdf_close_file(ctx, XRefStrm);
-            pdf_countdown((pdf_obj *)ctx->xref_table);
+            pdf_countdown(ctx->xref_table);
             ctx->xref_table = NULL;
             return code;
         }
     } else {
         if (code < 0) {
             pdf_close_file(ctx, XRefStrm);
-            pdf_countdown((pdf_obj *)ctx->xref_table);
+            pdf_countdown(ctx->xref_table);
             ctx->xref_table = NULL;
             return code;
         }
@@ -2317,7 +2317,7 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
         if (o->type != PDF_ARRAY) {
             pdf_countdown(o);
             pdf_close_file(ctx, XRefStrm);
-            pdf_countdown((pdf_obj *)ctx->xref_table);
+            pdf_countdown(ctx->xref_table);
             ctx->xref_table = NULL;
             return_error(gs_error_typecheck);
         }
@@ -2328,7 +2328,7 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
             if (a->entries & 1) {
                 pdf_countdown(o);
                 pdf_close_file(ctx, XRefStrm);
-                pdf_countdown((pdf_obj *)ctx->xref_table);
+                pdf_countdown(ctx->xref_table);
                 ctx->xref_table = NULL;
                 return_error(gs_error_rangecheck);
             }
@@ -2338,15 +2338,15 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
                 if (code < 0) {
                     pdf_countdown(o);
                     pdf_close_file(ctx, XRefStrm);
-                    pdf_countdown((pdf_obj *)ctx->xref_table);
+                    pdf_countdown(ctx->xref_table);
                     ctx->xref_table = NULL;
                     return code;
                 }
                 if (start->type != PDF_INT) {
                     pdf_countdown(o);
-                    pdf_countdown((pdf_obj *)start);
+                    pdf_countdown(start);
                     pdf_close_file(ctx, XRefStrm);
-                    pdf_countdown((pdf_obj *)ctx->xref_table);
+                    pdf_countdown(ctx->xref_table);
                     ctx->xref_table = NULL;
                     return_error(gs_error_typecheck);
                 }
@@ -2354,29 +2354,29 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
                 code = pdf_array_get(a, (uint64_t)i+1, (pdf_obj **)&end);
                 if (code < 0) {
                     pdf_countdown(o);
-                    pdf_countdown((pdf_obj *)start);
+                    pdf_countdown(start);
                     pdf_close_file(ctx, XRefStrm);
-                    pdf_countdown((pdf_obj *)ctx->xref_table);
+                    pdf_countdown(ctx->xref_table);
                     ctx->xref_table = NULL;
                     return code;
                 }
                 if (end->type != PDF_INT) {
                     pdf_countdown(o);
-                    pdf_countdown((pdf_obj *)start);
-                    pdf_countdown((pdf_obj *)end);
+                    pdf_countdown(start);
+                    pdf_countdown(end);
                     pdf_close_file(ctx, XRefStrm);
-                    pdf_countdown((pdf_obj *)ctx->xref_table);
+                    pdf_countdown(ctx->xref_table);
                     ctx->xref_table = NULL;
                     return_error(gs_error_typecheck);
                 }
 
                 code = read_xref_stream_entries(ctx, XRefStrm, start->value.i, start->value.i + end->value.i - 1, W);
-                pdf_countdown((pdf_obj *)start);
-                pdf_countdown((pdf_obj *)end);
+                pdf_countdown(start);
+                pdf_countdown(end);
                 if (code < 0) {
                     pdf_countdown(o);
                     pdf_close_file(ctx, XRefStrm);
-                    pdf_countdown((pdf_obj *)ctx->xref_table);
+                    pdf_countdown(ctx->xref_table);
                     ctx->xref_table = NULL;
                     return code;
                 }
@@ -2482,15 +2482,15 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
 
                         d->object_num = obj_num;
                         d->generation_num = gen_num;
-                        pdf_countup((pdf_obj *)d);
+                        pdf_countup(d);
                         pdf_pop(ctx, 1);
 
                         code = pdf_process_xref_stream(ctx, d, ctx->main_stream);
                         if (code < 0) {
-                            pdf_countdown((pdf_obj *)d);
+                            pdf_countdown(d);
                             return (repair_pdf_file(ctx));
                         }
-                        pdf_countdown((pdf_obj *)d);
+                        pdf_countdown(d);
                         break;
                     }
                     if (keyword->key == PDF_ENDOBJ) {
@@ -2557,7 +2557,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
 
         ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, (start + size) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
         if (ctx->xref_table->xref == NULL){
-            pdf_countdown((pdf_obj *)ctx->xref_table);
+            pdf_countdown(ctx->xref_table);
             ctx->xref_table = NULL;
             return_error(gs_error_VMerror);
         }
@@ -2570,7 +2570,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
         ctx->xref_table->memory = ctx->memory;
         ctx->xref_table->type = PDF_XREF_TABLE;
         ctx->xref_table->xref_size = start + size;
-        pdf_countup((pdf_obj *)ctx->xref_table);
+        pdf_countup(ctx->xref_table);
     }
 
     skip_white(ctx, s);
@@ -2623,7 +2623,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
 
     if (ctx->Trailer == NULL) {
         ctx->Trailer = d;
-        pdf_countup((pdf_obj *)d);
+        pdf_countup(d);
     }
 
     /* We have the Trailer dictionary. First up check for hybrid files. These have the initial
@@ -2655,7 +2655,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
         ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, ((pdf_num *)o)->value.i * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
         if (ctx->xref_table->xref == NULL){
             pdf_pop(ctx, 2);
-            pdf_countdown((pdf_obj *)ctx->xref_table);
+            pdf_countdown(ctx->xref_table);
             ctx->xref_table = NULL;
             return_error(gs_error_VMerror);
         }
@@ -2664,7 +2664,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
         ctx->xref_table->memory = ctx->memory;
         ctx->xref_table->type = PDF_XREF_TABLE;
         ctx->xref_table->xref_size = ((pdf_num *)o)->value.i;
-        pdf_countup((pdf_obj *)ctx->xref_table);
+        pdf_countup(ctx->xref_table);
     }
 
     /* Now check if this is a hybrid file. */
@@ -3190,35 +3190,35 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
             return code;
         code = pdf_dict_copy(inheritable, inherited);
         if (code < 0) {
-            pdf_countdown((pdf_obj *)inheritable);
+            pdf_countdown(inheritable);
             return code;
         }
     }
 
     code = pdf_dict_get(d, "Count", (pdf_obj **)&Count);
     if (code < 0) {
-        pdf_countdown((pdf_obj *)inheritable);
-        pdf_countdown((pdf_obj *)Count);
+        pdf_countdown(inheritable);
+        pdf_countdown(Count);
         return code;
     }
     if (Count->type != PDF_INT) {
-        pdf_countdown((pdf_obj *)inheritable);
-        pdf_countdown((pdf_obj *)Count);
+        pdf_countdown(inheritable);
+        pdf_countdown(Count);
         return_error(gs_error_typecheck);
     }
     if (Count->value.i + *page_offset < page_num) {
-        pdf_countdown((pdf_obj *)inheritable);
-        pdf_countdown((pdf_obj *)Count);
+        pdf_countdown(inheritable);
+        pdf_countdown(Count);
         *page_offset += Count->value.i;
         return 1;
     }
     /* The requested page is a descendant of this node */
-    pdf_countdown((pdf_obj *)Count);
+    pdf_countdown(Count);
 
     /* Check for inheritable keys, if we find any copy them to the 'inheritable' dictionary at this level */
     code = pdf_dict_known(d, "Resources", &known);
     if (code < 0) {
-        pdf_countdown((pdf_obj *)inheritable);
+        pdf_countdown(inheritable);
         return code;
     }
     if (known) {
@@ -3233,22 +3233,22 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
 
         code = pdf_make_name(ctx, (byte *)"Resources", 9, (pdf_obj **)&Key);
         if (code < 0) {
-            pdf_countdown((pdf_obj *)inheritable);
+            pdf_countdown(inheritable);
             return code;
         }
         code = pdf_dict_get(d, "Resources", &object);
         if (code < 0) {
-            pdf_countdown((pdf_obj *)Key);
-            pdf_countdown((pdf_obj *)inheritable);
+            pdf_countdown(Key);
+            pdf_countdown(inheritable);
             return code;
         }
         code = pdf_dict_put(inheritable, (pdf_obj *)Key, object);
-        pdf_countdown((pdf_obj *)Key);
-        pdf_countdown((pdf_obj *)object);
+        pdf_countdown(Key);
+        pdf_countdown(object);
     }
     code = pdf_dict_known(d, "MediaBox", &known);
     if (code < 0) {
-        pdf_countdown((pdf_obj *)inheritable);
+        pdf_countdown(inheritable);
         return code;
     }
     if (known) {
@@ -3263,22 +3263,22 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
 
         code = pdf_make_name(ctx, (byte *)"MediaBox", 9, (pdf_obj **)&Key);
         if (code < 0) {
-            pdf_countdown((pdf_obj *)inheritable);
+            pdf_countdown(inheritable);
             return code;
         }
         code = pdf_dict_get(d, "MediaBox", &object);
         if (code < 0) {
-            pdf_countdown((pdf_obj *)Key);
-            pdf_countdown((pdf_obj *)inheritable);
+            pdf_countdown(Key);
+            pdf_countdown(inheritable);
             return code;
         }
         code = pdf_dict_put(inheritable, (pdf_obj *)Key, object);
-        pdf_countdown((pdf_obj *)Key);
-        pdf_countdown((pdf_obj *)object);
+        pdf_countdown(Key);
+        pdf_countdown(object);
     }
     code = pdf_dict_known(d, "CropBox", &known);
     if (code < 0) {
-        pdf_countdown((pdf_obj *)inheritable);
+        pdf_countdown(inheritable);
         return code;
     }
     if (known) {
@@ -3293,22 +3293,22 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
 
         code = pdf_make_name(ctx, (byte *)"CropBox", 9, (pdf_obj **)&Key);
         if (code < 0) {
-            pdf_countdown((pdf_obj *)inheritable);
+            pdf_countdown(inheritable);
             return code;
         }
         code = pdf_dict_get(d, "CropBox", &object);
         if (code < 0) {
-            pdf_countdown((pdf_obj *)Key);
-            pdf_countdown((pdf_obj *)inheritable);
+            pdf_countdown(Key);
+            pdf_countdown(inheritable);
             return code;
         }
         code = pdf_dict_put(inheritable, (pdf_obj *)Key, object);
-        pdf_countdown((pdf_obj *)Key);
-        pdf_countdown((pdf_obj *)object);
+        pdf_countdown(Key);
+        pdf_countdown(object);
     }
     code = pdf_dict_known(d, "Rotate", &known);
     if (code < 0) {
-        pdf_countdown((pdf_obj *)inheritable);
+        pdf_countdown(inheritable);
         return code;
     }
     if (known) {
@@ -3323,30 +3323,30 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
 
         code = pdf_make_name(ctx, (byte *)"Rotate", 9, (pdf_obj **)&Key);
         if (code < 0) {
-            pdf_countdown((pdf_obj *)inheritable);
+            pdf_countdown(inheritable);
             return code;
         }
         code = pdf_dict_get(d, "Rotate", &object);
         if (code < 0) {
-            pdf_countdown((pdf_obj *)Key);
-            pdf_countdown((pdf_obj *)inheritable);
+            pdf_countdown(Key);
+            pdf_countdown(inheritable);
             return code;
         }
         code = pdf_dict_put(inheritable, (pdf_obj *)Key, object);
-        pdf_countdown((pdf_obj *)Key);
-        pdf_countdown((pdf_obj *)object);
+        pdf_countdown(Key);
+        pdf_countdown(object);
     }
 
     /* Get the Kids array */
     code = pdf_dict_get(d, "Kids", (pdf_obj **)&Kids);
     if (code < 0) {
-        pdf_countdown((pdf_obj *)inheritable);
-        pdf_countdown((pdf_obj *)Kids);
+        pdf_countdown(inheritable);
+        pdf_countdown(Kids);
         return code;
     }
     if (Kids->type != PDF_ARRAY) {
-        pdf_countdown((pdf_obj *)inheritable);
-        pdf_countdown((pdf_obj *)Kids);
+        pdf_countdown(inheritable);
+        pdf_countdown(Kids);
         return_error(gs_error_typecheck);
     }
 
@@ -3354,29 +3354,29 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
     for (i = 0;i < Kids->entries;i++) {
         code = pdf_array_get(Kids, i, (pdf_obj **)&node);
         if (code < 0) {
-            pdf_countdown((pdf_obj *)inheritable);
-            pdf_countdown((pdf_obj *)Kids);
+            pdf_countdown(inheritable);
+            pdf_countdown(Kids);
             return code;
         }
         if (node->type != PDF_INDIRECT && node->type != PDF_DICT) {
-            pdf_countdown((pdf_obj *)inheritable);
-            pdf_countdown((pdf_obj *)Kids);
-            pdf_countdown((pdf_obj *)node);
+            pdf_countdown(inheritable);
+            pdf_countdown(Kids);
+            pdf_countdown(node);
             return_error(gs_error_typecheck);
         }
         if (node->type == PDF_INDIRECT) {
             code = pdf_dereference(ctx, node->ref_object_num, node->ref_generation_num, (pdf_obj **)&child);
             if (code < 0) {
-                pdf_countdown((pdf_obj *)inheritable);
-                pdf_countdown((pdf_obj *)Kids);
-                pdf_countdown((pdf_obj *)node);
+                pdf_countdown(inheritable);
+                pdf_countdown(Kids);
+                pdf_countdown(node);
                 return code;
             }
             if (child->type != PDF_DICT) {
-                pdf_countdown((pdf_obj *)inheritable);
-                pdf_countdown((pdf_obj *)Kids);
-                pdf_countdown((pdf_obj *)node);
-                pdf_countdown((pdf_obj *)child);
+                pdf_countdown(inheritable);
+                pdf_countdown(Kids);
+                pdf_countdown(node);
+                pdf_countdown(child);
                 return_error(gs_error_typecheck);
             }
             /* If its an intermediate node, store it in the page_table, if its a leaf node
@@ -3393,28 +3393,28 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
              */
             code = pdf_dict_get(child, "Type", (pdf_obj **)&Type);
             if (code < 0) {
-                pdf_countdown((pdf_obj *)inheritable);
-                pdf_countdown((pdf_obj *)Kids);
-                pdf_countdown((pdf_obj *)child);
-                pdf_countdown((pdf_obj *)node);
+                pdf_countdown(inheritable);
+                pdf_countdown(Kids);
+                pdf_countdown(child);
+                pdf_countdown(node);
                 return code;
             }
             if (Type->type != PDF_NAME) {
-                pdf_countdown((pdf_obj *)inheritable);
-                pdf_countdown((pdf_obj *)Kids);
-                pdf_countdown((pdf_obj *)child);
-                pdf_countdown((pdf_obj *)Type);
-                pdf_countdown((pdf_obj *)node);
+                pdf_countdown(inheritable);
+                pdf_countdown(Kids);
+                pdf_countdown(child);
+                pdf_countdown(Type);
+                pdf_countdown(node);
                 return_error(gs_error_typecheck);
             }
             if (Type->length == 5 && memcmp(Type->data, "Pages", 5) == 0) {
                 code = pdf_array_put(Kids, i, (pdf_obj *)child);
                 if (code < 0) {
-                    pdf_countdown((pdf_obj *)inheritable);
-                    pdf_countdown((pdf_obj *)Kids);
-                    pdf_countdown((pdf_obj *)child);
-                    pdf_countdown((pdf_obj *)Type);
-                    pdf_countdown((pdf_obj *)node);
+                    pdf_countdown(inheritable);
+                    pdf_countdown(Kids);
+                    pdf_countdown(child);
+                    pdf_countdown(Type);
+                    pdf_countdown(node);
                     return code;
                 }
             }
@@ -3444,74 +3444,74 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
                         }
                     }
                 }
-                pdf_countdown((pdf_obj *)Key);
-                pdf_countdown((pdf_obj *)Key1);
-                pdf_countdown((pdf_obj *)leaf_dict);
+                pdf_countdown(Key);
+                pdf_countdown(Key1);
+                pdf_countdown(leaf_dict);
                 if (code < 0) {
-                    pdf_countdown((pdf_obj *)inheritable);
-                    pdf_countdown((pdf_obj *)Kids);
-                    pdf_countdown((pdf_obj *)child);
-                    pdf_countdown((pdf_obj *)Type);
-                    pdf_countdown((pdf_obj *)node);
+                    pdf_countdown(inheritable);
+                    pdf_countdown(Kids);
+                    pdf_countdown(child);
+                    pdf_countdown(Type);
+                    pdf_countdown(node);
                     return code;
                 }
             }
-            pdf_countdown((pdf_obj *)Type);
-            pdf_countdown((pdf_obj *)node);
+            pdf_countdown(Type);
+            pdf_countdown(node);
         } else {
             child = (pdf_dict *)node;
         }
         /* Check the type, if its a Pages entry, then recurse. If its a Page entry, is it the one we want */
         code = pdf_dict_get(child, "Type", (pdf_obj **)&Type);
         if (code < 0) {
-            pdf_countdown((pdf_obj *)inheritable);
-            pdf_countdown((pdf_obj *)Kids);
-            pdf_countdown((pdf_obj *)child);
+            pdf_countdown(inheritable);
+            pdf_countdown(Kids);
+            pdf_countdown(child);
             return code;
         }
         if (Type->type != PDF_NAME) {
-            pdf_countdown((pdf_obj *)inheritable);
-            pdf_countdown((pdf_obj *)Kids);
-            pdf_countdown((pdf_obj *)child);
-            pdf_countdown((pdf_obj *)Type);
+            pdf_countdown(inheritable);
+            pdf_countdown(Kids);
+            pdf_countdown(child);
+            pdf_countdown(Type);
             return_error(gs_error_typecheck);
         }
         if (Type->length == 5 && memcmp(Type->data, "Pages", 5) == 0) {
             code = pdf_dict_get(child, "Count", (pdf_obj **)&Count);
             if (code < 0) {
-                pdf_countdown((pdf_obj *)inheritable);
-                pdf_countdown((pdf_obj *)Kids);
-                pdf_countdown((pdf_obj *)child);
-                pdf_countdown((pdf_obj *)Type);
-                pdf_countdown((pdf_obj *)Count);
+                pdf_countdown(inheritable);
+                pdf_countdown(Kids);
+                pdf_countdown(child);
+                pdf_countdown(Type);
+                pdf_countdown(Count);
                 return code;
             }
             if (Count->type != PDF_INT) {
-                pdf_countdown((pdf_obj *)inheritable);
-                pdf_countdown((pdf_obj *)Kids);
-                pdf_countdown((pdf_obj *)child);
-                pdf_countdown((pdf_obj *)Type);
-                pdf_countdown((pdf_obj *)Count);
+                pdf_countdown(inheritable);
+                pdf_countdown(Kids);
+                pdf_countdown(child);
+                pdf_countdown(Type);
+                pdf_countdown(Count);
                 return_error(gs_error_typecheck);
             }
             if (Count->value.i + *page_offset <= page_num) {
-                pdf_countdown((pdf_obj *)child);
-                pdf_countdown((pdf_obj *)Type);
+                pdf_countdown(child);
+                pdf_countdown(Type);
                 *page_offset += Count->value.i;
-                pdf_countdown((pdf_obj *)Count);
+                pdf_countdown(Count);
             } else {
                 /* The requested page is a descendant of this node */
-                pdf_countdown((pdf_obj *)Count);
-                pdf_countdown((pdf_obj *)Type);
+                pdf_countdown(Count);
+                pdf_countdown(Type);
                 code = pdf_get_page_dict(ctx, child, page_num, page_offset, target, inheritable);
-                pdf_countdown((pdf_obj *)inheritable);
-                pdf_countdown((pdf_obj *)child);
-                pdf_countdown((pdf_obj *)Kids);
+                pdf_countdown(inheritable);
+                pdf_countdown(child);
+                pdf_countdown(Kids);
                 return code;
             }
         } else {
             if (Type->length == 7 && memcmp(Type->data, "PageRef", 7) == 0) {
-                pdf_countdown((pdf_obj *)Type);
+                pdf_countdown(Type);
                 if ((i + *page_offset) == page_num) {
                     pdf_indirect_ref *o;
                     pdf_dict *d;
@@ -3521,58 +3521,143 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
                         if (code == 0) {
                             if (inheritable != NULL) {
                                 code = pdf_merge_dicts(d, inheritable);
-                                pdf_countdown((pdf_obj *)inheritable);
+                                pdf_countdown(inheritable);
                                 inheritable = NULL;
                            }
                         }
                     }
                     if (code < 0) {
-                        pdf_countdown((pdf_obj *)inheritable);
-                        pdf_countdown((pdf_obj *)Kids);
-                        pdf_countdown((pdf_obj *)d);
+                        pdf_countdown(inheritable);
+                        pdf_countdown(Kids);
+                        pdf_countdown(d);
                     }
-                    pdf_countdown((pdf_obj *)Kids);
+                    pdf_countdown(Kids);
                     *target = d;
-                    pdf_countup((pdf_obj *)*target);
-                    pdf_countdown((pdf_obj *)d);
+                    pdf_countup(*target);
+                    pdf_countdown(d);
                     return 0;
                 } else
-                    pdf_countdown((pdf_obj *)child);
+                    pdf_countdown(child);
             } else {
                 if (Type->length == 4 && memcmp(Type->data, "Page", 4) == 0) {
-                    pdf_countdown((pdf_obj *)Type);
+                    pdf_countdown(Type);
                     if ((i + *page_offset) == page_num) {
                         if (inheritable != NULL) {
                             code = pdf_merge_dicts(child, inheritable);
                             if (code < 0) {
-                                pdf_countdown((pdf_obj *)inheritable);
-                                pdf_countdown((pdf_obj *)Kids);
-                                pdf_countdown((pdf_obj *)child);
+                                pdf_countdown(inheritable);
+                                pdf_countdown(Kids);
+                                pdf_countdown(child);
                                 return code;
                             }
-                            pdf_countdown((pdf_obj *)inheritable);
+                            pdf_countdown(inheritable);
                         }
-                        pdf_countdown((pdf_obj *)Kids);
+                        pdf_countdown(Kids);
                         *target = child;
-                        pdf_countup((pdf_obj *)*target);
-                        pdf_countdown((pdf_obj *)child);
+                        pdf_countup(*target);
+                        pdf_countdown(child);
                         return 0;
                     } else {
-                        pdf_countdown((pdf_obj *)child);
+                        pdf_countdown(child);
                     }
                 } else {
-                    pdf_countdown((pdf_obj *)inheritable);
-                    pdf_countdown((pdf_obj *)Kids);
-                    pdf_countdown((pdf_obj *)child);
-                    pdf_countdown((pdf_obj *)Type);
+                    pdf_countdown(inheritable);
+                    pdf_countdown(Kids);
+                    pdf_countdown(child);
+                    pdf_countdown(Type);
                     return_error(gs_error_typecheck);
                 }
             }
         }
     }
     /* Positive return value indicates we did not find the target below this node, try the next one */
-    pdf_countdown((pdf_obj *)inheritable);
+    pdf_countdown(inheritable);
     return 1;
+}
+
+int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
+{
+    return 0;
+}
+
+int pdf_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
+{
+    int i, code = 0;
+    pdf_obj *o, *o1;
+    pdf_dict *content_stream;
+
+    code = pdf_dict_get(page_dict, "Contents", &o);
+    if (code < 0)
+        return code;
+
+    if (o->type == PDF_INDIRECT) {
+        if (((pdf_indirect_ref *)o)->ref_object_num == page_dict->object_num)
+            return_error(gs_error_circular_reference);
+
+        code = pdf_dereference(ctx, ((pdf_indirect_ref *)o)->ref_object_num, ((pdf_indirect_ref *)o)->ref_generation_num, &o1);
+        pdf_countdown(o);
+        if (code < 0)
+            return code;
+        o = o1;
+    }
+
+    if (o->type == PDF_ARRAY) {
+        pdf_array *a = (pdf_array *)o;
+
+        for (i=0;i < a->size; i++) {
+            pdf_indirect_ref *r;
+            code = pdf_array_get(a, i, (pdf_obj **)&r);
+            if (code < 0) {
+                pdf_countdown(o);
+                return code;
+            }
+            if (r->type == PDF_DICT) {
+                code = pdf_interpret_content_stream(ctx, (pdf_dict *)r);
+                pdf_countdown(r);
+                if (code < 0) {
+                    pdf_countdown(o);
+                    return(code);
+                }
+            } else {
+                if (r->type != PDF_INDIRECT) {
+                    pdf_countdown(o);
+                    pdf_countdown(r);
+                    return_error(gs_error_typecheck);
+                } else {
+                    if (r->ref_object_num == page_dict->object_num) {
+                        pdf_countdown(o);
+                        pdf_countdown(r);
+                        return_error(gs_error_circular_reference);
+                    }
+                    code = pdf_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
+                    pdf_countdown(r);
+                    if (code < 0) {
+                        pdf_countdown(o);
+                        return code;;
+                    }
+                    if (o1->type != PDF_DICT) {
+                        pdf_countdown(o);
+                        return_error(gs_error_typecheck);
+                    }
+                    code = pdf_interpret_content_stream(ctx, (pdf_dict *)o1);
+                    pdf_countdown(o1);
+                    if (code < 0) {
+                        pdf_countdown(o);
+                        return code;
+                    }
+                }
+            }
+        }
+    } else {
+        if (o->type == PDF_DICT) {
+            code = pdf_interpret_content_stream(ctx, (pdf_dict *)o);
+        } else {
+            pdf_countdown(o);
+            return_error(gs_error_typecheck);
+        }
+    }
+    pdf_countdown(o);
+    return code;
 }
 
 static int pdf_check_page_transparency(pdf_context *ctx, pdf_dict *page_dict, bool *transparent)
@@ -3614,12 +3699,14 @@ int pdf_render_page(pdf_context *ctx, uint64_t page_num)
 
     code = pdf_check_page_transparency(ctx, page_dict, &uses_transparency);
     if (code < 0) {
-        pdf_countdown((pdf_obj *)page_dict);
+        pdf_countdown(page_dict);
         return code;
     }
 
-    pdf_countdown((pdf_obj *)page_dict);
-    return 0;
+    code = pdf_process_page_contents(ctx, page_dict);
+
+    pdf_countdown(page_dict);
+    return code;
 }
 
 /* These functions are used by the 'PL' implementation, eventually we will */
@@ -3656,7 +3743,7 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
          * from a hybrid file, then try again, but this time use the xref table
          */
         if (code == gs_error_undefined && ctx->is_hybrid && ctx->prefer_xrefstm) {
-            pdf_countdown((pdf_obj *)ctx->xref_table);
+            pdf_countdown(ctx->xref_table);
             ctx->xref_table = NULL;
             ctx->prefer_xrefstm = false;
             code = pdf_read_xref(ctx);
