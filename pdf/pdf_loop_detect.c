@@ -16,6 +16,7 @@
 /* code for handling circular references */
 
 #include "pdf_int.h"
+#include "pdf_loop_detect.h"
 
 int pdf_init_loop_detector(pdf_context *ctx)
 {

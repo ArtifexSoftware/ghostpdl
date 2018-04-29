@@ -1323,7 +1323,7 @@ int pdf_dict_copy(pdf_dict *target, pdf_dict *source)
     return 0;
 }
 
-int pdf_dict_known(pdf_dict *d, char *Key, bool *known)
+int pdf_dict_known(pdf_dict *d, const char *Key, bool *known)
 {
     int i;
     pdf_obj *t;
@@ -1333,7 +1333,7 @@ int pdf_dict_known(pdf_dict *d, char *Key, bool *known)
         t = d->keys[i];
 
         if (t && t->type == PDF_NAME) {
-            if (((pdf_name *)t)->length == strlen((const char *)Key) && memcmp((const char *)((pdf_name *)t)->data, (const char *)Key, ((pdf_name *)t)->length) == 0) {
+            if (((pdf_name *)t)->length == strlen(Key) && memcmp(((pdf_name *)t)->data, Key, ((pdf_name *)t)->length) == 0) {
                 *known = true;
                 break;
             }
@@ -2744,7 +2744,6 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
     char *s = NULL;
     float version = 0.0;
     gs_offset_t Offset = 0, bytes = 0;
-    int code = 0;
 
     if (ctx->pdfdebug)
         dmprintf1(ctx->memory, "%% Attempting to open %s as a PDF file\n", filename);
@@ -3476,7 +3475,6 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
             return_error(gs_error_typecheck);
         }
         if (Type->length == 5 && memcmp(Type->data, "Pages", 5) == 0) {
-            int x;
             code = pdf_dict_get(child, "Count", (pdf_obj **)&Count);
             if (code < 0) {
                 pdf_countdown((pdf_obj *)inheritable);

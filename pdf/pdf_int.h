@@ -22,19 +22,29 @@
 int pdf_read_token(pdf_context *ctx, pdf_stream *s);
 int pdf_read_object(pdf_context *ctx, pdf_stream *s);
 void pdf_free_object(pdf_obj *o);
+int pdf_pop(pdf_context *ctx, int num);
+void pdf_clearstack(pdf_context *ctx);
+int pdf_push(pdf_context *ctx, pdf_obj *o);
+int pdf_mark_stack(pdf_context *ctx, pdf_obj_type type);
+int pdf_count_to_mark(pdf_context *ctx, uint64_t *count);
+int pdf_clear_to_mark(pdf_context *ctx);
 
 int pdf_make_name(pdf_context *ctx, byte *key, uint32_t size, pdf_obj **o);
-int pdf_make_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned);
+int pdf_alloc_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned);
 
-int pdf_dict_known(pdf_dict *d, char *Key, bool *known);
+int pdf_dict_known(pdf_dict *d, const char *Key, bool *known);
 int pdf_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known);
+int pdf_merge_dicts(pdf_dict *target, pdf_dict *source);
 int pdf_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value);
 int pdf_dict_get(pdf_dict *d, const char *Key, pdf_obj **o);
 int pdf_dict_copy(pdf_dict *target, pdf_dict *source);
 
 int pdf_array_get(pdf_array *a, uint64_t index, pdf_obj **o);
+int pdf_array_put(pdf_array *a, uint64_t index, pdf_obj *o);
 
 int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object);
+
+int pdf_read_xref(pdf_context *ctx);
 
 int repair_pdf_file(pdf_context *ctx);
 
