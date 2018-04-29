@@ -2813,6 +2813,7 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
     do {
         byte *last_lineend = NULL;
         uint32_t read;
+        bool found = false;
 
         if (pdf_seek(ctx, ctx->main_stream, ctx->main_stream_length - Offset, SEEK_SET) != 0) {
             emprintf1(ctx->memory, "File is smaller than %"PRIi64" bytes\n", (int64_t)Offset);
@@ -2831,6 +2832,7 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
 
         while(read) {
             if (memcmp(Buffer + read - 9, "startxref", 9) == 0) {
+                found = true;
                 break;
             } else {
                 if (Buffer[read] == 0x0a || Buffer[read] == 0x0d)
@@ -2838,7 +2840,7 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
             }
             read--;
         }
-        if (memcmp(Buffer + read - 9, "startxref", 9) == 0) {
+        if (found) {
             byte *b = Buffer + read;
 
             if(sscanf((char *)b, " %ld", &ctx->startxref) != 1) {
