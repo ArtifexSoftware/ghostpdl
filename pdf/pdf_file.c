@@ -256,6 +256,9 @@ void pdf_close_file(pdf_context *ctx, pdf_stream *s)
 
 int pdf_seek(pdf_context *ctx, pdf_stream *s, gs_offset_t offset, uint32_t origin)
 {
+    if (origin == SEEK_CUR && s->unread_size != 0)
+        offset -= s->unread_size;
+
     s->unread_size = 0;;
 
     return (sfseek(s->s, offset, origin));
