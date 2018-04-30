@@ -91,10 +91,12 @@
 typedef enum pdf_error_flag_e {
     E_PDF_NOERROR = 0,
     E_PDF_NOHEADER = 1,
-    E_PDF_NOHEADER_VERSION = 2,
-    E_PDF_NOSTARTXREF = 4,
-    E_PDF_BAD_XREF = 8,
-    E_PDF_SHORT_XREF = 16,
+    E_PDF_NOHEADERVERSION = E_PDF_NOHEADER << 1,
+    E_PDF_NOSTARTXREF = E_PDF_NOHEADER << 2,
+    E_PDF_BADXREFSTREAM = E_PDF_NOHEADER << 3,
+    E_PDF_BADXREF = E_PDF_NOHEADER << 4,
+    E_PDF_SHORTXREF = E_PDF_NOHEADER << 5,
+    E_PDF_NOENDSTREAM = E_PDF_NOHEADER << 6,
 } pdf_error_flag;
 
 #define INITIAL_STACK_SIZE 32
@@ -106,6 +108,7 @@ typedef struct pdf_context_s
 {
     void *instance;
     gs_memory_t *memory;
+    pdf_error_flag pdf_errors;
 
     int first_page;             /* -dFirstPage= */
     int last_page;              /* -dLastPage= */

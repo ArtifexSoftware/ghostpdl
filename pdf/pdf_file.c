@@ -300,7 +300,8 @@ int pdf_unread(pdf_context *ctx, pdf_stream *s, byte *Buffer, uint32_t size)
 
 int pdf_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count, pdf_stream *s)
 {
-    uint32_t i = 0, bytes = 0, total = size * count;
+    uint32_t i = 0, total = size * count;
+    int32_t bytes = 0;
 
     if (s->unread_size) {
         if (s->unread_size >= total) {
@@ -321,5 +322,8 @@ int pdf_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count
     if (total) {
         bytes = sfread(Buffer, 1, total, s->s);
     }
-    return i + bytes;
+    if (bytes >= 0)
+        return i + bytes;
+    else
+        return bytes;
 }

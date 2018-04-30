@@ -42,6 +42,9 @@ PDF_TOP_OBJS= $(PDF_TOP_OBJ) $(PDFOBJDIR)$(D)pdfimpl.$(OBJ)
 
 PDFINCLUDES=$(PDFSRC)*.h $(PDFOBJ)arch.h $(strmio_h) $(stream_h)
 
+$(PDFOBJ)pdf_path.$(OBJ): $(PDFSRC)pdf_path.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_path.c $(XPSO_)pdf_path.$(OBJ)
+
 $(PDFOBJ)pdf_loop_detect.$(OBJ): $(PDFSRC)pdf_loop_detect.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_loop_detect.c $(XPSO_)pdf_loop_detect.$(OBJ)
 
@@ -71,7 +74,8 @@ $(PDF_TOP_OBJ): $(PDFSRC)pdftop.c $(plmain_h) $(pltop_h) $(PDFINCLUDES) $(GLOBJ)
 PDF_OBJS=\
     $(PDFOBJ)pdf_loop_detect.$(OBJ)\
     $(PDFOBJ)pdf_int.$(OBJ)\
-    $(PDFOBJ)pdf_file.$(OBJ)
+    $(PDFOBJ)pdf_file.$(OBJ)\
+    $(PDFOBJ)pdf_path.$(OBJ)
 
 
 

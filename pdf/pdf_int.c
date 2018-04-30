@@ -20,6 +20,7 @@
 #include "pdf_loop_detect.h"
 #include "strmio.h"
 #include "stream.h"
+#include "pdf_path.h"
 
 /***********************************************************************************/
 /* Some simple functions to find white space, delimiters and hex bytes             */
@@ -481,6 +482,8 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             for (i=0;i < offset;i++)
             {
                 code = pdf_read_bytes(ctx, (byte *)&Buffer[0], 1, 1, compressed_stream);
+                if (code <= 0)
+                    return_error(gs_error_ioerror);
             }
 
             code = pdf_read_token(ctx, compressed_stream);
@@ -537,24 +540,29 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
  * pushed onto the stack does the reference count become 1, indicating the stack is
  * the only reference.
  */
-static void skip_white(pdf_context *ctx,pdf_stream *s)
+static int skip_white(pdf_context *ctx,pdf_stream *s)
 {
-    uint32_t bytes = 0, read = 0;
+    uint32_t read = 0;
+    int32_t bytes = 0;
     byte c;
 
     do {
         bytes = pdf_read_bytes(ctx, &c, 1, 1, s);
+        if (bytes <= 0)
+            return_error(gs_error_ioerror);
         read += bytes;
     } while (bytes != 0 && iswhite(c));
 
     if (read > 0)
         pdf_unread(ctx, s, &c, 1);
+    return 0;
 }
 
 static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
 {
     byte Buffer[256];
-    unsigned short index = 0, bytes;
+    unsigned short index = 0;
+    short bytes;
     bool real = false;
     pdf_num *num;
     int code = 0;
@@ -563,7 +571,7 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
 
     do {
         bytes = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
-        if (bytes < 0)
+        if (bytes <= 0)
             return_error(gs_error_ioerror);
 
         if (iswhite((char)Buffer[index])) {
@@ -640,7 +648,8 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
 static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
 {
     char *Buffer, *NewBuf = NULL;
-    unsigned short index = 0, bytes = 0;
+    unsigned short index = 0;
+    short bytes = 0;
     uint32_t size = 256;
     pdf_name *name = NULL;
     int code;
@@ -651,11 +660,8 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
 
     do {
         bytes = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
-
-        if (bytes == 0) {
-            Buffer[index] = 0x00;
-            break;
-        }
+        if (bytes <= 0)
+            return_error(gs_error_ioerror);
 
         if (iswhite((char)Buffer[index])) {
             Buffer[index] = 0x00;
@@ -740,7 +746,8 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
 static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
 {
     char *Buffer, *NewBuf = NULL, HexBuf[2];
-    unsigned short index = 0, bytes = 0;
+    unsigned short index = 0;
+    short bytes = 0;
     uint32_t size = 256;
     pdf_string *string = NULL;
     int code;
@@ -754,7 +761,7 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
 
     do {
         bytes = pdf_read_bytes(ctx, (byte *)HexBuf, 1, 1, s);
-        if (bytes == 0)
+        if (bytes <= 0)
             return_error(gs_error_ioerror);
 
         if (HexBuf[0] == '>')
@@ -764,7 +771,7 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
             dmprintf1(ctx->memory, "%c", HexBuf[0]);
 
         bytes = pdf_read_bytes(ctx, (byte *)&HexBuf[1], 1, 1, s);
-        if (bytes == 0)
+        if (bytes <= 0)
             return_error(gs_error_ioerror);
 
         if (!ishex(HexBuf[0]) || !ishex(HexBuf[1]))
@@ -826,7 +833,8 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
 static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
 {
     char *Buffer, *NewBuf = NULL, octal[3];
-    unsigned short index = 0, bytes = 0;
+    unsigned short index = 0;
+    short bytes = 0;
     uint32_t size = 256;
     pdf_string *string = NULL;
     int code, octal_index = 0;
@@ -839,7 +847,7 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
     do {
         bytes = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
 
-        if (bytes == 0) {
+        if (bytes <= 0) {
             Buffer[index] = 0x00;
             break;
         }
@@ -1021,7 +1029,7 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
 
 static int pdf_read_array(pdf_context *ctx, pdf_stream *s)
 {
-    unsigned short bytes = 0;
+    short bytes = 0;
     uint64_t index = 0;
     byte Buffer;
     pdf_array *a = NULL;
@@ -1040,7 +1048,7 @@ static int pdf_read_array(pdf_context *ctx, pdf_stream *s)
 
         bytes = pdf_read_bytes(ctx, &Buffer, 1, 1, s);
         
-        if (bytes == 0)
+        if (bytes <= 0)
             return_error(gs_error_ioerror);
 
         if (Buffer == ']') {
@@ -1100,7 +1108,7 @@ static int pdf_read_array(pdf_context *ctx, pdf_stream *s)
 
 static int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
 {
-    unsigned short bytes = 0;
+    short bytes = 0;
     uint64_t index = 0;
     byte Buffer[2];
     pdf_dict *d = NULL;
@@ -1119,13 +1127,13 @@ static int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
 
         bytes = pdf_read_bytes(ctx, &Buffer[0], 1, 1, s);
         
-        if (bytes == 0)
+        if (bytes <= 0)
             return_error(gs_error_ioerror);
 
         if (Buffer[0] == '>') {
             bytes = pdf_read_bytes(ctx, &Buffer[1], 1, 1, s);
             
-            if (bytes == 0)
+            if (bytes <= 0)
                 return_error(gs_error_ioerror);
 
             if (Buffer[1] == '>')
@@ -1493,16 +1501,19 @@ int pdf_array_put(pdf_array *a, uint64_t index, pdf_obj *o)
     return 0;
 }
 
-static void pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
+static int pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
 {
     byte Buffer;
-    unsigned short bytes = 0;
+    short bytes = 0;
 
     if (ctx->pdfdebug)
         dmprintf (ctx->memory, " %%");
 
     do {
         bytes = pdf_read_bytes(ctx, (byte *)&Buffer, 1, 1, s);
+        if (bytes <= 0)
+            return_error(gs_error_ioerror);
+
         if (ctx->pdfdebug)
             dmprintf1 (ctx->memory, " %c", Buffer);
 
@@ -1510,6 +1521,7 @@ static void pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
             break;
         }
     } while (bytes);
+    return 0;
 }
 
 /* This function is slightly misnamed, for some keywords we do
@@ -1521,7 +1533,8 @@ static void pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
 static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
 {
     byte Buffer[256], b;
-    unsigned short index = 0, bytes = 0;
+    unsigned short index = 0;
+    short bytes = 0;
     int code;
     pdf_keyword *keyword;
 
@@ -1529,6 +1542,9 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
 
     do {
         bytes = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
+        if (bytes <= 0)
+            return_error(gs_error_ioerror);
+
         if (iswhite(Buffer[index])) {
             break;
         } else {
@@ -1630,6 +1646,8 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 keyword->key = PDF_STREAM;
                 do{
                     bytes = pdf_read_bytes(ctx, &b, 1, 1, s);
+                    if (bytes <= 0)
+                        return_error(gs_error_ioerror);
                     if (!iswhite(b))
                         break;
                 }while (1);
@@ -1741,7 +1759,7 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
     skip_white(ctx, s);
 
     bytes = pdf_read_bytes(ctx, (byte *)Buffer, 1, 1, s);
-    if (bytes == 0)
+    if (bytes <= 0)
         return (gs_error_ioerror);
 
     switch(Buffer[0]) {
@@ -1768,7 +1786,7 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
             break;
         case '<':
             bytes = pdf_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
-            if (bytes == 0)
+            if (bytes <= 0)
                 return (gs_error_ioerror);
             if (Buffer[1] == '<') {
                 return pdf_read_dict(ctx, s);
@@ -2198,7 +2216,7 @@ static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t fi
     uint32_t type = 0;
     uint64_t objnum = 0, gen = 0;
     byte *Buffer;
-    uint64_t bytes = 0;
+    int64_t bytes = 0;
     xref_entry *entry;
 
     if (W[0] > W[1]) {
@@ -2551,7 +2569,8 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
     int code = 0, i, j;
     pdf_obj *o = NULL;
     pdf_dict *d = NULL;
-    uint64_t start = 0, size = 0, bytes = 0;
+    uint64_t start = 0, size = 0;
+    int64_t bytes = 0;
     int64_t num;
     char Buffer[21];
 
@@ -2775,7 +2794,9 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
     byte *Buffer = NULL;
     char *s = NULL;
     float version = 0.0;
-    gs_offset_t Offset = 0, bytes = 0;
+    gs_offset_t Offset = 0;
+    int64_t bytes = 0;
+    bool found = false;
 
     if (ctx->pdfdebug)
         dmprintf1(ctx->memory, "%% Attempting to open %s as a PDF file\n", filename);
@@ -2810,7 +2831,7 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
         dmprintf(ctx->memory, "%% Reading header\n");
 
     bytes = pdf_read_bytes(ctx, Buffer, 1, Offset, ctx->main_stream);
-    if (bytes == 0) {
+    if (bytes <= 0) {
         emprintf(ctx->memory, "Failed to read any bytes from file\n");
         cleanup_pdf_open_file(ctx, Buffer);
         return_error(gs_error_ioerror);
@@ -2821,12 +2842,14 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
     if (s == NULL) {
         if (ctx->pdfdebug)
             dmprintf1(ctx->memory, "%% File %s does not appear to be a PDF file (no %%PDF in first 2Kb of file)\n", filename);
+        ctx->pdf_errors |= E_PDF_NOHEADER;
     } else {
         /* Now extract header version (may be overridden later) */
         if (sscanf(s + 5, "%f", &version) != 1) {
             if (ctx->pdfdebug)
                 dmprintf(ctx->memory, "%% Unable to read PDF version from header\n");
             ctx->HeaderVersion = 0;
+            ctx->pdf_errors |= E_PDF_NOHEADERVERSION;
         }
         else {
             ctx->HeaderVersion = version;
@@ -2845,7 +2868,6 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
     do {
         byte *last_lineend = NULL;
         uint32_t read;
-        bool found = false;
 
         if (pdf_seek(ctx, ctx->main_stream, ctx->main_stream_length - Offset, SEEK_SET) != 0) {
             emprintf1(ctx->memory, "File is smaller than %"PRIi64" bytes\n", (int64_t)Offset);
@@ -2854,7 +2876,7 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
         }
         read = pdf_read_bytes(ctx, Buffer, 1, bytes, ctx->main_stream);
 
-        if (read == 0) {
+        if (read <= 0) {
             emprintf1(ctx->memory, "Failed to read %"PRIi64" bytes from file\n", (int64_t)bytes);
             cleanup_pdf_open_file(ctx, Buffer);
             return_error(gs_error_ioerror);
@@ -2889,6 +2911,9 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
 
         Offset += bytes;
     } while(Offset < ctx->main_stream_length);
+
+    if (!found)
+        ctx->pdf_errors |= E_PDF_NOSTARTXREF;
 
     gs_free_object(ctx->memory, Buffer, "PDF interpreter - allocate working buffer for file validation");
     return 0;
@@ -3550,8 +3575,235 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
     return 1;
 }
 
+int split_bogus_operator(pdf_context *ctx)
+{
+    /* FIXME Need to write this, place holder for now */
+    return_error(gs_error_undefined);
+}
+
+#define K1(a) (a)
+#define K2(a, b) ((a << 8) + b)
+#define K3(a, b, c) ((a << 16) + (b << 8) + c)
+
+int pdf_interpret_stream_operator(pdf_context *ctx)
+{
+    pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1];
+    uint32_t op = 0;
+    int i, code = 0;
+
+    if (keyword->length > 3) {
+        /* This means we either have a corrupted or illegal operator. The most
+         * usual corruption is two concatented operators (eg QBT instead of Q BT)
+         * I plan to tackle this by trying to see if I can make two or more operators
+         * out of the mangled one. Note this will also be done below in the 'default'
+         * case where we don't recognise a keyword with 3 or fewer characters.
+         */
+        code = split_bogus_operator(ctx);
+        if (code < 0)
+            return code;
+    } else {
+        for (i=0;i < keyword->length;i++) {
+            op = (op << 8) + keyword->data[i];
+        }
+        switch(op) {
+            case K1('b'):           /* closepath, fill, stroke */
+                break;
+            case K1('B'):           /* fill, stroke */
+                break;
+            case K2('b','*'):       /* closepath, eofill, stroke */
+                break;
+            case K2('B','*'):       /* eofill, stroke */
+                break;
+            case K3('B','D','C'):   /* begin marked content sequence with property list */
+                break;
+            case K2('B','I'):       /* begin inline image */
+                break;
+            case K3('B','M','C'):   /* begin marked content sequence */
+                break;
+            case K2('B','T'):       /* begin text */
+                break;
+            case K2('B','X'):       /* begin compatibility section */
+                break;
+            case K1('c'):           /* curveto */
+                break;
+            case K2('c','m'):       /* concat */
+                break;
+            case K2('C','S'):       /* set stroke colour space */
+                break;
+            case K2('c','s'):       /* set non-stroke colour space */
+                break;
+            case K1('d'):           /* set dash params */
+                break;
+            case K2('d','0'):       /* set type 3 font glyph width */
+                break;
+            case K2('d','1'):       /* set type 3 font glyph width and bounding box */
+                break;
+            case K2('D','o'):       /* invoke named XObject */
+                break;
+            case K2('D','P'):       /* define marked content point with property list */
+                break;
+            case K2('E','I'):       /* end inline image */
+                break;
+            case K2('E','T'):       /* end text */
+                break;
+            case K2('E','X'):       /* end compatibility section */
+                break;
+            case K1('f'):           /* fill */
+                break;
+            case K1('F'):           /* fill (obselete operator) */
+                break;
+            case K2('f','*'):       /* eofill */
+                break;
+            case K1('G'):           /* setgray for stroke */
+                break;
+            case K1('g'):           /* setgray for non-stroke */
+                break;
+            case K2('g','s'):       /* set graphics state from dictionary */
+                break;
+            case K1('h'):           /* closepath */
+                break;
+            case K1('i'):           /* setflat */
+                break;
+            case K2('I','D'):       /* begin inline image data */
+                break;
+            case K1('j'):           /* setlinejoin */
+                break;
+            case K1('J'):           /* setlinecap */
+                break;
+            case K1('K'):           /* setcmyk for non-stroke */
+                break;
+            case K1('k'):           /* setcmyk for non-stroke */
+                break;
+            case K1('l'):           /* lineto */
+                break;
+            case K1('m'):           /* moveto */
+                pdf_pop(ctx, 1);
+                code = pdf_moveto(ctx);
+                break;
+            case K1('M'):           /* setmiterlimit */
+                break;
+            case K2('M','P'):       /* define marked content point */
+                break;
+            case K1('n'):           /* newpath */
+                break;
+            case K1('q'):           /* gsave */
+                break;
+            case K1('Q'):           /* grestore */
+                break;
+            case K2('r','e'):       /* append rectangle */
+                break;
+            case K2('R','G'):       /* set rgb colour for stroke */
+                break;
+            case K2('r','g'):       /* set rgb colour for non-stroke */
+                break;
+            case K2('r','i'):       /* set rendering intent */
+                break;
+            case K1('s'):           /* closepath, stroke */
+                break;
+            case K1('S'):           /* stroke */
+                break;
+            case K2('S','C'):       /* set colour for stroke */
+                break;
+            case K2('s','c'):       /* set colour for non-stroke */
+                break;
+            case K3('S','C','N'):   /* set special colour for stroke */
+                break;
+            case K3('s','c','n'):   /* set special colour for non-stroke */
+                break;
+            case K2('s','h'):       /* fill with sahding pattern */
+                break;
+            case K2('T','*'):       /* Move to start of next text line */
+                break;
+            case K2('T','c'):       /* set character spacing */
+                break;
+            case K2('T','d'):       /* move text position */
+                break;
+            case K2('T','D'):       /* Move text position, set leading */
+                break;
+            case K2('T','f'):       /* set font and size */
+                break;
+            case K2('T','j'):       /* show text */
+                break;
+            case K2('T','J'):       /* show text with individual glyph positioning */
+                break;
+            case K2('T','L'):       /* set text leading */
+                break;
+            case K2('T','m'):       /* set text matrix */
+                break;
+            case K2('T','r'):       /* set text rendering mode */
+                break;
+            case K2('T','s'):       /* set text rise */
+                break;
+            case K2('T','w'):       /* set word spacing */
+                break;
+            case K2('T','z'):       /* set text matrix */
+                break;
+            case K1('v'):           /* append curve (initial point replicated) */
+                break;
+            case K1('w'):           /* setlinewidth */
+                break;
+            case K1('W'):           /* clip */
+                break;
+            case K2('W','*'):       /* eoclip */
+                break;
+            case K1('y'):           /* append curve (final point replicated) */
+                break;
+            case K1('\''):          /* move to next line and show text */
+                break;
+            case K1('"'):           /* set word and character spacing, move to next line, show text */
+                break;
+            default:
+                code = split_bogus_operator(ctx);
+                if (code < 0)
+                    return code;
+                break;
+       }
+    }
+    return code;
+}
+
 int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
 {
+    int code;
+    pdf_stream *compressed_stream;
+    pdf_keyword *keyword;
+
+    code = pdf_seek(ctx, ctx->main_stream, stream_dict->stream_offset, SEEK_SET);
+    if (code < 0)
+        return code;
+
+    code = pdf_filter(ctx, stream_dict, ctx->main_stream, &compressed_stream);
+    if (code < 0)
+        return code;
+
+    do {
+        code = pdf_read_token(ctx, compressed_stream);
+        if (code < 0)
+            return code;
+
+        if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
+            keyword = (pdf_keyword *)ctx->stack_top[-1];
+
+            switch(keyword->key) {
+                case PDF_ENDSTREAM:
+                    pdf_clearstack(ctx);
+                    return 0;
+                    break;
+                case PDF_NOT_A_KEYWORD:
+                    code = pdf_interpret_stream_operator(ctx);
+                    if (code < 0) {
+                        pdf_clearstack(ctx);
+                        return code;
+                    }
+                    break;
+                default:
+                    ctx->pdf_errors |= E_PDF_NOENDSTREAM;
+                    pdf_clearstack(ctx);
+                    return_error(gs_error_typecheck);
+                    break;
+            }
+        }
+    }while(1);
     return 0;
 }
 
@@ -3715,14 +3967,17 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
             /* If its a hybrid file, and we failed to read the XrefStm, try
              * again, but this time read the xref table instead.
              */
+            ctx->pdf_errors |= E_PDF_BADXREFSTREAM;
             pdf_countdown(ctx->xref_table);
             ctx->xref_table = NULL;
             ctx->prefer_xrefstm = false;
             code = pdf_read_xref(ctx);
             if (code < 0)
                 return code;
-        } else
+        } else {
+            ctx->pdf_errors |= E_PDF_BADXREF;
             return code;
+        }
     }
 
     code = pdf_read_Root(ctx);
@@ -3731,12 +3986,15 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
          * from a hybrid file, then try again, but this time use the xref table
          */
         if (code == gs_error_undefined && ctx->is_hybrid && ctx->prefer_xrefstm) {
+            ctx->pdf_errors |= E_PDF_BADXREFSTREAM;
             pdf_countdown(ctx->xref_table);
             ctx->xref_table = NULL;
             ctx->prefer_xrefstm = false;
             code = pdf_read_xref(ctx);
-            if (code < 0)
+            if (code < 0) {
+                ctx->pdf_errors |= E_PDF_BADXREF;
                 return code;
+            }
             code = pdf_read_Root(ctx);
             if (code < 0)
                 return code;
