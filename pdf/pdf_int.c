@@ -1729,7 +1729,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
     return code;
 }
 
-/* This function reads form the given stream, at the current offset in the stream,
+/* This function reads from the given stream, at the current offset in the stream,
  * a single PDF 'token' and returns it on the stack.
  */
 int pdf_read_token(pdf_context *ctx, pdf_stream *s)
@@ -3191,11 +3191,10 @@ static int pdf_read_Pages(pdf_context *ctx)
 static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t *page_offset, pdf_dict **target, pdf_dict *inherited)
 {
     int i, code = 0;
-    pdf_num *Count;
-    pdf_array *Kids;
-    pdf_indirect_ref *node;
-    pdf_dict *child;
-    pdf_name *Type;
+    pdf_array *Kids = NULL;
+    pdf_indirect_ref *node = NULL;
+    pdf_dict *child = NULL;
+    pdf_name *Type = NULL;
     pdf_dict *inheritable = NULL;
     int64_t num;
     bool known;
@@ -3466,100 +3465,84 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
         }
         /* Check the type, if its a Pages entry, then recurse. If its a Page entry, is it the one we want */
         code = pdf_dict_get_type(child, "Type", PDF_NAME, (pdf_obj **)&Type);
+        if (code == 0) {
+            if (Type->length == 5 && memcmp(Type->data, "Pages", 5) == 0) {
+                code = pdf_dict_get_int(child, "Count", &num);
+                if (code == 0) {
+                    if (num < 0 || (num + *page_offset) > ctx->num_pages) {
+                        code = gs_error_rangecheck;
+                    } else {
+                        if (num + *page_offset <= page_num) {
+                            pdf_countdown(child);
+                            child = NULL;
+                            pdf_countdown(Type);
+                            Type = NULL;
+                            *page_offset += num;
+                        } else {
+                            code = pdf_get_page_dict(ctx, child, page_num, page_offset, target, inheritable);
+                            pdf_countdown(Type);
+                            pdf_countdown(Kids);
+                            pdf_countdown(child);
+                            return 0;
+                        }
+                    }
+                }
+            } else {
+                if (Type->length == 7 && memcmp(Type->data, "PageRef", 7) == 0) {
+                    pdf_countdown(Type);
+                    Type = NULL;
+                    if ((i + *page_offset) == page_num) {
+                        pdf_indirect_ref *o = NULL;
+                        pdf_dict *d = NULL;
+                        code = pdf_dict_get(child, "PageRef", (pdf_obj **)&o);
+                        if (code == 0) {
+                            code = pdf_dereference(ctx, o->ref_object_num, o->ref_generation_num, (pdf_obj **)&d);
+                            if (code == 0) {
+                                if (inheritable != NULL) {
+                                    code = pdf_merge_dicts(d, inheritable);
+                                    pdf_countdown(inheritable);
+                                    inheritable = NULL;
+                                }
+                                if (code == 0) {
+                                    pdf_countdown(Kids);
+                                    *target = d;
+                                    pdf_countup(*target);
+                                    pdf_countdown(d);
+                                    return 0;
+                                }
+                            }
+                        }
+                    } else
+                        pdf_countdown(child);
+                } else {
+                    if (Type->length == 4 && memcmp(Type->data, "Page", 4) == 0) {
+                        pdf_countdown(Type);
+                        Type = NULL;
+                        if ((i + *page_offset) == page_num) {
+                            if (inheritable != NULL) {
+                                code = pdf_merge_dicts(child, inheritable);
+                            }
+                            if (code == 0) {
+                                pdf_countdown(inheritable);
+                                pdf_countdown(Kids);
+                                *target = child;
+                                pdf_countup(*target);
+                                pdf_countdown(child);
+                                return 0;
+                            }
+                        } else
+                            pdf_countdown(child);
+                    } else
+                        code = gs_error_typecheck;
+                }
+            }
+        }
         if (code < 0) {
             pdf_countdown(inheritable);
             pdf_countdown(Kids);
             pdf_countdown(child);
+            pdf_countdown(Type);
             return code;
-        }
-        if (Type->length == 5 && memcmp(Type->data, "Pages", 5) == 0) {
-            code = pdf_dict_get_int(child, "Count", &num);
-            if (code < 0) {
-                pdf_countdown(inheritable);
-                pdf_countdown(Kids);
-                pdf_countdown(child);
-                pdf_countdown(Type);
-                return code;
-            }
-            if (num < 0 || (num + *page_offset) > ctx->num_pages) {
-                pdf_countdown(inheritable);
-                pdf_countdown(Kids);
-                pdf_countdown(child);
-                pdf_countdown(Type);
-                return_error(gs_error_rangecheck);
-            }
-            if (num + *page_offset <= page_num) {
-                pdf_countdown(child);
-                pdf_countdown(Type);
-                *page_offset += num;
-            } else {
-                /* The requested page is a descendant of this node */
-                pdf_countdown(Type);
-                code = pdf_get_page_dict(ctx, child, page_num, page_offset, target, inheritable);
-                pdf_countdown(inheritable);
-                pdf_countdown(child);
-                pdf_countdown(Kids);
-                return code;
-            }
-        } else {
-            if (Type->length == 7 && memcmp(Type->data, "PageRef", 7) == 0) {
-                pdf_countdown(Type);
-                if ((i + *page_offset) == page_num) {
-                    pdf_indirect_ref *o;
-                    pdf_dict *d;
-                    code = pdf_dict_get(child, "PageRef", (pdf_obj **)&o);
-                    if (code == 0) {
-                        code = pdf_dereference(ctx, o->ref_object_num, o->ref_generation_num, (pdf_obj **)&d);
-                        if (code == 0) {
-                            if (inheritable != NULL) {
-                                code = pdf_merge_dicts(d, inheritable);
-                                pdf_countdown(inheritable);
-                                inheritable = NULL;
-                           }
-                        }
-                    }
-                    if (code < 0) {
-                        pdf_countdown(inheritable);
-                        pdf_countdown(Kids);
-                        pdf_countdown(d);
-                    }
-                    pdf_countdown(Kids);
-                    *target = d;
-                    pdf_countup(*target);
-                    pdf_countdown(d);
-                    return 0;
-                } else
-                    pdf_countdown(child);
-            } else {
-                if (Type->length == 4 && memcmp(Type->data, "Page", 4) == 0) {
-                    pdf_countdown(Type);
-                    if ((i + *page_offset) == page_num) {
-                        if (inheritable != NULL) {
-                            code = pdf_merge_dicts(child, inheritable);
-                            if (code < 0) {
-                                pdf_countdown(inheritable);
-                                pdf_countdown(Kids);
-                                pdf_countdown(child);
-                                return code;
-                            }
-                            pdf_countdown(inheritable);
-                        }
-                        pdf_countdown(Kids);
-                        *target = child;
-                        pdf_countup(*target);
-                        pdf_countdown(child);
-                        return 0;
-                    } else {
-                        pdf_countdown(child);
-                    }
-                } else {
-                    pdf_countdown(inheritable);
-                    pdf_countdown(Kids);
-                    pdf_countdown(child);
-                    pdf_countdown(Type);
-                    return_error(gs_error_typecheck);
-                }
-            }
         }
     }
     /* Positive return value indicates we did not find the target below this node, try the next one */
