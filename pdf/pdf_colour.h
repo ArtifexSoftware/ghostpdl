@@ -18,6 +18,8 @@
 #ifndef PDF_COLOUR_OPERATORS
 #define PDF_COLOUR_OPERATORS
 
+#include "gscolor1.h"
+
 int pdf_setgraystroke(pdf_context *ctx);
 int pdf_setgrayfill(pdf_context *ctx);
 int pdf_setrgbstroke(pdf_context *ctx);

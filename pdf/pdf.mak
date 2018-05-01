@@ -46,7 +46,7 @@ PDFINCLUDES=$(PDFSRC)*.h $(PDFOBJ)arch.h $(strmio_h) $(stream_h) $(gsmatrix_h) $
 $(PDFOBJ)pdf_gstate.$(OBJ): $(PDFSRC)pdf_gstate.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_gstate.c $(XPSO_)pdf_gstate.$(OBJ)
 
-$(PDFOBJ)pdf_colour.$(OBJ): $(PDFSRC)pdf_colour.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+$(PDFOBJ)pdf_colour.$(OBJ): $(PDFSRC)pdf_colour.c $(PDFINCLUDES) $(gscolor1_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_colour.c $(XPSO_)pdf_colour.$(OBJ)
 
 $(PDFOBJ)pdf_path.$(OBJ): $(PDFSRC)pdf_path.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
@@ -55,7 +55,7 @@ $(PDFOBJ)pdf_path.$(OBJ): $(PDFSRC)pdf_path.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDI
 $(PDFOBJ)pdf_loop_detect.$(OBJ): $(PDFSRC)pdf_loop_detect.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_loop_detect.c $(XPSO_)pdf_loop_detect.$(OBJ)
 
-$(PDFOBJ)pdf_int.$(OBJ): $(PDFSRC)pdf_int.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+$(PDFOBJ)pdf_int.$(OBJ): $(PDFSRC)pdf_int.c $(PDFINCLUDES) $(plmain_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_int.c $(XPSO_)pdf_int.$(OBJ)
 
 $(PDFOBJ)pdf_file.$(OBJ): $(PDFSRC)pdf_file.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)

@@ -183,7 +183,6 @@ int pdf_y_curveto(pdf_context *ctx)
     int i, code;
     pdf_num *num;
     double Values[4];
-    gs_point pt;
 
     if (ctx->stack_top - ctx->stack_bot < 4)
         return_error(gs_error_stackunderflow);

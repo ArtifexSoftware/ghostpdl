@@ -15,6 +15,7 @@
 
 /* The PDF interpreter written in C */
 
+#include "plmain.h"
 #include "pdf_int.h"
 #include "pdf_file.h"
 #include "pdf_loop_detect.h"
@@ -22,6 +23,7 @@
 #include "stream.h"
 #include "pdf_path.h"
 #include "pdf_colour.h"
+#include "pdf_gstate.h"
 
 /***********************************************************************************/
 /* Some simple functions to find white space, delimiters and hex bytes             */
@@ -1942,7 +1944,6 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
         return 0;
     }
     if (keyword->key == PDF_STREAM) {
-        pdf_obj *o = NULL;
         pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
         gs_offset_t offset;
 
@@ -2358,7 +2359,6 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
 {
     pdf_stream *XRefStrm;
     int code, i;
-    pdf_obj *o;
     pdf_name *n;
     pdf_array *a;
     int64_t size;
@@ -3633,7 +3633,7 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
     return 1;
 }
 
-int split_bogus_operator(pdf_context *ctx)
+static int split_bogus_operator(pdf_context *ctx)
 {
     /* FIXME Need to write this, place holder for now */
     return_error(gs_error_undefined);
@@ -3643,7 +3643,7 @@ int split_bogus_operator(pdf_context *ctx)
 #define K2(a, b) ((a << 8) + b)
 #define K3(a, b, c) ((a << 16) + (b << 8) + c)
 
-int pdf_interpret_stream_operator(pdf_context *ctx)
+static int pdf_interpret_stream_operator(pdf_context *ctx)
 {
     pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1];
     uint32_t op = 0;
@@ -3880,7 +3880,7 @@ int pdf_interpret_stream_operator(pdf_context *ctx)
     return code;
 }
 
-int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
+static int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
 {
     int code;
     pdf_stream *compressed_stream;
@@ -3928,11 +3928,10 @@ int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
     return 0;
 }
 
-int pdf_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
+static int pdf_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
 {
     int i, code = 0;
     pdf_obj *o, *o1;
-    pdf_dict *content_stream;
 
     code = pdf_dict_get(page_dict, "Contents", &o);
     if (code < 0)
