@@ -146,3 +146,71 @@ int pdf_setflat(pdf_context *ctx)
         pdf_pop(ctx, 1);
     return code;
 }
+
+int pdf_setdash(pdf_context *ctx)
+{
+    pdf_num *phase;
+    pdf_array *a;
+    float *dash_array;
+    double phase_d, temp;
+    int i, code;
+
+    if (ctx->stack_top - ctx->stack_bot < 1)
+        return_error(gs_error_stackunderflow);
+
+    phase = (pdf_num *)ctx->stack_top[-1];
+    if (phase->type == PDF_INT){
+        phase_d = (double)phase->value.i;
+    } else{
+        if (phase->type == PDF_REAL) {
+            phase_d = phase->value.d;
+        } else
+            return_error(gs_error_typecheck);
+    }
+
+    a = (pdf_array *)ctx->stack_top[-2];
+    if (a->type != PDF_ARRAY)
+        return_error(gs_error_typecheck);
+
+    dash_array = (float *)gs_alloc_bytes(ctx->memory, a->entries * sizeof (float), "temporary float array for setdash");
+    if (dash_array == NULL)
+        return_error(gs_error_VMerror);
+
+    for (i=0;i < a->entries;i++){
+        code = pdf_array_get_number(ctx, a, (uint64_t)i, &temp);
+        if (code < 0) {
+            gs_free_object(ctx->memory, dash_array, "error in setdash");
+            return code;
+        }
+        dash_array[i] = (float)temp;
+    }
+    code = gs_setdash(ctx->pgs, dash_array, a->entries, phase_d);
+    gs_free_object(ctx->memory, dash_array, "error in setdash");
+    if (code == 0)
+        pdf_pop(ctx, 2);
+    return code;
+}
+
+int pdf_setmiterlimit(pdf_context *ctx)
+{
+    int code;
+    pdf_num *n1;
+    double d1;
+
+    if (ctx->stack_top - ctx->stack_bot < 1)
+        return_error(gs_error_stackunderflow);
+
+    n1 = (pdf_num *)ctx->stack_top[-1];
+    if (n1->type == PDF_INT){
+        d1 = (double)n1->value.i;
+    } else{
+        if (n1->type == PDF_REAL) {
+            d1 = n1->value.d;
+        } else
+            return_error(gs_error_typecheck);
+    }
+    code = gs_setmiterlimit(ctx->pgs, d1);
+    if (code == 0)
+        pdf_pop(ctx, 1);
+    return code;
+}

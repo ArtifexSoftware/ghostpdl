@@ -293,3 +293,41 @@ int pdf_eoclip(pdf_context *ctx)
 {
     return gs_eoclip(ctx->pgs);
 }
+
+int pdf_rectpath(pdf_context *ctx)
+{
+    int i, code;
+    pdf_num *num;
+    double Values[4];
+
+    if (ctx->stack_top - ctx->stack_bot < 4)
+        return_error(gs_error_stackunderflow);
+
+    for (i=0;i < 4;i++){
+        num = (pdf_num *)ctx->stack_top[i - 4];
+        if (num->type != PDF_INT) {
+            if(num->type != PDF_REAL)
+                return_error(gs_error_typecheck);
+            else
+                Values[i] = num->value.d;
+        } else {
+            Values[i] = (double)num->value.i;
+        }
+    }
+    code = gs_moveto(ctx->pgs, Values[0], Values[1]);
+    if (code == 0) {
+        code = gs_lineto(ctx->pgs, Values[0], Values[1] + Values[2]);
+        if (code == 0){
+            code = gs_lineto(ctx->pgs, Values[0] + Values[4], Values[1] + Values[2]);
+            if (code == 0) {
+                code = gs_lineto(ctx->pgs, Values[0] + Values[4], Values[1]);
+                if (code == 0){
+                    code = gs_closepath(ctx->pgs);
+                }
+            }
+        }
+    }
+    if (code == 0)
+        pdf_pop(ctx, 4);
+    return code;
+}

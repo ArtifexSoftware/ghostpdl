@@ -35,5 +35,6 @@ int pdf_B(pdf_context *ctx);
 int pdf_B_star(pdf_context *ctx);
 int pdf_clip(pdf_context *ctx);
 int pdf_eoclip(pdf_context *ctx);
+int pdf_rectpath(pdf_context *ctx);
 
 #endif

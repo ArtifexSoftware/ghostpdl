@@ -612,23 +612,25 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
     num->memory = ctx->memory;
 
     if (real) {
-        float temp;
+        float tempf;
         num->type = PDF_REAL;
-        if (sscanf((const char *)Buffer, "%f", &temp) == 0) {
+        if (sscanf((const char *)Buffer, "%f", &tempf) == 0) {
             if (ctx->pdfdebug)
                 dmprintf1(ctx->memory, "failed to read real number : %s\n", Buffer);
             gs_free_object(num->memory, num, "pdf_read_num error");
             return_error(gs_error_syntaxerror);
         }
-        num->value.d = temp;
+        num->value.d = tempf;
     } else {
+        int tempi;
         num->type = PDF_INT;
-        if (sscanf((const char *)Buffer, "%d", &num->value.i) == 0) {
+        if (sscanf((const char *)Buffer, "%d", &tempi) == 0) {
             if (ctx->pdfdebug)
                 dmprintf1(ctx->memory, "failed to read integer : %s\n", Buffer);
             gs_free_object(num->memory, num, "pdf_read_num error");
             return_error(gs_error_syntaxerror);
         }
+        num->value.i = tempi;
     }
 
     if (ctx->pdfdebug) {
@@ -2681,7 +2683,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
         dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
 #endif
 
-        memset(ctx->xref_table->xref, 0x00, ((pdf_num *)o)->value.i * sizeof(xref_entry));
+        memset(ctx->xref_table->xref, 0x00, (start + size) * sizeof(xref_entry));
         ctx->xref_table->memory = ctx->memory;
         ctx->xref_table->type = PDF_XREF_TABLE;
         ctx->xref_table->xref_size = start + size;
@@ -3703,6 +3705,8 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
             case K2('c','s'):       /* set non-stroke colour space */
                 break;
             case K1('d'):           /* set dash params */
+                pdf_pop(ctx, 1);
+                code = pdf_setdash(ctx);
                 break;
             case K2('d','0'):       /* set type 3 font glyph width */
                 break;
@@ -3713,6 +3717,8 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
             case K2('D','P'):       /* define marked content point with property list */
                 break;
             case K2('E','I'):       /* end inline image */
+                break;
+            case K3('E','M','C'):   /* end marked content sequence */
                 break;
             case K2('E','T'):       /* end text */
                 break;
@@ -3775,6 +3781,8 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 code = pdf_moveto(ctx);
                 break;
             case K1('M'):           /* setmiterlimit */
+                pdf_pop(ctx, 1);
+                code = pdf_setmiterlimit(ctx);
                 break;
             case K2('M','P'):       /* define marked content point */
                 break;
@@ -3791,6 +3799,8 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 code = pdf_grestore(ctx);
                 break;
             case K2('r','e'):       /* append rectangle */
+                pdf_pop(ctx, 1);
+                code = pdf_rectpath(ctx);
                 break;
             case K2('R','G'):       /* set rgb colour for stroke */
                 pdf_pop(ctx, 1);
@@ -3877,6 +3887,7 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 break;
        }
     }
+    pdf_clearstack(ctx);
     return code;
 }
 
@@ -3891,8 +3902,12 @@ static int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
         return code;
 
     code = pdf_filter(ctx, stream_dict, ctx->main_stream, &compressed_stream);
+    if (code == gs_error_undefined) {
+        compressed_stream = ctx->main_stream;
+        code = 0;
+    }
     if (code < 0)
-        return code;
+            return code;
 
     do {
         code = pdf_read_token(ctx, compressed_stream);

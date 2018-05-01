@@ -25,5 +25,7 @@ int pdf_setlinewidth(pdf_context *ctx);
 int pdf_setlinejoin(pdf_context *ctx);
 int pdf_setlinecap(pdf_context *ctx);
 int pdf_setflat(pdf_context *ctx);
+int pdf_setdash(pdf_context *ctx);
+int pdf_setmiterlimit(pdf_context *ctx);
 
 #endif
