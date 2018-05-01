@@ -1249,6 +1249,7 @@ int pdf_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_ty
 
     if ((*o)->type != type) {
         if ((*o)->type == PDF_INDIRECT){
+            pdf_name *NewKey = NULL;
             pdf_obj *o1 = NULL;
             pdf_indirect_ref *r = (pdf_indirect_ref *)*o;
 
@@ -1258,6 +1259,11 @@ int pdf_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_ty
             if (code < 0)
                 return code;
 
+            code = pdf_make_name(ctx, (byte *)Key, strlen(Key), (pdf_obj **)&NewKey);
+            if (code == 0) {
+                (void)pdf_dict_put(d, NewKey, o1);
+                pdf_countdown(NewKey);
+            }
             if (o1->type != type) {
                 pdf_countdown(o1);
                 return_error(gs_error_typecheck);
@@ -1476,9 +1482,28 @@ int pdf_array_get_type(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj_t
         return code;
 
     if ((*o)->type != type) {
-        pdf_countdown(*o);
-        *o = NULL;
-        return_error(gs_error_typecheck);
+        if ((*o)->type == PDF_INDIRECT){
+            pdf_obj *o1 = NULL;
+            pdf_indirect_ref *r = (pdf_indirect_ref *)*o;
+
+            code = pdf_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
+            pdf_countdown(*o);
+            *o = NULL;
+            if (code < 0)
+                return code;
+
+            (void)pdf_array_put(a, index, o1);
+
+            if (o1->type != type) {
+                pdf_countdown(o1);
+                return_error(gs_error_typecheck);
+            }
+            *o = o1;
+        } else {
+            pdf_countdown(*o);
+            *o = NULL;
+            return_error(gs_error_typecheck);
+        }
     }
     return 0;
 }
