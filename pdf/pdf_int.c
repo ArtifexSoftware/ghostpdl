@@ -549,8 +549,10 @@ static int skip_white(pdf_context *ctx,pdf_stream *s)
 
     do {
         bytes = pdf_read_bytes(ctx, &c, 1, 1, s);
-        if (bytes <= 0)
+        if (bytes < 0)
             return_error(gs_error_ioerror);
+        if (bytes == 0)
+            return 0;
         read += bytes;
     } while (bytes != 0 && iswhite(c));
 
@@ -1261,7 +1263,7 @@ int pdf_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_ty
 
             code = pdf_make_name(ctx, (byte *)Key, strlen(Key), (pdf_obj **)&NewKey);
             if (code == 0) {
-                (void)pdf_dict_put(d, NewKey, o1);
+                (void)pdf_dict_put(d, (pdf_obj *)NewKey, o1);
                 pdf_countdown(NewKey);
             }
             if (o1->type != type) {
@@ -1813,8 +1815,10 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
     skip_white(ctx, s);
 
     bytes = pdf_read_bytes(ctx, (byte *)Buffer, 1, 1, s);
-    if (bytes <= 0)
+    if (bytes < 0)
         return (gs_error_ioerror);
+    if (bytes == 0 && s->eof)
+        return 0;
 
     switch(Buffer[0]) {
         case 0x30:
@@ -3895,6 +3899,9 @@ int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
         if (code < 0)
             return code;
 
+        if(compressed_stream->eof == true)
+            break;
+
         if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
             keyword = (pdf_keyword *)ctx->stack_top[-1];
 
@@ -4045,10 +4052,10 @@ int pdf_render_page(pdf_context *ctx, uint64_t page_num)
     }
 
     code = pdf_process_page_contents(ctx, page_dict);
-/*    if (code < 0) {
+    if (code < 0) {
         pdf_countdown(page_dict);
         return code;
-    }*/
+    }
 
     pdf_countdown(page_dict);
 

@@ -162,6 +162,7 @@ typedef struct xref_s {
 #define UNREAD_BUFFER_SIZE 256
 
 typedef struct pdf_stream_s {
+    bool eof;
     stream *s;
     uint32_t unread_size;
     char unget_buffer[UNREAD_BUFFER_SIZE];

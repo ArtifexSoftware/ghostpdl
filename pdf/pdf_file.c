@@ -226,6 +226,7 @@ int pdf_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **n
         if (*new_stream == NULL)
             return_error(gs_error_VMerror);
         memset(*new_stream, 0x00, sizeof(pdf_stream));
+        (*new_stream)->eof = false;
         ((pdf_stream *)(*new_stream))->s = temp_stream;
         return 0;
     }
@@ -324,6 +325,11 @@ int pdf_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count
     }
     if (bytes >= 0)
         return i + bytes;
-    else
+    else {
+        if (bytes == EOFC){
+            s->eof = true;
+            return 0;
+        }
         return bytes;
+    }
 }
