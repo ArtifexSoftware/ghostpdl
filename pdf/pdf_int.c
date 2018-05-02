@@ -475,6 +475,9 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
 
     do {
         bytes = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
+        if (bytes == 0 && s->eof)
+            break;
+
         if (bytes <= 0)
             return_error(gs_error_ioerror);
 
@@ -566,6 +569,8 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
 
     do {
         bytes = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
+        if (bytes == 0 && s->eof)
+            break;
         if (bytes <= 0)
             return_error(gs_error_ioerror);
 
@@ -667,6 +672,8 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
 
     do {
         bytes = pdf_read_bytes(ctx, (byte *)HexBuf, 1, 1, s);
+        if (bytes == 0 && s->eof)
+            break;
         if (bytes <= 0)
             return_error(gs_error_ioerror);
 
@@ -753,6 +760,8 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
     do {
         bytes = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
 
+        if (bytes == 0 && s->eof)
+            break;
         if (bytes <= 0) {
             Buffer[index] = 0x00;
             break;
@@ -1428,14 +1437,16 @@ static int pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
 
     do {
         bytes = pdf_read_bytes(ctx, (byte *)&Buffer, 1, 1, s);
-        if (bytes <= 0)
+        if (bytes < 0)
             return_error(gs_error_ioerror);
 
-        if (ctx->pdfdebug)
-            dmprintf1 (ctx->memory, " %c", Buffer);
+        if (bytes > 0) {
+            if (ctx->pdfdebug)
+                dmprintf1 (ctx->memory, " %c", Buffer);
 
-        if ((Buffer = 0x0A) || (Buffer == 0x0D)) {
-            break;
+            if ((Buffer = 0x0A) || (Buffer == 0x0D)) {
+                break;
+            }
         }
     } while (bytes);
     return 0;
@@ -1459,18 +1470,20 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
 
     do {
         bytes = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
-        if (bytes <= 0)
+        if (bytes < 0)
             return_error(gs_error_ioerror);
 
-        if (iswhite(Buffer[index])) {
-            break;
-        } else {
-            if (isdelimiter(Buffer[index])) {
-                pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
+        if (bytes > 0) {
+            if (iswhite(Buffer[index])) {
                 break;
+            } else {
+                if (isdelimiter(Buffer[index])) {
+                    pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
+                    break;
+                }
             }
+            index++;
         }
-        index++;
     } while (bytes && index < 255);
 
     if (index >= 255 || index == 0)
