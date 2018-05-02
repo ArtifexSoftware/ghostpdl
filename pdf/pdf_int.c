@@ -24,6 +24,7 @@
 #include "pdf_path.h"
 #include "pdf_colour.h"
 #include "pdf_gstate.h"
+#include "pdf_stack.h"
 
 /***********************************************************************************/
 /* Some simple functions to find white space, delimiters and hex bytes             */
@@ -176,108 +177,6 @@ void pdf_free_object(pdf_obj *o)
 #endif
             break;
     }
-}
-
-int pdf_pop(pdf_context *ctx, int num)
-{
-    while(num) {
-        if (ctx->stack_top > ctx->stack_bot) {
-            pdf_countdown(ctx->stack_top[-1]);
-            ctx->stack_top--;
-        } else {
-            return_error(gs_error_stackunderflow);
-        }
-        num--;
-    }
-    return 0;
-}
-
-int pdf_push(pdf_context *ctx, pdf_obj *o)
-{
-    pdf_obj **new_stack;
-    uint32_t entries = 0;
-
-    if (ctx->stack_top < ctx->stack_bot)
-        ctx->stack_top = ctx->stack_bot;
-
-    if (ctx->stack_top >= ctx->stack_limit) {
-        if (ctx->stack_size >= MAX_STACK_SIZE)
-            return_error(gs_error_stackoverflow);
-
-        new_stack = (pdf_obj **)gs_alloc_bytes(ctx->memory, (ctx->stack_size + INITIAL_STACK_SIZE) * sizeof (pdf_obj *), "pdf_push_increase_interp_stack");
-        if (new_stack == NULL)
-            return_error(gs_error_VMerror);
-
-        memcpy(new_stack, ctx->stack_bot, ctx->stack_size * sizeof(pdf_obj *));
-        gs_free_object(ctx->memory, ctx->stack_bot, "pdf_push_increase_interp_stack");
-
-        entries = ctx->stack_top - ctx->stack_bot;
-
-        ctx->stack_bot = new_stack;
-        ctx->stack_top = ctx->stack_bot + entries;
-        ctx->stack_size += INITIAL_STACK_SIZE;
-        ctx->stack_limit = ctx->stack_bot + ctx->stack_size;
-    }
-
-    *ctx->stack_top = o;
-    ctx->stack_top++;
-    pdf_countup(o);
-
-    return 0;
-}
-
-int pdf_mark_stack(pdf_context *ctx, pdf_obj_type type)
-{
-    pdf_obj *o;
-    int code;
-
-    if (type != PDF_ARRAY_MARK && type != PDF_DICT_MARK)
-        return_error(gs_error_typecheck);
-
-    o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "Allocate a stack mark");
-    if (o == NULL)
-        return_error(gs_error_VMerror);
-
-    memset(o, 0x00, sizeof(pdf_obj));
-    o->memory = ctx->memory;
-    o->type = type;
-    o->refcnt = 1;
-#if REFCNT_DEBUG
-    o->UID = ctx->UID++;
-#endif
-    code = pdf_push(ctx, o);
-    pdf_countdown(o);
-    return code;
-}
-
-void pdf_clearstack(pdf_context *ctx)
-{
-    pdf_pop(ctx, ctx->stack_top - ctx->stack_bot);
-}
-
-int pdf_count_to_mark(pdf_context *ctx, uint64_t *count)
-{
-    pdf_obj **o = ctx->stack_top - 1;
-
-    *count = 0;
-    while (o >= ctx->stack_bot) {
-        if ((*o)->type == PDF_ARRAY_MARK || (*o)->type == PDF_DICT_MARK)
-            return 0;
-        (*count)++;
-        o--;
-    }
-    return_error(gs_error_unmatchedmark);
-}
-
-int pdf_clear_to_mark(pdf_context *ctx)
-{
-    int code;
-    uint64_t count;
-
-    code = pdf_count_to_mark(ctx, &count);
-    if (code < 0)
-        return code;
-    return pdf_pop(ctx, count + 1);
 }
 
 /***********************************************************************************/
@@ -1034,45 +933,18 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
     return code;
 }
 
-static int pdf_read_array(pdf_context *ctx, pdf_stream *s)
+static int pdf_array_from_stack(pdf_context *ctx)
 {
-    short bytes = 0;
     uint64_t index = 0;
-    byte Buffer;
     pdf_array *a = NULL;
     pdf_obj *o;
     int code;
-
-    if (ctx->pdfdebug)
-        dmprintf (ctx->memory, " [");
-
-    code = pdf_mark_stack(ctx, PDF_ARRAY_MARK);
-    if (code < 0)
-        return code;
-
-    do {
-        skip_white(ctx, s);
-
-        bytes = pdf_read_bytes(ctx, &Buffer, 1, 1, s);
-        
-        if (bytes <= 0)
-            return_error(gs_error_ioerror);
-
-        if (Buffer == ']') {
-            break;
-        } else {
-            pdf_unread(ctx, s, &Buffer, 1);
-            code = pdf_read_token(ctx, s);
-            if (code < 0)
-                return code;
-        }
-    } while (1);
 
     code = pdf_count_to_mark(ctx, &index);
     if (code < 0)
         return code;
 
-    a = (pdf_array *)gs_alloc_bytes(ctx->memory, sizeof(pdf_array), "pdf_read_array");
+    a = (pdf_array *)gs_alloc_bytes(ctx->memory, sizeof(pdf_array), "pdf_array_from_stack");
     if (a == NULL)
         return_error(gs_error_VMerror);
 
@@ -1082,9 +954,9 @@ static int pdf_read_array(pdf_context *ctx, pdf_stream *s)
 
     a->size = a->entries = index;
 
-    a->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, index * sizeof(pdf_obj *), "pdf_read_array");
+    a->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, index * sizeof(pdf_obj *), "pdf_array_from_stack");
     if (a->values == NULL) {
-        gs_free_object(a->memory, a, "pdf_read_array error");
+        gs_free_object(a->memory, a, "pdf_array_from_stack error");
         return_error(gs_error_VMerror);
     }
 
@@ -1113,47 +985,12 @@ static int pdf_read_array(pdf_context *ctx, pdf_stream *s)
     return code;
 }
 
-static int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
+static int pdf_dict_from_stack(pdf_context *ctx)
 {
-    short bytes = 0;
     uint64_t index = 0;
-    byte Buffer[2];
     pdf_dict *d = NULL;
     uint64_t i = 0;
     int code;
-
-    if (ctx->pdfdebug)
-        dmprintf (ctx->memory, " <<\n");
-
-    code = pdf_mark_stack(ctx, PDF_DICT_MARK);
-    if (code < 0)
-        return code;
-
-    do {
-        skip_white(ctx, s);
-
-        bytes = pdf_read_bytes(ctx, &Buffer[0], 1, 1, s);
-        
-        if (bytes <= 0)
-            return_error(gs_error_ioerror);
-
-        if (Buffer[0] == '>') {
-            bytes = pdf_read_bytes(ctx, &Buffer[1], 1, 1, s);
-            
-            if (bytes <= 0)
-                return_error(gs_error_ioerror);
-
-            if (Buffer[1] == '>')
-                break;
-
-            pdf_unread(ctx, s, &Buffer[1], 1);
-        } 
-
-        pdf_unread(ctx, s, &Buffer[0], 1);
-        code = pdf_read_token(ctx, s);
-        if (code < 0)
-            return code;
-    } while (1);
 
     code = pdf_count_to_mark(ctx, &index);
     if (code < 0)
@@ -1162,7 +999,7 @@ static int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
     if (index & 1)
         return_error(gs_error_rangecheck);
 
-    d = (pdf_dict *)gs_alloc_bytes(ctx->memory, sizeof(pdf_dict), "pdf_read_dict");
+    d = (pdf_dict *)gs_alloc_bytes(ctx->memory, sizeof(pdf_dict), "pdf_dict_from_stack");
     if (d == NULL)
         return_error(gs_error_VMerror);
 
@@ -1172,13 +1009,13 @@ static int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
 
     d->size = d->entries = index >> 1;
 
-    d->keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, d->size * sizeof(pdf_obj *), "pdf_read_dict");
+    d->keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, d->size * sizeof(pdf_obj *), "pdf_dict_from_stack");
     if (d->keys == NULL) {
         gs_free_object(d->memory, d, "pdf_read_dict error");
         return_error(gs_error_VMerror);
     }
 
-    d->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, d->size * sizeof(pdf_obj *), "pdf_read_dict");
+    d->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, d->size * sizeof(pdf_obj *), "pdf_dict_from_stack");
     if (d->values == NULL) {
         gs_free_object(d->memory, d->keys, "pdf_read_dict error");
         gs_free_object(d->memory, d, "pdf_read_dict error");
@@ -1220,6 +1057,26 @@ static int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
 
     return code;
 }
+
+static int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
+{
+    int code;
+    pdf_obj *o;
+
+    code = pdf_read_token(ctx, s);
+    if (code < 0)
+        return code;
+    if (ctx->stack_top[-1]->type != PDF_DICT_MARK)
+        return_error(gs_error_typecheck);
+
+    do {
+        code = pdf_read_token(ctx, s);
+        if (code < 0)
+            return code;
+    } while(ctx->stack_top[-1]->type != PDF_DICT);
+    return 0;
+}
+
 
 /* The object returned by pdf_dict_get has its reference count incremented by 1 to
  * indicate the reference now held by the caller, in **o.
@@ -1851,7 +1708,7 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
             if (bytes <= 0)
                 return (gs_error_ioerror);
             if (Buffer[1] == '<') {
-                return pdf_read_dict(ctx, s);
+                return pdf_mark_stack(ctx, PDF_DICT_MARK);
             } else {
                 if (ishex(Buffer[1])) {
                     pdf_unread(ctx, s, (byte *)&Buffer[1], 1);
@@ -1861,11 +1718,23 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
                     return_error(gs_error_syntaxerror);
             }
             break;
+        case '>':
+            bytes = pdf_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
+            if (bytes <= 0)
+                return (gs_error_ioerror);
+            if (Buffer[1] == '>')
+                return pdf_dict_from_stack(ctx);
+            else
+                return_error(gs_error_syntaxerror);
+            break;
         case '(':
             return pdf_read_string(ctx, s);
             break;
         case '[':
-            return pdf_read_array(ctx, s);
+            return pdf_mark_stack(ctx, PDF_ARRAY_MARK);
+            break;
+        case ']':
+            return pdf_array_from_stack(ctx);
             break;
         case '%':
             pdf_skip_comment(ctx, s);
@@ -1929,11 +1798,12 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
     if (code < 0)
         return code;
 
-    code = pdf_read_token(ctx, s);
-    if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-        pdf_pop(ctx, 1);
-        return_error(gs_error_typecheck);
-    }
+    do {
+        code = pdf_read_token(ctx, s);
+        if (code < 0)
+            return code;
+    }while (ctx->stack_top[-1]->type != PDF_KEYWORD);
+
     keyword = ((pdf_keyword *)ctx->stack_top[-1]);
     if (keyword->key == PDF_ENDOBJ) {
         pdf_obj *o = ctx->stack_top[-2];
@@ -2728,7 +2598,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
     }
     pdf_pop(ctx, 1);
 
-    code = pdf_read_token(ctx, ctx->main_stream);
+    code = pdf_read_dict(ctx, ctx->main_stream);
     if (code < 0)
         return code;
 

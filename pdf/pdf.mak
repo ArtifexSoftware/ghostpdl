@@ -43,6 +43,9 @@ PDF_TOP_OBJS= $(PDF_TOP_OBJ) $(PDFOBJDIR)$(D)pdfimpl.$(OBJ)
 PDFINCLUDES=$(PDFSRC)*.h $(PDFOBJ)arch.h $(strmio_h) $(stream_h) $(gsmatrix_h) $(gslparam_h)\
 	$(gstypes_h)
 
+$(PDFOBJ)pdf_stack.$(OBJ): $(PDFSRC)pdf_stack.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_stack.c $(XPSO_)pdf_stack.$(OBJ)
+
 $(PDFOBJ)pdf_gstate.$(OBJ): $(PDFSRC)pdf_gstate.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_gstate.c $(XPSO_)pdf_gstate.$(OBJ)
 
@@ -84,7 +87,8 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_file.$(OBJ)\
     $(PDFOBJ)pdf_path.$(OBJ)\
     $(PDFOBJ)pdf_colour.$(OBJ)\
-    $(PDFOBJ)pdf_gstate.$(OBJ)
+    $(PDFOBJ)pdf_gstate.$(OBJ)\
+    $(PDFOBJ)pdf_stack.$(OBJ)
 
 
 
