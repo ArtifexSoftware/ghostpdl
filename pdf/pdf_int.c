@@ -889,7 +889,7 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
         if (exit_loop)
             break;
 
-        if (index++ >= size) {
+        if (index++ >= size - 1) {
             NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdf_read_string");
             if (NewBuf == NULL) {
                 gs_free_object(ctx->memory, Buffer, "pdf_read_string error");
