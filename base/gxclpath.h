@@ -58,10 +58,6 @@ typedef enum {
 /* Extend the command set.  See gxcldev.h for more information. */
 typedef enum {
     cmd_op_misc2 = 0xd0,	/* (see below) */
-    /* obsolete */
-    /* cmd_opv_set_color = 0xd0, */	/* Used if base values do not fit into 1 bit */
-                                /* #flags,#base[0],...#base[num_comp-1] if flags */
-                                /* colored halftone with base colors a,b,c,d */
     cmd_op_fill_rect_hl = 0xd1,  /* rect fill with devn color */
     cmd_opv_set_fill_adjust = 0xd2,	/* adjust_x/y(fixed) */
     cmd_opv_set_ctm = 0xd3,	/* [per sput/sget_matrix] */
@@ -99,7 +95,16 @@ typedef enum {
                                 /* flags# (0 = same raster & data_x, */
                                 /* 1 = new raster & data_x, lsb first), */
                                 /* [raster#, [data_x#,]]* <data> */
-    cmd_opv_extend = 0xdf,	/* command, varies */
+    cmd_opv_extend = 0xdf,	/* command, varies (see gx_cmd_ext_op below) */
+
+
+#define cmd_misc2_op_name_strings\
+  "?d0?", "fill_hl_color", \
+  "set_fill_adjust", "set_ctm",\
+  "set_color_space", "set_misc2", "set_dash", "enable_clip",\
+  "disable_clip", "begin_clip", "end_clip", "begin_image_rect",\
+  "begin_image", "image_data", "image_plane_data", "extended"
+
     cmd_op_segment = 0xe0,	/* (see below) */
     cmd_opv_rmoveto = 0xe0,	/* dx%, dy% */
     cmd_opv_rlineto = 0xe1,	/* dx%, dy% */
@@ -110,7 +115,7 @@ typedef enum {
     cmd_opv_rm3lineto = 0xe6,	/* dx1%,dy1%, dx2%,dy2%, dx3%,dy3%, */
                                 /* [-dx2,-dy2 implicit] */
     cmd_opv_rrcurveto = 0xe7,	/* dx1%,dy1%, dx2%,dy2%, dx3%,dy3% */
-      cmd_opv_min_curveto = cmd_opv_rrcurveto,
+    cmd_opv_min_curveto = cmd_opv_rrcurveto,
     cmd_opv_hvcurveto = 0xe8,	/* dx1%, dx2%,dy2%, dy3% */
     cmd_opv_vhcurveto = 0xe9,	/* dy1%, dx2%,dy2%, dx3% */
     cmd_opv_nrcurveto = 0xea,	/* dx2%,dy2%, dx3%,dy3% */
@@ -124,21 +129,30 @@ typedef enum {
                                 /* *curveto with one or more of dx/y1/3 = 0. */
                                 /* If h*: -dx3,dy3, -dx2,dy2, -dx1,dy1. */
                                 /* If v*: dx3,-dy3, dx2,-dy2, dx1,-dy1. */
-      cmd_opv_max_curveto = cmd_opv_scurveto,
+    cmd_opv_max_curveto = cmd_opv_scurveto,
     cmd_opv_closepath = 0xef,	/* (nothing) */
+
+#define cmd_segment_op_name_strings\
+  "rmoveto", "rlineto", "hlineto", "vlineto",\
+  "rmlineto", "rm2lineto", "rm3lineto", "rrcurveto",\
+  "hvcurveto", "vhcurveto", "nrcurveto", "rncurveto",\
+  "vqcurveto", "hqcurveto", "scurveto", "closepath"
+
     cmd_op_path = 0xf0,		/* (see below) */
     cmd_opv_fill = 0xf0,
-    cmd_opv_rgapto = 0xf1, 	/* dx%, dy% */ /* was cmd_opv_htfill */
+    cmd_opv_rgapto = 0xf1, 	/* dx%, dy% */
     cmd_opv_eofill = 0xf3,
-    /* cmd_opv_hteofill = 0xf4, */ /* obsolete */
-    /* cmd_opv_coloreofill = 0xf5, */ /* obsolete */
     cmd_opv_stroke = 0xf6,
-    /* cmd_opv_htstroke = 0xf7, */ /* obsolete */
-    /* cmd_opv_colorstroke = 0xf8, */ /* obsolete */
     cmd_opv_polyfill = 0xf9,
-    /* cmd_opv_htpolyfill = 0xfa, */ /* obsolete */
-    /* cmd_opv_colorpolyfill = 0xfb */ /* obsolete */
     cmd_opv_fill_trapezoid = 0xfc
+
+#define cmd_path_op_name_strings\
+  "fill", "rgapto", "?f2?", "eofill",\
+  "?f4?", "?f5", "stroke", "?f7?",\
+  "?f8?", "polyfill", "?fa?", "?fb?",\
+  "fill_trapezoid", "?fd?", "?fe?", "?ff?"
+
+/* unused cmd_op values: 0xd0, 0xf2, 0xf4, 0xf5, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb, 0xfd, 0xfe, 0xff */
 } gx_cmd_xop;
 
 /* This is usd for cmd_opv_ext_put_drawing_color so that we know if it
@@ -170,25 +184,6 @@ typedef enum {
 
 #define cmd_segment_op_num_operands_values\
   2, 2, 1, 1, 4, 6, 6, 6, 4, 4, 4, 4, 2, 2, 0, 0
-
-#define cmd_misc2_op_name_strings\
-  "cmd_opv_set_color", "fill_hl_color", \
-  "set_fill_adjust", "set_ctm",\
-  "set_color_space", "set_misc2", "set_dash", "enable_clip",\
-  "disable_clip", "begin_clip", "end_clip", "begin_image_rect",\
-  "begin_image", "image_data", "image_plane_data", "put_params"
-
-#define cmd_segment_op_name_strings\
-  "rmoveto", "rlineto", "hlineto", "vlineto",\
-  "rmlineto", "rm2lineto", "rm3lineto", "rrcurveto",\
-  "hvcurveto", "vhcurveto", "nrcurveto", "rncurveto",\
-  "vqcurveto", "hqcurveto", "scurveto", "closepath"
-
-#define cmd_path_op_name_strings\
-  "fill", "htfill", "colorfill", "eofill",\
-  "hteofill", "coloreofill", "stroke", "htstroke",\
-  "colorstroke", "polyfill", "htpolyfill", "colorpolyfill",\
-  "fill_trapezoid", "?fd?", "?fe?", "?ff?"
 
 /*
  * We represent path coordinates as 'fixed' values in a variable-length,

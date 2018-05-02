@@ -972,7 +972,7 @@ in:                             /* Initialize for a new page. */
                 plane_height = 0;
               copy:cmd_getw(state.rect.x, cbp);
                 cmd_getw(state.rect.y, cbp);
-                if (op & 8) {   /* Use the current "tile". */
+                if (op & cmd_copy_use_tile) {   /* Use the current "tile". */
 #ifdef DEBUG
                     if (state_slot->index != state.tile_index) {
                         mlprintf2(mem, "state_slot->index = %d, state.tile_index = %d!\n",
@@ -1552,6 +1552,7 @@ idata:                  data_size = 0;
                     case cmd_opv_extend:
                         switch (*cbp++) {
                             case cmd_opv_ext_put_params:
+                                if_debug0m('L', mem, "put_params\n");
                                 cbuf.ptr = cbp;
                                 code = read_put_params(&cbuf, &gs_gstate,
                                                         cdev, mem);

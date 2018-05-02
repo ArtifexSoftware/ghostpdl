@@ -150,7 +150,7 @@ clist_fill_mask(gx_device * dev,
     int y0;
     byte copy_op =
         (depth > 1 ? cmd_op_copy_color_alpha :
-         cmd_op_copy_mono_planes + cmd_copy_ht_color);  /* Plane not needed here */
+         cmd_op_copy_mono_planes);  /* Plane not needed here */
     bool slow_rop =
         cmd_slow_rop(dev, lop_know_S_0(lop), pdcolor) ||
         cmd_slow_rop(dev, lop_know_S_1(lop), pdcolor);

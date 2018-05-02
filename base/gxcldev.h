@@ -104,12 +104,7 @@ typedef enum {
     cmd_op_tile_rect_tiny = 0x80,	/* +dw+0, rect_tiny | +dw+8 */
     cmd_op_copy_mono_planes = 0x90,	/* +compress, plane_height, x#, y#, (w+data_x)#, */
                                         /* h#, <bits> | */
-#define cmd_copy_ht_color 4
-                                /* +4+compress, x#, y#, (w+data_x)#, */
-                                /* h#, <bits> | */
-#define cmd_copy_use_tile 8
-                                /* +8 (use tile), x#, y# | */
-                                /* +12 (use tile), x#, y# */
+#define cmd_copy_use_tile 8             /* +8 (use tile), x#, y# | */
     cmd_op_copy_color_alpha = 0xa0,	/* (same as copy_mono, except: */
                                 /* if color, ignore ht_color; */
                                 /* if alpha & !use_tile, depth is */
