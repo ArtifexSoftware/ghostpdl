@@ -442,7 +442,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
  * pushed onto the stack does the reference count become 1, indicating the stack is
  * the only reference.
  */
-static int skip_white(pdf_context *ctx,pdf_stream *s)
+static int skip_white(pdf_context *ctx, pdf_stream *s)
 {
     uint32_t read = 0;
     int32_t bytes = 0;
@@ -456,6 +456,26 @@ static int skip_white(pdf_context *ctx,pdf_stream *s)
             return 0;
         read += bytes;
     } while (bytes != 0 && iswhite(c));
+
+    if (read > 0)
+        pdf_unread(ctx, s, &c, 1);
+    return 0;
+}
+
+static int skip_eol(pdf_context *ctx, pdf_stream *s)
+{
+    uint32_t read = 0;
+    int32_t bytes = 0;
+    byte c;
+
+    do {
+        bytes = pdf_read_bytes(ctx, &c, 1, 1, s);
+        if (bytes < 0)
+            return_error(gs_error_ioerror);
+        if (bytes == 0)
+            return 0;
+        read += bytes;
+    } while (bytes != 0 && (c == 0x0A || c == 0x0D));
 
     if (read > 0)
         pdf_unread(ctx, s, &c, 1);
@@ -695,7 +715,7 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
 
         Buffer[index] = (fromhex(HexBuf[0]) << 4) + fromhex(HexBuf[1]);
 
-        if (index++ >= size) {
+        if (index++ >= size - 1) {
             NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdf_read_hexstring");
             if (NewBuf == NULL) {
                 gs_free_object(ctx->memory, Buffer, "pdf_read_hexstring error");
@@ -1574,14 +1594,9 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
         case 's':
             if (keyword->length == 6 && memcmp((const char *)Buffer, "stream", 6) == 0){
                 keyword->key = PDF_STREAM;
-                do{
-                    bytes = pdf_read_bytes(ctx, &b, 1, 1, s);
-                    if (bytes <= 0)
-                        return_error(gs_error_ioerror);
-                    if (!iswhite(b))
-                        break;
-                }while (1);
-                pdf_seek(ctx, ctx->main_stream, -1, SEEK_CUR);
+                code = skip_eol(ctx, s);
+                if (code < 0)
+                    return code;
             }
             else {
                 if (keyword->length == 9 && memcmp((const char *)Buffer, "startxref", 9) == 0)
@@ -1815,11 +1830,18 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
         code = pdf_read_token(ctx, s);
         if (code < 0)
             return code;
+        if (s->eof)
+            return_error(gs_error_syntaxerror);
     }while (ctx->stack_top[-1]->type != PDF_KEYWORD);
 
     keyword = ((pdf_keyword *)ctx->stack_top[-1]);
     if (keyword->key == PDF_ENDOBJ) {
-        pdf_obj *o = ctx->stack_top[-2];
+        pdf_obj *o;
+
+        if (ctx->stack_top - ctx->stack_bot < 2)
+            return_error(gs_error_stackunderflow);
+
+        o = ctx->stack_top[-2];
 
         pdf_pop(ctx, 1);
 
@@ -1832,11 +1854,15 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
         pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
         gs_offset_t offset;
 
-        skip_white(ctx, ctx->main_stream);
+        skip_eol(ctx, ctx->main_stream);
 
-        offset = (gs_offset_t)stell(ctx->main_stream->s) - 1;
+        offset = pdf_tell(ctx);
 
         pdf_pop(ctx, 1);
+
+        if (ctx->stack_top - ctx->stack_bot < 1)
+            return_error(gs_error_stackunderflow);
+
         d = (pdf_dict *)ctx->stack_top[-1];
 
         if (d->type != PDF_DICT) {
@@ -1870,6 +1896,9 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
         }
 
         code = pdf_read_token(ctx, s);
+        if (ctx->stack_top - ctx->stack_bot < 2)
+            return_error(gs_error_stackunderflow);
+
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
             pdf_pop(ctx, 2);
             return_error(gs_error_typecheck);
@@ -1882,6 +1911,9 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
         pdf_pop(ctx, 1);
 
         code = pdf_read_token(ctx, s);
+        if (ctx->stack_top - ctx->stack_bot < 2)
+            return_error(gs_error_stackunderflow);
+
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
             pdf_pop(ctx, 2);
             return_error(gs_error_typecheck);
@@ -2741,7 +2773,7 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
     int64_t bytes = 0;
     bool found = false;
 
-    if (ctx->pdfdebug)
+//    if (ctx->pdfdebug)
         dmprintf1(ctx->memory, "%% Attempting to open %s as a PDF file\n", filename);
 
     ctx->main_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "PDF interpreter allocate main PDF stream");
@@ -2885,6 +2917,9 @@ int pdf_read_xref(pdf_context *ctx)
             dmprintf(ctx->memory, "Failed to read any token at the startxref location\n");
             return(repair_pdf_file(ctx));
         }
+
+        if (ctx->stack_top - ctx->stack_bot < 1)
+            return_error(gs_error_undefined);
 
         if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD && ((pdf_keyword *)ctx->stack_top[-1])->key == PDF_XREF) {
             /* Read old-style xref table */
@@ -3521,7 +3556,7 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
 static int split_bogus_operator(pdf_context *ctx)
 {
     /* FIXME Need to write this, place holder for now */
-    return_error(gs_error_undefined);
+    return 0;
 }
 
 #define K1(a) (a)
@@ -3566,14 +3601,11 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 code = pdf_B_star(ctx);
                 break;
             case K3('B','D','C'):   /* begin marked content sequence with property list */
-                break;
             case K2('B','I'):       /* begin inline image */
-                break;
             case K3('B','M','C'):   /* begin marked content sequence */
-                break;
             case K2('B','T'):       /* begin text */
-                break;
             case K2('B','X'):       /* begin compatibility section */
+                pdf_clearstack(ctx);
                 break;
             case K1('c'):           /* curveto */
                 pdf_pop(ctx, 1);
@@ -3584,28 +3616,22 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 code = pdf_concat(ctx);
                 break;
             case K2('C','S'):       /* set stroke colour space */
-                break;
             case K2('c','s'):       /* set non-stroke colour space */
+                pdf_clearstack(ctx);
                 break;
             case K1('d'):           /* set dash params */
                 pdf_pop(ctx, 1);
                 code = pdf_setdash(ctx);
                 break;
             case K2('d','0'):       /* set type 3 font glyph width */
-                break;
             case K2('d','1'):       /* set type 3 font glyph width and bounding box */
-                break;
             case K2('D','o'):       /* invoke named XObject */
-                break;
             case K2('D','P'):       /* define marked content point with property list */
-                break;
             case K2('E','I'):       /* end inline image */
-                break;
             case K3('E','M','C'):   /* end marked content sequence */
-                break;
             case K2('E','T'):       /* end text */
-                break;
             case K2('E','X'):       /* end compatibility section */
+                pdf_clearstack(ctx);
                 break;
             case K1('f'):           /* fill */
                 pdf_pop(ctx, 1);
@@ -3628,6 +3654,7 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 code = pdf_setgrayfill(ctx);
                 break;
             case K2('g','s'):       /* set graphics state from dictionary */
+                pdf_clearstack(ctx);
                 break;
             case K1('h'):           /* closepath */
                 pdf_pop(ctx, 1);
@@ -3638,6 +3665,7 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 code = pdf_setflat(ctx);
                 break;
             case K2('I','D'):       /* begin inline image data */
+                pdf_clearstack(ctx);
                 break;
             case K1('j'):           /* setlinejoin */
                 pdf_pop(ctx, 1);
@@ -3668,6 +3696,7 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 code = pdf_setmiterlimit(ctx);
                 break;
             case K2('M','P'):       /* define marked content point */
+                pdf_clearstack(ctx);
                 break;
             case K1('n'):           /* newpath */
                 pdf_pop(ctx, 1);
@@ -3694,6 +3723,7 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 code = pdf_setrgbfill(ctx);
                 break;
             case K2('r','i'):       /* set rendering intent */
+                pdf_clearstack(ctx);
                 break;
             case K1('s'):           /* closepath, stroke */
                 pdf_pop(ctx, 1);
@@ -3704,40 +3734,24 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 code = pdf_stroke(ctx);
                 break;
             case K2('S','C'):       /* set colour for stroke */
-                break;
             case K2('s','c'):       /* set colour for non-stroke */
-                break;
             case K3('S','C','N'):   /* set special colour for stroke */
-                break;
             case K3('s','c','n'):   /* set special colour for non-stroke */
-                break;
             case K2('s','h'):       /* fill with sahding pattern */
-                break;
             case K2('T','*'):       /* Move to start of next text line */
-                break;
             case K2('T','c'):       /* set character spacing */
-                break;
             case K2('T','d'):       /* move text position */
-                break;
             case K2('T','D'):       /* Move text position, set leading */
-                break;
             case K2('T','f'):       /* set font and size */
-                break;
             case K2('T','j'):       /* show text */
-                break;
             case K2('T','J'):       /* show text with individual glyph positioning */
-                break;
             case K2('T','L'):       /* set text leading */
-                break;
             case K2('T','m'):       /* set text matrix */
-                break;
             case K2('T','r'):       /* set text rendering mode */
-                break;
             case K2('T','s'):       /* set text rise */
-                break;
             case K2('T','w'):       /* set word spacing */
-                break;
             case K2('T','z'):       /* set text matrix */
+                pdf_clearstack(ctx);
                 break;
             case K1('v'):           /* append curve (initial point replicated) */
                 pdf_pop(ctx, 1);
@@ -3760,8 +3774,8 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 code = pdf_y_curveto(ctx);
                 break;
             case K1('\''):          /* move to next line and show text */
-                break;
             case K1('"'):           /* set word and character spacing, move to next line, show text */
+                pdf_clearstack(ctx);
                 break;
             default:
                 code = split_bogus_operator(ctx);
@@ -3770,7 +3784,6 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 break;
        }
     }
-    pdf_clearstack(ctx);
     return code;
 }
 
@@ -4027,8 +4040,11 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
     }
 
     code = pdf_read_Info(ctx);
-    if (code < 0 && code != gs_error_undefined)
-        return code;
+    if (code < 0 && code != gs_error_undefined) {
+        if (ctx->pdfstoponerror)
+            return code;
+        pdf_clearstack(ctx);
+    }
 
     code = pdf_read_Pages(ctx);
     if (code < 0)
