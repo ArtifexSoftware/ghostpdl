@@ -204,29 +204,29 @@ clist_fill_mask(gx_device * dev,
 
         RECT_STEP_INIT(re);
         code = cmd_update_lop(cdev, re.pcls, lop);
-        if (code < 0 && SET_BAND_CODE(code))
-            return re.band_code;
+        if (code < 0)
+            return code;
         if (depth > 1 && !re.pcls->color_is_alpha) {
             byte *dp;
 
             code = set_cmd_put_op(&dp, cdev, re.pcls, cmd_opv_set_copy_alpha, 1);
-            if (code < 0 && SET_BAND_CODE(code))
-                return re.band_code;
+            if (code < 0)
+                return code;
             re.pcls->color_is_alpha = 1;
         }
         code = cmd_do_write_unknown(cdev, re.pcls, clip_path_known);
         if (code >= 0)
             code = cmd_do_enable_clip(cdev, re.pcls, pcpath != NULL);
-        if (code < 0 && SET_BAND_CODE(code))
-            return re.band_code;
+        if (code < 0)
+            return code;
         code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re,
                                      devn_not_tile);
         if (code == gs_error_unregistered)
             return code;
         if (depth > 1 && code >= 0)
             code = cmd_set_color1(cdev, re.pcls, pdcolor->colors.pure);
-        if (code < 0 && SET_BAND_CODE(code))
-            return re.band_code;
+        if (code < 0)
+            return code;
         re.pcls->color_usage.slow_rop |= slow_rop;
         /* Put it in the cache if possible. */
         if (!cls_has_tile_id(cdev, re.pcls, id, offset_temp)) {
@@ -240,8 +240,6 @@ clist_fill_mask(gx_device * dev,
             tile.id = id;
             tile.num_planes = 1;
             code = clist_change_bits(cdev, re.pcls, &tile, depth);
-            if (code == gs_error_VMerror && SET_BAND_CODE(code))	/* only VMerror exits here */
-                return re.band_code;
             if (code < 0) {
                 /* Something went wrong; just copy the bits. */
                 goto copy;
@@ -280,8 +278,8 @@ clist_fill_mask(gx_device * dev,
                     cmd_putxy(rect, &dp);
                 }
             }
-            if (code < 0 && SET_BAND_CODE(code))
-                return re.band_code;
+            if (code < 0)
+                return code;
             re.pcls->rect = rect;
         }
     } while ((re.y += re.height) < re.yend);
@@ -1108,8 +1106,8 @@ clist_image_plane_data(gx_image_enum_common_t * info,
                 code = cmd_do_enable_clip(cdev, re.pcls, pie->pcpath != NULL);
             if (code >= 0)
                 code = cmd_update_lop(cdev, re.pcls, lop);
-            if (code < 0 && SET_BAND_CODE(code))
-                return re.band_code;
+            if (code < 0)
+                return code;
             if (pie->uses_color) {
                 /* We want to write the color taking into account the entire image so */
                 /* we set re.rect_nbands from pie->ymin and pie->ymax so that we will */
@@ -1120,8 +1118,8 @@ clist_image_plane_data(gx_image_enum_common_t * info,
                                  ((pie->ymin) / re.band_height);
                 code = cmd_put_drawing_color(cdev, re.pcls, &pie->dcolor,
                                              &re, devn_not_tile);
-                if (code < 0 && SET_BAND_CODE(code))
-                    return re.band_code;
+                if (code < 0)
+                    return code;
             }
             if (entire_box.p.x != 0 || entire_box.p.y != 0 ||
                 entire_box.q.x != pie->image.Width ||
@@ -1135,8 +1133,8 @@ clist_image_plane_data(gx_image_enum_common_t * info,
             len = bp - pie->begin_image_command;
             code =
                 set_cmd_put_op(&dp, cdev, re.pcls, image_op, 1 + len);
-            if (code < 0 && SET_BAND_CODE(code))
-                return re.band_code;
+            if (code < 0)
+                return code;
             memcpy(dp + 1, pie->begin_image_command, len);
 
             /* Mark band's begin_image as known */
@@ -1206,8 +1204,8 @@ clist_image_plane_data(gx_image_enum_common_t * info,
                                                     bytes_per_plane, offsets,
                                                     xoff - xskip, nrows);
                     }
-                    if (code < 0 && SET_BAND_CODE(code))
-                        return re.band_code;
+                    if (code < 0)
+                        return code;
                     for (i = 0; i < num_planes; ++i)
                         offsets[i] += planes[i].raster * nrows;
                 }
@@ -1217,8 +1215,8 @@ clist_image_plane_data(gx_image_enum_common_t * info,
                     code = cmd_image_plane_data(cdev, re.pcls, planes, info,
                                                 bytes_per_plane, offsets,
                                                 xoff - xskip, nrows);
-                    if (code < 0 && SET_BAND_CODE(code))
-                        return re.band_code;
+                    if (code < 0)
+                        return code;
                     for (i = 0; i < num_planes; ++i)
                         offsets[i] += planes[i].raster * nrows;
                 }
@@ -1372,8 +1370,8 @@ clist_create_compositor(gx_device * dev,
                 dp[2] = pcte->type->comp_id;
                 code = pcte->type->procs.write(pcte, dp + 3, &size_dummy, cdev);
             }
-            if (code < 0 && SET_BAND_CODE(code))
-                return re.band_code;
+            if (code < 0)
+                return code;
         } while ((re.y += re.height) < re.yend);
     }
     if (cropping_op == POPCROP) {
@@ -2038,8 +2036,8 @@ write_image_end_all(gx_device *dev, const clist_image_enum *pie)
         if (re.pcls->known & begin_image_known) {
             if_debug1m('L', dev->memory, "[L]image_end for band %d\n", re.band);
             code = set_cmd_put_op(&dp, cdev, re.pcls, cmd_opv_image_data, 2);
-            if (code < 0 && SET_BAND_CODE(code))
-                return re.band_code;
+            if (code < 0)
+                return code;
             dp[1] = 0;      /* EOD */
             re.pcls->known ^= begin_image_known;
         }

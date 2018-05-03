@@ -532,7 +532,6 @@ typedef struct cmd_rects_enum_s {
         int height;
         int yend;
         int band_height;
-        int band_code;
         int band;
         gx_clist_state *pcls;
         int band_end;
@@ -551,8 +550,6 @@ typedef struct cmd_rects_enum_s {
             re.pcls = cdev->states + re.band;\
             re.band_end = (re.band + 1) * re.band_height;\
             re.height = min(re.band_end, re.yend) - re.y;
-
-#define SET_BAND_CODE(codevar) (re.band_code = codevar)
 
 /* Read a transformation matrix. */
 const byte *cmd_read_matrix(gs_matrix * pmat, const byte * cbp);
