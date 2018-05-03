@@ -1013,12 +1013,6 @@ image_render_color_icc_landscape(gx_image_enum *penum_orig, const byte *buffer, 
         }
         mapper(&data);
         /* Fill the region between irun and fixed2int_var_rounded(pnext.y) */
-        /*
-         * Note;  This section is nearly a copy of a simlar section below
-         * for processing the last image pixel in the loop.  This would have been
-         * made into a subroutine except for complications about the number of
-         * variables that would have been needed to be passed to the routine.
-         */
         {		/* 90 degree rotated rectangle */
             int yi = irun;
             int hi = (irun = fixed2int_var_rounded(dda_current(pnext.y))) - yi;
