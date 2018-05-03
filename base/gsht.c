@@ -1154,8 +1154,13 @@ gx_gstate_dev_ht_install(
         gx_ht_order_component * pcomp = &dht.components[i];
         gx_ht_order *           porder = &pcomp->corder;
 
-        if (pcomp->comp_number == -1)
+        if (pcomp->comp_number == -1) {
             gx_ht_order_release(porder, pgs->memory, true);
+        }
+        else if (porder->cache != NULL) {
+            gx_ht_free_cache(pgs->memory, porder->cache);
+            porder->cache = NULL;
+        }
     }
     gs_free_object(pgs->memory, dht.components, "gx_gstate_dev_ht_install");
 
