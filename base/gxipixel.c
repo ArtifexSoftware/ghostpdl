@@ -950,6 +950,36 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     penum->y = 0;
     penum->used.x = 0;
     penum->used.y = 0;
+    if (penum->clip_image && pcpath) {  /* Set up the clipping device. */
+        gx_device_clip *cdev =
+            gs_alloc_struct(mem, gx_device_clip,
+                            &st_device_clip, "image clipper");
+
+        if (cdev == NULL)
+            return_error(gs_error_VMerror);
+        gx_make_clip_device_in_heap(cdev, pcpath, dev, mem);
+        penum->clip_dev = cdev;
+        penum->dev = (gx_device *)cdev; /* Will restore this in a mo. Hacky! */
+    }
+    if (penum->use_rop) {       /* Set up the RasterOp source device. */
+        gx_device_rop_texture *rtdev;
+
+        code = gx_alloc_rop_texture_device(&rtdev, mem,
+                                           "image RasterOp");
+        if (code < 0)
+            return code;
+        /* The 'target' must not be NULL for gx_make_rop_texture_device */
+        if (!penum->clip_dev && !dev)
+            return_error(gs_error_undefined);
+
+        gx_make_rop_texture_device(rtdev,
+                                   (penum->clip_dev != 0 ?
+                                    (gx_device *) penum->clip_dev :
+                                    dev), lop, pdcolor);
+        gx_device_retain((gx_device *)rtdev, true);
+        penum->rop_dev = rtdev;
+        penum->dev = (gx_device *)rtdev; /* Will restore this in a mo. Hacky! */
+    }
     {
         static sample_unpack_proc_t procs[2][6] = {
         {   sample_unpack_1, sample_unpack_2,
@@ -984,45 +1014,11 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
         for (i = 0; i < gx_image_class_table_count; ++i)
             if ((penum->render = gx_image_class_table[i](penum)) != 0)
                 break;
+        penum->dev = dev; /* Restore this (in case it was changed to cdev or rtdev) */
         if (i == gx_image_class_table_count) {
             /* No available class can handle this image. */
             return_error(gs_error_rangecheck);
         }
-    }
-    if (penum->clip_image && pcpath) {  /* Set up the clipping device. */
-        gx_device_clip *cdev =
-            gs_alloc_struct(mem, gx_device_clip,
-                            &st_device_clip, "image clipper");
-
-        if (cdev == 0) {
-            gx_default_end_image(dev,
-                                 (gx_image_enum_common_t *) penum,
-                                 false);
-            return_error(gs_error_VMerror);
-        }
-        gx_make_clip_device_in_heap(cdev, pcpath, dev, mem);
-        penum->clip_dev = cdev;
-    }
-    if (penum->use_rop) {       /* Set up the RasterOp source device. */
-        gx_device_rop_texture *rtdev;
-
-        code = gx_alloc_rop_texture_device(&rtdev, mem,
-                                           "image RasterOp");
-        if (code < 0) {
-            gx_default_end_image(dev, (gx_image_enum_common_t *) penum,
-                                 false);
-            return code;
-        }
-        /* The 'target' must not be NULL for gx_make_rop_texture_device */
-        if (!penum->clip_dev && !dev)
-            return_error(gs_error_undefined);
-
-        gx_make_rop_texture_device(rtdev,
-                                   (penum->clip_dev != 0 ?
-                                    (gx_device *) penum->clip_dev :
-                                    dev), lop, pdcolor);
-        gx_device_retain((gx_device *)rtdev, true);
-        penum->rop_dev = rtdev;
     }
     return 0;
 
