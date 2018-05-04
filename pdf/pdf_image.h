@@ -18,4 +18,7 @@
 #ifndef PDF_IMAGE_OPERATORS
 #define PDF_IMAGE_OPERATORS
 
+int pdf_BI(pdf_context *ctx);
+int pdf_EI(pdf_context *ctx);
+
 #endif
