@@ -2534,6 +2534,9 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
                         break;
                     }
                     if (keyword->key == PDF_ENDOBJ) {
+                        /* Something went wrong, this is not a stream dictionary */
+                        pdf_pop(ctx, 3);
+                        return(repair_pdf_file(ctx));
                         break;
                     }
                 }
@@ -2963,7 +2966,7 @@ int pdf_read_xref(pdf_context *ctx)
         return(repair_pdf_file(ctx));
     }
 
-    if(ctx->pdfdebug) {
+    if(ctx->pdfdebug && ctx->xref_table) {
         int i, j;
         xref_entry *entry;
         char Buffer[32];
