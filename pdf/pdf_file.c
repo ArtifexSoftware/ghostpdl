@@ -22,6 +22,7 @@
 #include "spngpx.h"
 #include "spdiffx.h"
 #include "strmio.h"
+#include "slzwx.h"
 
 /***********************************************************************************/
 /* Decompression filters.                                                          */
@@ -84,18 +85,14 @@ pdf_filter_open(uint buffer_size,
     return 0;
 }
 
-static int pdf_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
+static int pdf_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
 {
-    stream_zlib_state zls;
-    pdf_dict *DP;
-    pdf_obj *o;
-    stream_PNGP_state pps;
-    uint min_size = 2;
     int code;
     uint32_t Predictor = 1;
-
-    /* s_zlibD_template defined in base/szlibd.c */
-    (*s_zlibD_template.set_defaults)((stream_state *)&zls);
+    pdf_dict *DP;
+    pdf_obj *o;
+    uint min_size = 2;
+    stream_PNGP_state pps;
 
     code = pdf_dict_get(d, "DecodeParms", &o);
     if (code < 0 && code != gs_error_undefined)
@@ -180,17 +177,60 @@ static int pdf_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, strea
     }
     switch(Predictor) {
         case 1:
-            pdf_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_zlibD_template, (const stream_state *)&zls, ctx->memory->non_gc_memory, new_stream);
+            *new_stream = source;
             break;
         case 2:
         default:
-            pdf_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_zlibD_template, (const stream_state *)&zls, ctx->memory->non_gc_memory, new_stream);
-            (*new_stream)->strm = source;
-            source = *new_stream;
+            dmprintf(ctx->memory, "Predictor filter %d!!!!!!!!!!!!!!\n");
             pdf_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_PNGPD_template, (const stream_state *)&pps, ctx->memory->non_gc_memory, new_stream);
+            (*new_stream)->strm = source;
             break;
     }
+    return 0;
+}
+
+static int pdf_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
+{
+    stream_zlib_state zls;
+    uint min_size = 2;
+
+    /* s_zlibD_template defined in base/szlibd.c */
+    (*s_zlibD_template.set_defaults)((stream_state *)&zls);
+
+    pdf_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_zlibD_template, (const stream_state *)&zls, ctx->memory->non_gc_memory, new_stream);
     (*new_stream)->strm = source;
+    source = *new_stream;
+
+    pdf_Predictor_filter(ctx, d, source, new_stream);
+    return 0;
+}
+
+static int pdf_LZW_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
+{
+    stream_LZW_state lzs;
+    uint min_size = 2;
+    pdf_obj *o;
+    int code;
+    int64_t i;
+
+    /* s_zlibD_template defined in base/szlibd.c */
+    s_LZW_set_defaults_inline(&lzs);
+
+    code = pdf_dict_get_int(ctx, d, "EarlyChange", &i);
+    if (code < 0 && code != gs_error_undefined)
+        return code;
+    if (code == 0) {
+        if (i == 0)
+            lzs.EarlyChange = false;
+        else
+            lzs.EarlyChange = true;
+    }
+
+    pdf_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_LZWD_template, (const stream_state *)&lzs, ctx->memory->non_gc_memory, new_stream);
+    (*new_stream)->strm = source;
+    source = *new_stream;
+
+    pdf_Predictor_filter(ctx, d, source, new_stream);
     return 0;
 }
 
@@ -233,6 +273,16 @@ int pdf_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **n
     if (n->length == 11 && memcmp((const char *)n->data, "JBIG2Decode", 11) == 0) {
     }
     if (n->length == 9 && memcmp((const char *)n->data, "LZWDecode", 9) == 0) {
+        code = pdf_LZW_filter(ctx, d, source->s, &temp_stream);
+        if (code < 0)
+            return code;
+        *new_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdf_filter, new pdf_stream");
+        if (*new_stream == NULL)
+            return_error(gs_error_VMerror);
+        memset(*new_stream, 0x00, sizeof(pdf_stream));
+        (*new_stream)->eof = false;
+        ((pdf_stream *)(*new_stream))->s = temp_stream;
+        return 0;
     }
     if (n->length == 9 && memcmp((const char *)n->data, "DCTDecode", 9) == 0) {
     }
