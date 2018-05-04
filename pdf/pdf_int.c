@@ -2433,6 +2433,14 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
     if (num < 0 || num > ctx->main_stream_length)
         return_error(gs_error_rangecheck);
 
+    if (pdf_loop_detector_check_object(ctx, num) == true)
+        return_error(gs_error_circular_reference);
+    else {
+        code = pdf_loop_detector_add_object(ctx, num);
+        if (code < 0)
+            return code;
+    }
+
     if(ctx->pdfdebug)
         dmprintf(ctx->memory, "%% Reading /Prev xref\n");
 
@@ -2718,6 +2726,13 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
 
         pdf_pop(ctx, 2);
 
+        if (pdf_loop_detector_check_object(ctx, num) == true)
+            return_error(gs_error_circular_reference);
+        else {
+            code = pdf_loop_detector_add_object(ctx, num);
+            if (code < 0)
+                return code;
+        }
         /* Because of the way the code works when we read a file which is a pure
          * xref stream file, we need to read the first integer of 'x y obj'
          * because the xref stream decoding code expects that to be on the stack.
@@ -2748,6 +2763,14 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
 
     if (num < 0 || num > ctx->main_stream_length)
         return_error(gs_error_rangecheck);
+
+    if (pdf_loop_detector_check_object(ctx, num) == true)
+        return_error(gs_error_circular_reference);
+    else {
+        code = pdf_loop_detector_add_object(ctx, num);
+        if (code < 0)
+            return code;
+    }
 
     code = pdf_seek(ctx, s, num, SEEK_SET);
     if (code < 0)
@@ -4008,6 +4031,14 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
         return code;
     }
 
+    code = pdf_init_loop_detector(ctx);
+    if (code < 0)
+        return code;
+
+    code = pdf_loop_detector_add_object(ctx, ctx->startxref);
+    if (code < 0)
+        return code;
+
     code = pdf_read_xref(ctx);
     if (code < 0) {
         if (ctx->is_hybrid) {
@@ -4026,6 +4057,10 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
             return code;
         }
     }
+
+    code = pdf_free_loop_detector(ctx);
+    if (code < 0)
+        return code;
 
     code = pdf_read_Root(ctx);
     if (code < 0) {
