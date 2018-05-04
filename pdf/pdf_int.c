@@ -690,11 +690,15 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
         dmprintf(ctx->memory, " <");
 
     do {
-        bytes = pdf_read_bytes(ctx, (byte *)HexBuf, 1, 1, s);
+        do {
+            bytes = pdf_read_bytes(ctx, (byte *)HexBuf, 1, 1, s);
+            if (bytes == 0 && s->eof)
+                break;
+            if (bytes <= 0)
+                return_error(gs_error_ioerror);
+        } while(iswhite(HexBuf[0]));
         if (bytes == 0 && s->eof)
             break;
-        if (bytes <= 0)
-            return_error(gs_error_ioerror);
 
         if (HexBuf[0] == '>')
             break;
@@ -702,9 +706,15 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
         if (ctx->pdfdebug)
             dmprintf1(ctx->memory, "%c", HexBuf[0]);
 
-        bytes = pdf_read_bytes(ctx, (byte *)&HexBuf[1], 1, 1, s);
-        if (bytes <= 0)
-            return_error(gs_error_ioerror);
+        do {
+            bytes = pdf_read_bytes(ctx, (byte *)&HexBuf[1], 1, 1, s);
+            if (bytes == 0 && s->eof)
+                break;
+            if (bytes <= 0)
+                return_error(gs_error_ioerror);
+        } while(iswhite(HexBuf[1]));
+        if (bytes == 0 && s->eof)
+            break;
 
         if (!ishex(HexBuf[0]) || !ishex(HexBuf[1]))
             return_error(gs_error_syntaxerror);
@@ -3846,8 +3856,10 @@ static int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
         if (code < 0)
             return code;
 
-        if(compressed_stream->eof == true)
-            break;
+        if (ctx->stack_top - ctx->stack_bot <= 0) {
+            if(compressed_stream->eof == true)
+                break;
+        }
 
         if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
             keyword = (pdf_keyword *)ctx->stack_top[-1];
@@ -3871,6 +3883,8 @@ static int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
                     break;
             }
         }
+        if(compressed_stream->eof == true)
+            break;
     }while(1);
     return 0;
 }
