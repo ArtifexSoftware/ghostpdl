@@ -30,8 +30,7 @@ typedef enum pdf_obj_type_e {
     PDF_ARRAY = 'a',
     PDF_DICT = 'd',
     PDF_INDIRECT = 'R',
-    PDF_TRUE = '1',
-    PDF_FALSE = '0',
+    PDF_BOOL = 'b',
     PDF_KEYWORD = 'K',
     /* The following aren't PDF object types, but are objects we either want to
      * reference count, or store on the stack.
@@ -63,6 +62,11 @@ typedef enum pdf_obj_type_e {
 typedef struct pdf_obj_s {
     pdf_obj_common;
 } pdf_obj;
+
+typedef struct pdf_bool_s {
+    pdf_obj_common;
+    bool value;
+} pdf_bool;
 
 typedef struct pdf_num_s {
     pdf_obj_common;

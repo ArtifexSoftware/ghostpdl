@@ -148,11 +148,10 @@ void pdf_free_object(pdf_obj *o)
         case PDF_ARRAY_MARK:
         case PDF_DICT_MARK:
         case PDF_NULL:
-        case PDF_TRUE:
-        case PDF_FALSE:
         case PDF_INT:
         case PDF_REAL:
         case PDF_INDIRECT:
+        case PDF_BOOL:
             gs_free_object(o->memory, o, "pdf interpreter object refcount to 0");
             break;
         case PDF_STRING:
@@ -1014,7 +1013,7 @@ static int pdf_array_from_stack(pdf_context *ctx)
     return code;
 }
 
-static int pdf_dict_from_stack(pdf_context *ctx)
+int pdf_dict_from_stack(pdf_context *ctx)
 {
     uint64_t index = 0;
     pdf_dict *d = NULL;
@@ -1475,7 +1474,7 @@ static int pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
 /* This function is slightly misnamed, for some keywords we do
  * indeed read the keyword and return a PDF_KEYWORD object, but
  * for null, true, false and R we create an appropriate object
- * of that type (PDF_NULL, PDF_TRUE, PDF_FALSE or PDF_INDIRECT_REF)
+ * of that type (PDF_NULL, PDF_BOOL or PDF_INDIRECT_REF)
  * and return it instead.
  */
 static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
@@ -1605,23 +1604,24 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
             break;
         case 't':
             if (keyword->length == 4 && memcmp((const char *)Buffer, "true", 4) == 0) {
-                pdf_obj *o;
+                pdf_bool *o;
 
                 pdf_countdown(keyword);
 
-                o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
+                o = (pdf_bool *)gs_alloc_bytes(ctx->memory, sizeof(pdf_bool), "pdf_read_keyword");
                 if (o == NULL)
                     return_error(gs_error_VMerror);
 
-                memset(o, 0x00, sizeof(pdf_obj));
+                memset(o, 0x00, sizeof(pdf_bool));
                 o->memory = ctx->memory;
-                o->type = PDF_TRUE;
+                o->type = PDF_BOOL;
+                o->value = true;
 
 #if REFCNT_DEBUG
                 o->UID = ctx->UID++;
                 dmprintf1(ctx->memory, "Allocated boolean object with UID %"PRIi64"\n", o->UID);
 #endif
-                code = pdf_push(ctx, o);
+                code = pdf_push(ctx, (pdf_obj *)o);
                 if (code < 0)
                     pdf_free_object((pdf_obj *)o);
                 return code;
@@ -1634,23 +1634,24 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
         case 'f':
             if (keyword->length == 5 && memcmp((const char *)Buffer, "false", 5) == 0)
             {
-                pdf_obj *o;
+                pdf_bool *o;
 
                 pdf_countdown(keyword);
 
-                o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
+                o = (pdf_bool *)gs_alloc_bytes(ctx->memory, sizeof(pdf_bool), "pdf_read_keyword");
                 if (o == NULL)
                     return_error(gs_error_VMerror);
 
                 memset(o, 0x00, sizeof(pdf_obj));
                 o->memory = ctx->memory;
-                o->type = PDF_FALSE;
+                o->type = PDF_BOOL;
+                o->value = true;
 
 #if REFCNT_DEBUG
                 o->UID = ctx->UID++;
                 dmprintf1(ctx->memory, "Allocated boolean object with UID %"PRIi64"\n", o->UID);
 #endif
-                code = pdf_push(ctx, o);
+                code = pdf_push(ctx, (pdf_obj *)o);
                 if (code < 0)
                     pdf_free_object((pdf_obj *)o);
                 return code;
@@ -2326,6 +2327,7 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
         pdf_countup(d);
     }
 
+    pdf_seek(ctx, ctx->main_stream, d->stream_offset, SEEK_SET);
     code = pdf_filter(ctx, d, s, &XRefStrm);
     if (code < 0) {
         pdf_countdown(ctx->xref_table);
@@ -2508,7 +2510,7 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
                             return repair_pdf_file(ctx);
                         }
                         d = (pdf_dict *)ctx->stack_top[-1];
-                        d->stream_offset = (gs_offset_t)stell(ctx->main_stream->s);
+                        d->stream_offset = pdf_tell(ctx);
 
                         d->object_num = obj_num;
                         d->generation_num = gen_num;
@@ -2610,9 +2612,6 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
         xref_entry *entry = &ctx->xref_table->xref[i + start];
         unsigned char free;
 
-        if (entry->object_num != 0)
-            continue;
-
         bytes = pdf_read_bytes(ctx, (byte *)Buffer, 1, 20, s);
         if (bytes < 20)
             return_error(gs_error_ioerror);
@@ -2622,6 +2621,9 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
             j--;
         }
         Buffer[j] = 0x00;
+        if (entry->object_num != 0)
+            continue;
+
         sscanf(Buffer, "%ld %d %c", &entry->u.uncompressed.offset, &entry->u.uncompressed.generation_num, &free);
         entry->compressed = false;
         entry->object_num = i + start;
@@ -2710,7 +2712,7 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
     if (code == 0)
         ctx->is_hybrid = true;
 
-    if (ctx->is_hybrid && ctx->prefer_xrefstm) {
+    if (code == 0 && ctx->prefer_xrefstm) {
         if (ctx->pdfdebug)
             dmprintf(ctx->memory, "%% File is a hybrid, containing xref table and xref stream. Using the stream.\n");
 
@@ -2727,7 +2729,8 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
             return code;
 
         code = pdf_read_xref_stream_dict(ctx, ctx->main_stream);
-        return code;
+        if (code < 0)
+            return code;
     }
 
     /* Not a hybrid file, so now check if this is a modified file and has
@@ -2773,7 +2776,7 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
     int64_t bytes = 0;
     bool found = false;
 
-//    if (ctx->pdfdebug)
+    if (ctx->pdfdebug)
         dmprintf1(ctx->memory, "%% Attempting to open %s as a PDF file\n", filename);
 
     ctx->main_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "PDF interpreter allocate main PDF stream");
@@ -3600,8 +3603,11 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 pdf_pop(ctx, 1);
                 code = pdf_B_star(ctx);
                 break;
-            case K3('B','D','C'):   /* begin marked content sequence with property list */
             case K2('B','I'):       /* begin inline image */
+                pdf_pop(ctx, 1);
+                code = pdf_BI(ctx);
+                break;
+            case K3('B','D','C'):   /* begin marked content sequence with property list */
             case K3('B','M','C'):   /* begin marked content sequence */
             case K2('B','T'):       /* begin text */
             case K2('B','X'):       /* begin compatibility section */
@@ -3623,11 +3629,14 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 pdf_pop(ctx, 1);
                 code = pdf_setdash(ctx);
                 break;
+            case K2('E','I'):       /* end inline image */
+                pdf_pop(ctx, 1);
+                code = pdf_EI(ctx);
+                break;
             case K2('d','0'):       /* set type 3 font glyph width */
             case K2('d','1'):       /* set type 3 font glyph width and bounding box */
             case K2('D','o'):       /* invoke named XObject */
             case K2('D','P'):       /* define marked content point with property list */
-            case K2('E','I'):       /* end inline image */
             case K3('E','M','C'):   /* end marked content sequence */
             case K2('E','T'):       /* end text */
             case K2('E','X'):       /* end compatibility section */
@@ -3665,7 +3674,8 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 code = pdf_setflat(ctx);
                 break;
             case K2('I','D'):       /* begin inline image data */
-                pdf_clearstack(ctx);
+                pdf_pop(ctx, 1);
+                code = pdf_ID(ctx);
                 break;
             case K1('j'):           /* setlinejoin */
                 pdf_pop(ctx, 1);
