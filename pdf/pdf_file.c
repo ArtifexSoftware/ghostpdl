@@ -181,7 +181,6 @@ static int pdf_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
             break;
         case 2:
         default:
-            dmprintf(ctx->memory, "Predictor filter %d!!!!!!!!!!!!!!\n");
             pdf_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_PNGPD_template, (const stream_state *)&pps, ctx->memory->non_gc_memory, new_stream);
             (*new_stream)->strm = source;
             break;
