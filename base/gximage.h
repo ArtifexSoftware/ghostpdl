@@ -226,7 +226,7 @@ struct gx_image_enum_s {
     gs_fixed_point x_extent, y_extent;  /* extent of one row of rect */
     SAMPLE_UNPACK_PROC((*unpack));
     irender_proc((*render));
-    int (*skip_next_line)(gx_image_enum *penum);
+    int (*skip_next_line)(gx_image_enum *penum, gx_device *dev);
     const gs_gstate *pgs;
     const gs_color_space *pcs;  /* color space of image */
     byte *buffer;               /* for expanding samples to a */

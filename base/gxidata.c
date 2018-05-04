@@ -96,7 +96,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
 
         if (penum->interpolate == interp_off) {
             if (penum->skip_next_line) {
-                if (penum->skip_next_line(penum))
+                if (penum->skip_next_line(penum, dev))
                     goto mt;
             } else {
                 switch (penum->posture) {
