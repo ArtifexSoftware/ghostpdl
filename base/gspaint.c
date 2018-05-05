@@ -486,16 +486,12 @@ gs_stroke(gs_gstate * pgs)
         if (code < 0)
             return code;
     }
-    if (gs_is_null_device(pgs->device)) {
-        /* Handle separately to prevent gs_gstate_color_load. */
-        gs_newpath(pgs);
-        code = 0;
-    } else {
+    if (!gs_is_null_device(pgs->device)) {
         code = do_stroke(pgs);
-        if (code >= 0)
-            gs_newpath(pgs);
+        if (code < 0)
+            return code;
     }
-    return code;
+    return gs_newpath(pgs);
 }
 
 /* Compute the stroked outline of the current path */
