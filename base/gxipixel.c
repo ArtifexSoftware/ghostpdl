@@ -276,7 +276,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     int log2_xbytes = (bps <= 8 ? 0 : arch_log2_sizeof_frac);
     int spp, nplanes, spread;
     uint bsize;
-    byte *buffer;
+    byte *buffer = NULL;
     fixed mtx, mty;
     gs_fixed_point row_extent, col_extent, x_extent, y_extent;
     bool device_color = true;
@@ -955,8 +955,10 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
             gs_alloc_struct(mem, gx_device_clip,
                             &st_device_clip, "image clipper");
 
-        if (cdev == NULL)
-            return_error(gs_error_VMerror);
+        if (cdev == NULL) {
+            code = gs_error_VMerror;
+            goto fail;
+        }
         gx_make_clip_device_in_heap(cdev, pcpath, dev, mem);
         penum->clip_dev = cdev;
         penum->dev = (gx_device *)cdev; /* Will restore this in a mo. Hacky! */
@@ -1023,6 +1025,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     return 0;
 
 fail:
+    gs_free_object(mem, buffer, "image buffer");
     gs_free_object(mem, penum->clues, "gx_image_enum_begin");
     gs_free_object(mem, penum, "gx_begin_image1");
     return code;
