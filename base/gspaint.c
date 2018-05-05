@@ -348,7 +348,7 @@ fill_with_rule(gs_gstate * pgs, int rule)
     } else {
         code = do_fill(pgs, rule);
         if (code >= 0)
-            gs_newpath(pgs);
+            code = gs_newpath(pgs);
     }
     return code;
 }
