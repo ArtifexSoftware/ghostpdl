@@ -25,10 +25,14 @@ int pdf_BI(pdf_context *ctx)
     return pdf_mark_stack(ctx, PDF_DICT_MARK);
 }
 
-int pdf_ID(pdf_context *ctx)
+int pdf_ID(pdf_context *ctx, pdf_stream *source)
 {
-    pdf_dict *d;
-    int code;
+    pdf_name *n = NULL;
+    pdf_dict *d = NULL;
+    pdf_stream *new_stream;
+    int64_t Height, Width, BPC;
+    int i, code, comps = 0, byteswide, total;
+    byte c;
 
     code = pdf_dict_from_stack(ctx);
     if (code < 0)
@@ -39,7 +43,129 @@ int pdf_ID(pdf_context *ctx)
     pdf_pop(ctx, 1);
 
     /* Need to process it here. Punt for now */
+    code = pdf_dict_get_int(ctx, d, "Height", &Height);
+    if (code == gs_error_undefined)
+        code = pdf_dict_get_int(ctx, d, "H", &Height);
+    if (code < 0) {
+        pdf_countdown(d);
+        return code;
+    }
+
+    code = pdf_dict_get_int(ctx, d, "Width", &Width);
+    if (code == gs_error_undefined)
+        code = pdf_dict_get_int(ctx, d, "W", &Width);
+    if (code < 0) {
+        pdf_countdown(d);
+        return code;
+    }
+
+    code = pdf_dict_get_int(ctx, d, "BitsPerComponent", &BPC);
+    if (code == gs_error_undefined)
+        code = pdf_dict_get_int(ctx, d, "BPC", &BPC);
+    if (code < 0) {
+        pdf_countdown(d);
+        return code;
+    }
+
+    code = pdf_dict_get_type(ctx, d, "ColorSpace", PDF_NAME, (pdf_obj **)&n);
+    if (code == gs_error_undefined)
+        code = pdf_dict_get_type(ctx, d, "CS", PDF_NAME, (pdf_obj **)&n);
+    if (code < 0) {
+        gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+        comps = dev->color_info.num_components;
+    } else {
+        switch(n->length){
+            case 1:
+                if (memcmp(n->data, "G", 1) == 0){
+                    comps = 1;
+                } else {
+                    if (memcmp(n->data, "I", 1) == 0){
+                        comps = 1;
+                    } else {
+                        pdf_countdown(n);
+                        pdf_countdown(d);
+                        return_error(gs_error_syntaxerror);
+                    }
+                }
+                break;
+            case 3:
+                if (memcmp(n->data, "RGB", 3) == 0){
+                    comps = 3;
+                } else {
+                    pdf_countdown(n);
+                    pdf_countdown(d);
+                    return_error(gs_error_syntaxerror);
+                }
+                break;
+            case 4:
+                if (memcmp(n->data, "CMYK", 4) == 0){
+                    comps = 4;
+                } else {
+                    pdf_countdown(n);
+                    pdf_countdown(d);
+                    return_error(gs_error_syntaxerror);
+                }
+                break;
+            case 7:
+                if (memcmp(n->data, "Indexed", 7) == 0){
+                    comps = 1;
+                } else {
+                    pdf_countdown(n);
+                    pdf_countdown(d);
+                    return_error(gs_error_syntaxerror);
+                }
+                break;
+            case 9:
+                if (memcmp(n->data, "DeviceRGB", 9) == 0){
+                    comps = 3;
+                } else {
+                    pdf_countdown(n);
+                    pdf_countdown(d);
+                    return_error(gs_error_syntaxerror);
+                }
+                break;
+            case 10:
+                if (memcmp(n->data, "DeviceGray", 10) == 0){
+                    comps = 1;
+                } else {
+                    if (memcmp(n->data, "DeviceCMYK", 10) == 0){
+                        comps = 4;
+                    } else {
+                        pdf_countdown(n);
+                        pdf_countdown(d);
+                        return_error(gs_error_syntaxerror);
+                    }
+                }
+                break;
+            default:
+                pdf_countdown(n);
+                pdf_countdown(d);
+                return_error(gs_error_syntaxerror);
+        }
+        pdf_countdown(n);
+    }
+
+    code = pdf_filter(ctx, d, source, &new_stream, true);
+    if (code < 0) {
+        pdf_countdown(d);
+        return code;
+    }
+
     pdf_countdown(d);
+
+    byteswide = ((Width * comps * BPC) + 7) / 8;
+    total = byteswide * Height;
+
+    for (i=0;i < total;i++) {
+        code = pdf_read_bytes(ctx, &c, 1, 1, new_stream);
+        if (code < 0) {
+            if (new_stream != source)
+                gs_free_object(ctx->memory, new_stream, "Free working stream for inline image");
+            return code;
+        }
+    }
+    if (new_stream != source)
+        gs_free_object(ctx->memory, new_stream, "Free working stream for inline image");
     return 0;
 }
 
