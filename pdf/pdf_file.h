@@ -15,7 +15,7 @@
 
 /* File and decompression filter code */
 
-int pdf_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **new_stream);
+int pdf_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **new_stream, bool inline_image);
 void pdf_close_file(pdf_context *ctx, pdf_stream *s);
 int pdf_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count, pdf_stream *s);
 int pdf_unread(pdf_context *ctx, pdf_stream *s, byte *Buffer, uint32_t size);
