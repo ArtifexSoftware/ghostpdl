@@ -335,7 +335,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 return code;
             }
 
-            code = pdf_filter(ctx, compressed_object, ctx->main_stream, &compressed_stream);
+            code = pdf_filter(ctx, compressed_object, ctx->main_stream, &compressed_stream, false);
             if (code < 0) {
                 pdf_countdown(compressed_object);
                 (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
@@ -2342,7 +2342,7 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
     }
 
     pdf_seek(ctx, ctx->main_stream, d->stream_offset, SEEK_SET);
-    code = pdf_filter(ctx, d, s, &XRefStrm);
+    code = pdf_filter(ctx, d, s, &XRefStrm, false);
     if (code < 0) {
         pdf_countdown(ctx->xref_table);
         ctx->xref_table = NULL;
@@ -2862,7 +2862,7 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
     int64_t bytes = 0;
     bool found = false;
 
-    if (ctx->pdfdebug)
+//    if (ctx->pdfdebug)
         dmprintf1(ctx->memory, "%% Attempting to open %s as a PDF file\n", filename);
 
     ctx->main_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "PDF interpreter allocate main PDF stream");
@@ -2994,6 +2994,14 @@ int pdf_read_xref(pdf_context *ctx)
         return_error(gs_error_VMerror);
     }
 
+    code = pdf_init_loop_detector(ctx);
+    if (code < 0)
+        return code;
+
+    code = pdf_loop_detector_add_object(ctx, ctx->startxref);
+    if (code < 0)
+        return code;
+
     if (ctx->startxref != 0) {
         if (ctx->pdfdebug)
             dmprintf(ctx->memory, "%% Trying to read 'xref' token for xref table, or 'int int obj' for an xref stream\n");
@@ -3004,6 +3012,7 @@ int pdf_read_xref(pdf_context *ctx)
         code = pdf_read_token(ctx, ctx->main_stream);
         if (code < 0) {
             dmprintf(ctx->memory, "Failed to read any token at the startxref location\n");
+            (void)pdf_free_loop_detector(ctx);
             return(repair_pdf_file(ctx));
         }
 
@@ -3014,15 +3023,20 @@ int pdf_read_xref(pdf_context *ctx)
             /* Read old-style xref table */
             pdf_pop(ctx, 1);
             code = read_xref(ctx, ctx->main_stream);
-            if (code < 0)
+            if (code < 0) {
+                (void)pdf_free_loop_detector(ctx);
                 return(repair_pdf_file(ctx));
+            }
         } else {
             code = pdf_read_xref_stream_dict(ctx, ctx->main_stream);
-            if (code < 0)
+            if (code < 0){
+                (void)pdf_free_loop_detector(ctx);
                 return(repair_pdf_file(ctx));
+            }
         }
     } else {
         /* Attempt to repair PDF file */
+        (void)pdf_free_loop_detector(ctx);
         return(repair_pdf_file(ctx));
     }
 
@@ -3090,6 +3104,11 @@ int pdf_read_xref(pdf_context *ctx)
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "\n");
     gs_free_object(ctx->memory, Buffer, "PDF interpreter - allocate working buffer for file validation");
+
+    code = pdf_free_loop_detector(ctx);
+    if (code < 0)
+        return code;
+
     return 0;
 }
 
@@ -3652,7 +3671,7 @@ static int split_bogus_operator(pdf_context *ctx)
 #define K2(a, b) ((a << 8) + b)
 #define K3(a, b, c) ((a << 16) + (b << 8) + c)
 
-static int pdf_interpret_stream_operator(pdf_context *ctx)
+static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source)
 {
     pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1];
     uint32_t op = 0;
@@ -3761,7 +3780,7 @@ static int pdf_interpret_stream_operator(pdf_context *ctx)
                 break;
             case K2('I','D'):       /* begin inline image data */
                 pdf_pop(ctx, 1);
-                code = pdf_ID(ctx);
+                code = pdf_ID(ctx, source);
                 break;
             case K1('j'):           /* setlinejoin */
                 pdf_pop(ctx, 1);
@@ -3893,18 +3912,16 @@ static int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
     if (code < 0)
         return code;
 
-    code = pdf_filter(ctx, stream_dict, ctx->main_stream, &compressed_stream);
-    if (code == gs_error_undefined) {
-        compressed_stream = ctx->main_stream;
-        code = 0;
-    }
+    code = pdf_filter(ctx, stream_dict, ctx->main_stream, &compressed_stream, false);
     if (code < 0)
-            return code;
+        return code;
 
     do {
         code = pdf_read_token(ctx, compressed_stream);
-        if (code < 0)
+        if (code < 0) {
+            gs_free_object(ctx->memory, compressed_stream, "free content stream on error");
             return code;
+        }
 
         if (ctx->stack_top - ctx->stack_bot <= 0) {
             if(compressed_stream->eof == true)
@@ -3917,17 +3934,20 @@ static int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
             switch(keyword->key) {
                 case PDF_ENDSTREAM:
                     pdf_clearstack(ctx);
+                    gs_free_object(ctx->memory, compressed_stream, "free content stream on error");
                     return 0;
                     break;
                 case PDF_NOT_A_KEYWORD:
-                    code = pdf_interpret_stream_operator(ctx);
+                    code = pdf_interpret_stream_operator(ctx, compressed_stream);
                     if (code < 0) {
+                        gs_free_object(ctx->memory, compressed_stream, "free content stream on error");
                         pdf_clearstack(ctx);
                         return code;
                     }
                     break;
                 default:
                     ctx->pdf_errors |= E_PDF_NOENDSTREAM;
+                    gs_free_object(ctx->memory, compressed_stream, "free content stream on error");
                     pdf_clearstack(ctx);
                     return_error(gs_error_typecheck);
                     break;
@@ -3936,6 +3956,8 @@ static int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
         if(compressed_stream->eof == true)
             break;
     }while(1);
+
+    gs_free_object(ctx->memory, compressed_stream, "free content stream on completion");
     return 0;
 }
 
@@ -4098,14 +4120,6 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
         return code;
     }
 
-    code = pdf_init_loop_detector(ctx);
-    if (code < 0)
-        return code;
-
-    code = pdf_loop_detector_add_object(ctx, ctx->startxref);
-    if (code < 0)
-        return code;
-
     code = pdf_read_xref(ctx);
     if (code < 0) {
         if (ctx->is_hybrid) {
@@ -4124,10 +4138,6 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
             return code;
         }
     }
-
-    code = pdf_free_loop_detector(ctx);
-    if (code < 0)
-        return code;
 
     code = pdf_read_Root(ctx);
     if (code < 0) {

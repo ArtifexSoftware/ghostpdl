@@ -75,7 +75,7 @@ static inline void pdf_countdown_impl(pdf_obj *o)
     if (o != NULL) {
 #ifdef DEBUG
         if (o->refcnt == 0)
-            emprintf(o->memory, "Decrementing objct with recount at 0!\n");
+            emprintf(o->memory, "Decrementing object with refcount at 0!\n");
 #endif
         o->refcnt--;
 #if REFCNT_DEBUG
