@@ -1014,8 +1014,7 @@ gs_transparent_rop(gs_logical_operation_t lop)
     return (rop & mask) | (rop3_D & ~mask);
 }
 
-typedef enum
-{
+typedef enum {
     transform_pixel_region_portrait,
     transform_pixel_region_landscape,
     transform_pixel_region_skew
@@ -1075,8 +1074,8 @@ get_landscape_x_extent(mem_transform_pixel_region_state_t *state, int *ix, int *
     *iw = fixed2int_pixround_perfect(x1) - *ix;
 }
 
-static int
-mem_transform_pixel_region_render_portrait(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+static inline int
+template_mem_transform_pixel_region_render_portrait(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs, int spp)
 {
     gx_device_memory *mdev = (gx_device_memory *)dev;
     gx_dda_fixed_point pnext;
@@ -1084,10 +1083,8 @@ mem_transform_pixel_region_render_portrait(gx_device *dev, mem_transform_pixel_r
     int irun;			/* int x/rrun */
     int w = state->w;
     int h = state->h;
-    int spp = state->spp;
     const byte *data = buffer[0] + data_x * spp;
     const byte *bufend = NULL;
-    int code = 0;
     const byte *run;
     int k;
     gx_color_value *conc = &cmapper->conc[0];
@@ -1109,8 +1106,8 @@ mem_transform_pixel_region_render_portrait(gx_device *dev, mem_transform_pixel_r
         return 0;
 
     pnext = state->pixels;
-    irun = fixed2int_var_rounded(dda_current(pnext.x));
     dda_translate(pnext.x,  (-fixed_epsilon));
+    irun = fixed2int_var_rounded(dda_current(pnext.x));
     if_debug5m('b', dev->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
                vci, data_x, w, fixed2float(dda_current(pnext.x)), fixed2float(dda_current(pnext.y)));
 
@@ -1122,8 +1119,7 @@ mem_transform_pixel_region_render_portrait(gx_device *dev, mem_transform_pixel_r
         /* Find the length of the next run. It will either end when we hit
          * the end of the source data, or when the pixel data differs. */
         run = data + spp;
-        while (1)
-        {
+        while (1) {
             dda_next(pnext.x);
             if (run >= bufend)
                 break;
@@ -1177,12 +1173,50 @@ mem_transform_pixel_region_render_portrait(gx_device *dev, mem_transform_pixel_r
         }
         data = run;
     }
-    return (code < 0 ? code : 1);
-    /* Save position if error, in case we resume. */
+    return 0;
 }
 
 static int
-mem_transform_pixel_region_render_landscape(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+mem_transform_pixel_region_render_portrait_1(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+{
+    return template_mem_transform_pixel_region_render_portrait(dev, state, buffer, data_x, cmapper, pgs, 1);
+}
+
+static int
+mem_transform_pixel_region_render_portrait_3(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+{
+    return template_mem_transform_pixel_region_render_portrait(dev, state, buffer, data_x, cmapper, pgs, 3);
+}
+
+static int
+mem_transform_pixel_region_render_portrait_4(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+{
+    return template_mem_transform_pixel_region_render_portrait(dev, state, buffer, data_x, cmapper, pgs, 4);
+}
+
+static int
+mem_transform_pixel_region_render_portrait_n(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+{
+    return template_mem_transform_pixel_region_render_portrait(dev, state, buffer, data_x, cmapper, pgs, state->spp);
+}
+
+static int
+mem_transform_pixel_region_render_portrait(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+{
+    switch(state->spp) {
+    case 1:
+        return mem_transform_pixel_region_render_portrait_1(dev, state, buffer, data_x, cmapper, pgs);
+    case 3:
+        return mem_transform_pixel_region_render_portrait_3(dev, state, buffer, data_x, cmapper, pgs);
+    case 4:
+        return mem_transform_pixel_region_render_portrait_4(dev, state, buffer, data_x, cmapper, pgs);
+    default:
+        return mem_transform_pixel_region_render_portrait_n(dev, state, buffer, data_x, cmapper, pgs);
+    }
+}
+
+static inline int
+template_mem_transform_pixel_region_render_landscape(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs, int spp)
 {
     gx_device_memory *mdev = (gx_device_memory *)dev;
     gx_dda_fixed_point pnext;
@@ -1190,7 +1224,6 @@ mem_transform_pixel_region_render_landscape(gx_device *dev, mem_transform_pixel_
     int irun;			/* int x/rrun */
     int w = state->w;
     int h = state->h;
-    int spp = state->spp;
     const byte *data = buffer[0] + data_x * spp;
     const byte *bufend = NULL;
     int code = 0;
@@ -1215,8 +1248,8 @@ mem_transform_pixel_region_render_landscape(gx_device *dev, mem_transform_pixel_
         return 0;
 
     pnext = state->pixels;
-    irun = fixed2int_var_rounded(dda_current(pnext.y));
     dda_translate(pnext.x,  (-fixed_epsilon));
+    irun = fixed2int_var_rounded(dda_current(pnext.y));
     if_debug5m('b', dev->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
                vci, data_x, w, fixed2float(dda_current(pnext.x)), fixed2float(dda_current(pnext.y)));
 
@@ -1228,8 +1261,7 @@ mem_transform_pixel_region_render_landscape(gx_device *dev, mem_transform_pixel_
         /* Find the length of the next run. It will either end when we hit
          * the end of the source data, or when the pixel data differs. */
         run = data + spp;
-        while (1)
-        {
+        while (1) {
             dda_next(pnext.y);
             if (run >= bufend)
                 break;
@@ -1290,6 +1322,45 @@ mem_transform_pixel_region_render_landscape(gx_device *dev, mem_transform_pixel_
 err:
     buffer[0] = run;
     return code;
+}
+
+static int
+mem_transform_pixel_region_render_landscape_1(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+{
+    return template_mem_transform_pixel_region_render_landscape(dev, state, buffer, data_x, cmapper, pgs, 1);
+}
+
+static int
+mem_transform_pixel_region_render_landscape_3(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+{
+    return template_mem_transform_pixel_region_render_landscape(dev, state, buffer, data_x, cmapper, pgs, 3);
+}
+
+static int
+mem_transform_pixel_region_render_landscape_4(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+{
+    return template_mem_transform_pixel_region_render_landscape(dev, state, buffer, data_x, cmapper, pgs, 4);
+}
+
+static int
+mem_transform_pixel_region_render_landscape_n(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+{
+    return template_mem_transform_pixel_region_render_landscape(dev, state, buffer, data_x, cmapper, pgs, state->spp);
+}
+
+static int
+mem_transform_pixel_region_render_landscape(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
+{
+    switch (state->spp) {
+    case 1:
+        return mem_transform_pixel_region_render_landscape_1(dev, state, buffer, data_x, cmapper, pgs);
+    case 3:
+        return mem_transform_pixel_region_render_landscape_3(dev, state, buffer, data_x, cmapper, pgs);
+    case 4:
+        return mem_transform_pixel_region_render_landscape_4(dev, state, buffer, data_x, cmapper, pgs);
+    default:
+        return mem_transform_pixel_region_render_landscape_n(dev, state, buffer, data_x, cmapper, pgs);
+    }
 }
 
 static int
@@ -1373,7 +1444,9 @@ static int
 mem_transform_pixel_region_process_data(gx_device *dev, mem_transform_pixel_region_state_t *state, const unsigned char **buffer, int data_x, gx_cmapper_t *cmapper, const gs_gstate *pgs)
 {
     int ret = state->render(dev, state, buffer, data_x, cmapper, pgs);
+
     step_to_next_line(state);
+
     return ret;
 }
 
