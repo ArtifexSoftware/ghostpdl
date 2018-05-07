@@ -18,7 +18,6 @@ PDFSRC      = $(PDFSRCDIR)$(D)
 PDFGEN      = $(PDFGENDIR)$(D)
 PDFOBJ      = $(PDFOBJDIR)$(D)
 PDFO_       = $(O_)$(PDFOBJ)
-EXPATINCDIR = $(EXPATSRCDIR)$(D)lib
 PLOBJ       = $(PLOBJDIR)$(D)
 
 PDFCCC  = $(CC_) $(D_)PDF_INCLUDED$(_D) $(I_)$(PDFSRCDIR)$(_I) $(I_)$(PDFGENDIR)$(_I) \
@@ -44,37 +43,37 @@ PDFINCLUDES=$(PDFSRC)*.h $(PDFOBJ)arch.h $(strmio_h) $(stream_h) $(gsmatrix_h) $
 	$(gstypes_h)
 
 $(PDFOBJ)pdf_font.$(OBJ): $(PDFSRC)pdf_font.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdf_font.c $(XPSO_)pdf_font.$(OBJ)
+	$(PDFCCC) $(PDFSRC)pdf_font.c $(PDFO_)pdf_font.$(OBJ)
 
 $(PDFOBJ)pdf_text.$(OBJ): $(PDFSRC)pdf_text.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdf_text.c $(XPSO_)pdf_text.$(OBJ)
+	$(PDFCCC) $(PDFSRC)pdf_text.c $(PDFO_)pdf_text.$(OBJ)
 
 $(PDFOBJ)pdf_shading.$(OBJ): $(PDFSRC)pdf_shading.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdf_shading.c $(XPSO_)pdf_shading.$(OBJ)
+	$(PDFCCC) $(PDFSRC)pdf_shading.c $(PDFO_)pdf_shading.$(OBJ)
 
 $(PDFOBJ)pdf_image.$(OBJ): $(PDFSRC)pdf_image.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdf_image.c $(XPSO_)pdf_image.$(OBJ)
+	$(PDFCCC) $(PDFSRC)pdf_image.c $(PDFO_)pdf_image.$(OBJ)
 
 $(PDFOBJ)pdf_stack.$(OBJ): $(PDFSRC)pdf_stack.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdf_stack.c $(XPSO_)pdf_stack.$(OBJ)
+	$(PDFCCC) $(PDFSRC)pdf_stack.c $(PDFO_)pdf_stack.$(OBJ)
 
 $(PDFOBJ)pdf_gstate.$(OBJ): $(PDFSRC)pdf_gstate.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdf_gstate.c $(XPSO_)pdf_gstate.$(OBJ)
+	$(PDFCCC) $(PDFSRC)pdf_gstate.c $(PDFO_)pdf_gstate.$(OBJ)
 
 $(PDFOBJ)pdf_colour.$(OBJ): $(PDFSRC)pdf_colour.c $(PDFINCLUDES) $(gscolor1_h) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdf_colour.c $(XPSO_)pdf_colour.$(OBJ)
+	$(PDFCCC) $(PDFSRC)pdf_colour.c $(PDFO_)pdf_colour.$(OBJ)
 
 $(PDFOBJ)pdf_path.$(OBJ): $(PDFSRC)pdf_path.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdf_path.c $(XPSO_)pdf_path.$(OBJ)
+	$(PDFCCC) $(PDFSRC)pdf_path.c $(PDFO_)pdf_path.$(OBJ)
 
 $(PDFOBJ)pdf_loop_detect.$(OBJ): $(PDFSRC)pdf_loop_detect.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdf_loop_detect.c $(XPSO_)pdf_loop_detect.$(OBJ)
+	$(PDFCCC) $(PDFSRC)pdf_loop_detect.c $(PDFO_)pdf_loop_detect.$(OBJ)
 
 $(PDFOBJ)pdf_int.$(OBJ): $(PDFSRC)pdf_int.c $(PDFINCLUDES) $(plmain_h) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdf_int.c $(XPSO_)pdf_int.$(OBJ)
+	$(PDFCCC) $(PDFSRC)pdf_int.c $(PDFO_)pdf_int.$(OBJ)
 
 $(PDFOBJ)pdf_file.$(OBJ): $(PDFSRC)pdf_file.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(PDFSRC)pdf_file.c $(XPSO_)pdf_file.$(OBJ)
+	$(PDFCCC) $(PDFSRC)pdf_file.c $(PDFO_)pdf_file.$(OBJ)
 
 $(PDFGEN)pdfimpl.c: $(PLSRC)plimpl.c $(PDF_MAK) $(MAKEDIRS)
 	$(CP_) $(PLSRC)plimpl.c $(PDFGEN)pdfimpl.c
@@ -104,7 +103,8 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_image.$(OBJ)\
     $(PDFOBJ)pdf_font.$(OBJ)\
     $(PDFOBJ)pdf_text.$(OBJ)\
-    $(PDFOBJ)pdf_shading.$(OBJ)
+    $(PDFOBJ)pdf_shading.$(OBJ)\
+    $(GLOBJ)sa85d.$(OBJ)
 
 
 
