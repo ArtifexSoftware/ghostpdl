@@ -2196,6 +2196,7 @@ gx_get_cmapper(gx_cmapper_t *data, const gs_gstate *pgs,
     data->dev = dev;
     data->select = select;
     data->devc.type = gx_dc_type_none;
+    data->direct = 0;
     if (has_transfer && dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN)
         check_cmyk_color_model_comps(dev);
     if (pgs->effective_transfer_non_identity_count == 0)
@@ -2220,8 +2221,10 @@ gx_get_cmapper(gx_cmapper_t *data, const gs_gstate *pgs,
     } else {
         if (has_halftone)
             data->set_color = cmapper_halftone;
-        else
+        else {
             data->set_color = cmapper_vanilla;
+            data->direct = 1;
+        }
     }
 }
 

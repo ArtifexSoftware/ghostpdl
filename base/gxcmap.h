@@ -292,6 +292,7 @@ struct gx_cmapper_s {
     gs_color_select_t select;
     gx_device_color devc;
     gx_cmapper_fn *set_color;
+    int direct;
 };
 
 void gx_get_cmapper(gx_cmapper_t *cmapper, const gs_gstate *pgs,
