@@ -1473,7 +1473,7 @@ static int pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
             if (ctx->pdfdebug)
                 dmprintf1 (ctx->memory, " %c", Buffer);
 
-            if ((Buffer = 0x0A) || (Buffer == 0x0D)) {
+            if ((Buffer == 0x0A) || (Buffer == 0x0D)) {
                 break;
             }
         }
@@ -1747,6 +1747,8 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
             if (bytes <= 0)
                 return (gs_error_ioerror);
             if (Buffer[1] == '<') {
+                if (ctx->pdfdebug)
+                    dmprintf (ctx->memory, " <<\n");
                 return pdf_mark_stack(ctx, PDF_DICT_MARK);
             } else {
                 if (ishex(Buffer[1])) {
@@ -1770,6 +1772,8 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
             return pdf_read_string(ctx, s);
             break;
         case '[':
+            if (ctx->pdfdebug)
+                dmprintf (ctx->memory, "[");
             return pdf_mark_stack(ctx, PDF_ARRAY_MARK);
             break;
         case ']':
@@ -2562,30 +2566,35 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
     return 0;
 }
 
-static int read_xref(pdf_context *ctx, pdf_stream *s)
+static int read_xref_section(pdf_context *ctx, pdf_stream *s)
 {
     int code = 0, i, j;
     pdf_obj *o = NULL;
-    pdf_dict *d = NULL;
     uint64_t start = 0, size = 0;
     int64_t bytes = 0;
-    int64_t num;
     char Buffer[21];
 
     if (ctx->pdfdebug)
-        dmprintf(ctx->memory, "\n%% Reading pre PDF 1.5 xref table\n");
+        dmprintf(ctx->memory, "\n%% Reading xref section\n");
 
     code = pdf_read_token(ctx, ctx->main_stream);
 
     if (code < 0)
         return code;
 
+    if (ctx->stack_top - ctx->stack_bot < 1)
+        return_error(gs_error_stackunderflow);
+
     o = ctx->stack_top[-1];
+    if (o->type == PDF_KEYWORD)
+        return 0;
+
     if (o->type != PDF_INT) {
         /* element is not an integer, not a valid xref */
         pdf_pop(ctx, 1);
         return_error(gs_error_typecheck);
     }
+
     start = ((pdf_num *)o)->value.i;
 
     code = pdf_read_token(ctx, ctx->main_stream);
@@ -2603,29 +2612,49 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
     size = ((pdf_num *)o)->value.i;
     pdf_pop(ctx, 2);
 
-    /* If this is the first xref then allocate the xref table and store the trailer */
-    if (ctx->xref_table == NULL && size != 0) {
-        ctx->xref_table = (xref_table *)gs_alloc_bytes(ctx->memory, sizeof(xref_table), "read_xref_stream allocate xref table");
-        if (ctx->xref_table == NULL)
-            return_error(gs_error_VMerror);
-        memset(ctx->xref_table, 0x00, sizeof(xref_table));
+    if (ctx->pdfdebug)
+        dmprintf2(ctx->memory, "\n%% Section starts at %d and has %d entries\n", (unsigned int) start, (unsigned int)size);
 
-        ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, (start + size) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
-        if (ctx->xref_table->xref == NULL){
-            pdf_countdown(ctx->xref_table);
-            ctx->xref_table = NULL;
-            return_error(gs_error_VMerror);
-        }
+    if (size > 0) {
+        if (ctx->xref_table == NULL) {
+            ctx->xref_table = (xref_table *)gs_alloc_bytes(ctx->memory, sizeof(xref_table), "read_xref_stream allocate xref table");
+            if (ctx->xref_table == NULL)
+                return_error(gs_error_VMerror);
+            memset(ctx->xref_table, 0x00, sizeof(xref_table));
+
+            ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, (start + size) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
+            if (ctx->xref_table->xref == NULL){
+                pdf_countdown(ctx->xref_table);
+                ctx->xref_table = NULL;
+                return_error(gs_error_VMerror);
+            }
 #if REFCNT_DEBUG
-        ctx->xref_table->UID = ctx->UID++;
-        dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
+            ctx->xref_table->UID = ctx->UID++;
+            dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
 #endif
 
-        memset(ctx->xref_table->xref, 0x00, (start + size) * sizeof(xref_entry));
-        ctx->xref_table->memory = ctx->memory;
-        ctx->xref_table->type = PDF_XREF_TABLE;
-        ctx->xref_table->xref_size = start + size;
-        pdf_countup(ctx->xref_table);
+            memset(ctx->xref_table->xref, 0x00, (start + size) * sizeof(xref_entry));
+            ctx->xref_table->memory = ctx->memory;
+            ctx->xref_table->type = PDF_XREF_TABLE;
+            ctx->xref_table->xref_size = start + size;
+            pdf_countup(ctx->xref_table);
+        } else {
+            if (start + size > ctx->xref_table->xref_size) {
+                xref_entry *new_xrefs;
+
+                new_xrefs = (xref_entry *)gs_alloc_bytes(ctx->memory, (start + size) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
+                if (new_xrefs == NULL){
+                    pdf_countdown(ctx->xref_table);
+                    ctx->xref_table = NULL;
+                    return_error(gs_error_VMerror);
+                }
+                memset(new_xrefs, 0x00, (start + size) * sizeof(xref_entry));
+                memcpy(new_xrefs, ctx->xref_table->xref, ctx->xref_table->xref_size * sizeof(xref_entry));
+                gs_free_object(ctx->memory, ctx->xref_table->xref, "reallocated xref entries");
+                ctx->xref_table->xref = new_xrefs;
+                ctx->xref_table->xref_size = start + size;
+            }
+        }
     }
 
     skip_white(ctx, s);
@@ -2654,17 +2683,35 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
             entry->free = false;
     }
 
-    /* read trailer dict */
-    code = pdf_read_token(ctx, ctx->main_stream);
-    if (code < 0)
-        return code;
+    return 0;
+}
 
-    o = ctx->stack_top[-1];
-    if (o->type != PDF_KEYWORD || ((pdf_keyword *)o)->key != PDF_TRAILER) {
-        pdf_pop(ctx, 1);
-        return_error(gs_error_syntaxerror);
-    }
-    pdf_pop(ctx, 1);
+static int read_xref(pdf_context *ctx, pdf_stream *s)
+{
+    int code = 0, i, j;
+    pdf_obj **o = NULL;
+    pdf_keyword *k;
+    pdf_dict *d = NULL;
+    uint64_t start = 0, size = 0;
+    int64_t bytes = 0;
+    int64_t num;
+    char Buffer[21];
+
+    do {
+        o = ctx->stack_top;
+        code = read_xref_section(ctx, s);
+        if (code < 0)
+            return code;
+        if (ctx->stack_top - o > 0) {
+            k = (pdf_keyword *)ctx->stack_top[-1];
+            if(k->type != PDF_KEYWORD || k->key != PDF_TRAILER)
+                return_error(gs_error_syntaxerror);
+            else {
+                pdf_pop(ctx, 1);
+                break;
+            }
+        }
+    } while (1);
 
     code = pdf_read_dict(ctx, ctx->main_stream);
     if (code < 0)
@@ -2725,13 +2772,16 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
     }
 
     /* Now check if this is a hybrid file. */
-    code = pdf_dict_get_int(ctx, d, "XRefStm", &num);
-    if (code < 0 && code != gs_error_undefined) {
-        pdf_pop(ctx, 2);
-        return code;
-    }
-    if (code == 0)
-        ctx->is_hybrid = true;
+    if (ctx->Trailer == d) {
+        code = pdf_dict_get_int(ctx, d, "XRefStm", &num);
+        if (code < 0 && code != gs_error_undefined) {
+            pdf_pop(ctx, 2);
+            return code;
+        }
+        if (code == 0)
+            ctx->is_hybrid = true;
+    } else
+        code = gs_error_undefined;
 
     if (code == 0 && ctx->prefer_xrefstm) {
         if (ctx->pdfdebug)
