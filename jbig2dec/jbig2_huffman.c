@@ -536,7 +536,7 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
            the last normal table line in the encoded table */
         const int32_t HTHIGH = jbig2_get_int32(segment_data + 5);
 
-        /* estimated number of lines int this table, used for allocating memory for lines */
+        /* estimated number of lines in this table, used for allocating memory for lines */
         const size_t lines_max = (segment->data_length * 8 - HTPS * (HTOOB ? 3 : 2)) / (HTPS + HTRS) + (HTOOB ? 3 : 2);
 
         /* points to a first table line data */
@@ -681,7 +681,7 @@ jbig2_find_table(Jbig2Ctx *ctx, Jbig2Segment *segment, int index)
 
 /* cc -g -o jbig2_huffman.test1 -DTEST jbig2_huffman.c .libs/libjbig2dec.a */
 
-/* a test bitstream, and a list of the table indicies
+/* a test bitstream, and a list of the table indices
    to use in decoding it. 1 = table B.1 (A), 2 = table B.2 (B), and so on */
 /* this test stream should decode to { 8, 5, oob, 8 } */
 

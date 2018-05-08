@@ -122,7 +122,7 @@ jbig2_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_dat
         }
     }
     if (page->height == 0xFFFFFFFF && page->striped == FALSE) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "height is unspecified but page is not marks as striped");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "height is unspecified but page is not marked as striped");
         page->striped = TRUE;
     }
     page->end_row = 0;
@@ -269,10 +269,10 @@ jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, int x, 
         if (page->image->height < new_height) {
             Jbig2Image *resized_image = NULL;
 
-            jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "growing page buffer to %d rows " "to accomodate new stripe", new_height);
+            jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "growing page buffer to %d rows " "to accommodate new stripe", new_height);
             resized_image = jbig2_image_resize(ctx, page->image, page->image->width, new_height);
             if (resized_image == NULL) {
-                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "unable to resize image to accomodate new stripe");
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "unable to resize image to accommodate new stripe");
             }
             page->image = resized_image;
         }

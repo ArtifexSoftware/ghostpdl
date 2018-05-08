@@ -108,7 +108,7 @@ jbig2_metadata_add(Jbig2Ctx *ctx, Jbig2Metadata *md, const char *key, const int 
     md->keys[md->entries] = jbig2_strndup(ctx, key, key_length);
     md->values[md->entries] = jbig2_strndup(ctx, value, value_length);
     if (md->keys[md->entries] == NULL || md->values[md->entries] == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to accomodate more metadata");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to accommodate more metadata");
         return -1;
     }
     md->entries++;
