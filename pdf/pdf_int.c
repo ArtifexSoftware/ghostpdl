@@ -346,7 +346,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             {
                 code = pdf_read_token(ctx, compressed_stream);
                 if (code < 0) {
-                    sclose(compressed_stream->s);
+                    pdf_close_file(ctx, compressed_stream);
                     pdf_countdown(compressed_object);
                     (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return code;
@@ -354,7 +354,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 o = ctx->stack_top[-1];
                 if (((pdf_obj *)o)->type != PDF_INT) {
                     pdf_pop(ctx, 1);
-                    sclose(compressed_stream->s);
+                    pdf_close_file(ctx, compressed_stream);
                     pdf_countdown(compressed_object);
                     (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return_error(gs_error_typecheck);
@@ -362,7 +362,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 pdf_pop(ctx, 1);
                 code = pdf_read_token(ctx, compressed_stream);
                 if (code < 0) {
-                    sclose(compressed_stream->s);
+                    pdf_close_file(ctx, compressed_stream);
                     pdf_countdown(compressed_object);
                     (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return code;
@@ -370,7 +370,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 o = ctx->stack_top[-1];
                 if (((pdf_obj *)o)->type != PDF_INT) {
                     pdf_pop(ctx, 1);
-                    sclose(compressed_stream->s);
+                    pdf_close_file(ctx, compressed_stream);
                     pdf_countdown(compressed_object);
                     (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return_error(gs_error_typecheck);
@@ -383,19 +383,20 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             for (i=0;i < offset;i++)
             {
                 code = pdf_read_bytes(ctx, (byte *)&Buffer[0], 1, 1, compressed_stream);
-                if (code <= 0)
+                if (code <= 0) {
+                    pdf_close_file(ctx, compressed_stream);
                     return_error(gs_error_ioerror);
+                }
             }
 
             code = pdf_read_token(ctx, compressed_stream);
             if (code < 0) {
-                sclose(compressed_stream->s);
+                pdf_close_file(ctx, compressed_stream);
                 pdf_countdown(compressed_object);
                 (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
-
-            sclose(compressed_stream->s);
+            pdf_close_file(ctx, compressed_stream);
 
             *object = ctx->stack_top[-1];
             pdf_countup(*object);
@@ -2164,7 +2165,7 @@ int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx)
     }
 
     if (ctx->main_stream != NULL) {
-        pdf_close_file(ctx, ctx->main_stream);
+        sfclose(ctx->main_stream->s);
         ctx->main_stream = NULL;
     }
     if(ctx->pgs != NULL) {
@@ -2183,7 +2184,7 @@ static void cleanup_pdf_open_file(pdf_context *ctx, byte *Buffer)
         gs_free_object(ctx->memory, Buffer, "PDF interpreter - cleanup working buffer for file validation");
 
     if (ctx->main_stream != NULL) {
-        pdf_close_file(ctx, ctx->main_stream);
+        sfclose(ctx->main_stream->s);
         ctx->main_stream = NULL;
     }
     ctx->main_stream_length = 0;
@@ -3919,7 +3920,7 @@ static int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
     do {
         code = pdf_read_token(ctx, compressed_stream);
         if (code < 0) {
-            gs_free_object(ctx->memory, compressed_stream, "free content stream on error");
+            pdf_close_file(ctx, compressed_stream);
             return code;
         }
 
@@ -3933,21 +3934,21 @@ static int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
 
             switch(keyword->key) {
                 case PDF_ENDSTREAM:
+                    pdf_close_file(ctx, compressed_stream);
                     pdf_clearstack(ctx);
-                    gs_free_object(ctx->memory, compressed_stream, "free content stream on error");
                     return 0;
                     break;
                 case PDF_NOT_A_KEYWORD:
                     code = pdf_interpret_stream_operator(ctx, compressed_stream);
                     if (code < 0) {
-                        gs_free_object(ctx->memory, compressed_stream, "free content stream on error");
+                        pdf_close_file(ctx, compressed_stream);
                         pdf_clearstack(ctx);
                         return code;
                     }
                     break;
                 default:
                     ctx->pdf_errors |= E_PDF_NOENDSTREAM;
-                    gs_free_object(ctx->memory, compressed_stream, "free content stream on error");
+                    pdf_close_file(ctx, compressed_stream);
                     pdf_clearstack(ctx);
                     return_error(gs_error_typecheck);
                     break;
@@ -3957,7 +3958,7 @@ static int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
             break;
     }while(1);
 
-    gs_free_object(ctx->memory, compressed_stream, "free content stream on completion");
+    pdf_close_file(ctx, compressed_stream);
     return 0;
 }
 
@@ -4103,7 +4104,7 @@ int pdf_close_pdf_file(pdf_context *ctx)
 {
     if (ctx->main_stream) {
         if (ctx->main_stream->s) {
-            pdf_close_file(ctx, ctx->main_stream);
+            sfclose(ctx->main_stream->s);
             ctx->main_stream = NULL;
         }
         gs_free_object(ctx->memory, ctx->main_stream, "Closing main PDF file");
@@ -4178,7 +4179,8 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
             return code;
     }
 
-    code = pdf_close_pdf_file(ctx);
+    code = sfclose(ctx->main_stream->s);
+    ctx->main_stream = NULL;
     return code;
 }
 

@@ -159,13 +159,11 @@ int pdf_ID(pdf_context *ctx, pdf_stream *source)
     for (i=0;i < total;i++) {
         code = pdf_read_bytes(ctx, &c, 1, 1, new_stream);
         if (code < 0) {
-            if (new_stream != source)
-                gs_free_object(ctx->memory, new_stream, "Free working stream for inline image");
+            pdf_close_file(new_stream);
             return code;
         }
     }
-    if (new_stream != source)
-        gs_free_object(ctx->memory, new_stream, "Free working stream for inline image");
+    pdf_close_file(ctx, new_stream);
     return 0;
 }
 

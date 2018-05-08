@@ -26,6 +26,9 @@
 #include "sstring.h"    /* ASCIIHexDecode */
 #include "sa85d.h"      /* ASCII85Decode */
 #include "scfx.h"       /* CCITTFaxDecode */
+#include "srlx.h"
+#include "jpeglib.h"
+#include "sdct.h"       /* DCTDecode */
 
 /***********************************************************************************/
 /* Decompression filters.                                                          */
@@ -246,6 +249,80 @@ static int pdf_LZW_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream 
     return 0;
 }
 
+private_st_jpeg_decompress_data();
+
+static int PDF_DCTD_PassThrough(void *d, byte *Buffer, int Size)
+{
+    gx_device *dev = (gx_device *)d;
+
+    if (Buffer == NULL) {
+        if (Size == 0)
+            dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_end, NULL, 0);
+        else
+            dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_begin, NULL, 0);
+    } else {
+        dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_data, Buffer, Size);
+    }
+    return 0;
+}
+
+static int pdf_DCT_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
+{
+    stream_DCT_state dcts;
+    uint min_size = 2048;
+    pdf_obj *o;
+    int code;
+    int64_t i;
+    jpeg_decompress_data *jddp;
+    gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+    dcts.memory = ctx->memory;
+    /* First allocate space for IJG parameters. */
+    jddp = gs_alloc_struct_immovable(ctx->memory, jpeg_decompress_data,
+      &st_jpeg_decompress_data, "pdf_DCT");
+    if (jddp == 0)
+        return_error(gs_error_VMerror);
+    if (s_DCTD_template.set_defaults)
+        (*s_DCTD_template.set_defaults) ((stream_state *) & dcts);
+
+    dcts.data.decompress = jddp;
+    jddp->memory = dcts.jpeg_memory = ctx->memory;	/* set now for allocation */
+    jddp->scanline_buffer = NULL;	                /* set this early for safe error exit */
+    dcts.report_error = pdf_filter_report_error;	    /* in case create fails */
+    if ((code = gs_jpeg_create_decompress(&dcts)) < 0) {
+        gs_jpeg_destroy(&dcts);
+        gs_free_object(ctx->memory, jddp, "zDCTD fail");
+        return code;
+    }
+
+    if (d && d->type == PDF_DICT) {
+        code = pdf_dict_get_int(ctx, d, "ColorTransform", &i);
+        if (code < 0 && code != gs_error_undefined)
+            return code;
+    }
+
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_query, NULL, 0) > 0) {
+        jddp->StartedPassThrough = 0;
+        jddp->PassThrough = 1;
+        jddp->PassThroughfn = (PDF_DCTD_PassThrough);
+        jddp->device = (void *)dev;
+    }
+    else {
+        jddp->PassThrough = 0;
+        jddp->device = (void *)NULL;
+    }
+
+    jddp->templat = s_DCTD_template;
+
+    code = pdf_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&jddp->templat, (const stream_state *)&dcts, ctx->memory->non_gc_memory, new_stream);
+    if (code < 0)
+        return code;
+    (*new_stream)->strm = source;
+    source = *new_stream;
+
+    return 0;
+}
+
 static int pdf_ASCII85_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
 {
     stream_A85D_state ss;
@@ -352,6 +429,8 @@ static int pdf_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, str
     int code;
 
     if (n->length == 15 && memcmp((const char *)n->data, "RunLengthDecode", 15) == 0) {
+        code = pdf_simple_filter(ctx, &s_RLE_template, source, new_stream);
+        return code;
     }
     if (n->length == 14 && memcmp((const char *)n->data, "CCITTFaxDecode", 14) == 0) {
         code = pdf_CCITTFax_filter(ctx, decode, source, new_stream);
@@ -376,6 +455,8 @@ static int pdf_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, str
         return code;
     }
     if (n->length == 9 && memcmp((const char *)n->data, "DCTDecode", 9) == 0) {
+        code = pdf_DCT_filter(ctx, decode, source, new_stream);
+        return code;
     }
     if (n->length == 9 && memcmp((const char *)n->data, "JPXDecode", 9) == 0) {
     }
@@ -386,6 +467,8 @@ static int pdf_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, str
             return code;
         }
         if (n->length == 3 && memcmp((const char *)n->data, "A85", 3) == 0) {
+            code = pdf_simple_filter(ctx, &s_AXD_template, source, new_stream);
+            return code;
         }
         if (n->length == 3 && memcmp((const char *)n->data, "LZW", 3) == 0) {
             code = pdf_LZW_filter(ctx, decode, source, new_stream);
@@ -396,12 +479,16 @@ static int pdf_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, str
             return code;
         }
         if (n->length == 3 && memcmp((const char *)n->data, "DCT", 3) == 0) {
+            code = pdf_DCT_filter(ctx, decode, source, new_stream);
+            return code;
         }
         if (n->length == 2 && memcmp((const char *)n->data, "Fl", 2) == 0) {
             code = pdf_Flate_filter(ctx, decode, source, new_stream);
             return code;
         }
         if (n->length == 2 && memcmp((const char *)n->data, "RL", 2) == 0) {
+            code = pdf_simple_filter(ctx, &s_RLE_template, source, new_stream);
+            return code;
         }
     }
 
@@ -410,7 +497,7 @@ static int pdf_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, str
 
 int pdf_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **new_stream, bool inline_image)
 {
-    pdf_obj *o;
+    pdf_obj *o = NULL, *decode = NULL;
     int code;
     uint64_t i;
     stream *s = source->s, *new_s = NULL;
@@ -431,6 +518,7 @@ int pdf_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **n
                 memset(*new_stream, 0x00, sizeof(pdf_stream));
                 (*new_stream)->eof = false;
                 ((pdf_stream *)(*new_stream))->s = s;
+                ((pdf_stream *)(*new_stream))->original = source->s;
                 return 0;
             }
         } else
@@ -441,60 +529,105 @@ int pdf_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **n
         if (o->type == PDF_ARRAY) {
             pdf_array *filter_array = (pdf_array *)o;
             pdf_array *decodeparams_array = NULL;
-            pdf_obj *decode = NULL;
 
-            code = pdf_dict_get(d, "DecodeParams", &o);
+            code = pdf_dict_get(d, "DecodeParms", &o);
             if (code < 0 && code) {
                 if (code == gs_error_undefined) {
                     if (inline_image == true) {
                         code = pdf_dict_get(d, "DP", &o);
-                        if (code < 0 && code != gs_error_undefined)
+                        if (code < 0 && code != gs_error_undefined) {
+                            pdf_countdown(o);
+                            pdf_countdown(filter_array);
                             return code;
+                        }
                     }
-                } else
+                } else {
+                    pdf_countdown(o);
+                    pdf_countdown(filter_array);
                     return code;
+                }
             }
 
             if (code != gs_error_undefined) {
                 decodeparams_array = (pdf_array *)o;
-                if (decodeparams_array->type != PDF_ARRAY)
+                if (decodeparams_array->type != PDF_ARRAY) {
+                    pdf_countdown(decodeparams_array);
+                    pdf_countdown(filter_array);
                     return_error(gs_error_typecheck);
-                if (decodeparams_array->entries != filter_array->entries)
+                }
+                if (decodeparams_array->entries != filter_array->entries) {
+                    pdf_countdown(decodeparams_array);
+                    pdf_countdown(filter_array);
                     return_error(gs_error_rangecheck);
+                }
             }
 
             for (i = 0; i < filter_array->entries;i++) {
                 code = pdf_array_get(filter_array, i, &o);
-                if (code < 0)
+                if (code < 0) {
+                    pdf_countdown(decodeparams_array);
+                    pdf_countdown(filter_array);
                     return code;
-                if (o->type != PDF_NAME)
+                }
+                if (o->type != PDF_NAME) {
+                    pdf_countdown(decodeparams_array);
+                    pdf_countdown(filter_array);
                     return_error(gs_error_typecheck);
+                }
 
                 if (decodeparams_array != NULL) {
                     code = pdf_array_get(decodeparams_array, i, &decode);
-                    if (code < 0)
+                    if (code < 0) {
+                        pdf_countdown(decodeparams_array);
+                        pdf_countdown(filter_array);
                         return code;
+                    }
                 }
-                if (decode && decode->type != PDF_NULL && decode->type != PDF_DICT)
+                if (decode && decode->type != PDF_NULL && decode->type != PDF_DICT) {
+                    pdf_countdown(decodeparams_array);
+                    pdf_countdown(filter_array);
                     return_error(gs_error_typecheck);
+                }
 
                 code = pdf_apply_filter(ctx, (pdf_name *)o, (pdf_dict *)decode, s, &new_s, inline_image);
                 if (code < 0) {
                     *new_stream = 0;
+                    pdf_countdown(decodeparams_array);
+                    pdf_countdown(filter_array);
                     return code;
                 }
                 s = new_s;
             }
+            pdf_countdown(decodeparams_array);
+            pdf_countdown(filter_array);
             *new_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdf_filter, new pdf_stream");
             if (*new_stream == NULL)
                 return_error(gs_error_VMerror);
             memset(*new_stream, 0x00, sizeof(pdf_stream));
             (*new_stream)->eof = false;
+            ((pdf_stream *)(*new_stream))->original = source->s;
             ((pdf_stream *)(*new_stream))->s = s;
         } else
             return_error(gs_error_typecheck);
     } else {
-        code = pdf_apply_filter(ctx, (pdf_name *)o, d, s, &new_s, inline_image);
+        code = pdf_dict_get(d, "DecodeParms", &decode);
+        if (code < 0 && code) {
+            if (code == gs_error_undefined) {
+                if (inline_image == true) {
+                    code = pdf_dict_get(d, "DP", &decode);
+                    if (code < 0 && code != gs_error_undefined) {
+                        pdf_countdown(o);
+                        return code;
+                    }
+                }
+            } else {
+                pdf_countdown(o);
+                return code;
+            }
+        }
+
+        code = pdf_apply_filter(ctx, (pdf_name *)o, (pdf_dict *)decode, s, &new_s, inline_image);
+        pdf_countdown(o);
         if (code < 0)
             return code;
 
@@ -503,6 +636,7 @@ int pdf_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **n
             return_error(gs_error_VMerror);
         memset(*new_stream, 0x00, sizeof(pdf_stream));
         (*new_stream)->eof = false;
+        ((pdf_stream *)(*new_stream))->original = source->s;
         ((pdf_stream *)(*new_stream))->s = new_s;
     }
     return code;
@@ -514,9 +648,12 @@ int pdf_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **n
 
 void pdf_close_file(pdf_context *ctx, pdf_stream *s)
 {
-    if (s->s) {
-        sfclose(s->s);
-        s->s = NULL;
+    stream *next_s = s->s;
+
+    while(next_s && next_s != s->original){
+        if (next_s && next_s != ctx->main_stream->s)
+            sfclose(next_s);
+        next_s = next_s->strm;
     }
     gs_free_object(ctx->memory, s, "closing pdf_file");
 }
