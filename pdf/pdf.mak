@@ -40,7 +40,8 @@ PDF_TOP_OBJ=$(PDFOBJDIR)$(D)pdftop.$(OBJ)
 PDF_TOP_OBJS= $(PDF_TOP_OBJ) $(PDFOBJDIR)$(D)pdfimpl.$(OBJ)
 
 PDFINCLUDES=$(PDFSRC)*.h $(PDFOBJ)arch.h $(strmio_h) $(stream_h) $(gsmatrix_h) $(gslparam_h)\
-	$(gstypes_h)
+	$(gstypes_h) $(szlibx_h) $(spngpx_h) $(sstring_h) $(sa85d_h) $(scfx_h) $(srlx_h)\
+	$(jpeglib_h) $(sdct_h)
 
 $(PDFOBJ)pdf_font.$(OBJ): $(PDFSRC)pdf_font.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_font.c $(PDFO_)pdf_font.$(OBJ)
@@ -91,6 +92,9 @@ $(PLOBJ)pdfimpl.$(OBJ): $(PDFGEN)pdfimpl.c          \
 $(PDF_TOP_OBJ): $(PDFSRC)pdftop.c $(plmain_h) $(pltop_h) $(PDFINCLUDES) $(GLOBJ)gconfig.$(OBJ) \
                 $(pconfig_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdftop.c $(PDFO_)pdftop.$(OBJ)
+
+# sa85d is explicitly included here, which seems wrong, especially as none of
+# the other decoders have to be.
 
 PDF_OBJS=\
     $(PDFOBJ)pdf_loop_detect.$(OBJ)\
