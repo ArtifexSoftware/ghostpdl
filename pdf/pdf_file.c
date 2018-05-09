@@ -21,12 +21,11 @@
 #include "strmio.h"
 #include "szlibx.h"     /* Flate */
 #include "spngpx.h"     /* PNG Predictor */
-#include "spdiffx.h"    /* Horizontal diff */
 #include "slzwx.h"      /* LZW ZLib */
 #include "sstring.h"    /* ASCIIHexDecode */
 #include "sa85d.h"      /* ASCII85Decode */
 #include "scfx.h"       /* CCITTFaxDecode */
-#include "srlx.h"
+#include "srlx.h"       /* RunLengthDecode */
 #include "jpeglib.h"
 #include "sdct.h"       /* DCTDecode */
 
@@ -100,87 +99,81 @@ static int pdf_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
     uint min_size = 2048;
     stream_PNGP_state pps;
 
-    code = pdf_dict_get(d, "DecodeParms", &o);
+    code = pdf_dict_get(d, "Predictor", &o);
     if (code < 0 && code != gs_error_undefined)
         return code;
 
     if (code != gs_error_undefined) {
-        DP = (pdf_dict *)o;
-        code = pdf_dict_get(DP, "Predictor", &o);
-        if (code < 0 && code != gs_error_undefined)
-            return code;
+        if (o->type != PDF_INT)
+            return_error(gs_error_typecheck);
 
-        if (code != gs_error_undefined) {
-            if (o->type != PDF_INT)
-                return_error(gs_error_typecheck);
-
-            Predictor = (uint32_t)((pdf_num *)o)->value.i;
-        }
-        switch(Predictor) {
-            case 0:
-                break;
-            case 1:
-                min_size = 2048;
-                break;
-            case 2:
-                /* zpd_setup, componentwise horizontal differencing */
-                break;
-            case 10:
-            case 11:
-            case 12:
-            case 13:
-            case 14:
-            case 15:
-                /* zpp_setup, PNG predictor */
-                min_size = s_zlibD_template.min_out_size + max_min_left;
-                code = pdf_dict_get(DP, "Colors", &o);
-                if (code < 0 && code != gs_error_undefined)
-                    return code;
-                if(code == gs_error_undefined)
-                    pps.Colors = 1;
-                else {
-                    if (o->type != PDF_INT)
-                        return_error(gs_error_typecheck);
-
-                    pps.Colors = ((pdf_num *)o)->value.i;
-                }
-                if (pps.Colors < 1 || pps.Colors > s_PNG_max_Colors)
-                    return_error(gs_error_rangecheck);
-
-                code = pdf_dict_get(DP, "BitsPerComponent", &o);
-                if (code < 0 && code != gs_error_undefined)
-                    return code;
-                if(code == gs_error_undefined)
-                    pps.BitsPerComponent = 8;
-                else {
-                    if (o->type != PDF_INT)
-                        return_error(gs_error_typecheck);
-
-                    pps.BitsPerComponent = ((pdf_num *)o)->value.i;
-                }
-                if (pps.BitsPerComponent < 1 || pps.BitsPerComponent > 16 || (pps.BitsPerComponent & (pps.BitsPerComponent - 1)) != 0)
-                    return_error(gs_error_rangecheck);
-
-                code = pdf_dict_get(DP, "Columns", &o);
-                if (code < 0 && code != gs_error_undefined)
-                    return code;
-                if(code == gs_error_undefined)
-                    pps.Columns = 1;
-                else {
-                    if (o->type != PDF_INT)
-                        return_error(gs_error_typecheck);
-
-                    pps.Columns = ((pdf_num *)o)->value.i;
-                }
-                if (pps.Columns < 1)
-                    return_error(gs_error_rangecheck);
-
-                pps.Predictor = Predictor;
-                break;
-            default:
-                return_error(gs_error_rangecheck);
-        }
+        Predictor = (uint32_t)((pdf_num *)o)->value.i;
     }
+    switch(Predictor) {
+        case 0:
+            break;
+        case 1:
+            min_size = 2048;
+            break;
+        case 2:
+            /* zpd_setup, componentwise horizontal differencing */
+            break;
+        case 10:
+        case 11:
+        case 12:
+        case 13:
+        case 14:
+        case 15:
+            /* zpp_setup, PNG predictor */
+            min_size = s_zlibD_template.min_out_size + max_min_left;
+            code = pdf_dict_get(d, "Colors", &o);
+            if (code < 0 && code != gs_error_undefined)
+                return code;
+            if(code == gs_error_undefined)
+                pps.Colors = 1;
+            else {
+                if (o->type != PDF_INT)
+                    return_error(gs_error_typecheck);
+
+                pps.Colors = ((pdf_num *)o)->value.i;
+            }
+            if (pps.Colors < 1 || pps.Colors > s_PNG_max_Colors)
+                return_error(gs_error_rangecheck);
+
+            code = pdf_dict_get(d, "BitsPerComponent", &o);
+            if (code < 0 && code != gs_error_undefined)
+                return code;
+            if(code == gs_error_undefined)
+                pps.BitsPerComponent = 8;
+            else {
+                if (o->type != PDF_INT)
+                    return_error(gs_error_typecheck);
+
+                pps.BitsPerComponent = ((pdf_num *)o)->value.i;
+            }
+            if (pps.BitsPerComponent < 1 || pps.BitsPerComponent > 16 || (pps.BitsPerComponent & (pps.BitsPerComponent - 1)) != 0)
+                return_error(gs_error_rangecheck);
+
+            code = pdf_dict_get(d, "Columns", &o);
+            if (code < 0 && code != gs_error_undefined)
+                return code;
+            if(code == gs_error_undefined)
+                pps.Columns = 1;
+            else {
+                if (o->type != PDF_INT)
+                    return_error(gs_error_typecheck);
+
+                pps.Columns = ((pdf_num *)o)->value.i;
+            }
+            if (pps.Columns < 1)
+                return_error(gs_error_rangecheck);
+
+            pps.Predictor = Predictor;
+            break;
+        default:
+            return_error(gs_error_rangecheck);
+    }
+
     switch(Predictor) {
         case 1:
             *new_stream = source;
