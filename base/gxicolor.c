@@ -903,8 +903,8 @@ image_render_color_icc_portrait(gx_image_enum *penum_orig, const byte *buffer, i
     psrc_cm_initial = psrc_cm;
     /* Needed for device N */
     pnext = penum->dda.pixel0;
-    irun = fixed2int_var_rounded(dda_current(pnext.x));
     dda_translate(pnext.x,  (-fixed_epsilon));
+    irun = fixed2int_var_rounded(dda_current(pnext.x));
     vci = penum->yci, vdi = penum->hci;
     if_debug5m('b', penum->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
                penum->y, data_x, w, fixed2float(dda_current(pnext.x)), fixed2float(dda_current(pnext.y)));
@@ -988,8 +988,8 @@ image_render_color_icc_landscape(gx_image_enum *penum_orig, const byte *buffer, 
     psrc_cm_initial = psrc_cm;
     /* Needed for device N */
     pnext = penum->dda.pixel0;
-    irun = fixed2int_var_rounded(dda_current(pnext.y));
     dda_translate(pnext.x,  (-fixed_epsilon));
+    irun = fixed2int_var_rounded(dda_current(pnext.y));
     vci = penum->xci, vdi = penum->wci;
     if_debug5m('b', penum->memory, "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
                penum->y, data_x, w, fixed2float(dda_current(pnext.x)), fixed2float(dda_current(pnext.y)));
@@ -1076,8 +1076,8 @@ image_render_color_icc_skew(gx_image_enum *penum_orig, const byte *buffer, int d
     psrc_cm_initial = psrc_cm;
     /* Needed for device N */
     pnext = penum->dda.pixel0;
-    xprev = dda_current(pnext.x);
     dda_translate(pnext.x,  (-fixed_epsilon));
+    xprev = dda_current(pnext.x);
     yprev = dda_current(pnext.y);
     pdyx = dda_current(penum->dda.row.x) - penum->cur.x;
     pdyy = dda_current(penum->dda.row.y) - penum->cur.y;
