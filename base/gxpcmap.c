@@ -305,7 +305,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         dummy_size_buf_device, dummy_setup_buf_device, dummy_destroy_buf_device};
         gx_device_clist *cdev;
         gx_device_clist_writer *cwdev;
-        const int data_size = 1024*32;
+        const int data_size = 1024*128;
         gx_band_params_t band_params = { 0 };
         byte *data  = gs_alloc_bytes(storage_memory->non_gc_memory, data_size, cname);
 
