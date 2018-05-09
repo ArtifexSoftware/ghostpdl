@@ -397,7 +397,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 return code;
             }
             if (ctx->stack_top[-1]->type == PDF_ARRAY_MARK || ctx->stack_top[-1]->type == PDF_DICT_MARK) {
-                pdf_obj *bottom = &ctx->stack_top[-1];
+                int start_depth = ctx->stack_top - ctx->stack_bot;
 
                 /* Need to read all the elements from COS objects */
                 do {
@@ -408,7 +408,13 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                         (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                         return code;
                     }
-                }while ((ctx->stack_top[-1]->type != PDF_ARRAY && ctx->stack_top[-1]->type != PDF_DICT) || ctx->stack_top - bottom > 1);
+                    if (compressed_stream->eof == true) {
+                        pdf_close_file(ctx, compressed_stream);
+                        pdf_countdown(compressed_object);
+                        (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                        return_error(gs_error_ioerror);
+                    }
+                }while ((ctx->stack_top[-1]->type != PDF_ARRAY && ctx->stack_top[-1]->type != PDF_DICT) || ctx->stack_top - ctx->stack_bot > start_depth);
             }
 
             pdf_close_file(ctx, compressed_stream);
