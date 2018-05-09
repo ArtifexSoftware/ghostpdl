@@ -396,6 +396,21 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
+            if (ctx->stack_top[-1]->type == PDF_ARRAY_MARK || ctx->stack_top[-1]->type == PDF_DICT_MARK) {
+                pdf_obj *bottom = &ctx->stack_top[-1];
+
+                /* Need to read all the elements from COS objects */
+                do {
+                    code = pdf_read_token(ctx, compressed_stream);
+                    if (code < 0) {
+                        pdf_close_file(ctx, compressed_stream);
+                        pdf_countdown(compressed_object);
+                        (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                        return code;
+                    }
+                }while ((ctx->stack_top[-1]->type != PDF_ARRAY && ctx->stack_top[-1]->type != PDF_DICT) || ctx->stack_top - bottom > 1);
+            }
+
             pdf_close_file(ctx, compressed_stream);
 
             *object = ctx->stack_top[-1];
@@ -4115,6 +4130,7 @@ int pdf_close_pdf_file(pdf_context *ctx)
 int pdf_process_pdf_file(pdf_context *ctx, char *filename)
 {
     int code = 0, i;
+    pdf_obj *o;
 
     code = pdf_open_pdf_file(ctx, filename);
     if (code < 0) {
@@ -4138,6 +4154,14 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
             ctx->pdf_errors |= E_PDF_BADXREF;
             return code;
         }
+    }
+
+    code = pdf_dict_get(ctx->Trailer, "Encrypt", &o);
+    if (code < 0 && code != gs_error_undefined)
+        return code;
+    if (code == 0) {
+        dmprintf(ctx->memory, "Encrypted PDF files not yet supported.\n");
+        return 0;
     }
 
     code = pdf_read_Root(ctx);
