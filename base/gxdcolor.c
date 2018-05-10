@@ -847,10 +847,17 @@ gx_dc_pure_fill_masked(const gx_device_color * pdevc, const byte * data,
             scolors[1] = gx_device_white(dev);
         }
         tcolors[0] = tcolors[1] = pdevc->colors.pure;
+
+        if (invert)
+            lop = rop3_invert_S(lop);
+
+        if (!rop3_uses_S(lop))
+            lop |= rop3_S;
+            
         return (*dev_proc(dev, strip_copy_rop))
             (dev, data, data_x, raster, id, scolors,
              NULL, tcolors, x, y, w, h, 0, 0,
-             (invert ? rop3_invert_S(lop) : lop) | (rop3_S | lop_S_transparent));
+             lop | lop_S_transparent);
     }
 }
 
