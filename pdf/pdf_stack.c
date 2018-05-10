@@ -97,14 +97,15 @@ void pdf_clearstack(pdf_context *ctx)
 
 int pdf_count_to_mark(pdf_context *ctx, uint64_t *count)
 {
-    pdf_obj **o = ctx->stack_top - 1;
+    pdf_obj *o = ctx->stack_top[- 1];
+    int index = -1;
 
     *count = 0;
-    while (o >= ctx->stack_bot) {
-        if ((*o)->type == PDF_ARRAY_MARK || (*o)->type == PDF_DICT_MARK)
+    while (&ctx->stack_top[index] >= ctx->stack_bot) {
+        if (o->type == PDF_ARRAY_MARK || o->type == PDF_DICT_MARK)
             return 0;
+        o = ctx->stack_top[--index];
         (*count)++;
-        o--;
     }
     return_error(gs_error_unmatchedmark);
 }
