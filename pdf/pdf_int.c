@@ -510,14 +510,16 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
     short bytes;
     bool real = false;
     pdf_num *num;
-    int code = 0;
+    int code = 0, malformed = false;
 
     skip_white(ctx, s);
 
     do {
         bytes = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
-        if (bytes == 0 && s->eof)
+        if (bytes == 0 && s->eof) {
+            Buffer[index] = 0x00;
             break;
+        }
 
         if (bytes <= 0)
             return_error(gs_error_ioerror);
@@ -533,14 +535,28 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
             }
         }
         if (Buffer[index] == '.')
-            real = true;
+            if (real == true) {
+                if (ctx->pdfstoponerror)
+                    return_error(gs_error_syntaxerror);
+                malformed = true;
+            } else
+                real = true;
         else {
             if (Buffer[index] == '-' || Buffer[index] == '+') {
-                if (index != 0)
-                    return_error(gs_error_syntaxerror);
+                if (index != 0) {
+                    if (ctx->pdfstoponerror)
+                        return_error(gs_error_syntaxerror);
+                    malformed = true;
+                }
             } else {
-                if (Buffer[index] < 0x30 || Buffer[index] > 0x39)
-                    return_error(gs_error_syntaxerror);
+                if (Buffer[index] < 0x30 || Buffer[index] > 0x39) {
+                    if (ctx->pdfstoponerror)
+                        return_error(gs_error_syntaxerror);
+                    dmprintf(ctx->memory, "Ignoring missing white space while parsing number\n");
+                    pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
+                    Buffer[index] = 0x00;
+                    break;
+                }
             }
         }
         if (index++ > 256)
@@ -554,28 +570,33 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
     memset(num, 0x00, sizeof(pdf_num));
     num->memory = ctx->memory;
 
-    if (real) {
-        float tempf;
-        num->type = PDF_REAL;
-        if (sscanf((const char *)Buffer, "%f", &tempf) == 0) {
-            if (ctx->pdfdebug)
-                dmprintf1(ctx->memory, "failed to read real number : %s\n", Buffer);
-            gs_free_object(num->memory, num, "pdf_read_num error");
-            return_error(gs_error_syntaxerror);
-        }
-        num->value.d = tempf;
-    } else {
-        int tempi;
+    if (malformed) {
+        dmprintf1(ctx->memory, "Treating malformed number %s as 0.\n", Buffer);
         num->type = PDF_INT;
-        if (sscanf((const char *)Buffer, "%d", &tempi) == 0) {
-            if (ctx->pdfdebug)
-                dmprintf1(ctx->memory, "failed to read integer : %s\n", Buffer);
-            gs_free_object(num->memory, num, "pdf_read_num error");
-            return_error(gs_error_syntaxerror);
+        num->value.i = 0;
+    } else {
+        if (real) {
+            float tempf;
+            num->type = PDF_REAL;
+            if (sscanf((const char *)Buffer, "%f", &tempf) == 0) {
+                if (ctx->pdfdebug)
+                    dmprintf1(ctx->memory, "failed to read real number : %s\n", Buffer);
+                gs_free_object(num->memory, num, "pdf_read_num error");
+                return_error(gs_error_syntaxerror);
+            }
+            num->value.d = tempf;
+        } else {
+            int tempi;
+            num->type = PDF_INT;
+            if (sscanf((const char *)Buffer, "%d", &tempi) == 0) {
+                if (ctx->pdfdebug)
+                    dmprintf1(ctx->memory, "failed to read integer : %s\n", Buffer);
+                gs_free_object(num->memory, num, "pdf_read_num error");
+                return_error(gs_error_syntaxerror);
+            }
+            num->value.i = tempi;
         }
-        num->value.i = tempi;
     }
-
     if (ctx->pdfdebug) {
         if (real)
             dmprintf1(ctx->memory, " %f", num->value.d);
@@ -645,7 +666,7 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
         }
 
         /* If we ran out of memory, increase the buffer size */
-        if (index++ >= size) {
+        if (index++ >= size - 1) {
             NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdf_read_name");
             if (NewBuf == NULL) {
                 gs_free_object(ctx->memory, Buffer, "pdf_read_name error");
@@ -1537,8 +1558,12 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
         }
     } while (bytes && index < 255);
 
-    if (index >= 255 || index == 0)
-        return_error(gs_error_syntaxerror);
+    if (index >= 255 || index == 0) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_syntaxerror);
+        strcpy(Buffer, "KEYWORD_TOO_LONG");
+        index = 16;
+    }
 
     /* NB The code below uses 'Buffer', not the data stored in keyword->data to compare strings */
     Buffer[index] = 0x00;
@@ -1773,12 +1798,17 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
                     dmprintf (ctx->memory, " <<\n");
                 return pdf_mark_stack(ctx, PDF_DICT_MARK);
             } else {
-                if (ishex(Buffer[1])) {
+                if (Buffer[1] == '>') {
                     pdf_unread(ctx, s, (byte *)&Buffer[1], 1);
                     return pdf_read_hexstring(ctx, s);
+                } else {
+                    if (ishex(Buffer[1])) {
+                        pdf_unread(ctx, s, (byte *)&Buffer[1], 1);
+                        return pdf_read_hexstring(ctx, s);
+                    }
+                    else
+                        return_error(gs_error_syntaxerror);
                 }
-                else
-                    return_error(gs_error_syntaxerror);
             }
             break;
         case '>':
@@ -2291,81 +2321,83 @@ int repair_pdf_file(pdf_context *ctx)
             code = pdf_read_token(ctx, ctx->main_stream);
             if (code < 0)
                 return code;
-            if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
-                pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
-                pdf_num *n;
+            if (ctx->stack_top - ctx->stack_bot > 0) {
+                if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
+                    pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
+                    pdf_num *n;
 
-                if (k->key == PDF_OBJ) {
-                    if (ctx->stack_top - ctx->stack_bot < 3 || ctx->stack_top[-2]->type != PDF_INT || ctx->stack_top[-2]->type != PDF_INT) {
+                    if (k->key == PDF_OBJ) {
+                        if (ctx->stack_top - ctx->stack_bot < 3 || ctx->stack_top[-2]->type != PDF_INT || ctx->stack_top[-2]->type != PDF_INT) {
+                            pdf_clearstack(ctx);
+                            return_error(gs_error_syntaxerror);
+                        }
+                        n = (pdf_num *)ctx->stack_top[-3];
+                        object_num = n->value.i;
+                        n = (pdf_num *)ctx->stack_top[-2];
+                        generation_num = n->value.i;
                         pdf_clearstack(ctx);
-                        return_error(gs_error_syntaxerror);
-                    }
-                    n = (pdf_num *)ctx->stack_top[-3];
-                    object_num = n->value.i;
-                    n = (pdf_num *)ctx->stack_top[-2];
-                    generation_num = n->value.i;
-                    pdf_clearstack(ctx);
 
-                    do {
-                        code = pdf_read_token(ctx, ctx->main_stream);
-                        if (code < 0)
-                            return code;
-                        if (ctx->stack_top[-1]->type == PDF_KEYWORD){
-                            pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
+                        do {
+                            code = pdf_read_token(ctx, ctx->main_stream);
+                            if (code < 0)
+                                return code;
+                            if (ctx->stack_top[-1]->type == PDF_KEYWORD){
+                                pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
 
-                            if (k->key == PDF_ENDOBJ) {
-                                code = pdf_repair_add_object(ctx, object_num, generation_num, offset);
-                                if (code < 0)
-                                    return code;
-                                pdf_clearstack(ctx);
-                                break;
-                            } else {
-                                if (k->key == PDF_STREAM) {
-                                    char Buffer[10], test[] = "endstream";
-                                    int index = 0;
-
-                                    do {
-                                        code = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, ctx->main_stream);
-                                        if (code < 0)
-                                            return code;
-                                        if (Buffer[index] == test[index])
-                                            index++;
-                                        else
-                                            index = 0;
-                                    } while (index < 9 && ctx->main_stream->eof == false);
-                                    do {
-                                        code = pdf_read_token(ctx, ctx->main_stream);
-                                        if (code < 0)
-                                            return code;
-                                        if (ctx->stack_top[-1]->type == PDF_KEYWORD){
-                                            pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
-                                            if (k->key == PDF_ENDOBJ) {
-                                                code = pdf_repair_add_object(ctx, object_num, generation_num, offset);
-                                                if (code < 0)
-                                                    return code;
-                                                break;
-                                            }
-                                        }
-                                    }while(ctx->main_stream->eof == false);
-
+                                if (k->key == PDF_ENDOBJ) {
+                                    code = pdf_repair_add_object(ctx, object_num, generation_num, offset);
+                                    if (code < 0)
+                                        return code;
                                     pdf_clearstack(ctx);
                                     break;
                                 } else {
-                                    pdf_clearstack(ctx);
-                                    break;
+                                    if (k->key == PDF_STREAM) {
+                                        char Buffer[10], test[] = "endstream";
+                                        int index = 0;
+
+                                        do {
+                                            code = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, ctx->main_stream);
+                                            if (code < 0)
+                                                return code;
+                                            if (Buffer[index] == test[index])
+                                                index++;
+                                            else
+                                                index = 0;
+                                        } while (index < 9 && ctx->main_stream->eof == false);
+                                        do {
+                                            code = pdf_read_token(ctx, ctx->main_stream);
+                                            if (code < 0)
+                                                return code;
+                                            if (ctx->stack_top[-1]->type == PDF_KEYWORD){
+                                                pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
+                                                if (k->key == PDF_ENDOBJ) {
+                                                    code = pdf_repair_add_object(ctx, object_num, generation_num, offset);
+                                                    if (code < 0)
+                                                        return code;
+                                                    break;
+                                                }
+                                            }
+                                        }while(ctx->main_stream->eof == false);
+
+                                        pdf_clearstack(ctx);
+                                        break;
+                                    } else {
+                                        pdf_clearstack(ctx);
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                    } while(1);
-                    break;
-                } else {
-                    if (k->key == PDF_ENDOBJ) {
-                        code = pdf_repair_add_object(ctx, object_num, generation_num, offset);
-                        if (code < 0)
-                            return code;
-                        pdf_clearstack(ctx);
-                    } else
-                        pdf_clearstack(ctx);
+                        } while(1);
+                        break;
+                    } else {
+                        if (k->key == PDF_ENDOBJ) {
+                            code = pdf_repair_add_object(ctx, object_num, generation_num, offset);
+                            if (code < 0)
+                                return code;
+                            pdf_clearstack(ctx);
+                        } else
+                            pdf_clearstack(ctx);
+                    }
                 }
             }
         } while (ctx->main_stream->eof == false);
@@ -2421,6 +2453,7 @@ int repair_pdf_file(pdf_context *ctx)
                             }
                         }
                         pdf_clearstack(ctx);
+                        break;
                     }
                     if (k->key == PDF_STREAM) {
                         pdf_dict *d;
@@ -4431,7 +4464,7 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
     int code = 0, i;
     pdf_obj *o;
 
-    ctx->filename = (char *)gs_alloc_bytes(ctx->memory, strlen(filename), "copy of filename");
+    ctx->filename = (char *)gs_alloc_bytes(ctx->memory, strlen(filename) + 1, "copy of filename");
     if (ctx->filename == NULL)
         return_error(gs_error_VMerror);
     strcpy(ctx->filename, filename);
