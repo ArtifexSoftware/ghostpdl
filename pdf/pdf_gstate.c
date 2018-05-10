@@ -27,14 +27,24 @@ int pdf_concat(pdf_context *ctx)
     double Values[6];
     gs_matrix m;
 
-    if (ctx->stack_top - ctx->stack_bot < 6)
-        return_error(gs_error_stackunderflow);
+    if (ctx->stack_top - ctx->stack_bot < 6) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        pdf_clearstack(ctx);
+        return 0;
+    }
 
     for (i=0;i < 6;i++){
         num = (pdf_num *)ctx->stack_top[i - 6];
         if (num->type != PDF_INT) {
-            if(num->type != PDF_REAL)
-                return_error(gs_error_typecheck);
+            if(num->type != PDF_REAL) {
+                if (ctx->pdfstoponerror)
+                    return_error(gs_error_typecheck);
+                else {
+                    pdf_pop(ctx, 6);
+                    return 0;
+                }
+            }
             else
                 Values[i] = num->value.d;
         } else {
@@ -50,17 +60,30 @@ int pdf_concat(pdf_context *ctx)
     code = gs_concat(ctx->pgs, (const gs_matrix *)&m);
     if (code == 0)
         pdf_pop(ctx, 6);
-    return code;
+    if(code < 0 && ctx->pdfstoponerror)
+        return code;
+    else
+        return 0;
 }
 
 int pdf_gsave(pdf_context *ctx)
 {
-    return gs_gsave(ctx->pgs);
+    int code = gs_gsave(ctx->pgs);
+
+    if(code < 0 && ctx->pdfstoponerror)
+        return code;
+    else
+        return 0;
 }
 
 int pdf_grestore(pdf_context *ctx)
 {
-    return gs_grestore(ctx->pgs);
+    int code = gs_grestore(ctx->pgs);
+
+    if(code < 0 && ctx->pdfstoponerror)
+        return code;
+    else
+        return 0;
 }
 
 int pdf_setlinewidth(pdf_context *ctx)
@@ -69,8 +92,12 @@ int pdf_setlinewidth(pdf_context *ctx)
     pdf_num *n1;
     double d1;
 
-    if (ctx->stack_top - ctx->stack_bot < 1)
-        return_error(gs_error_stackunderflow);
+    if (ctx->stack_top - ctx->stack_bot < 1) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        pdf_clearstack(ctx);
+        return 0;
+    }
 
     n1 = (pdf_num *)ctx->stack_top[-1];
     if (n1->type == PDF_INT){
@@ -78,13 +105,22 @@ int pdf_setlinewidth(pdf_context *ctx)
     } else{
         if (n1->type == PDF_REAL) {
             d1 = n1->value.d;
-        } else
-            return_error(gs_error_typecheck);
+        } else {
+            if (ctx->pdfstoponerror)
+                return_error(gs_error_typecheck);
+            else {
+                pdf_pop(ctx, 1);
+                return 0;
+            }
+        }
     }
     code = gs_setlinewidth(ctx->pgs, d1);
     if (code == 0)
         pdf_pop(ctx, 1);
-    return code;
+    if(code < 0 && ctx->pdfstoponerror)
+        return code;
+    else
+        return 0;
 }
 
 int pdf_setlinejoin(pdf_context *ctx)
@@ -92,17 +128,30 @@ int pdf_setlinejoin(pdf_context *ctx)
     int code;
     pdf_num *n1;
 
-    if (ctx->stack_top - ctx->stack_bot < 1)
-        return_error(gs_error_stackunderflow);
+    if (ctx->stack_top - ctx->stack_bot < 1) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        pdf_clearstack(ctx);
+        return 0;
+    }
 
     n1 = (pdf_num *)ctx->stack_top[-1];
     if (n1->type == PDF_INT){
         code = gs_setlinejoin(ctx->pgs, (gs_line_join)n1->value.d);
-    } else
-        return_error(gs_error_typecheck);
+    } else {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_typecheck);
+        else {
+            pdf_pop(ctx, 1);
+            return 0;
+        }
+    }
     if (code == 0)
         pdf_pop(ctx, 1);
-    return code;
+    if(code < 0 && ctx->pdfstoponerror)
+        return code;
+    else
+        return 0;
 }
 
 int pdf_setlinecap(pdf_context *ctx)
@@ -110,17 +159,30 @@ int pdf_setlinecap(pdf_context *ctx)
     int code;
     pdf_num *n1;
 
-    if (ctx->stack_top - ctx->stack_bot < 1)
-        return_error(gs_error_stackunderflow);
+    if (ctx->stack_top - ctx->stack_bot < 1) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        pdf_clearstack(ctx);
+        return 0;
+    }
 
     n1 = (pdf_num *)ctx->stack_top[-1];
     if (n1->type == PDF_INT){
         code = gs_setlinecap(ctx->pgs, (gs_line_cap)n1->value.d);
-    } else
-        return_error(gs_error_typecheck);
+    } else {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_typecheck);
+        else {
+            pdf_pop(ctx, 1);
+            return 0;
+        }
+    }
     if (code == 0)
         pdf_pop(ctx, 1);
-    return code;
+    if(code < 0 && ctx->pdfstoponerror)
+        return code;
+    else
+        return 0;
 }
 
 int pdf_setflat(pdf_context *ctx)
@@ -129,8 +191,12 @@ int pdf_setflat(pdf_context *ctx)
     pdf_num *n1;
     double d1;
 
-    if (ctx->stack_top - ctx->stack_bot < 1)
-        return_error(gs_error_stackunderflow);
+    if (ctx->stack_top - ctx->stack_bot < 1) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        pdf_clearstack(ctx);
+        return 0;
+    }
 
     n1 = (pdf_num *)ctx->stack_top[-1];
     if (n1->type == PDF_INT){
@@ -138,13 +204,22 @@ int pdf_setflat(pdf_context *ctx)
     } else{
         if (n1->type == PDF_REAL) {
             d1 = n1->value.d;
-        } else
-            return_error(gs_error_typecheck);
+        } else {
+            if (ctx->pdfstoponerror)
+                return_error(gs_error_typecheck);
+            else {
+                pdf_pop(ctx, 1);
+                return 0;
+            }
+        }
     }
     code = gs_setflat(ctx->pgs, d1);
     if (code == 0)
         pdf_pop(ctx, 1);
-    return code;
+    if(code < 0 && ctx->pdfstoponerror)
+        return code;
+    else
+        return 0;
 }
 
 int pdf_setdash(pdf_context *ctx)
@@ -155,8 +230,12 @@ int pdf_setdash(pdf_context *ctx)
     double phase_d, temp;
     int i, code;
 
-    if (ctx->stack_top - ctx->stack_bot < 1)
-        return_error(gs_error_stackunderflow);
+    if (ctx->stack_top - ctx->stack_bot < 1) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        pdf_clearstack(ctx);
+        return 0;
+    }
 
     phase = (pdf_num *)ctx->stack_top[-1];
     if (phase->type == PDF_INT){
@@ -164,13 +243,25 @@ int pdf_setdash(pdf_context *ctx)
     } else{
         if (phase->type == PDF_REAL) {
             phase_d = phase->value.d;
-        } else
-            return_error(gs_error_typecheck);
+        } else {
+            if (ctx->pdfstoponerror)
+                return_error(gs_error_typecheck);
+            else {
+                pdf_pop(ctx, 1);
+                return 0;
+            }
+        }
     }
 
     a = (pdf_array *)ctx->stack_top[-2];
-    if (a->type != PDF_ARRAY)
-        return_error(gs_error_typecheck);
+    if (a->type != PDF_ARRAY) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_typecheck);
+        else {
+            pdf_pop(ctx, 1);
+            return 0;
+        }
+    }
 
     dash_array = (float *)gs_alloc_bytes(ctx->memory, a->entries * sizeof (float), "temporary float array for setdash");
     if (dash_array == NULL)
@@ -179,8 +270,15 @@ int pdf_setdash(pdf_context *ctx)
     for (i=0;i < a->entries;i++){
         code = pdf_array_get_number(ctx, a, (uint64_t)i, &temp);
         if (code < 0) {
-            gs_free_object(ctx->memory, dash_array, "error in setdash");
-            return code;
+            if (ctx->pdfstoponerror) {
+                gs_free_object(ctx->memory, dash_array, "error in setdash");
+                return code;
+            }
+            else {
+                pdf_pop(ctx, 1);
+                gs_free_object(ctx->memory, dash_array, "error in setdash");
+                return 0;
+            }
         }
         dash_array[i] = (float)temp;
     }
@@ -188,7 +286,10 @@ int pdf_setdash(pdf_context *ctx)
     gs_free_object(ctx->memory, dash_array, "error in setdash");
     if (code == 0)
         pdf_pop(ctx, 2);
-    return code;
+    if(code < 0 && ctx->pdfstoponerror)
+        return code;
+    else
+        return 0;
 }
 
 int pdf_setmiterlimit(pdf_context *ctx)
@@ -197,8 +298,12 @@ int pdf_setmiterlimit(pdf_context *ctx)
     pdf_num *n1;
     double d1;
 
-    if (ctx->stack_top - ctx->stack_bot < 1)
-        return_error(gs_error_stackunderflow);
+    if (ctx->stack_top - ctx->stack_bot < 1) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        pdf_clearstack(ctx);
+        return 0;
+    }
 
     n1 = (pdf_num *)ctx->stack_top[-1];
     if (n1->type == PDF_INT){
@@ -206,11 +311,20 @@ int pdf_setmiterlimit(pdf_context *ctx)
     } else{
         if (n1->type == PDF_REAL) {
             d1 = n1->value.d;
-        } else
-            return_error(gs_error_typecheck);
+        } else {
+            if (ctx->pdfstoponerror)
+                return_error(gs_error_typecheck);
+            else {
+                pdf_pop(ctx, 1);
+                return 0;
+            }
+        }
     }
     code = gs_setmiterlimit(ctx->pgs, d1);
     if (code == 0)
         pdf_pop(ctx, 1);
-    return code;
+    if(code < 0 && ctx->pdfstoponerror)
+        return code;
+    else
+        return 0;
 }
