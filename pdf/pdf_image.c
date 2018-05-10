@@ -16,6 +16,7 @@
 /* Image operations for the PDF interpreter */
 
 #include "pdf_int.h"
+#include "pdf_stack.h"
 #include "pdf_image.h"
 
 extern int pdf_dict_from_stack(pdf_context *ctx);

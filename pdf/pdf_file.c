@@ -14,6 +14,7 @@
 */
 
 #include "ghostpdf.h"
+#include "pdf_stack.h"
 #include "pdf_file.h"
 #include "pdf_int.h"
 #include "stream.h"
