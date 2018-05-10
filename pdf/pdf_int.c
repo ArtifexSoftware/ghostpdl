@@ -1884,8 +1884,8 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
 
         o->object_num = objnum;
         o->generation_num = gen;
-        pdf_add_to_cache(ctx, o);
-        return 0;
+        code = pdf_add_to_cache(ctx, o);
+        return code;
     }
     if (keyword->key == PDF_STREAM) {
         pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
@@ -1910,6 +1910,10 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
         d->generation_num = gen;
         d->stream_offset = offset;
         code = pdf_add_to_cache(ctx, (pdf_obj *)d);
+        if (code < 0) {
+            pdf_pop(ctx, 1);
+            return code;
+        }
 
         /* This code may be a performance overhead, it simply skips over the stream contents
          * and checks that the stream ends with a 'endstream endobj' pair. We could add a
@@ -2185,6 +2189,11 @@ int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx)
         gs_free_object(ctx->memory, ctx->stack_bot, "pdf_free_context");
     }
 
+    if (ctx->filename) {
+        gs_free_object(ctx->memory, ctx->filename, "free copy of filename");
+        ctx->filename = NULL;
+    }
+
     if (ctx->main_stream != NULL) {
         sfclose(ctx->main_stream->s);
         ctx->main_stream = NULL;
@@ -2213,14 +2222,227 @@ static void cleanup_pdf_open_file(pdf_context *ctx, byte *Buffer)
 
 #define BUF_SIZE 2048
 
+static int pdf_repair_add_object(pdf_context *ctx, uint64_t obj, uint64_t gen, gs_offset_t offset)
+{
+    if (ctx->xref_table == NULL) {
+        ctx->xref_table = (xref_table *)gs_alloc_bytes(ctx->memory, sizeof(xref_table), "repair xref table");
+        if (ctx->xref_table == NULL) {
+            return_error(gs_error_VMerror);
+        }
+        memset(ctx->xref_table, 0x00, sizeof(xref_table));
+        ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, (obj + 1) * sizeof(xref_entry), "repair xref table");
+        if (ctx->xref_table->xref == NULL){
+            gs_free_object(ctx->memory, ctx->xref_table, "failed to allocate xref table entries for repair");
+            ctx->xref_table = NULL;
+            return_error(gs_error_VMerror);
+        }
+        memset(ctx->xref_table->xref, 0x00, (obj + 1) * sizeof(xref_entry));
+        ctx->xref_table->memory = ctx->memory;
+        ctx->xref_table->type = PDF_XREF_TABLE;
+        ctx->xref_table->xref_size = obj + 1;
+#if REFCNT_DEBUG
+        ctx->xref_table->UID = ctx->UID++;
+        dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
+#endif
+        pdf_countup(ctx->xref_table);
+    } else {
+        if (ctx->xref_table->xref_size < (obj + 1)) {
+            xref_entry *new_xrefs;
+
+            new_xrefs = (xref_entry *)gs_alloc_bytes(ctx->memory, (obj + 1) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
+            if (new_xrefs == NULL){
+                pdf_countdown(ctx->xref_table);
+                ctx->xref_table = NULL;
+                return_error(gs_error_VMerror);
+            }
+            memset(new_xrefs, 0x00, (obj + 1) * sizeof(xref_entry));
+            memcpy(new_xrefs, ctx->xref_table->xref, ctx->xref_table->xref_size * sizeof(xref_entry));
+            gs_free_object(ctx->memory, ctx->xref_table->xref, "reallocated xref entries");
+            ctx->xref_table->xref = new_xrefs;
+            ctx->xref_table->xref_size = obj + 1;
+        }
+    }
+    ctx->xref_table->xref[obj].compressed = false;
+    ctx->xref_table->xref[obj].free = false;
+    ctx->xref_table->xref[obj].object_num = obj;
+    ctx->xref_table->xref[obj].u.uncompressed.generation_num = gen;
+    ctx->xref_table->xref[obj].u.uncompressed.offset = offset;
+    return 0;
+}
+
 int repair_pdf_file(pdf_context *ctx)
 {
+    int code;
+    gs_offset_t offset;
+    uint64_t object_num, generation_num;
+    int i;
+
     pdf_clearstack(ctx);
 
     if(ctx->pdfdebug)
-        dmprintf(ctx->memory, "%% Error encoutnered in opening PDF file, attempting repair\n");
+        dmprintf(ctx->memory, "%% Error encountered in opening PDF file, attempting repair\n");
 
-    return_error(gs_error_ioerror);
+    /* First pass, identify all the objects of the form x y obj */
+    pdf_seek(ctx, ctx->main_stream, 0, SEEK_SET);
+
+    do {
+        offset = pdf_tell(ctx);
+        do {
+            code = pdf_read_token(ctx, ctx->main_stream);
+            if (code < 0)
+                return code;
+            if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
+                pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
+                pdf_num *n;
+
+                if (k->key == PDF_OBJ) {
+                    if (ctx->stack_top - ctx->stack_bot < 3 || ctx->stack_top[-2]->type != PDF_INT || ctx->stack_top[-2]->type != PDF_INT) {
+                        pdf_clearstack(ctx);
+                        return_error(gs_error_syntaxerror);
+                    }
+                    n = (pdf_num *)ctx->stack_top[-3];
+                    object_num = n->value.i;
+                    n = (pdf_num *)ctx->stack_top[-2];
+                    generation_num = n->value.i;
+                    pdf_clearstack(ctx);
+
+                    do {
+                        code = pdf_read_token(ctx, ctx->main_stream);
+                        if (code < 0)
+                            return code;
+                        if (ctx->stack_top[-1]->type == PDF_KEYWORD){
+                            pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
+
+                            if (k->key == PDF_ENDOBJ) {
+                                code = pdf_repair_add_object(ctx, object_num, generation_num, offset);
+                                if (code < 0)
+                                    return code;
+                                pdf_clearstack(ctx);
+                                break;
+                            } else {
+                                if (k->key == PDF_STREAM) {
+                                    char Buffer[10], test[] = "endstream";
+                                    int index = 0;
+
+                                    do {
+                                        code = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, ctx->main_stream);
+                                        if (code < 0)
+                                            return code;
+                                        if (Buffer[index] == test[index])
+                                            index++;
+                                        else
+                                            index = 0;
+                                    } while (index < 9 && ctx->main_stream->eof == false);
+                                    do {
+                                        code = pdf_read_token(ctx, ctx->main_stream);
+                                        if (code < 0)
+                                            return code;
+                                        if (ctx->stack_top[-1]->type == PDF_KEYWORD){
+                                            pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
+                                            if (k->key == PDF_ENDOBJ) {
+                                                code = pdf_repair_add_object(ctx, object_num, generation_num, offset);
+                                                if (code < 0)
+                                                    return code;
+                                                break;
+                                            }
+                                        }
+                                    }while(ctx->main_stream->eof == false);
+
+                                    pdf_clearstack(ctx);
+                                    break;
+                                } else {
+                                    pdf_clearstack(ctx);
+                                    break;
+                                }
+                            }
+                        }
+                    } while(1);
+                    break;
+                } else {
+                    if (k->key == PDF_ENDOBJ) {
+                        code = pdf_repair_add_object(ctx, object_num, generation_num, offset);
+                        if (code < 0)
+                            return code;
+                        pdf_clearstack(ctx);
+                    } else
+                        pdf_clearstack(ctx);
+                }
+            }
+        } while (ctx->main_stream->eof == false);
+    } while(ctx->main_stream->eof == false);
+
+    if (ctx->main_stream->eof) {
+        sfclose(ctx->main_stream->s);
+        ctx->main_stream->s = sfopen(ctx->filename, "r", ctx->memory);
+        if (ctx->main_stream->s == NULL)
+            return_error(gs_error_ioerror);
+        ctx->main_stream->eof = false;
+    }
+
+    /* Second pass, examine every object we have located to see if its an ObjStm */
+    if (ctx->xref_table == NULL || ctx->xref_table->xref_size < 1)
+        return_error(gs_error_syntaxerror);
+
+    for (i=1;i < ctx->xref_table->xref_size;i++) {
+        if (ctx->xref_table->xref[i].object_num != 0) {
+            /* At this stage, all the objects we've found must be uncompressed */
+            pdf_seek(ctx, ctx->main_stream, ctx->xref_table->xref[i].u.uncompressed.offset, SEEK_SET);
+            do {
+                code = pdf_read_token(ctx, ctx->main_stream);
+                if (code < 0)
+                    return code;
+                if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
+                    pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
+
+                    if (k->key == PDF_OBJ){
+                        continue;
+                    }
+                    if (k->key == PDF_ENDOBJ) {
+                        if (ctx->stack_top - ctx->stack_bot > 1) {
+                            if (ctx->stack_top[-2]->type == PDF_DICT) {
+                                 pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
+                                 pdf_obj *o = NULL;
+
+                                 code = pdf_dict_get(d, "Type", &o);
+                                 if (code < 0 && code != gs_error_undefined){
+                                     pdf_clearstack(ctx);
+                                     return code;
+                                 }
+                                 if (o != NULL) {
+                                     pdf_name *n = (pdf_name *)o;
+
+                                     if (n->type == PDF_NAME) {
+                                         if (n->length == 7 && memcmp(n->data, "Catalog", 7) == 0) {
+                                             ctx->Root = (pdf_dict *)ctx->stack_top[-2];
+                                             pdf_countup(ctx->Root);
+                                         }
+                                     }
+                                 }
+                            }
+                        }
+                        pdf_clearstack(ctx);
+                    }
+                    if (k->key == PDF_STREAM) {
+                        pdf_dict *d;
+                        bool known;
+
+                        d = (pdf_dict *)ctx->stack_top[-2];
+                        code = pdf_dict_known(d, "ObjStm", &known);
+                        if (code < 0) {
+                            pdf_clearstack(ctx);
+                            return code;
+                        }
+                        if (known == true) {
+                        }
+                        pdf_clearstack(ctx);
+                        break;
+                    }
+                }
+            } while (1);
+        }
+    }
+
+    return 0;
 }
 
 static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t first, uint64_t last, uint64_t *W)
@@ -2339,7 +2561,7 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
     /* If this is the first xref stream then allocate the xref table and store the trailer */
     if (ctx->xref_table == NULL) {
         ctx->xref_table = (xref_table *)gs_alloc_bytes(ctx->memory, sizeof(xref_table), "read_xref_stream allocate xref table");
-        if (ctx->xref_table->xref == NULL) {
+        if (ctx->xref_table == NULL) {
             return_error(gs_error_VMerror);
         }
         memset(ctx->xref_table, 0x00, sizeof(xref_table));
@@ -4068,6 +4290,71 @@ static int pdf_check_page_transparency(pdf_context *ctx, pdf_dict *page_dict, bo
     return 0;
 }
 
+int pdf_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
+{
+    gs_c_param_list list;
+    gs_param_float_array fa;
+    pdf_array *a = NULL, *default_media = NULL;
+    float fv[2];
+    double d[4];
+    int code;
+    uint64_t i;
+
+    gs_c_param_list_write(&list, ctx->memory);
+
+    code = pdf_dict_get_type(ctx, page_dict, "MediaBox", PDF_ARRAY, (pdf_obj **)&default_media);
+    if (code < 0)
+        return 0;
+
+    if (ctx->usecropbox) {
+        if (a != NULL)
+            pdf_countdown(a);
+        (void)pdf_dict_get_type(ctx, page_dict, "CropBox", PDF_ARRAY, (pdf_obj **)&a);
+    }
+    if (ctx->useartbox) {
+        if (a != NULL)
+            pdf_countdown(a);
+        (void)pdf_dict_get_type(ctx, page_dict, "ArtBox", PDF_ARRAY, (pdf_obj **)&a);
+    }
+    if (ctx->usebleedbox) {
+        if (a != NULL)
+            pdf_countdown(a);
+        (void)pdf_dict_get_type(ctx, page_dict, "BBox", PDF_ARRAY, (pdf_obj **)&a);
+    }
+    if (ctx->usetrimbox) {
+        if (a != NULL)
+            pdf_countdown(a);
+        (void)pdf_dict_get_type(ctx, page_dict, "MediaBox", PDF_ARRAY, (pdf_obj **)&a);
+    }
+    if (a == NULL)
+        a = default_media;
+
+    for (i=0;i<4;i++) {
+        code = pdf_array_get_number(ctx, a, i, &d[i]);
+    }
+
+    fv[0] = (float)(d[2] - d[0]);
+    fv[1] = (float)(d[3] - d[1]);
+    fa.persistent = false;
+    fa.data = fv;
+    fa.size = 2;
+
+    code = param_write_float_array((gs_param_list *)&list, ".MediaSize", &fa);
+    if (code >= 0)
+    {
+        gx_device *dev = gs_currentdevice(ctx->pgs);
+
+        gs_c_param_list_read(&list);
+        code = gs_putdeviceparams(dev, (gs_param_list *)&list);
+        if (code < 0) {
+            gs_c_param_list_release(&list);
+            return code;
+        }
+    }
+    gs_c_param_list_release(&list);
+    return 0;
+}
+
 int pdf_render_page(pdf_context *ctx, uint64_t page_num)
 {
     int code;
@@ -4100,6 +4387,12 @@ int pdf_render_page(pdf_context *ctx, uint64_t page_num)
         return_error(gs_error_unknownerror);
 
     code = pdf_check_page_transparency(ctx, page_dict, &uses_transparency);
+    if (code < 0) {
+        pdf_countdown(page_dict);
+        return code;
+    }
+
+    code = pdf_set_media_size(ctx, page_dict);
     if (code < 0) {
         pdf_countdown(page_dict);
         return code;
@@ -4138,6 +4431,11 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
     int code = 0, i;
     pdf_obj *o;
 
+    ctx->filename = (char *)gs_alloc_bytes(ctx->memory, strlen(filename), "copy of filename");
+    if (ctx->filename == NULL)
+        return_error(gs_error_VMerror);
+    strcpy(ctx->filename, filename);
+
     code = pdf_open_pdf_file(ctx, filename);
     if (code < 0) {
         return code;
@@ -4162,41 +4460,52 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
         }
     }
 
-    code = pdf_dict_get(ctx->Trailer, "Encrypt", &o);
-    if (code < 0 && code != gs_error_undefined)
-        return code;
-    if (code == 0) {
-        dmprintf(ctx->memory, "Encrypted PDF files not yet supported.\n");
-        return 0;
+    if (ctx->Trailer) {
+        code = pdf_dict_get(ctx->Trailer, "Encrypt", &o);
+        if (code < 0 && code != gs_error_undefined)
+            return code;
+        if (code == 0) {
+            dmprintf(ctx->memory, "Encrypted PDF files not yet supported.\n");
+            return 0;
+        }
     }
 
-    code = pdf_read_Root(ctx);
-    if (code < 0) {
-        /* If we couldn#'t find the Root object, and we were using the XrefStm
-         * from a hybrid file, then try again, but this time use the xref table
-         */
-        if (code == gs_error_undefined && ctx->is_hybrid && ctx->prefer_xrefstm) {
-            ctx->pdf_errors |= E_PDF_BADXREFSTREAM;
-            pdf_countdown(ctx->xref_table);
-            ctx->xref_table = NULL;
-            ctx->prefer_xrefstm = false;
-            code = pdf_read_xref(ctx);
-            if (code < 0) {
-                ctx->pdf_errors |= E_PDF_BADXREF;
+    if (ctx->Trailer) {
+        code = pdf_read_Root(ctx);
+        if (code < 0) {
+            /* If we couldn#'t find the Root object, and we were using the XrefStm
+             * from a hybrid file, then try again, but this time use the xref table
+             */
+            if (code == gs_error_undefined && ctx->is_hybrid && ctx->prefer_xrefstm) {
+                ctx->pdf_errors |= E_PDF_BADXREFSTREAM;
+                pdf_countdown(ctx->xref_table);
+                ctx->xref_table = NULL;
+                ctx->prefer_xrefstm = false;
+                code = pdf_read_xref(ctx);
+                if (code < 0) {
+                    ctx->pdf_errors |= E_PDF_BADXREF;
+                    return code;
+                }
+                code = pdf_read_Root(ctx);
+                if (code < 0)
+                    return code;
+            } else
                 return code;
-            }
-            code = pdf_read_Root(ctx);
-            if (code < 0)
-                return code;
-        } else
-            return code;
+        }
     }
 
-    code = pdf_read_Info(ctx);
-    if (code < 0 && code != gs_error_undefined) {
-        if (ctx->pdfstoponerror)
-            return code;
-        pdf_clearstack(ctx);
+    if (ctx->Trailer) {
+        code = pdf_read_Info(ctx);
+        if (code < 0 && code != gs_error_undefined) {
+            if (ctx->pdfstoponerror)
+                return code;
+            pdf_clearstack(ctx);
+        }
+    }
+
+    if (!ctx->Root) {
+        dmprintf(ctx->memory, "Catalog dictionary not located in file, unable to proceed\n");
+        return_error(gs_error_syntaxerror);
     }
 
     code = pdf_read_Pages(ctx);

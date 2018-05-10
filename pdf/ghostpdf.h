@@ -145,6 +145,7 @@ typedef struct pdf_context_s
     gs_color_space *cmyk;
 
     char *directory;
+    char *filename;
     pdf_stream *main_stream;
     gs_offset_t main_stream_length;
 
