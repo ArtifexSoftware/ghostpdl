@@ -657,12 +657,12 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
                 return_error(gs_error_ioerror);
             }
 
-            if (NumBuf[0] < 0x30 || NumBuf[1] < 0x30 || NumBuf[0] > 0x39 || NumBuf[1] > 0x39) {
+            if (!ishex(NumBuf[0]) || !ishex(NumBuf[1])) {
                 gs_free_object(ctx->memory, Buffer, "pdf_read_name error");
                 return_error(gs_error_ioerror);
             }
 
-            Buffer[index] = ((NumBuf[0] - 0x30) * 10) + (NumBuf[1] - 0x30);
+            Buffer[index] = (fromhex(NumBuf[0]) << 4) + fromhex(NumBuf[1]);
         }
 
         /* If we ran out of memory, increase the buffer size */
@@ -1561,7 +1561,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
     if (index >= 255 || index == 0) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_syntaxerror);
-        strcpy(Buffer, "KEYWORD_TOO_LONG");
+        strcpy((char *)Buffer, "KEYWORD_TOO_LONG");
         index = 16;
     }
 
@@ -1831,6 +1831,14 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
         case ']':
             return pdf_array_from_stack(ctx);
             break;
+        case '{':
+            if (ctx->pdfdebug)
+                dmprintf (ctx->memory, "{");
+            return pdf_mark_stack(ctx, PDF_PROC_MARK);
+            break;
+        case '}':
+            pdf_clear_to_mark(ctx);
+            break;
         case '%':
             pdf_skip_comment(ctx, s);
             return pdf_read_token(ctx, s);
@@ -1976,8 +1984,13 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
         }
         keyword = ((pdf_keyword *)ctx->stack_top[-1]);
         if (keyword->key != PDF_ENDSTREAM) {
-            pdf_pop(ctx, 2);
-            return_error(gs_error_typecheck);
+            if (ctx->pdfstoponerror) {
+                pdf_pop(ctx, 2);
+                return_error(gs_error_typecheck);
+            }
+            dmprintf2(ctx->memory, "Stream object %d has an incorrect /Length of %d\n", objnum, i);
+            pdf_pop(ctx, 1);
+            return 0;
         }
         pdf_pop(ctx, 1);
 
@@ -2312,8 +2325,29 @@ int repair_pdf_file(pdf_context *ctx)
     if(ctx->pdfdebug)
         dmprintf(ctx->memory, "%% Error encountered in opening PDF file, attempting repair\n");
 
-    /* First pass, identify all the objects of the form x y obj */
+    /* First try to locate a %PDF header. If we can't find one, abort this, the file is too broken
+     * and may not even be a PDF file.
+     */
     pdf_seek(ctx, ctx->main_stream, 0, SEEK_SET);
+    {
+        char Buffer[10], test[] = "%PDF";
+        int index = 0;
+
+        do {
+            code = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, ctx->main_stream);
+            if (code < 0)
+                return code;
+            if (Buffer[index] == test[index])
+                index++;
+            else
+                index = 0;
+        } while (index < 4 && ctx->main_stream->eof == false);
+        pdf_unread(ctx, ctx->main_stream, (byte *)Buffer, 4);
+    }
+    if (ctx->main_stream->eof == true)
+        return_error(gs_error_ioerror);
+
+    /* First pass, identify all the objects of the form x y obj */
 
     do {
         offset = pdf_tell(ctx);
@@ -2396,7 +2430,16 @@ int repair_pdf_file(pdf_context *ctx)
                                 return code;
                             pdf_clearstack(ctx);
                         } else
-                            pdf_clearstack(ctx);
+                            if (k->key == PDF_STARTXREF) {
+                                code = pdf_read_token(ctx, ctx->main_stream);
+                                if (code < 0)
+                                    return code;
+                                offset = pdf_tell(ctx);
+                                pdf_clearstack(ctx);
+                            } else {
+                                offset = pdf_tell(ctx);
+                                pdf_clearstack(ctx);
+                            }
                     }
                 }
             }
@@ -3871,7 +3914,7 @@ static int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, u
                             pdf_countdown(Type);
                             pdf_countdown(Kids);
                             pdf_countdown(child);
-                            return 0;
+                            return code;
                         }
                     }
                 }

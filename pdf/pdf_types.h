@@ -37,7 +37,8 @@ typedef enum pdf_obj_type_e {
      */
     PDF_XREF_TABLE = 'X',
     PDF_ARRAY_MARK = '[',
-    PDF_DICT_MARK = '>',
+    PDF_DICT_MARK = '<',
+    PDF_PROC_MARK = '{',
 } pdf_obj_type;
 
 #if REFCNT_DEBUG

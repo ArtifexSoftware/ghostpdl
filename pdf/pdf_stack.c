@@ -71,7 +71,7 @@ int pdf_mark_stack(pdf_context *ctx, pdf_obj_type type)
     pdf_obj *o;
     int code;
 
-    if (type != PDF_ARRAY_MARK && type != PDF_DICT_MARK)
+    if (type != PDF_ARRAY_MARK && type != PDF_DICT_MARK && type != PDF_PROC_MARK)
         return_error(gs_error_typecheck);
 
     o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "Allocate a stack mark");
