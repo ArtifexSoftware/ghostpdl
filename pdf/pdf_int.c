@@ -1040,6 +1040,7 @@ static int pdf_array_from_stack(pdf_context *ctx)
         gs_free_object(a->memory, a, "pdf_array_from_stack error");
         return_error(gs_error_VMerror);
     }
+    memset(a->values, 0x00, index * sizeof(pdf_obj *));
 
     while (index) {
         o = ctx->stack_top[-1];
