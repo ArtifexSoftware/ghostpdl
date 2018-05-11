@@ -1095,6 +1095,7 @@ int pdf_dict_from_stack(pdf_context *ctx)
         gs_free_object(d->memory, d, "pdf_read_dict error");
         return_error(gs_error_VMerror);
     }
+    memset(d->keys, 0x00, d->size * sizeof(pdf_obj *));
 
     d->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, d->size * sizeof(pdf_obj *), "pdf_dict_from_stack");
     if (d->values == NULL) {
@@ -1102,6 +1103,7 @@ int pdf_dict_from_stack(pdf_context *ctx)
         gs_free_object(d->memory, d, "pdf_read_dict error");
         return_error(gs_error_VMerror);
     }
+    memset(d->values, 0x00, d->size * sizeof(pdf_obj *));
     
     while (index) {
         i = (index / 2) - 1;
@@ -1596,6 +1598,11 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
         dmprintf1(ctx->memory, " %s\n", Buffer);
 
     switch(Buffer[0]) {
+        case 'K':
+            if (keyword->length == 16 && memcmp(keyword->data, "KEYWORD_TOO_LONG", 16) == 0) {
+                keyword->key = PDF_INVALID_KEY;
+            }
+            break;
         case 'R':
             if (keyword->length == 1){
                 pdf_indirect_ref *o;
@@ -1844,6 +1851,11 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
             return pdf_read_token(ctx, s);
             break;
         default:
+            if (isdelimiter(Buffer[0])) {
+                if (ctx->pdfstoponerror)
+                    return_error(gs_error_syntaxerror);
+                return pdf_read_token(ctx, s);
+            }
             pdf_unread(ctx, s, (byte *)&Buffer[0], 1);
             return pdf_read_keyword(ctx, s);
             break;
@@ -2353,8 +2365,14 @@ int repair_pdf_file(pdf_context *ctx)
         offset = pdf_tell(ctx);
         do {
             code = pdf_read_token(ctx, ctx->main_stream);
-            if (code < 0)
-                return code;
+            if (code < 0) {
+                if (code != gs_error_VMerror && code != gs_error_ioerror) {
+                    pdf_clearstack(ctx);
+                    offset = pdf_tell(ctx);
+                    continue;
+                } else
+                    return code;
+            }
             if (ctx->stack_top - ctx->stack_bot > 0) {
                 if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
                     pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
@@ -4264,6 +4282,9 @@ static int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
                         pdf_clearstack(ctx);
                         return code;
                     }
+                    break;
+                case PDF_INVALID_KEY:
+                    pdf_clearstack(ctx);
                     break;
                 default:
                     ctx->pdf_errors |= E_PDF_NOENDSTREAM;

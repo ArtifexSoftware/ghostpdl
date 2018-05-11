@@ -99,6 +99,7 @@ typedef enum pdf_key_e {
     PDF_XREF,
     PDF_STARTXREF,
     PDF_TRAILER,
+    PDF_INVALID_KEY,
 }pdf_key;
 
 typedef struct pdf_keyword_s {
