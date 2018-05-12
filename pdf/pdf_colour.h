@@ -26,5 +26,12 @@ int pdf_setrgbstroke(pdf_context *ctx);
 int pdf_setrgbfill(pdf_context *ctx);
 int pdf_setcmykstroke(pdf_context *ctx);
 int pdf_setcmykfill(pdf_context *ctx);
+int pdf_setstrokecolor_space(pdf_context *ctx);
+int pdf_setfillcolor_space(pdf_context *ctx);
+int pdf_setstrokecolor(pdf_context *ctx);
+int pdf_setfillcolor(pdf_context *ctx);
+int pdf_setstrokecolorN(pdf_context *ctx);
+int pdf_setfillcolorN(pdf_context *ctx);
+int pdf_ri(pdf_context *ctx);
 
 #endif

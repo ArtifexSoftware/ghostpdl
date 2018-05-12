@@ -173,3 +173,10 @@ int pdf_EI(pdf_context *ctx)
     pdf_clearstack(ctx);
     return 0;
 }
+
+int pdf_Do(pdf_context *ctx)
+{
+    if (ctx->stack_top - ctx->stack_bot >= 1)
+        pdf_pop(ctx, 1);
+    return 0;
+}

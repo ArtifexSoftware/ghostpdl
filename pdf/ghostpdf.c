@@ -20,6 +20,7 @@
 #include "pdf_array.h"
 #include "pdf_int.h"
 #include "pdf_stack.h"
+#include "pdf_file.h"
 #include "stream.h"
 #include "strmio.h"
 
@@ -623,4 +624,3 @@ int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx)
     gs_free_object(ctx->memory, ctx, "pdf_free_context");
     return 0;
 }
-

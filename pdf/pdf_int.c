@@ -1750,7 +1750,7 @@ int repair_pdf_file(pdf_context *ctx)
                     if (k->key == PDF_OBJ) {
                         if (ctx->stack_top - ctx->stack_bot < 3 || ctx->stack_top[-2]->type != PDF_INT || ctx->stack_top[-2]->type != PDF_INT) {
                             pdf_clearstack(ctx);
-                            return_error(gs_error_syntaxerror);
+                            continue;
                         }
                         n = (pdf_num *)ctx->stack_top[-3];
                         object_num = n->value.i;
@@ -1760,8 +1760,11 @@ int repair_pdf_file(pdf_context *ctx)
 
                         do {
                             code = pdf_read_token(ctx, ctx->main_stream);
-                            if (code < 0)
+                            if (code < 0) {
+                                if (code != gs_error_VMerror && code != gs_error_ioerror)
+                                    continue;
                                 return code;
+                            }
                             if (ctx->stack_top[-1]->type == PDF_KEYWORD){
                                 pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
 
@@ -1778,6 +1781,8 @@ int repair_pdf_file(pdf_context *ctx)
 
                                         do {
                                             code = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, ctx->main_stream);
+                                            if (code < 0 && code != gs_error_VMerror && code != gs_error_ioerror)
+                                                continue;
                                             if (code < 0)
                                                 return code;
                                             if (Buffer[index] == test[index])
@@ -1787,12 +1792,16 @@ int repair_pdf_file(pdf_context *ctx)
                                         } while (index < 9 && ctx->main_stream->eof == false);
                                         do {
                                             code = pdf_read_token(ctx, ctx->main_stream);
+                                            if (code < 0 && code != gs_error_VMerror && code != gs_error_ioerror)
+                                                continue;
                                             if (code < 0)
                                                 return code;
                                             if (ctx->stack_top[-1]->type == PDF_KEYWORD){
                                                 pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
                                                 if (k->key == PDF_ENDOBJ) {
                                                     code = pdf_repair_add_object(ctx, object_num, generation_num, offset);
+                                                    if (code < 0 && code != gs_error_VMerror && code != gs_error_ioerror)
+                                                        break;
                                                     if (code < 0)
                                                         return code;
                                                     break;
@@ -1819,6 +1828,8 @@ int repair_pdf_file(pdf_context *ctx)
                         } else
                             if (k->key == PDF_STARTXREF) {
                                 code = pdf_read_token(ctx, ctx->main_stream);
+                                if (code < 0 && code != gs_error_VMerror && code != gs_error_ioerror)
+                                    continue;
                                 if (code < 0)
                                     return code;
                                 offset = pdf_tell(ctx);
@@ -1851,6 +1862,8 @@ int repair_pdf_file(pdf_context *ctx)
             pdf_seek(ctx, ctx->main_stream, ctx->xref_table->xref[i].u.uncompressed.offset, SEEK_SET);
             do {
                 code = pdf_read_token(ctx, ctx->main_stream);
+                if (code < 0 && code != gs_error_ioerror && code != gs_error_VMerror)
+                    continue;
                 if (code < 0)
                     return code;
                 if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
@@ -2510,10 +2523,22 @@ static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source)
                 code = pdf_BI(ctx);
                 break;
             case K3('B','D','C'):   /* begin marked content sequence with property list */
+                pdf_pop(ctx, 1);
+                if (ctx->stack_top - ctx->stack_bot >= 2) {
+                    pdf_pop(ctx, 2);
+                } else
+                    pdf_clearstack(ctx);
+                break;
             case K3('B','M','C'):   /* begin marked content sequence */
+                pdf_pop(ctx, 1);
+                if (ctx->stack_top - ctx->stack_bot >= 1) {
+                    pdf_pop(ctx, 1);
+                } else
+                    pdf_clearstack(ctx);
+                break;
             case K2('B','T'):       /* begin text */
             case K2('B','X'):       /* begin compatibility section */
-                pdf_clearstack(ctx);
+                pdf_pop(ctx, 1);
                 break;
             case K1('c'):           /* curveto */
                 pdf_pop(ctx, 1);
@@ -2524,8 +2549,13 @@ static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source)
                 code = pdf_concat(ctx);
                 break;
             case K2('C','S'):       /* set stroke colour space */
+                pdf_pop(ctx, 1);
+                code = pdf_setstrokecolor_space(ctx);
+                break;
             case K2('c','s'):       /* set non-stroke colour space */
-                pdf_clearstack(ctx);
+                pdf_pop(ctx, 1);
+                code = pdf_setfillcolor_space(ctx);
+                break;
                 break;
             case K1('d'):           /* set dash params */
                 pdf_pop(ctx, 1);
@@ -2536,13 +2566,28 @@ static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source)
                 code = pdf_EI(ctx);
                 break;
             case K2('d','0'):       /* set type 3 font glyph width */
+                pdf_pop(ctx, 1);
+                code = pdf_d0(ctx);
+                break;
             case K2('d','1'):       /* set type 3 font glyph width and bounding box */
+                pdf_pop(ctx, 1);
+                code = pdf_d1(ctx);
+                break;
             case K2('D','o'):       /* invoke named XObject */
+                pdf_pop(ctx, 1);
+                code = pdf_Do(ctx);
+                break;
             case K2('D','P'):       /* define marked content point with property list */
+                pdf_pop(ctx, 1);
+                if (ctx->stack_top - ctx->stack_bot >= 2) {
+                    pdf_pop(ctx, 2);
+                } else
+                    pdf_clearstack(ctx);
+                break;
             case K3('E','M','C'):   /* end marked content sequence */
             case K2('E','T'):       /* end text */
             case K2('E','X'):       /* end compatibility section */
-                pdf_clearstack(ctx);
+                pdf_pop(ctx, 1);
                 break;
             case K1('f'):           /* fill */
                 pdf_pop(ctx, 1);
@@ -2608,7 +2653,9 @@ static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source)
                 code = pdf_setmiterlimit(ctx);
                 break;
             case K2('M','P'):       /* define marked content point */
-                pdf_clearstack(ctx);
+                pdf_pop(ctx, 1);
+                if (ctx->stack_top - ctx->stack_bot >= 1)
+                    pdf_pop(ctx, 1);
                 break;
             case K1('n'):           /* newpath */
                 pdf_pop(ctx, 1);
@@ -2635,7 +2682,8 @@ static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source)
                 code = pdf_setrgbfill(ctx);
                 break;
             case K2('r','i'):       /* set rendering intent */
-                pdf_clearstack(ctx);
+                pdf_pop(ctx, 1);
+                code = pdf_ri(ctx);
                 break;
             case K1('s'):           /* closepath, stroke */
                 pdf_pop(ctx, 1);
@@ -2646,24 +2694,76 @@ static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source)
                 code = pdf_stroke(ctx);
                 break;
             case K2('S','C'):       /* set colour for stroke */
+                pdf_pop(ctx, 1);
+                code = pdf_setstrokecolor(ctx);
+                break;
             case K2('s','c'):       /* set colour for non-stroke */
+                pdf_pop(ctx, 1);
+                code = pdf_setfillcolor(ctx);
+                break;
             case K3('S','C','N'):   /* set special colour for stroke */
+                pdf_pop(ctx, 1);
+                code = pdf_setstrokecolorN(ctx);
+                break;
             case K3('s','c','n'):   /* set special colour for non-stroke */
+                pdf_pop(ctx, 1);
+                code = pdf_setstrokecolorN(ctx);
+                break;
             case K2('s','h'):       /* fill with sahding pattern */
+                pdf_pop(ctx, 1);
+                code = pdf_shading(ctx);
+                break;
             case K2('T','*'):       /* Move to start of next text line */
+                pdf_pop(ctx, 1);
+                code = pdf_T_star(ctx);
+                break;
             case K2('T','c'):       /* set character spacing */
+                pdf_pop(ctx, 1);
+                code = pdf_Tc(ctx);
+                break;
             case K2('T','d'):       /* move text position */
+                pdf_pop(ctx, 1);
+                code = pdf_Td(ctx);
+                break;
             case K2('T','D'):       /* Move text position, set leading */
+                pdf_pop(ctx, 1);
+                code = pdf_TD(ctx);
+                break;
             case K2('T','f'):       /* set font and size */
+                pdf_pop(ctx, 1);
+                code = pdf_Tf(ctx);
+                break;
             case K2('T','j'):       /* show text */
+                pdf_pop(ctx, 1);
+                code = pdf_Tj(ctx);
+                break;
             case K2('T','J'):       /* show text with individual glyph positioning */
+                pdf_pop(ctx, 1);
+                code = pdf_TJ(ctx);
+                break;
             case K2('T','L'):       /* set text leading */
+                pdf_pop(ctx, 1);
+                code = pdf_TL(ctx);
+                break;
             case K2('T','m'):       /* set text matrix */
+                pdf_pop(ctx, 1);
+                code = pdf_Tm(ctx);
+                break;
             case K2('T','r'):       /* set text rendering mode */
+                pdf_pop(ctx, 1);
+                code = pdf_T_star(ctx);
+                break;
             case K2('T','s'):       /* set text rise */
+                pdf_pop(ctx, 1);
+                code = pdf_Ts(ctx);
+                break;
             case K2('T','w'):       /* set word spacing */
+                pdf_pop(ctx, 1);
+                code = pdf_Tw(ctx);
+                break;
             case K2('T','z'):       /* set text matrix */
-                pdf_clearstack(ctx);
+                pdf_pop(ctx, 1);
+                code = pdf_Tz(ctx);
                 break;
             case K1('v'):           /* append curve (initial point replicated) */
                 pdf_pop(ctx, 1);
@@ -2686,8 +2786,12 @@ static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source)
                 code = pdf_y_curveto(ctx);
                 break;
             case K1('\''):          /* move to next line and show text */
+                pdf_pop(ctx, 1);
+                code = pdf_singlequote(ctx);
+                break;
             case K1('"'):           /* set word and character spacing, move to next line, show text */
-                pdf_clearstack(ctx);
+                pdf_pop(ctx, 1);
+                code = pdf_doublequote(ctx);
                 break;
             default:
                 code = split_bogus_operator(ctx);

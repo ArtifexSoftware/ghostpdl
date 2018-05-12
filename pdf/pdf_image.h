@@ -20,5 +20,6 @@
 
 int pdf_BI(pdf_context *ctx);
 int pdf_EI(pdf_context *ctx);
+int pdf_Do(pdf_context *ctx);
 
 #endif

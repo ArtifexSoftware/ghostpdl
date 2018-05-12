@@ -18,4 +18,19 @@
 #ifndef PDF_IMAGE_OPERATORS
 #define PDF_IMAGE_OPERATORS
 
+int pdf_T_star(pdf_context *ctx);
+int pdf_Tc(pdf_context *ctx);
+int pdf_Td(pdf_context *ctx);
+int pdf_TD(pdf_context *ctx);
+int pdf_Tj(pdf_context *ctx);
+int pdf_TJ(pdf_context *ctx);
+int pdf_TL(pdf_context *ctx);
+int pdf_Tm(pdf_context *ctx);
+int pdf_Tr(pdf_context *ctx);
+int pdf_Ts(pdf_context *ctx);
+int pdf_Tw(pdf_context *ctx);
+int pdf_Tz(pdf_context *ctx);
+int pdf_backslash(pdf_context *ctx);
+int pdf_doublequote(pdf_context *ctx);
+
 #endif

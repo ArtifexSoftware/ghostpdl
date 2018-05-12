@@ -127,4 +127,3 @@ int pdf_array_put(pdf_array *a, uint64_t index, pdf_obj *o)
     pdf_countup(o);
     return 0;
 }
-

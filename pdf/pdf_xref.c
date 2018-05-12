@@ -18,6 +18,7 @@
 #include "pdf_int.h"
 #include "pdf_stack.h"
 #include "pdf_xref.h"
+#include "pdf_file.h"
 
 static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t first, uint64_t last, uint64_t *W)
 {

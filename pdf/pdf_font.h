@@ -18,4 +18,8 @@
 #ifndef PDF_IMAGE_OPERATORS
 #define PDF_IMAGE_OPERATORS
 
+int pdf_d0(pdf_context *ctx);
+int pdf_d1(pdf_context *ctx);
+int pdf_Tf(pdf_context *ctx);
+
 #endif

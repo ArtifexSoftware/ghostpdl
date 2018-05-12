@@ -14,6 +14,7 @@
 */
 
 #include "ghostpdf.h"
+#include "pdf_types.H"
 #include "pdf_stack.h"
 #include "pdf_dict.h"
 #include "pdf_file.h"

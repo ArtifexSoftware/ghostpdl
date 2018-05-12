@@ -13,7 +13,14 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* DShading operations for the PDF interpreter */
+/* Shading operations for the PDF interpreter */
 
 #include "pdf_int.h"
 #include "pdf_shading.h"
+
+int pdf_shading(pdf_context *ctx)
+{
+    if (ctx->stack_top - ctx->stack_bot >= 1)
+        pdf_pop(ctx, 1);
+    return 0;
+}

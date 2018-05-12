@@ -18,6 +18,7 @@
 #include "pdf_types.h"
 #include "pdf_dict.h"
 #include "pdf_stack.h"
+#include "pdf_int.h"
 
 void pdf_free_dict(pdf_obj *o)
 {
@@ -73,7 +74,7 @@ int pdf_dict_from_stack(pdf_context *ctx)
         return_error(gs_error_VMerror);
     }
     memset(d->values, 0x00, d->size * sizeof(pdf_obj *));
-    
+
     while (index) {
         i = (index / 2) - 1;
 
@@ -392,4 +393,3 @@ int pdf_alloc_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned)
 #endif
     return 0;
 }
-
