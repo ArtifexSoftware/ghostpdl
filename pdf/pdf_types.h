@@ -13,13 +13,13 @@
    CA 94945, U.S.A., +1(415)492-9861, for further information.
 */
 
-#include "stdint_.h"    /* Various data types */
-#include "scommon.h"    /* for gs_offset_t */
-
 #define REFCNT_DEBUG 0
 
 #ifndef PDF_OBJ_TYPES
 #define PDF_OBJ_TYPES
+
+#include "stdint_.h"    /* Various data types */
+#include "scommon.h"    /* for gs_offset_t */
 
 typedef enum pdf_obj_type_e {
     PDF_NULL = 'n',

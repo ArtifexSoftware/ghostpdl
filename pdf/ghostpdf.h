@@ -79,10 +79,12 @@
 
 #include "gxdevsop.h"       /* For special ops */
 
-#include "pdf_types.h"
-
 #ifndef PDF_CONTEXT
 #define PDF_CONTEXT
+
+#define BUF_SIZE 2048
+
+#include "pdf_types.h"
 
 /*
  * The interpreter context.
@@ -192,5 +194,4 @@ int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx);
 int pdf_open_pdf_file(pdf_context *ctx, char *filename);
 int pdf_process_pdf_file(pdf_context *ctx, char *filename);
 int pdf_close_pdf_file(pdf_context *ctx);
-int pdf_render_page(pdf_context *ctx, uint64_t page_num);
 #endif

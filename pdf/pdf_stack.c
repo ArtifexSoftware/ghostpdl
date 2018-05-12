@@ -15,6 +15,8 @@
 
 /* Stack operations for the PDF interpreter */
 
+#include "ghostpdf.h"
+#include "pdf_types.h"
 #include "pdf_int.h"
 #include "pdf_stack.h"
 
