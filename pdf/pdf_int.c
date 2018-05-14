@@ -2075,6 +2075,7 @@ int pdf_read_Pages(pdf_context *ctx)
 {
     pdf_obj *o, *o1;
     int code;
+    double d;
 
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "%% Reading Pages dictionary\n");
@@ -2121,10 +2122,16 @@ int pdf_read_Pages(pdf_context *ctx)
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "\n");
 
-    code = pdf_dict_get_int(ctx, (pdf_dict *)o1, "Count", (int64_t *)&ctx->num_pages);
-    if (code < 0) {
-        pdf_countdown(o1);
+    /* Acrobat allows the Pages Count to be a flaoting point nuber (!) */
+    code = pdf_dict_get_number(ctx, (pdf_dict *)o1, "Count", &d);
+    if (code < 0)
         return code;
+
+    if (floor(d) != d) {
+        pdf_countdown(o1);
+        return_error(gs_error_rangecheck);
+    } else {
+        ctx->num_pages = (int)floor(d);
     }
 
     /* We don't pdf_countdown(o1) now, because we've transferred our
@@ -2143,6 +2150,7 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
     pdf_name *Type = NULL;
     pdf_dict *inheritable = NULL;
     int64_t num;
+    double dbl;
     bool known;
 
     if (ctx->pdfdebug)
@@ -2160,11 +2168,15 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
         }
     }
 
-    code = pdf_dict_get_int(ctx, d, "Count", &num);
+    code = pdf_dict_get_number(ctx, d, "Count", &dbl);
     if (code < 0) {
         pdf_countdown(inheritable);
         return code;
     }
+    if (dbl != floor(dbl))
+        return_error(gs_error_rangecheck);
+    num = (int)dbl;
+
     if (num < 0 || (num + *page_offset) > ctx->num_pages) {
         pdf_countdown(inheritable);
         return_error(gs_error_rangecheck);
@@ -2413,8 +2425,11 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
         code = pdf_dict_get_type(ctx, child, "Type", PDF_NAME, (pdf_obj **)&Type);
         if (code == 0) {
             if (Type->length == 5 && memcmp(Type->data, "Pages", 5) == 0) {
-                code = pdf_dict_get_int(ctx, child, "Count", &num);
+                code = pdf_dict_get_number(ctx, d, "Count", &dbl);
                 if (code == 0) {
+                    if (dbl != floor(dbl))
+                        return_error(gs_error_rangecheck);
+                    num = (int)dbl;
                     if (num < 0 || (num + *page_offset) > ctx->num_pages) {
                         code = gs_error_rangecheck;
                     } else {
