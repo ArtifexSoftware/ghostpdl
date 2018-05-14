@@ -374,6 +374,30 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
     return 0;
 }
 
+void normalize_rectangle(double *d)
+{
+    double d1[4];
+    int i;
+
+    if (d[0] < d[2]) {
+        d1[0] = d[0];
+        d1[2] = d[2];
+    } else {
+        d1[0] = d[2];
+        d1[2] = d[0];
+    }
+    if (d[1] < d[3]) {
+        d1[1] = d[1];
+        d1[3] = d[3];
+    } else {
+        d1[1] = d[3];
+        d1[3] = d[1];
+    }
+    for (i=0;i<=3;i++){
+        d[i] = d1[i];
+    }
+}
+
 /***********************************************************************************/
 /* 'token' reading functions. Tokens in this sense are PDF logical objects and the */
 /* related keywords. So that's numbers, booleans, names, strings, dictionaries,    */
@@ -2412,7 +2436,7 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
                 if (Type->length == 7 && memcmp(Type->data, "PageRef", 7) == 0) {
                     pdf_countdown(Type);
                     Type = NULL;
-                    if ((i + *page_offset) == page_num) {
+                    if ((*page_offset) == page_num) {
                         pdf_indirect_ref *o = NULL;
                         pdf_dict *d = NULL;
                         code = pdf_dict_get(child, "PageRef", (pdf_obj **)&o);
@@ -2433,13 +2457,15 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
                                 }
                             }
                         }
-                    } else
+                    } else {
+                        *page_offset += 1;
                         pdf_countdown(child);
+                    }
                 } else {
                     if (Type->length == 4 && memcmp(Type->data, "Page", 4) == 0) {
                         pdf_countdown(Type);
                         Type = NULL;
-                        if ((i + *page_offset) == page_num) {
+                        if ((*page_offset) == page_num) {
                             if (inheritable != NULL) {
                                 code = pdf_merge_dicts(child, inheritable);
                             }
@@ -2451,8 +2477,10 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
                                 pdf_countdown(child);
                                 return 0;
                             }
-                        } else
+                        } else {
+                            *page_offset += 1;
                             pdf_countdown(child);
+                        }
                     } else
                         code = gs_error_typecheck;
                 }

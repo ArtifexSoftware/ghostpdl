@@ -19,6 +19,8 @@
 #include "ghostpdf.h"
 #include "pdf_types.h"
 
+void normalize_rectangle(double *d);
+
 int skip_white(pdf_context *ctx, pdf_stream *s);
 int pdf_read_token(pdf_context *ctx, pdf_stream *s);
 int pdf_read_object(pdf_context *ctx, pdf_stream *s);
