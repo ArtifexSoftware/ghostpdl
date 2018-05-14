@@ -425,7 +425,7 @@ static int pdf_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, str
     int code;
 
     if (n->length == 15 && memcmp((const char *)n->data, "RunLengthDecode", 15) == 0) {
-        code = pdf_simple_filter(ctx, &s_RLE_template, source, new_stream);
+        code = pdf_simple_filter(ctx, &s_RLD_template, source, new_stream);
         return code;
     }
     if (n->length == 14 && memcmp((const char *)n->data, "CCITTFaxDecode", 14) == 0) {
@@ -517,7 +517,7 @@ static int pdf_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, str
             if (ctx->pdfstoponerror)
                 return_error(gs_error_syntaxerror);
         }
-        code = pdf_simple_filter(ctx, &s_RLE_template, source, new_stream);
+        code = pdf_simple_filter(ctx, &s_RLD_template, source, new_stream);
         return code;
     }
 
