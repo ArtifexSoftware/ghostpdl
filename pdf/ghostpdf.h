@@ -102,6 +102,8 @@ typedef enum pdf_error_flag_e {
     E_PDF_NOENDSTREAM = E_PDF_NOHEADER << 7,
     E_PDF_BAD_INLINEFILTER = E_PDF_NOHEADER << 8,
     E_PDF_UNKNOWNFILTER = E_PDF_NOHEADER << 9,
+    E_PDF_MISSINGWHITESPACE = E_PDF_NOHEADER << 10,
+    E_PDF_MALFORMEDNUMBER = E_PDF_NOHEADER << 11,
 } pdf_error_flag;
 
 #define INITIAL_STACK_SIZE 32
@@ -162,6 +164,8 @@ typedef struct pdf_context_s
      */
     bool prefer_xrefstm;
     bool is_hybrid;
+    /* If we've already repaired the file once, and it still fails, don't try to repair it again */
+    bool repaired;
 
     /* Global toggle for transparency */
     bool use_transparency;

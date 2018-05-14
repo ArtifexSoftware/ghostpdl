@@ -79,7 +79,10 @@ static int pdf_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
                     pdf_countdown(r);
                     if (code < 0) {
                         pdf_countdown(o);
-                        return code;;
+                        if (code == gs_error_VMerror || ctx->pdfstoponerror)
+                            return code;
+                        else
+                            return 0;
                     }
                     if (o1->type != PDF_DICT) {
                         pdf_countdown(o);
@@ -206,8 +209,11 @@ static int pdf_render_page(pdf_context *ctx, uint64_t page_num)
 
     code = pdf_get_page_dict(ctx, ctx->Pages, page_num, &page_offset, &page_dict, NULL);
     pdf_free_loop_detector(ctx);
-    if (code < 0)
-        return code;
+    if (code < 0) {
+        if (code == gs_error_VMerror || ctx->pdfstoponerror)
+            return code;
+        return 0;
+    }
 
     if (code > 0)
         return_error(gs_error_unknownerror);
@@ -296,6 +302,7 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
         }
     }
 
+read_root:
     if (ctx->Trailer) {
         code = pdf_read_Root(ctx);
         if (code < 0) {
@@ -316,6 +323,12 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
                 if (code < 0)
                     return code;
             } else
+                if (!ctx->repaired) {
+                    code = pdf_repair_file(ctx);
+                    if (code < 0)
+                        return code;
+                    goto read_root;
+                }
                 return code;
         }
     }
