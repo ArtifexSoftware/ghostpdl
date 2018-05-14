@@ -35,7 +35,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
 
 int pdf_read_xref(pdf_context *ctx);
 
-int repair_pdf_file(pdf_context *ctx);
+int pdf_repair_file(pdf_context *ctx);
 
 int pdf_read_Info(pdf_context *ctx);
 int pdf_read_Pages(pdf_context *ctx);

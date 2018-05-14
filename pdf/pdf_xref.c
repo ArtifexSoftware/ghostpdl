@@ -300,12 +300,12 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
         code = pdf_read_token(ctx, ctx->main_stream);
 
         if (code < 0)
-            return(repair_pdf_file(ctx));
+            return(pdf_repair_file(ctx));
 
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
             /* Second element is not an integer, not a valid xref */
             pdf_pop(ctx, 1);
-            return(repair_pdf_file(ctx));
+            return(pdf_repair_file(ctx));
         }
 
         code = pdf_read_token(ctx, ctx->main_stream);
@@ -317,7 +317,7 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
             /* Second element is not an integer, not a valid xref */
             pdf_pop(ctx, 2);
-            return(repair_pdf_file(ctx));
+            return(pdf_repair_file(ctx));
         } else {
             int obj_num, gen_num;
 
@@ -325,7 +325,7 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
 
             if (keyword->key != PDF_OBJ) {
                 pdf_pop(ctx, 3);
-                return(repair_pdf_file(ctx));
+                return(pdf_repair_file(ctx));
             }
             /* pop the 'obj', generation and object numbers */
             pdf_pop(ctx, 1);
@@ -337,7 +337,7 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
             do {
                 code = pdf_read_token(ctx, ctx->main_stream);
                 if (code < 0)
-                    return repair_pdf_file(ctx);
+                    return pdf_repair_file(ctx);
 
                 if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD) {
                     keyword = (pdf_keyword *)ctx->stack_top[-1];
@@ -348,7 +348,7 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
                         pdf_pop(ctx, 1);
                         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_DICT) {
                             pdf_pop(ctx, 1);
-                            return repair_pdf_file(ctx);
+                            return pdf_repair_file(ctx);
                         }
                         d = (pdf_dict *)ctx->stack_top[-1];
                         d->stream_offset = pdf_tell(ctx);
@@ -361,7 +361,7 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
                         code = pdf_process_xref_stream(ctx, d, ctx->main_stream);
                         if (code < 0) {
                             pdf_countdown(d);
-                            return (repair_pdf_file(ctx));
+                            return (pdf_repair_file(ctx));
                         }
                         pdf_countdown(d);
                         break;
@@ -369,7 +369,7 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
                     if (keyword->key == PDF_ENDOBJ) {
                         /* Something went wrong, this is not a stream dictionary */
                         pdf_pop(ctx, 3);
-                        return(repair_pdf_file(ctx));
+                        return(pdf_repair_file(ctx));
                         break;
                     }
                 }
@@ -380,7 +380,7 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
         }
     } else {
         /* Not an 'xref' and not an integer, so not a valid xref */
-        return(repair_pdf_file(ctx));
+        return(pdf_repair_file(ctx));
     }
     return 0;
 }
@@ -697,7 +697,7 @@ int pdf_read_xref(pdf_context *ctx)
             dmprintf(ctx->memory, "startxref offset is beyond end of file.\n");
             ctx->pdf_errors |= E_PDF_BADSTARTXREF;
             (void)pdf_free_loop_detector(ctx);
-            return(repair_pdf_file(ctx));
+            return(pdf_repair_file(ctx));
         }
 
         /* Read the xref(s) */
@@ -708,7 +708,7 @@ int pdf_read_xref(pdf_context *ctx)
             dmprintf(ctx->memory, "Failed to read any token at the startxref location\n");
             ctx->pdf_errors |= E_PDF_BADSTARTXREF;
             (void)pdf_free_loop_detector(ctx);
-            return(repair_pdf_file(ctx));
+            return(pdf_repair_file(ctx));
         }
 
         if (ctx->stack_top - ctx->stack_bot < 1)
@@ -720,19 +720,19 @@ int pdf_read_xref(pdf_context *ctx)
             code = read_xref(ctx, ctx->main_stream);
             if (code < 0) {
                 (void)pdf_free_loop_detector(ctx);
-                return(repair_pdf_file(ctx));
+                return(pdf_repair_file(ctx));
             }
         } else {
             code = pdf_read_xref_stream_dict(ctx, ctx->main_stream);
             if (code < 0){
                 (void)pdf_free_loop_detector(ctx);
-                return(repair_pdf_file(ctx));
+                return(pdf_repair_file(ctx));
             }
         }
     } else {
         /* Attempt to repair PDF file */
         (void)pdf_free_loop_detector(ctx);
-        return(repair_pdf_file(ctx));
+        return(pdf_repair_file(ctx));
     }
 
     if(ctx->pdfdebug && ctx->xref_table) {

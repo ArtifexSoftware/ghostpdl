@@ -550,7 +550,9 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
                 if (Buffer[index] < 0x30 || Buffer[index] > 0x39) {
                     if (ctx->pdfstoponerror)
                         return_error(gs_error_syntaxerror);
-                    dmprintf(ctx->memory, "Ignoring missing white space while parsing number\n");
+                    if (!ctx->pdf_errors & E_PDF_MISSINGWHITESPACE)
+                        dmprintf(ctx->memory, "Ignoring missing white space while parsing number\n");
+                    ctx->pdf_errors |= E_PDF_MISSINGWHITESPACE;
                     pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
                     Buffer[index] = 0x00;
                     break;
@@ -569,7 +571,9 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
     num->memory = ctx->memory;
 
     if (malformed) {
-        dmprintf1(ctx->memory, "Treating malformed number %s as 0.\n", Buffer);
+        if (!ctx->pdf_errors & E_PDF_MALFORMEDNUMBER)
+            dmprintf1(ctx->memory, "Treating malformed number %s as 0.\n", Buffer);
+        ctx->pdf_errors |= E_PDF_MALFORMEDNUMBER;
         num->type = PDF_INT;
         num->value.i = 0;
     } else {
@@ -1385,6 +1389,12 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
             bytes = pdf_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
             if (bytes <= 0)
                 return (gs_error_ioerror);
+            if (iswhite(Buffer[1])) {
+                code = skip_white(ctx, s);
+                if (code < 0)
+                    return code;
+                bytes = pdf_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
+            }
             if (Buffer[1] == '<') {
                 if (ctx->pdfdebug)
                     dmprintf (ctx->memory, " <<\n");
@@ -1421,7 +1431,13 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
             return pdf_mark_stack(ctx, PDF_ARRAY_MARK);
             break;
         case ']':
-            return pdf_array_from_stack(ctx);
+            code = pdf_array_from_stack(ctx);
+            if (code < 0) {
+                if (code == gs_error_VMerror || code == gs_error_ioerror || ctx->pdfstoponerror)
+                    return code;
+                pdf_clearstack(ctx);
+                return pdf_read_token(ctx, s);
+            }
             break;
         case '{':
             if (ctx->pdfdebug)
@@ -1719,12 +1735,14 @@ static int pdf_repair_add_object(pdf_context *ctx, uint64_t obj, uint64_t gen, g
     return 0;
 }
 
-int repair_pdf_file(pdf_context *ctx)
+int pdf_repair_file(pdf_context *ctx)
 {
     int code;
     gs_offset_t offset;
     uint64_t object_num, generation_num;
     int i;
+
+    ctx->repaired = true;
 
     pdf_clearstack(ctx);
 
@@ -1865,6 +1883,8 @@ int repair_pdf_file(pdf_context *ctx)
                             }
                     }
                 }
+                if (ctx->stack_top - ctx->stack_bot > 0 && ctx->stack_top[-1]->type != PDF_INT)
+                    pdf_clearstack(ctx);
             }
         } while (ctx->main_stream->eof == false);
     } while(ctx->main_stream->eof == false);
@@ -2425,7 +2445,7 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
         code = pdf_dict_get_type(ctx, child, "Type", PDF_NAME, (pdf_obj **)&Type);
         if (code == 0) {
             if (Type->length == 5 && memcmp(Type->data, "Pages", 5) == 0) {
-                code = pdf_dict_get_number(ctx, d, "Count", &dbl);
+                code = pdf_dict_get_number(ctx, child, "Count", &dbl);
                 if (code == 0) {
                     if (dbl != floor(dbl))
                         return_error(gs_error_rangecheck);
