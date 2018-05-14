@@ -34,6 +34,7 @@ int pdf_ID(pdf_context *ctx, pdf_stream *source)
     int64_t Height, Width, BPC;
     int i, code, comps = 0, byteswide, total;
     byte c;
+    pdf_obj *Mask;
 
     code = pdf_dict_from_stack(ctx);
     if (code < 0)
@@ -68,12 +69,28 @@ int pdf_ID(pdf_context *ctx, pdf_stream *source)
         return code;
     }
 
+    code = pdf_dict_get_type(ctx, d, "ImageMask", PDF_BOOL, &Mask);
+    if (code == gs_error_undefined)
+        code = pdf_dict_get_type(ctx, d, "IM", PDF_BOOL, &Mask);
+    if (code == 0) {
+        if (((pdf_bool *)Mask)->value == true)
+            comps = 1;
+        pdf_countdown(Mask);
+    } else {
+        if (code != gs_error_undefined) {
+            pdf_countdown(d);
+            return code;
+        }
+    }
+
     code = pdf_dict_get_type(ctx, d, "ColorSpace", PDF_NAME, (pdf_obj **)&n);
     if (code == gs_error_undefined)
         code = pdf_dict_get_type(ctx, d, "CS", PDF_NAME, (pdf_obj **)&n);
     if (code < 0) {
-        gx_device *dev = gs_currentdevice_inline(ctx->pgs);
-        comps = dev->color_info.num_components;
+        if (comps == 0) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+            comps = dev->color_info.num_components;
+        }
     } else {
         switch(n->length){
             case 1:
