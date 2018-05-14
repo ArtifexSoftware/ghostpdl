@@ -693,12 +693,20 @@ int pdf_read_xref(pdf_context *ctx)
         if (ctx->pdfdebug)
             dmprintf(ctx->memory, "%% Trying to read 'xref' token for xref table, or 'int int obj' for an xref stream\n");
 
+        if (ctx->startxref > ctx->main_stream_length - 5) {
+            dmprintf(ctx->memory, "startxref offset is beyond end of file.\n");
+            ctx->pdf_errors |= E_PDF_BADSTARTXREF;
+            (void)pdf_free_loop_detector(ctx);
+            return(repair_pdf_file(ctx));
+        }
+
         /* Read the xref(s) */
         pdf_seek(ctx, ctx->main_stream, ctx->startxref, SEEK_SET);
 
         code = pdf_read_token(ctx, ctx->main_stream);
         if (code < 0) {
             dmprintf(ctx->memory, "Failed to read any token at the startxref location\n");
+            ctx->pdf_errors |= E_PDF_BADSTARTXREF;
             (void)pdf_free_loop_detector(ctx);
             return(repair_pdf_file(ctx));
         }
