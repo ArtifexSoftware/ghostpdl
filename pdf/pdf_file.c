@@ -457,37 +457,71 @@ static int pdf_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, str
     if (n->length == 9 && memcmp((const char *)n->data, "JPXDecode", 9) == 0) {
     }
 
-    if (inline_image) {
-        if (n->length == 3 && memcmp((const char *)n->data, "AHx", 3) == 0) {
-            code = pdf_simple_filter(ctx, &s_AXD_template, source, new_stream);
-            return code;
+    if (n->length == 3 && memcmp((const char *)n->data, "AHx", 3) == 0) {
+        if (!inline_image) {
+            ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponerror)
+                return_error(gs_error_syntaxerror);
         }
-        if (n->length == 3 && memcmp((const char *)n->data, "A85", 3) == 0) {
-            code = pdf_simple_filter(ctx, &s_AXD_template, source, new_stream);
-            return code;
+        code = pdf_simple_filter(ctx, &s_AXD_template, source, new_stream);
+        return code;
+    }
+    if (n->length == 3 && memcmp((const char *)n->data, "A85", 3) == 0) {
+        if (!inline_image) {
+            ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponerror)
+                return_error(gs_error_syntaxerror);
         }
-        if (n->length == 3 && memcmp((const char *)n->data, "LZW", 3) == 0) {
-            code = pdf_LZW_filter(ctx, decode, source, new_stream);
-            return code;
+        code = pdf_ASCII85_filter(ctx, decode, source, new_stream);
+        return code;
+    }
+    if (n->length == 3 && memcmp((const char *)n->data, "LZW", 3) == 0) {
+        if (!inline_image) {
+            ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponerror)
+                return_error(gs_error_syntaxerror);
         }
-        if (n->length == 3 && memcmp((const char *)n->data, "CCF", 3) == 0) {
-            code = pdf_CCITTFax_filter(ctx, decode, source, new_stream);
-            return code;
+        code = pdf_LZW_filter(ctx, decode, source, new_stream);
+        return code;
+    }
+    if (n->length == 3 && memcmp((const char *)n->data, "CCF", 3) == 0) {
+        if (!inline_image) {
+            ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponerror)
+                return_error(gs_error_syntaxerror);
         }
-        if (n->length == 3 && memcmp((const char *)n->data, "DCT", 3) == 0) {
-            code = pdf_DCT_filter(ctx, decode, source, new_stream);
-            return code;
+        code = pdf_CCITTFax_filter(ctx, decode, source, new_stream);
+        return code;
+    }
+    if (n->length == 3 && memcmp((const char *)n->data, "DCT", 3) == 0) {
+        if (!inline_image) {
+            ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponerror)
+                return_error(gs_error_syntaxerror);
         }
-        if (n->length == 2 && memcmp((const char *)n->data, "Fl", 2) == 0) {
-            code = pdf_Flate_filter(ctx, decode, source, new_stream);
-            return code;
+        code = pdf_DCT_filter(ctx, decode, source, new_stream);
+        return code;
+    }
+    if (n->length == 2 && memcmp((const char *)n->data, "Fl", 2) == 0) {
+        if (!inline_image) {
+            ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponerror)
+                return_error(gs_error_syntaxerror);
         }
-        if (n->length == 2 && memcmp((const char *)n->data, "RL", 2) == 0) {
-            code = pdf_simple_filter(ctx, &s_RLE_template, source, new_stream);
-            return code;
+        code = pdf_Flate_filter(ctx, decode, source, new_stream);
+        return code;
+    }
+    if (n->length == 2 && memcmp((const char *)n->data, "RL", 2) == 0) {
+        if (!inline_image) {
+            ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
+            if (ctx->pdfstoponerror)
+                return_error(gs_error_syntaxerror);
         }
+        code = pdf_simple_filter(ctx, &s_RLE_template, source, new_stream);
+        return code;
     }
 
+    ctx->pdf_errors |= E_PDF_UNKNOWNFILTER;
     return_error(gs_error_undefined);
 }
 
