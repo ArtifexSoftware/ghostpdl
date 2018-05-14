@@ -1067,7 +1067,7 @@ static int pdf_array_from_stack(pdf_context *ctx)
 
 int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
 {
-    int code;
+    int code, depth;
     pdf_obj *o;
 
     code = pdf_read_token(ctx, s);
@@ -1075,12 +1075,13 @@ int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
         return code;
     if (ctx->stack_top[-1]->type != PDF_DICT_MARK)
         return_error(gs_error_typecheck);
+    depth = ctx->stack_top - ctx->stack_bot;
 
     do {
         code = pdf_read_token(ctx, s);
         if (code < 0)
             return code;
-    } while(ctx->stack_top[-1]->type != PDF_DICT);
+    } while(ctx->stack_top - ctx->stack_bot > depth);
     return 0;
 }
 
