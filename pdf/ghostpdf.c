@@ -30,6 +30,9 @@ static int pdf_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
     pdf_obj *o, *o1;
 
     code = pdf_dict_get(page_dict, "Contents", &o);
+    if (code == gs_error_undefined)
+        /* Don't throw an error if there are no contents, just render nothing.... */
+        return 0;
     if (code < 0)
         return code;
 
@@ -85,8 +88,10 @@ static int pdf_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
                     code = pdf_interpret_content_stream(ctx, (pdf_dict *)o1);
                     pdf_countdown(o1);
                     if (code < 0) {
-                        pdf_countdown(o);
-                        return code;
+                        if (code == gs_error_VMerror || ctx->pdfstoponerror == true) {
+                            pdf_countdown(o);
+                            return code;
+                        }
                     }
                 }
             }
@@ -151,6 +156,8 @@ static int pdf_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     for (i=0;i<4;i++) {
         code = pdf_array_get_number(ctx, a, i, &d[i]);
     }
+
+    normalize_rectangle(d);
 
     fv[0] = (float)(d[2] - d[0]);
     fv[1] = (float)(d[3] - d[1]);
