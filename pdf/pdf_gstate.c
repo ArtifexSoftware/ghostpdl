@@ -230,7 +230,7 @@ int pdf_setdash(pdf_context *ctx)
     double phase_d, temp;
     int i, code;
 
-    if (ctx->stack_top - ctx->stack_bot < 1) {
+    if (ctx->stack_top - ctx->stack_bot < 2) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
         pdf_clearstack(ctx);
