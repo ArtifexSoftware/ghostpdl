@@ -158,6 +158,12 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
 
         ctx->Trailer = d;
         pdf_countup(d);
+    } else {
+        code = pdf_merge_dicts(ctx->Trailer, d);
+        if (code < 0) {
+            if (code == gs_error_VMerror || ctx->pdfstoponerror)
+                return code;
+        }
     }
 
     pdf_seek(ctx, ctx->main_stream, d->stream_offset, SEEK_SET);
@@ -545,6 +551,12 @@ static int read_xref(pdf_context *ctx, pdf_stream *s)
     if (ctx->Trailer == NULL) {
         ctx->Trailer = d;
         pdf_countup(d);
+    } else {
+        code = pdf_merge_dicts(ctx->Trailer, d);
+        if (code < 0) {
+            if (code == gs_error_VMerror || ctx->pdfstoponerror)
+                return code;
+        }
     }
 
     /* We have the Trailer dictionary. First up check for hybrid files. These have the initial
