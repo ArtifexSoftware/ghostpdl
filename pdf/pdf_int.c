@@ -824,7 +824,7 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
     short bytes = 0;
     uint32_t size = 256;
     pdf_string *string = NULL;
-    int code, octal_index = 0;
+    int code, octal_index = 0, nesting = 0;
     bool escape = false, skip_eol = false, exit_loop = false;
 
     Buffer = (char *)gs_alloc_bytes(ctx->memory, size, "pdf_read_string");
@@ -929,13 +929,20 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
                             Buffer[index] = (Buffer[index] * 8) + octal[1];
                         octal_index = 0;
                     } else {
-                        Buffer[index] = 0x00;
-                        exit_loop = true;
+                        if (nesting == 0) {
+                            Buffer[index] = 0x00;
+                            exit_loop = true;
+                        } else
+                            nesting--;
                     }
                     break;
                 case '\\':
                     escape = true;
                     continue;
+                case '(':
+                    ctx->pdf_errors != E_PDF_UNESCAPEDSTRING;
+                    nesting++;
+                    break;
                 default:
                     if (octal_index) {
                         if (Buffer[index] >= 0x30 && Buffer[index] <= 0x37) {
@@ -1592,8 +1599,12 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
             return_error(gs_error_stackunderflow);
 
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-            pdf_pop(ctx, 2);
-            return_error(gs_error_typecheck);
+            if (ctx->pdfstoponerror) {
+                pdf_pop(ctx, 2);
+                return_error(gs_error_typecheck);
+            }
+            pdf_pop(ctx, 1);
+            return 0;
         }
         keyword = ((pdf_keyword *)ctx->stack_top[-1]);
         if (keyword->key != PDF_ENDSTREAM) {
@@ -1945,15 +1956,63 @@ int pdf_repair_file(pdf_context *ctx)
                     }
                     if (k->key == PDF_STREAM) {
                         pdf_dict *d;
-                        bool known;
+                        pdf_name *n;
 
                         d = (pdf_dict *)ctx->stack_top[-2];
-                        code = pdf_dict_known(d, "ObjStm", &known);
+                        code = pdf_dict_get(d, "Type", (pdf_obj **)&n);
                         if (code < 0) {
+                            if (ctx->pdfstoponerror || code == gs_error_VMerror) {
+                                pdf_clearstack(ctx);
+                                return code;
+                            }
                             pdf_clearstack(ctx);
-                            return code;
+                            break;
                         }
-                        if (known == true) {
+                        if (n->type == PDF_NAME) {
+                            if (n->length == 6 && memcmp(n->data, "ObjStm", 6) == 0) {
+                                int64_t N, obj_num, offset;
+                                int j;
+                                pdf_stream *compressed_stream;
+                                pdf_obj *o;
+
+                                offset = pdf_tell(ctx);
+                                pdf_seek(ctx, ctx->main_stream, offset, SEEK_SET);
+                                code = pdf_filter(ctx, d, ctx->main_stream, &compressed_stream, false);
+                                if (code == 0) {
+                                    code = pdf_dict_get_int(ctx, d, "N", &N);
+                                    if (code == 0) {
+                                        for (j=0;j < N; j++) {
+                                            code = pdf_read_token(ctx, compressed_stream);
+                                            if (code == 0) {
+                                                o = ctx->stack_top[-1];
+                                                if (((pdf_obj *)o)->type == PDF_INT) {
+                                                    obj_num = ((pdf_num *)o)->value.i;
+                                                    pdf_pop(ctx, 1);
+                                                    code = pdf_read_token(ctx, compressed_stream);
+                                                    if (code == 0) {
+                                                        o = ctx->stack_top[-1];
+                                                        if (((pdf_obj *)o)->type == PDF_INT) {
+                                                            offset = ((pdf_num *)o)->value.i;
+                                                            ctx->xref_table->xref[obj_num].compressed = true;
+                                                            ctx->xref_table->xref[obj_num].free = false;
+                                                            ctx->xref_table->xref[obj_num].object_num = obj_num;
+                                                            ctx->xref_table->xref[obj_num].u.compressed.compressed_stream_num = i;
+                                                            ctx->xref_table->xref[obj_num].u.compressed.object_index = j;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    pdf_close_file(ctx, compressed_stream);
+                                }
+                                if (code < 0) {
+                                    if (ctx->pdfstoponerror || code == gs_error_VMerror) {
+                                        pdf_clearstack(ctx);
+                                        return code;
+                                    }
+                                }
+                            }
                         }
                         pdf_clearstack(ctx);
                         break;
@@ -2884,8 +2943,11 @@ int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
     do {
         code = pdf_read_token(ctx, compressed_stream);
         if (code < 0) {
-            pdf_close_file(ctx, compressed_stream);
-            return code;
+            if (code == gs_error_ioerror || code == gs_error_VMerror || ctx->pdfstoponerror) {
+                pdf_close_file(ctx, compressed_stream);
+                return code;
+            }
+            continue;
         }
 
         if (ctx->stack_top - ctx->stack_bot <= 0) {
@@ -2900,6 +2962,14 @@ int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
                 case PDF_ENDSTREAM:
                     pdf_close_file(ctx, compressed_stream);
                     pdf_clearstack(ctx);
+                    return 0;
+                    break;
+                case PDF_ENDOBJ:
+                    pdf_close_file(ctx, compressed_stream);
+                    pdf_clearstack(ctx);
+                    ctx->pdf_errors |= E_PDF_MISSINGENDSTREAM;
+                    if (ctx->pdfstoponerror)
+                        return_error(gs_error_syntaxerror);
                     return 0;
                     break;
                 case PDF_NOT_A_KEYWORD:
