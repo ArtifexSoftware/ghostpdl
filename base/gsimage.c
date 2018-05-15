@@ -244,6 +244,12 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_gstate * pgs,
             if (code < 0)
                 return code;
         }
+        if (dev->interpolate_control < 0) {		/* Force interpolation before begin_typed_image */
+            ((gs_data_image_t *)pic)->Interpolate = true;
+        }
+        else if (dev->interpolate_control == 0) {
+            ((gs_data_image_t *)pic)->Interpolate = false;	/* Suppress interpolation */
+        }
         if (dev2 != dev) {
             set_nonclient_dev_color(&dc_temp, 1);
             pdevc = &dc_temp;

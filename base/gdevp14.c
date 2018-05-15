@@ -2317,6 +2317,8 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
     COPY_ARRAY_PARAM(HWMargins);
     COPY_PARAM(PageCount);
     COPY_PARAM(MaxPatternBitmap);
+    COPY_PARAM(graphics_type_tag);
+    COPY_PARAM(interpolate_control);
     memcpy(&(dev->space_params), &(target->space_params), sizeof(gdev_space_params));
     /* The PDF14 device copies only the default profile not the text etc.
        TODO: MJV.  It has to make its own device structure but
@@ -2350,7 +2352,6 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
         }
         profile_dev14->sim_overprint = profile_targ->sim_overprint;
     }
-    dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
 #undef COPY_ARRAY_PARAM
 #undef COPY_PARAM
 }
