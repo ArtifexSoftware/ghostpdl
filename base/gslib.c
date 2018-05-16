@@ -294,7 +294,7 @@ gs_copysign(double x, double y)
 /* Random number generator */
 static long rand_state = 1;
 static long
-rand(void)
+gs_rand(void)
 {
 #define A 16807
 #define M 0x7fffffff
@@ -322,7 +322,7 @@ test1(gs_gstate * pgs, gs_memory_t * mem)
     for (n = 200; --n >= 0;) {
         int j;
 
-#define rf() (rand() / (1.0 * 0x10000 * 0x8000))
+#define rf() (gs_rand() / (1.0 * 0x10000 * 0x8000))
         double r = rf(), g = rf(), b = rf();
         double x0 = rf(), y0 = rf(), x1 = rf(), y1 = rf(), x2 = rf(), y2 = rf();
 
