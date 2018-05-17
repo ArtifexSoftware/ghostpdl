@@ -2831,10 +2831,11 @@ gsicc_=$(GLOBJ)gsicc_manage.$(OBJ) $(GLOBJ)gsicc_cache.$(OBJ)\
  $(GLOBJ)gsicc_replacecm.$(OBJ) $(GLOBJ)gsicc_monitorcm.$(OBJ)
 
 sicclib_=$(GLOBJ)gsicc.$(OBJ)
-$(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(gsicc_)\
+$(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(gsicc_) $(md5_)\
  $(GLD)cielib.dev $(LCMSGENDIR)$(D)$(WHICH_CMS).dev $(LIB_MAK) $(MAKEDIRS)
 	$(SETMOD) $(GLD)sicclib $(sicclib_)
 	$(ADDMOD) $(GLD)sicclib $(gsicc_)
+	$(ADDMOD) $(GLD)sicclib $(md5_)
 	$(ADDMOD) $(GLD)sicclib -include $(LCMSGENDIR)$(D)$(WHICH_CMS).dev
 
 $(GLOBJ)gsicc.$(OBJ) : $(GLSRC)gsicc.c $(AK) $(gx_h) $(gserrors_h)\
