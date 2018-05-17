@@ -24,6 +24,7 @@
 #include "strmio.h"
 #include "szlibx.h"     /* Flate */
 #include "spngpx.h"     /* PNG Predictor */
+#include "spdiffx.h"    /* Horizontal differencing predictor */
 #include "slzwx.h"      /* LZW ZLib */
 #include "sstring.h"    /* ASCIIHexDecode */
 #include "sa85d.h"      /* ASCII85Decode */
@@ -101,6 +102,7 @@ static int pdf_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
     pdf_obj *o;
     uint min_size = 2048;
     stream_PNGP_state pps;
+    stream_PDiff_state ppds;
 
     code = pdf_dict_get(d, "Predictor", &o);
     if (code < 0 && code != gs_error_undefined)
@@ -120,6 +122,48 @@ static int pdf_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
             break;
         case 2:
             /* zpd_setup, componentwise horizontal differencing */
+            min_size = s_zlibD_template.min_out_size + max_min_left;
+            code = pdf_dict_get(d, "Colors", &o);
+            if (code < 0 && code != gs_error_undefined)
+                return code;
+            if(code == gs_error_undefined)
+                ppds.Colors = 1;
+            else {
+                if (o->type != PDF_INT)
+                    return_error(gs_error_typecheck);
+
+                ppds.Colors = ((pdf_num *)o)->value.i;
+            }
+            if (ppds.Colors < 1 || ppds.Colors > s_PNG_max_Colors)
+                return_error(gs_error_rangecheck);
+
+            code = pdf_dict_get(d, "BitsPerComponent", &o);
+            if (code < 0 && code != gs_error_undefined)
+                return code;
+            if(code == gs_error_undefined)
+                ppds.BitsPerComponent = 8;
+            else {
+                if (o->type != PDF_INT)
+                    return_error(gs_error_typecheck);
+
+                ppds.BitsPerComponent = ((pdf_num *)o)->value.i;
+            }
+            if (ppds.BitsPerComponent < 1 || ppds.BitsPerComponent > 16 || (ppds.BitsPerComponent & (ppds.BitsPerComponent - 1)) != 0)
+                return_error(gs_error_rangecheck);
+
+            code = pdf_dict_get(d, "Columns", &o);
+            if (code < 0 && code != gs_error_undefined)
+                return code;
+            if(code == gs_error_undefined)
+                ppds.Columns = 1;
+            else {
+                if (o->type != PDF_INT)
+                    return_error(gs_error_typecheck);
+
+                ppds.Columns = ((pdf_num *)o)->value.i;
+            }
+            if (ppds.Columns < 1)
+                return_error(gs_error_rangecheck);
             break;
         case 10:
         case 11:
@@ -182,6 +226,9 @@ static int pdf_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
             *new_stream = source;
             break;
         case 2:
+            pdf_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_PDiffE_template, (const stream_state *)&ppds, ctx->memory->non_gc_memory, new_stream);
+            (*new_stream)->strm = source;
+            break;
         default:
             pdf_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_PNGPD_template, (const stream_state *)&pps, ctx->memory->non_gc_memory, new_stream);
             (*new_stream)->strm = source;
