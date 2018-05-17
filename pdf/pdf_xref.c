@@ -20,6 +20,32 @@
 #include "pdf_xref.h"
 #include "pdf_file.h"
 
+int resize_xref(pdf_context *ctx, uint64_t new_size)
+{
+    xref_entry *new_xrefs;
+
+    /* Although we can technically handle object numbers larger than this, on some systems (32-bit Windows)
+     * memset is limited to a (signed!) integer for the size of memory to clear. We could deal
+     * with this by clearing the memory in blocks, but really, this is almost certainly a
+     * corrupted file or something.
+     */
+    if (new_size >= (0x7ffffff / sizeof(xref_entry)))
+        return_error(gs_error_rangecheck);
+
+    new_xrefs = (xref_entry *)gs_alloc_bytes(ctx->memory, (new_size) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
+    if (new_xrefs == NULL){
+        pdf_countdown(ctx->xref_table);
+        ctx->xref_table = NULL;
+        return_error(gs_error_VMerror);
+    }
+    memset(new_xrefs, 0x00, (new_size) * sizeof(xref_entry));
+    memcpy(new_xrefs, ctx->xref_table->xref, ctx->xref_table->xref_size * sizeof(xref_entry));
+    gs_free_object(ctx->memory, ctx->xref_table->xref, "reallocated xref entries");
+    ctx->xref_table->xref = new_xrefs;
+    ctx->xref_table->xref_size = new_size;
+    return 0;
+}
+
 static int read_xref_stream_entries(pdf_context *ctx, pdf_stream *s, uint64_t first, uint64_t last, uint64_t *W)
 {
     uint i, j = 0;
@@ -248,6 +274,12 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
                 return code;
             }
 
+            if (start + end > ctx->xref_table->xref_size) {
+                code = resize_xref(ctx, start + end - 1);
+                if (code < 0)
+                    return code;
+            }
+
             code = read_xref_stream_entries(ctx, XRefStrm, start, start + end - 1, (uint64_t *)W);
             if (code < 0) {
                 pdf_countdown(a);
@@ -465,19 +497,9 @@ static int read_xref_section(pdf_context *ctx, pdf_stream *s)
             pdf_countup(ctx->xref_table);
         } else {
             if (start + size > ctx->xref_table->xref_size) {
-                xref_entry *new_xrefs;
-
-                new_xrefs = (xref_entry *)gs_alloc_bytes(ctx->memory, (start + size) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
-                if (new_xrefs == NULL){
-                    pdf_countdown(ctx->xref_table);
-                    ctx->xref_table = NULL;
-                    return_error(gs_error_VMerror);
-                }
-                memset(new_xrefs, 0x00, (start + size) * sizeof(xref_entry));
-                memcpy(new_xrefs, ctx->xref_table->xref, ctx->xref_table->xref_size * sizeof(xref_entry));
-                gs_free_object(ctx->memory, ctx->xref_table->xref, "reallocated xref entries");
-                ctx->xref_table->xref = new_xrefs;
-                ctx->xref_table->xref_size = start + size;
+                code = resize_xref(ctx, start + size);
+                if (code < 0)
+                    return code;
             }
         }
     }
