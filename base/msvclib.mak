@@ -17,6 +17,45 @@
 # All configurable options are surrounded by !ifndef/!endif to allow 
 # preconfiguration from within another makefile.
 
+# If we are building MEMENTO=1, then adjust default debug flags
+!if "$(MEMENTO)"=="1"
+!ifndef DEBUG
+DEBUG=1
+!endif
+!ifndef TDEBUG
+TDEBUG=1
+!endif
+!ifndef DEBUGSYM
+DEBUGSYM=1
+!endif
+!endif
+
+# If we are building PROFILE=1, then adjust default debug flags
+!if "$(PROFILE)"=="1"
+!ifndef DEBUG
+DEBUG=0
+!endif
+!ifndef TDEBUG
+TDEBUG=0
+!endif
+!ifndef DEBUGSYM
+DEBUGSYM=1
+!endif
+!endif
+
+# Pick the target architecture file
+!if "$(TARGET_ARCH_FILE)"==""
+!ifdef WIN64
+TARGET_ARCH_FILE=$(GLSRCDIR)\..\arch\windows-x64-msvc.h
+!else
+!ifdef ARM
+TARGET_ARCH_FILE=$(GLSRCDIR)\..\arch\windows-arm-msvc.h
+!else
+TARGET_ARCH_FILE=$(GLSRCDIR)\..\arch\windows-x86-msvc.h
+!endif
+!endif
+!endif
+
 # ------------------------------- Options ------------------------------- #
 
 ###### This section is the only part of the file you should need to edit.
@@ -81,6 +120,86 @@ DEBUG=0
 TDEBUG=1
 !endif
 
+# Setting DEBUGSYM=1 is only useful with TDEBUG=0.
+# This option is for advanced developers. It includes symbol table
+# information for the debugger in an optimized (release) build.
+# NOTE: The debugging information generated for the optimized code may be
+# significantly misleading. For general MSVC users we recommend TDEBUG=1.
+
+!ifndef DEBUGSYM
+DEBUGSYM=0
+!endif
+
+
+# We can compile for a 32-bit or 64-bit target
+# WIN32 and WIN64 are mutually exclusive.  WIN32 is the default.
+!if !defined(WIN32) && (!defined(Win64) || !defined(WIN64))
+WIN32=0
+!endif
+
+# We can build either 32-bit or 64-bit target on a 64-bit platform
+# but the location of the binaries differs. Would be nice if the
+# detection of the platform could be automatic.
+!ifndef BUILD_SYSTEM
+!if "$(PROCESSOR_ARCHITEW6432)"=="AMD64" || "$(PROCESSOR_ARCHITECTURE)"=="AMD64"
+BUILD_SYSTEM=64
+PGMFILES=$(SYSTEMDRIVE)\Program Files
+PGMFILESx86=$(SYSTEMDRIVE)\Program Files (x86)
+!else
+BUILD_SYSTEM=32
+PGMFILES=$(SYSTEMDRIVE)\Program Files
+PGMFILESx86=$(SYSTEMDRIVE)\Program Files
+!endif
+!endif
+
+!ifndef MSWINSDKPATH
+!if exist ("$(PGMFILESx86)\Microsoft SDKs\Windows")
+!if exist ("$(PGMFILESx86)\Microsoft SDKs\Windows\v7.1A")
+MSWINSDKPATH=$(PGMFILESx86)\Microsoft SDKs\Windows\v7.1A
+!else
+!if exist ("$(PGMFILESx86)\Microsoft SDKs\Windows\v7.1")
+MSWINSDKPATH=$(PGMFILESx86)\Microsoft SDKs\Windows\v7.1
+!else
+!if exist ("$(PGMFILESx86)\Microsoft SDKs\Windows\v7.0A")
+MSWINSDKPATH=$(PGMFILESx86)\Microsoft SDKs\Windows\v7.0A
+!else
+!if exist ("$(PGMFILESx86)\Microsoft SDKs\Windows\v7.0")
+MSWINSDKPATH=$(PGMFILESx86)\Microsoft SDKs\Windows\v7.0
+!endif
+!endif
+!endif
+!endif
+!else
+!if exist ("$(PGMFILES)\Microsoft SDKs\Windows")
+!if exist ("$(PGMFILES)\Microsoft SDKs\Windows\v7.1A")
+MSWINSDKPATH=$(PGMFILES)\Microsoft SDKs\Windows\v7.1A
+!else
+!if exist ("$(PGMFILES)\Microsoft SDKs\Windows\v7.1")
+MSWINSDKPATH=$(PGMFILES)\Microsoft SDKs\Windows\v7.1
+!else
+!if exist ("$(PGMFILES)\Microsoft SDKs\Windows\v7.0A")
+MSWINSDKPATH=$(PGMFILES)\Microsoft SDKs\Windows\v7.0A
+!else
+!if exist ("$(PGMFILES)\Microsoft SDKs\Windows\v7.0")
+MSWINSDKPATH=$(PGMFILES)\Microsoft SDKs\Windows\v7.0
+!endif
+!endif
+!endif
+!endif
+!endif
+!endif
+!endif
+
+XPSPRINTCFLAGS=
+XPSPRINT=0
+
+!ifdef MSWINSDKPATH
+!if exist ("$(MSWINSDKPATH)\Include\XpsPrint.h")
+XPSPRINTCFLAGS=/DXPSPRINT=1 /I"$(MSWINSDKPATH)\Include"
+XPSPRINT=1
+!endif
+!endif
+
 !if "$(MEMENTO)"=="1"
 CFLAGS=$(CFLAGS) -DMEMENTO
 !endif
@@ -93,6 +212,10 @@ GX_COLOR_INDEX_TYPE=$(LARGEST_UINTEGER_TYPE)
 CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
 !endif
 
+# -W3 generates too much noise.
+!ifndef WARNOPT
+WARNOPT=-W2
+!endif
 
 # Define the name of the executable file.
 
@@ -103,6 +226,30 @@ GS=gslib
 # Define the directory for the final executable, and the
 # source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
+
+!if "$(MEMENTO)"=="1"
+DEFAULT_OBJ_DIR=.\$(PRODUCT_PREFIX)memobj
+!else
+!if "$(PROFILE)"=="1"
+DEFAULT_OBJ_DIR=.\$(PRODUCT_PREFIX)profobj
+!else
+!if "$(DEBUG)"=="1"
+DEFAULT_OBJ_DIR=.\$(PRODUCT_PREFIX)debugobj
+!else
+DEFAULT_OBJ_DIR=.\$(PRODUCT_PREFIX)obj
+!endif
+!endif
+!endif
+!ifdef METRO
+DEFAULT_OBJ_DIR=$(DEFAULT_OBJ_DIR)rt
+!endif
+!ifdef WIN64
+DEFAULT_OBJ_DIR=$(DEFAULT_OBJ_DIR)64
+!endif
+
+!ifndef AUXDIR
+AUXDIR=$(DEFAULT_OBJ_DIR)\aux_
+!endif
 
 !ifndef BINDIR
 BINDIR=.\bin
@@ -115,39 +262,97 @@ DEVSRCDIR=.\devices
 !ifndef PSRESDIR
 PSRESDIR=.\Resource
 !endif
+!ifndef PSGENDIR
+PSGENDIR=$(GLGENDIR)
+!endif
+!ifndef PSOBJDIR
+PSOBJDIR=$(GLOBJDIR)
+!endif
 !endif
 !ifndef GLGENDIR
-!if "$(DEBUG)"="1"
-GLGENDIR=.\debugobj
-!else
-GLGENDIR=.\obj
-!endif
+GLGENDIR=$(DEFAULT_OBJ_DIR)
 !endif
 !ifndef GLOBJDIR
-!if "$(DEBUG)"="1"
-GLOBJDIR=.\debugobj
-!else
-GLOBJDIR=.\obj
+GLOBJDIR=$(GLGENDIR)
 !endif
-!endif
-
 !ifndef DEVGENDIR
-!if "$(DEBUG)"="1"
-DEVGENDIR=.\debugobj
-!else
-DEVGENDIR=.\obj
+DEVGENDIR=$(GLGENDIR)
 !endif
-!endif
-
 !ifndef DEVOBJDIR
 DEVOBJDIR=$(DEVGENDIR)
 !endif
 
+!ifndef EXPATGENDIR
+EXPATGENDIR=$(GLGENDIR)
+!endif
+
+!ifndef EXPATOBJDIR
+EXPATOBJDIR=$(GLOBJDIR)
+!endif
+
+!ifndef JPEGXR_GENDIR
+JPEGXR_GENDIR=$(GLGENDIR)
+!endif
+
+!ifndef JPEGXR_OBJDIR
+JPEGXR_OBJDIR=$(GLOBJDIR)
+!endif
+
+!ifndef AUXDIR
+AUXDIR=$(DEFAULT_OBJ_DIR)\aux_
+!endif
+
+!ifndef CONTRIBDIR
+CONTRIBDIR=.\contrib
+!endif
 
 # Do not edit the next group of lines.
 NUL=
 DD=$(GLGENDIR)\$(NUL)
 GLD=$(GLGENDIR)\$(NUL)
+
+# Should we build in the cups device....
+!ifdef WITH_CUPS
+!if "$(WITH_CUPS)"!="0"
+WITH_CUPS=1
+!else
+WITH_CUPS=0
+!endif
+!else
+WITH_CUPS=0
+!endif
+
+# We can't build cups libraries in a Metro friendly way,
+# so if building for Metro, disable cups regardless of the
+# request
+!ifdef METRO
+WITH_CUPS=0
+!endif
+
+# Define the directory where the FreeType2 library sources are stored.
+# See freetype.mak for more information.
+
+!ifdef UFST_BRIDGE
+!if "$(UFST_BRIDGE)"=="1"
+FT_BRIDGE=0
+!endif
+!endif
+
+!ifndef FT_BRIDGE
+FT_BRIDGE=1
+!endif
+
+!ifndef FTSRCDIR
+FTSRCDIR=freetype
+!endif
+!ifndef FT_CFLAGS
+FT_CFLAGS=-I$(FTSRCDIR)\include
+!endif
+
+!ifdef BITSTREAM_BRIDGE
+FT_BRIDGE=0
+!endif
+
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -174,43 +379,201 @@ PNGSRCDIR=libpng
 ZSRCDIR=zlib
 !endif
 
-# Define the jbig2 library and source location.
-# See jbig2.mak for more information.
+!ifndef TIFFSRCDIR
+TIFFSRCDIR=tiff$(D)
+TIFFCONFDIR=$(TIFFSRCDIR)
+TIFFCONFIG_SUFFIX=.vc
+TIFFPLATFORM=win32
+TIFFCFLAGS="-DJPEG_LIB_MK1_OR_12BIT=0"
+!endif
+
+# Define which jbig2 library to use
+!if !defined(JBIG2_LIB) && (!defined(NO_LURATECH) || "$(NO_LURATECH)" != "1")
+!if exist("luratech\ldf_jb2")
+JBIG2_LIB=luratech
+!endif
+!endif
 
 !ifndef JBIG2_LIB
 JBIG2_LIB=jbig2dec
 !endif
 
+!if "$(JBIG2_LIB)" == "luratech" || "$(JBIG2_LIB)" == "ldf_jb2"
+# Set defaults for using the Luratech JB2 implementation
 !ifndef JBIG2SRCDIR
+# CSDK source code location
+JBIG2SRCDIR=luratech\ldf_jb2
+!endif
+!ifndef JBIG2_CFLAGS
+# required compiler flags
+!ifdef WIN64
+JBIG2_CFLAGS=-DUSE_LDF_JB2 -DWIN64
+!else
+JBIG2_CFLAGS=-DUSE_LDF_JB2 -DWIN32
+!endif
+!endif
+!else
+# Use jbig2dec by default. See jbig2.mak for more information.
+!ifndef JBIG2SRCDIR
+# location of included jbig2dec library source
 JBIG2SRCDIR=jbig2dec
 !endif
-
-# Define the directory where the lcms2mt source is stored.
-# See lcms2mt.mak for more information
-
-!ifndef LCMS2MTSRCDIR
-LCMS2MTSRCDIR=lcms2mt
 !endif
 
-# Define the directory where the lcms2 source is stored.
-# See lcms2.mak for more information
+# Alternatively, you can build a separate DLL
+# and define SHARE_JBIG2=1 in src/winlib.mak
 
-!ifndef LCMS2SRCDIR
-LCMS2SRCDIR=lcms2
+# Define which jpeg2k library to use
+!if !defined(JPX_LIB) && (!defined(NO_LURATECH) || "$(NO_LURATECH)" != "1")
+!if exist("luratech\lwf_jp2")
+JPX_LIB=luratech
+!endif
+!endif
+
+# Alternatively, you can build a separate DLL
+# and define SHARE_JPX=1 in src/winlib.mak
+!ifndef JPX_LIB
+JPX_LIB=openjpeg
+!endif
+
+!ifndef JPEGXR_SRCDIR
+JPEGXR_SRCDIR=.\jpegxr
+!endif
+
+!ifndef SHARE_JPEGXR
+SHARE_JPEGXR=0
+!endif
+
+!ifndef JPEGXR_CFLAGS
+JPEGXR_CFLAGS=/TP /DNDEBUG
+!endif
+
+!ifndef EXPATSRCDIR
+EXPATSRCDIR=.\expat
+!endif
+
+!ifndef SHARE_EXPAT
+SHARE_EXPAT=0
+!endif
+
+!ifndef EXPAT_CFLAGS
+EXPAT_CFLAGS=/DWIN32
 !endif
 
 # Define any other compilation flags.
+
+!ifndef XCFLAGS
+XCFLAGS=
+!endif
+
+# We now build with unicode support by default. To avoid this, build
+# with GS_NO_UTF8=1.
+!if "$(GS_NO_UTF8)" != ""
+UNICODECFLAGS=/DGS_NO_UTF8
+!else
+UNICODECFLAGS=
+!endif
 
 !ifndef CFLAGS
 CFLAGS=
 !endif
 
+!ifdef DEVSTUDIO
+CFLAGS=$(CFLAGS) /FC
+!endif
+
+!ifdef CLUSTER
+CFLAGS=$(CFLAGS) -DCLUSTER
+!endif
+
+!if "$(MEMENTO)"=="1"
+CFLAGS=$(CFLAGS) -DMEMENTO
+!endif
+
+!ifdef METRO
+# Ideally the TIF_PLATFORM_CONSOLE define should only be for libtiff,
+# but we aren't set up to do that easily
+CFLAGS=$(CFLAGS) -DMETRO -DWINAPI_FAMILY=WINAPI_PARTITION_APP -DTIF_PLATFORM_CONSOLE
+# WinRT doesn't allow ExitProcess() so we have to suborn it here.
+# it shouldn't matter since we actually rely on setjmp()/longjmp() for error handling in libtiff
+PNG_CFLAGS=/DExitProcess=exit
+!endif
+
+CFLAGS=$(CFLAGS) $(XCFLAGS) $(UNICODECFLAGS)
+
 # ------ Platform-specific options ------ #
 
-# Define which major version of MSVC is being used (currently, 4, 5 & 6 supported)
+# Define which major version of MSVC is being used
+# (currently, 4, 5, 6, 7, and 8 are supported).
+# Define the minor version of MSVC, currently only
+# used for Microsoft Visual Studio .NET 2003 (7.1)
+
+#MSVC_VERSION=6
+#MSVC_MINOR_VERSION=0
+
+# Make a guess at the version of MSVC in use
+# This will not work if service packs change the version numbers.
+
+!if defined(_NMAKE_VER) && !defined(MSVC_VERSION)
+!if "$(_NMAKE_VER)" == "162"
+MSVC_VERSION=5
+!endif
+!if "$(_NMAKE_VER)" == "6.00.8168.0"
+MSVC_VERSION=6
+!endif
+!if "$(_NMAKE_VER)" == "7.00.9466"
+MSVC_VERSION=7
+!endif
+!if "$(_NMAKE_VER)" == "7.00.9955"
+MSVC_VERSION=7
+!endif
+!if "$(_NMAKE_VER)" == "7.10.3077"
+MSVC_VERSION=7
+MSVC_MINOR_VERSION=1
+!endif
+!if "$(_NMAKE_VER)" == "8.00.40607.16"
+MSVC_VERSION=8
+!endif
+!if "$(_NMAKE_VER)" == "8.00.50727.42"
+MSVC_VERSION=8
+!endif
+!if "$(_NMAKE_VER)" == "8.00.50727.762"
+MSVC_VERSION=8
+!endif
+!if "$(_NMAKE_VER)" == "9.00.21022.08"
+MSVC_VERSION=9
+!endif
+!if "$(_NMAKE_VER)" == "9.00.30729.01"
+MSVC_VERSION=9
+!endif
+!if "$(_NMAKE_VER)" == "10.00.30319.01"
+MSVC_VERSION=10
+!endif
+!if "$(_NMAKE_VER)" == "11.00.50522.1"
+MSVC_VERSION=11
+!endif
+!if "$(_NMAKE_VER)" == "11.00.50727.1"
+MSVC_VERSION=11
+!endif
+!if "$(_NMAKE_VER)" == "11.00.60315.1"
+MSVC_VERSION=11
+!endif
+!if "$(_NMAKE_VER)" == "11.00.60610.1"
+MSVC_VERSION=11
+!endif
+!if "$(_NMAKE_VER)" == "12.00.21005.1"
+MSVC_VERSION=12
+!endif
+!if "$(_NMAKE_VER)" == "14.00.23506.0"
+MSVC_VERSION=14
+!endif
+!endif
 
 !ifndef MSVC_VERSION
-MSVC_VERSION = 6
+MSVC_VERSION=6
+!endif
+!ifndef MSVC_MINOR_VERSION
+MSVC_MINOR_VERSION=0
 !endif
 
 # Define the drive, directory, and compiler name for the Microsoft C files.
@@ -259,6 +622,269 @@ SHAREDBASE=$(DEVSTUDIO)\Common\MSDev98
 !endif
 !endif
 
+!if $(MSVC_VERSION) == 7
+! ifndef DEVSTUDIO
+!if $(MSVC_MINOR_VERSION) == 0
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio .NET
+!else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio .NET 2003
+!endif
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+COMPBASE=$(DEVSTUDIO)\Vc7
+SHAREDBASE=$(DEVSTUDIO)\Vc7
+!endif
+!endif
+
+!if $(MSVC_VERSION) == 8
+! ifndef DEVSTUDIO
+!if $(BUILD_SYSTEM) == 64
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 8
+!else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 8
+!endif
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+COMPBASE=$(DEVSTUDIO)\VC
+SHAREDBASE=$(DEVSTUDIO)\VC
+!ifdef WIN64
+COMPDIR64=$(COMPBASE)\bin\amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\AMD64"
+!endif
+!endif
+!endif
+
+!if $(MSVC_VERSION) == 9
+! ifndef DEVSTUDIO
+!if $(BUILD_SYSTEM) == 64
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 9.0
+!else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 9.0
+!endif
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+# There are at least 4 different values:
+# "v6.0"=Vista, "v6.0A"=Visual Studio 2008,
+# "v6.1"=Windows Server 2008, "v7.0"=Windows 7
+! ifdef MSSDK
+RCDIR=$(MSSDK)\bin
+! else
+RCDIR=C:\Program Files\Microsoft SDKs\Windows\v6.0A\bin
+! endif
+COMPBASE=$(DEVSTUDIO)\VC
+SHAREDBASE=$(DEVSTUDIO)\VC
+!ifdef WIN64
+COMPDIR64=$(COMPBASE)\bin\amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\AMD64"
+!endif
+!endif
+!endif
+
+!if $(MSVC_VERSION) == 10
+! ifndef DEVSTUDIO
+!if $(BUILD_SYSTEM) == 64
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 10.0
+!else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 10.0
+!endif
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+# There are at least 4 different values:
+# "v6.0"=Vista, "v6.0A"=Visual Studio 2008,
+# "v6.1"=Windows Server 2008, "v7.0"=Windows 7
+! ifdef MSSDK
+!  ifdef WIN64
+RCDIR=$(MSSDK)\bin\x64
+!  else
+RCDIR=$(MSSDK)\bin
+!  endif
+! else
+!ifdef WIN64
+RCDIR=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0\bin
+!else
+RCDIR=C:\Program Files\Microsoft SDKs\Windows\v7.0\bin
+!endif
+! endif
+COMPBASE=$(DEVSTUDIO)\VC
+SHAREDBASE=$(DEVSTUDIO)\VC
+!ifdef WIN64
+!if $(BUILD_SYSTEM) == 64
+COMPDIR64=$(COMPBASE)\bin\amd64
+LINKLIBPATH=/LIBPATH:"$(MSSDK)\lib\x64" /LIBPATH:"$(COMPBASE)\lib\amd64"
+!else
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\x64"
+!endif
+!endif
+!endif
+!endif
+
+!if $(MSVC_VERSION) == 11
+! ifndef DEVSTUDIO
+!if $(BUILD_SYSTEM) == 64
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 11.0
+!else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 11.0
+!endif
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+# There are at least 4 different values:
+# "v6.0"=Vista, "v6.0A"=Visual Studio 2008,
+# "v6.1"=Windows Server 2008, "v7.0"=Windows 7
+! ifdef MSSDK
+!  ifdef WIN64
+RCDIR=$(MSSDK)\bin\x64
+!  else
+RCDIR=$(MSSDK)\bin
+!  endif
+! else
+!if $(BUILD_SYSTEM) == 64
+RCDIR=C:\Program Files (x86)\Windows Kits\8.0\bin\x64
+!else
+RCDIR=C:\Program Files\Windows Kits\8.0\bin\x86
+!endif
+! endif
+COMPBASE=$(DEVSTUDIO)\VC
+SHAREDBASE=$(DEVSTUDIO)\VC
+!ifdef WIN64
+!if $(BUILD_SYSTEM) == 64
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(MSSDK)\lib\x64" /LIBPATH:"$(COMPBASE)\lib\amd64"
+!else
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\x64"
+!endif
+!endif
+!endif
+!endif
+
+!if $(MSVC_VERSION) == 12
+! ifndef DEVSTUDIO
+!  if $(BUILD_SYSTEM) == 64
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 12.0
+!  else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 12.0
+!  endif
+! endif
+! if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+! else
+# There are at least 4 different values:
+# "v6.0"=Vista, "v6.0A"=Visual Studio 2008,
+# "v6.1"=Windows Server 2008, "v7.0"=Windows 7
+!  ifdef MSSDK
+!   ifdef WIN64
+RCDIR=$(MSSDK)\bin\x64
+!   else
+RCDIR=$(MSSDK)\bin
+!   endif
+!  else
+!   if $(BUILD_SYSTEM) == 64
+RCDIR=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Bin
+!   else
+RCDIR=C:\Program Files\Microsoft SDKs\Windows\v7.1A\Bin
+!   endif
+!  endif
+COMPBASE=$(DEVSTUDIO)\VC
+SHAREDBASE=$(DEVSTUDIO)\VC
+!  ifdef WIN64
+!   if $(BUILD_SYSTEM) == 64
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64"
+!   else
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\x64"
+!   endif
+!  endif
+! endif
+!endif
+
+!if $(MSVC_VERSION) == 14
+! ifndef DEVSTUDIO
+!  if $(BUILD_SYSTEM) == 64
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 14.0
+!  else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 14.0
+!  endif
+! endif
+! if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+! else
+# There are at least 4 different values:
+# "v6.0"=Vista, "v6.0A"=Visual Studio 2008,
+# "v6.1"=Windows Server 2008, "v7.0"=Windows 7
+!  ifdef MSSDK
+!   ifdef WIN64
+RCDIR=$(MSSDK)\bin\x64
+!   else
+RCDIR=$(MSSDK)\bin
+!   endif
+!  else
+!   if $(BUILD_SYSTEM) == 64
+RCDIR=C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\Bin
+!   else
+RCDIR=C:\Program Files\Microsoft SDKs\Windows\v10.0A\Bin
+!   endif
+!  endif
+COMPBASE=$(DEVSTUDIO)\VC
+SHAREDBASE=$(DEVSTUDIO)\VC
+!  ifdef WIN64
+!   if $(BUILD_SYSTEM) == 64
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64"
+!   else
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\x64"
+!   endif
+!  endif
+! endif
+!endif
+
+!if "$(ARM)"=="1"
+VCINSTDIR=$(VS110COMNTOOLS)..\..\VC\
+
+!ifndef WINSDKVER
+WINSDKVER=8.0
+!endif
+
+!ifndef WINSDKDIR
+WINSDKDIR=$(VS110COMNTOOLS)..\..\..\Windows Kits\$(WINSDKVER)\
+!endif
+
+COMPAUX__="$(VCINSTDIR)\bin\cl.exe"
+COMPAUXCFLAGS=/I"$(VCINSTDIR)\INCLUDE" /I"$(VCINSTDIR)\ATLMFC\INCLUDE" \
+/I"$(WINSDKDIR)\include\shared" /I"$(WINSDKDIR)\include\um" \
+/I"$(WINDSKDIR)include\winrt"
+
+COMPAUXLDFLAGS=/LIBPATH:"$(VCINSTDIR)\LIB" \
+/LIBPATH:"$(VCINSTDIR)\ATLMFC\LIB" \
+/LIBPATH:"$(WINSDKDIR)\lib\win8\um\x86"
+
+COMPAUX=$(COMPAUX__) $(COMPAUXCFLAGS)
+
+!else
+
+COMPAUXLDFLAGS=""
+
+!endif
+
 # Some environments don't want to specify the path names for the tools at all.
 # Typical definitions for such an environment would be:
 #   MSINCDIR= LIBDIR= COMP=cl COMPAUX=cl RCOMP=rc LINK=link
@@ -269,7 +895,11 @@ SHAREDBASE=$(DEVSTUDIO)\Common\MSDev98
 !if "$(COMPBASE)"==""
 COMPDIR=
 !else
+!ifdef WIN64
+COMPDIR=$(COMPDIR64)
+!else
 COMPDIR=$(COMPBASE)\bin
+!endif
 !endif
 !endif
 
@@ -277,7 +907,11 @@ COMPDIR=$(COMPBASE)\bin
 !if "$(COMPBASE)"==""
 LINKDIR=
 !else
+!ifdef WIN64
+LINKDIR=$(COMPDIR64)
+!else
 LINKDIR=$(COMPBASE)\bin
+!endif
 !endif
 !endif
 
@@ -301,7 +935,11 @@ MSINCDIR=$(COMPBASE)\include
 !if "$(COMPBASE)"==""
 LIBDIR=
 !else
+!ifdef WIN64
+LIBDIR=$(COMPBASE)\lib\amd64
+!else
 LIBDIR=$(COMPBASE)\lib
+!endif
 !endif
 !endif
 
@@ -316,7 +954,11 @@ COMP="$(COMPDIR)\cl"
 COMPCPP=$(COMP)
 !endif
 !ifndef COMPAUX
+!ifdef WIN64
 COMPAUX=$(COMP)
+!else
+COMPAUX=$(COMP)
+!endif
 !endif
 
 !ifndef RCOMP
@@ -355,6 +997,10 @@ LINK="$(LINKDIR)\link"
 !endif
 !endif
 
+!ifndef LINKLIBPATH
+LINKLIBPATH=
+!endif
+
 # Define the processor architecture. (i386, ppc, alpha)
 
 !ifndef CPU_FAMILY
@@ -373,6 +1019,28 @@ CPU_TYPE=486
 #CPU_TYPE=601
 !endif
 
+# Define special features of CPUs
+
+# We'll assume that if you have an x86 machine, you've got a modern
+# enough one to have SSE2 instructions. If you don't, then predefine
+# DONT_HAVE_SSE2 when calling this makefile
+!ifndef ARM
+!if "$(CPU_FAMILY)" == "i386"
+!ifndef DONT_HAVE_SSE2
+!ifndef HAVE_SSE2
+!message **************************************************************
+!message * Assuming that target has SSE2 instructions available. If   *
+!message * this is NOT the case, define DONT_HAVE_SSE2 when building. *
+!message **************************************************************
+!endif
+HAVE_SSE2=1
+CFLAGS=$(CFLAGS) /DHAVE_SSE2
+# add "/D__SSE__" here, but causes crashes just now
+JPX_SSE_CFLAGS=
+!endif
+!endif
+!endif
+
 # Define the .dev module that implements thread and synchronization
 # primitives for this platform.  Don't change this unless you really know
 # what you're doing.
@@ -381,12 +1049,65 @@ CPU_TYPE=486
 SYNC=winsync
 !endif
 
+# Luratech jp2 flags depend on the compiler version
+#
+!if "$(JPX_LIB)" == "luratech" || "$(JPX_LIB)" == "lwf_jp2"
+# Set defaults for using the Luratech JP2 implementation
+!ifndef JPXSRCDIR
+# CSDK source code location
+JPXSRCDIR=luratech\lwf_jp2
+!endif
+!ifndef JPX_CFLAGS
+# required compiler flags
+!ifdef WIN64
+JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN64 -DNO_ASSEMBLY
+!else
+JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN32 -DNO_ASSEMBLY
+!endif
+!endif
+!endif
+
+# OpenJPEG compiler flags
+#
+!if "$(JPX_LIB)" == "openjpeg"
+!ifndef JPXSRCDIR
+JPXSRCDIR=openjpeg
+!endif
+!ifndef JPX_CFLAGS
+!ifdef WIN64
+JPX_CFLAGS=-DMUTEX_pthread=0 -DUSE_OPENJPEG_JP2 -DUSE_JPIP $(JPX_SSE_CFLAGS) -DOPJ_STATIC -DWIN64
+!else
+JPX_CFLAGS=-DMUTEX_pthread=0 -DUSE_OPENJPEG_JP2 -DUSE_JPIP $(JPX_SSE_CFLAGS) -DOPJ_STATIC -DWIN32
+!endif
+!else
+JPX_CFLAGS = $JPX_CFLAGS -DUSE_JPIP -DUSE_OPENJPEG_JP2 -DOPJ_STATIC
+!endif
+!endif
+
+# Define the directory where the lcms2mt source is stored.
+# See lcms2mt.mak for more information
+SHARE_LCMS=0
+!ifndef LCMS2MTSRCDIR
+LCMS2MTSRCDIR=lcms2mt
+!endif
+
+# Define the directory where the lcms2 source is stored.
+# See lcms2.mak for more information
+!ifndef LCMS2SRCDIR
+LCMS2SRCDIR=lcms2
+!endif
+
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=$(GLD)psl3lib.dev $(GLD)path1lib.dev $(GLD)dps2lib.dev $(GLD)psl2cs.dev $(GLD)cielib.dev $(GLD)imasklib.dev $(GLD)patlib.dev $(GLD)htxlib.dev $(GLD)devcmap.dev $(GLD)bbox.dev $(GLD)pipe.dev
+FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev $(GLD)psl2lib.dev \
+             $(GLD)dps2lib.dev $(GLD)path1lib.dev $(GLD)patlib.dev $(GLD)psl2cs.dev $(GLD)rld.dev $(GLD)gxfapiu$(UFST_BRIDGE).dev\
+             $(GLD)ttflib.dev  $(GLD)cielib.dev $(GLD)pipe.dev $(GLD)htxlib.dev $(GLD)sdct.dev $(GLD)libpng.dev\
+	     $(GLD)seprlib.dev $(GLD)translib.dev $(GLD)cidlib.dev $(GLD)psf0lib.dev $(GLD)psf1lib.dev\
+             $(GLD)psf2lib.dev $(GLD)lzwd.dev $(GLD)sicclib.dev $(GLD)mshandle.dev \
+             $(GLD)ramfs.dev $(GLD)sjpx.dev $(GLD)sjbig2.dev $(GLD)pwgd.dev
 !endif
 
 # Choose whether to compile the .ps initialization files into the executable.
@@ -425,7 +1146,7 @@ STDIO_IMPLEMENTATION=
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 !ifndef DEVICE_DEVS
-DEVICE_DEVS=$(DD)ljet2p.dev $(DD)bbox.dev
+DEVICE_DEVS=$(DD)ppmraw.dev $(DD)bbox.dev
 DEVICE_DEVS1=
 DEVICE_DEVS2=
 DEVICE_DEVS3=
@@ -480,7 +1201,7 @@ GSPLATFORM=mslib32_
 
 # For some reason, C-file dependencies have to come before mslib32__.dev
 
-$(GLOBJ)gp_mslib.$(OBJ): $(GLSRC)gp_mslib.c $(TOP_MAKEFILES) $(AK)
+$(GLOBJ)gp_mslib.$(OBJ): $(GLSRC)gp_mslib.c $(TOP_MAKEFILES) $(arch_h) $(AK)
 	$(GLCCWIN) $(GLO_)gp_mslib.$(OBJ) $(C_) $(GLSRC)gp_mslib.c
 
 mslib32__=$(GLOBJ)gp_mslib.$(OBJ)
