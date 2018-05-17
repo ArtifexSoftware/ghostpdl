@@ -42,8 +42,11 @@ static int pdf_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
 
         code = pdf_dereference(ctx, ((pdf_indirect_ref *)o)->ref_object_num, ((pdf_indirect_ref *)o)->ref_generation_num, &o1);
         pdf_countdown(o);
-        if (code < 0)
-            return code;
+        if (code < 0) {
+            if (code == gs_error_VMerror)
+                return code;
+            return 0;
+        }
         o = o1;
     }
 
