@@ -274,8 +274,8 @@ static int pdf_process_xref_stream(pdf_context *ctx, pdf_dict *d, pdf_stream *s)
                 return code;
             }
 
-            if (start + end > ctx->xref_table->xref_size) {
-                code = resize_xref(ctx, start + end - 1);
+            if (start + end >= ctx->xref_table->xref_size) {
+                code = resize_xref(ctx, start + end);
                 if (code < 0)
                     return code;
             }
