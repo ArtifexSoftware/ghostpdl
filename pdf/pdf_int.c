@@ -1726,7 +1726,7 @@ static int pdf_repair_add_object(pdf_context *ctx, uint64_t obj, uint64_t gen, g
      * with this by clearing the memory in blocks, but really, this is almost certainly a
      * corrupted file or something.
      */
-    if (obj >= 0x7ffffff)
+    if (obj >= 0x7ffffff / sizeof(xref_entry))
         return_error(gs_error_rangecheck);
 
     if (ctx->xref_table == NULL) {
