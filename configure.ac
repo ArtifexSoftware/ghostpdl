@@ -2100,7 +2100,10 @@ JPEG_DEVS='jpeg jpeggray jpegcmyk'
 PCX_DEVS='pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk'
 PBM_DEVS='pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm pksmraw pam pamcmyk4 pamcmyk32 plan plang planm planc plank'
 PS_DEVS='psdf psdcmyk psdrgb pdfwrite ps2write eps2write bbox txtwrite inkcov ink_cov psdcmykog fpng pdfimage8 pdfimage24 pdfimage32 PCLm'
-MISC_FDEVS='ccr cif inferno mgr4 mgr8 mgrgray2 mgrgray4 mgrgray8 mgrmono miff24 plan9bm bit bitrgb bitrgbtags bitcmyk devicen spotcmyk xcf plib plibg plibm plibc plibk gprf'
+
+# the "display" device isn't an ideal fit in the list below, but it saves adding a "list" for just that one entry
+MISC_FDEVS='ccr cif inferno mgr4 mgr8 mgrgray2 mgrgray4 mgrgray8 mgrmono miff24 plan9bm bit bitrgb bitrgbtags bitcmyk devicen spotcmyk xcf plib plibg plibm plibc plibk gprf display'
+
 XPSDEV=$XPSWRITEDEVICE
 
 while test -n "$drivers"; do
