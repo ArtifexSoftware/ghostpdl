@@ -155,8 +155,11 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
     int code;
     gs_offset_t saved_stream_offset;
 
-    if (obj > ctx->xref_table->xref_size)
+    if (obj >= ctx->xref_table->xref_size) {
+        dmprintf1(ctx->memory, "Error, attempted to dereference object %d, which is not present in the xref table\n", obj);
+        ctx->pdf_errors |= E_PDF_BADOBJNUMBER;
         return_error(gs_error_rangecheck);
+    }
 
     entry = &ctx->xref_table->xref[obj];
 
@@ -172,7 +175,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
 
         *object = cache_entry->o;
         pdf_countup(*object);
-        if (ctx->cache_MRU) {
+        if (ctx->cache_MRU && cache_entry != ctx->cache_MRU) {
             if ((pdf_obj_cache_entry *)cache_entry->next != NULL)
                 ((pdf_obj_cache_entry *)cache_entry->next)->previous = cache_entry->previous;
             if ((pdf_obj_cache_entry *)cache_entry->previous != NULL)
@@ -1638,6 +1641,24 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
 #endif
         return 0;
     }
+    /* Assume that any other keyword means a missing 'endobj' */
+    if (!ctx->pdfstoponerror) {
+        pdf_obj *o;
+
+        ctx->pdf_errors |= E_PDF_MISSINGENDOBJ;
+
+        if (ctx->stack_top - ctx->stack_bot < 2)
+            return_error(gs_error_stackunderflow);
+
+        o = ctx->stack_top[-2];
+
+        pdf_pop(ctx, 1);
+
+        o->object_num = objnum;
+        o->generation_num = gen;
+        code = pdf_add_to_cache(ctx, o);
+        return code;
+    }
     pdf_pop(ctx, 2);
     return_error(gs_error_syntaxerror);
 }
@@ -1700,6 +1721,14 @@ int pdf_make_name(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
 
 static int pdf_repair_add_object(pdf_context *ctx, uint64_t obj, uint64_t gen, gs_offset_t offset)
 {
+    /* Although we can handle object numbers larger than this, on some systems (32-bit Windows)
+     * memset is limited to a (signed!) integer for the size of memory to clear. We could deal
+     * with this by clearing the memory in blocks, but really, this is almost certainly a
+     * corrupted file or something.
+     */
+    if (obj >= 0x7ffffff)
+        return_error(gs_error_rangecheck);
+
     if (ctx->xref_table == NULL) {
         ctx->xref_table = (xref_table *)gs_alloc_bytes(ctx->memory, sizeof(xref_table), "repair xref table");
         if (ctx->xref_table == NULL) {
@@ -1915,11 +1944,14 @@ int pdf_repair_file(pdf_context *ctx)
     for (i=1;i < ctx->xref_table->xref_size;i++) {
         if (ctx->xref_table->xref[i].object_num != 0) {
             /* At this stage, all the objects we've found must be uncompressed */
+            if (ctx->xref_table->xref[i].u.uncompressed.offset > ctx->main_stream_length)
+                return_error(gs_error_rangecheck);
+
             pdf_seek(ctx, ctx->main_stream, ctx->xref_table->xref[i].u.uncompressed.offset, SEEK_SET);
             do {
                 code = pdf_read_token(ctx, ctx->main_stream);
-                if (code < 0 && code != gs_error_ioerror && code != gs_error_VMerror)
-                    continue;
+                if (ctx->main_stream->eof == true || code < 0 && code != gs_error_ioerror && code != gs_error_VMerror)
+                    break;;
                 if (code < 0)
                     return code;
                 if (ctx->stack_top[-1]->type == PDF_KEYWORD) {
@@ -1958,7 +1990,15 @@ int pdf_repair_file(pdf_context *ctx)
                         pdf_dict *d;
                         pdf_name *n;
 
+                        if (ctx->stack_top - ctx->stack_bot <= 1) {
+                            pdf_clearstack(ctx);
+                            break;;
+                        }
                         d = (pdf_dict *)ctx->stack_top[-2];
+                        if (d->type != PDF_DICT) {
+                            pdf_clearstack(ctx);
+                            break;;
+                        }
                         code = pdf_dict_get(d, "Type", (pdf_obj **)&n);
                         if (code < 0) {
                             if (ctx->pdfstoponerror || code == gs_error_VMerror) {
@@ -1993,6 +2033,11 @@ int pdf_repair_file(pdf_context *ctx)
                                                         o = ctx->stack_top[-1];
                                                         if (((pdf_obj *)o)->type == PDF_INT) {
                                                             offset = ((pdf_num *)o)->value.i;
+                                                            if (obj_num < 1) {
+                                                                pdf_close_file(ctx, compressed_stream);
+                                                                pdf_clearstack(ctx);
+                                                                return_error(gs_error_rangecheck);
+                                                            }
                                                             ctx->xref_table->xref[obj_num].compressed = true;
                                                             ctx->xref_table->xref[obj_num].free = false;
                                                             ctx->xref_table->xref[obj_num].object_num = obj_num;
