@@ -129,12 +129,15 @@ static int pdf_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     double d[4];
     int code;
     uint64_t i;
+    int64_t rotate = 0;
 
     gs_c_param_list_write(&list, ctx->memory);
 
     code = pdf_dict_get_type(ctx, page_dict, "MediaBox", PDF_ARRAY, (pdf_obj **)&default_media);
-    if (code < 0)
+    if (code < 0) {
+        code = gs_erasepage(ctx->pgs);
         return 0;
+    }
 
     if (ctx->usecropbox) {
         if (a != NULL)
@@ -165,8 +168,26 @@ static int pdf_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
 
     normalize_rectangle(d);
 
-    fv[0] = (float)(d[2] - d[0]);
-    fv[1] = (float)(d[3] - d[1]);
+    code = pdf_dict_get_int(ctx, page_dict, "Rotate", &rotate);
+
+    switch(rotate) {
+        case 0:
+        case -180:
+        case 180:
+            fv[0] = (float)(d[2] - d[0]);
+            fv[1] = (float)(d[3] - d[1]);
+            break;
+        case -90:
+        case 90:
+        case -270:
+        case 270:
+            fv[1] = (float)(d[2] - d[0]);
+            fv[0] = (float)(d[3] - d[1]);
+            break;
+        default:
+            break;
+    }
+
     fa.persistent = false;
     fa.data = fv;
     fa.size = 2;
@@ -186,6 +207,28 @@ static int pdf_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
     gs_c_param_list_release(&list);
 
     gs_initgraphics(ctx->pgs);
+
+    switch(rotate) {
+        case 0:
+            break;
+        case -270:
+        case 90:
+            gs_translate(ctx->pgs, 0, fv[1]);
+            gs_rotate(ctx->pgs, -90);
+            break;
+        case -180:
+        case 180:
+            gs_translate(ctx->pgs, fv[0], fv[1]);
+            gs_rotate(ctx->pgs, 180);
+            break;
+        case -90:
+        case 270:
+            gs_translate(ctx->pgs, fv[0], 0);
+            gs_rotate(ctx->pgs, 90);
+            break;
+        default:
+            break;
+    }
 
     gs_translate(ctx->pgs, d[0] * -1, d[1] * -1);
 
