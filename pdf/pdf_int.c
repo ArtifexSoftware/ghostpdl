@@ -2358,7 +2358,7 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
                 return code;
         }
 
-        code = pdf_make_name(ctx, (byte *)"MediaBox", 9, (pdf_obj **)&Key);
+        code = pdf_make_name(ctx, (byte *)"MediaBox", 8, (pdf_obj **)&Key);
         if (code < 0) {
             pdf_countdown(inheritable);
             return code;
@@ -2388,7 +2388,7 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
                 return code;
         }
 
-        code = pdf_make_name(ctx, (byte *)"CropBox", 9, (pdf_obj **)&Key);
+        code = pdf_make_name(ctx, (byte *)"CropBox", 7, (pdf_obj **)&Key);
         if (code < 0) {
             pdf_countdown(inheritable);
             return code;
@@ -2418,7 +2418,7 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
                 return code;
         }
 
-        code = pdf_make_name(ctx, (byte *)"Rotate", 9, (pdf_obj **)&Key);
+        code = pdf_make_name(ctx, (byte *)"Rotate", 6, (pdf_obj **)&Key);
         if (code < 0) {
             pdf_countdown(inheritable);
             return code;

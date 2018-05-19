@@ -118,7 +118,7 @@ int pdf_dict_from_stack(pdf_context *ctx)
 int pdf_dict_get(pdf_dict *d, const char *Key, pdf_obj **o)
 {
     int i=0;
-    pdf_obj *t;
+    pdf_name *t;
 
     *o = NULL;
 
