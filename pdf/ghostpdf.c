@@ -184,6 +184,12 @@ static int pdf_set_media_size(pdf_context *ctx, pdf_dict *page_dict)
         }
     }
     gs_c_param_list_release(&list);
+
+    gs_initgraphics(ctx->pgs);
+
+    gs_translate(ctx->pgs, d[0] * -1, d[1] * -1);
+
+    code = gs_erasepage(ctx->pgs);
     return 0;
 }
 
@@ -386,7 +392,7 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
     int64_t bytes = 0;
     bool found = false;
 
-//    if (ctx->pdfdebug)
+    if (ctx->pdfdebug)
         dmprintf1(ctx->memory, "%% Attempting to open %s as a PDF file\n", filename);
 
     ctx->main_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "PDF interpreter allocate main PDF stream");
