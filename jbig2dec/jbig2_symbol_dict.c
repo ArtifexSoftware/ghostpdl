@@ -27,23 +27,23 @@
 #include <stddef.h>
 #include <string.h>             /* memset() */
 
+#if defined(OUTPUT_PBM) || defined(DUMP_SYMDICT)
+#include <stdio.h>
+#endif
+
 #include "jbig2.h"
 #include "jbig2_priv.h"
 #include "jbig2_arith.h"
 #include "jbig2_arith_int.h"
 #include "jbig2_arith_iaid.h"
-#include "jbig2_huffman.h"
 #include "jbig2_generic.h"
+#include "jbig2_huffman.h"
+#include "jbig2_image.h"
 #include "jbig2_mmr.h"
-#include "jbig2_symbol_dict.h"
-#include "jbig2_text.h"
 #include "jbig2_refinement.h"
 #include "jbig2_segment.h"
-
-#if defined(OUTPUT_PBM) || defined(DUMP_SYMDICT)
-#include <stdio.h>
-#include "jbig2_image.h"
-#endif
+#include "jbig2_symbol_dict.h"
+#include "jbig2_text.h"
 
 /* Table 13 */
 typedef struct {

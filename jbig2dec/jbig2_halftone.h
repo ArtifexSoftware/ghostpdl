@@ -66,4 +66,7 @@ int
 jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                              Jbig2HalftoneRegionParams *params, const byte *data, const size_t size, Jbig2Image *image, Jbig2ArithCx *GB_stats);
 
+int jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
+int jbig2_pattern_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
+
 #endif /* _JBIG2_HALFTONE_H */

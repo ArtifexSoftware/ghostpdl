@@ -56,6 +56,9 @@ typedef uint8_t byte;
 #define NULL ((void*)0)
 #endif
 
+typedef struct _Jbig2Page Jbig2Page;
+typedef struct _Jbig2Segment Jbig2Segment;
+
 typedef enum {
     JBIG2_FILE_HEADER,
     JBIG2_FILE_SEQUENTIAL_HEADER,
@@ -114,23 +117,6 @@ void *jbig2_realloc(Jbig2Allocator *allocator, void *p, size_t size, size_t num)
 #define jbig2_renew(ctx, p, t, size) ((t *)jbig2_realloc(ctx->allocator, (p), size, sizeof(t)))
 
 int jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, int32_t seg_idx, const char *fmt, ...);
-
-typedef enum {
-    JBIG2_COMPOSE_OR = 0,
-    JBIG2_COMPOSE_AND = 1,
-    JBIG2_COMPOSE_XOR = 2,
-    JBIG2_COMPOSE_XNOR = 3,
-    JBIG2_COMPOSE_REPLACE = 4
-} Jbig2ComposeOp;
-
-int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int y, Jbig2ComposeOp op);
-int jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
-
-/* 7.4 */
-int jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
-
-int jbig2_pattern_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
-int jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
 
 /* The word stream design is a compromise between simplicity and
    trying to amortize the number of method calls. Each ::get_next_word

@@ -24,15 +24,15 @@
 
 #include <stdlib.h>
 
-#include "jbig2.h"
-#include "jbig2_priv.h"
-#include "jbig2_page.h"
-#include "jbig2_segment.h"
-
 #ifdef OUTPUT_PBM
 #include <stdio.h>
-#include "jbig2_image.h"
 #endif
+
+#include "jbig2.h"
+#include "jbig2_priv.h"
+#include "jbig2_image.h"
+#include "jbig2_page.h"
+#include "jbig2_segment.h"
 
 /* dump the page struct info */
 static void

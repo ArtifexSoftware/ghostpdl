@@ -43,4 +43,7 @@ int
 jbig2_decode_generic_region(Jbig2Ctx *ctx,
                             Jbig2Segment *segment, const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats);
 
+/* 7.4 */
+int jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
+
 #endif /* _JBIG2_GENERIC_H */

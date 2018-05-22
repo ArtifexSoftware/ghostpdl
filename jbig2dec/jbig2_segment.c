@@ -26,14 +26,19 @@
 
 #include "jbig2.h"
 #include "jbig2_priv.h"
-#include "jbig2_huffman.h"
-#include "jbig2_page.h"
-#include "jbig2_symbol_dict.h"
-#include "jbig2_metadata.h"
 #include "jbig2_arith.h"
+#include "jbig2_arith_int.h"
+#include "jbig2_arith_iaid.h"
+#include "jbig2_generic.h"
+#include "jbig2_image.h"
 #include "jbig2_halftone.h"
+#include "jbig2_huffman.h"
+#include "jbig2_metadata.h"
+#include "jbig2_page.h"
 #include "jbig2_refinement.h"
 #include "jbig2_segment.h"
+#include "jbig2_symbol_dict.h"
+#include "jbig2_text.h"
 
 Jbig2Segment *
 jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t *p_header_size)

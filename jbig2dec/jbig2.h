@@ -41,12 +41,6 @@ typedef enum {
 typedef struct _Jbig2Allocator Jbig2Allocator;
 typedef struct _Jbig2Ctx Jbig2Ctx;
 typedef struct _Jbig2GlobalCtx Jbig2GlobalCtx;
-typedef struct _Jbig2Segment Jbig2Segment;
-typedef struct _Jbig2Image Jbig2Image;
-
-/* private structures */
-typedef struct _Jbig2Page Jbig2Page;
-typedef struct _Jbig2SymbolDictionary Jbig2SymbolDictionary;
 
 /*
    this is the general image structure used by the jbig2dec library
@@ -54,7 +48,7 @@ typedef struct _Jbig2SymbolDictionary Jbig2SymbolDictionary;
    the byte offset to the next row, while width and height define
    the size of the image area in pixels.
 */
-
+typedef struct _Jbig2Image Jbig2Image;
 struct _Jbig2Image {
     uint32_t width;
     uint32_t height;
@@ -62,13 +56,6 @@ struct _Jbig2Image {
     uint8_t *data;
     int refcount;
 };
-
-Jbig2Image *jbig2_image_new(Jbig2Ctx *ctx, uint32_t width, uint32_t height);
-Jbig2Image *jbig2_image_clone(Jbig2Ctx *ctx, Jbig2Image *image);
-void jbig2_image_release(Jbig2Ctx *ctx, Jbig2Image *image);
-void jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image);
-void jbig2_image_clear(Jbig2Ctx *ctx, Jbig2Image *image, int value);
-Jbig2Image *jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image, uint32_t width, uint32_t height);
 
 /* errors are returned from the library via a callback. If no callback
    is provided (a NULL argument is passed to jbig2_ctx_new) a default

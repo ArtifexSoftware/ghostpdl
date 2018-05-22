@@ -29,6 +29,7 @@
 
 #include "jbig2.h"
 #include "jbig2_priv.h"
+#include "jbig2_image.h"
 #include "jbig2_page.h"
 #include "jbig2_segment.h"
 
