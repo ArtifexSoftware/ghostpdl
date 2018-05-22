@@ -650,6 +650,29 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
                         }
                     } else if (code < 0)
                         return code;
+                    if (glyph == GS_MIN_CID_GLYPH && pdev->PDFA != 0) {
+                        switch (pdev->PDFACompatibilityPolicy) {
+                            case 0:
+                            case 1:
+                            case 3:
+                                emprintf(pdev->memory,
+                                     "A CIDFont uses CID 0, which is not legal for PDF/A, reverting to normal PDF output.\n");
+                                pdev->AbortPDFAX = true;
+                                pdev->PDFA = 0;
+                                break;
+                            case 2:
+                                emprintf(pdev->memory,
+                                     "A CIDFont uses CID 0, which is not legal for PDF/A, aborting conversion.\n");
+                                return_error(gs_error_invalidfont);
+                                break;
+                            default:
+                                emprintf(pdev->memory,
+                                     "A CIDFont uses CID 0, which is not legal for PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                                pdev->AbortPDFAX = true;
+                                pdev->PDFA = 0;
+                                break;
+                        }
+                    }
                     if ((code == 0 /* just copied */ || pdsubf->Widths[cid] == 0) && !notdef_subst) {
                         pdf_glyph_widths_t widths;
 
