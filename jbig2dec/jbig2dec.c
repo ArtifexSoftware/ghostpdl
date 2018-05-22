@@ -243,7 +243,7 @@ print_usage(void)
     return 1;
 }
 
-static int
+static void
 error_callback(void *error_callback_data, const char *buf, Jbig2Severity severity, int32_t seg_idx)
 {
     const jbig2dec_params_t *params = (jbig2dec_params_t *) error_callback_data;
@@ -253,17 +253,17 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
     switch (severity) {
     case JBIG2_SEVERITY_DEBUG:
         if (params->verbose < 3)
-            return 0;
+            return;
         type = "DEBUG";
         break;
     case JBIG2_SEVERITY_INFO:
         if (params->verbose < 2)
-            return 0;
+            return;
         type = "info";
         break;
     case JBIG2_SEVERITY_WARNING:
         if (params->verbose < 1)
-            return 0;
+            return;
         type = "WARNING";
         break;
     case JBIG2_SEVERITY_FATAL:
@@ -279,8 +279,6 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
         snprintf(segment, sizeof(segment), "(segment 0x%02x)", seg_idx);
 
     fprintf(stderr, "jbig2dec %s %s %s\n", type, buf, segment);
-
-    return 0;
 }
 
 static char *

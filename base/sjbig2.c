@@ -39,14 +39,13 @@
 private_st_jbig2decode_state();	/* creates a gc object for our state, defined in sjbig2.h */
 
 /* error callback for jbig2 decoder */
-static int
+static void
 s_jbig2decode_error(void *callback_data, const char *msg, Jbig2Severity severity,
                int32_t seg_idx)
 {
     s_jbig2_callback_data_t *error_data = (s_jbig2_callback_data_t *)callback_data;
     const char *type;
     char segment[22];
-    int code = 0;
 
     switch (severity) {
         case JBIG2_SEVERITY_DEBUG:
@@ -58,8 +57,7 @@ s_jbig2decode_error(void *callback_data, const char *msg, Jbig2Severity severity
         case JBIG2_SEVERITY_FATAL:
             type = "FATAL ERROR decoding image:";
             /* pass the fatal error upstream if possible */
-            code = gs_error_ioerror;
-            if (error_data != NULL) error_data->error = code;
+            if (error_data != NULL) error_data->error = gs_error_ioerror;
             break;;
         default: type = "unknown message:"; break;;
     }
@@ -86,8 +84,6 @@ s_jbig2decode_error(void *callback_data, const char *msg, Jbig2Severity severity
             if_debug3('w', "[w] jbig2dec %s %s %s\n", type, msg, segment);
         }
     }
-
-    return code;
 }
 
 /* invert the bits in a buffer */

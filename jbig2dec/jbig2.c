@@ -68,7 +68,7 @@ jbig2_alloc(Jbig2Allocator *allocator, size_t size, size_t num)
 
 /* jbig2_free and jbig2_realloc moved to the bottom of this file */
 
-static int
+static void
 jbig2_default_error(void *data, const char *msg, Jbig2Severity severity, int32_t seg_idx)
 {
     /* report only fatal errors by default */
@@ -79,8 +79,6 @@ jbig2_default_error(void *data, const char *msg, Jbig2Severity severity, int32_t
         fprintf(stderr, "\n");
         fflush(stderr);
     }
-
-    return 0;
 }
 
 int
@@ -89,17 +87,14 @@ jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, int32_t segment_number, const
     char buf[1024];
     va_list ap;
     int n;
-    int code;
 
     va_start(ap, fmt);
     n = vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
     if (n < 0 || n == sizeof(buf))
         strncpy(buf, "jbig2_error: error in generating error string", sizeof(buf));
-    code = ctx->error_callback(ctx->error_callback_data, buf, severity, segment_number);
-    if (severity == JBIG2_SEVERITY_FATAL)
-        code = -1;
-    return code;
+    ctx->error_callback(ctx->error_callback_data, buf, severity, segment_number);
+    return -1;
 }
 
 Jbig2Ctx *
@@ -199,8 +194,7 @@ jbig2_get_uint32(const byte *bptr)
  * to (continue to) parse it as part of a jbig2 data stream.
  *
  * Return code: 0 on success
- *             -1 if there is a parsing error, or whatever
- *                the error handling callback returns
+ *             -1 if there is a parsing error
  **/
 int
 jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
