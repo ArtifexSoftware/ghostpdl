@@ -86,11 +86,11 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
         snprintf(name, 32, "refin-%d.pbm", count);
         code = jbig2_image_write_pbm_file(ref, name);
         if (code < 0)
-            return jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "failed write refinement input");
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed write refinement input");
         snprintf(name, 32, "refout-%d.pbm", count);
         code = jbig2_image_write_pbm_file(image, name);
         if (code < 0)
-            return jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "failed write refinement output");
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed write refinement output");
         count++;
     }
 #endif

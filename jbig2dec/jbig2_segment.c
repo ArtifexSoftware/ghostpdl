@@ -272,7 +272,7 @@ jbig2_parse_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment
         return jbig2_end_of_stripe(ctx, segment, segment_data);
     case 51:
         ctx->state = JBIG2_FILE_EOF;
-        return jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "end of file");
+        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "end of file");
     case 52:
         return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unhandled segment type 'profile'");
     case 53:                   /* user-supplied huffman table */
