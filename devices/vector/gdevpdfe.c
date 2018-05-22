@@ -251,8 +251,8 @@ pdf_xmp_convert_time(char *dt, int dtl, char *buf, int bufl)
     dt[16] = ':';
     memcpy(dt + 17, buf + 12, 2); /* second */
     if (l <= 14) {
-        dt[18] = 'Z'; /* Default time zone 0. */
-        return 19;
+        dt[19] = 'Z'; /* Default time zone 0. */
+        return 20;
     }
 
     dt[19] = buf[14]; /* designator */
@@ -266,7 +266,7 @@ pdf_xmp_convert_time(char *dt, int dtl, char *buf, int bufl)
 
     dt[22] = ':';
     /* Skipping '\'' in 'buf'. */
-    memcpy(dt + 23, buf + 18, 2); /* Time zone hour difference. */
+    memcpy(dt + 23, buf + 18, 2); /* Time zone minutes difference. */
     return 25;
 }
 
@@ -279,7 +279,7 @@ pdf_get_docinfo_item(gx_device_pdf *pdev, const char *key, char *buf, int buf_le
 
     if (v != NULL && (v->value_type == COS_VALUE_SCALAR ||
                         v->value_type == COS_VALUE_CONST)) {
-        if (v->contents.chars.size > 2 && v->contents.chars.data[0] == '(') {
+        if (v->contents.chars.size >= 2 && v->contents.chars.data[0] == '(') {
             s = v->contents.chars.data + 1;
             l = v->contents.chars.size - 2;
         } else {
