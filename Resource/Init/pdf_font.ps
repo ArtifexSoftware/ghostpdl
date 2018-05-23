@@ -1328,6 +1328,18 @@ currentdict /eexec_pdf_param_dict .undef
                 % Stack: filepos fontres stream
   1 index /CIDSystemInfo oknown {
     1 index /CIDSystemInfo get dup type /packedarraytype eq {exec}if
+    dup /Registry known not {
+      (   **** Warning: a CIDFont's CIDSystemInfo is missing the required Registry entry\n) pdfformatwarning
+      dup /Registry (Adobe) put
+    } if
+    dup /Ordering known not {
+      (   **** Warning: a CIDFont's CIDSystemInfo is missing the required Ordering entry\n) pdfformatwarning
+      dup /Ordering (Identity) put
+    } if
+    dup /Supplement known not {
+      (   **** Warning: a CIDFont's CIDSystemInfo is missing the required Supplement entry\n) pdfformatwarning
+      dup /Supplement 0 put
+    } if
     3 1 roll
     1 index /Subtype knownoget {
       /CIDFontType2 ne {
