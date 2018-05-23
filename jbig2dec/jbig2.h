@@ -91,7 +91,7 @@ int jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size);
 /* get the next available decoded page image. NULL means there isn't one. */
 Jbig2Image *jbig2_page_out(Jbig2Ctx *ctx);
 /* mark a returned page image as no longer needed. */
-int jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image);
+void jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image);
 /* mark the current page as complete, simulating an end-of-page segment (for broken streams) */
 int jbig2_complete_page(Jbig2Ctx *ctx);
 
