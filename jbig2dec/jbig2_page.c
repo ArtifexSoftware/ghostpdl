@@ -188,7 +188,7 @@ jbig2_end_of_stripe(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment
 int
 jbig2_complete_page(Jbig2Ctx *ctx)
 {
-    int code = 0;
+    int code;
 
     /* check for unfinished segments */
     if (ctx->segment_index != ctx->n_segments) {
@@ -207,11 +207,12 @@ jbig2_complete_page(Jbig2Ctx *ctx)
     }
 
     /* ensure image exists before marking page as complete */
-    if (!code && ctx->pages[ctx->current_page].image != NULL) {
-        ctx->pages[ctx->current_page].state = JBIG2_PAGE_COMPLETE;
+    if (ctx->pages[ctx->current_page].image == NULL) {
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "page has no image, cannot be completed");
     }
 
-    return code;
+    ctx->pages[ctx->current_page].state = JBIG2_PAGE_COMPLETE;
+    return 0;
 }
 
 /**
