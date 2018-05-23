@@ -599,6 +599,14 @@ pdf_context *pdf_create_context(gs_memory_t *pmem)
     code *= ctx->stack_size;
     ctx->stack_limit = ctx->stack_bot + ctx->stack_size;
 
+    pmem->gs_lib_ctx->font_dir = gs_font_dir_alloc2(pmem->non_gc_memory, pmem->non_gc_memory);
+    if (pmem->gs_lib_ctx->font_dir == NULL) {
+        gs_free_object(pmem->non_gc_memory, ctx->stack_bot, "pdf_imp_allocate_interp_instance");
+        gs_free_object(pmem->non_gc_memory, ctx, "pdf_imp_allocate_interp_instance");
+        gs_gstate_free(pgs);
+        return NULL;
+    }
+
     code = gsicc_init_iccmanager(pgs);
     if (code < 0) {
         gs_free_object(pmem->non_gc_memory, ctx->stack_bot, "pdf_imp_allocate_interp_instance");
@@ -613,7 +621,6 @@ pdf_context *pdf_create_context(gs_memory_t *pmem)
      * of pdfwrite and other high-level devices
      */
     ctx->pgs->have_pattern_streams = true;
-    ctx->fontdir = NULL;
     ctx->preserve_tr_mode = 0;
 
     ctx->main_stream = NULL;
@@ -633,6 +640,13 @@ pdf_context *pdf_create_context(gs_memory_t *pmem)
     ctx->freed_objects = 0;
 #endif
     return ctx;
+}
+
+/* Purge all */
+static bool
+pdf_fontdir_purge_all(const gs_memory_t * mem, cached_char * cc, void *dummy)
+{
+    return true;
 }
 
 int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx)
@@ -688,6 +702,12 @@ int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx)
         sfclose(ctx->main_stream->s);
         ctx->main_stream = NULL;
     }
+
+    if (ctx->memory->gs_lib_ctx->font_dir) {
+        gx_purge_selected_cached_chars(ctx->memory->gs_lib_ctx->font_dir, pdf_fontdir_purge_all, (void *)NULL);
+        gs_free_object(ctx->memory, ctx->memory->gs_lib_ctx->font_dir, "pdf_free_context");
+    }
+
     if(ctx->pgs != NULL) {
         gs_gstate_free(ctx->pgs);
         ctx->pgs = NULL;

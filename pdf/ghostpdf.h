@@ -146,7 +146,6 @@ typedef struct pdf_context_s
     float HeaderVersion, FinalVersion;
 
     gs_gstate *pgs;
-    gs_font_dir *fontdir;
     int preserve_tr_mode; /* for avoiding charpath with pdfwrite */
 
     gs_color_space *gray_lin; /* needed for transparency */
