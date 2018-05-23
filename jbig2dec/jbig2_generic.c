@@ -687,7 +687,7 @@ jbig2_decode_generic_region_TPGDON(Jbig2Ctx *ctx,
         return jbig2_decode_generic_template3_TPGDON(ctx, segment, params, as, image, GB_stats);
     }
 
-    return -1;
+    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unsupported GBTEMPLATE (%d)", params->GBTEMPLATE);
 }
 
 /**
@@ -746,7 +746,8 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
         for (i = 0; i < 8; i++)
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "gbat[%d] = %d", i, params->gbat[i]);
     }
-    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "decode_generic_region: MMR=%d, GBTEMPLATE=%d NYI", params->MMR, params->GBTEMPLATE);
+
+    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "decode_generic_region: MMR=%d TPGDON=%d GBTEMPLATE=%d", params->MMR, params->TPGDON, params->GBTEMPLATE);
 }
 
 /**
