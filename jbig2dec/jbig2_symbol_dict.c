@@ -186,6 +186,8 @@ jbig2_sd_list_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
     if (dindex != n_dicts) {
         /* should never happen */
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "counted %d symbol dictionaries but built a list with %d.", n_dicts, dindex);
+        jbig2_free(ctx->allocator, dicts);
+        return NULL;
     }
 
     return (dicts);
