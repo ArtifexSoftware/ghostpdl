@@ -316,12 +316,12 @@ cleanup1:
                 index = 0;
                 while (id >= dicts[index]->n_symbols)
                     id -= dicts[index++]->n_symbols;
-                IB = jbig2_image_reference(ctx, dicts[index]->glyphs[id]);
                 /* SumatraPDF: fail on missing glyphs */
-                if (!IB) {
+                if (dicts[index]->glyphs[id] == NULL) {
                     code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "missing glyph %d/%d", index, id);
                     goto cleanup2;
                 }
+                IB = jbig2_image_reference(ctx, dicts[index]->glyphs[id]);
             }
             if (params->SBREFINE) {
                 if (params->SBHUFF) {

@@ -459,9 +459,9 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "found reference bitmap in segment %d", ref->number);
     } else {
         /* the reference is just (a subset of) the page buffer */
+        if (ctx->pages[ctx->current_page].image == NULL)
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "reference page bitmap has no decoded image");
         params.reference = jbig2_image_reference(ctx, ctx->pages[ctx->current_page].image);
-        if (params.reference == NULL)
-            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not take reference to reference bitmap");
         /* TODO: subset the image if appropriate */
     }
 
