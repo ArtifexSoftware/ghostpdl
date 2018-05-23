@@ -445,7 +445,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
         ref = jbig2_region_find_referred(ctx, segment);
         if (ref == NULL)
-            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not find reference bitmap");
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "could not find reference bitmap");
         /* the reference bitmap is the result of a previous
            intermediate region segment; the reference selection
            rules say to use the first one available, and not to
@@ -475,7 +475,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
         image = jbig2_image_new(ctx, rsi.width, rsi.height);
         if (image == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unable to allocate refinement image");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to allocate refinement image");
             goto cleanup;
         }
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "allocated %d x %d image buffer for region decode results", rsi.width, rsi.height);
@@ -490,13 +490,13 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
         ws = jbig2_word_stream_buf_new(ctx, segment_data + offset, segment->data_length - offset);
         if (ws == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate ws in jbig2_refinement_region");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to allocate ws in jbig2_refinement_region");
             goto cleanup;
         }
 
         as = jbig2_arith_new(ctx, ws);
         if (as == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate as in jbig2_refinement_region");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to allocate as in jbig2_refinement_region");
             goto cleanup;
         }
 

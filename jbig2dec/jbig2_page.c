@@ -142,7 +142,7 @@ jbig2_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_dat
         page->image = jbig2_image_new(ctx, page->width, page->height);
     }
     if (page->image == NULL) {
-        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate buffer for page image");
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate buffer for page image");
     } else {
         /* 8.2 (3) fill the page with the default pixel value */
         jbig2_image_clear(ctx, page->image, (page->flags & 4));
@@ -203,6 +203,9 @@ jbig2_complete_page(Jbig2Ctx *ctx)
             code = jbig2_parse_segment(ctx, segment, ctx->buf + ctx->buf_rd_ix);
             ctx->buf_rd_ix += segment->data_length;
             ctx->segment_index++;
+            if (code < 0) {
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to parse segment");
+            }
         }
     }
 
@@ -232,10 +235,8 @@ jbig2_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_d
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "end of page %d", page_number);
 
     code = jbig2_complete_page(ctx);
-    if (code < 0) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to complete page");
-        return -1;
-    }
+    if (code < 0)
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to complete page");
 
 #ifdef OUTPUT_PBM
     code = jbig2_image_write_pbm(ctx->pages[ctx->current_page].image, stdout);

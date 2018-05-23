@@ -324,7 +324,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
             }
             if (code < 0) {
                 ctx->state = JBIG2_FILE_EOF;
-                return code;
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode; treating as end of file");
             }
             break;
         case JBIG2_FILE_EOF:

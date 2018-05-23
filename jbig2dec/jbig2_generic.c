@@ -801,11 +801,15 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte 
 
     image = jbig2_image_new(ctx, rsi.width, rsi.height);
     if (image == NULL)
-        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unable to allocate generic image");
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to allocate generic image");
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "allocated %d x %d image buffer for region decode results", rsi.width, rsi.height);
 
     if (params.MMR) {
         code = jbig2_decode_generic_mmr(ctx, segment, &params, segment_data + offset, segment->data_length - offset, image);
+        if (code < 0) {
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode MMR-coded generic region");
+            goto cleanup;
+        }
     } else {
         int stats_size = jbig2_generic_stats_size(ctx, params.GBTEMPLATE);
 
@@ -818,22 +822,24 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte 
 
         ws = jbig2_word_stream_buf_new(ctx, segment_data + offset, segment->data_length - offset);
         if (ws == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unable to allocate ws in jbig2_immediate_generic_region");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to allocate ws in jbig2_immediate_generic_region");
             goto cleanup;
         }
         as = jbig2_arith_new(ctx, ws);
         if (as == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unable to allocate as in jbig2_immediate_generic_region");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to allocate as in jbig2_immediate_generic_region");
             goto cleanup;
         }
         code = jbig2_decode_generic_region(ctx, segment, &params, as, image, GB_stats);
+        if (code < 0) {
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode generic region");
+            goto cleanup;
+        }
     }
 
-    if (code >= 0)
-        code = jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], image, rsi.x, rsi.y, rsi.op);
-
+    code = jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], image, rsi.x, rsi.y, rsi.op);
     if (code < 0)
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error while decoding immediate_generic_region");
+        code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to add result to page");
 
 cleanup:
     jbig2_free(ctx->allocator, as);
