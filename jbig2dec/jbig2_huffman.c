@@ -99,9 +99,7 @@ jbig2_huffman_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
 void
 jbig2_huffman_free(Jbig2Ctx *ctx, Jbig2HuffmanState *hs)
 {
-    if (hs != NULL)
-        jbig2_free(ctx->allocator, hs);
-    return;
+    jbig2_free(ctx->allocator, hs);
 }
 
 /** debug routines **/
@@ -640,12 +638,8 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
 too_short:
     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
 error_exit:
-    if (line != NULL) {
-        jbig2_free(ctx->allocator, line);
-    }
-    if (params != NULL) {
-        jbig2_free(ctx->allocator, params);
-    }
+    jbig2_free(ctx->allocator, line);
+    jbig2_free(ctx->allocator, params);
     return -1;
 }
 
@@ -654,8 +648,7 @@ void
 jbig2_table_free(Jbig2Ctx *ctx, Jbig2HuffmanParams *params)
 {
     if (params != NULL) {
-        if (params->lines != NULL)
-            jbig2_free(ctx->allocator, (void *)params->lines);
+        jbig2_free(ctx->allocator, (void *)params->lines);
         jbig2_free(ctx->allocator, params);
     }
 }
