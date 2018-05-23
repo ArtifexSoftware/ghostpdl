@@ -221,10 +221,8 @@ jbig2_pattern_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segme
         int stats_size = jbig2_generic_stats_size(ctx, params.HDTEMPLATE);
 
         GB_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
-        if (GB_stats == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate GB_stats in pattern dictionary");
-            return 0;
-        }
+        if (GB_stats == NULL)
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate GB_stats in pattern dictionary");
         memset(GB_stats, 0, stats_size);
     }
 
@@ -476,10 +474,8 @@ jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
      * get it from referred pattern dictionary */
 
     HPATS = jbig2_decode_ht_region_get_hpats(ctx, segment);
-    if (!HPATS) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "no pattern dictionary found, skipping halftone image");
-        return -1;
-    }
+    if (!HPATS)
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "no pattern dictionary found, skipping halftone image");
     HNUMPATS = HPATS->n_patterns;
 
     /* calculate ceil(log2(HNUMPATS)) */
@@ -489,11 +485,8 @@ jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     /* 6.6.5 point 4. decode gray-scale image as mentioned in annex C */
     GI = jbig2_decode_gray_scale_image(ctx, segment, data, size,
                                        params->HMMR, params->HGW, params->HGH, HBPP, params->HENABLESKIP, HSKIP, params->HTEMPLATE, GB_stats);
-
-    if (!GI) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to acquire gray-scale image, skipping halftone image");
-        return -1;
-    }
+    if (!GI)
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to acquire gray-scale image, skipping halftone image");
 
     /* 6.6.5 point 5. place patterns with procedure mentioned in 6.6.5.2 */
     for (mg = 0; mg < params->HGH; ++mg) {
@@ -509,10 +502,8 @@ jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                 gray_val = HNUMPATS - 1;
             }
             code = jbig2_image_compose(ctx, image, HPATS->patterns[gray_val], x, y, params->op);
-            if (code < 0) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to compose pattern with gray-scale image");
-                return -1;
-            }
+            if (code < 0)
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to compose pattern with gray-scale image");
         }
     }
 

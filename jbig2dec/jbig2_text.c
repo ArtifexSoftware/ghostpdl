@@ -98,10 +98,8 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "huffman coded text region");
         hs = jbig2_huffman_new(ctx, ws);
-        if (hs == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for text region");
-            return -1;
-        }
+        if (hs == NULL)
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for text region");
 
         /* 7.4.3.1.7 - decode symbol ID Huffman table */
         /* this is actually part of the segment header, but it is more

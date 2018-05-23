@@ -257,10 +257,8 @@ jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, int x, 
     int code;
 
     /* ensure image exists first */
-    if (page->image == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "page info possibly missing, no image defined");
-        return 0;
-    }
+    if (page->image == NULL)
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "page info possibly missing, no image defined");
 
     /* grow the page to accommodate a new stripe if necessary */
     if (page->striped && page->height == 0xFFFFFFFF) {
@@ -279,10 +277,8 @@ jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, int x, 
     }
 
     code = jbig2_image_compose(ctx, page->image, image, x, y + page->end_row, op);
-    if (code < 0) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to compose image with page");
-        return -1;
-    }
+    if (code < 0)
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to compose image with page");
 
     return 0;
 }

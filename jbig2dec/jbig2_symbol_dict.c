@@ -86,7 +86,7 @@ jbig2_dump_symbol_dict(Jbig2Ctx *ctx, Jbig2Segment *segment)
         code = jbig2_image_write_pbm_file(dict->glyphs[index], filename);
 #endif
         if (code < 0)
-            jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "failed to dump symbol %d/%d as '%s'", index, dict->n_symbols, filename);
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to dump symbol %d/%d as '%s'", index, dict->n_symbols, filename);
     }
 }
 #endif /* DUMP_SYMDICT */

@@ -110,8 +110,7 @@ jbig2_metadata_add(Jbig2Ctx *ctx, Jbig2Metadata *md, const char *key, const int 
     md->keys[md->entries] = jbig2_strndup(ctx, key, key_length);
     md->values[md->entries] = jbig2_strndup(ctx, value, value_length);
     if (md->keys[md->entries] == NULL || md->values[md->entries] == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to accommodate more metadata");
-        return -1;
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to accommodate more metadata");
     }
     md->entries++;
 
@@ -131,10 +130,8 @@ jbig2_comment_ascii(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "ASCII comment data");
 
     comment = jbig2_metadata_new(ctx, JBIG2_ENCODING_ASCII);
-    if (comment == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to allocate comment structure");
-        return -1;
-    }
+    if (comment == NULL)
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to allocate comment structure");
     /* loop over the segment data pulling out the key,value pairs */
     while (s < end && *s) {
         key = s;
@@ -147,10 +144,8 @@ jbig2_comment_ascii(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment
             goto too_short;
         s++;
         code = jbig2_metadata_add(ctx, comment, key, value - key, value, s - value);
-        if (code < 0) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to add ascii comment data");
-            return -1;
-        }
+        if (code < 0)
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to add ascii comment data");
         jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "'%s'\t'%s'", key, value);
     }
 

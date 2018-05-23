@@ -746,8 +746,7 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
         for (i = 0; i < 8; i++)
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "gbat[%d] = %d", i, params->gbat[i]);
     }
-    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "decode_generic_region: MMR=%d, GBTEMPLATE=%d NYI", params->MMR, params->GBTEMPLATE);
-    return -1;
+    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "decode_generic_region: MMR=%d, GBTEMPLATE=%d NYI", params->MMR, params->GBTEMPLATE);
 }
 
 /**

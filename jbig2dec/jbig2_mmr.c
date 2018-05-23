@@ -1022,10 +1022,8 @@ jbig2_decode_generic_mmr(Jbig2Ctx *ctx, Jbig2Segment *segment, const Jbig2Generi
     for (y = 0; y < image->height; y++) {
         memset(dst, 0, rowstride);
         code = jbig2_decode_mmr_line(ctx, &mmr, ref, dst);
-        if (code < 0) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode mmr line");
-            return code;
-        }
+        if (code < 0)
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode mmr line");
         ref = dst;
         dst += rowstride;
     }
@@ -1063,10 +1061,8 @@ jbig2_decode_halftone_mmr(Jbig2Ctx *ctx, const Jbig2GenericRegionParams *params,
     for (y = 0; y < image->height; y++) {
         memset(dst, 0, rowstride);
         code = jbig2_decode_mmr_line(ctx, &mmr, ref, dst);
-        if (code < 0) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode halftone mmr line");
-            return code;
-        }
+        if (code < 0)
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode halftone mmr line");
         ref = dst;
         dst += rowstride;
     }
