@@ -494,8 +494,10 @@ main(int argc, char **argv)
             /* handle embedded streams and work around broken CVision embedded streams */
             if (params.embedded || f_page != NULL) {
                 code = jbig2_complete_page(ctx);
-                if (code < 0)
+                if (code < 0) {
                     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to complete page");
+                    goto cleanup;
+                }
             }
 
             if (params.output_file == NULL) {
