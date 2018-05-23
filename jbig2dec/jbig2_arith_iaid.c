@@ -54,12 +54,14 @@ jbig2_arith_iaid_ctx_new(Jbig2Ctx *ctx, int SBSYMCODELEN)
 
     result->SBSYMCODELEN = SBSYMCODELEN;
     result->IAIDx = jbig2_new(ctx, Jbig2ArithCx, ctx_size);
-    if (result->IAIDx != NULL) {
-        memset(result->IAIDx, 0, ctx_size);
-    } else {
+    if (result->IAIDx == NULL)
+    {
+        jbig2_free(ctx->allocator, result);
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate symbol ID storage in jbig2_arith_iaid_ctx_new");
+        return NULL;
     }
 
+    memset(result->IAIDx, 0, ctx_size);
     return result;
 }
 
