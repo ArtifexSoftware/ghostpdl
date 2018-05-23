@@ -31,6 +31,7 @@
 #include "gsstype.h"
 #include "gdevprn.h"
 #include "gdevp14.h"        /* Needed to patch up the procs after compositor creation */
+#include "gximage.h"        /* For gx_image_enum */
 #include "gdevsclass.h"
 #include "gdevoflt.h"
 
@@ -331,7 +332,13 @@ obj_filter_image_plane_data(gx_image_enum_common_t * info,
                      const gx_image_plane_t * planes, int height,
                      int *rows_used)
 {
-    return 0;
+    gx_image_enum *penum = (gx_image_enum *) info;
+
+    penum->y += height;
+
+    if (penum->y < penum->rect.h)
+        return 0;
+    return 1;
 }
 
 static int
