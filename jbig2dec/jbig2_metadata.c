@@ -98,10 +98,8 @@ jbig2_metadata_add(Jbig2Ctx *ctx, Jbig2Metadata *md, const char *key, const int 
         keys = jbig2_renew(ctx, md->keys, char *, md->max_entries);
         values = jbig2_renew(ctx, md->values, char *, md->max_entries);
 
-        if (keys == NULL || values == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "unable to resize metadata structure");
-            return -1;
-        }
+        if (keys == NULL || values == NULL)
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "unable to resize metadata structure");
         md->keys = keys;
         md->values = values;
     }

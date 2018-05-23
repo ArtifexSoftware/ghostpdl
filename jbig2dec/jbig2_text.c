@@ -119,16 +119,14 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         runcodeparams.n_lines = 35;
         runcodes = jbig2_build_huffman_table(ctx, &runcodeparams);
         if (runcodes == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error constructing symbol id runcode table");
-            code = -1;
+            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error constructing symbol id runcode table");
             goto cleanup1;
         }
 
         /* decode the symbol id code lengths using the runlength table */
         symcodelengths = jbig2_new(ctx, Jbig2HuffmanLine, SBNUMSYMS);
         if (symcodelengths == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "memory allocation failure reading symbol ID huffman table");
-            code = -1;
+            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "memory allocation failure reading symbol ID huffman table");
             goto cleanup1;
         }
         index = 0;
@@ -146,8 +144,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
             } else {
                 if (code == 32) {
                     if (index < 1) {
-                        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error decoding symbol id table: run length with no antecedent");
-                        code = -1;
+                        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error decoding symbol id table: run length with no antecedent");
                         goto cleanup1;
                     }
                     len = symcodelengths[index - 1].PREFLEN;

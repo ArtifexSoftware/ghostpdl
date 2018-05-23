@@ -228,9 +228,8 @@ jbig2_huffman_get_bits(Jbig2HuffmanState *hs, const int bits, int *err)
     int32_t result;
 
     if (hs->offset_limit && hs->offset >= hs->offset_limit) {
-        jbig2_error(hs->ctx, JBIG2_SEVERITY_FATAL, -1, "end of jbig2 buffer reached at offset %d", hs->offset);
         *err = -1;
-        return -1;
+        return jbig2_error(hs->ctx, JBIG2_SEVERITY_FATAL, -1, "end of jbig2 buffer reached at offset %d", hs->offset);
     }
 
     result = this_word >> (32 - bits);
@@ -264,10 +263,9 @@ jbig2_huffman_get(Jbig2HuffmanState *hs, const Jbig2HuffmanTable *table, bool *o
     int32_t result;
 
     if (hs->offset_limit && hs->offset >= hs->offset_limit) {
-        jbig2_error(hs->ctx, JBIG2_SEVERITY_FATAL, -1, "end of Jbig2WordStream reached at offset %d", hs->offset);
         if (oob)
             *oob = -1;
-        return -1;
+        return jbig2_error(hs->ctx, JBIG2_SEVERITY_FATAL, -1, "end of Jbig2WordStream reached at offset %d", hs->offset);
     }
 
     for (;;) {
