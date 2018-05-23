@@ -348,11 +348,9 @@ jbig2_decode_refinement_region(Jbig2Ctx *ctx,
                                Jbig2Segment *segment,
                                const Jbig2RefinementRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GR_stats)
 {
-    {
-        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-                    "decoding generic refinement region with offset %d,%x, GRTEMPLATE=%d, TPGRON=%d",
-                    params->DX, params->DY, params->GRTEMPLATE, params->TPGRON);
-    }
+    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+            "decoding generic refinement region with offset %d,%x, GRTEMPLATE=%d, TPGRON=%d",
+            params->DX, params->DY, params->GRTEMPLATE, params->TPGRON);
 
     if (params->TPGRON)
         return jbig2_decode_refinement_TPGRON(ctx, params, as, image, GR_stats);
