@@ -655,11 +655,12 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         if (params->SDHUFF && !params->SDREFAGG) {
             /* 6.5.9 */
             Jbig2Image *image;
-            uint32_t BMSIZE = jbig2_huffman_get(hs, params->SDHUFFBMSIZE, &code);
+            uint32_t BMSIZE;
             uint32_t j;
             int x;
 
-            if (code) {
+            BMSIZE = jbig2_huffman_get(hs, params->SDHUFFBMSIZE, &code);
+            if (code < 0) {
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "error decoding size of collective bitmap");
                 goto cleanup4;
             }
