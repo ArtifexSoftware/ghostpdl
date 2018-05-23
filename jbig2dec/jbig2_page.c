@@ -238,9 +238,8 @@ jbig2_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_d
 
 #ifdef OUTPUT_PBM
     code = jbig2_image_write_pbm(ctx->pages[ctx->current_page].image, stdout);
-    if (code < 0) {
-        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "failed to write page image");
-    }
+    if (code < 0)
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to write page image");
 #endif
 
     return 0;

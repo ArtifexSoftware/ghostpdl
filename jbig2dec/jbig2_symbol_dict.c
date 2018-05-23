@@ -604,11 +604,12 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                     snprintf(name, 64, "sd.%04d.%04d.pbm", segment->number, NSYMSDECODED);
                     out = fopen(name, "wb");
                     code = jbig2_image_write_pbm(SDNEWSYMS->glyphs[NSYMSDECODED], out);
-                    if (code < 0)
-                        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "failed to write glyph");
-                    else
-                        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "writing out glyph as '%s' ...", name);
                     fclose(out);
+                    if (code < 0) {
+                        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to write glyph");
+                        goto cleanup4;
+                    }
+                    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "writing out glyph as '%s' ...", name);
                 }
 #endif
 
