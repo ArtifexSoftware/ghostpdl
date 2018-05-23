@@ -446,6 +446,8 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         ref = jbig2_region_find_referred(ctx, segment);
         if (ref == NULL)
             return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "could not find reference bitmap");
+        if (ref->result == NULL)
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "reference bitmap has no decoded image");
         /* the reference bitmap is the result of a previous
            intermediate region segment; the reference selection
            rules say to use the first one available, and not to
