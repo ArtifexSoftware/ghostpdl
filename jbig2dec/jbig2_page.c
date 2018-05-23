@@ -308,14 +308,14 @@ jbig2_page_out(Jbig2Ctx *ctx)
             Jbig2Image *img = ctx->pages[index].image;
             uint32_t page_number = ctx->pages[index].number;
 
-            ctx->pages[index].state = JBIG2_PAGE_RETURNED;
-            if (img != NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "page %d returned to the client", page_number);
-                return jbig2_image_reference(ctx, img);
-            } else {
+            if (img == NULL) {
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "page %d returned with no associated image", page_number);
-                ;               /* continue */
+                continue;
             }
+
+            ctx->pages[index].state = JBIG2_PAGE_RETURNED;
+            jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "page %d returned to the client", page_number);
+            return jbig2_image_reference(ctx, img);
         }
     }
 
