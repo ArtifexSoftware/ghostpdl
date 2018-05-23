@@ -340,7 +340,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         HCFIRSTSYM = NSYMSDECODED;
 
         if ((int32_t) HCHEIGHT < 0) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Invalid HCHEIGHT value");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "invalid HCHEIGHT value");
             goto cleanup2;
         }
 #ifdef JBIG2_DEBUG
@@ -366,14 +366,14 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
             /* check for broken symbol table */
             if (NSYMSDECODED >= params->SDNUMNEWSYMS) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "No OOB signaling end of height class %d", HCHEIGHT);
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "no OOB signaling end of height class %d", HCHEIGHT);
                 goto cleanup4;
             }
 
             SYMWIDTH = SYMWIDTH + DW;
             TOTWIDTH = TOTWIDTH + SYMWIDTH;
             if ((int32_t) SYMWIDTH < 0) {
-                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Invalid SYMWIDTH value (%d) at symbol %d", SYMWIDTH, NSYMSDECODED + 1);
+                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "invalid SYMWIDTH value (%d) at symbol %d", SYMWIDTH, NSYMSDECODED + 1);
                 goto cleanup4;
             }
 #ifdef JBIG2_DEBUG
@@ -437,12 +437,12 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                             /* as well as the text region parameters structure */
                             refagg_dicts = jbig2_new(ctx, Jbig2SymbolDict *, n_refagg_dicts);
                             if (refagg_dicts == NULL) {
-                                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Out of memory allocating dictionary array");
+                                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "out of memory allocating dictionary array");
                                 goto cleanup4;
                             }
                             refagg_dicts[0] = jbig2_sd_new(ctx, params->SDNUMINSYMS + params->SDNUMNEWSYMS);
                             if (refagg_dicts[0] == NULL) {
-                                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Out of memory allocating symbol dictionary");
+                                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "out of memory allocating symbol dictionary");
                                 goto cleanup4;
                             }
                             for (i = 0; i < params->SDNUMINSYMS; i++) {
@@ -451,7 +451,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
                             tparams = jbig2_new(ctx, Jbig2TextRegionParams, 1);
                             if (tparams == NULL) {
-                                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Out of memory creating text region params");
+                                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "out of memory creating text region params");
                                 goto cleanup4;
                             }
                             if (!params->SDHUFF) {
@@ -506,7 +506,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
                         image = jbig2_image_new(ctx, SYMWIDTH, HCHEIGHT);
                         if (image == NULL) {
-                            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Out of memory creating symbol image");
+                            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "out of memory creating symbol image");
                             goto cleanup4;
                         }
 
@@ -562,7 +562,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
                         image = jbig2_image_new(ctx, SYMWIDTH, HCHEIGHT);
                         if (image == NULL) {
-                            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Out of memory creating symbol image");
+                            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "out of memory creating symbol image");
                             goto cleanup4;
                         }
 
@@ -571,7 +571,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                         rparams.reference = (ID < ninsyms) ? params->SDINSYMS->glyphs[ID] : SDNEWSYMS->glyphs[ID - ninsyms];
                         /* SumatraPDF: fail on missing glyphs */
                         if (rparams.reference == NULL) {
-                            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "missing glyph %d/%d!", ID, ninsyms);
+                            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "missing glyph %d/%d", ID, ninsyms);
                             jbig2_image_release(ctx, image);
                             goto cleanup4;
                         }
@@ -634,7 +634,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             int x;
 
             if (code) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error decoding size of collective bitmap!");
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error decoding size of collective bitmap");
                 goto cleanup4;
             }
 
@@ -643,7 +643,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
             image = jbig2_image_new(ctx, TOTWIDTH, HCHEIGHT);
             if (image == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not allocate collective bitmap image!");
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not allocate collective bitmap image");
                 goto cleanup4;
             }
 
@@ -686,7 +686,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 rparams.MMR = 1;
                 code = jbig2_decode_generic_mmr(ctx, segment, &rparams, data + jbig2_huffman_offset(hs), BMSIZE, image);
                 if (code) {
-                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error decoding MMR bitmap image!");
+                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode MMR-coded generic region");
                     jbig2_image_release(ctx, image);
                     goto cleanup4;
                 }
@@ -859,7 +859,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         case 3:                /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Custom DH huffman table not found (%d)", table_index);
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom DH huffman table not found (%d)", table_index);
             }
             params.SDHUFFDH = jbig2_build_huffman_table(ctx, huffman_params);
             ++table_index;
@@ -883,7 +883,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         case 3:                /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Custom DW huffman table not found (%d)", table_index);
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom DW huffman table not found (%d)", table_index);
                 break;
             }
             params.SDHUFFDW = jbig2_build_huffman_table(ctx, huffman_params);
@@ -903,7 +903,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
             /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Custom BMSIZE huffman table not found (%d)", table_index);
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom BMSIZE huffman table not found (%d)", table_index);
             } else {
                 params.SDHUFFBMSIZE = jbig2_build_huffman_table(ctx, huffman_params);
                 ++table_index;
@@ -921,7 +921,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
             /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Custom REFAGG huffman table not found (%d)", table_index);
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom REFAGG huffman table not found (%d)", table_index);
             } else {
                 params.SDHUFFAGGINST = jbig2_build_huffman_table(ctx, huffman_params);
                 ++table_index;
@@ -1062,5 +1062,5 @@ too_short:
         jbig2_release_huffman_table(ctx, params.SDHUFFBMSIZE);
         jbig2_release_huffman_table(ctx, params.SDHUFFAGGINST);
     }
-    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
+    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
 }

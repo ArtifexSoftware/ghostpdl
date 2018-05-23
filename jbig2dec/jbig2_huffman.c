@@ -559,12 +559,12 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
         /* allocate HuffmanParams & HuffmanLine */
         params = jbig2_new(ctx, Jbig2HuffmanParams, 1);
         if (params == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Could not allocate Huffman Table Parameter");
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not allocate Huffman Table Parameter");
             goto error_exit;
         }
         line = jbig2_new(ctx, Jbig2HuffmanLine, lines_max);
         if (line == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Could not allocate Huffman Table Lines");
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not allocate Huffman Table Lines");
             goto error_exit;
         }
         /* B.2 5) */
@@ -611,7 +611,7 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
                                                      Jbig2HuffmanLine, NTEMP);
 
             if (new_line == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Could not reallocate Huffman Table Lines");
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not reallocate Huffman Table Lines");
                 goto error_exit;
             }
             line = new_line;
@@ -636,7 +636,7 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
     return 0;
 
 too_short:
-    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
+    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
 error_exit:
     if (line != NULL) {
         jbig2_free(ctx->allocator, line);

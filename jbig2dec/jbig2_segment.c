@@ -204,7 +204,7 @@ jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_
     bool necessary;
 
     if (segment->data_length < 4)
-        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
 
     type = jbig2_get_uint32(segment_data);
     reserved = type & 0x20000000;
@@ -234,7 +234,7 @@ int
 jbig2_parse_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
 {
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
-                "Segment %d, flags=%x, type=%d, data_length=%d", segment->number, segment->flags, segment->flags & 63, segment->data_length);
+                "segment %d, flags=%x, type=%d, data_length=%d", segment->number, segment->flags, segment->flags & 63, segment->data_length);
     switch (segment->flags & 63) {
     case 0:
         return jbig2_symbol_dictionary(ctx, segment, segment_data);

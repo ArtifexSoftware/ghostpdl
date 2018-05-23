@@ -408,7 +408,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
     /* 7.4.7 */
     if (segment->data_length < 18)
-        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
 
     jbig2_get_region_segment_info(&rsi, segment_data);
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "generic region: %d x %d @ (%d, %d), flags = %02x", rsi.width, rsi.height, rsi.x, rsi.y, rsi.flags);
@@ -426,7 +426,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     /* 7.4.7.3 */
     if (!params.GRTEMPLATE) {
         if (segment->data_length < 22)
-            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
         params.grat[0] = segment_data[offset + 0];
         params.grat[1] = segment_data[offset + 1];
         params.grat[2] = segment_data[offset + 2];
@@ -442,7 +442,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
         ref = jbig2_region_find_referred(ctx, segment);
         if (ref == NULL)
-            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not find reference bitmap!");
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not find reference bitmap");
         /* the reference bitmap is the result of a previous
            intermediate region segment; the reference selection
            rules say to use the first one available, and not to
@@ -456,7 +456,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         /* the reference is just (a subset of) the page buffer */
         params.reference = jbig2_image_clone(ctx, ctx->pages[ctx->current_page].image);
         if (params.reference == NULL)
-            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not clone reference bitmap!");
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not clone reference bitmap");
         /* TODO: subset the image if appropriate */
     }
 
@@ -499,7 +499,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
         code = jbig2_decode_refinement_region(ctx, segment, &params, as, image, GR_stats);
         if (code < 0) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to decode refinement region");
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode refinement region");
             goto cleanup;
         }
 

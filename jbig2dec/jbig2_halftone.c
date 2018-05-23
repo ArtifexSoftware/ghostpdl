@@ -135,7 +135,7 @@ jbig2_decode_pattern_dict(Jbig2Ctx *ctx, Jbig2Segment *segment,
     /* allocate the collective image */
     image = jbig2_image_new(ctx, params->HDPW * (params->GRAYMAX + 1), params->HDPH);
     if (image == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate collective bitmap for halftone dict!");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate collective bitmap for halftone dict");
         return NULL;
     }
 
@@ -164,13 +164,13 @@ jbig2_decode_pattern_dict(Jbig2Ctx *ctx, Jbig2Segment *segment,
             if (as != NULL) {
                 code = jbig2_decode_generic_region(ctx, segment, &rparams, as, image, GB_stats);
             } else {
-                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for as in halftone dict!");
+                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for as in halftone dict");
             }
 
             jbig2_free(ctx->allocator, as);
             jbig2_word_stream_buf_free(ctx, ws);
         } else {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for ws in halftone dict!");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for ws in halftone dict");
         }
     }
 
@@ -194,7 +194,7 @@ jbig2_pattern_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segme
 
     /* 7.4.4.1 - Data header */
     if (segment->data_length < 7) {
-        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
     }
     flags = segment_data[0];
     params.HDMMR = flags & 1;
@@ -211,7 +211,7 @@ jbig2_pattern_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segme
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "HDTEMPLATE is %d when HDMMR is %d, contrary to spec", params.HDTEMPLATE, params.HDMMR);
     }
     if (flags & 0xf8) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "Reserved flag bits non-zero");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "reserved flag bits non-zero");
     }
 
     /* 7.4.4.2 */
@@ -341,7 +341,7 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
             code = jbig2_decode_generic_region(ctx, segment, &rparams, as, GSPLANES[j], GB_stats);
         }
         if (code != 0) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error decoding GSPLANES for halftone image");
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode GSPLANES for halftone image");
             goto cleanup;
         }
 
@@ -608,7 +608,7 @@ jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
     if (code < 0) {
         jbig2_image_release(ctx, image);
         jbig2_free(ctx->allocator, GB_stats);
-        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to decode halftone region");
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode halftone region");
     }
 
     /* todo: retain GB_stats? */
@@ -627,5 +627,5 @@ jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
     return code;
 
 too_short:
-    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
+    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
 }

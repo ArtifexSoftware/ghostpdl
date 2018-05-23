@@ -111,7 +111,7 @@ jbig2_ctx_new(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCtx *g
 
     result = (Jbig2Ctx *) jbig2_alloc(allocator, sizeof(Jbig2Ctx), 1);
     if (result == NULL) {
-        error_callback(error_callback_data, "initial context allocation failed!", JBIG2_SEVERITY_FATAL, -1);
+        error_callback(error_callback_data, "initial context allocation failed", JBIG2_SEVERITY_FATAL, -1);
         return result;
     }
 
@@ -129,7 +129,7 @@ jbig2_ctx_new(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCtx *g
     result->n_segments_max = 16;
     result->segments = jbig2_new(result, Jbig2Segment *, result->n_segments_max);
     if (result->segments == NULL) {
-        error_callback(error_callback_data, "initial segments allocation failed!", JBIG2_SEVERITY_FATAL, -1);
+        error_callback(error_callback_data, "initial segments allocation failed", JBIG2_SEVERITY_FATAL, -1);
         jbig2_free(allocator, result);
         return result;
     }
@@ -139,7 +139,7 @@ jbig2_ctx_new(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCtx *g
     result->max_page_index = 4;
     result->pages = jbig2_new(result, Jbig2Page, result->max_page_index);
     if (result->pages == NULL) {
-        error_callback(error_callback_data, "initial pages allocation failed!", JBIG2_SEVERITY_FATAL, -1);
+        error_callback(error_callback_data, "initial pages allocation failed", JBIG2_SEVERITY_FATAL, -1);
         jbig2_free(allocator, result->segments);
         jbig2_free(allocator, result);
         return result;
@@ -256,7 +256,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
             if (ctx->buf_wr_ix - ctx->buf_rd_ix < 9)
                 return 0;
             if (memcmp(ctx->buf + ctx->buf_rd_ix, jbig2_id_string, 8))
-                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "Not a JBIG2 file header");
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "not a JBIG2 file header");
             /* D.4.2 */
             ctx->file_header_flags = ctx->buf[ctx->buf_rd_ix + 8];
             if (ctx->file_header_flags & 0xFC) {
@@ -333,7 +333,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
         case JBIG2_FILE_EOF:
             if (ctx->buf_rd_ix == ctx->buf_wr_ix)
                 return 0;
-            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "Garbage beyond end of file");
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "garbage beyond end of file");
         }
     }
 }

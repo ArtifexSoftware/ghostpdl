@@ -768,7 +768,7 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte 
 
     /* 7.4.6 */
     if (segment->data_length < 18)
-        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
 
     jbig2_get_region_segment_info(&rsi, segment_data);
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "generic region: %d x %d @ (%d, %d), flags = %02x", rsi.width, rsi.height, rsi.x, rsi.y, rsi.flags);
@@ -783,7 +783,7 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte 
     if (!(seg_flags & 1)) {
         gbat_bytes = (seg_flags & 6) ? 2 : 8;
         if (18 + gbat_bytes > segment->data_length)
-            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
         memcpy(gbat, segment_data + 18, gbat_bytes);
         jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "gbat: %d, %d", gbat[0], gbat[1]);
     }

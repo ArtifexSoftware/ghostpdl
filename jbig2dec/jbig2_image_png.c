@@ -59,7 +59,7 @@ jbig2_png_write_data(png_structp png_ptr, png_bytep data, png_size_t length)
 
     check = fwrite(data, 1, length, f);
     if (check != length) {
-        png_error(png_ptr, "Write Error");
+        png_error(png_ptr, "write error");
     }
 }
 

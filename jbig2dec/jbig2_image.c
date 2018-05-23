@@ -119,7 +119,7 @@ jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image, uint32_t width, uint32_t he
         /* use the same stride, just change the length */
         image->data = jbig2_renew(ctx, image->data, uint8_t, (int)check);
         if (image->data == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "could not resize image buffer!");
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "could not resize image buffer");
             return NULL;
         }
         if (height > image->height) {
