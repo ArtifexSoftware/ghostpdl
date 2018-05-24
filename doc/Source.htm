@@ -1,22 +1,67 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!doctype html>
 <html>
 <head>
-<meta http-equiv="content-type" content="text/html; charset=us-ascii">
-<title>Guide to Ghostscript source code</title>
-<!-- Originally: source.txt -->
-<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-54391264-2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-54391264-2');
+</script>	
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
+<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">	
+<title>Guide to Ghostscript Source Code</title>
+	<!-- Originally: source.txt -->
+<link href="style.css" rel="stylesheet" type="text/css">
+<link href="gs-style.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-<!-- [1.0 begin visible header] ============================================ -->
-
-<!-- [1.1 begin headline] ================================================== -->
-
-<h1>Guide to Ghostscript source code</h1>
-
-<!-- [1.1 end headline] ==================================================== -->
-
-<!-- [1.2 begin table of contents] ========================================= -->
+	
+	<div class="header">
+	<div class="row">
+		<div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
+		<div class="col-6"><div class="row"><div class="artifexlogo"><a href="https://artife.com" target="_blank"><img src="images/Artifex_logo.png" width="194" height="40" alt=""></a></div>
+		<div class="col-12"><div class="button button1"><a href="https://artifex.com/contact-us/" title="Contact Us" target="_blank">Contact Us</a></div>
+		<div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
+	</div>
+	</div>
+	</div>
+	
+	<div class="banner">
+	<div class="row">
+		<div class="col-12">Guide to Ghostscript Source Code</div>	
+	</div>
+	</div>
+	
+	<div class="main">
+	<div class="row">
+	<div id="sidebar">
+	<div class="sidebar-item"></div>
+	<div class="col-2 leftnav">
+<ul>
+			<li><a href="https://www.ghostscript.com/">Home</a></li>
+			<li><a href="https://www.ghostscript.com/license.html">Licensing</a></li>
+			<li><a href="https://www.ghostscript.com/releases.html">Releases</a></li>
+			<li><a href="https://www.ghostscript.com/release_history.html">Release History</a></li>
+			<li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
+			<li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
+			<li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
+			<li><a href="http://gsview.com/" title="GSView">GSView</a></li>
+			<li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
+			<li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
+			<li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
+			<li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
+		</ul>
+	</div>
+	</div>	
+	<div class="col-10 page">
+		
+<!--START EDITING HERE-->
 
 <h2>Table of contents</h2>
 
@@ -56,42 +101,64 @@ install Ghostscript</a>.
 <p>
 The Ghostscript source code is divided conceptually as follows:
 
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr valign=top>	<th align=left colspan=4><a href="#PostScript_interpreter">PostScript interpreter</a>:
-<tr valign=top>	<td>&nbsp;&nbsp;&nbsp;&nbsp;
-	<td>PostScript operators
-	<td>&nbsp;&nbsp;&nbsp;&nbsp;
-	<td><code>z</code>*<code>.h</code> and <code>z</code>*<code>.c</code>
-<tr valign=top>	<td>&nbsp;
-	<td>Other interpreter code
-	<td>&nbsp;
-	<td><code>i</code>*<code>.h</code> and <code>i</code>*<code>.c</code>
-<tr valign=top>	<td>&nbsp;
-	<td>PostScript code
-	<td>&nbsp;
-	<td><code>gs_</code>*<code>.ps</code>
-<tr valign=top>	<th align=left colspan=4><a href="#PDF_interpreter">PDF interpreter</a>:
-<tr valign=top>	<td>&nbsp;
-	<td>PostScript code
-	<td>&nbsp;
-	<td><code>pdf_</code>*<code>.ps</code>
-<tr valign=top>	<th align=left colspan=4><a href="#Graphics_library">Graphics library</a>:
-<tr valign=top>	<td>&nbsp;
-	<td>Main library code
-	<td>&nbsp;
-	<td><code>g</code>*<code>.h</code> and <code>g</code>*<code>.c</code>
-<tr valign=top>	<td>&nbsp;
-	<td>Streams
-	<td>&nbsp;
-	<td><code>s</code>*<code>.h</code> and <code>s</code>*<code>.c</code>
-<tr valign=top>	<td>&nbsp;
-	<td><a href="#Drivers">Device drivers</a>
-	<td>&nbsp;
-	<td><code>gdev</code>*<code>.h</code> and <code>gdev</code>*<code>.c</code>
-<tr valign=top>	<td>&nbsp;
-	<td><a href="#Platform_specific_code">Platform-specific code</a>
-	<td>&nbsp;
-	<td><code>gp</code>*<code>.h</code> and <code>gp</code>*<code>.c</code>
+<blockquote><table>
+<tr>	<a href="#PostScript_interpreter"></a>
+	<th align="left" colspan="4">PostScript interpreter:</th>
+	</tr>
+<tr>	
+	<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+	<td>PostScript operators</td>
+	<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+	<td><code>z</code>*<code>.h</code> and <code>z</code>*<code>.c</code></td>
+	</tr>
+<tr>	
+	<td>&nbsp;</td>
+	<td>Other interpreter code</td>
+	<td>&nbsp;</td>
+	<td><code>i</code>*<code>.h</code> and <code>i</code>*<code>.c</code></td>
+	</tr>
+<tr>	
+	<td>&nbsp;</td>
+	<td>PostScript code</td>
+	<td>&nbsp;</td>
+	<td><code>gs_</code>*<code>.ps</code></td>
+	</tr>
+<tr>	<a href="#PDF_interpreter"></a>
+	<th align="left" colspan="4">PDF interpreter:</th>
+	</tr>
+<tr>	
+	<td>&nbsp;</td>
+	<td>PostScript code</td>
+	<td>&nbsp;</td>
+	<td><code>pdf_</code>*<code>.ps</code></td>
+	</tr>
+<tr>	<a href="#Graphics_library"></a>
+	<th align="left" colspan="4">Graphics library:</th>
+	</tr>
+<tr>	
+	<td>&nbsp;</td>
+	<td>Main library code</td>
+	<td>&nbsp;</td>
+	<td><code>g</code>*<code>.h</code> and <code>g</code>*<code>.c</code></td>
+	</tr>
+<tr>	
+	<td>&nbsp;</td>
+	<td>Streams</td>
+	<td>&nbsp;</td>
+	<td><code>s</code>*<code>.h</code> and <code>s</code>*<code>.c</code></td>
+	</tr>
+<tr>	
+	<td>&nbsp;</td>
+	<td><a href="#Drivers">Device drivers</a></td>
+	<td>&nbsp;</td>
+	<td><code>gdev</code>*<code>.h</code> and <code>gdev</code>*<code>.c</code></td>
+	</tr>
+<tr>	
+	<td>&nbsp;</td>
+	<td><a href="#Platform_specific_code">Platform-specific code</a></td>
+	<td>&nbsp;</td>
+	<td><code>gp</code>*<code>.h</code> and <code>gp</code>*<code>.c</code></td>
+	</tr>
 </table></blockquote>
 
 <hr>
@@ -219,52 +286,80 @@ The platform-specific implementations of the
 "<code>gp_</code><em>{platform}</em><code>.c</code>, specifically
 (this list may be out of date):
 
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">Platform-specific interfaces</font><hr>
-<tr valign=bottom>
-	<th align=left>Routine
-	<td>&nbsp;&nbsp;&nbsp;&nbsp;
-	<th align=left>Platform
-<tr>	<td colspan=3><hr>
-<tr valign=top>	<td><code>gp_dosfb.c</code>
-	<td>&nbsp;
-	<td>DOS
-<tr valign=top>	<td><code>gp_dosfs.c</code>
-	<td>&nbsp;
-	<td>DOS and MS Windows
-<tr valign=top>	<td><code>gp_itbc.c</code>
-	<td>&nbsp;
-	<td>DOS, Borland compilers
-<tr valign=top>	<td><code>gp_iwatc.c</code>
-	<td>&nbsp;
-	<td>DOS, Watcom or Microsoft compiler
-<tr valign=top>	<td><code>gp_msdos.c</code>
-	<td>&nbsp;
-	<td>DOS and MS Windows
-<tr valign=top>	<td><code>gp_ntfs.c</code>
-	<td>&nbsp;
-	<td>MS Windows NT
-<tr valign=top>	<td><code>gp_os2.c</code>
-	<td>&nbsp;
-	<td>OS/2
-<tr valign=top>	<td><code>gp_os9.c</code>
-	<td>&nbsp;
-	<td>OS-9
-<tr valign=top>	<td><code>gp_unifs.c</code>
-	<td>&nbsp;
-	<td>Unix, OS-9, and QNX
-<tr valign=top>	<td><code>gp_unix.c</code>
-	<td>&nbsp;
-	<td>Unix and QNX
-<tr valign=top>	<td><code>gp_sysv.c</code>
-	<td>&nbsp;
-	<td>System V Unix
-<tr valign=top>	<td><code>gp_vms.c</code>
-	<td>&nbsp;
-	<td>VMS
-<tr valign=top>	<td><code>gp_win32.c</code>
-	<td>&nbsp;
-	<td>MS Windows NT
+<blockquote><table>
+<tr>
+	<th colspan="3">Platform-specific interfaces</th>
+	</tr>
+<tr>
+	<th align="left">Routine</th>
+	<th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
+	<th align="left">Platform</th>
+	</tr>
+<tr>	
+	<td><code>gp_dosfb.c</code></td>
+	<td>&nbsp;</td>
+	<td>DOS</td>
+	</tr>
+<tr>	
+	<td><code>gp_dosfs.c</code></td>
+	<td>&nbsp;</td>
+	<td>DOS and MS Windows</td>
+	</tr>
+<tr>	
+	<td><code>gp_itbc.c</code></td>
+	<td>&nbsp;</td>
+	<td>DOS, Borland compilers</td>
+	</tr>
+<tr>	
+	<td><code>gp_iwatc.c</code></td>
+	<td>&nbsp;</td>
+	<td>DOS, Watcom or Microsoft compiler</td>
+	</tr>
+<tr>	
+	<td><code>gp_msdos.c</code></td>
+	<td>&nbsp;</td>
+	<td>DOS and MS Windows</td>
+	</tr>
+<tr>	
+	<td><code>gp_ntfs.c</code></td>
+	<td>&nbsp;</td>
+	<td>MS Windows NT</td>
+	</tr>
+<tr>	
+	<td><code>gp_os2.c</code></td>
+	<td>&nbsp;</td>
+	<td>OS/2</td>
+	</tr>
+<tr>	
+	<td><code>gp_os9.c</code></td>
+	<td>&nbsp;</td>
+	<td>OS-9</td>
+	</tr>
+<tr>	
+	<td><code>gp_unifs.c</code></td>
+	<td>&nbsp;</td>
+	<td>Unix, OS-9, and QNX</td>
+	</tr>
+<tr>	
+	<td><code>gp_unix.c</code></td>
+	<td>&nbsp;</td>
+	<td>Unix and QNX</td>
+	</tr>
+<tr>	
+	<td><code>gp_sysv.c</code></td>
+	<td>&nbsp;</td>
+	<td>System V Unix</td>
+	</tr>
+<tr>	
+	<td><code>gp_vms.c</code></td>
+	<td>&nbsp;</td>
+	<td>VMS</td>
+	</tr>
+<tr>	
+	<td><code>gp_win32.c</code></td>
+	<td>&nbsp;</td>
+	<td>MS Windows NT</td>
+	</tr>
 </table></blockquote>
 
 <p>
@@ -358,7 +453,7 @@ support this may be overkill.
 and so on.
 
 <!-- [2.0 end contents] ==================================================== -->
-
+	
 <!-- [3.0 begin visible trailer] =========================================== -->
 <hr>
 
@@ -379,6 +474,38 @@ Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 <small>Ghostscript version 9.23, 21 March 2018
 
 <!-- [3.0 end visible trailer] ============================================= -->
+	
 
+<!--FINISH EDITING HERE-->
+	
+	</div>
+	</div>
+	</div>	
+	
+	<div class="footer">
+	<div class="row">
+		<div class="col-7 footleft">
+		<ul>
+			<li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
+			<li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
+			<li><a href="https://artifex.com/leadership-team/" target="blank">OUR TEAM</a></li>
+		</ul>
+		</div>
+		<div class="col-1 footcenter">
+		 <ul>
+		   <li><a href="https://artifex.com/support/" target="blank">SUPPORT</a></li>
+		   <li><a href="https://artifex.com/blog/artifex/" target="blank">BLOG</a></li>
+		   <li><a href="https://artifex.com/privacy-policy/" target="blank">PRIVACY</a></li>
+	   	</ul>
+		</div>
+		<div class="col-ft-3 footright"><img src="images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
+  			© Copyright 2018 Artifex Software, Inc. <br>
+			All rights reserved.
+		</div>
+	  	</div>
+	</div>
+	
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+	<script src="index.js"></script>
 </body>
 </html>

@@ -1,22 +1,67 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!doctype html>
 <html>
 <head>
-<meta http-equiv="content-type" content="text/html; charset=us-ascii">
-<title>Ghostscript device chains</title>
-<!-- Originally: devices.txt -->
-<link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-54391264-2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-54391264-2');
+</script>	
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
+<link rel="shortcut icon" type="image/png" href="../../images/favicon.png">	
+<title>Ghostscript: Device Subclassing</title>
+<link href="style.css" rel="stylesheet" type="text/css">
+<link href="gs-style.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
-<!-- [1.0 begin visible header] ============================================ -->
+	
+	<div class="header">
+	<div class="row">
+		<div class="col-lt-6 logo"><a href="https://www.ghostscript.com/"><img src="images/ghostscript_logo.png" width="108" height="119" alt=""></a></div>
+		<div class="col-6"><div class="row"><div class="artifexlogo"><a href="https://artife.com" target="_blank"><img src="images/Artifex_logo.png" width="194" height="40" alt=""></a></div>
+		<div class="col-12"><div class="button button1"><a href="https://artifex.com/contact-us/" title="Contact Us" target="_blank">Contact Us</a></div>
+		<div class="button button2 hidden-xs"><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></div></div></div>
+	</div>
+	</div>
+	</div>
+	
+	<div class="banner">
+	<div class="row">
+		<div class="col-12"> Details of Ghostscript Device Subclassing</div>	
+	</div>
+	</div>
+	
+	<div class="main">
+	<div class="row">
+	<div id="sidebar">
+	<div class="sidebar-item"></div>
+	<div class="col-2 leftnav">
+<ul>
+			<li><a href="https://www.ghostscript.com/">Home</a></li>
+			<li><a href="https://www.ghostscript.com/license.html">Licensing</a></li>
+			<li><a href="https://www.ghostscript.com/releases.html">Releases</a></li>
+			<li><a href="https://www.ghostscript.com/release_history.html">Release History</a></li>
+			<li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
+			<li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
+			<li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
+			<li><a href="http://gsview.com/" title="GSView">GSView</a></li>
+			<li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
+			<li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
+			<li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
+			<li><a href="https://www.ghostscript.com/faq.html" title="FAQ">FAQ</a></li>
+		</ul>
+	</div>
+	</div>	
+	<div class="col-10 page">
+		
+<!--START EDITING HERE-->
 
-<!-- [1.1 begin headline] ================================================== -->
-
-<h1>Details of Ghostscript device subclassing</h1>
-
-<!-- [1.1 end headline] ==================================================== -->
-
-<!-- [1.2 begin table of contents] ========================================= -->
 <h2>Table of contents</h2>
 
 <blockquote>
@@ -33,7 +78,7 @@
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
-
+<hr>
 <h2><a name="Gstate"></a>Devices in the graphics state</h2>
 <p>
 The 'device' is a member of the graphics state in PostScript, and is subject to gsave/grestore, like
@@ -50,7 +95,7 @@ In PostScript and PDF, the graphics state is itself a garbage collected object, 
  pass on a graphics state pointer for example. Without that pointer we can't change the graphics state and
  therefore can't point at a different device.
 </p>
-
+<hr>
 <h2><a name="Chaining"></a>Chaining devices</h2>
 <p>
 There are times when it is useful to be able to chain devices one after another, examples include the PDF
@@ -103,7 +148,7 @@ Taken together we have a number of different routes to install devices, but none
  for the goal of creating a chain of devices without access to the graphics state. However I think the existence of
  these manifold routes do indicate that there has been a recognition in the past that this would be useful to have.
 </p>
-
+<hr>
 <h2><a name="Subclassing"></a>Subclassing</h2>
 <p>
 From the above, its clear that we need to use some approach similar to the clist and spy devices. We must retain
@@ -135,7 +180,7 @@ In order to minimise the number of methods that a subclassing device needs to de
  the possible device methods. Subclassing devices should use these in their prototype for any methods they don't handle.
  Additionally these can be used to pass on any methods after processing by the subclassing device, if required.
 </p>
-
+<hr>
 <h2><a name="Example_uses"></a>Example uses</h2>
 <p>
 The original justification for this work was to create a device which would add 'first page' and 'last page' functionality
@@ -167,7 +212,7 @@ Finally the PCL interpreter now uses a subclassing device to implement the 'mono
  forwarding device had been pushed). This eliminated a somewhat ugly hack (in fairness its not obvious what would have been
  better), as well as allowing me to do away with some global variables in the PCL interpreter.
 </p>
-
+<hr>
 <h2><a name="Observations"></a>Observations</h2>
 <p>
 The monochrome palette device illuminated an interesting problem in the graphics library. Normally the device calls the graphics
@@ -207,7 +252,7 @@ Its pretty clear from reading through the code that the original intention of th
 <p>
 General observations are recorded in comments in gdevsclass.c
 </p>
-
+<hr>
 <h2><a name="Example"></a>Worked example</h2>
 <p>
 To see how to use the device subclassing we'll take a concrete example and implement it in a real device. For the purposes of the
@@ -747,3 +792,61 @@ int black_text_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_pa
 </code>
 <p>That concludes the worked example and the documentation on device subclassing.
 </p>
+<!-- [3.0 begin visible trailer] =========================================== -->
+<hr>
+
+<p>
+<small>Copyright &copy; 2013-2018 Artifex Software, Inc.  All rights
+reserved.</small>
+
+<p>
+This software is provided AS-IS with no warranty, either express or
+implied.
+
+This software is distributed under license and may not be copied,
+modified or distributed except as expressly authorized under the terms
+of the license contained in the file LICENSE in this distribution.
+
+For more information about licensing, please visit
+http://www.artifex.com/licensing/
+or contact Artifex Software, Inc., 1305 Grant Avenue - Suite 200,
+Novato, CA 94945, U.S.A., +1(415)492-9861.
+
+<p>
+<small>Ghostscript version 9.23, 21 March 2018
+
+<!-- [3.0 end visible trailer] ============================================= -->
+	
+<!--FINISH EDITING HERE-->
+	
+	</div>
+	</div>
+	</div>	
+	
+	<div class="footer">
+	<div class="row">
+		<div class="col-7 footleft">
+		<ul>
+			<li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
+			<li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
+			<li><a href="https://artifex.com/leadership-team/" target="blank">OUR TEAM</a></li>
+		</ul>
+		</div>
+		<div class="col-1 footcenter">
+		 <ul>
+		   <li><a href="https://artifex.com/support/" target="blank">SUPPORT</a></li>
+		   <li><a href="https://artifex.com/blog/artifex/" target="blank">BLOG</a></li>
+		   <li><a href="https://artifex.com/privacy-policy/" target="blank">PRIVACY</a></li>
+	   	</ul>
+		</div>
+		<div class="col-ft-3 footright"><img src="images/Artifex_logo.png" width="194" height="40" alt=""/> <br>
+  			© Copyright 2018 Artifex Software, Inc. <br>
+			All rights reserved.
+		</div>
+	  	</div>
+	</div>
+	
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+	<script src="index.js"></script>
+</body>
+</html>
