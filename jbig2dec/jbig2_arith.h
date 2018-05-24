@@ -17,6 +17,9 @@
     jbig2dec
 */
 
+#ifndef _JBIG2_ARITH_H
+#define _JBIG2_ARITH_H
+
 typedef struct _Jbig2ArithState Jbig2ArithState;
 
 /* An arithmetic coding context is stored as a single byte, with the
@@ -32,3 +35,5 @@ bool jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx, int *code);
 
 /* returns true if the end of the data stream has been reached (for sanity checks) */
 bool jbig2_arith_has_reached_marker(Jbig2ArithState *as);
+
+#endif /* _JBIG2_ARITH_H */

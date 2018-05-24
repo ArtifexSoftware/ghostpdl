@@ -17,6 +17,9 @@
     jbig2dec
 */
 
+#ifndef _JBIG2_GENERIC_H
+#define _JBIG2_GENERIC_H
+
 /**
  * Headers for Generic and Generic Refinement region handling
  **/
@@ -55,3 +58,5 @@ int
 jbig2_decode_refinement_region(Jbig2Ctx *ctx,
                                Jbig2Segment *segment,
                                const Jbig2RefinementRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats);
+
+#endif /* _JBIG2_GENERIC_H */

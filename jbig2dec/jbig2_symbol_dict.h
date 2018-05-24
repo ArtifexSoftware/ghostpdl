@@ -17,6 +17,9 @@
     jbig2dec
 */
 
+#ifndef _JBIG2_SYMBOL_DICT_H
+#define _JBIG2_SYMBOL_DICT_H
+
 /* symbol dictionary header */
 
 /* the results of decoding a symbol dictionary */
@@ -48,3 +51,5 @@ uint32_t jbig2_sd_count_referred(Jbig2Ctx *ctx, Jbig2Segment *segment);
 /* return an array of pointers to symbol dictionaries referred
    to by a segment */
 Jbig2SymbolDict **jbig2_sd_list_referred(Jbig2Ctx *ctx, Jbig2Segment *segment);
+
+#endif /* _JBIG2_SYMBOL_DICT_H */

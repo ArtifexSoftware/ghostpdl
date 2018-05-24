@@ -20,8 +20,8 @@
 /* predefined Huffman table definitions
     -- See Annex B of the JBIG2 specification */
 
-#ifndef JBIG2_HUFFTAB_H
-#define JBIG2_HUFFTAB_H
+#ifndef _JBIG2_HUFFTAB_H
+#define _JBIG2_HUFFTAB_H
 
 /* types are in jbig2_huffman.h, you must include that first */
 
@@ -312,4 +312,4 @@ const Jbig2HuffmanParams jbig2_huffman_params_O = { FALSE, JBIG2_COUNTOF(jbig2_h
 
 #undef JBIG2_COUNTOF
 
-#endif /* JBIG2_HUFFTAB_H */
+#endif /* _JBIG2_HUFFTAB_H */

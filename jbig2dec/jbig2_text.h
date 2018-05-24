@@ -17,6 +17,9 @@
     jbig2dec
 */
 
+#ifndef _JBIG2_TEXT_H
+#define _JBIG2_TEXT_H
+
 /**
  * Headers for Text region handling
  **/
@@ -72,3 +75,5 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                          const Jbig2TextRegionParams *params,
                          const Jbig2SymbolDict *const *dicts, const uint32_t n_dicts,
                          Jbig2Image *image, const byte *data, const size_t size, Jbig2ArithCx *GR_stats, Jbig2ArithState *as, Jbig2WordStream *ws);
+
+#endif /* _JBIG2_TEXT_H */

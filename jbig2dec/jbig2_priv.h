@@ -17,6 +17,9 @@
     jbig2dec
 */
 
+#ifndef _JBIG2_PRIV_H
+#define _JBIG2_PRIV_H
+
 /* To enable Memento, either uncomment the following, or arrange to
  * predefine MEMENTO whilst building. */
 /* #define MEMENTO */
@@ -188,3 +191,5 @@ struct _Jbig2WordStream {
 Jbig2WordStream *jbig2_word_stream_buf_new(Jbig2Ctx *ctx, const byte *data, size_t size);
 
 void jbig2_word_stream_buf_free(Jbig2Ctx *ctx, Jbig2WordStream *ws);
+
+#endif /* _JBIG2_PRIV_H */

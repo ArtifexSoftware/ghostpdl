@@ -17,8 +17,8 @@
     jbig2dec
 */
 
-#ifndef JBIG2_HUFFMAN_H
-#define JBIG2_HUFFMAN_H
+#ifndef _JBIG2_HUFFMAN_H
+#define _JBIG2_HUFFMAN_H
 
 /* Huffman coder interface */
 
@@ -107,4 +107,4 @@ void jbig2_table_free(Jbig2Ctx *ctx, Jbig2HuffmanParams *params);
 /* find a user supplied table used by 'segment' and by 'index' */
 const Jbig2HuffmanParams *jbig2_find_table(Jbig2Ctx *ctx, Jbig2Segment *segment, int index);
 
-#endif /* JBIG2_HUFFMAN_H */
+#endif /* _JBIG2_HUFFMAN_H */
