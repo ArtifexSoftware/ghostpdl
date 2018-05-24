@@ -731,6 +731,8 @@ int flp_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sras
 
 typedef struct flp_image_enum_s {
     gx_image_enum_common;
+    int y;
+    int height;
 } flp_image_enum;
 gs_private_st_composite(st_flp_image_enum, flp_image_enum, "flp_image_enum",
 flp_image_enum_enum_ptrs, flp_image_enum_reloc_ptrs);
@@ -751,11 +753,12 @@ flp_image_plane_data(gx_image_enum_common_t * info,
                      const gx_image_plane_t * planes, int height,
                      int *rows_used)
 {
-    gx_image_enum *penum = (gx_image_enum *) info;
+    flp_image_enum *pie = (flp_image_enum *)info;
 
-    penum->y += height;
+    pie->y += height;
+    *rows_used = height;
 
-    if (penum->y < penum->rect.h)
+    if (pie->y < pie->height)
         return 0;
     return 1;
 }
@@ -807,6 +810,8 @@ int flp_begin_typed_image(gx_device *dev, const gs_gstate *pgs, const gs_matrix 
                         (gx_device *)dev, num_components, pim->format);
     pie->memory = memory;
     pie->skipping = true;
+    pie->height = pim->Height;
+    pie->y = 0;
 
     return 0;
 }
