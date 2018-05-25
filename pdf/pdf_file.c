@@ -19,6 +19,7 @@
 #include "pdf_dict.h"
 #include "pdf_file.h"
 #include "pdf_int.h"
+#include "pdf_array.h"
 #include "stream.h"
 #include "strimpl.h"
 #include "strmio.h"
@@ -32,6 +33,7 @@
 #include "srlx.h"       /* RunLengthDecode */
 #include "jpeglib.h"
 #include "sdct.h"       /* DCTDecode */
+#include "sjpeg.h"
 
 /***********************************************************************************/
 /* Decompression filters.                                                          */
@@ -98,7 +100,6 @@ static int pdf_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
 {
     int code;
     uint32_t Predictor = 1;
-    pdf_dict *DP;
     pdf_obj *o;
     uint min_size = 2048;
     stream_PNGP_state pps;
@@ -262,7 +263,6 @@ static int pdf_LZW_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream 
 {
     stream_LZW_state lzs;
     uint min_size = 2048;
-    pdf_obj *o;
     int code;
     int64_t i;
 
@@ -313,7 +313,6 @@ static int pdf_DCT_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream 
 {
     stream_DCT_state dcts;
     uint min_size = 2048;
-    pdf_obj *o;
     int code;
     int64_t i;
     jpeg_decompress_data *jddp;
@@ -370,9 +369,7 @@ static int pdf_ASCII85_filter(pdf_context *ctx, pdf_dict *d, stream *source, str
 {
     stream_A85D_state ss;
     uint min_size = 2048;
-    pdf_obj *o;
     int code;
-    int64_t i;
 
     ss.pdf_rules = true;
 
@@ -456,7 +453,6 @@ static int pdf_CCITTFax_filter(pdf_context *ctx, pdf_dict *d, stream *source, st
 static int pdf_simple_filter(pdf_context *ctx, const stream_template *tmplate, stream *source, stream **new_stream)
 {
     uint min_size = 2048;
-    stream *temp_stream;
     int code;
 
     code = pdf_filter_open(min_size, &s_filter_read_procs, tmplate, NULL, ctx->memory->non_gc_memory, new_stream);

@@ -15,8 +15,8 @@
 
 /* Text operations for the PDF interpreter */
 
-#ifndef PDF_IMAGE_OPERATORS
-#define PDF_IMAGE_OPERATORS
+#ifndef PDF_TEXT_OPERATORS
+#define PDF_TEXT_OPERATORS
 
 int pdf_T_star(pdf_context *ctx);
 int pdf_Tc(pdf_context *ctx);
@@ -31,6 +31,7 @@ int pdf_Ts(pdf_context *ctx);
 int pdf_Tw(pdf_context *ctx);
 int pdf_Tz(pdf_context *ctx);
 int pdf_backslash(pdf_context *ctx);
+int pdf_singlequote(pdf_context *ctx);
 int pdf_doublequote(pdf_context *ctx);
 
 #endif

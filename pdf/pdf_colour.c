@@ -17,6 +17,7 @@
 
 #include "pdf_int.h"
 #include "pdf_colour.h"
+#include "pdf_stack.h"
 
 int pdf_setgraystroke(pdf_context *ctx)
 {

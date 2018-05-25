@@ -16,7 +16,10 @@
 /* Font operations for the PDF interpreter */
 
 #include "pdf_int.h"
+#include "pdf_font.h"
 #include "pdf_image.h"
+#include "pdf_stack.h"
+
 
 int pdf_d0(pdf_context *ctx)
 {

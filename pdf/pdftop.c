@@ -62,6 +62,7 @@ pdf_imp_characteristics(const pl_interp_implementation_t *pimpl)
     return &pdf_characteristics;
 }
 
+#if 0 /* the following are not currently used */
 static void
 pdf_set_nocache(pl_interp_implementation_t *impl, gs_font_dir *font_dir)
 {
@@ -80,6 +81,8 @@ pdf_set_icc_user_params(pl_interp_implementation_t *impl, gs_gstate *pgs)
     pdf_interp_instance_t *pdfi  = impl->interp_client_data;
     return pl_set_icc_params(pdfi->memory, pgs);
 }
+
+#endif
 
 /* Do per-instance interpreter allocation/init. No device is set yet */
 static int
@@ -332,10 +335,6 @@ pdf_imp_init_job(pl_interp_implementation_t *impl)
 static int
 pdf_imp_dnit_job(pl_interp_implementation_t *impl)
 {
-    pdf_interp_instance_t *instance = impl->interp_client_data;
-    pdf_context *ctx = instance->ctx;
-    int i;
-
     return 0;
 }
 

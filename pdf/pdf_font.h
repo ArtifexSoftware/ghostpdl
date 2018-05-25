@@ -15,8 +15,8 @@
 
 /* Font operations for the PDF interpreter */
 
-#ifndef PDF_IMAGE_OPERATORS
-#define PDF_IMAGE_OPERATORS
+#ifndef PDF_FONT_OPERATORS
+#define PDF_FONT_OPERATORS
 
 int pdf_d0(pdf_context *ctx);
 int pdf_d1(pdf_context *ctx);

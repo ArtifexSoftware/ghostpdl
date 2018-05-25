@@ -15,7 +15,8 @@
 
 /* Shading operations for the PDF interpreter */
 
-#ifndef PDF_IMAGE_OPERATORS
-#define PDF_IMAGE_OPERATORS
+#ifndef PDF_SHADING_OPERATORS
+#define PDF_SHADING_OPERATORS
+int pdf_shading(pdf_context *ctx);
 
 #endif

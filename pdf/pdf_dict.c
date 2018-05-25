@@ -123,7 +123,7 @@ int pdf_dict_get(pdf_dict *d, const char *Key, pdf_obj **o)
     *o = NULL;
 
     for (i=0;i< d->entries;i++) {
-        t = d->keys[i];
+        t = (pdf_name *)d->keys[i];
 
         if (t && t->type == PDF_NAME) {
             if (((pdf_name *)t)->length == strlen((const char *)Key) && memcmp((const char *)((pdf_name *)t)->data, (const char *)Key, ((pdf_name *)t)->length) == 0) {

@@ -15,12 +15,14 @@
 
 /* Top level PDF access routines */
 #include "ghostpdf.h"
+#include "plmain.h"
 #include "pdf_types.h"
 #include "pdf_dict.h"
 #include "pdf_array.h"
 #include "pdf_int.h"
 #include "pdf_stack.h"
 #include "pdf_file.h"
+#include "pdf_loop_detect.h"
 #include "stream.h"
 #include "strmio.h"
 
@@ -374,7 +376,7 @@ read_root:
                 code = pdf_read_Root(ctx);
                 if (code < 0)
                     return code;
-            } else
+            } else {
                 if (!ctx->repaired) {
                     code = pdf_repair_file(ctx);
                     if (code < 0)
@@ -382,6 +384,7 @@ read_root:
                     goto read_root;
                 }
                 return code;
+            }
         }
     }
 

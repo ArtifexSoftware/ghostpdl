@@ -16,7 +16,9 @@
 /* Text operations for the PDF interpreter */
 
 #include "pdf_int.h"
+#include "pdf_text.h"
 #include "pdf_image.h"
+#include "pdf_stack.h"
 
 int pdf_T_star(pdf_context *ctx)
 {

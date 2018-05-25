@@ -17,6 +17,8 @@
 
 #include "pdf_int.h"
 #include "pdf_gstate.h"
+#include "pdf_stack.h"
+#include "pdf_array.h"
 #include "gsmatrix.h"
 #include "gslparam.h"
 

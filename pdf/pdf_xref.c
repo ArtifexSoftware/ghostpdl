@@ -19,8 +19,11 @@
 #include "pdf_stack.h"
 #include "pdf_xref.h"
 #include "pdf_file.h"
+#include "pdf_loop_detect.h"
+#include "pdf_dict.h"
+#include "pdf_array.h"
 
-int resize_xref(pdf_context *ctx, uint64_t new_size)
+static int resize_xref(pdf_context *ctx, uint64_t new_size)
 {
     xref_entry *new_xrefs;
 
@@ -535,14 +538,12 @@ static int read_xref_section(pdf_context *ctx, pdf_stream *s)
 
 static int read_xref(pdf_context *ctx, pdf_stream *s)
 {
-    int code = 0, i, j;
+    int code = 0;
     pdf_obj **o = NULL;
     pdf_keyword *k;
     pdf_dict *d = NULL;
-    uint64_t start = 0, size = 0;
-    int64_t bytes = 0;
+    uint64_t size = 0;
     int64_t num;
-    char Buffer[21];
 
     do {
         o = ctx->stack_top;

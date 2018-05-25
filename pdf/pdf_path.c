@@ -17,6 +17,7 @@
 
 #include "pdf_int.h"
 #include "pdf_path.h"
+#include "pdf_stack.h"
 #include "gstypes.h"
 
 int pdf_moveto (pdf_context *ctx)

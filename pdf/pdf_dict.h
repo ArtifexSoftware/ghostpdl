@@ -19,6 +19,7 @@
 #define PDF_DICTIONARY_FUNCTIONS
 
 void pdf_free_dict(pdf_obj *o);
+int pdf_dict_from_stack(pdf_context *ctx);
 int pdf_dict_known(pdf_dict *d, const char *Key, bool *known);
 int pdf_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known);
 int pdf_merge_dicts(pdf_dict *target, pdf_dict *source);

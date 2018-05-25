@@ -21,5 +21,6 @@
 int pdf_BI(pdf_context *ctx);
 int pdf_EI(pdf_context *ctx);
 int pdf_Do(pdf_context *ctx);
+int pdf_ID(pdf_context *ctx, pdf_stream *source);
 
 #endif

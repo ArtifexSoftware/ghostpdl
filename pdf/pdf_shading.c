@@ -16,6 +16,7 @@
 /* Shading operations for the PDF interpreter */
 
 #include "pdf_int.h"
+#include "pdf_stack.h"
 #include "pdf_shading.h"
 
 int pdf_shading(pdf_context *ctx)

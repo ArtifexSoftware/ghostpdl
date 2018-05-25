@@ -18,6 +18,8 @@
 #ifndef PDF_STACK_OPERATIONS
 #define PDF_STACK_OPERATIONS
 
+#include "pdf_int.h"
+
 int pdf_pop(pdf_context *ctx, int num);
 int pdf_push(pdf_context *ctx, pdf_obj *o);
 int pdf_mark_stack(pdf_context *ctx, pdf_obj_type type);

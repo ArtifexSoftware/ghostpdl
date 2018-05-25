@@ -23,6 +23,10 @@
 #include "stream.h"
 #include "pdf_path.h"
 #include "pdf_colour.h"
+#include "pdf_image.h"
+#include "pdf_shading.h"
+#include "pdf_font.h"
+#include "pdf_text.h"
 #include "pdf_gstate.h"
 #include "pdf_stack.h"
 #include "pdf_xref.h"
@@ -156,7 +160,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
     gs_offset_t saved_stream_offset;
 
     if (obj >= ctx->xref_table->xref_size) {
-        dmprintf1(ctx->memory, "Error, attempted to dereference object %d, which is not present in the xref table\n", obj);
+        dmprintf1(ctx->memory, "Error, attempted to dereference object %"PRIu64", which is not present in the xref table\n", obj);
         ctx->pdf_errors |= E_PDF_BADOBJNUMBER;
         return_error(gs_error_rangecheck);
     }
@@ -553,7 +557,7 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
                 if (Buffer[index] < 0x30 || Buffer[index] > 0x39) {
                     if (ctx->pdfstoponerror)
                         return_error(gs_error_syntaxerror);
-                    if (!ctx->pdf_errors & E_PDF_MISSINGWHITESPACE)
+                    if (!(ctx->pdf_errors & E_PDF_MISSINGWHITESPACE))
                         dmprintf(ctx->memory, "Ignoring missing white space while parsing number\n");
                     ctx->pdf_errors |= E_PDF_MISSINGWHITESPACE;
                     pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
@@ -574,7 +578,7 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
     num->memory = ctx->memory;
 
     if (malformed) {
-        if (!ctx->pdf_errors & E_PDF_MALFORMEDNUMBER)
+        if (!(ctx->pdf_errors & E_PDF_MALFORMEDNUMBER))
             dmprintf1(ctx->memory, "Treating malformed number %s as 0.\n", Buffer);
         ctx->pdf_errors |= E_PDF_MALFORMEDNUMBER;
         num->type = PDF_INT;
@@ -1082,7 +1086,6 @@ static int pdf_array_from_stack(pdf_context *ctx)
 int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
 {
     int code, depth;
-    pdf_obj *o;
 
     code = pdf_read_token(ctx, s);
     if (code < 0)
@@ -1133,7 +1136,7 @@ static int pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
  */
 static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
 {
-    byte Buffer[256], b;
+    byte Buffer[256];
     unsigned short index = 0;
     short bytes = 0;
     int code;
@@ -1615,7 +1618,7 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
                 pdf_pop(ctx, 2);
                 return_error(gs_error_typecheck);
             }
-            dmprintf2(ctx->memory, "Stream object %d has an incorrect /Length of %d\n", objnum, i);
+            dmprintf2(ctx->memory, "Stream object %"PRIu64" has an incorrect /Length of %"PRIu64"\n", objnum, i);
             pdf_pop(ctx, 1);
             return 0;
         }
@@ -1950,7 +1953,7 @@ int pdf_repair_file(pdf_context *ctx)
             pdf_seek(ctx, ctx->main_stream, ctx->xref_table->xref[i].u.uncompressed.offset, SEEK_SET);
             do {
                 code = pdf_read_token(ctx, ctx->main_stream);
-                if (ctx->main_stream->eof == true || code < 0 && code != gs_error_ioerror && code != gs_error_VMerror)
+                if (ctx->main_stream->eof == true || (code < 0 && code != gs_error_ioerror && code != gs_error_VMerror))
                     break;;
                 if (code < 0)
                     return code;

@@ -19,6 +19,7 @@
 #include "pdf_stack.h"
 #include "pdf_image.h"
 #include "pdf_file.h"
+#include "pdf_dict.h"
 
 extern int pdf_dict_from_stack(pdf_context *ctx);
 
@@ -27,18 +28,13 @@ int pdf_BI(pdf_context *ctx)
     return pdf_mark_stack(ctx, PDF_DICT_MARK);
 }
 
-int do_image(pdf_context *ctx, gs_color_space *pcs, int bpc, int comps, int width, int height, pdf_stream *new_stream)
+static int do_image(pdf_context *ctx, gs_color_space *pcs, int bpc, int comps, int width, int height, pdf_stream *new_stream)
 {
     gs_image_enum *penum;
-    gs_color_space *colorspace;
     gs_image_t gsimage;
     int code;
-    char Buffer[1024];
+    unsigned char Buffer[1024];
     uint64_t toread;
-
-    unsigned int count;
-    unsigned int used;
-    byte *samples;
 
     memset(&gsimage, 0, sizeof(gsimage));
     gs_image_t_init(&gsimage, pcs);
@@ -91,10 +87,8 @@ int do_image(pdf_context *ctx, gs_color_space *pcs, int bpc, int comps, int widt
     return 0;
 }
 
-void pdf_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
+static void pdf_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
 {
-    int code;
-
     (void)pcs->type->install_cspace(pcs, ctx->pgs);
 #if 0
     code = gs_setcolorspace(ctx->pgs, pcs);
