@@ -41,6 +41,6 @@ int pdf_read_Info(pdf_context *ctx);
 int pdf_read_Pages(pdf_context *ctx);
 int pdf_read_Root(pdf_context *ctx);
 int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t *page_offset, pdf_dict **target, pdf_dict *inherited);
-int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict);
+int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
 
 #endif

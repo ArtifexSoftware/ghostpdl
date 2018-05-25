@@ -43,9 +43,9 @@ static int do_image(pdf_context *ctx, gs_color_space *pcs, int bpc, int comps, i
     gsimage.Width = width;
     gsimage.Height = height;
 
-    gsimage.ImageMatrix.xx = width;
-    gsimage.ImageMatrix.yy = height * -1;
-    gsimage.ImageMatrix.ty = height;
+    gsimage.ImageMatrix.xx = (float)width;
+    gsimage.ImageMatrix.yy = (float)(height * -1);
+    gsimage.ImageMatrix.ty = (float)height;
 /*    gsimage.ImageMatrix.xx = image->xres / 96.0;
     gsimage.ImageMatrix.yy = image->yres / 96.0;*/
 
@@ -65,10 +65,10 @@ static int do_image(pdf_context *ctx, gs_color_space *pcs, int bpc, int comps, i
         uint count, used, index;
 
         if (toread > 1024) {
-            code = pdf_read_bytes(ctx, Buffer, 1, 1024, new_stream);
+            code = pdf_read_bytes(ctx, (byte *)Buffer, 1, 1024, new_stream);
             count = 1024;
         } else {
-            code = pdf_read_bytes(ctx, Buffer, 1, toread, new_stream);
+            code = pdf_read_bytes(ctx, (byte *)Buffer, 1, toread, new_stream);
             count = toread;
         }
         toread -= count;
@@ -87,25 +87,6 @@ static int do_image(pdf_context *ctx, gs_color_space *pcs, int bpc, int comps, i
     return 0;
 }
 
-static void pdf_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
-{
-    (void)pcs->type->install_cspace(pcs, ctx->pgs);
-#if 0
-    code = gs_setcolorspace(ctx->pgs, pcs);
-    if (code >= 0) {
-        gs_client_color *pcc = gs_currentcolor_inline(ctx->pgs);
-
-        cs_adjust_color_count(ctx->pgs, -1); /* not strictly necessary */
-        pcc->paint.values[0] = 0;
-        pcc->paint.values[1] = 0;
-        pcc->paint.values[2] = 0;
-        pcc->pattern = 0;		/* for GC */
-        gx_unset_dev_color(ctx->pgs);
-    }
-    rc_decrement_only_cs(pcs, "zsetdevcspace");
-#endif
-}
-
 int pdf_ID(pdf_context *ctx, pdf_stream *source)
 {
     pdf_name *n = NULL;
@@ -115,7 +96,6 @@ int pdf_ID(pdf_context *ctx, pdf_stream *source)
     int i, code, comps = 0, byteswide, total;
     byte c;
     pdf_obj *Mask;
-
     gs_color_space  *pcs = NULL;
 
     code = pdf_dict_from_stack(ctx);
@@ -179,7 +159,7 @@ int pdf_ID(pdf_context *ctx, pdf_stream *source)
                 if (memcmp(n->data, "G", 1) == 0){
                     comps = 1;
                     pcs = gs_cspace_new_DeviceGray(ctx->memory);
-                    pdf_setcolorspace(ctx, pcs);
+                    (void)pcs->type->install_cspace(pcs, ctx->pgs);
                 } else {
                     if (memcmp(n->data, "I", 1) == 0){
                         comps = 1;
@@ -195,7 +175,7 @@ int pdf_ID(pdf_context *ctx, pdf_stream *source)
                 if (memcmp(n->data, "RGB", 3) == 0){
                     comps = 3;
                     pcs = gs_cspace_new_DeviceRGB(ctx->memory);
-                    pdf_setcolorspace(ctx, pcs);
+                    (void)pcs->type->install_cspace(pcs, ctx->pgs);
                 } else {
                     pdf_countdown(n);
                     pdf_countdown(d);
@@ -206,7 +186,7 @@ int pdf_ID(pdf_context *ctx, pdf_stream *source)
                 if (memcmp(n->data, "CMYK", 4) == 0){
                     comps = 4;
                     pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
-                    pdf_setcolorspace(ctx, pcs);
+                    (void)pcs->type->install_cspace(pcs, ctx->pgs);
                 } else {
                     pdf_countdown(n);
                     pdf_countdown(d);
@@ -226,7 +206,7 @@ int pdf_ID(pdf_context *ctx, pdf_stream *source)
                 if (memcmp(n->data, "DeviceRGB", 9) == 0){
                     comps = 3;
                     pcs = gs_cspace_new_DeviceRGB(ctx->memory);
-                    pdf_setcolorspace(ctx, pcs);
+                    (void)pcs->type->install_cspace(pcs, ctx->pgs);
                 } else {
                     pdf_countdown(n);
                     pdf_countdown(d);
@@ -237,12 +217,12 @@ int pdf_ID(pdf_context *ctx, pdf_stream *source)
                 if (memcmp(n->data, "DeviceGray", 10) == 0){
                     comps = 1;
                     pcs = gs_cspace_new_DeviceGray(ctx->memory);
-                    pdf_setcolorspace(ctx, pcs);
+                    (void)pcs->type->install_cspace(pcs, ctx->pgs);
                 } else {
                     if (memcmp(n->data, "DeviceCMYK", 10) == 0){
                         comps = 4;
                         pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
-                        pdf_setcolorspace(ctx, pcs);
+                        (void)pcs->type->install_cspace(pcs, ctx->pgs);
                     } else {
                         pdf_countdown(n);
                         pdf_countdown(d);
@@ -280,6 +260,7 @@ int pdf_ID(pdf_context *ctx, pdf_stream *source)
     } else {
         do_image(ctx, pcs, BPC, comps, Width, Height, new_stream);
     }
+    rc_decrement_cs(pcs, "gs_setrgbcolor");
     pdf_close_file(ctx, new_stream);
     return 0;
 }
@@ -290,9 +271,67 @@ int pdf_EI(pdf_context *ctx)
     return 0;
 }
 
-int pdf_Do(pdf_context *ctx)
+int pdf_find_XObject_resource(pdf_context *ctx, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_obj **o)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 1)
+    char Key[256];
+    pdf_dict *Resources, *XObjects;
+    int code;
+
+    *o = NULL;
+    memcpy(Key, name->data, name->length);
+    Key[name->length] = 0x00;
+
+    code = pdf_dict_get(stream_dict, "Resources", &Resources);
+    if (code == 0) {
+        code = pdf_dict_get(Resources, "XObject", &XObjects);
+        if (code == 0) {
+            pdf_countdown(Resources);
+            code = pdf_dict_get(XObjects, Key, o);
+            pdf_countdown(XObjects);
+            if (code == 0)
+                return code;
+        }
+    }
+    code = pdf_dict_get(page_dict, "Resources", &Resources);
+    if (code < 0)
+        return code;
+    }
+    code = pdf_dict_get(Resources, "XObject", &XObjects);
+    pdf_countdown(Resources);
+    if (code < 0)
+        return code;
+
+    code = pdf_dict_get(XObjects, Key, o);
+    pdf_countdown(XObjects);
+    return code;
+    return 0;
+}
+
+int pdf_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
+{
+    int code;
+    pdf_name *n = NULL;
+    pdf_obj *o;
+
+    if (ctx->stack_top - ctx->stack_bot < 1) {
+        if (ctx->pdfstoponerror) {
+            return_error(gs_error_stackunderflow);
+        }
+        return 0;
+    }
+    n = (pdf_name *)ctx->stack_top[-1];
+    if (n->type != PDF_NAME) {
         pdf_pop(ctx, 1);
+        if (ctx->pdfstoponerror) {
+            return_error(gs_error_typecheck);
+        }
+        return 0;
+    }
+
+    code = pdf_find_XObject_resource(ctx, n, stream_dict, page_dict, &o);
+    if (code < 0) {
+        pop(ctx, 1);
+        return code;
+    }
     return 0;
 }

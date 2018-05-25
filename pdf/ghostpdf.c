@@ -63,7 +63,7 @@ static int pdf_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
                 return code;
             }
             if (r->type == PDF_DICT) {
-                code = pdf_interpret_content_stream(ctx, (pdf_dict *)r);
+                code = pdf_interpret_content_stream(ctx, (pdf_dict *)r, page_dict);
                 pdf_countdown(r);
                 if (code < 0) {
                     pdf_countdown(o);
@@ -93,7 +93,7 @@ static int pdf_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
                         pdf_countdown(o);
                         return_error(gs_error_typecheck);
                     }
-                    code = pdf_interpret_content_stream(ctx, (pdf_dict *)o1);
+                    code = pdf_interpret_content_stream(ctx, (pdf_dict *)o1, page_dict);
                     pdf_countdown(o1);
                     if (code < 0) {
                         if (code == gs_error_VMerror || ctx->pdfstoponerror == true) {
@@ -106,7 +106,7 @@ static int pdf_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
         }
     } else {
         if (o->type == PDF_DICT) {
-            code = pdf_interpret_content_stream(ctx, (pdf_dict *)o);
+            code = pdf_interpret_content_stream(ctx, (pdf_dict *)o, page_dict);
         } else {
             pdf_countdown(o);
             return_error(gs_error_typecheck);

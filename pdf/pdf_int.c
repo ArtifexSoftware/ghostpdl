@@ -947,7 +947,7 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
                     escape = true;
                     continue;
                 case '(':
-                    ctx->pdf_errors != E_PDF_UNESCAPEDSTRING;
+                    ctx->pdf_errors |= E_PDF_UNESCAPEDSTRING;
                     nesting++;
                     break;
                 default:
@@ -2652,7 +2652,7 @@ static int split_bogus_operator(pdf_context *ctx)
 #define K2(a, b) ((a << 8) + b)
 #define K3(a, b, c) ((a << 16) + (b << 8) + c)
 
-static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source)
+static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1];
     uint32_t op = 0;
@@ -2746,7 +2746,7 @@ static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source)
                 break;
             case K2('D','o'):       /* invoke named XObject */
                 pdf_pop(ctx, 1);
-                code = pdf_Do(ctx);
+                code = pdf_Do(ctx, stream_dict, page_dict);
                 break;
             case K2('D','P'):       /* define marked content point with property list */
                 pdf_pop(ctx, 1);
@@ -2974,7 +2974,7 @@ static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source)
     return code;
 }
 
-int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
+int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
     pdf_stream *compressed_stream;
@@ -3021,7 +3021,7 @@ int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict)
                     return 0;
                     break;
                 case PDF_NOT_A_KEYWORD:
-                    code = pdf_interpret_stream_operator(ctx, compressed_stream);
+                    code = pdf_interpret_stream_operator(ctx, compressed_stream, stream_dict, page_dict);
                     if (code < 0) {
                         pdf_close_file(ctx, compressed_stream);
                         pdf_clearstack(ctx);
