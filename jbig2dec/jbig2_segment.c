@@ -241,6 +241,90 @@ jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_
     }
 }
 
+/* dispatch code for profile segment parsing */
+static int
+jbig2_parse_profile_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
+{
+    uint32_t profiles;
+    uint32_t i;
+    uint32_t profile;
+    int index;
+    const char *requirements;
+    const char *generic_region;
+    const char *refinement_region;
+    const char *halftone_region;
+    const char *numerical_data;
+
+    if (segment->data_length < 4)
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
+    index = 0;
+
+    profiles = jbig2_get_uint32(&segment_data[index]);
+    index += 4;
+
+    for (i = 0; i < profiles; i++) {
+        if (segment->data_length - index < 4)
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short to store profile");
+
+        profile = jbig2_get_uint32(&segment_data[index]);
+        index += 4;
+
+        switch (profile) {
+        case 0x00000001:
+            requirements = "All JBIG2 capabilities";
+            generic_region = "No restriction";
+            refinement_region = "No restriction";
+            halftone_region = "No restriction";
+            numerical_data = "No restriction";
+            break;
+        case 0x00000002:
+            requirements = "Maximum compression";
+            generic_region = "Arithmetic only; any template used";
+            refinement_region = "No restriction";
+            halftone_region = "No restriction";
+            numerical_data = "Arithmetic only";
+            break;
+        case 0x00000003:
+            requirements = "Medium complexity and medium compression";
+            generic_region = "Arithmetic only; only 10-pixel and 13-pixel templates";
+            refinement_region = "10-pixel template only";
+            halftone_region = "No skip mask used";
+            numerical_data = "Arithmetic only";
+            break;
+        case 0x00000004:
+            requirements = "Low complexity with progressive lossless capability";
+            generic_region = "MMR only";
+            refinement_region = "10-pixel template only";
+            halftone_region = "No skip mask used";
+            numerical_data = "Huffman only";
+            break;
+        case 0x00000005:
+            requirements = "Low complexity";
+            generic_region = "MMR only";
+            refinement_region = "Not available";
+            halftone_region = "No skip mask used";
+            numerical_data = "Huffman only";
+            break;
+        default:
+            requirements = "Unknown";
+            generic_region = "Unknown";
+            refinement_region = "Unknown";
+            halftone_region = "Unknown";
+            numerical_data = "Unknown";
+            break;
+        }
+
+        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "Supported profile: 0x%08x", profile);
+        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "  Requirements: %s", requirements);
+        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "  Generic region coding: %s", generic_region);
+        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "  Refinement region coding: %s", refinement_region);
+        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "  Halftone region coding: %s", halftone_region);
+        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "  Numerical data: %s", numerical_data);
+    }
+
+    return 0;
+}
+
 /* general segment parsing dispatch */
 int
 jbig2_parse_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
@@ -278,8 +362,9 @@ jbig2_parse_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment
     case 51:
         ctx->state = JBIG2_FILE_EOF;
         jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "end of file");
+        break;
     case 52:
-        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unhandled segment type 'profile'");
+        return jbig2_parse_profile_segment(ctx, segment, segment_data);
     case 53:                   /* user-supplied huffman table */
         return jbig2_table(ctx, segment, segment_data);
     case 54:
