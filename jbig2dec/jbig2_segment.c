@@ -345,7 +345,7 @@ jbig2_parse_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment
     case 23:                   /* immediate lossless halftone region */
         return jbig2_halftone_region(ctx, segment, segment_data);
     case 36:
-        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unhandled segment type 'intermediate generic region'");
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unhandled segment type 'intermediate generic region' (NYI)");
     case 38:                   /* immediate generic region */
     case 39:                   /* immediate lossless generic region */
         return jbig2_immediate_generic_region(ctx, segment, segment_data);
@@ -368,7 +368,7 @@ jbig2_parse_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment
     case 53:                   /* user-supplied huffman table */
         return jbig2_table(ctx, segment, segment_data);
     case 54:
-        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unhandled segment type 'color palette'");
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unhandled segment type 'color palette' (NYI)");
     case 62:
         return jbig2_parse_extension_segment(ctx, segment, segment_data);
     default:
