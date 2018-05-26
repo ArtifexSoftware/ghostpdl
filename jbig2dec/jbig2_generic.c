@@ -39,6 +39,7 @@
 #include "jbig2_arith.h"
 #include "jbig2_generic.h"
 #include "jbig2_mmr.h"
+#include "jbig2_page.h"
 
 /* return the appropriate context size for the given template */
 int

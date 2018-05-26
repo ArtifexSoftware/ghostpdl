@@ -115,35 +115,6 @@ void *jbig2_realloc(Jbig2Allocator *allocator, void *p, size_t size, size_t num)
 
 int jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, int32_t seg_idx, const char *fmt, ...);
 
-/* the page structure handles decoded page
-   results. it's allocated by a 'page info'
-   segment and marked complete by an 'end of page'
-   segment.
-*/
-typedef enum {
-    JBIG2_PAGE_FREE,
-    JBIG2_PAGE_NEW,
-    JBIG2_PAGE_COMPLETE,
-    JBIG2_PAGE_RETURNED,
-    JBIG2_PAGE_RELEASED
-} Jbig2PageState;
-
-struct _Jbig2Page {
-    Jbig2PageState state;
-    uint32_t number;
-    uint32_t height, width;     /* in pixels */
-    uint32_t x_resolution, y_resolution;        /* in pixels per meter */
-    uint16_t stripe_size;
-    bool striped;
-    uint32_t end_row;
-    uint8_t flags;
-    Jbig2Image *image;
-};
-
-int jbig2_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
-int jbig2_end_of_stripe(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
-int jbig2_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
-
 typedef enum {
     JBIG2_COMPOSE_OR = 0,
     JBIG2_COMPOSE_AND = 1,
@@ -153,7 +124,6 @@ typedef enum {
 } Jbig2ComposeOp;
 
 int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int y, Jbig2ComposeOp op);
-int jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *src, int x, int y, Jbig2ComposeOp op);
 
 /* region segment info */
 

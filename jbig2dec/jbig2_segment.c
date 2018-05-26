@@ -27,6 +27,7 @@
 #include "jbig2.h"
 #include "jbig2_priv.h"
 #include "jbig2_huffman.h"
+#include "jbig2_page.h"
 #include "jbig2_symbol_dict.h"
 #include "jbig2_metadata.h"
 #include "jbig2_arith.h"

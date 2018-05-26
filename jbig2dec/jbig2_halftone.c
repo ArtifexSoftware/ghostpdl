@@ -33,6 +33,7 @@
 #include "jbig2_mmr.h"
 #include "jbig2_image.h"
 #include "jbig2_halftone.h"
+#include "jbig2_page.h"
 
 /**
  * jbig2_hd_new: create a new dictionary from a collective bitmap

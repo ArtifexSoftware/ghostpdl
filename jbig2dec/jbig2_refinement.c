@@ -36,6 +36,7 @@
 #include "jbig2_arith.h"
 #include "jbig2_generic.h"
 #include "jbig2_image.h"
+#include "jbig2_page.h"
 
 static int
 jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,

@@ -26,6 +26,7 @@
 
 #include "jbig2.h"
 #include "jbig2_priv.h"
+#include "jbig2_page.h"
 
 #ifdef OUTPUT_PBM
 #include <stdio.h>
