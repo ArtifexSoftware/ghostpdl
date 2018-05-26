@@ -466,7 +466,7 @@ jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
     /* 6.6.5 point 2. compute HSKIP */
     if (params->HENABLESKIP == 1) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unhandled option HENABLESKIP");
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unhandled option HENABLESKIP");
     }
 
     /* 6.6.5 point 3. set HBPP to ceil(log2(HNUMPATS)):
