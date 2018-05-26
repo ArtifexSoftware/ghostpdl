@@ -33,6 +33,7 @@
 
 #include "jbig2.h"
 #include "jbig2_image.h"
+#include "jbig2_image_rw.h"
 
 int
 main(int argc, char *argv[])

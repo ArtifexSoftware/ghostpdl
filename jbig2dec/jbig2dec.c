@@ -45,6 +45,7 @@
 #include "jbig2.h"
 #include "jbig2_priv.h"
 #include "jbig2_image.h"
+#include "jbig2_image_rw.h"
 
 typedef enum {
     usage, dump, render

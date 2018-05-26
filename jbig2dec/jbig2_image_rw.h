@@ -17,10 +17,21 @@
     jbig2dec
 */
 
-#ifndef _JBIG2_IMAGE_H
-#define _JBIG2_IMAGE_H
+#ifndef _JBIG2_IMAGE_RW_H
+#define _JBIG2_IMAGE_RW_H
 
-int jbig2_image_get_pixel(Jbig2Image *image, int x, int y);
-void jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value);
+/* routines for dumping the image data in various formats */
 
-#endif /* _JBIG2_IMAGE_H */
+#include <stdio.h>
+
+int jbig2_image_write_pbm_file(Jbig2Image *image, char *filename);
+int jbig2_image_write_pbm(Jbig2Image *image, FILE *out);
+Jbig2Image *jbig2_image_read_pbm_file(Jbig2Ctx *ctx, char *filename);
+Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in);
+
+#ifdef HAVE_LIBPNG
+int jbig2_image_write_png_file(Jbig2Image *image, char *filename);
+int jbig2_image_write_png(Jbig2Image *image, FILE *out);
+#endif
+
+#endif /* _JBIG2_IMAGE_RW_H */

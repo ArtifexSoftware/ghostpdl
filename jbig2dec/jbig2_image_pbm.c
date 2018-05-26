@@ -28,6 +28,7 @@
 #include "jbig2.h"
 #include "jbig2_priv.h"
 #include "jbig2_image.h"
+#include "jbig2_image_rw.h"
 
 /* take an image structure and write it to a file in pbm format */
 
