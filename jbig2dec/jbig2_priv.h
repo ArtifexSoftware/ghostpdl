@@ -141,7 +141,6 @@ int jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segme
 
 /* 7.4 */
 int jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
-int jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
 
 int jbig2_pattern_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
 int jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);

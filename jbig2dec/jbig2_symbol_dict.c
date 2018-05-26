@@ -37,6 +37,7 @@
 #include "jbig2_mmr.h"
 #include "jbig2_symbol_dict.h"
 #include "jbig2_text.h"
+#include "jbig2_refinement.h"
 
 #if defined(OUTPUT_PBM) || defined(DUMP_SYMDICT)
 #include <stdio.h>

@@ -32,6 +32,7 @@
 #include "jbig2_metadata.h"
 #include "jbig2_arith.h"
 #include "jbig2_halftone.h"
+#include "jbig2_refinement.h"
 
 Jbig2Segment *
 jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t *p_header_size)

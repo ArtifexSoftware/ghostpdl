@@ -43,20 +43,4 @@ int
 jbig2_decode_generic_region(Jbig2Ctx *ctx,
                             Jbig2Segment *segment, const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats);
 
-/* 6.3 Table 6 */
-typedef struct {
-    /* GRW */
-    /* GRH */
-    bool GRTEMPLATE;
-    Jbig2Image *reference;
-    int32_t DX, DY;
-    bool TPGRON;
-    int8_t grat[4];
-} Jbig2RefinementRegionParams;
-
-int
-jbig2_decode_refinement_region(Jbig2Ctx *ctx,
-                               Jbig2Segment *segment,
-                               const Jbig2RefinementRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats);
-
 #endif /* _JBIG2_GENERIC_H */
