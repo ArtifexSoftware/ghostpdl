@@ -34,6 +34,7 @@
 #include "jbig2_generic.h"
 #include "jbig2_page.h"
 #include "jbig2_refinement.h"
+#include "jbig2_segment.h"
 #include "jbig2_symbol_dict.h"
 #include "jbig2_text.h"
 

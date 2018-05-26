@@ -34,6 +34,7 @@
 #include "jbig2_image.h"
 #include "jbig2_halftone.h"
 #include "jbig2_page.h"
+#include "jbig2_segment.h"
 
 /**
  * jbig2_hd_new: create a new dictionary from a collective bitmap

@@ -124,19 +124,6 @@ typedef enum {
 } Jbig2ComposeOp;
 
 int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int y, Jbig2ComposeOp op);
-
-/* region segment info */
-
-typedef struct {
-    int32_t width;
-    int32_t height;
-    int32_t x;
-    int32_t y;
-    Jbig2ComposeOp op;
-    uint8_t flags;
-} Jbig2RegionSegmentInfo;
-
-void jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info, const uint8_t *segment_data);
 int jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
 
 /* 7.4 */

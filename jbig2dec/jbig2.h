@@ -108,24 +108,6 @@ int jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image);
 /* mark the current page as complete, simulating an end-of-page segment (for broken streams) */
 int jbig2_complete_page(Jbig2Ctx *ctx);
 
-/* segment header routines */
-
-struct _Jbig2Segment {
-    uint32_t number;
-    uint8_t flags;
-    uint32_t page_association;
-    size_t data_length;
-    int referred_to_segment_count;
-    uint32_t *referred_to_segments;
-    void *result;
-};
-
-Jbig2Segment *jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t *p_header_size);
-int jbig2_parse_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data);
-void jbig2_free_segment(Jbig2Ctx *ctx, Jbig2Segment *segment);
-
-Jbig2Segment *jbig2_find_segment(Jbig2Ctx *ctx, uint32_t number);
-
 #endif                          /* _JBIG2_H */
 
 #ifdef __cplusplus

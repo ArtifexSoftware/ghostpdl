@@ -40,6 +40,7 @@
 #include "jbig2_generic.h"
 #include "jbig2_mmr.h"
 #include "jbig2_page.h"
+#include "jbig2_segment.h"
 
 /* return the appropriate context size for the given template */
 int

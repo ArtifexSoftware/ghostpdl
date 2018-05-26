@@ -36,6 +36,7 @@
 #include "jbig2_priv.h"
 #include "jbig2_huffman.h"
 #include "jbig2_hufftab.h"
+#include "jbig2_segment.h"
 
 #define JBIG2_HUFFMAN_FLAGS_ISOOB 1
 #define JBIG2_HUFFMAN_FLAGS_ISLOW 2

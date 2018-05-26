@@ -38,6 +38,7 @@
 #include "jbig2_symbol_dict.h"
 #include "jbig2_text.h"
 #include "jbig2_refinement.h"
+#include "jbig2_segment.h"
 
 #if defined(OUTPUT_PBM) || defined(DUMP_SYMDICT)
 #include <stdio.h>
