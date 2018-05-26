@@ -122,17 +122,21 @@ jbig2_metadata_add(Jbig2Ctx *ctx, Jbig2Metadata *md, const char *key, const int 
 int
 jbig2_comment_ascii(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_data)
 {
-    char *s = (char *)(segment_data + 4);
-    char *end = (char *)(segment_data + segment->data_length);
+    char *s, *end;
     Jbig2Metadata *comment;
     char *key, *value;
     int code;
+    char *p;
 
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "ASCII comment data");
+
+    s = (char *)(segment_data + 4);
+    end = (char *)(segment_data + segment->data_length);
 
     comment = jbig2_metadata_new(ctx, JBIG2_ENCODING_ASCII);
     if (comment == NULL)
         return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to allocate comment structure");
+
     /* loop over the segment data pulling out the key,value pairs */
     while (s < end && *s) {
         key = s;
@@ -144,6 +148,20 @@ jbig2_comment_ascii(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment
         if (!s)
             goto too_short;
         s++;
+
+        p = key;
+        while (*p) {
+            if (*p > 127)
+                goto invalid_character;
+            p++;
+        }
+        p = value;
+        while (*p) {
+            if (*p > 127)
+                goto invalid_character;
+            p++;
+        }
+
         code = jbig2_metadata_add(ctx, comment, key, value - key, value, s - value);
         if (code < 0)
             return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to add ascii comment data");
@@ -157,7 +175,11 @@ jbig2_comment_ascii(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment
 
 too_short:
     jbig2_metadata_free(ctx, comment);
-    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unexpected end of comment segment");
+    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unexpected end of comment segment");
+
+invalid_character:
+    jbig2_metadata_free(ctx, comment);
+    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "invalid character 0x%02x found in ASCII comment", *p);
 }
 
 /* decode a UCS-16 comment segment 7.4.15.2 */
