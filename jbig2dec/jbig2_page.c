@@ -268,6 +268,7 @@ jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, int x, 
 
         if (page->image->height < new_height) {
             Jbig2Image *resized_image = NULL;
+
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "growing page buffer to %d rows " "to accomodate new stripe", new_height);
             resized_image = jbig2_image_resize(ctx, page->image, page->image->width, new_height);
             if (resized_image == NULL) {

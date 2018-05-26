@@ -619,8 +619,7 @@ jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
     }
 
     code = jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], image, region_info.x, region_info.y, region_info.op);
-    if (code < 0)
-    {
+    if (code < 0) {
         jbig2_image_release(ctx, image);
         return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable add halftone region to page");
     }

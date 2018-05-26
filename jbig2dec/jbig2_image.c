@@ -149,7 +149,7 @@ jbig2_image_compose_unopt(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x
     /* clip to the dst image boundaries */
     if (x < 0) {
         sx += -x;
-        if (sw < (uint32_t)-x)
+        if (sw < (uint32_t) -x)
             sw = 0;
         else
             sw -= -x;
@@ -157,20 +157,20 @@ jbig2_image_compose_unopt(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x
     }
     if (y < 0) {
         sy += -y;
-        if (sh < (uint32_t)-y)
+        if (sh < (uint32_t) -y)
             sh = 0;
         else
             sh -= -y;
         y = 0;
     }
-    if ((uint32_t)x + sw >= dst->width) {
-        if (dst->width >= (uint32_t)x)
+    if ((uint32_t) x + sw >= dst->width) {
+        if (dst->width >= (uint32_t) x)
             sw = dst->width - x;
         else
             sw = 0;
     }
-    if ((uint32_t)y + sh >= dst->height) {
-        if (dst->height >= (uint32_t)y)
+    if ((uint32_t) y + sh >= dst->height) {
+        if (dst->height >= (uint32_t) y)
             sh = dst->height - y;
         else
             sh = 0;
@@ -240,21 +240,21 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
     ss = src->data;
 
     if (x < 0) {
-        if (w < (uint32_t)-x)
+        if (w < (uint32_t) -x)
             w = 0;
         else
             w += x;
         x = 0;
     }
     if (y < 0) {
-        if (h < (uint32_t)-y)
+        if (h < (uint32_t) -y)
             h = 0;
         else
             h += y;
         y = 0;
     }
-    w = ((uint32_t)x + w < dst->width) ? w : ((dst->width >= (uint32_t)x) ? dst->width - (uint32_t)x : 0);
-    h = ((uint32_t)y + h < dst->height) ? h : ((dst->height >= (uint32_t)y) ? dst->height - (uint32_t)y : 0);
+    w = ((uint32_t) x + w < dst->width) ? w : ((dst->width >= (uint32_t) x) ? dst->width - (uint32_t) x : 0);
+    h = ((uint32_t) y + h < dst->height) ? h : ((dst->height >= (uint32_t) y) ? dst->height - (uint32_t) y : 0);
 #ifdef JBIG2_DEBUG
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "compositing %dx%d at (%d, %d) after clipping", w, h, x, y);
 #endif
@@ -276,15 +276,15 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
     }
 #endif
 
-    leftbyte = (uint32_t)x >> 3;
-    rightbyte = ((uint32_t)x + w - 1) >> 3;
+    leftbyte = (uint32_t) x >> 3;
+    rightbyte = ((uint32_t) x + w - 1) >> 3;
     shift = x & 7;
 
     /* general OR case */
     s = ss;
     d = dd = dst->data + y * dst->stride + leftbyte;
     if (d < dst->data || leftbyte > dst->stride || d - leftbyte + h * dst->stride > dst->data + dst->height * dst->stride ||
-        s - leftbyte + (h - 1) * src->stride + rightbyte > src->data + src->height * src->stride) {
+            s - leftbyte + (h - 1) * src->stride + rightbyte > src->data + src->height * src->stride) {
         return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "preventing heap overflow in jbig2_image_compose");
     }
     if (leftbyte == rightbyte) {

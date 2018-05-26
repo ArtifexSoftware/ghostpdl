@@ -512,9 +512,8 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
                         /* multiple symbols are handled as a text region */
                         code = jbig2_decode_text_region(ctx, segment, tparams, (const Jbig2SymbolDict * const *)refagg_dicts,
-                                                 n_refagg_dicts, image, data, size, GR_stats, as, ws);
-                        if (code < 0)
-                        {
+                                                        n_refagg_dicts, image, data, size, GR_stats, as, ws);
+                        if (code < 0) {
                             jbig2_image_release(ctx, image);
                             goto cleanup4;
                         }
@@ -740,7 +739,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             if (params->SDHUFF)
                 exrunlength = jbig2_huffman_get(hs, SBHUFFRSIZE, &code);
             else
-                code = jbig2_arith_int_decode(ctx, IAEX, as, (int32_t *)&exrunlength);
+                code = jbig2_arith_int_decode(ctx, IAEX, as, (int32_t *) &exrunlength);
             /* prevent infinite loop */
             zerolength = exrunlength > 0 ? 0 : zerolength + 1;
             if (code || (exrunlength > limit - i) || (zerolength > 4) || (exflag && (exrunlength + j > params->SDNUMEXSYMS))) {

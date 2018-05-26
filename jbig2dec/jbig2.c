@@ -293,12 +293,11 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
                 return 0;       /* need more data */
             ctx->buf_rd_ix += header_size;
 
-            if (ctx->n_segments == ctx->n_segments_max)
-            {
+            if (ctx->n_segments == ctx->n_segments_max) {
                 Jbig2Segment **segments;
+
                 segments = jbig2_renew(ctx, ctx->segments, Jbig2Segment *, (ctx->n_segments_max <<= 2));
-                if (segments == NULL)
-                {
+                if (segments == NULL) {
                     ctx->state = JBIG2_FILE_EOF;
                     return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "could not reallocate space for more segments");
                 }

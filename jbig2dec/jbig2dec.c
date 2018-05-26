@@ -411,9 +411,8 @@ main(int argc, char **argv)
         break;
     case render:
 
-        if ((argc - filearg) == 1)
+        if ((argc - filearg) == 1) {
             /* only one argument--open as a jbig2 file */
-        {
             char *fn = argv[filearg];
 
             f = fopen(fn, "rb");
@@ -421,9 +420,8 @@ main(int argc, char **argv)
                 fprintf(stderr, "error opening %s\n", fn);
                 goto cleanup;
             }
-        } else if ((argc - filearg) == 2)
+        } else if ((argc - filearg) == 2) {
             /* two arguments open as separate global and page streams */
-        {
             char *fn = argv[filearg];
             char *fn_page = argv[filearg + 1];
 
@@ -488,8 +486,7 @@ main(int argc, char **argv)
             Jbig2Image *image;
 
             /* work around broken CVision embedded streams */
-            if (f_page != NULL)
-            {
+            if (f_page != NULL) {
                 code = jbig2_complete_page(ctx);
                 if (code < 0)
                     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to complete page");
