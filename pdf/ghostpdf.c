@@ -31,7 +31,7 @@ static int pdf_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
     int i, code = 0;
     pdf_obj *o, *o1;
 
-    code = pdf_dict_get(page_dict, "Contents", &o);
+    code = pdf_dict_get(ctx, page_dict, "Contents", &o);
     if (code == gs_error_undefined)
         /* Don't throw an error if there are no contents, just render nothing.... */
         return 0;
@@ -347,7 +347,7 @@ int pdf_process_pdf_file(pdf_context *ctx, char *filename)
     }
 
     if (ctx->Trailer) {
-        code = pdf_dict_get(ctx->Trailer, "Encrypt", &o);
+        code = pdf_dict_get(ctx, ctx->Trailer, "Encrypt", &o);
         if (code < 0 && code != gs_error_undefined)
             return code;
         if (code == 0) {
@@ -408,7 +408,7 @@ read_root:
 
     for (i=0;i < ctx->num_pages;i++) {
         code = pdf_render_page(ctx, i);
-        if (code < 0)
+        if (code < 0 && ctx->pdfstoponerror)
             return code;
     }
 

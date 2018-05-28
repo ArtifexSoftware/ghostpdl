@@ -105,7 +105,7 @@ static int pdf_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
     stream_PNGP_state pps;
     stream_PDiff_state ppds;
 
-    code = pdf_dict_get(d, "Predictor", &o);
+    code = pdf_dict_get(ctx, d, "Predictor", &o);
     if (code < 0 && code != gs_error_undefined)
         return code;
 
@@ -122,9 +122,10 @@ static int pdf_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
             min_size = 2048;
             break;
         case 2:
+            return_error(gs_error_rangecheck);
             /* zpd_setup, componentwise horizontal differencing */
             min_size = s_zlibD_template.min_out_size + max_min_left;
-            code = pdf_dict_get(d, "Colors", &o);
+            code = pdf_dict_get(ctx, d, "Colors", &o);
             if (code < 0 && code != gs_error_undefined)
                 return code;
             if(code == gs_error_undefined)
@@ -138,7 +139,7 @@ static int pdf_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
             if (ppds.Colors < 1 || ppds.Colors > s_PNG_max_Colors)
                 return_error(gs_error_rangecheck);
 
-            code = pdf_dict_get(d, "BitsPerComponent", &o);
+            code = pdf_dict_get(ctx, d, "BitsPerComponent", &o);
             if (code < 0 && code != gs_error_undefined)
                 return code;
             if(code == gs_error_undefined)
@@ -152,7 +153,7 @@ static int pdf_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
             if (ppds.BitsPerComponent < 1 || ppds.BitsPerComponent > 16 || (ppds.BitsPerComponent & (ppds.BitsPerComponent - 1)) != 0)
                 return_error(gs_error_rangecheck);
 
-            code = pdf_dict_get(d, "Columns", &o);
+            code = pdf_dict_get(ctx, d, "Columns", &o);
             if (code < 0 && code != gs_error_undefined)
                 return code;
             if(code == gs_error_undefined)
@@ -174,7 +175,7 @@ static int pdf_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
         case 15:
             /* zpp_setup, PNG predictor */
             min_size = s_zlibD_template.min_out_size + max_min_left;
-            code = pdf_dict_get(d, "Colors", &o);
+            code = pdf_dict_get(ctx, d, "Colors", &o);
             if (code < 0 && code != gs_error_undefined)
                 return code;
             if(code == gs_error_undefined)
@@ -188,7 +189,7 @@ static int pdf_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
             if (pps.Colors < 1 || pps.Colors > s_PNG_max_Colors)
                 return_error(gs_error_rangecheck);
 
-            code = pdf_dict_get(d, "BitsPerComponent", &o);
+            code = pdf_dict_get(ctx, d, "BitsPerComponent", &o);
             if (code < 0 && code != gs_error_undefined)
                 return code;
             if(code == gs_error_undefined)
@@ -202,7 +203,7 @@ static int pdf_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
             if (pps.BitsPerComponent < 1 || pps.BitsPerComponent > 16 || (pps.BitsPerComponent & (pps.BitsPerComponent - 1)) != 0)
                 return_error(gs_error_rangecheck);
 
-            code = pdf_dict_get(d, "Columns", &o);
+            code = pdf_dict_get(ctx, d, "Columns", &o);
             if (code < 0 && code != gs_error_undefined)
                 return code;
             if(code == gs_error_undefined)
@@ -494,8 +495,8 @@ static int pdf_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, str
         return code;
     }
     if (n->length == 9 && memcmp((const char *)n->data, "DCTDecode", 9) == 0) {
-        code = pdf_DCT_filter(ctx, decode, source, new_stream);
-        return code;
+/*        code = pdf_DCT_filter(ctx, decode, source, new_stream);
+        return code;*/
     }
     if (n->length == 9 && memcmp((const char *)n->data, "JPXDecode", 9) == 0) {
     }
@@ -576,11 +577,11 @@ int pdf_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **n
     stream *s = source->s, *new_s = NULL;
     *new_stream = NULL;
 
-    code = pdf_dict_get(d, "Filter", &o);
+    code = pdf_dict_get(ctx, d, "Filter", &o);
     if (code < 0){
         if (code == gs_error_undefined) {
             if (inline_image == true) {
-                code = pdf_dict_get(d, "F", &o);
+                code = pdf_dict_get(ctx, d, "F", &o);
                 if (code < 0 && code != gs_error_undefined)
                     return code;
             }
@@ -603,11 +604,11 @@ int pdf_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **n
             pdf_array *filter_array = (pdf_array *)o;
             pdf_array *decodeparams_array = NULL;
 
-            code = pdf_dict_get(d, "DecodeParms", &o);
+            code = pdf_dict_get(ctx, d, "DecodeParms", &o);
             if (code < 0 && code) {
                 if (code == gs_error_undefined) {
                     if (inline_image == true) {
-                        code = pdf_dict_get(d, "DP", &o);
+                        code = pdf_dict_get(ctx, d, "DP", &o);
                         if (code < 0 && code != gs_error_undefined) {
                             pdf_countdown(o);
                             pdf_countdown(filter_array);
@@ -683,11 +684,11 @@ int pdf_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **n
         } else
             return_error(gs_error_typecheck);
     } else {
-        code = pdf_dict_get(d, "DecodeParms", &decode);
+        code = pdf_dict_get(ctx, d, "DecodeParms", &decode);
         if (code < 0 && code) {
             if (code == gs_error_undefined) {
                 if (inline_image == true) {
-                    code = pdf_dict_get(d, "DP", &decode);
+                    code = pdf_dict_get(ctx, d, "DP", &decode);
                     if (code < 0 && code != gs_error_undefined) {
                         pdf_countdown(o);
                         return code;

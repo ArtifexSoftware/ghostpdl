@@ -90,8 +90,10 @@ bool pdf_loop_detector_check_object(pdf_context *ctx, uint64_t object)
     }
 
     for (i=0;i < ctx->loop_detection_entries;i++) {
-        if (ctx->loop_detection[i] == object)
+        if (ctx->loop_detection[i] == object) {
+            emprintf1(ctx->memory, "Error! circular reference to object %"PRIu64" detected.\n", object);
             return true;
+        }
     }
     return false;
 }
@@ -120,5 +122,7 @@ int pdf_loop_detector_cleartomark(pdf_context *ctx)
     while (ctx->loop_detection[--ctx->loop_detection_entries] != 0) {
         ctx->loop_detection[ctx->loop_detection_entries] = 0;
     }
+    if (ctx->loop_detection_entries == 0)
+        pdf_free_loop_detector(ctx);
     return 0;
 }

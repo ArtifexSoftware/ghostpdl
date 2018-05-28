@@ -184,6 +184,12 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
                 ((pdf_obj_cache_entry *)cache_entry->next)->previous = cache_entry->previous;
             if ((pdf_obj_cache_entry *)cache_entry->previous != NULL)
                 ((pdf_obj_cache_entry *)cache_entry->previous)->next = cache_entry->next;
+            else {
+                /* the existing entry is the current least recently used, we need to make the 'next'
+                 * cache entry into the LRU.
+                 */
+                ctx->cache_LRU = cache_entry->next;
+            }
             cache_entry->next = NULL;
             cache_entry->previous = ctx->cache_MRU;
             ctx->cache_MRU->next = cache_entry;
@@ -349,6 +355,11 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             pdf_close_file(ctx, compressed_stream);
 
             *object = ctx->stack_top[-1];
+            /* For compressed objects we don't get a 'obj gen obj' sequence which is what sets
+             * the object number for uncompressed objects. So we need to do that here.
+             */
+            (*object)->object_num = obj;
+            (*object)->generation_num = gen;
             pdf_countup(*object);
             pdf_pop(ctx, 1);
 
@@ -1969,7 +1980,7 @@ int pdf_repair_file(pdf_context *ctx)
                                  pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
                                  pdf_obj *o = NULL;
 
-                                 code = pdf_dict_get(d, "Type", &o);
+                                 code = pdf_dict_get(ctx, d, "Type", &o);
                                  if (code < 0 && code != gs_error_undefined){
                                      pdf_clearstack(ctx);
                                      return code;
@@ -2002,7 +2013,7 @@ int pdf_repair_file(pdf_context *ctx)
                             pdf_clearstack(ctx);
                             break;;
                         }
-                        code = pdf_dict_get(d, "Type", (pdf_obj **)&n);
+                        code = pdf_dict_get(ctx, d, "Type", (pdf_obj **)&n);
                         if (code < 0) {
                             if (ctx->pdfstoponerror || code == gs_error_VMerror) {
                                 pdf_clearstack(ctx);
@@ -2082,7 +2093,7 @@ int pdf_read_Root(pdf_context *ctx)
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "%% Reading Root dictionary\n");
 
-    code = pdf_dict_get(ctx->Trailer, "Root", &o1);
+    code = pdf_dict_get(ctx, ctx->Trailer, "Root", &o1);
     if (code < 0)
         return code;
 
@@ -2150,7 +2161,7 @@ int pdf_read_Info(pdf_context *ctx)
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "%% Reading Info dictionary\n");
 
-    code = pdf_dict_get(ctx->Trailer, "Info", &o1);
+    code = pdf_dict_get(ctx, ctx->Trailer, "Info", &o1);
     if (code < 0)
         return code;
 
@@ -2207,7 +2218,7 @@ int pdf_read_Pages(pdf_context *ctx)
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "%% Reading Pages dictionary\n");
 
-    code = pdf_dict_get(ctx->Root, "Pages", &o1);
+    code = pdf_dict_get(ctx, ctx->Root, "Pages", &o1);
     if (code < 0)
         return code;
 
@@ -2336,7 +2347,7 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
             pdf_countdown(inheritable);
             return code;
         }
-        code = pdf_dict_get(d, "Resources", &object);
+        code = pdf_dict_get(ctx, d, "Resources", &object);
         if (code < 0) {
             pdf_countdown(Key);
             pdf_countdown(inheritable);
@@ -2366,7 +2377,7 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
             pdf_countdown(inheritable);
             return code;
         }
-        code = pdf_dict_get(d, "MediaBox", &object);
+        code = pdf_dict_get(ctx, d, "MediaBox", &object);
         if (code < 0) {
             pdf_countdown(Key);
             pdf_countdown(inheritable);
@@ -2396,7 +2407,7 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
             pdf_countdown(inheritable);
             return code;
         }
-        code = pdf_dict_get(d, "CropBox", &object);
+        code = pdf_dict_get(ctx, d, "CropBox", &object);
         if (code < 0) {
             pdf_countdown(Key);
             pdf_countdown(inheritable);
@@ -2426,7 +2437,7 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
             pdf_countdown(inheritable);
             return code;
         }
-        code = pdf_dict_get(d, "Rotate", &object);
+        code = pdf_dict_get(ctx, d, "Rotate", &object);
         if (code < 0) {
             pdf_countdown(Key);
             pdf_countdown(inheritable);
@@ -2582,7 +2593,7 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
                     if ((*page_offset) == page_num) {
                         pdf_indirect_ref *o = NULL;
                         pdf_dict *d = NULL;
-                        code = pdf_dict_get(child, "PageRef", (pdf_obj **)&o);
+                        code = pdf_dict_get(ctx, child, "PageRef", (pdf_obj **)&o);
                         if (code == 0) {
                             code = pdf_dereference(ctx, o->ref_object_num, o->ref_generation_num, (pdf_obj **)&d);
                             if (code == 0) {

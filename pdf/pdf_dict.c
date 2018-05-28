@@ -115,9 +115,9 @@ int pdf_dict_from_stack(pdf_context *ctx)
 /* The object returned by pdf_dict_get has its reference count incremented by 1 to
  * indicate the reference now held by the caller, in **o.
  */
-int pdf_dict_get(pdf_dict *d, const char *Key, pdf_obj **o)
+int pdf_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
 {
-    int i=0;
+    int i=0, code;
     pdf_name *t;
 
     *o = NULL;
@@ -127,7 +127,49 @@ int pdf_dict_get(pdf_dict *d, const char *Key, pdf_obj **o)
 
         if (t && t->type == PDF_NAME) {
             if (((pdf_name *)t)->length == strlen((const char *)Key) && memcmp((const char *)((pdf_name *)t)->data, (const char *)Key, ((pdf_name *)t)->length) == 0) {
+                if (d->values[i]->type == PDF_INDIRECT) {
+                    pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[i];
+
+                    code = pdf_dereference(ctx, r->ref_object_num, r->ref_generation_num, o);
+                    if (code < 0)
+                        return code;
+                    pdf_countdown(d->values[i]);
+                    d->values[i] = *o;
+                }
                 *o = d->values[i];
+                pdf_countup(*o);
+                return 0;
+            }
+        }
+    }
+    return_error(gs_error_undefined);
+}
+
+/* As per pdf_dict_get(), but doesn't replace an indirect reference in a dictionary with a
+ * new object. This is for Resources following, such as Do, where we will have to seek and
+ * read the indirect object anyway, and we need to ensure that Form XObjects (for example)
+ * don't have circular calls.
+ */
+int pdf_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
+{
+    int i=0, code;
+    pdf_name *t;
+
+    *o = NULL;
+
+    for (i=0;i< d->entries;i++) {
+        t = (pdf_name *)d->keys[i];
+
+        if (t && t->type == PDF_NAME) {
+            if (((pdf_name *)t)->length == strlen((const char *)Key) && memcmp((const char *)((pdf_name *)t)->data, (const char *)Key, ((pdf_name *)t)->length) == 0) {
+                if (d->values[i]->type == PDF_INDIRECT) {
+                    pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[i];
+
+                    code = pdf_dereference(ctx, r->ref_object_num, r->ref_generation_num, o);
+                    if (code < 0)
+                        return code;
+                } else
+                    *o = d->values[i];
                 pdf_countup(*o);
                 return 0;
             }
@@ -140,7 +182,7 @@ int pdf_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_ty
 {
     int code;
 
-    code = pdf_dict_get(d, Key, o);
+    code = pdf_dict_get(ctx, d, Key, o);
     if (code < 0)
         return code;
 
@@ -194,7 +236,7 @@ int pdf_dict_get_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *
     int code;
     pdf_num *o;
 
-    code = pdf_dict_get(d, Key, (pdf_obj **)&o);
+    code = pdf_dict_get(ctx, d, Key, (pdf_obj **)&o);
     if (code < 0)
         return code;
     if (o->type == PDF_INDIRECT) {
