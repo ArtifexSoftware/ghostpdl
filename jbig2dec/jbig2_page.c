@@ -81,7 +81,7 @@ jbig2_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_dat
                 /* grow the list */
                 pages = jbig2_renew(ctx, ctx->pages, Jbig2Page, (ctx->max_page_index <<= 2));
                 if (pages == NULL) {
-                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to reallocate space for more pages");
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to reallocate pages");
                 }
                 ctx->pages = pages;
                 for (j = index; j < ctx->max_page_index; j++) {
@@ -348,5 +348,5 @@ jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image)
     }
 
     /* no matching pages */
-    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "jbig2_release_page called on unknown page");
+    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to release unknown page");
 }

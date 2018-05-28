@@ -48,7 +48,7 @@ jbig2_arith_iaid_ctx_new(Jbig2Ctx *ctx, int SBSYMCODELEN)
     int ctx_size = 1 << SBSYMCODELEN;
 
     if (result == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate storage in jbig2_arith_iaid_ctx_new");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate IAID arithmetic coding state");
         return NULL;
     }
 
@@ -57,7 +57,7 @@ jbig2_arith_iaid_ctx_new(Jbig2Ctx *ctx, int SBSYMCODELEN)
     if (result->IAIDx == NULL)
     {
         jbig2_free(ctx->allocator, result);
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate symbol ID storage in jbig2_arith_iaid_ctx_new");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate symbol ID in IAID arithmetic coding state");
         return NULL;
     }
 

@@ -291,7 +291,7 @@ make_output_filename(const char *input_filename, const char *extension)
     int len;
 
     if (extension == NULL) {
-        fprintf(stderr, "make_output_filename called with no extension!\n");
+        fprintf(stderr, "no filename extension; cannot create output filename!\n");
         exit(1);
     }
 
@@ -321,7 +321,7 @@ make_output_filename(const char *input_filename, const char *extension)
     /* allocate enough space for the base + ext */
     output_filename = (char *)malloc(len + strlen(extension) + 1);
     if (output_filename == NULL) {
-        fprintf(stderr, "couldn't allocate memory for output_filename\n");
+        fprintf(stderr, "failed to allocate memory for output filename\n");
         exit(1);
     }
 

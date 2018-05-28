@@ -94,7 +94,7 @@ jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, int32_t segment_number, const
     n = vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
     if (n < 0 || n == sizeof(buf))
-        strncpy(buf, "jbig2_error: error in generating error string", sizeof(buf));
+        strncpy(buf, "failed to generate error string", sizeof(buf));
     ctx->error_callback(ctx->error_callback_data, buf, severity, segment_number);
     return -1;
 }
@@ -111,7 +111,7 @@ jbig2_ctx_new(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCtx *g
 
     result = (Jbig2Ctx *) jbig2_alloc(allocator, sizeof(Jbig2Ctx), 1);
     if (result == NULL) {
-        error_callback(error_callback_data, "initial context allocation failed", JBIG2_SEVERITY_FATAL, -1);
+        error_callback(error_callback_data, "failed to allocate initial context", JBIG2_SEVERITY_FATAL, -1);
         return NULL;
     }
 
@@ -129,7 +129,7 @@ jbig2_ctx_new(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCtx *g
     result->n_segments_max = 16;
     result->segments = jbig2_new(result, Jbig2Segment *, result->n_segments_max);
     if (result->segments == NULL) {
-        error_callback(error_callback_data, "initial segments allocation failed", JBIG2_SEVERITY_FATAL, -1);
+        error_callback(error_callback_data, "failed to allocate initial segments", JBIG2_SEVERITY_FATAL, -1);
         jbig2_free(allocator, result);
         return NULL;
     }
@@ -139,7 +139,7 @@ jbig2_ctx_new(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCtx *g
     result->max_page_index = 4;
     result->pages = jbig2_new(result, Jbig2Page, result->max_page_index);
     if (result->pages == NULL) {
-        error_callback(error_callback_data, "initial pages allocation failed", JBIG2_SEVERITY_FATAL, -1);
+        error_callback(error_callback_data, "failed to allocated initial pages", JBIG2_SEVERITY_FATAL, -1);
         jbig2_free(allocator, result->segments);
         jbig2_free(allocator, result);
         return NULL;
@@ -211,7 +211,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
         while (buf_size < size);
         ctx->buf = jbig2_new(ctx, byte, buf_size);
         if (ctx->buf == NULL) {
-            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate ctx->buf in jbig2_data_in");
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate buffer when reading data");
         }
         ctx->buf_size = buf_size;
         ctx->buf_rd_ix = 0;
@@ -228,7 +228,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
             while (buf_size < ctx->buf_wr_ix - ctx->buf_rd_ix + size);
             buf = jbig2_new(ctx, byte, buf_size);
             if (buf == NULL) {
-                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate buf in jbig2_data_in");
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate bigger buffer when reading data");
             }
             memcpy(buf, ctx->buf + ctx->buf_rd_ix, ctx->buf_wr_ix - ctx->buf_rd_ix);
             jbig2_free(ctx->allocator, ctx->buf);
@@ -303,7 +303,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
                 segments = jbig2_renew(ctx, ctx->segments, Jbig2Segment *, (ctx->n_segments_max <<= 2));
                 if (segments == NULL) {
                     ctx->state = JBIG2_FILE_EOF;
-                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not reallocate space for more segments");
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate space for more segments");
                 }
                 ctx->segments = segments;
             }
@@ -472,7 +472,7 @@ jbig2_word_stream_buf_new(Jbig2Ctx *ctx, const byte *data, size_t size)
     Jbig2WordStreamBuf *result = jbig2_new(ctx, Jbig2WordStreamBuf, 1);
 
     if (result == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate Jbig2WordStreamBuf in jbig2_word_stream_buf_new");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate word stream");
         return NULL;
     }
 

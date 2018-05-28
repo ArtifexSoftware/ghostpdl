@@ -136,7 +136,7 @@ jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
             }
             buf[i] = '\0';
             if (sscanf(buf, "%d", &dim[done]) != 1) {
-                fprintf(stderr, "couldn't read pbm image dimensions\n");
+                fprintf(stderr, "failed to read pbm image dimensions\n");
                 return NULL;
             }
             i = 0;
@@ -146,7 +146,7 @@ jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
     /* allocate image structure */
     image = jbig2_image_new(ctx, dim[0], dim[1]);
     if (image == NULL) {
-        fprintf(stderr, "could not allocate %dx%d image for pbm file\n", dim[0], dim[1]);
+        fprintf(stderr, "failed to allocate %dx%d image for pbm file\n", dim[0], dim[1]);
         return NULL;
     }
     /* the pbm data is byte-aligned, so we can

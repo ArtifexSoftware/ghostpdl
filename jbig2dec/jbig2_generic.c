@@ -811,7 +811,7 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "gbat[%d] = %d", i, params->gbat[i]);
     }
 
-    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "decode_generic_region: MMR=%d TPGDON=%d GBTEMPLATE=%d", params->MMR, params->TPGDON, params->GBTEMPLATE);
+    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unsupported generic region (MMR=%d, GBTEMPLATE=%d)", params->MMR, params->GBTEMPLATE);
 }
 
 /**
@@ -901,7 +901,7 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte 
 
     image = jbig2_image_new(ctx, rsi.width, height);
     if (image == NULL)
-        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to allocate generic image");
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate generic image");
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "allocated %d x %d image buffer for region decode results", rsi.width, height);
 
     if (params.MMR) {
@@ -915,24 +915,24 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte 
 
         GB_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
         if (GB_stats == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unable to allocate GB_stats in jbig2_immediate_generic_region");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate arithmetic decoder states when handling immediate generic region");
             goto cleanup;
         }
         memset(GB_stats, 0, stats_size);
 
         ws = jbig2_word_stream_buf_new(ctx, segment_data + offset, segment->data_length - offset);
         if (ws == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to allocate ws in jbig2_immediate_generic_region");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocated word stream when handling immediate generic region");
             goto cleanup;
         }
         as = jbig2_arith_new(ctx, ws);
         if (as == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to allocate as in jbig2_immediate_generic_region");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate arithmetic coding state when handling immediate generic region");
             goto cleanup;
         }
         code = jbig2_decode_generic_region(ctx, segment, &params, as, image, GB_stats);
         if (code < 0) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode generic region");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode immediate generic region");
             goto cleanup;
         }
     }

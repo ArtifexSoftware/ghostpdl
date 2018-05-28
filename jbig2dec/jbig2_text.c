@@ -101,7 +101,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "huffman coded text region");
         hs = jbig2_huffman_new(ctx, ws);
         if (hs == NULL)
-            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for text region");
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate text region");
 
         /* 7.4.3.1.7 - decode symbol ID Huffman table */
         /* this is actually part of the segment header, but it is more
@@ -127,14 +127,14 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         runcodeparams.n_lines = 35;
         runcodes = jbig2_build_huffman_table(ctx, &runcodeparams);
         if (runcodes == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "error constructing symbol id runcode table");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "error constructing symbol ID runcode table");
             goto cleanup1;
         }
 
-        /* decode the symbol id code lengths using the runlength table */
+        /* decode the symbol ID code lengths using the runlength table */
         symcodelengths = jbig2_new(ctx, Jbig2HuffmanLine, SBNUMSYMS);
         if (symcodelengths == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "memory allocation failure reading symbol ID huffman table");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate memory when reading symbol ID huffman table");
             goto cleanup1;
         }
         index = 0;
@@ -159,7 +159,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
             } else {
                 if (code == 32) {
                     if (index < 1) {
-                        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error decoding symbol id table: run length with no antecedent");
+                        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "error decoding symbol ID table: run length with no antecedent");
                         goto cleanup1;
                     }
                     len = symcodelengths[index - 1].PREFLEN;
@@ -185,7 +185,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "  read runcode%d at index %d (length %d range %d)", code, index, len, range);
             if (index + range > SBNUMSYMS) {
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-                            "runlength extends %d entries beyond the end of symbol id table", index + range - SBNUMSYMS);
+                            "runlength extends %d entries beyond the end of symbol ID table", index + range - SBNUMSYMS);
                 range = SBNUMSYMS - index;
             }
             for (r = 0; r < range; r++) {
@@ -211,7 +211,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
             goto cleanup1;
         }
 
-        /* finally, construct the symbol id huffman table itself */
+        /* finally, construct the symbol ID huffman table itself */
         SBSYMCODES = jbig2_build_huffman_table(ctx, &symcodeparams);
 
 cleanup1:
@@ -219,7 +219,7 @@ cleanup1:
         jbig2_release_huffman_table(ctx, runcodes);
 
         if (SBSYMCODES == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "could not construct Symbol ID huffman table");
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to construct symbol ID huffman table");
             jbig2_huffman_free(ctx, hs);
             return ((code != 0) ? code : -1);
         }
@@ -329,7 +329,7 @@ cleanup1:
             }
             T = STRIPT + CURT;
 
-            /* (3b.iv) / 6.4.10 - decode the symbol id */
+            /* (3b.iv) / 6.4.10 - decode the symbol ID */
             if (params->SBHUFF) {
                 ID = jbig2_huffman_get(hs, SBSYMCODES, &code);
             } else {
@@ -344,7 +344,7 @@ cleanup1:
                 goto cleanup2;
             }
             if (ID >= SBNUMSYMS) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "symbol id out of range, ignoring (%d/%d)", ID, SBNUMSYMS);
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "ignoring out of range symbol ID (%d/%d)", ID, SBNUMSYMS);
                 IB = NULL;
             } else {
                 /* (3c.v) / 6.4.11 - look up the symbol bitmap IB */
@@ -422,7 +422,7 @@ cleanup1:
                 }
                 refimage = jbig2_image_new(ctx, IBO->width + RDW, IBO->height + RDH);
                 if (refimage == NULL) {
-                    code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "couldn't allocate reference image");
+                    code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate reference image");
                     goto cleanup2;
                 }
                 jbig2_image_clear(ctx, refimage, 0x00);
@@ -533,7 +533,7 @@ cleanup1:
             /* (3c.ix) */
 #ifdef JBIG2_DEBUG
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-                        "composing glyph id %d: %dx%d @ (%d,%d) symbol %d/%d", ID, IB->width, IB->height, x, y, NINSTANCES + 1, params->SBNUMINSTANCES);
+                        "composing glyph ID %d: %dx%d @ (%d,%d) symbol %d/%d", ID, IB->width, IB->height, x, y, NINSTANCES + 1, params->SBNUMINSTANCES);
 #endif
             code = jbig2_image_compose(ctx, image, IB, x, y, params->SBCOMBOP);
             if (code < 0) {
@@ -908,7 +908,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
 
         GR_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
         if (GR_stats == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not allocate GR_stats");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not allocate arithmetic decoder state");
             goto cleanup1;
         }
         memset(GR_stats, 0, stats_size);
@@ -916,7 +916,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
 
     image = jbig2_image_new(ctx, region_info.width, region_info.height);
     if (image == NULL) {
-        code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "couldn't allocate text region image");
+        code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate text region image");
         goto cleanup2;
     }
 
@@ -924,13 +924,13 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         goto too_short;
     ws = jbig2_word_stream_buf_new(ctx, segment_data + offset, segment->data_length - offset);
     if (ws == NULL) {
-        code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "couldn't allocate ws in text region image");
+        code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate word stream when handling text region image");
         goto cleanup2;
     }
 
     as = jbig2_arith_new(ctx, ws);
     if (as == NULL) {
-        code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "couldn't allocate as in text region image");
+        code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate arithmetic coding context when handling text region image");
         goto cleanup2;
     }
 
@@ -947,7 +947,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         params.IADS = jbig2_arith_int_ctx_new(ctx);
         params.IAIT = jbig2_arith_int_ctx_new(ctx);
         if (params.IADT == NULL || params.IAFS == NULL || params.IADS == NULL || params.IAIT == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "couldn't allocate text region image data");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate text region image data");
             goto cleanup3;
         }
 
@@ -962,7 +962,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         params.IARDY = jbig2_arith_int_ctx_new(ctx);
         if (params.IAID == NULL || params.IARI == NULL ||
             params.IARDW == NULL || params.IARDH == NULL || params.IARDX == NULL || params.IARDY == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "couldn't allocate text region image data");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate text region image data");
             goto cleanup4;
         }
     }
@@ -1027,5 +1027,5 @@ cleanup1:
     return code;
 
 too_short:
-    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Segment too short");
+    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
 }

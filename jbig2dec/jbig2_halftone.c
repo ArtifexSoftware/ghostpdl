@@ -137,7 +137,7 @@ jbig2_decode_pattern_dict(Jbig2Ctx *ctx, Jbig2Segment *segment,
     /* allocate the collective image */
     image = jbig2_image_new(ctx, params->HDPW * (params->GRAYMAX + 1), params->HDPH);
     if (image == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate collective bitmap for halftone dict");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate collective bitmap for halftone dictionary");
         return NULL;
     }
 
@@ -166,20 +166,20 @@ jbig2_decode_pattern_dict(Jbig2Ctx *ctx, Jbig2Segment *segment,
             if (as != NULL) {
                 code = jbig2_decode_generic_region(ctx, segment, &rparams, as, image, GB_stats);
             } else {
-                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for as in halftone dict");
+                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate arithmetic coding state when handling halftone dictionary");
             }
 
             jbig2_free(ctx->allocator, as);
             jbig2_word_stream_buf_free(ctx, ws);
         } else {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for ws in halftone dict");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate word stream when handling halftone dictionary");
         }
     }
 
     if (code == 0)
         hd = jbig2_hd_new(ctx, params, image);
     else
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "error while decoding immediate_generic_region");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode immediate generic region");
     jbig2_image_release(ctx, image);
 
     return hd;
@@ -223,7 +223,7 @@ jbig2_pattern_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segme
 
         GB_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
         if (GB_stats == NULL)
-            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate GB_stats in pattern dictionary");
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate arithmetic coding state when handling pattern dictionary");
         memset(GB_stats, 0, stats_size);
     }
 
@@ -313,13 +313,13 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
     } else {
         ws = jbig2_word_stream_buf_new(ctx, data, size);
         if (ws == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate ws in jbig2_decode_gray_scale_image");
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate word stream when decoding gray scale image");
             goto cleanup;
         }
 
         as = jbig2_arith_new(ctx, ws);
         if (as == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate as in jbig2_decode_gray_scale_image");
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate arithmetic coding state when decoding gray scale image");
             goto cleanup;
         }
 
@@ -611,7 +611,7 @@ jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
 
         GB_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
         if (GB_stats == NULL) {
-            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate GB_stats in halftone region");
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate arithmetic decoder states in halftone region");
         }
         memset(GB_stats, 0, stats_size);
     }
@@ -619,7 +619,7 @@ jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
     image = jbig2_image_new(ctx, region_info.width, region_info.height);
     if (image == NULL) {
         jbig2_free(ctx->allocator, GB_stats);
-        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to allocate halftone image");
+        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate halftone image");
     }
 
     code = jbig2_decode_halftone_region(ctx, segment, &params, segment_data + offset, segment->data_length - offset, image, GB_stats);

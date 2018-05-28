@@ -42,15 +42,13 @@ jbig2_image_new(Jbig2Ctx *ctx, uint32_t width, uint32_t height)
     uint32_t stride;
 
     if (width == 0 || height == 0) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
-            "zero width (%d) or height (%d) in jbig2_image_new",
-            width, height);
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to create zero sized image");
         return NULL;
     }
 
     image = jbig2_new(ctx, Jbig2Image, 1);
     if (image == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "could not allocate image structure in jbig2_image_new");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate image");
         return NULL;
     }
 
@@ -58,13 +56,13 @@ jbig2_image_new(Jbig2Ctx *ctx, uint32_t width, uint32_t height)
 
     /* check for integer multiplication overflow */
     if (height > (INT32_MAX / stride)) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "integer multiplication overflow stride=%u, height=%u", stride, height);
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "integer multiplication overflow (stride=%u, height=%u)", stride, height);
         jbig2_free(ctx->allocator, image);
         return NULL;
     }
     image->data = jbig2_new(ctx, uint8_t, (size_t) height * stride);
     if (image->data == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "could not allocate image data buffer! [stride(%u)*height(%u) bytes]", stride, height);
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate image data buffer (stride=%u, height=%u)", stride, height);
         jbig2_free(ctx->allocator, image);
         return NULL;
     }
@@ -114,13 +112,13 @@ jbig2_image_resize(Jbig2Ctx *ctx, Jbig2Image *image, uint32_t width, uint32_t he
     if (width == image->width) {
         /* check for integer multiplication overflow */
         if (image->height > (INT32_MAX / image->stride)) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "integer multiplication overflow during resize stride(%u)*height(%u)", image->stride, height);
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "integer multiplication overflow during resize (stride=%u, height=%u)", image->stride, height);
             return NULL;
         }
         /* use the same stride, just change the length */
         image->data = jbig2_renew(ctx, image->data, uint8_t, (size_t) height * image->stride);
         if (image->data == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "could not resize image buffer");
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to reallocate image");
             return NULL;
         }
         if (height > image->height) {

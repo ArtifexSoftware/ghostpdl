@@ -49,7 +49,7 @@ jbig2_arith_int_ctx_new(Jbig2Ctx *ctx)
     Jbig2ArithIntCtx *result = jbig2_new(ctx, Jbig2ArithIntCtx, 1);
 
     if (result == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate Jbig2ArithIntCtx in jbig2_arith_int_ctx_new");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate arithmetic integer coding state");
         return NULL;
     } else {
         memset(result->IAx, 0, sizeof(result->IAx));

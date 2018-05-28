@@ -161,7 +161,7 @@ jbig2_arith_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
 
     result = jbig2_new(ctx, Jbig2ArithState, 1);
     if (result == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate Jbig2ArithState in jbig2_arith_new");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate arithmetic coding state");
         return NULL;
     }
 

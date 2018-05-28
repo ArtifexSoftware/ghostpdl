@@ -396,7 +396,7 @@ jbig2_region_find_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
     for (index = 0; index < nsegments; index++) {
         rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
         if (rsegment == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "could not find referred to segment %d", segment->referred_to_segments[index]);
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to find referred to segment %d", segment->referred_to_segments[index]);
             continue;
         }
         switch (rsegment->flags & 63) {
@@ -463,7 +463,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
         ref = jbig2_region_find_referred(ctx, segment);
         if (ref == NULL)
-            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "could not find reference bitmap");
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to find reference bitmap");
         if (ref->result == NULL)
             return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "reference bitmap has no decoded image");
         /* the reference bitmap is the result of a previous
@@ -495,7 +495,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
         image = jbig2_image_new(ctx, rsi.width, rsi.height);
         if (image == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to allocate refinement image");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate refinement image");
             goto cleanup;
         }
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "allocated %d x %d image buffer for region decode results", rsi.width, rsi.height);
@@ -503,20 +503,20 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         stats_size = params.GRTEMPLATE ? 1 << 10 : 1 << 13;
         GR_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
         if (GR_stats == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate GR-stats in jbig2_refinement_region");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate arithmetic decoder state for generic refinement regions");
             goto cleanup;
         }
         memset(GR_stats, 0, stats_size);
 
         ws = jbig2_word_stream_buf_new(ctx, segment_data + offset, segment->data_length - offset);
         if (ws == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate ws in jbig2_refinement_region");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate word stream when handling refinement region");
             goto cleanup;
         }
 
         as = jbig2_arith_new(ctx, ws);
         if (as == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate as in jbig2_refinement_region");
+            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate arithmetic coding state when handling refinement region");
             goto cleanup;
         }
 

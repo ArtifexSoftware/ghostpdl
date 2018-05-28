@@ -76,7 +76,7 @@ jbig2_dump_symbol_dict(Jbig2Ctx *ctx, Jbig2Segment *segment)
 
     if (dict == NULL)
         return;
-    jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "dumping symbol dict as %d individual png files", dict->n_symbols);
+    jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "dumping symbol dictionary as %d individual png files", dict->n_symbols);
     for (index = 0; index < dict->n_symbols; index++) {
         snprintf(filename, sizeof(filename), "symbol_%02d-%04d.png", segment->number, index);
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "dumping symbol %d/%d as '%s'", index, dict->n_symbols, filename);
@@ -102,14 +102,14 @@ jbig2_sd_new(Jbig2Ctx *ctx, uint32_t n_symbols)
         new_dict->glyphs = jbig2_new(ctx, Jbig2Image *, n_symbols);
         new_dict->n_symbols = n_symbols;
     } else {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "unable to allocate new empty symbol dict");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate new empty symbol dictionary");
         return NULL;
     }
 
     if (new_dict->glyphs != NULL) {
         memset(new_dict->glyphs, 0, n_symbols * sizeof(Jbig2Image *));
     } else if (new_dict->n_symbols > 0) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "unable to allocate glyphs for new empty symbol dict");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate glyphs for new empty symbol dictionary");
         jbig2_free(ctx->allocator, new_dict);
         return NULL;
     }
@@ -260,13 +260,13 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
     ws = jbig2_word_stream_buf_new(ctx, data, size);
     if (ws == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate ws in jbig2_decode_symbol_dict");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate word stream when decoding symbol dictionary");
         return NULL;
     }
 
     as = jbig2_arith_new(ctx, ws);
     if (as == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate as in jbig2_decode_symbol_dict");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate arithmetic coding state when decoding symbol dictionary");
         jbig2_word_stream_buf_free(ctx, ws);
         return NULL;
     }
@@ -279,13 +279,13 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         tparams.SBHUFFRSIZE = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_A); /* Table B.1 */
         if (hs == NULL || tparams.SBHUFFRDX == NULL ||
                 tparams.SBHUFFRDY == NULL || tparams.SBHUFFRSIZE == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for symbol bitmap");
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate for symbol bitmap");
             goto cleanup;
         }
         if (!params->SDREFAGG) {
             SDNEWSYMWIDTHS = jbig2_new(ctx, uint32_t, params->SDNUMNEWSYMS);
             if (SDNEWSYMWIDTHS == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not allocate storage for (%u) symbol widths", params->SDNUMNEWSYMS);
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate symbol widths (%u)", params->SDNUMNEWSYMS);
                 goto cleanup;
             }
         } else {
@@ -307,7 +307,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         IAEX = jbig2_arith_int_ctx_new(ctx);
         IAAI = jbig2_arith_int_ctx_new(ctx);
         if (IADH == NULL || IADW == NULL || IAEX == NULL || IAAI == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate storage for symbol bitmap");
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate symbol bitmap");
             goto cleanup;
         }
         for (SBSYMCODELEN = 0; ((uint64_t) 1 << SBSYMCODELEN) < ((uint64_t) params->SDNUMINSYMS + params->SDNUMNEWSYMS); SBSYMCODELEN++);
@@ -316,7 +316,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         tparams.IARDY = jbig2_arith_int_ctx_new(ctx);
         if (tparams.IAID == NULL || tparams.IARDX == NULL ||
                 tparams.IARDY == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "out of memory creating text region arith decoder entries");
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate text region arithmetic decoder contexts");
             goto cleanup;
         }
         if (params->SDREFAGG) {
@@ -333,8 +333,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                     tparams.IADS == NULL || tparams.IAIT == NULL ||
                     tparams.IARI == NULL || tparams.IARDW == NULL ||
                     tparams.IARDH == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "out of memory creating text region arith decoder entries");
-                goto cleanup;
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate text region arith decoder contexts");
             }
         }
     }
@@ -350,7 +349,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
     SDNEWSYMS = jbig2_sd_new(ctx, params->SDNUMNEWSYMS);
     if (SDNEWSYMS == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "could not allocate storage for (%u) new symbols", params->SDNUMNEWSYMS);
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate new symbols (%u)", params->SDNUMNEWSYMS);
         goto cleanup;
     }
 
@@ -456,7 +455,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
                     image = jbig2_image_new(ctx, SYMWIDTH, HCHEIGHT);
                     if (image == NULL) {
-                        code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate image in jbig2_decode_symbol_dict");
+                        code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate image");
                         goto cleanup;
                     }
 
@@ -497,7 +496,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
                         image = jbig2_image_new(ctx, SYMWIDTH, HCHEIGHT);
                         if (image == NULL) {
-                            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "out of memory creating symbol image");
+                            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate symbol image");
                             goto cleanup;
                         }
 
@@ -553,11 +552,11 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                         }
 
                         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-                                    "symbol is a refinement of id %d with the refinement applied at (%d,%d)", ID, RDX, RDY);
+                                    "symbol is a refinement of ID %d with the refinement applied at (%d,%d)", ID, RDX, RDY);
 
                         image = jbig2_image_new(ctx, SYMWIDTH, HCHEIGHT);
                         if (image == NULL) {
-                            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "out of memory creating symbol image");
+                            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate symbol image");
                             goto cleanup;
                         }
 
@@ -653,7 +652,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
             image = jbig2_image_new(ctx, TOTWIDTH, HCHEIGHT);
             if (image == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "could not allocate collective bitmap image");
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate collective bitmap image");
                 goto cleanup;
             }
 
@@ -1032,7 +1031,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
         GB_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
         if (GB_stats == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate GB_stats in jbig2_symbol_dictionary");
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate arithmetic decoder states for generic regions");
             goto cleanup;
         }
         memset(GB_stats, 0, stats_size);
@@ -1040,7 +1039,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         stats_size = params.SDRTEMPLATE ? 1 << 10 : 1 << 13;
         GR_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
         if (GR_stats == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate GR_stats in jbig2_symbol_dictionary");
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate arithmetic decoder states for generic refinement regions");
             jbig2_free(ctx->allocator, GB_stats);
             goto cleanup;
         }

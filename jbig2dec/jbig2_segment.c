@@ -61,7 +61,7 @@ jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t 
 
     result = jbig2_new(ctx, Jbig2Segment, 1);
     if (result == NULL) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate segment in jbig2_parse_segment_header");
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate segment");
         return NULL;
     }
 
@@ -87,7 +87,7 @@ jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t 
     referred_to_segment_size = result->number <= 256 ? 1 : result->number <= 65536 ? 2 : 4;     /* 7.2.5 */
     pa_size = result->flags & 0x40 ? 4 : 1;     /* 7.2.6 */
     if (offset + referred_to_segment_count * referred_to_segment_size + pa_size + 4 > buf_size) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, result->number, "jbig2_parse_segment_header() called with insufficient data", -1);
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, result->number, "insufficient data to parse segment header", -1);
         jbig2_free(ctx->allocator, result);
         return NULL;
     }
@@ -98,7 +98,7 @@ jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t 
 
         referred_to_segments = jbig2_new(ctx, uint32_t, referred_to_segment_count * referred_to_segment_size);
         if (referred_to_segments == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, result->number, "could not allocate referred_to_segments in jbig2_parse_segment_header");
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, result->number, "failed to allocate referred to segments");
             return NULL;
         }
 
