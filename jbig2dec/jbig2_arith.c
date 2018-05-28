@@ -320,12 +320,6 @@ jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx, int *code)
     }
 }
 
-bool
-jbig2_arith_has_reached_marker(Jbig2ArithState *as)
-{
-    return as->next_word_bytes == 2 && (as->next_word >> 16) > 0xFF8F;
-}
-
 #ifdef TEST
 
 static const byte test_stream[] = {
