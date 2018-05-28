@@ -44,13 +44,13 @@ int codepoint_to_utf8(char *cstr, int rune)
                         cstr[idx++] = 0xf8 | (rune>>24);
                     } else {
                         cstr[idx++] = 0xfc | (rune>>30);
-                        cstr[idx++] = 0xc0 | (rune>>24);
+                        cstr[idx++] = 0x80 | ((rune>>24) & 0x3f);
                     }
-                    cstr[idx++] = 0xc0 | (rune>>18);
+                    cstr[idx++] = 0x80 | ((rune>>18) & 0x3f);
                 }
-                cstr[idx++] = 0xc0 | (rune>>12);
+                cstr[idx++] = 0x80 | ((rune>>12) & 0x3f);
             }
-            cstr[idx++] = 0xc0 | (rune>>6);
+            cstr[idx++] = 0x80 | ((rune>>6) & 0x3f);
         }
         cstr[idx++] = 0x80 | (rune & 0x3f);
     }

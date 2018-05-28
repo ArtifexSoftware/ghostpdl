@@ -59,10 +59,10 @@ int utf8_to_wchar(wchar_t *out, const char *in)
                 len++;
             } else if ((i & 0xE0) == 0xC0) {
                 in++;
-                len += 2;
+                len++;
             } else if ((i & 0xF0) == 0xE0) {
                 in+=2;
-                len += 3;
+                len++;
             } else {
                 return -1;
             }
