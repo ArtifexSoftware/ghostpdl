@@ -402,14 +402,42 @@ static int pdf_CCITTFax_filter(pdf_context *ctx, pdf_dict *d, stream *source, st
         code = pdf_dict_get_type(ctx, d, "EndOfLine", PDF_BOOL, &o);
         if (code < 0 && code != gs_error_undefined)
             return code;
-        if (code == 0)
-            ss.EndOfLine = ((pdf_bool *)o)->value;
+        if (code == 0) {
+            if (((pdf_bool *)o)->value == true)
+                ss.EndOfLine = 1;
+            else
+                ss.EndOfLine = 0;
+        }
 
         code = pdf_dict_get_type(ctx, d, "EncodedByteAlign", PDF_BOOL, &o);
         if (code < 0 && code != gs_error_undefined)
             return code;
-        if (code == 0)
-            ss.EncodedByteAlign = ((pdf_bool *)o)->value;
+        if (code == 0) {
+            if (((pdf_bool *)o)->value == true)
+                ss.EncodedByteAlign = 1;
+            else
+                ss.EncodedByteAlign = 0;
+        }
+
+        code = pdf_dict_get_type(ctx, d, "EndOfBlock", PDF_BOOL, &o);
+        if (code < 0 && code != gs_error_undefined)
+            return code;
+        if (code == 0) {
+            if (((pdf_bool *)o)->value == true)
+                ss.EndOfBlock = 1;
+            else
+                ss.EndOfBlock = 0;
+        }
+
+        code = pdf_dict_get_type(ctx, d, "BlackIs1", PDF_BOOL, &o);
+        if (code < 0 && code != gs_error_undefined)
+            return code;
+        if (code == 0) {
+            if (((pdf_bool *)o)->value == true)
+                ss.BlackIs1 = 1;
+            else
+                ss.BlackIs1 = 0;
+        }
 
         code = pdf_dict_get_int(ctx, d, "Columns", &i);
         if (code < 0 && code != gs_error_undefined)
@@ -422,18 +450,6 @@ static int pdf_CCITTFax_filter(pdf_context *ctx, pdf_dict *d, stream *source, st
             return code;
         if (code == 0)
             ss.Rows = i;
-
-        code = pdf_dict_get_int(ctx, d, "EndOfBlock", &i);
-        if (code < 0 && code != gs_error_undefined)
-            return code;
-        if (code == 0)
-            ss.EndOfBlock = i;
-
-        code = pdf_dict_get_int(ctx, d, "BlackIs1", &i);
-        if (code < 0 && code != gs_error_undefined)
-            return code;
-        if (code == 0)
-            ss.BlackIs1 = i;
 
         code = pdf_dict_get_int(ctx, d, "DamagedRowsBeforeError", &i);
         if (code < 0 && code != gs_error_undefined)
