@@ -31,7 +31,7 @@
 #include "sa85d.h"      /* ASCII85Decode */
 #include "scfx.h"       /* CCITTFaxDecode */
 #include "srlx.h"       /* RunLengthDecode */
-#include "jpeglib.h"
+#include "jpeglib_.h"
 #include "sdct.h"       /* DCTDecode */
 #include "sjpeg.h"
 
