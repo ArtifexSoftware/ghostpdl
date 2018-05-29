@@ -256,42 +256,6 @@ int pdf_EI(pdf_context *ctx)
     return 0;
 }
 
-int pdf_find_XObject_resource(pdf_context *ctx, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_obj **o)
-{
-    char Key[256];
-    pdf_dict *Resources, *XObjects;
-    int code;
-
-    *o = NULL;
-    memcpy(Key, name->data, name->length);
-    Key[name->length] = 0x00;
-
-    code = pdf_dict_get(ctx, stream_dict, "Resources", (pdf_obj **)&Resources);
-    if (code == 0) {
-        code = pdf_dict_get(ctx, Resources, "XObject", (pdf_obj **)&XObjects);
-        if (code == 0) {
-            pdf_countdown(Resources);
-            code = pdf_dict_get_no_store_R(ctx, XObjects, Key, o);
-            pdf_countdown(XObjects);
-            if (code != gs_error_undefined)
-                return code;
-        }
-    }
-    code = pdf_dict_get(ctx, page_dict, "Resources", (pdf_obj **)&Resources);
-    if (code < 0)
-        return code;
-
-    code = pdf_dict_get(ctx, Resources, "XObject", (pdf_obj **)&XObjects);
-    pdf_countdown(Resources);
-    if (code < 0)
-        return code;
-
-    code = pdf_dict_get_no_store_R(ctx, XObjects, Key, o);
-    pdf_countdown(XObjects);
-    return code;
-    return 0;
-}
-
 int pdf_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code = 0;
@@ -321,7 +285,7 @@ int pdf_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         return 0;
     }
 
-    code = pdf_find_XObject_resource(ctx, n, stream_dict, page_dict, &o);
+    code = pdf_find_resource(ctx, n, "XObject", stream_dict, page_dict, &o);
     if (code < 0) {
         pdf_pop(ctx, 1);
         pdf_loop_detector_cleartomark(ctx);

@@ -3058,3 +3058,37 @@ int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_di
     return 0;
 }
 
+int pdf_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_obj **o)
+{
+    char Key[256];
+    pdf_dict *Resources, *TypedResources;
+    int code;
+
+    *o = NULL;
+    memcpy(Key, name->data, name->length);
+    Key[name->length] = 0x00;
+
+    code = pdf_dict_get(ctx, stream_dict, "Resources", (pdf_obj **)&Resources);
+    if (code == 0) {
+        code = pdf_dict_get(ctx, Resources, "XObject", (pdf_obj **)&TypedResources);
+        if (code == 0) {
+            pdf_countdown(Resources);
+            code = pdf_dict_get_no_store_R(ctx, TypedResources, Key, o);
+            pdf_countdown(TypedResources);
+            if (code != gs_error_undefined)
+                return code;
+        }
+    }
+    code = pdf_dict_get(ctx, page_dict, "Resources", (pdf_obj **)&Resources);
+    if (code < 0)
+        return code;
+
+    code = pdf_dict_get(ctx, Resources, "XObject", (pdf_obj **)&TypedResources);
+    pdf_countdown(Resources);
+    if (code < 0)
+        return code;
+
+    code = pdf_dict_get_no_store_R(ctx, TypedResources, Key, o);
+    pdf_countdown(TypedResources);
+    return code;
+}
