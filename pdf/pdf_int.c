@@ -3071,7 +3071,7 @@ int pdf_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pdf
 
     code = pdf_dict_get(ctx, stream_dict, "Resources", (pdf_obj **)&Resources);
     if (code == 0) {
-        code = pdf_dict_get(ctx, Resources, "XObject", (pdf_obj **)&TypedResources);
+        code = pdf_dict_get(ctx, Resources, Type, (pdf_obj **)&TypedResources);
         if (code == 0) {
             pdf_countdown(Resources);
             code = pdf_dict_get_no_store_R(ctx, TypedResources, Key, o);
@@ -3084,7 +3084,7 @@ int pdf_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pdf
     if (code < 0)
         return code;
 
-    code = pdf_dict_get(ctx, Resources, "XObject", (pdf_obj **)&TypedResources);
+    code = pdf_dict_get(ctx, Resources, Type, (pdf_obj **)&TypedResources);
     pdf_countdown(Resources);
     if (code < 0)
         return code;
