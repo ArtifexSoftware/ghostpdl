@@ -1470,6 +1470,7 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
             break;
         case '}':
             pdf_clear_to_mark(ctx);
+            return pdf_read_token(ctx, s);
             break;
         case '%':
             pdf_skip_comment(ctx, s);
