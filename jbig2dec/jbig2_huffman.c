@@ -57,15 +57,8 @@ struct _Jbig2HuffmanState {
     Jbig2Ctx *ctx;
 };
 
-static int
-huff_get_next_word(Jbig2HuffmanState *hs, uint32_t offset, uint32_t *word)
-{
-    Jbig2WordStream *ws = hs->ws;
-
-    if (word == NULL)
-        return -1;
-    return ws->get_next_word(ws, offset, word);
-}
+#define huff_get_next_word(hs, offset, word) \
+    (hs)->ws->get_next_word((hs)->ws, (offset), (word))
 
 /** Allocate and initialize a new huffman coding state
  *  the returned pointer can simply be freed; this does
