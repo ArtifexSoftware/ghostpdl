@@ -1929,6 +1929,7 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
                 gdata = pte->text.data.glyphs + (pte->index++ * sizeof (gs_glyph));
             } else {
                 gdata = &pte->text.data.d_glyph;
+                pte->index++;
             }
         }
         glyph = (gdata == NULL ? pte->orig_font->procs.encode_char(pte->orig_font, ch, GLYPH_SPACE_NAME)
