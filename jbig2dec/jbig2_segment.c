@@ -59,7 +59,7 @@ jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t 
     result = jbig2_new(ctx, Jbig2Segment, 1);
     if (result == NULL) {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate segment in jbig2_parse_segment_header");
-        return result;
+        return NULL;
     }
 
     /* 7.2.2 */

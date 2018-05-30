@@ -49,7 +49,7 @@ jbig2_arith_iaid_ctx_new(Jbig2Ctx *ctx, int SBSYMCODELEN)
 
     if (result == NULL) {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate storage in jbig2_arith_iaid_ctx_new");
-        return result;
+        return NULL;
     }
 
     result->SBSYMCODELEN = SBSYMCODELEN;

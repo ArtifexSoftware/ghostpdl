@@ -92,6 +92,7 @@ jbig2_huffman_new(Jbig2Ctx *ctx, Jbig2WordStream *ws)
         }
     } else {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate new huffman coding state");
+        return NULL;
     }
 
     return result;

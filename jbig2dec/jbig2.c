@@ -110,7 +110,7 @@ jbig2_ctx_new(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCtx *g
     result = (Jbig2Ctx *) jbig2_alloc(allocator, sizeof(Jbig2Ctx), 1);
     if (result == NULL) {
         error_callback(error_callback_data, "initial context allocation failed", JBIG2_SEVERITY_FATAL, -1);
-        return result;
+        return NULL;
     }
 
     result->allocator = allocator;
@@ -129,7 +129,7 @@ jbig2_ctx_new(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCtx *g
     if (result->segments == NULL) {
         error_callback(error_callback_data, "initial segments allocation failed", JBIG2_SEVERITY_FATAL, -1);
         jbig2_free(allocator, result);
-        return result;
+        return NULL;
     }
     result->segment_index = 0;
 
@@ -140,7 +140,7 @@ jbig2_ctx_new(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCtx *g
         error_callback(error_callback_data, "initial pages allocation failed", JBIG2_SEVERITY_FATAL, -1);
         jbig2_free(allocator, result->segments);
         jbig2_free(allocator, result);
-        return result;
+        return NULL;
     }
     {
         int index;

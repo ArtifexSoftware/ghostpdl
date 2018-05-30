@@ -43,6 +43,7 @@ jbig2_arith_int_ctx_new(Jbig2Ctx *ctx)
 
     if (result == NULL) {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate Jbig2ArithIntCtx in jbig2_arith_int_ctx_new");
+        return NULL;
     } else {
         memset(result->IAx, 0, sizeof(result->IAx));
     }
