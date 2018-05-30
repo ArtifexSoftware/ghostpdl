@@ -43,9 +43,9 @@ Jbig2PatternDict *
 jbig2_hd_new(Jbig2Ctx *ctx, const Jbig2PatternDictParams *params, Jbig2Image *image)
 {
     Jbig2PatternDict *new;
-    const int N = params->GRAYMAX + 1;
-    const int HPW = params->HDPW;
-    const int HPH = params->HDPH;
+    const uint32_t N = params->GRAYMAX + 1;
+    const uint32_t HPW = params->HDPW;
+    const uint32_t HPH = params->HDPH;
     int code;
     int i;
     int j;

@@ -57,10 +57,10 @@ jbig2_decode_generic_template0(Jbig2Ctx *ctx,
                                const Jbig2GenericRegionParams *params, Jbig2ArithState *as,
                                Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const int GBW = image->width;
-    const int GBH = image->height;
-    const int rowstride = image->stride;
-    int x, y;
+    const uint32_t GBW = image->width;
+    const uint32_t GBH = image->height;
+    const uint32_t rowstride = image->stride;
+    uint32_t x, y;
     byte *line2 = NULL;
     byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
@@ -126,10 +126,10 @@ jbig2_decode_generic_template0_unopt(Jbig2Ctx *ctx,
                                      Jbig2Segment *segment,
                                      const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const int GBW = image->width;
-    const int GBH = image->height;
+    const uint32_t GBW = image->width;
+    const uint32_t GBH = image->height;
     uint32_t CONTEXT;
-    int x, y;
+    uint32_t x, y;
     bool bit;
     int code = 0;
 
@@ -175,10 +175,10 @@ jbig2_decode_generic_template1_unopt(Jbig2Ctx *ctx,
                                      Jbig2Segment *segment,
                                      const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const int GBW = image->width;
-    const int GBH = image->height;
+    const uint32_t GBW = image->width;
+    const uint32_t GBH = image->height;
     uint32_t CONTEXT;
-    int x, y;
+    uint32_t x, y;
     bool bit;
     int code = 0;
 
@@ -218,10 +218,10 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
                                Jbig2Segment *segment,
                                const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const int GBW = image->width;
-    const int GBH = image->height;
-    const int rowstride = image->stride;
-    int x, y;
+    const uint32_t GBW = image->width;
+    const uint32_t GBH = image->height;
+    const uint32_t rowstride = image->stride;
+    uint32_t x, y;
     byte *line2 = NULL;
     byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
@@ -284,10 +284,10 @@ jbig2_decode_generic_template2_unopt(Jbig2Ctx *ctx,
                                Jbig2Segment *segment,
                                const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const int GBW = image->width;
-    const int GBH = image->height;
+    const uint32_t GBW = image->width;
+    const uint32_t GBH = image->height;
     uint32_t CONTEXT;
-    int x, y;
+    uint32_t x, y;
     bool bit;
     int code = 0;
 
@@ -325,10 +325,10 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
                                 Jbig2Segment *segment,
                                 const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const int GBW = image->width;
-    const int GBH = image->height;
-    const int rowstride = image->stride;
-    int x, y;
+    const uint32_t GBW = image->width;
+    const uint32_t GBH = image->height;
+    const uint32_t rowstride = image->stride;
+    uint32_t x, y;
     byte *line2 = NULL;
     byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
@@ -391,12 +391,12 @@ jbig2_decode_generic_template3(Jbig2Ctx *ctx,
                                Jbig2Segment *segment,
                                const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const int GBW = image->width;
-    const int GBH = image->height;
-    const int rowstride = image->stride;
+    const uint32_t GBW = image->width;
+    const uint32_t GBH = image->height;
+    const uint32_t rowstride = image->stride;
     byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
-    int x, y;
+    uint32_t x, y;
     int code;
 
 #ifdef OUTPUT_PBM
@@ -450,10 +450,10 @@ jbig2_decode_generic_template3_unopt(Jbig2Ctx *ctx,
                                      Jbig2Segment *segment,
                                      const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const int GBW = image->width;
-    const int GBH = image->height;
+    const uint32_t GBW = image->width;
+    const uint32_t GBH = image->height;
     uint32_t CONTEXT;
-    int x, y;
+    uint32_t x, y;
     bool bit;
     int code = 0;
 
@@ -504,10 +504,10 @@ jbig2_decode_generic_template0_TPGDON(Jbig2Ctx *ctx,
                                       Jbig2Segment *segment,
                                       const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const int GBW = image->width;
-    const int GBH = image->height;
+    const uint32_t GBW = image->width;
+    const uint32_t GBH = image->height;
     uint32_t CONTEXT;
-    int x, y;
+    uint32_t x, y;
     bool bit;
     int LTP = 0;
     int code = 0;
@@ -559,10 +559,10 @@ jbig2_decode_generic_template1_TPGDON(Jbig2Ctx *ctx,
                                       Jbig2Segment *segment,
                                       const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const int GBW = image->width;
-    const int GBH = image->height;
+    const uint32_t GBW = image->width;
+    const uint32_t GBH = image->height;
     uint32_t CONTEXT;
-    int x, y;
+    uint32_t x, y;
     bool bit;
     int LTP = 0;
     int code = 0;
@@ -608,10 +608,10 @@ jbig2_decode_generic_template2_TPGDON(Jbig2Ctx *ctx,
                                       Jbig2Segment *segment,
                                       const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const int GBW = image->width;
-    const int GBH = image->height;
+    const uint32_t GBW = image->width;
+    const uint32_t GBH = image->height;
     uint32_t CONTEXT;
-    int x, y;
+    uint32_t x, y;
     bool bit;
     int LTP = 0;
     int code = 0;
@@ -654,10 +654,10 @@ jbig2_decode_generic_template3_TPGDON(Jbig2Ctx *ctx,
                                       Jbig2Segment *segment,
                                       const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const int GBW = image->width;
-    const int GBH = image->height;
+    const uint32_t GBW = image->width;
+    const uint32_t GBH = image->height;
     uint32_t CONTEXT;
-    int x, y;
+    uint32_t x, y;
     bool bit;
     int LTP = 0;
     int code = 0;
