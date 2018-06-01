@@ -194,8 +194,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             cache_entry->previous = ctx->cache_MRU;
             ctx->cache_MRU->next = cache_entry;
             ctx->cache_MRU = cache_entry;
-        } else
-            return_error(gs_error_unknownerror);
+        }
     } else {
         saved_stream_offset = (gs_offset_t)pdf_tell(ctx);
 
