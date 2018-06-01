@@ -301,7 +301,7 @@ jbig2_huffman_get(Jbig2HuffmanState *hs, const Jbig2HuffmanTable *table, bool *o
         if (flags == (byte) -1 && PREFLEN == (byte) -1 && entry->u.RANGELOW == -1) {
             if (oob)
                 *oob = -1;
-            return -1;
+            return jbig2_error(hs->ctx, JBIG2_SEVERITY_FATAL, -1, "encountered unpopulated huffman table entry");
         }
 
         next_word = hs->next_word;
