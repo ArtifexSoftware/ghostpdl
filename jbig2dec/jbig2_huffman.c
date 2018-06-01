@@ -694,6 +694,8 @@ jbig2_find_table(Jbig2Ctx *ctx, Jbig2Segment *segment, int index)
             ++table_index;
         }
     }
+
+    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "huffman table not found (%d)", index);
     return NULL;
 }
 

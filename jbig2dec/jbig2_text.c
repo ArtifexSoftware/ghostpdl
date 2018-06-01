@@ -656,7 +656,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         case 3:                /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom FS huffman table not found (%d)", table_index);
+                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom FS huffman table not found (%d)", table_index);
                 goto cleanup1;
             }
             params.SBHUFFFS = jbig2_build_huffman_table(ctx, huffman_params);
@@ -686,7 +686,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         case 3:                /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom DS huffman table not found (%d)", table_index);
+                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom DS huffman table not found (%d)", table_index);
                 goto cleanup1;
             }
             params.SBHUFFDS = jbig2_build_huffman_table(ctx, huffman_params);
@@ -711,7 +711,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         case 3:                /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom DT huffman table not found (%d)", table_index);
+                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom DT huffman table not found (%d)", table_index);
                 goto cleanup1;
             }
             params.SBHUFFDT = jbig2_build_huffman_table(ctx, huffman_params);
@@ -733,7 +733,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         case 3:                /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom RDW huffman table not found (%d)", table_index);
+                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom RDW huffman table not found (%d)", table_index);
                 goto cleanup1;
             }
             params.SBHUFFRDW = jbig2_build_huffman_table(ctx, huffman_params);
@@ -760,7 +760,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         case 3:                /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom RDH huffman table not found (%d)", table_index);
+                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom RDH huffman table not found (%d)", table_index);
                 goto cleanup1;
             }
             params.SBHUFFRDH = jbig2_build_huffman_table(ctx, huffman_params);
@@ -787,7 +787,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         case 3:                /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom RDX huffman table not found (%d)", table_index);
+                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom RDX huffman table not found (%d)", table_index);
                 goto cleanup1;
             }
             params.SBHUFFRDX = jbig2_build_huffman_table(ctx, huffman_params);
@@ -814,7 +814,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         case 3:                /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom RDY huffman table not found (%d)", table_index);
+                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom RDY huffman table not found (%d)", table_index);
                 goto cleanup1;
             }
             params.SBHUFFRDY = jbig2_build_huffman_table(ctx, huffman_params);
@@ -838,7 +838,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
         case 1:                /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom RSIZE huffman table not found (%d)", table_index);
+                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom RSIZE huffman table not found (%d)", table_index);
                 goto cleanup1;
             }
             params.SBHUFFRSIZE = jbig2_build_huffman_table(ctx, huffman_params);

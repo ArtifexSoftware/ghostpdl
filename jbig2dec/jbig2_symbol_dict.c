@@ -876,7 +876,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         case 3:                /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom DH huffman table not found (%d)", table_index);
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom DH huffman table not found (%d)", table_index);
             }
             params.SDHUFFDH = jbig2_build_huffman_table(ctx, huffman_params);
             ++table_index;
@@ -900,8 +900,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         case 3:                /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom DW huffman table not found (%d)", table_index);
-                break;
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom DW huffman table not found (%d)", table_index);
             }
             params.SDHUFFDW = jbig2_build_huffman_table(ctx, huffman_params);
             ++table_index;
@@ -920,11 +919,10 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
             /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom BMSIZE huffman table not found (%d)", table_index);
-            } else {
-                params.SDHUFFBMSIZE = jbig2_build_huffman_table(ctx, huffman_params);
-                ++table_index;
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom BMSIZE huffman table not found (%d)", table_index);
             }
+            params.SDHUFFBMSIZE = jbig2_build_huffman_table(ctx, huffman_params);
+            ++table_index;
         } else {
             /* Table B.1 */
             params.SDHUFFBMSIZE = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_A);
@@ -938,11 +936,10 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
             /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "custom REFAGG huffman table not found (%d)", table_index);
-            } else {
-                params.SDHUFFAGGINST = jbig2_build_huffman_table(ctx, huffman_params);
-                ++table_index;
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom REFAGG huffman table not found (%d)", table_index);
             }
+            params.SDHUFFAGGINST = jbig2_build_huffman_table(ctx, huffman_params);
+            ++table_index;
         } else {
             /* Table B.1 */
             params.SDHUFFAGGINST = jbig2_build_huffman_table(ctx, &jbig2_huffman_params_A);
