@@ -206,13 +206,13 @@ jbig2_sd_cat(Jbig2Ctx *ctx, uint32_t n_dicts, Jbig2SymbolDict **dicts)
     for (i = 0; i < n_dicts; i++)
         symbols += dicts[i]->n_symbols;
 
-    /* fill a new array with cloned glyph pointers */
+    /* fill a new array with new references to glyph pointers */
     new_dict = jbig2_sd_new(ctx, symbols);
     if (new_dict != NULL) {
         k = 0;
         for (i = 0; i < n_dicts; i++)
             for (j = 0; j < dicts[i]->n_symbols; j++)
-                new_dict->glyphs[k++] = jbig2_image_clone(ctx, dicts[i]->glyphs[j]);
+                new_dict->glyphs[k++] = jbig2_image_reference(ctx, dicts[i]->glyphs[j]);
     } else {
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to allocate new symbol dictionary");
     }
@@ -461,7 +461,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                                 goto cleanup4;
                             }
                             for (i = 0; i < params->SDNUMINSYMS; i++) {
-                                refagg_dicts[0]->glyphs[i] = jbig2_image_clone(ctx, params->SDINSYMS->glyphs[i]);
+                                refagg_dicts[0]->glyphs[i] = jbig2_image_reference(ctx, params->SDINSYMS->glyphs[i]);
                             }
 
                             tparams = jbig2_new(ctx, Jbig2TextRegionParams, 1);
@@ -535,7 +535,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                         }
 
                         SDNEWSYMS->glyphs[NSYMSDECODED] = image;
-                        refagg_dicts[0]->glyphs[params->SDNUMINSYMS + NSYMSDECODED] = jbig2_image_clone(ctx, SDNEWSYMS->glyphs[NSYMSDECODED]);
+                        refagg_dicts[0]->glyphs[params->SDNUMINSYMS + NSYMSDECODED] = jbig2_image_reference(ctx, SDNEWSYMS->glyphs[NSYMSDECODED]);
                     } else {
                         /* 6.5.8.2.2 */
                         /* bool SBHUFF = params->SDHUFF; */
@@ -784,7 +784,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             for (k = 0; k < exrunlength; k++) {
                 if (exflag) {
                     SDEXSYMS->glyphs[j++] = (i < params->SDNUMINSYMS) ?
-                                            jbig2_image_clone(ctx, params->SDINSYMS->glyphs[i]) : jbig2_image_clone(ctx, SDNEWSYMS->glyphs[i - params->SDNUMINSYMS]);
+                                            jbig2_image_reference(ctx, params->SDINSYMS->glyphs[i]) : jbig2_image_reference(ctx, SDNEWSYMS->glyphs[i - params->SDNUMINSYMS]);
                 }
                 i++;
             }

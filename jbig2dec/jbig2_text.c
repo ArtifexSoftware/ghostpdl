@@ -316,7 +316,7 @@ cleanup1:
                 index = 0;
                 while (id >= dicts[index]->n_symbols)
                     id -= dicts[index++]->n_symbols;
-                IB = jbig2_image_clone(ctx, dicts[index]->glyphs[id]);
+                IB = jbig2_image_reference(ctx, dicts[index]->glyphs[id]);
                 /* SumatraPDF: fail on missing glyphs */
                 if (!IB) {
                     code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "missing glyph %d/%d", index, id);
@@ -905,7 +905,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
 
     if ((segment->flags & 63) == 4) {
         /* we have an intermediate region here. save it for later */
-        segment->result = jbig2_image_clone(ctx, image);
+        segment->result = jbig2_image_reference(ctx, image);
     } else {
         /* otherwise composite onto the page */
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,

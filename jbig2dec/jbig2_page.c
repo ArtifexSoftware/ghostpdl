@@ -311,7 +311,7 @@ jbig2_page_out(Jbig2Ctx *ctx)
             ctx->pages[index].state = JBIG2_PAGE_RETURNED;
             if (img != NULL) {
                 jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "page %d returned to the client", page_number);
-                return jbig2_image_clone(ctx, img);
+                return jbig2_image_reference(ctx, img);
             } else {
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "page %d returned with no associated image", page_number);
                 ;               /* continue */

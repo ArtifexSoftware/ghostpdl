@@ -451,17 +451,17 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         /* the reference bitmap is the result of a previous
            intermediate region segment; the reference selection
            rules say to use the first one available, and not to
-           reuse any intermediate result, so we simply clone it
-           and free the original to keep track of this. */
-        params.reference = jbig2_image_clone(ctx, (Jbig2Image *) ref->result);
+           reuse any intermediate result, so we simply take another
+           reference to it and free the original to keep track of this. */
+        params.reference = jbig2_image_reference(ctx, (Jbig2Image *) ref->result);
         jbig2_image_release(ctx, (Jbig2Image *) ref->result);
         ref->result = NULL;
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "found reference bitmap in segment %d", ref->number);
     } else {
         /* the reference is just (a subset of) the page buffer */
-        params.reference = jbig2_image_clone(ctx, ctx->pages[ctx->current_page].image);
+        params.reference = jbig2_image_reference(ctx, ctx->pages[ctx->current_page].image);
         if (params.reference == NULL)
-            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not clone reference bitmap");
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not take reference to reference bitmap");
         /* TODO: subset the image if appropriate */
     }
 
@@ -510,7 +510,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
         if ((segment->flags & 63) == 40) {
             /* intermediate region. save the result for later */
-            segment->result = jbig2_image_clone(ctx, image);
+            segment->result = jbig2_image_reference(ctx, image);
         } else {
             /* immediate region. composite onto the page */
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,

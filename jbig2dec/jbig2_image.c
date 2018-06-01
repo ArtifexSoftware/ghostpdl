@@ -75,9 +75,9 @@ jbig2_image_new(Jbig2Ctx *ctx, uint32_t width, uint32_t height)
     return image;
 }
 
-/* clone an image pointer by bumping its reference count */
+/* bump the reference count for an image pointer */
 Jbig2Image *
-jbig2_image_clone(Jbig2Ctx *ctx, Jbig2Image *image)
+jbig2_image_reference(Jbig2Ctx *ctx, Jbig2Image *image)
 {
     if (image)
         image->refcount++;
