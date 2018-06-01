@@ -1984,6 +1984,35 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
         vsize = 0x0badf00d; /* Quiet compiler. */
 
+        if (pdev->PDFA !=0) {
+            const gs_param_string *p = pairs + i + 1;
+            if (p->size > 9 && memcmp(p->data, "(\\376\\377", 9) == 0) {
+                /* Can't handle UTF16BE in PDF/A1, so abort this pair or abort PDF/A or just abort,
+                 * depending on PDFACompatibilityPolicy
+                 */
+                switch (pdev->PDFACompatibilityPolicy) {
+                    case 0:
+                        emprintf(pdev->memory,
+                         "UTF16BE text string detected in DOCINFO cannot be represented in XMP for PDF/A1, reverting to normal PDF output\n");
+                        pdev->AbortPDFAX = true;
+                        pdev->PDFX = 0;
+                        break;
+                    case 1:
+                        emprintf(pdev->memory,
+                         "UTF16BE text string detected in DOCINFO cannot be represented in XMP for PDF/A1, discarding DOCINFO\n");
+                        continue;
+                        break;
+                    case 2:
+                        emprintf(pdev->memory,
+                         "UTF16BE text string detected in DOCINFO cannot be represented in XMP for PDF/A1, aborting conversion.\n");
+                        /* If we don't return a fatal error then zputdeviceparams simply ignores it (!) */
+                        return_error(gs_error_Fatal);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
         if (pdf_key_eq(pairs + i, "/Producer")) {
             /*
              * If the string "Distiller" appears anywhere in the Producer,
