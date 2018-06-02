@@ -255,14 +255,74 @@ int pdf_setcmykfill(pdf_context *ctx)
         return 0;
 }
 
-int pdf_setstrokecolor_space(pdf_context *ctx)
+int pdf_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 1)
+    int code;
+    pdf_name *n = NULL;
+    pdf_dict *d = NULL;
+    pdf_array *a = NULL;
+
+    if (ctx->stack_top - ctx->stack_bot < 1) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    if (ctx->stack_top[-1]->type != PDF_NAME) {
         pdf_pop(ctx, 1);
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    n = (pdf_name *)ctx->stack_top[-1];
+    switch(n->length) {
+        case 9:
+            if (memcmp(n->data, "DeviceRGB", 9) == 0) {
+                code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
+                if (code < 0) {
+                    if (ctx->pdfstoponerror)
+                        return code;
+                }
+                return 0;
+            }
+        case 10:
+            if (memcmp(n->data, "DeviceGray", 9) == 0) {
+                code = gs_setgray(ctx->pgs, 1);
+                if (code < 0) {
+                    if (ctx->pdfstoponerror)
+                        return code;
+                }
+                return 0;
+            }
+            if (memcmp(n->data, "DeviceCMYK", 9) == 0) {
+                code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
+                if (code < 0) {
+                    if (ctx->pdfstoponerror)
+                        return code;
+                }
+                return 0;
+            }
+        default:
+            break;
+    }
+    code = pdf_find_resource(ctx, (unsigned char *)"ColorSpace", n, stream_dict, page_dict, (pdf_obj **)&a);
+    if (code < 0) {
+        pdf_pop(ctx, 1);
+        if (ctx->pdfstoponerror)
+            return code;
+        return 0;
+    }
+    pdf_pop(ctx, 1);
+    if (a->type != PDF_ARRAY) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_typecheck);
+        return 0;
+    }
+
+    pdf_countdown(a);
     return 0;
 }
 
-int pdf_setfillcolor_space(pdf_context *ctx)
+int pdf_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     if (ctx->stack_top - ctx->stack_bot >= 1)
         pdf_pop(ctx, 1);
@@ -271,31 +331,214 @@ int pdf_setfillcolor_space(pdf_context *ctx)
 
 int pdf_setstrokecolor(pdf_context *ctx)
 {
-    pdf_clearstack(ctx);
+    const gs_color_space *  pcs = gs_currentcolorspace(ctx->pgs);
+    int ncomps, i, code;
+    gs_client_color cc;
+    pdf_num *n;
+
+    ncomps = cs_num_components(pcs);
+    if (ctx->stack_top - ctx->stack_bot <= ncomps) {
+        pdf_clearstack(ctx);
+        if(ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    for (i=0;i<ncomps;i++){
+        n = (pdf_num *)ctx->stack_top[i - ncomps];
+        if (n->type == PDF_INT) {
+            cc.paint.values[i] = (float)n->value.i;
+        } else {
+            if (n->type == PDF_REAL) {
+                cc.paint.values[i] = n->value.d;
+            } else {
+                pdf_clearstack(ctx);
+                if (ctx->pdfstoponerror)
+                    return_error(gs_error_typecheck);
+                return 0;
+            }
+        }
+    }
+    pdf_pop(ctx, ncomps);
+    code = gs_setcolor(ctx->pgs, &cc);
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
     return 0;
 }
 
 int pdf_setfillcolor(pdf_context *ctx)
 {
-    pdf_clearstack(ctx);
+    const gs_color_space *  pcs = gs_currentcolorspace(ctx->pgs);
+    int ncomps, i, code;
+    gs_client_color cc;
+    pdf_num *n;
+
+    ncomps = cs_num_components(pcs);
+    if (ctx->stack_top - ctx->stack_bot <= ncomps) {
+        pdf_clearstack(ctx);
+        if(ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    for (i=0;i<ncomps;i++){
+        n = (pdf_num *)ctx->stack_top[i - ncomps];
+        if (n->type == PDF_INT) {
+            cc.paint.values[i] = (float)n->value.i;
+        } else {
+            if (n->type == PDF_REAL) {
+                cc.paint.values[i] = n->value.d;
+            } else {
+                pdf_clearstack(ctx);
+                if (ctx->pdfstoponerror)
+                    return_error(gs_error_typecheck);
+                return 0;
+            }
+        }
+    }
+    pdf_pop(ctx, ncomps);
+    gs_swapcolors(ctx->pgs);
+    code = gs_setcolor(ctx->pgs, &cc);
+    gs_swapcolors(ctx->pgs);
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
     return 0;
 }
 
 int pdf_setstrokecolorN(pdf_context *ctx)
 {
-    pdf_clearstack(ctx);
+    const gs_color_space *  pcs = gs_currentcolorspace(ctx->pgs);
+    int ncomps, i, code;
+    gs_client_color cc;
+    pdf_num *n;
+
+    if (ctx->stack_top - ctx->stack_bot < 1) {
+        pdf_clearstack(ctx);
+        if(ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    if (ctx->stack_top[-1]->type == PDF_NAME) {
+        /* FIXME Patterns */
+        pdf_clearstack(ctx);
+        return 0;
+    }
+    ncomps = cs_num_components(pcs);
+    if (ctx->stack_top - ctx->stack_bot <= ncomps) {
+        pdf_clearstack(ctx);
+        if(ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    for (i=0;i<ncomps;i++){
+        n = (pdf_num *)ctx->stack_top[i - ncomps];
+        if (n->type == PDF_INT) {
+            cc.paint.values[i] = (float)n->value.i;
+        } else {
+            if (n->type == PDF_REAL) {
+                cc.paint.values[i] = n->value.d;
+            } else {
+                pdf_clearstack(ctx);
+                if (ctx->pdfstoponerror)
+                    return_error(gs_error_typecheck);
+                return 0;
+            }
+        }
+    }
+    pdf_pop(ctx, ncomps);
+    code = gs_setcolor(ctx->pgs, &cc);
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
     return 0;
 }
 
 int pdf_setfillcolorN(pdf_context *ctx)
 {
-    pdf_clearstack(ctx);
+    const gs_color_space *  pcs = gs_currentcolorspace(ctx->pgs);
+    int ncomps, i, code;
+    gs_client_color cc;
+    pdf_num *n;
+
+    if (ctx->stack_top - ctx->stack_bot < 1) {
+        pdf_clearstack(ctx);
+        if(ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    if (ctx->stack_top[-1]->type == PDF_NAME) {
+        /* FIXME Patterns */
+        pdf_clearstack(ctx);
+        return 0;
+    }
+    ncomps = cs_num_components(pcs);
+    if (ctx->stack_top - ctx->stack_bot <= ncomps) {
+        pdf_clearstack(ctx);
+        if(ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    for (i=0;i<ncomps;i++){
+        n = (pdf_num *)ctx->stack_top[i - ncomps];
+        if (n->type == PDF_INT) {
+            cc.paint.values[i] = (float)n->value.i;
+        } else {
+            if (n->type == PDF_REAL) {
+                cc.paint.values[i] = n->value.d;
+            } else {
+                pdf_clearstack(ctx);
+                if (ctx->pdfstoponerror)
+                    return_error(gs_error_typecheck);
+                return 0;
+            }
+        }
+    }
+    pdf_pop(ctx, ncomps);
+    gs_swapcolors(ctx->pgs);
+    code = gs_setcolor(ctx->pgs, &cc);
+    gs_swapcolors(ctx->pgs);
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
     return 0;
 }
 
 int pdf_ri(pdf_context *ctx)
 {
+    pdf_name *n;
+    int code;
+
     if (ctx->stack_top - ctx->stack_bot >= 1)
         pdf_pop(ctx, 1);
+
+    if (ctx->stack_top[-1]->type != PDF_NAME) {
+        pdf_pop(ctx, 1);
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_typecheck);
+        return 0;
+    }
+    n = (pdf_name *)ctx->stack_top[-1];
+    if (n->length == 10) {
+        if (memcmp(n->data, "Perceptual", 10) == 0)
+            code = gs_setrenderingintent(ctx->pgs, 0);
+        else {
+            if (memcmp(n->data, "Saturation", 10) == 0)
+                code = gs_setrenderingintent(ctx->pgs, 2);
+            else
+                code = gs_error_undefined;
+        }
+    } else {
+        if (n->length == 20) {
+            if (memcmp(n->data, "RelativeColorimetric", 20) == 0)
+                code = gs_setrenderingintent(ctx->pgs, 1);
+            else {
+                if (memcmp(n->data, "AbsoluteColoimetric", 20) == 0)
+                    code = gs_setrenderingintent(ctx->pgs, 3);
+                else
+                    code = gs_error_undefined;
+            }
+        } else {
+            code = gs_error_undefined;
+        }
+    }
+    pdf_pop(ctx, 1);
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
     return 0;
 }
