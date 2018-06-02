@@ -460,7 +460,7 @@ int pdf_open_pdf_file(pdf_context *ctx, char *filename)
 
     /* Determine file size */
     pdf_seek(ctx, ctx->main_stream, 0, SEEK_END);
-    ctx->main_stream_length = stell(ctx->main_stream->s);
+    ctx->main_stream_length = pdf_tell(ctx->main_stream);
     Offset = BUF_SIZE;
     bytes = BUF_SIZE;
     pdf_seek(ctx, ctx->main_stream, 0, SEEK_SET);

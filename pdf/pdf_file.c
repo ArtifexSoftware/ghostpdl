@@ -766,11 +766,16 @@ int pdf_seek(pdf_context *ctx, pdf_stream *s, gs_offset_t offset, uint32_t origi
  * NOTE! this is only going to be valid when performed on the main stream
  * the original PDF file, not any compressed stream!
  */
-gs_offset_t pdf_tell(pdf_context *ctx)
+gs_offset_t pdf_unread_tell(pdf_context *ctx)
 {
     gs_offset_t off = stell(ctx->main_stream->s);
 
     return (off - ctx->main_stream->unread_size);
+}
+
+gs_offset_t pdf_tell(pdf_stream *s)
+{
+    return stell(s->s);
 }
 
 int pdf_unread(pdf_context *ctx, pdf_stream *s, byte *Buffer, uint32_t size)

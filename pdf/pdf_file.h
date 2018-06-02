@@ -20,4 +20,5 @@ void pdf_close_file(pdf_context *ctx, pdf_stream *s);
 int pdf_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count, pdf_stream *s);
 int pdf_unread(pdf_context *ctx, pdf_stream *s, byte *Buffer, uint32_t size);
 int pdf_seek(pdf_context *ctx, pdf_stream *s, gs_offset_t offset, uint32_t origin);
-gs_offset_t pdf_tell(pdf_context *ctx);
+gs_offset_t pdf_unread_tell(pdf_context *ctx);
+gs_offset_t pdf_tell(pdf_stream *s);

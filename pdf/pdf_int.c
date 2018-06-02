@@ -196,7 +196,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             ctx->cache_MRU = cache_entry;
         }
     } else {
-        saved_stream_offset = (gs_offset_t)pdf_tell(ctx);
+        saved_stream_offset = pdf_unread_tell(ctx);
 
         if (entry->compressed) {
             /* This is an object in a compressed object stream */
@@ -1568,7 +1568,7 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
 
         skip_eol(ctx, ctx->main_stream);
 
-        offset = pdf_tell(ctx);
+        offset = pdf_unread_tell(ctx);
 
         pdf_pop(ctx, 1);
 
@@ -1828,13 +1828,13 @@ int pdf_repair_file(pdf_context *ctx)
     /* First pass, identify all the objects of the form x y obj */
 
     do {
-        offset = pdf_tell(ctx);
+        offset = pdf_unread_tell(ctx);
         do {
             code = pdf_read_token(ctx, ctx->main_stream);
             if (code < 0) {
                 if (code != gs_error_VMerror && code != gs_error_ioerror) {
                     pdf_clearstack(ctx);
-                    offset = pdf_tell(ctx);
+                    offset = pdf_unread_tell(ctx);
                     continue;
                 } else
                     return code;
@@ -1929,10 +1929,10 @@ int pdf_repair_file(pdf_context *ctx)
                                     continue;
                                 if (code < 0)
                                     return code;
-                                offset = pdf_tell(ctx);
+                                offset = pdf_unread_tell(ctx);
                                 pdf_clearstack(ctx);
                             } else {
-                                offset = pdf_tell(ctx);
+                                offset = pdf_unread_tell(ctx);
                                 pdf_clearstack(ctx);
                             }
                     }
@@ -2029,7 +2029,7 @@ int pdf_repair_file(pdf_context *ctx)
                                 pdf_stream *compressed_stream;
                                 pdf_obj *o;
 
-                                offset = pdf_tell(ctx);
+                                offset = pdf_unread_tell(ctx);
                                 pdf_seek(ctx, ctx->main_stream, offset, SEEK_SET);
                                 code = pdf_filter(ctx, d, ctx->main_stream, &compressed_stream, false);
                                 if (code == 0) {

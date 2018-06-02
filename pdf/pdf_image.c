@@ -20,7 +20,6 @@
 #include "pdf_image.h"
 #include "pdf_file.h"
 #include "pdf_dict.h"
-#include "stream.h"     /* for stell() */
 
 extern int pdf_dict_from_stack(pdf_context *ctx);
 
@@ -304,14 +303,14 @@ int pdf_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code == 0) {
         pdf_dict *d = (pdf_dict *)o;
         if (n->length == 5 && memcmp(n->data, "Image", 5) == 0) {
-            gs_offset_t savedoffset = stell(ctx->main_stream->s);
+            gs_offset_t savedoffset = pdf_tell(ctx->main_stream);
 
             sfseek(ctx->main_stream->s, d->stream_offset, SEEK_SET);
             code = pdf_do_image(ctx, d, ctx->main_stream, false);
             sfseek(ctx->main_stream->s, savedoffset, SEEK_SET);
         } else {
             if (n->length == 4 && memcmp(n->data, "Form", 4) == 0) {
-                gs_offset_t savedoffset = stell(ctx->main_stream->s);
+                gs_offset_t savedoffset = pdf_tell(ctx->main_stream);
 
                 code = pdf_interpret_content_stream(ctx, d, page_dict);
                 sfseek(ctx->main_stream->s, savedoffset, SEEK_SET);

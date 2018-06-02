@@ -392,7 +392,7 @@ static int pdf_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
                             return pdf_repair_file(ctx);
                         }
                         d = (pdf_dict *)ctx->stack_top[-1];
-                        d->stream_offset = pdf_tell(ctx);
+                        d->stream_offset = pdf_unread_tell(ctx);
 
                         d->object_num = obj_num;
                         d->generation_num = gen_num;
