@@ -800,7 +800,11 @@ set_logical_page_orientation(pcl_args_t * pargs, pcl_state_t * pcs)
        set the flag disabling the orientation command for this page. */
     code = pcl_end_page_if_marked(pcs);
     if (code >= 0) {
+        /* a page_orientation change is not the same as a new page.
+           If a cursor has moved this should be remembered */
+        bool cursor_moved = pcs->cursor_moved;
         code = new_logical_page(pcs, i, pcs->xfm_state.paper_size, false, false);
+        pcs->cursor_moved = cursor_moved;
         pcs->hmi_cp = HMI_DEFAULT;
         pcs->vmi_cp = VMI_DEFAULT;
     }
