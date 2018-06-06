@@ -92,10 +92,6 @@ gdev_prn_open(gx_device * pdev)
     int code;
     bool update_procs = false;
 
-    code = install_internal_subclass_devices(&pdev, &update_procs);
-    if (code < 0)
-        return code;
-
     ppdev = (gx_device_printer *)pdev;
 
     ppdev->file = NULL;
@@ -108,6 +104,9 @@ gdev_prn_open(gx_device * pdev)
         if (pdev->PageHandlerPushed)
             gx_copy_device_procs(pdev->parent, pdev, &gs_flp_device);
     }
+    if (code < 0)
+        return code;
+    code = install_internal_subclass_devices(&pdev, &update_procs);
     if (code < 0)
         return code;
     if (ppdev->OpenOutputFile)
