@@ -18,6 +18,7 @@
 #include "pdf_int.h"
 #include "pdf_colour.h"
 #include "pdf_stack.h"
+#include "pdf_array.h"
 
 int pdf_setgraystroke(pdf_context *ctx)
 {
@@ -255,11 +256,71 @@ int pdf_setcmykfill(pdf_context *ctx)
         return 0;
 }
 
+static int setcolorspace(pdf_context *ctx, pdf_array *color_array)
+{
+    int code;
+    pdf_name *space = NULL;
+
+    code = pdf_array_get(color_array, 1, (pdf_obj **)&space);
+    if(code == 0) {
+        if (space->type == PDF_NAME) {
+            code = gs_error_rangecheck;
+            switch(space->length) {
+                case 3:
+                    if (memcmp(space->data, "Lab", space->length) == 0) {
+                    }
+                    break;
+                case 6:
+                    if (memcmp(space->data, "CalRGB", space->length) == 0) {
+                        code = gs_setrgbcolor(ctx->pgs, 1, 1, 1);
+                    }
+                    break;
+                case 7:
+                    if (memcmp(space->data, "CalGray", space->length) == 0) {
+                        code = gs_setgray(ctx->pgs, 0);
+                    }
+                    if (memcmp(space->data, "Pattern", space->length) == 0) {
+                    }
+                    if (memcmp(space->data, "DeviceN", space->length) == 0) {
+                    }
+                    if (memcmp(space->data, "Indexed", space->length) == 0) {
+                    }
+                    break;
+                case 8:
+                    if (memcmp(space->data, "ICCBased", space->length) == 0) {
+                    }
+                    break;
+                case 9:
+                    if (memcmp(space->data, "DeviceRGB", space->length) == 0) {
+                        code = gs_setrgbcolor(ctx->pgs, 1, 1, 1);
+                    }
+                    break;
+                case 10:
+                    if (memcmp(space->data, "DeviceGray", space->length) == 0) {
+                        code = gs_setgray(ctx->pgs, 0);
+                    }
+                    if (memcmp(space->data, "DeviceCMYK", space->length) == 0) {
+                        code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
+                    }
+                    if (memcmp(space->data, "Separation", space->length) == 0) {
+                    }
+                    break;
+                default:
+                    break;
+            }
+        } else
+            code = gs_error_typecheck;
+    }
+    pdf_countdown(space);
+    if(ctx->pdfstoponerror)
+        return code;
+    return 0;
+}
+
 int pdf_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
     pdf_name *n = NULL;
-    pdf_dict *d = NULL;
     pdf_array *a = NULL;
 
     if (ctx->stack_top - ctx->stack_bot < 1) {
