@@ -280,7 +280,7 @@ int pdf_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         return 0;
     }
 
-    code = pdf_find_resource(ctx, (char *)"XObject", n, stream_dict, page_dict, &o);
+    code = pdf_find_resource(ctx, (unsigned char *)"XObject", n, stream_dict, page_dict, &o);
     if (code < 0) {
         pdf_pop(ctx, 1);
         pdf_loop_detector_cleartomark(ctx);
