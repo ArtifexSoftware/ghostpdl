@@ -20,6 +20,8 @@
 #include "pdf_image.h"
 #include "pdf_file.h"
 #include "pdf_dict.h"
+#include "pdf_loop_detect.h"
+#include "stream.h"     /* for stell() */
 
 extern int pdf_dict_from_stack(pdf_context *ctx);
 
@@ -226,14 +228,8 @@ static int pdf_do_image(pdf_context *ctx, pdf_dict *image_dict, pdf_stream *sour
 
 int pdf_ID(pdf_context *ctx, pdf_stream *source)
 {
-    pdf_name *n = NULL;
     pdf_dict *d = NULL;
-    pdf_stream *new_stream;
-    int64_t Height, Width, BPC;
-    int i, code, comps = 0, byteswide, total;
-    byte c;
-    pdf_obj *Mask;
-    gs_color_space  *pcs = NULL;
+    int code;
 
     code = pdf_dict_from_stack(ctx);
     if (code < 0)
@@ -284,7 +280,7 @@ int pdf_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         return 0;
     }
 
-    code = pdf_find_resource(ctx, "XObject", n, stream_dict, page_dict, &o);
+    code = pdf_find_resource(ctx, (char *)"XObject", n, stream_dict, page_dict, &o);
     if (code < 0) {
         pdf_pop(ctx, 1);
         pdf_loop_detector_cleartomark(ctx);
@@ -305,15 +301,15 @@ int pdf_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         if (n->length == 5 && memcmp(n->data, "Image", 5) == 0) {
             gs_offset_t savedoffset = pdf_tell(ctx->main_stream);
 
-            sfseek(ctx->main_stream->s, d->stream_offset, SEEK_SET);
+            pdf_seek(ctx, ctx->main_stream, d->stream_offset, SEEK_SET);
             code = pdf_do_image(ctx, d, ctx->main_stream, false);
-            sfseek(ctx->main_stream->s, savedoffset, SEEK_SET);
+            pdf_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         } else {
             if (n->length == 4 && memcmp(n->data, "Form", 4) == 0) {
                 gs_offset_t savedoffset = pdf_tell(ctx->main_stream);
 
                 code = pdf_interpret_content_stream(ctx, d, page_dict);
-                sfseek(ctx->main_stream->s, savedoffset, SEEK_SET);
+                pdf_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
             } else {
                 code = gs_error_typecheck;
             }
