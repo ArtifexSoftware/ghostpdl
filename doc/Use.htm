@@ -759,16 +759,17 @@ be drawn, whilst those not listed will not be drawn.</p>
 </dl>
 
 <dl>
-	<dt><code>-sPageList=</code><em>pagenumber</em>
-	There are three possible values for this; even, odd or a list of pages to be processed.
-	A list can include single pages or ranges of pages.
-	Ranges of pages use the minus sign '-', individual pages and ranges of pages are separated
-	by commas ','. A trailing minus '-' means process all remaining pages. For example;</dt>
+    <dt><code>-sPageList=</code><em>pagenumber</em>
+    <dd>There are three possible values for this; even, odd or a list of pages to be processed.
+    A list can include single pages or ranges of pages.
+    Ranges of pages use the minus sign '-', individual pages and ranges of pages are separated
+    by commas ','. A trailing minus '-' means process all remaining pages. For example;</dd></dt>
 <p><blockquote><pre>
 -sPageList=1,3,5 indicates that pages 1, 3 and 5 should be processed.
 -sPageList=5-10 indicates that pages 5, 6, 7, 8, 9 and 10 should be processed.
 -sPageList=1,5-10,12- indicates that pages 1, 5, 6, 7, 8, 9, 10 and 12 onwards should be processed.
 </pre></blockquote>
+<dd>Note: Use of PageList overrides FirstPage and/or LastPage, if you set these as well as PageList they will be ignored.</dd>
 </p>
 </dl>
 
