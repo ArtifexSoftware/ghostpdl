@@ -256,18 +256,20 @@ int pdf_setcmykfill(pdf_context *ctx)
         return 0;
 }
 
-static int setcolorspace(pdf_context *ctx, pdf_array *color_array)
+static int setcolorspace(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
     pdf_name *space = NULL;
+    pdf_array *a;
 
-    code = pdf_array_get(color_array, 1, (pdf_obj **)&space);
+    code = pdf_array_get(color_array, index, (pdf_obj **)&space);
     if(code == 0) {
         if (space->type == PDF_NAME) {
             code = gs_error_rangecheck;
             switch(space->length) {
                 case 3:
                     if (memcmp(space->data, "Lab", space->length) == 0) {
+                        code = gs_setrgbcolor(ctx->pgs, 1, 1, 1);
                     }
                     break;
                 case 6:
@@ -280,10 +282,19 @@ static int setcolorspace(pdf_context *ctx, pdf_array *color_array)
                         code = gs_setgray(ctx->pgs, 0);
                     }
                     if (memcmp(space->data, "Pattern", space->length) == 0) {
+                        if (index != 0)
+                            return_error(gs_error_syntaxerror);
                     }
                     if (memcmp(space->data, "DeviceN", space->length) == 0) {
                     }
                     if (memcmp(space->data, "Indexed", space->length) == 0) {
+                        if (index != 0)
+                            return_error(gs_error_syntaxerror);
+
+                        code = setcolorspace(ctx, color_array, index + 1, stream_dict, page_dict);
+                        if (code < 0 && ctx->pdfstoponerror)
+                            return code;
+                        return 0;
                     }
                     break;
                 case 8:
@@ -306,6 +317,24 @@ static int setcolorspace(pdf_context *ctx, pdf_array *color_array)
                     }
                     break;
                 default:
+                    code = pdf_find_resource(ctx, (unsigned char *)"ColorSpace", space, stream_dict, page_dict, (pdf_obj **)&a);
+                    if (code < 0) {
+                        if (ctx->pdfstoponerror)
+                            return code;
+                        return 0;
+                    }
+                    if (a->type != PDF_ARRAY) {
+                        pdf_countdown(a);
+                        if (ctx->pdfstoponerror)
+                            return_error(gs_error_typecheck);
+                        return 0;
+                    }
+
+                    code = setcolorspace(ctx, a, 0, stream_dict, page_dict);
+                    pdf_countdown(a);
+                    if (code < 0 && ctx->pdfstoponerror)
+                        return code;
+                    return 0;
                     break;
             }
         } else
@@ -379,14 +408,89 @@ int pdf_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *
         return 0;
     }
 
+    code = setcolorspace(ctx, a, 0, stream_dict, page_dict);
+
     pdf_countdown(a);
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
     return 0;
 }
 
 int pdf_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    if (ctx->stack_top - ctx->stack_bot >= 1)
+    int code;
+    pdf_name *n = NULL;
+    pdf_array *a = NULL;
+
+    if (ctx->stack_top - ctx->stack_bot < 1) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    if (ctx->stack_top[-1]->type != PDF_NAME) {
         pdf_pop(ctx, 1);
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    n = (pdf_name *)ctx->stack_top[-1];
+    switch(n->length) {
+        case 9:
+            if (memcmp(n->data, "DeviceRGB", 9) == 0) {
+                gs_swapcolors(ctx->pgs);
+                code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
+                gs_swapcolors(ctx->pgs);
+                if (code < 0) {
+                    if (ctx->pdfstoponerror)
+                        return code;
+                }
+                return 0;
+            }
+        case 10:
+            if (memcmp(n->data, "DeviceGray", 9) == 0) {
+                gs_swapcolors(ctx->pgs);
+                code = gs_setgray(ctx->pgs, 1);
+                gs_swapcolors(ctx->pgs);
+                if (code < 0) {
+                    if (ctx->pdfstoponerror)
+                        return code;
+                }
+                return 0;
+            }
+            if (memcmp(n->data, "DeviceCMYK", 9) == 0) {
+                gs_swapcolors(ctx->pgs);
+                code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
+                gs_swapcolors(ctx->pgs);
+                if (code < 0) {
+                    if (ctx->pdfstoponerror)
+                        return code;
+                }
+                return 0;
+            }
+        default:
+            break;
+    }
+    code = pdf_find_resource(ctx, (unsigned char *)"ColorSpace", n, stream_dict, page_dict, (pdf_obj **)&a);
+    if (code < 0) {
+        pdf_pop(ctx, 1);
+        if (ctx->pdfstoponerror)
+            return code;
+        return 0;
+    }
+    pdf_pop(ctx, 1);
+    if (a->type != PDF_ARRAY) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_typecheck);
+        return 0;
+    }
+
+    gs_swapcolors(ctx->pgs);
+    code = setcolorspace(ctx, a, 0, stream_dict, page_dict);
+    gs_swapcolors(ctx->pgs);
+
+    pdf_countdown(a);
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
     return 0;
 }
 
