@@ -77,6 +77,8 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     bool first_symbol;
     uint32_t index, SBNUMSYMS;
     Jbig2Image *IB = NULL;
+    Jbig2Image *IBO = NULL;
+    Jbig2Image *refimage = NULL;
     Jbig2HuffmanState *hs = NULL;
     Jbig2HuffmanTable *SBSYMCODES = NULL;
     int code = 0;
@@ -379,9 +381,7 @@ cleanup1:
             }
             if (RI) {
                 Jbig2RefinementRegionParams rparams;
-                Jbig2Image *IBO;
                 int32_t RDW, RDH, RDX, RDY;
-                Jbig2Image *refimage;
                 int BMSIZE = 0;
                 int code1 = 0;
                 int code2 = 0;
@@ -411,25 +411,21 @@ cleanup1:
                     goto cleanup2;
                 }
                 if (code1 > 0 || code2 > 0 || code3 > 0 || code4 > 0 || code5 > 0 || code6 > 0) {
-                    jbig2_image_release(ctx, IB);
                     code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "OOB obtained when decoding symbol instance refinement data");
                     goto cleanup2;
                 }
 
                 /* 6.4.11 (6) */
                 IBO = IB;
+                IB = NULL;
                 if (((int32_t) IBO->width) + RDW < 0 || ((int32_t) IBO->height) + RDH < 0) {
-                    jbig2_image_release(ctx, IBO);
                     code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "reference image dimensions negative");
                     goto cleanup2;
                 }
                 refimage = jbig2_image_new(ctx, IBO->width + RDW, IBO->height + RDH);
                 if (refimage == NULL) {
-                    jbig2_image_release(ctx, IBO);
-                    if (params->SBHUFF) {
-                        jbig2_release_huffman_table(ctx, SBSYMCODES);
-                    }
-                    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "couldn't allocate reference image");
+                    code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "couldn't allocate reference image");
+                    goto cleanup2;
                 }
                 jbig2_image_clear(ctx, refimage, 0x00);
 
@@ -443,21 +439,19 @@ cleanup1:
                 code = jbig2_decode_refinement_region(ctx, segment, &rparams, as, refimage, GR_stats);
                 if (code < 0) {
                     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode refinement region");
-                    jbig2_image_release(ctx, refimage);
-                    jbig2_image_release(ctx, IBO);
                     goto cleanup2;
                 }
 
                 jbig2_image_release(ctx, IBO);
+                IBO = NULL;
                 IB = refimage;
+                refimage = NULL;
 
                 /* 6.4.11 (7) */
                 if (params->SBHUFF) {
                     code = jbig2_huffman_advance(hs, BMSIZE);
                     if (code < 0) {
                         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to advance after huffman decoding refinement region");
-                        jbig2_image_release(ctx, refimage);
-                        jbig2_image_release(ctx, IBO);
                         goto cleanup2;
                     }
                 }
@@ -524,7 +518,6 @@ cleanup1:
             code = jbig2_image_compose(ctx, image, IB, x, y, params->SBCOMBOP);
             if (code < 0) {
                 jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to compose symbol instance symbol bitmap into picture");
-                jbig2_image_release(ctx, IB);
                 goto cleanup2;
             }
 
@@ -539,12 +532,16 @@ cleanup1:
             NINSTANCES++;
 
             jbig2_image_release(ctx, IB);
+            IB = NULL;
         }
         /* end strip */
     }
     /* 6.4.5 (4) */
 
 cleanup2:
+    jbig2_image_release(ctx, refimage);
+    jbig2_image_release(ctx, IBO);
+    jbig2_image_release(ctx, IB);
     if (params->SBHUFF) {
         jbig2_release_huffman_table(ctx, SBSYMCODES);
     }
