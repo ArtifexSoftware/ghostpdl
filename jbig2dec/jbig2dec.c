@@ -373,7 +373,7 @@ int
 main(int argc, char **argv)
 {
     FILE *f = NULL, *f_page = NULL;
-    Jbig2Ctx *ctx;
+    Jbig2Ctx *ctx = NULL;
     uint8_t buf[4096];
     jbig2dec_params_t params;
     int filearg;
@@ -534,7 +534,6 @@ main(int argc, char **argv)
                 write_document_hash(&params);
         }
 
-        jbig2_ctx_free(ctx);
 
     }                           /* end params.mode switch */
 
@@ -542,6 +541,7 @@ main(int argc, char **argv)
     result = 0;
 
 cleanup:
+    jbig2_ctx_free(ctx);
     if (params.output_filename)
         free(params.output_filename);
     if (params.hash)
