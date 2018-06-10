@@ -886,7 +886,8 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         case 3:                /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom DH huffman table not found (%d)", table_index);
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom DH huffman table not found (%d)", table_index);
+                goto cleanup;
             }
             params.SDHUFFDH = jbig2_build_huffman_table(ctx, huffman_params);
             ++table_index;
@@ -910,7 +911,8 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         case 3:                /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom DW huffman table not found (%d)", table_index);
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom DW huffman table not found (%d)", table_index);
+                goto cleanup;
             }
             params.SDHUFFDW = jbig2_build_huffman_table(ctx, huffman_params);
             ++table_index;
@@ -929,7 +931,8 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
             /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom BMSIZE huffman table not found (%d)", table_index);
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom BMSIZE huffman table not found (%d)", table_index);
+                goto cleanup;
             }
             params.SDHUFFBMSIZE = jbig2_build_huffman_table(ctx, huffman_params);
             ++table_index;
@@ -946,7 +949,8 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
             /* Custom table from referred segment */
             huffman_params = jbig2_find_table(ctx, segment, table_index);
             if (huffman_params == NULL) {
-                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom REFAGG huffman table not found (%d)", table_index);
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "custom REFAGG huffman table not found (%d)", table_index);
+                goto cleanup;
             }
             params.SDHUFFAGGINST = jbig2_build_huffman_table(ctx, huffman_params);
             ++table_index;
@@ -1058,6 +1062,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         jbig2_free(ctx->allocator, GR_stats);
         jbig2_free(ctx->allocator, GB_stats);
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "segment marks bitmap coding context as retained (NYI)");
+        goto cleanup;
     } else {
         jbig2_free(ctx->allocator, GR_stats);
         jbig2_free(ctx->allocator, GB_stats);
