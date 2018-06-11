@@ -53,7 +53,7 @@ int install_internal_subclass_devices(gx_device **ppdev, int *devices_loaded)
 
         /* Note in all devices in chain that we have loaded the PageHandler */
         do {
-            dev->is_open = true;
+            dev->PageHandlerPushed = true;
             dev = dev->child;
         }while(dev);
 
@@ -86,7 +86,7 @@ int install_internal_subclass_devices(gx_device **ppdev, int *devices_loaded)
 
         /* Note in all devices in chain that we have loaded the ObjectHandler */
         do {
-            dev->is_open = true;
+            dev->ObjectHandlerPushed = true;
             dev = dev->child;
         }while(dev);
 
