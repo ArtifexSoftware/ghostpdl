@@ -270,7 +270,7 @@ static int ParsePageList(gx_device *dev, first_last_subclass_data *psubclass_dat
                 }
             }
             /* str should now point to the last page number (we hope!) */
-            LastPage = atoi(str);
+            psubclass_data->LastListPage = LastPage = atoi(str);
 
             psubclass_data->PageArraySize = (LastPage + 7) / 8;
             psubclass_data->PageArray = gs_alloc_bytes(dev->memory->non_gc_memory, psubclass_data->PageArraySize, "array of pages selected");
@@ -346,19 +346,23 @@ static int SkipPage(gx_device *dev)
     }
 
     if (psubclass_data->PageArray) {
-        if (psubclass_data->FromToEnd != 0 && psubclass_data->PageCount >= psubclass_data->FromToEnd)
+        if (psubclass_data->FromToEnd != 0 && psubclass_data->PageCount >= psubclass_data->FromToEnd - 1)
             return 0;
         else {
-            int byte, bit;
-            char c;
-
-            byte = (int)((psubclass_data->PageCount) / 8);
-            bit = (psubclass_data->PageCount) % 8;
-            c = 0x01 << bit;
-            if (((char *)psubclass_data->PageArray)[byte] & c)
-                return 0;
-            else
+            if (psubclass_data->PageCount > psubclass_data->LastListPage - 1)
                 return 1;
+            else {
+                int byte, bit;
+                char c;
+
+                byte = (int)((psubclass_data->PageCount) / 8);
+                bit = (psubclass_data->PageCount) % 8;
+                c = 0x01 << bit;
+                if (((char *)psubclass_data->PageArray)[byte] & c)
+                    return 0;
+                else
+                    return 1;
+            }
         }
     } else {
         if (psubclass_data->EvenOdd != none) {

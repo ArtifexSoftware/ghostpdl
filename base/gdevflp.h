@@ -36,6 +36,7 @@ typedef struct {
     int ProcessedPageList;
     void *PageArray;
     int PageArraySize;
+    int LastListPage;
     int FromToEnd;
     flp_EOType EvenOdd;
 } first_last_subclass_data;
