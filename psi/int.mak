@@ -307,12 +307,6 @@ $(PSOBJ)iscannum.$(OBJ) : $(PSSRC)iscannum.c $(GH) $(math__h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)iscannum.$(OBJ) $(C_) $(PSSRC)iscannum.c
 
-### Streams
-
-$(PSOBJ)sfilter1.$(OBJ) : $(PSSRC)sfilter1.c $(AK) $(stdio__h) $(memory__h)\
- $(sfilter_h) $(strimpl_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)sfilter1.$(OBJ) $(C_) $(PSSRC)sfilter1.c
-
 ###### Operators
 
 OP=$(GH) $(oper_h)
@@ -547,7 +541,7 @@ INT3=$(PSOBJ)iinit.$(OBJ) $(PSOBJ)interp.$(OBJ)
 INT4=$(PSOBJ)iparam.$(OBJ) $(PSOBJ)ireclaim.$(OBJ) $(PSOBJ)iplugin.$(OBJ)
 INT5=$(PSOBJ)iscan.$(OBJ) $(PSOBJ)iscannum.$(OBJ) $(PSOBJ)istack.$(OBJ)
 INT6=$(PSOBJ)iutil.$(OBJ) $(GLOBJ)sa85d.$(OBJ) $(GLOBJ)scantab.$(OBJ)
-INT7=$(PSOBJ)sfilter1.$(OBJ) $(GLOBJ)sstring.$(OBJ) $(GLOBJ)stream.$(OBJ)
+INT7=$(GLOBJ)sstring.$(OBJ) $(GLOBJ)stream.$(OBJ)
 Z1=$(PSOBJ)zarith.$(OBJ) $(PSOBJ)zarray.$(OBJ) $(PSOBJ)zcontrol.$(OBJ)
 Z2=$(PSOBJ)zdict.$(OBJ) $(PSOBJ)zfile.$(OBJ) $(PSOBJ)zfile1.$(OBJ) $(PSOBJ)zfileio.$(OBJ)
 Z3=$(PSOBJ)zfilter.$(OBJ) $(PSOBJ)zfproc.$(OBJ) $(PSOBJ)zgeneric.$(OBJ)
@@ -1122,12 +1116,12 @@ $(PSOBJ)zdevcal.$(OBJ) : $(PSSRC)zdevcal.c $(GH) $(time__h)\
 # ---------------- Filters other than the ones in sfilter.c ---------------- #
 
 # Standard Level 2 decoding filters only.  The PDF configuration uses this.
-fdecode_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)scfparam.$(OBJ) $(GLOBJ)sfilter2.$(OBJ) $(PSOBJ)zfdecode.$(OBJ)
+fdecode_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)scfparam.$(OBJ) $(PSOBJ)zfdecode.$(OBJ)
 $(PSD)fdecode.dev : $(ECHOGS_XE) $(fdecode_)\
  $(GLD)cfd.dev $(GLD)lzwd.dev $(GLD)pdiff.dev $(GLD)pngp.dev $(GLD)rld.dev\
- $(GLD)pwgd.dev $(INT_MAK) $(MAKEDIRS)
+ $(GLD)pwgd.dev $(GLD)psfilters.dev $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)fdecode $(fdecode_)
-	$(ADDMOD) $(PSD)fdecode -include $(GLD)cfd $(GLD)lzwd $(GLD)pdiff $(GLD)pngp $(GLD)rld
+	$(ADDMOD) $(PSD)fdecode -include $(GLD)cfd $(GLD)lzwd $(GLD)pdiff $(GLD)pngp $(GLD)rld $(GLD)psfilters.dev
 	$(ADDMOD) $(PSD)fdecode -oper zfdecode
 
 $(PSOBJ)zfdecode.$(OBJ) : $(PSSRC)zfdecode.c $(OP) $(memory__h)\
