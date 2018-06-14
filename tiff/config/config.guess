@@ -961,6 +961,9 @@ EOF
     vax:Linux:*:*)
 	echo ${UNAME_MACHINE}-dec-linux-gnu
 	exit ;;
+    aarch64:Linux:*.*)
+	echo x86_64-unknown-linux-gnu
+	exit ;;
     x86_64:Linux:*:*)
 	echo x86_64-unknown-linux-gnu
 	exit ;;
