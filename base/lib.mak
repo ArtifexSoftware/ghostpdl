@@ -1938,7 +1938,7 @@ $(GLOBJ)sfilter1.$(OBJ) : $(GLSRC)sfilter1.c $(AK) $(stdio__h) $(memory__h)\
 
 $(GLD)psfilters.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)sfilter2.$(OBJ)\
   $(GLOBJ)sfilter1.$(OBJ) $(LIB_MAK) $(MAKEDIRS)
-	$(SETMOD) $(GLD)psfilters $(GLOBJ)sfilter1.$(OBJ) $(GLOBJ)sfilter1.$(OBJ)
+	$(SETMOD) $(GLD)psfilters $(GLOBJ)sfilter1.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
 
 $(GLOBJ)sstring.$(OBJ) : $(GLSRC)sstring.c $(AK)\
  $(stdio__h) $(memory__h) $(string__h)\
