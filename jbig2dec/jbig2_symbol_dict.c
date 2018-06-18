@@ -342,7 +342,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         tparams.IADS = jbig2_arith_int_ctx_new(ctx);
         tparams.IAIT = jbig2_arith_int_ctx_new(ctx);
         /* Table 31 */
-        for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < (int)(params->SDNUMINSYMS + params->SDNUMNEWSYMS); SBSYMCODELEN++);
+        for (SBSYMCODELEN = 0; ((uint64_t) 1 << SBSYMCODELEN) < ((uint64_t) params->SDNUMINSYMS + params->SDNUMNEWSYMS); SBSYMCODELEN++);
         tparams.IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
         tparams.IARI = jbig2_arith_int_ctx_new(ctx);
         tparams.IARDW = jbig2_arith_int_ctx_new(ctx);
