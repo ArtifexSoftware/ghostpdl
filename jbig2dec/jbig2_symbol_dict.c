@@ -768,20 +768,32 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
             /* prevent infinite loop */
             if (EXRUNLENGTH > limit - i || (exflag && (EXRUNLENGTH + j > params->SDNUMEXSYMS))) {
-                if (EXRUNLENGTH <= 0)
-                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength too small in export symbol table (%d <= 0)", EXRUNLENGTH);
-                else
-                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-                                "runlength too large in export symbol table (%d > %d - %d)", EXRUNLENGTH, params->SDNUMEXSYMS, j);
-                /* skip to the cleanup code and return SDEXSYMS = NULL */
-                jbig2_sd_release(ctx, SDEXSYMS);
-                SDEXSYMS = NULL;
-                break;
+                if (EXRUNLENGTH <= 0) {
+                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength too small in export symbol table (%u <= 0)", EXRUNLENGTH);
+                    /* skip to the cleanup code and return SDEXSYMS = NULL */
+                    jbig2_sd_release(ctx, SDEXSYMS);
+                    SDEXSYMS = NULL;
+                    break;
+                } else if (EXRUNLENGTH > limit - i) {
+                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength too large in export symbol table (%u > %u - %u)", EXRUNLENGTH, params->SDNUMEXSYMS, j);
+                    jbig2_sd_release(ctx, SDEXSYMS);
+                    SDEXSYMS = NULL;
+                    break;
+                } else if (EXRUNLENGTH < limit - i) {
+                    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "runlength too large in export symbol table, limiting export (%u > %u - %u)", EXRUNLENGTH, params->SDNUMEXSYMS, j);
+                    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "old=%u new=%u limit=%u", EXRUNLENGTH, params->SDNUMEXSYMS - j, limit);
+                    EXRUNLENGTH = params->SDNUMEXSYMS - j;
+                }
             }
             for (k = 0; k < EXRUNLENGTH; k++) {
                 if (exflag) {
-                    SDEXSYMS->glyphs[j++] = (i < params->SDNUMINSYMS) ?
-                                            jbig2_image_reference(ctx, params->SDINSYMS->glyphs[i]) : jbig2_image_reference(ctx, SDNEWSYMS->glyphs[i - params->SDNUMINSYMS]);
+                    Jbig2Image *img;
+                    if (i < params->SDNUMINSYMS) {
+                        img = params->SDINSYMS->glyphs[i];
+                    } else {
+                        img = SDNEWSYMS->glyphs[i - params->SDNUMINSYMS];
+                    }
+                    SDEXSYMS->glyphs[j++] = jbig2_image_reference(ctx, img);
                 }
                 i++;
             }
