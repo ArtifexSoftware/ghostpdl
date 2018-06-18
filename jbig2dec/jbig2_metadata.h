@@ -32,7 +32,6 @@ typedef struct _Jbig2Metadata Jbig2Metadata;
 
 Jbig2Metadata *jbig2_metadata_new(Jbig2Ctx *ctx, Jbig2Encoding encoding);
 void jbig2_metadata_free(Jbig2Ctx *ctx, Jbig2Metadata *md);
-int jbig2_metadata_add(Jbig2Ctx *ctx, Jbig2Metadata *md, const char *key, const int key_length, const char *value, const int value_length);
 
 struct _Jbig2Metadata {
     Jbig2Encoding encoding;

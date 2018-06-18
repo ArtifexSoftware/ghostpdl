@@ -90,7 +90,7 @@ jbig2_strndup(Jbig2Ctx *ctx, const char *c, const int len)
     return s;
 }
 
-int
+static int
 jbig2_metadata_add(Jbig2Ctx *ctx, Jbig2Metadata *md, const char *key, const int key_length, const char *value, const int value_length)
 {
     char **keys, **values;
