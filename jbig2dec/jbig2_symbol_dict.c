@@ -745,7 +745,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         int exflag = 0;
         uint32_t limit = params->SDNUMINSYMS + params->SDNUMNEWSYMS;
         uint32_t EXRUNLENGTH;
-        int zerolength = 0;
 
         while (i < limit) {
             if (params->SDHUFF)
@@ -768,8 +767,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
             }
 
             /* prevent infinite loop */
-            zerolength = EXRUNLENGTH > 0 ? 0 : zerolength + 1;
-            if (EXRUNLENGTH > limit - i || zerolength > 4 || (exflag && (EXRUNLENGTH + j > params->SDNUMEXSYMS))) {
+            if (EXRUNLENGTH > limit - i || (exflag && (EXRUNLENGTH + j > params->SDNUMEXSYMS))) {
                 if (EXRUNLENGTH <= 0)
                     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength too small in export symbol table (%d <= 0)", EXRUNLENGTH);
                 else
