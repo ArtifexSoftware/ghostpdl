@@ -295,7 +295,8 @@ clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
                                                        fname, fmode), fmode);
             /* If the platform supports FILE duplication then we overwrite the
              * file name with an encoded form of the FILE pointer */
-            file_to_fake_path(*pcf, fname);
+            if (*pcf != NULL)
+                file_to_fake_path(*pcf, fname);
         } else {
             *pcf = (clist_file_ptr)wrap_file(mem, gp_open_scratch_file_64(mem,
                                                        gp_scratch_file_name_prefix,
