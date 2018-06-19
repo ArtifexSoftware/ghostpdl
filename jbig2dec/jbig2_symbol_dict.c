@@ -584,7 +584,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                         /* 6.5.8.2.2 (7) */
                         if (params->SDHUFF) {
                             if (BMSIZE == 0)
-                                BMSIZE = SDNEWSYMS->glyphs[NSYMSDECODED]->height *
+                                BMSIZE = (size_t) SDNEWSYMS->glyphs[NSYMSDECODED]->height *
                                     SDNEWSYMS->glyphs[NSYMSDECODED]->stride;
                             code = jbig2_huffman_advance(hs, BMSIZE);
                             if (code < 0) {
@@ -630,7 +630,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
         /* 6.5.5 (4d) */
         if (params->SDHUFF && !params->SDREFAGG) {
             /* 6.5.9 */
-            uint32_t BMSIZE;
+            size_t BMSIZE;
             uint32_t j;
             int x;
 
@@ -663,13 +663,13 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 byte *dst = image->data;
 
                 /* SumatraPDF: prevent read access violation */
-                if ((size - jbig2_huffman_offset(hs) < image->height * stride) || (size < jbig2_huffman_offset(hs))) {
+                if ((size - jbig2_huffman_offset(hs) < (size_t) image->height * stride) || (size < jbig2_huffman_offset(hs))) {
                     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "not enough data for decoding uncompressed (%d/%d)", image->height * stride,
                                 size - jbig2_huffman_offset(hs));
                     goto cleanup;
                 }
 
-                BMSIZE = image->height * stride;
+                BMSIZE = (size_t) image->height * stride;
                 jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
                             "reading %dx%d uncompressed bitmap for %d symbols (%d bytes)", image->width, image->height, NSYMSDECODED - HCFIRSTSYM, BMSIZE);
 

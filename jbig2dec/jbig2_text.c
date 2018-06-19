@@ -380,7 +380,7 @@ cleanup1:
             if (RI) {
                 Jbig2RefinementRegionParams rparams;
                 int32_t RDW, RDH, RDX, RDY;
-                int BMSIZE = 0;
+                size_t BMSIZE = 0;
                 int code1 = 0;
                 int code2 = 0;
                 int code3 = 0;

@@ -205,11 +205,11 @@ jbig2_huffman_skip(Jbig2HuffmanState *hs)
 /* skip ahead a specified number of bytes in the word stream
  */
 int
-jbig2_huffman_advance(Jbig2HuffmanState *hs, int offset)
+jbig2_huffman_advance(Jbig2HuffmanState *hs, size_t advance)
 {
     int code;
-    hs->offset += offset & ~3;
-    hs->offset_bits += (offset & 3) << 3;
+    hs->offset += advance & ~3;
+    hs->offset_bits += (advance & 3) << 3;
     if (hs->offset_bits >= 32) {
         hs->offset += 4;
         hs->offset_bits -= 32;
