@@ -1035,7 +1035,6 @@
     <ClCompile Include="..\jbig2dec\jbig2_image.c" />
     <ClCompile Include="..\jbig2dec\jbig2_image_pbm.c" />
     <ClCompile Include="..\jbig2dec\jbig2_image_png.c" />
-    <ClCompile Include="..\jbig2dec\jbig2_metadata.c" />
     <ClCompile Include="..\jbig2dec\jbig2_mmr.c" />
     <ClCompile Include="..\jbig2dec\jbig2_page.c" />
     <ClCompile Include="..\jbig2dec\jbig2_refinement.c" />
@@ -1619,7 +1618,6 @@
     <ClInclude Include="..\jbig2dec\jbig2_huffman.h" />
     <ClInclude Include="..\jbig2dec\jbig2_hufftab.h" />
     <ClInclude Include="..\jbig2dec\jbig2_image.h" />
-    <ClInclude Include="..\jbig2dec\jbig2_metadata.h" />
     <ClInclude Include="..\jbig2dec\jbig2_mmr.h" />
     <ClInclude Include="..\jbig2dec\jbig2_priv.h" />
     <ClInclude Include="..\jbig2dec\jbig2_symbol_dict.h" />

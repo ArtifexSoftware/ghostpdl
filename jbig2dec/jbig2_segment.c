@@ -33,7 +33,6 @@
 #include "jbig2_image.h"
 #include "jbig2_halftone.h"
 #include "jbig2_huffman.h"
-#include "jbig2_metadata.h"
 #include "jbig2_page.h"
 #include "jbig2_refinement.h"
 #include "jbig2_segment.h"
@@ -159,10 +158,6 @@ jbig2_free_segment(Jbig2Ctx *ctx, Jbig2Segment *segment)
         if (segment->result != NULL)
             jbig2_table_free(ctx, (Jbig2HuffmanParams *) segment->result);
         break;
-    case 62:
-        if (segment->result != NULL)
-            jbig2_metadata_free(ctx, (Jbig2Metadata *) segment->result);
-        break;
     default:
         /* anything else is probably an undefined pointer */
         break;
@@ -229,9 +224,11 @@ jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_
 
     switch (type) {
     case 0x20000000:
-        return jbig2_comment_ascii(ctx, segment, segment_data);
+        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "ignoring ASCII comment");
+        break;
     case 0x20000002:
-        return jbig2_comment_unicode(ctx, segment, segment_data);
+        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "ignoring UCS-2 comment");
+        break;
     default:
         if (necessary) {
             return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unhandled necessary extension segment type 0x%08x", type);
@@ -239,6 +236,8 @@ jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_
             return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unhandled extension segment");
         }
     }
+
+    return 0;
 }
 
 /* dispatch code for profile segment parsing */

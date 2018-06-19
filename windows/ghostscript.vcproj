@@ -6948,14 +6948,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\jbig2dec\jbig2_metadata.c"
-				>
-			</File>
-			<File
-				RelativePath="..\jbig2dec\jbig2_metadata.h"
-				>
-			</File>
-			<File
 				RelativePath="..\jbig2dec\jbig2_mmr.c"
 				>
 			</File>

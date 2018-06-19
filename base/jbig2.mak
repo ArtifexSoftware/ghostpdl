@@ -57,7 +57,7 @@ libjbig2_OBJS2=\
         $(JBIG2OBJ)jbig2_symbol_dict.$(OBJ) \
         $(JBIG2OBJ)jbig2_text.$(OBJ) \
         $(JBIG2OBJ)jbig2_halftone.$(OBJ) \
-        $(JBIG2OBJ)jbig2_metadata.$(OBJ) $(JBIG2_EXTRA_OBJS)
+        $(JBIG2_EXTRA_OBJS)
 
 libjbig2_OBJS=$(libjbig2_OBJS1) $(libjbig2_OBJS2)
 
@@ -75,7 +75,6 @@ libjbig2_HDRS=\
         $(JBIG2SRC)jbig2_symbol_dict.h \
         $(JBIG2SRC)jbig2_text.h \
         $(JBIG2SRC)jbig2_halftone.h \
-        $(JBIG2SRC)jbig2_metadata.h \
         $(JBIG2SRC)config_win32.h
 
 jbig2dec_OBJS=$(JBIG2OBJ)getopt.$(OBJ) $(JBIG2OBJ)getopt1.$(OBJ) $(JBIG2OBJ)sha1.$(OBJ)
@@ -167,9 +166,6 @@ $(JBIG2OBJ)jbig2_text.$(OBJ) : $(JBIG2SRC)jbig2_text.c $(libjbig2_HDRS) $(JBIG2D
 
 $(JBIG2OBJ)jbig2_halftone.$(OBJ) : $(JBIG2SRC)jbig2_halftone.c $(libjbig2_HDRS) $(JBIG2DEP) $(JBIG2_MAK) $(MAKEDIRS)
 	$(JBIG2_CC) $(JBIG2O_)jbig2_halftone.$(OBJ) $(C_) $(JBIG2SRC)jbig2_halftone.c
-
-$(JBIG2OBJ)jbig2_metadata.$(OBJ) : $(JBIG2SRC)jbig2_metadata.c $(libjbig2_HDRS) $(JBIG2DEP) $(JBIG2_MAK) $(MAKEDIRS)
-	$(JBIG2_CC) $(JBIG2O_)jbig2_metadata.$(OBJ) $(C_) $(JBIG2SRC)jbig2_metadata.c
 
 $(JBIG2OBJ)jbig2dec.$(OBJ) : $(JBIG2SRC)jbig2dec.c $(libjbig2_HDRS) $(JBIG2DEP) $(JBIG2_MAK) $(MAKEDIRS)
 	$(JBIG2_CC) $(JBIG2O_)jbig2dec.$(OBJ) $(C_) $(JBIG2SRC)jbig2dec.c
