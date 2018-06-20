@@ -61,6 +61,8 @@ jbig2_decode_generic_template0(Jbig2Ctx *ctx,
     const int GBH = image->height;
     const int rowstride = image->stride;
     int x, y;
+    byte *line2 = NULL;
+    byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
 
 #ifdef OUTPUT_PBM
@@ -77,8 +79,8 @@ jbig2_decode_generic_template0(Jbig2Ctx *ctx,
         int padded_width = (GBW + 7) & -8;
         int code = 0;
 
-        line_m1 = (y >= 1) ? gbreg_line[-rowstride] : 0;
-        line_m2 = (y >= 2) ? gbreg_line[-(rowstride << 1)] << 6 : 0;
+        line_m1 = line1 ? line1[0] : 0;
+        line_m2 = line2 ? line2[0] << 6 : 0;
         CONTEXT = (line_m1 & 0x7f0) | (line_m2 & 0xf800);
 
         /* 6.2.5.7 3d */
@@ -87,11 +89,11 @@ jbig2_decode_generic_template0(Jbig2Ctx *ctx,
             int x_minor;
             int minor_width = GBW - x > 8 ? 8 : GBW - x;
 
-            if (y >= 1)
-                line_m1 = (line_m1 << 8) | (x + 8 < GBW ? gbreg_line[-rowstride + (x >> 3) + 1] : 0);
+            if (line1)
+                line_m1 = (line_m1 << 8) | (x + 8 < GBW ? line1[(x >> 3) + 1] : 0);
 
-            if (y >= 2)
-                line_m2 = (line_m2 << 8) | (x + 8 < GBW ? gbreg_line[-(rowstride << 1) + (x >> 3) + 1] << 6 : 0);
+            if (line2)
+                line_m2 = (line_m2 << 8) | (x + 8 < GBW ? line2[(x >> 3) + 1] << 6 : 0);
 
             /* This is the speed-critical inner loop. */
             for (x_minor = 0; x_minor < minor_width; x_minor++) {
@@ -108,6 +110,8 @@ jbig2_decode_generic_template0(Jbig2Ctx *ctx,
 #ifdef OUTPUT_PBM
         fwrite(gbreg_line, 1, rowstride, stdout);
 #endif
+        line2 = line1;
+        line1 = gbreg_line;
         gbreg_line += rowstride;
     }
 
@@ -218,6 +222,8 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
     const int GBH = image->height;
     const int rowstride = image->stride;
     int x, y;
+    byte *line2 = NULL;
+    byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
     int code = 0;
 
@@ -234,8 +240,8 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
         uint32_t line_m2;
         int padded_width = (GBW + 7) & -8;
 
-        line_m1 = (y >= 1) ? gbreg_line[-rowstride] : 0;
-        line_m2 = (y >= 2) ? gbreg_line[-(rowstride << 1)] << 5 : 0;
+        line_m1 = line1 ? line1[0] : 0;
+        line_m2 = line2 ? line2[0] << 5 : 0;
         CONTEXT = ((line_m1 >> 1) & 0x1f8) | ((line_m2 >> 1) & 0x1e00);
 
         /* 6.2.5.7 3d */
@@ -244,11 +250,11 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
             int x_minor;
             int minor_width = GBW - x > 8 ? 8 : GBW - x;
 
-            if (y >= 1)
-                line_m1 = (line_m1 << 8) | (x + 8 < GBW ? gbreg_line[-rowstride + (x >> 3) + 1] : 0);
+            if (line1)
+                line_m1 = (line_m1 << 8) | (x + 8 < GBW ? line1[(x >> 3) + 1] : 0);
 
-            if (y >= 2)
-                line_m2 = (line_m2 << 8) | (x + 8 < GBW ? gbreg_line[-(rowstride << 1) + (x >> 3) + 1] << 5 : 0);
+            if (line2)
+                line_m2 = (line_m2 << 8) | (x + 8 < GBW ? line2[(x >> 3) + 1] << 5 : 0);
 
             /* This is the speed-critical inner loop. */
             for (x_minor = 0; x_minor < minor_width; x_minor++) {
@@ -265,6 +271,8 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
 #ifdef OUTPUT_PBM
         fwrite(gbreg_line, 1, rowstride, stdout);
 #endif
+        line2 = line1;
+        line1 = gbreg_line;
         gbreg_line += rowstride;
     }
 
@@ -321,6 +329,8 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
     const int GBH = image->height;
     const int rowstride = image->stride;
     int x, y;
+    byte *line2 = NULL;
+    byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
     int code = 0;
 
@@ -337,8 +347,8 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
         uint32_t line_m2;
         int padded_width = (GBW + 7) & -8;
 
-        line_m1 = (y >= 1) ? gbreg_line[-rowstride] : 0;
-        line_m2 = (y >= 2) ? gbreg_line[-(rowstride << 1)] << 4 : 0;
+        line_m1 = line1 ? line1[0] : 0;
+        line_m2 = line2 ? line2[0] << 4 : 0;
         CONTEXT = ((line_m1 >> 3) & 0x7c) | ((line_m2 >> 3) & 0x380);
 
         /* 6.2.5.7 3d */
@@ -347,11 +357,11 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
             int x_minor;
             int minor_width = GBW - x > 8 ? 8 : GBW - x;
 
-            if (y >= 1)
-                line_m1 = (line_m1 << 8) | (x + 8 < GBW ? gbreg_line[-rowstride + (x >> 3) + 1] : 0);
+            if (line1)
+                line_m1 = (line_m1 << 8) | (x + 8 < GBW ? line1[(x >> 3) + 1] : 0);
 
-            if (y >= 2)
-                line_m2 = (line_m2 << 8) | (x + 8 < GBW ? gbreg_line[-(rowstride << 1) + (x >> 3) + 1] << 4 : 0);
+            if (line2)
+                line_m2 = (line_m2 << 8) | (x + 8 < GBW ? line2[(x >> 3) + 1] << 4 : 0);
 
             /* This is the speed-critical inner loop. */
             for (x_minor = 0; x_minor < minor_width; x_minor++) {
@@ -368,6 +378,8 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
 #ifdef OUTPUT_PBM
         fwrite(gbreg_line, 1, rowstride, stdout);
 #endif
+        line2 = line1;
+        line1 = gbreg_line;
         gbreg_line += rowstride;
     }
 
@@ -382,6 +394,7 @@ jbig2_decode_generic_template3(Jbig2Ctx *ctx,
     const int GBW = image->width;
     const int GBH = image->height;
     const int rowstride = image->stride;
+    byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
     int x, y;
     int code;
@@ -398,7 +411,7 @@ jbig2_decode_generic_template3(Jbig2Ctx *ctx,
         uint32_t line_m1;
         int padded_width = (GBW + 7) & -8;
 
-        line_m1 = (y >= 1) ? gbreg_line[-rowstride] : 0;
+        line_m1 = line1 ? line1[0] : 0;
         CONTEXT = (line_m1 >> 1) & 0x3f0;
 
         /* 6.2.5.7 3d */
@@ -407,8 +420,8 @@ jbig2_decode_generic_template3(Jbig2Ctx *ctx,
             int x_minor;
             int minor_width = GBW - x > 8 ? 8 : GBW - x;
 
-            if (y >= 1)
-                line_m1 = (line_m1 << 8) | (x + 8 < GBW ? gbreg_line[-rowstride + (x >> 3) + 1] : 0);
+            if (line1)
+                line_m1 = (line_m1 << 8) | (x + 8 < GBW ? line1[(x >> 3) + 1] : 0);
 
             /* This is the speed-critical inner loop. */
             for (x_minor = 0; x_minor < minor_width; x_minor++) {
@@ -425,6 +438,7 @@ jbig2_decode_generic_template3(Jbig2Ctx *ctx,
 #ifdef OUTPUT_PBM
         fwrite(gbreg_line, 1, rowstride, stdout);
 #endif
+        line1 = gbreg_line;
         gbreg_line += rowstride;
     }
 
