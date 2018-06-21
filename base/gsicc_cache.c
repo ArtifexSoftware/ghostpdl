@@ -167,20 +167,28 @@ icc_linkcache_finalize(const gs_memory_t *mem, void *ptr)
 /* This is a special allocation for a link that is used by devices for
    doing color management on post rendered data.  It is not tied into the
    profile cache like gsicc_alloc_link. Also it goes ahead and creates
-   the link */
+   the link, i.e. link creation is not delayed. */
 gsicc_link_t *
 gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, gsicc_rendering_param_t *rendering_params)
 {
     gsicc_link_t *result;
     int cms_flags = 0;
-    gs_memory_t *nongc_mem = memory->non_gc_memory;
 
-    result = (gsicc_link_t*) gs_malloc(nongc_mem, 1, sizeof(gsicc_link_t),
-        "gsicc_alloc_link_dev");
+    result = (gsicc_link_t*) gs_malloc(memory->stable_memory, 1,
+        sizeof(gsicc_link_t), "gsicc_alloc_link_dev");
 
     if (result == NULL)
         return NULL;
+#ifndef MEMENTO_SQUEEZE_BUILD
+    result->lock = gx_monitor_label(gx_monitor_alloc(memory->stable_memory),
+        "gsicc_link_new");
+    if (result->lock == NULL) {
+        gs_free_object(memory->stable_memory, result, "gsicc_alloc_link(lock)");
+        return NULL;
+    }
+    gx_monitor_enter(result->lock);
+#endif
 
     /* set up placeholder values */
     result->is_monitored = false;
@@ -190,7 +198,6 @@ gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
     result->next = NULL;
     result->link_handle = NULL;
     result->icc_link_cache = NULL;
-    result->lock = NULL;
     result->procs.map_buffer = gscms_transform_color_buffer;
     result->procs.map_color = gscms_transform_color;
     result->procs.free_link = gscms_release_link;
@@ -203,33 +210,35 @@ gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
     result->includes_devlink = 0;
     result->is_identity = false;
     result->valid = true;
+    result->memory = memory->stable_memory;
 
     if_debug2m('^', result->memory, "[^]%s 0x%lx init = 1\n",
                "icclink", result);
 
     if (src_profile->profile_handle == NULL) {
-        src_profile->profile_handle = gsicc_get_profile_handle_buffer(src_profile->buffer,
-            src_profile->buffer_size, nongc_mem);
+        src_profile->profile_handle = gsicc_get_profile_handle_buffer(
+            src_profile->buffer, src_profile->buffer_size, memory->stable_memory);
     }
 
     if (des_profile->profile_handle == NULL) {
-        des_profile->profile_handle = gsicc_get_profile_handle_buffer(des_profile->buffer,
-            des_profile->buffer_size, nongc_mem);
+        des_profile->profile_handle = gsicc_get_profile_handle_buffer(
+            des_profile->buffer, des_profile->buffer_size, memory->stable_memory);
     }
 
     /* Check for problems.. */
     if (src_profile->profile_handle == 0 || des_profile->profile_handle == 0) {
-        gs_free_object(nongc_mem, result, "gsicc_alloc_link_dev");
+        gs_free_object(memory->stable_memory, result, "gsicc_alloc_link_dev");
         return NULL;
     }
 
     /* [0] is chunky, littleendian, noalpha, 16-in, 16-out */
     result->link_handle = gscms_get_link(src_profile->profile_handle,
-        des_profile->profile_handle, rendering_params, cms_flags, nongc_mem);
+        des_profile->profile_handle, rendering_params, cms_flags,
+        memory->stable_memory);
 
     /* Check for problems.. */
     if (result->link_handle == NULL) {
-        gs_free_object(nongc_mem, result, "gsicc_alloc_link_dev");
+        gs_free_object(memory->stable_memory, result, "gsicc_alloc_link_dev");
         return NULL;
     }
 
