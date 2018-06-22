@@ -2882,7 +2882,7 @@ $(GLOBJ)gsicc_manage.$(OBJ) : $(GLSRC)gsicc_manage.c $(AK) $(gx_h)\
  $(gxgstate_h) $(gxcspace_h) $(gscms_h) $(gsicc_manage_h) $(gsicc_cache_h)\
  $(gsicc_profilecache_h) $(gserrors_h) $(string__h) $(gxclist_h) $(gxcldev_h)\
  $(gzstate_h) $(gsicc_create_h) $(gpmisc_h) $(gxdevice_h) $(std_h)\
- $(gsicc_cms_h) $(gp_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gsicc_cms_h) $(gp_h) $(gxdevsop_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsicc_manage.$(OBJ) $(C_) $(GLSRC)gsicc_manage.c
 
 $(GLOBJ)gsicc_cache.$(OBJ) : $(GLSRC)gsicc_cache.c $(AK) $(gx_h)\

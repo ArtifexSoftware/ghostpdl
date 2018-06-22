@@ -39,6 +39,7 @@
 #include "gsicc_create.h"
 #include "gpmisc.h"
 #include "gxdevice.h"
+#include "gxdevsop.h"
 
 #define ICC_HEADER_SIZE 128
 #define CREATE_V2_DATA 0
@@ -1756,6 +1757,88 @@ char* gsicc_get_dev_icccolorants(cmm_dev_profile_t *dev_profile)
         return dev_profile->spotnames->name_str;
 }
 
+/* Check that the current state of the profiles is fine. Proof profile is of no
+   concern since it is doing a CIELAB to CIELAB mapping in the mashed up
+   transform. */
+static int
+gsicc_verify_device_profiles(gx_device * pdev)
+{
+    int k;
+    bool objects = false;
+    cmm_dev_profile_t *dev_icc = pdev->icc_struct;
+
+    if (dev_icc->device_profile[0] == NULL)
+        return 0;
+
+    if (dev_icc->postren_profile != NULL && dev_icc->link_profile != NULL) {
+        return gs_rethrow(-1, "Post render profile not allowed with device link profile");
+    }
+
+    if (dev_icc->blend_profile != NULL) {
+        if (!(dev_icc->blend_profile->data_cs == gsGRAY ||
+            dev_icc->blend_profile->data_cs == gsRGB ||
+            dev_icc->blend_profile->data_cs == gsCMYK))
+            return gs_rethrow(-1, "Blending color space must be Gray, RGB or CMYK");
+    }
+
+    if (dev_icc->postren_profile != NULL) {
+        if (pdev->procs.dev_spec_op == NULL ||
+            !dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_iccpostrender, NULL, 0)) {
+            return gs_rethrow(-1, "Post render profile not supported by device");
+        }
+        if (!dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_devn, NULL, 0)) {
+            if (dev_icc->postren_profile->num_comps !=
+                pdev->color_info.num_components) {
+                return gs_rethrow(-1, "Post render profile does not match the device color model");
+            }
+            return 0;
+        }
+        return 0; /* An interesting case with sep device.  Need to do a bit of testing here */
+    }
+
+    for (k = 1; k < NUM_DEVICE_PROFILES; k++) {
+        if (dev_icc->device_profile[k] != NULL) {
+            objects = true;
+            break;
+        }
+    }
+
+    if (dev_icc->link_profile == NULL) {
+        if (!objects) {
+            if (dev_icc->device_profile[0]->num_comps !=
+                pdev->color_info.num_components)
+                return gs_rethrow(-1, "Mismatch of ICC profiles and device color model");
+            else
+                return 0;
+        } else {
+            for (k = 1; k < NUM_DEVICE_PROFILES; k++)
+                if (dev_icc->device_profile[k] != NULL) {
+                    if (dev_icc->device_profile[k]->num_comps !=
+                        pdev->color_info.num_components)
+                        return gs_rethrow(-1, "Mismatch of object dependent ICC profiles and device color model");
+                }
+            return 0;
+        }
+    } else {
+        /* The input of the device link must match the output of the device
+           profile and the device link output must match the device color
+           model */
+        if (dev_icc->link_profile->num_comps_out !=
+            pdev->color_info.num_components) {
+            return gs_rethrow(-1, "Mismatch of device link profile and device color model");
+        }
+        for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
+            if (dev_icc->device_profile[k] != NULL) {
+                if (dev_icc->device_profile[k]->num_comps !=
+                    dev_icc->link_profile->num_comps) {
+                    return gs_rethrow(-1, "Mismatch of device link profile and device ICC profile");
+                }
+            }
+        }
+        return 0;
+    }
+}
+
 /*  This computes the hash code for the device profile and assigns the profile
     in the icc_struct member variable of the device.  This should
     really occur only one time, but may occur twice if a color model is
@@ -1819,6 +1902,7 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                     pdev->icc_struct->blend_profile = icc_profile;
                 }
             }
+
             /* Get the profile handle */
             icc_profile->profile_handle =
                 gsicc_get_profile_handle_buffer(icc_profile->buffer,
@@ -1826,12 +1910,14 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                                                 mem);
             if (icc_profile->profile_handle == NULL)
                 return_error(gs_error_unknownerror);
+
             /* Compute the hash code of the profile. Everything in the
                ICC manager will have it's hash code precomputed */
             gsicc_get_icc_buff_hash(icc_profile->buffer,
                                     &(icc_profile->hashcode),
                                     icc_profile->buffer_size);
             icc_profile->hash_is_valid = true;
+
             /* Get the number of channels in the output profile */
             icc_profile->num_comps =
                 gscms_get_input_channel_count(icc_profile->profile_handle,
@@ -1844,6 +1930,12 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
             icc_profile->data_cs =
                 gscms_get_profile_data_space(icc_profile->profile_handle,
                     icc_profile->memory);
+
+            /* Check that everything is OK with regard to the number of
+               components. */
+            if (gsicc_verify_device_profiles(pdev) < 0)
+                return gs_rethrow(-1, "Error in device profiles");
+
             /* We need to know if this is one of the "default" profiles or
                if someone has externally set it.  The reason is that if there
                is an output intent in the file, and someone wants to use the

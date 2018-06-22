@@ -1021,6 +1021,7 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         case gxdso_supports_hlcolor:
         case gxdso_supports_saved_pages:
         case gxdso_needs_invariant_palette:
+        case gxdso_supports_iccpostrender:
             return 0;
         case gxdso_pattern_shfill_doesnt_need_path:
             return (dev_proc(pdev, fill_path) == gx_default_fill_path);

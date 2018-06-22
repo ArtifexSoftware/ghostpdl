@@ -47,6 +47,7 @@
 #include "gstiffio.h"
 #include "gscms.h"
 #include "gsicc_cache.h"
+#include "gxdevsop.h"
 
 /*
  * Some of the code in this module is based upon the gdevtfnx.c module.
@@ -88,6 +89,15 @@ const gx_device_tiff gs_tiffgray_device = {
     0
 };
 
+static int
+tiffscaled_spec_op(gx_device *dev_, int op, void *data, int datasize)
+{
+    if (op == gxdso_supports_iccpostrender) {
+        return true;
+    }
+    return gx_default_dev_spec_op(dev_, op, data, datasize);
+}
+
 /* ------ The tiffscaled device ------ */
 
 static dev_proc_print_page(tiffscaled_print_page);
@@ -127,14 +137,16 @@ const gx_device_tiff gs_tiffscaled_device = {
 
 static dev_proc_print_page(tiffscaled8_print_page);
 
-static const gx_device_procs tiffscaled8_procs =
-prn_color_params_procs(tiff_open,
-                       gdev_prn_output_page_seekable,
-                       tiff_close,
-                       gx_default_gray_map_rgb_color,
-                       gx_default_gray_map_color_rgb,
-                       tiff_get_params_downscale,
-                       tiff_put_params_downscale);
+static const gx_device_procs tiffscaled8_procs = {
+    tiff_open, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
+    gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb, NULL, NULL,
+    NULL, NULL, NULL, NULL, tiff_get_params_downscale, tiff_put_params_downscale,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, tiffscaled_spec_op
+};
 
 const gx_device_tiff gs_tiffscaled8_device = {
     prn_device_body(gx_device_tiff,
@@ -161,14 +173,16 @@ const gx_device_tiff gs_tiffscaled8_device = {
 
 static dev_proc_print_page(tiffscaled24_print_page);
 
-static const gx_device_procs tiffscaled24_procs =
-prn_color_params_procs(tiff_open,
-                       gdev_prn_output_page_seekable,
-                       tiff_close,
-                       gx_default_rgb_map_rgb_color,
-                       gx_default_rgb_map_color_rgb,
-                       tiff_get_params_downscale,
-                       tiff_put_params_downscale);
+static const gx_device_procs tiffscaled24_procs = {
+    tiff_open, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
+    gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb, NULL, NULL,
+    NULL, NULL, NULL, NULL, tiff_get_params_downscale, tiff_put_params_downscale,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, tiffscaled_spec_op
+};
 
 const gx_device_tiff gs_tiffscaled24_device = {
     prn_device_body(gx_device_tiff,
@@ -199,7 +213,11 @@ static const gx_device_procs tiffscaled32_procs = {
     tiff_open, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
     NULL, cmyk_8bit_map_color_cmyk, NULL, NULL, NULL, NULL, NULL, NULL,
     tiff_get_params_downscale_cmyk, tiff_put_params_downscale_cmyk,
-    cmyk_8bit_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
+    cmyk_8bit_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, tiffscaled_spec_op
 };
 
 const gx_device_tiff gs_tiffscaled32_device = {
@@ -499,6 +517,15 @@ tiff_set_icc_color_fields(gx_device_printer *pdev)
     return 0;
 }
 
+static int
+tiffsep_spec_op(gx_device *dev_, int op, void *data, int datasize)
+{
+    if (op == gxdso_supports_iccpostrender || op == gxdso_supports_devn) {
+        return true;
+    }
+    return gx_default_dev_spec_op(dev_, op, data, datasize);
+}
+
 /* ------ The cmyk devices ------ */
 
 static dev_proc_print_page(tiffcmyk_print_page);
@@ -749,7 +776,12 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
         NULL,                           /* fill_linear_color_trapezoid */\
         NULL,                           /* fill_linear_color_triangle */\
         update_spot_colors,             /* update_spot_equivalent_colors */\
-        tiffsep_ret_devn_params         /* ret_devn_params */\
+        tiffsep_ret_devn_params,         /* ret_devn_params */\
+        NULL,                           /* fillpage */\
+        NULL,                           /* push_transparency_state */\
+        NULL,                           /* pop_transparency_state */\
+        NULL,                           /* put_image */\
+        tiffsep_spec_op                 /* dev_spec_op */\
 }
 
 

@@ -325,6 +325,7 @@ enum {
     gxdso_JPEG_passthrough_begin,
     gxdso_JPEG_passthrough_data,
     gxdso_JPEG_passthrough_end,
+    gxdso_supports_iccpostrender,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };
