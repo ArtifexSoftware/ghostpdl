@@ -773,7 +773,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
     link_handle->flags = gsicc_link_flags(0, 0, 0, 0, 0,    /* no alpha, not planar, little-endian */
                                           sizeof(gx_color_value), sizeof(gx_color_value));
     /* Check if the rendering intent is something other than relative colorimetric
-       and  if we have a proofing profile.  In this case we need to create the
+       and if we have a proofing profile.  In this case we need to create the
        combined profile a bit different.  LCMS does not allow us to use different
        intents in the cmsCreateMultiprofileTransform transform.  Also, don't even
        think about doing this if someone has snuck in a source based device link
@@ -781,9 +781,18 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
     if (lcms_proofhandle != NULL &&
         rendering_params->rendering_intent != gsRELATIVECOLORIMETRIC &&
         !src_dev_link) {
+
         /* First handle the source to proof profile with its particular intent as
            a device link profile */
         cmsHPROFILE src_to_proof;
+
+        link_handle = gscms_get_link(lcms_srchandle, lcms_proofhandle,
+            rendering_params, cmm_flags, memory);
+        if (link_handle->hTransform == NULL) {
+            gs_free_object(memory, link_handle, "gscms_get_link_proof_devlink");
+            return NULL;
+        }
+
         /* Now mash that to a device link profile */
         flag = gscms_get_accuracy(memory);
         if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON ||
@@ -791,9 +800,8 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
             flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
         }
         src_to_proof = cmsTransform2DeviceLink(ctx, link_handle->hTransform, 3.4, flag);
-
-        /* Free up the link handle */
         cmsDeleteTransform(ctx, link_handle->hTransform);
+
         src_color_space  = cmsGetColorSpace(ctx, src_to_proof);
         lcms_src_color_space = _cmsLCMScolorSpace(ctx, src_color_space);
 
