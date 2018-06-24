@@ -29,6 +29,7 @@ struct _Jbig2Segment {
     size_t data_length;
     int referred_to_segment_count;
     uint32_t *referred_to_segments;
+    uint32_t rows;
     void *result;
 };
 

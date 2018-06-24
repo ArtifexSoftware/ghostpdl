@@ -795,6 +795,7 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte 
     Jbig2WordStream *ws = NULL;
     Jbig2ArithState *as = NULL;
     Jbig2ArithCx *GB_stats = NULL;
+    uint32_t height;
 
     /* 7.4.6 */
     if (segment->data_length < 18)
@@ -802,6 +803,14 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte 
 
     jbig2_get_region_segment_info(&rsi, segment_data);
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "generic region: %d x %d @ (%d, %d), flags = %02x", rsi.width, rsi.height, rsi.x, rsi.y, rsi.flags);
+
+    /* 7.4.6.4 */
+    height = rsi.height;
+    if (segment->rows != UINT32_MAX) {
+        if (segment->rows > rsi.height)
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment contains more rows than stated in header");
+        height = segment->rows;
+    }
 
     /* 7.4.6.2 */
     seg_flags = segment_data[17];
@@ -831,10 +840,10 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte 
     params.USESKIP = 0;
     memcpy(params.gbat, gbat, gbat_bytes);
 
-    image = jbig2_image_new(ctx, rsi.width, rsi.height);
+    image = jbig2_image_new(ctx, rsi.width, height);
     if (image == NULL)
         return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to allocate generic image");
-    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "allocated %d x %d image buffer for region decode results", rsi.width, rsi.height);
+    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, "allocated %d x %d image buffer for region decode results", rsi.width, height);
 
     if (params.MMR) {
         code = jbig2_decode_generic_mmr(ctx, segment, &params, segment_data + offset, segment->data_length - offset, image);

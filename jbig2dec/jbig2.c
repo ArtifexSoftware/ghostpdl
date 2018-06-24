@@ -292,7 +292,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
         case JBIG2_FILE_RANDOM_HEADERS:
             segment = jbig2_parse_segment_header(ctx, ctx->buf + ctx->buf_rd_ix, ctx->buf_wr_ix - ctx->buf_rd_ix, &header_size);
             if (segment == NULL)
-                return 0;       /* need more data */
+                return 0; /* need more data */
             ctx->buf_rd_ix += header_size;
 
             if (ctx->n_segments == ctx->n_segments_max) {
@@ -317,8 +317,48 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
         case JBIG2_FILE_SEQUENTIAL_BODY:
         case JBIG2_FILE_RANDOM_BODIES:
             segment = ctx->segments[ctx->segment_index];
-            if (segment->data_length > ctx->buf_wr_ix - ctx->buf_rd_ix)
-                return 0;       /* need more data */
+
+            /* immediate generic regions may have unknown size */
+            if (segment->data_length == 0xffffffff && (segment->flags & 63) == 38) {
+                byte *s, *e, *p;
+                int mmr;
+                byte mmr_marker[2] = { 0x00, 0x00 };
+                byte arith_marker[2] = { 0xff, 0xac };
+                byte *desired_marker;
+
+                s = p = ctx->buf + ctx->buf_rd_ix;
+                e = ctx->buf + ctx->buf_wr_ix;
+
+                if (e - p < 18)
+                        return 0; /* need more data */
+
+                mmr = p[17] & 1;
+                p += 18;
+                desired_marker = mmr ? mmr_marker : arith_marker;
+
+                /* look for two byte marker */
+                if (e - p < 2)
+                    return 0; /* need more data */
+
+                while (p[0] != desired_marker[0] || p[1] != desired_marker[1]) {
+                    p++;
+                    if (e - p < 2)
+                        return 0; /* need more data */
+                }
+                p += 2;
+
+                /* the marker is followed by a four byte row count */
+                if (e - p < 4)
+                        return 0; /* need more data */
+                segment->rows = jbig2_get_uint32(p);
+                p += 4;
+
+                segment->data_length = p - s;
+                jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "unknown length determined to be %u", segment->data_length);
+            }
+            else if (segment->data_length > ctx->buf_wr_ix - ctx->buf_rd_ix)
+                    return 0; /* need more data */
+
             code = jbig2_parse_segment(ctx, segment, ctx->buf + ctx->buf_rd_ix);
             ctx->buf_rd_ix += segment->data_length;
             ctx->segment_index++;

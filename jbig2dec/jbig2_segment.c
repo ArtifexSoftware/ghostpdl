@@ -121,6 +121,7 @@ jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t 
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, result->number, "segment %d is associated with page %d", result->number, result->page_association);
 
     /* 7.2.7 */
+    result->rows = UINT32_MAX;
     result->data_length = jbig2_get_uint32(buf + offset);
     *p_header_size = offset + 4;
 
