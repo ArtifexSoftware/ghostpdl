@@ -440,18 +440,6 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
             if (code < 0)
                 return code;
         }
-        gs_point_transform(font->FontBBox.p.x, font->FontBBox.p.y, &m, &p0);
-        gs_point_transform(font->FontBBox.p.x, font->FontBBox.q.y, &m, &p1);
-        gs_point_transform(font->FontBBox.q.x, font->FontBBox.p.y, &m, &p2);
-        gs_point_transform(font->FontBBox.q.x, font->FontBBox.q.y, &m, &p3);
-        bbox.p.x = min(min(p0.x, p1.x), min(p2.x, p3.x)) + total.x;
-        bbox.p.y = min(min(p0.y, p1.y), min(p2.y, p3.y)) + total.y;
-        bbox.q.x = max(max(p0.x, p1.x), max(p2.x, p3.x)) + total.x;
-        bbox.q.y = max(max(p0.y, p1.y), max(p2.y, p3.y)) + total.y;
-        if (i == 0)
-            *text_bbox = bbox;
-        else
-            rect_merge(*text_bbox, bbox);
         if (pte->text.operation & TEXT_REPLACE_WIDTHS) {
             gs_text_replaced_width(&pte->text, xy_index++, &tpt);
             gs_distance_transform(tpt.x, tpt.y, &ctm_only(pte->pgs), &wanted);
@@ -474,8 +462,31 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
                 wanted.y += tpt.y;
             }
         }
+
+        gs_point_transform(font->FontBBox.p.x, font->FontBBox.p.y, &m, &p0);
+        gs_point_transform(font->FontBBox.p.x, font->FontBBox.q.y, &m, &p1);
+        gs_point_transform(font->FontBBox.q.x, font->FontBBox.p.y, &m, &p2);
+        gs_point_transform(font->FontBBox.q.x, font->FontBBox.q.y, &m, &p3);
+
+        bbox.p.x = min(min(p0.x, p1.x), min(p2.x, p3.x));
+        bbox.p.y = min(min(p0.y, p1.y), min(p2.y, p3.y));
+        bbox.q.x = max(max(p0.x, p1.x), max(p2.x, p3.x));
+        bbox.q.y = max(max(p0.y, p1.y), max(p2.y, p3.y));
+
+        bbox.q.x = bbox.p.x + max(bbox.q.x - bbox.p.x, wanted.x);
+        bbox.q.y = bbox.p.y + max(bbox.q.y - bbox.p.y, wanted.y);
+        bbox.p.x += total.x;
+        bbox.p.y += total.y;
+        bbox.q.x += total.x;
+        bbox.q.y += total.y;
+
         total.x += wanted.x;
         total.y += wanted.y;
+
+        if (i == 0)
+            *text_bbox = bbox;
+        else
+            rect_merge(*text_bbox, bbox);
     }
     *pdpt = total;
     return 0;
