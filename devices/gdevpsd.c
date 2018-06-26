@@ -36,6 +36,7 @@
 #include "gxdownscale.h"
 #include "gdevdevnprn.h"
 #include "gdevpsd.h"
+#include "gxdevsop.h"
 
 #ifndef cmm_gcmmhlink_DEFINED
     #define cmm_gcmmhlink_DEFINED
@@ -135,6 +136,15 @@ static RELOC_PTRS_WITH(psd_device_reloc_ptrs, psd_device *pdev)
 }
 RELOC_PTRS_END
 
+static int
+psd_spec_op(gx_device *dev_, int op, void *data, int datasize)
+{
+    if (op == gxdso_supports_devn) {
+        return true;
+    }
+    return gx_default_dev_spec_op(dev_, op, data, datasize);
+}
+
 /* Even though psd_device_finalize is the same as gx_devn_prn_device_finalize,
  * we need to implement it separately because st_composite_final
  * declares all 3 procedures as private. */
@@ -213,7 +223,12 @@ gs_private_st_composite_final(st_psd_device, psd_device,
         NULL,				/* fill_linear_color_trapezoid */\
         NULL,				/* fill_linear_color_triangle */\
         gx_devn_prn_update_spot_equivalent_colors, /* update_spot_equivalent_colors */\
-        gx_devn_prn_ret_devn_params	/* ret_devn_params */\
+        gx_devn_prn_ret_devn_params, /* ret_devn_params */\
+        NULL,                       /* fillpage */\
+        NULL,                       /* push_transparency_state */\
+        NULL,                       /* pop_transparency_state */\
+        NULL,                       /* put_image */\
+        psd_spec_op                 /* dev_spec_op */\
 }
 
 static fixed_colorant_name DeviceGrayComponents[] = {

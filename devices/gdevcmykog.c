@@ -213,6 +213,9 @@ cmykog_dev_spec_op(gx_device *dev_, int op, void *data, int datasize)
       if (code != gs_error_undefined)
           return code;
   }
+  if (op == gxdso_supports_devn) {
+    return true;
+  }
   return gx_default_dev_spec_op(dev_, op, data, datasize);
 }
 

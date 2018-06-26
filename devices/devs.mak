@@ -1205,7 +1205,7 @@ $(DEVOBJ)gdevpsd.$(OBJ) : $(DEVSRC)gdevpsd.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
  $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gxdevsop_h) $(gsequivc_h)\
  $(gscms_h) $(gsicc_cache_h) $(gsicc_manage_h) $(gxgetbit_h)\
- $(gdevppla_h) $(gxiodev_h) $(gdevpsd_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(gdevppla_h) $(gxiodev_h) $(gdevpsd_h) $(gxdevsop_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevpsd.$(OBJ) $(C_) $(DEVSRC)gdevpsd.c
 
 ### --------------------------- The GPRF device ------------------------- ###
@@ -1219,14 +1219,14 @@ $(DEVOBJ)gdevgprf_1.$(OBJ) : $(DEVSRC)gdevgprf.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
  $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h) \
  $(gscms_h) $(gsicc_cache_h) $(gsicc_manage_h) $(gxgetbit_h)\
- $(gdevppla_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(gdevppla_h) $(gxdevsop_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevgprf_1.$(OBJ) $(II)$(ZI_)$(_I) $(C_) $(DEVSRC)gdevgprf.c
 
 $(DEVOBJ)gdevgprf_0.$(OBJ) : $(DEVSRC)gdevgprf.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
  $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h) $(zlib_h)\
  $(gscms_h) $(gsicc_cache_h) $(gsicc_manage_h) $(gxgetbit_h)\
- $(gdevppla_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(gdevppla_h) $(gxdevsop_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevgprf_0.$(OBJ) $(II)$(ZI_)$(_I) $(C_) $(DEVSRC)gdevgprf.c
 
 $(DEVOBJ)gdevgprf.$(OBJ) : $(DEVOBJ)gdevgprf_$(SHARE_ZLIB).$(OBJ) $(DEVS_MAK) $(MAKEDIRS)

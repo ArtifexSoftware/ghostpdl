@@ -35,6 +35,7 @@
 #include "gdevppla.h"
 #include "gxdownscale.h"
 #include "gdevdevnprn.h"
+#include "gxdevsop.h"
 
 #ifndef MAX_CHAN
 #   define MAX_CHAN 15
@@ -88,6 +89,15 @@ static RELOC_PTRS_WITH(gprf_device_reloc_ptrs, gprf_device *pdev)
     (void)pdev; /* Stop unused var warning */
 }
 RELOC_PTRS_END
+
+static int
+gprf_spec_op(gx_device *dev_, int op, void *data, int datasize)
+{
+    if (op == gxdso_supports_devn) {
+        return true;
+    }
+    return gx_default_dev_spec_op(dev_, op, data, datasize);
+}
 
 /* Even though gprf_device_finalize is the same as gx_devn_prn_device_finalize,
  * we need to implement it separately because st_composite_final
@@ -167,7 +177,12 @@ gs_private_st_composite_final(st_gprf_device, gprf_device,
         NULL,				/* fill_linear_color_trapezoid */\
         NULL,				/* fill_linear_color_triangle */\
         gx_devn_prn_update_spot_equivalent_colors, /* update_spot_equivalent_colors */\
-        gx_devn_prn_ret_devn_params	/* ret_devn_params */\
+        gx_devn_prn_ret_devn_params, /* ret_devn_params */\
+        NULL,                        /* fillpage */\
+        NULL,                        /* push_transparency_state */\
+        NULL,                        /* pop_transparency_state */\
+        NULL,                        /* put_image */\
+        gprf_spec_op                 /* dev_spec_op */\
 }
 
 #define gprf_device_body(procs, dname, ncomp, pol, depth, mg, mc, sl, cn)\
@@ -236,16 +251,16 @@ gprf_prn_open(gx_device * pdev)
     pdev->log2_align_mod = 6;
 #endif
 
-    /* There are 2 approaches to the use of a DeviceN ICC output profile.  
+    /* There are 2 approaches to the use of a DeviceN ICC output profile.
        One is to simply limit our device to only output the colorants
-       defined in the output ICC profile.   The other is to use the 
+       defined in the output ICC profile.   The other is to use the
        DeviceN ICC profile to color manage those N colorants and
-       to let any other separations pass through unmolested.   The define 
+       to let any other separations pass through unmolested.   The define
        LIMIT_TO_ICC sets the option to limit our device to only the ICC
        colorants defined by -sICCOutputColors (or to the ones that are used
-       as default names if ICCOutputColors is not used).  The pass through option 
-       (LIMIT_TO_ICC set to 0) makes life a bit more difficult since we don't 
-       know if the page_spot_colors overlap with any spot colorants that exist 
+       as default names if ICCOutputColors is not used).  The pass through option
+       (LIMIT_TO_ICC set to 0) makes life a bit more difficult since we don't
+       know if the page_spot_colors overlap with any spot colorants that exist
        in the DeviceN ICC output profile. Hence we don't know how many planes
        to use for our device.  This is similar to the issue when processing
        a PostScript file.  So that I remember, the cases are
@@ -274,7 +289,7 @@ gprf_prn_open(gx_device * pdev)
     pdev_gprf->warning_given = false;
     /* With planar the depth can be more than 64.  Update the color
        info to reflect the proper depth and number of planes.  Also note
-       that the number of spot colors can change from page to page.  
+       that the number of spot colors can change from page to page.
        Update things so that we only output separations for the
        inks on that page. */
 
@@ -321,14 +336,14 @@ gprf_prn_open(gx_device * pdev)
         for (k = 0; k < GS_CLIENT_COLOR_MAX_COMPONENTS; k++) {
             pdev_gprf->devn_params.separation_order_map[k] = k;
         }
-    pdev->color_info.depth = pdev->color_info.num_components * 
+    pdev->color_info.depth = pdev->color_info.num_components *
                              pdev_gprf->devn_params.bitspercomponent;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     profile_struct->supports_devn = true;
     code = gdev_prn_open_planar(pdev, true);
 
     /* Take care of the ICC transform now.  There are several possible ways
-     * that this could go.  One is that the CMYK colors are color managed 
+     * that this could go.  One is that the CMYK colors are color managed
      * but the non-standard colorants are not.  That is, we have specified
      * a CMYK profile for our device but we have other spot colorants in
      * the source file.  In this case, we will do managed proofing for the
@@ -336,10 +351,10 @@ gprf_prn_open(gx_device * pdev)
      * DeviceN colorants will be problematic in this case and we will do the
      * the best we can with the tools given to us.   The other possibility is
      * that someone has given an NColor ICC profile for the device and we can
-     * actually deal with the mapping directly. This is a much cleaner case 
-     * but as we know NColor profiles are not too common.  Also we need to 
-     * deal with transparent colorants (e.g. varnish) in an intelligent manner. 
-     * Note that we require the post rendering profile to be RGB based for 
+     * actually deal with the mapping directly. This is a much cleaner case
+     * but as we know NColor profiles are not too common.  Also we need to
+     * deal with transparent colorants (e.g. varnish) in an intelligent manner.
+     * Note that we require the post rendering profile to be RGB based for
      * this particular device. */
 
     if (pdev_gprf->icclink == NULL && profile_struct->device_profile[0] != NULL
@@ -364,7 +379,7 @@ gprf_prn_open(gx_device * pdev)
 * The following procedures are used to map the standard color spaces into
 * the color components. This is not where the color management occurs.  These
 * may do a reordering of the colors following some ICC base color management
-* or they may be used in the case of -dUseFastColor as that relies upon the 
+* or they may be used in the case of -dUseFastColor as that relies upon the
 * device color mapping procedures
 */
 static void
@@ -524,14 +539,14 @@ gprf_get_color_comp_index(gx_device * dev, const char * pname,
     if (strncmp(pname, "None", name_size) == 0) return -1;
     index = gx_devn_prn_get_color_comp_index(dev, pname, name_size,
                                              component_type);
-    /* This is a one shot deal.  That is it will simply post a notice once that 
+    /* This is a one shot deal.  That is it will simply post a notice once that
        some colorants will be converted due to a limit being reached.  It will
-       not list names of colorants since then I would need to keep track of 
+       not list names of colorants since then I would need to keep track of
        which ones I have already mentioned.  Also, if someone is fooling with
        num_order, then this warning is not given since they should know what
        is going on already */
-    if (index < 0 && component_type == SEPARATION_NAME && 
-        pdev->warning_given == false && 
+    if (index < 0 && component_type == SEPARATION_NAME &&
+        pdev->warning_given == false &&
         pdev->devn_params.num_separation_order_names == 0) {
         dmlprintf(dev->memory, "**** Max spot colorants reached.\n");
         dmlprintf(dev->memory, "**** Some colorants will be converted to equivalent CMYK values.\n");
@@ -603,7 +618,7 @@ gprf_setup(gprf_write_ctx *xc, gx_device_printer *pdev, FILE *file, int w, int h
      * which planes are actually imaged.  For the process color model channels
      * we image the channels which are requested.  Non requested process color
      * model channels are simply filled with white.  For spot colors we only
-     * image the requested channels. 
+     * image the requested channels.
      */
     for (i = 0; i < xc->num_channels + xc->n_extra_channels; i++) {
         xc->chnl_to_position[i] = i;
@@ -779,7 +794,7 @@ gprf_write_header(gprf_write_ctx *xc)
             cmyk[3] = (k < 0 ? 0 : (k > 255 ? 255 : k));
         }
 
-        /* Convert color to RGBA. To get the A value, we are going to need to 
+        /* Convert color to RGBA. To get the A value, we are going to need to
            deal with the mixing hints information in the PDF content.  A ToDo
            project. At this point, everything has an alpha of 1.0 */
         rgba[3] = 255;
@@ -975,14 +990,14 @@ compressAndWrite(gprf_write_ctx *xc, byte *data, int tile_w, int tile_h, int ras
     }
     deflate(&zstm, Z_FINISH);
     deflateEnd(&zstm);
-   
+
     code = gprf_write(xc, xc->deflate_block, xc->deflate_bound - zstm.avail_out);
     if (code < 0)
         return_error(gs_error_ioerror);
     return 0;
 }
 
-/* If the profile is NULL or if the profile does not support the spot 
+/* If the profile is NULL or if the profile does not support the spot
    colors then we have to calculate the equivalent CMYK values and then color
    manage. */
 static void
@@ -1036,7 +1051,7 @@ build_cmyk_planar_raster(gprf_write_ctx *xc, byte *planes[], byte *cmyk_in,
 
 /* Create RGB from CMYK the horribly slow way */
 static void
-get_rgb_planar_line(gprf_write_ctx *xc, byte *c, byte *m, byte *y, byte *k, 
+get_rgb_planar_line(gprf_write_ctx *xc, byte *c, byte *m, byte *y, byte *k,
     byte *red_in, byte *green_in, byte *blue_in, int width)
 {
     int x_pos;
@@ -1280,7 +1295,7 @@ gprf_write_image_data(gprf_write_ctx *xc)
 
 cleanup:
     gx_downscaler_fin(&ds);
-    gs_free_object(pdev->memory, planes[0], 
+    gs_free_object(pdev->memory, planes[0],
                     "gprf_write_image_data");
     gs_free_object(pdev->memory, rgb[0],
                    "gprf_write_image_data");
