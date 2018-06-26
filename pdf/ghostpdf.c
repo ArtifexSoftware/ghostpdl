@@ -407,6 +407,14 @@ read_root:
         return code;
 
     for (i=0;i < ctx->num_pages;i++) {
+        if (ctx->first_page != 0) {
+            if (i < ctx->first_page - 1)
+                continue;
+        }
+        if (ctx->last_page != 0) {
+            if (i >= ctx->last_page - 1)
+                break;;
+        }
         code = pdf_render_page(ctx, i);
         if (code < 0 && ctx->pdfstoponerror)
             return code;
