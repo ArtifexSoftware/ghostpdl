@@ -301,7 +301,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
                 segments = jbig2_renew(ctx, ctx->segments, Jbig2Segment *, (ctx->n_segments_max <<= 2));
                 if (segments == NULL) {
                     ctx->state = JBIG2_FILE_EOF;
-                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "could not reallocate space for more segments");
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "could not reallocate space for more segments");
                 }
                 ctx->segments = segments;
             }
@@ -330,7 +330,7 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
             }
             if (code < 0) {
                 ctx->state = JBIG2_FILE_EOF;
-                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode; treating as end of file");
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode; treating as end of file");
             }
             break;
         case JBIG2_FILE_EOF:

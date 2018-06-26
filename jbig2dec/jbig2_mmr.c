@@ -35,7 +35,9 @@
 #include "jbig2_priv.h"
 #include "jbig2_arith.h"
 #include "jbig2_generic.h"
+#include "jbig2_image.h"
 #include "jbig2_mmr.h"
+#include "jbig2_segment.h"
 
 typedef struct {
     uint32_t width;
@@ -1033,7 +1035,7 @@ jbig2_decode_generic_mmr(Jbig2Ctx *ctx, Jbig2Segment *segment, const Jbig2Generi
         memset(dst, 0, rowstride);
         code = jbig2_decode_mmr_line(ctx, &mmr, ref, dst);
         if (code < 0)
-            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode mmr line");
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode mmr line");
         ref = dst;
         dst += rowstride;
     }

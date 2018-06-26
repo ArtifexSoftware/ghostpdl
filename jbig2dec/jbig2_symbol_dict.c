@@ -1035,7 +1035,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 
         GB_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
         if (GB_stats == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate GB_stats in jbig2_symbol_dictionary");
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate GB_stats in jbig2_symbol_dictionary");
             goto cleanup;
         }
         memset(GB_stats, 0, stats_size);
@@ -1043,7 +1043,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         stats_size = params.SDRTEMPLATE ? 1 << 10 : 1 << 13;
         GR_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
         if (GR_stats == NULL) {
-            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "failed to allocate GR_stats in jbig2_symbol_dictionary");
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate GR_stats in jbig2_symbol_dictionary");
             jbig2_free(ctx->allocator, GB_stats);
             goto cleanup;
         }
