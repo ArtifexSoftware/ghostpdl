@@ -427,8 +427,8 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
             /* check for broken symbol table */
             if (NSYMSDECODED >= params->SDNUMNEWSYMS) {
-                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "no OOB signaling end of height class %d", HCHEIGHT);
-                goto cleanup;
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "no OOB signaling end of height class %d, continuing", HCHEIGHT);
+                break;
             }
 
             SYMWIDTH = SYMWIDTH + DW;
