@@ -118,6 +118,7 @@ ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
  ENUM_PTR(39, gx_device_pdf, EmbeddedFiles);
  ENUM_PTR(40, gx_device_pdf, pdf_font_dir);
  ENUM_PTR(41, gx_device_pdf, ExtensionMetadata);
+ ENUM_PTR(42, gx_device_pdf, PassThroughWriter);
 #define e1(i,elt) ENUM_PARAM_STRING_PTR(i + gx_device_pdf_num_ptrs, gx_device_pdf, elt);
 gx_device_pdf_do_param_strings(e1)
 #undef e1
@@ -170,6 +171,7 @@ static RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
  RELOC_PTR(gx_device_pdf, EmbeddedFiles);
  RELOC_PTR(gx_device_pdf, pdf_font_dir);
  RELOC_PTR(gx_device_pdf, ExtensionMetadata);
+ RELOC_PTR(gx_device_pdf, PassThroughWriter);
 #define r1(i,elt) RELOC_PARAM_STRING_PTR(gx_device_pdf,elt);
         gx_device_pdf_do_param_strings(r1)
 #undef r1

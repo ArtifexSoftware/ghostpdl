@@ -927,7 +927,7 @@ struct gx_device_pdf_s {
  m(39, gx_device_pdf, EmbeddedFiles);
  m(40, gx_device_pdf, pdf_font_dir);
  m(41, gx_device_pdf, Extension_Metadata);*/
-#define gx_device_pdf_num_ptrs 42
+#define gx_device_pdf_num_ptrs 43
 #define gx_device_pdf_do_param_strings(m)\
     m(0, OwnerPassword) m(1, UserPassword) m(2, NoEncrypt)\
     m(3, DocumentUUID) m(4, InstanceUUID)
