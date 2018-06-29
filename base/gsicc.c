@@ -31,6 +31,7 @@
 #include "gsicc_cms.h"
 #include "gsicc_manage.h"
 #include "gxdevice.h"
+#include "gsccolor.h"
 
 #define SAVEICCPROFILE 0
 
@@ -675,5 +676,36 @@ int
 gx_default_get_profile(gx_device *dev, cmm_dev_profile_t **profile)
 {
     *profile = dev->icc_struct;
+    return 0;
+}
+
+/* Adjust the color model of the device to match that of the profile. Used by
+   vector based devices and the tiff scaled devices. Only valid for bit depths
+   of 8n/component. Note the caller likely will need to update its procs */
+int
+gx_change_color_model(gx_device *dev, int num_comps, int bit_depth)
+{
+    int k;
+
+    if (!((num_comps == 1) || (num_comps == 3) || (num_comps == 4)))
+        return -1;
+
+    dev->color_info.max_components = num_comps;
+    dev->color_info.num_components = num_comps;
+    dev->color_info.depth = num_comps * bit_depth;
+
+    if (num_comps == 4) {
+        dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+    } else {
+        dev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
+    }
+
+    for (k = 0; k < num_comps; k++) {
+        dev->color_info.comp_shift[k] = bit_depth * (3 - k);
+        dev->color_info.comp_bits[k] = bit_depth;
+        dev->color_info.comp_mask[k] =
+            ((gx_color_index)255) << dev->color_info.comp_shift[k];
+    }
+
     return 0;
 }

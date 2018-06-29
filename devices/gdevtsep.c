@@ -48,6 +48,7 @@
 #include "gscms.h"
 #include "gsicc_cache.h"
 #include "gxdevsop.h"
+#include "gsicc.h"
 
 /*
  * Some of the code in this module is based upon the gdevtfnx.c module.
@@ -100,6 +101,7 @@ tiffscaled_spec_op(gx_device *dev_, int op, void *data, int datasize)
 
 /* ------ The tiffscaled device ------ */
 
+dev_proc_open_device(tiff_open_s);
 static dev_proc_print_page(tiffscaled_print_page);
 static int tiff_set_icc_color_fields(gx_device_printer *pdev);
 
@@ -138,7 +140,7 @@ const gx_device_tiff gs_tiffscaled_device = {
 static dev_proc_print_page(tiffscaled8_print_page);
 
 static const gx_device_procs tiffscaled8_procs = {
-    tiff_open, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
+    tiff_open_s, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
     gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb, NULL, NULL,
     NULL, NULL, NULL, NULL, tiff_get_params_downscale, tiff_put_params_downscale,
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -174,7 +176,7 @@ const gx_device_tiff gs_tiffscaled8_device = {
 static dev_proc_print_page(tiffscaled24_print_page);
 
 static const gx_device_procs tiffscaled24_procs = {
-    tiff_open, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
+    tiff_open_s, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
     gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb, NULL, NULL,
     NULL, NULL, NULL, NULL, tiff_get_params_downscale, tiff_put_params_downscale,
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -210,7 +212,7 @@ const gx_device_tiff gs_tiffscaled24_device = {
 static dev_proc_print_page(tiffscaled32_print_page);
 
 static const gx_device_procs tiffscaled32_procs = {
-    tiff_open, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
+    tiff_open_s, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
     NULL, cmyk_8bit_map_color_cmyk, NULL, NULL, NULL, NULL, NULL, NULL,
     tiff_get_params_downscale_cmyk, tiff_put_params_downscale_cmyk,
     cmyk_8bit_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device,
@@ -400,8 +402,7 @@ tiffscaled24_print_page(gx_device_printer * pdev, FILE * file)
     if (code < 0)
         return code;
 
-    if (tfdev->icclink != NULL && tfdev->icclink->num_output != 3)
-    {
+    if (tfdev->icclink != NULL && tfdev->icclink->num_output != 3) {
         code = tiff_set_icc_color_fields(pdev);
         if (code < 0)
             return code;
@@ -2909,3 +2910,57 @@ done:
         gs_free_object(pdev->memory, name, "tiffsep1_print_page(name)");
     return code;
 }
+
+/* The tiffscaled contone devices have to be able to change their color model
+to allow a more flexible use of the post render ICC profile with the output
+intent. For example, if we are wanting to render to a CMYK intermediate
+output intent but we want the output to be in sRGB then we need to use
+-sDEVICE=tiffscaled24 -dUsePDFX3Profile -sOutputICCProfile=default_cmyk.icc
+-sPostRenderProfile=srgb.icc .  This should then render to a temporary
+buffer the is in the OutputIntent color space and then be converted to
+sRGB.  This should look like the result we get when we go out to the
+tiffscaled32 device. This is in contrast to the command line
+sDEVICE=tiffscaled24 -dUsePDFX3Profile -sPostRenderProfile=srgb.icc which would
+end up using the output intent as a proofing profile.  The results may be similar
+but not exact as overprint and spot colors would not appear correctly due to the
+additive color model during rendering. */
+int
+tiff_open_s(gx_device *pdev)
+{
+    int code;
+
+    /* Take care of any color model changes now */
+    if (pdev->icc_struct->postren_profile != NULL &&
+        pdev->icc_struct->device_profile[0]->num_comps != pdev->color_info.num_components &&
+        pdev->color_info.depth == 8 * pdev->color_info.num_components) {
+
+        code = gx_change_color_model((gx_device*)pdev,
+            pdev->icc_struct->device_profile[0]->num_comps, 8);
+        if (code < 0)
+            return code;
+
+        /* Reset the device procs */
+        memset(&(pdev->procs), 0, sizeof(pdev->procs));
+        switch (pdev->icc_struct->device_profile[0]->num_comps) {
+        case 1:
+            pdev->procs = tiffscaled8_procs;
+            pdev->color_info.dither_colors = 0;
+            pdev->color_info.max_color = 0;
+            break;
+        case 3:
+            pdev->procs = tiffscaled24_procs;
+            pdev->color_info.dither_colors = 0;
+            pdev->color_info.max_color = 0;
+            break;
+        case 4:
+            pdev->procs = tiffscaled32_procs;
+            pdev->color_info.dither_colors = 256;
+            pdev->color_info.max_color = 255;
+            break;
+        }
+        check_device_separable(pdev);
+        gx_device_fill_in_procs(pdev);
+    }
+    return tiff_open(pdev);
+}
+

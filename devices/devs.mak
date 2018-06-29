@@ -1668,7 +1668,7 @@ $(DD)tiffgray.dev : $(libtiff_dev) $(tiffgray_) $(DD)tiffs.dev\
 
 $(DEVOBJ)gdevtsep.$(OBJ) : $(DEVSRC)gdevtsep.c $(PDEVH) $(stdint__h)\
  $(gdevtifs_h) $(gdevdevn_h) $(gxdevsop_h) $(gsequivc_h) $(stdio__h) $(ctype__h)\
- $(gxgetbit_h) $(gdevppla_h) $(gp_h) $(gstiffio_h)\
+ $(gxgetbit_h) $(gdevppla_h) $(gp_h) $(gstiffio_h) $(gsicc_h)\
  $(gscms_h) $(gsicc_cache_h) $(gxdevsop_h) $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(I_)$(TI_)$(_I) $(DEVO_)gdevtsep.$(OBJ) $(C_) $(DEVSRC)gdevtsep.c
 

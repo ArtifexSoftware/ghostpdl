@@ -33,4 +33,6 @@ extern  int     gs_cspace_build_ICC( gs_color_space **   ppcspace,
 extern const gs_color_space_type gs_color_space_type_ICC;
 extern cs_proc_remap_color(gx_remap_ICC_imagelab);
 
+int gx_change_color_model(gx_device *dev, int num_comps, int bit_depth);
+
 #endif /* gsicc_INCLUDED */
