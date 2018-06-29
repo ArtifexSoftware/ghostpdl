@@ -478,13 +478,13 @@ main(int argc, char **argv)
             Jbig2Image *image;
             FILE *out;
 
-            /* handle embedded streams and work around broken CVision embedded streams */
-            if (params.embedded || f_page != NULL) {
-                code = jbig2_complete_page(ctx);
-                if (code < 0) {
-                    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to complete page");
-                    goto cleanup;
-                }
+            /* always complete a page, working around streams that lack end of
+            page segments: broken CVision streams, embedded streams or streams
+            with parse errors. */
+            code = jbig2_complete_page(ctx);
+            if (code < 0) {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "unable to complete page");
+                goto cleanup;
             }
 
             if (params.output_filename == NULL) {
