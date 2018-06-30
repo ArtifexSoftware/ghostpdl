@@ -481,7 +481,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                                pcm_names, ecode);
         if (pcm >= 0) {
             pdf_set_process_color_model(pdev, pcm);
-            rc_decrement(pdev->icc_struct, 1);
+            rc_decrement(pdev->icc_struct, "gdev_pdf_put_params_impl, ProcessColorModel changed");
             pdev->icc_struct = 0;
         }
     }
