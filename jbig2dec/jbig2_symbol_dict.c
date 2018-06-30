@@ -762,30 +762,26 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 break;
             }
 
-            /* prevent infinite loop */
-            if (EXRUNLENGTH > limit - i || (exflag && (EXRUNLENGTH + j > params->SDNUMEXSYMS))) {
-                /* prevent infinite list of empty runs, 1000 is just an arbitrary number */
-                if (EXRUNLENGTH <= 0 && ++emptyruns == 1000) {
-                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlengths are too small when exporting symbol table");
-                    /* skip to the cleanup code and return SDEXSYMS = NULL */
-                    jbig2_sd_release(ctx, SDEXSYMS);
-                    SDEXSYMS = NULL;
-                    break;
-                } else if (EXRUNLENGTH > 0) {
-                    emptyruns = 0;
-                }
-
-                if (EXRUNLENGTH > limit - i) {
-                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength too large in export symbol table (%u > %u - %u)", EXRUNLENGTH, params->SDNUMEXSYMS, j);
-                    jbig2_sd_release(ctx, SDEXSYMS);
-                    SDEXSYMS = NULL;
-                    break;
-                } else if (EXRUNLENGTH < limit - i) {
-                    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "runlength too large in export symbol table, limiting export (%u > %u - %u)", EXRUNLENGTH, params->SDNUMEXSYMS, j);
-                    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "old=%u new=%u limit=%u", EXRUNLENGTH, params->SDNUMEXSYMS - j, limit);
-                    EXRUNLENGTH = params->SDNUMEXSYMS - j;
-                }
+            /* prevent infinite list of empty runs, 1000 is just an arbitrary number */
+            if (EXRUNLENGTH <= 0 && ++emptyruns == 1000) {
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength too small in export symbol table (%u == 0 i = %u limit = %u)", EXRUNLENGTH, i, limit);
+                /* skip to the cleanup code and return SDEXSYMS = NULL */
+                jbig2_sd_release(ctx, SDEXSYMS);
+                SDEXSYMS = NULL;
+                break;
+            } else if (EXRUNLENGTH > 0) {
+                emptyruns = 0;
             }
+
+            if (EXRUNLENGTH > limit - i) {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "exporting more symbols than available (%u > %u), capping", i + EXRUNLENGTH, limit);
+                EXRUNLENGTH = limit - i;
+            }
+            if (exflag && j + EXRUNLENGTH > params->SDNUMEXSYMS) {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "exporting more symbols than may be exported (%u > %u), capping", j + EXRUNLENGTH, params->SDNUMEXSYMS);
+                EXRUNLENGTH = params->SDNUMEXSYMS - j;
+            }
+
             for (k = 0; k < EXRUNLENGTH; k++) {
                 if (exflag) {
                     Jbig2Image *img;
