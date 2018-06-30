@@ -480,7 +480,9 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         ecode = param_put_enum(plist, "ProcessColorModel", &pcm,
                                pcm_names, ecode);
         if (pcm >= 0) {
-            pdev->color_info.cm_name = pcm_names[pcm];
+            pdf_set_process_color_model(pdev, pcm);
+            rc_decrement(pdev->icc_struct, 1);
+            pdev->icc_struct = 0;
         }
     }
     if (ecode < 0)
