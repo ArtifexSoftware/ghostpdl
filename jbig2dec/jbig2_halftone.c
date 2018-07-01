@@ -575,7 +575,7 @@ jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
     offset += 1;
 
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
-                "halftone region: %d x %d @ (%x,%d) flags=%02x", region_info.width, region_info.height, region_info.x, region_info.y, params.flags);
+                "halftone region: %u x %u @ (%u, %u), flags = %02x", region_info.width, region_info.height, region_info.x, region_info.y, params.flags);
 
     if (params.HMMR && params.HTEMPLATE) {
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "HTEMPLATE is %d when HMMR is %d, contrary to spec", params.HTEMPLATE, params.HMMR);

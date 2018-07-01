@@ -432,7 +432,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment too short");
 
     jbig2_get_region_segment_info(&rsi, segment_data);
-    jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "generic region: %d x %d @ (%d, %d), flags = %02x", rsi.width, rsi.height, rsi.x, rsi.y, rsi.flags);
+    jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "generic region: %u x %u @ (%u, %u), flags = %02x", rsi.width, rsi.height, rsi.x, rsi.y, rsi.flags);
 
     /* 7.4.7.2 */
     seg_flags = segment_data[17];

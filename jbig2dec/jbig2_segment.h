@@ -41,10 +41,10 @@ Jbig2Segment *jbig2_find_segment(Jbig2Ctx *ctx, uint32_t number);
 /* region segment info */
 
 typedef struct {
-    int32_t width;
-    int32_t height;
-    int32_t x;
-    int32_t y;
+    uint32_t width;
+    uint32_t height;
+    uint32_t x;
+    uint32_t y;
     Jbig2ComposeOp op;
     uint8_t flags;
 } Jbig2RegionSegmentInfo;

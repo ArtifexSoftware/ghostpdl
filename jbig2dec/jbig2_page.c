@@ -258,7 +258,7 @@ jbig2_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_d
  * is an image) to a page image buffer
  **/
 int
-jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, int x, int y, Jbig2ComposeOp op)
+jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, uint32_t x, uint32_t y, Jbig2ComposeOp op)
 {
     int code;
 
