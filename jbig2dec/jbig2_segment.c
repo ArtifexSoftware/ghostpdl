@@ -234,7 +234,7 @@ jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_
         if (necessary) {
             return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unhandled necessary extension segment type 0x%08x", type);
         } else {
-            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unhandled extension segment");
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unhandled non-necessary extension segment, skipping");
         }
     }
 
