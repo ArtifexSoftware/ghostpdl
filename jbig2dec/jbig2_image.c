@@ -256,6 +256,9 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
     uint8_t *d, *dd;
     uint8_t mask, rightmask;
 
+    if (src == NULL)
+        return 0;
+
     if (op != JBIG2_COMPOSE_OR) {
         /* hand off the the general routine */
         return jbig2_image_compose_unopt(ctx, dst, src, x, y, op);
