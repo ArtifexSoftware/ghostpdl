@@ -250,6 +250,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
     Jbig2TextRegionParams tparams;
     Jbig2Image *image = NULL;
     Jbig2Image *glyph = NULL;
+    uint32_t emptyruns = 0;
 
     memset(&tparams, 0, sizeof(tparams));
 
@@ -763,13 +764,18 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
             /* prevent infinite loop */
             if (EXRUNLENGTH > limit - i || (exflag && (EXRUNLENGTH + j > params->SDNUMEXSYMS))) {
-                if (EXRUNLENGTH <= 0) {
-                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength too small in export symbol table (%u <= 0)", EXRUNLENGTH);
+                /* prevent infinite list of empty runs, 1000 is just an arbitrary number */
+                if (EXRUNLENGTH <= 0 && ++emptyruns == 1000) {
+                    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlengths are too small when exporting symbol table");
                     /* skip to the cleanup code and return SDEXSYMS = NULL */
                     jbig2_sd_release(ctx, SDEXSYMS);
                     SDEXSYMS = NULL;
                     break;
-                } else if (EXRUNLENGTH > limit - i) {
+                } else if (EXRUNLENGTH > 0) {
+                    emptyruns = 0;
+                }
+
+                if (EXRUNLENGTH > limit - i) {
                     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "runlength too large in export symbol table (%u > %u - %u)", EXRUNLENGTH, params->SDNUMEXSYMS, j);
                     jbig2_sd_release(ctx, SDEXSYMS);
                     SDEXSYMS = NULL;
