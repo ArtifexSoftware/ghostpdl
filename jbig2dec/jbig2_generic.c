@@ -800,6 +800,7 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte 
     Jbig2ArithState *as = NULL;
     Jbig2ArithCx *GB_stats = NULL;
     uint32_t height;
+    Jbig2Page *page = &ctx->pages[ctx->current_page];
 
     /* 7.4.6 */
     if (segment->data_length < 18)
@@ -843,6 +844,28 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte 
     params.TPGDON = (seg_flags & 8) >> 3;
     params.USESKIP = 0;
     memcpy(params.gbat, gbat, gbat_bytes);
+
+    if (page->height == 0xffffffff && page->striped && page->stripe_size > 0) {
+        if (rsi.y >= page->end_row + page->stripe_size) {
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "ignoring %u x %u region at (%u, %u) outside of stripe at row %u covering %u rows, on page of height %u", rsi.width, rsi.height, rsi.x, rsi.y, page->end_row, page->stripe_size, page->image->height);
+            return 0;
+        }
+        if (height > page->end_row + page->stripe_size) {
+            height = page->end_row + page->stripe_size;
+        }
+    } else {
+        if (rsi.y >= page->height) {
+            jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "ignoring %u x %u region at (%u, %u) outside of page of height %u", rsi.width, rsi.height, rsi.x, rsi.y, page->height);
+            return 0;
+        }
+        if (height > page->height - rsi .y) {
+            height = page->height - rsi.y;
+        }
+    }
+    if (height == 0) {
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "nothing remains of region, ignoring");
+        return 0;
+    }
 
     image = jbig2_image_new(ctx, rsi.width, height);
     if (image == NULL)

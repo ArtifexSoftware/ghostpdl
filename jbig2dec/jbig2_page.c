@@ -172,7 +172,7 @@ jbig2_end_of_stripe(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
                     "end of stripe segment with non-positive end row advance (new end row %d vs current end row %d)", end_row, page.end_row);
     } else {
-        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "end of stripe: advancing end row to %d", end_row);
+        jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number, "end of stripe: advancing end row from %u to %u", page.end_row, end_row);
     }
 
     page.end_row = end_row;
@@ -268,11 +268,10 @@ jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, int x, 
     /* grow the page to accommodate a new stripe if necessary */
     if (page->striped && page->height == 0xFFFFFFFF) {
         uint32_t new_height = y + image->height;
-
         if (page->image->height < new_height) {
             Jbig2Image *resized_image = NULL;
 
-            jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "growing page buffer to %d rows to accommodate new stripe", new_height);
+            jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1, "growing page buffer to %u rows to accommodate new stripe", new_height);
             resized_image = jbig2_image_resize(ctx, page->image, page->image->width, new_height, page->flags & 4);
             if (resized_image == NULL) {
                 return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "unable to resize image to accommodate new stripe");
