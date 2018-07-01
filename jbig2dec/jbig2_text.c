@@ -860,27 +860,26 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
 
     /* 7.4.3.2 (2) - compose the list of symbol dictionaries */
     n_dicts = jbig2_sd_count_referred(ctx, segment);
-    if (n_dicts != 0) {
+    if (n_dicts == 0) {
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "text region refers to no symbol dictionaries");
+    } else {
         dicts = jbig2_sd_list_referred(ctx, segment);
-    } else {
-        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "text region refers to no symbol dictionaries");
-        goto cleanup1;
-    }
-    if (dicts == NULL) {
-        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unable to retrieve symbol dictionaries! previous parsing error?");
-        goto cleanup1;
-    } else {
-        uint32_t index;
-
-        if (dicts[0] == NULL) {
-            code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to find first referenced symbol dictionary");
+        if (dicts == NULL) {
+            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unable to retrieve symbol dictionaries! previous parsing error?");
             goto cleanup1;
-        }
-        for (index = 1; index < n_dicts; index++)
-            if (dicts[index] == NULL) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to find all referenced symbol dictionaries");
-                n_dicts = index;
+        } else {
+            uint32_t index;
+
+            if (dicts[0] == NULL) {
+                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to find first referenced symbol dictionary");
+                goto cleanup1;
             }
+            for (index = 1; index < n_dicts; index++)
+                if (dicts[index] == NULL) {
+                    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to find all referenced symbol dictionaries");
+                    n_dicts = index;
+                }
+        }
     }
 
     /* 7.4.3.2 (3) */
