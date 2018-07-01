@@ -344,12 +344,10 @@ cleanup1:
                 goto cleanup2;
             }
             if (ID >= SBNUMSYMS) {
-                code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "symbol id out of range! (%d/%d)", ID, SBNUMSYMS);
-                goto cleanup2;
-            }
-
-            /* (3c.v) / 6.4.11 - look up the symbol bitmap IB */
-            {
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "symbol id out of range, ignoring (%d/%d)", ID, SBNUMSYMS);
+                IB = NULL;
+            } else {
+                /* (3c.v) / 6.4.11 - look up the symbol bitmap IB */
                 uint32_t id = ID;
 
                 index = 0;
@@ -475,17 +473,28 @@ cleanup1:
                     y = T;
                     break;
                 case JBIG2_CORNER_TOPRIGHT:
-                    x = S - IB->width + 1;
+                    if (IB)
+                        x = S - IB->width + 1;
+                    else
+                        x = S + 1;
                     y = T;
                     break;
                 case JBIG2_CORNER_BOTTOMLEFT:
                     x = S;
-                    y = T - IB->height + 1;
+                    if (IB)
+                        y = T - IB->height + 1;
+                    else
+                        y = T + 1;
                     break;
                 default:
                 case JBIG2_CORNER_BOTTOMRIGHT:
-                    x = S - IB->width + 1;
-                    y = T - IB->height + 1;
+                    if (IB ) {
+                        x = S - IB->width + 1;
+                        y = T - IB->height + 1;
+                    } else {
+                        x = S + 1;
+                        y = T + 1;
+                    }
                     break;
                 }
             } else {            /* TRANSPOSED */
@@ -495,17 +504,28 @@ cleanup1:
                     y = S;
                     break;
                 case JBIG2_CORNER_TOPRIGHT:
-                    x = T - IB->width + 1;
+                    if (IB)
+                        x = T - IB->width + 1;
+                    else
+                        x = T + 1;
                     y = S;
                     break;
                 case JBIG2_CORNER_BOTTOMLEFT:
                     x = T;
-                    y = S - IB->height + 1;
+                    if (IB)
+                        y = S - IB->height + 1;
+                    else
+                        y = S + 1;
                     break;
                 default:
                 case JBIG2_CORNER_BOTTOMRIGHT:
-                    x = T - IB->width + 1;
-                    y = S - IB->height + 1;
+                    if (IB) {
+                        x = T - IB->width + 1;
+                        y = S - IB->height + 1;
+                    } else {
+                        x = T + 1;
+                        y = S + 1;
+                    }
                     break;
                 }
             }
@@ -522,9 +542,9 @@ cleanup1:
             }
 
             /* (3c.x) */
-            if ((!params->TRANSPOSED) && (params->REFCORNER < 2)) {
+            if (IB && (!params->TRANSPOSED) && (params->REFCORNER < 2)) {
                 CURS += IB->width - 1;
-            } else if ((params->TRANSPOSED) && (params->REFCORNER & 1)) {
+            } else if (IB && (params->TRANSPOSED) && (params->REFCORNER & 1)) {
                 CURS += IB->height - 1;
             }
 
