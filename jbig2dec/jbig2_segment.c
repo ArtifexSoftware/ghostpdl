@@ -112,7 +112,7 @@ jbig2_parse_segment_header(Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size, size_t 
     }
 
     /* 7.2.6 */
-    if (result->flags & 0x40) {
+    if (pa_size == 4) {
         result->page_association = jbig2_get_uint32(buf + offset);
         offset += 4;
     } else {
