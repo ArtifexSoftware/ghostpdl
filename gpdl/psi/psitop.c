@@ -130,17 +130,29 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
                                                   "ps_impl_allocate_interp_instance");
 
     int code;
-#define GS_NUM_ARGS 5
-    const char *gsargs[GS_NUM_ARGS] = {"gpdl","-I../Resource/Init", "-dNODISPLAY", "-dJOBSERVER", "-dPS_INTERP_ACT_ON_UEL"};
+#define GS_MAX_NUM_ARGS 10
+    const char *gsargs[GS_MAX_NUM_ARGS] = {0};
+    int nargs = 0;
     
     if (!psi)
         return gs_error_VMerror;
         
+    gsargs[nargs++] = "gpdl";
+    /* We start gs with the nullpage device, and replace the device with the
+     * set_device call from the language independent code.
+     */
+    gsargs[nargs++] = "-dNODISPLAY";
+    /* As we're "printer targetted, use a jobserver */
+    gsargs[nargs++] = "-dJOBSERVER";
+    /* Tell gs not to ignore a UEL, but do an interpreter exit
+     */
+    gsargs[nargs++] = "-dPS_INTERP_ACT_ON_UEL";
+
     code = gsapi_new_instance(&impl->interp_client_data, NULL);
     if (code < 0)
         gs_free_object(mem, psi, "ps_impl_allocate_interp_instance");
 
-    code = gsapi_init_with_args(impl->interp_client_data, GS_NUM_ARGS, (char **)gsargs);
+    code = gsapi_init_with_args(impl->interp_client_data, nargs, (char **)gsargs);
     if (code < 0) {
         gsapi_delete_instance(impl->interp_client_data);
         gs_free_object(mem, psi, "ps_impl_allocate_interp_instance");
@@ -196,6 +208,9 @@ ps_impl_process_begin(pl_interp_implementation_t * impl)
     return gsapi_run_string_begin(impl->interp_client_data, 0, &exit_code);
 }
 
+/* TODO: in some fashion have gs pass back how far into the input buffer it
+ * had read, so we don't need to explicitly search the buffer for the UEL
+ */
 static int
 ps_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
 {
