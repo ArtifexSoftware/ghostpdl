@@ -291,7 +291,7 @@ cleanup1:
                 first_symbol = FALSE;
             } else {
                 if (NINSTANCES > params->SBNUMINSTANCES) {
-                    code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "too many NINSTANCES (%d) decoded", NINSTANCES);
+                    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "too many NINSTANCES (%d) decoded", NINSTANCES);
                     break;
                 }
                 /* (3c.ii) / 6.4.8 */
