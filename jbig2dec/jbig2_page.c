@@ -126,8 +126,9 @@ jbig2_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_dat
         }
     }
     if (page->height == 0xFFFFFFFF && page->striped == FALSE) {
-        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "height is unspecified but page is not marked as striped");
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "height is unspecified but page is not marked as striped, assuming striped with maximum strip size");
         page->striped = TRUE;
+        page->stripe_size = 0x7FFF;
     }
     page->end_row = 0;
 
