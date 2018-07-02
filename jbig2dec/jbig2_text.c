@@ -353,12 +353,11 @@ cleanup1:
                 index = 0;
                 while (id >= dicts[index]->n_symbols)
                     id -= dicts[index++]->n_symbols;
-                /* SumatraPDF: fail on missing glyphs */
                 if (dicts[index]->glyphs[id] == NULL) {
-                    code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "missing glyph %d/%d", index, id);
-                    goto cleanup2;
+                    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "missing glyph (%d/%d), ignoring", index, id);
+                } else {
+                    IB = jbig2_image_reference(ctx, dicts[index]->glyphs[id]);
                 }
-                IB = jbig2_image_reference(ctx, dicts[index]->glyphs[id]);
             }
             if (params->SBREFINE) {
                 if (params->SBHUFF) {
@@ -414,36 +413,38 @@ cleanup1:
                 }
 
                 /* 6.4.11 (6) */
-                IBO = IB;
-                IB = NULL;
-                if (((int32_t) IBO->width) + RDW < 0 || ((int32_t) IBO->height) + RDH < 0) {
-                    code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "reference image dimensions negative");
-                    goto cleanup2;
-                }
-                refimage = jbig2_image_new(ctx, IBO->width + RDW, IBO->height + RDH);
-                if (refimage == NULL) {
-                    code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate reference image");
-                    goto cleanup2;
-                }
-                jbig2_image_clear(ctx, refimage, 0x00);
+                if (IB) {
+                    IBO = IB;
+                    IB = NULL;
+                    if (((int32_t) IBO->width) + RDW < 0 || ((int32_t) IBO->height) + RDH < 0) {
+                        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "reference image dimensions negative");
+                        goto cleanup2;
+                    }
+                    refimage = jbig2_image_new(ctx, IBO->width + RDW, IBO->height + RDH);
+                    if (refimage == NULL) {
+                        code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate reference image");
+                        goto cleanup2;
+                    }
+                    jbig2_image_clear(ctx, refimage, 0x00);
 
-                /* Table 12 */
-                rparams.GRTEMPLATE = params->SBRTEMPLATE;
-                rparams.GRREFERENCE = IBO;
-                rparams.GRREFERENCEDX = (RDW >> 1) + RDX;
-                rparams.GRREFERENCEDY = (RDH >> 1) + RDY;
-                rparams.TPGRON = 0;
-                memcpy(rparams.grat, params->sbrat, 4);
-                code = jbig2_decode_refinement_region(ctx, segment, &rparams, as, refimage, GR_stats);
-                if (code < 0) {
-                    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode refinement region");
-                    goto cleanup2;
-                }
+                    /* Table 12 */
+                    rparams.GRTEMPLATE = params->SBRTEMPLATE;
+                    rparams.GRREFERENCE = IBO;
+                    rparams.GRREFERENCEDX = (RDW >> 1) + RDX;
+                    rparams.GRREFERENCEDY = (RDH >> 1) + RDY;
+                    rparams.TPGRON = 0;
+                    memcpy(rparams.grat, params->sbrat, 4);
+                    code = jbig2_decode_refinement_region(ctx, segment, &rparams, as, refimage, GR_stats);
+                    if (code < 0) {
+                        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode refinement region");
+                        goto cleanup2;
+                    }
 
-                jbig2_image_release(ctx, IBO);
-                IBO = NULL;
-                IB = refimage;
-                refimage = NULL;
+                    jbig2_image_release(ctx, IBO);
+                    IBO = NULL;
+                    IB = refimage;
+                    refimage = NULL;
+                }
 
                 /* 6.4.11 (7) */
                 if (params->SBHUFF) {
