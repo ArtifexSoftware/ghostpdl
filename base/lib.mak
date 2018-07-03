@@ -2954,16 +2954,29 @@ $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(AK)\
  $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsicc_profilecache.$(OBJ) $(C_) $(GLSRC)gsicc_profilecache.c
 
-$(GLOBJ)gsicc_lcms2mt_1.$(OBJ) : $(GLSRC)gsicc_lcms2mt.c\
+$(GLOBJ)gsicc_lcms2mt_1_0.$(OBJ) : $(GLSRC)gsicc_lcms2mt.c\
  $(memory__h) $(gsicc_cms_h) $(gslibctx_h) $(gserrors_h) $(gxdevice_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLLCMS2MTCC) $(GLO_)gsicc_lcms2mt_1.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2mt.c
-$(GLOBJ)gsicc_lcms2mt_0.$(OBJ) : $(GLSRC)gsicc_lcms2mt.c\
+	$(GLLCMS2MTCC) $(GLO_)gsicc_lcms2mt_1_0.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2mt.c
+
+$(GLOBJ)gsicc_lcms2mt_0_0.$(OBJ) : $(GLSRC)gsicc_lcms2mt.c\
  $(memory__h) $(gsicc_cms_h) $(lcms2mt_h) $(gslibctx_h) $(lcms2mt_plugin_h) $(gserrors_h) \
- $(gxdevice_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLLCMS2MTCC) $(GLO_)gsicc_lcms2mt_0.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2mt.c
-$(GLOBJ)gsicc_lcms2mt.$(OBJ) : $(GLOBJ)gsicc_lcms2mt_$(SHARE_LCMS).$(OBJ) $(gp_h) \
+ $(gxdevice_h) $(lcms2mt_cobalt_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLLCMS2MTCC) $(GLO_)gsicc_lcms2mt_0_0.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2mt.c
+
+$(GLOBJ)gsicc_lcms2mt_1_1.$(OBJ) : $(GLSRC)gsicc_lcms2mt.c\
+ $(memory__h) $(gsicc_cms_h) $(gslibctx_h) $(gserrors_h)\
+ $(gxdevice_h) $(LIB_MAK) $(MAKEDIRS) $(cal_h)
+	$(GLLCMS2MTCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(GLO_)gsicc_lcms2mt_1_1.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2mt.c
+
+$(GLOBJ)gsicc_lcms2mt_0_1.$(OBJ) : $(GLSRC)gsicc_lcms2mt.c\
+ $(memory__h) $(gsicc_cms_h) $(lcms2mt_h) $(gslibctx_h) $(lcms2mt_plugin_h) $(gserrors_h) \
+ $(gxdevice_h) $(lcms2mt_cobalt_h) $(LIB_MAK) $(MAKEDIRS) $(cal_h)
+	$(GLLCMS2MTCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(GLO_)gsicc_lcms2mt_0_1.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2mt.c
+
+$(GLOBJ)gsicc_lcms2mt.$(OBJ) : $(GLOBJ)gsicc_lcms2mt_$(SHARE_LCMS)_$(WITH_CAL).$(OBJ) $(gp_h) \
  $(gxsync_h) $(LIB_MAK) $(MAKEDIRS)
-	$(CP_) $(GLOBJ)gsicc_lcms2mt_$(SHARE_LCMS).$(OBJ) $(GLOBJ)gsicc_lcms2mt.$(OBJ)
+	$(CP_) $(GLOBJ)gsicc_lcms2mt_$(SHARE_LCMS)_$(WITH_CAL).$(OBJ) $(GLOBJ)gsicc_lcms2mt.$(OBJ)
+
 $(GLOBJ)gsicc_lcms2_1.$(OBJ) : $(GLSRC)gsicc_lcms2.c\
  $(memory__h) $(gsicc_cms_h) $(gslibctx_h) $(gserrors_h) $(gxdevice_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLLCMS2CC) $(GLO_)gsicc_lcms2_1.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2.c

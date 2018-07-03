@@ -482,9 +482,12 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
         *psrc_cm_start = NULL;
     } else {
         spp_cm = num_des_comps;
-        *psrc_cm = gs_alloc_bytes(pgs->memory,  w * spp_cm/spp,
+
+        /* Put the buffer on a 32 byte memory alignment for SSE/AVX.  Also
+           extra space for 32 byte overrun */
+        *psrc_cm_start = gs_alloc_bytes(pgs->memory,  w * spp_cm/spp + 64,
                                   "image_color_icc_prep");
-        *psrc_cm_start = *psrc_cm;
+        *psrc_cm = *psrc_cm_start + ((32 - (intptr_t)(*psrc_cm_start)) & 31);
         *bufend = *psrc_cm +  w * spp_cm/spp;
         if (penum->icc_link->is_identity) {
             if (!force_planar) {

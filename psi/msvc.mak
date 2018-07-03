@@ -878,6 +878,12 @@ MSVC_VERSION=12
 !if "$(_NMAKE_VER)" == "14.00.23506.0"
 MSVC_VERSION=14
 !endif
+!if "$(_NMAKE_VER)" == "14.14.26433.0"
+MSVC_VERSION=14
+!endif
+!if "$(_NMAKE_VER)" == "14.16.27026.1"
+MSVC_VERSION=14
+!endif
 !endif
 
 !ifndef MSVC_VERSION

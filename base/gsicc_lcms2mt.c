@@ -25,6 +25,10 @@
 #include "gsicc_cms.h"
 #include "gxdevice.h"
 
+#ifdef WITH_CAL
+#include "cal.h"
+#endif
+
 #ifndef MEMENTO_SQUEEZE_BUILD
 #define USE_LCMS2_LOCKING
 #endif
@@ -169,7 +173,7 @@ static cmsPluginMutex gs_cms_mutexhandler =
 {
     {
         cmsPluginMagicNumber,
-        2060,
+        LCMS_VERSION,
         cmsPluginMutexSig,
         NULL
     },
@@ -869,6 +873,10 @@ gscms_create(gs_memory_t *memory)
 
 #ifdef USE_LCMS2_LOCKING
     cmsPlugin(ctx, (void *)&gs_cms_mutexhandler);
+#endif
+
+#ifdef WITH_CAL
+    cmsPlugin(ctx, cal_cms_extensions());
 #endif
 
     cmsSetLogErrorHandler(ctx, gscms_error);

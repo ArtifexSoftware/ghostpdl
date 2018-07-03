@@ -37,7 +37,10 @@ cal_OBJS = \
 	$(CAL_OBJ)$(CAL_PREFIX)cal.$(OBJ)	\
 	$(CAL_OBJ)$(CAL_PREFIX)rescale.$(OBJ)	\
 	$(CAL_OBJ)$(CAL_PREFIX)halftone.$(OBJ)	\
-	$(CAL_OBJ)$(CAL_PREFIX)doubler.$(OBJ)
+	$(CAL_OBJ)$(CAL_PREFIX)doubler.$(OBJ)	\
+	$(CAL_OBJ)$(CAL_PREFIX)cmsavx2.$(OBJ)	\
+	$(CAL_OBJ)$(CAL_PREFIX)cmssse42.$(OBJ)	\
+	$(CAL_OBJ)$(CAL_PREFIX)lcms2mt_cal.$(OBJ)
 
 cal_HDRS = \
 	$(CAL_SRC)cal.h		\
@@ -73,5 +76,15 @@ $(CAL_OBJ)$(CAL_PREFIX)halftone.$(OBJ) : $(CAL_SRC)halftone.c $(cal_HDRS) $(CAL_
 
 $(CAL_OBJ)$(CAL_PREFIX)doubler.$(OBJ) : $(CAL_SRC)doubler.c $(cal_HDRS) $(CAL_DEP) $(CAL_SRC)double_c.h $(CAL_SRC)double_sse.h
 	$(CAL_CC) $(CAL_O)doubler.$(OBJ) $(C_) $(CAL_SRC)doubler.c
+
+$(CAL_OBJ)$(CAL_PREFIX)cmsavx2.$(OBJ) : $(CAL_SRC)cmsavx2.c $(cal_HDRS) $(CAL_DEP)
+	$(CAL_CC) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmsavx2.$(OBJ) $(C_) $(CAL_SRC)cmsavx2.c
+
+$(CAL_OBJ)$(CAL_PREFIX)cmssse42.$(OBJ) : $(CAL_SRC)cmssse42.c $(cal_HDRS) $(CAL_DEP)
+	$(CAL_CC) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmssse42.$(OBJ) $(C_) $(CAL_SRC)cmssse42.c
+
+$(CAL_OBJ)$(CAL_PREFIX)lcms2mt_cal.$(OBJ) : $(CAL_SRC)lcms2mt_cal.c $(cal_HDRS) $(CAL_DEP)
+	$(CAL_CC) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(GLSRC) $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)lcms2mt_cal.$(OBJ) $(C_) $(CAL_SRC)lcms2mt_cal.c
+
 
 # end of file
