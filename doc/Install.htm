@@ -74,8 +74,6 @@
 </ul>
 <li><a href="#Install_Windows">Installing Ghostscript on MS Windows</a></li>
 <li><a href="#Install_VMS">Installing Ghostscript on OpenVMS</a></li>
-<li><a href="#Install_DOS">Installing Ghostscript on DOS</a></li>
-<li><a href="#Install_OS2">Installing Ghostscript on OS/2 2.x</a></li>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -423,110 +421,6 @@ specific login script.</li>
 If you have DECWindows/Motif installed, you may wish to replace the
 <code>FONTMAP.GS</code> file with <code>FONTMAP.VMS</code>.  Read the
 comment at the beginning of the latter file for more information.</p>
-
-<hr>
-
-<h2><a name="Install_DOS"></a>Installing Ghostscript on DOS</h2>
-
-<p>
-The last version to run on DOS was Aladdin Ghostscript 5.10,
-which used a 386 DOS extender.</p>
-<p>
-If you are running MS Windows, then use the MS Windows Ghostscript
-command line executable <code>GSWIN32C.EXE</code>.</p>
-
-<hr>
-
-<h2><a name="Install_OS2"></a>Installing Ghostscript on OS/2 2.x</h2>
-
-<p>
-Support for OS/2 has stagnated (and almost certainly bit-rotted), and
-as the core development team has no access to an OS/2 environment, we
-are unable to bring it up to date. We will consider patches from contributors
-if any wish to take on the task of getting it working again. Given the
-very limited appeal of OS/2 these days, however, we are unlikely to consider
-patches with invasive code changes.</p>
-
-<p>
-The Ghostscript OS/2 implementation is designed for OS/2 2.1 or later.
-You need these files to run Ghostscript on OS/2:</p>
-
-<blockquote><table>
-	<tr><td><code>GSOS2.EXE</code></td>
-		<td>&nbsp;&nbsp;&nbsp;</td>
-		<td>A text application that will run windowed or full screen</td></tr>
-	<tr><td><code>GSDLL2.DLL</code></td>
-		<td>&nbsp;</td>
-	<td>A dynamic link library that must be in the same directory as
-		<code>GSOS2.EXE</code> or on the <code>LIBPATH</code>.</td></tr>
-	<tr><td><code>GSPMDRV.EXE</code></td>
-		<td>&nbsp;</td>
-	<td>An "external driver" used by the <code>display</code>
-	    device, which is normally the default device and which displays
-	    output in a Presentation Manager window;
-	    <code>GSPMDRV.EXE</code> must be located in the same
-	    directory as <code>GSOS2.EXE</code> or on the
-		<code>PATH</code></td></tr>
-</table></blockquote>
-
-<p>
-<code>GSOS2.EXE</code>, <code>GSDLL2.DLL</code> and
-<code>GSPMDRV.EXE</code> are compiled using EMX/GCC 0.9d.  You must have
-the EMX DLLs on your <code>LIBPATH</code>; they are available in a
-package <code>emxrt.zip</code> from many places on the Internet.</p>
-
-<p>
-The system menu of the Ghostscript Image window includes a "Copy" command
-to copy the currently displayed bitmap to the Clipboard.</p>
-
-<p>
-OS/2 comes with some Adobe Type Manager fonts. If you wish to use these with
-Ghostscript, you should replace the <code>FONTMAP</code> file with
-<code>FONTMAP.OS2</code>, and add to the environment variable
-<code>GS_LIB</code> (see <a href="Use.htm#Finding_files">Use.htm</a> 
-for more information about
-<code>GS_LIB</code>) the name of the directory where the fonts are
-located, usually <code>C:\PSFONTS</code>.  Before you do this, please
-read carefully the license that accompanies the ATM fonts; we take no
-responsibility for any possible violations of such licenses.</p>
-
-<p>
-Since <code>GSOS2.EXE</code> is not a PM application, it cannot
-determine the depth of the PM display.  You must provide this information
-using the <code>-dBitsPerPixel</code> option.  Valid values are 1, 4, 8
-(the default), and 24.</p>
-
-<blockquote><table>
-<tr valign="bottom">
-	<th align="left">Use</th>
-	<th>&nbsp;&nbsp;&nbsp;&nbsp;</th>
-	<th align="left">For</th></tr>
-<tr valign="top"><td><code>-dBitsPerPixel=1</code></td>
-	<td>&nbsp;</td>
-	<td>VGA monochrome</td></tr>
-<tr valign="top"><td><code>-dBitsPerPixel=4</code></td>
-	<td>&nbsp;</td>
-	<td>VGA standard</td></tr>
-<tr valign="top"><td><code>-dBitsPerPixel=8</code></td>
-	<td>&nbsp;</td>
-	<td>SVGA 256 colors</td></tr>
-</table></blockquote>
-
-<p>
-Standard VGA is very slow because it uses double buffering to avoid bugs
-and because of 1-plane to 4-plane conversion; it's better to use a
-256-color display driver.  Many display drivers have bugs which cause 1
-	bit-per-pixel bitmaps to be displayed incorrectly.</p>
-
-<p>
-<code>GSOS2.EXE</code> and <code>GSPMDRV.EXE</code> will stay in
-memory for the number of minutes specified in the environment variable
-<code>GS_LOAD</code>.</p>
-
-<p>
-For printer devices, output goes to the default queue.  To print to a
-specified queue, use <code>-sOutputFile=\\spool\NullLPT1</code>, where
-<code>NullLPT1</code> is the queue's physical name.</p>
 
 <!-- [2.0 end contents] ==================================================== -->
 
