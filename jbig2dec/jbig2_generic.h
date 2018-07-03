@@ -32,7 +32,7 @@ typedef struct {
     int GBTEMPLATE;
     bool TPGDON;
     bool USESKIP;
-    /* SKIP */
+    Jbig2Image *SKIP;
     int8_t gbat[8];
 } Jbig2GenericRegionParams;
 

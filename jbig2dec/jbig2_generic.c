@@ -148,6 +148,10 @@ jbig2_decode_generic_template0_unopt(Jbig2Ctx *ctx,
 
     for (y = 0; y < GBH; y++) {
         for (x = 0; x < GBW; x++) {
+            if (params->USESKIP && jbig2_image_get_pixel(params->SKIP, x, y)) {
+                jbig2_image_set_pixel(image, x, y, 0);
+                continue;
+            }
             CONTEXT = 0;
             CONTEXT |= jbig2_image_get_pixel(image, x - 1, y) << 0;
             CONTEXT |= jbig2_image_get_pixel(image, x - 2, y) << 1;
@@ -194,6 +198,10 @@ jbig2_decode_generic_template1_unopt(Jbig2Ctx *ctx,
 
     for (y = 0; y < GBH; y++) {
         for (x = 0; x < GBW; x++) {
+            if (params->USESKIP && jbig2_image_get_pixel(params->SKIP, x, y)) {
+                jbig2_image_set_pixel(image, x, y, 0);
+                continue;
+            }
             CONTEXT = 0;
             CONTEXT |= jbig2_image_get_pixel(image, x - 1, y) << 0;
             CONTEXT |= jbig2_image_get_pixel(image, x - 2, y) << 1;
@@ -303,6 +311,10 @@ jbig2_decode_generic_template2_unopt(Jbig2Ctx *ctx,
 
     for (y = 0; y < GBH; y++) {
         for (x = 0; x < GBW; x++) {
+            if (params->USESKIP && jbig2_image_get_pixel(params->SKIP, x, y)) {
+                jbig2_image_set_pixel(image, x, y, 0);
+                continue;
+            }
             CONTEXT = 0;
             CONTEXT |= jbig2_image_get_pixel(image, x - 1, y) << 0;
             CONTEXT |= jbig2_image_get_pixel(image, x - 2, y) << 1;
@@ -469,6 +481,10 @@ jbig2_decode_generic_template3_unopt(Jbig2Ctx *ctx,
 
     for (y = 0; y < GBH; y++) {
         for (x = 0; x < GBW; x++) {
+            if (params->USESKIP && jbig2_image_get_pixel(params->SKIP, x, y)) {
+                jbig2_image_set_pixel(image, x, y, 0);
+                continue;
+            }
             CONTEXT = 0;
             CONTEXT |= jbig2_image_get_pixel(image, x - 1, y) << 0;
             CONTEXT |= jbig2_image_get_pixel(image, x - 2, y) << 1;
@@ -529,6 +545,10 @@ jbig2_decode_generic_template0_TPGDON(Jbig2Ctx *ctx,
             return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode arithmetic code when handling generic template0 TPGDON1");
         if (!LTP) {
             for (x = 0; x < GBW; x++) {
+                if (params->USESKIP && jbig2_image_get_pixel(params->SKIP, x, y)) {
+                    jbig2_image_set_pixel(image, x, y, 0);
+                    continue;
+                }
                 CONTEXT = jbig2_image_get_pixel(image, x - 1, y);
                 CONTEXT |= jbig2_image_get_pixel(image, x - 2, y) << 1;
                 CONTEXT |= jbig2_image_get_pixel(image, x - 3, y) << 2;
@@ -581,6 +601,10 @@ jbig2_decode_generic_template1_TPGDON(Jbig2Ctx *ctx,
             return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode arithmetic code when handling generic template1 TPGDON1");
         if (!LTP) {
             for (x = 0; x < GBW; x++) {
+                if (params->USESKIP && jbig2_image_get_pixel(params->SKIP, x, y)) {
+                    jbig2_image_set_pixel(image, x, y, 0);
+                    continue;
+                }
                 CONTEXT = jbig2_image_get_pixel(image, x - 1, y);
                 CONTEXT |= jbig2_image_get_pixel(image, x - 2, y) << 1;
                 CONTEXT |= jbig2_image_get_pixel(image, x - 3, y) << 2;
@@ -630,6 +654,10 @@ jbig2_decode_generic_template2_TPGDON(Jbig2Ctx *ctx,
             return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode arithmetic code when handling generic template2 TPGDON1");
         if (!LTP) {
             for (x = 0; x < GBW; x++) {
+                if (params->USESKIP && jbig2_image_get_pixel(params->SKIP, x, y)) {
+                    jbig2_image_set_pixel(image, x, y, 0);
+                    continue;
+                }
                 CONTEXT = jbig2_image_get_pixel(image, x - 1, y);
                 CONTEXT |= jbig2_image_get_pixel(image, x - 2, y) << 1;
                 CONTEXT |= jbig2_image_get_pixel(image, x + params->gbat[0], y + params->gbat[1]) << 2;
@@ -676,6 +704,10 @@ jbig2_decode_generic_template3_TPGDON(Jbig2Ctx *ctx,
             return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to decode arithmetic code when handling generic template3 TPGDON1");
         if (!LTP) {
             for (x = 0; x < GBW; x++) {
+                if (params->USESKIP && jbig2_image_get_pixel(params->SKIP, x, y)) {
+                    jbig2_image_set_pixel(image, x, y, 0);
+                    continue;
+                }
                 CONTEXT = jbig2_image_get_pixel(image, x - 1, y);
                 CONTEXT |= jbig2_image_get_pixel(image, x - 2, y) << 1;
                 CONTEXT |= jbig2_image_get_pixel(image, x - 3, y) << 2;
@@ -750,23 +782,23 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
         return jbig2_decode_generic_region_TPGDON(ctx, segment, params, as, image, GB_stats);
 
     if (!params->MMR && params->GBTEMPLATE == 0) {
-        if (gbat[0] == +3 && gbat[1] == -1 && gbat[2] == -3 && gbat[3] == -1 && gbat[4] == +2 && gbat[5] == -2 && gbat[6] == -2 && gbat[7] == -2)
+        if (!params->USESKIP && gbat[0] == +3 && gbat[1] == -1 && gbat[2] == -3 && gbat[3] == -1 && gbat[4] == +2 && gbat[5] == -2 && gbat[6] == -2 && gbat[7] == -2)
             return jbig2_decode_generic_template0(ctx, segment, params, as, image, GB_stats);
         else
             return jbig2_decode_generic_template0_unopt(ctx, segment, params, as, image, GB_stats);
     } else if (!params->MMR && params->GBTEMPLATE == 1) {
-        if (gbat[0] == +3 && gbat[1] == -1)
+        if (!params->USESKIP && gbat[0] == +3 && gbat[1] == -1)
             return jbig2_decode_generic_template1(ctx, segment, params, as, image, GB_stats);
         else
             return jbig2_decode_generic_template1_unopt(ctx, segment, params, as, image, GB_stats);
     }
     else if (!params->MMR && params->GBTEMPLATE == 2) {
-        if (gbat[0] == 2 && gbat[1] == -1)
+        if (!params->USESKIP && gbat[0] == 2 && gbat[1] == -1)
             return jbig2_decode_generic_template2(ctx, segment, params, as, image, GB_stats);
         else
             return jbig2_decode_generic_template2_unopt(ctx, segment, params, as, image, GB_stats);
     } else if (!params->MMR && params->GBTEMPLATE == 3) {
-        if (gbat[0] == 2 && gbat[1] == -1)
+        if (!params->USESKIP && gbat[0] == 2 && gbat[1] == -1)
             return jbig2_decode_generic_template3(ctx, segment, params, as, image, GB_stats);
         else
             return jbig2_decode_generic_template3_unopt(ctx, segment, params, as, image, GB_stats);

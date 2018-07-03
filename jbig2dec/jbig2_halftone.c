@@ -298,6 +298,7 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
     rparams.GBTEMPLATE = GSTEMPLATE;
     rparams.TPGDON = 0;
     rparams.USESKIP = GSUSESKIP;
+    rparams.SKIP = GSKIP;
     rparams.gbat[0] = (GSTEMPLATE <= 1 ? 3 : 2);
     rparams.gbat[1] = -1;
     rparams.gbat[2] = -3;
@@ -453,68 +454,89 @@ jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 {
     uint32_t HBPP;
     uint32_t HNUMPATS;
-    uint8_t **GI;
+    uint8_t **GI = NULL;
     Jbig2Image *HSKIP = NULL;
     Jbig2PatternDict *HPATS;
     uint32_t i;
-    uint32_t mg, ng;
+    int32_t mg, ng;
     int32_t x, y;
     uint8_t gray_val;
-    int code;
+    int code = 0;
+
+    /* We need the patterns used in this region, get them from the referred pattern dictionary */
+    HPATS = jbig2_decode_ht_region_get_hpats(ctx, segment);
+    if (!HPATS) {
+        code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "no pattern dictionary found, skipping halftone image");
+        goto cleanup;
+    }
 
     /* 6.6.5 point 1. Fill bitmap with HDEFPIXEL */
     memset(image->data, params->HDEFPIXEL, image->stride * image->height);
 
-    /* 6.6.5 point 2. compute HSKIP */
+    /* 6.6.5 point 2. compute HSKIP according to 6.6.5.1 */
     if (params->HENABLESKIP == 1) {
-        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "unhandled option HENABLESKIP (NYI)");
+        HSKIP = jbig2_image_new(ctx, params->HGW, params->HGH);
+        if (HSKIP == NULL)
+            return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to allocate skip image");
+
+        for (mg = 0; mg < params->HGH; ++mg) {
+            for (ng = 0; ng < params->HGW; ++ng) {
+                x = (params->HGX + mg * (int32_t) params->HRY + ng * (int32_t) params->HRX) >> 8;
+                y = (params->HGY + mg * (int32_t) params->HRX - ng * (int32_t) params->HRY) >> 8;
+
+                if (x + HPATS->HPW <= 0 || x >= (int32_t) image->width || y + HPATS->HPH <= 0 || y >= (int32_t) image->height) {
+                    jbig2_image_set_pixel(HSKIP, ng, mg, 1);
+                } else {
+                    jbig2_image_set_pixel(HSKIP, ng, mg, 0);
+                }
+            }
+        }
     }
 
-    /* 6.6.5 point 3. set HBPP to ceil(log2(HNUMPATS)):
-     * we need the number of patterns used in this region (HNUMPATS)
-     * get it from referred pattern dictionary */
-
-    HPATS = jbig2_decode_ht_region_get_hpats(ctx, segment);
-    if (!HPATS)
-        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "no pattern dictionary found, skipping halftone image");
+    /* 6.6.5 point 3. set HBPP to ceil(log2(HNUMPATS)): */
     HNUMPATS = HPATS->n_patterns;
-
-    /* calculate ceil(log2(HNUMPATS)) */
     HBPP = 0;
     while (HNUMPATS > (1U << ++HBPP));
 
     /* 6.6.5 point 4. decode gray-scale image as mentioned in annex C */
     GI = jbig2_decode_gray_scale_image(ctx, segment, data, size,
                                        params->HMMR, params->HGW, params->HGH, HBPP, params->HENABLESKIP, HSKIP, params->HTEMPLATE, GB_stats);
-    if (!GI)
-        return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to acquire gray-scale image, skipping halftone image");
+    if (!GI) {
+        code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "unable to acquire gray-scale image, skipping halftone image");
+        goto cleanup;
+    }
 
     /* 6.6.5 point 5. place patterns with procedure mentioned in 6.6.5.2 */
     for (mg = 0; mg < params->HGH; ++mg) {
         for (ng = 0; ng < params->HGW; ++ng) {
-            x = (params->HGX + mg * params->HRY + ng * params->HRX) >> 8;
-            y = (params->HGY + mg * params->HRX - ng * params->HRY) >> 8;
+            x = (params->HGX + mg * (int32_t) params->HRY + ng * (int32_t) params->HRX) >> 8;
+            y = (params->HGY + mg * (int32_t) params->HRX - ng * (int32_t) params->HRY) >> 8;
 
             /* prevent pattern index >= HNUMPATS */
             gray_val = GI[ng][mg];
             if (gray_val >= HNUMPATS) {
-                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "gray-scale image uses value %d which larger than pattern dictionary", gray_val);
+                jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "gray-scale index %d out of range, using largest index", gray_val);
                 /* use highest available pattern */
                 gray_val = HNUMPATS - 1;
             }
             code = jbig2_image_compose(ctx, image, HPATS->patterns[gray_val], x, y, params->op);
-            if (code < 0)
-                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to compose pattern with gray-scale image");
+            if (code < 0) {
+                code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to compose pattern with gray-scale image");
+                goto cleanup;
+            }
         }
     }
 
-    /* free GI */
-    for (i = 0; i < params->HGW; ++i) {
-        jbig2_free(ctx->allocator, GI[i]);
+cleanup:
+    if (GI) {
+        for (i = 0; i < params->HGW; ++i) {
+            jbig2_free(ctx->allocator, GI[i]);
+        }
     }
     jbig2_free(ctx->allocator, GI);
+    jbig2_image_release(ctx, HSKIP);
 
-    return 0;
+    return code;
 }
 
 /**
