@@ -380,7 +380,7 @@ dict_uid_param(const ref * pdict, gs_uid * puid, int defaultval,
     } else {
         if (!r_has_type(puniqueid, t_integer))
            return_error(gs_error_typecheck);
-        if (puniqueid->value.intval < 0 || puniqueid->value.intval > 0xffffff)
+        if (puniqueid->value.intval < 0 || puniqueid->value.intval > 0x7fffffff)
            return_error(gs_error_rangecheck);
         /* Apparently fonts created by Fontographer often have */
         /* a UniqueID of 0, contrary to Adobe's specifications. */
