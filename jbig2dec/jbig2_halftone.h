@@ -51,20 +51,7 @@ typedef struct {
     bool HDEFPIXEL;
 } Jbig2HalftoneRegionParams;
 
-Jbig2PatternDict *jbig2_hd_new(Jbig2Ctx *ctx, const Jbig2PatternDictParams *params, Jbig2Image *image);
-
 void jbig2_hd_release(Jbig2Ctx *ctx, Jbig2PatternDict *dict);
-
-uint8_t **jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
-                                        const byte *data, const size_t size,
-                                        bool GSMMR, uint32_t GSW, uint32_t GSH,
-                                        uint32_t GSBPP, bool GSUSESKIP, Jbig2Image *GSKIP, int GSTEMPLATE, Jbig2ArithCx *GB_stats);
-
-Jbig2PatternDict *jbig2_decode_ht_region_get_hpats(Jbig2Ctx *ctx, Jbig2Segment *segment);
-
-int
-jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
-                             Jbig2HalftoneRegionParams *params, const byte *data, const size_t size, Jbig2Image *image, Jbig2ArithCx *GB_stats);
 
 int jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
 int jbig2_pattern_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);

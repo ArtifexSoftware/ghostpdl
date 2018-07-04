@@ -39,7 +39,7 @@
 /**
  * jbig2_hd_new: create a new dictionary from a collective bitmap
  */
-Jbig2PatternDict *
+static Jbig2PatternDict *
 jbig2_hd_new(Jbig2Ctx *ctx, const Jbig2PatternDictParams *params, Jbig2Image *image)
 {
     Jbig2PatternDict *new;
@@ -258,7 +258,7 @@ jbig2_pattern_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segme
  * returns: array of gray-scale values with GSW x GSH width/height
  *          0 on failure
  **/
-uint8_t **
+static uint8_t **
 jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
                               const byte *data, const size_t size,
                               bool GSMMR, uint32_t GSW, uint32_t GSH,
@@ -409,7 +409,7 @@ cleanup:
  * returns: pattern dictionary
  *          0 if search failed
  **/
-Jbig2PatternDict *
+static Jbig2PatternDict *
 jbig2_decode_ht_region_get_hpats(Jbig2Ctx *ctx, Jbig2Segment *segment)
 {
     int index = 0;
@@ -447,7 +447,7 @@ jbig2_decode_ht_region_get_hpats(Jbig2Ctx *ctx, Jbig2Segment *segment)
  * returns: 0 on success
  *         <0 on failure
  **/
-int
+static int
 jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                              Jbig2HalftoneRegionParams *params, const byte *data, const size_t size, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
