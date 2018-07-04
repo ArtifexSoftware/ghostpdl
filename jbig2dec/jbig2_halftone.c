@@ -575,9 +575,12 @@ jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
     offset += 4;
 
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
-                " grid %d x %d @ (%d.%d,%d.%d) vector (%d.%d,%d.%d)",
+                "grid %d x %d @ (%d.%d,%d.%d) vector (%d.%d,%d.%d)",
                 params.HGW, params.HGH,
-                params.HGX >> 8, params.HGX & 0xff, params.HGY >> 8, params.HGY & 0xff, params.HRX >> 8, params.HRX & 0xff, params.HRY >> 8, params.HRY & 0xff);
+                params.HGX >> 8, params.HGX & 0xff,
+                params.HGY >> 8, params.HGY & 0xff,
+                params.HRX >> 8, params.HRX & 0xff,
+                params.HRY >> 8, params.HRY & 0xff);
 
     /* 7.4.5.2.2 */
     if (!params.HMMR) {
