@@ -1810,11 +1810,25 @@ subclass_parentmost_device(gx_device *dev)
     return dev;
 }
 
+extern const gx_cm_color_map_procs *default_subclass_get_color_mapping_procs(const gx_device *dev);
+
 static inline
 subclass_color_mappings get_color_mapping_procs_subclass(gx_device *dev)
 {
     subclass_color_mappings sc;
-    sc.dev = subclass_parentmost_device(dev);
+    gx_device *d;
+    sc.dev = NULL;
+
+    d = subclass_parentmost_device(dev);
+    while (d->procs.get_color_mapping_procs == default_subclass_get_color_mapping_procs) {
+        if (d->child)
+            d = d->child;
+        else {
+            break;
+        }
+    }
+    sc.dev = d;
+
     sc.procs = (gx_cm_color_map_procs *)(dev_proc(sc.dev, get_color_mapping_procs) == NULL ?
                                          NULL : dev_proc(sc.dev, get_color_mapping_procs)(sc.dev));
     return sc;
