@@ -206,7 +206,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
     *argstr = NULL;
 
     /* Loop over arguments, finding one to return. */
-    while (1) {
+    do {
         pas = &pal->sources[pal->depth];
         if (!pas->is_file && pas->u.s.parsed) {
             /* This string is a "pushed-back" argument (retrieved
@@ -249,7 +249,12 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
             /* Convert from astr into pal->cstr, and return it as *argstr. */
             *argstr = cstr = pal->cstr;
             in_quote = false;
-            eol = true;
+            /* We keep track of whether we have just read an "eol" or not,
+             * in order to skip # characters at the start of a line
+             * (possibly preceeded by whitespace). We do NOT want this to
+             * apply to the start of arguments in the arg list, so only
+             * set eol to be true, if we are in a file. */
+            eol = pal->depth > 0;
             for (i = 0;;) {
                 if (c == EOF) {
                     if (in_quote) {
@@ -270,7 +275,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
                     /* Skip a comment. */
                     do {
                         c = get_codepoint(pal, pas);
-                    } while (c != 0 && !is_eol(c));
+                    } while (c != 0 && !is_eol(c) && c != EOF);
                     if (c == '\r')
                         c = get_codepoint(pal, pas);
                     if (c == '\n')
@@ -342,8 +347,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
             pas->u.file = f;
             continue; /* Loop back to parse the first arg from the file. */
         }
-        break; /* Out of infinite loop */
-    }
+    } while (**argstr == 0); /* Until we get a non-empty arg */
 
     return 1;
 }
