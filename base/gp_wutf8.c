@@ -16,7 +16,6 @@
 
 #include "windows_.h"
 
-#ifndef GS_NO_UTF8
 int utf8_to_wchar(wchar_t *out, const char *in)
 {
     unsigned int i;
@@ -106,4 +105,3 @@ int wchar_to_utf8(char *out, const wchar_t *in)
     }
     return len;
 }
-#endif

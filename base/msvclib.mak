@@ -466,14 +466,6 @@ EXPAT_CFLAGS=/DWIN32
 XCFLAGS=
 !endif
 
-# We now build with unicode support by default. To avoid this, build
-# with GS_NO_UTF8=1.
-!if "$(GS_NO_UTF8)" != ""
-UNICODECFLAGS=/DGS_NO_UTF8
-!else
-UNICODECFLAGS=
-!endif
-
 !ifndef CFLAGS
 CFLAGS=
 !endif
@@ -499,7 +491,7 @@ CFLAGS=$(CFLAGS) -DMETRO -DWINAPI_FAMILY=WINAPI_PARTITION_APP -DTIF_PLATFORM_CON
 PNG_CFLAGS=/DExitProcess=exit
 !endif
 
-CFLAGS=$(CFLAGS) $(XCFLAGS) $(UNICODECFLAGS)
+CFLAGS=$(CFLAGS) $(XCFLAGS)
 
 # ------ Platform-specific options ------ #
 

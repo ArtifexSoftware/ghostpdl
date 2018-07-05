@@ -1000,29 +1000,6 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     }
 
     /* now try to match the printer name against the [Devices] section */
-#ifdef GS_NO_UTF8
-    {
-        char *devices = gs_malloc(wdev->memory, 4096, 1, "win_pr2_getdc");
-        char *p;
-        if (devices == (char *)NULL)
-            return FALSE;
-        GetProfileString("Devices", NULL, "", devices, 4096);
-        p = devices;
-        while (*p) {
-            if (stricmp(p, device) == 0)
-                break;
-            p += strlen(p) + 1;
-        }
-        if (*p == '\0')
-            p = NULL;
-        gs_free(wdev->memory, devices, 4096, 1, "win_pr2_getdc");
-        if (p == NULL)
-            return FALSE;  /* doesn't match an available printer */
-
-        /* the printer exists, get the remaining information from win.ini */
-        GetProfileString("Devices", device, "", driverbuf, sizeof(driverbuf));
-    }
-#else
     {
         wchar_t unidrvbuf[sizeof(driverbuf)];
         wchar_t *devices;
@@ -1059,7 +1036,6 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
             return FALSE;
         wchar_to_utf8(driverbuf, unidrvbuf);
     }
-#endif
     driver = gs_strtok(driverbuf, ",", &dbuflast);
     output = gs_strtok(NULL, ",", &dbuflast);
 

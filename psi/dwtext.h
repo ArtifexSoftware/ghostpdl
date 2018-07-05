@@ -23,9 +23,7 @@
 #define _Windows
 #endif
 
-#ifndef GS_NO_UTF8
 #define UNICODE
-#endif
 
 #include "windows_.h"
 
@@ -33,15 +31,9 @@
 
 typedef struct TEXTWINDOW_S {
     const char *Title;		/* required */
-#ifndef GS_NO_UTF8
     wchar_t *TitleW;             /* required */
-#endif
     HICON hIcon;		/* optional */
-#ifdef GS_NO_UTF8
-    BYTE *ScreenBuffer;
-#else
     wchar_t *ScreenBuffer;
-#endif
     POINT ScreenSize;		/* optional */
     char *DragPre;		/* optional */
     char *DragPost;		/* optional */
@@ -79,9 +71,7 @@ typedef struct TEXTWINDOW_S {
     POINT ScrollMax;
 
     int x, y, cx, cy;	/* window position */
-#ifndef GS_NO_UTF8
     int utf8shift;
-#endif
 } TW;
 
 /* Create new TW structure */

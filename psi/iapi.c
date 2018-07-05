@@ -299,13 +299,6 @@ lead: /* We've just read a leading surrogate */
     return rune + (trail-0xDC00) + 0x10000;
 }
 
-#ifdef GS_NO_UTF8
-static int clean8bit_get_codepoint(FILE *file, const char **astr)
-{
-    return (file ? fgetc(file) : (**astr ? (int)(unsigned char)*(*astr)++ : EOF));
-}
-#endif
-
 /* Initialise the interpreter */
 GSDLLEXPORT int GSDLLAPI
 gsapi_set_arg_encoding(void *instance, int encoding)
@@ -314,14 +307,6 @@ gsapi_set_arg_encoding(void *instance, int encoding)
     if (instance == NULL)
         return gs_error_Fatal;
 
-#if defined(GS_NO_UTF8)
-    if (encoding == GS_ARG_ENCODING_LOCAL) {
-        /* For GS_NO_UTF8 builds, we don't use utf8 internally, and we assume
-         * that all inputs are 8 bit clean. */
-        gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), clean8bit_get_codepoint);
-        return 0;
-    }
-#else
     if (encoding == GS_ARG_ENCODING_LOCAL) {
 #if defined(__WIN32__) && !defined(METRO)
         /* For windows, we need to set it up so that we convert from 'local'
@@ -342,7 +327,6 @@ gsapi_set_arg_encoding(void *instance, int encoding)
         gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), utf16le_get_codepoint);
         return 0;
     }
-#endif
     return gs_error_Fatal;
 }
 
@@ -426,22 +410,16 @@ GSDLLEXPORT int GSDLLAPI
 gsapi_run_file(void *instance, const char *file_name,
         int user_errors, int *pexit_code)
 {
-#ifndef GS_NO_UTF8
     char *d, *temp;
     const char *c = file_name;
     char dummy[6];
     int rune, code, len;
-#endif
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     gs_main_instance *minst;
     if (instance == NULL)
         return gs_error_Fatal;
     minst = get_minst_from_memory(ctx->memory);
 
-#ifdef GS_NO_UTF8
-    return gs_main_run_file(minst, file_name, user_errors, pexit_code,
-                            &(minst->error_object));
-#else
     /* Convert the file_name to utf8 */
     if (minst->get_codepoint) {
         len = 1;
@@ -464,17 +442,12 @@ gsapi_run_file(void *instance, const char *file_name,
     if (temp != file_name)
         gs_free_object(ctx->memory, temp, "gsapi_run_file");
     return code;
-#endif
 }
 
 #ifdef __WIN32__
 GSDLLEXPORT int GSDLLAPI
 gsapi_init_with_argsW(void *instance, int argc, wchar_t **argv)
 {
-#ifdef GS_NO_UTF8
-    /* Cannot call the W entrypoints in a GS_NO_UTF8 build */
-    return gs_error_Fatal;
-#else
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     int code;
     gs_arg_get_codepoint *old;
@@ -488,7 +461,6 @@ gsapi_init_with_argsW(void *instance, int argc, wchar_t **argv)
     code = gsapi_init_with_args(instance, 2*argc, (char **)argv);
     gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), old);
     return code;
-#endif
 }
 
 GSDLLEXPORT int GSDLLAPI
@@ -513,10 +485,6 @@ GSDLLEXPORT int GSDLLAPI
 gsapi_run_fileW(void *instance, const wchar_t *file_name,
         int user_errors, int *pexit_code)
 {
-#ifdef GS_NO_UTF8
-    /* Cannot call the W entrypoints in a GS_NO_UTF8 build */
-    return gs_error_Fatal;
-#else
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     int code;
     gs_arg_get_codepoint *old;
@@ -530,7 +498,6 @@ gsapi_run_fileW(void *instance, const wchar_t *file_name,
     code = gsapi_run_file(instance, (const char *)file_name, user_errors, pexit_code);
     gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), old);
     return code;
-#endif
 }
 
 GSDLLEXPORT int GSDLLAPI

@@ -250,9 +250,6 @@ gp_printfile(const char *filename, const char *pmport)
 
         /* WinNT stores default printer in registry and win.ini */
         /* Win95 stores default printer in win.ini */
-#ifdef GS_NO_UTF8
-        GetProfileString("windows", "device", "", buf, sizeof(buf));
-#else
         wchar_t wbuf[512];
         int l;
 
@@ -261,7 +258,6 @@ gp_printfile(const char *filename, const char *pmport)
         if (l < 0 || l > sizeof(buf))
             return_error(gs_error_undefinedfilename);
         wchar_to_utf8(buf, wbuf);
-#endif
         if ((p = strchr(buf, ',')) != NULL)
             *p = '\0';
         return gp_printfile_win32(filename, buf);
@@ -369,9 +365,6 @@ BOOL gp_OpenPrinter(char *port, LPHANDLE printer)
 #ifdef METRO
     return FALSE;
 #else
-#ifdef GS_NO_UTF8
-    return OpenPrinter(port, printer, NULL);
-#else
     BOOL opened;
     wchar_t *uni = malloc(utf8_to_wchar(NULL, port) * sizeof(wchar_t));
     if (uni)
@@ -379,7 +372,6 @@ BOOL gp_OpenPrinter(char *port, LPHANDLE printer)
     opened = OpenPrinterW(uni, printer, NULL);
     free(uni);
     return opened;
-#endif
 #endif
 }
 
@@ -468,11 +460,7 @@ gp_printfile_win32(const char *filename, char *port)
 FILE *mswin_popen(const char *cmd, const char *mode)
 {
     SECURITY_ATTRIBUTES saAttr;
-#ifdef GS_NO_UTF8
-    STARTUPINFO siStartInfo;
-#else
     STARTUPINFOW siStartInfo;
-#endif
     PROCESS_INFORMATION piProcInfo;
     HANDLE hPipeTemp = INVALID_HANDLE_VALUE;
     HANDLE hChildStdinRd = INVALID_HANDLE_VALUE;
@@ -481,11 +469,7 @@ FILE *mswin_popen(const char *cmd, const char *mode)
     HANDLE hChildStderrWr = INVALID_HANDLE_VALUE;
     HANDLE hProcess = GetCurrentProcess();
     int handle = 0;
-#ifdef GS_NO_UTF8
-    char *command = NULL;
-#else
     wchar_t *command = NULL;
-#endif
     FILE *pipe = NULL;
 
     if (strcmp(mode, "wb") != 0)
@@ -531,25 +515,15 @@ FILE *mswin_popen(const char *cmd, const char *mode)
     siStartInfo.hStdError = hChildStderrWr;
 
     if (handle == 0) {
-#ifdef GS_NO_UTF8
-        command = (char *)malloc(strlen(cmd)+1);
-        if (command)
-            strcpy(command, cmd);
-#else
         command = (wchar_t *)malloc(sizeof(wchar_t)*utf8_to_wchar(NULL, cmd));
         if (command)
             utf8_to_wchar(command, cmd);
-#endif
         else
             handle = -1;
     }
 
     if (handle == 0)
-#ifdef GS_NO_UTF8
-        if (!CreateProcess(NULL,
-#else
         if (!CreateProcessW(NULL,
-#endif
             command,  	   /* command line                       */
             NULL,          /* process security attributes        */
             NULL,          /* primary thread security attributes */
@@ -608,31 +582,26 @@ gp_open_scratch_file_generic(const gs_memory_t *mem,
     FILE *f = NULL;
     char sTempDir[_MAX_PATH];
     char sTempFileName[_MAX_PATH];
-#if defined(METRO) || !defined(GS_NO_UTF8)
     wchar_t wTempDir[_MAX_PATH];
     wchar_t wTempFileName[_MAX_PATH];
     wchar_t wPrefix[_MAX_PATH];
-#endif
 
     memset(fname, 0, gp_file_name_sizeof);
     if (!gp_file_name_is_absolute(prefix, strlen(prefix))) {
         int plen = _MAX_PATH;
 
-        /* gp_gettmpdir will always return a UTF8 encoded string unless
-         * GS_NO_UTF8 is defined, due to the windows specific version of
-         * gp_getenv being called (in gp_wgetv.c, not gp_getnv.c) */
+        /* gp_gettmpdir will always return a UTF8 encoded string
+         * due to the windows specific version of gp_getenv
+         * being called (in gp_wgetv.c, not gp_getnv.c) */
         if (gp_gettmpdir(sTempDir, &plen) != 0) {
 #ifdef METRO
             /* METRO always uses UTF8 for 'ascii' - there is no concept of
-             * local encoding, so GS_NO_UTF8 makes no difference here. */
+             * local encoding. */
             l = GetTempPathWRT(_MAX_PATH, wTempDir);
-            l = wchar_to_utf8(sTempDir, wTempDir);
-#elif defined(GS_NO_UTF8)
-            l = GetTempPathA(_MAX_PATH, sTempDir);
 #else
             GetTempPathW(_MAX_PATH, wTempDir);
-            l = wchar_to_utf8(sTempDir, wTempDir);
 #endif
+            l = wchar_to_utf8(sTempDir, wTempDir);
         } else
             l = strlen(sTempDir);
     } else {
@@ -645,19 +614,14 @@ gp_open_scratch_file_generic(const gs_memory_t *mem,
         sTempDir[l-1] = '\\';		/* What Windoze prefers */
 
     if (l <= _MAX_PATH) {
+        utf8_to_wchar(wTempDir, sTempDir);
+        utf8_to_wchar(wPrefix, prefix);
 #ifdef METRO
-        utf8_to_wchar(wTempDir, sTempDir);
-        utf8_to_wchar(wPrefix, prefix);
         n = GetTempFileNameWRT(wTempDir, wPrefix, wTempFileName);
-        n = wchar_to_utf8(sTempFileName, wTempFileName);
-#elif defined(GS_NO_UTF8)
-        n = GetTempFileNameA(sTempDir, prefix, 0, sTempFileName);
 #else
-        utf8_to_wchar(wTempDir, sTempDir);
-        utf8_to_wchar(wPrefix, prefix);
         GetTempFileNameW(wTempDir, wPrefix, 0, wTempFileName);
-        n = wchar_to_utf8(sTempFileName, wTempFileName);
 #endif
+        n = wchar_to_utf8(sTempFileName, wTempFileName);
         if (n == 0) {
             /* If 'prefix' is not a directory, it is a path prefix. */
             int l = strlen(sTempDir), i;
@@ -672,28 +636,16 @@ gp_open_scratch_file_generic(const gs_memory_t *mem,
                 }
             }
             if (i > 0) {
+                utf8_to_wchar(wPrefix, sTempDir + i);
 #ifdef METRO
-                utf8_to_wchar(wPrefix, sTempDir + i);
                 GetTempFileNameWRT(wTempDir, wPrefix, wTempFileName);
-                n = wchar_to_utf8(sTempFileName, wTempFileName);
-#elif defined(GS_NO_UTF8)
-                n = GetTempFileNameA(sTempDir, sTempDir + i, 0, sTempFileName);
 #else
-                utf8_to_wchar(wPrefix, sTempDir + i);
                 GetTempFileNameW(wTempDir, wPrefix, 0, wTempFileName);
-                n = wchar_to_utf8(sTempFileName, wTempFileName);
 #endif
+                n = wchar_to_utf8(sTempFileName, wTempFileName);
             }
         }
         if (n != 0) {
-#ifdef GS_NO_UTF8
-            hfile = CreateFile(sTempFileName,
-                               GENERIC_READ | GENERIC_WRITE | DELETE,
-                               FILE_SHARE_READ | FILE_SHARE_WRITE,
-                               NULL, CREATE_ALWAYS,
-                               FILE_ATTRIBUTE_NORMAL | (remove ? FILE_FLAG_DELETE_ON_CLOSE : 0),
-                               NULL);
-#else
             int len = utf8_to_wchar(NULL, sTempFileName);
             wchar_t *uni = (len > 0 ? malloc(sizeof(wchar_t)*len) : NULL);
             if (uni == NULL)
@@ -716,7 +668,6 @@ gp_open_scratch_file_generic(const gs_memory_t *mem,
 #endif
                 free(uni);
             }
-#endif
         }
     }
     if (hfile != INVALID_HANDLE_VALUE) {
@@ -767,9 +718,6 @@ gp_open_scratch_file_rm(const gs_memory_t *mem,
 FILE *
 gp_fopen(const char *fname, const char *mode)
 {
-#ifdef GS_NO_UTF8
-    return fopen(fname, mode);
-#else
     int len = utf8_to_wchar(NULL, fname);
     wchar_t *uni;
     wchar_t wmode[4];
@@ -785,14 +733,10 @@ gp_fopen(const char *fname, const char *mode)
     file = _wfopen(uni, wmode);
     free(uni);
     return file;
-#endif
 }
 
 int gp_stat(const char *path, struct _stat *buf)
 {
-#ifdef GS_NO_UTF8
-    return stat(path, buf);
-#else
     int len = utf8_to_wchar(NULL, path);
     wchar_t *uni;
     int ret;
@@ -806,7 +750,6 @@ int gp_stat(const char *path, struct _stat *buf)
     ret = _wstat(uni, buf);
     free(uni);
     return ret;
-#endif
 }
 
 /* test whether gp_fdup is supported on this platform  */

@@ -16,15 +16,7 @@
 
 /* MS Windows implementation of gp_getenv, and gp_serialnumber */
 
-#ifdef GS_NO_UTF8 /* We want the real sprintf, so unhide it */
-#define sprintf
-#endif
-
 #include "windows_.h"
-
-#ifdef GS_NO_UTF8
-#undef sprintf
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>		/* for getenv */
@@ -37,37 +29,6 @@
  * Key = hkeyroot\\key, named value = name.
  * name, ptr, plen and return values are the same as in gp_getenv();
  */
-#ifdef GS_NO_UTF8
-static int
-gp_getenv_registry(HKEY hkeyroot, const char *key, const char *name,
-    char *ptr, int *plen)
-{
-    HKEY hkey;
-    DWORD cbData;
-    BYTE b;
-    LONG rc;
-    BYTE *bptr = (BYTE *)ptr;
-
-    if (RegOpenKeyEx(hkeyroot, key, 0, KEY_READ, &hkey)
-        == ERROR_SUCCESS) {
-        cbData = *plen;
-        if (bptr == (char *)NULL)
-            bptr = &b;	/* Registry API won't return ERROR_MORE_DATA */
-                        /* if ptr is NULL */
-        rc = RegQueryValueEx(hkey, (char *)name, 0, NULL, bptr, &cbData);
-        RegCloseKey(hkey);
-        if (rc == ERROR_SUCCESS) {
-            *plen = cbData;
-            return 0;	/* found environment variable and copied it */
-        } else if (rc == ERROR_MORE_DATA) {
-            /* buffer wasn't large enough */
-            *plen = cbData;
-            return -1;
-        }
-    }
-    return 1;	/* not found */
-}
-#else        /* ifdef GS_NO_UTF8 */
 int
 gp_getenv_registry(HKEY hkeyroot, const wchar_t *key, const char *name,
     char *ptr, int *plen)
@@ -144,7 +105,6 @@ gp_getenv_registry(HKEY hkeyroot, const wchar_t *key, const char *name,
     free(wname);
     return 1;                           /* environment variable does not exist */
 }
-#endif        /* ifdef GS_NO_UTF8 */
 #endif    /* ifdef __WIN32__ */
 
 /* ------ Environment variables ------ */
@@ -153,23 +113,6 @@ gp_getenv_registry(HKEY hkeyroot, const wchar_t *key, const char *name,
 int
 gp_getenv(const char *name, char *ptr, int *plen)
 {
-#ifdef GS_NO_UTF8
-    const char *str = getenv(name);
-
-    if (str) {
-        int len = strlen(str);
-
-        if (len < *plen) {
-            /* string fits */
-            strcpy(ptr, str);
-            *plen = len + 1;
-            return 0;
-        }
-        /* string doesn't fit */
-        *plen = len + 1;
-        return -1;
-    }
-#else
     wchar_t *wname;
     wchar_t *str;
 
@@ -196,7 +139,6 @@ gp_getenv(const char *name, char *ptr, int *plen)
         *plen = len;
         return -1;
     }
-#endif
     /* environment variable was not found */
 
 #if defined(__WIN32__) && !defined(METRO)
@@ -215,21 +157,12 @@ gp_getenv(const char *name, char *ptr, int *plen)
               && ((HIWORD(version) & 0x4000) == 0))) {
             /* not Win32s */
             int code;
-#ifdef GS_NO_UTF8
-            char key[256];
-            char dotversion[16];
-
-            sprintf(dotversion, "%d.%02d", (int)(gs_revision / 100),
-                    (int)(gs_revision % 100));
-            sprintf(key, "Software\\%s\\%s", gs_productfamily, dotversion);
-#else
             wchar_t key[256];
             wchar_t dotversion[16];
 
             wsprintfW(dotversion, L"%d.%02d", (int)(gs_revision / 100),
                       (int)(gs_revision % 100));
             wsprintfW(key, L"Software\\%hs\\%s", gs_productfamily, dotversion);
-#endif
             code = gp_getenv_registry(HKEY_CURRENT_USER, key, name, ptr, plen);
             if ( code <= 0 )
                 return code;	/* found it */
@@ -259,15 +192,9 @@ gp_serialnumber(void)
     byte buf[SERIALNUMBER_BUFSIZE];
     int buflen = SERIALNUMBER_BUFSIZE;
     int code, i;
-#ifdef GS_NO_UTF8
-    char key[256];
-
-    sprintf(key, "Software\\Microsoft\\MSLicensing\\HardwareID");
-#else        /* GS_NO_UTF8 */
     wchar_t key[256];
 
     wsprintfW(key, L"Software\\Microsoft\\MSLicensing\\HardwareID");
-#endif        /* GS_NO_UTF8 */
     code = gp_getenv_registry(HKEY_LOCAL_MACHINE, key, "ClientHWID", (char *)buf, &buflen);
     if ( code != 0 )
         return (int)(gs_serialnumber); 	/* error - just return the default */

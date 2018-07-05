@@ -331,13 +331,8 @@ avoid_windows_scale(void)
  * If the user specifies a different device, or different parameters to
  * the display device, the later ones should take precedence.
  */
-#ifdef GS_NO_UTF8
-int
-main(int argc, char *argv[])
-#else
 static int
 main_utf8(int argc, char *argv[])
-#endif
 {
     int code, code1;
     int exit_code;
@@ -458,7 +453,6 @@ main_utf8(int argc, char *argv[])
     return exit_status;
 }
 
-#ifndef GS_NO_UTF8
 int wmain(int argc, wchar_t *argv[], wchar_t *envp[]) {
     /* Duplicate args as utf8 */
     char **nargv;
@@ -500,4 +494,3 @@ err:
 
     return code;
 }
-#endif

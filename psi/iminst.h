@@ -71,9 +71,7 @@ struct gs_main_instance_s {
     void *readline_data;	/* data for gp_readline */
     ref error_object;		/* Use by gsapi_*() */
     int (*get_codepoint)(FILE *file, const char **astr);
-                                /* Get next 'unicode' codepoint (in
-                                 * GS_NO_UTF8 builds, these will actually
-                                 * just be 8 bit clean values). */
+                                /* Get next 'unicode' codepoint */
     display_callback *display;	/* callback structure for display device */
     /* The following are updated dynamically. */
     i_ctx_t *i_ctx_p;		/* current interpreter context state */

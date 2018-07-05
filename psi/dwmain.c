@@ -330,10 +330,8 @@ int new_main(int argc, char *argv[])
 #if defined(_MSC_VER) || defined(__BORLANDC__)
     __try {
 #endif
-#ifndef GS_NO_UTF8
     code = gsdll.set_arg_encoding(instance, GS_ARG_ENCODING_UTF8);
     if (code == 0)
-#endif
     code = gsdll.init_with_args(instance, nargc, nargv);
     if (code == 0)
         code = gsdll.run_string(instance, start_string, 0, &exit_code);
@@ -416,9 +414,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
     int argc;
     LPSTR argv[MAXCMDTOKENS];
     LPSTR p;
-#ifndef GS_NO_UTF8
     LPSTR pstart;
-#endif
     char command[256];
     char *args;
     char *d, *e;
@@ -449,16 +445,12 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
      *          if called with CreateProcess(command, args, ...)
      * Consequently we must use GetCommandLine()
      */
-#ifdef GS_NO_UTF8
-    p = GetCommandLine();
-#else
     {
         wchar_t *uni = GetCommandLineW();
         pstart = p = malloc(wchar_to_utf8(NULL, uni));
         if (p != NULL)
             wchar_to_utf8(p, uni);
     }
-#endif
 
     argc = 0;
     args = (char *)malloc(lstrlen(p)+1);
@@ -497,9 +489,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
     }
     argv[argc] = NULL;
 
-#ifndef GS_NO_UTF8
     free(pstart);
-#endif
 
     if (strlen(argv[0]) == 0) {
         GetModuleFileName(hInstance, command, sizeof(command)-1);

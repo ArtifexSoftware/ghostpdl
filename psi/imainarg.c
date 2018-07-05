@@ -207,13 +207,8 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
             (char *)gs_alloc_bytes(minst->heap, len, "GS_OPTIONS");
 
             gp_getenv(GS_OPTIONS, opts, &len);  /* can't fail */
-#if defined(GS_NO_UTF8)
-            if (arg_push_memory_string(&args, opts, false, minst->heap))
-                return gs_error_Fatal;
-#else
             if (arg_push_decoded_memory_string(&args, opts, false, true, minst->heap))
                 return gs_error_Fatal;
-#endif
         }
     }
     while ((code = arg_next(&args, (const char **)&arg, minst->heap)) > 0) {

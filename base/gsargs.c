@@ -327,11 +327,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
                 if (c == '"')
                     in_quote = !in_quote;
                 else
-    #ifdef GS_NO_UTF8
-                    cstr[i++] = c;
-    #else
                     i += codepoint_to_utf8(&cstr[i], c);
-    #endif
                 eol = is_eol(c);
                 c = get_codepoint(pal, pas);
             }
