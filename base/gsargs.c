@@ -130,6 +130,10 @@ arg_init(arg_list * pal, const char **argv, int argc,
     pal->argp = argv + 1;
     pal->argn = argc - 1;
     pal->depth = 0;
+    pal->sources[0].is_file = 0;
+    pal->sources[0].u.s.memory = NULL;
+    pal->sources[0].u.s.decoded = 0;
+    pal->sources[0].u.s.parsed = 0;
 }
 
 /* Push a string onto an arg list. */
@@ -144,18 +148,17 @@ arg_push_decoded_memory_string(arg_list * pal, char *str, bool parsed, bool deco
 {
     arg_source *pas;
 
-    if (pal->depth == arg_depth_max) {
+    if (pal->depth+1 == arg_depth_max) {
         lprintf("Too much nesting of @-files.\n");
         return 1;
     }
-    pas = &pal->sources[pal->depth];
+    pas = &pal->sources[++pal->depth];
     pas->is_file = false;
     pas->u.s.parsed = parsed;
     pas->u.s.decoded = decoded;
     pas->u.s.chars = str;
     pas->u.s.memory = mem;
     pas->u.s.str = str;
-    pal->depth++;
     return 0;
 }
 
@@ -163,8 +166,9 @@ arg_push_decoded_memory_string(arg_list * pal, char *str, bool parsed, bool deco
 void
 arg_finit(arg_list * pal)
 {
+    /* No cleanup is required for level 0 */
     while (pal->depth) {
-        arg_source *pas = &pal->sources[--(pal->depth)];
+        arg_source *pas = &pal->sources[pal->depth--];
 
         if (pas->is_file)
             fclose(pas->u.file);
@@ -173,9 +177,12 @@ arg_finit(arg_list * pal)
     }
 }
 
-static int get_codepoint(FILE *file, const char **astr, arg_list *pal, arg_source *pas)
+static int get_codepoint(arg_list *pal, arg_source *pas)
 {
-    return (pas->u.s.decoded ? get_codepoint_utf8(file, astr) : pal->get_codepoint(file, astr));
+    int (*fn)(FILE *file, const char **str);
+
+    fn = (!pas->is_file && pas->u.s.decoded ? get_codepoint_utf8 : pal->get_codepoint);
+    return fn(pas->u.file, &pas->u.s.str);
 }
 
 /* Get the next arg from a list. */
@@ -191,156 +198,151 @@ int
 arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
 {
     arg_source *pas;
-    FILE *f;
-    const char *astr = 0; /* initialized only to pacify gcc */
     char *cstr;
     int c;
     int i;
-    bool in_quote, eol, end_on_whitespace;
+    bool in_quote, eol;
 
     *argstr = NULL;
 
-top:pas = &pal->sources[pal->depth - 1];
-    end_on_whitespace = 1;
-    if (pal->depth == 0) {
-        if (pal->argn <= 0) { /* all done */
-            return 0;
-        }
-        pal->argn--;
-        astr = *(pal->argp++);
-        f = NULL;
-        end_on_whitespace = 0;
-        goto decode;
-    }
-    if (pas->is_file)
-        f = pas->u.file;
-    else if (pas->u.s.parsed)
-        /* this string is a "pushed-back" argument                  */
-        /* (retrieved by a preceding arg_next(), but not processed) */
-        /* assert(pas->u.s.decoded); */
-        if (strlen(pas->u.s.str) >= arg_str_max) {
-            errprintf(errmem, "Command too long: %s\n", pas->u.s.str);
-            return_error(gs_error_Fatal);
-        } else {
+    /* Loop over arguments, finding one to return. */
+    while (1) {
+        pas = &pal->sources[pal->depth];
+        if (!pas->is_file && pas->u.s.parsed) {
+            /* This string is a "pushed-back" argument (retrieved
+             * by a preceding arg_next(), but not processed). No
+             * decoding is required. */
+            /* assert(pas->u.s.decoded); */
+            if (strlen(pas->u.s.str) >= arg_str_max) {
+                errprintf(errmem, "Command too long: %s\n", pas->u.s.str);
+                return_error(gs_error_Fatal);
+            }
             strcpy(pal->cstr, pas->u.s.str);
             *argstr = pal->cstr;
             if (pas->u.s.memory)
                 gs_free_object(pas->u.s.memory, pas->u.s.chars, "arg_next");
             pal->depth--;
-            pas--;
-            goto at;
-        }
-    else
-        astr = pas->u.s.str, f = NULL;
-  decode:
-    *argstr = cstr = pal->cstr;
-#define is_eol(c) (c == '\r' || c == '\n')
-    i = 0;
-    in_quote = false;
-    eol = true;
-    c = get_codepoint(f, &astr, pal, pas);
-    for (i = 0;;) {
-        if (c == EOF) {
-            if (in_quote) {
-                cstr[i] = 0;
-                errprintf(errmem,
-                          "Unterminated quote in @-file: %s\n", cstr);
-                return_error(gs_error_Fatal);
+        } else {
+            /* We need to decode the next argument */
+            if (pal->depth == 0) {
+                if (pal->argn <= 0)
+                    return 0; /* all done */
+                /* Move onto the next argument from the string. */
+                pal->argn--;
+                pas->u.s.str = *(pal->argp++);
             }
-            if (i == 0) {
+            /* Skip a prefix of whitespace. */
+            do {
+                c = get_codepoint(pal, pas);
+            } while (c > 0 && c < 256 && isspace(c));
+            if (c == EOF) {
                 /* EOF before any argument characters. */
-                if (f != NULL)
-                    fclose(f);
+                if (pas->is_file)
+                    fclose(pas->u.file);
                 else if (pas->u.s.memory)
                     gs_free_object(pas->u.s.memory, pas->u.s.chars,
                                    "arg_next");
                 pal->depth--;
-                goto top;
+                continue; /* Next argument */
             }
-            break;
-        }
-        /* c != 0 */
-        if (c > 0 && c < 256 && isspace(c)) {
-            if (i == 0) {
-                c = get_codepoint(f, &astr, pal, pas);
-                continue;
+    #define is_eol(c) (c == '\r' || c == '\n')
+            /* Convert from astr into pal->cstr, and return it as *argstr. */
+            *argstr = cstr = pal->cstr;
+            in_quote = false;
+            eol = true;
+            for (i = 0;;) {
+                if (c == EOF) {
+                    if (in_quote) {
+                        cstr[i] = 0;
+                        errprintf(errmem,
+                                  "Unterminated quote in @-file: %s\n", cstr);
+                        return_error(gs_error_Fatal);
+                    }
+                    break; /* End of arg */
+                }
+                /* c != 0 */
+                /* If we aren't parsing from the arglist (i.e. depth > 0)
+                 * then we break on whitespace (unless we're in quotes). */
+                if (pal->depth > 0 && !in_quote && c > 0 && c < 256 && isspace(c))
+                    break; /* End of arg */
+                /* c isn't leading or terminating whitespace. */
+                if (c == '#' && eol) {
+                    /* Skip a comment. */
+                    do {
+                        c = get_codepoint(pal, pas);
+                    } while (c != 0 && !is_eol(c));
+                    if (c == '\r')
+                        c = get_codepoint(pal, pas);
+                    if (c == '\n')
+                        c = get_codepoint(pal, pas);
+                    continue; /* Next char */
+                }
+                if (c == '\\') {
+                    /* Check for \ followed by newline. */
+                    c = get_codepoint(pal, pas);
+                    if (is_eol(c)) {
+                        if (c == '\r')
+                            c = get_codepoint(pal, pas);
+                        if (c == '\n')
+                            c = get_codepoint(pal, pas);
+                        eol = true;
+                        continue; /* Next char */
+                    }
+                    /* \ anywhere else is treated as a printing character. */
+                    /* This is different from the Unix shells. */
+                    if (i >= arg_str_max - 1) {
+                        cstr[i] = 0;
+                        errprintf(errmem, "Command too long: %s\n", cstr);
+                        return_error(gs_error_Fatal);
+                    }
+                    cstr[i++] = '\\';
+                    eol = false;
+                    continue; /* Next char */
+                }
+                /* c will become part of the argument */
+                if (i >= arg_str_max - 1) {
+                    cstr[i] = 0;
+                    errprintf(errmem, "Command too long: %s\n", cstr);
+                    return_error(gs_error_Fatal);
+                }
+                /* Allow quotes to protect whitespace. */
+                /* (special cases have already been handled and don't reach this point) */
+                if (c == '"')
+                    in_quote = !in_quote;
+                else
+    #ifdef GS_NO_UTF8
+                    cstr[i++] = c;
+    #else
+                    i += codepoint_to_utf8(&cstr[i], c);
+    #endif
+                eol = is_eol(c);
+                c = get_codepoint(pal, pas);
             }
-            if (!in_quote && end_on_whitespace)
-                break;
+            cstr[i] = 0;
         }
-        /* c isn't leading or terminating whitespace. */
-        if (c == '#' && eol) {
-            /* Skip a comment. */
-            do {
-                c = get_codepoint(f, &astr, pal, pas);
-            } while (!(c == 0 || is_eol(c)));
-            if (c == '\r')
-                c = get_codepoint(f, &astr, pal, pas);
-            if (c == '\n')
-                c = get_codepoint(f, &astr, pal, pas);
-            continue;
-        }
-        if (c == '\\') {
-            /* Check for \ followed by newline. */
-            c = get_codepoint(f, &astr, pal, pas);
-            if (is_eol(c)) {
-                if (c == '\r')
-                    c = get_codepoint(f, &astr, pal, pas);
-                if (c == '\n')
-                    c = get_codepoint(f, &astr, pal, pas);
-                eol = true;
-                continue;
-            }
-            /* \ anywhere else is treated as a printing character. */
-            /* This is different from the Unix shells. */
-            if (i >= arg_str_max - 1) {
-                cstr[i] = 0;
-                errprintf(errmem, "Command too long: %s\n", cstr);
+
+        /* At this point *argstr is full of utf8 encoded argument. */
+        /* If it's an @filename argument, then deal with it, and never return
+         * it to the caller. */
+        if (pal->expand_ats && **argstr == '@') {
+            char *fname;
+            FILE *f;
+            if (pal->depth+1 == arg_depth_max) {
+                errprintf(errmem, "Too much nesting of @-files.\n");
                 return_error(gs_error_Fatal);
             }
-            cstr[i++] = '\\';
-            eol = false;
-            continue;
+            fname = (char *)*argstr + 1; /* skip @ */
+            f = (*pal->arg_fopen) (fname, pal->fopen_data);
+            if (f == NULL) {
+                errprintf(errmem, "Unable to open command line file %s\n", *argstr);
+                return_error(gs_error_Fatal);
+            }
+            pas = &pal->sources[++pal->depth];
+            pas->is_file = true;
+            pas->u.file = f;
+            continue; /* Loop back to parse the first arg from the file. */
         }
-        /* c will become part of the argument */
-        if (i >= arg_str_max - 1) {
-            cstr[i] = 0;
-            errprintf(errmem, "Command too long: %s\n", cstr);
-            return_error(gs_error_Fatal);
-        }
-        /* Allow quotes to protect whitespace. */
-        /* (special cases have already been handled and don't reach this point) */
-        if (c == '"')
-            in_quote = !in_quote;
-        else
-#ifdef GS_NO_UTF8
-            cstr[i++] = c;
-#else
-            i += codepoint_to_utf8(&cstr[i], c);
-#endif
-        eol = is_eol(c);
-        c = get_codepoint(f, &astr, pal, pas);
-    }
-    cstr[i] = 0;
-    if (f == NULL)
-        pas->u.s.str = astr;
-  at:if (pal->expand_ats && *argstr[0] == '@') {
-        char *fname;
-        if (pal->depth == arg_depth_max) {
-            errprintf(errmem, "Too much nesting of @-files.\n");
-            return_error(gs_error_Fatal);
-        }
-        fname = (char *)*argstr + 1; /* skip @ */
-        f = (*pal->arg_fopen) (fname, pal->fopen_data);
-        if (f == NULL) {
-            errprintf(errmem, "Unable to open command line file %s\n", *argstr);
-            return_error(gs_error_Fatal);
-        }
-        pal->depth++;
-        pas++;
-        pas->is_file = true;
-        pas->u.file = f;
-        goto top;
+        break; /* Out of infinite loop */
     }
 
     return 1;

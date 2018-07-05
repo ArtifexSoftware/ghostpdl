@@ -26,7 +26,7 @@
  * decreases generality, but eliminates the need for dynamic allocation.
  */
 #define arg_str_max 2048
-#define arg_depth_max 10
+#define arg_depth_max 11
 typedef struct arg_source_s {
     bool is_file;
     union _u {
