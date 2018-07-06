@@ -306,6 +306,10 @@ static int ParsePageList(gx_device *dev, first_last_subclass_data *psubclass_dat
                         LastPage = 0;
 
                     for (i=Page; i<= LastPage;i++) {
+                        if (i > psubclass_data->LastListPage - 1) {
+                            emprintf(dev->memory, "\n**** Error : rangecheck processing PageList\n");
+                            return_error(gs_error_rangecheck);
+                        }
                         byte = (int)(i / 8);
                         bit = i % 8;
                         c = 0x01 << bit;
@@ -315,6 +319,10 @@ static int ParsePageList(gx_device *dev, first_last_subclass_data *psubclass_dat
                     Page = atoi(oldstr) - 1;
                     if (Page < 0)
                         Page = 0;
+                    if (Page > psubclass_data->LastListPage - 1) {
+                        emprintf(dev->memory, "\n**** Error : rangecheck processing PageList\n");
+                        return_error(gs_error_rangecheck);
+                    }
                     byte = (int)(Page / 8);
                     bit = Page % 8;
                     c = 0x01 << bit;
