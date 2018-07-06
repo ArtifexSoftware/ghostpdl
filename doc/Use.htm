@@ -769,7 +769,9 @@ be drawn, whilst those not listed will not be drawn.</p>
 -sPageList=5-10 indicates that pages 5, 6, 7, 8, 9 and 10 should be processed.
 -sPageList=1,5-10,12- indicates that pages 1, 5, 6, 7, 8, 9, 10 and 12 onwards should be processed.
 </pre></blockquote>
-<dd>Note: Use of PageList overrides FirstPage and/or LastPage, if you set these as well as PageList they will be ignored.</dd>
+<dd>Note: Use of PageList overrides FirstPage and/or LastPage, if you set these as well as PageList they will be ignored. The
+ list of pages should be given in increasing order, you cannot process pages out of order and inserting higher numbered pages before lower numbered
+ pages in the list will generate an error. </dd>
 </p>
 </dl>
 
