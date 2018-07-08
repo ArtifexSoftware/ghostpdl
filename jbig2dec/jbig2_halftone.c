@@ -349,7 +349,7 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
         /* C.5 step 3. (b):
          * for each [x,y]
          * GSPLANES[j][x][y] = GSPLANES[j+1][x][y] XOR GSPLANES[j][x][y] */
-        stride = GSPLANES[0]->stride;
+        stride = GSPLANES[j]->stride;
         for (i = 0; i < stride * GSH; ++i)
             GSPLANES[j]->data[i] ^= GSPLANES[j + 1]->data[i];
 
