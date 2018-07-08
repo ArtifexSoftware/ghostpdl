@@ -267,7 +267,7 @@ jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, int x, 
 
     /* grow the page to accommodate a new stripe if necessary */
     if (page->striped && page->height == 0xFFFFFFFF) {
-        uint32_t new_height = y + image->height + page->end_row;
+        uint32_t new_height = y + image->height;
 
         if (page->image->height < new_height) {
             Jbig2Image *resized_image = NULL;
@@ -281,7 +281,7 @@ jbig2_page_add_result(Jbig2Ctx *ctx, Jbig2Page *page, Jbig2Image *image, int x, 
         }
     }
 
-    code = jbig2_image_compose(ctx, page->image, image, x, y + page->end_row, op);
+    code = jbig2_image_compose(ctx, page->image, image, x, y, op);
     if (code < 0)
         return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to compose image with page");
 
