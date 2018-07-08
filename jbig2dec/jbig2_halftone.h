@@ -47,7 +47,7 @@ typedef struct {
     bool HMMR;
     int HTEMPLATE;
     bool HENABLESKIP;
-    Jbig2ComposeOp op;
+    Jbig2ComposeOp HCOMBOP;
     bool HDEFPIXEL;
 } Jbig2HalftoneRegionParams;
 

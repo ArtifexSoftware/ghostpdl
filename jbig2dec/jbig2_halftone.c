@@ -523,7 +523,7 @@ jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                 /* use highest available pattern */
                 gray_val = HNUMPATS - 1;
             }
-            code = jbig2_image_compose(ctx, image, HPATS->patterns[gray_val], x, y, params->op);
+            code = jbig2_image_compose(ctx, image, HPATS->patterns[gray_val], x, y, params->HCOMBOP);
             if (code < 0) {
                 code = jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to compose pattern with gray-scale image");
                 goto cleanup;
@@ -565,12 +565,12 @@ jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
     if (segment->data_length < 18)
         goto too_short;
 
-    /* 7.4.5.1.1 */
+    /* 7.4.5.1.1 Figure 42 */
     params.flags = segment_data[offset];
     params.HMMR = params.flags & 1;
     params.HTEMPLATE = (params.flags & 6) >> 1;
     params.HENABLESKIP = (params.flags & 8) >> 3;
-    params.op = (Jbig2ComposeOp)((params.flags & 0x70) >> 4);
+    params.HCOMBOP = (Jbig2ComposeOp)((params.flags & 0x70) >> 4);
     params.HDEFPIXEL = (params.flags & 0x80) >> 7;
     offset += 1;
 
@@ -584,7 +584,7 @@ jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "HENABLESKIP is %d when HMMR is %d, contrary to spec", params.HENABLESKIP, params.HMMR);
     }
 
-    /* Figure 43 */
+    /* 7.4.5.1.2 Figure 43 */
     if (segment->data_length - offset < 16)
         goto too_short;
     params.HGW = jbig2_get_uint32(segment_data + offset);
@@ -593,7 +593,7 @@ jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
     params.HGY = jbig2_get_int32(segment_data + offset + 12);
     offset += 16;
 
-    /* Figure 44 */
+    /* 7.4.5.1.3 Figure 44 */
     if (segment->data_length - offset < 4)
         goto too_short;
     params.HRX = jbig2_get_uint16(segment_data + offset);
@@ -608,7 +608,7 @@ jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
                 params.HRX >> 8, params.HRX & 0xff,
                 params.HRY >> 8, params.HRY & 0xff);
 
-    /* 7.4.5.2.2 */
+    /* 7.4.5.2 */
     if (!params.HMMR) {
         /* allocate and zero arithmetic coding stats */
         int stats_size = jbig2_generic_stats_size(ctx, params.HTEMPLATE);
