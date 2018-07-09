@@ -448,11 +448,14 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 
             /* Try to allocate memory for full memory buffer, then allocate the
                pdf14_trans_buffer_size to make sure we have enough space for that */
-            base = (reallocate ?
-                       (byte *)gs_resize_object(buffer_memory, the_memory,
-                                         (uint)mem_space, "printer buffer") :
-                       gs_alloc_bytes(buffer_memory, (uint)mem_space,
-                                      "printer_buffer"));
+            /* NOTE: Assumes that caller won't normally call this function if page
+               size didn't actually change, so we can free/alloc without checking
+               that the new size is different than old size.
+            */
+            if (reallocate) {
+                gs_free_object(buffer_memory, the_memory, "printer_buffer");
+            }
+            base = gs_alloc_bytes(buffer_memory, (uint)mem_space, "printer_buffer");
             if (base == 0)
                 is_command_list = true;
             else
