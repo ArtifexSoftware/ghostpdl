@@ -90,6 +90,107 @@ pdfdict begin
 
 .dicttomark readonly def
 
+
+% This dictionaty encapsulates all that is needed to generate pagelabel pdfmarks.
+%
+% This is provided by Leon Bottou for the benefit of the djvudigital device
+% which is a device developed and maintained outside of Artifex, and which is
+% not a contributed device.
+%
+% This device does not cope with the method used by pdfwrite to pass the pagelabels
+% number tree as a 'blob' of data, but requires that the page labels be passed using
+% a PAGELABEL pdfmark.
+%
+% We don't want to do that with pdfwrite because there is no mechanism in pdfmark syntax
+% to pass a tree, which means we'd have to laboriously disassemble the pdfmarks for the
+% page labels and rebuild a number tree for it. This would mean pattern matching each
+% string passed via PAGELABEL to see if it could be defined as a continuation
+% of the preceding string, uing prefixes. Its much easier for us just to pass the tree.
+%
+% Note that this code simply translates the PageLabels Number tree into a number of
+% individual PAGELABEL pdfmarks, if used for pdfwrite this would result in a number
+% tree which consists solely of leaf nodes, where each node has a string for its label.
+% This can be considerably more verbose than the shorthand possible with a Page Label
+% dictionary.
+%
+/pagelabeldict mark
+  % (TEXT) .toLower (text)
+  /.toLower {
+      dup length 1 sub  -1 0 {
+          1 index exch 2 copy get 2#00100000 or put
+      } for
+  } bind
+  % int .cvAlpha (int in alphabetic base 26)
+  /.cvAlpha {
+      [ exch % construct an array of ASCII values, in reverse
+        { % the remainder stays on the top of stack
+            dup 0 eq { pop exit } if % quit if the value is zero
+            dup 26 mod dup 0 eq { 26 add } if % so that the division is correct
+            dup 64 add 3 1 roll sub 26 idiv % save the ASCII value and iterate
+        } loop ]
+      dup length dup string 3 1 roll
+      dup -1 1 { % put the letters in a string
+          4 copy sub exch 4 -1 roll 1 sub get put
+      } for pop pop
+  } bind
+  % int  .cvRoman  (int in capital Roman numerals)
+  % convert a positive integer to capital Roman numerals
+  % return a decimal string if >= 4000
+  /.cvRoman {
+      dup 255 string cvs % start with the decimal representation
+      exch 4000 lt { % convert only if Roman numerals can represent this
+          dup length
+          [ [ () (I) (II) (III) (IV) (V) (VI) (VII) (VIII) (IX) ]
+            [ () (X) (XX) (XXX) (XL) (L) (LX) (LXX) (LXXX) (XC) ]
+            [ () (C) (CC) (CCC) (CD) (D) (DC) (DCC) (DCCC) (CM) ]
+            [ () (M) (MM) (MMM) ] ] % Roman equivalents
+          () % append the Roman equivalent of each decimal digit to this string
+          2 index  -1 1 {
+              2 index 1 index 1 sub get
+              5 index 5 index 4 -1 roll sub get
+              48 sub get concatstrings
+          } for
+          4 1 roll pop pop pop
+      } if
+  } bind
+  % style printers
+  /PageStyle <<
+    /D { 255 string cvs } bind
+    /R { .cvRoman }
+    /r { .cvRoman .toLower }
+    /A { .cvAlpha }
+    /a { .cvAlpha .toLower } >>
+  % check whether we want to generate pdfmarks
+  /wantpagelabelmarks {
+      % WantsPageLabels means that pagelabels will be passed
+      % using .pdfpagelabels and not using pdfmarks
+    /WantsPageLabels /GetDeviceParam .special_op
+    {pop pop false}{pop true} ifelse
+  } bind
+  % generate pagelabel pdfmark
+  /dopagelabel {  % dopagelabel --
+      << /pageno 0 /S null /P () /O 0 >> begin
+      wantpagelabelmarks {
+          Trailer /Root knownoget {
+              oforce /PageLabels knownoget {
+                  oforce {
+                      /pageno pageno 1 add def
+                      dup pageno 1 sub numoget dup //null eq { pop } {
+                          oforce
+                          dup /S knownoget not { //false } if /S exch def
+                          dup /P knownoget not { 0 string } if /P exch def
+                          /St knownoget not { 1 } if pageno sub /O exch def
+                      } ifelse
+                      pageno Page# ge { exit } if } loop pop
+                  P pageno O add PageStyle S knownoget { exec concatstrings } if
+                  mark /Label 3 -1 roll /PAGELABEL pdfmark
+              } if
+          } if
+      } if
+      end
+  } bind
+.dicttomark readonly def
+
 % ======================== Main program ======================== %
 
 end			% pdfdict
@@ -2574,6 +2675,9 @@ currentdict /PDF2PS_matrix_key undef
 
   .writepdfmarks {
 
+    % Pagelabel
+      pagelabeldict begin dopagelabel end
+    % Copy the boxes.
         % Copy the boxes.
     { /CropBox /BleedBox /TrimBox /ArtBox } {
       2 copy pget {
