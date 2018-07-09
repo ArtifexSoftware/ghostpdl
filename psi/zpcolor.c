@@ -277,6 +277,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
         {
             pattern_accum_param_s param;
             param.pinst = (void *)pinst;
+            param.interpreter_memory = imemory;
             param.graphics_state = (void *)pgs;
             param.pinst_id = pinst->id;
 

@@ -127,6 +127,7 @@ typedef struct dev_param_req_s {
 /* structure used to pass the parameters for pattern handling */
 typedef struct pattern_accum_param_t {
     void *pinst;
+    gs_memory_t *interpreter_memory;
     void *graphics_state;
     int pinst_id;
 }pattern_accum_param_s;
