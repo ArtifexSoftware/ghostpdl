@@ -1243,7 +1243,8 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
         parsed.fname = pfname;
         parsed.len = strlen(parsed.fname);
     }
-    if (positionable || (parsed.iodev && parsed.iodev != iodev_default(dev->memory))) {
+    if (parsed.iodev &&
+        (positionable || parsed.iodev != iodev_default(dev->memory))) {
         char fmode[4];
 
         if (!parsed.fname) {
@@ -1259,8 +1260,7 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
             emprintf1(dev->memory,
                       "**** Could not open the file %s .\n",
                       parsed.fname);
-    }
-    else {
+    } else {
         *pfile = gp_open_printer(dev->memory, (pfname[0] ? pfname : fname), binary);
         if (!(*pfile)) {
             emprintf1(dev->memory, "**** Could not open the file '%s'.\n", (pfname[0] ? pfname : fname));
