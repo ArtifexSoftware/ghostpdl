@@ -984,6 +984,15 @@ static int pscompact_isint(pscompstate *psc, int *i)
     }
     psc->bufferin[psc->inpos] = 0;
     *i = atoi(psc->bufferin);
+
+    /* Check for 32bit overflow */
+    if (psc->inpos > 9) {
+        char *end;
+        double d = strtod(psc->bufferin, &end);
+        if (d != (double)(int)*i)
+            return 0;
+    }
+
     return 1;
 }
 
@@ -1256,7 +1265,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                         psc->state = PSC_BufferOut;
                         break;
                     }
-                    if (psc->binary && psc->names && pscompact_isname(psc, &i)) {
+                    if (psc->names && pscompact_isname(psc, &i)) {
                         /* Encode as a name lookup */
                         if (i >= 0) {
                             /* Executable */
@@ -1407,8 +1416,9 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                             pscompact_copyinout_bin(psc);
                             break;
                         } else if (psc->inpos < 65536) {
-                            pscompact_bufferatstart(psc, psc->inpos>>8);
-                            pscompact_bufferatstart(psc, psc->inpos & 255);
+                            int count = psc->inpos;
+                            pscompact_bufferatstart(psc, count>>8);
+                            pscompact_bufferatstart(psc, count & 255);
                             pscompact_bufferatstart(psc, 144);
                             pscompact_copyinout_bin(psc);
                             break;
@@ -1510,8 +1520,9 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                             pscompact_bufferatstart(psc, 142);
                             pscompact_copyinout_bin(psc);
                         } else if (psc->inpos < 65536) {
-                            pscompact_bufferatstart(psc, psc->inpos>>8);
-                            pscompact_bufferatstart(psc, psc->inpos & 255);
+                            int count = psc->inpos;
+                            pscompact_bufferatstart(psc, count>>8);
+                            pscompact_bufferatstart(psc, count & 255);
                             pscompact_bufferatstart(psc, 144);
                             pscompact_copyinout_bin(psc);
                         } else {
