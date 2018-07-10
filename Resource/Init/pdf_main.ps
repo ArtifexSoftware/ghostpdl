@@ -165,7 +165,7 @@ pdfdict begin
       % WantsPageLabels means that pagelabels will be passed
       % using .pdfpagelabels and not using pdfmarks
     /WantsPageLabels /GetDeviceParam .special_op
-    {pop pop false}{pop true} ifelse
+    {pop pop false}{true} ifelse
   } bind
   % generate pagelabel pdfmark
   /dopagelabel {  % dopagelabel --
