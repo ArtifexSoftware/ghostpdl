@@ -259,10 +259,29 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
     if (src == NULL)
         return 0;
 
-    if (op != JBIG2_COMPOSE_OR) {
+    /* The optimized code for the OR operator below doesn't
+       handle the source image partially placed outside the
+       destination (above and/or to the left). The affected
+       intersection of the destination is computed correctly,
+       however the correct subset of the source image is not
+       chosen. Instead the upper left corner of the source image
+       is always used.
+
+       In the unoptimized version that handles all operators
+       (including OR) the correct subset of the source image is
+       chosen.
+
+       The workaround is to check whether the x/y coordinates to
+       the composition operator are negative and in this case use
+       the unoptimized implementation.
+
+       TODO: Fix the optimized OR implementation if possible. */
+    if (op != JBIG2_COMPOSE_OR || x < 0 || y < 0) {
         /* hand off the the general routine */
         return jbig2_image_compose_unopt(ctx, dst, src, x, y, op);
     }
+
+    /* optimized code for the prevalent OR operator */
 
     /* clip */
     w = src->width;
