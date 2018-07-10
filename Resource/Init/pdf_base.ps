@@ -1251,5 +1251,55 @@ currentdict /pdf_rules_dict undef
   } ifelse
 } bind def
 
+% The following variants return tree entry whose key is closest but
+% less or equal to the given key.
+
+/numogetle {		% <numtree> <key> numogetle <key obj true|false>
+  exch /Nums exch .treegetle
+} bind def
+
+/.treegetle {		% <key> <leafkey> <tree> .treegetle <key obj true|false>
+  dup /Kids knownoget {
+    exch pop .branchgetle
+  } {
+    exch oget .leafgetle
+  } ifelse
+} bind def
+
+/.branchgetle {		%  <key> <leafkey> <kids> .branchgetle  <key obj true|false>
+    dup length 0 eq {
+        pop pop pop false
+    } {
+        dup length -1 bitshift 2 copy oget
+        dup /Limits oget aload pop
+        % Stack: key leafkeyb kids mid kids[mid] min max
+        6 index ge {
+            5 index le {
+                exch pop exch pop .treegetle
+            } {
+                pop 0 exch getinterval .branchgetle
+            } ifelse
+        } {
+            pop 2 index length 2 index sub 1 gt {
+                pop 1 index length 1 index sub getinterval .branchgetle
+            } {
+                exch pop exch pop .treegetle
+            } ifelse
+        } ifelse
+    } ifelse
+} bind def
+
+/.leafgetle {		% <key> <pairs> .leafget <obj|null>
+    dup length 2 eq {
+        dup 0 get
+        2 index le { exch pop aload pop true } { pop pop false } ifelse
+    } {
+        dup length -1 bitshift -2 and 2 copy oget
+        % Stack: key pairs mid pairs[mid]
+        3 index gt { 0 exch } { 1 index length 1 index sub } ifelse
+        getinterval .leafgetle
+    } ifelse
+} bind def
+
 end			% pdfdict
 .setglobal

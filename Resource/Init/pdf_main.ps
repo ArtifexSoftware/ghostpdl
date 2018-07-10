@@ -168,21 +168,19 @@ pdfdict begin
     {pop pop false}{true} ifelse
   } bind
   % generate pagelabel pdfmark
-  /dopagelabel {  % dopagelabel --
-      << /pageno 0 /S null /P () /O 0 >> begin
+  /dopagelabel {  % -- dopagelabel --
+      << /S null /P () /O 0 >> begin
       wantpagelabelmarks {
           Trailer /Root knownoget {
               oforce /PageLabels knownoget {
-                  oforce {
-                      /pageno pageno 1 add def
-                      dup pageno 1 sub numoget dup //null eq { pop } {
-                          oforce
-                          dup /S knownoget not { //false } if /S exch def
-                          dup /P knownoget not { 0 string } if /P exch def
-                          /St knownoget not { 1 } if pageno sub /O exch def
-                      } ifelse
-                      pageno Page# ge { exit } if } loop pop
-                  P pageno O add PageStyle S knownoget { exec concatstrings } if
+                  oforce Page# 1 sub
+                  numogetle
+                  { oforce
+                    dup /S knownoget not { //false } if /S exch def
+                    dup /P knownoget not { 0 string } if /P exch def
+                    /St knownoget not { 1 } if exch sub /O exch def
+                  } if
+                  P Page# 1 sub O add PageStyle S knownoget { exec concatstrings } if
                   mark /Label 3 -1 roll /PAGELABEL pdfmark
               } if
           } if
