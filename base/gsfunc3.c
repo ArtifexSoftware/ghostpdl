@@ -344,6 +344,13 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
     int i;
 
     *mask = 0;
+
+    /* If the upper and lower parametric values are the same then this is a point
+     * and so is monotonic.
+     */
+    if (v0 == v1)
+        return 1;
+
     if (v0 > v1) {
         v0 = v1; v1 = lower[0];
     }
@@ -361,12 +368,15 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
         float e0, e1;
         float w0, w1;
         float vv0, vv1;
-        double vb0, vb1;
+        float vb0, vb1;
 
         if (v0 >= b1 - bsmall)
             continue; /* Ignore a small noise */
         vv0 = max(b0, v0);
-        vv1 = v1;
+        /* make sure we promote *both* values, in case v0 was within the
+         * noise threshold above.
+         */
+        vv1 = max(b0, v1);
         if (vv1 > b1 && v1 < b1 + bsmall)
             vv1 = b1; /* Ignore a small noise */
         if (vv0 == vv1)
@@ -378,8 +388,8 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
         e0 = pfn->params.Encode[2 * i];
         e1 = pfn->params.Encode[2 * i + 1];
         esmall = (float)1e-6 * any_abs(e1 - e0);
-        vb0 = max(vv0, b0);
-        vb1 = min(vv1, b1);
+        vb0 = (float)max(vv0, b0);
+        vb1 = (float)min(vv1, b1);
         if (b1 == b0)
             return 1; /* function is monotonous in a point */
         w0 = (float)(vb0 - b0) * (e1 - e0) / (b1 - b0) + e0;
