@@ -735,20 +735,22 @@ const mmr_table_node jbig2_mmr_black_decode[] = {
 
 #define getbit(buf, x) ( ( buf[x >> 3] >> ( 7 - (x & 7) ) ) & 1 )
 
-static int
+static uint32_t
 jbig2_find_changing_element(const byte *line, uint32_t x, uint32_t w)
 {
     int a, b;
 
-    if (line == 0)
-        return (int)w;
+    if (line == NULL)
+        return w;
 
     if (x == MINUS1) {
         a = 0;
         x = 0;
-    } else {
+    } else if (x < w) {
         a = getbit(line, x);
         x++;
+    } else {
+        return x;
     }
 
     while (x < w) {
@@ -761,10 +763,10 @@ jbig2_find_changing_element(const byte *line, uint32_t x, uint32_t w)
     return x;
 }
 
-static int
+static uint32_t
 jbig2_find_changing_element_of_color(const byte *line, uint32_t x, uint32_t w, int color)
 {
-    if (line == 0)
+    if (line == NULL)
         return w;
     x = jbig2_find_changing_element(line, x, w);
     if (x < w && getbit(line, x) != color)
