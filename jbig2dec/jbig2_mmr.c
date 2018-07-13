@@ -39,6 +39,10 @@
 #include "jbig2_mmr.h"
 #include "jbig2_segment.h"
 
+#if !defined (UINT32_MAX)
+#define UINT32_MAX 0xffffffff
+#endif
+
 typedef struct {
     uint32_t width;
     uint32_t height;
@@ -49,7 +53,10 @@ typedef struct {
     uint32_t word;
 } Jbig2MmrCtx;
 
-#define MINUS1 ((uint32_t)-1)
+#define MINUS1 UINT32_MAX
+#define ERROR -1
+#define ZEROES -2
+#define UNCOMPRESSED -3
 
 static void
 jbig2_decode_mmr_init(Jbig2MmrCtx *mmr, int width, int height, const byte *data, size_t size)
@@ -821,13 +828,19 @@ jbig2_decode_get_code(Jbig2MmrCtx *mmr, const mmr_table_node *table, int initial
 }
 
 static int
-jbig2_decode_get_run(Jbig2MmrCtx *mmr, const mmr_table_node *table, int initial_bits)
+jbig2_decode_get_run(Jbig2Ctx *ctx, Jbig2MmrCtx *mmr, const mmr_table_node *table, int initial_bits)
 {
     int result = 0;
     int val;
 
     do {
         val = jbig2_decode_get_code(mmr, table, initial_bits);
+        if (val == ERROR)
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "invalid code detected in MMR-coded data");
+        else if (val == UNCOMPRESSED)
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "uncompressed code in MMR-coded data");
+        else if (val == ZEROES)
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "zeroes code in MMR-coded data");
         result += val;
     } while (val >= 64);
 
@@ -858,8 +871,13 @@ jbig2_decode_mmr_line(Jbig2Ctx *ctx, Jbig2MmrCtx *mmr, const byte *ref, byte *ds
                 a0 = 0;
 
             if (c == 0) {
-                white_run = jbig2_decode_get_run(mmr, jbig2_mmr_white_decode, 8);
-                black_run = jbig2_decode_get_run(mmr, jbig2_mmr_black_decode, 7);
+                white_run = jbig2_decode_get_run(ctx, mmr, jbig2_mmr_white_decode, 8);
+                if (white_run < 0)
+                    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode white H run");
+                black_run = jbig2_decode_get_run(ctx, mmr, jbig2_mmr_black_decode, 7);
+                if (black_run < 0)
+                    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode black H run");
+                /* printf ("H %d %d\n", white_run, black_run); */
                 a1 = a0 + white_run;
                 a2 = a1 + black_run;
                 if (a1 > mmr->width)
@@ -871,10 +889,14 @@ jbig2_decode_mmr_line(Jbig2Ctx *ctx, Jbig2MmrCtx *mmr, const byte *ref, byte *ds
                 if (a1 < mmr->width)
                     jbig2_set_bits(dst, a1, a2);
                 a0 = a2;
-                /* printf ("H %d %d\n", white_run, black_run); */
             } else {
-                black_run = jbig2_decode_get_run(mmr, jbig2_mmr_black_decode, 7);
-                white_run = jbig2_decode_get_run(mmr, jbig2_mmr_white_decode, 8);
+                black_run = jbig2_decode_get_run(ctx, mmr, jbig2_mmr_black_decode, 7);
+                if (black_run < 0)
+                    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode black H run");
+                white_run = jbig2_decode_get_run(ctx, mmr, jbig2_mmr_white_decode, 8);
+                if (white_run < 0)
+                    return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode white H run");
+                /* printf ("H %d %d\n", black_run, white_run); */
                 a1 = a0 + black_run;
                 a2 = a1 + white_run;
                 if (a1 > mmr->width)
@@ -886,7 +908,6 @@ jbig2_decode_mmr_line(Jbig2Ctx *ctx, Jbig2MmrCtx *mmr, const byte *ref, byte *ds
                 if (a0 < mmr->width)
                     jbig2_set_bits(dst, a0, a1);
                 a0 = a2;
-                /* printf ("H %d %d\n", black_run, white_run); */
             }
         }
 
