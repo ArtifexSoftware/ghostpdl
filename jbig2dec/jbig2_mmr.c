@@ -833,7 +833,7 @@ jbig2_decode_get_run(Jbig2MmrCtx *mmr, const mmr_table_node *table, int initial_
 }
 
 static int
-jbig2_decode_mmr_line(Jbig2Ctx *ctx, Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
+jbig2_decode_mmr_line(Jbig2Ctx *ctx, Jbig2MmrCtx *mmr, const byte *ref, byte *dst, int *eofb)
 {
     uint32_t a0 = MINUS1;
     uint32_t a1, a2, b1, b2;
@@ -1012,6 +1012,13 @@ jbig2_decode_mmr_line(Jbig2Ctx *ctx, Jbig2MmrCtx *mmr, const byte *ref, byte *ds
             c = !c;
         }
 
+        else if ((word >> (32 - 24)) == 0x1001) {
+            /* printf ("EOFB\n"); */
+            jbig2_decode_mmr_consume(mmr, 24);
+            *eofb = 1;
+            break;
+        }
+
         else
             break;
     }
@@ -1028,16 +1035,21 @@ jbig2_decode_generic_mmr(Jbig2Ctx *ctx, Jbig2Segment *segment, const Jbig2Generi
     byte *ref = NULL;
     uint32_t y;
     int code = 0;
+    int eofb = 0;
 
     jbig2_decode_mmr_init(&mmr, image->width, image->height, data, size);
 
-    for (y = 0; y < image->height; y++) {
+    for (y = 0; !eofb && y < image->height; y++) {
         memset(dst, 0, rowstride);
-        code = jbig2_decode_mmr_line(ctx, &mmr, ref, dst);
+        code = jbig2_decode_mmr_line(ctx, &mmr, ref, dst, &eofb);
         if (code < 0)
             return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode mmr line");
         ref = dst;
         dst += rowstride;
+    }
+
+    if (eofb && y < image->height) {
+        memset(dst, 0, rowstride * (image->height - y));
     }
 
     return code;
@@ -1067,21 +1079,26 @@ jbig2_decode_halftone_mmr(Jbig2Ctx *ctx, const Jbig2GenericRegionParams *params,
     uint32_t y;
     int code = 0;
     const uint32_t EOFB = 0x001001;
+    int eofb = 0;
 
     jbig2_decode_mmr_init(&mmr, image->width, image->height, data, size);
 
-    for (y = 0; y < image->height; y++) {
+    for (y = 0; !eofb && y < image->height; y++) {
         memset(dst, 0, rowstride);
-        code = jbig2_decode_mmr_line(ctx, &mmr, ref, dst);
+        code = jbig2_decode_mmr_line(ctx, &mmr, ref, dst, &eofb);
         if (code < 0)
             return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1, "failed to decode halftone mmr line");
         ref = dst;
         dst += rowstride;
     }
 
+    if (eofb && y < image->height) {
+        memset(dst, 0, rowstride * (image->height - y));
+    }
+
     /* test for EOFB (see section 6.2.6) */
     if (mmr.word >> 8 == EOFB) {
-        mmr.data_index += 3;
+        jbig2_decode_mmr_consume(&mmr, 24);
     }
 
     *consumed_bytes += mmr.data_index + (mmr.bit_index >> 3) + (mmr.bit_index > 0 ? 1 : 0);
