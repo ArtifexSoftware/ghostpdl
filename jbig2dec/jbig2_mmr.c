@@ -885,7 +885,7 @@ jbig2_decode_mmr_line(Jbig2Ctx *ctx, Jbig2MmrCtx *mmr, const byte *ref, byte *ds
                 if (a2 > mmr->width)
                     a2 = mmr->width;
                 if (a1 == MINUS1 || a2 < a1)
-                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "negative white H run");
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "negative black H run");
                 if (a1 < mmr->width)
                     jbig2_set_bits(dst, a1, a2);
                 a0 = a2;
@@ -904,7 +904,7 @@ jbig2_decode_mmr_line(Jbig2Ctx *ctx, Jbig2MmrCtx *mmr, const byte *ref, byte *ds
                 if (a2 > mmr->width)
                     a2 = mmr->width;
                 if (a0 == MINUS1 || a1 < a0)
-                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "negative black H run");
+                    return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1, "negative white H run");
                 if (a0 < mmr->width)
                     jbig2_set_bits(dst, a0, a1);
                 a0 = a2;
