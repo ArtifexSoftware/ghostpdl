@@ -538,6 +538,7 @@ int default_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const 
                     dev->color_info = dev->child->color_info;
 
                     psubclass_data->saved_compositor_method = p14dev->procs.create_compositor;
+                    psubclass_data->forwarding_dev = fdev;
                     p14dev->procs.create_compositor = gx_subclass_create_compositor;
                 }
 

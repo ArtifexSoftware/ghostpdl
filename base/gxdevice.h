@@ -662,12 +662,14 @@ void gx_device_request_leadingedge(gx_device *dev, int le_req);
 int gs_is_pdf14trans_compositor(const gs_composite_t * pct);
 
 #define subclass_common\
-    t_dev_proc_create_compositor *saved_compositor_method
+    t_dev_proc_create_compositor *saved_compositor_method;\
+    gx_device_forward *forwarding_dev
 
 typedef int (t_dev_proc_create_compositor) (gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte, gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev);
 
 typedef struct {
     t_dev_proc_create_compositor *saved_compositor_method;
+    gx_device_forward *forwarding_dev;
 } generic_subclass_data;
 
 

@@ -1431,7 +1431,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
 
 int gx_device_unsubclass(gx_device *dev)
 {
-    void *psubclass_data;
+    generic_subclass_data *psubclass_data;
     gx_device *parent, *child;
     gs_memory_struct_type_t *a_std = 0;
     int dynamic, ref_count;
@@ -1442,9 +1442,21 @@ int gx_device_unsubclass(gx_device *dev)
 
     ref_count = dev->rc.ref_count;
     child = dev->child;
-    psubclass_data = dev->subclass_data;
+    psubclass_data = (generic_subclass_data *)dev->subclass_data;
     parent = dev->parent;
     dynamic = dev->stype_is_dynamic;
+
+    /* We need to account for the fact that we are removing ourselves from
+     * the device chain after a clist device has been pushed, due to a
+     * compositor action. Since we patched the clist 'create_compositor'
+     * method (and target device) when it was pushed.
+     * A point to note; we *don't* want to change the forwarding device's
+     * 'target', because when we copy the child up to replace 'this' device
+     * we do still want the forwarding device to point here. NB its the *child*
+     * device that goes away.
+     */
+    if (psubclass_data != NULL && psubclass_data->forwarding_dev != NULL)
+        psubclass_data->forwarding_dev->procs.create_compositor = psubclass_data->saved_compositor_method;
 
     /* If ths device's stype is dynamically allocated, keep a copy of it
      * in case we might need it.
