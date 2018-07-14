@@ -220,12 +220,16 @@ gdev_prn_setup_as_command_list(gx_device *pdev, gs_memory_t *buffer_memory,
                                bool bufferSpace_is_exact)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+    gx_device *target = pdev;
     uint space;
     int code;
     gx_device_clist *const pclist_dev = (gx_device_clist *)pdev;
     gx_device_clist_common * const pcldev = &pclist_dev->common;
     bool reallocate = *the_memory != 0;
     byte *base;
+
+    while (target->parent != NULL)
+        target = target->parent;
 
     /* Try to allocate based simply on param-requested buffer size */
 #ifdef DEBUGGING_HACKS
@@ -260,7 +264,7 @@ open_c:
     ppdev->buffer_space = space;
     pclist_dev->common.is_printer = 1;
     clist_init_io_procs(pclist_dev, ppdev->BLS_force_memory);
-    clist_init_params(pclist_dev, base, space, pdev,
+    clist_init_params(pclist_dev, base, space, target,
                       ppdev->printer_procs.buf_procs,
                       space_params->band,
                       false, /* do_not_open_or_close_bandfiles */
