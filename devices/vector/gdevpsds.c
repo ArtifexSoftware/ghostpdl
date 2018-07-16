@@ -1214,18 +1214,23 @@ s_image_colors_convert_to_device_color(stream_image_colors_state * ss)
     int i, code;
     double v0 = (1 << ss->bits_per_sample) - 1;
     double v1 = (1 << ss->output_bits_per_sample) - 1;
+    gx_device *target;
+
+    target = ss->pdev;
+    while(target->child)
+        target = target->child;
 
     for (i = 0; i < ss->depth; i++)
         cc.paint.values[i] = ss->input_color[i] *
                 (ss->Decode[i * 2 + 1] - ss->Decode[i * 2]) / v0 + ss->Decode[i * 2];
 
     code = ss->pcs->type->remap_color(&cc, ss->pcs, &dc, ss->pgs,
-                              ss->pdev, gs_color_select_texture);
+                              target, gs_color_select_texture);
     if (code < 0)
         return code;
     for (i = 0; i < ss->output_depth; i++) {
-        uint m = (1 << ss->pdev->color_info.comp_bits[i]) - 1;
-        uint w = (dc.colors.pure >> ss->pdev->color_info.comp_shift[i]) & m;
+        uint m = (1 << target->color_info.comp_bits[i]) - 1;
+        uint w = (dc.colors.pure >> target->color_info.comp_shift[i]) & m;
 
         ss->output_color[i] = (uint)(v1 * w / m + 0.5);
     }
@@ -1264,6 +1269,9 @@ s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
     ss->output_bits_per_sample = pdev->color_info.comp_bits[0]; /* Same precision for all components. */
     ss->convert_color = s_image_colors_convert_to_device_color;
     ss->pdev = pdev;
+    while(ss->pdev->parent)
+        ss->pdev = ss->pdev->parent;
+
     ss->pcs = pcs;
     ss->pgs = pgs;
     memcpy(ss->Decode, Decode, ss->depth * sizeof(Decode[0]) * 2);

@@ -1992,9 +1992,13 @@ cos_write_stream_process(stream_state * st, stream_cursor_read * pr,
     cos_write_stream_state_t *ss = (cos_write_stream_state_t *)st;
     stream *target = ss->target;
     gx_device_pdf *pdev = ss->pdev;
-    gs_offset_t start_pos = stell(pdev->streams.strm);
+    gs_offset_t start_pos;
     int code;
 
+    while(pdev->child != NULL)
+        pdev = (gx_device_pdf *)pdev->child;
+
+    start_pos = stell(pdev->streams.strm);
     stream_write(target, pr->ptr + 1, count);
     gs_md5_append(&ss->pcs->md5, pr->ptr + 1, count);
     pr->ptr = pr->limit;
@@ -2007,9 +2011,13 @@ cos_write_stream_close(stream *s)
 {
     cos_write_stream_state_t *ss = (cos_write_stream_state_t *)s->state;
     int status;
+    gx_device_pdf *target_dev = ss->pdev;
+
+    while (target_dev->child != NULL)
+        target_dev = target_dev->child;
 
     sflush(s);
-    status = s_close_filters(&ss->target, ss->pdev->streams.strm);
+    status = s_close_filters(&ss->target, target_dev->streams.strm);
     gs_md5_finish(&ss->pcs->md5, (gs_md5_byte_t *)ss->pcs->stream_hash);
     ss->pcs->stream_md5_valid = 1;
     return (status < 0 ? status : s_std_close(s));
@@ -2041,6 +2049,8 @@ cos_write_stream_alloc(cos_stream_t *pcs, gx_device_pdf *pdev,
     gs_md5_init(&ss->pcs->md5);
     memset(&ss->pcs->hash, 0x00, 16);
     ss->pdev = pdev;
+    while(ss->pdev->parent)
+        ss->pdev = (gx_device_pdf *)ss->pdev->parent;
     ss->s = s;
     ss->target = pdev->streams.strm; /* not s->strm */
     s_std_init(s, buf, CWS_BUF_SIZE, &cos_s_procs, s_mode_write);
