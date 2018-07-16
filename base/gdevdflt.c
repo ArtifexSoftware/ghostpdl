@@ -1356,7 +1356,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     a_std->ssize = dev_to_subclass->params_size;
 
     /* Allocate a device structure for the new child device */
-    child_dev = gs_alloc_struct_immovable(dev_to_subclass->memory, gx_device, a_std,
+    child_dev = gs_alloc_struct_immovable(dev_to_subclass->memory->stable_memory, gx_device, a_std,
                                         "gs_device_subclass(device)");
     if (child_dev == 0) {
         gs_free_const_object(dev_to_subclass->memory->non_gc_memory, a_std, "gs_device_subclass(stype)");
@@ -1424,6 +1424,9 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
         dev_to_subclass->parent = child_dev->parent;
         child_dev->parent->child = dev_to_subclass;
     }
+    if (child_dev->child) {
+        child_dev->child->parent = child_dev;
+    }
     child_dev->parent = dev_to_subclass;
 
     return 0;
@@ -1455,7 +1458,7 @@ int gx_device_unsubclass(gx_device *dev)
      * we do still want the forwarding device to point here. NB its the *child*
      * device that goes away.
      */
-    if (psubclass_data != NULL && psubclass_data->forwarding_dev != NULL)
+    if (psubclass_data != NULL && psubclass_data->forwarding_dev != NULL && psubclass_data->saved_compositor_method)
         psubclass_data->forwarding_dev->procs.create_compositor = psubclass_data->saved_compositor_method;
 
     /* If ths device's stype is dynamically allocated, keep a copy of it
@@ -1482,6 +1485,13 @@ int gx_device_unsubclass(gx_device *dev)
          * device.
          */
         dev->rc.ref_count = ref_count;
+
+        /* If we have a chain of devices, make sure the chain beond the device we're unsubclassing
+         * doesn't get broken, we needd to detach the lower chain and reattach it at the new
+         * highest level
+         */
+        if (child->child)
+            child->child->parent = dev;
     }
 
     /* How can we have a subclass device with no child ? Simples; when we hit the end of job
@@ -1505,6 +1515,7 @@ int gx_device_unsubclass(gx_device *dev)
             gs_memory_struct_type_t *b_std = (gs_memory_struct_type_t *)child->stype;
             /* We definitley do *not* want to finalise the device, we just copied it up a level */
             b_std->finalize = 0;
+            memset(child, 0x00, child->stype->ssize);
             gs_free_object(dev->memory, child, "gx_unsubclass_device(device)");
             child = 0;
         }
