@@ -1476,6 +1476,8 @@ int gx_device_unsubclass(gx_device *dev)
 
     /* Copy the child device into ths device's memory */
     if (child) {
+        rc_decrement(dev->icc_struct, "unsubclass device");
+        rc_increment(child->icc_struct);
         memcpy(dev, child, child->stype->ssize);
         /* Patch back the 'stype' in the memory manager */
         gs_set_object_type(child->memory, dev, child->stype);
