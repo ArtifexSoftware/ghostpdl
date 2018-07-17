@@ -248,6 +248,9 @@ display_open(gx_device * dev)
         return ccode;
     dev = (gx_device *)ddev;
 
+    while(dev->parent)
+        dev = dev->parent;
+
     /* Make sure we have been passed a valid callback structure. */
     if ((ccode = display_check_structure(ddev)) < 0)
         return_error(ccode);
@@ -309,6 +312,9 @@ display_sync_output(gx_device * dev)
         return 0;	/* ignore the call */
     display_set_separations(ddev);
 
+    while(dev->parent)
+        dev = dev->parent;
+
     (*(ddev->callback->display_sync))(ddev->pHandle, dev);
     return (0);
 }
@@ -323,6 +329,9 @@ display_output_page(gx_device * dev, int copies, int flush)
     if (ddev->callback == NULL)
         return gs_error_Fatal;
     display_set_separations(ddev);
+
+    while(dev->parent)
+        dev = dev->parent;
 
     code = (*(ddev->callback->display_page))
                         (ddev->pHandle, dev, copies, flush);
@@ -345,6 +354,9 @@ display_close(gx_device * dev)
 
     /* Release memory. */
     display_free_bitmap(ddev);
+
+    while(dev->parent)
+        dev = dev->parent;
 
     /* Tell caller that device is closed. */
     /* This is always the last callback */
@@ -712,6 +724,10 @@ display_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
         return 0;		/* ignore -- needed for fillpage when device wasn't really opened */
     dev_proc(ddev->mdev, fill_rectangle)((gx_device *)ddev->mdev,
         x, y, w, h, color);
+
+    while(dev->parent)
+        dev = dev->parent;
+
     if (ddev->callback->display_update)
         (*(ddev->callback->display_update))(ddev->pHandle, dev, x, y, w, h);
     return 0;
@@ -729,6 +745,10 @@ display_copy_mono(gx_device * dev,
         return gs_error_Fatal;
     dev_proc(ddev->mdev, copy_mono)((gx_device *)ddev->mdev,
         base, sourcex, raster, id, x, y, w, h, zero, one);
+
+    while(dev->parent)
+        dev = dev->parent;
+
     if (ddev->callback->display_update)
         (*(ddev->callback->display_update))(ddev->pHandle, dev, x, y, w, h);
     return 0;
@@ -745,6 +765,10 @@ display_copy_color(gx_device * dev,
         return gs_error_Fatal;
     dev_proc(ddev->mdev, copy_color)((gx_device *)ddev->mdev,
         base, sourcex, raster, id, x, y, w, h);
+
+    while(dev->parent)
+        dev = dev->parent;
+
     if (ddev->callback->display_update)
         (*(ddev->callback->display_update))(ddev->pHandle, dev, x, y, w, h);
     return 0;
@@ -1012,6 +1036,10 @@ display_put_params(gx_device * dev, gs_param_list * plist)
         /* We can resize this device while it is open, but we cannot
          * change the color format or handle.
          */
+
+        while(dev->parent)
+            dev = dev->parent;
+
         /* Tell caller we are about to change the device parameters */
         if ((*ddev->callback->display_presize)(ddev->pHandle, dev,
             dev->width, dev->height, display_raster(ddev),
@@ -1469,6 +1497,9 @@ display_set_separations(gx_device_display *dev)
                            * 65535 / frac_1;
                 }
             }
+            while(dev->parent)
+                dev = dev->parent;
+
             (*dev->callback->display_separation)(dev->pHandle, dev,
                 comp_num, name,
                 (unsigned short)c, (unsigned short)m,

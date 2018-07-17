@@ -91,6 +91,11 @@ display_set_callback(gs_main_instance *minst, display_callback *callback)
         }
 
         ddev = (gx_device_display *) dev;
+
+        /* Deal with the case where we subclassed the device before we got here */
+        while (ddev->child)
+            ddev = (gx_device_display *)ddev->child;
+
         ddev->callback = callback;
 
         if (was_open) {

@@ -180,8 +180,10 @@ static int display_size(void *handle, void *device, int width, int height,
     text_puts(tw, buf);
 #endif
     img = image_find(handle, device);
-    image_size(img, width, height, raster, format, pimage);
-    image_updatesize(img);
+    if (img != NULL) {
+        image_size(img, width, height, raster, format, pimage);
+        image_updatesize(img);
+    }
     return 0;
 }
 
@@ -195,7 +197,8 @@ static int display_sync(void *handle, void *device)
     text_puts(tw, buf);
 #endif
     img = image_find(handle, device);
-    image_sync(img);
+    if (img != NULL)
+        image_sync(img);
     return 0;
 }
 
@@ -211,7 +214,8 @@ static int display_page(void *handle, void *device, int copies, int flush)
     text_puts(tw, buf);
 #endif
     img = image_find(handle, device);
-    image_page(img);
+    if (img != NULL)
+        image_page(img);
     return 0;
 }
 
@@ -222,7 +226,8 @@ static int display_update(void *handle, void *device,
 {
     IMAGE *img;
     img = image_find(handle, device);
-    image_poll(img);	/* redraw the window periodically */
+    if (img != NULL)
+        image_poll(img);	/* redraw the window periodically */
     return poll();
 }
 
