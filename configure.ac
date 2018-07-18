@@ -1163,7 +1163,7 @@ AC_SUBST(LIBPNGDIR)
 
 WHICHLCMS=
 
-AC_MSG_CHECKING([for local lcms2 library source])
+AC_MSG_CHECKING([for local lcms2mt library source])
 LCMS2DIR=src
 LCMS2MTDIR=src
 
@@ -1175,7 +1175,9 @@ if test -f $LCMS2MTSRC/include/lcms2mt.h; then
       WHICHLCMS=lcms2mt
       LCMS2MTDIR=$LCMS2MTSRC
 else
+  AC_MSG_RESULT([no])
   # Now check for local lcms2 (non-Artifex)
+  AC_MSG_CHECKING([for local lcms2 library source])
   LCMS2SRC=$srcdir/lcms2
   if test -f $LCMS2SRC/include/lcms2.h; then
       AC_MSG_RESULT([yes])
@@ -2424,12 +2426,20 @@ else
       SO_LIB_EXT=".so"
       ;;
     AIX)
-      DYNAMIC_CFLAGS="-fPIC"
-      GCFLAGS="-Wl,-brtl -D_LARGE_FILES $GCFLAGS"
-      GS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
-      PCL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
-      XPS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
-      PDL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+      if test $ac_cv_prog_gcc = yes; then
+        DYNAMIC_CFLAGS="-fPIC"
+        GCFLAGS="-Wl,-brtl -D_LARGE_FILES $GCFLAGS"
+        GS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+        PCL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+        XPS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+        PDL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+      else
+        DYNAMIC_CFLAGS=""
+        GCFLAGS="-Wl,-brtl -D_LARGE_FILES $GCFLAGS"
+        GS_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
+        PCL_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
+        XPS_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
+      fi
       SO_LIB_EXT=".so"
       ;;
   esac
