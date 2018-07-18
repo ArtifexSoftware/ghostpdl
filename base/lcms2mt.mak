@@ -80,7 +80,7 @@ lcms2.config-clean :
 
 # NB: we can't use the normal $(CC_) here because msvccmd.mak
 # adds /Za which conflicts with the lcms source.
-LCMS2_CC=$(CC) $(D_)SHARE_LCMS=$(SHARE_LCMS)$(_D) $(CFLAGS) $(LCMS2_CFLAGS) $(I_)$(LCMS2MTSRCDIR)$(D)include $(LCMS2CF_)
+LCMS2_CC=$(CC) $(D_)SHARE_LCMS=$(SHARE_LCMS)$(_D) $(GENOPT) $(CAPOPT) $(CFLAGS) $(LCMS2_CFLAGS) $(I_)$(LCMS2MTSRCDIR)$(D)include $(LCMS2CF_)
 LCMS2O_=$(O_)$(LCMS2OBJ)
 
 # switch in the version of lcms2mt.dev we're actually using

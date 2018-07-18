@@ -105,6 +105,10 @@
         #define isinf(x) (!_finite((x)))
 # endif
 
+#else
+#  if !defined(HAVE_ISINF)
+#       define isinf(x) (!finite((x)))
+#  endif
 #endif
 
 // A fast way to convert from/to 16 <-> 8 bits
