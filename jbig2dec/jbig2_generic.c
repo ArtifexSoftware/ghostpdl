@@ -42,6 +42,10 @@
 #include "jbig2_page.h"
 #include "jbig2_segment.h"
 
+#if !defined (UINT32_MAX)
+#define UINT32_MAX 0xffffffff
+#endif
+
 /* return the appropriate context size for the given template */
 int
 jbig2_generic_stats_size(Jbig2Ctx *ctx, int template)
