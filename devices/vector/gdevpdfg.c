@@ -1583,7 +1583,36 @@ int pdf_reset_color(gx_device_pdf * pdev, const gs_gstate * pgs,
                             case ccs_UseDeviceIndependentColorForImages:
                                 /* If only correcting images, then leave unchanged */
                             case ccs_LeaveColorUnchanged:
-                                code = write_color_unchanged(pdev, pgs, pcc, &temp, psc, ppscc, used_process_color, pcs, pdc);
+                                pcs2 = pcs->base_space;
+                                csi2 = gs_color_space_get_index(pcs2);
+                                if (csi2 == gs_color_space_index_ICC) {
+                                    csi2 = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                                }
+                                if (csi2 == gs_color_space_index_ICC) {
+                                    if (pcs2->cmm_icc_profile_data->islab) {
+                                        if (pdev->ForOPDFRead) {
+                                            int saved_ccs = pdev->params.ColorConversionStrategy;
+                                            switch(pdev->pcm_color_info_index) {
+                                                case 0:
+                                                    pdev->params.ColorConversionStrategy = ccs_Gray;
+                                                    break;
+                                                case 1:
+                                                    pdev->params.ColorConversionStrategy = ccs_RGB;
+                                                    break;
+                                                case 2:
+                                                    pdev->params.ColorConversionStrategy = ccs_CMYK;
+                                                    break;
+                                                default:
+                                                    pdev->params.ColorConversionStrategy = saved_ccs;
+                                                    return_error(gs_error_rangecheck);
+                                            }
+                                            code = convert_separation_alternate(pdev, pgs, pcs, pdc, used_process_color, ppscc, pcc, NULL, false);
+                                            pdev->params.ColorConversionStrategy = saved_ccs;
+                                        }
+                                    } else
+                                        code = write_color_unchanged(pdev, pgs, pcc, &temp, psc, ppscc, used_process_color, pcs, pdc);
+                                } else
+                                    code = write_color_unchanged(pdev, pgs, pcc, &temp, psc, ppscc, used_process_color, pcs, pdc);
                                 break;
                             case ccs_UseDeviceIndependentColor:
                                 code = write_color_as_process(pdev, pgs, pcs, pdc, used_process_color, ppscc, pcc);
