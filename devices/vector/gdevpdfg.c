@@ -1589,7 +1589,7 @@ int pdf_reset_color(gx_device_pdf * pdev, const gs_gstate * pgs,
                                     csi2 = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
                                 }
                                 if (csi2 == gs_color_space_index_ICC) {
-                                    if (pcs2->cmm_icc_profile_data->islab) {
+                                    if (pcs2->cmm_icc_profile_data->islab && pdev->PreserveSeparation) {
                                         if (pdev->ForOPDFRead) {
                                             int saved_ccs = pdev->params.ColorConversionStrategy;
                                             switch(pdev->pcm_color_info_index) {
