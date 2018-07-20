@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <limits.h>
 
 #include "jbig2.h"
 #include "jbig2_priv.h"
@@ -60,8 +61,9 @@ static Jbig2Allocator jbig2_default_allocator = {
 void *
 jbig2_alloc(Jbig2Allocator *allocator, size_t size, size_t num)
 {
-    /* check for integer multiplication overflow */
-    if (num > 0 && size >= (size_t) - 0x100 / num)
+    /* Check for integer multiplication overflow when computing
+    the full size of the allocation. */
+    if (num > 0 && size > SIZE_MAX / num)
         return NULL;
     return allocator->alloc(allocator, size * num);
 }
@@ -506,7 +508,7 @@ void *
 jbig2_realloc(Jbig2Allocator *allocator, void *p, size_t size, size_t num)
 {
     /* check for integer multiplication overflow */
-    if (num > 0 && size >= (size_t) - 0x100 / num)
+    if (num > 0 && size >= SIZE_MAX / num)
         return NULL;
     return allocator->realloc(allocator, p, size * num);
 }
