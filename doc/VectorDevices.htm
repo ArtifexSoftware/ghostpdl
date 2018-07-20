@@ -585,11 +585,14 @@ by using the <code>-s</code> switch (<code>-sColorConversionStrategy=RGB</code>)
 </p>
 <p>ps2write cannot currently convert into device-independent color spaces, and so <code>UseDeviceIndependentColor</code>should not be used with ps2write (oe eps2write).
 </p>
-<p>All other color spaces are converted approproately. Separation and DeviceN spaces will be preserved if possible (ps2write cannot preserve DeviceN)
+<p>All other color spaces are converted approproately. Separation and DeviceN spaces will be preserved if possible (ps2write cannot preserve DeviceN or Lab)
 and if the alternate space is not appropriate a new alternate space will be created. Eg a [/Separation (MyColor) /DeviceRGB {...}]
 when the <code>ColorConversionStrategy</code> is set to <code>CMYK</code> would be converted to [/Separation (MyColor) /DeviceCMYK {...}]
 The new tint transform would be created by sampling the original tint transform, converting the RGB values into CMYK, and then creating
 a function to linearly interpolate between those values.</p>
+
+The <code>PreserveSeparation</code> switch now controls whether the pdfwrite family of devices will attempt to preserve Separation spaces. If this is set to false then
+all Separation colours will be converted into the current device space specified by ProcessColorModel.
 </p>
 
 <h4><a name="Orientation"></a>Setting page orientation</h4>
