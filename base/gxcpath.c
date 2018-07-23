@@ -16,6 +16,7 @@
 
 /* Implementation of clipping paths, other than actual clipping */
 #include "gx.h"
+#include "string_.h"
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsutil.h"
@@ -275,6 +276,8 @@ gx_cpath_unshare(gx_clip_path * pcpath)
             return code;
         /* Copy the rectangle list. */
 /**************** NYI ****************/
+        /* Until/Unless we implement this, NULL out the list */
+        memset(&pcpath->rect_list->list, 0x00, sizeof(gx_clip_list));
         rc_decrement(rlist, "gx_cpath_unshare");
     }
     return code;

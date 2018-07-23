@@ -738,7 +738,8 @@ $(GLOBJ)gxcmap.$(OBJ) : $(GLSRC)gxcmap.c $(AK) $(gx_h) $(gserrors_h)\
 $(GLOBJ)gxcpath.$(OBJ) : $(GLSRC)gxcpath.c $(AK) $(gx_h) $(gserrors_h)\
  $(gscoord_h) $(gsline_h) $(gsstruct_h) $(gsutil_h)\
  $(gxdevice_h) $(gxfixed_h) $(gxgstate_h) $(gxpaint_h)\
- $(gzpath_h) $(gzcpath_h) $(gzacpath_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gzpath_h) $(gzcpath_h) $(gzacpath_h) $(string__h) \
+ $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxcpath.$(OBJ) $(C_) $(GLSRC)gxcpath.c
 
 $(GLOBJ)gxdcconv.$(OBJ) : $(GLSRC)gxdcconv.c $(AK) $(gx_h)\
