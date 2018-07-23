@@ -65,6 +65,11 @@ gdev_fax_get_params(gx_device * dev, gs_param_list * plist)
         ecode = code;
     if ((code = param_write_int(plist, "MinFeatureSize", &fdev->MinFeatureSize)) < 0)
         ecode = code;
+    if ((code = param_write_int(plist, "FillOrder", &fdev->FillOrder)) < 0)
+        ecode = code;
+     if ((code = param_write_bool(plist, "BlackIs1", &fdev->BlackIs1)) < 0)
+        ecode = code;
+ 
     return ecode;
 }
 int
@@ -73,6 +78,8 @@ gdev_fax_put_params(gx_device * dev, gs_param_list * plist)
     gx_device_fax *const fdev = (gx_device_fax *)dev;
     int ecode = 0;
     int code;
+    int fill_order = fdev->FillOrder;
+    bool blackis1 = fdev->BlackIs1;
     int aw = fdev->AdjustWidth;
     int mfs = fdev->MinFeatureSize;
     const char *param_name;
@@ -88,7 +95,25 @@ gdev_fax_put_params(gx_device * dev, gs_param_list * plist)
         case 1:
             break;
     }
-
+    switch (code = param_read_int(plist, (param_name = "FillOrder"), &fill_order)) {
+        case 0:
+            if (fill_order == 1 || fill_order == 2)
+                break;
+            code = gs_error_rangecheck;
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 1:
+            break;
+    }
+    switch (code = param_read_bool(plist, (param_name = "BlackIs1"), &blackis1)) {
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 0:
+        case 1:
+            break;
+    }
     switch (code = param_read_int(plist, (param_name = "MinFeatureSize"), &mfs)) {
         case 0:
             if (mfs >= 0 && mfs <= 4)
@@ -109,6 +134,8 @@ gdev_fax_put_params(gx_device * dev, gs_param_list * plist)
 
     fdev->AdjustWidth = aw;
     fdev->MinFeatureSize = mfs;
+    fdev->FillOrder = fill_order;
+
     return code;
 }
 
@@ -123,7 +150,8 @@ gdev_fax_init_state_adjust(stream_CFE_state *ss,
     s_CFE_template.set_defaults((stream_state *)ss);
     ss->Columns = fdev->width;
     ss->Rows = fdev->height;
-    ss->BlackIs1 = true;
+    ss->BlackIs1 = fdev->BlackIs1;
+    ss->FirstBitLowOrder = fdev->FillOrder == 2;
     ss->Columns = fax_adjusted_width(ss->Columns, adjust_width);
 }
 

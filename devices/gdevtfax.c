@@ -45,7 +45,7 @@ struct gx_device_tfax_s {
     gx_fax_device_common;
     long MaxStripSize;          /* 0 = no limit, other is UNCOMPRESSED limit */
                                 /* The type and range of FillOrder follows TIFF 6 spec  */
-    int  FillOrder;             /* 1 = lowest column in the high-order bit, 2 = reverse */
+    /*int  FillOrder;    */         /* 1 = lowest column in the high-order bit, 2 = reverse */
     bool  BigEndian;            /* true = big endian; false = little endian*/
     bool UseBigTIFF;
     uint16 Compression;         /* same values as TIFFTAG_COMPRESSION */
@@ -64,7 +64,6 @@ static const gx_device_procs gdev_tfax_std_procs =
 {\
     FAX_DEVICE_BODY(gx_device_tfax, gdev_tfax_std_procs, dname, print_page),\
     TIFF_DEFAULT_STRIP_SIZE     /* strip size byte count */,\
-    1                           /* lowest column in the high-order bit */,\
     ARCH_IS_BIG_ENDIAN          /* default to native endian (i.e. use big endian iff the platform is so*/,\
     false,                      /* default to not using bigtiff */\
     compr,\

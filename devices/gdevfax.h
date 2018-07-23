@@ -26,7 +26,9 @@
 /* Precede this by gx_device_common and gx_prn_device_common. */
 #define gx_fax_device_common\
     int AdjustWidth;             /* 0 = no adjust, 1 = adjust to fax values */\
-    int MinFeatureSize           /* < 2 == no darkening */
+    int MinFeatureSize;           /* < 2 == no darkening */\
+    int  FillOrder;             /* 1 = lowest column in the high-order bit, 2 = reverse */\
+    bool BlackIs1   /* true 0 white 1 black false- opposite */
 typedef struct gx_device_fax_s {
     gx_device_common;
     gx_prn_device_common;
@@ -40,7 +42,9 @@ typedef struct gx_device_fax_s {
                         0, 0, 0, 0,	/* margins */\
                         1, print_page),\
     1,				/* AdjustWidth */\
-    0                           /* MinFeatureSize */
+    0,      /* MinFeatureSize */\
+    1,		/*FillOrder */\
+    true   /* BlackIs1 */
 
 /* Procedures defined in gdevfax.c */
 
