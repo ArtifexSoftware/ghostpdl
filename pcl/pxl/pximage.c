@@ -218,15 +218,14 @@ px_jpeg_init(px_bitmap_enum_t * benum, px_bitmap_params_t * params, px_args_t * 
         int comps = jddp->dinfo.output_components;
         if (comps == 1) {
             params->color_space = eGray;
-            params->depth = 1;
         } else if (comps == 3) {
             params->color_space = eRGB;
-            params->depth = 8;
         }
         else {
             code = -1;
             goto error;
         }
+        params->depth = 8;
         return 0;
     }
 
@@ -369,6 +368,14 @@ read_jpeg_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
             (*s_DCTD_template.process) ((stream_state *) ss, &r, &w, false);
         /* code = num scanlines processed (0=need more data, -ve=error) */
         used = w.ptr + 1 - data - pos_in_row;
+
+        /* the filter process returns 1 to indicate more room is
+         * needed for the output data, which should not happen unless
+         * the parameters are specified incorrectly.
+         */
+
+        if (code == 1)
+            code = -1;
         if ((code == EOFC) && (used > 0))
             code = 1;
         pos_in_row += used;
