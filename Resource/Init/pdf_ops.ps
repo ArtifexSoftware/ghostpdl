@@ -131,6 +131,9 @@ currentdict /gput_always_allow .undef
     %% original TextSaveMatrix behind allows the matching ET not to throw an error, as well as coping
     %% with the various other problems listed above. Its not pretty though.
     currentdict /TextSaveMatrix known {
+      (   **** Error: Encountered a 'q' inside a Text Object, this is illegal.\n)
+      pdfformaterror
+      (               Output may be incorrect..\n) pdfformaterror
       currentdict /TextSaveMatrix get matrix copy
       gsave //nodict begin
       /qTextSaveMatrix gput
@@ -1021,6 +1024,22 @@ end readonly def
     6 array astore
     setmatrix settextmatrix
   } if
+  currentdict /qTextSaveMatrix known {
+    qTextSaveMatrix
+    aload pop
+    5 index 0 ne 3 index 0 ne and
+    5 index 0 ne 5 index 0 ne and or not {
+      (\n   **** Error: Invalid (0 scaling) text matrix for Tm ****\n)
+      pdfformaterror
+      (                 Output may be incorrect.\n) pdfformaterror
+      % handle invalid scale by using a really small value
+      2 -6 roll pop pop pop pop
+      0.00000001 0 0 0.00000001
+      6 -2 roll
+    }if
+    6 array astore
+    setmatrix settextmatrix
+  } if
 } bdef
 /settextposition {
                 % Update the TextMatrix translation.
@@ -1415,7 +1434,11 @@ end readonly def
         % CTM, so we need to calculate the stroke width which would result
         % if the CTM had been unity.
           currentlinewidth dup
-          matrix defaultmatrix idtransform TextSaveMatrix dtransform
+          currentdict /qTextSaveMatrix known {
+            matrix defaultmatrix idtransform qTextSaveMatrix dtransform
+          }{
+            matrix defaultmatrix idtransform TextSaveMatrix dtransform
+          } ifelse
           abs 2 copy exch abs eq {
             pop
           }{
@@ -1431,7 +1454,11 @@ end readonly def
         % CTM, so we need to calculate the stroke width which would result
         % if the CTM had been unity.
           currentlinewidth dup
-          matrix defaultmatrix idtransform TextSaveMatrix dtransform
+          currentdict /qTextSaveMatrix known {
+            matrix defaultmatrix idtransform qTextSaveMatrix dtransform
+          }{
+            matrix defaultmatrix idtransform TextSaveMatrix dtransform
+          } ifelse
           abs 2 copy exch abs eq {
             pop
           }{
@@ -1467,7 +1494,11 @@ end readonly def
         % Tr 6 - Fill, stroke, add to clip
         { gsave 2 .settextrenderingmode
           currentlinewidth dup
-          matrix defaultmatrix idtransform TextSaveMatrix dtransform
+          currentdict /qTextSaveMatrix known {
+            matrix defaultmatrix idtransform qTextSaveMatrix dtransform
+          }{
+            matrix defaultmatrix idtransform TextSaveMatrix dtransform
+          } ifelse
           abs 2 copy exch abs eq {
             pop
           }{
@@ -1800,7 +1831,9 @@ end readonly def
    {
     .currentPDFfontsize 0 eq not {
        setstrokestate //true TextTransSetup
-       currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix .swapcolors stroke TextTransTeardown .swapcolors
+       currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix
+       currentdict /qTextSaveMatrix known {qTextSaveMatrix setmatrix} if
+       .swapcolors stroke TextTransTeardown .swapcolors
        setmatrix moveto
     } if
    } ifelse
