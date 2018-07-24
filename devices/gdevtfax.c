@@ -45,7 +45,6 @@ struct gx_device_tfax_s {
     gx_fax_device_common;
     long MaxStripSize;          /* 0 = no limit, other is UNCOMPRESSED limit */
                                 /* The type and range of FillOrder follows TIFF 6 spec  */
-    /*int  FillOrder;    */         /* 1 = lowest column in the high-order bit, 2 = reverse */
     bool  BigEndian;            /* true = big endian; false = little endian*/
     bool UseBigTIFF;
     uint16 Compression;         /* same values as TIFFTAG_COMPRESSION */
@@ -267,8 +266,9 @@ const gx_device_tfax gs_tifflzw_device = {
                         1, tifflzw_print_page),
     0/* AdjustWidth */,
     0                           /* MinFeatureSize */,
+    1,                          /* FillOrder */
+    true,                       /* BlackIs1 */
     TIFF_DEFAULT_STRIP_SIZE     /* strip size byte count */,
-    1                           /* lowest column in the high-order bit, not used */,
     ARCH_IS_BIG_ENDIAN          /* default to native endian (i.e. use big endian iff the platform is so*/,
     false                       /* defauilt to *not* UseBigTIFF */,
     COMPRESSION_LZW
@@ -282,8 +282,9 @@ const gx_device_tfax gs_tiffpack_device = {
                         1, tiffpack_print_page),
     0                           /* AdjustWidth */,
     0                           /* MinFeatureSize */,
+    1,                          /* FillOrder */
+    true,                       /* BlackIs1 */
     TIFF_DEFAULT_STRIP_SIZE     /* strip size byte count */,
-    1                           /* lowest column in the high-order bit, not used */,
     ARCH_IS_BIG_ENDIAN          /* default to native endian (i.e. use big endian iff the platform is so*/,
     false                       /* defauilt to *not* UseBigTIFF */,
     COMPRESSION_PACKBITS
