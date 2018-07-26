@@ -26,6 +26,9 @@
 #include "gdevp14.h"
 #include "gsrect.h"		/* for rect_merge */
 #include "math_.h"		/* for ceil, floor */
+#ifdef WITH_CAL
+#include "cal.h"
+#endif
 
 typedef int art_s32;
 
@@ -3253,6 +3256,7 @@ do_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     int nos_alpha_g_offset = nos_shape_offset + (nos->has_shape ? nos_planestride : 0);
     int nos_tag_offset = nos_planestride * (nos->n_planes - 1);
     byte *mask_tr_fn = NULL; /* Quiet compiler. */
+    bool is_ident = true;
     bool has_mask = false;
     byte *backdrop_ptr = NULL;
     pdf14_device *pdev = (pdf14_device *)dev;
@@ -3292,6 +3296,8 @@ do_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
         int tmp;
 
         mask_tr_fn = maskbuf->transfer_fn;
+
+        is_ident = maskbuf->is_ident;
         /* Make sure we are in the mask buffer */
         if (maskbuf->data != NULL) {
             mask_row_ptr = maskbuf->data + x0 - maskbuf->rect.p.x +
@@ -3368,9 +3374,18 @@ do_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
             if (has_mask || maskbuf) {/* 7% */
                 /* AirPrint test case hits this */
                 if (maskbuf && maskbuf->rect.p.x <= x0 && maskbuf->rect.p.y <= y0 &&
-                    maskbuf->rect.q.x >= x1 && maskbuf->rect.q.y >= y1)
-                    fn = compose_group_nonknockout_nonblend_isolated_allmask_common;
-                else
+                    maskbuf->rect.q.x >= x1 && maskbuf->rect.q.y >= y1) {
+                    /* AVX and SSE accelerations only valid if maskbuf transfer
+                       function is identity and we have no matte color replacement */
+                    if (is_ident && !has_matte) {
+                        fn = compose_group_nonknockout_nonblend_isolated_allmask_common;
+#ifdef WITH_CAL
+			fn = cal_get_compose_group(memory->gs_lib_ctx->core->cal_ctx, fn, tos->n_chan-1);
+#endif
+                    } else {
+                        fn = compose_group_nonknockout_nonblend_isolated_allmask_common;
+                    }
+                } else
                     fn = &compose_group_nonknockout_nonblend_isolated_mask_common;
             } else /* 14% */
                 fn = &compose_group_nonknockout_nonblend_isolated_nomask_common;
@@ -3383,14 +3398,13 @@ do_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     } else
         fn = compose_group_nonknockout_noblend_general;
 
-    fn(tos_ptr, tos_isolated, tos_planestride, tos->rowstride, alpha, shape, blend_mode, tos->has_shape,
-                  tos_shape_offset, tos_alpha_g_offset, tos_tag_offset, tos_has_tag,
-                  nos_ptr, nos_isolated, nos_planestride, nos->rowstride, nos_alpha_g_ptr, nos_knockout,
-                  nos_shape_offset, nos_tag_offset,
-                  mask_row_ptr, has_mask, maskbuf, mask_bg_alpha, mask_tr_fn,
-                  backdrop_ptr,
-                  has_matte, n_chan, additive, num_spots, overprint, drawn_comps, x0, y0, x1, y1,
-                  pblend_procs, pdev);
+    fn(tos_ptr, tos_isolated, tos_planestride, tos->rowstride, alpha, shape,
+        blend_mode, tos->has_shape, tos_shape_offset, tos_alpha_g_offset,
+        tos_tag_offset, tos_has_tag, nos_ptr, nos_isolated, nos_planestride,
+        nos->rowstride, nos_alpha_g_ptr, nos_knockout, nos_shape_offset,
+        nos_tag_offset, mask_row_ptr, has_mask, maskbuf, mask_bg_alpha,
+        mask_tr_fn, backdrop_ptr, has_matte, n_chan, additive, num_spots,
+        overprint, drawn_comps, x0, y0, x1, y1, pblend_procs, pdev);
 
 #if RAW_DUMP
     dump_raw_buffer(memory, y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
@@ -5188,7 +5202,7 @@ mark_fill_rect16_sub4_fast(int w, int h, uint16_t *gs_restrict dst_ptr, uint16_t
                 /* Result alpha is Union of backdrop and source alpha */
                 int tmp, src_scale;
                 unsigned int a_r;
-                
+
                 a_b += a_b>>15;
                 tmp = (0x10000 - a_b) * (0xffff - a_s) + 0x8000;
                 a_r = 0xffff - (tmp >> 16);
@@ -5618,7 +5632,7 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
     if (buf->deep)
         return do_mark_fill_rectangle16(dev, x, y, w, h, color, pdc, devn);
-    else 
+    else
         return do_mark_fill_rectangle(dev, x, y, w, h, color, pdc, devn);
 }
 

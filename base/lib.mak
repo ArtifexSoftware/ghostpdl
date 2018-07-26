@@ -3138,10 +3138,19 @@ $(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(AK) $(gx_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gximag3x_h) $(gxgstate_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gximag3x.$(OBJ) $(C_) $(GLSRC)gximag3x.c
 
-$(GLOBJ)gxblend.$(OBJ) : $(GLSRC)gxblend.c $(AK) $(gx_h) $(memory__h)\
+$(GLOBJ)gxblend_0.$(OBJ) : $(GLSRC)gxblend.c $(AK) $(gx_h) $(memory__h)\
  $(gstparam_h) $(gxblend_h) $(gxcolor2_h) $(gsicc_cache_h) $(gsrect_h)\
  $(gsicc_manage_h) $(gdevp14_h) $(gp_h) $(math__h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gxblend.$(OBJ) $(C_) $(GLSRC)gxblend.c
+	$(GLCC) $(GLO_)gxblend_0.$(OBJ) $(C_) $(GLSRC)gxblend.c
+
+$(GLOBJ)gxblend_1.$(OBJ) : $(GLSRC)gxblend.c $(AK) $(gx_h) $(memory__h)\
+ $(gstparam_h) $(gxblend_h) $(gxcolor2_h) $(gsicc_cache_h) $(gsrect_h)\
+ $(gsicc_manage_h) $(gdevp14_h) $(gp_h) $(math__h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(GLO_)gxblend_1.$(OBJ) $(C_) $(GLSRC)gxblend.c
+
+$(GLOBJ)gxblend.$(OBJ) : $(GLOBJ)gxblend_$(WITH_CAL).$(OBJ) $(AK) $(gx_h)\
+ $(LIB_MAK) $(MAKEDIRS)
+	$(CP_) $(GLOBJ)gxblend_$(WITH_CAL).$(OBJ) $(GLOBJ)gxblend.$(OBJ)
 
 $(GLOBJ)gxblend1.$(OBJ) : $(GLSRC)gxblend1.c $(AK) $(gx_h) $(memory__h)\
  $(gstparam_h) $(gsrect_h) $(gxdcconv_h) $(gxblend_h) $(gxdevcli_h)\
@@ -3149,7 +3158,7 @@ $(GLOBJ)gxblend1.$(OBJ) : $(GLSRC)gxblend1.c $(AK) $(gx_h) $(memory__h)\
  $(gsicc_cache_h) $(gxdevsop_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxblend1.$(OBJ) $(C_) $(GLSRC)gxblend1.c
 
-$(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(AK) $(gx_h) $(gserrors_h)\
+$(GLOBJ)gdevp14_0.$(OBJ) : $(GLSRC)gdevp14.c $(AK) $(gx_h) $(gserrors_h)\
  $(math__h) $(memory__h) $(gscdefs_h) $(gxdevice_h) $(gsdevice_h)\
  $(gsstruct_h) $(gscoord_h) $(gxgstate_h) $(gxdcolor_h) $(gxiparam_h)\
  $(gstparam_h) $(gxblend_h) $(gxtext_h) $(gsimage_h)\
@@ -3159,7 +3168,22 @@ $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(AK) $(gx_h) $(gserrors_h)\
  $(gsptype1_h) $(gzcpath_h) $(gxpaint_h) $(gsicc_manage_h) $(gxclist_h)\
  $(gxiclass_h) $(gximage_h) $(gsmatrix_h) $(gsicc_cache_h) $(gxdevsop_h)\
  $(gsicc_h) $(gscms_h) $(gdevmem_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gdevp14.$(OBJ) $(C_) $(GLSRC)gdevp14.c
+	$(GLCC) $(GLO_)gdevp14_0.$(OBJ) $(C_) $(GLSRC)gdevp14.c
+
+$(GLOBJ)gdevp14_1.$(OBJ) : $(GLSRC)gdevp14.c $(AK) $(gx_h) $(gserrors_h)\
+ $(math__h) $(memory__h) $(gscdefs_h) $(gxdevice_h) $(gsdevice_h)\
+ $(gsstruct_h) $(gscoord_h) $(gxgstate_h) $(gxdcolor_h) $(gxiparam_h)\
+ $(gstparam_h) $(gxblend_h) $(gxtext_h) $(gsimage_h)\
+ $(gsrect_h) $(gzstate_h) $(gdevdevn_h) $(gdevp14_h) $(gdevprn_h) $(gsovrc_h) $(gxcmap_h)\
+ $(gscolor1_h) $(gstrans_h) $(gsutil_h) $(gxcldev_h) $(gxclpath_h)\
+ $(gxdcconv_h) $(gsptype2_h) $(gxpcolor_h)\
+ $(gsptype1_h) $(gzcpath_h) $(gxpaint_h) $(gsicc_manage_h) $(gxclist_h)\
+ $(gxiclass_h) $(gximage_h) $(gsmatrix_h) $(gsicc_cache_h) $(gxdevsop_h)\
+ $(gsicc_h) $(gscms_h) $(gdevmem_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(GLO_)gdevp14_1.$(OBJ) $(C_) $(GLSRC)gdevp14.c
+
+$(GLOBJ)gdevp14.$(OBJ) : $(GLOBJ)gdevp14_$(WITH_CAL).$(OBJ) $(LIB_MAK) $(MAKEDIRS)
+	$(CP_) $(GLOBJ)gdevp14_$(WITH_CAL).$(OBJ) $(GLOBJ)gdevp14.$(OBJ)
 
 translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\
  $(GLOBJ)gxblend.$(OBJ) $(GLOBJ)gxblend1.$(OBJ) $(GLOBJ)gdevp14.$(OBJ) $(GLOBJ)gdevdevn.$(OBJ)\

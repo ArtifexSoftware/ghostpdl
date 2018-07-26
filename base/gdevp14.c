@@ -58,6 +58,9 @@
 #include "gsmatrix.h"
 #include "gxdevsop.h"
 #include "gsicc.h"
+#ifdef WITH_CAL
+#include "cal.h"
+#endif
 
 #if RAW_DUMP
 unsigned int global_index = 0;
@@ -991,6 +994,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
     result->n_planes = n_planes;
     result->rowstride = rowstride;
     result->transfer_fn = NULL;
+    result->is_ident = true;
     result->matte_num_comps = 0;
     result->matte = NULL;
     result->mask_stack = NULL;
@@ -1517,8 +1521,9 @@ exit:
  */
 static	int
 pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	uint16_t bg_alpha,
-                             byte *transfer_fn, bool idle, bool replacing,
-                             uint mask_id, gs_transparency_mask_subtype_t subtype,
+                             byte *transfer_fn, bool is_ident, bool idle,
+                             bool replacing, uint mask_id,
+                             gs_transparency_mask_subtype_t subtype,
                              int numcomps, int Background_components,
                              const float Background[], int Matte_components,
                              const float Matte[], const float GrayBackground)
@@ -1543,6 +1548,7 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	uint16_t bg_alph
     if (buf == NULL)
         return_error(gs_error_VMerror);
     buf->alpha = bg_alpha;
+    buf->is_ident = is_ident;
     /* fill in, but these values aren't really used */
     buf->isolated = true;
     buf->knockout = false;
@@ -2084,6 +2090,9 @@ pdf14_get_buffer_information(const gx_device * dev,
     return(0);
 }
 
+typedef void(*blend_image_row_proc_t) (const byte *gs_restrict buf_ptr,
+    int planestride, int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf);
+
 /**
  * pdf14_put_image: Put rendered image to target device.
  * @pdev: The PDF 1.4 rendering device.
@@ -2123,6 +2132,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     bool expand = (!deep && bits_per_comp > 8);
     int planestride = buf->planestride;
     int rowstride = buf->rowstride;
+    blend_image_row_proc_t blend_row;
 
     /* Make sure that this is the only item on the stack. Fuzzing revealed a
        potential problem. Bug 694190 */
@@ -2354,11 +2364,23 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
         clist_band_count++;
     }
 #endif
-#define SSE_ALIGN 16
-    linebuf_unaligned = gs_alloc_bytes(pdev->memory, width * (num_comp<<deep) + SSE_ALIGN, "pdf14_put_image");
+    /* Allocate on 32-byte border for AVX CMYK case. Four byte overflow for RGB case */
+#define SSE_ALIGN 32
+#define SSE_OVERFLOW 4
+    linebuf_unaligned = gs_alloc_bytes(pdev->memory, width * (num_comp<<deep) + SSE_ALIGN + SSE_OVERFLOW, "pdf14_put_image");
     if (linebuf_unaligned == NULL)
         return gs_error_VMerror;
     linebuf = linebuf_unaligned + ((-(intptr_t)linebuf_unaligned) & (SSE_ALIGN-1));
+
+    blend_row = deep ? gx_build_blended_image_row16 :
+                       gx_build_blended_image_row;
+#ifdef WITH_CAL
+    blend_row = cal_get_blend_row(pdev->memory->gs_lib_ctx->core->cal_ctx,
+				  blend_row, num_comp, deep);
+#endif
+
+    if (!deep)
+        bg >>= 8;
     for (y = 0; y < height; y++) {
         gx_image_plane_t planes;
         int rows_used,k,x;
@@ -2380,13 +2402,9 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                 }
             }
         } else {
-            if (deep) {
-                gx_build_blended_image_row16(buf_ptr, buf->planestride, width,
-                                             num_comp, bg, linebuf);
-            } else
-                gx_build_blended_image_row(buf_ptr, buf->planestride, width,
-                                           num_comp, bg>>8, linebuf);
+            blend_row(buf_ptr, buf->planestride, width, num_comp, bg, linebuf);
         }
+
         planes.data = linebuf;
         planes.data_x = 0;
         planes.raster = width * num_comp;
@@ -5573,7 +5591,8 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     /* Note that the soft mask always follows the group color requirements even
        when we have a separable device */
     return pdf14_push_transparency_mask(pdev->ctx, &rect, bg_alpha,
-                                        transfer_fn, ptmp->idle, ptmp->replacing,
+                                        transfer_fn, ptmp->function_is_identity,
+                                        ptmp->idle, ptmp->replacing,
                                         ptmp->mask_id, ptmp->subtype,
                                         group_color_numcomps,
                                         ptmp->Background_components,

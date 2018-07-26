@@ -31,13 +31,16 @@ CAL_PREFIX=cal_
 CAL_OBJ=$(CALOBJDIR)$(D)
 CAL_SRC=$(CALSRCDIR)$(D)
 
-# source files to build from the CSDK source
+# source files to build from the CAL source
 
 cal_OBJS = \
 	$(CAL_OBJ)$(CAL_PREFIX)cal.$(OBJ)	\
 	$(CAL_OBJ)$(CAL_PREFIX)rescale.$(OBJ)	\
 	$(CAL_OBJ)$(CAL_PREFIX)halftone.$(OBJ)	\
 	$(CAL_OBJ)$(CAL_PREFIX)doubler.$(OBJ)	\
+	$(CAL_OBJ)$(CAL_PREFIX)blendavx2.$(OBJ)	\
+	$(CAL_OBJ)$(CAL_PREFIX)blendsse42.$(OBJ)\
+	$(CAL_OBJ)$(CAL_PREFIX)blend.$(OBJ)	\
 	$(CAL_OBJ)$(CAL_PREFIX)cmsavx2.$(OBJ)	\
 	$(CAL_OBJ)$(CAL_PREFIX)cmssse42.$(OBJ)	\
 	$(CAL_OBJ)$(CAL_PREFIX)lcms2mt_cal.$(OBJ)
@@ -83,8 +86,17 @@ $(CAL_OBJ)$(CAL_PREFIX)cmsavx2.$(OBJ) : $(CAL_SRC)cmsavx2.c $(cal_HDRS) $(CAL_DE
 $(CAL_OBJ)$(CAL_PREFIX)cmssse42.$(OBJ) : $(CAL_SRC)cmssse42.c $(cal_HDRS) $(CAL_DEP)
 	$(CAL_CC) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)cmssse42.$(OBJ) $(C_) $(CAL_SRC)cmssse42.c
 
-$(CAL_OBJ)$(CAL_PREFIX)lcms2mt_cal.$(OBJ) : $(CAL_SRC)lcms2mt_cal.c $(cal_HDRS) $(CAL_DEP)
+$(CAL_OBJ)$(CAL_PREFIX)lcms2mt_cal.$(OBJ) : $(CAL_SRC)lcms2mt_cal.c $(cal_HDRS) $(CAL_DEP) $(gsmemory_h)
 	$(CAL_CC) $(I_)$(LCMS2MTSRCDIR)$(D)include $(I_)$(GLSRC) $(I_)$(LCMS2MTSRCDIR)$(D)src $(CAL_O)lcms2mt_cal.$(OBJ) $(C_) $(CAL_SRC)lcms2mt_cal.c
+
+$(CAL_OBJ)$(CAL_PREFIX)blendavx2.$(OBJ) : $(CAL_SRC)blendavx2.c $(cal_HDRS) $(CAL_DEP) $(gxblend_h)
+	$(CAL_CC) $(I_)$(GLSRC) $(CAL_O)blendavx2.$(OBJ) $(C_) $(CAL_SRC)blendavx2.c
+
+$(CAL_OBJ)$(CAL_PREFIX)blendsse42.$(OBJ) : $(CAL_SRC)blendsse42.c $(cal_HDRS) $(CAL_DEP) $(gxblend_h)
+	$(CAL_CC) $(I_)$(GLSRC) $(CAL_O)blendsse42.$(OBJ) $(C_) $(CAL_SRC)blendsse42.c
+
+$(CAL_OBJ)$(CAL_PREFIX)blend.$(OBJ) : $(CAL_SRC)blend.c $(cal_HDRS) $(CAL_DEP) $(gsmemory_h)
+	$(CAL_CC) $(I_)$(GLSRC) $(CAL_O)blend.$(OBJ) $(C_) $(CAL_SRC)blend.c
 
 
 # end of file

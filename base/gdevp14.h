@@ -152,6 +152,7 @@ struct pdf14_buf_s {
     int n_planes; /* total number of planes including alpha, shape, alpha_g */
     byte *data;
     byte *transfer_fn;
+    bool is_ident;
     int matte_num_comps;
     uint16_t *matte;
     gs_int_rect dirty;
