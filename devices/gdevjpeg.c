@@ -438,8 +438,11 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     }
     code = gx_downscaler_init(&ds, (gx_device *)jdev, 8, 8,
                               jdev->color_info.depth/8, jdev->downscale.downscale_factor, 0, NULL, 0);
-    if (code < 0)
-        goto done;
+    if (code < 0) {
+        gs_free_object(mem, jcdp, "jpeg_print_page(jpeg_compress_data)");
+        jcdp = NULL;
+        goto fail;
+    }
 
     /* Create the DCT encoder state. */
     jcdp->templat = s_DCTE_template;
@@ -557,12 +560,13 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     /* Wrap up. */
     sclose(&jstrm);
     sflush(&fstrm);
-    jcdp = 0;
   done:
     gs_free_object(mem, jbuf, "jpeg_print_page(jbuf)");
     gs_free_object(mem, fbuf, "jpeg_print_page(fbuf)");
-    if (jcdp)
-        gs_jpeg_destroy(&state);	/* frees *jcdp */
+    if (jcdp) {
+        gs_jpeg_destroy(&state);
+        gs_free_object(mem, jcdp, "jpeg_print_page(jpeg_compress_data)");
+    }
     gx_downscaler_fin(&ds);
     gs_free_object(mem, in, "jpeg_print_page(in)");
     return code;
