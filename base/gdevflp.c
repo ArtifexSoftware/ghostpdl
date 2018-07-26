@@ -112,7 +112,7 @@ static dev_proc_process_page(flp_process_page);
 
 #define public_st_flp_device()	/* in gsdevice.c */\
   gs_public_st_complex_only(st_flp_device, gx_device, "first_lastpage",\
-    0, flp_enum_ptrs, flp_reloc_ptrs, gx_device_finalize)
+    0, flp_enum_ptrs, flp_reloc_ptrs, default_subclass_finalize)
 
 static
 ENUM_PTRS_WITH(flp_enum_ptrs, gx_device *dev);

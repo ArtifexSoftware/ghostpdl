@@ -102,4 +102,5 @@ dev_proc_strip_tile_rect_devn(default_subclass_strip_tile_rect_devn);
 dev_proc_copy_alpha_hl_color(default_subclass_copy_alpha_hl_color);
 dev_proc_process_page(default_subclass_process_page);
 
+void default_subclass_finalize(const gs_memory_t *cmem, void *vptr);
 #endif /* gdev_obj_filter_INCLUDED */

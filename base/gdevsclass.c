@@ -886,3 +886,23 @@ int default_subclass_process_page(gx_device *dev, gx_process_page_options_t *opt
 
     return 0;
 }
+
+void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
+{
+    gx_device * const dev = (gx_device *)vptr;
+    generic_subclass_data *psubclass_data = (generic_subclass_data *)dev->subclass_data;
+    (void)cmem; /* unused */
+
+    if (psubclass_data) {
+        gs_free_object(dev->memory->non_gc_memory, psubclass_data, "gx_epo_finalize(suclass data)");
+        dev->subclass_data = NULL;
+    }
+    if (dev->parent)
+        dev->parent->child = dev->child;
+    if (dev->child)
+        dev->child->parent = dev->parent;
+    if (dev->icc_struct)
+        rc_decrement(dev->icc_struct, "finalize subclass device");
+    if (dev->PageList)
+        rc_decrement(dev->PageList, "finalize subclass device");
+}

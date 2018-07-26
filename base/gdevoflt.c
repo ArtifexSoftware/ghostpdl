@@ -74,7 +74,7 @@ static dev_proc_strip_tile_rect_devn(obj_filter_strip_tile_rect_devn);
 
 #define public_st_obj_filter_device()	/* in gsdevice.c */\
   gs_public_st_complex_only(st_obj_filter_device, gx_device, "object filter",\
-    0, obj_filter_enum_ptrs, obj_filter_reloc_ptrs, gx_device_finalize)
+    0, obj_filter_enum_ptrs, obj_filter_reloc_ptrs, default_subclass_finalize)
 
 static
 ENUM_PTRS_WITH(obj_filter_enum_ptrs, gx_device *dev);

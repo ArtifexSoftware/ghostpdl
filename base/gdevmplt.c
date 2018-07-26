@@ -52,7 +52,7 @@ static dev_proc_get_color_mapping_procs(pcl_mono_palette_get_color_mapping_procs
 /* GC descriptor */
 #define public_st_pcl_mono_palette_device()	/* in gsdevice.c */\
   gs_public_st_complex_only(st_pcl_mono_palette_device, gx_device, "PCL_Mono_Palette",\
-    0, pcl_mono_palette_enum_ptrs, pcl_mono_palette_reloc_ptrs, gx_device_finalize)
+    0, pcl_mono_palette_enum_ptrs, pcl_mono_palette_reloc_ptrs, default_subclass_finalize)
 
 static
 ENUM_PTRS_WITH(pcl_mono_palette_enum_ptrs, gx_device *dev);
