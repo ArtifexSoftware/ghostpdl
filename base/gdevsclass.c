@@ -897,6 +897,9 @@ void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
         gs_free_object(dev->memory->non_gc_memory, psubclass_data, "gx_epo_finalize(suclass data)");
         dev->subclass_data = NULL;
     }
+    if (dev->child) {
+        gs_free_object(dev->memory->stable_memory, dev->child, "free child device memory for subclassing device");
+    }
     if (dev->parent)
         dev->parent->child = dev->child;
     if (dev->child)

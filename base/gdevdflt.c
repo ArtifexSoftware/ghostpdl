@@ -1375,7 +1375,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     psubclass_data = (void *)gs_alloc_bytes(dev_to_subclass->memory->non_gc_memory, private_data_size, "subclass memory for subclassing device");
     if (psubclass_data == 0){
         gs_free_const_object(dev_to_subclass->memory->non_gc_memory, a_std, "gs_device_subclass(stype)");
-        gs_free(dev_to_subclass->memory, child_dev, 1, dev_to_subclass->stype->ssize, "free subclass memory for subclassing device");
+        gs_free_object(dev_to_subclass->memory->stable_memory, child_dev, "free subclass memory for subclassing device");
         return_error(gs_error_VMerror);
     }
     memset(psubclass_data, 0x00, private_data_size);
@@ -1515,8 +1515,6 @@ int gx_device_unsubclass(gx_device *dev)
          */
         if (child->stype_is_dynamic) {
             gs_memory_struct_type_t *b_std = (gs_memory_struct_type_t *)child->stype;
-            /* We definitley do *not* want to finalise the device, we just copied it up a level */
-            b_std->finalize = 0;
             memset(child, 0x00, child->stype->ssize);
             gs_free_object(dev->memory, child, "gx_unsubclass_device(device)");
             child = 0;
