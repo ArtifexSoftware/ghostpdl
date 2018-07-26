@@ -3101,6 +3101,7 @@ pdf_text_process(gs_text_enum_t *pte)
     PROCESS_TEXT_PROC((*process));
     int code, early_accumulator = 0;
     gx_device_pdf *pdev = (gx_device_pdf *)penum->dev;
+    uint captured_pte_index = 0xFFFFFFFF;
 #define BUF_SIZE 100                /* arbitrary > 0 */
     /* Use a union to ensure alignment. */
     union bu_ {
@@ -3166,6 +3167,12 @@ pdf_text_process(gs_text_enum_t *pte)
             code = complete_charproc(pdev, pte, pte_default, penum, true);
             if (code < 0)
                 return code;
+            /* Record the current index of the text, this is the index for which we captured
+             * this charproc. We use this below to determine whether an error return is an
+             * error after we've already captured a CharProc. If it is, then we must not
+             * attempt to capture it again, this wil lead to an infinite loop.
+             */
+            captured_pte_index = pte->index;
             if (!pdev->type3charpath)
                 goto top;
             else
@@ -3581,6 +3588,13 @@ pdf_text_process(gs_text_enum_t *pte)
         if (code == gs_error_invalidfont) /* Bug 688370. */
             return code;
  default_impl:
+        /* If we have captured a CharProc, and the current index into the
+         * text is unchanged, then the capturing a CharProc for this text still
+         * resulted in a text error. So don't try to fix it by capturing the
+         * CharProc again, this causes an endless loop.
+         */
+        if (captured_pte_index == pte->index)
+            return code;
         /* Fall back to the default implementation. */
         code = pdf_default_text_begin(pte, &pte->text, &pte_default);
         if (code < 0)
