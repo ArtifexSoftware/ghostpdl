@@ -228,8 +228,10 @@ gdev_prn_setup_as_command_list(gx_device *pdev, gs_memory_t *buffer_memory,
     bool reallocate = *the_memory != 0;
     byte *base;
 
-    while (target->parent != NULL)
+    while (target->parent != NULL) {
         target = target->parent;
+        gx_update_from_subclass(target);
+    }
 
     /* Try to allocate based simply on param-requested buffer size */
 #ifdef DEBUGGING_HACKS
