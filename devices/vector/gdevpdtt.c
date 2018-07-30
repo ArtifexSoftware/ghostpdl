@@ -3099,7 +3099,7 @@ pdf_text_process(gs_text_enum_t *pte)
     uint size = pte->text.size - pte->index;
     gs_text_enum_t *pte_default;
     PROCESS_TEXT_PROC((*process));
-    int code, early_accumulator = 0;
+    int code = 0, early_accumulator = 0;
     gx_device_pdf *pdev = (gx_device_pdf *)penum->dev;
     uint captured_pte_index = 0xFFFFFFFF;
 #define BUF_SIZE 100                /* arbitrary > 0 */
