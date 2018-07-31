@@ -1436,7 +1436,7 @@ int gx_device_unsubclass(gx_device *dev)
 {
     generic_subclass_data *psubclass_data;
     gx_device *parent, *child;
-    gs_memory_struct_type_t *a_std = 0;
+    gs_memory_struct_type_t *a_std = 0, *b_std = 0;
     int dynamic, ref_count;
 
     /* This should not happen... */
@@ -1476,11 +1476,14 @@ int gx_device_unsubclass(gx_device *dev)
 
     /* Copy the child device into ths device's memory */
     if (child) {
+        b_std = (gs_memory_struct_type_t *)dev->stype;
         rc_decrement(dev->icc_struct, "unsubclass device");
         rc_increment(child->icc_struct);
         memcpy(dev, child, child->stype->ssize);
         /* Patch back the 'stype' in the memory manager */
-        gs_set_object_type(child->memory, dev, child->stype);
+        gs_set_object_type(child->memory, dev, b_std);
+
+        dev->stype = b_std;
         /* The reference count of the subclassing device may have been changed
          * (eg graphics states pointing to it) after we subclassed the device. We
          * need to ensure that we do not overwrite this when we copy back the subclassed
@@ -1494,6 +1497,7 @@ int gx_device_unsubclass(gx_device *dev)
          */
         if (child->child)
             child->child->parent = dev;
+        child->parent->child = child->child;
     }
 
     /* How can we have a subclass device with no child ? Simples; when we hit the end of job
@@ -1514,9 +1518,28 @@ int gx_device_unsubclass(gx_device *dev)
          * If this ever happens garbage collecton will eventually clean up the memory.
          */
         if (child->stype_is_dynamic) {
-            gs_memory_struct_type_t *b_std = (gs_memory_struct_type_t *)child->stype;
-            memset(child, 0x00, child->stype->ssize);
-            gs_free_object(dev->memory, child, "gx_unsubclass_device(device)");
+            /* Make sure that nothing will tyr to follow the device chain, just security here */
+            child->parent = NULL;
+            child->child = NULL;
+            /* Make certainthe memory will be freed, zap the reference count */
+            child->rc.ref_count = 0;
+            /* We *don't* want to run the finalize routine. This would free the stype and
+             * properly handle the icc_struct and PageList, but for devices with a custom
+             * finalize (eg psdcmyk) it might also free memory it had allocated, and we're
+             * still pointing at that memory in the parent.
+             * The indirection through a variable is just to get rid of const warnings.
+             */
+            b_std = (gs_memory_struct_type_t *)child->stype;
+            b_std->finalize = NULL;
+            /* Having patched the stype, we need to make sure the memory manager uses it.
+             * It keeps a copy in its own data structure, and would use that copy, which would
+             * mean it would call the finalize routine that we just patched out.
+             */
+            gs_set_object_type(dev->memory->stable_memory, child, b_std);
+            /* Now (finally) free the child memory */
+            gs_free_object(dev->memory->stable_memory, child, "gx_unsubclass_device(device)");
+            /* And the stype for it */
+            gs_free_const_object(dev->memory->non_gc_memory, b_std, "gs_device_unsubclass(stype)");
             child = 0;
         }
     }
