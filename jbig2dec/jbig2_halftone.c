@@ -258,13 +258,13 @@ jbig2_pattern_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segme
  * returns: array of gray-scale values with GSW x GSH width/height
  *          0 on failure
  **/
-static uint8_t **
+static uint16_t **
 jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
                               const byte *data, const size_t size,
                               bool GSMMR, uint32_t GSW, uint32_t GSH,
                               uint32_t GSBPP, bool GSUSESKIP, Jbig2Image *GSKIP, int GSTEMPLATE, Jbig2ArithCx *GB_stats)
 {
-    uint8_t **GSVALS = NULL;
+    uint16_t **GSVALS = NULL;
     size_t consumed_bytes = 0;
     uint32_t i, j, stride, x, y;
     int code;
@@ -357,13 +357,13 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
     }
 
     /* allocate GSVALS */
-    GSVALS = jbig2_new(ctx, uint8_t *, GSW);
+    GSVALS = jbig2_new(ctx, uint16_t *, GSW);
     if (GSVALS == NULL) {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate GSVALS: %d bytes", GSW);
         goto cleanup;
     }
     for (i = 0; i < GSW; ++i) {
-        GSVALS[i] = jbig2_new(ctx, uint8_t, GSH);
+        GSVALS[i] = jbig2_new(ctx, uint16_t, GSH);
         if (GSVALS[i] == NULL) {
             jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "failed to allocate GSVALS: %d bytes", GSH * GSW);
             /* free already allocated */
@@ -454,13 +454,13 @@ jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 {
     uint32_t HBPP;
     uint32_t HNUMPATS;
-    uint8_t **GI = NULL;
+    uint16_t **GI = NULL;
     Jbig2Image *HSKIP = NULL;
     Jbig2PatternDict *HPATS;
     uint32_t i;
     int32_t mg, ng;
     int32_t x, y;
-    uint8_t gray_val;
+    uint16_t gray_val;
     int code = 0;
 
     /* We need the patterns used in this region, get them from the referred pattern dictionary */
@@ -497,6 +497,10 @@ jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     HNUMPATS = HPATS->n_patterns;
     HBPP = 0;
     while (HNUMPATS > (1U << ++HBPP));
+    if (HBPP > 16) {
+        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "HBPP is larger than supported (%u)", HBPP);
+        goto cleanup;
+    }
 
     /* 6.6.5 point 4. decode gray-scale image as mentioned in annex C */
     GI = jbig2_decode_gray_scale_image(ctx, segment, data, size,
