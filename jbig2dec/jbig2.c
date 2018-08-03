@@ -150,6 +150,14 @@ jbig2_ctx_new(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCtx *g
         for (index = 0; index < result->max_page_index; index++) {
             result->pages[index].state = JBIG2_PAGE_FREE;
             result->pages[index].number = 0;
+            result->pages[index].width = 0;
+            result->pages[index].height = 0xffffffff;
+            result->pages[index].x_resolution = 0;
+            result->pages[index].y_resolution = 0;
+            result->pages[index].stripe_size = 0;
+            result->pages[index].striped = 0;
+            result->pages[index].end_row = 0;
+            result->pages[index].flags = 0;
             result->pages[index].image = NULL;
         }
     }
