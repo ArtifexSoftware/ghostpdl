@@ -380,9 +380,6 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
     gs_matrix m;
     int xy_index = pte->xy_index;
 
-    if (font->FontBBox.p.x == font->FontBBox.q.x ||
-        font->FontBBox.p.y == font->FontBBox.q.y)
-        return_error(gs_error_undefined);
     code = gx_path_current_point(pte->path, &origin);
     if (code < 0)
         return code;
@@ -404,7 +401,7 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
 
         memset(&info, 0x00, sizeof(gs_glyph_info_t));
         code = font->procs.glyph_info((gs_font *)font, glyph, NULL,
-                                            GLYPH_INFO_WIDTH0 << WMode,
+                                            GLYPH_INFO_BBOX | GLYPH_INFO_WIDTH0 << WMode,
                                             &info);
 
         /* If we got an undefined error, and its a type 1/CFF font, try to
@@ -428,7 +425,7 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
 
                     if (gs_font_glyph_is_notdef(font, glyph)) {
                         code = font->procs.glyph_info((gs_font *)font, glyph, NULL,
-                                            GLYPH_INFO_WIDTH0 << WMode,
+                                            GLYPH_INFO_BBOX | GLYPH_INFO_WIDTH0 << WMode,
                                             &info);
 
                     if (code < 0)
@@ -463,10 +460,10 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
             }
         }
 
-        gs_point_transform(font->FontBBox.p.x, font->FontBBox.p.y, &m, &p0);
-        gs_point_transform(font->FontBBox.p.x, font->FontBBox.q.y, &m, &p1);
-        gs_point_transform(font->FontBBox.q.x, font->FontBBox.p.y, &m, &p2);
-        gs_point_transform(font->FontBBox.q.x, font->FontBBox.q.y, &m, &p3);
+        gs_point_transform(info.bbox.p.x, info.bbox.p.x, &m, &p0);
+        gs_point_transform(info.bbox.p.x, info.bbox.q.y, &m, &p1);
+        gs_point_transform(info.bbox.q.x, info.bbox.p.y, &m, &p2);
+        gs_point_transform(info.bbox.q.x, info.bbox.q.y, &m, &p3);
 
         bbox.p.x = min(min(p0.x, p1.x), min(p2.x, p3.x));
         bbox.p.y = min(min(p0.y, p1.y), min(p2.y, p3.y));
