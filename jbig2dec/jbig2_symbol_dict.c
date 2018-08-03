@@ -532,7 +532,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                             BMSIZE = jbig2_huffman_get(hs, tparams.SBHUFFRSIZE, &code4);
                             code5 = jbig2_huffman_skip(hs);
                         } else {
-                            code1 = jbig2_arith_iaid_decode(ctx, tparams.IAID, as, (int32_t *) & ID);
+                            code1 = jbig2_arith_iaid_decode(ctx, tparams.IAID, as, (int32_t *) &ID);
                             code2 = jbig2_arith_int_decode(ctx, tparams.IARDX, as, &RDX);
                             code3 = jbig2_arith_int_decode(ctx, tparams.IARDY, as, &RDY);
                         }
@@ -663,7 +663,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 byte *dst = image->data;
 
                 /* SumatraPDF: prevent read access violation */
-                if ((size - jbig2_huffman_offset(hs) < (size_t) image->height * stride) || (size < jbig2_huffman_offset(hs))) {
+                if (size < jbig2_huffman_offset(hs) || (size - jbig2_huffman_offset(hs) < (size_t) image->height * stride) || (size < jbig2_huffman_offset(hs))) {
                     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "not enough data for decoding uncompressed (%d/%d)", image->height * stride,
                                 size - jbig2_huffman_offset(hs));
                     goto cleanup;
@@ -682,7 +682,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 Jbig2GenericRegionParams rparams;
 
                 /* SumatraPDF: prevent read access violation */
-                if (size - jbig2_huffman_offset(hs) < BMSIZE) {
+                if (size < jbig2_huffman_offset(hs) || size < BMSIZE || size - jbig2_huffman_offset(hs) < BMSIZE) {
                     jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "not enough data for decoding (%d/%d)", BMSIZE, size - jbig2_huffman_offset(hs));
                     goto cleanup;
                 }
