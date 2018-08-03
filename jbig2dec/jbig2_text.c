@@ -457,9 +457,9 @@ cleanup1:
             }
 
             /* (3c.vi) */
-            if ((!params->TRANSPOSED) && (params->REFCORNER > 1)) {
+            if ((!params->TRANSPOSED) && (params->REFCORNER > 1) && IB) {
                 CURS += IB->width - 1;
-            } else if ((params->TRANSPOSED) && !(params->REFCORNER & 1)) {
+            } else if ((params->TRANSPOSED) && !(params->REFCORNER & 1) && IB) {
                 CURS += IB->height - 1;
             }
 
