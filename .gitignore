@@ -122,18 +122,3 @@ tiff-config
 # gs/*.png
 # gs/*.tif
 # gs/*.tiff
-Jbig2_042_09.pdf
-Jbig2_042_XXa.pdf
-diff.pnm
-diff2.pnm
-origin-master.ppm
-output.png
-output.ppm
-output.ps
-post.log
-pre.log
-sebras-wip.ppm
-t
-tags
-template2
-template2a
