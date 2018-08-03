@@ -451,8 +451,10 @@ jbig2_word_stream_buf_get_next_word(Jbig2WordStream *self, size_t offset, uint32
 
     if (self == NULL || word == NULL)
         return -1;
-    if (offset >= z->size)
+    if (offset >= z->size) {
+        *word = 0;
         return 0;
+    }
 
     if (offset < z->size) {
         val |= data[offset] << 24;
