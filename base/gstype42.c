@@ -990,6 +990,12 @@ gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matri
         return code;
     if (pmat == 0)
         pmat = &imat;
+    if (!pair->ttf) {
+        void *FAPI_store = ((gs_font_base *)font)->FAPI;
+        ((gs_font_base *)font)->FAPI = NULL;
+        gx_provide_fm_pair_attributes(font->dir, font, pair, pmat, &log2_scale, false);
+        ((gs_font_base *)font)->FAPI = FAPI_store;
+    }
     if ((code = gx_path_current_point(ppath, &origin)) < 0 ||
         (code = append_outline_fitted(glyph_index, pmat, ppath, pair,
                                         &log2_scale, design_grid)) < 0 ||
