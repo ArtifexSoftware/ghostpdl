@@ -2233,100 +2233,6 @@ end readonly def
   /PrevPage { counttomark 2 add index pdfpagenumber 1 sub dup 1 lt exch /CumulativePageCount where {pop CumulativePageCount}{0}ifelse add exch} bind def
 end readonly def
 % <pagedict> <annotdict> -proc- -
-/annottypes 5 dict dup begin
-  /Text {
-    mark exch
-     { /Rect /Open /Contents /F}
-     { 2 copy knownoget { 3 -1 roll } { pop } ifelse }
-    forall pop {/ANN pdfmark} stopped {cleartomark} if
-  } bind def
-  /Link {
-    /NO_PDFMARK_DESTS where {pop NO_PDFMARK_DESTS not}{true}ifelse
-    {
-    mark exch
-    dup /BS knownoget { << exch { oforce } forall >> /BS exch 3 -1 roll } if
-    dup /F knownoget { /F exch 3 -1 roll } if
-    dup /C knownoget { /Color exch 3 -1 roll } if
-    dup /Rect knownoget { /Rect exch 3 -1 roll } if
-    dup /Border knownoget {
-      dup type /arraytype eq {
-        dup length 3 lt
-      } {
-        //true
-      } ifelse {
-        pop [ 0 0 0 ] % Following AR5 use invisible border.
-      } if
-      /Border exch 3 -1 roll
-    } if
-    dup /A knownoget {
-      dup /URI known {
-        /A mark 3 2 roll    % <<>> /A [ <<action>>
-        { oforce } forall
-        .dicttomark
-        3 2 roll
-      } {
-        dup /S knownoget  {
-          %% Because we process GoTo Destinations into absolute references in the PDF file
-          %% we need to resolve the /D or /Dest. However, we must *not* do this for
-          %% GoToR Destinations because (obviously) those are in a different file and
-          %% we cannot resolve them into absolute references. We don't need to anyway
-          %% because that file must already have a named destination.
-          dup /GoTo eq {
-            pop
-            dup /D knownoget {
-              exch pop exch dup length dict copy dup /Dest 4 -1 roll put
-            } if
-          }{
-            dup /GoToR eq {
-              pop /A mark       % <<..action dict..>> /A [
-              3 2 roll          % /A [ <<..action dict..>>
-              { oforce } forall
-              .dicttomark
-              3 2 roll
-            }{
-              dup /Launch eq {
-                pop /A mark       % <<..action dict..>> /A [
-                3 2 roll          % /A [ <<..action dict..>>
-                { oforce } forall
-                .dicttomark
-                3 2 roll
-              }{
-                /Named eq {
-                  /N knownoget {
-                    namedactions exch .knownget {
-                      exec {
-                        pop
-                        (   **** Warning: Ignoring a named action pointing out of the document page range.\n)
-                        pdfformatwarning
-                      } {
-                        /Page exch 3 -1 roll
-                      } ifelse
-                    } if
-                  } if
-                } if
-              }ifelse
-            } ifelse
-          } ifelse
-        } if
-      } ifelse
-    } if
-    { linkdest } stopped {
-      cleartomark
-      (   **** Warning: Link annotation points out of the document page range.\n)
-      pdfformatwarning
-    } {
-      pop
-      {
-        %% Need to remove any '/.gs.pdfobj# key/value pairs from any dictionaries
-        counttomark array astore dup length 1 sub 0 1 3 -1 roll {
-          dup 2 index exch get Removepdfobj# 2 index 3 1 roll put
-        } for aload pop
-        /LNK pdfmark
-      } stopped {cleartomark} if
-    } ifelse
-    }{pop} ifelse
-  } bind def
-end readonly def
 
 % **** The following procedure should not be changed to allow clients
 % **** to directly interface with the constituent procedures. GSview
@@ -2688,20 +2594,6 @@ currentdict /PDF2PS_matrix_key undef
         pop
       } ifelse
     } forall
-
-    % Copy annotations and links.
-    dup /Annots knownoget {
-      0 1 2 index length 1 sub
-       { 1 index exch oget
-         dup type /dicttype eq {
-           dup /Subtype oget annottypes exch .knownget { exec } { pop } ifelse
-         } {
-           pop
-         } ifelse
-       }
-      for pop
-    } if
-
   } if		% end .writepdfmarks
 
         % Display the actual page contents.
