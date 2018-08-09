@@ -2011,7 +2011,7 @@ cos_write_stream_close(stream *s)
 {
     cos_write_stream_state_t *ss = (cos_write_stream_state_t *)s->state;
     int status;
-    gx_device_pdf *target_dev = ss->pdev;
+    gx_device_pdf *target_dev = (gx_device_pdf *)ss->pdev;
 
     while (target_dev->child != NULL)
         target_dev = (gx_device_pdf *)target_dev->child;
