@@ -587,6 +587,7 @@ gdevmpla_h=$(GLSRC)gdevmpla.h
 gdevmrop_h=$(GLSRC)gdevmrop.h
 gdevmrun_h=$(GLSRC)gdevmrun.h $(gxdevmem_h)
 gdevplnx_h=$(GLSRC)gdevplnx.h $(gxrplane_h)
+gdevepo_h=$(GLSRC)gdevepo.h $(gxdevice_h)
 
 sa85d_h=$(GLSRC)sa85d.h
 sa85x_h=$(GLSRC)sa85x.h $(sa85d_h)
@@ -1364,7 +1365,7 @@ $(GLOBJ)gxdownscale.$(OBJ) : $(GLSRC)gxdownscale.c $(AK) $(string__h) \
 ###### Create a pseudo-"feature" for the entire graphics library.
 
 LIB0s=$(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)stream.$(OBJ) $(GLOBJ)strmio.$(OBJ)
-LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gsalpha.$(OBJ) $(GLOBJ)gxdownscale.$(OBJ) $(downscale_) $(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevflp.$(OBJ) $(GLOBJ)gdevkrnlsclass.$(OBJ)
+LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gsalpha.$(OBJ) $(GLOBJ)gxdownscale.$(OBJ) $(downscale_) $(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevflp.$(OBJ) $(GLOBJ)gdevkrnlsclass.$(OBJ) $(GLOBJ)gdevepo.$(OBJ)
 LIB2s=$(GLOBJ)gdevmplt.$(OBJ) $(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ)
 # Note: gschar.c is no longer required for a standard build;
 # we include it only for backward compatibility for library clients.
@@ -2016,13 +2017,13 @@ $(GLOBJ)szlibd.$(OBJ) : $(GLOBJ)szlibd_$(SHARE_ZLIB).$(OBJ) $(LIB_MAK) $(MAKEDIR
 # We include this here, rather than in devs.mak, because it is more like
 # a feature than a simple device.
 
-gdevprn_h=$(GLSRC)gdevprn.h $(gdevflp_h) $(gdevmplt_h) $(memory__h) $(string__h) $(gp_h) $(gx_h)\
+gdevprn_h=$(GLSRC)gdevprn.h $(gdevflp_h) $(gdevepo_h) $(gdevmplt_h) $(memory__h) $(string__h) $(gp_h) $(gx_h)\
  $(gserrors_h) $(gsmatrix_h) $(gsparam_h) $(gsutil_h) $(gxclpage_h)\
  $(gxclist_h) $(gxdevice_h) $(gxdevmem_h) $(gxrplane_h) $(gxclthrd_h) $(gxflp_h) $(gdevsclass_h)\
  $(gdevoflt_h) $(gdevkrnlsclass_h)
 
 page_=$(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) $(GLOBJ)gdevmplt.$(OBJ) $(GLOBJ)gdevflp.$(OBJ)\
- $(downscale_) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ)
+ $(downscale_) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ) $(GLOBJ)gdevepo.$(OBJ)
 
 $(GLD)page.dev : $(LIB_MAK) $(ECHOGS_XE) $(page_) $(LIB_MAK) $(MAKEDIRS)
 	$(SETMOD) $(GLD)page $(page_)
@@ -2039,6 +2040,9 @@ $(GLOBJ)gdevmplt.$(OBJ) : $(GLSRC)gdevmplt.c $(gdevmplt_h) $(std_h)
 
 $(GLOBJ)gdevflp.$(OBJ) : $(GLSRC)gdevflp.c $(gdevflp_h) $(std_h)
 	$(GLCC) $(GLO_)gdevflp.$(OBJ) $(C_) $(GLSRC)gdevflp.c
+
+$(GLOBJ)gdevepo.$(OBJ) : $(GLSRC)gdevepo.c $(gdevepo_h) $(std_h)
+	$(GLCC) $(GLO_)gdevepo.$(OBJ) $(C_) $(GLSRC)gdevepo.c
 
 $(GLOBJ)gdevoflt.$(OBJ) : $(GLSRC)gdevoflt.c $(gdevoflp_h) $(std_h)
 	$(GLCC) $(GLO_)gdevoflt.$(OBJ) $(C_) $(GLSRC)gdevoflt.c
@@ -2255,7 +2259,7 @@ $(GLOBJ)gsmchunk.$(OBJ) :  $(GLSRC)gsmchunk.c $(AK) $(gx_h)\
 # ---------------- Vector devices ---------------- #
 # We include this here for the same reasons as page.dev.
 
-gdevvec_h=$(GLSRC)gdevvec.h $(gdevbbox_h) $(gp_h) $(gdevflp_h) $(gdevoflt_h) $(gdevkrnlsclass_h)\
+gdevvec_h=$(GLSRC)gdevvec.h $(gdevbbox_h) $(gp_h) $(gdevflp_h) $(gdevepo_h) $(gdevoflt_h) $(gdevkrnlsclass_h)\
  $(gsropt_h) $(gxdevice_h) $(gxiparam_h) $(gxgstate_h) $(gxhldevc_h) $(stream_h)
 
 vector_=$(GLOBJ)gdevvec.$(OBJ)

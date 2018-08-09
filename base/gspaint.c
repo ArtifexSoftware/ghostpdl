@@ -35,6 +35,7 @@
 #include "gxscanc.h"
 #include "gxdevsop.h"
 #include "gsicc_cms.h"
+#include "gdevepo.h"
 
 /* Define the nominal size for alpha buffers. */
 #define abuf_nominal_SMALL 500
@@ -76,6 +77,8 @@ gs_fillpage(gs_gstate * pgs)
 {
     gx_device *dev = gs_currentdevice(pgs);
     int code;
+
+    epo_check_and_install(dev);
 
     /* Deliberately use the terminal device here */
     if (dev_proc(dev, get_color_mapping_procs) ==  gx_error_get_color_mapping_procs) {
