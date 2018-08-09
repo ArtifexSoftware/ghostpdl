@@ -1498,7 +1498,7 @@ display_set_separations(gx_device_display *dev)
                 }
             }
             while(dev->parent)
-                dev = dev->parent;
+                dev = (gx_device_display *)dev->parent;
 
             (*dev->callback->display_separation)(dev->pHandle, dev,
                 comp_num, name,

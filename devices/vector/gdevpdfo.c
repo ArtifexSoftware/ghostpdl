@@ -2014,7 +2014,7 @@ cos_write_stream_close(stream *s)
     gx_device_pdf *target_dev = ss->pdev;
 
     while (target_dev->child != NULL)
-        target_dev = target_dev->child;
+        target_dev = (gx_device_pdf *)target_dev->child;
 
     sflush(s);
     status = s_close_filters(&ss->target, target_dev->streams.strm);
