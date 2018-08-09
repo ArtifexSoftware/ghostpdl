@@ -1142,9 +1142,10 @@ the end.</li>
 If that too fails, Ghostscript looks at the <code>GS_FONTPATH</code>
 environment variable (or the value provided with the
 <code>-sFONTPATH=</code> switch, if present), which is also a list of
-directories.  It goes to the first directory on the list, looking for all
-files that appear to contain PostScript fonts; it then adds all those files
-and fonts to the combined Fontmaps, and starts over.</li>
+directories.  It goes to the first directory on the list, and it's descendants,
+looking for all files that appear to contain PostScript fonts (also Truetype
+fonts); it then adds all those files and fonts to the combined Fontmaps, and
+starts over.</li>
 
 <li>
 If scanning the first FONTPATH directory doesn't produce a file that
