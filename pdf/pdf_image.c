@@ -90,6 +90,8 @@ static int pdf_do_image(pdf_context *ctx, pdf_dict *image_dict, pdf_stream *sour
                 if (memcmp(n->data, "G", 1) == 0){
                     comps = 1;
                     pcs = gs_cspace_new_DeviceGray(ctx->memory);
+                    if (pcs == NULL)
+                        return_error(gs_error_VMerror);
                     (void)pcs->type->install_cspace(pcs, ctx->pgs);
                 } else {
                     if (memcmp(n->data, "I", 1) == 0){
@@ -105,6 +107,8 @@ static int pdf_do_image(pdf_context *ctx, pdf_dict *image_dict, pdf_stream *sour
                 if (memcmp(n->data, "RGB", 3) == 0){
                     comps = 3;
                     pcs = gs_cspace_new_DeviceRGB(ctx->memory);
+                    if (pcs == NULL)
+                        return_error(gs_error_VMerror);
                     (void)pcs->type->install_cspace(pcs, ctx->pgs);
                 } else {
                     pdf_countdown(n);
@@ -115,6 +119,8 @@ static int pdf_do_image(pdf_context *ctx, pdf_dict *image_dict, pdf_stream *sour
                 if (memcmp(n->data, "CMYK", 4) == 0){
                     comps = 4;
                     pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
+                    if (pcs == NULL)
+                        return_error(gs_error_VMerror);
                     (void)pcs->type->install_cspace(pcs, ctx->pgs);
                 } else {
                     pdf_countdown(n);
@@ -133,6 +139,8 @@ static int pdf_do_image(pdf_context *ctx, pdf_dict *image_dict, pdf_stream *sour
                 if (memcmp(n->data, "DeviceRGB", 9) == 0){
                     comps = 3;
                     pcs = gs_cspace_new_DeviceRGB(ctx->memory);
+                    if (pcs == NULL)
+                        return_error(gs_error_VMerror);
                     (void)pcs->type->install_cspace(pcs, ctx->pgs);
                 } else {
                     pdf_countdown(n);
@@ -143,11 +151,15 @@ static int pdf_do_image(pdf_context *ctx, pdf_dict *image_dict, pdf_stream *sour
                 if (memcmp(n->data, "DeviceGray", 10) == 0){
                     comps = 1;
                     pcs = gs_cspace_new_DeviceGray(ctx->memory);
+                    if (pcs == NULL)
+                        return_error(gs_error_VMerror);
                     (void)pcs->type->install_cspace(pcs, ctx->pgs);
                 } else {
                     if (memcmp(n->data, "DeviceCMYK", 10) == 0){
                         comps = 4;
                         pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
+                        if (pcs == NULL)
+                            return_error(gs_error_VMerror);
                         (void)pcs->type->install_cspace(pcs, ctx->pgs);
                     } else {
                         pdf_countdown(n);
