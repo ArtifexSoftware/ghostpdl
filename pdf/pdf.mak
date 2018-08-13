@@ -106,7 +106,7 @@ $(PDF_TOP_OBJ): $(PDFSRC)pdftop.c $(plmain_h) $(pltop_h) $(PDFINCLUDES) $(GLOBJ)
 	$(PDFCCC) $(PDFSRC)pdftop.c $(PDFO_)pdftop.$(OBJ)
 
 # sa85d is explicitly included here, which seems wrong, especially as none of
-# the other decoders have to be. spdiff.c as well.
+# the other decoders have to be. spdiff.c as well. sfilter1 is included in filters.dev.
 
 PDF_OBJS=\
     $(PDFOBJ)pdf_loop_detect.$(OBJ)\
@@ -125,7 +125,8 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_text.$(OBJ)\
     $(PDFOBJ)pdf_shading.$(OBJ)\
     $(GLOBJ)sa85d.$(OBJ)\
-    $(GLOBJ)spdiff.$(OBJ)
+    $(GLOBJ)spdiff.$(OBJ)\
+    $(GLOBJ)sfilter1.$(OBJ)
 
 
 

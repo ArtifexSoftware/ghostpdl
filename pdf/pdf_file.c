@@ -34,6 +34,7 @@
 #include "jpeglib_.h"
 #include "sdct.h"       /* DCTDecode */
 #include "sjpeg.h"
+#include "sfilter.h"    /* SubFileDecode and PFBDecode */
 
 /***********************************************************************************/
 /* Decompression filters.                                                          */
@@ -500,6 +501,10 @@ static int pdf_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, str
         code = pdf_ASCII85_filter(ctx, decode, source, new_stream);
         return code;
     }
+    if (n->length == 13 && memcmp((const char *)n->data, "SubFileDecode", 13) == 0) {
+        code = pdf_simple_filter(ctx, &s_SFD_template, source, new_stream);
+        return code;
+    }
     if (n->length == 11 && memcmp((const char *)n->data, "FlateDecode", 11) == 0) {
         code = pdf_Flate_filter(ctx, decode, source, new_stream);
         return code;
@@ -732,6 +737,110 @@ int pdf_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **n
     return code;
 }
 
+/* This is just a convenience routine. We could use pdf_filter() above, but because PDF
+ * doesn't support the SubFileDecode filter that would mean callers having to manufacture
+ * a dictionary in order to use it. That's excessively convoluted, so just supply a simple
+ * means to instantiate a SubFileDecode filter.
+ */
+int pdf_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, gs_const_string *EODString, pdf_stream *source, pdf_stream **new_stream, bool inline_image)
+{
+    pdf_name SFD_name;
+    int code;
+    stream *s = source->s, *new_s = NULL;
+    stream_SFD_state *state;
+    *new_stream = NULL;
+
+    SFD_name.data = (byte *)"SubFileDecode";
+    SFD_name.length = 13;
+    code = pdf_apply_filter(ctx, &SFD_name, NULL, s, &new_s, inline_image);
+    if (code < 0)
+        return code;
+    *new_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdf_apply_SubFileDecode_filter, new pdf_stream");
+    if (*new_stream == NULL)
+        return_error(gs_error_VMerror);
+    memset(*new_stream, 0x00, sizeof(pdf_stream));
+    (*new_stream)->eof = false;
+    ((pdf_stream *)(*new_stream))->original = source->s;
+    ((pdf_stream *)(*new_stream))->s = new_s;
+
+    return 0;
+}
+
+/* We would really like to use a ReusableStreamDecode filter here, but that filter is defined
+ * purely in the PostScript interpreter. So instead we make a temporary stream from a
+ * memory buffer. Its icky (we can end up with the same data in memory multiple times)
+ * but it works, and is used elsewhere in Ghostscript.
+ * The calling function is responsible for the stream and buffer pointer lifetimes.
+ */
+int pdf_open_memory_stream_from_stream(pdf_context *ctx, unsigned int size, byte **Buffer, pdf_stream *source, pdf_stream **new_pdf_stream)
+{
+    stream *new_stream;
+    int code;
+
+    new_stream = file_alloc_stream(ctx->memory, "open memory stream(stream)");
+    if (new_stream == NULL)
+        return_error(gs_error_VMerror);
+
+    *Buffer = gs_alloc_bytes(ctx->memory, size, "open memory stream (buffer)");
+    if (*Buffer == NULL) {
+        gs_free_object(ctx->memory, new_stream, "open memory stream(stream)");
+        return_error(gs_error_VMerror);
+    }
+    code = pdf_read_bytes(ctx, *Buffer, 1, size, source);
+    if (code < 0) {
+        gs_free_object(ctx->memory, *Buffer, "open memory stream(buffer)");
+        gs_free_object(ctx->memory, new_stream, "open memory stream(stream)");
+        return code;
+    }
+
+    sread_string(new_stream, *Buffer, size);
+
+    *new_pdf_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdf_open_memory_stream (pdf_stream)");
+    if (*new_pdf_stream == NULL) {
+        sclose(new_stream);
+        gs_free_object(ctx->memory, *Buffer, "open memory stream(buffer)");
+        gs_free_object(ctx->memory, new_stream, "open memory stream(stream)");
+        return_error(gs_error_VMerror);
+    }
+    memset(*new_pdf_stream, 0x00, sizeof(pdf_stream));
+    (*new_pdf_stream)->eof = false;
+    ((pdf_stream *)(*new_pdf_stream))->original = source->s;
+    ((pdf_stream *)(*new_pdf_stream))->s = new_stream;
+
+    return 0;
+}
+
+int pdf_open_memory_stream_from_memory(pdf_context *ctx, unsigned int size, byte *Buffer, pdf_stream **new_pdf_stream)
+{
+    stream *new_stream;
+
+    new_stream = file_alloc_stream(ctx->memory, "open memory stream from memory(stream)");
+    if (new_stream == NULL)
+        return_error(gs_error_VMerror);
+    sread_string(new_stream, Buffer, size);
+
+    *new_pdf_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdf_open_memory_stream_from_memory(pdf_stream)");
+    if (*new_pdf_stream == NULL) {
+        sclose(new_stream);
+        gs_free_object(ctx->memory, new_stream, "open memory stream from memory(stream)");
+        return_error(gs_error_VMerror);
+    }
+    memset(*new_pdf_stream, 0x00, sizeof(pdf_stream));
+    (*new_pdf_stream)->eof = false;
+    ((pdf_stream *)(*new_pdf_stream))->original = NULL;
+    ((pdf_stream *)(*new_pdf_stream))->s = new_stream;
+
+    return 0;
+}
+
+int pdf_close_memory_stream(pdf_context *ctx, byte *Buffer, pdf_stream *source)
+{
+    sclose(source->s);
+    gs_free_object(ctx->memory, Buffer, "open memory stream(buffer)");
+    gs_free_object(ctx->memory, source->s, "open memory stream(stream)");
+    gs_free_object(ctx->memory, source, "open memory stream(pdf_stream)");
+    return 0;
+}
 
 /***********************************************************************************/
 /* Basic 'file' operations. Because of the need to 'unread' bytes we need our own  */
@@ -821,6 +930,7 @@ int pdf_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count
     if (total) {
         bytes = sfread(Buffer, 1, total, s->s);
     }
+
     if (bytes >= 0)
         return i + bytes;
     else {
