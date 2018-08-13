@@ -2889,7 +2889,7 @@ static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, p
                 break;
             case K3('s','c','n'):   /* set special colour for non-stroke */
                 pdf_pop(ctx, 1);
-                code = pdf_setstrokecolorN(ctx);
+                code = pdf_setfillcolorN(ctx);
                 break;
             case K2('s','h'):       /* fill with sahding pattern */
                 pdf_pop(ctx, 1);
