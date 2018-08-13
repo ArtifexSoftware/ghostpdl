@@ -454,11 +454,11 @@ int pdf_rectpath(pdf_context *ctx)
     }
     code = gs_moveto(ctx->pgs, Values[0], Values[1]);
     if (code == 0) {
-        code = gs_lineto(ctx->pgs, Values[0], Values[1] + Values[2]);
+        code = gs_lineto(ctx->pgs, Values[0], Values[1] + Values[3]);
         if (code == 0){
-            code = gs_lineto(ctx->pgs, Values[0] + Values[4], Values[1] + Values[2]);
+            code = gs_lineto(ctx->pgs, Values[0] + Values[2], Values[1] + Values[3]);
             if (code == 0) {
-                code = gs_lineto(ctx->pgs, Values[0] + Values[4], Values[1]);
+                code = gs_lineto(ctx->pgs, Values[0] + Values[2], Values[1]);
                 if (code == 0){
                     code = gs_closepath(ctx->pgs);
                 }
