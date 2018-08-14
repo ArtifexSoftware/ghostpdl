@@ -25,9 +25,9 @@ UNUSED(0) /* Never use 0, as lots of things 'imply' 0. */
 FLAG(icc, 1, 'c', "ICC profile"),
 FLAG(validate_clumps, 2, 0, "Validate clumps during interpretation"),
 FLAG(gc_disable, 3, 0, "Disable Garbage Collection (completely)"),
-UNUSED(4)
-UNUSED(5)
-UNUSED(6)
+FLAG(epo_disable, 4, 0, "Disable Erasepage Optimization (completely)"),
+FLAG(epo_details, 5, 0, "Erasepage Optimization tracing"),
+FLAG(epo_install_only, 6, 0, "Erasepage Optimization install only (for debugging subclass)"),
 UNUSED(7)
 UNUSED(8)
 UNUSED(9)

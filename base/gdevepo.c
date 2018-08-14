@@ -39,23 +39,9 @@
 #include "gdevepo.h"
 #include <stdlib.h>
 
-/* Enable this define if you want to only install/uninstall but not 
- * implement the actual deferred fillpage.
- * (useful for debugging subclass issues)
- */
-/*#define EPO_INSTALL_ONLY*/
-
-/* Enable this to turn on debug prints */
-/*#define LOCAL_DEBUG*/
-
-/* Turn debug prints on and off */
-#ifdef LOCAL_DEBUG
-#define DPRINTF(m,f) dmprintf(m,f)
-#define DPRINTF1(m,f,a1) dmprintf1(m,f,a1)
-#else
-#define DPRINTF(m,f)
-#define DPRINTF1(m,f,a1)
-#endif
+/* Shorter macros for sanity's sake */
+#define DPRINTF(m,f) if_debug0m(gs_debug_flag_epo_details, m,f)
+#define DPRINTF1(m,f,a1) if_debug1m(gs_debug_flag_epo_details, m,f, a1)
 
 /* Device procedures, we need quite a lot of them */
 static dev_proc_output_page(epo_output_page);
@@ -221,15 +207,24 @@ device_wants_optimization(gx_device *dev)
     return (dev_proc(dev, fillpage) == gx_default_fillpage);
 }
 
+/* Use this when debugging to enable/disable epo
+ * (1 - disable, 0 - enable)
+ */
+void
+epo_disable(int flag)
+{
+    gs_debug[gs_debug_flag_epo_disable] = flag;
+}
+
 int
 epo_check_and_install(gx_device *dev)
 {
     int code = 0;
-    static int install_me=1; /* Easy disable for debugging */
     bool is_installed;
     bool can_optimize = false;
     
-    if (!install_me) {
+    /* Debugging mode to totally disable this */
+    if (gs_debug_c(gs_debug_flag_epo_disable)) {
         return code;
     }
     
@@ -286,11 +281,11 @@ epo_handle_erase_page(gx_device *dev)
     erasepage_subclass_data *data = (erasepage_subclass_data *)dev->subclass_data;
     int code = 0;
     
-#ifdef EPO_INSTALL_ONLY
-    gx_device_unsubclass(dev);
-    DPRINTF1(dev->memory, "Uninstall erasepage, device=%s\n", dev->dname);
-    return code;
-#endif
+    if (gs_debug_c(gs_debug_flag_epo_install_only)) {
+        gx_device_unsubclass(dev);
+        DPRINTF1(dev->memory, "Uninstall erasepage, device=%s\n", dev->dname);
+        return code;
+    }
 
     DPRINTF1(dev->memory, "Do fillpage, Uninstall erasepage, device %s\n", dev->dname);
 
@@ -312,9 +307,9 @@ int epo_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
 {
     erasepage_subclass_data *data = (erasepage_subclass_data *)dev->subclass_data;
     
-#ifdef EPO_INSTALL_ONLY
-    return default_subclass_fillpage(dev, pgs, pdevc);
-#endif
+    if (gs_debug_c(gs_debug_flag_epo_install_only)) {
+        return default_subclass_fillpage(dev, pgs, pdevc);
+    }
 
     /* If color is not pure, don't defer this, uninstall and do it now */
     if (!color_is_pure(pdevc)) {
