@@ -24,9 +24,62 @@
 #include "pdf_file.h"
 #include "stream.h"
 
+/* Forward definitions for a few routines we need */
 static int pdf_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict);
 static int pdf_setcolorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict);
 
+/* Rendering intent is a bit of an oddity, but its clearly colour related, so we
+ * deal with it here. Cover it first to get it out of the way.
+ */
+int pdf_ri(pdf_context *ctx)
+{
+    pdf_name *n;
+    int code;
+
+    if (ctx->stack_top - ctx->stack_bot < 1) {
+        pdf_clearstack(ctx);
+        if(ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+
+    if (ctx->stack_top[-1]->type != PDF_NAME) {
+        pdf_pop(ctx, 1);
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_typecheck);
+        return 0;
+    }
+    n = (pdf_name *)ctx->stack_top[-1];
+    if (n->length == 10) {
+        if (memcmp(n->data, "Perceptual", 10) == 0)
+            code = gs_setrenderingintent(ctx->pgs, 0);
+        else {
+            if (memcmp(n->data, "Saturation", 10) == 0)
+                code = gs_setrenderingintent(ctx->pgs, 2);
+            else
+                code = gs_error_undefined;
+        }
+    } else {
+        if (n->length == 20) {
+            if (memcmp(n->data, "RelativeColorimetric", 20) == 0)
+                code = gs_setrenderingintent(ctx->pgs, 1);
+            else {
+                if (memcmp(n->data, "AbsoluteColoimetric", 20) == 0)
+                    code = gs_setrenderingintent(ctx->pgs, 3);
+                else
+                    code = gs_error_undefined;
+            }
+        } else {
+            code = gs_error_undefined;
+        }
+    }
+    pdf_pop(ctx, 1);
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
+    return 0;
+}
+
+/* Start with the simple cases, where we set the colour space and colour in a single operation */
 int pdf_setgraystroke(pdf_context *ctx)
 {
     pdf_num *n1;
@@ -262,6 +315,199 @@ int pdf_setcmykfill(pdf_context *ctx)
     else
         return 0;
 }
+
+/* Now deal with the case where we have to set the colour space separately from the
+ * colour values. We'll start with the routines to set the colour, because setting
+ * colour components is relatively easy.
+ */
+
+/* First up, the SC and sc operators. These set the colour for all spaces *except*
+ * ICCBased, Pattern, Separation and DeviceN
+ */
+int pdf_setstrokecolor(pdf_context *ctx)
+{
+    const gs_color_space *  pcs = gs_currentcolorspace(ctx->pgs);
+    int ncomps, i, code;
+    gs_client_color cc;
+    pdf_num *n;
+
+    ncomps = cs_num_components(pcs);
+    if (ctx->stack_top - ctx->stack_bot < ncomps) {
+        pdf_clearstack(ctx);
+        if(ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    for (i=0;i<ncomps;i++){
+        n = (pdf_num *)ctx->stack_top[i - ncomps];
+        if (n->type == PDF_INT) {
+            cc.paint.values[i] = (float)n->value.i;
+        } else {
+            if (n->type == PDF_REAL) {
+                cc.paint.values[i] = n->value.d;
+            } else {
+                pdf_clearstack(ctx);
+                if (ctx->pdfstoponerror)
+                    return_error(gs_error_typecheck);
+                return 0;
+            }
+        }
+    }
+    pdf_pop(ctx, ncomps);
+    code = gs_setcolor(ctx->pgs, &cc);
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
+    return 0;
+}
+
+int pdf_setfillcolor(pdf_context *ctx)
+{
+    const gs_color_space *  pcs;
+    int ncomps, i, code;
+    gs_client_color cc;
+    pdf_num *n;
+
+    gs_swapcolors(ctx->pgs);
+    pcs = gs_currentcolorspace(ctx->pgs);
+    ncomps = cs_num_components(pcs);
+    if (ctx->stack_top - ctx->stack_bot < ncomps) {
+        gs_swapcolors(ctx->pgs);
+        pdf_clearstack(ctx);
+        if(ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    for (i=0;i<ncomps;i++){
+        n = (pdf_num *)ctx->stack_top[i - ncomps];
+        if (n->type == PDF_INT) {
+            cc.paint.values[i] = (float)n->value.i;
+        } else {
+            if (n->type == PDF_REAL) {
+                cc.paint.values[i] = n->value.d;
+            } else {
+                gs_swapcolors(ctx->pgs);
+                pdf_clearstack(ctx);
+                if (ctx->pdfstoponerror)
+                    return_error(gs_error_typecheck);
+                return 0;
+            }
+        }
+    }
+    pdf_pop(ctx, ncomps);
+    code = gs_setcolor(ctx->pgs, &cc);
+    gs_swapcolors(ctx->pgs);
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
+    return 0;
+}
+
+/* Now the SCN and scn operators. These set the colour for special spaces;
+ * ICCBased, Pattern, Separation and DeviceN
+ */
+int pdf_setstrokecolorN(pdf_context *ctx)
+{
+    const gs_color_space *  pcs = gs_currentcolorspace(ctx->pgs);
+    int ncomps, i, code;
+    gs_client_color cc;
+    pdf_num *n;
+
+    if (ctx->stack_top - ctx->stack_bot < 1) {
+        pdf_clearstack(ctx);
+        if(ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    if (ctx->stack_top[-1]->type == PDF_NAME) {
+        /* FIXME Patterns */
+        pdf_clearstack(ctx);
+        return 0;
+    }
+    ncomps = cs_num_components(pcs);
+    if (ctx->stack_top - ctx->stack_bot < ncomps) {
+        pdf_clearstack(ctx);
+        if(ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    for (i=0;i<ncomps;i++){
+        n = (pdf_num *)ctx->stack_top[i - ncomps];
+        if (n->type == PDF_INT) {
+            cc.paint.values[i] = (float)n->value.i;
+        } else {
+            if (n->type == PDF_REAL) {
+                cc.paint.values[i] = n->value.d;
+            } else {
+                pdf_clearstack(ctx);
+                if (ctx->pdfstoponerror)
+                    return_error(gs_error_typecheck);
+                return 0;
+            }
+        }
+    }
+    pdf_pop(ctx, ncomps);
+    code = gs_setcolor(ctx->pgs, &cc);
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
+    return 0;
+}
+
+int pdf_setfillcolorN(pdf_context *ctx)
+{
+    const gs_color_space *  pcs;
+    int ncomps, i, code;
+    gs_client_color cc;
+    pdf_num *n;
+
+    gs_swapcolors(ctx->pgs);
+    pcs = gs_currentcolorspace(ctx->pgs);
+    if (ctx->stack_top - ctx->stack_bot < 1) {
+        gs_swapcolors(ctx->pgs);
+        pdf_clearstack(ctx);
+        if(ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    if (ctx->stack_top[-1]->type == PDF_NAME) {
+        gs_swapcolors(ctx->pgs);
+        /* FIXME Patterns */
+        pdf_clearstack(ctx);
+        return 0;
+    }
+    ncomps = cs_num_components(pcs);
+    if (ctx->stack_top - ctx->stack_bot < ncomps) {
+        gs_swapcolors(ctx->pgs);
+        pdf_clearstack(ctx);
+        if(ctx->pdfstoponerror)
+            return_error(gs_error_stackunderflow);
+        return 0;
+    }
+    for (i=0;i<ncomps;i++){
+        n = (pdf_num *)ctx->stack_top[i - ncomps];
+        if (n->type == PDF_INT) {
+            cc.paint.values[i] = (float)n->value.i;
+        } else {
+            if (n->type == PDF_REAL) {
+                cc.paint.values[i] = n->value.d;
+            } else {
+                gs_swapcolors(ctx->pgs);
+                pdf_clearstack(ctx);
+                if (ctx->pdfstoponerror)
+                    return_error(gs_error_typecheck);
+                return 0;
+            }
+        }
+    }
+    pdf_pop(ctx, ncomps);
+    code = gs_setcolor(ctx->pgs, &cc);
+    gs_swapcolors(ctx->pgs);
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
+    return 0;
+}
+
+/* And now, the routines to set the colour space on its own. */
+
+/* Starting with the ICCBased colour space */
 
 /* This routine is mostly a copy of seticc() in zicc.c */
 static int pdf_seticc(pdf_context *ctx, char *Name, stream *s, int ncomps, float *range_buff)
@@ -637,6 +883,96 @@ static int pdf_seticcbased(pdf_context *ctx, pdf_array *color_array, int index, 
     return code;
 }
 
+/* Now /Indexed spaces, essentially we just need to set the underlying space(s) and then set
+ * /Indexed.
+ */
+static int pdf_setindexed(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict)
+{
+    pdf_obj *space, *space1, *lookup;
+    pdf_array *a;
+    int code;
+    int64_t hival;
+    bool special;
+    gs_color_space *pcs, *pcs_base;
+    gs_color_space_index base_type;
+
+    if (index != 0)
+        return_error(gs_error_syntaxerror);
+
+    code = pdf_array_get_int(ctx, color_array, index + 2, &hival);
+    if (code < 0) {
+        if (code < 0 && ctx->pdfstoponerror)
+            return code;
+    }
+    if (hival > 255 || hival < 1)
+        return_error(gs_error_syntaxerror);
+
+    code = pdf_array_get(color_array, index + 1, &space);
+    if (code < 0) {
+        if (code < 0 && ctx->pdfstoponerror)
+            return code;
+        return 0;
+    }
+
+    code = pdf_setcolorspace(ctx, space, stream_dict, page_dict);
+    pdf_countdown(space);
+    if (code < 0 && ctx->pdfstoponerror)
+        return code;
+
+    pcs_base = gs_currentcolorspace(ctx->pgs);
+    base_type = gs_color_space_get_index(pcs_base);
+
+    code = pdf_array_get(color_array, index + 3, &lookup);
+    if (code < 0) {
+        if (code < 0 && ctx->pdfstoponerror)
+            return code;
+    }
+    if (lookup->type == PDF_INDIRECT) {
+        /* Need to dereference, and then read the stream */
+    }
+
+    if (hival * cs_num_components(pcs_base) > ((pdf_string *)lookup)->length) {
+        pdf_countdown(lookup);
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_rangecheck);
+        return 0;
+    }
+
+    /* If we have a named color profile and the base space is DeviceN or
+       Separation use a different set of procedures to ensure the named
+       color remapping code is used */
+    if (ctx->pgs->icc_manager->device_named != NULL &&
+        (base_type == gs_color_space_index_Separation ||
+         base_type == gs_color_space_index_DeviceN))
+        pcs = gs_cspace_alloc(ctx->memory, &gs_color_space_type_Indexed_Named);
+    else
+        pcs = gs_cspace_alloc(ctx->memory, &gs_color_space_type_Indexed);
+
+    pcs->base_space = pcs_base;
+    rc_increment_cs(pcs_base);
+
+    pcs->params.indexed.lookup.table.size = hival;
+    pcs->params.indexed.use_proc = 0;
+    pcs->params.indexed.hival = hival;
+    pcs->params.indexed.n_comps = cs_num_components(pcs_base);
+    pcs->params.indexed.lookup.table.data = gs_alloc_bytes(ctx->memory, (hival + 1) * pcs->params.indexed.n_comps, "pdf_setindexedspace");
+    memcpy((byte *)pcs->params.indexed.lookup.table.data, ((pdf_string *)lookup)->data, (hival + 1) * pcs->params.indexed.n_comps);
+    pdf_countdown(lookup);
+
+    code = gs_setcolorspace(ctx->pgs, pcs);
+    /* release reference from construction */
+    rc_decrement_only_cs(pcs, "setindexedspace");
+
+    return 0;
+}
+
+/* These next routines allow us to use recursion to set up colour spaces. We can set
+ * colour space starting from a name (which can be a named resource) or an array.
+ * If we get a name, and its a named resource we dereference it and go round again.
+ * If its an array we select the correct handler (above) for that space. The space
+ * handler will call pdf_setcolorspace() to set the underlygin space(s) whcih
+ * may mean calling pdf_setcolorspace again....
+ */
 static int pdf_setcolorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code, code1;
@@ -669,21 +1005,7 @@ static int pdf_setcolorspace_by_array(pdf_context *ctx, pdf_array *color_array, 
                     if (memcmp(space->data, "DeviceN", space->length) == 0) {
                     }
                     if (memcmp(space->data, "Indexed", space->length) == 0) {
-                        pdf_obj *space;
-
-                        if (index != 0)
-                            return_error(gs_error_syntaxerror);
-
-                        code = pdf_array_get(color_array, index + 1, &space);
-                        if (code < 0) {
-                            if (code < 0 && ctx->pdfstoponerror)
-                                return code;
-                        }
-                        code = pdf_setcolorspace(ctx, space, stream_dict, page_dict);
-                        pdf_countdown(space);
-                        if (code < 0 && ctx->pdfstoponerror)
-                            return code;
-                        return 0;
+                        code = pdf_setindexed(ctx, color_array, index, stream_dict, page_dict);
                     }
                     break;
                 case 8:
@@ -769,18 +1091,18 @@ static int pdf_setcolorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict 
                 return 0;
             }
         default:
-            code = pdf_find_resource(ctx, (unsigned char *)"ColorSpace", name, stream_dict, page_dict, &ref_space);
-            if (code < 0) {
-                if (ctx->pdfstoponerror)
-                    return_error(gs_error_undefined);
-                return 0;
-            }
-            code = pdf_setcolorspace(ctx, ref_space, stream_dict, page_dict);
-            if (code < 0) {
-                if (ctx->pdfstoponerror)
-                    return_error(gs_error_undefined);
-            }
             break;
+    }
+    code = pdf_find_resource(ctx, (unsigned char *)"ColorSpace", name, stream_dict, page_dict, &ref_space);
+    if (code < 0) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_undefined);
+        return 0;
+    }
+    code = pdf_setcolorspace(ctx, ref_space, stream_dict, page_dict);
+    if (code < 0) {
+        if (ctx->pdfstoponerror)
+            return_error(gs_error_undefined);
     }
     return 0;
 }
@@ -801,6 +1123,7 @@ static int pdf_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_
     return code;
 }
 
+/* And finally, the implementation of the actual PDF operators CS and cs */
 int pdf_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
@@ -848,232 +1171,6 @@ int pdf_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *pa
     gs_swapcolors(ctx->pgs);
     pdf_pop(ctx, 1);
 
-    if (code < 0 && ctx->pdfstoponerror)
-        return code;
-    return 0;
-}
-
-int pdf_setstrokecolor(pdf_context *ctx)
-{
-    const gs_color_space *  pcs = gs_currentcolorspace(ctx->pgs);
-    int ncomps, i, code;
-    gs_client_color cc;
-    pdf_num *n;
-
-    ncomps = cs_num_components(pcs);
-    if (ctx->stack_top - ctx->stack_bot < ncomps) {
-        pdf_clearstack(ctx);
-        if(ctx->pdfstoponerror)
-            return_error(gs_error_stackunderflow);
-        return 0;
-    }
-    for (i=0;i<ncomps;i++){
-        n = (pdf_num *)ctx->stack_top[i - ncomps];
-        if (n->type == PDF_INT) {
-            cc.paint.values[i] = (float)n->value.i;
-        } else {
-            if (n->type == PDF_REAL) {
-                cc.paint.values[i] = n->value.d;
-            } else {
-                pdf_clearstack(ctx);
-                if (ctx->pdfstoponerror)
-                    return_error(gs_error_typecheck);
-                return 0;
-            }
-        }
-    }
-    pdf_pop(ctx, ncomps);
-    code = gs_setcolor(ctx->pgs, &cc);
-    if (code < 0 && ctx->pdfstoponerror)
-        return code;
-    return 0;
-}
-
-int pdf_setfillcolor(pdf_context *ctx)
-{
-    const gs_color_space *  pcs;
-    int ncomps, i, code;
-    gs_client_color cc;
-    pdf_num *n;
-
-    gs_swapcolors(ctx->pgs);
-    pcs = gs_currentcolorspace(ctx->pgs);
-    ncomps = cs_num_components(pcs);
-    if (ctx->stack_top - ctx->stack_bot < ncomps) {
-        gs_swapcolors(ctx->pgs);
-        pdf_clearstack(ctx);
-        if(ctx->pdfstoponerror)
-            return_error(gs_error_stackunderflow);
-        return 0;
-    }
-    for (i=0;i<ncomps;i++){
-        n = (pdf_num *)ctx->stack_top[i - ncomps];
-        if (n->type == PDF_INT) {
-            cc.paint.values[i] = (float)n->value.i;
-        } else {
-            if (n->type == PDF_REAL) {
-                cc.paint.values[i] = n->value.d;
-            } else {
-                gs_swapcolors(ctx->pgs);
-                pdf_clearstack(ctx);
-                if (ctx->pdfstoponerror)
-                    return_error(gs_error_typecheck);
-                return 0;
-            }
-        }
-    }
-    pdf_pop(ctx, ncomps);
-    code = gs_setcolor(ctx->pgs, &cc);
-    gs_swapcolors(ctx->pgs);
-    if (code < 0 && ctx->pdfstoponerror)
-        return code;
-    return 0;
-}
-
-int pdf_setstrokecolorN(pdf_context *ctx)
-{
-    const gs_color_space *  pcs = gs_currentcolorspace(ctx->pgs);
-    int ncomps, i, code;
-    gs_client_color cc;
-    pdf_num *n;
-
-    if (ctx->stack_top - ctx->stack_bot < 1) {
-        pdf_clearstack(ctx);
-        if(ctx->pdfstoponerror)
-            return_error(gs_error_stackunderflow);
-        return 0;
-    }
-    if (ctx->stack_top[-1]->type == PDF_NAME) {
-        /* FIXME Patterns */
-        pdf_clearstack(ctx);
-        return 0;
-    }
-    ncomps = cs_num_components(pcs);
-    if (ctx->stack_top - ctx->stack_bot < ncomps) {
-        pdf_clearstack(ctx);
-        if(ctx->pdfstoponerror)
-            return_error(gs_error_stackunderflow);
-        return 0;
-    }
-    for (i=0;i<ncomps;i++){
-        n = (pdf_num *)ctx->stack_top[i - ncomps];
-        if (n->type == PDF_INT) {
-            cc.paint.values[i] = (float)n->value.i;
-        } else {
-            if (n->type == PDF_REAL) {
-                cc.paint.values[i] = n->value.d;
-            } else {
-                pdf_clearstack(ctx);
-                if (ctx->pdfstoponerror)
-                    return_error(gs_error_typecheck);
-                return 0;
-            }
-        }
-    }
-    pdf_pop(ctx, ncomps);
-    code = gs_setcolor(ctx->pgs, &cc);
-    if (code < 0 && ctx->pdfstoponerror)
-        return code;
-    return 0;
-}
-
-int pdf_setfillcolorN(pdf_context *ctx)
-{
-    const gs_color_space *  pcs;
-    int ncomps, i, code;
-    gs_client_color cc;
-    pdf_num *n;
-
-    gs_swapcolors(ctx->pgs);
-    pcs = gs_currentcolorspace(ctx->pgs);
-    if (ctx->stack_top - ctx->stack_bot < 1) {
-        gs_swapcolors(ctx->pgs);
-        pdf_clearstack(ctx);
-        if(ctx->pdfstoponerror)
-            return_error(gs_error_stackunderflow);
-        return 0;
-    }
-    if (ctx->stack_top[-1]->type == PDF_NAME) {
-        gs_swapcolors(ctx->pgs);
-        /* FIXME Patterns */
-        pdf_clearstack(ctx);
-        return 0;
-    }
-    ncomps = cs_num_components(pcs);
-    if (ctx->stack_top - ctx->stack_bot < ncomps) {
-        gs_swapcolors(ctx->pgs);
-        pdf_clearstack(ctx);
-        if(ctx->pdfstoponerror)
-            return_error(gs_error_stackunderflow);
-        return 0;
-    }
-    for (i=0;i<ncomps;i++){
-        n = (pdf_num *)ctx->stack_top[i - ncomps];
-        if (n->type == PDF_INT) {
-            cc.paint.values[i] = (float)n->value.i;
-        } else {
-            if (n->type == PDF_REAL) {
-                cc.paint.values[i] = n->value.d;
-            } else {
-                gs_swapcolors(ctx->pgs);
-                pdf_clearstack(ctx);
-                if (ctx->pdfstoponerror)
-                    return_error(gs_error_typecheck);
-                return 0;
-            }
-        }
-    }
-    pdf_pop(ctx, ncomps);
-    code = gs_setcolor(ctx->pgs, &cc);
-    gs_swapcolors(ctx->pgs);
-    if (code < 0 && ctx->pdfstoponerror)
-        return code;
-    return 0;
-}
-
-int pdf_ri(pdf_context *ctx)
-{
-    pdf_name *n;
-    int code;
-
-    if (ctx->stack_top - ctx->stack_bot < 1) {
-        pdf_clearstack(ctx);
-        if(ctx->pdfstoponerror)
-            return_error(gs_error_stackunderflow);
-        return 0;
-    }
-
-    if (ctx->stack_top[-1]->type != PDF_NAME) {
-        pdf_pop(ctx, 1);
-        if (ctx->pdfstoponerror)
-            return_error(gs_error_typecheck);
-        return 0;
-    }
-    n = (pdf_name *)ctx->stack_top[-1];
-    if (n->length == 10) {
-        if (memcmp(n->data, "Perceptual", 10) == 0)
-            code = gs_setrenderingintent(ctx->pgs, 0);
-        else {
-            if (memcmp(n->data, "Saturation", 10) == 0)
-                code = gs_setrenderingintent(ctx->pgs, 2);
-            else
-                code = gs_error_undefined;
-        }
-    } else {
-        if (n->length == 20) {
-            if (memcmp(n->data, "RelativeColorimetric", 20) == 0)
-                code = gs_setrenderingintent(ctx->pgs, 1);
-            else {
-                if (memcmp(n->data, "AbsoluteColoimetric", 20) == 0)
-                    code = gs_setrenderingintent(ctx->pgs, 3);
-                else
-                    code = gs_error_undefined;
-            }
-        } else {
-            code = gs_error_undefined;
-        }
-    }
-    pdf_pop(ctx, 1);
     if (code < 0 && ctx->pdfstoponerror)
         return code;
     return 0;
