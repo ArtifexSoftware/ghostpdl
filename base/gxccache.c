@@ -372,7 +372,6 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
             case 1:		/* empty image */
                 code = 0;
             default:
-                return code;
                 break;
             case 0:
                 for (iy = 0; iy < h && code >= 0; iy++)
