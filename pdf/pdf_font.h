@@ -18,8 +18,8 @@
 #ifndef PDF_FONT_OPERATORS
 #define PDF_FONT_OPERATORS
 
-int pdf_d0(pdf_context *ctx);
-int pdf_d1(pdf_context *ctx);
-int pdf_Tf(pdf_context *ctx);
+int pdfi_d0(pdf_context *ctx);
+int pdfi_d1(pdf_context *ctx);
+int pdfi_Tf(pdf_context *ctx);
 
 #endif

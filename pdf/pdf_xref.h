@@ -17,6 +17,6 @@
 #ifndef PDF_XREF_PARSER
 #define PDF_XREF_PARSER
 
-int pdf_read_xref(pdf_context *ctx);
+int pdfi_read_xref(pdf_context *ctx);
 
 #endif

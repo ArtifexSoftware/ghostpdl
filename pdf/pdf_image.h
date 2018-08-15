@@ -18,9 +18,9 @@
 #ifndef PDF_IMAGE_OPERATORS
 #define PDF_IMAGE_OPERATORS
 
-int pdf_BI(pdf_context *ctx);
-int pdf_EI(pdf_context *ctx);
-int pdf_ID(pdf_context *ctx, pdf_stream *source);
-int pdf_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_BI(pdf_context *ctx);
+int pdfi_EI(pdf_context *ctx);
+int pdfi_ID(pdf_context *ctx, pdf_stream *source);
+int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
 
 #endif

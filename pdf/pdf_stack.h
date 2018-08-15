@@ -20,14 +20,14 @@
 
 #include "pdf_int.h"
 
-int pdf_pop(pdf_context *ctx, int num);
-int pdf_push(pdf_context *ctx, pdf_obj *o);
-int pdf_mark_stack(pdf_context *ctx, pdf_obj_type type);
-void pdf_clearstack(pdf_context *ctx);
-int pdf_count_to_mark(pdf_context *ctx, uint64_t *count);
-int pdf_clear_to_mark(pdf_context *ctx);
+int pdfi_pop(pdf_context *ctx, int num);
+int pdfi_push(pdf_context *ctx, pdf_obj *o);
+int pdfi_mark_stack(pdf_context *ctx, pdf_obj_type type);
+void pdfi_clearstack(pdf_context *ctx);
+int pdfi_count_to_mark(pdf_context *ctx, uint64_t *count);
+int pdfi_clear_to_mark(pdf_context *ctx);
 
-static inline void pdf_countup_impl(pdf_obj *o)
+static inline void pdfi_countup_impl(pdf_obj *o)
 {
     if (o != NULL) {
         o->refcnt++;
@@ -42,7 +42,7 @@ static inline void pdf_countup_impl(pdf_obj *o)
 #endif
 }
 
-static inline void pdf_countdown_impl(pdf_obj *o)
+static inline void pdfi_countdown_impl(pdf_obj *o)
 {
     if (o != NULL) {
 #ifdef DEBUG
@@ -57,7 +57,7 @@ static inline void pdf_countdown_impl(pdf_obj *o)
 #if REFCNT_DEBUG
             dmprintf2(o->memory, "Freeing object %"PRIi64", UID %"PRIi64"\n", o->object_num, o->UID);
 #endif
-                pdf_free_object(o);
+                pdfi_free_object(o);
         }
     }
 #if REFCNT_DEBUG
@@ -67,8 +67,8 @@ static inline void pdf_countdown_impl(pdf_obj *o)
 #endif
 }
 
-#define pdf_countup(x) pdf_countup_impl((pdf_obj *)x)
+#define pdfi_countup(x) pdfi_countup_impl((pdf_obj *)x)
 
-#define pdf_countdown(x) pdf_countdown_impl((pdf_obj *)x)
+#define pdfi_countdown(x) pdfi_countdown_impl((pdf_obj *)x)
 
 #endif

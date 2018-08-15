@@ -30,11 +30,11 @@
 #ifndef PDF_LOOP_DETECTOR
 #define PDF_LOOP_DETECTOR
 
-int pdf_init_loop_detector(pdf_context *ctx);
-int pdf_free_loop_detector(pdf_context *ctx);
-int pdf_loop_detector_add_object(pdf_context *ctx, uint64_t object);
-bool pdf_loop_detector_check_object(pdf_context *ctx, uint64_t object);
-int pdf_loop_detector_mark(pdf_context *ctx);
-int pdf_loop_detector_cleartomark(pdf_context *ctx);
+int pdfi_init_loop_detector(pdf_context *ctx);
+int pdfi_free_loop_detector(pdf_context *ctx);
+int pdfi_loop_detector_add_object(pdf_context *ctx, uint64_t object);
+bool pdfi_loop_detector_check_object(pdf_context *ctx, uint64_t object);
+int pdfi_loop_detector_mark(pdf_context *ctx);
+int pdfi_loop_detector_cleartomark(pdf_context *ctx);
 
 #endif

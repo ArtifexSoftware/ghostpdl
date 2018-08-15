@@ -20,18 +20,18 @@
 
 #include "gscolor1.h"
 
-int pdf_setgraystroke(pdf_context *ctx);
-int pdf_setgrayfill(pdf_context *ctx);
-int pdf_setrgbstroke(pdf_context *ctx);
-int pdf_setrgbfill(pdf_context *ctx);
-int pdf_setcmykstroke(pdf_context *ctx);
-int pdf_setcmykfill(pdf_context *ctx);
-int pdf_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
-int pdf_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
-int pdf_setstrokecolor(pdf_context *ctx);
-int pdf_setfillcolor(pdf_context *ctx);
-int pdf_setstrokecolorN(pdf_context *ctx);
-int pdf_setfillcolorN(pdf_context *ctx);
-int pdf_ri(pdf_context *ctx);
+int pdfi_setgraystroke(pdf_context *ctx);
+int pdfi_setgrayfill(pdf_context *ctx);
+int pdfi_setrgbstroke(pdf_context *ctx);
+int pdfi_setrgbfill(pdf_context *ctx);
+int pdfi_setcmykstroke(pdf_context *ctx);
+int pdfi_setcmykfill(pdf_context *ctx);
+int pdfi_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_setstrokecolor(pdf_context *ctx);
+int pdfi_setfillcolor(pdf_context *ctx);
+int pdfi_setstrokecolorN(pdf_context *ctx);
+int pdfi_setfillcolorN(pdf_context *ctx);
+int pdfi_ri(pdf_context *ctx);
 
 #endif

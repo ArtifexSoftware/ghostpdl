@@ -19,9 +19,9 @@
 #include "pdf_stack.h"
 #include "pdf_shading.h"
 
-int pdf_shading(pdf_context *ctx)
+int pdfi_shading(pdf_context *ctx)
 {
     if (ctx->stack_top - ctx->stack_bot >= 1)
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
     return 0;
 }

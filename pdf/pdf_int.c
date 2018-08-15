@@ -40,7 +40,7 @@
 /* When an object's reference count is decremented to 0, the relevant 'free'       */
 /* function is called to free the object.                                          */
 
-static void pdf_free_namestring(pdf_obj *o)
+static void pdfi_free_namestring(pdf_obj *o)
 {
     /* Currently names and strings are the same, so a single cast is OK */
     pdf_name *n = (pdf_name *)o;
@@ -50,7 +50,7 @@ static void pdf_free_namestring(pdf_obj *o)
     gs_free_object(n->memory, n, "pdf interpreter free name or string");
 }
 
-static void pdf_free_keyword(pdf_obj *o)
+static void pdfi_free_keyword(pdf_obj *o)
 {
     /* Currently names and strings are the same, so a single cast is OK */
     pdf_keyword *k = (pdf_keyword *)o;
@@ -60,15 +60,15 @@ static void pdf_free_keyword(pdf_obj *o)
     gs_free_object(k->memory, k, "pdf interpreter free keyword");
 }
 
-static void pdf_free_xref_table(pdf_obj *o)
+static void pdfi_free_xref_table(pdf_obj *o)
 {
     xref_table *xref = (xref_table *)o;
 
-    gs_free_object(xref->memory, xref->xref, "pdf_free_xref_table");
-    gs_free_object(xref->memory, xref, "pdf_free_xref_table");
+    gs_free_object(xref->memory, xref->xref, "pdfi_free_xref_table");
+    gs_free_object(xref->memory, xref, "pdfi_free_xref_table");
 }
 
-void pdf_free_object(pdf_obj *o)
+void pdfi_free_object(pdf_obj *o)
 {
     switch(o->type) {
         case PDF_ARRAY_MARK:
@@ -82,19 +82,19 @@ void pdf_free_object(pdf_obj *o)
             break;
         case PDF_STRING:
         case PDF_NAME:
-            pdf_free_namestring(o);
+            pdfi_free_namestring(o);
             break;
         case PDF_ARRAY:
-            pdf_free_array(o);
+            pdfi_free_array(o);
             break;
         case PDF_DICT:
-            pdf_free_dict(o);
+            pdfi_free_dict(o);
             break;
         case PDF_KEYWORD:
-            pdf_free_keyword(o);
+            pdfi_free_keyword(o);
             break;
         case PDF_XREF_TABLE:
-            pdf_free_xref_table(o);
+            pdfi_free_xref_table(o);
             break;
         default:
 #ifdef DEBUG
@@ -107,7 +107,7 @@ void pdf_free_object(pdf_obj *o)
 /***********************************************************************************/
 /* Functions to dereference object references and manage the object cache          */
 
-static int pdf_add_to_cache(pdf_context *ctx, pdf_obj *o)
+static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
 {
     pdf_obj_cache_entry *entry;
 
@@ -122,20 +122,20 @@ static int pdf_add_to_cache(pdf_context *ctx, pdf_obj *o)
             if (entry->next)
                 ((pdf_obj_cache_entry *)entry->next)->previous = NULL;
             ctx->xref_table->xref[entry->o->object_num].cache = NULL;
-            pdf_countdown(entry->o);
+            pdfi_countdown(entry->o);
             ctx->cache_entries--;
-            gs_free_object(ctx->memory, entry, "pdf_add_to_cache, free LRU");
+            gs_free_object(ctx->memory, entry, "pdfi_add_to_cache, free LRU");
         } else
             return_error(gs_error_unknownerror);
     }
-    entry = (pdf_obj_cache_entry *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj_cache_entry), "pdf_add_to_cache");
+    entry = (pdf_obj_cache_entry *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj_cache_entry), "pdfi_add_to_cache");
     if (entry == NULL)
         return_error(gs_error_VMerror);
 
     memset(entry, 0x00, sizeof(pdf_obj_cache_entry));
 
     entry->o = o;
-    pdf_countup(o);
+    pdfi_countup(o);
     if (ctx->cache_MRU) {
         entry->previous = ctx->cache_MRU;
         ctx->cache_MRU->next = entry;
@@ -152,7 +152,7 @@ static int pdf_add_to_cache(pdf_context *ctx, pdf_obj *o)
 /* pdf_dereference returns an object with a reference count of at least 1, this represents the
  * reference being held by the caller (in **object) when we return from this function.
  */
-int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object)
+int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object)
 {
     xref_entry *entry;
     pdf_obj *o;
@@ -171,14 +171,14 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
         return_error(gs_error_undefined);
 
     if (ctx->loop_detection) {
-        if (pdf_loop_detector_check_object(ctx, obj) == true)
+        if (pdfi_loop_detector_check_object(ctx, obj) == true)
             return_error(gs_error_circular_reference);
     }
     if (entry->cache != NULL){
         pdf_obj_cache_entry *cache_entry = entry->cache;
 
         *object = cache_entry->o;
-        pdf_countup(*object);
+        pdfi_countup(*object);
         if (ctx->cache_MRU && cache_entry != ctx->cache_MRU) {
             if ((pdf_obj_cache_entry *)cache_entry->next != NULL)
                 ((pdf_obj_cache_entry *)cache_entry->next)->previous = cache_entry->previous;
@@ -196,7 +196,7 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             ctx->cache_MRU = cache_entry;
         }
     } else {
-        saved_stream_offset = pdf_unread_tell(ctx);
+        saved_stream_offset = pdfi_unread_tell(ctx);
 
         if (entry->compressed) {
             /* This is an object in a compressed object stream */
@@ -215,119 +215,119 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
             }
 
             if (compressed_entry->cache == NULL) {
-                code = pdf_seek(ctx, ctx->main_stream, compressed_entry->u.uncompressed.offset, SEEK_SET);
+                code = pdfi_seek(ctx, ctx->main_stream, compressed_entry->u.uncompressed.offset, SEEK_SET);
                 if (code < 0) {
-                    (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return code;
                 }
 
-                code = pdf_read_object_of_type(ctx, ctx->main_stream, PDF_DICT);
+                code = pdfi_read_object_of_type(ctx, ctx->main_stream, PDF_DICT);
                 if (code < 0){
-                    (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return code;
                 }
 
                 compressed_object = (pdf_dict *)ctx->stack_top[-1];
-                pdf_countup(compressed_object);
-                pdf_pop(ctx, 1);
+                pdfi_countup(compressed_object);
+                pdfi_pop(ctx, 1);
             } else {
                 compressed_object = (pdf_dict *)compressed_entry->cache->o;
-                pdf_countup(compressed_object);
+                pdfi_countup(compressed_object);
             }
             /* Check its an ObjStm ! */
-            code = pdf_dict_get_type(ctx, compressed_object, "Type", PDF_NAME, &o);
+            code = pdfi_dict_get_type(ctx, compressed_object, "Type", PDF_NAME, &o);
             if (code < 0) {
-                pdf_countdown(compressed_object);
-                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                pdfi_countdown(compressed_object);
+                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
             if (((pdf_name *)o)->length != 6 || memcmp(((pdf_name *)o)->data, "ObjStm", 6) != 0){
-                pdf_countdown(o);
-                pdf_countdown(compressed_object);
-                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                pdfi_countdown(o);
+                pdfi_countdown(compressed_object);
+                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return_error(gs_error_syntaxerror);
             }
-            pdf_countdown(o);
+            pdfi_countdown(o);
 
             /* Need to check the /N entry to see if the object is actually in this stream! */
-            code = pdf_dict_get_int(ctx, compressed_object, "N", &num_entries);
+            code = pdfi_dict_get_int(ctx, compressed_object, "N", &num_entries);
             if (code < 0) {
-                pdf_countdown(compressed_object);
-                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                pdfi_countdown(compressed_object);
+                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
             if (num_entries < 0 || num_entries > ctx->xref_table->xref_size) {
-                pdf_countdown(compressed_object);
-                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                pdfi_countdown(compressed_object);
+                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return_error(gs_error_rangecheck);
             }
 
-            code = pdf_seek(ctx, ctx->main_stream, compressed_object->stream_offset, SEEK_SET);
+            code = pdfi_seek(ctx, ctx->main_stream, compressed_object->stream_offset, SEEK_SET);
             if (code < 0) {
-                pdf_countdown(compressed_object);
-                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                pdfi_countdown(compressed_object);
+                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
 
-            code = pdf_filter(ctx, compressed_object, ctx->main_stream, &compressed_stream, false);
+            code = pdfi_filter(ctx, compressed_object, ctx->main_stream, &compressed_stream, false);
             if (code < 0) {
-                pdf_countdown(compressed_object);
-                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                pdfi_countdown(compressed_object);
+                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
 
             for (i=0;i < num_entries;i++)
             {
-                code = pdf_read_token(ctx, compressed_stream);
+                code = pdfi_read_token(ctx, compressed_stream);
                 if (code < 0) {
-                    pdf_close_file(ctx, compressed_stream);
-                    pdf_countdown(compressed_object);
-                    (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                    pdfi_close_file(ctx, compressed_stream);
+                    pdfi_countdown(compressed_object);
+                    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return code;
                 }
                 o = ctx->stack_top[-1];
                 if (((pdf_obj *)o)->type != PDF_INT) {
-                    pdf_pop(ctx, 1);
-                    pdf_close_file(ctx, compressed_stream);
-                    pdf_countdown(compressed_object);
-                    (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                    pdfi_pop(ctx, 1);
+                    pdfi_close_file(ctx, compressed_stream);
+                    pdfi_countdown(compressed_object);
+                    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return_error(gs_error_typecheck);
                 }
-                pdf_pop(ctx, 1);
-                code = pdf_read_token(ctx, compressed_stream);
+                pdfi_pop(ctx, 1);
+                code = pdfi_read_token(ctx, compressed_stream);
                 if (code < 0) {
-                    pdf_close_file(ctx, compressed_stream);
-                    pdf_countdown(compressed_object);
-                    (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                    pdfi_close_file(ctx, compressed_stream);
+                    pdfi_countdown(compressed_object);
+                    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return code;
                 }
                 o = ctx->stack_top[-1];
                 if (((pdf_obj *)o)->type != PDF_INT) {
-                    pdf_pop(ctx, 1);
-                    pdf_close_file(ctx, compressed_stream);
-                    pdf_countdown(compressed_object);
-                    (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                    pdfi_pop(ctx, 1);
+                    pdfi_close_file(ctx, compressed_stream);
+                    pdfi_countdown(compressed_object);
+                    (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                     return_error(gs_error_typecheck);
                 }
                 if (i == entry->u.compressed.object_index)
                     offset = ((pdf_num *)o)->value.i;
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
             }
 
             for (i=0;i < offset;i++)
             {
-                code = pdf_read_bytes(ctx, (byte *)&Buffer[0], 1, 1, compressed_stream);
+                code = pdfi_read_bytes(ctx, (byte *)&Buffer[0], 1, 1, compressed_stream);
                 if (code <= 0) {
-                    pdf_close_file(ctx, compressed_stream);
+                    pdfi_close_file(ctx, compressed_stream);
                     return_error(gs_error_ioerror);
                 }
             }
 
-            code = pdf_read_token(ctx, compressed_stream);
+            code = pdfi_read_token(ctx, compressed_stream);
             if (code < 0) {
-                pdf_close_file(ctx, compressed_stream);
-                pdf_countdown(compressed_object);
-                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                pdfi_close_file(ctx, compressed_stream);
+                pdfi_countdown(compressed_object);
+                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
             if (ctx->stack_top[-1]->type == PDF_ARRAY_MARK || ctx->stack_top[-1]->type == PDF_DICT_MARK) {
@@ -335,23 +335,23 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
 
                 /* Need to read all the elements from COS objects */
                 do {
-                    code = pdf_read_token(ctx, compressed_stream);
+                    code = pdfi_read_token(ctx, compressed_stream);
                     if (code < 0) {
-                        pdf_close_file(ctx, compressed_stream);
-                        pdf_countdown(compressed_object);
-                        (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                        pdfi_close_file(ctx, compressed_stream);
+                        pdfi_countdown(compressed_object);
+                        (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                         return code;
                     }
                     if (compressed_stream->eof == true) {
-                        pdf_close_file(ctx, compressed_stream);
-                        pdf_countdown(compressed_object);
-                        (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                        pdfi_close_file(ctx, compressed_stream);
+                        pdfi_countdown(compressed_object);
+                        (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                         return_error(gs_error_ioerror);
                     }
                 }while ((ctx->stack_top[-1]->type != PDF_ARRAY && ctx->stack_top[-1]->type != PDF_DICT) || ctx->stack_top - ctx->stack_bot > start_depth);
             }
 
-            pdf_close_file(ctx, compressed_stream);
+            pdfi_close_file(ctx, compressed_stream);
 
             *object = ctx->stack_top[-1];
             /* For compressed objects we don't get a 'obj gen obj' sequence which is what sets
@@ -359,32 +359,32 @@ int pdf_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **obje
              */
             (*object)->object_num = obj;
             (*object)->generation_num = gen;
-            pdf_countup(*object);
-            pdf_pop(ctx, 1);
+            pdfi_countup(*object);
+            pdfi_pop(ctx, 1);
 
-            pdf_countdown(compressed_object);
+            pdfi_countdown(compressed_object);
         } else {
-            code = pdf_seek(ctx, ctx->main_stream, entry->u.uncompressed.offset, SEEK_SET);
+            code = pdfi_seek(ctx, ctx->main_stream, entry->u.uncompressed.offset, SEEK_SET);
             if (code < 0) {
-                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
 
-            code = pdf_read_object(ctx, ctx->main_stream);
+            code = pdfi_read_object(ctx, ctx->main_stream);
             if (code < 0) {
-                (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+                (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
                 return code;
             }
 
             *object = ctx->stack_top[-1];
-            pdf_countup(*object);
-            pdf_pop(ctx, 1);
+            pdfi_countup(*object);
+            pdfi_pop(ctx, 1);
         }
-        (void)pdf_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
+        (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
     }
 
     if (ctx->loop_detection) {
-        code = pdf_loop_detector_add_object(ctx, (*object)->object_num);
+        code = pdfi_loop_detector_add_object(ctx, (*object)->object_num);
         if (code < 0)
             return code;
     }
@@ -485,7 +485,7 @@ int skip_white(pdf_context *ctx, pdf_stream *s)
     byte c;
 
     do {
-        bytes = pdf_read_bytes(ctx, &c, 1, 1, s);
+        bytes = pdfi_read_bytes(ctx, &c, 1, 1, s);
         if (bytes < 0)
             return_error(gs_error_ioerror);
         if (bytes == 0)
@@ -494,7 +494,7 @@ int skip_white(pdf_context *ctx, pdf_stream *s)
     } while (bytes != 0 && iswhite(c));
 
     if (read > 0)
-        pdf_unread(ctx, s, &c, 1);
+        pdfi_unread(ctx, s, &c, 1);
     return 0;
 }
 
@@ -505,7 +505,7 @@ static int skip_eol(pdf_context *ctx, pdf_stream *s)
     byte c;
 
     do {
-        bytes = pdf_read_bytes(ctx, &c, 1, 1, s);
+        bytes = pdfi_read_bytes(ctx, &c, 1, 1, s);
         if (bytes < 0)
             return_error(gs_error_ioerror);
         if (bytes == 0)
@@ -514,11 +514,11 @@ static int skip_eol(pdf_context *ctx, pdf_stream *s)
     } while (bytes != 0 && (c == 0x0A || c == 0x0D));
 
     if (read > 0)
-        pdf_unread(ctx, s, &c, 1);
+        pdfi_unread(ctx, s, &c, 1);
     return 0;
 }
 
-static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
+static int pdfi_read_num(pdf_context *ctx, pdf_stream *s)
 {
     byte Buffer[256];
     unsigned short index = 0;
@@ -530,7 +530,7 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
     skip_white(ctx, s);
 
     do {
-        bytes = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
+        bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
         if (bytes == 0 && s->eof) {
             Buffer[index] = 0x00;
             break;
@@ -544,7 +544,7 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
             break;
         } else {
             if (isdelimiter((char)Buffer[index])) {
-                pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
+                pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
                 Buffer[index] = 0x00;
                 break;
             }
@@ -570,7 +570,7 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
                     if (!(ctx->pdf_errors & E_PDF_MISSINGWHITESPACE))
                         dmprintf(ctx->memory, "Ignoring missing white space while parsing number\n");
                     ctx->pdf_errors |= E_PDF_MISSINGWHITESPACE;
-                    pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
+                    pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
                     Buffer[index] = 0x00;
                     break;
                 }
@@ -580,7 +580,7 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
             return_error(gs_error_syntaxerror);
     } while(1);
 
-    num = (pdf_num *)gs_alloc_bytes(ctx->memory, sizeof(pdf_num), "pdf_read_num");
+    num = (pdf_num *)gs_alloc_bytes(ctx->memory, sizeof(pdf_num), "pdfi_read_num");
     if (num == NULL)
         return_error(gs_error_VMerror);
 
@@ -600,7 +600,7 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
             if (sscanf((const char *)Buffer, "%f", &tempf) == 0) {
                 if (ctx->pdfdebug)
                     dmprintf1(ctx->memory, "failed to read real number : %s\n", Buffer);
-                gs_free_object(num->memory, num, "pdf_read_num error");
+                gs_free_object(num->memory, num, "pdfi_read_num error");
                 return_error(gs_error_syntaxerror);
             }
             num->value.d = tempf;
@@ -610,7 +610,7 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
             if (sscanf((const char *)Buffer, "%d", &tempi) == 0) {
                 if (ctx->pdfdebug)
                     dmprintf1(ctx->memory, "failed to read integer : %s\n", Buffer);
-                gs_free_object(num->memory, num, "pdf_read_num error");
+                gs_free_object(num->memory, num, "pdfi_read_num error");
                 return_error(gs_error_syntaxerror);
             }
             num->value.i = tempi;
@@ -627,15 +627,15 @@ static int pdf_read_num(pdf_context *ctx, pdf_stream *s)
     num->UID = ctx->UID++;
     dmprintf1(ctx->memory, "Allocated number object with UID %"PRIi64"\n", num->UID);
 #endif
-    code = pdf_push(ctx, (pdf_obj *)num);
+    code = pdfi_push(ctx, (pdf_obj *)num);
 
     if (code < 0)
-        pdf_free_object((pdf_obj *)num);
+        pdfi_free_object((pdf_obj *)num);
 
     return code;
 }
 
-static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
+static int pdfi_read_name(pdf_context *ctx, pdf_stream *s)
 {
     char *Buffer, *NewBuf = NULL;
     unsigned short index = 0;
@@ -644,12 +644,12 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
     pdf_name *name = NULL;
     int code;
 
-    Buffer = (char *)gs_alloc_bytes(ctx->memory, size, "pdf_read_name");
+    Buffer = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_read_name");
     if (Buffer == NULL)
         return_error(gs_error_VMerror);
 
     do {
-        bytes = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
+        bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
         if (bytes == 0 && s->eof)
             break;
         if (bytes <= 0)
@@ -660,7 +660,7 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
             break;
         } else {
             if (isdelimiter((char)Buffer[index])) {
-                pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
+                pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
                 Buffer[index] = 0x00;
                 break;
             }
@@ -670,14 +670,14 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
         if (Buffer[index] == '#') {
             byte NumBuf[2];
 
-            bytes = pdf_read_bytes(ctx, (byte *)&NumBuf, 1, 2, s);
+            bytes = pdfi_read_bytes(ctx, (byte *)&NumBuf, 1, 2, s);
             if (bytes < 2) {
-                gs_free_object(ctx->memory, Buffer, "pdf_read_name error");
+                gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
                 return_error(gs_error_ioerror);
             }
 
             if (!ishex(NumBuf[0]) || !ishex(NumBuf[1])) {
-                gs_free_object(ctx->memory, Buffer, "pdf_read_name error");
+                gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
                 return_error(gs_error_ioerror);
             }
 
@@ -686,21 +686,21 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
 
         /* If we ran out of memory, increase the buffer size */
         if (index++ >= size - 1) {
-            NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdf_read_name");
+            NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdfi_read_name");
             if (NewBuf == NULL) {
-                gs_free_object(ctx->memory, Buffer, "pdf_read_name error");
+                gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
                 return_error(gs_error_VMerror);
             }
             memcpy(NewBuf, Buffer, size);
-            gs_free_object(ctx->memory, Buffer, "pdf_read_name");
+            gs_free_object(ctx->memory, Buffer, "pdfi_read_name");
             Buffer = NewBuf;
             size += 256;
         }
     } while(1);
 
-    name = (pdf_name *)gs_alloc_bytes(ctx->memory, sizeof(pdf_name), "pdf_read_name");
+    name = (pdf_name *)gs_alloc_bytes(ctx->memory, sizeof(pdf_name), "pdfi_read_name");
     if (name == NULL) {
-        gs_free_object(ctx->memory, Buffer, "pdf_read_name error");
+        gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
         return_error(gs_error_VMerror);
     }
 
@@ -708,9 +708,9 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
     name->memory = ctx->memory;
     name->type = PDF_NAME;
 
-    NewBuf = (char *)gs_alloc_bytes(ctx->memory, index, "pdf_read_name");
+    NewBuf = (char *)gs_alloc_bytes(ctx->memory, index, "pdfi_read_name");
     if (NewBuf == NULL) {
-        gs_free_object(ctx->memory, Buffer, "pdf_read_name error");
+        gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
         return_error(gs_error_VMerror);
     }
     memcpy(NewBuf, Buffer, index);
@@ -718,7 +718,7 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
     if (ctx->pdfdebug)
         dmprintf1(ctx->memory, " /%s", Buffer);
 
-    gs_free_object(ctx->memory, Buffer, "pdf_read_name");
+    gs_free_object(ctx->memory, Buffer, "pdfi_read_name");
 
     name->data = (unsigned char *)NewBuf;
     name->length = index;
@@ -727,15 +727,15 @@ static int pdf_read_name(pdf_context *ctx, pdf_stream *s)
     name->UID = ctx->UID++;
     dmprintf1(ctx->memory, "Allocated name object with UID %"PRIi64"\n", name->UID);
 #endif
-    code = pdf_push(ctx, (pdf_obj *)name);
+    code = pdfi_push(ctx, (pdf_obj *)name);
 
     if (code < 0)
-        pdf_free_namestring((pdf_obj *)name);
+        pdfi_free_namestring((pdf_obj *)name);
 
     return code;
 }
 
-static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
+static int pdfi_read_hexstring(pdf_context *ctx, pdf_stream *s)
 {
     char *Buffer, *NewBuf = NULL, HexBuf[2];
     unsigned short index = 0;
@@ -744,7 +744,7 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
     pdf_string *string = NULL;
     int code;
 
-    Buffer = (char *)gs_alloc_bytes(ctx->memory, size, "pdf_read_hexstring");
+    Buffer = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_read_hexstring");
     if (Buffer == NULL)
         return_error(gs_error_VMerror);
 
@@ -753,7 +753,7 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
 
     do {
         do {
-            bytes = pdf_read_bytes(ctx, (byte *)HexBuf, 1, 1, s);
+            bytes = pdfi_read_bytes(ctx, (byte *)HexBuf, 1, 1, s);
             if (bytes == 0 && s->eof)
                 break;
             if (bytes <= 0)
@@ -769,7 +769,7 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
             dmprintf1(ctx->memory, "%c", HexBuf[0]);
 
         do {
-            bytes = pdf_read_bytes(ctx, (byte *)&HexBuf[1], 1, 1, s);
+            bytes = pdfi_read_bytes(ctx, (byte *)&HexBuf[1], 1, 1, s);
             if (bytes == 0 && s->eof)
                 break;
             if (bytes <= 0)
@@ -787,13 +787,13 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
         Buffer[index] = (fromhex(HexBuf[0]) << 4) + fromhex(HexBuf[1]);
 
         if (index++ >= size - 1) {
-            NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdf_read_hexstring");
+            NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdfi_read_hexstring");
             if (NewBuf == NULL) {
-                gs_free_object(ctx->memory, Buffer, "pdf_read_hexstring error");
+                gs_free_object(ctx->memory, Buffer, "pdfi_read_hexstring error");
                 return_error(gs_error_VMerror);
             }
             memcpy(NewBuf, Buffer, size);
-            gs_free_object(ctx->memory, Buffer, "pdf_read_hexstring");
+            gs_free_object(ctx->memory, Buffer, "pdfi_read_hexstring");
             Buffer = NewBuf;
             size += 256;
         }
@@ -802,9 +802,9 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, ">");
 
-    string = (pdf_string *)gs_alloc_bytes(ctx->memory, sizeof(pdf_string), "pdf_read_hexstring");
+    string = (pdf_string *)gs_alloc_bytes(ctx->memory, sizeof(pdf_string), "pdfi_read_hexstring");
     if (string == NULL) {
-        gs_free_object(ctx->memory, Buffer, "pdf_read_hexstring");
+        gs_free_object(ctx->memory, Buffer, "pdfi_read_hexstring");
         return_error(gs_error_VMerror);
     }
 
@@ -812,13 +812,13 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
     string->memory = ctx->memory;
     string->type = PDF_STRING;
 
-    NewBuf = (char *)gs_alloc_bytes(ctx->memory, index, "pdf_read_hexstring");
+    NewBuf = (char *)gs_alloc_bytes(ctx->memory, index, "pdfi_read_hexstring");
     if (NewBuf == NULL) {
-        gs_free_object(ctx->memory, Buffer, "pdf_read_hexstring error");
+        gs_free_object(ctx->memory, Buffer, "pdfi_read_hexstring error");
         return_error(gs_error_VMerror);
     }
     memcpy(NewBuf, Buffer, index);
-    gs_free_object(ctx->memory, Buffer, "pdf_read_hexstring");
+    gs_free_object(ctx->memory, Buffer, "pdfi_read_hexstring");
 
     string->data = (unsigned char *)NewBuf;
     string->length = index;
@@ -827,14 +827,14 @@ static int pdf_read_hexstring(pdf_context *ctx, pdf_stream *s)
     string->UID = ctx->UID++;
     dmprintf1(ctx->memory, "Allocated hexstring object with UID %"PRIi64"\n", string->UID);
 #endif
-    code = pdf_push(ctx, (pdf_obj *)string);
+    code = pdfi_push(ctx, (pdf_obj *)string);
     if (code < 0)
-        pdf_free_namestring((pdf_obj *)string);
+        pdfi_free_namestring((pdf_obj *)string);
 
     return code;
 }
 
-static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
+static int pdfi_read_string(pdf_context *ctx, pdf_stream *s)
 {
     char *Buffer, *NewBuf = NULL, octal[3];
     unsigned short index = 0;
@@ -844,12 +844,12 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
     int code, octal_index = 0, nesting = 0;
     bool escape = false, skip_eol = false, exit_loop = false;
 
-    Buffer = (char *)gs_alloc_bytes(ctx->memory, size, "pdf_read_string");
+    Buffer = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_read_string");
     if (Buffer == NULL)
         return_error(gs_error_VMerror);
 
     do {
-        bytes = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
+        bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
 
         if (bytes == 0 && s->eof)
             break;
@@ -874,9 +874,9 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
                 byte dummy[2];
                 dummy[0] = '\\';
                 dummy[1] = Buffer[index];
-                code = pdf_unread(ctx, s, dummy, 2);
+                code = pdfi_unread(ctx, s, dummy, 2);
                 if (code < 0) {
-                    gs_free_object(ctx->memory, Buffer, "pdf_read_string");
+                    gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
                     return code;
                 }
                 Buffer[index] = octal[0];
@@ -910,7 +910,7 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
                             octal_index++;
                             continue;
                         }
-                        gs_free_object(ctx->memory, Buffer, "pdf_read_string");
+                        gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
                         return_error(gs_error_syntaxerror);
                         break;
                 }
@@ -920,9 +920,9 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
                 case 0x0a:
                 case 0x0d:
                     if (octal_index != 0) {
-                        code = pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
+                        code = pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
                         if (code < 0) {
-                            gs_free_object(ctx->memory, Buffer, "pdf_read_string");
+                            gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
                             return code;
                         }
                         Buffer[index] = octal[0];
@@ -936,9 +936,9 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
                     break;
                 case ')':
                     if (octal_index != 0) {
-                        code = pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
+                        code = pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
                         if (code < 0) {
-                            gs_free_object(ctx->memory, Buffer, "pdf_read_string");
+                            gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
                             return code;
                         }
                         Buffer[index] = octal[0];
@@ -969,9 +969,9 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
                             Buffer[index] = (octal[0] * 64) + (octal[1] * 8) + octal[2];
                             octal_index = 0;
                         } else {
-                            code = pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
+                            code = pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
                             if (code < 0) {
-                                gs_free_object(ctx->memory, Buffer, "pdf_read_string");
+                                gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
                                 return code;
                             }
                             Buffer[index] = octal[0];
@@ -988,21 +988,21 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
             break;
 
         if (index++ >= size - 1) {
-            NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdf_read_string");
+            NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdfi_read_string");
             if (NewBuf == NULL) {
-                gs_free_object(ctx->memory, Buffer, "pdf_read_string error");
+                gs_free_object(ctx->memory, Buffer, "pdfi_read_string error");
                 return_error(gs_error_VMerror);
             }
             memcpy(NewBuf, Buffer, size);
-            gs_free_object(ctx->memory, Buffer, "pdf_read_string");
+            gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
             Buffer = NewBuf;
             size += 256;
         }
     } while(1);
 
-    string = (pdf_string *)gs_alloc_bytes(ctx->memory, sizeof(pdf_string), "pdf_read_string");
+    string = (pdf_string *)gs_alloc_bytes(ctx->memory, sizeof(pdf_string), "pdfi_read_string");
     if (string == NULL) {
-        gs_free_object(ctx->memory, Buffer, "pdf_read_string");
+        gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
         return_error(gs_error_VMerror);
     }
 
@@ -1010,13 +1010,13 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
     string->memory = ctx->memory;
     string->type = PDF_STRING;
 
-    NewBuf = (char *)gs_alloc_bytes(ctx->memory, index, "pdf_read_string");
+    NewBuf = (char *)gs_alloc_bytes(ctx->memory, index, "pdfi_read_string");
     if (NewBuf == NULL) {
-        gs_free_object(ctx->memory, Buffer, "pdf_read_string error");
+        gs_free_object(ctx->memory, Buffer, "pdfi_read_string error");
         return_error(gs_error_VMerror);
     }
     memcpy(NewBuf, Buffer, index);
-    gs_free_object(ctx->memory, Buffer, "pdf_read_string");
+    gs_free_object(ctx->memory, Buffer, "pdfi_read_string");
 
     string->data = (unsigned char *)NewBuf;
     string->length = index;
@@ -1033,25 +1033,25 @@ static int pdf_read_string(pdf_context *ctx, pdf_stream *s)
     string->UID = ctx->UID++;
     dmprintf1(ctx->memory, "Allocated string object with UID %"PRIi64"\n", string->UID);
 #endif
-    code = pdf_push(ctx, (pdf_obj *)string);
+    code = pdfi_push(ctx, (pdf_obj *)string);
     if (code < 0)
-        pdf_free_namestring((pdf_obj *)string);
+        pdfi_free_namestring((pdf_obj *)string);
 
     return code;
 }
 
-static int pdf_array_from_stack(pdf_context *ctx)
+static int pdfi_array_from_stack(pdf_context *ctx)
 {
     uint64_t index = 0;
     pdf_array *a = NULL;
     pdf_obj *o;
     int code;
 
-    code = pdf_count_to_mark(ctx, &index);
+    code = pdfi_count_to_mark(ctx, &index);
     if (code < 0)
         return code;
 
-    a = (pdf_array *)gs_alloc_bytes(ctx->memory, sizeof(pdf_array), "pdf_array_from_stack");
+    a = (pdf_array *)gs_alloc_bytes(ctx->memory, sizeof(pdf_array), "pdfi_array_from_stack");
     if (a == NULL)
         return_error(gs_error_VMerror);
 
@@ -1061,9 +1061,9 @@ static int pdf_array_from_stack(pdf_context *ctx)
 
     a->size = a->entries = index;
 
-    a->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, index * sizeof(pdf_obj *), "pdf_array_from_stack");
+    a->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, index * sizeof(pdf_obj *), "pdfi_array_from_stack");
     if (a->values == NULL) {
-        gs_free_object(a->memory, a, "pdf_array_from_stack error");
+        gs_free_object(a->memory, a, "pdfi_array_from_stack error");
         return_error(gs_error_VMerror);
     }
     memset(a->values, 0x00, index * sizeof(pdf_obj *));
@@ -1071,11 +1071,11 @@ static int pdf_array_from_stack(pdf_context *ctx)
     while (index) {
         o = ctx->stack_top[-1];
         a->values[--index] = o;
-        pdf_countup(o);
-        pdf_pop(ctx, 1);
+        pdfi_countup(o);
+        pdfi_pop(ctx, 1);
     }
 
-    code = pdf_clear_to_mark(ctx);
+    code = pdfi_clear_to_mark(ctx);
     if (code < 0)
         return code;
 
@@ -1086,18 +1086,18 @@ static int pdf_array_from_stack(pdf_context *ctx)
     a->UID = ctx->UID++;
     dmprintf1(ctx->memory, "Allocated array object with UID %"PRIi64"\n", a->UID);
 #endif
-    code = pdf_push(ctx, (pdf_obj *)a);
+    code = pdfi_push(ctx, (pdf_obj *)a);
     if (code < 0)
-        pdf_free_array((pdf_obj *)a);
+        pdfi_free_array((pdf_obj *)a);
 
     return code;
 }
 
-int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
+int pdfi_read_dict(pdf_context *ctx, pdf_stream *s)
 {
     int code, depth;
 
-    code = pdf_read_token(ctx, s);
+    code = pdfi_read_token(ctx, s);
     if (code < 0)
         return code;
     if (ctx->stack_top[-1]->type != PDF_DICT_MARK)
@@ -1105,7 +1105,7 @@ int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
     depth = ctx->stack_top - ctx->stack_bot;
 
     do {
-        code = pdf_read_token(ctx, s);
+        code = pdfi_read_token(ctx, s);
         if (code < 0)
             return code;
     } while(ctx->stack_top - ctx->stack_bot > depth);
@@ -1113,7 +1113,7 @@ int pdf_read_dict(pdf_context *ctx, pdf_stream *s)
 }
 
 
-static int pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
+static int pdfi_skip_comment(pdf_context *ctx, pdf_stream *s)
 {
     byte Buffer;
     short bytes = 0;
@@ -1122,7 +1122,7 @@ static int pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
         dmprintf (ctx->memory, " %%");
 
     do {
-        bytes = pdf_read_bytes(ctx, (byte *)&Buffer, 1, 1, s);
+        bytes = pdfi_read_bytes(ctx, (byte *)&Buffer, 1, 1, s);
         if (bytes < 0)
             return_error(gs_error_ioerror);
 
@@ -1144,7 +1144,7 @@ static int pdf_skip_comment(pdf_context *ctx, pdf_stream *s)
  * of that type (PDF_NULL, PDF_BOOL or PDF_INDIRECT_REF)
  * and return it instead.
  */
-static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
+static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
 {
     byte Buffer[256];
     unsigned short index = 0;
@@ -1155,7 +1155,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
     skip_white(ctx, s);
 
     do {
-        bytes = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
+        bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, s);
         if (bytes < 0)
             return_error(gs_error_ioerror);
 
@@ -1164,7 +1164,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 break;
             } else {
                 if (isdelimiter(Buffer[index])) {
-                    pdf_unread(ctx, s, (byte *)&Buffer[index], 1);
+                    pdfi_unread(ctx, s, (byte *)&Buffer[index], 1);
                     break;
                 }
             }
@@ -1182,13 +1182,13 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
     /* NB The code below uses 'Buffer', not the data stored in keyword->data to compare strings */
     Buffer[index] = 0x00;
 
-    keyword = (pdf_keyword *)gs_alloc_bytes(ctx->memory, sizeof(pdf_keyword), "pdf_read_keyword");
+    keyword = (pdf_keyword *)gs_alloc_bytes(ctx->memory, sizeof(pdf_keyword), "pdfi_read_keyword");
     if (keyword == NULL)
         return_error(gs_error_VMerror);
 
-    keyword->data = (unsigned char *)gs_alloc_bytes(ctx->memory, index, "pdf_read_keyword");
+    keyword->data = (unsigned char *)gs_alloc_bytes(ctx->memory, index, "pdfi_read_keyword");
     if (keyword->data == NULL) {
-        gs_free_object(ctx->memory, keyword, "pdf_read_keyword error");
+        gs_free_object(ctx->memory, keyword, "pdfi_read_keyword error");
         return_error(gs_error_VMerror);
     }
 
@@ -1221,7 +1221,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 uint64_t obj_num;
                 uint32_t gen_num;
 
-                pdf_countdown(keyword);
+                pdfi_countdown(keyword);
 
                 if(ctx->stack_top - ctx->stack_bot < 2)
                     return_error(gs_error_stackunderflow);
@@ -1230,11 +1230,11 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                     return_error(gs_error_typecheck);
 
                 gen_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
                 obj_num = ((pdf_num *)ctx->stack_top[-1])->value.i;
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
 
-                o = (pdf_indirect_ref *)gs_alloc_bytes(ctx->memory, sizeof(pdf_indirect_ref), "pdf_read_keyword");
+                o = (pdf_indirect_ref *)gs_alloc_bytes(ctx->memory, sizeof(pdf_indirect_ref), "pdfi_read_keyword");
                 if (o == NULL)
                     return_error(gs_error_VMerror);
 
@@ -1248,9 +1248,9 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 o->UID = ctx->UID++;
                 dmprintf1(ctx->memory, "Allocated indirect reference object with UID %"PRIi64"\n", o->UID);
 #endif
-                code = pdf_push(ctx, (pdf_obj *)o);
+                code = pdfi_push(ctx, (pdf_obj *)o);
                 if (code < 0)
-                    pdf_free_object((pdf_obj *)o);
+                    pdfi_free_object((pdf_obj *)o);
                 return code;
             }
             break;
@@ -1282,9 +1282,9 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
             if (keyword->length == 4 && memcmp((const char *)Buffer, "true", 4) == 0) {
                 pdf_bool *o;
 
-                pdf_countdown(keyword);
+                pdfi_countdown(keyword);
 
-                o = (pdf_bool *)gs_alloc_bytes(ctx->memory, sizeof(pdf_bool), "pdf_read_keyword");
+                o = (pdf_bool *)gs_alloc_bytes(ctx->memory, sizeof(pdf_bool), "pdfi_read_keyword");
                 if (o == NULL)
                     return_error(gs_error_VMerror);
 
@@ -1297,9 +1297,9 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 o->UID = ctx->UID++;
                 dmprintf1(ctx->memory, "Allocated boolean object with UID %"PRIi64"\n", o->UID);
 #endif
-                code = pdf_push(ctx, (pdf_obj *)o);
+                code = pdfi_push(ctx, (pdf_obj *)o);
                 if (code < 0)
-                    pdf_free_object((pdf_obj *)o);
+                    pdfi_free_object((pdf_obj *)o);
                 return code;
             }
             else {
@@ -1312,9 +1312,9 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
             {
                 pdf_bool *o;
 
-                pdf_countdown(keyword);
+                pdfi_countdown(keyword);
 
-                o = (pdf_bool *)gs_alloc_bytes(ctx->memory, sizeof(pdf_bool), "pdf_read_keyword");
+                o = (pdf_bool *)gs_alloc_bytes(ctx->memory, sizeof(pdf_bool), "pdfi_read_keyword");
                 if (o == NULL)
                     return_error(gs_error_VMerror);
 
@@ -1327,9 +1327,9 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 o->UID = ctx->UID++;
                 dmprintf1(ctx->memory, "Allocated boolean object with UID %"PRIi64"\n", o->UID);
 #endif
-                code = pdf_push(ctx, (pdf_obj *)o);
+                code = pdfi_push(ctx, (pdf_obj *)o);
                 if (code < 0)
-                    pdf_free_object((pdf_obj *)o);
+                    pdfi_free_object((pdf_obj *)o);
                 return code;
             }
             break;
@@ -1337,9 +1337,9 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
             if (keyword->length == 4 && memcmp((const char *)Buffer, "null", 4) == 0){
                 pdf_obj *o;
 
-                pdf_countdown(keyword);
+                pdfi_countdown(keyword);
 
-                o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdf_read_keyword");
+                o = (pdf_obj *)gs_alloc_bytes(ctx->memory, sizeof(pdf_obj), "pdfi_read_keyword");
                 if (o == NULL)
                     return_error(gs_error_VMerror);
 
@@ -1351,9 +1351,9 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
                 o->UID = ctx->UID++;
                 dmprintf1(ctx->memory, "Allocated null object with UID %"PRIi64"\n", o->UID);
 #endif
-                code = pdf_push(ctx, o);
+                code = pdfi_push(ctx, o);
                 if (code < 0)
-                    pdf_free_object((pdf_obj *)o);
+                    pdfi_free_object((pdf_obj *)o);
                 return code;
             }
             break;
@@ -1363,8 +1363,8 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
             break;
     }
 
-    code = pdf_push(ctx, (pdf_obj *)keyword);
-    pdf_countdown(keyword);
+    code = pdfi_push(ctx, (pdf_obj *)keyword);
+    pdfi_countdown(keyword);
 
     return code;
 }
@@ -1372,7 +1372,7 @@ static int pdf_read_keyword(pdf_context *ctx, pdf_stream *s)
 /* This function reads from the given stream, at the current offset in the stream,
  * a single PDF 'token' and returns it on the stack.
  */
-int pdf_read_token(pdf_context *ctx, pdf_stream *s)
+int pdfi_read_token(pdf_context *ctx, pdf_stream *s)
 {
     int32_t bytes = 0;
     char Buffer[256];
@@ -1380,7 +1380,7 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
 
     skip_white(ctx, s);
 
-    bytes = pdf_read_bytes(ctx, (byte *)Buffer, 1, 1, s);
+    bytes = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 1, s);
     if (bytes < 0)
         return (gs_error_ioerror);
     if (bytes == 0 && s->eof)
@@ -1400,36 +1400,36 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
         case '+':
         case '-':
         case '.':
-            pdf_unread(ctx, s, (byte *)&Buffer[0], 1);
-            code = pdf_read_num(ctx, s);
+            pdfi_unread(ctx, s, (byte *)&Buffer[0], 1);
+            code = pdfi_read_num(ctx, s);
             if (code < 0)
                 return code;
             break;
         case '/':
-            return pdf_read_name(ctx, s);
+            return pdfi_read_name(ctx, s);
             break;
         case '<':
-            bytes = pdf_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
+            bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
             if (bytes <= 0)
                 return (gs_error_ioerror);
             if (iswhite(Buffer[1])) {
                 code = skip_white(ctx, s);
                 if (code < 0)
                     return code;
-                bytes = pdf_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
+                bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
             }
             if (Buffer[1] == '<') {
                 if (ctx->pdfdebug)
                     dmprintf (ctx->memory, " <<\n");
-                return pdf_mark_stack(ctx, PDF_DICT_MARK);
+                return pdfi_mark_stack(ctx, PDF_DICT_MARK);
             } else {
                 if (Buffer[1] == '>') {
-                    pdf_unread(ctx, s, (byte *)&Buffer[1], 1);
-                    return pdf_read_hexstring(ctx, s);
+                    pdfi_unread(ctx, s, (byte *)&Buffer[1], 1);
+                    return pdfi_read_hexstring(ctx, s);
                 } else {
                     if (ishex(Buffer[1])) {
-                        pdf_unread(ctx, s, (byte *)&Buffer[1], 1);
-                        return pdf_read_hexstring(ctx, s);
+                        pdfi_unread(ctx, s, (byte *)&Buffer[1], 1);
+                        return pdfi_read_hexstring(ctx, s);
                     }
                     else
                         return_error(gs_error_syntaxerror);
@@ -1437,58 +1437,58 @@ int pdf_read_token(pdf_context *ctx, pdf_stream *s)
             }
             break;
         case '>':
-            bytes = pdf_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
+            bytes = pdfi_read_bytes(ctx, (byte *)&Buffer[1], 1, 1, s);
             if (bytes <= 0)
                 return (gs_error_ioerror);
             if (Buffer[1] == '>')
-                return pdf_dict_from_stack(ctx);
+                return pdfi_dict_from_stack(ctx);
             else
                 return_error(gs_error_syntaxerror);
             break;
         case '(':
-            return pdf_read_string(ctx, s);
+            return pdfi_read_string(ctx, s);
             break;
         case '[':
             if (ctx->pdfdebug)
                 dmprintf (ctx->memory, "[");
-            return pdf_mark_stack(ctx, PDF_ARRAY_MARK);
+            return pdfi_mark_stack(ctx, PDF_ARRAY_MARK);
             break;
         case ']':
-            code = pdf_array_from_stack(ctx);
+            code = pdfi_array_from_stack(ctx);
             if (code < 0) {
                 if (code == gs_error_VMerror || code == gs_error_ioerror || ctx->pdfstoponerror)
                     return code;
-                pdf_clearstack(ctx);
-                return pdf_read_token(ctx, s);
+                pdfi_clearstack(ctx);
+                return pdfi_read_token(ctx, s);
             }
             break;
         case '{':
             if (ctx->pdfdebug)
                 dmprintf (ctx->memory, "{");
-            return pdf_mark_stack(ctx, PDF_PROC_MARK);
+            return pdfi_mark_stack(ctx, PDF_PROC_MARK);
             break;
         case '}':
-            pdf_clear_to_mark(ctx);
-            return pdf_read_token(ctx, s);
+            pdfi_clear_to_mark(ctx);
+            return pdfi_read_token(ctx, s);
             break;
         case '%':
-            pdf_skip_comment(ctx, s);
-            return pdf_read_token(ctx, s);
+            pdfi_skip_comment(ctx, s);
+            return pdfi_read_token(ctx, s);
             break;
         default:
             if (isdelimiter(Buffer[0])) {
                 if (ctx->pdfstoponerror)
                     return_error(gs_error_syntaxerror);
-                return pdf_read_token(ctx, s);
+                return pdfi_read_token(ctx, s);
             }
-            pdf_unread(ctx, s, (byte *)&Buffer[0], 1);
-            return pdf_read_keyword(ctx, s);
+            pdfi_unread(ctx, s, (byte *)&Buffer[0], 1);
+            return pdfi_read_keyword(ctx, s);
             break;
     }
     return 0;
 }
 
-int pdf_read_object(pdf_context *ctx, pdf_stream *s)
+int pdfi_read_object(pdf_context *ctx, pdf_stream *s)
 {
     int code = 0;
     uint64_t objnum = 0, gen = 0;
@@ -1500,46 +1500,46 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
      * want to deal with it specially by getting the Length, jumping to the end and checking
      * for an endobj. Or not, possibly, because it would be slow.
      */
-    code = pdf_read_token(ctx, s);
+    code = pdfi_read_token(ctx, s);
     if (code < 0)
         return code;
     if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
         return_error(gs_error_typecheck);
     }
     objnum = ((pdf_num *)ctx->stack_top[-1])->value.i;
-    pdf_pop(ctx, 1);
+    pdfi_pop(ctx, 1);
 
-    code = pdf_read_token(ctx, s);
+    code = pdfi_read_token(ctx, s);
     if (code < 0)
         return code;
     if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_INT) {
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
         return_error(gs_error_typecheck);
     }
     gen = ((pdf_num *)ctx->stack_top[-1])->value.i;
-    pdf_pop(ctx, 1);
+    pdfi_pop(ctx, 1);
 
-    code = pdf_read_token(ctx, s);
+    code = pdfi_read_token(ctx, s);
     if (code < 0)
         return code;
     if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
         return_error(gs_error_typecheck);
     }
     keyword = ((pdf_keyword *)ctx->stack_top[-1]);
     if (keyword->key != PDF_OBJ) {
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
         return_error(gs_error_syntaxerror);
     }
-    pdf_pop(ctx, 1);
+    pdfi_pop(ctx, 1);
 
-    code = pdf_read_token(ctx, s);
+    code = pdfi_read_token(ctx, s);
     if (code < 0)
         return code;
 
     do {
-        code = pdf_read_token(ctx, s);
+        code = pdfi_read_token(ctx, s);
         if (code < 0)
             return code;
         if (s->eof)
@@ -1555,11 +1555,11 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
 
         o = ctx->stack_top[-2];
 
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
 
         o->object_num = objnum;
         o->generation_num = gen;
-        code = pdf_add_to_cache(ctx, o);
+        code = pdfi_add_to_cache(ctx, o);
         return code;
     }
     if (keyword->key == PDF_STREAM) {
@@ -1568,9 +1568,9 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
 
         skip_eol(ctx, ctx->main_stream);
 
-        offset = pdf_unread_tell(ctx);
+        offset = pdfi_unread_tell(ctx);
 
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
 
         if (ctx->stack_top - ctx->stack_bot < 1)
             return_error(gs_error_stackunderflow);
@@ -1578,15 +1578,15 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
         d = (pdf_dict *)ctx->stack_top[-1];
 
         if (d->type != PDF_DICT) {
-            pdf_pop(ctx, 1);
+            pdfi_pop(ctx, 1);
             return_error(gs_error_syntaxerror);
         }
         d->object_num = objnum;
         d->generation_num = gen;
         d->stream_offset = offset;
-        code = pdf_add_to_cache(ctx, (pdf_obj *)d);
+        code = pdfi_add_to_cache(ctx, (pdf_obj *)d);
         if (code < 0) {
-            pdf_pop(ctx, 1);
+            pdfi_pop(ctx, 1);
             return code;
         }
 
@@ -1596,59 +1596,59 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
          * could also allow us to skip all kinds of other checking.....
          */
 
-        code = pdf_dict_get_int(ctx, d, "Length", &i);
+        code = pdfi_dict_get_int(ctx, d, "Length", &i);
         if (code < 0) {
-            pdf_pop(ctx, 1);
+            pdfi_pop(ctx, 1);
             return code;
         }
         if (i < 0 || (i + offset)> ctx->main_stream_length) {
-            pdf_pop(ctx, 1);
+            pdfi_pop(ctx, 1);
             return_error(gs_error_rangecheck);
         }
-        code = pdf_seek(ctx, ctx->main_stream, i, SEEK_CUR);
+        code = pdfi_seek(ctx, ctx->main_stream, i, SEEK_CUR);
         if (code < 0) {
-            pdf_pop(ctx, 1);
+            pdfi_pop(ctx, 1);
             return code;
         }
 
-        code = pdf_read_token(ctx, s);
+        code = pdfi_read_token(ctx, s);
         if (ctx->stack_top - ctx->stack_bot < 2)
             return_error(gs_error_stackunderflow);
 
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
             if (ctx->pdfstoponerror) {
-                pdf_pop(ctx, 2);
+                pdfi_pop(ctx, 2);
                 return_error(gs_error_typecheck);
             }
-            pdf_pop(ctx, 1);
+            pdfi_pop(ctx, 1);
             return 0;
         }
         keyword = ((pdf_keyword *)ctx->stack_top[-1]);
         if (keyword->key != PDF_ENDSTREAM) {
             if (ctx->pdfstoponerror) {
-                pdf_pop(ctx, 2);
+                pdfi_pop(ctx, 2);
                 return_error(gs_error_typecheck);
             }
             dmprintf2(ctx->memory, "Stream object %"PRIu64" has an incorrect /Length of %"PRIu64"\n", objnum, i);
-            pdf_pop(ctx, 1);
+            pdfi_pop(ctx, 1);
             return 0;
         }
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
 
-        code = pdf_read_token(ctx, s);
+        code = pdfi_read_token(ctx, s);
         if (ctx->stack_top - ctx->stack_bot < 2)
             return_error(gs_error_stackunderflow);
 
         if (((pdf_obj *)ctx->stack_top[-1])->type != PDF_KEYWORD) {
-            pdf_pop(ctx, 2);
+            pdfi_pop(ctx, 2);
             return_error(gs_error_typecheck);
         }
         keyword = ((pdf_keyword *)ctx->stack_top[-1]);
         if (keyword->key != PDF_ENDOBJ) {
-            pdf_pop(ctx, 2);
+            pdfi_pop(ctx, 2);
             return_error(gs_error_typecheck);
         }
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
 #if REFCNT_DEBUG
         ctx->stack_top[-1]->UID = ctx->UID++;
         dmprintf1(ctx->memory, "Allocated object with UID %"PRIi64"\n", ctx->stack_top[-1]->UID);
@@ -1666,27 +1666,27 @@ int pdf_read_object(pdf_context *ctx, pdf_stream *s)
 
         o = ctx->stack_top[-2];
 
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
 
         o->object_num = objnum;
         o->generation_num = gen;
-        code = pdf_add_to_cache(ctx, o);
+        code = pdfi_add_to_cache(ctx, o);
         return code;
     }
-    pdf_pop(ctx, 2);
+    pdfi_pop(ctx, 2);
     return_error(gs_error_syntaxerror);
 }
 
-int pdf_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type type)
+int pdfi_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type type)
 {
     int code;
 
-    code = pdf_read_object(ctx, s);
+    code = pdfi_read_object(ctx, s);
     if (code < 0)
         return code;
 
     if (ctx->stack_top[-1]->type != type) {
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
         return_error(gs_error_typecheck);
     }
     return 0;
@@ -1697,14 +1697,14 @@ int pdf_read_object_of_type(pdf_context *ctx, pdf_stream *s, pdf_obj_type type)
  * caller need not increment the reference count to the object, but must decrement
  * it (pdf_countdown) before exiting.
  */
-int pdf_make_name(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
+int pdfi_make_name(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
 {
     char *NewBuf = NULL;
     pdf_name *name = NULL;
 
     *o = NULL;
 
-    name = (pdf_name *)gs_alloc_bytes(ctx->memory, sizeof(pdf_name), "pdf_make_name");
+    name = (pdf_name *)gs_alloc_bytes(ctx->memory, sizeof(pdf_name), "pdfi_make_name");
     if (name == NULL)
         return_error(gs_error_VMerror);
 
@@ -1713,7 +1713,7 @@ int pdf_make_name(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
     name->type = PDF_NAME;
     name->refcnt = 1;
 
-    NewBuf = (char *)gs_alloc_bytes(ctx->memory, size, "pdf_make_name");
+    NewBuf = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_make_name");
     if (NewBuf == NULL)
         return_error(gs_error_VMerror);
 
@@ -1733,7 +1733,7 @@ int pdf_make_name(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
 
 /* Now routines to open a PDF file (and clean up in the event of an error) */
 
-static int pdf_repair_add_object(pdf_context *ctx, uint64_t obj, uint64_t gen, gs_offset_t offset)
+static int pdfi_repair_add_object(pdf_context *ctx, uint64_t obj, uint64_t gen, gs_offset_t offset)
 {
     /* Although we can handle object numbers larger than this, on some systems (32-bit Windows)
      * memset is limited to a (signed!) integer for the size of memory to clear. We could deal
@@ -1763,14 +1763,14 @@ static int pdf_repair_add_object(pdf_context *ctx, uint64_t obj, uint64_t gen, g
         ctx->xref_table->UID = ctx->UID++;
         dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
 #endif
-        pdf_countup(ctx->xref_table);
+        pdfi_countup(ctx->xref_table);
     } else {
         if (ctx->xref_table->xref_size < (obj + 1)) {
             xref_entry *new_xrefs;
 
             new_xrefs = (xref_entry *)gs_alloc_bytes(ctx->memory, (obj + 1) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
             if (new_xrefs == NULL){
-                pdf_countdown(ctx->xref_table);
+                pdfi_countdown(ctx->xref_table);
                 ctx->xref_table = NULL;
                 return_error(gs_error_VMerror);
             }
@@ -1789,7 +1789,7 @@ static int pdf_repair_add_object(pdf_context *ctx, uint64_t obj, uint64_t gen, g
     return 0;
 }
 
-int pdf_repair_file(pdf_context *ctx)
+int pdfi_repair_file(pdf_context *ctx)
 {
     int code;
     gs_offset_t offset;
@@ -1798,7 +1798,7 @@ int pdf_repair_file(pdf_context *ctx)
 
     ctx->repaired = true;
 
-    pdf_clearstack(ctx);
+    pdfi_clearstack(ctx);
 
     if(ctx->pdfdebug)
         dmprintf(ctx->memory, "%% Error encountered in opening PDF file, attempting repair\n");
@@ -1806,13 +1806,13 @@ int pdf_repair_file(pdf_context *ctx)
     /* First try to locate a %PDF header. If we can't find one, abort this, the file is too broken
      * and may not even be a PDF file.
      */
-    pdf_seek(ctx, ctx->main_stream, 0, SEEK_SET);
+    pdfi_seek(ctx, ctx->main_stream, 0, SEEK_SET);
     {
         char Buffer[10], test[] = "%PDF";
         int index = 0;
 
         do {
-            code = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, ctx->main_stream);
+            code = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, ctx->main_stream);
             if (code < 0)
                 return code;
             if (Buffer[index] == test[index])
@@ -1820,7 +1820,7 @@ int pdf_repair_file(pdf_context *ctx)
             else
                 index = 0;
         } while (index < 4 && ctx->main_stream->eof == false);
-        pdf_unread(ctx, ctx->main_stream, (byte *)Buffer, 4);
+        pdfi_unread(ctx, ctx->main_stream, (byte *)Buffer, 4);
     }
     if (ctx->main_stream->eof == true)
         return_error(gs_error_ioerror);
@@ -1828,13 +1828,13 @@ int pdf_repair_file(pdf_context *ctx)
     /* First pass, identify all the objects of the form x y obj */
 
     do {
-        offset = pdf_unread_tell(ctx);
+        offset = pdfi_unread_tell(ctx);
         do {
-            code = pdf_read_token(ctx, ctx->main_stream);
+            code = pdfi_read_token(ctx, ctx->main_stream);
             if (code < 0) {
                 if (code != gs_error_VMerror && code != gs_error_ioerror) {
-                    pdf_clearstack(ctx);
-                    offset = pdf_unread_tell(ctx);
+                    pdfi_clearstack(ctx);
+                    offset = pdfi_unread_tell(ctx);
                     continue;
                 } else
                     return code;
@@ -1846,17 +1846,17 @@ int pdf_repair_file(pdf_context *ctx)
 
                     if (k->key == PDF_OBJ) {
                         if (ctx->stack_top - ctx->stack_bot < 3 || ctx->stack_top[-2]->type != PDF_INT || ctx->stack_top[-2]->type != PDF_INT) {
-                            pdf_clearstack(ctx);
+                            pdfi_clearstack(ctx);
                             continue;
                         }
                         n = (pdf_num *)ctx->stack_top[-3];
                         object_num = n->value.i;
                         n = (pdf_num *)ctx->stack_top[-2];
                         generation_num = n->value.i;
-                        pdf_clearstack(ctx);
+                        pdfi_clearstack(ctx);
 
                         do {
-                            code = pdf_read_token(ctx, ctx->main_stream);
+                            code = pdfi_read_token(ctx, ctx->main_stream);
                             if (code < 0) {
                                 if (code != gs_error_VMerror && code != gs_error_ioerror)
                                     continue;
@@ -1866,10 +1866,10 @@ int pdf_repair_file(pdf_context *ctx)
                                 pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
 
                                 if (k->key == PDF_ENDOBJ) {
-                                    code = pdf_repair_add_object(ctx, object_num, generation_num, offset);
+                                    code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
                                     if (code < 0)
                                         return code;
-                                    pdf_clearstack(ctx);
+                                    pdfi_clearstack(ctx);
                                     break;
                                 } else {
                                     if (k->key == PDF_STREAM) {
@@ -1877,7 +1877,7 @@ int pdf_repair_file(pdf_context *ctx)
                                         int index = 0;
 
                                         do {
-                                            code = pdf_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, ctx->main_stream);
+                                            code = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, ctx->main_stream);
                                             if (code < 0 && code != gs_error_VMerror && code != gs_error_ioerror)
                                                 continue;
                                             if (code < 0)
@@ -1888,7 +1888,7 @@ int pdf_repair_file(pdf_context *ctx)
                                                 index = 0;
                                         } while (index < 9 && ctx->main_stream->eof == false);
                                         do {
-                                            code = pdf_read_token(ctx, ctx->main_stream);
+                                            code = pdfi_read_token(ctx, ctx->main_stream);
                                             if (code < 0 && code != gs_error_VMerror && code != gs_error_ioerror)
                                                 continue;
                                             if (code < 0)
@@ -1896,7 +1896,7 @@ int pdf_repair_file(pdf_context *ctx)
                                             if (ctx->stack_top[-1]->type == PDF_KEYWORD){
                                                 pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
                                                 if (k->key == PDF_ENDOBJ) {
-                                                    code = pdf_repair_add_object(ctx, object_num, generation_num, offset);
+                                                    code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
                                                     if (code < 0 && code != gs_error_VMerror && code != gs_error_ioerror)
                                                         break;
                                                     if (code < 0)
@@ -1906,10 +1906,10 @@ int pdf_repair_file(pdf_context *ctx)
                                             }
                                         }while(ctx->main_stream->eof == false);
 
-                                        pdf_clearstack(ctx);
+                                        pdfi_clearstack(ctx);
                                         break;
                                     } else {
-                                        pdf_clearstack(ctx);
+                                        pdfi_clearstack(ctx);
                                         break;
                                     }
                                 }
@@ -1918,27 +1918,27 @@ int pdf_repair_file(pdf_context *ctx)
                         break;
                     } else {
                         if (k->key == PDF_ENDOBJ) {
-                            code = pdf_repair_add_object(ctx, object_num, generation_num, offset);
+                            code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
                             if (code < 0)
                                 return code;
-                            pdf_clearstack(ctx);
+                            pdfi_clearstack(ctx);
                         } else
                             if (k->key == PDF_STARTXREF) {
-                                code = pdf_read_token(ctx, ctx->main_stream);
+                                code = pdfi_read_token(ctx, ctx->main_stream);
                                 if (code < 0 && code != gs_error_VMerror && code != gs_error_ioerror)
                                     continue;
                                 if (code < 0)
                                     return code;
-                                offset = pdf_unread_tell(ctx);
-                                pdf_clearstack(ctx);
+                                offset = pdfi_unread_tell(ctx);
+                                pdfi_clearstack(ctx);
                             } else {
-                                offset = pdf_unread_tell(ctx);
-                                pdf_clearstack(ctx);
+                                offset = pdfi_unread_tell(ctx);
+                                pdfi_clearstack(ctx);
                             }
                     }
                 }
                 if (ctx->stack_top - ctx->stack_bot > 0 && ctx->stack_top[-1]->type != PDF_INT)
-                    pdf_clearstack(ctx);
+                    pdfi_clearstack(ctx);
             }
         } while (ctx->main_stream->eof == false);
     } while(ctx->main_stream->eof == false);
@@ -1961,9 +1961,9 @@ int pdf_repair_file(pdf_context *ctx)
             if (ctx->xref_table->xref[i].u.uncompressed.offset > ctx->main_stream_length)
                 return_error(gs_error_rangecheck);
 
-            pdf_seek(ctx, ctx->main_stream, ctx->xref_table->xref[i].u.uncompressed.offset, SEEK_SET);
+            pdfi_seek(ctx, ctx->main_stream, ctx->xref_table->xref[i].u.uncompressed.offset, SEEK_SET);
             do {
-                code = pdf_read_token(ctx, ctx->main_stream);
+                code = pdfi_read_token(ctx, ctx->main_stream);
                 if (ctx->main_stream->eof == true || (code < 0 && code != gs_error_ioerror && code != gs_error_VMerror))
                     break;;
                 if (code < 0)
@@ -1980,9 +1980,9 @@ int pdf_repair_file(pdf_context *ctx)
                                  pdf_dict *d = (pdf_dict *)ctx->stack_top[-2];
                                  pdf_obj *o = NULL;
 
-                                 code = pdf_dict_get(ctx, d, "Type", &o);
+                                 code = pdfi_dict_get(ctx, d, "Type", &o);
                                  if (code < 0 && code != gs_error_undefined){
-                                     pdf_clearstack(ctx);
+                                     pdfi_clearstack(ctx);
                                      return code;
                                  }
                                  if (o != NULL) {
@@ -1991,13 +1991,13 @@ int pdf_repair_file(pdf_context *ctx)
                                      if (n->type == PDF_NAME) {
                                          if (n->length == 7 && memcmp(n->data, "Catalog", 7) == 0) {
                                              ctx->Root = (pdf_dict *)ctx->stack_top[-2];
-                                             pdf_countup(ctx->Root);
+                                             pdfi_countup(ctx->Root);
                                          }
                                      }
                                  }
                             }
                         }
-                        pdf_clearstack(ctx);
+                        pdfi_clearstack(ctx);
                         break;
                     }
                     if (k->key == PDF_STREAM) {
@@ -2005,21 +2005,21 @@ int pdf_repair_file(pdf_context *ctx)
                         pdf_name *n;
 
                         if (ctx->stack_top - ctx->stack_bot <= 1) {
-                            pdf_clearstack(ctx);
+                            pdfi_clearstack(ctx);
                             break;;
                         }
                         d = (pdf_dict *)ctx->stack_top[-2];
                         if (d->type != PDF_DICT) {
-                            pdf_clearstack(ctx);
+                            pdfi_clearstack(ctx);
                             break;;
                         }
-                        code = pdf_dict_get(ctx, d, "Type", (pdf_obj **)&n);
+                        code = pdfi_dict_get(ctx, d, "Type", (pdf_obj **)&n);
                         if (code < 0) {
                             if (ctx->pdfstoponerror || code == gs_error_VMerror) {
-                                pdf_clearstack(ctx);
+                                pdfi_clearstack(ctx);
                                 return code;
                             }
-                            pdf_clearstack(ctx);
+                            pdfi_clearstack(ctx);
                             break;
                         }
                         if (n->type == PDF_NAME) {
@@ -2029,27 +2029,27 @@ int pdf_repair_file(pdf_context *ctx)
                                 pdf_stream *compressed_stream;
                                 pdf_obj *o;
 
-                                offset = pdf_unread_tell(ctx);
-                                pdf_seek(ctx, ctx->main_stream, offset, SEEK_SET);
-                                code = pdf_filter(ctx, d, ctx->main_stream, &compressed_stream, false);
+                                offset = pdfi_unread_tell(ctx);
+                                pdfi_seek(ctx, ctx->main_stream, offset, SEEK_SET);
+                                code = pdfi_filter(ctx, d, ctx->main_stream, &compressed_stream, false);
                                 if (code == 0) {
-                                    code = pdf_dict_get_int(ctx, d, "N", &N);
+                                    code = pdfi_dict_get_int(ctx, d, "N", &N);
                                     if (code == 0) {
                                         for (j=0;j < N; j++) {
-                                            code = pdf_read_token(ctx, compressed_stream);
+                                            code = pdfi_read_token(ctx, compressed_stream);
                                             if (code == 0) {
                                                 o = ctx->stack_top[-1];
                                                 if (((pdf_obj *)o)->type == PDF_INT) {
                                                     obj_num = ((pdf_num *)o)->value.i;
-                                                    pdf_pop(ctx, 1);
-                                                    code = pdf_read_token(ctx, compressed_stream);
+                                                    pdfi_pop(ctx, 1);
+                                                    code = pdfi_read_token(ctx, compressed_stream);
                                                     if (code == 0) {
                                                         o = ctx->stack_top[-1];
                                                         if (((pdf_obj *)o)->type == PDF_INT) {
                                                             offset = ((pdf_num *)o)->value.i;
                                                             if (obj_num < 1) {
-                                                                pdf_close_file(ctx, compressed_stream);
-                                                                pdf_clearstack(ctx);
+                                                                pdfi_close_file(ctx, compressed_stream);
+                                                                pdfi_clearstack(ctx);
                                                                 return_error(gs_error_rangecheck);
                                                             }
                                                             ctx->xref_table->xref[obj_num].compressed = true;
@@ -2063,17 +2063,17 @@ int pdf_repair_file(pdf_context *ctx)
                                             }
                                         }
                                     }
-                                    pdf_close_file(ctx, compressed_stream);
+                                    pdfi_close_file(ctx, compressed_stream);
                                 }
                                 if (code < 0) {
                                     if (ctx->pdfstoponerror || code == gs_error_VMerror) {
-                                        pdf_clearstack(ctx);
+                                        pdfi_clearstack(ctx);
                                         return code;
                                     }
                                 }
                             }
                         }
-                        pdf_clearstack(ctx);
+                        pdfi_clearstack(ctx);
                         break;
                     }
                 }
@@ -2085,7 +2085,7 @@ int pdf_repair_file(pdf_context *ctx)
 }
 
 
-int pdf_read_Root(pdf_context *ctx)
+int pdfi_read_Root(pdf_context *ctx)
 {
     pdf_obj *o, *o1;
     int code;
@@ -2093,67 +2093,67 @@ int pdf_read_Root(pdf_context *ctx)
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "%% Reading Root dictionary\n");
 
-    code = pdf_dict_get(ctx, ctx->Trailer, "Root", &o1);
+    code = pdfi_dict_get(ctx, ctx->Trailer, "Root", &o1);
     if (code < 0)
         return code;
 
     if (o1->type == PDF_INDIRECT) {
         pdf_obj *name;
 
-        code = pdf_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
-        pdf_countdown(o1);
+        code = pdfi_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
+        pdfi_countdown(o1);
         if (code < 0)
             return code;
 
         if (o->type != PDF_DICT) {
-            pdf_countdown(o);
+            pdfi_countdown(o);
             return_error(gs_error_typecheck);
         }
 
-        code = pdf_make_name(ctx, (byte *)"Root", 4, &name);
+        code = pdfi_make_name(ctx, (byte *)"Root", 4, &name);
         if (code < 0) {
-            pdf_countdown(o);
+            pdfi_countdown(o);
             return code;
         }
-        code = pdf_dict_put(ctx->Trailer, name, o);
-        /* pdf_make_name created a name with a reference count of 1, the local object
+        code = pdfi_dict_put(ctx->Trailer, name, o);
+        /* pdfi_make_name created a name with a reference count of 1, the local object
          * is going out of scope, so decrement the reference coutn.
          */
-        pdf_countdown(name);
+        pdfi_countdown(name);
         if (code < 0) {
-            pdf_countdown(o);
+            pdfi_countdown(o);
             return code;
         }
         o1 = o;
     } else {
         if (o1->type != PDF_DICT) {
-            pdf_countdown(o1);
+            pdfi_countdown(o1);
             return_error(gs_error_typecheck);
         }
     }
 
-    code = pdf_dict_get_type(ctx, (pdf_dict *)o1, "Type", PDF_NAME, &o);
+    code = pdfi_dict_get_type(ctx, (pdf_dict *)o1, "Type", PDF_NAME, &o);
     if (code < 0) {
-        pdf_countdown(o1);
+        pdfi_countdown(o1);
         return code;
     }
     if (((pdf_name *)o)->length != 7 || memcmp(((pdf_name *)o)->data, "Catalog", 7) != 0){
-        pdf_countdown(o);
-        pdf_countdown(o1);
+        pdfi_countdown(o);
+        pdfi_countdown(o1);
         return_error(gs_error_syntaxerror);
     }
-    pdf_countdown(o);
+    pdfi_countdown(o);
 
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "\n");
-    /* We don't pdf_countdown(o1) now, because we've transferred our
+    /* We don't pdfi_countdown(o1) now, because we've transferred our
      * reference to the pointer in the pdf_context structure.
      */
     ctx->Root = (pdf_dict *)o1;
     return 0;
 }
 
-int pdf_read_Info(pdf_context *ctx)
+int pdfi_read_Info(pdf_context *ctx)
 {
     pdf_obj *o, *o1;
     int code;
@@ -2161,55 +2161,55 @@ int pdf_read_Info(pdf_context *ctx)
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "%% Reading Info dictionary\n");
 
-    code = pdf_dict_get(ctx, ctx->Trailer, "Info", &o1);
+    code = pdfi_dict_get(ctx, ctx->Trailer, "Info", &o1);
     if (code < 0)
         return code;
 
     if (o1->type == PDF_INDIRECT) {
         pdf_obj *name;
 
-        code = pdf_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
-        pdf_countdown(o1);
+        code = pdfi_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
+        pdfi_countdown(o1);
         if (code < 0)
             return code;
 
         if (o->type != PDF_DICT) {
-            pdf_countdown(o);
+            pdfi_countdown(o);
             return_error(gs_error_typecheck);
         }
 
-        code = pdf_make_name(ctx, (byte *)"Info", 4, &name);
+        code = pdfi_make_name(ctx, (byte *)"Info", 4, &name);
         if (code < 0) {
-            pdf_countdown(o);
+            pdfi_countdown(o);
             return code;
         }
-        code = pdf_dict_put(ctx->Trailer, name, o);
-        /* pdf_make_name created a name with a reference count of 1, the local object
+        code = pdfi_dict_put(ctx->Trailer, name, o);
+        /* pdfi_make_name created a name with a reference count of 1, the local object
          * is going out of scope, so decrement the reference coutn.
          */
-        pdf_countdown(name);
+        pdfi_countdown(name);
         if (code < 0) {
-            pdf_countdown(o);
+            pdfi_countdown(o);
             return code;
         }
         o1 = o;
     } else {
         if (o1->type != PDF_DICT) {
-            pdf_countdown(o1);
+            pdfi_countdown(o1);
             return_error(gs_error_typecheck);
         }
     }
 
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "\n");
-    /* We don't pdf_countdown(o1) now, because we've transferred our
+    /* We don't pdfi_countdown(o1) now, because we've transferred our
      * reference to the pointer in the pdf_context structure.
      */
     ctx->Info = (pdf_dict *)o1;
     return 0;
 }
 
-int pdf_read_Pages(pdf_context *ctx)
+int pdfi_read_Pages(pdf_context *ctx)
 {
     pdf_obj *o, *o1;
     int code;
@@ -2218,41 +2218,41 @@ int pdf_read_Pages(pdf_context *ctx)
     if (ctx->pdfdebug)
         dmprintf(ctx->memory, "%% Reading Pages dictionary\n");
 
-    code = pdf_dict_get(ctx, ctx->Root, "Pages", &o1);
+    code = pdfi_dict_get(ctx, ctx->Root, "Pages", &o1);
     if (code < 0)
         return code;
 
     if (o1->type == PDF_INDIRECT) {
         pdf_obj *name;
 
-        code = pdf_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
-        pdf_countdown(o1);
+        code = pdfi_dereference(ctx, ((pdf_indirect_ref *)o1)->ref_object_num,  ((pdf_indirect_ref *)o1)->ref_generation_num, &o);
+        pdfi_countdown(o1);
         if (code < 0)
             return code;
 
         if (o->type != PDF_DICT) {
-            pdf_countdown(o);
+            pdfi_countdown(o);
             return_error(gs_error_typecheck);
         }
 
-        code = pdf_make_name(ctx, (byte *)"Pages", 5, &name);
+        code = pdfi_make_name(ctx, (byte *)"Pages", 5, &name);
         if (code < 0) {
-            pdf_countdown(o);
+            pdfi_countdown(o);
             return code;
         }
-        code = pdf_dict_put(ctx->Root, name, o);
-        /* pdf_make_name created a name with a reference count of 1, the local object
+        code = pdfi_dict_put(ctx->Root, name, o);
+        /* pdfi_make_name created a name with a reference count of 1, the local object
          * is going out of scope, so decrement the reference coutn.
          */
-        pdf_countdown(name);
+        pdfi_countdown(name);
         if (code < 0) {
-            pdf_countdown(o);
+            pdfi_countdown(o);
             return code;
         }
         o1 = o;
     } else {
         if (o1->type != PDF_DICT) {
-            pdf_countdown(o1);
+            pdfi_countdown(o1);
             return_error(gs_error_typecheck);
         }
     }
@@ -2261,25 +2261,25 @@ int pdf_read_Pages(pdf_context *ctx)
         dmprintf(ctx->memory, "\n");
 
     /* Acrobat allows the Pages Count to be a flaoting point nuber (!) */
-    code = pdf_dict_get_number(ctx, (pdf_dict *)o1, "Count", &d);
+    code = pdfi_dict_get_number(ctx, (pdf_dict *)o1, "Count", &d);
     if (code < 0)
         return code;
 
     if (floor(d) != d) {
-        pdf_countdown(o1);
+        pdfi_countdown(o1);
         return_error(gs_error_rangecheck);
     } else {
         ctx->num_pages = (int)floor(d);
     }
 
-    /* We don't pdf_countdown(o1) now, because we've transferred our
+    /* We don't pdfi_countdown(o1) now, because we've transferred our
      * reference to the pointer in the pdf_context structure.
      */
     ctx->Pages = (pdf_dict *)o1;
     return 0;
 }
 
-int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t *page_offset, pdf_dict **target, pdf_dict *inherited)
+int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t *page_offset, pdf_dict **target, pdf_dict *inherited)
 {
     int i, code = 0;
     pdf_array *Kids = NULL;
@@ -2296,19 +2296,19 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
 
     /* if we are being passed any inherited values from our parent, copy them now */
     if (inherited != NULL) {
-        code = pdf_alloc_dict(ctx, inherited->size, &inheritable);
+        code = pdfi_alloc_dict(ctx, inherited->size, &inheritable);
         if (code < 0)
             return code;
-        code = pdf_dict_copy(inheritable, inherited);
+        code = pdfi_dict_copy(inheritable, inherited);
         if (code < 0) {
-            pdf_countdown(inheritable);
+            pdfi_countdown(inheritable);
             return code;
         }
     }
 
-    code = pdf_dict_get_number(ctx, d, "Count", &dbl);
+    code = pdfi_dict_get_number(ctx, d, "Count", &dbl);
     if (code < 0) {
-        pdf_countdown(inheritable);
+        pdfi_countdown(inheritable);
         return code;
     }
     if (dbl != floor(dbl))
@@ -2316,20 +2316,20 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
     num = (int)dbl;
 
     if (num < 0 || (num + *page_offset) > ctx->num_pages) {
-        pdf_countdown(inheritable);
+        pdfi_countdown(inheritable);
         return_error(gs_error_rangecheck);
     }
     if (num + *page_offset < page_num) {
-        pdf_countdown(inheritable);
+        pdfi_countdown(inheritable);
         *page_offset += num;
         return 1;
     }
     /* The requested page is a descendant of this node */
 
     /* Check for inheritable keys, if we find any copy them to the 'inheritable' dictionary at this level */
-    code = pdf_dict_known(d, "Resources", &known);
+    code = pdfi_dict_known(d, "Resources", &known);
     if (code < 0) {
-        pdf_countdown(inheritable);
+        pdfi_countdown(inheritable);
         return code;
     }
     if (known) {
@@ -2337,29 +2337,29 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
         pdf_obj *object;
 
         if (inheritable == NULL) {
-            code = pdf_alloc_dict(ctx, 0, &inheritable);
+            code = pdfi_alloc_dict(ctx, 0, &inheritable);
             if (code < 0)
                 return code;
         }
 
-        code = pdf_make_name(ctx, (byte *)"Resources", 9, (pdf_obj **)&Key);
+        code = pdfi_make_name(ctx, (byte *)"Resources", 9, (pdf_obj **)&Key);
         if (code < 0) {
-            pdf_countdown(inheritable);
+            pdfi_countdown(inheritable);
             return code;
         }
-        code = pdf_dict_get(ctx, d, "Resources", &object);
+        code = pdfi_dict_get(ctx, d, "Resources", &object);
         if (code < 0) {
-            pdf_countdown(Key);
-            pdf_countdown(inheritable);
+            pdfi_countdown(Key);
+            pdfi_countdown(inheritable);
             return code;
         }
-        code = pdf_dict_put(inheritable, (pdf_obj *)Key, object);
-        pdf_countdown(Key);
-        pdf_countdown(object);
+        code = pdfi_dict_put(inheritable, (pdf_obj *)Key, object);
+        pdfi_countdown(Key);
+        pdfi_countdown(object);
     }
-    code = pdf_dict_known(d, "MediaBox", &known);
+    code = pdfi_dict_known(d, "MediaBox", &known);
     if (code < 0) {
-        pdf_countdown(inheritable);
+        pdfi_countdown(inheritable);
         return code;
     }
     if (known) {
@@ -2367,29 +2367,29 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
         pdf_obj *object;
 
         if (inheritable == NULL) {
-            code = pdf_alloc_dict(ctx, 0, &inheritable);
+            code = pdfi_alloc_dict(ctx, 0, &inheritable);
             if (code < 0)
                 return code;
         }
 
-        code = pdf_make_name(ctx, (byte *)"MediaBox", 8, (pdf_obj **)&Key);
+        code = pdfi_make_name(ctx, (byte *)"MediaBox", 8, (pdf_obj **)&Key);
         if (code < 0) {
-            pdf_countdown(inheritable);
+            pdfi_countdown(inheritable);
             return code;
         }
-        code = pdf_dict_get(ctx, d, "MediaBox", &object);
+        code = pdfi_dict_get(ctx, d, "MediaBox", &object);
         if (code < 0) {
-            pdf_countdown(Key);
-            pdf_countdown(inheritable);
+            pdfi_countdown(Key);
+            pdfi_countdown(inheritable);
             return code;
         }
-        code = pdf_dict_put(inheritable, (pdf_obj *)Key, object);
-        pdf_countdown(Key);
-        pdf_countdown(object);
+        code = pdfi_dict_put(inheritable, (pdf_obj *)Key, object);
+        pdfi_countdown(Key);
+        pdfi_countdown(object);
     }
-    code = pdf_dict_known(d, "CropBox", &known);
+    code = pdfi_dict_known(d, "CropBox", &known);
     if (code < 0) {
-        pdf_countdown(inheritable);
+        pdfi_countdown(inheritable);
         return code;
     }
     if (known) {
@@ -2397,29 +2397,29 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
         pdf_obj *object;
 
         if (inheritable == NULL) {
-            code = pdf_alloc_dict(ctx, 0, &inheritable);
+            code = pdfi_alloc_dict(ctx, 0, &inheritable);
             if (code < 0)
                 return code;
         }
 
-        code = pdf_make_name(ctx, (byte *)"CropBox", 7, (pdf_obj **)&Key);
+        code = pdfi_make_name(ctx, (byte *)"CropBox", 7, (pdf_obj **)&Key);
         if (code < 0) {
-            pdf_countdown(inheritable);
+            pdfi_countdown(inheritable);
             return code;
         }
-        code = pdf_dict_get(ctx, d, "CropBox", &object);
+        code = pdfi_dict_get(ctx, d, "CropBox", &object);
         if (code < 0) {
-            pdf_countdown(Key);
-            pdf_countdown(inheritable);
+            pdfi_countdown(Key);
+            pdfi_countdown(inheritable);
             return code;
         }
-        code = pdf_dict_put(inheritable, (pdf_obj *)Key, object);
-        pdf_countdown(Key);
-        pdf_countdown(object);
+        code = pdfi_dict_put(inheritable, (pdf_obj *)Key, object);
+        pdfi_countdown(Key);
+        pdfi_countdown(object);
     }
-    code = pdf_dict_known(d, "Rotate", &known);
+    code = pdfi_dict_known(d, "Rotate", &known);
     if (code < 0) {
-        pdf_countdown(inheritable);
+        pdfi_countdown(inheritable);
         return code;
     }
     if (known) {
@@ -2427,62 +2427,62 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
         pdf_obj *object;
 
         if (inheritable == NULL) {
-            code = pdf_alloc_dict(ctx, 0, &inheritable);
+            code = pdfi_alloc_dict(ctx, 0, &inheritable);
             if (code < 0)
                 return code;
         }
 
-        code = pdf_make_name(ctx, (byte *)"Rotate", 6, (pdf_obj **)&Key);
+        code = pdfi_make_name(ctx, (byte *)"Rotate", 6, (pdf_obj **)&Key);
         if (code < 0) {
-            pdf_countdown(inheritable);
+            pdfi_countdown(inheritable);
             return code;
         }
-        code = pdf_dict_get(ctx, d, "Rotate", &object);
+        code = pdfi_dict_get(ctx, d, "Rotate", &object);
         if (code < 0) {
-            pdf_countdown(Key);
-            pdf_countdown(inheritable);
+            pdfi_countdown(Key);
+            pdfi_countdown(inheritable);
             return code;
         }
-        code = pdf_dict_put(inheritable, (pdf_obj *)Key, object);
-        pdf_countdown(Key);
-        pdf_countdown(object);
+        code = pdfi_dict_put(inheritable, (pdf_obj *)Key, object);
+        pdfi_countdown(Key);
+        pdfi_countdown(object);
     }
 
     /* Get the Kids array */
-    code = pdf_dict_get_type(ctx, d, "Kids", PDF_ARRAY, (pdf_obj **)&Kids);
+    code = pdfi_dict_get_type(ctx, d, "Kids", PDF_ARRAY, (pdf_obj **)&Kids);
     if (code < 0) {
-        pdf_countdown(inheritable);
-        pdf_countdown(Kids);
+        pdfi_countdown(inheritable);
+        pdfi_countdown(Kids);
         return code;
     }
 
     /* Check each entry in the Kids array */
     for (i = 0;i < Kids->entries;i++) {
-        code = pdf_array_get(Kids, i, (pdf_obj **)&node);
+        code = pdfi_array_get(Kids, i, (pdf_obj **)&node);
         if (code < 0) {
-            pdf_countdown(inheritable);
-            pdf_countdown(Kids);
+            pdfi_countdown(inheritable);
+            pdfi_countdown(Kids);
             return code;
         }
         if (node->type != PDF_INDIRECT && node->type != PDF_DICT) {
-            pdf_countdown(inheritable);
-            pdf_countdown(Kids);
-            pdf_countdown(node);
+            pdfi_countdown(inheritable);
+            pdfi_countdown(Kids);
+            pdfi_countdown(node);
             return_error(gs_error_typecheck);
         }
         if (node->type == PDF_INDIRECT) {
-            code = pdf_dereference(ctx, node->ref_object_num, node->ref_generation_num, (pdf_obj **)&child);
+            code = pdfi_dereference(ctx, node->ref_object_num, node->ref_generation_num, (pdf_obj **)&child);
             if (code < 0) {
-                pdf_countdown(inheritable);
-                pdf_countdown(Kids);
-                pdf_countdown(node);
+                pdfi_countdown(inheritable);
+                pdfi_countdown(Kids);
+                pdfi_countdown(node);
                 return code;
             }
             if (child->type != PDF_DICT) {
-                pdf_countdown(inheritable);
-                pdf_countdown(Kids);
-                pdf_countdown(node);
-                pdf_countdown(child);
+                pdfi_countdown(inheritable);
+                pdfi_countdown(Kids);
+                pdfi_countdown(node);
+                pdfi_countdown(child);
                 return_error(gs_error_typecheck);
             }
             /* If its an intermediate node, store it in the page_table, if its a leaf node
@@ -2497,22 +2497,22 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
              * dictionary once, any other order will dereference each page twice. (or more
              * if we render the same page multiple times).
              */
-            code = pdf_dict_get_type(ctx, child, "Type", PDF_NAME, (pdf_obj **)&Type);
+            code = pdfi_dict_get_type(ctx, child, "Type", PDF_NAME, (pdf_obj **)&Type);
             if (code < 0) {
-                pdf_countdown(inheritable);
-                pdf_countdown(Kids);
-                pdf_countdown(child);
-                pdf_countdown(node);
+                pdfi_countdown(inheritable);
+                pdfi_countdown(Kids);
+                pdfi_countdown(child);
+                pdfi_countdown(node);
                 return code;
             }
             if (Type->length == 5 && memcmp(Type->data, "Pages", 5) == 0) {
-                code = pdf_array_put(Kids, i, (pdf_obj *)child);
+                code = pdfi_array_put(Kids, i, (pdf_obj *)child);
                 if (code < 0) {
-                    pdf_countdown(inheritable);
-                    pdf_countdown(Kids);
-                    pdf_countdown(child);
-                    pdf_countdown(Type);
-                    pdf_countdown(node);
+                    pdfi_countdown(inheritable);
+                    pdfi_countdown(Kids);
+                    pdfi_countdown(child);
+                    pdfi_countdown(Type);
+                    pdfi_countdown(node);
                     return code;
                 }
             }
@@ -2524,46 +2524,46 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
                 pdf_dict *leaf_dict = NULL;
                 pdf_name *Key = NULL, *Key1 = NULL;
 
-                code = pdf_alloc_dict(ctx, 0, &leaf_dict);
+                code = pdfi_alloc_dict(ctx, 0, &leaf_dict);
                 if (code == 0) {
-                    code = pdf_make_name(ctx, (byte *)"PageRef", 7, (pdf_obj **)&Key);
+                    code = pdfi_make_name(ctx, (byte *)"PageRef", 7, (pdf_obj **)&Key);
                     if (code == 0) {
-                        code = pdf_dict_put(leaf_dict, (pdf_obj *)Key, (pdf_obj *)node);
+                        code = pdfi_dict_put(leaf_dict, (pdf_obj *)Key, (pdf_obj *)node);
                         if (code == 0){
-                            code = pdf_make_name(ctx, (byte *)"Type", 4, (pdf_obj **)&Key);
+                            code = pdfi_make_name(ctx, (byte *)"Type", 4, (pdf_obj **)&Key);
                             if (code == 0){
-                                code = pdf_make_name(ctx, (byte *)"PageRef", 7, (pdf_obj **)&Key1);
+                                code = pdfi_make_name(ctx, (byte *)"PageRef", 7, (pdf_obj **)&Key1);
                                 if (code == 0) {
-                                    code = pdf_dict_put(leaf_dict, (pdf_obj *)Key, (pdf_obj *)Key1);
+                                    code = pdfi_dict_put(leaf_dict, (pdf_obj *)Key, (pdf_obj *)Key1);
                                     if (code == 0)
-                                        code = pdf_array_put(Kids, i, (pdf_obj *)leaf_dict);
+                                        code = pdfi_array_put(Kids, i, (pdf_obj *)leaf_dict);
                                 }
                             }
                         }
                     }
                 }
-                pdf_countdown(Key);
-                pdf_countdown(Key1);
-                pdf_countdown(leaf_dict);
+                pdfi_countdown(Key);
+                pdfi_countdown(Key1);
+                pdfi_countdown(leaf_dict);
                 if (code < 0) {
-                    pdf_countdown(inheritable);
-                    pdf_countdown(Kids);
-                    pdf_countdown(child);
-                    pdf_countdown(Type);
-                    pdf_countdown(node);
+                    pdfi_countdown(inheritable);
+                    pdfi_countdown(Kids);
+                    pdfi_countdown(child);
+                    pdfi_countdown(Type);
+                    pdfi_countdown(node);
                     return code;
                 }
             }
-            pdf_countdown(Type);
-            pdf_countdown(node);
+            pdfi_countdown(Type);
+            pdfi_countdown(node);
         } else {
             child = (pdf_dict *)node;
         }
         /* Check the type, if its a Pages entry, then recurse. If its a Page entry, is it the one we want */
-        code = pdf_dict_get_type(ctx, child, "Type", PDF_NAME, (pdf_obj **)&Type);
+        code = pdfi_dict_get_type(ctx, child, "Type", PDF_NAME, (pdf_obj **)&Type);
         if (code == 0) {
             if (Type->length == 5 && memcmp(Type->data, "Pages", 5) == 0) {
-                code = pdf_dict_get_number(ctx, child, "Count", &dbl);
+                code = pdfi_dict_get_number(ctx, child, "Count", &dbl);
                 if (code == 0) {
                     if (dbl != floor(dbl))
                         return_error(gs_error_rangecheck);
@@ -2572,68 +2572,68 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
                         code = gs_error_rangecheck;
                     } else {
                         if (num + *page_offset <= page_num) {
-                            pdf_countdown(child);
+                            pdfi_countdown(child);
                             child = NULL;
-                            pdf_countdown(Type);
+                            pdfi_countdown(Type);
                             Type = NULL;
                             *page_offset += num;
                         } else {
-                            code = pdf_get_page_dict(ctx, child, page_num, page_offset, target, inheritable);
-                            pdf_countdown(Type);
-                            pdf_countdown(Kids);
-                            pdf_countdown(child);
+                            code = pdfi_get_page_dict(ctx, child, page_num, page_offset, target, inheritable);
+                            pdfi_countdown(Type);
+                            pdfi_countdown(Kids);
+                            pdfi_countdown(child);
                             return code;
                         }
                     }
                 }
             } else {
                 if (Type->length == 7 && memcmp(Type->data, "PageRef", 7) == 0) {
-                    pdf_countdown(Type);
+                    pdfi_countdown(Type);
                     Type = NULL;
                     if ((*page_offset) == page_num) {
                         pdf_indirect_ref *o = NULL;
                         pdf_dict *d = NULL;
-                        code = pdf_dict_get(ctx, child, "PageRef", (pdf_obj **)&o);
+                        code = pdfi_dict_get(ctx, child, "PageRef", (pdf_obj **)&o);
                         if (code == 0) {
-                            code = pdf_dereference(ctx, o->ref_object_num, o->ref_generation_num, (pdf_obj **)&d);
+                            code = pdfi_dereference(ctx, o->ref_object_num, o->ref_generation_num, (pdf_obj **)&d);
                             if (code == 0) {
                                 if (inheritable != NULL) {
-                                    code = pdf_merge_dicts(d, inheritable);
-                                    pdf_countdown(inheritable);
+                                    code = pdfi_merge_dicts(d, inheritable);
+                                    pdfi_countdown(inheritable);
                                     inheritable = NULL;
                                 }
                                 if (code == 0) {
-                                    pdf_countdown(Kids);
+                                    pdfi_countdown(Kids);
                                     *target = d;
-                                    pdf_countup(*target);
-                                    pdf_countdown(d);
+                                    pdfi_countup(*target);
+                                    pdfi_countdown(d);
                                     return 0;
                                 }
                             }
                         }
                     } else {
                         *page_offset += 1;
-                        pdf_countdown(child);
+                        pdfi_countdown(child);
                     }
                 } else {
                     if (Type->length == 4 && memcmp(Type->data, "Page", 4) == 0) {
-                        pdf_countdown(Type);
+                        pdfi_countdown(Type);
                         Type = NULL;
                         if ((*page_offset) == page_num) {
                             if (inheritable != NULL) {
-                                code = pdf_merge_dicts(child, inheritable);
+                                code = pdfi_merge_dicts(child, inheritable);
                             }
                             if (code == 0) {
-                                pdf_countdown(inheritable);
-                                pdf_countdown(Kids);
+                                pdfi_countdown(inheritable);
+                                pdfi_countdown(Kids);
                                 *target = child;
-                                pdf_countup(*target);
-                                pdf_countdown(child);
+                                pdfi_countup(*target);
+                                pdfi_countdown(child);
                                 return 0;
                             }
                         } else {
                             *page_offset += 1;
-                            pdf_countdown(child);
+                            pdfi_countdown(child);
                         }
                     } else
                         code = gs_error_typecheck;
@@ -2641,15 +2641,15 @@ int pdf_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_t
             }
         }
         if (code < 0) {
-            pdf_countdown(inheritable);
-            pdf_countdown(Kids);
-            pdf_countdown(child);
-            pdf_countdown(Type);
+            pdfi_countdown(inheritable);
+            pdfi_countdown(Kids);
+            pdfi_countdown(child);
+            pdfi_countdown(Type);
             return code;
         }
     }
     /* Positive return value indicates we did not find the target below this node, try the next one */
-    pdf_countdown(inheritable);
+    pdfi_countdown(inheritable);
     return 1;
 }
 
@@ -2663,7 +2663,7 @@ static int split_bogus_operator(pdf_context *ctx)
 #define K2(a, b) ((a << 8) + b)
 #define K3(a, b, c) ((a << 16) + (b << 8) + c)
 
-static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *stream_dict, pdf_dict *page_dict)
+static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_keyword *keyword = (pdf_keyword *)ctx->stack_top[-1];
     uint32_t op = 0;
@@ -2685,295 +2685,295 @@ static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, p
         }
         switch(op) {
             case K1('b'):           /* closepath, fill, stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_b(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_b(ctx);
                 break;
             case K1('B'):           /* fill, stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_B(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_B(ctx);
                 break;
             case K2('b','*'):       /* closepath, eofill, stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_b_star(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_b_star(ctx);
                 break;
             case K2('B','*'):       /* eofill, stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_B_star(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_B_star(ctx);
                 break;
             case K2('B','I'):       /* begin inline image */
-                pdf_pop(ctx, 1);
-                code = pdf_BI(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_BI(ctx);
                 break;
             case K3('B','D','C'):   /* begin marked content sequence with property list */
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
                 if (ctx->stack_top - ctx->stack_bot >= 2) {
-                    pdf_pop(ctx, 2);
+                    pdfi_pop(ctx, 2);
                 } else
-                    pdf_clearstack(ctx);
+                    pdfi_clearstack(ctx);
                 break;
             case K3('B','M','C'):   /* begin marked content sequence */
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
                 if (ctx->stack_top - ctx->stack_bot >= 1) {
-                    pdf_pop(ctx, 1);
+                    pdfi_pop(ctx, 1);
                 } else
-                    pdf_clearstack(ctx);
+                    pdfi_clearstack(ctx);
                 break;
             case K2('B','T'):       /* begin text */
             case K2('B','X'):       /* begin compatibility section */
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
                 break;
             case K1('c'):           /* curveto */
-                pdf_pop(ctx, 1);
-                code = pdf_curveto(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_curveto(ctx);
                 break;
             case K2('c','m'):       /* concat */
-                pdf_pop(ctx, 1);
-                code = pdf_concat(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_concat(ctx);
                 break;
             case K2('C','S'):       /* set stroke colour space */
-                pdf_pop(ctx, 1);
-                code = pdf_setstrokecolor_space(ctx, stream_dict, page_dict);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setstrokecolor_space(ctx, stream_dict, page_dict);
                 break;
             case K2('c','s'):       /* set non-stroke colour space */
-                pdf_pop(ctx, 1);
-                code = pdf_setfillcolor_space(ctx, stream_dict, page_dict);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setfillcolor_space(ctx, stream_dict, page_dict);
                 break;
                 break;
             case K1('d'):           /* set dash params */
-                pdf_pop(ctx, 1);
-                code = pdf_setdash(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setdash(ctx);
                 break;
             case K2('E','I'):       /* end inline image */
-                pdf_pop(ctx, 1);
-                code = pdf_EI(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_EI(ctx);
                 break;
             case K2('d','0'):       /* set type 3 font glyph width */
-                pdf_pop(ctx, 1);
-                code = pdf_d0(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_d0(ctx);
                 break;
             case K2('d','1'):       /* set type 3 font glyph width and bounding box */
-                pdf_pop(ctx, 1);
-                code = pdf_d1(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_d1(ctx);
                 break;
             case K2('D','o'):       /* invoke named XObject */
-                pdf_pop(ctx, 1);
-                code = pdf_Do(ctx, stream_dict, page_dict);
+                pdfi_pop(ctx, 1);
+                code = pdfi_Do(ctx, stream_dict, page_dict);
                 break;
             case K2('D','P'):       /* define marked content point with property list */
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
                 if (ctx->stack_top - ctx->stack_bot >= 2) {
-                    pdf_pop(ctx, 2);
+                    pdfi_pop(ctx, 2);
                 } else
-                    pdf_clearstack(ctx);
+                    pdfi_clearstack(ctx);
                 break;
             case K3('E','M','C'):   /* end marked content sequence */
             case K2('E','T'):       /* end text */
             case K2('E','X'):       /* end compatibility section */
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
                 break;
             case K1('f'):           /* fill */
-                pdf_pop(ctx, 1);
-                code = pdf_fill(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_fill(ctx);
                 break;
             case K1('F'):           /* fill (obselete operator) */
-                pdf_pop(ctx, 1);
-                code = pdf_fill(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_fill(ctx);
                 break;
             case K2('f','*'):       /* eofill */
-                pdf_pop(ctx, 1);
-                code = pdf_eofill(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_eofill(ctx);
                 break;
             case K1('G'):           /* setgray for stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_setgraystroke(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setgraystroke(ctx);
                 break;
             case K1('g'):           /* setgray for non-stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_setgrayfill(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setgrayfill(ctx);
                 break;
             case K2('g','s'):       /* set graphics state from dictionary */
-                pdf_clearstack(ctx);
+                pdfi_clearstack(ctx);
                 break;
             case K1('h'):           /* closepath */
-                pdf_pop(ctx, 1);
-                code = pdf_closepath(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_closepath(ctx);
                 break;
             case K1('i'):           /* setflat */
-                pdf_pop(ctx, 1);
-                code = pdf_setflat(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setflat(ctx);
                 break;
             case K2('I','D'):       /* begin inline image data */
-                pdf_pop(ctx, 1);
-                code = pdf_ID(ctx, source);
+                pdfi_pop(ctx, 1);
+                code = pdfi_ID(ctx, source);
                 break;
             case K1('j'):           /* setlinejoin */
-                pdf_pop(ctx, 1);
-                code = pdf_setlinejoin(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setlinejoin(ctx);
                 break;
             case K1('J'):           /* setlinecap */
-                pdf_pop(ctx, 1);
-                code = pdf_setlinecap(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setlinecap(ctx);
                 break;
             case K1('K'):           /* setcmyk for non-stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_setcmykstroke(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setcmykstroke(ctx);
                 break;
             case K1('k'):           /* setcmyk for non-stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_setcmykfill(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setcmykfill(ctx);
                 break;
             case K1('l'):           /* lineto */
-                pdf_pop(ctx, 1);
-                code = pdf_lineto(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_lineto(ctx);
                 break;
             case K1('m'):           /* moveto */
-                pdf_pop(ctx, 1);
-                code = pdf_moveto(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_moveto(ctx);
                 break;
             case K1('M'):           /* setmiterlimit */
-                pdf_pop(ctx, 1);
-                code = pdf_setmiterlimit(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setmiterlimit(ctx);
                 break;
             case K2('M','P'):       /* define marked content point */
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
                 if (ctx->stack_top - ctx->stack_bot >= 1)
-                    pdf_pop(ctx, 1);
+                    pdfi_pop(ctx, 1);
                 break;
             case K1('n'):           /* newpath */
-                pdf_pop(ctx, 1);
-                code = pdf_newpath(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_newpath(ctx);
                 break;
             case K1('q'):           /* gsave */
-                pdf_pop(ctx, 1);
-                code = pdf_gsave(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_gsave(ctx);
                 break;
             case K1('Q'):           /* grestore */
-                pdf_pop(ctx, 1);
-                code = pdf_grestore(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_grestore(ctx);
                 break;
             case K2('r','e'):       /* append rectangle */
-                pdf_pop(ctx, 1);
-                code = pdf_rectpath(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_rectpath(ctx);
                 break;
             case K2('R','G'):       /* set rgb colour for stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_setrgbstroke(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setrgbstroke(ctx);
                 break;
             case K2('r','g'):       /* set rgb colour for non-stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_setrgbfill(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setrgbfill(ctx);
                 break;
             case K2('r','i'):       /* set rendering intent */
-                pdf_pop(ctx, 1);
-                code = pdf_ri(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_ri(ctx);
                 break;
             case K1('s'):           /* closepath, stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_closepath_stroke(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_closepath_stroke(ctx);
                 break;
             case K1('S'):           /* stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_stroke(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_stroke(ctx);
                 break;
             case K2('S','C'):       /* set colour for stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_setstrokecolor(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setstrokecolor(ctx);
                 break;
             case K2('s','c'):       /* set colour for non-stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_setfillcolor(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setfillcolor(ctx);
                 break;
             case K3('S','C','N'):   /* set special colour for stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_setstrokecolorN(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setstrokecolorN(ctx);
                 break;
             case K3('s','c','n'):   /* set special colour for non-stroke */
-                pdf_pop(ctx, 1);
-                code = pdf_setfillcolorN(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setfillcolorN(ctx);
                 break;
             case K2('s','h'):       /* fill with sahding pattern */
-                pdf_pop(ctx, 1);
-                code = pdf_shading(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_shading(ctx);
                 break;
             case K2('T','*'):       /* Move to start of next text line */
-                pdf_pop(ctx, 1);
-                code = pdf_T_star(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_T_star(ctx);
                 break;
             case K2('T','c'):       /* set character spacing */
-                pdf_pop(ctx, 1);
-                code = pdf_Tc(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_Tc(ctx);
                 break;
             case K2('T','d'):       /* move text position */
-                pdf_pop(ctx, 1);
-                code = pdf_Td(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_Td(ctx);
                 break;
             case K2('T','D'):       /* Move text position, set leading */
-                pdf_pop(ctx, 1);
-                code = pdf_TD(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_TD(ctx);
                 break;
             case K2('T','f'):       /* set font and size */
-                pdf_pop(ctx, 1);
-                code = pdf_Tf(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_Tf(ctx);
                 break;
             case K2('T','j'):       /* show text */
-                pdf_pop(ctx, 1);
-                code = pdf_Tj(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_Tj(ctx);
                 break;
             case K2('T','J'):       /* show text with individual glyph positioning */
-                pdf_pop(ctx, 1);
-                code = pdf_TJ(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_TJ(ctx);
                 break;
             case K2('T','L'):       /* set text leading */
-                pdf_pop(ctx, 1);
-                code = pdf_TL(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_TL(ctx);
                 break;
             case K2('T','m'):       /* set text matrix */
-                pdf_pop(ctx, 1);
-                code = pdf_Tm(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_Tm(ctx);
                 break;
             case K2('T','r'):       /* set text rendering mode */
-                pdf_pop(ctx, 1);
-                code = pdf_T_star(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_T_star(ctx);
                 break;
             case K2('T','s'):       /* set text rise */
-                pdf_pop(ctx, 1);
-                code = pdf_Ts(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_Ts(ctx);
                 break;
             case K2('T','w'):       /* set word spacing */
-                pdf_pop(ctx, 1);
-                code = pdf_Tw(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_Tw(ctx);
                 break;
             case K2('T','z'):       /* set text matrix */
-                pdf_pop(ctx, 1);
-                code = pdf_Tz(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_Tz(ctx);
                 break;
             case K1('v'):           /* append curve (initial point replicated) */
-                pdf_pop(ctx, 1);
-                code = pdf_v_curveto(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_v_curveto(ctx);
                 break;
             case K1('w'):           /* setlinewidth */
-                pdf_pop(ctx, 1);
-                code = pdf_setlinewidth(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setlinewidth(ctx);
                 break;
             case K1('W'):           /* clip */
-                pdf_pop(ctx, 1);
-                code = pdf_clip(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_clip(ctx);
                 break;
             case K2('W','*'):       /* eoclip */
-                pdf_pop(ctx, 1);
-                code = pdf_eoclip(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_eoclip(ctx);
                 break;
             case K1('y'):           /* append curve (final point replicated) */
-                pdf_pop(ctx, 1);
-                code = pdf_y_curveto(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_y_curveto(ctx);
                 break;
             case K1('\''):          /* move to next line and show text */
-                pdf_pop(ctx, 1);
-                code = pdf_singlequote(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_singlequote(ctx);
                 break;
             case K1('"'):           /* set word and character spacing, move to next line, show text */
-                pdf_pop(ctx, 1);
-                code = pdf_doublequote(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_doublequote(ctx);
                 break;
             default:
                 code = split_bogus_operator(ctx);
@@ -2985,25 +2985,25 @@ static int pdf_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, p
     return code;
 }
 
-int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
+int pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
     pdf_stream *compressed_stream;
     pdf_keyword *keyword;
 
-    code = pdf_seek(ctx, ctx->main_stream, stream_dict->stream_offset, SEEK_SET);
+    code = pdfi_seek(ctx, ctx->main_stream, stream_dict->stream_offset, SEEK_SET);
     if (code < 0)
         return code;
 
-    code = pdf_filter(ctx, stream_dict, ctx->main_stream, &compressed_stream, false);
+    code = pdfi_filter(ctx, stream_dict, ctx->main_stream, &compressed_stream, false);
     if (code < 0)
         return code;
 
     do {
-        code = pdf_read_token(ctx, compressed_stream);
+        code = pdfi_read_token(ctx, compressed_stream);
         if (code < 0) {
             if (code == gs_error_ioerror || code == gs_error_VMerror || ctx->pdfstoponerror) {
-                pdf_close_file(ctx, compressed_stream);
+                pdfi_close_file(ctx, compressed_stream);
                 return code;
             }
             continue;
@@ -3019,33 +3019,33 @@ int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_di
 
             switch(keyword->key) {
                 case PDF_ENDSTREAM:
-                    pdf_close_file(ctx, compressed_stream);
-                    pdf_clearstack(ctx);
+                    pdfi_close_file(ctx, compressed_stream);
+                    pdfi_clearstack(ctx);
                     return 0;
                     break;
                 case PDF_ENDOBJ:
-                    pdf_close_file(ctx, compressed_stream);
-                    pdf_clearstack(ctx);
+                    pdfi_close_file(ctx, compressed_stream);
+                    pdfi_clearstack(ctx);
                     ctx->pdf_errors |= E_PDF_MISSINGENDSTREAM;
                     if (ctx->pdfstoponerror)
                         return_error(gs_error_syntaxerror);
                     return 0;
                     break;
                 case PDF_NOT_A_KEYWORD:
-                    code = pdf_interpret_stream_operator(ctx, compressed_stream, stream_dict, page_dict);
+                    code = pdfi_interpret_stream_operator(ctx, compressed_stream, stream_dict, page_dict);
                     if (code < 0) {
-                        pdf_close_file(ctx, compressed_stream);
-                        pdf_clearstack(ctx);
+                        pdfi_close_file(ctx, compressed_stream);
+                        pdfi_clearstack(ctx);
                         return code;
                     }
                     break;
                 case PDF_INVALID_KEY:
-                    pdf_clearstack(ctx);
+                    pdfi_clearstack(ctx);
                     break;
                 default:
                     ctx->pdf_errors |= E_PDF_NOENDSTREAM;
-                    pdf_close_file(ctx, compressed_stream);
-                    pdf_clearstack(ctx);
+                    pdfi_close_file(ctx, compressed_stream);
+                    pdfi_clearstack(ctx);
                     return_error(gs_error_typecheck);
                     break;
             }
@@ -3054,11 +3054,11 @@ int pdf_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_di
             break;
     }while(1);
 
-    pdf_close_file(ctx, compressed_stream);
+    pdfi_close_file(ctx, compressed_stream);
     return 0;
 }
 
-int pdf_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_obj **o)
+int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_obj **o)
 {
     char Key[256];
     pdf_dict *Resources, *TypedResources;
@@ -3068,27 +3068,27 @@ int pdf_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pdf
     memcpy(Key, name->data, name->length);
     Key[name->length] = 0x00;
 
-    code = pdf_dict_get(ctx, stream_dict, "Resources", (pdf_obj **)&Resources);
+    code = pdfi_dict_get(ctx, stream_dict, "Resources", (pdf_obj **)&Resources);
     if (code == 0) {
-        code = pdf_dict_get(ctx, Resources, (const char *)Type, (pdf_obj **)&TypedResources);
+        code = pdfi_dict_get(ctx, Resources, (const char *)Type, (pdf_obj **)&TypedResources);
         if (code == 0) {
-            pdf_countdown(Resources);
-            code = pdf_dict_get_no_store_R(ctx, TypedResources, Key, o);
-            pdf_countdown(TypedResources);
+            pdfi_countdown(Resources);
+            code = pdfi_dict_get_no_store_R(ctx, TypedResources, Key, o);
+            pdfi_countdown(TypedResources);
             if (code != gs_error_undefined)
                 return code;
         }
     }
-    code = pdf_dict_get(ctx, page_dict, "Resources", (pdf_obj **)&Resources);
+    code = pdfi_dict_get(ctx, page_dict, "Resources", (pdf_obj **)&Resources);
     if (code < 0)
         return code;
 
-    code = pdf_dict_get(ctx, Resources, (const char *)Type, (pdf_obj **)&TypedResources);
-    pdf_countdown(Resources);
+    code = pdfi_dict_get(ctx, Resources, (const char *)Type, (pdf_obj **)&TypedResources);
+    pdfi_countdown(Resources);
     if (code < 0)
         return code;
 
-    code = pdf_dict_get_no_store_R(ctx, TypedResources, Key, o);
-    pdf_countdown(TypedResources);
+    code = pdfi_dict_get_no_store_R(ctx, TypedResources, Key, o);
+    pdfi_countdown(TypedResources);
     return code;
 }

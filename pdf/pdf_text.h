@@ -18,20 +18,20 @@
 #ifndef PDF_TEXT_OPERATORS
 #define PDF_TEXT_OPERATORS
 
-int pdf_T_star(pdf_context *ctx);
-int pdf_Tc(pdf_context *ctx);
-int pdf_Td(pdf_context *ctx);
-int pdf_TD(pdf_context *ctx);
-int pdf_Tj(pdf_context *ctx);
-int pdf_TJ(pdf_context *ctx);
-int pdf_TL(pdf_context *ctx);
-int pdf_Tm(pdf_context *ctx);
-int pdf_Tr(pdf_context *ctx);
-int pdf_Ts(pdf_context *ctx);
-int pdf_Tw(pdf_context *ctx);
-int pdf_Tz(pdf_context *ctx);
-int pdf_backslash(pdf_context *ctx);
-int pdf_singlequote(pdf_context *ctx);
-int pdf_doublequote(pdf_context *ctx);
+int pdfi_T_star(pdf_context *ctx);
+int pdfi_Tc(pdf_context *ctx);
+int pdfi_Td(pdf_context *ctx);
+int pdfi_TD(pdf_context *ctx);
+int pdfi_Tj(pdf_context *ctx);
+int pdfi_TJ(pdf_context *ctx);
+int pdfi_TL(pdf_context *ctx);
+int pdfi_Tm(pdf_context *ctx);
+int pdfi_Tr(pdf_context *ctx);
+int pdfi_Ts(pdf_context *ctx);
+int pdfi_Tw(pdf_context *ctx);
+int pdfi_Tz(pdf_context *ctx);
+int pdfi_backslash(pdf_context *ctx);
+int pdfi_singlequote(pdf_context *ctx);
+int pdfi_doublequote(pdf_context *ctx);
 
 #endif

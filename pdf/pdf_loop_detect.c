@@ -18,7 +18,7 @@
 #include "pdf_int.h"
 #include "pdf_loop_detect.h"
 
-int pdf_init_loop_detector(pdf_context *ctx)
+int pdfi_init_loop_detector(pdf_context *ctx)
 {
     if (ctx->loop_detection) {
 #ifdef DEBUG
@@ -36,7 +36,7 @@ int pdf_init_loop_detector(pdf_context *ctx)
     return 0;
 }
 
-int pdf_free_loop_detector(pdf_context *ctx)
+int pdfi_free_loop_detector(pdf_context *ctx)
 {
     if (ctx->loop_detection == NULL) {
 #ifdef DEBUG
@@ -53,7 +53,7 @@ int pdf_free_loop_detector(pdf_context *ctx)
     return 0;
 }
 
-int pdf_loop_detector_add_object(pdf_context *ctx, uint64_t object)
+int pdfi_loop_detector_add_object(pdf_context *ctx, uint64_t object)
 {
     if (ctx->loop_detection == NULL) {
 #ifdef DEBUG
@@ -78,7 +78,7 @@ int pdf_loop_detector_add_object(pdf_context *ctx, uint64_t object)
     return 0;
 }
 
-bool pdf_loop_detector_check_object(pdf_context *ctx, uint64_t object)
+bool pdfi_loop_detector_check_object(pdf_context *ctx, uint64_t object)
 {
     int i = 0;
 
@@ -98,7 +98,7 @@ bool pdf_loop_detector_check_object(pdf_context *ctx, uint64_t object)
     return false;
 }
 
-int pdf_loop_detector_mark(pdf_context *ctx)
+int pdfi_loop_detector_mark(pdf_context *ctx)
 {
     if (ctx->loop_detection == NULL) {
 #ifdef DEBUG
@@ -107,10 +107,10 @@ int pdf_loop_detector_mark(pdf_context *ctx)
         return 0;
     }
 
-    return pdf_loop_detector_add_object(ctx, 0);
+    return pdfi_loop_detector_add_object(ctx, 0);
 }
 
-int pdf_loop_detector_cleartomark(pdf_context *ctx)
+int pdfi_loop_detector_cleartomark(pdf_context *ctx)
 {
     if (ctx->loop_detection == NULL) {
 #ifdef DEBUG
@@ -123,6 +123,6 @@ int pdf_loop_detector_cleartomark(pdf_context *ctx)
         ctx->loop_detection[ctx->loop_detection_entries] = 0;
     }
     if (ctx->loop_detection_entries == 0)
-        pdf_free_loop_detector(ctx);
+        pdfi_free_loop_detector(ctx);
     return 0;
 }

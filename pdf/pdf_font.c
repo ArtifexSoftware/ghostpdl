@@ -21,29 +21,29 @@
 #include "pdf_stack.h"
 
 
-int pdf_d0(pdf_context *ctx)
+int pdfi_d0(pdf_context *ctx)
 {
     if (ctx->stack_top - ctx->stack_bot >= 2)
-        pdf_pop(ctx, 2);
+        pdfi_pop(ctx, 2);
     else
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
     return 0;
 }
 
-int pdf_d1(pdf_context *ctx)
+int pdfi_d1(pdf_context *ctx)
 {
     if (ctx->stack_top - ctx->stack_bot >= 6)
-        pdf_pop(ctx, 6);
+        pdfi_pop(ctx, 6);
     else
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
     return 0;
 }
 
-int pdf_Tf(pdf_context *ctx)
+int pdfi_Tf(pdf_context *ctx)
 {
     if (ctx->stack_top - ctx->stack_bot >= 2)
-        pdf_pop(ctx, 2);
+        pdfi_pop(ctx, 2);
     else
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
     return 0;
 }

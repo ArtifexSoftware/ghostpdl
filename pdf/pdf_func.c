@@ -18,3 +18,8 @@
 #include "pdf_int.h"
 #include "pdf_stack.h"
 #include "pdf_func.h"
+
+int pdf_build_function(pdf_context *ctx, gs_function_t ** ppfn, pdf_dict *stream_dict, pdf_dict *page_dict)
+{
+    /* First gather all the entries common to all functions */
+}

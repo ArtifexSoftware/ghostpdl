@@ -22,7 +22,7 @@
 #include "gsmatrix.h"
 #include "gslparam.h"
 
-int pdf_concat(pdf_context *ctx)
+int pdfi_concat(pdf_context *ctx)
 {
     int i, code;
     pdf_num *num;
@@ -32,7 +32,7 @@ int pdf_concat(pdf_context *ctx)
     if (ctx->stack_top - ctx->stack_bot < 6) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -43,7 +43,7 @@ int pdf_concat(pdf_context *ctx)
                 if (ctx->pdfstoponerror)
                     return_error(gs_error_typecheck);
                 else {
-                    pdf_pop(ctx, 6);
+                    pdfi_pop(ctx, 6);
                     return 0;
                 }
             }
@@ -61,14 +61,14 @@ int pdf_concat(pdf_context *ctx)
     m.ty = (float)Values[5];
     code = gs_concat(ctx->pgs, (const gs_matrix *)&m);
     if (code == 0)
-        pdf_pop(ctx, 6);
+        pdfi_pop(ctx, 6);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
         return 0;
 }
 
-int pdf_gsave(pdf_context *ctx)
+int pdfi_gsave(pdf_context *ctx)
 {
     int code = gs_gsave(ctx->pgs);
 
@@ -78,7 +78,7 @@ int pdf_gsave(pdf_context *ctx)
         return 0;
 }
 
-int pdf_grestore(pdf_context *ctx)
+int pdfi_grestore(pdf_context *ctx)
 {
     int code = gs_grestore(ctx->pgs);
 
@@ -88,7 +88,7 @@ int pdf_grestore(pdf_context *ctx)
         return 0;
 }
 
-int pdf_setlinewidth(pdf_context *ctx)
+int pdfi_setlinewidth(pdf_context *ctx)
 {
     int code;
     pdf_num *n1;
@@ -97,7 +97,7 @@ int pdf_setlinewidth(pdf_context *ctx)
     if (ctx->stack_top - ctx->stack_bot < 1) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -111,21 +111,21 @@ int pdf_setlinewidth(pdf_context *ctx)
             if (ctx->pdfstoponerror)
                 return_error(gs_error_typecheck);
             else {
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
                 return 0;
             }
         }
     }
     code = gs_setlinewidth(ctx->pgs, d1);
     if (code == 0)
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
         return 0;
 }
 
-int pdf_setlinejoin(pdf_context *ctx)
+int pdfi_setlinejoin(pdf_context *ctx)
 {
     int code;
     pdf_num *n1;
@@ -133,7 +133,7 @@ int pdf_setlinejoin(pdf_context *ctx)
     if (ctx->stack_top - ctx->stack_bot < 1) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -144,19 +144,19 @@ int pdf_setlinejoin(pdf_context *ctx)
         if (ctx->pdfstoponerror)
             return_error(gs_error_typecheck);
         else {
-            pdf_pop(ctx, 1);
+            pdfi_pop(ctx, 1);
             return 0;
         }
     }
     if (code == 0)
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
         return 0;
 }
 
-int pdf_setlinecap(pdf_context *ctx)
+int pdfi_setlinecap(pdf_context *ctx)
 {
     int code;
     pdf_num *n1;
@@ -164,7 +164,7 @@ int pdf_setlinecap(pdf_context *ctx)
     if (ctx->stack_top - ctx->stack_bot < 1) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -175,19 +175,19 @@ int pdf_setlinecap(pdf_context *ctx)
         if (ctx->pdfstoponerror)
             return_error(gs_error_typecheck);
         else {
-            pdf_pop(ctx, 1);
+            pdfi_pop(ctx, 1);
             return 0;
         }
     }
     if (code == 0)
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
         return 0;
 }
 
-int pdf_setflat(pdf_context *ctx)
+int pdfi_setflat(pdf_context *ctx)
 {
     int code;
     pdf_num *n1;
@@ -196,7 +196,7 @@ int pdf_setflat(pdf_context *ctx)
     if (ctx->stack_top - ctx->stack_bot < 1) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -210,21 +210,21 @@ int pdf_setflat(pdf_context *ctx)
             if (ctx->pdfstoponerror)
                 return_error(gs_error_typecheck);
             else {
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
                 return 0;
             }
         }
     }
     code = gs_setflat(ctx->pgs, d1);
     if (code == 0)
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
         return 0;
 }
 
-int pdf_setdash(pdf_context *ctx)
+int pdfi_setdash(pdf_context *ctx)
 {
     pdf_num *phase;
     pdf_array *a;
@@ -235,7 +235,7 @@ int pdf_setdash(pdf_context *ctx)
     if (ctx->stack_top - ctx->stack_bot < 2) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -249,7 +249,7 @@ int pdf_setdash(pdf_context *ctx)
             if (ctx->pdfstoponerror)
                 return_error(gs_error_typecheck);
             else {
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
                 return 0;
             }
         }
@@ -260,7 +260,7 @@ int pdf_setdash(pdf_context *ctx)
         if (ctx->pdfstoponerror)
             return_error(gs_error_typecheck);
         else {
-            pdf_pop(ctx, 1);
+            pdfi_pop(ctx, 1);
             return 0;
         }
     }
@@ -270,14 +270,14 @@ int pdf_setdash(pdf_context *ctx)
         return_error(gs_error_VMerror);
 
     for (i=0;i < a->entries;i++){
-        code = pdf_array_get_number(ctx, a, (uint64_t)i, &temp);
+        code = pdfi_array_get_number(ctx, a, (uint64_t)i, &temp);
         if (code < 0) {
             if (ctx->pdfstoponerror) {
                 gs_free_object(ctx->memory, dash_array, "error in setdash");
                 return code;
             }
             else {
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
                 gs_free_object(ctx->memory, dash_array, "error in setdash");
                 return 0;
             }
@@ -287,14 +287,14 @@ int pdf_setdash(pdf_context *ctx)
     code = gs_setdash(ctx->pgs, dash_array, a->entries, phase_d);
     gs_free_object(ctx->memory, dash_array, "error in setdash");
     if (code == 0)
-        pdf_pop(ctx, 2);
+        pdfi_pop(ctx, 2);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
         return 0;
 }
 
-int pdf_setmiterlimit(pdf_context *ctx)
+int pdfi_setmiterlimit(pdf_context *ctx)
 {
     int code;
     pdf_num *n1;
@@ -303,7 +303,7 @@ int pdf_setmiterlimit(pdf_context *ctx)
     if (ctx->stack_top - ctx->stack_bot < 1) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -317,14 +317,14 @@ int pdf_setmiterlimit(pdf_context *ctx)
             if (ctx->pdfstoponerror)
                 return_error(gs_error_typecheck);
             else {
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
                 return 0;
             }
         }
     }
     code = gs_setmiterlimit(ctx->pgs, d1);
     if (code == 0)
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else

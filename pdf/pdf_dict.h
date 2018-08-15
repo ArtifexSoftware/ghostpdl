@@ -18,18 +18,18 @@
 #ifndef PDF_DICTIONARY_FUNCTIONS
 #define PDF_DICTIONARY_FUNCTIONS
 
-void pdf_free_dict(pdf_obj *o);
-int pdf_dict_from_stack(pdf_context *ctx);
-int pdf_dict_known(pdf_dict *d, const char *Key, bool *known);
-int pdf_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known);
-int pdf_merge_dicts(pdf_dict *target, pdf_dict *source);
-int pdf_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value);
-int pdf_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o);
-int pdf_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o);
-int pdf_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type t, pdf_obj **o);
-int pdf_dict_get_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t *i);
-int pdf_dict_get_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *f);
-int pdf_dict_copy(pdf_dict *target, pdf_dict *source);
-int pdf_alloc_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned);
+void pdfi_free_dict(pdf_obj *o);
+int pdfi_dict_from_stack(pdf_context *ctx);
+int pdfi_dict_known(pdf_dict *d, const char *Key, bool *known);
+int pdfi_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known);
+int pdfi_merge_dicts(pdf_dict *target, pdf_dict *source);
+int pdfi_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value);
+int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o);
+int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o);
+int pdfi_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type t, pdf_obj **o);
+int pdfi_dict_get_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t *i);
+int pdfi_dict_get_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *f);
+int pdfi_dict_copy(pdf_dict *target, pdf_dict *source);
+int pdfi_alloc_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned);
 
 #endif

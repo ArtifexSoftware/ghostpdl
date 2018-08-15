@@ -25,26 +25,26 @@
 #include "stream.h"
 
 /* Forward definitions for a few routines we need */
-static int pdf_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict);
-static int pdf_setcolorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict);
+static int pdfi_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict);
+static int pdfi_setcolorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict);
 
 /* Rendering intent is a bit of an oddity, but its clearly colour related, so we
  * deal with it here. Cover it first to get it out of the way.
  */
-int pdf_ri(pdf_context *ctx)
+int pdfi_ri(pdf_context *ctx)
 {
     pdf_name *n;
     int code;
 
     if (ctx->stack_top - ctx->stack_bot < 1) {
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         if(ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
 
     if (ctx->stack_top[-1]->type != PDF_NAME) {
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
         if (ctx->pdfstoponerror)
             return_error(gs_error_typecheck);
         return 0;
@@ -73,14 +73,14 @@ int pdf_ri(pdf_context *ctx)
             code = gs_error_undefined;
         }
     }
-    pdf_pop(ctx, 1);
+    pdfi_pop(ctx, 1);
     if (code < 0 && ctx->pdfstoponerror)
         return code;
     return 0;
 }
 
 /* Start with the simple cases, where we set the colour space and colour in a single operation */
-int pdf_setgraystroke(pdf_context *ctx)
+int pdfi_setgraystroke(pdf_context *ctx)
 {
     pdf_num *n1;
     int code;
@@ -89,7 +89,7 @@ int pdf_setgraystroke(pdf_context *ctx)
     if (ctx->stack_top - ctx->stack_bot < 1) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -103,21 +103,21 @@ int pdf_setgraystroke(pdf_context *ctx)
             if (ctx->pdfstoponerror)
                 return_error(gs_error_typecheck);
             else {
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
                 return 0;
             }
         }
     }
     code = gs_setgray(ctx->pgs, d1);
     if (code == 0)
-        pdf_pop(ctx, 2);
+        pdfi_pop(ctx, 2);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
         return 0;
 }
 
-int pdf_setgrayfill(pdf_context *ctx)
+int pdfi_setgrayfill(pdf_context *ctx)
 {
     pdf_num *n1;
     int code;
@@ -126,7 +126,7 @@ int pdf_setgrayfill(pdf_context *ctx)
     if (ctx->stack_top - ctx->stack_bot < 1) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -140,7 +140,7 @@ int pdf_setgrayfill(pdf_context *ctx)
             if (ctx->pdfstoponerror)
                 return_error(gs_error_typecheck);
             else {
-                pdf_pop(ctx, 1);
+                pdfi_pop(ctx, 1);
                 return 0;
             }
         }
@@ -149,14 +149,14 @@ int pdf_setgrayfill(pdf_context *ctx)
     code = gs_setgray(ctx->pgs, d1);
     gs_swapcolors(ctx->pgs);
     if (code == 0)
-        pdf_pop(ctx, 2);
+        pdfi_pop(ctx, 2);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
         return 0;
 }
 
-int pdf_setrgbstroke(pdf_context *ctx)
+int pdfi_setrgbstroke(pdf_context *ctx)
 {
     pdf_num *num;
     double Values[3];
@@ -165,7 +165,7 @@ int pdf_setrgbstroke(pdf_context *ctx)
     if (ctx->stack_top - ctx->stack_bot < 3) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -176,7 +176,7 @@ int pdf_setrgbstroke(pdf_context *ctx)
                 if (ctx->pdfstoponerror)
                     return_error(gs_error_typecheck);
                 else {
-                    pdf_pop(ctx, 3);
+                    pdfi_pop(ctx, 3);
                     return 0;
                 }
             }
@@ -188,14 +188,14 @@ int pdf_setrgbstroke(pdf_context *ctx)
     }
     code = gs_setrgbcolor(ctx->pgs, Values[0], Values[1], Values[2]);
     if (code == 0)
-        pdf_pop(ctx, 2);
+        pdfi_pop(ctx, 2);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
         return 0;
 }
 
-int pdf_setrgbfill(pdf_context *ctx)
+int pdfi_setrgbfill(pdf_context *ctx)
 {
     pdf_num *num;
     double Values[3];
@@ -204,7 +204,7 @@ int pdf_setrgbfill(pdf_context *ctx)
     if (ctx->stack_top - ctx->stack_bot < 3) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -215,7 +215,7 @@ int pdf_setrgbfill(pdf_context *ctx)
                 if (ctx->pdfstoponerror)
                     return_error(gs_error_typecheck);
                 else {
-                    pdf_pop(ctx, 3);
+                    pdfi_pop(ctx, 3);
                     return 0;
                 }
             }
@@ -229,14 +229,14 @@ int pdf_setrgbfill(pdf_context *ctx)
     code = gs_setrgbcolor(ctx->pgs, Values[0], Values[1], Values[2]);
     gs_swapcolors(ctx->pgs);
     if (code == 0)
-        pdf_pop(ctx, 2);
+        pdfi_pop(ctx, 2);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
         return 0;
 }
 
-int pdf_setcmykstroke(pdf_context *ctx)
+int pdfi_setcmykstroke(pdf_context *ctx)
 {
     pdf_num *num;
     double Values[4];
@@ -245,7 +245,7 @@ int pdf_setcmykstroke(pdf_context *ctx)
     if (ctx->stack_top - ctx->stack_bot < 4) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -256,7 +256,7 @@ int pdf_setcmykstroke(pdf_context *ctx)
                 if (ctx->pdfstoponerror)
                     return_error(gs_error_typecheck);
                 else {
-                    pdf_pop(ctx, 4);
+                    pdfi_pop(ctx, 4);
                     return 0;
                 }
             }
@@ -268,14 +268,14 @@ int pdf_setcmykstroke(pdf_context *ctx)
     }
     code = gs_setcmykcolor(ctx->pgs, Values[0], Values[1], Values[2], Values[3]);
     if (code == 0)
-        pdf_pop(ctx, 2);
+        pdfi_pop(ctx, 2);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
         return 0;
 }
 
-int pdf_setcmykfill(pdf_context *ctx)
+int pdfi_setcmykfill(pdf_context *ctx)
 {
     pdf_num *num;
     double Values[4];
@@ -284,7 +284,7 @@ int pdf_setcmykfill(pdf_context *ctx)
     if (ctx->stack_top - ctx->stack_bot < 4) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
 
@@ -295,7 +295,7 @@ int pdf_setcmykfill(pdf_context *ctx)
                 if (ctx->pdfstoponerror)
                     return_error(gs_error_typecheck);
                 else {
-                    pdf_pop(ctx, 4);
+                    pdfi_pop(ctx, 4);
                     return 0;
                 }
             }
@@ -309,7 +309,7 @@ int pdf_setcmykfill(pdf_context *ctx)
     code = gs_setcmykcolor(ctx->pgs, Values[0], Values[1], Values[2], Values[3]);
     gs_swapcolors(ctx->pgs);
     if (code == 0)
-        pdf_pop(ctx, 2);
+        pdfi_pop(ctx, 2);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -324,7 +324,7 @@ int pdf_setcmykfill(pdf_context *ctx)
 /* First up, the SC and sc operators. These set the colour for all spaces *except*
  * ICCBased, Pattern, Separation and DeviceN
  */
-int pdf_setstrokecolor(pdf_context *ctx)
+int pdfi_setstrokecolor(pdf_context *ctx)
 {
     const gs_color_space *  pcs = gs_currentcolorspace(ctx->pgs);
     int ncomps, i, code;
@@ -333,7 +333,7 @@ int pdf_setstrokecolor(pdf_context *ctx)
 
     ncomps = cs_num_components(pcs);
     if (ctx->stack_top - ctx->stack_bot < ncomps) {
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         if(ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
@@ -346,21 +346,21 @@ int pdf_setstrokecolor(pdf_context *ctx)
             if (n->type == PDF_REAL) {
                 cc.paint.values[i] = n->value.d;
             } else {
-                pdf_clearstack(ctx);
+                pdfi_clearstack(ctx);
                 if (ctx->pdfstoponerror)
                     return_error(gs_error_typecheck);
                 return 0;
             }
         }
     }
-    pdf_pop(ctx, ncomps);
+    pdfi_pop(ctx, ncomps);
     code = gs_setcolor(ctx->pgs, &cc);
     if (code < 0 && ctx->pdfstoponerror)
         return code;
     return 0;
 }
 
-int pdf_setfillcolor(pdf_context *ctx)
+int pdfi_setfillcolor(pdf_context *ctx)
 {
     const gs_color_space *  pcs;
     int ncomps, i, code;
@@ -372,7 +372,7 @@ int pdf_setfillcolor(pdf_context *ctx)
     ncomps = cs_num_components(pcs);
     if (ctx->stack_top - ctx->stack_bot < ncomps) {
         gs_swapcolors(ctx->pgs);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         if(ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
@@ -386,14 +386,14 @@ int pdf_setfillcolor(pdf_context *ctx)
                 cc.paint.values[i] = n->value.d;
             } else {
                 gs_swapcolors(ctx->pgs);
-                pdf_clearstack(ctx);
+                pdfi_clearstack(ctx);
                 if (ctx->pdfstoponerror)
                     return_error(gs_error_typecheck);
                 return 0;
             }
         }
     }
-    pdf_pop(ctx, ncomps);
+    pdfi_pop(ctx, ncomps);
     code = gs_setcolor(ctx->pgs, &cc);
     gs_swapcolors(ctx->pgs);
     if (code < 0 && ctx->pdfstoponerror)
@@ -404,7 +404,7 @@ int pdf_setfillcolor(pdf_context *ctx)
 /* Now the SCN and scn operators. These set the colour for special spaces;
  * ICCBased, Pattern, Separation and DeviceN
  */
-int pdf_setstrokecolorN(pdf_context *ctx)
+int pdfi_setstrokecolorN(pdf_context *ctx)
 {
     const gs_color_space *  pcs = gs_currentcolorspace(ctx->pgs);
     int ncomps, i, code;
@@ -412,19 +412,19 @@ int pdf_setstrokecolorN(pdf_context *ctx)
     pdf_num *n;
 
     if (ctx->stack_top - ctx->stack_bot < 1) {
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         if(ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
     if (ctx->stack_top[-1]->type == PDF_NAME) {
         /* FIXME Patterns */
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
     ncomps = cs_num_components(pcs);
     if (ctx->stack_top - ctx->stack_bot < ncomps) {
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         if(ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
@@ -437,21 +437,21 @@ int pdf_setstrokecolorN(pdf_context *ctx)
             if (n->type == PDF_REAL) {
                 cc.paint.values[i] = n->value.d;
             } else {
-                pdf_clearstack(ctx);
+                pdfi_clearstack(ctx);
                 if (ctx->pdfstoponerror)
                     return_error(gs_error_typecheck);
                 return 0;
             }
         }
     }
-    pdf_pop(ctx, ncomps);
+    pdfi_pop(ctx, ncomps);
     code = gs_setcolor(ctx->pgs, &cc);
     if (code < 0 && ctx->pdfstoponerror)
         return code;
     return 0;
 }
 
-int pdf_setfillcolorN(pdf_context *ctx)
+int pdfi_setfillcolorN(pdf_context *ctx)
 {
     const gs_color_space *  pcs;
     int ncomps, i, code;
@@ -462,7 +462,7 @@ int pdf_setfillcolorN(pdf_context *ctx)
     pcs = gs_currentcolorspace(ctx->pgs);
     if (ctx->stack_top - ctx->stack_bot < 1) {
         gs_swapcolors(ctx->pgs);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         if(ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
@@ -470,13 +470,13 @@ int pdf_setfillcolorN(pdf_context *ctx)
     if (ctx->stack_top[-1]->type == PDF_NAME) {
         gs_swapcolors(ctx->pgs);
         /* FIXME Patterns */
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         return 0;
     }
     ncomps = cs_num_components(pcs);
     if (ctx->stack_top - ctx->stack_bot < ncomps) {
         gs_swapcolors(ctx->pgs);
-        pdf_clearstack(ctx);
+        pdfi_clearstack(ctx);
         if(ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
@@ -490,14 +490,14 @@ int pdf_setfillcolorN(pdf_context *ctx)
                 cc.paint.values[i] = n->value.d;
             } else {
                 gs_swapcolors(ctx->pgs);
-                pdf_clearstack(ctx);
+                pdfi_clearstack(ctx);
                 if (ctx->pdfstoponerror)
                     return_error(gs_error_typecheck);
                 return 0;
             }
         }
     }
-    pdf_pop(ctx, ncomps);
+    pdfi_pop(ctx, ncomps);
     code = gs_setcolor(ctx->pgs, &cc);
     gs_swapcolors(ctx->pgs);
     if (code < 0 && ctx->pdfstoponerror)
@@ -510,7 +510,7 @@ int pdf_setfillcolorN(pdf_context *ctx)
 /* Starting with the ICCBased colour space */
 
 /* This routine is mostly a copy of seticc() in zicc.c */
-static int pdf_seticc(pdf_context *ctx, char *Name, stream *s, int ncomps, float *range_buff)
+static int pdfi_seticc(pdf_context *ctx, char *Name, stream *s, int ncomps, float *range_buff)
 {
     int                     code, k;
     gs_color_space *        pcs;
@@ -540,7 +540,7 @@ static int pdf_seticc(pdf_context *ctx, char *Name, stream *s, int ncomps, float
     } else {
         picc_profile = gsicc_profile_new(s, gs_gstate_memory(ctx->pgs), NULL, 0);
         if (picc_profile == NULL)
-            return gs_throw(gs_error_VMerror, "pdf_seticc Creation of ICC profile failed");
+            return gs_throw(gs_error_VMerror, "pdfi_seticc Creation of ICC profile failed");
         /* We have to get the profile handle due to the fact that we need to know
            if it has a data space that is CIELAB */
         picc_profile->profile_handle =
@@ -552,14 +552,14 @@ static int pdf_seticc(pdf_context *ctx, char *Name, stream *s, int ncomps, float
     if (picc_profile == NULL || picc_profile->profile_handle == NULL) {
         /* Free up everything, the profile is not valid. We will end up going
            ahead and using a default based upon the number of components */
-        rc_decrement(picc_profile,"pdf_seticc");
-        rc_decrement(pcs,"pdf_seticc");
+        rc_decrement(picc_profile,"pdfi_seticc");
+        rc_decrement(pcs,"pdfi_seticc");
         return -1;
     }
     code = gsicc_set_gscs_profile(pcs, picc_profile, gs_gstate_memory(ctx->pgs));
     if (code < 0) {
-        rc_decrement(picc_profile,"pdf_seticc");
-        rc_decrement(pcs,"pdf_seticc");
+        rc_decrement(picc_profile,"pdfi_seticc");
+        rc_decrement(pcs,"pdfi_seticc");
         return code;
     }
     picc_profile->num_comps = ncomps;
@@ -585,8 +585,8 @@ static int pdf_seticc(pdf_context *ctx, char *Name, stream *s, int ncomps, float
             break;
     }
     if (!expected || ncomps != expected) {
-        rc_decrement(picc_profile,"pdf_seticc");
-        rc_decrement(pcs,"pdf_seticc");
+        rc_decrement(picc_profile,"pdfi_seticc");
+        rc_decrement(pcs,"pdfi_seticc");
         return_error(gs_error_rangecheck);
     }
     /* Lets go ahead and get the hash code and check if we match one of the default spaces */
@@ -644,22 +644,22 @@ static int pdf_seticc(pdf_context *ctx, char *Name, stream *s, int ncomps, float
         }
         /* Have one increment from the color space.  Having these tied
            together is not really correct.  Need to fix that.  ToDo.  MJV */
-        rc_adjust(picc_profile, -2, "pdf_seticc");
+        rc_adjust(picc_profile, -2, "pdfi_seticc");
         rc_increment(pcs->cmm_icc_profile_data);
     }
     /* Set the color space.  We are done.  No joint cache here... */
     code = gs_setcolorspace(ctx->pgs, pcs);
     /* The context has taken a reference to the colorspace. We no longer need
      * ours, so drop it. */
-    rc_decrement_only(pcs, "pdf_seticc");
+    rc_decrement_only(pcs, "pdfi_seticc");
     /* In this case, we already have a ref count of 2 on the icc profile
        one for when it was created and one for when it was set.  We really
        only want one here so adjust */
-    rc_decrement(picc_profile, "pdf_seticc");
+    rc_decrement(picc_profile, "pdfi_seticc");
     return code;
 }
 
-static int pdf_seticcprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cname, int64_t Length, int N, float *range)
+static int pdfi_seticcprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cname, int64_t Length, int N, float *range)
 {
     pdf_stream *profile_stream = NULL, *filtered_profile_stream = NULL;
     stream *s;
@@ -669,8 +669,8 @@ static int pdf_seticcprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cname, 
     int code, code1;
 
     /* Save the current stream position, and move to the start of the profile stream */
-    savedoffset = pdf_tell(ctx->main_stream);
-    pdf_seek(ctx, ctx->main_stream, ICC_dict->stream_offset, SEEK_SET);
+    savedoffset = pdfi_tell(ctx->main_stream);
+    pdfi_seek(ctx, ctx->main_stream, ICC_dict->stream_offset, SEEK_SET);
 
     /* The ICC profile reading code (irritatingly) requires a seekable stream, because it
      * rewids it to the start, then seeks to the ned to find the size, then rewids the
@@ -679,13 +679,13 @@ static int pdf_seticcprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cname, 
      * implemented in PostScript (!) so we can't use it. What we cna do is create a
      * string sourced stream in memory, which is at least seekable.
      */
-    code = pdf_open_memory_stream_from_stream(ctx, (unsigned int)Length, &profile_buffer, ctx->main_stream, &profile_stream);
+    code = pdfi_open_memory_stream_from_stream(ctx, (unsigned int)Length, &profile_buffer, ctx->main_stream, &profile_stream);
     if (code < 0)
         return code;
 
-    pdf_dict_known(ICC_dict, "F", &known);
+    pdfi_dict_known(ICC_dict, "F", &known);
     if (!known)
-        pdf_dict_known(ICC_dict, "Filter", &known);
+        pdfi_dict_known(ICC_dict, "Filter", &known);
 
     /* If this is a compressed stream, we need to decompress it */
     if(known) {
@@ -703,9 +703,9 @@ static int pdf_seticcprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cname, 
          * We can then discard the original (compresed) stream and use the new
          * (decompressed) stream instead.
          */
-        code = pdf_filter(ctx, ICC_dict, profile_stream, &filtered_profile_stream, false);
+        code = pdfi_filter(ctx, ICC_dict, profile_stream, &filtered_profile_stream, false);
         if (code < 0) {
-            pdf_close_memory_stream(ctx, profile_buffer, profile_stream);
+            pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
             return code;
         }
         do {
@@ -713,51 +713,51 @@ static int pdf_seticcprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cname, 
             if (bytes > 0)
                 decompressed_length += bytes;
         } while (bytes >= 0);
-        pdf_close_file(ctx, filtered_profile_stream);
+        pdfi_close_file(ctx, filtered_profile_stream);
 
-        Buffer = gs_alloc_bytes(ctx->memory, decompressed_length, "pdf_seticcprofile (decompression buffer)");
+        Buffer = gs_alloc_bytes(ctx->memory, decompressed_length, "pdfi_seticcprofile (decompression buffer)");
         if (Buffer != NULL) {
             code = srewind(profile_stream->s);
             if (code >= 0) {
-                code = pdf_filter(ctx, ICC_dict, profile_stream, &filtered_profile_stream, false);
+                code = pdfi_filter(ctx, ICC_dict, profile_stream, &filtered_profile_stream, false);
                 if (code >= 0) {
                     sfread(Buffer, 1, decompressed_length, filtered_profile_stream->s);
-                    pdf_close_file(ctx, filtered_profile_stream);
-                    code = pdf_close_memory_stream(ctx, profile_buffer, profile_stream);
+                    pdfi_close_file(ctx, filtered_profile_stream);
+                    code = pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
                     if (code >= 0) {
                         profile_buffer = Buffer;
-                        code = pdf_open_memory_stream_from_memory(ctx, (unsigned int)decompressed_length, profile_buffer, &profile_stream);
+                        code = pdfi_open_memory_stream_from_memory(ctx, (unsigned int)decompressed_length, profile_buffer, &profile_stream);
                     }
                 }
             } else {
-                pdf_close_memory_stream(ctx, profile_buffer, profile_stream);
-                gs_free_object(ctx->memory, Buffer, "pdf_seticcprofile (profile name)");
+                pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
+                gs_free_object(ctx->memory, Buffer, "pdfi_seticcprofile (profile name)");
                 return code;
             }
         } else {
-            pdf_close_memory_stream(ctx, profile_buffer, profile_stream);
+            pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
             return_error(gs_error_VMerror);
         }
         if (code < 0) {
-            gs_free_object(ctx->memory, Buffer, "pdf_seticcprofile (profile name)");
+            gs_free_object(ctx->memory, Buffer, "pdfi_seticcprofile (profile name)");
             return code;
         }
     }
 
     /* Now, finally, we can call the code to create and set the profile */
-    code = pdf_seticc(ctx, cname, profile_stream->s, (int)N, range);
+    code = pdfi_seticc(ctx, cname, profile_stream->s, (int)N, range);
 
-    code1 = pdf_close_memory_stream(ctx, profile_buffer, profile_stream);
+    code1 = pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
 
     if (code == 0)
         code = code1;
 
-    pdf_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
 
     return code;
 }
 
-static int pdf_seticcbased(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict)
+static int pdfi_seticcbased(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_dict *ICC_dict = NULL;
     int64_t Length, N;
@@ -767,7 +767,7 @@ static int pdf_seticcbased(pdf_context *ctx, pdf_array *color_array, int index, 
     bool known;
     float range[8];
 
-    code = pdf_array_get(color_array, index + 1, (pdf_obj **)&ICC_dict);
+    code = pdfi_array_get(color_array, index + 1, (pdf_obj **)&ICC_dict);
     if (code < 0) {
         if (ctx->pdfstoponerror)
             return code;
@@ -776,8 +776,8 @@ static int pdf_seticcbased(pdf_context *ctx, pdf_array *color_array, int index, 
     }
     if (ICC_dict->type == PDF_INDIRECT) {
         pdf_indirect_ref *r = (pdf_indirect_ref *)ICC_dict;
-        code = pdf_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&ICC_dict);
-        pdf_countdown(r);
+        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&ICC_dict);
+        pdfi_countdown(r);
         if (code < 0) {
             if (ctx->pdfstoponerror)
                 return code;
@@ -786,44 +786,44 @@ static int pdf_seticcbased(pdf_context *ctx, pdf_array *color_array, int index, 
             }
         }
     }
-    code = pdf_dict_get_int(ctx, ICC_dict, "Length", &Length);
+    code = pdfi_dict_get_int(ctx, ICC_dict, "Length", &Length);
     if (code < 0)
         return code;
-    code = pdf_dict_get_int(ctx, ICC_dict, "N", &N);
+    code = pdfi_dict_get_int(ctx, ICC_dict, "N", &N);
     if (code < 0) {
-        pdf_countdown(Length);
+        pdfi_countdown(Length);
         return code;
     }
-    pdf_dict_known(ICC_dict, "Name", &known);
+    pdfi_dict_known(ICC_dict, "Name", &known);
     if (known) {
-        code = pdf_dict_get(ctx, ICC_dict, "Name", &Name);
+        code = pdfi_dict_get(ctx, ICC_dict, "Name", &Name);
         if (code >= 0) {
             if(Name->type == PDF_STRING || Name->type == PDF_NAME) {
-                cname = (char *)gs_alloc_bytes(ctx->memory, ((pdf_name *)Name)->length + 1, "pdf_seticcbased (profile name)");
+                cname = (char *)gs_alloc_bytes(ctx->memory, ((pdf_name *)Name)->length + 1, "pdfi_seticcbased (profile name)");
                 if (cname == NULL) {
-                    pdf_countdown(Name);
+                    pdfi_countdown(Name);
                     return_error(gs_error_VMerror);
                 }
                 memset(cname, 0x00, ((pdf_name *)Name)->length + 1);
                 memcpy(cname, ((pdf_name *)Name)->data, ((pdf_name *)Name)->length);
             }
-            pdf_countdown(Name);
+            pdfi_countdown(Name);
         }
     }
 
-    pdf_dict_known(ICC_dict, "Range", &known);
+    pdfi_dict_known(ICC_dict, "Range", &known);
     if (known) {
         pdf_array *a;
         double dbl;
         int i;
 
-        code = pdf_dict_get_type(ctx, ICC_dict, "Range", PDF_ARRAY, (pdf_obj **)&a);
+        code = pdfi_dict_get_type(ctx, ICC_dict, "Range", PDF_ARRAY, (pdf_obj **)&a);
         if (code < 0)
             known = false;
         else {
             if (a->size >= N * 2) {
                 for (i = 0; i < a->size;i++) {
-                    code = pdf_array_get_number(ctx, a, i, &dbl);
+                    code = pdfi_array_get_number(ctx, a, i, &dbl);
                     if (code < 0) {
                         known = false;
                         break;
@@ -844,22 +844,22 @@ static int pdf_seticcbased(pdf_context *ctx, pdf_array *color_array, int index, 
         }
     }
 
-    code = pdf_seticcprofile(ctx, ICC_dict, cname, Length, N, range);
+    code = pdfi_seticcprofile(ctx, ICC_dict, cname, Length, N, range);
 
-    gs_free_object(ctx->memory, cname, "pdf_seticcbased (profile name)");
+    gs_free_object(ctx->memory, cname, "pdfi_seticcbased (profile name)");
 
     if (code < 0) {
         /* Failed to set the ICCBased space, attempt to use the Alternate */
-        pdf_dict_known(ICC_dict, "Alternate", &known);
+        pdfi_dict_known(ICC_dict, "Alternate", &known);
         if (known) {
             pdf_obj *Alternate;
 
-            code = pdf_dict_get(ctx, ICC_dict, "Alternate", &Alternate);
+            code = pdfi_dict_get(ctx, ICC_dict, "Alternate", &Alternate);
             if (code < 0)
                 return code;
-            code = pdf_setcolorspace_by_name(ctx, (pdf_name *)Alternate, stream_dict, page_dict);
+            code = pdfi_setcolorspace_by_name(ctx, (pdf_name *)Alternate, stream_dict, page_dict);
             /* The Alternate should be one of the device spaces */
-            pdf_countdown(Alternate);
+            pdfi_countdown(Alternate);
         } else {
             /* Use the number of components (N) to set a space.... */
             switch(N) {
@@ -879,14 +879,14 @@ static int pdf_seticcbased(pdf_context *ctx, pdf_array *color_array, int index, 
         }
     }
 
-    pdf_countdown(ICC_dict);
+    pdfi_countdown(ICC_dict);
     return code;
 }
 
 /* Now /Indexed spaces, essentially we just need to set the underlying space(s) and then set
  * /Indexed.
  */
-static int pdf_setindexed(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict)
+static int pdfi_setindexed(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_obj *space, *space1, *lookup;
     pdf_array *a;
@@ -899,7 +899,7 @@ static int pdf_setindexed(pdf_context *ctx, pdf_array *color_array, int index, p
     if (index != 0)
         return_error(gs_error_syntaxerror);
 
-    code = pdf_array_get_int(ctx, color_array, index + 2, &hival);
+    code = pdfi_array_get_int(ctx, color_array, index + 2, &hival);
     if (code < 0) {
         if (code < 0 && ctx->pdfstoponerror)
             return code;
@@ -907,22 +907,22 @@ static int pdf_setindexed(pdf_context *ctx, pdf_array *color_array, int index, p
     if (hival > 255 || hival < 1)
         return_error(gs_error_syntaxerror);
 
-    code = pdf_array_get(color_array, index + 1, &space);
+    code = pdfi_array_get(color_array, index + 1, &space);
     if (code < 0) {
         if (code < 0 && ctx->pdfstoponerror)
             return code;
         return 0;
     }
 
-    code = pdf_setcolorspace(ctx, space, stream_dict, page_dict);
-    pdf_countdown(space);
+    code = pdfi_setcolorspace(ctx, space, stream_dict, page_dict);
+    pdfi_countdown(space);
     if (code < 0 && ctx->pdfstoponerror)
         return code;
 
     pcs_base = gs_currentcolorspace(ctx->pgs);
     base_type = gs_color_space_get_index(pcs_base);
 
-    code = pdf_array_get(color_array, index + 3, &lookup);
+    code = pdfi_array_get(color_array, index + 3, &lookup);
     if (code < 0) {
         if (code < 0 && ctx->pdfstoponerror)
             return code;
@@ -932,7 +932,7 @@ static int pdf_setindexed(pdf_context *ctx, pdf_array *color_array, int index, p
     }
 
     if (hival * cs_num_components(pcs_base) > ((pdf_string *)lookup)->length) {
-        pdf_countdown(lookup);
+        pdfi_countdown(lookup);
         if (ctx->pdfstoponerror)
             return_error(gs_error_rangecheck);
         return 0;
@@ -955,9 +955,9 @@ static int pdf_setindexed(pdf_context *ctx, pdf_array *color_array, int index, p
     pcs->params.indexed.use_proc = 0;
     pcs->params.indexed.hival = hival;
     pcs->params.indexed.n_comps = cs_num_components(pcs_base);
-    pcs->params.indexed.lookup.table.data = gs_alloc_bytes(ctx->memory, (hival + 1) * pcs->params.indexed.n_comps, "pdf_setindexedspace");
+    pcs->params.indexed.lookup.table.data = gs_alloc_bytes(ctx->memory, (hival + 1) * pcs->params.indexed.n_comps, "pdfi_setindexedspace");
     memcpy((byte *)pcs->params.indexed.lookup.table.data, ((pdf_string *)lookup)->data, (hival + 1) * pcs->params.indexed.n_comps);
-    pdf_countdown(lookup);
+    pdfi_countdown(lookup);
 
     code = gs_setcolorspace(ctx->pgs, pcs);
     /* release reference from construction */
@@ -970,16 +970,16 @@ static int pdf_setindexed(pdf_context *ctx, pdf_array *color_array, int index, p
  * colour space starting from a name (which can be a named resource) or an array.
  * If we get a name, and its a named resource we dereference it and go round again.
  * If its an array we select the correct handler (above) for that space. The space
- * handler will call pdf_setcolorspace() to set the underlygin space(s) whcih
- * may mean calling pdf_setcolorspace again....
+ * handler will call pdfi_setcolorspace() to set the underlygin space(s) whcih
+ * may mean calling pdfi_setcolorspace again....
  */
-static int pdf_setcolorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict)
+static int pdfi_setcolorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code, code1;
     pdf_name *space = NULL;
     pdf_array *a;
 
-    code = pdf_array_get(color_array, index, (pdf_obj **)&space);
+    code = pdfi_array_get(color_array, index, (pdf_obj **)&space);
     if(code == 0) {
         if (space->type == PDF_NAME) {
             code = gs_error_rangecheck;
@@ -1005,12 +1005,12 @@ static int pdf_setcolorspace_by_array(pdf_context *ctx, pdf_array *color_array, 
                     if (memcmp(space->data, "DeviceN", space->length) == 0) {
                     }
                     if (memcmp(space->data, "Indexed", space->length) == 0) {
-                        code = pdf_setindexed(ctx, color_array, index, stream_dict, page_dict);
+                        code = pdfi_setindexed(ctx, color_array, index, stream_dict, page_dict);
                     }
                     break;
                 case 8:
                     if (memcmp(space->data, "ICCBased", space->length) == 0) {
-                        code = pdf_seticcbased(ctx, color_array, index, stream_dict, page_dict);
+                        code = pdfi_seticcbased(ctx, color_array, index, stream_dict, page_dict);
                     }
                     break;
                 case 9:
@@ -1029,21 +1029,21 @@ static int pdf_setcolorspace_by_array(pdf_context *ctx, pdf_array *color_array, 
                     }
                     break;
                 default:
-                    code = pdf_find_resource(ctx, (unsigned char *)"ColorSpace", space, stream_dict, page_dict, (pdf_obj **)&a);
+                    code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", space, stream_dict, page_dict, (pdf_obj **)&a);
                     if (code < 0) {
                         if (ctx->pdfstoponerror)
                             return code;
                         return 0;
                     }
                     if (a->type != PDF_ARRAY) {
-                        pdf_countdown(a);
+                        pdfi_countdown(a);
                         if (ctx->pdfstoponerror)
                             return_error(gs_error_typecheck);
                         return 0;
                     }
 
-                    code = pdf_setcolorspace_by_array(ctx, a, 0, stream_dict, page_dict);
-                    pdf_countdown(a);
+                    code = pdfi_setcolorspace_by_array(ctx, a, 0, stream_dict, page_dict);
+                    pdfi_countdown(a);
                     if (code < 0 && ctx->pdfstoponerror)
                         return code;
                     return 0;
@@ -1052,13 +1052,13 @@ static int pdf_setcolorspace_by_array(pdf_context *ctx, pdf_array *color_array, 
         } else
             code = gs_error_typecheck;
     }
-    pdf_countdown(space);
+    pdfi_countdown(space);
     if(ctx->pdfstoponerror)
         return code;
     return 0;
 }
 
-static int pdf_setcolorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict)
+static int pdfi_setcolorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
     pdf_obj *ref_space;
@@ -1093,13 +1093,13 @@ static int pdf_setcolorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict 
         default:
             break;
     }
-    code = pdf_find_resource(ctx, (unsigned char *)"ColorSpace", name, stream_dict, page_dict, &ref_space);
+    code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", name, stream_dict, page_dict, &ref_space);
     if (code < 0) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_undefined);
         return 0;
     }
-    code = pdf_setcolorspace(ctx, ref_space, stream_dict, page_dict);
+    code = pdfi_setcolorspace(ctx, ref_space, stream_dict, page_dict);
     if (code < 0) {
         if (ctx->pdfstoponerror)
             return_error(gs_error_undefined);
@@ -1107,16 +1107,16 @@ static int pdf_setcolorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict 
     return 0;
 }
 
-static int pdf_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict)
+static int pdfi_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
     pdf_array *a = NULL;
 
     if (space->type == PDF_NAME) {
-        return pdf_setcolorspace_by_name(ctx, (pdf_name *)space, stream_dict, page_dict);
+        return pdfi_setcolorspace_by_name(ctx, (pdf_name *)space, stream_dict, page_dict);
     } else {
         if (space->type == PDF_ARRAY) {
-            code = pdf_setcolorspace_by_array(ctx, (pdf_array *)space, 0, stream_dict, page_dict);
+            code = pdfi_setcolorspace_by_array(ctx, (pdf_array *)space, 0, stream_dict, page_dict);
         } else
             return_error(gs_error_typecheck);
     }
@@ -1124,7 +1124,7 @@ static int pdf_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_
 }
 
 /* And finally, the implementation of the actual PDF operators CS and cs */
-int pdf_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
+int pdfi_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
     pdf_name *n = NULL;
@@ -1136,20 +1136,20 @@ int pdf_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *
         return 0;
     }
     if (ctx->stack_top[-1]->type != PDF_NAME) {
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
-    code = pdf_setcolorspace(ctx, ctx->stack_top[-1], stream_dict, page_dict);
-    pdf_pop(ctx, 1);
+    code = pdfi_setcolorspace(ctx, ctx->stack_top[-1], stream_dict, page_dict);
+    pdfi_pop(ctx, 1);
 
     if (code < 0 && ctx->pdfstoponerror)
         return code;
     return 0;
 }
 
-int pdf_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
+int pdfi_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
     pdf_name *n = NULL;
@@ -1161,15 +1161,15 @@ int pdf_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *pa
         return 0;
     }
     if (ctx->stack_top[-1]->type != PDF_NAME) {
-        pdf_pop(ctx, 1);
+        pdfi_pop(ctx, 1);
         if (ctx->pdfstoponerror)
             return_error(gs_error_stackunderflow);
         return 0;
     }
     gs_swapcolors(ctx->pgs);
-    code = pdf_setcolorspace(ctx, ctx->stack_top[-1], stream_dict, page_dict);
+    code = pdfi_setcolorspace(ctx, ctx->stack_top[-1], stream_dict, page_dict);
     gs_swapcolors(ctx->pgs);
-    pdf_pop(ctx, 1);
+    pdfi_pop(ctx, 1);
 
     if (code < 0 && ctx->pdfstoponerror)
         return code;

@@ -98,7 +98,7 @@ pdf_imp_allocate_interp_instance(pl_interp_implementation_t *impl,
     if (!instance)
         return gs_error_VMerror;
 
-    ctx = pdf_create_context(pmem);
+    ctx = pdfi_create_context(pmem);
 
     if (ctx == NULL) {
         gs_free_object(pmem, instance, "pdf_imp_allocate_interp_instance");
@@ -231,7 +231,7 @@ pdf_imp_process_file(pl_interp_implementation_t *impl, char *filename)
         strcpy(ctx->PageList, imain->PageList);
     }
 
-    code = pdf_process_pdf_file(ctx, filename);
+    code = pdfi_process_pdf_file(ctx, filename);
     if (code)
         return code;
 
@@ -294,7 +294,7 @@ pdf_imp_process_eof(pl_interp_implementation_t *impl)
         if_debug0m('|', ctx->memory, "pdf: executing scratch file\n");
         fclose(instance->scratch_file);
         instance->scratch_file = NULL;
-        code = pdf_process_pdf_file(ctx, instance->scratch_name);
+        code = pdfi_process_pdf_file(ctx, instance->scratch_name);
         unlink(instance->scratch_name);
         if (code < 0)
         {
@@ -358,7 +358,7 @@ pdf_imp_deallocate_interp_instance(pl_interp_implementation_t *impl)
     gs_memory_t *mem = ctx->memory;
     int code = 0;
 
-    code = pdf_free_context(mem, ctx);
+    code = pdfi_free_context(mem, ctx);
 
     gs_free_object(mem, instance, "pdf_imp_deallocate_interp_instance");
 

@@ -18,11 +18,11 @@
 #ifndef PDF_ARRAY_FUNCTIONS
 #define PDF_ARRAY_FUNCTIONS
 
-void pdf_free_array(pdf_obj *o);
-int pdf_array_get(pdf_array *a, uint64_t index, pdf_obj **o);
-int pdf_array_get_type(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj_type t, pdf_obj **o);
-int pdf_array_get_int(pdf_context *ctx, pdf_array *a, uint64_t index, int64_t *i);
-int pdf_array_get_number(pdf_context *ctx, pdf_array *a, uint64_t index, double *f);
-int pdf_array_put(pdf_array *a, uint64_t index, pdf_obj *o);
+void pdfi_free_array(pdf_obj *o);
+int pdfi_array_get(pdf_array *a, uint64_t index, pdf_obj **o);
+int pdfi_array_get_type(pdf_context *ctx, pdf_array *a, uint64_t index, pdf_obj_type t, pdf_obj **o);
+int pdfi_array_get_int(pdf_context *ctx, pdf_array *a, uint64_t index, int64_t *i);
+int pdfi_array_get_number(pdf_context *ctx, pdf_array *a, uint64_t index, double *f);
+int pdfi_array_put(pdf_array *a, uint64_t index, pdf_obj *o);
 
 #endif

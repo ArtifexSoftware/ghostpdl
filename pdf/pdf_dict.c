@@ -20,37 +20,37 @@
 #include "pdf_stack.h"
 #include "pdf_int.h"
 
-void pdf_free_dict(pdf_obj *o)
+void pdfi_free_dict(pdf_obj *o)
 {
     pdf_dict *d = (pdf_dict *)o;
     int i;
 
     for (i=0;i < d->entries;i++) {
         if (d->keys[i] != NULL)
-            pdf_countdown(d->keys[i]);
+            pdfi_countdown(d->keys[i]);
         if (d->values[i] != NULL)
-            pdf_countdown(d->values[i]);
+            pdfi_countdown(d->values[i]);
     }
     gs_free_object(d->memory, d->keys, "pdf interpreter free dictionary keys");
     gs_free_object(d->memory, d->values, "pdf interpreter free dictioanry values");
     gs_free_object(d->memory, d, "pdf interpreter free dictionary");
 }
 
-int pdf_dict_from_stack(pdf_context *ctx)
+int pdfi_dict_from_stack(pdf_context *ctx)
 {
     uint64_t index = 0;
     pdf_dict *d = NULL;
     uint64_t i = 0;
     int code;
 
-    code = pdf_count_to_mark(ctx, &index);
+    code = pdfi_count_to_mark(ctx, &index);
     if (code < 0)
         return code;
 
     if (index & 1)
         return_error(gs_error_rangecheck);
 
-    d = (pdf_dict *)gs_alloc_bytes(ctx->memory, sizeof(pdf_dict), "pdf_dict_from_stack");
+    d = (pdf_dict *)gs_alloc_bytes(ctx->memory, sizeof(pdf_dict), "pdfi_dict_from_stack");
     if (d == NULL)
         return_error(gs_error_VMerror);
 
@@ -60,17 +60,17 @@ int pdf_dict_from_stack(pdf_context *ctx)
 
     d->size = d->entries = index >> 1;
 
-    d->keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, d->size * sizeof(pdf_obj *), "pdf_dict_from_stack");
+    d->keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, d->size * sizeof(pdf_obj *), "pdfi_dict_from_stack");
     if (d->keys == NULL) {
-        gs_free_object(d->memory, d, "pdf_read_dict error");
+        gs_free_object(d->memory, d, "pdfi_read_dict error");
         return_error(gs_error_VMerror);
     }
     memset(d->keys, 0x00, d->size * sizeof(pdf_obj *));
 
-    d->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, d->size * sizeof(pdf_obj *), "pdf_dict_from_stack");
+    d->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, d->size * sizeof(pdf_obj *), "pdfi_dict_from_stack");
     if (d->values == NULL) {
-        gs_free_object(d->memory, d->keys, "pdf_read_dict error");
-        gs_free_object(d->memory, d, "pdf_read_dict error");
+        gs_free_object(d->memory, d->keys, "pdfi_read_dict error");
+        gs_free_object(d->memory, d, "pdfi_read_dict error");
         return_error(gs_error_VMerror);
     }
     memset(d->values, 0x00, d->size * sizeof(pdf_obj *));
@@ -81,19 +81,19 @@ int pdf_dict_from_stack(pdf_context *ctx)
         /* In PDF keys are *required* to be names, so we ought to check that here */
         if (((pdf_obj *)ctx->stack_top[-2])->type == PDF_NAME) {
             d->keys[i] = ctx->stack_top[-2];
-            pdf_countup(d->keys[i]);
+            pdfi_countup(d->keys[i]);
             d->values[i] = ctx->stack_top[-1];
-            pdf_countup(d->values[i]);
+            pdfi_countup(d->values[i]);
         } else {
-            pdf_free_dict((pdf_obj *)d);
+            pdfi_free_dict((pdf_obj *)d);
             return_error(gs_error_typecheck);
         }
 
-        pdf_pop(ctx, 2);
+        pdfi_pop(ctx, 2);
         index -= 2;
     }
 
-    code = pdf_clear_to_mark(ctx);
+    code = pdfi_clear_to_mark(ctx);
     if (code < 0)
         return code;
 
@@ -104,18 +104,18 @@ int pdf_dict_from_stack(pdf_context *ctx)
     d->UID = ctx->UID++;
     dmprintf1(ctx->memory, "Allocated dictionary object with UID %"PRIi64"\n", d->UID);
 #endif
-    code = pdf_push(ctx, (pdf_obj *)d);
+    code = pdfi_push(ctx, (pdf_obj *)d);
     if (code < 0)
-        pdf_free_dict((pdf_obj *)d);
+        pdfi_free_dict((pdf_obj *)d);
 
     return code;
 }
 
 
-/* The object returned by pdf_dict_get has its reference count incremented by 1 to
+/* The object returned by pdfi_dict_get has its reference count incremented by 1 to
  * indicate the reference now held by the caller, in **o.
  */
-int pdf_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
+int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
 {
     int i=0, code;
     pdf_name *t;
@@ -130,14 +130,14 @@ int pdf_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
                 if (d->values[i]->type == PDF_INDIRECT) {
                     pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[i];
 
-                    code = pdf_dereference(ctx, r->ref_object_num, r->ref_generation_num, o);
+                    code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, o);
                     if (code < 0)
                         return code;
-                    pdf_countdown(d->values[i]);
+                    pdfi_countdown(d->values[i]);
                     d->values[i] = *o;
                 }
                 *o = d->values[i];
-                pdf_countup(*o);
+                pdfi_countup(*o);
                 return 0;
             }
         }
@@ -145,12 +145,12 @@ int pdf_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
     return_error(gs_error_undefined);
 }
 
-/* As per pdf_dict_get(), but doesn't replace an indirect reference in a dictionary with a
+/* As per pdfi_dict_get(), but doesn't replace an indirect reference in a dictionary with a
  * new object. This is for Resources following, such as Do, where we will have to seek and
  * read the indirect object anyway, and we need to ensure that Form XObjects (for example)
  * don't have circular calls.
  */
-int pdf_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
+int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
 {
     int i=0, code;
     pdf_name *t;
@@ -165,12 +165,12 @@ int pdf_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_
                 if (d->values[i]->type == PDF_INDIRECT) {
                     pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[i];
 
-                    code = pdf_dereference(ctx, r->ref_object_num, r->ref_generation_num, o);
+                    code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, o);
                     if (code < 0)
                         return code;
                 } else
                     *o = d->values[i];
-                pdf_countup(*o);
+                pdfi_countup(*o);
                 return 0;
             }
         }
@@ -178,11 +178,11 @@ int pdf_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_
     return_error(gs_error_undefined);
 }
 
-int pdf_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type type, pdf_obj **o)
+int pdfi_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type type, pdf_obj **o)
 {
     int code;
 
-    code = pdf_dict_get(ctx, d, Key, o);
+    code = pdfi_dict_get(ctx, d, Key, o);
     if (code < 0)
         return code;
 
@@ -192,24 +192,24 @@ int pdf_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_ty
             pdf_obj *o1 = NULL;
             pdf_indirect_ref *r = (pdf_indirect_ref *)*o;
 
-            code = pdf_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
-            pdf_countdown(*o);
+            code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
+            pdfi_countdown(*o);
             *o = NULL;
             if (code < 0)
                 return code;
 
-            code = pdf_make_name(ctx, (byte *)Key, strlen(Key), (pdf_obj **)&NewKey);
+            code = pdfi_make_name(ctx, (byte *)Key, strlen(Key), (pdf_obj **)&NewKey);
             if (code == 0) {
-                (void)pdf_dict_put(d, (pdf_obj *)NewKey, o1);
-                pdf_countdown(NewKey);
+                (void)pdfi_dict_put(d, (pdf_obj *)NewKey, o1);
+                pdfi_countdown(NewKey);
             }
             if (o1->type != type) {
-                pdf_countdown(o1);
+                pdfi_countdown(o1);
                 return_error(gs_error_typecheck);
             }
             *o = o1;
         } else {
-            pdf_countdown(*o);
+            pdfi_countdown(*o);
             *o = NULL;
             return_error(gs_error_typecheck);
         }
@@ -217,34 +217,34 @@ int pdf_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_ty
     return 0;
 }
 
-int pdf_dict_get_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t *i)
+int pdfi_dict_get_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t *i)
 {
     int code;
     pdf_num *n;
 
-    code = pdf_dict_get_type(ctx, d, Key, PDF_INT, (pdf_obj **)&n);
+    code = pdfi_dict_get_type(ctx, d, Key, PDF_INT, (pdf_obj **)&n);
     if (code < 0)
         return code;
 
     *i = n->value.i;
-    pdf_countdown(n);
+    pdfi_countdown(n);
     return 0;
 }
 
-int pdf_dict_get_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *f)
+int pdfi_dict_get_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *f)
 {
     int code;
     pdf_num *o;
 
-    code = pdf_dict_get(ctx, d, Key, (pdf_obj **)&o);
+    code = pdfi_dict_get(ctx, d, Key, (pdf_obj **)&o);
     if (code < 0)
         return code;
     if (o->type == PDF_INDIRECT) {
         pdf_obj *o1 = NULL;
         pdf_indirect_ref *r = (pdf_indirect_ref *)o;
 
-        code = pdf_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
-        pdf_countdown(o);
+        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
+        pdfi_countdown(o);
         o = NULL;
         if (code < 0)
             return code;
@@ -257,15 +257,15 @@ int pdf_dict_get_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *
         if (o->type == PDF_REAL){
             *f = o->value.d;
         } else {
-            pdf_countdown(o);
+            pdfi_countdown(o);
             return_error(gs_error_typecheck);
         }
     }
-    pdf_countdown(o);
+    pdfi_countdown(o);
     return 0;
 }
 
-int pdf_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
+int pdfi_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
 {
     uint64_t i;
     pdf_obj **new_keys, **new_values;
@@ -282,9 +282,9 @@ int pdf_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
                 if (d->values[i] == value)
                     /* We already have this value stored with this key.... */
                     return 0;
-                pdf_countdown(d->values[i]);
+                pdfi_countdown(d->values[i]);
                 d->values[i] = value;
-                pdf_countup(value);
+                pdfi_countup(value);
                 return 0;
             }
         }
@@ -296,27 +296,27 @@ int pdf_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
         for (i=0;i< d->size;i++) {
             if (d->keys[i] == NULL) {
                 d->keys[i] = Key;
-                pdf_countup(Key);
+                pdfi_countup(Key);
                 d->values[i] = value;
-                pdf_countup(value);
+                pdfi_countup(value);
                 d->entries++;
                 return 0;
             }
         }
     }
 
-    new_keys = (pdf_obj **)gs_alloc_bytes(d->memory, (d->size + 1) * sizeof(pdf_obj *), "pdf_dict_put reallocate dictionary keys");
-    new_values = (pdf_obj **)gs_alloc_bytes(d->memory, (d->size + 1) * sizeof(pdf_obj *), "pdf_dict_put reallocate dictionary values");
+    new_keys = (pdf_obj **)gs_alloc_bytes(d->memory, (d->size + 1) * sizeof(pdf_obj *), "pdfi_dict_put reallocate dictionary keys");
+    new_values = (pdf_obj **)gs_alloc_bytes(d->memory, (d->size + 1) * sizeof(pdf_obj *), "pdfi_dict_put reallocate dictionary values");
     if (new_keys == NULL || new_values == NULL){
-        gs_free_object(d->memory, new_keys, "pdf_dict_put memory allocation failure");
-        gs_free_object(d->memory, new_values, "pdf_dict_put memory allocation failure");
+        gs_free_object(d->memory, new_keys, "pdfi_dict_put memory allocation failure");
+        gs_free_object(d->memory, new_values, "pdfi_dict_put memory allocation failure");
         return_error(gs_error_VMerror);
     }
     memcpy(new_keys, d->keys, d->size * sizeof(pdf_obj *));
     memcpy(new_values, d->values, d->size * sizeof(pdf_obj *));
 
-    gs_free_object(d->memory, d->keys, "pdf_dict_put key reallocation");
-    gs_free_object(d->memory, d->values, "pdf_dict_put value reallocation");
+    gs_free_object(d->memory, d->keys, "pdfi_dict_put key reallocation");
+    gs_free_object(d->memory, d->values, "pdfi_dict_put value reallocation");
 
     d->keys = new_keys;
     d->values = new_values;
@@ -325,25 +325,25 @@ int pdf_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
     d->values[d->size] = value;
     d->size++;
     d->entries++;
-    pdf_countup(Key);
-    pdf_countup(value);
+    pdfi_countup(Key);
+    pdfi_countup(value);
 
     return 0;
 }
 
-int pdf_dict_copy(pdf_dict *target, pdf_dict *source)
+int pdfi_dict_copy(pdf_dict *target, pdf_dict *source)
 {
     int i=0, code = 0;
 
     for (i=0;i< source->entries;i++) {
-        code = pdf_dict_put(target, source->keys[i], source->values[i]);
+        code = pdfi_dict_put(target, source->keys[i], source->values[i]);
         if (code < 0)
             return code;
     }
     return 0;
 }
 
-int pdf_dict_known(pdf_dict *d, const char *Key, bool *known)
+int pdfi_dict_known(pdf_dict *d, const char *Key, bool *known)
 {
     int i;
     pdf_obj *t;
@@ -362,7 +362,7 @@ int pdf_dict_known(pdf_dict *d, const char *Key, bool *known)
     return 0;
 }
 
-int pdf_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known)
+int pdfi_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known)
 {
     int i;
     pdf_obj *t;
@@ -381,17 +381,17 @@ int pdf_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known)
     return 0;
 }
 
-int pdf_merge_dicts(pdf_dict *target, pdf_dict *source)
+int pdfi_merge_dicts(pdf_dict *target, pdf_dict *source)
 {
     int i, code;
     bool known = false;
 
     for (i=0;i< source->entries;i++) {
-        code = pdf_dict_known_by_key(target, (pdf_name *)source->keys[i], &known);
+        code = pdfi_dict_known_by_key(target, (pdf_name *)source->keys[i], &known);
         if (code < 0)
             return code;
         if (!known) {
-            code = pdf_dict_put(target, source->keys[i], source->values[i]);
+            code = pdfi_dict_put(target, source->keys[i], source->values[i]);
             if (code < 0)
                 return code;
         }
@@ -399,13 +399,13 @@ int pdf_merge_dicts(pdf_dict *target, pdf_dict *source)
     return 0;
 }
 
-int pdf_alloc_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned)
+int pdfi_alloc_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned)
 {
     pdf_dict *returned_dict;
 
     *returned = NULL;
 
-    returned_dict = (pdf_dict *)gs_alloc_bytes(ctx->memory, sizeof(pdf_dict), "pdf_alloc_dict");
+    returned_dict = (pdf_dict *)gs_alloc_bytes(ctx->memory, sizeof(pdf_dict), "pdfi_alloc_dict");
     if (returned_dict == NULL)
         return_error(gs_error_VMerror);
 
@@ -414,15 +414,15 @@ int pdf_alloc_dict(pdf_context *ctx, uint64_t size, pdf_dict **returned)
     returned_dict->type = PDF_DICT;
     returned_dict->refcnt = 1;
 
-    returned_dict->keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdf_alloc_dict");
+    returned_dict->keys = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_alloc_dict");
     if (returned_dict->keys == NULL) {
-        gs_free_object(ctx->memory, returned_dict, "pdf_alloc_dict");
+        gs_free_object(ctx->memory, returned_dict, "pdfi_alloc_dict");
         return_error(gs_error_VMerror);
     }
-    returned_dict->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdf_alloc_dict");
+    returned_dict->values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_alloc_dict");
     if (returned_dict->keys == NULL) {
-        gs_free_object(ctx->memory, returned_dict->keys, "pdf_alloc_dict");
-        gs_free_object(ctx->memory, returned_dict, "pdf_alloc_dict");
+        gs_free_object(ctx->memory, returned_dict->keys, "pdfi_alloc_dict");
+        gs_free_object(ctx->memory, returned_dict, "pdfi_alloc_dict");
         return_error(gs_error_VMerror);
     }
     memset(returned_dict->keys, 0x00, size * sizeof(pdf_obj *));

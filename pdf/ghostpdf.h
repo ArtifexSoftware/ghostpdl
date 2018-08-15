@@ -198,10 +198,10 @@ typedef struct pdf_context_s
 #endif
 }pdf_context;
 
-pdf_context *pdf_create_context(gs_memory_t *pmem);
-int pdf_free_context(gs_memory_t *pmem, pdf_context *ctx);
+pdf_context *pdfi_create_context(gs_memory_t *pmem);
+int pdfi_free_context(gs_memory_t *pmem, pdf_context *ctx);
 
-int pdf_open_pdf_file(pdf_context *ctx, char *filename);
-int pdf_process_pdf_file(pdf_context *ctx, char *filename);
-int pdf_close_pdf_file(pdf_context *ctx);
+int pdfi_open_pdf_file(pdf_context *ctx, char *filename);
+int pdfi_process_pdf_file(pdf_context *ctx, char *filename);
+int pdfi_close_pdf_file(pdf_context *ctx);
 #endif

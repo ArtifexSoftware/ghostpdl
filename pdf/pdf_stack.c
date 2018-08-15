@@ -20,11 +20,11 @@
 #include "pdf_int.h"
 #include "pdf_stack.h"
 
-int pdf_pop(pdf_context *ctx, int num)
+int pdfi_pop(pdf_context *ctx, int num)
 {
     while(num) {
         if (ctx->stack_top > ctx->stack_bot) {
-            pdf_countdown(ctx->stack_top[-1]);
+            pdfi_countdown(ctx->stack_top[-1]);
             ctx->stack_top--;
         } else {
             return_error(gs_error_stackunderflow);
@@ -34,7 +34,7 @@ int pdf_pop(pdf_context *ctx, int num)
     return 0;
 }
 
-int pdf_push(pdf_context *ctx, pdf_obj *o)
+int pdfi_push(pdf_context *ctx, pdf_obj *o)
 {
     pdf_obj **new_stack;
     uint32_t entries = 0;
@@ -46,12 +46,12 @@ int pdf_push(pdf_context *ctx, pdf_obj *o)
         if (ctx->stack_size >= MAX_STACK_SIZE)
             return_error(gs_error_stackoverflow);
 
-        new_stack = (pdf_obj **)gs_alloc_bytes(ctx->memory, (ctx->stack_size + INITIAL_STACK_SIZE) * sizeof (pdf_obj *), "pdf_push_increase_interp_stack");
+        new_stack = (pdf_obj **)gs_alloc_bytes(ctx->memory, (ctx->stack_size + INITIAL_STACK_SIZE) * sizeof (pdf_obj *), "pdfi_push_increase_interp_stack");
         if (new_stack == NULL)
             return_error(gs_error_VMerror);
 
         memcpy(new_stack, ctx->stack_bot, ctx->stack_size * sizeof(pdf_obj *));
-        gs_free_object(ctx->memory, ctx->stack_bot, "pdf_push_increase_interp_stack");
+        gs_free_object(ctx->memory, ctx->stack_bot, "pdfi_push_increase_interp_stack");
 
         entries = ctx->stack_top - ctx->stack_bot;
 
@@ -63,12 +63,12 @@ int pdf_push(pdf_context *ctx, pdf_obj *o)
 
     *ctx->stack_top = o;
     ctx->stack_top++;
-    pdf_countup(o);
+    pdfi_countup(o);
 
     return 0;
 }
 
-int pdf_mark_stack(pdf_context *ctx, pdf_obj_type type)
+int pdfi_mark_stack(pdf_context *ctx, pdf_obj_type type)
 {
     pdf_obj *o;
     int code;
@@ -87,17 +87,17 @@ int pdf_mark_stack(pdf_context *ctx, pdf_obj_type type)
 #if REFCNT_DEBUG
     o->UID = ctx->UID++;
 #endif
-    code = pdf_push(ctx, o);
-    pdf_countdown(o);
+    code = pdfi_push(ctx, o);
+    pdfi_countdown(o);
     return code;
 }
 
-void pdf_clearstack(pdf_context *ctx)
+void pdfi_clearstack(pdf_context *ctx)
 {
-    pdf_pop(ctx, ctx->stack_top - ctx->stack_bot);
+    pdfi_pop(ctx, ctx->stack_top - ctx->stack_bot);
 }
 
-int pdf_count_to_mark(pdf_context *ctx, uint64_t *count)
+int pdfi_count_to_mark(pdf_context *ctx, uint64_t *count)
 {
     pdf_obj *o = ctx->stack_top[- 1];
     int index = -1;
@@ -112,13 +112,13 @@ int pdf_count_to_mark(pdf_context *ctx, uint64_t *count)
     return_error(gs_error_unmatchedmark);
 }
 
-int pdf_clear_to_mark(pdf_context *ctx)
+int pdfi_clear_to_mark(pdf_context *ctx)
 {
     int code;
     uint64_t count;
 
-    code = pdf_count_to_mark(ctx, &count);
+    code = pdfi_count_to_mark(ctx, &count);
     if (code < 0)
         return code;
-    return pdf_pop(ctx, count + 1);
+    return pdfi_pop(ctx, count + 1);
 }

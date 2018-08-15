@@ -18,14 +18,14 @@
 #ifndef PDF_GSTATE_OPERATORS
 #define PDF_GSTATE_OPERATORS
 
-int pdf_concat(pdf_context *ctx);
-int pdf_gsave(pdf_context *ctx);
-int pdf_grestore(pdf_context *ctx);
-int pdf_setlinewidth(pdf_context *ctx);
-int pdf_setlinejoin(pdf_context *ctx);
-int pdf_setlinecap(pdf_context *ctx);
-int pdf_setflat(pdf_context *ctx);
-int pdf_setdash(pdf_context *ctx);
-int pdf_setmiterlimit(pdf_context *ctx);
+int pdfi_concat(pdf_context *ctx);
+int pdfi_gsave(pdf_context *ctx);
+int pdfi_grestore(pdf_context *ctx);
+int pdfi_setlinewidth(pdf_context *ctx);
+int pdfi_setlinejoin(pdf_context *ctx);
+int pdfi_setlinecap(pdf_context *ctx);
+int pdfi_setflat(pdf_context *ctx);
+int pdfi_setdash(pdf_context *ctx);
+int pdfi_setmiterlimit(pdf_context *ctx);
 
 #endif

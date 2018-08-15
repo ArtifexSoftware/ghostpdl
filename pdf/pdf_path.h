@@ -18,23 +18,23 @@
 #ifndef PDF_PATH_OPERATORS
 #define PDF_PATH_OPERATORS
 
-int pdf_moveto (pdf_context *ctx);
-int pdf_lineto (pdf_context *ctx);
-int pdf_fill (pdf_context *ctx);
-int pdf_eofill(pdf_context *ctx);
-int pdf_stroke(pdf_context *ctx);
-int pdf_closepath_stroke(pdf_context *ctx);
-int pdf_curveto(pdf_context *ctx);
-int pdf_v_curveto(pdf_context *ctx);
-int pdf_y_curveto(pdf_context *ctx);
-int pdf_closepath(pdf_context *ctx);
-int pdf_newpath(pdf_context *ctx);
-int pdf_b(pdf_context *ctx);
-int pdf_b_star(pdf_context *ctx);
-int pdf_B(pdf_context *ctx);
-int pdf_B_star(pdf_context *ctx);
-int pdf_clip(pdf_context *ctx);
-int pdf_eoclip(pdf_context *ctx);
-int pdf_rectpath(pdf_context *ctx);
+int pdfi_moveto (pdf_context *ctx);
+int pdfi_lineto (pdf_context *ctx);
+int pdfi_fill (pdf_context *ctx);
+int pdfi_eofill(pdf_context *ctx);
+int pdfi_stroke(pdf_context *ctx);
+int pdfi_closepath_stroke(pdf_context *ctx);
+int pdfi_curveto(pdf_context *ctx);
+int pdfi_v_curveto(pdf_context *ctx);
+int pdfi_y_curveto(pdf_context *ctx);
+int pdfi_closepath(pdf_context *ctx);
+int pdfi_newpath(pdf_context *ctx);
+int pdfi_b(pdf_context *ctx);
+int pdfi_b_star(pdf_context *ctx);
+int pdfi_B(pdf_context *ctx);
+int pdfi_B_star(pdf_context *ctx);
+int pdfi_clip(pdf_context *ctx);
+int pdfi_eoclip(pdf_context *ctx);
+int pdfi_rectpath(pdf_context *ctx);
 
 #endif

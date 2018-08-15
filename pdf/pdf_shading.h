@@ -17,6 +17,7 @@
 
 #ifndef PDF_SHADING_OPERATORS
 #define PDF_SHADING_OPERATORS
-int pdf_shading(pdf_context *ctx);
+
+int pdfi_shading(pdf_context *ctx);
 
 #endif
