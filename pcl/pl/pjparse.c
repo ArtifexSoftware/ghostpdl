@@ -895,6 +895,8 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                             }
                         } else
                             continue;
+
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return 0;
                 }
             case INITIALIZE:
