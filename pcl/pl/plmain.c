@@ -745,7 +745,6 @@ static int check_for_special_str(pl_main_instance_t * pmi, const char *arg, gs_p
     return 1;
 }
 
-#define arg_heap_copy(str) arg_copy(str, pmi->memory)
 static int
 pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         pl_interp_implementation_t * pjli)
@@ -858,7 +857,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         if (code == 1)
                             code =
                                 param_write_bool((gs_param_list *) params,
-                                                 arg_heap_copy(arg), &bval);
+                                                 arg, &bval);
                         continue;
                     }
 
@@ -871,7 +870,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         code = check_for_special_str(pmi, arg, &str);
                         if (code == 1)
                             code = param_write_name((gs_param_list *) params,
-                                                    arg_heap_copy(buffer), &str);
+                                                    buffer, &str);
                         continue;
                     }
                     /* Search for a non-decimal 'radix' number */
@@ -911,7 +910,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         if (code == 1)
                             code =
                                 param_write_int((gs_param_list *) params,
-                                                arg_heap_copy(buffer), &number);
+                                                buffer, &number);
                     } else if ((!strchr(value, '.')) &&
                                /* search for an int (no decimal), if fail try a float */
                                (sscanf(value, "%d", &vi) == 1)) {
@@ -943,7 +942,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         if (code == 1)
                             code =
                                 param_write_int((gs_param_list *) params,
-                                                arg_heap_copy(buffer), &vi);
+                                                buffer, &vi);
                     } else if (sscanf(value, "%f", &vf) == 1) {
                         /* create a null terminated string.  NB duplicated code. */
                         strncpy(buffer, arg, eqp - arg);
@@ -952,7 +951,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         if (code == 1)
                             code =
                                 param_write_float((gs_param_list *) params,
-                                                  arg_heap_copy(buffer), &vf);
+                                                  buffer, &vf);
                     } else if (!strcmp(value, "true")) {
                         /* bval = true; */
                         strncpy(buffer, arg, eqp - arg);
@@ -961,7 +960,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         if (code == 1)
                             code =
                                 param_write_bool((gs_param_list *) params,
-                                                 arg_heap_copy(buffer), &bval);
+                                                 buffer, &bval);
                     } else if (!strcmp(value, "false")) {
                         bval = false;
                         strncpy(buffer, arg, eqp - arg);
@@ -970,7 +969,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         if (code == 1)
                             code =
                                 param_write_bool((gs_param_list *) params,
-                                                 arg_heap_copy(buffer), &bval);
+                                                 buffer, &bval);
                     } else {
                         dmprintf(pmi->memory,
                                  "Usage for -d is -d<option>=[<integer>|<float>|true|false]\n");
@@ -1216,21 +1215,21 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         if (!strncmp
                             (arg, "DefaultGrayProfile",
                              strlen("DefaultGrayProfile"))) {
-                        pmi->pdefault_gray_icc = arg_heap_copy(value);
+                        pmi->pdefault_gray_icc = arg_copy(value, pmi->memory);
                     } else
                         if (!strncmp
                             (arg, "DefaultRGBProfile",
                              strlen("DefaultRGBProfile"))) {
-                        pmi->pdefault_rgb_icc = arg_heap_copy(value);
+                        pmi->pdefault_rgb_icc = arg_copy(value, pmi->memory);
                     } else
                         if (!strncmp
                             (arg, "DefaultCMYKProfile",
                              strlen("DefaultCMYKProfile"))) {
-                        pmi->pdefault_cmyk_icc = arg_heap_copy(value);
+                        pmi->pdefault_cmyk_icc = arg_copy(value, pmi->memory);
                     } else
                         if (!strncmp
                             (arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
-                        pmi->piccdir = arg_heap_copy(value);
+                        pmi->piccdir = arg_copy(value, pmi->memory);
                     } else {
                         char buffer[128];
 
