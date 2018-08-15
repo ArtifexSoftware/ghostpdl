@@ -64,6 +64,9 @@ $(PDFOBJ)pdf_text.$(OBJ): $(PDFSRC)pdf_text.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDI
 $(PDFOBJ)pdf_shading.$(OBJ): $(PDFSRC)pdf_shading.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_shading.c $(PDFO_)pdf_shading.$(OBJ)
 
+$(PDFOBJ)pdf_func.$(OBJ): $(PDFSRC)pdf_func.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_func.c $(PDFO_)pdf_func.$(OBJ)
+
 $(PDFOBJ)pdf_image.$(OBJ): $(PDFSRC)pdf_image.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_image.c $(PDFO_)pdf_image.$(OBJ)
 
@@ -106,7 +109,7 @@ $(PDF_TOP_OBJ): $(PDFSRC)pdftop.c $(plmain_h) $(pltop_h) $(PDFINCLUDES) $(GLOBJ)
 	$(PDFCCC) $(PDFSRC)pdftop.c $(PDFO_)pdftop.$(OBJ)
 
 # sa85d is explicitly included here, which seems wrong, especially as none of
-# the other decoders have to be. spdiff.c as well. sfilter1 is included in filters.dev.
+# the other decoders have to be. spdiff.c as well. sfilter1 is included in filters.dev, still needs to be here.
 
 PDF_OBJS=\
     $(PDFOBJ)pdf_loop_detect.$(OBJ)\
@@ -124,6 +127,7 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_font.$(OBJ)\
     $(PDFOBJ)pdf_text.$(OBJ)\
     $(PDFOBJ)pdf_shading.$(OBJ)\
+    $(PDFOBJ)pdf_func.$(OBJ)\
     $(GLOBJ)sa85d.$(OBJ)\
     $(GLOBJ)spdiff.$(OBJ)\
     $(GLOBJ)sfilter1.$(OBJ)
