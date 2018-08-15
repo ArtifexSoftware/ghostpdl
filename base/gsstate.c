@@ -835,9 +835,10 @@ gs_initgraphics(gs_gstate * pgs)
         if (pcs1 == NULL)
             return_error(gs_error_unknownerror);
 
-        if (pgs->color[0].color_space != NULL)
+        if (pgs->color[0].color_space != NULL) {
             gs_setcolorspace(pgs, pcs1);
-        else {
+            rc_decrement_cs(pcs1, "gs_initgraphics");
+        } else {
             pgs->color[0].color_space = pcs1;
             gs_setcolorspace(pgs, pcs1);
         }
@@ -851,9 +852,10 @@ gs_initgraphics(gs_gstate * pgs)
         if (pcs2 == NULL)
             return_error(gs_error_unknownerror);
 
-        if (pgs->color[0].color_space != NULL)
+        if (pgs->color[0].color_space != NULL) {
             gs_setcolorspace(pgs, pcs2);
-        else {
+            rc_decrement_cs(pcs2, "gs_initgraphics");
+        } else {
             pgs->color[0].color_space = pcs2;
             gs_setcolorspace(pgs, pcs2);
         }
@@ -867,13 +869,14 @@ gs_initgraphics(gs_gstate * pgs)
     } else {
         gs_color_space  *pcs1, *pcs2;
 
-        pcs1 = gs_cspace_new_ICC(pgs->memory, pgs, 1);;
+        pcs1 = gs_cspace_new_ICC(pgs->memory, pgs, 1);
         if (pcs1 == NULL)
             return_error(gs_error_unknownerror);
 
-        if (pgs->color[0].color_space != NULL)
+        if (pgs->color[0].color_space != NULL) {
             gs_setcolorspace(pgs, pcs1);
-        else {
+            rc_decrement_cs(pcs1, "gs_initgraphics");
+        } else {
             pgs->color[0].color_space = pcs1;
             gs_setcolorspace(pgs, pcs1);
         }
@@ -882,13 +885,14 @@ gs_initgraphics(gs_gstate * pgs)
             return code;
 
         gs_swapcolors_quick(pgs); /* To color 1 */
-        pcs2 = gs_cspace_new_ICC(pgs->memory, pgs, 1);;
+        pcs2 = gs_cspace_new_ICC(pgs->memory, pgs, 1);
         if (pcs2 == NULL)
             return_error(gs_error_unknownerror);
 
-        if (pgs->color[0].color_space != NULL)
+        if (pgs->color[0].color_space != NULL) {
             gs_setcolorspace(pgs, pcs2);
-        else {
+            rc_decrement_cs(pcs2, "gs_initgraphics");
+        } else {
             pgs->color[0].color_space = pcs2;
             gs_setcolorspace(pgs, pcs2);
         }
