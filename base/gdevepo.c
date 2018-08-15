@@ -43,6 +43,9 @@
 #define DPRINTF(m,f) if_debug0m(gs_debug_flag_epo_details, m,f)
 #define DPRINTF1(m,f,a1) if_debug1m(gs_debug_flag_epo_details, m,f, a1)
 
+/* This is only called for debugging */
+extern void epo_disable(int flag);
+
 /* Device procedures, we need quite a lot of them */
 static dev_proc_output_page(epo_output_page);
 static dev_proc_fill_rectangle(epo_fill_rectangle);
