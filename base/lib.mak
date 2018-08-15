@@ -653,6 +653,8 @@ gsequivc_h=$(GLSRC)gsequivc.h
 gdevdevn_h=$(GLSRC)gdevdevn.h $(gsequivc_h)
 gdevdevnprn_h=$(GLSRC)gdevdevnprn.h
 
+gdevoflt_h=$(GLSRC)gdevoflt.h $(gxdevice_h)
+
 png__h=$(GLSRC)png_.h $(MAKEFILE)
 x__h=$(GLSRC)x_.h
 
