@@ -1074,7 +1074,7 @@ static int pdfi_setcolorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict
                 return 0;
             }
         case 10:
-            if (memcmp(name->data, "DeviceGray", 9) == 0) {
+            if (memcmp(name->data, "DeviceGray", 10) == 0) {
                 code = gs_setgray(ctx->pgs, 1);
                 if (code < 0) {
                     if (ctx->pdfstoponerror)
@@ -1082,7 +1082,7 @@ static int pdfi_setcolorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict
                 }
                 return 0;
             }
-            if (memcmp(name->data, "DeviceCMYK", 9) == 0) {
+            if (memcmp(name->data, "DeviceCMYK", 10) == 0) {
                 code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
                 if (code < 0) {
                     if (ctx->pdfstoponerror)
