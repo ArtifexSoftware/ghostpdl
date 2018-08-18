@@ -1058,7 +1058,7 @@ display_put_params(gx_device * dev, gs_param_list * plist)
             return_error(gs_error_rangecheck);
         }
 
-        dev = ddev;
+        dev = (gx_device *)ddev;
         while(dev->parent) {
             dev = dev->parent;
             gx_update_from_subclass(dev);
