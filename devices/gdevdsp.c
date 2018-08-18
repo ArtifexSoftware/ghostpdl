@@ -1037,12 +1037,14 @@ display_put_params(gx_device * dev, gs_param_list * plist)
          * change the color format or handle.
          */
 
-        while(dev->parent)
+        while(dev->parent) {
             dev = dev->parent;
+            gx_update_from_subclass(dev);
+        }
 
         /* Tell caller we are about to change the device parameters */
         if ((*ddev->callback->display_presize)(ddev->pHandle, dev,
-            dev->width, dev->height, display_raster(ddev),
+            ddev->width, ddev->height, display_raster(ddev),
             ddev->nFormat) < 0) {
             /* caller won't let us change the size */
             /* restore parameters then return an error */
@@ -1051,9 +1053,15 @@ display_put_params(gx_device * dev, gs_param_list * plist)
             display_set_color_format(ddev, old_format);
             ddev->nFormat = old_format;
             ddev->pHandle = old_handle;
-            dev->width = old_width;
-            dev->height = old_height;
+            ddev->width = old_width;
+            ddev->height = old_height;
             return_error(gs_error_rangecheck);
+        }
+
+        dev = ddev;
+        while(dev->parent) {
+            dev = dev->parent;
+            gx_update_from_subclass(dev);
         }
 
         display_free_bitmap(ddev);
