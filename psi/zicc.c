@@ -90,6 +90,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
                 break;
             }
         }
+        gs_free_object(gs_gstate_memory(igs), str, "seticc");
     } else {
         picc_profile = gsicc_profile_new(s, gs_gstate_memory(igs), NULL, 0);
         if (picc_profile == NULL)
