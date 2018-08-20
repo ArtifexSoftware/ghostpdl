@@ -774,7 +774,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
 
                     /* open the device if not yet open */
                     if (pdev->is_open == 0 && (code = gs_opendevice(pdev)) < 0) {
-                        return code;
+                        break;
                     }
                     if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) <= 0) {
                         errprintf(pmi->memory, "   --saved-pages not supported by the '%s' device.\n",
@@ -794,8 +794,6 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                             color = dev_proc(pdev, map_cmyk_color)(pdev, cmyk_white);
                         code = dev_proc(pdev, fill_rectangle)(pdev, 0, 0, pdev->width, pdev->height, color);
                     }
-                    if (code < 0)
-                        return code;
                     break;
 #endif /* not defined OMIT_SAVED_PAGES */
                 /* The following code is only to allow regression testing of saved-pages */
@@ -805,7 +803,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     gx_device *pdev = pmi->device;
 
                     if ((code = gs_opendevice(pdev)) < 0)
-                        return code;
+                        break;
 
                     if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) <= 0) {
                         errprintf(pmi->memory, "   --saved-pages-test not supported by the '%s' device.\n",
@@ -825,16 +823,15 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                             color = dev_proc(pdev, map_cmyk_color)(pdev, cmyk_white);
                         code = dev_proc(pdev, fill_rectangle)(pdev, 0, 0, pdev->width, pdev->height, color);
                     }
-                    if (code < 0)
-                        return code;
-                    pmi->saved_pages_test_mode = true;
+                    if (code >= 0)
+                        pmi->saved_pages_test_mode = true;
 #endif /* OMIT_SAVED_PAGES_TEST */
                     break;
                 }
                 /* FALLTHROUGH */
             default:
                 dmprintf1(pmi->memory, "Unrecognized switch: %s\n", arg);
-                return -1;
+                code = -1;
             case '\0':
                 /* read from stdin - must be last arg */
                 continue;
@@ -854,11 +851,12 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     else {
                         /* -dDefaultBooleanIs_TRUE */
                         code = check_for_special_int(pmi, arg, (int)bval);
+                        if (code < 0) code = 0;
                         if (code == 1)
                             code =
                                 param_write_bool((gs_param_list *) params,
                                                  arg, &bval);
-                        continue;
+                        break;
                     }
 
                     if (value && value[0] == '/') {
@@ -871,7 +869,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         if (code == 1)
                             code = param_write_name((gs_param_list *) params,
                                                     buffer, &str);
-                        continue;
+                        break;
                     }
                     /* Search for a non-decimal 'radix' number */
                     else if (strchr(value, '#')) {
@@ -907,6 +905,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         strncpy(buffer, arg, eqp - arg);
                         buffer[eqp - arg] = '\0';
                         code = check_for_special_int(pmi, arg, number);
+                        if (code < 0) code = 0;
                         if (code == 1)
                             code =
                                 param_write_int((gs_param_list *) params,
@@ -939,6 +938,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         strncpy(buffer, arg, eqp - arg);
                         buffer[eqp - arg] = '\0';
                         code = check_for_special_int(pmi, arg, vi);
+                        if (code < 0) code = 0;
                         if (code == 1)
                             code =
                                 param_write_int((gs_param_list *) params,
@@ -957,6 +957,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         strncpy(buffer, arg, eqp - arg);
                         buffer[eqp - arg] = '\0';
                         code = check_for_special_int(pmi, arg, (int)bval);
+                        if (code < 0) code = 0;
                         if (code == 1)
                             code =
                                 param_write_bool((gs_param_list *) params,
@@ -966,6 +967,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         strncpy(buffer, arg, eqp - arg);
                         buffer[eqp - arg] = '\0';
                         code = check_for_special_int(pmi, arg, (int)bval);
+                        if (code < 0) code = 0;
                         if (code == 1)
                             code =
                                 param_write_bool((gs_param_list *) params,
@@ -999,7 +1001,8 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     code =
                         param_write_int_array((gs_param_list *) params,
                                               "HWSize", &ia);
-                    pmi->page_set_on_command_line = true;
+                    if (code >= 0)
+                        pmi->page_set_on_command_line = true;
                 }
                 break;
             case 'H':
@@ -1084,7 +1087,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     /* we expect the language to exit properly otherwise
                        there was some sort of problem */
                     if (code != e_ExitLanguage)
-                        return (code == 0 ? -1 : code);
+                        if (code == 0) code = -1;
                     else
                         code = 0;
                 }
@@ -1099,9 +1102,10 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     if (sscanf(arg, "%d", &maxk) != 1) {
                         dmprintf(pmi->memory,
                                  "-K must be followed by a number\n");
-                        return -1;
+                        code = -1;
                     }
-                    rawheap->limit = (long)maxk << 10;
+                    else
+                        rawheap->limit = (long)maxk << 10;
                 }
                 break;
             case 'o':
@@ -1202,14 +1206,12 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     }
                     value = eqp + 1;
                     if (!strncmp(arg, "DEVICE", 6)) {
-                        int code = pl_top_create_device(pmi,
+                        code = pl_top_create_device(pmi,
                                                         get_device_index(pmi->
                                                                          memory,
                                                                          value),
                                                         false);
 
-                        if (code < 0)
-                            return code;
                         /* check for icc settings */
                     } else
                         if (!strncmp
@@ -1246,6 +1248,8 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 set_debug_flags(arg, gs_debug);
                 break;
         }
+        if (code < 0)
+            return code;
     }
   out:if (help) {
         arg_finit(pal);
