@@ -21,6 +21,7 @@
 #include "pdf_file.h"
 #include "pdf_dict.h"
 #include "pdf_loop_detect.h"
+#include "pdf_colour.h"
 #include "stream.h"     /* for stell() */
 
 extern int pdfi_dict_from_stack(pdf_context *ctx);
@@ -30,14 +31,14 @@ int pdfi_BI(pdf_context *ctx)
     return pdfi_mark_stack(ctx, PDF_DICT_MARK);
 }
 
-static int pdfi_do_image(pdf_context *ctx, pdf_dict *image_dict, pdf_stream *source, bool inline_image)
+static int pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_dict *image_dict, pdf_stream *source, bool inline_image)
 {
     pdf_name *n = NULL;
     pdf_stream *new_stream;
     int64_t Height, Width, BPC;
     int i, code, comps = 0, byteswide, total;
     byte c;
-    pdf_obj *Mask;
+    pdf_obj *Mask, *space;
     gs_color_space  *pcs = NULL;
     gs_image_enum *penum;
     gs_image_t gsimage;
@@ -74,9 +75,9 @@ static int pdfi_do_image(pdf_context *ctx, pdf_dict *image_dict, pdf_stream *sou
             return code;
     }
 
-    code = pdfi_dict_get_type(ctx, image_dict, "ColorSpace", PDF_NAME, (pdf_obj **)&n);
+    code = pdfi_dict_get(ctx, image_dict, "ColorSpace", &space);
     if (code == gs_error_undefined)
-        code = pdfi_dict_get_type(ctx, image_dict, "CS", PDF_NAME, (pdf_obj **)&n);
+        code = pdfi_dict_get(ctx, image_dict, "CS", &space);
     if (code < 0) {
         if (comps == 0) {
             gx_device *dev = gs_currentdevice_inline(ctx->pgs);
@@ -85,93 +86,11 @@ static int pdfi_do_image(pdf_context *ctx, pdf_dict *image_dict, pdf_stream *sou
             pcs = gs_currentcolorspace(ctx->pgs);
         }
     } else {
-        switch(n->length){
-            case 1:
-                if (memcmp(n->data, "G", 1) == 0){
-                    comps = 1;
-                    pcs = gs_cspace_new_DeviceGray(ctx->memory);
-                    if (pcs == NULL)
-                        return_error(gs_error_VMerror);
-                    (void)pcs->type->install_cspace(pcs, ctx->pgs);
-                } else {
-                    if (memcmp(n->data, "I", 1) == 0){
-                        comps = 1;
-                        pcs = gs_currentcolorspace(ctx->pgs);
-                    } else {
-                        pdfi_countdown(n);
-                        return_error(gs_error_syntaxerror);
-                    }
-                }
-                break;
-            case 3:
-                if (memcmp(n->data, "RGB", 3) == 0){
-                    comps = 3;
-                    pcs = gs_cspace_new_DeviceRGB(ctx->memory);
-                    if (pcs == NULL)
-                        return_error(gs_error_VMerror);
-                    (void)pcs->type->install_cspace(pcs, ctx->pgs);
-                } else {
-                    pdfi_countdown(n);
-                    return_error(gs_error_syntaxerror);
-                }
-                break;
-            case 4:
-                if (memcmp(n->data, "CMYK", 4) == 0){
-                    comps = 4;
-                    pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
-                    if (pcs == NULL)
-                        return_error(gs_error_VMerror);
-                    (void)pcs->type->install_cspace(pcs, ctx->pgs);
-                } else {
-                    pdfi_countdown(n);
-                    return_error(gs_error_syntaxerror);
-                }
-                break;
-            case 7:
-                if (memcmp(n->data, "Indexed", 7) == 0){
-                    comps = 1;
-                } else {
-                    pdfi_countdown(n);
-                    return_error(gs_error_syntaxerror);
-                }
-                break;
-            case 9:
-                if (memcmp(n->data, "DeviceRGB", 9) == 0){
-                    comps = 3;
-                    pcs = gs_cspace_new_DeviceRGB(ctx->memory);
-                    if (pcs == NULL)
-                        return_error(gs_error_VMerror);
-                    (void)pcs->type->install_cspace(pcs, ctx->pgs);
-                } else {
-                    pdfi_countdown(n);
-                    return_error(gs_error_syntaxerror);
-                }
-                break;
-            case 10:
-                if (memcmp(n->data, "DeviceGray", 10) == 0){
-                    comps = 1;
-                    pcs = gs_cspace_new_DeviceGray(ctx->memory);
-                    if (pcs == NULL)
-                        return_error(gs_error_VMerror);
-                    (void)pcs->type->install_cspace(pcs, ctx->pgs);
-                } else {
-                    if (memcmp(n->data, "DeviceCMYK", 10) == 0){
-                        comps = 4;
-                        pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
-                        if (pcs == NULL)
-                            return_error(gs_error_VMerror);
-                        (void)pcs->type->install_cspace(pcs, ctx->pgs);
-                    } else {
-                        pdfi_countdown(n);
-                        return_error(gs_error_syntaxerror);
-                    }
-                }
-                break;
-            default:
-                pdfi_countdown(n);
-                return_error(gs_error_syntaxerror);
-        }
+        code = pdfi_create_colorspace(ctx, space, page_dict, stream_dict, &pcs);
         pdfi_countdown(n);
+        if (code < 0)
+            return code;
+        comps = gs_color_space_num_components(pcs);
     }
 
     code = pdfi_filter(ctx, image_dict, source, &new_stream, inline_image);
@@ -238,7 +157,7 @@ static int pdfi_do_image(pdf_context *ctx, pdf_dict *image_dict, pdf_stream *sou
     return 0;
 }
 
-int pdfi_ID(pdf_context *ctx, pdf_stream *source)
+int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_stream *source)
 {
     pdf_dict *d = NULL;
     int code;
@@ -251,7 +170,8 @@ int pdfi_ID(pdf_context *ctx, pdf_stream *source)
     pdfi_countup(d);
     pdfi_pop(ctx, 1);
 
-    code = pdfi_do_image(ctx, d, source, true);
+    code = pdfi_do_image(ctx, stream_dict, page_dict, d, source, true);
+    pdfi_countdown(d);
     if (code < 0 && ctx->pdfstoponerror)
         return code;
     return 0;
@@ -314,7 +234,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
             gs_offset_t savedoffset = pdfi_tell(ctx->main_stream);
 
             pdfi_seek(ctx, ctx->main_stream, d->stream_offset, SEEK_SET);
-            code = pdfi_do_image(ctx, d, ctx->main_stream, false);
+            code = pdfi_do_image(ctx, page_dict, stream_dict, d, ctx->main_stream, false);
             pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         } else {
             if (n->length == 4 && memcmp(n->data, "Form", 4) == 0) {

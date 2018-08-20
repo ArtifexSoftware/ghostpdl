@@ -2804,7 +2804,7 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 break;
             case K2('I','D'):       /* begin inline image data */
                 pdfi_pop(ctx, 1);
-                code = pdfi_ID(ctx, source);
+                code = pdfi_ID(ctx, stream_dict, page_dict, source);
                 break;
             case K1('j'):           /* setlinejoin */
                 pdfi_pop(ctx, 1);
