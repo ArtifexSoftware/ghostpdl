@@ -364,7 +364,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
      * LockDistillerParams is read again, and reset if necessary, in
      * psdf_put_params.
      */
-    ecode = param_read_bool(plist, "LockDistillerParams", &locked);
+    ecode = param_read_bool(plist, (param_name = "LockDistillerParams"), &locked);
     if (ecode < 0)
         param_signal_error(plist, param_name, ecode);
 
