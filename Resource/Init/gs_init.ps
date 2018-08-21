@@ -2036,6 +2036,19 @@ readonly def
             concatstrings concatstrings .generate_dir_list_templates
         } if
       ]
+      /PermitFileWriting [
+          currentuserparams /PermitFileWriting get aload pop
+          (TMPDIR) getenv not
+          {
+            (TEMP) getenv not
+            {
+              (TMP) getenv not
+              {
+                (/temp) (/tmp)
+              } if
+            } if
+          } if
+      ]
       /LockFilePermissions //true
     >> setuserparams
   }
@@ -2122,7 +2135,9 @@ readonly def
 % the file can be deleted later, even if SAFER is set.
 /.tempfile {
   .tempfile	% filename file
-  //SAFETY /tempfiles get 2 .argindex //true .forceput
+    //SAFETY /safe get not { % only add the filename if we're not yet safe
+    //SAFETY /tempfiles get 2 .argindex //true .forceput
+  } if
 } .bind executeonly odef
 
 % If we are running in SAFER mode, lock things down
