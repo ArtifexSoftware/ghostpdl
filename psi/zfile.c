@@ -134,7 +134,7 @@ check_file_permissions_reduced(i_ctx_t *i_ctx_p, const char *fname, int len,
     /* we're protecting arbitrary file system accesses, not Postscript device accesses.
      * Although, note that %pipe% is explicitly checked for and disallowed elsewhere
      */
-    if (iodev != iodev_default(imemory)) {
+    if (iodev && iodev != iodev_default(imemory)) {
         return 0;
     }
 
@@ -734,7 +734,23 @@ ztempfile(i_ctx_t *i_ctx_p)
     }
 
     if (gp_file_name_is_absolute(pstr, strlen(pstr))) {
-        if (check_file_permissions(i_ctx_p, pstr, strlen(pstr),
+        int plen = strlen(pstr);
+        const char *sep = gp_file_name_separator();
+#ifdef DEBUG
+        int seplen = strlen(sep);
+        if (seplen != 1)
+            return_error(gs_error_Fatal);
+#endif
+        /* strip off the file name prefix, leave just the directory name
+         * so we can check if we are allowed to write to it
+         */
+        for ( ; plen >=0; plen--) {
+            if (pstr[plen] == sep[0])
+                break;
+        }
+        memcpy(fname, pstr, plen);
+        fname[plen] = '\0';
+        if (check_file_permissions(i_ctx_p, fname, strlen(fname),
                                    NULL, "PermitFileWriting") < 0) {
             code = gs_note_error(gs_error_invalidfileaccess);
             goto done;
