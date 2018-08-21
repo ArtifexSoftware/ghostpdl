@@ -283,8 +283,9 @@ zsetcolor(i_ctx_t * i_ctx_p)
         if (r_has_type(op, t_dictionary)) {
             ref     *pImpl, pPatInst;
 
-            code = dict_find_string(op, "Implementation", &pImpl);
-            if (code != 0) {
+            if ((code = dict_find_string(op, "Implementation", &pImpl)) < 0)
+                return code;
+            if (code > 0) {
                 code = array_get(imemory, pImpl, 0, &pPatInst);
                 if (code < 0)
                     return code;
