@@ -708,7 +708,7 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cn
         do {
             bytes = sfgetc(filtered_profile_stream->s);
             if (bytes > 0)
-                decompressed_length += bytes;
+                decompressed_length++;
         } while (bytes >= 0);
         pdfi_close_file(ctx, filtered_profile_stream);
 
@@ -968,7 +968,7 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
                 do {
                     bytes = sfgetc(filtered_lookup_stream->s);
                     if (bytes > 0)
-                        decompressed_length += bytes;
+                        decompressed_length++;
                 } while (bytes >= 0);
                 pdfi_close_file(ctx, filtered_lookup_stream);
 
