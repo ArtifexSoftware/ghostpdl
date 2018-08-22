@@ -207,7 +207,8 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     gsimage.BitsPerComponent = BPC;
     gsimage.Width = Width;
     gsimage.Height = Height;
-
+    /* gsimage.ImageMask = image_info.ImageMask; *//* Why not do this? */
+    
     gsimage.ImageMatrix.xx = (float)Width;
     gsimage.ImageMatrix.yy = (float)(Height * -1);
     gsimage.ImageMatrix.ty = (float)Height;
@@ -221,9 +222,36 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         goto cleanupExit;
     }
 
+    /* Took this logic from gs_image_init() 
+     * (the other tests in there have already been handled above
+     */
+    {
+        gx_image_enum_common_t *pie;
+
+        if (!gsimage.ImageMask) {
+            /* TODO: Can in_cachedevie ever be set in PDF? */
+            if (ctx->pgs->in_cachedevice != CACHE_DEVICE_NONE) {
+                code = gs_error_undefined;
+                return_error = true;
+                goto cleanupExit;
+            }
+        }
+
+        code = gs_image_begin_typed((const gs_image_common_t *)&gsimage, ctx->pgs,
+                                    gsimage.ImageMask, false, &pie);
+        if (code < 0)
+            goto cleanupExit;
+        
+        code = gs_image_enum_init(penum, pie, (const gs_data_image_t *)&gsimage, ctx->pgs);
+        if (code < 0)
+            goto cleanupExit;
+    }
+#if 0
     if ((code = gs_image_init(penum, &gsimage, false, false, ctx->pgs)) < 0)
         goto cleanupExit;
-
+#endif
+    
+    
     toread = (((Width * comps * BPC) + 7) / 8) * Height;
 
     do {
