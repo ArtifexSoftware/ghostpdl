@@ -71,13 +71,6 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
     if (code < 0)
         goto errorExit;
 
-    /* Required */
-    code = pdfi_dict_get_int(ctx, image_dict, "BitsPerComponent", &info->BPC);
-    if (code == gs_error_undefined)
-        code = pdfi_dict_get_int(ctx, image_dict, "BPC", &info->BPC);
-    if (code < 0)
-        goto errorExit;
-
     /* Optional, default false */
     code = pdfi_dict_get_type(ctx, image_dict, "ImageMask", PDF_BOOL, &ImageMask);
     if (code == gs_error_undefined)
@@ -90,6 +83,24 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
             goto errorExit;
         info->ImageMask = false;
     }
+
+    /* Optional (Required, unless ImageMask is true)  */
+    code = pdfi_dict_get_int(ctx, image_dict, "BitsPerComponent", &info->BPC);
+    if (code == gs_error_undefined)
+        code = pdfi_dict_get_int(ctx, image_dict, "BPC", &info->BPC);
+    if (code < 0) {
+        if (code != gs_error_undefined) {
+            goto errorExit;
+        }
+        if (info->ImageMask) {
+            info->BPC = 1; /* If ImageMask was true, and not specified, force to 1 */
+        } else {
+            goto errorExit; /* Required if !ImageMask, so flag error */
+        }
+    }
+    /* TODO: spec says if ImageMask is specified, and BPC is specified, then BPC must be 1 
+       Should we flag an error if this is violated?
+     */
 
     /* Optional */
     code = pdfi_dict_get(ctx, image_dict, "Mask", &info->Mask);
