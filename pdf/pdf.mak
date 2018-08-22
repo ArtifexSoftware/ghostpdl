@@ -130,7 +130,9 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_func.$(OBJ)\
     $(GLOBJ)sa85d.$(OBJ)\
     $(GLOBJ)spdiff.$(OBJ)\
-    $(GLOBJ)sfilter1.$(OBJ)
+    $(GLOBJ)sfilter1.$(OBJ)\
+    $(GLOBJ)saes.$(OBJ)\
+    $(GLOBJ)aes.$(OBJ)
 
 
 
