@@ -31,53 +31,121 @@ int pdfi_BI(pdf_context *ctx)
     return pdfi_mark_stack(ctx, PDF_DICT_MARK);
 }
 
-static int pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_dict *image_dict, pdf_stream *source, bool inline_image)
+typedef struct {
+    bool ImageMask;
+    int64_t Height;
+    int64_t Width;
+    int64_t BPC;
+    pdf_obj *Mask;
+    pdf_obj *ColorSpace;
+} pdfi_image_info_t;
+
+static void
+pdfi_free_image_info_components(pdfi_image_info_t *info)
+{
+    if (info->Mask)
+        pdfi_countdown(info->Mask);
+    if (info->ColorSpace)
+        pdfi_countdown(info->ColorSpace);
+}
+
+static int
+pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *info)
+{
+    int code;
+    pdf_obj *ImageMask;
+    
+    memset(info, 0, sizeof(*info));
+
+    /* Required */
+    code = pdfi_dict_get_int(ctx, image_dict, "Height", &info->Height);
+    if (code == gs_error_undefined)
+        code = pdfi_dict_get_int(ctx, image_dict, "H", &info->Height);
+    if (code < 0)
+        goto errorExit;
+
+    /* Required */
+    code = pdfi_dict_get_int(ctx, image_dict, "Width", &info->Width);
+    if (code == gs_error_undefined)
+        code = pdfi_dict_get_int(ctx, image_dict, "W", &info->Width);
+    if (code < 0)
+        goto errorExit;
+
+    /* Required */
+    code = pdfi_dict_get_int(ctx, image_dict, "BitsPerComponent", &info->BPC);
+    if (code == gs_error_undefined)
+        code = pdfi_dict_get_int(ctx, image_dict, "BPC", &info->BPC);
+    if (code < 0)
+        goto errorExit;
+
+    /* Optional, default false */
+    code = pdfi_dict_get_type(ctx, image_dict, "ImageMask", PDF_BOOL, &ImageMask);
+    if (code == gs_error_undefined)
+        code = pdfi_dict_get_type(ctx, image_dict, "IM", PDF_BOOL, &ImageMask);
+    if (code == 0) {
+        info->ImageMask = ((pdf_bool *)ImageMask)->value;
+        pdfi_countdown(ImageMask);
+    } else {
+        if (code != gs_error_undefined)
+            goto errorExit;
+        info->ImageMask = false;
+    }
+
+    /* Optional */
+    code = pdfi_dict_get(ctx, image_dict, "Mask", &info->Mask);
+    if (code < 0) {
+        if (code != gs_error_undefined)
+            goto errorExit;
+    }
+    
+    /* Optional */
+    code = pdfi_dict_get(ctx, image_dict, "ColorSpace", &info->ColorSpace);
+    if (code == gs_error_undefined)
+        code = pdfi_dict_get(ctx, image_dict, "CS", &info->ColorSpace);
+    if (code < 0) {
+        if (code != gs_error_undefined)
+            goto errorExit;
+    }
+    return 0;
+
+ errorExit:
+    pdfi_free_image_info_components(info);
+    return code;
+}
+
+static int
+pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_dict *image_dict,
+              pdf_stream *source, bool inline_image)
 {
     pdf_stream *new_stream;
     int64_t Height, Width, BPC;
+    bool return_error = false;
     int i, code, comps = 0, byteswide, total;
     byte c;
-    pdf_obj *Mask, *space;
     gs_color_space  *pcs = NULL;
     gs_image_enum *penum;
     gs_image_t gsimage;
     unsigned char Buffer[1024];
     uint64_t toread;
-
-    code = pdfi_dict_get_int(ctx, image_dict, "Height", &Height);
-    if (code == gs_error_undefined)
-        code = pdfi_dict_get_int(ctx, image_dict, "H", &Height);
+    pdfi_image_info_t image_info;
+    
+    code = pdfi_get_image_info(ctx, image_dict, &image_info);
     if (code < 0)
-        return code;
+        goto cleanupExit;
 
-    code = pdfi_dict_get_int(ctx, image_dict, "Width", &Width);
-    if (code == gs_error_undefined)
-        code = pdfi_dict_get_int(ctx, image_dict, "W", &Width);
-    if (code < 0)
-        return code;
+    Width = image_info.Width;
+    Height = image_info.Height;
+    BPC = image_info.BPC;
 
-    code = pdfi_dict_get_int(ctx, image_dict, "BitsPerComponent", &BPC);
-    if (code == gs_error_undefined)
-        code = pdfi_dict_get_int(ctx, image_dict, "BPC", &BPC);
-    if (code < 0)
-        return code;
-
-    code = pdfi_dict_get_type(ctx, image_dict, "ImageMask", PDF_BOOL, &Mask);
-    if (code == gs_error_undefined)
-        code = pdfi_dict_get_type(ctx, image_dict, "IM", PDF_BOOL, &Mask);
-    if (code == 0) {
-        if (((pdf_bool *)Mask)->value == true)
-            comps = 1;
-        pdfi_countdown(Mask);
-    } else {
-        if (code != gs_error_undefined)
-            return code;
+    if (image_info.ImageMask) {
+        comps = 1;
     }
 
-    code = pdfi_dict_get(ctx, image_dict, "ColorSpace", &space);
-    if (code == gs_error_undefined)
-        code = pdfi_dict_get(ctx, image_dict, "CS", &space);
-    if (code < 0) {
+    /* TODO: Need to do something with Mask, get it into a MaskColor in the image struct
+    */
+
+    if (image_info.ColorSpace == NULL) {
+        /* Do something sensible if no ColorSpace provided */
         if (comps == 0) {
             gx_device *dev = gs_currentdevice_inline(ctx->pgs);
             comps = dev->color_info.num_components;
@@ -85,16 +153,16 @@ static int pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream
             pcs = gs_currentcolorspace(ctx->pgs);
         }
     } else {
-        code = pdfi_create_colorspace(ctx, space, page_dict, stream_dict, &pcs);
-        pdfi_countdown(space);
+        code = pdfi_create_colorspace(ctx, image_info.ColorSpace, page_dict, stream_dict, &pcs);
+        //        pdfi_countdown(info.ColorSpace);
         if (code < 0)
-            return code;
+            goto cleanupExit;
         comps = gs_color_space_num_components(pcs);
     }
 
     code = pdfi_filter(ctx, image_dict, source, &new_stream, inline_image);
     if (code < 0)
-        return code;
+        goto cleanupExit;
 
     if (pcs == NULL) {
         byteswide = ((Width * comps * BPC) + 7) / 8;
@@ -104,7 +172,7 @@ static int pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream
             code = pdfi_read_bytes(ctx, &c, 1, 1, new_stream);
             if (code < 0) {
                 pdfi_close_file(ctx, new_stream);
-                return code;
+                goto cleanupExit;
             }
         }
     } else {
@@ -122,11 +190,14 @@ static int pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream
         gsimage.Interpolate = 1;
 
         penum = gs_image_enum_alloc(ctx->memory, "xps_parse_image_brush (gs_image_enum_alloc)");
-        if (!penum)
-            return_error(gs_error_VMerror);
+        if (!penum) {
+            code = gs_error_VMerror;
+            return_error = true;
+            goto cleanupExit;
+        }
 
         if ((code = gs_image_init(penum, &gsimage, false, false, ctx->pgs)) < 0)
-            return code;
+            goto cleanupExit;
 
         toread = (((Width * comps * BPC) + 7) / 8) * Height;
 
@@ -144,7 +215,7 @@ static int pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream
             index = 0;
             do {
                 if ((code = gs_image_next(penum, (byte *)&Buffer[index], count, &used)) < 0)
-                    return code;
+                    goto cleanupExit;
                 count -= used;
                 index += used;
             } while (count);
@@ -153,7 +224,14 @@ static int pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream
         gs_image_cleanup_and_free_enum(penum, ctx->pgs);
         pdfi_close_file(ctx, new_stream);
     }
-    return 0;
+    code = 0;
+    
+ cleanupExit:
+    pdfi_free_image_info_components(&image_info);
+    if (return_error)
+        return_error(code);
+    else
+        return code;
 }
 
 int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_stream *source)
