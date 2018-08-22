@@ -35,6 +35,8 @@
 #include "sdct.h"       /* DCTDecode */
 #include "sjpeg.h"
 #include "sfilter.h"    /* SubFileDecode and PFBDecode */
+#include "sarc4.h"      /* Arc4Decode */
+#include "saes.h"       /* AESDecode */
 
 /***********************************************************************************/
 /* Decompression filters.                                                          */
@@ -237,6 +239,47 @@ static int pdfi_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, 
             (*new_stream)->strm = source;
             break;
     }
+    return 0;
+}
+
+static int pdfi_Arc4_filter(pdf_context *ctx, char *Key, stream *source, stream **new_stream)
+{
+    stream_arcfour_state state;
+
+    uint min_size = 2048;
+    int code;
+
+    s_arcfour_set_key(&state, (const unsigned char *)Key, strlen(Key));
+
+    code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_arcfour_template, (const stream_state *)&state, ctx->memory->non_gc_memory, new_stream);
+
+    if (code < 0)
+        return code;
+
+    (*new_stream)->strm = source;
+    source = *new_stream;
+
+    return 0;
+}
+
+static int pdfi_AES_filter(pdf_context *ctx, char *Key, bool use_padding, stream *source, stream **new_stream)
+{
+    stream_aes_state state;
+
+    uint min_size = 2048;
+    int code;
+
+    s_aes_set_key(&state, Key, strlen(Key));
+    s_aes_set_padding(&state, use_padding);
+
+    code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_aes_template, (const stream_state *)&state, ctx->memory->non_gc_memory, new_stream);
+
+    if (code < 0)
+        return code;
+
+    (*new_stream)->strm = source;
+    source = *new_stream;
+
     return 0;
 }
 
