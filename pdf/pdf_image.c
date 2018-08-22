@@ -33,7 +33,6 @@ int pdfi_BI(pdf_context *ctx)
 
 static int pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_dict *image_dict, pdf_stream *source, bool inline_image)
 {
-    pdf_name *n = NULL;
     pdf_stream *new_stream;
     int64_t Height, Width, BPC;
     int i, code, comps = 0, byteswide, total;
@@ -87,7 +86,7 @@ static int pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream
         }
     } else {
         code = pdfi_create_colorspace(ctx, space, page_dict, stream_dict, &pcs);
-        pdfi_countdown(n);
+        pdfi_countdown(space);
         if (code < 0)
             return code;
         comps = gs_color_space_num_components(pcs);
