@@ -1387,16 +1387,27 @@ int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_di
     int code;
     pdf_array *a = NULL;
 
+    if (ctx->loop_detection == NULL) {
+        pdfi_init_loop_detector(ctx);
+        pdfi_loop_detector_mark(ctx);
+    } else {
+        pdfi_loop_detector_mark(ctx);
+    }
+
     if (space->type == PDF_NAME) {
         code = pdfi_create_colorspace_by_name(ctx, (pdf_name *)space, stream_dict, page_dict, ppcs);
     } else {
         if (space->type == PDF_ARRAY) {
             code = pdfi_create_colorspace_by_array(ctx, (pdf_array *)space, 0, stream_dict, page_dict, ppcs);
-        } else
+        } else {
+            pdfi_loop_detector_cleartomark(ctx);
             return_error(gs_error_typecheck);
+        }
     }
     if (ppcs && *ppcs && code >= 0)
         (void)(*ppcs)->type->install_cspace(*ppcs, ctx->pgs);
+
+    pdfi_loop_detector_cleartomark(ctx);
     return code;
 }
 
