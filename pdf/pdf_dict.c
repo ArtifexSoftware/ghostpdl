@@ -112,6 +112,19 @@ int pdfi_dict_from_stack(pdf_context *ctx)
 }
 
 
+/* Convenience routine for common case where there are two possible keys */
+int
+pdfi_dict_get2(pdf_context *ctx, pdf_dict *d, const char *Key1,
+               const char *Key2, pdf_obj **o)
+{
+    int code;
+
+    code = pdfi_dict_get(ctx, d, Key1, o);
+    if (code == gs_error_undefined)
+        code = pdfi_dict_get(ctx, d, Key2, o);
+    return code;
+}
+
 /* The object returned by pdfi_dict_get has its reference count incremented by 1 to
  * indicate the reference now held by the caller, in **o.
  */
@@ -178,6 +191,18 @@ int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf
     return_error(gs_error_undefined);
 }
 
+/* Convenience routine for common case where there are two possible keys */
+int
+pdfi_dict_get_type2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, pdf_obj_type type, pdf_obj **o)
+{
+    int code; 
+
+    code = pdfi_dict_get_type(ctx, d, Key1, type, o);
+    if (code == gs_error_undefined)
+        code = pdfi_dict_get_type(ctx, d, Key2, type, o);
+    return code;
+}
+
 int pdfi_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type type, pdf_obj **o)
 {
     int code;
@@ -217,6 +242,19 @@ int pdfi_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_t
     return 0;
 }
 
+/* Convenience routine for common case where value has two possible keys */
+int
+pdfi_dict_get_int2(pdf_context *ctx, pdf_dict *d, const char *Key1,
+                   const char *Key2, int64_t *i)
+{
+    int code;
+    
+    code = pdfi_dict_get_int(ctx, d, Key1, i);
+    if (code == gs_error_undefined)
+        code = pdfi_dict_get_int(ctx, d, Key2, i);
+    return code;
+}
+
 int pdfi_dict_get_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t *i)
 {
     int code;
@@ -228,6 +266,33 @@ int pdfi_dict_get_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t *i
 
     *i = n->value.i;
     pdfi_countdown(n);
+    return 0;
+}
+
+/* Convenience routine for common case where value has two possible keys */
+int
+pdfi_dict_get_bool2(pdf_context *ctx, pdf_dict *d, const char *Key1,
+                    const char *Key2, bool *val)
+{
+    int code;
+    
+    code = pdfi_dict_get_bool(ctx, d, Key1, val);
+    if (code == gs_error_undefined)
+        code = pdfi_dict_get_bool(ctx, d, Key2, val);
+    return code;
+}
+
+int pdfi_dict_get_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool *val)
+{
+    int code;
+    pdf_bool *b;
+
+    code = pdfi_dict_get_type(ctx, d, Key, PDF_BOOL, (pdf_obj **)&b);
+    if (code < 0)
+        return code;
+
+    *val = b->value;
+    pdfi_countdown(b);
     return 0;
 }
 
