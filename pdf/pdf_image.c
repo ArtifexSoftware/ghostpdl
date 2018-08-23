@@ -132,7 +132,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 {
     pdf_stream *new_stream;
     int64_t Height, Width, BPC;
-    bool return_error = false;
     int i, code, comps = 0, byteswide, total;
     byte c;
     gs_color_space  *pcs = NULL;
@@ -217,8 +216,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     penum = gs_image_enum_alloc(ctx->memory, "xps_parse_image_brush (gs_image_enum_alloc)");
     if (!penum) {
-        code = gs_error_VMerror;
-        return_error = true;
+        code = gs_note_error(gs_error_VMerror);
         goto cleanupExit;
     }
 
@@ -231,8 +229,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         if (!gsimage.ImageMask) {
             /* TODO: Can in_cachedevie ever be set in PDF? */
             if (ctx->pgs->in_cachedevice != CACHE_DEVICE_NONE) {
-                code = gs_error_undefined;
-                return_error = true;
+                code = gs_note_error(gs_error_undefined);
                 goto cleanupExit;
             }
         }
@@ -281,10 +278,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     
  cleanupExit:
     pdfi_free_image_info_components(&image_info);
-    if (return_error)
-        return_error(code);
-    else
-        return code;
+    return code;
 }
 
 int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_stream *source)
