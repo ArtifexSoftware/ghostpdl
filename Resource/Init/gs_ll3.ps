@@ -440,6 +440,11 @@ systemdict /.reuseparamdict mark
     /shfill .systemvar /undefined signalerror
   } ifelse
 } bind def
+
+/.buildshading_and_shfill {
+  .buildshading .shfill
+} bind def
+
 systemdict /.reuseparamdict undef
 
 /.buildpattern2 {	% <template> <matrix> .buildpattern2
@@ -464,7 +469,7 @@ systemdict /.reuseparamdict undef
         % Currently, .shfill requires that the color space
         % in the pattern be the current color space.
         % Disable overprintmode for shfill
-  { dup gsave 0 .setoverprintmode .buildshading .shfill } stopped
+  { dup gsave 0 .setoverprintmode .buildshading_and_shfill } stopped
   grestore {
     /$error .systemvar /errorinfo 2 copy known {
       pop pop

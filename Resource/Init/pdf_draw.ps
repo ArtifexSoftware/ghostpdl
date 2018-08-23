@@ -1365,9 +1365,8 @@ drawopdict begin
     { dup /.shading .knownget {
         exch pop
       } {
-       .buildshading
+       .buildshading_and_shfill
       } ifelse
-      .shfill
     } stopped {
       pop
       (   **** Error: Ignoring invalid smooth shading object, output may be incorrect.\n)
