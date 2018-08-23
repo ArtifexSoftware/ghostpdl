@@ -178,6 +178,7 @@ static	dev_proc_fill_mask(pdf14_fill_mask);
 static	dev_proc_stroke_path(pdf14_stroke_path);
 static	dev_proc_begin_typed_image(pdf14_begin_typed_image);
 static	dev_proc_text_begin(pdf14_text_begin);
+static  dev_proc_finish_copydevice(pdf14_finish_copydevice);
 static	dev_proc_create_compositor(pdf14_create_compositor);
 static	dev_proc_create_compositor(pdf14_forward_create_compositor);
 static	dev_proc_begin_transparency_group(pdf14_begin_transparency_group);
@@ -245,7 +246,7 @@ static	const gx_color_map_procs *
         pdf14_create_compositor,	/* create_compositor */\
         NULL,				/* get_hardware_params */\
         pdf14_text_begin,		/* text_begin */\
-        NULL,				/* finish_copydevice */\
+        pdf14_finish_copydevice,        /* finish_copydevice */\
         pdf14_begin_transparency_group,\
         pdf14_end_transparency_group,\
         pdf14_begin_transparency_mask,\
@@ -3933,6 +3934,19 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
         }
     *ppenum = (gs_text_enum_t *)penum;
     return code;
+}
+
+static	int
+pdf14_finish_copydevice(gx_device *new_dev, const gx_device *from_dev)
+{
+    pdf14_device *pdev = (pdf14_device*)new_dev;
+
+    pdev->ctx = NULL;
+    pdev->trans_group_parent_cmap_procs = NULL;
+    pdev->smaskcolor = NULL;
+
+    /* Only allow copying the prototype. */
+    return (from_dev->memory ? gs_note_error(gs_error_rangecheck) : 0);
 }
 
 /*
@@ -8093,6 +8107,7 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                        before reopening the device */
                     if (p14dev->ctx != NULL) {
                         pdf14_ctx_free(p14dev->ctx);
+                        p14dev->ctx = NULL;
                     }
                     dev_proc(tdev, open_device) (tdev);
                 }

@@ -59,7 +59,8 @@ static struct xv_ {
     Boolean alloc_error;
     XErrorHandler orighandler;
     XErrorHandler oldhandler;
-} x_error_handler;
+    Boolean set;
+} x_error_handler = {0};
 
 static int
 x_catch_alloc(Display * dpy, XErrorEvent * err)
@@ -74,7 +75,8 @@ x_catch_alloc(Display * dpy, XErrorEvent * err)
 int
 x_catch_free_colors(Display * dpy, XErrorEvent * err)
 {
-    if (err->request_code == X_FreeColors)
+    if (err->request_code == X_FreeColors ||
+        x_error_handler.orighandler == x_catch_free_colors)
         return 0;
     return x_error_handler.orighandler(dpy, err);
 }
@@ -274,8 +276,10 @@ gdev_x_open(gx_device_X * xdev)
         return_error(gs_error_ioerror);
     }
     /* Buggy X servers may cause a Bad Access on XFreeColors. */
-    x_error_handler.orighandler = XSetErrorHandler(x_catch_free_colors);
-
+    if (!x_error_handler.set) {
+        x_error_handler.orighandler = XSetErrorHandler(x_catch_free_colors);
+        x_error_handler.set = True;
+    }
     /* Get X Resources.  Use the toolkit for this. */
     XtToolkitInitialize();
     app_con = XtCreateApplicationContext();
