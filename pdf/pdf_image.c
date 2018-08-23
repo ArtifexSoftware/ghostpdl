@@ -32,12 +32,20 @@ int pdfi_BI(pdf_context *ctx)
 }
 
 typedef struct {
+    /* Type and SubType were already checked by caller */
     bool ImageMask;
+    bool Interpolate;
     int64_t Height;
     int64_t Width;
     int64_t BPC;
     pdf_obj *Mask;
+    pdf_obj *SMask;
     pdf_obj *ColorSpace;
+    /* ?? Should Decode be handled by pdfi_filter()? What is it? */
+    pdf_obj *Decode;
+    /* Filter and DecodeParms handled by pdfi_filter() (can probably remove, but I like the info while debugging) */
+    pdf_obj *Filter;
+    pdf_obj *DecodeParms;
 } pdfi_image_info_t;
 
 static void
@@ -45,50 +53,55 @@ pdfi_free_image_info_components(pdfi_image_info_t *info)
 {
     if (info->Mask)
         pdfi_countdown(info->Mask);
+    if (info->SMask)
+        pdfi_countdown(info->SMask);
     if (info->ColorSpace)
         pdfi_countdown(info->ColorSpace);
+    if (info->Filter)
+        pdfi_countdown(info->Filter);
+    if (info->Decode)
+        pdfi_countdown(info->Decode);
+    if (info->DecodeParms)
+        pdfi_countdown(info->DecodeParms);
 }
+
 
 /* Get image info out of dict into more convenient form, enforcing some requirements from the spec */
 static int
 pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *info)
 {
     int code;
-    pdf_obj *ImageMask;
     
     memset(info, 0, sizeof(*info));
 
     /* Required */
-    code = pdfi_dict_get_int(ctx, image_dict, "Height", &info->Height);
-    if (code == gs_error_undefined)
-        code = pdfi_dict_get_int(ctx, image_dict, "H", &info->Height);
+    code = pdfi_dict_get_int2(ctx, image_dict, "Height", "H", &info->Height);
     if (code < 0)
         goto errorExit;
 
     /* Required */
-    code = pdfi_dict_get_int(ctx, image_dict, "Width", &info->Width);
-    if (code == gs_error_undefined)
-        code = pdfi_dict_get_int(ctx, image_dict, "W", &info->Width);
+    code = pdfi_dict_get_int2(ctx, image_dict, "Width", "W", &info->Width);
     if (code < 0)
         goto errorExit;
 
     /* Optional, default false */
-    code = pdfi_dict_get_type(ctx, image_dict, "ImageMask", PDF_BOOL, &ImageMask);
-    if (code == gs_error_undefined)
-        code = pdfi_dict_get_type(ctx, image_dict, "IM", PDF_BOOL, &ImageMask);
-    if (code == 0) {
-        info->ImageMask = ((pdf_bool *)ImageMask)->value;
-        pdfi_countdown(ImageMask);
-    } else {
+    code = pdfi_dict_get_bool2(ctx, image_dict, "ImageMask", "IM", &info->ImageMask);
+    if (code != 0) {
         if (code != gs_error_undefined)
             goto errorExit;
         info->ImageMask = false;
     }
 
+    /* Optional, default false */
+    code = pdfi_dict_get_bool2(ctx, image_dict, "Interpolate", "I", &info->Interpolate);
+    if (code != 0) {
+        if (code != gs_error_undefined)
+            goto errorExit;
+        info->Interpolate = false;
+    }
+
     /* Optional (Required, unless ImageMask is true)  */
-    code = pdfi_dict_get_int(ctx, image_dict, "BitsPerComponent", &info->BPC);
-    if (code == gs_error_undefined)
-        code = pdfi_dict_get_int(ctx, image_dict, "BPC", &info->BPC);
+    code = pdfi_dict_get_int2(ctx, image_dict, "BitsPerComponent", "BPC", &info->BPC);
     if (code < 0) {
         if (code != gs_error_undefined) {
             goto errorExit;
@@ -103,8 +116,15 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
        Should we flag an error if this is violated?
      */
 
-    /* Optional */
+    /* Optional (apparently there is no "M" abbreviation for "Mask"? */
     code = pdfi_dict_get(ctx, image_dict, "Mask", &info->Mask);
+    if (code < 0) {
+        if (code != gs_error_undefined)
+            goto errorExit;
+    }
+    
+    /* Optional (apparently there is no abbreviation for "SMask"? */
+    code = pdfi_dict_get(ctx, image_dict, "SMask", &info->SMask);
     if (code < 0) {
         if (code != gs_error_undefined)
             goto errorExit;
@@ -112,13 +132,33 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
     
     /* Optional (Required except for ImageMask, not allowed for ImageMask)*/
     /* TODO: Should we enforce this required/not allowed thing? */
-    code = pdfi_dict_get(ctx, image_dict, "ColorSpace", &info->ColorSpace);
-    if (code == gs_error_undefined)
-        code = pdfi_dict_get(ctx, image_dict, "CS", &info->ColorSpace);
+    code = pdfi_dict_get2(ctx, image_dict, "ColorSpace", "CS", &info->ColorSpace);
     if (code < 0) {
         if (code != gs_error_undefined)
             goto errorExit;
     }
+
+    /* Optional */
+    code = pdfi_dict_get2(ctx, image_dict, "Filter", "F", &info->Filter);
+    if (code < 0) {
+        if (code != gs_error_undefined)
+            goto errorExit;
+    }
+
+    /* Optional */
+    code = pdfi_dict_get2(ctx, image_dict, "Decode", "D", &info->Decode);
+    if (code < 0) {
+        if (code != gs_error_undefined)
+            goto errorExit;
+    }
+    
+    /* Optional */
+    code = pdfi_dict_get2(ctx, image_dict, "DecodeParms", "DP", &info->DecodeParms);
+    if (code < 0) {
+        if (code != gs_error_undefined)
+            goto errorExit;
+    }
+
     return 0;
 
  errorExit:
@@ -206,7 +246,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     gsimage.BitsPerComponent = BPC;
     gsimage.Width = Width;
     gsimage.Height = Height;
-    /* gsimage.ImageMask = image_info.ImageMask; *//* Why not do this? */
+    /* gsimage.ImageMask = image_info.ImageMask;*/ /* Why not do this? */
     
     gsimage.ImageMatrix.xx = (float)Width;
     gsimage.ImageMatrix.yy = (float)(Height * -1);
