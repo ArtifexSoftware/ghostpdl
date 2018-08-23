@@ -924,6 +924,28 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
                 return 0;
         }
         gsicc_adjust_profile_rc(icc_profile, -1,"gsicc_set_profile");
+        /* Icky - if the creation of the new profile fails, we end up with a dangling
+           pointer, or a wrong reference count - so NULL the appropriate entry here
+         */
+        switch(defaulttype) {
+            case DEFAULT_GRAY:
+                icc_manager->default_gray = NULL;
+                break;
+            case DEFAULT_RGB:
+                icc_manager->default_rgb = NULL;
+                break;
+            case DEFAULT_CMYK:
+                 icc_manager->default_cmyk = NULL;
+                 break;
+            case NAMED_TYPE:
+                 icc_manager->device_named = NULL;
+                 break;
+            case LAB_TYPE:
+                 icc_manager->lab_profile = NULL;
+                 break;
+            default:
+                break;
+        }
     }
     /* We need to do a special check for DeviceN since we have a linked list of
        profiles and we can have multiple specifications */
@@ -1179,14 +1201,21 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
         if (buffer == NULL)
             return_error(gs_error_VMerror);
         strcpy(buffer, dirname);
+        buffer[dirlen] = '\0';
         strcat(buffer, pname);
         /* Just to make sure we were null terminated */
         buffer[namelen + dirlen] = '\0';
-        str = sfopen(buffer, "r", mem_gc);
-        gs_free_object(mem_gc, buffer, "gsicc_open_search");
-        if (str != NULL) {
-            *strp = str;
-            return 0;
+
+        if (gs_check_file_permission(mem_gc, buffer, strlen(buffer), "r") >= 0) {
+            str = sfopen(buffer, "r", mem_gc);
+            gs_free_object(mem_gc, buffer, "gsicc_open_search");
+            if (str != NULL) {
+                *strp = str;
+                return 0;
+            }
+        }
+        else {
+            gs_free_object(mem_gc, buffer, "gsicc_open_search");
         }
     }
 
@@ -1683,7 +1712,7 @@ gsicc_init_device_profile_struct(gx_device * dev,
         if (curr_profile != NULL) {
             /* There is something there now.  See if what we have coming in
                is different and it is not the output intent.  In this  */
-            if (profile_name != NULL) {
+            if (profile_name != NULL && curr_profile->name != NULL) {
                 if (strncmp(curr_profile->name, profile_name,
                             strlen(profile_name)) != 0 &&
                     strncmp(curr_profile->name, OI_PROFILE,
@@ -1691,6 +1720,24 @@ gsicc_init_device_profile_struct(gx_device * dev,
                     /* A change in the profile.  rc decrement this one as it
                        will be replaced */
                     gsicc_adjust_profile_rc(curr_profile, -1, "gsicc_init_device_profile_struct");
+                    /* Icky - if the creation of the new profile fails, we end up with a dangling
+                       pointer, or a wrong reference count - so NULL the appropriate entry here
+                     */
+                    if (profile_type < gsPROOFPROFILE) {
+                        profile_struct->device_profile[profile_type] = NULL;
+                    } else {
+                        /* The proof, link profile or post render */
+                        if (profile_type == gsPROOFPROFILE) {
+                            profile_struct->proof_profile = NULL;
+                        } else if (profile_type == gsLINKPROFILE) {
+                            profile_struct->link_profile = NULL;
+                        } else if (profile_type == gsPRPROFILE) {
+                            profile_struct->postren_profile = NULL;
+                        } else
+                            profile_struct->blend_profile = NULL;
+
+                    }
+
                 } else {
                     /* Nothing to change.  It was either the same or is the
                        output intent */
