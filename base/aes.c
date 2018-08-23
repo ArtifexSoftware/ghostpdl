@@ -662,6 +662,9 @@ void aes_crypt_ecb( aes_context *ctx,
     }
 #endif
 
+    if (ctx == NULL || ctx->rk == NULL)
+        return;
+
     RK = ctx->rk;
 
     GET_ULONG_LE( X0, input,  0 ); X0 ^= *RK++;

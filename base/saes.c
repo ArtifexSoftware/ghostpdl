@@ -120,6 +120,7 @@ s_aes_process(stream_state * ss, stream_cursor_read * pr,
         gs_throw(gs_error_VMerror, "could not allocate aes context");
         return ERRC;
       }
+      memset(state->ctx, 0x00, sizeof(aes_context));
       if (state->keylength < 1 || state->keylength > SAES_MAX_KEYLENGTH) {
         gs_throw1(gs_error_rangecheck, "invalid aes key length (%d bytes)",
                 state->keylength);
