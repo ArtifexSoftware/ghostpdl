@@ -936,6 +936,16 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
             i_ctx_p = minst->i_ctx_p; /* interp_reclaim could change it. */
         }
 
+        if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL &&
+            gx_device_is_null(i_ctx_p->pgs->device)) {
+            /* if the job replaced the device with the nulldevice, we we need to grestore
+               away that device, so the block below can properly dispense
+               with the default device.
+             */
+            int code = gs_grestoreall(i_ctx_p->pgs);
+            if (code < 0) return_error(gs_error_Fatal);
+        }
+
         if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
             gx_device *pdev = i_ctx_p->pgs->device;
             const char * dname = pdev->dname;
