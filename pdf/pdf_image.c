@@ -24,6 +24,9 @@
 #include "pdf_colour.h"
 #include "stream.h"     /* for stell() */
 
+#include "gsiparm4.h"
+#include "gsiparm3.h"
+
 extern int pdfi_dict_from_stack(pdf_context *ctx);
 
 int pdfi_BI(pdf_context *ctx)
@@ -33,14 +36,19 @@ int pdfi_BI(pdf_context *ctx)
 
 typedef struct {
     /* Type and SubType were already checked by caller */
+    /* OPI, Metadata -- do we care? */
     bool ImageMask;
     bool Interpolate;
     int64_t Height;
     int64_t Width;
     int64_t BPC;
+    int64_t StructParent;
     pdf_obj *Mask;
     pdf_obj *SMask;
     pdf_obj *ColorSpace;
+    pdf_obj *Intent;
+    pdf_obj *Alternates;
+    pdf_obj *Name; /* obsolete, do we still support? */
     /* ?? Should Decode be handled by pdfi_filter()? What is it? */
     pdf_obj *Decode;
     /* Filter and DecodeParms handled by pdfi_filter() (can probably remove, but I like the info while debugging) */
@@ -57,10 +65,16 @@ pdfi_free_image_info_components(pdfi_image_info_t *info)
         pdfi_countdown(info->SMask);
     if (info->ColorSpace)
         pdfi_countdown(info->ColorSpace);
-    if (info->Filter)
-        pdfi_countdown(info->Filter);
+    if (info->Intent)
+        pdfi_countdown(info->Intent);
+    if (info->Alternates)
+        pdfi_countdown(info->Alternates);
+    if (info->Name)
+        pdfi_countdown(info->Name);
     if (info->Decode)
         pdfi_countdown(info->Decode);
+    if (info->Filter)
+        pdfi_countdown(info->Filter);
     if (info->DecodeParms)
         pdfi_countdown(info->DecodeParms);
 }
@@ -138,6 +152,36 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
             goto errorExit;
     }
 
+    /* Optional (default is to use from graphics state) */
+    /* (no abbreviation for inline) */
+    code = pdfi_dict_get(ctx, image_dict, "Intent", &info->Intent);
+    if (code < 0) {
+        if (code != gs_error_undefined)
+            goto errorExit;
+    }
+
+    /* Optional (array of alternate image dicts, can't be nested) */
+    code = pdfi_dict_get(ctx, image_dict, "Alternates", &info->Alternates);
+    if (code < 0) {
+        if (code != gs_error_undefined)
+            goto errorExit;
+    }
+
+    /* Optional (required in PDF1.0, obsolete, do we support?) */
+    code = pdfi_dict_get(ctx, image_dict, "Name", &info->Name);
+    if (code < 0) {
+        if (code != gs_error_undefined)
+            goto errorExit;
+    }
+
+    /* Required "if image is structural content item" */
+    /* TODO: Figure out what to do here */
+    code = pdfi_dict_get_int(ctx, image_dict, "StructParent", &info->StructParent);
+    if (code < 0) {
+        if (code != gs_error_undefined)
+            goto errorExit;
+    }
+
     /* Optional */
     code = pdfi_dict_get2(ctx, image_dict, "Filter", "F", &info->Filter);
     if (code < 0) {
@@ -176,14 +220,28 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     byte c;
     gs_color_space  *pcs = NULL;
     gs_image_enum *penum;
-    gs_image_t gsimage;
+    gs_image1_t t1image;
+    gs_image4_t t4image;
+    gs_image3_t t3image;
     unsigned char Buffer[1024];
     uint64_t toread;
-    pdfi_image_info_t image_info;
+    pdfi_image_info_t image_info, mask_info;
+    pdf_dict *mask_dict = NULL;
+    pdf_array *mask_array = NULL;
     
+    memset(&mask_info, 0, sizeof(mask_info));
+
     code = pdfi_get_image_info(ctx, image_dict, &image_info);
     if (code < 0)
         goto cleanupExit;
+
+    /* TODO: Handle Alternates */
+    /* If image_info.Alternates, look in the array, see if any of them are flagged as "DefaultForPrinting"
+     * and if so, substitute that one for the image we are processing.
+     * (it can probably be either an array, or a reference to an array, need an example to test/implement)
+     * see p.274 of PDFReference.pdf
+     */
+    
 
     Width = image_info.Width;
     Height = image_info.Height;
@@ -193,9 +251,20 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         comps = 1;
     }
 
-    /* TODO: Need to do something with Mask, get it into a MaskColor in the image struct
-    */
-
+    if (image_info.Mask != NULL) {
+        if (image_info.Mask->type == PDF_ARRAY) {
+            mask_array = (pdf_array *)image_info.Mask;
+        } else if (image_info.Mask->type == PDF_DICT) {
+            mask_dict = (pdf_dict *)image_info.Mask;
+            code = pdfi_get_image_info(ctx, mask_dict, &mask_info);
+            if (code < 0)
+                goto cleanupExit;
+        } else {
+            code = gs_note_error(gs_error_typecheck);
+            goto cleanupExit;
+        }
+    }
+    
     /* NOTE: Spec says ImageMask and ColorSpace mutually exclusive */
     if (image_info.ColorSpace == NULL) {
         if (image_info.ImageMask) {
@@ -240,19 +309,19 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
 
     /* Main code -- render the image */
-    memset(&gsimage, 0, sizeof(gsimage));
-    gs_image_t_init(&gsimage, pcs);
-    gsimage.ColorSpace = pcs;
-    gsimage.BitsPerComponent = BPC;
-    gsimage.Width = Width;
-    gsimage.Height = Height;
-    /* gsimage.ImageMask = image_info.ImageMask;*/ /* Why not do this? */
+    memset(&t1image, 0, sizeof(t1image));
+    gs_image_t_init(&t1image, pcs);
+    t1image.ColorSpace = pcs;
+    t1image.BitsPerComponent = BPC;
+    t1image.Width = Width;
+    t1image.Height = Height;
+    /* t1image.ImageMask = image_info.ImageMask;*/ /* Why not do this? */
     
-    gsimage.ImageMatrix.xx = (float)Width;
-    gsimage.ImageMatrix.yy = (float)(Height * -1);
-    gsimage.ImageMatrix.ty = (float)Height;
+    t1image.ImageMatrix.xx = (float)Width;
+    t1image.ImageMatrix.yy = (float)(Height * -1);
+    t1image.ImageMatrix.ty = (float)Height;
 
-    gsimage.Interpolate = 1;
+    t1image.Interpolate = image_info.Interpolate;
 
     penum = gs_image_enum_alloc(ctx->memory, "xps_parse_image_brush (gs_image_enum_alloc)");
     if (!penum) {
@@ -266,7 +335,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     {
         gx_image_enum_common_t *pie;
 
-        if (!gsimage.ImageMask) {
+        if (!t1image.ImageMask) {
             /* TODO: Can in_cachedevie ever be set in PDF? */
             if (ctx->pgs->in_cachedevice != CACHE_DEVICE_NONE) {
                 code = gs_note_error(gs_error_undefined);
@@ -274,17 +343,17 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             }
         }
 
-        code = gs_image_begin_typed((const gs_image_common_t *)&gsimage, ctx->pgs,
-                                    gsimage.ImageMask, false, &pie);
+        code = gs_image_begin_typed((const gs_image_common_t *)&t1image, ctx->pgs,
+                                    t1image.ImageMask, false, &pie);
         if (code < 0)
             goto cleanupExit;
         
-        code = gs_image_enum_init(penum, pie, (const gs_data_image_t *)&gsimage, ctx->pgs);
+        code = gs_image_enum_init(penum, pie, (const gs_data_image_t *)&t1image, ctx->pgs);
         if (code < 0)
             goto cleanupExit;
     }
 #if 0
-    if ((code = gs_image_init(penum, &gsimage, false, false, ctx->pgs)) < 0)
+    if ((code = gs_image_init(penum, &t1image, false, false, ctx->pgs)) < 0)
         goto cleanupExit;
 #endif
     
@@ -318,6 +387,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     
  cleanupExit:
     pdfi_free_image_info_components(&image_info);
+    pdfi_free_image_info_components(&mask_info);
     return code;
 }
 
