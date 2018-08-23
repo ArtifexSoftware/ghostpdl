@@ -676,7 +676,12 @@ again:
     /* Push the error object on the operand stack if appropriate. */
     if (!GS_ERROR_IS_INTERRUPT(code)) {
         /* Replace the error object if within an oparray or .errorexec. */
-        *++osp = *perror_object;
+        osp++;
+        if (osp >= ostop) {
+            *pexit_code = gs_error_Fatal;
+            return_error(gs_error_Fatal);
+        }
+        *osp = *perror_object;
         errorexec_find(i_ctx_p, osp);
     }
     goto again;
