@@ -22,6 +22,7 @@
 #include "gsicc_manage.h"
 
 #include "pdf_file.h"
+#include "pdf_dict.h"
 #include "stream.h"
 
 /* Forward definitions for a routine we need */
@@ -783,7 +784,6 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         return code;
     code = pdfi_dict_get_int(ctx, ICC_dict, "N", &N);
     if (code < 0) {
-        pdfi_countdown(Length);
         return code;
     }
     pdfi_dict_known(ICC_dict, "Name", &known);
