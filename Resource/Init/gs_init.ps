@@ -2235,6 +2235,8 @@ SAFER { .setsafeglobal } if
 %% Since each operator is a potential security vulnerability, and any operator listed here
 %% is not required once the initislisation is complete and functions are bound, we undefine
 %% the ones that aren't needed at runtime.
+%% This function is only called if DELAYBIND is true. It is a copy of the code at the end of pdf_main.ps
+%% and must be maintained in parallel with it.
 [
 /.pdfawidthshow /.pdfwidthshow /.currentblackptcomp /.setblackptcomp
 /.setfillcolor /.setfillcolorspace /.setstrokecolor /.setstrokecolorspace /.currentrenderingintent /.setrenderingintent
@@ -2248,6 +2250,7 @@ SAFER { .setsafeglobal } if
 /.setfillconstantalpha /.setalphaisshape /.currentalphaisshape
 /.settextspacing /.currenttextspacing /.settextleading /.currenttextleading /.settextrise /.currenttextrise
 /.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling /.setPDFfontsize /.currentPDFfontsize
+/.setdistillerparams
 
 % Used by our own test suite files
 %/.pushpdf14devicefilter    % transparency-example.ps
@@ -2277,8 +2280,8 @@ SAFER { .setsafeglobal } if
   //systemdict /.delaybind {} .forceput	% reclaim the space
   //systemdict /.bindnow .forceundef	% ditto
   put
-%  //systemdict /UndefinePostScriptOperators get exec
-%  //systemdict /UndefinePDFOperators get exec
+  //systemdict /UndefinePostScriptOperators get exec
+  //systemdict /UndefinePDFOperators get exec
   //systemdict /.forcecopynew .forceundef	% remove temptation
   //systemdict /.forcedef .forceundef		% ditto
   //systemdict /.forceput .forceundef		% ditto
