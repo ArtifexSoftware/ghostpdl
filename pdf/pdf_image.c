@@ -269,7 +269,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     if (image_info.ColorSpace == NULL) {
         if (image_info.ImageMask) {
             /* No ColorSpace is okay (expected) for ImageMask */
+            gs_swapcolors(ctx->pgs);
             pcs = gs_currentcolorspace(ctx->pgs);
+            gs_swapcolors(ctx->pgs);
         } else {
             /* TODO: this is invalid by the spec, no pcs so it will bail out below
              * What is correct handling?
