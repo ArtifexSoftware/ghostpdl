@@ -99,19 +99,18 @@ zsave(i_ctx_t *i_ctx_p)
 static int restore_check_operand(os_ptr, alloc_save_t **, gs_dual_memory_t *);
 static int restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t *, const alloc_save_t *, bool);
 static void restore_fix_stack(i_ctx_t *i_ctx_p, ref_stack_t *, const alloc_save_t *, bool);
+
+/* Do as many up front checks of the save object as we reasonably can */
 int
-zrestore(i_ctx_t *i_ctx_p)
+restore_check_save(i_ctx_t *i_ctx_p, alloc_save_t **asave)
 {
     os_ptr op = osp;
-    alloc_save_t *asave;
-    bool last;
-    vm_save_t *vmsave;
-    int code = restore_check_operand(op, &asave, idmemory);
+    int code = restore_check_operand(op, asave, idmemory);
 
     if (code < 0)
         return code;
     if_debug2m('u', imemory, "[u]vmrestore 0x%lx, id = %lu\n",
-               (ulong) alloc_save_client_data(asave),
+               (ulong) alloc_save_client_data(*asave),
                (ulong) op->value.saveid);
     if (I_VALIDATE_BEFORE_RESTORE)
         ivalidate_clean_spaces(i_ctx_p);
@@ -120,14 +119,37 @@ zrestore(i_ctx_t *i_ctx_p)
     {
         int code;
 
-        if ((code = restore_check_stack(i_ctx_p, &o_stack, asave, false)) < 0 ||
-            (code = restore_check_stack(i_ctx_p, &e_stack, asave, true)) < 0 ||
-            (code = restore_check_stack(i_ctx_p, &d_stack, asave, false)) < 0
+        if ((code = restore_check_stack(i_ctx_p, &o_stack, *asave, false)) < 0 ||
+            (code = restore_check_stack(i_ctx_p, &e_stack, *asave, true)) < 0 ||
+            (code = restore_check_stack(i_ctx_p, &d_stack, *asave, false)) < 0
             ) {
             osp++;
             return code;
         }
     }
+    osp++;
+    return 0;
+}
+
+/* the semantics of restore differ slightly between Level 1 and
+   Level 2 and later - the latter includes restoring the device
+   state (whilst Level 1 didn't have "page devices" as such).
+   Hence we have two restore operators - one here (Level 1)
+   and one in zdevice2.c (Level 2+). For that reason, the
+   operand checking and guts of the restore operation are
+   separated so both implementations can use them to best
+   effect.
+ */
+int
+dorestore(i_ctx_t *i_ctx_p, alloc_save_t *asave)
+{
+    os_ptr op = osp;
+    bool last;
+    vm_save_t *vmsave;
+    int code;
+
+    osp--;
+
     /* Reset l_new in all stack entries if the new save level is zero. */
     /* Also do some special fixing on the e-stack. */
     restore_fix_stack(i_ctx_p, &o_stack, asave, false);
@@ -170,9 +192,24 @@ zrestore(i_ctx_t *i_ctx_p)
     /* cause an 'invalidaccess' in setuserparams. Temporarily set     */
     /* LockFilePermissions false until the gs_lev2.ps can do a        */
     /* setuserparams from the restored userparam dictionary.          */
+    /* NOTE: This is safe to do here, since the restore has           */
+    /* successfully completed - this should never come before any     */
+    /* operation that can trigger an error                            */
     i_ctx_p->LockFilePermissions = false;
     return 0;
 }
+
+int
+zrestore(i_ctx_t *i_ctx_p)
+{
+    alloc_save_t *asave;
+    int code = restore_check_save(i_ctx_p, &asave);
+    if (code < 0)
+        return code;
+
+    return dorestore(i_ctx_p, asave);
+}
+
 /* Check the operand of a restore. */
 static int
 restore_check_operand(os_ptr op, alloc_save_t ** pasave,
@@ -193,6 +230,7 @@ restore_check_operand(os_ptr op, alloc_save_t ** pasave,
     *pasave = asave;
     return 0;
 }
+
 /* Check a stack to make sure all its elements are older than a save. */
 static int
 restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t * pstack,

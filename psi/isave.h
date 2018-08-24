@@ -128,4 +128,10 @@ int  font_restore(const alloc_save_t * save);
    express purpose of getting the library context. */
 gs_memory_t *gs_save_any_memory(const alloc_save_t *save);
 
+int
+restore_check_save(i_ctx_t *i_ctx_p, alloc_save_t **asave);
+
+int
+dorestore(i_ctx_t *i_ctx_p, alloc_save_t *asave);
+
 #endif /* isave_INCLUDED */

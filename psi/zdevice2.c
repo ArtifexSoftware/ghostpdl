@@ -26,6 +26,7 @@
 #include "igstate.h"
 #include "iname.h"
 #include "iutil.h"
+#include "isave.h"
 #include "store.h"
 #include "gxdevice.h"
 #include "gsstate.h"
@@ -307,13 +308,24 @@ z2grestoreall(i_ctx_t *i_ctx_p)
     }
     return 0;
 }
-
+/* This is the Level 2+ variant of restore - which adds restoring
+   of the page device to the Level 1 variant in zvmem.c.
+   Previous this restored the device state before calling zrestore.c
+   which validated operands etc, meaning a restore could error out
+   partially complete.
+   The operand checking, and actual VM restore are now in two functions
+   so they can called separately thus, here, we can do as much
+   checking as possible, before embarking on actual changes
+ */
 /* <save> restore - */
 static int
 z2restore(i_ctx_t *i_ctx_p)
 {
-    os_ptr op = osp;
-    check_type(*op, t_save);
+    alloc_save_t *asave;
+    bool saveLockSafety = gs_currentdevice_inline(igs)->LockSafetyParams;
+    int code = restore_check_save(i_ctx_p, &asave);
+
+    if (code < 0) return code;
 
     while (gs_gstate_saved(gs_gstate_saved(igs))) {
         if (restore_page_device(igs, gs_gstate_saved(igs)))
@@ -322,7 +334,20 @@ z2restore(i_ctx_t *i_ctx_p)
     }
     if (restore_page_device(igs, gs_gstate_saved(igs)))
         return push_callout(i_ctx_p, "%restorepagedevice");
-    return zrestore(i_ctx_p);
+
+    code = dorestore(i_ctx_p, asave);
+
+    if (code < 0) {
+        /* An error here is basically fatal, but....
+           restore_page_device() has to set LockSafetyParams false so it can
+           configure the restored device correctly - in normal operation, that
+           gets reset by that configuration. If we hit an error, though, that
+           may not happen -  at least ensure we keep the setting through the
+           error.
+         */
+        gs_currentdevice_inline(igs)->LockSafetyParams = saveLockSafety;
+    }
+    return code;
 }
 
 /* <gstate> setgstate - */
