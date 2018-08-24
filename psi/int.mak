@@ -1086,7 +1086,7 @@ $(PSD)pagedev.dev : $(ECHOGS_XE) $(pagedev_)\
 
 $(PSOBJ)zdevice2.$(OBJ) : $(PSSRC)zdevice2.c $(OP) $(math__h) $(memory__h)\
  $(dstack_h) $(estack_h)\
- $(idict_h) $(idparam_h) $(igstate_h) $(iname_h) $(isave) $(iutil_h) \
+ $(idict_h) $(idparam_h) $(igstate_h) $(iname_h) $(isave_h) $(iutil_h) \
  $(store_h) $(gxdevice_h) $(gsstate_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zdevice2.$(OBJ) $(C_) $(PSSRC)zdevice2.c
 
