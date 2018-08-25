@@ -691,7 +691,7 @@ int
 gs_nulldevice(gs_gstate * pgs)
 {
     int code = 0;
-
+    bool saveLockSafety = false;
     if (pgs->device == 0 || !gx_device_is_null(pgs->device)) {
         gx_device *ndev;
         code = gs_copydevice(&ndev, (const gx_device *)&gs_null_device,
@@ -699,6 +699,8 @@ gs_nulldevice(gs_gstate * pgs)
 
         if (code < 0)
             return code;
+        if (gs_currentdevice_inline(pgs) != NULL)
+            saveLockSafety = gs_currentdevice_inline(pgs)->LockSafetyParams;
         /*
          * Internal devices have a reference count of 0, not 1,
          * aside from references from graphics states.
@@ -718,6 +720,7 @@ gs_nulldevice(gs_gstate * pgs)
 
         if ((code = gs_setdevice_no_erase(pgs, ndev)) < 0)
             gs_free_object(pgs->memory, ndev, "gs_copydevice(device)");
+        gs_currentdevice_inline(pgs)->LockSafetyParams = saveLockSafety;
     }
     return code;
 }
