@@ -445,7 +445,6 @@ static int
 jbig2_word_stream_buf_get_next_word(Jbig2WordStream *self, size_t offset, uint32_t *word)
 {
     Jbig2WordStreamBuf *z = (Jbig2WordStreamBuf *) self;
-    const byte *data = z->data;
     uint32_t val = 0;
     int ret = 0;
 
@@ -457,19 +456,19 @@ jbig2_word_stream_buf_get_next_word(Jbig2WordStream *self, size_t offset, uint32
     }
 
     if (offset < z->size) {
-        val |= data[offset] << 24;
+        val |= z->data[offset] << 24;
         ret++;
     }
     if (offset + 1 < z->size) {
-        val |= data[offset + 1] << 16;
+        val |= z->data[offset + 1] << 16;
         ret++;
     }
     if (offset + 2 < z->size) {
-        val |= data[offset + 2] << 8;
+        val |= z->data[offset + 2] << 8;
         ret++;
     }
     if (offset + 3 < z->size) {
-        val |= data[offset + 3];
+        val |= z->data[offset + 3];
         ret++;
     }
     *word = val;
