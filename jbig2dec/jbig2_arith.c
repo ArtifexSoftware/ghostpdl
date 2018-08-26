@@ -298,8 +298,10 @@ jbig2_arith_decode(Jbig2ArithState *as, Jbig2ArithCx *pcx, int *code)
             jbig2_arith_renormd(as);
             *code = 0;
             return D;
-        } else
+        } else {
+            *code = 0;
             return cx >> 7;
+        }
     } else {
 #ifdef SOFTWARE_CONVENTION
         as->C -= (as->A) << 16;
