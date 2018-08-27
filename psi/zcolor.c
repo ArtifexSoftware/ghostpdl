@@ -6611,6 +6611,7 @@ static int
 zsetstrokecolor(i_ctx_t * i_ctx_p)
 {
     int code;
+    es_ptr iesp = esp;  /* preserve exec stack in case of error */
 
     code = zswapcolors(i_ctx_p);
     if (code < 0)
@@ -6627,6 +6628,9 @@ zsetstrokecolor(i_ctx_t * i_ctx_p)
     if (code >= 0)
         return o_push_estack;
 
+    /* Something went wrong, swap back to the non-stroking colour and restore the exec stack */
+    esp = iesp;
+    (void)zswapcolors(i_ctx_p);
     return code;
 }
 static int
@@ -6638,6 +6642,7 @@ static int
 zsetstrokecolorspace(i_ctx_t * i_ctx_p)
 {
     int code;
+    es_ptr iesp = esp;  /* preserve exec stack in case of error */
 
     code = zswapcolors(i_ctx_p);
     if (code < 0)
@@ -6653,6 +6658,9 @@ zsetstrokecolorspace(i_ctx_t * i_ctx_p)
     if (code >= 0)
         return o_push_estack;
 
+    /* Something went wrong, swap back to the non-stroking space and restore the exec stack */
+    esp = iesp;
+    (void)zswapcolors(i_ctx_p);
     return code;
 }
 
