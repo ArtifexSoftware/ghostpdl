@@ -28,14 +28,14 @@ pdfdict begin
 
 % Define the name interpretation dictionary for reading values.
 /valueopdict mark
-  (<<) cvn { mark } bind	% don't push an actual mark!
+  (<<) cvn { mark } bind executeonly	% don't push an actual mark!
   (>>) cvn { { .dicttomark } stopped {
       (   **** Error: File has an unbalanced >> \(close dictionary\).\n)
       pdfformaterror
       (                Output may be incorrect.\n) pdfformaterror
     } if
-  } bind
-  ([) cvn { mark } bind		% ditto
+  } bind executeonly
+  ([) cvn { mark } bind executeonly		% ditto
   (]) cvn dup load
 %  /true true		% see .pdfexectoken below
 %  /false false		% ibid.
@@ -62,7 +62,7 @@ pdfdict begin
       pop
     } ifelse
   } if
-} bind def
+} bind executeonly def
 /name#escape			% <post> <(#)> <pre> name#escape <string>
 { exch pop
   1 index 2 () /SubFileDecode filter dup (x) readhexstring
@@ -77,7 +77,7 @@ pdfdict begin
     exch 2 1 index length 2 sub getinterval
   } ifelse
   (#) search { name#escape } if concatstrings
-} bind def
+} bind executeonly def
 
 /num-chars-dict mark (0123456789-.) {dup} forall .dicttomark readonly def
 
@@ -124,7 +124,7 @@ pdfdict begin
   pop pop count exch sub { pop } repeat	% pop all the operands
   } if
   (                Output may be incorrect.\n) pdfformaterror
-} bind def
+} bind executeonly def
 
 currentdict /num-chars-dict .undef
 
@@ -218,7 +218,7 @@ currentdict /num-chars-dict .undef
       } ifelse
     } ifelse
   } ifelse
-} bind def
+} bind executeonly def
 /PDFScanRules_true << /PDFScanRules //true >> def
 /PDFScanRules_null << /PDFScanRules //null >> def
 /.pdfrun {			% <file> <opdict> .pdfrun -
@@ -278,7 +278,7 @@ currentdict /num-chars-dict .undef
   .packtomark cvx                       % file { { {cnt <<>> file ... } loop } stopped /PDFsource PDFsource store {...} if}
   /PDFsource 3 -1 roll store            % {...} 
   exec
-} bind def
+} bind executeonly def
 
 % Execute a file, like .pdfrun, for a marking context.
 % This temporarily rebinds LocalResources and DefaultQstate.
@@ -289,7 +289,7 @@ currentdict /num-chars-dict .undef
   3 .execn
   /DefaultQstate exch store
   /LocalResources exch store
-} bind def
+} bind executeonly def
 
 % Get the depth of the PDF operand stack.  The caller sets pdfemptycount
 % before calling .pdfrun or .pdfruncontext.  It is initially set by
@@ -298,7 +298,7 @@ currentdict /num-chars-dict .undef
 % of .pdfrun{context} which have not been checked for opstack depth.
 /.pdfcount {		% - .pdfcount <count>
   count pdfemptycount sub
-} bind def
+} bind executeonly def
 
 % Read a token, but simply return false (no token read) in the case of an
 % error.  This is messy because 'token' either may or may not pop its operand
@@ -306,12 +306,12 @@ currentdict /num-chars-dict .undef
 % on whether the source is a file or a string. To avoid closing the file
 % check for '{' before trying 'token'.
 /token_nofail_dict mark
-  ( )  { dup ( ) readstring pop pop } bind
+  ( )  { dup ( ) readstring pop pop } bind executeonly
   (\t) 1 index
   (\r) 1 index
   (\n) 1 index
   (\000) 1 index
-  ({) { //null //true exit } bind
+  ({) { //null //true exit } bind executeonly
 .dicttomark def
 
 /token_nofail {		% <file|string> token_nofail false
@@ -341,7 +341,7 @@ currentdict /num-chars-dict .undef
       ifelse
     } ifelse
    } ifelse
-} bind def
+} bind executeonly def
 
 currentdict /token_nofail_dict .undef
 
@@ -384,7 +384,7 @@ currentdict /token_nofail_dict .undef
   /GlobalObjects 20 dict def
   .setglobal
   /IsGlobal 0 string def
-} bind def
+} bind executeonly def
 
 % Grow the tables to a specified size.
 /growPDFobjects {		% <minsize> growPDFobjects -
@@ -401,7 +401,7 @@ currentdict /token_nofail_dict .undef
     dup IsGlobal exch string dup 3 1 roll copy pop /IsGlobal exch def
   } if
   pop
-} bind def
+} bind executeonly def
 
 % We represent an unresolved object reference by a procedure of the form
 % {obj# gen# resolveR}.  This is not a possible PDF object, because PDF has
@@ -429,7 +429,7 @@ currentdict /token_nofail_dict .undef
   } {				% Else object is not executable.
     exch pop //true		% Therefore it must have been resolved.
   } ifelse
-} bind def
+} bind executeonly def
 /oforce /exec load def
 /oget {		% <array> <index> oget <object>
                 % <dict> <key> oget <object>
@@ -437,15 +437,15 @@ currentdict /token_nofail_dict .undef
                 % object back into the referring slot.  In order to support
                 % PDF linearization, we no longer do this.
   get oforce
-} bind def
+} bind executeonly def
 
 /oforce_array { % <array> oforce_array <array>
   [ exch { oforce } forall ]
-} bind def
+} bind executeonly def
 
 /oforce_elems { % <array> oforce_elems <first> ... <last>
   { oforce } forall
-} bind def
+} bind executeonly def
 
 %% Safe recursion maintain a dicitonary in which we record all the object numbers
 %% of objects which we resolve. Whenever it resolves a new one, it checks all the
@@ -485,11 +485,11 @@ currentdict /token_nofail_dict .undef
       << exch 2 index <<>> copy  exch { 3 -1 roll exch safe_recursive 3 -1 roll oforce 3 1 roll exch } forall pop>>
     } if
   } ifelse
-} bind def
+} bind executeonly def
 
 /oforce_recursive {
   << >> exch safe_recursive exch pop
-} bind def
+} bind executeonly def
 
 % A null value in a dictionary is equivalent to an omitted key;
 % we must check for this specially.
@@ -501,26 +501,26 @@ currentdict /token_nofail_dict .undef
   } {
     //false
   } ifelse
-} bind def
+} bind executeonly def
 
 % See /knownoget above.
 /oknown {	% <dict> <key> oknown <bool>
   .knownget { oforce //null ne } { //false } ifelse
-} bind def
+} bind executeonly def
 
 /knownogetdict { % <dict> <key> knownogetdict <dict> true
                  % <dict> <key> knownogetdict false
   //knownoget exec dup {
     1 index type /dicttype ne { pop pop //false } if
   } if
-} bind def
+} bind executeonly def
 
 % PDF 1.1 defines a 'foreign file reference', but not its meaning.
 % Per the specification, we convert these to nulls.
 /F {		% <file#> <object#> <generation#> F <object>
                 % Some PDF 1.1 files use F as a synonym for f!
    .pdfcount 3 lt { f } { pop pop pop //null } ifelse
-} bind def
+} bind executeonly def
 
 % Verify the generation number for a specified object
 % Note:  The values in Generations is the generation number plus 1.
@@ -550,7 +550,7 @@ currentdict /token_nofail_dict .undef
     % Ghostscript tolerant of of bad generation numbers.
     //true
   } ifelse
-} bind def
+} bind executeonly def
 /R {		% <object#> <generation#> R <object>
   %% Parameter validation; this should not be required but we have found files
   %% (Bug 697351) which are corrupted in ways that mean we see a 'R' in a stream
@@ -567,7 +567,7 @@ currentdict /token_nofail_dict .undef
     (   **** Error: indirect object reference \(R\) encountered with invalid arguments.) pdfformaterror
     (               Output may be incorrect.\n) pdfformaterror
   } ifelse
-} bind def
+} bind executeonly def
 
 % If we encounter an object definition while reading sequentially,
 % we just store it away and keep going.
@@ -578,7 +578,7 @@ currentdict /token_nofail_dict .undef
 
 /obj {			% <object#> <generation#> obj <object>
   PDFfile objopdict .pdfrun
-} bind def
+} bind executeonly def
 
 /endobj {		% <object#> <generation#> <object> endobj <object>
 
@@ -631,19 +631,19 @@ currentdict /token_nofail_dict .undef
       pop pop //null
     } ifelse
   }ifelse
-} bind def
+} bind executeonly def
 
 % When resolving an object reference in an object stream, we stop at
 % the end of file.  Note:  Objects in an object stream do not have either
 % a starting 'obj' or and ending 'endobj'.
 /resolveobjstreamopdict mark
   valueopdict { } forall
-  (%%EOF) cvn { exit } bind
+  (%%EOF) cvn { exit } bind executeonly
   /endobj {  % bug 689795
     (   **** Error: Objects in an object stream should not have 'endobj'.\n)
     pdfformaterror
     (               Output may be incorrect.\n) pdfformaterror
-  } bind
+  } bind executeonly
 .dicttomark readonly def
 
 % Note: This version of this function is not currently being used.
@@ -722,7 +722,7 @@ currentdict /token_nofail_dict .undef
     Objects exch 2 index exch put	% Put object into Objects array
   } if
   pop pop pop pop		% Clear stack
-} bind def
+} bind executeonly def
 
 /no_debug_dict <<
   /PDFDEBUG //false
@@ -792,7 +792,7 @@ currentdict /token_nofail_dict .undef
     pop 			% Remove loop index
   } for
   pop pop pop pop pop		% Remove strm# objstream, N, (obj#], and [objects]
-} bind def
+} bind executeonly def
 
 currentdict /no_debug_dict undef
 
@@ -803,26 +803,26 @@ currentdict /no_debug_dict undef
      (   **** Error: Encountered 'xref' while expecting 'endobj'.\n) pdfformaterror
      (               Treating this as a missing 'endobj', output may be incorrect.\n) pdfformaterror
      endobj exit
-  } bind
+  } bind executeonly
   /endstream { endobj exit } bind
   /endobj { endobj exit } bind
   /endjobj { % Bug 689876.
      (   **** Error: Operator 'endobj' is misspelled as 'endjobj'.\n) pdfformaterror
      (               Output may be incorrect.\n) pdfformaterror
      endobj exit
-  } bind
+  } bind executeonly
   /enbobj { % Bug 690397.
      (   **** Error: Operator 'endobj' is misspelled as 'enbobj'.\n) pdfformaterror
      (               Output may be incorrect.\n) pdfformaterror
      endobj exit
-  } bind
+  } bind executeonly
   /obj {
                 % OmniForm generates PDF file with endobj missing in some
                 % objects. AR ignores this. So we have to do it too.
      (   **** Error: Encountered 'obj' while expecting 'endobj'.\n) pdfformaterror
      (               Treating this as a missing 'endobj', output may be incorrect.\n) pdfformaterror
      pop pop endobj exit
-  } bind
+  } bind executeonly
 .dicttomark readonly def
 
 /resolveR {             % <object#> <generation#> resolveR <object>
@@ -896,7 +896,7 @@ currentdict /no_debug_dict undef
    }
    {exch pop}
    ifelse
-} bind def
+} bind executeonly def
 
 % ================================ Streams ================================ %
 
@@ -1010,11 +1010,11 @@ currentdict /no_debug_dict undef
     } if
   } ifelse
   cvx
-} bind def
+} bind executeonly def
 
 /endstream {
   exit
-} bind def
+} bind executeonly def
 
 % Contrary to the published PDF (1.3) specification, Acrobat Reader
 % accepts abbreviated filter names everywhere, not just for in-line images,
@@ -1053,7 +1053,7 @@ currentdict /no_debug_dict undef
                 % No filters: ignore parameters, if any.
     pop //null { }
   } ifelse
-} bind def
+} bind executeonly def
 /filtername {		% <filtername> filtername <filtername'>
   //unabbrevfilterdict 1 index .knownget { exch pop } if
   dup /Filter resourcestatus { pop pop } {
@@ -1067,7 +1067,7 @@ currentdict /no_debug_dict undef
     % provide a filter that returns EOF (no data)
     /.EOFDecode
   } ifelse
-} bind def
+} bind executeonly def
 
 /pdf_rules_dict << /PDFRules //true >> readonly def
 
@@ -1084,7 +1084,7 @@ currentdict /no_debug_dict undef
       //pdf_rules_dict exch
     } ifelse
   } if
-} bind def
+} bind executeonly def
 
 currentdict /pdf_rules_dict undef
 
@@ -1114,7 +1114,7 @@ currentdict /pdf_rules_dict undef
     } ifelse
   } ifelse
   forall exch pop
-} bind def
+} bind executeonly def
 
 % JBIG2 streams have an optional 'globals' stream obj for
 % sharing redundant data between page images. Here we resolve
@@ -1136,7 +1136,7 @@ currentdict /pdf_rules_dict undef
     1 index exch
     /.jbig2globalctx exch put
   } if
-} bind def
+} bind executeonly def
 
 % Resolve a stream dictionary to a PostScript stream.
 % Streams with no filters require special handling:
@@ -1197,17 +1197,17 @@ currentdict /pdf_rules_dict undef
   } ifelse
                 % Stack: readdata? dict file
   exch pop exch pop
-} bind def
+} bind executeonly def
 
 % ============================ Name/number trees ============================ %
 
 /nameoget {		% <nametree> <key> nameoget <obj|null>
   exch /Names exch .treeget
-} bind def
+} bind executeonly def
 
 /numoget {		% <numtree> <key> numoget <obj|null>
   exch /Nums exch .treeget
-} bind def
+} bind executeonly def
 
 /.treeget {		% <key> <leafkey> <tree> .treeget <obj|null>
   dup /Kids knownoget {
@@ -1215,7 +1215,7 @@ currentdict /pdf_rules_dict undef
   } {
     exch oget .leafget
   } ifelse
-} bind def
+} bind executeonly def
 
 /.branchget {		%  <key> <leafkey> <kids> .branchget <obj|null>
   dup length 0 eq {
@@ -1237,7 +1237,7 @@ currentdict /pdf_rules_dict undef
       } ifelse
     } ifelse
   } ifelse
-} bind def
+} bind executeonly def
 
 /.leafget {		% <key> <pairs> .leafget <obj|null>
   dup length 2 eq {
@@ -1249,14 +1249,14 @@ currentdict /pdf_rules_dict undef
     3 index gt { 0 exch } { 1 index length 1 index sub } ifelse
     getinterval .leafget
   } ifelse
-} bind def
+} bind executeonly def
 
 % The following variants return tree entry whose key is closest but
 % less or equal to the given key.
 
 /numogetle {		% <numtree> <key> numogetle <key obj true|false>
   exch /Nums exch .treegetle
-} bind def
+} bind executeonly def
 
 /.treegetle {		% <key> <leafkey> <tree> .treegetle <key obj true|false>
   dup /Kids knownoget {
@@ -1264,7 +1264,7 @@ currentdict /pdf_rules_dict undef
   } {
     exch oget .leafgetle
   } ifelse
-} bind def
+} bind executeonly def
 
 /.branchgetle {		%  <key> <leafkey> <kids> .branchgetle  <key obj true|false>
     dup length 0 eq {
@@ -1287,7 +1287,7 @@ currentdict /pdf_rules_dict undef
             } ifelse
         } ifelse
     } ifelse
-} bind def
+} bind executeonly def
 
 /.leafgetle {		% <key> <pairs> .leafget <obj|null>
     dup length 2 eq {
@@ -1299,7 +1299,7 @@ currentdict /pdf_rules_dict undef
         3 index gt { 0 exch } { 1 index length 1 index sub } ifelse
         getinterval .leafgetle
     } ifelse
-} bind def
+} bind executeonly def
 
 end			% pdfdict
 .setglobal

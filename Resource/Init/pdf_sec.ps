@@ -51,7 +51,7 @@ pdfdict begin
   1 dict begin
   /Key exch def
   currentdict end /ArcfourDecode filter
-} bind def
+} bind executeonly def
 
 % <ciphertext> <key> arc4decode <plaintext>
 /arc4decode {
@@ -60,7 +60,7 @@ pdfdict begin
   } {
     1 index length string 3 1 roll arc4decodefilter exch readstring pop
   } ifelse
-} bind def
+} bind executeonly def
 
 % take a stream and aes decrypt it.
 % <stream> <key> aesdecodefilter <stream>
@@ -69,7 +69,7 @@ pdfdict begin
   /Key exch def
   currentdict end
   /AESDecode filter
-} bind def
+} bind executeonly def
 
 % AES decrypt a string, returning a string.  The second argument can
 % be a dictionary of the form << /Key key /Padding false >>, which
@@ -92,24 +92,24 @@ pdfdict begin
 
     exch readstring pop
   } ifelse
-} bind def
+} bind executeonly def
 
 /md5 {
   16 string dup /MD5Encode filter dup 4 3 roll writestring closefile
-} bind def
+} bind executeonly def
 
 /md5_trunk {
   md5 0 pdf_key_length getinterval
-} bind def
+} bind executeonly def
 
 /sha256 {
   32 string dup /SHA256Encode filter dup 4 3 roll writestring closefile
-} bind def
+} bind executeonly def
 
 % <string> contains_non_ascii <bool>
 /contains_non_ascii {
   //false exch { 128 ge { pop //true exit } if } forall
-} bind def
+} bind executeonly def
 
 /pdf_padding_string
    <28bf4e5e4e758a41 64004e56fffa0108
@@ -122,7 +122,7 @@ def
   pdf_padding_string
   0 32 3 index length sub getinterval
   concatstrings
-} bind def
+} bind executeonly def
 
 /pdf_xorbytes {      % <iter-num> <key> pdf_xorbytes <xored-key>
   dup length dup string
@@ -133,7 +133,7 @@ def
     3 copy put pop pop
   } for
   3 1 roll pop pop
-} bind def
+} bind executeonly def
 
 % Get length of encryption key in bytes
 /pdf_key_length {    % pdf_key_length <key_length>
@@ -142,7 +142,7 @@ def
   { pop 5 }	% If V == 1 then always use 40 bits
   { /Length knownoget { -3 bitshift } { 5 } ifelse }
   ifelse
-} bind def
+} bind executeonly def
 
 % Algorithm 3.2
 /pdf_compute_encryption_key {  % <password> pdf_compute_encryption_key <key>
@@ -198,14 +198,14 @@ def
   } ifelse
 
   % Step 9 - Done in md5_trunk.
-} bind def
+} bind executeonly def
 
 % Algorithm 3.4
 /pdf_gen_user_password_R2 { % <filekey> pdf_gen_user_password_R2 <U>
 
   % Step 2.
   pdf_padding_string exch arc4decode
-} bind def
+} bind executeonly def
 
 % Algorithm 3.5
 /pdf_gen_user_password_R3 { % <filekey> pdf_gen_user_password_R3 <U>
@@ -230,7 +230,7 @@ def
   } for
   exch pop
 
-} bind def
+} bind executeonly def
 
 /pdf_gen_user_password { % <password> pdf_gen_user_password <filekey> <U>
   % common Step 1 of Algorithms 3.4 and 3.5.
@@ -253,7 +253,7 @@ def
       } ifelse
     } ifelse
   } ifelse
-} bind def
+} bind executeonly def
 
 % Algorithm 3.6
 % <password> pdf_check_pre_r5_user_password <filekey> true
@@ -268,7 +268,7 @@ def
   } {
     pop //false
   } ifelse
-} bind def
+} bind executeonly def
 
 % Compute an owner key, ie the result of step 4 of Algorithm 3.3
 /pdf_owner_key % <password> pdf_owner_key <owner-key>
@@ -285,7 +285,7 @@ def
   } if
 
   % Step 4 - Done in md5_trunk.
-} bind def
+} bind executeonly def
 
 % Algorithm 3.7
 % <password> pdf_check_pre_r5_owner_password <filekey> true
@@ -308,7 +308,7 @@ def
   % <result-of-step-3>
 
   pdf_check_pre_r5_user_password
-} bind def
+} bind executeonly def
 
 % Algorithm 3.2a
 % <password> pdf_check_r5_password <filekey> true
@@ -377,7 +377,7 @@ def
   } if
 
   end
-} bind def
+} bind executeonly def
 
 % <password> pdf_check_password <filekey> true
 % <password> pdf_check_password false
@@ -443,7 +443,7 @@ def
       } ifelse
     } ifelse
   } ifelse
-} bind def
+} bind executeonly def
 
 % Process the encryption information in the Trailer.
 /pdf_process_Encrypt {
@@ -511,7 +511,7 @@ def
 %      /pdf_process_Encrypt cvx /invalidfileaccess signalerror
 %    }
 %   if
-} bind def
+} bind executeonly def
 
 % Calculate the key used to decrypt an object (to pass to .decpdfrun or
 % put into a stream dictionary).
@@ -554,7 +554,7 @@ def
       } ifelse
     md5 0 FileKey length 5 add 2 index length .min getinterval
   } ifelse
-} bind def
+} bind executeonly def
 
 % As .pdfrun, but decrypt strings with key <key>.
 /PDFScanRules_true << /PDFScanRules //true >> def
@@ -653,7 +653,7 @@ def
    /PDFsource PDFsource
     { store { stop } if } aload pop .packtomark cvx
    /PDFsource 3 -1 roll store exec
- } bind def
+ } bind executeonly def
 currentdict /PDFScanRules_true undef
 currentdict /PDFScanRules_null undef
 
@@ -719,7 +719,7 @@ currentdict /PDFScanRules_null undef
   } {					% Else file is not encrypted
     PDFfile resolveopdict .pdfrun
   } ifelse				% Ifelse encrypted
-} bind def
+} bind executeonly def
 
 % Prefix a decryption filter to a stream if needed.
 % Stack: readdata? dict parms file/string filternames
@@ -745,7 +745,7 @@ currentdict /PDFScanRules_null undef
       ifelse
       exch
    } if
- } bind def
+ } bind executeonly def
 
 end			% pdfdict
 .setglobal

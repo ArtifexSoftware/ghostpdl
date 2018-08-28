@@ -87,7 +87,7 @@
         % Set error flag if we have equal object and generation numbers
     Generations 4 index get 1 index eq { /dup_obj_gen_num //true def } if
   } 8 -1 roll { ifelse } { pop if } ifelse  % Run 'else' only when rebuilding.
-} bind def
+} bind executeonly def
 
 % Print the contents of the xref array.  This actually consists of three
 % arrays (Objects, Generations, and ObjectStream).
@@ -102,7 +102,7 @@
     Objects exch get ===		% print object location
   } for
   flush
-} bind def
+} bind executeonly def
 
 % Get token from string and check its type
 %   <string> <type> typed_token <false>		% no token or not match
@@ -121,7 +121,7 @@
   } {
     pop //false			% no token - pop type, set exit status
   } ifelse			% check if we got token
-} bind def
+} bind executeonly def
 
 % Allocate space for post_eof_count to be bound into procedures below.
 /post_eof_count 0 def
@@ -153,7 +153,7 @@
   } {
     pop 0                 	% no xref, should not happen, report it upstrem
   } ifelse
-} bind def
+} bind executeonly def
 
 
 %% Searches backwards from a specified point looking for a 'trailer' keyword.
@@ -197,7 +197,7 @@
     }if
     pop                                         % renove the zero leaving the new start position
   } loop
-} bind def
+} bind executeonly def
 
 % We want the location of the trailer dictionary at the end of file.
 % We will read the last block of data and search for the final occurance
@@ -223,7 +223,7 @@
   } {
     pop pop 0
   } ifelse
-} bind def
+} bind executeonly def
 
 % We want to find the trailer dictionary.  There is a trailer dictionary
 % for each xref object list.  We only want the trailer dictionary associated
@@ -309,7 +309,7 @@
   /Trailer exch def
   pop
   } ifelse
-} bind def
+} bind executeonly def
 
 % This routine will determine if there is stuff after the %%EOF.  There is
 % supposed to be only a line termination.  However many real life files
@@ -343,7 +343,7 @@
     % Can't even find startxref, assume it's all objects
     pop 0
   } ifelse
-} bind def
+} bind executeonly def
 
 % This routine will scan a file searaching for object locations to build
 % an alternate version of the data in the xref tables.
@@ -422,7 +422,7 @@
     pdfformatwarning
   } if
   currentdict /Orig_Objects undef
-} bind def
+} bind executeonly def
 
 % Print warning message because we found a problem while reading the xref
 % tables
@@ -436,7 +436,7 @@
   (   **** Ghostscript will attempt to recover the data.\n)
   pdfformaterror
   (   **** However, the output may be incorrect.\n) pdfformaterror
-} bind def
+} bind executeonly def
 
 % Attempt to recover the XRef data.  This is called if we have a failure
 % while reading the normal XRef tables.  This routine usually works
@@ -445,4 +445,4 @@
 { print_xref_warning		% Print warning message
   count pdfemptycount sub { pop } repeat % remove anything left by readxref
   search_objects		% Search for objects
-} bind def
+} bind executeonly def
