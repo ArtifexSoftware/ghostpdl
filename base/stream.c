@@ -499,7 +499,11 @@ spputc(register stream * s, byte b)
 int
 sungetc(register stream * s, byte c)
 {
-    if (!s_is_reading(s) || s->srptr < s->cbuf || *(s->srptr) != c)
+    /* cbuf == NULL means this stream is stdin, and we shouldn't
+       unread from stdin, ever.
+     */
+    if (s->cbuf == NULL || !s_is_reading(s) ||
+        s->srptr < s->cbuf || *(s->srptr) != c)
         return ERRC;
     s->srptr--;
     return 0;
