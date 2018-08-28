@@ -767,23 +767,6 @@ userdict /.currentresourcefile //null put
   { /run .systemvar exec } .execasresource
 } bind def
 
-% Define procedures for getting and setting the current device resolution.
-
-/gsgetdeviceprop	% <device> <propname> gsgetdeviceprop <value>
- { 2 copy mark exch //null .dicttomark .getdeviceparams
-   dup mark eq		% if true, not found
-    { pop dup /undefined signalerror }
-    { 5 1 roll pop pop pop pop }
-   ifelse
- } bind def
-/gscurrentresolution	% - gscurrentresolution <[xres yres]>
- { currentdevice /HWResolution gsgetdeviceprop
- } bind def
-/gssetresolution	% <[xres yres]> gssetresolution -
- { 2 array astore mark exch /HWResolution exch
-   currentdevice copydevice putdeviceprops setdevice
- } bind def
-
 % Define auxiliary procedures needed for the above.
 /shellarguments		% -> shell_arguments true (or) false
         { /ARGUMENTS where
@@ -1521,6 +1504,14 @@ setpacking
   dup 150 lt //systemdict /DITHERPPI known not and
 } bind def
 
+/.gsgetdeviceprop	% <device> <propname> gsgetdeviceprop <value>
+ { 2 copy mark exch //null .dicttomark .getdeviceparams
+   dup mark eq		% if true, not found
+    { pop dup /undefined signalerror }
+    { 5 1 roll pop pop pop pop }
+   ifelse
+ } bind def
+
 % The following implementation uses LL2 extensions, but only in stopped
 % contexts so that with LL1, the .set??reshalftone will be used.
 %
@@ -1528,7 +1519,7 @@ setpacking
 %			      false
 /.getdefaulthalftone {
   % try the device to see if it has a default halftone
-  { currentdevice /HalftoneDefault gsgetdeviceprop } .internalstopped
+  { currentdevice /HalftoneDefault //.gsgetdeviceprop exec } .internalstopped
   { pop pop //false }		% no device property
   { dup type /dicttype eq { //true } { pop //false } ifelse }
   ifelse
@@ -1541,6 +1532,7 @@ setpacking
   }
   if
 } bind def
+currentdict /.gsgetdeviceprop .forceundef
 
 /.setdefaulthalftone {
   .getdefaulthalftone

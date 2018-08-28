@@ -204,8 +204,8 @@ level2dict begin
     mark
     % First put the device's default page size in slot 0
     % This satifies those that have devices built with a4 as the default
-    0 mark /PageSize currentdevice /PageSize gsgetdeviceprop .dicttomark
-
+    0 mark /PageSize /GetDeviceParam .special_op
+    not {/setpagedevice .systemvar /configurationerror signalerror} if .dicttomark
     % Only populate the other entries if we aren't FIXEDMEDIA
     FIXEDMEDIA not {
       statusdict /.pagetypenames get {
