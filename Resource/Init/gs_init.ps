@@ -2135,6 +2135,26 @@ readonly def
 % If we are running in SAFER mode, lock things down
 SAFER { .setsafeglobal } if
 
+/SAFERUndefinePostScriptOperators {
+[
+% Used by our own test suite files
+/.pushpdf14devicefilter    % transparency-example.ps
+/.poppdf14devicefilter     % transparency-example.ps
+/.setopacityalpha          % transparency-example.ps
+/.setshapealpha            % transparency-example.ps
+/.endtransparencygroup     % transparency-example.ps
+/.setdotlength             % Bug687720.ps
+/.sort /.setdebug /.mementolistnewblocks /getenv
+
+/.makeoperator /.setCPSImode              % gs_cet.ps, this won't work on cluster with -dSAFER
+
+/unread
+]
+{systemdict exch .forceundef} forall
+
+//systemdict /SAFERUndefinePostScriptOperators .forceundef
+}bind def
+
 /UndefinePostScriptOperators {
 
 %% This list is of Display PostScript operators. We believe that Display PostScript
@@ -2214,7 +2234,7 @@ SAFER { .setsafeglobal } if
 %/.buildfotn32 /.buildfont42 /.type9mapcid /.type11mapcid /.swapcolors
 %/currentdevice  /.quit /.setuseciecolor /.needinput /.setoverprintmode /.special_op /.dicttomark /.knownget
 %/.FAPIavailable /.FAPIpassfont /.FAPIrebuildfont /.FAPIBuildGlyph /.FAPIBuildChar /.FAPIBuildGlyph9
-%/.tempfile /.numicc_components /.set_outputintent  /.max /.min /.shfill /.vmreclaim /.getpath /.setglobal
+%/.tempfile /.numicc_components /.set_outputintent  /.max /.min /.vmreclaim /.getpath /.setglobal
 %/.setdebug /.mementolistnewblocks /getenv
 ]
 {systemdict exch .forceundef} forall
@@ -2244,13 +2264,6 @@ SAFER { .setsafeglobal } if
 /.setwordspacing /.currentwordspacing /.settexthscaling /.currenttexthscaling /.setPDFfontsize /.currentPDFfontsize
 /.setdistillerparams
 
-% Used by our own test suite files
-%/.pushpdf14devicefilter    % transparency-example.ps
-%/.poppdf14devicefilter     % transparency-example.ps
-%/.setopacityalpha          % transparency-example.ps
-%/.setshapealpha            % transparency-example.ps
-%/.endtransparencygroup     % transparency-example.ps
-
 % undefining these causes errors/incorrect output
 %/.settextrenderingmode /.setblendmode /.begintransparencygroup /.settextknockout /check_r6_password /.setstrokeoverprint /.setfilloverprint
 %/.currentstrokeoverprint /.currentfilloverprint /.currentfillconstantalpha /.currentstrokeconstantalpha
@@ -2272,6 +2285,9 @@ SAFER { .setsafeglobal } if
   //systemdict /.delaybind {} .forceput	% reclaim the space
   //systemdict /.bindnow .forceundef	% ditto
   put
+  SAFER {
+    //systemdict /SAFERUndefinePostScriptOperators get exec
+  } if
   //systemdict /UndefinePostScriptOperators get exec
   //systemdict /UndefinePDFOperators get exec
   //systemdict /.forcecopynew .forceundef	% remove temptation
@@ -2385,6 +2401,9 @@ currentdict /.renderingintentdict .undef
 %% If we are using DELAYBIND we have to defer the undefinition
 %% until .bindnow.
 DELAYBIND not {
+  SAFER {
+    //systemdict /SAFERUndefinePostScriptOperators get exec
+  } if
   //systemdict /UndefinePostScriptOperators get exec
   //systemdict /UndefinePDFOperators .forceundef
 } if
@@ -2395,6 +2414,7 @@ end
  { pop NOGC not { 2 .vmreclaim 0 vmreclaim } if
  } if
 DELAYBIND not {
+  systemdict /.bindnow .undef       % We only need this for DELAYBIND
   systemdict /.forcecopynew .undef	% remove temptation
   systemdict /.forcedef .undef		% ditto
   systemdict /.forceput .undef		% ditto
