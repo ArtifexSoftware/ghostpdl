@@ -64,6 +64,7 @@ static dev_proc_put_image(epo_put_image);
 static dev_proc_fillpage(epo_fillpage);
 static dev_proc_create_compositor(epo_create_compositor);
 static dev_proc_text_begin(epo_text_begin);
+static dev_proc_finish_copydevice(epo_finish_copydevice);
 static dev_proc_begin_image(epo_begin_image);
 static dev_proc_begin_typed_image(epo_begin_typed_image);
 static dev_proc_stroke_path(epo_stroke_path);
@@ -152,7 +153,7 @@ gx_device_epo gs_epo_device =
      epo_create_compositor,
      default_subclass_get_hardware_params,			/* get_hardware_params */
      epo_text_begin,
-     default_subclass_finish_copydevice,			/* finish_copydevice */
+     epo_finish_copydevice,                                     /* finish_copydevice */
      default_subclass_begin_transparency_group,			/* begin_transparency_group */
      default_subclass_end_transparency_group,			/* end_transparency_group */
      default_subclass_begin_transparency_mask,			/* begin_transparency_mask */
@@ -495,6 +496,20 @@ int epo_text_begin(gx_device *dev, gs_gstate *pgs, const gs_text_params_t *text,
     if (code != 0)
         return code;
     return dev_proc(dev, text_begin)(dev, pgs, text, font, path, pdcolor, pcpath, memory, ppte);
+}
+
+int epo_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+{
+    /* We musn't allow the following pointers to remain shared with the from_dev
+       because we're about to tell the caller it's only allowed to copy the prototype
+       and free the attempted copy of a non-prototype. If from_dev is the prototype
+       these pointers won't be set, anyway.
+     */
+    dev->child = NULL;
+    dev->parent = NULL;
+    dev->subclass_data = NULL;
+    /* Only allow copying the prototype. */
+    return (from_dev->memory ? gs_note_error(gs_error_rangecheck) : 0);
 }
 
 int epo_begin_image(gx_device *dev, const gs_gstate *pgs, const gs_image_t *pim,
