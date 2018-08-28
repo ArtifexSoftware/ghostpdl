@@ -190,7 +190,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
             goto errorExit;
     }
 
-    /* Optional */
+    /* Optional (default is probably [0,1] per component) */
     code = pdfi_dict_get2(ctx, image_dict, "Decode", "D", &info->Decode);
     if (code < 0) {
         if (code != gs_error_undefined)
@@ -299,13 +299,13 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 {
     pdf_stream *new_stream = NULL;
     int64_t Height, Width, BPC;
-    int i, code, comps = 0, byteswide, total;
-    byte c;
+    int i, code, comps = 0;
     bool flush = false;
     gs_color_space  *pcs = NULL;
     gs_image1_t t1image;
     gs_image4_t t4image;
     gs_image3_t t3image;
+    gs_pixel_image_t *pim;
     pdfi_image_info_t image_info, mask_info;
     pdf_dict *mask_dict = NULL;
     pdf_array *mask_array = NULL;
@@ -382,13 +382,15 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     /* TODO: Is this correct or should we flag error? */
     /* TODO: isn't this "flushing" only needed for inline_image? Do we really need to do it? */
     if (flush) {
+        int byteswide, total;
+        byte c;
+
         byteswide = ((Width * comps * BPC) + 7) / 8;
         total = byteswide * Height;
 
         for (i=0;i < total;i++) {
             code = pdfi_read_bytes(ctx, &c, 1, 1, new_stream);
             if (code < 0) {
-                pdfi_close_file(ctx, new_stream);
                 goto cleanupExit;
             }
         }
@@ -397,24 +399,54 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
 
     /* Get the image into a supported gs type (type1, type3, type4) */
-    memset(&t1image, 0, sizeof(t1image));
-
-    if (image_info.ImageMask) {
-        /* Sets up timage.ImageMask, amongst other things */
-        gs_image_t_init_adjust(&t1image, NULL, false);
-        t1image.ColorSpace = NULL;
+    if (!image_info.Mask) { /* Type 1 and ImageMask */
+        memset(&t1image, 0, sizeof(t1image));
+        pim = (gs_pixel_image_t *)&t1image;
+    
+        if (image_info.ImageMask) {
+            /* Sets up timage.ImageMask, amongst other things */
+            gs_image_t_init_adjust(&t1image, NULL, false);
+        } else {
+            gs_image_t_init_adjust(&t1image, pcs, true);
+        }
     } else {
-        gs_image_t_init_adjust(&t1image, pcs, true);
-        t1image.ColorSpace = pcs;
-    }
-    t1image.BitsPerComponent = BPC;
-    t1image.Width = Width;
-    t1image.Height = Height;
-    t1image.ImageMatrix.xx = (float)Width;
-    t1image.ImageMatrix.yy = (float)(Height * -1);
-    t1image.ImageMatrix.ty = (float)Height;
+        if (mask_array) { /* Type 4 */
+            memset(&t4image, 0, sizeof(t1image));
+            pim = (gs_pixel_image_t *)&t4image;
+            gs_image4_t_init(&t4image, NULL);
+            {
+                int i;
+                double num;
 
-    t1image.Interpolate = image_info.Interpolate;
+                if (mask_array->size > GS_IMAGE_MAX_COMPONENTS * 2) {
+                    code = gs_note_error(gs_error_limitcheck);
+                    goto cleanupExit;
+                }
+
+                for (i=0; i<mask_array->size; i++) {
+                    code = pdfi_array_get_number(ctx, mask_array, i, &num);
+                    if (code < 0)
+                        goto cleanupExit;
+                    t4image.MaskColor[i] = (float)num;
+                }
+                t4image.MaskColor_is_range = true;
+            }
+        } else { /* Type 3 (or is it 3x?) */
+            memset(&t3image, 0, sizeof(t1image));
+            pim = (gs_pixel_image_t *)&t3image;
+            gs_image3_t_init(&t3image, NULL, 3);
+        }
+    }
+
+    pim->ColorSpace = pcs;
+    pim->BitsPerComponent = BPC;
+    pim->Width = Width;
+    pim->Height = Height;
+    pim->ImageMatrix.xx = (float)Width;
+    pim->ImageMatrix.yy = (float)(Height * -1);
+    pim->ImageMatrix.ty = (float)Height;
+
+    pim->Interpolate = image_info.Interpolate;
 
     /* Get the decode array (required for ImageMask, probably for everything */
     if (image_info.Decode) {
@@ -431,12 +463,19 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             code = pdfi_array_get_number(ctx, decode_array, i, &num);
             if (code < 0)
                 goto cleanupExit;
-            t1image.Decode[i] = (float)num;
+            pim->Decode[i] = (float)num;
+        }
+    } else {
+        /* Provide a default if not specified [0 1 ...] per component */
+        int i;
+        for (i=0; i<comps*2; i+=2) {
+            pim->Decode[i] = 0.0;
+            pim->Decode[i+1] = 1.0;
         }
     }
 
 
-    code = pdfi_render_image(ctx, (gs_pixel_image_t *)&t1image, new_stream, comps, image_info.ImageMask);
+    code = pdfi_render_image(ctx, pim, new_stream, comps, image_info.ImageMask);
     if (code < 0)
         goto cleanupExit;
 
