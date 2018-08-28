@@ -2283,10 +2283,16 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
                 unsigned char uc[4] = {0};
                 unsigned int cc = 0;
                 int i, l;
-                byte *c = (byte *)&penum->text.data.bytes[penum->index - penum->bytes_decoded];
-
-                for (i = 0; i < penum->bytes_decoded ; i++) {
-                  cc |= c[i] << ((penum->bytes_decoded - 1) - i) * 8;
+                if (penum->text.operation && TEXT_FROM_SINGLE_CHAR) {
+                    cc = penum->text.data.d_char;
+                } else if (penum->text.operation && TEXT_FROM_SINGLE_GLYPH) {
+                    cc = penum->text.data.d_glyph - GS_MIN_CID_GLYPH;
+                }
+                else {
+                    byte *c = (byte *)&penum->text.data.bytes[penum->index - penum->bytes_decoded];
+                    for (i = 0; i < penum->bytes_decoded ; i++) {
+                      cc |= c[i] << ((penum->bytes_decoded - 1) - i) * 8;
+                    }
                 }
                 l = ((gs_font_base *)gs_rootfont(igs))->procs.decode_glyph(gs_rootfont(igs), cc + GS_MIN_CID_GLYPH, ccode, (unsigned short *)uc, sizeof(uc));
                 if (l > 0 && l < sizeof(uc)) {
