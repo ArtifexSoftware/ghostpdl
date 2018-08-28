@@ -20,6 +20,7 @@
 #include "pdf_image.h"
 #include "pdf_file.h"
 #include "pdf_dict.h"
+#include "pdf_array.h"
 #include "pdf_loop_detect.h"
 #include "pdf_colour.h"
 #include "stream.h"     /* for stell() */
@@ -210,21 +211,101 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
     return code;
 }
 
+/* Render a PDF image
+ * pim can be type1 (or imagemask), type3, type4
+ */
+static int
+pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *new_stream, int comps, bool ImageMask)
+{
+    int code;
+    gs_image_enum *penum = NULL;
+    int64_t Height, Width, BPC;
+    unsigned char Buffer[1024];
+    uint64_t toread;
+
+    Width = pim->Width;
+    Height = pim->Height;
+    BPC = pim->BitsPerComponent;
+
+    penum = gs_image_enum_alloc(ctx->memory, "xps_parse_image_brush (gs_image_enum_alloc)");
+    if (!penum) {
+        code = gs_note_error(gs_error_VMerror);
+        goto cleanupExit;
+    }
+
+    if (ImageMask) {
+        /* for ImageMask, the code below expects the colorspace to be NULL, and instead takes the 
+         * color from the current graphics state.  But we need to swap it so it will get the
+         * non-stroking color space.  We will swap it back later in this routine.
+         */
+        gs_swapcolors(ctx->pgs);
+    }
+    
+    /* Took this logic from gs_image_init() 
+     * (the other tests in there have already been handled above
+     */
+    {
+        gx_image_enum_common_t *pie;
+
+        if (!ImageMask) {
+            /* TODO: Can in_cachedevie ever be set in PDF? */
+            if (ctx->pgs->in_cachedevice != CACHE_DEVICE_NONE) {
+                code = gs_note_error(gs_error_undefined);
+                goto cleanupExit;
+            }
+        }
+
+        code = gs_image_begin_typed((const gs_image_common_t *)pim, ctx->pgs, ImageMask, false, &pie);
+        if (code < 0)
+            goto cleanupExit;
+        
+        code = gs_image_enum_init(penum, pie, (const gs_data_image_t *)pim, ctx->pgs);
+        if (code < 0)
+            goto cleanupExit;
+    }
+    
+    toread = (((Width * comps * BPC) + 7) / 8) * Height;
+
+    do {
+        uint count, used, index;
+
+        if (toread > 1024) {
+            code = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 1024, new_stream);
+            count = 1024;
+        } else {
+            code = pdfi_read_bytes(ctx, (byte *)Buffer, 1, toread, new_stream);
+            count = toread;
+        }
+        toread -= count;
+        index = 0;
+        do {
+            if ((code = gs_image_next(penum, (byte *)&Buffer[index], count, &used)) < 0)
+                goto cleanupExit;
+            count -= used;
+            index += used;
+        } while (count);
+    } while(toread && new_stream->eof == false);
+    code = 0;
+    
+ cleanupExit:
+    if (penum)
+        gs_image_cleanup_and_free_enum(penum, ctx->pgs);
+    return code;
+}
+
 static int
 pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_dict *image_dict,
               pdf_stream *source, bool inline_image)
 {
-    pdf_stream *new_stream;
+    pdf_stream *new_stream = NULL;
     int64_t Height, Width, BPC;
     int i, code, comps = 0, byteswide, total;
     byte c;
+    bool flush = false;
     gs_color_space  *pcs = NULL;
-    gs_image_enum *penum;
     gs_image1_t t1image;
     gs_image4_t t4image;
     gs_image3_t t3image;
-    unsigned char Buffer[1024];
-    uint64_t toread;
     pdfi_image_info_t image_info, mask_info;
     pdf_dict *mask_dict = NULL;
     pdf_array *mask_array = NULL;
@@ -268,16 +349,20 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     /* NOTE: Spec says ImageMask and ColorSpace mutually exclusive */
     if (image_info.ColorSpace == NULL) {
         if (image_info.ImageMask) {
+#if 0
             /* No ColorSpace is okay (expected) for ImageMask */
             gs_swapcolors(ctx->pgs);
             pcs = gs_currentcolorspace(ctx->pgs);
             gs_swapcolors(ctx->pgs);
+#endif
         } else {
             /* TODO: this is invalid by the spec, no pcs so it will bail out below
              * What is correct handling?
              */
             gx_device *dev = gs_currentdevice_inline(ctx->pgs);
             comps = dev->color_info.num_components;
+            /* TODO: probably don't need to do above, since we will flush anyway? */
+            flush = true;
         }
     } else {
         code = pdfi_create_colorspace(ctx, image_info.ColorSpace, page_dict, stream_dict, &pcs);
@@ -294,8 +379,8 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     /* Handle null pcs -- this is just swallowing the image data stream and continuing */
     /* TODO: Is this correct or should we flag error? */
-    /* TODO: isn't this "flushing" only needed for inline_image? */
-    if (pcs == NULL) {
+    /* TODO: isn't this "flushing" only needed for inline_image? Do we really need to do it? */
+    if (flush) {
         byteswide = ((Width * comps * BPC) + 7) / 8;
         total = byteswide * Height;
 
@@ -310,84 +395,54 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         goto cleanupExit;
     }
 
-    /* Main code -- render the image */
+    /* Get the image into a supported gs type (type1, type3, type4) */
     memset(&t1image, 0, sizeof(t1image));
-    gs_image_t_init(&t1image, pcs);
-    t1image.ColorSpace = pcs;
+
+    if (image_info.ImageMask) {
+        /* Sets up timage.ImageMask, amongst other things */
+        gs_image_t_init_adjust(&t1image, NULL, false);
+        t1image.ColorSpace = NULL;
+    } else {
+        gs_image_t_init_adjust(&t1image, pcs, true);
+        t1image.ColorSpace = pcs;
+    }
     t1image.BitsPerComponent = BPC;
     t1image.Width = Width;
     t1image.Height = Height;
-    /* t1image.ImageMask = image_info.ImageMask;*/ /* Why not do this? */
-    
     t1image.ImageMatrix.xx = (float)Width;
     t1image.ImageMatrix.yy = (float)(Height * -1);
     t1image.ImageMatrix.ty = (float)Height;
 
     t1image.Interpolate = image_info.Interpolate;
 
-    penum = gs_image_enum_alloc(ctx->memory, "xps_parse_image_brush (gs_image_enum_alloc)");
-    if (!penum) {
-        code = gs_note_error(gs_error_VMerror);
-        goto cleanupExit;
-    }
+    /* Get the decode array (required for ImageMask, probably for everything */
+    if (image_info.Decode) {
+        pdf_array *decode_array = (pdf_array *)image_info.Decode;
+        int i;
+        double num;
 
-    /* Took this logic from gs_image_init() 
-     * (the other tests in there have already been handled above
-     */
-    {
-        gx_image_enum_common_t *pie;
-
-        if (!t1image.ImageMask) {
-            /* TODO: Can in_cachedevie ever be set in PDF? */
-            if (ctx->pgs->in_cachedevice != CACHE_DEVICE_NONE) {
-                code = gs_note_error(gs_error_undefined);
-                goto cleanupExit;
-            }
+        if (decode_array->size > GS_IMAGE_MAX_COMPONENTS * 2) {
+            code = gs_note_error(gs_error_limitcheck);
+            goto cleanupExit;
         }
 
-        code = gs_image_begin_typed((const gs_image_common_t *)&t1image, ctx->pgs,
-                                    t1image.ImageMask, false, &pie);
-        if (code < 0)
-            goto cleanupExit;
-        
-        code = gs_image_enum_init(penum, pie, (const gs_data_image_t *)&t1image, ctx->pgs);
-        if (code < 0)
-            goto cleanupExit;
-    }
-#if 0
-    if ((code = gs_image_init(penum, &t1image, false, false, ctx->pgs)) < 0)
-        goto cleanupExit;
-#endif
-    
-    
-    toread = (((Width * comps * BPC) + 7) / 8) * Height;
-
-    do {
-        uint count, used, index;
-
-        if (toread > 1024) {
-            code = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 1024, new_stream);
-            count = 1024;
-        } else {
-            code = pdfi_read_bytes(ctx, (byte *)Buffer, 1, toread, new_stream);
-            count = toread;
-        }
-        toread -= count;
-        index = 0;
-        do {
-            if ((code = gs_image_next(penum, (byte *)&Buffer[index], count, &used)) < 0)
+        for (i=0; i<decode_array->size; i++) {
+            code = pdfi_array_get_number(ctx, decode_array, i, &num);
+            if (code < 0)
                 goto cleanupExit;
-            count -= used;
-            index += used;
-        } while (count);
-    } while(toread && new_stream->eof == false);
+            t1image.Decode[i] = (float)num;
+        }
+    }
 
-    gs_image_cleanup_and_free_enum(penum, ctx->pgs);
-    pdfi_close_file(ctx, new_stream);
+
+    code = pdfi_render_image(ctx, (gs_pixel_image_t *)&t1image, new_stream, comps, image_info.ImageMask);
+    if (code < 0)
+        goto cleanupExit;
 
     code = 0;
     
  cleanupExit:
+    pdfi_close_file(ctx, new_stream);
     pdfi_free_image_info_components(&image_info);
     pdfi_free_image_info_components(&mask_info);
     return code;
