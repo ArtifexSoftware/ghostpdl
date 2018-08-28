@@ -366,6 +366,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         }
     } else {
         code = pdfi_create_colorspace(ctx, image_info.ColorSpace, page_dict, stream_dict, &pcs);
+        /* TODO: image_2bpp.pdf has an image in there somewhere that fails on this call */
         if (code < 0)
             goto cleanupExit;
         comps = gs_color_space_num_components(pcs);
@@ -442,7 +443,8 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     code = 0;
     
  cleanupExit:
-    pdfi_close_file(ctx, new_stream);
+    if (new_stream)
+        pdfi_close_file(ctx, new_stream);
     pdfi_free_image_info_components(&image_info);
     pdfi_free_image_info_components(&mask_info);
     return code;
