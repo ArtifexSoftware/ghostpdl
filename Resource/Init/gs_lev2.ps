@@ -163,7 +163,8 @@ end
         % Set them again to the new values.  From here on, we are safe,
         % since a context switch will consult userparams.
   .setuserparams
-} .bind def
+} .bind executeonly def % must be bound and hidden for .forceput
+
 /setuserparams {		% <dict> setuserparams -
     .setuserparams2
 } .bind odef

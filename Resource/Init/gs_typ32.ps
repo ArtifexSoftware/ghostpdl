@@ -85,7 +85,7 @@ systemdict /.removeglyphs .undef
 { dup /FontType 32 .forceput
   dup /CharStrings 20 dict .forceput
   1 index exch .buildfont32 exch pop
-} bind def
+} .bind executeonly def % must be bound and hidden for .forceput
 
 end		% .cidfonttypes
 
