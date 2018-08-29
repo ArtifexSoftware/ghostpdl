@@ -408,7 +408,7 @@ currentdict end def
     exit
   } loop
   exch setglobal
-} bind def
+} .bind executeonly def % must be bound and hidden for .forceput
 
 currentdict end /ProcSet defineresource pop
 

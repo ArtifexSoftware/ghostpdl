@@ -624,7 +624,7 @@ SETPDDEBUG { (Rolling back.) = pstack flush } if
          { 4 index 3 1 roll .forceput }
          { 3 index exch .undef }
         ifelse
-  } .bind
+  } .bind executeonly % must be bound and hidden for .forceput
   7 {		% For PageSize only, just impose the request.
         1 index /PageSize eq
          { pop pop 1 index /PageSize 7 put }
