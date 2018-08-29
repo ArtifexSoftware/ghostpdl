@@ -218,6 +218,7 @@ static int
 pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *new_stream, int comps, bool ImageMask)
 {
     int code;
+    bool colors_swapped = false;
     gs_image_enum *penum = NULL;
     int64_t Height, Width, BPC;
     unsigned char Buffer[1024];
@@ -239,6 +240,7 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *new_strea
          * non-stroking color space.  We will swap it back later in this routine.
          */
         gs_swapcolors(ctx->pgs);
+        colors_swapped = true;
     }
     
     /* Took this logic from gs_image_init() 
@@ -288,6 +290,8 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *new_strea
     code = 0;
     
  cleanupExit:
+    if (colors_swapped)
+        gs_swapcolors(ctx->pgs);
     if (penum)
         gs_image_cleanup_and_free_enum(penum, ctx->pgs);
     return code;
@@ -328,10 +332,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     Height = image_info.Height;
     BPC = image_info.BPC;
 
-    if (image_info.ImageMask) {
-        comps = 1;
-    }
-
     if (image_info.Mask != NULL) {
         if (image_info.Mask->type == PDF_ARRAY) {
             mask_array = (pdf_array *)image_info.Mask;
@@ -347,55 +347,54 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
     
     /* NOTE: Spec says ImageMask and ColorSpace mutually exclusive */
-    if (image_info.ColorSpace == NULL) {
-        if (image_info.ImageMask) {
-#if 0
-            /* No ColorSpace is okay (expected) for ImageMask */
-            gs_swapcolors(ctx->pgs);
-            pcs = gs_currentcolorspace(ctx->pgs);
-            gs_swapcolors(ctx->pgs);
-#endif
-        } else {
-            /* TODO: this is invalid by the spec, no pcs so it will bail out below
-             * What is correct handling?
+    if (image_info.ImageMask) {
+        comps = 1;
+        pcs = NULL;
+    } else {
+        if (image_info.ColorSpace == NULL) {
+            /* This is invalid by the spec, ColorSpace is required if not ImageMask.
+             * Will bail out below, but need to calculate the number of comps for flushing.
              */
             gx_device *dev = gs_currentdevice_inline(ctx->pgs);
             comps = dev->color_info.num_components;
-            /* TODO: probably don't need to do above, since we will flush anyway? */
+            pcs = NULL;
             flush = true;
+        } else {
+            code = pdfi_create_colorspace(ctx, image_info.ColorSpace, page_dict, stream_dict, &pcs);
+            /* TODO: image_2bpp.pdf has an image in there somewhere that fails on this call (probably ColorN) */
+            if (code < 0)
+                goto cleanupExit;
+            comps = gs_color_space_num_components(pcs);
         }
-    } else {
-        code = pdfi_create_colorspace(ctx, image_info.ColorSpace, page_dict, stream_dict, &pcs);
-        /* TODO: image_2bpp.pdf has an image in there somewhere that fails on this call */
-        if (code < 0)
-            goto cleanupExit;
-        comps = gs_color_space_num_components(pcs);
     }
-    /* At this point, comps and pcs are setup */
     
     /* Setup the data stream for the image data */
     code = pdfi_filter(ctx, image_dict, source, &new_stream, inline_image);
     if (code < 0)
         goto cleanupExit;
 
-    /* Handle null pcs -- this is just swallowing the image data stream and continuing */
+    /* Handle null ColorSpace -- this is just swallowing the image data stream and continuing */
     /* TODO: Is this correct or should we flag error? */
-    /* TODO: isn't this "flushing" only needed for inline_image? Do we really need to do it? */
     if (flush) {
-        int byteswide, total;
-        byte c;
+        if (inline_image) {
+            int byteswide, total;
+            byte c;
 
-        byteswide = ((Width * comps * BPC) + 7) / 8;
-        total = byteswide * Height;
+            byteswide = ((Width * comps * BPC) + 7) / 8;
+            total = byteswide * Height;
 
-        for (i=0;i < total;i++) {
-            code = pdfi_read_bytes(ctx, &c, 1, 1, new_stream);
-            if (code < 0) {
-                goto cleanupExit;
+            for (i=0;i < total;i++) {
+                code = pdfi_read_bytes(ctx, &c, 1, 1, new_stream);
+                if (code < 0) {
+                    goto cleanupExit;
+                }
             }
+            code = 0; /* TODO: Should we flag an error instead of silently swallowing? */
+            goto cleanupExit;
+        } else {
+            code = 0; /* TODO: Should we flag an error instead of just ignoring? */
+            goto cleanupExit;
         }
-        code = 0;
-        goto cleanupExit;
     }
 
     /* Get the image into a supported gs type (type1, type3, type4) */
@@ -448,7 +447,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     pim->Interpolate = image_info.Interpolate;
 
-    /* Get the decode array (required for ImageMask, probably for everything */
+    /* Get the decode array (required for ImageMask, probably for everything) */
     if (image_info.Decode) {
         pdf_array *decode_array = (pdf_array *)image_info.Decode;
         int i;
