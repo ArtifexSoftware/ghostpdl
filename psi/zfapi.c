@@ -2283,9 +2283,9 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
                 unsigned char uc[4] = {0};
                 unsigned int cc = 0;
                 int i, l;
-                if (penum->text.operation && TEXT_FROM_SINGLE_CHAR) {
+                if (penum->text.operation & TEXT_FROM_SINGLE_CHAR) {
                     cc = penum->text.data.d_char;
-                } else if (penum->text.operation && TEXT_FROM_SINGLE_GLYPH) {
+                } else if (penum->text.operation & TEXT_FROM_SINGLE_GLYPH) {
                     cc = penum->text.data.d_glyph - GS_MIN_CID_GLYPH;
                 }
                 else {
