@@ -94,6 +94,19 @@ pdfi_get_image_data_size(gs_data_image_t *pim, int comps)
     return size;
 }
 
+static inline uint64_t
+pdfi_get_image_line_size(gs_data_image_t *pim, int comps)
+{
+    int size;
+    int64_t W, B;
+
+    W = pim->Width;
+    B = pim->BitsPerComponent;
+        
+    size = (((W * comps * B) + 7) / 8);
+    return size;
+}
+
 /* Get image info out of dict into more convenient form, enforcing some requirements from the spec */
 static int
 pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *info)
@@ -228,16 +241,18 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
  * pim can be type1 (or imagemask), type3, type4
  */
 static int
-pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim,
-                  pdf_stream *image_stream, unsigned char *mask_buffer, uint64_t mask_size,
+pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_stream,
+                  unsigned char *mask_buffer, uint64_t mask_size, uint64_t mask_linelen,
                   int comps, bool ImageMask)
 {
     int code;
     bool colors_swapped = false;
     gs_image_enum *penum = NULL;
-    unsigned char Buffer[1024];
-    uint64_t toread;
-
+    //    unsigned char Buffer[1024];
+    byte *buffer = NULL;
+    uint64_t linelen;
+    uint64_t curline, Height;
+    
     penum = gs_image_enum_alloc(ctx->memory, "pdfi_render_image (gs_image_enum_alloc)");
     if (!penum) {
         code = gs_note_error(gs_error_VMerror);
@@ -254,13 +269,13 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim,
     }
     
     /* Took this logic from gs_image_init() 
-     * (the other tests in there have already been handled above
+     * (the other tests in there have already been handled elsewhere)
      */
     {
         gx_image_enum_common_t *pie;
 
         if (!ImageMask) {
-            /* TODO: Can in_cachedevie ever be set in PDF? */
+            /* TODO: Can in_cachedevice ever be set in PDF? */
             if (ctx->pgs->in_cachedevice != CACHE_DEVICE_NONE) {
                 code = gs_note_error(gs_error_undefined);
                 goto cleanupExit;
@@ -293,29 +308,42 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim,
 #endif    
 
     /* Main image */
-    toread = pdfi_get_image_data_size((gs_data_image_t *)pim, comps);
-    do {
+    linelen = pdfi_get_image_data_size((gs_data_image_t *)pim, comps);
+    Height = pim->Height;
+    curline = 0;
+    buffer = gs_alloc_bytes(ctx->memory, linelen, "pdfi_render_image (buffer)");
+    if (!buffer) {
+        code = gs_note_error(gs_error_VMerror);
+        goto cleanupExit;
+    }
+    for (curline = 0; curline < Height; curline++) {
         uint count, used, index;
 
-        if (toread > 1024) {
-            code = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 1024, image_stream);
-            count = 1024;
-        } else {
-            code = pdfi_read_bytes(ctx, (byte *)Buffer, 1, toread, image_stream);
-            count = toread;
+        code = pdfi_read_bytes(ctx, buffer, 1, linelen, image_stream);
+        if (code < 0) {
+            goto cleanupExit;
         }
-        toread -= count;
+        if (code != linelen) {
+            code = gs_note_error(gs_error_limitcheck);
+            goto cleanupExit;
+        }
+        count = linelen;
+
         index = 0;
         do {
-            if ((code = gs_image_next(penum, (byte *)&Buffer[index], count, &used)) < 0)
+            code = gs_image_next(penum, buffer + index, count, &used);
+            if (code < 0)
                 goto cleanupExit;
             count -= used;
             index += used;
         } while (count);
-    } while(toread && image_stream->eof == false);
+    }
+
     code = 0;
     
  cleanupExit:
+    if (buffer)
+        gs_free_object(ctx->memory, buffer, "pdfi_render_image (buffer)");
     if (colors_swapped)
         gs_swapcolors(ctx->pgs);
     if (penum)
@@ -386,7 +414,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     pdf_dict *mask_dict = NULL;
     pdf_array *mask_array = NULL;
     unsigned char *mask_buffer = NULL;
-    uint64_t mask_size = 0;
+    uint64_t mask_size = 0, mask_linelen = 0;
     
     memset(&mask_info, 0, sizeof(mask_info));
 
@@ -493,9 +521,14 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         gs_offset_t savedoffset = pdfi_tell(source);
 
         mask_size = pdfi_get_image_data_size((gs_data_image_t *)&t3image.MaskDict, 1);
+        mask_linelen = pdfi_get_image_line_size((gs_data_image_t *)&t3image.MaskDict, 1);
         
         pdfi_seek(ctx, source, mask_dict->stream_offset, SEEK_SET);
         mask_buffer = gs_alloc_bytes(ctx->memory, mask_size, "pdfi_do_image (mask_buffer)");
+        if (!mask_buffer) {
+            code = gs_note_error(gs_error_VMerror);
+            goto cleanupExit;
+        }
 
         /* Setup the data stream for the mask data */
         code = pdfi_filter(ctx, mask_dict, source, &mask_stream, false);
@@ -539,7 +572,8 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
 
     /* Render the image */
-    code = pdfi_render_image(ctx, pim, new_stream, mask_buffer, mask_size,
+    code = pdfi_render_image(ctx, pim, new_stream,
+                             mask_buffer, mask_size, mask_linelen,
                              comps, image_info.ImageMask);
     if (code < 0)
         goto cleanupExit;
