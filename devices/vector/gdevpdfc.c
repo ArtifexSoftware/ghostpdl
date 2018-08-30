@@ -847,13 +847,7 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
                         cos_c_string_value(pvalue, pcsn->DeviceGray);
                         return 0;
                     case 3:
-                        if (pcs->cmm_icc_profile_data->islab) {
-                            if (pdev->ForOPDFRead) {
-                                return_error(gs_error_rangecheck);
-                            }
-                        } else {
-                            cos_c_string_value(pvalue, pcsn->DeviceRGB);
-                        }
+                        cos_c_string_value(pvalue, pcsn->DeviceRGB);
                         return 0;
                     case 4:
                         cos_c_string_value(pvalue, pcsn->DeviceCMYK);
