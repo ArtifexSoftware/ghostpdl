@@ -242,7 +242,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
  */
 static int
 pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_stream,
-                  unsigned char *mask_buffer, uint64_t mask_size, uint64_t mask_linelen,
+                  unsigned char *mask_buffer, uint64_t mask_size,
                   int comps, bool ImageMask)
 {
     int code;
@@ -250,8 +250,9 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
     gs_image_enum *penum = NULL;
     //    unsigned char Buffer[1024];
     byte *buffer = NULL;
-    uint64_t linelen;
-    uint64_t curline, Height;
+    uint64_t linelen, bytesleft;
+    gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
+    int main_plane, mask_plane;
     
     penum = gs_image_enum_alloc(ctx->memory, "pdfi_render_image (gs_image_enum_alloc)");
     if (!penum) {
@@ -291,34 +292,33 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
             goto cleanupExit;
     }
     
-    /* Data for mask is first (if any) */
-#if 0
+    /* NOTE: I used image_file_continue() as my template for this code.
+     * But this case is (hopefully) much much simpler.
+     * We only handle two situations -- if there is mask_data, then we assume there are two planes.
+     * If no mask_data, then there is one plane.
+     */
     if (mask_buffer) {
-        uint count, used, index;
-
-        count = (uint)mask_size;
-        index = 0;
-        do {
-            if ((code = gs_image_next(penum, (byte *)mask_buffer+index, count, &used)) < 0)
-                goto cleanupExit;
-            count -= used;
-            index += used;
-        } while (count);
+        main_plane = 1;
+        mask_plane = 0;
+        plane_data[mask_plane].data = mask_buffer;
+        plane_data[mask_plane].size = mask_size;
+    } else {
+        main_plane = 0;
     }
-#endif    
-
-    /* Main image */
-    linelen = pdfi_get_image_data_size((gs_data_image_t *)pim, comps);
-    Height = pim->Height;
-    curline = 0;
+    
+    /* Going to feed the data one line at a time.  
+     * This isn't required by gs_image_next_planes(), but it might make things simpler.
+     */
+    linelen = pdfi_get_image_line_size((gs_data_image_t *)pim, comps);
+    bytesleft = pdfi_get_image_data_size((gs_data_image_t *)pim, comps);
     buffer = gs_alloc_bytes(ctx->memory, linelen, "pdfi_render_image (buffer)");
     if (!buffer) {
         code = gs_note_error(gs_error_VMerror);
         goto cleanupExit;
     }
-    for (curline = 0; curline < Height; curline++) {
-        uint count, used, index;
-
+    while (bytesleft > 0) {
+        uint used[GS_IMAGE_MAX_COMPONENTS];
+        
         code = pdfi_read_bytes(ctx, buffer, 1, linelen, image_stream);
         if (code < 0) {
             goto cleanupExit;
@@ -327,16 +327,20 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
             code = gs_note_error(gs_error_limitcheck);
             goto cleanupExit;
         }
-        count = linelen;
-
-        index = 0;
-        do {
-            code = gs_image_next(penum, buffer + index, count, &used);
-            if (code < 0)
-                goto cleanupExit;
-            count -= used;
-            index += used;
-        } while (count);
+        
+        plane_data[main_plane].data = buffer;
+        plane_data[main_plane].size = linelen;
+        
+        code = gs_image_next_planes(penum, plane_data, used);
+        if (code < 0) {
+            goto cleanupExit;
+        }
+        /* TODO: Deal with case where it didn't consume all the data
+         * Maybe this will never happen when I feed a line at a time?
+         * Does it always consume all the mask data?
+         * (I am being lazy and waiting for a sample file that doesn't work...)
+         */
+        bytesleft -= used[main_plane];
     }
 
     code = 0;
@@ -414,7 +418,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     pdf_dict *mask_dict = NULL;
     pdf_array *mask_array = NULL;
     unsigned char *mask_buffer = NULL;
-    uint64_t mask_size = 0, mask_linelen = 0;
+    uint64_t mask_size = 0;
     
     memset(&mask_info, 0, sizeof(mask_info));
 
@@ -516,12 +520,14 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     if (code < 0)
         goto cleanupExit;
 
-    /* Grab the mask_image data buffer in advance */
+    /* Grab the mask_image data buffer in advance.
+     * Doing it this way because I don't want to muck with reading from
+     * two streams simultaneously -- not even sure that is feasible?
+     */
     if (mask_dict) {
         gs_offset_t savedoffset = pdfi_tell(source);
 
         mask_size = pdfi_get_image_data_size((gs_data_image_t *)&t3image.MaskDict, 1);
-        mask_linelen = pdfi_get_image_line_size((gs_data_image_t *)&t3image.MaskDict, 1);
         
         pdfi_seek(ctx, source, mask_dict->stream_offset, SEEK_SET);
         mask_buffer = gs_alloc_bytes(ctx->memory, mask_size, "pdfi_do_image (mask_buffer)");
@@ -573,7 +579,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     /* Render the image */
     code = pdfi_render_image(ctx, pim, new_stream,
-                             mask_buffer, mask_size, mask_linelen,
+                             mask_buffer, mask_size,
                              comps, image_info.ImageMask);
     if (code < 0)
         goto cleanupExit;
