@@ -97,29 +97,20 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h2><a name="Version9.23"></a>Version 9.24 (2018-08-28)</h2>
-
-<p>This is the seventeenth full release in the stable 9.x series.
+<h2><a name="Version9.24"></a>Version 9.24 (2018-08-30)</h2>
 
 <p> Highlights in this release include:
 <ul>
 <li>
-<p>Ghostscript now has a family of 'pdfimage' devices (pdfimage8, pdfimage24 and pdfimage32)
-which produce rendered output wrapped up as an image in a PDF. Additionally, there is a 'pclm'
-device which produces PCLm format output.
+<p>Security issues have been the primary focus of this release, including solving
+several (well publicised) real and potential exploits.
+<br>
+<p> <big><u><b>PLEASE NOTE:</b> We <b>strongly</b> urge users to upgrade to this latest
+release to avoid these issues.</u></big>
 </li>
 <li>
-<p>There is now a ColorAccuracy parameter allowing the user to decide between speed or accuracy
-in ICC color transforms.
-</li>
-<li>
-<p>JPEG Passthrough: devices which support it can now receive the 'raw' JPEG stream from the
-interpreter. The main use of this is the pdfwrite/ps2write family of devices that can now
-take JPEG streams from the input file(s) and write them unchanged to the output (thus avoiding
-additional quantization effects).
-</li>
-<li>
-<p>PDF transparency performance improvements
+<p>As well as Ghostscript itself, jbig2dec has had a significant amount of work improving
+its robustness in the face of out specification files.
 </li>
 <li>
 <p>IMPORTANT: We are in the process of forking LittleCMS. LCMS2 is not thread safe, and
@@ -129,25 +120,19 @@ will maintain compatibility between Ghostscript and LCMS2 for a time, but not in
 Our fork will be available as its own package separately from Ghostscript (and MuPDF).
 </li>
 <li>
-<p>We have continued the focus on code hygiene in this release cleaning up security issues,
-ignored return values, and compiler warnings.
-</li>
-<li>
 <p>The usual round of bug fixes, compatibility changes, and incremental improvements.
 </li>
 </ul>
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 
-<h3><a name="9.23_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="9.24_Incompatible_changes"></a>Incompatible changes</h3>
 <ul>
 <li>
-<p>
-The planned device API tidy has, unfortunately, been indefinitely postponed, until
-appropriate resources are available.
+<p>None
 </li>
 </ul>
-<h3><a name="9.22_changelog"></a>Changelog</h3>
+<h3><a name="9.24_changelog"></a>Changelog</h3>
 
 <p>See the <a href="History9.htm">history file</a> for complete log 
 of changes.
@@ -172,7 +157,7 @@ or contact Artifex Software, Inc.,  1305 Grant Avenue - Suite 200,
 Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.24, 28 August 2018
+<small>Ghostscript version 9.24, 30 August 2018
 
 <!-- [3.0 end visible trailer] ============================================= -->
 	
