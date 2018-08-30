@@ -107,6 +107,38 @@ pdfi_get_image_line_size(gs_data_image_t *pim, int comps)
     return size;
 }
 
+/* Find first dictionary in array that contains "/DefaultForPrinting true" */
+static pdf_dict *
+pdfi_find_alternate(pdf_context *ctx, pdf_obj *alt)
+{
+    pdf_array *array;
+    pdf_obj *item;
+    pdf_dict *alt_dict;
+    int i;
+    int code;
+    bool flag;
+    
+    if (alt->type != PDF_ARRAY)
+        return NULL;
+    
+    array = (pdf_array *)alt;
+    for (i=0; i<array->size;i++) {
+        item = array->values[i];
+        if (item->type != PDF_DICT)
+            continue;
+        code = pdfi_dict_get_bool(ctx, (pdf_dict *)item, "DefaultForPrinting", &flag);
+        if (code != 0 || !flag)
+            continue;
+        code = pdfi_dict_get(ctx, (pdf_dict *)item, "Image", (pdf_obj **)&alt_dict);
+        if (code != 0)
+            continue;
+        if (alt_dict->type != PDF_DICT)
+            continue;
+        return alt_dict;
+    }
+    return NULL;
+}
+
 /* Get image info out of dict into more convenient form, enforcing some requirements from the spec */
 static int
 pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *info)
@@ -401,19 +433,25 @@ pdfi_data_image_params(pdf_context *ctx, pdfi_image_info_t *info, gs_data_image_
     return code;
 }
 
+/* NOTE: "source" is the current input stream.
+ * on exit:
+ *  inline_image = TRUE, stream it will point to after the image data.
+ *  inline_image = FALSE, stream position undefined.
+ */
 static int
 pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_dict *image_dict,
               pdf_stream *source, bool inline_image)
 {
     pdf_stream *new_stream = NULL;
     pdf_stream *mask_stream = NULL;
-    int i, code, comps = 0;
+    int code, comps = 0;
     bool flush = false;
     gs_color_space  *pcs = NULL;
     gs_image1_t t1image;
     gs_image4_t t4image;
     gs_image3_t t3image;
     gs_pixel_image_t *pim;
+    pdf_dict *alt_dict = NULL;
     pdfi_image_info_t image_info, mask_info;
     pdf_dict *mask_dict = NULL;
     pdf_array *mask_array = NULL;
@@ -426,13 +464,23 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     if (code < 0)
         goto cleanupExit;
 
-    /* TODO: Handle Alternates */
+    /* If there is an alternate, swap it in */
     /* If image_info.Alternates, look in the array, see if any of them are flagged as "DefaultForPrinting"
      * and if so, substitute that one for the image we are processing.
      * (it can probably be either an array, or a reference to an array, need an example to test/implement)
      * see p.274 of PDFReference.pdf
      */
     
+    if (image_info.Alternates != NULL) {
+        alt_dict = pdfi_find_alternate(ctx, image_info.Alternates);
+        if (alt_dict != NULL) {
+            image_dict = alt_dict;
+            pdfi_free_image_info_components(&image_info);
+            code = pdfi_get_image_info(ctx, image_dict, &image_info);
+            if (code < 0)
+                goto cleanupExit;
+        }
+    }
 
     if (image_info.Mask != NULL) {
         if (image_info.Mask->type == PDF_ARRAY) {
@@ -525,8 +573,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
      * two streams simultaneously -- not even sure that is feasible?
      */
     if (mask_dict) {
-        gs_offset_t savedoffset = pdfi_tell(source);
-
         mask_size = pdfi_get_image_data_size((gs_data_image_t *)&t3image.MaskDict, 1);
         
         pdfi_seek(ctx, source, mask_dict->stream_offset, SEEK_SET);
@@ -544,31 +590,18 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         code = pdfi_read_bytes(ctx, mask_buffer, 1, mask_size, mask_stream);
         if (code < 0)
             goto cleanupExit;
-
-        pdfi_seek(ctx, source, savedoffset, SEEK_SET);
     }
 
     
-    /* Setup the data stream for the image data */
-    code = pdfi_filter(ctx, image_dict, source, &new_stream, inline_image);
-    if (code < 0)
-        goto cleanupExit;
-
     /* Handle null ColorSpace -- this is just swallowing the image data stream and continuing */
     /* TODO: Is this correct or should we flag error? */
     if (flush) {
         if (inline_image) {
             int total;
-            byte c;
 
             total = pdfi_get_image_data_size((gs_data_image_t *)pim, comps);
+            pdfi_seek(ctx, source, image_dict->stream_offset + total, SEEK_SET);
 
-            for (i=0;i < total;i++) {
-                code = pdfi_read_bytes(ctx, &c, 1, 1, new_stream);
-                if (code < 0) {
-                    goto cleanupExit;
-                }
-            }
             code = 0; /* TODO: Should we flag an error instead of silently swallowing? */
             goto cleanupExit;
         } else {
@@ -576,6 +609,13 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             goto cleanupExit;
         }
     }
+
+
+    /* Setup the data stream for the image data */
+    pdfi_seek(ctx, source, image_dict->stream_offset, SEEK_SET);
+    code = pdfi_filter(ctx, image_dict, source, &new_stream, inline_image);
+    if (code < 0)
+        goto cleanupExit;
 
     /* Render the image */
     code = pdfi_render_image(ctx, pim, new_stream,
@@ -593,6 +633,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         pdfi_close_file(ctx, mask_stream);
     if (mask_buffer)
         gs_free_object(ctx->memory, mask_buffer, "pdfi_do_image (mask_buffer)");
+    if (alt_dict) {
+        pdfi_countdown(alt_dict);
+    }
 
     pdfi_free_image_info_components(&image_info);
     pdfi_free_image_info_components(&mask_info);
@@ -675,7 +718,6 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         if (n->length == 5 && memcmp(n->data, "Image", 5) == 0) {
             gs_offset_t savedoffset = pdfi_tell(ctx->main_stream);
 
-            pdfi_seek(ctx, ctx->main_stream, d->stream_offset, SEEK_SET);
             code = pdfi_do_image(ctx, page_dict, stream_dict, d, ctx->main_stream, false);
             pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         } else {
