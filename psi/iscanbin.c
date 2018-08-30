@@ -258,7 +258,7 @@ scan_bos(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
         pstate->s_da.base = pstate->s_da.next =
             pstate->s_da.limit = pstate->s_da.buf;
         code = scan_bos_continue(i_ctx_p, pref, pstate);
-        if (code == scan_Refill || code < 0) {
+        if ((code == scan_Refill || code < 0) && pbs->index < r_size(&pbs->bin_array)) {
             /* Clean up array for GC. */
             uint index = pbs->index;
 
