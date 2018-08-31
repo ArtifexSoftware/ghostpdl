@@ -2298,7 +2298,7 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
                 if (l > 0 && l < sizeof(uc)) {
                     cc = 0;
                     for (i = 0; i < l; i++) {
-                        cc |= uc[i] << ((penum->bytes_decoded - 1) - i) * 8;
+                        cc |= uc[l - 1 - i] << (i * 8);
                     }
                     ccode = cc;
                     unicode_cp = true;
