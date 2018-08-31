@@ -131,9 +131,6 @@ currentdict /gput_always_allow .undef
     %% original TextSaveMatrix behind allows the matching ET not to throw an error, as well as coping
     %% with the various other problems listed above. Its not pretty though.
     currentdict /TextSaveMatrix known {
-      (   **** Error: Encountered a 'q' inside a Text Object, this is illegal.\n)
-      pdfformaterror
-      (               Output may be incorrect..\n) pdfformaterror
       currentdict /TextSaveMatrix get matrix copy
       gsave //nodict begin
       /qTextSaveMatrix gput
