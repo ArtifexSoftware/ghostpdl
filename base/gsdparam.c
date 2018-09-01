@@ -1976,10 +1976,20 @@ label:\
     /* We must 'commit', in order to detect unknown parameters, */
     /* even if there were errors. */
     code = param_commit(plist);
-    if (ecode < 0)
+    if (ecode < 0) {
+        /* restore_page_device (zdevice2.c) will turn off LockSafetyParams, and relies on putparams
+         * to put it back if we are restoring a device. The locksafe value is picked up above from the
+         * device we are restoring to, and we *must* make sure it is preserved, even if setting the
+         * params failed. Otherwise an attacker can use a failed grestore to reset LockSafetyParams.
+         * See bug #699687.
+         */
+        dev->LockSafetyParams = locksafe;
         return ecode;
-    if (code < 0)
+    }
+    if (code < 0) {
+        dev->LockSafetyParams = locksafe;
         return code;
+    }
 
     /*
      * Now actually make the changes. Changing resolution, rotation
