@@ -1073,10 +1073,10 @@ def
 % the values given into an array.  This is consistent with what we see when
 % testing with Adobe Distiller 6.0.
 %   <cyan> <magenta> <yellow> <black> <key> findcmykcustomcolor <array>
-/findcmykcustomcolor { 5 array astore } bind def
+/findcmykcustomcolor { 5 array astore } bind executeonly def
 % The following isn't documented by Adobe, but was found in Adobe Illustrator (R)
 % Version 7.0 Full Prolog
-/findrgbcustomcolor { 4 array astore } bind def
+/findrgbcustomcolor { 4 array astore } bind executeonly def
 
 % Build a tint transform function for use by setcustomcolor.  This function
 % is for a Separation color space which has either a DeviceCMYK base color space
@@ -1105,7 +1105,7 @@ def
     ]
   } ifelse
   cvx bind exch pop		%  Make executable and remove the input array
-} bind def
+} bind executeonly def
 
 % Construct the colorspace array to be used by setcolorspace from the array
 % result of either findcmykcustomcolor or findrgbcustomcolor.
@@ -1125,7 +1125,7 @@ def
     ]
   } ifelse
   exch pop		% remove the input array
-} bind def
+} bind executeonly def
 
 % Set a custom color based upon a tint and array which describes the custom
 % color.  See findcmykcustomcolor.  First we create and then set a Separation
@@ -1134,14 +1134,51 @@ def
 % for some reason, so an alternate operational mode is tolerated:
 % 					    null setcustomcolor -
 /setcustomcolor			% <array> <tint> setcustomcolor -
-{ dup //null ne {
+{
+  dup //null eq {
+    pop pop
+  }{
+    % Check that the tint is a number between 0 and 1
+    dup type dup /integertype eq exch /realtype eq or not {
+      /setcustomcolor /typecheck cvx signalerror
+    } if
+    dup 1 le not {
+      /setcustomcolor /rangecheck cvx signalerror
+    } if
+    dup 0 ge not {
+      /setcustomcolor /rangecheck cvx signalerror
+    } if
+
+    % The array is supposed to be the result of fundcmykcustomcolor. Our
+    % implementation just pushes all the arguments into the array and that's
+    % what buildcolorspacearray expects. So check that now.
+    % Starting with the first N-1 elemenst which must be numbers where 0 <= x <= 1
+    1 index
+    0 1 2 index length 2 sub
+    {
+      1 index exch get dup
+      type dup /integertype eq exch /realtype eq or not {
+        /setcustomcolor /typecheck cvx signalerror
+      } if
+      dup
+      1 le not {
+        /setcustomcolor /rangecheck cvx signalerror
+      } if
+      0 ge not {
+        /setcustomcolor /rangecheck cvx signalerror
+      } if
+    } for
+
+    % Finally, check the last element of the array, which must be a string.
+    dup length 1 sub get type /stringtype eq not {
+      /setcustomcolor /typecheck cvx signalerror
+    } if
+
     exch //buildcolorspacearray exec
     setcolorspace			% Set the Separation color space as current
     setcolor			% Set the tint as the current color
-  }
-  { pop pop }	% 'null' as the tint is ignored. pop tint and array
-  ifelse
-} bind def
+  } ifelse
+} bind executeonly def
 
 % This proc is supposed to implement a version of overprinting. TN 5044 says
 % that this proc is not used by any shipping host-based application. We have
