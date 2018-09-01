@@ -2004,15 +2004,30 @@ systemdict /EPSBoundingBoxInit known { EPSBoundingBoxInit } if
 .currentglobal //true .setglobal
 /SAFETY 2 dict
   dup /safe //false put
-  dup /tempfiles 10 dict readonly put
+  dup /tempfiles 10 dict noaccess put
 readonly def
 .setglobal
+
+/tempfilepaths
+[
+  (TMPDIR) getenv not
+  {
+    (TEMP) getenv not
+    {
+      (TMP) getenv not
+      {
+        (/temp) (/tmp)
+      } if
+    } if
+  } if
+] def
 
 /.locksafe_userparams {
   SAFETY /safe get not {
     <<
       /PermitFileReading [
         currentuserparams /PermitFileReading get aload pop
+        //tempfilepaths aload pop
         /FONTPATH .systemvar (*) .generate_dir_list_templates
           % Library files :
         /LIBPATH  .systemvar (*) .generate_dir_list_templates
@@ -2030,22 +2045,19 @@ readonly def
       ]
       /PermitFileWriting [
           currentuserparams /PermitFileWriting get aload pop
-          (TMPDIR) getenv not
-          {
-            (TEMP) getenv not
-            {
-              (TMP) getenv not
-              {
-                (/temp) (/tmp)
-              } if
-            } if
-          } if
+          //tempfilepaths aload pop
+      ]
+      /PermitFileControl [
+          currentuserparams /PermitFileControl get aload pop
+          //tempfilepaths aload pop
       ]
       /LockFilePermissions //true
     >> setuserparams
   }
   if
 } bind def
+
+currentdict /tempfilepaths undef
 
 /.locksafe {
   .locksafe_userparams
@@ -2107,30 +2119,6 @@ readonly def
   if
   .locksafeglobal
 } bind executeonly odef
-
-/deletefile {
-  dup { deletefile } stopped {
-    pop //deletefile $error /errorname get signalerror
-  } {
-    % deletefile succeeded. Remove from tempfile list if present
-    //SAFETY /tempfiles get exch cvn 2 copy known {
-      .forceundef
-    } {
-      pop pop
-    }
-    ifelse
-  }
-  ifelse
-} .bind executeonly odef
-
-% If a file is opened with .tempfile with SAFER not (yet) set,
-% the file can be deleted later, even if SAFER is set.
-/.tempfile {
-  .tempfile	% filename file
-    //SAFETY /safe get not { % only add the filename if we're not yet safe
-    //SAFETY /tempfiles get 2 .argindex //true .forceput
-  } if
-} .bind executeonly odef
 
 % If we are running in SAFER mode, lock things down
 SAFER { .setsafeglobal } if
