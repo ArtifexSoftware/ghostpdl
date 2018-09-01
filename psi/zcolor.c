@@ -3378,6 +3378,9 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
         pop (1);
     }
 
+    if (pfn == NULL)
+        return_error(gs_error_typecheck);
+
     *stage = 0;
     if ((code = name_ref(imemory, (const byte *)"All", 3, &name_all, 0)) < 0)
         return code;
@@ -6006,8 +6009,10 @@ setcolor_cont(i_ctx_t *i_ctx_p)
          */
         for (i=0;i<=depth;i++) {
             code = get_space_object(i_ctx_p, parr, &obj);
-            if (code < 0)
+            if (code < 0) {
+                esp -= 5;
                 return code;
+            }
 
             if (strcmp(obj->name, "ICCBased") == 0)
                 IsICC = 1;
@@ -6017,17 +6022,23 @@ setcolor_cont(i_ctx_t *i_ctx_p)
                     return_error(gs_error_typecheck);
                 }
                 code = obj->alternateproc(i_ctx_p, parr, &parr, &CIESubst);
-                if (code < 0)
+                if (code < 0) {
+                    esp -= 5;
                     return code;
+                }
             }
         }
         if (obj->runtransformproc) {
             code = obj->runtransformproc(i_ctx_p, &istate->colorspace[0].array, &usealternate, &stage, &stack_depth);
             make_int(&ep[-3], stack_depth);
             make_int(&ep[-1], stage);
-            if (code != 0) {
+            if (code < 0) {
+                esp -= 5;
                 return code;
             }
+            if (code != 0)
+                return code;
+
             make_int(&ep[-2], ++depth);
             if (!usealternate)
                 break;
@@ -6041,8 +6052,10 @@ setcolor_cont(i_ctx_t *i_ctx_p)
      */
     if (IsICC && depth == 0) {
         code = gx_set_dev_color(i_ctx_p->pgs);
-        if (code < 0)
+        if (code < 0) {
+            esp -= 5;
             return code;
+        }
     }
 
     /* Remove our next continuation and our data */
@@ -6096,16 +6109,20 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
          */
         for (i = 0;i < depth;i++) {
             code = get_space_object(i_ctx_p, parr, &obj);
-            if (code < 0)
+            if (code < 0) {
+                esp -= 5;
                 return code;
+            }
 
             if (i < (depth - 1)) {
                 if (!obj->alternateproc) {
                     return_error(gs_error_typecheck);
                 }
                 code = obj->alternateproc(i_ctx_p, parr, &parr, &CIESubst);
-                if (code < 0)
+                if (code < 0) {
+                    esp -= 5;
                     return code;
+                }
             }
         }
 
