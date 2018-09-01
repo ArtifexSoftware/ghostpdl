@@ -35,6 +35,7 @@
 #include "iname.h"
 #include "isave.h"              /* for restore */
 #include "idict.h"
+#include "iddict.h"
 #include "iutil.h"
 #include "stream.h"
 #include "strimpl.h"
@@ -312,6 +313,28 @@ file_is_tempfile(i_ctx_t *i_ctx_p, const uchar *fname, int len)
     return true;
 }
 
+static int
+record_file_is_tempfile(i_ctx_t *i_ctx_p, const uchar *fname, int len, bool add)
+{
+    ref *SAFETY;
+    ref *tempfiles;
+    ref kname, bref;
+    int code = 0;
+
+    if (dict_find_string(systemdict, "SAFETY", &SAFETY) <= 0 ||
+            dict_find_string(SAFETY, "tempfiles", &tempfiles) <= 0) {
+        return 0;
+    }
+    if ((code = name_ref(imemory, fname, len, &kname, 1)) < 0) {
+        return code;
+    }
+    make_bool(&bref, true);
+    if (add)
+        return idict_put(tempfiles, &kname, &bref);
+    else
+        return idict_undef(tempfiles, &kname);
+}
+
 /* ------ Level 2 extensions ------ */
 
 /* <string> deletefile - */
@@ -321,17 +344,22 @@ zdeletefile(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_parsed_file_name_t pname;
     int code = parse_real_file_name(op, &pname, imemory, "deletefile");
+    bool is_temp = false;
 
     if (code < 0)
         return code;
     if (pname.iodev == iodev_default(imemory)) {
         if ((code = check_file_permissions(i_ctx_p, pname.fname, pname.len,
                 pname.iodev, "PermitFileControl")) < 0 &&
-                 !file_is_tempfile(i_ctx_p, op->value.bytes, r_size(op))) {
+                 !(is_temp = file_is_tempfile(i_ctx_p, op->value.bytes, r_size(op)))) {
             return code;
         }
     }
     code = (*pname.iodev->procs.delete_file)(pname.iodev, pname.fname);
+
+    if (code >= 0 && is_temp)
+        code = record_file_is_tempfile(i_ctx_p, (unsigned char *)pname.fname, strlen(pname.fname), false);
+
     gs_free_file_name(&pname, "deletefile");
     if (code < 0)
         return code;
@@ -797,6 +825,7 @@ ztempfile(i_ctx_t *i_ctx_p)
     }
     make_string(op - 1, a_readonly | icurrent_space, fnlen, sbody);
     make_stream_file(op, s, fmode);
+    code = record_file_is_tempfile(i_ctx_p, (unsigned char *)fname, fnlen, true);
 
 done:
     if (prefix)
