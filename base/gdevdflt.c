@@ -1331,7 +1331,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
 {
     gx_device *child_dev;
     void *psubclass_data;
-    gs_memory_struct_type_t *a_std, *b_std;
+    gs_memory_struct_type_t *a_std, *b_std = NULL;
     int dynamic = dev_to_subclass->stype_is_dynamic;
     char *ptr, *ptr1;
 
