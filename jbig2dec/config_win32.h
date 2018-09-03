@@ -21,7 +21,7 @@
 
 /* update package version here */
 #define PACKAGE "jbig2dec"
-#define VERSION "0.14"
+#define VERSION "0.15"
 
 #ifdef _MSC_VER
 

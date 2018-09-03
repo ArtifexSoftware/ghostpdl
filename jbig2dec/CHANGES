@@ -1,3 +1,8 @@
+Version 0.15 (2018 September 04)
+
+* Bug fix release, with many security related and stability fixes
+  as well as better tolerance/behaviour with out of spec files
+
 Version 0.14 (2017 October 04)
 
 * Bug fix release.
