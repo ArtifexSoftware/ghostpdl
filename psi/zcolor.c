@@ -3720,12 +3720,15 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
 
         if (stage == 0) {
             code = gs_gsave(igs);
-            if (code < 0)
+            if (code < 0) {
+                esp -= 4;
                 return code;
+            }
 
             code = validate_spaces(i_ctx_p, &space[1], &depth);
             if (code < 0) {
                 (void)gs_grestore(igs);
+                esp -= 4;
                 return code;
             }
 
@@ -3743,6 +3746,7 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
             code = zsetcolorspace(i_ctx_p);
             if (code < 0) {
                 (void)gs_grestore(igs);
+                esp -= 4;
                 return code;
             } else
                 return code;
@@ -3754,6 +3758,7 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
                     code = name_from_string(imemory, &space[0], &sname);
                     if (code < 0){
                         (void)gs_grestore(igs);
+                        esp -= 4;
                         return code;
                     }
                     sep_name = name_index(imemory, &sname);
@@ -3772,8 +3777,10 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
             gs_attachattributecolorspace(sep_name, igs);
 
             code = gs_grestore(igs);
-            if (code < 0)
+            if (code < 0) {
+                esp -= 4;
                 return code;
+            }
         }
     }
     while(1);
@@ -4348,8 +4355,10 @@ indexed_cont(i_ctx_t *i_ctx_p)
         int m = (int)ep[csme_num_components].value.intval;
         int code = float_params(op, m, &r_ptr(&ep[csme_map], gs_indexed_map)->values[i * m]);
 
-        if (code < 0)
+        if (code < 0) {
+            esp -= num_csme;
             return code;
+        }
         pop(m);
         op -= m;
         if (i == (int)ep[csme_hival].value.intval) {	/* All done. */
@@ -6116,6 +6125,7 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
 
             if (i < (depth - 1)) {
                 if (!obj->alternateproc) {
+                    esp -= 5;
                     return_error(gs_error_typecheck);
                 }
                 code = obj->alternateproc(i_ctx_p, parr, &parr, &CIESubst);
@@ -6199,15 +6209,25 @@ setdevicecolor_cont(i_ctx_t *i_ctx_p)
                         code = name_enter_string(imemory, "DeviceCMYK", op);
                         break;
                 }
-                if (code < 0)
+                if (code < 0) {
+                    esp -= 3;
                     return code;
+                }
                 code = zsetcolorspace(i_ctx_p);
+                if (code < 0) {
+                    esp -= 3;
+                    return code;
+                }
                 if (code != 0)
                     return code;
                 break;
             case 1:
                 make_int(pstage, ++stage);
                 code = zsetcolor(i_ctx_p);
+                if (code < 0) {
+                    esp -= 3;
+                    return code;
+                }
                 if (code != 0)
                     return code;
                 break;
@@ -6408,8 +6428,10 @@ currentbasecolor_cont(i_ctx_t *i_ctx_p)
     /* This shouldn't be possible, all the procedures which call this should
      * set the depth to at *least* 1.
      */
-    if (depth < 1)
+    if (depth < 1) {
+        esp -= 7;
         return_error(gs_error_unknownerror);
+    }
 
     /* If we get a continuation from a sub-procedure, we will want to come back
      * here afterward, to do any remaining stages. We need to set up for that now.
@@ -6427,16 +6449,21 @@ currentbasecolor_cont(i_ctx_t *i_ctx_p)
          */
         for (i = 0;i < depth;i++) {
             code = get_space_object(i_ctx_p, parr, &obj);
-            if (code < 0)
+            if (code < 0) {
+                esp -= 7;
                 return code;
+            }
 
             if (i < (depth - 1)) {
                 if (!obj->alternateproc) {
+                    esp -= 7;
                     return_error(gs_error_typecheck);
                 }
                 code = obj->alternateproc(i_ctx_p, parr, &parr, &CIESubst);
-                if (code < 0)
+                if (code < 0) {
+                    esp -= 7;
                     return code;
+                }
             }
         }
 
