@@ -51,7 +51,7 @@ gs_program_family_name(void)
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-        GS_PRODUCTFAMILY " Release Candidate 2"
+        GS_PRODUCTFAMILY ""
 #endif
 const char *const gs_product = GS_PRODUCT;
 
