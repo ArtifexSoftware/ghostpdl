@@ -2176,7 +2176,7 @@ SAFER { .setsafeglobal } if
 
   %% This list of operators are used internally by various parts of the Ghostscript startup code.
   %% Since each operator is a potential security vulnerability, and any operator listed here
-  %% is not required once the initislisation is complete and functions are bound, we undefine
+  %% is not required once the initialisation is complete and functions are bound, we undefine
   %% the ones that aren't needed at runtime.
   [
   /.callinstall /.callbeginpage /.callendpage
@@ -2207,7 +2207,7 @@ SAFER { .setsafeglobal } if
   % scanner and SQL database lookup. Its not clear to us exactly why this needs to be
   % done as a partial page, but its easiest to restore the operator, and it seems like
   % its a reasonably safe operator to restore, for the *very* few devices on which
-  % it will have any effect. Currently this uses the 'sync_outptu' device method
+  % it will have any effect. Currently this uses the 'sync_output' device method
   % to transfer the partial page, in future we may use a spec_op instead.
   %/flushpage
 
