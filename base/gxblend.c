@@ -2285,12 +2285,7 @@ pdf14_compose_alphaless_group(pdf14_buf *tos, pdf14_buf *nos,
                     "bImageTOS",tos_ptr);
     dump_raw_buffer(y1-y0, width, nos->n_planes, nos_planestride, nos->rowstride,
                     "cImageNOS",nos_ptr);
-    if (maskbuf !=NULL && maskbuf->data != NULL) {
-        dump_raw_buffer(maskbuf->rect.q.y - maskbuf->rect.p.y,
-                        maskbuf->rect.q.x - maskbuf->rect.p.x, maskbuf->n_planes,
-                        maskbuf->planestride, maskbuf->rowstride, "dMask",
-                        maskbuf->data);
-    }
+    /* maskbuf is NULL in here */
 #endif
 
     /* You might hope that has_mask iff maskbuf != NULL, but this is
@@ -2308,7 +2303,7 @@ pdf14_compose_alphaless_group(pdf14_buf *tos, pdf14_buf *nos,
         code += (!!tos_has_tag)<<4;
         code += (!!additive)<<5;
         code += (!!overprint)<<6;
-        code += (!!has_mask || maskbuf != NULL)<<7;
+        code += (!!has_mask)<<7;
         code += (backdrop_ptr != NULL)<<9;
         code += (num_spots != 0)<<10;
         code += blend_mode<<11;
