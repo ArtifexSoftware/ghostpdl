@@ -1860,7 +1860,7 @@ $(DD)pwgraster.dev : $(lcups_dev) $(lcupsi_dev) $(cups_) $(GDEV) \
 	$(ADDMOD) $(DD)pwgraster -include $(lcups_dev)
 	$(ADDMOD) $(DD)pwgraster -include $(lcupsi_dev)
 
-$(DEVOBJ)gdevcups.$(OBJ) : $(LCUPSSRCDIR)$(D)gdevcups.c $(std_h) $(DEVS_MAK) $(MAKEDIRS)
+$(DEVOBJ)gdevcups.$(OBJ) : $(LCUPSSRCDIR)$(D)gdevcups.c $(std_h) $(gxdevsop_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(CUPS_CC) $(DEVO_)gdevcups.$(OBJ) $(C_) $(CFLAGS) $(CUPSCFLAGS) \
 	    $(I_)$(GLSRC) \
 	    $(I_)$(DEVSRC) \

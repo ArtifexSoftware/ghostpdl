@@ -70,6 +70,7 @@
 #include "std.h"                /* to stop stdlib.h redefining types */
 #include "gdevprn.h"
 #include "gsparam.h"
+#include "gxdevsop.h"
 #include "arch.h"
 #include "gsicc_manage.h"
 
@@ -252,6 +253,7 @@ private int cups_put_params(gx_device *, gs_param_list *);
 private int cups_set_color_info(gx_device *);
 private dev_proc_sync_output(cups_sync_output);
 private prn_dev_proc_get_space_params(cups_get_space_params);
+private int cups_spec_op(gx_device *dev_, int op, void *data, int datasize);
 
 #ifdef dev_t_proc_encode_color
 private cm_map_proc_gray(cups_map_gray);
@@ -392,7 +394,7 @@ private gx_device_procs	cups_procs =
    NULL,				/* push_transparency_state */
    NULL,				/* pop_transparency_state */
    NULL,                                /* put_image */
-
+   cups_spec_op
 };
 
 #define prn_device_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_pages)\
@@ -5927,6 +5929,17 @@ cups_print_planar(gx_device_printer *pdev,
   return (0);
 }
 
+private int
+cups_spec_op(gx_device *dev_, int op, void *data, int datasize)
+{
+    /* Although not strictly DeviceN, the range of color models
+       this device supports presets similar issues.
+     */
+    if (op == gxdso_supports_devn) {
+        return true;
+    }
+    return gx_default_dev_spec_op(dev_, op, data, datasize);
+}
 
 /*
  */
