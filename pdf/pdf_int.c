@@ -576,7 +576,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_stream *s)
                 }
             }
         }
-        if (index++ > 256)
+        if (++index > 255)
             return_error(gs_error_syntaxerror);
     } while(1);
 
