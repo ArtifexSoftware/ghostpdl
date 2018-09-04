@@ -539,6 +539,7 @@ gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache,
                 /* this is probably a fatal error. MV ???					*/
                 if (curr->valid == false) {
                     emprintf1(curr->memory, "link 0x%p lock released, but still not valid.\n", curr);	/* Breakpoint here */
+                    return NULL;
                 }
                 gx_monitor_enter(icc_link_cache->lock);	/* re-enter to loop and check */
 #endif
@@ -886,6 +887,7 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
 {
     gs_memory_t *cache_mem = icc_link_cache->memory;
     gsicc_link_t *link;
+    int retries = 0;
 
     *ret_link = NULL;
     /* First see if we can add a link */
@@ -912,6 +914,8 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
 #endif
             /* we will re-test the num_links above while locked to insure */
             /* that some other thread didn't grab the slot and max us out */
+            if (retries++ > 10)
+                return false;
         }
         /* Remove the zero ref_count link profile we found.		*/
         /* Even if we remove this link, we may still be maxed out so	*/
