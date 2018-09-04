@@ -95,12 +95,19 @@ level2dict begin
  {	% Since setpagedevice doesn't create new device objects,
         % we must (carefully) reinstall the old parameters in
         % the same device.
-   .currentpagedevice pop //null currentdevice //null .trysetparams
+   .currentpagedevice pop //null currentdevice //null
+   {.trysetparams} .internalstopped
+   {
+     //null
+   } if
    dup type /booleantype eq
     { pop pop }
-    {		% This should never happen!
+    {
       SETPDDEBUG { (Error in .trysetparams!) = pstack flush } if
       cleartomark pop pop pop
+      % if resetting the entire device state failed, at least put back the se
+      currentdevice //null //false mark /.LockSafetyParams .currentpagedevice pop
+      /.LockSafetyParams .knownget not {//false} if .putdeviceparamsonly
       /.installpagedevice cvx /rangecheck signalerror
     }
    ifelse pop pop
