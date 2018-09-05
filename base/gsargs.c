@@ -244,12 +244,17 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
                                    "arg_next");
                 /* If depth is 0, then we are reading from the simple
                  * argument list and we just hit an "empty" argument
-                 * (such as -o ""). Just ignore it and look for the next
-                 * one. If depth > 0, then we're reading from a response
-                 * file, and we can't have empty arguments - so we've
-                 * hit the end of the response file. Pop up one level. */
-                if (pal->depth > 0)
-                    pal->depth--;
+                 * (such as -o ""). Return this. */
+                if (pal->depth == 0)
+                {
+                    *argstr = pal->cstr;
+                    pal->cstr[0] = 0;
+                    break;
+                }
+                /* If depth > 0, then we're reading from a response
+                 * file, and we've hit the end of the response file.
+                 * Pop up one level and continue. */
+                pal->depth--;
                 continue; /* Next argument */
             }
     #define is_eol(c) (c == '\r' || c == '\n')

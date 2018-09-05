@@ -1119,6 +1119,11 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                             break;
                     } else
                         adef = arg;
+                    if (adef == NULL)
+                    {
+                        code = gs_error_undefinedfilename;
+                        break;
+                    }
                     param_string_from_transient_string(str, adef);
                     code =
                         param_write_string((gs_param_list *) params,

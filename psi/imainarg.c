@@ -429,7 +429,7 @@ run_stdin:
 
                 if (code < 0)
                     return gs_error_Fatal;
-                if (psarg == 0) {
+                if (psarg == NULL) {
                     outprintf(minst->heap, "Usage: gs ... -%c file.ps arg1 ... argn\n", sw);
                     arg_finit(pal);
                     return gs_error_Fatal;
@@ -504,7 +504,7 @@ run_stdin:
                 }
                 if (code < 0)
                     return gs_error_Fatal;
-                if (arg != 0) {
+                if (arg != NULL) {
                     char *p = arg_copy(arg, minst->heap);
                     if (p == NULL)
                         return gs_error_Fatal;
