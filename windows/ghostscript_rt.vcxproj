@@ -460,7 +460,6 @@
     <ClCompile Include="..\base\gp_stdia.c" />
     <ClCompile Include="..\base\gp_stdin.c" />
     <ClCompile Include="..\base\gp_strdl.c" />
-    <ClCompile Include="..\base\gp_sysv.c" />
     <ClCompile Include="..\base\gp_unifn.c" />
     <ClCompile Include="..\base\gp_unifs.c" />
     <ClCompile Include="..\base\gp_unix.c" />

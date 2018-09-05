@@ -1942,10 +1942,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\base\gp_sysv.c"
-				>
-			</File>
-			<File
 				RelativePath="..\base\gp_unifn.c"
 				>
 			</File>

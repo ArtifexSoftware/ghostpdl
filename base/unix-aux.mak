@@ -54,16 +54,6 @@ $(AUX)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
   $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h) $(UNIX_AUX_MAK) $(MAKEDIRS)
 	$(GLCCAUX) $(AUXO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
 
-# System V platforms other than SVR4, which lack some system calls,
-# but have pipes.
-sysv__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_upapr.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_sysv.$(OBJ) $(GLOBJ)gp_nxpsprn.$(OBJ)
-$(GLGEN)sysv_.dev: $(sysv__) $(GLD)nosync.dev $(UNIX_AUX_MAK) $(MAKEDIRS)
-	$(SETMOD) $(GLGEN)sysv_ $(sysv__) -include $(GLD)nosync
-
-$(GLOBJ)gp_sysv.$(OBJ): $(GLSRC)gp_sysv.c $(stdio__h) $(time__h) $(AK)\
- $(UNIX_AUX_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gp_sysv.$(OBJ) $(C_) $(GLSRC)gp_sysv.c
-
 # -------------------------- Auxiliary programs --------------------------- #
 
 $(ECHOGS_XE): $(GLSRC)echogs.c $(AK) $(stdpre_h) $(UNIX_AUX_MAK) $(MAKEDIRS)
