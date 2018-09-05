@@ -105,7 +105,8 @@ level2dict begin
     {
       SETPDDEBUG { (Error in .trysetparams!) = pstack flush } if
       cleartomark pop pop pop
-      % if resetting the entire device state failed, at least put back the se
+      % if resetting the entire device state failed, at least put back the
+      % security related key
       currentdevice //null //false mark /.LockSafetyParams .currentpagedevice pop
       /.LockSafetyParams .knownget not {//false} if .putdeviceparamsonly
       /.installpagedevice cvx /rangecheck signalerror
