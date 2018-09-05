@@ -96,7 +96,7 @@ level2dict begin
         % we must (carefully) reinstall the old parameters in
         % the same device.
    .currentpagedevice pop //null currentdevice //null
-   {.trysetparams} .internalstopped
+   { .trysetparams } .internalstopped
    {
      //null
    } if
@@ -104,26 +104,32 @@ level2dict begin
     { pop pop }
     {
       SETPDDEBUG { (Error in .trysetparams!) = pstack flush } if
-      cleartomark pop pop pop
+      {cleartomark pop pop pop} .internalstopped pop
       % if resetting the entire device state failed, at least put back the
       % security related key
-      currentdevice //null //false mark /.LockSafetyParams .currentpagedevice pop
-      /.LockSafetyParams .knownget not {//false} if .putdeviceparamsonly
+      currentdevice //null //false mark /.LockSafetyParams
+      currentpagedevice /.LockSafetyParams .knownget not
+      {systemdict /SAFER .knownget not {//false} } if
+      .putdeviceparamsonly
       /.installpagedevice cvx /rangecheck signalerror
     }
    ifelse pop pop
         % A careful reading of the Red Book reveals that an erasepage
         % should occur, but *not* an initgraphics.
    erasepage .beginpage
- } bind def
+ } bind executeonly def
 
 /.uninstallpagedevice
- { 2 .endpage { .currentnumcopies //false .outputpage } if
+ {
+   {2 .endpage { .currentnumcopies //false .outputpage } if} .internalstopped pop
    nulldevice
  } bind def
 
 (%grestorepagedevice) cvn
- { .uninstallpagedevice grestore .installpagedevice
+ {
+ .uninstallpagedevice
+ grestore
+ .installpagedevice
  } bind def
 
 (%grestoreallpagedevice) cvn
