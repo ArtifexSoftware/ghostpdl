@@ -312,9 +312,6 @@ swproc(gs_main_instance * minst, const char *arg, arg_list * pal)
     char sw = arg[1];
     ref vtrue;
     int code = 0;
-#undef initial_enter_name
-#define initial_enter_name(nstr, pvalue)\
-  i_initial_enter_name(minst->i_ctx_p, nstr, pvalue)
 
     make_true(&vtrue);
     arg += 2;                   /* skip - and letter */
@@ -603,10 +600,10 @@ run_stdin:
                     return gs_error_Fatal;
                 }
                 make_int(&value, width);
-                initial_enter_name("DEVICEWIDTH", &value);
+                i_initial_enter_name(minst->i_ctx_p, "DEVICEWIDTH", &value);
                 make_int(&value, height);
-                initial_enter_name("DEVICEHEIGHT", &value);
-                initial_enter_name("FIXEDMEDIA", &vtrue);
+                i_initial_enter_name(minst->i_ctx_p, "DEVICEHEIGHT", &value);
+                i_initial_enter_name(minst->i_ctx_p, "FIXEDMEDIA", &vtrue);
                 break;
             }
         case 'h':               /* print help */
@@ -705,9 +702,9 @@ run_stdin:
                 memcpy(str, adef, len);
                 make_const_string(&value, a_readonly | avm_system, len, str);
                 ialloc_set_space(idmemory, space);
-                initial_enter_name("OutputFile", &value);
-                initial_enter_name("NOPAUSE", &vtrue);
-                initial_enter_name("BATCH", &vtrue);
+                i_initial_enter_name(minst->i_ctx_p, "OutputFile", &value);
+                i_initial_enter_name(minst->i_ctx_p, "NOPAUSE", &vtrue);
+                i_initial_enter_name(minst->i_ctx_p, "BATCH", &vtrue);
             }
             break;
         case 'P':               /* choose whether search '.' first */
@@ -723,7 +720,7 @@ run_stdin:
         case 'q':               /* quiet startup */
             if ((code = gs_main_init1(minst)) < 0)
                 return code;
-            initial_enter_name("QUIET", &vtrue);
+            i_initial_enter_name(minst->i_ctx_p, "QUIET", &vtrue);
             break;
         case 'r':               /* define device resolution */
             {
@@ -741,10 +738,10 @@ run_stdin:
                         /* fall through */
                     case 2:     /* -r<xres>x<yres> */
                         make_real(&value, xres);
-                        initial_enter_name("DEVICEXRESOLUTION", &value);
+                        i_initial_enter_name(minst->i_ctx_p, "DEVICEXRESOLUTION", &value);
                         make_real(&value, yres);
-                        initial_enter_name("DEVICEYRESOLUTION", &value);
-                        initial_enter_name("FIXEDRESOLUTION", &vtrue);
+                        i_initial_enter_name(minst->i_ctx_p, "DEVICEYRESOLUTION", &value);
+                        i_initial_enter_name(minst->i_ctx_p, "FIXEDRESOLUTION", &vtrue);
                 }
                 break;
             }
@@ -772,6 +769,7 @@ run_stdin:
                 }
                 if (eqp == adef) {
                     puts(minst->heap, "Usage: -dNAME, -dNAME=TOKEN, -sNAME=STRING");
+                    arg_free((char *)adef, minst->heap);
                     return gs_error_Fatal;
                 }
                 if (eqp == NULL) {
@@ -828,6 +826,7 @@ run_stdin:
                             code = gs_scan_token(minst->i_ctx_p, &value, &state);
                             if (code) {
                                 outprintf(minst->heap, "Invalid value for option -d%s, -dNAME= must be followed by a valid token\n", arg);
+                                arg_free((char *)adef, minst->heap);
                                 return gs_error_Fatal;
                             }
                             if (r_has_type_attrs(&value, t_name,
@@ -847,6 +846,7 @@ run_stdin:
                                     make_false(&value);
                                 else {
                                     outprintf(minst->heap, "Invalid value for option -d%s, use -sNAME= to define string constants\n", arg);
+                                    arg_free((char *)adef, minst->heap);
                                     return gs_error_Fatal;
                                 }
                             }
@@ -857,17 +857,21 @@ run_stdin:
 
                         if (body == NULL) {
                             lprintf("Out of memory!\n");
+                            arg_free((char *)adef, minst->heap);
                             return gs_error_Fatal;
                         }
                         memcpy(body, eqp, len);
                         make_const_string(&value, a_readonly | avm_system, len, body);
-                        if ((code = try_stdout_redirect(minst, adef, eqp)) < 0)
+                        if ((code = try_stdout_redirect(minst, adef, eqp)) < 0) {
+                            arg_free((char *)adef, minst->heap);
                             return code;
+                        }
                     }
                     ialloc_set_space(idmemory, space);
                 }
                 /* Enter the name in systemdict. */
-                initial_enter_name(adef, &value);
+                i_initial_enter_name_copy(minst->i_ctx_p, adef, &value);
+                arg_free((char *)adef, minst->heap);
                 break;
             }
         case 'u':               /* undefine name */

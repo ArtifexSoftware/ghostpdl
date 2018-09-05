@@ -29,6 +29,8 @@
   dict_put(pdref, key, pvalue, &idict_stack)
 #define idict_put_string(pdref, kstr, pvalue)\
   dict_put_string(pdref, kstr, pvalue, &idict_stack)
+#define idict_put_string_copy(pdref, kstr, pvalue)\
+  dict_put_string_copy(pdref, kstr, pvalue, &idict_stack)
 #define idict_undef(pdref, key)\
   dict_undef(pdref, key, &idict_stack)
 #define idict_copy(dfrom, dto)\

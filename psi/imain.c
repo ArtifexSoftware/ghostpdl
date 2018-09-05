@@ -264,18 +264,18 @@ int gs_main_init2aux(gs_main_instance * minst) {
 
         /* Set up the array of additional initialization files. */
         make_const_string(&ifa, a_readonly | avm_foreign, gs_init_files_sizeof - 2, gs_init_files);
-        code = initial_enter_name("INITFILES", &ifa);
+        code = i_initial_enter_name(i_ctx_p, "INITFILES", &ifa);
         if (code < 0)
             return code;
 
         /* Set up the array of emulator names. */
         make_const_string(&ifa, a_readonly | avm_foreign, gs_emulators_sizeof - 2, gs_emulators);
-        code = initial_enter_name("EMULATORS", &ifa);
+        code = i_initial_enter_name(i_ctx_p, "EMULATORS", &ifa);
         if (code < 0)
             return code;
 
         /* Pass the search path. */
-        code = initial_enter_name("LIBPATH", &minst->lib_path.list);
+        code = i_initial_enter_name(i_ctx_p, "LIBPATH", &minst->lib_path.list);
         if (code < 0)
             return code;
 

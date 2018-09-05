@@ -555,6 +555,23 @@ dict_put_string(ref * pdref, const char *kstr, const ref * pvalue,
     return dict_put(pdref, &kname, pvalue, pds);
 }
 
+/*
+ * Enter a key-value pair where the key is a C string that must be copied.
+ */
+int
+dict_put_string_copy(ref * pdref, const char *kstr, const ref * pvalue,
+                     dict_stack_t *pds)
+{
+    int code;
+    ref kname;
+    dict *pdict = pdref->value.pdict;
+
+    if ((code = name_ref(dict_mem(pdict),
+                         (const byte *)kstr, strlen(kstr), &kname, 1)) < 0)
+        return code;
+    return dict_put(pdref, &kname, pvalue, pds);
+}
+
 /* Remove an element from a dictionary. */
 int
 dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)

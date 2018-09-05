@@ -23,13 +23,9 @@
 
 /* Enter a name and value into systemdict. */
 int i_initial_enter_name(i_ctx_t *, const char *, const ref *);
-#define initial_enter_name(nstr, pvalue)\
-  i_initial_enter_name(i_ctx_p, nstr, pvalue)
 
 /* Remove a name from systemdict. */
 void i_initial_remove_name(i_ctx_t *, const char *);
-#define initial_remove_name(nstr)\
-  i_initial_remove_name(i_ctx_p, nstr)
 
 /* ------ interp.c ------ */
 

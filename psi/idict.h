@@ -125,6 +125,12 @@ int dict_put_string(ref * pdref, const char *kstr, const ref * pvalue,
                     dict_stack_t *pds);
 
 /*
+ * Enter a key-value pair where the key is a (transient) C string.
+ */
+int dict_put_string_copy(ref * pdref, const char *kstr, const ref * pvalue,
+                         dict_stack_t *pds);
+
+/*
  * Remove a key-value pair from a dictionary.
  * Return any of the same values as dict_put, except for 0 and gs_error_dictfull
  * which are converted to gs_error_undefined.

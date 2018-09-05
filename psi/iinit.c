@@ -105,6 +105,24 @@ i_initial_enter_name(i_ctx_t *i_ctx_p, const char *nstr, const ref * pref)
     return i_initial_enter_name_in(i_ctx_p, systemdict, nstr, pref);
 }
 
+/* Enter a name and value into a dictionary. */
+static int
+i_initial_enter_name_copy_in(i_ctx_t *i_ctx_p, ref *pdict, const char *nstr,
+                             const ref * pref)
+{
+    int code = idict_put_string_copy(pdict, nstr, pref);
+
+    if (code < 0)
+        lprintf4("initial_enter failed (%d), entering /%s in -dict:%u/%u-\n",
+                 code, nstr, dict_length(pdict), dict_maxlength(pdict));
+    return code;
+}
+int
+i_initial_enter_name_copy(i_ctx_t *i_ctx_p, const char *nstr, const ref * pref)
+{
+    return i_initial_enter_name_copy_in(i_ctx_p, systemdict, nstr, pref);
+}
+
 /* Remove a name from systemdict. */
 void
 i_initial_remove_name(i_ctx_t *i_ctx_p, const char *nstr)
@@ -297,7 +315,7 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
         }
 
         /* Enter names of referenced initial dictionaries into systemdict. */
-        initial_enter_name("systemdict", systemdict);
+        i_initial_enter_name(i_ctx_p, "systemdict", systemdict);
         for (i = 0; i < icount; i++) {
             ref *idict = &idicts[i];
 
@@ -314,8 +332,8 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
                 uint save_space = r_space(systemdict);
 
                 r_set_space(systemdict, avm_local);
-                code = initial_enter_name(initial_dictionaries[i].name,
-                                          idict);
+                code = i_initial_enter_name(i_ctx_p, initial_dictionaries[i].name,
+                                            idict);
                 r_set_space(systemdict, save_space);
                 if (code < 0)
                     return code;
@@ -336,9 +354,9 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
         make_null(&vnull);
         make_true(&vtrue);
         make_false(&vfalse);
-        if ((code = initial_enter_name("null", &vnull)) < 0 ||
-            (code = initial_enter_name("true", &vtrue)) < 0 ||
-            (code = initial_enter_name("false", &vfalse)) < 0
+        if ((code = i_initial_enter_name(i_ctx_p, "null", &vnull)) < 0 ||
+            (code = i_initial_enter_name(i_ctx_p, "true", &vtrue)) < 0 ||
+            (code = i_initial_enter_name(i_ctx_p, "false", &vfalse)) < 0
             )
             return code;
     }
@@ -356,7 +374,7 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
           if ((code = name_enter_string(imemory, (const char *)gs_error_names[i],
                                           era.value.refs + i)) < 0)
                 return code;
-        return initial_enter_name("ErrorNames", &era);
+        return i_initial_enter_name(i_ctx_p, "ErrorNames", &era);
     }
 }
 
@@ -398,11 +416,11 @@ zop_init(i_ctx_t *i_ctx_p)
                           (const byte *)gs_productfamily);
         make_int(&vre, gs_revision);
         make_int(&vrd, gs_revisiondate);
-        if ((code = initial_enter_name("copyright", &vcr)) < 0 ||
-            (code = initial_enter_name("product", &vpr)) < 0 ||
-            (code = initial_enter_name("productfamily", &vpf)) < 0 ||
-            (code = initial_enter_name("revision", &vre)) < 0 ||
-            (code = initial_enter_name("revisiondate", &vrd)) < 0)
+        if ((code = i_initial_enter_name(i_ctx_p, "copyright", &vcr)) < 0 ||
+            (code = i_initial_enter_name(i_ctx_p, "product", &vpr)) < 0 ||
+            (code = i_initial_enter_name(i_ctx_p, "productfamily", &vpf)) < 0 ||
+            (code = i_initial_enter_name(i_ctx_p, "revision", &vre)) < 0 ||
+            (code = i_initial_enter_name(i_ctx_p, "revisiondate", &vrd)) < 0)
             return code;
     }
 
