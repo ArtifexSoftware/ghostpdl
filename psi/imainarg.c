@@ -693,8 +693,6 @@ run_stdin:
                         return code;
                 } else
                     adef = arg;
-                if (adef == NULL)
-                    return_error(gs_error_invalidfileaccess);
                 if ((code = gs_main_init1(minst)) < 0)
                     return code;
                 ialloc_set_space(idmemory, avm_system);

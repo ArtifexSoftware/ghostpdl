@@ -348,7 +348,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
             *argstr = NULL; /* Empty the argument string so we don't return it. */
             continue; /* Loop back to parse the first arg from the file. */
         }
-    } while (pal->depth >= 0 && *argstr != NULL && **argstr == 0); /* Until we get a non-empty arg */
+    } while (**argstr == 0); /* Until we get a non-empty arg */
 
     return 1;
 }
