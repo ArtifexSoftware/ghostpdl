@@ -24,6 +24,9 @@
 /* Enter a name and value into systemdict. */
 int i_initial_enter_name(i_ctx_t *, const char *, const ref *);
 
+/* Enter a (transient) name and value into systemdict. */
+int i_initial_enter_name_copy(i_ctx_t *, const char *, const ref *);
+
 /* Remove a name from systemdict. */
 void i_initial_remove_name(i_ctx_t *, const char *);
 
