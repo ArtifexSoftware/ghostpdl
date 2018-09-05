@@ -242,7 +242,14 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
                 else if (pas->u.s.memory)
                     gs_free_object(pas->u.s.memory, pas->u.s.chars,
                                    "arg_next");
-                pal->depth--;
+                /* If depth is 0, then we are reading from the simple
+                 * argument list and we just hit an "empty" argument
+                 * (such as -o ""). Just ignore it and look for the next
+                 * one. If depth > 0, then we're reading from a response
+                 * file, and we can't have empty arguments - so we've
+                 * hit the end of the response file. Pop up one level. */
+                if (pal->depth > 0)
+                    pal->depth--;
                 continue; /* Next argument */
             }
     #define is_eol(c) (c == '\r' || c == '\n')
@@ -348,7 +355,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
             *argstr = NULL; /* Empty the argument string so we don't return it. */
             continue; /* Loop back to parse the first arg from the file. */
         }
-    } while (**argstr == 0); /* Until we get a non-empty arg */
+    } while (*argstr == NULL || **argstr == 0); /* Until we get a non-empty arg */
 
     return 1;
 }

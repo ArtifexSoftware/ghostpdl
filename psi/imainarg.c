@@ -691,6 +691,8 @@ run_stdin:
                     code = arg_next(pal, (const char **)&adef, minst->heap);
                     if (code < 0)
                         return code;
+                    if (code == 0)
+                        return gs_error_undefinedfilename;
                 } else
                     adef = arg;
                 if ((code = gs_main_init1(minst)) < 0)
