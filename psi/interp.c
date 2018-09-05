@@ -1484,9 +1484,12 @@ remap:              if (iesp + 2 >= estop) {
                         /* If the updated string isn't empty, push it back */
                         /* on the e-stack. */
                         {
-                            uint size = sbufavailable(&ss);
+                            /* This is just the available buffer size, so
+                               a signed int is plenty big
+                             */
+                            int size = sbufavailable(&ss);
 
-                            if (size) {
+                            if (size > 0) {
                                 if (iesp >= estop)
                                     return_with_error_iref(gs_error_execstackoverflow);
                                 ++iesp;
