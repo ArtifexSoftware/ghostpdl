@@ -881,7 +881,7 @@ userdict /.currentresourcefile //null put
        { not exch pop exit } { pop } ifelse
     }
    for exch pop .quit
- } bind def
+ } bind executeonly def
 /.errorhandler		% <command> <errorname> .errorhandler -
   {		% Detect an internal 'stopped'.
     1 .instopped { //null eq { pop pop stop } if } if
@@ -926,7 +926,7 @@ userdict /.currentresourcefile //null put
     $error /globalmode get $error /.nosetlocal get and .setglobal
     $error /.inerror //false put
     stop
-  } bind def
+  } bind executeonly def
 % Define the standard handleerror.  We break out the printing procedure
 % (.printerror) so that it can be extended for binary output
 % if the Level 2 facilities are present.
@@ -976,7 +976,7 @@ userdict /.currentresourcefile //null put
      ifelse	% newerror
      end
      flush
-    } bind def
+    } bind executeonly def
   /.printerror_long			% long error printout,
                                         % $error is on the dict stack
    {	% Push the (anonymous) stack printing procedure.
@@ -1053,14 +1053,14 @@ userdict /.currentresourcefile //null put
         { (Current file position is ) print position = }
        if
 
-   } bind def
+   } bind executeonly def
 % Define a procedure for clearing the error indication.
 /.clearerror
  { $error /newerror //false put
    $error /errorname //null put
    $error /errorinfo //null put
    0 .setoserrno
- } bind def
+ } bind executeonly def
 
 % Define $error.  This must be in local VM.
 .currentglobal //false .setglobal
@@ -1086,11 +1086,15 @@ end
 /errordict ErrorNames length 3 add dict
 .forcedef		% errordict is local, systemdict is global
 .setglobal		% back to global VM
-% For greater Adobe compatibility, we put all non-standard errors in a
-%   separate dictionary, gserrordict.  It does not need to be in local VM,
-%   because PostScript programs do not access it.
+%  gserrordict contains all the default error handling methods, but unlike
+%  errordict it is noaccess after creation (also it is in global VM).
+%  When running 'SAFER', we'll ignore the contents of errordict, which
+%  may have been tampered with by the running job, and always use gserrordict
+%  gserrordict also contains any non-standard errors, for better compatibility
+%  with Adobe.
+%
 %   NOTE: the name gserrordict is known to the interpreter.
-/gserrordict 5 dict def
+/gserrordict ErrorNames length 3 add dict def
 % Register an error in errordict.  We make this a procedure because we only
 % register the Level 1 errors here: the rest are registered by "feature"
 % files.  However, ErrorNames contains all of the error names regardless of
@@ -1119,8 +1123,11 @@ errordict begin
  } bind def
 end		% errordict
 
-% Put non-standard errors in gserrordict.
-gserrordict /unknownerror errordict /unknownerror get put
+% Put all the default handlers in gserrordict
+gserrordict
+errordict {2 index 3 1 roll put} forall
+noaccess pop
+% remove the non-standard errors from errordict
 errordict /unknownerror .undef
 % Define a stable private copy of handleerror that we will always use under
 % JOBSERVER mode.
