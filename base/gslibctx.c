@@ -278,6 +278,13 @@ void gs_lib_ctx_set_cms_context( const gs_memory_t *mem, void *cms_context )
     mem->gs_lib_ctx->cms_context = cms_context;
 }
 
+int gs_lib_ctx_get_act_on_uel( const gs_memory_t *mem )
+{
+    if (mem == NULL)
+        return 0;
+    return mem->gs_lib_ctx->act_on_uel;
+}
+
 /* Provide a single point for all "C" stdout and stderr.
  */
 

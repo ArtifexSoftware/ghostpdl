@@ -133,6 +133,16 @@ gsapi_new_instance(void **pinstance, void *caller_handle)
     return gsapi_set_arg_encoding(*pinstance, GS_ARG_ENCODING_LOCAL);
 }
 
+/* Set an instance of Ghostscript to respond to UEL (universal
+ * exit language) strings in the input. */
+GSDLLEXPORT void GSDLLAPI
+gsapi_act_on_uel(void *instance)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+
+    ctx->act_on_uel = 1;
+}
+
 /* Destroy an instance of Ghostscript */
 /* We do not support multiple instances, so make sure
  * we use the default instance only once.

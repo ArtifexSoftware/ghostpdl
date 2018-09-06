@@ -174,6 +174,11 @@ gsapi_new_instance(void **pinstance, void *caller_handle);
 GSDLLEXPORT void GSDLLAPI
 gsapi_delete_instance(void *instance);
 
+/* Set an instance of ghostscript to respond to UEL (universal
+ * exit language) strings in the input. */
+GSDLLEXPORT void GSDLLAPI
+gsapi_act_on_uel(void *instance);
+
 /* Set the callback functions for stdio
  * The stdin callback function should return the number of
  * characters read, 0 for EOF, or -1 for error.

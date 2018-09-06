@@ -98,6 +98,7 @@ typedef struct gs_lib_ctx_s
     char *default_device_list;
     int gcsignal;
     int scanconverter;
+    int act_on_uel;
     void *sjpxd_private; /* optional for use of jpx codec */
 } gs_lib_ctx_t;
 
@@ -125,6 +126,7 @@ gs_lib_ctx_t *gs_lib_ctx_get_interp_instance( const gs_memory_t *mem );
 
 void *gs_lib_ctx_get_cms_context( const gs_memory_t *mem );
 void gs_lib_ctx_set_cms_context( const gs_memory_t *mem, void *cms_context );
+int gs_lib_ctx_get_act_on_uel( const gs_memory_t *mem );
 
 #ifndef GS_THREADSAFE
 /* HACK to get at non garbage collection memory pointer

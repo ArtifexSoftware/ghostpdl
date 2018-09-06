@@ -144,13 +144,13 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
     gsargs[nargs++] = "-dNODISPLAY";
     /* As we're "printer targetted, use a jobserver */
     gsargs[nargs++] = "-dJOBSERVER";
-    /* Tell gs not to ignore a UEL, but do an interpreter exit
-     */
-    gsargs[nargs++] = "-dPS_INTERP_ACT_ON_UEL";
 
     code = gsapi_new_instance(&impl->interp_client_data, NULL);
     if (code < 0)
         gs_free_object(mem, psi, "ps_impl_allocate_interp_instance");
+
+    /* Tell gs not to ignore a UEL, but do an interpreter exit */
+    gsapi_act_on_uel(impl->interp_client_data);
 
     code = gsapi_init_with_args(impl->interp_client_data, nargs, (char **)gsargs);
     if (code < 0) {

@@ -147,6 +147,7 @@ static int errorexec_pop(i_ctx_t *);
 static int errorexec_cleanup(i_ctx_t *);
 static int zsetstackprotect(i_ctx_t *);
 static int zcurrentstackprotect(i_ctx_t *);
+static int zactonuel(i_ctx_t *);
 
 /* Stack sizes */
 
@@ -283,6 +284,7 @@ const op_def interp2_op_defs[] = {
     {"0.forceinterp_exit", zforceinterp_exit},
     {"0%oparray_pop", oparray_pop},
     {"0%errorexec_pop", errorexec_pop},
+    {"0.actonuel", zactonuel},
     op_def_end(0)
 };
 
@@ -737,21 +739,15 @@ static int
 zforceinterp_exit(i_ctx_t *i_ctx_p)
 {
     os_ptr op;
-    ref *pvalue;
-    int code = 0;
 
-    code = dict_find_string(systemdict, "PS_INTERP_ACT_ON_UEL", &pvalue);
+    if (!gs_lib_ctx_get_act_on_uel((gs_memory_t *)(i_ctx_p->memory.current)))
+        return 0;
 
-    if (code >= 0 && r_has_type(pvalue, t_boolean)
-        && pvalue->value.boolval == true) {
-
-        gs_interp_reset(i_ctx_p);
-        op = osp;
-        push(1);
-        make_int(op, gs_error_InterpreterExit);
-        code = gs_note_error(gs_error_Quit);
-    }
-    return code;
+    gs_interp_reset(i_ctx_p);
+    op = osp;
+    push(1);
+    make_int(op, gs_error_InterpreterExit);
+    return_error(gs_error_Quit);
 }
 
 /* Set the GC signal for all VMs. */
@@ -2042,5 +2038,15 @@ zcurrentstackprotect(i_ctx_t *i_ctx_p)
         return_error(gs_error_rangecheck);
     push(1);
     make_bool(op, ep->value.opproc == oparray_cleanup);
+    return 0;
+}
+
+static int
+zactonuel(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_bool(op, !!gs_lib_ctx_get_act_on_uel((gs_memory_t *)(i_ctx_p->memory.current)));
     return 0;
 }

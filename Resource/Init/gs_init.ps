@@ -2026,9 +2026,8 @@ gsave
     { }
   } ifelse def
 <1b> cvn
-<50535F494E544552505F4143545F4F4E5F55454C> cvn systemdict exch .knownget
-    % UEL is <esc>%-12345X and acts the same as ^D
-{systemdict (.forceinterp_exit) cvn known and {//true} {//false} ifelse}
+.actonuel % UEL is <esc>%-12345X and acts the same as ^D
+{systemdict (.forceinterp_exit) cvn known {//true} {//false} ifelse}
 {//false} ifelse
 
 {
@@ -2278,7 +2277,7 @@ SAFER { .setsafeglobal } if
   /.patterntypes /.shadingtypes /.wheredict /.renderingintentdict
   /.currentmatrix /.setmatrix
   /.setlinecap  /.setlinejoin  /.sizeimagebox  /.systemvmcheck
-  /.forceinterp_exit
+  /.forceinterp_exit /.actonuel
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
