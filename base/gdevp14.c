@@ -5072,6 +5072,9 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev, int x, int y, int w, int h,
     int shift = 8;
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
+    bool overprint = pdev->overprint;
+    gx_color_index drawn_comps = pdev->drawn_comps;
+    gx_color_index comps;
 
     if (buf->data == NULL)
         return 0;
@@ -5165,8 +5168,16 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev, int x, int y, int w, int h,
                 for (k = 0; k < num_chan; ++k)
                     dst_ptr[k * planestride] = dst[k];
             } else {
-                for (k = 0; k < num_comp; ++k)
-                    dst_ptr[k * planestride] = 255 - dst[k];
+                if (overprint) {
+                    for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
+                        if ((comps & 0x1) != 0) {
+                            dst_ptr[k * planestride] = 255 - dst[k];
+                        }
+                    }
+                } else {
+                    for (k = 0; k < num_comp; ++k)
+                        dst_ptr[k * planestride] = 255 - dst[k];
+                }
                 dst_ptr[num_comp * planestride] = dst[num_comp];
             }
             if (tag_off) {
