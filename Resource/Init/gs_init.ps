@@ -2049,6 +2049,7 @@ readonly def
           [ currentsystemparams /GenericResourceDir get] (*) .file_name_separator (*)
             concatstrings concatstrings .generate_dir_list_templates
         } if
+        currentuserparams /ICCProfilesDir known {currentuserparams /ICCProfilesDir get} if
       ]
       /PermitFileWriting [
           currentuserparams /PermitFileWriting get aload pop

@@ -2972,7 +2972,7 @@ gs_currenticcdirectory(const gs_gstate * pgs, gs_param_string * pval)
         pval->persistent = true;
     } else {
         pval->data = (const byte *)(lib_ctx->profiledir);
-        pval->size = lib_ctx->profiledir_len;
+        pval->size = lib_ctx->profiledir_len - 1;
         pval->persistent = false;
     }
 }
