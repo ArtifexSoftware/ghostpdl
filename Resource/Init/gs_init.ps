@@ -2034,7 +2034,7 @@ readonly def
     <<
       /PermitFileReading [
         currentuserparams /PermitFileReading get aload pop
-        //tempfilepaths aload pop
+        [//tempfilepaths aload pop] (*) .generate_dir_list_templates
         /FONTPATH .systemvar (*) .generate_dir_list_templates
           % Library files :
         /LIBPATH  .systemvar (*) .generate_dir_list_templates
@@ -2049,15 +2049,15 @@ readonly def
           [ currentsystemparams /GenericResourceDir get] (*) .file_name_separator (*)
             concatstrings concatstrings .generate_dir_list_templates
         } if
-        currentuserparams /ICCProfilesDir known {currentuserparams /ICCProfilesDir get} if
+        currentuserparams /ICCProfilesDir known {[currentuserparams /ICCProfilesDir get] (*) .generate_dir_list_templates} if
       ]
       /PermitFileWriting [
           currentuserparams /PermitFileWriting get aload pop
-          //tempfilepaths aload pop
+          [//tempfilepaths aload pop] (*) .generate_dir_list_templates
       ]
       /PermitFileControl [
           currentuserparams /PermitFileControl get aload pop
-          //tempfilepaths aload pop
+          [//tempfilepaths aload pop] (*) .generate_dir_list_templates
       ]
       /LockFilePermissions //true
     >> setuserparams
@@ -2140,7 +2140,7 @@ SAFER { .setsafeglobal } if
   /.setshapealpha            % transparency-example.ps
   /.endtransparencygroup     % transparency-example.ps
   /.setdotlength             % Bug687720.ps
-  /.sort /.setdebug /.mementolistnewblocks /getenv
+  /.sort /.mementolistnewblocks /getenv
 
   /.makeoperator /.setCPSImode              % gs_cet.ps, this won't work on cluster with -dSAFER
 
