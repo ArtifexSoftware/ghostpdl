@@ -1080,9 +1080,9 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     pmi->pjl_from_args = true;
                     /* we expect the language to exit properly otherwise
                        there was some sort of problem */
-                    if (code != e_ExitLanguage)
+                    if (code != e_ExitLanguage) {
                         if (code == 0) code = -1;
-                    else
+                    } else
                         code = 0;
                 }
                 break;
