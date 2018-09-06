@@ -1222,8 +1222,8 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                                 dev_value = &(color_cache[*psrc * spp_out]);
                                 for (j = 0; j < spp_out; j++) {
                                     *(devc_contone[j] + position) = dev_value[j];
-                                    position -= LAND_BITS;
                                 }
+                                position -= LAND_BITS;
                                 xr--;
                             }           /* at loop exit xn will be <= xr */
                             psrc++;
@@ -1259,8 +1259,8 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                                 dev_value = &(color_cache[*psrc * spp_out]);
                                 for (j = 0; j < spp_out; j++) {
                                     *(devc_contone[j] + position) = dev_value[j];
-                                    devc_contone[j] += LAND_BITS;
                                 }
+                                position += LAND_BITS;
                                 xr++;
                             }           /* at loop exit xn will be >= xr */
                             psrc++;
