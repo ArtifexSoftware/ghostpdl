@@ -578,6 +578,8 @@ gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
         }
         new_link_handle->next = NULL;		/* new end of list */
         new_link_handle->flags = needed_flags;
+        hTransform = link_handle->hTransform;
+
         /* the variant we want wasn't present, clone it from the HEAD (no alpha, not planar) */
         dwInputFormat = (dwInputFormat & (~LCMS_BYTES_MASK))  | BYTES_SH(num_bytes);
         dwOutputFormat = (dwOutputFormat & (~LCMS_BYTES_MASK)) | BYTES_SH(num_bytes);
