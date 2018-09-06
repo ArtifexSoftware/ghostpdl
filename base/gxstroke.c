@@ -465,19 +465,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
          (uniform = 0,
           reflected = xy * yx > xx * yy,
           orient_other));
-    /*
-     * Formerly, there was a hack here that only treated the joins of
-     * flattened curves specially if the dot length was non-zero.
-     * This was a surrogate to detect use of the library by PCL
-     * interpreters.  We have replaced this hack with an explicit
-     * curve join parameter in the graphics state.
-     */
-#if 0
-    segment_notes not_first =
-        (!is_fzero(pgs->line_params.dot_length) ? sn_not_first : sn_none);
-#else
     const segment_notes not_first = sn_not_first;
-#endif
     gs_line_join curve_join =
         (pgs_lp->curve_join >= 0 ? (gs_line_join)pgs_lp->curve_join :
          pgs_lp->join == gs_join_none || pgs_lp->join == gs_join_round ?
