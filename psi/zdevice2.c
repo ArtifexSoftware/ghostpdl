@@ -278,8 +278,8 @@ restore_page_device(i_ctx_t *i_ctx_p, const gs_gstate * pgs_old, const gs_gstate
     }
 
     if (LockSafetyParams && !samepagedevice) {
-        os_ptr op = osp;
-        const int max_ops = 512;
+        const int required_ops = 512;
+        const int required_es = 32;
 
         /* The %grestorepagedevice must complete: the biggest danger
            is operand stack overflow. As we use get/putdeviceparams
@@ -289,9 +289,16 @@ restore_page_device(i_ctx_t *i_ctx_p, const gs_gstate * pgs_old, const gs_gstate
            424 entries on the op stack. Allowing for working stack
            space, and safety margin.....
          */
-        if (max_ops > op - osbot) {
-            if (max_ops >= ref_stack_count(&o_stack))
-               return_error(gs_error_stackoverflow);
+        if (required_ops + ref_stack_count(&o_stack) >= ref_stack_max_count(&o_stack)) {
+           gs_currentdevice(pgs_old)->LockSafetyParams = LockSafetyParams;
+           return_error(gs_error_stackoverflow);
+        }
+        /* We also want enough exec stack space - 32 is an overestimate of
+           what we need to complete the Postscript call out.
+         */
+        if (required_es + ref_stack_count(&e_stack) >= ref_stack_max_count(&e_stack)) {
+           gs_currentdevice(pgs_old)->LockSafetyParams = LockSafetyParams;
+           return_error(gs_error_execstackoverflow);
         }
     }
     /*
