@@ -542,7 +542,7 @@ gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
 {
     gsicc_lcms2mt_link_list_t *link_handle = (gsicc_lcms2mt_link_list_t *)(icclink->link_handle);
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM)link_handle->hTransform;
-    cmsUInt32Number dwInputFormat,dwOutputFormat;
+    cmsUInt32Number dwInputFormat, dwOutputFormat;
     cmsContext ctx = gs_lib_ctx_get_cms_context(icclink->memory);
     int big_endianIN, big_endianOUT, needed_flags;
 
@@ -581,14 +581,21 @@ gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
         hTransform = link_handle->hTransform;
 
         /* the variant we want wasn't present, clone it from the HEAD (no alpha, not planar) */
-        dwInputFormat = (dwInputFormat & (~LCMS_BYTES_MASK))  | BYTES_SH(num_bytes);
-        dwOutputFormat = (dwOutputFormat & (~LCMS_BYTES_MASK)) | BYTES_SH(num_bytes);
-        dwInputFormat = (dwInputFormat & (~LCMS_ENDIAN16_MASK))  | ENDIAN16_SH(big_endianIN);
-        dwOutputFormat = (dwOutputFormat & (~LCMS_ENDIAN16_MASK)) | ENDIAN16_SH(big_endianOUT);
+        dwInputFormat = COLORSPACE_SH(T_COLORSPACE(cmsGetTransformInputFormat(ctx, hTransform)));
+        dwOutputFormat = COLORSPACE_SH(T_COLORSPACE(cmsGetTransformOutputFormat(ctx, hTransform)));
+        dwInputFormat = dwInputFormat | CHANNELS_SH(T_CHANNELS(cmsGetTransformInputFormat(ctx, hTransform)));
+        dwOutputFormat = dwOutputFormat | CHANNELS_SH(T_CHANNELS(cmsGetTransformOutputFormat(ctx, hTransform)));
+        dwInputFormat = dwInputFormat | ENDIAN16_SH(big_endianIN);
+        dwOutputFormat = dwOutputFormat | ENDIAN16_SH(big_endianOUT);
+        dwInputFormat = dwInputFormat | BYTES_SH(num_bytes);
+        dwOutputFormat = dwOutputFormat | BYTES_SH(num_bytes);
+
         /* Get the transform with the settings we need */
         hTransform = cmsCloneTransformChangingFormats(ctx, hTransform, dwInputFormat, dwOutputFormat);
+
         if (hTransform == NULL)
             return_error(gs_error_unknownerror);
+
         /* Now we have a new hTransform to add to the list, BUT some other thread */
         /* may have been working in the same one. Lock, check again and add to    */
         /* the (potentially new) end of the list */
