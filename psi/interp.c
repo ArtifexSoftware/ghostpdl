@@ -1266,7 +1266,7 @@ remap:              if (iesp + 2 >= estop) {
             pvalue = IREF->value.pname->pvalue;
             if (!pv_valid(pvalue)) {
                 uint nidx = names_index(int_nt, IREF);
-                uint htemp;
+                uint htemp = 0;
 
                 INCR(find_name);
                 if ((pvalue = dict_find_name_by_index_inline(nidx, htemp)) == 0)
@@ -1653,7 +1653,7 @@ remap:              if (iesp + 2 >= estop) {
 
                             pvalue = name_index_ptr_inline(int_nt, nidx)->pvalue;
                             if (!pv_valid(pvalue)) {
-                                uint htemp;
+                                uint htemp = 0;
 
                                 INCR(p_find_name);
                                 if ((pvalue = dict_find_name_by_index_inline(nidx, htemp)) == 0) {
