@@ -2140,7 +2140,7 @@ SAFER { .setsafeglobal } if
   /.setshapealpha            % transparency-example.ps
   /.endtransparencygroup     % transparency-example.ps
   /.setdotlength             % Bug687720.ps
-  /.sort /.mementolistnewblocks /getenv
+  /.sort /.setdebug /.mementolistnewblocks /getenv
 
   /.makeoperator /.setCPSImode              % gs_cet.ps, this won't work on cluster with -dSAFER
 
