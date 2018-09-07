@@ -115,8 +115,11 @@ setcolorscreen_finish(i_ctx_t *i_ctx_p)
 
     pdht->order = pdht->components[0].corder;
     code = gx_ht_install(igs, r_ptr(esp - 1, gs_halftone), pdht);
-    if (code < 0)
+    if (code < 0) {
+        esp -= 7;
+        setcolorscreen_cleanup(i_ctx_p);
         return code;
+    }
     istate->screen_procs.red   = esp[-5];
     istate->screen_procs.green = esp[-4];
     istate->screen_procs.blue  = esp[-3];

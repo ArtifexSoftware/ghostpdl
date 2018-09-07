@@ -232,6 +232,8 @@ path_continue(i_ctx_t *i_ctx_p)
             path_cleanup(i_ctx_p);
             return o_pop_estack;
         default:		/* error */
+            esp -= 6;
+            path_cleanup(i_ctx_p);
             return code;
         case gs_pe_moveto:
             esp[2] = esp[-4];	/* moveto proc */

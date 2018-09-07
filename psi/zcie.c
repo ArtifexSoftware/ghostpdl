@@ -455,25 +455,29 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
     push(1); /* Sacrificial */
     procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
-    if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0)
-        return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
-    check_read_type(*ptref, t_array);
-    if (r_size(ptref) != 5)
-        return_error(gs_error_rangecheck);
-        /* Stable memory due to current caching of color space */
-        code = gs_cspace_build_CIEDEFG(&pcs, NULL, mem->stable_memory);
-    if (code < 0)
-        return code;
-    pcie = pcs->params.defg;
-    pcie->Table.n = 4;
-    pcie->Table.m = 3;
+        if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0) {
+            if (code == 0)
+                gs_note_error(cie_set_finish(i_ctx_p, pcs, &procs, edepth, gs_error_rangecheck));
+            else
+                return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        }
+        check_read_type(*ptref, t_array);
+        if (r_size(ptref) != 5)
+            return_error(gs_error_rangecheck);
+            /* Stable memory due to current caching of color space */
+            code = gs_cspace_build_CIEDEFG(&pcs, NULL, mem->stable_memory);
+        if (code < 0)
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        pcie = pcs->params.defg;
+        pcie->Table.n = 4;
+        pcie->Table.m = 3;
         code = cie_cache_push_finish(i_ctx_p, cie_defg_finish, imem, pcie);
         if (code < 0)
-            return code;
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
         code = cie_defg_param(i_ctx_p, imemory, CIEDict, pcie, &procs,
             &has_abc_procs, &has_lmn_procs, &has_defg_procs,ptref);
         if (code < 0)
-            return code;
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
         /* Add the color space to the profile cache */
         gsicc_add_cs(igs, pcs,dictkey);
     } else {
@@ -561,25 +565,29 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
     push(1); /* Sacrificial */
     procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
-    if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0)
-        return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
-    check_read_type(*ptref, t_array);
-    if (r_size(ptref) != 4)
-        return_error(gs_error_rangecheck);
-        /* Stable memory due to current caching of color space */
-        code = gs_cspace_build_CIEDEF(&pcs, NULL, mem->stable_memory);
-    if (code < 0)
-        return code;
-    pcie = pcs->params.def;
-    pcie->Table.n = 3;
-    pcie->Table.m = 3;
+        if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0) {
+            if (code == 0)
+                gs_note_error(cie_set_finish(i_ctx_p, pcs, &procs, edepth, gs_error_rangecheck));
+            else
+                return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        }
+        check_read_type(*ptref, t_array);
+        if (r_size(ptref) != 4)
+            return_error(gs_error_rangecheck);
+            /* Stable memory due to current caching of color space */
+            code = gs_cspace_build_CIEDEF(&pcs, NULL, mem->stable_memory);
+        if (code < 0)
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        pcie = pcs->params.def;
+        pcie->Table.n = 3;
+        pcie->Table.m = 3;
         code = cie_cache_push_finish(i_ctx_p, cie_def_finish, imem, pcie);
         if (code < 0)
-            return code;
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
         code = cie_def_param(i_ctx_p, imemory, CIEDict, pcie, &procs,
             &has_abc_procs, &has_lmn_procs, &has_def_procs, ptref);
         if (code < 0)
-            return code;
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
         /* Add the color space to the profile cache */
         gsicc_add_cs(igs, pcs,dictkey);
     } else {
@@ -629,15 +637,15 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
         /* Stable memory due to current caching of color space */
         code = gs_cspace_build_CIEABC(&pcs, NULL, mem->stable_memory);
     if (code < 0)
-        return code;
+        return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
     pcie = pcs->params.abc;
         code = cie_cache_push_finish(i_ctx_p, cie_abc_finish, imem, pcie);
         if (code < 0)
-            return code;
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
         code = cie_abc_param(i_ctx_p, imemory, CIEDict, pcie, &procs,
             &has_abc_procs, &has_lmn_procs);
         if (code < 0)
-            return code;
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
         /* Set the color space in the graphic state.  The ICC profile
             will be set later if we actually use the space.  Procs will be
             sampled now though. Also, the finish procedure is on the stack
@@ -692,16 +700,16 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, ulong dictkey)
         /* Stable memory due to current caching of color space */
         code = gs_cspace_build_CIEA(&pcs, NULL, mem->stable_memory);
     if (code < 0)
-        return code;
+        return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
     pcie = pcs->params.a;
         code = cie_a_param(imemory, CIEdict, pcie, &procs, &has_a_procs,
                                 &has_lmn_procs);
         if (code < 0)
-            return code;
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
         /* Push finalize procedure on the execution stack */
         code = cie_cache_push_finish(i_ctx_p, cie_a_finish, (gs_ref_memory_t *)imem, pcie);
         if (code < 0)
-            return code;
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
         if (!has_a_procs && !has_lmn_procs) {
             pcie->common.caches.DecodeLMN->floats
                 .params.is_identity = true;
@@ -713,7 +721,7 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, ulong dictkey)
                 code = cie_prepare_iccproc(i_ctx_p, &pcie->RangeA,
                     &procs.Decode.A, &pcie->caches.DecodeA.floats, pcie, imem, "Decode.A");
                 if (code < 0)
-                    return code;
+                    return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
             } else {
                 pcie->caches.DecodeA.floats.params.is_identity = true;
             }
@@ -842,8 +850,10 @@ cie_cache_finish_store(i_ctx_t *i_ctx_p, bool replicate)
             code = float_param(ref_stack_index(&o_stack,
                                (replicate ? 0 : gx_cie_cache_size - 1 - i)),
                                &pcache->values[i]);
-            if (code < 0)
+            if (code < 0) {
+                esp -= 2;			/* pop pointer to cache */
                 return code;
+            }
         }
     }
 #ifdef DEBUG

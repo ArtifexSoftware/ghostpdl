@@ -351,8 +351,10 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
             }
             pinst = (gs_pattern1_instance_t *)gs_currentcolor(igs->saved)->pattern;
             /* If pinst is NULL after all of that then we are not going to recover */
-            if (pinst == NULL)
+            if (pinst == NULL) {
+                esp -= 5;
                 return_error(gs_error_unknownerror);
+            }
         }
         pgs = igs;
 
@@ -360,8 +362,10 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
             if (pinst->is_clist) {
                 /* Send the compositor command to close the PDF14 device */
                 code = gs_pop_pdf14trans_device(pgs, true);
-                if (code < 0)
+                if (code < 0) {
+                    esp -= 5;
                     return code;
+                }
             } else {
                 /* Not a clist, get PDF14 buffer information */
                 code = pdf14_get_buffer_information(pgs->device,
@@ -369,8 +373,10 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
                                                     true);
                 /* PDF14 device (and buffer) is destroyed when pattern cache
                    entry is removed */
-                if (code < 0)
+                if (code < 0) {
+                    esp -= 5;
                     return code;
+                }
             }
         }
         code = gx_pattern_cache_add_entry(igs, pdev, &ctile);

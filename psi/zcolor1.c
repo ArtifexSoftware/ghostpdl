@@ -94,6 +94,7 @@ static int
 zsetcolortransfer(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    os_ptr ep = esp;
     int code;
 
     check_proc(op[-3]);
@@ -130,8 +131,14 @@ zsetcolortransfer(i_ctx_t *i_ctx_p)
         (code = zcolor_remap_one(i_ctx_p, &istate->transfer_procs.gray,
                                  igs->set_transfer.gray, igs,
                                  zcolor_remap_one_finish)) < 0
-        )
+                                 )
+    {
+        /* Return the exec stack to the state it was in before we started the setup
+         * for the transfer function evaluation.
+         */
+        esp = ep;
         return code;
+    }
     return o_push_estack;
 }
 

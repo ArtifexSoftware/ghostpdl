@@ -425,8 +425,10 @@ file_continue(i_ctx_t *i_ctx_p)
     uint len = r_size(pscratch);
     uint code;
 
-    if (len < devlen)
+    if (len < devlen) {
+        esp -= 5;               /* pop proc, pfen, devlen, iodev , mark */
         return_error(gs_error_rangecheck);     /* not even room for device len */
+    }
 
     do {
         memcpy((char *)pscratch->value.bytes, iodev->dname, devlen);
@@ -435,8 +437,10 @@ file_continue(i_ctx_t *i_ctx_p)
         if (code == ~(uint) 0) {    /* all done */
             esp -= 5;               /* pop proc, pfen, devlen, iodev , mark */
             return o_pop_estack;
-        } else if (code > len)      /* overran string */
+        } else if (code > len) {      /* overran string */
+            esp -= 5;               /* pop proc, pfen, devlen, iodev , mark */
             return_error(gs_error_rangecheck);
+        }
         else if (iodev != iodev_default(imemory)
               || (check_file_permissions(i_ctx_p, (char *)pscratch->value.bytes, code + devlen, iodev, "PermitFileReading")) == 0) {
             push(1);

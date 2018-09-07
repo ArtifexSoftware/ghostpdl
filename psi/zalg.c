@@ -165,8 +165,10 @@ H6:	    H = 6;
             ref_assign(&op[0], &Rn[j]);
             break;
         case 6:
-/*H6_cont:*/if (!r_has_type(&op[0], t_boolean))
+            /*H6_cont:*/if (!r_has_type(&op[0], t_boolean)) {
+                esp -= 9;
                 return_error(gs_error_typecheck);
+            }
             if (op[0].value.boolval) {
 /* H7: */  	ref_assign_old(&arry, &Rn[i], &Rn[j], ".sort(H7)");
                 goto H4;
@@ -176,6 +178,7 @@ H8:		ref_assign_old(&arry, &Rn[i], &R, ".sort(H8)");
             }
         default:
             pop(1);
+            esp -= 9;
             return_error(gs_error_unregistered); /* Must not happen. */
     }
     esp += 2;
