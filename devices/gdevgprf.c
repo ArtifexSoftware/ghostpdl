@@ -802,7 +802,8 @@ gprf_write_header(gprf_write_ctx *xc)
            project. At this point, everything has an alpha of 1.0 */
         rgba[3] = 255;
         if (xc->icclink != NULL) {
-	  xc->icclink->procs.map_color((gx_device *)dev, xc->icclink, &(cmyk[0]), &(rgba[0]), 1);
+            xc->icclink->procs.map_color((gx_device *)dev, xc->icclink,
+                &(cmyk[0]), &(rgba[0]), 1);
         } else {
             /* Something was wrong with the icclink. Use the canned routines. */
             frac rgb_frac[3], cmyk_frac[4];
@@ -1298,13 +1299,11 @@ gprf_write_image_data(gprf_write_ctx *xc)
 
 cleanup:
     gx_downscaler_fin(&ds);
-    gs_free_object(pdev->memory, planes[0],
-                    "gprf_write_image_data");
-    gs_free_object(pdev->memory, rgb[0],
-                   "gprf_write_image_data");
+    gs_free_object(pdev->memory, planes[0], "gprf_write_image_data");
+    gs_free_object(pdev->memory, rgb[0], "gprf_write_image_data");
+    gs_free_object(pdev->memory, xc->deflate_block, "gprf_write_image_data");
     if (equiv_needed) {
-        gs_free_object(pdev->memory, cmyk,
-            "gprf_write_image_data");
+        gs_free_object(pdev->memory, cmyk, "gprf_write_image_data");
     }
     return code;
 }
