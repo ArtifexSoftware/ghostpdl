@@ -695,8 +695,9 @@ int
 gs_nulldevice(gs_gstate * pgs)
 {
     int code = 0;
+    gs_gstate *spgs;
     bool saveLockSafety = false;
-    if (pgs->device == 0 || !gx_device_is_null(pgs->device)) {
+    if (pgs->device == NULL || !gx_device_is_null(pgs->device)) {
         gx_device *ndev;
         code = gs_copydevice(&ndev, (const gx_device *)&gs_null_device,
                                  pgs->memory);
@@ -722,10 +723,20 @@ gs_nulldevice(gs_gstate * pgs)
             set_dev_proc(ndev, get_profile, gx_default_get_profile);
         }
 
-        if ((code = gs_setdevice_no_erase(pgs, ndev)) < 0)
+        if (gs_setdevice_no_erase(pgs, ndev) < 0) {
             gs_free_object(pgs->memory, ndev, "gs_copydevice(device)");
-        if (pgs->device != NULL)
-            pgs->device->LockSafetyParams = saveLockSafety;
+            /* We are out of options: find the device we installed in
+               the initial graphics state, and put that in place.
+               We just need something so we can end this job cleanly.
+             */
+            spgs = pgs->saved;
+            while (spgs->saved) spgs = spgs->saved;
+            gs_currentdevice_inline(pgs) = gs_currentdevice_inline(spgs);
+            rc_increment(gs_currentdevice_inline(pgs));
+            code = gs_note_error(gs_error_Fatal);
+        }
+        if (gs_currentdevice_inline(pgs) != NULL)
+            gs_currentdevice_inline(pgs)->LockSafetyParams = saveLockSafety;
     }
     return code;
 }
