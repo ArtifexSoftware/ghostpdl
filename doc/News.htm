@@ -98,7 +98,6 @@ overview</a>.
 <!-- [2.0 begin contents] ================================================== -->
 
 <h2><a name="Version9.25"></a>Version 9.25 (2018-09-10)</h2>
-
 <p> Highlights in this release include:
 <ul>
 <li>
@@ -106,6 +105,15 @@ overview</a>.
 the security fixes to the SAFER file access restrictions (specifically accessing
 ICC profile files), and some additional security issues over the recent 9.24 release.
 </li>
+</ul>
+<ul>
+<li>
+<p><u>Note:</u> The ps2epsi utility does not, and cannot call Ghostscript with
+the -dSAFER command line option. It should <i>never</i> be called with input from
+untrusted sources.
+</li>
+</ul>
+<ul>
 <li>
 <p>Security issues have been the primary focus of this release, including solving
 several (well publicised) real and potential exploits.
