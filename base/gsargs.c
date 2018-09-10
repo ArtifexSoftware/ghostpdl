@@ -182,7 +182,7 @@ static int get_codepoint(arg_list *pal, arg_source *pas)
     int (*fn)(FILE *file, const char **str);
 
     fn = (!pas->is_file && pas->u.s.decoded ? get_codepoint_utf8 : pal->get_codepoint);
-    return fn(pas->u.file, &pas->u.s.str);
+    return fn(pas->is_file ? pas->u.file : NULL, &pas->u.s.str);
 }
 
 /* Get the next arg from a list. */
