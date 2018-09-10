@@ -958,7 +958,7 @@ time, and returns the same instance thereafter.</dd>
 <dl>
 <dt><code>&lt;devicename&gt; findprotodevice &lt;device&gt;</code></dt>
 <dd>Finds the prototype of a device specified by name.  A prototype can be
-used with <code>.getdeviceparams</code> or other parameter-reading
+used with <code>getdeviceprops</code> or other parameter-reading
 operators, but it is read-only and cannot be set with
 <code>setdevice</code>: it must be copied first.</dd>
 </dl>
@@ -1510,7 +1510,7 @@ same name. Using PostScript there are several methods:</p>
 <pre>
     currentpagedevice /pageneutralcolor get
 
-    mark currentdevice //null .getdeviceprops .dicttomark /pageneutralcolor get
+    mark currentdevice getdeviceprops .dicttomark /pageneutralcolor get
 
     /pageneutralcolor /GetDeviceParam .special_op { exch pop }{ //false } ifelse
 </pre>
