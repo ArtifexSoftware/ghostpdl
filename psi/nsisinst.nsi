@@ -173,9 +173,13 @@ Section "" ; (default section)
 SetOutPath "$INSTDIR"
 CreateDirectory "$INSTDIR\bin"
 ; add files / whatever that need to be installed here.
-File   /r /x contrib /x lcms /x lcms2 /x expat /x .svn doc
-File   /r /x zlib /x expat /x .svn /x lcms2 examples
-File   /r /x contrib /x expat /x luratech /x lwf_jp2 /x lcms /x lcms2 /x .svn /x lib/gssetgs.bat lib
+File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib doc
+File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib examples
+File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib /x lib/gssetgs.bat lib
+File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib Resource
+File /r /x arch /x base /x cups /x contrib /x devices /x expat /x freetype /x gpdl /x ijs /x ios /x jbig2dec /x jpeg /x jpegxr /x lcms2mt /x lib /x libpng /x man /x obj /x openjpeg /x pcl /x psi /x tiff /x toolbin /x windows /x xps /x zlib iccprofiles
+
+
 File /oname=lib\gssetgs.bat .\lib\gssetgs${WINTYPE}.bat
 File /oname=bin\gsdll${WINTYPE}.dll .\bin\gsdll${WINTYPE}.dll
 File /oname=bin\gsdll${WINTYPE}.lib .\bin\gsdll${WINTYPE}.lib
@@ -257,12 +261,19 @@ DeleteRegKey HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${VERSION}"
 RMDir /r "$INSTDIR\doc"
 RMDir /r "$INSTDIR\examples"
 RMDir /r "$INSTDIR\lib"
+RMDir /r "$INSTDIR\Resource"
+RMDir /r "$INSTDIR\iccprofiles"
 Delete   "$INSTDIR\bin\gsdll${WINTYPE}.dll"
 Delete   "$INSTDIR\bin\gsdll${WINTYPE}.lib"
 Delete   "$INSTDIR\bin\gswin${WINTYPE}.exe"
 Delete   "$INSTDIR\bin\gswin${WINTYPE}c.exe"
 RMDir    "$INSTDIR\bin"
 RMDir    "$INSTDIR"
+!if "${WINTYPE}" == "64"
+RMDir "$PROGRAMFILES64\gs"
+!else
+RMDir "$PROGRAMFILES\gs"
+!endif
 SectionEnd ; end of uninstall section
 
 ; eof
