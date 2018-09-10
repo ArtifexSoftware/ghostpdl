@@ -225,7 +225,7 @@ fail:
  */
 static int
 gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
-        int *pexit_code, ref * perror_object)
+                  int *pexit_code, ref * perror_object)
 {
     int code;
 
@@ -233,7 +233,7 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
     minst->i_ctx_p->lib_path = &minst->lib_path;
 
     code = gs_interpret(&minst->i_ctx_p, pref,
-                user_errors, pexit_code, perror_object);
+                        user_errors, pexit_code, perror_object);
     return code;
 }
 
@@ -630,7 +630,7 @@ gs_main_run_string_begin(gs_main_instance * minst, int user_errors,
     make_const_string(&rstr, avm_foreign | a_readonly | a_executable,
                       strlen(setup), (const byte *)setup);
     code = gs_main_interpret(minst, &rstr, user_errors, pexit_code,
-                        perror_object);
+                             perror_object);
     return (code == gs_error_NeedInput ? 0 : code == 0 ? gs_error_Fatal : code);
 }
 /* Continue running a string with the option of suspending. */
@@ -645,7 +645,7 @@ gs_main_run_string_continue(gs_main_instance * minst, const char *str,
     make_const_string(&rstr, avm_foreign | a_readonly, length,
                       (const byte *)str);
     return gs_main_interpret(minst, &rstr, user_errors, pexit_code,
-                        perror_object);
+                             perror_object);
 }
 /* Signal EOF when suspended. */
 int
@@ -656,7 +656,7 @@ gs_main_run_string_end(gs_main_instance * minst, int user_errors,
 
     make_empty_const_string(&rstr, avm_foreign | a_readonly);
     return gs_main_interpret(minst, &rstr, user_errors, pexit_code,
-                        perror_object);
+                             perror_object);
 }
 
 gs_memory_t *
