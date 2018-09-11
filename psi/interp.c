@@ -738,7 +738,14 @@ interp_exit(i_ctx_t *i_ctx_p)
 static int
 zforceinterp_exit(i_ctx_t *i_ctx_p)
 {
-    os_ptr op;
+    os_ptr op = osp;
+    stream *s;
+
+    check_file(s, op);
+    i_ctx_p->uel_position = stell(s)-1;
+    /* resetfile */
+    if (file_is_valid(s, op))
+        sreset(s);
 
     if (!gs_lib_ctx_get_act_on_uel((gs_memory_t *)(i_ctx_p->memory.current)))
         return 0;

@@ -382,6 +382,16 @@ gsapi_run_string_continue(void *instance,
                                        &(get_minst_from_memory(ctx->memory)->error_object));
 }
 
+GSDLLEXPORT uint GSDLLAPI
+gsapi_get_uel_offset(void *instance)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
+    if (instance == NULL)
+        return 0;
+
+    return gs_main_get_uel_offset(get_minst_from_memory(ctx->memory));
+}
+
 GSDLLEXPORT int GSDLLAPI
 gsapi_run_string_end(void *instance,
         int user_errors, int *pexit_code)

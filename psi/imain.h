@@ -198,6 +198,13 @@ int gs_main_run_string_continue(gs_main_instance * minst,
 int gs_main_run_string_end(gs_main_instance * minst, int user_errors,
                            int *pexit_code, ref * perror_object);
 
+/* This procedure returns the offset at which the last UEL was
+ * encountered during parsing. This is only defined after
+ * a gs_error_InterpreterExit has been returned (and in particular
+ * after a .forceinterp_exit has been called). Calling this
+ * in other circumstances will get undefined results. */
+uint gs_main_get_uel_offset(gs_main_instance * minst);
+
 gs_memory_t *
 gs_main_get_device_memory(gs_main_instance * minst);
 

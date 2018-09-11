@@ -647,6 +647,14 @@ gs_main_run_string_continue(gs_main_instance * minst, const char *str,
     return gs_main_interpret(minst, &rstr, user_errors, pexit_code,
                              perror_object);
 }
+uint
+gs_main_get_uel_offset(gs_main_instance * minst)
+{
+    if (minst->i_ctx_p == NULL)
+        return 0;
+    return (uint)minst->i_ctx_p->uel_position;
+}
+
 /* Signal EOF when suspended. */
 int
 gs_main_run_string_end(gs_main_instance * minst, int user_errors,

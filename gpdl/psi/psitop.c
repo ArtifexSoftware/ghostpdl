@@ -55,7 +55,9 @@ extern int zflush(i_ctx_t *);
  * PS interpreter instance: derived from pl_interp_implementation_t
  */
 typedef struct ps_interp_instance_s {
-    pl_interp_implementation_t pl;
+    gs_memory_t *memory;
+    uint         bytes_fed;
+    void        *gsapi_instance;
 } ps_interp_instance_t;
 
 static int
@@ -145,16 +147,21 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
     /* As we're "printer targetted, use a jobserver */
     gsargs[nargs++] = "-dJOBSERVER";
 
-    code = gsapi_new_instance(&impl->interp_client_data, NULL);
+    psi->memory = mem;
+    psi->bytes_fed = 0;
+    psi->gsapi_instance = NULL;
+    code = gsapi_new_instance(&psi->gsapi_instance, NULL);
     if (code < 0)
         gs_free_object(mem, psi, "ps_impl_allocate_interp_instance");
 
-    /* Tell gs not to ignore a UEL, but do an interpreter exit */
-    gsapi_act_on_uel(impl->interp_client_data);
+    impl->interp_client_data = psi;
 
-    code = gsapi_init_with_args(impl->interp_client_data, nargs, (char **)gsargs);
+    /* Tell gs not to ignore a UEL, but do an interpreter exit */
+    gsapi_act_on_uel(psi->gsapi_instance);
+
+    code = gsapi_init_with_args(psi->gsapi_instance, nargs, (char **)gsargs);
     if (code < 0) {
-        gsapi_delete_instance(impl->interp_client_data);
+        gsapi_delete_instance(psi->gsapi_instance);
         gs_free_object(mem, psi, "ps_impl_allocate_interp_instance");
     }
     return code;
@@ -166,14 +173,18 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
 static gs_memory_t *
 ps_impl_get_device_memory(pl_interp_implementation_t *impl)
 {
-    return gsapi_get_device_memory(impl->interp_client_data);
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
+
+    return gsapi_get_device_memory(psi->gsapi_instance);
 }
 
 /* Set a device into an interpreter instance */
 static int
 ps_impl_set_device(pl_interp_implementation_t *impl, gx_device *device)
 {
-    return gsapi_set_device(impl->interp_client_data, device);
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
+
+    return gsapi_set_device(psi->gsapi_instance, device);
 }
 
 
@@ -181,13 +192,15 @@ ps_impl_set_device(pl_interp_implementation_t *impl, gx_device *device)
 static int
 ps_impl_init_job(pl_interp_implementation_t *impl)
 {
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
     int exit_code, code, code1;
-    /* Possibly should be done in ps_impl_set_device */
-    code = gsapi_run_string_begin(impl->interp_client_data, 0, &exit_code);
-    if (code > 0)
-        code = gsapi_run_string_continue(impl->interp_client_data, "erasepage", 10, 0, &exit_code);
 
-    code1 = gsapi_run_string_end(impl->interp_client_data, 0, &exit_code);
+    /* Possibly should be done in ps_impl_set_device */
+    code = gsapi_run_string_begin(psi->gsapi_instance, 0, &exit_code);
+    if (code > 0)
+        code = gsapi_run_string_continue(psi->gsapi_instance, "erasepage", 10, 0, &exit_code);
+
+    code1 = gsapi_run_string_end(psi->gsapi_instance, 0, &exit_code);
     return code < 0 ? code : code1;
 }
 
@@ -196,16 +209,21 @@ static int
 ps_impl_process_file(pl_interp_implementation_t *impl, char *filename)
 {
     /* NB incomplete */
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
     int exit_code;
-    return gsapi_run_file(impl->interp_client_data, filename, 0, &exit_code);
+
+    return gsapi_run_file(psi->gsapi_instance, filename, 0, &exit_code);
 }
 
 /* Do any setup for parser per-cursor */
 static int                      /* ret 0 or +ve if ok, else -ve error code */
 ps_impl_process_begin(pl_interp_implementation_t * impl)
 {
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
     int exit_code;
-    return gsapi_run_string_begin(impl->interp_client_data, 0, &exit_code);
+
+    psi->bytes_fed = 0;
+    return gsapi_run_string_begin(psi->gsapi_instance, 0, &exit_code);
 }
 
 /* TODO: in some fashion have gs pass back how far into the input buffer it
@@ -214,35 +232,30 @@ ps_impl_process_begin(pl_interp_implementation_t * impl)
 static int
 ps_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
 {
-    const unsigned int l = pr->limit - pr->ptr;
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
+    const unsigned int len = pr->limit - pr->ptr;
     int code, exit_code = 0;
-    const char eot[1] = {4};
 
-    code = gsapi_run_string_continue(impl->interp_client_data, (const char *)pr->ptr + 1, l, 0, &exit_code);
+    code = gsapi_run_string_continue(psi->gsapi_instance, (const char *)pr->ptr + 1, len, 0, &exit_code);
     if (exit_code == gs_error_InterpreterExit) {
-        const byte *p = pr->ptr;
-        const byte *rlimit = pr->limit;
+        int64_t offset;
 
-        /* Skip to, but leave UEL in buffer for PJL to find later */
-        for (; p < rlimit; ++p) {
-            if (p[1] == '\033') {
-                uint avail = rlimit - p;
+        offset = gsapi_get_uel_offset(psi->gsapi_instance) - psi->bytes_fed;
+        pr->ptr += offset;
+        psi->bytes_fed += offset + 1;
 
-                if (memcmp(p + 1, "\033%-12345X", min(avail, 9)))
-                    continue;
-                if (avail < 9)
-                    break;
-
-                code = gsapi_run_string_continue(impl->interp_client_data, eot, 1, 0, &exit_code);
-
-                pr->ptr = p;
-                return gs_error_InterpreterExit;
-            }
+#ifdef SEND_CTRLD_AFTER_UEL
+        {
+            const char eot[1] = {4};
+            code = gsapi_run_string_continue(psi->gsapi_instance, eot, 1, 0, &exit_code);
+            (void)code; /* Ignoring code here */
         }
-        pr->ptr = p;
+#endif
+        return gs_error_InterpreterExit;
     }
     else {
         pr->ptr = pr->limit;
+        psi->bytes_fed += len;
     }
     return code;
 }
@@ -250,8 +263,10 @@ ps_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
 static int                      /* ret 0 or +ve if ok, else -ve error code */
 ps_impl_process_end(pl_interp_implementation_t * impl)
 {
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
     int exit_code, code;
-    code = gsapi_run_string_end(impl->interp_client_data, 0, &exit_code);
+
+    code = gsapi_run_string_end(psi->gsapi_instance, 0, &exit_code);
 
     if (exit_code == gs_error_InterpreterExit || code == gs_error_NeedInput)
         code = 0;
@@ -311,16 +326,24 @@ ps_impl_dnit_job(pl_interp_implementation_t *impl)
 static int
 ps_impl_remove_device(pl_interp_implementation_t *impl)
 {
-    return gsapi_set_device(impl->interp_client_data, NULL);
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
+
+    return gsapi_set_device(psi->gsapi_instance, NULL);
 }
 
 /* Deallocate a interpreter instance */
 static int
 ps_impl_deallocate_interp_instance(pl_interp_implementation_t *impl)
 {
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
+    int                   code;
 
-    int code = gsapi_exit(impl->interp_client_data);
-    gsapi_delete_instance(impl->interp_client_data);
+    if (psi == NULL)
+        return 0;
+    code = gsapi_exit(psi->gsapi_instance);
+    gsapi_delete_instance(psi->gsapi_instance);
+    gs_free_object(psi->memory, psi, "ps_impl_allocate_interp_instance");
+    impl->interp_client_data = NULL;
     return code;
 }
 

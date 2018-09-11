@@ -285,6 +285,9 @@ GSDLLEXPORT int GSDLLAPI
 gsapi_run_string_continue(void *instance,
     const char *str, unsigned int length, int user_errors, int *pexit_code);
 
+GSDLLEXPORT unsigned int GSDLLAPI
+gsapi_get_uel_offset(void *instance);
+
 GSDLLEXPORT int GSDLLAPI
 gsapi_run_string_end(void *instance,
     int user_errors, int *pexit_code);
