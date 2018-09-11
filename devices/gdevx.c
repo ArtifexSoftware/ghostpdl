@@ -75,6 +75,7 @@ static dev_proc_strip_tile_rectangle(x_strip_tile_rectangle);
 static dev_proc_begin_typed_image(x_begin_typed_image);
 static dev_proc_get_bits_rectangle(x_get_bits_rectangle);
 /*extern dev_proc_get_xfont_procs(gdev_x_finish_copydevice);*/
+static dev_proc_fillpage(x_fillpage);
 
 /* The device descriptor */
 #define x_device(this_device, dev_body) \
@@ -124,7 +125,36 @@ const gx_device_X this_device = { \
         NULL,			/* create_compositor */ \
         NULL,			/* get_hardware_params */ \
         NULL,			/* text_begin */ \
-        gdev_x_finish_copydevice \
+        gdev_x_finish_copydevice, \
+        NULL,			/* begin_transparency_group */ \
+        NULL,                   /* end_transparency_group */ \
+        NULL,                  /* begin_transparency_mask */ \
+        NULL,                    /* end_transparency_mask */ \
+        NULL,                       /* discard_transparency_layer */ \
+        NULL,                  /* get_color_mapping_procs */ \
+        NULL,                     /* get_color_comp_index */ \
+        NULL,                     /* encode_color */ \
+        NULL,                     /* decode_color */ \
+        NULL,                   /* pattern_manage */ \
+        NULL,                       /* fill_rectangle_hl_color */ \
+        NULL,                      /* include_color_space */ \
+        NULL,                    /* fill_linear_color_scanline */ \
+        NULL,                   /* fill_linear_color_trapezoid */ \
+        NULL,                    /* fill_linear_color_triangle */ \
+        NULL,                    /* update_spot_equivalent_colors */ \
+        NULL,                  /* ret_devn_params */ \
+        x_fillpage,              /* fillpage */ \
+        NULL,                      /* push_transparency_state */ \
+        NULL,                      /* pop_transparency_state */ \
+        NULL,                      /* put_image */ \
+        NULL,                      /* dev_spec_op */ \
+        NULL,                      /* copy_planes */ \
+        NULL,                      /* get_profile */ \
+        NULL,        /* set_graphics_type_tag */ \
+        NULL, \
+        NULL, \
+        NULL, \
+        NULL  \
     }, \
     gx_device_bbox_common_initial(0 /*false*/, 1 /*true*/, 1 /*true*/), \
     0 /*false*/,		/* is_buffered */ \
@@ -977,6 +1007,15 @@ x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 #endif /* GET_IMAGE_EXPOSURES */
     }
     return code;
+}
+
+/* Supplying a fillpage prevents the erasepage optimisation
+   device being installed.
+ */
+static int
+x_fillpage(gx_device *dev, gs_gstate * pgs, gx_device_color *pdevc)
+{
+    return gx_default_fillpage(dev, pgs, pdevc);
 }
 
 /* Set up with a specified tile. */
