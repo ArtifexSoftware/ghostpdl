@@ -166,6 +166,16 @@ pdfdict begin
       % using .pdfpagelabels and not using pdfmarks
     /WantsPageLabels /GetDeviceParam .special_op
     {pop pop false}{true} ifelse
+
+    %% This is truly ugly.....
+    %% GSView 5 redefines pdfmark and processes it itself. However if it gets
+    %% a pdfmark it cannot cope with, it simply fails. Its not prepared to cope
+    %% with PAGELABEL pdfmarks, so we don't want to send it to them. There's no
+    %% way for us to fix GSView 5, its long out of any kind of support, but we do
+    %% try not to break it. We happen to know that GSView 5 installs a GSview
+    %% dictionary in userdict, so this test simply ensures we don't emit PAGELABEL
+    %% pdfmarks if that dictioanry is present.
+    userdict /GSview known {pop false} if
   } bind executeonly
   % generate pagelabel pdfmark
   /dopagelabel {  % -- dopagelabel --
