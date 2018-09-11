@@ -63,11 +63,11 @@ fillstroke_cont1(i_ctx_t *i_ctx_p)
 static int
 zfillstroke(i_ctx_t *i_ctx_p)
 {
-    int restart;
+    int restart = 0;
     int code = gs_fillstroke(igs, &restart);
     if (restart == 1)
         push_op_estack(fillstroke_cont1);
-    else
+    else if (restart == 2)
         push_op_estack(fillstroke_cont2);
     return code;
 }
@@ -92,11 +92,11 @@ eofillstroke_cont1(i_ctx_t *i_ctx_p)
 static int
 zeofillstroke(i_ctx_t *i_ctx_p)
 {
-    int restart;
+    int restart = 0;
     int code = gs_eofillstroke(igs, &restart);
     if (restart == 1)
         push_op_estack(eofillstroke_cont1);
-    else
+    else if (restart == 1)
         push_op_estack(eofillstroke_cont2);
     return code;
 }

@@ -647,7 +647,7 @@ restart2:
     } else
         acode = 0;
     code = gx_fill_stroke_path(pgs, rule);
-    if (abits > 0)
+    if (abits > 1)
     {
         gs_setlinewidth(pgs, orig_width);
         scale_dash_pattern(pgs, 1.0 / scale);
