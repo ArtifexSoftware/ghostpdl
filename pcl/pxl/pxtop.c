@@ -128,17 +128,18 @@ typedef struct pxl_interp_instance_s
     gs_memory_t *memory;        /* memory allocator to use */
     px_parser_state_t *st;      /* parser state */
     px_state_t *pxs;            /* interp state */
-    gs_gstate *pgs;              /* grafix state */
-    enum
-    { PSHeader, PSXL, PSDone }
-    processState;               /* interp's processing state */
-         px_stream_header_process_t headerState;        /* used to decode stream header */
+    gs_gstate *pgs;             /* graphics state */
+    enum {
+        PSHeader,
+        PSXL,
+        PSDone
+    } processState;             /* interp's processing state */
+    px_stream_header_process_t headerState;        /* used to decode stream header */
 } pxl_interp_instance_t;
 
 /* Get implemtation's characteristics */
 static const pl_interp_characteristics_t *      /* always returns a descriptor */
-pxl_impl_characteristics(const pl_interp_implementation_t * impl        /* implementation of interpereter to alloc */
-    )
+pxl_impl_characteristics(const pl_interp_implementation_t * impl)        /* implementation of interpereter to alloc */
 {
     /* version and build date are not currently used */
 #define PXLVERSION NULL
@@ -198,7 +199,7 @@ pxl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
     pxs->pjls = pl_main_get_pjl_instance(mem);
 
     /* The PCL instance is needed for PassThrough mode */
-    pxs->pcls =pl_main_get_pcl_instance(mem);
+    pxs->pcls = pl_main_get_pcl_instance(mem);
 
     /* Return success */
     impl->interp_client_data = pxli;

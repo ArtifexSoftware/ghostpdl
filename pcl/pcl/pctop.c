@@ -160,7 +160,6 @@ static const gs_gstate_client_procs pcl_gstate_procs = {
 
 typedef struct pcl_interp_instance_s
 {
-    pl_interp_implementation_t pl;    /* common part: must be first */
     gs_memory_t *memory;        /* memory allocator to use */
     pcl_state_t pcs;            /* pcl state */
     pcl_parser_state_t pst;     /* parser state */
