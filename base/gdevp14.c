@@ -182,6 +182,7 @@ dev_proc_decode_color(pdf14_decode_color16);
 static	dev_proc_fill_rectangle(pdf14_fill_rectangle);
 static  dev_proc_fill_rectangle_hl_color(pdf14_fill_rectangle_hl_color);
 static	dev_proc_fill_path(pdf14_fill_path);
+static	dev_proc_fill_stroke_path(pdf14_fill_stroke_path);
 static  dev_proc_copy_mono(pdf14_copy_mono);
 static	dev_proc_fill_mask(pdf14_fill_mask);
 static	dev_proc_stroke_path(pdf14_stroke_path);
@@ -283,7 +284,9 @@ static	const gx_color_map_procs *
         gx_forward_set_graphics_type_tag, /* set_graphics_type_tag */\
         NULL,                           /* strip_copy_rop2 */\
         NULL,                           /* strip_tile_rect_devn */\
-        pdf14_copy_alpha_hl_color       /* copy_alpha_hl_color */\
+        pdf14_copy_alpha_hl_color,       /* copy_alpha_hl_color */\
+        NULL,                            /* process_page */\
+        pdf14_fill_stroke_path,         /* fill_stroke */\
 }
 
 static	const gx_device_procs pdf14_Gray_procs =
@@ -3238,6 +3241,66 @@ pdf14_stroke_path(gx_device *dev, const	gs_gstate	*pgs,
         code = pop_shfill_group(&new_pgs);
         pdf14_set_marking_params(dev, pgs);
     }
+
+    return code;
+}
+
+static int
+pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
+    const gx_fill_params *fill_params, const gx_drawing_color *pdcolor_fill,
+    const gx_stroke_params *stroke_params, const gx_drawing_color *pdcolor_stroke,
+    const gx_clip_path *pcpath)
+{
+    int code;
+    gs_pattern2_instance_t *pinst = NULL;
+    gs_transparency_group_params_t params = { 0 };
+    gs_rect bbox, group_stroke_box, group_fill_box;
+    float opacity = pgs->opacity.alpha;
+    gs_blend_mode_t blend_mode = pgs->blend_mode;
+
+    code = gx_curr_bbox(pgs, &bbox, PATH_STROKE);
+    if (code < 0)
+        return code;
+    code = gs_bbox_transform_inverse(&bbox, &ctm_only(pgs), &group_stroke_box);
+    if (code < 0)
+        return code;
+
+    /* Push a non-isolated knockout group. Do not change the alpha or
+        blend modes */
+    params.Isolated = false;
+    params.Knockout = true;
+    params.group_color = UNKNOWN;
+    code = pdf14_begin_transparency_group(dev, &params, &group_stroke_box, pgs,
+        dev->memory);
+    if (code < 0)
+        return code;
+
+    code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
+    if (code < 0)
+        return code;
+
+    gs_swapcolors(pgs);
+    code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
+    if (code < 0)
+        return code;
+    gs_swapcolors(pgs);
+
+    /* Now during the pop do the compositing with alpha of 1.0 and normal blend */
+    code = gs_setopacityalpha(pgs, 1.0);
+    if (code < 0)
+        return code;
+    code = gs_setblendmode(pgs, BLEND_MODE_Normal);
+    if (code < 0)
+        return code;
+
+    code = pdf14_end_transparency_group(dev, pgs);
+    if (code < 0)
+        return code;
+
+    code = gs_setopacityalpha(pgs, opacity);
+    if (code < 0)
+        return code;
+    code = gs_setblendmode(pgs, blend_mode);
 
     return code;
 }
