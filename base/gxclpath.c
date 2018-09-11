@@ -127,14 +127,18 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
          pdht->id != cldev->device_halftone_id   ) {
         if ((code = cmd_put_halftone(cldev, pdht)) < 0)
             return code;
-        color_unset(psdc);
+        psdc->type = gx_dc_type_none;	/* force writing */
     }
 
+    if (psdc->devn_type != devn_type) {
+        psdc->type = gx_dc_type_none;	/* force writing if fill/stroke mismatch. */
+        psdc->devn_type = devn_type;
+    }
     /*
      * Get the device color type index and the required size.
      *
      * The complete cmd_opv_ext_put_drawing_color consists of:
-     *  comand code (2 bytes)
+     *  command code (2 bytes)
      *  tile index value or non tile color (1)
      *  device color type index (1)
      *  length of serialized device color (enc_u_sizew(dc_size))
@@ -149,7 +153,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                                  &dc_size );
 
     /* if the returned value is > 0, no change in the color is necessary */
-    if (code > 0 && devn_type == devn_not_tile)
+    if (code > 0 && ((devn_type == devn_not_tile_fill) || (devn_type == devn_not_tile_stroke)))
         return 0;
     else if (code < 0 && code != gs_error_rangecheck)
         return code;
@@ -216,8 +220,11 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             return code;
         dp0 = dp;
         switch (devn_type) {
-            case devn_not_tile:
-                dp[1] = cmd_opv_ext_put_drawing_color;
+            case devn_not_tile_fill:
+                dp[1] = cmd_opv_ext_put_fill_dcolor;
+                break;
+            case devn_not_tile_stroke:
+                dp[1] = cmd_opv_ext_put_stroke_dcolor;
                 break;
             case devn_tile0:
                 dp[1] = cmd_opv_ext_put_tile_devn_color0;
@@ -226,7 +233,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                 dp[1] = cmd_opv_ext_put_tile_devn_color1;
                 break;
             default:
-                dp[1] = cmd_opv_ext_put_drawing_color;
+                dp[1] = cmd_opv_ext_put_fill_dcolor;
         }
         dp += 2;
         *dp++ = di | (offset > 0 ? 0x80 : 0);
@@ -846,7 +853,7 @@ clist_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                 )
                 return code;
             code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re,
-                                         devn_not_tile);
+                                         devn_not_tile_fill);
             if (code == gs_error_unregistered)
                 return code;
             if (code < 0) {
@@ -865,6 +872,191 @@ clist_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
             re.y += re.height;
         } while (re.y < re.yend);
     }
+    return 0;
+}
+
+int
+clist_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
+                            gx_path * ppath,
+                            const gx_fill_params * params_fill,
+                            const gx_device_color * pdevc_fill,
+                            const gx_stroke_params * params_stroke,
+                            const gx_device_color * pdevc_stroke,
+                            const gx_clip_path * pcpath)
+{
+    gx_device_clist_writer * const cdev =
+        &((gx_device_clist *)pdev)->writer;
+    int pattern_size = pgs->line_params.dash.pattern_size;
+    byte op = (byte) (params_fill->rule == gx_rule_even_odd ?
+                  cmd_opv_eofill_stroke : cmd_opv_fill_stroke);
+    uint unknown = 0;
+    gs_fixed_rect bbox;
+    gs_fixed_point expansion;
+    int adjust_y, expansion_code;
+    int ry, rheight;
+    gs_logical_operation_t lop = pgs->log_op;
+    bool slow_rop = cmd_slow_rop(pdev, lop_know_S_0(lop), pdevc_fill);
+    cmd_rects_enum_t re;
+
+    if ((cdev->disable_mask & (clist_disable_fill_path || clist_disable_stroke_path)) ||
+        gs_debug_c(',')
+        ) {
+        /* Disable path-based banding. */
+        return gx_default_fill_stroke_path(pdev, pgs, ppath, params_fill, pdevc_fill,
+                                           params_stroke, pdevc_stroke, pcpath);
+    }
+    /* TODO: For now punt to default if we have shaded color (pattern2) */
+    if ((pdevc_fill != NULL && gx_dc_is_pattern2_color(pdevc_fill)) ||
+        (pdevc_stroke != NULL && gx_dc_is_pattern2_color(pdevc_stroke)) ) {
+        return gx_default_fill_stroke_path(pdev, pgs, ppath, params_fill, pdevc_fill,
+                                           params_stroke, pdevc_stroke, pcpath);
+    }
+    gx_path_bbox(ppath, &bbox);
+    /* We must use the supplied gs_gstate, not our saved one, */
+    /* for computing the stroke expansion. */
+    expansion_code = gx_stroke_path_expansion(pgs, ppath, &expansion);
+    if (expansion_code < 0) {
+        /* Expansion is too large: use the entire page. */
+        adjust_y = 0;
+        ry = 0;
+        rheight = pdev->height;
+    } else {
+        adjust_y = fixed2int_ceiling(expansion.y) + 1;
+        ry = fixed2int(bbox.p.y) - adjust_y;
+        rheight = fixed2int_ceiling(bbox.q.y) - ry + adjust_y;
+        fit_fill_y(pdev, ry, rheight);
+        fit_fill_h(pdev, ry, rheight);
+        if (rheight <= 0)
+            return 0;
+    }
+    /* Check the dash pattern, since we bail out if */
+    /* the pattern is too large. */
+    if (cdev->gs_gstate.line_params.dash.pattern_size != pattern_size ||
+        (pattern_size != 0 &&
+         memcmp(cdev->dash_pattern, pgs->line_params.dash.pattern,
+                pattern_size * sizeof(float))) ||
+        cdev->gs_gstate.line_params.dash.offset !=
+          pgs->line_params.dash.offset ||
+        cdev->gs_gstate.line_params.dash.adapt !=
+          pgs->line_params.dash.adapt ||
+        cdev->gs_gstate.line_params.dot_length !=
+          pgs->line_params.dot_length ||
+        cdev->gs_gstate.line_params.dot_length_absolute !=
+          pgs->line_params.dot_length_absolute
+    ) {
+        /* Bail out if the dash pattern is too long. */
+        if (pattern_size > cmd_max_dash)
+            return gx_default_fill_stroke_path(pdev, pgs, ppath, params_fill, pdevc_fill,
+                                               params_stroke, pdevc_stroke, pcpath);
+        unknown |= dash_known;
+        /*
+         * Temporarily reset the dash pattern pointer for gx_set_dash,
+         * but don't leave it set, since that would confuse the GC.
+         */
+        cdev->gs_gstate.line_params.dash.pattern = cdev->dash_pattern;
+        gx_set_dash(&cdev->gs_gstate.line_params.dash,
+                    pgs->line_params.dash.pattern,
+                    pgs->line_params.dash.pattern_size,
+                    pgs->line_params.dash.offset, NULL);
+        cdev->gs_gstate.line_params.dash.pattern = 0;
+        gx_set_dash_adapt(&cdev->gs_gstate.line_params.dash,
+                          pgs->line_params.dash.adapt);
+        gx_set_dot_length(&cdev->gs_gstate.line_params,
+                          pgs->line_params.dot_length,
+                          pgs->line_params.dot_length_absolute);
+    }
+
+    if (state_neq(line_params.start_cap) || state_neq(line_params.join) ||
+        state_neq(line_params.end_cap) || state_neq(line_params.dash_cap)) {
+        unknown |= cap_join_known;
+        state_update(line_params.start_cap);
+        state_update(line_params.end_cap);
+        state_update(line_params.dash_cap);
+        state_update(line_params.join);
+    }
+    cmd_check_fill_known(cdev, pgs, params_fill->flatness, &pgs->fill_adjust,
+                         pcpath, &unknown);
+    if (state_neq(line_params.half_width)) {
+        unknown |= line_width_known;
+        state_update(line_params.half_width);
+    }
+    if (state_neq(line_params.miter_limit)) {
+        unknown |= miter_limit_known;
+        gx_set_miter_limit(&cdev->gs_gstate.line_params,
+                           pgs->line_params.miter_limit);
+    }
+    if (state_neq(ctm.xx) || state_neq(ctm.xy) ||
+        state_neq(ctm.yx) || state_neq(ctm.yy) ||
+    /* We don't actually need tx or ty, but we don't want to bother */
+    /* tracking them separately from the other coefficients. */
+        state_neq(ctm.tx) || state_neq(ctm.ty)
+        ) {
+        unknown |= ctm_known;
+        state_update(ctm);
+    }
+    if (unknown)
+        cmd_clear_known(cdev, unknown);
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect trans_bbox;
+        int rx = fixed2int(bbox.p.x) - 1;
+        int rwidth = fixed2int_ceiling(bbox.q.x) - rx + 1;
+
+        fit_fill_w(cdev, rx, rwidth);
+        trans_bbox.p.x = rx;
+        trans_bbox.q.x = rx + rwidth - 1;
+        trans_bbox.p.y = ry;
+        trans_bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &trans_bbox);
+    }
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
+        int code;
+        fixed ymin, ymax;
+
+        RECT_STEP_INIT(re);
+        if ((code = cmd_do_write_unknown(cdev, re.pcls, stroke_all_known)) < 0 ||
+            (code = cmd_do_enable_clip(cdev, re.pcls, pcpath != NULL)) < 0 ||
+            (code = cmd_update_lop(cdev, re.pcls, lop)) < 0
+            )
+            return code;
+        code = cmd_put_drawing_color(cdev, re.pcls, pdevc_fill, &re, devn_not_tile_fill);
+        if (code < 0) {
+            /* Something went wrong, use the default implementation. */
+            return gx_default_fill_stroke_path(pdev, pgs, ppath, params_fill, pdevc_fill,
+                                               params_stroke, pdevc_stroke, pcpath);
+        }
+        code = cmd_put_drawing_color(cdev, re.pcls, pdevc_stroke, &re, devn_not_tile_stroke);
+        if (code < 0) {
+            /* Something went wrong, use the default implementation. */
+            return gx_default_fill_stroke_path(pdev, pgs, ppath, params_fill, pdevc_fill,
+                                               params_stroke, pdevc_stroke, pcpath);
+        }
+        re.pcls->color_usage.slow_rop |= slow_rop;
+
+        /*
+         * If a dash pattern is active, we can't skip segments
+         * outside the clipping region, because that would throw off
+         * the pattern.
+         * Don't skip segments when expansion is unknown.
+         */
+
+        if (pattern_size || expansion_code < 0 ) {
+            ymin = min_fixed;
+            ymax = max_fixed;
+        } else {
+            ymin = int2fixed(re.y - adjust_y);
+            ymax = int2fixed(re.y + re.height + adjust_y);
+        }
+        code = cmd_put_path(cdev, re.pcls, ppath, ymin, ymax,
+                            op, false, (segment_notes)~0);
+        if (code < 0)
+            return code;
+        re.y += re.height;
+    } while (re.y < re.yend);
     return 0;
 }
 
@@ -1006,7 +1198,7 @@ clist_stroke_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
             )
             return code;
         CMD_CHECK_LAST_OP_BLOCK_DEFINED(cdev);
-        code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, devn_not_tile);
+        code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, devn_not_tile_stroke);
             if (code == gs_error_unregistered)
                 return code;
         if (code < 0) {
@@ -1102,7 +1294,7 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
     do {
         RECT_STEP_INIT(re);
         if ((code = cmd_update_lop(cdev, re.pcls, lop)) < 0 ||
-            (code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, devn_not_tile)) < 0)
+            (code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, devn_not_tile_stroke)) < 0)
             goto out;
         re.pcls->color_usage.slow_rop |= slow_rop;
         code = cmd_put_path(cdev, re.pcls, &path,

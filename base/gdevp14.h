@@ -205,6 +205,8 @@ typedef struct pdf14_device_s {
     float opacity;
     float shape;
     float alpha; /* alpha = opacity * shape */
+    float fillconstantalpha;
+    float strokeconstantalpha;
     gs_blend_mode_t blend_mode;
     bool text_knockout;
     bool overprint;

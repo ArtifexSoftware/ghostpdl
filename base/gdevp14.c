@@ -2947,6 +2947,8 @@ pdf14_set_marking_params(gx_device *dev, const gs_gstate *pgs)
     pdev->blend_mode = pgs->blend_mode;
     pdev->overprint = pgs->overprint;
     pdev->effective_overprint_mode = pgs->effective_overprint_mode;
+    pdev->fillconstantalpha = pgs->fillconstantalpha;
+    pdev->strokeconstantalpha = pgs->strokeconstantalpha;
 
     if_debug5m('v', dev->memory,
                "[v]set_marking_params, opacity = %g, shape = %g, bm = %d, op = %d, eop = %d\n",
@@ -3252,15 +3254,46 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     const gx_clip_path *pcpath)
 {
     int code;
-    gs_pattern2_instance_t *pinst = NULL;
     gs_transparency_group_params_t params = { 0 };
     gs_rect bbox, group_stroke_box, group_fill_box;
     float opacity = pgs->opacity.alpha;
     gs_blend_mode_t blend_mode = pgs->blend_mode;
 
-    code = gx_curr_bbox(pgs, &bbox, PATH_STROKE);
-    if (code < 0)
-        return code;
+    if (pgs->device == NULL) {
+        gs_fixed_rect clip_bbox;
+        gs_fixed_rect path_bbox;
+        int expansion_code;
+        gs_fixed_point expansion;
+
+        /* gstate comes from clist playback */
+        /* compute smallest from device, pcpath (if any) and ppath bbox */
+        clip_bbox.p.x = clip_bbox.p.y = 0;
+        clip_bbox.q.x = int2fixed(dev->width);
+        clip_bbox.q.y = int2fixed(dev->height);
+        if (pcpath) {
+            rect_intersect(clip_bbox, pcpath->outer_box);
+        }
+        /* expand the ppath using stroke expansion rule, then intersect it */
+        code = gx_path_bbox(ppath, &path_bbox);
+        if (code < 0)
+            return code;
+        expansion_code = gx_stroke_path_expansion(pgs, ppath, &expansion);
+        if (expansion_code >= 0) {
+            path_bbox.p.x -= expansion.x;
+            path_bbox.p.y -= expansion.y;
+            path_bbox.q.x += expansion.x;
+            path_bbox.q.y += expansion.y;
+        }
+        rect_intersect(path_bbox, clip_bbox);
+        bbox.p.x = fixed2float(path_bbox.p.x);
+        bbox.p.y = fixed2float(path_bbox.p.y);
+        bbox.q.x = fixed2float(path_bbox.q.x);
+        bbox.q.y = fixed2float(path_bbox.q.y);
+    } else {
+        code = gx_curr_bbox(pgs, &bbox, PATH_STROKE);
+        if (code < 0)
+            return code;
+    }
     code = gs_bbox_transform_inverse(&bbox, &ctm_only(pgs), &group_stroke_box);
     if (code < 0)
         return code;
@@ -4252,6 +4285,10 @@ pdf14_set_params(gs_gstate * pgs,
         pgs->overprint = pparams->overprint;
     if (pparams->changed & PDF14_SET_OVERPRINT_MODE)
         pgs->effective_overprint_mode = pparams->effective_overprint_mode;
+    if (pparams->changed & PDF14_SET_FILLCONSTANTALPHA)
+        pgs->fillconstantalpha = pparams->fillconstantalpha;
+    if (pparams->changed & PDF14_SET_STROKECONSTANTALPHA)
+        pgs->strokeconstantalpha = pparams->strokeconstantalpha;
     pdf14_set_marking_params(dev, pgs);
 }
 
@@ -7320,6 +7357,10 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
                 put_value(pbuf, pparams->overprint);
             if (pparams->changed & PDF14_SET_OVERPRINT_MODE)
                 put_value(pbuf, pparams->effective_overprint_mode);
+            if (pparams->changed & PDF14_SET_FILLCONSTANTALPHA)
+                put_value(pbuf, pparams->fillconstantalpha);
+            if (pparams->changed & PDF14_SET_STROKECONSTANTALPHA)
+                put_value(pbuf, pparams->strokeconstantalpha);
             break;
         case PDF14_PUSH_TRANS_STATE:
             break;
@@ -7517,6 +7558,10 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
                 read_value(data, params.overprint);
             if (params.changed & PDF14_SET_OVERPRINT_MODE)
                 read_value(data, params.effective_overprint_mode);
+            if (params.changed & PDF14_SET_FILLCONSTANTALPHA)
+                read_value(data, params.fillconstantalpha);
+            if (params.changed & PDF14_SET_STROKECONSTANTALPHA)
+                read_value(data, params.strokeconstantalpha);
             break;
     }
     code = gs_create_pdf14trans(ppct, &params, mem);
@@ -7940,13 +7985,16 @@ send_pdf14trans(gs_gstate	* pgs, gx_device * dev,
         gx_forward_set_graphics_type_tag, /* set_graphics_type_tag */\
         NULL,                           /* strip_copy_rop2 */\
         NULL,                           /* strip_tile_rect_devn */\
-        gx_forward_copy_alpha_hl_color\
+        gx_forward_copy_alpha_hl_color,\
+        NULL,				/* process_page */\
+        pdf14_clist_fill_stroke_path,\
 }
 
 static	dev_proc_create_compositor(pdf14_clist_create_compositor);
 static	dev_proc_create_compositor(pdf14_clist_forward_create_compositor);
 static	dev_proc_fill_path(pdf14_clist_fill_path);
 static	dev_proc_stroke_path(pdf14_clist_stroke_path);
+static	dev_proc_fill_stroke_path(pdf14_clist_fill_stroke_path);
 static	dev_proc_text_begin(pdf14_clist_text_begin);
 static	dev_proc_begin_image(pdf14_clist_begin_image);
 static	dev_proc_begin_typed_image(pdf14_clist_begin_typed_image);
@@ -8929,6 +8977,14 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_gstate * pgs,
         changed |= PDF14_SET_OVERPRINT_MODE;
         params.effective_overprint_mode = pdev->effective_overprint_mode = pgs->effective_overprint_mode;
     }
+    if (pgs->fillconstantalpha != pdev->fillconstantalpha) {
+        changed |= PDF14_SET_FILLCONSTANTALPHA;
+        params.fillconstantalpha = pdev->fillconstantalpha = pgs->fillconstantalpha;
+    }
+    if (pgs->strokeconstantalpha != pdev->strokeconstantalpha) {
+        changed |= PDF14_SET_STROKECONSTANTALPHA;
+        params.strokeconstantalpha = pdev->strokeconstantalpha = pgs->strokeconstantalpha;
+    }
     if (crop_blend_params) {
         params.ctm = group_params->ctm;
         params.bbox = group_params->bbox;
@@ -9154,6 +9210,86 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_gstate *pgs,
     }
     if (pinst != NULL)
         pinst->saved->trans_device = NULL;
+    return code;
+}
+
+/*
+ * fill_path routine for the PDF 1.4 transaprency compositor device for
+ * writing the clist.
+ */
+static	int
+pdf14_clist_fill_stroke_path(gx_device	*dev, const gs_gstate *pgs, gx_path *ppath,
+                             const gx_fill_params *params_fill, const gx_drawing_color *pdevc_fill,
+                             const gx_stroke_params *params_stroke, const gx_drawing_color *pdevc_stroke,
+                             const gx_clip_path *pcpath)
+{
+    pdf14_clist_device * pdev = (pdf14_clist_device *)dev;
+    gs_gstate new_pgs = *pgs;
+    int code;
+    gs_pattern2_instance_t *pinst_fill = NULL;
+    gs_pattern2_instance_t *pinst_stroke = NULL;
+    gx_device_forward * fdev = (gx_device_forward *)dev;
+    cmm_dev_profile_t *dev_profile, *fwd_profile;
+    gsicc_rendering_param_t render_cond;
+    cmm_profile_t *icc_profile_fwd, *icc_profile_dev;
+
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    if (code < 0)
+        return code;
+    code = dev_proc(fdev->target, get_profile)(fdev->target,  &fwd_profile);
+    if (code < 0)
+        return code;
+
+    gsicc_extract_profile(GS_UNKNOWN_TAG, fwd_profile, &icc_profile_fwd,
+                          &render_cond);
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile_dev,
+                          &render_cond);
+
+    /*
+     * Ensure that that the PDF 1.4 reading compositor will have the current
+     * blending parameters.  This is needed since the fill_rectangle routines
+     * do not have access to the gs_gstate.  Thus we have to pass any
+     * changes explictly.
+     */
+    code = pdf14_clist_update_params(pdev, pgs, false, NULL);
+    if (code < 0)
+        return code;
+    /* If we are doing a shading fill and we are in a transparency group of a
+       different color space, then we do not want to do the shading in the
+       device color space. It must occur in the source space.  To handle it in
+       the device space would require knowing all the nested transparency group
+       color space as well as the transparency.  Some of the shading code ignores
+       this, so we have to pass on the clist_writer device to enable proper
+       mapping to the transparency group color space. */
+
+    if (pdevc_fill != NULL && gx_dc_is_pattern2_color(pdevc_fill)) {
+        pinst_fill = (gs_pattern2_instance_t *)pdevc_fill->ccolor.pattern;
+        pinst_fill->saved->has_transparency = true;
+        /* The transparency color space operations are driven by the pdf14
+           clist writer device.  */
+        pinst_fill->saved->trans_device = dev;
+    }
+    if (pdevc_stroke != NULL && gx_dc_is_pattern2_color(pdevc_stroke) &&
+        pdev->trans_group_parent_cmap_procs != NULL) {
+        pinst_stroke = (gs_pattern2_instance_t *)pdevc_stroke->ccolor.pattern;
+        pinst_stroke->saved->has_transparency = true;
+        /* The transparency color space operations are driven
+           by the pdf14 clist writer device.  */
+        pinst_stroke->saved->trans_device = dev;
+    }
+    update_lop_for_pdf14(&new_pgs, pdevc_fill);
+    new_pgs.trans_device = dev;
+    new_pgs.has_transparency = true;
+    code = gx_forward_fill_stroke_path(dev, &new_pgs, ppath, params_fill, pdevc_fill,
+                                       params_stroke, pdevc_stroke, pcpath);
+    new_pgs.trans_device = NULL;
+    new_pgs.has_transparency = false;
+    if (pinst_fill != NULL){
+        pinst_fill->saved->trans_device = NULL;
+    }
+    if (pinst_stroke != NULL){
+        pinst_stroke->saved->trans_device = NULL;
+    }
     return code;
 }
 

@@ -509,8 +509,9 @@ clist_playback_band(clist_playback_action playback_action,
         gx_device_color dcolor;
     } clip_save;
     bool in_clip = false;
-    gs_gstate gs_gstate;
-    gx_device_color dev_color;
+    gs_gstate gs_gstate = { 0 };
+    gx_device_color fill_color;
+    gx_device_color stroke_color;
     float dash_pattern[cmd_max_dash];
     gx_fill_params fill_params;
     gx_stroke_params stroke_params;
@@ -635,8 +636,10 @@ in:                             /* Initialize for a new page. */
         code = gs_note_error(gs_error_VMerror);
         goto out;
     }
-    dev_color.ccolor_valid = false;
-    color_unset(&dev_color);
+    fill_color.ccolor_valid = false;
+    color_unset(&fill_color);
+    stroke_color.ccolor_valid = false;
+    color_unset(&stroke_color);
     data_bits = gs_alloc_bytes(mem, data_bits_size,
                                "clist_playback_band(data_bits)");
     if (data_bits == 0) {
@@ -1290,9 +1293,9 @@ set_phase:      /*
                                                 &target_box);
                         tdev = (gx_device *)&clip_accum;
                         clip_save.lop_enabled = state.lop_enabled;
-                        clip_save.dcolor = dev_color;
+                        clip_save.dcolor = fill_color;
                         /* temporarily set a solid color */
-                        color_set_pure(&dev_color, (gx_color_index)1);
+                        color_set_pure(&fill_color, (gx_color_index)1);
                         state.lop_enabled = false;
                         gs_gstate.log_op = lop_default;
                         break;
@@ -1325,7 +1328,7 @@ set_phase:      /*
                         gs_gstate.log_op =
                             (state.lop_enabled ? state.lop :
                              lop_default);
-                        dev_color = clip_save.dcolor;
+                        fill_color = clip_save.dcolor;
                         in_clip = false;
                         break;
                     case cmd_opv_set_color_space:
@@ -1344,7 +1347,7 @@ set_phase:      /*
                             gs_fixed_rect rect_hl;
 
                             cbp = cmd_read_rect(op & 0xf0, &state.rect, cbp);
-                            if (dev_color.type != gx_dc_type_devn) {
+                            if (fill_color.type != gx_dc_type_devn) {
                                 if_debug0m('L', mem, "hl rect fill without devn color\n");
                                 code = gs_note_error(gs_error_typecheck);
                                 goto out;
@@ -1358,7 +1361,7 @@ set_phase:      /*
                             rect_hl.q.y = int2fixed(state.rect.height) + rect_hl.p.y;
                             code = dev_proc(tdev, fill_rectangle_hl_color) (tdev,
                                                         &rect_hl, NULL,
-                                                        &dev_color, NULL);
+                                                        &fill_color, NULL);
                         }
                         continue;
                     case cmd_opv_begin_image_rect:
@@ -1400,7 +1403,7 @@ ibegin:                 if_debug0m('L', mem, "\n");
                             code = (*dev_proc(tdev, begin_typed_image))
                                 (tdev, &gs_gstate, NULL,
                                  (const gs_image_common_t *)&image,
-                                 &image_rect, &dev_color, pcpath, mem,
+                                 &image_rect, &fill_color, pcpath, mem,
                                  &image_info);
                         }
                         if (code < 0)
@@ -1785,14 +1788,17 @@ idata:                  data_size = 0;
                                      &(state.tile_color_devn[1]),
                                      tile_phase.x, tile_phase.y);
                                 break;
+                            case cmd_opv_ext_put_fill_dcolor:
+                                pdcolor = &fill_color;
+                                goto load_dcolor;
+                            case cmd_opv_ext_put_stroke_dcolor:
+                                pdcolor = &stroke_color;
+                                goto load_dcolor;
                             case cmd_opv_ext_put_tile_devn_color0:
                                 pdcolor = &set_dev_colors[0];
                                 goto load_dcolor;
                             case cmd_opv_ext_put_tile_devn_color1:
                                 pdcolor = &set_dev_colors[1];
-                                goto load_dcolor;
-                            case cmd_opv_ext_put_drawing_color:
-                                pdcolor = &dev_color;
                     load_dcolor:{
                                     uint    color_size;
                                     int left, offset, l;
@@ -1952,10 +1958,20 @@ idata:                  data_size = 0;
                         fill:
                             fill_params.adjust = gs_gstate.fill_adjust;
                             fill_params.flatness = gs_gstate.flatness;
-                            code = gx_fill_path_only(ppath, tdev,
-                                                     &gs_gstate,
-                                                     &fill_params,
-                                                     &dev_color, pcpath);
+                            code = (*dev_proc(tdev, fill_path))(tdev, &gs_gstate, ppath,
+                                                                &fill_params, &fill_color, pcpath);
+                            break;
+                        case cmd_opv_fill_stroke:
+                            fill_params.rule = gx_rule_winding_number;
+                            goto fill_stroke;
+                        case cmd_opv_eofill_stroke:
+                            fill_params.rule = gx_rule_even_odd;
+                        fill_stroke:
+                            fill_params.adjust = gs_gstate.fill_adjust;
+                            fill_params.flatness = gs_gstate.flatness;
+                            code = (*dev_proc(tdev, fill_stroke_path))(tdev, &gs_gstate, ppath,
+                                                                &fill_params, &fill_color,
+                                                                &stroke_params, &stroke_color, pcpath);
                             break;
                         case cmd_opv_stroke:
                             stroke_params.flatness = gs_gstate.flatness;
@@ -1963,10 +1979,10 @@ idata:                  data_size = 0;
                             code = (*dev_proc(tdev, stroke_path))
                                                        (tdev, &gs_gstate,
                                                        ppath, &stroke_params,
-                                                       &dev_color, pcpath);
+                                                       &stroke_color, pcpath);
                             break;
                         case cmd_opv_polyfill:
-                            code = clist_do_polyfill(tdev, ppath, &dev_color,
+                            code = clist_do_polyfill(tdev, ppath, &fill_color,
                                                      gs_gstate.log_op);
                             break;
                         case cmd_opv_fill_trapezoid:
@@ -2109,7 +2125,7 @@ idata:                  data_size = 0;
                                     code = gx_default_fill_trapezoid(ttdev, &left, &right,
                                         max(ybot - y0f, fixed_half),
                                         min(ytop - y0f, int2fixed(wh)), swap_axes,
-                                        &dev_color, gs_gstate.log_op);
+                                        &fill_color, gs_gstate.log_op);
                             }
                            break;
                         default:
@@ -2155,7 +2171,7 @@ idata:                  data_size = 0;
                      * is open pending a proper fix. */
                     code = (dev_proc(tdev, fillpage) == NULL ? 0 :
                             (*dev_proc(tdev, fillpage))(tdev, &gs_gstate,
-                                                        &dev_color));
+                                                        &fill_color));
                     break;
                 }
             case cmd_op_fill_rect_short >> 4:
@@ -2201,7 +2217,7 @@ idata:                  data_size = 0;
             case cmd_op_tile_rect >> 4:
                 if (state.rect.width == 0 && state.rect.height == 0 &&
                     state.rect.x == 0 && state.rect.y == 0) {
-                    code = (*dev_proc(tdev, fillpage))(tdev, &gs_gstate, &dev_color);
+                    code = (*dev_proc(tdev, fillpage))(tdev, &gs_gstate, &fill_color);
                     break;
                 }
             case cmd_op_tile_rect_short >> 4:
@@ -2228,7 +2244,7 @@ idata:                  data_size = 0;
                         (tdev, source, data_x, raster, gx_no_bitmap_id,
                          state.rect.x - x0, state.rect.y - y0,
                          state.rect.width - data_x, state.rect.height,
-                         &dev_color, 1, gs_gstate.log_op, pcpath);
+                         &fill_color, 1, gs_gstate.log_op, pcpath);
                 } else {
                     if (plane_height == 0) {
                         code = (*dev_proc(tdev, copy_mono))
@@ -2256,7 +2272,7 @@ idata:                  data_size = 0;
                             (tdev, source, data_x, raster, gx_no_bitmap_id,
                              state.rect.x - x0, state.rect.y - y0,
                              state.rect.width - data_x, state.rect.height,
-                             &dev_color, depth);
+                             &fill_color, depth);
                     } else {
                         code = (*dev_proc(tdev, copy_alpha))
                             (tdev, source, data_x, raster, gx_no_bitmap_id,

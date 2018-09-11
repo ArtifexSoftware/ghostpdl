@@ -73,6 +73,8 @@ typedef enum {
 #define PDF14_SET_OPACITY_ALPHA (1 << 3)
 #define PDF14_SET_OVERPRINT		(1 << 4)
 #define PDF14_SET_OVERPRINT_MODE (1 << 5)
+#define PDF14_SET_FILLCONSTANTALPHA (1 << 6)
+#define PDF14_SET_STROKECONSTANTALPHA (1 << 7)
 
 /* Used for keeping track of the text group madness, since we have the pdf14
    device needs to know if we are int an BT/ET group vs. a FreeText Annotation
@@ -123,6 +125,8 @@ struct gs_pdf14trans_params_s {
     int text_group;
     gs_transparency_source_t opacity;
     gs_transparency_source_t shape;
+    float fillconstantalpha;
+    float strokeconstantalpha;
     bool mask_is_image;
     gs_matrix ctm;
     bool replacing;

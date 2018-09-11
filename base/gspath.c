@@ -348,7 +348,8 @@ gx_curr_bbox(gs_gstate * pgs, gs_rect *bbox, gs_bbox_comp_t comp_type)
         return 0;
     }
     code = gx_path_bbox(pgs->path, &path_bbox);
-        if (code < 0) return code;
+    if (code < 0)
+        return code;
     if (comp_type == PATH_STROKE) {
         /* Handle any stroke expansion of our bounding box */
         expansion_code = gx_stroke_path_expansion(pgs, pgs->path, &expansion);

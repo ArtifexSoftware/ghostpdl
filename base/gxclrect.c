@@ -321,7 +321,7 @@ clist_fillpage(gx_device * dev, gs_gstate *pgs, gx_drawing_color *pdcolor)
 
     pcls = cdev->states; /* Use any. */
 
-    code = cmd_put_drawing_color(cdev, pcls, pdcolor, NULL, devn_not_tile);
+    code = cmd_put_drawing_color(cdev, pcls, pdcolor, NULL, devn_not_tile_fill);
     if (code >= 0)
         code = cmd_write_page_rect_cmd(cdev, cmd_op_fill_rect);
     return code;
@@ -414,7 +414,7 @@ clist_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         re.pcls->color_usage.or |= color_usage;
         code = cmd_disable_lop(cdev, re.pcls);
         code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re,
-                                     devn_not_tile);
+                                     devn_not_tile_fill);
         if (code >= 0) {
             code = cmd_write_rect_hl_cmd(cdev, re.pcls, cmd_op_fill_rect_hl,
                                          rx, re.y, rwidth, re.height, false);
@@ -492,7 +492,7 @@ clist_write_fill_trapezoid(gx_device * dev,
         RECT_STEP_INIT(re);
         if (pdcolor != NULL) {
             code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re,
-                                         devn_not_tile);
+                                         devn_not_tile_fill);
             if (code == gs_error_unregistered)
                 return code;
             if (code < 0) {
@@ -1216,7 +1216,7 @@ clist_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
             re.pcls->color_is_alpha = 1;
         }
         /* Set the color */
-        code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, devn_not_tile);
+        code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, devn_not_tile_fill);
 copy:{
             gx_cmd_rect rect;
             int rsize;
