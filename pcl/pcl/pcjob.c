@@ -167,37 +167,37 @@ pcl_duplex_page_side_select(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint i = uint_arg(pargs);
     int code = 0;
-    /* save : because pcl_end_page() messes with it,
-       or not if it was an unmarked page, so do it yourself */
-    bool back_side = pcs->back_side;
 
     /* oddly the command goes to the next page irrespective of
        arguments */
     code = pcl_end_page_if_marked(pcs);
-    if (code < 0)
-        return code;
-    pcl_home_cursor(pcs);
-
     if (i > 2)
         return 0;
 
-    /* restore */
-    pcs->back_side = back_side;
-    if (pcs->duplex)
-    {
+    /* home the cursor even if the command has no effect */
+    pcl_home_cursor(pcs);
+    
+    /* if there is an error (code < 0) or the page is unmarked (code
+       == 0) then nothing to update */
+    if (code <= 0)
+        return code;
+
+
+    if (pcs->duplex) {
         switch (i) {
-            case 0:
-                pcs->back_side = !pcs->back_side;
-                break;
-            case 1:
-                pcs->back_side = false;
-                break;
-            case 2:
-                pcs->back_side = true;
-                break;
-            default:
-                pcs->back_side = false; /* default front */
-                break;
+        case 0:
+            /* do nothing, back_side was updated by
+               pcl_end_page_if_marked() above */
+            break;
+        case 1:
+            pcs->back_side = false;
+            break;
+        case 2:
+            pcs->back_side = true;
+            break;
+        default:
+            /* can't happen */
+            break;
         }
         code = put_param1_bool(pcs, "FirstSide", !pcs->back_side);
     }
