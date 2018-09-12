@@ -3275,11 +3275,17 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     if (code < 0)
         return code;
 
+    code = gs_setopacityalpha(pgs, pgs->fillconstantalpha);
+    if (code < 0)
+        return code;
     code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
     if (code < 0)
         return code;
 
     gs_swapcolors(pgs);
+    code = gs_setopacityalpha(pgs, pgs->strokeconstantalpha);
+    if (code < 0)
+        return code;
     code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
     if (code < 0)
         return code;
@@ -3297,6 +3303,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     if (code < 0)
         return code;
 
+    /* Restore to the original values */
     code = gs_setopacityalpha(pgs, opacity);
     if (code < 0)
         return code;
