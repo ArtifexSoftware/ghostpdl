@@ -3282,6 +3282,85 @@ pdf_prepare_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
     return pdf_try_prepare_stroke(pdev, pgs, for_text);
 }
 
+static int
+pdf_try_prepare_fill_stroke(gx_device_pdf *pdev, const gs_gstate *pgs)
+{
+    pdf_resource_t *pres = 0;
+    int code = pdf_prepare_drawing(pdev, pgs, &pres);
+
+    if (code < 0)
+        return code;
+    /* Update overprint. */
+    if (pdev->params.PreserveOverprintSettings &&
+        (pdev->fill_overprint != pgs->overprint ||
+        pdev->font3) &&	!pdev->skip_colors
+        ) {
+        code = pdf_open_gstate(pdev, &pres);
+        if (code < 0)
+            return code;
+        /* PDF 1.2 only has a single overprint setting. */
+        if (pdev->CompatibilityLevel < 1.3) {
+            code = cos_dict_put_c_key_bool(resource_dict(pres), "/OP", pgs->overprint);
+            if (code < 0)
+                return code;
+            pdev->stroke_overprint = pgs->overprint;
+        } else {
+            code = cos_dict_put_c_key_bool(resource_dict(pres), "/op", pgs->overprint);
+            if (code < 0)
+                return code;
+        }
+        pdev->fill_overprint = pgs->overprint;
+    }
+    /* Update overprint, stroke adjustment. */
+    if (pdev->params.PreserveOverprintSettings &&
+        pdev->stroke_overprint != pgs->overprint &&
+        !pdev->skip_colors
+        ) {
+        code = pdf_open_gstate(pdev, &pres);
+        if (code < 0)
+            return code;
+        code = cos_dict_put_c_key_bool(resource_dict(pres), "/OP", pgs->overprint);
+        if (code < 0)
+            return code;
+        pdev->stroke_overprint = pgs->overprint;
+        if (pdev->CompatibilityLevel < 1.3) {
+            /* PDF 1.2 only has a single overprint setting. */
+            pdev->fill_overprint = pgs->overprint;
+        } else {
+            /* According to PDF>=1.3 spec, OP also sets op,
+               if there is no /op in same garphic state object.
+               We don't write /op, so monitor the viewer's state here : */
+            pdev->fill_overprint = pgs->overprint;
+        }
+    }
+    if (pdev->state.stroke_adjust != pgs->stroke_adjust) {
+        code = pdf_open_gstate(pdev, &pres);
+        if (code < 0)
+            return code;
+        code = cos_dict_put_c_key_bool(resource_dict(pres), "/SA", pgs->stroke_adjust);
+        if (code < 0)
+            return code;
+        pdev->state.stroke_adjust = pgs->stroke_adjust;
+    }
+    return pdf_end_gstate(pdev, pres);
+}
+
+int
+pdf_prepare_fill_stroke(gx_device_pdf *pdev, const gs_gstate *pgs)
+{
+    int code;
+
+    if (pdev->context != PDF_IN_STREAM) {
+        code = pdf_try_prepare_fill_stroke(pdev, pgs);
+        if (code != gs_error_interrupt) /* See pdf_open_gstate */
+            return code;
+        code = pdf_open_contents(pdev, PDF_IN_STREAM);
+        if (code < 0)
+            return code;
+    }
+    return pdf_try_prepare_fill_stroke(pdev, pgs);
+}
+
 /* Update the graphics state for an image other than an ImageType 1 mask. */
 int
 pdf_prepare_image(gx_device_pdf *pdev, const gs_gstate *pgs)

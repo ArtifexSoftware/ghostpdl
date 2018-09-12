@@ -154,6 +154,7 @@ int pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_tex
 int pdf_prepare_drawing(gx_device_pdf *pdev, const gs_gstate *pgs, pdf_resource_t **ppres, bool for_text);
 int pdf_prepare_fill(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text);
 int pdf_prepare_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text);
+int pdf_prepare_fill_stroke(gx_device_pdf *pdev, const gs_gstate *pgs);
 int pdf_prepare_image(gx_device_pdf *pdev, const gs_gstate *pgs);
 int pdf_prepare_imagemask(gx_device_pdf *pdev, const gs_gstate *pgs,
                           const gx_drawing_color *pdcolor);

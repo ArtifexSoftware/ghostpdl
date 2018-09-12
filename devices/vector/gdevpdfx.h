@@ -963,6 +963,7 @@ extern const gx_device_vector_procs pdf_vector_procs;
 dev_proc_fill_rectangle(gdev_pdf_fill_rectangle);
 dev_proc_fill_path(gdev_pdf_fill_path);
 dev_proc_stroke_path(gdev_pdf_stroke_path);
+dev_proc_fill_stroke_path(gdev_pdf_fill_stroke_path);
 dev_proc_fillpage(gdev_pdf_fillpage);
     /* In gdevpdfi.c */
 dev_proc_begin_typed_image(gdev_pdf_begin_typed_image);

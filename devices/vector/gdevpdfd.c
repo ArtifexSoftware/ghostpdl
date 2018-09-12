@@ -1866,6 +1866,195 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_gstate * pgs,
     return 0;
 }
 
+int
+gdev_pdf_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
+                          const gx_fill_params *fill_params, const gx_drawing_color *pdcolor_fill,
+                          const gx_stroke_params *stroke_params, const gx_drawing_color *pdcolor_stroke,
+    const gx_clip_path *pcpath)
+{
+    gx_device_pdf *pdev = (gx_device_pdf *) dev;
+    int code;
+    bool new_clip;
+    bool have_path;
+
+    have_path = !gx_path_is_void(ppath);
+    if (!have_path) {
+        if (!pdev->vg_initial_set) {
+            /* See lib/gs_pdfwr.ps about "initial graphic state". */
+            pdf_prepare_initial_viewer_state(pdev, pgs);
+            pdf_reset_graphics(pdev);
+            return 0;
+        }
+    }
+
+    /* PostScript doesn't have a fill+stroke primitive, so break it into two operations
+     * PDF 1.2 only has a single overprint setting, we can't be certainto match that
+     * Because our inpu tcould be from a higher level. So be sure and break it into
+     * 2 operations.
+     */
+    if (pdev->ForOPDFRead || pdev->CompatibilityLevel < 1.3) {
+        code = gdev_pdf_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
+        if (code < 0)
+            return code;
+        return gdev_pdf_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
+    } else {
+        pdf_resource_t *pres = 0;
+        bool set_ctm;
+        gs_matrix mat;
+        double scale, path_scale;
+        double prescale = 1;
+        gs_fixed_rect bbox;
+        gs_path_enum cenum;
+        gdev_vector_dopath_state_t state;
+        stream *s = pdev->strm;
+        /*
+         * Check for an empty clipping path.
+         */
+        if (pcpath) {
+            gs_fixed_rect cbox;
+
+            gx_cpath_outer_box(pcpath, &cbox);
+            if (cbox.p.x >= cbox.q.x || cbox.p.y >= cbox.q.y)
+                return 1;		/* empty clipping path */
+//            *box = cbox;
+        }
+        code = pdf_check_soft_mask(pdev, (gs_gstate *)pgs);
+        if (code < 0)
+            return code;
+
+        new_clip = pdf_must_put_clip_path(pdev, pcpath);
+        if (have_path || pdev->context == PDF_IN_NONE || new_clip) {
+            if (new_clip)
+                code = pdf_unclip(pdev);
+            else
+                code = pdf_open_page(pdev, PDF_IN_STREAM);
+            if (code < 0)
+                return code;
+        }
+        code = pdf_prepare_fill_stroke(pdev, pgs);
+        if (code < 0)
+            return code;
+
+        code = pdf_put_clip_path(pdev, pcpath);
+        if (code < 0)
+            return code;
+        /*
+         * If the CTM is not uniform, stroke width depends on angle.
+         * We'd like to avoid resetting the CTM, so we check for uniform
+         * CTMs explicitly.  Note that in PDF, unlike PostScript, it is
+         * the CTM at the time of the stroke operation, not the CTM at
+         * the time the path was constructed, that is used for transforming
+         * the points of the path; so if we have to reset the CTM, we must
+         * do it before constructing the path, and inverse-transform all
+         * the coordinates.
+         */
+        set_ctm = (bool)gdev_vector_stroke_scaling((gx_device_vector *)pdev,
+                                                   pgs, &scale, &mat);
+        if (set_ctm && ((pgs->ctm.xx == 0 && pgs->ctm.xy == 0) ||
+                        (pgs->ctm.yx == 0 && pgs->ctm.yy == 0))) {
+            /* Acrobat Reader 5 and Adobe Reader 6 issues
+               the "Wrong operand type" error with matrices, which have 3 zero coefs.
+               Besides that, we found that Acrobat Reader 4, Acrobat Reader 5
+               and Adobe Reader 6 all store the current path in user space
+               and apply CTM in the time of stroking - See the bug 687901.
+               Therefore a precise conversion of Postscript to PDF isn't possible in this case.
+               Adobe viewers render a line with a constant width instead.
+               At last, with set_ctm == true we need the inverse matrix in
+               gdev_vector_dopath. Therefore we exclude projection matrices
+               (see bug 688363). */
+            set_ctm = false;
+            scale = fabs(pgs->ctm.xx + pgs->ctm.xy + pgs->ctm.yx + pgs->ctm.yy) /* Using the non-zero coeff. */
+                    / sqrt(2); /* Empirically from Adobe. */
+        }
+        if (set_ctm) {
+            /*
+             * We want a scaling factor that will bring the largest reasonable
+             * user coordinate within bounds.  We choose a factor based on the
+             * minor axis of the transformation.  Thanks to Raph Levien for
+             * the following formula.
+             */
+            double a = mat.xx, b = mat.xy, c = mat.yx, d = mat.yy;
+            double u = fabs(a * d - b * c);
+            double v = a * a + b * b + c * c + d * d;
+            double minor = (sqrt(v + 2 * u) - sqrt(v - 2 * u)) * 0.5;
+
+            prescale = (minor == 0 || minor > 1 ? 1 : 1 / minor);
+        }
+        gx_path_bbox(ppath, &bbox);
+        {
+            /* Check whether a painting appears inside the clipping box.
+               Doing so after writing the clipping path due to /SP pdfmark
+               uses a special hack with painting outside the clipping box
+               for synchronizing the clipping path (see lib/gs_pdfwr.ps).
+               That hack appeared because there is no way to pass
+               the gs_gstate through gdev_pdf_put_params,
+               which pdfmark is implemented with.
+            */
+            gs_fixed_rect clip_box, stroke_bbox = bbox;
+            gs_point d0, d1;
+            gs_fixed_point p0, p1;
+            fixed bbox_expansion_x, bbox_expansion_y;
+
+            gs_distance_transform(pgs->line_params.half_width, 0, &ctm_only(pgs), &d0);
+            gs_distance_transform(0, pgs->line_params.half_width, &ctm_only(pgs), &d1);
+            p0.x = float2fixed(any_abs(d0.x));
+            p0.y = float2fixed(any_abs(d0.y));
+            p1.x = float2fixed(any_abs(d1.x));
+            p1.y = float2fixed(any_abs(d1.y));
+            bbox_expansion_x = max(p0.x, p1.x) + fixed_1 * 2;
+            bbox_expansion_y = max(p0.y, p1.y) + fixed_1 * 2;
+            stroke_bbox.p.x -= bbox_expansion_x;
+            stroke_bbox.p.y -= bbox_expansion_y;
+            stroke_bbox.q.x += bbox_expansion_x;
+            stroke_bbox.q.y += bbox_expansion_y;
+            gx_cpath_outer_box(pcpath, &clip_box);
+            rect_intersect(stroke_bbox, clip_box);
+            if (stroke_bbox.q.x < stroke_bbox.p.x || stroke_bbox.q.y < stroke_bbox.p.y)
+                return 0;
+        }
+        if (make_rect_scaling(pdev, &bbox, prescale, &path_scale)) {
+            scale /= path_scale;
+            if (set_ctm)
+                gs_matrix_scale(&mat, path_scale, path_scale, &mat);
+            else {
+                gs_make_scaling(path_scale, path_scale, &mat);
+                set_ctm = true;
+            }
+        }
+
+        code = pdf_setfillcolor((gx_device_vector *)pdev, pgs, pdcolor_fill);
+        if (code == gs_error_rangecheck) {
+            code = gdev_pdf_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
+            if (code < 0)
+                return code;
+            return gdev_pdf_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
+        }
+
+        code = gdev_vector_prepare_stroke((gx_device_vector *)pdev, pgs, stroke_params,
+                                          pdcolor_stroke, scale);
+        if (code < 0) {
+            code = gdev_pdf_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
+            if (code < 0)
+                return code;
+            return gdev_pdf_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
+        }
+        if (!pdev->HaveStrokeColor)
+            pdev->saved_fill_color = pdev->saved_stroke_color;
+        if (set_ctm)
+            pdf_put_matrix(pdev, "q ", &mat, "cm\n");
+        if (pgs->line_params.dash.offset != 0 || pgs->line_params.dash.pattern_size != 0)
+            code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)ppath, 0, gx_path_type_stroke | gx_path_type_optimize | gx_path_type_dashed_stroke, (set_ctm ? &mat : (const gs_matrix *)0));
+        else
+            code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)ppath, 0, gx_path_type_stroke | gx_path_type_optimize, (set_ctm ? &mat : (const gs_matrix *)0));
+        if (code < 0)
+            return code;
+        s = pdev->strm;
+        stream_puts(s, (fill_params->rule < 0 ? "B\n" : "B*\n"));
+        stream_puts(s, (set_ctm ? " Q\n" : "\n"));
+    }
+    return 0;
+}
+
 /*
    The fill_rectangle_hl_color device method.
    See gxdevcli.h about return codes.
