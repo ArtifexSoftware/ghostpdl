@@ -932,12 +932,7 @@ currentdict dup /Dpush .undef /Dpop .undef
 
 /B {
   OFFlevels length 0 eq {
-         PDFusingtransparency {
-                                .fillstroke
-         } {
-                gsave setfillstate fill grestore
-                setstrokestate .swapcolors /stroke fsexec .swapcolors
-        } ifelse
+    .fillstroke
   } {
     newpath
   } ifelse
@@ -947,12 +942,7 @@ currentdict dup /Dpush .undef /Dpop .undef
 
 /B* {
   OFFlevels length 0 eq {
-         PDFusingtransparency {
-                                .eofillstroke
-                } {
-                gsave setfillstate eofill grestore
-                setstrokestate .swapcolors /stroke fsexec .swapcolors
-        } ifelse
+    .eofillstroke
   } {
     newpath
   } ifelse
@@ -968,24 +958,14 @@ currentdict dup /Dpush .undef /Dpop .undef
 /f* { OFFlevels length 0 eq { gsave setfillstate eofill grestore } if n } bind executeonly def
 /B {
   OFFlevels length 0 eq {
-    PDFusingtransparency {
-      .fillstroke
-    } {
-      gsave setfillstate fill grestore
-      setstrokestate .swapcolors /stroke fsexec .swapcolors
-    } ifelse
+    .fillstroke
   } if
   n
 } bind executeonly def
 /b { closepath B } bind executeonly def
 /B* {
   OFFlevels length 0 eq {
-    PDFusingtransparency {
-                .eofillstroke
-    } {
-      gsave setfillstate eofill grestore
-      setstrokestate .swapcolors /stroke fsexec .swapcolors
-    } ifelse
+    eofillstroke
   } if
   n
 } bind executeonly def
