@@ -676,12 +676,12 @@ gx_default_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
                             const gx_device_color * pdevc_stroke,
                             const gx_clip_path * pcpath)
 {
-    int code = gx_default_fill_path(pdev, pgs, ppath, params_fill, pdevc_fill, pcpath);
+    int code = dev_proc(pdev, fill_path)(pdev, pgs, ppath, params_fill, pdevc_fill, pcpath);
 
     if (code < 0)
         return code;
 
-    return gx_default_stroke_path(pdev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
+    return dev_proc(pdev, stroke_path)(pdev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
 }
 
 /* Free the line list. */
