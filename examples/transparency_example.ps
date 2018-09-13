@@ -1,6 +1,18 @@
 %!PS
 %   Postscript that uses Ghostscript extensions to do simple transparency
 
+systemdict /.pushpdf14devicefilter known not
+{
+    (\n\n%%%% WARNING: Transparency operations ignored - probably due to using -dSAFER\n\n) print flush
+    /.pushpdf14devicefilter {pop} bind def
+    /.begintransparencygroup {pop pop pop pop pop} bind def
+    /.endtransparencygroup {} bind def
+    /.poppdf14devicefilter {} bind def
+    /.setopacityalpha {pop} bind def
+    /.setshapealpha {pop} bind def
+} if
+
+
 <<
    /PageUsesTransparency true	% needed if we are using transparency
    /CompatibilityLevel 1.4
