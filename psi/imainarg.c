@@ -95,8 +95,8 @@ static int argproc(gs_main_instance *, const char *);
 static int run_buffered(gs_main_instance *, const char *);
 static int esc_strlen(const char *);
 static void esc_strcat(char *, const char *);
-static int runarg(gs_main_instance *, const char *, const char *, const char *, int);
-static int run_string(gs_main_instance *, const char *, int);
+static int runarg(gs_main_instance *, const char *, const char *, const char *, int, int, int *, ref *);
+static int run_string(gs_main_instance *, const char *, int, int, int *, ref *);
 static int run_finish(gs_main_instance *, int, int, ref *);
 static int try_stdout_redirect(gs_main_instance * minst,
                                 const char *command, const char *filename);
@@ -296,7 +296,7 @@ gs_arg_get_codepoint *gs_main_inst_get_arg_decode(gs_main_instance * minst)
 int
 gs_main_run_start(gs_main_instance * minst)
 {
-    return run_string(minst, "systemdict /start get exec", runFlush);
+    return run_string(minst, "systemdict /start get exec", runFlush, minst->user_errors, NULL, NULL);
 }
 
 /* Process switches.  Return 0 if processed, 1 for unknown switch, */
@@ -329,7 +329,7 @@ run_stdin:
             if (code < 0)
                 return code;
 
-            code = run_string(minst, ".runstdin", runFlush);
+            code = run_string(minst, ".runstdin", runFlush, minst->user_errors, NULL, NULL);
             if (code < 0)
                 return code;
             /* If in saved_pages_test_mode, print and flush previous job before the next file */
@@ -432,15 +432,15 @@ run_stdin:
                 else
                     code = gs_main_init2(minst);
                 if (code >= 0)
-                    code = run_string(minst, "userdict/ARGUMENTS[", 0);
+                    code = run_string(minst, "userdict/ARGUMENTS[", 0, minst->user_errors, NULL, NULL);
                 if (code >= 0)
                     while ((code = arg_next(pal, (const char **)&arg, minst->heap)) > 0) {
-                        code = runarg(minst, "", arg, "", runInit);
+                        code = runarg(minst, "", arg, "", runInit, minst->user_errors, NULL, NULL);
                         if (code < 0)
                             break;
                     }
                 if (code >= 0)
-                    code = runarg(minst, "]put", psarg, ".runfile", runInit | runFlush);
+                    code = runarg(minst, "]put", psarg, ".runfile", runInit | runFlush, minst->user_errors, NULL, NULL);
                 arg_free((char *)psarg, minst->heap);
                 if (code >= 0)
                     code = gs_error_Quit;
@@ -490,7 +490,7 @@ run_stdin:
                         (arg[0] == '-' && !isdigit((unsigned char)arg[1]))
                         )
                         break;
-                    code = runarg(minst, "", arg, ".runstring", 0);
+                    code = runarg(minst, "", arg, ".runstring", 0, minst->user_errors, NULL, NULL);
                     if (code < 0)
                         return code;
                 }
@@ -954,7 +954,7 @@ argproc(gs_main_instance * minst, const char *arg)
         return run_buffered(minst, arg);
     } else {
         /* Run file directly in the normal way. */
-        return runarg(minst, "", arg, ".runfile", runInit | runFlush);
+        return runarg(minst, "", arg, ".runfile", runInit | runFlush, minst->user_errors, NULL, NULL);
     }
 }
 static int
@@ -999,8 +999,14 @@ run_buffered(gs_main_instance * minst, const char *arg)
     return run_finish(minst, code, exit_code, &error_object);
 }
 static int
-runarg(gs_main_instance * minst, const char *pre, const char *arg,
-       const char *post, int options)
+runarg(gs_main_instance *minst,
+       const char       *pre,
+       const char       *arg,
+       const char       *post,
+       int               options,
+       int               user_errors,
+       int              *pexit_code,
+       ref              *perror_object)
 {
     int len = strlen(pre) + esc_strlen(arg) + strlen(post) + 1;
     int code;
@@ -1021,24 +1027,45 @@ runarg(gs_main_instance * minst, const char *pre, const char *arg,
     esc_strcat(line, arg);
     strcat(line, post);
     minst->i_ctx_p->starting_arg_file = true;
-    code = run_string(minst, line, options);
+    code = run_string(minst, line, options, user_errors, pexit_code, perror_object);
     minst->i_ctx_p->starting_arg_file = false;
     gs_free_object(minst->heap, line, "runarg");
     return code;
 }
+int
+gs_main_run_file2(gs_main_instance *minst,
+                  const char       *filename,
+                  int               user_errors,
+                  int              *pexit_code,
+                  ref              *perror_object)
+{
+    return runarg(minst, "", filename, ".runfile", runFlush, user_errors, pexit_code, perror_object);
+}
 static int
-run_string(gs_main_instance * minst, const char *str, int options)
+run_string(gs_main_instance *minst,
+           const char       *str,
+           int               options,
+           int               user_errors,
+           int              *pexit_code,
+           ref              *perror_object)
 {
     int exit_code;
     ref error_object;
-    int code = gs_main_run_string(minst, str, minst->user_errors,
-                                  &exit_code, &error_object);
+    int code;
+
+    if (pexit_code == NULL)
+        pexit_code = &exit_code;
+    if (perror_object == NULL)
+        perror_object = &error_object;
+
+    code = gs_main_run_string(minst, str, user_errors,
+                              pexit_code, perror_object);
 
     if ((options & runFlush) || code != 0) {
         zflush(minst->i_ctx_p);         /* flush stdout */
         zflushpage(minst->i_ctx_p);     /* force display update */
     }
-    return run_finish(minst, code, exit_code, &error_object);
+    return run_finish(minst, code, *pexit_code, perror_object);
 }
 static int
 run_finish(gs_main_instance *minst, int code, int exit_code,

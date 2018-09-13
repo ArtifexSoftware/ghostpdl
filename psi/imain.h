@@ -169,6 +169,13 @@ int gs_main_run_string_with_length(gs_main_instance * minst,
                                    int user_errors, int *pexit_code,
                                    ref * perror_object);
 
+/* Version of gs_main_run_file that works for PDF files. */
+int gs_main_run_file2(gs_main_instance *minst,
+                      const char       *fname,
+                      int               user_errors,
+                      int              *pexit_code,
+                      ref              *perror_object);
+
 /*
  * Open the file for gs_main_run_file.  This is an internal routine
  * that is only exported for some special clients.

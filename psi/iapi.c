@@ -457,7 +457,7 @@ gsapi_run_file(void *instance, const char *file_name,
     else {
       temp = (char *)file_name;
     }
-    code =  gs_main_run_file(minst, temp, user_errors, pexit_code,
+    code = gs_main_run_file2(minst, temp, user_errors, pexit_code,
                              &(minst->error_object));
     if (temp != file_name)
         gs_free_object(ctx->memory, temp, "gsapi_run_file");
