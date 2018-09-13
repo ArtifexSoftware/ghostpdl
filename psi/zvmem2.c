@@ -43,7 +43,7 @@ zsetglobal(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* <bool> .currentglobal - */
+/* - .currentglobal <bool> */
 static int
 zcurrentglobal(i_ctx_t *i_ctx_p)
 {

@@ -641,7 +641,7 @@ zspec_op(i_ctx_t *i_ctx_p)
 
 const op_def zdevice_op_defs[] =
 {
-    {"1.copydevice2", zcopydevice2},
+    {"2.copydevice2", zcopydevice2},
     {"0currentdevice", zcurrentdevice},
     {"0.currentoutputdevice", zcurrentoutputdevice},
     {"1.devicename", zdevicename},
@@ -649,7 +649,7 @@ const op_def zdevice_op_defs[] =
     {"0flushpage", zflushpage},
     {"7.getbitsrect", zgetbitsrect},
     {"1.getdevice", zgetdevice},
-    {"1.getdefaultdevice", zgetdefaultdevice},
+    {"0.getdefaultdevice", zgetdefaultdevice},
     {"2.getdeviceparams", zgetdeviceparams},
     {"2.gethardwareparams", zgethardwareparams},
     {"5makewordimagedevice", zmakewordimagedevice},

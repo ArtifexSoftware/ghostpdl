@@ -118,8 +118,8 @@ zfile_name_parent(i_ctx_t *i_ctx_p)
 
 const op_def zfile1_op_defs[] =
 {
-    {"0.file_name_combine", zfile_name_combine},
-    {"0.file_name_is_absolute", zfile_name_is_absolute},
+    {"3.file_name_combine", zfile_name_combine},
+    {"1.file_name_is_absolute", zfile_name_is_absolute},
     {"0.file_name_separator", zfile_name_separator},
     {"0.file_name_directory_separator", zfile_name_directory_separator},
     {"0.file_name_current", zfile_name_current},

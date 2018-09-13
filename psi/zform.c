@@ -229,6 +229,6 @@ const op_def zform_op_defs[] =
     {"0.beginform", zbeginform},
     {"0.endform", zendform},
     {"0.get_form_id", zget_form_id},
-    {"1.repeatform", zrepeatform},
+    {"3.repeatform", zrepeatform},
 op_def_end(0)
 };

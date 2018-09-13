@@ -466,7 +466,7 @@ const op_def zmisc_a_op_defs[] =
     {"0.oserrno", zoserrno},
     {"1.oserrorstring", zoserrorstring},
     {"0realtime", zrealtime},
-    {"1serialnumber", zserialnumber},
+    {"0serialnumber", zserialnumber},
     {"2.setdebug", zsetdebug},
     {"0.mementolistnewblocks", zmementolistnewblocks},
     {"1.setoserrno", zsetoserrno},
