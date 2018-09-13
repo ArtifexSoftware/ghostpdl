@@ -726,7 +726,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\pcl\pl\plapi.c"
+				>
+			</File>
+			<File
 				RelativePath="..\pcl\pl\plchar.c"
+				>
+			</File>
+			<File
+				RelativePath="..\pcl\pl\plcursor.c"
 				>
 			</File>
 			<File
@@ -763,6 +771,10 @@
 			</File>
 			<File
 				RelativePath="..\pcl\pl\plmain.c"
+				>
+			</File>
+			<File
+				RelativePath="..\pcl\pl\plparams.c"
 				>
 			</File>
 			<File
