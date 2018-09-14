@@ -96,7 +96,7 @@ zeofillstroke(i_ctx_t *i_ctx_p)
     int code = gs_eofillstroke(igs, &restart);
     if (restart == 1)
         push_op_estack(eofillstroke_cont1);
-    else if (restart == 1)
+    else if (restart == 2)
         push_op_estack(eofillstroke_cont2);
     return code;
 }
