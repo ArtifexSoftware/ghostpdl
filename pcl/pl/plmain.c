@@ -254,21 +254,50 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
 
 
 int
-pl_main_run_string_begin(void *instance)
+pl_main_run_string_begin(pl_main_instance_t *minst)
 {
-    return 0;
+    return pl_process_begin(minst->curr_implementation);
 }
 
 int
-pl_main_run_string_continue(void *instance, const char *str, unsigned int length)
+pl_main_run_string_continue(pl_main_instance_t *minst, const char *str, unsigned int length)
 {
-    return 0;
+    stream_cursor_read cursor;
+
+    cursor.ptr = (const byte *)str-1; /* -1 because of gs's stupid stream convention */
+    cursor.limit = cursor.ptr + length;
+    return pl_process(minst->curr_implementation, &cursor);
 }
 
 int
-pl_main_run_string_end(void *instance)
+pl_main_run_string_end(pl_main_instance_t *minst)
 {
-    return 0;
+    return pl_process_end(minst->curr_implementation);
+}
+
+static int
+revert_to_pjli(pl_main_instance_t *minst)
+{
+    pl_interp_implementation_t *pjli =
+        minst->implementations[0];
+    int code;
+
+    /* If we're already in PJL, don't clear the state. */
+    if (minst->curr_implementation == pjli)
+        return 0;
+
+    code = pl_dnit_job(minst->curr_implementation);
+    if (code < 0)
+        return code;
+    code = pl_remove_device(minst->curr_implementation);
+    if (code >= 0)
+        code = pl_set_device(pjli, minst->device);
+    if (code < 0)
+        return code;
+    minst->curr_implementation = pjli;
+    code = pl_init_job(minst->curr_implementation);
+
+    return code;
 }
 
 int
@@ -281,25 +310,39 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
     stream *s;
     int code = 0;
     bool is_stdin = filename[0] == '-' && filename[1] == 0;
-    bool use_process_file;
+    bool use_process_file = false;
+    bool first_job = true;
 
     s = sfopen(filename, "r", mem);
     if (s == NULL)
         return gs_error_Fatal;
 
-    use_process_file = (minst->curr_implementation->proc_process_file != NULL) && !is_stdin;
+    /* This function can run in 2 modes. Either it can run a file directly
+     * using the run_file mechanism, or it can feed the data piecemeal
+     * using the run_string mechanism. Which one depends on several things:
+     *
+     * If we're being piped data, then we have to use run_string.
+     * If we are entered (as is usually the case) with PJL as the selected
+     * interpreter, then we do a quick assessment of the file contents to
+     * pick an interpreter. If the first interpreter has a run_file method
+     * then we'll use that.
+     *
+     * This means that files that start with PJL data will always be run
+     * using run_string.
+     */
 
     for (;;) {
         if_debug1m('I', mem, "[i][file pos=%ld]\n",
                    sftell(s));
 
+        /* Check for EOF and prepare the next block of data. */
         if (s->cursor.r.ptr == s->cursor.r.limit && sfeof(s)) {
             if_debug0m('I', mem, "End of of data\n");
             if (pl_process_end(minst->curr_implementation) < 0)
                  return gs_error_Fatal;
             pl_process_eof(minst->curr_implementation);
-            if (pl_dnit_job(minst->curr_implementation) < 0)
-                return gs_error_Fatal;
+            if (revert_to_pjli(minst) < 0)
+                goto error_fatal_reverted;
             break;
         }
         code = s_process_read_buf(s);
@@ -307,116 +350,119 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
             break;
 
         if (new_job) {
-            if_debug0m('I', mem, "Selecting PDL\n");
-            minst->desired_implementation = pl_select_implementation(pjli, minst, s);
+            /* The only time the current implementation won't be PJL,
+             * is if someone has preselected a particular language
+             * before calling this function. */
+            if (minst->curr_implementation == pjli) {
+                /* Autodetect the language based on the content. */
+                if_debug0m('I', mem, "Selecting PDL\n");
+                minst->desired_implementation = pl_select_implementation(pjli, minst, s);
+
+                /* Possibly this never happens? But attempt to cope anyway. */
+                if (minst->desired_implementation == NULL)
+                    goto flush_to_end_of_job;
+                if (minst->desired_implementation != pjli) {
+                    if (pl_dnit_job(minst->curr_implementation) < 0)
+                        goto error_fatal;
+                }
+            }
+
+            /* If the language implementation needs changing, change it. */
             if (minst->curr_implementation != minst->desired_implementation) {
                 code = pl_remove_device(minst->curr_implementation);
                 if (code >= 0)
                     code = pl_set_device(minst->desired_implementation, minst->device);
-                if (code < 0) {
-                    minst->curr_implementation = minst->desired_implementation;
-                    return gs_error_Fatal;
-                }
+                minst->curr_implementation = minst->desired_implementation;
+                if (code < 0)
+                    goto error_fatal;
+                if_debug1m('I', mem, "selected (%s)\n",
+                           pl_characteristics(minst->curr_implementation)->language);
             }
 
-            minst->curr_implementation = minst->desired_implementation;
-
-            /* Don't reset PJL if there is PJL state from the command line arguments. */
-            if (minst->curr_implementation == pjli) {
-                if (minst->pjl_from_args == false) {
-                    if (pl_init_job(pjli) < 0)
-                        return gs_error_Fatal;
-                } else
-                    minst->pjl_from_args = false;
-            } else {
+            /* PJLI will have been reinitialised already after finishing a non PJL job. */
+            if (minst->curr_implementation != pjli) {
                 if (pl_init_job(minst->curr_implementation) < 0)
-                    return gs_error_Fatal;
-            }
-
-            if_debug1m('I', mem, "selected and initializing (%s)\n",
-                       pl_characteristics(minst->curr_implementation)->language);
-            new_job = false;
-            if (!use_process_file) {
-                if (pl_process_begin(minst->curr_implementation) < 0)
-                    return gs_error_Fatal;
-            }
-        }
-
-        if (minst->curr_implementation) {
-            /* Special case when the job resides in a seekable file and
-               the implementation has a function to process a file at a
-               time. */
-            if (use_process_file) {
-                if_debug1m('I', mem, "processing job from file (%s)\n",
-                           filename);
-
-                code = pl_process_file(minst->curr_implementation, (char *)filename);
-                if (code < 0) {
-                    errprintf(mem, "Warning interpreter exited with error code %d\n",
-                              code);
-                }
-                if (pl_dnit_job(minst->curr_implementation) < 0)
-                    return gs_error_Fatal;
-
-                break;      /* break out of the loop to process the next file */
-            }
-
-            code = pl_process(minst->curr_implementation, &s->cursor.r);
-            if_debug1m('I', mem, "processing (%s) job\n",
-                       pl_characteristics(minst->curr_implementation)->language);
-            if (code == e_ExitLanguage) {
-                if (pl_process_end(minst->curr_implementation) < 0)
-                    return gs_error_Fatal;
-
-                if (pl_dnit_job(minst->curr_implementation) < 0)
-                    return gs_error_Fatal;
-
-                new_job = true;
-
-                if (minst->curr_implementation != pjli)
-                    if (pl_init_job(pjli) < 0)
-                        return gs_error_Fatal;
-
-            }
-            else if (code == gs_error_NeedInput) {
-                code = 0;
-                continue;
-            }
-            else if (code < 0) {  /* error and not exit language */
-                dmprintf1(mem,
-                          "Warning interpreter exited with error code %d\n",
-                          code);
-                dmprintf(mem, "Flushing to end of job\n");
-                /* flush eoj may require more data */
-                while ((pl_flush_to_eoj(minst->curr_implementation, &s->cursor.r)) == 0) {
-                    int code2;
-                    if (s->cursor.r.ptr == s->cursor.r.limit && sfeof(s)) {
-                        if_debug0m('I', mem,
-                                   "end of data found while flushing\n");
+                    goto error_fatal;
+                if_debug1m('I', mem, "initialised (%s)\n",
+                           pl_characteristics(minst->curr_implementation)->language);
+                if (first_job) {
+                    if (!is_stdin && minst->curr_implementation->proc_process_file) {
+                        /* If we aren't being piped data, and this interpreter
+                         * is capable of coping with running a file directly,
+                         * let's do that. */
+                        use_process_file = true;
                         break;
                     }
-                    code2 = s_process_read_buf(s);
-                    if (code2 < 0)
-                        break;
                 }
-                pl_report_errors(minst->curr_implementation, code,
-                                 sftell(s),
-                                 minst->error_report > 0);
-
-                if (pl_process_end(minst->curr_implementation) < 0)
-                    return gs_error_Fatal;
-                if (pl_dnit_job(minst->curr_implementation) < 0)
-                    return gs_error_Fatal;
-                if (pl_init_job(pjli) < 0)
-                    return gs_error_Fatal;
-
-                code = 0;
-                new_job = true;
             }
+
+            first_job = false;
+            new_job = false;
+
+            if (pl_process_begin(minst->curr_implementation) < 0)
+                 goto error_fatal;
         }
+
+        code = pl_process(minst->curr_implementation, &s->cursor.r);
+        if_debug1m('I', mem, "processing (%s) job\n",
+                   pl_characteristics(minst->curr_implementation)->language);
+        if (code == gs_error_NeedInput || code >= 0) {
+            continue;
+        }
+        if (code != e_ExitLanguage) {
+            /* error and not exit language */
+            dmprintf1(mem,
+                      "Warning interpreter exited with error code %d\n",
+                      code);
+flush_to_end_of_job:
+            dmprintf(mem, "Flushing to end of job\n");
+            /* flush eoj may require more data */
+            while ((pl_flush_to_eoj(minst->curr_implementation, &s->cursor.r)) == 0) {
+                int code2;
+                if (s->cursor.r.ptr == s->cursor.r.limit && sfeof(s)) {
+                    if_debug0m('I', mem,
+                               "end of data found while flushing\n");
+                    break;
+                }
+                code2 = s_process_read_buf(s);
+                if (code2 < 0)
+                    break;
+            }
+            pl_report_errors(minst->curr_implementation, code,
+                             sftell(s),
+                             minst->error_report > 0);
+        }
+
+        if (pl_process_end(minst->curr_implementation) < 0)
+            goto error_fatal;
+        new_job = true;
+        /* Always revert to PJL after each job. We avoid reinitialising PJL
+         * if we are already in PJL to avoid clearing the state. */
+        if (revert_to_pjli(minst))
+            goto error_fatal_reverted;
     }
     sfclose(s);
+    s = NULL;
+    if (use_process_file)
+    {
+        if_debug1m('I', mem, "processing job from file (%s)\n",
+                   filename);
+
+        code = pl_process_file(minst->curr_implementation, (char *)filename);
+        if (code < 0) {
+            errprintf(mem, "Warning interpreter exited with error code %d\n",
+                      code);
+        }
+    }
+    if (revert_to_pjli(minst) < 0)
+        goto error_fatal_reverted;
     return 0;
+
+error_fatal:
+    revert_to_pjli(minst);
+error_fatal_reverted:
+    sfclose(s);
+    return gs_error_Fatal;
 }
 
 int
