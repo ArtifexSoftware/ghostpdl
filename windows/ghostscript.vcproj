@@ -2321,6 +2321,10 @@
 				RelativePath="..\base\gstext.c"
 				>
 			</File>
+                        <File
+                                RelativePath="..\base\gstiffio.c"
+                                >
+                        </File>
 			<File
 				RelativePath="..\base\gstrap.c"
 				>
