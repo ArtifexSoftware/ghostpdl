@@ -173,14 +173,13 @@ dynamic_make_string(i_ctx_t *i_ctx_p, ref * pref, da_ptr pda, byte * next)
 /* ------ Main scanner ------ */
 
 /* GC procedures */
-#define ssarray ssptr->s_ss.binary.bin_array
 static
 CLEAR_MARKS_PROC(scanner_clear_marks)
 {
     scanner_state *const ssptr = vptr;
 
     r_clear_attrs(&ssptr->s_file, l_mark);
-    r_clear_attrs(&ssarray, l_mark);
+    r_clear_attrs(&ssptr->s_ss.binary.bin_array, l_mark);
     r_clear_attrs(&ssptr->s_error.object, l_mark);
 }
 static
@@ -198,7 +197,7 @@ case 2:
 case 3:
     if (ssptr->s_scan_type != scanning_binary)
         return 0;
-    ENUM_RETURN_REF(&ssarray);
+    ENUM_RETURN_REF(&ssptr->s_ss.binary.bin_array);
 ENUM_PTRS_END
 static RELOC_PTRS_WITH(scanner_reloc_ptrs, scanner_state *ssptr)
 {
@@ -215,8 +214,8 @@ static RELOC_PTRS_WITH(scanner_reloc_ptrs, scanner_state *ssptr)
         ssptr->s_da.base = sda.data;
     }
     if (ssptr->s_scan_type == scanning_binary) {
-        RELOC_REF_VAR(ssarray);
-        r_clear_attrs(&ssarray, l_mark);
+        RELOC_REF_VAR(ssptr->s_ss.binary.bin_array);
+        r_clear_attrs(&ssptr->s_ss.binary.bin_array, l_mark);
     }
     RELOC_REF_VAR(ssptr->s_error.object);
     r_clear_attrs(&ssptr->s_error.object, l_mark);
