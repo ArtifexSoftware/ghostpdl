@@ -3253,7 +3253,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     const gx_stroke_params *stroke_params, const gx_drawing_color *pdcolor_stroke,
     const gx_clip_path *pcpath)
 {
-    int code;
+    int code, code2;
     gs_transparency_group_params_t params = { 0 };
     gs_rect bbox, group_stroke_box, group_fill_box;
     float opacity = pgs->opacity.alpha;
@@ -3315,40 +3315,47 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     if (pgs->fillconstantalpha > 0.0) {
         code = gs_setopacityalpha(pgs, pgs->fillconstantalpha);
         if (code < 0)
-            return code;
+            goto cleanup;
         code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
         if (code < 0)
-            return code;
+            goto cleanup;
     }
 
     if (pgs->strokeconstantalpha > 0.0) {
         gs_swapcolors(pgs);
         code = gs_setopacityalpha(pgs, pgs->strokeconstantalpha);
         if (code < 0)
-            return code;
+            goto cleanup;
         code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
         if (code < 0)
-            return code;
+            goto cleanup;
         gs_swapcolors(pgs);
     }
 
     /* Now during the pop do the compositing with alpha of 1.0 and normal blend */
     code = gs_setopacityalpha(pgs, 1.0);
     if (code < 0)
-        return code;
+        goto cleanup;
     code = gs_setblendmode(pgs, BLEND_MODE_Normal);
     if (code < 0)
-        return code;
+        goto cleanup;
 
-    code = pdf14_end_transparency_group(dev, pgs);
-    if (code < 0)
-        return code;
+    /* Restore where we were. If an error occured while in the group push
+       return that error code but try to do the cleanup */
+cleanup:
+    code2 = pdf14_end_transparency_group(dev, pgs);
+    if (code2 < 0) {
+        /* At this point things have gone very wrong. We should just shut down */
+        code = gs_abort_pdf14trans_device(pgs);
+        return code2;
+    }
 
-    /* Restore to the original values */
-    code = gs_setopacityalpha(pgs, opacity);
-    if (code < 0)
-        return code;
-    code = gs_setblendmode(pgs, blend_mode);
+    code2 = gs_setopacityalpha(pgs, opacity);
+    if (code2 < 0)
+        return code2;
+    code2 = gs_setblendmode(pgs, blend_mode);
+    if (code2 < 0)
+        return code2;
 
     return code;
 }
