@@ -382,6 +382,7 @@ gx_curr_bbox(gs_gstate * pgs, gs_rect *bbox, gs_bbox_comp_t comp_type)
     bbox->p.y = fixed2float(curr_fixed_bbox.p.y);
     bbox->q.x = fixed2float(curr_fixed_bbox.q.x);
     bbox->q.y = fixed2float(curr_fixed_bbox.q.y);
+    return 0;
 }
 
 /*
