@@ -3259,6 +3259,9 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     float opacity = pgs->opacity.alpha;
     gs_blend_mode_t blend_mode = pgs->blend_mode;
 
+    if (pgs->fillconstantalpha == 0.0 && pgs->strokeconstantalpha == 0.0)
+        return 0;
+
     if (pgs->device == NULL) {
         gs_fixed_rect clip_bbox;
         gs_fixed_rect path_bbox;
@@ -3294,6 +3297,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
         if (code < 0)
             return code;
     }
+
     code = gs_bbox_transform_inverse(&bbox, &ctm_only(pgs), &group_stroke_box);
     if (code < 0)
         return code;
@@ -3308,21 +3312,25 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     if (code < 0)
         return code;
 
-    code = gs_setopacityalpha(pgs, pgs->fillconstantalpha);
-    if (code < 0)
-        return code;
-    code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
-    if (code < 0)
-        return code;
+    if (pgs->fillconstantalpha > 0.0) {
+        code = gs_setopacityalpha(pgs, pgs->fillconstantalpha);
+        if (code < 0)
+            return code;
+        code = pdf14_fill_path(dev, pgs, ppath, fill_params, pdcolor_fill, pcpath);
+        if (code < 0)
+            return code;
+    }
 
-    gs_swapcolors(pgs);
-    code = gs_setopacityalpha(pgs, pgs->strokeconstantalpha);
-    if (code < 0)
-        return code;
-    code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
-    if (code < 0)
-        return code;
-    gs_swapcolors(pgs);
+    if (pgs->strokeconstantalpha > 0.0) {
+        gs_swapcolors(pgs);
+        code = gs_setopacityalpha(pgs, pgs->strokeconstantalpha);
+        if (code < 0)
+            return code;
+        code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
+        if (code < 0)
+            return code;
+        gs_swapcolors(pgs);
+    }
 
     /* Now during the pop do the compositing with alpha of 1.0 and normal blend */
     code = gs_setopacityalpha(pgs, 1.0);
