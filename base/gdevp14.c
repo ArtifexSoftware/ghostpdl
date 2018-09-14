@@ -3255,48 +3255,45 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
 {
     int code, code2;
     gs_transparency_group_params_t params = { 0 };
+    gs_fixed_rect clip_bbox;
     gs_rect bbox, group_stroke_box, group_fill_box;
     float opacity = pgs->opacity.alpha;
     gs_blend_mode_t blend_mode = pgs->blend_mode;
+    gs_fixed_rect path_bbox;
+    int expansion_code;
+    gs_fixed_point expansion;
 
     if (pgs->fillconstantalpha == 0.0 && pgs->strokeconstantalpha == 0.0)
         return 0;
 
-    if (pgs->device == NULL) {
-        gs_fixed_rect clip_bbox;
-        gs_fixed_rect path_bbox;
-        int expansion_code;
-        gs_fixed_point expansion;
-
-        /* gstate comes from clist playback */
-        /* compute smallest from device, pcpath (if any) and ppath bbox */
-        clip_bbox.p.x = clip_bbox.p.y = 0;
+    code = gx_curr_fixed_bbox(pgs, &clip_bbox, NO_PATH);
+    if (code < 0 && code != gs_error_unknownerror)
+        return code;
+    if (code == gs_error_unknownerror) {
+        /* didn't get clip box from gx_curr_fixed_bbox */
+        clip_bbox.p.x = clip_bbox.p.y = 0.0;
         clip_bbox.q.x = int2fixed(dev->width);
         clip_bbox.q.y = int2fixed(dev->height);
-        if (pcpath) {
-            rect_intersect(clip_bbox, pcpath->outer_box);
-        }
-        /* expand the ppath using stroke expansion rule, then intersect it */
-        code = gx_path_bbox(ppath, &path_bbox);
-        if (code < 0)
-            return code;
-        expansion_code = gx_stroke_path_expansion(pgs, ppath, &expansion);
-        if (expansion_code >= 0) {
-            path_bbox.p.x -= expansion.x;
-            path_bbox.p.y -= expansion.y;
-            path_bbox.q.x += expansion.x;
-            path_bbox.q.y += expansion.y;
-        }
-        rect_intersect(path_bbox, clip_bbox);
-        bbox.p.x = fixed2float(path_bbox.p.x);
-        bbox.p.y = fixed2float(path_bbox.p.y);
-        bbox.q.x = fixed2float(path_bbox.q.x);
-        bbox.q.y = fixed2float(path_bbox.q.y);
-    } else {
-        code = gx_curr_bbox(pgs, &bbox, PATH_STROKE);
-        if (code < 0)
-            return code;
     }
+    if (pcpath)
+        rect_intersect(clip_bbox, pcpath->outer_box);
+
+    /* expand the ppath using stroke expansion rule, then intersect it */
+    code = gx_path_bbox(ppath, &path_bbox);
+    if (code < 0)
+        return code;
+    expansion_code = gx_stroke_path_expansion(pgs, ppath, &expansion);
+    if (expansion_code >= 0) {
+        path_bbox.p.x -= expansion.x;
+        path_bbox.p.y -= expansion.y;
+        path_bbox.q.x += expansion.x;
+        path_bbox.q.y += expansion.y;
+    }
+    rect_intersect(path_bbox, clip_bbox);
+    bbox.p.x = fixed2float(path_bbox.p.x);
+    bbox.p.y = fixed2float(path_bbox.p.y);
+    bbox.q.x = fixed2float(path_bbox.q.x);
+    bbox.q.y = fixed2float(path_bbox.q.y);
 
     code = gs_bbox_transform_inverse(&bbox, &ctm_only(pgs), &group_stroke_box);
     if (code < 0)

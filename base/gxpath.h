@@ -309,6 +309,7 @@ int gx_clip_to_rectangle(gs_gstate *, gs_fixed_rect *);
 int gx_clip_to_path(gs_gstate *);
 int gx_default_clip_box(const gs_gstate *, gs_fixed_rect *);
 int gx_effective_clip_path(gs_gstate *, gx_clip_path **);
+int gx_curr_fixed_bbox(gs_gstate * pgs, gs_fixed_rect *bbox, gs_bbox_comp_t comp_type);
 int gx_curr_bbox(gs_gstate * pgs, gs_rect *bbox, gs_bbox_comp_t comp_type);
  
 

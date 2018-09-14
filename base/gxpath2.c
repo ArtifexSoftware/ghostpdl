@@ -58,6 +58,9 @@ gx_path_subpath_start_point(const gx_path * ppath, gs_fixed_point * ppt)
 int
 gx_path_bbox(gx_path * ppath, gs_fixed_rect * pbox)
 {
+    if (ppath == NULL) {
+        return_error(gs_error_unknownerror) ;
+    }
     if (ppath->bbox_accurate) {
         /* The bounding box was set by setbbox. */
         *pbox = ppath->bbox;
