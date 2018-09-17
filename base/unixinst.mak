@@ -146,24 +146,25 @@ install-resdata1 :
 install-iccdata1 :
 
 # install html documentation
-DOC_PAGES=API.htm C-style.htm Develop.htm GS9_Color_Management.pdf Helpers.htm \
-          History4.htm History9.htm Lib.htm Ps2pdf.htm Readme.htm Use.htm \
-          AUTHORS Deprecated.htm Devices.htm GS9_Color_Management.tex\
-          Hershey.htm History5.htm index.html Make.htm Ps2ps2.htm Release.htm \
-          WhatIsGS.htm Changes.htm Details8.htm DLL.htm gs.css History1.htm \
-          History6.htm Install.htm News.htm pscet_status.txt Source.htm \
-          Commprod.htm Details9.htm Drivers.htm gsdoc.el  History2.htm \
-          History7.htm Issues.htm Projects.htm Psfiles.htm thirdparty.htm \
-          COPYING Details.htm Fonts.htm gs-vms.hlp History3.htm History8.htm\
-          Language.htm Ps2epsi.htm Ps-style.htm Unix-lpr.htm \
-          sample_downscale_device.htm SavedPages.htm subclass.htm\
-          VectorDevices.htm gdevds32.c
+DOC_PAGES=index.html API.htm C-style.htm Develop.htm DLL.htm Fonts.htm Install.htm Lib.htm \
+          News.htm Psfiles.htm Readme.htm sample_downscale_device.htm Source.htm \
+          thirdparty.htm Use.htm WhatIsGS.htm Commprod.htm Deprecated.htm \
+          Devices.htm Drivers.htm History9.htm Language.htm Make.htm Ps2epsi.htm \
+          Ps-style.htm Release.htm SavedPages.htm subclass.htm Unix-lpr.htm \
+          VectorDevices.htm gs-style.css index.js pscet_status.txt style.css \
+          gdevds32.c \
+          GS9_Color_Management.pdf
 
+DOC_PAGE_IMAGES=Artifex_logo.png  favicon.png  ghostscript_logo.png  hamburger-light.png  x-light.png
 
 install-doc: $(PSDOCDIR)/News.htm
 	-mkdir -p $(DESTDIR)$(docdir)
+	-mkdir -p $(DESTDIR)$(docdir)/images
 	$(SH) -c 'for f in $(DOC_PAGES) ;\
 	do if ( test -f $(PSDOCDIR)/$$f ); then $(INSTALL_DATA) $(PSDOCDIR)/$$f $(DESTDIR)$(docdir); fi;\
+	done'
+	$(SH) -c 'for f in $(DOC_PAGE_IMAGES) ;\
+	do if ( test -f $(PSDOCDIR)/images/$$f ); then $(INSTALL_DATA) $(PSDOCDIR)/images/$$f $(DESTDIR)$(docdir)/images; fi;\
 	done'
 
 # install the man pages for each locale
