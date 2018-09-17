@@ -1044,6 +1044,11 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
                 dev_param_req_t *request = (dev_param_req_t *)data;
                 return gx_default_get_param(pdev, request->Param, request->list);
             }
+        case gxdso_current_output_device:
+            {
+                *(gx_device **)data = pdev;
+                return 0;
+            }
     }
     return_error(gs_error_undefined);
 }

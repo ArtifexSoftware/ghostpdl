@@ -327,6 +327,10 @@ enum {
     gxdso_JPEG_passthrough_data,
     gxdso_JPEG_passthrough_end,
     gxdso_supports_iccpostrender,
+    /* Retrieve the last device in a device chain
+       (either forwarding or subclass devices).
+     */
+    gxdso_current_output_device,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

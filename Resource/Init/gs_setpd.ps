@@ -877,7 +877,13 @@ SETPDDEBUG { (Selecting.) = pstack flush } if
                 % Stack: mark <orig> <request> <merged> <failed>
 SETPDDEBUG { (Constructing.) = pstack flush } if
 
-   currentdevice .devicename 2 index /OutputDevice get eq
+   % Non-obvious: we need to check the name of the output device, to tell
+   % whether we're going to have to replace the entire device chain (which
+   % may be only one device, or may be multiple devices.
+   % If we're not replacing the entire change, we have to use the device in
+   % the graphics state, so the configuration of the entire device chain is
+   % correctly set.
+   .currentoutputdevice .devicename 2 index /OutputDevice get eq
     { currentdevice }
     { 1 index /OutputDevice get finddevice }
    ifelse
