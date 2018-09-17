@@ -159,10 +159,15 @@ pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
 /* Restore the viewer's graphic state. */
 int
 pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s)
-{   const int i = --pdev->vgstack_depth;
+{
+    const int i = --pdev->vgstack_depth;
 
-    if (i < pdev->vgstack_bottom || i < 0)
-        return_error(gs_error_unregistered); /* Must not happen. */
+    if (i < pdev->vgstack_bottom || i < 0) {
+        if ((pdev->ObjectFilter & FILTERIMAGE) == 0)
+            return_error(gs_error_unregistered); /* Must not happen. */
+        else
+            return 0;
+    }
     if (s)
         stream_puts(s, "Q\n");
     pdf_load_viewer_state(pdev, pdev->vgstack + i);
