@@ -547,16 +547,19 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
     bool devn;
     float orig_width, scale, orig_flatness;
 
+    /* If we restart with 1, then we're swapped to the alternative
+     * (stroke) color. Put us back before we do anything else. */
     switch (*restart)
     {
+    case 0:
+        /* Initial entry, or restart after loading fill pattern. */
+        break;
     case 1:
-        goto restart1;
-    case 2:
-        goto restart2;
+        /* restart after loading stroke pattern. */
+        gs_swapcolors_quick(pgs);
+        break;
     default:
         assert("This should never happen" == NULL);
-        break;
-    case 0:
         break;
     }
 
@@ -582,19 +585,23 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
         ensure_tag_is_set(pgs, pgs->device, GS_TEXT_TAG);	/* NB: may unset_dev_color */
 
     code = gx_set_dev_color(pgs);
-    *restart = 1;
+    *restart = 0;
     if (code != 0)
         return code;
-restart1:
     code = gs_gstate_color_load(pgs);
     if (code < 0)
         return code;
     gs_swapcolors_quick(pgs);
     code = gx_set_dev_color(pgs);
-    *restart = 2;
-    if (code != 0)
+    *restart = 1;
+    if (code != 0) {
+        /* If we exit here, because of needing to Remap the colors,
+         * leave the colors swapped. Otherwise, put them back for
+         * sanity. */
+        if (code != gs_error_Remap_Color)
+            gs_swapcolors_quick(pgs);
         return code;
-restart2:
+    }
     *restart = 0;
     code = gs_gstate_color_load(pgs);
     if (code < 0)
