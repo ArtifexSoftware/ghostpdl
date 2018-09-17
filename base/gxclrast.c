@@ -2698,16 +2698,18 @@ read_set_misc2(command_buf_t *pcb, gs_gstate *pgs, segment_notes *pnotes)
     if (mask & op_bm_tk_known) {
         cb = *cbp++;
         pgs->blend_mode = cb >> 3;
-        pgs->text_knockout = (cb & 4) != 0;
+        pgs->text_knockout = cb & 1;
         /* the following usually have no effect; see gxclpath.c */
-        pgs->overprint_mode = (cb >> 1) & 1;
+        cb = *cbp++;
+        pgs->overprint_mode = (cb >> 2) & 1;
         pgs->effective_overprint_mode = pgs->overprint_mode;
+        pgs->stroke_overprint = (cb >> 1) & 1;
         pgs->overprint = cb & 1;
         cb = *cbp++;
         pgs->renderingintent = cb;
-        if_debug5m('L', pgs->memory, " BM=%d TK=%d OPM=%d OP=%d RI=%d\n",
+        if_debug6m('L', pgs->memory, " BM=%d TK=%d OPM=%d OP=%d op=%d RI=%d\n",
                    pgs->blend_mode, pgs->text_knockout, pgs->overprint_mode,
-                   pgs->overprint, pgs->renderingintent);
+                   pgs->stroke_overprint, pgs->overprint, pgs->renderingintent);
     }
     if (mask & segment_notes_known) {
         cb = *cbp++;

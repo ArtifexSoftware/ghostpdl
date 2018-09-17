@@ -3319,14 +3319,18 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     }
 
     if (pgs->strokeconstantalpha > 0.0) {
-        gs_swapcolors(pgs);
+        pdf14_device * pdev = (pdf14_device *)dev;
+
+        /* set up overprint and OPM for stroke */
+        pdev->overprint = pgs->stroke_overprint;
         code = gs_setopacityalpha(pgs, pgs->strokeconstantalpha);
         if (code < 0)
             goto cleanup;
         code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
+        /* restore the overprint settings to fill */
+        pdev->overprint = pgs->stroke_overprint;
         if (code < 0)
             goto cleanup;
-        gs_swapcolors(pgs);
     }
 
     /* Now during the pop do the compositing with alpha of 1.0 and normal blend */

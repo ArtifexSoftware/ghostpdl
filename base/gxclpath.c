@@ -400,12 +400,13 @@ cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_gstate *pgs,
      */
     if (state_neq(overprint) || state_neq(effective_overprint_mode) ||
         state_neq(blend_mode) || state_neq(text_knockout) ||
-        state_neq(renderingintent)) {
+        state_neq(stroke_overprint) || state_neq(renderingintent)) {
         *punknown |= op_bm_tk_known;
         state_update(overprint);
         state_update(effective_overprint_mode);
         state_update(blend_mode);
         state_update(text_knockout);
+        state_update(stroke_overprint);
         state_update(renderingintent);
     }
     if (state_neq(opacity.alpha)) {
@@ -484,7 +485,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                  sizeof(float) +	/* flatness */
                  sizeof(float) +	/* line width */
                  sizeof(float) +	/* miter limit */
-                 2 +		/* op_bm_tk and rend intent */
+                 3 +		/* bm_tk, op, and rend intent */
                  sizeof(float) * 2 +  /* opacity/shape alpha */
                  sizeof(cldev->gs_gstate.alpha)
         ];
@@ -520,8 +521,10 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         if (unknown & op_bm_tk_known) {
             *bp++ =
                 ((int)cldev->gs_gstate.blend_mode << 3) +
-                (cldev->gs_gstate.text_knockout << 2) +
-                (cldev->gs_gstate.overprint_mode << 1) +
+                cldev->gs_gstate.text_knockout;
+            *bp++ =
+                (cldev->gs_gstate.overprint_mode << 2) +
+                (cldev->gs_gstate.stroke_overprint << 1) +
                 cldev->gs_gstate.overprint;
             *bp++ = cldev->gs_gstate.renderingintent;
         }
