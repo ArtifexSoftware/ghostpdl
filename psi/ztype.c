@@ -174,9 +174,10 @@ static int
 zexecuteonly(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    ref_type rtype = r_type(op);
 
     check_op(1);
-    if (r_has_type(op, t_dictionary))
+    if (rtype == t_dictionary || rtype == t_astruct || rtype == t_device)
         return_error(gs_error_typecheck);
     return access_check(i_ctx_p, a_execute, true);
 }
