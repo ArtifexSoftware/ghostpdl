@@ -399,6 +399,8 @@ pxl_impl_process_eof(pl_interp_implementation_t * impl)
     pxl_interp_instance_t *pxli = impl->interp_client_data;
 
     px_state_cleanup(pxli->pxs);
+    px_process_init(pxli->st, true);
+
     return 0;
 }
 
@@ -454,6 +456,7 @@ pxl_impl_dnit_job(pl_interp_implementation_t * impl)
 
     px_stream_header_dnit(&pxli->headerState);
     px_state_cleanup(pxli->pxs);
+    px_process_init(pxli->st, true);
     return 0;
 }
 

@@ -198,7 +198,6 @@ px_state_cleanup(px_state_t * pxs)
 {
     px_end_page_cleanup(pxs);
     px_end_session_cleanup(pxs);
-    px_process_init(pxs, true);
     pxs->have_page = false;
 }
 
