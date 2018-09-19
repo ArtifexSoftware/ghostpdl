@@ -177,7 +177,7 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
 {
     gs_memory_t *mem = inst->memory;
     pl_interp_implementation_t *pjli;
-    
+
     gp_init();
     /* debug flags we reset this out of gs_lib_init0 which sets these
        and the allocator we want the debug setting but we do our own
@@ -202,7 +202,7 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
         if (gs_iodev_init(mem) < 0)
             return gs_error_Fatal;
     }
-    
+
     gp_get_realtime(inst->base_time);
     gs_c_param_list_write(&inst->params, mem);
     gs_param_list_set_persistent_keys((gs_param_list *)&inst->params, false);
@@ -216,7 +216,7 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
     }
 
     inst->curr_implementation = pjli = inst->implementations[0];
-    
+
     /* initialize pjl, needed for option processing. */
     if (pl_init_job(pjli) < 0) {
         return gs_error_Fatal;
@@ -284,7 +284,7 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
 
 #define curr_implementation minst->curr_implementation
 #define desired_implementation minst->desired_implementation
-    
+
     if (pl_cursor_open(mem, &r, filename, minst->buf, sizeof(minst->buf)) < 0) {
         return gs_error_Fatal;
     }
@@ -300,7 +300,7 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                 return gs_error_Fatal;
             break;
         }
-        
+
         if (new_job) {
             if_debug0m('I', mem, "Selecting PDL\n");
             desired_implementation = pl_select_implementation(pjli, minst, r);
@@ -313,7 +313,7 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                     return gs_error_Fatal;
                 }
             }
-            
+
             curr_implementation = desired_implementation;
 
             /* Don't reset PJL if there is PJL state from the command line arguments. */
@@ -327,7 +327,7 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                 if (pl_init_job(curr_implementation) < 0)
                     return gs_error_Fatal;
             }
-            
+
             if_debug1m('I', mem, "selected and initializing (%s)\n",
                        pl_characteristics(curr_implementation)->language);
             new_job = false;
@@ -484,7 +484,7 @@ pl_main_languages_init(gs_memory_t * mem,        /* deallocator for devices */
     minst->implementations = impls;
     minst->curr_implementation = minst->desired_implementation = NULL;
     memset(impls, 0, sz);
-    
+
     /* Create & init PDL all instances. Could do this lazily to save memory, */
     /* but for now it's simpler to just create all instances up front. */
     for (index = 0; index < count; ++index) {
@@ -493,12 +493,12 @@ pl_main_languages_init(gs_memory_t * mem,        /* deallocator for devices */
             gs_alloc_bytes_immovable(mem,
                                      sizeof(pl_interp_implementation_t),
                                      "pl_main_languages_init interp");
-        
+
         if (impls[index] == NULL)
             goto pmui_err;
-            
+
         *impls[index] = *pdl_implementations[index];
-        
+
         /* Whatever instance we allocate here will become the current
          * instance during initialisation; this allows init files to be
          * successfully read etc. */
@@ -514,7 +514,7 @@ pl_main_languages_init(gs_memory_t * mem,        /* deallocator for devices */
         }
 
     }
-    
+
     return 0;
 
  pmui_err:
@@ -552,7 +552,7 @@ pl_main_alloc_instance(gs_memory_t * mem)
     memset(minst, 0, sizeof(*minst));
 
     minst->memory = mem;
-    
+
     minst->pjl_from_args = false;
     minst->error_report = -1;
     minst->pause = true;
@@ -616,7 +616,7 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
         gs_register_struct_root(pti->memory, &device_root,
                                 (void **)&pti->device,
                                 "pl_top_create_device");
-        
+
         {
             gs_c_param_list list;
 
@@ -635,7 +635,7 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
         /* If the display device is selected (default), set up the callback.  NB Move me. */
         if (strcmp(gs_devicename(pti->device), "display") == 0) {
             gx_device_display *ddev;
-        
+
             if (!pti->disp) {
                 code = -1;
             } else {
@@ -678,7 +678,7 @@ parse_floats(gs_memory_t * mem, uint arg_count, char *arg, float *f)
     char *s = arg_copy(arg, mem);
     if (s == NULL)
         return -1;
-    
+
     /* allow 'x', tab or spaces to delimit arguments */
     tok = gs_strtok(s, " \tx", &l);
     while (tok != NULL && float_index < arg_count) {
@@ -747,7 +747,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     bool help = false;
     char *arg;
     gs_c_param_list *params = &pmi->params;
-    
+
     gs_c_param_list_write_more(params);
     while ((code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0 && *arg == '-') {
         if (arg[1] == '\0') /* not an option, stdin */
@@ -1130,7 +1130,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     int index;
                     pl_interp_implementation_t **impls = pmi->implementations;
 
-                    /* 
+                    /*
                      * the 0th entry always holds the PJL
                      * implementation, which is never explicitly
                      * selected.
@@ -1305,16 +1305,13 @@ pl_auto_sense(pl_main_instance_t *minst, const char *name,  int buffer_length)
         if (!memcmp(name, PJL_UEL, uel_len))
             return impls[0];
     }
-    
-    for (impl = impls; *impl != 0; ++impl) {
-        int auto_string_len = strlen(pl_characteristics(*impl)->auto_sense_string);
-        const char *sense   = pl_characteristics(*impl)->auto_sense_string;
-        if (auto_string_len != 0 && buffer_length >= auto_string_len)
-            if (!memcmp(sense, name, auto_string_len))
-                return *impl;
+
+    for (impl = impls; *impl != NULL; ++impl) {
+        if (pl_characteristics(*impl)->auto_sense(name, buffer_length) == 0)
+            return *impl;
     }
-    /* Defaults to first language PJL is first in the table */
-    return impls[1];
+    /* Defaults to language 1 (if there is one): PJL is language 0, PCL is language 1. */
+    return impls[1] ? impls[1] : impls[0];
 }
 
 /* either the (1) implementation has been selected on the command line or
@@ -1360,7 +1357,7 @@ pl_print_usage(const pl_main_instance_t * pti, const char *msg)
 {
     long utime[2];
     gx_device *pdev = pti->device;
-    
+
     gp_get_realtime(utime);
     dmprintf3(pti->memory, "%% %s time = %g, pages = %ld\n",
               msg, utime[0] - pti->base_time[0] +
@@ -1424,7 +1421,7 @@ pl_set_icc_params(const gs_memory_t *mem, gs_gstate *pgs)
     pl_main_instance_t *minst = pl_main_get_instance(mem);
     gs_param_string p;
     int code = 0;
-    
+
     if (minst->pdefault_gray_icc) {
         param_string_from_transient_string(p, minst->pdefault_gray_icc);
         code = gs_setdefaultgrayicc(pgs, &p);

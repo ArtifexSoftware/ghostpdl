@@ -30,7 +30,7 @@ typedef struct gx_device_s gx_device;
 #endif
 
 /*
- * Generic interpreter data types which may be subclassed by specific interpereters
+ * Generic interpreter data types which may be subclassed by specific interpreters
  */
 typedef struct pl_interp_implementation_s pl_interp_implementation_t;   /* fwd decl */
 
@@ -41,7 +41,7 @@ typedef struct pl_interp_characteristics_s
 {
     const char *language;       /* generic language should correspond with
                                    HP documented PJL name */
-    const char *auto_sense_string;      /* string used to detect language */
+    int (*auto_sense)(const char *string, int length);      /* routine used to detect language - 0 is detected, non-zero not detected */
     const char *manufacturer;   /* manuf str */
     const char *version;        /* version str */
     const char *build_date;     /* build date str */
@@ -52,8 +52,7 @@ typedef struct pl_interp_characteristics_s
  * Function to return the characteristics to the main loop.
  */
 const pl_interp_characteristics_t *pl_characteristics(const
-                                                      pl_interp_implementation_t
-                                                      *);
+                                                      pl_interp_implementation_t *);
 typedef const pl_interp_characteristics_t
     *(*pl_interp_proc_characteristics_t) (const pl_interp_implementation_t *);
 

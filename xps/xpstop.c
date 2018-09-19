@@ -55,13 +55,21 @@ struct xps_interp_instance_s
 #define XPS_VERSION NULL
 #define XPS_BUILD_DATE NULL
 
+static int
+xps_detect_language(const char *s, int len)
+{
+    if (len < 2)
+        return 1;
+    return memcmp(s, "PK", 2);
+}
+
 static const pl_interp_characteristics_t *
 xps_imp_characteristics(const pl_interp_implementation_t *pimpl)
 {
     static pl_interp_characteristics_t xps_characteristics =
     {
         "XPS",
-        "PK", /* string to recognize XPS files */
+        xps_detect_language,
         "Artifex",
         XPS_VERSION,
         XPS_BUILD_DATE,

@@ -137,16 +137,24 @@ typedef struct pxl_interp_instance_s
     px_stream_header_process_t headerState;        /* used to decode stream header */
 } pxl_interp_instance_t;
 
-/* Get implemtation's characteristics */
+static int
+pxl_detect_language(const char *s, int len)
+{
+   if (len < 11)
+       return 1;
+   return memcmp(s, ") HP-PCL XL", 11);
+}
+
+/* Get implementation's characteristics */
 static const pl_interp_characteristics_t *      /* always returns a descriptor */
-pxl_impl_characteristics(const pl_interp_implementation_t * impl)        /* implementation of interpereter to alloc */
+pxl_impl_characteristics(const pl_interp_implementation_t * impl)        /* implementation of interpreter to alloc */
 {
     /* version and build date are not currently used */
 #define PXLVERSION NULL
 #define PXLBUILDDATE NULL
     static pl_interp_characteristics_t pxl_characteristics = {
         "PCLXL",
-        ") HP-PCL XL",
+        pxl_detect_language,
         "Artifex",
         PXLVERSION,
         PXLBUILDDATE,

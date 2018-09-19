@@ -1254,14 +1254,24 @@ pjl_process(pjl_parser_state * pst, void *pstate, stream_cursor_read * pr)
                 /* Skip the UEL and continue. */
                 p += 9;
                 continue;
-            } else if (!memcmp(p + 1, "@PJL", min(avail, 4))) { /* Might be PJL. */
-                if (avail < 4) {        /* Not enough data to know yet. */
+            } else {
+                /* We allow for a single CRLF at the start of a block of PJL.
+                 * This is in violation of the spec, but allows us to accept
+                 * files like bug 693269. This shouldn't adversely affect any
+                 * real world files. */
+                if (avail > 0 && p[1] == '\r')
+                    p++, avail--;
+                if (avail > 0 && p[1] == '\n')
+                    p++, avail--;
+                if (!memcmp(p + 1, "@PJL", min(avail, 4))) { /* Might be PJL. */
+                    if (avail < 4) {        /* Not enough data to know yet. */
+                        break;
+                    }
+                    /* Definitely a PJL command. */
+                } else {            /* Definitely not PJL. */
+                    code = 1;
                     break;
                 }
-                /* Definitely a PJL command. */
-            } else {            /* Definitely not PJL. */
-                code = 1;
-                break;
             }
         }
         if (!legal_pjl_char(p[1])) {
