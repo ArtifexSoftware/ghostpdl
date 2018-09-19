@@ -1855,6 +1855,7 @@ zFAPIavailable(i_ctx_t *i_ctx_p)
     char *serv_name = NULL;
     ref name_ref;
 
+    check_op(1);
     if (r_has_type(op, t_name)) {
         name_string_ref(imemory, op, &name_ref);
 

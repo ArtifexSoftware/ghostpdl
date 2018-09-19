@@ -455,6 +455,9 @@ bind def
 end % the temporary dictionary for local binding.
 odef odef odef odef odef odef
 
+% Undef these, not needed outside this file
+[ /.FAPIavailable /.FAPIpassfont /.FAPIrebuildfont ] {systemdict exch .forceundef} forall
+
 .setlanguagelevel
 
 %END FAPI
