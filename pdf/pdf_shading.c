@@ -23,5 +23,7 @@ int pdfi_shading(pdf_context *ctx)
 {
     if (ctx->stack_top - ctx->stack_bot >= 1)
         pdfi_pop(ctx, 1);
+
+
     return 0;
 }
