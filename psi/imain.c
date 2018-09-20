@@ -606,8 +606,15 @@ gs_main_run_string_with_length(gs_main_instance * minst, const char *str,
                                        pexit_code, perror_object);
     if (code != gs_error_NeedInput)
         return code;
-    return gs_main_run_string_end(minst, user_errors,
+
+    code = gs_main_run_string_end(minst, user_errors,
                                   pexit_code, perror_object);
+    /* Not okay for user to use .needinput
+     * This treats it as a fatal error.
+     */
+    if (code == gs_error_NeedInput)
+        return_error(gs_error_Fatal);
+    return code;
 }
 
 /* Set up for a suspendable run_string. */
