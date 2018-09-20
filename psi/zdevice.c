@@ -46,6 +46,10 @@ zcopydevice2(i_ctx_t *i_ctx_p)
 
     check_read_type(op[-1], t_device);
     check_type(*op, t_boolean);
+    if (op[-1].value.pdevice == NULL)
+        /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
+        return_error(gs_error_undefined);
+
     code = gs_copydevice2(&new_dev, op[-1].value.pdevice, op->value.boolval,
                           imemory);
     if (code < 0)
@@ -108,6 +112,10 @@ zdevicename(i_ctx_t *i_ctx_p)
     const char *dname;
 
     check_read_type(*op, t_device);
+    if (op->value.pdevice == NULL)
+        /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
+        return_error(gs_error_undefined);
+
     dname = op->value.pdevice->dname;
     make_const_string(op, avm_foreign | a_readonly, strlen(dname),
                       (const byte *)dname);
@@ -157,6 +165,10 @@ zgetbitsrect(i_ctx_t *i_ctx_p)
 
     check_read_type(op[-7], t_device);
     dev = op[-7].value.pdevice;
+    if (dev == NULL)
+        /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
+        return_error(gs_error_undefined);
+
     check_int_leu(op[-6], dev->width);
     rect.p.x = op[-6].value.intval;
     check_int_leu(op[-5], dev->height);
@@ -274,6 +286,9 @@ zget_device_params(i_ctx_t *i_ctx_p, bool is_hardware)
     }
     rkeys = *op;
     dev = op[-1].value.pdevice;
+    if (op[-1].value.pdevice == NULL)
+        /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
+        return_error(gs_error_undefined);
     pop(1);
     stack_param_list_write(&list, &o_stack, &rkeys, iimemory);
     code = gs_get_device_or_hardware_params(dev, (gs_param_list *) & list,
@@ -440,6 +455,9 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
     check_type_only(*prequire_all, t_boolean);
     check_write_type_only(*pdev, t_device);
     dev = pdev->value.pdevice;
+    if (dev == NULL)
+        /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
+        return_error(gs_error_undefined);
     code = stack_param_list_read(&list, &o_stack, 0, ppolicy,
                                  prequire_all->value.boolval, iimemory);
     if (code < 0)

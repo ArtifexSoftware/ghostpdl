@@ -81,6 +81,10 @@ display_set_callback(gs_main_instance *minst, display_callback *callback)
          * setting callback, then reopen it.
          */
         check_read_type(op[-1], t_device);
+        if (op[-1].value.pdevice == NULL)
+            /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
+            return_error(gs_error_undefined);
+
         dev = op[-1].value.pdevice;
 
         was_open = dev->is_open;
