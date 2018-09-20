@@ -1110,8 +1110,7 @@ end
    .setglobal
  } bind def
 ErrorNames
- { dup .registererror /VMerror eq {exit} if
- } forall
+ { .registererror} forall
 errordict begin
 % The handlers for interrupt and timeout are special; there is no
 % 'current object', so they push their own name.
