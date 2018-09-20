@@ -372,9 +372,13 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 % of strings: what the system thinks is the ps name,
 % and the access path.
 /.setnativefontmapbuilt { % set whether we've been run
-  systemdict exch /.nativefontmapbuilt exch .forceput
+  dup type /booleantype eq {
+      systemdict exch /.nativefontmapbuilt exch .forceput
+  }
+  {pop}
+  ifelse
 } .bind executeonly def
-systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
+systemdict /NONATIVEFONTMAP known //.setnativefontmapbuilt exec
 /.buildnativefontmap {   % - .buildnativefontmap <bool>
   systemdict /.nativefontmapbuilt .knownget not
   { //false} if
@@ -415,9 +419,10 @@ systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
       } forall
     } if
     % record that we've been run
-    //true .setnativefontmapbuilt
+    //true //.setnativefontmapbuilt exec
   } ifelse
 } bind def
+currentdict /.setnativefontmapbuilt .forceundef
 
 % Create the dictionary that registers the .buildfont procedure
 % (called by definefont) for each FontType.
