@@ -380,7 +380,7 @@ jbig2_decode_generic_template0(Jbig2Ctx *ctx,
         uint32_t CONTEXT;
         uint32_t line_m1;
         uint32_t line_m2;
-        int padded_width = (GBW + 7) & -8;
+        uint32_t padded_width = (GBW + 7) & -8;
         int code = 0;
 
         line_m1 = line1 ? line1[0] : 0;
@@ -550,7 +550,7 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
         uint32_t CONTEXT;
         uint32_t line_m1;
         uint32_t line_m2;
-        int padded_width = (GBW + 7) & -8;
+        uint32_t padded_width = (GBW + 7) & -8;
 
         line_m1 = line1 ? line1[0] : 0;
         line_m2 = line2 ? line2[0] << 5 : 0;
@@ -661,7 +661,7 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
         uint32_t CONTEXT;
         uint32_t line_m1;
         uint32_t line_m2;
-        int padded_width = (GBW + 7) & -8;
+        uint32_t padded_width = (GBW + 7) & -8;
 
         line_m1 = line1 ? line1[0] : 0;
         line_m2 = line2 ? line2[0] << 4 : 0;
@@ -725,7 +725,7 @@ jbig2_decode_generic_template3(Jbig2Ctx *ctx,
     for (y = 0; y < GBH; y++) {
         uint32_t CONTEXT;
         uint32_t line_m1;
-        int padded_width = (GBW + 7) & -8;
+        uint32_t padded_width = (GBW + 7) & -8;
 
         line_m1 = line1 ? line1[0] : 0;
         CONTEXT = (line_m1 >> 1) & 0x3f0;
