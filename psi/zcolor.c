@@ -687,6 +687,7 @@ zcolor_remap_one(
     ++esp;
     make_struct(esp, imemory_space((gs_ref_memory_t *) pgs->memory),
                 pmap);
+    rc_increment(pmap);
     push_op_estack(finish_proc);
     push_op_estack(zfor_samples);
     return o_push_estack;
@@ -699,6 +700,7 @@ zcolor_remap_one_store(i_ctx_t *i_ctx_p, double min_value)
     int i;
     gx_transfer_map *pmap = r_ptr(esp, gx_transfer_map);
 
+    rc_decrement_only(pmap, "zcolor_remap_one_store");
     if (ref_stack_count(&o_stack) < transfer_map_size)
         return_error(gs_error_stackunderflow);
     for (i = 0; i < transfer_map_size; i++) {
