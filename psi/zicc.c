@@ -261,6 +261,8 @@ zset_outputintent(i_ctx_t * i_ctx_p)
     code = dict_find_string(op, "N", &pnval);
     if (code < 0)
         return code;
+    if (code == 0)
+        return_error(gs_error_undefined);
     ncomps = pnval->value.intval;
 
     /* verify the DataSource entry. Creat profile from stream */
@@ -491,6 +493,8 @@ znumicc_components(i_ctx_t * i_ctx_p)
     code = dict_find_string(op, "N", &pnval);
     if (code < 0)
         return code;
+    if (code == 0)
+        return_error(gs_error_undefined);
     ncomps = pnval->value.intval;
     /* verify the DataSource entry. Create profile from stream */
     if (dict_find_string(op, "DataSource", &pstrmval) <= 0)

@@ -410,13 +410,25 @@ zbuildfont9(i_ctx_t *i_ctx_p)
      * from a file, GlyphData will be an integer, and DataSource will be
      * a (reusable) stream.
      */
-    if (code < 0 ||
-        (code = cid_font_data_param(op, &common, &GlyphDirectory)) < 0 ||
-        (code = dict_find_string(op, "FDArray", &prfda)) < 0 ||
-        (code = dict_find_string(op, "CIDFontName", &pCIDFontName)) <= 0 ||
-        (code = dict_int_param(op, "FDBytes", 0, MAX_FDBytes, -1, &FDBytes)) < 0
-        )
+    if (code < 0)
         return code;
+    code = cid_font_data_param(op, &common, &GlyphDirectory);
+    if (code < 0)
+        return code;
+    code = dict_find_string(op, "FDArray", &prfda);
+    if (code < 0)
+        return code;
+    if (code == 0)
+        return_error(gs_error_undefined);
+    code = dict_find_string(op, "CIDFontName", &pCIDFontName);
+    if (code < 0)
+        return code;
+    if (code == 0)
+        return_error(gs_error_undefined);
+    code = dict_int_param(op, "FDBytes", 0, MAX_FDBytes, -1, &FDBytes);
+    if (code < 0)
+        return code;
+
     /*
      * Since build_gs_simple_font may resize the dictionary and cause
      * pointers to become invalid, save CIDFontName
@@ -426,17 +438,24 @@ zbuildfont9(i_ctx_t *i_ctx_p)
         /* Standard CIDFont, require GlyphData and CIDMapOffset. */
         ref *pGlyphData;
 
-        if ((code = dict_find_string(op, "GlyphData", &pGlyphData)) < 0 ||
-            (code = dict_uint_param(op, "CIDMapOffset", 0, max_uint - 1,
-                                    max_uint, &CIDMapOffset)) < 0)
+        code = dict_find_string(op, "GlyphData", &pGlyphData);
+        if (code < 0)
+            return code;
+        if (code == 0)
+            return_error(gs_error_undefined);
+        code = dict_uint_param(op, "CIDMapOffset", 0, max_uint - 1, max_uint, &CIDMapOffset);
+        if (code < 0)
             return code;
         GlyphData = *pGlyphData;
         if (r_has_type(&GlyphData, t_integer)) {
             ref *pds;
             stream *ignore_s;
 
-            if ((code = dict_find_string(op, "DataSource", &pds)) < 0)
+            code = dict_find_string(op, "DataSource", &pds);
+            if (code < 0)
                 return code;
+            if (code == 0)
+                return_error(gs_error_undefined);
             check_read_file(i_ctx_p, ignore_s, pds);
             DataSource = *pds;
         } else {

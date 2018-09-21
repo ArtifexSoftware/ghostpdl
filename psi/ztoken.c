@@ -356,7 +356,7 @@ ztoken_scanner_options(const ref *upref, int old_options)
         int code = dict_find_string(upref, pnso->pname, &ppcproc);
 
         /* Update the options only if the parameter has changed. */
-        if (code >= 0) {
+        if (code > 0) {
             if (r_has_type(ppcproc, t_null))
                 options &= ~pnso->option;
             else

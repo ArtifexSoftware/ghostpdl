@@ -145,21 +145,36 @@ zcheck_r6_password(i_ctx_t * i_ctx_p)
         return_error(gs_error_typecheck);
     
     code = dict_find_string(CryptDict, "O", &Oref);
-    if (code < 0 || !r_has_type(Oref, t_string)) {
+    if (code < 0)
+        return code;
+    if (code == 0)
+        return_error(gs_error_undefined);
+    if (!r_has_type(Oref, t_string))
       return_error(gs_error_typecheck);
-    }
+
     code = dict_find_string(CryptDict, "OE", &OEref);
-    if (code < 0 || !r_has_type(OEref, t_string)) {
+    if (code < 0)
+        return code;
+    if (code == 0)
+        return_error(gs_error_undefined);
+    if (!r_has_type(OEref, t_string))
       return_error(gs_error_typecheck);
-    }
+
     code = dict_find_string(CryptDict, "U", &Uref);
-    if (code < 0 || !r_has_type(Uref, t_string)) {
+    if (code < 0)
+        return code;
+    if (code == 0)
+        return_error(gs_error_undefined);
+    if (!r_has_type(Uref, t_string))
       return_error(gs_error_typecheck);
-    }
+
     code = dict_find_string(CryptDict, "UE", &UEref);
-    if (code < 0 || !r_has_type(UEref, t_string)) {
+    if (code < 0)
+        return code;
+    if (code == 0)
+        return_error(gs_error_undefined);
+    if (!r_has_type(UEref, t_string))
       return_error(gs_error_typecheck);
-    }
 
     pop(2);
     op = osp;

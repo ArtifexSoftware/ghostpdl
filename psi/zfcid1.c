@@ -347,11 +347,17 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     ref rcidmap, ignore_gdir, file, *pfile, cfnstr, *pCIDFontName, CIDFontName, *t;
     ulong loca_glyph_pos[2][2];
     int code = cid_font_data_param(op, &common, &ignore_gdir);
+    if (code < 0)
+        return code;
 
-    if (code < 0 ||
-        (code = dict_find_string(op, "CIDFontName", &pCIDFontName)) <= 0 ||
-        (code = dict_int_param(op, "MetricsCount", 0, 4, 0, &MetricsCount)) < 0
-        )
+    code = dict_find_string(op, "CIDFontName", &pCIDFontName);
+    if (code <= 0) {
+        if (code == 0)
+            return_error(gs_error_undefined);
+        return code;
+    }
+    code = dict_int_param(op, "MetricsCount", 0, 4, 0, &MetricsCount);
+    if (code < 0)
         return code;
     /*
      * Since build_gs_simple_font may resize the dictionary and cause

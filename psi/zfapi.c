@@ -1826,6 +1826,9 @@ FAPI_get_xlatmap(i_ctx_t *i_ctx_p, char **xlatmap)
 
     if ((code = dict_find_string(systemdict, ".xlatmap", &pref)) < 0)
         return code;
+    if (code == 0)
+        return_error(gs_error_undefined);
+
     if (r_type(pref) != t_string)
         return_error(gs_error_typecheck);
     *xlatmap = (char *)pref->value.bytes;
@@ -1882,11 +1885,11 @@ ps_get_server_param(gs_fapi_server *I, const byte *subtype,
     ref *FAPIconfig, *options, *server_options;
     i_ctx_t *i_ctx_p = (i_ctx_t *) I->client_ctx_p;
 
-    if (dict_find_string(systemdict, ".FAPIconfig", &FAPIconfig) >= 0
+    if (dict_find_string(systemdict, ".FAPIconfig", &FAPIconfig) > 0
         && r_has_type(FAPIconfig, t_dictionary)) {
-        if (dict_find_string(FAPIconfig, "ServerOptions", &options) >= 0
+        if (dict_find_string(FAPIconfig, "ServerOptions", &options) > 0
             && r_has_type(options, t_dictionary)) {
-            if (dict_find_string(options, (char *)subtype, &server_options) >=
+            if (dict_find_string(options, (char *)subtype, &server_options) >
                 0 && r_has_type(server_options, t_string)) {
                 *server_param = (byte *) server_options->value.const_bytes;
                 *server_param_size = r_size(server_options);
@@ -2071,7 +2074,7 @@ zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     pdata = (font_data *) pfont->client_data;
     I = pbfont->FAPI;
 
-    if (dict_find_string((op - 1), "SubfontId", &v) >= 0
+    if (dict_find_string((op - 1), "SubfontId", &v) > 0
         && r_has_type(v, t_integer))
         subfont = v->value.intval;
     else
@@ -2278,8 +2281,8 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
         if (pbfont->FontType == ft_CID_TrueType && font_file_path) {
             ref *pdr2, *fidr, *dummy;
             pdr2 = pfont_dict(gs_rootfont(igs));
-            if (dict_find_string(pdr2, "FontInfo", &fidr) &&
-                dict_find_string(fidr, "GlyphNames2Unicode", &dummy))
+            if (dict_find_string(pdr2, "FontInfo", &fidr) > 0 &&
+                dict_find_string(fidr, "GlyphNames2Unicode", &dummy) > 0)
             {
                 unsigned char uc[4] = {0};
                 unsigned int cc = 0;
@@ -2418,13 +2421,13 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
 
                 fdict = pfont_dict(gs_rootfont(igs));
                 code = dict_find_string(fdict, "CMap", &CMapDict);
-                if (code >= 0 && r_has_type(CMapDict, t_dictionary)) {
+                if (code > 0 && r_has_type(CMapDict, t_dictionary)) {
                     code = dict_find_string(CMapDict, "WMode", &WMode);
-                    if (code >= 0 && r_has_type(WMode, t_integer)) {
+                    if (code > 0 && r_has_type(WMode, t_integer)) {
                         wmode = WMode->value.intval;
                     }
                     code = dict_find_string(CMapDict, "CMapName", &CMapName);
-                    if (code >= 0 && r_has_type(CMapName, t_name)) {
+                    if (code > 0 && r_has_type(CMapName, t_name)) {
                         name_string_ref(imemory, CMapName, &CMapNameStr);
                         cmapnm = (char *)CMapNameStr.value.bytes;
                         cmapnmlen = r_size(&CMapNameStr);
@@ -2433,10 +2436,10 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
                 /* We only have to lookup the char code if we're *not* using an identity ordering 
                    with the exception of Identity-UTF16 which is a different beast altogether */
                 if (unicode_cp || (cmapnmlen > 0 && !strncmp(cmapnm, utfcmap, cmapnmlen > utfcmaplen ? utfcmaplen : cmapnmlen))
-                    || (dict_find_string(pdr, "CIDSystemInfo", &CIDSystemInfo) >= 0
+                    || (dict_find_string(pdr, "CIDSystemInfo", &CIDSystemInfo) > 0
                     && r_has_type(CIDSystemInfo, t_dictionary)
                     && dict_find_string(CIDSystemInfo, "Ordering",
-                                        &Ordering) >= 0
+                                        &Ordering) > 0
                     && r_has_type(Ordering, t_string)
                     && strncmp((const char *)Ordering->value.bytes,
                                "Identity", 8) != 0)) {
@@ -2464,7 +2467,7 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
                 ref cc32;
                 ref *gid;
                 make_int(&cc32, 32);
-                if (dict_find(TT_cmap, &cc32, &gid) >= 0)
+                if (dict_find(TT_cmap, &cc32, &gid) > 0)
                     c = gid->value.intval;
             }
             cr->char_codes[0] = c;
@@ -2537,7 +2540,7 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
         if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0
             || !r_has_type(CharStrings, t_dictionary))
             return_error(gs_error_invalidfont);
-        if ((dict_find(CharStrings, &char_name, &glyph_index) < 0)
+        if ((dict_find(CharStrings, &char_name, &glyph_index) <= 0)
             || r_has_type(glyph_index, t_null)) {
 #ifdef DEBUG
             ref *pvalue;
@@ -2956,7 +2959,7 @@ zFAPIpassfont(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
 
-    if (dict_find_string(op, "SubfontId", &v) >= 0
+    if (dict_find_string(op, "SubfontId", &v) > 0
         && r_has_type(v, t_integer))
         subfont = v->value.intval;
     else
@@ -2969,7 +2972,7 @@ zFAPIpassfont(i_ctx_t *i_ctx_p)
     /* If the font dictionary contains a FAPIPlugInReq key, the the PS world wants us
      * to try to use a specific FAPI plugin, so find it, and try it....
      */
-    if (dict_find_string(op, "FAPIPlugInReq", &v) >= 0 && r_type(v) == t_name) {
+    if (dict_find_string(op, "FAPIPlugInReq", &v) > 0 && r_type(v) == t_name) {
 
         name_string_ref(imemory, v, &reqstr);
 

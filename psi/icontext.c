@@ -162,7 +162,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
         uint size;
         ref *system_dict = &pcst->dict_stack.system_dict;
 
-        if (dict_find_string(system_dict, "userparams", &puserparams) >= 0)
+        if (dict_find_string(system_dict, "userparams", &puserparams) > 0)
             size = dict_length(puserparams);
         else
             size = 300;
@@ -286,7 +286,7 @@ context_state_store(gs_context_state_t * pcst)
         /* We need i_ctx_p for access to the d_stack. */
         i_ctx_t *i_ctx_p = pcst;
 
-        if (dict_find_string(systemdict, "userparams", &puserparams) < 0)
+        if (dict_find_string(systemdict, "userparams", &puserparams) <= 0)
             return_error(gs_error_Fatal);
         pcst->userparams = *puserparams;
     }

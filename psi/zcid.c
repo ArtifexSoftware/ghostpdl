@@ -72,11 +72,13 @@ TT_char_code_from_CID_no_subst(const gs_memory_t *mem,
     } else
         return false; /* Must not happen. */
     for (;n--; i++) {
+        int code;
+
         if (array_get(mem, DecodingArray, i, &char_code1) < 0 ||
             !r_has_type(&char_code1, t_integer))
             return false; /* Must not happen. */
-        if (dict_find(TT_cmap, &char_code1, &glyph_index) >= 0 &&
-                r_has_type(glyph_index, t_integer)) {
+        code = dict_find(TT_cmap, &char_code1, &glyph_index);
+        if (code > 0 && r_has_type(glyph_index, t_integer)) {
             *c = glyph_index->value.intval;
             found = true;
             if (*c != 0)
