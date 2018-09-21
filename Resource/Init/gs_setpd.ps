@@ -919,10 +919,15 @@ SETPDDEBUG { (Recovering.) = pstack flush } if
                 % Stack: mark ... <merged> <failed> <device> <eraseflag>
 SETPDDEBUG { (Installing.) = pstack flush } if
 
-    pop
+   pop
                 % .setdevice clears the current page device!
    .currentpagedevice pop exch
-   .setdevice pop
+   { .setdevice } stopped {
+     cleartomark exch pop
+     /setpagedevice $error /errorname get
+     signalerror
+   } if
+   pop
    .setpagedevice
 
                 % Implement UseCIEColor directly if this is a LL3 system.

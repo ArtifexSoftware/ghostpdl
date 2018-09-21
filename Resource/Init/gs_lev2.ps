@@ -610,7 +610,14 @@ currentuserparams /WaitTimeout known
    .dicttomark setpagedevice
    /WaitTimeout exch mark /JobTimeout 5 2 roll .dicttomark setsystemparams
  } bind def
-/.setpagesize { 2 array astore /PageSize .dict1 setpagedevice } bind def
+/.setpagesize
+ { 2 copy 2 array astore /PageSize .dict1 { setpagedevice } stopped {
+     pop	% the setpagedevice dict
+     /setpagesize $error /errorname get signalerror
+   } {
+     pop pop	% success -- pop the arguments
+   } ifelse
+ } bind def
 /setduplexmode { /Duplex .dict1 setpagedevice } bind def
 /setmargins
  { exch 2 array astore /Margins .dict1 setpagedevice
