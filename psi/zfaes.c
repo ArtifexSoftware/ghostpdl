@@ -45,7 +45,7 @@ z_aes_d(i_ctx_t * i_ctx_p)
     check_dict_read(*op);
     if (dict_find_string(op, "Key", &sop) <= 0)
         return_error(gs_error_rangecheck);
-
+    check_type(*sop, t_string);
     s_aes_set_key(&state, sop->value.const_bytes, r_size(sop));
 
     /* extract the padding flag, which defaults to true for compatibility */
