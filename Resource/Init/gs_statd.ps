@@ -50,15 +50,15 @@ statusdict begin
                 % Page sizes defined by Adobe documentation
                 % Note: these executable arrays should all begin with two
                 % integers which are the width and height (see gs_setpd.ps).
- /11x17 {792 1224 //.setpagesize exec} bind def  % 11x17 portrait
- /a3 {842 1191 //.setpagesize exec} bind def
- /a4 {595 842 //.setpagesize exec} bind def
+ /11x17 {792 1224 //.setpagesize stopped { pop pop /11x17 $error /errorname get signalerror } if } bind def  % 11x17 portrait
+ /a3 {842 1191 //.setpagesize stopped { pop pop /a3 $error /errorname get signalerror } if } bind def
+ /a4 {595 842 //.setpagesize stopped { pop pop /a4 $error /errorname get signalerror } if } bind def
 % a4small should be a4 with an ImagingBBox of [25 25 570 817].
  /a4small /a4 load def
 % b5 see below.
- /ledger {1224 792 //.setpagesize exec} bind def  % 11x17 landscape
- /legal {612 1008 //.setpagesize exec} bind def
- /letter {612 792 //.setpagesize exec} bind def
+ /ledger {1224 792 //.setpagesize stopped { pop pop /ledger $error /errorname get signalerror } if } bind def  % 11x17 landscape
+ /legal {612 1008 //.setpagesize stopped { pop pop /legal $error /errorname get signalerror } if } bind def
+ /letter {612 792 //.setpagesize stopped { pop pop /letter $error /errorname get signalerror } if } bind def
 % lettersmall should be letter with an ImagingBBox of [25 25 587 767].
  /lettersmall /letter load def
 % note should be letter (or some other size) with the ImagingBBox
@@ -68,68 +68,68 @@ statusdict begin
 
                 % Other page sizes
         % ISO standard paper sizes
- /a0 {2384 3370 //.setpagesize exec} bind def
- /a1 {1684 2384 //.setpagesize exec} bind def
- /a2 {1191 1684 //.setpagesize exec} bind def
-% /a3 {842 1191 //.setpagesize exec} bind def	% defined by Adobe
-% /a4 {595 842 //.setpagesize exec} bind def	% defined by Adobe
- /a5 {420 595 //.setpagesize exec} bind def
- /a6 {297 420 //.setpagesize exec} bind def
- /a7 {210 297 //.setpagesize exec} bind def
- /a8 {148 210 //.setpagesize exec} bind def
- /a9 {105 148 //.setpagesize exec} bind def
- /a10 {73 105 //.setpagesize exec} bind def
+ /a0 {2384 3370 //.setpagesize stopped { pop pop /a0 $error /errorname get signalerror } if } bind def
+ /a1 {1684 2384 //.setpagesize stopped { pop pop /a1 $error /errorname get signalerror } if } bind def
+ /a2 {1191 1684 //.setpagesize stopped { pop pop /a2 $error /errorname get signalerror } if } bind def
+% /a3 {842 1191 //.setpagesize stopped { pop pop /a3 $error /errorname get signalerror } if } bind def	% defined by Adobe
+% /a4 {595 842 //.setpagesize stopped { pop pop /a4 $error /errorname get signalerror } if } bind def	% defined by Adobe
+ /a5 {420 595 //.setpagesize stopped { pop pop /a5 $error /errorname get signalerror } if } bind def
+ /a6 {297 420 //.setpagesize stopped { pop pop /a6 $error /errorname get signalerror } if } bind def
+ /a7 {210 297 //.setpagesize stopped { pop pop /a7 $error /errorname get signalerror } if } bind def
+ /a8 {148 210 //.setpagesize stopped { pop pop /a8 $error /errorname get signalerror } if } bind def
+ /a9 {105 148 //.setpagesize stopped { pop pop /a9 $error /errorname get signalerror } if } bind def
+ /a10 {73 105 //.setpagesize stopped { pop pop /a10 $error /errorname get signalerror } if } bind def
 % ISO and JIS B sizes are different....
- /isob0 {2835 4008 //.setpagesize exec} bind def
+ /isob0 {2835 4008 //.setpagesize stopped { pop pop /isob0 $error /errorname get signalerror } if } bind def
  /b0 /isob0 load def
- /isob1 {2004 2835 //.setpagesize exec} bind def
+ /isob1 {2004 2835 //.setpagesize stopped { pop pop /isob1 $error /errorname get signalerror } if } bind def
  /b1 /isob1 load def
- /isob2 {1417 2004 //.setpagesize exec} bind def
+ /isob2 {1417 2004 //.setpagesize stopped { pop pop /isob2 $error /errorname get signalerror } if } bind def
  /b2 /isob2 load def
- /isob3 {1001 1417 //.setpagesize exec} bind def
+ /isob3 {1001 1417 //.setpagesize stopped { pop pop /isob3 $error /errorname get signalerror } if } bind def
  /b3 /isob3 load def
- /isob4 {709 1001 //.setpagesize exec} bind def
+ /isob4 {709 1001 //.setpagesize stopped { pop pop /isob4 $error /errorname get signalerror } if } bind def
  /b4 /isob4 load def
- /isob5 {499 709 //.setpagesize exec} bind def
+ /isob5 {499 709 //.setpagesize stopped { pop pop /isob5 $error /errorname get signalerror } if } bind def
  /b5 /isob5 load def
- /isob6 {354 499 //.setpagesize exec} bind def
+ /isob6 {354 499 //.setpagesize stopped { pop pop /isob6 $error /errorname get signalerror } if } bind def
  /b6 /isob6 load def
- /jisb0 {2920 4127 //.setpagesize exec} bind def
- /jisb1 {2064 2920 //.setpagesize exec} bind def
- /jisb2 {1460 2064 //.setpagesize exec} bind def
- /jisb3 {1032 1460 //.setpagesize exec} bind def
- /jisb4 {729 1032 //.setpagesize exec} bind def
- /jisb5 {516 729 //.setpagesize exec} bind def
- /jisb6 {363 516 //.setpagesize exec} bind def
- /c0 {2599 3677 //.setpagesize exec} bind def
- /c1 {1837 2599 //.setpagesize exec} bind def
- /c2 {1298 1837 //.setpagesize exec} bind def
- /c3 {918 1298 //.setpagesize exec} bind def
- /c4 {649 918 //.setpagesize exec} bind def
- /c5 {459 649 //.setpagesize exec} bind def
- /c6 {323 459 //.setpagesize exec} bind def
+ /jisb0 {2920 4127 //.setpagesize stopped { pop pop /jisb0 $error /errorname get signalerror } if } bind def
+ /jisb1 {2064 2920 //.setpagesize stopped { pop pop /jisb1 $error /errorname get signalerror } if } bind def
+ /jisb2 {1460 2064 //.setpagesize stopped { pop pop /jisb2 $error /errorname get signalerror } if } bind def
+ /jisb3 {1032 1460 //.setpagesize stopped { pop pop /jisb3 $error /errorname get signalerror } if } bind def
+ /jisb4 {729 1032 //.setpagesize stopped { pop pop /jisb4 $error /errorname get signalerror } if } bind def
+ /jisb5 {516 729 //.setpagesize stopped { pop pop /jisb5 $error /errorname get signalerror } if } bind def
+ /jisb6 {363 516 //.setpagesize stopped { pop pop /jisb6 $error /errorname get signalerror } if } bind def
+ /c0 {2599 3677 //.setpagesize stopped { pop pop /c0 $error /errorname get signalerror } if } bind def
+ /c1 {1837 2599 //.setpagesize stopped { pop pop /c1 $error /errorname get signalerror } if } bind def
+ /c2 {1298 1837 //.setpagesize stopped { pop pop /c2 $error /errorname get signalerror } if } bind def
+ /c3 {918 1298 //.setpagesize stopped { pop pop /c3 $error /errorname get signalerror } if } bind def
+ /c4 {649 918 //.setpagesize stopped { pop pop /c4 $error /errorname get signalerror } if } bind def
+ /c5 {459 649 //.setpagesize stopped { pop pop /c5 $error /errorname get signalerror } if } bind def
+ /c6 {323 459 //.setpagesize stopped { pop pop /c6 $error /errorname get signalerror } if } bind def
         % U.S. CAD standard paper sizes
- /archE {2592 3456 //.setpagesize exec} bind def
- /archD {1728 2592 //.setpagesize exec} bind def
- /archC {1296 1728 //.setpagesize exec} bind def
- /archB {864 1296 //.setpagesize exec} bind def
- /archA {648 864 //.setpagesize exec} bind def
+ /archE {2592 3456 //.setpagesize stopped { pop pop /archE $error /errorname get signalerror } if } bind def
+ /archD {1728 2592 //.setpagesize stopped { pop pop /archD $error /errorname get signalerror } if } bind def
+ /archC {1296 1728 //.setpagesize stopped { pop pop /archC $error /errorname get signalerror } if } bind def
+ /archB {864 1296 //.setpagesize stopped { pop pop /archB $error /errorname get signalerror } if } bind def
+ /archA {648 864 //.setpagesize stopped { pop pop /archA $error /errorname get signalerror } if } bind def
         % Other paper sizes
- /flsa {612 936 //.setpagesize exec} bind def  % U.S. foolscap
- /flse {612 936 //.setpagesize exec} bind def  % European foolscap
- /halfletter {396 612 //.setpagesize exec} bind def
+ /flsa {612 936 //.setpagesize stopped { pop pop /flsa $error /errorname get signalerror } if } bind def  % U.S. foolscap
+ /flse {612 936 //.setpagesize stopped { pop pop /flse $error /errorname get signalerror } if } bind def  % European foolscap
+ /halfletter {396 612 //.setpagesize stopped { pop pop /halfletter $error /errorname get signalerror } if } bind def
         % minimum of a4 and letter (a4 width, letter length)
- /pa4 {595 792 //.setpagesize exec} bind def
+ /pa4 {595 792 //.setpagesize stopped { pop pop /pa4 $error /errorname get signalerror } if } bind def
         % Japanese postcard size, 100mm x 148mm
- /hagaki {283 420 //.setpagesize exec} bind def
+ /hagaki {283 420 //.setpagesize stopped { pop pop /hagaki $error /errorname get signalerror } if } bind def
         % U.S. ANSI/ASME Y14.1 paper sizes
  /ANSI_A  //letter def
  /ANSI_B  //11x17  def
  /tabloid //11x17  def
- /ANSI_C {1224 1585 //.setpagesize exec} bind def
- /ANSI_D {1585 2448 //.setpagesize exec} bind def
- /ANSI_E {2448 3168 //.setpagesize exec} bind def
- /ANSI_F {2016 2880 //.setpagesize exec} bind def
+ /ANSI_C {1224 1585 //.setpagesize stopped { pop pop /ANSI_C $error /errorname get signalerror } if } bind def
+ /ANSI_D {1585 2448 //.setpagesize stopped { pop pop /ANSI_D $error /errorname get signalerror } if } bind def
+ /ANSI_E {2448 3168 //.setpagesize stopped { pop pop /ANSI_E $error /errorname get signalerror } if } bind def
+ /ANSI_F {2016 2880 //.setpagesize stopped { pop pop /ANSI_F $error /errorname get signalerror } if } bind def
 %END SIZES
 currentdict end
 dup /.setpagesize .undef
@@ -164,19 +164,19 @@ readonly def
 
 % Tray and format selection
 
- /11x17tray {/11x17 .uservar exec} bind def
- /a3tray {/a3 .uservar exec} bind def
- /a4tray {/a4 .uservar exec} bind def
- /a5tray {/a5 .uservar exec} bind def
- /a6tray {/a6 .uservar exec} bind def
- /b4tray {/b4 .uservar exec} bind def
- /b5tray {/b5 .uservar exec} bind def
- /flsatray {/flsa .uservar exec} bind def
- /flsetray {/flse .uservar exec} bind def
- /halflettertray {/halfletter .uservar exec} bind def
- /ledgertray {/ledger .uservar exec} bind def
- /legaltray {/legal .uservar exec} bind def
- /lettertray {/letter .uservar exec} bind def
+ /11x17tray {/11x17 .uservar stopped { pop pop /11x17tray $error /errorname get signalerror } if } bind def
+ /a3tray {/a3 .uservar stopped { pop pop /a3tray $error /errorname get signalerror } if } bind def
+ /a4tray {/a4 .uservar stopped { pop pop /a4tray $error /errorname get signalerror } if } bind def
+ /a5tray {/a5 .uservar stopped { pop pop /a5tray $error /errorname get signalerror } if } bind def
+ /a6tray {/a6 .uservar stopped { pop pop /a6tray $error /errorname get signalerror } if } bind def
+ /b4tray {/b4 .uservar stopped { pop pop /b4tray $error /errorname get signalerror } if } bind def
+ /b5tray {/b5 .uservar stopped { pop pop /b5tray $error /errorname get signalerror } if } bind def
+ /flsatray {/flsa .uservar stopped { pop pop /flsatray $error /errorname get signalerror } if } bind def
+ /flsetray {/flse .uservar stopped { pop pop /flsetray $error /errorname get signalerror } if } bind def
+ /halflettertray {/halfletter .uservar stopped { pop pop /halflettertray $error /errorname get signalerror } if } bind def
+ /ledgertray {/ledger .uservar stopped { pop pop /ledgertray $error /errorname get signalerror } if } bind def
+ /legaltray {/legal .uservar stopped { pop pop /legaltray $error /errorname get signalerror } if } bind def
+ /lettertray {/letter .uservar stopped { pop pop /lettertray $error /errorname get signalerror } if } bind def
 
 % Per-job parameters
 
