@@ -631,7 +631,14 @@ currentuserparams /WaitTimeout known
    .dicttomark setpagedevice
  } bind def
 /setresolution
- { dup 2 array astore /HWResolution .dict1 setpagedevice
+ { count 1 lt { /setresolution /stackunderflow signalerror } if
+   dup type dup /integertype eq exch /realtype eq or not
+   {
+      /setresolution /typecheck signalerror
+   } if
+   dup 2 array astore /HWResolution .dict1 { setpagedevice } stopped {
+     pop /setresolution $error /errorname get signalerror
+   } if
  } bind def
 %END PAGEDEVICE
 
