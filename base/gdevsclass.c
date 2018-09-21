@@ -99,13 +99,21 @@
  */
 int default_subclass_open_device(gx_device *dev)
 {
-    if (dev->child) {
-        dev_proc(dev->child, open_device)(dev->child);
-        dev->child->is_open = true;
-        gx_update_from_subclass(dev);
-    }
+    int code = 0;
 
-    return 0;
+    /* observed with Bug 699794, don't set is_open = true if the open_device failed */
+    /* and make sure to propagate the return code from the child device to caller.  */
+    /* Only open the child if it was closed  and if child open is OK, return 1.     */
+    /* (see gs_opendevice) */
+    if (dev->child && dev->child->is_open == 0) {
+        code = dev_proc(dev->child, open_device)(dev->child);
+        if (code >= 0) {
+            dev->child->is_open = true;
+            code = 1;	/* device had been closed, but now is open */
+        }
+        gx_update_from_subclass(dev);	/* this is probably safe to do even if the open failed */
+    }
+    return code;
 }
 
 void default_subclass_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
