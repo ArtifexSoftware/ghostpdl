@@ -146,6 +146,10 @@ currentdict /.bind_ undef
 } bind def
 
 /.bigstring {	% <size> .bigstring <string|bytestring>
+  count 1 lt { /.bigstring /stackunderflow signalerror } if
+  dup type /integertype ne {
+    /.bigstring /typecheck signalerror
+  } if
   dup 65400 gt { .bytestring } { string } ifelse
 } bind def
 
