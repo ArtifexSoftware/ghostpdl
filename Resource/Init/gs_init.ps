@@ -20,6 +20,11 @@
 %	%% Replace <n> <file(s)>
 % indicate places where the next <n> lines should be replaced by
 % the contents of <file(s)>, when creating a single merged init file.
+%
+% For reasons not clear to me, some cases of %% are being treated as
+% DSC comments when (and only when) the resource files are disk based
+% This can kill DSC parsing for pdfwrite at least, so avoid using
+% double % comments in this file.
 
 % The interpreter can call out to PostScript code.  All procedures
 % called in this way, and no other procedures defined in these
@@ -136,12 +141,12 @@ currentdict /PDFNOCIDFALLBACK known /PDFNOCIDFALLBACK exch def
          ifelse
   .bind def
 
-%% This was a debugging switch removed in 9.22, no other software
-%% should have had any regard for it, and even if testing its value
-%% should have checked its existence first. However pstotext, an
-%% ancient and no longer maintained piece of softare, did check
-%% its value unconditionally. So we retain this key in the dictionary
-%% purely for backward compatibility.
+% This was a debugging switch removed in 9.22, no other software
+% should have had any regard for it, and even if testing its value
+% should have checked its existence first. However pstotext, an
+% ancient and no longer maintained piece of softare, did check
+% its value unconditionally. So we retain this key in the dictionary
+% purely for backward compatibility.
 /NOBIND false def
 
 currentdict /BATCH known   /BATCH exch def
@@ -2082,12 +2087,12 @@ currentdict /tempfilepaths undef
   //SAFETY /safe //true .forceput % overrides readonly
 } .bind executeonly odef
 
-%% This is only used during startup. Its required so that
-%% we can detect in setpagdevice that we are in fact in startup
-%% and allocate a *global* instead of local VM. We need it to be
-%% global to satisfy Display PostScript (see start of /setpagdevice
-%% in gs_setpd.ps)
-%%
+% This is only used during startup. Its required so that
+% we can detect in setpagdevice that we are in fact in startup
+% and allocate a *global* instead of local VM. We need it to be
+% global to satisfy Display PostScript (see start of /setpagdevice
+% in gs_setpd.ps)
+%
 /.locksafeglobal {
   .locksafe_userparams
   systemdict /getenv {pop //false} put
@@ -2116,8 +2121,8 @@ currentdict /tempfilepaths undef
   .locksafe
 } .bind executeonly odef
 
-%% See /.locksafeglobal above.
-%%
+% See /.locksafeglobal above.
+%
 /.setsafeglobal {
   SAFETY /safe get not {
     <<
@@ -2155,22 +2160,22 @@ SAFER { .setsafeglobal } if
 
 /UndefinePostScriptOperators {
 
-  %% This list is of Display PostScript operators. We believe that Display PostScript
-  %% was never fully implemented and the only known user, GNUStep, is no longer
-  %% using it. So lets remove it.
+  % This list is of Display PostScript operators. We believe that Display PostScript
+  % was never fully implemented and the only known user, GNUStep, is no longer
+  % using it. So lets remove it.
   [
   /condition /currentcontext /detach /.fork /join /.localfork /lock /monitor /notify
   /wait /yield /.currentscreenphase /.setscreenphase /.image2 /eoviewclip /initviewclip
   /viewclip /viewclippath /defineusername
-  %% NeXT DPS extensions
+  % NeXT DPS extensions
   /currentalpha /setalpha /.alphaimage /composite /compositerect /dissolve /sizeimagebox /.sizeimageparams
   ]
   {systemdict exch .forceundef} forall
 
-  %% This list is of operators which no longer appear to be used, and which we do not believe
-  %% to have any real use. For now we will undefine the operstors so they cannot easily be used
-  %% but can be easily restored (just delete the name from the list in the array). In future
-  %% we may remove the operator and the code implementation entirely.
+  % This list is of operators which no longer appear to be used, and which we do not believe
+  % to have any real use. For now we will undefine the operstors so they cannot easily be used
+  % but can be easily restored (just delete the name from the list in the array). In future
+  % we may remove the operator and the code implementation entirely.
   [
   /.bitadd /.charboxpath /.cond /.countexecstack /.execstack /.runandhide /.popdevicefilter
   /.execfile /.filenamesplit /.file_name_parent
@@ -2179,15 +2184,15 @@ SAFER { .setsafeglobal } if
   /.currentlimitclamp /.dotorientation /.setaccuratecurves /.setcurvejoin /.setdashadapt /.setdotorientation
   /.setlimitclamp /.currentscreenlevels /.dashpath /.pathbbox /.identeq /.identne /.tokenexec /.forgetsave /.pantonecallback
 
-  %% Used by our own test suite files
-  %%/.setdotlength % Bug687720.ps
+  % Used by our own test suite files
+  %/.setdotlength % Bug687720.ps
   ]
   {systemdict exch .forceundef} forall
 
-  %% This list of operators are used internally by various parts of the Ghostscript startup code.
-  %% Since each operator is a potential security vulnerability, and any operator listed here
-  %% is not required once the initialisation is complete and functions are bound, we undefine
-  %% the ones that aren't needed at runtime.
+  % This list of operators are used internally by various parts of the Ghostscript startup code.
+  % Since each operator is a potential security vulnerability, and any operator listed here
+  % is not required once the initialisation is complete and functions are bound, we undefine
+  % the ones that aren't needed at runtime.
   [
   /.callinstall /.callbeginpage /.callendpage
   /.currentstackprotect /.setstackprotect /.errorexec /.finderrorobject /.installsystemnames /.bosobject /.fontbbox
@@ -2242,12 +2247,12 @@ SAFER { .setsafeglobal } if
 } .bind executeonly def % must be bound and hidden for .forceundef
 
 /UndefinePDFOperators {
-  %% This list of operators are used internally by various parts of the Ghostscript PDF interpreter.
-  %% Since each operator is a potential security vulnerability, and any operator listed here
-  %% is not required once the initislisation is complete and functions are bound, we undefine
-  %% the ones that aren't needed at runtime.
-  %% This function is only called if DELAYBIND is true. It is a copy of the code at the end of pdf_main.ps
-  %% and must be maintained in parallel with it.
+  % This list of operators are used internally by various parts of the Ghostscript PDF interpreter.
+  % Since each operator is a potential security vulnerability, and any operator listed here
+  % is not required once the initislisation is complete and functions are bound, we undefine
+  % the ones that aren't needed at runtime.
+  % This function is only called if DELAYBIND is true. It is a copy of the code at the end of pdf_main.ps
+  % and must be maintained in parallel with it.
   [
   /.pdfawidthshow /.pdfwidthshow /.currentblackptcomp /.setblackptcomp
   /.setfillcolor /.setfillcolorspace /.setstrokecolor /.setstrokecolorspace /.currentrenderingintent /.setrenderingintent
@@ -2356,13 +2361,13 @@ $error /.nosetlocal //false put
 
 (END GLOBAL) VMDEBUG
 
-%% .savelocalstate is part of Display PostScript (if included). Part of the function of
-%% the .savelocalstate routine is to store the 'initial saved gstate' (savedinitialgstate)
-%% in systemdict. The code in dps1.c, gstate_check_space, disallows writing or creating
-%% gstates in global VM in certain conditions. If we execute setpagedevice before we
-%% reach this point, we must ensure that we do so using /..StartupGlobal so that
-%% the dictionary is defined in global VM, because the gstate contains a pointer to the
-%% device dictionary, and if that is allocated in local VM we will fail the gstate check.
+% .savelocalstate is part of Display PostScript (if included). Part of the function of
+% the .savelocalstate routine is to store the 'initial saved gstate' (savedinitialgstate)
+% in systemdict. The code in dps1.c, gstate_check_space, disallows writing or creating
+% gstates in global VM in certain conditions. If we execute setpagedevice before we
+% reach this point, we must ensure that we do so using /..StartupGlobal so that
+% the dictionary is defined in global VM, because the gstate contains a pointer to the
+% device dictionary, and if that is allocated in local VM we will fail the gstate check.
 /.savelocalstate where {
         % If we might create new contexts, save away copies of all dictionaries
         % referenced from systemdict that are stored in local VM,
@@ -2397,8 +2402,8 @@ currentdict /.shadingtypes .undef
 currentdict /.wheredict .undef
 currentdict /.renderingintentdict .undef
 
-%% If we are using DELAYBIND we have to defer the undefinition
-%% until .bindnow.
+% If we are using DELAYBIND we have to defer the undefinition
+% until .bindnow.
 DELAYBIND not {
   SAFER {
     //systemdict /SAFERUndefinePostScriptOperators get exec
@@ -2426,7 +2431,7 @@ systemdict /superexec .knownget {
   systemdict /superexec .undef
 } if
 
-%% Can't remove this one until the last minute :-)
+% Can't remove this one until the last minute :-)
 DELAYBIND not {
 systemdict /.undef .undef
 } if
