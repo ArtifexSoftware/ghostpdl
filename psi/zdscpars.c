@@ -457,6 +457,9 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
     code = dict_find_string(opDict, dsc_dict_name, &pvalue);
     if (code < 0)
         return code;
+    if (code == 0)
+        return_error(gs_error_undefined);
+
     dsc_state = r_ptr(pvalue, dsc_data_t);
     /*
      * Pick up the comment string to be parsed.
