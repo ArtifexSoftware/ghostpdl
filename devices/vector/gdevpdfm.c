@@ -1970,9 +1970,6 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     int code = 0, i;
     gs_memory_t *mem = pdev->pdf_memory;
 
-    if (pdev->CompatibilityLevel >= 2.0)
-        return 0;
-
     if (count & 1)
         return_error(gs_error_rangecheck);
     for (i = 0; code >= 0 && i < count; i += 2) {
@@ -1983,6 +1980,11 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
         byte *str = 0;
 
         vsize = 0x0badf00d; /* Quiet compiler. */
+
+        if (pdev->CompatibilityLevel >= 2.0) {
+            if (!pdf_key_eq(pairs + i, "/ModDate") && !pdf_key_eq(pairs + i, "/CreationDate"))
+                continue;
+        }
 
         if (pdev->PDFA !=0) {
             const gs_param_string *p = pairs + i + 1;
