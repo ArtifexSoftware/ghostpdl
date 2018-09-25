@@ -26,3 +26,7 @@ gs_offset_t pdfi_tell(pdf_stream *s);
 int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, gs_const_string *EODString, pdf_stream *source, pdf_stream **new_stream, bool inline_image);
 int pdfi_open_memory_stream(pdf_context *ctx, unsigned int size, byte **Buffer, pdf_stream *source, pdf_stream **new_stream);
 int pdfi_close_memory_stream(pdf_context *ctx, byte *Buffer, pdf_stream *source);
+int pdfi_open_memory_stream_from_stream(pdf_context *ctx, unsigned int size,
+                                        byte **Buffer, pdf_stream *source, pdf_stream **new_pdf_stream);
+int pdfi_open_memory_stream_from_memory(pdf_context *ctx, unsigned int size,
+                                        byte *Buffer, pdf_stream **new_pdf_stream);
