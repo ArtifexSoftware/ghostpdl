@@ -357,7 +357,7 @@ static int PDF_DCTD_PassThrough(void *d, byte *Buffer, int Size)
 static int pdfi_DCT_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
 {
     stream_DCT_state dcts;
-    uint min_size = 2048;
+    uint min_size = s_DCTD_template.min_out_size;
     int code;
     int64_t i;
     jpeg_decompress_data *jddp;
@@ -559,9 +559,8 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, st
         return code;
     }
     if (pdfi_name_strcmp(n, "DCTDecode") == 0) {
-        dmprintf(ctx->memory, "WARNING DCTDecode filter not implemented!\n");
-/*        code = pdfi_DCT_filter(ctx, decode, source, new_stream);
-        return code;*/
+        code = pdfi_DCT_filter(ctx, decode, source, new_stream);
+        return code;
     }
     if (pdfi_name_strcmp(n, "JPXDecode") == 0) {
         dmprintf(ctx->memory, "WARNING JPXDecode filter not implemented!\n");
