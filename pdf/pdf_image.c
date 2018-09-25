@@ -44,6 +44,7 @@ typedef struct {
     int64_t Width;
     int64_t BPC;
     int64_t StructParent;
+    int64_t SMaskInData;
     pdf_obj *Mask;
     pdf_obj *SMask;
     pdf_obj *ColorSpace;
@@ -51,6 +52,7 @@ typedef struct {
     pdf_obj *Alternates;
     pdf_obj *Name; /* obsolete, do we still support? */
     pdf_obj *Decode;
+    pdf_obj *OC;  /* Optional Content */
     /* Filter and DecodeParms handled by pdfi_filter() (can probably remove, but I like the info while debugging) */
     pdf_obj *Filter;
     pdf_obj *DecodeParms;
@@ -73,6 +75,8 @@ pdfi_free_image_info_components(pdfi_image_info_t *info)
         pdfi_countdown(info->Name);
     if (info->Decode)
         pdfi_countdown(info->Decode);
+    if (info->OC)
+        pdfi_countdown(info->OC);
     if (info->Filter)
         pdfi_countdown(info->Filter);
     if (info->DecodeParms)
@@ -147,6 +151,8 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
     
     memset(info, 0, sizeof(*info));
 
+    /* Not Handled: "ID", "OPI" */
+    
     /* Required */
     code = pdfi_dict_get_int2(ctx, image_dict, "Height", "H", &info->Height);
     if (code < 0)
@@ -202,6 +208,17 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
             goto errorExit;
     }
     
+    /* Optional, for JPXDecode filter images 
+     * (If non-zero, then SMask shouldn't be  specified)
+     * Default: 0
+     */
+    code = pdfi_dict_get_int(ctx, image_dict, "SMaskInData", &info->SMaskInData);
+    if (code < 0) {
+        if (code != gs_error_undefined)
+            goto errorExit;
+        info->SMaskInData = 0;
+    }
+
     /* Optional (Required except for ImageMask, not allowed for ImageMask)*/
     /* TODO: Should we enforce this required/not allowed thing? */
     code = pdfi_dict_get2(ctx, image_dict, "ColorSpace", "CS", &info->ColorSpace);
@@ -247,6 +264,13 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
             goto errorExit;
     }
     
+    /* Optional "Optional Content" */
+    code = pdfi_dict_get(ctx, image_dict, "OC", &info->OC);
+    if (code < 0) {
+        if (code != gs_error_undefined)
+            goto errorExit;
+    }
+
     /* Optional */
     code = pdfi_dict_get2(ctx, image_dict, "Filter", "F", &info->Filter);
     if (code < 0) {
