@@ -836,12 +836,26 @@ userdict /.currentresourcefile //null put
 /.runstring {
   0 0 .systemvmstring .systemvmSFD cvx { .runexec } execute0
 } bind def
+
 % Define the procedure that the C code uses to set up for executing
 % a string that may be received in pieces.
+%
+% Immediate evaluation doesn't work on operators (like .needinput)
+% so calling .runstringbegin will throw an undefined error if we
+% undefined .needinput so it cannot be accessed outside the init
+% code. But, we can store the operator in an array, use immediate
+% evaluation on the array to get the operator, then undefined the
+% array (and because they are both of the same name, the operator
+% get undefined too).
+% This prevents random Postscript from erroneously calling .needinput
+% and forcing the interpreter into an invalid state.
+/.needinput
+1 .systemvmarray dup 0 /.needinput load put
+def
 /.runstringbegin {
-  1 .systemvmarray dup 0 /.needinput load put cvx	% { .needinput } in systemvm
+  1 .systemvmarray dup 0 //.needinput 0 get put cvx	% { .needinput } in systemvm
   0 0 .systemvmstring .systemvmSFD cvx .runexec
-} bind def
+} bind executeonly def
 
 % Define a special version of runlibfile that aborts on errors.
 /runlibfile0
@@ -2216,7 +2230,7 @@ SAFER { .setsafeglobal } if
   /.localvmarray /.localvmdict /.localvmpackedarray /.localvmstring /.systemvmarray /.systemvmdict /.systemvmpackedarray /.systemvmstring /.systemvmfile /.systemvmlibfile
   /.systemvmSFD /.settrapparams /.currentsystemparams /.currentuserparams /.getsystemparam /.getuserparam /.setsystemparams /.setuserparams
   /.checkpassword /.locale_to_utf8 /.currentglobal /.gcheck /.imagepath /.currentoutputdevice
-  /.type /.writecvs /.setSMask /.currentSMask
+  /.type /.writecvs /.setSMask /.currentSMask /.needinput
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
