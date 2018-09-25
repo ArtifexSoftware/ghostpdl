@@ -498,7 +498,9 @@ gs_setdevice_no_erase(gs_gstate * pgs, gx_device * dev)
     if (libctx->io_device_table != NULL) {
         cmm_dev_profile_t *dev_profile;
         if (pgs->icc_manager->lab_profile == NULL) {  /* pick one not set externally */
-            gsicc_init_iccmanager(pgs);
+            code = gsicc_init_iccmanager(pgs);
+            if (code < 0)
+                return(code);
         }
         /* Also, if the device profile is not yet set then take care of that
            before we start filling pages, if we can */
@@ -720,7 +722,8 @@ gs_nulldevice(gs_gstate * pgs)
 
         if ((code = gs_setdevice_no_erase(pgs, ndev)) < 0)
             gs_free_object(pgs->memory, ndev, "gs_copydevice(device)");
-        gs_currentdevice_inline(pgs)->LockSafetyParams = saveLockSafety;
+        if (pgs->device != NULL)
+            pgs->device->LockSafetyParams = saveLockSafety;
     }
     return code;
 }
