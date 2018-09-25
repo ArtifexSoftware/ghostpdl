@@ -3010,7 +3010,7 @@ gs_currentsrcgtagicc(const gs_gstate * pgs, gs_param_string * pval)
         pval->persistent = true;
     } else {
         pval->data = (byte *)pgs->icc_manager->srcgtag_profile->name;
-        pval->size = strlen((const char *)pval->data);
+        pval->size = pgs->icc_manager->srcgtag_profile->name_length;
         pval->persistent = false;
     }
 }
