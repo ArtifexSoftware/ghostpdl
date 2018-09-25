@@ -528,46 +528,46 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, st
 {
     int code;
 
-    if (n->length == 15 && memcmp((const char *)n->data, "RunLengthDecode", 15) == 0) {
+    if (pdfi_name_strcmp(n, "RunLengthDecode") == 0) {
         code = pdfi_simple_filter(ctx, &s_RLD_template, source, new_stream);
         return code;
     }
-    if (n->length == 14 && memcmp((const char *)n->data, "CCITTFaxDecode", 14) == 0) {
+    if (pdfi_name_strcmp(n, "CCITTFaxDecode") == 0) {
         code = pdfi_CCITTFax_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (n->length == 14 && memcmp((const char *)n->data, "ASCIIHexDecode", 14) == 0) {
+    if (pdfi_name_strcmp(n, "ASCIIHexDecode") == 0) {
         code = pdfi_simple_filter(ctx, &s_AXD_template, source, new_stream);
         return code;
     }
-    if (n->length == 13 && memcmp((const char *)n->data, "ASCII85Decode", 13) == 0) {
+    if (pdfi_name_strcmp(n, "ASCII85Decode") == 0) {
         code = pdfi_ASCII85_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (n->length == 13 && memcmp((const char *)n->data, "SubFileDecode", 13) == 0) {
+    if (pdfi_name_strcmp(n, "SubFileDecode") == 0) {
         code = pdfi_simple_filter(ctx, &s_SFD_template, source, new_stream);
         return code;
     }
-    if (n->length == 11 && memcmp((const char *)n->data, "FlateDecode", 11) == 0) {
+    if (pdfi_name_strcmp(n, "FlateDecode") == 0) {
         code = pdfi_Flate_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (n->length == 11 && memcmp((const char *)n->data, "JBIG2Decode", 11) == 0) {
+    if (pdfi_name_strcmp(n, "JBIG2Decode") == 0) {
     }
-    if (n->length == 9 && memcmp((const char *)n->data, "LZWDecode", 9) == 0) {
+    if (pdfi_name_strcmp(n, "LZWDecode") == 0) {
         code = pdfi_LZW_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (n->length == 9 && memcmp((const char *)n->data, "DCTDecode", 9) == 0) {
+    if (pdfi_name_strcmp(n, "DCTDecode") == 0) {
         dmprintf(ctx->memory, "WARNING DCTDecode filter not implemented!\n");
 /*        code = pdfi_DCT_filter(ctx, decode, source, new_stream);
         return code;*/
     }
-    if (n->length == 9 && memcmp((const char *)n->data, "JPXDecode", 9) == 0) {
+    if (pdfi_name_strcmp(n, "JPXDecode") == 0) {
         dmprintf(ctx->memory, "WARNING JPXDecode filter not implemented!\n");
     }
 
-    if (n->length == 3 && memcmp((const char *)n->data, "AHx", 3) == 0) {
+    if (pdfi_name_strcmp(n, "AHx") == 0) {
         if (!inline_image) {
             ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
             if (ctx->pdfstoponerror)
@@ -576,7 +576,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, st
         code = pdfi_simple_filter(ctx, &s_AXD_template, source, new_stream);
         return code;
     }
-    if (n->length == 3 && memcmp((const char *)n->data, "A85", 3) == 0) {
+    if (pdfi_name_strcmp(n, "A85") == 0) {
         if (!inline_image) {
             ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
             if (ctx->pdfstoponerror)
@@ -585,7 +585,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, st
         code = pdfi_ASCII85_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (n->length == 3 && memcmp((const char *)n->data, "LZW", 3) == 0) {
+    if (pdfi_name_strcmp(n, "LZW") == 0) {
         if (!inline_image) {
             ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
             if (ctx->pdfstoponerror)
@@ -594,7 +594,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, st
         code = pdfi_LZW_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (n->length == 3 && memcmp((const char *)n->data, "CCF", 3) == 0) {
+    if (pdfi_name_strcmp(n, "CCF") == 0) {
         if (!inline_image) {
             ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
             if (ctx->pdfstoponerror)
@@ -603,7 +603,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, st
         code = pdfi_CCITTFax_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (n->length == 3 && memcmp((const char *)n->data, "DCT", 3) == 0) {
+    if (pdfi_name_strcmp(n, "DCT") == 0) {
         if (!inline_image) {
             ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
             if (ctx->pdfstoponerror)
@@ -612,7 +612,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, st
         code = pdfi_DCT_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (n->length == 2 && memcmp((const char *)n->data, "Fl", 2) == 0) {
+    if (pdfi_name_strcmp(n, "Fl") == 0) {
         if (!inline_image) {
             ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
             if (ctx->pdfstoponerror)
@@ -621,7 +621,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, st
         code = pdfi_Flate_filter(ctx, decode, source, new_stream);
         return code;
     }
-    if (n->length == 2 && memcmp((const char *)n->data, "RL", 2) == 0) {
+    if (pdfi_name_strcmp(n, "RL") == 0) {
         if (!inline_image) {
             ctx->pdf_errors |= E_PDF_BAD_INLINEFILTER;
             if (ctx->pdfstoponerror)

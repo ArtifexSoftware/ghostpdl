@@ -139,7 +139,7 @@ int pdfi_dict_get(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o)
         t = (pdf_name *)d->keys[i];
 
         if (t && t->type == PDF_NAME) {
-            if (((pdf_name *)t)->length == strlen((const char *)Key) && memcmp((const char *)((pdf_name *)t)->data, (const char *)Key, ((pdf_name *)t)->length) == 0) {
+            if (pdfi_name_strcmp((pdf_name *)t, Key) == 0) {
                 if (d->values[i]->type == PDF_INDIRECT) {
                     pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[i];
 
@@ -174,7 +174,7 @@ int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf
         t = (pdf_name *)d->keys[i];
 
         if (t && t->type == PDF_NAME) {
-            if (((pdf_name *)t)->length == strlen((const char *)Key) && memcmp((const char *)((pdf_name *)t)->data, (const char *)Key, ((pdf_name *)t)->length) == 0) {
+            if (pdfi_name_strcmp((pdf_name *)t, Key) == 0) {
                 if (d->values[i]->type == PDF_INDIRECT) {
                     pdf_indirect_ref *r = (pdf_indirect_ref *)d->values[i];
 
@@ -343,7 +343,7 @@ int pdfi_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
     for (i=0;i< d->entries;i++) {
         n = (pdf_name *)d->keys[i];
         if (n && n->type == PDF_NAME) {
-            if (n->length == ((pdf_name *)Key)->length && memcmp((const char *)n->data, ((pdf_name *)Key)->data, n->length) == 0) {
+            if (pdfi_name_cmp((pdf_name *)Key, n) == 0) {
                 if (d->values[i] == value)
                     /* We already have this value stored with this key.... */
                     return 0;
@@ -418,7 +418,7 @@ int pdfi_dict_known(pdf_dict *d, const char *Key, bool *known)
         t = d->keys[i];
 
         if (t && t->type == PDF_NAME) {
-            if (((pdf_name *)t)->length == strlen(Key) && memcmp(((pdf_name *)t)->data, Key, ((pdf_name *)t)->length) == 0) {
+            if (pdfi_name_strcmp((pdf_name *)t, Key) == 0) {
                 *known = true;
                 break;
             }
@@ -437,7 +437,7 @@ int pdfi_dict_known_by_key(pdf_dict *d, pdf_name *Key, bool *known)
         t = d->keys[i];
 
         if (t && t->type == PDF_NAME) {
-            if (((pdf_name *)t)->length == Key->length && memcmp((const char *)((pdf_name *)t)->data, Key->data, ((pdf_name *)t)->length) == 0) {
+            if (pdfi_name_cmp((pdf_name *)t, Key) == 0) {
                 *known = true;
                 break;
             }

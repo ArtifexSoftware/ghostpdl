@@ -731,13 +731,13 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     code = pdfi_dict_get(ctx, (pdf_dict *)o, "Subtype", (pdf_obj **)&n);
     if (code == 0) {
         pdf_dict *d = (pdf_dict *)o;
-        if (n->length == 5 && memcmp(n->data, "Image", 5) == 0) {
+        if (pdfi_name_strcmp(n, "Image") == 0) {
             gs_offset_t savedoffset = pdfi_tell(ctx->main_stream);
 
             code = pdfi_do_image(ctx, page_dict, stream_dict, d, ctx->main_stream, false);
             pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         } else {
-            if (n->length == 4 && memcmp(n->data, "Form", 4) == 0) {
+            if (pdfi_name_strcmp(n, "Form") == 0) {
                 gs_offset_t savedoffset = pdfi_tell(ctx->main_stream);
 
                 code = pdfi_interpret_content_stream(ctx, d, page_dict);

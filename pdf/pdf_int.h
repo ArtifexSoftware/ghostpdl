@@ -45,4 +45,10 @@ int pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_d
 
 int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_obj **o);
 
+
+/***********************************************************************************/
+/* Utility Functions                                                               */
+int pdfi_name_strcmp(const pdf_name *n, const char *s);
+int pdfi_name_cmp(const pdf_name *n1, const pdf_name *n2);
+
 #endif
