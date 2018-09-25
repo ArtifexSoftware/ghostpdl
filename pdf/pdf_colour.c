@@ -23,7 +23,9 @@
 
 #include "pdf_file.h"
 #include "pdf_dict.h"
+#include "pdf_loop_detect.h"
 #include "stream.h"
+#include "strmio.h"
 
 /* Forward definitions for a routine we need */
 static int pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs);
@@ -50,28 +52,16 @@ int pdfi_ri(pdf_context *ctx)
         return 0;
     }
     n = (pdf_name *)ctx->stack_top[-1];
-    if (n->length == 10) {
-        if (memcmp(n->data, "Perceptual", 10) == 0)
+    if (pdfi_name_strcmp(n, "Perceptual") == 0) {
             code = gs_setrenderingintent(ctx->pgs, 0);
-        else {
-            if (memcmp(n->data, "Saturation", 10) == 0)
-                code = gs_setrenderingintent(ctx->pgs, 2);
-            else
-                code = gs_error_undefined;
-        }
+    } else if (pdfi_name_strcmp(n, "Saturation") == 0) {
+        code = gs_setrenderingintent(ctx->pgs, 2);
+    } else if (pdfi_name_strcmp(n, "RelativeColorimetric") == 0) {
+        code = gs_setrenderingintent(ctx->pgs, 1);
+    } else if (pdfi_name_strcmp(n, "AbsoluteColoimetric") == 0) {
+        code = gs_setrenderingintent(ctx->pgs, 3);
     } else {
-        if (n->length == 20) {
-            if (memcmp(n->data, "RelativeColorimetric", 20) == 0)
-                code = gs_setrenderingintent(ctx->pgs, 1);
-            else {
-                if (memcmp(n->data, "AbsoluteColoimetric", 20) == 0)
-                    code = gs_setrenderingintent(ctx->pgs, 3);
-                else
-                    code = gs_error_undefined;
-            }
-        } else {
-            code = gs_error_undefined;
-        }
+        code = gs_error_undefined;
     }
     pdfi_pop(ctx, 1);
     if (code < 0 && ctx->pdfstoponerror)
@@ -657,7 +647,6 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
 static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cname, int64_t Length, int N, float *range, gs_color_space **ppcs)
 {
     pdf_stream *profile_stream = NULL, *filtered_profile_stream = NULL;
-    stream *s;
     byte *profile_buffer;
     gs_offset_t savedoffset;
     bool known;
@@ -674,7 +663,8 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cn
      * implemented in PostScript (!) so we can't use it. What we cna do is create a
      * string sourced stream in memory, which is at least seekable.
      */
-    code = pdfi_open_memory_stream_from_stream(ctx, (unsigned int)Length, &profile_buffer, ctx->main_stream, &profile_stream);
+    code = pdfi_open_memory_stream_from_stream(ctx, (unsigned int)Length, &profile_buffer,
+                                               ctx->main_stream, &profile_stream);
     if (code < 0) {
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
@@ -687,8 +677,7 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cn
     /* If this is a compressed stream, we need to decompress it */
     if(known) {
         int decompressed_length = 0, bytes;
-        byte c, *Buffer;
-        gs_offset_t avail;
+        byte *Buffer;
 
         /* This is again complicated by requiring a seekable stream, and the fact that,
          * unlike fonts, there is no Length2 key to tell us how large the uncompressed
@@ -724,7 +713,8 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cn
                     code = pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
                     if (code >= 0) {
                         profile_buffer = Buffer;
-                        code = pdfi_open_memory_stream_from_memory(ctx, (unsigned int)decompressed_length, profile_buffer, &profile_stream);
+                        code = pdfi_open_memory_stream_from_memory(ctx, (unsigned int)decompressed_length,
+                                                                   profile_buffer, &profile_stream);
                     }
                 }
             } else {
@@ -764,7 +754,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
     int64_t Length, N;
     pdf_obj *Name;
     char *cname = NULL;
-    int code, code1;
+    int code;
     bool known;
     float range[8];
 
@@ -889,11 +879,9 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
  */
 static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
 {
-    pdf_obj *space, *space1, *lookup;
-    pdf_array *a;
+    pdf_obj *space, *lookup;
     int code;
     int64_t hival, lookup_length;
-    bool special;
     gs_color_space *pcs, *pcs_base;
     gs_color_space_index base_type;
     byte *Buffer;
@@ -956,8 +944,6 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
              */
             if(known) {
                 int decompressed_length = 0, bytes;
-                byte c;
-                gs_offset_t avail;
 
                 code = pdfi_filter(ctx, lookup_dict, ctx->main_stream, &filtered_lookup_stream, false);
                 if (code < 0) {
@@ -1070,322 +1056,242 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
  * handler will call pdfi_create_colorspace() to set the underlygin space(s) whcih
  * may mean calling pdfi_create_colorspace again....
  */
-static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index,
+                                           pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
 {
-    int code, code1;
+    int code;
     pdf_name *space = NULL;
-    pdf_array *a;
+    pdf_array *a = NULL;
     gs_color_space *pcs;
 
     code = pdfi_array_get(color_array, index, (pdf_obj **)&space);
-    if(code == 0) {
-        if (space->type == PDF_NAME) {
-            code = gs_error_rangecheck;
-            switch(space->length) {
-                case 1:
-                    if (memcmp(space->data, "G", 1) == 0) {
-                        if (ppcs != NULL) {
-                            *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
-                            if (*ppcs == NULL)
-                                return_error(gs_error_VMerror);
-                        } else {
-                            code = gs_setgray(ctx->pgs, 1);
-                            if (code < 0)
-                                return code;
-                        }
-                        return 0;
-                    }
-                    if (memcmp(space->data, "I", 1) == 0) {
-                        code = pdfi_create_indexed(ctx, color_array, index, stream_dict, page_dict, &pcs);
-                        if (code < 0)
-                            return code;
+    if (code != 0)
+        goto exit;
 
-                        if (ppcs!= NULL){
-                            *ppcs = pcs;
-                        } else {
-                            code = gs_setcolorspace(ctx->pgs, pcs);
-                            /* release reference from construction */
-                            rc_decrement_only_cs(pcs, "setindexedspace");
-                        }
-                    }
-                    break;
-                case 3:
-                    if (memcmp(space->data, "Lab", space->length) == 0) {
-                        if (ppcs != NULL) {
-                            pcs = gs_cspace_new_DeviceRGB(ctx->memory);
-                            if (pcs == NULL)
-                                return_error(gs_error_VMerror);
-                            *ppcs = pcs;
-                        } else {
-                            code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
-                            if (code < 0)
-                                return code;
-                        }
-                    }
-                    if (memcmp(space->data, "RGB", 3) == 0){
-                        if (ppcs != NULL) {
-                            *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
-                            if (*ppcs == NULL)
-                                return_error(gs_error_VMerror);
-                        } else {
-                            code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
-                            if (code < 0)
-                                return code;
-                        }
-                        return 0;
-                    }
-                    break;
-                case 4:
-                    if (memcmp(space->data, "CMYK", 4) == 0){
-                        if (ppcs != NULL) {
-                            pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
-                            if (pcs == NULL)
-                                return_error(gs_error_VMerror);
-                            *ppcs = pcs;
-                        } else {
-                            code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
-                            if (code < 0)
-                                return code;
-                        }
-                    }
-                    break;
-                case 6:
-                    if (memcmp(space->data, "CalRGB", space->length) == 0) {
-                        if (ppcs != NULL) {
-                            pcs = gs_cspace_new_DeviceRGB(ctx->memory);
-                            if (pcs == NULL)
-                                return_error(gs_error_VMerror);
-                            *ppcs = pcs;
-                        } else {
-                            code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
-                            if (code < 0)
-                                return code;
-                        }
-                    }
-                    break;
-                case 7:
-                    if (memcmp(space->data, "CalGray", space->length) == 0) {
-                        if (ppcs != NULL) {
-                            pcs = gs_cspace_new_DeviceGray(ctx->memory);
-                            if (pcs == NULL)
-                                return_error(gs_error_VMerror);
-                            *ppcs = pcs;
-                        } else {
-                            code = gs_setgray(ctx->pgs, 1);
-                            if (code < 0)
-                                return code;
-                        }
-                    }
-                    if (memcmp(space->data, "Pattern", space->length) == 0) {
-                        if (index != 0)
-                            return_error(gs_error_syntaxerror);
-                    }
-                    if (memcmp(space->data, "DeviceN", space->length) == 0) {
-                    }
-                    if (memcmp(space->data, "Indexed", space->length) == 0) {
-                        code = pdfi_create_indexed(ctx, color_array, index, stream_dict, page_dict, &pcs);
-                        if (code < 0)
-                            return code;
-
-                        if (ppcs!= NULL){
-                            *ppcs = pcs;
-                        } else {
-                            code = gs_setcolorspace(ctx->pgs, pcs);
-                            /* release reference from construction */
-                            rc_decrement_only_cs(pcs, "setindexedspace");
-                        }
-                    }
-                    break;
-                case 8:
-                    if (memcmp(space->data, "ICCBased", space->length) == 0) {
-                        code = pdfi_create_iccbased(ctx, color_array, index, stream_dict, page_dict, &pcs);
-                        if (code < 0)
-                            return code;
-
-                        if (ppcs!= NULL){
-                            *ppcs = pcs;
-                        } else {
-                            code = gs_setcolorspace(ctx->pgs, pcs);
-                            /* release reference from construction */
-                            rc_decrement_only_cs(pcs, "seticcspace");
-                        }
-                    }
-                    break;
-                case 9:
-                    if (memcmp(space->data, "DeviceRGB", space->length) == 0) {
-                        if (ppcs != NULL) {
-                            pcs = gs_cspace_new_DeviceRGB(ctx->memory);
-                            if (pcs == NULL)
-                                return_error(gs_error_VMerror);
-                            *ppcs = pcs;
-                        } else {
-                            code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
-                            if (code < 0)
-                                return code;
-                        }
-                    }
-                    break;
-                case 10:
-                    if (memcmp(space->data, "DeviceGray", space->length) == 0) {
-                        if (ppcs != NULL) {
-                            pcs = gs_cspace_new_DeviceGray(ctx->memory);
-                            if (pcs == NULL)
-                                return_error(gs_error_VMerror);
-                            *ppcs = pcs;
-                        } else {
-                            code = gs_setgray(ctx->pgs, 1);
-                            if (code < 0)
-                                return code;
-                        }
-                    }
-                    if (memcmp(space->data, "DeviceCMYK", space->length) == 0) {
-                        if (ppcs != NULL) {
-                            pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
-                            if (pcs == NULL)
-                                return_error(gs_error_VMerror);
-                            *ppcs = pcs;
-                        } else {
-                            code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
-                            if (code < 0)
-                                return code;
-                        }
-                    }
-                    if (memcmp(space->data, "Separation", space->length) == 0) {
-                        if (ppcs != NULL) {
-                            pcs = gs_cspace_new_DeviceGray(ctx->memory);
-                            if (pcs == NULL)
-                                return_error(gs_error_VMerror);
-                            *ppcs = pcs;
-                        } else {
-                            code = gs_setgray(ctx->pgs, 1);
-                            if (code < 0)
-                                return code;
-                        }
-                    }
-                    break;
-                default:
-                    code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", space, stream_dict, page_dict, (pdf_obj **)&a);
-                    if (code < 0)
-                        return code;
-
-                    if (a->type != PDF_ARRAY) {
-                        pdfi_countdown(a);
-                        return_error(gs_error_typecheck);
-                        return 0;
-                    }
-
-                    code = pdfi_create_colorspace_by_array(ctx, a, 0, stream_dict, page_dict, ppcs);
-                    pdfi_countdown(a);
-                    return code;
-                    break;
-            }
-        } else
-            code = gs_error_typecheck;
+    if (space->type != PDF_NAME) {
+        code = gs_error_typecheck;
+        goto exit;
     }
-    pdfi_countdown(space);
+
+    code = gs_error_rangecheck;
+    if (pdfi_name_strcmp(space, "G") == 0) {
+        if (ppcs != NULL) {
+            *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
+            if (*ppcs == NULL)
+                code = gs_note_error(gs_error_VMerror);
+        } else {
+            code = gs_setgray(ctx->pgs, 1);
+        }
+    } else if (pdfi_name_strcmp(space, "I") == 0) {
+        code = pdfi_create_indexed(ctx, color_array, index, stream_dict, page_dict, &pcs);
+        if (code < 0)
+            goto exit;
+
+        if (ppcs!= NULL){
+            *ppcs = pcs;
+        } else {
+            code = gs_setcolorspace(ctx->pgs, pcs);
+            /* release reference from construction */
+            rc_decrement_only_cs(pcs, "setindexedspace");
+        }
+    } else if (pdfi_name_strcmp(space, "Lab") == 0) {
+        if (ppcs != NULL) {
+            pcs = gs_cspace_new_DeviceRGB(ctx->memory);
+            if (pcs == NULL)
+                code = gs_note_error(gs_error_VMerror);
+            *ppcs = pcs;
+        } else {
+            code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
+        }
+    } else if (pdfi_name_strcmp(space, "RGB") == 0) {
+        if (ppcs != NULL) {
+            *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
+            if (*ppcs == NULL)
+                code = gs_note_error(gs_error_VMerror);
+        } else {
+            code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
+        }
+    } else if (pdfi_name_strcmp(space, "CMYK") == 0) {
+        if (ppcs != NULL) {
+            pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
+            if (pcs == NULL)
+                code = gs_note_error(gs_error_VMerror);
+            else
+                *ppcs = pcs;
+        } else {
+            code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
+        }
+    } else if (pdfi_name_strcmp(space, "CalRGB") == 0) {
+        if (ppcs != NULL) {
+            pcs = gs_cspace_new_DeviceRGB(ctx->memory);
+            if (pcs == NULL)
+                code = gs_note_error(gs_error_VMerror);
+            else
+                *ppcs = pcs;
+        } else {
+            code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
+        }
+    } else if (pdfi_name_strcmp(space, "CalGray") == 0) {
+        if (ppcs != NULL) {
+            pcs = gs_cspace_new_DeviceGray(ctx->memory);
+            if (pcs == NULL)
+                code = gs_note_error(gs_error_VMerror);
+            else
+                *ppcs = pcs;
+        } else {
+            code = gs_setgray(ctx->pgs, 1);
+        }
+    } else if (pdfi_name_strcmp(space, "Pattern") == 0) {
+        if (index != 0)
+            return_error(gs_error_syntaxerror);
+    } else if (pdfi_name_strcmp(space, "DeviceN") == 0) {
+    } else if (pdfi_name_strcmp(space, "Indexed") == 0) {
+        code = pdfi_create_indexed(ctx, color_array, index, stream_dict, page_dict, &pcs);
+        if (code < 0)
+            goto exit;
+
+        if (ppcs!= NULL){
+            *ppcs = pcs;
+        } else {
+            code = gs_setcolorspace(ctx->pgs, pcs);
+            /* release reference from construction */
+            rc_decrement_only_cs(pcs, "setindexedspace");
+        }
+    } else if (pdfi_name_strcmp(space, "ICCBased") == 0) {
+        code = pdfi_create_iccbased(ctx, color_array, index, stream_dict, page_dict, &pcs);
+        if (code < 0)
+            goto exit;
+
+        if (ppcs!= NULL){
+            *ppcs = pcs;
+        } else {
+            code = gs_setcolorspace(ctx->pgs, pcs);
+            /* release reference from construction */
+            rc_decrement_only_cs(pcs, "seticcspace");
+        }
+    } else if (pdfi_name_strcmp(space, "DeviceRGB") == 0) {
+        if (ppcs != NULL) {
+            pcs = gs_cspace_new_DeviceRGB(ctx->memory);
+            if (pcs == NULL)
+                code = gs_note_error(gs_error_VMerror);
+            else
+                *ppcs = pcs;
+        } else {
+            code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
+        }
+    } else if (pdfi_name_strcmp(space, "DeviceGray") == 0) {
+        if (ppcs != NULL) {
+            pcs = gs_cspace_new_DeviceGray(ctx->memory);
+            if (pcs == NULL)
+                code = gs_note_error(gs_error_VMerror);
+            else
+                *ppcs = pcs;
+        } else {
+            code = gs_setgray(ctx->pgs, 1);
+        }
+    } else if (pdfi_name_strcmp(space, "DeviceCMYK") == 0) {
+        if (ppcs != NULL) {
+            pcs = gs_cspace_new_DeviceCMYK(ctx->memory);
+            if (pcs == NULL)
+                code = gs_note_error(gs_error_VMerror);
+            else
+                *ppcs = pcs;
+        } else {
+            code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
+        }
+    } else if (pdfi_name_strcmp(space, "Separation") == 0) {
+        if (ppcs != NULL) {
+            pcs = gs_cspace_new_DeviceGray(ctx->memory);
+            if (pcs == NULL)
+                code = gs_note_error(gs_error_VMerror);
+            else
+                *ppcs = pcs;
+        } else {
+            code = gs_setgray(ctx->pgs, 1);
+        }
+    } else {
+        code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace",
+                                  space, stream_dict, page_dict, (pdf_obj **)&a);
+        if (code < 0)
+            goto exit;
+
+        if (a->type != PDF_ARRAY) {
+            code = gs_note_error(gs_error_typecheck);
+            goto exit;
+        }
+
+        /* recursion */
+        code = pdfi_create_colorspace_by_array(ctx, a, 0, stream_dict, page_dict, ppcs);
+    }
+
+ exit:
+    if (space)
+        pdfi_countdown(space);
+    if (a)
+        pdfi_countdown(a);
     return code;
 }
 
-static int pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
+static int pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
+                                          pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
 {
-    int code;
+    int code = 0;
     pdf_obj *ref_space;
 
-    switch(name->length) {
-        case 1:
-            if (memcmp(name->data, "G", 1) == 0) {
-                if (ppcs != NULL) {
-                    *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
-                    if (*ppcs == NULL)
-                        return_error(gs_error_VMerror);
-                } else {
-                    code = gs_setgray(ctx->pgs, 1);
-                    if (code < 0)
-                        return code;
-                }
-                return 0;
-            }
-            break;
-        case 3:
-            if (memcmp(name->data, "RGB", 3) == 0){
-                if (ppcs != NULL) {
-                    *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
-                    if (*ppcs == NULL)
-                        return_error(gs_error_VMerror);
-                } else {
-                    code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
-                    if (code < 0)
-                        return code;
-                }
-                return 0;
-            }
-            break;
-        case 4:
-            if (memcmp(name->data, "CMYK", 4) == 0){
-                if (ppcs != NULL) {
-                    *ppcs = gs_cspace_new_DeviceCMYK(ctx->memory);
-                    if (*ppcs == NULL)
-                        return_error(gs_error_VMerror);
-                } else {
-                    code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
-                    if (code < 0)
-                        return code;
-                }
-                return 0;
-            }
-            break;
-        case 9:
-            if (memcmp(name->data, "DeviceRGB", 9) == 0) {
-                if (ppcs != NULL) {
-                    *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
-                    if (*ppcs == NULL)
-                        return_error(gs_error_VMerror);
-                } else {
-                    code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
-                    if (code < 0)
-                        return code;
-                }
-                return 0;
-            }
-        case 10:
-            if (memcmp(name->data, "DeviceGray", 10) == 0) {
-                if (ppcs != NULL) {
-                    *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
-                    if (*ppcs == NULL)
-                        return_error(gs_error_VMerror);
-                } else {
-                    code = gs_setgray(ctx->pgs, 1);
-                    if (code < 0)
-                        return code;
-                }
-                return 0;
-            }
-            if (memcmp(name->data, "DeviceCMYK", 10) == 0) {
-                if (ppcs != NULL) {
-                    *ppcs = gs_cspace_new_DeviceCMYK(ctx->memory);
-                    if (*ppcs == NULL)
-                        return_error(gs_error_VMerror);
-                } else {
-                    code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
-                    if (code < 0)
-                        return code;
-                }
-                return 0;
-            }
-        default:
-            break;
-    }
-    code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", name, stream_dict, page_dict, &ref_space);
-    if (code < 0)
-        return code;
+    if (pdfi_name_strcmp(name, "G") == 0) {
+        if (ppcs != NULL) {
+            *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
+        } else {
+            code = gs_setgray(ctx->pgs, 1);
+        }
+    } else if (pdfi_name_strcmp(name, "RGB") == 0) {
+        if (ppcs != NULL) {
+            *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
+        } else {
+            code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
+        }
+    } else if (pdfi_name_strcmp(name, "CMYK") == 0) {
+        if (ppcs != NULL) {
+            *ppcs = gs_cspace_new_DeviceCMYK(ctx->memory);
+        } else {
+            code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
+        }
+    } else if (pdfi_name_strcmp(name, "DeviceRGB") == 0) {
+        if (ppcs != NULL) {
+            *ppcs = gs_cspace_new_DeviceRGB(ctx->memory);
+        } else {
+            code = gs_setrgbcolor(ctx->pgs, 0, 0, 0);
+        }
+    } else if (pdfi_name_strcmp(name, "DeviceGray") == 0) {
+        if (ppcs != NULL) {
+            *ppcs = gs_cspace_new_DeviceGray(ctx->memory);
+        } else {
+            code = gs_setgray(ctx->pgs, 1);
+        }
+    } else if (pdfi_name_strcmp(name, "DeviceCMYK") == 0) {
+        if (ppcs != NULL) {
+            *ppcs = gs_cspace_new_DeviceCMYK(ctx->memory);
+        } else {
+            code = gs_setcmykcolor(ctx->pgs, 0, 0, 0, 1);
+        }
+    } else {
+        code = pdfi_find_resource(ctx, (unsigned char *)"ColorSpace", name, stream_dict, page_dict, &ref_space);
+        if (code < 0)
+            return code;
 
-    return pdfi_create_colorspace(ctx, ref_space, stream_dict, page_dict, ppcs);
+        /* recursion */
+        return pdfi_create_colorspace(ctx, ref_space, stream_dict, page_dict, ppcs);
+    }
+
+    /* If we got here, it's a recursion base case, and ppcs should have been set if requested */
+    if (ppcs != NULL && *ppcs == NULL)
+        code = gs_note_error(gs_error_VMerror);
+    return code;
 }
 
 int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs)
 {
     int code;
-    pdf_array *a = NULL;
 
     if (ctx->loop_detection == NULL) {
         pdfi_init_loop_detector(ctx);
@@ -1420,8 +1326,6 @@ int pdfi_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, 
 int pdfi_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
-    pdf_name *n = NULL;
-    pdf_array *a = NULL;
 
     if (ctx->stack_top - ctx->stack_bot < 1) {
         if (ctx->pdfstoponerror)
@@ -1445,8 +1349,6 @@ int pdfi_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
 int pdfi_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code;
-    pdf_name *n = NULL;
-    pdf_array *a = NULL;
 
     if (ctx->stack_top - ctx->stack_bot < 1) {
         if (ctx->pdfstoponerror)
