@@ -269,7 +269,7 @@ static int pdfi_AES_filter(pdf_context *ctx, char *Key, bool use_padding, stream
     uint min_size = 2048;
     int code;
 
-    s_aes_set_key(&state, Key, strlen(Key));
+    s_aes_set_key(&state, (const unsigned char *)Key, strlen(Key));
     s_aes_set_padding(&state, use_padding);
 
     code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_aes_template, (const stream_state *)&state, ctx->memory->non_gc_memory, new_stream);
