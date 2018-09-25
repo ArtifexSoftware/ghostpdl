@@ -173,17 +173,16 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
         info->Interpolate = false;
     }
 
-    /* Optional (Required, unless ImageMask is true)  */
+    /* Optional (Required, unless ImageMask is true)  
+     * But apparently for JPXDecode filter, this can be omitted.
+     * Let's try a default of 1 for now...
+     */
     code = pdfi_dict_get_int2(ctx, image_dict, "BitsPerComponent", "BPC", &info->BPC);
     if (code < 0) {
         if (code != gs_error_undefined) {
             goto errorExit;
         }
-        if (info->ImageMask) {
-            info->BPC = 1; /* If ImageMask was true, and not specified, force to 1 */
-        } else {
-            goto errorExit; /* Required if !ImageMask, so flag error */
-        }
+        info->BPC = 1;
     }
     /* TODO: spec says if ImageMask is specified, and BPC is specified, then BPC must be 1 
        Should we flag an error if this is violated?
@@ -505,15 +504,31 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             /* This is invalid by the spec, ColorSpace is required if not ImageMask.
              * Will bail out below, but need to calculate the number of comps for flushing.
              */
+            /* TODO: JPXDecode filter would have info in the data stream, how to handle? */
+            pcs = gs_currentcolorspace(ctx->pgs);
+            comps = gs_color_space_num_components(pcs);
+#if 0
             gx_device *dev = gs_currentdevice_inline(ctx->pgs);
             comps = dev->color_info.num_components;
             pcs = NULL;
             flush = true;
+#endif
         } else {
             code = pdfi_create_colorspace(ctx, image_info.ColorSpace, page_dict, stream_dict, &pcs);
             /* TODO: image_2bpp.pdf has an image in there somewhere that fails on this call (probably ColorN) */
-            if (code < 0)
+            if (code < 0) {
+                dmprintf(ctx->memory, "WARNING: Image has unsupported ColorSpace ");
+                if (image_info.ColorSpace->type == PDF_NAME) {
+                    pdf_name *name = (pdf_name *)image_info.ColorSpace;
+                    char str[100];
+                    memcpy(str, (const char *)name->data, name->length);
+                    str[name->length] = '\0';
+                    dmprintf1(ctx->memory, "NAME:%s\n", str);
+                } else {
+                    dmprintf(ctx->memory, "(not a name)\n");
+                }
                 goto cleanupExit;
+            }
             comps = gs_color_space_num_components(pcs);
         }
     }
@@ -612,7 +627,8 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
 
     /* Setup the data stream for the image data */
-    pdfi_seek(ctx, source, image_dict->stream_offset, SEEK_SET);
+    if (!inline_image)
+        pdfi_seek(ctx, source, image_dict->stream_offset, SEEK_SET);
     code = pdfi_filter(ctx, image_dict, source, &new_stream, inline_image);
     if (code < 0)
         goto cleanupExit;

@@ -559,10 +559,12 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, st
         return code;
     }
     if (n->length == 9 && memcmp((const char *)n->data, "DCTDecode", 9) == 0) {
+        dmprintf(ctx->memory, "WARNING DCTDecode filter not implemented!\n");
 /*        code = pdfi_DCT_filter(ctx, decode, source, new_stream);
         return code;*/
     }
     if (n->length == 9 && memcmp((const char *)n->data, "JPXDecode", 9) == 0) {
+        dmprintf(ctx->memory, "WARNING JPXDecode filter not implemented!\n");
     }
 
     if (n->length == 3 && memcmp((const char *)n->data, "AHx", 3) == 0) {
