@@ -2521,6 +2521,7 @@ drawopdict begin
       pop pop pop pop
       //d0 exec
     } {
+      currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors
       6 -2 roll .adjustcharwidth 6 2 roll setcachedevice
     } ifelse
   } bind executeonly def
