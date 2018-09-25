@@ -2893,7 +2893,7 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 break;
             case K2('s','h'):       /* fill with sahding pattern */
                 pdfi_pop(ctx, 1);
-                code = pdfi_shading(ctx);
+                code = pdfi_shading(ctx, stream_dict, page_dict);
                 break;
             case K2('T','*'):       /* Move to start of next text line */
                 pdfi_pop(ctx, 1);

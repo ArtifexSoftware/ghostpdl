@@ -18,6 +18,13 @@
 #ifndef PDF_SHADING_OPERATORS
 #define PDF_SHADING_OPERATORS
 
-int pdfi_shading(pdf_context *ctx);
+int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_shading1(pdf_context *ctx, pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_shading2(pdf_context *ctx, pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_shading3(pdf_context *ctx, pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_shading4(pdf_context *ctx, pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_shading5(pdf_context *ctx, pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_shading6(pdf_context *ctx, pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict);
+int pdfi_shading7(pdf_context *ctx, pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict);
 
 #endif
