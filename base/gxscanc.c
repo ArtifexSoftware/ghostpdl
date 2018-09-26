@@ -992,14 +992,14 @@ cursor_output(cursor * gs_restrict cr, int iy)
             cr->save_iy    = iy;
             cr->save_d     = cr->d;
             cr->saved      = 1;
-        } else {
+        } else if (cr->d != DIRN_UNSET) {
             /* Enter it into the table */
-            assert(cr->d != DIRN_UNSET);
-
             row = &cr->table[cr->index[iy]];
             *row = count = (*row)+1; /* Increment the count */
             row[2 * count - 1] = (cr->left&~1) | cr->d;
             row[2 * count    ] = cr->right;
+        } else {
+            assert(cr->left == max_int_in_fixed && cr->right == min_int_in_fixed);
         }
     }
     cr->first = 0;
@@ -1033,7 +1033,7 @@ cursor_output_inrange(cursor * gs_restrict cr, int iy)
 
 /* Step the cursor in y, allowing for maybe crossing a scanline */
 static inline void
-cursor_step(cursor * gs_restrict cr, fixed dy, fixed x)
+cursor_step(cursor * gs_restrict cr, fixed dy, fixed x, int skip)
 {
     int new_iy;
     int iy = fixed2int(cr->y) - cr->base;
@@ -1041,7 +1041,8 @@ cursor_step(cursor * gs_restrict cr, fixed dy, fixed x)
     cr->y += dy;
     new_iy = fixed2int(cr->y) - cr->base;
     if (new_iy != iy) {
-        cursor_output(cr, iy);
+        if (!skip)
+            cursor_output(cr, iy);
         cr->left = x;
         cr->right = x;
     } else {
@@ -1089,11 +1090,12 @@ cursor_never_step_right(cursor * gs_restrict cr, fixed dy, fixed x)
 
 /* Step the cursor in y, always by enough to cross a scanline. */
 static inline void
-cursor_always_step(cursor * gs_restrict cr, fixed dy, fixed x)
+cursor_always_step(cursor * gs_restrict cr, fixed dy, fixed x, int skip)
 {
     int iy = fixed2int(cr->y) - cr->base;
 
-    cursor_output(cr, iy);
+    if (!skip)
+        cursor_output(cr, iy);
     cr->y += dy;
     cr->left = x;
     cr->right = x;
@@ -1169,15 +1171,20 @@ static inline void cursor_right(cursor * gs_restrict cr, fixed x)
     cr->right = x;
 }
 
-static inline void cursor_down(cursor * gs_restrict cr, fixed x)
+static inline int cursor_down(cursor * gs_restrict cr, fixed x)
 {
+    int skip = 0;
+    if ((cr->y & 0xff) == 0)
+        skip = 1;
     if (cr->d == DIRN_UP)
     {
-        cursor_output(cr, fixed2int(cr->y) - cr->base);
+        if (!skip)
+            cursor_output(cr, fixed2int(cr->y) - cr->base);
         cr->left = x;
         cr->right = x;
     }
     cr->d = DIRN_DOWN;
+    return skip;
 }
 
 static inline void cursor_up(cursor * gs_restrict cr, fixed x)
@@ -1201,6 +1208,11 @@ cursor_flush(cursor * gs_restrict cr, fixed x)
      * rectangle from the start point. */
     if (cr->first) {
         int iy = fixed2int(cr->y) - cr->base;
+        /* Any zero height rectangle counts as filled, except
+         * those on the baseline of a pixel. */
+        if (cr->d == DIRN_UNSET && (cr->y & 0xff) == 0)
+            return;
+        assert(cr->left != max_int_in_fixed && cr->right != min_int_in_fixed);
         if (iy >= 0 && iy < cr->scanlines) {
             int *row = &cr->table[cr->index[iy]];
             int count = *row = (*row)+2; /* Increment the count */
@@ -1236,6 +1248,14 @@ cursor_flush(cursor * gs_restrict cr, fixed x)
     }
 }
 
+static inline void
+cursor_null(cursor *cr)
+{
+    cr->right = min_int_in_fixed;
+    cr->left  = max_int_in_fixed;
+    cr->d     = DIRN_UNSET;
+}
+
 static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex, fixed ey)
 {
     int isy, iey;
@@ -1260,7 +1280,13 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
     dlprintf("stroke %%PS\n");
 #endif
 
-    assert(cr->y == sy && cr->left <= sx && cr->right >= sx && cr->d >= DIRN_UNSET && cr->d <= DIRN_DOWN);
+    /* Horizontal motion at the bottom of a pixel is ignored */
+    if (sy == ey && (sy & 0xff) == 0)
+        return;
+
+    assert(cr->y == sy &&
+           ((cr->left <= sx && cr->right >= sx) || ((sy & 0xff) == 0)) &&
+           cr->d >= DIRN_UNSET && cr->d <= DIRN_DOWN);
 
     if (isy < iey) {
         /* Rising line */
@@ -1326,6 +1352,10 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
         }
     }
 
+    if (sy != ey) {
+        cursor_left_merge(cr, sx);
+        cursor_right_merge(cr, sx);
+    }
     assert(cr->left <= sx);
     assert(cr->right >= sx);
     assert(cr->y == sy);
@@ -1353,9 +1383,18 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
     if (isy == iey) {
         if (saved_sy == saved_ey) {
             /* Horizontal line. Don't change cr->d, don't flush. */
+            if ((saved_ey & 0xff) == 0)
+                goto no_merge;
         } else if (saved_sy > saved_ey) {
             /* Falling line, flush if previous was rising */
-            cursor_down(cr, sx);
+            (void)cursor_down(cr, sx);
+            if ((saved_ey & 0xff) == 0) {
+                /* We are falling to the baseline of a subpixel, so output
+                 * for the current pixel, and leave the cursor nulled. */
+                cursor_output(cr, fixed2int(cr->y) - cr->base);
+                cursor_null(cr);
+                goto no_merge;
+            }
         } else {
             /* Rising line, flush if previous was falling */
             cursor_up(cr, sx);
@@ -1367,6 +1406,7 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
             cursor_left_merge(cr, ex);
             cursor_right_merge(cr, sx);
         }
+no_merge:
         cr->y = ey;
         if (sy > saved_ey)
             goto endFalling;
@@ -1398,11 +1438,13 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
             if (phase1_y_steps) {
                 /* If phase 1 will move us into a new scanline, then we must
                  * flush it before we move. */
-                cursor_step(cr, phase1_y_steps, sx);
+                cursor_step(cr, phase1_y_steps, sx, 0);
                 sy += phase1_y_steps;
                 y_steps -= phase1_y_steps;
-                if (y_steps == 0)
+                if (y_steps == 0) {
+                    cursor_null(cr);
                     goto end;
+                }
             }
 
             /* Phase 3: precalculation */
@@ -1412,7 +1454,7 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
             y_steps = fixed2int(y_steps);
             assert(y_steps >= 0);
             if (y_steps > 0) {
-                cursor_always_step(cr, fixed_1, sx);
+                cursor_always_step(cr, fixed_1, sx, 0);
                 y_steps--;
                 while (y_steps) {
                     cursor_always_step_inrange_vertical(cr, fixed_1, sx);
@@ -1422,7 +1464,10 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
 
             /* Phase 3 */
             assert(cr->left == sx && cr->right == sx);
-            cr->y += phase3_y_steps;
+            if (phase3_y_steps == 0)
+                cursor_null(cr);
+            else
+                cr->y += phase3_y_steps;
         } else if (sx < ex) {
             /* Lines increasing in x. (Rightwards, rising) */
             int phase1_x_steps, phase3_x_steps;
@@ -1435,11 +1480,13 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
                 sx += phase1_x_steps;
                 cursor_right_merge(cr, sx);
                 x_steps -= phase1_x_steps;
-                cursor_step(cr, phase1_y_steps, sx);
+                cursor_step(cr, phase1_y_steps, sx, 0);
                 sy += phase1_y_steps;
                 y_steps -= phase1_y_steps;
-                if (y_steps == 0)
+                if (y_steps == 0) {
+                    cursor_null(cr);
                     goto end;
+                }
             }
 
             /* Phase 3: precalculation */
@@ -1466,7 +1513,7 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
                 if (f < 0)
                     f += d, sx++;
                 cursor_right_merge(cr, sx);
-                cursor_always_step(cr, fixed_1, sx);
+                cursor_always_step(cr, fixed_1, sx, 0);
                 y_steps--;
 
                 while (y_steps) {
@@ -1482,8 +1529,12 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
 
             /* Phase 3 */
             assert(cr->left <= ex && cr->right >= sx);
-            cursor_right(cr, ex);
-            cr->y += phase3_y_steps;
+            if (phase3_y_steps == 0)
+                cursor_null(cr);
+            else {
+                cursor_right(cr, ex);
+                cr->y += phase3_y_steps;
+            }
         } else {
             /* Lines decreasing in x. (Leftwards, rising) */
             int phase1_x_steps, phase3_x_steps;
@@ -1496,11 +1547,13 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
                 x_steps -= phase1_x_steps;
                 sx -= phase1_x_steps;
                 cursor_left_merge(cr, sx);
-                cursor_step(cr, phase1_y_steps, sx);
+                cursor_step(cr, phase1_y_steps, sx, 0);
                 sy += phase1_y_steps;
                 y_steps -= phase1_y_steps;
-                if (y_steps == 0)
+                if (y_steps == 0) {
+                    cursor_null(cr);
                     goto end;
+                }
             }
 
             /* Phase 3: precalculation */
@@ -1527,7 +1580,7 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
                 if (f < 0)
                     f += d, sx--;
                 cursor_left_merge(cr, sx);
-                cursor_always_step(cr, fixed_1, sx);
+                cursor_always_step(cr, fixed_1, sx, 0);
                 y_steps--;
 
                 while (y_steps) {
@@ -1543,8 +1596,12 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
 
             /* Phase 3 */
             assert(cr->right >= ex && cr->left <= sx);
-            cursor_left(cr, ex);
-            cr->y += phase3_y_steps;
+            if (phase3_y_steps == 0)
+                cursor_null(cr);
+            else {
+                cursor_left(cr, ex);
+                cr->y += phase3_y_steps;
+            }
         }
     } else {
         /* So lines decreasing in y. */
@@ -1558,7 +1615,7 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
         int phase3_y_steps = (-ey) & (fixed_1 - 1);
         ufixed y_steps = (ufixed)sy - (ufixed)ey;
 
-        cursor_down(cr, sx);
+        int skip = cursor_down(cr, sx);
 
         if (sx == ex) {
             /* Vertical line. (Falling) */
@@ -1572,7 +1629,7 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
                 sy -= phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
-                    goto endFalling;
+                    goto endFallingLeftOnEdgeOfPixel;
             }
 
             /* Phase 3: precalculation */
@@ -1583,7 +1640,8 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
             y_steps = fixed2int(y_steps);
             assert(y_steps >= 0);
             if (y_steps) {
-                cursor_always_step(cr, -fixed_1, sx);
+                cursor_always_step(cr, -fixed_1, sx, skip);
+                skip = 0;
                 y_steps--;
                 while (y_steps) {
                     cursor_always_step_inrange_vertical(cr, -fixed_1, sx);
@@ -1592,8 +1650,12 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
             }
 
             /* Phase 3 */
-            if (phase3_y_steps > 0) {
-                cursor_step(cr, -phase3_y_steps, sx);
+            if (phase3_y_steps == 0) {
+endFallingLeftOnEdgeOfPixel:
+                cursor_always_step_inrange_vertical(cr, 0, sx);
+                cursor_null(cr);
+            } else {
+                cursor_step(cr, -phase3_y_steps, sx, skip);
                 assert(cr->left == sx && cr->right == sx);
             }
         } else if (sx < ex) {
@@ -1612,7 +1674,7 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
                 sy -= phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
-                    goto endFalling;
+                    goto endFallingRightOnEdgeOfPixel;
             } else
                 cursor_right_merge(cr, sx);
 
@@ -1633,7 +1695,8 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
                 int f = y_steps/2;
                 int d = y_steps;
 
-                cursor_always_step(cr, -fixed_1, sx);
+                cursor_always_step(cr, -fixed_1, sx, skip);
+                skip = 0;
                 sx += x_inc;
                 f -= n_inc;
                 if (f < 0)
@@ -1653,8 +1716,12 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
             }
 
             /* Phase 3 */
-            if (phase3_y_steps > 0) {
-                cursor_step(cr, -phase3_y_steps, sx);
+            if (phase3_y_steps == 0) {
+endFallingRightOnEdgeOfPixel:
+                cursor_always_step_inrange_vertical(cr, 0, sx);
+                cursor_null(cr);
+            } else {
+                cursor_step(cr, -phase3_y_steps, sx, skip);
                 cursor_right(cr, ex);
                 assert(cr->left == sx && cr->right == ex);
             }
@@ -1674,7 +1741,7 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
                 sy -= phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
-                    goto endFalling;
+                    goto endFallingVerticalOnEdgeOfPixel;
             } else
                 cursor_left_merge(cr, sx);
 
@@ -1695,7 +1762,8 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
                 int f = y_steps/2;
                 int d = y_steps;
 
-                cursor_always_step(cr, -fixed_1, sx);
+                cursor_always_step(cr, -fixed_1, sx, skip);
+                skip = 0;
                 sx -= x_inc;
                 f -= n_inc;
                 if (f < 0)
@@ -1715,8 +1783,12 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
             }
 
             /* Phase 3 */
-            if (phase3_y_steps > 0) {
-                cursor_step(cr, -phase3_y_steps, sx);
+            if (phase3_y_steps == 0) {
+endFallingVerticalOnEdgeOfPixel:
+                cursor_always_step_inrange_vertical(cr, 0, sx);
+                cursor_null(cr);
+            } else {
+                cursor_step(cr, -phase3_y_steps, sx, skip);
                 cursor_left(cr, ex);
                 assert(cr->left == ex && cr->right == sx);
             }
@@ -1851,7 +1923,12 @@ int gx_scan_convert_app(gx_device     * gs_restrict pdev,
         fixed iy = ey;
         fixed sx, sy;
 
-        cr.left = cr.right = ex;
+        if ((ey & 0xff) == 0) {
+            cr.left  = max_int_in_fixed;
+            cr.right = min_int_in_fixed;
+        } else {
+            cr.left = cr.right = ex;
+        }
         cr.y = ey;
         cr.d = DIRN_UNSET;
         cr.first = 1;
@@ -2781,16 +2858,16 @@ cursor_output_tr(cursor_tr * gs_restrict cr, int iy)
             cr->save_iy    = iy;
             cr->save_d     = cr->d;
             cr->saved      = 1;
-        } else {
+        } else if (cr->d != DIRN_UNSET) {
             /* Enter it into the table */
-            assert(cr->d != DIRN_UNSET);
-
             row = &cr->table[cr->index[iy]];
             *row = count = (*row)+1; /* Increment the count */
             row[4 * count - 3] = cr->left;
             row[4 * count - 2] = cr->d | (cr->lid<<1);
             row[4 * count - 1] = cr->right;
             row[4 * count    ] = cr->rid;
+        } else {
+            assert(cr->left == max_int_in_fixed && cr->right == min_int_in_fixed);
         }
     }
     cr->first = 0;
@@ -2828,7 +2905,7 @@ cursor_output_inrange_tr(cursor_tr * gs_restrict cr, int iy)
 
 /* Step the cursor in y, allowing for maybe crossing a scanline */
 static inline void
-cursor_step_tr(cursor_tr * gs_restrict cr, fixed dy, fixed x, int id)
+cursor_step_tr(cursor_tr * gs_restrict cr, fixed dy, fixed x, int id, int skip)
 {
     int new_iy;
     int iy = fixed2int(cr->y) - cr->base;
@@ -2836,19 +2913,18 @@ cursor_step_tr(cursor_tr * gs_restrict cr, fixed dy, fixed x, int id)
     cr->y += dy;
     new_iy = fixed2int(cr->y) - cr->base;
     if (new_iy != iy) {
-        cursor_output_tr(cr, iy);
+        if (!skip)
+            cursor_output_tr(cr, iy);
         cr->left = x;
         cr->lid = id;
         cr->right = x;
         cr->rid = id;
     } else {
-        if (x < cr->left)
-        {
+        if (x < cr->left) {
             cr->left = x;
             cr->lid = id;
         }
-        if (x > cr->right)
-        {
+        if (x > cr->right) {
             cr->right = x;
             cr->rid = id;
         }
@@ -2898,11 +2974,12 @@ cursor_never_step_right_tr(cursor_tr * gs_restrict cr, fixed dy, fixed x, int id
 
 /* Step the cursor in y, always by enough to cross a scanline. */
 static inline void
-cursor_always_step_tr(cursor_tr * gs_restrict cr, fixed dy, fixed x, int id)
+cursor_always_step_tr(cursor_tr * gs_restrict cr, fixed dy, fixed x, int id, int skip)
 {
     int iy = fixed2int(cr->y) - cr->base;
 
-    cursor_output_tr(cr, iy);
+    if (!skip)
+        cursor_output_tr(cr, iy);
     cr->y += dy;
     cr->left = x;
     cr->lid = id;
@@ -2990,17 +3067,22 @@ static inline void cursor_right_tr(cursor_tr * gs_restrict cr, fixed x, int id)
     cr->rid   = id;
 }
 
-static inline void cursor_down_tr(cursor_tr * gs_restrict cr, fixed x, int id)
+static inline int cursor_down_tr(cursor_tr * gs_restrict cr, fixed x, int id)
 {
+    int skip = 0;
+    if ((cr->y & 0xff) == 0)
+        skip = 1;
     if (cr->d == DIRN_UP)
     {
-        cursor_output_tr(cr, fixed2int(cr->y) - cr->base);
+        if (!skip)
+            cursor_output_tr(cr, fixed2int(cr->y) - cr->base);
         cr->left = x;
         cr->lid = id;
         cr->right = x;
         cr->rid = id;
     }
     cr->d = DIRN_DOWN;
+    return skip;
 }
 
 static inline void cursor_up_tr(cursor_tr * gs_restrict cr, fixed x, int id)
@@ -3026,6 +3108,11 @@ cursor_flush_tr(cursor_tr * gs_restrict cr, fixed x, int id)
      * rectangle from the start point. */
     if (cr->first) {
         int iy = fixed2int(cr->y) - cr->base;
+        /* Any zero height rectangle counts as filled, except
+         * those on the baseline of a pixel. */
+        if (cr->d == DIRN_UNSET && (cr->y & 0xff) == 0)
+            return;
+        assert(cr->left != max_int_in_fixed && cr->right != min_int_in_fixed);
         if (iy >= 0 && iy < cr->scanlines) {
             int *row = &cr->table[cr->index[iy]];
             int count = *row = (*row)+2; /* Increment the count */
@@ -3071,6 +3158,14 @@ cursor_flush_tr(cursor_tr * gs_restrict cr, fixed x, int id)
     }
 }
 
+static inline void
+cursor_null_tr(cursor_tr *cr)
+{
+    cr->right = min_int_in_fixed;
+    cr->left  = max_int_in_fixed;
+    cr->d     = DIRN_UNSET;
+}
+
 static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fixed ex, fixed ey, int id)
 {
     int isy, iey;
@@ -3079,7 +3174,7 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
     fixed saved_ey = ey;
     int truncated;
 
-    if (sx == ex && sy == ey)
+    if (sy == ey && sx == ex)
         return;
 
     isy = fixed2int(sy) - cr->base;
@@ -3096,7 +3191,13 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
     dlprintf("stroke %%PS\n");
 #endif
 
-    assert(cr->y == sy && cr->left <= sx && cr->right >= sx && cr->d >= DIRN_UNSET && cr->d <= DIRN_DOWN);
+    /* Horizontal motion at the bottom of a pixel is ignored */
+    if (sy == ey && (sy & 0xff) == 0)
+        return;
+
+    assert(cr->y == sy &&
+           ((cr->left <= sx && cr->right >= sx) || ((sy & 0xff) == 0)) &&
+           cr->d >= DIRN_UNSET && cr->d <= DIRN_DOWN);
 
     if (isy < iey) {
         /* Rising line */
@@ -3166,6 +3267,10 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
         }
     }
 
+    if (sy != ey) {
+        cursor_left_merge_tr(cr, sx, id);
+        cursor_right_merge_tr(cr, sx, id);
+    }
     assert(cr->left <= sx);
     assert(cr->right >= sx);
     assert(cr->y == sy);
@@ -3193,9 +3298,18 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
     if (isy == iey) {
         if (saved_sy == saved_ey) {
             /* Horizontal line. Don't change cr->d, don't flush. */
+            if ((saved_ey & 0xff) == 0)
+                goto no_merge;
         } else if (saved_sy > saved_ey) {
             /* Falling line, flush if previous was rising */
-            cursor_down_tr(cr, sx, id);
+            (void)cursor_down_tr(cr, sx, id);
+            if ((saved_ey & 0xff) == 0) {
+                /* We are falling to the baseline of a subpixel, so output
+                 * for the current pixel, and leave the cursor nulled. */
+                cursor_output_tr(cr, fixed2int(cr->y) - cr->base);
+                cursor_null_tr(cr);
+                goto no_merge;
+            }
         } else {
             /* Rising line, flush if previous was falling */
             cursor_up_tr(cr, sx, id);
@@ -3207,6 +3321,7 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
             cursor_left_merge_tr(cr, ex, id);
             cursor_right_merge_tr(cr, sx, id);
         }
+no_merge:
         cr->y = ey;
         if (sy > saved_ey)
             goto endFalling;
@@ -3233,11 +3348,13 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
             if (phase1_y_steps) {
                 /* If phase 1 will move us into a new scanline, then we must
                  * flush it before we move. */
-                cursor_step_tr(cr, phase1_y_steps, sx, id);
+                cursor_step_tr(cr, phase1_y_steps, sx, id, 0);
                 sy += phase1_y_steps;
                 y_steps -= phase1_y_steps;
-                if (y_steps == 0)
+                if (y_steps == 0) {
+                    cursor_null_tr(cr);
                     goto end;
+                }
             }
 
             /* Phase 3: precalculation */
@@ -3247,7 +3364,7 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
             y_steps = fixed2int(y_steps);
             assert(y_steps >= 0);
             if (y_steps > 0) {
-                cursor_always_step_tr(cr, fixed_1, sx, id);
+                cursor_always_step_tr(cr, fixed_1, sx, id, 0);
                 y_steps--;
                 while (y_steps) {
                     cursor_always_step_inrange_vertical_tr(cr, fixed_1, sx, id);
@@ -3257,7 +3374,10 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
 
             /* Phase 3 */
             assert(cr->left == sx && cr->right == sx && cr->lid == id && cr->rid == id);
-            cr->y += phase3_y_steps;
+            if (phase3_y_steps == 0)
+                cursor_null_tr(cr);
+            else
+                cr->y += phase3_y_steps;
         } else if (sx < ex) {
             /* Lines increasing in x. (Rightwards, rising) */
             int phase1_x_steps, phase3_x_steps;
@@ -3270,11 +3390,13 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
                 sx += phase1_x_steps;
                 cursor_right_merge_tr(cr, sx, id);
                 x_steps -= phase1_x_steps;
-                cursor_step_tr(cr, phase1_y_steps, sx, id);
+                cursor_step_tr(cr, phase1_y_steps, sx, id, 0);
                 sy += phase1_y_steps;
                 y_steps -= phase1_y_steps;
-                if (y_steps == 0)
+                if (y_steps == 0) {
+                    cursor_null_tr(cr);
                     goto end;
+                }
             }
 
             /* Phase 3: precalculation */
@@ -3301,7 +3423,7 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
                 if (f < 0)
                     f += d, sx++;
                 cursor_right_merge_tr(cr, sx, id);
-                cursor_always_step_tr(cr, fixed_1, sx, id);
+                cursor_always_step_tr(cr, fixed_1, sx, id, 0);
                 y_steps--;
 
                 while (y_steps) {
@@ -3317,8 +3439,12 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
 
             /* Phase 3 */
             assert(cr->left <= ex && cr->lid == id && cr->right >= sx);
-            cursor_right_tr(cr, ex, id);
-            cr->y += phase3_y_steps;
+            if (phase3_y_steps == 0)
+                cursor_null_tr(cr);
+            else {
+                cursor_right_tr(cr, ex, id);
+                cr->y += phase3_y_steps;
+            }
         } else {
             /* Lines decreasing in x. (Leftwards, rising) */
             int phase1_x_steps, phase3_x_steps;
@@ -3331,11 +3457,13 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
                 x_steps -= phase1_x_steps;
                 sx -= phase1_x_steps;
                 cursor_left_merge_tr(cr, sx, id);
-                cursor_step_tr(cr, phase1_y_steps, sx, id);
+                cursor_step_tr(cr, phase1_y_steps, sx, id, 0);
                 sy += phase1_y_steps;
                 y_steps -= phase1_y_steps;
-                if (y_steps == 0)
+                if (y_steps == 0) {
+                    cursor_null_tr(cr);
                     goto end;
+                }
             }
 
             /* Phase 3: precalculation */
@@ -3362,7 +3490,7 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
                 if (f < 0)
                     f += d, sx--;
                 cursor_left_merge_tr(cr, sx, id);
-                cursor_always_step_tr(cr, fixed_1, sx, id);
+                cursor_always_step_tr(cr, fixed_1, sx, id, 0);
                 y_steps--;
 
                 while (y_steps) {
@@ -3378,8 +3506,12 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
 
             /* Phase 3 */
             assert(cr->right >= ex && cr->rid == id && cr->left <= sx);
-            cursor_left_tr(cr, ex, id);
-            cr->y += phase3_y_steps;
+            if (phase3_y_steps == 0)
+                cursor_null_tr(cr);
+            else {
+                cursor_left_tr(cr, ex, id);
+                cr->y += phase3_y_steps;
+            }
         }
     } else {
         /* So lines decreasing in y. */
@@ -3393,7 +3525,7 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
         int phase3_y_steps = (-ey) & (fixed_1 - 1);
         ufixed y_steps = (ufixed)sy - (ufixed)ey;
 
-        cursor_down_tr(cr, sx, id);
+        int skip = cursor_down_tr(cr, sx, id);
 
         if (sx == ex) {
             /* Vertical line. (Falling) */
@@ -3407,7 +3539,7 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
                 sy -= phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
-                    goto endFalling;
+                    goto endFallingLeftOnEdgeOfPixel;
             }
 
             /* Phase 3: precalculation */
@@ -3418,7 +3550,8 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
             y_steps = fixed2int(y_steps);
             assert(y_steps >= 0);
             if (y_steps) {
-                cursor_always_step_tr(cr, -fixed_1, sx, id);
+                cursor_always_step_tr(cr, -fixed_1, sx, id, skip);
+                skip = 0;
                 y_steps--;
                 while (y_steps) {
                     cursor_always_step_inrange_vertical_tr(cr, -fixed_1, sx, id);
@@ -3427,8 +3560,12 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
             }
 
             /* Phase 3 */
-            if (phase3_y_steps > 0) {
-                cursor_step_tr(cr, -phase3_y_steps, sx, id);
+            if (phase3_y_steps == 0) {
+endFallingLeftOnEdgeOfPixel:
+                cursor_always_step_inrange_vertical_tr(cr, 0, sx, id);
+                cursor_null_tr(cr);
+            } else {
+                cursor_step_tr(cr, -phase3_y_steps, sx, id, skip);
                 assert(cr->left == sx && cr->lid == id && cr->right == sx && cr->rid == id);
             }
         } else if (sx < ex) {
@@ -3447,7 +3584,7 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
                 sy -= phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
-                    goto endFalling;
+                    goto endFallingRightOnEdgeOfPixel;
             } else
                 cursor_right_merge_tr(cr, sx, id);
 
@@ -3468,7 +3605,8 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
                 int f = y_steps/2;
                 int d = y_steps;
 
-                cursor_always_step_tr(cr, -fixed_1, sx, id);
+                cursor_always_step_tr(cr, -fixed_1, sx, id, skip);
+                skip = 0;
                 sx += x_inc;
                 f -= n_inc;
                 if (f < 0)
@@ -3488,8 +3626,12 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
             }
 
             /* Phase 3 */
-            if (phase3_y_steps > 0) {
-                cursor_step_tr(cr, -phase3_y_steps, sx, id);
+            if (phase3_y_steps == 0) {
+endFallingRightOnEdgeOfPixel:
+                cursor_always_step_inrange_vertical_tr(cr, 0, sx, id);
+                cursor_null_tr(cr);
+            } else {
+                cursor_step_tr(cr, -phase3_y_steps, sx, id, skip);
                 cursor_right_tr(cr, ex, id);
                 assert(cr->left == sx && cr->lid == id && cr->right == ex && cr->rid == id);
             }
@@ -3509,7 +3651,7 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
                 sy -= phase1_y_steps;
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
-                    goto endFalling;
+                    goto endFallingVerticalOnEdgeOfPixel;
             } else
                 cursor_left_merge_tr(cr, sx, id);
 
@@ -3530,7 +3672,8 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
                 int f = y_steps/2;
                 int d = y_steps;
 
-                cursor_always_step_tr(cr, -fixed_1, sx, id);
+                cursor_always_step_tr(cr, -fixed_1, sx, id, skip);
+                skip = 0;
                 sx -= x_inc;
                 f -= n_inc;
                 if (f < 0)
@@ -3550,15 +3693,18 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
             }
 
             /* Phase 3 */
-            if (phase3_y_steps > 0) {
-                cursor_step_tr(cr, -phase3_y_steps, sx, id);
+            if (phase3_y_steps == 0) {
+endFallingVerticalOnEdgeOfPixel:
+                cursor_always_step_inrange_vertical_tr(cr, 0, sx, id);
+                cursor_null_tr(cr);
+            } else {
+                cursor_step_tr(cr, -phase3_y_steps, sx, id, skip);
                 cursor_left_tr(cr, ex, id);
                 assert(cr->left == ex && cr->lid == id && cr->right == sx && cr->rid == id);
             }
         }
 endFalling:
-        if (truncated)
-        {
+        if (truncated) {
             cursor_output_tr(cr, fixed2int(cr->y) - cr->base);
         }
     }
@@ -3693,7 +3839,12 @@ int gx_scan_convert_tr_app(gx_device     * gs_restrict pdev,
         fixed iy = ey;
         fixed sx, sy;
 
-        cr.left = cr.right = ex;
+        if ((ey & 0xff) == 0) {
+            cr.left  = max_int_in_fixed;
+            cr.right = min_int_in_fixed;
+        } else {
+            cr.left = cr.right = ex;
+        }
         cr.lid = cr.rid = id+1;
         cr.y = ey;
         cr.d = DIRN_UNSET;
