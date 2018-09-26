@@ -1969,6 +1969,8 @@ idata:                  data_size = 0;
                         fill_stroke:
                             fill_params.adjust = gs_gstate.fill_adjust;
                             fill_params.flatness = gs_gstate.flatness;
+                            stroke_params.flatness = gs_gstate.flatness;
+                            stroke_params.traditional = false;
                             code = (*dev_proc(tdev, fill_stroke_path))(tdev, &gs_gstate, ppath,
                                                                 &fill_params, &fill_color,
                                                                 &stroke_params, &stroke_color, pcpath);
