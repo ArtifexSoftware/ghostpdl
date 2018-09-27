@@ -438,7 +438,6 @@ file_continue(i_ctx_t *i_ctx_p)
             esp -= 5;               /* pop proc, pfen, devlen, iodev , mark */
             return o_pop_estack;
         } else if (code > len) {      /* overran string */
-            esp -= 5;               /* pop proc, pfen, devlen, iodev , mark */
             return_error(gs_error_rangecheck);
         }
         else if (iodev != iodev_default(imemory)
