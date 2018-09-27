@@ -67,6 +67,37 @@ static int func_float_array_from_dict_key(pdf_context *ctx, float **parray, pdf_
     return a->entries;
 }
 
+static int func_int_array_from_dict_key(pdf_context *ctx, int **parray, pdf_dict *dict, const char *Key)
+{
+    int code, i;
+    pdf_array *a;
+    int *arr;
+
+    code = pdfi_dict_get(ctx, dict, Key, (pdf_obj *)&a);
+    if (code < 0)
+        return code;
+    if (a->type != PDF_ARRAY) {
+        pdfi_countdown(a);
+        return_error(gs_error_typecheck);
+    }
+    if (a->entries & 1) {
+        pdfi_countdown(a);
+        return_error(gs_error_rangecheck);
+    }
+    arr = (int *)gs_alloc_byte_array(ctx->memory, a->entries, sizeof(int), "array_from_dict_key");
+    *parray = arr;
+
+    for (i=0;i< a->entries;i++) {
+        if (a->values[i]->type != PDF_INT) {
+            pdfi_countdown(a);
+            return_error(gs_error_typecheck);
+        }
+        (*parray)[i] = (int)((pdf_num *)a->values[i])->value.i;
+    }
+    pdfi_countdown(a);
+    return a->entries;
+}
+
 static int
 pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
                     pdf_dict *function_dict, int depth, gs_function_t ** ppfn)
@@ -78,11 +109,12 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
     params.Encode = params.Decode = NULL;
     params.pole = NULL;
     params.Size = params.array_step = params.stream_step = NULL;
+    params.Order = 0;
 
     data_source_init_stream(&params.DataSource, ctx->main_stream->s);
 
     code = pdfi_dict_get_int(ctx, function_dict, "Order", &params.Order);
-    if (code < 0)
+    if (code < 0 &&  code != gs_error_undefined)
         return code;
 
     code = pdfi_dict_get_int(ctx, function_dict, "BitsPerSample", &params.BitsPerSample);
@@ -121,6 +153,26 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
         return code;
     }
 
+    code = func_int_array_from_dict_key(ctx, (int **)&params.Size, function_dict, "Size");
+    if (code != params.m) {
+        gs_free_const_object(ctx->memory, params.Decode, "Decode");
+        gs_free_const_object(ctx->memory, params.Encode, "Encode");
+        gs_free_const_object(ctx->memory, params.Domain, "Domain");
+        if (params.Range != NULL)
+            gs_free_const_object(ctx->memory, params.Domain, "Range");
+        if (code > 0)
+            return_error(gs_error_rangecheck);
+        return code;
+    }
+    code = gs_function_Sd_init(ppfn, &params, ctx->memory);
+    if (code < 0) {
+        gs_free_const_object(ctx->memory, params.Size, "Size");
+        gs_free_const_object(ctx->memory, params.Decode, "Decode");
+        gs_free_const_object(ctx->memory, params.Encode, "Encode");
+        gs_free_const_object(ctx->memory, params.Domain, "Domain");
+        if (params.Range != NULL)
+            gs_free_const_object(ctx->memory, params.Domain, "Range");
+    }
     return 0;
 }
 
@@ -156,6 +208,9 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
     }
     switch(Type) {
         case 0:
+            code = pdfi_build_function_0(ctx, &params, stream_dict, 0, ppfn);
+            if (code < 0)
+                gs_free_const_object(ctx->memory, params.Domain, "Domain");
             break;
         case 2:
             break;
@@ -168,7 +223,7 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
     }
 /*    gs_free_const_object(ctx->memory, params.Domain, "Domain");
     gs_free_const_object(ctx->memory, params.Domain, "Range");*/
-    return 0;
+    return code;
 }
 
 #if 0
