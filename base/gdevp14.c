@@ -3280,6 +3280,8 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
 
     /* expand the ppath using stroke expansion rule, then intersect it */
     code = gx_path_bbox(ppath, &path_bbox);
+    if (code == gs_error_nocurrentpoint && ppath->segments->contents.subpath_first == 0)
+        return 0;		/* ignore empty path */
     if (code < 0)
         return code;
     expansion_code = gx_stroke_path_expansion(pgs, ppath, &expansion);
