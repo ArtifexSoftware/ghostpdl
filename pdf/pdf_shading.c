@@ -173,7 +173,9 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     pdf_obj *o, *o1, *cspace;
     gs_shading_params_t params;
     gs_shading_t *psh;
+    gs_offset_t savedoffset;
 
+    savedoffset = pdfi_tell(ctx->main_stream);
     if (ctx->loop_detection == NULL) {
         pdfi_init_loop_detector(ctx);
         pdfi_loop_detector_mark(ctx);
@@ -183,6 +185,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
     if (ctx->stack_top - ctx->stack_bot < 1) {
         pdfi_loop_detector_cleartomark(ctx);
+        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return_error(gs_error_stackunderflow);
     }
 
@@ -190,6 +193,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (n->type != PDF_NAME) {
         pdfi_pop(ctx, 1);
         pdfi_loop_detector_cleartomark(ctx);
+        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return_error(gs_error_typecheck);
     }
 
@@ -199,12 +203,14 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         pdfi_loop_detector_cleartomark(ctx);
         if (ctx->pdfstoponerror)
             return code;
+        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return 0;
     }
     if (o->type != PDF_DICT) {
         pdfi_pop(ctx, 1);
         pdfi_loop_detector_cleartomark(ctx);
         pdfi_countdown(o);
+        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return_error(gs_error_typecheck);
     }
 
@@ -213,6 +219,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         pdfi_pop(ctx, 1);
         pdfi_loop_detector_cleartomark(ctx);
         pdfi_countdown(o);
+        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
     }
 
@@ -228,6 +235,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         pdfi_pop(ctx, 1);
         pdfi_loop_detector_cleartomark(ctx);
         pdfi_countdown(o);
+        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
     }
 
@@ -237,6 +245,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         pdfi_pop(ctx, 1);
         pdfi_loop_detector_cleartomark(ctx);
         pdfi_countdown(o);
+        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
     }
 
@@ -249,6 +258,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
             pdfi_pop(ctx, 1);
             pdfi_loop_detector_cleartomark(ctx);
             pdfi_countdown(o);
+            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
             return_error(gs_error_typecheck);
         }
         params.ColorSpace = pcs;
@@ -300,6 +310,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     }
 
     code1 = gs_grestore(ctx->pgs);
+    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
     if (code1 == 0)
         return code;
     return code1;

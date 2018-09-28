@@ -103,7 +103,10 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
                     pdf_dict *function_dict, int depth, gs_function_t ** ppfn)
 {
     gs_function_Sd_params_t params;
+    pdf_stream *profile_stream = NULL;
     int code;
+    int64_t Length;
+    byte *data_source_buffer;
 
     *(gs_function_params_t *) & params = *mnDR;
     params.Encode = params.Decode = NULL;
@@ -111,7 +114,17 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
     params.Size = params.array_step = params.stream_step = NULL;
     params.Order = 0;
 
-    data_source_init_stream(&params.DataSource, ctx->main_stream->s);
+    code = pdfi_dict_get_int(ctx, function_dict, "Length", &Length);
+    if (code < 0)
+        return code;
+
+    pdfi_seek(ctx, ctx->main_stream, function_dict->stream_offset, SEEK_SET);
+    code = pdfi_open_memory_stream_from_stream(ctx, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &profile_stream);
+    if (code < 0) {
+        pdfi_close_memory_stream(ctx, data_source_buffer, profile_stream);
+        return code;
+    }
+    data_source_init_stream(&params.DataSource, profile_stream->s);
 
     code = pdfi_dict_get_int(ctx, function_dict, "Order", &params.Order);
     if (code < 0 &&  code != gs_error_undefined)
