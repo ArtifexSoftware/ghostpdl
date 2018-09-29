@@ -163,10 +163,11 @@ end
         % Set them again to the new values.  From here on, we are safe,
         % since a context switch will consult userparams.
   .setuserparams
-} .bind executeonly def % must be bound and hidden for .forceput
+} .bind executeonly odef % must be bound and hidden for .forceput
 
 /setuserparams {		% <dict> setuserparams -
-    .setuserparams2
+    {.setuserparams2} stopped
+    {/setuserparams load $error /errorname get signalerror} if
 } .bind odef
 % Initialize user parameters managed here.
 /JobName () .definepsuserparam
@@ -415,7 +416,9 @@ psuserparams /ProcessDSCComment {.checkprocesscomment} put
 
 % VMReclaim and VMThreshold are user parameters.
 /setvmthreshold {		% <int> setvmthreshold -
-  mark /VMThreshold 2 .argindex .dicttomark .setuserparams2 pop
+  mark /VMThreshold 2 .argindex .dicttomark {.setuserparams2} stopped
+  {pop /setvmthreshold load $error /errorname get signalerror}
+  {pop} ifelse
 } odef
 /vmreclaim {			% <int> vmreclaim -
   dup 0 gt {
@@ -427,7 +430,9 @@ psuserparams /ProcessDSCComment {.checkprocesscomment} put
     ifelse
   } {
     % VMReclaim userparam controls enable/disable GC
-    mark /VMReclaim 2 index .dicttomark .setuserparams2 pop
+    mark /VMReclaim 2 index .dicttomark {.setuserparams2} stopped
+    {pop /vmreclaim load $error /errorname get signalerror}
+    {pop} ifelse
   } ifelse
 } odef
 -1 setvmthreshold

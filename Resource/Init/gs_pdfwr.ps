@@ -660,7 +660,7 @@ currentdict /.pdfmarkparams .undef
   {
     pop
   } ifelse
-} .bind executeonly def % must be bound and hidden for .forceput
+} .bind executeonly odef % must be bound and hidden for .forceput
 
 % Use the DSC processing hook to pass DSC comments to the driver.
 % We use a pseudo-parameter named DSC whose value is an array:

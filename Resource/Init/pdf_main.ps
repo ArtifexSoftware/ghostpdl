@@ -660,7 +660,7 @@ currentdict /runpdfstring .undef
     } forall
     pop
   } ifelse
-} bind executeonly def
+} bind executeonly odef
 
 currentdict /pdf_collection_files .undef
 
@@ -2723,7 +2723,7 @@ currentdict /PDF2PS_matrix_key undef
   .setglobal
   /RepairedAnError exch def
   /Repaired exch def
-} bind executeonly def
+} bind executeonly odef
 
 % Display the contents of a page (including annotations).
 /showpagecontents {	% <pagedict> showpagecontents -

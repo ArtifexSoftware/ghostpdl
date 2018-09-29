@@ -1158,7 +1158,7 @@ currentdict end readonly def
   Q
   PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { //true } ifelse { (%End PaintProc) print dup === flush } if } if
   PDFfile exch setfileposition
-} bind executeonly def
+} bind executeonly odef
 
 /.pdfpaintproc {
     %% Get the /m from pdfopdict (must be present)
@@ -1189,7 +1189,7 @@ currentdict end readonly def
     {
       switch_to_text_marking_ops
     } if
-}bind executeonly def
+}bind executeonly odef
 
 /resolvepattern {	% <patternstreamdict> resolvepattern <patterndict>
                 % Don't do the resolvestream now: just capture the data
@@ -2353,7 +2353,7 @@ currentdict /last-ditch-bpc-csp undef
   }{
     pdfdict /AppearanceNumber 0 .forceput
   } ifelse
-}bind executeonly def
+}bind executeonly odef
 
 /MakeAppearanceName {
   pdfdict /AppearanceNumber get
@@ -2382,7 +2382,7 @@ currentdict /last-ditch-bpc-csp undef
   DoForm
   pdfdict /.PreservePDFForm 3 -1 roll .forceput
   grestore
-} bind executeonly def
+} bind executeonly odef
 
 /DoForm {
   %% save the current value, if its true we will set it to false later, in order
@@ -2541,7 +2541,7 @@ currentdict /last-ditch-bpc-csp undef
     end
   } if
   pdfdict /.PreservePDFForm 3 -1 roll .forceput
-} bind executeonly def
+} bind executeonly odef
 
 /_dops_save 1 array def
 

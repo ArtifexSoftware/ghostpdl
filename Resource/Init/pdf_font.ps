@@ -718,7 +718,7 @@ currentdict end readonly def
   {pop pop pop}
   ifelse
 
-} bind executeonly def
+} bind executeonly odef
 
 currentdict /.DoToUnicode? .forceundef
 
@@ -1241,7 +1241,7 @@ currentdict /eexec_pdf_param_dict .undef
     } bdef
     dup currentdict Encoding .processToUnicode
     currentdict end .completefont exch pop
-} bind executeonly def
+} bind executeonly odef
 /.adjustcharwidth {	% <wx> <wy> .adjustcharwidth <wx'> <wy'>
   % Enforce the metrics, in glyph space, to the values found in the PDF Font object
   % - force wy == 0 (assumed, and not stored in the PDF font)
@@ -2026,7 +2026,7 @@ currentdict /CMap_read_dict undef
     } if
     /findresource cvx /undefined signalerror
   } loop
-} bind executeonly def
+} bind executeonly odef
 
 /buildCIDType0 {	% <CIDFontType0-font-resource> buildCIDType0 <font>
   dup /BaseFont get findCIDFont exch pop
@@ -2211,7 +2211,7 @@ currentdict /CMap_read_dict undef
   /Type0 //buildType0
   /Type1 //buildType1
   /MMType1 //buildType1
-  /Type3 //buildType3
+  /Type3 /buildType3 load
   /TrueType //buildTrueType
   /CIDFontType0 //buildCIDType0
   /CIDFontType2 //buildCIDType2

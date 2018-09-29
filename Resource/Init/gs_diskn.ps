@@ -53,7 +53,7 @@ systemdict begin
     exch .setglobal
   }
   if
-} .bind executeonly def % must be bound and hidden for .forceput
+} .bind executeonly odef % must be bound and hidden for .forceput
 
 % Modify .putdevparams to force regeneration of .searchabledevs list
 /.putdevparams {

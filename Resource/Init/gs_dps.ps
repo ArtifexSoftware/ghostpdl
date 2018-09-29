@@ -70,7 +70,7 @@
                 % Save a copy of the initial gstate.
   //systemdict /savedinitialgstate gstate readonly .forceput
   .setglobal
-} .bind executeonly def % must be bound and hidden for .forceput
+} .bind executeonly odef % must be bound and hidden for .forceput
 
 % Initialize local dictionaries and gstate when creating a new context.
 % Note that until this completes, we are in the anomalous situation of

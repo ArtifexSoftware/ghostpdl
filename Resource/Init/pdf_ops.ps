@@ -193,7 +193,7 @@ currentdict /gput_always_allow .undef
       pdfformaterror
     } ifelse
   } if
-} bind executeonly def
+} bind executeonly odef
 
 % Save PDF gstate
 /qstate {       % - qstate <qstate>
@@ -451,7 +451,7 @@ currentdict /gput_always_allow .undef
   %% a gsave, so we haven't copied it to /self, if we don't do that here
   %% then transparent annotations cause an invalid access error.
   currentdict //nodict eq {/self dup load end 5 dict begin def} if
-} bind executeonly def
+} bind executeonly odef
 /AIS { .setalphaisshape } bind executeonly def
 /BM {
   /.setblendmode where {
@@ -1077,7 +1077,7 @@ end readonly def
     pdfopdict /v {inside_text_v} bind .forceput
     pdfopdict /y {inside_text_y} bind .forceput
     pdfopdict /re {inside_text_re} bind .forceput
-} bind executeonly def
+} bind executeonly odef
 
 /switch_to_normal_marking_ops {
     pdfopdict /m {normal_m} bind .forceput
@@ -1086,7 +1086,7 @@ end readonly def
     pdfopdict /v {normal_v} bind .forceput
     pdfopdict /y {normal_y} bind .forceput
     pdfopdict /re {normal_re} bind .forceput
-} bind executeonly def
+} bind executeonly odef
 
 /BT {
   currentdict /TextSaveMatrix known {

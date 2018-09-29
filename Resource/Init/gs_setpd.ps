@@ -608,6 +608,20 @@ NOMEDIAATTRS {
 % in the <failed> dictionary with the policy value,
 % and we replace the key in the <merged> dictionary with its prior value
 % (or remove it if it had no prior value).
+
+% Making this an operator means we can properly hide
+% the contents - specifically .forceput
+/1Policy
+{
+  % Roll back the failed request to its previous status.
+  SETPDDEBUG { (Rolling back.) = pstack flush } if
+  3 index 2 index 3 -1 roll .forceput
+  4 index 1 index .knownget
+   { 4 index 3 1 roll .forceput }
+   { 3 index exch .undef }
+  ifelse
+} bind executeonly odef
+
 /.policyprocs mark
 % These procedures are called with the following on the stack:
 %   <orig> <merged> <failed> <Policies> <key> <policy>
@@ -631,14 +645,7 @@ NOMEDIAATTRS {
         /setpagedevice .systemvar /configurationerror signalerror
       } ifelse
   } bind
-  1 {		% Roll back the failed request to its previous status.
-SETPDDEBUG { (Rolling back.) = pstack flush } if
-        3 index 2 index 3 -1 roll .forceput
-        4 index 1 index .knownget
-         { 4 index 3 1 roll .forceput }
-         { 3 index exch .undef }
-        ifelse
-  } .bind executeonly % must be bound and hidden for .forceput
+  1 /1Policy load
   7 {		% For PageSize only, just impose the request.
         1 index /PageSize eq
          { pop pop 1 index /PageSize 7 put }
@@ -646,6 +653,8 @@ SETPDDEBUG { (Rolling back.) = pstack flush } if
         ifelse
   } bind
 .dicttomark readonly def
+currentdict /1Policy undef
+
 /.applypolicies		% <orig> <merged> <failed> .applypolicies
                         %   <orig> <merged'> <failed'>
  { 1 index /Policies get 1 index

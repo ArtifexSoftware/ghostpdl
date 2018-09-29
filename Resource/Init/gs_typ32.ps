@@ -79,15 +79,19 @@ systemdict /.removeglyphs .undef
 .dicttomark /ProcSet defineresource pop
 
 /.cidfonttypes where { pop } { /.cidfonttypes 6 dict def } ifelse
-.cidfonttypes begin
-
-4	% CIDFontType 4 = FontType 32
-{ dup /FontType 32 .forceput
+/CIDFontType4
+{
+  dup /FontType 32 .forceput
   dup /CharStrings 20 dict .forceput
   1 index exch .buildfont32 exch pop
-} .bind executeonly def % must be bound and hidden for .forceput
+} .bind executeonly odef
+.cidfonttypes begin
+
+
+4 /CIDFontType4 load def % CIDFontType 4 = FontType 32
 
 end		% .cidfonttypes
+currentdict /CIDFontType4 .forceundef
 
 % Define the BuildGlyph procedure.
 % Since Type 32 fonts are indexed by CID, there is no BuildChar procedure.
