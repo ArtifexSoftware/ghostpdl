@@ -330,6 +330,209 @@ int pdfi_dict_get_number(pdf_context *ctx, pdf_dict *d, const char *Key, double 
     return 0;
 }
 
+/* convenience functions for retrieving arrys, see shadings and functions */
+
+/* The 'fill' versions fill existing arrays, and need a size,
+ * the 'make' versions allocate memory and fill it. Both varieties return the
+ * number of entries on success. The fill Matrix utility expects to always
+ * receive 6 values. The Domain function expects to receive an even number of
+ * entries and each pair must have the second element larger than the first.
+ */
+int fill_domain_from_dict(pdf_context *ctx, float *parray, int size, pdf_dict *dict)
+{
+    int code, i;
+    pdf_array *a = NULL;
+    float *arr = NULL;
+
+    code = pdfi_dict_get(ctx, dict, "Domain", (pdf_obj **)&a);
+    if (code < 0)
+        return code;
+    if (a->type != PDF_ARRAY) {
+        pdfi_countdown(a);
+        return_error(gs_error_typecheck);
+    }
+    if (a->entries & 1 || a->entries > size) {
+        pdfi_countdown(a);
+        return_error(gs_error_rangecheck);
+    }
+
+    for (i=0;i< a->entries;i+=2) {
+        if (a->values[i]->type != PDF_INT && a->values[i]->type != PDF_REAL) {
+            pdfi_countdown(a);
+            return_error(gs_error_typecheck);
+        }
+        if (a->values[i]->type == PDF_INT)
+            parray[i] = (float)((pdf_num *)a->values[i])->value.i;
+        else
+            parray[i] = (float)((pdf_num *)a->values[i])->value.d;
+    }
+    pdfi_countdown(a);
+    return a->entries;
+}
+
+int fill_float_array_from_dict(pdf_context *ctx, float *parray, int size, pdf_dict *dict, const char *Key)
+{
+    int code, i;
+    pdf_array *a = NULL;
+    float *arr = NULL;
+
+    code = pdfi_dict_get(ctx, dict, Key, (pdf_obj **)&a);
+    if (code < 0)
+        return code;
+    if (a->type != PDF_ARRAY) {
+        pdfi_countdown(a);
+        return_error(gs_error_typecheck);
+    }
+    if (a->entries > size)
+        return_error(gs_error_rangecheck);
+
+    for (i=0;i< a->entries;i++) {
+        if (a->values[i]->type != PDF_INT && a->values[i]->type != PDF_REAL) {
+            pdfi_countdown(a);
+            return_error(gs_error_typecheck);
+        }
+        if (a->values[i]->type == PDF_INT)
+            parray[i] = (float)((pdf_num *)a->values[i])->value.i;
+        else
+            parray[i] = (float)((pdf_num *)a->values[i])->value.d;
+    }
+    pdfi_countdown(a);
+    return a->entries;
+}
+
+int fill_bool_array_from_dict(pdf_context *ctx, bool *parray, int size, pdf_dict *dict, const char *Key)
+{
+    int code, i;
+    pdf_array *a = NULL;
+    float *arr = NULL;
+
+    code = pdfi_dict_get(ctx, dict, Key, (pdf_obj **)&a);
+    if (code < 0)
+        return code;
+    if (a->type != PDF_ARRAY) {
+        pdfi_countdown(a);
+        return_error(gs_error_typecheck);
+    }
+    if (a->entries > size)
+        return_error(gs_error_rangecheck);
+
+    for (i=0;i< a->entries;i++) {
+        if (a->values[i]->type != PDF_BOOL) {
+            pdfi_countdown(a);
+            return_error(gs_error_typecheck);
+        }
+        parray[i] = ((pdf_bool *)a->values[i])->value;
+    }
+    pdfi_countdown(a);
+    return a->entries;
+}
+
+int fill_matrix_from_dict(pdf_context *ctx, float *parray, pdf_dict *dict)
+{
+    int code, i;
+    pdf_array *a = NULL;
+    float *arr = NULL;
+
+    code = pdfi_dict_get(ctx, dict, "Matrix", (pdf_obj **)&a);
+    if (code < 0)
+        return code;
+    if (a->type != PDF_ARRAY) {
+        pdfi_countdown(a);
+        return_error(gs_error_typecheck);
+    }
+    if (a->entries != 6) {
+        pdfi_countdown(a);
+        return_error(gs_error_rangecheck);
+    }
+    if (a->entries != 6)
+        return_error(gs_error_rangecheck);
+
+    for (i=0;i< a->entries;i++) {
+        if (a->values[i]->type != PDF_INT && a->values[i]->type != PDF_REAL) {
+            pdfi_countdown(a);
+            return_error(gs_error_typecheck);
+        }
+        if (a->values[i]->type == PDF_INT)
+            parray[i] = (float)((pdf_num *)a->values[i])->value.i;
+        else
+            parray[i] = (float)((pdf_num *)a->values[i])->value.d;
+    }
+    pdfi_countdown(a);
+    return a->entries;
+}
+
+/* Returns < 0 for error or the number of entries allocated */
+int make_float_array_from_dict(pdf_context *ctx, float **parray, pdf_dict *dict, const char *Key)
+{
+    int code, i;
+    pdf_array *a = NULL;
+    float *arr = NULL;
+
+    code = pdfi_dict_get(ctx, dict, Key, (pdf_obj **)&a);
+    if (code < 0)
+        return code;
+    if (a->type != PDF_ARRAY) {
+        pdfi_countdown(a);
+        return_error(gs_error_typecheck);
+    }
+    if (a->entries & 1) {
+        pdfi_countdown(a);
+        return_error(gs_error_rangecheck);
+    }
+    arr = (float *)gs_alloc_byte_array(ctx->memory, a->entries, sizeof(float), "array_from_dict_key");
+    *parray = arr;
+
+    for (i=0;i< a->entries;i+=2) {
+        if (a->values[i]->type != PDF_INT && a->values[i]->type != PDF_REAL) {
+            pdfi_countdown(a);
+            return_error(gs_error_typecheck);
+        }
+        if (a->values[i]->type == PDF_INT)
+            (*parray)[i] = (float)((pdf_num *)a->values[i])->value.i;
+        else
+            (*parray)[i] = (float)((pdf_num *)a->values[i])->value.d;
+        if (a->values[i+1]->type == PDF_INT)
+            (*parray)[i+1] = (float)((pdf_num *)a->values[i+1])->value.i;
+        else
+            (*parray)[i+1] = (float)((pdf_num *)a->values[i+1])->value.d;
+
+        if ((*parray)[i] > (*parray)[i+1]) {
+            pdfi_countdown(a);
+            gs_free_const_object(ctx->memory, *parray, "array_from_dict_key");
+            return_error(gs_error_rangecheck);
+        }
+    }
+    pdfi_countdown(a);
+    return a->entries;
+}
+
+int make_int_array_from_dict(pdf_context *ctx, int **parray, pdf_dict *dict, const char *Key)
+{
+    int code, i;
+    pdf_array *a = NULL;
+    int *arr = NULL;
+
+    code = pdfi_dict_get(ctx, dict, Key, (pdf_obj **)&a);
+    if (code < 0)
+        return code;
+    if (a->type != PDF_ARRAY) {
+        pdfi_countdown(a);
+        return_error(gs_error_typecheck);
+    }
+    arr = (int *)gs_alloc_byte_array(ctx->memory, a->entries, sizeof(int), "array_from_dict_key");
+    *parray = arr;
+
+    for (i=0;i< a->entries;i++) {
+        if (a->values[i]->type != PDF_INT) {
+            pdfi_countdown(a);
+            return_error(gs_error_typecheck);
+        }
+        (*parray)[i] = (int)((pdf_num *)a->values[i])->value.i;
+    }
+    pdfi_countdown(a);
+    return a->entries;
+}
+
 int pdfi_dict_put(pdf_dict *d, pdf_obj *Key, pdf_obj *value)
 {
     uint64_t i;
