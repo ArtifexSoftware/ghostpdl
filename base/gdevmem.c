@@ -180,25 +180,7 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
         dev->cached_colors = target->cached_colors;
         dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
 
-        /* Do a copy of put_image since it needs the source buffer */
-
-        /* This is truly ugly. The PDF14 device expects to check for a device implementing a put_image
-         * method, which is quite reasonable, but, those devices which do implement a put_image
-         * method expect to be called not with their own device, but with the memory device!
-         * This means that if we have any device in the way (subclassing, forwarding, whatever)
-         * then this will fail, horribly. The only way to get this to work is to go right to
-         * the end of the chain of devices, copy the method from the real terminating device, and
-         * then call that directly. Thus completely bypassing the chain.
-         * This is awful. We should revise this so that we pass the 'memroy device' as an additional
-         * parameter, rather than overriding the actual device, so that we can pass this along the
-         * chain. We'd also need to alter the code which checks the put_image method against gx_default_put_image
-         * and have that walk the chain of devices, or implement a spec_op to query whether the device impleemnts
-         * put_image.
-         */
-        while (target->child)
-            target = target->child;
-
-        set_dev_proc(dev, put_image, target->procs.put_image);
+        set_dev_proc(dev, put_image, gx_forward_put_image);
         set_dev_proc(dev, dev_spec_op, gx_default_dev_spec_op);
     }
     if (dev->color_info.depth == 1) {

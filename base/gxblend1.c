@@ -722,9 +722,8 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride,
             input_map[num_known_comp++] = comp_num + 4;
         }
     }
-    /* See if the target device has a put_image command.  If
-       yes then see if it can handle the image data directly. */
-    if (target->procs.put_image != gx_default_put_image) {
+
+    {
         /* See if the target device can handle the data in its current
            form with the alpha component */
         int alpha_offset = num_comp;
@@ -733,7 +732,7 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride,
         int i;
         for (i = 0; i < num_comp; i++)
             buf_ptrs[i] = buf_ptr + i * planestride;
-        code = dev_proc(target, put_image) (target, buf_ptrs, num_comp,
+        code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
                                             rect.p.x, rect.p.y, width, height,
                                             rowstride,
                                             num_comp,tag_offset);
@@ -758,7 +757,7 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride,
 #endif
             /* Try again now */
             alpha_offset = 0;
-            code = dev_proc(target, put_image) (target, buf_ptrs, num_comp,
+            code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
                                                 rect.p.x, rect.p.y, width, height,
                                                 rowstride,
                                                 alpha_offset, tag_offset);
@@ -767,7 +766,7 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, int planestride,
             /* We processed some or all of the rows.  Continue until we are done */
             num_rows_left = height - code;
             while (num_rows_left > 0) {
-                code = dev_proc(target, put_image) (target, buf_ptrs, num_comp,
+                code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
                                                     rect.p.x, rect.p.y+code, width,
                                                     num_rows_left, rowstride,
                                                     alpha_offset, tag_offset);

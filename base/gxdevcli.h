@@ -1514,7 +1514,7 @@ typedef struct gs_devn_params_s gs_devn_params;
   dev_t_proc_pop_transparency_state(proc, gx_device)
 
 #define dev_t_proc_put_image(proc, dev_t)\
-  int proc(gx_device *dev, const byte **buffers, int num_chan, int x, int y,\
+  int proc(gx_device *dev, gx_device *mdev,  const byte **buffers, int num_chan, int x, int y,\
             int width, int height, int row_stride,\
             int alpha_plane_index, int tag_plane_index)
 #define dev_proc_put_image(proc)\

@@ -466,7 +466,7 @@ int epo_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
     return dev_proc(dev, fill_linear_color_triangle)(dev, fa, p0, p1, p2, c0, c1, c2);
 }
 
-int epo_put_image(gx_device *dev, const byte **buffers, int num_chan, int x, int y,
+int epo_put_image(gx_device *dev, gx_device *mdev, const byte **buffers, int num_chan, int x, int y,
             int width, int height, int row_stride,
             int alpha_plane_index, int tag_plane_index)
 {
@@ -474,7 +474,7 @@ int epo_put_image(gx_device *dev, const byte **buffers, int num_chan, int x, int
 
     if (code != 0)
         return code;
-    return dev_proc(dev, put_image)(dev, buffers, num_chan, x, y, width, height, row_stride, alpha_plane_index, tag_plane_index);
+    return dev_proc(dev, put_image)(dev, mdev, buffers, num_chan, x, y, width, height, row_stride, alpha_plane_index, tag_plane_index);
 }
 
 int epo_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,

@@ -530,12 +530,12 @@ int obj_filter_fill_linear_color_triangle(gx_device *dev, const gs_fill_attribut
     return 0;
 }
 
-int obj_filter_put_image(gx_device *dev, const byte **buffers, int num_chan, int x, int y,
+int obj_filter_put_image(gx_device *dev, gx_device *mdev, const byte **buffers, int num_chan, int x, int y,
             int width, int height, int row_stride,
             int alpha_plane_index, int tag_plane_index)
 {
     if ((dev->ObjectFilter & FILTERIMAGE) == 0)
-        return default_subclass_put_image(dev, buffers, num_chan, x, y, width, height, row_stride, alpha_plane_index, tag_plane_index);
+        return default_subclass_put_image(dev, mdev, buffers, num_chan, x, y, width, height, row_stride, alpha_plane_index, tag_plane_index);
     return 0;
 }
 

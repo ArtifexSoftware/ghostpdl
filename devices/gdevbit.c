@@ -828,11 +828,11 @@ bittags_print_page(gx_device_printer * pdev, FILE * prn_stream)
 }
 
 static int
-bit_put_image(gx_device *pdev, const byte **buffers, int num_chan, int xstart,
+bit_put_image(gx_device *pdev, gx_device *mdev, const byte **buffers, int num_chan, int xstart,
               int ystart, int width, int height, int row_stride,
               int alpha_plane_index, int tag_plane_index)
 {
-    gx_device_memory *pmemdev = (gx_device_memory *)pdev;
+    gx_device_memory *pmemdev = (gx_device_memory *)mdev;
     byte *buffer_prn;
     int yend = ystart + height;
     int xend = xstart + width;

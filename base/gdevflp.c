@@ -1132,7 +1132,7 @@ int flp_pop_transparency_state(gx_device *dev, gs_gstate *pgs)
     return 0;
 }
 
-int flp_put_image(gx_device *dev, const byte **buffers, int num_chan, int x, int y,
+int flp_put_image(gx_device *dev, gx_device *mdev, const byte **buffers, int num_chan, int x, int y,
             int width, int height, int row_stride,
             int alpha_plane_index, int tag_plane_index)
 {
@@ -1141,7 +1141,7 @@ int flp_put_image(gx_device *dev, const byte **buffers, int num_chan, int x, int
     if (code < 0)
         return code;
     if (!code)
-        return default_subclass_put_image(dev, buffers, num_chan, x, y, width, height, row_stride, alpha_plane_index, tag_plane_index);
+        return default_subclass_put_image(dev, mdev, buffers, num_chan, x, y, width, height, row_stride, alpha_plane_index, tag_plane_index);
 
     return 0;
 }

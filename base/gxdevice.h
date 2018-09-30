@@ -408,6 +408,7 @@ dev_proc_fill_linear_color_triangle(gx_forward_fill_linear_color_triangle);
 dev_proc_update_spot_equivalent_colors(gx_forward_update_spot_equivalent_colors);
 dev_proc_ret_devn_params(gx_forward_ret_devn_params);
 dev_proc_fillpage(gx_forward_fillpage);
+dev_proc_put_image(gx_forward_put_image);
 dev_proc_copy_planes(gx_forward_copy_planes);
 dev_proc_create_compositor(gx_forward_create_compositor);
 dev_proc_get_profile(gx_forward_get_profile);

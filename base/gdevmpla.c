@@ -254,11 +254,11 @@ put_image_copy_planes(gx_device * dev, const byte **base_ptr, int sourcex,
 /* Put image command for copying the planar image buffers with or without
    alpha directly to the device buffer */
 static int
-mem_planar_put_image(gx_device *pdev, const byte **buffers, int num_chan, int xstart,
+mem_planar_put_image(gx_device *pdev, gx_device *pmdev, const byte **buffers, int num_chan, int xstart,
               int ystart, int width, int height, int row_stride,
               int alpha_plane_index, int tag_plane_index)
 {
-    gx_device_memory * const mdev = (gx_device_memory *)pdev;
+    gx_device_memory * const mdev = (gx_device_memory *)pmdev;
 
     /* We don't want alpha, return 0 to ask for the pdf14 device to do the
        alpha composition. We also do not want chunky data coming in or to deal

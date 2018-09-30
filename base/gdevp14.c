@@ -1883,11 +1883,10 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     if (dev_target_profile == NULL)
         return gs_throw_code(gs_error_Fatal);
 
-    /* See if the target device has a put_image command.  If yes then see if it
-       can handle the image data directly. If it cannot, then we will need to
+    /* See if the target device can handle the image data directly. If it cannot, then we will need to
        use the begin_typed_image interface, which cannot pass along tag nor
        alpha data to the target device. */
-    if (dev_proc(target, put_image) != gx_default_put_image) {
+    {
         pdf14_buf *cm_result = NULL;
         int alpha_offset, tag_offset;
         const byte *buf_ptrs[GS_CLIENT_COLOR_MAX_COMPONENTS];
@@ -1946,7 +1945,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
         /* See if the target device can handle the data with alpha component */
         for (i = 0; i < buf->n_planes; i++)
             buf_ptrs[i] = buf_ptr + i * buf->planestride;
-        code = dev_proc(target, put_image) (target, buf_ptrs, num_comp,
+        code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
                                             rect.p.x, rect.p.y, width, height,
                                             buf->rowstride, alpha_offset,
                                             tag_offset);
@@ -1973,7 +1972,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
 
             /* Try again now with just the tags */
             alpha_offset = 0;
-            code = dev_proc(target, put_image) (target, buf_ptrs, num_comp,
+            code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
                                                 rect.p.x, rect.p.y, width, height,
                                                 buf->rowstride, alpha_offset,
                                                 tag_offset);
@@ -1982,7 +1981,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
             /* We processed some or all of the rows.  Continue until we are done */
             num_rows_left = height - code;
             while (num_rows_left > 0) {
-                code = dev_proc(target, put_image) (target, buf_ptrs, num_comp,
+                code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
                                                     rect.p.x, rect.p.y + code, width,
                                                     num_rows_left, buf->rowstride,
                                                     alpha_offset, tag_offset);

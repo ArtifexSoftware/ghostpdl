@@ -112,6 +112,7 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, update_spot_equivalent_colors, gx_forward_update_spot_equivalent_colors);
     fill_dev_proc(dev, ret_devn_params, gx_forward_ret_devn_params);
     fill_dev_proc(dev, fillpage, gx_forward_fillpage);
+    fill_dev_proc(dev, put_image, gx_forward_put_image);
     fill_dev_proc(dev, get_profile, gx_forward_get_profile);
     fill_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
     fill_dev_proc(dev, strip_copy_rop2, gx_forward_strip_copy_rop2);
@@ -1013,7 +1014,21 @@ gx_forward_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t graphics
     dev->graphics_type_tag = (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) | graphics_type_tag;
 }
 
-/* ---------------- The null device(s) ---------------- */
+int
+gx_forward_put_image(gx_device *pdev, gx_device *mdev, const byte **buffers, int num_chan, int xstart,
+              int ystart, int width, int height, int row_stride,
+              int alpha_plane_index, int tag_plane_index)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)pdev;
+    gx_device *tdev = fdev->target;
+
+    if (tdev != 0)
+        return dev_proc(tdev, put_image)(tdev, mdev, buffers, num_chan, xstart, ystart, width, height, row_stride, alpha_plane_index, tag_plane_index);
+    else
+        return gx_default_put_image(tdev, mdev, buffers, num_chan, xstart, ystart, width, height, row_stride, alpha_plane_index, tag_plane_index);
+}
+
+/* ---------------- The null device(s) ---------_plane_index------- */
 
 static dev_proc_get_initial_matrix(gx_forward_upright_get_initial_matrix);
 static dev_proc_fill_rectangle(null_fill_rectangle);
