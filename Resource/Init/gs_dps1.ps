@@ -21,7 +21,7 @@ level2dict begin
 % ------ Virtual memory ------ %
 
 /currentshared /.currentglobal load def
-/scheck /.gcheck load def
+/scheck {.gcheck} bind odef
 %****** FOLLOWING IS WRONG ******
 /shareddict currentdict /globaldict .knownget not { 20 dict } if def
 

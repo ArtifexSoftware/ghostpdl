@@ -678,6 +678,8 @@ again:
     epref = &doref;
     /* Push the error object on the operand stack if appropriate. */
     if (!GS_ERROR_IS_INTERRUPT(code)) {
+        byte buf[260], *bufptr;
+        uint rlen;
         /* Replace the error object if within an oparray or .errorexec. */
         osp++;
         if (osp >= ostop) {
@@ -686,23 +688,36 @@ again:
         }
         *osp = *perror_object;
         errorexec_find(i_ctx_p, osp);
-        /* If using SAFER, hand a name object to the error handler, rather than the executable
-         * object/operator itself.
-         */
-        if (i_ctx_p->LockFilePermissions) {
+
+        if (!r_has_type(osp, t_string) && !r_has_type(osp, t_name)) {
             code = obj_cvs(imemory, osp, buf + 2, 256, &rlen, (const byte **)&bufptr);
             if (code < 0) {
                 const char *unknownstr = "--unknown--";
                 rlen = strlen(unknownstr);
                 memcpy(buf, unknownstr, rlen);
+                bufptr = buf;
             }
             else {
-                buf[0] = buf[1] = buf[rlen + 2] = buf[rlen + 3] = '-';
-                rlen += 4;
+                ref *tobj;
+                bufptr[rlen] = '\0';
+                /* Only pass a name object if the operator doesn't exist in systemdict
+                 * i.e. it's an internal operator we have hidden
+                 */
+                code = dict_find_string(systemdict, (const char *)bufptr, &tobj);
+                if (code < 0) {
+                    buf[0] = buf[1] = buf[rlen + 2] = buf[rlen + 3] = '-';
+                    rlen += 4;
+                    bufptr = buf;
+                }
+                else {
+                    bufptr = NULL;
+                }
             }
-            code = name_ref(imemory, buf, rlen, osp, 1);
-            if (code < 0)
-                make_null(osp);
+            if (bufptr) {
+                code = name_ref(imemory, buf, rlen, osp, 1);
+                if (code < 0)
+                    make_null(osp);
+            }
         }
     }
     goto again;
