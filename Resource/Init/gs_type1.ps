@@ -166,7 +166,7 @@ ifelse
         % However, we can't use any of the other well-known dictionaries
         % (such as userdict), since the whole point of pushing systemdict
         % is to make sure that nothing important has been redefined.
-   /userdict .systemvar begin
+   32 dict begin
         % We can't just use `run', because we want to check for .PFB files.
    currentpacking
     { //false setpacking .loadfont1 //true setpacking }
