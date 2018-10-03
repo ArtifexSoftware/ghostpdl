@@ -342,7 +342,6 @@ int fill_domain_from_dict(pdf_context *ctx, float *parray, int size, pdf_dict *d
 {
     int code, i;
     pdf_array *a = NULL;
-    float *arr = NULL;
 
     code = pdfi_dict_get(ctx, dict, "Domain", (pdf_obj **)&a);
     if (code < 0)
@@ -374,7 +373,6 @@ int fill_float_array_from_dict(pdf_context *ctx, float *parray, int size, pdf_di
 {
     int code, i;
     pdf_array *a = NULL;
-    float *arr = NULL;
 
     code = pdfi_dict_get(ctx, dict, Key, (pdf_obj **)&a);
     if (code < 0)
@@ -404,7 +402,6 @@ int fill_bool_array_from_dict(pdf_context *ctx, bool *parray, int size, pdf_dict
 {
     int code, i;
     pdf_array *a = NULL;
-    float *arr = NULL;
 
     code = pdfi_dict_get(ctx, dict, Key, (pdf_obj **)&a);
     if (code < 0)
@@ -431,7 +428,6 @@ int fill_matrix_from_dict(pdf_context *ctx, float *parray, pdf_dict *dict)
 {
     int code, i;
     pdf_array *a = NULL;
-    float *arr = NULL;
 
     code = pdfi_dict_get(ctx, dict, "Matrix", (pdf_obj **)&a);
     if (code < 0)

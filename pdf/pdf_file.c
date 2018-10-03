@@ -791,7 +791,6 @@ int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, gs_const_str
     pdf_name SFD_name;
     int code;
     stream *s = source->s, *new_s = NULL;
-    stream_SFD_state *state;
     *new_stream = NULL;
 
     SFD_name.data = (byte *)"SubFileDecode";

@@ -18,7 +18,11 @@
 #include "pdf_int.h"
 #include "pdf_stack.h"
 #include "pdf_shading.h"
-
+#include "pdf_dict.h"
+#include "pdf_func.h"
+#include "pdf_file.h"
+#include "pdf_loop_detect.h"
+#include "pdf_colour.h"
 
 #include "gxshade.h"
 #include "gsptype2.h"
@@ -81,7 +85,6 @@ static int pdfi_shading1(pdf_context *ctx, gs_shading_params_t *pcommon,
                   pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     pdf_obj *o = NULL;
-    gs_function_t *pfn = NULL;
     int code, i;
     gs_shading_Fb_params_t params;
     static const float default_Domain[4] = {0, 1, 0, 1};
@@ -94,7 +97,7 @@ static int pdfi_shading1(pdf_context *ctx, gs_shading_params_t *pcommon,
     if (code < 0) {
         if (code == gs_error_undefined) {
             for (i = 0; i < 4; i++) {
-                (float)params.Domain[i] = default_Domain[i];
+                params.Domain[i] = default_Domain[i];
             }
         } else
             return code;
@@ -136,14 +139,14 @@ static int pdfi_shading2(pdf_context *ctx, gs_shading_params_t *pcommon,
 
     *(gs_shading_params_t *)&params = *pcommon;
 
-    code = fill_float_array_from_dict(ctx, &params.Coords, 4, shading_dict, "Coords");
+    code = fill_float_array_from_dict(ctx, (float *)&params.Coords, 4, shading_dict, "Coords");
     if (code < 0)
         return code;
-    code = fill_domain_from_dict(ctx, &params.Domain, 2, shading_dict);
+    code = fill_domain_from_dict(ctx, (float *)&params.Domain, 2, shading_dict);
     if (code < 0) {
         if (code == gs_error_undefined) {
             for (i = 0; i < 2; i++) {
-                (float)params.Domain[i] = default_Domain[i];
+                params.Domain[i] = default_Domain[i];
             }
         } else
             return code;
@@ -151,7 +154,7 @@ static int pdfi_shading2(pdf_context *ctx, gs_shading_params_t *pcommon,
 
     code = fill_bool_array_from_dict(ctx, (bool *)&params.Extend, 2, shading_dict, "Extend");
     if (code < 0) {
-        if (code = gs_error_undefined) {
+        if (code == gs_error_undefined) {
             params.Extend[0] = params.Extend[1] = false;
         } else
             return code;
@@ -190,22 +193,22 @@ static int pdfi_shading3(pdf_context *ctx,  gs_shading_params_t *pcommon,
 
     *(gs_shading_params_t *)&params = *pcommon;
 
-    code = fill_float_array_from_dict(ctx, &params.Coords, shading_dict, "Coords");
+    code = fill_float_array_from_dict(ctx, (float *)&params.Coords, 4, shading_dict, "Coords");
     if (code < 0)
         return code;
-    code = fill_domain_from_dict(ctx, &params.Domain, shading_dict);
+    code = fill_domain_from_dict(ctx, (float *)&params.Domain, 4, shading_dict);
     if (code < 0) {
         if (code == gs_error_undefined) {
             for (i = 0; i < 2; i++) {
-                (float)params.Domain[i] = default_Domain[i];
+                params.Domain[i] = default_Domain[i];
             }
         } else
             return code;
     }
 
-    code = fill_bool_array_from_dict(ctx, (bool *)&params.Extend, shading_dict, "Extend");
+    code = fill_bool_array_from_dict(ctx, (bool *)&params.Extend, 2, shading_dict, "Extend");
     if (code < 0) {
-        if (code = gs_error_undefined) {
+        if (code == gs_error_undefined) {
             params.Extend[0] = params.Extend[1] = false;
         } else
             return code;

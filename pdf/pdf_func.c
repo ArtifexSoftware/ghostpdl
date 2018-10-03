@@ -18,6 +18,8 @@
 #include "pdf_int.h"
 #include "pdf_stack.h"
 #include "pdf_func.h"
+#include "pdf_dict.h"
+#include "pdf_file.h"
 
 #include "gsdsrc.h"
 #include "gsfunc0.h"
@@ -30,7 +32,7 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
     gs_function_Sd_params_t params;
     pdf_stream *profile_stream = NULL;
     int code;
-    int64_t Length;
+    int64_t Length, temp;
     byte *data_source_buffer;
 
     *(gs_function_params_t *) & params = *mnDR;
@@ -51,13 +53,15 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
     }
     data_source_init_stream(&params.DataSource, profile_stream->s);
 
-    code = pdfi_dict_get_int(ctx, function_dict, "Order", &params.Order);
+    code = pdfi_dict_get_int(ctx, function_dict, "Order", &temp);
     if (code < 0 &&  code != gs_error_undefined)
         return code;
+    params.Order = (int)temp;
 
-    code = pdfi_dict_get_int(ctx, function_dict, "BitsPerSample", &params.BitsPerSample);
+    code = pdfi_dict_get_int(ctx, function_dict, "BitsPerSample", &temp);
     if (code < 0)
         return code;
+    params.BitsPerSample = temp;
 
     code = make_float_array_from_dict(ctx, (float **)&params.Encode, function_dict, "Encode");
     if (code < 0) {
@@ -116,8 +120,8 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
 
 static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    int Type, code, i;
-    pdf_array *Domain = NULL, *Range = NULL, *value = NULL;
+    int code;
+    int64_t Type;
     gs_function_params_t params;
 
     code = pdfi_dict_get_int(ctx, stream_dict, "FunctionType", &Type);
