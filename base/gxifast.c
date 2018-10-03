@@ -110,9 +110,6 @@ gs_image_class_1_simple(gx_image_enum * penum)
                 penum->line = gs_alloc_bytes(penum->memory,
                                              penum->line_size, "image line");
                 if (penum->line == 0) {
-                    gx_default_end_image(penum->dev,
-                                         (gx_image_enum_common_t *) penum,
-                                         false);
                     return 0;
                 }
 #ifdef PACIFY_VALGRIND
