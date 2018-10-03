@@ -1952,22 +1952,30 @@ currentdict /xref-char-dict undef
   Trailer /Root knownoget {
     /Pages knownoget {
       10 dict begin
+      /Count pdfpagecount def
       /verify_page_tree_recursive {
-        dup 1 def
-        dup /Kids knownoget {
-          { oforce
-            dup //null ne {
-              currentdict 1 index known {
-                (   **** Error: there's a loop in the Pages tree. Giving up.\n) pdfformaterror
-                /verify_page_tree cvx /syntaxerror signalerror
-              } if
-              verify_page_tree_recursive
-            } {
-              pop
-            } ifelse
-          } forall
-        } if
-        currentdict exch undef
+        Count 0 gt {
+          dup 1 def
+          dup /Kids knownoget {
+            { oforce
+              dup //null ne {
+                currentdict 1 index known {
+                  (   **** Error: there's a loop in the Pages tree. Giving up.\n) pdfformaterror
+                  /verify_page_tree cvx /syntaxerror signalerror
+                } if
+                verify_page_tree_recursive
+              } {
+                pop
+              } ifelse
+            } forall
+          } {
+            /Count Count 1 sub def
+          }ifelse
+          currentdict exch undef
+          } {
+            pop
+            (   **** Error: Too many pages in Page tree.\n) pdfformaterror
+        } ifelse
       } def
       verify_page_tree_recursive
       end
