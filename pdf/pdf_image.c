@@ -40,6 +40,7 @@ typedef struct {
     /* OPI, Metadata -- do we care? */
     bool ImageMask;
     bool Interpolate;
+    int64_t Length;
     int64_t Height;
     int64_t Width;
     int64_t BPC;
@@ -54,6 +55,7 @@ typedef struct {
     pdf_obj *Decode;
     pdf_obj *OC;  /* Optional Content */
     /* Filter and DecodeParms handled by pdfi_filter() (can probably remove, but I like the info while debugging) */
+    bool is_JPXDecode;
     pdf_obj *Filter;
     pdf_obj *DecodeParms;
 } pdfi_image_info_t;
@@ -143,6 +145,166 @@ pdfi_find_alternate(pdf_context *ctx, pdf_obj *alt)
     return NULL;
 }
 
+#define READ32BE(i) (((i)[0] << 24) | ((i)[1] << 16) | ((i)[2] << 8) | (i)[3])
+#define READ16BE(i) (((i)[0] << 8) | (i)[1])
+#define K4(a, b, c, d) ((a << 24) + (b << 16) + (c << 8) + d)
+#define LEN_IHDR 14
+#define LEN_DATA 128
+
+/* Returns either < 0, or exactly 8 */
+static int
+get_box(pdf_context *ctx, pdf_stream *source, int length, uint32_t *box_len, uint32_t *box_val)
+{
+    int code;
+    byte blob[4];
+
+    if (length < 8)
+        return_error(gs_error_limitcheck);
+    code = pdfi_read_bytes(ctx, blob, 1, 4, source);
+    if (code < 0)
+        return code;
+    *box_len = READ32BE(blob);
+    if (*box_len < 8)
+        return_error(gs_error_limitcheck);
+    code = pdfi_read_bytes(ctx, blob, 1, 4, source);
+    if (code < 0)
+        return code;
+    *box_val = READ32BE(blob);
+
+    dmprintf3(ctx->memory, "JPXFilter: BOX: l:%d, v:%x (%4.4s)\n", *box_len, *box_val, blob);
+    return 8;
+}
+
+typedef struct {
+    int comps;
+    int bpc;
+    uint32_t cs_enum;
+} pdfi_jpx_info_t;
+
+/* Scan JPX image for header info */
+static int
+pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_info_t *info)
+{
+    uint32_t box_len = 0;
+    uint32_t box_val = 0;
+    int code;
+    byte ihdr_data[LEN_IHDR];
+    byte data[LEN_DATA];
+    int avail = length;
+    int bpc = 0;
+    int comps = 0;
+    int cs_meth = 0;
+    uint32_t cs_enum = 0;
+    
+    dmprintf1(ctx->memory, "JPXFilter: Image length %d\n", length);
+    
+    /* Find the 'jp2h' box, skipping over everything else */
+    while (avail > 0) {
+        code = get_box(ctx, source, avail, &box_len, &box_val);
+        if (code < 0)
+            return code;
+        avail -= 8;
+        box_len -= 8;
+        if (box_len <= 0)
+            return_error(gs_error_limitcheck);
+        if (box_val == K4('j','p','2','h')) {
+            break;
+        }
+        pdfi_seek(ctx, source, box_len, SEEK_CUR);
+        avail -= box_len;
+    }
+    if (avail <= 0)
+        return_error(gs_error_limitcheck);
+
+    /* Now we are only looking inside the jp2h box */
+    avail = box_len;
+
+    /* The first thing in the 'jp2h' box is an 'ihdr', get that */
+    code = get_box(ctx, source, avail, &box_len, &box_val);
+    if (code < 0)
+        return code;
+    avail -= 8;
+    box_len -= 8;
+    if (box_val != K4('i','h','d','r'))
+        return_error(gs_error_limitcheck);
+    if (box_len != LEN_IHDR)
+        return_error(gs_error_limitcheck);
+    
+    /* Get things we care about from ihdr */
+    code = pdfi_read_bytes(ctx, ihdr_data, 1, LEN_IHDR, source);
+    if (code < 0)
+        return code;
+    avail -= LEN_IHDR;
+    comps = READ16BE(ihdr_data+8);
+    dmprintf1(ctx->memory, "    COMPS: %d\n", comps);
+    bpc = ihdr_data[10];
+    if (bpc != 255)
+        bpc += 1;
+    dmprintf1(ctx->memory, "    BPC: %d\n", bpc);
+    
+    /* Parse the rest of the things */
+    while (avail > 0) {
+        code = get_box(ctx, source, avail, &box_len, &box_val);
+        if (code < 0)
+            return code;
+        avail -= 8;
+        box_len -= 8;
+        if (box_len <= 0)
+            return_error(gs_error_limitcheck);
+        if (box_len > LEN_DATA)
+            return_error(gs_error_limitcheck);
+        code = pdfi_read_bytes(ctx, data, 1, box_len, source);
+        if (code < 0)
+            return code;
+        avail -= box_len;
+        switch(box_val) {
+        case K4('b','p','c','c'):
+            {
+                int i;
+                int bpc2;
+
+                bpc2 = data[0];
+                for (i=1;i<comps;i++) {
+                    if (bpc2 != data[i]) {
+                        emprintf(ctx->memory,
+                                 "*** Error: JPX image colour challens do not all have the same colour depth\n");
+                        emprintf(ctx->memory,
+                                 "    Output may be incorrect.\n");
+                    }
+                }
+                bpc = bpc2+1;
+                dmprintf1(ctx->memory, "    BPCC: %d\n", bpc);
+            }
+            break;
+        case K4('c','o','l','r'):
+            cs_meth = data[0];
+            if (cs_meth == 1)
+                cs_enum = READ32BE(data+3);
+            else if (cs_meth == 2) {
+                dmprintf(ctx->memory, "JPXDecode: COLR Meth 2 not supported yet\n");
+                cs_enum = 0;
+            }
+            dmprintf2(ctx->memory, "    COLR: M:%d, ENUM:%d\n", cs_meth, cs_enum);
+            break;
+        case K4('p','c','l','r'):
+            dmprintf(ctx->memory, "JPXDecode: PCLR not supported yet\n");
+            break;
+        case K4('c','d','e','f'):
+            dmprintf(ctx->memory, "JPXDecode: CDEF not supported yet\n");
+            break;
+        default:
+            break;
+        }
+        
+    }
+
+    info->comps = comps;
+    info->bpc = bpc;
+    info->cs_enum = cs_enum;
+    
+    return 0;
+}
+
 /* Get image info out of dict into more convenient form, enforcing some requirements from the spec */
 static int
 pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *info)
@@ -153,6 +315,14 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
 
     /* Not Handled: "ID", "OPI" */
     
+    /* Length if it's in a stream dict (?) */
+    code = pdfi_dict_get_int(ctx, image_dict, "Length", &info->Length);
+    if (code != 0) {
+        if (code != gs_error_undefined)
+            goto errorExit;
+        info->Length = 0;
+    }
+
     /* Required */
     code = pdfi_dict_get_int2(ctx, image_dict, "Height", "H", &info->Height);
     if (code < 0)
@@ -278,6 +448,13 @@ pdfi_get_image_info(pdf_context *ctx, pdf_dict *image_dict, pdfi_image_info_t *i
             goto errorExit;
     }
 
+    /* Check and set JPXDecode flag for later */
+    info->is_JPXDecode = false;
+    if (info->Filter && info->Filter->type == PDF_NAME) {
+        if (pdfi_name_strcmp((pdf_name *)info->Filter, "JPXDecode") == 0)
+            info->is_JPXDecode = true;
+    }
+    
     /* Optional */
     code = pdfi_dict_get2(ctx, image_dict, "DecodeParms", "DP", &info->DecodeParms);
     if (code < 0) {
@@ -480,6 +657,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     pdf_array *mask_array = NULL;
     unsigned char *mask_buffer = NULL;
     uint64_t mask_size = 0;
+    pdfi_jpx_info_t jpx_info;
     
     memset(&mask_info, 0, sizeof(mask_info));
 
@@ -503,6 +681,14 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             if (code < 0)
                 goto cleanupExit;
         }
+    }
+
+    /* Handle JPXDecode filter pre-scan of header */
+    if (image_info.is_JPXDecode && !inline_image) {
+        pdfi_seek(ctx, source, image_dict->stream_offset, SEEK_SET);
+        code = pdfi_scan_jpxfilter(ctx, source, image_info.Length, &jpx_info);
+        if (code < 0)
+            goto cleanupExit;
     }
 
     /* TODO: Not sure how to implement SMask, needs transparency mode or something? 
@@ -533,18 +719,42 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         pcs = NULL;
     } else {
         if (image_info.ColorSpace == NULL) {
-            /* This is invalid by the spec, ColorSpace is required if not ImageMask.
-             * Will bail out below, but need to calculate the number of comps for flushing.
-             */
-            /* TODO: JPXDecode filter would have info in the data stream, how to handle? */
-            pcs = gs_currentcolorspace(ctx->pgs);
-            comps = gs_color_space_num_components(pcs);
-#if 0
-            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
-            comps = dev->color_info.num_components;
-            pcs = NULL;
-            flush = true;
-#endif
+            if (image_info.is_JPXDecode) {
+                pdf_name name;
+                char *color_str;
+
+                /* TODO: Hackity BS here, just trying to pull out a reasonable color for now */
+                switch(jpx_info.cs_enum) {
+                case 12:
+                    color_str = "DeviceCMYK";
+                    break;
+                case 16:
+                case 18:
+                    color_str = "DeviceRGB";
+                    break;
+                case 17:
+                    color_str = "DeviceGray";
+                    break;
+                default:
+                    dmprintf1(ctx->memory, "JPXDecode: Unsupported colorspace %d\n", jpx_info.cs_enum);
+                    goto cleanupExit;
+                }
+                
+                /* Make a fake name so I can pass it to this function (hackity, hackity..) */
+                memset(&name, 0, sizeof(pdf_name));
+                name.memory = NULL;
+                name.type = PDF_NAME;
+                name.length = strlen(color_str);
+                name.data = color_str;
+                code = pdfi_create_colorspace(ctx, &name, page_dict, stream_dict, &pcs);
+                comps = gs_color_space_num_components(pcs);
+                image_info.BPC = jpx_info.bpc;
+            } else {
+                gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+                comps = dev->color_info.num_components;
+                pcs = NULL;
+                flush = true;
+            }
         } else {
             code = pdfi_create_colorspace(ctx, image_info.ColorSpace, page_dict, stream_dict, &pcs);
             /* TODO: image_2bpp.pdf has an image in there somewhere that fails on this call (probably ColorN) */

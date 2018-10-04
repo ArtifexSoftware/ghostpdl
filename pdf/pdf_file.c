@@ -38,6 +38,14 @@
 #include "sarc4.h"      /* Arc4Decode */
 #include "saes.h"       /* AESDecode */
 
+#if defined(USE_LWF_JP2)
+#  include "sjpx_luratech.h"
+#elif defined(USE_OPENJPEG_JP2)
+#  include "sjpx_openjpeg.h"
+#else
+#  include "sjpx.h"
+#endif
+
 /***********************************************************************************/
 /* Decompression filters.                                                          */
 
@@ -337,6 +345,27 @@ static int pdfi_LZW_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream
     return 0;
 }
 
+static int
+pdfi_JPX_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
+{
+    stream_jpxd_state state;
+    uint min_size = s_jpxd_template.min_out_size;
+    int code;
+
+    state.memory = ctx->memory->non_gc_memory;
+    if (s_jpxd_template.set_defaults)
+      (*s_jpxd_template.set_defaults)((stream_state *)&state);
+
+    code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_jpxd_template,
+                            (const stream_state *)&state, ctx->memory->non_gc_memory, new_stream);
+    if (code < 0)
+        return code;
+    (*new_stream)->strm = source;
+    source = *new_stream;
+
+    return 0;
+}
+
 private_st_jpeg_decompress_data();
 
 static int PDF_DCTD_PassThrough(void *d, byte *Buffer, int Size)
@@ -563,7 +592,8 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, st
         return code;
     }
     if (pdfi_name_strcmp(n, "JPXDecode") == 0) {
-        dmprintf(ctx->memory, "WARNING JPXDecode filter not implemented!\n");
+        code = pdfi_JPX_filter(ctx, decode, source, new_stream);
+        return code;
     }
 
     if (pdfi_name_strcmp(n, "AHx") == 0) {
