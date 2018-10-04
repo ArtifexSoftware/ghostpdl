@@ -193,6 +193,16 @@ currentdict /DELAYSAFER known { /DELAYSAFER //true def /NOSAFER //true def } if
   currentdict /PARANOIDSAFER known or	% PARANOIDSAFER is equivalent
 }
 ifelse def
+
+/SAFERERRORS
+currentdict /NOSAFERERRORS known
+{
+  //false
+}
+{
+  currentdict /SAFERERRORS known
+} ifelse def
+
 currentdict /SHORTERRORS known   /SHORTERRORS exch def
 currentdict /TTYPAUSE known   /TTYPAUSE exch def
 currentdict /WRITESYSTEMDICT known   /WRITESYSTEMDICT exch def
@@ -1141,12 +1151,23 @@ errordict begin
  } bind def
 end		% errordict
 
-% Put all the default handlers in gserrordict
-gserrordict
-errordict {2 index 3 1 roll put} forall
-noaccess pop
-% remove the non-standard errors from errordict
+gserrordict /unknownerror errordict /unknownerror get put
 errordict /unknownerror .undef
+
+/.SAFERERRORLIST ErrorNames def
+/.setsafererrors
+{
+% Put all the requested handlers in gserrordict
+  gserrordict
+  //.SAFERERRORLIST
+  {dup errordict exch get 2 index 3 1 roll put} forall
+  noaccess pop
+  systemdict /.setsafeerrors .forceundef
+  systemdict /.SAFERERRORLIST .forceundef
+} bind executeonly odef
+
+SAFERERRORS {.setsafererrors} if
+
 % Define a stable private copy of handleerror that we will always use under
 % JOBSERVER mode.
 /.GShandleerror errordict /handleerror get def
@@ -1778,18 +1799,15 @@ currentdict /.runlibfile .undef
 
 % Bind all the operators defined as procedures.
 /.bindoperators		% binds operators in currentdict
- { % Temporarily disable the typecheck error.
-   errordict /typecheck 2 copy get
-   errordict /typecheck { pop } put	% pop the command
+ {
    currentdict
     { dup type /operatortype eq
-       { % This might be a real operator, so bind might cause a typecheck,
-         % but we've made the error a no-op temporarily.
-         .bind
+       {
+         % This might be a real operator, so bind might cause a typecheck
+         {.bind} .internalstopped pop
        }
       if pop pop
     } forall
-   put
  } def
 DELAYBIND not { .bindoperators } if
 

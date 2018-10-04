@@ -662,27 +662,18 @@ again:
     if (gs_errorname(i_ctx_p, code, &error_name) < 0)
         return code;            /* out-of-range error code! */
 
-    /*  If LockFilePermissions is true, we only refer to gserrordict, which
-     *  is not accessible to Postcript jobs
+    /*  We refer to gserrordict first, which is not accessible to Postcript jobs
+     *  If we're running with SAFERERRORS all the handlers are copied to gserrordict
+     *  so we'll always find the default one. If not SAFERERRORS, only gs specific
+     *  errors are in gserrordict.
      */
-    if (i_ctx_p->LockFilePermissions) {
-        if (((dict_find_string(systemdict, "gserrordict", &perrordict) <= 0 ||
-              dict_find(perrordict, &error_name, &epref) <= 0))
-            )
-            return code;            /* error name not in errordict??? */
-    }
-    else {
-        /*
-         * For greater Adobe compatibility, only the standard PostScript errors
-         * are defined in errordict; the rest are in gserrordict.
-         */
-        if (dict_find_string(systemdict, "errordict", &perrordict) <= 0 ||
-            (dict_find(perrordict, &error_name, &epref) <= 0 &&
-             (dict_find_string(systemdict, "gserrordict", &perrordict) <= 0 ||
-              dict_find(perrordict, &error_name, &epref) <= 0))
-            )
-            return code;            /* error name not in errordict??? */
-    }
+    if (dict_find_string(systemdict, "gserrordict", &perrordict) <= 0 ||
+        (dict_find(perrordict, &error_name, &epref) <= 0 &&
+         (dict_find_string(systemdict, "errordict", &perrordict) <= 0 ||
+          dict_find(perrordict, &error_name, &epref) <= 0))
+        )
+        return code;            /* error name not in errordict??? */
+
     doref = *epref;
     epref = &doref;
     /* Push the error object on the operand stack if appropriate. */
@@ -695,6 +686,24 @@ again:
         }
         *osp = *perror_object;
         errorexec_find(i_ctx_p, osp);
+        /* If using SAFER, hand a name object to the error handler, rather than the executable
+         * object/operator itself.
+         */
+        if (i_ctx_p->LockFilePermissions) {
+            code = obj_cvs(imemory, osp, buf + 2, 256, &rlen, (const byte **)&bufptr);
+            if (code < 0) {
+                const char *unknownstr = "--unknown--";
+                rlen = strlen(unknownstr);
+                memcpy(buf, unknownstr, rlen);
+            }
+            else {
+                buf[0] = buf[1] = buf[rlen + 2] = buf[rlen + 3] = '-';
+                rlen += 4;
+            }
+            code = name_ref(imemory, buf, rlen, osp, 1);
+            if (code < 0)
+                make_null(osp);
+        }
     }
     goto again;
 }
