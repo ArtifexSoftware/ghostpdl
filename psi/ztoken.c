@@ -123,6 +123,7 @@ again:
             if (code > 0)       /* comment, not possible */
                 code = gs_note_error(gs_error_syntaxerror);
             gs_scanner_error_object(i_ctx_p, pstate, &i_ctx_p->error_object);
+            make_op_estack(esp + 1, ztoken);
             break;
         case scan_BOS:
             code = 0;
@@ -150,6 +151,8 @@ again:
     if (code <= 0 && !save) {   /* Deallocate the scanner state record. */
         ifree_object(pstate, "token_continue");
     }
+    if (code < 0)
+        make_op_estack(esp + 1, ztoken);
     return code;
 }
 
