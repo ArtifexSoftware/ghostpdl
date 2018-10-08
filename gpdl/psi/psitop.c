@@ -178,19 +178,10 @@ ps_impl_get_device_memory(pl_interp_implementation_t *impl)
     return gsapi_get_device_memory(psi->gsapi_instance);
 }
 
-/* Set a device into an interpreter instance */
-static int
-ps_impl_set_device(pl_interp_implementation_t *impl, gx_device *device)
-{
-    ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
-
-    return gsapi_set_device(psi->gsapi_instance, device);
-}
-
-
 /* Prepare interp instance for the next "job" */
 static int
-ps_impl_init_job(pl_interp_implementation_t *impl)
+ps_impl_init_job(pl_interp_implementation_t *impl,
+                 gx_device                  *device)
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
     int exit_code, code, code1;
@@ -201,7 +192,13 @@ ps_impl_init_job(pl_interp_implementation_t *impl)
         code = gsapi_run_string_continue(psi->gsapi_instance, "erasepage", 10, 0, &exit_code);
 
     code1 = gsapi_run_string_end(psi->gsapi_instance, 0, &exit_code);
-    return code < 0 ? code : code1;
+
+    code = code < 0 ? code : code1;
+
+    if (code >= 0)
+        code = gsapi_set_device(psi->gsapi_instance, device);
+
+    return code;
 }
 
 /* Not complete. */
@@ -319,13 +316,6 @@ ps_impl_report_errors(pl_interp_implementation_t *impl,      /* interp instance 
 static int
 ps_impl_dnit_job(pl_interp_implementation_t *impl)
 {
-    return 0;
-}
-
-/* Remove a device from an interpreter instance */
-static int
-ps_impl_remove_device(pl_interp_implementation_t *impl)
-{
     ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
 
     return gsapi_set_device(psi->gsapi_instance, NULL);
@@ -352,7 +342,6 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_characteristics,
   ps_impl_allocate_interp_instance,
   ps_impl_get_device_memory,
-  ps_impl_set_device,
   ps_impl_init_job,
   ps_impl_process_file,
   ps_impl_process_begin,
@@ -362,7 +351,6 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_process_eof,
   ps_impl_report_errors,
   ps_impl_dnit_job,
-  ps_impl_remove_device,
   ps_impl_deallocate_interp_instance,
   NULL
 };

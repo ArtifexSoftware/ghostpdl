@@ -217,7 +217,7 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
     inst->curr_implementation = pjli = inst->implementations[0];
 
     /* initialize pjl, needed for option processing. */
-    if (pl_init_job(pjli) < 0) {
+    if (pl_init_job(pjli, inst->device) < 0) {
         return gs_error_Fatal;
     }
 
@@ -289,13 +289,8 @@ revert_to_pjli(pl_main_instance_t *minst)
     code = pl_dnit_job(minst->curr_implementation);
     if (code < 0)
         return code;
-    code = pl_remove_device(minst->curr_implementation);
-    if (code >= 0)
-        code = pl_set_device(pjli, minst->device);
-    if (code < 0)
-        return code;
     minst->curr_implementation = pjli;
-    code = pl_init_job(minst->curr_implementation);
+    code = pl_init_job(minst->curr_implementation, minst->device);
 
     return code;
 }
@@ -363,36 +358,29 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                     goto flush_to_end_of_job;
                 if_debug1m('I', mem, "selected (%s)\n",
                            pl_characteristics(minst->desired_implementation)->language);
-                if (minst->desired_implementation != pjli) {
-                    if (pl_dnit_job(minst->curr_implementation) < 0)
-                        goto error_fatal;
-                }
             }
 
             /* If the language implementation needs changing, change it. */
             if (minst->curr_implementation != minst->desired_implementation) {
-                code = pl_remove_device(minst->curr_implementation);
+                code = pl_dnit_job(minst->curr_implementation);
                 if (code >= 0)
-                    code = pl_set_device(minst->desired_implementation, minst->device);
+                    code = pl_init_job(minst->desired_implementation, minst->device);
                 minst->curr_implementation = minst->desired_implementation;
                 if (code < 0)
                     goto error_fatal;
             }
 
-            /* PJLI will have been reinitialised already after finishing a non PJL job. */
             if (minst->curr_implementation != pjli) {
-                if (pl_init_job(minst->curr_implementation) < 0)
-                    goto error_fatal;
                 if_debug1m('I', mem, "initialised (%s)\n",
                            pl_characteristics(minst->curr_implementation)->language);
-                if (first_job) {
-                    if (!is_stdin && minst->curr_implementation->proc_process_file) {
-                        /* If we aren't being piped data, and this interpreter
-                         * is capable of coping with running a file directly,
-                         * let's do that. */
-                        use_process_file = true;
-                        break;
-                    }
+                if (first_job &&
+                    !is_stdin &&
+                    minst->curr_implementation->proc_process_file) {
+                    /* If we aren't being piped data, and this interpreter
+                     * is capable of coping with running a file directly,
+                     * let's do that. */
+                    use_process_file = true;
+                    break;
                 }
             }
 
@@ -523,7 +511,7 @@ pl_to_exit(gs_memory_t *mem)
     pl_main_instance_t *minst = mem->gs_lib_ctx->top_of_system;
     /* Deselect last-selected device */
     if (minst->curr_implementation
-        && pl_remove_device(minst->curr_implementation) < 0) {
+        && pl_dnit_job(minst->curr_implementation) < 0) {
         return -1;
     }
 

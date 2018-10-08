@@ -74,18 +74,10 @@ pl_get_device_memory(pl_interp_implementation_t *);
 typedef gs_memory_t * (*pl_interp_proc_get_device_memory_t) (pl_interp_implementation_t *);
 
 /*
- * Set a device, possibly shared, into the graphics state of the language.
- */
-
-int pl_set_device(pl_interp_implementation_t *, gx_device *);
-typedef int (*pl_interp_proc_set_device_t) (pl_interp_implementation_t *,
-                                            gx_device *);
-
-/*
  * Work to be done when a job begins.
  */
-int pl_init_job(pl_interp_implementation_t *);
-typedef int (*pl_interp_proc_init_job_t) (pl_interp_implementation_t *);
+int pl_init_job(pl_interp_implementation_t *, gx_device *);
+typedef int (*pl_interp_proc_init_job_t) (pl_interp_implementation_t *, gx_device *);
 
 /*
  * Process a stream of PDL data.
@@ -137,12 +129,6 @@ int pl_dnit_job(pl_interp_implementation_t *);
 typedef int (*pl_interp_proc_dnit_job_t) (pl_interp_implementation_t *);
 
 /*
- * Remove the device from the graphics state and reset.
- */
-int pl_remove_device(pl_interp_implementation_t *);
-typedef int (*pl_interp_proc_remove_device_t) (pl_interp_implementation_t *);
-
-/*
  * Free everything.
  */
 int pl_deallocate_interp_instance(pl_interp_implementation_t *);
@@ -157,7 +143,6 @@ struct pl_interp_implementation_s
     pl_interp_proc_characteristics_t proc_characteristics;
     pl_interp_proc_allocate_interp_instance_t proc_allocate_interp_instance;
     pl_interp_proc_get_device_memory_t proc_get_device_memory;
-    pl_interp_proc_set_device_t proc_set_device;
     pl_interp_proc_init_job_t proc_init_job;
     pl_interp_proc_process_file_t proc_process_file;
     pl_interp_proc_process_begin_t proc_process_begin;
@@ -167,7 +152,6 @@ struct pl_interp_implementation_s
     pl_interp_proc_process_eof_t proc_process_eof;
     pl_interp_proc_report_errors_t proc_report_errors;
     pl_interp_proc_dnit_job_t proc_dnit_job;
-    pl_interp_proc_remove_device_t proc_remove_device;
     pl_interp_proc_deallocate_interp_instance_t
         proc_deallocate_interp_instance;
     void *interp_client_data;

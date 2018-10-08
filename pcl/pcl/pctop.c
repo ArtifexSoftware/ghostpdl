@@ -291,20 +291,19 @@ pcl_set_icc_params(pl_interp_implementation_t * impl, gs_gstate * pgs)
     return pl_set_icc_params(pcli->memory, pgs);
 }
 
-/* Set a device into an interperter instance */
+/* Prepare interp instance for the next "job" */
 static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_set_device(pl_interp_implementation_t * impl,    /* interp instance to use */
-                    gx_device * device  /* device to set (open or closed) */
-    )
+pcl_impl_init_job(pl_interp_implementation_t * impl,       /* interp instance to start job in */
+                  gx_device                  * device)
 {
-
-    int code;
+    int code = 0;
     pcl_interp_instance_t *pcli = impl->interp_client_data;
     gs_memory_t *mem = pcli->memory;
-    
     enum
     { Sbegin, Ssetdevice, Sinitg, Sgsave1, Spclgsave, Sreset, Serase,
             Sdone } stage;
+
+    pcl_process_init(&pcli->pst);
 
     stage = Sbegin;
 
@@ -385,18 +384,6 @@ pcl_impl_set_device(pl_interp_implementation_t * impl,    /* interp instance to 
         case Sbegin:           /* nothing left to undo */
             break;
     }
-    return code;
-}
-
-/* Prepare interp instance for the next "job" */
-static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_init_job(pl_interp_implementation_t * impl       /* interp instance to start job in */
-    )
-{
-    int code = 0;
-    pcl_interp_instance_t *pcli = impl->interp_client_data;
-
-    pcl_process_init(&pcli->pst);
     return code;
 }
 
@@ -482,24 +469,11 @@ pcl_impl_report_errors(pl_interp_implementation_t * impl, /* interp instance to 
 
 /* Wrap up interp instance after a "job" */
 static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_dnit_job(pl_interp_implementation_t * impl       /* interp instance to wrap up job in */
-    )
+pcl_impl_dnit_job(pl_interp_implementation_t * impl)       /* interp instance to wrap up job in */
 {
     pcl_interp_instance_t *pcli = impl->interp_client_data;
     pcl_state_t *pcs = &pcli->pcs;
-
-    if (pcs->raster_state.graphics_mode)
-        return pcl_end_graphics_mode(pcs);
-    return 0;
-}
-
-/* Remove a device from an interperter instance */
-static int                      /* ret 0 ok, else -ve error code */
-pcl_impl_remove_device(pl_interp_implementation_t * impl  /* interp instance to use */
-    )
-{
     int code;
-    pcl_interp_instance_t *pcli = impl->interp_client_data;
 
     /* Note: "PCL" grestore. */
     code = pcl_grestore(&pcli->pcs);
@@ -511,7 +485,14 @@ pcl_impl_remove_device(pl_interp_implementation_t * impl  /* interp instance to 
     if (code < 0)
         return code;
 
-    return pcl_do_resets(&pcli->pcs, pcl_reset_permanent);
+    code = pcl_do_resets(&pcli->pcs, pcl_reset_permanent);
+    if (code < 0)
+        return code;
+
+    if (pcs->raster_state.graphics_mode)
+        code = pcl_end_graphics_mode(pcs);
+
+    return code;
 }
 
 /* Deallocate a interpreter instance */
@@ -559,7 +540,6 @@ pl_interp_implementation_t pcl_implementation = {
     pcl_impl_characteristics,
     pcl_impl_allocate_interp_instance,
     NULL,
-    pcl_impl_set_device,
     pcl_impl_init_job,
     NULL,                       /* process_file */
     pcl_impl_process_begin,
@@ -569,7 +549,6 @@ pl_interp_implementation_t pcl_implementation = {
     pcl_impl_process_eof,
     pcl_impl_report_errors,
     pcl_impl_dnit_job,
-    pcl_impl_remove_device,
     pcl_impl_deallocate_interp_instance,
     NULL
 };

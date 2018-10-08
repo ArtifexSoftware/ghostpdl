@@ -51,19 +51,12 @@ pl_get_device_memory(pl_interp_implementation_t *impl)
     return impl->proc_get_device_memory(impl);
 }
 
-/* Get and interpreter prefered device memory allocator if any */
-int                             /* ret 0 ok, else -ve error code */
-pl_set_device(pl_interp_implementation_t * impl,   /* interp instance to use */
-              gx_device                  * device) /* device to set (open or closed) */
-{
-    return impl->proc_set_device(impl, device);
-}
-
 /* Prepare interp instance for the next "job" */
 int                             /* ret 0 ok, else -ve error code */
-pl_init_job(pl_interp_implementation_t * impl)     /* interp instance to start job in */
+pl_init_job(pl_interp_implementation_t * impl,     /* interp instance to start job in */
+            gx_device                  * device) /* device to set (open or closed) */
 {
-    return impl->proc_init_job(impl);
+    return impl->proc_init_job(impl, device);
 }
 
 /* Parse a random access seekable file.
@@ -136,13 +129,6 @@ int                             /* ret 0 ok, else -ve error code */
 pl_dnit_job(pl_interp_implementation_t * impl)     /* interp instance to wrap up job in */
 {
     return impl->proc_dnit_job(impl);
-}
-
-/* Remove a device from an interperter instance */
-int                             /* ret 0 ok, else -ve error code */
-pl_remove_device(pl_interp_implementation_t * impl)        /* interp instance to use */
-{
-    return impl->proc_remove_device(impl);
 }
 
 /* Deallocate a interpreter instance */

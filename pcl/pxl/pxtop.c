@@ -221,18 +221,25 @@ pxl_set_icc_params(pl_interp_implementation_t * impl, gs_gstate * pgs)
     return pl_set_icc_params(pxli->memory, pgs);
 }
 
-/* Set a device into an interperter instance */
+/* Prepare interp instance for the next "job" */
 /* ret 0 ok, else -ve error code */
-static int 
-pxl_impl_set_device(pl_interp_implementation_t * impl,
-                    gx_device * device)
+static int
+pxl_impl_init_job(pl_interp_implementation_t * impl,
+                  gx_device                  * device)
 {
-    int code;
+    int code = 0;
     pxl_interp_instance_t *pxli = impl->interp_client_data;
     px_state_t *pxs = pxli->pxs;
     gs_memory_t *mem = pxli->memory;
     
     enum { Sbegin, Ssetdevice, Sinitg, Sgsave, Serase, Sdone } stage;
+
+    px_reset_errors(pxli->pxs);
+    px_process_init(pxli->st, true);
+
+    /* set input status to: expecting stream header */
+    px_stream_header_init(&pxli->headerState, pxli->st, pxli->pxs);
+    pxli->processState = PSHeader;
 
     stage = Sbegin;
 
@@ -295,24 +302,6 @@ pxl_impl_set_device(pl_interp_implementation_t * impl,
         case Sbegin:           /* nothing left to undo */
             break;
     }
-    return code;
-}
-
-/* Prepare interp instance for the next "job" */
-/* ret 0 ok, else -ve error code */
-static int
-pxl_impl_init_job(pl_interp_implementation_t * impl)
-{
-    int code = 0;
-    pxl_interp_instance_t *pxli = impl->interp_client_data;
-
-    px_reset_errors(pxli->pxs);
-    px_process_init(pxli->st, true);
-
-    /* set input status to: expecting stream header */
-    px_stream_header_init(&pxli->headerState, pxli->st, pxli->pxs);
-    pxli->processState = PSHeader;
-
     return code;
 }
 
@@ -476,16 +465,6 @@ pxl_impl_dnit_job(pl_interp_implementation_t * impl)
     px_stream_header_dnit(&pxli->headerState);
     px_state_cleanup(pxli->pxs);
     px_process_init(pxli->st, true);
-    return 0;
-}
-
-/* Remove a device from an interperter instance */
-/* ret 0 ok, else -ve error code */
-static int
-pxl_impl_remove_device(pl_interp_implementation_t * impl)
-{
-    pxl_interp_instance_t *pxli = impl->interp_client_data;
-
     /* return to original gstate  */
     return gs_grestore_only(pxli->pgs);        /* destroys gs_save stack */
 }
@@ -526,7 +505,6 @@ pl_interp_implementation_t pxl_implementation = {
     pxl_impl_characteristics,
     pxl_impl_allocate_interp_instance,
     NULL,
-    pxl_impl_set_device,
     pxl_impl_init_job,
     NULL,                       /* process_file */
     pxl_impl_process_begin,
@@ -536,7 +514,6 @@ pl_interp_implementation_t pxl_implementation = {
     pxl_impl_process_eof,
     pxl_impl_report_errors,
     pxl_impl_dnit_job,
-    pxl_impl_remove_device,
     pxl_impl_deallocate_interp_instance,
     NULL
 };

@@ -165,13 +165,32 @@ xps_imp_allocate_interp_instance(pl_interp_implementation_t *impl,
     return 0;
 }
 
+/* Prepare interp instance for the next "job" */
 static int
-xps_imp_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
+xps_imp_init_job(pl_interp_implementation_t *impl,
+                 gx_device                  *pdevice)
 {
     xps_interp_instance_t *instance = impl->interp_client_data;
     xps_context_t *ctx = instance->ctx;
     gs_c_param_list list;
     int code;
+
+    if (gs_debug_c('|'))
+        xps_zip_trace = 1;
+    if (gs_debug_c('|'))
+        xps_doc_trace = 1;
+
+    ctx->font_table = xps_hash_new(ctx);
+    ctx->colorspace_table = xps_hash_new(ctx);
+
+    ctx->start_part = NULL;
+
+    ctx->use_transparency = 1;
+    if (getenv("XPS_DISABLE_TRANSPARENCY"))
+        ctx->use_transparency = 0;
+
+    ctx->opacity_only = 0;
+    ctx->fill_rule = 0;
 
     code = gs_setdevice_no_erase(ctx->pgs, pdevice);
     if (code < 0)
@@ -333,33 +352,6 @@ xps_imp_report_errors(pl_interp_implementation_t *impl,
     return 0;
 }
 
-/* Prepare interp instance for the next "job" */
-static int
-xps_imp_init_job(pl_interp_implementation_t *impl)
-{
-    xps_interp_instance_t *instance = impl->interp_client_data;
-    xps_context_t *ctx = instance->ctx;
-
-    if (gs_debug_c('|'))
-        xps_zip_trace = 1;
-    if (gs_debug_c('|'))
-        xps_doc_trace = 1;
-
-    ctx->font_table = xps_hash_new(ctx);
-    ctx->colorspace_table = xps_hash_new(ctx);
-
-    ctx->start_part = NULL;
-
-    ctx->use_transparency = 1;
-    if (getenv("XPS_DISABLE_TRANSPARENCY"))
-        ctx->use_transparency = 0;
-
-    ctx->opacity_only = 0;
-    ctx->fill_rule = 0;
-
-    return 0;
-}
-
 static void xps_free_key_func(xps_context_t *ctx, void *ptr)
 {
     xps_free(ctx, ptr);
@@ -376,7 +368,10 @@ xps_imp_dnit_job(pl_interp_implementation_t *impl)
 {
     xps_interp_instance_t *instance = impl->interp_client_data;
     xps_context_t *ctx = instance->ctx;
-    int i;
+    int i, code;
+
+    /* return to original gstate */
+    code = gs_grestore_only(ctx->pgs); /* destroys gs_save stack */
 
     if (gs_debug_c('|'))
         xps_debug_fixdocseq(ctx);
@@ -392,18 +387,7 @@ xps_imp_dnit_job(pl_interp_implementation_t *impl)
     xps_free_fixed_pages(ctx);
     xps_free_fixed_documents(ctx);
 
-    return 0;
-}
-
-/* Remove a device from an interperter instance */
-static int
-xps_imp_remove_device(pl_interp_implementation_t *impl)
-{
-    xps_interp_instance_t *instance = impl->interp_client_data;
-    xps_context_t *ctx = instance->ctx;
-
-    /* return to original gstate */
-    return gs_grestore_only(ctx->pgs); /* destroys gs_save stack */
+    return code;
 }
 
 /* Deallocate a interpreter instance */
@@ -429,7 +413,6 @@ pl_interp_implementation_t xps_implementation =
     xps_imp_characteristics,
     xps_imp_allocate_interp_instance,
     NULL,
-    xps_imp_set_device,
     xps_imp_init_job,
     xps_imp_process_file,
     xps_impl_process_begin,
@@ -439,7 +422,6 @@ pl_interp_implementation_t xps_implementation =
     xps_imp_process_eof,
     xps_imp_report_errors,
     xps_imp_dnit_job,
-    xps_imp_remove_device,
     xps_imp_deallocate_interp_instance,
     NULL,
 };

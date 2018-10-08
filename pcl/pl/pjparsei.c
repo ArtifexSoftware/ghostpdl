@@ -71,19 +71,10 @@ pjl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
     return 0;
 }
 
-/* Set a device into an interperter instance */
-static int                      /* ret 0 ok, else -ve error code */
-pjl_impl_set_device(pl_interp_implementation_t *impl,    /* interp instance to use */
-                    gx_device * device  /* device to set (open or closed) */
-    )
-{
-    return 0;
-}
-
 /* Prepare interp instance for the next "job" */
 static int                      /* ret 0 ok, else -ve error code */
-pjl_impl_init_job(pl_interp_implementation_t *impl       /* interp instance to start job in */
-    )
+pjl_impl_init_job(pl_interp_implementation_t *impl,       /* interp instance to start job in */
+                  gx_device                  *device)
 {
     pjl_parser_state *pjls = impl->interp_client_data;
     if (pjls == NULL)
@@ -161,14 +152,6 @@ pjl_impl_dnit_job(pl_interp_implementation_t * impl       /* interp impl to wrap
     return 0;
 }
 
-/* Remove a device from an interperter impl */
-static int                      /* ret 0 ok, else -ve error code */
-pjl_impl_remove_device(pl_interp_implementation_t * impl  /* interp impl to use */
-    )
-{
-    return 0;
-}
-
 /* Deallocate a interpreter impl */
 static int                      /* ret 0 ok, else -ve error code */
 pjl_impl_deallocate_interp_instance(pl_interp_implementation_t * impl     /* impl to dealloc */
@@ -184,7 +167,6 @@ pl_interp_implementation_t pjl_implementation = {
     pjl_impl_characteristics,
     pjl_impl_allocate_interp_instance,
     NULL,
-    pjl_impl_set_device,
     pjl_impl_init_job,
     NULL,                      /* process_file */
     pjl_impl_process_begin,
@@ -194,7 +176,6 @@ pl_interp_implementation_t pjl_implementation = {
     pjl_impl_process_eof,
     pjl_impl_report_errors,
     pjl_impl_dnit_job,
-    pjl_impl_remove_device,
     pjl_impl_deallocate_interp_instance,
     NULL, /* instance */
 };
