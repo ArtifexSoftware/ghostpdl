@@ -122,7 +122,6 @@ struct pl_main_instance_s
     arg_list args;
     pl_interp_implementation_t **implementations;
     pl_interp_implementation_t *curr_implementation;
-    pl_interp_implementation_t *desired_implementation;
     byte buf[8192]; /* languages read buffer */
     void *disp; /* display device pointer NB wrong - remove */
 };
@@ -307,6 +306,8 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
     bool is_stdin = filename[0] == '-' && filename[1] == 0;
     bool use_process_file = false;
     bool first_job = true;
+    pl_interp_implementation_t *desired_implementation = NULL;
+
 
     s = sfopen(filename, "r", mem);
     if (s == NULL)
@@ -351,23 +352,24 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
             if (minst->curr_implementation == pjli) {
                 /* Autodetect the language based on the content. */
                 if_debug0m('I', mem, "Selecting PDL\n");
-                minst->desired_implementation = pl_select_implementation(pjli, minst, s);
+                desired_implementation = pl_select_implementation(pjli, minst, s);
 
                 /* Possibly this never happens? But attempt to cope anyway. */
-                if (minst->desired_implementation == NULL)
+                if (desired_implementation == NULL)
                     goto flush_to_end_of_job;
                 if_debug1m('I', mem, "selected (%s)\n",
-                           pl_characteristics(minst->desired_implementation)->language);
-            }
+                           pl_characteristics(desired_implementation)->language);
 
-            /* If the language implementation needs changing, change it. */
-            if (minst->curr_implementation != minst->desired_implementation) {
-                code = pl_dnit_job(minst->curr_implementation);
-                if (code >= 0)
-                    code = pl_init_job(minst->desired_implementation, minst->device);
-                minst->curr_implementation = minst->desired_implementation;
-                if (code < 0)
-                    goto error_fatal;
+                /* If the language implementation needs changing, change it. */
+                if (desired_implementation != pjli) {
+                    code = pl_dnit_job(pjli);
+                    minst->curr_implementation = NULL;
+                    if (code >= 0)
+                        code = pl_init_job(desired_implementation, minst->device);
+                    if (code < 0)
+                        goto error_fatal;
+                    minst->curr_implementation = desired_implementation;
+                }
             }
 
             if (minst->curr_implementation != pjli) {
@@ -542,7 +544,7 @@ pl_main_languages_init(gs_memory_t * mem,        /* deallocator for devices */
         goto pmui_err;
 
     minst->implementations = impls;
-    minst->curr_implementation = minst->desired_implementation = NULL;
+    minst->curr_implementation = NULL;
     memset(impls, 0, sz);
 
     /* Create & init PDL all instances. Could do this lazily to save memory, */
