@@ -24,6 +24,9 @@
 #include "gsstruct.h"
 #include "gsdevice.h"
 #include "pltop.h"
+#include "gserrors.h"
+#include "stream.h"
+#include "strmio.h"
 
 /* Get implementation's characteristics */
 const pl_interp_characteristics_t *     /* always returns a descriptor */
@@ -67,7 +70,43 @@ pl_init_job(pl_interp_implementation_t * impl,     /* interp instance to start j
 int
 pl_process_file(pl_interp_implementation_t * impl, char *filename)
 {
-    return impl->proc_process_file(impl, filename);
+    gs_memory_t *mem;
+    int code, code1;
+    stream *s;
+
+    if (impl->proc_process_file != NULL)
+        return impl->proc_process_file(impl, filename);
+
+    /* We have to process the file in chunks. */
+    mem = pl_get_device_memory(impl);
+    code = 0;
+
+    s = sfopen(filename, "r", mem);
+    if (s == NULL)
+        return gs_error_Fatal;
+
+    code = pl_process_begin(impl);
+
+    while (code == gs_error_NeedInput || code >= 0) {
+        if (s->cursor.r.ptr == s->cursor.r.limit && sfeof(s))
+            break;
+        code = s_process_read_buf(s);
+        if (code < 0)
+            break;
+
+        code = pl_process(impl, &s->cursor.r);
+        if_debug2m('I', mem, "processed (%s) job to offset %ld\n",
+                   pl_characteristics(impl)->language,
+                   sftell(s));
+    }
+
+    code1 = pl_process_end(impl);
+    if (code >= 0 && code1 < 0)
+        code = code1;
+
+    sfclose(s);
+
+    return code;
 }
 
 /* Do setup to for parsing cursor-fulls of data */

@@ -308,7 +308,6 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
     bool first_job = true;
     pl_interp_implementation_t *desired_implementation = NULL;
 
-
     s = sfopen(filename, "r", mem);
     if (s == NULL)
         return gs_error_Fatal;
