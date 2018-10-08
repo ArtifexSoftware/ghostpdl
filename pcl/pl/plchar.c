@@ -689,11 +689,17 @@ tt_find_table(gs_font_type42 * pfont, const char *tname, uint * plen)
     const byte *TableDirectory;
     uint i;
     ulong table_dir_offset = 0;
+    int code;
 
-    access(0, 12, OffsetTable);
-    access(table_dir_offset, 12, OffsetTable);
+    if (((code = access(0, 12, OffsetTable)) < 0) ||
+        ((code = access(table_dir_offset, 12, OffsetTable)) < 0))
+        return 0;
+
     numTables = pl_get_uint16(OffsetTable + 4);
-    access(table_dir_offset + 12, numTables * 16, TableDirectory);
+
+    if (access(table_dir_offset + 12, numTables * 16, TableDirectory) < 0)
+        return 0;
+
     for (i = 0; i < numTables; ++i) {
         const byte *tab = TableDirectory + i * 16;
 

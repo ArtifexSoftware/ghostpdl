@@ -373,10 +373,15 @@ pcl_home_cursor(pcl_state_t * pcs)
     pcl_set_cap_y(pcs, 0L, false, false, true, false);
 }
 
+int pcl_update_hmi_cp(pcl_state_t * pcs)
+{
+    return ((pcs->hmi_cp == HMI_DEFAULT) ? pcl_updated_hmi(pcs) : 0);
+}
+
 /*
  * Update the HMI by recomputing it from the font.
  */
-coord
+int
 pcl_updated_hmi(pcl_state_t * pcs)
 {
     coord hmi;
@@ -386,7 +391,7 @@ pcl_updated_hmi(pcl_state_t * pcs)
     const pl_font_t *plfont = pcs->font;
 
     if (code < 0)
-        return pcs->hmi_cp;     /* bad news; don't mark the HMI as valid. */
+        return code;     /* bad news; don't mark the HMI as valid. */
 
     /* we check for typeface == 0 here (lineprinter) because we
        frequently simulate lineprinter with a scalable truetype
@@ -407,7 +412,8 @@ pcl_updated_hmi(pcl_state_t * pcs)
      * LanguageTechnical Reference Manual", October 1992 ed., page 5-22.
      */
     hmi = hmi + pcs->uom_cp / 2;
-    return pcs->hmi_cp = hmi - (hmi % pcs->uom_cp);
+    pcs->hmi_cp = hmi - (hmi % pcs->uom_cp);
+    return code;
 }
 
 /* Commands */
@@ -507,7 +513,12 @@ set_line_termination(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 horiz_cursor_pos_columns(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    do_horiz_motion(pargs, pcs, pcl_hmi(pcs), false);
+    int code = pcl_update_hmi_cp(pcs);
+    if (code < 0)
+        return code;
+
+    do_horiz_motion(pargs, pcs, pcs->hmi_cp, false);
+
     return 0;
 }
 
@@ -569,10 +580,17 @@ cmd_HT(pcl_args_t * pargs,      /* ignored */
 
     if (x < 0)
         x = -x;
-    else if ((tab = 8 * pcl_hmi(pcs)) > 0)
-        x = tab - (x % tab);
     else
-        x = 0L;
+    {
+        int code = pcl_update_hmi_cp(pcs);
+        if (code < 0)
+            return code;
+
+        if ((tab = 8 * pcs->hmi_cp) > 0)
+            x = tab - (x % tab);
+        else
+            x = 0L;
+    }
     pcl_set_cap_x(pcs, x, true, true);
     pcs->cursor_moved = true;
     return 0;

@@ -62,10 +62,9 @@ int pcl_do_LF(pcl_state_t * pcs);
 void pcl_home_cursor(pcl_state_t * pcs);
 
 /* Get the HMI.  This may require recomputing it from the font. */
-coord pcl_updated_hmi(pcl_state_t * pcs);
+int pcl_updated_hmi(pcl_state_t * pcs);
 
-#define pcl_hmi(pcs)                                                    \
-    ((pcs)->hmi_cp == HMI_DEFAULT ? pcl_updated_hmi(pcs) : (pcs)->hmi_cp)
+int pcl_update_hmi_cp(pcl_state_t * pcs);
 
 extern const pcl_init_t pcursor_init;
 

@@ -842,7 +842,11 @@ set_print_direction(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 set_left_margin(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    coord lmarg = uint_arg(pargs) * pcl_hmi(pcs);
+    int code = pcl_update_hmi_cp(pcs);
+    coord lmarg = uint_arg(pargs) * pcs->hmi_cp;
+
+    if (code < 0)
+        return code;
 
     /* adjust underlining if the left margin passes to the right of
        the underline start position */
@@ -866,7 +870,11 @@ set_left_margin(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 set_right_margin(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    coord rmarg = (uint_arg(pargs) + 1) * pcl_hmi(pcs);
+    int code = pcl_update_hmi_cp(pcs);
+    coord rmarg = (uint_arg(pargs) + 1) * pcs->hmi_cp;
+
+    if (code < 0)
+        return code;
 
     if (rmarg > pcs->xfm_state.pd_size.x)
         rmarg = pcs->xfm_state.pd_size.x;

@@ -703,17 +703,24 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
 /*
  * get the advance width.
  */
-static double
+static int
 pcl_get_width(pcl_state_t * pcs, gs_point * advance_vector,
               const gs_point * pscale, gs_char chr, bool is_space,
-              bool print_undefined)
+              bool print_undefined, double *output_width)
 {
+    int code = 0;
     pcl_font_selection_t *pfp = &(pcs->font_selection[pcs->font_selected]);
     double width;
 
     if (chr != 0xffff || print_undefined) {
         if (!pfp->params.proportional_spacing || is_space)
-            width = pcl_hmi(pcs);
+        {
+            code = pcl_update_hmi_cp(pcs);
+            if (code < 0)
+                return code;
+
+            width = pcs->hmi_cp;
+        }
         else {
             if (pcs->font->scaling_technology == plfst_TrueType ||
                 pcs->font->scaling_technology == plfst_MicroType) {
@@ -729,12 +736,17 @@ pcl_get_width(pcl_state_t * pcs, gs_point * advance_vector,
             width += (double) pcs->uom_cp / 2.0;
             width -= fmod(width, (double) pcs->uom_cp);
         }
-    } else if (is_space)
-        width = pcl_hmi(pcs);
+    } else if (is_space) {
+        code = pcl_update_hmi_cp(pcs);
+        if (code < 0)
+            return code;
+        width = pcs->hmi_cp;
+    }
     else
         width = 0.0;
     /* round to nearest integral pcl units */
-    return width;
+    *output_width = width;
+    return code;
 }
 
 /*
@@ -827,9 +839,11 @@ pcl_show_chars_slow(pcl_state_t * pcs,
         buff[0] = chr;
 
         /* round width to integral pcl current units */
-        width =
+        code =
             (pcl_get_width
-             (pcs, &advance_vector, pscale, chr, is_space, print_undefined));
+             (pcs, &advance_vector, pscale, chr, is_space, print_undefined, &width));
+        if (code < 0)
+            return code;
 
         /*
          * Check for transitions of the left margin; this check is
