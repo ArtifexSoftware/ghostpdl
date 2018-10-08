@@ -354,17 +354,23 @@ static void window_resize(IMAGE *img)
 #endif
 
     if (!visible) {
-        guint width, height;
         /* We haven't yet shown the window, so set a default size
          * which is smaller than the desktop to allow room for
          * desktop toolbars, and if possible a little larger than
          * the image to allow room for the scroll bars.
          * We don't know the width of the scroll bars, so just guess. */
+#if !GTK_CHECK_VERSION(3, 0, 0)
+        gtk_window_set_default_size(GTK_WINDOW(img->window),
+            min(gdk_screen_width()-96, img->width+24),
+            min(gdk_screen_height()-96, img->height+24));
+#else
+        guint width, height;
         width = gtk_widget_get_allocated_width (img->window) - 96;
         height = gtk_widget_get_allocated_height (img->window) - 96;
         gtk_window_set_default_size(GTK_WINDOW(img->window),
             min(width, img->width+24),
             min(height, img->height+24));
+#endif
     }
 }
 
