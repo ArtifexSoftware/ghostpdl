@@ -24,6 +24,7 @@
 #include "gsdsrc.h"
 #include "gsfunc0.h"
 
+static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_dict *stream_dict, pdf_dict *page_dict);
 
 static int
 pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
@@ -118,9 +119,163 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
     return 0;
 }
 
+static int
+pdfi_build_function_2(pdf_context *ctx, const gs_function_params_t * mnDR,
+                    pdf_dict *function_dict, int depth, gs_function_t ** ppfn)
+{
+    gs_function_ElIn_params_t params;
+    int code, n0, n1;
+    double temp = 0.0;
+
+    *(gs_function_params_t *)&params = *mnDR;
+    params.C0 = 0;
+    params.C1 = 0;
+
+    code = pdfi_dict_get_number(ctx, function_dict, "N", &temp);
+    if (code < 0 &&  code != gs_error_undefined)
+        return code;
+    params.N = (float)temp;
+
+    code = make_float_array_from_dict(ctx, (float **)&params.C0, function_dict, "C0");
+    if (code < 0 && code != gs_error_undefined)
+        return code;
+    n0 = code;
+
+    code = make_float_array_from_dict(ctx, (float **)&params.C1, function_dict, "C1");
+    if (code < 0 && code != gs_error_undefined) {
+        gs_function_ElIn_free_params(&params, ctx->memory);
+        return code;
+    }
+    n1 = code;
+
+    if (params.C0 == NULL)
+        n0 = 1;
+    if (params.C1 == NULL)
+        n1 = 1;
+    if (params.Range == 0)
+        params.n = n0;		/* either one will do */
+    if (n0 != n1 || n0 != params.n) {
+        gs_function_ElIn_free_params(&params, ctx->memory);
+        return_error(gs_error_rangecheck);
+    }
+    code = gs_function_ElIn_init(ppfn, &params, ctx->memory);
+    if (code < 0) {
+        gs_function_ElIn_free_params(&params, ctx->memory);
+        return code;
+    }
+    return 0;
+}
+
+static int
+pdfi_build_function_3(pdf_context *ctx, const gs_function_params_t * mnDR,
+                    pdf_dict *function_dict, const float *shading_domain, int num_inputs, pdf_dict *page_dict, int depth, gs_function_t ** ppfn)
+{
+    gs_function_1ItSg_params_t params;
+    int code, i;
+    pdf_array *Functions;
+    gs_function_t **ptr;
+
+    *(gs_function_params_t *) & params = *mnDR;
+    params.Functions = 0;
+    params.Bounds = 0;
+    params.Encode = 0;
+
+    code = pdfi_dict_get(ctx, function_dict, "Functions", (pdf_obj **)&Functions);
+    if (code < 0)
+        return code;
+    if (Functions->type != PDF_ARRAY) {
+        pdf_indirect_ref *r = (pdf_indirect_ref *)Functions;
+
+        if (Functions->type != PDF_INDIRECT)
+            return_error(gs_error_typecheck);
+
+        if (ctx->loop_detection == NULL) {
+            pdfi_init_loop_detector(ctx);
+            pdfi_loop_detector_mark(ctx);
+        } else {
+            pdfi_loop_detector_mark(ctx);
+        }
+        code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&Functions);
+        pdfi_countdown(r);
+        pdfi_loop_detector_cleartomark(ctx);
+        if (code < 0)
+            return code;
+
+        if (Functions->type != PDF_ARRAY) {
+            pdfi_countdown(Functions);
+            return_error(gs_error_typecheck);
+        }
+    }
+
+    params.k = Functions->entries;
+    code = alloc_function_array(params.k, &ptr, ctx->memory);
+    if (code < 0) {
+        pdfi_countdown(Functions);
+        return code;
+    }
+    params.Functions = (const gs_function_t * const *)ptr;
+
+    for (i = 0; i < params.k; ++i) {
+        pdf_obj * rsubfn = NULL;
+
+        code = pdfi_array_get((pdf_array *)Functions, (int64_t)i, &rsubfn);
+        if (code < 0)
+            return  code;
+
+        if (rsubfn->type == PDF_INDIRECT) {
+            pdf_indirect_ref *r = (pdf_indirect_ref *)rsubfn;
+
+            pdfi_loop_detector_mark(ctx);
+            code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&rsubfn);
+            pdfi_loop_detector_cleartomark(ctx);
+            pdfi_countdown(r);
+            if (code < 0) {
+                pdfi_countdown(Functions);
+                return code;
+            }
+        }
+        if (rsubfn->type != PDF_DICT) {
+            pdfi_countdown(rsubfn);
+            pdfi_countdown(Functions);
+            return_error(gs_error_typecheck);
+        }
+        code = pdfi_build_sub_function(ctx, &ptr[i], shading_domain, num_inputs, (pdf_dict *)rsubfn, page_dict);
+        pdfi_countdown(rsubfn);
+        if (code < 0) {
+            pdfi_countdown(Functions);
+            break;
+        }
+    }
+    pdfi_countdown(Functions);
+
+    code = make_float_array_from_dict(ctx, (float **)&params.Bounds, function_dict, "Bounds");
+    if (code < 0){
+        gs_function_1ItSg_free_params(&params, ctx->memory);
+        return code;
+    }
+
+    code = make_float_array_from_dict(ctx, (float **)&params.Encode, function_dict, "Encode");
+    if (code < 0) {
+        gs_function_1ItSg_free_params(&params, ctx->memory);
+        return code;
+    }
+    if (code != 2 * params.k) {
+        gs_function_1ItSg_free_params(&params, ctx->memory);
+        return_error(gs_error_rangecheck);
+    }
+
+    if (params.Range == 0)
+        params.n = params.Functions[0]->params.n;
+    code = gs_function_1ItSg_init(ppfn, &params, ctx->memory);
+    if (code < 0)
+        gs_function_1ItSg_free_params(&params, ctx->memory);
+
+    return code;
+}
+
 static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    int code;
+    int code, i;
     int64_t Type;
     gs_function_params_t params;
 
@@ -138,6 +293,29 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
     if (code < 0)
         return code;
 
+    if (code & 1) {
+        gs_free_const_object(ctx->memory, params.Domain, "pdfi_build_sub_function");
+        return_error(gs_error_rangecheck);
+    }
+    for (i=0;i<code;i+=2) {
+        if (params.Domain[i] > params.Domain[i+1]) {
+            gs_free_const_object(ctx->memory, params.Domain, "pdfi_build_sub_function");
+            return_error(gs_error_rangecheck);
+        }
+    }
+    if (shading_domain) {
+        if (num_inputs != code >> 1) {
+            gs_free_const_object(ctx->memory, params.Domain, "pdfi_build_sub_function");
+            return_error(gs_error_rangecheck);
+        }
+        for (i=0;i<2*num_inputs;i+=2) {
+            if (params.Domain[i] > shading_domain[i] || params.Domain[i+1] < shading_domain[i+1]) {
+                gs_free_const_object(ctx->memory, params.Domain, "pdfi_build_sub_function");
+                return_error(gs_error_rangecheck);
+            }
+        }
+    }
+
     params.m = code >> 1;
 
     code = make_float_array_from_dict(ctx, (float **)&params.Range, stream_dict, "Range");
@@ -147,16 +325,30 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
     } else {
         if (code > 0)
             params.n = code >> 1;
+        else
+            params.n = 0;
     }
     switch(Type) {
         case 0:
             code = pdfi_build_function_0(ctx, &params, stream_dict, 0, ppfn);
-            if (code < 0)
+            if (code < 0) {
                 gs_free_const_object(ctx->memory, params.Domain, "Domain");
+                gs_free_const_object(ctx->memory, params.Range, "Range");
+            }
             break;
         case 2:
+            code = pdfi_build_function_2(ctx, &params, stream_dict, 0, ppfn);
+            if (code < 0) {
+                gs_free_const_object(ctx->memory, params.Domain, "Domain");
+                gs_free_const_object(ctx->memory, params.Range, "Range");
+            }
             break;
         case 3:
+            code = pdfi_build_function_3(ctx, &params, stream_dict, shading_domain,  num_inputs, page_dict, 0, ppfn);
+            if (code < 0) {
+                gs_free_const_object(ctx->memory, params.Domain, "Domain");
+                gs_free_const_object(ctx->memory, params.Range, "Range");
+            }
             break;
         case 4:
             break;
@@ -166,7 +358,7 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
     return code;
 }
 
-int pdfi_build_function(pdf_context *ctx, gs_function_t ** ppfn, pdf_dict *stream_dict, pdf_dict *page_dict)
+int pdfi_build_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    return pdfi_build_sub_function(ctx, ppfn, NULL, 0, stream_dict, page_dict);
+    return pdfi_build_sub_function(ctx, ppfn, shading_domain, num_inputs, stream_dict, page_dict);
 }

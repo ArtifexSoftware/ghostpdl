@@ -26,11 +26,19 @@
 
 #include "gxshade.h"
 #include "gsptype2.h"
+#include "gsfunc0.h"    /* For gs_function */
 
-#if 0
-static int pdfi_build_shading_function(pdf_context *ctx, gs_function **ppfn, pdf_dict *stream_dict, pdf_dict *page_dict)
+static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, const float *shading_domain, int num_inputs, pdf_dict *shading_dict, pdf_dict *page_dict)
 {
     int code;
+    pdf_obj *o;
+
+    if (ctx->loop_detection == NULL) {
+        pdfi_init_loop_detector(ctx);
+        pdfi_loop_detector_mark(ctx);
+    } else {
+        pdfi_loop_detector_mark(ctx);
+    }
 
     code = pdfi_dict_get(ctx, shading_dict, "Function", &o);
     if (code < 0)
@@ -38,30 +46,61 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function **ppfn, pdf
 
     if (o->type != PDF_DICT) {
         uint size;
+        pdf_obj *rsubfn;
         gs_function_t **Functions;
-        uint i;
+        int64_t i;
         gs_function_AdOt_params_t params;
 
         if (o->type != PDF_ARRAY) {
+            pdfi_loop_detector_cleartomark(ctx);
             pdfi_countdown(o);
             return_error(gs_error_typecheck);
         }
         size = ((pdf_array *)o)->entries;
 
-        if (size == 0)
+        if (size == 0) {
+            pdfi_loop_detector_cleartomark(ctx);
+            pdfi_countdown(o);
             return_error(gs_error_rangecheck);
-        code = alloc_function_array(size, &Functions, mem);
-        if (code < 0)
+        }
+        code = alloc_function_array(size, &Functions, ctx->memory);
+        if (code < 0) {
+            pdfi_loop_detector_cleartomark(ctx);
+            pdfi_countdown(o);
             return code;
+        }
         for (i = 0; i < size; ++i) {
-            pdf_obj * rsubfn;
+            pdf_obj * rsubfn = NULL;
 
             code = pdfi_array_get((pdf_array *)o, i, &rsubfn);
-            code = pdfi_build_function(ctx, &Functions[i], (pdf_dict *)rsubfn, page_dict);
-            if (code < 0)
+            if (rsubfn->type == PDF_INDIRECT) {
+                pdf_indirect_ref *r = (pdf_indirect_ref *)rsubfn;
+
+                pdfi_loop_detector_mark(ctx);
+                code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&rsubfn);
+                pdfi_loop_detector_cleartomark(ctx);
+                pdfi_countdown(r);
+                if (code < 0) {
+                    pdfi_loop_detector_cleartomark(ctx);
+                    pdfi_countdown(o);
+                    return code;
+                }
+            }
+            if (rsubfn->type != PDF_DICT) {
+                pdfi_loop_detector_cleartomark(ctx);
+                pdfi_countdown(rsubfn);
+                pdfi_countdown(o);
+                return_error(gs_error_typecheck);
+            }
+            code = pdfi_build_function(ctx, &Functions[i], shading_domain, num_inputs, (pdf_dict *)rsubfn, page_dict);
+            if (code < 0) {
+                pdfi_loop_detector_cleartomark(ctx);
+                pdfi_countdown(rsubfn);
+                pdfi_countdown(o);
                 break;
+            }
         }
-        params.m = 0;
+        params.m = num_inputs;
         params.Domain = 0;
         params.n = size;
         params.Range = 0;
@@ -70,15 +109,13 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function **ppfn, pdf
             code = gs_function_AdOt_init(ppfn, &params, ctx->memory);
         if (code < 0)
             gs_function_AdOt_free_params(&params, ctx->memory);
-    }
-    code = pdfi_build_function(ctx, &params.Function, (pdf_dict *)o, page_dict);
-    if (code < 0){
-        pdfi_countdown(o);
-        return code;
-    }
-    return 0;
+    } else
+        code = pdfi_build_function(ctx, ppfn, shading_domain, num_inputs, (pdf_dict *)o, page_dict);
+
+    pdfi_loop_detector_cleartomark(ctx);
+    pdfi_countdown(o);
+    return code;
 }
-#endif
 
 static int pdfi_shading1(pdf_context *ctx, gs_shading_params_t *pcommon,
                   gs_shading_t **ppsh,
@@ -107,15 +144,7 @@ static int pdfi_shading1(pdf_context *ctx, gs_shading_params_t *pcommon,
     if (code < 0)
         return code;
 
-    code = pdfi_dict_get(ctx, shading_dict, "Function", &o);
-    if (code < 0)
-        return code;
-
-    if (o->type != PDF_DICT) {
-        pdfi_countdown(o);
-        return_error(gs_error_typecheck);
-    }
-    code = pdfi_build_function(ctx, &params.Function, (pdf_dict *)o, page_dict);
+    code = pdfi_build_shading_function(ctx, &params.Function, (const float *)&params.Domain, 2, (pdf_dict *)shading_dict, page_dict);
     if (code < 0){
         pdfi_countdown(o);
         return code;
@@ -160,15 +189,7 @@ static int pdfi_shading2(pdf_context *ctx, gs_shading_params_t *pcommon,
             return code;
     }
 
-    code = pdfi_dict_get(ctx, shading_dict, "Function", &o);
-    if (code < 0)
-        return code;
-
-    if (o->type != PDF_DICT) {
-        pdfi_countdown(o);
-        return_error(gs_error_typecheck);
-    }
-    code = pdfi_build_function(ctx, &params.Function, (pdf_dict *)o, page_dict);
+    code = pdfi_build_shading_function(ctx, &params.Function, (const float *)&params.Domain, 1, (pdf_dict *)shading_dict, page_dict);
     if (code < 0){
         pdfi_countdown(o);
         return code;
@@ -193,7 +214,7 @@ static int pdfi_shading3(pdf_context *ctx,  gs_shading_params_t *pcommon,
 
     *(gs_shading_params_t *)&params = *pcommon;
 
-    code = fill_float_array_from_dict(ctx, (float *)&params.Coords, 4, shading_dict, "Coords");
+    code = fill_float_array_from_dict(ctx, (float *)&params.Coords, 6, shading_dict, "Coords");
     if (code < 0)
         return code;
     code = fill_domain_from_dict(ctx, (float *)&params.Domain, 4, shading_dict);
@@ -214,15 +235,7 @@ static int pdfi_shading3(pdf_context *ctx,  gs_shading_params_t *pcommon,
             return code;
     }
 
-    code = pdfi_dict_get(ctx, shading_dict, "Function", &o);
-    if (code < 0)
-        return code;
-
-    if (o->type != PDF_DICT) {
-        pdfi_countdown(o);
-        return_error(gs_error_typecheck);
-    }
-    code = pdfi_build_function(ctx, &params.Function, (pdf_dict *)o, page_dict);
+    code = pdfi_build_shading_function(ctx, &params.Function, (const float *)&params.Domain, 1, (pdf_dict *)shading_dict, page_dict);
     if (code < 0){
         pdfi_countdown(o);
         return code;

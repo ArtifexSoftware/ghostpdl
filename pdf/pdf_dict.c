@@ -464,6 +464,8 @@ int make_float_array_from_dict(pdf_context *ctx, float **parray, pdf_dict *dict,
     pdf_array *a = NULL;
     float *arr = NULL;
 
+    *parray = NULL;
+
     code = pdfi_dict_get(ctx, dict, Key, (pdf_obj **)&a);
     if (code < 0)
         return code;
@@ -471,15 +473,14 @@ int make_float_array_from_dict(pdf_context *ctx, float **parray, pdf_dict *dict,
         pdfi_countdown(a);
         return_error(gs_error_typecheck);
     }
-    if (a->entries & 1) {
-        pdfi_countdown(a);
-        return_error(gs_error_rangecheck);
-    }
+
     arr = (float *)gs_alloc_byte_array(ctx->memory, a->entries, sizeof(float), "array_from_dict_key");
     *parray = arr;
 
-    for (i=0;i< a->entries;i+=2) {
+    for (i=0;i< a->entries;i++) {
         if (a->values[i]->type != PDF_INT && a->values[i]->type != PDF_REAL) {
+            gs_free_const_object(ctx->memory, arr, "float_array");
+            *parray = NULL;
             pdfi_countdown(a);
             return_error(gs_error_typecheck);
         }
@@ -487,16 +488,6 @@ int make_float_array_from_dict(pdf_context *ctx, float **parray, pdf_dict *dict,
             (*parray)[i] = (float)((pdf_num *)a->values[i])->value.i;
         else
             (*parray)[i] = (float)((pdf_num *)a->values[i])->value.d;
-        if (a->values[i+1]->type == PDF_INT)
-            (*parray)[i+1] = (float)((pdf_num *)a->values[i+1])->value.i;
-        else
-            (*parray)[i+1] = (float)((pdf_num *)a->values[i+1])->value.d;
-
-        if ((*parray)[i] > (*parray)[i+1]) {
-            pdfi_countdown(a);
-            gs_free_const_object(ctx->memory, *parray, "array_from_dict_key");
-            return_error(gs_error_rangecheck);
-        }
     }
     pdfi_countdown(a);
     return a->entries;
@@ -507,6 +498,8 @@ int make_int_array_from_dict(pdf_context *ctx, int **parray, pdf_dict *dict, con
     int code, i;
     pdf_array *a = NULL;
     int *arr = NULL;
+
+    *parray = NULL;
 
     code = pdfi_dict_get(ctx, dict, Key, (pdf_obj **)&a);
     if (code < 0)
@@ -520,6 +513,8 @@ int make_int_array_from_dict(pdf_context *ctx, int **parray, pdf_dict *dict, con
 
     for (i=0;i< a->entries;i++) {
         if (a->values[i]->type != PDF_INT) {
+            gs_free_const_object(ctx->memory, arr, "int_array");
+            *parray = NULL;
             pdfi_countdown(a);
             return_error(gs_error_typecheck);
         }
