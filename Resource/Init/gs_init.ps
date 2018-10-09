@@ -1160,7 +1160,13 @@ errordict /unknownerror .undef
 % Put all the requested handlers in gserrordict
   gserrordict
   //.SAFERERRORLIST
-  {dup errordict exch get 2 index 3 1 roll put} forall
+  {
+    dup /unknownerror eq
+    {pop}
+    {
+      dup errordict exch get 2 index 3 1 roll put
+    }ifelse
+  }forall
   noaccess pop
   systemdict /.setsafeerrors .forceundef
   systemdict /.SAFERERRORLIST .forceundef
