@@ -2124,7 +2124,7 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
                                   int               (*adjust_width_proc)(int, int),
                                   int                 adjust_width,
                                   int                 trap_w,
-                                  int                  trap_h,
+                                  int                 trap_h,
                                   const int          *comp_order,
                                   gx_downscale_cm_fn *apply_cm,
                                   void               *apply_cm_arg,
@@ -2302,13 +2302,13 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
         }
         if (dst_bpc == 1) {
             ds->errors = (int *)gs_alloc_bytes(dev->memory,
-                                               num_comps*(awidth+3)*sizeof(int),
+                                               nc*(awidth+3)*sizeof(int),
                                                "gx_downscaler(errors)");
             if (ds->errors == NULL) {
                 code = gs_note_error(gs_error_VMerror);
                 goto cleanup;
             }
-            memset(ds->errors, 0, num_comps * (awidth+3) * sizeof(int));
+            memset(ds->errors, 0, nc * (awidth+3) * sizeof(int));
         }
     }
 

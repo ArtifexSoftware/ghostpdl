@@ -131,6 +131,7 @@ DEVGEN=$(DEVGENDIR)$(D)
 #	bmp256		8-bit (256-color) .BMP file format
 #	bmp16m		24-bit .BMP file format
 #	bmp32b		32-bit pseudo-.BMP file format
+#	chameleon	Plain bits, rgb/mono/cmyk runtime configurable.
 #	jpeg		JPEG format, RGB output
 #	jpeggray	JPEG format, gray output
 #	jpegcmyk	JPEG format, cmyk output
@@ -1125,6 +1126,20 @@ $(DEVOBJ)gdevbit.$(OBJ) : $(DEVSRC)gdevbit.c $(PDEVH)\
  $(gsparam_h) $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gxdcconv_h)\
  $(gsutil_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevbit.$(OBJ) $(C_) $(DEVSRC)gdevbit.c
+
+### --------------------- The chameleon device ---------------------- ###
+
+chameleon_=$(DEVOBJ)gdevchameleon.$(OBJ) $(DEVOBJ)gdevdcrd.$(OBJ)
+
+$(DD)chameleon.dev : $(chameleon_) $(GLD)page.dev $(GLD)cielib.dev $(GDEV) \
+ $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)chameleon $(chameleon_)
+	$(ADDMOD) $(DD)chameleon -include $(GLD)cielib
+
+$(DEVOBJ)gdevchameleon.$(OBJ) : $(DEVSRC)gdevchameleon.c $(PDEVH)\
+ $(gsparam_h) $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gxdcconv_h)\
+ $(gsutil_h) $(DEVS_MAK) $(MAKEDIRS)
+	$(DEVCC) $(DEVO_)gdevchameleon.$(OBJ) $(C_) $(DEVSRC)gdevchameleon.c
 
 ### ------------------------- .BMP file formats ------------------------- ###
 
