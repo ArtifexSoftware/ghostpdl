@@ -7,7 +7,7 @@ use Data::Dumper;
 
 my $verbose=0;
 
-# bmpcmp usage: [gs] [pcl] [xps] [mupdf] [mujstest] [bmpcmp] [lowres] [highres] [32] [pdfwrite] [ps2write] [xpswrite] [relaxtimeout] [extended] [smoke] [cull] [$user] | abort
+# bmpcmp usage: [gs] [pcl] [xps] [mupdf] [mujstest] [bmpcmp] [lowres] [highres] [32] [pdfwrite] [ps2write] [xpswrite] [relaxtimeout] [extended] [smoke] [cull] [avx2] [$user] | abort
 
 
 
@@ -39,6 +39,7 @@ my $relaxTimeout="";
 my $extended="";
 my $smoke="";
 my $cull="";
+my $avx2="";
 my $t1;
 while ($t1=shift) {
   if ($t1 eq "lowres") {
@@ -57,7 +58,9 @@ while ($t1=shift) {
   } elsif ($t1 eq "smoke") {
     $smoke="smoke";
   } elsif ($t1 eq "cull") {
-    $win32="cull";
+    $cull="cull";
+  } elsif ($t1 eq "avx2") {
+    $avx2="avx2";
   } elsif ($t1 eq "nr" || $t1 eq "nonredundnat") {
     $nr="nonredundant";
   } elsif ($t1 eq "pdfwrite" || $t1 eq "ps2write" || $t1 eq "xpswrite") {
@@ -216,7 +219,7 @@ if ($product ne "abort" ) { #&& $product ne "bmpcmp") {
 }
 
 open(F,">cluster_command.run");
-print F "$user $product $res $w32 $win32 $nr $pdfwrite $relaxTimeout $singlePagePDF $extended $smoke $cull\n";
+print F "$user $product $res $w32 $win32 $nr $pdfwrite $relaxTimeout $singlePagePDF $extended $smoke $cull $avx2\n";
 print F "$command\n";
 print F "$filters\n";
 print F "$extras\n";
