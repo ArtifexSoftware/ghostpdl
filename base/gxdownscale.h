@@ -44,6 +44,16 @@ typedef int (gx_downscale_cm_fn)(void  *arg,
                                  int    h,
                                  int    raster);
 
+typedef struct gx_downscaler_ht_s
+{
+    int w;
+    int h;
+    int stride;
+    int x_phase;
+    int y_phase;
+    byte *data;
+} gx_downscaler_ht_t;
+
 /* The following structure definitions should really be considered
  * private, and are exposed here only because it enables us to define
  * gx_downscaler_t's on the stack, thus avoiding mallocs.
@@ -67,12 +77,14 @@ struct gx_downscaler_s {
     int                   factor;     /* Factor to downscale */
     byte                 *mfs_data;   /* MinFeatureSize data */
     int                   src_bpc;    /* Source bpc */
+    int                   dst_bpc;    /* Destination bpc */
     int                  *errors;     /* Error diffusion table */
     byte                 *scaled_data;/* Downscaled data (only used for non
                                        * integer downscales). */
     int                   scaled_span;/* Num bytes in scaled scanline */
     gx_downscale_core    *down_core;  /* Core downscaling function */
     gs_get_bits_params_t  params;     /* Params if in planar mode */
+    int                   num_comps;  /* Number of components as rendered */
     int                   num_planes; /* Number of planes if planar, 0 otherwise */
 
     ClapTrap             *claptrap;   /* ClapTrap pointer (if trapping) */
@@ -89,6 +101,12 @@ struct gx_downscaler_s {
 
     byte                 *pre_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
     byte                 *post_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
+
+    gx_downscaler_ht_t   *ht;
+    byte                 *htrow;
+    byte                 *htrow_alloc;
+    byte                 *inbuf;
+    byte                 *inbuf_alloc;
 };
 
 /* To use the downscaler:
@@ -220,6 +238,23 @@ int gx_downscaler_init_trapped_cm_ets(gx_downscaler_t    *ds,
                                       void               *apply_cm_arg,
                                       int                 post_cm_num_comps,
                                       int                 ets);
+
+int gx_downscaler_init_trapped_cm_halftone(gx_downscaler_t    *ds,
+                                           gx_device          *dev,
+                                           int                 src_bpc,
+                                           int                 dst_bpc,
+                                           int                 num_comps,
+                                           int                 factor,
+                                           int                 mfs,
+                                           int               (*adjust_width_proc)(int, int),
+                                           int                 adjust_width,
+                                           int                 trap_w,
+                                           int                 trap_h,
+                                           const int          *comp_order,
+                                           gx_downscale_cm_fn *apply_cm,
+                                           void               *apply_cm_arg,
+                                           int                 post_cm_num_comps,
+                                           gx_downscaler_ht_t *ht);
 
 int gx_downscaler_init_planar(gx_downscaler_t      *ds,
                               gx_device            *dev,

@@ -5697,6 +5697,10 @@
 				RelativePath="..\devices\gdevcfax.c"
 				>
 			</File>
+                        <File
+                                RelativePath="..\devices\gdevchameleon.c"
+                                >
+                        </File>
 			<File
 				RelativePath="..\devices\gdevcif.c"
 				>
