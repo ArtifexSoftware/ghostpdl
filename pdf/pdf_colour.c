@@ -883,6 +883,7 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
     pdf_obj *space, *lookup;
     int code;
     int64_t hival, lookup_length;
+    int num_values;
     gs_color_space *pcs, *pcs_base;
     gs_color_space_index base_type;
     byte *Buffer;
@@ -1021,10 +1022,10 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
         pdfi_countdown(lookup);
     }
 
-    if (hival * cs_num_components(pcs_base) > lookup_length) {
+    num_values = (hival+1) * cs_num_components(pcs_base);
+    if (num_values > lookup_length) {
         gs_free_object(ctx->memory, Buffer, "pdfi_create_indexed (lookup buffer)");
         return_error(gs_error_rangecheck);
-        return 0;
     }
 
     /* If we have a named color profile and the base space is DeviceN or
@@ -1040,7 +1041,7 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
     pcs->base_space = pcs_base;
     rc_increment_cs(pcs_base);
 
-    pcs->params.indexed.lookup.table.size = hival;
+    pcs->params.indexed.lookup.table.size = num_values;
     pcs->params.indexed.use_proc = 0;
     pcs->params.indexed.hival = hival;
     pcs->params.indexed.n_comps = cs_num_components(pcs_base);
