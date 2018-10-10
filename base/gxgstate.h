@@ -251,8 +251,6 @@ struct gs_gstate_s {
     int overprint_mode;
     int effective_overprint_mode;
     bool stroke_overprint;
-    int overprint_mode_alt;
-    int effective_overprint_mode_alt;
     float flatness;
     gs_fixed_point fill_adjust; /* A path expansion for fill; -1 = dropout prevention*/
     bool stroke_adjust;
@@ -327,7 +325,7 @@ struct gs_gstate_s {
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
   false, {0, 0}, {0, 0}, false, \
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
-{ 1.0 }, { 1.0 }, {0, 0}, 0, 0/*false*/, 0, 0, 0, 0/*false*/, 0, 0, 0/*false*/, 0, 0, 1.0,  \
+{ 1.0 }, { 1.0 }, {0, 0}, 0, 0/*false*/, 0, 0/*false*/, 0, 0/*false*/, 0, 0, 0/*false*/, 1.0,  \
    { fixed_half, fixed_half }, 0/*false*/, 1/*true*/, 0/*false*/, 1.0,\
   1, 1/* bpt true */, 0, 0, 0, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
   gx_default_get_cmap_procs
@@ -359,8 +357,6 @@ struct gs_gstate_s {
     s->overprint_mode = __state_init.overprint_mode; \
     s->effective_overprint_mode = __state_init.effective_overprint_mode; \
     s->stroke_overprint = __state_init.stroke_overprint; \
-    s->overprint_mode_alt = __state_init.overprint_mode_alt; \
-    s->effective_overprint_mode_alt = __state_init.effective_overprint_mode_alt; \
     s->flatness = __state_init.flatness; \
     s->fill_adjust = __state_init.fill_adjust; \
     s->stroke_adjust = __state_init.stroke_adjust; \

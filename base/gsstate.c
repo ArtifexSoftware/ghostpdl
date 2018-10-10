@@ -1458,15 +1458,6 @@ void gs_swapcolors_quick(gs_gstate *pgs)
     tmp                = pgs->overprint;
     pgs->overprint     = pgs->stroke_overprint;
     pgs->stroke_overprint = tmp;
-
-    tmp                     = pgs->overprint_mode;
-    pgs->overprint_mode     = pgs->overprint_mode_alt;
-    pgs->overprint_mode_alt = tmp;
-
-    tmp                               = pgs->effective_overprint_mode;
-    pgs->effective_overprint_mode     = pgs->effective_overprint_mode_alt;
-    pgs->effective_overprint_mode_alt = tmp;
-
 }
 
 int gs_swapcolors(gs_gstate *pgs)
