@@ -901,6 +901,11 @@ void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
     generic_subclass_data *psubclass_data = (generic_subclass_data *)dev->subclass_data;
     (void)cmem; /* unused */
 
+    if (dev->finalize)
+        dev->finalize(dev);
+
+    discard(gs_closedevice(dev));
+
     if (psubclass_data) {
         gs_free_object(dev->memory->non_gc_memory, psubclass_data, "gx_epo_finalize(suclass data)");
         dev->subclass_data = NULL;
@@ -908,6 +913,9 @@ void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
     if (dev->child) {
         gs_free_object(dev->memory->stable_memory, dev->child, "free child device memory for subclassing device");
     }
+    if (dev->stype_is_dynamic)
+        gs_free_const_object(dev->memory->non_gc_memory, dev->stype,
+                             "default_subclass_finalize");
     if (dev->parent)
         dev->parent->child = dev->child;
     if (dev->child)
