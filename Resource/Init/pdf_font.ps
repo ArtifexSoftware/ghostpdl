@@ -1849,8 +1849,16 @@ currentdict /CMap_read_dict undef
 /findCIDFont {
   {
     dup /CIDFont resourcestatus {
-      pop pop /CIDFont findresource
-      exit
+      pop %size
+      % Check status. If its 1 then we loaded this CIDFont resource from disk, and
+      % its safe to use it. If its 0 then it was loaded from the PDF file and its
+      % *not* safe to use as a replacement for a missing font. If its 2 then its
+      % not loaded, but is available from external resource and is safe to use. So
+      % if status is 0, *don't* use this CIDFont.
+      0 eq not {
+        /CIDFont findresource
+        exit
+      }if
     } if
     .remove_font_name_prefix
     dup dup length string cvs
