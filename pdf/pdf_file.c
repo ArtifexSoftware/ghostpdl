@@ -345,17 +345,95 @@ static int pdfi_LZW_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream
     return 0;
 }
 
+/*
+ * dict -- the dict that contained the decoder (i.e. the image dict)
+ * decode -- the decoder dict 
+ */
 static int
-pdfi_JPX_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
+pdfi_JPX_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
+                stream *source, stream **new_stream)
 {
     stream_jpxd_state state;
     uint min_size = s_jpxd_template.min_out_size;
     int code;
-
+    pdf_obj *csobj = NULL;
+    pdf_name *csname = NULL;
+    
     state.memory = ctx->memory->non_gc_memory;
     if (s_jpxd_template.set_defaults)
       (*s_jpxd_template.set_defaults)((stream_state *)&state);
 
+    /* Pull some extra params out of the image dict */
+    /* TODO: Alpha -- this seems to be a hack that PS implementation did, need to get equiv */
+    if (dict && pdfi_dict_get(ctx, dict, "ColorSpace", &csobj) == 0) {
+        /* parse the value */
+        if (csobj->type == PDF_ARRAY) {
+            /* assume it's the first array element */
+            csname =  (pdf_name *)((pdf_array *)csobj)->values[0];
+        } else if (csobj->type == PDF_NAME) {
+            /* use the name directly */
+            csname = csobj;
+        } else {
+            dmprintf(ctx->memory, "warning: JPX ColorSpace value is an unhandled type!\n");
+        }
+        if (csname != NULL && csname->type == PDF_NAME) {
+            /* request raw index values if the colorspace is /Indexed */
+            if (!pdfi_name_strcmp(csname, "Indexed"))
+                state.colorspace = gs_jpx_cs_indexed;
+            /* tell the filter what output we want for other spaces */
+            else if (!pdfi_name_strcmp(csname, "DeviceGray"))
+                state.colorspace = gs_jpx_cs_gray;
+            else if (!pdfi_name_strcmp(csname, "DeviceRGB"))
+                state.colorspace = gs_jpx_cs_rgb;
+            else if (!pdfi_name_strcmp(csname, "DeviceCMYK"))
+                state.colorspace = gs_jpx_cs_cmyk;
+            else if (!pdfi_name_strcmp(csname, "ICCBased")) {
+                /* TODO: I don't think this even happens without PS wrapper code? */
+#if 0
+                /* The second array element should be the profile's
+                   stream dict */
+                ref *csdict = csobj->value.refs + 1;
+                ref *nref;
+                ref altname;
+                if (r_is_array(csobj) && (r_size(csobj) > 1) &&
+                    r_has_type(csdict, t_dictionary)) {
+                    check_dict_read(*csdict);
+                    /* try to look up the alternate space */
+                    if (dict_find_string(csdict, "Alternate", &nref) > 0) {
+                        name_string_ref(imemory, csname, &altname);
+                        if (!pdfi_name_strcmp(&altname, "DeviceGray"))
+                            state.colorspace = gs_jpx_cs_gray;
+                        else if (!pdfi_name_strcmp(&altname, "DeviceRGB"))
+                            state.colorspace = gs_jpx_cs_rgb;
+                        else if (!pdfi_name_strcmp(&altname, "DeviceCMYK"))
+                            state.colorspace = gs_jpx_cs_cmyk;
+                    }
+                    /* else guess based on the number of components */
+                    if (state.colorspace == gs_jpx_cs_unset &&
+                        dict_find_string(csdict, "N", &nref) > 0) {
+                        if_debug1m('w', imemory, "[w] JPX image has an external %"PRIpsint
+                                   " channel colorspace\n", nref->value.intval);
+                        switch (nref->value.intval) {
+                        case 1: state.colorspace = gs_jpx_cs_gray;
+                            break;
+                        case 3: state.colorspace = gs_jpx_cs_rgb;
+                            break;
+                        case 4: state.colorspace = gs_jpx_cs_cmyk;
+                            break;
+                        }
+                    }
+                }
+#endif
+            }
+        }
+    }
+
+    if (csobj)
+        pdfi_countdown(csobj);
+    if (csname)
+        pdfi_countdown(csname);
+
+    
     code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_jpxd_template,
                             (const stream_state *)&state, ctx->memory->non_gc_memory, new_stream);
     if (code < 0)
@@ -553,7 +631,8 @@ static int pdfi_simple_filter(pdf_context *ctx, const stream_template *tmplate, 
     return 0;
 }
 
-static int pdfi_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, stream *source, stream **new_stream, bool inline_image)
+static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_dict *decode,
+                             stream *source, stream **new_stream, bool inline_image)
 {
     int code;
 
@@ -592,7 +671,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, st
         return code;
     }
     if (pdfi_name_strcmp(n, "JPXDecode") == 0) {
-        code = pdfi_JPX_filter(ctx, decode, source, new_stream);
+        code = pdfi_JPX_filter(ctx, dict, decode, source, new_stream);
         return code;
     }
 
@@ -664,7 +743,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_name *n, pdf_dict *decode, st
     return_error(gs_error_undefined);
 }
 
-int pdfi_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **new_stream, bool inline_image)
+int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream **new_stream, bool inline_image)
 {
     pdf_obj *o = NULL, *decode = NULL;
     int code;
@@ -672,11 +751,11 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **
     stream *s = source->s, *new_s = NULL;
     *new_stream = NULL;
 
-    code = pdfi_dict_get(ctx, d, "Filter", &o);
+    code = pdfi_dict_get(ctx, dict, "Filter", &o);
     if (code < 0){
         if (code == gs_error_undefined) {
             if (inline_image == true) {
-                code = pdfi_dict_get(ctx, d, "F", &o);
+                code = pdfi_dict_get(ctx, dict, "F", &o);
                 if (code < 0 && code != gs_error_undefined)
                     return code;
             }
@@ -699,11 +778,11 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **
             pdf_array *filter_array = (pdf_array *)o;
             pdf_array *decodeparams_array = NULL;
 
-            code = pdfi_dict_get(ctx, d, "DecodeParms", &o);
+            code = pdfi_dict_get(ctx, dict, "DecodeParms", &o);
             if (code < 0 && code) {
                 if (code == gs_error_undefined) {
                     if (inline_image == true) {
-                        code = pdfi_dict_get(ctx, d, "DP", &o);
+                        code = pdfi_dict_get(ctx, dict, "DP", &o);
                         if (code < 0 && code != gs_error_undefined) {
                             pdfi_countdown(o);
                             pdfi_countdown(filter_array);
@@ -758,7 +837,8 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **
                     return_error(gs_error_typecheck);
                 }
 
-                code = pdfi_apply_filter(ctx, (pdf_name *)o, (pdf_dict *)decode, s, &new_s, inline_image);
+                code = pdfi_apply_filter(ctx, dict, (pdf_name *)o,
+                                         (pdf_dict *)decode, s, &new_s, inline_image);
                 if (code < 0) {
                     *new_stream = 0;
                     pdfi_countdown(decodeparams_array);
@@ -779,11 +859,11 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **
         } else
             return_error(gs_error_typecheck);
     } else {
-        code = pdfi_dict_get(ctx, d, "DecodeParms", &decode);
+        code = pdfi_dict_get(ctx, dict, "DecodeParms", &decode);
         if (code < 0 && code) {
             if (code == gs_error_undefined) {
                 if (inline_image == true) {
-                    code = pdfi_dict_get(ctx, d, "DP", &decode);
+                    code = pdfi_dict_get(ctx, dict, "DP", &decode);
                     if (code < 0 && code != gs_error_undefined) {
                         pdfi_countdown(o);
                         return code;
@@ -795,7 +875,8 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *d, pdf_stream *source, pdf_stream **
             }
         }
 
-        code = pdfi_apply_filter(ctx, (pdf_name *)o, (pdf_dict *)decode, s, &new_s, inline_image);
+        code = pdfi_apply_filter(ctx, dict, (pdf_name *)o,
+                                 (pdf_dict *)decode, s, &new_s, inline_image);
         pdfi_countdown(o);
         if (code < 0)
             return code;
@@ -825,7 +906,7 @@ int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, gs_const_str
 
     SFD_name.data = (byte *)"SubFileDecode";
     SFD_name.length = 13;
-    code = pdfi_apply_filter(ctx, &SFD_name, NULL, s, &new_s, inline_image);
+    code = pdfi_apply_filter(ctx, NULL, &SFD_name, NULL, s, &new_s, inline_image);
     if (code < 0)
         return code;
     *new_stream = (pdf_stream *)gs_alloc_bytes(ctx->memory, sizeof(pdf_stream), "pdfi_apply_SubFileDecode_filter, new pdf_stream");
