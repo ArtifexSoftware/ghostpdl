@@ -901,10 +901,10 @@ void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
     generic_subclass_data *psubclass_data = (generic_subclass_data *)dev->subclass_data;
     (void)cmem; /* unused */
 
+    discard(gs_closedevice(dev));
+
     if (dev->finalize)
         dev->finalize(dev);
-
-    discard(gs_closedevice(dev));
 
     if (psubclass_data) {
         gs_free_object(dev->memory->non_gc_memory, psubclass_data, "gx_epo_finalize(suclass data)");
