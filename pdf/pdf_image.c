@@ -600,7 +600,8 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
 
 /* Load up params common to the different image types */
 static int
-pdfi_data_image_params(pdf_context *ctx, pdfi_image_info_t *info, gs_data_image_t *pim, int comps)
+pdfi_data_image_params(pdf_context *ctx, pdfi_image_info_t *info,
+                       gs_data_image_t *pim, int comps, gs_color_space *pcs)
 {
     int code;
     
@@ -633,9 +634,20 @@ pdfi_data_image_params(pdf_context *ctx, pdfi_image_info_t *info, gs_data_image_
     } else {
         /* Provide a default if not specified [0 1 ...] per component */
         int i;
+        float minval, maxval;
+        
+        /* TODO: Is there a less hacky way to identify Indexed case? */
+        if (pcs && pcs->type == &gs_color_space_type_Indexed) {
+            /* Default value is [0,N], where N=2^n-1, our hival */
+            minval = 0.0;
+            maxval = pcs->params.indexed.hival;
+        } else {
+            minval = 0.0;
+            maxval = 1.0;
+        }
         for (i=0; i<comps*2; i+=2) {
-            pim->Decode[i] = 0.0;
-            pim->Decode[i+1] = 1.0;
+            pim->Decode[i] = minval;
+            pim->Decode[i+1] = maxval;
         }
     }
     code = 0;
@@ -823,7 +835,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             memset(&t3image, 0, sizeof(t1image));
             pim = (gs_pixel_image_t *)&t3image;
             gs_image3_t_init(&t3image, NULL, interleave_separate_source);
-            code = pdfi_data_image_params(ctx, &mask_info, &t3image.MaskDict, 1);
+            code = pdfi_data_image_params(ctx, &mask_info, &t3image.MaskDict, 1, NULL);
             if (code < 0)
                 goto cleanupExit;
 
@@ -832,7 +844,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     /* Setup the common params */
     pim->ColorSpace = pcs;
-    code = pdfi_data_image_params(ctx, &image_info, (gs_data_image_t *)pim, comps);
+    code = pdfi_data_image_params(ctx, &image_info, (gs_data_image_t *)pim, comps, pcs);
     if (code < 0)
         goto cleanupExit;
 
