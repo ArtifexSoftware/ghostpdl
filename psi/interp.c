@@ -142,7 +142,6 @@ static int oparray_pop(i_ctx_t *);
 static int oparray_cleanup(i_ctx_t *);
 static int zerrorexec(i_ctx_t *);
 static int zfinderrorobject(i_ctx_t *);
-static int errorexec_find(i_ctx_t *, ref *);
 static int errorexec_pop(i_ctx_t *);
 static int errorexec_cleanup(i_ctx_t *);
 static int zsetstackprotect(i_ctx_t *);
@@ -761,7 +760,7 @@ copy_stack(i_ctx_t *i_ctx_p, const ref_stack_t * pstack, int skip, ref * arr)
 {
     uint size = ref_stack_count(pstack) - skip;
     uint save_space = ialloc_space(idmemory);
-    int code;
+    int code, i;
 
     if (size > 65535)
         size = 65535;
@@ -770,6 +769,15 @@ copy_stack(i_ctx_t *i_ctx_p, const ref_stack_t * pstack, int skip, ref * arr)
     if (code >= 0)
         code = ref_stack_store(pstack, arr, size, 0, 1, true, idmemory,
                                "copy_stack");
+    /* If we are copying the exec stack, try to replace any oparrays with
+     * with the operator than references them
+     */
+    if (pstack == &e_stack) {
+        for (i = 0; i < size; i++) {
+            if (errorexec_find(i_ctx_p, &arr->value.refs[i]) < 0)
+                make_null(&arr->value.refs[i]);
+        }
+    }
     ialloc_set_space(idmemory, save_space);
     return code;
 }
@@ -1934,7 +1942,7 @@ zfinderrorobject(i_ctx_t *i_ctx_p)
  * .errorexec with errobj != null, store it in *perror_object and return 1,
  * otherwise return 0;
  */
-static int
+int
 errorexec_find(i_ctx_t *i_ctx_p, ref *perror_object)
 {
     long i;

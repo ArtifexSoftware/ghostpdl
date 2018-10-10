@@ -323,7 +323,7 @@ $(PSOBJ)zarray.$(OBJ) : $(PSSRC)zarray.c $(OP) $(memory__h)\
 
 $(PSOBJ)zcontrol.$(OBJ) : $(PSSRC)zcontrol.c $(OP) $(string__h)\
  $(estack_h) $(files_h) $(ipacked_h) $(iutil_h) $(store_h) $(stream_h)\
- $(INT_MAK) $(MAKEDIRS)
+ $(interp_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zcontrol.$(OBJ) $(C_) $(PSSRC)zcontrol.c
 
 $(PSOBJ)zdict.$(OBJ) : $(PSSRC)zdict.c $(OP)\

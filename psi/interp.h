@@ -91,5 +91,7 @@ void gs_interp_reset(i_ctx_t *i_ctx_p);
 /* Define the top-level interface to the interpreter. */
 int gs_interpret(i_ctx_t **pi_ctx_p, ref * pref, int user_errors,
                  int *pexit_code, ref * perror_object);
+int
+errorexec_find(i_ctx_t *i_ctx_p, ref *perror_object);
 
 #endif /* interp_INCLUDED */

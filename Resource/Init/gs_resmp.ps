@@ -183,7 +183,7 @@ setpacking
   % We don't check them.
 
   currentglobal //false setglobal                  % <object> bGlobal
-  countexecstack array execstack                   % <object> bGlobal [execstack]
+  //false .countexecstack array //false .execstack % <object> bGlobal [execstack]
   dup //null exch                                  % <object> bGlobal [execstack] null [execstack]
   length 3 sub -1 0 {                              % <object> bGlobal [execstack] null i
     2 index exch get                               % <object> bGlobal [execstack] null proc

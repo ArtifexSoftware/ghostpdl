@@ -24,6 +24,7 @@
 #include "ipacked.h"
 #include "iutil.h"
 #include "store.h"
+#include "interp.h"
 
 /* Forward references */
 static int check_for_exec(const_os_ptr);
@@ -787,7 +788,7 @@ zexecstack2(i_ctx_t *i_ctx_p)
 /* Continuation operator to do the actual transfer. */
 /* r_size(op1) was set just above. */
 static int
-do_execstack(i_ctx_t *i_ctx_p, bool include_marks, os_ptr op1)
+do_execstack(i_ctx_t *i_ctx_p, bool include_marks, bool include_oparrays, os_ptr op1)
 {
     os_ptr op = osp;
     ref *arefs = op1->value.refs;
@@ -829,6 +830,12 @@ do_execstack(i_ctx_t *i_ctx_p, bool include_marks, os_ptr op1)
                                   strlen(tname), (const byte *)tname);
                 break;
             }
+            case t_array:
+            case t_shortarray:
+            case t_mixedarray:
+                if (!include_oparrays && errorexec_find(i_ctx_p, rq) < 0)
+                    make_null(rq);
+                break;
             default:
                 ;
         }
@@ -841,14 +848,14 @@ execstack_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    return do_execstack(i_ctx_p, false, op);
+    return do_execstack(i_ctx_p, false, false, op);
 }
 static int
 execstack2_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    return do_execstack(i_ctx_p, op->value.boolval, op - 1);
+    return do_execstack(i_ctx_p, op->value.boolval, true, op - 1);
 }
 
 /* - .needinput - */
