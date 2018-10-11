@@ -134,9 +134,6 @@
 /* Make sure we cast to the correct structure type. */
 typedef struct gx_device_win_pr2_s gx_device_win_pr2;
 
-#undef wdev
-#define wdev ((gx_device_win_pr2 *)dev)
-
 /* Device procedures */
 
 /* See gxdevice.h for the definitions of the procedures. */
@@ -259,6 +256,7 @@ win_pr2_open(gx_device * dev)
     FILE *pfile;
     DOCINFO docinfo;
     float ratio = 1.0;
+    gx_device_win_pr2 *wdev = (gx_device_win_pr2 *)dev;
 
     win_pr2_copy_check(wdev);
 
@@ -441,6 +439,7 @@ win_pr2_close(gx_device * dev)
 {
     int code;
     int aborted = FALSE;
+    gx_device_win_pr2 *wdev = (gx_device_win_pr2 *)dev;
 
     win_pr2_copy_check(wdev);
 
@@ -480,9 +479,6 @@ win_pr2_close(gx_device * dev)
 
 /* ------ Internal routines ------ */
 
-#undef wdev
-#define wdev ((gx_device_win_pr2 *)pdev)
-
 /********************************************************************************/
 
 /* ------ Private definitions ------ */
@@ -509,6 +505,7 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
     char dlgtext[32];
     HGLOBAL hrow;
     int ratio = ((gx_device_win_pr2 *)pdev)->ratio;
+    gx_device_win_pr2 *wdev = (gx_device_win_pr2 *)pdev;
 
     struct bmi_s {
         BITMAPINFOHEADER h;
@@ -689,6 +686,7 @@ win_pr2_set_bpp(gx_device * dev, int depth)
 {
     int code = 0;
     gx_device_printer *pdev = (gx_device_printer *)dev;
+    gx_device_win_pr2 *wdev = (gx_device_win_pr2 *)pdev;
 
     if (depth > 8) {
         static const gx_device_color_info win_pr2_24color = dci_std_color(24);
@@ -813,6 +811,7 @@ int
 win_pr2_get_params(gx_device * pdev, gs_param_list * plist)
 {
     int code = gdev_prn_get_params(pdev, plist);
+    gx_device_win_pr2 *wdev = (gx_device_win_pr2 *)pdev;
 
     win_pr2_copy_check(wdev);
 
@@ -840,6 +839,7 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
     int ecode = 0, code;
     int old_bpp = pdev->color_info.depth;
     int bpp = old_bpp;
+    gx_device_win_pr2 *wdev = (gx_device_win_pr2 *)pdev;
     bool tumble   = wdev->tumble;
     bool nocancel = wdev->nocancel;
     int queryuser = 0;
@@ -960,8 +960,6 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
 
     return ecode;
 }
-
-#undef wdev
 
 /********************************************************************************/
 
@@ -1558,6 +1556,28 @@ win_pr2_copy_check(gx_device_win_pr2 * wdev)
 
     if (wdev->original_device == wdev)
         return;
+
+    /* I have, I'm afraid, no real idea what this routine is for. Its been present
+     * since the earliest incarnation of the device I can find (in 1994). It seems
+     * to me that if this check ever fails, then things will always go badly wrong,
+     * since the Windows-specific structures (eg hdcprn) will be reset. I'm not
+     * sure if these are somehow expected to be set by calling 'open' again or
+     * something. In any event this check is completely incompatible with the
+     * device subclassing, because the device is now capable of moving around in
+     * memory. So add this check to see if the device has been subclassed. If it
+     * has, don't throw away the Windows-specific structures, we need them and
+     * they certainly won't be recreated.
+     */
+    {
+        gx_device *dev = wdev->parent;
+
+        while(dev) {
+            if ((gx_device *)wdev->original_device == dev)
+                return;
+
+            dev = dev->parent;
+        }
+    }
 
     wdev->hdcprn = NULL;
     wdev->win32_hdevmode = NULL;
