@@ -697,10 +697,12 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cn
             return code;
         }
         do {
-            bytes = sfgetc(filtered_profile_stream->s);
-            if (bytes > 0)
-                decompressed_length++;
-        } while (bytes >= 0);
+            byte b;
+            code = pdfi_read_bytes(ctx, &b, 1, 1, filtered_profile_stream);
+            if (code <= 0)
+                break;
+            decompressed_length++;
+        } while (true);
         pdfi_close_file(ctx, filtered_profile_stream);
 
         Buffer = gs_alloc_bytes(ctx->memory, decompressed_length, "pdfi_create_iccprofile (decompression buffer)");
@@ -709,7 +711,7 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cn
             if (code >= 0) {
                 code = pdfi_filter(ctx, ICC_dict, profile_stream, &filtered_profile_stream, false);
                 if (code >= 0) {
-                    sfread(Buffer, 1, decompressed_length, filtered_profile_stream->s);
+                    code = pdfi_read_bytes(ctx, Buffer, 1, decompressed_length, filtered_profile_stream);
                     pdfi_close_file(ctx, filtered_profile_stream);
                     code = pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
                     if (code >= 0) {
