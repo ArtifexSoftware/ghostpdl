@@ -383,15 +383,19 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
                     break;
                 case 4:
                     code = pdfi_shading4(ctx, (pdf_dict *)o, stream_dict, page_dict);
+                    code = gs_error_undefined;
                     break;
                 case 5:
                     code = pdfi_shading5(ctx, (pdf_dict *)o, stream_dict, page_dict);
+                    code = gs_error_undefined;
                     break;
                 case 6:
                     code = pdfi_shading6(ctx, (pdf_dict *)o, stream_dict, page_dict);
+                    code = gs_error_undefined;
                     break;
                 case 7:
                     code = pdfi_shading7(ctx, (pdf_dict *)o, stream_dict, page_dict);
+                    code = gs_error_undefined;
                     break;
                 default:
                     code = gs_error_rangecheck;
