@@ -195,6 +195,7 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
     int comps = 0;
     int cs_meth = 0;
     uint32_t cs_enum = 0;
+    bool got_color = false;
     
     dmprintf1(ctx->memory, "JPXFilter: Image length %d\n", length);
     
@@ -277,6 +278,10 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
             }
             break;
         case K4('c','o','l','r'):
+            if (got_color) {
+                dmprintf(ctx->memory, "JPXFilter: Ignore extra COLR specs\n");
+                break;
+            }
             cs_meth = data[0];
             if (cs_meth == 1)
                 cs_enum = READ32BE(data+3);
@@ -285,9 +290,15 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
                 cs_enum = 0;
             }
             dmprintf2(ctx->memory, "    COLR: M:%d, ENUM:%d\n", cs_meth, cs_enum);
+            got_color = true;
             break;
         case K4('p','c','l','r'):
-            dmprintf(ctx->memory, "JPXDecode: PCLR not supported yet\n");
+            /* Apparently we just grab the BPC out of this */
+            dmprintf7(ctx->memory, "    PCLR Data: %x %x %x %x %x %x %x\n",
+                      data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
+            bpc = data[3];
+            bpc = (bpc & 0x7) + 1;
+            dmprintf1(ctx->memory, "    PCLR BPC: %d\n", bpc);
             break;
         case K4('c','d','e','f'):
             dmprintf(ctx->memory, "JPXDecode: CDEF not supported yet\n");
