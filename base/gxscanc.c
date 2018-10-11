@@ -1292,9 +1292,13 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
         /* Rising line */
         if (iey < 0 || isy >= cr->scanlines) {
             /* All line is outside. */
+            if ((ey & 0xff) == 0)
+                cursor_null(cr);
+            else {
+                cr->left = ex;
+                cr->right = ex;
+            }
             cr->y = ey;
-            cr->left = ex;
-            cr->right = ex;
             cr->first = 0;
             return;
         }
@@ -1305,7 +1309,8 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
             int64_t dy = (int64_t)new_sy - (int64_t)sy;
             sx += (int)((((int64_t)(ex-sx))*dy + y/2)/y);
             sy = new_sy;
-            cursor_init(cr, sy, sx);
+            cursor_null(cr);
+            cr->y = sy;
             isy = 0;
         }
         truncated = iey > cr->scanlines;
@@ -1324,9 +1329,13 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
         /* Falling line */
         if (isy < 0 || iey >= cr->scanlines) {
             /* All line is outside. */
+            if ((ey & 0xff) == 0)
+                cursor_null(cr);
+            else {
+                cr->left = ex;
+                cr->right = ex;
+            }
             cr->y = ey;
-            cr->left = ex;
-            cr->right = ex;
             cr->first = 0;
             return;
         }
@@ -1347,15 +1356,15 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
             int64_t dy = (int64_t)new_sy - (int64_t)sy;
             sx += (int)((((int64_t)(ex-sx))*dy + y/2)/y);
             sy = new_sy;
-            cursor_init(cr, sy, sx);
+            cursor_null(cr);
+            cr->y = sy;
             isy = cr->scanlines;
         }
     }
 
-    if (sy != ey) {
-        cursor_left_merge(cr, sx);
-        cursor_right_merge(cr, sx);
-    }
+    cursor_left_merge(cr, sx);
+    cursor_right_merge(cr, sx);
+
     assert(cr->left <= sx);
     assert(cr->right >= sx);
     assert(cr->y == sy);
@@ -1383,28 +1392,31 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
     if (isy == iey) {
         if (saved_sy == saved_ey) {
             /* Horizontal line. Don't change cr->d, don't flush. */
-            if ((saved_ey & 0xff) == 0)
+            if ((ey & 0xff) == 0)
                 goto no_merge;
         } else if (saved_sy > saved_ey) {
             /* Falling line, flush if previous was rising */
-            (void)cursor_down(cr, sx);
-            if ((saved_ey & 0xff) == 0) {
+            int skip = cursor_down(cr, sx);
+            if ((ey & 0xff) == 0) {
                 /* We are falling to the baseline of a subpixel, so output
                  * for the current pixel, and leave the cursor nulled. */
-                cursor_output(cr, fixed2int(cr->y) - cr->base);
+                if (!skip)
+                    cursor_output(cr, fixed2int(cr->y) - cr->base);
                 cursor_null(cr);
                 goto no_merge;
             }
         } else {
             /* Rising line, flush if previous was falling */
             cursor_up(cr, sx);
+            if ((ey & 0xff) == 0) {
+                cursor_null(cr);
+                goto no_merge;
+            }
         }
         if (sx <= ex) {
-            cursor_left_merge(cr, sx);
             cursor_right_merge(cr, ex);
         } else {
             cursor_left_merge(cr, ex);
-            cursor_right_merge(cr, sx);
         }
 no_merge:
         cr->y = ey;
@@ -1433,8 +1445,6 @@ no_merge:
             /* Vertical line. (Rising) */
 
             /* Phase 1: */
-            cursor_left_merge(cr, sx);
-            cursor_right_merge(cr, sx);
             if (phase1_y_steps) {
                 /* If phase 1 will move us into a new scanline, then we must
                  * flush it before we move. */
@@ -1474,7 +1484,6 @@ no_merge:
             fixed x_steps = ex - sx;
 
             /* Phase 1: */
-            cursor_left_merge(cr, sx);
             if (phase1_y_steps) {
                 phase1_x_steps = (int)(((int64_t)x_steps * phase1_y_steps + y_steps/2) / y_steps);
                 sx += phase1_x_steps;
@@ -1541,7 +1550,6 @@ no_merge:
             fixed x_steps = sx - ex;
 
             /* Phase 1: */
-            cursor_right_merge(cr, sx);
             if (phase1_y_steps) {
                 phase1_x_steps = (int)(((int64_t)x_steps * phase1_y_steps + y_steps/2) / y_steps);
                 x_steps -= phase1_x_steps;
@@ -1621,8 +1629,6 @@ no_merge:
             /* Vertical line. (Falling) */
 
             /* Phase 1: */
-            cursor_left_merge(cr, sx);
-            cursor_right_merge(cr, sx);
             if (phase1_y_steps) {
                 /* Phase 1 in a falling line never moves us into a new scanline. */
                 cursor_never_step_vertical(cr, -phase1_y_steps, sx);
@@ -1664,7 +1670,6 @@ endFallingLeftOnEdgeOfPixel:
             fixed x_steps = ex - sx;
 
             /* Phase 1: */
-            cursor_left_merge(cr, sx);
             if (phase1_y_steps) {
                 phase1_x_steps = (int)(((int64_t)x_steps * phase1_y_steps + y_steps/2) / y_steps);
                 x_steps -= phase1_x_steps;
@@ -1675,8 +1680,7 @@ endFallingLeftOnEdgeOfPixel:
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
                     goto endFallingRightOnEdgeOfPixel;
-            } else
-                cursor_right_merge(cr, sx);
+            }
 
             /* Phase 3: precalculation */
             phase3_x_steps = (int)(((int64_t)x_steps * phase3_y_steps + y_steps/2) / y_steps);
@@ -1731,7 +1735,6 @@ endFallingRightOnEdgeOfPixel:
             fixed x_steps = sx - ex;
 
             /* Phase 1: */
-            cursor_right_merge(cr, sx);
             if (phase1_y_steps) {
                 phase1_x_steps = (int)(((int64_t)x_steps * phase1_y_steps + y_steps/2) / y_steps);
                 x_steps -= phase1_x_steps;
@@ -1742,8 +1745,7 @@ endFallingRightOnEdgeOfPixel:
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
                     goto endFallingVerticalOnEdgeOfPixel;
-            } else
-                cursor_left_merge(cr, sx);
+            }
 
             /* Phase 3: precalculation */
             phase3_x_steps = (int)(((int64_t)x_steps * phase3_y_steps + y_steps/2) / y_steps);
@@ -1793,9 +1795,7 @@ endFallingVerticalOnEdgeOfPixel:
                 assert(cr->left == ex && cr->right == sx);
             }
         }
-endFalling:
-        if (truncated)
-            cursor_output(cr, fixed2int(cr->y) - cr->base);
+endFalling: {}
     }
 
 end:
@@ -3203,11 +3203,15 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
         /* Rising line */
         if (iey < 0 || isy >= cr->scanlines) {
             /* All line is outside. */
+            if ((ey & 0xff) == 0) {
+                cursor_null_tr(cr);
+            } else {
+                cr->left = ex;
+                cr->lid = id;
+                cr->right = ex;
+                cr->rid = id;
+            }
             cr->y = ey;
-            cr->left = ex;
-            cr->lid = id;
-            cr->right = ex;
-            cr->rid = id;
             cr->first = 0;
             return;
         }
@@ -3218,7 +3222,8 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
             int64_t dy = (int64_t)new_sy - (int64_t)sy;
             sx += (int)((((int64_t)(ex-sx))*dy + y/2)/y);
             sy = new_sy;
-            cursor_init_tr(cr, sy, sx, id);
+            cursor_null_tr(cr);
+            cr->y = sy;
             isy = 0;
         }
         truncated = iey > cr->scanlines;
@@ -3237,11 +3242,15 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
         /* Falling line */
         if (isy < 0 || iey >= cr->scanlines) {
             /* All line is outside. */
+            if ((ey & 0xff) == 0) {
+                cursor_null_tr(cr);
+            } else {
+                cr->left = ex;
+                cr->lid = id;
+                cr->right = ex;
+                cr->rid = id;
+            }
             cr->y = ey;
-            cr->left = ex;
-            cr->lid = id;
-            cr->right = ex;
-            cr->rid = id;
             cr->first = 0;
             return;
         }
@@ -3262,15 +3271,15 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
             int64_t dy = (int64_t)new_sy - (int64_t)sy;
             sx += (int)((((int64_t)(ex-sx))*dy + y/2)/y);
             sy = new_sy;
-            cursor_init_tr(cr, sy, sx, id);
+            cursor_null_tr(cr);
+            cr->y = sy;
             isy = cr->scanlines;
         }
     }
 
-    if (sy != ey) {
-        cursor_left_merge_tr(cr, sx, id);
-        cursor_right_merge_tr(cr, sx, id);
-    }
+    cursor_left_merge_tr(cr, sx, id);
+    cursor_right_merge_tr(cr, sx, id);
+
     assert(cr->left <= sx);
     assert(cr->right >= sx);
     assert(cr->y == sy);
@@ -3298,28 +3307,33 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
     if (isy == iey) {
         if (saved_sy == saved_ey) {
             /* Horizontal line. Don't change cr->d, don't flush. */
-            if ((saved_ey & 0xff) == 0)
+            if ((ey & 0xff) == 0) {
+                cursor_null_tr(cr);
                 goto no_merge;
+            }
         } else if (saved_sy > saved_ey) {
             /* Falling line, flush if previous was rising */
-            (void)cursor_down_tr(cr, sx, id);
-            if ((saved_ey & 0xff) == 0) {
+            int skip = cursor_down_tr(cr, sx, id);
+            if ((ey & 0xff) == 0) {
                 /* We are falling to the baseline of a subpixel, so output
                  * for the current pixel, and leave the cursor nulled. */
-                cursor_output_tr(cr, fixed2int(cr->y) - cr->base);
+                if (!skip)
+                    cursor_output_tr(cr, fixed2int(cr->y) - cr->base);
                 cursor_null_tr(cr);
                 goto no_merge;
             }
         } else {
             /* Rising line, flush if previous was falling */
             cursor_up_tr(cr, sx, id);
+            if ((ey & 0xff) == 0) {
+                cursor_null_tr(cr);
+                goto no_merge;
+            }
         }
         if (sx <= ex) {
-            cursor_left_merge_tr(cr, sx, id);
             cursor_right_merge_tr(cr, ex, id);
         } else {
             cursor_left_merge_tr(cr, ex, id);
-            cursor_right_merge_tr(cr, sx, id);
         }
 no_merge:
         cr->y = ey;
@@ -3343,8 +3357,6 @@ no_merge:
             /* Vertical line. (Rising) */
 
             /* Phase 1: */
-            cursor_left_merge_tr(cr, sx, id);
-            cursor_right_merge_tr(cr, sx, id);
             if (phase1_y_steps) {
                 /* If phase 1 will move us into a new scanline, then we must
                  * flush it before we move. */
@@ -3384,7 +3396,6 @@ no_merge:
             fixed x_steps = ex - sx;
 
             /* Phase 1: */
-            cursor_left_merge_tr(cr, sx, id);
             if (phase1_y_steps) {
                 phase1_x_steps = (int)(((int64_t)x_steps * phase1_y_steps + y_steps/2) / y_steps);
                 sx += phase1_x_steps;
@@ -3451,7 +3462,6 @@ no_merge:
             fixed x_steps = sx - ex;
 
             /* Phase 1: */
-            cursor_right_merge_tr(cr, sx, id);
             if (phase1_y_steps) {
                 phase1_x_steps = (int)(((int64_t)x_steps * phase1_y_steps + y_steps/2) / y_steps);
                 x_steps -= phase1_x_steps;
@@ -3531,8 +3541,6 @@ no_merge:
             /* Vertical line. (Falling) */
 
             /* Phase 1: */
-            cursor_left_merge_tr(cr, sx, id);
-            cursor_right_merge_tr(cr, sx, id);
             if (phase1_y_steps) {
                 /* Phase 1 in a falling line never moves us into a new scanline. */
                 cursor_never_step_vertical_tr(cr, -phase1_y_steps, sx, id);
@@ -3574,7 +3582,6 @@ endFallingLeftOnEdgeOfPixel:
             fixed x_steps = ex - sx;
 
             /* Phase 1: */
-            cursor_left_merge_tr(cr, sx, id);
             if (phase1_y_steps) {
                 phase1_x_steps = (int)(((int64_t)x_steps * phase1_y_steps + y_steps/2) / y_steps);
                 x_steps -= phase1_x_steps;
@@ -3585,8 +3592,7 @@ endFallingLeftOnEdgeOfPixel:
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
                     goto endFallingRightOnEdgeOfPixel;
-            } else
-                cursor_right_merge_tr(cr, sx, id);
+            }
 
             /* Phase 3: precalculation */
             phase3_x_steps = (int)(((int64_t)x_steps * phase3_y_steps + y_steps/2) / y_steps);
@@ -3641,7 +3647,6 @@ endFallingRightOnEdgeOfPixel:
             fixed x_steps = sx - ex;
 
             /* Phase 1: */
-            cursor_right_merge_tr(cr, sx, id);
             if (phase1_y_steps) {
                 phase1_x_steps = (int)(((int64_t)x_steps * phase1_y_steps + y_steps/2) / y_steps);
                 x_steps -= phase1_x_steps;
@@ -3652,8 +3657,7 @@ endFallingRightOnEdgeOfPixel:
                 y_steps -= phase1_y_steps;
                 if (y_steps == 0)
                     goto endFallingVerticalOnEdgeOfPixel;
-            } else
-                cursor_left_merge_tr(cr, sx, id);
+            }
 
             /* Phase 3: precalculation */
             phase3_x_steps = (int)(((int64_t)x_steps * phase3_y_steps + y_steps/2) / y_steps);
@@ -3703,10 +3707,7 @@ endFallingVerticalOnEdgeOfPixel:
                 assert(cr->left == ex && cr->lid == id && cr->right == sx && cr->rid == id);
             }
         }
-endFalling:
-        if (truncated) {
-            cursor_output_tr(cr, fixed2int(cr->y) - cr->base);
-        }
+endFalling: {}
     }
 
 end:
