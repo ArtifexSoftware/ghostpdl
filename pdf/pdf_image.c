@@ -149,7 +149,7 @@ pdfi_find_alternate(pdf_context *ctx, pdf_obj *alt)
 #define READ16BE(i) (((i)[0] << 8) | (i)[1])
 #define K4(a, b, c, d) ((a << 24) + (b << 16) + (c << 8) + d)
 #define LEN_IHDR 14
-#define LEN_DATA 128
+#define LEN_DATA 2048
 
 /* Returns either < 0, or exactly 8 */
 static int
@@ -189,7 +189,8 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
     uint32_t box_val = 0;
     int code;
     byte ihdr_data[LEN_IHDR];
-    byte data[LEN_DATA];
+    byte *data = NULL;
+    int data_buf_len = 0;
     int avail = length;
     int bpc = 0;
     int comps = 0;
@@ -198,24 +199,36 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
     bool got_color = false;
     
     dmprintf1(ctx->memory, "JPXFilter: Image length %d\n", length);
+
+    /* Allocate a data buffer that hopefully is big enough */
+    data_buf_len = LEN_DATA;
+    data = gs_alloc_bytes(ctx->memory, data_buf_len, "pdfi_scan_jpxfilter (data)");
+    if (!data) {
+        code = gs_note_error(gs_error_VMerror);
+        goto exit;
+    }
     
     /* Find the 'jp2h' box, skipping over everything else */
     while (avail > 0) {
         code = get_box(ctx, source, avail, &box_len, &box_val);
         if (code < 0)
-            return code;
+            goto exit;
         avail -= 8;
         box_len -= 8;
-        if (box_len <= 0)
-            return_error(gs_error_limitcheck);
+        if (box_len <= 0) {
+            code = gs_note_error(gs_error_syntaxerror);
+            goto exit;
+        }
         if (box_val == K4('j','p','2','h')) {
             break;
         }
         pdfi_seek(ctx, source, box_len, SEEK_CUR);
         avail -= box_len;
     }
-    if (avail <= 0)
-        return_error(gs_error_limitcheck);
+    if (avail <= 0) {
+        code = gs_note_error(gs_error_ioerror);
+        goto exit;
+    }
 
     /* Now we are only looking inside the jp2h box */
     avail = box_len;
@@ -223,18 +236,22 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
     /* The first thing in the 'jp2h' box is an 'ihdr', get that */
     code = get_box(ctx, source, avail, &box_len, &box_val);
     if (code < 0)
-        return code;
+        goto exit;
     avail -= 8;
     box_len -= 8;
-    if (box_val != K4('i','h','d','r'))
-        return_error(gs_error_limitcheck);
-    if (box_len != LEN_IHDR)
-        return_error(gs_error_limitcheck);
-    
+    if (box_val != K4('i','h','d','r')) {
+        code = gs_note_error(gs_error_syntaxerror);
+        goto exit;
+    }
+    if (box_len != LEN_IHDR) {
+        code = gs_note_error(gs_error_syntaxerror);
+        goto exit;
+    }
+
     /* Get things we care about from ihdr */
     code = pdfi_read_bytes(ctx, ihdr_data, 1, LEN_IHDR, source);
     if (code < 0)
-        return code;
+        goto exit;
     avail -= LEN_IHDR;
     comps = READ16BE(ihdr_data+8);
     dmprintf1(ctx->memory, "    COMPS: %d\n", comps);
@@ -247,16 +264,28 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
     while (avail > 0) {
         code = get_box(ctx, source, avail, &box_len, &box_val);
         if (code < 0)
-            return code;
+            goto exit;
         avail -= 8;
         box_len -= 8;
-        if (box_len <= 0)
-            return_error(gs_error_limitcheck);
-        if (box_len > LEN_DATA)
-            return_error(gs_error_limitcheck);
+        if (box_len <= 0) {
+            code = gs_note_error(gs_error_syntaxerror);
+            goto exit;
+        }
+        /* Re-alloc buffer if it wasn't big enough (unlikely) */
+        if (box_len > data_buf_len) {
+            dmprintf2(ctx->memory, "data buffer (size %d) was too small, reallocing to size %d\n",
+                      data_buf_len, box_len);
+            gs_free_object(ctx->memory, data, "pdfi_scan_jpxfilter (data)");
+            data_buf_len = box_len;
+            data = gs_alloc_bytes(ctx->memory, data_buf_len, "pdfi_scan_jpxfilter (data)");
+            if (!data) {
+                code = gs_note_error(gs_error_VMerror);
+                goto exit;
+            }
+        }
         code = pdfi_read_bytes(ctx, data, 1, box_len, source);
         if (code < 0)
-            return code;
+            goto exit;
         avail -= box_len;
         switch(box_val) {
         case K4('b','p','c','c'):
@@ -268,7 +297,7 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
                 for (i=1;i<comps;i++) {
                     if (bpc2 != data[i]) {
                         emprintf(ctx->memory,
-                                 "*** Error: JPX image colour challens do not all have the same colour depth\n");
+                                 "*** Error: JPX image colour channels do not all have the same colour depth\n");
                         emprintf(ctx->memory,
                                  "    Output may be incorrect.\n");
                     }
@@ -287,6 +316,9 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
                 cs_enum = READ32BE(data+3);
             else if (cs_meth == 2) {
                 dmprintf(ctx->memory, "JPXDecode: COLR Meth 2 not supported yet\n");
+                cs_enum = 0;
+            } else {
+                dmprintf1(ctx->memory, "JPXDecode: COLR unexpected method %d\n", cs_meth);
                 cs_enum = 0;
             }
             dmprintf2(ctx->memory, "    COLR: M:%d, ENUM:%d\n", cs_meth, cs_enum);
@@ -313,6 +345,9 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
     info->bpc = bpc;
     info->cs_enum = cs_enum;
     
+ exit:
+    if (data)
+        gs_free_object(ctx->memory, data, "pdfi_scan_jpxfilter (data)");
     return 0;
 }
 
@@ -749,14 +784,14 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                 /* TODO: Hackity BS here, just trying to pull out a reasonable color for now */
                 switch(jpx_info.cs_enum) {
                 case 12:
-                    color_str = "DeviceCMYK";
+                    color_str = (char *)"DeviceCMYK";
                     break;
                 case 16:
                 case 18:
-                    color_str = "DeviceRGB";
+                    color_str = (char *)"DeviceRGB";
                     break;
                 case 17:
-                    color_str = "DeviceGray";
+                    color_str = (char *)"DeviceGray";
                     break;
                 default:
                     dmprintf1(ctx->memory, "JPXDecode: Unsupported colorspace %d\n", jpx_info.cs_enum);
@@ -768,8 +803,8 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                 name.memory = NULL;
                 name.type = PDF_NAME;
                 name.length = strlen(color_str);
-                name.data = color_str;
-                code = pdfi_create_colorspace(ctx, &name, page_dict, stream_dict, &pcs);
+                name.data = (byte *)color_str;
+                code = pdfi_create_colorspace(ctx, (pdf_obj *)&name, page_dict, stream_dict, &pcs);
                 comps = gs_color_space_num_components(pcs);
                 image_info.BPC = jpx_info.bpc;
             } else {
