@@ -25,7 +25,7 @@
 
 // This program does apply profiles to (some) TIFF files
 
-#include "lcms2_plugin.h"
+#include "lcms2mt_plugin.h"
 #include "tiffio.h"
 #include "utils.h"
 
@@ -936,7 +936,7 @@ void Help(int level)
          fprintf(stderr, "%co<profile> - Output profile (defaults to sRGB)\n", SW);
          fprintf(stderr, "%cl<profile> - Transform by device-link profile\n", SW);
 
-         PrintRenderingIntents();
+         PrintRenderingIntents(NULL);
 
          fprintf(stderr, "%cb - Black point compensation\n", SW);
          fprintf(stderr, "%cd<0..1> - Observer adaptation state (abs.col. only)\n", SW);
@@ -1138,7 +1138,7 @@ int main(int argc, char* argv[])
 
     cmsPlugin(&TiffLabPlugin);
 
-    InitUtils("tificc");
+    InitUtils(NULL, "tificc");
 
     HandleSwitches(argc, argv);
 

@@ -503,10 +503,8 @@ cmsBool AddConversion(cmsContext ContextID, cmsPipeline* Result, cmsColorSpaceSi
 
 // Is a given space compatible with another?
 static
-cmsBool ColorSpaceIsCompatible(cmsContext ContextID, cmsColorSpaceSignature a, cmsColorSpaceSignature b)
+cmsBool ColorSpaceIsCompatible(cmsColorSpaceSignature a, cmsColorSpaceSignature b)
 {
-    cmsUNUSED_PARAMETER(ContextID);
-
     // If they are same, they are compatible.
     if (a == b) return TRUE;
 
@@ -581,7 +579,7 @@ cmsPipeline* DefaultICCintents(cmsContext       ContextID,
             ColorSpaceOut   = cmsGetColorSpace(ContextID, hProfile);
         }
 
-        if (!ColorSpaceIsCompatible(ContextID, ColorSpaceIn, CurrentColorSpace)) {
+        if (!ColorSpaceIsCompatible(ColorSpaceIn, CurrentColorSpace)) {
 
             cmsSignalError(ContextID, cmsERROR_COLORSPACE_CHECK, "ColorSpace mismatch");
             goto Error;
@@ -876,7 +874,7 @@ int BlackPreservingSampler(cmsContext ContextID, register const cmsUInt16Number 
         return TRUE;
     }
 
-    // K differ, mesure and keep Lab measurement for further usage
+    // K differ, measure and keep Lab measurement for further usage
     // this is done in relative colorimetric intent
     cmsDoTransform(ContextID, bp->hProofOutput, Out, &ColorimetricLab, 1);
 
@@ -990,15 +988,15 @@ cmsPipeline* BlackPreservingKPlaneIntents(cmsContext     ContextID,
     if (bp.KTone == NULL) goto Cleanup;
 
     // To measure the output, Last profile to Lab
-    hLab = cmsCreateLab4ProfileTHR(ContextID, NULL);
-    bp.hProofOutput = cmsCreateTransformTHR(ContextID, hProfiles[nProfiles-1],
+    hLab = cmsCreateLab4Profile(ContextID, NULL);
+    bp.hProofOutput = cmsCreateTransform(ContextID, hProfiles[nProfiles-1],
                                          CHANNELS_SH(4)|BYTES_SH(2), hLab, TYPE_Lab_DBL,
                                          INTENT_RELATIVE_COLORIMETRIC,
                                          cmsFLAGS_NOCACHE|cmsFLAGS_NOOPTIMIZE);
     if ( bp.hProofOutput == NULL) goto Cleanup;
 
     // Same as anterior, but lab in the 0..1 range
-    bp.cmyk2Lab = cmsCreateTransformTHR(ContextID, hProfiles[nProfiles-1],
+    bp.cmyk2Lab = cmsCreateTransform(ContextID, hProfiles[nProfiles-1],
                                          FLOAT_SH(1)|CHANNELS_SH(4)|BYTES_SH(4), hLab,
                                          FLOAT_SH(1)|CHANNELS_SH(3)|BYTES_SH(4),
                                          INTENT_RELATIVE_COLORIMETRIC,
@@ -1093,7 +1091,7 @@ cmsPipeline* _cmsLinkProfiles(cmsContext     ContextID,
 // Get information about available intents. nMax is the maximum space for the supplied "Codes"
 // and "Descriptions" the function returns the total number of intents, which may be greater
 // than nMax, although the matrices are not populated beyond this level.
-cmsUInt32Number CMSEXPORT cmsGetSupportedIntentsTHR(cmsContext ContextID, cmsUInt32Number nMax, cmsUInt32Number* Codes, char** Descriptions)
+cmsUInt32Number CMSEXPORT cmsGetSupportedIntents(cmsContext ContextID, cmsUInt32Number nMax, cmsUInt32Number* Codes, char** Descriptions)
 {
     _cmsIntentsPluginChunkType* ctx = ( _cmsIntentsPluginChunkType*) _cmsContextGetClientChunk(ContextID, IntentPlugin);
     cmsIntentsList* pt;
@@ -1126,11 +1124,6 @@ cmsUInt32Number CMSEXPORT cmsGetSupportedIntentsTHR(cmsContext ContextID, cmsUIn
         nIntents++;
     }
     return nIntents;
-}
-
-cmsUInt32Number CMSEXPORT cmsGetSupportedIntents(cmsUInt32Number nMax, cmsUInt32Number* Codes, char** Descriptions)
-{
-    return cmsGetSupportedIntentsTHR(NULL, nMax, Codes, Descriptions);
 }
 
 // The plug-in registration. User can add new intents or override default routines

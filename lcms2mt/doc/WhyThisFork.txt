@@ -1,5 +1,5 @@
                          LCMS 2.9.MT
-                         ============
+                         ===========
 
 Why does this fork exist?
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -45,8 +45,8 @@ Put simply, we ran into problems with using LCMS in a multi-threaded
 environment.
 
 A few years ago, Marti kindly made some changes within LittleCMS
-intended to enable us to safely use LCMS with Ghostscript when run
-with multiple threads.
+to enable us to safely use LCMS with Ghostscript when run with
+multiple threads.
 
 Specifically, Ghostscript needed to use different allocators from
 each thread. In order to account for this, Marti added the idea
@@ -111,7 +111,7 @@ new buffer format handlers. Since the underlying tables for the link
 are shared, the cost of cloning the profile is very low.
 
 In addition, we've made 1 other change that breaks the ABI, but not
-the API.
+the API:
 
 5) The organisation of the flags word used to describe the format of
 input/output pixels has been altered to accommodate more 'extra'

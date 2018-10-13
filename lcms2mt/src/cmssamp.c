@@ -40,7 +40,7 @@
 static
 cmsHTRANSFORM CreateRoundtripXForm(cmsContext ContextID, cmsHPROFILE hProfile, cmsUInt32Number nIntent)
 {
-    cmsHPROFILE hLab = cmsCreateLab4ProfileTHR(ContextID, NULL);
+    cmsHPROFILE hLab = cmsCreateLab4Profile(ContextID, NULL);
     cmsHTRANSFORM xform;
     cmsBool BPC[4] = { FALSE, FALSE, FALSE, FALSE };
     cmsFloat64Number States[4] = { 1.0, 1.0, 1.0, 1.0 };
@@ -101,14 +101,14 @@ cmsBool  BlackPointAsDarkerColorant(cmsContext ContextID,
     }
 
     // Lab will be used as the output space, but lab2 will avoid recursion
-    hLab = cmsCreateLab2ProfileTHR(ContextID, NULL);
+    hLab = cmsCreateLab2Profile(ContextID, NULL);
     if (hLab == NULL) {
        BlackPoint -> X = BlackPoint ->Y = BlackPoint -> Z = 0.0;
        return FALSE;
     }
 
     // Create the transform
-    xform = cmsCreateTransformTHR(ContextID, hInput, dwFormat,
+    xform = cmsCreateTransform(ContextID, hInput, dwFormat,
                                 hLab, TYPE_Lab_DBL, Intent, cmsFLAGS_NOOPTIMIZE|cmsFLAGS_NOCACHE);
     cmsCloseProfile(ContextID, hLab);
 

@@ -61,7 +61,7 @@ int Help(int level)
          fprintf(stderr, "flags:\n\n");
          fprintf(stderr, "%co<profile> - Output devicelink profile. [defaults to 'devicelink.icc']\n", SW);
 
-         PrintRenderingIntents();
+         PrintRenderingIntents(NULL);
 
          fprintf(stderr, "%cc<0,1,2> - Precision (0=LowRes, 1=Normal, 2=Hi-res) [defaults to 1]\n", SW);
          fprintf(stderr, "%cn<gridpoints> - Alternate way to set precision, number of CLUT points\n", SW);
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
     fflush(stderr);
 
     // Initialize
-    InitUtils("linkicc");
+    InitUtils(ContextID, "linkicc");
     rc = 0;
 
     // Get the options
@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
     // Ink limiting
     if (InkLimit != 400.0) {
         cmsColorSpaceSignature EndingColorSpace = cmsGetColorSpace(ContextID, Profiles[nargs-1]);
-        Profiles[nargs++] = cmsCreateInkLimitingDeviceLink(EndingColorSpace, InkLimit);
+        Profiles[nargs++] = cmsCreateInkLimitingDeviceLink(ContextID, EndingColorSpace, InkLimit);
     }
 
     // Set the flags
@@ -342,11 +342,11 @@ int main(int argc, char *argv[])
 
     if (lUse8bits) dwFlags |= cmsFLAGS_8BITS_DEVICELINK;
 
-     cmsSetAdaptationState(ObserverAdaptationState);
+     cmsSetAdaptationState(ContextID, ObserverAdaptationState);
 
     // Create the color transform. Specify 0 for the format is safe as the transform
     // is intended to be used only for the devicelink.
-    hTransform = cmsCreateMultiprofileTransform(Profiles, nargs, 0, 0, Intent, dwFlags|cmsFLAGS_NOOPTIMIZE);
+    hTransform = cmsCreateMultiprofileTransform(ContextID, Profiles, nargs, 0, 0, Intent, dwFlags|cmsFLAGS_NOOPTIMIZE);
     if (hTransform == NULL) {
         FatalError("Transform creation failed");
         goto Cleanup;

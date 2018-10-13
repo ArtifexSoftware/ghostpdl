@@ -29,11 +29,11 @@
 #ifdef CMS_USE_BIG_ENDIAN
 
 static
-void byteReverse(cmsContext ContextID, cmsUInt8Number * buf, cmsUInt32Number longs)
+void byteReverse(cmsUInt8Number * buf, cmsUInt32Number longs)
 {
     do {
 
-        cmsUInt32Number t = _cmsAdjustEndianess32(ContextID, *(cmsUInt32Number *) buf);
+        cmsUInt32Number t = _cmsAdjustEndianess32(*(cmsUInt32Number *) buf);
         *(cmsUInt32Number *) buf = t;
         buf += sizeof(cmsUInt32Number);
 
@@ -42,7 +42,7 @@ void byteReverse(cmsContext ContextID, cmsUInt8Number * buf, cmsUInt32Number lon
 }
 
 #else
-#define byteReverse(ContextID, buf, len)
+#define byteReverse(buf, len)
 #endif
 
 
@@ -51,7 +51,6 @@ typedef struct {
     cmsUInt32Number buf[4];
     cmsUInt32Number bits[2];
     cmsUInt8Number in[64];
-    cmsContext ContextID;
 
 } _cmsMD5;
 
@@ -157,8 +156,6 @@ cmsHANDLE  MD5alloc(cmsContext ContextID)
     _cmsMD5* ctx = (_cmsMD5*) _cmsMallocZero(ContextID, sizeof(_cmsMD5));
     if (ctx == NULL) return NULL;
 
-    ctx ->ContextID = ContextID;
-
     ctx->buf[0] = 0x67452301;
     ctx->buf[1] = 0xefcdab89;
     ctx->buf[2] = 0x98badcfe;
@@ -196,7 +193,7 @@ void MD5add(cmsHANDLE Handle, cmsUInt8Number* buf, cmsUInt32Number len)
         }
 
         memmove(p, buf, t);
-        byteReverse(ctx->ContextID, ctx->in, 16);
+        byteReverse(ctx->in, 16);
 
         MD5_Transform(ctx->buf, (cmsUInt32Number *) ctx->in);
         buf += t;
@@ -205,7 +202,7 @@ void MD5add(cmsHANDLE Handle, cmsUInt8Number* buf, cmsUInt32Number len)
 
     while (len >= 64) {
         memmove(ctx->in, buf, 64);
-        byteReverse(ctx->ContextID, ctx->in, 16);
+        byteReverse(ctx->in, 16);
         MD5_Transform(ctx->buf, (cmsUInt32Number *) ctx->in);
         buf += 64;
         len -= 64;
@@ -216,7 +213,7 @@ void MD5add(cmsHANDLE Handle, cmsUInt8Number* buf, cmsUInt32Number len)
 
 // Destroy the object and return the checksum
 static
-void MD5finish(cmsProfileID* ProfileID,  cmsHANDLE Handle)
+void MD5finish(cmsContext ContextID, cmsProfileID* ProfileID,  cmsHANDLE Handle)
 {
     _cmsMD5* ctx = (_cmsMD5*) Handle;
     cmsUInt32Number count;
@@ -232,24 +229,24 @@ void MD5finish(cmsProfileID* ProfileID,  cmsHANDLE Handle)
     if (count < 8) {
 
         memset(p, 0, count);
-        byteReverse(ctx->ContextID, ctx->in, 16);
+        byteReverse(ctx->in, 16);
         MD5_Transform(ctx->buf, (cmsUInt32Number *) ctx->in);
 
         memset(ctx->in, 0, 56);
     } else {
         memset(p, 0, count - 8);
     }
-    byteReverse(ctx->ContextID, ctx->in, 14);
+    byteReverse(ctx->in, 14);
 
     ((cmsUInt32Number *) ctx->in)[14] = ctx->bits[0];
     ((cmsUInt32Number *) ctx->in)[15] = ctx->bits[1];
 
     MD5_Transform(ctx->buf, (cmsUInt32Number *) ctx->in);
 
-    byteReverse(ctx->ContextID, (cmsUInt8Number *) ctx->buf, 4);
+    byteReverse((cmsUInt8Number *) ctx->buf, 4);
     memmove(ProfileID ->ID8, ctx->buf, 16);
 
-    _cmsFree(ctx ->ContextID, ctx);
+    _cmsFree(ContextID, ctx);
 }
 
 
@@ -300,7 +297,7 @@ cmsBool CMSEXPORT cmsMD5computeID(cmsContext ContextID, cmsHPROFILE hProfile)
     memmove(Icc, &Keep, sizeof(_cmsICCPROFILE));
 
     // And store the ID
-    MD5finish(&Icc ->ProfileID,  MD5);
+    MD5finish(ContextID, &Icc ->ProfileID,  MD5);
     return TRUE;
 
 Error:

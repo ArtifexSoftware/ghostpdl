@@ -27,7 +27,7 @@
 #include "testcms2.h"
 
 // --------------------------------------------------------------------------------------------------
-// Auxiliar, duplicate a context and mark the block as non-debug because in this case the allocator
+// Auxiliary, duplicate a context and mark the block as non-debug because in this case the allocator
 // and deallocator have different context owners
 // --------------------------------------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ cmsInt32Number CheckAllocContext(void)
      c2 = cmsCreateContext(PluginMemHandler(), NULL);
      DebugMemDontCheckThis(c2);
 
-     cmsPluginTHR(c1, PluginMemHandler()); // Now the context have custom allocators
+     cmsPlugin(c1, PluginMemHandler()); // Now the context have custom allocators
 
      c3 = DupContext(c1, NULL);
      c4 = DupContext(c2, NULL);
@@ -150,11 +150,11 @@ cmsInt32Number CheckAlarmColorsContext(void)
 
     c1 = WatchDogContext(NULL);
 
-    cmsSetAlarmCodesTHR(c1, codes);
+    cmsSetAlarmCodes(c1, codes);
     c2 = DupContext(c1, NULL);
     c3 = DupContext(c2, NULL);
 
-    cmsGetAlarmCodesTHR(c3, out);
+    cmsGetAlarmCodes(c3, out);
 
     rc = 1;
     for (i=0; i < 16; i++) {
@@ -184,22 +184,22 @@ cmsInt32Number CheckAdaptationStateContext(void)
     cmsContext c1, c2, c3;
     cmsFloat64Number old1, old2;
 
-    old1 =  cmsSetAdaptationStateTHR(NULL, -1);
+    old1 =  cmsSetAdaptationState(NULL, -1);
 
     c1 = WatchDogContext(NULL);
 
-    cmsSetAdaptationStateTHR(c1, 0.7);
+    cmsSetAdaptationState(c1, 0.7);
 
     c2 = DupContext(c1, NULL);
     c3 = DupContext(c2, NULL);
 
-    rc = IsGoodVal("Adaptation state", cmsSetAdaptationStateTHR(c3, -1), 0.7, 0.001);
+    rc = IsGoodVal("Adaptation state", cmsSetAdaptationState(c3, -1), 0.7, 0.001);
 
     cmsDeleteContext(c1);
     cmsDeleteContext(c2);
     cmsDeleteContext(c3);
 
-    old2 =  cmsSetAdaptationStateTHR(NULL, -1);
+    old2 =  cmsSetAdaptationState(NULL, -1);
 
     if (old1 != old2) {
         Fail("Adaptation state has changed");
@@ -296,7 +296,7 @@ cmsInt32Number CheckInterp1DPlugin(void)
         goto Error;
     }
 
-    cmsPluginTHR(ctx, &InterpPluginSample);
+    cmsPlugin(ctx, &InterpPluginSample);
 
     cpy = DupContext(ctx, NULL);
      if (cpy == NULL) {
@@ -371,7 +371,7 @@ cmsInt32Number CheckInterp3DPlugin(void)
        return 0;
     }
 
-    cmsPluginTHR(ctx, &InterpPluginSample);
+    cmsPlugin(ctx, &InterpPluginSample);
 
     p =  cmsPipelineAlloc(ctx, 3, 3);
     clut = cmsStageAllocCLut16bit(ctx, 2, 3, 3, identity);
@@ -555,11 +555,11 @@ cmsInt32Number CheckParametricCurvePlugin(void)
 
     ctx = WatchDogContext(NULL);
 
-    cmsPluginTHR(ctx, &CurvePluginSample);
+    cmsPlugin(ctx, &CurvePluginSample);
 
     cpy = DupContext(ctx, NULL);
 
-    cmsPluginTHR(cpy, &CurvePluginSample2);
+    cmsPlugin(cpy, &CurvePluginSample2);
 
     sinus = cmsBuildParametricToneCurve(cpy, TYPE_SIN, &scale);
     cosinus = cmsBuildParametricToneCurve(cpy, TYPE_COS, &scale);
@@ -715,13 +715,13 @@ cmsInt32Number CheckFormattersPlugin(void)
     cmsUInt16Number result[4];
     int i;
 
-    cmsPluginTHR(ctx, &FormattersPluginSample);
+    cmsPlugin(ctx, &FormattersPluginSample);
 
     cpy = DupContext(ctx, NULL);
 
-    cmsPluginTHR(cpy, &FormattersPluginSample2);
+    cmsPlugin(cpy, &FormattersPluginSample2);
 
-    xform = cmsCreateTransformTHR(cpy, NULL, TYPE_RGB_565, NULL, TYPE_RGB_565, INTENT_PERCEPTUAL, cmsFLAGS_NULLTRANSFORM);
+    xform = cmsCreateTransform(cpy, NULL, TYPE_RGB_565, NULL, TYPE_RGB_565, INTENT_PERCEPTUAL, cmsFLAGS_NULLTRANSFORM);
 
     cmsDoTransform(cpy, xform, stream, result, 4);
 
@@ -802,7 +802,7 @@ cmsInt32Number CheckTagTypePlugin(void)
     cmsUInt32Number clen = 0;
 
     ctx = WatchDogContext(NULL);
-    cmsPluginTHR(ctx, &TagTypePluginSample);
+    cmsPlugin(ctx, &TagTypePluginSample);
 
     cpy = DupContext(ctx, NULL);
 
@@ -840,8 +840,8 @@ cmsInt32Number CheckTagTypePlugin(void)
 
     cmsCloseProfile(cpy, h);
 
-    cmsSetLogErrorHandler(NULL);
-    h = cmsOpenProfileFromMem(data, clen);
+    cmsSetLogErrorHandler(cpy, NULL);
+    h = cmsOpenProfileFromMem(cpy, data, clen);
     if (h == NULL) {
         Fail("Open profile failed");
         goto Error;
@@ -855,9 +855,9 @@ cmsInt32Number CheckTagTypePlugin(void)
     }
 
     cmsCloseProfile(cpy, h);
-    ResetFatalError();
+    ResetFatalError(cpy);
 
-    h = cmsOpenProfileFromMemTHR(cpy, data, clen);
+    h = cmsOpenProfileFromMem(cpy, data, clen);
     if (h == NULL) {
         Fail("Open profile from mem failed");
         goto Error;
@@ -959,7 +959,7 @@ cmsInt32Number CheckMPEPlugin(void)
     cmsPipeline* pipe;
 
     ctx = WatchDogContext(NULL);
-    cmsPluginTHR(ctx, &MPEPluginSample);
+    cmsPlugin(ctx, &MPEPluginSample);
 
     cpy =  DupContext(ctx, NULL);
 
@@ -1015,8 +1015,8 @@ cmsInt32Number CheckMPEPlugin(void)
 
     cmsCloseProfile(cpy, h);
 
-    cmsSetLogErrorHandler(NULL);
-    h = cmsOpenProfileFromMem(data, clen);
+    cmsSetLogErrorHandler(cpy, NULL);
+    h = cmsOpenProfileFromMem(cpy, data, clen);
     if (h == NULL) {
         Fail("Open profile failed");
         goto Error;
@@ -1032,9 +1032,9 @@ cmsInt32Number CheckMPEPlugin(void)
 
     cmsCloseProfile(cpy, h);
 
-    ResetFatalError();
+    ResetFatalError(cpy);
 
-    h = cmsOpenProfileFromMemTHR(cpy, data, clen);
+    h = cmsOpenProfileFromMem(cpy, data, clen);
     if (h == NULL) {
         Fail("Open profile from mem failed");
         goto Error;
@@ -1133,15 +1133,15 @@ cmsInt32Number CheckOptimizationPlugin(void)
     cmsHPROFILE h;
     int i;
 
-    cmsPluginTHR(ctx, &OptimizationPluginSample);
+    cmsPlugin(ctx, &OptimizationPluginSample);
 
     cpy = DupContext(ctx, NULL);
 
     Linear[0] = cmsBuildGamma(cpy, 1.0);
-    h = cmsCreateLinearizationDeviceLinkTHR(cpy, cmsSigGrayData, Linear);
+    h = cmsCreateLinearizationDeviceLink(cpy, cmsSigGrayData, Linear);
     cmsFreeToneCurve(cpy, Linear[0]);
 
-    xform = cmsCreateTransformTHR(cpy, h, TYPE_GRAY_8, h, TYPE_GRAY_8, INTENT_PERCEPTUAL, 0);
+    xform = cmsCreateTransform(cpy, h, TYPE_GRAY_8, h, TYPE_GRAY_8, INTENT_PERCEPTUAL, 0);
     cmsCloseProfile(cpy, h);
 
     cmsDoTransform(cpy, xform, In, Out, 4);
@@ -1222,19 +1222,19 @@ cmsInt32Number CheckIntentPlugin(void)
     cmsUInt8Number Out[4];
     int i;
 
-    cmsPluginTHR(ctx, &IntentPluginSample);
+    cmsPlugin(ctx, &IntentPluginSample);
 
     cpy  = DupContext(ctx, NULL);
 
     Linear1 = cmsBuildGamma(cpy, 3.0);
     Linear2 = cmsBuildGamma(cpy, 0.1);
-    h1 = cmsCreateLinearizationDeviceLinkTHR(cpy, cmsSigGrayData, &Linear1);
-    h2 = cmsCreateLinearizationDeviceLinkTHR(cpy, cmsSigGrayData, &Linear2);
+    h1 = cmsCreateLinearizationDeviceLink(cpy, cmsSigGrayData, &Linear1);
+    h2 = cmsCreateLinearizationDeviceLink(cpy, cmsSigGrayData, &Linear2);
 
     cmsFreeToneCurve(cpy, Linear1);
     cmsFreeToneCurve(cpy, Linear2);
 
-    xform = cmsCreateTransformTHR(cpy, h1, TYPE_GRAY_8, h2, TYPE_GRAY_8, INTENT_DECEPTIVE, 0);
+    xform = cmsCreateTransform(cpy, h1, TYPE_GRAY_8, h2, TYPE_GRAY_8, INTENT_DECEPTIVE, 0);
     cmsCloseProfile(cpy,h1); cmsCloseProfile(cpy, h2);
 
     cmsDoTransform(cpy, xform, In, Out, 4);
@@ -1311,15 +1311,15 @@ cmsInt32Number CheckTransformPlugin(void)
     cmsHPROFILE h;
     int i;
 
-    cmsPluginTHR(ctx, &FullTransformPluginSample);
+    cmsPlugin(ctx, &FullTransformPluginSample);
 
     cpy  = DupContext(ctx, NULL);
 
     Linear = cmsBuildGamma(cpy, 1.0);
-    h = cmsCreateLinearizationDeviceLinkTHR(cpy, cmsSigGrayData, &Linear);
+    h = cmsCreateLinearizationDeviceLink(cpy, cmsSigGrayData, &Linear);
     cmsFreeToneCurve(cpy, Linear);
 
-    xform = cmsCreateTransformTHR(cpy, h, TYPE_GRAY_8, h, TYPE_GRAY_8, INTENT_PERCEPTUAL, 0);
+    xform = cmsCreateTransform(cpy, h, TYPE_GRAY_8, h, TYPE_GRAY_8, INTENT_PERCEPTUAL, 0);
     cmsCloseProfile(cpy, h);
 
     cmsDoTransform(cpy, xform, In, Out, 4);
@@ -1402,15 +1402,15 @@ cmsInt32Number CheckMutexPlugin(void)
     int i;
 
 
-    cmsPluginTHR(ctx, &MutexPluginSample);
+    cmsPlugin(ctx, &MutexPluginSample);
 
     cpy  = DupContext(ctx, NULL);
 
     Linear = cmsBuildGamma(cpy, 1.0);
-    h = cmsCreateLinearizationDeviceLinkTHR(cpy, cmsSigGrayData, &Linear);
+    h = cmsCreateLinearizationDeviceLink(cpy, cmsSigGrayData, &Linear);
     cmsFreeToneCurve(cpy, Linear);
 
-    xform = cmsCreateTransformTHR(cpy, h, TYPE_GRAY_8, h, TYPE_GRAY_8, INTENT_PERCEPTUAL, 0);
+    xform = cmsCreateTransform(cpy, h, TYPE_GRAY_8, h, TYPE_GRAY_8, INTENT_PERCEPTUAL, 0);
     cmsCloseProfile(cpy, h);
 
     cmsDoTransform(cpy, xform, In, Out, 4);

@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2017 Marti Maria Saguer
+//  Copyright (c) 1998-2018 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -129,7 +129,7 @@ typedef struct _Table {
 
 // File stream being parsed
 typedef struct _FileContext {
-        char           FileName[cmsMAX_PATH];    // File name if being readed from file
+        char           FileName[cmsMAX_PATH];    // File name if being read from file
         FILE*          Stream;                   // File stream or NULL if holded in memory
     } FILECTX;
 
@@ -254,7 +254,7 @@ static PROPERTY PredefinedProperties[] = {
                                                    // needed.
 
         {"SAMPLE_BACKING",   WRITE_STRINGIFY},     // Identifies the backing material used behind the sample during
-                                                   // measurement. Allowed values are “black”, “white”, or {"na".
+                                                   // measurement. Allowed values are "black", "white", or {"na".
 
         {"CHISQ_DOF",        WRITE_STRINGIFY},     // Degrees of freedom associated with the Chi squared statistic
                                                    // below properties are new in recent specs:
@@ -269,7 +269,7 @@ static PROPERTY PredefinedProperties[] = {
                                                    // denote the use of filters such as none, D65, Red, Green or Blue.
 
        {"POLARIZATION",      WRITE_STRINGIFY},     // Identifies the use of a physical polarization filter during measurement. Allowed
-                                                   // values are {"yes”, “white”, “none” or “na”.
+                                                   // values are {"yes", "white", "none" or "na".
 
        {"WEIGHTING_FUNCTION", WRITE_PAIR},         // Indicates such functions as: the CIE standard observer functions used in the
                                                    // calculation of various data parameters (2 degree and 10 degree), CIE standard
@@ -478,10 +478,8 @@ cmsBool Check(cmsContext ContextID, cmsIT8* it8, SYMBOL sy, const char* Err)
 
 // Read Next character from stream
 static
-void NextCh(cmsContext ContextID, cmsIT8* it8)
+void NextCh(cmsIT8* it8)
 {
-    cmsUNUSED_PARAMETER(ContextID);
-
     if (it8 -> FileStack[it8 ->IncludeSP]->Stream) {
 
         it8 ->ch = fgetc(it8 ->FileStack[it8 ->IncludeSP]->Stream);
@@ -506,12 +504,11 @@ void NextCh(cmsContext ContextID, cmsIT8* it8)
 
 // Try to see if current identifier is a keyword, if so return the referred symbol
 static
-SYMBOL BinSrchKey(cmsContext ContextID, const char *id)
+SYMBOL BinSrchKey(const char *id)
 {
     int l = 1;
     int r = NUMKEYS;
     int x, res;
-    cmsUNUSED_PARAMETER(ContextID);
 
     while (r >= l)
     {
@@ -536,14 +533,14 @@ cmsFloat64Number xpow10(int n)
 
 //  Reads a Real number, tries to follow from integer number
 static
-void ReadReal(cmsContext ContextID, cmsIT8* it8, cmsInt32Number inum)
+void ReadReal(cmsIT8* it8, cmsInt32Number inum)
 {
     it8->dnum = (cmsFloat64Number)inum;
 
     while (isdigit(it8->ch)) {
 
         it8->dnum = (cmsFloat64Number)it8->dnum * 10.0 + (cmsFloat64Number)(it8->ch - '0');
-        NextCh(ContextID, it8);
+        NextCh(it8);
     }
 
     if (it8->ch == '.') {        // Decimal point
@@ -551,13 +548,13 @@ void ReadReal(cmsContext ContextID, cmsIT8* it8, cmsInt32Number inum)
         cmsFloat64Number frac = 0.0;      // fraction
         int prec = 0;                     // precision
 
-        NextCh(ContextID, it8);               // Eats dec. point
+        NextCh(it8);               // Eats dec. point
 
         while (isdigit(it8->ch)) {
 
             frac = frac * 10.0 + (cmsFloat64Number)(it8->ch - '0');
             prec++;
-            NextCh(ContextID, it8);
+            NextCh(it8);
         }
 
         it8->dnum = it8->dnum + (frac / xpow10(prec));
@@ -569,17 +566,17 @@ void ReadReal(cmsContext ContextID, cmsIT8* it8, cmsInt32Number inum)
         cmsInt32Number e;
         cmsInt32Number sgn;
 
-        NextCh(ContextID, it8); sgn = 1;
+        NextCh(it8); sgn = 1;
 
         if (it8->ch == '-') {
 
-            sgn = -1; NextCh(ContextID, it8);
+            sgn = -1; NextCh(it8);
         }
         else
             if (it8->ch == '+') {
 
                 sgn = +1;
-                NextCh(ContextID, it8);
+                NextCh(it8);
             }
 
         e = 0;
@@ -590,7 +587,7 @@ void ReadReal(cmsContext ContextID, cmsIT8* it8, cmsInt32Number inum)
             if ((cmsFloat64Number)e * 10.0 + (cmsFloat64Number)digit < (cmsFloat64Number)+2147483647.0)
                 e = e * 10 + digit;
 
-            NextCh(ContextID, it8);
+            NextCh(it8);
         }
 
         e = sgn*e;
@@ -602,11 +599,10 @@ void ReadReal(cmsContext ContextID, cmsIT8* it8, cmsInt32Number inum)
 // This can not call directly atof because it uses locale dependent
 // parsing, while CCMX files always use . as decimal separator
 static
-cmsFloat64Number ParseFloatNumber(cmsContext ContextID, const char *Buffer)
+cmsFloat64Number ParseFloatNumber(const char *Buffer)
 {
     cmsFloat64Number dnum = 0.0;
     int sign = 1;
-    cmsUNUSED_PARAMETER(ContextID);
 
     // keep safe
     if (Buffer == NULL) return 0.0;
@@ -693,7 +689,7 @@ void InSymbol(cmsContext ContextID, cmsIT8* it8)
     do {
 
         while (isseparator(it8->ch))
-            NextCh(ContextID, it8);
+            NextCh(it8);
 
         if (isfirstidchar(it8->ch)) {          // Identifier
 
@@ -704,14 +700,14 @@ void InSymbol(cmsContext ContextID, cmsIT8* it8)
 
                 if (++k < MAXID) *idptr++ = (char) it8->ch;
 
-                NextCh(ContextID, it8);
+                NextCh(it8);
 
             } while (isidchar(it8->ch));
 
             *idptr = '\0';
 
 
-            key = BinSrchKey(ContextID, it8->id);
+            key = BinSrchKey(it8->id);
             if (key == SUNDEFINED) it8->sy = SIDENT;
             else it8->sy = key;
 
@@ -723,7 +719,7 @@ void InSymbol(cmsContext ContextID, cmsIT8* it8)
 
                 if (it8->ch == '-') {
                     sign = -1;
-                    NextCh(ContextID, it8);
+                    NextCh(it8);
                 }
 
                 it8->inum = 0;
@@ -731,12 +727,12 @@ void InSymbol(cmsContext ContextID, cmsIT8* it8)
 
                 if (it8->ch == '0') {          // 0xnnnn (Hexa) or 0bnnnn (Binary)
 
-                    NextCh(ContextID, it8);
+                    NextCh(it8);
                     if (toupper(it8->ch) == 'X') {
 
                         int j;
 
-                        NextCh(ContextID, it8);
+                        NextCh(it8);
                         while (isxdigit(it8->ch))
                         {
                             it8->ch = toupper(it8->ch);
@@ -750,7 +746,7 @@ void InSymbol(cmsContext ContextID, cmsIT8* it8)
                             }
 
                             it8->inum = it8->inum * 16 + j;
-                            NextCh(ContextID, it8);
+                            NextCh(it8);
                         }
                         return;
                     }
@@ -759,7 +755,7 @@ void InSymbol(cmsContext ContextID, cmsIT8* it8)
 
                         int j;
 
-                        NextCh(ContextID, it8);
+                        NextCh(it8);
                         while (it8->ch == '0' || it8->ch == '1')
                         {
                             j = it8->ch - '0';
@@ -771,7 +767,7 @@ void InSymbol(cmsContext ContextID, cmsIT8* it8)
                             }
 
                             it8->inum = it8->inum * 2 + j;
-                            NextCh(ContextID, it8);
+                            NextCh(it8);
                         }
                         return;
                     }
@@ -783,19 +779,19 @@ void InSymbol(cmsContext ContextID, cmsIT8* it8)
                     cmsInt32Number digit = (it8->ch - '0');
 
                     if ((cmsFloat64Number) it8->inum * 10.0 + (cmsFloat64Number) digit > (cmsFloat64Number) +2147483647.0) {
-                        ReadReal(ContextID, it8, it8->inum);
+                        ReadReal(it8, it8->inum);
                         it8->sy = SDNUM;
                         it8->dnum *= sign;
                         return;
                     }
 
                     it8->inum = it8->inum * 10 + digit;
-                    NextCh(ContextID, it8);
+                    NextCh(it8);
                 }
 
                 if (it8->ch == '.') {
 
-                    ReadReal(ContextID, it8, it8->inum);
+                    ReadReal(it8, it8->inum);
                     it8->sy = SDNUM;
                     it8->dnum *= sign;
                     return;
@@ -822,7 +818,7 @@ void InSymbol(cmsContext ContextID, cmsIT8* it8)
 
                         if (++k < MAXID) *idptr++ = (char) it8->ch;
 
-                        NextCh(ContextID, it8);
+                        NextCh(it8);
 
                     } while (isidchar(it8->ch));
 
@@ -837,7 +833,7 @@ void InSymbol(cmsContext ContextID, cmsIT8* it8)
 
         // EOF marker -- ignore it
         case '\x1a':
-            NextCh(ContextID, it8);
+            NextCh(it8);
             break;
 
         // Eof stream markers
@@ -849,24 +845,24 @@ void InSymbol(cmsContext ContextID, cmsIT8* it8)
 
         // Next line
         case '\r':
-            NextCh(ContextID, it8);
+            NextCh(it8);
             if (it8 ->ch == '\n')
-                NextCh(ContextID, it8);
+                NextCh(it8);
             it8->sy = SEOLN;
             it8->lineno++;
             break;
 
         case '\n':
-            NextCh(ContextID, it8);
+            NextCh(it8);
             it8->sy = SEOLN;
             it8->lineno++;
             break;
 
         // Comment
         case '#':
-            NextCh(ContextID, it8);
+            NextCh(it8);
             while (it8->ch && it8->ch != '\n' && it8->ch != '\r')
-                NextCh(ContextID, it8);
+                NextCh(it8);
 
             it8->sy = SCOMMENT;
             break;
@@ -877,21 +873,21 @@ void InSymbol(cmsContext ContextID, cmsIT8* it8)
             idptr = it8->str;
             sng = it8->ch;
             k = 0;
-            NextCh(ContextID, it8);
+            NextCh(it8);
 
             while (k < (MAXSTR-1) && it8->ch != sng) {
 
                 if (it8->ch == '\n'|| it8->ch == '\r') k = MAXSTR+1;
                 else {
                     *idptr++ = (char) it8->ch;
-                    NextCh(ContextID, it8);
+                    NextCh(it8);
                     k++;
                 }
             }
 
             it8->sy = SSTRING;
             *idptr = '\0';
-            NextCh(ContextID, it8);
+            NextCh(it8);
             break;
 
 
@@ -1421,7 +1417,7 @@ cmsFloat64Number CMSEXPORT cmsIT8GetPropertyDbl(cmsContext ContextID, cmsHANDLE 
 
     if (v == NULL) return 0.0;
 
-    return ParseFloatNumber(ContextID, v);
+    return ParseFloatNumber(v);
 }
 
 const char* CMSEXPORT cmsIT8GetPropertyMulti(cmsContext ContextID, cmsHANDLE hIT8, const char* Key, const char *SubKey)
@@ -1509,10 +1505,16 @@ void AllocateDataSet(cmsContext ContextID, cmsIT8* it8)
     t-> nSamples   = atoi(cmsIT8GetProperty(ContextID, it8, "NUMBER_OF_FIELDS"));
     t-> nPatches   = atoi(cmsIT8GetProperty(ContextID, it8, "NUMBER_OF_SETS"));
 
-    t-> Data = (char**)AllocChunk (ContextID, it8, ((cmsUInt32Number) t->nSamples + 1) * ((cmsUInt32Number) t->nPatches + 1) *sizeof (char*));
-    if (t->Data == NULL) {
+    if (t -> nSamples < 0 || t->nSamples > 0x7ffe || t->nPatches < 0 || t->nPatches > 0x7ffe)
+    {
+        SynError(ContextID, it8, "AllocateDataSet: too much data");
+    }
+    else {
+        t->Data = (char**)AllocChunk(ContextID, it8, ((cmsUInt32Number)t->nSamples + 1) * ((cmsUInt32Number)t->nPatches + 1) * sizeof(char*));
+        if (t->Data == NULL) {
 
-        SynError(ContextID, it8, "AllocateDataSet: Unable to allocate data array");
+            SynError(ContextID, it8, "AllocateDataSet: Unable to allocate data array");
+        }
     }
 
 }
@@ -2032,20 +2034,20 @@ cmsBool HeaderSection(cmsContext ContextID, cmsIT8* it8)
 
 
 static
-void ReadType(cmsContext ContextID, cmsIT8* it8, char* SheetTypePtr)
+void ReadType(cmsIT8* it8, char* SheetTypePtr)
 {
     cmsInt32Number cnt = 0;
 
     // First line is a very special case.
 
     while (isseparator(it8->ch))
-            NextCh(ContextID, it8);
+            NextCh(it8);
 
     while (it8->ch != '\r' && it8 ->ch != '\n' && it8->ch != '\t' && it8 -> ch != 0) {
 
         if (cnt++ < MAXSTR)
             *SheetTypePtr++= (char) it8 ->ch;
-        NextCh(ContextID, it8);
+        NextCh(it8);
     }
 
     *SheetTypePtr = 0;
@@ -2058,7 +2060,7 @@ cmsBool ParseIT8(cmsContext ContextID, cmsIT8* it8, cmsBool nosheet)
     char* SheetTypePtr = it8 ->Tab[0].SheetType;
 
     if (nosheet == 0) {
-        ReadType(ContextID, it8, SheetTypePtr);
+        ReadType(it8, SheetTypePtr);
     }
 
     InSymbol(ContextID, it8);
@@ -2093,7 +2095,7 @@ cmsBool ParseIT8(cmsContext ContextID, cmsIT8* it8, cmsBool nosheet)
                                     // May be a type sheet or may be a prop value statement. We cannot use insymbol in
                                     // this special case...
                                      while (isseparator(it8->ch))
-                                         NextCh(ContextID, it8);
+                                         NextCh(it8);
 
                                      // If a newline is found, then this is a type string
                                     if (it8 ->ch == '\n' || it8->ch == '\r') {
@@ -2237,7 +2239,7 @@ void CookPointers(cmsContext ContextID, cmsIT8* it8)
 // that should be something like some printable characters plus a \n
 // returns 0 if this is not like a CGATS, or an integer otherwise. This integer is the number of words in first line?
 static
-int IsMyBlock(cmsContext ContextID, const cmsUInt8Number* Buffer, cmsUInt32Number n)
+int IsMyBlock(const cmsUInt8Number* Buffer, cmsUInt32Number n)
 {
     int words = 1, space = 0, quot = 0;
     cmsUInt32Number i;
@@ -2276,7 +2278,7 @@ int IsMyBlock(cmsContext ContextID, const cmsUInt8Number* Buffer, cmsUInt32Numbe
 
 
 static
-cmsBool IsMyFile(cmsContext ContextID, const char* FileName)
+cmsBool IsMyFile(const char* FileName)
 {
    FILE *fp;
    cmsUInt32Number Size;
@@ -2295,7 +2297,7 @@ cmsBool IsMyFile(cmsContext ContextID, const char* FileName)
 
    Ptr[Size] = '\0';
 
-   return IsMyBlock(ContextID, Ptr, Size);
+   return IsMyBlock(Ptr, Size);
 }
 
 // ---------------------------------------------------------- Exported routines
@@ -2310,7 +2312,7 @@ cmsHANDLE  CMSEXPORT cmsIT8LoadFromMem(cmsContext ContextID, const void *Ptr, cm
     _cmsAssert(Ptr != NULL);
     _cmsAssert(len != 0);
 
-    type = IsMyBlock(ContextID, (const cmsUInt8Number*)Ptr, len);
+    type = IsMyBlock((const cmsUInt8Number*)Ptr, len);
     if (type == 0) return NULL;
 
     hIT8 = cmsIT8Alloc(ContextID);
@@ -2318,6 +2320,11 @@ cmsHANDLE  CMSEXPORT cmsIT8LoadFromMem(cmsContext ContextID, const void *Ptr, cm
 
     it8 = (cmsIT8*) hIT8;
     it8 ->MemoryBlock = (char*) _cmsMalloc(ContextID, len + 1);
+    if (it8->MemoryBlock == NULL)
+    {
+        cmsIT8Free(ContextID, hIT8);
+        return FALSE;
+    }
 
     strncpy(it8 ->MemoryBlock, (const char*) Ptr, len);
     it8 ->MemoryBlock[len] = 0;
@@ -2352,7 +2359,7 @@ cmsHANDLE  CMSEXPORT cmsIT8LoadFromFile(cmsContext ContextID, const char* cFileN
 
      _cmsAssert(cFileName != NULL);
 
-     type = IsMyFile(ContextID, cFileName);
+     type = IsMyFile(cFileName);
      if (type == 0) return NULL;
 
      hIT8 = cmsIT8Alloc(ContextID);
@@ -2569,7 +2576,7 @@ cmsFloat64Number CMSEXPORT cmsIT8GetDataRowColDbl(cmsContext ContextID, cmsHANDL
 
     if (Buffer == NULL) return 0.0;
 
-    return ParseFloatNumber(ContextID, Buffer);
+    return ParseFloatNumber(Buffer);
 }
 
 
@@ -2624,7 +2631,7 @@ cmsFloat64Number CMSEXPORT cmsIT8GetDataDbl(cmsContext ContextID, cmsHANDLE  it8
 
     Buffer = cmsIT8GetData(ContextID, it8, cPatch, cSample);
 
-    return ParseFloatNumber(ContextID, Buffer);
+    return ParseFloatNumber(Buffer);
 }
 
 

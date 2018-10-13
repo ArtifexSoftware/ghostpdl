@@ -128,9 +128,9 @@ struct _cms_io_handler {
 };
 
 // Endianness adjust functions
-CMSAPI cmsUInt16Number   CMSEXPORT  _cmsAdjustEndianess16(cmsContext ContextID, cmsUInt16Number Word);
-CMSAPI cmsUInt32Number   CMSEXPORT  _cmsAdjustEndianess32(cmsContext ContextID, cmsUInt32Number Value);
-CMSAPI void              CMSEXPORT  _cmsAdjustEndianess64(cmsContext ContextID, cmsUInt64Number* Result, cmsUInt64Number* QWord);
+CMSAPI cmsUInt16Number   CMSEXPORT  _cmsAdjustEndianess16(cmsUInt16Number Word);
+CMSAPI cmsUInt32Number   CMSEXPORT  _cmsAdjustEndianess32(cmsUInt32Number Value);
+CMSAPI void              CMSEXPORT  _cmsAdjustEndianess64(cmsUInt64Number* Result, cmsUInt64Number* QWord);
 
 // Helper IO functions
 CMSAPI cmsBool           CMSEXPORT  _cmsReadUInt8Number(cmsContext ContextID, cmsIOHANDLER* io,  cmsUInt8Number* n);

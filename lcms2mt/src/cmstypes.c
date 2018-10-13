@@ -166,7 +166,7 @@ typedef cmsBool (* PositionTableEntryFn)(cmsContext ContextID, struct _cms_typeh
                                              cmsUInt32Number SizeOfTag);
 
 // Helper function to deal with position tables as described in ICC spec 4.3
-// A table of n elements is readed, where first comes n records containing offsets and sizes and
+// A table of n elements is read, where first comes n records containing offsets and sizes and
 // then a block containing the data itself. This allows to reuse same data in more than one entry
 static
 cmsBool ReadPositionTable(cmsContext ContextID, struct _cms_typehandler_struct* self,
@@ -1001,7 +1001,7 @@ cmsBool  Type_Text_Description_Write(cmsContext ContextID, struct _cms_typehandl
     len = cmsMLUgetASCII(ContextID, mlu, cmsNoLanguage, cmsNoCountry, NULL, 0);
 
     // Specification ICC.1:2001-04 (v2.4.0): It has been found that textDescriptionType can contain misaligned data
-    //(see clause 4.1 for the definition of “aligned”). Because the Unicode language
+    //(see clause 4.1 for the definition of 'aligned'). Because the Unicode language
     // code and Unicode count immediately follow the ASCII description, their
     // alignment is not correct if the ASCII count is not a multiple of four. The
     // ScriptCode code is misaligned when the ASCII count is odd. Profile reading and
@@ -1517,7 +1517,7 @@ void *Type_MLU_Read(cmsContext ContextID, struct _cms_typehandler_struct* self, 
         // True begin of the string
         BeginOfThisString = Offset - SizeOfHeader - 8;
 
-        // Ajust to wchar_t elements
+        // Adjust to wchar_t elements
         mlu ->Entries[i].Len = (Len * sizeof(wchar_t)) / sizeof(cmsUInt16Number);
         mlu ->Entries[i].StrW = (BeginOfThisString * sizeof(wchar_t)) / sizeof(cmsUInt16Number);
 
@@ -1761,10 +1761,9 @@ cmsBool Write8bitTables(cmsContext ContextID, cmsIOHANDLER* io, cmsUInt32Number 
 
 // Check overflow
 static
-cmsUInt32Number uipow(cmsContext ContextID, cmsUInt32Number n, cmsUInt32Number a, cmsUInt32Number b)
+cmsUInt32Number uipow(cmsUInt32Number n, cmsUInt32Number a, cmsUInt32Number b)
 {
     cmsUInt32Number rv = 1, rc;
-    cmsUNUSED_PARAMETER(ContextID);
 
     if (a == 0) return 0;
     if (n == 0) return 0;
@@ -1841,7 +1840,7 @@ void *Type_LUT8_Read(cmsContext ContextID, struct _cms_typehandler_struct* self,
     if (!Read8bitTables(ContextID, io,  NewLUT, InputChannels)) goto Error;
 
     // Get 3D CLUT. Check the overflow....
-    nTabSize = uipow(ContextID, OutputChannels, CLUTpoints, InputChannels);
+    nTabSize = uipow(OutputChannels, CLUTpoints, InputChannels);
     if (nTabSize == (cmsUInt32Number) -1) goto Error;
     if (nTabSize > 0) {
 
@@ -1974,7 +1973,7 @@ cmsBool  Type_LUT8_Write(cmsContext ContextID, struct _cms_typehandler_struct* s
     // The prelinearization table
     if (!Write8bitTables(ContextID, io, NewLUT ->InputChannels, PreMPE)) return FALSE;
 
-    nTabSize = uipow(ContextID, NewLUT->OutputChannels, clutPoints, NewLUT ->InputChannels);
+    nTabSize = uipow(NewLUT->OutputChannels, clutPoints, NewLUT ->InputChannels);
     if (nTabSize == (cmsUInt32Number) -1) return FALSE;
     if (nTabSize > 0) {
 
@@ -2085,8 +2084,6 @@ cmsBool Write16bitTables(cmsContext ContextID, cmsIOHANDLER* io, _cmsStageToneCu
         }
     }
     return TRUE;
-
-    cmsUNUSED_PARAMETER(ContextID);
 }
 
 static
@@ -2145,7 +2142,7 @@ void *Type_LUT16_Read(cmsContext ContextID, struct _cms_typehandler_struct* self
     if (!Read16bitTables(ContextID, io,  NewLUT, InputChannels, InputEntries)) goto Error;
 
     // Get 3D CLUT
-    nTabSize = uipow(ContextID, OutputChannels, CLUTpoints, InputChannels);
+    nTabSize = uipow(OutputChannels, CLUTpoints, InputChannels);
     if (nTabSize == (cmsUInt32Number) -1) goto Error;
     if (nTabSize > 0) {
 
@@ -2291,7 +2288,7 @@ cmsBool  Type_LUT16_Write(cmsContext ContextID, struct _cms_typehandler_struct* 
         }
     }
 
-    nTabSize = uipow(ContextID, OutputChannels, clutPoints, InputChannels);
+    nTabSize = uipow(OutputChannels, clutPoints, InputChannels);
     if (nTabSize == (cmsUInt32Number) -1) return FALSE;
     if (nTabSize > 0) {
         // The 3D CLUT.
@@ -2462,7 +2459,7 @@ cmsToneCurve* ReadEmbeddedCurve(cmsContext ContextID, struct _cms_typehandler_st
                 {
                     char String[5];
 
-                    _cmsTagSignature2String(ContextID, String, (cmsTagSignature) BaseType);
+                    _cmsTagSignature2String(String, (cmsTagSignature) BaseType);
                     cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unknown curve type '%s'", String);
                 }
                 return NULL;
@@ -2669,7 +2666,7 @@ cmsBool WriteSetOfCurves(cmsContext ContextID, struct _cms_typehandler_struct* s
                 {
                     char String[5];
 
-                    _cmsTagSignature2String(ContextID, String, (cmsTagSignature) Type);
+                    _cmsTagSignature2String(String, (cmsTagSignature) Type);
                     cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unknown curve type '%s'", String);
                 }
                 return FALSE;
@@ -3139,10 +3136,10 @@ void Type_ColorantTable_Free(cmsContext ContextID, struct _cms_typehandler_struc
 //The namedColor2Type is a count value and array of structures that provide color
 //coordinates for 7-bit ASCII color names. For each named color, a PCS and optional
 //device representation of the color are given. Both representations are 16-bit values.
-//The device representation corresponds to the header’s “color space of data” field.
-//This representation should be consistent with the “number of device components”
+//The device representation corresponds to the header's 'color space of data' field.
+//This representation should be consistent with the 'number of device components'
 //field in the namedColor2Type. If this field is 0, device coordinates are not provided.
-//The PCS representation corresponds to the header’s PCS field. The PCS representation
+//The PCS representation corresponds to the header's PCS field. The PCS representation
 //is always provided. Color names are fixed-length, 32-byte fields including null
 //termination. In order to maintain maximum portability, it is strongly recommended
 //that special characters of the 7-bit ASCII set not be used.
@@ -3896,7 +3893,7 @@ void Type_Screening_Free(cmsContext ContextID, struct _cms_typehandler_struct* s
 // ********************************************************************************
 //
 //This type represents a set of viewing condition parameters including:
-//CIE ’absolute’ illuminant white point tristimulus values and CIE ’absolute’
+//CIE 'absolute' illuminant white point tristimulus values and CIE 'absolute'
 //surround tristimulus values.
 
 static
@@ -3986,7 +3983,7 @@ void GenericMPEfree(cmsContext ContextID, struct _cms_typehandler_struct* self, 
 }
 
 // Each curve is stored in one or more curve segments, with break-points specified between curve segments.
-// The first curve segment always starts at –Infinity, and the last curve segment always ends at +Infinity. The
+// The first curve segment always starts at -Infinity, and the last curve segment always ends at +Infinity. The
 // first and last curve segments shall be specified in terms of a formula, whereas the other segments shall be
 // specified either in terms of a formula, or by a sampled curve.
 
@@ -4076,7 +4073,7 @@ cmsToneCurve* ReadSegmentedCurve(cmsContext ContextID, struct _cms_typehandler_s
                 {
                 char String[5];
 
-                _cmsTagSignature2String(ContextID, String, (cmsTagSignature) ElementSig);
+                _cmsTagSignature2String(String, (cmsTagSignature) ElementSig);
                 cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unknown curve element type '%s' found.", String);
                 }
                 goto Error;
@@ -4268,7 +4265,7 @@ cmsBool  Type_MPEcurve_Write(cmsContext ContextID, struct _cms_typehandler_struc
 // The matrix is organized as an array of PxQ+Q elements, where P is the number of input channels to the
 // matrix, and Q is the number of output channels. The matrix elements are each float32Numbers. The array
 // is organized as follows:
-// array = [e11, e12, …, e1P, e21, e22, …, e2P, …, eQ1, eQ2, …, eQP, e1, e2, …, eQ]
+// array = [e11, e12, ..., e1P, e21, e22, ..., e2P, ..., eQ1, eQ2, ..., eQP, e1, e2, ..., eQ]
 
 static
 void *Type_MPEmatrix_Read(cmsContext ContextID, struct _cms_typehandler_struct* self, cmsIOHANDLER* io, cmsUInt32Number* nItems, cmsUInt32Number SizeOfTag)
@@ -4500,7 +4497,7 @@ cmsBool ReadMPEElem(cmsContext ContextID, struct _cms_typehandler_struct* self,
 
         char String[5];
 
-        _cmsTagSignature2String(ContextID, String, (cmsTagSignature) ElementSig);
+        _cmsTagSignature2String(String, (cmsTagSignature) ElementSig);
 
         // An unknown element was found.
         cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unknown MPE type '%s' found.", String);
@@ -4619,7 +4616,7 @@ cmsBool Type_MPE_Write(cmsContext ContextID, struct _cms_typehandler_struct* sel
 
                 char String[5];
 
-                _cmsTagSignature2String(ContextID, String, (cmsTagSignature) ElementSig);
+                _cmsTagSignature2String(String, (cmsTagSignature) ElementSig);
 
                  // An unknown element was found.
                  cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Found unknown MPE type '%s'", String);
@@ -4794,10 +4791,10 @@ void *Type_vcgt_Read(cmsContext ContextID, struct _cms_typehandler_struct* self,
             // Y = cX + f             | X < d
 
             // vcgt formula is:
-            // Y = (Max – Min) * (X ^ Gamma) + Min
+            // Y = (Max - Min) * (X ^ Gamma) + Min
 
             // So, the translation is
-            // a = (Max – Min) ^ ( 1 / Gamma)
+            // a = (Max - Min) ^ ( 1 / Gamma)
             // e = Min
             // b=c=d=f=0
 
@@ -5102,10 +5099,9 @@ cmsBool ReadOneWChar(cmsContext ContextID, cmsIOHANDLER* io,  _cmsDICelem* e, cm
 }
 
 static
-cmsUInt32Number mywcslen(cmsContext ContextID, const wchar_t *s)
+cmsUInt32Number mywcslen(const wchar_t *s)
 {
     const wchar_t *p;
-    cmsUNUSED_PARAMETER(ContextID);
 
     p = s;
     while (*p)
@@ -5128,7 +5124,7 @@ cmsBool WriteOneWChar(cmsContext ContextID, cmsIOHANDLER* io,  _cmsDICelem* e, c
         return TRUE;
     }
 
-    n = mywcslen(ContextID, wcstr);
+    n = mywcslen(wcstr);
     if (!_cmsWriteWCharArray(ContextID, io,  n, wcstr)) return FALSE;
 
     e ->Sizes[i] = io ->Tell(ContextID, io) - Before;

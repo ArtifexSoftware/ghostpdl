@@ -264,7 +264,7 @@ void FUNCTION_NAME(cmsContext ContextID,
                 evalGamut(ContextID, currIn, &wOutOfGamut, core->GamutCheck->Data);
                 if (wOutOfGamut >= 1)
                     /* RJW: Could be faster? copy once to a local buffer? */
-                    cmsGetAlarmCodes(wOut);
+                    cmsGetAlarmCodes(ContextID, wOut);
                 else
  #endif /* FLOAT_XFORM */
 #endif /* GAMUTCHECK */

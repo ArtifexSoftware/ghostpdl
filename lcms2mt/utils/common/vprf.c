@@ -56,12 +56,12 @@ void MyErrorLogHandler(cmsContext ContextID, cmsUInt32Number ErrorCode, const ch
 }
 
 
-void InitUtils(const char* PName)
+void InitUtils(cmsContext ContextID, const char* PName)
 {
       strncpy(ProgramName, PName, sizeof(ProgramName));
       ProgramName[sizeof(ProgramName)-1] = 0;
 
-      cmsSetLogErrorHandler(MyErrorLogHandler);
+      cmsSetLogErrorHandler(ContextID, MyErrorLogHandler);
 }
 
 
@@ -69,32 +69,32 @@ void InitUtils(const char* PName)
 cmsHPROFILE OpenStockProfile(cmsContext ContextID, const char* File)
 {
        if (!File)
-            return cmsCreate_sRGBProfileTHR(ContextID);
+            return cmsCreate_sRGBProfile(ContextID);
 
        if (cmsstrcasecmp(File, "*Lab2") == 0)
-                return cmsCreateLab2ProfileTHR(ContextID, NULL);
+                return cmsCreateLab2Profile(ContextID, NULL);
 
        if (cmsstrcasecmp(File, "*Lab4") == 0)
-                return cmsCreateLab4ProfileTHR(ContextID, NULL);
+                return cmsCreateLab4Profile(ContextID, NULL);
 
        if (cmsstrcasecmp(File, "*Lab") == 0)
-                return cmsCreateLab4ProfileTHR(ContextID, NULL);
+                return cmsCreateLab4Profile(ContextID, NULL);
 
        if (cmsstrcasecmp(File, "*LabD65") == 0) {
 
            cmsCIExyY D65xyY;
 
            cmsWhitePointFromTemp(ContextID,  &D65xyY, 6504);
-           return cmsCreateLab4ProfileTHR(ContextID, &D65xyY);
+           return cmsCreateLab4Profile(ContextID, &D65xyY);
        }
 
        if (cmsstrcasecmp(File, "*XYZ") == 0)
-                return cmsCreateXYZProfileTHR(ContextID);
+                return cmsCreateXYZProfile(ContextID);
 
        if (cmsstrcasecmp(File, "*Gray22") == 0) {
 
            cmsToneCurve* Curve = cmsBuildGamma(ContextID, 2.2);
-           cmsHPROFILE hProfile = cmsCreateGrayProfileTHR(ContextID, cmsD50_xyY(ContextID), Curve);
+           cmsHPROFILE hProfile = cmsCreateGrayProfile(ContextID, cmsD50_xyY(ContextID), Curve);
            cmsFreeToneCurve(ContextID, Curve);
            return hProfile;
        }
@@ -102,16 +102,16 @@ cmsHPROFILE OpenStockProfile(cmsContext ContextID, const char* File)
         if (cmsstrcasecmp(File, "*Gray30") == 0) {
 
            cmsToneCurve* Curve = cmsBuildGamma(ContextID, 3.0);
-           cmsHPROFILE hProfile = cmsCreateGrayProfileTHR(ContextID, cmsD50_xyY(ContextID), Curve);
+           cmsHPROFILE hProfile = cmsCreateGrayProfile(ContextID, cmsD50_xyY(ContextID), Curve);
            cmsFreeToneCurve(ContextID, Curve);
            return hProfile;
        }
 
        if (cmsstrcasecmp(File, "*srgb") == 0)
-                return cmsCreate_sRGBProfileTHR(ContextID);
+                return cmsCreate_sRGBProfile(ContextID);
 
        if (cmsstrcasecmp(File, "*null") == 0)
-                return cmsCreateNULLProfileTHR(ContextID);
+                return cmsCreateNULLProfile(ContextID);
 
 
        if (cmsstrcasecmp(File, "*Lin2222") == 0) {
@@ -121,13 +121,13 @@ cmsHPROFILE OpenStockProfile(cmsContext ContextID, const char* File)
             cmsHPROFILE hProfile;
 
             Gamma4[0] = Gamma4[1] = Gamma4[2] = Gamma4[3] = Gamma;
-            hProfile = cmsCreateLinearizationDeviceLink(cmsSigCmykData, Gamma4);
+            hProfile = cmsCreateLinearizationDeviceLink(ContextID, cmsSigCmykData, Gamma4);
             cmsFreeToneCurve(ContextID, Gamma);
             return hProfile;
        }
 
 
-        return cmsOpenProfileFromFileTHR(ContextID, File, "r");
+        return cmsOpenProfileFromFile(ContextID, File, "r");
 }
 
 // Help on available built-ins
@@ -225,7 +225,7 @@ void PrintProfileInformation(cmsContext ContextID, cmsHPROFILE hInput)
 // -----------------------------------------------------------------------------
 
 
-void PrintRenderingIntents(void)
+void PrintRenderingIntents(cmsContext ContextID)
 {
     cmsUInt32Number Codes[200];
     char* Descriptions[200];
@@ -233,7 +233,7 @@ void PrintRenderingIntents(void)
 
     fprintf(stderr, "%ct<n> rendering intent:\n\n", SW);
 
-    n = cmsGetSupportedIntents(200, Codes, Descriptions);
+    n = cmsGetSupportedIntents(ContextID, 200, Codes, Descriptions);
 
     for (i=0; i < n; i++) {
         fprintf(stderr, "\t%u - %s\n", Codes[i], Descriptions[i]);

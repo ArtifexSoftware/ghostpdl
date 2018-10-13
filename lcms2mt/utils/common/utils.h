@@ -55,7 +55,7 @@
 
 // Init the utility functions
 
-void InitUtils(const char* PName);
+void InitUtils(cmsContext ContextID, const char* PName);
 
 // Fatal Error (print the message and exit(1))---------------------------------------------
 
@@ -82,7 +82,7 @@ void PrintProfileInformation(cmsContext ContextID, cmsHPROFILE h);
 
 // ---------------------------------------------------------------------------------
 
-void PrintRenderingIntents(void);
+void PrintRenderingIntents(cmsContext ContextID);
 void PrintBuiltins(void);
 
 // ---------------------------------------------------------------------------------

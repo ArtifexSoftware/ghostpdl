@@ -163,7 +163,7 @@ cmsInt32Number CheckSingleSpecimen(cmsContext ContextID, const char* Profile)
     sprintf(BuffSrc, "%s%s", ZOOfolder, Profile);
     sprintf(BuffDst, "%s%s", ZOOwrite,  Profile);
 
-    h = cmsOpenProfileFromFile(BuffSrc, "r");
+    h = cmsOpenProfileFromFile(ContextID, BuffSrc, "r");
     if (h == NULL) return 0;
 
     printf("%s\n", Profile);
@@ -177,7 +177,7 @@ cmsInt32Number CheckSingleSpecimen(cmsContext ContextID, const char* Profile)
     cmsSaveProfileToFile(ContextID, h, BuffDst);
     cmsCloseProfile(ContextID, h);
 
-    h = cmsOpenProfileFromFile(BuffDst, "r");
+    h = cmsOpenProfileFromFile(ContextID, BuffDst, "r");
     if (h == NULL) return 0;
     ReadAllTags(ContextID, h);
 
@@ -197,7 +197,7 @@ cmsInt32Number CheckRAWSpecimen(cmsContext ContextID, const char* Profile)
     sprintf(BuffSrc, "%s%s", ZOOfolder, Profile);
     sprintf(BuffDst, "%s%s", ZOORawWrite,  Profile);
 
-    h = cmsOpenProfileFromFile(BuffSrc, "r");
+    h = cmsOpenProfileFromFile(ContextID, BuffSrc, "r");
     if (h == NULL) return 0;
 
     ReadAllTags(ContextID, h);
@@ -205,7 +205,7 @@ cmsInt32Number CheckRAWSpecimen(cmsContext ContextID, const char* Profile)
     cmsSaveProfileToFile(ContextID, h, BuffDst);
     cmsCloseProfile(ContextID, h);
 
-    h = cmsOpenProfileFromFile(BuffDst, "r");
+    h = cmsOpenProfileFromFile(ContextID, BuffDst, "r");
     if (h == NULL) return 0;
     ReadAllTags(ContextID, h);
     cmsCloseProfile(ContextID, h);
@@ -238,7 +238,7 @@ int count_stats(cmsContext ContextID, const char* Profile)
 
     sprintf(BuffSrc, "%s%s", ZOOfolder, Profile);
 
-    h = cmsOpenProfileFromFile(BuffSrc, "r");
+    h = cmsOpenProfileFromFile(ContextID, BuffSrc, "r");
     if (h == NULL) return 0;
 
 
@@ -278,7 +278,7 @@ void CheckProfileZOO(cmsContext ContextID)
     struct _finddata_t c_file;
     intptr_t hFile;
 
-    cmsSetLogErrorHandler(NULL);
+    cmsSetLogErrorHandler(ContextID, NULL);
 
     if ( (hFile = _findfirst("c:\\colormaps\\*.*", &c_file)) == -1L )
         printf("No files in current directory");
@@ -303,7 +303,7 @@ void CheckProfileZOO(cmsContext ContextID)
         _findclose(hFile);
     }
 
-     ResetFatalError();
+     ResetFatalError(ContextID);
 }
 
 #endif

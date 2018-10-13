@@ -54,7 +54,7 @@ long int CMSEXPORT cmsfilelength(FILE* f)
     long int p , n;
 
     p = ftell(f); // register current file position
-    if (p == -1L) 
+    if (p == -1L)
         return -1L;
 
     if (fseek(f, 0, SEEK_END) != 0) {
@@ -72,7 +72,7 @@ long int CMSEXPORT cmsfilelength(FILE* f)
 //
 // This is the interface to low-level memory management routines. By default a simple
 // wrapping to malloc/free/realloc is provided, although there is a limit on the max
-// amount of memoy that can be reclaimed. This is mostly as a safety feature to prevent 
+// amount of memoy that can be reclaimed. This is mostly as a safety feature to prevent
 // bogus or evil code to allocate huge blocks that otherwise lcms would never need.
 
 #define MAX_MEMORY_FOR_ALLOC  ((cmsUInt32Number)(1024U*1024U*512U))
@@ -178,7 +178,7 @@ void* _cmsDupDefaultFn(cmsContext ContextID, const void* Org, cmsUInt32Number si
 
 
 // Pointers to memory manager functions in Context0
-_cmsMemPluginChunkType _cmsMemPluginChunk = { _cmsMallocDefaultFn, _cmsMallocZeroDefaultFn, _cmsFreeDefaultFn, 
+_cmsMemPluginChunkType _cmsMemPluginChunk = { _cmsMallocDefaultFn, _cmsMallocZeroDefaultFn, _cmsFreeDefaultFn,
                                               _cmsReallocDefaultFn, _cmsCallocDefaultFn,    _cmsDupDefaultFn
                                             };
 
@@ -188,16 +188,16 @@ void _cmsAllocMemPluginChunk(struct _cmsContext_struct* ctx, const struct _cmsCo
 {
     _cmsAssert(ctx != NULL);
 
-    if (src != NULL) {    
+    if (src != NULL) {
 
         // Duplicate
-        ctx ->chunks[MemPlugin] = _cmsSubAllocDup(ctx ->MemPool, src ->chunks[MemPlugin], sizeof(_cmsMemPluginChunkType));  
+        ctx ->chunks[MemPlugin] = _cmsSubAllocDup(ctx ->MemPool, src ->chunks[MemPlugin], sizeof(_cmsMemPluginChunkType));
     }
     else {
 
         // To reset it, we use the default allocators, which cannot be overridden
         ctx ->chunks[MemPlugin] = &ctx ->DefaultMemoryManager;
-    } 
+    }
 }
 
 // Auxiliary to fill memory management functions from plugin (or context 0 defaults)
@@ -217,11 +217,11 @@ void _cmsInstallAllocFunctions(cmsPluginMemHandler* Plugin, _cmsMemPluginChunkTy
         ptr ->MallocZeroPtr= _cmsMallocZeroDefaultFn;
         ptr ->CallocPtr    = _cmsCallocDefaultFn;
         ptr ->DupPtr       = _cmsDupDefaultFn;
-      
+
         if (Plugin ->MallocZeroPtr != NULL) ptr ->MallocZeroPtr = Plugin -> MallocZeroPtr;
         if (Plugin ->CallocPtr != NULL)     ptr ->CallocPtr     = Plugin -> CallocPtr;
         if (Plugin ->DupPtr != NULL)        ptr ->DupPtr        = Plugin -> DupPtr;
-        
+
     }
 }
 
@@ -229,12 +229,12 @@ void _cmsInstallAllocFunctions(cmsPluginMemHandler* Plugin, _cmsMemPluginChunkTy
 // Plug-in replacement entry
 cmsBool  _cmsRegisterMemHandlerPlugin(cmsContext ContextID, cmsPluginBase *Data)
 {
-    cmsPluginMemHandler* Plugin = (cmsPluginMemHandler*) Data;     
+    cmsPluginMemHandler* Plugin = (cmsPluginMemHandler*) Data;
     _cmsMemPluginChunkType* ptr;
 
-    // NULL forces to reset to defaults. In this special case, the defaults are stored in the context structure. 
+    // NULL forces to reset to defaults. In this special case, the defaults are stored in the context structure.
     // Remaining plug-ins does NOT have any copy in the context structure, but this is somehow special as the
-    // context internal data should be malloce'd by using those functions. 
+    // context internal data should be malloce'd by using those functions.
     if (Data == NULL) {
 
        struct _cmsContext_struct* ctx = ( struct _cmsContext_struct*) ContextID;
@@ -253,7 +253,7 @@ cmsBool  _cmsRegisterMemHandlerPlugin(cmsContext ContextID, cmsPluginBase *Data)
 
     // Set replacement functions
     ptr = (_cmsMemPluginChunkType*) _cmsContextGetClientChunk(ContextID, MemPlugin);
-    if (ptr == NULL) 
+    if (ptr == NULL)
         return FALSE;
 
     _cmsInstallAllocFunctions(Plugin, ptr);
@@ -414,7 +414,7 @@ void*  _cmsSubAlloc(_cmsSubAllocator* sub, cmsUInt32Number size)
 void* _cmsSubAllocDup(_cmsSubAllocator* s, const void *ptr, cmsUInt32Number size)
 {
     void *NewPtr;
-    
+
     // Dup of null pointer is also NULL
     if (ptr == NULL)
         return NULL;
@@ -435,7 +435,7 @@ void* _cmsSubAllocDup(_cmsSubAllocator* s, const void *ptr, cmsUInt32Number size
 // There is no error handling at all. When a function fails, it returns proper value.
 // For example, all create functions does return NULL on failure. Other return FALSE
 // It may be interesting, for the developer, to know why the function is failing.
-// for that reason, lcms2 does offer a logging function. This function does recive
+// for that reason, lcms2 does offer a logging function. This function does receive
 // a ENGLISH string with some clues on what is going wrong. You can show this
 // info to the end user, or just create some sort of log.
 // The logging function should NOT terminate the program, as this obviously can leave
@@ -456,20 +456,20 @@ _cmsLogErrorChunkType _cmsLogErrorChunk = { DefaultLogErrorHandlerFunction };
 
 // Allocates and inits error logger container for a given context. If src is NULL, only initializes the value
 // to the default. Otherwise, it duplicates the value. The interface is standard across all context clients
-void _cmsAllocLogErrorChunk(struct _cmsContext_struct* ctx, 
+void _cmsAllocLogErrorChunk(struct _cmsContext_struct* ctx,
                             const struct _cmsContext_struct* src)
-{    
+{
     static _cmsLogErrorChunkType LogErrorChunk = { DefaultLogErrorHandlerFunction };
     void* from;
-     
+
      if (src != NULL) {
-        from = src ->chunks[Logger];       
+        from = src ->chunks[Logger];
     }
     else {
        from = &LogErrorChunk;
     }
-    
-    ctx ->chunks[Logger] = _cmsSubAllocDup(ctx ->MemPool, from, sizeof(_cmsLogErrorChunkType));   
+
+    ctx ->chunks[Logger] = _cmsSubAllocDup(ctx ->MemPool, from, sizeof(_cmsLogErrorChunkType));
 }
 
 // The default error logger does nothing.
@@ -485,7 +485,7 @@ void DefaultLogErrorHandlerFunction(cmsContext ContextID, cmsUInt32Number ErrorC
 }
 
 // Change log error, context based
-void CMSEXPORT cmsSetLogErrorHandlerTHR(cmsContext ContextID, cmsLogErrorHandlerFunction Fn)
+void CMSEXPORT cmsSetLogErrorHandler(cmsContext ContextID, cmsLogErrorHandlerFunction Fn)
 {
     _cmsLogErrorChunkType* lhg = (_cmsLogErrorChunkType*) _cmsContextGetClientChunk(ContextID, Logger);
 
@@ -496,12 +496,6 @@ void CMSEXPORT cmsSetLogErrorHandlerTHR(cmsContext ContextID, cmsLogErrorHandler
         else
             lhg -> LogErrorHandler = Fn;
     }
-}
-
-// Change log error, legacy
-void CMSEXPORT cmsSetLogErrorHandler(cmsLogErrorHandlerFunction Fn)
-{
-    cmsSetLogErrorHandlerTHR(NULL, Fn);    
 }
 
 // Log an error
@@ -521,16 +515,16 @@ void CMSEXPORT cmsSignalError(cmsContext ContextID, cmsUInt32Number ErrorCode, c
     lhg = (_cmsLogErrorChunkType*) _cmsContextGetClientChunk(ContextID, Logger);
     if (lhg ->LogErrorHandler) {
         lhg ->LogErrorHandler(ContextID, ErrorCode, Buffer);
-    }   
+    }
 }
 
 // Utility function to print signatures
-void _cmsTagSignature2String(cmsContext ContextID, char String[5], cmsTagSignature sig)
+void _cmsTagSignature2String(char String[5], cmsTagSignature sig)
 {
     cmsUInt32Number be;
 
     // Convert to big endian
-    be = _cmsAdjustEndianess32(ContextID, (cmsUInt32Number) sig);
+    be = _cmsAdjustEndianess32((cmsUInt32Number) sig);
 
     // Move chars
     memmove(String, &be, 4);
@@ -548,13 +542,13 @@ void* defMtxCreate(cmsContext id)
     _cmsMutex* ptr_mutex = (_cmsMutex*) _cmsMalloc(id, sizeof(_cmsMutex));
     if (ptr_mutex != NULL)
         _cmsInitMutexPrimitive(ptr_mutex);
-    return (void*) ptr_mutex;   
+    return (void*) ptr_mutex;
 }
 
 static
 void defMtxDestroy(cmsContext id, void* mtx)
 {
-    _cmsDestroyMutexPrimitive((_cmsMutex *) mtx); 
+    _cmsDestroyMutexPrimitive((_cmsMutex *) mtx);
     _cmsFree(id, mtx);
 }
 
@@ -562,14 +556,14 @@ static
 cmsBool defMtxLock(cmsContext id, void* mtx)
 {
     cmsUNUSED_PARAMETER(id);
-    return _cmsLockPrimitive((_cmsMutex *) mtx) == 0;     
+    return _cmsLockPrimitive((_cmsMutex *) mtx) == 0;
 }
 
 static
 void defMtxUnlock(cmsContext id, void* mtx)
 {
     cmsUNUSED_PARAMETER(id);
-    _cmsUnlockPrimitive((_cmsMutex *) mtx); 
+    _cmsUnlockPrimitive((_cmsMutex *) mtx);
 }
 
 
@@ -578,20 +572,20 @@ void defMtxUnlock(cmsContext id, void* mtx)
 _cmsMutexPluginChunkType _cmsMutexPluginChunk = { defMtxCreate, defMtxDestroy, defMtxLock, defMtxUnlock };
 
 // Allocate and init mutex container.
-void _cmsAllocMutexPluginChunk(struct _cmsContext_struct* ctx, 
+void _cmsAllocMutexPluginChunk(struct _cmsContext_struct* ctx,
                                         const struct _cmsContext_struct* src)
 {
     static _cmsMutexPluginChunkType MutexChunk = {defMtxCreate, defMtxDestroy, defMtxLock, defMtxUnlock };
     void* from;
-     
+
      if (src != NULL) {
-        from = src ->chunks[MutexPlugin];       
+        from = src ->chunks[MutexPlugin];
     }
     else {
        from = &MutexChunk;
     }
-    
-    ctx ->chunks[MutexPlugin] = _cmsSubAllocDup(ctx ->MemPool, from, sizeof(_cmsMutexPluginChunkType));   
+
+    ctx ->chunks[MutexPlugin] = _cmsSubAllocDup(ctx ->MemPool, from, sizeof(_cmsMutexPluginChunkType));
 }
 
 // Register new ways to transform
@@ -603,15 +597,15 @@ cmsBool  _cmsRegisterMutexPlugin(cmsContext ContextID, cmsPluginBase* Data)
     if (Data == NULL) {
 
         // No lock routines
-        ctx->CreateMutexPtr = NULL; 
-        ctx->DestroyMutexPtr = NULL; 
+        ctx->CreateMutexPtr = NULL;
+        ctx->DestroyMutexPtr = NULL;
         ctx->LockMutexPtr = NULL;
         ctx ->UnlockMutexPtr = NULL;
         return TRUE;
     }
 
     // Factory callback is required
-    if (Plugin ->CreateMutexPtr == NULL || Plugin ->DestroyMutexPtr == NULL || 
+    if (Plugin ->CreateMutexPtr == NULL || Plugin ->DestroyMutexPtr == NULL ||
         Plugin ->LockMutexPtr == NULL || Plugin ->UnlockMutexPtr == NULL) return FALSE;
 
 

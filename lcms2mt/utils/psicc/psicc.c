@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
     cmsContext ContextID = NULL;
 
 	// Initialize
-	InitUtils("psicc");
+	InitUtils(NULL, "psicc");
 
 	 HandleSwitches(argc, argv);
 

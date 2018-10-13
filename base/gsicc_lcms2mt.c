@@ -313,8 +313,8 @@ gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size,
 {
     cmsContext ctx = gs_lib_ctx_get_cms_context(mem);
 
-    cmsSetLogErrorHandlerTHR(ctx, gscms_error);
-    return cmsOpenProfileFromMemTHR(ctx,buffer,input_size);
+    cmsSetLogErrorHandler(ctx, gscms_error);
+    return cmsOpenProfileFromMem(ctx,buffer,input_size);
 }
 
 /* Get ICC Profile handle from file ptr */
@@ -323,7 +323,7 @@ gscms_get_profile_handle_file(const char *filename, gs_memory_t *mem)
 {
     cmsContext ctx = gs_lib_ctx_get_cms_context(mem);
 
-    return cmsOpenProfileFromFileTHR(ctx, filename, "r");
+    return cmsOpenProfileFromFile(ctx, filename, "r");
 }
 
 /* Transform an entire buffer */
@@ -735,7 +735,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle, gcmmhprofile_t lcms_deshandle,
                                                          "gscms_transform_color_buffer");
     if (link_handle == NULL)
         return NULL;
-    link_handle->hTransform = cmsCreateTransformTHR(ctx, lcms_srchandle, src_data_type,
+    link_handle->hTransform = cmsCreateTransform(ctx, lcms_srchandle, src_data_type,
                                                     lcms_deshandle, des_data_type,
                                                     rendering_params->rendering_intent,
                                                     flag | cmm_flags);
@@ -853,7 +853,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
         }
 
         /* Use relative colorimetric here */
-        link_handle->hTransform = cmsCreateMultiprofileTransformTHR(ctx,
+        link_handle->hTransform = cmsCreateMultiprofileTransform(ctx,
                     hProfiles, nProfiles, src_data_type, des_data_type,
                     gsRELATIVECOLORIMETRIC, flag);
         cmsCloseProfile(ctx, src_to_proof);
@@ -912,7 +912,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
             || rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
             flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
         }
-        link_handle->hTransform =  cmsCreateMultiprofileTransformTHR(ctx,
+        link_handle->hTransform =  cmsCreateMultiprofileTransform(ctx,
                                        hProfiles, nProfiles, src_data_type,
                                        des_data_type, rendering_params->rendering_intent, flag);
     }
@@ -935,10 +935,10 @@ gscms_create(gs_memory_t *memory)
         return_error(gs_error_VMerror);
 
 #ifdef USE_LCMS2_LOCKING
-    cmsPluginTHR(ctx, (void *)&gs_cms_mutexhandler);
+    cmsPlugin(ctx, (void *)&gs_cms_mutexhandler);
 #endif
 
-    cmsSetLogErrorHandlerTHR(ctx, gscms_error);
+    cmsSetLogErrorHandler(ctx, gscms_error);
     gs_lib_ctx_set_cms_context(memory, ctx);
     return 0;
 }
@@ -1058,7 +1058,7 @@ gscms_get_name2device_link(gsicc_link_t *icclink,
 
     /* Create the transform */
     /* ToDo:  Adjust rendering intent */
-    hTransform = cmsCreateProofingTransformTHR(ctx,
+    hTransform = cmsCreateProofingTransform(ctx,
                                             lcms_srchandle, TYPE_NAMED_COLOR_INDEX,
                                             lcms_deshandle, TYPE_CMYK_8,
                                             lcms_proofhandle,INTENT_PERCEPTUAL,

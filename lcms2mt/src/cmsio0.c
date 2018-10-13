@@ -239,7 +239,7 @@ cmsBool  MemoryClose(cmsContext ContextID, struct _cms_io_handler* iohandler)
 
 // Create a iohandler for memory block. AccessMode=='r' assumes the iohandler is going to read, and makes
 // a copy of the memory block for letting user to free the memory after invoking open profile. In write
-// mode ("w"), Buffere points to the begin of memory block to be written.
+// mode ("w"), Buffer points to the begin of memory block to be written.
 cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromMem(cmsContext ContextID, void *Buffer, cmsUInt32Number size, const char* AccessMode)
 {
     cmsIOHANDLER* iohandler = NULL;
@@ -629,7 +629,6 @@ cmsBool _cmsNewTag(cmsContext ContextID, _cmsICCPROFILE* Icc, cmsTagSignature si
     else  {
 
         // No, make a new one
-
         if (Icc -> TagCount >= MAX_TABLE_TAG) {
             cmsSignalError(ContextID, cmsERROR_RANGE, "Too many tags (%d)", MAX_TABLE_TAG);
             return FALSE;
@@ -649,8 +648,6 @@ cmsBool CMSEXPORT cmsIsTag(cmsContext ContextID, cmsHPROFILE hProfile, cmsTagSig
        _cmsICCPROFILE*  Icc = (_cmsICCPROFILE*) (void*) hProfile;
        return _cmsSearchTag(ContextID, Icc, sig, FALSE) >= 0;
 }
-
-
 
 // Enforces that the profile version is per. spec.
 // Operates on the big endian bytes from the profile.
@@ -694,27 +691,27 @@ cmsBool _cmsReadHeader(cmsContext ContextID, _cmsICCPROFILE* Icc)
     }
 
     // Validate file as an ICC profile
-    if (_cmsAdjustEndianess32(ContextID, Header.magic) != cmsMagicNumber) {
+    if (_cmsAdjustEndianess32(Header.magic) != cmsMagicNumber) {
         cmsSignalError(ContextID, cmsERROR_BAD_SIGNATURE, "not an ICC profile, invalid signature");
         return FALSE;
     }
 
     // Adjust endianness of the used parameters
-    Icc -> DeviceClass     = (cmsProfileClassSignature) _cmsAdjustEndianess32(ContextID, Header.deviceClass);
-    Icc -> ColorSpace      = (cmsColorSpaceSignature)   _cmsAdjustEndianess32(ContextID, Header.colorSpace);
-    Icc -> PCS             = (cmsColorSpaceSignature)   _cmsAdjustEndianess32(ContextID, Header.pcs);
+    Icc -> DeviceClass     = (cmsProfileClassSignature) _cmsAdjustEndianess32(Header.deviceClass);
+    Icc -> ColorSpace      = (cmsColorSpaceSignature)   _cmsAdjustEndianess32(Header.colorSpace);
+    Icc -> PCS             = (cmsColorSpaceSignature)   _cmsAdjustEndianess32(Header.pcs);
 
-    Icc -> RenderingIntent = _cmsAdjustEndianess32(ContextID, Header.renderingIntent);
-    Icc -> flags           = _cmsAdjustEndianess32(ContextID, Header.flags);
-    Icc -> manufacturer    = _cmsAdjustEndianess32(ContextID, Header.manufacturer);
-    Icc -> model           = _cmsAdjustEndianess32(ContextID, Header.model);
-    Icc -> creator         = _cmsAdjustEndianess32(ContextID, Header.creator);
+    Icc -> RenderingIntent = _cmsAdjustEndianess32(Header.renderingIntent);
+    Icc -> flags           = _cmsAdjustEndianess32(Header.flags);
+    Icc -> manufacturer    = _cmsAdjustEndianess32(Header.manufacturer);
+    Icc -> model           = _cmsAdjustEndianess32(Header.model);
+    Icc -> creator         = _cmsAdjustEndianess32(Header.creator);
 
-    _cmsAdjustEndianess64(ContextID, &Icc -> attributes, &Header.attributes);
-    Icc -> Version         = _cmsAdjustEndianess32(ContextID, _validatedVersion(Header.version));
+    _cmsAdjustEndianess64(&Icc -> attributes, &Header.attributes);
+    Icc -> Version         = _cmsAdjustEndianess32(_validatedVersion(Header.version));
 
     // Get size as reported in header
-    HeaderSize = _cmsAdjustEndianess32(ContextID, Header.size);
+    HeaderSize = _cmsAdjustEndianess32(Header.size);
 
     // Make sure HeaderSize is lower than profile size
     if (HeaderSize >= Icc ->IOhandler ->ReportedSize)
@@ -779,41 +776,41 @@ cmsBool _cmsWriteHeader(cmsContext ContextID, _cmsICCPROFILE* Icc, cmsUInt32Numb
     cmsTagEntry Tag;
     cmsUInt32Number Count;
 
-    Header.size        = _cmsAdjustEndianess32(ContextID, UsedSpace);
-    Header.cmmId       = _cmsAdjustEndianess32(ContextID, lcmsSignature);
-    Header.version     = _cmsAdjustEndianess32(ContextID, Icc ->Version);
+    Header.size        = _cmsAdjustEndianess32(UsedSpace);
+    Header.cmmId       = _cmsAdjustEndianess32(lcmsSignature);
+    Header.version     = _cmsAdjustEndianess32(Icc ->Version);
 
-    Header.deviceClass = (cmsProfileClassSignature) _cmsAdjustEndianess32(ContextID, Icc -> DeviceClass);
-    Header.colorSpace  = (cmsColorSpaceSignature) _cmsAdjustEndianess32(ContextID, Icc -> ColorSpace);
-    Header.pcs         = (cmsColorSpaceSignature) _cmsAdjustEndianess32(ContextID, Icc -> PCS);
+    Header.deviceClass = (cmsProfileClassSignature) _cmsAdjustEndianess32(Icc -> DeviceClass);
+    Header.colorSpace  = (cmsColorSpaceSignature) _cmsAdjustEndianess32(Icc -> ColorSpace);
+    Header.pcs         = (cmsColorSpaceSignature) _cmsAdjustEndianess32(Icc -> PCS);
 
     //   NOTE: in v4 Timestamp must be in UTC rather than in local time
     _cmsEncodeDateTimeNumber(ContextID, &Header.date, &Icc ->Created);
 
-    Header.magic       = _cmsAdjustEndianess32(ContextID, cmsMagicNumber);
+    Header.magic       = _cmsAdjustEndianess32(cmsMagicNumber);
 
 #ifdef CMS_IS_WINDOWS_
-    Header.platform    = (cmsPlatformSignature) _cmsAdjustEndianess32(ContextID, cmsSigMicrosoft);
+    Header.platform    = (cmsPlatformSignature) _cmsAdjustEndianess32(cmsSigMicrosoft);
 #else
-    Header.platform    = (cmsPlatformSignature) _cmsAdjustEndianess32(ContextID, cmsSigMacintosh);
+    Header.platform    = (cmsPlatformSignature) _cmsAdjustEndianess32(cmsSigMacintosh);
 #endif
 
-    Header.flags        = _cmsAdjustEndianess32(ContextID, Icc -> flags);
-    Header.manufacturer = _cmsAdjustEndianess32(ContextID, Icc -> manufacturer);
-    Header.model        = _cmsAdjustEndianess32(ContextID, Icc -> model);
+    Header.flags        = _cmsAdjustEndianess32(Icc -> flags);
+    Header.manufacturer = _cmsAdjustEndianess32(Icc -> manufacturer);
+    Header.model        = _cmsAdjustEndianess32(Icc -> model);
 
-    _cmsAdjustEndianess64(ContextID, &Header.attributes, &Icc -> attributes);
+    _cmsAdjustEndianess64(&Header.attributes, &Icc -> attributes);
 
     // Rendering intent in the header (for embedded profiles)
-    Header.renderingIntent = _cmsAdjustEndianess32(ContextID, Icc -> RenderingIntent);
+    Header.renderingIntent = _cmsAdjustEndianess32(Icc -> RenderingIntent);
 
     // Illuminant is always D50
-    Header.illuminant.X = (cmsS15Fixed16Number) _cmsAdjustEndianess32(ContextID, (cmsUInt32Number) _cmsDoubleTo15Fixed16(ContextID, cmsD50_XYZ(ContextID)->X));
-    Header.illuminant.Y = (cmsS15Fixed16Number) _cmsAdjustEndianess32(ContextID, (cmsUInt32Number) _cmsDoubleTo15Fixed16(ContextID, cmsD50_XYZ(ContextID)->Y));
-    Header.illuminant.Z = (cmsS15Fixed16Number) _cmsAdjustEndianess32(ContextID, (cmsUInt32Number) _cmsDoubleTo15Fixed16(ContextID, cmsD50_XYZ(ContextID)->Z));
+    Header.illuminant.X = (cmsS15Fixed16Number) _cmsAdjustEndianess32((cmsUInt32Number) _cmsDoubleTo15Fixed16(ContextID, cmsD50_XYZ(ContextID)->X));
+    Header.illuminant.Y = (cmsS15Fixed16Number) _cmsAdjustEndianess32((cmsUInt32Number) _cmsDoubleTo15Fixed16(ContextID, cmsD50_XYZ(ContextID)->Y));
+    Header.illuminant.Z = (cmsS15Fixed16Number) _cmsAdjustEndianess32((cmsUInt32Number) _cmsDoubleTo15Fixed16(ContextID, cmsD50_XYZ(ContextID)->Z));
 
     // Created by LittleCMS (that's me!)
-    Header.creator      = _cmsAdjustEndianess32(ContextID, lcmsSignature);
+    Header.creator      = _cmsAdjustEndianess32(lcmsSignature);
 
     memset(&Header.reserved, 0, sizeof(Header.reserved));
 
@@ -839,9 +836,9 @@ cmsBool _cmsWriteHeader(cmsContext ContextID, _cmsICCPROFILE* Icc, cmsUInt32Numb
 
         if (Icc ->TagNames[i] == (cmsTagSignature) 0) continue;   // It is just a placeholder
 
-        Tag.sig    = (cmsTagSignature) _cmsAdjustEndianess32(ContextID, (cmsUInt32Number) Icc -> TagNames[i]);
-        Tag.offset = _cmsAdjustEndianess32(ContextID, (cmsUInt32Number) Icc -> TagOffsets[i]);
-        Tag.size   = _cmsAdjustEndianess32(ContextID, (cmsUInt32Number) Icc -> TagSizes[i]);
+        Tag.sig    = (cmsTagSignature) _cmsAdjustEndianess32((cmsUInt32Number) Icc -> TagNames[i]);
+        Tag.offset = _cmsAdjustEndianess32((cmsUInt32Number) Icc -> TagOffsets[i]);
+        Tag.size   = _cmsAdjustEndianess32((cmsUInt32Number) Icc -> TagSizes[i]);
 
         if (!Icc ->IOhandler -> Write(ContextID, Icc-> IOhandler, sizeof(cmsTagEntry), &Tag)) return FALSE;
     }
@@ -1050,7 +1047,7 @@ cmsFloat64Number CMSEXPORT cmsGetProfileVersion(cmsContext ContextID, cmsHPROFIL
 
 
 // Create profile from IOhandler
-cmsHPROFILE CMSEXPORT cmsOpenProfileFromIOhandlerTHR(cmsContext ContextID, cmsIOHANDLER* io)
+cmsHPROFILE CMSEXPORT cmsOpenProfileFromIOhandler(cmsContext ContextID, cmsIOHANDLER* io)
 {
     _cmsICCPROFILE* NewIcc;
     cmsHPROFILE hEmpty = cmsCreateProfilePlaceholder(ContextID);
@@ -1069,7 +1066,7 @@ Error:
 }
 
 // Create profile from IOhandler
-cmsHPROFILE CMSEXPORT cmsOpenProfileFromIOhandler2THR(cmsContext ContextID, cmsIOHANDLER* io, cmsBool write)
+cmsHPROFILE CMSEXPORT cmsOpenProfileFromIOhandler2(cmsContext ContextID, cmsIOHANDLER* io, cmsBool write)
 {
     _cmsICCPROFILE* NewIcc;
     cmsHPROFILE hEmpty = cmsCreateProfilePlaceholder(ContextID);
@@ -1095,7 +1092,7 @@ Error:
 
 
 // Create profile from disk file
-cmsHPROFILE CMSEXPORT cmsOpenProfileFromFileTHR(cmsContext ContextID, const char *lpFileName, const char *sAccess)
+cmsHPROFILE CMSEXPORT cmsOpenProfileFromFile(cmsContext ContextID, const char *lpFileName, const char *sAccess)
 {
     _cmsICCPROFILE* NewIcc;
     cmsHPROFILE hEmpty = cmsCreateProfilePlaceholder(ContextID);
@@ -1123,13 +1120,7 @@ Error:
 }
 
 
-cmsHPROFILE CMSEXPORT cmsOpenProfileFromFile(const char *ICCProfile, const char *sAccess)
-{
-    return cmsOpenProfileFromFileTHR(NULL, ICCProfile, sAccess);
-}
-
-
-cmsHPROFILE  CMSEXPORT cmsOpenProfileFromStreamTHR(cmsContext ContextID, FILE* ICCProfile, const char *sAccess)
+cmsHPROFILE  CMSEXPORT cmsOpenProfileFromStream(cmsContext ContextID, FILE* ICCProfile, const char *sAccess)
 {
     _cmsICCPROFILE* NewIcc;
     cmsHPROFILE hEmpty = cmsCreateProfilePlaceholder(ContextID);
@@ -1156,14 +1147,9 @@ Error:
 
 }
 
-cmsHPROFILE  CMSEXPORT cmsOpenProfileFromStream(FILE* ICCProfile, const char *sAccess)
-{
-    return cmsOpenProfileFromStreamTHR(NULL, ICCProfile, sAccess);
-}
-
 
 // Open from memory block
-cmsHPROFILE CMSEXPORT cmsOpenProfileFromMemTHR(cmsContext ContextID, const void* MemPtr, cmsUInt32Number dwSize)
+cmsHPROFILE CMSEXPORT cmsOpenProfileFromMem(cmsContext ContextID, const void* MemPtr, cmsUInt32Number dwSize)
 {
     _cmsICCPROFILE* NewIcc;
     cmsHPROFILE hEmpty;
@@ -1185,11 +1171,6 @@ cmsHPROFILE CMSEXPORT cmsOpenProfileFromMemTHR(cmsContext ContextID, const void*
 Error:
     cmsCloseProfile(ContextID, hEmpty);
     return NULL;
-}
-
-cmsHPROFILE CMSEXPORT cmsOpenProfileFromMem(const void* MemPtr, cmsUInt32Number dwSize)
-{
-    return cmsOpenProfileFromMemTHR(NULL, MemPtr, dwSize);
 }
 
 
@@ -1286,7 +1267,7 @@ cmsBool SaveTags(cmsContext ContextID, _cmsICCPROFILE* Icc, _cmsICCPROFILE* File
 
                 char String[5];
 
-                _cmsTagSignature2String(ContextID, String, (cmsTagSignature) TypeBase);
+                _cmsTagSignature2String(String, (cmsTagSignature) TypeBase);
                 cmsSignalError(ContextID, cmsERROR_WRITE, "Couldn't write type '%s'", String);
                 return FALSE;
             }
@@ -1565,7 +1546,7 @@ void* CMSEXPORT cmsReadTag(cmsContext ContextID, cmsHPROFILE hProfile, cmsTagSig
 
         char String[5];
 
-        _cmsTagSignature2String(ContextID, String, sig);
+        _cmsTagSignature2String(String, sig);
 
         // An unknown element was found.
         cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unknown tag type '%s' found.", String);
@@ -1578,7 +1559,7 @@ void* CMSEXPORT cmsReadTag(cmsContext ContextID, cmsHPROFILE hProfile, cmsTagSig
 
     if (!IsTypeSupported(TagDescriptor, BaseType)) goto Error;
 
-    TagSize  -= 8;       // Alredy read by the type base logic
+    TagSize  -= 8;       // Already read by the type base logic
 
     // Get type handler
     TypeHandler = _cmsGetTagTypeHandler(ContextID, BaseType);
@@ -1598,7 +1579,7 @@ void* CMSEXPORT cmsReadTag(cmsContext ContextID, cmsHPROFILE hProfile, cmsTagSig
 
         char String[5];
 
-        _cmsTagSignature2String(ContextID, String, sig);
+        _cmsTagSignature2String(String, sig);
         cmsSignalError(ContextID, cmsERROR_CORRUPTION_DETECTED, "Corrupted tag '%s'", String);
         goto Error;
     }
@@ -1609,9 +1590,10 @@ void* CMSEXPORT cmsReadTag(cmsContext ContextID, cmsHPROFILE hProfile, cmsTagSig
 
         char String[5];
 
-        _cmsTagSignature2String(ContextID, String, sig);
+        _cmsTagSignature2String(String, sig);
         cmsSignalError(ContextID, cmsERROR_CORRUPTION_DETECTED, "'%s' Inconsistent number of items: expected %d, got %d",
             String, TagDescriptor ->ElemCount, ElemCount);
+        goto Error;
     }
 
 
@@ -1712,8 +1694,8 @@ cmsBool CMSEXPORT cmsWriteTag(cmsContext ContextID, cmsHPROFILE hProfile, cmsTag
     // Does the tag support this type?
     if (!IsTypeSupported(TagDescriptor, Type)) {
 
-        _cmsTagSignature2String(ContextID, TypeString, (cmsTagSignature) Type);
-        _cmsTagSignature2String(ContextID, SigString,  sig);
+        _cmsTagSignature2String(TypeString, (cmsTagSignature) Type);
+        _cmsTagSignature2String(SigString,  sig);
 
         cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unsupported type '%s' for tag '%s'", TypeString, SigString);
         goto Error;
@@ -1723,8 +1705,8 @@ cmsBool CMSEXPORT cmsWriteTag(cmsContext ContextID, cmsHPROFILE hProfile, cmsTag
     TypeHandler =  _cmsGetTagTypeHandler(ContextID, Type);
     if (TypeHandler == NULL) {
 
-        _cmsTagSignature2String(ContextID, TypeString, (cmsTagSignature) Type);
-        _cmsTagSignature2String(ContextID, SigString,  sig);
+        _cmsTagSignature2String(TypeString, (cmsTagSignature) Type);
+        _cmsTagSignature2String(SigString,  sig);
 
         cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unsupported type '%s' for tag '%s'", TypeString, SigString);
         goto Error;           // Should never happen
@@ -1743,8 +1725,8 @@ cmsBool CMSEXPORT cmsWriteTag(cmsContext ContextID, cmsHPROFILE hProfile, cmsTag
 
     if (Icc ->TagPtrs[i] == NULL)  {
 
-        _cmsTagSignature2String(ContextID, TypeString, (cmsTagSignature) Type);
-        _cmsTagSignature2String(ContextID, SigString,  sig);
+        _cmsTagSignature2String(TypeString, (cmsTagSignature) Type);
+        _cmsTagSignature2String(SigString,  sig);
         cmsSignalError(ContextID, cmsERROR_CORRUPTION_DETECTED, "Malformed struct in type '%s' for tag '%s'", TypeString, SigString);
 
         goto Error;
@@ -1807,7 +1789,7 @@ cmsUInt32Number CMSEXPORT cmsReadRawTag(cmsContext ContextID, cmsHPROFILE hProfi
         return Icc ->TagSizes[i];
     }
 
-    // The data has been already read, or written. But wait!, maybe the user choosed to save as
+    // The data has been already read, or written. But wait!, maybe the user chose to save as
     // raw data. In this case, return the raw data directly
     if (Icc ->TagSaveAsRaw[i]) {
 
@@ -1827,7 +1809,7 @@ cmsUInt32Number CMSEXPORT cmsReadRawTag(cmsContext ContextID, cmsHPROFILE hProfi
         return Icc ->TagSizes[i];
     }
 
-    // Already readed, or previously set by cmsWriteTag(). We need to serialize that
+    // Already read, or previously set by cmsWriteTag(). We need to serialize that
     // data to raw in order to maintain consistency.
 
     _cmsUnlockMutex(ContextID, Icc ->UsrMutex);

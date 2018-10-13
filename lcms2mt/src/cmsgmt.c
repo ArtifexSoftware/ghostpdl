@@ -52,7 +52,7 @@ cmsHTRANSFORM _cmsChain2Lab(cmsContext            ContextID,
     if (nProfiles > 254) return NULL;
 
     // The output space
-    hLab = cmsCreateLab4ProfileTHR(ContextID, NULL);
+    hLab = cmsCreateLab4Profile(ContextID, NULL);
     if (hLab == NULL) return NULL;
 
     // Create a copy of parameters
@@ -313,7 +313,7 @@ cmsPipeline* _cmsCreateGamutCheckPipeline(cmsContext ContextID,
         return NULL;
     }
 
-    hLab = cmsCreateLab4ProfileTHR(ContextID, NULL);
+    hLab = cmsCreateLab4Profile(ContextID, NULL);
     if (hLab == NULL) return NULL;
 
 
@@ -365,14 +365,14 @@ cmsPipeline* _cmsCreateGamutCheckPipeline(cmsContext ContextID,
 
     // Does create the forward step. Lab double to device
     dwFormat    = (CHANNELS_SH(nChannels)|BYTES_SH(2));
-    Chain.hForward = cmsCreateTransformTHR(ContextID,
+    Chain.hForward = cmsCreateTransform(ContextID,
         hLab, TYPE_Lab_DBL,
         hGamut, dwFormat,
         INTENT_RELATIVE_COLORIMETRIC,
         cmsFLAGS_NOCACHE);
 
     // Does create the backwards step
-    Chain.hReverse = cmsCreateTransformTHR(ContextID, hGamut, dwFormat,
+    Chain.hReverse = cmsCreateTransform(ContextID, hGamut, dwFormat,
         hLab, TYPE_Lab_DBL,
         INTENT_RELATIVE_COLORIMETRIC,
         cmsFLAGS_NOCACHE);
@@ -477,10 +477,10 @@ cmsFloat64Number CMSEXPORT cmsDetectTAC(cmsContext ContextID, cmsHPROFILE hProfi
     //  for safety
     if (bp.nOutputChans >= cmsMAXCHANNELS) return 0;
 
-    hLab = cmsCreateLab4ProfileTHR(ContextID, NULL);
+    hLab = cmsCreateLab4Profile(ContextID, NULL);
     if (hLab == NULL) return 0;
     // Setup a roundtrip on perceptual intent in output profile for TAC estimation
-    bp.hRoundTrip = cmsCreateTransformTHR(ContextID, hLab, TYPE_Lab_16,
+    bp.hRoundTrip = cmsCreateTransform(ContextID, hLab, TYPE_Lab_16,
                                           hProfile, dwFormatter, INTENT_PERCEPTUAL, cmsFLAGS_NOOPTIMIZE|cmsFLAGS_NOCACHE);
 
     cmsCloseProfile(ContextID, hLab);

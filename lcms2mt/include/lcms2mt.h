@@ -1041,10 +1041,8 @@ CMSAPI void*            CMSEXPORT cmsGetContextUserData(cmsContext ContextID);
 
 // Plug-In registering  --------------------------------------------------------------------------------------------------
 
-CMSAPI cmsBool           CMSEXPORT cmsPlugin(void* Plugin);
-CMSAPI cmsBool           CMSEXPORT cmsPluginTHR(cmsContext ContextID, void* Plugin);
+CMSAPI cmsBool           CMSEXPORT cmsPlugin(cmsContext ContextID, void* Plugin);
 CMSAPI void              CMSEXPORT cmsUnregisterPlugins(cmsContext ContextID);
-CMSAPI void              CMSEXPORT cmsUnregisterPluginsTHR(cmsContext ContextID);
 
 // Error logging ----------------------------------------------------------------------------------------------------------
 
@@ -1080,8 +1078,7 @@ CMSAPI void              CMSEXPORT cmsUnregisterPluginsTHR(cmsContext ContextID)
 typedef void  (* cmsLogErrorHandlerFunction)(cmsContext ContextID, cmsUInt32Number ErrorCode, const char *Text);
 
 // Allows user to set any specific logger
-CMSAPI void              CMSEXPORT cmsSetLogErrorHandler(cmsLogErrorHandlerFunction Fn);
-CMSAPI void              CMSEXPORT cmsSetLogErrorHandlerTHR(cmsContext ContextID, cmsLogErrorHandlerFunction Fn);
+CMSAPI void              CMSEXPORT cmsSetLogErrorHandler(cmsContext ContextID, cmsLogErrorHandlerFunction Fn);
 
 // Conversions --------------------------------------------------------------------------------------------------------------
 
@@ -1536,14 +1533,11 @@ CMSAPI cmsBool           CMSEXPORT cmsMD5computeID(cmsContext ContextID, cmsHPRO
 
 // Profile high level functions ------------------------------------------------------------------------------------------
 
-CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromFile(const char *ICCProfile, const char *sAccess);
-CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromFileTHR(cmsContext ContextID, const char *ICCProfile, const char *sAccess);
-CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromStream(FILE* ICCProfile, const char* sAccess);
-CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromStreamTHR(cmsContext ContextID, FILE* ICCProfile, const char* sAccess);
-CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromMem(const void * MemPtr, cmsUInt32Number dwSize);
-CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromMemTHR(cmsContext ContextID, const void * MemPtr, cmsUInt32Number dwSize);
-CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromIOhandlerTHR(cmsContext ContextID, cmsIOHANDLER* io);
-CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromIOhandler2THR(cmsContext ContextID, cmsIOHANDLER* io, cmsBool write);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromFile(cmsContext ContextID, const char *ICCProfile, const char *sAccess);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromStream(cmsContext ContextID, FILE* ICCProfile, const char* sAccess);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromMem(cmsContext ContextID, const void * MemPtr, cmsUInt32Number dwSize);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromIOhandler(cmsContext ContextID, cmsIOHANDLER* io);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsOpenProfileFromIOhandler2(cmsContext ContextID, cmsIOHANDLER* io, cmsBool write);
 CMSAPI cmsBool          CMSEXPORT cmsCloseProfile(cmsContext ContextID, cmsHPROFILE hProfile);
 
 CMSAPI cmsBool          CMSEXPORT cmsSaveProfileToFile(cmsContext ContextID, cmsHPROFILE hProfile, const char* FileName);
@@ -1553,68 +1547,48 @@ CMSAPI cmsUInt32Number  CMSEXPORT cmsSaveProfileToIOhandler(cmsContext ContextID
 
 // Predefined virtual profiles ------------------------------------------------------------------------------------------
 
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateRGBProfileTHR(cmsContext ContextID,
-                                                   const cmsCIExyY* WhitePoint,
-                                                   const cmsCIExyYTRIPLE* Primaries,
-                                                   cmsToneCurve* const TransferFunction[3]);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateRGBProfile(cmsContext ContextID,
+                                                const cmsCIExyY* WhitePoint,
+                                                const cmsCIExyYTRIPLE* Primaries,
+                                                cmsToneCurve* const TransferFunction[3]);
 
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateRGBProfile(const cmsCIExyY* WhitePoint,
-                                                   const cmsCIExyYTRIPLE* Primaries,
-                                                   cmsToneCurve* const TransferFunction[3]);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateGrayProfile(cmsContext ContextID,
+                                                 const cmsCIExyY* WhitePoint,
+                                                 const cmsToneCurve* TransferFunction);
 
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateGrayProfileTHR(cmsContext ContextID,
-                                                    const cmsCIExyY* WhitePoint,
-                                                    const cmsToneCurve* TransferFunction);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateLinearizationDeviceLink(cmsContext ContextID,
+                                                                   cmsColorSpaceSignature ColorSpace,
+                                                                   cmsToneCurve* const TransferFunctions[]);
 
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateGrayProfile(const cmsCIExyY* WhitePoint,
-                                                    const cmsToneCurve* TransferFunction);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateInkLimitingDeviceLink(cmsContext ContextID,
+                                                                 cmsColorSpaceSignature ColorSpace,
+                                                                 cmsFloat64Number Limit);
 
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateLinearizationDeviceLinkTHR(cmsContext ContextID,
-                                                                cmsColorSpaceSignature ColorSpace,
-                                                                cmsToneCurve* const TransferFunctions[]);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateLab2Profile(cmsContext ContextID,
+                                                 const cmsCIExyY* WhitePoint);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateLab4Profile(cmsContext ContextID,
+                                                 const cmsCIExyY* WhitePoint);
 
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateLinearizationDeviceLink(cmsColorSpaceSignature ColorSpace,
-                                                                cmsToneCurve* const TransferFunctions[]);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateXYZProfile(cmsContext ContextID);
 
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateInkLimitingDeviceLinkTHR(cmsContext ContextID,
-                                                              cmsColorSpaceSignature ColorSpace, cmsFloat64Number Limit);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsCreate_sRGBProfile(cmsContext ContextID);
 
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateInkLimitingDeviceLink(cmsColorSpaceSignature ColorSpace, cmsFloat64Number Limit);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateBCHSWabstractProfile(cmsContext ContextID,
+                                                                cmsUInt32Number nLUTPoints,
+                                                                cmsFloat64Number Bright,
+                                                                cmsFloat64Number Contrast,
+                                                                cmsFloat64Number Hue,
+                                                                cmsFloat64Number Saturation,
+                                                                cmsUInt32Number TempSrc,
+                                                                cmsUInt32Number TempDest);
 
-
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateLab2ProfileTHR(cmsContext ContextID, const cmsCIExyY* WhitePoint);
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateLab2Profile(const cmsCIExyY* WhitePoint);
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateLab4ProfileTHR(cmsContext ContextID, const cmsCIExyY* WhitePoint);
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateLab4Profile(const cmsCIExyY* WhitePoint);
-
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateXYZProfileTHR(cmsContext ContextID);
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateXYZProfile(void);
-
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreate_sRGBProfileTHR(cmsContext ContextID);
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreate_sRGBProfile(void);
-
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateBCHSWabstractProfileTHR(cmsContext ContextID,
-                                                             cmsUInt32Number nLUTPoints,
-                                                             cmsFloat64Number Bright,
-                                                             cmsFloat64Number Contrast,
-                                                             cmsFloat64Number Hue,
-                                                             cmsFloat64Number Saturation,
-                                                             cmsUInt32Number TempSrc,
-                                                             cmsUInt32Number TempDest);
-
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateBCHSWabstractProfile(cmsUInt32Number nLUTPoints,
-                                                             cmsFloat64Number Bright,
-                                                             cmsFloat64Number Contrast,
-                                                             cmsFloat64Number Hue,
-                                                             cmsFloat64Number Saturation,
-                                                             cmsUInt32Number TempSrc,
-                                                             cmsUInt32Number TempDest);
-
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateNULLProfileTHR(cmsContext ContextID);
-CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateNULLProfile(void);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsCreateNULLProfile(cmsContext ContextID);
 
 // Converts a transform to a devicelink profile
-CMSAPI cmsHPROFILE      CMSEXPORT cmsTransform2DeviceLink(cmsContext ContextID, cmsHTRANSFORM hTransform, cmsFloat64Number Version, cmsUInt32Number dwFlags);
+CMSAPI cmsHPROFILE      CMSEXPORT cmsTransform2DeviceLink(cmsContext ContextID,
+                                                          cmsHTRANSFORM hTransform,
+                                                          cmsFloat64Number Version,
+                                                          cmsUInt32Number dwFlags);
 
 // Intents ----------------------------------------------------------------------------------------------
 
@@ -1633,8 +1607,10 @@ CMSAPI cmsHPROFILE      CMSEXPORT cmsTransform2DeviceLink(cmsContext ContextID, 
 #define INTENT_PRESERVE_K_PLANE_SATURATION            15
 
 // Call with NULL as parameters to get the intent count
-CMSAPI cmsUInt32Number  CMSEXPORT cmsGetSupportedIntents(cmsUInt32Number nMax, cmsUInt32Number* Codes, char** Descriptions);
-CMSAPI cmsUInt32Number  CMSEXPORT cmsGetSupportedIntentsTHR(cmsContext ContextID, cmsUInt32Number nMax, cmsUInt32Number* Codes, char** Descriptions);
+CMSAPI cmsUInt32Number  CMSEXPORT cmsGetSupportedIntents(cmsContext ContextID,
+                                                         cmsUInt32Number nMax,
+                                                         cmsUInt32Number* Codes,
+                                                         char** Descriptions);
 
 // Flags
 
@@ -1649,7 +1625,7 @@ CMSAPI cmsUInt32Number  CMSEXPORT cmsGetSupportedIntentsTHR(cmsContext ContextID
 // Misc
 #define cmsFLAGS_BLACKPOINTCOMPENSATION   0x2000
 #define cmsFLAGS_NOWHITEONWHITEFIXUP      0x0004    // Don't fix scum dot
-#define cmsFLAGS_HIGHRESPRECALC           0x0400    // Use more memory to give better accurancy
+#define cmsFLAGS_HIGHRESPRECALC           0x0400    // Use more memory to give better accuracy
 #define cmsFLAGS_LOWRESPRECALC            0x0800    // Use less memory to minimize resources
 
 // For devicelink creation
@@ -1676,7 +1652,7 @@ CMSAPI cmsUInt32Number  CMSEXPORT cmsGetSupportedIntentsTHR(cmsContext ContextID
 
 // Transforms ---------------------------------------------------------------------------------------------------
 
-CMSAPI cmsHTRANSFORM    CMSEXPORT cmsCreateTransformTHR(cmsContext ContextID,
+CMSAPI cmsHTRANSFORM    CMSEXPORT cmsCreateTransform(cmsContext ContextID,
                                                   cmsHPROFILE Input,
                                                   cmsUInt32Number InputFormat,
                                                   cmsHPROFILE Output,
@@ -1684,14 +1660,7 @@ CMSAPI cmsHTRANSFORM    CMSEXPORT cmsCreateTransformTHR(cmsContext ContextID,
                                                   cmsUInt32Number Intent,
                                                   cmsUInt32Number dwFlags);
 
-CMSAPI cmsHTRANSFORM    CMSEXPORT cmsCreateTransform(cmsHPROFILE Input,
-                                                  cmsUInt32Number InputFormat,
-                                                  cmsHPROFILE Output,
-                                                  cmsUInt32Number OutputFormat,
-                                                  cmsUInt32Number Intent,
-                                                  cmsUInt32Number dwFlags);
-
-CMSAPI cmsHTRANSFORM    CMSEXPORT cmsCreateProofingTransformTHR(cmsContext ContextID,
+CMSAPI cmsHTRANSFORM    CMSEXPORT cmsCreateProofingTransform(cmsContext ContextID,
                                                   cmsHPROFILE Input,
                                                   cmsUInt32Number InputFormat,
                                                   cmsHPROFILE Output,
@@ -1701,25 +1670,8 @@ CMSAPI cmsHTRANSFORM    CMSEXPORT cmsCreateProofingTransformTHR(cmsContext Conte
                                                   cmsUInt32Number ProofingIntent,
                                                   cmsUInt32Number dwFlags);
 
-CMSAPI cmsHTRANSFORM    CMSEXPORT cmsCreateProofingTransform(cmsHPROFILE Input,
-                                                  cmsUInt32Number InputFormat,
-                                                  cmsHPROFILE Output,
-                                                  cmsUInt32Number OutputFormat,
-                                                  cmsHPROFILE Proofing,
-                                                  cmsUInt32Number Intent,
-                                                  cmsUInt32Number ProofingIntent,
-                                                  cmsUInt32Number dwFlags);
-
-CMSAPI cmsHTRANSFORM    CMSEXPORT cmsCreateMultiprofileTransformTHR(cmsContext ContextID,
+CMSAPI cmsHTRANSFORM    CMSEXPORT cmsCreateMultiprofileTransform(cmsContext ContextID,
                                                   cmsHPROFILE hProfiles[],
-                                                  cmsUInt32Number nProfiles,
-                                                  cmsUInt32Number InputFormat,
-                                                  cmsUInt32Number OutputFormat,
-                                                  cmsUInt32Number Intent,
-                                                  cmsUInt32Number dwFlags);
-
-
-CMSAPI cmsHTRANSFORM    CMSEXPORT cmsCreateMultiprofileTransform(cmsHPROFILE hProfiles[],
                                                   cmsUInt32Number nProfiles,
                                                   cmsUInt32Number InputFormat,
                                                   cmsUInt32Number OutputFormat,
@@ -1765,20 +1717,15 @@ CMSAPI void             CMSEXPORT cmsDoTransformLineStride(cmsContext ContextID,
                                                  cmsUInt32Number BytesPerPlaneOut);
 
 
-CMSAPI void             CMSEXPORT cmsSetAlarmCodes(const cmsUInt16Number NewAlarm[cmsMAXCHANNELS]);
-CMSAPI void             CMSEXPORT cmsGetAlarmCodes(cmsUInt16Number NewAlarm[cmsMAXCHANNELS]);
-
-
-CMSAPI void             CMSEXPORT cmsSetAlarmCodesTHR(cmsContext ContextID,
-                                                          const cmsUInt16Number AlarmCodes[cmsMAXCHANNELS]);
-CMSAPI void             CMSEXPORT cmsGetAlarmCodesTHR(cmsContext ContextID,
-                                                          cmsUInt16Number AlarmCodes[cmsMAXCHANNELS]);
+CMSAPI void             CMSEXPORT cmsSetAlarmCodes(cmsContext ContextID,
+                                             const cmsUInt16Number AlarmCodes[cmsMAXCHANNELS]);
+CMSAPI void             CMSEXPORT cmsGetAlarmCodes(cmsContext ContextID,
+                                                   cmsUInt16Number AlarmCodes[cmsMAXCHANNELS]);
 
 
 
 // Adaptation state for absolute colorimetric intent
-CMSAPI cmsFloat64Number CMSEXPORT cmsSetAdaptationState(cmsFloat64Number d);
-CMSAPI cmsFloat64Number CMSEXPORT cmsSetAdaptationStateTHR(cmsContext ContextID, cmsFloat64Number d);
+CMSAPI cmsFloat64Number CMSEXPORT cmsSetAdaptationState(cmsContext ContextID, cmsFloat64Number d);
 
 
 // Grab the input/output formats

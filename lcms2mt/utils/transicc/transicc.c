@@ -111,7 +111,7 @@ void Help(void)
 
     fprintf(stderr, "\nYou can use '*Lab', '*xyz' and others as built-in profiles\n\n");
 
-    PrintRenderingIntents();
+    PrintRenderingIntents(NULL);
 
     fprintf(stderr, "\n");
 
@@ -140,7 +140,7 @@ void Help(void)
 // The toggles stuff
 
 static
-void HandleSwitches(int argc, char *argv[])
+void HandleSwitches(cmsContext ContextID, int argc, char *argv[])
 {
     int s;
 
@@ -172,7 +172,7 @@ void HandleSwitches(int argc, char *argv[])
                 ObserverAdaptationState > 1.0)
                 FatalError("Adaptation states should be between 0 and 1");
 
-            cmsSetAdaptationState(ObserverAdaptationState);
+            cmsSetAdaptationState(ContextID, ObserverAdaptationState);
                   }
                   break;
 
@@ -561,13 +561,13 @@ cmsBool OpenTransforms(cmsContext ContextID)
         for (i=0; i < cmsMAXCHANNELS; i++)
             Alarm[i] = 0xFFFF;
 
-        cmsSetAlarmCodes(Alarm);
+        cmsSetAlarmCodes(ContextID, Alarm);
         dwFlags |= cmsFLAGS_GAMUTCHECK;
     }
 
 
     // The main transform
-    hTrans = cmsCreateProofingTransform(hInput,  dwIn, hOutput, dwOut, hProof, Intent, ProofingIntent, dwFlags);
+    hTrans = cmsCreateProofingTransform(ContextID, hInput,  dwIn, hOutput, dwOut, hProof, Intent, ProofingIntent, dwFlags);
 
     if (hProof) cmsCloseProfile(ContextID, hProof);
 
@@ -579,13 +579,13 @@ cmsBool OpenTransforms(cmsContext ContextID)
 
     if (hOutput && Verbose > 1) {
 
-        cmsHPROFILE hXYZ = cmsCreateXYZProfile();
-        cmsHPROFILE hLab = cmsCreateLab4Profile(NULL);
+        cmsHPROFILE hXYZ = cmsCreateXYZProfile(ContextID);
+        cmsHPROFILE hLab = cmsCreateLab4Profile(ContextID, NULL);
 
-        hTransXYZ = cmsCreateTransform(hInput, dwIn, hXYZ,  lIsFloat ? TYPE_XYZ_DBL : TYPE_XYZ_16, Intent, cmsFLAGS_NOCACHE);
+        hTransXYZ = cmsCreateTransform(ContextID, hInput, dwIn, hXYZ,  lIsFloat ? TYPE_XYZ_DBL : TYPE_XYZ_16, Intent, cmsFLAGS_NOCACHE);
         if (hTransXYZ == NULL) return FALSE;
 
-        hTransLab = cmsCreateTransform(hInput, dwIn, hLab,  lIsFloat? TYPE_Lab_DBL : TYPE_Lab_16, Intent, cmsFLAGS_NOCACHE);
+        hTransLab = cmsCreateTransform(ContextID, hInput, dwIn, hLab,  lIsFloat? TYPE_Lab_DBL : TYPE_Lab_16, Intent, cmsFLAGS_NOCACHE);
         if (hTransLab == NULL) return FALSE;
 
         cmsCloseProfile(ContextID, hXYZ);
@@ -1243,7 +1243,7 @@ int main(int argc, char *argv[])
 
     fprintf(stderr, "LittleCMS ColorSpace conversion calculator - 4.3 [LittleCMS %2.2f]\n", LCMS_VERSION / 1000.0);
 
-    InitUtils("transicc");
+    InitUtils(ContextID, "transicc");
 
     Verbose = 1;
 
@@ -1253,7 +1253,7 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    HandleSwitches(argc, argv);
+    HandleSwitches(ContextID, argc, argv);
 
     // Open profiles, create transforms
     if (!OpenTransforms(ContextID)) return 1;

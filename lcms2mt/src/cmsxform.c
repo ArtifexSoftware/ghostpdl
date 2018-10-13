@@ -53,8 +53,9 @@ void _cmsAllocAdaptationStateChunk(struct _cmsContext_struct* ctx,
 
 
 // Sets adaptation state for absolute colorimetric intent in the given context.  Adaptation state applies on all
-// but cmsCreateExtendedTransformTHR().  Little CMS can handle incomplete adaptation states.
-cmsFloat64Number CMSEXPORT cmsSetAdaptationStateTHR(cmsContext ContextID, cmsFloat64Number d)
+// but cmsCreateExtendedTransform().  Little CMS can handle incomplete adaptation states.
+// The adaptation state may be defaulted by this function. If you don't like it, use the extended transform routine
+cmsFloat64Number CMSEXPORT cmsSetAdaptationState(cmsContext ContextID, cmsFloat64Number d)
 {
     cmsFloat64Number prev;
     _cmsAdaptationStateChunkType* ptr = (_cmsAdaptationStateChunkType*) _cmsContextGetClientChunk(ContextID, AdaptationStateContext);
@@ -73,12 +74,6 @@ cmsFloat64Number CMSEXPORT cmsSetAdaptationStateTHR(cmsContext ContextID, cmsFlo
 }
 
 
-// The adaptation state may be defaulted by this function. If you don't like it, use the extended transform routine
-cmsFloat64Number CMSEXPORT cmsSetAdaptationState(cmsFloat64Number d)
-{
-    return cmsSetAdaptationStateTHR(NULL, d);
-}
-
 // -----------------------------------------------------------------------
 
 // Alarm codes for 16-bit transformations, because the fixed range of containers there are
@@ -90,7 +85,7 @@ _cmsAlarmCodesChunkType _cmsAlarmCodesChunk = { DEFAULT_ALARM_CODES_VALUE };
 
 // Sets the codes used to mark out-out-gamut on Proofing transforms for a given context. Values are meant to be
 // encoded in 16 bits.
-void CMSEXPORT cmsSetAlarmCodesTHR(cmsContext ContextID, const cmsUInt16Number AlarmCodesP[cmsMAXCHANNELS])
+void CMSEXPORT cmsSetAlarmCodes(cmsContext ContextID, const cmsUInt16Number AlarmCodesP[cmsMAXCHANNELS])
 {
     _cmsAlarmCodesChunkType* ContextAlarmCodes = (_cmsAlarmCodesChunkType*) _cmsContextGetClientChunk(ContextID, AlarmCodesContext);
 
@@ -101,26 +96,13 @@ void CMSEXPORT cmsSetAlarmCodesTHR(cmsContext ContextID, const cmsUInt16Number A
 
 // Gets the current codes used to mark out-out-gamut on Proofing transforms for the given context.
 // Values are meant to be encoded in 16 bits.
-void CMSEXPORT cmsGetAlarmCodesTHR(cmsContext ContextID, cmsUInt16Number AlarmCodesP[cmsMAXCHANNELS])
+void CMSEXPORT cmsGetAlarmCodes(cmsContext ContextID, cmsUInt16Number AlarmCodesP[cmsMAXCHANNELS])
 {
     _cmsAlarmCodesChunkType* ContextAlarmCodes = (_cmsAlarmCodesChunkType*) _cmsContextGetClientChunk(ContextID, AlarmCodesContext);
 
     _cmsAssert(ContextAlarmCodes != NULL); // Can't happen
 
     memcpy(AlarmCodesP, ContextAlarmCodes->AlarmCodes, sizeof(ContextAlarmCodes->AlarmCodes));
-}
-
-void CMSEXPORT cmsSetAlarmCodes(const cmsUInt16Number NewAlarm[cmsMAXCHANNELS])
-{
-    _cmsAssert(NewAlarm != NULL);
-
-    cmsSetAlarmCodesTHR(NULL, NewAlarm);
-}
-
-void CMSEXPORT cmsGetAlarmCodes(cmsUInt16Number OldAlarm[cmsMAXCHANNELS])
-{
-    _cmsAssert(OldAlarm != NULL);
-    cmsGetAlarmCodesTHR(NULL, OldAlarm);
 }
 
 
@@ -355,7 +337,7 @@ void NullFloatXFORM(cmsContext ContextID, _cmsTRANSFORM* p,
 
 // 16 bit precision -----------------------------------------------------------------------------------------------------------
 
-// Null transformation, only applies formatters. No caché
+// Null transformation, only applies formatters. No cache
 static
 void NullXFORM(cmsContext ContextID,
                _cmsTRANSFORM* p,
@@ -411,6 +393,7 @@ void PrecalculatedXFORMIdentity(cmsContext ContextID,
     cmsUInt32Number bppi = Stride->BytesPerPlaneIn;
     cmsUInt32Number bppo = Stride->BytesPerPlaneOut;
     int bpp;
+    cmsUNUSED_PARAMETER(ContextID);
 
     /* Silence some warnings */
     (void)bppi;
@@ -457,12 +440,12 @@ void TransformOnePixelWithGamutCheck(cmsContext ContextID, _cmsTRANSFORM* p,
         core->Lut->Eval16Fn(ContextID, wIn, wOut, core->Lut->Data);
 }
 
-// Gamut check, No caché, 16 bits.
+// Gamut check, No cache, 16 bits.
 #define FUNCTION_NAME PrecalculatedXFORMGamutCheck
 #define GAMUTCHECK
 #include "extra_xform.h"
 
-// No gamut check, Caché, 16 bits,
+// No gamut check, Cache, 16 bits,
 #define FUNCTION_NAME CachedXFORM
 #define CACHED
 #include "extra_xform.h"
@@ -976,16 +959,16 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
     }
     if (dwFlags & cmsFLAGS_NOCACHE) {
         if (dwFlags & cmsFLAGS_GAMUTCHECK)
-            p ->xform = PrecalculatedXFORMGamutCheck;  // Gamut check, no cach<E9>
+            p ->xform = PrecalculatedXFORMGamutCheck;  // Gamut check, no cache
         else if ((InputFormat & ~COLORSPACE_SH(31)) == (OutputFormat & ~COLORSPACE_SH(31)) &&
                  _cmsLutIsIdentity(p->core->Lut))
             p ->xform = PrecalculatedXFORMIdentity;
         else
-            p ->xform = PrecalculatedXFORM;  // No cach<E9>, no gamut check
+            p ->xform = PrecalculatedXFORM;  // No cache, no gamut check
 	return;
     }
     if (dwFlags & cmsFLAGS_GAMUTCHECK) {
-        p ->xform = CachedXFORMGamutCheck;    // Gamut check, cach<E9>
+        p ->xform = CachedXFORMGamutCheck;    // Gamut check, cache
 	return;
     }
     if ((InputFormat & ~COLORSPACE_SH(31)) == (OutputFormat & ~COLORSPACE_SH(31)) &&
@@ -994,7 +977,7 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
         return;
     }
     if (T_EXTRA(InputFormat) != 0) {
-        p ->xform = CachedXFORM;  // No gamut check, cach<E9>
+        p ->xform = CachedXFORM;  // No gamut check, cache
         return;
     }
     if ((InputFormat & ~(COLORSPACE_SH(31)|CHANNELS_SH(7)|BYTES_SH(3))) == 0 &&
@@ -1064,7 +1047,7 @@ _cmsFindFormatter(_cmsTRANSFORM* p, cmsUInt32Number InputFormat, cmsUInt32Number
         else if (inwords <= 4)
             p ->xform = CachedXFORM8;
         else
-            p ->xform = CachedXFORM;  // No gamut check, cach<E9>
+            p ->xform = CachedXFORM;  // No gamut check, cache
     }
 }
 
@@ -1157,7 +1140,7 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
             p ->xform = NullFloatXFORM;
         }
         else {
-            // Float transforms don't use caché, always are non-NULL
+            // Float transforms don't use cache, always are non-NULL
             p ->xform = FloatXFORM;
         }
 
@@ -1272,9 +1255,8 @@ cmsBool  IsProperColorSpace(cmsContext ContextID, cmsColorSpaceSignature Check, 
 // with the media white (media black?) x 100. Add a sanity check
 
 static
-void NormalizeXYZ(cmsContext ContextID, cmsCIEXYZ* Dest)
+void NormalizeXYZ(cmsCIEXYZ* Dest)
 {
-    cmsUNUSED_PARAMETER(ContextID);
     while (Dest -> X > 2. &&
            Dest -> Y > 2. &&
            Dest -> Z > 2.) {
@@ -1286,7 +1268,7 @@ void NormalizeXYZ(cmsContext ContextID, cmsCIEXYZ* Dest)
 }
 
 static
-void SetWhitePoint(cmsContext ContextID, cmsCIEXYZ* wtPt, const cmsCIEXYZ* src)
+void SetWhitePoint(cmsCIEXYZ* wtPt, const cmsCIEXYZ* src)
 {
     if (src == NULL) {
         wtPt ->X = cmsD50X;
@@ -1298,7 +1280,7 @@ void SetWhitePoint(cmsContext ContextID, cmsCIEXYZ* wtPt, const cmsCIEXYZ* src)
         wtPt ->Y = src->Y;
         wtPt ->Z = src->Z;
 
-        NormalizeXYZ(ContextID, wtPt);
+        NormalizeXYZ(wtPt);
     }
 
 }
@@ -1381,8 +1363,8 @@ cmsHTRANSFORM CMSEXPORT cmsCreateExtendedTransform(cmsContext ContextID,
     xform->core->RenderingIntent = Intents[nProfiles-1];
 
     // Take white points
-    SetWhitePoint(ContextID, &xform->core->EntryWhitePoint, (cmsCIEXYZ*) cmsReadTag(ContextID, hProfiles[0], cmsSigMediaWhitePointTag));
-    SetWhitePoint(ContextID, &xform->core->ExitWhitePoint,  (cmsCIEXYZ*) cmsReadTag(ContextID, hProfiles[nProfiles-1], cmsSigMediaWhitePointTag));
+    SetWhitePoint(&xform->core->EntryWhitePoint, (cmsCIEXYZ*) cmsReadTag(ContextID, hProfiles[0], cmsSigMediaWhitePointTag));
+    SetWhitePoint(&xform->core->ExitWhitePoint,  (cmsCIEXYZ*) cmsReadTag(ContextID, hProfiles[nProfiles-1], cmsSigMediaWhitePointTag));
 
 
     // Create a gamut check LUT if requested
@@ -1445,7 +1427,7 @@ cmsHTRANSFORM CMSEXPORT cmsCreateExtendedTransform(cmsContext ContextID,
 }
 
 // Multiprofile transforms: Gamut check is not available here, as it is unclear from which profile the gamut comes.
-cmsHTRANSFORM CMSEXPORT cmsCreateMultiprofileTransformTHR(cmsContext ContextID,
+cmsHTRANSFORM CMSEXPORT cmsCreateMultiprofileTransform(cmsContext ContextID,
                                                        cmsHPROFILE hProfiles[],
                                                        cmsUInt32Number nProfiles,
                                                        cmsUInt32Number InputFormat,
@@ -1466,7 +1448,7 @@ cmsHTRANSFORM CMSEXPORT cmsCreateMultiprofileTransformTHR(cmsContext ContextID,
     for (i=0; i < nProfiles; i++) {
         BPC[i] = dwFlags & cmsFLAGS_BLACKPOINTCOMPENSATION ? TRUE : FALSE;
         Intents[i] = Intent;
-        AdaptationStates[i] = cmsSetAdaptationStateTHR(ContextID, -1);
+        AdaptationStates[i] = cmsSetAdaptationState(ContextID, -1);
     }
 
 
@@ -1475,34 +1457,13 @@ cmsHTRANSFORM CMSEXPORT cmsCreateMultiprofileTransformTHR(cmsContext ContextID,
 
 
 
-cmsHTRANSFORM CMSEXPORT cmsCreateMultiprofileTransform(cmsHPROFILE hProfiles[],
-                                                  cmsUInt32Number nProfiles,
-                                                  cmsUInt32Number InputFormat,
-                                                  cmsUInt32Number OutputFormat,
-                                                  cmsUInt32Number Intent,
-                                                  cmsUInt32Number dwFlags)
-{
-
-    if (nProfiles <= 0 || nProfiles > 255) {
-         cmsSignalError(NULL, cmsERROR_RANGE, "Wrong number of profiles. 1..255 expected, %d found.", nProfiles);
-         return NULL;
-    }
-
-    return cmsCreateMultiprofileTransformTHR(NULL, hProfiles,
-                                                  nProfiles,
-                                                  InputFormat,
-                                                  OutputFormat,
-                                                  Intent,
-                                                  dwFlags);
-}
-
-cmsHTRANSFORM CMSEXPORT cmsCreateTransformTHR(cmsContext ContextID,
-                                              cmsHPROFILE Input,
-                                              cmsUInt32Number InputFormat,
-                                              cmsHPROFILE Output,
-                                              cmsUInt32Number OutputFormat,
-                                              cmsUInt32Number Intent,
-                                              cmsUInt32Number dwFlags)
+cmsHTRANSFORM CMSEXPORT cmsCreateTransform(cmsContext ContextID,
+                                           cmsHPROFILE Input,
+                                           cmsUInt32Number InputFormat,
+                                           cmsHPROFILE Output,
+                                           cmsUInt32Number OutputFormat,
+                                           cmsUInt32Number Intent,
+                                           cmsUInt32Number dwFlags)
 {
 
     cmsHPROFILE hArray[2];
@@ -1510,21 +1471,11 @@ cmsHTRANSFORM CMSEXPORT cmsCreateTransformTHR(cmsContext ContextID,
     hArray[0] = Input;
     hArray[1] = Output;
 
-    return cmsCreateMultiprofileTransformTHR(ContextID, hArray, Output == NULL ? 1U : 2U, InputFormat, OutputFormat, Intent, dwFlags);
-}
-
-CMSAPI cmsHTRANSFORM CMSEXPORT cmsCreateTransform(cmsHPROFILE Input,
-                                                  cmsUInt32Number InputFormat,
-                                                  cmsHPROFILE Output,
-                                                  cmsUInt32Number OutputFormat,
-                                                  cmsUInt32Number Intent,
-                                                  cmsUInt32Number dwFlags)
-{
-    return cmsCreateTransformTHR(NULL, Input, InputFormat, Output, OutputFormat, Intent, dwFlags);
+    return cmsCreateMultiprofileTransform(ContextID, hArray, Output == NULL ? 1U : 2U, InputFormat, OutputFormat, Intent, dwFlags);
 }
 
 
-cmsHTRANSFORM CMSEXPORT cmsCreateProofingTransformTHR(cmsContext ContextID,
+cmsHTRANSFORM CMSEXPORT cmsCreateProofingTransform(cmsContext ContextID,
                                                    cmsHPROFILE InputProfile,
                                                    cmsUInt32Number InputFormat,
                                                    cmsHPROFILE OutputProfile,
@@ -1545,36 +1496,16 @@ cmsHTRANSFORM CMSEXPORT cmsCreateProofingTransformTHR(cmsContext ContextID,
     Intents[0] = nIntent;      Intents[1] = nIntent;        Intents[2] = INTENT_RELATIVE_COLORIMETRIC;  Intents[3] = ProofingIntent;
     BPC[0]     = DoBPC;        BPC[1] = DoBPC;              BPC[2] = 0;                                 BPC[3] = 0;
 
-    Adaptation[0] = Adaptation[1] = Adaptation[2] = Adaptation[3] = cmsSetAdaptationStateTHR(ContextID, -1);
+    Adaptation[0] = Adaptation[1] = Adaptation[2] = Adaptation[3] = cmsSetAdaptationState(ContextID, -1);
 
     if (!(dwFlags & (cmsFLAGS_SOFTPROOFING|cmsFLAGS_GAMUTCHECK)))
-        return cmsCreateTransformTHR(ContextID, InputProfile, InputFormat, OutputProfile, OutputFormat, nIntent, dwFlags);
+        return cmsCreateTransform(ContextID, InputProfile, InputFormat, OutputProfile, OutputFormat, nIntent, dwFlags);
 
     return cmsCreateExtendedTransform(ContextID, 4, hArray, BPC, Intents, Adaptation,
                                         ProofingProfile, 1, InputFormat, OutputFormat, dwFlags);
 
 }
 
-
-cmsHTRANSFORM CMSEXPORT cmsCreateProofingTransform(cmsHPROFILE InputProfile,
-                                                   cmsUInt32Number InputFormat,
-                                                   cmsHPROFILE OutputProfile,
-                                                   cmsUInt32Number OutputFormat,
-                                                   cmsHPROFILE ProofingProfile,
-                                                   cmsUInt32Number nIntent,
-                                                   cmsUInt32Number ProofingIntent,
-                                                   cmsUInt32Number dwFlags)
-{
-    return cmsCreateProofingTransformTHR(NULL,
-                                                   InputProfile,
-                                                   InputFormat,
-                                                   OutputProfile,
-                                                   OutputFormat,
-                                                   ProofingProfile,
-                                                   nIntent,
-                                                   ProofingIntent,
-                                                   dwFlags);
-}
 
 
 // Grab the input/output formats

@@ -203,7 +203,7 @@
     <ClCompile Include="..\..\..\utils\jpgicc\jpgicc.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\lcms2_static\lcms2_static.vcxproj">
+    <ProjectReference Include="..\lcms2mt_static\lcms2mt_static.vcxproj">
       <Project>{71dede59-3f1e-486b-a899-4283000f76b5}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

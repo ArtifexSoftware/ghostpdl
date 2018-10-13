@@ -105,7 +105,7 @@ in the case of future revision (for example, 1994).
 Spatial Resolution: (Two octets) Lightness pixel density in pels/25.4 mm. The basic value is 200. Allowed values are
 100, 200, 300, 400, 600 and 1200 pels/25.4 mm, with square (or equivalent) pels.
 
-NOTE – The functional equivalence of inch-based and mm-based resolutions is maintained. For example, the 200 × 200
+NOTE - The functional equivalence of inch-based and mm-based resolutions is maintained. For example, the 200 x 200
 */
 
 static
@@ -142,8 +142,8 @@ void SetITUFax(j_compress_ptr cinfo)
 // the default range for ITU/T.42 -- See RFC 2301, section 6.2.3 for details
 
 //  L*  =   [0, 100]
-//  a*  =   [–85, 85]
-//  b*  =   [–75, 125]
+//  a*  =   [-85, 85]
+//  b*  =   [-75, 125]
 
 
 // These functions does convert the encoding of ITUFAX to floating point
@@ -170,7 +170,7 @@ void Lab2ITU(const cmsCIELab* Lab, cmsUInt16Number Out[3])
 // once for each node. In[] will contain the Lab PCS value to convert to ITUFAX
 // on PCS2ITU, or the ITUFAX value to convert to Lab in ITU2PCS
 // You can change the number of sample points if desired, the algorithm will
-// remain same. 33 points gives good accurancy, but you can reduce to 22 or less
+// remain same. 33 points gives good accuracy, but you can reduce to 22 or less
 // is space is critical
 
 #define GRID_POINTS 33
@@ -1047,7 +1047,7 @@ void Help(int level)
      fprintf(stderr, "%ci<profile> - Input profile (defaults to sRGB)\n", SW);
      fprintf(stderr, "%co<profile> - Output profile (defaults to sRGB)\n", SW);
 
-     PrintRenderingIntents();
+     PrintRenderingIntents(NULL);
 
 
      fprintf(stderr, "%cb - Black point compensation\n", SW);
@@ -1238,7 +1238,7 @@ void HandleSwitches(int argc, char *argv[])
 
 int main(int argc, char* argv[])
 {
-    InitUtils("jpgicc");
+    InitUtils(NULL, "jpgicc");
 
     HandleSwitches(argc, argv);
 

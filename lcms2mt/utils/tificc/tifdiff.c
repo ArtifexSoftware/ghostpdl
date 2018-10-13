@@ -629,7 +629,7 @@ int main(int argc, char* argv[])
 
       Tiff1 = Tiff2 = TiffDiff = NULL;
 
-	  InitUtils("tiffdiff");
+      InitUtils(NULL, "tiffdiff");
 
       HandleSwitches(argc, argv);
 

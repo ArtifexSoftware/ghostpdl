@@ -290,7 +290,7 @@ cmsStage* CMSEXPORT cmsStageAllocToneCurves(cmsContext ContextID, cmsUInt32Numbe
 
 
 // Create a bunch of identity curves
-cmsStage* _cmsStageAllocIdentityCurves(cmsContext ContextID, cmsUInt32Number nChannels)
+cmsStage* CMSEXPORT _cmsStageAllocIdentityCurves(cmsContext ContextID, cmsUInt32Number nChannels)
 {
     cmsStage* mpe = cmsStageAllocToneCurves(ContextID, nChannels, NULL);
 
@@ -709,7 +709,7 @@ int IdentitySampler(cmsContext ContextID, register const cmsUInt16Number In[], r
 }
 
 // Creates an MPE that just copies input to output
-cmsStage* _cmsStageAllocIdentityCLut(cmsContext ContextID, cmsUInt32Number nChan)
+cmsStage* CMSEXPORT _cmsStageAllocIdentityCLut(cmsContext ContextID, cmsUInt32Number nChan)
 {
     cmsUInt32Number Dimensions[MAX_INPUT_DIMENSIONS];
     cmsStage* mpe ;
@@ -733,7 +733,7 @@ cmsStage* _cmsStageAllocIdentityCLut(cmsContext ContextID, cmsUInt32Number nChan
 
 
 // Quantize a value 0 <= i < MaxSamples to 0..0xffff
-cmsUInt16Number _cmsQuantizeVal(cmsFloat64Number i, cmsUInt32Number MaxSamples)
+cmsUInt16Number CMSEXPORT _cmsQuantizeVal(cmsFloat64Number i, cmsUInt32Number MaxSamples)
 {
     cmsFloat64Number x;
 
@@ -966,7 +966,7 @@ void EvaluateLab2XYZ(cmsContext ContextID, const cmsFloat32Number In[],
 
 
 // No dup or free routines needed, as the structure has no pointers in it.
-cmsStage* _cmsStageAllocLab2XYZ(cmsContext ContextID)
+cmsStage* CMSEXPORT _cmsStageAllocLab2XYZ(cmsContext ContextID)
 {
     return _cmsStageAllocPlaceholder(ContextID, cmsSigLab2XYZElemType, 3, 3, EvaluateLab2XYZ, NULL, NULL, NULL);
 }
@@ -1017,7 +1017,7 @@ cmsStage* _cmsStageAllocLabV2ToV4curves(cmsContext ContextID)
 // ********************************************************************************
 
 // Matrix-based conversion, which is more accurate, but slower and cannot properly be saved in devicelink profiles
-cmsStage* _cmsStageAllocLabV2ToV4(cmsContext ContextID)
+cmsStage* CMSEXPORT _cmsStageAllocLabV2ToV4(cmsContext ContextID)
 {
     static const cmsFloat64Number V2ToV4[] = { 65535.0/65280.0, 0, 0,
                                      0, 65535.0/65280.0, 0,
@@ -1033,7 +1033,7 @@ cmsStage* _cmsStageAllocLabV2ToV4(cmsContext ContextID)
 
 
 // Reverse direction
-cmsStage* _cmsStageAllocLabV4ToV2(cmsContext ContextID)
+cmsStage* CMSEXPORT _cmsStageAllocLabV4ToV2(cmsContext ContextID)
 {
     static const cmsFloat64Number V4ToV2[] = { 65280.0/65535.0, 0, 0,
                                      0, 65280.0/65535.0, 0,
@@ -1177,7 +1177,7 @@ void EvaluateXYZ2Lab(cmsContext ContextID, const cmsFloat32Number In[], cmsFloat
     cmsUNUSED_PARAMETER(mpe);
 }
 
-cmsStage* _cmsStageAllocXYZ2Lab(cmsContext ContextID)
+cmsStage* CMSEXPORT _cmsStageAllocXYZ2Lab(cmsContext ContextID)
 {
     return _cmsStageAllocPlaceholder(ContextID, cmsSigXYZ2LabElemType, 3, 3, EvaluateXYZ2Lab, NULL, NULL, NULL);
 

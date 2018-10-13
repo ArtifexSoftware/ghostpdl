@@ -50,7 +50,7 @@ cmsBool IsGoodWordPrec(const char *title, cmsUInt16Number in, cmsUInt16Number ou
 void* PluginMemHandler(void);
 cmsContext WatchDogContext(void* usr);
 
-void ResetFatalError(void);
+void ResetFatalError(cmsContext ContextID);
 void Die(const char* Reason, ...);
 void Dot(void);
 void Fail(const char* frm, ...);

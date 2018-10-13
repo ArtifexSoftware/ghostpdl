@@ -642,7 +642,7 @@ cmsBool OptimizeByResampling(cmsContext ContextID, cmsPipeline** Lut, cmsUInt32N
     cmsToneCurve** DataSetOut;
     Prelin16Data* p16;
 
-    // This is a loosy optimization! does not apply in floating-point cases
+    // This is a lossy optimization! does not apply in floating-point cases
     if (_cmsFormatterIsFloat(*InputFormat) || _cmsFormatterIsFloat(*OutputFormat)) return FALSE;
 
     ColorSpace       = _cmsICCcolorSpace(ContextID, (int) T_COLORSPACE(*InputFormat));
@@ -906,7 +906,7 @@ void* Prelin8dup(cmsContext ContextID, const void* ptr)
 
 // A optimized interpolation for 8-bit input.
 #define DENS(i,j,k) (LutTable[(i)+(j)+(k)+OutChan])
-static
+static CMS_NO_SANITIZE
 void PrelinEval8(cmsContext ContextID, register const cmsUInt16Number Input[],
                   register cmsUInt16Number Output[],
                   register const void* D)
@@ -1039,7 +1039,7 @@ cmsBool OptimizeByComputingLinearization(cmsContext ContextID, cmsPipeline** Lut
     _cmsStageCLutData* OptimizedPrelinCLUT;
 
 
-    // This is a loosy optimization! does not apply in floating-point cases
+    // This is a lossy optimization! does not apply in floating-point cases
     if (_cmsFormatterIsFloat(*InputFormat) || _cmsFormatterIsFloat(*OutputFormat)) return FALSE;
 
     // Only on chunky RGB
@@ -1389,7 +1389,7 @@ cmsBool OptimizeByJoiningCurves(cmsContext ContextID, cmsPipeline** Lut, cmsUInt
     cmsStage* ObtainedCurves = NULL;
 
 
-    // This is a loosy optimization! does not apply in floating-point cases
+    // This is a lossy optimization! does not apply in floating-point cases
     if (_cmsFormatterIsFloat(*InputFormat) || _cmsFormatterIsFloat(*OutputFormat)) return FALSE;
 
     //  Only curves in this LUT?
@@ -1764,8 +1764,8 @@ cmsBool OptimizeMatrixShaper(cmsContext ContextID, cmsPipeline** Lut, cmsUInt32N
         _cmsStageToneCurvesData* mpeC1 = (_cmsStageToneCurvesData*) cmsStageData(ContextID, Curve1);
         _cmsStageToneCurvesData* mpeC2 = (_cmsStageToneCurvesData*) cmsStageData(ContextID, Curve2);
 
-        // In this particular optimization, caché does not help as it takes more time to deal with
-        // the caché that with the pixel handling
+        // In this particular optimization, cache does not help as it takes more time to deal with
+        // the cache that with the pixel handling
         *dwFlags |= cmsFLAGS_NOCACHE;
 
         // Setup the optimizarion routines
