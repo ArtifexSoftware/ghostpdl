@@ -1682,18 +1682,6 @@ static int get_planar_line_for_trap(void *arg, unsigned char *buf)
 static int check_trapping(gs_memory_t *memory, int trap_w, int trap_h,
                           int num_comps, const int *comp_order)
 {
-#ifndef ENABLE_TRAPPING
-    if (trap_w > 0 || trap_h > 0)
-    {
-        dmprintf(memory,
-                 "Trapping is disabled in this build. To enable trapping,\n"
-                 "follow the instructions in the documentation. Please note\n"
-                 "that if you do this, you are responsible for ensuring that\n"
-                 "you have any and all patent licenses that may be required.\n");
-        return_error(gs_error_rangecheck);
-    }
-#endif
-
     if (trap_w < 0 || trap_h < 0)
     {
         dmprintf(memory, "Trapping range must be >= 0");
