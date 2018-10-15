@@ -609,6 +609,23 @@ NOMEDIAATTRS {
 % and we replace the key in the <merged> dictionary with its prior value
 % (or remove it if it had no prior value).
 
+% These procedures are called with the following on the stack:
+%   <orig> <merged> <failed> <Policies> <key> <policy>
+% They are expected to consume the top 2 operands.
+% NOTE: we currently treat all values other than 0, 1, or 7 (for PageSize)
+% the same as 0, i.e., we signal an error.
+/0Policy {		% Set errorinfo and signal a configurationerror.
+  NOMEDIAATTRS {
+    % NOMEDIAATTRS means that the default policy is 7...
+    pop 2 index exch 7 put
+  } {
+    pop dup 4 index exch get 2 array astore
+    $error /errorinfo 3 -1 roll put
+    cleartomark
+    /setpagedevice .systemvar /configurationerror signalerror
+  } ifelse
+} bind executeonly odef
+
 % Making this an operator means we can properly hide
 % the contents - specifically .forceput
 /1Policy
@@ -617,59 +634,46 @@ NOMEDIAATTRS {
   SETPDDEBUG { (Rolling back.) = pstack flush } if
   3 index 2 index 3 -1 roll .forceput
   4 index 1 index .knownget
-   { 4 index 3 1 roll .forceput }
-   { 3 index exch .undef }
+  { 4 index 3 1 roll .forceput }
+  { 3 index exch .undef }
   ifelse
 } bind executeonly odef
 
-/.policyprocs mark
-% These procedures are called with the following on the stack:
-%   <orig> <merged> <failed> <Policies> <key> <policy>
-% They are expected to consume the top 2 operands.
-% NOTE: we currently treat all values other than 0, 1, or 7 (for PageSize)
-% the same as 0, i.e., we signal an error.
-%
-% M. Sweet, Easy Software Products:
-%
-% Define NOMEDIAATTRS to turn off the default (but unimplementable) media
-% selection policies for setpagedevice.  This is used by CUPS to support
-% the standard Adobe media attributes.
-  0 {		% Set errorinfo and signal a configurationerror.
-      NOMEDIAATTRS {
-        % NOMEDIAATTRS means that the default policy is 7...
-        pop 2 index exch 7 put
-      } {
-        pop dup 4 index exch get 2 array astore
-        $error /errorinfo 3 -1 roll put
-        cleartomark
-        /setpagedevice .systemvar /configurationerror signalerror
-      } ifelse
-  } bind
-  1 /1Policy load
-  7 {		% For PageSize only, just impose the request.
-        1 index /PageSize eq
-         { pop pop 1 index /PageSize 7 put }
-         { .policyprocs 0 get exec }
-        ifelse
-  } bind
-.dicttomark readonly def
-currentdict /1Policy undef
+/7Policy {		% For PageSize only, just impose the request.
+  1 index /PageSize eq
+  { pop pop 1 index /PageSize 7 put }
+  { .policyprocs 0 get exec }
+  ifelse
+} bind executeonly odef
 
 /.applypolicies		% <orig> <merged> <failed> .applypolicies
                         %   <orig> <merged'> <failed'>
- { 1 index /Policies get 1 index
-    { type /integertype eq
-       { pop		% already processed
-       }
-       { 2 copy .knownget not { 1 index /PolicyNotFound get } if
-                        % Stack: <orig> <merged> <failed> <Policies> <key>
-                        %   <policy>
-         .policyprocs 1 index .knownget not { .policyprocs 0 get } if exec
-       }
-      ifelse
-    }
-   forall pop
- } bind def
+{
+  1 index /Policies get 1 index
+  { type /integertype eq
+     {
+       pop		% already processed
+     }{
+       2 copy .knownget not { 1 index /PolicyNotFound get } if
+                      % Stack: <orig> <merged> <failed> <Policies> <key>
+                      %   <policy>
+        dup 1 eq {
+          1Policy
+        }{
+          dup 7 eq {
+            7Policy
+          }{
+            0Policy
+          } ifelse
+        } ifelse
+     } ifelse
+  }
+  forall pop
+} bind executeonly odef
+
+currentdict /0Policy undef
+currentdict /1Policy undef
+currentdict /7Policy undef
 
 % Prepare to present parameters to the device, by spreading them onto the
 % operand stack and removing any that shouldn't be presented.
@@ -1017,7 +1021,7 @@ SETPDDEBUG { (Installing.) = pstack flush } if
     .postinstall
   } ifelse
   setglobal           % return to original VM allocation mode
-} odef
+} bind executeonly odef
 
 % We break out the code after calling the Install procedure into a
 % separate procedure, since it is executed even if Install causes an error.

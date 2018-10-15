@@ -61,7 +61,7 @@ systemdict begin
   % doesn't get run enough to justify the complication
   //.putdevparams
   //systemdict /.searchabledevs .forceundef
-} .bind odef % must be bound and hidden for .forceundef
+} .bind executeonly odef % must be bound and hidden for .forceundef
 
 % ------ extend filenameforall to handle wildcards in %dev% part of pattern -------%
 /filenameforall {

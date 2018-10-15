@@ -583,7 +583,7 @@ buildfontdict 3 /.buildfont3 cvx put
 } bind def
 /.setloadingfont {
    //systemdict /.loadingfont 3 -1 roll .forceput
-} .bind odef % .forceput must be bound and hidden
+} .bind executeonly odef % .forceput must be bound and hidden
 /.loadfont
  {              % Some buggy fonts leave extra junk on the stack,
                 % so we have to make a closure that records the stack depth
@@ -1012,7 +1012,7 @@ $error /SubstituteFont { } put
     dup length string copy
     .forceput setglobal
   } ifelse
-} .bind odef % must be bound and hidden for .forceput
+} .bind executeonly odef % must be bound and hidden for .forceput
 
 % Attempt to load a font from a file.
 /.tryloadfont {         % <fontname> .tryloadfont <font> true

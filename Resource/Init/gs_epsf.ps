@@ -31,7 +31,7 @@
 /EPSBoundingBoxState 5 def
 /EPSBoundingBoxSetState {
   //systemdict /EPSBoundingBoxState 3 -1 roll .forceput
-} .bind odef % .forceput must be bound and hidden
+} .bind executeonly odef % .forceput must be bound and hidden
 
 % Parse 4 numbers for a bounding box
 /EPSBoundingBoxParse { % (llx lly urx ury) -- llx lly urx ury true OR false
