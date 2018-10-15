@@ -536,7 +536,7 @@ dup /DefineResource {
   } if
   dup /CodeMap .knownget { //null eq { .buildcmap } if } if
   /Generic /Category findresource /DefineResource get exec
-} bind put
+} bind executeonly put
 /Category defineresource pop
         % We might have loaded CID font support already.
 /CIDInit /ProcSet 2 copy { findresource } .internalstopped

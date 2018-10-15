@@ -2745,8 +2745,12 @@ zparsecff(i_ctx_t *i_ctx_p)
     ref blk_wrap[1];
 
     check_read(*op);
+
     if (r_has_type(op, t_array)) {  /* no packedarrays */
         int i, blk_sz, blk_cnt;
+
+        if (op->value.refs == NULL)
+            return_error(gs_error_typecheck);
 
         data.blk_ref = op->value.refs;
         blk_cnt  = r_size(op);

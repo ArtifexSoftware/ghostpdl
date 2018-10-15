@@ -199,7 +199,7 @@ def
 % ordinary CFF font.
 /StartData {          % <resname> <nbytes> StartData -
   currentfile exch subfilefilter //false //false ReadData pop
-} bind def
+} bind executeonly def
 /ReadData {           % <resname> <file> <forceresname> <forcecid> ReadData <fontset>
         % Initialize.
 
@@ -234,7 +234,7 @@ def
   end		% FontSetInit ProcSet
   /FontSet defineresource
 
-} bind def
+} bind executeonly def
 
 % ---------------- Resource category definition ---------------- %
 

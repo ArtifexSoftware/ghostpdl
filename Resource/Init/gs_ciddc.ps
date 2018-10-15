@@ -204,7 +204,7 @@ begin
     exch pop begin                                   %
     .GetCIDDecoding
     end
-  } bind def
+  } bind executeonly def
 
   /FindResource      % <name> FindResource <dict>
   { currentglobal exch                               % bGlobal /InstName
@@ -212,7 +212,7 @@ begin
     dup //.MakeInstance exec                         % bGlobal /InstName <Inst>
     DefineResource                                   % bGlobal <Inst>
     exch setglobal                                   % <Inst>
-  } bind def
+  } bind executeonly def
 
 currentdict end
 /CIDDecoding exch /Category defineresource pop

@@ -327,7 +327,7 @@ currentdict end def
       //FindResource exec
     } ifelse
   } ifelse
-} bind def
+} bind executeonly def
 
 /ResourceStatus {  % <InstName> ResourceStatus <nStatus> <nSize> true
                    % <InstName> ResourceStatus false
@@ -359,7 +359,7 @@ currentdict end def
       //false
     } ifelse
   } ifelse
-} bind def
+} bind executeonly def
 
 /ResourceForAll { % <template> <proc> <scratch> ResourceForAll -
 
@@ -440,7 +440,7 @@ currentdict end def
 
   % Make the enumerator and apply it :
   /MappedCategoryRedefiner /ProcSet findresource /MakeResourceEnumerator get exec exec
-} bind def
+} bind executeonly def
 
 currentdict end /Font exch /Category defineresource pop
 end
