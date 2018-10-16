@@ -23,15 +23,63 @@
 
 #include "gsdsrc.h"
 #include "gsfunc0.h"
+#include "gsfunc4.h"
 
 static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_dict *stream_dict, pdf_dict *page_dict);
+
+static int
+pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_stream *function_stream, char **ops, unsigned int *size)
+{
+    return 0;
+}
+
+static int
+pdfi_build_function_4(pdf_context *ctx, const gs_function_params_t * mnDR,
+                    pdf_dict *function_dict, int depth, gs_function_t ** ppfn)
+{
+    gs_function_PtCr_params_t params;
+    pdf_stream *function_stream = NULL;
+    int code;
+    int64_t Length, temp;
+    byte *data_source_buffer;
+    char *ops;
+    unsigned int size;
+
+    *(gs_function_params_t *)&params = *mnDR;
+    params.ops.data = 0;	/* in case of failure */
+    params.ops.size = 0;	/* ditto */
+
+    code = pdfi_dict_get_int(ctx, function_dict, "Length", &Length);
+    if (code < 0)
+        return code;
+
+    pdfi_seek(ctx, ctx->main_stream, function_dict->stream_offset, SEEK_SET);
+    code = pdfi_open_memory_stream_from_stream(ctx, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &function_stream);
+    if (code < 0) {
+        pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
+        return code;
+    }
+
+    code = pdfi_parse_type4_func_stream(ctx, function_stream, &ops, &size);
+    pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
+    if (code < 0)
+        return code;
+
+    params.ops.data = (const byte *)ops;
+    params.ops.size = size + 1;
+    code = gs_function_PtCr_init(ppfn, &params, ctx->memory);
+    if (code < 0)
+        gs_function_PtCr_free_params(&params, ctx->memory);
+
+    return code;
+}
 
 static int
 pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
                     pdf_dict *function_dict, int depth, gs_function_t ** ppfn)
 {
     gs_function_Sd_params_t params;
-    pdf_stream *profile_stream = NULL;
+    pdf_stream *function_stream = NULL;
     int code;
     int64_t Length, temp;
     byte *data_source_buffer;
@@ -47,12 +95,12 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
         return code;
 
     pdfi_seek(ctx, ctx->main_stream, function_dict->stream_offset, SEEK_SET);
-    code = pdfi_open_memory_stream_from_stream(ctx, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &profile_stream);
+    code = pdfi_open_memory_stream_from_stream(ctx, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &function_stream);
     if (code < 0) {
-        pdfi_close_memory_stream(ctx, data_source_buffer, profile_stream);
+        pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
         return code;
     }
-    data_source_init_stream(&params.DataSource, profile_stream->s);
+    data_source_init_stream(&params.DataSource, function_stream->s);
 
     code = pdfi_dict_get_int(ctx, function_dict, "Order", &temp);
     if (code < 0 &&  code != gs_error_undefined)
