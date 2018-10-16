@@ -956,6 +956,16 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
             gx_device *pdev = i_ctx_p->pgs->device;
             const char * dname = pdev->dname;
+            gs_gc_root_t dev_root;
+            /* There is a chance that, during the call to gs_main_run_string(), the interpreter may
+             * decide to call the garbager - the device is in gc memory, and the only reference to it
+             * (in the gstate) has been removed, thus it can be destroyed by the garbager.
+             * Counter-intuitively, adjusting the reference count makes not difference to that.
+             * Register the device as a gc 'root' so it will be implicitely marked by garbager, and
+             * and thus surive until control returns here.
+             */
+            if (gs_register_struct_root(pdev->memory, &dev_root, (void **)&pdev, "gs_main_finit") < 0)
+                return_error(gs_error_Fatal);
 
             /* make sure device doesn't isn't freed by .uninstalldevice */
             rc_adjust(pdev, 1, "gs_main_finit");
@@ -978,6 +988,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
                     emprintf2(imemory, "UNKNOWN ERROR %d closing %s device.\n", code, dname);
                }
             }
+            gs_unregister_root(pdev->memory, &dev_root, "gs_main_finit");
             rc_decrement(pdev, "gs_main_finit");                /* device might be freed */
             if (exit_status == 0 || exit_status == gs_error_Quit)
                 exit_status = code;
