@@ -143,4 +143,4 @@ PDF_OBJS=\
 $(PDFOBJ)gpdf.dev: $(ECHOGS_XE) $(PDF_OBJS)  $(PDFOBJDIR)$(D)expat.dev $(JPEGXR_GENDIR)$(D)jpegxr.dev \
                   $(PDFGEN)pl.dev $(PDFGEN)$(PL_SCALER).dev $(PDFGEN)pjl.dev $(PDF_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PDFOBJ)gpdf $(PDF_OBJS)
-	$(ADDMOD) $(PDFOBJ)gpdf -include $(PDFGEN)$(PL_SCALER) $(PDFGEN)pjl.dev
+	$(ADDMOD) $(PDFOBJ)gpdf -include $(PDFGEN)$(PL_SCALER) $(PDFGEN)pjl.dev $(PDFGEN)func4lib.dev
