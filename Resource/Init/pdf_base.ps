@@ -394,7 +394,7 @@ currentdict /token_nofail_dict .undef
   dup Objects length gt {
     dup Objects exch array dup 3 1 roll copy pop /Objects exch def
   } if
-  dup Generations length pstack gt {
+  dup Generations length gt {
     %% Initiallly Generations is a string, but the xref rebuilding code
     %% can convert it to an array (/setxrefentry in pdf_rbld.ps). So we
     %% need to be able to deal with either case.
