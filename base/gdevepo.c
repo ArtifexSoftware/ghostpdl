@@ -208,7 +208,7 @@ is_device_installed(gx_device *dev, const char *name)
 static bool
 device_wants_optimization(gx_device *dev)
 {
-    return (dev_proc(dev, fillpage) == gx_default_fillpage);
+    return (!gs_is_null_device(dev) && dev_proc(dev, fillpage) == gx_default_fillpage);
 }
 
 /* Use this when debugging to enable/disable epo
