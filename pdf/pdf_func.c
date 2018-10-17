@@ -30,7 +30,56 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
 static int
 pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_stream *function_stream, char **ops, unsigned int *size)
 {
-    return 0;
+    int code;
+    byte c;
+    char OpTokenBuffer[9], NumTokenBuffer[16];
+    unsigned int OpSize, NumSize, IsReal;
+
+    do {
+        code = pdfi_read_bytes(ctx, &c, 1, 1, function_stream);
+        if (code < 0)
+            break;
+        switch(c) {
+            case 0x20:
+            case 0x0a:
+            case 0x0d:
+            case 0x09:
+                continue;
+            case '{':
+                break;
+            case '}':
+                break;
+            default:
+                if ((c >= '0' && c <= '9') || c == '-' || c == '.') {
+                    /* parse a number */
+                    NumSize = 1;
+                    if (c == '.')
+                        IsReal = 1;
+                    else
+                        IsReal = 0;
+                    NumTokenBuffer[0] = c;
+                    do {
+                        code = pdfi_read_bytes(ctx, &c, 1, 1, function_stream);
+                        if (c == '.'){
+                            if (IsReal == 1)
+                                code = gs_error_syntaxerror;
+                            else
+                                NumTokenBuffer[NumSize++] = c;
+                        } else {
+                            if (c >= '0' && 'c' <= '9') {
+                                NumTokenBuffer[NumSize++] = c;
+                            } else
+                                code = gs_error_syntaxerror;
+                        }
+                    } while (code >= 0);
+                } else {
+                    /* parse an operator */
+                }
+                break;
+        }
+    } while (code >= 0);
+
+    return code;
 }
 
 static int
@@ -105,7 +154,10 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
     code = pdfi_dict_get_int(ctx, function_dict, "Order", &temp);
     if (code < 0 &&  code != gs_error_undefined)
         return code;
-    params.Order = (int)temp;
+    if (code == gs_error_undefined)
+        params.Order = 1;
+    else
+        params.Order = (int)temp;
 
     code = pdfi_dict_get_int(ctx, function_dict, "BitsPerSample", &temp);
     if (code < 0)
@@ -114,43 +166,35 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
 
     code = make_float_array_from_dict(ctx, (float **)&params.Encode, function_dict, "Encode");
     if (code < 0) {
-        gs_free_const_object(ctx->memory, params.Domain, "Domain");
-        if (params.Range != NULL)
-            gs_free_const_object(ctx->memory, params.Range, "Range");
-        return code;
+        if (code == gs_error_undefined)
+            code = 2 * params.m;
+        else
+            return code;
     }
     if (code != 2 * params.m) {
         gs_free_const_object(ctx->memory, params.Encode, "Encode");
-        gs_free_const_object(ctx->memory, params.Domain, "Domain");
-        if (params.Range != NULL)
-            gs_free_const_object(ctx->memory, params.Range, "Range");
-        return code;
+        return_error(gs_error_rangecheck);
     }
 
     code = make_float_array_from_dict(ctx, (float **)&params.Decode, function_dict, "Decode");
     if (code < 0) {
-        gs_free_const_object(ctx->memory, params.Encode, "Encode");
-        gs_free_const_object(ctx->memory, params.Domain, "Domain");
-        if (params.Range != NULL)
-            gs_free_const_object(ctx->memory, params.Range, "Range");
-        return code;
+        if (code == gs_error_undefined)
+            code = 2 * params.n;
+        else {
+            gs_free_const_object(ctx->memory, params.Encode, "Encode");
+            return code;
+        }
     }
     if (code != 2 * params.n) {
         gs_free_const_object(ctx->memory, params.Decode, "Decode");
         gs_free_const_object(ctx->memory, params.Encode, "Encode");
-        gs_free_const_object(ctx->memory, params.Domain, "Domain");
-        if (params.Range != NULL)
-            gs_free_const_object(ctx->memory, params.Range, "Range");
-        return code;
+        return_error(gs_error_rangecheck);
     }
 
     code = make_int_array_from_dict(ctx, (int **)&params.Size, function_dict, "Size");
     if (code != params.m) {
         gs_free_const_object(ctx->memory, params.Decode, "Decode");
         gs_free_const_object(ctx->memory, params.Encode, "Encode");
-        gs_free_const_object(ctx->memory, params.Domain, "Domain");
-        if (params.Range != NULL)
-            gs_free_const_object(ctx->memory, params.Range, "Range");
         if (code > 0)
             return_error(gs_error_rangecheck);
         return code;
@@ -160,11 +204,8 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
         gs_free_const_object(ctx->memory, params.Size, "Size");
         gs_free_const_object(ctx->memory, params.Decode, "Decode");
         gs_free_const_object(ctx->memory, params.Encode, "Encode");
-        gs_free_const_object(ctx->memory, params.Domain, "Domain");
-        if (params.Range != NULL)
-            gs_free_const_object(ctx->memory, params.Range, "Range");
     }
-    return 0;
+    return code;
 }
 
 static int
@@ -291,7 +332,7 @@ pdfi_build_function_3(pdf_context *ctx, const gs_function_params_t * mnDR,
         pdfi_countdown(rsubfn);
         if (code < 0) {
             pdfi_countdown(Functions);
-            break;
+            return code;
         }
     }
     pdfi_countdown(Functions);
