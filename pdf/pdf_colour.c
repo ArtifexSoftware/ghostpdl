@@ -658,10 +658,10 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cn
     pdfi_seek(ctx, ctx->main_stream, ICC_dict->stream_offset, SEEK_SET);
 
     /* The ICC profile reading code (irritatingly) requires a seekable stream, because it
-     * rewids it to the start, then seeks to the ned to find the size, then rewids the
+     * rewinds it to the start, then seeks to the end to find the size, then rewinds the
      * stream again.
      * Ideally we would use a ReusableStreamDecode filter here, but that is largely
-     * implemented in PostScript (!) so we can't use it. What we cna do is create a
+     * implemented in PostScript (!) so we can't use it. What we can do is create a
      * string sourced stream in memory, which is at least seekable.
      */
     code = pdfi_open_memory_stream_from_stream(ctx, (unsigned int)Length, &profile_buffer,
@@ -677,7 +677,7 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cn
 
     /* If this is a compressed stream, we need to decompress it */
     if(known) {
-        int decompressed_length = 0, bytes;
+        int decompressed_length = 0;
         byte *Buffer;
 
         /* This is again complicated by requiring a seekable stream, and the fact that,
@@ -1290,6 +1290,48 @@ static int pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
     /* If we got here, it's a recursion base case, and ppcs should have been set if requested */
     if (ppcs != NULL && *ppcs == NULL)
         code = gs_note_error(gs_error_VMerror);
+    return code;
+}
+
+/*
+ * Gets icc profile data from the provided stream.
+ * Position in the stream is NOT preserved.
+ * This is raw data, not filtered, so no need to worry about compression.
+ * (Used for JPXDecode images)
+ */
+int
+pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_stream *stream, gs_offset_t offset,
+                                       unsigned int length, int comps, gs_color_space **ppcs)
+{
+    pdf_stream *profile_stream = NULL;
+    byte *profile_buffer;
+    int code, code1;
+    float range[8] = {0,1,0,1,0,1,0,1};
+
+    /* Move to the start of the profile data */
+    pdfi_seek(ctx, stream, offset, SEEK_SET);
+
+    /* The ICC profile reading code (irritatingly) requires a seekable stream, because it
+     * rewinds it to the start, then seeks to the end to find the size, then rewinds the
+     * stream again.
+     * Ideally we would use a ReusableStreamDecode filter here, but that is largely
+     * implemented in PostScript (!) so we can't use it. What we can do is create a
+     * string sourced stream in memory, which is at least seekable.
+     */
+    code = pdfi_open_memory_stream_from_stream(ctx, length, &profile_buffer,
+                                               stream, &profile_stream);
+    if (code < 0) {
+        return code;
+    }
+
+    /* Now, finally, we can call the code to create and set the profile */
+    code = pdfi_create_icc(ctx, NULL, profile_stream->s, comps, range, ppcs);
+
+    code1 = pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
+
+    if (code == 0)
+        code = code1;
+
     return code;
 }
 

@@ -179,6 +179,9 @@ typedef struct {
     int comps;
     int bpc;
     uint32_t cs_enum;
+    bool iccbased;
+    uint32_t icc_offset;
+    uint32_t icc_length;
 } pdfi_jpx_info_t;
 
 /* Scan JPX image for header info */
@@ -199,6 +202,9 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
     bool got_color = false;
     
     dmprintf1(ctx->memory, "JPXFilter: Image length %d\n", length);
+
+    /* Clear out the info param */
+    memset(info, sizeof(pdfi_jpx_info_t), 0);
 
     /* Allocate a data buffer that hopefully is big enough */
     data_buf_len = LEN_DATA;
@@ -315,7 +321,15 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
             if (cs_meth == 1)
                 cs_enum = READ32BE(data+3);
             else if (cs_meth == 2) {
-                dmprintf(ctx->memory, "JPXDecode: COLR Meth 2 not supported yet\n");
+                /* This is an ICCBased color space just sitting there in the buffer.
+                 * TODO: I could create the colorspace now while I have the buffer,
+                 * but code flow is more consistent if I do it later.  Could change this.
+                 */
+                info->iccbased = true;
+                info->icc_offset = pdfi_tell(source) - (box_len-3);
+                info->icc_length = box_len - 3;
+                dmprintf4(ctx->memory, "JPXDecode: COLR Meth 2 at offset %d(0x%x), length %d(0x%x)\n",
+                          info->icc_offset, info->icc_offset, info->icc_length, info->icc_length);
                 cs_enum = 0;
             } else {
                 dmprintf1(ctx->memory, "JPXDecode: COLR unexpected method %d\n", cs_meth);
@@ -778,33 +792,49 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     } else {
         if (image_info.ColorSpace == NULL) {
             if (image_info.is_JPXDecode) {
-                pdf_name name;
-                char *color_str;
+                if (jpx_info.iccbased) {
+                    code = pdfi_create_icc_colorspace_from_stream(ctx, source, jpx_info.icc_offset,
+                                                                  jpx_info.icc_length, jpx_info.comps,
+                                                                  &pcs);
+                    if (code < 0) {
+                        dmprintf2(ctx->memory,
+                                  "JPXDecode: Error setting icc colorspace (offset=%d,len=%d)\n",
+                                  jpx_info.icc_offset, jpx_info.icc_length);
+                        goto cleanupExit;
+                    }
+                } else {
+                    pdf_name name;
+                    char *color_str;
 
-                /* TODO: Hackity BS here, just trying to pull out a reasonable color for now */
-                switch(jpx_info.cs_enum) {
-                case 12:
-                    color_str = (char *)"DeviceCMYK";
-                    break;
-                case 16:
-                case 18:
-                    color_str = (char *)"DeviceRGB";
-                    break;
-                case 17:
-                    color_str = (char *)"DeviceGray";
-                    break;
-                default:
-                    dmprintf1(ctx->memory, "JPXDecode: Unsupported colorspace %d\n", jpx_info.cs_enum);
-                    goto cleanupExit;
-                }
+                    /* TODO: Hackity BS here, just trying to pull out a reasonable color for now */
+                    switch(jpx_info.cs_enum) {
+                    case 12:
+                        color_str = (char *)"DeviceCMYK";
+                        break;
+                    case 16:
+                    case 18:
+                        color_str = (char *)"DeviceRGB";
+                        break;
+                    case 17:
+                        color_str = (char *)"DeviceGray";
+                        break;
+                    default:
+                        dmprintf1(ctx->memory, "JPXDecode: Unsupported colorspace %d\n", jpx_info.cs_enum);
+                        goto cleanupExit;
+                    }
                 
-                /* Make a fake name so I can pass it to this function (hackity, hackity..) */
-                memset(&name, 0, sizeof(pdf_name));
-                name.memory = NULL;
-                name.type = PDF_NAME;
-                name.length = strlen(color_str);
-                name.data = (byte *)color_str;
-                code = pdfi_create_colorspace(ctx, (pdf_obj *)&name, page_dict, stream_dict, &pcs);
+                    /* Make a fake name so I can pass it to this function (hackity, hackity..) */
+                    memset(&name, 0, sizeof(pdf_name));
+                    name.memory = NULL;
+                    name.type = PDF_NAME;
+                    name.length = strlen(color_str);
+                    name.data = (byte *)color_str;
+                    code = pdfi_create_colorspace(ctx, (pdf_obj *)&name, page_dict, stream_dict, &pcs);
+                    if (code < 0) {
+                        dmprintf1(ctx->memory, "JPXDecode: Error setting colorspace %s\n", color_str);
+                        goto cleanupExit;
+                    }
+                }
                 comps = gs_color_space_num_components(pcs);
                 image_info.BPC = jpx_info.bpc;
             } else {

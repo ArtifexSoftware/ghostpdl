@@ -37,5 +37,7 @@ int pdfi_ri(pdf_context *ctx);
 /* For potential use by other types of object (images etc) */
 int pdfi_setcolorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict);
 int pdfi_create_colorspace(pdf_context *ctx, pdf_obj *space, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs);
+int pdfi_create_icc_colorspace_from_stream(pdf_context *ctx, pdf_stream *stream, gs_offset_t offset,
+                                           unsigned int length, int comps, gs_color_space **ppcs);
 
 #endif
