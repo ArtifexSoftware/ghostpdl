@@ -126,10 +126,13 @@ pdf_imp_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
     gs_c_param_list list;
     int code;
 
+#if 0
+    gx_device_fill_in_procs(pmi->device);
     code = gs_opendevice(pdevice);
     if (code < 0)
         goto cleanup_setdevice;
-
+#endif
+    
     code = gs_setdevice_no_erase(ctx->pgs, pdevice);
     if (code < 0)
         goto cleanup_setdevice;

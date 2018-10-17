@@ -1320,10 +1320,17 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     if (code < 0)
         return code;
 
+#if 0
+    /* TODO: added this call to gx_device_fill_in_procs() to fix problem with
+     * check_device_separable() being called before there is an encode_color proc defined.
+     * BUT... maybe the correct solution is not to call gs_opendevice() here at all?
+     */
+    //    gx_device_fill_in_procs(pmi->device);
     code = gs_opendevice(pmi->device);
     if (code < 0)
         return code;
-    
+#endif
+
     /* No file names to process.*/
     if (!arg)
         return 0;
