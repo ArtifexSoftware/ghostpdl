@@ -675,7 +675,7 @@ pdfi_data_image_params(pdf_context *ctx, pdfi_image_info_t *info,
         if (pcs && pcs->type == &gs_color_space_type_Indexed) {
             /* Default value is [0,N], where N=2^n-1, our hival */
             minval = 0.0;
-            maxval = pcs->params.indexed.hival;
+            maxval = (float)pcs->params.indexed.hival;
         } else {
             minval = 0.0;
             maxval = 1.0;
@@ -862,7 +862,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                     code = pdfi_array_get_number(ctx, mask_array, i, &num);
                     if (code < 0)
                         goto cleanupExit;
-                    t4image.MaskColor[i] = (float)num;
+                    t4image.MaskColor[i] = (unsigned int)num;
                 }
                 t4image.MaskColor_is_range = true;
             }
