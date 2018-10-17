@@ -30,6 +30,8 @@
 
 #define PDF_PARSER_MIN_INPUT_SIZE (8192 * 4)
 
+static int pdfi_install_halftone(pdf_context *ctx, gx_device *pdevice);
+
 /*
  * The PDF interpreter instance is derived from pl_interp_implementation_t.
  */
@@ -159,9 +161,13 @@ pdf_imp_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
     if (code < 0)
         goto cleanup_erase;
 
+    code = pdfi_install_halftone(ctx, pdevice);
+    if (code < 0)
+        goto cleanup_halftone;
 
     return 0;
 
+cleanup_halftone:
 cleanup_erase:
     /* undo gsave */
     gs_grestore_only(ctx->pgs);     /* destroys gs_save stack */
@@ -383,3 +389,73 @@ pl_interp_implementation_t pdf_implementation =
     NULL,
 };
 
+/*
+ * We need to install a halftone ourselves, this is not
+ * done automatically.
+ */
+
+static float
+identity_transfer(double tint, const gx_transfer_map *ignore_map)
+{
+    return tint;
+}
+
+/* The following is a 45 degree spot screen with the spots enumerated
+ * in a defined order. */
+static byte order16x16[256] = {
+    38, 11, 14, 32, 165, 105, 90, 171, 38, 12, 14, 33, 161, 101, 88, 167,
+    30, 6, 0, 16, 61, 225, 231, 125, 30, 6, 1, 17, 63, 222, 227, 122,
+    27, 3, 8, 19, 71, 242, 205, 110, 28, 4, 9, 20, 74, 246, 208, 106,
+    35, 24, 22, 40, 182, 46, 56, 144, 36, 25, 22, 41, 186, 48, 58, 148,
+    152, 91, 81, 174, 39, 12, 15, 34, 156, 95, 84, 178, 40, 13, 16, 34,
+    69, 212, 235, 129, 31, 7, 2, 18, 66, 216, 239, 133, 32, 8, 2, 18,
+    79, 254, 203, 114, 28, 4, 10, 20, 76, 250, 199, 118, 29, 5, 10, 21,
+    193, 44, 54, 142, 36, 26, 23, 42, 189, 43, 52, 139, 37, 26, 24, 42,
+    39, 12, 15, 33, 159, 99, 87, 169, 38, 11, 14, 33, 163, 103, 89, 172,
+    31, 7, 1, 17, 65, 220, 229, 123, 30, 6, 1, 17, 62, 223, 233, 127,
+    28, 4, 9, 20, 75, 248, 210, 108, 27, 3, 9, 19, 72, 244, 206, 112,
+    36, 25, 23, 41, 188, 49, 60, 150, 35, 25, 22, 41, 184, 47, 57, 146,
+    157, 97, 85, 180, 40, 13, 16, 35, 154, 93, 83, 176, 39, 13, 15, 34,
+    67, 218, 240, 135, 32, 8, 3, 19, 70, 214, 237, 131, 31, 7, 2, 18,
+    78, 252, 197, 120, 29, 5, 11, 21, 80, 255, 201, 116, 29, 5, 10, 21,
+    191, 43, 51, 137, 37, 27, 24, 43, 195, 44, 53, 140, 37, 26, 23, 42
+};
+
+#define source_phase_x 4
+#define source_phase_y 0
+
+static int
+pdfi_install_halftone(pdf_context *ctx, gx_device *pdevice)
+{
+    gs_halftone ht;
+    gs_string thresh;
+    int code;
+
+    int width = 16;
+    int height = 16;
+    thresh.data = order16x16;
+    thresh.size = width * height;
+
+    if (gx_device_must_halftone(pdevice))
+    {
+        ht.type = ht_type_threshold;
+        ht.params.threshold.width = width;
+        ht.params.threshold.height = height;
+        ht.params.threshold.thresholds.data = thresh.data;
+        ht.params.threshold.thresholds.size = thresh.size;
+        ht.params.threshold.transfer = 0;
+        ht.params.threshold.transfer_closure.proc = 0;
+
+        gs_settransfer(ctx->pgs, identity_transfer);
+
+        code = gs_sethalftone(ctx->pgs, &ht);
+        if (code < 0)
+            return gs_throw(code, "could not install halftone");
+
+        code = gs_sethalftonephase(ctx->pgs, 0, 0);
+        if (code < 0)
+            return gs_throw(code, "could not set halftone phase");
+    }
+
+    return 0;
+}
