@@ -1341,7 +1341,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_stream *s)
                 memset(o, 0x00, sizeof(pdf_obj));
                 o->memory = ctx->memory;
                 o->type = PDF_BOOL;
-                o->value = true;
+                o->value = false;
 
 #if REFCNT_DEBUG
                 o->UID = ctx->UID++;
