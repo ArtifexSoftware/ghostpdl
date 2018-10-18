@@ -1023,7 +1023,7 @@ process_ccitt_compress(gs_gstate * pgs,
  */
 static int
 process_adaptive_compress(gs_gstate * pgs,
-                          pcl_raster_t * prast, const byte * pin, uint insize)
+                          pcl_raster_t * prast, const byte * pin, uint insize, bool mono)
 {
     pcl_seed_row_t *pseed_row = prast->pseed_rows;
     byte *pdata = pseed_row->pdata;
@@ -1088,8 +1088,10 @@ process_adaptive_compress(gs_gstate * pgs,
             break;
     }
 
-    /* clear the seed rows if Delta Row Compression at end of raster block */
-    if (cmd == DELTA_ROW_COMPRESS) {
+    /* On monochrome printers tested HP clears the seed row of delta
+       row compression after each block, color printers leave it
+       intact. */
+    if (mono) {
         memset(pdata, 0, row_size);
         pseed_row->is_blank = true;
     }
@@ -1151,7 +1153,7 @@ add_raster_plane(const byte * pdata,
         else if (comp_mode == NO_COMPRESS_BLOCK)
             return process_block_nocompress(pcs->pgs, prast, pdata, nbytes);
         else if (comp_mode == ADAPTIVE_COMPRESS)
-            return process_adaptive_compress(pcs->pgs, prast, pdata, nbytes);
+            return process_adaptive_compress(pcs->pgs, prast, pdata, nbytes, pcs->personality == pcl5e);
         else
             return process_ccitt_compress(pcs->pgs, prast, pdata, nbytes,
                                           comp_mode);
