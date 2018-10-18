@@ -1941,8 +1941,9 @@ $(GLOBJ)sfilter1.$(OBJ) : $(GLSRC)sfilter1.c $(AK) $(stdio__h) $(memory__h)\
 	$(GLCC) $(GLO_)sfilter1.$(OBJ) $(C_) $(GLSRC)sfilter1.c
 
 $(GLD)psfilters.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)sfilter2.$(OBJ)\
-  $(GLOBJ)sfilter1.$(OBJ) $(LIB_MAK) $(MAKEDIRS)
-	$(SETMOD) $(GLD)psfilters $(GLOBJ)sfilter1.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
+  $(GLOBJ)sfilter1.$(OBJ) $(GLOBJ)sa85d.$(OBJ) $(LIB_MAK) $(MAKEDIRS)
+	$(SETMOD) $(GLD)psfilters $(GLOBJ)sfilter1.$(OBJ) $(GLOBJ)sfilter2.$(OBJ) $(GLOBJ)sa85d.$(OBJ)
+	$(ADDMOD) $(GLD)psfilters $(GLOBJ)sa85d.$(OBJ)
 
 $(GLOBJ)sstring.$(OBJ) : $(GLSRC)sstring.c $(AK)\
  $(stdio__h) $(memory__h) $(string__h)\

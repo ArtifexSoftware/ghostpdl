@@ -108,6 +108,12 @@ gxpspg:
 gxpspgclean:
 	$(MAKE) $(PROFILEMAKEOPTS) cleansub
 
+gpdfpg:
+	$(MAKE) $(PROFILEMAKEOPTS) .gpdfsubtarget
+
+gpdfpgclean:
+	$(MAKE) $(PROFILEMAKEOPTS) cleansub
+
 gpdlpg:
 	$(MAKE) $(PROFILEMAKEOPTS) .gpdlsubtarget
 
@@ -149,6 +155,12 @@ gxpsdebug:
 #	$(MAKE) $(DEBUGMAKEOPTS) apitest
 
 gxpsdebugclean:
+	$(MAKE) $(DEBUGMAKEOPTS) cleansub
+
+gpdfdebug:
+	$(MAKE) $(DEBUGMAKEOPTS) .gpdfsubtarget
+
+gpdlfdebugclean:
 	$(MAKE) $(DEBUGMAKEOPTS) cleansub
 
 gpdldebug:
@@ -194,6 +206,9 @@ gpcl6memento:
 gxpsmemento:
 	$(MAKE) $(MEMENTOMAKEOPTS) .xpssubtarget
 
+gpdfmemento:
+	$(MAKE) $(MEMENTOMAKEOPTS) .pdfsubtarget
+
 mementoclean:
 	$(MAKE) $(MEMENTOMAKEOPTS) cleansub
 
@@ -219,6 +234,9 @@ gpcl6sanitize:
 
 gxpssanitize:
 	$(MAKE) $(SANITIZEMAKEOPTS) .xpssubtarget
+
+gpdfsanitize:
+	$(MAKE) $(SANITIZEMAKEOPTS) .pdfsubtarget
 
 sanitizeclean:
 	$(MAKE) $(SANITIZEMAKEOPTS) cleansub

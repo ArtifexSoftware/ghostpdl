@@ -109,9 +109,6 @@ $(PDF_TOP_OBJ): $(PDFSRC)pdftop.c $(plmain_h) $(pltop_h) $(PDFINCLUDES) $(GLOBJ)
                 $(pconfig_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdftop.c $(PDFO_)pdftop.$(OBJ)
 
-# sa85d is explicitly included here, which seems wrong, especially as none of
-# the other decoders have to be. spdiff.c as well. sfilter1 is included in filters.dev, still needs to be here.
-
 PDF_OBJS=\
     $(PDFOBJ)pdf_loop_detect.$(OBJ)\
     $(PDFOBJ)ghostpdf.$(OBJ)\
@@ -129,18 +126,17 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_text.$(OBJ)\
     $(PDFOBJ)pdf_shading.$(OBJ)\
     $(PDFOBJ)pdf_func.$(OBJ)\
-    $(GLOBJ)sa85d.$(OBJ)\
-    $(GLOBJ)spdiff.$(OBJ)\
-    $(GLOBJ)sfilter1.$(OBJ)\
-    $(GLOBJ)saes.$(OBJ)\
-    $(GLOBJ)aes.$(OBJ)
-
 
 
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is
 # required and shouldn't be and PLOBJ==PDFGEN is required.
 
-$(PDFOBJ)gpdf.dev: $(ECHOGS_XE) $(PDF_OBJS)  $(PDFOBJDIR)$(D)expat.dev $(JPEGXR_GENDIR)$(D)jpegxr.dev \
-                  $(PDFGEN)pl.dev $(PDFGEN)$(PL_SCALER).dev $(PDFGEN)pjl.dev $(PDF_MAK) $(MAKEDIRS) $(PDFGEN)func4lib.dev
+$(PDFOBJ)gpdf.dev: $(ECHOGS_XE) $(PDF_OBJS) \
+                  $(PDFGEN)pl.dev $(PDFGEN)$(PL_SCALER).dev $(PDFGEN)pjl.dev $(PDFGEN)func4lib.dev \
+                  $(PDFGEN)pdiff.dev $(PDFGEN)psfilters.dev $(PDFGEN)saes.dev $(PDFGEN)sjpx.dev $(PDFGEN)psfilters.dev \
+                  $(PDFGEN)sdct.dev \
+                  $(PDF_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PDFOBJ)gpdf $(PDF_OBJS)
 	$(ADDMOD) $(PDFOBJ)gpdf -include $(PDFGEN)$(PL_SCALER) $(PDFGEN)pjl.dev $(PDFGEN)func4lib.dev
+	$(ADDMOD) $(PDFOBJ)gpdf -include $(PDFGEN)pdiff.dev $(PDFGEN)psfilters.dev $(PDFGEN)saes.dev $(PDFGEN)sjpx.dev
+	$(ADDMOD) $(PDFOBJ)gpdf -include $(PDFGEN)psfilters.dev $(PDFGEN)sdct.dev
