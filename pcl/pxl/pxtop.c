@@ -228,9 +228,6 @@ pxl_impl_set_device(pl_interp_implementation_t * impl,
 
     stage = Sbegin;
 
-    if ((code = gs_opendevice(device)) < 0)
-        goto pisdEnd;
-
     pxs->interpolate = pl_main_get_interpolate(mem);
     pxs->nocache = pl_main_get_nocache(mem);
     gs_setscanconverter(pxli->pgs, pl_main_get_scanconverter(mem));

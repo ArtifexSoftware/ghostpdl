@@ -1276,10 +1276,6 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     if (code < 0)
         return code;
 
-    code = gs_opendevice(pmi->device);
-    if (code < 0)
-        return code;
-    
     /* No file names to process.*/
     if (!arg)
         return 0;
