@@ -204,7 +204,7 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
     dmprintf1(ctx->memory, "JPXFilter: Image length %d\n", length);
 
     /* Clear out the info param */
-    memset(info, sizeof(pdfi_jpx_info_t), 0);
+    memset(info, 0, sizeof(pdfi_jpx_info_t));
 
     /* Allocate a data buffer that hopefully is big enough */
     data_buf_len = LEN_DATA;
