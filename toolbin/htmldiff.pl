@@ -13,29 +13,44 @@
 # here (e.g. as list.txt).
 # 4) Invoke this script. (e.g. diffrun diffout list.txt)
 # 5) Make tea. Drink tea.
+#
+# list.txt should look like:
+#
+# tests_private/pdf/PDF_2.0_FTS/fts_01_0108.pdf.ppmraw.300.0 gs peeved peeves
+# tests_private/pdf/PDF_2.0_FTS/fts_02_0230.pdf.ppmraw.300.0 gs peeved peeves
+# ...
+#
+# Basically this mirrors the list of failed jobs given in a cluster test
+# email.
+
 
 ########################################################################
 # SETUP SECTION
 
 # The path to the executables.
 #$gsexe     = "gs/bin/gswin32c.exe";
-$gsexe     = "gs\\bin\\gswin32c.exe";
-$pclexe    = "main\\obj\\pcl6.exe";
-$xpsexe    = "xps\\obj\\gxps.exe";
-$svgexe    = "svg\\obj\\gsvg.exe";
-$bmpcmpexe = "..\\bmpcmp\\bmpcmp\\Release\\bmpcmp.exe";
+$gsexe     = "debugbin/gswin32c.exe";
+$pclexe    = "main/obj/pcl6.exe";
+$xpsexe    = "xps/obj/gxps.exe";
+$svgexe    = "svg/obj/gsvg.exe";
+$bmpcmpexe = "toolbin/Debug/bmpcmp.exe";
 $convertexe= "convert.exe"; # ImageMagick
 
 # The args fed to the different exes. Probably won't need to play with these.
-$gsargs    = "-sDEVICE=bmp16m -dNOPAUSE -dBATCH -q -sDEFAULTPAPERSIZE=letter -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f";
+$gsargs    = "-dNOPAUSE -dBATCH -q -sDEFAULTPAPERSIZE=letter -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f";
 $gsargsPS  = " %rom%Resource/Init/gs_cet.ps";
-$pclargs   = "-sDEVICE=bmp16m -dNOPAUSE";
-$xpsargs   = "-sDEVICE=bmp16m -dNOPAUSE";
-$svgargs   = "-sDEVICE=bmp16m -dNOPAUSE";
+$pclargs   = "-dNOPAUSE";
+$xpsargs   = "-dNOPAUSE";
+$svgargs   = "-dNOPAUSE";
 $pwgsargs  = "-sDEVICE=pdfwrite -dNOPAUSE -dBATCH -q -sDEFAULTPAPERSIZE=letter -dNOOUTERSAVE -dJOBSERVER -c false 0 startjob pop -f";
 $pwpclargs = "-sDEVICE=pdfwrite -dNOPAUSE";
 $pwxpsargs = "-sDEVICE=pdfwrite -dNOPAUSE";
 $pwsvgargs = "-sDEVICE=pdfwrite -dNOPAUSE";
+
+# Set the following if you want to override all the tests to use a
+# particular output format/device.
+#$format_override="bmp";
+$format_override="";
 
 # Set the following to the maximum number (approx) of bitmap sets that
 # should be put into a single HTML file.
@@ -47,11 +62,11 @@ $pngize = 1;
 
 # The path from your ghostpdl directory to where the test files can be
 # found
-$fileadjust = "../ghostpcl/";
+$fileadjust = "../";
 
 # The path to prepend to each of the above exe's to get the reference
 # version.
-$reference = "..\\ghostpdlREF\\";
+$reference = "reference/";
 
 # I thought we'd need to use redirection, but this gives problems on
 # windows at least. Non windows users may want to use the following:
@@ -215,10 +230,10 @@ sub dprint {
 sub runjobs {
     my ($cmd, $cmd2, $html, $html2, $pre1, $pre2, $post) = @_;
     my $ret, $ret2, $pid;
-    
+
     if ($parallel) {
         FORK: {
-            if ($pid = fork) {
+            if ($pid = fork()) {
                 $ret  = system($cmd);
                 waitpid($pid, 0);
                 $ret2 = $?;
@@ -235,7 +250,7 @@ sub runjobs {
         $ret  = system($cmd);
         $ret2 = system($cmd2);
     }
-        
+
     if ($ret != 0)
     {
         print $pre1." ".$post." failed with exit code ".$ret."\n";
@@ -375,6 +390,62 @@ while (<>)
     {
         nexthtml();
     }
+
+    # Override the format if required
+    if ($format_override ne "") {
+        $fmt = $format_override;
+    }
+
+    # Map format to device
+    if ($fmt eq "ppmraw") {
+        $devargs="-sDEVICE=ppmraw";
+        $suffix="ppm";
+    } elsif ($fmt eq "pbmraw") {
+        $devargs="-sDEVICE=pbmraw";
+        $suffix="pbm";
+    } elsif ($fmt eq "pam") {
+        $devargs="-sDEVICE=pam";
+        $suffix="pam";
+    } elsif ($fmt eq "pgmraw") {
+        $devargs="-sDEVICE=pgmraw";
+        $suffix="pgm";
+    } elsif ($fmt eq "pnmcmyk") {
+        $devargs="-sDEVICE=pnmcmyk";
+        $suffix="pnm";
+    } elsif ($fmt eq "pkmraw") {
+        $devargs="-sDEVICE=pkmraw";
+        $suffix="pkm";
+    } elsif ($fmt eq "bmp") {
+        $devargs="-sDEVICE=bmp16m";
+        $suffix="bmp";
+    } elsif ($fmt eq "png") {
+        $devargs="-sDEVICE=png16m";
+        $suffix="png";
+    } elsif ($fmt eq "tiffscaled") {
+        $devargs="-sDEVICE=tiffscaled";
+        $suffix="tif";
+    } elsif ($fmt eq "bitrgb") {
+        $devargs="-sDEVICE=bitrgb";
+        $suffix="bit";
+    } elsif ($fmt eq "bitrgbtags") {
+        $devargs="-sDEVICE=bitrgbtags";
+        $suffix="bit";
+    } elsif ($fmt eq "cups") {
+        $devargs="-sDEVICE=cups";
+        $suffix="cups";
+    } elsif ($fmt eq "plank") {
+        $devargs="-sDEVICE=plank";
+        $suffix="plank";
+    } elsif ($fmt eq "psdcmyk") {
+        $devargs="-sDEVICE=psdcmyk";
+        $suffix="psd";
+    } elsif ($fmt eq "psdcmykog") {
+        $devargs="-sDEVICE=psdcmykog";
+        $suffix="psd";
+    } else {
+        print "Unsupported format $fmt - skipping\n";
+        next;
+    }
     
     # Open the iframe
     openiframe();
@@ -387,16 +458,16 @@ while (<>)
     if ($exe eq "gs")
     {
         $cmd  =     $gsexe;
-        $cmd .= " -r".$res;
-        $cmd .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
-        $cmd .= " ".$gsargs;
-        if ($file =~ m/\.PS$/) { $cmd .= " ".$gsargsPS; };
+        $cmd .= " -r$res";
+        $cmd .= " -sOutputFile=$outdir/tmp1_%d.$suffix";
+        $cmd .= " $devargs $gsargs";
+        if ($file =~ m/\.PS$/) { $cmd .= " $gsargsPS"; };
         $cmd .= $redir.$file;
         $cmd2  = $reference.$gsexe;
-        $cmd2 .= " -r".$res;
-        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd2 .= " ".$gsargs;
-        if ($file =~ m/\.PS$/) { $cmd2 .= " ".$gsargsPS; }
+        $cmd2 .= " -r$res";
+        $cmd2 .= " -sOutputFile=$outdir/tmp2_%d.$suffix";
+        $cmd2 .= " $devargs $gsargs";
+        if ($file =~ m/\.PS$/) { $cmd2 .= " $gsargsPS"; }
         $cmd2 .= $redir.$file;
         if (runjobs($cmd, $cmd2, $html, $iframe,
                     "New", "Ref", "bitmap generation")) {
@@ -406,15 +477,15 @@ while (<>)
     elsif ($exe eq "pcl")
     {
         $cmd   =     $pclexe;
-        $cmd  .= " ".$pclargs;
-        $cmd  .= " -r".$res;
-        $cmd  .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
-        $cmd  .= " ".$file;
+        $cmd  .= " -r$res";
+        $cmd  .= " -sOutputFile=$outdir/tmp1_%d.$suffix";
+        $cmd  .= " $devargs $pclargs";
+        $cmd  .= " $file";
         $cmd2  = $reference.$pclexe;
-        $cmd2 .= " ".$pclargs;
-        $cmd2 .= " -r".$res;
-        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd2 .= " ".$file;
+        $cmd2 .= " -r$res";
+        $cmd2 .= " -sOutputFile=$outdir/tmp2_%d.$suffix";
+        $cmd2 .= " $devargs $pclargs";
+        $cmd2 .= " $file";
         if (runjobs($cmd, $cmd2, $html, $iframe,
                     "New", "Ref", "bitmap generation")) {
             next;
@@ -423,15 +494,15 @@ while (<>)
     elsif ($exe eq "xps")
     {
         $cmd   =     $xpsexe;
-        $cmd  .= " ".$xpsargs;
-        $cmd  .= " -r".$res;
-        $cmd  .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
-        $cmd  .= " ".$file;
+        $cmd  .= " -r$res";
+        $cmd  .= " -sOutputFile=$outdir/tmp1_%d.$suffix";
+        $cmd  .= " $devargs $xpsargs";
+        $cmd  .= " $file";
         $cmd2  = $reference.$xpsexe;
-        $cmd2 .= " ".$xpsargs;
-        $cmd2 .= " -r".$res;
-        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd2 .= " ".$file;
+        $cmd2 .= " -r$res";
+        $cmd2 .= " -sOutputFile=$outdir/tmp2_%d.$suffix";
+        $cmd2 .= " $devargs $xpsargs";
+        $cmd2 .= " $file";
         if (runjobs($cmd, $cmd2, $html, $iframe,
                     "New", "Ref", "bitmap generation")) {
             next;
@@ -440,15 +511,15 @@ while (<>)
     elsif ($exe eq "svg")
     {
         $cmd   =     $svgexe;
-        $cmd  .= " ".$svgargs;
-        $cmd  .= " -r".$res;
-        $cmd  .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
-        $cmd  .= " ".$file;
+        $cmd  .= " -r$res";
+        $cmd  .= " -sOutputFile=$outdir/tmp1_%d.$suffix";
+        $cmd  .= " $devargs $svgargs";
+        $cmd  .= " $file";
         $cmd2  = $reference.$svgexe;
-        $cmd2 .= " ".$svgargs;
-        $cmd2 .= " -r".$res;
-        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd2 .= " ".$file;
+        $cmd2 .= " -r$res";
+        $cmd2 .= " -sOutputFile=$outdir/tmp2_%d.$suffix";
+        $cmd2 .= " $devargs $svgargs";
+        $cmd2 .= " $file";
         if (runjobs($cmd, $cmd2, $html, $iframe,
                     "New", "Ref", "bitmap generation")) {
             next;
@@ -457,32 +528,32 @@ while (<>)
     elsif ($exe eq "pwgs")
     {
         $cmd   =     $gsexe;
-        $cmd  .= " -r".$res;
-        $cmd  .= " -sOutputFile=".$outdir."/tmp1.pdf";
-        $cmd  .= " ".$pwgsargs;
-        if ($file2 =~ m/\.PS$/) { $cmd .= " ".$gsargsPS; }
-        $cmd  .= $redir.$file2;
+        $cmd  .= " -r$res";
+        $cmd  .= " -sOutputFile=$outdir/tmp1.pdf";
+        $cmd  .= " $pwgsargs";
+        if ($file2 =~ m/\.PS$/) { $cmd .= " $gsargsPS"; }
+        $cmd  .= " $file2";
         $cmd2  = $reference.$gsexe;
-        $cmd2 .= " -r".$res;
-        $cmd2 .= " -sOutputFile=".$outdir."/tmp2.pdf";
-        $cmd2 .= " ".$pwgsargs;
-        if ($file2 =~ m/\.PS$/) { $cmd2 .= " ".$gsargsPS; }
-        $cmd2 .= $redir.$file2;
+        $cmd2 .= " -r$res";
+        $cmd2 .= " -sOutputFile=$outdir/tmp2.pdf";
+        $cmd2 .= " $pwgsargs";
+        if ($file2 =~ m/\.PS$/) { $cmd2 .= " $gsargsPS"; }
+        $cmd2 .= " $file2";
         if (runjobs($cmd, $cmd2, $html, $iframe,
                     "New", "Ref", "pdf generation")) {
             next;
         }
 
         $cmd   =     $gsexe;
-        $cmd  .= " -r".$res;
-        $cmd  .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
-        $cmd  .= " ".$gsargs;
-        $cmd  .= $redir.$outdir."/tmp1.pdf";
+        $cmd  .= " -r$res";
+        $cmd  .= " -sOutputFile=$outdir/tmp1_%d.$suffix";
+        $cmd  .= " $devargs $gsargs";
+        $cmd  .= " $redir$outdir/tmp1.pdf";
         $cmd2  =     $gsexe;
-        $cmd2 .= " -r".$res;
-        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd2 .= " ".$gsargs;
-        $cmd2 .= $redir.$outdir."/tmp2.pdf";
+        $cmd2 .= " -r$res";
+        $cmd2 .= " -sOutputFile=$outdir/tmp2_%d.$suffix";
+        $cmd2 .= " $devargs $gsargs";
+        $cmd2 .= " $redir$outdir/tmp2.pdf";
         if (runjobs($cmd, $cmd2, $html, $iframe,
                     "New", "Ref", "bitmap generation")) {
             next;
@@ -493,30 +564,30 @@ while (<>)
     elsif ($exe eq "pwpcl")
     {
         $cmd   =     $pclexe;
-        $cmd  .= " ".$pwpclargs;
-        $cmd  .= " -r".$res;
-        $cmd  .= " -sOutputFile=".$outdir."/tmp1.pdf";
-        $cmd  .= " ".$file2;
+        $cmd  .= " -r$res";
+        $cmd  .= " -sOutputFile=$outdir/tmp1.pdf";
+        $cmd  .= " $pwpclargs";
+        $cmd  .= " $file2";
         $cmd2  = $reference.$pclexe;
-        $cmd2 .= " ".$pwpclargs;
-        $cmd2 .= " -r".$res;
-        $cmd2 .= " -sOutputFile=".$outdir."/tmp2.pdf";
-        $cmd2 .= " ".$file2;
+        $cmd2 .= " -r$res";
+        $cmd2 .= " -sOutputFile=$outdir/tmp2.pdf";
+        $cmd2 .= " $pwpclargs";
+        $cmd2 .= " $file2";
         if (runjobs($cmd, $cmd2, $html, $iframe,
                     "New", "Ref", "pdf generation")) {
             next;
         }
 
         $cmd   =     $gsexe;
-        $cmd  .= " -r".$res;
-        $cmd  .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
-        $cmd  .= " ".$gsargs;
-        $cmd  .= $redir.$outdir."/tmp1.pdf";
+        $cmd  .= " -r$res";
+        $cmd  .= " -sOutputFile=$outdir/tmp1_%d.$suffix";
+        $cmd  .= " $devargs $gsargs";
+        $cmd  .= " $redir$outdir/tmp1.pdf";
         $cmd2  = $reference.$gsexe;
-        $cmd2 .= " -r".$res;
-        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd2 .= " ".$gsargs;
-        $cmd2 .= $redir.$outdir."/tmp2.pdf";
+        $cmd2 .= " -r$res";
+        $cmd2 .= " -sOutputFile=$outdir/tmp2_%d.$suffix";
+        $cmd2 .= " $devargs $gsargs";
+        $cmd2 .= " $redir$outdir/tmp2.pdf";
         if (runjobs($cmd, $cmd2, $html, $iframe,
                     "New", "Ref", "bitmap generation")) {
             next;
@@ -527,30 +598,30 @@ while (<>)
     elsif ($exe eq "pwxps")
     {
         $cmd   =     $xpsexe;
-        $cmd  .= " ".$pwxpsargs;
-        $cmd  .= " -r".$res;
-        $cmd  .= " -sOutputFile=".$outdir."/tmp1.pdf";
-        $cmd  .= " ".$file2;
+        $cmd  .= " -r$res";
+        $cmd  .= " -sOutputFile=$outdir/tmp1.pdf";
+        $cmd  .= " $pwxpsargs";
+        $cmd  .= " $file2";
         $cmd2  = $reference.$xpsexe;
-        $cmd2 .= " ".$pwxpsargs;
-        $cmd2 .= " -r".$res;
-        $cmd2 .= " -sOutputFile=".$outdir."/tmp2.pdf";
-        $cmd2 .= " ".$file2;
+        $cmd2 .= " -r$res";
+        $cmd2 .= " -sOutputFile=$outdir/tmp2.pdf";
+        $cmd2 .= " $pwxpsargs";
+        $cmd2 .= " $file2";
         if (runjobs($cmd, $cmd2, $html, $iframe,
                     "New", "Ref", "pdf generation")) {
             next;
         }
 
         $cmd   =     $gsexe;
-        $cmd  .= " -r".$res;
-        $cmd  .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
-        $cmd  .= " ".$gsargs;
-        $cmd  .= $redir.$outdir."/tmp1.pdf";
+        $cmd  .= " -r$res";
+        $cmd  .= " -sOutputFile=$outdir/tmp1_%d.$suffix";
+        $cmd  .= " $devargs $gsargs";
+        $cmd  .= " $redir$outdir/tmp1.pdf";
         $cmd2  = $reference.$gsexe;
-        $cmd2 .= " -r".$res;
-        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd2 .= " ".$gsargs;
-        $cmd2 .= $redir.$outdir."/tmp2.pdf";
+        $cmd2 .= " -r$res";
+        $cmd2 .= " -sOutputFile=$outdir/tmp2_%d.$suffix";
+        $cmd2 .= " $devargs $gsargs";
+        $cmd2 .= " $redir$outdir/tmp2.pdf";
         if (runjobs($cmd, $cmd2, $html, $iframe,
                     "New", "Ref", "bitmap generation")) {
             next;
@@ -561,29 +632,29 @@ while (<>)
     elsif ($exe eq "pwsvg")
     {
         $cmd   =     $svgexe;
-        $cmd  .= " ".$pwsvgargs;
-        $cmd  .= " -r".$res;
-        $cmd  .= " -sOutputFile=".$outdir."/tmp1.pdf";
-        $cmd  .= " ".$file2;
+        $cmd  .= " -r$res";
+        $cmd  .= " -sOutputFile=$outdir/tmp1.pdf";
+        $cmd  .= " $pwsvgargs";
+        $cmd  .= " $file2";
         $cmd2  = $reference.$svgexe;
-        $cmd2 .= " ".$pwsvgargs;
-        $cmd2 .= " -r".$res;
-        $cmd2 .= " -sOutputFile=".$outdir."/tmp2.pdf";
-        $cmd2 .= " ".$file2;
+        $cmd2 .= " $pwsvgargs";
+        $cmd2 .= " -r$res";
+        $cmd2 .= " -sOutputFile=$outdir/tmp2.pdf";
+        $cmd2 .= " $file2";
         if (runjobs($cmd, $cmd2, $html, $iframe,
                     "New", "Ref", "pdf generation")) {
             next;
         }
 
         $cmd   =     $gsexe;
-        $cmd  .= " -r".$res;
-        $cmd  .= " -sOutputFile=".$outdir."/tmp1_%d.bmp";
-        $cmd  .= " ".$gsargs;
-        $cmd  .= $redir.$outdir."/tmp1.pdf";
+        $cmd  .= " -r$res";
+        $cmd  .= " -sOutputFile=$outdir/tmp1_%d.$suffix";
+        $cmd  .= " $devargs $gsargs";
+        $cmd  .= " $redir$outdir/tmp1.pdf";
         $cmd2  = $reference.$gsexe;
-        $cmd2 .= " -r".$res;
-        $cmd2 .= " -sOutputFile=".$outdir."/tmp2_%d.bmp";
-        $cmd2 .= " ".$gsargs;
+        $cmd2 .= " -r$res";
+        $cmd2 .= " -sOutputFile=$outdir/tmp2_%d.$suffix";
+        $cmd2 .= " $devargs $gsargs";
         $cmd2 .= $redir.$outdir."/tmp2.pdf";
         if (runjobs($cmd, $cmd2, $html, $iframe,
                     "New", "Ref", "bitmap generation")) {
@@ -601,8 +672,8 @@ while (<>)
     # Now diff those things
     $page = 1;
     $diffs = 0;
-    while (stat($tmp1 = $outdir."/tmp1_".$page.".bmp") &&
-           stat($tmp2 = $outdir."/tmp2_".$page.".bmp"))
+    while (stat($tmp1 = $outdir."/tmp1_".$page.".$suffix") &&
+           stat($tmp2 = $outdir."/tmp2_".$page.".$suffix"))
     {
         $cmd  = $bmpcmpexe;
         $cmd .= " ".$tmp1;
