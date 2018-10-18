@@ -358,6 +358,10 @@ while (<>)
     ($path,$exe,$m1,$m2) = /(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/;
     ($file,$fmt,$res,$band) = ($path =~ /(\S+)\.(\S+)\.(\d+)\.(\d+)$/);
 
+    if ($file eq "") {
+        next;
+    }
+
     # Adjust for the local fs layout
     $file = $fileadjust.$file;
 
