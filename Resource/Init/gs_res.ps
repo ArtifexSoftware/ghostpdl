@@ -155,7 +155,7 @@ setglobal
         } {
           /defineresource cvx /typecheck signaloperror
         } ifelse
-} bind executeonly def
+} bind executeonly odef
 /FindResource		% (redefined below)
         { .Instances exch get 0 get
         } bind executeonly def
@@ -412,7 +412,7 @@ status {
   } ifelse
 } bind def
 
-/DefineResource {
+/DefineResource dup {
         .CheckResource
            { dup [ exch 0 -1 ]
                         % Stack: key value instance
@@ -441,7 +441,7 @@ status {
            { /defineresource cvx /typecheck signaloperror
            }
         ifelse
-} .bind executeonly		% executeonly to prevent access to .forcedef
+} .bind executeonly .makeoperator		% executeonly to prevent access to .forcedef
 /UndefineResource
         {  { dup 2 index .knownget
               { dup 1 get 1 ge
