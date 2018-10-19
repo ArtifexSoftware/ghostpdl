@@ -922,7 +922,7 @@ static int pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int ind
     if (lookup->type == PDF_INDIRECT) {
         /* Need to dereference, and then read the stream */
         pdf_indirect_ref *r = (pdf_indirect_ref *)lookup;
-        pdf_dict *lookup_dict;
+        pdf_dict *lookup_dict = NULL;
         gs_offset_t savedoffset;
         bool known;
         pdf_stream *filtered_lookup_stream = NULL;
