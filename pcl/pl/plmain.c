@@ -96,6 +96,8 @@ struct pl_main_instance_s
     int last_page;              /* -dLastPage= */
     gx_device *device;
     gs_gc_root_t *device_root;
+    pl_main_get_codepoint_t *get_codepoint;
+                                /* Get next 'unicode' codepoint */
 
     pl_interp_implementation_t *implementation; /*-L<Language>*/
 
@@ -206,7 +208,7 @@ pl_main_init_with_args(pl_main_instance_t *inst, int argc, char *argv[])
     gs_param_list_set_persistent_keys((gs_param_list *)&inst->params, false);
 
     arg_init(&inst->args, (const char **)argv, argc, pl_main_arg_fopen, NULL,
-             NULL, mem);
+             inst->get_codepoint, mem);
 
     /* Create PDL instances, etc */
     if (pl_main_languages_init(mem, inst) < 0) {
@@ -294,8 +296,8 @@ revert_to_pjli(pl_main_instance_t *minst)
     return code;
 }
 
-int
-pl_main_run_file(pl_main_instance_t *minst, const char *filename)
+static int
+pl_main_run_file_utf8(pl_main_instance_t *minst, const char *filename)
 {
     bool new_job = true;
     pl_interp_implementation_t *pjli =
@@ -456,6 +458,50 @@ error_fatal:
 error_fatal_reverted:
     sfclose(s);
     return gs_error_Fatal;
+}
+
+void
+pl_main_set_arg_decode(pl_main_instance_t *minst,
+                       pl_main_get_codepoint_t *get_codepoint)
+{
+    if (minst == NULL)
+        return;
+
+    minst->get_codepoint = get_codepoint;
+}
+
+int
+pl_main_run_file(pl_main_instance_t *minst, const char *file_name)
+{
+    char *d, *temp;
+    const char *c = file_name;
+    char dummy[6];
+    int rune, code, len;
+
+    if (minst == NULL)
+        return 0;
+
+    /* Convert the file_name to utf8 */
+    if (minst->get_codepoint) {
+        len = 1;
+        while ((rune = minst->get_codepoint(NULL, &c)) >= 0)
+            len += codepoint_to_utf8(dummy, rune);
+        temp = (char *)gs_alloc_bytes_immovable(minst->memory, len, "gsapi_run_file");
+        if (temp == NULL)
+            return gs_error_VMerror;
+        c = file_name;
+        d = temp;
+        while ((rune = minst->get_codepoint(NULL, &c)) >= 0)
+           d += codepoint_to_utf8(d, rune);
+        *d = 0;
+    }
+    else {
+      temp = (char *)file_name;
+    }
+    code = pl_main_run_file_utf8(minst, temp);
+    if (temp != file_name)
+        gs_free_object(minst->memory, temp, "gsapi_run_file");
+    return code;
 }
 
 int
@@ -1358,7 +1404,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
         return 0;
 
     do {
-        code = pl_main_run_file(pmi, arg);
+        code = pl_main_run_file_utf8(pmi, arg);
         if (code < 0)
             return code;
     } while ((code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0);

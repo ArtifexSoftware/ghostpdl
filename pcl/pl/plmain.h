@@ -69,6 +69,10 @@ bool pl_main_get_high_level_device(const gs_memory_t *mem);
 int pl_main_get_scanconverter(const gs_memory_t *mem);
 pl_main_instance_t *pl_main_get_instance(const gs_memory_t *mem);
 
+typedef int pl_main_get_codepoint_t(FILE *, const char **);
+void pl_main_set_arg_decode(pl_main_instance_t *minst,
+                            pl_main_get_codepoint_t *get_codepoint);
+
 /* retrieve the PJL instance so languages can query PJL. */
 bool pl_main_get_pjl_from_args(const gs_memory_t *mem); /* pjl was passed on the command line */
 
