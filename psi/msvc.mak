@@ -271,7 +271,7 @@ XPS_TARGET=gxps
 # GPDL_TARGET=gpdl
 # !endif
 
-PCL_XPS_TARGETS=$(PCL_TARGET) $(XPS_TARGET) $(GPDL_TARGET)
+PCL_XPS_TARGETS=$(PCL_TARGET) $(XPS_TARGET)
 
 # Define the root directory for Ghostscript installation.
 

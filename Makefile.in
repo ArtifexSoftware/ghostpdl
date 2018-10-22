@@ -190,7 +190,7 @@ PCL_TARGET=@PCL_TARGET@
 XPS_TARGET=@XPS_TARGET@
 GPDL_TARGET=@GPDL_TARGET@
 
-PCL_XPS_TARGETS=$(PCL_TARGET) $(XPS_TARGET) $(GPDL_TARGET)
+PCL_XPS_TARGETS=$(PCL_TARGET) $(XPS_TARGET)
 
 # Define the directories for debugging and profiling binaries, relative to
 # the standard binaries.
