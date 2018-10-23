@@ -27,13 +27,118 @@
 
 static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_dict *stream_dict, pdf_dict *page_dict);
 
+#define NUMBERTOKENSIZE 16
+#define OPTOKENSIZE 9
+#define TOKENBUFFERSIZE NUMBERTOKENSIZE + 1
+#define NUMOPS 42
+
+typedef struct op_struct {
+    unsigned char length;
+    gs_PtCr_opcode_t code;
+    unsigned char op[8];
+}op_struct_t;
+
+static const op_struct_t ops_table[] = {
+    {(unsigned char)2, PtCr_eq, "eq"},
+    {(unsigned char)2, PtCr_ge, "ge"},
+    {(unsigned char)2, PtCr_gt, "gt"},
+    {(unsigned char)2, PtCr_if, "if"},
+    {(unsigned char)2, PtCr_le, "le"},
+    {(unsigned char)2, PtCr_ln, "ln"},
+    {(unsigned char)2, PtCr_lt, "lt"},
+    {(unsigned char)2, PtCr_ne, "ne"},
+    {(unsigned char)2, PtCr_or, "or"},
+
+    {(unsigned char)3, PtCr_abs, "abs"},
+    {(unsigned char)3, PtCr_add, "add"},
+    {(unsigned char)3, PtCr_and, "and"},
+    {(unsigned char)3, PtCr_cos, "cos"},
+    {(unsigned char)3, PtCr_cvi, "cvi"},
+    {(unsigned char)3, PtCr_cvr, "cvr"},
+    {(unsigned char)3, PtCr_div, "div"},
+    {(unsigned char)3, PtCr_dup, "dup"},
+    {(unsigned char)3, PtCr_exp, "exp"},
+    {(unsigned char)3, PtCr_log, "log"},
+    {(unsigned char)3, PtCr_mul, "mul"},
+    {(unsigned char)3, PtCr_mod, "mod"},
+    {(unsigned char)3, PtCr_neg, "neg"},
+    {(unsigned char)3, PtCr_not, "not"},
+    {(unsigned char)3, PtCr_pop, "pop"},
+    {(unsigned char)3, PtCr_sin, "sin"},
+    {(unsigned char)3, PtCr_sub, "sub"},
+    {(unsigned char)3, PtCr_xor, "xor"},
+
+    {(unsigned char)4, PtCr_atan, "atan"},
+    {(unsigned char)4, PtCr_copy, "copy"},
+    {(unsigned char)4, PtCr_exch, "exch"},
+    {(unsigned char)4, PtCr_idiv, "idiv"},
+    {(unsigned char)4, PtCr_atan, "roll"},
+    {(unsigned char)4, PtCr_sqrt, "sqrt"},
+    {(unsigned char)4, PtCr_true, "true"},
+
+    {(unsigned char)5, PtCr_false, "false"},
+    {(unsigned char)5, PtCr_floor, "floor"},
+    {(unsigned char)5, PtCr_index, "index"},
+    {(unsigned char)5, PtCr_round, "round"},
+
+    {(unsigned char)6, PtCr_else, "ifelse"},
+
+    {(unsigned char)7, PtCr_ceiling, "ceiling"},
+
+    {(unsigned char)8, PtCr_bitshift, "bitshift"},
+    {(unsigned char)8, PtCr_truncate, "truncate"},
+};
+
+/* Fix up an if or ifelse forward reference. */
+static void
+psc_fixup(byte *p, byte *to)
+{
+    int skip = to - (p + 3);
+
+    p[1] = (byte)(skip >> 8);
+    p[2] = (byte)skip;
+}
+
+/* Store an int in the  buffer */
 static int
-pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_stream *function_stream, char **ops, unsigned int *size)
+put_int(byte **p, int n) {
+   if (n == (byte)n) {
+       if (*p) {
+          (*p)[0] = PtCr_byte;
+          (*p)[1] = (byte)n;
+          *p += 2;
+       }
+       return 2;
+   } else {
+       if (*p) {
+          **p = PtCr_int;
+          memcpy(*p + 1, &n, sizeof(int));
+          *p += sizeof(int) + 1;
+       }
+       return (sizeof(int) + 1);
+   }
+}
+
+/* Store a float in the  buffer */
+static int
+put_float(byte **p, float n) {
+   if (*p) {
+      **p = PtCr_float;
+      memcpy(*p + 1, &n, sizeof(float));
+      *p += sizeof(float) + 1;
+   }
+   return (sizeof(float) + 1);
+}
+
+static int
+pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_stream *function_stream, int depth, byte *ops, unsigned int *size)
 {
     int code;
     byte c;
-    char OpTokenBuffer[9], NumTokenBuffer[16];
-    unsigned int OpSize, NumSize, IsReal;
+    char TokenBuffer[16];
+    unsigned int Size, IsReal;
+    bool clause = false;
+    byte *p = (ops ? ops + *size : NULL);
 
     do {
         code = pdfi_read_bytes(ctx, &c, 1, 1, function_stream);
@@ -46,34 +151,112 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_stream *function_stream, char
             case 0x09:
                 continue;
             case '{':
+                if (depth == 0) {
+                    depth++;
+                } else {
+                    /* recursion, move on 3 bytes, and parse the sub level */
+                    if (depth++ == MAX_PSC_FUNCTION_NESTING)
+                        return_error (gs_error_syntaxerror);
+                    *size += 3;
+                    code = pdfi_parse_type4_func_stream(ctx, function_stream, depth + 1, ops, size);
+                    if (p) {
+                        if (clause == false) {
+                            *p = (byte)PtCr_if;
+                            psc_fixup(p, ops + *size + 3);
+                            clause = true;
+                        } else {
+                            *p = (byte)PtCr_else;
+                            psc_fixup(p, ops + *size + 3);
+                            clause = false;
+                        }
+                        p = ops + *size;
+                    }
+                }
                 break;
             case '}':
+                return *size;
                 break;
             default:
                 if ((c >= '0' && c <= '9') || c == '-' || c == '.') {
                     /* parse a number */
-                    NumSize = 1;
+                    Size = 1;
                     if (c == '.')
                         IsReal = 1;
                     else
                         IsReal = 0;
-                    NumTokenBuffer[0] = c;
+                    TokenBuffer[0] = c;
                     do {
                         code = pdfi_read_bytes(ctx, &c, 1, 1, function_stream);
+                        if (code < 0)
+                            return code;
+                        if (code == 0)
+                            return_error(gs_error_syntaxerror);
+
                         if (c == '.'){
                             if (IsReal == 1)
                                 code = gs_error_syntaxerror;
-                            else
-                                NumTokenBuffer[NumSize++] = c;
+                            else {
+                                TokenBuffer[Size++] = c;
+                                IsReal = 1;
+                            }
                         } else {
-                            if (c >= '0' && 'c' <= '9') {
-                                NumTokenBuffer[NumSize++] = c;
+                            if (c >= '0' && c <= '9') {
+                                TokenBuffer[Size++] = c;
                             } else
-                                code = gs_error_syntaxerror;
+                                break;
                         }
+                        if (Size > NUMBERTOKENSIZE)
+                            return_error(gs_error_syntaxerror);
                     } while (code >= 0);
+                    TokenBuffer[Size] = 0x00;
+                    pdfi_unread(ctx, function_stream, &c, 1);
+                    if (IsReal == 1) {
+                        *size += put_float(&p, atof(TokenBuffer));
+                    } else {
+                        *size += put_int(&p, atoi(TokenBuffer));
+                    }
                 } else {
+                    int i, NumOps = sizeof(ops_table) / sizeof(op_struct_t);
+                    op_struct_t *Op;
+
                     /* parse an operator */
+                    Size = 1;
+                    TokenBuffer[0] = c;
+                    do {
+                        code = pdfi_read_bytes(ctx, &c, 1, 1, function_stream);
+                        if (code < 0)
+                            return code;
+                        if (code == 0)
+                            return_error(gs_error_syntaxerror);
+                        if (c == 0x20 || c == 0x09 || c == 0x0a || c == 0x0d || c == '{' || c == '}')
+                            break;
+                        TokenBuffer[Size++] = c;
+                        if (Size > OPTOKENSIZE)
+                            return_error(gs_error_syntaxerror);
+                    } while(code >= 0);
+                    TokenBuffer[Size] = 0x00;
+                    pdfi_unread(ctx, function_stream, &c, 1);
+                    for (i=0;i < NumOps;i++) {
+                        Op = (op_struct_t *)&ops_table[i];
+                        if (Op->length < Size)
+                            continue;
+
+                        if (Op->length < Size)
+                            return_error(gs_error_undefined);
+
+                        if (memcmp(Op->op, TokenBuffer, Size) == 0)
+                            break;
+                    }
+                    if (i > NumOps)
+                        return_error(gs_error_syntaxerror);
+                    if (p == NULL)
+                        (*size)++;
+                    else {
+                        if (Op->code != PtCr_else && Op->code != PtCr_if) {
+                            (*size)++;
+                            *p++ = Op->code;
+                        }
+                    }
                 }
                 break;
         }
@@ -91,7 +274,7 @@ pdfi_build_function_4(pdf_context *ctx, const gs_function_params_t * mnDR,
     int code;
     int64_t Length, temp;
     byte *data_source_buffer;
-    char *ops;
+    byte *ops;
     unsigned int size;
     bool known = false;
     gs_offset_t savedoffset;
@@ -173,10 +356,28 @@ pdfi_build_function_4(pdf_context *ctx, const gs_function_params_t * mnDR,
         }
     }
 
-    code = pdfi_parse_type4_func_stream(ctx, function_stream, &ops, &size);
-    pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
+    size = 0;
+    code = pdfi_parse_type4_func_stream(ctx, function_stream, 0, NULL, &size);
+    ops = gs_alloc_string(ctx->memory, size + 1, "pdfi_build_function_4(ops)");
+    if (ops == NULL)
+        return_error(gs_error_VMerror);
+
+    code = pdfi_seek(ctx, function_stream, 0, SEEK_SET);
     if (code < 0)
         return code;
+    size = 0;
+    code = pdfi_parse_type4_func_stream(ctx, function_stream, 0, ops, &size);
+    if (code < 0) {
+        gs_free_const_string(ctx->memory, ops, size, "pdfi_build_function_4(ops)");
+        return code;
+    }
+    ops[size] = PtCr_return;
+
+    code = pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
+    if (code < 0) {
+        gs_free_const_string(ctx->memory, ops, size, "pdfi_build_function_4(ops)");
+        return code;
+    }
 
     params.ops.data = (const byte *)ops;
     params.ops.size = size + 1;
@@ -569,6 +770,11 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
             }
             break;
         case 4:
+            code = pdfi_build_function_4(ctx, &params, stream_dict, 0, ppfn);
+            if (code < 0) {
+                gs_free_const_object(ctx->memory, params.Domain, "Domain");
+                gs_free_const_object(ctx->memory, params.Range, "Range");
+            }
             break;
         default:
             break;
