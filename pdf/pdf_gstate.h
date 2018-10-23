@@ -27,5 +27,6 @@ int pdfi_setlinecap(pdf_context *ctx);
 int pdfi_setflat(pdf_context *ctx);
 int pdfi_setdash(pdf_context *ctx);
 int pdfi_setmiterlimit(pdf_context *ctx);
+int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict);
 
 #endif

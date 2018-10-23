@@ -2812,7 +2812,8 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_stream *source, 
                 code = pdfi_setgrayfill(ctx);
                 break;
             case K2('g','s'):       /* set graphics state from dictionary */
-                pdfi_clearstack(ctx);
+                pdfi_pop(ctx, 1);
+                code = pdfi_setgstate(ctx, stream_dict, page_dict);
                 break;
             case K1('h'):           /* closepath */
                 pdfi_pop(ctx, 1);
