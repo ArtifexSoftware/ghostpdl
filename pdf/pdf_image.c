@@ -610,12 +610,17 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_stream *image_str
     }
     while (bytesleft > 0) {
         uint used[GS_IMAGE_MAX_COMPONENTS];
-        
+
         code = pdfi_read_bytes(ctx, buffer, 1, linelen, image_stream);
         if (code < 0) {
+            dmprintf3(ctx->memory,
+                      "WARNING: Image data error (pdfi_read_bytes) bytesleft=%ld, linelen=%ld, code=%d\n",
+                      bytesleft, linelen, code);
             goto cleanupExit;
         }
         if (code != linelen) {
+            dmprintf3(ctx->memory, "WARNING: Image data mismatch, bytesleft=%ld, linelen=%ld, code=%d\n",
+                      bytesleft, linelen, code);
             code = gs_note_error(gs_error_limitcheck);
             goto cleanupExit;
         }
@@ -967,8 +972,10 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     code = pdfi_render_image(ctx, pim, new_stream,
                              mask_buffer, mask_size,
                              comps, image_info.ImageMask);
-    if (code < 0)
+    if (code < 0) {
+        dmprintf1(ctx->memory, "WARNING: pdfi_do_image: error %d from pdfi_render_image\n", code);
         goto cleanupExit;
+    }
 
     code = 0;
     
@@ -1066,15 +1073,16 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
             code = pdfi_do_image(ctx, page_dict, stream_dict, d, ctx->main_stream, false);
             pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-        } else {
-            if (pdfi_name_strcmp(n, "Form") == 0) {
-                gs_offset_t savedoffset = pdfi_tell(ctx->main_stream);
+        } else if (pdfi_name_strcmp(n, "Form") == 0) {
+            gs_offset_t savedoffset = pdfi_tell(ctx->main_stream);
 
-                code = pdfi_interpret_content_stream(ctx, d, page_dict);
-                pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            } else {
-                code = gs_error_typecheck;
-            }
+            code = pdfi_interpret_content_stream(ctx, d, page_dict);
+            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+        } else if (pdfi_name_strcmp(n, "PS") == 0) {
+            dmprintf(ctx->memory, "*** WARNING: PostScript XOBjects are deprecated (SubType 'PS')\n");
+            code = 0; /* Swallow silently */
+        } else {
+            code = gs_error_typecheck;
         }
         pdfi_countdown(n);
     }
