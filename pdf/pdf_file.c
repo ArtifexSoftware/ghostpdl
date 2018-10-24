@@ -1065,7 +1065,10 @@ int pdfi_unread(pdf_context *ctx, pdf_stream *s, byte *Buffer, uint32_t size)
 int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t count, pdf_stream *s)
 {
     uint32_t i = 0, total = size * count;
-    int32_t bytes = 0;
+    int32_t bytes = 0, code;
+
+    if (s->eof)
+        return 0;
 
     if (s->unread_size) {
         if (s->unread_size >= total) {
@@ -1074,7 +1077,7 @@ int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t coun
                 s->unget_buffer[i] = s->unget_buffer[i + total];
             }
             s->unread_size -= total;
-            return size;
+            return total;
         } else {
             memcpy(Buffer, s->unget_buffer, s->unread_size);
             total -= s->unread_size;
@@ -1084,16 +1087,15 @@ int pdfi_read_bytes(pdf_context *ctx, byte *Buffer, uint32_t size, uint32_t coun
         }
     }
     if (total) {
-        bytes = sfread(Buffer, 1, total, s->s);
+        /* TODO the Ghostscript code uses sbufptr(s) to avoid a memcpy
+         * at some point we should modify this code to do so as well.
+         */
+        code = sgets(s->s, Buffer, total, &bytes);
+        if (code == EOFC)
+            s->eof = true;
+        if(code == ERRC)
+            bytes = ERRC;
     }
 
-    if (bytes >= 0)
-        return i + bytes;
-    else {
-        if (bytes == EOFC){
-            s->eof = true;
-            return 0;
-        }
-        return bytes;
-    }
+    return bytes;
 }
