@@ -363,14 +363,14 @@ zcvrs(i_ctx_t *i_ctx_p)
                 return_error(gs_error_rangecheck); /* CET 24-05 wants rangecheck */
         }
     } else {
-        uint ival;
+        ps_uint ival;
         byte digits[sizeof(ulong) * 8];
         byte *endp = &digits[countof(digits)];
         byte *dp = endp;
 
         switch (r_type(op - 2)) {
             case t_integer:
-                ival = (uint) op[-2].value.intval;
+                ival = (ps_uint) op[-2].value.intval;
                 break;
             case t_real:
                 {
@@ -385,13 +385,25 @@ zcvrs(i_ctx_t *i_ctx_p)
             default:
                 return_error(gs_error_rangecheck); /* CET 24-05 wants rangecheck */
         }
-        do {
-            int dit = ival % radix;
+        if (gs_currentcpsimode(imemory)) {
+            uint val = (uint)ival;
+            do {
+                int dit = val % radix;
 
-            *--dp = dit + (dit < 10 ? '0' : ('A' - 10));
-            ival /= radix;
+                *--dp = dit + (dit < 10 ? '0' : ('A' - 10));
+                val /= radix;
+            }
+            while (val);
+
+        } else {
+            do {
+                int dit = ival % radix;
+
+                *--dp = dit + (dit < 10 ? '0' : ('A' - 10));
+                ival /= radix;
+            }
+            while (ival);
         }
-        while (ival);
         if (endp - dp > r_size(op))
             return_error(gs_error_rangecheck);
         memcpy(op->value.bytes, dp, (uint) (endp - dp));
