@@ -21,6 +21,7 @@
 #include "imain.h"
 #include "imainarg.h"
 #include "iapi.h"
+#include "psapi.h"
 #include "string_.h"
 #include "gdebug.h"
 #include "gp.h"
