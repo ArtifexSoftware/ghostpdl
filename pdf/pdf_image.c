@@ -851,8 +851,12 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                     }
                 }
                 comps = gs_color_space_num_components(pcs);
+                /* The graphics library doesn't support 12-bit images, so the openjpeg layer
+                 * (see sjpx_openjpeg.c/decode_image()) is going to translate the 12-bits up to 16-bits.
+                 * That means we just treat it as 16-bit when rendering, so force the value
+                 * to 16 here.
+                 */
                 if (jpx_info.bpc == 12) {
-                    dmprintf(ctx->memory, "JPXDecode: Warning: Forcing BPC from 12 to 16 (why?)\n");
                     jpx_info.bpc = 16;
                 }
                 image_info.BPC = jpx_info.bpc;
