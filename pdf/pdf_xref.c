@@ -511,12 +511,24 @@ static int read_xref_section(pdf_context *ctx, pdf_stream *s)
     for (i=0;i< size;i++){
         xref_entry *entry = &ctx->xref_table->xref[i + start];
         unsigned char free;
-
+        char ch;
+        
+        /* The entries are supposed to be exactly 20 bytes, but sometimes they might be 19 bytes.
+         * Only the first 18 bytes matter, the last 1-2 bytes are 0x0d, 0x0a or 0x20 (space).
+         * (space violates the spec, but occurs in the wild)
+         */
         bytes = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 20, s);
         if (bytes < 20)
             return_error(gs_error_ioerror);
-
+        
+        /* Check for case where there is only 1 whitespace between end of entry and next one */
+        ch = Buffer[19];
+        if (ch != 0x0a && ch != 0x0d && ch != ' ')
+            pdfi_unread(ctx, s, (byte *)&Buffer[19], 1);
+            
+        /* Overwrite the 19th character with a null, we don't care what it was */
         Buffer[18] = 0;
+
         if (entry->object_num != 0)
             continue;
 
