@@ -428,7 +428,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
 
 static int read_xref_section(pdf_context *ctx, pdf_stream *s)
 {
-    int code = 0, i, j;
+    int code = 0, i;
     pdf_obj *o = NULL;
     uint64_t start = 0, size = 0;
     int64_t bytes = 0;
@@ -515,12 +515,8 @@ static int read_xref_section(pdf_context *ctx, pdf_stream *s)
         bytes = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 20, s);
         if (bytes < 20)
             return_error(gs_error_ioerror);
-        j = 19;
-        while (Buffer[j] != 0x0D && Buffer[j] != 0x0A) {
-            pdfi_unread(ctx, s, (byte *)&Buffer[j], 1);
-            j--;
-        }
-        Buffer[j] = 0x00;
+
+        Buffer[18] = 0;
         if (entry->object_num != 0)
             continue;
 
