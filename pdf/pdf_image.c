@@ -823,8 +823,18 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                     case 17:
                         color_str = (char *)"DeviceGray";
                         break;
+                    case 20:
+                    case 24:
+                        /* TODO: gs Implementation assumes these are DeviceRGB.
+                         * We can do same and get matching output (but is it correct?)
+                         * (should probably look at num comps, but gs code doesn't)
+                         */
+                        dmprintf1(ctx->memory, "JPXDecode: Unsupported EnumCS %d, assuming DeviceRGB\n",
+                                  jpx_info.cs_enum);
+                        color_str = (char *)"DeviceRGB";
+                        break;
                     default:
-                        dmprintf1(ctx->memory, "JPXDecode: Unsupported colorspace %d\n", jpx_info.cs_enum);
+                        dmprintf1(ctx->memory, "JPXDecode: Unsupported EnumCS %d\n", jpx_info.cs_enum);
                         goto cleanupExit;
                     }
                 
@@ -841,6 +851,10 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                     }
                 }
                 comps = gs_color_space_num_components(pcs);
+                if (jpx_info.bpc == 12) {
+                    dmprintf(ctx->memory, "JPXDecode: Warning: Forcing BPC from 12 to 16 (why?)\n");
+                    jpx_info.bpc = 16;
+                }
                 image_info.BPC = jpx_info.bpc;
             } else {
                 gx_device *dev = gs_currentdevice_inline(ctx->pgs);
