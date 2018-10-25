@@ -17,8 +17,8 @@
 /* plapi.h */
 /* pcl6 as a library or dll api */
 
-#ifndef plapi_INCLUDED
-#  define plapi_INCLUDED
+#ifndef gsapi_INCLUDED
+#  define gsapi_INCLUDED
 
 /*
  * This API level is intended to hide everything behind
@@ -92,12 +92,12 @@ GSDLLEXPORT int GSDLLAPI
 pl_wchar_to_utf8(char *out, const void *in);
 #endif
 
-typedef struct plapi_revision_s {
+typedef struct gsapi_revision_s {
     const char *product;
     const char *copyright;
     long revision;
     long revisiondate;
-} plapi_revision_t;
+} gsapi_revision_t;
 
 /* Get version numbers and strings.
  * This is safe to call at any time.
@@ -109,7 +109,7 @@ typedef struct plapi_revision_s {
  * have been added to the structure) it will return the required
  * size of the structure.
  */
-GSDLLEXPORT int GSDLLAPI plapi_revision(plapi_revision_t *pr, int len);
+GSDLLEXPORT int GSDLLAPI gsapi_revision(gsapi_revision_t *pr, int len);
 
 /* Create a new instance of GhostPDL.
  * This instance is passed to most other API functions.
@@ -120,14 +120,14 @@ GSDLLEXPORT int GSDLLAPI plapi_revision(plapi_revision_t *pr, int len);
  * On error: (such as the maximum number of instances being exceeded)
  * this will return <0 and set *instance=NULL.
  */
-GSDLLEXPORT int GSDLLAPI plapi_new_instance(void **instance, void *caller_handle);
+GSDLLEXPORT int GSDLLAPI gsapi_new_instance(void **instance, void *caller_handle);
 
 /* Destroy an instance of GhostPDL
  * Before you call this, GhostPDL must have finished.
- * If GhostPDL has been initialised, you must call plapi_exit()
- * before plapi_delete_instance.
+ * If GhostPDL has been initialised, you must call gsapi_exit()
+ * before gsapi_delete_instance.
  */
-GSDLLEXPORT int GSDLLAPI plapi_delete_instance(void *instance);
+GSDLLEXPORT int GSDLLAPI gsapi_delete_instance(void *instance);
 
 /* Set the callback functions for stdio
  * The stdin callback function should return the number of
@@ -137,7 +137,7 @@ GSDLLEXPORT int GSDLLAPI plapi_delete_instance(void *instance);
  * If a callback address is NULL, the real stdio will be used.
  */
 GSDLLEXPORT int GSDLLAPI
-plapi_set_stdio(void *instance,
+gsapi_set_stdio(void *instance,
     int (GSDLLCALLPTR stdin_fn)(void *caller_handle, char *buf, int len),
     int (GSDLLCALLPTR stdout_fn)(void *caller_handle, const char *str, int len),
     int (GSDLLCALLPTR stderr_fn)(void *caller_handle, const char *str, int len));
@@ -151,7 +151,7 @@ plapi_set_stdio(void *instance,
  * and negative if it wants ghostscript to abort.
  * The polling function must be fast.
  */
-GSDLLEXPORT int GSDLLAPI plapi_set_poll(void *instance,
+GSDLLEXPORT int GSDLLAPI gsapi_set_poll(void *instance,
     int (GSDLLCALLPTR poll_fn)(void *caller_handle));
 
 /* Set the display device callback structure.
@@ -159,7 +159,7 @@ GSDLLEXPORT int GSDLLAPI plapi_set_poll(void *instance,
  * after gsapi_new_instance() and before gsapi_init_with_args().
  * See gdevdisp.h for more details.
  */
-GSDLLEXPORT int GSDLLAPI plapi_set_display_callback(
+GSDLLEXPORT int GSDLLAPI gsapi_set_display_callback(
    void *instance, display_callback *callback);
 
 /* Set the string containing the list of default device names
@@ -168,15 +168,15 @@ GSDLLEXPORT int GSDLLAPI plapi_set_display_callback(
  * to select the default device
  *
  * If this is to be called, it must be called after
- * plapi_new_instance() and before plapi_init_with_args().
+ * gsapi_new_instance() and before gsapi_init_with_args().
  */
 GSDLLEXPORT int GSDLLAPI
-plapi_set_default_device_list(void *instance, char *list, int listlen);
+gsapi_set_default_device_list(void *instance, char *list, int listlen);
 
 /* Returns a pointer to the current default device string.
  */
 GSDLLEXPORT int GSDLLAPI
-plapi_get_default_device_list(void *instance, char **list, int *listlen);
+gsapi_get_default_device_list(void *instance, char **list, int *listlen);
 
 /* Set the encoding used for the args. By default we assume
  * 'local' encoding. For windows this equates to whatever the current
@@ -185,7 +185,7 @@ plapi_get_default_device_list(void *instance, char **list, int *listlen);
  * Use of this API (gsapi) with 'local' encodings (and hence without calling
  * this function) is now deprecated!
  */
-GSDLLEXPORT int GSDLLAPI plapi_set_arg_encoding(void *instance,
+GSDLLEXPORT int GSDLLAPI gsapi_set_arg_encoding(void *instance,
                                                 int encoding);
 
 enum {
@@ -196,27 +196,27 @@ enum {
 
 /* Initialise the interpreter.
  * If this returns gs_error_Quit, then the interpreter quit due to
- * an explicit .quit. This is not an error. You must call plapi_exit()
- * and plapi_destroy_instance(). You may not call any other plapi
+ * an explicit .quit. This is not an error. You must call gsapi_exit()
+ * and gsapi_destroy_instance(). You may not call any other plapi
  * functions.
  * If this returns gs_error_Info, then usage info should be displayed.
- * This is not an error. You must call plapi_exit() and
- * plapi_destroy_instance(). You may not call any other plapi functions.
+ * This is not an error. You must call gsapi_exit() and
+ * gsapi_destroy_instance(). You may not call any other plapi functions.
  * If this returns another negative value, this is an error.
  * Normal return is 0 or greater. Callers can then call other
- * plapi_run... functions if required, ending with plapi_exit and
- * plapi_destroy_instance.
+ * gsapi_run... functions if required, ending with gsapi_exit and
+ * gsapi_destroy_instance.
  */
-GSDLLEXPORT int GSDLLAPI plapi_init_with_args(void *instance, int argc, char **argv);
+GSDLLEXPORT int GSDLLAPI gsapi_init_with_args(void *instance, int argc, char **argv);
 
-GSDLLEXPORT int GSDLLAPI plapi_run_file(void *instance, const char *file_name);
+GSDLLEXPORT int GSDLLAPI gsapi_run_file(void *instance, const char *file_name);
 
-GSDLLEXPORT int GSDLLAPI plapi_exit(void *instance);
+GSDLLEXPORT int GSDLLAPI gsapi_exit(void *instance);
 
-GSDLLEXPORT int GSDLLAPI plapi_run_string_begin(void *instance);
+GSDLLEXPORT int GSDLLAPI gsapi_run_string_begin(void *instance);
 
-GSDLLEXPORT int GSDLLAPI plapi_run_string_continue(void *instance, const char *str, unsigned int length);
+GSDLLEXPORT int GSDLLAPI gsapi_run_string_continue(void *instance, const char *str, unsigned int length);
 
-GSDLLEXPORT int GSDLLAPI plapi_run_string_end(void *instance);
+GSDLLEXPORT int GSDLLAPI gsapi_run_string_end(void *instance);
 
-#endif /* plapi_INCLUDED */
+#endif /* gsapi_INCLUDED */

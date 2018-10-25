@@ -28,10 +28,10 @@
 /* Used for determining if wrong GSDLL loaded. */
 /* This may be called before any other function. */
 GSDLLEXPORT int GSDLLAPI
-plapi_revision(plapi_revision_t *pr, int rvsize)
+gsapi_revision(gsapi_revision_t *pr, int rvsize)
 {
-    if (rvsize < sizeof(plapi_revision_t))
-        return sizeof(plapi_revision_t);
+    if (rvsize < sizeof(gsapi_revision_t))
+        return sizeof(gsapi_revision_t);
     pr->product = gs_product;
     pr->copyright = gs_copyright;
     pr->revision = gs_revision;
@@ -40,7 +40,7 @@ plapi_revision(plapi_revision_t *pr, int rvsize)
 }
 
 GSDLLEXPORT int GSDLLAPI
-plapi_new_instance(void **lib, void *caller_handle)
+gsapi_new_instance(void **lib, void *caller_handle)
 {
     gs_memory_t *heap_mem = gs_malloc_init();
     gs_memory_t *chunk_mem;
@@ -68,7 +68,7 @@ plapi_new_instance(void **lib, void *caller_handle)
 }
 
 GSDLLEXPORT int GSDLLAPI
-plapi_set_stdio(void *instance,
+gsapi_set_stdio(void *instance,
     int (GSDLLCALLPTR stdin_fn)(void *caller_handle, char *buf, int len),
     int (GSDLLCALLPTR stdout_fn)(void *caller_handle, const char *str, int len),
     int (GSDLLCALLPTR stderr_fn)(void *caller_handle, const char *str, int len))
@@ -85,7 +85,7 @@ plapi_set_stdio(void *instance,
 }
 
 GSDLLEXPORT int GSDLLAPI
-plapi_init_with_args(void *lib, int argc, char **argv)
+gsapi_init_with_args(void *lib, int argc, char **argv)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
     if (lib == NULL)
@@ -95,7 +95,7 @@ plapi_init_with_args(void *lib, int argc, char **argv)
 }
 
 GSDLLEXPORT int GSDLLAPI
-plapi_run_file(void *lib, const char *file_name)
+gsapi_run_file(void *lib, const char *file_name)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
     if (lib == NULL)
@@ -105,7 +105,7 @@ plapi_run_file(void *lib, const char *file_name)
 }
 
 GSDLLEXPORT int GSDLLAPI
-plapi_exit(void *lib)
+gsapi_exit(void *lib)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
     if (lib == NULL)
@@ -115,7 +115,7 @@ plapi_exit(void *lib)
 }
 
 GSDLLEXPORT int GSDLLAPI
-plapi_delete_instance(void *lib)
+gsapi_delete_instance(void *lib)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
     if (lib == NULL)
@@ -124,7 +124,7 @@ plapi_delete_instance(void *lib)
     return pl_main_delete_instance(pl_main_get_instance(ctx->memory));
 }
 
-GSDLLEXPORT int GSDLLAPI plapi_set_poll(void *instance,
+GSDLLEXPORT int GSDLLAPI gsapi_set_poll(void *instance,
     int (GSDLLCALLPTR poll_fn)(void *caller_handle))
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
@@ -135,7 +135,7 @@ GSDLLEXPORT int GSDLLAPI plapi_set_poll(void *instance,
 }
 
 GSDLLEXPORT int GSDLLAPI
-plapi_set_display_callback(void *lib, display_callback *callback)
+gsapi_set_display_callback(void *lib, display_callback *callback)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
     if (lib == NULL)
@@ -145,7 +145,7 @@ plapi_set_display_callback(void *lib, display_callback *callback)
 }
 
 GSDLLEXPORT int GSDLLAPI
-plapi_set_default_device_list(void *instance, char *list, int listlen)
+gsapi_set_default_device_list(void *instance, char *list, int listlen)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
@@ -154,7 +154,7 @@ plapi_set_default_device_list(void *instance, char *list, int listlen)
 }
 
 GSDLLEXPORT int GSDLLAPI
-plapi_get_default_device_list(void *instance, char **list, int *listlen)
+gsapi_get_default_device_list(void *instance, char **list, int *listlen)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
@@ -241,7 +241,7 @@ lead: /* We've just read a leading surrogate */
 
 /* Initialise the interpreter */
 GSDLLEXPORT int GSDLLAPI
-plapi_set_arg_encoding(void *instance, int encoding)
+gsapi_set_arg_encoding(void *instance, int encoding)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
@@ -271,7 +271,7 @@ plapi_set_arg_encoding(void *instance, int encoding)
 }
 
 GSDLLEXPORT int GSDLLAPI
-plapi_run_string_begin(void *lib)
+gsapi_run_string_begin(void *lib)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
     if (lib == NULL)
@@ -280,7 +280,7 @@ plapi_run_string_begin(void *lib)
 }
 
 GSDLLEXPORT int GSDLLAPI
-plapi_run_string_continue(void *lib, const char *str, unsigned int length)
+gsapi_run_string_continue(void *lib, const char *str, unsigned int length)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
     if (lib == NULL)
@@ -289,7 +289,7 @@ plapi_run_string_continue(void *lib, const char *str, unsigned int length)
 }
 
 GSDLLEXPORT int GSDLLAPI
-plapi_run_string_end(void *lib)
+gsapi_run_string_end(void *lib)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
     if (lib == NULL)
