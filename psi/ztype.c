@@ -31,6 +31,7 @@
 #include "iutil.h"
 #include "dstack.h"             /* for dict_set_top */
 #include "store.h"
+#include "gsstate.h"
 
 /*
  * Some of the procedures in this file are public only so they can be
