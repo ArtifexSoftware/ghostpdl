@@ -25,6 +25,11 @@
 typedef struct gs_main_instance_s gs_main_instance;
 #endif
 
+#ifndef display_callback_DEFINED
+# define display_callback_DEFINED
+typedef struct display_callback_s display_callback;
+#endif
+
 /*
  * Define the structure of a search path.  Currently there is only one,
  * but there might be more someday.

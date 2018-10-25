@@ -535,7 +535,7 @@ $(PSOBJ)zpath.$(OBJ) : $(PSSRC)zpath.c $(OP) $(math__h)\
 # Define the base PostScript language interpreter.
 # This is the subset of PostScript Level 1 required by our PDF reader.
 
-INT1=$(PSOBJ)iapi.$(OBJ) $(PSOBJ)icontext.$(OBJ) $(PSOBJ)idebug.$(OBJ)
+INT1=$(PSOBJ)iapi.$(OBJ) $(PSOBJ)psapi.$(OBJ) $(PSOBJ)icontext.$(OBJ) $(PSOBJ)idebug.$(OBJ)
 INT2=$(PSOBJ)idict.$(OBJ) $(PSOBJ)idparam.$(OBJ) $(PSOBJ)idstack.$(OBJ)
 INT3=$(PSOBJ)iinit.$(OBJ) $(PSOBJ)interp.$(OBJ)
 INT4=$(PSOBJ)iparam.$(OBJ) $(PSOBJ)ireclaim.$(OBJ) $(PSOBJ)iplugin.$(OBJ)
@@ -1918,6 +1918,12 @@ $(PSOBJ)iapi.$(OBJ) : $(PSSRC)iapi.c $(AK)\
  $(iref_h) $(imain_h) $(imainarg_h) $(iminst_h) $(gslibctx_h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)iapi.$(OBJ) $(C_) $(PSSRC)iapi.c
+
+$(PSOBJ)psapi.$(OBJ) : $(PSSRC)psapi.c $(AK)\
+ $(string__h) $(ierrors_h) $(gscdefs_h) $(gstypes_h) $(iapi_h)\
+ $(iref_h) $(imain_h) $(imainarg_h) $(iminst_h) $(gslibctx_h)\
+ $(INT_MAK) $(MAKEDIRS)
+	$(PSCC) $(PSO_)psapi.$(OBJ) $(C_) $(PSSRC)psapi.c
 
 $(PSOBJ)icontext.$(OBJ) : $(PSSRC)icontext.c $(GH)\
  $(gsstruct_h) $(gxalloc_h)\
