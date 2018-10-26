@@ -124,13 +124,22 @@ libgpdl_tr=$(GLOBJ)libgpdl.tr
 GPDL_A=$(BINDIR)$(D)$(GPDL).a
 $(GPDL_A): $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(MAIN_OBJ) \
          $(XOBJS) $(GLOBJDIR)/pdlromfs$(COMPILE_INITS).$(OBJ) \
+         $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c0.$(OBJ) \
+         $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c1.$(OBJ) \
+         $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c2.$(OBJ) \
+         $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c3.$(OBJ) \
          $(PSINT_ARCHIVE_ALL) \
          $(pdlobj_tr) $(ECHOGS_XE) $(INT_ARCHIVE_ALL) $(INT_ALL) $(DEVS_ALL) \
          $(UNIXLINK_MAK)
 	rm -f $(GPDL_A)
 	$(ECHOGS_XE) -w $(libgpdl_tr) -n - $(AR) $(ARFLAGS) $(GPDL_A)
 	$(ECHOGS_XE) -a $(libgpdl_tr) -n -s $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(XOBJS) -s
-	$(ECHOGS_XE) -a $(libgpdl_tr) -n -s $(GLOBJDIR)/pdlromfs$(COMPILE_INITS).$(OBJ) $(MAIN_OBJ) -s
+	$(ECHOGS_XE) -a $(libgpdl_tr) -n -s $(GLOBJDIR)/pdlromfs$(COMPILE_INITS).$(OBJ) -s
+	$(ECHOGS_XE) -a $(libgpdl_tr) -n -s $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c0.$(OBJ) -s
+	$(ECHOGS_XE) -a $(libgpdl_tr) -n -s $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c1.$(OBJ) -s
+	$(ECHOGS_XE) -a $(libgpdl_tr) -n -s $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c2.$(OBJ) -s
+	$(ECHOGS_XE) -a $(libgpdl_tr) -n -s $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c3.$(OBJ) -s
+	$(ECHOGS_XE) -a $(libgpdl_tr) -n -s $(MAIN_OBJ) -s
 	cat $(pdlobj_tr) >>$(libgpdl_tr)
 	$(ECHOGS_XE) -a $(libgpdl_tr) -s -
 	$(SH) <$(libgpdl_tr)
@@ -222,11 +231,20 @@ gpdlldt_tr=$(PSOBJ)gpdlldt.tr
 $(GPDL_XE): $(ld_tr) $(gpdl_tr) $(INT_ARCHIVE_ALL) $(REALMAIN_OBJ) $(MAIN_OBJ) \
              $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) \
              $(XOBJS) $(GLOBJDIR)/pdlromfs$(COMPILE_INITS).$(OBJ) \
+	     $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c0.$(OBJ) \
+	     $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c1.$(OBJ) \
+	     $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c2.$(OBJ) \
+	     $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c3.$(OBJ) \
              $(PSINT_ARCHIVE_ALL) $(UNIXLINK_MAK)
 	$(ECHOGS_XE) -w $(gpdlldt_tr) -n - $(CCLD) $(PDL_LDFLAGS) $(XLIBDIRS) -o $(GPDL_XE)
 	$(ECHOGS_XE) -a $(gpdlldt_tr) -n -s $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(XOBJS) -s
 	cat $(gpdlld_tr) >> $(gpdlldt_tr)
-	$(ECHOGS_XE) -a $(gpdlldt_tr) -s - $(GLOBJDIR)/pdlromfs$(COMPILE_INITS).$(OBJ) $(REALMAIN_OBJ) $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
+	$(ECHOGS_XE) -a $(gpdlldt_tr) -n -s - $(GLOBJDIR)/pdlromfs$(COMPILE_INITS).$(OBJ)
+	$(ECHOGS_XE) -a $(gpdlldt_tr) -n -s - $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c0.$(OBJ)
+	$(ECHOGS_XE) -a $(gpdlldt_tr) -n -s - $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c1.$(OBJ)
+	$(ECHOGS_XE) -a $(gpdlldt_tr) -n -s - $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c2.$(OBJ)
+	$(ECHOGS_XE) -a $(gpdlldt_tr) -n -s - $(GLOBJDIR)/pdlromfs$(COMPILE_INITS)c3.$(OBJ)
+	$(ECHOGS_XE) -a $(gpdlldt_tr) -s - $(REALMAIN_OBJ) $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
 	if [ x$(XLIBDIR) != x ]; then LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; fi; \
 	XCFLAGS= XINCLUDE= XLDFLAGS= XLIBDIRS= XLIBS= \
 	PCL_FEATURE_DEVS= DEVICE_DEVS= DEVICE_DEVS1= DEVICE_DEVS2= DEVICE_DEVS3= \

@@ -3313,31 +3313,111 @@ $(GLGEN)xpsromfs0.c : $(GLGEN)xpsromfs0_$(UFST_BRIDGE).c $(LIB_MAK) $(MAKEDIRS)
 	$(CP_) $(GLGEN)xpsromfs0_$(UFST_BRIDGE).c $(GLGEN)xpsromfs0.c
 
 # pdl
-$(GLGEN)pdlromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(LIB_MAK) $(MAKEDIRS)
-	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs1_.c \
+# We generate the pdl romfs in index + 4 lumps because of size
+
+# COMPILE_INITS + Non UFST variant
+$(GLGEN)pdlromfs1_c0.c : $(GLGEN)pdlromfs1_.c
+	$(NO_OP)
+
+$(GLGEN)pdlromfs1_c1.c : $(GLGEN)pdlromfs1_.c
+	$(NO_OP)
+
+$(GLGEN)pdlromfs1_c2.c : $(GLGEN)pdlromfs1_.c
+	$(NO_OP)
+
+$(GLGEN)pdlromfs1_c3.c : $(GLGEN)pdlromfs1_.c
+	$(NO_OP)
+
+$(GLGEN)pdlromfs1_.c: $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(LIB_MAK) $(MAKEDIRS)
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs1_.c -s 4 \
 	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(PCLXL_ROMFS_ARGS) $(PCLXL_FONT_ROMFS_ARGS) $(PJL_ROMFS_ARGS) \
         $(XPS_ROMFS_ARGS) $(XPS_FONT_ROMFS_ARGS) \
 	$(PS_ROMFS_ARGS) $(PS_FONT_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
-$(GLGEN)pdlromfs1_1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(LIB_MAK) $(MAKEDIRS)
-	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs1_1.c \
+# COMPILE_INITS + UFST variant
+$(GLGEN)pdlromfs1_1c0.c : $(GLGEN)pdlromfs1_1.c
+	$(NO_OP)
+
+$(GLGEN)pdlromfs1_1c1.c : $(GLGEN)pdlromfs1_1.c
+	$(NO_OP)
+
+$(GLGEN)pdlromfs1_1c2.c : $(GLGEN)pdlromfs1_1.c
+	$(NO_OP)
+
+$(GLGEN)pdlromfs1_1c3.c : $(GLGEN)pdlromfs1_1.c
+	$(NO_OP)
+
+$(GLGEN)pdlromfs1_1.c: $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(LIB_MAK) $(MAKEDIRS)
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs1_1.c -s 4 \
 	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(UFST_ROMFS_ARGS) $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
 	$(PS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
+# Rules to fold COMPILE_INITS +/- UFST into 1 set of targets
+$(GLGEN)pdlromfs1c0.c : $(GLGEN)pdlromfs1_$(UFST_BRIDGE)c0.c
+	$(CP_) $(GLGEN)pdlromfs1_$(UFST_BRIDGE)c0.c $(GLGEN)pdlromfs1c0.c
+
+$(GLGEN)pdlromfs1c1.c : $(GLGEN)pdlromfs1_$(UFST_BRIDGE)c1.c
+	$(CP_) $(GLGEN)pdlromfs1_$(UFST_BRIDGE)c1.c $(GLGEN)pdlromfs1c1.c
+
+$(GLGEN)pdlromfs1c2.c : $(GLGEN)pdlromfs1_$(UFST_BRIDGE)c2.c
+	$(CP_) $(GLGEN)pdlromfs1_$(UFST_BRIDGE)c2.c $(GLGEN)pdlromfs1c2.c
+
+$(GLGEN)pdlromfs1c3.c : $(GLGEN)pdlromfs1_$(UFST_BRIDGE)c3.c
+	$(CP_) $(GLGEN)pdlromfs1_$(UFST_BRIDGE)c3.c $(GLGEN)pdlromfs1c3.c
+
 $(GLGEN)pdlromfs1.c : $(GLGEN)pdlromfs1_$(UFST_BRIDGE).c $(LIB_MAK) $(MAKEDIRS)
 	$(CP_) $(GLGEN)pdlromfs1_$(UFST_BRIDGE).c $(GLGEN)pdlromfs1.c
 
+# Non COMPILE_INITS + Non UFST variant
+$(GLGEN)pdlromfs0_c0.c : $(GLGEN)pdlromfs0_.c
+	$(NO_OP)
+
+$(GLGEN)pdlromfs0_c1.c : $(GLGEN)pdlromfs0_.c
+	$(NO_OP)
+
+$(GLGEN)pdlromfs0_c2.c : $(GLGEN)pdlromfs0_.c
+	$(NO_OP)
+
+$(GLGEN)pdlromfs0_c3.c : $(GLGEN)pdlromfs0_.c
+	$(NO_OP)
+
 $(GLGEN)pdlromfs0_.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
-	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs0_.c \
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs0_.c -s 4 \
 	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(GL_ROMFS_ARGS)
 
+# Non COMPILE_INITS + UFST variant
+$(GLGEN)pdlromfs0_1c0.c : $(GLGEN)pdlromfs0_1.c
+	$(NO_OP)
+
+$(GLGEN)pdlromfs0_1c1.c : $(GLGEN)pdlromfs0_1.c
+	$(NO_OP)
+
+$(GLGEN)pdlromfs0_1c2.c : $(GLGEN)pdlromfs0_1.c
+	$(NO_OP)
+
+$(GLGEN)pdlromfs0_1c3.c : $(GLGEN)pdlromfs0_1.c
+	$(NO_OP)
+
 $(GLGEN)pdlromfs0_1.c : $(MKROMFS_XE) $(LIB_MAK) $(MAKEDIRS)
-	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs0_1.c \
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs0_1.c -s 4 \
 	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
 	$(GL_ROMFS_ARGS)
+
+# Rules to fold Non COMPILE_INITS +/- UFST into 1 set of targets
+$(GLGEN)pdlromfs0c0.c : $(GLGEN)pdlromfs1_$(UFST_BRIDGE)c0.c
+	$(CP_) $(GLGEN)pdlromfs0_$(UFST_BRIDGE)c0.c $(GLGEN)pdlromfs0c0.c
+
+$(GLGEN)pdlromfs0c1.c : $(GLGEN)pdlromfs1_$(UFST_BRIDGE)c1.c
+	$(CP_) $(GLGEN)pdlromfs0_$(UFST_BRIDGE)c1.c $(GLGEN)pdlromfs0c1.c
+
+$(GLGEN)pdlromfs0c2.c : $(GLGEN)pdlromfs1_$(UFST_BRIDGE)c2.c
+	$(CP_) $(GLGEN)pdlromfs0_$(UFST_BRIDGE)c2.c $(GLGEN)pdlromfs0c2.c
+
+$(GLGEN)pdlromfs0c3.c : $(GLGEN)pdlromfs1_$(UFST_BRIDGE)c3.c
+	$(CP_) $(GLGEN)pdlromfs0_$(UFST_BRIDGE)c3.c $(GLGEN)pdlromfs0c3.c
 
 $(GLGEN)pdlromfs0.c : $(GLGEN)pdlromfs0_$(UFST_BRIDGE).c $(LIB_MAK) $(MAKEDIRS)
 	$(CP_) $(GLGEN)pdlromfs0_$(UFST_BRIDGE).c $(GLGEN)pdlromfs0.c
@@ -3384,8 +3464,32 @@ $(GLOBJ)xpsromfs1.$(OBJ) : $(GLOBJ)xpsromfs1.c $(time__h) $(LIB_MAK) $(MAKEDIRS)
 $(GLOBJ)pdlromfs0.$(OBJ) : $(GLGEN)pdlromfs0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pdlromfs0.$(OBJ) $(C_) $(GLGEN)pdlromfs0.c
 
+$(GLOBJ)pdlromfs0c0.$(OBJ) : $(GLGEN)pdlromfs0c0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)pdlromfs0c0.$(OBJ) $(C_) $(GLGEN)pdlromfs0c0.c
+
+$(GLOBJ)pdlromfs0c1.$(OBJ) : $(GLGEN)pdlromfs0c0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)pdlromfs0c1.$(OBJ) $(C_) $(GLGEN)pdlromfs0c1.c
+
+$(GLOBJ)pdlromfs0c2.$(OBJ) : $(GLGEN)pdlromfs0c0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)pdlromfs0c2.$(OBJ) $(C_) $(GLGEN)pdlromfs0c2.c
+
+$(GLOBJ)pdlromfs0c3.$(OBJ) : $(GLGEN)pdlromfs0c0.c $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)pdlromfs0c3.$(OBJ) $(C_) $(GLGEN)pdlromfs0c3.c
+
 $(GLOBJ)pdlromfs1.$(OBJ) : $(GLOBJ)pdlromfs1.c $(time__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pdlromfs1.$(OBJ) $(C_) $(GLOBJ)pdlromfs1.c
+
+$(GLOBJ)pdlromfs1c0.$(OBJ) : $(GLOBJ)pdlromfs1c0.c $(time__h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)pdlromfs1c0.$(OBJ) $(C_) $(GLOBJ)pdlromfs1c0.c
+
+$(GLOBJ)pdlromfs1c1.$(OBJ) : $(GLOBJ)pdlromfs1c1.c $(time__h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)pdlromfs1c1.$(OBJ) $(C_) $(GLOBJ)pdlromfs1c1.c
+
+$(GLOBJ)pdlromfs1c2.$(OBJ) : $(GLOBJ)pdlromfs1c2.c $(time__h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)pdlromfs1c2.$(OBJ) $(C_) $(GLOBJ)pdlromfs1c2.c
+
+$(GLOBJ)pdlromfs1c3.$(OBJ) : $(GLOBJ)pdlromfs1c3.c $(time__h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)pdlromfs1c3.$(OBJ) $(C_) $(GLOBJ)pdlromfs1c3.c
 
 # Define the ZLIB modules needed by mnkromfs here to factor it out of top makefiles
 # Also put the .h dependencies here for the same reason
