@@ -426,9 +426,137 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_stream *s)
     return 0;
 }
 
+static int skip_to_digit(pdf_context *ctx, pdf_stream *s, unsigned int limit)
+{
+    byte c;
+    int bytes, read = 0;
+
+    do {
+        bytes = pdfi_read_bytes(ctx, &c, 1, 1, s);
+        if (bytes == 0)
+            return_error(gs_error_ioerror);
+        if (c >= 0x30 && c <= 0x39) {
+            pdfi_unread(ctx, s, &c, 1);
+            break;
+        }
+        read += bytes;
+    }while (read < limit);
+    return read;
+}
+
+static int read_digits(pdf_context *ctx, pdf_stream *s, byte *Buffer, unsigned int limit)
+{
+    byte c;
+    int bytes, read = 0;
+
+    do {
+        bytes = pdfi_read_bytes(ctx, &Buffer[read], 1, 1, s);
+        if (bytes == 0)
+            return_error(gs_error_ioerror);
+        if (Buffer[read] < 0x30 || Buffer[read] > 0x39) {
+            pdfi_unread(ctx, s, &Buffer[read], 1);
+            break;
+        }
+        read += bytes;
+    }while (read < limit);
+    return read;
+}
+
+
+static int read_xref_entry_slow(pdf_context *ctx, pdf_stream *s, gs_offset_t *offset, uint32_t *generation_num, unsigned char *free)
+{
+    byte Buffer[20];
+    int code, read = 0, bytes;
+
+    /* First off, find a number. If we don't find one, and read 20 bytes, throw an error */
+    code = skip_to_digit(ctx, s, 20);
+    if (code < 0)
+        return code;
+    read += code;
+
+    /* Now read a number */
+    code = read_digits(ctx, s, (byte *)&Buffer,  (read > 10 ? 20 - read : 10));
+    if (code < 0)
+        return code;
+    Buffer[code] = 0x00;
+    read += code;
+
+    *offset = atol((const char *)Buffer);
+
+    /* find next number */
+    code = skip_to_digit(ctx, s, 20 - read);
+    if (code < 0)
+        return code;
+    read += code;
+
+    /* and read it */
+    code = read_digits(ctx, s, (byte *)&Buffer,  (read > 15 ? 20 - read : 5));
+    if (code < 0)
+        return code;
+    Buffer[code] = 0x00;
+    read += code;
+
+    *generation_num = atol((const char *)Buffer);
+
+    do {
+        bytes = pdfi_read_bytes(ctx, &Buffer[0], 1, 1, s);
+        if (bytes == 0)
+            return_error(gs_error_ioerror);
+        read += bytes;
+        if (Buffer[0] == 0x09 || Buffer[0] == 0x20)
+            continue;
+        if (Buffer[0] == 'n' || Buffer[0] == 'f') {
+            *free = Buffer[0];
+            break;
+        } else {
+            return_error(gs_error_syntaxerror);
+        }
+    } while (read < 20);
+    if (read >= 20)
+        return_error(gs_error_syntaxerror);
+
+    do {
+        bytes = pdfi_read_bytes(ctx, &Buffer[0], 1, 1, s);
+        read += bytes;
+        if (Buffer[0] == 0x20 || Buffer[0] == 0x09 || Buffer[0] == 0x0d || Buffer[0] == 0x0a)
+            continue;
+    } while (read < 20);
+    return 0;
+}
+
+static int write_offset(byte *B, gs_offset_t o, unsigned int g, unsigned char free)
+{
+    byte b[20], *ptr = B;
+    int index = 0;
+
+    gs_sprintf((char *)b, "%"PRId64"", o);
+    if (strlen((const char *)b) > 10)
+        return_error(gs_error_rangecheck);
+    for(index=0;index < 10 - strlen((const char *)b); index++) {
+        *ptr++ = 0x30;
+    }
+    memcpy(ptr, b, strlen((const char *)b));
+    ptr += strlen((const char *)b);
+    *ptr++ = 0x20;
+
+    gs_sprintf((char *)b, "%d", g);
+    if (strlen((const char *)b) > 5)
+        return_error(gs_error_rangecheck);
+    for(index=0;index < 5 - strlen((const char *)b);index++) {
+        *ptr++ = 0x30;
+    }
+    memcpy(ptr, b, strlen((const char *)b));
+    ptr += strlen((const char *)b);
+    *ptr++ = 0x20;
+    *ptr++ = free;
+    *ptr++ = 0x20;
+    *ptr++ = 0x0d;
+    return 0;
+}
+
 static int read_xref_section(pdf_context *ctx, pdf_stream *s)
 {
-    int code = 0, i;
+    int code = 0, i, j;
     pdf_obj *o = NULL;
     uint64_t start = 0, size = 0;
     int64_t bytes = 0;
@@ -511,28 +639,41 @@ static int read_xref_section(pdf_context *ctx, pdf_stream *s)
     for (i=0;i< size;i++){
         xref_entry *entry = &ctx->xref_table->xref[i + start];
         unsigned char free;
-        char ch;
-        
-        /* The entries are supposed to be exactly 20 bytes, but sometimes they might be 19 bytes.
-         * Only the first 18 bytes matter, the last 1-2 bytes are 0x0d, 0x0a or 0x20 (space).
-         * (space violates the spec, but occurs in the wild)
-         */
+        gs_offset_t off;
+        unsigned int gen;
+
         bytes = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 20, s);
         if (bytes < 20)
             return_error(gs_error_ioerror);
-        
-        /* Check for case where there is only 1 whitespace between end of entry and next one */
-        ch = Buffer[19];
-        if (ch != 0x0a && ch != 0x0d && ch != ' ')
-            pdfi_unread(ctx, s, (byte *)&Buffer[19], 1);
-            
-        /* Overwrite the 19th character with a null, we don't care what it was */
-        Buffer[18] = 0;
-
+        j = 19;
+        while (Buffer[j] != 0x0D && Buffer[j] != 0x0A) {
+            pdfi_unread(ctx, s, (byte *)&Buffer[j], 1);
+            if (--j < 0) {
+                dmprintf(ctx->memory, "Invalid xref entry, line terminator missing.\n");
+                code = read_xref_entry_slow(ctx, s, &off, &gen, &free);
+                if (code < 0)
+                    return code;
+                code = write_offset((byte *)Buffer, off, gen, free);
+                if (code < 0)
+                    return code;
+                break;
+            }
+        }
+        Buffer[j] = 0x00;
         if (entry->object_num != 0)
             continue;
 
-        sscanf(Buffer, "%ld %d %c", &entry->u.uncompressed.offset, &entry->u.uncompressed.generation_num, &free);
+        if (sscanf(Buffer, "%ld %d %c", &entry->u.uncompressed.offset, &entry->u.uncompressed.generation_num, &free) != 3) {
+            dmprintf(ctx->memory, "Invalid xref entry, incorrect format.\n");
+            pdfi_unread(ctx, s, (byte *)Buffer, 20);
+            code = read_xref_entry_slow(ctx, s, &off, &gen, &free);
+            if (code < 0)
+                return code;
+            code = write_offset((byte *)Buffer, off, gen, free);
+            if (code < 0)
+                return code;
+        }
+
         entry->compressed = false;
         entry->object_num = i + start;
         if (free == 'f')
