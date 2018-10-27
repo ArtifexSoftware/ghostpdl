@@ -747,9 +747,9 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
 
 int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream **new_stream, bool inline_image)
 {
-    pdf_obj *o = NULL, *decode = NULL;
+    pdf_obj *o = NULL, *decode = NULL, *o1 = NULL;
     int code;
-    uint64_t i;
+    int64_t i, j, duplicates;
     stream *s = source->s, *new_s = NULL;
     *new_stream = NULL;
 
@@ -812,6 +812,54 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
                 }
             }
 
+            /* Check the Filter array to see if we have any duplicates (to prevent filter bombs)
+             * For now we will allow one duplicate (in case people do stupid things like ASCIIEncode
+             * and Flate and ASCIIEncode again or something).
+             */
+            for (i = 0; i < filter_array->entries - 1;i++) {
+                code = pdfi_array_get(filter_array, i, &o);
+                if (code < 0) {
+                    pdfi_countdown(decodeparams_array);
+                    pdfi_countdown(filter_array);
+                    return code;
+                }
+                if (o->type != PDF_NAME) {
+                    pdfi_countdown(o);
+                    pdfi_countdown(decodeparams_array);
+                    pdfi_countdown(filter_array);
+                    return_error(gs_error_typecheck);
+                }
+                duplicates = 0;
+
+                for (j = i + 1; j < filter_array->entries;j++) {
+                    code = pdfi_array_get(filter_array, j, &o1);
+                    if (code < 0) {
+                        pdfi_countdown(o);
+                        pdfi_countdown(decodeparams_array);
+                        pdfi_countdown(filter_array);
+                        return code;
+                    }
+                    if (o1->type != PDF_NAME) {
+                        pdfi_countdown(o);
+                        pdfi_countdown(o1);
+                        pdfi_countdown(decodeparams_array);
+                        pdfi_countdown(filter_array);
+                        return_error(gs_error_typecheck);
+                    }
+                    if (((pdf_name *)o)->length == ((pdf_name *)o1)->length) {
+                        if (memcmp(((pdf_name *)o)->data, ((pdf_name *)o1)->data, ((pdf_name *)o)->length) == 0)
+                            duplicates++;
+                    }
+                    pdfi_countdown(o1);
+                }
+                pdfi_countdown(o);
+                if (duplicates > 2) {
+                    pdfi_countdown(decodeparams_array);
+                    pdfi_countdown(filter_array);
+                    return_error(gs_error_syntaxerror);
+                }
+            }
+
             for (i = 0; i < filter_array->entries;i++) {
                 code = pdfi_array_get(filter_array, i, &o);
                 if (code < 0) {
@@ -820,11 +868,11 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
                     return code;
                 }
                 if (o->type != PDF_NAME) {
+                    pdfi_countdown(o);
                     pdfi_countdown(decodeparams_array);
                     pdfi_countdown(filter_array);
                     return_error(gs_error_typecheck);
                 }
-
                 if (decodeparams_array != NULL) {
                     code = pdfi_array_get(decodeparams_array, i, &decode);
                     if (code < 0) {
@@ -841,6 +889,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
 
                 code = pdfi_apply_filter(ctx, dict, (pdf_name *)o,
                                          (pdf_dict *)decode, s, &new_s, inline_image);
+                pdfi_countdown(o);
                 if (code < 0) {
                     *new_stream = 0;
                     pdfi_countdown(decodeparams_array);
