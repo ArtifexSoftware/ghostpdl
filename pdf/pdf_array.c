@@ -38,7 +38,7 @@ void pdfi_free_array(pdf_obj *o)
  */
 int pdfi_array_get(pdf_array *a, uint64_t index, pdf_obj **o)
 {
-    if (index > a->size)
+    if (index >= a->size)
         return_error(gs_error_rangecheck);
 
     *o = a->values[index];
