@@ -474,7 +474,17 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
             return code;
     }
 
-   /* release the reference to the target */
+    if (penum->tpr_state != NULL) {
+        transform_pixel_region_data data;
+        gx_device *dev = penum->dev;
+        if (penum->clip_dev)
+            dev = (gx_device *)penum->clip_dev;
+        if (penum->rop_dev)
+            dev = (gx_device *)penum->rop_dev;
+        data.state = penum->tpr_state;
+        dev_proc(dev, transform_pixel_region)(dev, transform_pixel_region_end, &data);
+    }
+    /* release the reference to the target */
     if ( penum->rop_dev )
         gx_device_set_target((gx_device_forward *)penum->rop_dev, NULL);
     if ( penum->clip_dev )

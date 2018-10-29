@@ -102,6 +102,7 @@ dev_proc_map_color_rgb(mem_mapped_map_color_rgb);
 /* Default implementations */
 dev_proc_strip_copy_rop(mem_default_strip_copy_rop);
 dev_proc_strip_copy_rop2(mem_default_strip_copy_rop2);
+dev_proc_transform_pixel_region(mem_transform_pixel_region);
 
 /*
  * Macro for generating the device descriptor.
@@ -182,7 +183,26 @@ dev_proc_strip_copy_rop2(mem_default_strip_copy_rop2);
                 NULL, /* encode_color */\
                 NULL, /* decode_color */\
                 NULL, /* pattern_manage */\
-                fill_rectangle_hl_color /* fill_rectangle_hl_color */\
+                fill_rectangle_hl_color, /* fill_rectangle_hl_color */\
+                NULL, /* include_color_space */\
+                NULL, /* fill_linear_color_scanline */\
+                NULL, /* fill_linear_color_trapezoid */\
+                NULL, /* fill_linear_color_triangle */\
+                NULL, /* update_spot_equivalent_colors */\
+                NULL, /* ret_devn_params */\
+                NULL, /* fillpage */\
+                NULL, /* push_transparency_state */\
+                NULL, /* pop_transparency_state */\
+                NULL, /* put_image */\
+                NULL, /* dev_spec_op */\
+                NULL, /* copy_planes */\
+                NULL, /* get_profile */\
+                NULL, /* set_graphics_type_tag */\
+                NULL, /* strip_copy_rop2 */\
+                NULL, /* strip_tile_rect_devn */\
+                NULL, /* copy_alpha_hl_color */\
+                NULL, /* process_page */\
+                mem_transform_pixel_region\
         },\
         0,			/* target */\
         mem_device_init_private	/* see gxdevmem.h */\

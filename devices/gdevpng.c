@@ -765,10 +765,28 @@ pngalpha_create_buf_device(gx_device **pbdev, gx_device *target, int y,
    const gx_render_plane_t *render_plane, gs_memory_t *mem,
    gx_color_usage_t *color_usage)
 {
-    gx_device_printer *ptarget = (gx_device_printer *)target;
+    gx_device_printer *ptarget;
     int code = gx_default_create_buf_device(pbdev, target, y,
         render_plane, mem, color_usage);
     /* Now set copy_alpha to one that handles RGBA */
+
+    /* this is really pretty nasty. The pngalpha device is going to replace
+     * the device methods in the memory rendering device with some of its own.
+     * To me this seems fraught with peril, its making a lot of assumptions
+     * about the compatibility of the devices!
+     * This, of course, totally breaks device chaining, but since the memory
+     * device wasn't going to pass on the intermediate method calls to the
+     * 'terminating' device, we can work around it here. We simply descend
+     * the chain of devices to the terminating device, and pull the methods
+     * we need directly from that device. I don't know why we are using
+     * 'orig_procs' either, but its safe to do so because this is only
+     * done here for the PNG device, and we know that this is a gx_device_prn
+     * based device.
+     */
+    while (target->child != NULL)
+        target = target->child;
+
+    ptarget= (gx_device_printer *)target;
     set_dev_proc(*pbdev, copy_alpha, ptarget->orig_procs.copy_alpha);
     set_dev_proc(*pbdev, fillpage, pngalpha_fillpage);
     return code;

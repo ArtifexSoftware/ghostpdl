@@ -1201,6 +1201,7 @@ typedef struct pdf_lcvd_s {
     dev_t_proc_fill_rectangle((*std_fill_rectangle), gx_device);
     dev_t_proc_close_device((*std_close_device), gx_device);
     dev_t_proc_get_clipping_box((*std_get_clipping_box), gx_device);
+    dev_t_proc_transform_pixel_region((*std_transform_pixel_region), gx_device);
     bool mask_is_empty;
     bool path_is_empty;
     bool mask_is_clean;

@@ -387,10 +387,10 @@ static void invalidate_stack_devices(i_ctx_t *i_ctx_p)
 static int
 znulldevice(i_ctx_t *i_ctx_p)
 {
-    gs_nulldevice(igs);
+    int code = gs_nulldevice(igs);
     invalidate_stack_devices(i_ctx_p);
     clear_pagedevice(istate);
-    return 0;
+    return code;
 }
 
 extern void print_resource_usage(const gs_main_instance *, gs_dual_memory_t *,

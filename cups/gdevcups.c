@@ -1016,10 +1016,6 @@ cups_get_params(gx_device     *pdev,	/* I - Device info */
                               (int *)&(cups->header.Jog))) < 0)
     goto done;
 
-  if ((code = param_write_int(plist, "LeadingEdge",
-                              (int *)&(cups->header.LeadingEdge))) < 0)
-    goto done;
-
   b = cups->header.ManualFeed;
   if ((code = param_write_bool(plist, "ManualFeed", &b)) < 0)
     goto done;
@@ -2838,6 +2834,9 @@ cups_open(gx_device *pdev)		/* I - Device info */
     return(code);
   }
 
+  /* Establish the default LeadingEdge in the cups header */
+  cups->header.LeadingEdge = (cups_edge_t)(pdev->LeadingEdge & LEADINGEDGE_MASK);
+
   if ((code = gdev_prn_open(pdev)) != 0)
     return(code);
 
@@ -3241,23 +3240,6 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   intoption(cupsRowFeed, "cupsRowFeed", unsigned)
   intoption(cupsRowStep, "cupsRowStep", unsigned)
 
-  /* Special handling of LeadingEdge to allow null as a valid value type */
-  if ((code = param_read_int(plist, "LeadingEdge", &intval)) < 0)
-  {
-    if ((code = param_read_null(plist, "LeadingEdge")) < 0)
-    {
-      dmprintf(pdev->memory, "ERROR: Error setting LeadingEdge ...\n");
-      param_signal_error(plist, "LeadingEdge", code);
-      goto done;
-    }
-    if (code == 0)
-      cups->header.LeadingEdge = CUPS_EDGE_TOP;
-  }
-  else if (code == 0)
-  {
-    cups->header.LeadingEdge = (cups_edge_t)intval;
-  }
-
 #ifdef GX_COLOR_INDEX_TYPE
  /*
   * Support cupsPreferredBitsPerColor - basically, allows you to
@@ -3315,6 +3297,8 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
   if ((code = gdev_prn_put_params(pdev, plist)) < 0)
     goto done;
+
+  cups->header.LeadingEdge = (cups_edge_t)(pdev->LeadingEdge & LEADINGEDGE_MASK);
 
   /* If cups_set_color_info() changed the color model of the device we want to
    * force the raster memory to be recreated/reinitialized

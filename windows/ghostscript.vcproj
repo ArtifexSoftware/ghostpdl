@@ -1814,6 +1814,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\gdevepo.c"
+				>
+			</File>
+			<File
+				RelativePath="..\base\gdevmplt.c"
+				>
+			</File>
+			<File
 				RelativePath="..\base\gdevsclass.c"
 				>
 			</File>
@@ -3124,11 +3132,11 @@
 						>
 					</File>
 					<File
-						RelativePath="..\base\gsicc_lcms2mt.c"
+						RelativePath="..\base\gsicc_lcms2.c"
 						>
 					</File>
 					<File
-						RelativePath="..\base\gsicc_lcms2.c"
+						RelativePath="..\base\gsicc_lcms2mt.c"
 						>
 					</File>
 					<File
@@ -3363,6 +3371,10 @@
 			</File>
 			<File
 				RelativePath="..\base\gdevflp.h"
+				>
+			</File>
+			<File
+				RelativePath="..\base\gdevmplt.h"
 				>
 			</File>
 			<File
@@ -5857,15 +5869,15 @@
 				RelativePath="..\devices\gdevpcx.c"
 				>
 			</File>
-          <File
-              RelativePath="..\devices\gdevpdfimg.c"
+			<File
+				RelativePath="..\devices\gdevpdfimg.c"
 				>
-          </File>
-          <File
-              RelativePath="..\devices\gdevpe.c"
+			</File>
+			<File
+				RelativePath="..\devices\gdevpe.c"
 				>
-          </File>
-          <File
+			</File>
+			<File
 				RelativePath="..\devices\gdevperm.c"
 				>
 			</File>
@@ -7468,11 +7480,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2mt\include\lcms2mt.h"
+				RelativePath="..\lcms2mt\src\lcms2_internal.h"
 				>
 			</File>
 			<File
-				RelativePath="..\lcms2mt\src\lcms2_internal.h"
+				RelativePath="..\lcms2mt\include\lcms2mt.h"
 				>
 			</File>
 			<File

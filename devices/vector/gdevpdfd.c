@@ -918,6 +918,7 @@ lcvd_dev_spec_op(gx_device *pdev1, int dev_spec_op,
         case gxdso_pattern_is_cpath_accum:
         case gxdso_pattern_shfill_doesnt_need_path:
         case gxdso_pattern_handles_clip_path:
+        case gxdso_copy_color_is_fast:
             return 0;
     }
     return gx_default_dev_spec_op(pdev1, dev_spec_op, data, size);
@@ -1319,6 +1320,47 @@ lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
     return 0;
 }
 
+static int
+lcvd_transform_pixel_region(gx_device *dev, transform_pixel_region_reason reason, transform_pixel_region_data *data)
+{
+    transform_pixel_region_data local_data;
+    gx_dda_fixed_point local_pixels, local_rows;
+    gs_int_rect local_clip;
+    pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
+    int ret;
+    dev_t_proc_fill_rectangle((*fill_rectangle), gx_device);
+    dev_t_proc_copy_color((*copy_color), gx_device);
+
+    if (reason == transform_pixel_region_begin) {
+        local_data = *data;
+        local_pixels = *local_data.u.init.pixels;
+        local_rows = *local_data.u.init.rows;
+        local_clip = *local_data.u.init.clip;
+        local_data.u.init.pixels = &local_pixels;
+        local_data.u.init.rows = &local_rows;
+        local_data.u.init.clip = &local_clip;
+        local_pixels.x.state.Q -= int2fixed(cvd->mdev.mapped_x);
+        local_pixels.y.state.Q -= int2fixed(cvd->mdev.mapped_y);
+        local_rows.x.state.Q -= int2fixed(cvd->mdev.mapped_x);
+        local_rows.y.state.Q -= int2fixed(cvd->mdev.mapped_y);
+        local_clip.p.x -= cvd->mdev.mapped_x;
+        local_clip.p.y -= cvd->mdev.mapped_y;
+        local_clip.q.x -= cvd->mdev.mapped_x;
+        local_clip.q.y -= cvd->mdev.mapped_y;
+        ret = cvd->std_transform_pixel_region(dev, reason, &local_data);
+        data->state = local_data.state;
+        return ret;
+    }
+    copy_color = dev_proc(&cvd->mdev, copy_color);
+    fill_rectangle = dev_proc(&cvd->mdev, fill_rectangle);
+    dev_proc(&cvd->mdev, copy_color) = cvd->std_copy_color;
+    dev_proc(&cvd->mdev, fill_rectangle) = cvd->std_fill_rectangle;
+    ret = cvd->std_transform_pixel_region(dev, reason, data);
+    dev_proc(&cvd->mdev, copy_color) = copy_color;
+    dev_proc(&cvd->mdev, fill_rectangle) = fill_rectangle;
+    return ret;
+}
+
 int
 pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs_matrix *m, pdf_lcvd_t **pcvd,
                                  bool need_mask, int x, int y, int w, int h, bool write_on_close)
@@ -1379,6 +1421,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     cvd->std_fill_rectangle = dev_proc(&cvd->mdev, fill_rectangle);
     cvd->std_close_device = dev_proc(&cvd->mdev, close_device);
     cvd->std_get_clipping_box = dev_proc(&cvd->mdev, get_clipping_box);
+    cvd->std_transform_pixel_region = dev_proc(&cvd->mdev, transform_pixel_region);
     if (!write_on_close) {
         /* Type 3 images will write to the mask directly. */
         dev_proc(&cvd->mdev, fill_rectangle) = (need_mask ? lcvd_fill_rectangle_shifted2
@@ -1391,6 +1434,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     dev_proc(&cvd->mdev, copy_color) = lcvd_copy_color_shifted;
     dev_proc(&cvd->mdev, dev_spec_op) = lcvd_dev_spec_op;
     dev_proc(&cvd->mdev, fill_path) = lcvd_handle_fill_path_as_shading_coverage;
+    dev_proc(&cvd->mdev, transform_pixel_region) = lcvd_transform_pixel_region;
     cvd->m = *m;
     if (write_on_close) {
         cvd->mdev.is_open = true;

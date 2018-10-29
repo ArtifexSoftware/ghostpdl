@@ -203,6 +203,7 @@ const gx_device_procs gs_clist_device_procs = {
     clist_strip_tile_rect_devn,
     clist_copy_alpha_hl_color,
     clist_process_page,
+    gx_default_transform_pixel_region
 };
 
 /*------------------- Choose the implementation -----------------------

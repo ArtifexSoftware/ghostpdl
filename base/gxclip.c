@@ -46,6 +46,7 @@ static dev_proc_strip_copy_rop2(clip_strip_copy_rop2);
 static dev_proc_get_clipping_box(clip_get_clipping_box);
 static dev_proc_get_bits_rectangle(clip_get_bits_rectangle);
 static dev_proc_fill_path(clip_fill_path);
+static dev_proc_transform_pixel_region(clip_transform_pixel_region);
 
 /* The device descriptor. */
 static const gx_device_clip gs_clip_device =
@@ -122,7 +123,9 @@ static const gx_device_clip gs_clip_device =
   gx_forward_set_graphics_type_tag,
   clip_strip_copy_rop2,
   clip_strip_tile_rect_devn,
-  clip_copy_alpha_hl_color
+  clip_copy_alpha_hl_color,
+  NULL,
+  clip_transform_pixel_region
  }
 };
 
@@ -1540,4 +1543,69 @@ clip_fill_path(gx_device * dev, const gs_gstate * pgs,
                           fixed2int(box.q.x - box.p.x),
                           fixed2int(box.q.y - box.p.y),
                           clip_call_fill_path, &ccdata);
+}
+
+typedef struct  {
+    int use_default;
+    void *child_state;
+} clip_transform_pixel_region_data;
+
+static int
+clip_transform_pixel_region(gx_device *dev, transform_pixel_region_reason reason, transform_pixel_region_data *data)
+{
+    clip_transform_pixel_region_data *state = (clip_transform_pixel_region_data *)data->state;
+    gx_device_clip *cdev = (gx_device_clip *)dev;
+    transform_pixel_region_data local_data;
+    gs_int_rect local_clip;
+    int ret;
+
+    if (reason == transform_pixel_region_begin) {
+        int skewed = 1;
+        if (data->u.init.pixels->y.step.dQ == 0 && data->u.init.pixels->y.step.dR == 0 &&
+            data->u.init.rows->x.step.dQ == 0 && data->u.init.rows->x.step.dR == 0)
+            skewed = 0;
+        else if (data->u.init.pixels->x.step.dQ == 0 && data->u.init.pixels->x.step.dR == 0 &&
+                 data->u.init.rows->y.step.dQ == 0 && data->u.init.rows->y.step.dR == 0)
+            skewed = 0;
+        state = (clip_transform_pixel_region_data *)gs_alloc_bytes(dev->memory->non_gc_memory, sizeof(*state), "clip_transform_pixel_region_data");
+        if (state == NULL)
+            return gs_error_VMerror;
+        local_data = *data;
+        if (cdev->list.count == 1 && skewed == 0) {
+            /* Single unskewed rectangle - we can use the underlying device direct */
+            local_data.u.init.clip = &local_clip;
+            local_clip = *data->u.init.clip;
+            if (local_clip.p.x < cdev->current->xmin)
+                local_clip.p.x = cdev->current->xmin;
+            if (local_clip.q.x > cdev->current->xmax)
+                local_clip.q.x = cdev->current->xmax;
+            if (local_clip.p.y < cdev->current->ymin)
+                local_clip.p.y = cdev->current->ymin;
+            if (local_clip.q.y > cdev->current->ymax)
+                local_clip.q.y = cdev->current->ymax;
+            state->use_default = 0;
+            ret = dev_proc(cdev->target, transform_pixel_region)(cdev->target, reason, &local_data);
+        } else {
+            /* Multiple rectangles - we need to use the default */
+            state->use_default = 1;
+            ret = gx_default_transform_pixel_region(dev, reason, &local_data);
+        }
+        state->child_state = local_data.state;
+        data->state = state;
+        return ret;
+    }
+
+    data->state = state->child_state;
+    if (state->use_default)
+        ret = gx_default_transform_pixel_region(dev, reason, data);
+    else
+        ret = dev_proc(cdev->target, transform_pixel_region)(cdev->target, reason, data);
+
+    if (reason == transform_pixel_region_end) {
+        gs_free_object(dev->memory->non_gc_memory, state, "clip_transform_pixel_region_data");
+        state = NULL;
+    }
+    data->state = state;
+
+    return ret;
 }

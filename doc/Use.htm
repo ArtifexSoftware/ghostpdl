@@ -51,7 +51,6 @@
 			<li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
 			<li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
 			<li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
-			<li><a href="http://gsview.com/" title="GSView">GSView</a></li>
 			<li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
 			<li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
 			<li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
@@ -102,6 +101,7 @@
 
 <li><a href="#Platforms">Notes on specific platforms</a></li>
 <ul>
+<li><a href="#Word size">Word size (32 or 64 bits)</a></li>
 <li><a href="#Unix">Unix</a></li>
 <li><a href="#VMS">VMS</a></li>
 <ul>
@@ -1666,6 +1666,39 @@ of an error; you may have to delete them manually from time to time.</p>
 <hr>
 
 <h2><a name="Platforms"></a>Notes on specific platforms</h2>
+
+<h3><a name="Word size"></a>Word size (32 or 64 bits)</h3>
+
+<p>
+The original PostScript language specification, while not stating a specific word sise,
+defines 'typical' limits which make it clear that it was intended to run as a 32-bit
+environment. Ghostscript was originally coded that way, and the heritage remains
+within the code base.
+</p>
+<p>
+Because the Ghostscript PDF interpreter is currently written in PostScript, it proved
+necessary to add support for 64-bit integers so that we could process PDF files which
+exceed 2GB in size. This is the only real purpose in adding support for large integers,
+however since that time, we have made some efforts to allow for the use of 64-bit words; in
+particular the use of integers, but also lifting the 64K limit on strings and arrays,
+among other areas.
+</p>
+However this is, obviously, dependent on the operating system and compiler support
+available. Not all builds of Ghostscript will support 64-bit integers, though some
+32-bit builds (eg Windows) will.
+<p>
+Even when the build supports 64-bit words, you should be aware that there are areas
+of Ghostscript which do not support 64-bit values. Sometimes these are dependent
+on the build and other times they are inherent in the architecture of Ghostscript (the graphics library does not
+support 64-bit co-ordinates in device space for example, and most likely never will).
+</p>
+<p>
+Note that the extended support for 64-bit word size can be disabled by executing 'true .setcpsimode',
+This is important for checking the output of the Quality Logic test suite (and possibly other
+test suites) as the tests make assumptions about the sizes of integers (amongst other things).
+You can run /ghostpdl/Resource/Init/gs_cet.ps to change Ghostscript's behaviour so
+that it matches the observed behaviour of Adobe CPSI interpreters.
+</p>
 
 <h3><a name="Unix"></a>Unix</h3>
 
@@ -5109,7 +5142,7 @@ Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 		<ul>
 			<li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
 			<li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
-			<li><a href="https://artifex.com/leadership-team/" target="blank">OUR TEAM</a></li>
+			<li><a href="https://ghostscript.com/security.html">SECURITY</a></li>
 		</ul>
 		</div>
 		<div class="col-1 footcenter">

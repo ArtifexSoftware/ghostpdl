@@ -51,7 +51,6 @@
 			<li><a href="https://www.ghostscript.com/documentation.html" title="Documentation">Documentation</a></li>
 			<li><a href="https://www.ghostscript.com/download.html" title="Download">Download</a></li>
 			<li><a href="https://www.ghostscript.com/performance.html" title="Performance">Performance</a></li>
-			<li><a href="http://gsview.com/" title="GSView">GSView</a></li>
 			<li><a href="http://jbig2dec.com/" title="jbig2dec">jbig2dec</a></li>
 			<li><a href="http://git.ghostscript.com/?p=ghostpdl.git;a=summary">Source</a></li>
 			<li><a href="http://bugs.ghostscript.com/">Bugs</a></li>
@@ -1709,6 +1708,81 @@ for <code>copy_color</code>, the <code>raster</code> and
 <code>height</code> in the "bitmap" are interpreted as for real bitmaps,
 but the <code>x</code> and <code>width</code> are in pixels, not
 bits.</p>
+
+<dl>
+<dt>
+<code>
+<pre>
+typedef enum {
+    transform_pixel_region_begin = 0,
+    transform_pixel_region_data_needed = 1,
+    transform_pixel_region_process_data = 2,
+    transform_pixel_region_end = 3
+    } transform_pixel_region_reason;
+typedef struct {
+    void *state;
+    union {
+        struct {
+            const gs_int_rect *clip;
+            int w; /* source width */
+            int h; /* source height */
+            int spp;
+            const gx_dda_fixed_point *pixels; /* DDA to enumerate the destination positions of pixels across a row */
+            const gx_dda_fixed_point *rows; /* DDA to enumerate the starting position of each row */
+            gs_logical_operation_t lop;
+        } init;
+        struct {
+            const unsigned char *buffer[GX_DEVICE_COLOR_MAX_COMPONENTS];
+            int data_x;
+            gx_cmapper_t *cmapper;
+            const gs_gstate *pgs;
+        } process_data;
+    } u;
+} transform_pixel_region_data;
+</pre>
+int (*transform_pixel_region)(gx_device&nbsp;*,
+transform_pixel_reason, transform_pixel_reason_data *data)</code> <b><em>[OPTIONAL]</em></b>
+<dd>Transform a 2-dimensional region of pixels into the destination.
+Given a 2d source block of pixels (supplied as scanline data), this
+function transforms that data, maps it through the supplied colour
+lookup function, clips it, and plots it into the device.
+
+<p>In all calls to this function a negative return value indicates an error.
+
+<p>Called first with the <code>transform_pixel_region_init</code> reason code,
+this prepares for subsequent calls to scale a region as described in the
+<code>data.u.init</code> structure. A pointer to any state required for
+this should be written into <code>data.state</code>, and the caller must
+pass that in to subsequent calls.
+
+<p>Subsequently this will be called with <code>transform_pixel_region_data_needed</code>.
+The function will then check to see if the next scanline of data will be trivially
+clipped away. If so, then it will return zero to indicate that it is not needed.
+This can help the caller to avoid unnecessary processing. A positive return value
+indicates that the line is required.
+
+<p>For every line where the data is required, the function will be called with
+<code>transform_pixel_region_process_data</code>. The function will then read
+and process the line from <code>data.u.process_data</code>.
+The data in the buffer is packed 8 bit values, which will be fed into the supplied
+<code>cmapper</code> to set the device color as required. This is then written
+into the device.
+
+<p>Once all the scanlines have been fed through calls to <code>transform_pixel_region_data_needed</code>
+and <code>transform_pixel_region_process_data</code>, a final call with <code>transform_pixel_region_end</code>
+is made that frees the state.
+
+<p>The default implementation of this device function will generally break the pixel
+data down into calls to <code>fill_rectangle</code>, though in some cases (notably
+the portrait 8 bit per component output case), a faster route through <code>copy_color</code>
+can be used.
+
+<p>Memory devices offer a version of this device function that can accelerate direct
+plotting to the memory array.
+
+<p>NOTE: Currently the clipping rectangle is not honoured for skewed (not portrait or landscape)
+transformations. This is allowed for in the callers.
+</dl>
 
 <h4><a name="Compositing"></a>Compositing</h4>
 
@@ -3621,7 +3695,7 @@ Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
 		<ul>
 			<li><a href="https://artifex.com/contact-us/" target="blank">CONTACT US</a></li>
 			<li><a href="https://artifex.com/about-us/" target="blank">ABOUT</a></li>
-			<li><a href="https://artifex.com/leadership-team/" target="blank">OUR TEAM</a></li>
+			<li><a href="https://ghostscript.com/security.html">SECURITY</a></li>
 		</ul>
 		</div>
 		<div class="col-1 footcenter">

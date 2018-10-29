@@ -173,7 +173,8 @@ gx_device_obj_filter gs_obj_filter_device =
      obj_filter_strip_copy_rop2,
      obj_filter_strip_tile_rect_devn,
      default_subclass_copy_alpha_hl_color,
-     default_subclass_process_page
+     default_subclass_process_page,
+     default_subclass_transform_pixel_region
     }
 };
 

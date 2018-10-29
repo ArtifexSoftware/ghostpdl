@@ -895,6 +895,14 @@ int default_subclass_process_page(gx_device *dev, gx_process_page_options_t *opt
     return 0;
 }
 
+int default_subclass_transform_pixel_region(gx_device *dev, transform_pixel_region_reason reason, transform_pixel_region_data *data)
+{
+    if (dev->child)
+        return dev_proc(dev->child, transform_pixel_region)(dev->child, reason, data);
+
+    return gs_error_unknownerror;
+}
+
 void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
 {
     gx_device * const dev = (gx_device *)vptr;
