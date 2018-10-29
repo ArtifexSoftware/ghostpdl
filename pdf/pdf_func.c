@@ -477,6 +477,7 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
             pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
             return code;
         }
+        Length = decompressed_length;
     }
 
     data_source_init_stream(&params.DataSource, function_stream->s);
@@ -529,6 +530,25 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
             return_error(gs_error_rangecheck);
         return code;
     }
+    /* check the stream has enough data */
+    {
+        unsigned int i;
+        uint64_t inputs = 1, samples = 0;
+
+        for (i=0;i<params.m;i++) {
+            inputs *= params.Size[i];
+        }
+        samples = params.n * params.BitsPerSample;
+        samples *= inputs;
+        samples = samples >> 3;
+        if (samples > Length) {
+            gs_free_const_object(ctx->memory, params.Size, "Size");
+            gs_free_const_object(ctx->memory, params.Decode, "Decode");
+            gs_free_const_object(ctx->memory, params.Encode, "Encode");
+            return_error(gs_error_rangecheck);
+        }
+    }
+
     code = gs_function_Sd_init(ppfn, &params, ctx->memory);
     if (code < 0) {
         gs_free_const_object(ctx->memory, params.Size, "Size");
