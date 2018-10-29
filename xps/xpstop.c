@@ -399,8 +399,15 @@ xps_imp_deallocate_interp_instance(pl_interp_implementation_t *impl)
     gs_memory_t *mem = ctx->memory;
 
     /* language clients don't free the font cache machinery */
+    rc_decrement_cs(ctx->gray_lin, "xps_imp_deallocate_interp_instance");
+    rc_decrement_cs(ctx->gray, "xps_imp_deallocate_interp_instance");
+    rc_decrement_cs(ctx->cmyk, "xps_imp_deallocate_interp_instance");
+    rc_decrement_cs(ctx->srgb, "xps_imp_deallocate_interp_instance");
+    rc_decrement_cs(ctx->scrgb, "xps_imp_deallocate_interp_instance");
 
-    // free gstate?
+    gs_gstate_free(ctx->pgs);
+
+    gs_free_object(mem, ctx->fontdir, "xps_imp_deallocate_interp_instance");
     gs_free_object(mem, ctx, "xps_imp_deallocate_interp_instance");
     gs_free_object(mem, instance, "xps_imp_deallocate_interp_instance");
 
