@@ -1882,6 +1882,9 @@ int pdfi_repair_file(pdf_context *ctx)
                                     continue;
                                 return code;
                             }
+                            if (code == 0 && ctx->main_stream->eof)
+                                break;
+
                             if (ctx->stack_top[-1]->type == PDF_KEYWORD){
                                 pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
 
@@ -1898,10 +1901,11 @@ int pdfi_repair_file(pdf_context *ctx)
 
                                         do {
                                             code = pdfi_read_bytes(ctx, (byte *)&Buffer[index], 1, 1, ctx->main_stream);
-                                            if (code < 0 && code != gs_error_VMerror && code != gs_error_ioerror)
-                                                continue;
-                                            if (code < 0)
+                                            if (code < 0) {
+                                                if (code != gs_error_VMerror && code != gs_error_ioerror)
+                                                    continue;
                                                 return code;
+                                            }
                                             if (Buffer[index] == test[index])
                                                 index++;
                                             else
@@ -1909,18 +1913,20 @@ int pdfi_repair_file(pdf_context *ctx)
                                         } while (index < 9 && ctx->main_stream->eof == false);
                                         do {
                                             code = pdfi_read_token(ctx, ctx->main_stream);
-                                            if (code < 0 && code != gs_error_VMerror && code != gs_error_ioerror)
-                                                continue;
-                                            if (code < 0)
+                                            if (code < 0) {
+                                                if (code != gs_error_VMerror && code != gs_error_ioerror)
+                                                    continue;
                                                 return code;
+                                            }
                                             if (ctx->stack_top[-1]->type == PDF_KEYWORD){
                                                 pdf_keyword *k = (pdf_keyword *)ctx->stack_top[-1];
                                                 if (k->key == PDF_ENDOBJ) {
                                                     code = pdfi_repair_add_object(ctx, object_num, generation_num, offset);
-                                                    if (code < 0 && code != gs_error_VMerror && code != gs_error_ioerror)
-                                                        break;
-                                                    if (code < 0)
+                                                    if (code < 0) {
+                                                        if (code != gs_error_VMerror && code != gs_error_ioerror)
+                                                            continue;
                                                         return code;
+                                                    }
                                                     break;
                                                 }
                                             }
