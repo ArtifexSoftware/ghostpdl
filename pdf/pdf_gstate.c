@@ -490,37 +490,31 @@ static int GS_OPM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dic
 
 static int GS_Font(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    dmprintf(ctx->memory, "ExtGState Font not yet implemented\n");
     return 0;
 }
 
 static int GS_BG(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    dmprintf(ctx->memory, "ExtGState BG not yet implemented\n");
     return 0;
 }
 
 static int GS_BG2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    dmprintf(ctx->memory, "ExtGState BG2 not yet implemented\n");
     return 0;
 }
 
 static int GS_UCR(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    dmprintf(ctx->memory, "ExtGState UCR not yet implemented\n");
     return 0;
 }
 
 static int GS_UCR2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    dmprintf(ctx->memory, "ExtGState UCR2 not yet implemented\n");
     return 0;
 }
 
 static int GS_TR(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    dmprintf(ctx->memory, "ExtGState TR not yet implemented\n");
     return 0;
 }
 
@@ -625,13 +619,11 @@ static int GS_SA(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
 
 static int GS_BM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    dmprintf(ctx->memory, "ExtGState BM not yet implemented\n");
     return 0;
 }
 
 static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-    dmprintf(ctx->memory, "ExtGState SMask not yet implemented\n");
     return 0;
 }
 
