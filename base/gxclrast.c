@@ -2434,7 +2434,7 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 
     cmd_getw(index, cbp);
     cmd_getw(offset, cbp);
-    if_debug2m('L', mem, " index=%d offset=%lu\n", pcls->tile_index, offset);
+    if_debug2m('L', mem, " index=%d offset=%lu\n", index, offset);
     pcls->tile_index = index;
     cdev->tile_table[pcls->tile_index].offset = offset;
     slot = (tile_slot *)(cdev->cache_chunk->data + offset);
