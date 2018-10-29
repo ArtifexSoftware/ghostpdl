@@ -84,9 +84,9 @@ gsapi_set_stdio(void *instance,
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
         return gs_error_Fatal;
-    ctx->stdin_fn = stdin_fn;
-    ctx->stdout_fn = stdout_fn;
-    ctx->stderr_fn = stderr_fn;
+    ctx->core->stdin_fn = stdin_fn;
+    ctx->core->stdout_fn = stdout_fn;
+    ctx->core->stderr_fn = stderr_fn;
     return 0;
 }
 
@@ -98,7 +98,7 @@ gsapi_set_poll(void *instance,
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)instance;
     if (instance == NULL)
         return gs_error_Fatal;
-    ctx->poll_fn = poll_fn;
+    ctx->core->poll_fn = poll_fn;
     return 0;
 }
 

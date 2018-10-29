@@ -150,7 +150,7 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
 
     psi->memory = mem;
     psi->bytes_fed = 0;
-    psi->psapi_instance = NULL;
+    psi->psapi_instance = gs_lib_ctx_get_interp_instance(mem);
     code = psapi_new_instance(&psi->psapi_instance, NULL);
     if (code < 0)
         gs_free_object(mem, psi, "ps_impl_allocate_interp_instance");

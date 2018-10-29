@@ -84,16 +84,7 @@ psapi_new_instance(gs_lib_ctx_t **pinstance,
     ++gsapi_instance_counter;
 #endif
 
-    if (*pinstance == NULL)
-        /* first instance in this process */
-        mem = gs_malloc_init();
-    else {
-        /* nothing different for second thread initialization
-         * seperate memory, ids, only stdio is process shared.
-         */
-        mem = gs_malloc_init();
-
-    }
+    mem = gs_malloc_init_with_context(*pinstance);
     if (mem == NULL)
         return gs_error_Fatal;
     minst = gs_main_alloc_instance(mem);
@@ -102,18 +93,18 @@ psapi_new_instance(gs_lib_ctx_t **pinstance,
         return gs_error_Fatal;
     }
     mem->gs_lib_ctx->top_of_system = (void*) minst;
-    mem->gs_lib_ctx->caller_handle = caller_handle;
-    mem->gs_lib_ctx->custom_color_callback = NULL;
+    mem->gs_lib_ctx->core->caller_handle = caller_handle;
+    mem->gs_lib_ctx->core->custom_color_callback = NULL;
 #ifdef METRO
-    mem->gs_lib_ctx->stdin_fn = metro_stdin;
-    mem->gs_lib_ctx->stdout_fn = metro_stdout;
-    mem->gs_lib_ctx->stderr_fn = metro_stderr;
+    mem->gs_lib_ctx->core->stdin_fn = metro_stdin;
+    mem->gs_lib_ctx->core->stdout_fn = metro_stdout;
+    mem->gs_lib_ctx->core->stderr_fn = metro_stderr;
 #else
-    mem->gs_lib_ctx->stdin_fn = NULL;
-    mem->gs_lib_ctx->stdout_fn = NULL;
-    mem->gs_lib_ctx->stderr_fn = NULL;
+    mem->gs_lib_ctx->core->stdin_fn = NULL;
+    mem->gs_lib_ctx->core->stdout_fn = NULL;
+    mem->gs_lib_ctx->core->stderr_fn = NULL;
 #endif
-    mem->gs_lib_ctx->poll_fn = NULL;
+    mem->gs_lib_ctx->core->poll_fn = NULL;
 
     *pinstance = mem->gs_lib_ctx;
     return psapi_set_arg_encoding(*pinstance, PS_ARG_ENCODING_LOCAL);
@@ -124,7 +115,7 @@ psapi_new_instance(gs_lib_ctx_t **pinstance,
 void
 psapi_act_on_uel(gs_lib_ctx_t *ctx)
 {
-    ctx->act_on_uel = 1;
+    ctx->core->act_on_uel = 1;
 }
 
 /* Destroy an instance of Ghostscript */
@@ -143,11 +134,11 @@ psapi_delete_instance(gs_lib_ctx_t *ctx)
     mem = (gs_memory_t *)(ctx->memory);
     minst = get_minst_from_memory(ctx->memory);
 
-    ctx->caller_handle = NULL;
-    ctx->stdin_fn = NULL;
-    ctx->stdout_fn = NULL;
-    ctx->stderr_fn = NULL;
-    ctx->poll_fn = NULL;
+    ctx->core->caller_handle = NULL;
+    ctx->core->stdin_fn = NULL;
+    ctx->core->stdout_fn = NULL;
+    ctx->core->stderr_fn = NULL;
+    ctx->core->poll_fn = NULL;
     minst->display = NULL;
 
     gs_free_object(mem, minst, "init_main_instance");

@@ -914,6 +914,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     int exit_code;
     ref error_object;
     char *tempnames = NULL;
+    gs_lib_ctx_core_t *core;
 
     /* NB: need to free gs_name_table
      */
@@ -1069,15 +1070,16 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     }
 
     /* clean up redirected stdout */
-    if (minst->heap->gs_lib_ctx->fstdout2
-        && (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstdout)
-        && (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstderr)) {
-        fclose(minst->heap->gs_lib_ctx->fstdout2);
-        minst->heap->gs_lib_ctx->fstdout2 = (FILE *)NULL;
+    core = minst->heap->gs_lib_ctx->core;
+    if (core->fstdout2
+        && (core->fstdout2 != core->fstdout)
+        && (core->fstdout2 != core->fstderr)) {
+        fclose(core->fstdout2);
+        core->fstdout2 = (FILE *)NULL;
     }
 
-    minst->heap->gs_lib_ctx->stdout_is_redirected = 0;
-    minst->heap->gs_lib_ctx->stdout_to_stderr = 0;
+    minst->heap->gs_lib_ctx->core->stdout_is_redirected = 0;
+    minst->heap->gs_lib_ctx->core->stdout_to_stderr = 0;
     /* remove any temporary files, after ghostscript has closed files */
     if (tempnames) {
         char *p = tempnames;

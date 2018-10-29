@@ -715,7 +715,7 @@ gs_setcpsimode(gs_memory_t *mem, bool mode)
 {
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
 
-    libctx->CPSI_mode = mode;
+    libctx->core->CPSI_mode = mode;
 }
 
 /* currentcpsimode */
@@ -724,7 +724,7 @@ gs_currentcpsimode(const gs_memory_t * mem)
 {
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
 
-    return libctx->CPSI_mode;
+    return libctx->core->CPSI_mode;
 }
 
 /* The edgebuffer based scanconverter can only cope with values of 0
@@ -748,7 +748,7 @@ gs_setscanconverter(gs_gstate * gs, int converter)
 {
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(gs->memory);
 
-    libctx->scanconverter = converter;
+    libctx->core->scanconverter = converter;
 
     sanitize_fill_adjust(gs);
 }
@@ -759,7 +759,7 @@ gs_getscanconverter(const gs_memory_t * mem)
 {
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
 
-    return libctx->scanconverter;
+    return libctx->core->scanconverter;
 }
 
 /* setrenderingintent

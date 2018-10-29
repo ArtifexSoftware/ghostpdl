@@ -39,9 +39,10 @@ typedef struct gs_font_dir_s gs_font_dir;
 
 typedef int (*client_check_file_permission_t) (gs_memory_t *mem, const char *fname, const int len, const char *permission);
 
-typedef struct gs_lib_ctx_s
-{
-    gs_memory_t *memory;  /* mem->gs_lib_ctx->memory == mem */
+typedef struct {
+    void *monitor;
+    int refs;
+    gs_memory_t *memory;
     FILE *fstdin;
     FILE *fstdout;
     FILE *fstderr;
@@ -56,6 +57,18 @@ typedef struct gs_lib_ctx_s
     int (GSDLLCALL *stderr_fn)(void *caller_handle, const char *str, int len);
     int (GSDLLCALL *poll_fn)(void *caller_handle);
     ulong gs_next_id; /* gs_id initialized here, private variable of gs_next_ids() */
+    /* True if we are emulating CPSI. Ideally this would be in the imager
+     * state, but this can't be done due to problems detecting changes in it
+     * for the clist based devices. */
+    bool CPSI_mode;
+    int scanconverter;
+    int act_on_uel;
+} gs_lib_ctx_core_t;
+
+typedef struct gs_lib_ctx_s
+{
+    gs_memory_t *memory;  /* mem->gs_lib_ctx->memory == mem */
+    gs_lib_ctx_core_t *core;
     void *top_of_system;  /* use accessor functions to walk down the system
                            * to the desired structure gs_lib_ctx_get_*()
                            */
@@ -84,10 +97,6 @@ typedef struct gs_lib_ctx_s
     /* font directory - see gsfont.h */
     gs_font_dir *font_dir;
     gs_gc_root_ptr font_dir_root;
-    /* True if we are emulating CPSI. Ideally this would be in the imager
-     * state, but this can't be done due to problems detecting changes in it
-     * for the clist based devices. */
-    bool CPSI_mode;
     /* Keep the path for the ICCProfiles here so devices and the icc_manager
      * can get to it. Prevents needing two copies, one in the icc_manager
      * and one in the device */
@@ -97,8 +106,6 @@ typedef struct gs_lib_ctx_s
     gs_fapi_server **fapi_servers;
     char *default_device_list;
     int gcsignal;
-    int scanconverter;
-    int act_on_uel;
     void *sjpxd_private; /* optional for use of jpx codec */
 } gs_lib_ctx_t;
 
@@ -115,7 +122,7 @@ enum {
  * it is the responsibility of the gs_memory_t objects to copy
  * the pointer to subsequent memory objects.
  */
-int gs_lib_ctx_init( gs_memory_t *mem );
+int gs_lib_ctx_init( gs_lib_ctx_t *ctx, gs_memory_t *mem );
 
 /** Called when the lowest level allocator (the one which the lib_ctx was
  * initialised under) is about to be destroyed. The lib_ctx should tidy up
@@ -154,8 +161,8 @@ gs_lib_ctx_get_default_device_list(const gs_memory_t *mem, char** dev_list_str,
 int
 gs_check_file_permission (gs_memory_t *mem, const char *fname, const int len, const char *permission);
 
-#define IS_LIBCTX_STDOUT(mem, f) (f == mem->gs_lib_ctx->fstdout)
-#define IS_LIBCTX_STDERR(mem, f) (f == mem->gs_lib_ctx->fstderr)
+#define IS_LIBCTX_STDOUT(mem, f) (f == mem->gs_lib_ctx->core->fstdout)
+#define IS_LIBCTX_STDERR(mem, f) (f == mem->gs_lib_ctx->core->fstderr)
 
 /* Functions to init/fin JPX decoder libctx entry */
 int sjpxd_create(gs_memory_t *mem);

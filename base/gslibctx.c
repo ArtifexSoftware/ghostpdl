@@ -95,7 +95,7 @@ gs_lib_ctx_set_default_device_list(const gs_memory_t *mem, const char* dev_list_
     gs_lib_ctx_t *p_ctx = mem->gs_lib_ctx;
     gs_memory_t *ctx_mem = p_ctx->memory;
     int code = 0;
-    
+
     result = (char *)gs_alloc_bytes(ctx_mem, list_str_len + 1,
              "gs_lib_ctx_set_default_device_list");
 
@@ -142,9 +142,9 @@ gs_lib_ctx_alloc_root_structure(gs_memory_t *mem, gs_gc_root_ptr *rp)
 	return code;
 }
 
-int gs_lib_ctx_init( gs_memory_t *mem )
+int gs_lib_ctx_init(gs_lib_ctx_t *ctx, gs_memory_t *mem)
 {
-    gs_lib_ctx_t *pio = 0;
+    gs_lib_ctx_t *pio = NULL;
 
     /* Check the non gc allocator is being passed in */
     if (mem == 0 || mem != mem->non_gc_memory)
@@ -160,18 +160,48 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     pio = (gs_lib_ctx_t*)gs_alloc_bytes_immovable(mem,
                                                   sizeof(gs_lib_ctx_t),
                                                   "gs_lib_ctx_init");
-    if( pio == 0 )
+    if(pio == NULL)
         return -1;
 
     /* Wholesale blanking is cheaper than retail, and scales better when new
      * fields are added. */
     memset(pio, 0, sizeof(*pio));
+
+    if (ctx != NULL) {
+        pio->core = ctx->core;
+        gx_monitor_enter((gx_monitor_t *)(pio->core->monitor));
+        pio->core->refs++;
+        gx_monitor_leave((gx_monitor_t *)(pio->core->monitor));
+    } else {
+        pio->core = (gs_lib_ctx_core_t *)gs_alloc_bytes_immovable(mem,
+                                                                  sizeof(gs_lib_ctx_core_t),
+                                                                  "gs_lib_ctx_init(core)");
+        if (pio->core == NULL) {
+            gs_free_object(mem, pio, "gs_lib_ctx_init");
+            return -1;
+        }
+        memset(pio->core, 0, sizeof(*pio->core));
+
+        pio->core->monitor = gx_monitor_alloc(mem);
+        if (pio->core->monitor == NULL) {
+            gs_free_object(mem, pio->core, "gs_lib_ctx_init");
+            gs_free_object(mem, pio, "gs_lib_ctx_init");
+            return -1;
+        }
+        pio->core->refs = 1;
+        pio->core->memory = mem;
+
+        /* Set the non-zero "shared" things */
+        gs_lib_ctx_get_real_stdio(&pio->core->fstdin, &pio->core->fstdout, &pio->core->fstderr );
+        pio->core->stdin_is_interactive = true;
+        /* id's 1 through 4 are reserved for Device color spaces; see gscspace.h */
+        pio->core->gs_next_id = 5; /* Cloned contexts share the state */
+        /* Set scanconverter to 1 (default) */
+        pio->core->scanconverter = GS_SCANCONVERTER_DEFAULT;
+    }
+
     /* Now set the non zero/false/NULL things */
     pio->memory               = mem;
-    gs_lib_ctx_get_real_stdio(&pio->fstdin, &pio->fstdout, &pio->fstderr );
-    pio->stdin_is_interactive = true;
-    /* id's 1 through 4 are reserved for Device color spaces; see gscspace.h */
-    pio->gs_next_id           = 5;  /* this implies that each thread has its own complete state */
 
     /* Need to set this before calling gs_lib_ctx_set_icc_directory. */
     mem->gs_lib_ctx = pio;
@@ -196,9 +226,6 @@ int gs_lib_ctx_init( gs_memory_t *mem )
 
     pio->client_check_file_permission = NULL;
     gp_get_realtime(pio->real_time_0);
-
-    /* Set scanconverter to 1 (default) */
-    pio->scanconverter = GS_SCANCONVERTER_DEFAULT;
 
     if (gs_lib_ctx_alloc_root_structure(mem, &pio->name_table_root))
         goto Failure;
@@ -231,10 +258,11 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
 {
     gs_lib_ctx_t *ctx;
     gs_memory_t *ctx_mem;
+    int refs;
 
     if (!mem || !mem->gs_lib_ctx)
         return;
-    
+
     ctx = mem->gs_lib_ctx;
     ctx_mem = ctx->memory;
 
@@ -242,7 +270,7 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
     gscms_destroy(ctx_mem);
     gs_free_object(ctx_mem, ctx->profiledir,
         "gs_lib_ctx_fin");
-        
+
     gs_free_object(ctx_mem, ctx->default_device_list,
                 "gs_lib_ctx_fin");
 
@@ -254,6 +282,15 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
     mem_err_print = NULL;
 #endif
     remove_ctx_pointers(ctx_mem);
+
+    gx_monitor_enter((gx_monitor_t *)(ctx->core->monitor));
+    refs = --ctx->core->refs;
+    gx_monitor_leave((gx_monitor_t *)(ctx->core->monitor));
+    if (refs == 0) {
+        gx_monitor_free((gx_monitor_t *)(ctx->core->monitor));
+        gs_free_object(ctx->core->memory, ctx->core, "gs_lib_ctx_fin");
+    }
+
     gs_free_object(ctx_mem, ctx, "gs_lib_ctx_init");
 }
 
@@ -282,7 +319,7 @@ int gs_lib_ctx_get_act_on_uel( const gs_memory_t *mem )
 {
     if (mem == NULL)
         return 0;
-    return mem->gs_lib_ctx->act_on_uel;
+    return mem->gs_lib_ctx->core->act_on_uel;
 }
 
 /* Provide a single point for all "C" stdout and stderr.
@@ -293,19 +330,20 @@ int outwrite(const gs_memory_t *mem, const char *str, int len)
     int code;
     FILE *fout;
     gs_lib_ctx_t *pio = mem->gs_lib_ctx;
+    gs_lib_ctx_core_t *core = pio->core;
 
     if (len == 0)
         return 0;
-    if (pio->stdout_is_redirected) {
-        if (pio->stdout_to_stderr)
+    if (core->stdout_is_redirected) {
+        if (core->stdout_to_stderr)
             return errwrite(mem, str, len);
-        fout = pio->fstdout2;
+        fout = core->fstdout2;
     }
-    else if (pio->stdout_fn) {
-        return (*pio->stdout_fn)(pio->caller_handle, str, len);
+    else if (core->stdout_fn) {
+        return (*core->stdout_fn)(core->caller_handle, str, len);
     }
     else {
-        fout = pio->fstdout;
+        fout = core->fstdout;
     }
     code = fwrite(str, 1, len, fout);
     fflush(fout);
@@ -323,6 +361,7 @@ int errwrite(const gs_memory_t *mem, const char *str, int len)
 {
     int code;
     gs_lib_ctx_t *ctx;
+    gs_lib_ctx_core_t *core;
     if (len == 0)
         return 0;
     if (mem == NULL) {
@@ -337,26 +376,28 @@ int errwrite(const gs_memory_t *mem, const char *str, int len)
     ctx = mem->gs_lib_ctx;
     if (ctx == NULL)
       return 0;
-    if (ctx->stderr_fn)
-        return (*ctx->stderr_fn)(ctx->caller_handle, str, len);
+    core = ctx->core;
+    if (core->stderr_fn)
+        return (*core->stderr_fn)(core->caller_handle, str, len);
 
-    code = fwrite(str, 1, len, ctx->fstderr);
-    fflush(ctx->fstderr);
+    code = fwrite(str, 1, len, core->fstderr);
+    fflush(core->fstderr);
     return code;
 }
 
 void outflush(const gs_memory_t *mem)
 {
-    if (mem->gs_lib_ctx->stdout_is_redirected) {
-        if (mem->gs_lib_ctx->stdout_to_stderr) {
-            if (!mem->gs_lib_ctx->stderr_fn)
-                fflush(mem->gs_lib_ctx->fstderr);
+    gs_lib_ctx_core_t *core = mem->gs_lib_ctx->core;
+    if (core->stdout_is_redirected) {
+        if (core->stdout_to_stderr) {
+            if (!core->stderr_fn)
+                fflush(core->fstderr);
         }
         else
-            fflush(mem->gs_lib_ctx->fstdout2);
+            fflush(core->fstdout2);
     }
-    else if (!mem->gs_lib_ctx->stdout_fn)
-        fflush(mem->gs_lib_ctx->fstdout);
+    else if (!core->stdout_fn)
+        fflush(core->fstdout);
 }
 
 #ifndef GS_THREADSAFE
@@ -368,8 +409,8 @@ void errflush_nomem(void)
 
 void errflush(const gs_memory_t *mem)
 {
-    if (!mem->gs_lib_ctx->stderr_fn)
-        fflush(mem->gs_lib_ctx->fstderr);
+    if (!mem->gs_lib_ctx->core->stderr_fn)
+        fflush(mem->gs_lib_ctx->core->fstderr);
     /* else nothing to flush */
 }
 

@@ -1493,7 +1493,7 @@ pl_log_string(const gs_memory_t * mem, const char *str, int wait_for_key)
 {
     errwrite(mem, str, strlen(str));
     if (wait_for_key)
-        (void)fgetc(mem->gs_lib_ctx->fstdin);
+        (void)fgetc(mem->gs_lib_ctx->core->fstdin);
 }
 
 pl_interp_implementation_t *

@@ -582,13 +582,19 @@ gs_malloc_unwrap(gs_memory_t *wrapped)
 gs_memory_t *
 gs_malloc_init(void)
 {
+    return gs_malloc_init_with_context(NULL);
+}
+
+gs_memory_t *
+gs_malloc_init_with_context(gs_lib_ctx_t *ctx)
+{
     gs_malloc_memory_t *malloc_memory_default = gs_malloc_memory_init();
     gs_memory_t *memory_t_default;
 
     if (malloc_memory_default == NULL)
         return NULL;
 
-    if (gs_lib_ctx_init((gs_memory_t *)malloc_memory_default) != 0) {
+    if (gs_lib_ctx_init(ctx, (gs_memory_t *)malloc_memory_default) != 0) {
         gs_malloc_release((gs_memory_t *)malloc_memory_default);
         return NULL;
     }

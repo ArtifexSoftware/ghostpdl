@@ -1219,7 +1219,7 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
             code = gs_note_error(gs_error_undefinedfilename);
 	    goto done;
 	}
-        *pfile = dev->memory->gs_lib_ctx->fstdout;
+        *pfile = dev->memory->gs_lib_ctx->core->fstdout;
         /* Force stdout to binary. */
         code = gp_setmode_binary(*pfile, true);
 	goto done;
