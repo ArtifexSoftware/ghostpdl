@@ -2433,7 +2433,7 @@ int pdf_record_usage_by_parent(gx_device_pdf *const pdev, long resource_id, long
     return 0;
 }
 
-/* These two routines are related to the PCL interpreter. Because of the way that
+/* This routine is related to the PCL interpreter. Because of the way that
  * PCL pass through works, the PCL interpreter can shut down and free its font cache
  * while still running. This leaves us with copies of fonts, which point to a now
  * freed font cache. Large parts of the code which retrieve font information require
@@ -2445,43 +2445,12 @@ int pdf_record_usage_by_parent(gx_device_pdf *const pdev, long resource_id, long
  * from the copied fonts.
  * Here we need to shut down and free our font cache.
  */
-static bool
-purge_all(const gs_memory_t * mem, cached_char * cc, void *dummy)
-{
-    return true;
-}
-
 static void pdf_free_pdf_font_cache(gx_device_pdf *pdev)
 {
-    if (pdev->pdf_font_dir) {
-        gx_purge_selected_cached_chars(pdev->pdf_font_dir,
-                                       purge_all,
-                                       (void *)NULL);
-        /* free character cache machinery */
-        gs_free_object(pdev->pdf_font_dir->memory, pdev->pdf_font_dir->fmcache.mdata, "pdf_free_pdf_font_cache");
-        {
-            /* free the circular list of memory chunks first */
-            gx_bits_cache_chunk *chunk = pdev->pdf_font_dir->ccache.chunks;
-            gx_bits_cache_chunk *start_chunk = chunk;
-            gx_bits_cache_chunk *prev_chunk;
-            while (1) {
-                if (start_chunk == chunk->next) {
-                    gs_free_object(pdev->pdf_font_dir->ccache.bits_memory, chunk->data, "pdf_free_pdf_font_cache");
-                    gs_free_object(pdev->pdf_font_dir->ccache.bits_memory, chunk, "pdf_free_pdf_font_cache");
-                    break;
-                }
-                prev_chunk = chunk;
-                chunk = chunk->next;
-                gs_free_object(pdev->pdf_font_dir->ccache.bits_memory, prev_chunk->data, "pdf_free_pdf_font_cache");
-                gs_free_object(pdev->pdf_font_dir->ccache.bits_memory, prev_chunk, "pdf_free_pdf_font_cache");
-            }
-
-            pdev->pdf_font_dir->ccache.chunks = NULL;
-            gs_free_object(pdev->pdf_font_dir->memory, pdev->pdf_font_dir->ccache.table, "pdf_free_pdf_font_cache");
-            gs_free_object(pdev->pdf_font_dir->memory, pdev->pdf_font_dir, "pdf_free_pdf_font_cache");
-            pdev->pdf_font_dir = 0;
-        }
-    }
+    if (pdev->pdf_font_dir == NULL)
+        return;
+    gs_free_object(pdev->pdf_font_dir->memory, pdev->pdf_font_dir, "pdf_free_pdf_font_cache");
+    pdev->pdf_font_dir = NULL;
 }
 
 static int discard_dict_refs(void *client_data, const byte *key_data, uint key_size, const cos_value_t *v);

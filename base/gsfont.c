@@ -288,6 +288,10 @@ gs_font_dir_finalize(const gs_memory_t *cmem, void *vptr)
         cmem->gs_lib_ctx->font_dir = NULL;
     }
 
+    /* free character cache machinery */
+    gs_free_object(pdir->memory, pdir->fmcache.mdata, "gs_font_dir_finalize");
+    gs_free_object(pdir->memory, pdir->ccache.table, "gs_font_dir_finalize");
+
     /* free the circular list of memory chunks */
     while (chunk) {
         if (start_chunk == chunk->next) {
@@ -303,7 +307,6 @@ gs_font_dir_finalize(const gs_memory_t *cmem, void *vptr)
     }
     pdir->ccache.chunks = NULL;
 }
-
 
 /* Allocate and minimally initialize a font. */
 gs_font *
