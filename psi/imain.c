@@ -693,7 +693,7 @@ gs_main_set_device(gs_main_instance * minst, gx_device *pdev)
         return code;
     make_tav(&devref, t_device, icurrent_space | a_all, pdevice, pdev);
     *ref_stack_index(&o_stack, 0L) = devref;
-    gs_main_run_string(minst, "setdevice currentpagedevice pop save erasepage", 0, &code, &error_object);
+    gs_main_run_string(minst, "setdevice currentpagedevice pop save .setdefaultscreen initgraphics erasepage", 0, &code, &error_object);
 
     return code;
 }
