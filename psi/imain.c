@@ -685,16 +685,25 @@ gs_main_set_device(gs_main_instance * minst, gx_device *pdev)
     ref error_object, devref;
     int code;
 
-    if (pdev == NULL)
-        return 0;
-
-    code = ref_stack_push(&o_stack, 1);
-    if (code < 0)
-        return code;
-    make_tav(&devref, t_device, icurrent_space | a_all, pdevice, pdev);
-    *ref_stack_index(&o_stack, 0L) = devref;
-    gs_main_run_string(minst, "setdevice currentpagedevice pop save .setdefaultscreen initgraphics erasepage", 0, &code, &error_object);
-
+    if (pdev == NULL) {
+        code = gs_main_run_string(minst, "true 0 startjob pop .uninstallpagedevice gsave", 0, &code, &error_object);
+        if (code < 0) goto done;
+        code = gs_main_run_string(minst, "false 0 startjob pop", 0, &code, &error_object);
+        if (code < 0) goto done;
+    }
+    else {
+        code = gs_main_run_string(minst, "true 0 startjob pop", 0, &code, &error_object);
+        if (code < 0) goto done;
+        code = ref_stack_push(&o_stack, 1);
+        if (code < 0) goto done;
+        make_tav(&devref, t_device, icurrent_space | a_all, pdevice, pdev);
+        *ref_stack_index(&o_stack, 0L) = devref;
+        code = gs_main_run_string(minst, "setdevice currentpagedevice pop .setdefaultscreen gsave", 0, &code, &error_object);
+        if (code < 0) goto done;
+        code = gs_main_run_string(minst, "false 0 startjob pop", 0, &code, &error_object);
+        if (code < 0) goto done;
+    }
+done:
     return code;
 }
 
