@@ -1400,6 +1400,11 @@ static void mark_line_app(cursor * gs_restrict cr, fixed sx, fixed sy, fixed ex,
             if ((ey & 0xff) == 0) {
                 /* We are falling to the baseline of a subpixel, so output
                  * for the current pixel, and leave the cursor nulled. */
+                if (sx <= ex) {
+                    cursor_right_merge(cr, ex);
+                } else {
+                    cursor_left_merge(cr, ex);
+                }
                 if (!skip)
                     cursor_output(cr, fixed2int(cr->y) - cr->base);
                 cursor_null(cr);
@@ -3317,6 +3322,11 @@ static void mark_line_tr_app(cursor_tr * gs_restrict cr, fixed sx, fixed sy, fix
             if ((ey & 0xff) == 0) {
                 /* We are falling to the baseline of a subpixel, so output
                  * for the current pixel, and leave the cursor nulled. */
+                if (sx <= ex) {
+                    cursor_right_merge_tr(cr, ex, id);
+                } else {
+                    cursor_left_merge_tr(cr, ex, id);
+                }
                 if (!skip)
                     cursor_output_tr(cr, fixed2int(cr->y) - cr->base);
                 cursor_null_tr(cr);
