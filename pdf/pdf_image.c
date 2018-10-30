@@ -221,7 +221,8 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
             goto exit;
         avail -= 8;
         box_len -= 8;
-        if (box_len <= 0) {
+        if (box_len <= 0 || box_len > avail) {
+            dmprintf1(ctx->memory, "WARNING: invalid JPX header, box_len=0x%x\n", box_len+8);
             code = gs_note_error(gs_error_syntaxerror);
             goto exit;
         }
@@ -362,6 +363,10 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
  exit:
     if (data)
         gs_free_object(ctx->memory, data, "pdfi_scan_jpxfilter (data)");
+    /* Always return 0 -- there are cases where this no image header at all, and just ignoring 
+     * the header seems to work.  May need to add an is_valid flag for other weird cases?
+     * (need to encounter such a sample first)
+     */
     return 0;
 }
 
