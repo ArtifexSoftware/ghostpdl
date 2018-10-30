@@ -328,17 +328,24 @@ int pdfi_b(pdf_context *ctx)
     int code;
 
     code = gs_closepath(ctx->pgs);
-    if (code == 0) {
+    if (code >= 0) {
         code = gs_gsave(ctx->pgs);
-        if (code > 0) {
+        if (code >= 0) {
+            gs_swapcolors(ctx->pgs);
             code = gs_fill(ctx->pgs);
-            if (code == 0) {
+            gs_swapcolors(ctx->pgs);
+            if (code >= 0) {
                 code = gs_grestore(ctx->pgs);
-                if (code == 0)
+                if (code >= 0)
                     code = gs_stroke(ctx->pgs);
-            }
+            } else
+                (void)gs_grestore(ctx->pgs);
         }
     }
+    if (code >= 0)
+       code = gs_newpath(ctx->pgs);
+    else
+        (void)gs_newpath(ctx->pgs);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -350,17 +357,24 @@ int pdfi_b_star(pdf_context *ctx)
     int code;
 
     code = gs_closepath(ctx->pgs);
-    if (code == 0) {
+    if (code >= 0) {
         code = gs_gsave(ctx->pgs);
-        if (code > 0) {
+        if (code >= 0) {
+            gs_swapcolors(ctx->pgs);
             code = gs_eofill(ctx->pgs);
-            if (code == 0) {
+            gs_swapcolors(ctx->pgs);
+            if (code >= 0) {
                 code = gs_grestore(ctx->pgs);
-                if (code == 0)
+                if (code >= 0)
                     code = gs_stroke(ctx->pgs);
-            }
+            } else
+                (void)gs_grestore(ctx->pgs);
         }
     }
+    if (code >= 0)
+       code = gs_newpath(ctx->pgs);
+    else
+        (void)gs_newpath(ctx->pgs);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -372,14 +386,24 @@ int pdfi_B(pdf_context *ctx)
     int code;
 
     code = gs_gsave(ctx->pgs);
-    if (code > 0) {
+    if (code >= 0) {
+        gs_swapcolors(ctx->pgs);
         code = gs_fill(ctx->pgs);
-        if (code == 0) {
+        gs_swapcolors(ctx->pgs);
+        if (code >= 0) {
             code = gs_grestore(ctx->pgs);
-            if (code == 0)
+            if (code >= 0)
                 code = gs_stroke(ctx->pgs);
+        } else {
+            (void)gs_grestore(ctx->pgs);
         }
+    } else {
+        (void)gs_grestore(ctx->pgs);
     }
+    if (code >= 0)
+       code = gs_newpath(ctx->pgs);
+    else
+        (void)gs_newpath(ctx->pgs);
     if(code < 0 && ctx->pdfstoponerror)
         return code;
     else
@@ -391,14 +415,24 @@ int pdfi_B_star(pdf_context *ctx)
     int code;
 
     code = gs_gsave(ctx->pgs);
-    if (code > 0) {
+    if (code >= 0) {
+        gs_swapcolors(ctx->pgs);
         code = gs_eofill(ctx->pgs);
-        if (code == 0) {
+        gs_swapcolors(ctx->pgs);
+        if (code >= 0) {
             code = gs_grestore(ctx->pgs);
-            if (code == 0)
+            if (code >= 0)
                 code = gs_stroke(ctx->pgs);
+        } else {
+            (void)gs_grestore(ctx->pgs);
         }
+    } else {
+        (void)gs_grestore(ctx->pgs);
     }
+    if (code >= 0)
+       code = gs_newpath(ctx->pgs);
+    else
+        (void)gs_newpath(ctx->pgs);
     return code;
 }
 
