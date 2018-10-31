@@ -40,6 +40,7 @@
 #include "pcpalet.h"
 #include "rtgmode.h"
 #include "gsicc_manage.h"
+#include "pcparam.h"
 
 /* Configuration table for modules */
 extern const pcl_init_t pcparse_init;
@@ -252,7 +253,7 @@ pcl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
     }
 
     pcli->pcs.pjls = pl_main_get_pjl_instance(mem);
-    
+
     /* Return success */
     impl->interp_client_data = pcli;
     return 0;
@@ -265,12 +266,12 @@ pcl_get_personality(pl_interp_implementation_t * impl, gx_device * device)
 {
     pcl_interp_instance_t *pcli  = impl->interp_client_data;
     char *personality = pl_main_get_pcl_personality(pcli->memory);
-    
+
     if (!strcmp(personality, "PCL5C"))
         return pcl5c;
     else if (!strcmp(personality, "PCL5E"))
         return pcl5e;
-    /* 
+    /*
      * match RTL or any string containing "GL" we see many variants in
      * test files: HPGL/2, HPGL2 etc.
      */
@@ -384,6 +385,14 @@ pcl_impl_init_job(pl_interp_implementation_t * impl,       /* interp instance to
         case Sbegin:           /* nothing left to undo */
             break;
     }
+
+    /* Warn the device we use ROPs */
+    if (code == 0) {
+        code = put_param1_bool(&pcli->pcs, "LanguageUsesROPs", true);
+        if (!device->is_open)
+            code = gs_opendevice(device);
+    }
+
     return code;
 }
 
@@ -474,6 +483,7 @@ pcl_impl_dnit_job(pl_interp_implementation_t * impl)       /* interp instance to
     pcl_interp_instance_t *pcli = impl->interp_client_data;
     pcl_state_t *pcs = &pcli->pcs;
     int code;
+    gx_device *device = gs_currentdevice(pcs->pgs);
 
     /* Note: "PCL" grestore. */
     code = pcl_grestore(&pcli->pcs);
@@ -491,6 +501,14 @@ pcl_impl_dnit_job(pl_interp_implementation_t * impl)       /* interp instance to
 
     if (pcs->raster_state.graphics_mode)
         code = pcl_end_graphics_mode(pcs);
+
+    if (code >= 0) {
+        /* Warn the device that ROP usage has come to an end */
+        code = put_param1_bool(&pcli->pcs, "LanguageUsesROPs", false);
+
+        if (!device->is_open)
+            code = gs_opendevice(device);
+    }
 
     return code;
 }

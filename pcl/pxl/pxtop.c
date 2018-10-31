@@ -44,6 +44,7 @@
 #include "pltop.h"
 #include "plmain.h"
 #include "gsicc_manage.h"
+#include "gxdevsop.h"
 
 /* Imported operators */
 px_operator_proc(pxEndPage);
@@ -221,6 +222,29 @@ pxl_set_icc_params(pl_interp_implementation_t * impl, gs_gstate * pgs)
     return pl_set_icc_params(pxli->memory, pgs);
 }
 
+/*
+ * Set a Boolean parameter.
+ */
+static int
+put_param_bool(pxl_interp_instance_t *pxli, gs_param_name pkey, bool value)
+{
+    gs_c_param_list list;
+    int code;
+
+    gs_c_param_list_write(&list, pxli->memory);
+    code = param_write_bool((gs_param_list *) & list, pkey, &value);
+    if (code >= 0) {
+        gs_c_param_list_read(&list);
+
+        code = gs_gstate_putdeviceparams(pxli->pgs,
+                                         gs_currentdevice(pxli->pgs),
+                                         (gs_param_list *) &list);
+    }
+
+    gs_c_param_list_release(&list);
+    return code;
+}
+
 /* Prepare interp instance for the next "job" */
 /* ret 0 ok, else -ve error code */
 static int
@@ -302,6 +326,15 @@ pxl_impl_init_job(pl_interp_implementation_t * impl,
         case Sbegin:           /* nothing left to undo */
             break;
     }
+
+    /* Warn the device that PXL uses ROPs. */
+    if (code == 0) {
+        code = put_param_bool(pxli, "LanguageUsesROPs", true);
+
+        if (!device->is_open)
+            code = gs_opendevice(device);
+    }
+
     return code;
 }
 
@@ -460,13 +493,25 @@ pxl_impl_report_errors(pl_interp_implementation_t * impl,
 static int
 pxl_impl_dnit_job(pl_interp_implementation_t * impl)
 {
+    int code;
     pxl_interp_instance_t *pxli = impl->interp_client_data;
+    gx_device *device = gs_currentdevice(pxli->pgs);
 
     px_stream_header_dnit(&pxli->headerState);
     px_state_cleanup(pxli->pxs);
     px_process_init(pxli->st, true);
     /* return to original gstate  */
-    return gs_grestore_only(pxli->pgs);        /* destroys gs_save stack */
+    code = gs_grestore_only(pxli->pgs);        /* destroys gs_save stack */
+
+    /* Warn the device that ROP usage has come to an end */
+    if (code >= 0) {
+        code = put_param_bool(pxli, "LanguageUsesROPs", false);
+
+        if (!device->is_open)
+            code = gs_opendevice(device);
+    }
+
+    return code;
 }
 
 /* Deallocate a interpreter instance */
