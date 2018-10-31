@@ -49,6 +49,8 @@
 #include "gdevpccm.h"		/* 4-bit PC color */
 #include "gxdevmem.h"
 #include "gdevdevn.h"
+#include "gxpcolor.h"		/* for gx_dc_devn_masked */
+#include "gxdevsop.h"
 #include "gsequivc.h"
 #include "gdevdsp.h"
 #include "gdevdsp2.h"
@@ -94,6 +96,8 @@ static dev_proc_encode_color(display_separation_encode_color);
 static dev_proc_decode_color(display_separation_decode_color);
 static dev_proc_update_spot_equivalent_colors(display_update_spot_equivalent_colors);
 static dev_proc_ret_devn_params(display_ret_devn_params);
+static dev_proc_dev_spec_op(display_spec_op);
+static dev_proc_fill_rectangle_hl_color(display_fill_rectangle_hl_color);
 
 static const gx_device_procs display_procs =
 {
@@ -152,13 +156,18 @@ static const gx_device_procs display_procs =
     NULL,           			/* encode_color */
     NULL,           			/* decode_color */
     NULL,                          	/* pattern_manage */
-    NULL,				/* fill_rectangle_hl_color */\
+    display_fill_rectangle_hl_color,	/* fill_rectangle_hl_color */\
     NULL,				/* include_color_space */\
     NULL,				/* fill_linear_color_scanline */\
     NULL,				/* fill_linear_color_trapezoid */\
     NULL,				/* fill_linear_color_triangle */\
     display_update_spot_equivalent_colors, /* update_spot_equivalent_colors */
-    display_ret_devn_params		/* ret_devn_params */\
+    display_ret_devn_params,		/* ret_devn_params */\
+    NULL,                        /* fillpage */\
+    NULL,                        /* push_transparency_state */\
+    NULL,                        /* pop_transparency_state */\
+    NULL,                        /* put_image */\
+    display_spec_op              /* dev_spec_op */\
 };
 
 /* GC descriptor */
@@ -1227,6 +1236,37 @@ display_ret_devn_params(gx_device * dev)
     return &pdev->devn_params;
 }
 
+static int
+display_spec_op(gx_device *dev, int op, void *data, int datasize)
+{
+
+    if (op == gxdso_supports_devn) {
+        return (dev_proc(dev, fill_rectangle_hl_color) == display_fill_rectangle_hl_color);
+    }
+    return gx_default_dev_spec_op(dev, op, data, datasize);
+}
+
+/* Fill a rectangle with a high level color.  This is used in separation mode */
+static int
+display_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
+    const gs_gstate *pgs, const gx_drawing_color *pdcolor,
+    const gx_clip_path *pcpath)
+{
+    int x = fixed2int(rect->p.x);
+    int y = fixed2int(rect->p.y);
+    int w = fixed2int(rect->q.x) - x;
+    int h = fixed2int(rect->q.y) - y;
+    gx_color_index pure_color;
+
+    /* We can only handle devn cases, so use the default if not */
+    /* We can get called here from gx_dc_devn_masked_fill_rectangle */
+    if (pdcolor->type != gx_dc_type_devn && pdcolor->type != &gx_dc_devn_masked) {
+        return gx_fill_rectangle_device_rop( x, y, w, h, pdcolor, dev, lop_default);
+    }
+    pure_color = display_separation_encode_color(dev, pdcolor->colors.devn.values);
+    return display_fill_rectangle(dev, x, y, w, h, pure_color);
+}
+
 /*
  * This routine will check to see if the color component name  match those
  * that are available amoung the current device's color components.
@@ -1581,16 +1621,14 @@ set_color_procs(gx_device * pdev,
         dev_t_proc_encode_color((*encode_color), gx_device),
         dev_t_proc_decode_color((*decode_color), gx_device),
         dev_t_proc_get_color_mapping_procs((*get_color_mapping_procs), gx_device),
-        dev_t_proc_get_color_comp_index((*get_color_comp_index), gx_device))
+        dev_t_proc_get_color_comp_index((*get_color_comp_index), gx_device),
+        dev_t_proc_fill_rectangle_hl_color((*fill_hl_color), gx_device))
 {
-#if 0				/* These procs are no longer used */
-    pdev->procs.map_rgb_color = encode_color;
-    pdev->procs.map_color_rgb = decode_color;
-#endif
     pdev->procs.get_color_mapping_procs = get_color_mapping_procs;
     pdev->procs.get_color_comp_index = get_color_comp_index;
     pdev->procs.encode_color = encode_color;
     pdev->procs.decode_color = decode_color;
+    pdev->procs.fill_rectangle_hl_color = fill_hl_color;
 }
 
 /*
@@ -1604,7 +1642,8 @@ set_gray_color_procs(gx_device * pdev,
 {
     set_color_procs(pdev, encode_color, decode_color,
         gx_default_DevGray_get_color_mapping_procs,
-        gx_default_DevGray_get_color_comp_index);
+        gx_default_DevGray_get_color_comp_index,
+        gx_default_fill_rectangle_hl_color);
 }
 
 /*
@@ -1618,7 +1657,8 @@ set_rgb_color_procs(gx_device * pdev,
 {
     set_color_procs(pdev, encode_color, decode_color,
         gx_default_DevRGB_get_color_mapping_procs,
-        gx_default_DevRGB_get_color_comp_index);
+        gx_default_DevRGB_get_color_comp_index,
+        gx_default_fill_rectangle_hl_color);
 }
 
 /*
@@ -1632,7 +1672,8 @@ set_rgbk_color_procs(gx_device * pdev,
 {
     set_color_procs(pdev, encode_color, decode_color,
         gx_default_DevRGBK_get_color_mapping_procs,
-        gx_default_DevRGBK_get_color_comp_index);
+        gx_default_DevRGBK_get_color_comp_index,
+        gx_default_fill_rectangle_hl_color);
 }
 
 /*
@@ -1646,7 +1687,8 @@ set_cmyk_color_procs(gx_device * pdev,
 {
     set_color_procs(pdev, encode_color, decode_color,
         gx_default_DevCMYK_get_color_mapping_procs,
-        gx_default_DevCMYK_get_color_comp_index);
+        gx_default_DevCMYK_get_color_comp_index,
+        gx_default_fill_rectangle_hl_color);
 }
 
 /* Set the color_info and mapping functions for this instance of the device */
@@ -1818,7 +1860,8 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
                     display_separation_encode_color,
                     display_separation_decode_color,
                     display_separation_get_color_mapping_procs,
-                    display_separation_get_color_comp_index);
+                    display_separation_get_color_comp_index,
+                    display_fill_rectangle_hl_color);
             }
             else
                 return_error(gs_error_rangecheck);
