@@ -352,14 +352,14 @@ pl_main_run_file_utf8(pl_main_instance_t *minst, const char *filename)
              * before calling this function. */
             if (minst->curr_implementation == pjli) {
                 /* Autodetect the language based on the content. */
-                if_debug0m('I', mem, "Selecting PDL\n");
                 desired_implementation = pl_select_implementation(pjli, minst, s);
 
                 /* Possibly this never happens? But attempt to cope anyway. */
                 if (desired_implementation == NULL)
                     goto flush_to_end_of_job;
-                if_debug1m('I', mem, "selected (%s)\n",
-                           pl_characteristics(desired_implementation)->language);
+                if (gs_debug_c('I') || gs_debug_c(':'))
+                    dmlprintf1(mem, "PDL detected as %s\n",
+                               pl_characteristics(desired_implementation)->language);
 
                 /* If the language implementation needs changing, change it. */
                 if (desired_implementation != pjli) {
