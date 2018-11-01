@@ -110,125 +110,52 @@ pdfi_filter_open(uint buffer_size,
 static int pdfi_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
 {
     int code;
-    uint32_t Predictor = 1;
-    pdf_obj *o;
-    uint min_size = 2048;
+    int64_t Predictor, Colors, BPC, Columns;
+    uint min_size;
     stream_PNGP_state pps;
     stream_PDiff_state ppds;
+    /* NOTE: 'max_min_left=1' is a horribly named definition from stream.h */
 
-    code = pdfi_dict_get(ctx, d, "Predictor", &o);
-    if (code < 0 && code != gs_error_undefined)
+    code = pdfi_dict_get_int_def(ctx, d, "Predictor", &Predictor, 1);
+    if (code < 0)
         return code;
 
-    if (code != gs_error_undefined) {
-        if (o->type != PDF_INT)
-            return_error(gs_error_typecheck);
-
-        Predictor = (uint32_t)((pdf_num *)o)->value.i;
-    }
+    /* Predictor values 0,1 are identity (use the existing stream).
+     * The other values need to be cascaded.
+     */
     switch(Predictor) {
         case 0:
+            Predictor = 1;
             break;
         case 1:
-            min_size = 2048;
             break;
         case 2:
-            return_error(gs_error_rangecheck);
-            /* zpd_setup, componentwise horizontal differencing */
-            min_size = s_zlibD_template.min_out_size + max_min_left;
-            code = pdfi_dict_get(ctx, d, "Colors", &o);
-            if (code < 0 && code != gs_error_undefined)
-                return code;
-            if(code == gs_error_undefined)
-                ppds.Colors = 1;
-            else {
-                if (o->type != PDF_INT)
-                    return_error(gs_error_typecheck);
-
-                ppds.Colors = ((pdf_num *)o)->value.i;
-            }
-            if (ppds.Colors < 1 || ppds.Colors > s_PNG_max_Colors)
-                return_error(gs_error_rangecheck);
-
-            code = pdfi_dict_get(ctx, d, "BitsPerComponent", &o);
-            if (code < 0 && code != gs_error_undefined)
-                return code;
-            if(code == gs_error_undefined)
-                ppds.BitsPerComponent = 8;
-            else {
-                if (o->type != PDF_INT)
-                    return_error(gs_error_typecheck);
-
-                ppds.BitsPerComponent = ((pdf_num *)o)->value.i;
-            }
-            if (ppds.BitsPerComponent < 1 || ppds.BitsPerComponent > 16 || (ppds.BitsPerComponent & (ppds.BitsPerComponent - 1)) != 0)
-                return_error(gs_error_rangecheck);
-
-            code = pdfi_dict_get(ctx, d, "Columns", &o);
-            if (code < 0 && code != gs_error_undefined)
-                return code;
-            if(code == gs_error_undefined)
-                ppds.Columns = 1;
-            else {
-                if (o->type != PDF_INT)
-                    return_error(gs_error_typecheck);
-
-                ppds.Columns = ((pdf_num *)o)->value.i;
-            }
-            if (ppds.Columns < 1)
-                return_error(gs_error_rangecheck);
-            break;
         case 10:
         case 11:
         case 12:
         case 13:
         case 14:
         case 15:
-            /* zpp_setup, PNG predictor */
+            /* grab values common to both kinds of predictors */
             min_size = s_zlibD_template.min_out_size + max_min_left;
-            code = pdfi_dict_get(ctx, d, "Colors", &o);
-            if (code < 0 && code != gs_error_undefined)
+            code = pdfi_dict_get_int_def(ctx, d, "Colors", &Colors, 1);
+            if (code < 0)
                 return code;
-            if(code == gs_error_undefined)
-                pps.Colors = 1;
-            else {
-                if (o->type != PDF_INT)
-                    return_error(gs_error_typecheck);
-
-                pps.Colors = ((pdf_num *)o)->value.i;
-            }
-            if (pps.Colors < 1 || pps.Colors > s_PNG_max_Colors)
+            if (Colors < 1 || Colors > s_PNG_max_Colors)
                 return_error(gs_error_rangecheck);
 
-            code = pdfi_dict_get(ctx, d, "BitsPerComponent", &o);
-            if (code < 0 && code != gs_error_undefined)
+            code = pdfi_dict_get_int_def(ctx, d, "BitsPerComponent", &BPC, 8);
+            if (code < 0)
                 return code;
-            if(code == gs_error_undefined)
-                pps.BitsPerComponent = 8;
-            else {
-                if (o->type != PDF_INT)
-                    return_error(gs_error_typecheck);
-
-                pps.BitsPerComponent = ((pdf_num *)o)->value.i;
-            }
-            if (pps.BitsPerComponent < 1 || pps.BitsPerComponent > 16 || (pps.BitsPerComponent & (pps.BitsPerComponent - 1)) != 0)
+            /* tests for 1-16, powers of 2 */
+            if (BPC < 1 || BPC > 16 || (BPC & (BPC - 1)) != 0)
                 return_error(gs_error_rangecheck);
 
-            code = pdfi_dict_get(ctx, d, "Columns", &o);
-            if (code < 0 && code != gs_error_undefined)
+            code = pdfi_dict_get_int_def(ctx, d, "Columns", &Columns, 1);
+            if (code < 0)
                 return code;
-            if(code == gs_error_undefined)
-                pps.Columns = 1;
-            else {
-                if (o->type != PDF_INT)
-                    return_error(gs_error_typecheck);
-
-                pps.Columns = ((pdf_num *)o)->value.i;
-            }
-            if (pps.Columns < 1)
+            if (Columns < 1)
                 return_error(gs_error_rangecheck);
-
-            pps.Predictor = Predictor;
             break;
         default:
             return_error(gs_error_rangecheck);
@@ -239,11 +166,24 @@ static int pdfi_Predictor_filter(pdf_context *ctx, pdf_dict *d, stream *source, 
             *new_stream = source;
             break;
         case 2:
-            pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_PDiffE_template, (const stream_state *)&ppds, ctx->memory->non_gc_memory, new_stream);
+            /* zpd_setup, componentwise horizontal differencing */
+            ppds.Colors = (int)Colors;
+            ppds.BitsPerComponent = (int)BPC;
+            ppds.Columns = (int)Columns;
+            pdfi_filter_open(min_size, &s_filter_read_procs,
+                             (const stream_template *)&s_PDiffE_template,
+                             (const stream_state *)&ppds, ctx->memory->non_gc_memory, new_stream);
             (*new_stream)->strm = source;
             break;
         default:
-            pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_PNGPD_template, (const stream_state *)&pps, ctx->memory->non_gc_memory, new_stream);
+            /* zpp_setup, PNG predictor */
+            pps.Colors = (int)Colors;
+            pps.BitsPerComponent = (int)BPC;
+            pps.Columns = (uint)Columns;
+            pps.Predictor = Predictor;
+            pdfi_filter_open(min_size, &s_filter_read_procs,
+                             (const stream_template *)&s_PNGPD_template,
+                             (const stream_state *)&pps, ctx->memory->non_gc_memory, new_stream);
             (*new_stream)->strm = source;
             break;
     }
@@ -537,7 +477,7 @@ static int pdfi_CCITTFax_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
 {
     stream_CFD_state ss;
     uint min_size = 2048;
-    pdf_obj *o;
+    bool bval;
     int code;
     int64_t i;
 
@@ -550,45 +490,29 @@ static int pdfi_CCITTFax_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
         if (code == 0)
             ss.K = i;
 
-        code = pdfi_dict_get_type(ctx, d, "EndOfLine", PDF_BOOL, &o);
+        code = pdfi_dict_get_bool(ctx, d, "EndOfLine", &bval);
         if (code < 0 && code != gs_error_undefined)
             return code;
-        if (code == 0) {
-            if (((pdf_bool *)o)->value == true)
-                ss.EndOfLine = 1;
-            else
-                ss.EndOfLine = 0;
-        }
+        if (code == 0)
+            ss.EndOfLine = bval ? 1 : 0;
 
-        code = pdfi_dict_get_type(ctx, d, "EncodedByteAlign", PDF_BOOL, &o);
+        code = pdfi_dict_get_bool(ctx, d, "EncodedByteAlign", &bval);
         if (code < 0 && code != gs_error_undefined)
             return code;
-        if (code == 0) {
-            if (((pdf_bool *)o)->value == true)
-                ss.EncodedByteAlign = 1;
-            else
-                ss.EncodedByteAlign = 0;
-        }
+        if (code == 0)
+            ss.EncodedByteAlign = bval ? 1 : 0;
 
-        code = pdfi_dict_get_type(ctx, d, "EndOfBlock", PDF_BOOL, &o);
+        code = pdfi_dict_get_bool(ctx, d, "EndOfBlock", &bval);
         if (code < 0 && code != gs_error_undefined)
             return code;
-        if (code == 0) {
-            if (((pdf_bool *)o)->value == true)
-                ss.EndOfBlock = 1;
-            else
-                ss.EndOfBlock = 0;
-        }
+        if (code == 0)
+            ss.EndOfBlock = bval ? 1 : 0;
 
-        code = pdfi_dict_get_type(ctx, d, "BlackIs1", PDF_BOOL, &o);
+        code = pdfi_dict_get_bool(ctx, d, "BlackIs1", &bval);
         if (code < 0 && code != gs_error_undefined)
             return code;
-        if (code == 0) {
-            if (((pdf_bool *)o)->value == true)
-                ss.BlackIs1 = 1;
-            else
-                ss.BlackIs1 = 0;
-        }
+        if (code == 0)
+            ss.BlackIs1 = bval ? 1 : 0;
 
         code = pdfi_dict_get_int(ctx, d, "Columns", &i);
         if (code < 0 && code != gs_error_undefined)
@@ -610,7 +534,10 @@ static int pdfi_CCITTFax_filter(pdf_context *ctx, pdf_dict *d, stream *source, s
 
     }
 
-    code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_CFD_template, (const stream_state *)&ss, ctx->memory->non_gc_memory, new_stream);
+    code = pdfi_filter_open(min_size, &s_filter_read_procs,
+                            (const stream_template *)&s_CFD_template,
+                            (const stream_state *)&ss,
+                            ctx->memory->non_gc_memory, new_stream);
     if (code < 0)
         return code;
 
@@ -635,6 +562,13 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
                              stream *source, stream **new_stream, bool inline_image)
 {
     int code;
+
+    {
+        char str[100];
+        memcpy(str, (const char *)n->data, n->length);
+        str[n->length] = '\0';
+        dmprintf1(ctx->memory, "FILTER NAME:%s\n", str);
+    }
 
     if (pdfi_name_strcmp(n, "RunLengthDecode") == 0) {
         code = pdfi_simple_filter(ctx, &s_RLD_template, source, new_stream);
@@ -753,6 +687,7 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
     stream *s = source->s, *new_s = NULL;
     *new_stream = NULL;
 
+    dmprintf2(ctx->memory, "Filter: offset %ld(0x%lx)\n", dict->stream_offset, dict->stream_offset);
     code = pdfi_dict_get(ctx, dict, "Filter", &o);
     if (code < 0){
         if (code == gs_error_undefined) {
@@ -1055,9 +990,10 @@ void pdfi_close_file(pdf_context *ctx, pdf_stream *s)
     stream *next_s = s->s;
 
     while(next_s && next_s != s->original){
-        if (next_s && next_s != ctx->main_stream->s)
-            sfclose(next_s);
+        stream *curr_s = next_s;
         next_s = next_s->strm;
+        if (curr_s != ctx->main_stream->s)
+            sfclose(curr_s);
     }
     gs_free_object(ctx->memory, s, "closing pdf_file");
 }

@@ -269,6 +269,21 @@ int pdfi_dict_get_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t *i
     return 0;
 }
 
+/* Get an int from dict, and if undefined, return provided default */
+int pdfi_dict_get_int_def(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t *i,
+                          int64_t def_val)
+{
+    int code;
+
+    code = pdfi_dict_get_int(ctx, d, Key, i);
+    if (code == gs_error_undefined) {
+        *i = def_val;
+        code = 0;
+    }
+
+    return code;
+}
+
 /* Convenience routine for common case where value has two possible keys */
 int
 pdfi_dict_get_bool2(pdf_context *ctx, pdf_dict *d, const char *Key1,

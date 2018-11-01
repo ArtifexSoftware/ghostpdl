@@ -31,6 +31,7 @@ int pdfi_dict_get_type2(pdf_context *ctx, pdf_dict *d, const char *Key1, const c
 int pdfi_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type t, pdf_obj **o);
 int pdfi_dict_get_int2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, int64_t *i);
 int pdfi_dict_get_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t *i);
+int pdfi_dict_get_int_def(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t *i, int64_t def_val);
 int pdfi_dict_get_bool2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, bool *val);
 int pdfi_dict_get_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool *val);
 int pdfi_dict_get_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *f);
