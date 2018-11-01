@@ -3060,7 +3060,7 @@ int pdfi_interpret_content_stream(pdf_context *ctx, pdf_dict *stream_dict, pdf_d
                     break;
                 case PDF_NOT_A_KEYWORD:
                     code = pdfi_interpret_stream_operator(ctx, compressed_stream, stream_dict, page_dict);
-                    if (code < 0) {
+                    if (code < 0 && ctx->pdfstoponerror) {
                         pdfi_close_file(ctx, compressed_stream);
                         pdfi_clearstack(ctx);
                         return code;

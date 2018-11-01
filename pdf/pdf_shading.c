@@ -126,6 +126,7 @@ static int pdfi_shading1(pdf_context *ctx, gs_shading_params_t *pcommon,
     gs_shading_Fb_params_t params;
     static const float default_Domain[4] = {0, 1, 0, 1};
 
+    memset(&params, 0, sizeof(params));
     *(gs_shading_params_t *)&params = *pcommon;
     gs_make_identity(&params.Matrix);
     params.Function = 0;
@@ -166,6 +167,7 @@ static int pdfi_shading2(pdf_context *ctx, gs_shading_params_t *pcommon,
     static const float default_Domain[2] = {0, 1};
     int code, i;
 
+    memset(&params, 0, sizeof(params));
     *(gs_shading_params_t *)&params = *pcommon;
 
     code = fill_float_array_from_dict(ctx, (float *)&params.Coords, 4, shading_dict, "Coords");
@@ -212,6 +214,7 @@ static int pdfi_shading3(pdf_context *ctx,  gs_shading_params_t *pcommon,
     static const float default_Domain[2] = {0, 1};
     int code, i;
 
+    memset(&params, 0, sizeof(params));
     *(gs_shading_params_t *)&params = *pcommon;
 
     code = fill_float_array_from_dict(ctx, (float *)&params.Coords, 6, shading_dict, "Coords");
@@ -277,6 +280,8 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     gs_shading_params_t params;
     gs_shading_t *psh;
     gs_offset_t savedoffset;
+
+    memset(&params, 0, sizeof(params));
 
     savedoffset = pdfi_tell(ctx->main_stream);
     if (ctx->loop_detection == NULL) {
