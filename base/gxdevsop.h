@@ -327,6 +327,18 @@ enum {
     gxdso_JPEG_passthrough_data,
     gxdso_JPEG_passthrough_end,
     gxdso_supports_iccpostrender,
+    /* Retrieve the last device in a device chain
+       (either forwarding or subclass devices).
+     */
+    gxdso_current_output_device,
+    /* Should we call copy_color rather than resolving images to fill_rectangles? */
+    gxdso_copy_color_is_fast,
+
+    /* Debug only dsos follow here */
+#ifdef DEBUG
+    /* Private dso used to check that a printer device properly forwards to the default */
+    gxdso_debug_printer_check,
+#endif
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };
