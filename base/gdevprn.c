@@ -210,6 +210,11 @@ gdev_prn_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
             return code;
     }
 
+#ifdef DEBUG
+    if (dev_spec_op == gxdso_debug_printer_check)
+        return 1;
+#endif
+
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
@@ -1478,8 +1483,10 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
 #ifdef DEBUG
         /* scanning sources didn't show anything, but if a device gets changed or added */
         /* that has its own dev_spec_op, it should call the gdev_prn_spec_op as well    */
-        else
-            errprintf(mdev->memory, "Warning: printer device has private dev_spec_op\n");
+        else {
+            if (dev_proc(mdev, dev_spec_op)((gx_device *)mdev, gxdso_debug_printer_check, NULL, 0) < 0)
+                errprintf(mdev->memory, "Warning: printer device has private dev_spec_op\n");
+        }
 #endif
         gx_device_fill_in_procs((gx_device *)mdev);
     } else {
