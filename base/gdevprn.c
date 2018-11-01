@@ -1466,8 +1466,11 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
         mdev = (gx_device_memory *)*pbdev;
     }
     if (target == (gx_device *)mdev) {
+        dev_t_proc_dev_spec_op((*orig_dso), gx_device) = dev_proc(mdev, dev_spec_op);
         /* The following is a special hack for setting up printer devices. */
         assign_dev_procs(mdev, mdproto);
+        /* Do not override the dev_spec_op! */
+        dev_proc(mdev, dev_spec_op) = orig_dso;
         check_device_separable((gx_device *)mdev);
         /* In order for saved-pages to work, we need to hook the dev_spec_op */
         if (mdev->procs.dev_spec_op == NULL)
