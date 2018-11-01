@@ -180,7 +180,8 @@ static const gx_device_pattern_accum gs_pattern_accum_device =
      gx_default_strip_tile_rect_devn,
      NULL,                              /* alpha_hl_color */
      NULL,                              /* process_page */
-     gx_default_transform_pixel_region  /* NOT the default forwarding one */
+     gx_default_transform_pixel_region, /* NOT the default forwarding one */
+     gx_default_fill_stroke_path,
 },
  0,                             /* target */
  0, 0, 0, 0                     /* bitmap_memory, bits, mask, instance */

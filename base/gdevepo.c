@@ -81,6 +81,7 @@ static dev_proc_copy_planes(epo_copy_planes);
 static dev_proc_copy_alpha_hl_color(epo_copy_alpha_hl_color);
 static dev_proc_process_page(epo_process_page);
 static dev_proc_transform_pixel_region(epo_transform_pixel_region);
+static dev_proc_fill_stroke_path(epo_fill_stroke_path);
 
 /* The device prototype */
 #define MAX_COORD (max_int_in_fixed - 1000)
@@ -184,7 +185,8 @@ gx_device_epo gs_epo_device =
      default_subclass_strip_tile_rect_devn,
      epo_copy_alpha_hl_color,
      epo_process_page,
-     epo_transform_pixel_region
+     epo_transform_pixel_region,
+     epo_fill_stroke_path,
     }
 };
 
@@ -677,6 +679,19 @@ int epo_process_page(gx_device *dev, gx_process_page_options_t *options)
     if (code != 0)
         return code;
     return dev_proc(dev, process_page)(dev, options);
+}
+
+int epo_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
+    const gx_fill_params *fill_params, const gx_drawing_color *pdcolor_fill,
+    const gx_stroke_params *stroke_params, const gx_drawing_color *pdcolor_stroke,
+    const gx_clip_path *pcpath)
+{
+    int code = epo_handle_erase_page(dev);
+
+    if (code != 0)
+        return code;
+    return dev_proc(dev, fill_stroke_path)(dev, pgs, ppath, fill_params, pdcolor_fill,
+                                           stroke_params, pdcolor_stroke, pcpath);
 }
 
 int epo_transform_pixel_region(gx_device *dev, transform_pixel_region_reason reason, transform_pixel_region_data *data)

@@ -82,7 +82,6 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, copy_rop, gx_forward_copy_rop);
     fill_dev_proc(dev, fill_path, gx_forward_fill_path);
     fill_dev_proc(dev, stroke_path, gx_forward_stroke_path);
-    fill_dev_proc(dev, fill_stroke_path, gx_forward_fill_stroke_path);
     fill_dev_proc(dev, fill_mask, gx_forward_fill_mask);
     fill_dev_proc(dev, fill_trapezoid, gx_forward_fill_trapezoid);
     fill_dev_proc(dev, fill_parallelogram, gx_forward_fill_parallelogram);
@@ -118,7 +117,9 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
     fill_dev_proc(dev, strip_copy_rop2, gx_forward_strip_copy_rop2);
     fill_dev_proc(dev, strip_tile_rect_devn, gx_forward_strip_tile_rect_devn);
+    fill_dev_proc(dev, strip_tile_rect_devn, gx_forward_strip_tile_rect_devn);
     fill_dev_proc(dev, transform_pixel_region, gx_forward_transform_pixel_region);
+    fill_dev_proc(dev, fill_stroke_path, gx_forward_fill_stroke_path);
     gx_device_fill_in_procs((gx_device *) dev);
 }
 

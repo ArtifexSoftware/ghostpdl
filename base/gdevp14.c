@@ -286,6 +286,7 @@ static	const gx_color_map_procs *
         NULL,                           /* strip_tile_rect_devn */\
         pdf14_copy_alpha_hl_color,       /* copy_alpha_hl_color */\
         NULL,                            /* process_page */\
+        NULL,				/* transform_pixel_region */\
         pdf14_fill_stroke_path,         /* fill_stroke */\
 }
 
@@ -3262,6 +3263,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     gs_fixed_rect path_bbox;
     int expansion_code;
     gs_fixed_point expansion;
+    bool fill_overprint = pgs->overprint;
 
     if (pgs->fillconstantalpha == 0.0 && pgs->strokeconstantalpha == 0.0)
         return 0;
@@ -3323,14 +3325,15 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     if (pgs->strokeconstantalpha > 0.0) {
         pdf14_device * pdev = (pdf14_device *)dev;
 
-        /* set up overprint for stroke */
-        pdev->overprint = pgs->stroke_overprint;
+        if (pgs->stroke_overprint != fill_overprint) {
+            /* set up overprint for stroke */
+            ((gs_gstate *)pgs)->overprint = pgs->stroke_overprint;
+        }
         code = gs_setopacityalpha(pgs, pgs->strokeconstantalpha);
         if (code < 0)
             goto cleanup;
         code = pdf14_stroke_path(dev, pgs, ppath, stroke_params, pdcolor_stroke, pcpath);
-        /* restore the overprint settings to fill */
-        pdev->overprint = pgs->stroke_overprint;
+        /* NB: restore the overprint settings to fill below in cleanup */
         if (code < 0)
             goto cleanup;
     }
@@ -3340,8 +3343,6 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
     if (code < 0)
         goto cleanup;
     code = gs_setblendmode(pgs, BLEND_MODE_Normal);
-    if (code < 0)
-        goto cleanup;
 
     /* Restore where we were. If an error occured while in the group push
        return that error code but try to do the cleanup */
@@ -3352,7 +3353,10 @@ cleanup:
         code = gs_abort_pdf14trans_device(pgs);
         return code2;
     }
-
+    if (pgs->stroke_overprint != fill_overprint) {
+        /* restore the overprint settings to fill */
+        ((gs_gstate *)pgs)->overprint = fill_overprint;
+    }
     code2 = gs_setopacityalpha(pgs, opacity);
     if (code2 < 0)
         return code2;
@@ -8005,6 +8009,7 @@ send_pdf14trans(gs_gstate	* pgs, gx_device * dev,
         NULL,                           /* strip_tile_rect_devn */\
         gx_forward_copy_alpha_hl_color,\
         NULL,				/* process_page */\
+        NULL,				/* transform_pixel_region */\
         pdf14_clist_fill_stroke_path,\
 }
 

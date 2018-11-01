@@ -680,8 +680,11 @@ gx_default_fill_stroke_path(gx_device * pdev, const gs_gstate * pgs,
 
     if (code < 0)
         return code;
-
-    return dev_proc(pdev, stroke_path)(pdev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
+    /* Swap colors to make sure the pgs colorspace is correct for stroke */
+    gs_swapcolors(pgs);
+    code = dev_proc(pdev, stroke_path)(pdev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
+    gs_swapcolors(pgs);
+    return code;
 }
 
 /* Free the line list. */

@@ -427,7 +427,10 @@ static const gx_device_procs no_overprint_procs = {
     0,                                  /* set graphics type tag */
     0,                                  /* strip_copy_rop2 */
     0,                                  /* strip_tile_rect_devn */
-    gx_forward_copy_alpha_hl_color       /* copy_alpha_hl_color */
+    gx_forward_copy_alpha_hl_color,     /* copy_alpha_hl_color */
+    NULL,                               /* process_page */\
+    NULL,				/* transform_pixel_region */\
+    gx_forward_fill_stroke_path,        /* fill_stroke */\
 };
 
 /*
@@ -536,7 +539,10 @@ static const gx_device_procs generic_overprint_procs = {
     0,                                  /* set graphics type tag */
     0,                                  /* strip_copy_rop2 */
     0,                                  /* strip_tile_rect_devn */
-    gx_forward_copy_alpha_hl_color       /* copy_alpha_hl_color */
+    gx_forward_copy_alpha_hl_color,     /* copy_alpha_hl_color */
+    NULL,                               /* process_page */\
+    NULL,				/* transform_pixel_region */\
+    gx_default_fill_stroke_path,        /* fill_stroke */\
 };
 
 static const gx_device_procs sep_overprint_procs = {
@@ -611,7 +617,10 @@ static const gx_device_procs sep_overprint_procs = {
     0,                                  /* set graphics type tag */
     0,                                  /* strip_copy_rop2 */
     0,                                  /* strip_tile_rect_devn */
-    overprint_copy_alpha_hl_color       /* copy_alpha_hl_color */
+    overprint_copy_alpha_hl_color,      /* copy_alpha_hl_color */
+    NULL,                               /* process_page */\
+    NULL,				/* transform_pixel_region */\
+    gx_default_fill_stroke_path,        /* fill_stroke */\
 };
 
 /*

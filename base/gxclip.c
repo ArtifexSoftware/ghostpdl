@@ -126,8 +126,8 @@ static const gx_device_clip gs_clip_device =
   clip_strip_tile_rect_devn,
   clip_copy_alpha_hl_color,
   NULL,						/* process_page */
-  clip_transform_pixel_region
-  clip_fill_stroke_path
+  clip_transform_pixel_region,
+  clip_fill_stroke_path,
  }
 };
 
@@ -1635,6 +1635,7 @@ clip_transform_pixel_region(gx_device *dev, transform_pixel_region_reason reason
     data->state = state;
 
     return ret;
+}
 
 static int
 clip_call_fill_stroke_path(clip_callback_data_t * pccd, int xc, int yc, int xec, int yec)

@@ -203,7 +203,8 @@ dev_proc_transform_pixel_region(mem_transform_pixel_region);
                 NULL, /* strip_tile_rect_devn */\
                 NULL, /* copy_alpha_hl_color */\
                 NULL, /* process_page */\
-                mem_transform_pixel_region\
+                mem_transform_pixel_region,\
+                NULL, /* fill_stroke_path */\
         },\
         0,			/* target */\
         mem_device_init_private	/* see gxdevmem.h */\
