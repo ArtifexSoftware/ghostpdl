@@ -84,7 +84,11 @@ gs_jpeg_read_scanlines(stream_DCT_state * st,
 int
 gs_jpeg_finish_decompress(stream_DCT_state * st)
 {
+    int code = 0;
     if (setjmp(find_jmp_buf(st->data.common->exit_jmpbuf)))
-        return_error(gs_jpeg_log_error(st));
-    return (int)jpeg_finish_decompress(&st->data.decompress->dinfo);
+        code = gs_note_error(gs_jpeg_log_error(st));
+    if (code >= 0)
+        code = (int)jpeg_finish_decompress(&st->data.decompress->dinfo);
+    stream_dct_end_passthrough(st->data.decompress);
+    return code;
 }

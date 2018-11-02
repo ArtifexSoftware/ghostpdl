@@ -70,19 +70,15 @@ dctd_skip_input_data(j_decompress_ptr dinfo, long num_bytes)
         src->bytes_in_buffer -= num_bytes;
     }
 }
+
 static void
 dctd_term_source(j_decompress_ptr dinfo)
 {
-    char EOI[2] = {0xff, 0xD9};
-
     jpeg_decompress_data *jddp =
     (jpeg_decompress_data *) ((char *)dinfo -
                               offset_of(jpeg_decompress_data, dinfo));
 
-    if (jddp->PassThrough && jddp->PassThroughfn) {
-        (jddp->PassThroughfn)(jddp->device, (byte *)EOI, 2);
-        (jddp->PassThroughfn)(jddp->device, NULL, 0);
-    }
+    stream_dct_end_passthrough(jddp);
     return;
 }
 
