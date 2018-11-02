@@ -563,6 +563,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
 {
     int code;
 
+    if (ctx->pdfdebug)
     {
         char str[100];
         memcpy(str, (const char *)n->data, n->length);
@@ -595,7 +596,9 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         return code;
     }
     if (pdfi_name_strcmp(n, "JBIG2Decode") == 0) {
+#ifdef DEBUG
         dmprintf(ctx->memory, "WARNING: JBIG2Decode filter not implemented\n");
+#endif
         return -1;
     }
     if (pdfi_name_strcmp(n, "LZWDecode") == 0) {
@@ -687,7 +690,9 @@ int pdfi_filter(pdf_context *ctx, pdf_dict *dict, pdf_stream *source, pdf_stream
     stream *s = source->s, *new_s = NULL;
     *new_stream = NULL;
 
-    dmprintf2(ctx->memory, "Filter: offset %ld(0x%lx)\n", dict->stream_offset, dict->stream_offset);
+    if (ctx->pdfdebug)
+        dmprintf2(ctx->memory, "Filter: offset %ld(0x%lx)\n", dict->stream_offset, dict->stream_offset);
+
     code = pdfi_dict_get(ctx, dict, "Filter", &o);
     if (code < 0){
         if (code == gs_error_undefined) {
