@@ -156,4 +156,7 @@ extern const stream_template s_DCTE_template;
 /* Clients do not call this. */
 void s_DCT_set_defaults(stream_state * st);
 
+void
+stream_dct_end_passthrough(jpeg_decompress_data *jddp);
+
 #endif /* sdct_INCLUDED */

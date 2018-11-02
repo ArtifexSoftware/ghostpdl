@@ -64,8 +64,6 @@ px_state_release(px_state_t * pxs)
 {
     /* free the font dictionary */
     px_dict_release(&pxs->font_dict);
-    gs_free_object(pxs->memory, pxs->font_dir->ccache.table, "font_dir_alloc(chars)");
-    gs_free_object(pxs->memory, pxs->font_dir->fmcache.mdata, "font_dir_alloc(mdata)");
     gs_free_object(pxs->memory, pxs->font_dir, "font_dir_alloc(dir)");
     /* Don't free pxgs since it'll get freed as pgs' client */
     gs_free_object(pxs->memory, pxs, "px_state_release");

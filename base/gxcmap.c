@@ -1136,8 +1136,6 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     }
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
-    /* if output device supports devn, we need to make sure we send it the
-       proper color type */
     if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
         for (i = 0; i < ncomps; i++)
             pdc->colors.devn.values[i] = frac2cv(cm_comps[i]);

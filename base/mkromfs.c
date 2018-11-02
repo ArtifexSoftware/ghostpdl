@@ -61,6 +61,7 @@
  *				For performance reasons, it is best to turn off compression
  *				for the init file. Less frequently accessed files, if they
  *				are large should still be compressed.
+ *              -s num_files    split the output into <num_files> subfiles.
  *
  */
 
@@ -117,6 +118,13 @@ typedef struct Xlist_element_s {
         char *path;
     } Xlist_element;
 
+typedef struct {
+    int num_splits;
+    int max_splits;
+    unsigned long *sizes;
+    char *outname;
+    char *outname_formatted;
+} split_data;
 
 #define PATH_STR_LEN 1024
 
@@ -348,13 +356,11 @@ int cmpstringp(const void *p1, const void *p2);
 void put_uint32(FILE *out, const unsigned int q);
 void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len);
 void inode_clear(romfs_inode* node);
-void inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int*totlen);
+void inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int*totlen, split_data *splits);
 void process_path(char *path, const char *os_prefix, const char *rom_prefix,
                   Xlist_element *Xlist_head, int compression,
-                  int compaction, int *inode_count, int *totlen, FILE *out);
-int process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
-                     const char *rom_prefix,
-                     int compression, int *inode_count, int *totlen, FILE *out);
+                  int compaction, int *inode_count, int *totlen, FILE *out,
+                  split_data *splits);
 FILE *prefix_open(const char *os_prefix, const char *inname);
 void prefix_add(const char *prefix, const char *filename, char *prefixed_path);
 
@@ -433,9 +439,8 @@ void inode_clear(romfs_inode* node)
     }
 }
 
-/* write out and inode and its file data */
-void
-inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int *totlen)
+static unsigned long
+do_inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int *totlen, int split)
 {
     int i, offset;
     int blocks = (node->length+ROMFS_BLOCKSIZE-1)/ROMFS_BLOCKSIZE;
@@ -443,7 +448,10 @@ inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int 
     int clen = 0;			/* compressed length */
 
     /* write the node header */
-    fprintf(out,"    static uint32_t node_%d[] = {\n\t", inode_count);
+    fprintf(out,"    %s const uint32_t %snode_%d[] = {\n\t",
+            split ? "" : "static",
+            split ? "mkromfs_" : "",
+            inode_count);
     /* 4 byte file length + compression flag in high bit */
     put_uint32(out, node->length | (compression ? 0x80000000 : 0));
     fprintf(out, "\t/* compression_flag_bit + file length */\n\t");
@@ -475,6 +483,68 @@ inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int 
         printf(", compressed size=%d", clen);
     }
     printf("\n");
+    if (compression)
+        return clen;
+    return node->length;
+}
+
+static void
+prepare_splits(split_data *splits)
+{
+    if (splits->num_splits) {
+        /* Make sure we have a properly sized size array. */
+        if (splits->num_splits > splits->max_splits) {
+            unsigned long *sizes = realloc(splits->sizes, sizeof(unsigned long) * splits->num_splits);
+            if (sizes == NULL) {
+                fprintf(stderr, "Failed to allocate split data array\n");
+                exit(1);
+            }
+            memset(&sizes[splits->max_splits], 0, sizeof(unsigned long) * (splits->num_splits - splits->max_splits));
+            splits->sizes = sizes;
+            splits->max_splits = splits->num_splits;
+        }
+    }
+}
+
+static void
+start_file(FILE *out)
+{
+    fprintf(out,"\t/* Generated data for %%rom%% device, see mkromfs.c */\n");
+#if ARCH_IS_BIG_ENDIAN
+    fprintf(out,"\t/* this code assumes a big endian target platform */\n");
+#else
+    fprintf(out,"\t/* this code assumes a little endian target platform */\n");
+#endif
+    fprintf(out,"\n#include \"stdint_.h\"\n");
+    fprintf(out,"\n#include \"time_.h\"\n\n");
+}
+
+/* write out an inode and its file data */
+void
+inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int *totlen, split_data *splits)
+{
+    prepare_splits(splits);
+    if (splits->max_splits) {
+        /* Find the smallest bin to add this to. */
+        FILE *out2;
+        int which = 0;
+        int i;
+        for (i = 1; i < splits->max_splits; i++) {
+            if (splits->sizes[which] > splits->sizes[i])
+                which = i;
+        }
+
+        sprintf(splits->outname_formatted, splits->outname, which);
+        if (splits->sizes[which] == 0) {
+            out2 = fopen(splits->outname_formatted, "w");
+            start_file(out2);
+        } else {
+            out2 = fopen(splits->outname_formatted, "a");
+        }
+        splits->sizes[which] += do_inode_write(out2, node, compression, inode_count, totlen, 1);
+        fclose(out2);
+    } else
+        (void)do_inode_write(out, node, compression, inode_count, totlen, 0);
 }
 
 void
@@ -1568,7 +1638,8 @@ int cmpstringp(const void *p1, const void *p2)
 /* paths are checked to see if they are an ordinary file or a path		*/
 void process_path(char *path, const char *os_prefix, const char *rom_prefix,
                   Xlist_element *Xlist_head, int compression,
-                  int compaction, int *inode_count, int *totlen, FILE *out)
+                  int compaction, int *inode_count, int *totlen, FILE *out,
+                  split_data *splits)
 {
     int i, namelen, excluded, save_count=*inode_count;
     Xlist_element *Xlist_scan;
@@ -1699,8 +1770,9 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
             pscompact_end(&psc);
             node->length = psc_len;
         }
+
         /* write out data for this file */
-        inode_write(out, node, compression, *inode_count, totlen);
+        inode_write(out, node, compression, *inode_count, totlen, splits);
         /* clean up */
         inode_clear(node);
         free(node);
@@ -1792,10 +1864,10 @@ static int ib_feof(in_block_file *ibf)
     return ibf->eof;
 }
 
-int
+static int
 process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
                  const char *rom_prefix, int compression, int *inode_count,
-                 int *totlen, FILE *out)
+                 int *totlen, FILE *out, split_data *splits)
 {
     int ret, block, blocks;
     romfs_inode *node = NULL;
@@ -1919,7 +1991,7 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
     }
 
     /* write data for this file */
-    inode_write(out, node, compression, *inode_count, totlen);
+    inode_write(out, node, compression, *inode_count, totlen, splits);
     /* clean up */
     inode_clear(node);
     (*inode_count)++;
@@ -2312,6 +2384,43 @@ merge_to_ps(const char *os_prefix, const char *inname, FILE * in, FILE * config)
     mergefile(os_prefix, inname, in, config, false);
 }
 
+static void
+make_split_name(split_data *splits, const char *filename)
+{
+  const char *s = filename;
+  const char *t = NULL;
+  char *u;
+
+  while (*s) {
+    if (*s == '.')
+      t = s;
+    s++;
+  }
+  if (t == NULL)
+    t = s;
+
+  free(splits->outname);
+  splits->outname = u = malloc(s-filename+4);
+  if (u == NULL) {
+    fprintf(stderr, "malloc failure while constructing split filename\n");
+    exit(1);
+  }
+  memcpy(u, filename, t-filename);
+  u[t-filename] = 'c';
+  u[t-filename+1] = '%';
+  u[t-filename+2] = 'd';
+  if (s-t)
+     memcpy(u+(t-filename)+3, t, s-t);
+  u[s-filename+3] = 0;
+
+  free(splits->outname_formatted);
+  splits->outname_formatted = malloc(s-filename+4+32);
+  if (splits->outname_formatted == NULL) {
+    fprintf(stderr, "malloc failure while constructing split filename\n");
+    exit(1);
+  }
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -2328,6 +2437,7 @@ main(int argc, char *argv[])
     char pa[PATH_STR_LEN];
     time_t buildtime = 0;
     char* env_source_date_epoch;
+    split_data splits = { 0 } ;
 
     memset(pa, 0x00, PATH_STR_LEN);
 
@@ -2376,14 +2486,7 @@ main(int argc, char *argv[])
     printf("   writing romfs data to '%s'\n", outfilename);
     out = fopen(outfilename, "w");
 
-    fprintf(out,"\t/* Generated data for %%rom%% device, see mkromfs.c */\n");
-#if ARCH_IS_BIG_ENDIAN
-    fprintf(out,"\t/* this code assumes a big endian target platform */\n");
-#else
-    fprintf(out,"\t/* this code assumes a little endian target platform */\n");
-#endif
-    fprintf(out,"\n#include \"stdint_.h\"\n");
-    fprintf(out,"\n#include \"time_.h\"\n\n");
+    start_file(out);
 
     if ((env_source_date_epoch = getenv("SOURCE_DATE_EPOCH"))) {
         buildtime = strtoul(env_source_date_epoch, NULL, 10);
@@ -2416,6 +2519,18 @@ main(int argc, char *argv[])
                 }
                 rom_prefix = argv[atarg];
                 break;
+              case 's':
+                if (++atarg == argc) {
+                    printf("   option %s missing required argument\n", argv[atarg-1]);
+                    exit(1);
+                }
+                splits.num_splits = atoi(argv[atarg]);
+                if (splits.num_splits <= 0) {
+                    printf("   Invalid number of files to split to: %s\n", argv[atarg]);
+                    exit(1);
+                }
+                make_split_name(&splits, outfilename);
+                break;
               case 'g':
                 {
                     char initfile[PATH_STR_LEN] = {0};
@@ -2428,7 +2543,7 @@ main(int argc, char *argv[])
                     atarg++;
                     strncpy(gconfig_h, argv[atarg], PATH_STR_LEN - 1);
                     process_initfile(initfile, gconfig_h, os_prefix, rom_prefix, compression,
-                                    &inode_count, &totlen, out);
+                                    &inode_count, &totlen, out, &splits);
                 }
                 break;
               case 'P':
@@ -2459,12 +2574,30 @@ main(int argc, char *argv[])
         /* process a path or file */
         strncpy(pa, argv[atarg], PATH_STR_LEN - (strlen(os_prefix) < strlen(rom_prefix) ? strlen(rom_prefix) : strlen(os_prefix)));
         process_path(pa, os_prefix, rom_prefix, Xlist_head,
-                    compression, compaction, &inode_count, &totlen, out);
+                     compression, compaction, &inode_count, &totlen, out, &splits);
     }
+
+    /* Now allow for the (probably never happening) case where we are splitting, but haven't written anything to one of the files */
+    prepare_splits(&splits);
+    for (i = 0; i < splits.max_splits; i++) {
+        if (splits.sizes[i] == 0) {
+            FILE *out2;
+            sprintf(splits.outname_formatted, splits.outname, i);
+            out2 = fopen(splits.outname_formatted, "w");
+            fprintf(out2, "const int mkromfs_dummy_chunk%d;\n", i);
+            fclose(out2);
+        }
+    }
+
+    if (splits.max_splits) {
+        for (i=0; i<inode_count; i++)
+            fprintf(out, "\t extern const uint32_t mkromfs_node_%d[];\n", i);
+    }
+
     /* now write out the array of nodes */
-    fprintf(out, "    uint32_t *gs_romfs[] = {\n");
+    fprintf(out, "    const uint32_t *gs_romfs[] = {\n");
     for (i=0; i<inode_count; i++)
-        fprintf(out, "\tnode_%d,\n", i);
+        fprintf(out, "\t%snode_%d,\n", splits.max_splits ? "mkromfs_" : "", i);
     fprintf(out, "\t0 };\n");
     fclose(out);
     while (Xlist_head) {

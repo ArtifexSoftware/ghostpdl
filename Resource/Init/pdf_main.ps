@@ -2727,8 +2727,29 @@ currentdict /PDF2PS_matrix_key undef
 % Display the contents of a page (including annotations).
 /showpagecontents {	% <pagedict> showpagecontents -
   dup		% Save the pagedict for the Annotations
+
+  % We do a 'save' here in order to allow us to restore at the end of the page, before
+  % we run the annotations. There are two reasons for this; firstly so that the graphics state
+  % at the time we run the annotations is the same as when we ran the page, secondly in order
+  % to empty the font cache before we run the annotations.
+  %
+  % Bug #700096 an annotation uses Helvetica but doesn't embed it, however the page *does*
+  % use an embedded Helvetica, which is subset and not prefixed as such. For this file to
+  % render correctly we must not use the font from the page, but must find a replacement.
+  % However the file for Bug #695897 has a page which uses two versions of the same font,
+  % one embedded, one not. In order for *that* file to render correctly we *must* use the
+  % embedded font as a substitute for the missing font. So we divorce the fonts used
+  % for the page from the fonts used for Annotations, this allows both files to work as
+  % expected.
+  %
+  % We also need a countdictstack, so that we can check the dictionaries on the dictioanry
+  % stack after we run the page contents, and 'end' an extra ones before we try to restore
+  % otherwise we might try to restore back to a point before one of those dictionaries existed.
+  %
+  save
+  countdictstack
+  3 -1 roll
   count 1 sub  /pdfemptycount exch store
-  /pdfemptycount where pop /annot_gstate gstate currentgstate put	% preserve gstate for Annots later
   /Contents knownoget not { 0 array } if
   dup type /arraytype ne { 1 array astore } if {
     oforce dup type /dicttype eq {
@@ -2748,7 +2769,21 @@ currentdict /PDF2PS_matrix_key undef
   } {
     pop
   } ifelse
-  annot_gstate setgstate	% restore the gstate for Annots
+
+  % Top of the stack should ow be the count of dictionaries on the stack at the time
+  % we did a save. If there are more than there were then, end dictionaries until
+  % we get back to the sme number.
+  {
+    countdictstack 1 index le {exit}if
+    end
+  } loop
+  % discard the count of dictionaries
+  pop
+  % and restore the state. This will take us back to a point before any fonts
+  % used on the page were defined, so the annotations won't inherit any of
+  % them.
+  restore
+
   % Draw the annotations
   //systemdict /ShowAnnots .knownget not { //true } if {
     /Annots knownoget {

@@ -106,6 +106,9 @@ void *opj_malloc(size_t size)
 
     assert(opj_memory != NULL);
 
+    if (size > (size_t) ARCH_MAX_UINT)
+	    return NULL;
+
     return (void *)gs_alloc_bytes(opj_memory, size, "opj_malloc");
 }
 

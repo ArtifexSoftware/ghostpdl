@@ -426,10 +426,14 @@
       /* now load the slot image into the auto-outline */
       /* and run the automatic hinting process         */
       if ( writing_system_class->style_hints_apply )
-        writing_system_class->style_hints_apply( glyph_index,
+      {
+        error = writing_system_class->style_hints_apply( glyph_index,
                                                  hints,
                                                  &gloader->base.outline,
                                                  style_metrics );
+        if ( error )
+          goto Exit;
+      }
 
       /* we now need to adjust the metrics according to the change in */
       /* width/positioning that occurred during the hinting process   */

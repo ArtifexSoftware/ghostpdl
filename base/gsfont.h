@@ -41,6 +41,8 @@ typedef struct gs_font_s gs_font;
 
 /* Initialization */
 /* These procedures return 0 if they fail. */
+/* The returned gs_font_dir can be cleanly deallocated by
+ * simply calling gs_free_object on it. */
 gs_font_dir *gs_font_dir_alloc2(gs_memory_t * struct_mem,
                                 gs_memory_t * bits_mem);
 gs_font_dir *gs_font_dir_alloc2_limits(gs_memory_t * struct_mem,
