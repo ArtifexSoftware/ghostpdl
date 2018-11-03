@@ -206,31 +206,31 @@ extern FILE *gs_debug_out;
     BEGIN if (gs_debug_c(c)) dmlprintf12(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12); END
 
 #  define dbgmprintf(m,s)\
-    BEGIN dlmprintf(m,s); END
+    BEGIN dmlprintf(m,s); END
 #  define dbgmprintf1(m,s,a1)\
-    BEGIN dlmprintf1(m,s,a1); END
+    BEGIN dmlprintf1(m,s,a1); END
 #  define dbgmprintf2(m,s,a1,a2)\
-    BEGIN dlmprintf2(m,s,a1,a2); END
+    BEGIN dmlprintf2(m,s,a1,a2); END
 #  define dbgmprintf3(m,s,a1,a2,a3)\
-    BEGIN dlmprintf3(m,s,a1,a2,a3); END
+    BEGIN dmlprintf3(m,s,a1,a2,a3); END
 #  define dbgmprintf4(m,s,a1,a2,a3,a4)\
-    BEGIN dlmprintf4(m,s,a1,a2,a3,a4); END
+    BEGIN dmlprintf4(m,s,a1,a2,a3,a4); END
 #  define dbgmprintf5(m,s,a1,a2,a3,a4,a5)\
-    BEGIN dlmprintf5(m,s,a1,a2,a3,a4,a5); END
+    BEGIN dmlprintf5(m,s,a1,a2,a3,a4,a5); END
 #  define dbgmprintf6(m,s,a1,a2,a3,a4,a5,a6)\
-    BEGIN dlmprintf6(m,s,a1,a2,a3,a4,a5,a6); END
+    BEGIN dmlprintf6(m,s,a1,a2,a3,a4,a5,a6); END
 #  define dbgmprintf7(m,s,a1,a2,a3,a4,a5,a6,a7)\
-    BEGIN dlmprintf7(m,s,a1,a2,a3,a4,a5,a6,a7); END
+    BEGIN dmlprintf7(m,s,a1,a2,a3,a4,a5,a6,a7); END
 #  define dbgmprintf8(m,s,a1,a2,a3,a4,a5,a6,a7,a8)\
-    BEGIN dlmprintf8(m,s,a1,a2,a3,a4,a5,a6,a7,a8); END
+    BEGIN dmlprintf8(m,s,a1,a2,a3,a4,a5,a6,a7,a8); END
 #  define dbgmprintf9(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9)\
-    BEGIN dlmprintf9(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9); END
+    BEGIN dmlprintf9(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9); END
 #  define dbgmprintf10(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)\
-    BEGIN dlmprintf10(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10); END
+    BEGIN dmlprintf10(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10); END
 #  define dbgmprintf11(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11)\
-    BEGIN dlmprintf11(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11); END
+    BEGIN dmlprintf11(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11); END
 #  define dbgmprintf12(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12)\
-    BEGIN dlmprintf12(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12); END
+    BEGIN dmlprintf12(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12); END
 
 #else
 #  define if_debug0m(c,m,s) DO_NOTHING
