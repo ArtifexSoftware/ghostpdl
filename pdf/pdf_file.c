@@ -596,9 +596,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         return code;
     }
     if (pdfi_name_strcmp(n, "JBIG2Decode") == 0) {
-#ifdef DEBUG
-        dmprintf(ctx->memory, "WARNING: JBIG2Decode filter not implemented\n");
-#endif
+        dbgmprintf(ctx->memory, "WARNING: JBIG2Decode filter not implemented\n");
         return -1;
     }
     if (pdfi_name_strcmp(n, "LZWDecode") == 0) {

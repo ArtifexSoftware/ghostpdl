@@ -360,9 +360,7 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_stream *source, int length, pdfi_jpx_i
                 dmprintf1(ctx->memory, "    PCLR BPC: %d\n", bpc);
             break;
         case K4('c','d','e','f'):
-#ifdef DEBUG
-            dmprintf(ctx->memory, "JPXDecode: CDEF not supported yet\n");
-#endif
+            dbgmprintf(ctx->memory, "JPXDecode: CDEF not supported yet\n");
             break;
         default:
             break;
@@ -792,9 +790,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
      * image on top of it (both as Type1 images).
      */
     if (image_info.SMask != NULL) {
-#ifdef DEBUG
-        dmprintf(ctx->memory, "WARNING: Image has unsupported SMask\n");
-#endif
+        dbgmprintf(ctx->memory, "WARNING: Image has unsupported SMask\n");
     }
 
     if (image_info.SMask == NULL && image_info.Mask != NULL) {

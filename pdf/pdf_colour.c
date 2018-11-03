@@ -409,9 +409,7 @@ int pdfi_setstrokecolorN(pdf_context *ctx)
     }
     if (ctx->stack_top[-1]->type == PDF_NAME) {
         /* FIXME Patterns */
-#ifdef DEBUG
-        dmprintf(ctx->memory, "WARNING: Pattern is not supported\n");
-#endif
+        dbgmprintf(ctx->memory, "WARNING: Pattern is not supported\n");
         pdfi_clearstack(ctx);
         return 0;
     }

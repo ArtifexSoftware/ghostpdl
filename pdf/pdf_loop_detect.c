@@ -21,9 +21,7 @@
 int pdfi_init_loop_detector(pdf_context *ctx)
 {
     if (ctx->loop_detection) {
-#ifdef DEBUG
-        dmprintf(ctx->memory, "Attempt to initialise loop detector while one is in operation\n");
-#endif
+        dbgmprintf(ctx->memory, "Attempt to initialise loop detector while one is in operation\n");
         return_error(gs_error_unknownerror);
     }
 
@@ -39,9 +37,7 @@ int pdfi_init_loop_detector(pdf_context *ctx)
 int pdfi_free_loop_detector(pdf_context *ctx)
 {
     if (ctx->loop_detection == NULL) {
-#ifdef DEBUG
-        dmprintf(ctx->memory, "Attempt to free loop detector without initialising it\n");
-#endif
+        dbgmprintf(ctx->memory, "Attempt to free loop detector without initialising it\n");
         return 0;
     }
     if (ctx->loop_detection != NULL)
@@ -56,9 +52,7 @@ int pdfi_free_loop_detector(pdf_context *ctx)
 int pdfi_loop_detector_add_object(pdf_context *ctx, uint64_t object)
 {
     if (ctx->loop_detection == NULL) {
-#ifdef DEBUG
-        dmprintf(ctx->memory, "Attempt to use loop detector without initialising it\n");
-#endif
+        dbgmprintf(ctx->memory, "Attempt to use loop detector without initialising it\n");
         return 0;
     }
 
@@ -83,9 +77,7 @@ bool pdfi_loop_detector_check_object(pdf_context *ctx, uint64_t object)
     int i = 0;
 
     if (ctx->loop_detection == NULL) {
-#ifdef DEBUG
-        dmprintf(ctx->memory, "Attempt to use loop detector without initialising it\n");
-#endif
+        dbgmprintf(ctx->memory, "Attempt to use loop detector without initialising it\n");
         return 0;
     }
 
@@ -101,9 +93,7 @@ bool pdfi_loop_detector_check_object(pdf_context *ctx, uint64_t object)
 int pdfi_loop_detector_mark(pdf_context *ctx)
 {
     if (ctx->loop_detection == NULL) {
-#ifdef DEBUG
-        dmprintf(ctx->memory, "Attempt to use loop detector without initialising it\n");
-#endif
+        dbgmprintf(ctx->memory, "Attempt to use loop detector without initialising it\n");
         return 0;
     }
 
@@ -113,9 +103,7 @@ int pdfi_loop_detector_mark(pdf_context *ctx)
 int pdfi_loop_detector_cleartomark(pdf_context *ctx)
 {
     if (ctx->loop_detection == NULL) {
-#ifdef DEBUG
-        dmprintf(ctx->memory, "Attempt to use loop detector without initialising it\n");
-#endif
+        dbgmprintf(ctx->memory, "Attempt to use loop detector without initialising it\n");
         return 0;
     }
 

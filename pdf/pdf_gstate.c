@@ -566,18 +566,14 @@ static int GS_TR2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dic
     }
 
     (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
-#ifdef DEBUG
-    dmprintf(ctx->memory, "ExtGState TR2 not yet implemented\n");
-#endif
+    dbgmprintf(ctx->memory, "ExtGState TR2 not yet implemented\n");
 
     return 0;
 }
 
 static int GS_HT(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-#ifdef DEBUG
-    dmprintf(ctx->memory, "ExtGState HT not yet implemented\n");
-#endif
+    dbgmprintf(ctx->memory, "ExtGState HT not yet implemented\n");
     return 0;
 }
 
@@ -623,17 +619,13 @@ static int GS_SA(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict
 
 static int GS_BM(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-#ifdef DEBUG
-    dmprintf(ctx->memory, "ExtGState BM not yet implemented\n");
-#endif
+    dbgmprintf(ctx->memory, "ExtGState BM not yet implemented\n");
     return 0;
 }
 
 static int GS_SMask(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
-#ifdef DEBUG
-    dmprintf(ctx->memory, "ExtGState SMask not yet implemented\n");
-#endif
+    dbgmprintf(ctx->memory, "ExtGState SMask not yet implemented\n");
     return 0;
 }
 

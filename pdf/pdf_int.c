@@ -97,9 +97,7 @@ void pdfi_free_object(pdf_obj *o)
             pdfi_free_xref_table(o);
             break;
         default:
-#ifdef DEBUG
-            dmprintf(o->memory, "!!! Attempting to free unknown obect type !!!\n");
-#endif
+            dbgmprintf(o->memory, "!!! Attempting to free unknown obect type !!!\n");
             break;
     }
 }
