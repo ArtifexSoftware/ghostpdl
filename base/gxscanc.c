@@ -404,8 +404,8 @@ static int make_bbox(gx_path       * path,
     }
 
     /* Convert to bbox - int */
-    ibox->p.x = fixed2int(bbox.p.x-adjust);
-    ibox->p.y = fixed2int(bbox.p.y-adjust);
+    ibox->p.x = fixed2int(bbox.p.x+adjust-(adjust?1:0));
+    ibox->p.y = fixed2int(bbox.p.y+adjust-(adjust?1:0));
     ibox->q.x = fixed2int(bbox.q.x-adjust+fixed_1);
     ibox->q.y = fixed2int(bbox.q.y-adjust+fixed_1);
 
