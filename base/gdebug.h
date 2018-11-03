@@ -119,6 +119,34 @@ extern FILE *gs_debug_out;
     BEGIN if (gs_debug_c(c)) dlprintf11(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11); END
 #  define if_debug12(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12)\
     BEGIN if (gs_debug_c(c)) dlprintf12(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12); END
+
+#  define dbgprintf(s)\
+    BEGIN dlprintf(s); END
+#  define dbgprintf1(s,a1)\
+    BEGIN dlprintf1(s,a1); END
+#  define dbgprintf2(s,a1,a2)\
+    BEGIN dlprintf2(s,a1,a2); END
+#  define dbgprintf3(s,a1,a2,a3)\
+    BEGIN dlprintf3(s,a1,a2,a3); END
+#  define dbgprintf4(s,a1,a2,a3,a4)\
+    BEGIN dlprintf4(s,a1,a2,a3,a4); END
+#  define dbgprintf5(s,a1,a2,a3,a4,a5)\
+    BEGIN dlprintf5(s,a1,a2,a3,a4,a5); END
+#  define dbgprintf6(s,a1,a2,a3,a4,a5,a6)\
+    BEGIN dlprintf6(s,a1,a2,a3,a4,a5,a6); END
+#  define dbgprintf7(s,a1,a2,a3,a4,a5,a6,a7)\
+    BEGIN dlprintf7(s,a1,a2,a3,a4,a5,a6,a7); END
+#  define dbgprintf8(s,a1,a2,a3,a4,a5,a6,a7,a8)\
+    BEGIN dlprintf8(s,a1,a2,a3,a4,a5,a6,a7,a8); END
+#  define dbgprintf9(s,a1,a2,a3,a4,a5,a6,a7,a8,a9)\
+    BEGIN dlprintf9(s,a1,a2,a3,a4,a5,a6,a7,a8,a9); END
+#  define dbgprintf10(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)\
+    BEGIN dlprintf10(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10); END
+#  define dbgprintf11(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11)\
+    BEGIN dlprintf11(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11); END
+#  define dbgprintf12(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12)\
+    BEGIN dlprintf12(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12); END
+
 #else
 #  define if_debug0(c,s) DO_NOTHING
 #  define if_debug1(c,s,a1) DO_NOTHING
@@ -133,6 +161,20 @@ extern FILE *gs_debug_out;
 #  define if_debug10(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) DO_NOTHING
 #  define if_debug11(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11) DO_NOTHING
 #  define if_debug12(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12) DO_NOTHING
+
+#  define dbgprintf(s) DO_NOTHING
+#  define dbgprintf1(s,a1) DO_NOTHING
+#  define dbgprintf2(s,a1,a2) DO_NOTHING
+#  define dbgprintf3(s,a1,a2,a3) DO_NOTHING
+#  define dbgprintf4(s,a1,a2,a3,a4) DO_NOTHING
+#  define dbgprintf5(s,a1,a2,a3,a4,a5) DO_NOTHING
+#  define dbgprintf6(s,a1,a2,a3,a4,a5,a6) DO_NOTHING
+#  define dbgprintf7(s,a1,a2,a3,a4,a5,a6,a7) DO_NOTHING
+#  define dbgprintf8(s,a1,a2,a3,a4,a5,a6,a7,a8) DO_NOTHING
+#  define dbgprintf9(s,a1,a2,a3,a4,a5,a6,a7,a8,a9) DO_NOTHING
+#  define dbgprintf10(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) DO_NOTHING
+#  define dbgprintf11(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11) DO_NOTHING
+#  define dbgprintf12(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12) DO_NOTHING
 #endif
 
 #ifdef DEBUG
@@ -162,6 +204,34 @@ extern FILE *gs_debug_out;
     BEGIN if (gs_debug_c(c)) dmlprintf11(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11); END
 #  define if_debug12m(c,m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12)\
     BEGIN if (gs_debug_c(c)) dmlprintf12(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12); END
+
+#  define dbgmprintf(m,s)\
+    BEGIN dlmprintf(m,s); END
+#  define dbgmprintf1(m,s,a1)\
+    BEGIN dlmprintf1(m,s,a1); END
+#  define dbgmprintf2(m,s,a1,a2)\
+    BEGIN dlmprintf2(m,s,a1,a2); END
+#  define dbgmprintf3(m,s,a1,a2,a3)\
+    BEGIN dlmprintf3(m,s,a1,a2,a3); END
+#  define dbgmprintf4(m,s,a1,a2,a3,a4)\
+    BEGIN dlmprintf4(m,s,a1,a2,a3,a4); END
+#  define dbgmprintf5(m,s,a1,a2,a3,a4,a5)\
+    BEGIN dlmprintf5(m,s,a1,a2,a3,a4,a5); END
+#  define dbgmprintf6(m,s,a1,a2,a3,a4,a5,a6)\
+    BEGIN dlmprintf6(m,s,a1,a2,a3,a4,a5,a6); END
+#  define dbgmprintf7(m,s,a1,a2,a3,a4,a5,a6,a7)\
+    BEGIN dlmprintf7(m,s,a1,a2,a3,a4,a5,a6,a7); END
+#  define dbgmprintf8(m,s,a1,a2,a3,a4,a5,a6,a7,a8)\
+    BEGIN dlmprintf8(m,s,a1,a2,a3,a4,a5,a6,a7,a8); END
+#  define dbgmprintf9(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9)\
+    BEGIN dlmprintf9(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9); END
+#  define dbgmprintf10(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)\
+    BEGIN dlmprintf10(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10); END
+#  define dbgmprintf11(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11)\
+    BEGIN dlmprintf11(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11); END
+#  define dbgmprintf12(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12)\
+    BEGIN dlmprintf12(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12); END
+
 #else
 #  define if_debug0m(c,m,s) DO_NOTHING
 #  define if_debug1m(c,m,s,a1) DO_NOTHING
@@ -176,6 +246,20 @@ extern FILE *gs_debug_out;
 #  define if_debug10m(c,m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) DO_NOTHING
 #  define if_debug11m(c,m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11) DO_NOTHING
 #  define if_debug12m(c,m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12) DO_NOTHING
+
+#  define dbgmprintf(m,s) DO_NOTHING
+#  define dbgmprintf1(m,s,a1) DO_NOTHING
+#  define dbgmprintf2(m,s,a1,a2) DO_NOTHING
+#  define dbgmprintf3(m,s,a1,a2,a3) DO_NOTHING
+#  define dbgmprintf4(m,s,a1,a2,a3,a4) DO_NOTHING
+#  define dbgmprintf5(m,s,a1,a2,a3,a4,a5) DO_NOTHING
+#  define dbgmprintf6(m,s,a1,a2,a3,a4,a5,a6) DO_NOTHING
+#  define dbgmprintf7(m,s,a1,a2,a3,a4,a5,a6,a7) DO_NOTHING
+#  define dbgmprintf8(m,s,a1,a2,a3,a4,a5,a6,a7,a8) DO_NOTHING
+#  define dbgmprintf9(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9) DO_NOTHING
+#  define dbgmprintf10(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) DO_NOTHING
+#  define dbgmprintf11(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11) DO_NOTHING
+#  define dbgmprintf12(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12) DO_NOTHING
 #endif
 
 /* Debugging support procedures in gsmisc.c */
