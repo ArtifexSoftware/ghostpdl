@@ -50,6 +50,12 @@ int
 psapi_init_with_args(gs_lib_ctx_t  *instance,
                      int            argc,
                      char         **argv);
+int
+psapi_init_with_args01(gs_lib_ctx_t  *instance,
+                      int            argc,
+                      char         **argv);
+int
+psapi_init_with_args2(gs_lib_ctx_t  *instance);
 
 int
 psapi_run_string_begin(gs_lib_ctx_t *instance,
@@ -99,5 +105,8 @@ psapi_set_device(gs_lib_ctx_t *instance,
 
 int
 psapi_exit(gs_lib_ctx_t *instance);
+
+int
+psapi_force_geometry(gs_lib_ctx_t *ctx, const float *resolutions, const long *dimensions);
 
 #endif /* psapi_INCLUDED */

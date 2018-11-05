@@ -1178,3 +1178,53 @@ gs_main_dump_stack(gs_main_instance *minst, int code, ref * perror_object)
     debug_dump_stack(minst->heap, &e_stack, "Execution stack");
     debug_dump_stack(minst->heap, &d_stack, "Dictionary stack");
 }
+
+int
+gs_main_force_resolutions(gs_main_instance * minst, const float *resolutions)
+{
+    ref value;
+    int code;
+
+    if (resolutions == NULL)
+        return 0;
+
+    if (minst == NULL)
+        return gs_error_Fatal;
+
+    make_true(&value);
+    code = i_initial_enter_name(minst->i_ctx_p, "FIXEDRESOLUTION", &value);
+    if (code < 0)
+        return code;
+    make_real(&value, resolutions[0]);
+    code = i_initial_enter_name(minst->i_ctx_p, "DEVICEXRESOLUTION", &value);
+    if (code < 0)
+        return code;
+    make_real(&value, resolutions[1]);
+    return i_initial_enter_name(minst->i_ctx_p, "DEVICEYRESOLUTION", &value);
+}
+
+int
+gs_main_force_dimensions(gs_main_instance *minst, const long *dimensions)
+{
+    i_ctx_t *i_ctx_p;
+    ref value;
+    int code = 0;
+
+    if (dimensions == NULL)
+        return 0;
+    if (minst == NULL)
+        return gs_error_Fatal;
+
+    i_ctx_p = minst->i_ctx_p;
+
+    make_true(&value);
+    code = i_initial_enter_name(minst->i_ctx_p, "FIXEDMEDIA", &value);
+    if (code < 0)
+        return code;
+    make_int(&value, dimensions[0]);
+    code = i_initial_enter_name(minst->i_ctx_p, "DEVICEWIDTH", &value);
+    if (code < 0)
+        return code;
+    make_int(&value, dimensions[1]);
+    return i_initial_enter_name(minst->i_ctx_p, "DEVICEHEIGHT", &value);
+}

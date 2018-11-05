@@ -217,6 +217,13 @@ gs_main_get_device_memory(gs_main_instance * minst);
 
 int
 gs_main_set_device(gs_main_instance * minst, gx_device *pdev);
+
+int
+gs_main_force_resolutions(gs_main_instance * minst, const float *resolutions);
+
+int
+gs_main_force_dimensions(gs_main_instance * minst, const long *resolutions);
+
 /* ---------------- Operand stack access ---------------- */
 
 /*

@@ -131,7 +131,7 @@ set_debug_flags(const char *arg, char *flags)
 }
 
 int
-gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
+gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
 {
     const char *arg;
     arg_list args;
@@ -256,24 +256,43 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
                 }
         }
     }
-    if (code < 0)
-        return code;
+
+    if (gs_debug[':']) {
+        int i;
+
+        dmprintf1(minst->heap, "%% Init (Part 1/2) done, instance 0x%p, with args: ", minst);
+        for (i=1; i<argc; i++)
+            dmprintf1(minst->heap, "%s ", argv[i]);
+        dmprintf(minst->heap, "\n");
+    }
+    return code;
+}
+
+int
+gs_main_init_with_args2(gs_main_instance * minst)
+{
+    int code;
 
     code = gs_main_init2(minst);
     if (code < 0)
         return code;
 
-    if (gs_debug[':']) {
-        int i;
+    if (gs_debug[':'])
+        dmprintf1(minst->heap, "%% Init (Part 2/2) done, instance 0x%p.", minst);
 
-        dmprintf1(minst->heap, "%% Init done, instance 0x%p, with args: ", minst);
-        for (i=1; i<argc; i++)
-            dmprintf1(minst->heap, "%s ", argv[i]);
-        dmprintf(minst->heap, "\n");
-    }
     if (!minst->run_start)
         return gs_error_Quit;
-    return code ;
+    return code;
+}
+
+int
+gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
+{
+    int code = gs_main_init_with_args01(minst, argc, argv);
+
+    if (code < 0)
+        return code;
+    return gs_main_init_with_args2(minst);
 }
 
 /*
@@ -444,7 +463,7 @@ run_stdin:
                 arg_free((char *)psarg, minst->heap);
                 if (code >= 0)
                     code = gs_error_Quit;
-                
+
                 return code;
             }
         case 'A':               /* trace allocator */
@@ -585,20 +604,15 @@ run_stdin:
             break;
         case 'g':               /* define device geometry */
             {
-                long width, height;
-                ref value;
+                long dimensions[2];
 
                 if ((code = gs_main_init1(minst)) < 0)
                     return code;
-                if (sscanf((const char *)arg, "%ldx%ld", &width, &height) != 2) {
+                if (sscanf((const char *)arg, "%ldx%ld", &dimensions[0], &dimensions[1]) != 2) {
                     puts(minst->heap, "-g must be followed by <width>x<height>");
                     return gs_error_Fatal;
                 }
-                make_int(&value, width);
-                i_initial_enter_name(minst->i_ctx_p, "DEVICEWIDTH", &value);
-                make_int(&value, height);
-                i_initial_enter_name(minst->i_ctx_p, "DEVICEHEIGHT", &value);
-                i_initial_enter_name(minst->i_ctx_p, "FIXEDMEDIA", &vtrue);
+                gs_main_force_dimensions(minst, dimensions);
                 break;
             }
         case 'h':               /* print help */
@@ -719,24 +733,19 @@ run_stdin:
             break;
         case 'r':               /* define device resolution */
             {
-                float xres, yres;
-                ref value;
+                float res[2];
 
                 if ((code = gs_main_init1(minst)) < 0)
                     return code;
-                switch (sscanf((const char *)arg, "%fx%f", &xres, &yres)) {
+                switch (sscanf((const char *)arg, "%fx%f", &res[0], &res[0])) {
                     default:
                         puts(minst->heap, "-r must be followed by <res> or <xres>x<yres>");
                         return gs_error_Fatal;
                     case 1:     /* -r<res> */
-                        yres = xres;
+                        res[1] = res[0];
                         /* fall through */
                     case 2:     /* -r<xres>x<yres> */
-                        make_real(&value, xres);
-                        i_initial_enter_name(minst->i_ctx_p, "DEVICEXRESOLUTION", &value);
-                        make_real(&value, yres);
-                        i_initial_enter_name(minst->i_ctx_p, "DEVICEYRESOLUTION", &value);
-                        i_initial_enter_name(minst->i_ctx_p, "FIXEDRESOLUTION", &vtrue);
+                        gs_main_force_resolutions(minst, res);
                 }
                 break;
             }

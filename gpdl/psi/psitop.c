@@ -59,6 +59,7 @@ typedef struct ps_interp_instance_s {
     gs_memory_t  *memory;
     uint          bytes_fed;
     gs_lib_ctx_t *psapi_instance;
+    int           init_completed;
 } ps_interp_instance_t;
 
 static int
@@ -136,10 +137,10 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
 #define GS_MAX_NUM_ARGS 10
     const char *gsargs[GS_MAX_NUM_ARGS] = {0};
     int nargs = 0;
-    
+
     if (!psi)
         return gs_error_VMerror;
-        
+
     gsargs[nargs++] = "gpdl";
     /* We start gs with the nullpage device, and replace the device with the
      * set_device call from the language independent code.
@@ -150,6 +151,7 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
 
     psi->memory = mem;
     psi->bytes_fed = 0;
+    psi->init_completed = 0;
     psi->psapi_instance = gs_lib_ctx_get_interp_instance(mem);
     code = psapi_new_instance(&psi->psapi_instance, NULL);
     if (code < 0)
@@ -160,7 +162,7 @@ ps_impl_allocate_interp_instance(pl_interp_implementation_t *impl, gs_memory_t *
     /* Tell gs not to ignore a UEL, but do an interpreter exit */
     psapi_act_on_uel(psi->psapi_instance);
 
-    code = psapi_init_with_args(psi->psapi_instance, nargs, (char **)gsargs);
+    code = psapi_init_with_args01(psi->psapi_instance, nargs, (char **)gsargs);
     if (code < 0) {
         psapi_delete_instance(psi->psapi_instance);
         gs_free_object(mem, psi, "ps_impl_allocate_interp_instance");
@@ -185,7 +187,21 @@ ps_impl_init_job(pl_interp_implementation_t *impl,
                  gx_device                  *device)
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
-    int exit_code, code, code1;
+    int exit_code, code1;
+    int code = 0;
+
+    if (!psi->init_completed) {
+        const float *resolutions;
+        const long *page_sizes;
+
+        pl_main_get_forced_geometry(psi->memory, &resolutions, &page_sizes);
+        psapi_force_geometry(psi->psapi_instance, resolutions, page_sizes);
+
+        code = psapi_init_with_args2(psi->psapi_instance);
+        if (code < 0)
+            return code;
+        psi->init_completed = 1;
+    }
 
     /* Possibly should be done in ps_impl_set_device */
     code = psapi_run_string_begin(psi->psapi_instance, 0, &exit_code);

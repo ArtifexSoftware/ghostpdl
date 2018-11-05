@@ -107,7 +107,9 @@ struct pl_main_instance_s
     bool interpolate;
     bool nocache;
     bool page_set_on_command_line;
+    long page_size[2];
     bool res_set_on_command_line;
+    float res[2];
     bool high_level_device;
 #ifndef OMIT_SAVED_PAGES_TEST
     bool saved_pages_test_mode;
@@ -1118,8 +1120,11 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     code =
                         param_write_int_array((gs_param_list *) params,
                                               "HWSize", &ia);
-                    if (code >= 0)
+                    if (code >= 0) {
                         pmi->page_set_on_command_line = true;
+                        pmi->page_size[0] = geom[0];
+                        pmi->page_size[1] = geom[1];
+                    }
                 }
                 break;
             case 'H':
@@ -1309,8 +1314,11 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     code =
                         param_write_float_array((gs_param_list *) params,
                                                 "HWResolution", &fa);
-                    if (code == 0)
+                    if (code == 0) {
                         pmi->res_set_on_command_line = true;
+                        pmi->res[0] = res[0];
+                        pmi->res[1] = res[1];
+                    }
                 }
                 break;
             case 's':
@@ -1526,6 +1534,24 @@ bool pl_main_get_page_set_on_command_line(const gs_memory_t *mem)
 bool pl_main_get_res_set_on_command_line(const gs_memory_t *mem)
 {
     return pl_main_get_instance(mem)->res_set_on_command_line;
+}
+
+void pl_main_get_forced_geometry(const gs_memory_t *mem, const float **resolutions, const long **dimensions)
+{
+    pl_main_instance_t *minst = pl_main_get_instance(mem);
+
+    if (resolutions) {
+        if (minst->res_set_on_command_line)
+            *resolutions = minst->res;
+        else
+            *resolutions = NULL;
+    }
+    if (dimensions) {
+        if (minst->page_set_on_command_line)
+            *dimensions = minst->page_size;
+        else
+            *dimensions = NULL;
+    }
 }
 
 bool pl_main_get_high_level_device(const gs_memory_t *mem)

@@ -267,6 +267,24 @@ psapi_init_with_args(gs_lib_ctx_t *ctx, int argc, char **argv)
     return gs_main_init_with_args(get_minst_from_memory(ctx->memory), argc, argv);
 }
 
+int
+psapi_init_with_args01(gs_lib_ctx_t *ctx, int argc, char **argv)
+{
+    if (ctx == NULL)
+        return gs_error_Fatal;
+
+    return gs_main_init_with_args01(get_minst_from_memory(ctx->memory), argc, argv);
+}
+
+int
+psapi_init_with_args2(gs_lib_ctx_t *ctx)
+{
+    if (ctx == NULL)
+        return gs_error_Fatal;
+
+    return gs_main_init_with_args2(get_minst_from_memory(ctx->memory));
+}
+
 /* The gsapi_run_* functions are like gs_main_run_* except
  * that the error_object is omitted.
  * An error object in minst is used instead.
@@ -418,4 +436,17 @@ psapi_exit(gs_lib_ctx_t *ctx)
 
     gs_to_exit(ctx->memory, 0);
     return 0;
+}
+
+int
+psapi_force_geometry(gs_lib_ctx_t *ctx, const float *resolutions, const long *dimensions)
+{
+    int code;
+
+    if (ctx == NULL)
+        return gs_error_Fatal;
+    code = gs_main_force_resolutions(get_minst_from_memory(ctx->memory), resolutions);
+    if (code < 0)
+        return code;
+    return gs_main_force_dimensions(get_minst_from_memory(ctx->memory), dimensions);
 }
