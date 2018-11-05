@@ -251,18 +251,18 @@ static int pdfi_render_page(pdf_context *ctx, uint64_t page_num)
     if (ctx->pdfdebug)
         dmprintf1(ctx->memory, "%% Processing Page %"PRIi64" content stream\n", page_num + 1);
 
-    code = pdfi_init_loop_detector(ctx);
+    code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
         return code;
 
     code = pdfi_loop_detector_add_object(ctx, ctx->Pages->object_num);
     if (code < 0) {
-        pdfi_free_loop_detector(ctx);
+        pdfi_loop_detector_cleartomark(ctx);
         return code;
     }
 
     code = pdfi_get_page_dict(ctx, ctx->Pages, page_num, &page_offset, &page_dict, NULL);
-    pdfi_free_loop_detector(ctx);
+    pdfi_loop_detector_cleartomark(ctx);
     if (code < 0) {
         if (code == gs_error_VMerror || ctx->pdfstoponerror)
             return code;

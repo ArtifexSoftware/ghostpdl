@@ -865,7 +865,7 @@ int pdfi_read_xref(pdf_context *ctx)
     if (Buffer == NULL)
         return_error(gs_error_VMerror);
 
-    code = pdfi_init_loop_detector(ctx);
+    code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
         return code;
 
@@ -880,7 +880,7 @@ int pdfi_read_xref(pdf_context *ctx)
         if (ctx->startxref > ctx->main_stream_length - 5) {
             dmprintf(ctx->memory, "startxref offset is beyond end of file.\n");
             ctx->pdf_errors |= E_PDF_BADSTARTXREF;
-            (void)pdfi_free_loop_detector(ctx);
+            (void)pdfi_loop_detector_cleartomark(ctx);
             return(pdfi_repair_file(ctx));
         }
 
@@ -891,31 +891,33 @@ int pdfi_read_xref(pdf_context *ctx)
         if (code < 0) {
             dmprintf(ctx->memory, "Failed to read any token at the startxref location\n");
             ctx->pdf_errors |= E_PDF_BADSTARTXREF;
-            (void)pdfi_free_loop_detector(ctx);
+            (void)pdfi_loop_detector_cleartomark(ctx);
             return(pdfi_repair_file(ctx));
         }
 
-        if (ctx->stack_top - ctx->stack_bot < 1)
+        if (ctx->stack_top - ctx->stack_bot < 1) {
+            (void)pdfi_loop_detector_cleartomark(ctx);
             return_error(gs_error_undefined);
+        }
 
         if (((pdf_obj *)ctx->stack_top[-1])->type == PDF_KEYWORD && ((pdf_keyword *)ctx->stack_top[-1])->key == PDF_XREF) {
             /* Read old-style xref table */
             pdfi_pop(ctx, 1);
             code = read_xref(ctx, ctx->main_stream);
             if (code < 0) {
-                (void)pdfi_free_loop_detector(ctx);
+                (void)pdfi_loop_detector_cleartomark(ctx);
                 return(pdfi_repair_file(ctx));
             }
         } else {
             code = pdfi_read_xref_stream_dict(ctx, ctx->main_stream);
             if (code < 0){
-                (void)pdfi_free_loop_detector(ctx);
+                (void)pdfi_loop_detector_cleartomark(ctx);
                 return(pdfi_repair_file(ctx));
             }
         }
     } else {
         /* Attempt to repair PDF file */
-        (void)pdfi_free_loop_detector(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         return(pdfi_repair_file(ctx));
     }
 
@@ -984,7 +986,7 @@ int pdfi_read_xref(pdf_context *ctx)
         dmprintf(ctx->memory, "\n");
     gs_free_object(ctx->memory, Buffer, "PDF interpreter - allocate working buffer for file validation");
 
-    code = pdfi_free_loop_detector(ctx);
+    (void)pdfi_loop_detector_cleartomark(ctx);
     if (code < 0)
         return code;
 

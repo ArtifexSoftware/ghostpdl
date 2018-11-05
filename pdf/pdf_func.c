@@ -279,6 +279,7 @@ pdfi_build_function_4(pdf_context *ctx, const gs_function_params_t * mnDR,
     bool known = false;
     gs_offset_t savedoffset;
 
+    memset(&params, 0x00, sizeof(gs_function_PtCr_params_t));
     *(gs_function_params_t *)&params = *mnDR;
     params.ops.data = 0;	/* in case of failure */
     params.ops.size = 0;	/* ditto */
@@ -400,6 +401,7 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
     bool known = false;
     gs_offset_t savedoffset;
 
+    memset(&params, 0x00, sizeof(gs_function_params_t));
     *(gs_function_params_t *) & params = *mnDR;
     params.Encode = params.Decode = NULL;
     params.pole = NULL;
@@ -566,6 +568,7 @@ pdfi_build_function_2(pdf_context *ctx, const gs_function_params_t * mnDR,
     int code, n0, n1;
     double temp = 0.0;
 
+    memset(&params, 0x00, sizeof(gs_function_params_t));
     *(gs_function_params_t *)&params = *mnDR;
     params.C0 = 0;
     params.C1 = 0;
@@ -614,7 +617,8 @@ pdfi_build_function_3(pdf_context *ctx, const gs_function_params_t * mnDR,
     pdf_array *Functions;
     gs_function_t **ptr;
 
-    *(gs_function_params_t *) & params = *mnDR;
+    memset(&params, 0x00, sizeof(gs_function_params_t));
+    *(gs_function_params_t *) &params = *mnDR;
     params.Functions = 0;
     params.Bounds = 0;
     params.Encode = 0;
@@ -628,15 +632,13 @@ pdfi_build_function_3(pdf_context *ctx, const gs_function_params_t * mnDR,
         if (Functions->type != PDF_INDIRECT)
             return_error(gs_error_typecheck);
 
-        if (ctx->loop_detection == NULL) {
-            pdfi_init_loop_detector(ctx);
-            pdfi_loop_detector_mark(ctx);
-        } else {
-            pdfi_loop_detector_mark(ctx);
-        }
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0)
+            return code;
+
         code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&Functions);
         pdfi_countdown(r);
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         if (code < 0)
             return code;
 
@@ -724,8 +726,7 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
     if (Type < 0 || Type > 4 || Type == 1)
         return_error(gs_error_rangecheck);
 
-    params.Domain = 0;
-    params.Range = 0;
+    memset(&params, 0x00, sizeof(gs_function_params_t));
 
     /* First gather all the entries common to all functions */
     code = make_float_array_from_dict(ctx, (float **)&params.Domain, stream_dict, "Domain");

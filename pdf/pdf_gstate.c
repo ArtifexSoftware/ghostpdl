@@ -535,14 +535,12 @@ static int GS_TR2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dic
 
     saved_stream_offset = pdfi_unread_tell(ctx);
     if (n->type == PDF_INDIRECT) {
-        if (ctx->loop_detection == NULL) {
-            pdfi_init_loop_detector(ctx);
-            pdfi_loop_detector_mark(ctx);
-        } else {
-            pdfi_loop_detector_mark(ctx);
-        }
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0)
+            return code;
+
         code = pdfi_dereference(ctx, n->object_num, n->generation_num, &o);
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         if (code < 0) {
             (void)pdfi_seek(ctx, ctx->main_stream, saved_stream_offset, SEEK_SET);
             pdfi_countdown(o);
@@ -726,32 +724,29 @@ int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     int code, i, limit = sizeof(ExtGStateTable) / sizeof (GS_Func_t);
     bool known;
 
-    if (ctx->loop_detection == NULL) {
-        pdfi_init_loop_detector(ctx);
-        pdfi_loop_detector_mark(ctx);
-    } else {
-        pdfi_loop_detector_mark(ctx);
-    }
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
 
     if (ctx->stack_top - ctx->stack_bot < 1) {
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         return_error(gs_error_stackunderflow);
     }
     n = (pdf_name *)ctx->stack_top[-1];
     if (n->type != PDF_NAME) {
         pdfi_pop(ctx, 1);
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         return_error(gs_error_typecheck);
     }
 
     code = pdfi_find_resource(ctx, (unsigned char *)"ExtGState", n, stream_dict, page_dict, &o);
     pdfi_pop(ctx, 1);
     if (code < 0) {
-        pdfi_loop_detector_cleartomark(ctx);
-            return code;
+        (void)pdfi_loop_detector_cleartomark(ctx);
+        return code;
     }
     if (o->type != PDF_DICT) {
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         pdfi_countdown(o);
         return_error(gs_error_typecheck);
     }
@@ -759,21 +754,21 @@ int pdfi_setgstate(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     for (i=0;i < limit; i++) {
         code = pdfi_dict_known((pdf_dict *)o, ExtGStateTable[i].Name, &known);
         if (code < 0 && ctx->pdfstoponerror) {
-            pdfi_loop_detector_cleartomark(ctx);
+            (void)pdfi_loop_detector_cleartomark(ctx);
             pdfi_countdown(o);
             return code;
         }
         if (known) {
             code = ExtGStateTable[i].proc(ctx, (pdf_dict *)o, stream_dict, page_dict);
             if (code < 0 && ctx->pdfstoponerror) {
-                pdfi_loop_detector_cleartomark(ctx);
+                (void)pdfi_loop_detector_cleartomark(ctx);
                 pdfi_countdown(o);
                 return code;
             }
         }
     }
 
-    pdfi_loop_detector_cleartomark(ctx);
+    code = pdfi_loop_detector_cleartomark(ctx);
     pdfi_countdown(o);
-    return 0;
+    return code;
 }

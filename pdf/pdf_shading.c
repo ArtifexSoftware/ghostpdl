@@ -33,16 +33,15 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
     int code;
     pdf_obj *o;
 
-    if (ctx->loop_detection == NULL) {
-        pdfi_init_loop_detector(ctx);
-        pdfi_loop_detector_mark(ctx);
-    } else {
-        pdfi_loop_detector_mark(ctx);
-    }
-
-    code = pdfi_dict_get(ctx, shading_dict, "Function", &o);
+    code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
         return code;
+
+    code = pdfi_dict_get(ctx, shading_dict, "Function", &o);
+    if (code < 0) {
+        (void)pdfi_loop_detector_cleartomark(ctx);
+        return code;
+    }
 
     if (o->type != PDF_DICT) {
         uint size;
@@ -52,20 +51,20 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
         gs_function_AdOt_params_t params;
 
         if (o->type != PDF_ARRAY) {
-            pdfi_loop_detector_cleartomark(ctx);
+            (void)pdfi_loop_detector_cleartomark(ctx);
             pdfi_countdown(o);
             return_error(gs_error_typecheck);
         }
         size = ((pdf_array *)o)->entries;
 
         if (size == 0) {
-            pdfi_loop_detector_cleartomark(ctx);
+            (void)pdfi_loop_detector_cleartomark(ctx);
             pdfi_countdown(o);
             return_error(gs_error_rangecheck);
         }
         code = alloc_function_array(size, &Functions, ctx->memory);
         if (code < 0) {
-            pdfi_loop_detector_cleartomark(ctx);
+            (void)pdfi_loop_detector_cleartomark(ctx);
             pdfi_countdown(o);
             return code;
         }
@@ -76,25 +75,25 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
             if (rsubfn->type == PDF_INDIRECT) {
                 pdf_indirect_ref *r = (pdf_indirect_ref *)rsubfn;
 
-                pdfi_loop_detector_mark(ctx);
+                (void)pdfi_loop_detector_mark(ctx);
                 code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, (pdf_obj **)&rsubfn);
-                pdfi_loop_detector_cleartomark(ctx);
+                (void)pdfi_loop_detector_cleartomark(ctx);
                 pdfi_countdown(r);
                 if (code < 0) {
-                    pdfi_loop_detector_cleartomark(ctx);
+                    (void)pdfi_loop_detector_cleartomark(ctx);
                     pdfi_countdown(o);
                     return code;
                 }
             }
             if (rsubfn->type != PDF_DICT) {
-                pdfi_loop_detector_cleartomark(ctx);
+                (void)pdfi_loop_detector_cleartomark(ctx);
                 pdfi_countdown(rsubfn);
                 pdfi_countdown(o);
                 return_error(gs_error_typecheck);
             }
             code = pdfi_build_function(ctx, &Functions[i], shading_domain, num_inputs, (pdf_dict *)rsubfn, page_dict);
             if (code < 0) {
-                pdfi_loop_detector_cleartomark(ctx);
+                (void)pdfi_loop_detector_cleartomark(ctx);
                 pdfi_countdown(rsubfn);
                 pdfi_countdown(o);
                 break;
@@ -112,7 +111,7 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
     } else
         code = pdfi_build_function(ctx, ppfn, shading_domain, num_inputs, (pdf_dict *)o, page_dict);
 
-    pdfi_loop_detector_cleartomark(ctx);
+    (void)pdfi_loop_detector_cleartomark(ctx);
     pdfi_countdown(o);
     return code;
 }
@@ -284,15 +283,10 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     memset(&params, 0, sizeof(params));
 
     savedoffset = pdfi_tell(ctx->main_stream);
-    if (ctx->loop_detection == NULL) {
-        pdfi_init_loop_detector(ctx);
-        pdfi_loop_detector_mark(ctx);
-    } else {
-        pdfi_loop_detector_mark(ctx);
-    }
+    code = pdfi_loop_detector_mark(ctx);
 
     if (ctx->stack_top - ctx->stack_bot < 1) {
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return_error(gs_error_stackunderflow);
     }
@@ -300,7 +294,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     n = (pdf_name *)ctx->stack_top[-1];
     if (n->type != PDF_NAME) {
         pdfi_pop(ctx, 1);
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return_error(gs_error_typecheck);
     }
@@ -308,7 +302,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     code = pdfi_find_resource(ctx, (unsigned char *)"Shading", n, stream_dict, page_dict, &o);
     if (code < 0) {
         pdfi_pop(ctx, 1);
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         if (ctx->pdfstoponerror)
             return code;
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
@@ -316,7 +310,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     }
     if (o->type != PDF_DICT) {
         pdfi_pop(ctx, 1);
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         pdfi_countdown(o);
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return_error(gs_error_typecheck);
@@ -325,7 +319,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     code = gs_gsave(ctx->pgs);
     if (code < 0) {
         pdfi_pop(ctx, 1);
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         pdfi_countdown(o);
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
@@ -341,7 +335,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0) {
         (void)gs_grestore(ctx->pgs);
         pdfi_pop(ctx, 1);
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         pdfi_countdown(o);
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
@@ -351,7 +345,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (code < 0) {
         (void)gs_grestore(ctx->pgs);
         pdfi_pop(ctx, 1);
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         pdfi_countdown(o);
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
@@ -364,7 +358,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
         if (num_comp < 0) {	/* Pattern color space */
             pdfi_pop(ctx, 1);
-            pdfi_loop_detector_cleartomark(ctx);
+            (void)pdfi_loop_detector_cleartomark(ctx);
             pdfi_countdown(o);
             pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
             return_error(gs_error_typecheck);
@@ -415,7 +409,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
     pdfi_countdown(o);
     pdfi_pop(ctx, 1);
-    pdfi_loop_detector_cleartomark(ctx);
+    (void)pdfi_loop_detector_cleartomark(ctx);
 
     if (code >= 0) {
         code = gs_shfill(ctx->pgs, psh);

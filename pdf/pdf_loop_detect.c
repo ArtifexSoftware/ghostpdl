@@ -18,7 +18,7 @@
 #include "pdf_int.h"
 #include "pdf_loop_detect.h"
 
-int pdfi_init_loop_detector(pdf_context *ctx)
+static int pdfi_init_loop_detector(pdf_context *ctx)
 {
     if (ctx->loop_detection) {
         dbgmprintf(ctx->memory, "Attempt to initialise loop detector while one is in operation\n");
@@ -34,7 +34,7 @@ int pdfi_init_loop_detector(pdf_context *ctx)
     return 0;
 }
 
-int pdfi_free_loop_detector(pdf_context *ctx)
+static int pdfi_free_loop_detector(pdf_context *ctx)
 {
     if (ctx->loop_detection == NULL) {
         dbgmprintf(ctx->memory, "Attempt to free loop detector without initialising it\n");
@@ -92,9 +92,12 @@ bool pdfi_loop_detector_check_object(pdf_context *ctx, uint64_t object)
 
 int pdfi_loop_detector_mark(pdf_context *ctx)
 {
+    int code = 0;
+
     if (ctx->loop_detection == NULL) {
-        dbgmprintf(ctx->memory, "Attempt to use loop detector without initialising it\n");
-        return 0;
+        code = pdfi_init_loop_detector(ctx);
+        if (code < 0)
+            return code;
     }
 
     return pdfi_loop_detector_add_object(ctx, 0);

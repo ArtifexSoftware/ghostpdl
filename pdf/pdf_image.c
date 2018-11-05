@@ -1064,15 +1064,10 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     pdf_name *n = NULL;
     pdf_obj *o;
 
-    if (ctx->loop_detection == NULL) {
-        pdfi_init_loop_detector(ctx);
-        pdfi_loop_detector_mark(ctx);
-    } else {
-        pdfi_loop_detector_mark(ctx);
-    }
+    code = pdfi_loop_detector_mark(ctx);
 
     if (ctx->stack_top - ctx->stack_bot < 1) {
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         if (ctx->pdfstoponerror) {
             return_error(gs_error_stackunderflow);
         }
@@ -1081,7 +1076,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     n = (pdf_name *)ctx->stack_top[-1];
     if (n->type != PDF_NAME) {
         pdfi_pop(ctx, 1);
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         if (ctx->pdfstoponerror)
             return_error(gs_error_typecheck);
         return 0;
@@ -1090,13 +1085,13 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     code = pdfi_find_resource(ctx, (unsigned char *)"XObject", n, stream_dict, page_dict, &o);
     if (code < 0) {
         pdfi_pop(ctx, 1);
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         if (ctx->pdfstoponerror)
             return code;
         return 0;
     }
     if (o->type != PDF_DICT) {
-        pdfi_loop_detector_cleartomark(ctx);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         pdfi_countdown(o);
         if (ctx->pdfstoponerror)
             return_error(gs_error_typecheck);
@@ -1125,7 +1120,7 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     }
     pdfi_countdown(o);
     pdfi_pop(ctx, 1);
-    pdfi_loop_detector_cleartomark(ctx);
+    (void)pdfi_loop_detector_cleartomark(ctx);
     if (code < 0 && ctx->pdfstoponerror)
         return code;
     return 0;
