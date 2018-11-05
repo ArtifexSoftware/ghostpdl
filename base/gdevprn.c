@@ -1478,7 +1478,7 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
         dev_proc(mdev, dev_spec_op) = orig_dso;
         check_device_separable((gx_device *)mdev);
         /* In order for saved-pages to work, we need to hook the dev_spec_op */
-        if (mdev->procs.dev_spec_op == NULL)
+        if (mdev->procs.dev_spec_op == NULL || mdev->procs.dev_spec_op == gx_default_dev_spec_op)
             set_dev_proc(mdev, dev_spec_op, gdev_prn_dev_spec_op);
 #ifdef DEBUG
         /* scanning sources didn't show anything, but if a device gets changed or added */
