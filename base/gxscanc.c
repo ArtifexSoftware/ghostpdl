@@ -276,6 +276,7 @@ zero_case(gx_device      * gs_restrict pdev,
         fixed ex = pseg->pt.x;
         fixed sy = pseg->pt.y;
         fixed ix = ex;
+        int iy = fixed2int(pseg->pt.y);
 
         zf[0] = ex;
         zf[1] = ex;
@@ -308,7 +309,7 @@ zero_case(gx_device      * gs_restrict pdev,
         }
         /* And close any open segments */
         mark_line_zero(ex, ix, zf);
-        fill(&table[index[0]], zf);
+        fill(&table[index[iy-ibox->p.y]], zf);
         psub = (const subpath *)pseg;
     }
 
