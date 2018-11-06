@@ -1483,6 +1483,16 @@ currentdict end readonly def
   //CMap_read_dict begin
   /CIDInit /ProcSet findresource begin
   12 dict begin
+  /o.endmapvalue /.endmapvalue load def
+  /.endmapvalue
+  {
+    dup 65535 gt
+    {
+      (   **** Warning: CMap: CID out of valid range (0-65535).\n)  pdfformatwarning
+      pop 65535
+    } if
+    o.endmapvalue
+  } bind def
   4 2 roll
   dup //null eq { pop } { /WMode exch def } ifelse
   dup //null eq { pop } { /CIDSystemInfo exch def } ifelse
@@ -1490,6 +1500,7 @@ currentdict end readonly def
   /.last_CMap_def currentdict def % establish binding
   mark exch % emulate 'begincodespacerange'
   0 (endcmap) /SubFileDecode filter cvx /begincmap cvx exch 2 .execn
+  currentdict /o.endmapvalue undef
   endcmap
   /.last_CMap_def load
   { currentdict end //CMap_read_dict eq { exit } if } loop
