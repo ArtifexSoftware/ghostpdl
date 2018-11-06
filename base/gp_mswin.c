@@ -735,7 +735,7 @@ gp_fopen(const char *fname, const char *mode)
     return file;
 }
 
-int gp_stat(const char *path, struct _stat *buf)
+int gp_stat(const char *path, struct _stat64 *buf)
 {
     int len = utf8_to_wchar(NULL, path);
     wchar_t *uni;
@@ -747,7 +747,7 @@ int gp_stat(const char *path, struct _stat *buf)
     if (uni == NULL)
         return -1;
     utf8_to_wchar(uni, path);
-    ret = _wstat(uni, buf);
+    ret = _wstat64(uni, buf);
     free(uni);
     return ret;
 }
