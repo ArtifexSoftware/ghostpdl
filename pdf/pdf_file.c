@@ -313,6 +313,7 @@ pdfi_JPX_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
         } else if (csobj->type == PDF_NAME) {
             /* use the name directly */
             csname = (pdf_name *)csobj;
+            csobj = NULL; /* To keep ref counting straight */
         } else {
             dmprintf(ctx->memory, "warning: JPX ColorSpace value is an unhandled type!\n");
         }

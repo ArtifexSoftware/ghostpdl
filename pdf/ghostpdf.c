@@ -648,7 +648,6 @@ pdf_context *pdfi_create_context(gs_memory_t *pmem)
 
 #if REFCNT_DEBUG
     ctx->UID = 1;
-    ctx->freed_objects = 0;
 #endif
     return ctx;
 }

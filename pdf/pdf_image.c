@@ -83,6 +83,7 @@ pdfi_free_image_info_components(pdfi_image_info_t *info)
         pdfi_countdown(info->Filter);
     if (info->DecodeParms)
         pdfi_countdown(info->DecodeParms);
+    memset(info, 0, sizeof(*info));
 }
 
 
