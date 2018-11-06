@@ -5508,10 +5508,20 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                     if (r_has_type(tempref, t_string)){
                         uint n = r_size(tempref);
                         ref rss;
+                        byte *body;
+                        uint save_space = icurrent_space;
 
-                        code = make_rss(i_ctx_p, &rss, tempref->value.const_bytes, n, r_space(tempref), 0L, n, false);
-                        if (code < 0)
+                        ialloc_set_space(idmemory, avm_system);
+                        body = ialloc_string(n, "seticcspace");
+                        ialloc_set_space(idmemory, save_space);
+                        if (!body)
+                            return_error(gs_error_VMerror);
+                        memcpy(body, tempref->value.const_bytes, n);
+                        code = make_rss(i_ctx_p, &rss, body, n, avm_system, 0L, n, false);
+                        if (code < 0) {
+                            ifree_string(body, n, "seticcspace");
                             return code;
+                        }
                         ref_assign(tempref, &rss);
                     }
                     /* Make space on operand stack to pass the ICC dictionary */
