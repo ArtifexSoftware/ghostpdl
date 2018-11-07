@@ -546,8 +546,9 @@ static int
 npdl_close(gx_device *pdev)
 {
     gx_device_printer *const ppdev = (gx_device_printer *) pdev;
-    gdev_prn_open_printer(pdev, 1);
-    fputs("\033c1", ppdev->file);
+    int code = gdev_prn_open_printer(pdev, 1);
+    if (code >= 0)
+        fputs("\033c1", ppdev->file);
 
     return gdev_prn_close(pdev);
 }

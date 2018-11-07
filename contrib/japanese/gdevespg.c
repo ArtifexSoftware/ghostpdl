@@ -96,12 +96,14 @@ lp2000_open(gx_device * pdev)
 static int
 escpage_close(gx_device * pdev)
 {
-    gdev_prn_open_printer(pdev, 1);
-    if (ppdev->Duplex && (pdev->PageCount & 1)) {
-        fprintf(ppdev->file, "%c0dpsE", GS);
+    int code = gdev_prn_open_printer(pdev, 1);
+    if (code >= 0) {
+        if (ppdev->Duplex && (pdev->PageCount & 1)) {
+            fprintf(ppdev->file, "%c0dpsE", GS);
+        }
+        fputs(epson_remote_start, ppdev->file);
+        fputs(epson_remote_start, ppdev->file);
     }
-    fputs(epson_remote_start, ppdev->file);
-    fputs(epson_remote_start, ppdev->file);
     return gdev_prn_close(pdev);
 }
 

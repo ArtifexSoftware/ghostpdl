@@ -260,16 +260,17 @@ lips_close(gx_device * pdev)
     gx_device_printer *const ppdev = (gx_device_printer *) pdev;
     gx_device_lips *const lips = (gx_device_lips *) pdev;
 
-    gdev_prn_open_printer(pdev, 1);
+    int code = gdev_prn_open_printer(pdev, 1);
 
-    fprintf(ppdev->file, "%c0J%c", LIPS_DCS, LIPS_ST);
-    if (lips->pjl)
-        fprintf(ppdev->file,
+    if (code >= 0) {
+        fprintf(ppdev->file, "%c0J%c", LIPS_DCS, LIPS_ST);
+        if (lips->pjl)
+            fprintf(ppdev->file,
                 "%c%%-12345X"
                 "@PJL SET LPARM : LIPS SW2 = OFF\n"
                 "@PJL EOJ\n"
                 "%c%%-12345X", LIPS_ESC, LIPS_ESC);
-
+    }
     return gdev_prn_close(pdev);
 }
 
