@@ -371,10 +371,14 @@ paint_path(px_state_t * pxs)
             gx_path_assign_preserve(stroke_path, ppath);
         }
 
+        /* Make a reduced version of the path, and put that back. */
+        code = gx_path_elide_1d(ppath);
+        if (code < 0)
+            return code;
+
         /* exit here if no stroke or the fill failed. */
         code = (*fill_proc) (pgs);
         if (code < 0 || !will_stroke) {
-            /* if there is a stroke path free it */
             if (stroke_path)
                 gx_path_free(stroke_path, "paint_path(error_with_fill)");
             return code;
