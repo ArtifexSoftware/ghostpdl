@@ -515,14 +515,6 @@ end		% serverdict
   { .startnewjob //true } .startjob
 } odef
 
-% The procedure to undo the job encapsulation
-/.endjob {
-  clear cleardictstack
-  serverdict /.jobsave get dup //null eq { pop } { restore } ifelse
-  serverdict /.jobsave //null put
-  2 .vmreclaim   % recover local and global VM
-} odef
-
 systemdict begin
 /quit {				% - quit -
   //systemdict begin serverdict /.jobsave get //null eq
