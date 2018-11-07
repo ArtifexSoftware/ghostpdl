@@ -54,6 +54,18 @@ pl_get_device_memory(pl_interp_implementation_t *impl)
     return impl->proc_get_device_memory(impl);
 }
 
+int
+pl_set_param(pl_interp_implementation_t *impl,
+             pl_set_param_type           type,
+             const char                 *param,
+             const void                 *value)
+{
+    if (impl->proc_set_param == NULL)
+        return 0;
+
+    return impl->proc_set_param(impl, type, param, value);
+}
+
 /* Prepare interp instance for the next "job" */
 int                             /* ret 0 ok, else -ve error code */
 pl_init_job(pl_interp_implementation_t * impl,     /* interp instance to start job in */

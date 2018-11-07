@@ -819,23 +819,26 @@ parse_floats(gs_memory_t * mem, uint arg_count, char *arg, float *f)
     return float_index;
 }
 
+#define argcmp(A, S, L) \
+    (!strncmp(A, S, L) && (A[L] == 0 || A[L] == '='))
+
 static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int b)
 {
-    if (!strncmp(arg, "BATCH", 5))
-        return (b == 0) ? 0 : gs_note_error(gs_error_rangecheck);
-    if (!strncmp(arg, "NOPAUSE", 6)) {
+    if (argcmp(arg, "BATCH", 5))
+        return (b == 1) ? 0 : gs_note_error(gs_error_rangecheck);
+    if (argcmp(arg, "NOPAUSE", 7)) {
         pmi->pause = !b;
         return 0;
     }
-    if (!strncmp(arg, "DOINTERPOLATE", 13)) {
+    if (argcmp(arg, "DOINTERPOLATE", 13)) {
         pmi->interpolate = !!b;
         return 0;
     }
-    if (!strncmp(arg, "NOCACHE", 7)) {
+    if (argcmp(arg, "NOCACHE", 7)) {
         pmi->nocache = !!b;
         return 0;
     }
-    if (!strncmp(arg, "SCANCONVERTERTYPE", 17)) {
+    if (argcmp(arg, "SCANCONVERTERTYPE", 17)) {
         pmi->scanconverter = b;
         return 0;
     }
@@ -844,11 +847,11 @@ static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int 
 
 static int check_for_special_float(pl_main_instance_t * pmi, const char *arg, float f)
 {
-    if (!strncmp(arg, "BATCH", 5) ||
-        !strncmp(arg, "NOPAUSE", 6) ||
-        !strncmp(arg, "DOINTERPOLATE", 13) ||
-        !strncmp(arg, "NOCACHE", 7) ||
-        !strncmp(arg, "SCANCONVERTERTYPE", 17)) {
+    if (argcmp(arg, "BATCH", 5) ||
+        argcmp(arg, "NOPAUSE", 7) ||
+        argcmp(arg, "DOINTERPOLATE", 13) ||
+        argcmp(arg, "NOCACHE", 7) ||
+        argcmp(arg, "SCANCONVERTERTYPE", 17)) {
         return gs_note_error(gs_error_rangecheck);
     }
     return 1;
@@ -856,14 +859,32 @@ static int check_for_special_float(pl_main_instance_t * pmi, const char *arg, fl
 
 static int check_for_special_str(pl_main_instance_t * pmi, const char *arg, gs_param_string *f)
 {
-    if (!strncmp(arg, "BATCH", 5) ||
-        !strncmp(arg, "NOPAUSE", 6) ||
-        !strncmp(arg, "DOINTERPOLATE", 13) ||
-        !strncmp(arg, "NOCACHE", 7) ||
-        !strncmp(arg, "SCANCONVERTERTYPE", 17)) {
+    if (argcmp(arg, "BATCH", 5) ||
+        argcmp(arg, "NOPAUSE", 7) ||
+        argcmp(arg, "DOINTERPOLATE", 13) ||
+        argcmp(arg, "NOCACHE", 7) ||
+        argcmp(arg, "SCANCONVERTERTYPE", 17)) {
         return gs_note_error(gs_error_rangecheck);
     }
     return 1;
+}
+
+static int
+pass_param_to_languages(pl_main_instance_t *pmi,
+                        pl_set_param_type   type,
+                        const char         *param,
+                        const void         *value)
+{
+    pl_interp_implementation_t **imp;
+    int code;
+
+    for (imp = pmi->implementations; *imp != NULL; imp++) {
+        code = pl_set_param(*imp, type, param, value);
+        if (code != 0)
+            break;
+    }
+
+    return code;
 }
 
 static int
@@ -966,73 +987,86 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     float vf;
                     bool bval = true;
                     char buffer[128];
+                    pl_set_param_type spt_type = pl_spt_invalid;
+                    const void *spt_val = NULL;
+                    static const char const_true_string[] = "true";
 
                     if (eqp || (eqp = strchr(arg, '#')))
                         value = eqp + 1;
                     else {
                         /* -dDefaultBooleanIs_TRUE */
-                        code = check_for_special_int(pmi, arg, (int)bval);
-                        if (code < 0) code = 0;
-                        if (code == 1)
-                            code =
-                                param_write_bool((gs_param_list *) params,
-                                                 arg, &bval);
-                        break;
+                        value = const_true_string;
+                        eqp = arg + strlen(arg);
                     }
 
+                    /* Arrange for a null terminated copy of the key name in buffer. */
+                    if (eqp-arg >= sizeof(buffer)-1) {
+                        dmprintf1(pmi->memory, "Command line key is too long: %s\n", arg);
+                        return -1;
+                    }
+                    strncpy(buffer, arg, eqp - arg);
+                    buffer[eqp - arg] = '\0';
+                    code = 0;
                     if (value && value[0] == '/') {
+                        /* We have a name! */
                         gs_param_string str;
 
-                        strncpy(buffer, arg, eqp - arg);
-                        buffer[eqp - arg] = '\0';
-                        param_string_from_transient_string(str, value + 1);
                         code = check_for_special_str(pmi, arg, &str);
-                        if (code == 1)
-                            code = param_write_name((gs_param_list *) params,
-                                                    buffer, &str);
-                        break;
-                    }
-                    /* Search for a non-decimal 'radix' number */
-                    else if (strchr(value, '#')) {
-                        int base, number = 0;
-                        char *val = strchr(value, '#');
+                        if (code <= 0)
+                            break;
 
-                        *val++ = 0x00;
-                        sscanf(value, "%d", &base);
-                        if (base < 2 || base > 36) {
-                            dmprintf1(pmi->memory, "Value out of range %s",
+                        param_string_from_transient_string(str, value + 1);
+                        code = param_write_name((gs_param_list *) params,
+                                                buffer, &str);
+                        spt_type = pl_spt_name;
+                        spt_val = value+1;
+                    } else if (strchr(value, '#')) {
+                        /* We have a non-decimal 'radix' number */
+                        int base = 0;
+                        const char *val = strchr(value, '#');
+                        const char *v = value;
+                        char c;
+
+                        while ((c = *v++) >= '0' && c <= '9')
+                            base = base*10 + (c - '0');
+                        if (*v != '#') {
+                            dmprintf1(pmi->memory, "Malformed base value for radix. %s",
                                       value);
                             return -1;
                         }
+
+                        if (base < 2 || base > 36) {
+                            dmprintf1(pmi->memory, "Base out of range %s",
+                                      value);
+                            return -1;
+                        }
+                        vi = 0;
                         while (*val) {
-                            if (*val >= '0' && *val <= '9') {
-                                number = number * base + (*val - '0');
-                            } else {
-                                if (*val >= 'A' && *val <= 'Z') {
-                                    number = number * base + (*val - 'A');
+                            if (*val >= '0' && *val < ('0'+(base<=10?base:10))) {
+                                vi = vi * base + (*val - '0');
+                            } else if (base > 10) {
+                                if (*val >= 'A' && *val < 'A'+base-10) {
+                                    vi = vi * base + (*val - 'A' + 10);
+                                } else if (*val >= 'a' && *val < 'a'+base-10) {
+                                    vi = vi * base + (*val - 'a' + 10);
                                 } else {
-                                    if (*val >= 'a' && *val <= 'z') {
-                                        number = number * base + (*val - 'a');
-                                    } else {
-                                        dmprintf1(pmi->memory,
-                                                  "Value out of range %s",
-                                                  val);
-                                        return -1;
-                                    }
+                                    dmprintf1(pmi->memory,
+                                              "Value out of range %s\n",
+                                              val);
+                                    return -1;
                                 }
                             }
                             val++;
                         }
-                        strncpy(buffer, arg, eqp - arg);
-                        buffer[eqp - arg] = '\0';
-                        code = check_for_special_int(pmi, arg, number);
+                        code = check_for_special_int(pmi, arg, vi);
                         if (code < 0) code = 0;
-                        if (code == 1)
-                            code =
-                                param_write_int((gs_param_list *) params,
-                                                buffer, &number);
+                        if (code <= 0)
+                            break;
+                        code = param_write_int((gs_param_list *) params,
+                                               buffer, &vi);
+                        spt_type = pl_spt_int;
+                        spt_val = &vi;
                     } else if ((!strchr(value, '.')) &&
-                               /* search for an int (no decimal), if fail try a float */
                                (sscanf(value, "%d", &vi) == 1)) {
                         /* Here we have an int -- check for a scaling suffix */
                         char suffix = eqp[strlen(eqp) - 1];
@@ -1055,51 +1089,63 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                             default:
                                 break;  /* not a valid suffix or last char was digit */
                         }
-                        /* create a null terminated string for the key */
-                        strncpy(buffer, arg, eqp - arg);
-                        buffer[eqp - arg] = '\0';
                         code = check_for_special_int(pmi, arg, vi);
                         if (code < 0) code = 0;
-                        if (code == 1)
-                            code =
-                                param_write_int((gs_param_list *) params,
-                                                buffer, &vi);
+                        if (code <= 0)
+                            break;
+                        code = param_write_int((gs_param_list *) params,
+                                               buffer, &vi);
+                        spt_type = pl_spt_int;
+                        spt_val = &vi;
                     } else if (sscanf(value, "%f", &vf) == 1) {
-                        /* create a null terminated string.  NB duplicated code. */
-                        strncpy(buffer, arg, eqp - arg);
-                        buffer[eqp - arg] = '\0';
+                        /* We have a float */
                         code = check_for_special_float(pmi, arg, vf);
-                        if (code == 1)
-                            code =
-                                param_write_float((gs_param_list *) params,
+                        if (code <= 0)
+                            break;
+                        code = param_write_float((gs_param_list *) params,
                                                   buffer, &vf);
+                        spt_type = pl_spt_float;
+                        spt_val = &vf;
+                    } else if (!strcmp(value, "null")) {
+                        code = check_for_special_int(pmi, arg, (int)bval);
+                        if (code < 0) code = 0;
+                        if (code <= 0)
+                            break;
+                        code = param_write_null((gs_param_list *) params,
+                                                buffer);
+                        spt_type = pl_spt_null;
+                        spt_val = NULL;
                     } else if (!strcmp(value, "true")) {
                         /* bval = true; */
-                        strncpy(buffer, arg, eqp - arg);
-                        buffer[eqp - arg] = '\0';
                         code = check_for_special_int(pmi, arg, (int)bval);
                         if (code < 0) code = 0;
-                        if (code == 1)
-                            code =
-                                param_write_bool((gs_param_list *) params,
-                                                 buffer, &bval);
+                        if (code <= 0)
+                            break;
+                        code = param_write_bool((gs_param_list *) params,
+                                                buffer, &bval);
+                        spt_type = pl_spt_bool;
+                        spt_val = (void*)1;
                     } else if (!strcmp(value, "false")) {
                         bval = false;
-                        strncpy(buffer, arg, eqp - arg);
-                        buffer[eqp - arg] = '\0';
                         code = check_for_special_int(pmi, arg, (int)bval);
                         if (code < 0) code = 0;
-                        if (code == 1)
-                            code =
-                                param_write_bool((gs_param_list *) params,
-                                                 buffer, &bval);
+                        if (code <= 0)
+                            break;
+                        code = param_write_bool((gs_param_list *) params,
+                                                buffer, &bval);
+                        spt_type = pl_spt_bool;
+                        spt_val = NULL;
                     } else {
                         dmprintf(pmi->memory,
-                                 "Usage for -d is -d<option>=[<integer>|<float>|true|false]\n");
+                                 "Usage for -d is -d<option>=[<integer>|<float>|null|true|false|name]\n");
                         continue;
                     }
+                    if (code < 0)
+                        return code;
+                    code = pass_param_to_languages(pmi, spt_type, buffer, spt_val);
+                    if (code < 0)
+                        return code;
                 }
-                break;
             case 'E':
                 if (*arg == 0)
                     gs_debug['#'] = 1;
@@ -1339,11 +1385,10 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     value = eqp + 1;
                     if (!strncmp(arg, "DEVICE", 6)) {
                         code = pl_top_create_device(pmi,
-                                                        get_device_index(pmi->
-                                                                         memory,
-                                                                         value),
-                                                        false);
-
+                                                    get_device_index(pmi->
+                                                                     memory,
+                                                                     value),
+                                                                     false);
                         /* check for icc settings */
                     } else
                         if (!strncmp
@@ -1367,12 +1412,22 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     } else {
                         char buffer[128];
 
+                        if (eqp-arg >= sizeof(buffer)-1) {
+                            dmprintf1(pmi->memory, "Command line key is too long: %s\n", arg);
+                            return -1;
+                        }
                         strncpy(buffer, arg, eqp - arg);
                         buffer[eqp - arg] = '\0';
+
                         param_string_from_transient_string(str, value);
                         code =
                             param_write_string((gs_param_list *) params,
                                                buffer, &str);
+                        if (code < 0)
+                            return code;
+                        code = pass_param_to_languages(pmi, pl_spt_string, buffer, value);
+                        if (code < 0)
+                            return code;
                     }
                 }
                 break;

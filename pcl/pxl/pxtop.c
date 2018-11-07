@@ -550,6 +550,7 @@ pl_interp_implementation_t pxl_implementation = {
     pxl_impl_characteristics,
     pxl_impl_allocate_interp_instance,
     NULL,
+    NULL,
     pxl_impl_init_job,
     NULL,                       /* process_file */
     pxl_impl_process_begin,

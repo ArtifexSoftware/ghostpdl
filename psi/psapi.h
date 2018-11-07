@@ -57,6 +57,21 @@ psapi_init_with_args01(gs_lib_ctx_t  *instance,
 int
 psapi_init_with_args2(gs_lib_ctx_t  *instance);
 
+typedef enum {
+    psapi_spt_invalid = -1,
+    psapi_spt_null    = 0,   /* void * is NULL */
+    psapi_spt_bool    = 1,   /* void * is NULL (false) or non-NULL (true) */
+    psapi_spt_int     = 2,   /* void * is a pointer to an int */
+    psapi_spt_float   = 3,   /* void * is a float * */
+    psapi_spt_name    = 4,   /* void * is a char * */
+    psapi_spt_string  = 5    /* void * is a char * */
+} psapi_sptype;
+int
+psapi_set_param(gs_lib_ctx_t *ctx,
+                psapi_sptype  type,
+                const char   *param,
+                const void   *val);
+
 int
 psapi_run_string_begin(gs_lib_ctx_t *instance,
                        int           user_errors,

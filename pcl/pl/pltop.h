@@ -74,6 +74,24 @@ pl_get_device_memory(pl_interp_implementation_t *);
 typedef gs_memory_t * (*pl_interp_proc_get_device_memory_t) (pl_interp_implementation_t *);
 
 /*
+ * Pass a parameter/value to a language.
+ */
+typedef enum {
+    pl_spt_invalid = -1,
+    pl_spt_null    = 0,   /* void * is NULL */
+    pl_spt_bool    = 1,   /* void * is NULL (false) or non-NULL (true) */
+    pl_spt_int     = 2,   /* void * is a pointer to an int */
+    pl_spt_float   = 3,   /* void * is a float * */
+    pl_spt_name    = 4,   /* void * is a char * */
+    pl_spt_string  = 5    /* void * is a char * */
+} pl_set_param_type;
+int pl_set_param(pl_interp_implementation_t *, pl_set_param_type type, const char *param, const void *value);
+typedef int (*pl_interp_proc_set_param_t) (pl_interp_implementation_t *,
+                                           pl_set_param_type,
+                                           const char *,
+                                           const void *);
+
+/*
  * Work to be done when a job begins.
  */
 int pl_init_job(pl_interp_implementation_t *, gx_device *);
@@ -143,6 +161,7 @@ struct pl_interp_implementation_s
     pl_interp_proc_characteristics_t proc_characteristics;
     pl_interp_proc_allocate_interp_instance_t proc_allocate_interp_instance;
     pl_interp_proc_get_device_memory_t proc_get_device_memory;
+    pl_interp_proc_set_param_t proc_set_param;
     pl_interp_proc_init_job_t proc_init_job;
     pl_interp_proc_process_file_t proc_process_file;
     pl_interp_proc_process_begin_t proc_process_begin;

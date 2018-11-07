@@ -32,6 +32,11 @@
 #include "gslibctx.h"
 #include "gp.h"
 #include "gsargs.h"
+#include "ialloc.h"
+#include "icstate.h"
+#include "store.h"
+#include "iname.h"
+#include "interp.h"
 
 #ifndef GS_THREADSAFE
 /* Number of threads to allow per process. Unless GS_THREADSAFE is defined
@@ -283,6 +288,61 @@ psapi_init_with_args2(gs_lib_ctx_t *ctx)
         return gs_error_Fatal;
 
     return gs_main_init_with_args2(get_minst_from_memory(ctx->memory));
+}
+
+int
+psapi_set_param(gs_lib_ctx_t *ctx,
+                psapi_sptype  type,
+                const char   *param,
+                const void   *val)
+{
+    gs_main_instance *minst = get_minst_from_memory(ctx->memory);
+    ref value;
+    int code = 0;
+    i_ctx_t *i_ctx_p = minst->i_ctx_p;
+    uint space = icurrent_space;
+
+    ialloc_set_space(idmemory, avm_system);
+    switch (type) {
+        case psapi_spt_null:
+            make_null(&value);
+            break;
+        case psapi_spt_bool:
+            if (val)
+                make_true(&value);
+            else
+                make_false(&value);
+            break;
+        case psapi_spt_int:
+            make_int(&value, *(int *)val);
+            break;
+        case psapi_spt_float:
+            make_real(&value, *(float *)val);
+            break;
+        case psapi_spt_string:
+            if (val == NULL)
+                make_empty_string(&value, a_readonly);
+            else {
+                size_t len = strlen(val);
+                byte *body = ialloc_string(len, "-s");
+
+                if (body == NULL)
+                    return gs_error_Fatal;
+                memcpy(body, val, len);
+                make_const_string(&value, a_readonly | avm_system, len, body);
+            }
+            break;
+        case psapi_spt_name:
+            code = name_ref(ctx->memory, val, strlen(val), &value, 1);
+            break;
+        default:
+            break;
+    }
+    ialloc_set_space(idmemory, space);
+    /* Enter the name in systemdict. */
+    i_initial_enter_name_copy(minst->i_ctx_p, param, &value);
+
+    return code;
 }
 
 /* The gsapi_run_* functions are like gs_main_run_* except

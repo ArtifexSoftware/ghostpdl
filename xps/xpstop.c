@@ -420,6 +420,7 @@ pl_interp_implementation_t xps_implementation =
     xps_imp_characteristics,
     xps_imp_allocate_interp_instance,
     NULL,
+    NULL,
     xps_imp_init_job,
     xps_imp_process_file,
     xps_impl_process_begin,

@@ -167,6 +167,7 @@ pl_interp_implementation_t pjl_implementation = {
     pjl_impl_characteristics,
     pjl_impl_allocate_interp_instance,
     NULL,
+    NULL,
     pjl_impl_init_job,
     NULL,                      /* process_file */
     pjl_impl_process_begin,

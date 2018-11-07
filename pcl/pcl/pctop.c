@@ -558,6 +558,7 @@ pl_interp_implementation_t pcl_implementation = {
     pcl_impl_characteristics,
     pcl_impl_allocate_interp_instance,
     NULL,
+    NULL,
     pcl_impl_init_job,
     NULL,                       /* process_file */
     pcl_impl_process_begin,

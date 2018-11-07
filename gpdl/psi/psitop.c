@@ -181,6 +181,17 @@ ps_impl_get_device_memory(pl_interp_implementation_t *impl)
     return psapi_get_device_memory(psi->psapi_instance);
 }
 
+static int
+ps_impl_set_param(pl_interp_implementation_t *impl,
+                  pl_set_param_type           type,
+                  const char                 *param,
+                  const void                 *val)
+{
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
+
+    return psapi_set_param(psi->psapi_instance, type, param, val);
+}
+
 /* Prepare interp instance for the next "job" */
 static int
 ps_impl_init_job(pl_interp_implementation_t *impl,
@@ -363,6 +374,7 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_characteristics,
   ps_impl_allocate_interp_instance,
   ps_impl_get_device_memory,
+  ps_impl_set_param,
   ps_impl_init_job,
   ps_impl_process_file,
   ps_impl_process_begin,
