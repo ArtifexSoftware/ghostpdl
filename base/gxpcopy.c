@@ -851,3 +851,196 @@ gx_path_merge_contacting_contours(gx_path *ppath)
     }
     return 0;
 }
+
+static int
+is_colinear(gs_fixed_rect *rect, fixed x, fixed y)
+{
+    fixed x0 = rect->p.x;
+    fixed y0 = rect->p.y;
+    fixed x1 = rect->q.x;
+    fixed y1 = rect->q.y;
+
+    if (x0 == x1) {
+        if (y0 == y1) {
+            /* Initial case */
+            /* Still counts as colinear */
+        } else if (x == x0) {
+            /* OK! */
+        } else {
+            return 0; /* Not colinear */
+        }
+    } else if (rect->p.y == rect->q.y) {
+        if (y == rect->p.y) {
+            /* OK */
+        } else {
+            return 0; /* Not colinear */
+        }
+    } else {
+        /* Need to do hairy maths */
+        /* The distance of a point (x,y) from the line passing through
+         * (x0,y0) and (x1,y1) is:
+         * d = |(y1-y0)x - (x1-x0)y + x1y0 - y1x0| / SQR((y1-y0)^2 + (x1-x0)^2)
+         *
+         * We want d <= epsilon to count as colinear.
+         *
+         * d = |(y1-y0)x - (x1-x0)y + x1y0 - y1x0| / SQR((y1-y0)^2 + (x1-x0)^2) <= epsilon
+         *
+         * |(y1-y0)x - (x1-x0)y + x1y0 - y1x0| <= epsilon * SQR((y1-y0)^2 + (x1-x0)^2)
+         *
+         * ((y1-y0)x - (x1-x0)y + x1y0 - y1x0)^2 <= epsilon^2 * ((y1-y0)^2 + (x1-x0)^2)
+         */
+        int64_t ix1 = ((int64_t)x1);
+        int64_t iy1 = ((int64_t)y1);
+        int64_t dx  = ix1 - x0;
+        int64_t dy  = iy1 - y0;
+        int64_t num = dy*x - dx*y + ix1*y0 - iy1*x0;
+        int64_t den = dx*dx + dy*dy;
+        int epsilon_squared = 2;
+
+        if (num < 0)
+            num = -num;
+        while (num > (1<<30)) {
+            num >>= 2;
+            den >>= 1;
+            if (den == 0)
+                return 0; /* Not colinear */
+        }
+        num *= num;
+        if (num > epsilon_squared * den)
+            return 0;
+    }
+    /* rect is not really a rect. It's just a pair of points. We guarantee that x0 <= x1. */
+    if (x == x0) {
+        if (y < y0)
+            rect->p.y = y;
+        else if (y > y1)
+            rect->q.y = y;
+    } else if (x < x0) {
+        rect->p.x = x;
+        rect->p.y = y;
+    } else {
+        rect->q.x = x;
+        rect->q.y = y;
+    }
+
+    return 1;
+}
+
+static int
+gx_path_copy_eliding_1d(const gx_path *ppath_old, gx_path *ppath)
+{
+    const segment *pseg;
+    /*
+     * Since we're going to be adding to the path, unshare it
+     * before we start.
+     */
+    int code = gx_path_unshare(ppath);
+
+    if (code < 0)
+        return code;
+#ifdef DEBUG
+    if (gs_debug_c('P'))
+        gx_dump_path(ppath_old, "before eliding_1d");
+#endif
+
+    pseg = (const segment *)(ppath_old->first_subpath);
+    while (pseg != NULL) {
+        const segment *look = pseg;
+        gs_fixed_rect rect;
+
+        rect.p.x = rect.q.x = look->pt.x;
+        rect.p.y = rect.q.y = look->pt.y;
+
+        if (look->type != s_start) {
+            dlprintf("Unlikely?");
+        }
+
+        look = look->next;
+        while (look != NULL && look->type != s_start) {
+            if (look->type == s_curve) {
+                const curve_segment *pc = (const curve_segment *)look;
+                if (!is_colinear(&rect, pc->p1.x, pc->p1.y) ||
+                    !is_colinear(&rect, pc->p2.x, pc->p2.y) ||
+                    !is_colinear(&rect, pc->pt.x, pc->pt.y))
+                    goto not_colinear;
+            } else if (!is_colinear(&rect, look->pt.x, look->pt.y)) {
+                goto not_colinear;
+            }
+            look = look->next;
+        }
+        pseg = look;
+        if (0)
+        {
+not_colinear:
+            /* Not colinear. We want to keep this section. */
+            while (look != NULL && look->type != s_start)
+                look = look->next;
+            while (pseg != look && code >= 0) {
+                /* Copy */
+                switch (pseg->type) {
+                    case s_start:
+                        code = gx_path_add_point(ppath,
+                                                 pseg->pt.x, pseg->pt.y);
+                        break;
+                    case s_curve:
+                        {
+                            const curve_segment *pc = (const curve_segment *)pseg;
+
+                            code = gx_path_add_curve_notes(ppath,
+                                             pc->p1.x, pc->p1.y, pc->p2.x, pc->p2.y,
+                                                   pc->pt.x, pc->pt.y, pseg->notes);
+                            break;
+                        }
+                    case s_line:
+                        code = gx_path_add_line_notes(ppath,
+                                               pseg->pt.x, pseg->pt.y, pseg->notes);
+                        break;
+                    case s_gap:
+                        code = gx_path_add_gap_notes(ppath,
+                                               pseg->pt.x, pseg->pt.y, pseg->notes);
+                        break;
+                    case s_dash:
+                        {
+                            const dash_segment *pd = (const dash_segment *)pseg;
+
+                            code = gx_path_add_dash_notes(ppath,
+                                               pd->pt.x, pd->pt.y, pd->tangent.x, pd->tangent.y, pseg->notes);
+                            break;
+                        }
+                    case s_line_close:
+                        code = gx_path_close_subpath(ppath);
+                        break;
+                    default:		/* can't happen */
+                        code = gs_note_error(gs_error_unregistered);
+                }
+                pseg = pseg->next;
+            }
+            if (code < 0) {
+                gx_path_new(ppath);
+                return code;
+            }
+        }
+    }
+    ppath->bbox_set = false;
+#ifdef DEBUG
+    if (gs_debug_c('P'))
+        gx_dump_path(ppath, "after eliding_1d");
+#endif
+    return 0;
+}
+
+int
+gx_path_elide_1d(gx_path *ppath)
+{
+    int code;
+    gx_path path;
+
+    gx_path_init_local(&path, ppath->memory);
+    code = gx_path_copy_eliding_1d(ppath, &path);
+    if (code < 0)
+        return code;
+    gx_path_assign_free(ppath, &path);
+    gx_path_free(&path, "gx_path_elide_1d");
+
+    return 0;
+}

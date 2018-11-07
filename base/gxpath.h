@@ -287,6 +287,8 @@ int gx_path_add_dash_expansion(const gx_path * /*old*/, gx_path * /*new*/,
 void gx_point_scale_exp2(gs_fixed_point *, int, int),
       gx_rect_scale_exp2(gs_fixed_rect *, int, int);
 
+int gx_path_elide_1d(gx_path *ppath);
+
 /* Path enumerator */
 
 /* This interface does not make a copy of the path. */
