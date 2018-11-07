@@ -2380,6 +2380,7 @@ if test x"$cross_compiling" = x"yes"; then
   PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
   XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
   PDL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR)"
+  PDF_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDF_SONAME_MAJOR)"
   if test $ac_cv_prog_gcc = yes; then
     # GCC high level flag
     DYNAMIC_LIBS="-rdynamic"
@@ -2395,6 +2396,7 @@ else
       PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
       XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
       PDL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR)"
+      PDF_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDF_SONAME_MAJOR)"
       if test $ac_cv_prog_gcc = yes; then
         # GCC high level flag
         DYNAMIC_LIBS="-rdynamic"
@@ -2409,6 +2411,7 @@ else
       PCL_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(PCL_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
       XPS_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(XPS_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
       PDL_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(PDL_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
+      PDF_DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(PDF_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
       SO_LIB_EXT=""
       DLL_EXT=".dll"
       SO_LIB_VERSION_SEPARATOR="-"
@@ -2418,6 +2421,8 @@ else
       GS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
       PCL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
       XPS_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
+      PDL_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PDL_SONAME_MAJOR)"
+      PDF_DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PDF_SONAME_MAJOR)"
       DYNAMIC_LIBS=""
       SO_LIB_EXT=".so"
     ;;
@@ -2426,6 +2431,7 @@ else
       PCL_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(PCL_SONAME_MAJOR_MINOR)"
       XPS_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(XPS_SONAME_MAJOR_MINOR)"
       PDL_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GPDL_SONAME_MAJOR_MINOR)"
+      PDF_DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GPDF_SONAME_MAJOR_MINOR)"
       DYNAMIC_LIBS=""
       SO_LIB_EXT=".dylib"
     ;;
@@ -2439,6 +2445,7 @@ else
       PCL_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
       XPS_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
       PDL_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR)"
+      PDF_DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GPDF_SONAME_MAJOR)"
       DYNAMIC_LIBS=""
       SO_LIB_EXT=".so"
       ;;
@@ -2450,12 +2457,15 @@ else
         PCL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
         XPS_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
         PDL_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+        PDF_DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
       else
         DYNAMIC_CFLAGS=""
         GCFLAGS="-Wl,-brtl -D_LARGE_FILES $GCFLAGS"
         GS_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
         PCL_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
         XPS_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
+        PDL_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
+        PDF_DYNAMIC_LDFLAGS="-G -qmkshrobj -Wl,-brtl,-G"
       fi
       SO_LIB_EXT=".so"
       ;;
@@ -2513,6 +2523,7 @@ AC_SUBST(GS_DYNAMIC_LDFLAGS)
 AC_SUBST(PCL_DYNAMIC_LDFLAGS)
 AC_SUBST(XPS_DYNAMIC_LDFLAGS)
 AC_SUBST(PDL_DYNAMIC_LDFLAGS)
+AC_SUBST(PDF_DYNAMIC_LDFLAGS)
 AC_SUBST(DYNAMIC_LIBS)
 AC_SUBST(INSTALL_SHARED)
 AC_SUBST(X11_DEVS)
