@@ -2255,6 +2255,9 @@ SAFER { .setsafeglobal } if
   /.systemvmSFD /.settrapparams /.currentsystemparams /.currentuserparams /.getsystemparam /.getuserparam /.setsystemparams /.setuserparams
   /.checkpassword /.locale_to_utf8 /.currentglobal /.gcheck /.imagepath /.currentoutputdevice
   /.type /.writecvs /.setSMask /.currentSMask /.needinput /.countexecstack /.execstack /.applypolicies
+  /filterdict /.cidfonttypes /.colorrenderingtypes
+  /.formtypes /.halftonetypes /.imagetypes /.imagemasktypes
+  /.patterntypes /.shadingtypes /.wheredict /.renderingintentdict
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
@@ -2425,20 +2428,6 @@ currentdict /.delayed_init_queue undef
 % Make global and local FontDirectory read-only.
 FontDirectory readonly pop
 /GlobalFontDirectory where { pop GlobalFontDirectory readonly pop } if
-
-% Remove systemdict entries for things that have been bound in where used
-% and that shouldn't be accessible by name, and close up systemdict.
-currentdict /filterdict .undef
-currentdict /.cidfonttypes .undef
-currentdict /.colorrenderingtypes .undef
-currentdict /.formtypes .undef
-currentdict /.halftonetypes .undef
-currentdict /.imagetypes .undef
-currentdict /.imagemasktypes .undef
-currentdict /.patterntypes .undef
-currentdict /.shadingtypes .undef
-currentdict /.wheredict .undef
-currentdict /.renderingintentdict .undef
 
 % If we are using DELAYBIND we have to defer the undefinition
 % until .bindnow.
