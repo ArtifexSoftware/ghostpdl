@@ -65,6 +65,8 @@ static const float default_0_1[] = {0, 1, 0, 1, 0, 1, 0, 1};
 
 /* imported from gsht.c */
 extern  void    gx_set_effective_transfer(gs_gstate *);
+extern_st(st_pattern1_instance);
+extern_st(st_pattern2_instance);
 
 /* Essential forward declarations */
 static int validate_spaces(i_ctx_t *i_ctx_p, ref *arr, int *depth);
@@ -289,6 +291,9 @@ zsetcolor(i_ctx_t * i_ctx_p)
                 code = array_get(imemory, pImpl, 0, &pPatInst);
                 if (code < 0)
                     return code;
+                if (!r_is_struct(&pPatInst) || (!r_has_stype(&pPatInst, imemory, st_pattern1_instance) && !r_has_stype(&pPatInst, imemory, st_pattern2_instance)))
+                    return_error(gs_error_typecheck);
+
                 cc.pattern = r_ptr(&pPatInst, gs_pattern_instance_t);
                 n_numeric_comps = ( pattern_instance_uses_base_space(cc.pattern)
                       ? n_comps - 1
@@ -4423,7 +4428,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
         /* If we have a named color profile and the base space is DeviceN or
            Separation use a different set of procedures to ensure the named
            color remapping code is used */
-        if (igs->icc_manager->device_named != NULL && 
+        if (igs->icc_manager->device_named != NULL &&
             (base_type == gs_color_space_index_Separation ||
              base_type == gs_color_space_index_DeviceN))
             pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed_Named);
@@ -5585,7 +5590,7 @@ static int iccompareproc(i_ctx_t *i_ctx_p, ref *space, ref *testspace)
         return 0;
 
     /* As a quick check see if current is same as new */
-    if (ICCdict1.value.bytes == ICCdict2.value.bytes) 
+    if (ICCdict1.value.bytes == ICCdict2.value.bytes)
          return 1;
 
     /* Need to check all the various parts */
@@ -5605,7 +5610,7 @@ static int iccompareproc(i_ctx_t *i_ctx_p, ref *space, ref *testspace)
     code2 = dict_find_string(&ICCdict2, "DataSource", &tempref2);
     if (code2 <= 0)
         return 0;
-    if (r_size(tempref1) != r_size(tempref2)) 
+    if (r_size(tempref1) != r_size(tempref2))
         return 0;
 
     buff_size = r_size(tempref1);

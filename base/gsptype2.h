@@ -57,8 +57,8 @@ typedef struct gs_pattern2_instance_s {
     bool shfill;
 } gs_pattern2_instance_t;
 
-#define private_st_pattern2_instance() /* in gsptype2.c */\
-  gs_private_st_composite(st_pattern2_instance, gs_pattern2_instance_t,\
+#define public_st_pattern2_instance() /* in gsptype2.c */\
+  gs_public_st_composite(st_pattern2_instance, gs_pattern2_instance_t,\
     "gs_pattern2_instance_t", pattern2_instance_enum_ptrs,\
     pattern2_instance_reloc_ptrs)
 

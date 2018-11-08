@@ -33,7 +33,7 @@
 
 /* GC descriptors */
 private_st_pattern2_template();
-private_st_pattern2_instance();
+public_st_pattern2_instance();
 
 /* GC procedures */
 static ENUM_PTRS_BEGIN(pattern2_instance_enum_ptrs) {
@@ -206,10 +206,10 @@ gs_pattern2_set_color(const gs_client_color * pcc, gs_gstate * pgs)
 
     pinst->saved->overprint_mode = pgs->overprint_mode;
     pinst->saved->overprint = pgs->overprint;
-    
+
     num_comps = pgs->device->color_info.num_components;
     for (k = 0; k < num_comps; k++) {
-        pgs->color_component_map.color_map[k] = 
+        pgs->color_component_map.color_map[k] =
             pinst->saved->color_component_map.color_map[k];
     }
     code = pcs->type->set_overprint(pcs, pgs);
