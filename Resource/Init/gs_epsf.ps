@@ -44,7 +44,7 @@
     } {
       cleartomark //false
     } ifelse
-} bind def
+} bind executeonly odef
 
 % Crop the page to the BoundingBox
 /EPSBoundingBoxCrop { % llx lly urx ury --
@@ -54,7 +54,7 @@
   exch 3 index sub exch 2 index sub % stack: llx lly urx-llx ury-lly
   << /PageSize [ 5 -2 roll ] >> setpagedevice
   neg exch neg exch translate
-} bind def
+} bind executeonly odef
 
 % Rescale, translate and rotate to fit the BoundingBox on the page
 /EPSBoundingBoxFitPage { % llx lly urx ury --
@@ -85,7 +85,7 @@
   exch neg exch neg translate
   % Finally perform the rotate if needed.
   { clippath pathbbox pop 0 exch translate 90 rotate pop pop } if
-} bind def
+} bind executeonly odef
 
 /EPSBoundingBoxProcess { % (llx lly urx ury) state --
   //systemdict /EPSBoundingBoxState get 1 index lt {
@@ -121,7 +121,8 @@
   } {
     pop pop
   } ifelse
-} bind def
+} bind executeonly odef
+
 
 /ProcessEPSComment { % file comment --  file comment
   /EPSBoundingBoxState .systemvar 3 lt {
@@ -184,19 +185,20 @@
       } ifelse
     } ifelse
   } if
-} bind def
+} bind executeonly def
 
 % Install EPS handler for DSC comments, which we do later
 /EPSBoundingBoxInit {
   systemdict /NOEPS known not {
     % Merge ProcessEPSComment with existing handler
-    /ProcessEPSComment load /exec load
+    //ProcessEPSComment /exec load
     currentuserparams /ProcessDSCComment get
     dup //null eq {pop {pop pop}} if /exec load
     4 array astore cvx readonly
     << /ProcessDSCComment 3 -1 roll >> setuserparams
   } if
-} bind def
+} bind executeonly odef
+
 
 /.runNoEPS /run load def
 
@@ -206,13 +208,13 @@
   /runEPS_op_count count 2 sub def
   /runEPS_page_count currentpagedevice /PageCount get def
   0 EPSBoundingBoxSetState
-  .runNoEPS
+  //.runNoEPS
   currentpagedevice /PageCount get runEPS_page_count sub 0 eq
   { /showpage load exec } if
   count runEPS_op_count sub {pop} repeat
   countdictstack runEPS_dict_count sub {end} repeat
   runEPS_save restore
-} bind def
+} bind executeonly odef
 
 /run { % file OR string --
   dup type /filetype ne { (r) file } if
@@ -223,29 +225,29 @@
         pop pop pop
         EPSDEBUG {(runEPS: Found EPS\n) print flush} if
         systemdict /NOEPS known {
-          cvx .runNoEPS
+          cvx //.runNoEPS
         } {
           cvx .runEPS
         } ifelse
       } {
         EPSDEBUG {(runEPS: Normal DSC\n) print flush} if
         pop
-          cvx .runNoEPS
+          cvx //.runNoEPS
 
       } ifelse
       } {
         EPSDEBUG {(runEPS: Short DSC\n) print flush} if
       pop
-        cvx .runNoEPS
+        cvx //.runNoEPS
       } ifelse
     } {
       EPSDEBUG {(runEPS: Not DSC\n) print flush} if
-      cvx .runNoEPS
+      cvx //.runNoEPS
     } ifelse
   } {
     EPSDEBUG {(runEPS: Short non-DSC\n) print flush} if
     pop
-    cvx .runNoEPS
+    cvx //.runNoEPS
   } ifelse
 } bind odef
 
@@ -278,7 +280,7 @@
                 % Now interpret the PostScript.
       exch () /SubFileDecode filter cvx run
     }
-    { .runnoepsf
+    { //.runnoepsf
     }
    ifelse
  } odef
@@ -289,3 +291,17 @@ userdict begin
   { (%stdin) run } execute0
 } bind def
 end
+
+% undefine things defined in this file and not referenced elsewhere
+[
+    /.runNoEPS
+    /.runnoepsf
+    /.runEPS
+    /EPSBoundingBoxSetState
+    /EPSBoundingBoxCrop
+    /EPSBoundingBoxFitPage
+    /EPSBoundingBoxParse
+    /EPSBoundingBoxProcess
+    /ProcessEPSComment
+]
+{currentdict exch .forceundef} forall
