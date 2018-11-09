@@ -212,8 +212,12 @@ ps_impl_init_job(pl_interp_implementation_t *impl,
 
     code = code < 0 ? code : code1;
 
-    if (code >= 0)
+    if (code >= 0) {
         code = psapi_set_device(psi->psapi_instance, device);
+        if (code < 0)
+            code1 = psapi_set_device(psi->psapi_instance, NULL);
+        (void)code1;
+    }
 
     return code;
 }
