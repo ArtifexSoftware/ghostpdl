@@ -289,9 +289,11 @@ revert_to_pjli(pl_main_instance_t *minst)
     if (minst->curr_implementation == pjli)
         return 0;
 
-    code = pl_dnit_job(minst->curr_implementation);
-    if (code < 0)
-        return code;
+    if (minst->curr_implementation) {
+        code = pl_dnit_job(minst->curr_implementation);
+        if (code < 0)
+            return code;
+    }
     minst->curr_implementation = pjli;
     code = pl_init_job(minst->curr_implementation, minst->device);
 
