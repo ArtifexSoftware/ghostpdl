@@ -322,6 +322,9 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
     }
     if (crdev->num_render_threads > band_count)
         crdev->num_render_threads = band_count; /* don't bother starting more threads than bands */
+    /* don't exceed our limit (allow for BGPrint and main thread) */
+    if (crdev->num_render_threads > MAX_THREADS - 2)
+        crdev->num_render_threads = MAX_THREADS - 2;
 
     /* Allocate and initialize an array of thread control structures */
     crdev->render_threads = (clist_render_thread_control_t *)

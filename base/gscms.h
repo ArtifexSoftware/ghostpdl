@@ -471,6 +471,8 @@ typedef struct gsicc_link_cache_s {
     rc_header rc;
     gs_memory_t *memory;
     gx_monitor_t *lock;		/* handle for the monitor */
+    bool cache_full;		/* flag that some thread needs a cache slot */
+    gx_semaphore_t *full_wait;	/* semaphore for waiting when the cache is full */
 } gsicc_link_cache_t;
 
 /* A linked list structure to keep DeviceN ICC profiles
