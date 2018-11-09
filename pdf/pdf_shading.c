@@ -271,6 +271,103 @@ static int pdfi_shading7(pdf_context *ctx, pdf_dict *shading_dict, pdf_dict *str
     return 0;
 }
 
+static int get_shading_common(pdf_context *ctx, pdf_dict *shading_dict, gs_shading_params_t *params)
+{
+    gs_color_space *pcs = gs_currentcolorspace(ctx->pgs);
+    int code, num_comp = gs_color_space_num_components(pcs);
+    pdf_array *a;
+    pdf_bool b;
+
+    if (num_comp < 0)	/* Pattern color space */
+        return_error(gs_error_typecheck);
+
+    params->ColorSpace = pcs;
+    rc_increment_cs(pcs);
+
+    code = pdfi_dict_get_type(ctx, shading_dict, "Background", PDF_ARRAY, (pdf_obj **)&a);
+    if (code < 0 && code != gs_error_undefined)
+        return code;
+
+    if (code >= 0) {
+        gs_client_color *pcc;
+        uint64_t i;
+
+        if (a->size < num_comp) {
+            pdfi_countdown((pdf_obj *)a);
+            return_error(gs_error_rangecheck);
+        }
+
+        pcc = gs_alloc_struct(ctx->memory, gs_client_color, &st_client_color, "get_shading_common");
+        if (pcc == 0) {
+            pdfi_countdown((pdf_obj *)a);
+            return_error(gs_error_VMerror);
+        }
+
+        pcc->pattern = 0;
+        params->Background = pcc;
+
+        for(i=0;i<num_comp;i++) {
+            code = pdfi_array_get_number(ctx, a, i, &pcc->paint.values[i]);
+            if (code < 0) {
+                pdfi_countdown((pdf_obj *)a);
+                gs_free_object(ctx->memory, params->Background, "Background");
+                return code;
+            }
+        }
+        pdfi_countdown((pdf_obj *)a);
+    }
+
+    code = pdfi_dict_get_type(ctx, shading_dict, "BBox", PDF_ARRAY, (pdf_obj **)&a);
+    if (code < 0 && code != gs_error_undefined) {
+        gs_free_object(ctx->memory, params->Background, "Background");
+        return code;
+    }
+
+    if (code >= 0) {
+        double box[4];
+        uint64_t i;
+
+        if (a->size < 4) {
+            gs_free_object(ctx->memory, params->Background, "Background");
+            return_error(gs_error_rangecheck);
+        }
+
+        for(i=0;i<4;i++) {
+            code = pdfi_array_get_number(ctx, a, i, &box[i]);
+            if (code < 0) {
+                pdfi_countdown((pdf_obj *)a);
+                gs_free_object(ctx->memory, params->Background, "Background");
+                return code;
+            }
+        }
+        /* Adobe Interpreters accept denormalised BBox - bug 688937 */
+        if (box[0] <= box[2]) {
+            params->BBox.p.x = box[0];
+            params->BBox.q.x = box[2];
+        } else {
+            params->BBox.p.x = box[2];
+            params->BBox.q.x = box[0];
+        }
+        if (box[1] <= box[3]) {
+            params->BBox.p.y = box[1];
+            params->BBox.q.y = box[3];
+        } else {
+            params->BBox.p.y = box[3];
+            params->BBox.q.y = box[1];
+        }
+        params->have_BBox = true;
+    } else {
+        params->have_BBox = false;
+    }
+
+    code = pdfi_dict_get_bool(ctx, shading_dict, "AntiAlias", &params->AntiAlias);
+    if (code < 0 && code != gs_error_undefined) {
+        gs_free_object(ctx->memory, params->Background, "Background");
+        return code;
+    }
+    return 0;
+}
+
 int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int code, code1;
@@ -351,20 +448,18 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         return code;
     }
 
+    code = get_shading_common(ctx, (pdf_dict *)o, &params);
+    if (code < 0) {
+        (void)gs_grestore(ctx->pgs);
+        pdfi_pop(ctx, 1);
+        (void)pdfi_loop_detector_cleartomark(ctx);
+        pdfi_countdown(o);
+        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+        return code;
+    }
+
     /* Collect parameters common to all shading types. */
     {
-        gs_color_space *pcs = gs_currentcolorspace(ctx->pgs);
-        int num_comp = gs_color_space_num_components(pcs);
-
-        if (num_comp < 0) {	/* Pattern color space */
-            pdfi_pop(ctx, 1);
-            (void)pdfi_loop_detector_cleartomark(ctx);
-            pdfi_countdown(o);
-            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            return_error(gs_error_typecheck);
-        }
-        params.ColorSpace = pcs;
-        rc_increment_cs(pcs);
     }
 
     code = pdfi_dict_get(ctx, (pdf_dict *)o, "ShadingType", &o1);
