@@ -682,7 +682,7 @@ int
 gs_main_set_device(gs_main_instance * minst, gx_device *pdev)
 {
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
-    ref error_object, devref;
+    ref error_object;
     int code;
 
     if (pdev == NULL) {
@@ -694,10 +694,13 @@ gs_main_set_device(gs_main_instance * minst, gx_device *pdev)
     else {
         code = gs_main_run_string(minst, "true 0 startjob pop", 0, &code, &error_object);
         if (code < 0) goto done;
-        code = ref_stack_push(&o_stack, 1);
+        /* Call the C directly to avoid the SAFER checks */
+        code = zsetdevice_no_safer(i_ctx_p, pdev);
         if (code < 0) goto done;
-        make_tav(&devref, t_device, icurrent_space | a_all, pdevice, pdev);
-        *ref_stack_index(&o_stack, 0L) = devref;
+        code = gs_main_run_string(minst, code ? "true" : "false", 0, &code, &error_object);
+        if (code < 0) goto done;
+        code = zcurrentoutputdevice(i_ctx_p);
+        if (code < 0) goto done;
         code = gs_main_run_string(minst, "setdevice currentpagedevice pop .setdefaultscreen gsave", 0, &code, &error_object);
         if (code < 0) goto done;
         code = gs_main_run_string(minst, "false 0 startjob pop", 0, &code, &error_object);
