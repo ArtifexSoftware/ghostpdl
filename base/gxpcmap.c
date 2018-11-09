@@ -177,7 +177,10 @@ static const gx_device_pattern_accum gs_pattern_accum_device =
      NULL,                              /* get_profile */
      NULL,                              /* set_graphics_type_tag */
      gx_default_strip_copy_rop2,
-     gx_default_strip_tile_rect_devn
+     gx_default_strip_tile_rect_devn,
+     NULL,                              /* alpha_hl_color */
+     NULL,                              /* process_page */
+     gx_default_transform_pixel_region  /* NOT the default forwarding one */
 },
  0,                             /* target */
  0, 0, 0, 0                     /* bitmap_memory, bits, mask, instance */
@@ -307,7 +310,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         gx_device_clist_writer *cwdev;
         const int data_size = 1024*128;
         gx_band_params_t band_params = { 0 };
-        byte *data  = gs_alloc_bytes(storage_memory->non_gc_memory, data_size, cname);
+        byte *data  = gs_alloc_bytes(tdev->memory->non_gc_memory, data_size, cname);
 
         if (data == NULL)
             return 0;
@@ -321,7 +324,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
                                        &buf_procs, &band_params, true, /* use_memory_clist */
                                        pinst->templat.uses_transparency, pinst);
         if (cdev == 0) {
-            gs_free_object(storage_memory->non_gc_memory, data, cname);
+            gs_free_object(tdev->memory->non_gc_memory, data, cname);
             return 0;
         }
         cwdev = (gx_device_clist_writer *)cdev;

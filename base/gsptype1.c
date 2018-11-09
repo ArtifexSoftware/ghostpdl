@@ -50,7 +50,7 @@
 
 /* GC descriptors */
 private_st_pattern1_template();
-private_st_pattern1_instance();
+public_st_pattern1_instance();
 
 /* GC procedures */
 static ENUM_PTRS_BEGIN(pattern1_instance_enum_ptrs) {

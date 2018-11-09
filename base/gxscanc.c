@@ -195,6 +195,127 @@ static void coord(const char *str, fixed x, fixed y)
 }
 #endif
 
+typedef void (zero_filler_fn)(int *, const fixed *);
+
+static void mark_line_zero(fixed sx, fixed ex, fixed *zf)
+{
+    if (sx < zf[0])
+        zf[0] = sx;
+    if (ex < zf[0])
+        zf[0] = ex;
+    if (sx > zf[1])
+        zf[1] = sx;
+    if (ex > zf[1])
+        zf[1] = ex;
+}
+
+static void mark_curve_zero(fixed sx, fixed c1x, fixed c2x, fixed ex, int depth, fixed *zf)
+{
+    fixed ax = (sx + c1x)>>1;
+    fixed bx = (c1x + c2x)>>1;
+    fixed cx = (c2x + ex)>>1;
+    fixed dx = (ax + bx)>>1;
+    fixed fx = (bx + cx)>>1;
+    fixed gx = (dx + fx)>>1;
+
+    assert(depth >= 0);
+    if (depth == 0)
+        mark_line_zero(sx, ex, zf);
+    else {
+        depth--;
+        mark_curve_zero(sx, ax, dx, gx, depth, zf);
+        mark_curve_zero(gx, fx, cx, ex, depth, zf);
+    }
+}
+
+static void mark_curve_big_zero(fixed64 sx, fixed64 c1x, fixed64 c2x, fixed64 ex, int depth, fixed *zf)
+{
+    fixed64 ax = (sx + c1x)>>1;
+    fixed64 bx = (c1x + c2x)>>1;
+    fixed64 cx = (c2x + ex)>>1;
+    fixed64 dx = (ax + bx)>>1;
+    fixed64 fx = (bx + cx)>>1;
+    fixed64 gx = (dx + fx)>>1;
+
+    assert(depth >= 0);
+    if (depth == 0)
+        mark_line_zero((fixed)sx, (fixed)ex, zf);
+    else {
+        depth--;
+        mark_curve_big_zero(sx, ax, dx, gx, depth, zf);
+        mark_curve_big_zero(gx, fx, cx, ex, depth, zf);
+    }
+}
+
+static void mark_curve_top_zero(fixed sx, fixed c1x, fixed c2x, fixed ex, int depth, fixed *zf)
+{
+    fixed test = (sx^(sx<<1))|(c1x^(c1x<<1))|(c2x^(c2x<<1))|(ex^(ex<<1));
+
+    if (test < 0)
+        mark_curve_big_zero(sx, c1x, c2x, ex, depth, zf);
+    else
+        mark_curve_zero(sx, c1x, c2x, ex, depth, zf);
+}
+
+static int
+zero_case(gx_device      * gs_restrict pdev,
+          gx_path        * gs_restrict path,
+          gs_fixed_rect  * gs_restrict ibox,
+          int            * gs_restrict index,
+          int            * gs_restrict table,
+          fixed                        fixed_flat,
+          zero_filler_fn *             fill)
+{
+    const subpath *psub;
+    fixed zf[2];
+
+    /* Step 2 continued: Now we run through the path, filling in the real
+     * values. */
+    for (psub = path->first_subpath; psub != 0;) {
+        const segment *pseg = (const segment *)psub;
+        fixed ex = pseg->pt.x;
+        fixed sy = pseg->pt.y;
+        fixed ix = ex;
+        int iy = fixed2int(pseg->pt.y);
+
+        zf[0] = ex;
+        zf[1] = ex;
+
+        while ((pseg = pseg->next) != 0 &&
+               pseg->type != s_start
+            ) {
+            fixed sx = ex;
+            ex = pseg->pt.x;
+
+            switch (pseg->type) {
+                default:
+                case s_start: /* Should never happen */
+                case s_dash:  /* We should never be seeing a dash here */
+                    assert("This should never happen" == NULL);
+                    break;
+                case s_curve: {
+                    const curve_segment *const pcur = (const curve_segment *)pseg;
+                    int k = gx_curve_log2_samples(sx, sy, pcur, fixed_flat);
+
+                    mark_curve_top_zero(sx, pcur->p1.x, pcur->p2.x, ex, k, zf);
+                    break;
+                }
+                case s_gap:
+                case s_line:
+                case s_line_close:
+                    mark_line_zero(sx, ex, zf);
+                    break;
+            }
+        }
+        /* And close any open segments */
+        mark_line_zero(ex, ix, zf);
+        fill(&table[index[iy-ibox->p.y]], zf);
+        psub = (const subpath *)pseg;
+    }
+
+    return 0;
+}
+
 static void mark_line(fixed sx, fixed sy, fixed ex, fixed ey, int base_y, int height, int *table, int *index)
 {
     int64_t delta;
@@ -385,31 +506,50 @@ static void mark_curve_top(fixed sx, fixed sy, fixed c1x, fixed c1y, fixed c2x, 
 
 static int make_bbox(gx_path       * path,
                const gs_fixed_rect * clip,
+                     gs_fixed_rect * bbox,
                      gs_fixed_rect * ibox,
                      fixed           adjust)
 {
-    gs_fixed_rect bbox;
     int           code;
+    int           ret = 0;
 
     /* Find the bbox - fixed */
-    code = gx_path_bbox(path, &bbox);
+    code = gx_path_bbox(path, bbox);
     if (code < 0)
         return code;
 
+    if (bbox->p.y == bbox->q.y) {
+        /* Zero height path */
+        if (!clip ||
+            (bbox->p.y >= clip->p.y && bbox->q.y <= clip->q.y)) {
+            /* Either we're not clipping, or we are vertically inside the clip */
+            if (clip) {
+                if (bbox->p.x < clip->p.x)
+                    bbox->p.x = clip->p.x;
+                if (bbox->q.x > clip->q.x)
+                    bbox->q.x = clip->q.x;
+            }
+            if (bbox->p.x <= bbox->q.x) {
+                /* Zero height rectangle, not clipped completely away */
+                ret = 1;
+            }
+        }
+    }
+
     if (clip) {
-        if (bbox.p.y < clip->p.y)
-            bbox.p.y = clip->p.y;
-        if (bbox.q.y > clip->q.y)
-            bbox.q.y = clip->q.y;
+        if (bbox->p.y < clip->p.y)
+            bbox->p.y = clip->p.y;
+        if (bbox->q.y > clip->q.y)
+            bbox->q.y = clip->q.y;
     }
 
     /* Convert to bbox - int */
-    ibox->p.x = fixed2int(bbox.p.x-adjust);
-    ibox->p.y = fixed2int(bbox.p.y-adjust);
-    ibox->q.x = fixed2int(bbox.q.x-adjust+fixed_1);
-    ibox->q.y = fixed2int(bbox.q.y-adjust+fixed_1);
+    ibox->p.x = fixed2int(bbox->p.x+adjust-(adjust?1:0));
+    ibox->p.y = fixed2int(bbox->p.y+adjust-(adjust?1:0));
+    ibox->q.x = fixed2int(bbox->q.x-adjust+fixed_1);
+    ibox->q.y = fixed2int(bbox->q.y-adjust+fixed_1);
 
-    return 0;
+    return ret;
 }
 
 static inline int
@@ -638,7 +778,7 @@ make_table_template(gx_device     * pdev,
     /* Step 1 continued: index now contains a list of deltas (how the
      * number of intersects on line x differs from the number on line x-1).
      * First convert them to be the real number of intersects on that line.
-     * Sum these values to get us the total nunber of intersects. Then
+     * Sum these values to get us the total number of intersects. Then
      * convert the table to be a list of offsets into the real intersect
      * buffer. */
     offset = 0;
@@ -648,6 +788,9 @@ make_table_template(gx_device     * pdev,
         index[i]  = offset;                      /* Offset into table for this lines data. */
         offset   += delta+1;                     /* Adjust offset for next line. */
     }
+    /* Ensure we always have enough room for our zero height rectangle hack. */
+    if (offset < 2*intersection_size)
+        offset += 2*intersection_size;
     offset *= sizeof(*table);
     if (offset != (int64_t)(uint)offset)
     {
@@ -691,19 +834,29 @@ static int make_table(gx_device     * pdev,
     return make_table_template(pdev, path, ibox, 1, 1, scanlines, index, table);
 }
 
+static void
+fill_zero(int *row, const fixed *x)
+{
+    int n = *row = (*row)+2; /* Increment the count */
+    row[n-1] = (x[0]&~1);
+    row[n  ] = (x[1]|1);
+}
+
 int gx_scan_convert(gx_device     * gs_restrict pdev,
                     gx_path       * gs_restrict path,
               const gs_fixed_rect * gs_restrict clip,
                     gx_edgebuffer * gs_restrict edgebuffer,
-                    fixed                    fixed_flat)
+                    fixed                       fixed_flat)
 {
     gs_fixed_rect  ibox;
+    gs_fixed_rect  bbox;
     int            scanlines;
     const subpath *psub;
     int           *index;
     int           *table;
     int            i;
     int            code;
+    int            zero;
 
     edgebuffer->index = NULL;
     edgebuffer->table = NULL;
@@ -712,9 +865,9 @@ int gx_scan_convert(gx_device     * gs_restrict pdev,
     if (path->first_subpath == NULL)
         return 0;
 
-    code = make_bbox(path, clip, &ibox, fixed_half);
-    if (code < 0)
-        return code;
+    zero = make_bbox(path, clip, &bbox, &ibox, fixed_half);
+    if (zero < 0)
+        return zero;
 
     if (ibox.q.y <= ibox.p.y)
         return 0;
@@ -722,6 +875,10 @@ int gx_scan_convert(gx_device     * gs_restrict pdev,
     code = make_table(pdev, path, &ibox, &scanlines, &index, &table);
     if (code < 0)
         return code;
+
+    if (zero) {
+        code = zero_case(pdev, path, &ibox, index, table, fixed_flat, fill_zero);
+    } else {
 
     /* Step 2 continued: Now we run through the path, filling in the real
      * values. */
@@ -765,6 +922,7 @@ int gx_scan_convert(gx_device     * gs_restrict pdev,
         if (iy != ey)
             mark_line(ex, ey, ix, iy, ibox.p.y, scanlines, table, index);
         psub = (const subpath *)pseg;
+    }
     }
 
     /* Step 2 complete: We now have a complete list of intersection data in
@@ -1881,6 +2039,16 @@ static int make_table_app(gx_device     * pdev,
     return make_table_template(pdev, path, ibox, 2, 0, scanlines, index, table);
 }
 
+static void
+fill_zero_app(int *row, const fixed *x)
+{
+    int n = *row = (*row)+2; /* Increment the count */
+    row[2*n-3] = (x[0]&~1);
+    row[2*n-2] = (x[1]&~1);
+    row[2*n-1] = (x[1]&~1)|1;
+    row[2*n  ] = x[1];
+}
+
 int gx_scan_convert_app(gx_device     * gs_restrict pdev,
                         gx_path       * gs_restrict path,
                   const gs_fixed_rect * gs_restrict clip,
@@ -1888,6 +2056,7 @@ int gx_scan_convert_app(gx_device     * gs_restrict pdev,
                         fixed                    fixed_flat)
 {
     gs_fixed_rect  ibox;
+    gs_fixed_rect  bbox;
     int            scanlines;
     const subpath *psub;
     int           *index;
@@ -1895,6 +2064,7 @@ int gx_scan_convert_app(gx_device     * gs_restrict pdev,
     int            i;
     cursor         cr;
     int            code;
+    int            zero;
 
     edgebuffer->index = NULL;
     edgebuffer->table = NULL;
@@ -1903,9 +2073,9 @@ int gx_scan_convert_app(gx_device     * gs_restrict pdev,
     if (path->first_subpath == NULL)
         return 0;
 
-    code = make_bbox(path, clip, &ibox, 0);
-    if (code < 0)
-        return code;
+    zero = make_bbox(path, clip, &bbox, &ibox, 0);
+    if (zero < 0)
+        return zero;
 
     if (ibox.q.y <= ibox.p.y)
         return 0;
@@ -1913,6 +2083,10 @@ int gx_scan_convert_app(gx_device     * gs_restrict pdev,
     code = make_table_app(pdev, path, &ibox, &scanlines, &index, &table);
     if (code < 0)
         return code;
+
+    if (zero) {
+        code = zero_case(pdev, path, &ibox, index, table, fixed_flat, fill_zero_app);
+    } else {
 
     /* Step 2 continued: Now we run through the path, filling in the real
      * values. */
@@ -1971,6 +2145,7 @@ int gx_scan_convert_app(gx_device     * gs_restrict pdev,
         mark_line_app(&cr, ex, ey, ix, iy);
         cursor_flush(&cr, ex);
         psub = (const subpath *)pseg;
+    }
     }
 
     /* Step 2 complete: We now have a complete list of intersection data in
@@ -2389,6 +2564,16 @@ static int make_table_tr(gx_device     * pdev,
     return make_table_template(pdev, path, ibox, 2, 1, scanlines, index, table);
 }
 
+static void
+fill_zero_tr(int *row, const fixed *x)
+{
+    int n = *row = (*row)+2; /* Increment the count */
+    row[2*n-3] = x[0];
+    row[2*n-2] = 0;
+    row[2*n-1] = x[1];
+    row[2*n  ] = 1;
+}
+
 int gx_scan_convert_tr(gx_device     * gs_restrict pdev,
                        gx_path       * gs_restrict path,
                  const gs_fixed_rect * gs_restrict clip,
@@ -2396,6 +2581,7 @@ int gx_scan_convert_tr(gx_device     * gs_restrict pdev,
                        fixed                    fixed_flat)
 {
     gs_fixed_rect  ibox;
+    gs_fixed_rect  bbox;
     int            scanlines;
     const subpath *psub;
     int           *index;
@@ -2403,6 +2589,7 @@ int gx_scan_convert_tr(gx_device     * gs_restrict pdev,
     int            i;
     int            code;
     int            id = 0;
+    int            zero;
 
     edgebuffer->index = NULL;
     edgebuffer->table = NULL;
@@ -2411,9 +2598,9 @@ int gx_scan_convert_tr(gx_device     * gs_restrict pdev,
     if (path->first_subpath == NULL)
         return 0;
 
-    code = make_bbox(path, clip, &ibox, fixed_half);
-    if (code < 0)
-        return code;
+    zero = make_bbox(path, clip, &bbox, &ibox, fixed_half);
+    if (zero < 0)
+        return zero;
 
     if (ibox.q.y <= ibox.p.y)
         return 0;
@@ -2421,6 +2608,10 @@ int gx_scan_convert_tr(gx_device     * gs_restrict pdev,
     code = make_table_tr(pdev, path, &ibox, &scanlines, &index, &table);
     if (code < 0)
         return code;
+
+    if (zero) {
+        code = zero_case(pdev, path, &ibox, index, table, fixed_flat, fill_zero_tr);
+    } else {
 
     /* Step 3: Now we run through the path, filling in the real
      * values. */
@@ -2465,6 +2656,18 @@ int gx_scan_convert_tr(gx_device     * gs_restrict pdev,
             mark_line_tr(ex, ey, ix, iy, ibox.p.y, scanlines, table, index, ++id);
         psub = (const subpath *)pseg;
     }
+    }
+
+    //if (zero) {
+    //    if (table[0] == 0) {
+    //        /* Zero height rectangle fills a span */
+    //        table[0] = 2;
+    //        table[1] = int2fixed(fixed2int(bbox.p.x + fixed_half));
+    //        table[2] = 0;
+    //        table[3] = int2fixed(fixed2int(bbox.q.x + fixed_half));
+    //        table[4] = 1;
+    //    }
+    //}
 
     /* Step 2 complete: We now have a complete list of intersection data in
      * table, indexed by index. */
@@ -2518,7 +2721,7 @@ int gx_scan_convert_tr(gx_device     * gs_restrict pdev,
 int
 gx_filter_edgebuffer_tr(gx_device       * gs_restrict pdev,
                         gx_edgebuffer   * gs_restrict edgebuffer,
-                        int                        rule)
+                        int                           rule)
 {
     int i;
 
@@ -3802,6 +4005,20 @@ static int make_table_tr_app(gx_device     * pdev,
     return make_table_template(pdev, path, ibox, 4, 0, scanlines, index, table);
 }
 
+static void
+fill_zero_app_tr(int *row, const fixed *x)
+{
+    int n = *row = (*row)+2; /* Increment the count */
+    row[4*n-7] = x[0];
+    row[4*n-6] = 0;
+    row[4*n-5] = x[1];
+    row[4*n-4] = 0;
+    row[4*n-3] = x[1];
+    row[4*n-2] = (1<<1)|1;
+    row[4*n-1] = x[1];
+    row[4*n  ] = 1;
+}
+
 int gx_scan_convert_tr_app(gx_device     * gs_restrict pdev,
                            gx_path       * gs_restrict path,
                      const gs_fixed_rect * gs_restrict clip,
@@ -3809,6 +4026,7 @@ int gx_scan_convert_tr_app(gx_device     * gs_restrict pdev,
                            fixed                    fixed_flat)
 {
     gs_fixed_rect  ibox;
+    gs_fixed_rect  bbox;
     int            scanlines;
     const subpath *psub;
     int           *index;
@@ -3817,6 +4035,7 @@ int gx_scan_convert_tr_app(gx_device     * gs_restrict pdev,
     cursor_tr      cr;
     int            code;
     int            id = 0;
+    int            zero;
 
     edgebuffer->index = NULL;
     edgebuffer->table = NULL;
@@ -3825,9 +4044,9 @@ int gx_scan_convert_tr_app(gx_device     * gs_restrict pdev,
     if (path->first_subpath == NULL)
         return 0;
 
-    code = make_bbox(path, clip, &ibox, 0);
-    if (code < 0)
-        return code;
+    zero = make_bbox(path, clip, &bbox, &ibox, 0);
+    if (zero < 0)
+        return zero;
 
     if (ibox.q.y <= ibox.p.y)
         return 0;
@@ -3835,6 +4054,10 @@ int gx_scan_convert_tr_app(gx_device     * gs_restrict pdev,
     code = make_table_tr_app(pdev, path, &ibox, &scanlines, &index, &table);
     if (code < 0)
         return code;
+
+    if (zero) {
+        code = zero_case(pdev, path, &ibox, index, table, fixed_flat, fill_zero_app_tr);
+    } else {
 
     /* Step 2 continued: Now we run through the path, filling in the real
      * values. */
@@ -3894,6 +4117,7 @@ int gx_scan_convert_tr_app(gx_device     * gs_restrict pdev,
         mark_line_tr_app(&cr, ex, ey, ix, iy, ++id);
         cursor_flush_tr(&cr, ex, id);
         psub = (const subpath *)pseg;
+    }
     }
 
     /* Step 2 complete: We now have a complete list of intersection data in

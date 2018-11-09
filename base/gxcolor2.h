@@ -92,8 +92,8 @@ struct gs_pattern1_instance_s {
     gx_bitmap_id id;		/* key for cached bitmap (= id of mask) */
 };
 
-#define private_st_pattern1_instance() /* in gsptype1.c */\
-  gs_private_st_composite(st_pattern1_instance, gs_pattern1_instance_t,\
+#define public_st_pattern1_instance() /* in gsptype1.c */\
+  gs_public_st_composite(st_pattern1_instance, gs_pattern1_instance_t,\
     "gs_pattern1_instance_t", pattern1_instance_enum_ptrs,\
     pattern1_instance_reloc_ptrs)
 

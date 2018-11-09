@@ -1179,8 +1179,16 @@ currentdict /eexec_pdf_param_dict .undef
     /CharProcs 1 index /CharProcs oget def
     1 index /Widths knownoget {
       /Widths exch def
-      /FirstChar 1 index /FirstChar oget def
-      /LastChar 1 index /LastChar oget def
+      1 index /FirstChar known 2 index /LastChar known and {
+        /FirstChar 1 index /FirstChar oget def
+        /LastChar 1 index /LastChar oget def
+      } {
+       (   **** Error: Requireed entry FirstChar or LastChar is missing from Font.\n)
+       pdfformaterror
+       (               Output may be incorrect.\n) pdfformaterror
+        /FirstChar 0 def
+        /LastChar Widths length def
+      }ifelse
     } if
     /FontName 1 index /Name knownoget not { /PDFType3Untitled } if def
     /Encoding .notdefEncoding 2 index getencoding def
@@ -1475,6 +1483,16 @@ currentdict end readonly def
   //CMap_read_dict begin
   /CIDInit /ProcSet findresource begin
   12 dict begin
+  /o.endmapvalue /.endmapvalue load def
+  /.endmapvalue
+  {
+    dup 65535 gt
+    {
+      (   **** Warning: CMap: CID out of valid range (0-65535).\n)  pdfformatwarning
+      pop 65535
+    } if
+    o.endmapvalue
+  } bind def
   4 2 roll
   dup //null eq { pop } { /WMode exch def } ifelse
   dup //null eq { pop } { /CIDSystemInfo exch def } ifelse
@@ -1482,6 +1500,7 @@ currentdict end readonly def
   /.last_CMap_def currentdict def % establish binding
   mark exch % emulate 'begincodespacerange'
   0 (endcmap) /SubFileDecode filter cvx /begincmap cvx exch 2 .execn
+  currentdict /o.endmapvalue undef
   endcmap
   /.last_CMap_def load
   { currentdict end //CMap_read_dict eq { exit } if } loop

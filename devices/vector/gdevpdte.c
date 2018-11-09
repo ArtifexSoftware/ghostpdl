@@ -376,9 +376,10 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
     int WMode = font->WMode;
     int code = 0;
     gs_point total = {0, 0};
+    gs_point p0, p1, p2, p3;
     gs_fixed_point origin;
     gs_matrix m;
-    int xy_index = pte->xy_index;
+    int xy_index = pte->xy_index, info_flags = 0;
 
     code = gx_path_current_point(pte->path, &origin);
     if (code < 0)
@@ -387,10 +388,59 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
     m.tx = fixed2float(origin.x);
     m.ty = fixed2float(origin.y);
     gs_matrix_multiply(pfmat, &m, &m);
+
+    /* If the FontBBox is all 0, then its clearly wrong, so determine the text width
+     * accurately by processing the glyph program.
+     */
+    if (font->FontBBox.p.x == font->FontBBox.q.x ||
+        font->FontBBox.p.y == font->FontBBox.q.y) {
+            info_flags = GLYPH_INFO_BBOX | GLYPH_INFO_WIDTH0 << WMode;
+    } else {
+        double width, height;
+
+        /* This is a heuristic for Bug #700124. We try to determine whether a given glyph
+         * is used in a string by using the current point, glyph width and advance width
+         * to see if the glyph is fully clipped out, if it is we don't include it in the
+         * output, or in subset fonts.
+         *
+         * Previously we used the FontBBox to determine a quick glyph width, but
+         * in bug #699454 and bug #699571 we saw that OneVision EPSExport could construct
+         * fonts with a wildly incorrect BBox ([0 0 2 1]) and then draw the text without
+         * an advance width, leading us to conclude the glyph was clipped out and eliding it.
+         *
+         * To solve this we added code to process the glyph program and extract an accurate
+         * width of the glyph. However, this proved slow. So here we attempt to decide if
+         * the FontBBox is sensible by applying the FontMatrix to it, and looking to see
+         * if that results in a reasonable number of co-ordinates in font space. If it
+         * does then we use the FontBBox for speed, otherwise we carefully process the
+         * glyphs in the font and extract their accurate widths.
+         */
+        gs_point_transform(font->FontBBox.p.x, font->FontBBox.p.y, &font->FontMatrix, &p0);
+        gs_point_transform(font->FontBBox.p.x, font->FontBBox.q.y, &font->FontMatrix, &p1);
+        gs_point_transform(font->FontBBox.q.x, font->FontBBox.p.y, &font->FontMatrix, &p2);
+        gs_point_transform(font->FontBBox.q.x, font->FontBBox.q.y, &font->FontMatrix, &p3);
+        width = max(fabs(p2.x), fabs(p3.x)) - p0.x;
+        height = max(fabs(p1.y), fabs(p3.y)) - p0.y;
+
+        /* Yes, this is a magic number. There's no reasoning here, its just a guess, we may
+         * need to adjust this in future. Or possibly do away with it altogether if it proves
+         * unreliable.
+         */
+        if (fabs(width) < 0.1 || fabs(height) < 0.1) {
+            info_flags = GLYPH_INFO_BBOX | GLYPH_INFO_WIDTH0 << WMode;
+        } else {
+            gs_point_transform(font->FontBBox.p.x, font->FontBBox.p.y, &m, &p0);
+            gs_point_transform(font->FontBBox.p.x, font->FontBBox.q.y, &m, &p1);
+            gs_point_transform(font->FontBBox.q.x, font->FontBBox.p.y, &m, &p2);
+            gs_point_transform(font->FontBBox.q.x, font->FontBBox.q.y, &m, &p3);
+            info_flags = GLYPH_INFO_WIDTH0 << WMode;
+        }
+    }
+
     for (i = 0; i < pstr->size; ++i) {
         byte c = pstr->data[i];
         gs_rect bbox;
-        gs_point wanted, tpt, p0, p1, p2, p3;
+        gs_point wanted, tpt;
         gs_glyph glyph = font->procs.encode_char((gs_font *)font, c,
                                         GLYPH_SPACE_NAME);
         gs_glyph_info_t info;
@@ -401,7 +451,7 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
 
         memset(&info, 0x00, sizeof(gs_glyph_info_t));
         code = font->procs.glyph_info((gs_font *)font, glyph, NULL,
-                                            GLYPH_INFO_BBOX | GLYPH_INFO_WIDTH0 << WMode,
+                                            info_flags,
                                             &info);
 
         /* If we got an undefined error, and its a type 1/CFF font, try to
@@ -425,7 +475,7 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
 
                     if (gs_font_glyph_is_notdef(font, glyph)) {
                         code = font->procs.glyph_info((gs_font *)font, glyph, NULL,
-                                            GLYPH_INFO_BBOX | GLYPH_INFO_WIDTH0 << WMode,
+                                            info_flags,
                                             &info);
 
                     if (code < 0)
@@ -460,10 +510,12 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
             }
         }
 
-        gs_point_transform(info.bbox.p.x, info.bbox.p.x, &m, &p0);
-        gs_point_transform(info.bbox.p.x, info.bbox.q.y, &m, &p1);
-        gs_point_transform(info.bbox.q.x, info.bbox.p.y, &m, &p2);
-        gs_point_transform(info.bbox.q.x, info.bbox.q.y, &m, &p3);
+        if (info_flags & GLYPH_INFO_BBOX) {
+            gs_point_transform(info.bbox.p.x, info.bbox.p.x, &m, &p0);
+            gs_point_transform(info.bbox.p.x, info.bbox.q.y, &m, &p1);
+            gs_point_transform(info.bbox.q.x, info.bbox.p.y, &m, &p2);
+            gs_point_transform(info.bbox.q.x, info.bbox.q.y, &m, &p3);
+        }
 
         bbox.p.x = min(min(p0.x, p1.x), min(p2.x, p3.x));
         bbox.p.y = min(min(p0.y, p1.y), min(p2.y, p3.y));

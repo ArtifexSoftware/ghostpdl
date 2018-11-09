@@ -210,6 +210,11 @@ gdev_prn_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
             return code;
     }
 
+#ifdef DEBUG
+    if (dev_spec_op == gxdso_debug_printer_check)
+        return 1;
+#endif
+
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
@@ -1466,17 +1471,22 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
         mdev = (gx_device_memory *)*pbdev;
     }
     if (target == (gx_device *)mdev) {
+        dev_t_proc_dev_spec_op((*orig_dso), gx_device) = dev_proc(mdev, dev_spec_op);
         /* The following is a special hack for setting up printer devices. */
         assign_dev_procs(mdev, mdproto);
+        /* Do not override the dev_spec_op! */
+        dev_proc(mdev, dev_spec_op) = orig_dso;
         check_device_separable((gx_device *)mdev);
         /* In order for saved-pages to work, we need to hook the dev_spec_op */
-        if (mdev->procs.dev_spec_op == NULL)
+        if (mdev->procs.dev_spec_op == NULL || mdev->procs.dev_spec_op == gx_default_dev_spec_op)
             set_dev_proc(mdev, dev_spec_op, gdev_prn_dev_spec_op);
 #ifdef DEBUG
         /* scanning sources didn't show anything, but if a device gets changed or added */
         /* that has its own dev_spec_op, it should call the gdev_prn_spec_op as well    */
-        else
-            errprintf(mdev->memory, "Warning: printer device has private dev_spec_op\n");
+        else {
+            if (dev_proc(mdev, dev_spec_op)((gx_device *)mdev, gxdso_debug_printer_check, NULL, 0) < 0)
+                errprintf(mdev->memory, "Warning: printer device has private dev_spec_op\n");
+        }
 #endif
         gx_device_fill_in_procs((gx_device *)mdev);
     } else {
