@@ -277,7 +277,7 @@ restore_page_device(i_ctx_t *i_ctx_p, const gs_gstate * pgs_old, const gs_gstate
             samepagedevice = false;
     }
 
-    if (LockSafetyParams && !samepagedevice) {
+    if (LockSafetyParams) {
         const int required_ops = 512;
         const int required_es = 32;
 
