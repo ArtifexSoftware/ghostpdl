@@ -370,7 +370,7 @@ int fill_domain_from_dict(pdf_context *ctx, float *parray, int size, pdf_dict *d
         return_error(gs_error_rangecheck);
     }
 
-    for (i=0;i< a->entries;i+=2) {
+    for (i=0;i< a->entries;i++) {
         if (a->values[i]->type != PDF_INT && a->values[i]->type != PDF_REAL) {
             pdfi_countdown(a);
             return_error(gs_error_typecheck);
