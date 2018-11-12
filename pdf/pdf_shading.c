@@ -251,8 +251,101 @@ static int pdfi_shading3(pdf_context *ctx,  gs_shading_params_t *pcommon,
     return 0;
 }
 
-static int pdfi_shading4(pdf_context *ctx, pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict)
+static int pdfi_shading4(pdf_context *ctx, gs_shading_params_t *pcommon,
+                  gs_shading_t **ppsh,
+                  pdf_dict *shading_dict, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
+    gs_shading_FfGt_params_t params;
+    int num_decode = 4, code;
+    int64_t i;
+    gs_offset_t savedoffset;
+    int64_t Length, temp;
+    byte *data_source_buffer;
+    bool known = false;
+    pdf_stream *function_stream = NULL, *filtered_function_stream = NULL;
+
+    memset(&params, 0, sizeof(params));
+    *(gs_shading_params_t *)&params = *pcommon;
+
+    if (shading_dict->stream_offset == 0)
+        return_error(gs_error_typecheck);
+
+    code = pdfi_dict_get_int(ctx, shading_dict, "Length", &Length);
+    if (code < 0)
+        return code;
+
+    savedoffset = pdfi_tell(ctx->main_stream);
+    code = pdfi_seek(ctx, ctx->main_stream, shading_dict->stream_offset, SEEK_SET);
+    if (code < 0)
+        return code;
+
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, stream_dict, Length, &data_source_buffer, ctx->main_stream, &function_stream);
+    if (code < 0) {
+        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+        return code;
+    }
+
+    data_source_init_stream(&params.DataSource, function_stream->s);
+
+    code = pdfi_seek(ctx, function_stream, 0, SEEK_SET);
+    if (code < 0)
+        return code;
+    code = pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+    if (code < 0)
+        return code;
+
+    code = pdfi_build_shading_function(ctx, &params.Function, (const float *)NULL, 1, (pdf_dict *)shading_dict, page_dict);
+    if (code < 0 && code != gs_error_undefined)
+        return code;
+
+    code = pdfi_dict_get_int(ctx, shading_dict, "BitsPerCoordinate", &i);
+    if (code < 0)
+        return code;
+
+    if (i != 1 && i != 2 && i != 4 && i != 8 && i != 12 && i != 16 && i != 24 && i != 32)
+        return_error(gs_error_rangecheck);
+
+    params.BitsPerCoordinate = i;
+
+    code = pdfi_dict_get_int(ctx, shading_dict, "BitsPerComponent", &i);
+    if (code < 0)
+        return code;
+
+    if (i != 1 && i != 2 && i != 4 && i != 8 && i != 12 && i != 16)
+        return_error(gs_error_rangecheck);
+
+    params.BitsPerComponent = i;
+
+    code = pdfi_dict_get_int(ctx, shading_dict, "BitsPerFlag", &i);
+    if (code < 0)
+        return code;
+
+    if (i != 2 && i != 4 && i != 8)
+        return_error(gs_error_rangecheck);
+
+    params.BitsPerFlag = i;
+
+    if (params.Function == NULL)
+        num_decode += 1;
+    else
+        num_decode += gs_color_space_num_components(params.ColorSpace);
+    num_decode *= 2;
+
+    params.Decode = (float *) gs_alloc_byte_array(ctx->memory, num_decode, sizeof(float),
+                            "build_mesh_shading");
+
+    code = fill_float_array_from_dict(ctx, (float *)params.Decode, num_decode, shading_dict, "Decode");
+    if (code < 0) {
+        gs_free_object(ctx->memory, params.Decode, "Decode");
+        return code;
+    }
+
+    code = gs_shading_FfGt_init(ppsh, &params, ctx->memory);
+    if (code < 0) {
+        gs_free_object(ctx->memory, params.Function, "Function");
+        gs_free_object(ctx->memory, params.Decode, "Decode");
+        return code;
+    }
     return 0;
 }
 
@@ -476,8 +569,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
                     code = pdfi_shading3(ctx, &params, &psh, (pdf_dict *)o, stream_dict, page_dict);
                     break;
                 case 4:
-                    code = pdfi_shading4(ctx, (pdf_dict *)o, stream_dict, page_dict);
-                    code = gs_error_undefined;
+                    code = pdfi_shading4(ctx, &params, &psh, (pdf_dict *)o, stream_dict, page_dict);
                     break;
                 case 5:
                     code = pdfi_shading5(ctx, (pdf_dict *)o, stream_dict, page_dict);

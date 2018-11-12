@@ -195,7 +195,7 @@ int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf
 int
 pdfi_dict_get_type2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, pdf_obj_type type, pdf_obj **o)
 {
-    int code; 
+    int code;
 
     code = pdfi_dict_get_type(ctx, d, Key1, type, o);
     if (code == gs_error_undefined)
@@ -248,7 +248,7 @@ pdfi_dict_get_int2(pdf_context *ctx, pdf_dict *d, const char *Key1,
                    const char *Key2, int64_t *i)
 {
     int code;
-    
+
     code = pdfi_dict_get_int(ctx, d, Key1, i);
     if (code == gs_error_undefined)
         code = pdfi_dict_get_int(ctx, d, Key2, i);
@@ -290,7 +290,7 @@ pdfi_dict_get_bool2(pdf_context *ctx, pdf_dict *d, const char *Key1,
                     const char *Key2, bool *val)
 {
     int code;
-    
+
     code = pdfi_dict_get_bool(ctx, d, Key1, val);
     if (code == gs_error_undefined)
         code = pdfi_dict_get_bool(ctx, d, Key2, val);

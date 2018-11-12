@@ -290,71 +290,11 @@ pdfi_build_function_4(pdf_context *ctx, const gs_function_params_t * mnDR,
 
     savedoffset = pdfi_tell(ctx->main_stream);
     pdfi_seek(ctx, ctx->main_stream, function_dict->stream_offset, SEEK_SET);
-    code = pdfi_open_memory_stream_from_stream(ctx, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &function_stream);
+
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, function_dict, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &function_stream);
     if (code < 0) {
-        pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
+        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
-    }
-
-    pdfi_dict_known(function_dict, "F", &known);
-    if (!known)
-        pdfi_dict_known(function_dict, "Filter", &known);
-
-    /* If this is a compressed stream, we need to decompress it */
-    if(known) {
-        int decompressed_length = 0;
-        byte *Buffer;
-
-        /* This is again complicated by requiring a seekable stream, and the fact that,
-         * unlike fonts, there is no Length2 key to tell us how large the uncompressed
-         * stream is.
-         */
-        code = pdfi_filter(ctx, function_dict, function_stream, &filtered_function_stream, false);
-        if (code < 0) {
-            pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
-            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            return code;
-        }
-        do {
-            byte b;
-            code = pdfi_read_bytes(ctx, &b, 1, 1, filtered_function_stream);
-            if (code <= 0)
-                break;
-            decompressed_length++;
-        } while (true);
-        pdfi_close_file(ctx, filtered_function_stream);
-
-        Buffer = gs_alloc_bytes(ctx->memory, decompressed_length, "pdfi_build_function_4 (decompression buffer)");
-        if (Buffer != NULL) {
-            code = srewind(function_stream->s);
-            if (code >= 0) {
-                code = pdfi_filter(ctx, function_dict, function_stream, &filtered_function_stream, false);
-                if (code >= 0) {
-                    code = pdfi_read_bytes(ctx, Buffer, 1, decompressed_length, filtered_function_stream);
-                    pdfi_close_file(ctx, filtered_function_stream);
-                    code = pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
-                    if (code >= 0) {
-                        data_source_buffer = Buffer;
-                        code = pdfi_open_memory_stream_from_memory(ctx, (unsigned int)decompressed_length,
-                                                                   data_source_buffer, &function_stream);
-                    }
-                }
-            } else {
-                pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
-                gs_free_object(ctx->memory, Buffer, "pdfi_build_function_4");
-                pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-                return code;
-            }
-        } else {
-            pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
-            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            return_error(gs_error_VMerror);
-        }
-        if (code < 0) {
-            gs_free_object(ctx->memory, Buffer, "pdfi_build_function_4");
-            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            return code;
-        }
     }
 
     size = 0;
@@ -414,72 +354,11 @@ pdfi_build_function_0(pdf_context *ctx, const gs_function_params_t * mnDR,
 
     savedoffset = pdfi_tell(ctx->main_stream);
     pdfi_seek(ctx, ctx->main_stream, function_dict->stream_offset, SEEK_SET);
-    code = pdfi_open_memory_stream_from_stream(ctx, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &function_stream);
+
+    Length = pdfi_open_memory_stream_from_filtered_stream(ctx, function_dict, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &function_stream);
     if (code < 0) {
-        pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
+        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
-    }
-
-    pdfi_dict_known(function_dict, "F", &known);
-    if (!known)
-        pdfi_dict_known(function_dict, "Filter", &known);
-
-    /* If this is a compressed stream, we need to decompress it */
-    if(known) {
-        int decompressed_length = 0;
-        byte *Buffer;
-
-        /* This is again complicated by requiring a seekable stream, and the fact that,
-         * unlike fonts, there is no Length2 key to tell us how large the uncompressed
-         * stream is.
-         */
-        code = pdfi_filter(ctx, function_dict, function_stream, &filtered_function_stream, false);
-        if (code < 0) {
-            pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
-            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            return code;
-        }
-        do {
-            byte b;
-            code = pdfi_read_bytes(ctx, &b, 1, 1, filtered_function_stream);
-            if (code <= 0)
-                break;
-            decompressed_length++;
-        } while (true);
-        pdfi_close_file(ctx, filtered_function_stream);
-
-        Buffer = gs_alloc_bytes(ctx->memory, decompressed_length, "pdfi_build_function_4 (decompression buffer)");
-        if (Buffer != NULL) {
-            code = srewind(function_stream->s);
-            if (code >= 0) {
-                code = pdfi_filter(ctx, function_dict, function_stream, &filtered_function_stream, false);
-                if (code >= 0) {
-                    code = pdfi_read_bytes(ctx, Buffer, 1, decompressed_length, filtered_function_stream);
-                    pdfi_close_file(ctx, filtered_function_stream);
-                    code = pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
-                    if (code >= 0) {
-                        data_source_buffer = Buffer;
-                        code = pdfi_open_memory_stream_from_memory(ctx, (unsigned int)decompressed_length,
-                                                                   data_source_buffer, &function_stream);
-                    }
-                }
-            } else {
-                pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
-                gs_free_object(ctx->memory, Buffer, "pdfi_build_function_4");
-                pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-                return code;
-            }
-        } else {
-            pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
-            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            return_error(gs_error_VMerror);
-        }
-        if (code < 0) {
-            gs_free_object(ctx->memory, Buffer, "pdfi_build_function_4");
-            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            return code;
-        }
-        Length = decompressed_length;
     }
 
     data_source_init_stream(&params.DataSource, function_stream->s);

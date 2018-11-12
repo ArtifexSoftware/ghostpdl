@@ -664,78 +664,10 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_dict *ICC_dict, char *cn
      * implemented in PostScript (!) so we can't use it. What we can do is create a
      * string sourced stream in memory, which is at least seekable.
      */
-    code = pdfi_open_memory_stream_from_stream(ctx, (unsigned int)Length, &profile_buffer,
-                                               ctx->main_stream, &profile_stream);
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, ICC_dict, Length, &profile_buffer, ctx->main_stream, &profile_stream);
     if (code < 0) {
         pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
-    }
-
-    pdfi_dict_known(ICC_dict, "F", &known);
-    if (!known)
-        pdfi_dict_known(ICC_dict, "Filter", &known);
-
-    /* If this is a compressed stream, we need to decompress it */
-    if(known) {
-        int decompressed_length = 0;
-        byte *Buffer;
-
-        /* This is again complicated by requiring a seekable stream, and the fact that,
-         * unlike fonts, there is no Length2 key to tell us how large the uncompressed
-         * stream is. We need to make a new string sourced stream containing the
-         * uncompressed dtaa, because the ICC profile reading code needs to seek, and
-         * we don't kow the decompressed size. But the compressed stream is at least
-         * seekable, so we do 2 passes, one to find the decompressed size, then allocate
-         * enough memory to hold it, and then another decompressing into that buffer.
-         * We can then discard the original (compresed) stream and use the new
-         * (decompressed) stream instead.
-         */
-        code = pdfi_filter(ctx, ICC_dict, profile_stream, &filtered_profile_stream, false);
-        if (code < 0) {
-            pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
-            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            return code;
-        }
-        do {
-            byte b;
-            code = pdfi_read_bytes(ctx, &b, 1, 1, filtered_profile_stream);
-            if (code <= 0)
-                break;
-            decompressed_length++;
-        } while (true);
-        pdfi_close_file(ctx, filtered_profile_stream);
-
-        Buffer = gs_alloc_bytes(ctx->memory, decompressed_length, "pdfi_create_iccprofile (decompression buffer)");
-        if (Buffer != NULL) {
-            code = srewind(profile_stream->s);
-            if (code >= 0) {
-                code = pdfi_filter(ctx, ICC_dict, profile_stream, &filtered_profile_stream, false);
-                if (code >= 0) {
-                    code = pdfi_read_bytes(ctx, Buffer, 1, decompressed_length, filtered_profile_stream);
-                    pdfi_close_file(ctx, filtered_profile_stream);
-                    code = pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
-                    if (code >= 0) {
-                        profile_buffer = Buffer;
-                        code = pdfi_open_memory_stream_from_memory(ctx, (unsigned int)decompressed_length,
-                                                                   profile_buffer, &profile_stream);
-                    }
-                }
-            } else {
-                pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
-                gs_free_object(ctx->memory, Buffer, "pdfi_create_iccprofile (profile name)");
-                pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-                return code;
-            }
-        } else {
-            pdfi_close_memory_stream(ctx, profile_buffer, profile_stream);
-            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            return_error(gs_error_VMerror);
-        }
-        if (code < 0) {
-            gs_free_object(ctx->memory, Buffer, "pdfi_create_iccprofile (profile name)");
-            pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-            return code;
-        }
     }
 
     /* Now, finally, we can call the code to create and set the profile */
