@@ -66,10 +66,61 @@ s_jbig2decode_error(void *callback_data, const char *msg, Jbig2Severity severity
 
     if (error_data)
     {
-        if (severity == JBIG2_SEVERITY_FATAL || severity == JBIG2_SEVERITY_WARNING) {
-            dmlprintf3(error_data->memory, "jbig2dec %s %s %s\n", type, msg, segment);
-        } else {
-            if_debug3m('w', error_data->memory, "[w] jbig2dec %s %s %s\n", type, msg, segment);
+        char *message;
+        int len;
+
+        len = snprintf(NULL, 0, "jbig2dec %s %s %s", type, msg, segment);
+        if (len < 0)
+            return;
+
+        message = (char *)gs_alloc_bytes(error_data->memory, len + 1, "sjbig2decode_error(message)");
+        if (message == NULL)
+            return;
+
+        len = snprintf(message, len + 1, "jbig2dec %s %s %s", type, msg, segment);
+        if (len < 0)
+        {
+            gs_free_object(error_data->memory, message, "s_jbig2decode_error(message)");
+            return;
+        }
+
+        if (error_data->last_message != NULL && strcmp(message, error_data->last_message)) {
+            if (error_data->repeats > 1)
+            {
+                if (error_data->severity == JBIG2_SEVERITY_FATAL || error_data->severity == JBIG2_SEVERITY_WARNING) {
+                    dmlprintf1(error_data->memory, "jbig2dec last message repeated %ld times\n", error_data->repeats);
+                } else {
+                    if_debug1m('w', error_data->memory, "[w] jbig2dec last message repeated %ld times\n", error_data->repeats);
+                }
+            }
+            gs_free_object(error_data->memory, error_data->last_message, "s_jbig2decode_error(last_message)");
+            error_data->last_message = message;
+            error_data->severity = severity;
+            error_data->type = type;
+            error_data->repeats = 0;
+        }
+        else if (error_data->last_message != NULL) {
+            error_data->repeats++;
+            if (error_data->repeats % 1000000 == 0)
+            {
+                if (error_data->severity == JBIG2_SEVERITY_FATAL || error_data->severity == JBIG2_SEVERITY_WARNING) {
+                    dmlprintf1(error_data->memory, "jbig2dec last message repeated %ld times so far\n", error_data->repeats);
+                } else {
+                    if_debug1m('w', error_data->memory, "[w] jbig2dec last message repeated %ld times so far\n", error_data->repeats);
+                }
+            }
+            gs_free_object(error_data->memory, message, "s_jbig2decode_error(message)");
+        }
+        else if (error_data->last_message == NULL) {
+            if (severity == JBIG2_SEVERITY_FATAL || severity == JBIG2_SEVERITY_WARNING) {
+                dmlprintf1(error_data->memory, "%s\n", message);
+            } else {
+                if_debug1m('w', error_data->memory, "[w] %s\n", message);
+            }
+            error_data->last_message = message;
+            error_data->severity = severity;
+            error_data->type = type;
+            error_data->repeats = 0;
         }
     }
     else
@@ -83,6 +134,29 @@ s_jbig2decode_error(void *callback_data, const char *msg, Jbig2Severity severity
         } else {
             if_debug3('w', "[w] jbig2dec %s %s %s\n", type, msg, segment);
         }
+    }
+}
+
+static void
+s_jbig2decode_flush_errors(void *callback_data)
+{
+    s_jbig2_callback_data_t *error_data = (s_jbig2_callback_data_t *)callback_data;
+
+    if (error_data == NULL)
+        return;
+
+    if (error_data->last_message != NULL) {
+        if (error_data->repeats > 1)
+        {
+            if (error_data->severity == JBIG2_SEVERITY_FATAL || error_data->severity == JBIG2_SEVERITY_WARNING) {
+                dmlprintf1(error_data->memory, "jbig2dec last message repeated %ld times\n", error_data->repeats);
+            } else {
+                if_debug1m('w', error_data->memory, "[w] jbig2dec last message repeated %ld times\n", error_data->repeats);
+            }
+        }
+        gs_free_object(error_data->memory, error_data->last_message, "s_jbig2decode_error(last_message)");
+        error_data->last_message = NULL;
+        error_data->repeats = 0;
     }
 }
 
@@ -171,6 +245,8 @@ s_jbig2decode_init(stream_state * ss)
     if (state->callback_data) {
         state->callback_data->memory = ss->memory->non_gc_memory;
         state->callback_data->error = 0;
+        state->callback_data->last_message = NULL;
+        state->callback_data->repeats = 0;
         /* initialize the decoder with the parsed global context if any */
         state->decode_ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED,
                      global_ctx, s_jbig2decode_error, state->callback_data);
@@ -249,11 +325,13 @@ s_jbig2decode_release(stream_state *ss)
     if (state->decode_ctx) {
         if (state->image) jbig2_release_page(state->decode_ctx, state->image);
 	state->image = NULL;
+        s_jbig2decode_flush_errors(state->callback_data);
         jbig2_ctx_free(state->decode_ctx);
 	state->decode_ctx = NULL;
     }
     if (state->callback_data) {
         gs_memory_t *mem = state->callback_data->memory;
+        gs_free_object(state->callback_data->memory, state->callback_data->last_message, "s_jbig2decode_release(message)");
         gs_free_object(mem, state->callback_data, "s_jbig2decode_release(callback_data)");
 	state->callback_data = NULL;
     }

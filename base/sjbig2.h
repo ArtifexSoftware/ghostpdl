@@ -28,6 +28,10 @@ typedef struct s_jbig2_callback_data_s
 {
     gs_memory_t *memory;
     int error;
+    char *last_message;
+    Jbig2Severity severity;
+    const char *type;
+    long repeats;
 } s_jbig2_callback_data_t;
 
 /* See zfjbig2.c for details. */

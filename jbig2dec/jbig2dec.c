@@ -66,6 +66,10 @@ typedef struct {
     SHA1_CTX *hash_ctx;
     char *output_filename;
     jbig2dec_format output_format;
+    char *last_message;
+    Jbig2Severity severity;
+    char *type;
+    long repeats;
 } jbig2dec_params_t;
 
 static int print_version(void);
@@ -248,9 +252,11 @@ print_usage(void)
 static void
 error_callback(void *error_callback_data, const char *buf, Jbig2Severity severity, int32_t seg_idx)
 {
-    const jbig2dec_params_t *params = (jbig2dec_params_t *) error_callback_data;
+    jbig2dec_params_t *params = (jbig2dec_params_t *) error_callback_data;
     char *type;
     char segment[22];
+    int len;
+    char *message;
 
     switch (severity) {
     case JBIG2_SEVERITY_DEBUG:
@@ -280,7 +286,52 @@ error_callback(void *error_callback_data, const char *buf, Jbig2Severity severit
     else
         snprintf(segment, sizeof(segment), "(segment 0x%02x)", seg_idx);
 
-    fprintf(stderr, "jbig2dec %s %s %s\n", type, buf, segment);
+    len = snprintf(NULL, 0, "jbig2dec %s %s %s", type, buf, segment);
+    if (len < 0) {
+        return;
+    }
+
+    message = malloc(len + 1);
+    if (message == NULL) {
+        return;
+    }
+
+    len = snprintf(message, len + 1, "jbig2dec %s %s %s", type, buf, segment);
+    if (len < 0)
+    {
+        free(message);
+        return;
+    }
+
+    if (params->last_message != NULL && strcmp(message, params->last_message)) {
+        if (params->repeats > 1)
+            fprintf(stderr, "jbig2dec %s last message repeated %ld times\n", params->type, params->repeats);
+        fprintf(stderr, "%s\n", message);
+        free(params->last_message);
+        params->last_message = message;
+        params->severity = severity;
+        params->type = type;
+        params->repeats = 0;
+    } else if (params->last_message != NULL) {
+        params->repeats++;
+        if (params->repeats % 1000000 == 0)
+            fprintf(stderr, "jbig2dec %s last message repeated %ld times so far\n", params->type, params->repeats);
+        free(message);
+    } else if (params->last_message == NULL) {
+        fprintf(stderr, "%s\n", message);
+        params->last_message = message;
+        params->severity = severity;
+        params->type = type;
+        params->repeats = 0;
+    }
+}
+
+static void
+flush_errors(jbig2dec_params_t *params)
+{
+    if (params->repeats > 1) {
+        fprintf(stderr, "jbig2dec last message repeated %ld times\n", params->repeats);
+    }
 }
 
 static char *
@@ -387,6 +438,8 @@ main(int argc, char **argv)
     params.output_filename = NULL;
     params.output_format = jbig2dec_format_none;
     params.embedded = 0;
+    params.last_message = NULL;
+    params.repeats = 0;
 
     filearg = parse_options(argc, argv, &params);
 
@@ -541,6 +594,7 @@ main(int argc, char **argv)
     result = 0;
 
 cleanup:
+    flush_errors(&params);
     jbig2_ctx_free(ctx);
     if (params.output_filename)
         free(params.output_filename);
