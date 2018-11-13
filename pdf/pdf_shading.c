@@ -282,32 +282,40 @@ static int pdfi_build_mesh_shading(pdf_context *ctx, gs_shading_mesh_params_t *p
 
     data_source_init_stream(&params->DataSource, function_stream->s);
 
-    code = pdfi_seek(ctx, function_stream, 0, SEEK_SET);
-    if (code < 0)
-        return code;
     code = pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-    if (code < 0)
+    if (code < 0) {
+        pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
         return code;
+    }
 
     code = pdfi_build_shading_function(ctx, &params->Function, (const float *)NULL, 1, (pdf_dict *)shading_dict, page_dict);
-    if (code < 0 && code != gs_error_undefined)
+    if (code < 0 && code != gs_error_undefined) {
         return code;
+    }
 
     code = pdfi_dict_get_int(ctx, shading_dict, "BitsPerCoordinate", &i);
-    if (code < 0)
+    if (code < 0) {
+        gs_free_object(ctx->memory, params->Function, "Decode");
         return code;
+    }
 
-    if (i != 1 && i != 2 && i != 4 && i != 8 && i != 12 && i != 16 && i != 24 && i != 32)
+    if (i != 1 && i != 2 && i != 4 && i != 8 && i != 12 && i != 16 && i != 24 && i != 32) {
+        gs_free_object(ctx->memory, params->Function, "Decode");
         return_error(gs_error_rangecheck);
+    }
 
     params->BitsPerCoordinate = i;
 
     code = pdfi_dict_get_int(ctx, shading_dict, "BitsPerComponent", &i);
-    if (code < 0)
+    if (code < 0) {
+        gs_free_object(ctx->memory, params->Function, "Decode");
         return code;
+    }
 
-    if (i != 1 && i != 2 && i != 4 && i != 8 && i != 12 && i != 16)
+    if (i != 1 && i != 2 && i != 4 && i != 8 && i != 12 && i != 16) {
+        gs_free_object(ctx->memory, params->Function, "Decode");
         return_error(gs_error_rangecheck);
+    }
 
     params->BitsPerComponent = i;
 
@@ -318,9 +326,14 @@ static int pdfi_build_mesh_shading(pdf_context *ctx, gs_shading_mesh_params_t *p
 
     params->Decode = (float *) gs_alloc_byte_array(ctx->memory, num_decode, sizeof(float),
                             "build_mesh_shading");
+    if (params->Decode == NULL) {
+        gs_free_object(ctx->memory, params->Function, "Decode");
+        return_error(gs_error_VMerror);
+    }
 
     code = fill_float_array_from_dict(ctx, (float *)params->Decode, num_decode, shading_dict, "Decode");
     if (code < 0) {
+        gs_free_object(ctx->memory, params->Function, "Decode");
         gs_free_object(ctx->memory, params->Decode, "Decode");
         return code;
     }
