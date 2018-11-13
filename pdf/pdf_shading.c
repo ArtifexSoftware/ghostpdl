@@ -311,11 +311,10 @@ static int pdfi_build_mesh_shading(pdf_context *ctx, gs_shading_mesh_params_t *p
 
     params->BitsPerComponent = i;
 
-    if (params->Function == NULL)
+    if (params->Function != NULL)
         num_decode += 1;
     else
-        num_decode += gs_color_space_num_components(params->ColorSpace);
-    num_decode *= 2;
+        num_decode += gs_color_space_num_components(params->ColorSpace) * 2;
 
     params->Decode = (float *) gs_alloc_byte_array(ctx->memory, num_decode, sizeof(float),
                             "build_mesh_shading");
