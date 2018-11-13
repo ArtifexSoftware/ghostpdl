@@ -396,7 +396,7 @@ int fill_float_array_from_dict(pdf_context *ctx, float *parray, int size, pdf_di
         pdfi_countdown(a);
         return_error(gs_error_typecheck);
     }
-    if (a->entries > size)
+    if (a->entries < size)
         return_error(gs_error_rangecheck);
 
     for (i=0;i< a->entries;i++) {
