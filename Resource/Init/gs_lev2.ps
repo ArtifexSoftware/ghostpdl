@@ -64,7 +64,7 @@ level2dict begin
       pop
     } ifelse pop pop
   } forall pop pop
-} .bind def	% not odef, shouldn't reset stacks
+} .bind odef
 
 % currentuser/systemparams creates and returns a dictionary in the
 % current VM.  The easiest way to make this work is to copy any composite
@@ -101,7 +101,7 @@ level2dict begin
     1 index length string exch .setglobal
     copy exch not { readonly } if
   } if
-} .bind def
+} .bind odef
 
 % Some user parameters are managed entirely at the PostScript level.
 % We take care of that here.
@@ -344,13 +344,13 @@ end
   } ifelse
 } .bind def
 /ProcessComment //null .definepsuserparam
-psuserparams /ProcessComment {.checkprocesscomment} put
+psuserparams /ProcessComment {//.checkprocesscomment exec} put
 (%ProcessComment) cvn {
   /ProcessComment getuserparam
   dup //null eq { pop pop pop } { exec } ifelse
 } bind def
 /ProcessDSCComment //null .definepsuserparam
-psuserparams /ProcessDSCComment {.checkprocesscomment} put
+psuserparams /ProcessDSCComment {//.checkprocesscomment exec} put
 /.loadingfont //false def
 (%ProcessDSCComment) cvn {
   /ProcessDSCComment getuserparam
@@ -547,7 +547,8 @@ end		% serverdict
 % Note that statusdict must be allocated in local VM.
 % We don't bother with many of these yet.
 
-/.dict1 { exch mark 3 1 roll .dicttomark } bind def
+% convenience function to make a dictionary from an object and a key
+/.pair2dict { exch mark 3 1 roll .dicttomark } bind def
 
 currentglobal //false setglobal 25 dict exch setglobal begin
 currentsystemparams
@@ -560,11 +561,11 @@ systemdict /buildtime dup load put
 /checkpassword { .checkpassword 0 gt } bind def
 dup /DoStartPage known
  { /dostartpage { /DoStartPage getsystemparam } bind def
-   /setdostartpage { /DoStartPage .dict1 setsystemparams } bind def
+   /setdostartpage { /DoStartPage //.pair2dict exec setsystemparams } bind def
  } if
 dup /StartupMode known
  { /dosysstart { /StartupMode getsystemparam 0 ne } bind def
-   /setdosysstart { { 1 } { 0 } ifelse /StartupMode .dict1 setsystemparams } bind def
+   /setdosysstart { { 1 } { 0 } ifelse /StartupMode //.pair2dict exec setsystemparams } bind def
  } if
 %****** Setting jobname is supposed to set userparams.JobName, too.
 /jobname { /JobName getuserparam } bind def
@@ -572,7 +573,7 @@ dup /StartupMode known
 /ramsize { /RamSize getsystemparam } bind def
 /realformat 1 index /RealFormat get def
 dup /PrinterName known
- { /setprintername { /PrinterName .dict1 setsystemparams } bind def
+ { /setprintername { /PrinterName //.pair2dict exec setsystemparams } bind def
  } if
 /printername
  { currentsystemparams /PrinterName .knownget not { () } if exch copy
@@ -608,18 +609,18 @@ currentuserparams /WaitTimeout known
    /WaitTimeout exch mark /JobTimeout 5 2 roll .dicttomark setsystemparams
  } bind def
 /.setpagesize
- { 2 copy 2 array astore /PageSize .dict1 { setpagedevice } stopped {
+ { 2 copy 2 array astore /PageSize //.pair2dict exec { setpagedevice } stopped {
      pop	% the setpagedevice dict
      /setpagesize $error /errorname get signalerror
    } {
      pop pop	% success -- pop the arguments
    } ifelse
  } bind def
-/setduplexmode { /Duplex .dict1 setpagedevice } bind def
+/setduplexmode { /Duplex //.pair2dict exec setpagedevice } bind def
 /setmargins
- { exch 2 array astore /Margins .dict1 setpagedevice
+ { exch 2 array astore /Margins //.pair2dict exec setpagedevice
  } bind def
-/setpagemargin { 0 2 array astore /PageOffset .dict1 setpagedevice } bind def
+/setpagemargin { 0 2 array astore /PageOffset //.pair2dict exec setpagedevice } bind def
 /setpageparams
  { mark /PageSize 6 -2 roll
    4 index 1 and ORIENT1 { 1 } { 0 } ifelse ne { exch } if 2 array astore
@@ -633,7 +634,7 @@ currentuserparams /WaitTimeout known
    {
       /setresolution /typecheck signalerror
    } if
-   dup 2 array astore /HWResolution .dict1 { setpagedevice } stopped {
+   dup 2 array astore /HWResolution //.pair2dict exec { setpagedevice } stopped {
      pop /setresolution $error /errorname get signalerror
    } if
  } bind def
@@ -1245,3 +1246,10 @@ def
 %END TN 5044 psuedo-ops
 
 end				% level2dict
+
+% undefine things defined in this file and not referenced elsewhere
+[
+    /.checkprocesscomment
+    /.pair2dict
+]
+{level2dict exch .forceundef} forall

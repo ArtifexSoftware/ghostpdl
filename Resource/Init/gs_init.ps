@@ -2284,6 +2284,24 @@ SAFER { .setsafeglobal } if
   ]
   {systemdict exch .forceundef} forall
 
+  % level 2 operators, undefine from both systemdict and level2dict
+  [
+      /.execform1
+      /.getdevparams
+      /.setuserparams2
+      /.startjob
+      /.checkFilePermitparams
+      /.checksetparams
+      /.copyparam
+      /.setpagesize
+
+% Couldn't figure out how to do these yet
+%      /.checkparamtype
+%      /.startnewjob
+  ]
+  dup {level2dict exch .forceundef} forall
+  {systemdict exch .forceundef} forall
+
   //systemdict /UndefinePostScriptOperators .forceundef
 } .bind executeonly def % must be bound and hidden for .forceundef
 
