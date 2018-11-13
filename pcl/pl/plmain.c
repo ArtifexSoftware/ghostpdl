@@ -448,6 +448,8 @@ flush_to_end_of_job:
                    filename);
 
         code = pl_process_file(minst->curr_implementation, (char *)filename);
+        if (code == gs_error_InterpreterExit)
+            code = 0;
         if (code < 0) {
             errprintf(mem, "Warning interpreter exited with error code %d\n",
                       code);

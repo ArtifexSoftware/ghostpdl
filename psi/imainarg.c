@@ -1085,9 +1085,12 @@ run_finish(gs_main_instance *minst, int code, int exit_code,
         case 0:
             break;
         case gs_error_Fatal:
-            emprintf1(minst->heap,
-                      "Unrecoverable error, exit code %d\n",
-                      exit_code);
+            if (exit_code == gs_error_InterpreterExit)
+                code = exit_code;
+            else
+                emprintf1(minst->heap,
+                          "Unrecoverable error, exit code %d\n",
+                          exit_code);
             break;
         default:
             gs_main_dump_stack(minst, code, perror_object);
