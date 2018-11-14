@@ -2112,6 +2112,8 @@ static int hashcieaspace(i_ctx_t *i_ctx_p, ref *space, gs_md5_state_t *md5)
     code = array_get(imemory, space, 1, &CIEdict1);
     if (code < 0)
         return 0;
+    check_read_type(CIEdict1, t_dictionary);
+
     if (!hashdictkey(i_ctx_p, &CIEdict1, (char *)"WhitePoint", md5))
         return 0;
     if (!hashdictkey(i_ctx_p, &CIEdict1, (char *)"BlackPoint", md5))
@@ -5092,7 +5094,7 @@ static int validatelabspace(i_ctx_t * i_ctx_p, ref **r)
     code = array_get(imemory, space, 1, &labdict);
     if (code < 0)
         return code;
-    check_type(labdict, t_dictionary);
+    check_read_type(labdict, t_dictionary);
     /* Check the white point, which is required. */
     code = checkWhitePoint(i_ctx_p, &labdict);
     if (code != 0)
@@ -5335,7 +5337,7 @@ static int validatecalgrayspace(i_ctx_t * i_ctx_p, ref **r)
     code = array_get(imemory, space, 1, &calgraydict);
     if (code < 0)
         return code;
-    check_type(calgraydict, t_dictionary);
+    check_read_type(calgraydict, t_dictionary);
     /* Check the white point, which is required */
     /* We have to have a white point */
     /* Check white point exists, and is an array of three numbers */
@@ -5431,8 +5433,8 @@ static int validatecalrgbspace(i_ctx_t * i_ctx_p, ref **r)
     code = array_get(imemory, space, 1, &calrgbdict);
     if (code < 0)
         return code;
-    if (!r_has_type(&calrgbdict, t_dictionary))
-        return_error(gs_error_typecheck);
+    check_read_type(calrgbdict, t_dictionary);
+
     /* Check the white point, which is required */
     code = checkWhitePoint(i_ctx_p, &calrgbdict);
     if (code != 0)
@@ -5475,8 +5477,7 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                 code = array_get(imemory, r, 1, &ICCdict);
                 if (code < 0)
                     return code;
-                if (!r_has_type(&ICCdict, t_dictionary))
-                    return gs_note_error(gs_error_typecheck);
+                check_read_type(ICCdict, t_dictionary);
 
                 code = dict_find_string(&ICCdict, "N", &tempref);
                 if (code < 0)
@@ -5651,7 +5652,7 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
     if (code < 0)
         return code;
 
-    check_type(ICCdict, t_dictionary);
+    check_read_type(ICCdict, t_dictionary);
 
     code = dict_find_string(&ICCdict, "N", &tempref);
     if (code < 0)
