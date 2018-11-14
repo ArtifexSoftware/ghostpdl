@@ -5617,7 +5617,8 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
             return 0;
         }
     }
-    if (dev_spec_op == gxdso_get_dev_param || dev_spec_op == gxdso_restrict_bbox) {
+    if (dev_spec_op == gxdso_get_dev_param || dev_spec_op == gxdso_restrict_bbox
+        || dev_spec_op == gxdso_current_output_device) {
         return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
     }
 
