@@ -89,7 +89,7 @@ rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname
 }
 
 void
-gsicc_add_cs(gs_gstate * pgs, gs_color_space * colorspace, ulong dictkey)
+gsicc_add_cs(gs_gstate * pgs, gs_color_space * colorspace, uint64_t dictkey)
 {
     gsicc_profile_entry_t *result;
     gsicc_profile_cache_t *profile_cache = pgs->icc_profile_cache;
@@ -117,7 +117,7 @@ gsicc_add_cs(gs_gstate * pgs, gs_color_space * colorspace, ulong dictkey)
 }
 
 gs_color_space*
-gsicc_find_cs(ulong key_test, gs_gstate * pgs)
+gsicc_find_cs(uint64_t key_test, gs_gstate * pgs)
 {
     gsicc_profile_cache_t *profile_cache = pgs->icc_profile_cache;
     gsicc_profile_entry_t *prev = NULL, *curr = profile_cache->head;

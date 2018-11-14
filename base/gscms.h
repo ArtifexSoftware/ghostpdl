@@ -400,8 +400,8 @@ typedef struct gsicc_profile_entry_s gsicc_profile_entry_t;
 
 struct gsicc_profile_entry_s {
     gs_color_space *color_space;     /* The color space with the profile */
-    gsicc_profile_entry_t *next;    /* next CS */
-    int64_t key;                    /* Key based off dictionary location */
+    gsicc_profile_entry_t *next;     /* next CS */
+    uint64_t key;                    /* Key based off dictionary location */
 };
 
 /* ProfileList. The size of the list is limited by max_memory_size.

@@ -435,7 +435,7 @@ cie_defg_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref,
     return(0);
 }
 int
-ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
+ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
@@ -545,7 +545,7 @@ cie_def_param(i_ctx_t *i_ctx_p, const gs_memory_t *mem, const ref * pdref,
 
 static int cie_def_finish(i_ctx_t *);
 int
-ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
+ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
@@ -613,7 +613,7 @@ cie_def_finish(i_ctx_t *i_ctx_p)
 static int cie_abc_finish(i_ctx_t *);
 
 int
-cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
+cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);
@@ -676,7 +676,7 @@ cie_abc_finish(i_ctx_t *i_ctx_p)
 static int cie_a_finish(i_ctx_t *);
 
 int
-cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, ulong dictkey)
+cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, uint64_t dictkey)
 {
     os_ptr op = osp;
     int edepth = ref_stack_count(&e_stack);

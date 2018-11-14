@@ -2135,7 +2135,7 @@ static int setcieaspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
 {
     int code = 0;
     ref CIEDict, *nocie;
-    ulong dictkey;
+    uint64_t dictkey;
     gs_md5_state_t md5;
     byte key[16];
 
@@ -2165,7 +2165,7 @@ static int setcieaspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
     }
     gs_md5_init(&md5);
     /* If the hash (dictkey) is 0, we don't check for an existing
-     * ICC profile dor this space. So if we get an error hashing
+     * ICC profile for this space. So if we get an error hashing
      * the space, we construct a new profile.
      */
     dictkey = 0;
@@ -2177,7 +2177,7 @@ static int setcieaspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
          * the full 16 byte hashs.
          */
         gs_md5_finish(&md5, key);
-        dictkey = *(ulong *)&key[sizeof(key) - sizeof(ulong)];
+        dictkey = *(uint64_t *)&key[sizeof(key) - sizeof(uint64_t)];
     } else {
         gs_md5_finish(&md5, key);
     }
@@ -2389,7 +2389,7 @@ static int setcieabcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
 {
     int code = 0;
     ref CIEDict, *nocie;
-    ulong dictkey;
+    uint64_t dictkey;
     gs_md5_state_t md5;
     byte key[16];
 
@@ -2434,7 +2434,7 @@ static int setcieabcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
          * the full 16 byte hashs.
          */
         gs_md5_finish(&md5, key);
-        dictkey = *(ulong *)&key[sizeof(key) - sizeof(ulong)];
+        dictkey = *(uint64_t *)&key[sizeof(key) - sizeof(uint64_t)];
     } else {
         gs_md5_finish(&md5, key);
     }
@@ -2660,7 +2660,7 @@ static int setciedefspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
 {
     int code = 0;
     ref CIEDict, *nocie;
-    ulong dictkey;
+    uint64_t dictkey;
     gs_md5_state_t md5;
     byte key[16];
 
@@ -2704,7 +2704,7 @@ static int setciedefspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
          * the full 16 byte hashs.
          */
         gs_md5_finish(&md5, key);
-        dictkey = *(ulong *)&key[sizeof(key) - sizeof(ulong)];
+        dictkey = *(uint64_t *)&key[sizeof(key) - sizeof(uint64_t)];
     } else {
         gs_md5_finish(&md5, key);
     }
@@ -2961,7 +2961,7 @@ static int setciedefgspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
 {
     int code = 0;
     ref CIEDict, *nocie;
-    ulong dictkey;
+    uint64_t dictkey;
     gs_md5_state_t md5;
     byte key[16];
 
@@ -3005,7 +3005,7 @@ static int setciedefgspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
          * the full 16 byte hashs.
          */
         gs_md5_finish(&md5, key);
-        dictkey = *(ulong *)&key[sizeof(key) - sizeof(ulong)];
+        dictkey = *(uint64_t *)&key[sizeof(key) - sizeof(uint64_t)];
     } else {
         gs_md5_finish(&md5, key);
     }

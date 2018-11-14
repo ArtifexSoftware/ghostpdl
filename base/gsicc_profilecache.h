@@ -21,7 +21,7 @@
 #  define gsicc_profilecache_INCLUDED
 
 gsicc_profile_cache_t* gsicc_profilecache_new(gs_memory_t *memory);
-gs_color_space* gsicc_find_cs(ulong key_test, gs_gstate * pgs);
-void gsicc_add_cs(gs_gstate * pgs, gs_color_space * pcs, ulong dictkey);
+gs_color_space* gsicc_find_cs(uint64_t key_test, gs_gstate * pgs);
+void gsicc_add_cs(gs_gstate * pgs, gs_color_space * pcs, uint64_t dictkey);
 
 #endif
