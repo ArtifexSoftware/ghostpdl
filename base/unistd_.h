@@ -40,7 +40,6 @@
 #  define read(fd, buf, len) _read(fd, buf, len)
 #  define isatty(fd) _isatty(fd)
 #  define setmode(fd, mode) _setmode(fd, mode)
-#  define fstat(fd, buf) _fstat(fd, buf)
 #  define dup(fd) _dup(fd)
 #  define open(fname, flags, mode) _open(fname, flags, mode)
 #  define close(fd) _close(fd)
