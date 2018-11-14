@@ -1264,6 +1264,24 @@ pjl_process(pjl_parser_state * pst, void *pstate, stream_cursor_read * pr)
                 break;
             }
         }
+        if (!legal_pjl_char(p[1])) {
+            code = 1;
+            /* If we haven't read anything yet, then just give up */
+            if (pst->pos == 0) {
+                ++p;
+                break;
+            }
+            /* If we have, process what we had collected already before giving up. */
+            /* null terminate, parse and set the pjl state */
+            pst->line[pst->pos] = '\0';
+            /*
+             * NB PJL continues not considering normal errors but we
+             * ignore memory failure errors here and shouldn't.
+             */
+            (void)pjl_parse_and_process_line(pst);
+            pst->pos = 0;
+            break;
+        }
         if (p[1] == '\n') {
             ++p;
             /* null terminate, parse and set the pjl state */
@@ -1275,12 +1293,6 @@ pjl_process(pjl_parser_state * pst, void *pstate, stream_cursor_read * pr)
             (void)pjl_parse_and_process_line(pst);
             pst->pos = 0;
             continue;
-        }
-        
-        if (!legal_pjl_char(p[1])) {
-            code = 1;
-            ++p;
-            break;
         }
 
         /* Copy the PJL line into the parser's line buffer. */
