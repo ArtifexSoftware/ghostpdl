@@ -527,6 +527,87 @@ FT_BEGIN_HEADER
   /*************************************************************************/
   /*                                                                       */
   /* <Function>                                                            */
+  /*    FT_Set_MM_WeightVector                                             */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*    For Adobe MM fonts, choose an interpolated font design by          */
+  /*    directly setting the weight vector.                                */
+  /*                                                                       */
+  /*    This function can't be used with TrueType GX or OpenType variation */
+  /*    fonts.                                                             */
+  /*                                                                       */
+  /* <InOut>                                                               */
+  /*    face         :: A handle to the source face.                       */
+  /*                                                                       */
+  /* <Input>                                                               */
+  /*    len          :: The length of the weight vector array. If it is    */
+  /*                    larger than the number of designs, the extra       */
+  /*                    values are ignored. If it is less than the number  */
+  /*                    of designs, the remaining values are set to zero.  */
+  /*                                                                       */
+  /*    weightvector :: An array representing the weight vector.           */
+  /*                                                                       */
+  /* <Return>                                                              */
+  /*    FreeType error code.  0~means success.                             */
+  /*                                                                       */
+  /* <Note>                                                                */
+  /*       Adobe Multiple Master fonts limit the number of designs, and    */
+  /*       thus the length of the WeightVector to 16.                      */
+  /*                                                                       */
+  /*       If len is zero and weightvector is NULL, the WeightVector is    */
+  /*       reset to the default values.                                    */
+  /*       The Adobe documentation also states that the values in the      */
+  /*       WeightVector must total 1.0 +/- 0.001. In practice this does    */
+  /*       not seem to be enforced, so is not enforced, here either.       */
+  /*                                                                       */
+  FT_EXPORT( FT_Error )
+  FT_Set_MM_WeightVector( FT_Face    face,
+                          FT_UInt    len,
+                          FT_Fixed*  weightvector );
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Function>                                                            */
+  /*    FT_Get_MM_WeightVector                                             */
+  /*                                                                       */
+  /* <Description>                                                         */
+  /*    For Adobe MM fonts, retrieve the current weight vector of the font */
+  /*                                                                       */
+  /*    This function can't be used with TrueType GX or OpenType variation */
+  /*    fonts.                                                             */
+  /*                                                                       */
+  /* <InOut>                                                               */
+  /*    face         :: A handle to the source face.                       */
+  /*                                                                       */
+  /* <InOut>                                                               */
+  /*    len          :: Pointer to the size of the array to be filled. If  */
+  /*                    size of the array less than the number of designs, */
+  /*                    an Invalid_Argument is returned, and len is set to */
+  /*                    the required size (the number of designs). If the  */
+  /*                    size of the array is greater than the number of    */
+  /*                    designs, the remaining entries are set to 0. On    */
+  /*                    successful completion, len is set to the number of */
+  /*                    designs (i.e. the number of values written to the  */
+  /*                    array.                                             */
+  /*                                                                       */
+  /* <Output>                                                              */
+  /*    weightvector :: An array to be filled.                             */
+  /*                                                                       */
+  /* <Return>                                                              */
+  /*    FreeType error code.  0~means success.                             */
+  /*                                                                       */
+  /* <Note>                                                                */
+  /*       Adobe Multiple Master fonts limit the number of designs, and    */
+  /*       thus the length of the WeightVector to 16.                      */
+  /*                                                                       */
+  FT_EXPORT( FT_Error )
+  FT_Get_MM_WeightVector( FT_Face   face,
+                          FT_UInt*  len,
+                          FT_Fixed* weightvector );
+
+  /*************************************************************************/
+  /*                                                                       */
+  /* <Function>                                                            */
   /*    FT_Get_Var_Blend_Coordinates                                       */
   /*                                                                       */
   /* <Description>                                                         */
