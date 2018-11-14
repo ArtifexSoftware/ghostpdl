@@ -188,8 +188,37 @@ gpcl6memento:
 gxpsmemento:
 	$(MAKE) $(MEMENTOMAKEOPTS) .xpssubtarget
 
+gpdlmemento:
+	$(MAKE) $(MEMENTOMAKEOPTS) .gpdlsubtarget
+
 mementoclean:
 	$(MAKE) $(MEMENTOMAKEOPTS) cleansub
+
+# Define a rule for building memento configurations with valgrind
+MEMENTOVGDEFS=GENOPT='-DMEMENTO -DDEBUG -DPACIFY_VALGRIND -DHAVE_VALGRIND' \
+ CFLAGS='$(CFLAGS_DEBUG) $(GCFLAGS) $(XCFLAGS)'\
+ BUILDDIRPREFIX=$(MEMENTODIRPREFIX) GENOPTAUX='-DMEMENTO' \
+ CFLAGSAUX='$(CFLAGSAUX_DEBUG) $(GCFLAGSAUX) $(XCFLAGSAUX)'
+
+MEMENTOVGMAKEOPTS=$(SUB_MAKE_OPTION) $(MEMENTOVGDEFS)
+
+mementovg:
+	$(MAKE) $(MEMENTOVGMAKEOPTS) default
+
+gsmementovg:
+	$(MAKE) $(MEMENTOVGMAKEOPTS) .gssubtarget
+
+gpcl6mementovg:
+	$(MAKE) $(MEMENTOVGMAKEOPTS) .pcl6subtarget
+
+gxpsmementovg:
+	$(MAKE) $(MEMENTOVGMAKEOPTS) .xpssubtarget
+
+gpdlmementovg:
+	$(MAKE) $(MEMENTOVGMAKEOPTS) .gpdlsubtarget
+
+mementovgclean:
+	$(MAKE) $(MEMENTOVGMAKEOPTS) cleansub
 
 gpcl6_gxps_clean: gpcl6clean gxpsclean
 	$(NO_OP)
