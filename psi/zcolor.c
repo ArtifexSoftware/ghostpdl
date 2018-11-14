@@ -5475,6 +5475,9 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                 code = array_get(imemory, r, 1, &ICCdict);
                 if (code < 0)
                     return code;
+                if (!r_has_type(&ICCdict, t_dictionary))
+                    return gs_note_error(gs_error_typecheck);
+
                 code = dict_find_string(&ICCdict, "N", &tempref);
                 if (code < 0)
                     return code;
