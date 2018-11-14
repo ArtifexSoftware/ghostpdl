@@ -666,6 +666,9 @@ sub_font_params(gs_memory_t *mem, const ref *op, gs_matrix *pmat, gs_matrix *pom
         return_error(gs_error_invalidfont);
     if (dict_find_string(op, "OrigFont", &porigfont) <= 0)
         porigfont = NULL;
+    if (porigfont != NULL && !r_has_type(porigfont, t_dictionary))
+        return_error(gs_error_typecheck);
+
     if (pomat!= NULL) {
         if (porigfont == NULL ||
             dict_find_string(porigfont, "FontMatrix", &pmatrix) <= 0 ||
@@ -676,8 +679,8 @@ sub_font_params(gs_memory_t *mem, const ref *op, gs_matrix *pmat, gs_matrix *pom
     /* Use the FontInfo/OrigFontName key preferrentially (created by MS PSCRIPT driver) */
     if ((dict_find_string((porigfont != NULL ? porigfont : op), "FontInfo", &pfontinfo) > 0) &&
         r_has_type(pfontinfo, t_dictionary) &&
-        (dict_find_string(pfontinfo, "OrigFontName", &pfontname) > 0)) {
-        if ((dict_find_string(pfontinfo, "OrigFontStyle", &pfontstyle) > 0) &&
+        (dict_find_string(pfontinfo, "OrigFontName", &pfontname) > 0) && (r_has_type(pfontname, t_name) || r_has_type(pfontname, t_string))) {
+        if ((dict_find_string(pfontinfo, "OrigFontStyle", &pfontstyle) > 0) && (r_has_type(pfontname, t_name) || r_has_type(pfontname, t_string)) &&
                 r_size(pfontstyle) > 0) {
             const byte *tmpStr1 = pfontname->value.const_bytes;
             const byte *tmpStr2 = pfontstyle->value.const_bytes;
@@ -775,11 +778,11 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
             avm_space useglob = r_is_local(pencoding) ? avm_local : avm_global;
 
             ialloc_set_space(idmemory, useglob);
-            
+
             count = r_size(pencoding);
             if ((code = ialloc_ref_array(&penc, (r_type_attrs(pencoding) & a_readonly), count, "build_gs_font")) < 0)
                  return code;
-            
+
             while (count--) {
                ref r;
                if (array_get(imemory, pencoding, count, &r) < 0){
@@ -790,7 +793,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
                    ref_assign(&(penc.value.refs[count]), &r);
                }
                else {
-               
+
                    if ((code = obj_cvs(imemory, &r, (byte *)buf, 32, &size, (const byte **)(&bptr))) < 0) {
                        return(code);
                    }
@@ -799,7 +802,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
                    ref_assign(&(penc.value.refs[count]), &r);
                }
             }
-            
+
             if ((code = dict_put_string(osp, "Encoding", &penc, NULL)) < 0)
                return code;
             ialloc_set_space(idmemory, curglob);

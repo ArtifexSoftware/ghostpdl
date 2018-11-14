@@ -1879,7 +1879,12 @@ static int comparedictkey(i_ctx_t * i_ctx_p, ref *CIEdict1, ref *CIEdict2, char 
     if (r_type(tempref1) == t_null)
         return 1;
 
-    return comparearrays(i_ctx_p, tempref1, tempref2);
+    code = comparearrays(i_ctx_p, tempref1, tempref2);
+
+    if (code > 0)
+        return 1;
+    else
+        return 0;
 }
 
 static int hasharray(i_ctx_t * i_ctx_p, ref *m1, gs_md5_state_t *md5)
@@ -5475,6 +5480,9 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                     return code;
                 if (code == 0)
                     return gs_note_error(gs_error_undefined);
+                if (r_type(tempref) != t_integer)
+                    return gs_note_error(gs_error_typecheck);
+
                 components = tempref->value.intval;
                 if (components > count_of(range)/2)
                     return_error(gs_error_rangecheck);
@@ -5596,6 +5604,10 @@ static int iccompareproc(i_ctx_t *i_ctx_p, ref *space, ref *testspace)
     /* Need to check all the various parts */
     code1 = dict_find_string(&ICCdict1, "N", &tempref1);
     code2 = dict_find_string(&ICCdict2, "N", &tempref2);
+
+    if (!r_has_type(tempref1, t_integer) || !r_has_type(tempref2, t_integer))
+        return 0;
+
     if (code1 != code2)
         return 0;
     if (tempref1->value.intval != tempref2->value.intval)
@@ -5749,6 +5761,8 @@ static int iccalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r, int *CIESub
         return code;
     if (code == 0)
         return gs_note_error(gs_error_undefined);
+    if (!r_has_type(tempref, t_integer))
+        return_error(gs_error_typecheck);
 
     components = tempref->value.intval;
 
@@ -5787,6 +5801,9 @@ static int icccomponents(i_ctx_t * i_ctx_p, ref *space, int *n)
         return code;
     if (code == 0)
         return gs_note_error(gs_error_undefined);
+    if (!r_has_type(tempref, t_integer))
+        return gs_note_error(gs_error_typecheck);
+
     *n = tempref->value.intval;
     return 0;
 }
@@ -5803,6 +5820,9 @@ static int iccdomain(i_ctx_t * i_ctx_p, ref *space, float *ptr)
         return code;
     if (code == 0)
         return gs_note_error(gs_error_undefined);
+    if (!r_has_type(tempref, t_integer))
+        return gs_note_error(gs_error_typecheck);
+
     components = tempref->value.intval;
     code = dict_find_string(&ICCdict, "Range", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {
@@ -5836,6 +5856,8 @@ static int iccrange(i_ctx_t * i_ctx_p, ref *space, float *ptr)
         return code;
     if (code == 0)
         return gs_note_error(gs_error_undefined);
+    if (!r_has_type(tempref, t_integer))
+        return gs_note_error(gs_error_typecheck);
     components = tempref->value.intval;
     code = dict_find_string(&ICCdict, "Range", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {

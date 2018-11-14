@@ -417,6 +417,7 @@ zimage3x(i_ctx_t *i_ctx_p)
     gs_image3x_t_init(&image, NULL);
     if (dict_find_string(op, "DataDict", &pDataDict) <= 0)
         return_error(gs_error_rangecheck);
+    check_type(*pDataDict, t_dictionary);
     if ((code = pixel_image_params(i_ctx_p, pDataDict,
                    (gs_pixel_image_t *)&image, &ip_data,
                    16, false, gs_currentcolorspace(igs))) < 0 ||
@@ -453,6 +454,9 @@ image_params *pip_data, const char *dict_name,
 
     if (dict_find_string(op, dict_name, &pMaskDict) <= 0)
         return 1;
+    if (!r_has_type(pMaskDict, t_dictionary))
+        return gs_note_error(gs_error_typecheck);
+
     if ((mcode = code = data_image_params(mem, pMaskDict, &pixm->MaskDict,
                                           &ip_mask, false, 1, 16, false, false)) < 0 ||
         (code = dict_int_param(pMaskDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
