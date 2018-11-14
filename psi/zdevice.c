@@ -508,13 +508,17 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
 int
 zsetdevice(i_ctx_t *i_ctx_p)
 {
-    gx_device *dev = gs_currentdevice(igs);
+    gx_device *odev = NULL, *dev = gs_currentdevice(igs);
     os_ptr op = osp;
-    int code = 0;
+    int code = dev_proc(dev, dev_spec_op)(dev,
+                        gxdso_current_output_device, (void *)&odev, 0);
+
+    if (code < 0)
+        return code;
 
     check_write_type(*op, t_device);
-    if (dev->LockSafetyParams) {	  /* do additional checking if locked  */
-        if(op->value.pdevice != dev) 	  /* don't allow a different device    */
+    if (odev->LockSafetyParams) {	  /* do additional checking if locked  */
+        if(op->value.pdevice != odev) 	  /* don't allow a different device    */
             return_error(gs_error_invalidaccess);
     }
     dev->ShowpageCount = 0;
