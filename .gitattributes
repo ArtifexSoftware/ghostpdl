@@ -1,4 +1,19 @@
-* text=auto
-*.inf eol=crlf
-*.cat binary
+# Macros:
+[attr]tabs              whitespace=trailing-space,space-before-tab,indent-with-non-tab,tabwidth=4
+[attr]spaces            whitespace=trailing-space,space-before-tab,tabs-in-indent
+[attr]makefile          whitespace=trailing-space,space-before-tab,indent-with-non-tab,tabwidth=8
 
+*		text=auto
+Make*		makefile
+*.mak		makefile
+*.inf 		eol=crlf
+*.cat 		binary
+
+# Documentation files:
+*.txt		spaces
+*.htm		spaces
+*.css		spaces
+
+# Source files
+*.c		spaces
+*.h		spaces
