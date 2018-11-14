@@ -76,7 +76,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         want to have this buffer. */
     /* Check if we have the /Name entry.  This is used to associate with
        specs that have enumerated types to indicate sRGB sGray etc */
-    if (dict_find_string(ICCdict, "Name", &pnameval) > 0){
+    if (dict_find_string(ICCdict, "Name", &pnameval) > 0 && r_has_type(pnameval, t_string)){
         uint size = r_size(pnameval);
         char *str = (char *)gs_alloc_bytes(gs_gstate_memory(igs), size+1, "seticc");
         memcpy(str, (const char *)pnameval->value.bytes, size);
@@ -263,6 +263,8 @@ zset_outputintent(i_ctx_t * i_ctx_p)
         return code;
     if (code == 0)
         return_error(gs_error_undefined);
+    if (r_type(pnval) != t_integer)
+        return gs_note_error(gs_error_typecheck);
     ncomps = pnval->value.intval;
 
     /* verify the DataSource entry. Creat profile from stream */
@@ -495,6 +497,8 @@ znumicc_components(i_ctx_t * i_ctx_p)
         return code;
     if (code == 0)
         return_error(gs_error_undefined);
+    if (r_type(pnval) != t_integer)
+        return gs_note_error(gs_error_typecheck);
     ncomps = pnval->value.intval;
     /* verify the DataSource entry. Create profile from stream */
     if (dict_find_string(op, "DataSource", &pstrmval) <= 0)
