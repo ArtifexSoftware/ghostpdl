@@ -797,7 +797,7 @@ currentdict /csncompdict undef
   mark exch { oforce } forall .dicttomark
   dup dup //true resolvestream
   /ReusableStreamDecode filter /DataSource exch put
-
+  dup /.hash 0 put	% placeholder for use by seticc icc_profile_cache key
   % Check that the number of components (/N) defined in the ICCBased
   % dictionry matches the actual profile. Bug #696120
   dup /N get
