@@ -3445,6 +3445,19 @@ currentdict /set_bc_color undef
     } if
   }bind executeonly def
 
+  /ValidateAP {
+    dup /AP oknown {
+        dup /AP oget
+        /N oknown not {
+          //false
+        } {
+          //true
+        } ifelse
+    } {
+      //false
+    }ifelse
+  } bind executeonly def
+
   % x0 y0 x1 y1 x2 y2 x3 y3 -> x0 y0 x1-x0 y1-y0 x2-x0 y2-y0
   /quadpoints2basis {
     8 { oforce 8 1 roll } repeat
@@ -3489,9 +3502,10 @@ currentdict /set_bc_color undef
   } bind executeonly def
 
   /Square {
-    dup /AP oknown {
+    //ValidateAP exec
+    {
       //true
-    }{
+    } {
       gsave
       //startannottransparency exec
       dup
@@ -3532,9 +3546,10 @@ currentdict /set_bc_color undef
 }bind executeonly def
 
   /Circle {
-    dup /AP oknown {
+    //ValidateAP exec
+    {
       //true
-    }{
+    } {
       gsave
       //startannottransparency exec
       dup annotrect 4 2 roll exch 3 index 2 div add exch 2 index 2 div add
@@ -3549,9 +3564,10 @@ currentdict /set_bc_color undef
   } bind executeonly def
 
   /Polygon {
-    dup /AP oknown {
+    //ValidateAP exec
+    {
       //true
-    }{
+    } {
       gsave
       //startannottransparency exec
       dup /Vertices knownoget {
@@ -3802,7 +3818,8 @@ currentdict /set_bc_color undef
   currentdict end readonly def
 
   /Line  {
-    dup /AP oknown {
+    //ValidateAP exec
+    {
       //true
     } {
       gsave
@@ -3844,9 +3861,10 @@ currentdict /set_bc_color undef
   } bind executeonly def
 
   /PolyLine {
-    dup /AP oknown {
+    //ValidateAP exec
+    {
       //true
-    }{
+    } {
       gsave
       //startannottransparency exec
       dup /Vertices knownoget {
@@ -3916,7 +3934,8 @@ currentdict /set_bc_color undef
 
   /Ink { % <annot> -> <annot> <true>
          % <annot> -> <false>
-    dup /AP oknown {
+    //ValidateAP exec
+    {
       //true
     } {
       //startannottransparency exec
@@ -3967,7 +3986,8 @@ currentdict /set_bc_color undef
   } bind executeonly def
 
   /Underline {
-    dup /AP oknown {
+    //ValidateAP exec
+    {
       //true
     } {
       0 setlinecap
@@ -4006,7 +4026,8 @@ currentdict /set_bc_color undef
   } bind executeonly def
 
   /StrikeOut {
-    dup /AP oknown {
+    //ValidateAP exec
+    {
       //true
     } {
       0 setlinecap
@@ -4067,12 +4088,10 @@ currentdict /set_bc_color undef
   /emptydict 0 dict readonly def
 
   /Highlight {
-% technically we should apply an appearance stream if we have one, but if we do
-% some test files don't match Acrobat. PDF 2.0 says appearance streams are mandatory,
-% and take precedence over generatig new ones, so we may need to revisit this.
-%    dup /AP oknown {
-%      //true
-%    }{
+    //ValidateAP exec
+    {
+      //true
+    } {
     0 setlinecap
     dup annotsetcolor {
       /QuadPoints knownoget {
@@ -4096,13 +4115,14 @@ currentdict /set_bc_color undef
       } if
     } if
     //false
-%    } ifelse
+    } ifelse
   } bind executeonly def
   currentdict /emptydict undef
   currentdict /highlight-arc undef
 
   /Squiggly {
-    dup /AP oknown {
+    //ValidateAP exec
+    {
       //true
     } {
       //startannottransparency exec
@@ -4160,7 +4180,8 @@ currentdict /set_bc_color undef
   } bind executeonly def
 
   /Text {
-    dup /AP oknown {
+    //ValidateAP exec
+    {
       //true
     } {
       //startannottransparency exec
@@ -4202,16 +4223,10 @@ currentdict /set_bc_color undef
   } bind executeonly def
 
   /FreeText {
-    dup /AP knownoget {
-        %% Check minimal entriy in /AP dictionary
-        /N known not {
-          //true
-        }{
-          //false
-        }ifelse
-      } {
-        //true
-    }ifelse
+    //ValidateAP exec
+    {
+      //true
+    }
     %% We either have no appearance, or its invalid, make one up.
     {
       gsave
@@ -4382,9 +4397,6 @@ currentdict /set_bc_color undef
       //endannottransparency exec
       //false
       grestore
-    }
-    {
-      //true
     } ifelse
   } bind executeonly def
 
@@ -4499,7 +4511,8 @@ currentdict /set_bc_color undef
   {/text/frame/red/green/blue} {currentdict exch undef} forall
 
   /Stamp  {
-    dup /AP oknown {
+    //ValidateAP exec
+    {
       //true
     } {
       //startannottransparency exec
@@ -4533,9 +4546,10 @@ currentdict /set_bc_color undef
   /Popup {
     dup /Open oknown {
       dup /Open get {
-        dup /AP oknown {
+        //ValidateAP exec
+        {
           //true
-        }{
+        } {
           gsave
           //startannottransparency exec
           newpath
@@ -4624,7 +4638,8 @@ currentdict /set_bc_color undef
     %% until the content is removed, before that the content should be present and
     %% I beleive we should print it. So take no action for Redact annotations if they
     %% have no appearance.
-    dup /AP oknown {
+    //ValidateAP exec
+    {
       //true
     } {
       //false
@@ -4633,6 +4648,7 @@ currentdict /set_bc_color undef
 
 currentdict /startannottransparency undef
 currentdict /endannottransparency undef
+currentdict /ValidateAP undef
 currentdict /quadpoints2basis undef
 currentdict /drawellipse undef
 currentdict end readonly def
