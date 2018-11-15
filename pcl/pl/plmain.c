@@ -361,6 +361,8 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                 /* Possibly this never happens? But attempt to cope anyway. */
                 if (minst->desired_implementation == NULL)
                     goto flush_to_end_of_job;
+                if_debug1m('I', mem, "selected (%s)\n",
+                           pl_characteristics(minst->desired_implementation)->language);
                 if (minst->desired_implementation != pjli) {
                     if (pl_dnit_job(minst->curr_implementation) < 0)
                         goto error_fatal;
@@ -375,8 +377,6 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                 minst->curr_implementation = minst->desired_implementation;
                 if (code < 0)
                     goto error_fatal;
-                if_debug1m('I', mem, "selected (%s)\n",
-                           pl_characteristics(minst->curr_implementation)->language);
             }
 
             /* PJLI will have been reinitialised already after finishing a non PJL job. */
@@ -403,9 +403,13 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                  goto error_fatal;
         }
 
+        if_debug2m('I', mem, "processing (%s) job from offset %ld\n",
+                   pl_characteristics(minst->curr_implementation)->language,
+                   sftell(s));
         code = pl_process(minst->curr_implementation, &s->cursor.r);
-        if_debug1m('I', mem, "processing (%s) job\n",
-                   pl_characteristics(minst->curr_implementation)->language);
+        if_debug2m('I', mem, "processed (%s) job to offset %ld\n",
+                   pl_characteristics(minst->curr_implementation)->language,
+                   sftell(s));
         if (code == gs_error_NeedInput || code >= 0) {
             continue;
         }
