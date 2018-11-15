@@ -1413,10 +1413,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\Resource\Init\gs_l2img.ps"
-					>
-				</File>
-				<File
 					RelativePath="..\Resource\Init\gs_lev2.ps"
 					>
 				</File>

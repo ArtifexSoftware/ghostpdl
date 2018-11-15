@@ -479,7 +479,7 @@ $(PSOBJ)zcolor.$(OBJ) : $(PSSRC)zcolor.c $(OP)\
  $(idict_h) $(icolor_h) $(idparam_h) $(iname_h) $(iutil_h) $(icsmap_h)\
  $(ifunc_h) $(zht2_h) $(zcolor_h) $(zcie_h) $(zicc_h) $(gscspace_h)\
  $(zfrsd_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zcolor.$(OBJ) $(C_) $(PSSRC)zcolor.c 
+	$(PSCC) $(PSO_)zcolor.$(OBJ) $(C_) $(PSSRC)zcolor.c
 
 $(PSOBJ)zdevice.$(OBJ) : $(PSSRC)zdevice.c $(OP) $(string__h)\
  $(ialloc_h) $(idict_h) $(igstate_h) $(iname_h) $(interp_h) $(iparam_h) $(ivmspace_h)\
@@ -848,7 +848,7 @@ type42read_=$(PSOBJ)zchar42.$(OBJ) $(PSOBJ)zcharout.$(OBJ) $(PSOBJ)zfont42.$(OBJ
 $(PSD)type42.dev : $(ECHOGS_XE) $(type42read_) $(GLD)ttflib.dev\
  $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)type42 $(type42read_)
-	$(ADDMOD) $(PSD)type42 -include $(GLD)ttflib	
+	$(ADDMOD) $(PSD)type42 -include $(GLD)ttflib
 	$(ADDMOD) $(PSD)type42 -oper zchar42 zfont42
 	$(ADDMOD) $(PSD)type42 -ps gs_typ42
 
@@ -1219,7 +1219,7 @@ $(PSD)jbig2_luratech.dev : $(ECHOGS_XE) $(fjbig2_) $(GLD)sjbig2.dev\
 	$(ADDMOD) $(PSD)jbig2_luratech -oper zfjbig2
 
 $(PSD)jbig2_.dev : $(ECHOGS_XE) $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)jbig2_ 
+	$(SETMOD) $(PSD)jbig2_
 
 $(PSD)jbig2.dev : $(PSD)jbig2_$(JBIG2_LIB).dev $(INT_MAK) $(MAKEDIRS)
 	$(CP_) $(PSD)jbig2_$(JBIG2_LIB).dev $(PSD)jbig2.dev
@@ -1840,7 +1840,7 @@ $(PSD)pdfread.dev : $(ECHOGS_XE) \
  $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)pdfread -include $(PSD)frsd $(PSD)func4 $(PSD)fzlib
 	$(ADDMOD) $(PSD)pdfread -include $(PSD)transpar
-	$(ADDMOD) $(PSD)pdfread -ps pdf_ops gs_l2img
+	$(ADDMOD) $(PSD)pdfread -ps pdf_ops
 	$(ADDMOD) $(PSD)pdfread -ps pdf_rbld
 	$(ADDMOD) $(PSD)pdfread -ps pdf_base pdf_draw pdf_font pdf_main pdf_sec
 
