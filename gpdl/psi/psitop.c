@@ -40,6 +40,7 @@
 #include "gxstate.h"
 #include "plparse.h"
 #include "pltop.h"
+#include "plmain.h"
 #include "gzstate.h"
 #include "gsicc_manage.h"
 
@@ -63,13 +64,106 @@ typedef struct ps_interp_instance_s {
 } ps_interp_instance_t;
 
 static int
+check_token(int token_type, const char *s, const char *e, int *score)
+{
+    /* Empty tokens are always OK */
+    if (s == e)
+        return 0;
+
+    switch (token_type) {
+        case 'a':
+            /* Angle bracket - mainly to catch << */
+            break;
+        case 'n':
+            /* Name */
+            /* FIXME: Check it's a valid name */
+            break;
+        case 'd':
+            /* Dictionary */
+            break;
+        case 'i':
+            /* int - ok by construction. */
+            return 0;
+        case 'f':
+            /* float - ok by construction. */
+            return 0;
+    }
+
+#define TOKEN_CHECK(n) else if (e-s == strlen(n) && memcmp(s, n, e-s) == 0) { score[0] += e-s; score[1]++; }
+
+    if (0) {}
+    TOKEN_CHECK("dup")
+    TOKEN_CHECK("exch")
+    TOKEN_CHECK("grestore")
+    TOKEN_CHECK("gsave")
+    TOKEN_CHECK("idiv")
+    TOKEN_CHECK("lineto")
+    TOKEN_CHECK("mod")
+    TOKEN_CHECK("mul")
+    TOKEN_CHECK("moveto")
+    TOKEN_CHECK("setflat")
+    TOKEN_CHECK("setlinecap")
+    TOKEN_CHECK("setlinejoin")
+    TOKEN_CHECK("showpage")
+    TOKEN_CHECK("stroke")
+    TOKEN_CHECK("translate")
+    TOKEN_CHECK("systemdict")
+
+    if (score[0] > 1024 && score[2] >= 3)
+        return 1;
+    if (score[0] < -1024)
+        return 1;
+
+    return 0;
+}
+
+static int
+score_comment(const char *s, const char *e, int *score)
+{
+#define COMMENT_CHECK(n) else if (e-s >= strlen(n) && memcmp(s, n, strlen(n)) == 0) { score[0] += 100; score[1]++; }
+
+    if (0) {}
+    COMMENT_CHECK("!PS")
+    COMMENT_CHECK("%Title:")
+    COMMENT_CHECK("%Version:")
+    COMMENT_CHECK("%Creator:")
+    COMMENT_CHECK("%CreationDate:")
+    COMMENT_CHECK("%Document")
+    COMMENT_CHECK("%BoundingBox:")
+    COMMENT_CHECK("%HiResBoundingBox:")
+    COMMENT_CHECK("%Pages:")
+    COMMENT_CHECK("%+ procset")
+    COMMENT_CHECK("%End")
+    COMMENT_CHECK("%Begin")
+    COMMENT_CHECK("%Copyright")
+    else {
+        score[0]++; score[1]++;
+    }
+
+    if (score[0] > 1024 && score[1] >= 3)
+        return 1;
+
+    return 0;
+}
+
+static int
 ps_detect_language(const char *s, int len)
 {
     /* For postscript, we look for %! */
     if (len >= 2) {
-        /* Be careful to avoid shell scripts (e.g. #!/bin/bash) if possible */
-        if (s[0] == '%' && s[1] == '!' && (len < 3 || s[2] != '/'))
+        if (s[0] != '%' || s[1] != '!') {
+            /* Not what we were looking for */
+        } else if (len >= 12 && memcmp(s+2, "Postscript", 10) == 0) {
+            return 100;
+        } else if (len >= 4 && memcmp(s+2, "PS", 2) == 0) {
+            return 100;
+        } else if (len >= 3 && s[2] == '/') {
+            /* Looks like a shell script. Don't want that. */
             return 0;
+        } else {
+            /* If it begins %!, then it's PROBABLY postscript */
+            return 80;
+        }
     }
     /* For PDF, we allow for leading crap, then a postscript version marker */
     {
@@ -83,7 +177,7 @@ ps_detect_language(const char *s, int len)
                 t[5] >= '1' && t[5] <= '9' &&
                 t[6] == '.' &&
                 t[7] >= '0' && t[7] <= '9') {
-                return 0;
+                return 100;
             }
             if (memcmp(t, "%!PS-Adobe-", 11) == 0 &&
                 t[11] >= '0' && t[11] <= '9' &&
@@ -93,14 +187,115 @@ ps_detect_language(const char *s, int len)
                 t[19] >= '0' && t[19] <= '9' &&
                 t[20] == '.' &&
                 t[21] >= '0' && t[21] <= '9') {
-                return 0;
+                return 100;
             }
             t++;
             left--;
         }
     }
 
-    return 1;
+    /* Now we do some seriously hairy stuff */
+    {
+        const char *t = s;
+        const char *token = t;
+        int left = len;
+        int token_type = 0;
+        int score[2] = { 0, 0 };
+
+        while (left--) {
+            if (*t == '%') {
+                if (check_token(token_type, token, t, score))
+                    break;
+                /* Skip to end of line */
+                left--;
+                token = ++t;
+                while (left && *t != '\r' && *t != '\n') {
+                    left--; t++;
+                }
+                if (score_comment(token, t, score))
+                    break;
+                /* Skip any combination of newlines */
+                while (left && (*t == '\r' || *t == '\n')) {
+                    left--; t++;
+                }
+                token_type = 0;
+                continue;
+            } else if (*t == 27) {
+                /* Give up if we meet an ESC. It could be a UEL. */
+                break;
+            } else if (*t <= 32 || *t > 127) {
+                if (check_token(token_type, token, t, score))
+                    break;
+                if (*t != 9 && *t != 10 && *t != 12 && *t != 13 && *t != 32)
+                    score[0]--;
+                token = t+1;
+                token_type = 0;
+            } else if (*t == '/') {
+                if (check_token(token_type, token, t, score))
+                    break;
+                token = t+1;
+                token_type = 'n';
+            } else if (*t == '[' || *t == ']' || *t == '{' || *t == '}') {
+                if (check_token(token_type, token, t, score))
+                    break;
+                token = t+1;
+                token_type = 0;
+            } else if (*t == '<') {
+                if (token_type == 'a') {
+                    /* << */
+                    token = t+1;
+                    token_type = 'd';
+                } else if (token_type == 'd') {
+                    /* <<< ???!? */
+                    score[0] -= 10;
+                } else {
+                    if (check_token(token_type, token, t, score))
+                        break;
+                    token = t+1;
+                    token_type = 'a';
+                }
+            } else if (*t == '>') {
+                if (check_token(token_type, token, t, score))
+                    break;
+                token = t+1;
+                token_type = 0;
+            } else if (*t >= '0' && *t <= '9') {
+                if (token_type == 'i') {
+                    /* Keep going */
+                } else if (token_type == 'f') {
+                    /* Keep going */
+                } else {
+                    if (check_token(token_type, token, t, score))
+                        break;
+                    token = t;
+                    token_type = 'i';
+                }
+            } else if (*t == '.') {
+                if (token_type == 'f') {
+                    /* seems unlikely */
+                    score[0]--;
+                    break;
+                } else if (token_type == 'i') {
+                    token = t;
+                    token_type = 'f';
+                } else {
+                    if (check_token(token_type, token, t, score))
+                        break;
+                    token = t;
+                    token_type = 'f';
+                }
+            } else {
+                /* Assume anything else goes into the token */
+            }
+            t++;
+        }
+        if (score[0] < 0 || score[1] < 3)
+            return 0; /* Unlikely to be PS */
+        else if (score[0] > 0)
+            return 75; /* Could be PS */
+    }
+
+    return 0;
 }
 
 /* Get implementation's characteristics */

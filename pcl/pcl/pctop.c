@@ -169,9 +169,30 @@ typedef struct pcl_interp_instance_s
 static int
 pcl_detect_language(const char *s, int length)
 {
+    int count;
+    int len;
+
     if (length < 2)
-        return 1;
-    return memcmp(s, "\033E", 2);
+        return 0;
+    if (s[0] == 27) {
+        if (s[1] == 'E')
+            return 100;
+        return 80;
+    }
+
+    /* Count the number of ESC's */
+    for (count = 0, len = length; len > 0; len--, s++)
+    {
+        if (*s == 27)
+            count++;
+    }
+
+    if (count > 10 || count > length/20)
+        return 80;
+    if (count > 0)
+        return 20;
+
+    return 0;
 }
 
 /* Get implementation's characteristics */

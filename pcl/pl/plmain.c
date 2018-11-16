@@ -1489,6 +1489,8 @@ pl_auto_sense(pl_main_instance_t *minst, const char *name,  int buffer_length)
     pl_interp_implementation_t **impls = minst->implementations;
     pl_interp_implementation_t **impl;
     size_t uel_len = strlen(PJL_UEL);
+    pl_interp_implementation_t *best = NULL;
+    int max_score = 0;
 
     /* first check for a UEL */
     if (buffer_length >= uel_len) {
@@ -1496,12 +1498,16 @@ pl_auto_sense(pl_main_instance_t *minst, const char *name,  int buffer_length)
             return impls[0];
     }
 
-    for (impl = impls; *impl != NULL; ++impl) {
-        if (pl_characteristics(*impl)->auto_sense(name, buffer_length) == 0)
-            return *impl;
-    }
     /* Defaults to language 1 (if there is one): PJL is language 0, PCL is language 1. */
-    return impls[1] ? impls[1] : impls[0];
+    best = impls[1] ? impls[1] : impls[0];
+    for (impl = impls; *impl != NULL; ++impl) {
+        int score = pl_characteristics(*impl)->auto_sense(name, buffer_length);
+        if (score > max_score) {
+            best = *impl;
+            max_score = score;
+        }
+    }
+    return best;
 }
 
 /* either the (1) implementation has been selected on the command line or

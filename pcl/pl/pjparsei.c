@@ -35,8 +35,10 @@ pjl_detect_language(const char *s, int len)
     if (len && *s == '\n')
         s++, len--;
     if (len < 4)
-        return 1;
-    return memcmp(s, "@PJL", 4);
+        return 0;
+    if (memcmp(s, "@PJL", 4) == 0)
+        return 100;
+    return 0;
 }
 
 /* Get implementation's characteristics */

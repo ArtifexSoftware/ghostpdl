@@ -142,8 +142,10 @@ static int
 pxl_detect_language(const char *s, int len)
 {
    if (len < 11)
-       return 1;
-   return memcmp(s, ") HP-PCL XL", 11);
+       return 0;
+   if (memcmp(s, ") HP-PCL XL", 11) == 0)
+       return 100;
+   return 0;
 }
 
 /* Get implementation's characteristics */

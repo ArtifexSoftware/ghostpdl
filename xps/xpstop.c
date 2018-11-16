@@ -59,8 +59,10 @@ static int
 xps_detect_language(const char *s, int len)
 {
     if (len < 2)
-        return 1;
-    return memcmp(s, "PK", 2);
+        return 0;
+    if (memcmp(s, "PK", 2) == 0)
+        return 100;
+    return 0;
 }
 
 static const pl_interp_characteristics_t *

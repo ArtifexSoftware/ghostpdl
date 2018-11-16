@@ -41,7 +41,7 @@ typedef struct pl_interp_characteristics_s
 {
     const char *language;       /* generic language should correspond with
                                    HP documented PJL name */
-    int (*auto_sense)(const char *string, int length);      /* routine used to detect language - 0 is detected, non-zero not detected */
+    int (*auto_sense)(const char *string, int length);      /* routine used to detect language - returns a score: 0 is definitely not, 100 is definitely yes. */
     const char *manufacturer;   /* manuf str */
     const char *version;        /* version str */
     const char *build_date;     /* build date str */
