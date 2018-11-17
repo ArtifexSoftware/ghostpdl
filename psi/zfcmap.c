@@ -310,6 +310,10 @@ cid_system_info_compatible(const gs_cid_system_info_t * psi1,
 
 /* ---------------- (Semi-)public procedures ---------------- */
 
+extern_st(st_cmap_tt_16bit_format4);
+extern_st(st_cmap_identity);
+extern_st(st_cmap_ToUnicode);
+
 /* Get the CodeMap from a Type 0 font, and check the CIDSystemInfo of */
 /* its subsidiary fonts. */
 int
@@ -323,16 +327,12 @@ ztype0_get_cmap(const gs_cmap_t **ppcmap, const ref *pfdepvector,
     uint num_fonts;
     uint i;
 
-    /*
-     * We have no way of checking whether the CodeMap is a concrete
-     * subclass of gs_cmap_t, so we just check that it is in fact a
-     * t_struct and is large enough.
-     */
     if (dict_find_string(op, "CMap", &prcmap) <= 0 ||
         !r_has_type(prcmap, t_dictionary) ||
         dict_find_string(prcmap, "CodeMap", &pcodemap) <= 0 ||
-        !r_is_struct(pcodemap) ||
-        gs_object_size(imem, r_ptr(pcodemap, gs_cmap_t)) < sizeof(gs_cmap_t)
+        !r_is_struct(pcodemap) || (!r_has_stype(pcodemap, imem, st_cmap_tt_16bit_format4) &&
+        !r_has_stype(pcodemap, imem, st_cmap_identity) && !r_has_stype(pcodemap, imem, st_cmap_ToUnicode) &&
+        !r_has_stype(pcodemap, imem, st_cmap_adobe1))
         )
         return_error(gs_error_invalidfont);
     pcmap = r_ptr(pcodemap, gs_cmap_t);
