@@ -84,7 +84,7 @@ typedef struct gs_cmap_tt_16bit_format4_s {
     uint segCount2;
     ulong endCount, startCount, idDelta, idRangeOffset, glyphIdArray;
 } gs_cmap_tt_16bit_format4_t;
-gs_private_st_suffix_add1(st_cmap_tt_16bit_format4, gs_cmap_tt_16bit_format4_t,
+gs_public_st_suffix_add1(st_cmap_tt_16bit_format4, gs_cmap_tt_16bit_format4_t,
   "gs_cmap_tt_16bit_format4_t",
   cmap_tt_16bit_format4_enum_ptrs, cmap_tt_16bit_format4_reloc_ptrs,
   st_cmap, font);

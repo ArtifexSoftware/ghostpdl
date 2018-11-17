@@ -460,6 +460,7 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
     if (code == 0)
         return_error(gs_error_undefined);
 
+    check_stype(*pvalue, st_dsc_data_t);
     dsc_state = r_ptr(pvalue, dsc_data_t);
     /*
      * Pick up the comment string to be parsed.
