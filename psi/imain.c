@@ -874,7 +874,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     gs_dual_memory_t dmem = {0};
     int exit_code;
     ref error_object;
-    char *tempnames;
+    char *tempnames = NULL;
 
     /* NB: need to free gs_name_table
      */
@@ -950,7 +950,10 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
                with the default device.
              */
             int code = gs_grestoreall(i_ctx_p->pgs);
-            if (code < 0) return_error(gs_error_Fatal);
+            if (code < 0) {
+                free(tempnames);
+                return_error(gs_error_Fatal);
+            }
         }
 
         if (i_ctx_p->pgs != NULL && i_ctx_p->pgs->device != NULL) {
@@ -964,8 +967,10 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
              * Register the device as a gc 'root' so it will be implicitely marked by garbager, and
              * and thus surive until control returns here.
              */
-            if (gs_register_struct_root(pdev->memory, &dev_root, (void **)&pdev, "gs_main_finit") < 0)
+            if (gs_register_struct_root(pdev->memory, &dev_root, (void **)&pdev, "gs_main_finit") < 0) {
+                free(tempnames);
                 return_error(gs_error_Fatal);
+            }
 
             /* make sure device doesn't isn't freed by .uninstalldevice */
             rc_adjust(pdev, 1, "gs_main_finit");
