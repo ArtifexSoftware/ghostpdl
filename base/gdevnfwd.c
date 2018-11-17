@@ -116,8 +116,8 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, get_profile, gx_forward_get_profile);
     fill_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
     fill_dev_proc(dev, strip_copy_rop2, gx_forward_strip_copy_rop2);
-    fill_dev_proc(dev, strip_tile_rect_devn, gx_forward_strip_tile_rect_devn); 
-    fill_dev_proc(dev, transform_pixel_region, gx_forward_transform_pixel_region); 
+    fill_dev_proc(dev, strip_tile_rect_devn, gx_forward_strip_tile_rect_devn);
+    fill_dev_proc(dev, transform_pixel_region, gx_forward_transform_pixel_region);
     gx_device_fill_in_procs((gx_device *) dev);
 }
 
@@ -612,17 +612,17 @@ gx_forward_strip_copy_rop2(gx_device * dev, const byte * sdata, int sourcex,
 
 int
 gx_forward_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
-   int x, int y, int w, int h, const gx_drawing_color * pdcolor0, 
+   int x, int y, int w, int h, const gx_drawing_color * pdcolor0,
    const gx_drawing_color * pdcolor1, int px, int py)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     if (tdev == 0)
-        return gx_default_strip_tile_rect_devn(dev, tiles, x, y, w, h, pdcolor0, 
+        return gx_default_strip_tile_rect_devn(dev, tiles, x, y, w, h, pdcolor0,
                                                pdcolor1, px, py);
     else
-        return dev_proc(tdev, strip_tile_rect_devn)(tdev, tiles, x, y, w, h, 
+        return dev_proc(tdev, strip_tile_rect_devn)(tdev, tiles, x, y, w, h,
                                                     pdcolor0, pdcolor1, px, py);
 }
 
@@ -1038,7 +1038,7 @@ gx_forward_transform_pixel_region(gx_device *pdev, transform_pixel_region_reason
     if (tdev != 0)
         return dev_proc(tdev, transform_pixel_region)(tdev, reason, data);
     else
-        return gx_default_transform_pixel_region(tdev, reason, data);
+        return gx_default_transform_pixel_region(pdev, reason, data);
 }
 
 /* ---------------- The null device(s) ---------_plane_index------- */
@@ -1304,7 +1304,7 @@ null_strip_copy_rop2(gx_device * dev, const byte * sdata, int sourcex,
 
 static int
 null_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
-   int x, int y, int w, int h, const gx_drawing_color * pdcolor0, 
+   int x, int y, int w, int h, const gx_drawing_color * pdcolor0,
    const gx_drawing_color * pdcolor1, int px, int py)
 {
     return 0;
