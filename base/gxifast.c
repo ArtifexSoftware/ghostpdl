@@ -50,10 +50,10 @@ iclass_proc(gs_image_class_1_simple);
 static irender_proc(image_render_skip);
 static irender_proc(image_render_simple);
 static irender_proc(image_render_landscape);
-irender_proc_t
-gs_image_class_1_simple(gx_image_enum * penum)
+
+int
+gs_image_class_1_simple(gx_image_enum * penum, irender_proc_t *render_fn)
 {
-    irender_proc_t rproc;
     fixed ox = dda_current(penum->dda.pixel0.x);
     fixed oy = dda_current(penum->dda.pixel0.y);
 
@@ -82,12 +82,12 @@ gs_image_class_1_simple(gx_image_enum * penum)
                     penum->line = gs_alloc_bytes(penum->memory,
                                             penum->line_size, "image line");
                     if (penum->line == 0) {
-                        return 0;
+                        return gs_error_VMerror;
                     }
                 }
                 if_debug2m('b', penum->memory, "[b]render=simple, unpack=copy; rect.w=%d, dev_width=%ld\n",
                            penum->rect.w, dev_width);
-                rproc = image_render_simple;
+                *render_fn = image_render_simple;
                 break;
             }
         case image_landscape:
@@ -110,7 +110,7 @@ gs_image_class_1_simple(gx_image_enum * penum)
                 penum->line = gs_alloc_bytes(penum->memory,
                                              penum->line_size, "image line");
                 if (penum->line == 0) {
-                    return 0;
+                    return gs_error_VMerror;
                 }
 #ifdef PACIFY_VALGRIND
                 memset(penum->line, 0, penum->line_size); /* For the number of scan lined < 8 */
@@ -119,7 +119,7 @@ gs_image_class_1_simple(gx_image_enum * penum)
                 if_debug3m('b', penum->memory,
                            "[b]render=landscape, unpack=copy; rect.w=%d, dev_width=%ld, line_size=%ld\n",
                            penum->rect.w, dev_width, line_size);
-                rproc = image_render_landscape;
+                *render_fn = image_render_landscape;
                 /* Precompute values needed for rasterizing. */
                 penum->dxy =
                     float2fixed(penum->matrix.xy +
@@ -158,11 +158,11 @@ gs_image_class_1_simple(gx_image_enum * penum)
              * The only other possible in-range value is v0 = 0, v1 = 1.
              * The image is completely transparent!
              */
-            rproc = image_render_skip;
+            *render_fn = image_render_skip;
         }
         penum->map[0].decoding = sd_none;
     }
-    return rproc;
+    return 0;
 }
 
 /* ------ Rendering procedures ------ */

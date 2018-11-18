@@ -106,8 +106,8 @@ iclass_proc(gs_image_class_2_fracs);
 static irender_proc(image_render_frac);
 static irender_proc(image_render_icc16); /* icc 16bit case */
 
-irender_proc_t
-gs_image_class_2_fracs(gx_image_enum * penum)
+int
+gs_image_class_2_fracs(gx_image_enum * penum, irender_proc_t *render_fn)
 {
     bool std_cmap_procs;
 
@@ -134,7 +134,8 @@ gs_image_class_2_fracs(gx_image_enum * penum)
                a simple color space that just is scaled to the device bit
                depth when remapped. No CM needed */
             if_debug0m('b', penum->memory, "[b]render=frac\n");
-            return &image_render_frac;
+            *render_fn =  &image_render_frac;
+            return 0;
         } else {
             /* Set up the link now */
             const gs_color_space *pcs;
@@ -181,7 +182,8 @@ gs_image_class_2_fracs(gx_image_enum * penum)
             /* Use the direct unpacking proc */
             penum->unpack = sample_unpackicc_16;
             if_debug0m('b', penum->memory, "[b]render=icc16\n");
-            return &image_render_icc16;
+            *render_fn = &image_render_icc16;
+            return 0;
         }
     }
     return 0;

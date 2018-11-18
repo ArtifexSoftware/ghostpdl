@@ -173,8 +173,8 @@ static int mask_suitable_for_interpolation(gx_image_enum *penum)
     return high_level_color;
 }
 
-irender_proc_t
-gs_image_class_0_interpolate(gx_image_enum * penum)
+int
+gs_image_class_0_interpolate(gx_image_enum * penum, irender_proc_t *render_fn)
 {
     gs_memory_t *mem = penum->memory;
     stream_image_scale_params_t iss;
@@ -550,13 +550,15 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     if_debug0m('b', penum->memory, "[b]render=interpolate\n");
     if (penum->masked) {
         if (!mask_col_high_level) {
-            return (penum->posture == image_portrait ?
+            *render_fn = (penum->posture == image_portrait ?
                     &image_render_interpolate_masked :
                     &image_render_interpolate_landscape_masked);
+            return 0;
         } else {
-            return (penum->posture == image_portrait ?
+            *render_fn = (penum->posture == image_portrait ?
                     &image_render_interpolate_masked_hl :
                     &image_render_interpolate_landscape_masked_hl);
+            return 0;
         }
     } else if (use_icc) {
         /* Set up the link now */
@@ -604,13 +606,15 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         if (penum->bps == 16) {
             penum->unpack = sample_unpackicc_16;
         }
-        return (penum->posture == image_portrait ?
+        *render_fn = (penum->posture == image_portrait ?
                 &image_render_interpolate_icc :
                 &image_render_interpolate_landscape_icc);
+        return 0;
     } else {
-        return (penum->posture == image_portrait ?
+        *render_fn = (penum->posture == image_portrait ?
                 &image_render_interpolate :
                 &image_render_interpolate_landscape);
+        return 0;
     }
 }
 

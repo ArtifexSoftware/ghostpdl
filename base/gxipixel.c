@@ -994,6 +994,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
         }};
         int num_planes = penum->num_planes;
         bool interleaved = (num_planes == 1 && penum->plane_depths[0] != penum->bps);
+        irender_proc_t render_fn = NULL;
         int i;
 
         if (interleaved) {
@@ -1013,9 +1014,16 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
         /* Set up pixel0 for image class procedures. */
         penum->dda.pixel0 = penum->dda.strip;
         penum->skip_next_line = NULL;
-        for (i = 0; i < gx_image_class_table_count; ++i)
-            if ((penum->render = gx_image_class_table[i](penum)) != 0)
+        for (i = 0; i < gx_image_class_table_count; ++i) {
+            code = gx_image_class_table[i](penum, &render_fn);
+            if (code < 0)
+                goto fail;
+
+            if (render_fn != NULL) {
+                penum->render = render_fn;
                 break;
+            }
+        }
         penum->dev = dev; /* Restore this (in case it was changed to cdev or rtdev) */
         if (i == gx_image_class_table_count) {
             /* No available class can handle this image. */

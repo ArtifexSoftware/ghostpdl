@@ -60,7 +60,7 @@ typedef irender_proc((*irender_proc_t));
  * structure as well as returning the rendering procedure.
  */
 #define iclass_proc(proc)\
-  irender_proc_t proc(gx_image_enum *penum)
+  int proc(gx_image_enum *penum, irender_proc_t *render_fn)
 typedef iclass_proc((*gx_image_class_t));
 
 #endif /* gxiclass_INCLUDED */
