@@ -206,7 +206,9 @@ gs_function_ElIn_free_params(gs_function_ElIn_params_t * params,
                              gs_memory_t * mem)
 {
     gs_free_const_object(mem, params->C1, "C1");
+    params->C1 = NULL;
     gs_free_const_object(mem, params->C0, "C0");
+    params->C0 = NULL;
     fn_common_free_params((gs_function_params_t *) params, mem);
 }
 
@@ -490,8 +492,11 @@ gs_function_1ItSg_free_params(gs_function_1ItSg_params_t * params,
                               gs_memory_t * mem)
 {
     gs_free_const_object(mem, params->Encode, "Encode");
+    params->Encode = NULL;
     gs_free_const_object(mem, params->Bounds, "Bounds");
+    params->Bounds = NULL;
     fn_free_functions(params->Functions, params->k, mem);
+    params->Functions = NULL;
     fn_common_free_params((gs_function_params_t *) params, mem);
 }
 
@@ -688,6 +693,7 @@ gs_function_AdOt_free_params(gs_function_AdOt_params_t * params,
                              gs_memory_t * mem)
 {
     fn_free_functions(params->Functions, params->n, mem);
+    params->Functions = NULL;
     fn_common_free_params((gs_function_params_t *) params, mem);
 }
 

@@ -1361,12 +1361,18 @@ void
 gs_function_Sd_free_params(gs_function_Sd_params_t * params, gs_memory_t * mem)
 {
     gs_free_const_object(mem, params->Size, "Size");
+    params->Size = NULL;
     gs_free_const_object(mem, params->Decode, "Decode");
+    params->Decode = NULL;
     gs_free_const_object(mem, params->Encode, "Encode");
+    params->Encode = NULL;
     fn_common_free_params((gs_function_params_t *) params, mem);
     gs_free_object(mem, params->pole, "gs_function_Sd_free_params");
+    params->pole = NULL;
     gs_free_object(mem, params->array_step, "gs_function_Sd_free_params");
+    params->array_step = NULL;
     gs_free_object(mem, params->stream_step, "gs_function_Sd_free_params");
+    params->stream_step = NULL;
 }
 
 /* aA helper for gs_function_Sd_serialize. */

@@ -63,7 +63,9 @@ rpdl_open(gx_device * pdev)
 static int
 rpdl_close(gx_device * pdev)
 {
-    gdev_prn_open_printer(pdev, 1);
+    int code = gdev_prn_open_printer(pdev, 1);
+    if (code < 0)
+        return code;
     if (ppdev->Duplex && (pdev->PageCount & 1)) {
         fprintf(ppdev->file, "\014"); /* Form Feed */
     }
