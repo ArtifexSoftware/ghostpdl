@@ -518,6 +518,9 @@ zsetdevice(i_ctx_t *i_ctx_p)
         return code;
     check_write_type(*op, t_device);
 
+    if (op->value.pdevice == 0)
+        return gs_note_error(gs_error_undefined);
+
     /* slightly icky special case: the new device may not have had
      * it's procs initialised, at this point - but we need to check
      * whether we're being asked to change the device here
@@ -536,9 +539,6 @@ zsetdevice(i_ctx_t *i_ctx_p)
             return_error(gs_error_invalidaccess);
     }
     dev->ShowpageCount = 0;
-
-    if (op->value.pdevice == 0)
-        return gs_note_error(gs_error_undefined);
 
     code = gs_setdevice_no_erase(igs, op->value.pdevice);
     if (code < 0)
