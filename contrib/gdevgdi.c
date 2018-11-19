@@ -151,10 +151,13 @@ gdi_open(gx_device *pdev)
 /* gdi_close is only here to eject odd numbered pages in duplex mode. */
 static int
 gdi_close(gx_device *pdev)
-{	if ( ppdev->Duplex_set >= 0 && ppdev->Duplex )
-          {	gdev_prn_open_printer(pdev, 1);
-                fputs("\033&l0H", ppdev->file) ;
-          }
+{
+        if ( ppdev->Duplex_set >= 0 && ppdev->Duplex )
+        {
+              int code = gdev_prn_open_printer(pdev, 1);
+              if (code >= 0)
+                    fputs("\033&l0H", ppdev->file) ;
+        }
         return gdev_prn_close(pdev);
 }
 
