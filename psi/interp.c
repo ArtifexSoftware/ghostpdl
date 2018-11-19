@@ -751,8 +751,14 @@ zforceinterp_exit(i_ctx_t *i_ctx_p)
         return 0;
 
     gs_interp_reset(i_ctx_p);
+    /* gs_interp_reset() actually leaves the op stack one entry below
+     * the bottom of the stack, and that can cause problems depending
+     * on the interpreter state at the end of the job.
+     * So push a null object, and the return code before continuing.
+     */
+    push(2);
     op = osp;
-    push(1);
+    make_null(op - 1);
     make_int(op, gs_error_InterpreterExit);
     return_error(gs_error_Quit);
 }
