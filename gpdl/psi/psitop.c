@@ -58,19 +58,57 @@ typedef struct ps_interp_instance_s {
     pl_interp_implementation_t pl;
 } ps_interp_instance_t;
 
-/* Get implemtation's characteristics */
+static int
+ps_detect_language(const char *s, int len)
+{
+    /* For postscript, we look for %! */
+    if (len >= 2) {
+        /* Be careful to avoid shell scripts (e.g. #!/bin/bash) if possible */
+        if (s[0] == '%' && s[1] == '!' && (len < 3 || s[2] != '/'))
+            return 0;
+    }
+    /* For PDF, we allow for leading crap, then a postscript version marker */
+    {
+        const char *t = s;
+        int left = len-22;
+        /* Search within just the first 4K, plus a bit for the marker length. */
+        if (left > 4096+22)
+            left = 4096+22;
+        while (left > 22) {
+            if (memcmp(t, "%PDF-", 5) == 0 &&
+                t[5] >= '1' && t[5] <= '9' &&
+                t[6] == '.' &&
+                t[7] >= '0' && t[7] <= '9') {
+                return 0;
+            }
+            if (memcmp(t, "%!PS-Adobe-", 11) == 0 &&
+                t[11] >= '0' && t[11] <= '9' &&
+                t[12] == '.' &&
+                t[13] >= '0' && t[13] <= '9' &&
+                memcmp(t+14, " PDF-", 5) == 0 &&
+                t[19] >= '0' && t[19] <= '9' &&
+                t[20] == '.' &&
+                t[21] >= '0' && t[21] <= '9') {
+                return 0;
+            }
+            t++;
+            left--;
+        }
+    }
+
+    return 1;
+}
+
+/* Get implementation's characteristics */
 static const pl_interp_characteristics_t * /* always returns a descriptor */
-ps_impl_characteristics(
-  const pl_interp_implementation_t *impl     /* implementation of interpereter to alloc */
-)
+ps_impl_characteristics(const pl_interp_implementation_t *impl)     /* implementation of interpreter to alloc */
 {
     /* version and build date are not currently used */
 #define PSVERSION NULL
 #define PSBUILDDATE NULL
   static const pl_interp_characteristics_t ps_characteristics = {
     "POSTSCRIPT",
-    /* NOTE - we don't look for %! because we want to recognize pdf as well */
-    "%",
+    ps_detect_language,
     "Artifex",
     PSVERSION,
     PSBUILDDATE,

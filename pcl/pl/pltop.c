@@ -25,10 +25,9 @@
 #include "gsdevice.h"
 #include "pltop.h"
 
-/* Get implemtation's characteristics */
+/* Get implementation's characteristics */
 const pl_interp_characteristics_t *     /* always returns a descriptor */
-pl_characteristics(const pl_interp_implementation_t * impl      /* implementation of interpereter to alloc */
-    )
+pl_characteristics(const pl_interp_implementation_t * impl)      /* implementation of interpreter to alloc */
 {
     return impl->proc_characteristics(impl);
 }

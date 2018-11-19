@@ -508,19 +508,37 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
 int
 zsetdevice(i_ctx_t *i_ctx_p)
 {
-    gx_device *dev = gs_currentdevice(igs);
+    gx_device *odev = NULL, *dev = gs_currentdevice(igs);
+    gx_device *ndev = NULL;
     os_ptr op = osp;
-    int code = 0;
+    int code = dev_proc(dev, dev_spec_op)(dev,
+                        gxdso_current_output_device, (void *)&odev, 0);
 
+    if (code < 0)
+        return code;
     check_write_type(*op, t_device);
-    if (dev->LockSafetyParams) {	  /* do additional checking if locked  */
-        if(op->value.pdevice != dev) 	  /* don't allow a different device    */
-            return_error(gs_error_invalidaccess);
-    }
-    dev->ShowpageCount = 0;
 
     if (op->value.pdevice == 0)
         return gs_note_error(gs_error_undefined);
+
+    /* slightly icky special case: the new device may not have had
+     * it's procs initialised, at this point - but we need to check
+     * whether we're being asked to change the device here
+     */
+    if (dev_proc((op->value.pdevice), dev_spec_op) == NULL)
+        ndev = op->value.pdevice;
+    else
+        code = dev_proc((op->value.pdevice), dev_spec_op)(op->value.pdevice,
+                        gxdso_current_output_device, (void *)&ndev, 0);
+
+    if (code < 0)
+        return code;
+
+    if (odev->LockSafetyParams) {	  /* do additional checking if locked  */
+        if(ndev != odev) 	  /* don't allow a different device    */
+            return_error(gs_error_invalidaccess);
+    }
+    dev->ShowpageCount = 0;
 
     code = gs_setdevice_no_erase(igs, op->value.pdevice);
     if (code < 0)

@@ -26,6 +26,9 @@
 
 #define COMPILING_MEMENTO_C
 
+/* SHUT UP, MSVC. I KNOW WHAT I AM DOING. */
+#define _CRT_SECURE_NO_WARNINGS
+
 /* We have some GS specific tweaks; more for the GS build environment than
  * anything else. */
 #define MEMENTO_GS_HACKS
@@ -38,12 +41,48 @@ int atexit(void (*)(void));
 #else
 #include "memento.h"
 #include <stdio.h>
-#include <stdlib.h>
 #endif
 #ifndef _MSC_VER
 #include <stdint.h>
 #include <limits.h>
 #endif
+
+#include <stdlib.h>
+#include <stdarg.h>
+
+#ifdef __ANDROID__
+#define MEMENTO_ANDROID
+#include <stdio.h>
+#endif
+
+/* Hacks to portably print large sizes */
+#ifdef _MSC_VER
+#define FMTZ "%llu"
+#define FMTZ_CAST _int64
+#else
+#define FMTZ "%zu"
+#define FMTZ_CAST size_t
+#endif
+
+#define UB(x) ((intptr_t)((x) & 0xFF))
+#define B2I(x) (UB(x) | (UB(x)<<8) | (UB(x)<<16) | (UB(x)<<24))
+#define B2P(x) ((void *)(B2I(x) | ((B2I(x)<<16)<<16)))
+#define MEMENTO_PREFILL_UBYTE ((unsigned char)(MEMENTO_PREFILL))
+#define MEMENTO_PREFILL_USHORT (((unsigned short)MEMENTO_PREFILL_UBYTE) | (((unsigned short)MEMENTO_PREFILL_UBYTE)<<8))
+#define MEMENTO_PREFILL_UINT (((unsigned int)MEMENTO_PREFILL_USHORT) | (((unsigned int)MEMENTO_PREFILL_USHORT)<<16))
+#define MEMENTO_PREFILL_PTR (void *)(((uintptr_t)MEMENTO_PREFILL_UINT) | ((((uintptr_t)MEMENTO_PREFILL_UINT)<<16)<<16))
+#define MEMENTO_POSTFILL_UBYTE ((unsigned char)(MEMENTO_POSTFILL))
+#define MEMENTO_POSTFILL_USHORT (((unsigned short)MEMENTO_POSTFILL_UBYTE) | (((unsigned short)MEMENTO_POSTFILL_UBYTE)<<8))
+#define MEMENTO_POSTFILL_UINT (((unsigned int)MEMENTO_POSTFILL_USHORT) | (((unsigned int)MEMENTO_POSTFILL_USHORT)<<16))
+#define MEMENTO_POSTFILL_PTR (void *)(((uintptr_t)MEMENTO_POSTFILL_UINT) | ((((uintptr_t)MEMENTO_POSTFILL_UINT)<<16)<<16))
+#define MEMENTO_ALLOCFILL_UBYTE ((unsigned char)(MEMENTO_ALLOCFILL))
+#define MEMENTO_ALLOCFILL_USHORT (((unsigned short)MEMENTO_ALLOCFILL_UBYTE) | (((unsigned short)MEMENTO_ALLOCFILL_UBYTE)<<8))
+#define MEMENTO_ALLOCFILL_UINT (((unsigned int)MEMENTO_ALLOCFILL_USHORT) | (((unsigned int)MEMENTO_ALLOCFILL_USHORT)<<16))
+#define MEMENTO_ALLOCFILL_PTR (void *)(((uintptr_t)MEMENTO_ALLOCFILL_UINT) | ((((uintptr_t)MEMENTO_ALLOCFILL_UINT)<<16)<<16))
+#define MEMENTO_FREEFILL_UBYTE ((unsigned char)(MEMENTO_FREEFILL))
+#define MEMENTO_FREEFILL_USHORT (((unsigned short)MEMENTO_FREEFILL_UBYTE) | (((unsigned short)MEMENTO_FREEFILL_UBYTE)<<8))
+#define MEMENTO_FREEFILL_UINT (((unsigned int)MEMENTO_FREEFILL_USHORT) | (((unsigned int)MEMENTO_FREEFILL_USHORT)<<16))
+#define MEMENTO_FREEFILL_PTR (void *)(((uintptr_t)MEMENTO_FREEFILL_UINT) | ((((uintptr_t)MEMENTO_FREEFILL_UINT)<<16)<<16))
 
 #ifdef MEMENTO
 
@@ -111,7 +150,8 @@ android_fprintf(FILE *file, const char *fmt, ...)
 #define MEMENTO_STACKTRACE_METHOD 3
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
+/* _WIN64 defined implies _WIN32 will be */
+#ifdef _WIN32
 #include <windows.h>
 
 static int
@@ -898,7 +938,7 @@ void Memento_breakpoint(void)
 {
     /* A handy externally visible function for breakpointing */
 #if 0 /* Enable this to force automatic breakpointing */
-#ifdef DEBUG
+#ifndef NDEBUG
 #ifdef _MSC_VER
     __asm int 3;
 #endif
@@ -981,7 +1021,7 @@ typedef struct BlkCheckData {
     int preCorrupt;
     int postCorrupt;
     int freeCorrupt;
-    int index;
+    size_t index;
 } BlkCheckData;
 
 #ifndef MEMENTO_LEAKONLY
@@ -1048,25 +1088,32 @@ post_corrupt:
 
 static int Memento_Internal_checkFreedBlock(Memento_BlkHeader *b, void *arg)
 {
-    int            i;
+    size_t         i;
     unsigned char *p;
     BlkCheckData  *data = (BlkCheckData *)arg;
 
     p = MEMBLK_TOBLK(b); /* p will always be aligned */
-    i = b->rawsize - 4;
+    i = b->rawsize;
     /* Attempt to speed this up by checking an (aligned) int at a time */
-    while (i >= 0) {
-        if (*(MEMENTO_UINT32 *)p != MEMENTO_FREEFILL_UINT32)
-            goto mismatch;
-        p += 4;
+    if (i >= 4) {
         i -= 4;
+        do {
+            if (*(MEMENTO_UINT32 *)p != MEMENTO_FREEFILL_UINT32)
+                goto mismatch4;
+            p += 4;
+            i -= 4;
+	} while (i > 0);
+        i += 4;
     }
-    i += 4;
     if (i & 2) {
         if (*(MEMENTO_UINT16 *)p != MEMENTO_FREEFILL_UINT16)
             goto mismatch;
         p += 2;
         i -= 2;
+    }
+    if (0) {
+mismatch4:
+        i += 4;
     }
 mismatch:
     while (i) {
@@ -1210,8 +1257,8 @@ static int Memento_appBlock(Memento_Blocks    *blks,
 
 static void showBlock(Memento_BlkHeader *b, int space)
 {
-    fprintf(stderr, "0x%p:(size=%d,num=%d)",
-            MEMBLK_TOBLK(b), (int)b->rawsize, b->sequence);
+    fprintf(stderr, "0x%p:(size=" FMTZ ",num=%d)",
+            MEMBLK_TOBLK(b), (FMTZ_CAST)b->rawsize, b->sequence);
     if (b->label)
         fprintf(stderr, "%c(%s)", space, b->label);
     if (b->flags & Memento_Flag_KnownLeak)
@@ -1241,7 +1288,7 @@ static void blockDisplay(Memento_BlkHeader *b, int n)
 static int Memento_listBlock(Memento_BlkHeader *b,
                              void              *arg)
 {
-    int *counts = (int *)arg;
+    size_t *counts = (size_t *)arg;
     blockDisplay(b, 0);
     counts[0]++;
     counts[1]+= b->rawsize;
@@ -1275,7 +1322,8 @@ static int ptrcmp(const void *a_, const void *b_)
 static
 int Memento_listBlocksNested(void)
 {
-    int count, size, i;
+    int count, i;
+    size_t size;
     Memento_BlkHeader *b, *prev;
     void **blocks, *minptr, *maxptr;
     intptr_t mask;
@@ -1365,7 +1413,7 @@ int Memento_listBlocksNested(void)
             doNestedDisplay(b, 0);
     }
     fprintf(stderr, " Total number of blocks = %d\n", count);
-    fprintf(stderr, " Total size of blocks = %d\n", size);
+    fprintf(stderr, " Total size of blocks = "FMTZ"\n", (FMTZ_CAST)size);
 
     MEMENTO_UNDERLYING_FREE(blocks);
 
@@ -1391,12 +1439,12 @@ void Memento_listBlocks(void)
     fprintf(stderr, "Allocated blocks:\n");
     if (Memento_listBlocksNested())
     {
-        int counts[2];
+        size_t counts[2];
         counts[0] = 0;
         counts[1] = 0;
         Memento_appBlocks(&memento.used, Memento_listBlock, &counts[0]);
-        fprintf(stderr, " Total number of blocks = %d\n", counts[0]);
-        fprintf(stderr, " Total size of blocks = %d\n", counts[1]);
+        fprintf(stderr, " Total number of blocks = "FMTZ"\n", (FMTZ_CAST)counts[0]);
+        fprintf(stderr, " Total size of blocks = "FMTZ"\n", (FMTZ_CAST)counts[1]);
     }
     MEMENTO_UNLOCK();
 }
@@ -1412,31 +1460,31 @@ static int Memento_listNewBlock(Memento_BlkHeader *b,
 
 void Memento_listNewBlocks(void)
 {
-    int counts[2];
+    size_t counts[2];
     MEMENTO_LOCK();
     counts[0] = 0;
     counts[1] = 0;
     fprintf(stderr, "Blocks allocated and still extant since last list:\n");
     Memento_appBlocks(&memento.used, Memento_listNewBlock, &counts[0]);
-    fprintf(stderr, "  Total number of blocks = %d\n", counts[0]);
-    fprintf(stderr, "  Total size of blocks = %d\n", counts[1]);
+    fprintf(stderr, "  Total number of blocks = "FMTZ"\n", (FMTZ_CAST)counts[0]);
+    fprintf(stderr, "  Total size of blocks = "FMTZ"\n", (FMTZ_CAST)counts[1]);
     MEMENTO_UNLOCK();
 }
 
 static void Memento_endStats(void)
 {
-    fprintf(stderr, "Total memory malloced = %u bytes\n", (unsigned int)memento.totalAlloc);
-    fprintf(stderr, "Peak memory malloced = %u bytes\n", (unsigned int)memento.peakAlloc);
-    fprintf(stderr, "%u mallocs, %u frees, %u reallocs\n", (unsigned int)memento.numMallocs,
-            (unsigned int)memento.numFrees, (unsigned int)memento.numReallocs);
-    fprintf(stderr, "Average allocation size %u bytes\n", (unsigned int)
+    fprintf(stderr, "Total memory malloced = "FMTZ" bytes\n", (FMTZ_CAST)memento.totalAlloc);
+    fprintf(stderr, "Peak memory malloced = "FMTZ" bytes\n", (FMTZ_CAST)memento.peakAlloc);
+    fprintf(stderr, FMTZ" mallocs, "FMTZ" frees, "FMTZ" reallocs\n", (FMTZ_CAST)memento.numMallocs,
+            (FMTZ_CAST)memento.numFrees, (FMTZ_CAST)memento.numReallocs);
+    fprintf(stderr, "Average allocation size "FMTZ" bytes\n", (FMTZ_CAST)
             (memento.numMallocs != 0 ? memento.totalAlloc/memento.numMallocs: 0));
 }
 
 void Memento_stats(void)
 {
     MEMENTO_LOCK();
-    fprintf(stderr, "Current memory malloced = %u bytes\n", (unsigned int)memento.alloc);
+    fprintf(stderr, "Current memory malloced = "FMTZ" bytes\n", (FMTZ_CAST)memento.alloc);
     Memento_endStats();
     MEMENTO_UNLOCK();
 }
@@ -1446,8 +1494,8 @@ static int showInfo(Memento_BlkHeader *b, void *arg)
 {
     Memento_BlkDetails *details;
 
-    fprintf(stderr, "0x%p:(size=%d,num=%d)",
-            MEMBLK_TOBLK(b), (int)b->rawsize, b->sequence);
+    fprintf(stderr, "0x%p:(size="FMTZ",num=%d)",
+            MEMBLK_TOBLK(b), (FMTZ_CAST)b->rawsize, b->sequence);
     if (b->label)
         fprintf(stderr, " (%s)", b->label);
     fprintf(stderr, "\nEvents:\n");
@@ -1498,7 +1546,7 @@ void Memento_fin(void)
             Memento_listBlockInfo();
 #endif
             Memento_breakpoint();
-	}
+        }
     }
     if (memento.squeezing) {
         if (memento.pattern == 0)
@@ -1506,7 +1554,7 @@ void Memento_fin(void)
         else
             fprintf(stderr, "Memory squeezing @ %d (%d) complete%s\n", memento.squeezeAt, memento.pattern, memento.segv ? " (with SEGV)" : "");
     } else if (memento.segv) {
-        fprintf(stderr, "Memory squeezing complete (with SEGV)\n", memento.failAt);
+        fprintf(stderr, "Memento completed (with SEGV)\n");
     }
     if (memento.failing)
     {
@@ -1993,33 +2041,268 @@ static void do_reference(Memento_BlkHeader *blk, int event)
 #endif /* MEMENTO_DETAILS */
 }
 
-void *Memento_takeRef(void *blk)
+int Memento_checkPointerOrNull(void *blk)
 {
-    if (!blk)
-        return NULL;
+	if (blk == NULL)
+		return 0;
+	if (blk == MEMENTO_PREFILL_PTR)
+		fprintf(stderr, "Prefill value found as pointer - buffer underrun?\n");
+	else if (blk == MEMENTO_POSTFILL_PTR)
+		fprintf(stderr, "Postfill value found as pointer - buffer overrun?\n");
+	else if (blk == MEMENTO_ALLOCFILL_PTR)
+		fprintf(stderr, "Allocfill value found as pointer - use of uninitialised value?\n");
+	else if (blk == MEMENTO_FREEFILL_PTR)
+		fprintf(stderr, "Allocfill value found as pointer - use after free?\n");
+	else
+		return 0;
+#ifdef MEMENTO_DETAILS
+	fprintf(stderr, "Current backtrace:\n");
+	Memento_bt();
+	fprintf(stderr, "History:\n");
+	Memento_info(blk);
+#endif
+	return 1;
+}
 
-    if (!memento.inited)
-        Memento_init();
+int Memento_checkBytePointerOrNull(void *blk)
+{
+	unsigned char i;
+	if (blk == NULL)
+		return 0;
+	Memento_checkPointerOrNull(blk);
 
+	i = *(unsigned int *)blk;
+
+	if (i == MEMENTO_PREFILL_UBYTE)
+		fprintf(stderr, "Prefill value found - buffer underrun?\n");
+	else if (i == MEMENTO_POSTFILL_UBYTE)
+		fprintf(stderr, "Postfill value found - buffer overrun?\n");
+	else if (i == MEMENTO_ALLOCFILL_UBYTE)
+		fprintf(stderr, "Allocfill value found - use of uninitialised value?\n");
+	else if (i == MEMENTO_FREEFILL_UBYTE)
+		fprintf(stderr, "Allocfill value found - use after free?\n");
+	else
+		return 0;
+#ifdef MEMENTO_DETAILS
+	fprintf(stderr, "Current backtrace:\n");
+	Memento_bt();
+	fprintf(stderr, "History:\n");
+	Memento_info(blk);
+#endif
+	Memento_breakpoint();
+	return 1;
+}
+
+int Memento_checkShortPointerOrNull(void *blk)
+{
+	unsigned short i;
+	if (blk == NULL)
+		return 0;
+	Memento_checkPointerOrNull(blk);
+
+	i = *(unsigned short *)blk;
+
+	if (i == MEMENTO_PREFILL_USHORT)
+		fprintf(stderr, "Prefill value found - buffer underrun?\n");
+	else if (i == MEMENTO_POSTFILL_USHORT)
+		fprintf(stderr, "Postfill value found - buffer overrun?\n");
+	else if (i == MEMENTO_ALLOCFILL_USHORT)
+		fprintf(stderr, "Allocfill value found - use of uninitialised value?\n");
+	else if (i == MEMENTO_FREEFILL_USHORT)
+		fprintf(stderr, "Allocfill value found - use after free?\n");
+	else
+		return 0;
+#ifdef MEMENTO_DETAILS
+	fprintf(stderr, "Current backtrace:\n");
+	Memento_bt();
+	fprintf(stderr, "History:\n");
+	Memento_info(blk);
+#endif
+	Memento_breakpoint();
+	return 1;
+}
+
+int Memento_checkIntPointerOrNull(void *blk)
+{
+	unsigned int i;
+	if (blk == NULL)
+		return 0;
+	Memento_checkPointerOrNull(blk);
+
+	i = *(unsigned int *)blk;
+
+	if (i == MEMENTO_PREFILL_UINT)
+		fprintf(stderr, "Prefill value found - buffer underrun?\n");
+	else if (i == MEMENTO_POSTFILL_UINT)
+		fprintf(stderr, "Postfill value found - buffer overrun?\n");
+	else if (i == MEMENTO_ALLOCFILL_UINT)
+		fprintf(stderr, "Allocfill value found - use of uninitialised value?\n");
+	else if (i == MEMENTO_FREEFILL_UINT)
+		fprintf(stderr, "Allocfill value found - use after free?\n");
+	else
+		return 0;
+#ifdef MEMENTO_DETAILS
+	fprintf(stderr, "Current backtrace:\n");
+	Memento_bt();
+	fprintf(stderr, "History:\n");
+	Memento_info(blk);
+#endif
+	Memento_breakpoint();
+	return 1;
+}
+
+static void *do_takeRef(void *blk)
+{
     MEMENTO_LOCK();
     do_reference(safe_find_block(blk), Memento_EventType_takeRef);
     MEMENTO_UNLOCK();
     return blk;
 }
 
-void *Memento_dropRef(void *blk)
+void *Memento_takeByteRef(void *blk)
 {
-    if (!blk)
-        return NULL;
-
     if (!memento.inited)
         Memento_init();
 
+    if (Memento_event()) Memento_breakpoint();
+
+    if (!blk)
+        return NULL;
+
+    (void)Memento_checkBytePointerOrNull(blk);
+
+    return do_takeRef(blk);
+}
+
+void *Memento_takeShortRef(void *blk)
+{
+    if (!memento.inited)
+        Memento_init();
+
+    if (Memento_event()) Memento_breakpoint();
+
+    if (!blk)
+        return NULL;
+
+    (void)Memento_checkShortPointerOrNull(blk);
+
+    return do_takeRef(blk);
+}
+
+void *Memento_takeIntRef(void *blk)
+{
+    if (!memento.inited)
+        Memento_init();
+
+    if (Memento_event()) Memento_breakpoint();
+
+    if (!blk)
+        return NULL;
+
+    (void)Memento_checkIntPointerOrNull(blk);
+
+    return do_takeRef(blk);
+}
+
+void *Memento_takeRef(void *blk)
+{
+    if (!memento.inited)
+        Memento_init();
+
+    if (Memento_event()) Memento_breakpoint();
+
+    if (!blk)
+        return NULL;
+
+    return do_takeRef(blk);
+}
+
+static void *do_dropRef(void *blk)
+{
     MEMENTO_LOCK();
     do_reference(safe_find_block(blk), Memento_EventType_dropRef);
     MEMENTO_UNLOCK();
     return blk;
 }
+
+void *Memento_dropByteRef(void *blk)
+{
+    if (!memento.inited)
+        Memento_init();
+
+    if (Memento_event()) Memento_breakpoint();
+
+    if (!blk)
+        return NULL;
+
+    Memento_checkBytePointerOrNull(blk);
+
+    return do_dropRef(blk);
+}
+
+void *Memento_dropShortRef(void *blk)
+{
+    if (!memento.inited)
+        Memento_init();
+
+    if (Memento_event()) Memento_breakpoint();
+
+    if (!blk)
+        return NULL;
+
+    Memento_checkShortPointerOrNull(blk);
+
+    return do_dropRef(blk);
+}
+
+void *Memento_dropIntRef(void *blk)
+{
+    if (!memento.inited)
+        Memento_init();
+
+    if (Memento_event()) Memento_breakpoint();
+
+    if (!blk)
+        return NULL;
+
+    Memento_checkIntPointerOrNull(blk);
+
+    return do_dropRef(blk);
+}
+
+void *Memento_dropRef(void *blk)
+{
+    if (!memento.inited)
+        Memento_init();
+
+    if (Memento_event()) Memento_breakpoint();
+
+    if (!blk)
+        return NULL;
+
+    return do_dropRef(blk);
+}
+
+void *Memento_adjustRef(void *blk, int adjust)
+{
+    if (Memento_event()) Memento_breakpoint();
+
+    if (blk == NULL)
+        return NULL;
+
+    while (adjust > 0)
+    {
+        do_takeRef(blk);
+        adjust--;
+    }
+    while (adjust < 0)
+    {
+        do_dropRef(blk);
+        adjust++;
+    }
+
+    return blk;
+ }
 
 void *Memento_reference(void *blk)
 {
@@ -2321,7 +2604,7 @@ static int Memento_Internal_checkAllFreed(Memento_BlkHeader *memblk, void *arg)
         fprintf(stderr, "  ");
         showBlock(memblk, ' ');
         if (data->freeCorrupt) {
-            fprintf(stderr, " index %d (address 0x%p) onwards", data->index,
+            fprintf(stderr, " index %d (address 0x%p) onwards", (int)data->index,
                     &((char *)MEMBLK_TOBLK(memblk))[data->index]);
             if (data->preCorrupt) {
                 fprintf(stderr, "+ preguard");
@@ -2673,6 +2956,11 @@ void *(Memento_takeRef)(void *a)
 }
 
 void *(Memento_dropRef)(void *a)
+{
+    return a;
+}
+
+void *(Memento_adjustRef)(void *a, int adjust)
 {
     return a;
 }

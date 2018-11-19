@@ -23,14 +23,29 @@
 #include "plparse.h"
 #include "plver.h"
 
-/* Get implemtation's characteristics */
+static int
+pjl_detect_language(const char *s, int len)
+{
+    /* We will accept a single CRLF before the @PJL
+     * string. This is a break with the spec, but is
+     * required to cope with Bug 693269. We believe
+     * this should be harmless in real world usage. */
+    if (len && *s == '\r')
+        s++, len--;
+    if (len && *s == '\n')
+        s++, len--;
+    if (len < 4)
+        return 1;
+    return memcmp(s, "@PJL", 4);
+}
+
+/* Get implementation's characteristics */
 static const pl_interp_characteristics_t *      /* always returns a descriptor */
-pjl_impl_characteristics(const pl_interp_implementation_t * impl        /* implementation of interpereter to alloc */
-    )
+pjl_impl_characteristics(const pl_interp_implementation_t * impl)        /* implementation of interpreter to alloc */
 {
     static const pl_interp_characteristics_t pjl_characteristics = {
         "PJL",
-        "@PJL",
+        pjl_detect_language,
         "Artifex",
         PJLVERSION,
         PJLBUILDDATE,

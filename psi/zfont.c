@@ -596,6 +596,9 @@ zfont_info(gs_font *font, const gs_point *pscale, int members,
         info->members |= FONT_INFO_FULL_NAME;
     if ((members & FONT_INFO_EMBEDDING_RIGHTS)
         && (dict_find_string(pfontinfo, "FSType", &pvalue) > 0)) {
+        if (r_type(pvalue) != t_integer)
+            return gs_note_error(gs_error_typecheck);
+
         info->EmbeddingRights = pvalue->value.intval;
         info->members |= FONT_INFO_EMBEDDING_RIGHTS;
     }

@@ -149,6 +149,8 @@ zexp(i_ctx_t *i_ctx_p)
 
     if (code < 0)
         return code;
+    if (args[0] == 0.0 && args[1] < 0)
+        return_error(gs_error_undefinedresult);
     if (args[0] < 0.0 && modf(args[1], &ipart) != 0.0)
         return_error(gs_error_undefinedresult);
     if (args[0] == 0.0 && args[1] == 0.0)
@@ -156,6 +158,10 @@ zexp(i_ctx_t *i_ctx_p)
     else
         result = pow(args[0], args[1]);
     make_real(op - 1, result);
+#ifdef HAVE_ISINF
+    if (isinf((op - 1)->value.realval))
+        return_error(gs_error_undefinedresult);
+#endif
     pop(1);
     return 0;
 }

@@ -231,8 +231,10 @@ zcrd1_params(os_ptr op, gs_cie_render * pcrd,
         return code;
 
     if (dict_find_string(op, "RenderTable", &pRT) > 0) {
-        const ref *prte = pRT->value.const_refs;
+        const ref *prte;
 
+        check_read_type(*pRT, t_array);
+        prte = pRT->value.const_refs;
         /* Finish unpacking and checking the RenderTable parameter. */
         check_type_only(prte[4], t_integer);
         if (!(prte[4].value.intval == 3 || prte[4].value.intval == 4))

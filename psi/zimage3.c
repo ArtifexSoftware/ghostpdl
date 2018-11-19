@@ -53,6 +53,8 @@ zimage3(i_ctx_t *i_ctx_p)
         dict_find_string(op, "MaskDict", &pMaskDict) <= 0
         )
         return_error(gs_error_rangecheck);
+    check_type(*pDataDict, t_dictionary);
+    check_type(*pMaskDict, t_dictionary);
     if ((code = pixel_image_params(i_ctx_p, pDataDict,
                         (gs_pixel_image_t *)&image, &ip_data,
                         12, false, gs_currentcolorspace(igs))) < 0 ||

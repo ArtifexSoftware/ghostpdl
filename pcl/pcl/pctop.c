@@ -165,16 +165,23 @@ typedef struct pcl_interp_instance_s
     pcl_parser_state_t pst;     /* parser state */
 } pcl_interp_instance_t;
 
-/* Get implemtation's characteristics */
+static int
+pcl_detect_language(const char *s, int length)
+{
+    if (length < 2)
+        return 1;
+    return memcmp(s, "\033E", 2);
+}
+
+/* Get implementation's characteristics */
 static const pl_interp_characteristics_t *      /* always returns a descriptor */
-pcl_impl_characteristics(const pl_interp_implementation_t * impl        /* implementation of interpereter to alloc */
-    )
+pcl_impl_characteristics(const pl_interp_implementation_t * impl)        /* implementation of interpreter to alloc */
 {
 #define PCLVERSION NULL
 #define PCLBUILDDATE NULL
     static pl_interp_characteristics_t pcl_characteristics = {
         "PCL",
-        "\033E",
+        pcl_detect_language,
         "Artifex",
         PCLVERSION,
         PCLBUILDDATE,

@@ -1254,15 +1254,43 @@ pjl_process(pjl_parser_state * pst, void *pstate, stream_cursor_read * pr)
                 /* Skip the UEL and continue. */
                 p += 9;
                 continue;
-            } else if (!memcmp(p + 1, "@PJL", min(avail, 4))) { /* Might be PJL. */
-                if (avail < 4) {        /* Not enough data to know yet. */
+            } else {
+                /* We allow for a single CRLF at the start of a block of PJL.
+                 * This is in violation of the spec, but allows us to accept
+                 * files like bug 693269. This shouldn't adversely affect any
+                 * real world files. */
+                if (avail > 0 && p[1] == '\r')
+                    p++, avail--;
+                if (avail > 0 && p[1] == '\n')
+                    p++, avail--;
+                if (!memcmp(p + 1, "@PJL", min(avail, 4))) { /* Might be PJL. */
+                    if (avail < 4) {        /* Not enough data to know yet. */
+                        break;
+                    }
+                    /* Definitely a PJL command. */
+                } else {            /* Definitely not PJL. */
+                    code = 1;
                     break;
                 }
-                /* Definitely a PJL command. */
-            } else {            /* Definitely not PJL. */
-                code = 1;
+            }
+        }
+        if (!legal_pjl_char(p[1])) {
+            code = 1;
+            /* If we haven't read anything yet, then just give up */
+            if (pst->pos == 0) {
+                ++p;
                 break;
             }
+            /* If we have, process what we had collected already before giving up. */
+            /* null terminate, parse and set the pjl state */
+            pst->line[pst->pos] = '\0';
+            /*
+             * NB PJL continues not considering normal errors but we
+             * ignore memory failure errors here and shouldn't.
+             */
+            (void)pjl_parse_and_process_line(pst);
+            pst->pos = 0;
+            break;
         }
         if (p[1] == '\n') {
             ++p;
@@ -1275,12 +1303,6 @@ pjl_process(pjl_parser_state * pst, void *pstate, stream_cursor_read * pr)
             (void)pjl_parse_and_process_line(pst);
             pst->pos = 0;
             continue;
-        }
-        
-        if (!legal_pjl_char(p[1])) {
-            code = 1;
-            ++p;
-            break;
         }
 
         /* Copy the PJL line into the parser's line buffer. */

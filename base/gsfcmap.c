@@ -32,7 +32,7 @@ typedef struct gs_cmap_identity_s {
 
 /* GC descriptors */
 public_st_cmap();
-gs_private_st_suffix_add0_local(st_cmap_identity, gs_cmap_identity_t,
+gs_public_st_suffix_add0_local(st_cmap_identity, gs_cmap_identity_t,
                                 "gs_cmap_identity_t", cmap_ptrs, cmap_data,
                                 st_cmap);
 
@@ -425,7 +425,7 @@ gs_cmap_compute_identity(const gs_cmap_t *pcmap, int font_index_only)
 
 static const int gs_cmap_ToUnicode_code_bytes = 2;
 
-gs_private_st_suffix_add0(st_cmap_ToUnicode, gs_cmap_ToUnicode_t,
+gs_public_st_suffix_add0(st_cmap_ToUnicode, gs_cmap_ToUnicode_t,
     "gs_cmap_ToUnicode_t", cmap_ToUnicode_enum_ptrs, cmap_ToUnicode_reloc_ptrs,
     st_cmap);
 

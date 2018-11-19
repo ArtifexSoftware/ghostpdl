@@ -243,6 +243,9 @@ zbuildfont0(i_ctx_t *i_ctx_p)
         array_get(pfont->memory, &fdepvector, i, &fdep);
         /* The lookup can't fail, because of the pre-check above. */
         dict_find_string(&fdep, "FID", &pfid);
+        if (!r_has_type(pfid, t_fontID))
+            return gs_note_error(gs_error_typecheck);
+
         data.FDepVector[i] = r_ptr(pfid, gs_font);
     }
     pfont->data = data;

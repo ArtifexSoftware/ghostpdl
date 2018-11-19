@@ -115,6 +115,8 @@ z_jpx_decode(i_ctx_t * i_ctx_p)
                                 dict_find_string(csdict, "N", &nref) > 0) {
                           if_debug1m('w', imemory, "[w] JPX image has an external %"PRIpsint
                                      " channel colorspace\n", nref->value.intval);
+                          if (r_type(nref) != t_integer)
+                              return gs_note_error(gs_error_typecheck);
                           switch (nref->value.intval) {
                             case 1: state.colorspace = gs_jpx_cs_gray;
                                 break;
