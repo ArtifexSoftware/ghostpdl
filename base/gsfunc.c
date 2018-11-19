@@ -53,7 +53,9 @@ void
 fn_common_free_params(gs_function_params_t * params, gs_memory_t * mem)
 {
     gs_free_const_object(mem, params->Range, "Range");
+    params->Range = NULL;
     gs_free_const_object(mem, params->Domain, "Domain");
+    params->Domain = NULL;
 }
 
 /* Generic free implementation. */

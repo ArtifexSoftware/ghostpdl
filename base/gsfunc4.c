@@ -793,6 +793,8 @@ void
 gs_function_PtCr_free_params(gs_function_PtCr_params_t * params, gs_memory_t * mem)
 {
     gs_free_const_string(mem, params->ops.data, params->ops.size, "ops");
+    params->ops.data = NULL;
+    params->ops.size = 0;
     fn_common_free_params((gs_function_params_t *) params, mem);
 }
 
