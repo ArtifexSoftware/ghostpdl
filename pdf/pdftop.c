@@ -49,13 +49,21 @@ typedef struct pdf_interp_instance_s
 #define PDF_VERSION NULL
 #define PDF_BUILD_DATE NULL
 
+static int
+pdf_detect_language(const char *s, int len)
+{
+    if (len < 5)
+        return 1;
+    return memcmp(s, "%!PDF", 2);
+}
+
 static const pl_interp_characteristics_t *
 pdf_imp_characteristics(const pl_interp_implementation_t *pimpl)
 {
     static pl_interp_characteristics_t pdf_characteristics =
     {
         "PDF",
-        "%!PDF", /* string to recognize PDF files */
+        pdf_detect_language,
         "Artifex",
         PDF_VERSION,
         PDF_BUILD_DATE,
@@ -112,7 +120,7 @@ pdf_imp_allocate_interp_instance(pl_interp_implementation_t *impl,
     instance->scratch_file = NULL;
     instance->scratch_name[0] = 0;
     instance->memory = pmem;
-    
+
     impl->interp_client_data = instance;
 
     return 0;
@@ -132,7 +140,7 @@ pdf_imp_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
     if (code < 0)
         goto cleanup_setdevice;
 #endif
-    
+
     code = gs_setdevice_no_erase(ctx->pgs, pdevice);
     if (code < 0)
         goto cleanup_setdevice;
@@ -151,7 +159,7 @@ pdf_imp_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
     gs_setaccuratecurves(ctx->pgs, true); /* NB not sure */
     gs_setfilladjust(ctx->pgs, 0, 0);
 
-    gs_setscanconverter(ctx->pgs, pl_main_get_scanconverter(ctx->memory));    
+    gs_setscanconverter(ctx->pgs, pl_main_get_scanconverter(ctx->memory));
 
     /* gsave and grestore (among other places) assume that */
     /* there are at least 2 gstates on the graphics stack. */
