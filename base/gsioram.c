@@ -241,18 +241,18 @@ s_ram_available(register stream * s, gs_offset_t *pl)
 static int
 s_ram_read_seek(register stream * s, gs_offset_t pos)
 {
-    uint end = s->srlimit - s->cbuf + 1;
+    uint end = s->cursor.r.limit - s->cbuf + 1;
     long offset = pos - s->position;
 
     if (offset >= 0 && offset <= end) {  /* Staying within the same buffer */
-    s->srptr = s->cbuf + offset - 1;
-    return 0;
+        s->cursor.r.ptr = s->cbuf + offset - 1;
+        return 0;
     }
     if (pos < 0 || pos > s->file_limit ||
-    ramfile_seek((ramhandle*)s->file, s->file_offset + pos, RAMFS_SEEK_SET) != 0
+        ramfile_seek((ramhandle*)s->file, s->file_offset + pos, RAMFS_SEEK_SET) != 0
     )
     return ERRC;
-    s->srptr = s->srlimit = s->cbuf - 1;
+    s->cursor.r.ptr = s->cursor.r.limit = s->cbuf - 1;
     s->end_status = 0;
     s->position = pos;
     return 0;

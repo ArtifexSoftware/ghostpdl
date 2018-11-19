@@ -438,8 +438,8 @@ filter_ensure_buf(stream ** ps, uint min_buf_size, gs_ref_memory_t *imem,
         if (buf == 0)
             return_error(gs_error_VMerror);
         s->cbuf = buf;
-        s->srptr = s->srlimit = s->swptr = buf - 1;
-        s->swlimit = buf - 1 + len;
+        s->cursor.r.ptr = s->cursor.r.limit = s->cursor.w.ptr = buf - 1;
+        s->cursor.w.limit = buf - 1 + len;
         s->bsize = s->cbsize = len;
         return 0;
     } else {

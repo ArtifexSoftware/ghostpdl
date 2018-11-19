@@ -92,23 +92,23 @@ struct stream_s {
     /*
      * The following invariants apply at all times for read streams:
      *
-     *    s->cbuf - 1 <= s->srptr <= s->srlimit.
+     *    s->cbuf - 1 <= s->cursor.r.ptr <= s->cursor.r.limit.
      *
-     *    The amount of data in the buffer is s->srlimit + 1 - s->cbuf.
+     *    The amount of data in the buffer is s->cursor.r.limit + 1 - s->cbuf.
      *
      *    s->position represents the stream position as of the beginning
      *      of the buffer, so the current position is s->position +
-     *      (s->srptr + 1 - s->cbuf).
+     *      (s->cursor.r.ptr + 1 - s->cbuf).
      *
      * Analogous invariants apply for write streams:
      *
-     *    s->cbuf - 1 <= s->swptr <= s->swlimit.
+     *    s->cbuf - 1 <= s->cursor.w.ptr <= s->cursor.w.limit.
      *
-     *    The amount of data in the buffer is s->swptr + 1 - s->cbuf.
+     *    The amount of data in the buffer is s->cursor.w.ptr + 1 - s->cbuf.
      *
      *    s->position represents the stream position as of the beginning
      *      of the buffer, so the current position is s->position +
-     *      (s->swptr + 1 - s->cbuf).
+     *      (s->cursor.w.ptr + 1 - s->cbuf).
      */
     stream_cursor cursor;	/* cursor for reading/writing data */
     byte *cbuf;			/* base of buffer */
@@ -200,16 +200,11 @@ extern_st(st_stream);
 
 /* ------ Stream functions ------ */
 
-#define srptr cursor.r.ptr
-#define srlimit cursor.r.limit
-#define swptr cursor.w.ptr
-#define swlimit cursor.w.limit
-
 /* Some of these are macros -- beware. */
 /* Note that unlike the C stream library, */
 /* ALL stream procedures take the stream as the first argument. */
-#define sendrp(s) ((s)->srptr >= (s)->srlimit)	/* NOT FOR CLIENTS */
-#define sendwp(s) ((s)->swptr >= (s)->swlimit)	/* NOT FOR CLIENTS */
+#define sendrp(s) ((s)->cursor.r.ptr >= (s)->cursor.r.limit)	/* NOT FOR CLIENTS */
+#define sendwp(s) ((s)->cursor.w.ptr >= (s)->cursor.w.limit)	/* NOT FOR CLIENTS */
 
 /*
  * Following are valid for all streams.
@@ -236,16 +231,16 @@ int spgetcc(stream *, bool);	/* bool indicates close at EOD */
  * ahead to detect EOD.
  *
  * In the definition of sgetc, the first alternative should read
- *      (int)(*++((s)->srptr))
+ *      (int)(*++((s)->cursor.r.ptr))
  * but the Borland compiler generates truly atrocious code for this.
  * The SCO ODT compiler requires the first, pointless cast to int.
  */
 #define sgetc(s)\
-  ((int)((s)->srlimit - (s)->srptr > 1 ? (++((s)->srptr), (int)*(s)->srptr) : spgetc(s)))
+  ((int)((s)->cursor.r.limit - (s)->cursor.r.ptr > 1 ? (++((s)->cursor.r.ptr), (int)*(s)->cursor.r.ptr) : spgetc(s)))
 int sgets(stream *, byte *, uint, uint *);
 int sungetc(stream *, byte);	/* ERRC on error, 0 if OK */
 
-#define sputback(s) ((s)->srptr--)	/* can only do this once! */
+#define sputback(s) ((s)->cursor.r.ptr--)	/* can only do this once! */
 #define seofp(s) (sendrp(s) && (s)->end_status == EOFC)
 #define serrorp(s) (sendrp(s) && (s)->end_status == ERRC)
 int spskip(stream *, gs_offset_t, gs_offset_t *);
@@ -265,11 +260,11 @@ int spputc(stream *, byte);	/* a procedure equivalent of sputc */
 
 /*
  * The first alternative should read
- *      ((int)(*++((s)->swptr)=(c)))
+ *      ((int)(*++((s)->cursor.w.ptr)=(c)))
  * but the Borland compiler generates truly atrocious code for this.
  */
 #define sputc(s,c)\
-  (!sendwp(s) ? (++((s)->swptr), *(s)->swptr=(c), 0) : spputc((s),(c)))
+  (!sendwp(s) ? (++((s)->cursor.w.ptr), *(s)->cursor.w.ptr=(c), 0) : spputc((s),(c)))
 int sputs(stream *, const byte *, uint, uint *);
 
 /*
@@ -286,9 +281,9 @@ int spseek(stream *, gs_offset_t);
 
 /* Following are for high-performance reading clients. */
 /* bufptr points to the next item. */
-#define sbufptr(s) ((s)->srptr + 1)
-#define sbufavailable(s) ((s)->srlimit - (s)->srptr)
-#define sbufskip(s, n) ((s)->srptr += (n), 0)
+#define sbufptr(s) ((s)->cursor.r.ptr + 1)
+#define sbufavailable(s) ((s)->cursor.r.limit - (s)->cursor.r.ptr)
+#define sbufskip(s, n) ((s)->cursor.r.ptr += (n), 0)
 /*
  * Define the minimum amount of data that must be left in an input buffer
  * after a read operation to handle filter read-ahead, either 0 or 1
@@ -312,9 +307,9 @@ int spseek(stream *, gs_offset_t);
   register const byte *cp;\
   const byte *ep
 #define s_begin_inline(s, cp, ep)\
-  cp = (s)->srptr, ep = (s)->srlimit
+  cp = (s)->cursor.r.ptr, ep = (s)->cursor.r.limit
 #define s_end_inline(s, cp, ep)\
-  (s)->srptr = cp
+  (s)->cursor.r.ptr = cp
 #define sbufavailable_inline(s, cp, ep)\
   (ep - cp)
 #define sendbufp_inline(s, cp, ep)\
