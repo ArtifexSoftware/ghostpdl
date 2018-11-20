@@ -282,9 +282,6 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
     pl_top_cursor_t r;
     int code = 0;
 
-#define curr_implementation minst->curr_implementation
-#define desired_implementation minst->desired_implementation
-
     if (pl_cursor_open(mem, &r, filename, minst->buf, sizeof(minst->buf)) < 0) {
         return gs_error_Fatal;
     }
@@ -295,74 +292,74 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
 
         if (pl_cursor_next(&r) <= 0) {
             if_debug0m('I', mem, "End of of data\n");
-            pl_process_eof(curr_implementation);
-            if (pl_dnit_job(curr_implementation) < 0)
+            pl_process_eof(minst->curr_implementation);
+            if (pl_dnit_job(minst->curr_implementation) < 0)
                 return gs_error_Fatal;
             break;
         }
 
         if (new_job) {
             if_debug0m('I', mem, "Selecting PDL\n");
-            desired_implementation = pl_select_implementation(pjli, minst, r);
-            if (curr_implementation != desired_implementation) {
-                code = pl_remove_device(curr_implementation);
+            minst->desired_implementation = pl_select_implementation(pjli, minst, r);
+            if (minst->curr_implementation != minst->desired_implementation) {
+                code = pl_remove_device(minst->curr_implementation);
                 if (code >= 0)
-                    code = pl_set_device(desired_implementation, minst->device);
+                    code = pl_set_device(minst->desired_implementation, minst->device);
                 if (code < 0) {
-                    curr_implementation = desired_implementation;
+                    minst->curr_implementation = minst->desired_implementation;
                     return gs_error_Fatal;
                 }
             }
 
-            curr_implementation = desired_implementation;
+            minst->curr_implementation = minst->desired_implementation;
 
             /* Don't reset PJL if there is PJL state from the command line arguments. */
-            if (curr_implementation == pjli) {
+            if (minst->curr_implementation == pjli) {
                 if (minst->pjl_from_args == false) {
                     if (pl_init_job(pjli) < 0)
                         return gs_error_Fatal;
                 } else
                     minst->pjl_from_args = false;
             } else {
-                if (pl_init_job(curr_implementation) < 0)
+                if (pl_init_job(minst->curr_implementation) < 0)
                     return gs_error_Fatal;
             }
 
             if_debug1m('I', mem, "selected and initializing (%s)\n",
-                       pl_characteristics(curr_implementation)->language);
+                       pl_characteristics(minst->curr_implementation)->language);
             new_job = false;
         }
 
-        if (curr_implementation) {
+        if (minst->curr_implementation) {
             /* Special case when the job resides in a seekable file and
                the implementation has a function to process a file at a
                time. */
-            if (curr_implementation->proc_process_file
+            if (minst->curr_implementation->proc_process_file
                 && r.strm != mem->gs_lib_ctx->fstdin) {
                 if_debug1m('I', mem, "processing job from file (%s)\n",
                            filename);
 
-                code = pl_process_file(curr_implementation, (char *)filename);
+                code = pl_process_file(minst->curr_implementation, (char *)filename);
                 if (code < 0) {
                     errprintf(mem, "Warning interpreter exited with error code %d\n",
                               code);
                 }
-                if (pl_dnit_job(curr_implementation) < 0)
+                if (pl_dnit_job(minst->curr_implementation) < 0)
                     return gs_error_Fatal;
 
                 break;      /* break out of the loop to process the next file */
             }
 
-            code = pl_process(curr_implementation, &r.cursor);
+            code = pl_process(minst->curr_implementation, &r.cursor);
             if_debug1m('I', mem, "processing (%s) job\n",
-                       pl_characteristics(curr_implementation)->language);
+                       pl_characteristics(minst->curr_implementation)->language);
             if (code == e_ExitLanguage) {
-                if (pl_dnit_job(curr_implementation) < 0)
+                if (pl_dnit_job(minst->curr_implementation) < 0)
                     return gs_error_Fatal;
 
                 new_job = true;
 
-                if (curr_implementation != pjli)
+                if (minst->curr_implementation != pjli)
                     if (pl_init_job(pjli) < 0)
                         return gs_error_Fatal;
 
@@ -372,17 +369,17 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                           code);
                 dmprintf(mem, "Flushing to end of job\n");
                 /* flush eoj may require more data */
-                while ((pl_flush_to_eoj(curr_implementation, &r.cursor)) == 0) {
+                while ((pl_flush_to_eoj(minst->curr_implementation, &r.cursor)) == 0) {
                     if (pl_cursor_next(&r) <= 0) {
                         if_debug0m('I', mem,
                                    "end of data found while flushing\n");
                         break;
                     }
                 }
-                pl_report_errors(curr_implementation, code,
+                pl_report_errors(minst->curr_implementation, code,
                                  pl_cursor_position(&r),
                                  minst->error_report > 0);
-                if (pl_dnit_job(curr_implementation) < 0)
+                if (pl_dnit_job(minst->curr_implementation) < 0)
                     return gs_error_Fatal;
                 if (pl_init_job(pjli) < 0)
                     return gs_error_Fatal;
@@ -394,8 +391,6 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
     }
     pl_cursor_close(&r);
     return 0;
-#undef curr_implementation
-#undef desired_implementation
 }
 
 int
