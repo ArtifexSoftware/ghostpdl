@@ -2255,7 +2255,7 @@ SAFER { .setsafeglobal } if
   /filterdict /.cidfonttypes /.colorrenderingtypes
   /.formtypes /.halftonetypes /.imagetypes /.imagemasktypes
   /.patterntypes /.shadingtypes /.wheredict /.renderingintentdict
-  /.currentmatrix /.setmatrix /.setdevicecolorrendering1
+  /.currentmatrix /.setmatrix
   /.setlinecap  /.setlinejoin  /.sizeimagebox  /.systemvmcheck
 
   % Used by a free user in the Library of Congress. Apparently this is used to
@@ -2292,7 +2292,7 @@ SAFER { .setsafeglobal } if
       /.checkFilePermitparams
       /.checksetparams
       /.copyparam
-      /.setpagesize
+      /.setdevicecolorrendering1
 
 % Couldn't figure out how to do these yet
 %      /.checkparamtype
@@ -2300,6 +2300,12 @@ SAFER { .setsafeglobal } if
   ]
   dup {level2dict exch .forceundef} forall
   {systemdict exch .forceundef} forall
+
+  % undef stuff from statusdict
+  [
+%      /.setpagesize
+  ]
+  {statusdict exch .forceundef} forall
 
   //systemdict /UndefinePostScriptOperators .forceundef
 } .bind executeonly def % must be bound and hidden for .forceundef
