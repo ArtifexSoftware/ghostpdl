@@ -42,11 +42,12 @@
 #include "plparse.h"
 #include "plmain.h"
 #include "pltop.h"
-#include "plcursor.h"
 #include "plapi.h"
 #include "gslibctx.h"
 #include "gsicc_manage.h"
 #include "gxiodev.h"
+#include "stream.h"
+#include "strmio.h"
 
 /* includes for the display device */
 #include "gdevdevn.h"
@@ -135,7 +136,7 @@ static int pl_main_languages_init(gs_memory_t * mem, pl_main_instance_t * inst);
 
 static pl_interp_implementation_t
     *pl_select_implementation(pl_interp_implementation_t * pjl_instance,
-                              pl_main_instance_t * pmi, pl_top_cursor_t r);
+                              pl_main_instance_t * pmi, stream *s);
 
 /* Process the options on the command line. */
 static FILE *pl_main_arg_fopen(const char *fname, void *ignore_data);
@@ -279,28 +280,32 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
     pl_interp_implementation_t *pjli =
         minst->implementations[0];
     gs_memory_t *mem = minst->memory;
-    pl_top_cursor_t r;
+    stream *s;
     int code = 0;
+    bool is_stdin = filename[0] == '-' && filename[1] == 0;
 
-    if (pl_cursor_open(mem, &r, filename, minst->buf, sizeof(minst->buf)) < 0) {
+    s = sfopen(filename, "r", mem);
+    if (s == NULL)
         return gs_error_Fatal;
-    }
 
     for (;;) {
         if_debug1m('I', mem, "[i][file pos=%ld]\n",
-                   pl_cursor_position(&r));
+                   sftell(s));
 
-        if (pl_cursor_next(&r) <= 0) {
+        if (s->cursor.r.ptr == s->cursor.r.limit && sfeof(s)) {
             if_debug0m('I', mem, "End of of data\n");
             pl_process_eof(minst->curr_implementation);
             if (pl_dnit_job(minst->curr_implementation) < 0)
                 return gs_error_Fatal;
             break;
         }
+        code = s_process_read_buf(s);
+        if (code < 0)
+            break;
 
         if (new_job) {
             if_debug0m('I', mem, "Selecting PDL\n");
-            minst->desired_implementation = pl_select_implementation(pjli, minst, r);
+            minst->desired_implementation = pl_select_implementation(pjli, minst, s);
             if (minst->curr_implementation != minst->desired_implementation) {
                 code = pl_remove_device(minst->curr_implementation);
                 if (code >= 0)
@@ -335,7 +340,7 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                the implementation has a function to process a file at a
                time. */
             if (minst->curr_implementation->proc_process_file
-                && r.strm != mem->gs_lib_ctx->fstdin) {
+                && !is_stdin) {
                 if_debug1m('I', mem, "processing job from file (%s)\n",
                            filename);
 
@@ -350,7 +355,7 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                 break;      /* break out of the loop to process the next file */
             }
 
-            code = pl_process(minst->curr_implementation, &r.cursor);
+            code = pl_process(minst->curr_implementation, &s->cursor.r);
             if_debug1m('I', mem, "processing (%s) job\n",
                        pl_characteristics(minst->curr_implementation)->language);
             if (code == e_ExitLanguage) {
@@ -369,15 +374,19 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
                           code);
                 dmprintf(mem, "Flushing to end of job\n");
                 /* flush eoj may require more data */
-                while ((pl_flush_to_eoj(minst->curr_implementation, &r.cursor)) == 0) {
-                    if (pl_cursor_next(&r) <= 0) {
+                while ((pl_flush_to_eoj(minst->curr_implementation, &s->cursor.r)) == 0) {
+                    int code2;
+                    if (s->cursor.r.ptr == s->cursor.r.limit && sfeof(s)) {
                         if_debug0m('I', mem,
                                    "end of data found while flushing\n");
                         break;
                     }
+                    code2 = s_process_read_buf(s);
+                    if (code2 < 0)
+                        break;
                 }
                 pl_report_errors(minst->curr_implementation, code,
-                                 pl_cursor_position(&r),
+                                 sftell(s),
                                  minst->error_report > 0);
                 if (pl_dnit_job(minst->curr_implementation) < 0)
                     return gs_error_Fatal;
@@ -389,7 +398,7 @@ pl_main_run_file(pl_main_instance_t *minst, const char *filename)
             }
         }
     }
-    pl_cursor_close(&r);
+    sfclose(s);
     return 0;
 }
 
@@ -1313,7 +1322,7 @@ pl_auto_sense(pl_main_instance_t *minst, const char *name,  int buffer_length)
    (2) it has been selected in PJL or (3) we need to auto sense. */
 static pl_interp_implementation_t *
 pl_select_implementation(pl_interp_implementation_t * pjli,
-                         pl_main_instance_t * pmi, pl_top_cursor_t r)
+                         pl_main_instance_t * pmi, stream *s)
 {
     /* Determine language of file to interpret. We're making the incorrect */
     /* assumption that any file only contains jobs in one PDL. The correct */
@@ -1326,8 +1335,8 @@ pl_select_implementation(pl_interp_implementation_t * pjli,
     if ((impl = pl_pjl_select(pmi, pjli)) != 0)
         return impl;
     /* lookup string in name field for each implementation */
-    return pl_auto_sense(pmi, (const char *)r.cursor.ptr + 1,
-                         (r.cursor.limit - r.cursor.ptr));
+    return pl_auto_sense(pmi, (const char *)s->cursor.r.ptr + 1,
+                         (s->cursor.r.limit - s->cursor.r.ptr));
 }
 
 /* Find default language implementation */
