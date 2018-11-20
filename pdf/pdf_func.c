@@ -159,6 +159,8 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_stream *function_stream, int 
                         return_error (gs_error_syntaxerror);
                     *size += 3;
                     code = pdfi_parse_type4_func_stream(ctx, function_stream, depth + 1, ops, size);
+                    if (code < 0)
+                        return code;
                     if (p) {
                         if (clause == false) {
                             *p = (byte)PtCr_if;
@@ -241,7 +243,7 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_stream *function_stream, int 
                         if (Op->length < Size)
                             continue;
 
-                        if (Op->length < Size)
+                        if (Op->length > Size)
                             return_error(gs_error_undefined);
 
                         if (memcmp(Op->op, TokenBuffer, Size) == 0)
@@ -266,7 +268,7 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_stream *function_stream, int 
 }
 
 static int
-pdfi_build_function_4(pdf_context *ctx, const gs_function_params_t * mnDR,
+pdfi_build_function_4(pdf_context *ctx, gs_function_params_t * mnDR,
                     pdf_dict *function_dict, int depth, gs_function_t ** ppfn)
 {
     gs_function_PtCr_params_t params;
@@ -274,7 +276,7 @@ pdfi_build_function_4(pdf_context *ctx, const gs_function_params_t * mnDR,
     int code;
     int64_t Length, temp;
     byte *data_source_buffer;
-    byte *ops;
+    byte *ops = NULL;
     unsigned int size;
     bool known = false;
     gs_offset_t savedoffset;
@@ -289,43 +291,60 @@ pdfi_build_function_4(pdf_context *ctx, const gs_function_params_t * mnDR,
         return code;
 
     savedoffset = pdfi_tell(ctx->main_stream);
-    pdfi_seek(ctx, ctx->main_stream, function_dict->stream_offset, SEEK_SET);
+    code = pdfi_seek(ctx, ctx->main_stream, function_dict->stream_offset, SEEK_SET);
+    if (code < 0)
+        return code;
 
     code = pdfi_open_memory_stream_from_filtered_stream(ctx, function_dict, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &function_stream);
-    if (code < 0) {
-        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-        return code;
-    }
+    if (code < 0)
+        goto function_4_error;
 
     size = 0;
     code = pdfi_parse_type4_func_stream(ctx, function_stream, 0, NULL, &size);
+    if (code < 0)
+        goto function_4_error;
+
     ops = gs_alloc_string(ctx->memory, size + 1, "pdfi_build_function_4(ops)");
-    if (ops == NULL)
-        return_error(gs_error_VMerror);
+    if (ops == NULL) {
+        code = gs_error_VMerror;
+        goto function_4_error;
+    }
 
     code = pdfi_seek(ctx, function_stream, 0, SEEK_SET);
     if (code < 0)
-        return code;
+        goto function_4_error;
+
     size = 0;
     code = pdfi_parse_type4_func_stream(ctx, function_stream, 0, ops, &size);
-    if (code < 0) {
-        gs_free_const_string(ctx->memory, ops, size, "pdfi_build_function_4(ops)");
-        return code;
-    }
+    if (code < 0)
+        goto function_4_error;
     ops[size] = PtCr_return;
 
     code = pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
     if (code < 0) {
-        gs_free_const_string(ctx->memory, ops, size, "pdfi_build_function_4(ops)");
-        return code;
+        function_stream = NULL;
+        goto function_4_error;
     }
 
     params.ops.data = (const byte *)ops;
     params.ops.size = size + 1;
     code = gs_function_PtCr_init(ppfn, &params, ctx->memory);
     if (code < 0)
-        gs_function_PtCr_free_params(&params, ctx->memory);
+        goto function_4_error;
 
+    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+    return 0;
+
+function_4_error:
+    if (function_stream)
+        (void)pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
+    (void)pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
+
+    gs_function_PtCr_free_params(&params, ctx->memory);
+    if (ops)
+        gs_free_const_string(ctx->memory, ops, size, "pdfi_build_function_4(ops)");
+    mnDR->Range = NULL;
+    mnDR->Domain = NULL;
     return code;
 }
 
