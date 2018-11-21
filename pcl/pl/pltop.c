@@ -95,7 +95,7 @@ pl_process_file(pl_interp_implementation_t * impl, char *filename)
 
     s = sfopen(filename, "r", mem);
     if (s == NULL)
-        return gs_error_Fatal;
+        return gs_error_undefinedfilename;
 
     code = pl_process_begin(impl);
 

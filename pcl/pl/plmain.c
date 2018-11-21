@@ -316,7 +316,7 @@ pl_main_run_file_utf8(pl_main_instance_t *minst, const char *filename)
 
     s = sfopen(filename, "r", mem);
     if (s == NULL)
-        return gs_error_Fatal;
+        return gs_error_undefinedfilename;
 
     /* This function can run in 2 modes. Either it can run a file directly
      * using the run_file mechanism, or it can feed the data piecemeal
@@ -1472,6 +1472,8 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
 
     do {
         code = pl_main_run_file_utf8(pmi, arg);
+        if (code == gs_error_undefinedfilename)
+            errprintf(pmi->memory, "Failed to open file '%s'\n", arg);
         if (code < 0)
             return code;
     } while ((code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0);
