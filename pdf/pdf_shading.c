@@ -670,6 +670,5 @@ shading_error:
     pdfi_pop(ctx, 1);
     (void)pdfi_loop_detector_cleartomark(ctx);
     pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-    return 0;
     return code;
 }
