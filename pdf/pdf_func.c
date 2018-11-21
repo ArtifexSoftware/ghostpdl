@@ -19,11 +19,14 @@
 #include "pdf_stack.h"
 #include "pdf_func.h"
 #include "pdf_dict.h"
+#include "pdf_array.h"
 #include "pdf_file.h"
+#include "pdf_loop_detect.h"
 
 #include "gsdsrc.h"
 #include "gsfunc0.h"
 #include "gsfunc4.h"
+#include "stream.h"
 
 static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, const float *shading_domain, int num_inputs, pdf_dict *stream_dict, pdf_dict *page_dict);
 
@@ -272,13 +275,12 @@ pdfi_build_function_4(pdf_context *ctx, gs_function_params_t * mnDR,
                     pdf_dict *function_dict, int depth, gs_function_t ** ppfn)
 {
     gs_function_PtCr_params_t params;
-    pdf_stream *function_stream = NULL, *filtered_function_stream = NULL;
+    pdf_stream *function_stream = NULL;
     int code;
-    int64_t Length, temp;
+    int64_t Length;
     byte *data_source_buffer;
     byte *ops = NULL;
     unsigned int size;
-    bool known = false;
     gs_offset_t savedoffset;
 
     memset(&params, 0x00, sizeof(gs_function_PtCr_params_t));
@@ -353,11 +355,10 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
                     pdf_dict *function_dict, int depth, gs_function_t ** ppfn)
 {
     gs_function_Sd_params_t params;
-    pdf_stream *function_stream = NULL, *filtered_function_stream = NULL;
+    pdf_stream *function_stream = NULL;
     int code;
     int64_t Length, temp;
     byte *data_source_buffer;
-    bool known = false;
     gs_offset_t savedoffset;
 
     memset(&params, 0x00, sizeof(gs_function_params_t));
@@ -384,7 +385,7 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
 
     pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
 
-    /* We need to clear up the PDF stream, but leave the underlyign stream alone, that's now
+    /* We need to clear up the PDF stream, but leave the underlying stream alone, that's now
      * pointed to by the params.DataSource member.
      */
     gs_free_object(ctx->memory, function_stream, "discard memory stream(pdf_stream)");
