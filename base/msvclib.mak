@@ -1130,11 +1130,6 @@ BAND_LIST_COMPRESSOR=zlib
 FILE_IMPLEMENTATION=stdio
 !endif
 
-# Choose the implementation of stdio: Only '' is allowed for library.
-# See gs.mak and ziodevs.c/ziodevsc.c for more details.
-
-STDIO_IMPLEMENTATION= 
-
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 !ifndef DEVICE_DEVS

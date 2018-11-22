@@ -381,11 +381,11 @@ $(PSOBJ)ziodev.$(OBJ) : $(PSSRC)ziodev.c $(OP)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)ziodev.$(OBJ) $(C_) $(PSSRC)ziodev.c
 
-$(PSOBJ)ziodevs$(STDIO_IMPLEMENTATION).$(OBJ) : $(PSSRC)ziodevs$(STDIO_IMPLEMENTATION).c $(OP) $(stdio__h)\
+$(PSOBJ)ziodevsc.$(OBJ) : $(PSSRC)ziodevsc.c $(OP) $(stdio__h)\
  $(gpcheck_h)\
  $(gxiodev_h)\
  $(files_h) $(ifilter_h) $(istream_h) $(store_h) $(stream_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)ziodevs$(STDIO_IMPLEMENTATION).$(OBJ) $(C_) $(PSSRC)ziodevs$(STDIO_IMPLEMENTATION).c
+	$(PSCC) $(PSO_)ziodevsc.$(OBJ) $(C_) $(PSSRC)ziodevsc.c
 
 $(PSOBJ)zmath.$(OBJ) : $(PSSRC)zmath.c $(OP) $(math__h) $(gxfarith_h) $(store_h)\
  $(INT_MAK) $(MAKEDIRS)
@@ -545,7 +545,7 @@ INT7=$(GLOBJ)sstring.$(OBJ) $(GLOBJ)stream.$(OBJ)
 Z1=$(PSOBJ)zarith.$(OBJ) $(PSOBJ)zarray.$(OBJ) $(PSOBJ)zcontrol.$(OBJ)
 Z2=$(PSOBJ)zdict.$(OBJ) $(PSOBJ)zfile.$(OBJ) $(PSOBJ)zfile1.$(OBJ) $(PSOBJ)zfileio.$(OBJ)
 Z3=$(PSOBJ)zfilter.$(OBJ) $(PSOBJ)zfproc.$(OBJ) $(PSOBJ)zgeneric.$(OBJ)
-Z4=$(PSOBJ)ziodev.$(OBJ) $(PSOBJ)ziodevs$(STDIO_IMPLEMENTATION).$(OBJ) $(PSOBJ)zmath.$(OBJ) $(PSOBJ)zalg.$(OBJ)
+Z4=$(PSOBJ)ziodev.$(OBJ) $(PSOBJ)ziodevsc.$(OBJ) $(PSOBJ)zmath.$(OBJ) $(PSOBJ)zalg.$(OBJ)
 Z5=$(PSOBJ)zmisc.$(OBJ) $(PSOBJ)zpacked.$(OBJ) $(PSOBJ)zrelbit.$(OBJ)
 Z6=$(PSOBJ)zstack.$(OBJ) $(PSOBJ)zstring.$(OBJ) $(PSOBJ)zsysvm.$(OBJ)
 Z7=$(PSOBJ)ztoken.$(OBJ) $(PSOBJ)ztype.$(OBJ) $(PSOBJ)zvmem.$(OBJ)

@@ -75,10 +75,6 @@ const gx_io_device gs_iodev_stderr =
  */
 
 static int
-    s_stdin_read_process(stream_state *, stream_cursor_read *,
-                         stream_cursor_write *, bool);
-
-static int
 stdin_init(gx_io_device * iodev, gs_memory_t * mem)
 {
     mem->gs_lib_ctx->stdin_is_interactive = true;
