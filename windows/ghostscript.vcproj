@@ -8364,10 +8364,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\psi\ziodevs.c"
-				>
-			</File>
-			<File
 				RelativePath="..\psi\ziodevsc.c"
 				>
 			</File>
