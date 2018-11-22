@@ -198,7 +198,7 @@ ps_impl_init_job(pl_interp_implementation_t *impl,
                  gx_device                  *device)
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)impl->interp_client_data;
-    int exit_code, code1;
+    int exit_code;
     int code = 0;
 
     if (!psi->init_completed) {
@@ -214,19 +214,15 @@ ps_impl_init_job(pl_interp_implementation_t *impl,
         psi->init_completed = 1;
     }
 
-    /* Possibly should be done in ps_impl_set_device */
-    code = psapi_run_string_begin(psi->psapi_instance, 0, &exit_code);
-    if (code > 0)
-        code = psapi_run_string_continue(psi->psapi_instance, "erasepage", 10, 0, &exit_code);
-
-    code1 = psapi_run_string_end(psi->psapi_instance, 0, &exit_code);
-
-    code = code < 0 ? code : code1;
-
-    if (code >= 0) {
+    /* Any error after here *must* reset the device to null */
+    if (code >= 0)
         code = psapi_set_device(psi->psapi_instance, device);
-        if (code < 0)
-            code1 = psapi_set_device(psi->psapi_instance, NULL);
+
+    if (code >= 0)
+        code = psapi_run_string(psi->psapi_instance, "erasepage", 0, &exit_code);
+
+    if (code < 0) {
+        int code1 = psapi_set_device(psi->psapi_instance, NULL);
         (void)code1;
     }
 

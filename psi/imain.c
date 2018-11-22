@@ -692,18 +692,36 @@ gs_main_set_device(gs_main_instance * minst, gx_device *pdev)
         if (code < 0) goto done;
     }
     else {
-        code = gs_main_run_string(minst, "true 0 startjob pop", 0, &code, &error_object);
+        code = gs_main_run_string(minst,
+                                  /* Do the startjob magic */
+                                  "true 0 startjob pop "
+                                  /* Make us a dictionary to carry over configuration from this
+                                   * device to the next (currently just page size). */
+                                  "<< /PageSize currentpagedevice /PageSize get >> "
+                                  , 0, &code, &error_object);
         if (code < 0) goto done;
-        /* Call the C directly to avoid the SAFER checks */
+        /* First call goes to the C directly to actually set the device. This
+         * avoids the SAFER checks. */
         code = zsetdevice_no_safer(i_ctx_p, pdev);
-        if (code < 0) goto done;
-        code = gs_main_run_string(minst, code ? "true" : "false", 0, &code, &error_object);
         if (code < 0) goto done;
         code = zcurrentoutputdevice(i_ctx_p);
         if (code < 0) goto done;
-        code = gs_main_run_string(minst, "setdevice currentpagedevice pop .setdefaultscreen gsave", 0, &code, &error_object);
-        if (code < 0) goto done;
-        code = gs_main_run_string(minst, "false 0 startjob pop", 0, &code, &error_object);
+        code = gs_main_run_string(minst,
+                                  /* Set the device again to the same one. This determines
+                                   * whether to erase page or not, but passes the safer
+                                   * checks as the device is unchanged. */
+                                  "setdevice "
+                                  /* Reconfigure the device with the carried over config. */
+                                  "setpagedevice "
+                                  /* GS specifics: Force the cached copy of the params to be updated. */
+                                  "currentpagedevice pop "
+                                  /* Setup the halftone */
+                                  ".setdefaultscreen "
+                                  /* Save the gstate */
+                                  "gsave "
+                                  /* More startjob magic */
+                                  "false 0 startjob pop"
+                                  , 0, &code, &error_object);
         if (code < 0) goto done;
     }
 done:
