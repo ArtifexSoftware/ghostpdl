@@ -179,7 +179,7 @@ pcl_secondary_pitch(pcl_args_t * pargs, pcl_state_t * pcs)
     return pcl_pitch(float_arg(pargs), pcs, 1);
 }
 
-/* 
+/*
  * Experiments on HP printers indicate height command parameters are truncated to
  * the documented range .25 - 999.75.
  */
@@ -199,7 +199,7 @@ static int
 pcl_height(pcl_args_t * pargs, pcl_state_t * pcs, int set)
 {
 
-    uint height_4ths = 
+    uint height_4ths =
         (uint) (height_clamp(float_arg(pargs)) * 4 + 0.5);
     pcl_font_selection_t *pfs = &pcs->font_selection[set];
     pfs->params.height_4ths = height_4ths;
@@ -673,13 +673,6 @@ pcl_unload_resident_fonts(pcl_state_t * pcs)
                 dmprintf1(pcs->memory, "%s", "could not store data");
 
     }
-}
-
-/* Purge all */
-static bool
-purge_all(const gs_memory_t * mem, cached_char * cc, void *dummy)
-{
-    return true;
 }
 
 static int

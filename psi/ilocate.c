@@ -611,7 +611,7 @@ do_validate_object(const obj_header_t * ptr, const clump_t * cp,
     if (size % otype->ssize != 0) {
         mlprintf3(gcst->heap, "\n Potentially bad object 0x%lx(%lu), in clump 0x%lx!\n",
                   (ulong) ptr, (ulong) size, (ulong) cp);
-        dmprintf3(gcst->heap, " structure name = %s, size = %u, ssize = %u\n",
+        dmprintf3(gcst->heap, " structure name = %s, size = %lu, ssize = %u\n",
                   oname, size, otype->ssize);
         dmprintf(gcst->heap, " This can happen (and is benign) if a device has been subclassed\n");
     }

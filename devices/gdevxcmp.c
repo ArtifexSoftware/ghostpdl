@@ -21,6 +21,7 @@
 #include "gserrors.h"
 #include "gxdevice.h"
 #include "gdevx.h"
+#include "stdint_.h"
 
 /* ---------------- Utilities ---------------- */
 
@@ -568,7 +569,7 @@ iabs(int x)
     return (x < 0 ? -x : x);
 }
 
-/* Map RGB values to a pixel value. If force is true, then we will force 
+/* Map RGB values to a pixel value. If force is true, then we will force
  * a match to one of the table values, avoiding an encode error */
 static gx_color_index
 encode_color(gx_device * dev, const gx_color_value cv[], bool force)
@@ -644,8 +645,8 @@ encode_color(gx_device * dev, const gx_color_value cv[], bool force)
                      cr * cmap->red_mult + cg * cmap->green_mult +
                      cb * cmap->blue_mult) + cmap->base_pixel;
 
-                if_debug4m('C', dev->memory, "[cX]%u,%u,%u (std cmap) => %lu\n",
-                           r, g, b, pixel);  /* NB: gx_color_index size is 4 or 8 */
+                if_debug4m('C', dev->memory, "[cX]%u,%u,%u (std cmap) => %"PRIu64"\n",
+                           r, g, b, (uint64_t)pixel);  /* NB: gx_color_index size is 4 or 8 */
                 return pixel;
             }
             if_debug3m('C', dev->memory, "[cX]%u,%u,%u (std cmap fails)\n", r, g, b);
@@ -658,7 +659,7 @@ encode_color(gx_device * dev, const gx_color_value cv[], bool force)
             if (force || ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0)) {
                 gx_color_index pixel = cr * cmap->red_mult + cmap->base_pixel;
 
-                if_debug2m('C', dev->memory, "[cX]%u (std cmap) => %lu\n", r, pixel);
+                if_debug2m('C', dev->memory, "[cX]%u (std cmap) => %"PRIu64"\n", r, (uint64_t)pixel);
                 return pixel;
             }
             if_debug1m('C', dev->memory, "[cX]%u (std cmap fails)\n", r);
@@ -694,8 +695,8 @@ encode_color(gx_device * dev, const gx_color_value cv[], bool force)
                 gx_color_index pixel =
                     xdev->cman.dither_ramp[CUBE_INDEX(cr, cg, cb)];
 
-                if_debug4m('C', dev->memory, "[cX]%u,%u,%u (dither cube) => %lu\n",
-                          r, g, b, pixel);
+                if_debug4m('C', dev->memory, "[cX]%u,%u,%u (dither cube) => %"PRIu64"\n",
+                           r, g, b, (uint64_t)pixel);
                 return pixel;
             }
             if_debug3m('C', dev->memory, "[cX]%u,%u,%u (dither cube fails)\n", r, g, b);
@@ -710,7 +711,7 @@ encode_color(gx_device * dev, const gx_color_value cv[], bool force)
             if (force || ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0)) {
                 gx_color_index pixel = xdev->cman.dither_ramp[cr];
 
-                if_debug2m('C', dev->memory, "[cX]%u (dither ramp) => %lu\n", r, pixel);
+                if_debug2m('C', dev->memory, "[cX]%u (dither ramp) => %"PRIu64"\n", r, (uint64_t)pixel);
                 return pixel;
             }
             if_debug1m('C', dev->memory, "[cX]%u (dither ramp fails)\n", r);
