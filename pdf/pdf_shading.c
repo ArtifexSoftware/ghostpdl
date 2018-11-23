@@ -79,8 +79,15 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
                     goto build_shading_function_error;
             }
             if (rsubfn->type != PDF_DICT) {
-                goto build_shading_function_error;
+                int j;
+
+                for (j = 0;j < i; j++) {
+                    pdfi_free_function(ctx, Functions[j]);
+                    Functions[j] = NULL;
+                }
+                gs_free_object(ctx->memory, Functions, "function array error, freeing functions");
                 code = gs_error_typecheck;
+                goto build_shading_function_error;
             }
             code = pdfi_build_function(ctx, &Functions[i], shading_domain, num_inputs, (pdf_dict *)rsubfn, page_dict);
             if (code < 0)
@@ -476,6 +483,7 @@ static int get_shading_common(pdf_context *ctx, pdf_dict *shading_dict, gs_shadi
     gs_color_space *pcs = gs_currentcolorspace(ctx->pgs);
     int code, num_comp = gs_color_space_num_components(pcs);
     pdf_array *a = NULL;
+    double *temp;
 
     if (num_comp < 0)	/* Pattern color space */
         return_error(gs_error_typecheck);
@@ -506,14 +514,20 @@ static int get_shading_common(pdf_context *ctx, pdf_dict *shading_dict, gs_shadi
         pcc->pattern = 0;
         params->Background = pcc;
 
+        temp = (double *)gs_alloc_bytes(ctx->memory, num_comp * sizeof(double), "temporary array of doubles");
         for(i=0;i<num_comp;i++) {
-            code = pdfi_array_get_number(ctx, a, i, &pcc->paint.values[i]);
-            if (code < 0)
+            code = pdfi_array_get_number(ctx, a, i, &temp[i]);
+            if (code < 0) {
+                gs_free_object(ctx->memory, temp, "free workign array (error)");
                 goto get_shading_common_error;
+            }
+            pcc->paint.values[i] = temp[i];
         }
         pdfi_countdown((pdf_obj *)a);
         a = NULL;
+        gs_free_object(ctx->memory, temp, "free workign array (done)");
     }
+
 
     code = pdfi_dict_get_type(ctx, shading_dict, "BBox", PDF_ARRAY, (pdf_obj **)&a);
     if (code < 0 && code != gs_error_undefined)
@@ -570,7 +584,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     pdf_name *n = NULL;
     pdf_obj *o, *cspace;
     gs_shading_params_t params;
-    gs_shading_t *psh;
+    gs_shading_t *psh = NULL;
     gs_offset_t savedoffset;
     int64_t type;
 
@@ -660,6 +674,51 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     }
 
     code1 = gs_grestore(ctx->pgs);
+
+    if (psh) {
+        switch(type) {
+            case 1:
+                if (((gs_shading_Fb_params_t *)&psh->params)->Function != NULL)
+                    pdfi_free_function(ctx, ((gs_shading_Fb_params_t *)&psh->params)->Function);
+                break;
+            case 2:
+                if (((gs_shading_A_params_t *)&psh->params)->Function != NULL)
+                    pdfi_free_function(ctx, ((gs_shading_A_params_t *)&psh->params)->Function);
+                break;
+            case 3:
+                if (((gs_shading_R_params_t *)&psh->params)->Function != NULL)
+                    pdfi_free_function(ctx, ((gs_shading_R_params_t *)&psh->params)->Function);
+                break;
+            case 4:
+                if (((gs_shading_FfGt_params_t *)&psh->params)->Function != NULL);
+                    pdfi_free_function(ctx, ((gs_shading_FfGt_params_t *)&psh->params)->Function);
+                if (((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm != NULL)
+                    sclose(((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm);
+                break;
+            case 5:
+                if (((gs_shading_LfGt_params_t *)&psh->params)->Function != NULL)
+                    pdfi_free_function(ctx, ((gs_shading_LfGt_params_t *)&psh->params)->Function);
+                if (((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm != NULL)
+                    sclose(((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm);
+                break;
+            case 6:
+                if (((gs_shading_Cp_params_t *)&psh->params)->Function != NULL)
+                    pdfi_free_function(ctx, ((gs_shading_Cp_params_t *)&psh->params)->Function);
+                if (((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm != NULL)
+                    sclose(((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm);
+                break;
+            case 7:
+                if (((gs_shading_Tpp_params_t *)&psh->params)->Function != NULL)
+                    pdfi_free_function(ctx, ((gs_shading_Tpp_params_t *)&psh->params)->Function);
+                if (((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm != NULL)
+                    sclose(((gs_shading_mesh_params_t *)&psh->params)->DataSource.data.strm);
+                break;
+            default:
+                break;
+        }
+        gs_free_object(ctx->memory, psh, "Free shaindg, finished");
+    }
+
     pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
     if (code1 == 0)
         return code;
